@@ -186,6 +186,53 @@ describe('RadioIoProgressModal', () => {
     expect(container.querySelector('.mantine-Progress-root')).toBeInTheDocument();
   });
 
+  it('lists every planned stage before the first progress event, in a fixed-height list', () => {
+    const plan = Array.from({ length: 30 }, (_, i) => ({ label: `Planned ${i}`, weight: 10 }));
+    renderModal({
+      opened: true,
+      operation: 'write',
+      phase: 'transfer',
+      progress: null,
+      plan,
+      onCancel: vi.fn(),
+    });
+    expect(screen.getByText('Planned 0')).toBeInTheDocument();
+    expect(screen.getByText('Planned 29')).toBeInTheDocument();
+    const list = screen.getByTestId('stage-list');
+    expect(list.style.maxHeight).not.toBe('');
+    expect(list.style.overflowY).toBe('auto');
+    // Nothing is marked done before the first event; the first planned stage is current.
+    expect(screen.getByText('Planned 0').closest('li')).toHaveAttribute('data-status', 'active');
+    expect(screen.getByText('Planned 29').closest('li')).toHaveAttribute('data-status', 'pending');
+  });
+
+  it('appends a stage the plan did not name instead of dropping it', () => {
+    renderModal({
+      opened: true,
+      operation: 'write',
+      phase: 'transfer',
+      progress: { cur: 1, max: 2, msg: '', stage: 'Surprise' },
+      transferStages: ['Planned A', 'Surprise'],
+      plan: [{ label: 'Planned A', weight: 10 }],
+      onCancel: vi.fn(),
+    });
+    expect(screen.getByText('Surprise').closest('li')).toHaveAttribute('data-status', 'active');
+    expect(screen.getByText('Planned A').closest('li')).toHaveAttribute('data-status', 'success');
+  });
+
+  it('falls back to the growing list when there is no plan', () => {
+    renderModal({
+      opened: true,
+      operation: 'write',
+      phase: 'transfer',
+      progress: { cur: 1, max: 2, msg: '', stage: 'Upload' },
+      transferStages: ['Upload'],
+      onCancel: vi.fn(),
+    });
+    expect(screen.queryByTestId('stage-list')).not.toBeInTheDocument();
+    expect(screen.getByText('Upload')).toBeInTheDocument();
+  });
+
   it('shows unverified write done with optional verify actions', () => {
     const onVerify = vi.fn();
     const onCloseWithoutVerify = vi.fn();

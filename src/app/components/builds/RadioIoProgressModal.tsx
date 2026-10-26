@@ -3,7 +3,8 @@
  */
 
 import { Alert, Text } from '@mantine/core';
-import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
+import type { PlannedStage, ProgressUpdate } from '@integrations/radio-io/types.ts';
+import RadioIoStageList, { type StageRow } from './RadioIoStageList.tsx';
 import { Button, ProgressModal, type ProgressModalStep } from '../v2/index.ts';
 
 /**
@@ -25,6 +26,14 @@ export interface RadioIoProgressModalProps {
   phase: RadioIoProgressPhase;
   progress: ProgressUpdate | null;
   transferStages?: readonly string[];
+  /**
+   * Stages the adapter declared before the transfer (`planForOperation`). When present the whole
+   * list is shown up front in a fixed-height list with an overall bar and time remaining;
+   * `transferStages` then only adds stages the plan did not name. Omitted: the list grows.
+   */
+  plan?: readonly PlannedStage[];
+  /** When the operation began (ms), for the time estimate. */
+  startedAt?: number;
   navigationBlocked?: boolean;
   writeVerifyStatus?: RadioIoWriteVerifyStatus;
   requiresCrossSessionReconnect?: boolean;
@@ -122,6 +131,7 @@ function activeStepId(
   progress: ProgressUpdate | null,
   transferStages: readonly string[],
   writeVerifyStatus: RadioIoWriteVerifyStatus,
+  planned = false,
 ): string {
   if (phase === 'connecting') return 'connecting';
   if (phase === 'preparing') return 'preparing';
@@ -135,6 +145,7 @@ function activeStepId(
   }
   if (phase === 'done') return 'done';
   if (progress?.stage) return `stage:${progress.stage}`;
+  if (planned && transferStages.length > 0) return `stage:${transferStages[0]}`;
   if (transferStages.length > 0) return `stage:${transferStages[transferStages.length - 1]}`;
   return 'transfer';
 }
@@ -207,7 +218,9 @@ export default function RadioIoProgressModal({
   operation,
   phase,
   progress,
-  transferStages = [],
+  transferStages: grownStages = [],
+  plan,
+  startedAt,
   navigationBlocked = false,
   writeVerifyStatus = 'none',
   requiresCrossSessionReconnect = true,
@@ -218,8 +231,12 @@ export default function RadioIoProgressModal({
   onClose,
   successNote,
 }: RadioIoProgressModalProps) {
+  const planned = plan != null && plan.length > 0;
+  const transferStages: readonly string[] = planned
+    ? [...plan.map((p) => p.label), ...grownStages.filter((l) => !plan.some((p) => p.label === l))]
+    : grownStages;
   const stepDefs = buildSteps(operation, transferStages, phase, writeVerifyStatus);
-  const activeId = activeStepId(phase, progress, transferStages, writeVerifyStatus);
+  const activeId = activeStepId(phase, progress, transferStages, writeVerifyStatus, planned);
   const title =
     operation === 'read'
       ? 'Reading from radio'
@@ -244,6 +261,21 @@ export default function RadioIoProgressModal({
         ? 'error'
         : stepStatus(step.id, activeId, stepDefs),
   }));
+
+  const planByStep = new Map((plan ?? []).map((p) => [`stage:${p.label}`, p]));
+  const stageRows: StageRow[] = steps.map((step) => {
+    const p = planByStep.get(step.id);
+    return {
+      id: step.id,
+      label: typeof step.label === 'string' ? step.label : String(step.id),
+      status: step.status,
+      ...(typeof step.detail === 'string' ? { detail: step.detail } : {}),
+      ...(p ? { weight: p.weight, ...(p.optional ? { optional: true } : {}) } : {}),
+    };
+  });
+  const stageListBody = planned ? (
+    <RadioIoStageList rows={stageRows} progress={progress} startedAt={startedAt} />
+  ) : undefined;
 
   const alert =
     operation === 'write' && showPostUploadAlert
@@ -320,6 +352,7 @@ export default function RadioIoProgressModal({
       title={title}
       phase={complete ? 'finished' : 'running'}
       steps={steps}
+      body={stageListBody}
       progress={
         !complete &&
         (phase === 'transfer' || verifying || (phase === 'preparing' && progress != null))

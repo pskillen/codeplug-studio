@@ -29,7 +29,8 @@ import {
 } from '../v2/index.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
-import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
+import type { PlannedStage, ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
+import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
 import type {
   WriteVerifyPendingPayload,
   WriteVerifyResult,
@@ -121,6 +122,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [writeWarnings, setWriteWarnings] = useState<ExportWarning[]>([]);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [transferStages, setTransferStages] = useState<string[]>([]);
+  const [plan, setPlan] = useState<PlannedStage[] | undefined>(undefined);
+  const [startedAt, setStartedAt] = useState<number | undefined>(undefined);
   const [writeVerifyStatus, setWriteVerifyStatus] = useState<RadioIoWriteVerifyStatus>('none');
   const [verifyButtonEnabled, setVerifyButtonEnabled] = useState(false);
   const [verifyResult, setVerifyResult] = useState<WriteVerifyResult | null>(null);
@@ -205,6 +208,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     setPhase('connecting');
     setProgress(null);
     setTransferStages([]);
+    setPlan(undefined);
+    setStartedAt(Date.now());
     setWriteVerifyStatus('none');
     setVerifyButtonEnabled(false);
     setVerifyResult(null);
@@ -324,6 +329,21 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             : undefined,
       );
       const session = await ensureSession(true, grantedPort);
+      // Declare the whole step list before the first byte moves (#1393).
+      setPlan(
+        descriptor
+          ? planForOperation(descriptor, 'write', {
+              prepared: { channels, organisation },
+              session,
+              parts: {
+                codeplug: true,
+                contacts: contactSource !== 'none',
+                settings: false,
+                keps: false,
+              },
+            })
+          : undefined,
+      );
       setPhase('transfer');
       const uploadResult = await uploadPreparedRadioWrite(session, egress, image, {
         onProgress,
@@ -719,6 +739,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         phase={phase}
         progress={progress}
         transferStages={transferStages}
+        plan={plan}
+        startedAt={startedAt}
         navigationBlocked={leaveAttempted}
         writeVerifyStatus={writeVerifyStatus}
         requiresCrossSessionReconnect={writeVerifyHooks?.requiresCrossSessionReconnect ?? true}
