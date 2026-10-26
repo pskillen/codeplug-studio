@@ -85,14 +85,42 @@ describe('BuildRadioBackupPage backups this session', () => {
   it('lists a backup saved from Review with the full serial, newest first', () => {
     const build = renderPage();
     act(() => {
-      addBackupThisSession(build.id, { serial: 'SN-OLD-0001', name: 'MM9PDY-1', at: 1_000 });
-      addBackupThisSession(build.id, { serial: 'SN-NEW-0002', name: 'MM9PDY-2', at: 2_000 });
+      addBackupThisSession(build.id, {
+        serial: 'SN-OLD-0001',
+        model: 'AT-D890UV',
+        name: 'MM9PDY-1',
+        at: 1_000,
+      });
+      addBackupThisSession(build.id, {
+        serial: 'SN-NEW-0002',
+        model: 'AT-D890UV',
+        name: 'MM9PDY-2',
+        at: 2_000,
+      });
     });
     const rows = within(section()).getAllByRole('row').slice(1);
     expect(rows).toHaveLength(2);
     expect(rows[0]).toHaveTextContent('MM9PDY-2');
     expect(rows[0]).toHaveTextContent('SN-NEW-0002');
     expect(rows[1]).toHaveTextContent('SN-OLD-0001');
+  });
+
+  it('renders named and unnamed entries the same way: name over model, or model alone', () => {
+    const build = renderPage();
+    act(() => {
+      addBackupThisSession(build.id, {
+        serial: 'A',
+        model: 'AT-D890UV',
+        name: 'MM9PDY-1',
+        at: 1_000,
+      });
+      addBackupThisSession(build.id, { serial: 'B', model: 'DM-32UV', name: '', at: 2_000 });
+    });
+    const rows = within(section()).getAllByRole('row').slice(1);
+    expect(within(rows[0]).getByText('DM-32UV')).toBeInTheDocument();
+    expect(within(rows[0]).queryByText('MM9PDY-1')).toBeNull();
+    expect(within(rows[1]).getByText('MM9PDY-1')).toBeInTheDocument();
+    expect(within(rows[1]).getByText('AT-D890UV')).toBeInTheDocument();
   });
 
   it('records a backup taken on this page, with the full serial', async () => {
@@ -108,7 +136,7 @@ describe('BuildRadioBackupPage backups this session', () => {
   it('keeps the list in memory only', () => {
     const before = [localStorage.length, sessionStorage.length];
     renderPage();
-    act(() => addBackupThisSession('x', { serial: 'S', name: 'N', at: 1 }));
+    act(() => addBackupThisSession('x', { serial: 'S', model: 'M', name: '', at: 1 }));
     expect([localStorage.length, sessionStorage.length]).toEqual(before);
   });
 });

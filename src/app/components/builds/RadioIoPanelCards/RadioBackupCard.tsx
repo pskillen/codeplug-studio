@@ -1,11 +1,20 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Anchor } from '@mantine/core';
-import { useBackupsThisSession } from '../../../state/radioSessionBackups.ts';
+import {
+  describeBackupRadio,
+  useBackupsThisSession,
+  type RadioBackupThisSession,
+} from '../../../state/radioSessionBackups.ts';
 import { Button } from '../../v2/index.ts';
 import classes from './RadioIoPanelCards.module.css';
 
 export interface RadioBackupCardProps {
   buildId: string;
+}
+
+function backupRadioText(b: RadioBackupThisSession): string {
+  const { primary, secondary } = describeBackupRadio(b);
+  return secondary ? `${primary}, ${secondary}` : primary;
 }
 
 function timeOf(at: number): string {
@@ -18,7 +27,7 @@ export default function RadioBackupCard({ buildId }: RadioBackupCardProps) {
   const backups = useBackupsThisSession(buildId);
   const last = backups.at(-1);
   const line = last
-    ? `Last backup this session: ${timeOf(last.at)} (${last.name || last.serial || 'radio'})`
+    ? `Last backup this session: ${timeOf(last.at)} (${backupRadioText(last)})`
     : 'No backups this session';
   const backupPath = `/builds/${buildId}/backup`;
   return (

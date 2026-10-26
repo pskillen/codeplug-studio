@@ -211,9 +211,18 @@ describe('BuildRadioIoPanel layout, AT-D890UV (#1393)', () => {
 
   it('shows the last backup this session', async () => {
     const build = renderPanel('radio-io-at-d890uv');
-    act(() => addBackupThisSession(build.id, { serial: 'SN-1', name: 'MM9PDY-1', at: Date.now() }));
+    act(() =>
+      addBackupThisSession(build.id, {
+        serial: 'SN-1',
+        model: 'AT-D890UV',
+        name: 'MM9PDY-1',
+        at: Date.now(),
+      }),
+    );
     await waitFor(() =>
-      expect(screen.getByText(/Last backup this session: .* \(MM9PDY-1\)/)).toBeInTheDocument(),
+      expect(
+        screen.getByText(/Last backup this session: .* \(MM9PDY-1, AT-D890UV\)/),
+      ).toBeInTheDocument(),
     );
   });
 });

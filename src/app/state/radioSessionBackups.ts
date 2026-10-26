@@ -8,11 +8,39 @@
 
 import { useSyncExternalStore } from 'react';
 
-/** One backup saved this session. `serial` is empty when the radio reports none. */
+/**
+ * One backup saved this session. `model` is the radio model label and is always set. `name` is the
+ * radio's own name and is empty when unknown. `serial` is empty when the radio reports none.
+ */
 export interface RadioBackupThisSession {
   readonly serial: string;
+  readonly model: string;
   readonly name: string;
   readonly at: number;
+}
+
+/** How an entry reads everywhere: the name with the model beneath, or the model alone. */
+export function describeBackupRadio(b: RadioBackupThisSession): {
+  primary: string;
+  secondary: string | null;
+} {
+  const name = b.name.trim();
+  const model = b.model.trim() || 'radio';
+  return name ? { primary: name, secondary: model } : { primary: model, secondary: null };
+}
+
+/**
+ * The newest backup saved from the radio with this serial. A blank serial never matches: Studio
+ * cannot tell two such radios apart.
+ */
+export function findBackupForSerial(
+  buildId: string,
+  serial: string,
+): RadioBackupThisSession | undefined {
+  if (serial.trim() === '') return undefined;
+  return getBackupsThisSession(buildId)
+    .filter((b) => b.serial === serial)
+    .at(-1);
 }
 
 const EMPTY: readonly RadioBackupThisSession[] = [];

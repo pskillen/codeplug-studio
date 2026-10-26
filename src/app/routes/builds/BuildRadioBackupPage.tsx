@@ -45,7 +45,12 @@ import {
 } from '../../services/atD890VitalBackup.ts';
 import AtD890VitalBackupPanel from './AtD890VitalBackupPanel.tsx';
 import Dm32CalibrationBackupPanel from './Dm32CalibrationBackupPanel.tsx';
-import { addBackupThisSession, useBackupsThisSession } from '../../state/radioSessionBackups.ts';
+import {
+  addBackupThisSession,
+  describeBackupRadio,
+  useBackupsThisSession,
+  type RadioBackupThisSession,
+} from '../../state/radioSessionBackups.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 
 function coverageCopy(coverage: RadioBackupSession['manifest']['coverage']): string {
@@ -57,6 +62,20 @@ function coverageCopy(coverage: RadioBackupSession['manifest']['coverage']): str
     case 'partial':
       return 'Partial coverage — some memory was not captured.';
   }
+}
+
+function BackupRadioLabel({ backup }: { backup: RadioBackupThisSession }) {
+  const { primary, secondary } = describeBackupRadio(backup);
+  return (
+    <>
+      <Text size="sm">{primary}</Text>
+      {secondary ? (
+        <Text size="xs" c="dimmed">
+          {secondary}
+        </Text>
+      ) : null}
+    </>
+  );
 }
 
 export default function BuildRadioBackupPage() {
@@ -173,7 +192,8 @@ export default function BuildRadioBackupPage() {
       await releaseSession();
       addBackupThisSession(build.id, {
         serial: result.manifest.serial ?? '',
-        name: result.manifest.descriptorLabel,
+        model: result.manifest.descriptorLabel,
+        name: '',
         at: Date.now(),
       });
       applyBackupSession(result);
@@ -540,7 +560,9 @@ export default function BuildRadioBackupPage() {
               <Table.Tbody>
                 {[...backupsThisSession].reverse().map((b, i) => (
                   <Table.Tr key={`${b.at}-${i}`}>
-                    <Table.Td>{b.name || '—'}</Table.Td>
+                    <Table.Td>
+                      <BackupRadioLabel backup={b} />
+                    </Table.Td>
                     <Table.Td>{b.serial || '—'}</Table.Td>
                     <Table.Td>
                       {new Date(b.at).toLocaleTimeString([], {

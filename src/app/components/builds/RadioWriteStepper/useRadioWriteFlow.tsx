@@ -53,7 +53,7 @@ import {
   setRead,
   setStepperTicks,
 } from '../../../state/atD890RadioSettingsSession.ts';
-import { addBackupThisSession, getBackupsThisSession } from '../../../state/radioSessionBackups.ts';
+import { addBackupThisSession, findBackupForSerial } from '../../../state/radioSessionBackups.ts';
 import {
   packAtD890BackupFromSession,
   downloadRadioBackupZip,
@@ -503,9 +503,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   ): AtD890ReviewController {
     const store = getAtD890RadioSettingsSession(build.id);
     const sameRadio = isSettingsReadRadio(store, atCtx.serial);
-    const existing = getBackupsThisSession(build.id)
-      .filter((b) => b.serial === atCtx.serial)
-      .pop();
+    const existing = findBackupForSerial(build.id, atCtx.serial);
     const fullReadHeld = atCtx.downloadCache !== undefined;
     const download = estimateWriteSeconds(d890DownloadStages(), null);
     const controller: AtD890ReviewController = createAtD890ReviewController({
@@ -566,7 +564,12 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       const packed = packAtD890BackupFromSession(session, cache ? { cache } : undefined);
       downloadRadioBackupZip(packed.zipBytes, packed.manifest);
       const at = now();
-      addBackupThisSession(build.id, { serial: atCtx.serial, name: atCtx.masterIdName, at });
+      addBackupThisSession(build.id, {
+        serial: atCtx.serial,
+        model: session.descriptor.label,
+        name: atCtx.masterIdName,
+        at,
+      });
       c.setBackup({ status: 'saved', at });
     } catch (err) {
       c.setBackup({ status: 'error', message: errorMessage(err) });
