@@ -20,6 +20,8 @@ import {
   DEFAULT_WRITE_PARTS,
   type WriteParts,
 } from '../../components/builds/RadioWriteStepper/writeParts.ts';
+import { reviewSectionsFor } from '../../components/builds/RadioWriteStepper/reviewSections.tsx';
+import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
 import { Button } from '../../components/v2/index.ts';
 
 const IDENTITY = { model: 'AT-D890UV', serial: 'DEMO0000', name: 'MM9PDY-2', firmware: 'MM9PDY' };
@@ -39,18 +41,30 @@ function viewFor(step: WriteStep, parts: WriteParts): WriteFlowView {
           { id: 'd', label: 'Scan lists', status: 'pending', weight: 3000 },
         ],
       };
-    case 'review':
+    case 'review': {
+      const contactsNote = parts.contacts ? '1200 digital contacts will be written.' : null;
+      const kepsCount = parts.keps ? 24 : null;
       return {
         ...base,
         review: {
           channelCount: 412,
-          contactsNote: parts.contacts ? '1200 digital contacts will be written.' : null,
-          kepsCount: parts.keps ? 24 : null,
+          contactsNote,
+          kepsCount,
           estimateSeconds: 100,
           identityOnly: false,
-          sections: [],
+          sections: reviewSectionsFor(AT_D890UV_DESCRIPTOR, {
+            identity: IDENTITY,
+            parts,
+            channelCount: 412,
+            contactsNote,
+            kepsCount,
+            estimateSeconds: 100,
+            identityOnly: false,
+            restartsAfterWrite: true,
+          }),
         },
       };
+    }
     case 'writing':
       return {
         ...base,
