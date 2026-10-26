@@ -15,11 +15,13 @@ import {
   type AtD890DownloadCache,
 } from './memory.ts';
 import {
+  assertAtD890NotHardDenied,
   assertAtD890TransmitAddress,
   assertAtD890WritableAddress,
   assertAtD890WritableSpan,
   AT_D890_WRITABLE_EXTENTS,
   findWritableExtentForAddress,
+  isAtD890HardDeniedWriteAddress,
   isAtD890TransmitAddress,
   isAtD890WritableAddress,
 } from './writableExtents.ts';
@@ -251,5 +253,31 @@ describe('AT_D890 channel location table extent (#1383)', () => {
       assertAtD890WritableSpan(base, AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES + 0x10),
     ).toThrow(RadioProtocolError);
     expect(isAtD890TransmitAddress(AT_D890_CHANNEL_LOCATION.PAIR_B_ADDRESS, new Set())).toBe(false);
+  });
+});
+
+describe('hard deny (LocalInfo, calibration, markers, safe-skip)', () => {
+  it('transmit fence refuses vital units even when the unit is in the touched set', () => {
+    expect(isAtD890TransmitAddress(0x04f8_0000, new Set([0x04f8_0000]))).toBe(false);
+    expect(isAtD890TransmitAddress(0x04f0_0010, new Set([0x04f0_0000]))).toBe(false);
+    expect(isAtD890TransmitAddress(0x04fc_0000, new Set([0x04fc_0000]))).toBe(false);
+  });
+
+  it('range boundaries', () => {
+    expect(isAtD890HardDeniedWriteAddress(0x04ef_ffe0)).toBe(false);
+    expect(isAtD890HardDeniedWriteAddress(0x04f0_0000)).toBe(true);
+    expect(isAtD890HardDeniedWriteAddress(0x04ff_fff0)).toBe(true);
+    expect(isAtD890HardDeniedWriteAddress(0x0500_0000)).toBe(false);
+  });
+
+  it('denies bookkeeping and safe-skip, with the reason in the message', () => {
+    expect(isAtD890HardDeniedWriteAddress(0x03a3_fbf0)).toBe(true);
+    expect(isAtD890HardDeniedWriteAddress(0x03a3_fff0)).toBe(true);
+    expect(() => assertAtD890NotHardDenied(0x03a3_fbf0)).toThrow(/sector-management marker/);
+    expect(() => assertAtD890NotHardDenied(0x02fa_0010)).toThrow(/family safe-skip/);
+    expect(() => assertAtD890NotHardDenied(0x04f8_0000)).toThrow(/LocalInfo \/ calibration/);
+    expect(() => assertAtD890TransmitAddress(0x04f8_0000, new Set([0x04f8_0000]))).toThrow(
+      /LocalInfo \/ calibration/,
+    );
   });
 });
