@@ -195,7 +195,7 @@ function hardDenyReasonFor(address: number): HardDenyReason | undefined {
   //
   // This runs before any touched-unit shortcut and before any caller-supplied transmitGuard,
   // so no generic write path can reach these addresses. There is no LocalInfo writer today.
-  // The only one planned is the Radio tools frequency-range change (#1369), a one-shot,
+  // The only one planned is the Danger zone frequency-range change (#1369), a one-shot,
   // single-purpose sender that will use neither atD890WriteMemory nor atD890WriteBlockRaw.
   if (
     address >= AT_D890_VITAL_UNITS_RANGE.start &&

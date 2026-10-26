@@ -190,7 +190,9 @@ describe('AtD890uvProtocol.restoreFromBackup', () => {
     scriptAtD890ConnectWithNegotiation(pipe);
     const radio = new AtD890uvProtocol();
     await radio.connect(pipe);
-    const memory = new Map([[D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)]]);
+    const memory = new Map<number, Uint8Array>([
+      [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
+    ]);
     const unitBase = address - (address % 0x4_0000);
     // The LocalInfo unit is already served by the serial span above.
     if (!memory.has(unitBase)) memory.set(unitBase, makeAtD890EraseUnitBuffer());
