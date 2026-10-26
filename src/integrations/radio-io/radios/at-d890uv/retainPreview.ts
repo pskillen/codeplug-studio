@@ -276,7 +276,7 @@ export function alarmRetainPreview(
 
 const LOCAL_INFO_FIELD_HINTS: { start: number; end: number; label: string }[] = [
   { start: 0x02, end: 0x03, label: 'full test mode' },
-  { start: 0x03, end: 0x04, label: 'frequency mode' },
+  { start: 0x03, end: 0x04, label: 'frequency range' },
   { start: 0x04, end: 0x06, label: 'Chinese UI' },
   { start: 0x06, end: 0x07, label: 'band select' },
   { start: 0x0b, end: 0x0f, label: 'band password' },

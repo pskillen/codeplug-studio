@@ -15,16 +15,16 @@
 
 Inclusive MHz bands used when filtering build lists and export ([#612](https://github.com/pskillen/codeplug-studio/issues/612)). See [channel-eligibility.md](../../../../features/builds/channel-eligibility.md).
 
-| Band (MHz) | Modes   | TX           |
-| ---------- | ------- | ------------ |
-| 136–174    | FM, DMR | Yes          |
-| 400–480    | FM, DMR | Yes          |
-| 108–136    | AM      | Yes          |
-| 87.5–108   | FM      | Receive-only |
+| Band (MHz) | Modes   | TX                                      |
+| ---------- | ------- | --------------------------------------- |
+| 136–174    | FM, DMR | Yes (subject to the radio's range code) |
+| 400–480    | FM, DMR | Yes (subject to the radio's range code) |
+| 108–136    | AM      | Yes                                     |
+| 87.5–108   | FM      | Receive-only                            |
 
 Source: Studio Anytone bank docs + common CPS clamps.
 
-These are the **hardware receive bands**: every channel inside them is written. The radio itself enforces its range code's **TX** table at PTT ([band-code.md](band-code.md)), so a channel can be written yet receive-only on a given radio. The Write's Review warns per connected radio about those channels (from the radio's range code, nothing stored in the build).
+Studio's static bands above cover the hardware receive bands (some range codes receive up to 520 MHz, beyond this table): every channel inside these bands is written. The radio itself enforces its range code's **TX** table at PTT ([band-code.md](band-code.md)), so a channel can be written yet receive-only on a given radio. Once the Review step (PR 4c) lands, it will warn per connected radio about those channels (from the radio's range code, nothing stored in the build).
 
 ### Satellite transmitter mode support (Studio write eligibility) — operator-confirmed on real hardware
 
