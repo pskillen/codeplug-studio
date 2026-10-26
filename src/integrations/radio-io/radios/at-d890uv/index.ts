@@ -119,22 +119,7 @@ export {
   type AtD890SweepResult,
 } from './linkProbe.ts';
 export {
-  AT_D890_WRITE_BLOCK_CANDIDATES,
-  atD890WriteProbeAddress,
-  buildAtD890WriteTrials,
-  classifyAtD890WriteReadback,
-  isAtD890InertPayload,
-  makeAtD890WritePayload,
-  summariseAtD890WriteProbe,
-  type AtD890WriteOutcome,
-  type AtD890WriteProbeVerdict,
-  type AtD890WriteTrial,
-  type AtD890WriteTrialResult,
-} from './writeBlockProbe.ts';
-export {
   runAtD890LinkProbe,
-  runAtD890WriteBlockProbe,
-  runAtD890WriteBlockVerify,
   runAtD890ConfigAliasCheck,
   runAtD890ProbeDiagnose,
   runAtD890ProbeInspect,
@@ -143,7 +128,6 @@ export {
   runAtD890ProbeVerifyAndMark,
   type AtD890ConfigAliasCheckResult,
   type AtD890LinkProbeResult,
-  type AtD890WriteProbeResult,
   type AtD890ProbeDiagnoseResult,
   type AtD890ProbeInspectResult,
 } from './eraseUnitProbeRunner.ts';

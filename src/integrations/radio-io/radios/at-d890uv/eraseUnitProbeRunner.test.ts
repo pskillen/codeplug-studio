@@ -7,7 +7,6 @@ import {
   scriptAtD890NegotiateReadBlock,
   scriptAtD890WriteAck,
 } from './__fixtures__/scriptedPipe.ts';
-import { buildAtD890WriteTrials, makeAtD890WritePayload } from './writeBlockProbe.ts';
 import {
   runAtD890ConfigAliasCheck,
   runAtD890ProbeDiagnose,
@@ -15,8 +14,6 @@ import {
   runAtD890ProbeMeasure,
   runAtD890ProbePaint,
   runAtD890ProbeVerifyAndMark,
-  runAtD890WriteBlockProbe,
-  runAtD890WriteBlockVerify,
 } from './eraseUnitProbeRunner.ts';
 import { AT_D890_CONFIG_ALIAS_PAIRS, AT_D890_CONFIG_ALIAS_STRIDE } from './configAliasProbe.ts';
 import {
@@ -321,116 +318,5 @@ describe('probe block encoding', () => {
     expect(Array.from(makeAtD890ProbeMarker(a))).not.toEqual(
       Array.from(makeAtD890ProbeSentinel(a)),
     );
-  });
-});
-
-describe('runAtD890WriteBlockProbe', () => {
-  const trials = buildAtD890WriteTrials();
-
-  /**
-   * Script a radio honouring writes up to `maxBlock`. Each accepted write is ACKed and then
-   * read back inline; the next size up is NAKed. `desyncAt` instead models the real hazard —
-   * the radio stops answering entirely after that size.
-   */
-  function scriptWrite(opts: {
-    maxBlock: number;
-    staged?: boolean;
-    desyncAt?: number;
-  }): AtD890ScriptedPipe {
-    const { maxBlock, staged = true, desyncAt } = opts;
-    const pipe = new AtD890ScriptedPipe();
-    scriptAtD890Connect(pipe);
-    for (const { address, blockSize } of trials) {
-      if (blockSize > maxBlock) {
-        pipe.enqueue(new Uint8Array([0x15])); // NAK
-        break;
-      }
-      scriptAtD890WriteAck(pipe, 1);
-      if (desyncAt === blockSize) break; // no read reply: the stream goes silent
-      enqueueAtD890ReadReply(
-        pipe,
-        address,
-        staged ? makeAtD890WritePayload(address, blockSize) : new Uint8Array(blockSize).fill(0xff),
-      );
-    }
-    return pipe;
-  }
-
-  it('reads each size back before trying a larger one', async () => {
-    const r = await runAtD890WriteBlockProbe(scriptWrite({ maxBlock: 0xf0 }));
-    expect(r.verdict.bestBlockSize).toBe(0xf0);
-    expect(r.desynced).toBe(false);
-    expect(r.inSessionReadsSeeStagedWrites).toBe(true);
-  });
-
-  it('stops at a NAK instead of trying larger frames', async () => {
-    const r = await runAtD890WriteBlockProbe(scriptWrite({ maxBlock: 0x20 }));
-    expect(r.verdict.results.map((t) => t.blockSize)).toEqual([0x10, 0x20, 0x40]);
-    expect(r.verdict.results.at(-1)!.accepted).toBe(false);
-    expect(r.verdict.bestBlockSize).toBe(0x20);
-  });
-
-  it('stops on desync and keeps the sizes proven so far', async () => {
-    const r = await runAtD890WriteBlockProbe(scriptWrite({ maxBlock: 0xf0, desyncAt: 0x20 }));
-
-    expect(r.desynced).toBe(true);
-    // 0x10 proved good before the stream broke; nothing beyond 0x20 was attempted.
-    expect(r.verdict.bestBlockSize).toBe(0x10);
-    expect(r.verdict.results.map((t) => t.blockSize)).toEqual([0x10, 0x20]);
-  });
-
-  it('does NOT commit a desynced session — the shadow must not reach flash', async () => {
-    const pipe = scriptWrite({ maxBlock: 0xf0, desyncAt: 0x20 });
-    const r = await runAtD890WriteBlockProbe(pipe);
-
-    expect(r.committed).toBe(false);
-    expect(sentEnd(pipe)).toBe(false);
-  });
-
-  it('commits a clean run so the verify pass can check flash', async () => {
-    const pipe = scriptWrite({ maxBlock: 0xf0 });
-    const r = await runAtD890WriteBlockProbe(pipe);
-
-    expect(r.committed).toBe(true);
-    expect(sentEnd(pipe)).toBe(true);
-  });
-
-  it('reports when in-session reads come from flash rather than the staged shadow', async () => {
-    const r = await runAtD890WriteBlockProbe(scriptWrite({ maxBlock: 0xf0, staged: false }));
-    expect(r.inSessionReadsSeeStagedWrites).toBe(false);
-    expect(r.verdict.bestBlockSize).toBe(0x10);
-  });
-});
-
-describe('runAtD890WriteBlockVerify', () => {
-  const trials = buildAtD890WriteTrials();
-
-  it('reads every trial address and writes nothing', async () => {
-    const pipe = new AtD890ScriptedPipe();
-    scriptAtD890Connect(pipe);
-    for (const { address, blockSize } of trials) {
-      enqueueAtD890ReadReply(pipe, address, makeAtD890WritePayload(address, blockSize));
-    }
-    const r = await runAtD890WriteBlockVerify(pipe);
-
-    expect(r.verdict.bestBlockSize).toBe(Math.max(...trials.map((t) => t.blockSize)));
-    expect(writtenAddresses(pipe)).toEqual([]);
-  });
-
-  it('does not credit a size whose bytes did not survive the commit', async () => {
-    const pipe = new AtD890ScriptedPipe();
-    scriptAtD890Connect(pipe);
-    for (const { address, blockSize } of trials) {
-      // Only the 16-byte write survived; everything larger came back erased.
-      enqueueAtD890ReadReply(
-        pipe,
-        address,
-        blockSize === 0x10
-          ? makeAtD890WritePayload(address, blockSize)
-          : new Uint8Array(blockSize).fill(0xff),
-      );
-    }
-    const r = await runAtD890WriteBlockVerify(pipe);
-    expect(r.verdict.bestBlockSize).toBe(0x10);
   });
 });

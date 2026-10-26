@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * The AT-D890 hard deny lives in `connection.ts` (`atD890WriteMemory` / `atD890WriteBlockRaw`).
+ * The AT-D890 hard deny lives in `connection.ts` (`atD890WriteMemory`).
  * A new D890 `W` frame builder elsewhere would bypass it, so every production use of the frame
  * builder must be a deliberate, reviewed entry here.
  */

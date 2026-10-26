@@ -6,7 +6,6 @@ import {
   atD890ProbeIdent,
   atD890ReadBlockRaw,
   atD890ReadMemory,
-  atD890WriteBlockRaw,
   atD890WriteMemory,
 } from './connection.ts';
 import { assertAtD890TransmitAddress } from './writableExtents.ts';
@@ -124,13 +123,6 @@ describe('hard deny before any caller guard', () => {
       expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(0);
       expect(pipe.writes).toHaveLength(0);
     });
-    it(`atD890WriteBlockRaw refuses 0x${addr.toString(16)}`, async () => {
-      const pipe = new AtD890ScriptedPipe();
-      await expect(atD890WriteBlockRaw(pipe, addr, new Uint8Array(0x10))).rejects.toThrow(
-        RadioProtocolError,
-      );
-      expect(pipe.writes).toHaveLength(0);
-    });
   }
 
   it('refuses a span that starts below the range and runs into it, before the first frame', async () => {
@@ -138,10 +130,6 @@ describe('hard deny before any caller guard', () => {
     await expect(
       atD890WriteMemory(pipe, 0x04ef_ffe0, new Uint8Array(0x30), undefined, permissive),
     ).rejects.toThrow(/LocalInfo \/ calibration/);
-    expect(pipe.writes).toHaveLength(0);
-    await expect(atD890WriteBlockRaw(pipe, 0x04ef_ffe0, new Uint8Array(0x30))).rejects.toThrow(
-      RadioProtocolError,
-    );
     expect(pipe.writes).toHaveLength(0);
   });
 });
@@ -266,7 +254,7 @@ describe('atD890 frame resend', () => {
     const pipe = new AtD890ScriptedPipe();
     pipe.pendingTimeouts = 5;
     await expect(
-      atD890WriteBlockRaw(pipe, D890_MAP.ChannelSet, new Uint8Array(0x10)),
+      atD890WriteMemory(pipe, D890_MAP.ChannelSet, new Uint8Array(0x10)),
     ).rejects.toBeInstanceOf(RadioTimeoutError);
     expect(writeFrames(pipe)).toHaveLength(3);
     expect(pipe.flushCount).toBe(2);
