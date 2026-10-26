@@ -10,7 +10,10 @@
  * Wire facts: `docs/reference/radios/anytone/at-d890uv/memory-layout.md`.
  */
 
-import { atD890SettingField } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
+import {
+  AT_D890_POWER_ON_LINE_MAX_LENGTH,
+  atD890SettingField,
+} from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
 import { isAtD890EraseUnitBookkeepingAddress } from './eraseUnits.ts';
@@ -210,7 +213,7 @@ function specFor(layout: FieldLayout): AtD890SettingsFieldSpec {
   const base = { id, address, targets: BOTH_TARGETS, advanced: false } as const;
 
   if (def.kind === 'text') {
-    const maxLength = def.maxLength ?? 16;
+    const maxLength = def.maxLength ?? AT_D890_POWER_ON_LINE_MAX_LENGTH;
     return {
       ...base,
       length: AT_D890_POWER_ON_LINE_BYTES,

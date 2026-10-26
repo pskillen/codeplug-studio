@@ -65,5 +65,8 @@ Studio offers the range the **firmware** honours, not always the CPS's: for exam
 | RS8 | DMR call with a talker alias: call display mode 0 vs 1 shows what the page says. Then set "Name Based" with the official CPS, power-cycle, read back in Studio: the value is 0 | Pending |
 | RS8b | Last caller 1 (ID), 2 (callsign), 3 (both) on a received call: the line matches the labels | Pending |
 | RS8c | Channel line extras on a DMR channel: time slot and colour code bits show the right item | Pending |
+| RS8d | Power-on text with 14 characters on both lines: small font, no spill into the other line or the password block | Pending |
+| RS8e | TX preamble 5 against 40 on air or with a monitor: 300 ms against 2400 ms (Studio does not offer 0..4, which the radio treats as 5) | Pending |
+| RS8f | Backlight timeout entries 13 and 14: time them; Studio labels them 3 min and 4.5 min from the radio's timeout table | Pending |
 
 Emulator evidence for the transmitted bytes is recorded in the PR; it is not a substitute for these rows.

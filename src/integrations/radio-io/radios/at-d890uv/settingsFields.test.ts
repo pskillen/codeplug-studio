@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AT_D890_KEY_FUNCTION_MAX,
+  AT_D890_POWER_ON_LINE_MAX_LENGTH,
   AT_D890_V1_SETTINGS_FIELD_IDS,
   atD890KeyFunctionOptions,
   atD890SettingField,
@@ -185,7 +187,7 @@ describe('AT-D890 v1 settings fields', () => {
   const sampleFor = (id: string): AtD890SettingValue[] => {
     const def = atD890SettingField(id)!;
     if (def.kind === 'boolean') return [false, true];
-    if (def.kind === 'text') return ['', 'A', 'MM9PDY TEST', 'LINE TWO 1234567'];
+    if (def.kind === 'text') return ['', 'A', 'MM9PDY TEST', 'LINE TWO 12345'];
     return def.options!.map((o) => o.value);
   };
 
@@ -217,7 +219,8 @@ describe('AT-D890 v1 settings fields', () => {
     const def = atD890SettingField(id)!;
     const bad: unknown[] = [{}, null, undefined];
     if (def.kind === 'boolean') bad.push(1, 'on');
-    else if (def.kind === 'text') bad.push(5, 'x'.repeat(17), 'café', 'tab\t', '中');
+    else if (def.kind === 'text')
+      bad.push(5, 'x'.repeat(AT_D890_POWER_ON_LINE_MAX_LENGTH + 1), 'café', 'tab\t', '中');
     else {
       const values = def.options!.map((o) => o.value);
       bad.push(true, '1', -1, 1.5);
@@ -237,10 +240,10 @@ describe('AT-D890 v1 settings fields', () => {
     expect(ids).toHaveLength(10);
     for (const id of ids) {
       const spec = AT_D890_SETTINGS_FIELDS.get(id)!;
-      expect(() => spec.encode(65)).toThrow(RadioProtocolError);
+      expect(() => spec.encode(AT_D890_KEY_FUNCTION_MAX + 1)).toThrow(RadioProtocolError);
       expect(() => spec.encode(255)).toThrow(RadioProtocolError);
       expect([...spec.encode(0)]).toEqual([0]);
-      expect([...spec.encode(64)]).toEqual([64]);
+      expect([...spec.encode(AT_D890_KEY_FUNCTION_MAX)]).toEqual([AT_D890_KEY_FUNCTION_MAX]);
     }
   });
 
@@ -294,8 +297,30 @@ describe('AT-D890 v1 settings fields', () => {
     expect([...bytes.subarray(0, 6)]).toEqual([0x41, 0, 0x42, 0, 0, 0]);
     expect(bytes.subarray(4).every((b) => b === 0)).toBe(true);
     expect([...line2.encode('')]).toEqual(new Array(0x20).fill(0));
-    expect(line1.decode(line1.encode('1234567890123456'))).toBe('1234567890123456');
+    expect(line1.decode(line1.encode('12345678901234'))).toBe('12345678901234');
     expect(line1.decode(new Uint8Array(0x20).fill(0xff))).toBeUndefined();
+  });
+
+  it('always leaves a NUL terminator after a power-on line, even at the longest length', () => {
+    // The firmware draws a line until 0x0000; a full 16 unit line would run into the next one.
+    expect(AT_D890_POWER_ON_LINE_MAX_LENGTH).toBeLessThanOrEqual(15);
+    for (const id of ['powerOnLine1', 'powerOnLine2']) {
+      const spec = AT_D890_SETTINGS_FIELDS.get(id)!;
+      for (const text of ['', 'A', 'x'.repeat(AT_D890_POWER_ON_LINE_MAX_LENGTH)]) {
+        const bytes = spec.encode(text);
+        expect([...bytes.subarray(0x1e)], `${id} "${text}"`).toEqual([0, 0]);
+      }
+      expect(() => spec.encode('x'.repeat(16))).toThrow(RadioProtocolError);
+      expect(() => spec.encode('x'.repeat(15))).toThrow(RadioProtocolError);
+    }
+  });
+
+  it('does not offer TX preamble 0..4: the firmware uses at least 5', () => {
+    const spec = AT_D890_SETTINGS_FIELDS.get('txPreamble')!;
+    for (const v of [0, 1, 4]) expect(() => spec.encode(v)).toThrow(RadioProtocolError);
+    expect([...spec.encode(5)]).toEqual([5]);
+    expect([...spec.encode(40)]).toEqual([40]);
+    expect(() => spec.encode(41)).toThrow(RadioProtocolError);
   });
 
   it('keeps masked +0x110 specs independent', () => {

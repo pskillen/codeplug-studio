@@ -150,6 +150,13 @@ export const AT_D890_KEY_FUNCTIONS: readonly AtD890KeyFunction[] = KEY_FUNCTION_
   ([value, label, radioLabel]) => ({ value, label, radioLabel }),
 );
 
+/**
+ * Longest start-up text line Studio offers. The firmware draws a line until a `0x0000` terminator
+ * and has no length cap, so a line must leave at least one NUL unit inside its `0x20` bytes (16
+ * units; a 16 character line would run into the next line, then the password). 14 is the CPS limit.
+ */
+export const AT_D890_POWER_ON_LINE_MAX_LENGTH = 14;
+
 /** Highest key function value the firmware has a handler for. */
 export const AT_D890_KEY_FUNCTION_MAX = 64;
 
@@ -373,17 +380,17 @@ export const AT_D890_SETTING_FIELDS: readonly AtD890SettingFieldDef[] = [
     id: 'powerOnLine1',
     section: 'startup',
     label: 'Power-on line 1',
-    help: 'First start-up text line, up to 16 characters.',
+    help: 'First start-up text line, up to 14 characters.',
     exposure: 'cps',
-    maxLength: 16,
+    maxLength: AT_D890_POWER_ON_LINE_MAX_LENGTH,
   }),
   txt({
     id: 'powerOnLine2',
     section: 'startup',
     label: 'Power-on line 2',
-    help: 'Second start-up text line, up to 16 characters.',
+    help: 'Second start-up text line, up to 14 characters.',
     exposure: 'cps',
-    maxLength: 16,
+    maxLength: AT_D890_POWER_ON_LINE_MAX_LENGTH,
   }),
   bool({
     id: 'startupTone',
@@ -579,8 +586,10 @@ export const AT_D890_SETTING_FIELDS: readonly AtD890SettingFieldDef[] = [
       '4 min',
       '5 min',
       '15 min',
-      '30 min',
-      '45 min',
+      // The radio's menu says 30 and 45 min, but its timeout table (0x0814BA86) holds 3 min and
+      // 4.5 min for these two entries, so that is what the radio does.
+      '3 min (radio menu says 30 min)',
+      '4.5 min (radio menu says 45 min)',
       '1 hour',
     ]),
   }),
@@ -774,7 +783,8 @@ export const AT_D890_SETTING_FIELDS: readonly AtD890SettingFieldDef[] = [
     label: 'TX preamble duration',
     help: 'Digital preamble sent before a transmission.',
     exposure: 'menu',
-    options: range(0, 40, (n) => `${n * 60} ms`),
+    // The firmware sends at least 5 (300 ms) in DMR (reader 0x08118AA8), so 0..4 are not offered.
+    options: range(5, 40, (n) => `${n * 60} ms`),
   }),
   lvl({
     id: 'voiceHeaderRepeats',
