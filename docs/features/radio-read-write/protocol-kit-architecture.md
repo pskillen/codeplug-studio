@@ -195,6 +195,8 @@ requestPort (no open) → assemble(build, library)   // grant during Write click
   → disconnect
 ```
 
+**Planned stages (#1393).** Before the transfer, the app asks the descriptor for the steps it will emit: `RadioDescriptor.planStages?(op, ctx)` returns `PlannedStage[]` (`label` = the exact `ProgressUpdate.stage` string, `weight` = estimated bytes, `optional?`), via `planForOperation(descriptor, op, ctx)` in `plannedStages.ts`. `op` is `read | write | backup | restore`; `ctx` carries the prepared projection, the parts being written and the session, all optional. Adapters that do not declare a plan for an operation return nothing and the progress window falls back to a list that grows as stages arrive. The UI side is [`RadioIoStageList`](../../../src/app/components/builds/RadioIoStageList.md). Adapters declare Write plans today; D890 also Read and Backup (its download list).
+
 Read path (unchanged): `requestPort` → open → `connect(read)` → `download` → persist hydration on egress.
 
 MVP **Read** hydrates the FormatBuild only — it does **not** import channels into the library. See [adding-a-radio-adapter.md](adding-a-radio-adapter.md).
