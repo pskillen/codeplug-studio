@@ -43,12 +43,16 @@ vi.mock('@integrations/radio-io/transport/featureDetect.ts', async (importOrigin
 });
 
 const kepsWrite = vi.hoisted(() => vi.fn());
+// The D890 uses the restart step for keps (#1406); the same-session branch is forced for its F2 tests.
+const forceKepsSameSession = vi.hoisted(() => ({ on: false }));
 
 vi.mock('../../services/satelliteKepsWriteAdapters.ts', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('../../services/satelliteKepsWriteAdapters.ts')>();
   return {
     ...actual,
+    satelliteKepsSameSessionAfterUpload: (profileId: string) =>
+      forceKepsSameSession.on || actual.satelliteKepsSameSessionAfterUpload(profileId),
     hasSatelliteKepsWriteAdapter: (profileId: string) =>
       profileId === 'radio-io-at-d890uv' ||
       profileId === 'radio-io-opengd77-1701' ||
@@ -205,6 +209,7 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     hookRan = false;
     uploaded = 0;
     kepsWrite.mockReset();
+    forceKepsSameSession.on = false;
     kepsWrite.mockResolvedValue({ written: 3, skipped: [], skippedTransmitters: [] });
     vi.mocked(radioIoSession.closeRadioSession).mockClear();
     vi.mocked(radioIoSession.openRadioSessionForEgress).mockClear();
@@ -324,20 +329,22 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     expect(prepare).toHaveBeenCalledTimes(2);
   });
 
-  it('D890 keps in the same session: keps write runs before the session closes', async () => {
+  it('D890 keps need a new session: restart step, then Write keps (#1406)', async () => {
     openStepper('radio-io-at-d890uv');
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Satellite keps' }));
     await connect();
     fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug + keps' }));
+    expect(await screen.findByTestId('write-stepper-restart-wait')).toBeInTheDocument();
+    // No keps write before the codeplug session has closed.
+    expect(kepsWrite).not.toHaveBeenCalled();
+    expect(radioIoSession.closeRadioSession).toHaveBeenCalledTimes(1);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.now() + 25_000);
+    const writeKeps = await screen.findByRole('button', { name: 'Write keps' });
+    await waitFor(() => expect(writeKeps).toBeEnabled(), { timeout: 3000 });
+    fireEvent.click(writeKeps);
     expect(await screen.findByText(/Satellite keps written/)).toBeInTheDocument();
     expect(kepsWrite).toHaveBeenCalledTimes(1);
-    const session = kepsWrite.mock.calls[0]![0];
-    expect(session.descriptor.label).toBe('Test radio');
-    expect(kepsWrite.mock.invocationCallOrder[0]!).toBeLessThan(
-      vi.mocked(radioIoSession.closeRadioSession).mock.invocationCallOrder[0]!,
-    );
-    // No restart step between.
-    expect(screen.queryByTestId('write-stepper-restart-wait')).toBeNull();
   });
 
   it('OpenGD77 keps need a new session: restart step, then Write keps', async () => {
@@ -358,6 +365,7 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
   });
 
   it('D890 keps failing after the upload: says the codeplug was written, keps were not, offers Check write (F2)', async () => {
+    forceKepsSameSession.on = true;
     kepsWrite.mockRejectedValue(new Error('Satellite unit busy'));
     vi.mocked(radioIoSession.uploadPreparedRadioWrite).mockImplementation(
       async (_s, _e, _i, opts) => {
@@ -389,6 +397,7 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
   });
 
   it('D890 keps aborted after the upload: Done says keps were cancelled, codeplug written (F2)', async () => {
+    forceKepsSameSession.on = true;
     kepsWrite.mockImplementation(
       (_s: unknown, _sats: unknown, opts: { signal?: AbortSignal }) =>
         new Promise((_resolve, reject) => {

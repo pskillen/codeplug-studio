@@ -14,11 +14,16 @@ function summary(rows: ReturnType<typeof stageRows>): string {
 }
 
 describe('stageRows (4a stage cursor)', () => {
-  it('D890 codeplug + keps: the second Upload row activates, ids are unique', () => {
-    const parts = { codeplug: true, contacts: false, settings: false, keps: true };
-    const plan = planForOperation(AT_D890UV_DESCRIPTOR, 'write', { parts })!;
+  it('a plan that repeats a label: the second Upload row activates, ids are unique', () => {
+    // A same-session keps write re-emits 'Upload' after its own preserve stage. No radio plans
+    // that today (the D890 keps follow the restart, #1406), but the cursor must still cope.
+    const plan: PlannedStage[] = [
+      { label: 'Preserving untouched settings', weight: 4 },
+      { label: 'Upload', weight: 4 },
+      { label: 'Preserving untouched satellite data', weight: 1, optional: true },
+      { label: 'Upload', weight: 2 },
+    ];
     const labels = plan.map((p) => p.label);
-    // The keps writer re-emits 'Upload' after its own preserve stage.
     expect(labels.filter((l) => l === 'Upload')).toHaveLength(2);
     let track = trackWithPlan(newTrack(), plan);
     const emitted = [

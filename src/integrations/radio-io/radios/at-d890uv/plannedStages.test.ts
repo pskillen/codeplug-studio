@@ -91,18 +91,19 @@ describe('AT-D890UV planned stages', () => {
     expect(labels.slice(-2)).toEqual(['Preserving untouched settings', 'Upload']);
   });
 
-  it('adds contact and keps stages only for the parts being written', () => {
+  it('adds the contact stage only for the parts being written; keps follow the restart', () => {
     const parts = { codeplug: true, contacts: true, settings: false, keps: true };
     const labels = planForOperation(AT_D890UV_DESCRIPTOR, 'write', { parts })!.map((s) => s.label);
-    expect(labels).toEqual(
-      expect.arrayContaining(['Digital contacts', 'Preserving untouched satellite data']),
-    );
+    expect(labels).toContain('Digital contacts');
+    // Keps run in their own session after the restart: no keps stages in this plan (#1406).
+    expect(labels).not.toContain('Preserving untouched satellite data');
+    expect(labels.filter((l) => l === 'Upload')).toHaveLength(1);
     expect(labels).not.toContain('Preserving untouched contact data');
     const none = planForOperation(AT_D890UV_DESCRIPTOR, 'write')!.map((s) => s.label);
     expect(none).not.toContain('Digital contacts');
   });
 
-  it('the contact and keps writers emit the declared stages, in order, with Upload twice', async () => {
+  it('the contact writer emits the declared stages, in order', async () => {
     const contacts = [
       {
         wireName: 'Contact 1',
@@ -116,31 +117,32 @@ describe('AT-D890UV planned stages', () => {
     ];
     const plan = planForOperation(AT_D890UV_DESCRIPTOR, 'write', {
       prepared: { channels: [], organisation: { zones: [], digitalContacts: contacts } },
-      parts: { codeplug: true, contacts: true, settings: false, keps: true },
+      parts: { codeplug: true, contacts: true, settings: false, keps: false },
     })!;
     const labels = plan.map((s) => s.label);
-    expect(labels.filter((l) => l === 'Upload')).toHaveLength(2);
-    expect(labels.indexOf('Digital contacts')).toBeLessThan(labels.lastIndexOf('Upload'));
+    expect(labels.at(-1)).toBe('Digital contacts');
 
+    const pipe = new AtD890ScriptedPipe();
+    pipe.autoAckWrites = true;
+    const rec = stageRecorder();
+    await uploadAtD890DigitalContacts(pipe, contacts, { onProgress: rec.onProgress });
+    // The tail of the plan is what this writer emits; the codeplug part is covered above.
+    expectEventsFollowPlan(plan.slice(labels.indexOf('Digital contacts')), rec.events);
+    expect(rec.stages).toEqual(['Digital contacts']);
+  });
+
+  it('the keps writer, in its own session after the restart, emits preserve then Upload', async () => {
     const pipe = new AtD890ScriptedPipe();
     pipe.readResponder = (_addr, len) => new Uint8Array(len).fill(0xff);
     pipe.autoAckWrites = true;
     const rec = stageRecorder();
-    await uploadAtD890DigitalContacts(pipe, contacts, { onProgress: rec.onProgress });
     const bytes = new Uint8Array(AT_D890_SATELLITE.RECORD_STRIDE).fill(0x11);
     await uploadAtD890SatelliteRecords(
       pipe,
       [{ satelliteId: 's', transmitterId: 't', address: AT_D890_SATELLITE.BASE_ADDRESS, bytes }],
       { onProgress: rec.onProgress },
     );
-    // The tail of the plan is what these two writers emit; the codeplug part is covered above.
-    const tail = plan.slice(labels.indexOf('Digital contacts'));
-    expectEventsFollowPlan(tail, rec.events);
-    expect(rec.stages).toEqual([
-      'Digital contacts',
-      'Preserving untouched satellite data',
-      'Upload',
-    ]);
+    expect(rec.stages).toEqual(['Preserving untouched satellite data', 'Upload']);
   });
 });
 

@@ -260,18 +260,7 @@ function writePlan(ctx: RadioPlanContext): PlannedStage[] {
     { label: 'Upload', weight: uploadBytes },
   );
   stages.push(...contactStages(ctx));
-  if (ctx.parts?.keps) {
-    // `satelliteWrite.ts` preserves, then emits 'Upload' again for its own blocks: a second
-    // 'Upload' slot, matched in order after the contact stages.
-    stages.push(
-      {
-        label: 'Preserving untouched satellite data',
-        weight: AT_D890_ERASE_UNIT_BYTES,
-        optional: true,
-      },
-      { label: 'Upload', weight: AT_D890_LIMITS.MAX_SATELLITES * SATELLITE_RECORD_BYTES },
-    );
-  }
+  // Keps after a restart are a separate session with no plan, as on OpenGD77 (#1406).
   return stages;
 }
 
