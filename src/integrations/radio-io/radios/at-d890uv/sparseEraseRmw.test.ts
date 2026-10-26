@@ -106,6 +106,66 @@ describe('assertPreservedBytesMatchFreshRead', () => {
       assertPreservedBytesMatchFreshRead(staging, new Map([[UNIT_350, fresh]]), new Set()),
     ).toThrow(RadioProtocolError);
   });
+
+  describe('with patch masks', () => {
+    function stage(fresh: Uint8Array, edit: (merged: Uint8Array) => void) {
+      const merged = fresh.slice();
+      edit(merged);
+      return listSparseStagingChunks(new Map([[UNIT_350, merged]]), new Set());
+    }
+    function freshSettings(): Uint8Array {
+      const fresh = unitBuffer(0xff);
+      fresh.fill(0x42, 0x10, 0x20);
+      return fresh;
+    }
+    const masks = new Map<number, number>([
+      [UNIT_350 + 0x13, 0xff],
+      [UNIT_350 + 0x14, 0x0f],
+    ]);
+
+    it('passes when only patched bits changed', () => {
+      const fresh = freshSettings();
+      const staging = stage(fresh, (m) => {
+        m[0x13] = 14;
+        m[0x14] = 0x4d; // 0x42 with the low nibble replaced
+      });
+      expect(() =>
+        assertPreservedBytesMatchFreshRead(staging, new Map([[UNIT_350, fresh]]), new Set(), masks),
+      ).not.toThrow();
+    });
+
+    it('throws on a collateral change in an unpatched byte of a patched block', () => {
+      const fresh = freshSettings();
+      const staging = stage(fresh, (m) => {
+        m[0x13] = 14;
+        m[0x15] = 0x00;
+      });
+      expect(() =>
+        assertPreservedBytesMatchFreshRead(staging, new Map([[UNIT_350, fresh]]), new Set(), masks),
+      ).toThrow(/0x3500015/);
+    });
+
+    it('throws on a change outside the mask of a partly patched byte', () => {
+      const fresh = freshSettings();
+      const staging = stage(fresh, (m) => {
+        m[0x14] = 0x5d; // high nibble changed too
+      });
+      expect(() =>
+        assertPreservedBytesMatchFreshRead(staging, new Map([[UNIT_350, fresh]]), new Set(), masks),
+      ).toThrow(/0x3500014/);
+    });
+
+    it('still throws for an unpatched block when masks are given elsewhere', () => {
+      const fresh = freshSettings();
+      fresh.fill(0x42, 0x30, 0x40);
+      const staging = stage(fresh, (m) => {
+        m[0x30] = 0x00;
+      });
+      expect(() =>
+        assertPreservedBytesMatchFreshRead(staging, new Map([[UNIT_350, fresh]]), new Set(), masks),
+      ).toThrow(RadioProtocolError);
+    });
+  });
 });
 
 describe('modelledAddressSetFromChunks', () => {

@@ -84,12 +84,14 @@ export function listSparseStagingChunks(
 }
 
 /**
- * Every staged block outside the modelled set must be byte-identical to the fresh read.
+ * Every staged block outside the modelled set must be byte-identical to the fresh read, except
+ * for the bits a settings patch is allowed to change (`patchMasks`: byte address to mask).
  */
 export function assertPreservedBytesMatchFreshRead(
   stagingChunks: readonly AtD890StagingChunk[],
   freshUnitBuffers: ReadonlyMap<number, Uint8Array>,
   modelledAddressSet: ReadonlySet<number>,
+  patchMasks?: ReadonlyMap<number, number>,
 ): void {
   for (const { address, data } of stagingChunks) {
     if (modelledAddressSet.has(address)) continue;
@@ -102,7 +104,8 @@ export function assertPreservedBytesMatchFreshRead(
     }
     const off = address - unitBase;
     for (let i = 0; i < data.length; i++) {
-      if (data[i] !== fresh[off + i]) {
+      const allowed = patchMasks?.get(address + i) ?? 0;
+      if (((data[i]! ^ fresh[off + i]!) & ~allowed & 0xff) !== 0) {
         throw new RadioProtocolError(
           `D890 preserved byte mismatch at 0x${(address + i).toString(16)}: staged 0x${data[i]!.toString(16)} !== fresh 0x${fresh[off + i]!.toString(16)}`,
         );
