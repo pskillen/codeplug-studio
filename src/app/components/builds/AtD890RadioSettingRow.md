@@ -6,16 +6,18 @@ One AT-D890UV radio setting on the Radio settings page: label, a tag saying wher
 
 ## Props
 
-| Prop       | Type                                | Notes                                                         |
-| ---------- | ----------------------------------- | ------------------------------------------------------------- |
-| `field`    | `AtD890SettingFieldDef`             | From core `radioSettings.ts`                                  |
-| `target`   | `'stock' \| 'mm9pdy'`               | MM9PDY key function names and exposure                        |
-| `override` | `AtD890SettingValue \| undefined`   | The session override; `undefined` means Keep                  |
-| `decoded`  | `AtD890DecodedSetting \| undefined` | What the last read found for this field                       |
-| `hasRead`  | `boolean`                           | False shows "not read"                                        |
-| `onSet`    | `(value) => void`                   | Called when the control picks or types a value                |
-| `onClear`  | `() => void`                        | Back to Keep (the select's first option, or the Clear button) |
-| `note`     | `string`                            | Optional line under the control                               |
+| Prop             | Type                                | Notes                                                         |
+| ---------------- | ----------------------------------- | ------------------------------------------------------------- |
+| `field`          | `AtD890SettingFieldDef`             | From core `radioSettings.ts`                                  |
+| `target`         | `'stock' \| 'mm9pdy'`               | MM9PDY key function names and exposure                        |
+| `override`       | `AtD890SettingValue \| undefined`   | The session override; `undefined` means Keep                  |
+| `decoded`        | `AtD890DecodedSetting \| undefined` | What the last read found for this field                       |
+| `hasRead`        | `boolean`                           | False shows "not read"                                        |
+| `onSet`          | `(value) => void`                   | Called when the control picks or types a value                |
+| `onClear`        | `() => void`                        | Back to Keep (the select's first option, or the Clear button) |
+| `note`           | `string`                            | Optional line under the control                               |
+| `disabledReason` | `string`                            | Disables the select and says why (Language before a read)     |
+| `problem`        | `string`                            | Red line: the set value cannot be written to the read radio   |
 
 ## Usage
 
@@ -36,7 +38,7 @@ One AT-D890UV radio setting on the Radio settings page: label, a tag saying wher
 - Select controls (enums, levels, Off/On for booleans) list **Keep radio's value** first. Text lines are a text box whose placeholder is "Keep radio's value"; an empty value that was typed is a set value (an empty line): the box then shows the placeholder "(empty line)" and the hint "Will be set to an empty line.", so it does not read as Keep, and Clear returns to Keep.
 - A value the radio holds that Studio does not offer (a custom picture, a corrupt byte) appears only in the Radio column, as "<name or raw bytes> (not offered)"; it is never an option.
 - Text lines are checked with the core `atD890TextProblem` (16 characters, printable ASCII); the problem shows under the box.
-- A set row shows a dot and a **Clear** button.
+- A set row shows a dot and a **Clear** button, and an advanced field's one-line `warning` in amber.
 - The Radio column never logs anything; power-on text and serial are never sent anywhere.
 
 ## Related
