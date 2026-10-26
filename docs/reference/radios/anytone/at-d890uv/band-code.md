@@ -77,7 +77,7 @@ Code: [`frequencyRange.ts`](../../../../../src/core/radios/anytone/at-d890uv/fre
 - **Code 18 at 220 MHz is TX only (222–225).** The firmware's RX clamp, VFO range init and out-of-band check open 200–300 MHz only for code 14, so RX at 220 MHz on code 18 is not claimed. Unconfirmed on a radio; the earlier 220–225 RX figure came from the table row alone.
 - **Changing the range resets the radio** at the next boot: channels, zones, scan lists and the whole settings unit are cleared and the tune bank is rewritten. Changing it stays on [#1369](https://github.com/pskillen/codeplug-studio/issues/1369) and is not implemented in Studio.
 - **Single-frame `W` write** of the range byte: facts recorded from the firmware's code only, **not radio-tested**.
-- **Calibration bank pair** `0x04F00000` / `0x04F40000` holds the tune data that is rewritten on a range change; Studio's backup does not read it yet.
+- **Calibration bank pair** `0x04F00000` / `0x04F40000` holds the tune data that is rewritten on a range change; Studio's vital-data backup reads and saves it (see [backup-restore.md](backup-restore.md#vital-data-backup)).
 
 ### How Studio uses it
 
