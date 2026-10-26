@@ -258,7 +258,7 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
       screen.getByText('Amateur Europe (code 3) · TX 430–440, 144–146 MHz'),
     ).toBeInTheDocument();
     expect(screen.getByText('MM9PDY-2')).toBeInTheDocument();
-    expect(screen.getByText('…EW01')).toBeInTheDocument();
+    expect(screen.getByText(SERIAL)).toBeInTheDocument();
     const note = screen.getByTestId('d890-receive-only');
     expect(note).toHaveTextContent('1 channel is receive-only on this radio');
     expect(note).toHaveTextContent('Amateur Europe');

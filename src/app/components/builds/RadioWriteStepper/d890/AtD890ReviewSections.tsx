@@ -8,7 +8,7 @@ import { useSyncExternalStore, type ReactNode } from 'react';
 import { Text } from '@mantine/core';
 import { Button, SegmentedControl, StatusBanner } from '../../../v2/index.ts';
 import { useAtD890RadioSettingsSession } from '../../../../state/atD890RadioSettingsSession.ts';
-import { changesLabel, lastFour } from '../../../../lib/atD890RadioSettingsText.ts';
+import { changesLabel } from '../../../../lib/atD890RadioSettingsText.ts';
 import Mm9pdyStepKeysNudge from '../../Mm9pdyStepKeysNudge.tsx';
 import { Section } from '../reviewSectionParts.tsx';
 import type { ReviewContext } from '../reviewSections.tsx';
@@ -83,7 +83,7 @@ function SettingsSection({ controller }: { controller: AtD890ReviewController })
               {store.read
                 ? "This isn't the radio you read settings from."
                 : "You haven't read a radio's settings this session."}{' '}
-              {init.masterIdName ? `${init.masterIdName} ` : ''}(…{lastFour(init.serial)})
+              {init.masterIdName ? `${init.masterIdName} ` : ''}({init.serial})
             </Text>
             <SegmentedControl
               size="sm"
