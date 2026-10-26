@@ -141,6 +141,60 @@ describe('uploadPreparedRadioWrite beforeTransmit', () => {
     expect(ctx?.plan?.map((s) => s.label)).toContain('Upload');
   }, 20_000);
 
+  it('leaves the frames byte-identical for a codeplug + contacts write (D890 single bank)', async () => {
+    const contacts = [
+      {
+        wireName: 'Contact 1',
+        digitalId: 1234567,
+        callsign: 'CALL',
+        city: 'City',
+        province: 'State',
+        country: 'Country',
+        remark: 'Note',
+      },
+    ];
+    const withContacts = {
+      ...projected,
+      organisation: { ...projected.organisation, digitalContacts: contacts },
+    };
+    async function run(hook: boolean, contactsOn = true) {
+      const { session, pipe } = await d890Session();
+      // The contact bank's erase units are read back and merged; serve them as erased flash.
+      const base = pipe.readResponder;
+      pipe.readResponder = (addr, len) => {
+        try {
+          const served = base?.(addr, len);
+          if (served) return served;
+        } catch {
+          // Not a unit the codeplug script knows: erased flash.
+        }
+        return new Uint8Array(len).fill(0xff);
+      };
+      const before = pipe.writes.length;
+      let atHook = -1;
+      await uploadPreparedRadioWrite(session, egress, undefined, {
+        ...(contactsOn ? withContacts : projected),
+        parts: { codeplug: true, contacts: contactsOn, settings: false, keps: false },
+        ...(hook
+          ? {
+              beforeTransmit: async () => {
+                atHook = pipe.writes.length - before;
+              },
+            }
+          : {}),
+      });
+      return { frames: pipe.writes.slice(before).map((f) => [...f]), atHook };
+    }
+    const plain = await run(false);
+    const codeplugOnly = await run(false, false);
+    const hooked = await run(true);
+    expect(plain.frames.length).toBeGreaterThan(0);
+    // Contact frames are on the wire in both runs (a write to the contact bank follows the upload).
+    expect(plain.frames.length).toBeGreaterThan(codeplugOnly.frames.length);
+    expect(hooked.frames).toEqual(plain.frames);
+    expect(hooked.atHook).toBe(0);
+  }, 20_000);
+
   it('sends no frame when the hook rejects', async () => {
     const { session, pipe } = await d890Session();
     const before = pipe.writes.length;
