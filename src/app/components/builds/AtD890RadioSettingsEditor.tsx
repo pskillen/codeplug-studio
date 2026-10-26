@@ -21,11 +21,17 @@ import {
   setOverride,
   useAtD890RadioSettingsSession,
 } from '../../state/atD890RadioSettingsSession.ts';
-import type { AtD890RadioSettingsRead } from '../../state/atD890RadioSettingsSession.ts';
 import { Button, ConfirmModal, Panel, StatusBanner } from '../v2/index.ts';
 import Mm9pdyStepKeysNudge from './Mm9pdyStepKeysNudge.tsx';
 import AtD890RadioSettingRow from './AtD890RadioSettingRow.tsx';
 import AtD890RadioSettingsReadButton from './AtD890RadioSettingsReadButton.tsx';
+import {
+  WRITE_ARRIVES_LATER_NOTE,
+  changesLabel,
+  readBannerText,
+  lastFour,
+  rangeCaption,
+} from '../../lib/atD890RadioSettingsText.ts';
 import classes from './AtD890RadioSettingsEditor.module.css';
 
 export interface AtD890RadioSettingsEditorProps {
@@ -35,38 +41,7 @@ export interface AtD890RadioSettingsEditorProps {
   egress: EgressPath;
 }
 
-export const WRITE_ARRIVES_LATER_NOTE =
-  'Writing these settings arrives with the next Write update.';
-
 const LARGE_FONT_HINT = 'Both lines 8 characters or fewer use the large font.';
-
-export function changesLabel(count: number): string {
-  return `${count} ${count === 1 ? 'change' : 'changes'}`;
-}
-
-/** hh:mm in the user's locale. */
-function timeLabel(at: number): string {
-  return new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-function lastFour(serial: string): string {
-  return serial.length <= 4 ? serial : serial.slice(-4);
-}
-
-/** Banner text for a settings read. Never shows more than the last four serial characters. */
-export function readBannerText(read: AtD890RadioSettingsRead): string {
-  const name = read.masterIdName.trim() || 'the radio';
-  return `Read from ${name} (…${lastFour(read.serial)}) at ${timeLabel(read.readAt)} · range ${rangeCaption(read.bandCode)}`;
-}
-
-/**
- * The frequency range caption for the band code from the read.
- * TODO(#1393 PR 7): use describeAtD890FrequencyRange(code) once PR 7 (#1395) is on this stack;
- * whichever of PR 3 / PR 7 merges second completes this line.
- */
-function rangeCaption(bandCode: number): string {
-  return `code ${bandCode}`;
-}
 
 function numberOrUndefined(v: unknown): number | undefined {
   return typeof v === 'number' ? v : undefined;

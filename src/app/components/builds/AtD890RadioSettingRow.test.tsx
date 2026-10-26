@@ -2,7 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { atD890SettingField } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import { DesignSystemV2Provider } from '../v2/index.ts';
-import AtD890RadioSettingRow, { radioValueText } from './AtD890RadioSettingRow.tsx';
+import AtD890RadioSettingRow from './AtD890RadioSettingRow.tsx';
+import { radioValueText } from '../../lib/atD890RadioSettingsText.ts';
 
 function renderRow(
   id: string,
@@ -102,8 +103,9 @@ describe('AtD890RadioSettingRow', () => {
   });
 
   it('flags text that is too long or not plain ASCII', () => {
-    renderRow('powerOnLine1', { override: 'x'.repeat(17) });
-    expect(screen.getByText('At most 16 characters.')).toBeInTheDocument();
+    const max = atD890SettingField('powerOnLine1')!.maxLength!;
+    renderRow('powerOnLine1', { override: 'x'.repeat(max + 1) });
+    expect(screen.getByText(`At most ${max} characters.`)).toBeInTheDocument();
   });
 
   it('flags accented text', () => {

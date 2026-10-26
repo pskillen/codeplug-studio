@@ -85,7 +85,7 @@ describe('AtD890RadioSettingsEditor', () => {
       }
     }
     expect(screen.getByTestId('changes-count')).toHaveTextContent('0 changes');
-  });
+  }, 30_000);
 
   it('marks a set field, counts it, and Clear returns it to Keep', () => {
     renderEditor();

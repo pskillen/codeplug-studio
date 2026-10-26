@@ -101,8 +101,9 @@ describe('AT-D890 radio settings page helpers', () => {
   it('accepts printable ASCII up to the line length and refuses the rest', () => {
     const line = atD890SettingField('powerOnLine1')!;
     expect(atD890TextProblem(line, '')).toBeUndefined();
-    expect(atD890TextProblem(line, 'MM9PDY D890 ~!')).toBeUndefined();
-    expect(atD890TextProblem(line, 'x'.repeat(17))).toBeDefined();
+    expect(atD890TextProblem(line, 'MM9PDY D890')).toBeUndefined();
+    expect(atD890TextProblem(line, 'x'.repeat(line.maxLength!))).toBeUndefined();
+    expect(atD890TextProblem(line, 'x'.repeat(line.maxLength! + 1))).toBeDefined();
     expect(atD890TextProblem(line, 'café')).toBeDefined();
     expect(atD890TextProblem(line, 'tab\t')).toBeDefined();
   });

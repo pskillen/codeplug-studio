@@ -7,7 +7,6 @@ import { NativeSelect } from '@mantine/core';
 import {
   atD890SettingExposureFor,
   atD890SettingOptionsFor,
-  atD890SettingValueLabelFor,
   atD890TextProblem,
   type AtD890SettingExposure,
   type AtD890SettingFieldDef,
@@ -18,9 +17,8 @@ import type {
   AtD890SettingValue,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import { Button, TextInput } from '../v2/index.ts';
+import { KEEP_RADIO_VALUE_LABEL, radioValueText } from '../../lib/atD890RadioSettingsText.ts';
 import classes from './AtD890RadioSettingRow.module.css';
-
-export const KEEP_RADIO_VALUE_LABEL = "Keep radio's value";
 
 const EXPOSURE_TAG: Record<AtD890SettingExposure, string> = {
   menu: 'On radio menu',
@@ -43,26 +41,6 @@ export interface AtD890RadioSettingRowProps {
   onClear: () => void;
   /** Extra line under the control, e.g. the large-font hint. */
   note?: string;
-}
-
-/** The Radio column text. Exported for tests and the review step. */
-export function radioValueText(
-  field: AtD890SettingFieldDef,
-  target: AtD890SettingsTargetId,
-  decoded: AtD890DecodedSetting | undefined,
-  hasRead: boolean,
-): string {
-  if (!hasRead) return 'not read';
-  if (!decoded) return 'not on this radio';
-  const { value } = decoded;
-  if (value === undefined) {
-    if (decoded.label) return `${decoded.label} (not offered)`;
-    const shown = field.kind === 'text' ? 'unreadable text' : decoded.raw.join(' ');
-    return `${shown} (not offered)`;
-  }
-  if (typeof value === 'boolean') return value ? 'On' : 'Off';
-  if (typeof value === 'string') return value === '' ? '(empty)' : value;
-  return atD890SettingValueLabelFor(field, value, target) ?? String(value);
 }
 
 export default function AtD890RadioSettingRow({

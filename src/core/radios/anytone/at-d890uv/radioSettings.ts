@@ -866,8 +866,8 @@ export function atD890SettingExposureFor(
 
 /** Why a text value cannot be set, or `undefined` when it can. */
 export function atD890TextProblem(field: AtD890SettingFieldDef, text: string): string | undefined {
-  const max = field.maxLength ?? 16;
-  if (text.length > max) return `At most ${max} characters.`;
+  const max = field.maxLength;
+  if (max !== undefined && text.length > max) return `At most ${max} characters.`;
   if (!isPrintableAscii(text)) return 'Letters, digits and punctuation only (no accents).';
   return undefined;
 }
