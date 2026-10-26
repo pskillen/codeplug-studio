@@ -287,6 +287,10 @@ Append here as adapters ship. Keep entries short; promote repeated patterns into
 
 ---
 
+## Optional: Radio tools
+
+A radio with a rare job that changes the radio itself (not the codeplug) adds a tool to the Radio tools area instead of a Write option. Add a registry entry in `src/app/services/radioTools/registry.ts` (`radios` lists the radio target ids, `prodDisabled: true`), give the tool its own wizard route and its own guarded send path with its own allow-list, and clear `prodDisabled` in its own commit after a radio check. A tool never runs from Write, Restore or Backup. See [radio-tools.md](radio-tools.md).
+
 ## Related
 
 - [protocol-kit-architecture.md](protocol-kit-architecture.md)
