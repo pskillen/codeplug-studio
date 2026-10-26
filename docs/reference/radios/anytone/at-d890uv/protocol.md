@@ -109,6 +109,8 @@ Checksum (anytone-cps): 8-bit sum over command bytes after the opcode (`cmd[1:]`
 
 **Failed or aborted uploads** must call `abandonProgramMode()` before `disconnect()` so Studio does **not** send `END` after a partial write. Omitting `END` is the safe failure path.
 
+**Stun/kill flag guard ([#1288](https://github.com/pskillen/codeplug-studio/issues/1288)):** if LocalInfo `+0x00` or `+0x01` is non-zero, the radio's `END` clears the flag and erases and rewrites LocalInfo (firmware `0x0812ED60`, which calls `0x0813A064`). Studio reads those two bytes at Connect, from the block-size probe's baseline read of LocalInfo (no extra frame on a healthy radio; if the probe fails, one 16-byte read of LocalInfo), and when either is non-zero it: opens no session (the Web Serial open fails with a message to switch the radio off and on again), leaves PROGRAM without `END` (`disconnect()` skips it), and refuses `upload()` and `uploadSettingsPatches()` before any `W` frame (backstop for a session that is already open). A healthy radio (`00 00`) behaves as before. Reading is refused too, because a Read or Backup ends with `END`.
+
 **Hydration on Write:** Write overlays modelled bytes onto this PROGRAM session’s download cache. LocalInfo **identity check** (serial match) uses the live radio, not a persisted bag. Upload fresh-reads each touched erase unit from the radio immediately before staging.
 
 ## Typical session flow

@@ -497,6 +497,13 @@ export async function downloadAtD890SparseRegions(
   }
 }
 
+/**
+ * Shown when LocalInfo `+0x00` or `+0x01` is non-zero (#1288). The radio's END clears that flag and erases
+ * and rewrites LocalInfo, so Studio leaves without END and writes nothing.
+ */
+export const AT_D890_STUN_KILL_MESSAGE =
+  "This radio reports a stun/kill flag, so Studio has not written to it and has not sent the end-of-programming command (that would clear the flag and rewrite the radio's identity data). Switch the radio off and on again, and check it with the vendor programming software.";
+
 export class AtD890uvProtocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
   private cache: AtD890DownloadCache | null = null;
@@ -504,6 +511,8 @@ export class AtD890uvProtocol implements CloneImageRadio {
   private readBlockSize = AT_D890_BLOCK_SIZE;
   private identRaw: Uint8Array | null = null;
   private identBandCode = 0;
+  /** LocalInfo `+0x00` / `+0x01` read at Connect (#1288); `null` when it could not be read. */
+  private localInfoFlags: readonly [number, number] | null = null;
   private lastUploadSentinelBefore: AtD890SentinelSnapshot | undefined;
   private lastUploadStagingSnapshot: AtD890WriteStagingSnapshot | undefined;
   private lastUploadSettingsPatches: readonly AtD890SettingsPatch[] | undefined;
@@ -515,6 +524,20 @@ export class AtD890uvProtocol implements CloneImageRadio {
   /** Band code from the connection ident (byte 8); `0` before connect. */
   getIdentBandCode(): number {
     return this.identBandCode;
+  }
+
+  /**
+   * True when LocalInfo `+0x00` or `+0x01` is non-zero (stun/kill flag, #1288). The radio's END then
+   * clears the flag and erases and rewrites LocalInfo, so Studio never sends END to it and never writes to it.
+   */
+  hasStunKillFlag(): boolean {
+    const f = this.localInfoFlags;
+    return f !== null && (f[0] !== 0 || f[1] !== 0);
+  }
+
+  /** Throws before any frame when the radio reports a stun/kill flag. */
+  assertNoStunKillFlag(): void {
+    if (this.hasStunKillFlag()) throw new RadioProtocolError(AT_D890_STUN_KILL_MESSAGE);
   }
 
   getNegotiatedReadBlockSize(): number {
@@ -559,6 +582,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
     this.cache = { blocks: new Map() };
     this.programming = false;
     this.readBlockSize = AT_D890_BLOCK_SIZE;
+    this.localInfoFlags = null;
 
     await atD890EnterProgram(pipe, opts?.signal);
     this.programming = true;
@@ -569,12 +593,32 @@ export class AtD890uvProtocol implements CloneImageRadio {
     this.identBandCode = ident.bandCode;
 
     try {
-      const { bestBlockSize } = await negotiateAtD890ReadBlockSize(pipe, D890_MAP.LocalInfo, {
-        signal: opts?.signal,
-      });
+      const { bestBlockSize, baseline } = await negotiateAtD890ReadBlockSize(
+        pipe,
+        D890_MAP.LocalInfo,
+        { signal: opts?.signal },
+      );
       this.readBlockSize = bestBlockSize;
+      // The baseline is LocalInfo itself: the stun/kill flags need no extra read.
+      this.localInfoFlags = [baseline[0] ?? 0, baseline[1] ?? 0];
     } catch {
       this.readBlockSize = AT_D890_BLOCK_SIZE;
+    }
+    if (this.localInfoFlags === null) {
+      // The probe failed before it read LocalInfo: read the flags directly. If that also fails the
+      // link is unusable and the first real read reports it; the flags stay unknown (not flagged).
+      try {
+        const head = await atD890ReadMemory(
+          pipe,
+          D890_MAP.LocalInfo,
+          AT_D890_BLOCK_SIZE,
+          opts?.signal,
+          AT_D890_BLOCK_SIZE,
+        );
+        this.localInfoFlags = [head[0] ?? 0, head[1] ?? 0];
+      } catch {
+        await pipe.flush?.();
+      }
     }
 
     return {
@@ -587,7 +631,8 @@ export class AtD890uvProtocol implements CloneImageRadio {
   async disconnect(): Promise<void> {
     const pipe = this.pipe;
     try {
-      if (pipe && this.programming) {
+      // A stun/kill flag (#1288): END would clear it and rewrite LocalInfo, so leave without END.
+      if (pipe && this.programming && !this.hasStunKillFlag()) {
         await atD890ExitProgram(pipe);
       }
     } catch {
@@ -668,6 +713,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
     if (!this.pipe || !this.cache) {
       throw new RadioProtocolError('AT-D890UV not connected');
     }
+    this.assertNoStunKillFlag();
     assertAtD890SettingsPatchesPermitted(this.uploadBankIntent.settingsPatches ?? []);
     if (!this.programming) {
       await atD890EnterProgram(this.pipe, opts.signal);
@@ -728,6 +774,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
     if (patches.length === 0) {
       throw new RadioProtocolError('AT-D890UV settings upload has no patches');
     }
+    this.assertNoStunKillFlag();
     assertAtD890SettingsPatchesPermitted(patches);
     if (!this.programming) {
       await atD890EnterProgram(this.pipe, opts.signal);

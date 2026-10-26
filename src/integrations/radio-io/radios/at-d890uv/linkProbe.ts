@@ -74,6 +74,8 @@ export interface AtD890ReadBlockNegotiation {
   trials: AtD890BlockTrial[];
   /** Largest block size that returned bytes identical to the 16-byte baseline. */
   bestBlockSize: number;
+  /** The bytes read at `address` for the baseline (LocalInfo on Connect), so Connect need not read it again. */
+  baseline: Uint8Array;
 }
 
 /**
@@ -134,7 +136,7 @@ export async function probeAtD890ReadBlockSizes(
   const bestBlockSize =
     okTrials.length > 0 ? Math.max(...okTrials.map((t) => t.blockSize)) : AT_D890_BLOCK_SIZE;
 
-  return { trials, bestBlockSize };
+  return { trials, bestBlockSize, baseline };
 }
 
 /**

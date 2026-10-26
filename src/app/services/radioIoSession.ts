@@ -6,6 +6,7 @@
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { channelLocationWriteRadioNote } from '@core/radio-targets/channelLocationNotes.ts';
+import { RadioProtocolError } from '@integrations/radio-io/kit/errors.ts';
 import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
@@ -74,7 +75,10 @@ import {
   resolveRadioWriteProdDisabledMessage,
 } from './radioWriteEnvGate.ts';
 import { encodeAtD890WriteImageFromDownloadCache } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
-import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import {
+  AT_D890_STUN_KILL_MESSAGE,
+  AtD890uvProtocol,
+} from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import { encodeDm32uvWriteImageFromDownloadCache } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
@@ -250,6 +254,11 @@ export async function openRadioSessionForEgress(
     } catch (err) {
       const baudsTried = bauds.slice(0, attempt + 1);
       const canRetry =
+      if (radio instanceof AtD890uvProtocol && radio.hasStunKillFlag()) {
+        // #1288: END would clear the flag and rewrite LocalInfo. `disconnect()` leaves without END.
+        await closeRadioSession(session).catch(() => undefined);
+        throw new RadioProtocolError(AT_D890_STUN_KILL_MESSAGE);
+      }
         attempt < bauds.length - 1 && isHandshakeConnectFailure(err) && descriptor.baudRateFallback;
       if (!canRetry) {
         try {
@@ -822,6 +831,8 @@ export async function uploadPreparedRadioWrite(
         opts?.channels,
       );
     }
+  // A flagged radio is refused at open; this is the backstop before the pause and any frame.
+  if (session.radio instanceof AtD890uvProtocol) session.radio.assertNoStunKillFlag();
   }
   await session.radio.upload(resolved, {
     onProgress: opts?.onProgress,
