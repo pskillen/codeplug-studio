@@ -152,15 +152,20 @@ export function defaultSettingsChoice(
   serial: string,
 ): AtD890SettingsChoice {
   if (state.applyToEveryRadio) return 'apply';
-  return state.read !== undefined && state.read.serial === serial ? 'apply' : 'keep';
+  return isSettingsReadRadio(state, serial) ? 'apply' : 'keep';
 }
 
-/** True when the settings were read from the radio with this serial (no choice to make). */
+/**
+ * True when the settings were read from the radio with this serial (no choice to make). A blank
+ * serial (NUL or non-ASCII bytes in LocalInfo) identifies nothing, so it is never the same radio:
+ * the user gets the fleet choice.
+ */
 export function isSettingsReadRadio(
   state: AtD890RadioSettingsSessionState,
   serial: string,
 ): boolean {
-  return state.read !== undefined && state.read.serial === serial;
+  if (serial.trim() === '' || state.read === undefined) return false;
+  return state.read.serial === serial;
 }
 
 export function addBackupThisSession(buildId: string, backup: AtD890BackupThisSession): void {

@@ -133,6 +133,17 @@ describe('the Review helpers (PR 4c)', () => {
     expect(m.isSettingsReadRadio(state, 'SN-OTHER')).toBe(false);
   });
 
+  it('never treats a blank serial as the same radio, even when the read radio was blank too', async () => {
+    const m = await freshStore();
+    m.setRead('b1', { ...read({}), serial: '' });
+    const state = m.getAtD890RadioSettingsSession('b1');
+    expect(m.isSettingsReadRadio(state, '')).toBe(false);
+    expect(m.defaultSettingsChoice(state, '')).toBe('keep');
+    expect(m.isSettingsReadRadio(state, '  ')).toBe(false);
+    m.setRead('b1', read({}));
+    expect(m.isSettingsReadRadio(m.getAtD890RadioSettingsSession('b1'), '')).toBe(false);
+  });
+
   it("preselects Apply for every radio once 'don't ask again' is set", async () => {
     const m = await freshStore();
     m.setRead('b1', read({}));
