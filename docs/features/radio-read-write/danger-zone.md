@@ -32,14 +32,14 @@ Agent rules: [.claude/rules/danger-zone.md](../../../.claude/rules/danger-zone.m
 
 Hardware facts and the frame rules: [band-code.md — Changing the range](../../reference/radios/anytone/at-d890uv/band-code.md#changing-the-range).
 
-| Piece                          | Where                                                                                                                                                                                  |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Targets, summaries             | `src/core/radios/anytone/at-d890uv/frequencyRange.ts`: `AT_D890_RANGE_CHANGE_TARGET_CODES`, `atD890RangeChangeTargets`, `atD890ReceiveNarrower`, `atD890TxChangeSummary`               |
-| Frame builder and refusals     | `src/integrations/radio-io/radios/at-d890uv/rangeChange/rangeChangeFrame.ts`: `buildAtD890RangeChangeFrame`, `AtD890RangeChangeRefusedError`                                           |
-| The only LocalInfo sender      | `rangeChange/rangeChangeSend.ts`: one frame, one address, one call; resends the identical frame on a lost ACK; not exported from the barrel                                            |
-| Session (called in PROGRAM)    | `rangeChange/rangeChangeSession.ts`: `changeAtD890FrequencyRange`; errors carry `frameSent` and `mayEnd`; `atD890RangeChangeMayEndAfter(err)` is the one answer to "may I send `END`?" |
-| Post-change verify (read only) | `rangeChange/rangeChangeVerify.ts`: `verifyAtD890RangeChange`. A separate step the user starts; nothing runs it automatically                                                          |
-| Import boundary                | `rangeChange/rangeChangeBoundary.test.ts`                                                                                                                                              |
+| Piece                          | Where                                                                                                                                                                                                                                  |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Targets, summaries             | `src/core/radios/anytone/at-d890uv/frequencyRange.ts`: `AT_D890_RANGE_CHANGE_TARGET_CODES`, `atD890RangeChangeTargets`, `atD890ReceiveNarrower`, `atD890TxChangeSummary`                                                               |
+| Frame builder and refusals     | `src/integrations/radio-io/radios/at-d890uv/rangeChange/rangeChangeFrame.ts`: `buildAtD890RangeChangeFrame`, `AtD890RangeChangeRefusedError`                                                                                           |
+| The only LocalInfo sender      | `rangeChange/rangeChangeSend.ts`: one frame, one address, one call; resends the identical frame on a lost ACK; not exported from the barrel                                                                                            |
+| Session (called in PROGRAM)    | `rangeChange/rangeChangeSession.ts`: `changeAtD890FrequencyRange`; errors carry `frameSent` and `mayEnd`; `atD890RangeChangeMayEndAfter(err)` is the one answer to "may I send `END`?"                                                 |
+| Post-change verify (read only) | `rangeChange/rangeChangeVerify.ts`: `verifyAtD890RangeChange`. A separate step the user starts; nothing runs it automatically. Reports `serialMatches`; tune `+0x700..+0x711` may show in `tuneDiffs` on some radios (RT-2 records it) |
+| Import boundary                | `rangeChange/rangeChangeBoundary.test.ts`                                                                                                                                                                                              |
 
 **Targets.** Every code 0 to 18. Code 14 is refused (reason `maintenance-locked`) unless LocalInfo `+0x0B..+0x0E`
 reads `890#`; `atD890RangeChangeTargets` marks it `available: false` so a screen can disable it with a reason. Codes 6,

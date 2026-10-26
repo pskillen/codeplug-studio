@@ -27,6 +27,36 @@ describe('verifyAtD890RangeChange', () => {
   const backupLi = syntheticLocalInfo(3);
   const backupTune = syntheticTune(3);
 
+  it('serialMatches is true when the serial is unchanged and false when it differs', async () => {
+    const same = await verifyAtD890RangeChange(radio(syntheticLocalInfo(7), syntheticTune(7)), {
+      identBandCode: 7,
+      backupLocalInfo: backupLi,
+      target: 7,
+    });
+    expect(same.serialMatches).toBe(true);
+    const other = syntheticLocalInfo(7);
+    other[0x35] ^= 0xff;
+    const r = await verifyAtD890RangeChange(radio(other, syntheticTune(7)), {
+      identBandCode: 7,
+      backupLocalInfo: backupLi,
+      target: 7,
+    });
+    expect(r.serialMatches).toBe(false);
+    expect(r.localInfoDiffs).toContain(0x35);
+  });
+
+  it('tune +0x700..+0x711 differing is reported (a known possible false positive)', async () => {
+    const tune = syntheticTune(7);
+    tune[0x700] ^= 0xff;
+    const r = await verifyAtD890RangeChange(radio(syntheticLocalInfo(7), tune), {
+      identBandCode: 7,
+      backupLocalInfo: backupLi,
+      backupTune,
+      target: 7,
+    });
+    expect(r.tuneDiffs).toEqual([0x700]);
+  });
+
   it('only +0x03 and tune +0x28 changed: clean', async () => {
     const li = syntheticLocalInfo(7);
     const tune = syntheticTune(7);
@@ -40,6 +70,7 @@ describe('verifyAtD890RangeChange', () => {
     expect(r).toEqual({
       rangeIsTarget: true,
       rangeIsOld: false,
+      serialMatches: true,
       localInfoDiffs: [],
       tuneDiffs: [],
       tuneChecked: true,

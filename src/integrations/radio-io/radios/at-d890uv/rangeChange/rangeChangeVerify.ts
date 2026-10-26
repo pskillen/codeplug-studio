@@ -3,11 +3,17 @@
  *
  * After the radio has rebooted, LocalInfo should differ from the backup only at `+0x03`, and the tune bank
  * (`0x04F00000`) only at `+0x28` (the firmware rewrites it with the new range).
+ *
+ * Known possible false positive: the firmware loader reads tune `+0x700` and the boot rewrite may not write it
+ * back, so on a radio where it is not `FF`, `tuneDiffs` can list `+0x700..+0x711` even though the change worked.
+ * Radio check RT-2 records whether that happens. `identBandCode` is supplied by the caller; this function does
+ * not read the ident.
  */
 
 import type { BytePipe } from '../../../types.ts';
 import { atD890ReadMemory } from '../connection.ts';
 import { D890_MAP } from '../constants.ts';
+import { LOCAL_INFO_SERIAL_LENGTH, LOCAL_INFO_SERIAL_OFFSET } from '../identityCheck.ts';
 import { AT_D890_LOCAL_INFO_RANGE_OFFSET } from './rangeChangeFrame.ts';
 
 const TUNE_START = 0x04f00000;
@@ -27,6 +33,8 @@ export interface AtD890RangeChangeVerifyResult {
   rangeIsTarget: boolean;
   /** The ident still reports the old code (the change did not take). */
   rangeIsOld: boolean;
+  /** The 16-byte serial at LocalInfo `+0x30` is unchanged: this is still the same radio. */
+  serialMatches: boolean;
   /** LocalInfo offsets that differ from the backup, other than `+0x03`. */
   localInfoDiffs: number[];
   /** Tune offsets that differ from the backup, other than `+0x28`. */
@@ -70,6 +78,11 @@ export async function verifyAtD890RangeChange(
       identBandCode === backupLocalInfo[AT_D890_LOCAL_INFO_RANGE_OFFSET] &&
       liveLocalInfo[AT_D890_LOCAL_INFO_RANGE_OFFSET] ===
         backupLocalInfo[AT_D890_LOCAL_INFO_RANGE_OFFSET],
+    serialMatches: Array.from({ length: LOCAL_INFO_SERIAL_LENGTH }).every(
+      (_, i) =>
+        liveLocalInfo[LOCAL_INFO_SERIAL_OFFSET + i] ===
+        backupLocalInfo[LOCAL_INFO_SERIAL_OFFSET + i],
+    ),
     localInfoDiffs,
     tuneDiffs,
     tuneChecked: backupTune !== undefined,
