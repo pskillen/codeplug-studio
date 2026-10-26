@@ -184,6 +184,13 @@ export interface RadioDescriptor {
    * Omit for an operation without a plan: the UI falls back to a list that grows as stages arrive.
    */
   planStages?(op: RadioOperation, ctx: RadioPlanContext): PlannedStage[];
+  /**
+   * How long the radio is known to stay in programming mode with the session open and idle, in ms
+   * (the Write stepper's Review step holds the session while the user reads). `Infinity` when the
+   * radio has no timeout of its own (AT-D890UV). Unset means unknown: the stepper treats it as
+   * `DEFAULT_PROGRAM_HOLD_SAFE_MS` and reconnects and re-reads before transmitting after that.
+   */
+  programHoldSafeMs?: number;
   /** Optional cross-session write verify — compare staged upload vs post-commit read-back. */
   writeVerify?: import('./writeVerify.ts').WriteVerifyHooks;
 }

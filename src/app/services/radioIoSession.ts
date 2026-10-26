@@ -39,6 +39,8 @@ import {
   getRadioSerialUnsupportedMessage,
   getWebSerialUnsupportedMessage,
 } from '@integrations/radio-io/index.ts';
+import type { PlannedStage, RadioPlanContext } from '@integrations/radio-io/types.ts';
+import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
 import type {
   WriteVerifyCaptureResult,
   WriteVerifyPendingPayload,
@@ -84,6 +86,7 @@ import { Uv17ProProtocol } from '@integrations/radio-io/radios/uv17pro-family/pr
 import { Rt95Protocol } from '@integrations/radio-io/radios/rt95/protocol.ts';
 import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
+import { getCacheBytes } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import { isOpenGd77RadioIoEgress } from './radioIoChannelMap.ts';
@@ -624,6 +627,45 @@ export async function writeBuildToRadio(
   return { warnings: [...prepared.warnings, ...openGd77WriteWarnings(session)] };
 }
 
+/** What Studio knows about the connected radio at the pause before transmit. */
+export interface RadioWriteIdentity {
+  /** Descriptor label, e.g. `Anytone AT-D890UV`. */
+  model: string;
+  /** Full serial where the radio reports one in the read (the UI shows the last four only). */
+  serial?: string;
+  name?: string;
+  /** Firmware where the radio reports it; unset means unknown. */
+  firmware?: string;
+}
+
+/**
+ * Passed to `beforeTransmit` once the in-session read is done and nothing has been sent. Radio
+ * neutral: radios that need more (the AT-D890UV settings overrides, PR 1 of #1393) extend it.
+ */
+export interface BeforeTransmitContext {
+  identity: RadioWriteIdentity;
+  /** Channels in the Write projection. */
+  channelCount: number;
+  /** The write plan sized from the session (after the in-session read). */
+  plan?: PlannedStage[];
+}
+
+/** Identity from what the session already read; never sends a frame. */
+export function radioWriteIdentityFromSession(session: RadioSession): RadioWriteIdentity {
+  const identity: RadioWriteIdentity = { model: session.descriptor.label };
+  if (session.radio instanceof AtD890uvProtocol) {
+    const cache = session.radio.getDownloadCache();
+    const serial = cache
+      ? formatAtD890LocalInfoSerial(
+          getCacheBytes(cache, D890_MAP.LocalInfo, D890_MAP.LocalInfoLength),
+        )
+      : '';
+    if (serial) identity.serial = serial;
+    if (cache?.firmware) identity.firmware = cache.firmware;
+  }
+  return identity;
+}
+
 /** Upload a prepared clone image after {@link prepareRadioWriteImage} and session connect. */
 export async function uploadPreparedRadioWrite(
   session: RadioSession,
@@ -634,6 +676,14 @@ export async function uploadPreparedRadioWrite(
     signal?: AbortSignal;
     organisation?: RadioWriteOrganisation;
     channels?: readonly RadioChannelDto[];
+    /** Parts being written, to size the plan handed to `beforeTransmit`. */
+    parts?: RadioPlanContext['parts'];
+    /**
+     * Pause point (#1393): called after the in-session read and before the first frame is sent
+     * (`session.radio.upload`). Resolve to transmit; reject to stop (nothing is sent). Omitted:
+     * the path is unchanged.
+     */
+    beforeTransmit?: (ctx: BeforeTransmitContext) => Promise<void>;
   },
 ): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult; warnings?: ExportWarning[] }> {
   const hydration = getRadioCloneHydration(egress);
@@ -654,6 +704,17 @@ export async function uploadPreparedRadioWrite(
     opts,
   );
   setCachedImage(session, resolved);
+  if (opts?.beforeTransmit) {
+    await opts.beforeTransmit({
+      identity: radioWriteIdentityFromSession(session),
+      channelCount: opts.channels?.length ?? 0,
+      plan: planForOperation(session.descriptor, 'write', {
+        prepared: { channels: opts.channels ?? [], organisation: opts.organisation ?? {} },
+        session,
+        ...(opts.parts ? { parts: opts.parts } : {}),
+      }),
+    });
+  }
   await session.radio.upload(resolved, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,

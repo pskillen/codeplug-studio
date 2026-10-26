@@ -37,6 +37,8 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
     { formatId: 'radio-io', profileId: 'radio-io-at-d890uv-mm9pdy' },
   ],
   writeStrategy: 'selective-ranges',
+  // The PC-mode loop has no exit of its own (static read of the stock firmware; radio check RS14).
+  programHoldSafeMs: Number.POSITIVE_INFINITY,
   baudRate: AT_D890_CONNECTION.BAUD_RATE,
   hydration: {
     extractHydration: (image, meta) => {
