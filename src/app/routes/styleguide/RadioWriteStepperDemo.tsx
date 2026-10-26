@@ -32,13 +32,18 @@ import {
   atD890ReceiveOnlyChannels,
   atD890ReviewRange,
 } from '../../components/builds/RadioWriteStepper/d890/atD890ReviewFacts.ts';
-import { clearAllOverrides, setOverride } from '../../state/atD890RadioSettingsSession.ts';
+import {
+  clearAllOverrides,
+  clearOverride,
+  overridesForWrite,
+  setOverride,
+} from '../../state/atD890RadioSettingsSession.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import { Button } from '../../components/v2/index.ts';
 
 const D890_DEMO_BUILD = 'styleguide-d890-review';
 
-type D890Variant = 'same' | 'other' | 'receiveOnly' | 'nudge' | 'backupSaved';
+type D890Variant = 'same' | 'other' | 'receiveOnly' | 'nudge' | 'backupSaved' | 'languageBlocked';
 
 const D890_VARIANTS: { id: D890Variant; label: string }[] = [
   { id: 'same', label: 'D890 Review: same radio' },
@@ -46,6 +51,7 @@ const D890_VARIANTS: { id: D890Variant; label: string }[] = [
   { id: 'receiveOnly', label: 'D890 Review: receive-only' },
   { id: 'nudge', label: 'D890 Review: step-key nudge' },
   { id: 'backupSaved', label: 'D890 Review: backup saved' },
+  { id: 'languageBlocked', label: 'D890 Review: language blocked' },
 ];
 
 function demoChannel(slotIndex: number, name: string, mhz: number): RadioChannelDto {
@@ -63,6 +69,12 @@ function demoChannel(slotIndex: number, name: string, mhz: number): RadioChannel
 }
 
 /** A controller for one demo variant: dummy radio, no serial port. */
+/** The region lock forbids the Russian this asks for: Write is blocked until it is cleared. */
+function prepareD890Demo(variant: D890Variant): void {
+  if (variant === 'languageBlocked') setOverride(D890_DEMO_BUILD, 'language', 2);
+  else clearOverride(D890_DEMO_BUILD, 'language');
+}
+
 function demoD890Controller(variant: D890Variant): AtD890ReviewController {
   const snapshot = {
     localInfo: new Uint8Array(0x100),
@@ -71,6 +83,7 @@ function demoD890Controller(variant: D890Variant): AtD890ReviewController {
     masterId: new Uint8Array(0x40),
     bandCode: 3,
   };
+  if (variant === 'languageBlocked') snapshot.localInfo[0x04] = 1;
   const target = variant === 'nudge' ? ('mm9pdy' as const) : ('stock' as const);
   const channels =
     variant === 'receiveOnly'
@@ -91,6 +104,9 @@ function demoD890Controller(variant: D890Variant): AtD890ReviewController {
     snapshot,
     target,
     decoded: decodeAtD890RadioSettings(snapshot, target),
+    languageLock: variant === 'languageBlocked' ? 1 : 0,
+    getOverrides: () => overridesForWrite(D890_DEMO_BUILD),
+    onClearLanguage: () => clearOverride(D890_DEMO_BUILD, 'language'),
     initialSettingsTicked: variant !== 'nudge',
     sameRadio: !other && variant !== 'nudge',
     applyToEveryRadio: false,
@@ -228,7 +244,15 @@ export default function RadioWriteStepperDemo() {
       </Group>
       <Group gap="xs">
         {D890_VARIANTS.map((v) => (
-          <Button key={v.id} variant="secondary" size="sm" onClick={() => setD890Variant(v.id)}>
+          <Button
+            key={v.id}
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              prepareD890Demo(v.id);
+              setD890Variant(v.id);
+            }}
+          >
             {v.label}
           </Button>
         ))}

@@ -4,11 +4,14 @@
  * the stepper's view-model carrying D890 fields. One controller per Review.
  */
 
+import { atD890LanguageLockProblem } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { AtD890SettingsChoice } from '../../../../state/atD890RadioSettingsSession.ts';
 import type { AtD890SettingsTargetId } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import type {
   AtD890DecodedSetting,
+  AtD890LanguageLock,
   AtD890RadioSettingsSnapshot,
+  AtD890SettingsOverride,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { AtD890ReceiveOnlyChannel } from './atD890ReviewFacts.ts';
 import type { AtD890FrequencyRangeDescription } from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
@@ -38,6 +41,12 @@ export interface AtD890ReviewInit {
   target: AtD890SettingsTargetId;
   /** The radio's settings, decoded from the snapshot. */
   decoded: Readonly<Record<string, AtD890DecodedSetting>>;
+  /** This radio's language lock, from LocalInfo `+0x04`. */
+  languageLock: AtD890LanguageLock;
+  /** The session overrides as they stand now (they can change while Review is open). */
+  getOverrides: () => readonly AtD890SettingsOverride[];
+  /** Drop the Language override (the Review's way out of a forbidden language). */
+  onClearLanguage: () => void;
   initialSettingsTicked: boolean;
   /** The settings were read from this radio: no choice to make. */
   sameRadio: boolean;
@@ -66,6 +75,13 @@ export interface AtD890ReviewController {
   setSettingsTicked(ticked: boolean): void;
   /** Whether pressing Write would write anything (settings alone with Keep writes nothing). */
   canWrite(): boolean;
+  /**
+   * Why the settings that would be applied cannot be written to this radio (a language its
+   * region forbids), or `undefined`. Only while Radio settings is ticked and the choice is Apply.
+   */
+  blockReason(): string | undefined;
+  /** Tell listeners to re-read (the overrides changed under the Review). */
+  refresh(): void;
 }
 
 export function createAtD890ReviewController(init: AtD890ReviewInit): AtD890ReviewController {
@@ -75,6 +91,10 @@ export function createAtD890ReviewController(init: AtD890ReviewInit): AtD890Revi
     settingsTicked: init.initialSettingsTicked,
   };
   const listeners = new Set<() => void>();
+  const blockReason = () =>
+    state.settingsTicked && state.choice === 'apply'
+      ? atD890LanguageLockProblem(init.getOverrides(), init.languageLock)
+      : undefined;
   const set = (next: AtD890ReviewState) => {
     state = next;
     for (const l of listeners) l();
@@ -91,6 +111,10 @@ export function createAtD890ReviewController(init: AtD890ReviewInit): AtD890Revi
     setChoice: (choice) => set({ ...state, choice }),
     setBackup: (backup) => set({ ...state, backup }),
     setSettingsTicked: (settingsTicked) => set({ ...state, settingsTicked }),
-    canWrite: () => !(init.settingsOnly && state.settingsTicked && state.choice === 'keep'),
+    refresh: () => set({ ...state }),
+    blockReason,
+    canWrite: () =>
+      !(init.settingsOnly && state.settingsTicked && state.choice === 'keep') &&
+      blockReason() === undefined,
   };
 }

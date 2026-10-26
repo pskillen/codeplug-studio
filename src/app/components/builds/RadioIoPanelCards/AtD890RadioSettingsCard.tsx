@@ -1,6 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import type { EgressPath } from '@core/models/egressPath.ts';
-import { useAtD890RadioSettingsSession } from '../../../state/atD890RadioSettingsSession.ts';
+import {
+  atD890OverrideCount,
+  useAtD890RadioSettingsSession,
+} from '../../../state/atD890RadioSettingsSession.ts';
 import { Button } from '../../v2/index.ts';
 import AtD890RadioSettingsReadButton from '../AtD890RadioSettingsReadButton.tsx';
 import classes from './RadioIoPanelCards.module.css';
@@ -14,7 +17,7 @@ export interface AtD890RadioSettingsCardProps {
 export default function AtD890RadioSettingsCard({ buildId, egress }: AtD890RadioSettingsCardProps) {
   const navigate = useNavigate();
   const session = useAtD890RadioSettingsSession(buildId);
-  const n = session.overrides.size;
+  const n = atD890OverrideCount(session.overrides);
   const readName = session.read?.masterIdName.trim();
   const readSuffix = readName ? ` · read from ${readName}` : '';
   const line =

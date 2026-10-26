@@ -75,7 +75,7 @@ describe('AtD890RadioSettingsEditor', () => {
     expect(AT_D890_SETTING_FIELDS.map((f) => f.id)).toEqual(
       expect.arrayContaining([...AT_D890_V1_SETTINGS_FIELD_IDS]),
     );
-    for (const field of AT_D890_SETTING_FIELDS) {
+    for (const field of AT_D890_SETTING_FIELDS.filter((f) => !f.advanced)) {
       const control = screen.getByLabelText(field.label, { selector: '[id^="d890-setting-"]' });
       if (field.kind === 'text') {
         expect((control as HTMLInputElement).value).toBe('');

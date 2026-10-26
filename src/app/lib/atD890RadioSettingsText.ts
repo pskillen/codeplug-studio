@@ -1,5 +1,6 @@
 /** Wording helpers for the AT-D890UV Radio settings page (#1393). */
 
+import { AT_D890_POWER_ON_PASSWORD_MAX_DIGITS } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import { describeAtD890FrequencyRange } from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
 import {
   atD890SettingValueLabelFor,
@@ -58,4 +59,16 @@ export function radioValueText(
   if (typeof value === 'boolean') return value ? 'On' : 'Off';
   if (typeof value === 'string') return value === '' ? '(empty)' : value;
   return atD890SettingValueLabelFor(field, value, target) ?? String(value);
+}
+
+const PASSWORD_DIGITS = new RegExp(`^[0-9]{1,${AT_D890_POWER_ON_PASSWORD_MAX_DIGITS}}$`);
+
+/** Why the two power-on password entries do not make a password yet, or `undefined` when they do. */
+export function powerOnPasswordProblem(digits: string, again: string): string | undefined {
+  if (digits === '' && again === '') return undefined;
+  if (!PASSWORD_DIGITS.test(digits)) {
+    return `Digits only, 1 to ${AT_D890_POWER_ON_PASSWORD_MAX_DIGITS} of them.`;
+  }
+  if (digits !== again) return 'The two entries do not match.';
+  return undefined;
 }

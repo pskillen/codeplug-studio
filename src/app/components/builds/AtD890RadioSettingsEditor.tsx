@@ -4,9 +4,11 @@
  */
 
 import {
+  AT_D890_POWER_ON_PASSWORD_FIELD_IDS,
   AT_D890_SETTING_FIELDS,
   AT_D890_SETTING_SECTIONS,
   AT_D890_V1_SETTINGS_FIELD_IDS,
+  atD890LanguagesForLock,
   type AtD890SettingFieldDef,
   type AtD890SettingsTargetId,
 } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
@@ -15,16 +17,23 @@ import { Fragment, useState } from 'react';
 import { mm9pdyStepKeyOverrides } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import { Link, useNavigate } from 'react-router-dom';
 import {
+  advancedOverrideCount,
+  atD890OverrideCount,
   clearAllOverrides,
+  clearPowerOnPassword,
   copyAllFromRead,
   clearOverride,
   setOverride,
+  setPowerOnPassword,
+  setPowerOnPasswordOff,
+  setShowAdvanced,
   setWriteSettingsRequested,
   useAtD890RadioSettingsSession,
 } from '../../state/atD890RadioSettingsSession.ts';
-import { Button, ConfirmModal, Panel, StatusBanner } from '../v2/index.ts';
+import { Button, ConfirmModal, Panel, StatusBanner, ToggleSwitch } from '../v2/index.ts';
 import Mm9pdyStepKeysNudge from './Mm9pdyStepKeysNudge.tsx';
 import AtD890RadioSettingRow from './AtD890RadioSettingRow.tsx';
+import AtD890PowerOnPasswordRow from './AtD890PowerOnPasswordRow.tsx';
 import AtD890RadioSettingsReadButton from './AtD890RadioSettingsReadButton.tsx';
 import { changesLabel, readBannerText, rangeSummary } from '../../lib/atD890RadioSettingsText.ts';
 import classes from './AtD890RadioSettingsEditor.module.css';
@@ -43,8 +52,12 @@ function numberOrUndefined(v: unknown): number | undefined {
 }
 
 function fieldsOfSection(sectionId: string): AtD890SettingFieldDef[] {
-  return AT_D890_SETTING_FIELDS.filter((f) => f.section === sectionId);
+  return AT_D890_SETTING_FIELDS.filter((f) => f.section === sectionId && !f.advanced);
 }
+
+const ADVANCED_FIELDS = AT_D890_SETTING_FIELDS.filter((f) => f.advanced);
+
+const LANGUAGE_BEFORE_READ = 'Read the radio first: its region decides which languages stick.';
 
 export default function AtD890RadioSettingsEditor({
   buildId,
@@ -55,7 +68,9 @@ export default function AtD890RadioSettingsEditor({
   const navigate = useNavigate();
   const { overrides, read } = session;
 
-  const [confirm, setConfirm] = useState<'clear' | 'copy' | null>(null);
+  const [confirm, setConfirm] = useState<'clear' | 'copy' | 'advancedOff' | null>(null);
+  const { showAdvanced } = session;
+  const changeCount = atD890OverrideCount(overrides);
   const copyCount = read
     ? AT_D890_V1_SETTINGS_FIELD_IDS.filter((id) => read.decoded[id]?.value !== undefined).length
     : 0;
@@ -68,8 +83,17 @@ export default function AtD890RadioSettingsEditor({
     <div className={classes.editor}>
       <div className={classes.toolbar}>
         <span className={classes.count} aria-live="polite" data-testid="changes-count">
-          {changesLabel(overrides.size)}
+          {changesLabel(changeCount)}
         </span>
+        <ToggleSwitch
+          checked={showAdvanced}
+          label="Show advanced settings"
+          onChange={(on) => {
+            if (on) setShowAdvanced(buildId, true);
+            else if (advancedOverrideCount(overrides) > 0) setConfirm('advancedOff');
+            else setShowAdvanced(buildId, false);
+          }}
+        />
         <AtD890RadioSettingsReadButton buildId={buildId} egress={egress} />
         {read ? (
           <Button
@@ -162,10 +186,101 @@ export default function AtD890RadioSettingsEditor({
             </Fragment>
           );
         })}
+        {showAdvanced ? (
+          <Panel
+            id="radio-settings-advanced"
+            title="Advanced"
+            collapsible
+            badge={
+              advancedOverrideCount(overrides) > 0
+                ? changesLabel(advancedOverrideCount(overrides))
+                : undefined
+            }
+          >
+            <StatusBanner tone="warning">
+              A wrong value here can lock the radio or stop most of it working. Each setting says
+              what it does once you set it.
+            </StatusBanner>
+            <div className={classes.rows} data-testid="advanced-rows">
+              {ADVANCED_FIELDS.map((field) => {
+                if (field.id === AT_D890_POWER_ON_PASSWORD_FIELD_IDS[1]) return null;
+                if (field.id === AT_D890_POWER_ON_PASSWORD_FIELD_IDS[0]) {
+                  const enabled = overrides.get('powerOnPasswordEnabled');
+                  const digitsOverride = overrides.get('powerOnPasswordDigits');
+                  return (
+                    <AtD890PowerOnPasswordRow
+                      key="powerOnPassword"
+                      enabledOverride={typeof enabled === 'boolean' ? enabled : undefined}
+                      digitsOverride={
+                        typeof digitsOverride === 'string' ? digitsOverride : undefined
+                      }
+                      decodedEnabled={read?.decoded.powerOnPasswordEnabled}
+                      hasRead={read !== undefined}
+                      onSetPassword={(digits) => setPowerOnPassword(buildId, digits)}
+                      onClearPassword={() => setPowerOnPasswordOff(buildId)}
+                      onKeep={() => clearPowerOnPassword(buildId)}
+                    />
+                  );
+                }
+                if (field.id === 'language') {
+                  const current = overrides.get('language');
+                  const allowed = atD890LanguagesForLock(read?.languageLock ?? 0);
+                  const stranded =
+                    read !== undefined &&
+                    typeof current === 'number' &&
+                    !allowed.some((o) => o.value === current);
+                  const options = stranded
+                    ? [
+                        ...allowed,
+                        ...(field.options ?? [])
+                          .filter((o) => o.value === current)
+                          .map((o) => ({ ...o, label: `${o.label} (not allowed here)` })),
+                      ]
+                    : allowed;
+                  return (
+                    <AtD890RadioSettingRow
+                      key={field.id}
+                      field={{ ...field, options }}
+                      target={target}
+                      override={current}
+                      decoded={read?.decoded[field.id]}
+                      hasRead={read !== undefined}
+                      disabledReason={read === undefined ? LANGUAGE_BEFORE_READ : undefined}
+                      problem={
+                        stranded
+                          ? "This radio's region doesn't allow that language; a Write would be refused."
+                          : undefined
+                      }
+                      note={
+                        read !== undefined && read.languageLock !== 0
+                          ? `This radio's region only allows ${read.languageLock === 1 ? 'English' : 'Chinese'}.`
+                          : undefined
+                      }
+                      onSet={(value) => setOverride(buildId, field.id, value)}
+                      onClear={() => clearOverride(buildId, field.id)}
+                    />
+                  );
+                }
+                return (
+                  <AtD890RadioSettingRow
+                    key={field.id}
+                    field={field}
+                    target={target}
+                    override={overrides.get(field.id)}
+                    decoded={read?.decoded[field.id]}
+                    hasRead={read !== undefined}
+                    onSet={(value) => setOverride(buildId, field.id, value)}
+                    onClear={() => clearOverride(buildId, field.id)}
+                  />
+                );
+              })}
+            </div>
+          </Panel>
+        ) : null}
       </div>
       {overrides.size > 0 ? (
         <div className={classes.footer} data-testid="changes-footer">
-          <span className={classes.footerCount}>{changesLabel(overrides.size)}</span>
+          <span className={classes.footerCount}>{changesLabel(changeCount)}</span>
           <Button variant="outline" size="sm" onClick={() => setConfirm('clear')}>
             Clear all
           </Button>
@@ -197,6 +312,21 @@ export default function AtD890RadioSettingsEditor({
         tone="destructive"
       >
         Every field goes back to Keep radio&apos;s value.
+      </ConfirmModal>
+      <ConfirmModal
+        open={confirm === 'advancedOff'}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => {
+          setShowAdvanced(buildId, false);
+          setConfirm(null);
+        }}
+        title="Hide advanced settings?"
+        confirmLabel="Hide and discard"
+        tone="destructive"
+      >
+        This discards {advancedOverrideCount(overrides)} advanced{' '}
+        {advancedOverrideCount(overrides) === 1 ? 'change' : 'changes'}. Settings you cannot see are
+        never written.
       </ConfirmModal>
       <ConfirmModal
         open={confirm === 'copy'}

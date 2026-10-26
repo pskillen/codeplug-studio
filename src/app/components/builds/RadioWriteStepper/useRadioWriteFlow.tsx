@@ -27,6 +27,7 @@ import { reviewNeedsReconnect } from '@integrations/radio-io/programHold.ts';
 import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
 import {
   decodeAtD890RadioSettings,
+  languageLockFromLocalInfo,
   mm9pdyStepKeyOverrides,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
@@ -45,6 +46,7 @@ import type {
 import { loadLibrarySlice } from '../../../lib/loadLibrarySlice.ts';
 import { persistence } from '../../../state/persistence.ts';
 import {
+  clearOverride,
   defaultSettingsChoice,
   getAtD890RadioSettingsSession,
   isSettingsReadRadio,
@@ -515,6 +517,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       snapshot: atCtx.snapshot,
       target: atCtx.target,
       decoded: decodeAtD890RadioSettings(atCtx.snapshot, atCtx.target),
+      languageLock: languageLockFromLocalInfo(atCtx.snapshot.localInfo),
+      getOverrides: () => overridesForWrite(build.id),
+      onClearLanguage: () => clearOverride(build.id, 'language'),
       initialSettingsTicked: p.settings,
       sameRadio,
       applyToEveryRadio: store.applyToEveryRadio,

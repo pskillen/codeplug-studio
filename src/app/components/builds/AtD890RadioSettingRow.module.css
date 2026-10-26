@@ -92,6 +92,20 @@
   color: var(--dsv2-text-tertiary);
 }
 
+.warning {
+  flex-basis: 100%;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-warning);
+  line-height: 1.4;
+}
+
+.problem {
+  flex-basis: 100%;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-destructive);
+  line-height: 1.4;
+}
+
 @media (max-width: 40rem) {
   .row {
     grid-template-columns: minmax(0, 1fr);

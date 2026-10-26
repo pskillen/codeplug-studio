@@ -53,6 +53,7 @@ function SettingsSection({ controller }: { controller: AtD890ReviewController })
   if (!state.settingsTicked) return null;
   const overrides = [...store.overrides].map(([fieldId, value]) => ({ fieldId, value }));
   const changes = atD890SettingChanges(init.snapshot, init.target, overrides);
+  const blocked = controller.blockReason();
   return (
     <Section title="Radio settings">
       <div className={dClasses.stack} data-testid="d890-settings-review">
@@ -73,6 +74,25 @@ function SettingsSection({ controller }: { controller: AtD890ReviewController })
             </ul>
           </>
         )}
+        {blocked ? (
+          <div className={dClasses.warn} data-testid="d890-language-blocked">
+            <Text size="sm" c="red">
+              {blocked}
+            </Text>
+            <div className={dClasses.actions}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  init.onClearLanguage();
+                  controller.refresh();
+                }}
+              >
+                Clear the language change
+              </Button>
+            </div>
+          </div>
+        ) : null}
         {init.sameRadio ? (
           <Text size="xs" c="dimmed">
             This is the radio you read the settings from.

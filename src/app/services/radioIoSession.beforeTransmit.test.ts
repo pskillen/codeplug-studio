@@ -33,7 +33,9 @@ import { uploadPreparedRadioWrite, type BeforeTransmitContext } from './radioIoS
 
 const SERIAL = 'SN-TEST-UPLOAD01';
 
-async function d890Session(lockByte?: number): Promise<{ session: RadioSession; pipe: AtD890ScriptedPipe }> {
+async function d890Session(
+  lockByte?: number,
+): Promise<{ session: RadioSession; pipe: AtD890ScriptedPipe }> {
   const pipe = new AtD890ScriptedPipe();
   scriptAtD890ConnectWithNegotiation(pipe);
   const radio = new AtD890uvProtocol();

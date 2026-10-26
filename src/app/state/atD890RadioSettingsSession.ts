@@ -8,7 +8,11 @@
  */
 
 import { useSyncExternalStore } from 'react';
-import { AT_D890_V1_SETTINGS_FIELD_IDS } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
+import {
+  AT_D890_ADVANCED_SETTINGS_FIELD_IDS,
+  AT_D890_ALL_SETTINGS_FIELD_IDS,
+  AT_D890_V1_SETTINGS_FIELD_IDS,
+} from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import type {
   AtD890DecodedSetting,
   AtD890LanguageLock,
@@ -39,6 +43,11 @@ export interface AtD890StepperTicks {
 
 export interface AtD890RadioSettingsSessionState {
   readonly overrides: ReadonlyMap<string, AtD890SettingValue>;
+  /**
+   * "Show advanced settings" is on. Per tab, in memory only; turning it off drops the advanced
+   * overrides, so nothing hidden is ever written.
+   */
+  readonly showAdvanced: boolean;
   readonly read?: AtD890RadioSettingsRead;
   /** The "don't ask again until reload" tick of the Done screen; read by the Review step. */
   readonly applyToEveryRadio: boolean;
@@ -50,6 +59,7 @@ export interface AtD890RadioSettingsSessionState {
 
 const EMPTY: AtD890RadioSettingsSessionState = {
   overrides: new Map(),
+  showAdvanced: false,
   applyToEveryRadio: false,
   writeSettingsRequested: false,
 };
@@ -94,6 +104,66 @@ export function clearOverride(buildId: string, fieldId: string): void {
   });
 }
 
+const PASSWORD_ENABLED = 'powerOnPasswordEnabled';
+const PASSWORD_DIGITS = 'powerOnPasswordDigits';
+
+/**
+ * The power-on password is one control over two fields: the two overrides are always set and
+ * cleared together. Digits are validated by the caller (1 to 8 digits).
+ */
+export function setPowerOnPassword(buildId: string, digits: string): void {
+  update(buildId, (s) => ({
+    ...s,
+    overrides: new Map(s.overrides).set(PASSWORD_ENABLED, true).set(PASSWORD_DIGITS, digits),
+  }));
+}
+
+/** Turn the power-on password off: enable 0 and the eight bytes cleared. Needs no read. */
+export function setPowerOnPasswordOff(buildId: string): void {
+  update(buildId, (s) => ({
+    ...s,
+    overrides: new Map(s.overrides).set(PASSWORD_ENABLED, false).set(PASSWORD_DIGITS, ''),
+  }));
+}
+
+/** Back to Keep for the power-on password. */
+export function clearPowerOnPassword(buildId: string): void {
+  update(buildId, (s) => {
+    if (!s.overrides.has(PASSWORD_ENABLED) && !s.overrides.has(PASSWORD_DIGITS)) return s;
+    const overrides = new Map(s.overrides);
+    overrides.delete(PASSWORD_ENABLED);
+    overrides.delete(PASSWORD_DIGITS);
+    return { ...s, overrides };
+  });
+}
+
+/** How many changes the overrides are: the two password fields count once. */
+export function atD890OverrideCount(overrides: ReadonlyMap<string, unknown>): number {
+  return overrides.has(PASSWORD_ENABLED) && overrides.has(PASSWORD_DIGITS)
+    ? overrides.size - 1
+    : overrides.size;
+}
+
+/** How many advanced overrides are set (the password pair counts once). */
+export function advancedOverrideCount(overrides: ReadonlyMap<string, unknown>): number {
+  const advanced = new Map([...overrides].filter(([id]) => ADVANCED_IDS.has(id)));
+  return atD890OverrideCount(advanced);
+}
+
+const ADVANCED_IDS: ReadonlySet<string> = new Set(AT_D890_ADVANCED_SETTINGS_FIELD_IDS);
+
+/**
+ * Show or hide the advanced fields. Hiding drops every advanced override: a value the user can no
+ * longer see must not be written.
+ */
+export function setShowAdvanced(buildId: string, on: boolean): void {
+  update(buildId, (s) => {
+    if (on) return s.showAdvanced ? s : { ...s, showAdvanced: true };
+    const overrides = new Map([...s.overrides].filter(([id]) => !ADVANCED_IDS.has(id)));
+    return { ...s, showAdvanced: false, overrides };
+  });
+}
+
 export function clearAllOverrides(buildId: string): void {
   update(buildId, (s) => (s.overrides.size === 0 ? s : { ...s, overrides: new Map() }));
 }
@@ -122,8 +192,8 @@ export function copyAllFromRead(buildId: string): void {
 /** The overrides as upload input, in field display order. */
 export function overridesForWrite(buildId: string): AtD890SettingsOverride[] {
   const { overrides } = getAtD890RadioSettingsSession(buildId);
-  const known = new Set<string>(AT_D890_V1_SETTINGS_FIELD_IDS);
-  const ordered = AT_D890_V1_SETTINGS_FIELD_IDS.filter((id) => overrides.has(id));
+  const known = new Set<string>(AT_D890_ALL_SETTINGS_FIELD_IDS);
+  const ordered = AT_D890_ALL_SETTINGS_FIELD_IDS.filter((id) => overrides.has(id));
   const rest = [...overrides.keys()].filter((id) => !known.has(id));
   return [...ordered, ...rest].map((fieldId) => ({ fieldId, value: overrides.get(fieldId)! }));
 }

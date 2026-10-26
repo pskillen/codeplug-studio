@@ -46,6 +46,10 @@ export interface AtD890RadioSettingRowProps {
   onClear: () => void;
   /** Extra line under the control, e.g. the large-font hint. */
   note?: string;
+  /** The control is disabled, and why (e.g. Language before a read). */
+  disabledReason?: string;
+  /** A red line under the control: the set value cannot be written to the read radio. */
+  problem?: string;
 }
 
 export default function AtD890RadioSettingRow({
@@ -57,6 +61,8 @@ export default function AtD890RadioSettingRow({
   onSet,
   onClear,
   note,
+  disabledReason,
+  problem,
 }: AtD890RadioSettingRowProps) {
   const isSet = override !== undefined;
   const exposure = atD890SettingExposureFor(field, target);
@@ -103,6 +109,7 @@ export default function AtD890RadioSettingRow({
         id={controlId}
         aria-label={field.label}
         value={current}
+        disabled={disabledReason !== undefined}
         data={[{ value: KEEP, label: KEEP_RADIO_VALUE_LABEL }, ...options]}
         onChange={(e) => {
           const next = e.currentTarget.value;
@@ -145,7 +152,18 @@ export default function AtD890RadioSettingRow({
             </>
           ) : null}
         </div>
+        {disabledReason ? <div className={classes.note}>{disabledReason}</div> : null}
         {note ? <div className={classes.note}>{note}</div> : null}
+        {problem ? (
+          <div className={classes.problem} role="alert">
+            {problem}
+          </div>
+        ) : null}
+        {isSet && field.warning ? (
+          <div className={classes.warning} data-testid="field-warning">
+            {field.warning}
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -104,6 +104,50 @@ describe('atD890SettingChanges', () => {
   });
 });
 
+describe('the power-on password in the Review', () => {
+  const pair = (enabled: boolean, digits: string) => [
+    { fieldId: 'powerOnPasswordEnabled', value: enabled },
+    { fieldId: 'powerOnPasswordDigits', value: digits },
+  ];
+  const off = { main: new Uint8Array(0x200), ext: new Uint8Array(0x60) };
+  const on = (() => {
+    const ext = new Uint8Array(0x60);
+    ext.set([0x31, 0x32, 0x33, 0x34], 0x40);
+    const main = new Uint8Array(0x200);
+    main[0x07] = 1;
+    return { main, ext };
+  })();
+
+  it('is one change: Off to On with the chosen digits, never the radio digits', () => {
+    const changes = atD890SettingChanges(off, 'stock', pair(true, '4821'));
+    expect(changes).toEqual([
+      {
+        fieldId: 'powerOnPasswordEnabled',
+        label: 'Power-on password',
+        now: 'Off',
+        after: 'On (4821)',
+      },
+    ]);
+  });
+
+  it('On to Off for Clear password, and nothing when it is already off and empty', () => {
+    expect(atD890SettingChanges(on, 'stock', pair(false, ''))[0]).toMatchObject({
+      now: 'On',
+      after: 'Off',
+    });
+    expect(atD890SettingChanges(off, 'stock', pair(false, ''))).toEqual([]);
+  });
+
+  it('a new password over the same on state is still a change; the same one is not', () => {
+    expect(atD890SettingChanges(on, 'stock', pair(true, '9999'))).toHaveLength(1);
+    expect(atD890SettingChanges(on, 'stock', pair(true, '1234'))).toEqual([]);
+  });
+
+  it('is one phrase in the part row', () => {
+    expect(atD890OverrideWords(pair(true, '4821'), 'stock')).toEqual(['Power-on password On']);
+  });
+});
+
 describe('atD890OverrideWords', () => {
   it('names the first few and counts the rest', () => {
     const words = atD890OverrideWords(

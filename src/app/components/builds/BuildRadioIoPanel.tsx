@@ -49,6 +49,7 @@ import AtD890RadioSettingsCard from './RadioIoPanelCards/AtD890RadioSettingsCard
 import RadioBackupCard from './RadioIoPanelCards/RadioBackupCard.tsx';
 import ExperimentalNote from './RadioIoPanelCards/ExperimentalNote.tsx';
 import {
+  atD890OverrideCount,
   overridesForWrite,
   setApplyToEveryRadio,
   setWriteSettingsRequested,
@@ -248,7 +249,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     ...(isAtD890Write
       ? {
           radioSettings: {
-            count: settingsSession.overrides.size,
+            count: atD890OverrideCount(settingsSession.overrides),
             words: atD890OverrideWords(
               overridesForWrite(build.id),
               isMm9pdyAtD890RadioIoProfileId(egress.profileId) ? 'mm9pdy' : 'stock',
@@ -345,7 +346,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             ? buildSummaryLine({
                 channels: facts.channelCount,
                 zones: facts.zoneCount,
-                ...(isAtD890Write ? { settingChanges: settingsSession.overrides.size } : {}),
+                ...(isAtD890Write
+                  ? { settingChanges: atD890OverrideCount(settingsSession.overrides) }
+                  : {}),
               })
             : undefined
         }
@@ -373,7 +376,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           </Button>
           {coverageOpen ? (
             <AtD890WriteCoverageTable
-              settingsChangeCount={settingsSession.overrides.size}
+              settingsChangeCount={atD890OverrideCount(settingsSession.overrides)}
               buildId={build.id}
               hasHydration={hasHydration}
               mm9pdy={isMm9pdyAtD890RadioIoProfileId(egress.profileId)}
