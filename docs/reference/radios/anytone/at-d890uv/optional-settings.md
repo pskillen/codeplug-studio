@@ -23,7 +23,7 @@ The optional-settings record is the radio's general settings: erase unit `0x3500
 | `channelNumberStyle`   | `+0xB8`  | ff   | 0 Actual channel number, 1 Sequence number in zone                        | none (firmware tests `== 0`)     | CPS           | Yes                                                                           |
 | `showChannelType`      | `+0x110` | 01   | boolean                                                                   | none                             | CPS           | Yes. Bit 0 confirmed in the emulator (open item 4)                            |
 | `showTimeSlot`         | `+0x110` | 02   | boolean                                                                   | none                             | CPS           | Yes. Bit 1 by the drawer code                                                 |
-| `showColourCode`       | `+0x110` | 04   | boolean                                                                   | none                             | CPS           | Yes. Bit 2 by elimination                                                     |
+| `showColourCode`       | `+0x110` | 04   | boolean                                                                   | none                             | CPS           | Yes. Bit 2 from the drawers (open item 4)                                     |
 
 ## Start-up
 

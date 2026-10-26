@@ -295,7 +295,7 @@ const FIELD_LAYOUT: readonly FieldLayout[] = [
   { id: 'powerOnScreen', offset: 0x06 },
   { id: 'powerOnLine1', offset: 0x00, ext: true },
   { id: 'powerOnLine2', offset: 0x20, ext: true },
-  { id: 'startupTone', offset: 0x39 },
+  { id: 'startupTone', offset: 0x39, anyNonZeroOn: true },
   { id: 'powerOnVolumeType', offset: 0x155 },
   { id: 'powerOnVolumeLevel', offset: 0x156 },
   // Volume and audio
@@ -309,7 +309,7 @@ const FIELD_LAYOUT: readonly FieldLayout[] = [
   { id: 'dmrMicGain', offset: 0x0f },
   { id: 'analogueMicGain', offset: 0x113 },
   // Tones
-  { id: 'keyTone', offset: 0x00 },
+  { id: 'keyTone', offset: 0x00, anyNonZeroOn: true },
   { id: 'talkPermitTone', offset: 0x31 },
   { id: 'callResetTone', offset: 0x32 },
   { id: 'digitalIdleTone', offset: 0x36 },
@@ -328,7 +328,7 @@ const FIELD_LAYOUT: readonly FieldLayout[] = [
   { id: 'zoneNameColourB', offset: 0x10e },
   { id: 'standbyBackground', offset: 0xc1 },
   { id: 'nightMode', offset: 0x14d },
-  { id: 'clockOnStandby', offset: 0x51 },
+  { id: 'clockOnStandby', offset: 0x51, anyNonZeroOn: true },
   { id: 'dateFormat', offset: 0x112 },
   { id: 'timeZone', offset: 0x30 },
   // Keys (short +0x10..0x14, long +0x41..0x45)
@@ -347,7 +347,7 @@ const FIELD_LAYOUT: readonly FieldLayout[] = [
   { id: 'autoPowerOff', offset: 0x03 },
   { id: 'autoPowerOffType', offset: 0x10f },
   { id: 'txTimeout', offset: 0x04 },
-  { id: 'txTimeoutPreAlert', offset: 0x10b },
+  { id: 'txTimeoutPreAlert', offset: 0x10b, anyNonZeroOn: true },
   { id: 'powerSave', offset: 0x0b },
   // DMR
   { id: 'groupCallHangTime', offset: 0x19 },

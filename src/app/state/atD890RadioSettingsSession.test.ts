@@ -20,6 +20,7 @@ function read(decoded: AtD890RadioSettingsRead['decoded']): AtD890RadioSettingsR
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('AT-D890 radio settings session store', () => {
@@ -117,6 +118,5 @@ describe('AT-D890 radio settings session store', () => {
     expect(ls).not.toHaveBeenCalled();
     expect(lg).not.toHaveBeenCalled();
     expect(idb).not.toHaveBeenCalled();
-    vi.unstubAllGlobals();
   });
 });

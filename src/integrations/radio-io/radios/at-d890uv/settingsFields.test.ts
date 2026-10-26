@@ -283,7 +283,8 @@ describe('AT-D890 v1 settings fields', () => {
     const get = (id: string, b: number) =>
       AT_D890_SETTINGS_FIELDS.get(id)!.decode(Uint8Array.of(b));
     expect(get('volumeBar', 7)).toBe(true);
-    expect(get('keyTone', 7)).toBeUndefined();
+    expect(get('keyTone', 7)).toBe(true);
+    expect(get('smsAlert', 7)).toBeUndefined();
     expect(get('keyTone', 0)).toBe(false);
   });
 
@@ -321,6 +322,47 @@ describe('AT-D890 v1 settings fields', () => {
     expect([...spec.encode(5)]).toEqual([5]);
     expect([...spec.encode(40)]).toEqual([40]);
     expect(() => spec.encode(41)).toThrow(RadioProtocolError);
+  });
+
+  it('offers nothing above the firmware load clamp (0x080DDEE0) or reader ceiling', () => {
+    const ceilings: Record<string, number> = {
+      callDisplayMode: 1,
+      lastCaller: 3,
+      aliasDisplayPriority: 2,
+      aliasTxFormat: 2,
+      callSignColour: 7,
+      powerOnScreen: 1, // clamp is >2, custom picture (2) is not offered
+      powerOnVolumeLevel: 15,
+      maxVolume: 8,
+      maxHeadphoneVolume: 8,
+      audioProfile: 3,
+      rxNoiseReduction: 5,
+      txNoiseReduction: 5,
+      menuExitTime: 11,
+      standbyTextColour: 7,
+      channelNameColourA: 6,
+      channelNameColourB: 6,
+      zoneNameColourA: 6,
+      zoneNameColourB: 6,
+      standbyBackground: 0,
+      timeZone: 33,
+      longPressTime: 4,
+      voiceHeaderRepeats: 10,
+      smsFormat: 2,
+      txPreamble: 40,
+      backlightTimeout: 15,
+      txTimeout: 8,
+      autoPowerOff: 4,
+      powerSave: 2,
+      dmrMicGain: 5,
+      analogueMicGain: 5,
+      talkPermitTone: 3,
+      digitalIdleTone: 3,
+    };
+    for (const [id, ceiling] of Object.entries(ceilings)) {
+      const values = atD890SettingField(id)!.options!.map((o) => o.value);
+      expect(Math.max(...values), id).toBeLessThanOrEqual(ceiling);
+    }
   });
 
   it('keeps masked +0x110 specs independent', () => {

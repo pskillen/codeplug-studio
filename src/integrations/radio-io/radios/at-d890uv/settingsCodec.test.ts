@@ -71,6 +71,16 @@ describe('decodeAtD890RadioSettings', () => {
     expect(decoded.keyShortP1).toEqual({ value: undefined, raw: [0xff] });
   });
 
+  it('reads a byte above 1 as on where the firmware clamps it to 1 at load', () => {
+    const snap = snapshotFrom({});
+    for (const off of [0x00, 0x39, 0x51, 0x10b]) snap.main[off] = 2;
+    snap.main[0x29] = 2; // clamps to 0 elsewhere: stays not offered
+    const decoded = decodeAtD890RadioSettings(snap, 'stock');
+    for (const id of ['keyTone', 'startupTone', 'clockOnStandby', 'txTimeoutPreAlert']) {
+      expect(decoded[id]!.value, id).toBe(true);
+    }
+  });
+
   it('reports erased power-on text as not offered', () => {
     const snap = { main: new Uint8Array(0x200), ext: new Uint8Array(0x60).fill(0xff) };
     const decoded = decodeAtD890RadioSettings(snap, 'stock');
