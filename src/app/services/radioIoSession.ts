@@ -648,6 +648,23 @@ export interface BeforeTransmitContext {
   channelCount: number;
   /** The write plan sized from the session (after the in-session read). */
   plan?: PlannedStage[];
+  /**
+   * True when this radio reads inside `upload()` rather than before it, so the pause has only the
+   * ident (Review says "Studio reads the rest while writing").
+   */
+  identityOnly: boolean;
+}
+
+/** Whether `resolveRadioWriteImageForUpload` reads the radio itself (every protocol but the generic path). */
+export function writeReadsBeforeTransmit(session: RadioSession): boolean {
+  const radio = session.radio;
+  return (
+    radio instanceof AtD890uvProtocol ||
+    radio instanceof OpenGd77Protocol ||
+    radio instanceof Uv17ProProtocol ||
+    radio instanceof Dm32uvProtocol ||
+    radio instanceof Rt95Protocol
+  );
 }
 
 /** Identity from what the session already read; never sends a frame. */
@@ -708,6 +725,7 @@ export async function uploadPreparedRadioWrite(
     await opts.beforeTransmit({
       identity: radioWriteIdentityFromSession(session),
       channelCount: opts.channels?.length ?? 0,
+      identityOnly: !writeReadsBeforeTransmit(session),
       plan: planForOperation(session.descriptor, 'write', {
         prepared: { channels: opts.channels ?? [], organisation: opts.organisation ?? {} },
         session,

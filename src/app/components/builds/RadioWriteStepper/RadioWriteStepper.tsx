@@ -21,6 +21,9 @@ import { WhatToWriteBody, WhatToWriteFooter } from './steps/WhatToWriteStep.tsx'
 import { ConnectReadBody, ConnectReadFooter } from './steps/ConnectReadStep.tsx';
 import { ReviewBody, ReviewFooter } from './steps/ReviewStep.tsx';
 import { Button } from '../../v2/index.ts';
+import { WritingBody, WritingFooter } from './steps/WritingStep.tsx';
+import { RestartCheckBody, RestartCheckFooter } from './steps/RestartCheckStep.tsx';
+import { DoneBody, DoneFooter } from './steps/DoneStep.tsx';
 
 export interface RadioWriteStepperProps {
   config: WriteStepperConfig;
@@ -70,7 +73,17 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
       body = <ReviewBody {...props} />;
       footer = <ReviewFooter {...props} />;
       break;
-    default:
+    case 'writing':
+      body = <WritingBody {...props} />;
+      footer = <WritingFooter {...props} />;
+      break;
+    case 'restartCheck':
+      body = <RestartCheckBody {...props} />;
+      footer = <RestartCheckFooter {...props} />;
+      break;
+    case 'done':
+      body = <DoneBody {...props} />;
+      footer = <DoneFooter {...props} />;
       break;
   }
 
