@@ -167,7 +167,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const [canReconnect, setCanReconnect] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
-  const [startedAt, setStartedAt] = useState<number | undefined>(undefined);
   const [readPlan, setReadPlan] = useState<PlannedStage[]>([]);
   const [writePlan, setWritePlan] = useState<PlannedStage[] | undefined>(undefined);
   const [readGrown, setReadGrown] = useState<string[]>([]);
@@ -387,7 +386,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setStep('writing');
     setReconnecting(false);
     setBusyNotify(true);
-    setStartedAt(now());
   }
 
   async function writeKeps(session: RadioSession): Promise<void> {
@@ -413,7 +411,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setWriteGrown([]);
     setReview(null);
     setBusyNotify(true);
-    setStartedAt(now());
     readStartRef.current = now();
     setPhaseBoth('read');
     transmitStartedRef.current = false;
@@ -713,7 +710,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     canReconnect,
     reconnecting,
     progress,
-    startedAt,
     readRows: stageRows({
       plan: readPlan.length > 0 ? readPlan : undefined,
       grown: readGrown,

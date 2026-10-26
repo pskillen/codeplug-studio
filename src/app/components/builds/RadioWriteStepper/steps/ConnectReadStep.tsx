@@ -28,11 +28,7 @@ export function ConnectReadBody({ config, view }: StepProps) {
           : `Connecting to ${config.radioLabel} and reading it…`}
       </Text>
       {view.readRows.length > 0 ? (
-        <RadioIoStageList
-          rows={view.readRows}
-          progress={view.progress}
-          startedAt={view.startedAt}
-        />
+        <RadioIoStageList rows={view.readRows} progress={view.progress} />
       ) : (
         <div>
           <Progress value={percent ?? 0} animated={percent == null} aria-label="Read progress" />

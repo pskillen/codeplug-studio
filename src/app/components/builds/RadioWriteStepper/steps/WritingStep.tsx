@@ -18,7 +18,7 @@ interface StepProps {
 export function WritingBody({ view }: StepProps) {
   return (
     <div className={classes.stack}>
-      <RadioIoStageList rows={view.writeRows} progress={view.progress} startedAt={view.startedAt} />
+      <RadioIoStageList rows={view.writeRows} progress={view.progress} />
       <Text size="xs" c="dimmed">
         Keep this tab open until the transfer finishes or you cancel.
       </Text>
