@@ -3,7 +3,7 @@
  * optional Check write and, when keps could not share the codeplug's session, the keps write.
  */
 
-import { Progress, Text } from '@mantine/core';
+import { Alert, Progress, Text } from '@mantine/core';
 import { Button } from '../../../v2/index.ts';
 import classes from '../RadioWriteStepper.module.css';
 import type { WriteFlowActions, WriteFlowView, WriteStepperConfig } from '../types.ts';
@@ -32,6 +32,13 @@ export function RestartCheckBody({ config, view }: StepProps) {
       ) : (
         <Text size="sm">Wait until the radio shows its normal screen, then continue.</Text>
       )}
+      {view.kepsFailure ? (
+        <Alert color="yellow" title="Codeplug written, satellite keps not written">
+          <Text size="sm" data-testid="write-stepper-keps-failure">
+            The codeplug is on the radio. The satellite keps were not written ({view.kepsFailure}).
+          </Text>
+        </Alert>
+      ) : null}
       {view.checkStatus === 'available' ? (
         <Text size="sm" c="dimmed">
           Check write reads the radio back and compares it with what was sent. It is optional.
@@ -68,7 +75,11 @@ export function RestartCheckFooter({ view, actions }: StepProps) {
   return (
     <>
       <Button variant="secondary" size="sm" onClick={actions.onSkipCheck}>
-        {view.checkStatus === 'available' ? 'Skip and finish' : 'Finish'}
+        {view.kepsAfterRestart === 'pending'
+          ? 'Finish without keps'
+          : view.checkStatus === 'available'
+            ? 'Skip and finish'
+            : 'Finish'}
       </Button>
       {view.kepsAfterRestart === 'pending' ? (
         <Button

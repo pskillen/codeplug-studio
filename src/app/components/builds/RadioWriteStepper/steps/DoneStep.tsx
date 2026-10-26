@@ -33,6 +33,12 @@ function writtenLines(summary: WriteSummary): string[] {
   if (summary.contactsWritten) lines.push('Digital contacts written.');
   if (summary.kepsResult) {
     lines.push(`Satellite keps written (${summary.kepsResult.written} transmitters).`);
+  } else if (summary.kepsTicked) {
+    lines.push(
+      summary.kepsError
+        ? `Satellite keps were not written: ${summary.kepsError}. Write them again from Write.`
+        : 'Satellite keps: not written.',
+    );
   }
   return lines;
 }
@@ -65,9 +71,20 @@ export function DoneBody({ config, view, actions }: StepProps) {
     ),
   ];
   const notes = [...summary.warnings.map((w) => formatExportWarning(w)), ...kepsSkips];
+  const kepsNotWritten = summary.kepsTicked && !summary.kepsResult;
+  const wroteSomething = summary.codeplugWritten || summary.contactsWritten;
   return (
     <div className={classes.stack}>
-      <Alert color={summary.checkStatus === 'failed' ? 'red' : 'green'} title={`${who} written`}>
+      <Alert
+        color={summary.checkStatus === 'failed' ? 'red' : kepsNotWritten ? 'yellow' : 'green'}
+        title={
+          kepsNotWritten
+            ? wroteSomething
+              ? `${who} written, satellite keps not written`
+              : `${who}: satellite keps not written`
+            : `${who} written`
+        }
+      >
         <Stack gap={2}>
           {writtenLines(summary).map((l) => (
             <Text key={l} size="sm">

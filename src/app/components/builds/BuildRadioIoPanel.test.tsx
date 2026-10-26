@@ -331,6 +331,120 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     expect(kepsWrite).toHaveBeenCalledTimes(1);
   });
 
+  it('D890 keps failing after the upload: says the codeplug was written, keps were not, offers Check write (F2)', async () => {
+    kepsWrite.mockRejectedValue(new Error('Satellite unit busy'));
+    vi.mocked(radioIoSession.uploadPreparedRadioWrite).mockImplementation(
+      async (_s, _e, _i, opts) => {
+        await opts?.beforeTransmit?.({
+          identity,
+          channelCount: 3,
+          plan: [{ label: 'Upload', weight: 4000 }],
+          identityOnly: false,
+        });
+        return { writeVerifyPending: { staging: { capturedAt: 'x', chunks: [] } } as never };
+      },
+    );
+    openStepper('radio-io-at-d890uv');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Satellite keps' }));
+    await connect();
+    fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug + keps' }));
+    const failure = await screen.findByTestId('write-stepper-keps-failure');
+    expect(failure).toHaveTextContent('The codeplug is on the radio');
+    expect(failure).toHaveTextContent('Satellite unit busy');
+    // The session still closed (END commits the codeplug) and the check is offered.
+    expect(radioIoSession.closeRadioSession).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Check write' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Skip and finish' }));
+    expect(await screen.findByText('Codeplug written (3 channels).')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Satellite keps were not written: Satellite unit busy/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Satellite keps written/)).toBeNull();
+  });
+
+  it('D890 keps aborted after the upload: Done says keps were cancelled, codeplug written (F2)', async () => {
+    kepsWrite.mockImplementation(
+      (_s: unknown, _sats: unknown, opts: { signal?: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          opts.signal?.addEventListener('abort', () => reject(new Error('The write was aborted')));
+        }),
+    );
+    openStepper('radio-io-at-d890uv');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Satellite keps' }));
+    await connect();
+    fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug + keps' }));
+    await waitFor(() => expect(kepsWrite).toHaveBeenCalled());
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    expect(await screen.findByText('Codeplug written (3 channels).')).toBeInTheDocument();
+    expect(screen.getByText(/Satellite keps were not written: cancelled/)).toBeInTheDocument();
+  });
+
+  it('Cancel on Review tells a restarting radio (D890) that it restarts, and others that nothing changes (F3)', async () => {
+    const d890 = openStepper('radio-io-at-d890uv');
+    await connect();
+    await screen.findByRole('button', { name: 'Write codeplug' });
+    expect(
+      screen.getByText(/Cancel writes nothing, but the radio restarts \(about 20 s\)/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Write codeplug' })).toBeNull(),
+    );
+    d890.unmount();
+    openStepper('radio-io-dm32uv');
+    await connect();
+    await screen.findByRole('button', { name: 'Write codeplug' });
+    expect(screen.getByText(/Cancel leaves the radio as it is/)).toBeInTheDocument();
+    expect(screen.queryByText(/radio restarts/)).toBeNull();
+  });
+
+  it('OpenGD77: finishing without the pending keps says they were not written (F4)', async () => {
+    openStepper('radio-io-opengd77-1701');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Satellite keps' }));
+    await connect();
+    fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug + keps' }));
+    await screen.findByTestId('write-stepper-restart-wait');
+    fireEvent.click(screen.getByRole('button', { name: 'Finish without keps' }));
+    expect(await screen.findByText('Satellite keps: not written.')).toBeInTheDocument();
+    expect(screen.getByText(/satellite keps not written/)).toBeInTheDocument();
+    expect(kepsWrite).not.toHaveBeenCalled();
+  });
+
+  it('OpenGD77: Check write then Write keps keeps the check report on Done (F5)', async () => {
+    vi.mocked(radioIoSession.uploadPreparedRadioWrite).mockImplementation(
+      async (_s, _e, _i, opts) => {
+        await opts?.beforeTransmit?.({
+          identity,
+          channelCount: 3,
+          plan: [{ label: 'Upload', weight: 4000 }],
+          identityOnly: false,
+        });
+        return { writeVerifyPending: { staging: { capturedAt: 'x', chunks: [] } } as never };
+      },
+    );
+    vi.spyOn(radioIoSession, 'verifyRadioWrite').mockResolvedValue({
+      ok: true,
+      staging: { totalChunks: 1, mismatchedChunks: 0 },
+      regions: [],
+    } as never);
+    openStepper('radio-io-opengd77-1701');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Satellite keps' }));
+    await connect();
+    fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug + keps' }));
+    await screen.findByTestId('write-stepper-restart-wait');
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.now() + 25_000);
+    const check = await screen.findByRole('button', { name: 'Check write' });
+    await waitFor(() => expect(check).toBeEnabled(), { timeout: 3000 });
+    fireEvent.click(check);
+    const writeKeps = await screen.findByRole('button', { name: 'Write keps' });
+    await waitFor(() => expect(writeKeps).toBeEnabled());
+    fireEvent.click(writeKeps);
+    expect(await screen.findByText(/Satellite keps written/)).toBeInTheDocument();
+    expect(screen.getByText(/Check write: passed/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View check report' })).toBeInTheDocument();
+  });
+
   it('keps only: connects, reviews, then writes keps without an upload', async () => {
     openStepper('radio-io-at-d890uv');
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Satellite keps' }));

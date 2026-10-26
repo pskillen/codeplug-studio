@@ -39,6 +39,7 @@ export function demoFlowView(overrides: Partial<WriteFlowView> = {}): WriteFlowV
     restartSecondsLeft: 0,
     checkStatus: 'none',
     kepsAfterRestart: 'none',
+    kepsFailure: null,
     summary: null,
     ...overrides,
   };

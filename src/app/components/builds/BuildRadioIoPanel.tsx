@@ -197,6 +197,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         }
       : {}),
     restartWaitSeconds: RADIO_RESTART_WAIT_SECONDS,
+    cancelRestartsRadio: writeVerifyHooks?.requiresCrossSessionReconnect === true,
     supportsCheck: Boolean(writeVerifyHooks),
     successNote: isDm32RadioIoProfileId(egress.profileId)
       ? DM32_POWER_CYCLE_AFTER_SESSION_NOTE

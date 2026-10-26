@@ -87,6 +87,8 @@ function viewFor(step: WriteStep, parts: WriteParts): WriteFlowView {
           contactsWritten: parts.contacts,
           channelCount: 412,
           kepsResult: null,
+          kepsTicked: parts.keps,
+          kepsError: null,
           warnings: [],
           checkStatus: 'skipped',
           checkResult: null,

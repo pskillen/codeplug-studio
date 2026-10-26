@@ -70,6 +70,8 @@ export interface WriteStepperConfig {
   };
   /** Seconds the radio needs to restart after END (0 when it does not need a wait). */
   restartWaitSeconds: number;
+  /** Closing the session (Cancel on Review) sends END and the radio restarts (Q-C). */
+  cancelRestartsRadio?: boolean;
   /** Radios with a Check write step. */
   supportsCheck: boolean;
   /** Extra sentence on the Done step (DM-32: power-cycle the radio). */
@@ -93,6 +95,10 @@ export interface WriteSummary {
   contactsWritten: boolean;
   channelCount: number;
   kepsResult: SatelliteKepsWriteResult | null;
+  /** Keps were ticked (so "not written" is worth saying when `kepsResult` is null). */
+  kepsTicked: boolean;
+  /** Why the keps part failed or stopped after the codeplug went onto the radio (D890). */
+  kepsError: string | null;
   warnings: ExportWarning[];
   checkStatus: CheckStatus;
   checkResult: WriteVerifyResult | null;
@@ -134,6 +140,8 @@ export interface WriteFlowView {
   restartSecondsLeft: number;
   checkStatus: CheckStatus;
   kepsAfterRestart: 'none' | 'pending' | 'running' | 'done';
+  /** Keps failed or were aborted after the codeplug was written in the same session. */
+  kepsFailure: string | null;
   summary: WriteSummary | null;
 }
 

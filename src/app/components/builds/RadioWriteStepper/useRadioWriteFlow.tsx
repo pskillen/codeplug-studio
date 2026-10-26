@@ -135,6 +135,7 @@ interface WrittenFacts {
   contactsWritten: boolean;
   channelCount: number;
   kepsResult: SatelliteKepsWriteResult | null;
+  kepsError: string | null;
   warnings: ExportWarning[];
 }
 
@@ -143,6 +144,7 @@ const EMPTY_FACTS: WrittenFacts = {
   contactsWritten: false,
   channelCount: 0,
   kepsResult: null,
+  kepsError: null,
   warnings: [],
 };
 
@@ -188,6 +190,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const [checkResult, setCheckResult] = useState<WriteVerifyResult | null>(null);
   const [kepsAfterRestart, setKepsAfterRestart] =
     useState<WriteFlowView['kepsAfterRestart']>('none');
+  const [kepsFailure, setKepsFailure] = useState<string | null>(null);
   const [summary, setSummary] = useState<WriteSummary | null>(null);
   const [emptyDirectoryOpen, setEmptyDirectoryOpen] = useState(false);
 
@@ -206,6 +209,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const factsRef = useRef<WrittenFacts>({ ...EMPTY_FACTS });
   const identityRef = useRef<RadioIdentityView | null>(null);
   const checkStatusRef = useRef<CheckStatus>('none');
+  const checkResultRef = useRef<WriteVerifyResult | null>(null);
   const kepsPendingRef = useRef(false);
   const satellitesRef = useRef<Satellite[]>([]);
   const restartDeadlineRef = useRef(0);
@@ -310,6 +314,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setRestartSecondsLeft(0);
     setCheck('none');
     setCheckResult(null);
+    checkResultRef.current = null;
+    setKepsFailure(null);
     setKepsAfterRestart('none');
     kepsPendingRef.current = false;
     setSummary(null);
@@ -329,9 +335,12 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       contactsWritten: facts.contactsWritten,
       channelCount: facts.channelCount,
       kepsResult: facts.kepsResult,
+      kepsTicked: partsRef.current.keps,
+      kepsError: facts.kepsError,
       warnings: facts.warnings,
       checkStatus: checkStatusRef.current,
-      checkResult,
+      // A ref, not the render's state: check-then-keps reaches here from an older closure.
+      checkResult: checkResultRef.current,
       identity: identityRef.current,
     });
     setBusyNotify(false);
@@ -513,7 +522,16 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         };
         if (p.keps && kepsSameSessionAfterUpload) {
           // The keps unit is never touched by upload(); the writer does its own fresh read on the open pipe.
-          await writeKeps(session);
+          // The codeplug is already on the radio (closing the session sends END, which commits it), so a
+          // keps failure or abort is reported next to that fact, not as a failed write.
+          try {
+            await writeKeps(session);
+          } catch (err) {
+            const aborted = signal.aborted;
+            const reason = aborted ? 'cancelled' : errorMessage(err);
+            factsRef.current = { ...factsRef.current, kepsError: reason };
+            setKepsFailure(reason);
+          }
         }
         await releaseSession();
         kepsPendingRef.current = p.keps && !kepsSameSessionAfterUpload;
@@ -641,19 +659,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       await releaseSession();
       pendingVerifyRef.current = null;
       clearWriteVerifyPending();
+      checkResultRef.current = result;
       setCheckResult(result);
       setCheck(result.ok ? 'passed' : 'failed');
       setBusyNotify(false);
-      if (!kepsPendingRef.current) {
-        const facts = factsRef.current;
-        setSummary({
-          ...facts,
-          checkStatus: result.ok ? 'passed' : 'failed',
-          checkResult: result,
-          identity: identityRef.current,
-        });
-        setStep('done');
-      }
+      if (!kepsPendingRef.current) goDone();
     } catch (err) {
       await releaseSession().catch(() => undefined);
       setBusyNotify(false);
@@ -732,6 +742,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     restartSecondsLeft,
     checkStatus,
     kepsAfterRestart,
+    kepsFailure,
     summary,
   };
 

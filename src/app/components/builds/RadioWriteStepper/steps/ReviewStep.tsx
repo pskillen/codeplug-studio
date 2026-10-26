@@ -16,7 +16,7 @@ interface StepProps {
   actions: WriteFlowActions;
 }
 
-export function ReviewBody({ view }: StepProps) {
+export function ReviewBody({ config, view }: StepProps) {
   const review = view.review;
   if (!review) return null;
   return (
@@ -25,7 +25,9 @@ export function ReviewBody({ view }: StepProps) {
         <Fragment key={i}>{section}</Fragment>
       ))}
       <Text size="xs" c="dimmed">
-        Nothing has been written yet. Cancel leaves the radio as it is.
+        {config.cancelRestartsRadio
+          ? `Nothing has been written yet. Cancel writes nothing, but the radio restarts (about ${config.restartWaitSeconds} s).`
+          : 'Nothing has been written yet. Cancel leaves the radio as it is.'}
       </Text>
     </div>
   );
