@@ -152,6 +152,7 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
           kepsCount,
           estimateSeconds: 100,
           identityOnly: false,
+          writeDisabled: d890 ? !d890.canWrite() : false,
           // The button names what will be sent: Keep on another radio sends no settings.
           effectiveParts:
             d890 && d890.getState().choice !== 'apply' ? { ...parts, settings: false } : parts,

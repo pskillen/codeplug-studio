@@ -500,4 +500,44 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     await screen.findByRole('button', { name: 'Write codeplug' });
     expect(screen.queryByTestId('mm9pdy-step-keys-nudge')).toBeNull();
   });
+
+  describe('a language the radio region forbids', () => {
+    /** LocalInfo `+0x04` = 1: English only, so Russian (2) is refused. */
+    const lockedCtx = () => {
+      const ctx = atD890Ctx();
+      ctx.snapshot.localInfo[4] = 1;
+      return ctx;
+    };
+
+    it('disables the real Write button until the language change is cleared', async () => {
+      const build = renderPanel();
+      ctxFactory = lockedCtx;
+      setRead(build.id, readOf(SERIAL));
+      setOverride(build.id, 'language', 2);
+      await connect();
+      const write = await screen.findByRole('button', { name: 'Write codeplug + settings' });
+      expect(write).toBeDisabled();
+      expect(screen.getByTestId('d890-language-blocked')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Clear the language change' }));
+      // Nothing is left to send, so the label drops settings and the codeplug can be written.
+      expect(await screen.findByRole('button', { name: 'Write codeplug' })).toBeEnabled();
+      clearAllOverrides(build.id);
+    });
+
+    it('settings alone: after clearing the only override, Write stays disabled and names nothing', async () => {
+      const build = renderPanel();
+      ctxFactory = lockedCtx;
+      setRead(build.id, readOf(SERIAL));
+      setOverride(build.id, 'language', 2);
+      await openStepper();
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Codeplug' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
+      expect(await screen.findByRole('button', { name: 'Write settings' })).toBeDisabled();
+      fireEvent.click(screen.getByRole('button', { name: 'Clear the language change' }));
+      const write = await screen.findByRole('button', { name: 'Write' });
+      expect(write).toBeDisabled();
+      expect(screen.queryByRole('button', { name: /^Write .*settings/i })).toBeNull();
+      clearAllOverrides(build.id);
+    });
+  });
 });

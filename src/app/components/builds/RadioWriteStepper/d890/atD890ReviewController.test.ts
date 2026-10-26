@@ -57,7 +57,7 @@ describe('AT-D890 Review controller language guard', () => {
   it('unblocks when the override is cleared, and refresh tells listeners', () => {
     let overrides: { fieldId: string; value: number }[] = [...russian];
     const c = createAtD890ReviewController(
-      init({ languageLock: 1, getOverrides: () => overrides }),
+      init({ languageLock: 1, getOverrides: () => overrides, settingsOnly: false }),
     );
     let calls = 0;
     c.subscribe(() => calls++);
@@ -86,5 +86,20 @@ describe('AT-D890 Review controller language guard', () => {
       init({ languageLock: 1, getOverrides: () => russian, initialSettingsTicked: false }),
     );
     expect(c.blockReason()).toBeUndefined();
+  });
+
+  it('settings alone with no override left has nothing to write', () => {
+    let overrides: { fieldId: string; value: number }[] = [...russian];
+    const c = createAtD890ReviewController(
+      init({ languageLock: 1, getOverrides: () => overrides, settingsOnly: true }),
+    );
+    expect(c.canWrite()).toBe(false);
+    overrides = [];
+    c.refresh();
+    expect(c.canWrite()).toBe(false);
+    const withCodeplug = createAtD890ReviewController(
+      init({ languageLock: 1, getOverrides: () => [], settingsOnly: false }),
+    );
+    expect(withCodeplug.canWrite()).toBe(true);
   });
 });

@@ -62,7 +62,8 @@ describe('AtD890 Review language guard', () => {
     expect(c.canWrite()).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: 'Clear the language change' }));
     expect(screen.queryByTestId('d890-language-blocked')).toBeNull();
-    expect(c.canWrite()).toBe(true);
+    // Settings alone, and the language was the only change: nothing left to write.
+    expect(c.canWrite()).toBe(false);
   });
 
   it('shows nothing for an allowed language', () => {

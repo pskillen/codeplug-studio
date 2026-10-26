@@ -73,7 +73,7 @@ export interface AtD890ReviewController {
   setChoice(choice: AtD890SettingsChoice): void;
   setBackup(backup: AtD890BackupStatus): void;
   setSettingsTicked(ticked: boolean): void;
-  /** Whether pressing Write would write anything (settings alone with Keep writes nothing). */
+  /** Whether pressing Write would write anything (settings alone with Keep, or with no override left, writes nothing). */
   canWrite(): boolean;
   /**
    * Why the settings that would be applied cannot be written to this radio (a language its
@@ -115,6 +115,13 @@ export function createAtD890ReviewController(init: AtD890ReviewInit): AtD890Revi
     blockReason,
     canWrite: () =>
       !(init.settingsOnly && state.settingsTicked && state.choice === 'keep') &&
+      // Settings alone with no override left (e.g. after clearing the language) sends nothing.
+      !(
+        init.settingsOnly &&
+        state.settingsTicked &&
+        state.choice === 'apply' &&
+        init.getOverrides().length === 0
+      ) &&
       blockReason() === undefined,
   };
 }
