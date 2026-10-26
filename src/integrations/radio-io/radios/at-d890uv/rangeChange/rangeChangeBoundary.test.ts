@@ -49,18 +49,52 @@ describe('range-change send boundary', () => {
     ).toEqual([]);
   });
 
-  it('within radios/at-d890uv/, only connection.ts and rangeChangeSend.ts reference makeAnytoneDmrWriteFrame', () => {
+  // The frame builder is exported from kit/, so a file anywhere in src could build a LocalInfo frame. Scan all of
+  // src. The allow-list is the definition, its re-export, its own test, the generic D890 connection and the
+  // one-shot range sender (plus this test, which names it).
+  const KIT_CODEC = join('integrations', 'radio-io', 'kit', 'codecs', 'anytoneDmrRw.ts');
+  const KIT_CODEC_TEST = join('integrations', 'radio-io', 'kit', 'codecs', 'anytoneDmrRw.test.ts');
+  const KIT_INDEX = join('integrations', 'radio-io', 'kit', 'index.ts');
+  const FRAME_BUILDER_ALLOWED = new Set([
+    KIT_CODEC,
+    KIT_CODEC_TEST,
+    KIT_INDEX,
+    join(D890_DIR, 'connection.ts'),
+    join(D890_DIR, 'rangeChange', 'rangeChangeSend.ts'),
+    join(D890_DIR, 'rangeChange', 'rangeChangeBoundary.test.ts'),
+  ]);
+
+  it('across all of src, only the allow-list references makeAnytoneDmrWriteFrame', () => {
+    expect(offenders(/makeAnytoneDmrWriteFrame/, (rel) => FRAME_BUILDER_ALLOWED.has(rel))).toEqual(
+      [],
+    );
+  });
+
+  it('across all of src, only the codec, its re-export and tests reference anytoneDmrRwCodec', () => {
+    const allowed = new Set([
+      KIT_CODEC,
+      KIT_CODEC_TEST,
+      KIT_INDEX,
+      join(D890_DIR, 'rangeChange', 'rangeChangeBoundary.test.ts'),
+    ]);
+    expect(offenders(/anytoneDmrRwCodec/, (rel) => allowed.has(rel))).toEqual([]);
+  });
+
+  it('within radios/at-d890uv/, only connection.ts and rangeChangeSend.ts call pipe.write', () => {
     const allowed = new Set([
       join(D890_DIR, 'connection.ts'),
       join(D890_DIR, 'rangeChange', 'rangeChangeSend.ts'),
     ]);
     const bad = files
-      .filter((f) => f.rel.startsWith(D890_DIR + sep) && /makeAnytoneDmrWriteFrame/.test(f.text))
-      .map((f) => f.rel)
       .filter(
-        (rel) =>
-          !allowed.has(rel) && rel !== join(D890_DIR, 'rangeChange', 'rangeChangeBoundary.test.ts'),
-      );
+        (f) =>
+          f.rel.startsWith(D890_DIR + sep) &&
+          !/\.test\.tsx?$/.test(f.rel) &&
+          !f.rel.includes(`${sep}__fixtures__${sep}`) &&
+          /\.write\(/.test(f.text),
+      )
+      .map((f) => f.rel)
+      .filter((rel) => !allowed.has(rel));
     expect(bad).toEqual([]);
   });
 
