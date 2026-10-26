@@ -111,7 +111,10 @@ describe('atD890WriteMemory allow-list', () => {
 
 describe('hard deny before any caller guard', () => {
   const permissive = { transmitGuard: () => {} };
-  const denied = [0x04f8_0000, 0x04f0_0000, 0x04f7_fff0, 0x04ff_fff0, 0x03a3_fbf0, 0x02fa_0010];
+  const denied = [
+    0x04f8_0000, 0x04f0_0000, 0x04f7_fff0, 0x04ff_fff0, 0x04ff_ffe0, 0x04f7_ffe0, 0x04f3_ffe0,
+    0x03a3_fbf0, 0x02fa_0010,
+  ];
   for (const addr of denied) {
     it(`atD890WriteMemory refuses 0x${addr.toString(16)} with a permissive guard`, async () => {
       const pipe = new AtD890ScriptedPipe();

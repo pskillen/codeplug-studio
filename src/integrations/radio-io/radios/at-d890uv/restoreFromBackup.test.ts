@@ -201,9 +201,10 @@ describe('AtD890uvProtocol.restoreFromBackup', () => {
     image.fill(address, 0x20, 0x5a);
     const archive = { manifest: manifest([region('forged', address, 0x20, 'restorable')]), image };
 
-    const failure = await radio
-      .restoreFromBackup(archive, { regionIds: ['forged'] })
-      .then(() => undefined, (e: unknown) => e);
+    const failure = await radio.restoreFromBackup(archive, { regionIds: ['forged'] }).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
     expect(failure).toBeInstanceOf(RadioProtocolError);
     expect((failure as Error).message).toMatch(/LocalInfo \/ calibration/);
     expect(collectAtD890WriteDataAddresses(pipe)).toEqual([]);
