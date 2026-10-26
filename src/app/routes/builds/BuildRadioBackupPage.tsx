@@ -38,6 +38,12 @@ import {
   type RadioBackupSession,
 } from '../../services/radioBackupRestore.ts';
 import { Button, Checkbox, ConfirmModal } from '../../components/v2/index.ts';
+import {
+  backupAtD890Vital,
+  openAtD890VitalZip,
+  type AtD890VitalSession,
+} from '../../services/atD890VitalBackup.ts';
+import AtD890VitalBackupPanel from './AtD890VitalBackupPanel.tsx';
 import Dm32CalibrationBackupPanel from './Dm32CalibrationBackupPanel.tsx';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 
@@ -69,6 +75,7 @@ export default function BuildRadioBackupPage() {
   const [error, setError] = useState<string | null>(null);
   const [backup, setBackup] = useState<RadioBackupSession | null>(null);
   const [selectedRegionIds, setSelectedRegionIds] = useState<ReadonlySet<string>>(new Set());
+  const [vital, setVital] = useState<AtD890VitalSession | null>(null);
   const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
   const [restoreIdentity, setRestoreIdentity] = useState<{
     label: string;
@@ -100,6 +107,7 @@ export default function BuildRadioBackupPage() {
   const serialOk = isRadioSerialSupported();
   const restoreAvailable = descriptorSupportsRestore(descriptor);
   const dm32Model = (descriptor?.modelIds ?? []).some((id) => /dm-?32/i.test(id));
+  const d890Model = (descriptor?.modelIds ?? []).includes('AT-D890UV');
   const warnFactoryReset = dm32Model;
   const dm32PowerCycle =
     dm32Model ||
@@ -168,6 +176,44 @@ export default function BuildRadioBackupPage() {
       setBusy(false);
       setProgress(null);
       abortRef.current = null;
+    }
+  }
+
+  async function handleBackupVital() {
+    setVital(null);
+    beginBusy('vital-read');
+    try {
+      const { session } = await openRadioSessionForEgress(radioEgress!, {
+        forcePortSelection: true,
+        purpose: 'read',
+      });
+      sessionRef.current = session;
+      setPhase('transfer');
+      const result = await backupAtD890Vital(session, {
+        onProgress,
+        signal: abortRef.current!.signal,
+      });
+      await releaseSession();
+      setVital(result);
+      setPhase('done');
+    } catch (err) {
+      setVital(null);
+      setError(err instanceof Error ? err.message : String(err));
+      await releaseSession();
+      setBusy(false);
+      setProgress(null);
+      abortRef.current = null;
+    }
+  }
+
+  async function handleOpenVitalFile(file: File | null) {
+    if (!file) return;
+    setError(null);
+    try {
+      setVital(await openAtD890VitalZip(new Uint8Array(await file.arrayBuffer())));
+    } catch (err) {
+      setVital(null);
+      setError(err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -303,6 +349,17 @@ export default function BuildRadioBackupPage() {
           </Alert>
         ) : null}
         {error ? <Alert color="red">{error}</Alert> : null}
+
+        {d890Model ? (
+          <AtD890VitalBackupPanel
+            busy={busy}
+            serialOk={serialOk}
+            session={vital}
+            onBackup={() => void handleBackupVital()}
+            onOpenFile={(f) => void handleOpenVitalFile(f)}
+            onClear={() => setVital(null)}
+          />
+        ) : null}
 
         {!backup ? (
           <FormSection title="Backup">

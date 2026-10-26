@@ -432,6 +432,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
   private cache: AtD890DownloadCache | null = null;
   private programming = false;
   private readBlockSize = AT_D890_BLOCK_SIZE;
+  private identRaw: Uint8Array | null = null;
   private lastUploadSentinelBefore: AtD890SentinelSnapshot | undefined;
   private lastUploadStagingSnapshot: AtD890WriteStagingSnapshot | undefined;
   private uploadBankIntent: AtD890UploadBankIntent = {
@@ -441,6 +442,11 @@ export class AtD890uvProtocol implements CloneImageRadio {
 
   getNegotiatedReadBlockSize(): number {
     return this.readBlockSize;
+  }
+
+  /** The 16 ident bytes from the last connect, or null before one. Byte 8 is the variant. */
+  getIdentRaw(): Uint8Array | null {
+    return this.identRaw ? this.identRaw.slice() : null;
   }
 
   getDownloadCache(): AtD890DownloadCache | null {
@@ -480,6 +486,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
     await atD890EnterProgram(pipe, opts?.signal);
     this.programming = true;
     const ident = await atD890ProbeIdent(pipe, opts?.signal);
+    this.identRaw = ident.raw.slice();
     this.cache.modelString = ident.model;
     this.cache.firmware = ident.version;
 

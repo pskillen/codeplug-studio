@@ -22,20 +22,20 @@ Kit codec for Anytone DMR R/W is shipped in `src/integrations/radio-io/kit/codec
 
 ## Identity
 
-| Item          | Value                                                                                                                                    |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Baud          | **921600** (anytone-cps `SerialDevice` default)                                                                                          |
-| Enter         | ASCII `PROGRAM`                                                                                                                          |
-| Enter reply   | ASCII `QX` + `0x06`. A lone `0x00` fails this session (the shared kit still accepts it for a future family caller)                       |
-| Version probe | `0x02` after enter                                                                                                                       |
-| Exit          | ASCII `END`                                                                                                                              |
-| Read block    | Negotiated on Connect up to **`0xf0`** (240); falls back to **`0x10`** ([#793](https://github.com/pskillen/codeplug-studio/issues/793))  |
-| Write block   | **`0x10`** (16) — do not widen; oversized write frames desync the radio ([#793](https://github.com/pskillen/codeplug-studio/issues/793)) |
-| Alignment     | Host read/write spans must be a multiple of **16**                                                                                       |
-| Read opcode   | ASCII `'R'` (`0x52`)                                                                                                                     |
-| Write opcode  | ASCII `'W'` (`0x57`)                                                                                                                     |
-| Write ACK     | Trailing `0x06` on command; radio replies with `0x06`                                                                                    |
-| Safe-skip     | Studio skips **`0x2fa0010`** (anytone-cps lore; the official CPS encoder we read does not)                                               |
+| Item          | Value                                                                                                                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Baud          | **921600** (anytone-cps `SerialDevice` default)                                                                                                                                             |
+| Enter         | ASCII `PROGRAM`                                                                                                                                                                             |
+| Enter reply   | ASCII `QX` + `0x06`. A lone `0x00` fails this session (the shared kit still accepts it for a future family caller)                                                                          |
+| Version probe | `0x02` after enter                                                                                                                                                                          |
+| Exit          | ASCII `END`. It **reboots the radio** (USB re-enumerates after 20 s or more). Not sent when LocalInfo stun/kill flags are set, see [vital-data backup](backup-restore.md#vital-data-backup) |
+| Read block    | Negotiated on Connect up to **`0xf0`** (240); falls back to **`0x10`** ([#793](https://github.com/pskillen/codeplug-studio/issues/793))                                                     |
+| Write block   | **`0x10`** (16) — do not widen; oversized write frames desync the radio ([#793](https://github.com/pskillen/codeplug-studio/issues/793))                                                    |
+| Alignment     | Host read/write spans must be a multiple of **16**                                                                                                                                          |
+| Read opcode   | ASCII `'R'` (`0x52`)                                                                                                                                                                        |
+| Write opcode  | ASCII `'W'` (`0x57`)                                                                                                                                                                        |
+| Write ACK     | Trailing `0x06` on command; radio replies with `0x06`                                                                                                                                       |
+| Safe-skip     | Studio skips **`0x2fa0010`** (anytone-cps lore; the official CPS encoder we read does not)                                                                                                  |
 
 ## Model allow-list (ident response)
 

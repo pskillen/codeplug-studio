@@ -1,4 +1,5 @@
 import { unzipSync, strFromU8 } from 'fflate';
+import { AT_D890_VITAL_KIND } from '../radios/at-d890uv/vitalBackupZip.ts';
 import {
   RadioBackupError,
   validateRadioBackupManifest,
@@ -34,6 +35,16 @@ export function parseRadioBackupZip(bytes: Uint8Array): ParsedRadioBackupZip {
     parsedJson = JSON.parse(strFromU8(manifestBytes)) as unknown;
   } catch {
     throw new RadioBackupError('Radio backup manifest.json is not valid JSON.');
+  }
+
+  if (
+    typeof parsedJson === 'object' &&
+    parsedJson !== null &&
+    (parsedJson as { kind?: unknown }).kind === AT_D890_VITAL_KIND
+  ) {
+    throw new RadioBackupError(
+      'This is an AT-D890UV vital-data file, not a codeplug backup. Open it with Open vital data file.',
+    );
   }
 
   const manifest = validateRadioBackupManifest(parsedJson);
