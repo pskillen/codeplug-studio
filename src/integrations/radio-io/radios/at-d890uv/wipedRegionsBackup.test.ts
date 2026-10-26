@@ -53,6 +53,11 @@ function fillByte(i: number): number {
   return 0x60 + i;
 }
 
+/** Non-`FF` ramp byte for extent `i` at offset `off`, so a shifted or truncated copy is caught. */
+function rampByte(i: number, off: number): number {
+  return 0x20 + ((i * 31 + off) % 0x80);
+}
+
 /** Scripted radio memory: zeroed bitmaps, and non-`FF` bytes in every wiped extent. */
 function radioMemory(): Map<number, Uint8Array> {
   const m = new Map<number, Uint8Array>([
@@ -144,6 +149,9 @@ describe('AT-D890 backup of the extents a range change wipes', () => {
 
       const channelSet = new Uint8Array(0x200);
       setBitmapBit(channelSet, 0, true);
+      // A real radio's bitmap also has the VFO A/B slots (4000/4001) set.
+      setBitmapBit(channelSet, 4000, true);
+      setBitmapBit(channelSet, 4001, true);
       const primary = new Uint8Array(0x40);
       primary.set(encodeBcdFrequencyHz(145_520_000), 0);
       const blocks = new Map<number, Uint8Array>([
@@ -153,6 +161,10 @@ describe('AT-D890 backup of the extents a range change wipes', () => {
         [channelSecondaryAddress(0), new Uint8Array(0x40)],
         [AT_D890_SAFE_SKIP_WRITE_ADDR, new Uint8Array(0x10)],
       ]);
+      for (const slot of [4000, 4001]) {
+        blocks.set(channelPrimaryAddress(slot), new Uint8Array(0x40).fill(0x77));
+        blocks.set(channelSecondaryAddress(slot), new Uint8Array(0x40).fill(0x78));
+      }
       if (withWiped) {
         WIPED.forEach((w, i) => blocks.set(w.start, new Uint8Array(w.length).fill(fillByte(i))));
       }
@@ -208,7 +220,9 @@ describe('AT-D890 Restore of the wiped extents', () => {
     enableAtD890AutoWriteAck(pipe);
 
     const image = createMemoryMap(AT_D890_MAP_SIZE);
-    WIPED.forEach((w, i) => image.fill(w.start, w.length, fillByte(i)));
+    WIPED.forEach((w, i) => {
+      for (let off = 0; off < w.length; off++) image.fill(w.start + off, 1, rampByte(i, off));
+    });
     image.fill(D890_MAP.OptionalSettingsMain, D890_MAP.OptionalSettingsMainLength, 0x41);
     await radio.restoreFromBackup({ manifest: manifestFor(regionsIn), image }, { regionIds: ids });
     return pipe;
@@ -238,8 +252,16 @@ describe('AT-D890 Restore of the wiped extents', () => {
     );
     const written = collectAtD890WriteDataAddresses(pipe);
     WIPED.forEach((w, i) => {
-      expect(written, w.id).toContain(w.start);
-      expect(writePayloadAt(pipe, w.start)?.[0], w.id).toBe(fillByte(i));
+      // Every 16-byte block of the extent is sent, with the zip's bytes at that offset.
+      for (let off = 0; off < w.length; off += 16) {
+        const addr = w.start + off;
+        expect(written, `${w.id}+${off}`).toContain(addr);
+        const payload = writePayloadAt(pipe, addr);
+        expect(payload, `${w.id}+${off}`).toBeDefined();
+        expect(Array.from(payload!.subarray(0, 16)), `${w.id}+${off}`).toEqual(
+          Array.from({ length: 16 }, (_, k) => rampByte(i, off + k)),
+        );
+      }
     });
   });
 

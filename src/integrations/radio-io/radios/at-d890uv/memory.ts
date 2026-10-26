@@ -285,8 +285,10 @@ export function clearAmAirBankBlocksFromCache(cache: AtD890DownloadCache): void 
 }
 
 /**
- * Drop cached VFO A/B channel blocks (slots 4000/4001). Read captures them for Backup, but a
- * Write never models them, and staging them would rewrite the `0x01F80000` erase unit.
+ * Drop cached VFO A/B channel blocks (slots 4000/4001). Read captures them for Backup (through
+ * the channel bitmap, or the explicit VFO read), but a Write never models them, and staging
+ * them would rewrite the `0x01F80000` erase unit. The set-bit restage loop in
+ * {@link applyAtD890WriteImageToCache} skips those slots too.
  */
 export function clearVfoChannelBlocksFromCache(cache: AtD890DownloadCache): void {
   const base = D890_MAP.VfoChannels;
@@ -421,6 +423,10 @@ export function applyAtD890WriteImageToCache(
 
   const channelSet = image.get(D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES);
   for (const idx of listSetBits(channelSet)) {
+    // Slots at or above MAX_CHANNELS are VFO A/B (4000/4001). A real radio's bitmap has those
+    // bits set, but Studio does not model them, so never restage them (it would rewrite the
+    // 0x01F80000 unit with stale Read-time bytes).
+    if (idx >= AT_D890_LIMITS.MAX_CHANNELS) continue;
     putWritableCacheBytes(
       cache,
       channelPrimaryAddress(idx),
