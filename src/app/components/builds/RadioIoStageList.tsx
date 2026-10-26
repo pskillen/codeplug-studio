@@ -59,8 +59,8 @@ export default function RadioIoStageList({
   startedAt,
   hideOverall = false,
 }: RadioIoStageListProps) {
-  const mountedAt = useRef(Date.now());
-  const start = startedAt ?? mountedAt.current;
+  const [mountedAt] = useState(() => Date.now());
+  const start = startedAt ?? mountedAt;
   const [tracker, setTracker] = useState(EMPTY_TRACKER);
   const [now, setNow] = useState(() => Date.now());
   const activeRef = useRef<HTMLLIElement | null>(null);
@@ -68,6 +68,7 @@ export default function RadioIoStageList({
   // Fold each progress event into the tracker.
   useEffect(() => {
     const t = Date.now();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- folds an external event stream (progress) into the tracker
     setTracker((prev) => advanceTracker(prev, rows, progress, t));
     setNow(t);
   }, [rows, progress]);
