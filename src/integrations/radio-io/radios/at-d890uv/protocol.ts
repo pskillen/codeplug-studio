@@ -66,7 +66,7 @@ import {
   overlayModelledChunksOntoUnit,
   preWriteChunksFromFreshUnits,
 } from './sparseEraseRmw.ts';
-import type { AtD890SettingsPatch } from './settingsFields.ts';
+import type { AtD890RadioSettingsSnapshot, AtD890SettingsPatch } from './settingsFields.ts';
 import {
   applyAtD890SettingsPatchesToUnit,
   assertAtD890SentinelSpansNotErased,
@@ -499,6 +499,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
   private programming = false;
   private readBlockSize = AT_D890_BLOCK_SIZE;
   private identRaw: Uint8Array | null = null;
+  private identBandCode = 0;
   private lastUploadSentinelBefore: AtD890SentinelSnapshot | undefined;
   private lastUploadStagingSnapshot: AtD890WriteStagingSnapshot | undefined;
   private lastUploadSettingsPatches: readonly AtD890SettingsPatch[] | undefined;
@@ -556,6 +557,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
     this.identRaw = ident.raw.slice();
     this.cache.modelString = ident.model;
     this.cache.firmware = ident.version;
+    this.identBandCode = ident.bandCode;
 
     try {
       const { bestBlockSize } = await negotiateAtD890ReadBlockSize(pipe, D890_MAP.LocalInfo, {
@@ -697,6 +699,56 @@ export class AtD890uvProtocol implements CloneImageRadio {
       preUploadCache,
       opts,
     });
+  }
+
+  /**
+   * Settings-only Write: apply `patches` to the fresh read of the settings erase unit and
+   * transmit that unit's non-`0xff` blocks, nothing else. Goes through the same RMW core as
+   * {@link upload}: sentinel and LocalInfo plausibility, marker filter, transmit fence limited to
+   * erase unit `0x3500000`, staging snapshot, and the no-`END` failure path. Needs no Download.
+   */
+  async uploadSettingsPatches(
+    patches: readonly AtD890SettingsPatch[],
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
+    if (!this.pipe) {
+      throw new RadioProtocolError('AT-D890UV not connected');
+    }
+    if (patches.length === 0) {
+      throw new RadioProtocolError('AT-D890UV settings upload has no patches');
+    }
+    if (!this.programming) {
+      await atD890EnterProgram(this.pipe, opts.signal);
+      this.programming = true;
+    }
+    await this.rmwStageAndTransmit({
+      modelledChunks: [],
+      touchedUnits: [eraseUnitBaseFor(D890_MAP.OptionalSettingsMain)],
+      settingsPatches: patches,
+      ownsLocationUnit: false,
+      opts,
+    });
+  }
+
+  /** Cheap read of the settings spans (W9): no other reads, no cache changes. */
+  async readSettingsSnapshot(opts?: {
+    signal?: AbortSignal;
+  }): Promise<AtD890RadioSettingsSnapshot> {
+    const pipe = this.pipe;
+    if (!pipe) {
+      throw new RadioProtocolError('AT-D890UV not connected');
+    }
+    if (!this.programming) {
+      await atD890EnterProgram(pipe, opts?.signal);
+      this.programming = true;
+    }
+    const read = (address: number, length: number) =>
+      atD890ReadMemory(pipe, address, length, opts?.signal, this.readBlockSize);
+    const localInfo = await read(D890_MAP.LocalInfo, D890_MAP.LocalInfoLength);
+    const main = await read(D890_MAP.OptionalSettingsMain, D890_MAP.OptionalSettingsMainLength);
+    const ext = await read(D890_MAP.OptionalSettingsExt, D890_MAP.OptionalSettingsExtLength);
+    const masterId = await read(D890_MAP.MasterIdData, D890_MAP.MasterIdLength);
+    return { localInfo, main, ext, masterId, bandCode: this.identBandCode };
   }
 
   /**

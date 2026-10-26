@@ -28,6 +28,7 @@ import { encodeBcdFrequencyHz } from './bcd.ts';
 import { setBitmapBit } from './bitmap.ts';
 import { channelPrimaryAddress, channelSecondaryAddress } from './memory.ts';
 import { encodeAtD890WriteImageFromDownloadCache } from './hydration.ts';
+import { resolveAtD890SettingsPatches } from './settingsFields.ts';
 
 import { isAtD890EraseUnitBookkeepingAddress, listTouchedEraseUnits } from './eraseUnits.ts';
 
@@ -276,7 +277,7 @@ describe('AtD890uvProtocol', () => {
     expect(radio.takeUploadSettingsPatches()).toBeUndefined();
   });
 
-  it('refuses a session override of a key the step-key switch already sets', () => {
+  it('throws before any frame when the step-key switch and an override patch the same field', () => {
     expect(() =>
       atD890UploadBankIntentFromOrganisation({
         assignMm9pdyStepKeys: true,
@@ -338,6 +339,111 @@ describe('AtD890uvProtocol', () => {
     const result = await radio.verifySentinelRegionsAgainst(before, { settingsPatches: patches });
     expect(result.ok).toBe(false);
   }, 20_000);
+
+  describe('uploadSettingsPatches', () => {
+    const patches = resolveAtD890SettingsPatches([{ fieldId: 'keyShortP1', value: 9 }], 'stock');
+
+    function settingsUnit(): Uint8Array {
+      const settings = makeAtD890EraseUnitBuffer();
+      for (let i = 0; i < 0x160; i++) settings[i] = (i * 3 + 1) & 0xff;
+      settings.set([0x41, 0x42], 0x900);
+      settings[0x1280] = 0x33;
+      settings.fill(0x5a, 0x200, 0x210);
+      seedAtD890EraseUnitBookkeepingMarkers(settings);
+      return settings;
+    }
+
+    async function connected(memory: Map<number, Uint8Array>) {
+      const pipe = new AtD890ScriptedPipe();
+      scriptAtD890ConnectWithNegotiation(pipe);
+      const radio = new AtD890uvProtocol();
+      await radio.connect(pipe);
+      scriptAtD890UploadReadResponder(pipe, memory);
+      enableAtD890AutoWriteAck(pipe);
+      return { pipe, radio };
+    }
+
+    it('transmits only the settings erase unit, no markers, with just the patched bytes changed', async () => {
+      const settings = settingsUnit();
+      const { pipe, radio } = await connected(
+        new Map([
+          [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
+          [0x350_0000, settings],
+        ]),
+      );
+
+      await radio.uploadSettingsPatches(patches, {});
+
+      const frames = pipe.writes.filter((w) => w[0] === 0x57);
+      expect(frames.length).toBeGreaterThan(10);
+      const expected = settings.slice();
+      expected[0x13] = 9;
+      for (const w of frames) {
+        const address = ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0;
+        expect(address).toBeGreaterThanOrEqual(0x350_0000);
+        expect(address).toBeLessThan(0x354_0000);
+        expect(isAtD890EraseUnitBookkeepingAddress(address)).toBe(false);
+        const off = address - 0x350_0000;
+        expect([...w.subarray(6, 22)]).toEqual([...expected.subarray(off, off + 16)]);
+      }
+      const reads = collectAtD890ReadRequestAddresses(pipe);
+      expect(reads.some((a) => a >= 0x100_0000 && a < 0x348_0000)).toBe(false);
+      expect(radio.takeUploadSettingsPatches()?.map((p) => p.fieldId)).toEqual(['keyShortP1']);
+      expect(radio.takeUploadSentinelSnapshot()).toBeDefined();
+      expect(radio.takeUploadStagingSnapshot()?.chunks.length).toBe(frames.length);
+    }, 20_000);
+
+    it('refuses an all-0xff settings unit before any frame and sends no END', async () => {
+      const { pipe, radio } = await connected(
+        new Map([
+          [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
+          [0x350_0000, makeAtD890EraseUnitBuffer()],
+        ]),
+      );
+
+      await expect(radio.uploadSettingsPatches(patches, {})).rejects.toBeInstanceOf(
+        RadioProtocolError,
+      );
+      expect(indexOfFirstAtD890WriteFrame(pipe)).toBe(-1);
+      await radio.disconnect();
+      expect(pipe.writes.some((w) => new TextDecoder().decode(w) === 'END')).toBe(false);
+      expect(radio.takeUploadSettingsPatches()).toBeUndefined();
+    }, 20_000);
+
+    it('refuses an empty patch list', async () => {
+      const { radio } = await connected(new Map());
+      await expect(radio.uploadSettingsPatches([], {})).rejects.toBeInstanceOf(RadioProtocolError);
+    });
+
+    it('readSettingsSnapshot reads only the four settings spans and reports the ident band', async () => {
+      const settings = settingsUnit();
+      const { pipe, radio } = await connected(
+        new Map([
+          [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
+          [0x350_0000, settings],
+          [D890_MAP.MasterIdData, new Uint8Array(D890_MAP.MasterIdLength).fill(0x07)],
+        ]),
+      );
+      const before = collectAtD890ReadRequestAddresses(pipe).length;
+
+      const snap = await radio.readSettingsSnapshot();
+
+      expect(snap.main).toEqual(settings.subarray(0, 0x200));
+      expect(snap.ext).toEqual(settings.subarray(0x900, 0x960));
+      expect(snap.masterId).toEqual(new Uint8Array(0x40).fill(0x07));
+      expect(snap.localInfo.length).toBe(D890_MAP.LocalInfoLength);
+      expect(snap.bandCode).toBe(0x03);
+      const reads = collectAtD890ReadRequestAddresses(pipe).slice(before);
+      for (const a of reads) {
+        const inSpan =
+          (a >= D890_MAP.LocalInfo && a < D890_MAP.LocalInfo + 0x100) ||
+          (a >= 0x350_0000 && a < 0x350_0200) ||
+          (a >= 0x350_0900 && a < 0x350_0960) ||
+          (a >= D890_MAP.MasterIdData && a < D890_MAP.MasterIdData + 0x40);
+        expect(inSpan).toBe(true);
+      }
+    });
+  });
 
   it('never transmits the per-unit flash bookkeeping blocks', async () => {
     // E7: `+0x3fbf0` and `+0x3fff0` are radio-managed sector metadata, confirmed on

@@ -47,6 +47,20 @@ export interface AtD890SettingsPatch {
   readonly mask: Uint8Array;
 }
 
+/** What a cheap settings read returns: just the spans the confirm and the settings page need. */
+export interface AtD890RadioSettingsSnapshot {
+  /** LocalInfo, `0x100` bytes (serial, band code). */
+  readonly localInfo: Uint8Array;
+  /** Optional settings main record, `0x200` bytes. */
+  readonly main: Uint8Array;
+  /** Power-on lines and password block, `0x60` bytes. */
+  readonly ext: Uint8Array;
+  /** Master radio ID record, `0x40` bytes. */
+  readonly masterId: Uint8Array;
+  /** Band code from the connection ident (byte 8). */
+  readonly bandCode: number;
+}
+
 /** Inclusive-start, exclusive-end span a spec may cover. */
 interface PermittedSpan {
   readonly start: number;
