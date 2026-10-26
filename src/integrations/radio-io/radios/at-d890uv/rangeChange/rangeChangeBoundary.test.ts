@@ -38,9 +38,10 @@ describe('range-change send boundary', () => {
   });
 
   it('only rangeChange/ files reference rangeChangeSend', () => {
-    expect(offenders(/rangeChangeSend/, (rel) => rel.startsWith(RANGE_CHANGE_DIR + sep))).toEqual(
-      [],
-    );
+    // writeFrameCallers.test.ts names the sender in its own allow-list (#1410's scan).
+    const allowed = (rel: string) =>
+      rel.startsWith(RANGE_CHANGE_DIR + sep) || rel === join(D890_DIR, 'writeFrameCallers.test.ts');
+    expect(offenders(/rangeChangeSend/, allowed)).toEqual([]);
   });
 
   it('only rangeChange/ files reference AT_D890_RANGE_CHANGE_EXTENT', () => {
@@ -62,6 +63,7 @@ describe('range-change send boundary', () => {
     join(D890_DIR, 'connection.ts'),
     join(D890_DIR, 'rangeChange', 'rangeChangeSend.ts'),
     join(D890_DIR, 'rangeChange', 'rangeChangeBoundary.test.ts'),
+    join(D890_DIR, 'writeFrameCallers.test.ts'),
   ]);
 
   it('across all of src, only the allow-list references makeAnytoneDmrWriteFrame', () => {
@@ -76,6 +78,7 @@ describe('range-change send boundary', () => {
       KIT_CODEC_TEST,
       KIT_INDEX,
       join(D890_DIR, 'rangeChange', 'rangeChangeBoundary.test.ts'),
+      join(D890_DIR, 'writeFrameCallers.test.ts'),
     ]);
     expect(offenders(/anytoneDmrRwCodec/, (rel) => allowed.has(rel))).toEqual([]);
   });

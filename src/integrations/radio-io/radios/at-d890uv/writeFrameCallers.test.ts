@@ -19,9 +19,12 @@ const FRAME_BUILDER_DEFINITION_AND_REEXPORT = [
 /**
  * Production files allowed to call the D890 write-frame builder. Add a single-purpose sender
  * here only with a review of why it may bypass the generic hard deny. The one-shot LocalInfo
- * range-change sender (#1369, under `at-d890uv/rangeChange/`) is the expected future entry.
+ * range-change sender (#1369) validates its own single frame; see `rangeChangeBoundary.test.ts`.
  */
-const ALLOWED_CALLERS = ['integrations/radio-io/radios/at-d890uv/connection.ts'];
+const ALLOWED_CALLERS = [
+  'integrations/radio-io/radios/at-d890uv/connection.ts',
+  'integrations/radio-io/radios/at-d890uv/rangeChange/rangeChangeSend.ts',
+];
 
 function listProductionSources(dir: string): string[] {
   const out: string[] = [];
