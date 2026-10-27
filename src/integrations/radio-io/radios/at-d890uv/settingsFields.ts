@@ -177,6 +177,24 @@ export function assertAtD890SettingsPatchesPermitted(
   for (const patch of patches) assertAtD890SettingsPatchPermitted(patch);
 }
 
+/** Optional-settings `+0x154`, CPS "Reset Digital Protocol" (0 Off, 1 DMR, 2 NXDN). */
+export const AT_D890_RESET_DIGITAL_PROTOCOL_ADDRESS = MAIN + 0x154;
+
+/**
+ * Patch writing Reset Digital Protocol = Off. Not a registry field: only the MM9PDY Write session
+ * adds it, when the radio reports NXDN enabled; the settings model never offers it.
+ */
+export function atD890ResetDigitalProtocolOffPatch(): AtD890SettingsPatch {
+  const patch: AtD890SettingsPatch = {
+    fieldId: 'resetDigitalProtocol',
+    address: AT_D890_RESET_DIGITAL_PROTOCOL_ADDRESS,
+    bytes: new Uint8Array([0]),
+    mask: new Uint8Array([0xff]),
+  };
+  assertAtD890SettingsPatchPermitted(patch);
+  return patch;
+}
+
 const BOTH_TARGETS: readonly AtD890SettingsTarget[] = ['stock', 'mm9pdy'];
 
 function refuse(id: string, value: unknown, why: string): never {

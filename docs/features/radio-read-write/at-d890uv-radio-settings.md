@@ -142,4 +142,4 @@ Emulator evidence for the transmitted bytes is recorded in the PR; it is not a s
 
 ## Digital protocol and NXDN
 
-Studio offers no Digital protocol or NXDN mic gain setting. A Write leaves `+0x152` and `+0x153` as read (a test pins this); the protocol is switched on the radio. Whether a Write sends NXDN channel fields depends on the radio: see [NXDN channel fields](../../reference/radios/anytone/at-d890uv/nxdn.md).
+Studio offers no Digital protocol or NXDN mic gain setting. A Write leaves `+0x152` and `+0x153` as read (a test pins this); the protocol is switched on the radio. The one exception is Reset Digital Protocol (`+0x154`): on an MM9PDY radio that reports NXDN enabled, a Write sets it to Off so the menu choice survives every boot. Whether a Write sends NXDN channel fields depends on the radio: see [NXDN channel fields](../../reference/radios/anytone/at-d890uv/nxdn.md).

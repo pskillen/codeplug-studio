@@ -9,6 +9,7 @@ import {
 } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
+import { atD890UploadBankIntentFromOrganisation } from './memory.ts';
 import {
   AT_D890_NEVER_PATCH_MAIN_OFFSETS,
   AT_D890_SETTINGS_FIELDS,
@@ -416,7 +417,7 @@ describe('AT-D890 v1 settings fields', () => {
     expect(unit[0x110]).toBe(0xaa);
   });
 
-  it('leaves the digital protocol byte +0x152, NXDN mic gain +0x153 and Reset Digital Protocol +0x154 as read (NXDN is switched on the radio)', () => {
+  it('leaves the digital protocol byte +0x152, NXDN mic gain +0x153 and Reset Digital Protocol +0x154 as read when the radio does not report NXDN enabled (the Write session adds the +0x154 = Off patch only then)', () => {
     for (const spec of AT_D890_SETTINGS_FIELDS.values()) {
       const end = spec.address + spec.length;
       for (const off of [0x152, 0x153, 0x154]) {
@@ -443,6 +444,21 @@ describe('AT-D890 v1 settings fields', () => {
     expect(unit[0x152]).toBe(1);
     expect(unit[0x153]).toBe(3);
     expect(unit[0x154]).toBe(2);
+  });
+
+  it('the +0x154 = Off patch is added only for the MM9PDY target with the session flag', () => {
+    const on = atD890UploadBankIntentFromOrganisation({
+      atD890SettingsTarget: 'mm9pdy',
+      atD890ResetDigitalProtocolOff: true,
+    });
+    expect(on.settingsPatches?.map((p) => [p.address, [...p.bytes]])).toEqual([[0x3500154, [0]]]);
+    for (const organisation of [
+      { atD890SettingsTarget: 'mm9pdy' as const },
+      { atD890SettingsTarget: 'stock' as const, atD890ResetDigitalProtocolOff: true },
+      { atD890ResetDigitalProtocolOff: true },
+    ]) {
+      expect(atD890UploadBankIntentFromOrganisation(organisation).settingsPatches).toBeUndefined();
+    }
   });
 
   it('never trips the erased-span guard for a valid encode, empty lines included', () => {

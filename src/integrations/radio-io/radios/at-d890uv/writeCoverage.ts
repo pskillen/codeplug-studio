@@ -57,7 +57,11 @@ export const AT_D890_MM9PDY_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow
   AT_D890_WRITE_COVERAGE_ROWS.map((row) => {
     if (row.label === 'Channel positions (MM9PDY firmware)') return { ...row, status: 'written' };
     if (row.label === 'NXDN channel settings') {
-      return { ...row, status: 'written', note: 'Updated when the radio reports NXDN enabled' };
+      return {
+        ...row,
+        status: 'written',
+        note: 'Updated when the radio reports NXDN enabled; Reset Digital Protocol is then set to Off',
+      };
     }
     return row;
   });

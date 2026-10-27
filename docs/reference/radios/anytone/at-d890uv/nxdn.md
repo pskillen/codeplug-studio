@@ -16,7 +16,9 @@ Anything else (blank, bad sum, other version, byte 21 not 1, no cache) counts as
 
 Offline exports and the stock target never write NXDN. The stock target has no `nxdn` mode in its RF capabilities, so an NXDN-only channel is ineligible there. MM9PDY lists `nxdn` on 136–174 and 400–480 MHz.
 
-There is no export setting. Studio never writes `+0x152` (digital protocol), `+0x153` (NXDN mic gain) or `+0x154` (Reset Digital Protocol) in optional settings; the protocol is switched on the radio, and a Write leaves all three as read. On an NXDN-enabled MM9PDY radio the firmware reads `+0x154` at boot and can set the protocol from it, so Studio leaving it as read matters: a Write does not change which protocol the radio boots in.
+There is no export setting. Studio never writes `+0x152` (digital protocol) or `+0x153` (NXDN mic gain); the protocol is switched on the radio, and a Write leaves both as read.
+
+`+0x154` (Reset Digital Protocol: 0 Off, 1 DMR, 2 NXDN) is different. On an NXDN-enabled MM9PDY radio the firmware reads it at boot and can set the protocol from it, so a non-zero value left by the vendor CPS would override the radio-menu choice at every power-on. When the radio reports NXDN enabled (the same check as above), a Web Serial Write on the MM9PDY target sets `+0x154` to 0 (Off). If the value it replaced was non-zero, the Write summary says "Reset Digital Protocol set to Off". On the stock target, on a radio that does not report NXDN enabled, and in offline exports, `+0x154` stays as read. The settings model has no field for it.
 
 ## Channel bytes `0x66`–`0x6E`
 

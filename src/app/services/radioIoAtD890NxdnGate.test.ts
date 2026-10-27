@@ -20,6 +20,7 @@ import {
   makeAtD890EraseUnitBuffer,
   scriptAtD890ConnectWithNegotiation,
   scriptAtD890UploadReadResponder,
+  writePayloadAt,
 } from '@integrations/radio-io/radios/at-d890uv/__fixtures__/scriptedPipe.ts';
 import { encodeBcdFrequencyHz } from '@integrations/radio-io/radios/at-d890uv/bcd.ts';
 import { setBitmapBit } from '@integrations/radio-io/radios/at-d890uv/bitmap.ts';
@@ -33,6 +34,7 @@ import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protoc
 import type { RadioSession } from '@integrations/radio-io/types.ts';
 import {
   ATD890_NXDN_NOT_WRITTEN_NOTICE,
+  ATD890_RESET_PROTOCOL_OFF_NOTICE,
   closeRadioSession,
   prepareRadioWriteImage,
   uploadPreparedRadioWrite,
@@ -91,6 +93,7 @@ const library: LibrarySlice = {
   aprsConfiguration: null,
 };
 const { build, egress } = newRadioBuildForProfile(P, 'radio-io-at-d890uv-mm9pdy');
+const stockTarget = newRadioBuildForProfile(P, 'radio-io-at-d890uv');
 
 /** A 32-byte MM9PDY settings-store record. */
 function storeRecord(enabled: number, goodSum = true): Uint8Array {
@@ -105,7 +108,7 @@ function storeRecord(enabled: number, goodSum = true): Uint8Array {
   return r;
 }
 
-async function d890Session(store: Uint8Array | null): Promise<RadioSession> {
+async function d890Session(store: Uint8Array | null, resetProtocol = 0): Promise<RadioSession> {
   const pipe = new AtD890ScriptedPipe();
   scriptAtD890ConnectWithNegotiation(pipe);
   const radio = new AtD890uvProtocol();
@@ -113,9 +116,14 @@ async function d890Session(store: Uint8Array | null): Promise<RadioSession> {
   const unit348 = makeAtD890EraseUnitBuffer();
   unit348[D890_MAP.AlarmBitmap - 0x348_0000] = 0xab;
   unit348[D890_MAP.AlarmData - 0x348_0000] = 0xcd;
+  // The optional-settings unit as read from the radio: +0x154 is Reset Digital Protocol.
+  const unit350 = makeAtD890EraseUnitBuffer();
+  unit350.fill(0, 0, 0x1400); // plausible sentinel spans (main, ext, APRS)
+  unit350[0x154] = resetProtocol;
   scriptAtD890UploadReadResponder(
     pipe,
     new Map([
+      [0x350_0000, unit350],
       [D890_MAP.LocalInfo, localInfoWithSerial(SERIAL)],
       [0x100_0000, makeAtD890EraseUnitBuffer()],
       [0x348_0000, unit348],
@@ -136,6 +144,10 @@ async function d890Session(store: Uint8Array | null): Promise<RadioSession> {
     blocks.set(D890_MAP.SettingsStore, store.slice(0, 16));
     blocks.set(D890_MAP.SettingsStore + 16, store.slice(16, 32));
   }
+  // The in-session read holds the optional-settings block with Reset Digital Protocol (+0x154).
+  const resetBlock = new Uint8Array(16);
+  resetBlock[0x154 % 16] = resetProtocol;
+  blocks.set(0x350_0150, resetBlock);
   radio.seedDownloadCache({ blocks });
   enableAtD890AutoWriteAck(pipe);
   return { descriptor: AT_D890UV_DESCRIPTOR, pipe, radio };
@@ -151,11 +163,15 @@ function slotNxdnBytes(session: RadioSession, slot: number): number[] {
   return [...readCombinedChannelRecord(image!, slot).subarray(0x66, 0x6f)];
 }
 
-async function run(store: Uint8Array | null) {
-  const prepared = await prepareRadioWriteImage(build, egress, library);
-  const session = await d890Session(store);
+async function run(
+  store: Uint8Array | null,
+  opts: { resetProtocol?: number; stock?: boolean } = {},
+) {
+  const target = opts.stock ? stockTarget : { build, egress };
+  const prepared = await prepareRadioWriteImage(target.build, target.egress, library);
+  const session = await d890Session(store, opts.resetProtocol);
   let seen: BeforeTransmitContext | undefined;
-  const result = await uploadPreparedRadioWrite(session, egress, prepared.image, {
+  const result = await uploadPreparedRadioWrite(session, target.egress, prepared.image, {
     organisation: prepared.organisation,
     channels: prepared.channels,
     ...(prepared.nxdn ? { nxdn: prepared.nxdn, warnings: prepared.warnings } : {}),
@@ -163,8 +179,9 @@ async function run(store: Uint8Array | null) {
       seen = ctx;
     },
   });
+  const resetByte = writePayloadAt(session.pipe as AtD890ScriptedPipe, 0x350_0150)?.[4];
   await closeRadioSession(session);
-  return { prepared, result, seen: seen!, session };
+  return { prepared, result, seen: seen!, session, resetByte };
 }
 
 const text = (ws: readonly Parameters<typeof formatExportWarning>[0][]) =>
@@ -219,4 +236,37 @@ describe('AT-D890 MM9PDY NXDN gate on Write', () => {
       expect(slotNxdnBytes(session, 0)).toEqual(new Array(9).fill(0));
     });
   }
+
+  describe('Reset Digital Protocol (+0x154)', () => {
+    it('radio reports NXDN enabled: a read value of 2 is written as 0, with one line in the summary', async () => {
+      const { resetByte, result } = await run(storeRecord(1), { resetProtocol: 2 });
+      expect(resetByte).toBe(0);
+      expect(text(result.warnings ?? [])).toContain(ATD890_RESET_PROTOCOL_OFF_NOTICE);
+    });
+
+    it('radio reports NXDN enabled and the value is already 0: no line in the summary', async () => {
+      const { resetByte, result } = await run(storeRecord(1), { resetProtocol: 0 });
+      // The byte is unchanged, so its block may not be sent at all.
+      expect(resetByte ?? 0).toBe(0);
+      expect(text(result.warnings ?? [])).not.toContain(ATD890_RESET_PROTOCOL_OFF_NOTICE);
+    });
+
+    for (const [label, store] of [
+      ['the NXDN-enabled byte = 0', storeRecord(0)],
+      ['a bad sum', storeRecord(1, false)],
+      ['no store record', null],
+    ] as const) {
+      it(`radio with ${label}: the read value 2 is kept`, async () => {
+        const { resetByte, result } = await run(store, { resetProtocol: 2 });
+        expect(resetByte).toBe(2);
+        expect(text(result.warnings ?? [])).not.toContain(ATD890_RESET_PROTOCOL_OFF_NOTICE);
+      });
+    }
+
+    it('stock target: the read value 2 is kept even if the store record says enabled', async () => {
+      const { resetByte, result } = await run(storeRecord(1), { resetProtocol: 2, stock: true });
+      expect(resetByte).toBe(2);
+      expect(text(result.warnings ?? [])).not.toContain(ATD890_RESET_PROTOCOL_OFF_NOTICE);
+    });
+  });
 });

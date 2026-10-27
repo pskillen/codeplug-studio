@@ -204,6 +204,12 @@ export interface RadioWriteOrganisation {
   /** AT-D890UV firmware target, selects which settings fields exist. Unset → `'stock'`. */
   atD890SettingsTarget?: AtD890SettingsTarget;
   /**
+   * MM9PDY AT-D890UV only; set by the Write session when the radio reports NXDN enabled. Write
+   * `+0x154` (Reset Digital Protocol) = 0 (Off), so the radio-menu protocol choice survives every
+   * boot. Unset: the byte stays as read.
+   */
+  atD890ResetDigitalProtocolOff?: boolean;
+  /**
    * MM9PDY only (AT-D890UV, DM-32UV). When true, Write stores the channel location table
    * from {@link RadioChannelDto.location} on channels with `useLocation`: the dedicated
    * erase-unit pair on the AT-D890UV, twelve tag pages on the DM-32UV. Stock writes never

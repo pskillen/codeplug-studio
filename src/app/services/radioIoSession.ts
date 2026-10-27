@@ -103,10 +103,11 @@ import {
   atD890LanguageLockProblem,
   languageLockFromLocalInfo,
 } from '@integrations/radio-io/radios/at-d890uv/settingsCodec.ts';
-import type {
-  AtD890RadioSettingsSnapshot,
-  AtD890SettingsOverride,
-  AtD890SettingsTarget,
+import {
+  AT_D890_RESET_DIGITAL_PROTOCOL_ADDRESS,
+  type AtD890RadioSettingsSnapshot,
+  type AtD890SettingsOverride,
+  type AtD890SettingsTarget,
 } from '@integrations/radio-io/radios/at-d890uv/settingsFields.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import { isOpenGd77RadioIoEgress } from './radioIoChannelMap.ts';
@@ -397,6 +398,9 @@ export function atD890PauseOutcome(
 /** Shown once when a Write skips NXDN because the radio does not report it enabled. */
 export const ATD890_NXDN_NOT_WRITTEN_NOTICE =
   'NXDN not written: this radio does not have NXDN enabled';
+
+/** Shown when a Write replaced a non-zero Reset Digital Protocol (`+0x154`) on an NXDN-enabled radio. */
+export const ATD890_RESET_PROTOCOL_OFF_NOTICE = 'Reset Digital Protocol set to Off';
 
 /**
  * The AT-D890UV MM9PDY projection with NXDN output on. {@link prepareRadioWriteImage} builds it
@@ -843,22 +847,41 @@ export async function uploadPreparedRadioWrite(
   try {
     // AT-D890UV MM9PDY: the NXDN gate is the radio's own settings-store record, so it is decided
     // here, from the in-session read, before anything is seeded, reviewed or sent.
-    if (opts?.nxdn && session.radio instanceof AtD890uvProtocol) {
+    let resetProtocolReplaced = false;
+    if (
+      session.radio instanceof AtD890uvProtocol &&
+      (opts?.nxdn || isMm9pdyAtD890RadioIoProfileId(egress.profileId))
+    ) {
       let cache = session.radio.getDownloadCache();
       if (!cache || cache.blocks.size === 0) {
         await session.radio.download({ onProgress, signal: opts?.signal });
         cache = session.radio.getDownloadCache();
       }
-      if (isAtD890Mm9pdyNxdnEnabled(cache)) {
-        nxdnOutcome = { channels: opts.nxdn.channels, warnings: opts.nxdn.warnings };
-        opts = { ...opts, channels: opts.nxdn.channels, organisation: opts.nxdn.organisation };
-      } else {
-        const notice: ExportWarning[] = [];
-        pushGeneralWarning(notice, ATD890_NXDN_NOT_WRITTEN_NOTICE);
-        nxdnOutcome = {
-          channels: opts.channels ?? [],
-          warnings: [...(opts.warnings ?? []), ...notice],
+      const nxdnEnabled = isAtD890Mm9pdyNxdnEnabled(cache);
+      if (opts?.nxdn) {
+        if (nxdnEnabled) {
+          nxdnOutcome = { channels: opts.nxdn.channels, warnings: opts.nxdn.warnings };
+          opts = { ...opts, channels: opts.nxdn.channels, organisation: opts.nxdn.organisation };
+        } else {
+          const notice: ExportWarning[] = [];
+          pushGeneralWarning(notice, ATD890_NXDN_NOT_WRITTEN_NOTICE);
+          nxdnOutcome = {
+            channels: opts.channels ?? [],
+            warnings: [...(opts.warnings ?? []), ...notice],
+          };
+        }
+      }
+      // Same gate: on an NXDN-enabled MM9PDY radio the firmware applies +0x154 to the protocol at
+      // every boot, so the Write sets it to Off. Any other radio keeps it as read.
+      if (nxdnEnabled && isMm9pdyAtD890RadioIoProfileId(egress.profileId) && cache) {
+        opts = {
+          ...opts,
+          organisation: { ...(opts?.organisation ?? {}), atD890ResetDigitalProtocolOff: true },
         };
+        // Say so only when the in-session read holds the byte and it is non-zero.
+        resetProtocolReplaced =
+          cache.blocks.has(alignDownAtD890Address(AT_D890_RESET_DIGITAL_PROTOCOL_ADDRESS)) &&
+          getCacheBytes(cache, AT_D890_RESET_DIGITAL_PROTOCOL_ADDRESS, 1)[0] !== 0;
       }
     }
     const hydration = getRadioCloneHydration(egress);
@@ -966,6 +989,7 @@ export async function uploadPreparedRadioWrite(
     }
     const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
     const warnings = openGd77WriteWarnings(session);
+    if (resetProtocolReplaced) pushGeneralWarning(warnings, ATD890_RESET_PROTOCOL_OFF_NOTICE);
     const timings = timing?.finish({
       profileId: egress.profileId,
       contacts: opts?.organisation?.digitalContacts?.length ?? 0,

@@ -27,6 +27,7 @@ describe('What Write updates: the NXDN channel settings row', () => {
   it('is written on MM9PDY, with the radio condition in the note', () => {
     expect(nxdnRow(true).status).toBe('written');
     expect(nxdnRow(true).note).toMatch(/reports NXDN enabled/);
+    expect(nxdnRow(true).note).toMatch(/Reset Digital Protocol is then set to Off/);
   });
 
   it('is carried through unchanged on the stock target', () => {
