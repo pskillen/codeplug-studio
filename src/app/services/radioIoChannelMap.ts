@@ -22,7 +22,11 @@ import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDef
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
-import type { RadioChannelDto, RadioChannelMode } from '@integrations/radio-io/radioChannelDto.ts';
+import type {
+  RadioChannelDto,
+  RadioChannelMode,
+  RadioChannelNxdnDto,
+} from '@integrations/radio-io/radioChannelDto.ts';
 import { channelToneToRadioTone } from '@app/lib/channelFields/channelToneToRadioTone.ts';
 import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
 import type { ExpandedChannelWireRow } from '@core/import-export/channelExpansion/multiMode.ts';
@@ -34,6 +38,15 @@ import { resolveDmrOperatingMode } from '@core/domain/dmrOperatingMode.ts';
 export interface RadioWireEgressIds {
   formatId: string;
   profileId: string;
+}
+
+/** Options for the AT-D890UV MM9PDY channel projection. */
+export interface RadioChannelProjectionOptions {
+  /**
+   * Project NXDN profiles (`dto.nxdn`, NXDN-only channels). Set only for the MM9PDY AT-D890UV
+   * target when the radio reports NXDN enabled; otherwise NXDN profiles are ignored.
+   */
+  nxdn?: boolean;
 }
 
 export interface AssembledChannelsToRadioDtosResult {
@@ -133,19 +146,56 @@ function aprsFieldsFromChannel(channel: Channel): Partial<RadioChannelDto> {
   };
 }
 
+function isNxdnProfile(
+  profile: ChannelModeProfile,
+): profile is Extract<ChannelModeProfile, { mode: 'nxdn' }> {
+  return profile.mode === 'nxdn';
+}
+
+const NXDN_RAN_MAX = 63;
+
+/** `dto.nxdn` from a library NXDN profile. A RAN outside 0-63 is left out and counted. */
+function nxdnFieldsFromProfile(
+  profile: Extract<ChannelModeProfile, { mode: 'nxdn' }>,
+  invalidRan: { count: number },
+): RadioChannelNxdnDto {
+  const nxdn: RadioChannelNxdnDto = {};
+  const ran = (value: number | null | undefined): number | undefined => {
+    if (value == null) return undefined;
+    if (Number.isInteger(value) && value >= 0 && value <= NXDN_RAN_MAX) return value;
+    invalidRan.count++;
+    return undefined;
+  };
+  const rxRan = ran(profile.rxRan);
+  const txRan = ran(profile.txRan);
+  if (rxRan != null) nxdn.rxRan = rxRan;
+  if (txRan != null) nxdn.txRan = txRan;
+  if (profile.nxdnRate != null) nxdn.rate = profile.nxdnRate;
+  return nxdn;
+}
+
 function digitalFieldsFromChannel(
   channel: Channel,
   fkMaps?: RadioChannelFkMaps,
+  nxdnOptions?: { invalidRan: { count: number } },
 ): Partial<RadioChannelDto> {
   const dmr = channel.modeProfiles.find((p) => p.mode === 'dmr');
   const analog = channel.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
+  const nxdnProfile = nxdnOptions ? channel.modeProfiles.find(isNxdnProfile) : undefined;
+  const nxdnFields: Partial<RadioChannelDto> =
+    nxdnProfile && nxdnOptions
+      ? { nxdn: nxdnFieldsFromProfile(nxdnProfile, nxdnOptions.invalidRan) }
+      : {};
+  // The mode byte follows the DMR rule; an NXDN profile counts as the digital half when there is
+  // no DMR profile (NXDN mode forces A+D / D+A to D-Digital on the radio anyway).
+  const digital = dmr ?? nxdnProfile;
   let mode: RadioChannelMode | undefined;
-  if (dmr && analog) mode = 'fixed-digital';
-  else if (dmr) mode = 'digital';
+  if (digital && analog) mode = 'fixed-digital';
+  else if (digital) mode = 'digital';
   else if (analog) mode = 'analog';
 
   if (!dmr) {
-    return { ...(mode ? { mode } : {}), ...aprsFieldsFromChannel(channel) };
+    return { ...(mode ? { mode } : {}), ...nxdnFields, ...aprsFieldsFromChannel(channel) };
   }
 
   const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
@@ -160,6 +210,7 @@ function digitalFieldsFromChannel(
     ...(txContactId != null ? { txContactId } : {}),
     ...(rxGroupIndex != null ? { rxGroupIndex } : {}),
     ...(dmrRadioIdIndex != null ? { dmrRadioIdIndex } : {}),
+    ...nxdnFields,
     ...aprsFieldsFromChannel(channel),
   };
 }
@@ -377,6 +428,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
   fkMaps?: RadioChannelFkMaps,
   channelMemorySlots?: readonly ExportMemorySlot[],
   library?: LibrarySlice,
+  options?: RadioChannelProjectionOptions,
 ): AssembledChannelsToRadioDtosResult {
   if (isOpenGd77RadioIoEgress(egress.profileId)) {
     return openGd77AssembledChannelsToRadioDtos(channels, build, egress, fkMaps);
@@ -404,6 +456,9 @@ export function assembledChannelsToRadioDtosWithWarnings(
   );
   const slotByChannelId = channelSlotIndexMap(channels, channelMemorySlots);
   const dtos: RadioChannelDto[] = [];
+  const nxdnOptions = options?.nxdn === true ? { invalidRan: { count: 0 } } : undefined;
+  let nxdnOnly = 0;
+  let nxdnWithAnalog = 0;
   channels.forEach((row, index) => {
     const rxHz = row.entity.rxFrequency;
     if (rxHz == null || rxHz <= 0) return;
@@ -438,10 +493,46 @@ export function assembledChannelsToRadioDtosWithWarnings(
       bandwidth: bandwidthFromAnalogProfile(analog ?? { mode: 'fm', bandwidthKHz: null }),
       ...(analog && 'squelch' in analog ? { squelchPercent: analog.squelch } : {}),
       ...(rxOnly ? { rxOnly: true } : {}),
-      ...digitalFieldsFromChannel(entity, fkMaps),
+      ...digitalFieldsFromChannel(entity, fkMaps, nxdnOptions),
     });
+    if (nxdnOptions && entity.modeProfiles.some(isNxdnProfile)) {
+      const hasDmr = entity.modeProfiles.some(isDmrProfile);
+      if (!hasDmr && !analog) nxdnOnly++;
+      if (analog) nxdnWithAnalog++;
+    }
   });
+  if (nxdnOptions) {
+    pushNxdnProjectionWarnings(warnings, {
+      nxdnOnly,
+      nxdnWithAnalog,
+      invalidRan: nxdnOptions.invalidRan.count,
+    });
+  }
   return { dtos: truncateToRadioCapacity(dtos, egress, warnings), warnings };
+}
+
+function pushNxdnProjectionWarnings(
+  warnings: ExportWarning[],
+  counts: { nxdnOnly: number; nxdnWithAnalog: number; invalidRan: number },
+): void {
+  if (counts.nxdnOnly > 0) {
+    pushGeneralWarning(
+      warnings,
+      `${counts.nxdnOnly} channel(s) have NXDN settings only. While the radio is on DMR they act as DMR channels with no contact.`,
+    );
+  }
+  if (counts.nxdnWithAnalog > 0) {
+    pushGeneralWarning(
+      warnings,
+      `${counts.nxdnWithAnalog} channel(s) have analogue and NXDN settings. While the radio is on NXDN they run as NXDN only; the analogue half is not used.`,
+    );
+  }
+  if (counts.invalidRan > 0) {
+    pushGeneralWarning(
+      warnings,
+      `${counts.invalidRan} NXDN RAN value(s) are outside 0-63 and were not written.`,
+    );
+  }
 }
 
 /**
@@ -453,6 +544,7 @@ export function expandAssembledChannelsToRadioDtos(
   library: LibrarySlice,
   egress: RadioWireEgressIds,
   fkMaps?: RadioChannelFkMaps,
+  options?: RadioChannelProjectionOptions,
 ): AssembledChannelsToRadioDtosResult {
   if (!hasMxNChannelExpansion(build.radioTargetId)) {
     return assembledChannelsToRadioDtosWithWarnings(
@@ -462,6 +554,7 @@ export function expandAssembledChannelsToRadioDtos(
       fkMaps,
       assembled.channelMemorySlots,
       library,
+      options,
     );
   }
 

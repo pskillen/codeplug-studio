@@ -96,6 +96,7 @@ import {
   receiveBankChannelSlot,
 } from '@core/services/anytoneChannelBanks.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+import { dropNxdnOnlyChannels } from '@core/import-export/formats/anytone/nxdnOnlyChannels.ts';
 import { AT_D890_APRS_CURRENT_CHANNEL_WIRE } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import {
   expandAssembledChannelsToRadioDtos,
@@ -491,6 +492,12 @@ function buildDm32Organisation(
 }
 
 export interface BuildRadioWriteProjectionContext {
+  /**
+   * AT-D890UV MM9PDY only: write NXDN channel fields and NXDN-only channels. Set by the caller
+   * only when the radio reports NXDN enabled (a valid settings-store record with nxdn_unlock = 1).
+   * Unset or false: NXDN profiles are ignored and NXDN-only channels are left out.
+   */
+  atD890Nxdn?: boolean;
   dualBank?: {
     mode: DualBankWriteMode;
     options: DualBankRadioWriteOptions;
@@ -1259,11 +1266,14 @@ function stampOpenGd77ChannelBehaviour(
 
 /** DMR-bank-only assembled view for AT-D890UV serial Write (CSV parity for AM air / FM broadcast). */
 function buildAtD890DmrBankAssembled(
-  assembled: AssembledBuild,
+  sourceAssembled: AssembledBuild,
   build: RadioBuild,
   egress: RadioWireEgressIds,
   warnings: ExportWarning[],
+  nxdnOn: boolean,
 ): AssembledBuild {
+  // NXDN-only channels are eligible on MM9PDY; without NXDN output they have nowhere to go.
+  const assembled = nxdnOn ? sourceAssembled : dropNxdnOnlyChannels(sourceAssembled);
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const context = merged.channelBehaviourContext;
   const { dmrChannels, fmBroadcastChannels } = partitionAnytoneChannels(assembled, context);
@@ -1500,6 +1510,13 @@ function pushAtD890UnlistedContactChannelWarning(
   }
 }
 
+/** True when any assembled channel has an NXDN profile (so an NXDN-enabled Write would differ). */
+export function assembledHasNxdnChannels(assembled: AssembledBuild): boolean {
+  return assembled.channels.some((row) =>
+    row.entity.modeProfiles.some((profile) => profile.mode === 'nxdn'),
+  );
+}
+
 export function buildRadioWriteProjection(
   sourceAssembled: AssembledBuild,
   build: RadioBuild,
@@ -1508,6 +1525,7 @@ export function buildRadioWriteProjection(
   context?: BuildRadioWriteProjectionContext,
 ): RadioWriteProjection {
   const warnings: ExportWarning[] = [];
+  const nxdnOn = isMm9pdyAtD890RadioIoProfileId(egress.profileId) && context?.atD890Nxdn === true;
   // AT-D890: the talk-group, Contacts and ID-database banks are DMR-only; NXDN etc. stay out.
   const assembled = isAtD890RadioIoProfileId(egress.profileId)
     ? keepDmrTalkGroupsAndContacts(sourceAssembled, warnings)
@@ -1582,7 +1600,7 @@ export function buildRadioWriteProjection(
   }
 
   const projectionAssembled = isAtD890RadioIoProfileId(egress.profileId)
-    ? buildAtD890DmrBankAssembled(assembled, build, egress, warnings)
+    ? buildAtD890DmrBankAssembled(assembled, build, egress, warnings, nxdnOn)
     : assembled;
 
   const { dtos, warnings: channelWarnings } = expandAssembledChannelsToRadioDtos(
@@ -1591,6 +1609,7 @@ export function buildRadioWriteProjection(
     library,
     egress,
     fkMaps,
+    nxdnOn ? { nxdn: true } : undefined,
   );
   warnings.push(...channelWarnings);
 
