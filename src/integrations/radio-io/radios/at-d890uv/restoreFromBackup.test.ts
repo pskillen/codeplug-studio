@@ -16,6 +16,11 @@ import {
   AT_D890_SAFE_SKIP_WRITE_ADDR,
   D890_MAP,
 } from './constants.ts';
+import {
+  AtD890PendingUnitsError,
+  findAtD890PendingBlock,
+  recordAtD890PendingUnits,
+} from './pendingUnits.ts';
 import { AtD890uvProtocol } from './protocol.ts';
 import { listAtD890RestoreModelledChunks } from './restoreFromBackup.ts';
 import {
@@ -30,7 +35,7 @@ import {
   writePayloadAt,
 } from './__fixtures__/scriptedPipe.ts';
 
-const TEST_SERIAL = 'SN-TEST-RESTORE01';
+const TEST_SERIAL = 'SN-TEST-RESTORE0';
 const here = dirname(fileURLToPath(import.meta.url));
 
 function region(
@@ -213,5 +218,91 @@ describe('AtD890uvProtocol.restoreFromBackup', () => {
     expect((failure as Error).message).toMatch(/LocalInfo \/ calibration/);
     expect(collectAtD890WriteDataAddresses(pipe)).toEqual([]);
     expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(0);
+  });
+});
+
+describe('AtD890uvProtocol.restoreFromBackup and pending units (#1406)', () => {
+  const SETTINGS_UNIT = 0x350_0000;
+
+  async function connected(unitContents: Uint8Array) {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    scriptAtD890UploadReadResponder(
+      pipe,
+      new Map([
+        [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
+        [SETTINGS_UNIT, unitContents],
+      ]),
+    );
+    enableAtD890AutoWriteAck(pipe);
+    return { pipe, radio };
+  }
+
+  function settingsArchive(fill: number) {
+    const image = createMemoryMap(AT_D890_MAP_SIZE);
+    image.fill(D890_MAP.OptionalSettingsMain, D890_MAP.OptionalSettingsMainLength, fill);
+    return {
+      manifest: manifest([
+        region(
+          'optional-settings-main',
+          D890_MAP.OptionalSettingsMain,
+          D890_MAP.OptionalSettingsMainLength,
+          'restorable',
+        ),
+      ]),
+      image,
+    };
+  }
+
+  const sentEnd = (pipe: AtD890ScriptedPipe) =>
+    pipe.writes.some((f) => f.length === 3 && f[0] === 0x45 && f[1] === 0x4e && f[2] === 0x44);
+
+  it('a restore that rewrites the pending units is a repair: END clears the record', async () => {
+    recordAtD890PendingUnits(TEST_SERIAL, [SETTINGS_UNIT]);
+    const { pipe, radio } = await connected(makeAtD890EraseUnitBuffer(0x10));
+    await radio.restoreFromBackup(settingsArchive(0x41), {
+      regionIds: ['optional-settings-main'],
+    });
+    expect(findAtD890PendingBlock(TEST_SERIAL)).not.toBeNull(); // not committed until END
+    await radio.disconnect();
+    expect(sentEnd(pipe)).toBe(true);
+    expect(findAtD890PendingBlock(TEST_SERIAL)).toBeNull();
+  });
+
+  it('a restore that would not rewrite them is refused before the first W', async () => {
+    recordAtD890PendingUnits(TEST_SERIAL, [0x360_0000]);
+    const { pipe, radio } = await connected(makeAtD890EraseUnitBuffer(0x10));
+    await expect(
+      radio.restoreFromBackup(settingsArchive(0x41), { regionIds: ['optional-settings-main'] }),
+    ).rejects.toBeInstanceOf(AtD890PendingUnitsError);
+    expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(0);
+    await radio.disconnect();
+    expect(sentEnd(pipe)).toBe(false);
+  });
+
+  it('a pending unit whose staged blocks are all FF is still erased with an FF block', async () => {
+    recordAtD890PendingUnits(TEST_SERIAL, [SETTINGS_UNIT]);
+    const { pipe, radio } = await connected(makeAtD890EraseUnitBuffer(0xff));
+    await radio.restoreFromBackup(settingsArchive(0xff), {
+      regionIds: ['optional-settings-main'],
+    });
+    const written = collectAtD890WriteDataAddresses(pipe);
+    expect(written).toEqual([D890_MAP.OptionalSettingsMain]);
+    expect(writePayloadAt(pipe, D890_MAP.OptionalSettingsMain)?.every((b) => b === 0xff)).toBe(
+      true,
+    );
+    await radio.disconnect();
+    expect(findAtD890PendingBlock(TEST_SERIAL)).toBeNull();
+  });
+
+  it('without a pending record, an all-FF unit sends nothing (unchanged)', async () => {
+    const { pipe, radio } = await connected(makeAtD890EraseUnitBuffer(0xff));
+    await radio.restoreFromBackup(settingsArchive(0xff), {
+      regionIds: ['optional-settings-main'],
+    });
+    expect(collectAtD890WriteDataAddresses(pipe)).toEqual([]);
+    await radio.disconnect();
   });
 });

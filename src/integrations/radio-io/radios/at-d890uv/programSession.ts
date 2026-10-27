@@ -22,18 +22,30 @@
  * Abandoned sessions (#1406). Leaving PROGRAM without `END` keeps the unit in progress safe, but
  * every unit the session had already finished keeps its PC marker and is committed by the next
  * write-mode `END` from any tool. {@link recordAtD890AbandonedSession} persists those units
- * (`pendingUnits.ts`), and {@link gateAtD890Write} refuses, before the first `W`, any write that
- * would not rewrite them.
+ * (`pendingUnits.ts`, per radio: any read that covers the LocalInfo serial ties the pipe to its
+ * radio), and {@link gateAtD890Write} refuses, before the first `W`, any write that would not
+ * rewrite them. A session cut off with no error (tab closed, crash) is covered by an in-progress
+ * marker written at each new unit entered and removed at `END`.
  */
 
 import type { BytePipe } from '../../types.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { eraseUnitBaseFor } from './eraseUnits.ts';
+import { D890_MAP } from './constants.ts';
+import { isAtD890DigitalContactUnit } from './digitalContactUnits.ts';
 import {
+  LOCAL_INFO_SERIAL_LENGTH,
+  LOCAL_INFO_SERIAL_OFFSET,
+  formatAtD890LocalInfoSerial,
+} from './identityCheck.ts';
+import {
+  AT_D890_UNKNOWN_RADIO,
   AtD890PendingUnitsError,
   clearAtD890PendingUnits,
-  readAtD890PendingUnits,
+  findAtD890PendingBlock,
+  markAtD890WriteInProgress,
   recordAtD890PendingUnits,
+  settleAtD890InProgress,
 } from './pendingUnits.ts';
 
 export class AtD890ReadAfterWriteError extends RadioProtocolError {
@@ -69,7 +81,19 @@ interface AtD890ProgramSessionState {
   declaredUnits: Set<number>;
   /** The pending-units gate has passed for this session. */
   gated: boolean;
+  /** LocalInfo serial seen on this pipe; `''` until a read covered it. */
+  serial: string;
+  /** Names this session's in-progress marker in storage. */
+  sessionId: string;
+  /** Radio bucket the in-progress marker was written under. */
+  markedRadio?: string;
+  /** Pending units this session must rewrite (set by the gate). */
+  mustRewrite: number[];
+  /** Pending contact units outside the new contact plan: dead data, cleared by `END` (F276). */
+  deadContactUnits: number[];
 }
+
+let sessionCounter = 0;
 
 const sessions = new WeakMap<BytePipe, AtD890ProgramSessionState>();
 
@@ -81,6 +105,10 @@ function stateFor(pipe: BytePipe): AtD890ProgramSessionState {
       unitsEntered: [],
       declaredUnits: new Set(),
       gated: false,
+      serial: '',
+      sessionId: `${Date.now().toString(36)}-${(sessionCounter++).toString(36)}`,
+      mustRewrite: [],
+      deadContactUnits: [],
     };
     sessions.set(pipe, st);
   }
@@ -93,8 +121,8 @@ export function noteAtD890WriteFrame(pipe: BytePipe, address: number): void {
   if (st.firstWriteAddress === undefined) {
     // Backstop: a sender that never called the gate may not write while units are pending.
     if (!st.gated) {
-      const pending = readAtD890PendingUnits();
-      if (pending.length > 0) throw new AtD890PendingUnitsError(pending);
+      const block = findAtD890PendingBlock(st.serial);
+      if (block) throw new AtD890PendingUnitsError(block);
       st.gated = true;
     }
     st.firstWriteAddress = address;
@@ -105,7 +133,27 @@ export function noteAtD890WriteFrame(pipe: BytePipe, address: number): void {
   if (st.unitsEntered[st.unitsEntered.length - 1] !== unit) {
     st.unitsEntered.push(unit);
     st.counters.wUnitsEntered += 1;
+    // A tab closed or a crash from here on sends no `END` and throws nothing: leave a marker.
+    st.markedRadio = st.serial || AT_D890_UNKNOWN_RADIO;
+    markAtD890WriteInProgress(st.markedRadio, st.sessionId, st.unitsEntered);
   }
+}
+
+/**
+ * Call with the bytes of every completed read. When the read covered the LocalInfo serial, the
+ * pipe is tied to that radio: pending-unit records are kept and checked per radio.
+ */
+export function noteAtD890ReadCompleted(pipe: BytePipe, address: number, data: Uint8Array): void {
+  const need = LOCAL_INFO_SERIAL_OFFSET + LOCAL_INFO_SERIAL_LENGTH;
+  const rel = D890_MAP.LocalInfo - address;
+  if (rel < 0 || rel + need > data.length) return;
+  const serial = formatAtD890LocalInfoSerial(data.subarray(rel, rel + need));
+  if (serial) stateFor(pipe).serial = serial;
+}
+
+/** The LocalInfo serial seen on this pipe, `''` when none has been read. */
+export function getAtD890SessionSerial(pipe: BytePipe): string {
+  return stateFor(pipe).serial;
 }
 
 /** Call before each `R` frame's `pipe.write`. Throws, sending nothing, in the write phase. */
@@ -150,19 +198,42 @@ export function declareAtD890PlannedUnits(pipe: BytePipe, units: readonly number
 }
 
 /**
- * Before the first `W`: units pending from an abandoned Write must all be rewritten by this
- * session (`plannedUnits` plus the declared ones), else throw {@link AtD890PendingUnitsError}
- * having sent nothing. Passing marks the session so later senders in it are not re-checked.
+ * Before the first `W`: units pending from an interrupted Write to **this radio** must all be
+ * rewritten by this session (`plannedUnits` plus the declared ones), else throw
+ * {@link AtD890PendingUnitsError} having sent nothing. Passing marks the session so later senders
+ * in it are not re-checked. Returns the pending units this session must rewrite.
+ *
+ * Contact order and data units beyond the new contact count are dead data (anytone-d890-firmware
+ * F276: the firmware reads `count * 8` order entries and the self-terminating record stream), so
+ * when this session rewrites the contact header they count as satisfied and `END` clears them.
+ * This is never relaxed for codeplug units, nor when the header is not rewritten.
  */
-export function gateAtD890Write(pipe: BytePipe, plannedUnits: readonly number[]): void {
+export function gateAtD890Write(
+  pipe: BytePipe,
+  plannedUnits: readonly number[],
+): readonly number[] {
   const st = stateFor(pipe);
-  if (st.gated) return;
-  const pending = readAtD890PendingUnits();
-  if (pending.length > 0) {
+  if (st.gated) return [...st.mustRewrite];
+  const block = findAtD890PendingBlock(st.serial);
+  st.mustRewrite = [];
+  st.deadContactUnits = [];
+  if (block) {
+    if (block.hard) throw new AtD890PendingUnitsError(block);
     const planned = new Set([...st.declaredUnits, ...plannedUnits]);
-    if (!pending.every((u) => planned.has(u))) throw new AtD890PendingUnitsError(pending);
+    const headerRewritten = planned.has(D890_MAP.DigitalContactMeta);
+    for (const u of block.units) {
+      if (planned.has(u)) st.mustRewrite.push(u);
+      else if (
+        headerRewritten &&
+        u !== D890_MAP.DigitalContactMeta &&
+        isAtD890DigitalContactUnit(u)
+      )
+        st.deadContactUnits.push(u);
+      else throw new AtD890PendingUnitsError(block);
+    }
   }
   st.gated = true;
+  return [...st.mustRewrite];
 }
 
 /**
@@ -172,13 +243,27 @@ export function gateAtD890Write(pipe: BytePipe, plannedUnits: readonly number[])
 export function recordAtD890AbandonedSession(pipe: BytePipe): readonly number[] {
   const st = stateFor(pipe);
   const finished = st.unitsEntered.slice(0, -1);
-  recordAtD890PendingUnits(finished);
+  const radio = st.markedRadio ?? (st.serial || AT_D890_UNKNOWN_RADIO);
+  recordAtD890PendingUnits(radio, finished);
+  settleAtD890InProgress(radio, st.sessionId);
   st.gated = false;
   return finished;
 }
 
-/** After `END` was sent: the units this session wrote are committed, so no longer pending. */
+/**
+ * After `END` was sent: the units this session wrote are committed, so no longer pending. The
+ * same `END` promotes the dead contact units the gate waved through, so they go too, but only
+ * when the contact header was actually written.
+ */
 export function commitAtD890SessionUnits(pipe: BytePipe, units: readonly number[]): void {
-  void pipe;
-  clearAtD890PendingUnits(units);
+  const st = stateFor(pipe);
+  const dead = units.includes(D890_MAP.DigitalContactMeta) ? st.deadContactUnits : [];
+  clearAtD890PendingUnits(
+    st.markedRadio ?? (st.serial || AT_D890_UNKNOWN_RADIO),
+    [...units, ...dead],
+    st.sessionId,
+  );
+  st.markedRadio = undefined;
+  st.deadContactUnits = [];
+  st.mustRewrite = [];
 }

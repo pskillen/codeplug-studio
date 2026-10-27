@@ -29,10 +29,16 @@ import {
 } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
 import {
   AtD890PendingUnitsError,
-  clearAtD890PendingUnits,
+  clearAllAtD890PendingRecords,
+  findAtD890PendingBlock,
   readAtD890PendingUnits,
+  recordAtD890PendingUnits,
 } from '@integrations/radio-io/radios/at-d890uv/pendingUnits.ts';
-import { interruptedWriteWarning } from './radioIoInterruptedWrite.ts';
+import {
+  clearInterruptedWriteWarning,
+  interruptedWriteNotice,
+  interruptedWriteWarning,
+} from './radioIoInterruptedWrite.ts';
 import { atD890WriteMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import type { RadioSession } from '@integrations/radio-io/types.ts';
@@ -147,8 +153,8 @@ function sentEnd(pipe: AtD890ScriptedPipe): boolean {
 }
 
 // The pending-units record lives in browser storage: keep every test independent of the others.
-beforeEach(() => clearAtD890PendingUnits());
-afterEach(() => clearAtD890PendingUnits());
+beforeEach(() => clearAllAtD890PendingRecords());
+afterEach(() => clearAllAtD890PendingRecords());
 
 describe('AT-D890 Write flows send no R after the first W (#1406)', () => {
   it('uploadPreparedRadioWrite: codeplug + contacts', async () => {
@@ -207,6 +213,43 @@ describe('AT-D890 write timings (#1406)', () => {
     const contactsRow = report.rows.find((r) => r.stage === 'Digital contacts')!;
     expect(contactsRow.counters.rFrames).toBe(0);
     expect(contactsRow.counters.wFrames).toBe(contactFrameCount(pipe));
+  });
+
+  it('logs the partial timings when the Write fails or is cancelled', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    const { session, pipe } = await d890Session();
+    pipe.writeAckResponder = (address) => (address < 0x0700_0000 ? 0x06 : 0x15);
+    await expect(
+      uploadPreparedRadioWrite(session, egress, undefined, withContacts),
+    ).rejects.toThrow(/not ACKed/);
+    await closeRadioSession(session);
+    const failed = info.mock.calls
+      .map((c) => String(c[0]))
+      .filter((l) => l.startsWith('[d890-write-timing] '));
+    expect(failed).toHaveLength(1);
+    expect(JSON.parse(failed[0]!.slice('[d890-write-timing] '.length))).toMatchObject({
+      outcome: 'failed',
+    });
+    info.mockClear();
+    const second = await d890Session();
+    const abort = new AbortController();
+    await expect(
+      uploadPreparedRadioWrite(second.session, egress, undefined, {
+        ...withContacts,
+        onProgress: (p) => {
+          if (p.stage === 'Digital contacts' && p.cur === 2) abort.abort();
+        },
+        signal: abort.signal,
+      }),
+    ).rejects.toThrow();
+    await closeRadioSession(second.session);
+    const aborted = info.mock.calls
+      .map((c) => String(c[0]))
+      .filter((l) => l.startsWith('[d890-write-timing] '));
+    expect(JSON.parse(aborted[0]!.slice('[d890-write-timing] '.length))).toMatchObject({
+      outcome: 'aborted',
+    });
+    info.mockRestore();
   });
 
   it('is absent for the other radios (no D890 session)', async () => {
@@ -276,14 +319,19 @@ describe('AT-D890 interrupted Write leaves units pending (#1406)', () => {
 
   it('records the finished units but not the one in progress', async () => {
     await interruptedWrite();
-    const pending = readAtD890PendingUnits();
+    const pending = readAtD890PendingUnits(SERIAL);
     expect(pending).toContain(0x0700_0000); // contact meta unit: finished
     expect(pending).not.toContain(0x0708_0000); // contact order unit: the NAK hit its first frame
     expect(pending.length).toBeGreaterThan(1); // the codeplug units too
     // The failure carries the warning; a refusal does not repeat it; other radios get none.
-    expect(interruptedWriteWarning(egress.profileId, new Error('x'))).toMatch(/full Write/);
+    expect(interruptedWriteWarning(egress.profileId, new Error('x'))).toMatch(
+      /Codeplug and Digital contacts ticked/,
+    );
     expect(
-      interruptedWriteWarning(egress.profileId, new AtD890PendingUnitsError(pending)),
+      interruptedWriteWarning(
+        egress.profileId,
+        new AtD890PendingUnitsError(findAtD890PendingBlock(SERIAL)!),
+      ),
     ).toBeNull();
     expect(interruptedWriteWarning('radio-io-dm32uv', new Error('x'))).toBeNull();
   });
@@ -295,7 +343,7 @@ describe('AT-D890 interrupted Write leaves units pending (#1406)', () => {
       uploadPreparedRadioWrite(session, egress, undefined, withContacts),
     ).rejects.toThrow(/not ACKed/);
     await closeRadioSession(session);
-    expect(readAtD890PendingUnits()).toEqual([]);
+    expect(readAtD890PendingUnits(SERIAL)).toEqual([]);
   });
 
   it('refuses a write that would not rewrite them, sending no W frame', async () => {
@@ -307,7 +355,7 @@ describe('AT-D890 interrupted Write leaves units pending (#1406)', () => {
     expect(pipe.writes.some((f) => f[0] === 0x57)).toBe(false);
     await closeRadioSession(session);
     expect(sentEnd(pipe)).toBe(false);
-    expect(readAtD890PendingUnits().length).toBeGreaterThan(0);
+    expect(readAtD890PendingUnits(SERIAL).length).toBeGreaterThan(0);
   });
 
   it('refuses other Studio senders (keps, restore, settings) the same way', async () => {
@@ -319,13 +367,73 @@ describe('AT-D890 interrupted Write leaves units pending (#1406)', () => {
     expect(pipe.writes.some((f) => f[0] === 0x57)).toBe(false);
   });
 
+  it('a pending contact data unit beyond the new contact count is dead data: gate passes, END clears it', async () => {
+    await interruptedWrite();
+    const dead = D890_MAP.DigitalContactData + 4 * D890_MAP.DigitalContactDataStride;
+    recordAtD890PendingUnits(SERIAL, [dead]);
+    const { session, pipe } = await d890Session();
+    await uploadPreparedRadioWrite(session, egress, undefined, withContacts);
+    await closeRadioSession(session);
+    expect(sentEnd(pipe)).toBe(true);
+    expect(readAtD890PendingUnits(SERIAL)).toEqual([]);
+  });
+
+  it('a pending codeplug unit is not waved through by a contact rewrite', async () => {
+    recordAtD890PendingUnits(SERIAL, [0x0124_0000]);
+    const { session, pipe } = await d890Session();
+    await expect(
+      uploadPreparedRadioWrite(session, egress, undefined, withContacts),
+    ).rejects.toBeInstanceOf(AtD890PendingUnitsError);
+    expect(pipe.writes.some((f) => f[0] === 0x57)).toBe(false);
+    await closeRadioSession(session);
+  });
+
+  it('a failure carries the clear action behind the warning, and clearing lifts the block', async () => {
+    await interruptedWrite();
+    const notice = interruptedWriteNotice(egress.profileId, new Error('x'))!;
+    expect(notice.text).toMatch(/clear the warning/);
+    expect(notice.block.radios).toEqual([SERIAL]);
+    // A refusal carries the same record without repeating the text.
+    const refusal = interruptedWriteNotice(
+      egress.profileId,
+      new AtD890PendingUnitsError(notice.block),
+    )!;
+    expect(refusal.text).toBeNull();
+    expect(refusal.block.units).toEqual(notice.block.units);
+    clearInterruptedWriteWarning(notice.block);
+    expect(findAtD890PendingBlock(SERIAL)).toBeNull();
+    const { session, pipe } = await d890Session();
+    await uploadPreparedRadioWrite(session, egress, undefined, projected);
+    await closeRadioSession(session);
+    expect(sentEnd(pipe)).toBe(true);
+  });
+
+  it('a Write closed with no error and no END (tab closed) leaves the in-progress marker', async () => {
+    const { session } = await d890Session();
+    let n = 0;
+    await expect(
+      uploadPreparedRadioWrite(session, egress, undefined, {
+        ...withContacts,
+        onProgress: () => {
+          // Simulate the tab dying: stop everything with an unrelated throw after contacts start.
+          n += 1;
+        },
+      }),
+    ).resolves.toBeDefined();
+    expect(n).toBeGreaterThan(0);
+    // Written, not yet ENDed: the marker is on record until the session closes with END.
+    expect(findAtD890PendingBlock(SERIAL)?.interrupted).toBe(true);
+    await closeRadioSession(session);
+    expect(findAtD890PendingBlock(SERIAL)).toBeNull();
+  });
+
   it('a Write that rewrites them completes with END and clears the record', async () => {
     await interruptedWrite();
     const { session, pipe } = await d890Session();
     await uploadPreparedRadioWrite(session, egress, undefined, withContacts);
-    expect(readAtD890PendingUnits().length).toBeGreaterThan(0); // not committed until END
+    expect(readAtD890PendingUnits(SERIAL).length).toBeGreaterThan(0); // not committed until END
     await closeRadioSession(session);
     expect(sentEnd(pipe)).toBe(true);
-    expect(readAtD890PendingUnits()).toEqual([]);
+    expect(readAtD890PendingUnits(SERIAL)).toEqual([]);
   });
 });

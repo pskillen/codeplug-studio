@@ -6,8 +6,18 @@
  * short one. Counts `R` and `W` frames per stage. No owner data: the stale list is generated.
  */
 import { describe, expect, it } from 'vitest';
-import { AtD890ScriptedPipe, assertAtD890NoReadAfterWrite } from './__fixtures__/scriptedPipe.ts';
-import { uploadAtD890DigitalContacts } from './digitalContactWrite.ts';
+import {
+  AtD890ScriptedPipe,
+  assertAtD890NoReadAfterWrite,
+  localInfoWithSerial,
+} from './__fixtures__/scriptedPipe.ts';
+import { atD890ExitProgram, atD890ReadMemory } from './connection.ts';
+import { findAtD890PendingBlock, recordAtD890PendingUnits } from './pendingUnits.ts';
+import {
+  prepareAtD890DigitalContactWrite,
+  uploadAtD890DigitalContacts,
+  writePreparedAtD890DigitalContacts,
+} from './digitalContactWrite.ts';
 import { packAtD890DigitalContacts } from './digitalContactCodec.ts';
 import { D890_MAP } from './constants.ts';
 import {
@@ -151,3 +161,48 @@ describe('AT-D890 digital contact write frame counts (#1406)', () => {
 
 /** Non-`FF` packer chunks: the only frames a contact Write sends. */
 const EXPECTED_W: Record<number, number> = { 2: 14, 100: 626, 1000: 6251 };
+
+describe('AT-D890 contact write: a pending unit with nothing to send is still erased (#1406)', () => {
+  const SERIAL = 'SN-CONTACT-00001';
+  const DATA_UNIT = D890_MAP.DigitalContactData;
+
+  async function setup(pending: boolean) {
+    const prepared = prepareAtD890DigitalContactWrite(contacts(2));
+    // As if every staged block of the data unit were FF: nothing would be sent into it.
+    const trimmed = {
+      ...prepared,
+      chunks: prepared.chunks.filter((c) => eraseUnitBaseFor(c.address) !== DATA_UNIT),
+    };
+    const pipe = new AtD890ScriptedPipe();
+    pipe.autoAckWrites = true;
+    pipe.readResponder = (a, len) => {
+      const li = localInfoWithSerial(SERIAL);
+      const rel = a - D890_MAP.LocalInfo;
+      return rel >= 0 && rel + len <= li.length
+        ? li.slice(rel, rel + len)
+        : new Uint8Array(len).fill(0xff);
+    };
+    await atD890ReadMemory(pipe, D890_MAP.LocalInfo, D890_MAP.LocalInfoLength);
+    if (pending) recordAtD890PendingUnits(SERIAL, [DATA_UNIT]);
+    await writePreparedAtD890DigitalContacts(pipe, trimmed);
+    return { prepared, pipe };
+  }
+
+  it('sends one FF block at the unit anchor', async () => {
+    const { prepared, pipe } = await setup(true);
+    const anchor = prepared.anchors.get(DATA_UNIT)!;
+    const frame = pipe.writes.find((f) => f[0] === 0x57 && addr(f) === anchor);
+    expect(frame).toBeDefined();
+    expect(frame!.slice(6, 22).every((b) => b === 0xff)).toBe(true);
+    const wAddrs = pipe.writes.filter((f) => f[0] === 0x57).map(addr);
+    expect([...wAddrs].sort((a, b) => a - b)).toEqual(wAddrs);
+    await atD890ExitProgram(pipe);
+    expect(findAtD890PendingBlock(SERIAL)).toBeNull();
+  });
+
+  it('sends nothing into that unit when it is not pending', async () => {
+    const { pipe } = await setup(false);
+    const wAddrs = pipe.writes.filter((f) => f[0] === 0x57).map(addr);
+    expect(wAddrs.some((a) => eraseUnitBaseFor(a) === DATA_UNIT)).toBe(false);
+  });
+});

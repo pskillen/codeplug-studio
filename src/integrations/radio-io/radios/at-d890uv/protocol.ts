@@ -61,6 +61,8 @@ import {
 import { assertAtD890LocalInfoPlausible } from './identityCheck.ts';
 import {
   assertPreservedBytesMatchFreshRead,
+  eraseAnchorsFromModelled,
+  listEraseOnlyChunks,
   type AtD890StagingChunk,
   listSparseStagingChunks,
   modelledAddressSetFromChunks,
@@ -875,9 +877,6 @@ export class AtD890uvProtocol implements CloneImageRadio {
     const transmitGuard = (address: number) => assertAtD890TransmitAddress(address, touchedUnitSet);
 
     try {
-      // Units pending from an interrupted Write must be rewritten by this one: nothing is sent
-      // otherwise (#1406). Inside the try so a refusal abandons rather than ENDs.
-      gateAtD890Write(pipe, touchedUnits);
       const sentinelBefore = await snapshotAtD890SentinelRegions(
         pipe,
         opts.signal,
@@ -914,6 +913,10 @@ export class AtD890uvProtocol implements CloneImageRadio {
         this.readBlockSize,
       );
       assertAtD890LocalInfoPlausible(liveLocal);
+      // The radio is identified (that read tied the pipe to its serial). Units pending from an
+      // interrupted Write to it must be rewritten by this one: nothing is sent otherwise
+      // (#1406). Inside the try so a refusal abandons rather than ENDs.
+      const mustRewrite = gateAtD890Write(pipe, touchedUnits);
 
       const mergedUnits = new Map<number, Uint8Array>();
       for (const [base, data] of freshUnits) {
@@ -967,11 +970,21 @@ export class AtD890uvProtocol implements CloneImageRadio {
       // display "Program error please initialise the radio!" and factory-reset itself,
       // destroying the operator's configuration. Writing these addresses is not a
       // diagnostic option. See docs/reference/radios/anytone/at-d890uv/flash-sectors.md
-      const transmittedChunks = stagingChunks.filter(
+      const sendable = stagingChunks.filter(
         (c) =>
           c.address !== AT_D890_SAFE_SKIP_WRITE_ADDR &&
           !isAtD890EraseUnitBookkeepingAddress(c.address),
       );
+      // A pending unit whose staged blocks are all 0xff would not be entered, and this END would
+      // promote its stale half: send it one 0xff block so the first W erases it.
+      const transmittedChunks = [
+        ...sendable,
+        ...listEraseOnlyChunks(
+          mustRewrite.filter((u) => touchedUnitSet.has(u)),
+          sendable,
+          eraseAnchorsFromModelled(modelledChunks, (a) => a === AT_D890_SAFE_SKIP_WRITE_ADDR),
+        ),
+      ].sort((a, b) => a.address - b.address);
       const preWriteFromRadio = preWriteChunksFromFreshUnits(transmittedChunks, freshUnits);
       this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(transmittedChunks, {
         preWriteFromRadio,

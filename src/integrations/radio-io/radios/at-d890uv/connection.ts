@@ -21,6 +21,7 @@ import {
   commitAtD890SessionUnits,
   listAtD890UnitsEntered,
   noteAtD890ProgramExited,
+  noteAtD890ReadCompleted,
   noteAtD890WriteFrame,
 } from './programSession.ts';
 import { assertAtD890SpanNotHardDenied, assertAtD890WritableAddress } from './writableExtents.ts';
@@ -173,6 +174,7 @@ export async function atD890ReadMemory(
     out.set(payload, off);
     off += chunkLen;
   }
+  noteAtD890ReadCompleted(pipe, address, out);
   return out;
 }
 

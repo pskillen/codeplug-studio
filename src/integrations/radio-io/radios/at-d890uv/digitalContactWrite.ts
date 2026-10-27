@@ -15,6 +15,8 @@ import { gateAtD890Write } from './programSession.ts';
 import { isAtD890DigitalContactUnit } from './digitalContactUnits.ts';
 import { AT_D890_ERASE_UNIT_BYTES, eraseUnitBaseFor, listTouchedEraseUnits } from './eraseUnits.ts';
 import {
+  eraseAnchorsFromModelled,
+  listEraseOnlyChunks,
   listSparseStagingChunks,
   modelledAddressSetFromChunks,
   overlayModelledChunksOntoUnit,
@@ -39,6 +41,8 @@ export interface AtD890PreparedContactWrite {
   readonly chunks: readonly AtD890StagingChunk[];
   /** Erase units the Write visits, ascending. */
   readonly units: readonly number[];
+  /** Lowest modelled address per unit: where an erase-only `FF` block goes (pending units). */
+  readonly anchors: ReadonlyMap<number, number>;
 }
 
 /**
@@ -49,7 +53,7 @@ export function prepareAtD890DigitalContactWrite(
   contacts: readonly RadioDigitalContactDto[],
 ): AtD890PreparedContactWrite {
   const modelledChunks = packAtD890DigitalContacts(contacts).stagingChunks;
-  if (modelledChunks.length === 0) return { chunks: [], units: [] };
+  if (modelledChunks.length === 0) return { chunks: [], units: [], anchors: new Map() };
 
   for (const c of modelledChunks) {
     assertAtD890SpanNotHardDenied(c.address, c.data.length);
@@ -80,7 +84,7 @@ export function prepareAtD890DigitalContactWrite(
     assertAtD890TransmitAddress(c.address, touchedUnitSet);
     assertContactUnit(c.address);
   }
-  return { chunks, units };
+  return { chunks, units, anchors: eraseAnchorsFromModelled(modelledChunks) };
 }
 
 /** Send a prepared contact Write. Sends only `W` frames. */
@@ -91,13 +95,21 @@ export async function writePreparedAtD890DigitalContacts(
 ): Promise<void> {
   // Contacts alone (no codeplug upload before them): the pending-units gate runs here, before
   // the first W. Already passed when a codeplug upload ran first in this session (#1406).
-  gateAtD890Write(pipe, prepared.units);
+  const mustRewrite = gateAtD890Write(pipe, prepared.units);
   const touchedUnitSet = new Set(prepared.units);
   const transmitGuard = (address: number) => {
     assertAtD890TransmitAddress(address, touchedUnitSet);
     assertContactUnit(address);
   };
-  const { chunks } = prepared;
+  // A pending unit whose blocks are all FF would not be entered: erase it with one FF block.
+  const chunks = [
+    ...prepared.chunks,
+    ...listEraseOnlyChunks(
+      mustRewrite.filter((u) => touchedUnitSet.has(u)),
+      prepared.chunks,
+      prepared.anchors,
+    ),
+  ].sort((a, b) => a.address - b.address);
   for (let i = 0; i < chunks.length; i++) {
     throwIfAborted(opts.signal);
     const { address, data } = chunks[i]!;
