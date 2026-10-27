@@ -57,8 +57,8 @@ describe('encodeAtD890ChannelRecord NXDN fields', () => {
     expect(encoded[0x66]).toBe(0xf3);
     expect(encoded[0x67]).toBe(prior[0x67]);
     expect(encoded[0x6a]).toBe(prior[0x6a]);
-    // RX group list and the contact slot are piece 4's: carried over.
-    expect(encoded[0x6b]).toBe(0x03);
+    // The contact slot is piece 4's: carried over. The RX group list is "none", not the old 0x03.
+    expect(encoded[0x6b]).toBe(0xff);
     expect(encoded[0x6c]).toBe(prior[0x6c]);
     expect(encoded[0x6d]).toBe(prior[0x6d]);
     expect(encoded[0x6e]).toBe(prior[0x6e]);
@@ -81,6 +81,21 @@ describe('encodeAtD890ChannelRecord NXDN fields', () => {
     expect(encoded[0x6c]).toBe(0);
     expect(encoded[0x6d]).toBe(0);
     expect(encoded[0x6e]).toBe(0);
+  });
+
+  it('a slot whose previous 0x6b was 0 (list 0) or another index gets 0xff', () => {
+    for (const previous of [0x00, 0x03]) {
+      const prior = priorWithNxdnBytes();
+      prior[0x6b] = previous;
+      const encoded = encodeAtD890ChannelRecord({ ...base, nxdn: { rxRan: 1, txRan: 1 } }, prior);
+      expect(encoded[0x6b]).toBe(0xff);
+    }
+  });
+
+  it('a channel without nxdn leaves 0x6b as read', () => {
+    const prior = priorWithNxdnBytes();
+    prior[0x6b] = 0x00;
+    expect(encodeAtD890ChannelRecord(base, prior)[0x6b]).toBe(0x00);
   });
 
   it('throws on an out-of-range or fractional RAN before producing a record', () => {

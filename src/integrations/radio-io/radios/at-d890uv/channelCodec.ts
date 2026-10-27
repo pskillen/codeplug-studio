@@ -330,19 +330,19 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
 }
 
 /**
- * Write the modelled NXDN bytes. `carriedOver` is true when `0x66`-`0x6e` came from a downloaded
- * slot; a fresh slot gets "no RX group list" (`0xff`) because the zero it would hold selects list 0.
- * An absent field leaves its byte (or bit) as it is. Bit fields use `setBit`.
+ * Write the modelled NXDN bytes. Every NXDN channel gets "no RX group list" (`0xff`): a zero there
+ * selects list 0, and a used slot holds whatever its previous channel had. A later piece (RX group
+ * lists, #255) writes real indices. An absent rate or RAN leaves its byte (or bit) as it is; a fresh
+ * slot starts as zeros, so an absent rate is NXDN48 (6.25 kHz). Bit fields use `setBit`.
  */
 export function applyAtD890NxdnChannelBytes(
   data: Uint8Array,
   nxdn: RadioChannelNxdnDto,
   slotIndex: number,
-  carriedOver: boolean,
 ): void {
   if (nxdn.txRan != null) assertAtD890NxdnRan(nxdn.txRan, 'TX RAN', slotIndex);
   if (nxdn.rxRan != null) assertAtD890NxdnRan(nxdn.rxRan, 'RX RAN', slotIndex);
-  if (!carriedOver) data[NXDN_BYTE_RX_GROUP] = 0xff;
+  data[NXDN_BYTE_RX_GROUP] = 0xff;
   if (nxdn.rate != null) {
     data[NXDN_BYTE_RATE] = setBit(data[NXDN_BYTE_RATE]!, NXDN_RATE_BIT, nxdn.rate === 'nxdn96');
   }
@@ -446,7 +446,7 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
     data[0x38] = Math.max(0, Math.min(7, ch.aprsReportSlotIndex - 1));
   }
 
-  if (ch.nxdn) applyAtD890NxdnChannelBytes(data, ch.nxdn, ch.slotIndex, carriedOver);
+  if (ch.nxdn) applyAtD890NxdnChannelBytes(data, ch.nxdn, ch.slotIndex);
 
   data.set(encodeWideCharName(ch.wireName, 0x20), 0x44);
   return data;

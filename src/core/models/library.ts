@@ -93,7 +93,7 @@ export interface ChannelModeProfileNxdn {
   contactRef: EntityRef | null;
   /** RX group list to listen to; may mix modes, each radio writes only the NXDN members. */
   rxGroupListId?: string | null;
-  /** 6.25 kHz (NXDN48) or 12.5 kHz (NXDN96); `null` / absent = radio default. */
+  /** 6.25 kHz (NXDN48) or 12.5 kHz (NXDN96); `null` / absent = not set: a new radio slot gets NXDN48, an existing slot keeps its rate. */
   nxdnRate?: NxdnRate | null;
 }
 
