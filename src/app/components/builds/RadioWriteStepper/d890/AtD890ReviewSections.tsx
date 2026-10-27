@@ -62,6 +62,17 @@ export function AtD890MasterIdNote({ controller }: { controller: AtD890ReviewCon
   );
 }
 
+/** The radio's one NXDN ID, set from the default NXDN Digital ID (MM9PDY, NXDN enabled). */
+export function AtD890NxdnOwnIdNote({ controller }: { controller: AtD890ReviewController }) {
+  const { nxdnOwnIdLabel, settingsOnly } = controller.init;
+  if (!nxdnOwnIdLabel || settingsOnly) return null;
+  return (
+    <Text size="sm" data-testid="d890-nxdn-own-id">
+      NXDN ID → {nxdnOwnIdLabel}, your default NXDN ID
+    </Text>
+  );
+}
+
 function SettingsSection({ controller }: { controller: AtD890ReviewController }) {
   const state = useReviewState(controller);
   const store = useAtD890RadioSettingsSession(controller.init.buildId);

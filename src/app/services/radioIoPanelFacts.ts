@@ -17,6 +17,8 @@ export interface RadioIoPanelFacts {
   outOfRangeChannelNames: string[];
   /** The library has a default DMR Digital ID (the AT-D890 writes radio IDs only then). */
   hasDefaultDmrId: boolean;
+  /** The library has a default NXDN Digital ID (the AT-D890 MM9PDY writes the radio's NXDN ID only then). */
+  hasDefaultNxdnId: boolean;
 }
 
 export function radioIoPanelFacts(
@@ -39,6 +41,7 @@ export function radioIoPanelFacts(
     zoneCount: assembled.zones.length,
     outOfRangeChannelNames,
     hasDefaultDmrId: defaultOwnDigitalId(library.ownDigitalIds ?? [], 'dmr') !== null,
+    hasDefaultNxdnId: defaultOwnDigitalId(library.ownDigitalIds ?? [], 'nxdn') !== null,
   };
 }
 

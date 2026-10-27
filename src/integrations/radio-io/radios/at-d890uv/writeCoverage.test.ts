@@ -55,3 +55,25 @@ describe('What Write updates: the NXDN list rows', () => {
     }
   });
 });
+
+describe('What Write updates: the NXDN ID row (#1442)', () => {
+  const row = (mm9pdy: boolean, hasDefaultNxdnId: boolean) =>
+    atD890WriteCoverageRows(mm9pdy, 0, false, hasDefaultNxdnId).find((r) => r.label === 'NXDN ID')!;
+
+  it('is written on MM9PDY from the default NXDN ID, when the radio has NXDN enabled', () => {
+    expect(row(true, true).status).toBe('written');
+    expect(row(true, true).note).toBe('From your default NXDN ID, when the radio has NXDN enabled');
+  });
+
+  it('is left alone on MM9PDY without a default NXDN ID', () => {
+    expect(row(true, false).status).toBe('leftAlone');
+    expect(row(true, false).note).toBe('No default NXDN ID');
+  });
+
+  it('is left alone on the stock target, default or not', () => {
+    for (const hasDefault of [true, false]) {
+      expect(row(false, hasDefault).status).toBe('leftAlone');
+      expect(row(false, hasDefault).note).toBeUndefined();
+    }
+  });
+});

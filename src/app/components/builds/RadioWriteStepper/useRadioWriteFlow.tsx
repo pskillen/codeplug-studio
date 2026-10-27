@@ -514,6 +514,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       serial: atCtx.serial,
       masterIdName: atCtx.masterIdName,
       masterIdSelected: isAtD890MasterIdSelected(atCtx.snapshot.masterId),
+      ...(atCtx.nxdnOwnIdLabel !== undefined ? { nxdnOwnIdLabel: atCtx.nxdnOwnIdLabel } : {}),
       range: atD890ReviewRange(atCtx.snapshot),
       receiveOnly: atD890ReceiveOnlyChannels(channels, atCtx.snapshot.bandCode),
       snapshot: atCtx.snapshot,

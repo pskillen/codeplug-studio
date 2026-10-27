@@ -7,6 +7,7 @@ import { AT_D890UV_MODEL_IDS } from '@integrations/radio-io/radios/at-d890uv/con
 import { registerReviewSectionProvider } from '../reviewSections.tsx';
 import {
   AtD890MasterIdNote,
+  AtD890NxdnOwnIdNote,
   AtD890ReceiveOnlyNote,
   atD890ReviewSections,
 } from './AtD890ReviewSections.tsx';
@@ -19,6 +20,7 @@ registerReviewSectionProvider({
       ? [
           <AtD890ReceiveOnlyNote key="rx-only" controller={ctx.atD890} />,
           <AtD890MasterIdNote key="master-id" controller={ctx.atD890} />,
+          <AtD890NxdnOwnIdNote key="nxdn-own-id" controller={ctx.atD890} />,
         ]
       : [],
   sections: atD890ReviewSections,

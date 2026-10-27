@@ -97,6 +97,8 @@ export interface AtD890WriteCoverageTableProps {
   settingsChangeCount?: number;
   /** The library has a default DMR ID: radio IDs and the master ID are written from it. */
   hasDefaultDmrId?: boolean;
+  /** The library has a default NXDN ID: MM9PDY writes the radio's NXDN ID from it. */
+  hasDefaultNxdnId?: boolean;
 }
 
 export default function AtD890WriteCoverageTable({
@@ -105,6 +107,7 @@ export default function AtD890WriteCoverageTable({
   mm9pdy = false,
   settingsChangeCount = 0,
   hasDefaultDmrId = false,
+  hasDefaultNxdnId = false,
 }: AtD890WriteCoverageTableProps) {
   return (
     <Stack gap={4}>
@@ -124,7 +127,12 @@ export default function AtD890WriteCoverageTable({
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {atD890WriteCoverageRows(mm9pdy, settingsChangeCount, hasDefaultDmrId).map((row) => (
+          {atD890WriteCoverageRows(
+            mm9pdy,
+            settingsChangeCount,
+            hasDefaultDmrId,
+            hasDefaultNxdnId,
+          ).map((row) => (
             <Table.Tr key={row.label}>
               <Table.Td>{row.label}</Table.Td>
               <Table.Td>
