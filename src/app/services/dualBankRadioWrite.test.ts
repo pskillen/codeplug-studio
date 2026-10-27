@@ -198,3 +198,77 @@ describe('collectDualBankDirectorySlice', () => {
     expect(warnings.some((w) => formatExportWarning(w).includes('Skipped'))).toBe(false);
   });
 });
+
+describe('collectDualBankDirectorySlice AT-D890 ID database (#1433)', () => {
+  async function storeWith(ids: readonly number[]): Promise<InMemoryProjectPersistence> {
+    const store = new InMemoryProjectPersistence();
+    await store.putDigitalIdDirectoryEntriesBatch(
+      ids.map((digitalId) => ({
+        projectId: 'p1',
+        digitalId,
+        mode: 'dmr' as const,
+        name: `Row ${digitalId}`,
+        callsign: `M0${digitalId}`,
+        city: '',
+        state: '',
+        country: '',
+      })),
+    );
+    return store;
+  }
+
+  it('collects the directory for the radio-io-at-d890uv egress', async () => {
+    const slice = await collectDualBankDirectorySlice({
+      store: await storeWith([1001, 2002]),
+      projectId: 'p1',
+      library: emptyLibrary(),
+      egressProfileId: 'radio-io-at-d890uv',
+      options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
+      warnings: [],
+    });
+    expect(slice.digitalContacts.map((row) => row.digitalId).sort()).toEqual([1001, 2002]);
+  });
+
+  it('skips build contact IDs even for ID directory alone', async () => {
+    const warnings: ExportWarning[] = [];
+    const library: LibrarySlice = {
+      ...emptyLibrary(),
+      // A library contact outside the build: its directory row stays.
+      digitalContacts: [{ ...newDigitalContact('p1', 'Unbuilt', 2002, 'dmr'), id: 'dc-2' }],
+    };
+    const slice = await collectDualBankDirectorySlice({
+      store: await storeWith([1001, 2002]),
+      projectId: 'p1',
+      library,
+      egressProfileId: 'radio-io-at-d890uv',
+      options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
+      libraryDigitalIds: new Set([1001]),
+      warnings,
+    });
+    expect(slice.digitalContacts.map((row) => row.digitalId)).toEqual([2002]);
+    expect(warnings.some((w) => formatExportWarning(w).includes('Skipped 1 directory row'))).toBe(
+      true,
+    );
+  });
+
+  it('warns with the AT-D890 ID database label when the directory exceeds the cap', async () => {
+    const warnings: ExportWarning[] = [];
+    const slice = await collectDualBankDirectorySlice({
+      store: await storeWith(Array.from({ length: 30 }, (_, i) => 40_000 + i)),
+      projectId: 'p1',
+      library: emptyLibrary(),
+      egressProfileId: 'radio-io-at-d890uv-mm9pdy',
+      options: { includeLibraryContacts: true, includeDigitalIdDirectory: true },
+      maxDirectoryContacts: 10,
+      warnings,
+    });
+    expect(slice.digitalContacts).toHaveLength(10);
+    expect(
+      warnings.some((w) =>
+        formatExportWarning(w).includes(
+          'than the AT-D890 ID database allows; only 10 write from directory',
+        ),
+      ),
+    ).toBe(true);
+  });
+});

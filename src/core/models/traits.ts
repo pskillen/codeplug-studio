@@ -15,8 +15,8 @@ export const BuildCapabilityTrait = {
   TalkGroupTimeslotClones: 'talkGroupTimeslotClones',
   MxNChannelExpansion: 'mxnChannelExpansion',
   /**
-   * Firmware exposes a contact list bank separate from a digital ID list bank.
-   * Gates dual-bank vs single-bank Write / CPS projection UX.
+   * Firmware has a selectable contact list separate from an incoming-call ID lookup store.
+   * Gates the dual-bank Write / CPS directory UX.
    */
   SeparateDigitalIdList: 'separateDigitalIdList',
 } as const;
@@ -92,6 +92,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.DedicatedScanLists,
       BuildCapabilityTrait.MxNChannelExpansion,
+      BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
   'neonplug-dm32uv': {
@@ -165,6 +166,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.DedicatedScanLists,
       BuildCapabilityTrait.MxNChannelExpansion,
+      BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
   /** Web Serial — AT-D890UV MM9PDY modded firmware. Same codec, no m×n or scan lists. */
@@ -176,6 +178,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
   /** Web Serial direct-write — OpenGD77 / OpenUV380 (DM-1701). */

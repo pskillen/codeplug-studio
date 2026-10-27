@@ -332,7 +332,8 @@ export function getProfileExportLimits(
           maxZones: profile.maxZones,
           maxScanLists: profile.maxScanLists,
           maxRxGroupLists: profile.maxRxGroupLists,
-          maxContacts: null,
+          // ID database (DMR contact DB) cap; the Contacts list shares maxTalkGroups.
+          maxContacts: profile.maxContacts,
           maxTalkGroups: profile.maxTalkGroups,
           maxRadioIds: null,
           zoneMembers: profile.zoneMembers,

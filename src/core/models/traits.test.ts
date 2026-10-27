@@ -59,7 +59,7 @@ describe('trait profiles', () => {
     expect(profile?.traits).toContain(BuildCapabilityTrait.SeparateDigitalIdList);
   });
 
-  it('stamps dual-bank digital ID list trait on OpenGD77 and DM-32 profiles', () => {
+  it('stamps dual-bank digital ID list trait on OpenGD77, DM-32 and AT-D890 profiles', () => {
     const dualBankProfileIds = [
       'opengd77-1701',
       'opengd77-md9600',
@@ -68,17 +68,13 @@ describe('trait profiles', () => {
       'radio-io-dm32uv',
       'radio-io-opengd77-1701',
       'radio-io-opengd77-md9600',
+      'anytone-at-d890uv',
+      'radio-io-at-d890uv',
+      'radio-io-at-d890uv-mm9pdy',
     ] as const;
     for (const profileId of dualBankProfileIds) {
       const profile = traitProfileFor(profileId);
       expect(profile?.traits).toContain(BuildCapabilityTrait.SeparateDigitalIdList);
-    }
-  });
-
-  it('does not stamp separate digital ID list on single-bank Anytone profiles', () => {
-    for (const profileId of ['anytone-at-d890uv', 'radio-io-at-d890uv'] as const) {
-      const profile = traitProfileFor(profileId);
-      expect(profile?.traits).not.toContain(BuildCapabilityTrait.SeparateDigitalIdList);
     }
   });
 

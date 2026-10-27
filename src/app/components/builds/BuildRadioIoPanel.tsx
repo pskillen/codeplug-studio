@@ -66,7 +66,6 @@ import {
   DM32_ANALOG_CONTACTS_WRITE_GAP,
   DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
 } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
-import { AT_D890_DIGITAL_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/at-d890uv/writeRole.ts';
 import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
@@ -117,8 +116,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const supportsDualBankWrite = Boolean(
     dualBankTraitProfile?.traits.includes(BuildCapabilityTrait.SeparateDigitalIdList),
   );
-  const supportsSingleBankWrite = isAtD890Write && !supportsDualBankWrite;
-  const supportsDigitalContacts = supportsDualBankWrite || supportsSingleBankWrite;
+  const supportsDigitalContacts = supportsDualBankWrite;
 
   const flow = useRadioWriteFlow({
     build,
@@ -126,7 +124,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     descriptor,
     activeProjectId,
     supportsDualBankWrite,
-    supportsSingleBankWrite,
     kepsWriteFn,
     kepsSameSessionAfterUpload: satelliteKepsSameSessionAfterUpload(egress.profileId),
     onOpenSettingsPage: () => navigate(`/builds/${build.id}/export/radio-settings`),
@@ -437,11 +434,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       {isDm32RadioIoProfileId(egress.profileId) ? (
         <Text size="xs" c="dimmed">
           {DM32_ANALOG_CONTACTS_WRITE_GAP}
-        </Text>
-      ) : null}
-      {isAtD890Write && !supportsSingleBankWrite ? (
-        <Text size="xs" c="dimmed">
-          {AT_D890_DIGITAL_CONTACTS_WRITE_GAP}
         </Text>
       ) : null}
       {error ? <Alert color="red">{error}</Alert> : null}

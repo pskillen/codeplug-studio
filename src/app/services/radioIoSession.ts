@@ -55,22 +55,15 @@ import {
   collectDualBankDirectorySlice,
   type DualBankRadioWritePrepareOptions,
 } from './dualBankRadioWrite.ts';
-import {
-  collectSingleBankDigitalContacts,
-  type SingleBankRadioWritePrepareOptions,
-} from './singleBankRadioWrite.ts';
 import { startAtD890WriteTiming } from './radioIoAtD890WriteTimings.ts';
 import {
   declareAtD890ContactUnitsForWrite,
   prepareAtD890DigitalContactsForWrite,
   writePreparedAtD890DigitalContactsForWrite,
 } from './radioIoAtD890DigitalContactWrite.ts';
-import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
-import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
-import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
-import type { ProjectedDigitalContactRow } from '@core/domain/digitalIdDirectoryProjection.ts';
+import { libraryDigitalIdSet } from '@core/domain/digitalIdDirectoryProjection.ts';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
@@ -420,7 +413,6 @@ export async function prepareRadioWriteImage(
   library: LibrarySlice,
   opts?: {
     dualBank?: DualBankRadioWritePrepareOptions;
-    singleBank?: SingleBankRadioWritePrepareOptions;
     persistence?: ProjectPersistence;
     projectId?: string;
     onProgress?: ProgressFn;
@@ -463,6 +455,14 @@ export async function prepareRadioWriteImage(
             options: opts.dualBank.options,
             maxRadioIds,
             maxDirectoryContacts,
+            // AT-D890: skip directory rows for this build's contacts, not every library contact.
+            ...(isAtD890RadioIoProfileId(egress.profileId)
+              ? {
+                  libraryDigitalIds: libraryDigitalIdSet(
+                    assembled.digitalContacts.map((row) => row.entity),
+                  ),
+                }
+              : {}),
             warnings: projectionWarnings,
             onProgress: opts.onProgress,
           })
@@ -472,55 +472,6 @@ export async function prepareRadioWriteImage(
         mode: opts.dualBank.mode,
         options: opts.dualBank.options,
         directorySlice,
-      },
-    };
-  } else if (opts?.singleBank && isAtD890RadioIoProfileId(egress.profileId)) {
-    const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
-    const maxContacts =
-      typeof limits?.maxContacts === 'number'
-        ? limits.maxContacts
-        : AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX;
-    const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
-    const reserved = new Set<string>();
-    const nameLen = AT_D890UV_LIMITS.NAME_LENGTH;
-    const digitalContacts =
-      opts.persistence && opts.projectId
-        ? await collectSingleBankDigitalContacts({
-            store: opts.persistence,
-            projectId: opts.projectId,
-            assembled,
-            projectionMode: opts.singleBank.projectionMode,
-            maxContacts,
-            warnings: projectionWarnings,
-            mapLibraryRow: (row) => {
-              const wireName = applyListWireNameLimits(
-                row.wireName,
-                reserved,
-                merged,
-                egress.profileId,
-                projectionWarnings,
-                'Contact',
-                nameLen,
-                Boolean(row.wireNameOverride?.trim()),
-              );
-              return {
-                digitalId: row.entity.digitalId,
-                wireName,
-                callsign: row.entity.callsign ?? '',
-                city: row.entity.city ?? '',
-                province: row.entity.state ?? '',
-                country: row.entity.country ?? '',
-                remark: row.entity.remarks ?? '',
-              } satisfies ProjectedDigitalContactRow;
-            },
-            onProgress: opts.onProgress,
-          })
-        : undefined;
-    projectionContext = {
-      singleBank: {
-        mode: opts.singleBank.mode,
-        projectionMode: opts.singleBank.projectionMode,
-        digitalContacts,
       },
     };
   }

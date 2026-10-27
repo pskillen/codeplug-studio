@@ -50,6 +50,7 @@ const anytoneTraits: readonly Trait[] = [
   BuildCapabilityTrait.ZoneGrouping,
   BuildCapabilityTrait.DedicatedScanLists,
   BuildCapabilityTrait.MxNChannelExpansion,
+  BuildCapabilityTrait.SeparateDigitalIdList,
 ];
 
 /** MM9PDY DM-32UV — zone is the scan, one channel per repeater, dual-bank contacts. */
@@ -64,6 +65,7 @@ const anytoneMm9pdyTraits: readonly Trait[] = [
   BuildCapabilityTrait.ZoneGrouping,
   BuildCapabilityTrait.ZoneAsScanList,
   BuildCapabilityTrait.MultiTalkGroupPerChannel,
+  BuildCapabilityTrait.SeparateDigitalIdList,
 ];
 
 /** Authoritative radio-target catalog (#654). */

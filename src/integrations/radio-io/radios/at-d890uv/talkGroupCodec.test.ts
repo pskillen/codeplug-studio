@@ -149,3 +149,83 @@ describe('encodeTalkgroupsIntoAtD890Image', () => {
     expect(image.get(D890_MAP.TalkgroupOrder + order.length, 1)[0]).toBe(0xff);
   });
 });
+
+describe('AT-D890 Contacts list private entries (#1433)', () => {
+  function utf16(text: string): number[] {
+    const out: number[] = [];
+    for (const ch of text) out.push(ch.charCodeAt(0) & 0xff, (ch.charCodeAt(0) >> 8) & 0xff);
+    return out;
+  }
+
+  it('writes a NeonPlug private 0x03 DTO as wire call type 0', () => {
+    const record = encodeAtD890TalkgroupRecord({
+      index: 3,
+      wireName: 'MM0ABC',
+      digitalId: 2_351_234,
+      callType: 0x03,
+    });
+    expect(record[0]).toBe(0x00);
+  });
+
+  it('gives a private ID an even order key (ID 2351234 at index 3)', () => {
+    const order = encodeAtD890TalkgroupOrder([
+      { index: 3, wireName: 'MM0ABC', digitalId: 2_351_234, callType: 0x03 },
+    ]);
+    expect([...order.subarray(0, 8)]).toEqual([0x68, 0x24, 0x6a, 0x04, 0x02, 0x00, 0x00, 0x00]);
+  });
+
+  it('keeps two order entries for the same ID as group and private, keys one apart', () => {
+    const order = encodeAtD890TalkgroupOrder([
+      { index: 1, wireName: 'TG', digitalId: 2_351_234, callType: 0x04 },
+      { index: 2, wireName: 'Private', digitalId: 2_351_234, callType: 0x03 },
+    ]);
+    const key = (off: number) =>
+      (order[off]! | (order[off + 1]! << 8) | (order[off + 2]! << 16) | (order[off + 3]! << 24)) >>>
+      0;
+    expect(order.length).toBe(16);
+    expect(key(8) - key(0)).toBe(1);
+    expect(order[4]).toBe(1); // private sorts first, slot 1
+    expect(order[12]).toBe(0); // group, slot 0
+  });
+
+  it('writes city, callsign, state, country and remarks at the CPS offsets', () => {
+    const record = encodeAtD890TalkgroupRecord({
+      index: 1,
+      wireName: 'MM0ABC',
+      digitalId: 2_351_234,
+      callType: 0x03,
+      city: 'Glasgow',
+      callsign: 'MM0ABC',
+      province: 'Scotland',
+      country: 'United Kingdom',
+      remark: 'Club',
+    });
+    expect([...record.subarray(0x2a, 0x2a + 16)]).toEqual([...utf16('Glasgow'), 0, 0]);
+    expect([...record.subarray(0x4a, 0x4a + 14)]).toEqual([...utf16('MM0ABC'), 0, 0]);
+    expect([...record.subarray(0x62, 0x62 + 18)]).toEqual([...utf16('Scotland'), 0, 0]);
+    expect([...record.subarray(0x84, 0x84 + 30)]).toEqual([...utf16('United Kingdom'), 0, 0]);
+    expect([...record.subarray(0xa6, 0xa6 + 10)]).toEqual([...utf16('Club'), 0, 0]);
+  });
+
+  it('caps a 20-char city at 15 chars so a NUL follows', () => {
+    const record = encodeAtD890TalkgroupRecord({
+      index: 1,
+      wireName: 'X',
+      digitalId: 1,
+      callType: 0x03,
+      city: 'ABCDEFGHIJKLMNOPQRST',
+    });
+    expect([...record.subarray(0x2a, 0x2a + 30)]).toEqual(utf16('ABCDEFGHIJKLMNO'));
+    expect([...record.subarray(0x2a + 30, 0x2a + 32)]).toEqual([0, 0]);
+  });
+
+  it('leaves 0x26..0xC7 all zero for a talk group with no extras', () => {
+    const record = encodeAtD890TalkgroupRecord({
+      index: 1,
+      wireName: 'Scotland West',
+      digitalId: 23_559,
+      callType: 0x04,
+    });
+    expect(record.subarray(0x26, 0xc8).every((b) => b === 0)).toBe(true);
+  });
+});

@@ -7,16 +7,17 @@ import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
 import { AT_D890_BLOCK_SIZE, D890_MAP } from './constants.ts';
 import { encodeBcdAsHexU32 } from './bcd.ts';
 import type { AtD890StagingChunk } from './sparseEraseRmw.ts';
+import {
+  CALLSIGN_MAX_CHARS,
+  CITY_MAX_CHARS,
+  COUNTRY_MAX_CHARS,
+  NAME_MAX_CHARS,
+  REMARK_MAX_CHARS,
+  STATE_MAX_CHARS,
+} from './contactFieldCaps.ts';
 
 const ANYTONE_CALL_TYPE_PRIVATE = 0;
 const ANYTONE_CALL_ALERT_NONE = 0;
-
-const NAME_MAX_CHARS = 16;
-const CITY_MAX_CHARS = 15;
-const CALLSIGN_MAX_CHARS = 8;
-const STATE_MAX_CHARS = 16;
-const COUNTRY_MAX_CHARS = 16;
-const REMARK_MAX_CHARS = 16;
 
 function writeU32Le(buf: Uint8Array, offset: number, value: number): void {
   buf[offset] = value & 0xff;
