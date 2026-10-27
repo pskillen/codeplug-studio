@@ -159,6 +159,8 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
   const lastStageRef = useRef<string>('');
   const mountedRef = useRef(true);
   const wipedRef = useRef(false);
+  /** The session the change is running on: the engine owns it and its `END`. Set before the frame. */
+  const changeSessionRef = useRef<RadioSession | null>(null);
 
   const restartCountdown = useRestartCountdown();
   const checkCountdown = useRestartCountdown();
@@ -206,12 +208,13 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
       abortRef.current?.abort();
       const session = sessionRef.current;
       sessionRef.current = null;
-      // Leaving mid-flow closes without END when a frame may have gone out; before the frame END is safe.
-      if (session) {
-        const r = session.radio;
-        if (wipedRef.current && r instanceof AtD890uvProtocol) r.abandonProgramMode();
-        void closeRadioSession(session).catch(() => undefined);
-      }
+      if (!session) return;
+      // While the change runs (or has run) the engine owns the session and sends its own `END`: a second one
+      // from here would race it. Only the journal's `sending` state covers recovery. Before the change, END is safe.
+      if (session === changeSessionRef.current) return;
+      const r = session.radio;
+      if (wipedRef.current && r instanceof AtD890uvProtocol) r.abandonProgramMode();
+      void closeRadioSession(session).catch(() => undefined);
     };
   }, []);
 
@@ -541,6 +544,8 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
     const signal = beginBusy();
     setStep('change');
     let journalled = false;
+    // Before anything can reach the radio: leaving the page from here on must not send an END of its own.
+    changeSessionRef.current = session;
     try {
       const outcome = await changeRange(session, {
         backupLocalInfo: pair.localInfo,
@@ -553,6 +558,7 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
       });
       // The service has closed the session in every case.
       sessionRef.current = null;
+      changeSessionRef.current = null;
       switch (outcome.kind) {
         case 'changed':
           writeJournal('changed');
@@ -596,6 +602,7 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
       }
     } catch (err) {
       sessionRef.current = null;
+      changeSessionRef.current = null;
       say('unknown', 'refusal', COPY.change.unknown, { details: errMessage(err) });
     } finally {
       endBusy();

@@ -52,6 +52,8 @@ export class FakeD890Radio {
   unreadableAddress?: number;
   /** Answer this many `R` frames at `unreadableAddress` first (the connect check reads LocalInfo too). */
   unreadableAfterReads = 0;
+  /** Called as each `W` frame arrives, before it is answered (a test can leave the page from here). */
+  onWrite?: (frame: FakeFrame) => void;
 
   constructor(code = 3) {
     this.band = code;
@@ -148,6 +150,7 @@ export class FakeD890Radio {
           const address = ((data[1]! << 24) | (data[2]! << 16) | (data[3]! << 8) | data[4]!) >>> 0;
           const length = data[5]!;
           this.frames.push({ session, kind: 'W', address, length });
+          this.onWrite?.({ session, kind: 'W', address, length });
           if (this.nakAddress === address) {
             queue.push(0x15);
             return;

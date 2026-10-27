@@ -407,6 +407,28 @@ describe('useRangeChangeFlow', () => {
       expect(journal()).toHaveLength(0);
     }, 120_000);
 
+    it('leaving the page while the W is in flight sends no second END', async () => {
+      const hook = setup();
+      await toConfirm(hook);
+      let aSession = 0;
+      fake().onWrite = (f) => {
+        aSession = f.session;
+        hook.unmount();
+      };
+      act(() => hook.result.current.actions.onConfirmTick(true));
+      await act(async () => hook.result.current.actions.onChange());
+      await waitFor(() => expect(fake().endsIn(aSession || -1)).toBeGreaterThan(0), {
+        timeout: 20_000,
+      });
+      // Let any stray close from the unmount cleanup land before counting.
+      await new Promise((r) => setTimeout(r, 300));
+      const frames = fake()
+        .frames.filter((f) => f.session === aSession && (f.kind === 'W' || f.kind === 'END'))
+        .map((f) => f.kind);
+      expect(frames).toEqual(['W', 'END']);
+      expect(['sending', 'changed']).toContain(journal()[0]?.stage);
+    });
+
     it('the journal is written before the W', async () => {
       const hook = setup();
       await toConfirm(hook);
