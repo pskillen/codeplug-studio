@@ -55,15 +55,38 @@ describe('encodeAtD890ChannelRecord NXDN fields', () => {
     );
     // 0x66: only bit 0 changes (0xf2 -> 0xf3).
     expect(encoded[0x66]).toBe(0xf3);
-    expect(encoded[0x67]).toBe(prior[0x67]);
+    // Busy lock (0x67 b3:0) is carried over; PTT Call (b7:4) is Off with no call target.
+    expect(encoded[0x67]).toBe(prior[0x67]! & 0x0f);
     expect(encoded[0x6a]).toBe(prior[0x6a]);
-    // The contact slot is piece 4's: carried over. The RX group list is "none", not the old 0x03.
+    // No call target: slot 0 and no status message. The RX group list is "none", not the old 0x03.
     expect(encoded[0x6b]).toBe(0xff);
-    expect(encoded[0x6c]).toBe(prior[0x6c]);
-    expect(encoded[0x6d]).toBe(prior[0x6d]);
-    expect(encoded[0x6e]).toBe(prior[0x6e]);
+    expect(encoded[0x6c]).toBe(0);
+    expect(encoded[0x6d]).toBe(0);
+    expect(encoded[0x6e]).toBe(0);
     expect(encoded[0x68]).toBe(5);
     expect(encoded[0x69]).toBe(7);
+  });
+
+  it('a call target sets PTT Call and the u16 slot; an RX group is its 0-based index', () => {
+    const prior = priorWithNxdnBytes();
+    const encoded = encodeAtD890ChannelRecord(
+      { ...base, nxdn: { rxRan: 1, txRan: 1, txTargetIndex: 0x1234 & 0x3ff, rxGroupIndex: 3 } },
+      prior,
+    );
+    expect(encoded[0x67]! >> 4).toBe(1);
+    expect(encoded[0x67]! & 0x0f).toBe(prior[0x67]! & 0x0f);
+    expect(encoded[0x6c]! | (encoded[0x6d]! << 8)).toBe(0x1234 & 0x3ff);
+    expect(encoded[0x6b]).toBe(3);
+    expect(encoded[0x6e]).toBe(0);
+  });
+
+  it('a call target at list slot 0 still turns PTT Call on', () => {
+    const encoded = encodeAtD890ChannelRecord({
+      ...base,
+      nxdn: { rxRan: 1, txRan: 1, txTargetIndex: 0 },
+    });
+    expect(encoded[0x67]! >> 4).toBe(1);
+    expect(encoded[0x6c]).toBe(0);
   });
 
   it('a missing rate or RAN leaves that byte as read', () => {

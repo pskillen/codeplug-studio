@@ -47,7 +47,7 @@ import type {
   WriteVerifyResult,
 } from '@integrations/radio-io/writeVerify.ts';
 import {
-  assembledHasNxdnChannels,
+  assembledHasNxdnContent,
   buildRadioWriteProjection,
   type BuildRadioWriteProjectionContext,
 } from './radioIoWriteProjection.ts';
@@ -513,7 +513,7 @@ export async function prepareRadioWriteImage(
     ).deciseconds;
   }
   let nxdn: AtD890NxdnWriteVariant | undefined;
-  if (isMm9pdyAtD890RadioIoProfileId(egress.profileId) && assembledHasNxdnChannels(assembled)) {
+  if (isMm9pdyAtD890RadioIoProfileId(egress.profileId) && assembledHasNxdnContent(assembled)) {
     const withNxdn = buildRadioWriteProjection(assembled, build, library, egress, {
       ...projectionContext,
       atD890Nxdn: true,

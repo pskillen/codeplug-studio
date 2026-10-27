@@ -73,6 +73,10 @@ const NXDN_RATE_BIT = 0;
 const NXDN_BYTE_TX_RAN = 0x68;
 const NXDN_BYTE_RX_RAN = 0x69;
 const NXDN_BYTE_RX_GROUP = 0x6b;
+const NXDN_BYTE_PTT_CALL = 0x67;
+const NXDN_PTT_CALL_SHIFT = 4;
+const NXDN_BYTE_TX_CONTACT = 0x6c;
+const NXDN_BYTE_STATUS = 0x6e;
 
 function setBit(byte: number, bit: number, value: boolean): number {
   return value ? (byte | (1 << bit)) & 0xff : byte & ~(1 << bit) & 0xff;
@@ -330,9 +334,8 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
 }
 
 /**
- * Write the modelled NXDN bytes. Every NXDN channel gets "no RX group list" (`0xff`): a zero there
- * selects list 0, and a used slot holds whatever its previous channel had. A later piece (RX group
- * lists, #255) writes real indices. An absent rate or RAN leaves its byte (or bit) as it is; a fresh
+ * Write the modelled NXDN bytes. The RX group list is the channel's list or "none" (`0xff`): a zero
+ * there selects list 0, and a used slot holds whatever its previous channel had. An absent rate or RAN leaves its byte (or bit) as it is; a fresh
  * slot starts as zeros, so an absent rate is NXDN48 (6.25 kHz). Bit fields use `setBit`.
  */
 export function applyAtD890NxdnChannelBytes(
@@ -342,7 +345,16 @@ export function applyAtD890NxdnChannelBytes(
 ): void {
   if (nxdn.txRan != null) assertAtD890NxdnRan(nxdn.txRan, 'TX RAN', slotIndex);
   if (nxdn.rxRan != null) assertAtD890NxdnRan(nxdn.rxRan, 'RX RAN', slotIndex);
-  data[NXDN_BYTE_RX_GROUP] = 0xff;
+  data[NXDN_BYTE_RX_GROUP] = nxdn.rxGroupIndex ?? 0xff;
+  // PTT Call (`0x67` b7:4) gates the contact: on only with a call target, whose list slot is the
+  // u16 at `0x6C`. Off, the radio calls group ID 0. Busy lock (b3:0) is left as it is. A previous
+  // occupant's status message number (`0x6E`) is cleared: Studio models none.
+  const target = nxdn.txTargetIndex;
+  data[NXDN_BYTE_PTT_CALL] =
+    (data[NXDN_BYTE_PTT_CALL]! & 0x0f) | ((target != null ? 1 : 0) << NXDN_PTT_CALL_SHIFT);
+  data[NXDN_BYTE_TX_CONTACT] = (target ?? 0) & 0xff;
+  data[NXDN_BYTE_TX_CONTACT + 1] = ((target ?? 0) >> 8) & 0xff;
+  data[NXDN_BYTE_STATUS] = 0;
   if (nxdn.rate != null) {
     data[NXDN_BYTE_RATE] = setBit(data[NXDN_BYTE_RATE]!, NXDN_RATE_BIT, nxdn.rate === 'nxdn96');
   }
@@ -351,7 +363,9 @@ export function applyAtD890NxdnChannelBytes(
 }
 
 /** NXDN fields of a combined `0x80` channel record. Separate from {@link parseAtD890ChannelRecord}. */
-export function decodeAtD890ChannelNxdn(record: Uint8Array): Required<RadioChannelNxdnDto> {
+export function decodeAtD890ChannelNxdn(
+  record: Uint8Array,
+): Required<Pick<RadioChannelNxdnDto, 'rxRan' | 'txRan' | 'rate'>> {
   return {
     rxRan: record[NXDN_BYTE_RX_RAN]!,
     txRan: record[NXDN_BYTE_TX_RAN]!,

@@ -106,4 +106,11 @@ export interface RadioChannelNxdnDto {
   /** Transmit RAN, 0-63. */
   txRan?: number;
   rate?: RadioNxdnRate;
+  /**
+   * 0-based slot in the radio's NXDN list the channel calls (a talk group or contact written by
+   * this Write). Absent: no call target (PTT Call off).
+   */
+  txTargetIndex?: number;
+  /** 0-based NXDN RX group list. Absent: none (`0xFF`). */
+  rxGroupIndex?: number;
 }
