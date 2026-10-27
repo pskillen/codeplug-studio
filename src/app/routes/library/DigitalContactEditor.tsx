@@ -54,6 +54,7 @@ export function DigitalContactEditor({
   const [name, setName] = useState(base.name);
   const [mode, setMode] = useState<DigitalChannelMode>(base.mode);
   const [digitalId, setDigitalId] = useState(String(base.digitalId));
+  const [saveAttempted, setSaveAttempted] = useState(false);
   const [callsign, setCallsign] = useState(base.callsign);
   const [city, setCity] = useState(base.city);
   const [state, setState] = useState(base.state);
@@ -85,8 +86,14 @@ export function DigitalContactEditor({
 
   const idError = validateDigitalIdForMode(mode, parseOptionalInt(digitalId) ?? 0);
 
+  // A blank ID is invalid for NXDN, but the error only shows once the user typed one or tried to save.
+  const idErrorShown = digitalId.trim() === '' && !saveAttempted ? null : idError;
+
   function handleSave() {
-    if (idError) return;
+    if (idError) {
+      setSaveAttempted(true);
+      return;
+    }
     const row = buildRow();
     void save(() => persistence.putDigitalContact(row, entity ? entity.revision : null), {
       permitNavigation: permitNavigationOnce,
@@ -167,7 +174,7 @@ export function DigitalContactEditor({
               <FormField
                 label={mode === 'nxdn' ? 'NXDN ID' : 'DMR ID'}
                 mono
-                error={idError ?? undefined}
+                error={idErrorShown ?? undefined}
                 hint={mode === 'nxdn' ? 'NXDN ID, 1–65519.' : undefined}
               >
                 <TextInput

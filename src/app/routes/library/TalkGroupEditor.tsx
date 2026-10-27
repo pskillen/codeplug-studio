@@ -46,6 +46,7 @@ export function TalkGroupEditor({
   const [abbreviation, setAbbreviation] = useState(base.abbreviation ?? '');
   const [mode, setMode] = useState<DigitalChannelMode>(base.mode);
   const [digitalId, setDigitalId] = useState(String(base.digitalId));
+  const [saveAttempted, setSaveAttempted] = useState(false);
   const [comment, setComment] = useState(base.comment);
   const { save, saving, error } = useEntitySave('talk-groups');
   const { library } = useLibrary();
@@ -74,8 +75,14 @@ export function TalkGroupEditor({
 
   const idError = validateDigitalIdForMode(mode, parseOptionalInt(digitalId) ?? 0);
 
+  // A blank ID is invalid for NXDN, but the error only shows once the user typed one or tried to save.
+  const idErrorShown = digitalId.trim() === '' && !saveAttempted ? null : idError;
+
   function handleSave() {
-    if (idError) return;
+    if (idError) {
+      setSaveAttempted(true);
+      return;
+    }
     const row = buildRow();
     void save(() => persistence.putTalkGroup(row, entity ? entity.revision : null), {
       permitNavigation: permitNavigationOnce,
@@ -137,7 +144,7 @@ export function TalkGroupEditor({
               <FormField
                 label={mode === 'nxdn' ? 'NXDN ID' : 'Talk group ID'}
                 mono
-                error={idError ?? undefined}
+                error={idErrorShown ?? undefined}
                 hint={mode === 'nxdn' ? 'NXDN ID, 1–65519.' : undefined}
               >
                 <TextInput
