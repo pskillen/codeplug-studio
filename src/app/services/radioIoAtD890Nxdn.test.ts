@@ -50,11 +50,11 @@ function channel(id: string, rxHz: number, profiles: ChannelModeProfile[]): Chan
   });
 }
 
-function libraryOf(channels: Channel[]): LibrarySlice {
+function libraryOf(channels: Channel[], zoneChannels: Channel[] = channels): LibrarySlice {
   const zone = {
     ...newZone(PROJECT, 'Z'),
     id: 'zone-z',
-    members: channels.map((ch) => ({ kind: 'channel' as const, channelId: ch.id })),
+    members: zoneChannels.map((ch) => ({ kind: 'channel' as const, channelId: ch.id })),
   };
   return {
     channels,
@@ -68,12 +68,17 @@ function libraryOf(channels: Channel[]): LibrarySlice {
   };
 }
 
-/** The same library with every NXDN profile removed and NXDN-only channels dropped: what the base wrote. */
+/**
+ * The same library with every NXDN profile removed and NXDN-only channels dropped from the channel
+ * list: what the base wrote. The zone keeps every original member, so a dropped NXDN-only channel
+ * stays in the zone's member list (as it would on the base) and the comparison covers that path.
+ */
 function withoutNxdn(library: LibrarySlice): LibrarySlice {
   const channels = library.channels
     .map((ch) => ({ ...ch, modeProfiles: ch.modeProfiles.filter((p) => p.mode !== 'nxdn') }))
     .filter((ch) => ch.modeProfiles.length > 0);
-  return libraryOf(channels);
+  const out = libraryOf(channels);
+  return { ...out, zones: library.zones };
 }
 
 function project(
@@ -175,6 +180,7 @@ describe('AT-D890 MM9PDY NXDN channel projection', () => {
         expect(off.channels).toEqual(baseline.channels);
         expect(off.organisation).toEqual(baseline.organisation);
         expect([...off.numbersBySourceChannelId]).toEqual([...baseline.numbersBySourceChannelId]);
+        expect(off.warnings).toEqual(baseline.warnings);
         for (const ch of off.channels) expect(ch.nxdn).toBeUndefined();
       });
     }
