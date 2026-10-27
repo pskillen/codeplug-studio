@@ -35,6 +35,11 @@ export interface AtD890ReviewInit {
   buildId: string;
   serial: string;
   masterIdName: string;
+  /**
+   * The radio's "Master Id" flag (`MasterIdData` `+0x26`, `0x03684026`) is set in the image Studio
+   * read: the radio then sends the master ID on every channel, so per-channel IDs have no effect.
+   */
+  masterIdSelected?: boolean;
   range: AtD890FrequencyRangeDescription;
   receiveOnly: AtD890ReceiveOnlyChannel[];
   snapshot: Pick<AtD890RadioSettingsSnapshot, 'main' | 'ext'>;

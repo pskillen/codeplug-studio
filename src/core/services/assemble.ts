@@ -44,7 +44,7 @@ import {
 } from '@core/domain/channelEligibility.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import { sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
-import type { Library } from '@core/models/library.ts';
+import type { Library, OwnDigitalId } from '@core/models/library.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { ChannelBehaviourDefaults } from '@core/models/channelBehaviourDefaults.ts';
 import type { ZoneBehaviourDefaults } from '@core/models/zoneBehaviourDefaults.ts';
@@ -63,6 +63,8 @@ export interface LibrarySlice {
   analogContacts: AnalogContact[];
   rxGroupLists: RxGroupList[];
   scanLists: ScanList[];
+  /** The operator's own DMR and NXDN IDs; absent = none. */
+  ownDigitalIds?: OwnDigitalId[];
   aprsConfiguration?: AprsConfiguration | null;
   channelDefaults?: ChannelBehaviourDefaults;
   zoneDefaults?: ZoneBehaviourDefaults;
@@ -77,6 +79,7 @@ export function librarySliceFrom(library: Library): LibrarySlice {
     analogContacts: library.analogContacts,
     rxGroupLists: library.rxGroupLists,
     scanLists: library.scanLists,
+    ownDigitalIds: library.ownDigitalIds,
     aprsConfiguration: library.aprsConfiguration,
     channelDefaults: library.channelDefaults,
     zoneDefaults: library.zoneDefaults,
@@ -146,6 +149,8 @@ export interface AssembledBuild {
   channelMemorySlots?: ExportMemorySlot[];
   /** Resolved active APRS config for the single global row; null when none selected. */
   aprsConfiguration?: AprsConfiguration | null;
+  /** All library Digital IDs; exports pick the default and channel overrides from these. */
+  ownDigitalIds?: OwnDigitalId[];
 }
 
 export interface AssembleOptions {
@@ -697,5 +702,6 @@ export function assemble(
     zoneGrouping: zoneGroupingSections(normalizedBuild)[0],
     scanListsLayout: scanListsSections(normalizedBuild)[0],
     aprsConfiguration: resolveAprsConfiguration(library),
+    ownDigitalIds: library.ownDigitalIds ?? [],
   };
 }

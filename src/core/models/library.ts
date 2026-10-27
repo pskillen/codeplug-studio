@@ -60,7 +60,8 @@ export interface ChannelModeProfileDMR {
   dmrMode?: DmrOperatingMode | null;
   colourCode: number | null;
   timeslot: DMRTimeSlot | null;
-  dmrId: number | null;
+  /** `OwnDigitalId` row id this channel sends; `null` = the DMR default. */
+  ownDigitalIdId: string | null;
   contactRef: EntityRef | null;
   rxGroupListId: string | null;
   /** Send talker alias — `default` defers to library + build cascade. */
@@ -87,8 +88,8 @@ export interface ChannelModeProfileNxdn {
   mode: 'nxdn';
   rxRan: number | null;
   txRan: number | null;
-  /** The operator's NXDN ID on this channel (1–65519). */
-  unitId: number | null;
+  /** `OwnDigitalId` row id this channel sends; `null` = the NXDN default. */
+  ownDigitalIdId: string | null;
   /** What the channel calls: an NXDN talk group (group call) or NXDN contact (private call). */
   contactRef: EntityRef | null;
   /** RX group list to listen to; may mix modes, each radio writes only the NXDN members. */
@@ -156,6 +157,23 @@ export interface TalkGroup extends PersistableRow {
   abbreviation?: string;
 }
 
+/** The protocols that have an operator-owned ID: what the radio sends. */
+export type OwnDigitalIdProtocol = 'dmr' | 'nxdn';
+
+/**
+ * One of the operator's own IDs (what the radio sends), as opposed to a contact or talk group
+ * (who you call) or an ID-directory row (the downloaded lookup list).
+ */
+export interface OwnDigitalId extends PersistableRow {
+  /** Empty for IDs migrated from channels until the user names them. */
+  name: string;
+  protocol: OwnDigitalIdProtocol;
+  /** DMR 1-16776415, NXDN 1-65519. */
+  number: number;
+  /** At most one per protocol; see `defaultOwnDigitalId`. */
+  isDefault: boolean;
+}
+
 export interface DigitalContact extends PersistableRow {
   mode: DigitalChannelMode;
   name: string;
@@ -221,6 +239,8 @@ export interface Library {
   analogContacts: AnalogContact[];
   talkGroups: TalkGroup[];
   digitalContacts: DigitalContact[];
+  /** The operator's own DMR and NXDN IDs (Library "Digital IDs"). */
+  ownDigitalIds: OwnDigitalId[];
   rxGroupLists: RxGroupList[];
   scanLists: ScanList[];
   zones: Zone[];

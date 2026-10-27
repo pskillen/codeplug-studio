@@ -75,6 +75,9 @@ export function buildReferenceCountIndex(library: Library): Map<string, number> 
     };
     for (const profile of channel.modeProfiles) {
       if (profile.mode === 'dmr' || profile.mode === 'nxdn') {
+        if (profile.ownDigitalIdId) {
+          bumpProfileTarget({ kind: 'ownDigitalId', id: profile.ownDigitalIdId });
+        }
         if (profile.contactRef) {
           bumpProfileTarget(profile.contactRef);
         }

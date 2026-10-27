@@ -7,6 +7,7 @@ import type {
   AnalogContact,
   Channel,
   DigitalContact,
+  OwnDigitalId,
   RxGroupList,
   TalkGroup,
   Zone,
@@ -35,6 +36,8 @@ export const FIXTURE_TRACKING_SETTINGS_ID = 'ffffffff-ffff-4fff-8fff-fffffffffff
 export const FIXTURE_CHILD_ZONE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 export const FIXTURE_PARENT_ZONE_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 export const FIXTURE_SATELLITE_TRANSMITTER_ID = '12121212-1212-4212-8212-121212121212';
+export const FIXTURE_DMR_OWN_ID = '13131313-1313-4313-8313-131313131313';
+export const FIXTURE_NXDN_OWN_ID = '14141414-1414-4414-8414-141414141414';
 
 function rowMeta(projectId: string, id: string) {
   return {
@@ -66,6 +69,7 @@ export function minimalProjectAggregate(): ProjectAggregate {
     zones: [],
     talkGroups: [],
     digitalContacts: [],
+    ownDigitalIds: [],
     analogContacts: [],
     rxGroupLists: [],
     scanLists: [],
@@ -161,7 +165,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
         mode: 'dmr',
         colourCode: 1,
         timeslot: 2,
-        dmrId: 2351123,
+        ownDigitalIdId: FIXTURE_DMR_OWN_ID,
         dmrMode: null,
         contactRef: { kind: 'digitalContact', id: FIXTURE_DIGITAL_CONTACT_ID },
         rxGroupListId: FIXTURE_RX_LIST_ID,
@@ -175,6 +179,23 @@ export function fullLibraryAggregate(): ProjectAggregate {
       reportSlotIndex: 1,
     },
   };
+
+  const ownDigitalIds: OwnDigitalId[] = [
+    {
+      ...rowMeta(projectId, FIXTURE_DMR_OWN_ID),
+      name: 'Home',
+      protocol: 'dmr',
+      number: 2351123,
+      isDefault: true,
+    },
+    {
+      ...rowMeta(projectId, FIXTURE_NXDN_OWN_ID),
+      name: 'Home NXDN',
+      protocol: 'nxdn',
+      number: 1234,
+      isDefault: true,
+    },
+  ];
 
   const aprsConfiguration: AprsConfiguration = {
     ...rowMeta(projectId, FIXTURE_APRS_CONFIG_ID),
@@ -262,6 +283,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     zones: [zone],
     talkGroups: [talkGroup],
     digitalContacts: [digitalContact],
+    ownDigitalIds,
     analogContacts: [analogContact],
     rxGroupLists: [rxGroupList],
     scanLists: [],

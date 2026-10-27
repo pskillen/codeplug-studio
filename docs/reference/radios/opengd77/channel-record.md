@@ -141,18 +141,18 @@ Example (Edinburgh `55.9533`, `-3.1883`, `useLocation` on): lat bytes `3d a5 1b`
 
 On Web Serial Write, Studio **fully replaces** each occupied channel record from the build projection. Fields below are written to firmware-safe defaults when not carried on `RadioChannelDto` — prior Read bytes in those offsets are **not** retained (no RMW inside channel records).
 
-| Field / offset                            | Write default             | Notes                                                                                            |
-| ----------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------ |
-| txTimeout @ `0x1b`                        | `0`                       | Infinite (qdmr units of 15 s)                                                                    |
-| latitude / longitude @ split bytes        | from projection           | Packed angle when `location` set; zero + flag clear when unset. See Packed angle section         |
-| flags @ `0x26`                            | from projection           | `useFixedLocation` bit 3 when `useLocation` and finite coords; other flag bits clear             |
-| dmrId @ `0x27`                            | `0`                       | No per-channel DMR ID override                                                                   |
-| aprsIndex @ `0x2d`                        | `0`                       | No APRS alias link                                                                               |
-| alias @ `0x30`                            | `0`                       | Alias mode None                                                                                  |
-| vox / monitor bits @ `0x33`               | clear                     | Bits 6–3 off                                                                                     |
-| squelch @ `0x37`                          | from projection           | Analogue: library `squelch` % via qDMR scaling; digital: Global (`0`). See Squelch section above |
-| skipScan / skipZoneScan @ `0x33` bits 4–5 | from projection           | Both bits set together from scan-inclusion trait (no separate library fields)                    |
-| Empty / unlisted slots                    | `0xFF` fill, bitmap clear | Full channel table replace                                                                       |
+| Field / offset                            | Write default             | Notes                                                                                                |
+| ----------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------- |
+| txTimeout @ `0x1b`                        | `0`                       | Infinite (qdmr units of 15 s)                                                                        |
+| latitude / longitude @ split bytes        | from projection           | Packed angle when `location` set; zero + flag clear when unset. See Packed angle section             |
+| flags @ `0x26`                            | from projection           | `useFixedLocation` bit 3 when `useLocation` and finite coords; other flag bits clear                 |
+| dmrId @ `0x27`                            | `0` (Default)             | A channel that chose a Digital ID writes the number (24-bit BE) and sets flags bit 7 (overrideDMRID) |
+| aprsIndex @ `0x2d`                        | `0`                       | No APRS alias link                                                                                   |
+| alias @ `0x30`                            | `0`                       | Alias mode None                                                                                      |
+| vox / monitor bits @ `0x33`               | clear                     | Bits 6–3 off                                                                                         |
+| squelch @ `0x37`                          | from projection           | Analogue: library `squelch` % via qDMR scaling; digital: Global (`0`). See Squelch section above     |
+| skipScan / skipZoneScan @ `0x33` bits 4–5 | from projection           | Both bits set together from scan-inclusion trait (no separate library fields)                        |
+| Empty / unlisted slots                    | `0xFF` fill, bitmap clear | Full channel table replace                                                                           |
 
 Modelled fields (name, frequencies, mode, power, tones, bandwidth, color code, timeslot, TX contact, RX group, channel location + use location when set, scan skip flags when set on DTO, analogue squelch when set on DTO) encode from the projection. Tone wire values: see [#690](https://github.com/pskillen/codeplug-studio/issues/690).
 

@@ -34,16 +34,17 @@ OpenGD77 `Channel Type` wire mapping (`Analogue` / `Digital` / passthrough): [op
 
 ## Form field applicability
 
-| Field group                                           | Applies when                                                                             |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| RX/TX tone, bandwidth, squelch                        | `isAnalogMode(mode)` — `fm`, `am`, `ssb`                                                 |
-| SSB sideband (USB / LSB)                              | `ssb` profile only — `ssbSideband` on `ChannelModeProfileAnalog`, not a separate mode id |
-| Colour code, timeslot, DMR ID, contact, RX group list | `isDmrMode(mode)` — `dmr` only                                                           |
-| UR / RPT1 / RPT2 calls                                | `dstar` profile only                                                                     |
-| DG-ID, WIRES-X DTMF ID                                | `ysf` profile only                                                                       |
-| RX/TX RAN, rate, unit ID, call, RX group list         | `nxdn` profile only                                                                      |
-| MCC, MNC, GSSI, color code, talk group ref            | `tetra` profile only                                                                     |
-| (hidden) tones                                        | `isDigitalMode(mode)` — all digital modes                                                |
+| Field group                                                | Applies when                                                                             |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| RX/TX tone, bandwidth, squelch                             | `isAnalogMode(mode)` — `fm`, `am`, `ssb`                                                 |
+| SSB sideband (USB / LSB)                                   | `ssb` profile only — `ssbSideband` on `ChannelModeProfileAnalog`, not a separate mode id |
+| Colour code, timeslot, DMR ID, contact, RX group list      | `isDmrMode(mode)` — `dmr` only                                                           |
+| UR / RPT1 / RPT2 calls                                     | `dstar` profile only                                                                     |
+| DG-ID, WIRES-X DTMF ID                                     | `ysf` profile only                                                                       |
+| RX/TX RAN, rate, Digital ID (unit ID), call, RX group list | `nxdn` profile only                                                                      |
+| Digital ID (DMR ID)                                        | `dmr` profile only; `ownDigitalIdId`, `null` = the default DMR ID                        |
+| MCC, MNC, GSSI, color code, talk group ref                 | `tetra` profile only                                                                     |
+| (hidden) tones                                             | `isDigitalMode(mode)` — all digital modes                                                |
 
 YSF, D-STAR, P25, NXDN, M17, and Tetra are digital but may lack format-specific CPS columns for some adapters. OpenGD77 mode wire rules: [opengd77/channels.md](formats/opengd77/channels.md).
 

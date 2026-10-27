@@ -14,7 +14,7 @@ function multiModeChannel(): Channel {
         mode: 'dmr',
         colourCode: 1,
         timeslot: 2,
-        dmrId: 123,
+        ownDigitalIdId: null,
         contactRef: null,
         rxGroupListId: null,
       },

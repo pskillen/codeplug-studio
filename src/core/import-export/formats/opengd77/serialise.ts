@@ -1,6 +1,7 @@
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
+import { channelOwnIdOverride } from '@core/domain/ownDigitalIds.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import {
   buildScanContext,
@@ -123,7 +124,10 @@ function channelRowValues(
       channelTimeslot: dmr?.timeslot ?? null,
     }),
     [CHANNEL_COL.tgList]: rxGroupListWireName(assembled, dmr?.rxGroupListId ?? null, mode),
-    [CHANNEL_COL.dmrId]: formatOpenGd77DmrIdWire(mode, dmr?.dmrId ?? null),
+    [CHANNEL_COL.dmrId]: formatOpenGd77DmrIdWire(
+      mode,
+      dmr ? (channelOwnIdOverride(dmr, assembled.ownDigitalIds ?? [])?.number ?? null) : null,
+    ),
     [CHANNEL_COL.rxTone]: formatOpenGd77ToneWire(mode, analog?.rxTone ?? null),
     [CHANNEL_COL.txTone]: formatOpenGd77ToneWire(mode, analog?.txTone ?? null),
     [CHANNEL_COL.squelch]: formatOpenGd77SquelchWire(mode, analog?.squelch ?? null),

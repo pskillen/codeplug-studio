@@ -102,7 +102,7 @@ export function WhatToWriteBody({ config, view, actions }: StepProps) {
                 config.sharedContactBankNote
                   ? 'Talk groups and contacts use the 1024-slot DMR contact bank. ID directory writes the firmware User Database for incoming-call lookup. ID directory does not fill the 1024 contact bank; ID directory alone leaves prior FLASH contacts. Contacts or Both replaces talk groups and contacts in that bank.'
                   : config.sharedAddressBookNote
-                    ? 'Contacts and the ID directory share one address book. ID directory or Both replaces that book. Duplicate DMR IDs: contacts win. Operator radio IDs come from channel DMR IDs when the codeplug is written; contacts alone do not rewrite them.'
+                    ? 'Contacts and the ID directory share one address book. ID directory or Both replaces that book. Duplicate DMR IDs: contacts win. Operator radio IDs come from your Digital IDs when the codeplug is written; contacts alone do not rewrite them.'
                     : config.separateLookupDatabaseNote
                       ? AT_D890_CONTACTS_HINT
                       : 'Contacts are the ones you curate and call. The ID directory is bulk lookup-only data. Both: contacts win on duplicate DMR ID.'

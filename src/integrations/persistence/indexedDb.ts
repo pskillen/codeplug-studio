@@ -9,6 +9,7 @@ import type {
   Channel,
   DigitalContact,
   RxGroupList,
+  OwnDigitalId,
   ScanList,
   TalkGroup,
   Zone,
@@ -52,6 +53,7 @@ import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
 import { readEgressPathRow } from './egressPathRow.ts';
 import { readRadioBuildRow } from './radioBuildRow.ts';
+import { migrateLegacyOwnIds } from '@core/domain/ownDigitalIds.ts';
 import { readSatelliteRow } from './satelliteRow.ts';
 
 /** Legacy IndexedDB store name dropped in schema v22 (#654) — no build data migration. */
@@ -103,6 +105,32 @@ function ensureDigitalIdDirectoryIndexes(os: IDBObjectStore): void {
   if (!os.indexNames.contains('byProjectDigitalIdStr')) {
     os.createIndex('byProjectDigitalIdStr', ['projectId', 'digitalIdStr'], { unique: false });
   }
+}
+
+/**
+ * Schema v30: per-channel `dmrId` / `unitId` numbers become Digital IDs. Runs inside the
+ * version-change transaction (no awaits). Channel revision and updatedAt are kept: this is a
+ * format change, not an edit. Channels without a legacy key are not rewritten.
+ */
+function migrateChannelOwnIds(tx: IDBTransaction): void {
+  const channelStore = tx.objectStore(STORES.channel);
+  const idStore = tx.objectStore(STORES.ownDigitalId);
+  const req = channelStore.getAll();
+  req.onsuccess = () => {
+    const byProject = new Map<string, Channel[]>();
+    for (const row of req.result as Channel[]) {
+      const list = byProject.get(row.projectId) ?? [];
+      list.push(row);
+      byProject.set(row.projectId, list);
+    }
+    for (const [projectId, channels] of byProject) {
+      const { channels: migrated, ownDigitalIds } = migrateLegacyOwnIds(projectId, channels, []);
+      for (const row of ownDigitalIds) idStore.put(row);
+      migrated.forEach((row, index) => {
+        if (row !== channels[index]) channelStore.put(row);
+      });
+    }
+  };
 }
 
 function backfillDirectoryIndexFields(os: IDBObjectStore): void {
@@ -340,6 +368,9 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
               os.createIndex('byRadioBuild', ['projectId', 'radioBuildId'], { unique: false });
             }
           }
+        }
+        if (oldVersion > 0 && oldVersion < 30) {
+          migrateChannelOwnIds(request.transaction!);
         }
         const directoryStore = DIRECTORY_STORES.digitalIdDirectory;
         if (!db.objectStoreNames.contains(directoryStore)) {
@@ -706,6 +737,15 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   async listScanLists(projectId: string): Promise<ScanList[]> {
     return this.listRows<ScanList>('scanList', projectId);
   }
+  async getOwnDigitalId(projectId: string, id: string): Promise<OwnDigitalId | null> {
+    return this.getRow<OwnDigitalId>('ownDigitalId', projectId, id);
+  }
+  async putOwnDigitalId(row: OwnDigitalId, expectedRevision: number | null): Promise<PutResult> {
+    return this.putRow('ownDigitalId', row, expectedRevision);
+  }
+  async listOwnDigitalIds(projectId: string): Promise<OwnDigitalId[]> {
+    return this.listRows<OwnDigitalId>('ownDigitalId', projectId);
+  }
 
   async getAprsConfiguration(projectId: string, id: string): Promise<AprsConfiguration | null> {
     return this.getRow<AprsConfiguration>('aprsConfiguration', projectId, id);
@@ -868,6 +908,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       analogContacts,
       rxGroupLists,
       scanLists,
+      ownDigitalIds,
       aprsConfigurations,
       satellites,
       trackingSettings,
@@ -881,6 +922,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       this.listAnalogContacts(projectId),
       this.listRxGroupLists(projectId),
       this.listScanLists(projectId),
+      this.listOwnDigitalIds(projectId),
       this.listAprsConfigurations(projectId),
       this.listSatellites(projectId),
       this.listTrackingSettings(projectId),
@@ -896,6 +938,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       analogContacts,
       rxGroupLists,
       scanLists,
+      ownDigitalIds,
       aprsConfigurations,
       satellites,
       trackingSettings,
@@ -916,6 +959,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'analogContact', rows: seed.analogContacts ?? [] },
       { kind: 'rxGroupList', rows: seed.rxGroupLists ?? [] },
       { kind: 'scanList', rows: seed.scanLists ?? [] },
+      { kind: 'ownDigitalId', rows: seed.ownDigitalIds ?? [] },
       { kind: 'aprsConfiguration', rows: seed.aprsConfigurations ?? [] },
       { kind: 'satellite', rows: seed.satellites ?? [] },
       { kind: 'trackingSettings', rows: seed.trackingSettings ?? [] },
@@ -975,6 +1019,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'analogContact', rows: seed.analogContacts ?? [] },
       { kind: 'rxGroupList', rows: seed.rxGroupLists ?? [] },
       { kind: 'scanList', rows: seed.scanLists ?? [] },
+      { kind: 'ownDigitalId', rows: seed.ownDigitalIds ?? [] },
       { kind: 'aprsConfiguration', rows: seed.aprsConfigurations ?? [] },
       { kind: 'satellite', rows: seed.satellites ?? [] },
       { kind: 'trackingSettings', rows: seed.trackingSettings ?? [] },

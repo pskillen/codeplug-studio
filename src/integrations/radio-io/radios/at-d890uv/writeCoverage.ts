@@ -25,6 +25,8 @@ export const AT_D890_WRITE_COVERAGE_STATUS_LABEL: Record<AtD890WriteCoverageStat
   separateWrite: 'Updated separately via “Write Keps”',
 };
 
+const RADIO_ID_COVERAGE_LABELS = new Set(['Operator radio IDs', 'Master radio ID']);
+
 /** Rows for Export Web Serial — aligned with v1 Write allow-list and deferred banks. */
 export const AT_D890_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow[] = [
   { label: 'Channels', status: 'written' },
@@ -73,8 +75,16 @@ export const AT_D890_MM9PDY_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow
 export function atD890WriteCoverageRows(
   mm9pdy: boolean,
   settingsChangeCount = 0,
+  hasDefaultDmrId = false,
 ): readonly AtD890WriteCoverageRow[] {
-  const rows = mm9pdy ? AT_D890_MM9PDY_WRITE_COVERAGE_ROWS : AT_D890_WRITE_COVERAGE_ROWS;
+  const base = mm9pdy ? AT_D890_MM9PDY_WRITE_COVERAGE_ROWS : AT_D890_WRITE_COVERAGE_ROWS;
+  // Radio IDs and the master ID come from the default DMR Digital ID; without one they stay as read.
+  const rows = base.map((row): AtD890WriteCoverageRow => {
+    if (!RADIO_ID_COVERAGE_LABELS.has(row.label)) return row;
+    return hasDefaultDmrId
+      ? { ...row, status: 'written', note: 'From your Digital IDs' }
+      : { ...row, status: 'leftAlone', note: 'No default DMR ID' };
+  });
   if (settingsChangeCount <= 0) return rows;
   const note = `Preserved, except ${settingsChangeCount} ${
     settingsChangeCount === 1 ? 'field' : 'fields'

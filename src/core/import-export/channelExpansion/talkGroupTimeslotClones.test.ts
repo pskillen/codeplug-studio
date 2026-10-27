@@ -30,7 +30,7 @@ function dmrChannel(
     mode: 'dmr',
     colourCode: 1,
     timeslot,
-    dmrId: null,
+    ownDigitalIdId: null,
     contactRef,
     rxGroupListId,
   };

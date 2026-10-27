@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import DesignSystemV2Provider from '../v2/DesignSystemV2Provider.tsx';
@@ -74,18 +75,22 @@ describe('ChannelModeProfilesEditor NXDN panel', () => {
       nxdnRate: 'nxdn96',
     };
     render(
-      <DesignSystemV2Provider>
-        <ChannelModeProfilesEditor
-          profiles={[profile]}
-          library={library}
-          rxFrequency={null}
-          txFrequency={null}
-          onChange={() => {}}
-        />
-      </DesignSystemV2Provider>,
+      <MemoryRouter>
+        <DesignSystemV2Provider>
+          <ChannelModeProfilesEditor
+            profiles={[profile]}
+            library={library}
+            rxFrequency={null}
+            txFrequency={null}
+            onChange={() => {}}
+          />
+        </DesignSystemV2Provider>
+      </MemoryRouter>,
     );
     expect(screen.getByLabelText('Call', { selector: 'input' })).toHaveValue('NX Bob');
     expect(screen.getByLabelText('Rate', { selector: 'input' })).toHaveValue('NXDN96 (12.5 kHz)');
-    expect(screen.getByText('Your NXDN ID on this channel, 1–65519.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Unit ID', { selector: 'input' })).toHaveValue(
+      'Default (none set)',
+    );
   });
 });

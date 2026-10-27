@@ -13,6 +13,8 @@ export const AT_D890UV_LIMITS = {
   RX_GROUP_LISTS_MAX: 250,
   RX_GROUP_MEMBERS_MAX: 64,
   TALK_GROUPS_MAX: 10_000,
+  /** Operator radio-ID list entries (the master ID is separate). */
+  RADIO_IDS_MAX: 250,
   NAME_LENGTH: 16,
   APRS_SLOTS: 8,
   /** Parallel AM airband bank (AmAirData) — not MR channels. */

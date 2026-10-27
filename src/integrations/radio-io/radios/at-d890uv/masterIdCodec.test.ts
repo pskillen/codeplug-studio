@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { AT_D890_MAP_SIZE, D890_MAP } from './constants.ts';
-import { encodeMasterIdIntoAtD890Image } from './masterIdCodec.ts';
+import { encodeMasterIdIntoAtD890Image, isAtD890MasterIdSelected } from './masterIdCodec.ts';
 
 const master = { index: 0, dmrId: 2_351_234, name: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' };
 
@@ -51,5 +51,15 @@ describe('encodeMasterIdIntoAtD890Image', () => {
     const body = image.get(D890_MAP.MasterIdData, D890_MAP.MasterIdLength);
     expect(body[0]).toBe(0xcc);
     expect(body[0x26]).toBe(0xff);
+  });
+});
+
+describe('isAtD890MasterIdSelected', () => {
+  it('reads the flag at +0x26 (0x03684026)', () => {
+    const body = new Uint8Array(D890_MAP.MasterIdLength);
+    expect(isAtD890MasterIdSelected(body)).toBe(false);
+    body[0x26] = 1;
+    expect(isAtD890MasterIdSelected(body)).toBe(true);
+    expect(D890_MAP.MasterIdData + 0x26).toBe(0x03684026);
   });
 });

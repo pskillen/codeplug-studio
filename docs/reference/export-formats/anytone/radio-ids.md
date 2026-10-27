@@ -14,10 +14,10 @@ DMR radio ID labels referenced from `Channel.CSV` (`Radio ID` column).
 
 ## Internal mapping
 
-| Wire       | Internal (target)                                      |
-| ---------- | ------------------------------------------------------ |
-| `Radio ID` | `ChannelModeProfileDMR.dmrId` or build/profile default |
-| `Name`     | Wire label; resolved by name on import                 |
+| Wire       | Internal (target)                                                                                                                                 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Radio ID` | Profile placeholder today (not the channel's Digital ID); [#1448](https://github.com/pskillen/codeplug-studio/issues/1448) maps it to Digital IDs |
+| `Name`     | Wire label; resolved by name on import                                                                                                            |
 
 Accepted pattern: multiple channels share one radio ID row.
 

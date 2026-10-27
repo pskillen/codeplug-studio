@@ -128,7 +128,7 @@ describe('normalizeModeProfile (NXDN)', () => {
       mode: 'nxdn',
       rxRan: null,
       txRan: null,
-      unitId: null,
+      ownDigitalIdId: null,
       contactRef: { kind: 'digitalContact', id: 'c-1' },
       talkGroupRef: { kind: 'talkGroup', id: 'tg-1' },
     } as unknown as ChannelModeProfile);
@@ -140,7 +140,7 @@ describe('normalizeModeProfile (NXDN)', () => {
       mode: 'nxdn',
       rxRan: null,
       txRan: null,
-      unitId: null,
+      ownDigitalIdId: null,
       contactRef: null,
       rxGroupListId: null,
       nxdnRate: null,
@@ -207,19 +207,30 @@ describe('validateModeProfiles (NXDN)', () => {
   const nxdn = (patch: Record<string, unknown>) =>
     ({ ...defaultModeProfile('nxdn'), ...patch }) as ChannelModeProfile;
 
-  it('rejects the all-call ID 65535 as an NXDN unit ID', () => {
-    expect(validateModeProfiles([nxdn({ unitId: 65535 })])).toContain(
-      'NXDN unit ID must be 1–65519',
+  it('rejects a Digital ID that is missing or of the other protocol, when the IDs are given', () => {
+    const own = (id: string, protocol: 'dmr' | 'nxdn') => ({
+      id,
+      projectId: 'p',
+      revision: 1,
+      updatedAt: '',
+      name: '',
+      protocol,
+      number: 5,
+      isDefault: false,
+    });
+    const ids = [own('n1', 'nxdn'), own('d1', 'dmr')];
+    expect(validateModeProfiles([nxdn({ ownDigitalIdId: 'n1' })], ids)).toEqual([]);
+    expect(validateModeProfiles([nxdn({ ownDigitalIdId: 'd1' })], ids)).toContain(
+      "This channel's NXDN ID is not in Digital IDs",
     );
-  });
-
-  it('rejects NXDN unit IDs outside 1-65519', () => {
-    expect(validateModeProfiles([nxdn({ unitId: 0 })])).toContain('NXDN unit ID must be 1–65519');
-    expect(validateModeProfiles([nxdn({ unitId: 65520 })])).toContain(
-      'NXDN unit ID must be 1–65519',
+    expect(validateModeProfiles([nxdn({ ownDigitalIdId: 'gone' })], ids)).toHaveLength(1);
+    const dmr = { ...defaultModeProfile('dmr'), ownDigitalIdId: 'n1' } as ChannelModeProfile;
+    expect(validateModeProfiles([dmr], ids)).toContain(
+      "This channel's DMR ID is not in Digital IDs",
     );
-    expect(validateModeProfiles([nxdn({ unitId: 65519 })])).toEqual([]);
-    expect(validateModeProfiles([nxdn({ unitId: null })])).toEqual([]);
+    // Default, and no IDs passed: nothing to check.
+    expect(validateModeProfiles([nxdn({ ownDigitalIdId: null })], ids)).toEqual([]);
+    expect(validateModeProfiles([nxdn({ ownDigitalIdId: 'gone' })])).toEqual([]);
   });
 
   it('accepts a talk group or digital contact call, rejects other kinds', () => {

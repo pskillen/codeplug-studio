@@ -47,7 +47,7 @@ function previewChannel(callsign: string): Channel {
         mode: 'dmr',
         colourCode: 1,
         timeslot: 2 as DMRTimeSlot,
-        dmrId: null,
+        ownDigitalIdId: null,
         contactRef: null,
         rxGroupListId: null,
         sendTalkerAlias: 'default',

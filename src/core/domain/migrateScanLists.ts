@@ -78,6 +78,7 @@ export function migrateBuildScanListsToLibrary(aggregate: ProjectAggregate): Pro
     zones: aggregate.zones,
     talkGroups: aggregate.talkGroups,
     digitalContacts: aggregate.digitalContacts,
+    ownDigitalIds: aggregate.ownDigitalIds,
     analogContacts: aggregate.analogContacts,
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: [...scanListsById.values()],

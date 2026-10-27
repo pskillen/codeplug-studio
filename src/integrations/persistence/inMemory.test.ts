@@ -113,6 +113,30 @@ describe('InMemoryProjectPersistence', () => {
     });
   });
 
+  it('stores Digital IDs per project and round-trips them through the seed', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    const row = {
+      id: 'own-1',
+      projectId: meta.projectId,
+      revision: 1,
+      updatedAt: meta.updatedAt,
+      name: 'Home',
+      protocol: 'dmr' as const,
+      number: 2351234,
+      isDefault: true,
+    };
+    expect((await store.putOwnDigitalId(row, null)).ok).toBe(true);
+    // The store restamps updatedAt on every put, so the clock is not part of the comparison.
+    const stored = { ...row, updatedAt: expect.any(String) };
+    expect(await store.getOwnDigitalId(meta.projectId, 'own-1')).toEqual(stored);
+    expect(await store.listOwnDigitalIds(meta.projectId)).toEqual([stored]);
+    expect((await store.loadProjectSeed(meta.projectId))?.ownDigitalIds).toEqual([stored]);
+    await store.deleteEntity(meta.projectId, 'ownDigitalId', 'own-1');
+    expect(await store.listOwnDigitalIds(meta.projectId)).toEqual([]);
+  });
+
   it('loadProjectSeed returns full aggregate including radioBuilds and egressPaths', async () => {
     const store = new InMemoryProjectPersistence();
     const meta = newProjectMeta('Test');

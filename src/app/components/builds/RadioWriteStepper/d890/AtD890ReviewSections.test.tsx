@@ -8,7 +8,7 @@ import {
   setOverride,
 } from '../../../../state/atD890RadioSettingsSession.ts';
 import type { ReviewContext } from '../reviewSections.tsx';
-import { atD890ReviewSections } from './AtD890ReviewSections.tsx';
+import { AtD890MasterIdNote, atD890ReviewSections } from './AtD890ReviewSections.tsx';
 import { createAtD890ReviewController, type AtD890ReviewInit } from './atD890ReviewController.ts';
 
 const BUILD = 'review-language-guard';
@@ -115,5 +115,28 @@ describe('AtD890 Review repeater mode check', () => {
   it('is absent when repeater mode is off', () => {
     renderSections(controller(0, { snapshot: snapshot({ 0x2d: 0 }) }));
     expect(screen.queryByTestId('d890-repeater-mode')).toBeNull();
+  });
+});
+
+describe('AtD890 Review Master Id note', () => {
+  const note = (c: ReturnType<typeof controller>) =>
+    render(
+      <DesignSystemV2Provider>
+        <AtD890MasterIdNote controller={c} />
+      </DesignSystemV2Provider>,
+    );
+
+  it('says per-channel IDs have no effect when the radio has Master Id on', () => {
+    note(controller(0, { masterIdSelected: true, settingsOnly: false }));
+    expect(screen.getByTestId('d890-master-id-on')).toHaveTextContent(
+      'Master Id is on: per-channel ID overrides have no effect',
+    );
+  });
+
+  it('is absent when Master Id is off, unknown, or the Write sends only settings', () => {
+    note(controller(0, { masterIdSelected: false, settingsOnly: false }));
+    note(controller(0, { settingsOnly: false }));
+    note(controller(0, { masterIdSelected: true, settingsOnly: true }));
+    expect(screen.queryByTestId('d890-master-id-on')).toBeNull();
   });
 });

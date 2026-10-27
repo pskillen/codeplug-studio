@@ -47,6 +47,21 @@ export function AtD890ReceiveOnlyNote({ controller }: { controller: AtD890Review
   );
 }
 
+/** The radio sends its Master ID on every channel, so per-channel Digital IDs do nothing. */
+export function AtD890MasterIdNote({ controller }: { controller: AtD890ReviewController }) {
+  const { masterIdSelected, settingsOnly } = controller.init;
+  if (!masterIdSelected || settingsOnly) return null;
+  return (
+    <div className={dClasses.warn} data-testid="d890-master-id-on">
+      <StatusBanner tone="warning">
+        Master Id is on: per-channel ID overrides have no effect. This radio sends its master ID on
+        every channel. Choose a radio ID in Settings &gt; Channel &gt; Radio ID on the radio to use
+        them.
+      </StatusBanner>
+    </div>
+  );
+}
+
 function SettingsSection({ controller }: { controller: AtD890ReviewController }) {
   const state = useReviewState(controller);
   const store = useAtD890RadioSettingsSession(controller.init.buildId);

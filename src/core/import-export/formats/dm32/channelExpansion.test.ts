@@ -21,7 +21,7 @@ function dmrRepeaterChannel(name: string, rxGroupListId: string): ReturnType<typ
         mode: 'dmr',
         colourCode: 1,
         timeslot: 1,
-        dmrId: 1234567,
+        ownDigitalIdId: null,
         contactRef: null,
         rxGroupListId,
       } satisfies ChannelModeProfileDMR,

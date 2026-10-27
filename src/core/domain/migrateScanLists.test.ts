@@ -24,6 +24,7 @@ describe('migrateBuildScanListsToLibrary', () => {
       zones: [],
       talkGroups: [],
       digitalContacts: [],
+      ownDigitalIds: [],
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],

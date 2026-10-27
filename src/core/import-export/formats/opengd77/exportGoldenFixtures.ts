@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { newFormatBuild, newRadioBuildForProfile } from '@core/domain/factories.ts';
-import type { Channel } from '@core/models/library.ts';
+import type { Channel, OwnDigitalId } from '@core/models/library.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
@@ -35,6 +35,7 @@ export function loadOpenGd77YamlGoldenFixture(): {
     zones: aggregate.zones,
     talkGroups: aggregate.talkGroups,
     digitalContacts: aggregate.digitalContacts,
+    ownDigitalIds: aggregate.ownDigitalIds,
     analogContacts: aggregate.analogContacts,
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: [],
@@ -48,6 +49,18 @@ export function assembleOpenGd77YamlGolden(library: LibrarySlice, build: RadioBu
     profileId: 'opengd77-1701',
   });
 }
+
+/** The DMR ID the multi-mode golden channel chooses (shows in the DMR ID column). */
+const MULTI_MODE_OWN_ID: OwnDigitalId = {
+  id: '88888888-8888-4888-8888-888888888889',
+  projectId: OPENGD77_GOLDEN_PROJECT_ID,
+  revision: 1,
+  updatedAt: '2026-01-01T00:00:00.000Z',
+  name: '',
+  protocol: 'dmr',
+  number: 234_999,
+  isDefault: false,
+};
 
 /** One logical channel with FM + DMR mode profiles for multi-mode golden assertions. */
 export function multiModeOpenGd77ExportLibrary(base: LibrarySlice): LibrarySlice {
@@ -70,7 +83,7 @@ export function multiModeOpenGd77ExportLibrary(base: LibrarySlice): LibrarySlice
         mode: 'dmr' as const,
         colourCode: 7,
         timeslot: 2 as const,
-        dmrId: 234_999,
+        ownDigitalIdId: MULTI_MODE_OWN_ID.id,
         contactRef: { kind: 'talkGroup' as const, id: tg.id },
         rxGroupListId: rgl.id,
       },
@@ -79,6 +92,7 @@ export function multiModeOpenGd77ExportLibrary(base: LibrarySlice): LibrarySlice
   return {
     ...base,
     channels: [base.channels[0]!, multiCh],
+    ownDigitalIds: [...(base.ownDigitalIds ?? []), MULTI_MODE_OWN_ID],
   };
 }
 

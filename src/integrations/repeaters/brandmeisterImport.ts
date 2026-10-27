@@ -52,7 +52,7 @@ function withRxGroupListOnChannel(channel: Channel, rxGroupListId: string): Chan
     mode: 'dmr',
     colourCode: null,
     timeslot: null,
-    dmrId: null,
+    ownDigitalIdId: null,
     contactRef: null,
     rxGroupListId,
   };

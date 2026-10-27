@@ -351,6 +351,125 @@ describe('IndexedDbProjectPersistence', () => {
     rawDb.close();
   });
 
+  it('upgrading a v29 DB turns channel DMR and NXDN numbers into Digital IDs per project', async () => {
+    const dbName = `v29-db-${counter++}`;
+    const metaA = newProjectMeta('A');
+    const metaB = newProjectMeta('B');
+    const stamp = '2026-01-02T03:04:05.000Z';
+    const legacy = (projectId: string, id: string, profiles: Record<string, unknown>[]): Channel =>
+      ({
+        ...newChannel(projectId, id),
+        id,
+        revision: 7,
+        updatedAt: stamp,
+        modeProfiles: profiles,
+      }) as unknown as Channel;
+    const dmr = (dmrId: number | null) => ({ mode: 'dmr', colourCode: 1, dmrId });
+    const rows = [
+      legacy(metaA.projectId, 'a1', [dmr(2351234)]),
+      legacy(metaA.projectId, 'a2', [dmr(2351234), { mode: 'nxdn', rxRan: 1, unitId: 5 }]),
+      legacy(metaA.projectId, 'a3', [dmr(null)]),
+      legacy(metaA.projectId, 'a4', [{ mode: 'fm', squelch: null }]),
+      legacy(metaB.projectId, 'b1', [dmr(2351234)]),
+      // A partial row with no profiles at all must not abort the upgrade.
+      (() => {
+        const partial = legacy(metaA.projectId, 'a5', []) as unknown as Record<string, unknown>;
+        delete partial.modeProfiles;
+        return partial as unknown as Channel;
+      })(),
+    ];
+
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.open(dbName, 29);
+      req.onupgradeneeded = () => {
+        for (const name of ['projects', 'channels']) {
+          const os = req.result.createObjectStore(name, { keyPath: ['projectId', 'id'] });
+          os.createIndex('byProject', 'projectId', { unique: false });
+        }
+      };
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction(['projects', 'channels'], 'readwrite');
+        tx.objectStore('projects').put(metaA);
+        tx.objectStore('projects').put(metaB);
+        for (const row of rows) tx.objectStore('channels').put(row);
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+      req.onerror = () => reject(req.error);
+    });
+
+    const store = new IndexedDbProjectPersistence(dbName);
+    open.add(store);
+
+    const idsA = await store.listOwnDigitalIds(metaA.projectId);
+    const idsB = await store.listOwnDigitalIds(metaB.projectId);
+    expect(idsA.map((r) => [r.protocol, r.number, r.name, r.isDefault]).sort()).toEqual([
+      ['dmr', 2351234, '', false],
+      ['nxdn', 5, '', false],
+    ]);
+    expect(idsB.map((r) => [r.protocol, r.number, r.isDefault])).toEqual([['dmr', 2351234, false]]);
+    // No default is set by the migration.
+    expect([...idsA, ...idsB].some((r) => r.isDefault)).toBe(false);
+
+    const channels = await store.listChannels(metaA.projectId);
+    const byId = new Map(channels.map((c) => [c.id, c]));
+    // The DB opened, the other rows migrated, and the partial row is still there.
+    expect(byId.has('a5')).toBe(true);
+    const dmrRow = idsA.find((r) => r.protocol === 'dmr')!;
+    const nxdnRow = idsA.find((r) => r.protocol === 'nxdn')!;
+    const profile = (id: string, index = 0) =>
+      byId.get(id)!.modeProfiles[index] as unknown as Record<string, unknown>;
+    expect(profile('a1').ownDigitalIdId).toBe(dmrRow.id);
+    expect(profile('a2', 0).ownDigitalIdId).toBe(dmrRow.id);
+    expect(profile('a2', 1).ownDigitalIdId).toBe(nxdnRow.id);
+    expect(profile('a3').ownDigitalIdId).toBeNull();
+    for (const key of ['a1', 'a2', 'a3']) {
+      for (const p of byId.get(key)!.modeProfiles as unknown as Record<string, unknown>[]) {
+        expect(p).not.toHaveProperty('dmrId');
+        expect(p).not.toHaveProperty('unitId');
+      }
+    }
+    // A format change, not an edit: revision and timestamp stay.
+    for (const c of channels) {
+      expect(c.revision).toBe(7);
+      expect(c.updatedAt).toBe(stamp);
+    }
+    // The other project's row is its own.
+    const b1 = (await store.listChannels(metaB.projectId))[0]!;
+    expect((b1.modeProfiles[0] as unknown as Record<string, unknown>).ownDigitalIdId).toBe(
+      idsB[0]!.id,
+    );
+  });
+
+  it('persists Digital IDs and loads them in the project seed', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    const row = {
+      id: 'own-1',
+      projectId: meta.projectId,
+      revision: 1,
+      updatedAt: meta.updatedAt,
+      name: 'Home',
+      protocol: 'dmr' as const,
+      number: 2351234,
+      isDefault: true,
+    };
+    expect((await store.putOwnDigitalId(row, null)).ok).toBe(true);
+    expect(await store.getOwnDigitalId(meta.projectId, 'own-1')).toMatchObject({
+      name: 'Home',
+      number: 2351234,
+      isDefault: true,
+    });
+    expect((await store.loadProjectSeed(meta.projectId))?.ownDigitalIds).toHaveLength(1);
+    await store.deleteEntity(meta.projectId, 'ownDigitalId', 'own-1');
+    expect(await store.listOwnDigitalIds(meta.projectId)).toEqual([]);
+  });
+
   it('replaceProject removes stale rows from a prior seed', async () => {
     const store = makeStore();
     const meta = newProjectMeta('Test');

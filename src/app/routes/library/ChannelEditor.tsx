@@ -220,7 +220,7 @@ export default function ChannelEditor({
   }
 
   function handleSave() {
-    const profileErrors = validateModeProfiles(modeProfiles);
+    const profileErrors = validateModeProfiles(modeProfiles, library.ownDigitalIds);
     if (profileErrors.length > 0) {
       setValidationError(profileErrors[0] ?? 'Invalid mode profiles');
       return;

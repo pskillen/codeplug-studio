@@ -36,6 +36,7 @@ export function resolveDmrOperatingMode(
 export function normalizeDmrModeProfile(profile: ChannelModeProfileDMR): ChannelModeProfileDMR {
   return {
     ...profile,
+    ownDigitalIdId: profile.ownDigitalIdId ?? null,
     dmrMode: normalizeDmrOperatingMode(profile.dmrMode ?? null),
     sendTalkerAlias:
       profile.sendTalkerAlias ?? DEFAULT_MODE_PROFILE_BEHAVIOUR_OVERRIDES.sendTalkerAlias,

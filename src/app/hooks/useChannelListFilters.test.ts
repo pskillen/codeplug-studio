@@ -42,7 +42,7 @@ describe('filterChannelsForList', () => {
           mode: 'dmr',
           colourCode: 1,
           timeslot: 1,
-          dmrId: 123,
+          ownDigitalIdId: null,
           contactRef: null,
           rxGroupListId: null,
         },

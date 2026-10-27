@@ -19,7 +19,14 @@ export interface EntityReference {
 
 /** Target of a reference scan: a library entity addressed by kind + UUID id. */
 export interface ReferenceTarget {
-  kind: EntityRefKind | 'rxGroupList' | 'scanList' | 'zone' | 'aprsConfiguration' | 'satellite';
+  kind:
+    | EntityRefKind
+    | 'rxGroupList'
+    | 'scanList'
+    | 'zone'
+    | 'aprsConfiguration'
+    | 'satellite'
+    | 'ownDigitalId';
   id: string;
 }
 
@@ -116,6 +123,20 @@ export function findReferencesTo(library: Library, target: ReferenceTarget): Ent
       }
     }
     for (const profile of channel.modeProfiles) {
+      // Being the default is not a reference; only a channel that names the ID is.
+      if (
+        (profile.mode === 'dmr' || profile.mode === 'nxdn') &&
+        target.kind === 'ownDigitalId' &&
+        profile.ownDigitalIdId === target.id
+      ) {
+        refs.push({
+          fromKind: 'channel',
+          fromId: channel.id,
+          fromName: channel.name,
+          relationship: profile.mode === 'dmr' ? 'channel DMR ID' : 'channel NXDN unit ID',
+        });
+        break;
+      }
       if (profile.mode === 'dmr') {
         const refsContact = profile.contactRef !== null && refMatches(profile.contactRef, target);
         const refsRxList = target.kind === 'rxGroupList' && profile.rxGroupListId === target.id;
@@ -205,6 +226,7 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
 
   const scanListIds = new Set(library.scanLists.map((s) => s.id));
   const satelliteIds = new Set(library.satellites.map((s) => s.id));
+  const ownDigitalIdsById = new Map(library.ownDigitalIds.map((row) => [row.id, row]));
 
   const hasTarget = (target: ReferenceTarget): boolean => {
     switch (target.kind) {
@@ -226,6 +248,8 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
         return library.aprsConfiguration?.id === target.id;
       case 'satellite':
         return satelliteIds.has(target.id);
+      case 'ownDigitalId':
+        return ownDigitalIdsById.has(target.id);
     }
   };
 
@@ -316,6 +340,21 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
           targetKind: slot.channelRef.kind,
           targetId: slot.channelRef.id,
           relationship: 'channel APRS report slot channel',
+        });
+      }
+    }
+    for (const profile of [...dmrProfiles(channel), ...nxdnProfiles(channel)]) {
+      if (
+        profile.ownDigitalIdId &&
+        ownDigitalIdsById.get(profile.ownDigitalIdId)?.protocol !== profile.mode
+      ) {
+        dangling.push({
+          fromKind: 'channel',
+          fromId: channel.id,
+          fromName: channel.name,
+          targetKind: 'ownDigitalId',
+          targetId: profile.ownDigitalIdId,
+          relationship: profile.mode === 'dmr' ? 'channel DMR ID' : 'channel NXDN unit ID',
         });
       }
     }

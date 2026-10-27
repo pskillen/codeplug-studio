@@ -28,6 +28,7 @@ function library(zones: Zone[], channelIds: string[] = []): Library {
     analogContacts: [],
     talkGroups: [],
     digitalContacts: [],
+    ownDigitalIds: [],
     rxGroupLists: [],
     scanLists: [],
     satellites: [],

@@ -36,6 +36,7 @@ describe('contextualStripItems', () => {
       'Zones',
       'Talk groups',
       'Contacts',
+      'Digital IDs',
       'Receive group lists',
       'Scan lists',
       'APRS setup',

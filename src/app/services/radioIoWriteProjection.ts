@@ -7,6 +7,7 @@ import type {
   DualBankWriteMode,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
+import { channelOwnIdOverride, defaultOwnDigitalId } from '@core/domain/ownDigitalIds.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
 import type { DualBankDirectorySlice } from './dualBankRadioWrite.ts';
@@ -721,31 +722,6 @@ function isDmrProfile(
   return profile.mode === 'dmr';
 }
 
-function mergeDm32RadioIdEntries(
-  channelEntries: readonly { dmrId: number; name: string }[],
-  maxRadioIds: number,
-  warnings: ExportWarning[],
-): { radioIds: RadioRadioIdDto[]; dmrIdIndexByValue: Map<number, number> } {
-  const seen = new Map<number, { dmrId: number; name: string }>();
-
-  for (const entry of channelEntries) {
-    if (entry.dmrId <= 0 || seen.has(entry.dmrId)) continue;
-    seen.set(entry.dmrId, { dmrId: entry.dmrId, name: entry.name.slice(0, 11) });
-  }
-
-  const entries = [...seen.values()];
-  if (entries.length > maxRadioIds) {
-    pushGeneralWarning(
-      warnings,
-      `Build has ${entries.length} distinct DMR radio ID(s); only ${maxRadioIds} export to operator radio-ID bank`,
-    );
-  }
-  const capped = entries.slice(0, maxRadioIds);
-  const radioIds = capped.map((entry, index) => ({ index, ...entry }));
-  const dmrIdIndexByValue = new Map(capped.map((entry, index) => [entry.dmrId, index]));
-  return { radioIds, dmrIdIndexByValue };
-}
-
 /**
  * Merge library contacts and directory rows into a radio's ID lookup store
  * (DM-32 address book, AT-D890 ID database). Library rows win; overlapping directory IDs skip.
@@ -806,30 +782,70 @@ function mergeLookupStoreContacts(
   return merged;
 }
 
-function buildDm32RadioIdBank(
+/** DM-32 radio-ID names are 11 characters + NUL; AT-D890 radio-ID and master names are 16. */
+const DM32_RADIO_ID_NAME_LIMIT = 11;
+const AT_D890_RADIO_ID_NAME_LIMIT = 16;
+
+/** The operator radio-ID list a Write sends, and how channels point into it. */
+interface OwnRadioIdList {
+  radioIds: RadioRadioIdDto[];
+  dmrRadioIdIndexByOwnIdId: Map<string, number>;
+  /** 0 when the library has a default DMR ID (it is entry 0), else absent. */
+  dmrDefaultRadioIdIndex?: number;
+}
+
+/**
+ * Operator radio-ID list for a Write: the default DMR Digital ID first (when there is one), then
+ * the distinct IDs that exported channels choose, in channel order. A chosen ID is labelled with its
+ * name, else with the channel that first uses it. The list is capped at `maxRadioIds`.
+ */
+function buildOwnRadioIdList(
   assembled: AssembledBuild,
   build: RadioBuild,
   library: Pick<LibrarySlice, 'talkGroups' | 'digitalContacts'>,
   egress: RadioWireEgressIds,
+  maxRadioIds: number,
+  nameLimit: number,
   warnings: ExportWarning[],
-): { radioIds: RadioRadioIdDto[]; dmrIdIndexByValue: Map<number, number> } {
-  const limits = requireProfileExportLimits(egress);
-  const maxRadioIds = requireNumericLimit(limits.maxRadioIds, 'maxRadioIds', egress);
-  const channelEntries: { dmrId: number; name: string }[] = [];
-  const seenChannel = new Set<number>();
+): OwnRadioIdList {
+  const ownIds = assembled.ownDigitalIds ?? [];
+  const entries: { dmrId: number; name: string }[] = [];
+  const indexByNumber = new Map<number, number>();
+  const dmrRadioIdIndexByOwnIdId = new Map<string, number>();
 
-  const considerChannelDmrId = (dmrId: number | null | undefined, channel: Channel) => {
-    if (dmrId == null || dmrId <= 0 || seenChannel.has(dmrId)) return;
-    seenChannel.add(dmrId);
-    const label = channel.callsign?.trim() || channel.name?.trim() || 'Radio ID';
-    channelEntries.push({ dmrId, name: label });
+  const addEntry = (number: number, name: string, unnamed?: boolean): number => {
+    const known = indexByNumber.get(number);
+    if (known != null) return known;
+    entries.push({
+      dmrId: number,
+      name: name.slice(0, nameLimit),
+      ...(unnamed ? { unnamed: true } : {}),
+    });
+    indexByNumber.set(number, entries.length - 1);
+    return entries.length - 1;
+  };
+
+  const defaultId = defaultOwnDigitalId(ownIds, 'dmr');
+  if (defaultId) {
+    // An unnamed default is labelled by its number ("ID 2351234"), never a generic "Radio ID".
+    const defaultName = defaultId.name.trim();
+    dmrRadioIdIndexByOwnIdId.set(
+      defaultId.id,
+      addEntry(defaultId.number, defaultName || `ID ${defaultId.number}`, defaultName === ''),
+    );
+  }
+
+  const considerChannelId = (profile: ChannelModeProfile, channel: Channel) => {
+    const row = channelOwnIdOverride(profile, ownIds);
+    if (!row || row.number <= 0) return;
+    const label =
+      row.name.trim() || channel.callsign?.trim() || channel.name?.trim() || `ID ${row.number}`;
+    dmrRadioIdIndexByOwnIdId.set(row.id, addEntry(row.number, label));
   };
 
   for (const row of assembled.channels) {
     for (const profile of row.entity.modeProfiles) {
-      if (isDmrProfile(profile)) {
-        considerChannelDmrId(profile.dmrId, row.entity);
-      }
+      if (isDmrProfile(profile)) considerChannelId(profile, row.entity);
     }
   }
 
@@ -850,11 +866,25 @@ function buildDm32RadioIdBank(
     for (const projection of expanded) {
       const channel = channelById.get(projection.sourceChannelId);
       if (!channel || !isDmrProfile(projection.modeProfile)) continue;
-      considerChannelDmrId(projection.modeProfile.dmrId, channel);
+      considerChannelId(projection.modeProfile, channel);
     }
   }
 
-  return mergeDm32RadioIdEntries(channelEntries, maxRadioIds, warnings);
+  if (entries.length > maxRadioIds) {
+    pushGeneralWarning(
+      warnings,
+      `Build has ${entries.length} distinct DMR radio ID(s); only ${maxRadioIds} export to operator radio-ID bank`,
+    );
+  }
+  const capped = entries.slice(0, maxRadioIds);
+  for (const [id, index] of [...dmrRadioIdIndexByOwnIdId]) {
+    if (index >= capped.length) dmrRadioIdIndexByOwnIdId.delete(id);
+  }
+  return {
+    radioIds: capped.map((entry, index) => ({ index, ...entry })),
+    dmrRadioIdIndexByOwnIdId,
+    ...(defaultId ? { dmrDefaultRadioIdIndex: 0 } : {}),
+  };
 }
 
 /**
@@ -1510,6 +1540,11 @@ function pushAtD890UnlistedContactChannelWarning(
   }
 }
 
+/** True when any assembled channel has a DMR profile (so a missing default DMR ID matters). */
+function assembledHasDmrChannels(assembled: AssembledBuild): boolean {
+  return assembled.channels.some((row) => row.entity.modeProfiles.some(isDmrProfile));
+}
+
 /** True when any assembled channel has an NXDN profile (so an NXDN-enabled Write would differ). */
 export function assembledHasNxdnChannels(assembled: AssembledBuild): boolean {
   return assembled.channels.some((row) =>
@@ -1540,6 +1575,7 @@ export function buildRadioWriteProjection(
   let rxGroups: RadioRxGroupDto[] = [];
   let digitalContacts: RadioDigitalContactDto[] = [];
   let dm32RadioIds: RadioRadioIdDto[] = [];
+  let atD890RadioIds: RadioRadioIdDto[] = [];
   let dm32AddressBook: RadioDigitalContactDto[] | undefined;
   let atD890Db: RadioDigitalContactDto[] | undefined;
 
@@ -1557,11 +1593,22 @@ export function buildRadioWriteProjection(
     digitalContacts = tgRx.digitalContacts;
     fkMaps = tgRx.fkMaps;
     if (isDm32RadioIoProfileId(egress.profileId)) {
-      const radioIdBank = buildDm32RadioIdBank(assembled, build, library, egress, warnings);
+      const radioIdBank = buildOwnRadioIdList(
+        assembled,
+        build,
+        library,
+        egress,
+        requireNumericLimit(requireProfileExportLimits(egress).maxRadioIds, 'maxRadioIds', egress),
+        DM32_RADIO_ID_NAME_LIMIT,
+        warnings,
+      );
       dm32RadioIds = radioIdBank.radioIds;
       fkMaps = {
         ...tgRx.fkMaps,
-        dmrIdIndexByValue: radioIdBank.dmrIdIndexByValue,
+        dmrRadioIdIndexByOwnIdId: radioIdBank.dmrRadioIdIndexByOwnIdId,
+        ...(radioIdBank.dmrDefaultRadioIdIndex != null
+          ? { dmrDefaultRadioIdIndex: radioIdBank.dmrDefaultRadioIdIndex }
+          : {}),
       };
       dm32AddressBook = mergeLookupStoreContacts(
         tgRx.digitalContacts,
@@ -1572,7 +1619,35 @@ export function buildRadioWriteProjection(
         'DM-32 address book',
         warnings,
       );
-    } else if (dualBank) {
+    } else if (isAtD890RadioIoProfileId(egress.profileId) && dualBankMode === 'codeplug') {
+      const defaultId = defaultOwnDigitalId(assembled.ownDigitalIds ?? [], 'dmr');
+      if (defaultId) {
+        // Master ID = radioIds[0] = the default; Default channels point at slot 0, an override at its slot.
+        const radioIdBank = buildOwnRadioIdList(
+          assembled,
+          build,
+          library,
+          egress,
+          AT_D890UV_LIMITS.RADIO_IDS_MAX,
+          AT_D890_RADIO_ID_NAME_LIMIT,
+          warnings,
+        );
+        atD890RadioIds = radioIdBank.radioIds;
+        fkMaps = {
+          ...tgRx.fkMaps,
+          dmrRadioIdIndexByOwnIdId: radioIdBank.dmrRadioIdIndexByOwnIdId,
+          ...(radioIdBank.dmrDefaultRadioIdIndex != null
+            ? { dmrDefaultRadioIdIndex: radioIdBank.dmrDefaultRadioIdIndex }
+            : {}),
+        };
+      } else if (assembledHasDmrChannels(assembled)) {
+        pushGeneralWarning(
+          warnings,
+          'Radio IDs not written: set a default DMR ID in Digital IDs. The radio keeps the radio IDs and master ID it has.',
+        );
+      }
+    }
+    if (isAtD890RadioIoProfileId(egress.profileId) && dualBank) {
       // AT-D890 ID database: written only when the Contacts part supplies a dual-bank context.
       atD890Db = mergeLookupStoreContacts(
         tgRx.digitalContacts,
@@ -1596,7 +1671,7 @@ export function buildRadioWriteProjection(
     talkGroups = tgRx.talkGroups;
     rxGroups = tgRx.rxGroups;
     digitalContacts = tgRx.digitalContacts;
-    fkMaps = tgRx.fkMaps;
+    fkMaps = { ...tgRx.fkMaps, ownDigitalIds: assembled.ownDigitalIds ?? [] };
   }
 
   const projectionAssembled = isAtD890RadioIoProfileId(egress.profileId)
@@ -1655,6 +1730,16 @@ export function buildRadioWriteProjection(
     channels = mm9pdy
       ? org.channels.map((ch) => (ch.empty ? ch : { ...ch, scanListId: 0 }))
       : org.channels;
+    // With a default DMR ID no channel is left on "no ID" (0xFF): the radio refuses to transmit
+    // on one (#1445). Analogue channels point at the default too, which the radio ignores.
+    const defaultRadioIdIndex = fkMaps?.dmrDefaultRadioIdIndex;
+    if (defaultRadioIdIndex != null) {
+      channels = channels.map((ch) =>
+        ch.empty || ch.dmrRadioIdIndex != null
+          ? ch
+          : { ...ch, dmrRadioIdIndex: defaultRadioIdIndex },
+      );
+    }
     numbersBySourceChannelId = org.numbersBySourceChannelId;
     organisation = {
       zones: org.zones,
@@ -1693,7 +1778,7 @@ export function buildRadioWriteProjection(
       rxGroups,
       ...(mm9pdy ? { writeRxGroupTimeSlotOverrides: true } : {}),
       atD890SettingsTarget: mm9pdy ? 'mm9pdy' : 'stock',
-      radioIds: dm32RadioIds,
+      radioIds: atD890RadioIds,
       ...(atD890Db !== undefined ? { digitalContacts: atD890Db } : {}),
       ...(amAir ? { amAirChannels: amAir.amAirChannels, amZones: amAir.amZones } : {}),
       aprs: radioAprsFromAnytoneLibrary(projectionAssembled, numbersBySourceChannelId, warnings),

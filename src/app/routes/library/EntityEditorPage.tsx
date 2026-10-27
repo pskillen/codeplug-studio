@@ -15,6 +15,7 @@ import { TalkGroupEditor } from './TalkGroupEditor.tsx';
 import { DigitalContactEditor } from './DigitalContactEditor.tsx';
 import { AnalogContactEditor } from './AnalogContactEditor.tsx';
 import { SatelliteEditor } from './SatelliteEditor.tsx';
+import { OwnDigitalIdEditor } from './OwnDigitalIdEditor.tsx';
 
 const V2_SELF_SHELLED_EDITORS = new Set<LibraryEntityKind>([
   'channel',
@@ -24,6 +25,7 @@ const V2_SELF_SHELLED_EDITORS = new Set<LibraryEntityKind>([
   'analogContact',
   'scanList',
   'satellite',
+  'ownDigitalId',
 ]);
 
 export default function EntityEditorPage() {
@@ -117,6 +119,18 @@ export default function EntityEditorPage() {
             entity={entityId ? (library.talkGroups.find((t) => t.id === entityId) ?? null) : null}
           />
         );
+      case 'ownDigitalId': {
+        const ownEntity = entityId
+          ? (library.ownDigitalIds.find((o) => o.id === entityId) ?? null)
+          : null;
+        return (
+          <OwnDigitalIdEditor
+            key={ownEntity ? `${ownEntity.id}:${ownEntity.revision}` : 'new'}
+            projectId={projectId}
+            entity={ownEntity}
+          />
+        );
+      }
       case 'digitalContact': {
         const digitalEntity = entityId
           ? (library.digitalContacts.find((c) => c.id === entityId) ?? null)

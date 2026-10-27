@@ -4,6 +4,7 @@ import type {
   AnalogContact,
   Channel,
   DigitalContact,
+  OwnDigitalId,
   RxGroupList,
   ScanList,
   TalkGroup,
@@ -24,6 +25,7 @@ export interface ProjectSeed {
   zones?: Zone[];
   talkGroups?: TalkGroup[];
   digitalContacts?: DigitalContact[];
+  ownDigitalIds?: OwnDigitalId[];
   analogContacts?: AnalogContact[];
   rxGroupLists?: RxGroupList[];
   scanLists?: ScanList[];

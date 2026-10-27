@@ -5,6 +5,7 @@
 
 import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
 import { listIneligibleChannels } from '@core/domain/channelEligibility.ts';
+import { defaultOwnDigitalId } from '@core/domain/ownDigitalIds.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
@@ -14,6 +15,8 @@ export interface RadioIoPanelFacts {
   zoneCount: number;
   /** Names of channels outside the radio's receive bands; the Write skips them. */
   outOfRangeChannelNames: string[];
+  /** The library has a default DMR Digital ID (the AT-D890 writes radio IDs only then). */
+  hasDefaultDmrId: boolean;
 }
 
 export function radioIoPanelFacts(
@@ -35,6 +38,7 @@ export function radioIoPanelFacts(
     channelCount: assembled.channels.length,
     zoneCount: assembled.zones.length,
     outOfRangeChannelNames,
+    hasDefaultDmrId: defaultOwnDigitalId(library.ownDigitalIds ?? [], 'dmr') !== null,
   };
 }
 

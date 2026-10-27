@@ -37,6 +37,7 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/library/zones',
   '/library/talk-groups',
   '/library/contacts',
+  '/library/digital-ids',
   '/library/rx-group-lists',
   '/library/scan-lists',
   '/library/aprs-configuration',
