@@ -257,7 +257,7 @@ Flash address space is **not** uniformly flat. Measured on hardware 2026-07-27 (
 | Upper half                   | `+0x40000` — alternate unit, not a mirror of the lower half |
 | Erase unit                   | `0x40000`, aligned                                          |
 
-Firmware selects the live half at run time. `55 55 AA AA` at `+0x3FFFC` is the tail of the already-documented `+0x3fff0` marker block. `AA AA 55 55` at `+0x3FDF8` marks the lower half not live. Firmware sites `0x08023EA8`, `0x080D4E14`, and `0x080D4028` read those words. The PC-link address map is not settled. Never write the `+0x3fbf0` / `+0x3fff0` markers; see [flash-sectors.md](flash-sectors.md) and investigation [i001](../../../investigations/i001-d890-write-commit-failure/README.md).
+Firmware selects the live half at run time. `55 55 AA AA` at `+0x3FFFC` is the tail of the already-documented `+0x3fff0` marker block. `AA AA 55 55` at `+0x3FDF8` marks the lower half not live. Three firmware routines read those words. The PC-link address map is not settled. Never write the `+0x3fbf0` / `+0x3fff0` markers; see [flash-sectors.md](flash-sectors.md) and investigation [i001](../../../investigations/i001-d890-write-commit-failure/README.md).
 
 Studio refuses upper-half ChannelData addresses ([#791](https://github.com/pskillen/codeplug-studio/issues/791)). That refusal is the write fence (`writableExtents.ts` per-block extents; `channelDataGeometry.ts`), separate from how firmware selects the live half.
 
