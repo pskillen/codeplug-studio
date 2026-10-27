@@ -16,6 +16,10 @@ Danger zone's Change frequency range (steps 6 and 8).
 | `waitingText`  | `string` | Optional. Default "Waiting for the radio to restart".                            |
 | `data-testid`  | `string` | On the counting line only.                                                       |
 
+The default `doneText` suits radios that return to a normal screen. The AT-D890UV's screen can stay on "PC Read"
+after `END` (seen on hardware, 2026-10-27), so the Danger zone passes its own `doneText` and never promises a normal
+screen. Pass your own text for any radio whose screen does not signal that it has restarted.
+
 ## `useRestartCountdown()` (`useRestartCountdown.ts`)
 
 Returns `{ secondsLeft, start(seconds), clear() }`. The count comes from a deadline (`Date.now()`), so a background

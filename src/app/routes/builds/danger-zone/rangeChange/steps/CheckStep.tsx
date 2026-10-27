@@ -18,7 +18,7 @@ export default function CheckStep({ view, actions }: StepProps) {
         secondsLeft={check.secondsLeft}
         totalSeconds={check.totalSeconds}
         waitingText={COPY.restart.waiting}
-        doneText="The radio should now show its normal screen."
+        doneText={COPY.check.waitDone}
         data-testid="range-check-wait"
       />
       {view.busy ? (

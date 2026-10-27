@@ -174,9 +174,9 @@ export const COPY = {
     reconnect: 'Reconnect',
     choosePort: 'Choose the port…',
     afterCount:
-      'Wait until the radio shows its normal screen. If the browser asks which port to use, pick the radio.',
+      "The radio applies the change and restarts. Its screen may stay on 'PC Read'. Continue when Reconnect lights up or the countdown ends. If the browser asks which port to use, pick the radio.",
     noPort:
-      "Can't see the radio yet. Wait until it shows its normal screen, then unplug and replug the cable and press Reconnect.",
+      "Can't see the radio yet. Give it a little longer (its screen may stay on 'PC Read'), then unplug and replug the cable and press Reconnect.",
     wrongRadio: (found: string, want: string) =>
       `This isn't the radio you changed (serial ${found}). Plug in the one with serial ${want}.`,
     checklist: {
@@ -219,7 +219,11 @@ export const COPY = {
   },
 
   check: {
-    intro: 'The radio is restarting again. When it shows its normal screen, press Check.',
+    intro:
+      "The radio is restarting again. Its screen may stay on 'PC Read'. Press Check when the countdown ends.",
+    waitDone: 'The countdown has ended. Press Check.',
+    usageChanges: (labels: string) =>
+      `Changed since the restore, which is normal if you've used the radio: ${labels}.`,
     button: 'Check',
     skip: 'Skip check',
     stages: { check: 'Check' },
