@@ -78,6 +78,7 @@ const NXDN_BYTE_RX_GROUP = 0x6b;
 const NXDN_BYTE_PTT_CALL = 0x67;
 const NXDN_PTT_CALL_SHIFT = 4;
 const NXDN_BYTE_TX_CONTACT = 0x6c;
+const NXDN_BYTE_ENCRYPTION = 0x6a;
 const NXDN_BYTE_STATUS = 0x6e;
 
 function setBit(byte: number, bit: number, value: boolean): number {
@@ -350,12 +351,14 @@ export function applyAtD890NxdnChannelBytes(
   data[NXDN_BYTE_RX_GROUP] = nxdn.rxGroupIndex ?? 0xff;
   // PTT Call (`0x67` b7:4) gates the contact: on only with a call target, whose list slot is the
   // u16 at `0x6C`. Off, the radio calls group ID 0. Busy lock (b3:0) is left as it is. A previous
-  // occupant's status message number (`0x6E`) is cleared: Studio models none.
+  // occupant's encryption key slot (`0x6A`) and status message number (`0x6E`) are cleared: Studio
+  // models neither, and a stale key slot would make the channel come up encrypted.
   const target = nxdn.txTargetIndex;
   data[NXDN_BYTE_PTT_CALL] =
     (data[NXDN_BYTE_PTT_CALL]! & 0x0f) | ((target != null ? 1 : 0) << NXDN_PTT_CALL_SHIFT);
   data[NXDN_BYTE_TX_CONTACT] = (target ?? 0) & 0xff;
   data[NXDN_BYTE_TX_CONTACT + 1] = ((target ?? 0) >> 8) & 0xff;
+  data[NXDN_BYTE_ENCRYPTION] = 0;
   data[NXDN_BYTE_STATUS] = 0;
   if (nxdn.rate != null) {
     data[NXDN_BYTE_RATE] = setBit(data[NXDN_BYTE_RATE]!, NXDN_RATE_BIT, nxdn.rate === 'nxdn96');

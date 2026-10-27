@@ -33,14 +33,14 @@ One channel record holds both DMR and NXDN fields; the radio's global protocol p
 | `0x67` b7:4   | PTT call                                       | 0 off, 1 on; gates the contact at `0x6C`         | Bits 7:4 = 1 with a call target, else 0; busy lock (3:0) carried over      |
 | `0x68`        | TX RAN                                         | 0–63                                             | Writes from the profile; none keeps the byte                               |
 | `0x69`        | RX RAN                                         | 0–63                                             | Writes from the profile; none keeps the byte                               |
-| `0x6A`        | Encryption                                     | 0 off, 1–32 key slot                             | Carried over                                                               |
+| `0x6A`        | Encryption                                     | 0 off, 1–32 key slot                             | Written 0 (Studio models no encryption)                                    |
 | `0x6B`        | RX group list                                  | 0-based, `0xFF` = none (0 selects list 0)        | The channel's NXDN RX group list (0-based), or `0xFF` for none             |
 | `0x6C`–`0x6D` | Contact slot (u16 LE) in the NXDN contact list | slot index; used for TX only when PTT call is on | The call target's slot in the NXDN list, or 0 with no target               |
 | `0x6E`        | Send status                                    | 0 none, 1–50                                     | Written 0 (Studio models no status messages)                               |
 
 Writing uses bit operations on `0x66`, so carried-over bits survive. A RAN outside 0–63 is not written (Studio leaves it out and warns); the encoder itself refuses one before any frame is sent.
 
-A new slot starts as zeros, which on the radio is a valid NXDN48 channel with RAN 0 / 0, PTT call off (group call to ID 0) and RX group list 0. A library channel with no NXDN rate therefore comes out as NXDN48 on a new slot and keeps its existing rate on a used one. Studio sets `0x6B` on every channel it writes with NXDN fields, new or used: the list index, or `0xFF` when the channel has no RX group list, so it never listens to list 0 or to the previous occupant's list. `0x67` b7:4, `0x6C`–`0x6D` and `0x6E` are written the same way, so a channel with no call target is PTT call off and slot 0 (never the previous occupant's).
+A new slot starts as zeros, which on the radio is a valid NXDN48 channel with RAN 0 / 0, PTT call off (group call to ID 0) and RX group list 0. A library channel with no NXDN rate therefore comes out as NXDN48 on a new slot and keeps its existing rate on a used one. Studio sets `0x6B` on every channel it writes with NXDN fields, new or used: the list index, or `0xFF` when the channel has no RX group list, so it never listens to list 0 or to the previous occupant's list. `0x67` b7:4, `0x6A`, `0x6C`–`0x6D` and `0x6E` are written the same way, so a channel with no call target is PTT call off and slot 0 (never the previous occupant's), and a channel never inherits the previous occupant's encryption key slot.
 
 ### Channels without NXDN fields
 

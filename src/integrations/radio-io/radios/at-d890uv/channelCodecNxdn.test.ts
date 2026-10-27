@@ -57,7 +57,9 @@ describe('encodeAtD890ChannelRecord NXDN fields', () => {
     expect(encoded[0x66]).toBe(0xf3);
     // Busy lock (0x67 b3:0) is carried over; PTT Call (b7:4) is Off with no call target.
     expect(encoded[0x67]).toBe(prior[0x67]! & 0x0f);
-    expect(encoded[0x6a]).toBe(prior[0x6a]);
+    // Encryption key slot: cleared, not carried over (a stale slot 1-32 would come up encrypted).
+    expect(prior[0x6a]).not.toBe(0);
+    expect(encoded[0x6a]).toBe(0);
     // No call target: slot 0 and no status message. The RX group list is "none", not the old 0x03.
     expect(encoded[0x6b]).toBe(0xff);
     expect(encoded[0x6c]).toBe(0);
