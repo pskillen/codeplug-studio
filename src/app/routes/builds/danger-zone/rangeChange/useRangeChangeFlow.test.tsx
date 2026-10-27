@@ -242,6 +242,29 @@ describe('useRangeChangeFlow', () => {
       expect(fake().frames.filter((f) => f.kind === 'END')).toHaveLength(0);
     });
 
+    it('an unreadable LocalInfo at connect: no END (stun/kill state unknown), power-cycle advice', async () => {
+      // The connect check reads LocalInfo once; the identify read after it fails.
+      fake().unreadableAddress = LOCAL_INFO;
+      fake().unreadableAfterReads = 1;
+      const hook = setup();
+      await connectRead(hook);
+      expect(hook.result.current.view.notice?.kind).toBe('unreadable');
+      expect(hook.result.current.view.notice?.body).toContain('Switch the radio off and on');
+      expect(fake().allWrites()).toHaveLength(0);
+      expect(fake().frames.filter((f) => f.kind === 'END')).toHaveLength(0);
+    });
+
+    it('a LocalInfo that becomes unreadable during the backup: no END', async () => {
+      const hook = setup();
+      await toBackUp(hook, 7);
+      fake().unreadableAddress = LOCAL_INFO;
+      await backUp(hook);
+      expect(hook.result.current.view.notice?.kind).toBe('unreadable');
+      expect(hook.result.current.view.backUp.phase).toBe('idle');
+      expect(fake().allWrites()).toHaveLength(0);
+      expect(fake().frames.filter((f) => f.kind === 'END')).toHaveLength(0);
+    });
+
     it('a blank serial is refused at the backup, nothing written', async () => {
       const li = fake().getBytes(LOCAL_INFO, 0x100);
       li.fill(0xff, 0x30, 0x40);

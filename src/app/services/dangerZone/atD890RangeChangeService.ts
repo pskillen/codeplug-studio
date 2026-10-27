@@ -38,6 +38,7 @@ import {
   parseAtD890VitalZip,
   sha256Hex,
 } from '@integrations/radio-io/radios/at-d890uv/vitalBackupZip.ts';
+import { AtD890VitalMismatchError } from '@integrations/radio-io/radios/at-d890uv/vitalBackup.ts';
 import {
   atD890VitalFileName,
   backupAtD890Vital,
@@ -127,6 +128,16 @@ export async function identifyRangeChangeRadio(
     maintenanceUnlocked: atD890MaintenanceUnlocked(localInfo),
     localInfo: localInfo.slice(0, D890_MAP.LocalInfoLength),
   };
+}
+
+/**
+ * May the caller send `END` after this failure in session A, before the frame? Only when the failure came after
+ * LocalInfo was read and checked for a stun/kill flag (a refusal on the bytes, or two reads that disagree).
+ * Everything else, an unreadable LocalInfo above all, leaves the stun/kill state unknown, and `END` would
+ * rewrite LocalInfo from stale RAM if a flag was set: no `END`, as the engine does. Fails closed.
+ */
+export function rangeChangeMayEndAfterRead(err: unknown): boolean {
+  return err instanceof RangeChangeRefusedError || err instanceof AtD890VitalMismatchError;
 }
 
 /** What step 3 produced: both files, as bytes, with what the journal and the later checks need. */

@@ -55,6 +55,7 @@ import {
   changeRange,
   checkRestored,
   identifyRangeChangeRadio,
+  rangeChangeMayEndAfterRead,
   receiveOnlyAfterChange,
   restoreAfterChange,
   RangeChangeRefusedError,
@@ -387,15 +388,25 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
     );
   }
 
+  /** The radio's stun/kill state is unknown: Studio sent no `END` and the session is abandoned. */
+  function sayUnreadable(err: unknown): void {
+    say('unreadable', 'refusal', COPY.refusal.unreadableNoEnd, {
+      nothingChanged: true,
+      details: errMessage(err),
+    });
+  }
+
   // ---- steps 1 to 4 ----------------------------------------------------------------------------------------
 
   const connectRead = useCallback(async () => {
     const signal = beginBusy();
     setNotice(null);
     let session: RadioSession;
+    let sessionOpened = false;
     try {
       session = await openSession('read', true, signal);
       sessionRef.current = session;
+      sessionOpened = true;
       const identified = await identifyRangeChangeRadio(session, { signal });
       setRadio(identified);
       setFromCode(identified.identCode);
@@ -419,9 +430,11 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
         );
       }
     } catch (err) {
-      const stun = isStunKill(err);
-      await releaseHeld(!stun && !(err instanceof AtD890StunKillError));
-      sayFailure(err, false);
+      // END only when LocalInfo was read and checked: an unreadable one leaves the stun/kill state unknown.
+      const mayEnd = rangeChangeMayEndAfterRead(err);
+      await releaseHeld(mayEnd);
+      if (isStunKill(err) || mayEnd || !sessionOpened) sayFailure(err, false);
+      else sayUnreadable(err);
     } finally {
       endBusy();
     }
@@ -497,19 +510,10 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
       setBackupPhase('saved');
     } catch (err) {
       setBackupPhase('idle');
-      const stun = isStunKill(err);
-      await releaseHeld(!stun);
-      sayFailure(err, false);
-      if (
-        !(err instanceof RangeChangeRefusedError) &&
-        !(err instanceof AtD890VitalMismatchError) &&
-        !stun
-      ) {
-        say('backup-failed', 'refusal', COPY.backUp.failed, {
-          details: errMessage(err),
-          nothingChanged: true,
-        });
-      }
+      const mayEnd = rangeChangeMayEndAfterRead(err);
+      await releaseHeld(mayEnd);
+      if (isStunKill(err) || mayEnd) sayFailure(err, false);
+      else sayUnreadable(err);
     } finally {
       endBusy();
     }

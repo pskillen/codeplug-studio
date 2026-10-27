@@ -48,6 +48,10 @@ export class FakeD890Radio {
   band: number;
   /** Fail every `W` at this address with a NAK (0x15). */
   nakAddress?: number;
+  /** Never answer an `R` at this address (a timeout): an unreadable block. */
+  unreadableAddress?: number;
+  /** Answer this many `R` frames at `unreadableAddress` first (the connect check reads LocalInfo too). */
+  unreadableAfterReads = 0;
 
   constructor(code = 3) {
     this.band = code;
@@ -131,6 +135,10 @@ export class FakeD890Radio {
           const address = ((data[1]! << 24) | (data[2]! << 16) | (data[3]! << 8) | data[4]!) >>> 0;
           const length = data[5]!;
           this.frames.push({ session, kind: 'R', address, length });
+          if (this.unreadableAddress === address) {
+            if (this.unreadableAfterReads > 0) this.unreadableAfterReads -= 1;
+            else return;
+          }
           const body = new Uint8Array(6 + length);
           body[0] = 0x57;
           body.set(data.subarray(1, 6), 1);

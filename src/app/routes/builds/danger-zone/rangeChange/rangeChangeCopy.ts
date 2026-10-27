@@ -160,6 +160,8 @@ export const COPY = {
     notD890: "This isn't an AT-D890UV. Studio has stopped.",
     stunKill:
       'This radio is flagged as stunned or killed. Studio has stopped and changed nothing. Switch it off and on, then try again.',
+    unreadableNoEnd:
+      "Studio couldn't read the radio's identity, so it can't tell whether the radio is safe to leave. It stopped without changing anything and sent nothing more. Switch the radio off and on, then try again.",
     lost: 'Lost the connection to the radio.',
     lostBefore: NOTHING_CHANGED,
     lostAfter: 'Your radio may be wiped.',
