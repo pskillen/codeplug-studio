@@ -25,6 +25,7 @@ import {
   previewWireRows,
   includedPreviewWireRows,
   isPreviewRowIncludedInExport,
+  PREVIEW_ROW_NOT_DMR_NOTE,
 } from './previewWireRows.ts';
 
 const fixtureDir = join(
@@ -850,6 +851,65 @@ describe('previewWireRows', () => {
       expect(zoneRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
       expect(rglRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
     }
+  });
+
+  describe('AT-D890 DMR-only talk-group and contact banks (#1438)', () => {
+    const projectId = 'proj-d890-nxdn-preview';
+    const nxdnTg = { ...newTalkGroup(projectId, 'NXDN Local', 1234, 'nxdn'), id: 'tg-nx' };
+    const dmrTg = { ...newTalkGroup(projectId, 'Local', 9), id: 'tg-dmr' };
+    const nxdnContact = { ...newDigitalContact(projectId, 'NX Carol', 4321, 'nxdn'), id: 'dc-nx' };
+    const dmrContact = { ...newDigitalContact(projectId, 'Alice', 2_351_234), id: 'dc-dmr' };
+    const channel: Channel = {
+      ...newChannel(projectId, 'DMR 1'),
+      rxFrequency: 430_000_000,
+      txFrequency: 430_000_000,
+      modeProfiles: [
+        { ...defaultModeProfile('dmr'), contactRef: { kind: 'talkGroup', id: nxdnTg.id } },
+      ] as Channel['modeProfiles'],
+    };
+    const library = {
+      channels: [channel],
+      zones: [],
+      talkGroups: [nxdnTg, dmrTg],
+      digitalContacts: [nxdnContact, dmrContact],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    for (const profileId of [
+      'anytone-at-d890uv',
+      'radio-io-at-d890uv',
+      'radio-io-at-d890uv-mm9pdy',
+    ] as const) {
+      it(`marks NXDN talk groups and contacts as not written (${profileId})`, () => {
+        const build = newFormatBuild(projectId, profileId);
+        const tgRows = previewWireRows(build, library, 'talkGroup');
+        expect(tgRows.find((row) => row.libraryEntityId === nxdnTg.id)?.expansionNote).toBe(
+          PREVIEW_ROW_NOT_DMR_NOTE,
+        );
+        expect(tgRows.find((row) => row.libraryEntityId === dmrTg.id)?.expansionNote).not.toBe(
+          PREVIEW_ROW_NOT_DMR_NOTE,
+        );
+        expect(
+          includedPreviewWireRows(build, library, 'talkGroup').map((row) => row.libraryEntityId),
+        ).toEqual([dmrTg.id]);
+
+        const contactRows = previewWireRows(build, library, 'contact');
+        expect(
+          contactRows.find((row) => row.libraryEntityId === nxdnContact.id)?.expansionNote,
+        ).toBe(PREVIEW_ROW_NOT_DMR_NOTE);
+        expect(
+          includedPreviewWireRows(build, library, 'contact').map((row) => row.libraryEntityId),
+        ).toEqual([dmrContact.id]);
+      });
+    }
+
+    it('leaves NXDN rows alone for other radios', () => {
+      const build = newFormatBuild(projectId, 'opengd77-1701');
+      const rows = previewWireRows(build, library, 'talkGroup');
+      expect(rows.some((row) => row.expansionNote === PREVIEW_ROW_NOT_DMR_NOTE)).toBe(false);
+    });
   });
 
   it('filters Anytone airband channels out of the main Channels preview', () => {

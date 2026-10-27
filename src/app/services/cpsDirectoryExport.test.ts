@@ -149,6 +149,30 @@ describe('enrichCpsExportOptionsWithDirectory — Anytone ID database (#1433)', 
     expect(rows[0]?.wireName).toBeTruthy();
   });
 
+  it('writes a directory row whose ID matches only a non-DMR contact (#1438)', async () => {
+    const { build, egress } = newRadioBuildForProfile('p1', 'anytone-at-d890uv');
+    const withNxdn: LibrarySlice = {
+      ...library,
+      digitalContacts: [
+        ...library.digitalContacts,
+        { ...newDigitalContact('p1', 'NX Carol', 3003, 'nxdn'), id: 'dc-nx' },
+      ],
+    };
+    const options = await enrichCpsExportOptionsWithDirectory(
+      await storeWith([1001, 2002, 3003]),
+      'p1',
+      build,
+      egress,
+      withNxdn,
+      {
+        profileId: egress.profileId,
+        cpsDualBankDirectory: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
+      },
+    );
+    const rows = options.directoryProjection?.dualBank?.directoryDigitalContacts ?? [];
+    expect(rows.map((row) => row.entity.digitalId)).toEqual([2002, 3003]);
+  });
+
   it('reads a legacy single-bank merge setting as both', async () => {
     const { build, egress } = newRadioBuildForProfile('p1', 'anytone-at-d890uv');
     const options = await enrichCpsExportOptionsWithDirectory(

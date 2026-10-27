@@ -12,13 +12,16 @@ import {
   pushMemberCapWarning,
   type ExportWarning,
 } from '@core/import-export/exportWarning.ts';
+import { keepDmrTalkGroupsAndContacts } from '@core/import-export/dmrContactBanks.ts';
 
 export function collectAnytoneExportWarnings(
-  assembled: AssembledBuild,
+  sourceAssembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
 ): ExportWarning[] {
   const warnings: ExportWarning[] = [];
+  // Same DMR-only view the serialiser writes (prepareAnytoneExportAssembly).
+  const assembled = keepDmrTalkGroupsAndContacts(sourceAssembled, warnings);
   const profile = getAnytoneProfile(options?.profileId ?? assembled.profileId);
   const expandedChannels = expandAllAnytoneChannelsForExport(assembled, library, options, warnings);
   const expansionByChannelId = anytoneChannelExpansionById(expandedChannels);

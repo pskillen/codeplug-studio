@@ -9,6 +9,8 @@ The radio's Contacts list. Studio export writes:
 1. talk groups → `Group Call` rows (internal `TalkGroup` with `mode: 'dmr'`);
 2. then the build's library contacts with a DMR ID → `Private Call` rows, with `No.` continuing the sequence, `Name` the contact wire name (the same name `Channel.CSV` and `DMRReceiveGroupCallList.CSV` use for that contact).
 
+Only DMR entries are written ([#1438](https://github.com/pskillen/codeplug-studio/issues/1438)): talk groups and contacts with any other `mode` (NXDN, TETRA, …) are left out of this file, `DMRDigitalContactList.CSV` and `DMRReceiveGroupCallList.CSV` members (and so out of the RX-list channel fan-out), with one export warning giving the counts. A `Channel.CSV` row whose DMR contact is one of them gets an empty `Contact/Talk Group` and `Contact/Talk Group TG/DMR ID`. A row with no `mode` counts as DMR.
+
 Talk groups and contacts share 10,000 rows (`maxTalkGroups`). Contact rows fill only the slots the talk groups leave; the export warns with the number left out. Talk groups past the cap are emitted as before. A contact whose wire name equals a talk group's also warns: the CPS resolves channel and RX-list names against this file.
 
 **Fixture:** [`test-data/anytone/at-d890uv/DMRTalkGroups.CSV`](../../../../test-data/anytone/at-d890uv/DMRTalkGroups.CSV)

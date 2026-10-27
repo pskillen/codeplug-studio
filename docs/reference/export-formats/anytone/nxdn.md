@@ -72,6 +72,8 @@ When `Channel Type` indicates NXDN operation, map to `ChannelModeProfileNxdn` (`
 | Import    | Planned ([#229](https://github.com/pskillen/codeplug-studio/issues/229)) |
 | Export    | Deferred post-DMR MVP                                                    |
 
+NXDN library entries are not exported to the DMR files: talk groups and contacts with `mode: 'nxdn'` (or any non-DMR mode) are left out of `DMRTalkGroups.CSV`, `DMRDigitalContactList.CSV` and `DMRReceiveGroupCallList.CSV` members, with one export warning, and a DMR channel that called one gets an empty `Contact/Talk Group` cell ([#1438](https://github.com/pskillen/codeplug-studio/issues/1438)). The AT-D890 Web Serial Write and the build wire preview follow the same rule. No `NX*.CSV` file is written yet.
+
 **Wire elicitation:** D890 NXDN column/enum gap analysis is deferred until NXDN export is scheduled under epic [#247](https://github.com/pskillen/codeplug-studio/issues/247) (repeat the [#357](https://github.com/pskillen/codeplug-studio/issues/357) worksheet for the NX\* set).
 
 ## Related

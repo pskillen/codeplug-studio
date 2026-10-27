@@ -109,6 +109,10 @@ import {
   pushMemberCapWarning,
   type ExportWarning,
 } from '@core/import-export/exportWarning.ts';
+import {
+  isDmrDigitalEntity,
+  keepDmrTalkGroupsAndContacts,
+} from '@core/import-export/dmrContactBanks.ts';
 
 /**
  * NeonPlug quick-contact call type bytes. DM-32UV always writes group call; the AT-D890UV
@@ -1475,6 +1479,7 @@ function withoutChannelLocations(channels: readonly RadioChannelDto[]): RadioCha
 function pushAtD890UnlistedContactChannelWarning(
   assembled: AssembledBuild,
   contactIdByEntityId: ReadonlyMap<string, number> | undefined,
+  nonDmrContactIds: ReadonlySet<string>,
   warnings: ExportWarning[],
 ): void {
   let n = 0;
@@ -1483,6 +1488,8 @@ function pushAtD890UnlistedContactChannelWarning(
     const ref = dmr?.contactRef;
     if (ref?.kind !== 'digitalContact') continue;
     if (contactIdByEntityId?.has(ref.id)) continue;
+    // Non-DMR contacts have their own warning (keepDmrTalkGroupsAndContacts).
+    if (nonDmrContactIds.has(ref.id)) continue;
     n++;
   }
   if (n > 0) {
@@ -1494,13 +1501,17 @@ function pushAtD890UnlistedContactChannelWarning(
 }
 
 export function buildRadioWriteProjection(
-  assembled: AssembledBuild,
+  sourceAssembled: AssembledBuild,
   build: RadioBuild,
   library: LibrarySlice,
   egress: RadioWireEgressIds,
   context?: BuildRadioWriteProjectionContext,
 ): RadioWriteProjection {
   const warnings: ExportWarning[] = [];
+  // AT-D890: the talk-group, Contacts and ID-database banks are DMR-only; NXDN etc. stay out.
+  const assembled = isAtD890RadioIoProfileId(egress.profileId)
+    ? keepDmrTalkGroupsAndContacts(sourceAssembled, warnings)
+    : sourceAssembled;
   const dualBank = context?.dualBank;
   const includeLibraryContacts = dualBank?.options.includeLibraryContacts ?? true;
   const includeDigitalIdDirectory = dualBank?.options.includeDigitalIdDirectory ?? false;
@@ -1587,6 +1598,11 @@ export function buildRadioWriteProjection(
     pushAtD890UnlistedContactChannelWarning(
       projectionAssembled,
       fkMaps?.contactIdByEntityId,
+      new Set(
+        sourceAssembled.digitalContacts
+          .filter((row) => !isDmrDigitalEntity(row.entity))
+          .map((row) => row.entity.id),
+      ),
       warnings,
     );
   }
