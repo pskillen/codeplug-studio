@@ -350,6 +350,12 @@ export type AtD890UploadBankIntent = {
    * the radio's NXDN lists are left as they are.
    */
   nxdnLists?: RadioNxdnListsDto;
+  /**
+   * MM9PDY AT-D890UV, radio reports NXDN enabled, library has a default NXDN Digital ID. Upload
+   * read-modify-writes the NXDN settings unit and sets only `OwnId` (`0x04B00000` `+0..2`). Unset
+   * (every stock intent, and MM9PDY without it): the unit is not touched.
+   */
+  nxdnOwnId?: number;
 };
 
 export function atD890UploadBankIntentFromOrganisation(
@@ -382,6 +388,10 @@ export function atD890UploadBankIntentFromOrganisation(
     // this check keeps a stock intent from ever carrying them.
     ...(target === 'mm9pdy' && organisation?.nxdnLists !== undefined
       ? { nxdnLists: organisation.nxdnLists }
+      : {}),
+    // Same gate for the NXDN own ID: only an MM9PDY intent ever carries it.
+    ...(target === 'mm9pdy' && organisation?.nxdnOwnId !== undefined
+      ? { nxdnOwnId: organisation.nxdnOwnId }
       : {}),
   };
 }

@@ -40,6 +40,11 @@ export interface AtD890ReviewInit {
    * read: the radio then sends the master ID on every channel, so per-channel IDs have no effect.
    */
   masterIdSelected?: boolean;
+  /**
+   * MM9PDY with NXDN enabled on the radio: what the Write sets the radio's NXDN ID to, from the
+   * default NXDN Digital ID ("Base (1234)"). Unset: the radio's NXDN ID is left alone.
+   */
+  nxdnOwnIdLabel?: string;
   range: AtD890FrequencyRangeDescription;
   receiveOnly: AtD890ReceiveOnlyChannel[];
   snapshot: Pick<AtD890RadioSettingsSnapshot, 'main' | 'ext'>;

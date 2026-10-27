@@ -8,7 +8,11 @@ import {
   setOverride,
 } from '../../../../state/atD890RadioSettingsSession.ts';
 import type { ReviewContext } from '../reviewSections.tsx';
-import { AtD890MasterIdNote, atD890ReviewSections } from './AtD890ReviewSections.tsx';
+import {
+  AtD890MasterIdNote,
+  AtD890NxdnOwnIdNote,
+  atD890ReviewSections,
+} from './AtD890ReviewSections.tsx';
 import { createAtD890ReviewController, type AtD890ReviewInit } from './atD890ReviewController.ts';
 
 const BUILD = 'review-language-guard';
@@ -138,5 +142,27 @@ describe('AtD890 Review Master Id note', () => {
     note(controller(0, { settingsOnly: false }));
     note(controller(0, { masterIdSelected: true, settingsOnly: true }));
     expect(screen.queryByTestId('d890-master-id-on')).toBeNull();
+  });
+});
+
+describe('AtD890 Review NXDN ID line (#1442)', () => {
+  const note = (c: ReturnType<typeof controller>) =>
+    render(
+      <DesignSystemV2Provider>
+        <AtD890NxdnOwnIdNote controller={c} />
+      </DesignSystemV2Provider>,
+    );
+
+  it('says which NXDN ID the Write sets', () => {
+    note(controller(0, { nxdnOwnIdLabel: 'Base (1234)', settingsOnly: false }));
+    expect(screen.getByTestId('d890-nxdn-own-id')).toHaveTextContent(
+      'NXDN ID → Base (1234), your default NXDN ID',
+    );
+  });
+
+  it('is absent when no NXDN ID is written, or the Write sends only settings', () => {
+    note(controller(0, { settingsOnly: false }));
+    note(controller(0, { nxdnOwnIdLabel: 'Base (1234)', settingsOnly: true }));
+    expect(screen.queryByTestId('d890-nxdn-own-id')).toBeNull();
   });
 });

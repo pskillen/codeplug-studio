@@ -383,6 +383,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
               hasHydration={hasHydration}
               mm9pdy={isMm9pdyAtD890RadioIoProfileId(egress.profileId)}
               hasDefaultDmrId={facts?.hasDefaultDmrId ?? false}
+              hasDefaultNxdnId={facts?.hasDefaultNxdnId ?? false}
             />
           ) : null}
         </div>

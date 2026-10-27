@@ -134,6 +134,7 @@ describe('NXDN list and RX group spans', () => {
       'nxdn-list-order',
       'nxdn-rx-group-data',
       'nxdn-rx-group-set',
+      'nxdn-settings',
     ]);
     expect(nxdn.every((span) => span.restoreRole === 'inspect-only')).toBe(true);
   });

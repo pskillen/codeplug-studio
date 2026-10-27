@@ -6,12 +6,14 @@ Shows AT-D890UV operators which parts of the radio **Write** updates from their 
 
 ## Props
 
-| Prop                   | Type      | Description                                               |
-| ---------------------- | --------- | --------------------------------------------------------- |
-| `buildId`              | `string`  | Build id for the **Radio image** deep-dive link           |
-| `hasHydration?`        | `boolean` | When true, shows link to retained-region map after a Read |
-| `mm9pdy?`              | `boolean` | MM9PDY target: the channel positions row reads "Updated"  |
-| `settingsChangeCount?` | `number`  | Radio settings fields set this session                    |
+| Prop                   | Type      | Description                                                         |
+| ---------------------- | --------- | ------------------------------------------------------------------- |
+| `buildId`              | `string`  | Build id for the **Radio image** deep-dive link                     |
+| `hasHydration?`        | `boolean` | When true, shows link to retained-region map after a Read           |
+| `mm9pdy?`              | `boolean` | MM9PDY target: the channel positions row reads "Updated"            |
+| `settingsChangeCount?` | `number`  | Radio settings fields set this session                              |
+| `hasDefaultDmrId?`     | `boolean` | Radio IDs and the master ID are written from it                     |
+| `hasDefaultNxdnId?`    | `boolean` | MM9PDY: the NXDN ID row reads "Updated" (else "No default NXDN ID") |
 
 ## Usage
 
@@ -25,6 +27,7 @@ Shows AT-D890UV operators which parts of the radio **Write** updates from their 
 - Status labels with icons: check (updated from library), cross (not supported yet), minus (left alone), violet check (satellite keps — updated via the separate **Satellite keps** tab's Write Keps trigger, #859/#1085, not this Write).
 - Copy follows the [help writing styleguide](../../../docs/reference/writing-styleguide/help-writing-styleguide.md).
 - The **Radio settings** row reads "Preserved, except N fields you set" when the session has changes (otherwise "Carried through erase unchanged").
+- The **NXDN ID** row ([#1442](https://github.com/pskillen/codeplug-studio/issues/1442)): left alone on the stock target; on MM9PDY written "From your default NXDN ID, when the radio has NXDN enabled", or left alone with "No default NXDN ID".
 - Does not gate Write — informational only.
 
 ## Related

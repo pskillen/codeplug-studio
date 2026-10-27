@@ -250,6 +250,14 @@ export interface RadioWriteOrganisation {
    */
   nxdnLists?: RadioNxdnListsDto;
   /**
+   * MM9PDY AT-D890UV only; set when the radio reports NXDN enabled and the library has a default
+   * NXDN Digital ID. Write sets the radio's one NXDN ID (`OwnId`) to it and leaves every other NXDN
+   * setting as read. Unset: the radio's NXDN ID stays as it is.
+   */
+  nxdnOwnId?: number;
+  /** What the Review shows for {@link nxdnOwnId}: "Base (1234)". Display only. */
+  nxdnOwnIdLabel?: string;
+  /**
    * MM9PDY only (AT-D890UV, DM-32UV). When true, Write stores the channel location table
    * from {@link RadioChannelDto.location} on channels with `useLocation`: the dedicated
    * erase-unit pair on the AT-D890UV, twelve tag pages on the DM-32UV. Stock writes never

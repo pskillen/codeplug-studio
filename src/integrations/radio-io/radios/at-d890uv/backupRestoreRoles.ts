@@ -20,6 +20,7 @@ import {
   AT_D890_NXDN_LIST_ORDER_MAX_BYTES,
   AT_D890_NXDN_LIST_SET_SPAN_BYTES,
   AT_D890_NXDN_RX_GROUP_DATA_MAX_BYTES,
+  AT_D890_NXDN_SETTINGS,
   AT_D890_SAFE_SKIP_WRITE_ADDR,
   D890_MAP,
 } from './constants.ts';
@@ -316,6 +317,15 @@ export const AT_D890_BACKUP_REGION_SPANS: readonly AtD890BackupRegionSpan[] = [
     label: 'NXDN RX group lists (bitmap)',
     start: AT_D890_NXDN.RxGroupSet,
     length: AT_D890_NXDN.RxGroupSetBytes,
+    restoreRole: 'inspect-only',
+  },
+  // NXDN settings block (own ID, station ID, the other NX settings). Backed up for inspection;
+  // Restore does not write it (MM9PDY Write changes only the own ID there, on its own RMW).
+  {
+    id: 'nxdn-settings',
+    label: 'NXDN settings (own ID)',
+    start: AT_D890_NXDN_SETTINGS.Address,
+    length: AT_D890_NXDN_SETTINGS.Bytes,
     restoreRole: 'inspect-only',
   },
   {

@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { newChannel, newRadioBuildForProfile, newZone } from '@core/domain/factories.ts';
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
-import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfile, OwnDigitalId } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import {
   AT_D890_SAFE_SKIP_WRITE_ADDR,
@@ -15,6 +15,7 @@ import {
 import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
 import {
   AtD890ScriptedPipe,
+  collectAtD890WriteDataAddresses,
   enableAtD890AutoWriteAck,
   localInfoWithSerial,
   makeAtD890EraseUnitBuffer,
@@ -165,10 +166,14 @@ function slotNxdnBytes(session: RadioSession, slot: number): number[] {
 
 async function run(
   store: Uint8Array | null,
-  opts: { resetProtocol?: number; stock?: boolean } = {},
+  opts: { resetProtocol?: number; stock?: boolean; library?: LibrarySlice } = {},
 ) {
   const target = opts.stock ? stockTarget : { build, egress };
-  const prepared = await prepareRadioWriteImage(target.build, target.egress, library);
+  const prepared = await prepareRadioWriteImage(
+    target.build,
+    target.egress,
+    opts.library ?? library,
+  );
   const session = await d890Session(store, opts.resetProtocol);
   let seen: BeforeTransmitContext | undefined;
   const result = await uploadPreparedRadioWrite(session, target.egress, prepared.image, {
@@ -180,8 +185,20 @@ async function run(
     },
   });
   const resetByte = writePayloadAt(session.pipe as AtD890ScriptedPipe, 0x350_0150)?.[4];
+  const nxdnSettingsBlock = writePayloadAt(session.pipe as AtD890ScriptedPipe, 0x04b0_0000);
+  const nxdnSettingsTouched = collectAtD890WriteDataAddresses(
+    session.pipe as AtD890ScriptedPipe,
+  ).some((a) => a >= 0x04b0_0000 && a < 0x04b8_0000);
   await closeRadioSession(session);
-  return { prepared, result, seen: seen!, session, resetByte };
+  return {
+    prepared,
+    result,
+    seen: seen!,
+    session,
+    resetByte,
+    nxdnSettingsBlock,
+    nxdnSettingsTouched,
+  };
 }
 
 const text = (ws: readonly Parameters<typeof formatExportWarning>[0][]) =>
@@ -268,5 +285,57 @@ describe('AT-D890 MM9PDY NXDN gate on Write', () => {
       expect(resetByte).toBe(2);
       expect(text(result.warnings ?? [])).not.toContain(ATD890_RESET_PROTOCOL_OFF_NOTICE);
     });
+  });
+});
+
+describe('AT-D890 MM9PDY NXDN own ID on Write (#1442)', () => {
+  const base: OwnDigitalId = {
+    id: 'nx-base',
+    projectId: P,
+    revision: 1,
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    name: 'Base',
+    protocol: 'nxdn',
+    number: 1234,
+    isDefault: true,
+  };
+  const withDefault: LibrarySlice = { ...library, ownDigitalIds: [base] };
+
+  it('radio reports NXDN enabled: OwnId at 0x04B00000 is written as BCD 1234', async () => {
+    const { nxdnSettingsBlock, seen } = await run(storeRecord(1), { library: withDefault });
+    expect([...nxdnSettingsBlock!.subarray(0, 3)]).toEqual([0x00, 0x12, 0x34]);
+    expect(seen.atD890?.nxdnOwnIdLabel).toBe('Base (1234)');
+  });
+
+  it('a default NXDN ID alone (no NXDN channels) is written too', async () => {
+    const dmrOnly: LibrarySlice = {
+      ...withDefault,
+      channels: [ch('p', 430_125_000, [DMR])],
+      zones: [{ ...library.zones[0]!, members: [{ kind: 'channel', channelId: 'p' }] }],
+    };
+    const { prepared, nxdnSettingsBlock } = await run(storeRecord(1), { library: dmrOnly });
+    expect(prepared.nxdn).toBeDefined();
+    expect([...nxdnSettingsBlock!.subarray(0, 3)]).toEqual([0x00, 0x12, 0x34]);
+  });
+
+  for (const [label, store, stock] of [
+    ['NXDN not enabled', storeRecord(0), false],
+    ['the stock target', storeRecord(1), true],
+  ] as const) {
+    it(`${label}: the NXDN settings unit is not written`, async () => {
+      const { nxdnSettingsTouched, seen } = await run(store, { library: withDefault, stock });
+      expect(nxdnSettingsTouched).toBe(false);
+      expect(seen.atD890?.nxdnOwnIdLabel).toBeUndefined();
+    });
+  }
+
+  it('no default NXDN ID: the unit is not written, and the Done notice says why', async () => {
+    const { nxdnSettingsTouched, result } = await run(storeRecord(1), {
+      library: { ...library, ownDigitalIds: [{ ...base, isDefault: false }] },
+    });
+    expect(nxdnSettingsTouched).toBe(false);
+    expect(text(result.projectionWarnings!)).toContain(
+      'NXDN ID not written: set a default NXDN ID in Digital IDs.',
+    );
   });
 });

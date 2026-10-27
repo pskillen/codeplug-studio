@@ -326,6 +326,21 @@ export const AT_D890_NXDN = {
   RxGroupSetBytes: 0x20,
 } as const;
 
+/**
+ * NXDN settings (CPS `NXSetting.CSV`, owner `0x5BB650`): unit `0x04B00000` `+0x000`. The firmware
+ * reads `0x32` bytes; the CPS writes `0x50`. `OwnId` is `+0x00..+0x02`, 3-byte big-endian BCD
+ * (1234 is `00 12 34`); all `FF` is unset and the radio sends source ID 0 ("NULL ID" at PTT). The
+ * same unit holds the NXDN encryption keys (`+0x200`) and state messages (`+0x400`), so Studio
+ * read-modify-writes the whole unit and changes only the `OwnId` bytes (U5).
+ */
+export const AT_D890_NXDN_SETTINGS = {
+  Address: 0x04b0_0000,
+  /** What the CPS writes; Studio reads this much for the backup. */
+  Bytes: 0x50,
+  OwnIdOffset: 0x00,
+  OwnIdBytes: 3,
+} as const;
+
 /** Largest span Studio may write into each NXDN list unit, rounded to the 16-byte block. */
 export const AT_D890_NXDN_LIST_SET_SPAN_BYTES = 0x80;
 export const AT_D890_NXDN_LIST_DATA_MAX_BYTES =

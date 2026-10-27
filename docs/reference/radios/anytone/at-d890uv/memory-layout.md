@@ -329,22 +329,23 @@ Bit indexing: slot `n` → byte `n // 8`, bit `n % 8`.
 
 The official CPS encoder we read writes the address book, prefab SMS, FM, DTMF / 2-tone / 5-tone / MDC / one-touch, roaming, auto-repeater offsets, keys, and the NXDN bank. Studio does not model those regions. A zero there can be payload that encoder wrote on a radio it programmed. Digital contacts stay in the [#759](https://github.com/pskillen/codeplug-studio/issues/759) section below.
 
-| Region family                            | Bases (D890)                                           | Notes                                                                        |
-| ---------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| Boot / BK images                         | `0x3f80000`, `0x4000000`, `0x4080000`                  | Large image blobs                                                            |
-| DigitalContact\*                         | `0x7000000` …                                          | Huge contact banks — see the DigitalContact section below                    |
-| AES / ARC4 / EncryptionCode\*            | `0x3580000` …                                          | Crypto material — treat carefully                                            |
-| AmAir / AmZone\*                         | `0x3880000` …                                          | AM airband — layout verified; see the AmAir / AmZone section above           |
-| RoamingChannel\* / RoamingZone\*         | `0x2080000` …                                          | Roaming. Unmodelled; that encoder writes it                                  |
-| Per-zone NXDN roaming bitmap             | `0x4C00000`                                            | Unmodelled; left alone (the radio uses it only for NXDN roaming)             |
-| Prefab SMS, analog address book          | various (`PrefabSms*`, `AnalogBook*`, `GpsRoaming`)    | Unmodelled; that encoder writes them                                         |
-| FM                                       | —                                                      | Unmodelled; that encoder writes it                                           |
-| DTMF / 2-tone / 5-tone / MDC / one-touch | —                                                      | Unmodelled; that encoder writes them                                         |
-| Auto-repeater offsets                    | —                                                      | Unmodelled; that encoder writes them                                         |
-| Keys                                     | —                                                      | Unmodelled; that encoder writes them                                         |
-| NXDN list (index, set, records, order)   | `0x18000000`, `0x18080000`, `0x18100000`, `0x18180000` | MM9PDY Write NXDN writes them (not the stock target); see [nxdn.md](nxdn.md) |
-| NXDN RX group lists (data, bitmap)       | `0x4B80000`, `0x4BA0000`                               | MM9PDY Write NXDN writes them; see [nxdn.md](nxdn.md)                        |
-| Talkgroup / digital-contact whitelist    | `0x4c80000` / `0x4c82000`                              | D890-specific lists                                                          |
+| Region family                            | Bases (D890)                                           | Notes                                                                                                              |
+| ---------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Boot / BK images                         | `0x3f80000`, `0x4000000`, `0x4080000`                  | Large image blobs                                                                                                  |
+| DigitalContact\*                         | `0x7000000` …                                          | Huge contact banks — see the DigitalContact section below                                                          |
+| AES / ARC4 / EncryptionCode\*            | `0x3580000` …                                          | Crypto material — treat carefully                                                                                  |
+| AmAir / AmZone\*                         | `0x3880000` …                                          | AM airband — layout verified; see the AmAir / AmZone section above                                                 |
+| RoamingChannel\* / RoamingZone\*         | `0x2080000` …                                          | Roaming. Unmodelled; that encoder writes it                                                                        |
+| Per-zone NXDN roaming bitmap             | `0x4C00000`                                            | Unmodelled; left alone (the radio uses it only for NXDN roaming)                                                   |
+| Prefab SMS, analog address book          | various (`PrefabSms*`, `AnalogBook*`, `GpsRoaming`)    | Unmodelled; that encoder writes them                                                                               |
+| FM                                       | —                                                      | Unmodelled; that encoder writes it                                                                                 |
+| DTMF / 2-tone / 5-tone / MDC / one-touch | —                                                      | Unmodelled; that encoder writes them                                                                               |
+| Auto-repeater offsets                    | —                                                      | Unmodelled; that encoder writes them                                                                               |
+| Keys                                     | —                                                      | Unmodelled; that encoder writes them                                                                               |
+| NXDN list (index, set, records, order)   | `0x18000000`, `0x18080000`, `0x18100000`, `0x18180000` | MM9PDY Write NXDN writes them (not the stock target); see [nxdn.md](nxdn.md)                                       |
+| NXDN RX group lists (data, bitmap)       | `0x4B80000`, `0x4BA0000`                               | MM9PDY Write NXDN writes them; see [nxdn.md](nxdn.md)                                                              |
+| NXDN settings, keys, state messages      | `0x4B00000` (`+0x000`, `+0x200`, `+0x400`)             | MM9PDY Write NXDN writes only `OwnId` (`+0..2`), read-modify-write of the unit; see [nxdn.md](nxdn.md#nxdn-own-id) |
+| Talkgroup / digital-contact whitelist    | `0x4c80000` / `0x4c82000`                              | D890-specific lists                                                                                                |
 
 Full map fields live in anytone-cps `D890_MAP`; expand these pages when an adapter slice needs them.
 

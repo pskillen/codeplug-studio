@@ -26,6 +26,7 @@ export const AT_D890_WRITE_COVERAGE_STATUS_LABEL: Record<AtD890WriteCoverageStat
 };
 
 const RADIO_ID_COVERAGE_LABELS = new Set(['Operator radio IDs', 'Master radio ID']);
+const NXDN_ID_COVERAGE_LABEL = 'NXDN ID';
 
 /** Rows for Export Web Serial — aligned with v1 Write allow-list and deferred banks. */
 export const AT_D890_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow[] = [
@@ -50,6 +51,7 @@ export const AT_D890_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow[] = [
   { label: 'NXDN channel settings', status: 'preserved' },
   { label: 'NXDN talk groups and contacts', status: 'leftAlone' },
   { label: 'NXDN RX group lists', status: 'leftAlone' },
+  { label: 'NXDN ID', status: 'leftAlone' },
 ] as const;
 
 /**
@@ -75,6 +77,13 @@ export const AT_D890_MM9PDY_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow
         note: 'Updated when the radio reports NXDN enabled and your library has NXDN entries',
       };
     }
+    if (row.label === NXDN_ID_COVERAGE_LABEL) {
+      return {
+        ...row,
+        status: 'written',
+        note: 'From your default NXDN ID, when the radio has NXDN enabled',
+      };
+    }
     return row;
   });
 
@@ -86,10 +95,15 @@ export function atD890WriteCoverageRows(
   mm9pdy: boolean,
   settingsChangeCount = 0,
   hasDefaultDmrId = false,
+  hasDefaultNxdnId = false,
 ): readonly AtD890WriteCoverageRow[] {
   const base = mm9pdy ? AT_D890_MM9PDY_WRITE_COVERAGE_ROWS : AT_D890_WRITE_COVERAGE_ROWS;
   // Radio IDs and the master ID come from the default DMR Digital ID; without one they stay as read.
   const rows = base.map((row): AtD890WriteCoverageRow => {
+    // MM9PDY writes the radio's NXDN ID from the default NXDN Digital ID; without one it stays.
+    if (row.label === NXDN_ID_COVERAGE_LABEL && mm9pdy && !hasDefaultNxdnId) {
+      return { ...row, status: 'leftAlone', note: 'No default NXDN ID' };
+    }
     if (!RADIO_ID_COVERAGE_LABELS.has(row.label)) return row;
     return hasDefaultDmrId
       ? { ...row, status: 'written', note: 'From your Digital IDs' }
