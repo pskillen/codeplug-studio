@@ -14,7 +14,10 @@ export interface AnytoneRadioProfile {
   scanListMembers: number;
   maxRxGroupLists: number;
   rxGroupListMembers: number;
+  /** Contacts list (`DMRTalkGroups.CSV`): talk groups and private contacts share it. */
   maxTalkGroups: number;
+  /** ID database (`DMRDigitalContactList.CSV`). */
+  maxDigitalContacts: number;
   nameLimit: number;
   /** Digital APRS channel slots in `APRS.CSV` (AT-D890UV). */
   maxAprsSlots: number;
@@ -44,6 +47,7 @@ export const ANYTONE_PROFILES: readonly AnytoneRadioProfile[] = [
     maxRxGroupLists: AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX,
     rxGroupListMembers: AT_D890UV_LIMITS.RX_GROUP_MEMBERS_MAX,
     maxTalkGroups: AT_D890UV_LIMITS.TALK_GROUPS_MAX,
+    maxDigitalContacts: AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX,
     nameLimit: AT_D890UV_LIMITS.NAME_LENGTH,
     maxAprsSlots: AT_D890UV_LIMITS.APRS_SLOTS,
     powerLadder: AT_D890UV_POWER_LADDER,

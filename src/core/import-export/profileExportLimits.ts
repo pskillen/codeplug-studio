@@ -200,7 +200,7 @@ export function getProfileExportLimits(
         maxZones: profile.maxZones,
         maxScanLists: profile.maxScanLists,
         maxRxGroupLists: profile.maxRxGroupLists,
-        maxContacts: null,
+        maxContacts: profile.maxDigitalContacts,
         maxTalkGroups: profile.maxTalkGroups,
         zoneMembers: profile.zoneMembers,
         scanListMembers: profile.scanListMembers,

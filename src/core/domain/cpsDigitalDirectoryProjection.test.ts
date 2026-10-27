@@ -63,11 +63,19 @@ describe('applyCpsDigitalDirectoryProjection', () => {
     expect(out.digitalContacts.map((row) => row.entity.digitalId)).toEqual([]);
   });
 
-  it('clears digital contacts for single-bank skip', () => {
+  it('keeps library contacts in the assembly when asked, even with the library toggle off', () => {
     const assembled = minimalAssembled([100]);
     const { assembled: out } = applyCpsDigitalDirectoryProjection(assembled, {
-      directoryProjection: { omitDigitalContactList: true },
+      directoryProjection: {
+        dualBank: {
+          includeLibraryContacts: false,
+          directoryDigitalContacts: [],
+          dm32RadioIds: [],
+          includeDm32RadioIdFile: false,
+          keepLibraryContactsInAssembly: true,
+        },
+      },
     });
-    expect(out.digitalContacts).toEqual([]);
+    expect(out.digitalContacts.map((row) => row.entity.digitalId)).toEqual([100]);
   });
 });

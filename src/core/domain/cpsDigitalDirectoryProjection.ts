@@ -22,15 +22,19 @@ export const DM32_CPS_DIRECTORY_WARNING =
 
 export interface CpsDirectoryProjectionPayload {
   warnings?: ExportWarning[];
-  /** Single-bank replacement list (Anytone `DMRDigitalContactList.CSV`). */
-  singleBankDigitalContacts?: AssembledEntity<DigitalContact>[];
-  /** When true, emit header-only digital contact CPS files (single-bank skip). */
-  omitDigitalContactList?: boolean;
+  /** Dual-bank directory choice: library contacts and directory rows for the lookup file. */
   dualBank?: {
+    /** Library contacts in the lookup file (and, unless kept below, in the assembly). */
     includeLibraryContacts: boolean;
+    /** Directory rows for the lookup file (Anytone `DMRDigitalContactList.CSV`). */
     directoryDigitalContacts: AssembledEntity<DigitalContact>[];
     dm32RadioIds: CpsDm32RadioIdRow[];
     includeDm32RadioIdFile: boolean;
+    /**
+     * Library contacts also live in the talk-group list (AT-D890), so the toggle selects only
+     * the lookup file rows.
+     */
+    keepLibraryContactsInAssembly?: boolean;
   };
 }
 
@@ -64,18 +68,10 @@ export function applyCpsDigitalDirectoryProjection(
 
   const warnings = [...(payload.warnings ?? [])];
 
-  if (payload.omitDigitalContactList) {
-    return { assembled: { ...assembled, digitalContacts: [] }, warnings };
-  }
-
-  if (payload.singleBankDigitalContacts) {
-    return {
-      assembled: { ...assembled, digitalContacts: payload.singleBankDigitalContacts },
-      warnings,
-    };
-  }
-
   const dual = payload.dualBank;
+  if (dual?.keepLibraryContactsInAssembly) {
+    return { assembled, warnings };
+  }
   if (dual) {
     const digitalContacts = dual.includeLibraryContacts ? [...assembled.digitalContacts] : [];
     return { assembled: { ...assembled, digitalContacts }, warnings };

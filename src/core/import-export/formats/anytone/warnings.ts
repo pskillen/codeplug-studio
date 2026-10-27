@@ -23,7 +23,13 @@ export function collectAnytoneExportWarnings(
   const expandedChannels = expandAllAnytoneChannelsForExport(assembled, library, options, warnings);
   const expansionByChannelId = anytoneChannelExpansionById(expandedChannels);
 
-  buildAnytoneExportWireContext(assembled, library, expandedChannels, options, warnings);
+  const context = buildAnytoneExportWireContext(
+    assembled,
+    library,
+    expandedChannels,
+    options,
+    warnings,
+  );
 
   if (expandedChannels.length > profile.maxChannels) {
     pushGeneralWarning(
@@ -67,6 +73,29 @@ export function collectAnytoneExportWarnings(
       warnings,
       `Scan list count ${assembled.scanLists.length} exceeds profile cap ${profile.maxScanLists}`,
     );
+  }
+
+  // DMRTalkGroups.CSV is shared: talk groups first, then contacts as private calls.
+  const contactsWithId = assembled.digitalContacts.filter((c) => c.entity.digitalId > 0);
+  const contactsListTotal = assembled.talkGroups.length + contactsWithId.length;
+  if (contactsListTotal > profile.maxTalkGroups) {
+    const left = Math.min(contactsWithId.length, contactsListTotal - profile.maxTalkGroups);
+    pushGeneralWarning(
+      warnings,
+      `Talk groups and contacts total ${contactsListTotal}; DMRTalkGroups.CSV holds ${profile.maxTalkGroups} — ${left} contact(s) left out (talk groups go first)`,
+    );
+  }
+  const talkGroupNames = new Set(
+    assembled.talkGroups.map((tg) => context.talkGroupWireName(tg.entity.id)),
+  );
+  for (const contact of contactsWithId) {
+    const name = context.digitalContactWireName(contact.entity.id);
+    if (name && talkGroupNames.has(name)) {
+      pushGeneralWarning(
+        warnings,
+        `Contact "${name}" has the same name as a talk group; the CPS may resolve the wrong one`,
+      );
+    }
   }
 
   return warnings;

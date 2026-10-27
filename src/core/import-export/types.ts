@@ -3,7 +3,6 @@ import type { ZoneBehaviourContext } from './zoneBehaviourDefaults/resolve.ts';
 import type { DefaultScanInclusion } from '@core/models/formatBuild.ts';
 import type { CpsDirectoryProjectionPayload } from '@core/domain/cpsDigitalDirectoryProjection.ts';
 import type { DualBankRadioWriteOptions } from '@core/domain/digitalIdDirectoryProjection.ts';
-import type { SingleBankDigitalProjectionMode } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
 import type { DigitalContactExportNameMode } from './digitalContactExportName.ts';
 import type { ExportWarning } from './exportWarning.ts';
@@ -139,8 +138,6 @@ export interface CpsExportOptions {
   directoryProjection?: CpsDirectoryProjectionPayload;
   /** Persisted dual-bank CPS preferences (mirrors Web Serial Write defaults). */
   cpsDualBankDirectory?: DualBankRadioWriteOptions;
-  /** Persisted single-bank CPS projection mode (Anytone). */
-  cpsSingleBankProjectionMode?: SingleBankDigitalProjectionMode;
 }
 
 /**

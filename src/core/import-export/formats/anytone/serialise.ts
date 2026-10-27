@@ -40,7 +40,7 @@ import {
 } from './exportWireContext.ts';
 import { expandAllAnytoneChannelsForExport } from './channelExpansion.ts';
 import { channelFrequencyById, rxGroupListMemberNames } from './listWire.ts';
-import { DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
+import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
 import { partitionAnytoneChannels } from './receiveOnlyBanks.ts';
 import { hasAmZoneExport, partitionAnytoneZones } from './zonePartition.ts';
 import { zoneIdFromDerivedScanListId } from './zoneDerivedScanLists.ts';
@@ -317,9 +317,14 @@ function serialiseScanListsCsv(
   return formatCsv(SCAN_LIST_HEADERS, rows);
 }
 
+/**
+ * Contacts list: talk groups (`Group Call`) then library contacts (`Private Call`) in the slots
+ * the shared cap leaves, so channels and RX group lists that call a contact resolve in the CPS.
+ */
 function serialiseTalkGroupsCsv(
   assembled: AssembledBuild,
   context: AnytoneExportWireContext,
+  options?: CpsExportOptions,
 ): string {
   const rows = assembled.talkGroups.map((tg, index) =>
     padRow(TALK_GROUP_HEADERS, {
@@ -330,19 +335,43 @@ function serialiseTalkGroupsCsv(
       [TALK_GROUP_COL.callAlert]: 'None',
     }),
   );
+  const profile = getAnytoneProfile(options?.profileId ?? assembled.profileId);
+  let remaining = profile.maxTalkGroups - assembled.talkGroups.length;
+  for (const contact of assembled.digitalContacts) {
+    if (remaining <= 0) break;
+    if (contact.entity.digitalId <= 0) continue;
+    rows.push(
+      padRow(TALK_GROUP_HEADERS, {
+        [TALK_GROUP_COL.number]: String(rows.length + 1),
+        [TALK_GROUP_COL.radioId]: String(contact.entity.digitalId),
+        [TALK_GROUP_COL.name]: context.digitalContactWireName(contact.entity.id),
+        [TALK_GROUP_COL.callType]: 'Private Call',
+        [TALK_GROUP_COL.callAlert]: 'None',
+      }),
+    );
+    remaining--;
+  }
   return formatCsv(TALK_GROUP_HEADERS, rows);
 }
 
+/** ID database: library contacts (toggle, default on) then ID directory rows (toggle). */
 function serialiseDigitalContactsCsv(
   assembled: AssembledBuild,
   context: AnytoneExportWireContext,
+  options?: CpsExportOptions,
 ): string {
-  const rows = assembled.digitalContacts.map((contact, index) =>
+  const dual = options?.directoryProjection?.dualBank;
+  const contacts = [
+    ...((dual?.includeLibraryContacts ?? true) ? assembled.digitalContacts : []),
+    ...(dual?.directoryDigitalContacts ?? []),
+  ];
+  const rows = contacts.map((contact, index) =>
     padRow(DIGITAL_CONTACT_HEADERS, {
       [DIGITAL_CONTACT_COL.number]: String(index + 1),
       [DIGITAL_CONTACT_COL.radioId]: String(contact.entity.digitalId),
       [DIGITAL_CONTACT_COL.callsign]: contact.entity.callsign,
-      [DIGITAL_CONTACT_COL.name]: context.digitalContactWireName(contact.entity.id),
+      [DIGITAL_CONTACT_COL.name]:
+        context.digitalContactWireName(contact.entity.id) || contact.wireName,
       [DIGITAL_CONTACT_COL.city]: contact.entity.city,
       [DIGITAL_CONTACT_COL.state]: contact.entity.state,
       [DIGITAL_CONTACT_COL.country]: contact.entity.country,
@@ -456,8 +485,8 @@ export function serialiseAnytoneFiles(
       options?.channelBehaviourContext,
     ),
     'ScanList.CSV': serialiseScanListsCsv(exportAssembly, ctx, options),
-    'DMRTalkGroups.CSV': serialiseTalkGroupsCsv(exportAssembly, ctx),
-    'DMRDigitalContactList.CSV': serialiseDigitalContactsCsv(exportAssembly, ctx),
+    'DMRTalkGroups.CSV': serialiseTalkGroupsCsv(exportAssembly, ctx, options),
+    'DMRDigitalContactList.CSV': serialiseDigitalContactsCsv(exportAssembly, ctx, options),
     'DMRReceiveGroupCallList.CSV': serialiseRxGroupListsCsv(exportAssembly, ctx),
   };
 }

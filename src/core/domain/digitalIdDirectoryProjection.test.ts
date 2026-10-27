@@ -1,28 +1,12 @@
-import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import {
+  cpsDualBankOptionsForBuild,
   defaultDualBankWriteOptions,
-  defaultSingleBankProjectionMode,
   dualBankOptionsFromWriteSource,
   libraryDigitalIdSet,
-  projectSingleBankDigitalContacts,
   shouldIncludeDirectoryRow,
-  singleBankProjectionFromWriteSource,
   writeSourceIncludesDirectory,
-  type ProjectedDigitalContactRow,
 } from './digitalIdDirectoryProjection.ts';
-
-function row(digitalId: number, wireName = `ID${digitalId}`): ProjectedDigitalContactRow {
-  return {
-    digitalId,
-    wireName,
-    callsign: '',
-    city: '',
-    province: '',
-    country: '',
-    remark: '',
-  };
-}
 
 describe('digitalIdDirectoryProjection', () => {
   it('libraryDigitalIdSet collects positive digitalIds', () => {
@@ -54,12 +38,7 @@ describe('digitalIdDirectoryProjection', () => {
     });
   });
 
-  it('defaultSingleBankProjectionMode matches product tables', () => {
-    expect(defaultSingleBankProjectionMode('codeplug')).toBe('contacts-only');
-    expect(defaultSingleBankProjectionMode('digitalIdList')).toBe('directory-only');
-  });
-
-  it('maps Write radio popup source to dual-bank toggles and single-bank projection', () => {
+  it('maps Write radio popup source to dual-bank toggles', () => {
     expect(dualBankOptionsFromWriteSource('none')).toEqual({
       includeLibraryContacts: false,
       includeDigitalIdDirectory: false,
@@ -76,50 +55,45 @@ describe('digitalIdDirectoryProjection', () => {
       includeLibraryContacts: true,
       includeDigitalIdDirectory: true,
     });
-    expect(singleBankProjectionFromWriteSource('none')).toBe('skip');
-    expect(singleBankProjectionFromWriteSource('library')).toBe('contacts-only');
-    expect(singleBankProjectionFromWriteSource('directory')).toBe('directory-only');
-    expect(singleBankProjectionFromWriteSource('both')).toBe('merge');
     expect(writeSourceIncludesDirectory('none')).toBe(false);
     expect(writeSourceIncludesDirectory('library')).toBe(false);
     expect(writeSourceIncludesDirectory('directory')).toBe(true);
     expect(writeSourceIncludesDirectory('both')).toBe(true);
   });
 
-  describe('projectSingleBankDigitalContacts', () => {
-    it('merge keeps library first and skips overlapping directory ids', () => {
-      const library = [row(42, 'Lib42'), row(99, 'Lib99')];
-      const directory = [row(42, 'Dir42'), row(43, 'Dir43')];
-      const { contacts, warnings } = projectSingleBankDigitalContacts({
-        mode: 'merge',
-        libraryContacts: library,
-        directoryRows: directory,
-        maxContacts: 100,
+  describe('cpsDualBankOptionsForBuild', () => {
+    it('returns the stored dual-bank choice over a legacy single-bank mode', () => {
+      expect(
+        cpsDualBankOptionsForBuild({
+          cpsDualBankDirectory: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
+          cpsSingleBankProjectionMode: 'merge',
+        }),
+      ).toEqual({ includeLibraryContacts: false, includeDigitalIdDirectory: true });
+    });
+
+    it('maps each legacy single-bank mode once', () => {
+      expect(cpsDualBankOptionsForBuild({ cpsSingleBankProjectionMode: 'contacts-only' })).toEqual({
+        includeLibraryContacts: true,
+        includeDigitalIdDirectory: false,
       });
-      expect(contacts.map((c) => c.digitalId)).toEqual([42, 99, 43]);
-      expect(warnings.some((w) => formatExportWarning(w).includes('Skipped 1 directory'))).toBe(
-        true,
+      expect(cpsDualBankOptionsForBuild({ cpsSingleBankProjectionMode: 'directory-only' })).toEqual(
+        { includeLibraryContacts: false, includeDigitalIdDirectory: true },
       );
+      expect(cpsDualBankOptionsForBuild({ cpsSingleBankProjectionMode: 'merge' })).toEqual({
+        includeLibraryContacts: true,
+        includeDigitalIdDirectory: true,
+      });
+      expect(cpsDualBankOptionsForBuild({ cpsSingleBankProjectionMode: 'skip' })).toEqual({
+        includeLibraryContacts: false,
+        includeDigitalIdDirectory: false,
+      });
     });
 
-    it('skip returns empty contacts', () => {
-      const { contacts } = projectSingleBankDigitalContacts({
-        mode: 'skip',
-        libraryContacts: [row(1)],
-        directoryRows: [row(2)],
-        maxContacts: 100,
-      });
-      expect(contacts).toEqual([]);
-    });
-
-    it('directory-only omits library contacts', () => {
-      const { contacts } = projectSingleBankDigitalContacts({
-        mode: 'directory-only',
-        libraryContacts: [row(1)],
-        directoryRows: [row(2)],
-        maxContacts: 100,
-      });
-      expect(contacts.map((c) => c.digitalId)).toEqual([2]);
+    it('defaults to library on, directory off', () => {
+      expect(cpsDualBankOptionsForBuild(undefined)).toEqual(
+        defaultDualBankWriteOptions('codeplug'),
+      );
+      expect(cpsDualBankOptionsForBuild({})).toEqual(defaultDualBankWriteOptions('codeplug'));
     });
   });
 });
