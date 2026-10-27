@@ -530,6 +530,9 @@ function buildTalkGroupsAndRx(
 
   for (const row of assembled.talkGroups) {
     if (talkGroups.length >= maxTalkGroups) break;
+    // AT-D890: the codec writes no record for DMR ID 0, so give it no slot either; otherwise
+    // contacts appended after it would leave a blank row in the radio's Contacts list.
+    if (isAtD890 && row.entity.digitalId <= 0) continue;
     const wireName = resolvedWireName(
       warnings,
       'Talk group',

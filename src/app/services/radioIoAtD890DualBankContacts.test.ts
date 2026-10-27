@@ -167,6 +167,20 @@ describe('AT-D890 Contacts list carries library contacts as private entries', ()
     expect(tgs[1]?.digitalId).toBe(2_351_234);
   });
 
+  it('skips a trailing talk group with DMR ID 0 so contact slots stay contiguous', () => {
+    const zeroTg = { ...newTalkGroup(P, 'Zero', 0), id: 'tg-0' };
+    const library = {
+      ...emptyLibrary(),
+      talkGroups: [tgA, zeroTg],
+      digitalContacts: [dcA],
+    };
+    const tgs = project(library).organisation.talkGroups ?? [];
+    expect(tgs.map((t) => [t.index, t.digitalId])).toEqual([
+      [1, 9],
+      [2, 2_351_234],
+    ]);
+  });
+
   it('drops contacts past the shared cap, warns, and leaves their channels without a TX contact', () => {
     const many = Array.from({ length: AT_D890UV_LIMITS.TALK_GROUPS_MAX }, (_, i) => ({
       ...tgA,
