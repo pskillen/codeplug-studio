@@ -1,6 +1,6 @@
 # AT-D890UV band code (frequency range)
 
-The official CPS lets the operator pick a **frequency range** (Europe, US, commercial, amateur, …). This page records where that choice lives on the radio and how Studio changes it ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369)). **Studio shows the range read-only (Backup page, LocalInfo decode), uses the firmware table for the receive-only check, and has a range-change engine (a single 16-byte `W`, below) that no screen calls yet. The engine is not radio-tested: checks RT-1 and RT-2 are pending, as are the hardware tests in "Open questions".**
+The official CPS lets the operator pick a **frequency range** (Europe, US, commercial, amateur, …). This page records where that choice lives on the radio and how Studio changes it ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369)). **Studio shows the range (Backup page, LocalInfo decode, Radio settings), uses the firmware table for the receive-only check, and changes it from the Danger zone's wizard with a single 16-byte `W` (below). A first hardware run on 2026-10-27 (code 3 to 0, restore, check) worked; RT-2 to RT-5 passed and the other checks are pending ([danger-zone.md](../../../../features/radio-read-write/danger-zone.md#radio-checks)).**
 
 Evidence comes from the MM9PDY firmware reverse-engineering notes (`anytone-d890-firmware`: `docs/reference/cps/protocol.md`, `docs/reference/firmware/calibration-and-identity.md`, `pc-link-protocol.md`, findings F51 / F73), and from a real read of one radio.
 
@@ -86,7 +86,7 @@ Code: [`frequencyRange.ts`](../../../../../src/core/radios/anytone/at-d890uv/fre
 
 ## Changing the range
 
-Facts from a reading of stock V1.05 firmware. **Not radio-tested: RT-1 and RT-2 are pending** (see [danger-zone.md](../../../../features/radio-read-write/danger-zone.md)).
+Facts from a reading of stock V1.05 firmware, confirmed by one hardware run on 2026-10-27 (see [danger-zone.md](../../../../features/radio-read-write/danger-zone.md#radio-checks)). The abort case (frame sent, no `END`) has not been run on a radio. Firmware-side records: the firmware repo's `docs/reference/firmware/calibration-and-identity.md` and `pc-link-protocol.md`, findings F223 to F226 and F280 to F288.
 
 ### How the firmware takes the change
 
@@ -127,7 +127,11 @@ The firmware sees LocalInfo `+0x03` differ from the tune bank's copy at tune `+0
 - writes the new range's defaults;
 - A/B-rewrites the tune bank (`0x04F00000` to `0x04F40000`), byte-identical apart from `+0x28`.
 
-The official **CPS** never writes LocalInfo, cannot change a radio's range, and refuses an old codeplug file after a change ("Band Error!").
+The official **CPS** never writes LocalInfo, cannot change a radio's range, and refuses an old codeplug file after a change ("Band Error!"). Changing the range in the CPS's Model Information dialog is a File > New: every record in the open file goes back to CPS defaults (settings, power-on text, APRS, DTMF and the rest), not just the frequency data, so writing it afterwards sends a default codeplug. Opening a saved file takes the range from the file's header with no reset. So "change the range in the CPS, then write" is not a way to keep settings (high confidence, from reading the CPS, not run).
+
+What the reset depends on and leaves alone, and the order a restore must follow: [memory-layout.md](memory-layout.md#what-depends-on-the-range-code-and-what-a-restore-does-with-it).
+
+**Boot and screen (hardware, 2026-10-27).** After `END` the radio applies the change and restarts, but its screen may stay on "PC Read" and the user can carry on anyway, so a tool must not wait for a normal screen.
 
 ### Frame rules (enforced in code)
 
@@ -143,21 +147,23 @@ Run in PROGRAM by `changeAtD890FrequencyRange`: read LocalInfo `0x100`; refuse o
 
 - Core: [`frequencyRange.ts`](../../../../../src/core/radios/anytone/at-d890uv/frequencyRange.ts) (targets, summaries).
 - Frame, sender, session, verify: `src/integrations/radio-io/radios/at-d890uv/rangeChange/`. `rangeChangeSend.ts` is the only code that can write LocalInfo; `rangeChangeBoundary.test.ts` keeps everything else from importing it.
-- **Not radio-tested.** The emulator has no USB, so the `W` path is proved on a radio (RT-1, RT-2).
+- The emulator has no USB, so the `W` path is proved only on hardware: RT-2 passed on 2026-10-27; RT-1 (abort) is pending.
 
 ### Not engine work
 
-The wizard, the backup tickbox, the resumable journal and the final Check button belong to later PRs of [#1369](https://github.com/pskillen/codeplug-studio/issues/1369). **Eligibility follows the code:** the D890 channel-eligibility bands ([capabilities.md](capabilities.md)) are currently fixed at 136-174 / 400-480 MHz and should come from the table above once the code is known.
+The wizard, the backup tickbox, the resumable journal and the final Check button are in [danger-zone.md](../../../../features/radio-read-write/danger-zone.md). **Eligibility follows the code:** the D890 channel-eligibility bands ([capabilities.md](capabilities.md)) are fixed at 136-174 / 400-480 MHz for build eligibility, while the Write's Review warns about channels outside the connected radio's transmit table.
 
-## Open questions (hardware tests)
+## Questions the hardware run answered
 
-| #   | Question                                                                                                                      | How to answer                                                                                                                                                                                                |
-| --- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Does the firmware enforce TX limits from this byte at runtime, or is it only the ident / CPS check?                           | The firmware repo's reverse engineering shows the PTT check reads the per-code tables (see its `calibration-and-identity.md`); bench test on a dummy load (RT-5).                                            |
-| 2   | Is the whole change really one LocalInfo byte, or does the radio also expect other fields (`+0x06`, band password) to change? | Capture the CPS "dealer" / expert range setting if one exists; diff LocalInfo between two radios of different codes.                                                                                         |
-| 3   | Does the radio wipe or flag existing channels outside the new range?                                                          | Test on a spare radio after a Backup: change the code, read channels back.                                                                                                                                   |
-| 4   | Does it need a power cycle or `END` reboot to take effect?                                                                    | Same test.                                                                                                                                                                                                   |
-| 5   | Is it a single write session?                                                                                                 | LocalInfo is its own erase unit, so it is a separate write from the codeplug regions. The code probably needs to change **before** the codeplug Write, since Studio does not enforce the CPS match. Confirm. |
+| #   | Question                                                                                      | Answer                                                                                                                                                                                                     |
+| --- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Does the firmware enforce TX limits from this byte at runtime, or only the ident / CPS check? | At runtime, at PTT, from the per-code tables. Confirmed on a radio (RT-5, 2026-10-27).                                                                                                                     |
+| 2   | Is the whole change one LocalInfo byte, or must other fields change too?                      | One byte, in one 16-byte `W`; the firmware does the rest at the next boot (RT-2).                                                                                                                          |
+| 3   | Does the radio wipe or flag existing channels outside the new range?                          | It wipes: channels, zones, scan lists, zone names and the settings unit are replaced by defaults. Nothing is flagged.                                                                                      |
+| 4   | Does it need a power cycle or `END` reboot to take effect?                                    | `END` commits and restarts the radio; the reset happens in the boot after it. The screen may stay on "PC Read" meanwhile.                                                                                  |
+| 5   | Is it a single write session?                                                                 | The change is its own session. Restore is a second session after the restart, and writes the codeplug and settings together (the order rule above). Studio does not enforce the CPS's code match on Write. |
+
+Still open (pending radio checks): the abort case (RT-1), reverting (RT-7), resuming from the journal (RT-9), code 18 at 220 MHz (RT-10) and the rest of the table in [danger-zone.md](../../../../features/radio-read-write/danger-zone.md#radio-checks).
 
 ## Related
 

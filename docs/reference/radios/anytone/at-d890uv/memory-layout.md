@@ -96,6 +96,20 @@ The range change also re-defaults VFO A/B, which are channel slots 4000/4001 at 
 
 The flash sector-management markers at `+0x3FBF0` / `+0x3FFF0` of each half (including the bytes at `+0x3FFFC..+0x3FFFF`) are radio-managed. They are deliberately uncovered: never backed up, never restored (see [flash-sectors.md](flash-sectors.md)).
 
+#### What depends on the range code, and what a restore does with it
+
+Firmware facts (the firmware repo's `docs/reference/firmware/codeplug-and-settings.md` sections 4.3, 4.5 and 4.10; findings F280 to F283):
+
+- **Only 49 bytes of the settings unit depend on the code:** `+0x34` (the professional-mode flag: 1 by default for codes 0, 1, 8, 13 and 14, else 0; a non-zero value hides menu rows and blocks the VFO) and the three limit blocks `+0x58..+0x67` (VFO scan), `+0xC4..+0xD3` and `+0xF4..+0x103` (auto-repeater 1 and 2), filled from the code's receive table. For codes 0, 3, 7 and 10 the limits are identical (receive 400-480 / 136-174), so between those codes only `+0x34` differs, and only for code 0. Everything else the reset writes is constant. The language byte follows LocalInfo `+0x04`, not the range.
+- **Outside the unit,** the default channels 1 to 8 and VFO A/B depend on the code (VFO A is 435.125, 446.125 and 430.125 MHz on codes 0, 7 and 10). A restore replaces them.
+- **Replay is safe for the common codes.** Putting a code-3 backup back onto a radio on code 7 or 10, after the zones and channels, boots without a second reset and leaves the settings byte-identical to the radio before the change. A restored `+0x34` of 0 is legal on code 0 too: the radio keeps amateur-style menus.
+- **Narrower codes.** At every load the firmware clamps the auto-repeater ranges (`+0xC4..` and `+0xF4..`) to the code's receive table, in RAM only; the flash keeps the restored bytes until the next settings save. The VFO-scan limits `+0x58..+0x67` are **not** clamped. What a scan does outside the receive table is unconfirmed. Studio does not rewrite either set on Restore.
+- **The order rule.** The settings must not go back before the zones and channels, or in a session of their own while the codeplug is still the default: the boot then stops at "Program Error / Please Initialize The Radio!", because the restored zone A/B numbers point at empty zones. The same stop is expected for a build with fewer zones than those numbers, or without the start-up zone or channel (`+0xD6..+0xDA`); that is inferred, not tested. Whether a radio in that state still accepts a PC session is not known (RT-8). Studio therefore restores settings and codeplug together, after the restart ([backup-restore.md](backup-restore.md#after-a-range-change)).
+- **The DTMF settings, 2-tone, 5-tone, alarm, auto-repeater offset list and the channel, zone and scan-list bitmaps live in unit `0x3480000`, which the reset does not touch.** Until a Write, the bitmaps there keep the old bits while the data units hold defaults. Studio's restore rewrites both, so this only matters to a radio left between the change and the Restore.
+- **What Studio cannot put back:** calibration and LocalInfo (never written by Restore; the wizard checks them against the vital backup), and anything in a unit outside the backup's regions (MDC, one-touch, broadcast FM and the like are not wiped, so they are not lost).
+
+Every stock-CPS Optional Settings input, with its address and whether a range change wipes it: [optional-settings-cps-coverage.md](optional-settings-cps-coverage.md).
+
 ### Usage-volatile bytes
 
 Bytes the radio rewrites in normal use (changing channel or zone, tuning a VFO). A difference from a backup at these
@@ -243,7 +257,7 @@ Flash address space is **not** uniformly flat. Measured on hardware 2026-07-27 (
 | Upper half                   | `+0x40000` — alternate unit, not a mirror of the lower half |
 | Erase unit                   | `0x40000`, aligned                                          |
 
-Firmware selects the live half at run time. `55 55 AA AA` at `+0x3FFFC` is the tail of the already-documented `+0x3fff0` marker block. `AA AA 55 55` at `+0x3FDF8` marks the lower half not live. Firmware sites `0x08023EA8`, `0x080D4E14`, and `0x080D4028` read those words. The PC-link address map is not settled. Never write the `+0x3fbf0` / `+0x3fff0` markers; see [flash-sectors.md](flash-sectors.md) and investigation [i001](../../../investigations/i001-d890-write-commit-failure/README.md).
+Firmware selects the live half at run time. `55 55 AA AA` at `+0x3FFFC` is the tail of the already-documented `+0x3fff0` marker block. `AA AA 55 55` at `+0x3FDF8` marks the lower half not live. Three firmware routines read those words. The PC-link address map is not settled. Never write the `+0x3fbf0` / `+0x3fff0` markers; see [flash-sectors.md](flash-sectors.md) and investigation [i001](../../../investigations/i001-d890-write-commit-failure/README.md).
 
 Studio refuses upper-half ChannelData addresses ([#791](https://github.com/pskillen/codeplug-studio/issues/791)). That refusal is the write fence (`writableExtents.ts` per-block extents; `channelDataGeometry.ts`), separate from how firmware selects the live half.
 
