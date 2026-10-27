@@ -29,7 +29,7 @@ const ALLOWED_CALLERS = [
 
 const FRAME_BUILDERS = /makeAnytoneDmrWriteFrame|makeAnytoneDmrReadFrame|anytoneDmrRwCodec/;
 
-/** A sender that skips the latch carries this marker, with the reason, instead. */
+/** A function that builds frames but skips the latch carries this marker, with the reason, in its body. */
 const LATCH_EXEMPT = /\/\/ latch-exempt: \S/;
 
 function listProductionSources(dir: string): string[] {
@@ -66,16 +66,37 @@ describe('AT-D890 write-frame builder callers', () => {
     }
   });
 
-  it('every allow-listed caller uses the program-session latch (or says why not)', () => {
+  it('every frame built in an allow-listed caller sits in a function that calls the latch (or says why not)', () => {
+    // A top-level function runs from its declaration line to the next one at column 0.
+    const topLevel = /^(?:export\s+)?(?:async\s+)?function\s+(\w+)/gm;
+    const required = [
+      { build: 'makeAnytoneDmrWriteFrame(', latch: 'noteAtD890WriteFrame(' },
+      { build: 'makeAnytoneDmrReadFrame(', latch: 'assertAtD890ReadAllowed(' },
+    ];
     for (const rel of ALLOWED_CALLERS) {
       const text = readFileSync(join(srcRoot, rel), 'utf8');
-      if (LATCH_EXEMPT.test(text)) continue;
-      expect(text, `${rel} sends W frames without noteAtD890WriteFrame`).toMatch(
-        /noteAtD890WriteFrame\(/,
-      );
-      expect(text, `${rel} sends R frames without assertAtD890ReadAllowed`).toMatch(
-        /assertAtD890ReadAllowed\(/,
-      );
+      const starts = [...text.matchAll(topLevel)].map((m) => ({ name: m[1]!, at: m.index! }));
+      for (const { build, latch } of required) {
+        let from = text.indexOf(build);
+        let found = 0;
+        while (from !== -1) {
+          found += 1;
+          const idx = from;
+          const fnIdx = starts.filter((s) => s.at <= idx).length - 1;
+          expect(fnIdx, `${rel}: ${build} outside any top-level function`).toBeGreaterThanOrEqual(
+            0,
+          );
+          const start = starts[fnIdx]!;
+          const body = text.slice(start.at, starts[fnIdx + 1]?.at ?? text.length);
+          if (!LATCH_EXEMPT.test(body)) {
+            expect(body, `${rel}: ${start.name}() builds a frame without ${latch}`).toContain(
+              latch,
+            );
+          }
+          from = text.indexOf(build, idx + build.length);
+        }
+        expect(found, `${rel} no longer calls ${build}`).toBeGreaterThan(0);
+      }
     }
   });
 });
