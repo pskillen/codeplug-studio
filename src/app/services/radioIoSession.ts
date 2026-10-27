@@ -63,7 +63,7 @@ import {
 } from './radioIoAtD890DigitalContactWrite.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
-import { libraryDigitalIdSet } from '@core/domain/digitalIdDirectoryProjection.ts';
+import { dmrContactDigitalIdSet } from '@core/import-export/dmrContactBanks.ts';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
@@ -458,9 +458,7 @@ export async function prepareRadioWriteImage(
             // AT-D890: skip directory rows for this build's contacts, not every library contact.
             ...(isAtD890RadioIoProfileId(egress.profileId)
               ? {
-                  libraryDigitalIds: libraryDigitalIdSet(
-                    assembled.digitalContacts.map((row) => row.entity),
-                  ),
+                  libraryDigitalIds: dmrContactDigitalIdSet(assembled.digitalContacts),
                 }
               : {}),
             warnings: projectionWarnings,

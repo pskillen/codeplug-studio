@@ -4,7 +4,6 @@
 
 import {
   cpsDualBankOptionsForBuild,
-  libraryDigitalIdSet,
   shouldIncludeDirectoryRow,
   type DualBankRadioWriteOptions,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
@@ -15,6 +14,7 @@ import {
   type CpsDirectoryProjectionPayload,
 } from '@core/domain/cpsDigitalDirectoryProjection.ts';
 import { isDm32RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
+import { dmrContactDigitalIdSet } from '@core/import-export/dmrContactBanks.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
@@ -50,7 +50,8 @@ async function collectAnytoneCpsProjection(
 ): Promise<CpsDirectoryProjectionPayload> {
   const directoryDigitalContacts: AssembledEntity<DigitalContact>[] = [];
   if (options.includeDigitalIdDirectory) {
-    const libraryIds = libraryDigitalIdSet(assembled.digitalContacts.map((row) => row.entity));
+    // Only DMR contacts are written (#1438), so only their IDs shadow directory rows.
+    const libraryIds = dmrContactDigitalIdSet(assembled.digitalContacts);
     const limits = getProfileExportLimits('anytone', egress.profileId);
     const cap = typeof limits?.maxContacts === 'number' ? limits.maxContacts : Infinity;
     let skippedOverlap = 0;

@@ -1,3 +1,4 @@
+import { libraryDigitalIdSet } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { DigitalChannelMode } from '@core/models/libraryTypes.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { pushGeneralWarning, type ExportWarning } from './exportWarning.ts';
@@ -8,6 +9,18 @@ import { pushGeneralWarning, type ExportWarning } from './exportWarning.ts';
  */
 export function isDmrDigitalEntity(entity: { mode?: DigitalChannelMode | null }): boolean {
   return entity.mode == null || entity.mode === 'dmr';
+}
+
+/**
+ * DMR IDs of the build's DMR contacts: the set an ID-database directory row is skipped against.
+ * Non-DMR contacts are not written, so a directory row sharing one's ID must still be written.
+ */
+export function dmrContactDigitalIdSet(
+  contacts: readonly { entity: { mode?: DigitalChannelMode | null; digitalId: number } }[],
+): Set<number> {
+  return libraryDigitalIdSet(
+    contacts.filter((row) => isDmrDigitalEntity(row.entity)).map((row) => row.entity),
+  );
 }
 
 /**
