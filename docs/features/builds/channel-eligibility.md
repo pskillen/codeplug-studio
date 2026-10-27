@@ -19,6 +19,8 @@ Wire translation (NeonPlug no-TX sentinels, Anytone receive banks, CHIRP analogu
 1. **Mode (always on):** the channel must have at least one `modeProfile` whose `mode` is in the radio target’s `supportedModes`.
 2. **Frequency (default on):** when **Hide channels outside frequency range** is enabled on the build, the channel’s **RX** frequency (Hz → MHz) must fall in at least one configured range whose `modes` intersect the channel’s supported-mode profiles. Missing RX frequency counts as out of range. Overlapping bands: any matching range wins.
 
+`nxdn` is a supported mode only on the AT-D890UV MM9PDY target (136–174 and 400–480 MHz). Whether a Write carries it depends on the radio, not the target: see [nxdn.md](../../reference/radios/anytone/at-d890uv/nxdn.md).
+
 Per-radio tables live in `src/core/radio-targets/rfCapabilities.ts` and are mirrored on **Radio characteristics** (`/builds/:id/characteristics` → **RF bands and modes**). Tier-3 range tables: `docs/reference/radios/<mfr>/<model>/capabilities.md`.
 
 ## Export setting

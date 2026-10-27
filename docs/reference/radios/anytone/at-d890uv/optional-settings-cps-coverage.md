@@ -99,7 +99,7 @@ How to read it:
 | 7 Digital Func   | Manual Dial - Group TG Hold Time                      | `0x3500107`      | Yes: `manualDialGroupHangTime`                                               | Yes (main)             | Yes     |
 | 7 Digital Func   | Manual Dial - Private TG Hold Time                    | `0x3500108`      | Yes: `manualDialPrivateHangTime`                                             | Yes (main)             | Yes     |
 | 7 Digital Func   | DMR CRC Ignore                                        | not located      | No                                                                           | Unknown                | Unknown |
-| 7 Digital Func   | Digital Protocol                                      | `0x3500152`      | No                                                                           | Yes (main)             | Yes     |
+| 7 Digital Func   | Digital Protocol                                      | `0x3500152`      | No: left as read (the protocol is switched on the radio; [nxdn.md](nxdn.md)) | Yes (main)             | Yes     |
 | 7 Digital Func   | Reset Digital Protocol                                | `0x3500154`      | No (firmware never reads it)                                                 | Yes (main)             | Yes     |
 | 8 Power-on       | Power-on Interface                                    | `0x3500006`      | Yes: `powerOnScreen`                                                         | Yes (main)             | Yes     |
 | 8 Power-on       | Power-on Password                                     | `0x3500007`      | Yes: `powerOnPasswordEnabled`                                                | Yes (main)             | Yes     |
