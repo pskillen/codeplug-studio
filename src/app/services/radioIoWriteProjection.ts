@@ -12,7 +12,11 @@ import {
   atD890NxdnOrderKey,
   isValidAtD890NxdnId,
 } from '@integrations/radio-io/radios/at-d890uv/nxdnListCodec.ts';
-import { channelOwnIdOverride, defaultOwnDigitalId } from '@core/domain/ownDigitalIds.ts';
+import {
+  channelOwnIdOverride,
+  defaultOwnDigitalId,
+  ownDigitalIdOptionLabel,
+} from '@core/domain/ownDigitalIds.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
 import type { DualBankDirectorySlice } from './dualBankRadioWrite.ts';
@@ -984,6 +988,47 @@ function pushAtD890NxdnUnlistedChannelWarning(
       `${noRxList} NXDN channel(s) use an RX group list that is not in the radio's NXDN RX group lists; they are written with no RX group list`,
     );
   }
+}
+
+/** Shown once when an NXDN-enabled MM9PDY Write has no default NXDN Digital ID to write. */
+export const ATD890_NXDN_OWN_ID_NOT_WRITTEN_NOTICE =
+  'NXDN ID not written: set a default NXDN ID in Digital IDs.';
+
+/**
+ * MM9PDY AT-D890 with NXDN enabled: the radio's one NXDN ID is the default NXDN Digital ID (D17).
+ * Without a default the radio keeps its own, with one notice when the build has NXDN channels. Exported NXDN channels that choose
+ * another NXDN ID get one warning: the radio cannot send a different ID per channel.
+ */
+function atD890NxdnOwnId(
+  assembled: AssembledBuild,
+  warnings: ExportWarning[],
+): { nxdnOwnId: number; nxdnOwnIdLabel: string } | undefined {
+  const ownIds = assembled.ownDigitalIds ?? [];
+  const fallback = defaultOwnDigitalId(ownIds, 'nxdn');
+  if (!fallback) {
+    // Only builds with NXDN channels need the ID; a DMR-only build gets no notice.
+    if (assembledHasNxdnChannels(assembled)) {
+      pushGeneralWarning(warnings, ATD890_NXDN_OWN_ID_NOT_WRITTEN_NOTICE);
+    }
+    return undefined;
+  }
+  const label = ownDigitalIdOptionLabel(fallback);
+  let others = 0;
+  for (const row of assembled.channels) {
+    const profile = row.entity.modeProfiles.find((p) => p.mode === 'nxdn');
+    if (!profile) continue;
+    const chosen = channelOwnIdOverride(profile, ownIds);
+    if (chosen && chosen.id !== fallback.id) others++;
+  }
+  if (others > 0) {
+    pushGeneralWarning(
+      warnings,
+      `The radio has one NXDN ID. Studio writes your default, ${label}; ${others} ${
+        others === 1 ? 'channel chooses' : 'channels choose'
+      } another NXDN ID.`,
+    );
+  }
+  return { nxdnOwnId: fallback.number, nxdnOwnIdLabel: label };
 }
 
 function isDmrProfile(
@@ -2056,6 +2101,7 @@ export function buildRadioWriteProjection(
     }
     numbersBySourceChannelId = org.numbersBySourceChannelId;
     const amAir = buildAtD890AmAirOrganisation(assembled, build, egress, warnings);
+    const ownId = nxdnOn ? atD890NxdnOwnId(projectionAssembled, warnings) : undefined;
     organisation = {
       zones: org.zones,
       scanLists: org.scanLists,
@@ -2064,6 +2110,7 @@ export function buildRadioWriteProjection(
       ...(mm9pdy ? { writeRxGroupTimeSlotOverrides: true } : {}),
       atD890SettingsTarget: mm9pdy ? 'mm9pdy' : 'stock',
       ...(nxdnLists?.lists ? { nxdnLists: nxdnLists.lists } : {}),
+      ...(ownId ?? {}),
       radioIds: atD890RadioIds,
       ...(atD890Db !== undefined ? { digitalContacts: atD890Db } : {}),
       ...(amAir ? { amAirChannels: amAir.amAirChannels, amZones: amAir.amZones } : {}),

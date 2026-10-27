@@ -3,6 +3,7 @@
  * No PROGRAM frame bytes here — integrations/radio-io owns protocol.
  */
 
+import { defaultOwnDigitalId } from '@core/domain/ownDigitalIds.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { channelLocationWriteRadioNote } from '@core/radio-targets/channelLocationNotes.ts';
@@ -366,6 +367,11 @@ export interface AtD890PreTransmitContext {
   overrides: readonly AtD890SettingsOverride[];
   target: AtD890SettingsTarget;
   /**
+   * MM9PDY with NXDN enabled on the radio and a default NXDN Digital ID: what the Write sets the
+   * radio's NXDN ID to ("Base (1234)"). Unset: the radio's NXDN ID is left alone.
+   */
+  nxdnOwnIdLabel?: string;
+  /**
    * A copy of the in-session download cache taken at the pause, before `upload()` can touch it, so
    * Review's "Save backup now" packs what the radio held. Absent for a settings-only Write, which
    * reads only the settings.
@@ -404,8 +410,9 @@ export const ATD890_RESET_PROTOCOL_OFF_NOTICE = 'Reset Digital Protocol set to O
 
 /**
  * The AT-D890UV MM9PDY projection with NXDN output on. {@link prepareRadioWriteImage} builds it
- * beside the standard projection when the build has NXDN channels, because the radio is not read
- * until the upload starts; the upload keeps it only if the in-session read says NXDN is enabled.
+ * beside the standard projection when the build has NXDN content or a default NXDN Digital ID,
+ * because the radio is not read until the upload starts; the upload keeps it only if the
+ * in-session read says NXDN is enabled.
  */
 export interface AtD890NxdnWriteVariant {
   channels: readonly RadioChannelDto[];
@@ -444,7 +451,7 @@ export async function prepareRadioWriteImage(
   warnings: ExportWarning[];
   organisation: RadioWriteOrganisation;
   channels: readonly RadioChannelDto[];
-  /** AT-D890UV MM9PDY with NXDN channels in the build: the projection to use if the radio has NXDN enabled. */
+  /** AT-D890UV MM9PDY with NXDN content or a default NXDN ID: the projection to use if the radio has NXDN enabled. */
   nxdn?: AtD890NxdnWriteVariant;
 }> {
   const descriptor = descriptorsForEgress(egress)[0];
@@ -513,7 +520,12 @@ export async function prepareRadioWriteImage(
     ).deciseconds;
   }
   let nxdn: AtD890NxdnWriteVariant | undefined;
-  if (isMm9pdyAtD890RadioIoProfileId(egress.profileId) && assembledHasNxdnContent(assembled)) {
+  // A default NXDN Digital ID alone is NXDN output too: the radio's NXDN ID is written from it.
+  if (
+    isMm9pdyAtD890RadioIoProfileId(egress.profileId) &&
+    (assembledHasNxdnContent(assembled) ||
+      defaultOwnDigitalId(assembled.ownDigitalIds ?? [], 'nxdn') !== null)
+  ) {
     const withNxdn = buildRadioWriteProjection(assembled, build, library, egress, {
       ...projectionContext,
       atD890Nxdn: true,
@@ -792,6 +804,11 @@ function buildAtD890PreTransmitContext(
     },
     overrides: organisation.atD890SettingsOverrides ?? [],
     target: organisation.atD890SettingsTarget ?? 'stock',
+    ...(organisation.atD890SettingsTarget === 'mm9pdy' &&
+    organisation.nxdnOwnId !== undefined &&
+    organisation.nxdnOwnIdLabel !== undefined
+      ? { nxdnOwnIdLabel: organisation.nxdnOwnIdLabel }
+      : {}),
     downloadCache: {
       ...(cache.firmware !== undefined ? { firmware: cache.firmware } : {}),
       ...(cache.modelString !== undefined ? { modelString: cache.modelString } : {}),

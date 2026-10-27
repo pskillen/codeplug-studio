@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { newChannel, newRadioBuildForProfile, newZone } from '@core/domain/factories.ts';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
-import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfile, OwnDigitalId } from '@core/models/library.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { encodeAtD890ChannelRecord } from '@integrations/radio-io/radios/at-d890uv/channelCodec.ts';
-import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
+import {
+  ATD890_NXDN_OWN_ID_NOT_WRITTEN_NOTICE,
+  buildRadioWriteProjection,
+} from './radioIoWriteProjection.ts';
 
 const PROJECT = 'p1';
 
@@ -218,5 +221,117 @@ describe('AT-D890 MM9PDY NXDN channel projection', () => {
       const stock = byName(project('radio-io-at-d890uv', library, true));
       expect(stock.has('nxdn-only')).toBe(false);
     });
+  });
+});
+
+function ownId(id: string, number: number, over: Partial<OwnDigitalId> = {}): OwnDigitalId {
+  return {
+    id,
+    projectId: PROJECT,
+    revision: 1,
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    name: '',
+    protocol: 'nxdn',
+    number,
+    isDefault: false,
+    ...over,
+  };
+}
+
+describe('AT-D890 MM9PDY NXDN own ID from the default NXDN Digital ID (#1442)', () => {
+  const BASE = ownId('nx-base', 1234, { name: 'Base', isDefault: true });
+  const MOBILE = ownId('nx-mobile', 5678, { name: 'Mobile' });
+  const DMR_DEFAULT = ownId('dmr-home', 2351234, {
+    name: 'Home',
+    protocol: 'dmr',
+    isDefault: true,
+  });
+  const onDefault = channel('nx-default', 430_125_000, [nxdn()]);
+  const onMobile = channel('nx-mobile', 430_250_000, [nxdn({ ownDigitalIdId: 'nx-mobile' })]);
+  const onBaseExplicit = channel('nx-base', 430_375_000, [nxdn({ ownDigitalIdId: 'nx-base' })]);
+  const withIds = (ids: OwnDigitalId[], channels = [onDefault, onMobile, onBaseExplicit]) => ({
+    ...libraryOf(channels),
+    ownDigitalIds: ids,
+  });
+  const OWN_ID_WARNING = /The radio has one NXDN ID/;
+
+  it('writes the default NXDN ID and warns once about channels that choose another', () => {
+    const out = project('radio-io-at-d890uv-mm9pdy', withIds([BASE, MOBILE, DMR_DEFAULT]), true);
+    expect(out.organisation.nxdnOwnId).toBe(1234);
+    expect(out.organisation.nxdnOwnIdLabel).toBe('Base (1234)');
+    const text = warningText(out);
+    expect(text).toContain(
+      'The radio has one NXDN ID. Studio writes your default, Base (1234); 1 channel chooses another NXDN ID.',
+    );
+    expect(text.match(new RegExp(OWN_ID_WARNING, 'g'))).toHaveLength(1);
+    expect(text).not.toContain(ATD890_NXDN_OWN_ID_NOT_WRITTEN_NOTICE);
+  });
+
+  it('counts every channel that chooses another NXDN ID in the one warning', () => {
+    const second = channel('nx-mobile-2', 430_500_000, [nxdn({ ownDigitalIdId: 'nx-mobile' })]);
+    const out = project(
+      'radio-io-at-d890uv-mm9pdy',
+      withIds([BASE, MOBILE], [onDefault, onMobile, second]),
+      true,
+    );
+    expect(warningText(out)).toContain('2 channels choose another NXDN ID.');
+  });
+
+  it('does not warn when every NXDN channel uses the default', () => {
+    const out = project(
+      'radio-io-at-d890uv-mm9pdy',
+      withIds([BASE, MOBILE], [onDefault, onBaseExplicit]),
+      true,
+    );
+    expect(out.organisation.nxdnOwnId).toBe(1234);
+    expect(warningText(out)).not.toMatch(OWN_ID_WARNING);
+  });
+
+  it('labels an unnamed default by its number', () => {
+    const out = project(
+      'radio-io-at-d890uv-mm9pdy',
+      withIds([ownId('nx-anon', 4321, { isDefault: true })], [onDefault]),
+      true,
+    );
+    expect(out.organisation.nxdnOwnId).toBe(4321);
+    expect(out.organisation.nxdnOwnIdLabel).toBe('NXDN 4321');
+  });
+
+  it('with no default NXDN ID leaves the radio ID alone, with one notice', () => {
+    const out = project('radio-io-at-d890uv-mm9pdy', withIds([MOBILE, DMR_DEFAULT]), true);
+    expect(out.organisation.nxdnOwnId).toBeUndefined();
+    expect(out.organisation.nxdnOwnIdLabel).toBeUndefined();
+    const text = warningText(out);
+    expect(text.split(ATD890_NXDN_OWN_ID_NOT_WRITTEN_NOTICE)).toHaveLength(2);
+    expect(text).not.toMatch(OWN_ID_WARNING);
+  });
+
+  it('writes the default NXDN ID with no NXDN channels, and changes nothing else', () => {
+    const plain = libraryOf([plainDmr]);
+    const withId = { ...plain, ownDigitalIds: [BASE] };
+    const on = project('radio-io-at-d890uv-mm9pdy', withId, true);
+    const onWithoutId = project('radio-io-at-d890uv-mm9pdy', plain, true);
+    expect(on.organisation.nxdnOwnId).toBe(1234);
+    const { nxdnOwnId, nxdnOwnIdLabel, ...rest } = on.organisation;
+    void nxdnOwnId;
+    void nxdnOwnIdLabel;
+    expect(rest).toEqual(onWithoutId.organisation);
+    expect(on.channels).toEqual(onWithoutId.channels);
+  });
+
+  it('is absent with NXDN not enabled on the radio, and on the stock target', () => {
+    const library = withIds([BASE, MOBILE]);
+    for (const out of [
+      project('radio-io-at-d890uv-mm9pdy', library),
+      project('radio-io-at-d890uv-mm9pdy', library, false),
+      project('radio-io-at-d890uv', library, true),
+      project('radio-io-at-d890uv', library),
+    ]) {
+      expect(out.organisation.nxdnOwnId).toBeUndefined();
+      expect(out.organisation.nxdnOwnIdLabel).toBeUndefined();
+      const text = warningText(out);
+      expect(text).not.toMatch(OWN_ID_WARNING);
+      expect(text).not.toContain(ATD890_NXDN_OWN_ID_NOT_WRITTEN_NOTICE);
+    }
   });
 });
