@@ -118,7 +118,7 @@ const CAPABILITY_COPY: Record<CapabilityId, CapabilityCopy> = {
       'Firmware keeps contacts in one bank and the ID directory (incoming-call lookup) in another — not a single shared contact table.',
     consequences: [
       'Write and export can target contacts and the ID directory independently.',
-      'Profiles without this trait use one bank for contacts and ID directory rows (single-bank Write modes).',
+      'On the AT-D890UV, contacts also go to the radio Contacts list with the codeplug; the source picks what fills the ID lookup store.',
     ],
   },
 };

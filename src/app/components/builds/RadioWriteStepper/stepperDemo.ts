@@ -15,6 +15,7 @@ export function demoStepperConfig(overrides: Partial<WriteStepperConfig> = {}): 
     support: { contacts: true, keps: true, settings: false },
     sharedContactBankNote: false,
     sharedAddressBookNote: false,
+    separateLookupDatabaseNote: false,
     restartWaitSeconds: 20,
     supportsCheck: true,
     ...overrides,

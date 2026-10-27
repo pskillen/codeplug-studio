@@ -1,12 +1,8 @@
-import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
-/** Dual-bank / single-bank Write overlap and projection modes — vendor-neutral; no CPS wire shapes. */
+import type { BuildExportSettings } from '@core/models/radioBuild.ts';
+
+/** Dual-bank Write overlap and projection options — vendor-neutral; no CPS wire shapes. */
 
 export type DualBankWriteMode = 'codeplug' | 'digitalIdList';
-
-export type SingleBankWriteMode = 'codeplug' | 'digitalIdList';
-
-/** Single shared contact bank (no `SeparateDigitalIdList` trait). */
-export type SingleBankDigitalProjectionMode = 'contacts-only' | 'directory-only' | 'merge' | 'skip';
 
 export interface ProjectedDigitalContactRow {
   digitalId: number;
@@ -16,86 +12,6 @@ export interface ProjectedDigitalContactRow {
   province: string;
   country: string;
   remark: string;
-}
-
-export interface ProjectSingleBankDigitalContactsArgs {
-  mode: SingleBankDigitalProjectionMode;
-  libraryContacts: readonly ProjectedDigitalContactRow[];
-  directoryRows: readonly ProjectedDigitalContactRow[];
-  maxContacts: number;
-}
-
-export function defaultSingleBankProjectionMode(
-  mode: SingleBankWriteMode,
-): SingleBankDigitalProjectionMode {
-  return mode === 'codeplug' ? 'contacts-only' : 'directory-only';
-}
-
-export function singleBankProjectionModesForWrite(
-  mode: SingleBankWriteMode,
-): readonly SingleBankDigitalProjectionMode[] {
-  return mode === 'codeplug'
-    ? ['contacts-only', 'directory-only', 'merge', 'skip']
-    : ['contacts-only', 'directory-only', 'merge'];
-}
-
-export function projectSingleBankDigitalContacts(args: ProjectSingleBankDigitalContactsArgs): {
-  contacts: ProjectedDigitalContactRow[];
-  warnings: ExportWarning[];
-} {
-  const warnings: ExportWarning[] = [];
-  if (args.mode === 'skip') {
-    return { contacts: [], warnings };
-  }
-
-  const out: ProjectedDigitalContactRow[] = [];
-  const includeLibrary = args.mode === 'contacts-only' || args.mode === 'merge';
-  const includeDirectory = args.mode === 'directory-only' || args.mode === 'merge';
-
-  if (includeLibrary) {
-    for (const row of args.libraryContacts) {
-      if (out.length >= args.maxContacts) break;
-      if (row.digitalId <= 0) continue;
-      out.push(row);
-    }
-    if (args.libraryContacts.length > args.maxContacts) {
-      pushGeneralWarning(
-        warnings,
-        `Build has ${args.libraryContacts.length} digital contact(s); only ${args.maxContacts} export to radio contact bank`,
-      );
-    }
-  }
-
-  if (includeDirectory) {
-    const libraryIds = libraryDigitalIdSet(includeLibrary ? args.libraryContacts : []);
-    let skippedOverlap = 0;
-    let truncated = 0;
-    for (const row of args.directoryRows) {
-      if (!shouldIncludeDirectoryRow(row.digitalId, libraryIds)) {
-        skippedOverlap++;
-        continue;
-      }
-      if (out.length >= args.maxContacts) {
-        truncated++;
-        continue;
-      }
-      out.push(row);
-    }
-    if (skippedOverlap > 0) {
-      pushGeneralWarning(
-        warnings,
-        `Skipped ${skippedOverlap} directory row(s) whose DMR ID already exists on a library digital contact`,
-      );
-    }
-    if (truncated > 0) {
-      pushGeneralWarning(
-        warnings,
-        `Directory has more contacts than the radio contact bank allows; only ${args.maxContacts} export from directory`,
-      );
-    }
-  }
-
-  return { contacts: out, warnings };
 }
 
 export interface DualBankRadioWriteOptions {
@@ -114,9 +30,8 @@ export function libraryDigitalIdSet(contacts: readonly { digitalId: number }[]):
 }
 
 /**
- * Single shared contact bank: skip directory rows whose `digitalId` is already
- * on a library contact. Dual-bank radios that keep a separate lookup store
- * (OpenGD77 User Database) must **not** use this — both stores may hold the same ID.
+ * Overlap rule: skip directory rows whose `digitalId` is already a contact. Radios whose lookup
+ * store may hold the same ID as a contact (OpenGD77 User Database) do not apply it.
  */
 export function shouldIncludeDirectoryRow(
   digitalId: number,
@@ -146,21 +61,28 @@ export function dualBankOptionsFromWriteSource(
   };
 }
 
-export function singleBankProjectionFromWriteSource(
-  source: DigitalContactsWriteSource,
-): SingleBankDigitalProjectionMode {
-  switch (source) {
-    case 'none':
-      return 'skip';
-    case 'library':
-      return 'contacts-only';
-    case 'directory':
-      return 'directory-only';
-    case 'both':
-      return 'merge';
-  }
-}
-
 export function writeSourceIncludesDirectory(source: DigitalContactsWriteSource): boolean {
   return source === 'directory' || source === 'both';
+}
+
+/**
+ * CPS export ID-directory toggles for a build: the stored dual-bank choice, else the deprecated
+ * pre-#1433 Anytone single-bank mode mapped once, else the codeplug default.
+ */
+export function cpsDualBankOptionsForBuild(
+  settings: BuildExportSettings | undefined,
+): DualBankRadioWriteOptions {
+  if (settings?.cpsDualBankDirectory) return settings.cpsDualBankDirectory;
+  switch (settings?.cpsSingleBankProjectionMode) {
+    case 'contacts-only':
+      return { includeLibraryContacts: true, includeDigitalIdDirectory: false };
+    case 'directory-only':
+      return { includeLibraryContacts: false, includeDigitalIdDirectory: true };
+    case 'merge':
+      return { includeLibraryContacts: true, includeDigitalIdDirectory: true };
+    case 'skip':
+      return { includeLibraryContacts: false, includeDigitalIdDirectory: false };
+    default:
+      return defaultDualBankWriteOptions('codeplug');
+  }
 }

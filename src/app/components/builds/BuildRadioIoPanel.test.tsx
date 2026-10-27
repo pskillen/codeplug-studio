@@ -3,10 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import * as featureDetect from '@integrations/radio-io/transport/featureDetect.ts';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
-import {
-  dualBankOptionsFromWriteSource,
-  singleBankProjectionFromWriteSource,
-} from '@core/domain/digitalIdDirectoryProjection.ts';
+import { dualBankOptionsFromWriteSource } from '@core/domain/digitalIdDirectoryProjection.ts';
 import { DesignSystemV2Provider } from '../v2/index.ts';
 import { BuildLayoutProvider } from '../../routes/builds/BuildLayoutContext.tsx';
 import BuildRadioIoPanel from './BuildRadioIoPanel.tsx';
@@ -274,15 +271,28 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     expect(screen.getByText(/SN123456/)).toBeInTheDocument();
   });
 
-  it('maps codeplug only to the codeplug mode with no contact source (D890 single bank)', async () => {
+  it('maps codeplug only to the codeplug mode with no contact source (AT-D890 dual-bank)', async () => {
     openStepper('radio-io-at-d890uv');
     await connect();
     await screen.findByRole('button', { name: 'Write codeplug' });
     const opts = prepare.mock.calls[0]![3] as {
-      singleBank: { mode: string; projectionMode: string };
+      dualBank: { mode: string; options: unknown };
     };
-    expect(opts.singleBank.mode).toBe('codeplug');
-    expect(opts.singleBank.projectionMode).toBe(singleBankProjectionFromWriteSource('none'));
+    expect(opts.dualBank.mode).toBe('codeplug');
+    expect(opts.dualBank.options).toEqual(dualBankOptionsFromWriteSource('none'));
+  });
+
+  it('maps AT-D890 codeplug + contacts with Both to that contact source', async () => {
+    openStepper('radio-io-at-d890uv');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Both' }));
+    await connect();
+    await screen.findByRole('button', { name: 'Write codeplug + contacts' });
+    const opts = prepare.mock.calls[0]![3] as {
+      dualBank: { mode: string; options: unknown };
+    };
+    expect(opts.dualBank.mode).toBe('codeplug');
+    expect(opts.dualBank.options).toEqual(dualBankOptionsFromWriteSource('both'));
   });
 
   it('maps codeplug + contacts to the codeplug mode with that contact source (DM-32)', async () => {

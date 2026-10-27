@@ -23,7 +23,7 @@ order. Individual controls within a section gate on `build.radioTargetId` catalo
 6. **Channel behaviour** — build-level overrides for library behavioural defaults,
    always shown (fields inside gate by mode support)
 7. **Digital ID directory** — `ExportDirectoryProjectionFields`; self-gates and renders
-   nothing when the target has neither dual-bank nor single-bank directory trait
+   nothing when the target has no dual-bank directory trait
 8. **MM9PDY key assignment** and **MM9PDY channel distance** — MM9PDY AT-D890UV and
    DM-32UV targets only. The distance unit (`exportSettings.channelDistanceUnit`, km
    default) is written into the channel location table header on Write
@@ -63,10 +63,12 @@ These section names are the vocabulary phase 8's Resolution view attributes valu
   it applies the same on radio-io Web Serial write, which has no CPS file at all.
 - **AT-D890UV** scan-list timing fields render inline in the Organisation section
   (`AtD890ScanListTimingFields`) when `radioTargetId === 'anytone-at-d890uv'`.
-- Dual-bank CPS (`SeparateDigitalIdList`) or Anytone single-bank uses
-  `ExportDirectoryProjectionFields` — **Include library digital contacts** / **Include
-  digital ID directory**, or the single-bank projection mode select. The component
-  returns `null` (no empty card) when neither trait applies.
+- Dual-bank CPS (`SeparateDigitalIdList`, Anytone included since
+  [#1433](https://github.com/pskillen/codeplug-studio/issues/1433)) uses
+  `ExportDirectoryProjectionFields` — **Include contacts** / **Include ID directory**.
+  On Anytone they choose the ID database file rows; contacts
+  always go to the talk-group file. The component returns `null` (no empty card) when
+  the trait does not apply.
 - **Naming** delegates to [`ExportNameSettingsFields`](./ExportNameSettingsFields.md) —
   see that sidecar for the abbreviations / shorten-length grouping.
 

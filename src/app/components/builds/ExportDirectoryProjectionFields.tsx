@@ -1,10 +1,6 @@
-import { Checkbox, Select, Stack, Text } from '@mantine/core';
+import { Checkbox, Stack, Text } from '@mantine/core';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
-import {
-  defaultDualBankWriteOptions,
-  defaultSingleBankProjectionMode,
-  type SingleBankDigitalProjectionMode,
-} from '@core/domain/digitalIdDirectoryProjection.ts';
+import { cpsDualBankOptionsForBuild } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
 import { FieldCard } from '../fields/Fields.tsx';
 
@@ -16,12 +12,18 @@ export interface ExportDirectoryProjectionFieldsProps {
   onPatch: (patch: Partial<BuildExportSettings>) => void;
 }
 
-const SINGLE_BANK_CPS_MODES: { value: SingleBankDigitalProjectionMode; label: string }[] = [
-  { value: 'contacts-only', label: 'Contacts only' },
-  { value: 'directory-only', label: 'ID directory only' },
-  { value: 'merge', label: 'Merge (library wins on duplicate ID)' },
-  { value: 'skip', label: 'Skip (omit digital contact CPS file rows)' },
-];
+function dualBankFormatNote(formatId: string): string {
+  switch (formatId) {
+    case 'opengd77':
+      return 'OpenGD77 CPS has no User Database file. Include ID directory warns and does not add rows to Contacts.csv — use Web Serial Write for incoming-call lookup IDs. Contacts stay in Contacts.csv. The radio may hold the same DMR ID in both stores.';
+    case 'dm32':
+      return 'DM-32 CPS DigitalContacts.csv is capped at 250 rows. Include ID directory warns and does not add rows to that file or DMR-ID.csv — use Web Serial Write for address-book lookup IDs. Contacts stay in DigitalContacts.csv. Duplicate DMR IDs: library wins on Web Serial Both.';
+    case 'anytone':
+      return "Contacts always go to DMRTalkGroups.CSV as private calls, so channels and RX group lists find them. These boxes choose what goes to DMRDigitalContactList.CSV, the radio's ID database: your contacts, the ID directory, or both. ID directory rows for a DMR ID that is already a contact are skipped.";
+    default:
+      return 'Dual-bank radios keep contacts and the ID directory in separate CPS tables. When both are included, directory rows whose DMR ID matches a contact are skipped.';
+  }
+}
 
 export default function ExportDirectoryProjectionFields({
   build,
@@ -32,83 +34,52 @@ export default function ExportDirectoryProjectionFields({
 }: ExportDirectoryProjectionFieldsProps) {
   const traits = traitProfileFor(profileId)?.traits ?? [];
   const supportsDualBank = traits.includes(BuildCapabilityTrait.SeparateDigitalIdList);
-  const supportsSingleBank = formatId === 'anytone' && !supportsDualBank;
 
-  if (!supportsDualBank && !supportsSingleBank) {
+  if (!supportsDualBank) {
     return null;
   }
 
-  const dualToggles =
-    build.exportSettings?.cpsDualBankDirectory ?? defaultDualBankWriteOptions('codeplug');
-  const singleMode =
-    build.exportSettings?.cpsSingleBankProjectionMode ??
-    defaultSingleBankProjectionMode('codeplug');
+  // Stored choice, else the deprecated pre-#1433 Anytone single-bank mode, else the default.
+  const dualToggles = cpsDualBankOptionsForBuild(build.exportSettings);
 
   return (
     <FieldCard
       title="ID directory"
       description="Project your ID directory into CPS digital contact / ID list files. Directory rows are streamed from IndexedDB — not included in project YAML."
     >
-      {supportsDualBank ? (
-        <Stack gap="xs">
-          <Text size="sm" c="dimmed">
-            {formatId === 'opengd77'
-              ? 'OpenGD77 CPS has no User Database file. Include ID directory warns and does not add rows to Contacts.csv — use Web Serial Write for incoming-call lookup IDs. Contacts stay in Contacts.csv. The radio may hold the same DMR ID in both stores.'
-              : formatId === 'dm32'
-                ? 'DM-32 CPS DigitalContacts.csv is capped at 250 rows. Include ID directory warns and does not add rows to that file or DMR-ID.csv — use Web Serial Write for address-book lookup IDs. Contacts stay in DigitalContacts.csv. Duplicate DMR IDs: library wins on Web Serial Both.'
-                : 'Dual-bank radios keep contacts and the ID directory in separate CPS tables. When both are included, directory rows whose DMR ID matches a contact are skipped.'}
-          </Text>
-          <Checkbox
-            label="Include contacts"
-            checked={dualToggles.includeLibraryContacts}
-            disabled={saving}
-            onChange={(event) => {
-              const checked = (event.currentTarget ?? event.target).checked;
-              onPatch({
-                cpsDualBankDirectory: {
-                  ...dualToggles,
-                  includeLibraryContacts: checked,
-                },
-              });
-            }}
-          />
-          <Checkbox
-            label="Include ID directory"
-            checked={dualToggles.includeDigitalIdDirectory}
-            disabled={saving}
-            onChange={(event) => {
-              const checked = (event.currentTarget ?? event.target).checked;
-              onPatch({
-                cpsDualBankDirectory: {
-                  ...dualToggles,
-                  includeDigitalIdDirectory: checked,
-                },
-              });
-            }}
-          />
-        </Stack>
-      ) : null}
-      {supportsSingleBank ? (
-        <Stack gap="xs">
-          <Text size="sm" c="dimmed">
-            AT-D890 uses one digital contact bank in CPS. Merge skips directory rows whose DMR ID
-            already exists on a library contact.
-          </Text>
-          <Select
-            label="Digital contact projection"
-            value={singleMode}
-            data={SINGLE_BANK_CPS_MODES}
-            disabled={saving}
-            onChange={(value) =>
-              onPatch({
-                cpsSingleBankProjectionMode:
-                  (value as SingleBankDigitalProjectionMode) ??
-                  defaultSingleBankProjectionMode('codeplug'),
-              })
-            }
-          />
-        </Stack>
-      ) : null}
+      <Stack gap="xs">
+        <Text size="sm" c="dimmed">
+          {dualBankFormatNote(formatId)}
+        </Text>
+        <Checkbox
+          label="Include contacts"
+          checked={dualToggles.includeLibraryContacts}
+          disabled={saving}
+          onChange={(event) => {
+            const checked = (event.currentTarget ?? event.target).checked;
+            onPatch({
+              cpsDualBankDirectory: {
+                ...dualToggles,
+                includeLibraryContacts: checked,
+              },
+            });
+          }}
+        />
+        <Checkbox
+          label="Include ID directory"
+          checked={dualToggles.includeDigitalIdDirectory}
+          disabled={saving}
+          onChange={(event) => {
+            const checked = (event.currentTarget ?? event.target).checked;
+            onPatch({
+              cpsDualBankDirectory: {
+                ...dualToggles,
+                includeDigitalIdDirectory: checked,
+              },
+            });
+          }}
+        />
+      </Stack>
     </FieldCard>
   );
 }

@@ -5,8 +5,6 @@
 import type {
   DualBankRadioWriteOptions,
   DualBankWriteMode,
-  SingleBankDigitalProjectionMode,
-  SingleBankWriteMode,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
@@ -112,8 +110,12 @@ import {
   type ExportWarning,
 } from '@core/import-export/exportWarning.ts';
 
-/** NeonPlug quick-contact group-call type byte (DM-32UV always writes group call). */
+/**
+ * NeonPlug quick-contact call type bytes. DM-32UV always writes group call; the AT-D890UV
+ * writes group for talk groups and private for library contacts in its Contacts list.
+ */
 const TG_CALL_TYPE_GROUP = 0x04;
+const TG_CALL_TYPE_PRIVATE = 0x03;
 
 /** Resolve one wire-name entity kind for this build/library once, indexed by library entity id. */
 function resolutionsByLibraryEntityId(
@@ -490,11 +492,6 @@ export interface BuildRadioWriteProjectionContext {
     options: DualBankRadioWriteOptions;
     directorySlice?: DualBankDirectorySlice;
   };
-  singleBank?: {
-    mode: SingleBankWriteMode;
-    projectionMode: SingleBankDigitalProjectionMode;
-    digitalContacts?: RadioDigitalContactDto[] | undefined;
-  };
 }
 
 function buildTalkGroupsAndRx(
@@ -511,9 +508,10 @@ function buildTalkGroupsAndRx(
   fkMaps: RadioChannelFkMaps;
 } {
   const limits = requireProfileExportLimits(egress);
+  const isAtD890 = isAtD890RadioIoProfileId(egress.profileId);
   const maxTalkGroups = requireNumericLimit(limits.maxTalkGroups, 'maxTalkGroups', egress);
   const maxDigitalContacts =
-    isAtD890RadioIoProfileId(egress.profileId) || limits.maxContacts === 'not_used'
+    limits.maxContacts === 'not_used'
       ? 0
       : requireNumericLimit(limits.maxContacts, 'maxContacts', egress);
   const maxRx = requireNumericLimit(limits.maxRxGroupLists, 'maxRxGroupLists', egress);
@@ -532,6 +530,9 @@ function buildTalkGroupsAndRx(
 
   for (const row of assembled.talkGroups) {
     if (talkGroups.length >= maxTalkGroups) break;
+    // AT-D890: the codec writes no record for DMR ID 0, so give it no slot either; otherwise
+    // contacts appended after it would leave a blank row in the radio's Contacts list.
+    if (isAtD890 && row.entity.digitalId <= 0) continue;
     const wireName = resolvedWireName(
       warnings,
       'Talk group',
@@ -556,8 +557,11 @@ function buildTalkGroupsAndRx(
   }
 
   const digitalContacts: RadioDigitalContactDto[] = [];
+  const contactDtoByEntityId = new Map<string, RadioDigitalContactDto>();
   const digitalContactTotal = assembled.digitalContacts.length;
-  if (includeLibraryContacts) {
+  // AT-D890: contacts always go to the Contacts list with the codeplug, so build the DTOs
+  // regardless of the ID-database toggle.
+  if (includeLibraryContacts || isAtD890) {
     for (const row of assembled.digitalContacts) {
       if (digitalContacts.length >= maxDigitalContacts) break;
       const wireName = resolvedWireName(
@@ -567,7 +571,7 @@ function buildTalkGroupsAndRx(
         contactResolutions.get(row.entity.id),
         row.wireName,
       );
-      digitalContacts.push({
+      const dto: RadioDigitalContactDto = {
         wireName,
         digitalId: row.entity.digitalId,
         callsign: row.entity.callsign ?? '',
@@ -575,12 +579,46 @@ function buildTalkGroupsAndRx(
         province: row.entity.state ?? '',
         country: row.entity.country ?? '',
         remark: row.entity.remarks ?? '',
-      });
+      };
+      digitalContacts.push(dto);
+      contactDtoByEntityId.set(row.entity.id, dto);
     }
     if (digitalContactTotal > maxDigitalContacts) {
       pushGeneralWarning(
         warnings,
         `Build has ${digitalContactTotal} digital contact(s); only ${maxDigitalContacts} export to radio address book`,
+      );
+    }
+  }
+
+  if (isAtD890) {
+    // Contacts list (talk-group list) is shared: talk groups first, then private contacts.
+    let dropped = 0;
+    for (const row of assembled.digitalContacts) {
+      const dto = contactDtoByEntityId.get(row.entity.id);
+      if (!dto || dto.digitalId <= 0) continue;
+      if (talkGroups.length >= maxTalkGroups) {
+        dropped++;
+        continue;
+      }
+      const index = talkGroups.length + 1;
+      talkGroups.push({
+        index,
+        wireName: dto.wireName,
+        digitalId: dto.digitalId,
+        callType: TG_CALL_TYPE_PRIVATE,
+        callsign: dto.callsign,
+        city: dto.city,
+        province: dto.province,
+        country: dto.country,
+        remark: dto.remark,
+      });
+      contactIdByEntityId.set(row.entity.id, index);
+    }
+    if (dropped > 0) {
+      pushGeneralWarning(
+        warnings,
+        `The radio's Contacts list holds ${maxTalkGroups} entries shared by talk groups and contacts; ${dropped} contact(s) were not written to it (talk groups go first)`,
       );
     }
   }
@@ -626,7 +664,13 @@ function buildTalkGroupsAndRx(
             }
           }
         }
-      } else if (!useTalkgroupBankSlots && member.ref.kind === 'digitalContact') {
+      } else if (useTalkgroupBankSlots && member.ref.kind === 'digitalContact') {
+        const bankIndex = contactIdByEntityId.get(member.ref.id);
+        if (bankIndex != null) {
+          memberDigitalIds.push(bankIndex - 1);
+          if (writeTimeSlots) memberTimeSlotOverrides.push(undefined);
+        }
+      } else if (member.ref.kind === 'digitalContact') {
         const dc = assembled.digitalContacts.find((d) => d.entity.id === member.ref.id);
         if (dc) {
           memberDigitalIds.push(dc.entity.digitalId);
@@ -691,12 +735,17 @@ function mergeDm32RadioIdEntries(
   return { radioIds, dmrIdIndexByValue };
 }
 
-function mergeDm32AddressBookContacts(
+/**
+ * Merge library contacts and directory rows into a radio's ID lookup store
+ * (DM-32 address book, AT-D890 ID database). Library rows win; overlapping directory IDs skip.
+ */
+function mergeLookupStoreContacts(
   libraryContacts: readonly RadioDigitalContactDto[],
   directoryContacts: readonly RadioDigitalContactDto[],
   includeLibrary: boolean,
   includeDirectory: boolean,
   serialCap: number,
+  storeLabel: string,
   warnings: ExportWarning[],
 ): RadioDigitalContactDto[] | undefined {
   if (!includeLibrary && !includeDirectory) return undefined;
@@ -704,7 +753,7 @@ function mergeDm32AddressBookContacts(
     if (directoryContacts.length > serialCap) {
       pushGeneralWarning(
         warnings,
-        `Directory has more contacts than the DM-32 address book allows; only ${serialCap} write from directory`,
+        `Directory has more contacts than the ${storeLabel} allows; only ${serialCap} write from directory`,
       );
     }
     return directoryContacts.slice(0, serialCap);
@@ -740,7 +789,7 @@ function mergeDm32AddressBookContacts(
   if (truncated > 0) {
     pushGeneralWarning(
       warnings,
-      `Directory has more contacts than the DM-32 address book allows; only ${serialCap} write from directory`,
+      `Directory has more contacts than the ${storeLabel} allows; only ${serialCap} write from directory`,
     );
   }
   return merged;
@@ -1422,6 +1471,28 @@ function withoutChannelLocations(channels: readonly RadioChannelDto[]): RadioCha
   });
 }
 
+/** AT-D890: channels whose TX contact is a library contact that missed the Contacts list. */
+function pushAtD890UnlistedContactChannelWarning(
+  assembled: AssembledBuild,
+  contactIdByEntityId: ReadonlyMap<string, number> | undefined,
+  warnings: ExportWarning[],
+): void {
+  let n = 0;
+  for (const row of assembled.channels) {
+    const dmr = row.entity.modeProfiles.find(isDmrProfile);
+    const ref = dmr?.contactRef;
+    if (ref?.kind !== 'digitalContact') continue;
+    if (contactIdByEntityId?.has(ref.id)) continue;
+    n++;
+  }
+  if (n > 0) {
+    pushGeneralWarning(
+      warnings,
+      `${n} channel(s) call a contact that is not in the radio's Contacts list; they are written with no TX contact`,
+    );
+  }
+}
+
 export function buildRadioWriteProjection(
   assembled: AssembledBuild,
   build: RadioBuild,
@@ -1441,6 +1512,7 @@ export function buildRadioWriteProjection(
   let digitalContacts: RadioDigitalContactDto[] = [];
   let dm32RadioIds: RadioRadioIdDto[] = [];
   let dm32AddressBook: RadioDigitalContactDto[] | undefined;
+  let atD890Db: RadioDigitalContactDto[] | undefined;
 
   if (isDm32RadioIoProfileId(egress.profileId) || isAtD890RadioIoProfileId(egress.profileId)) {
     const tgRx = buildTalkGroupsAndRx(
@@ -1462,12 +1534,24 @@ export function buildRadioWriteProjection(
         ...tgRx.fkMaps,
         dmrIdIndexByValue: radioIdBank.dmrIdIndexByValue,
       };
-      dm32AddressBook = mergeDm32AddressBookContacts(
+      dm32AddressBook = mergeLookupStoreContacts(
         tgRx.digitalContacts,
         directorySlice?.digitalContacts ?? [],
         includeLibraryContacts,
         includeDigitalIdDirectory,
         DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX,
+        'DM-32 address book',
+        warnings,
+      );
+    } else if (dualBank) {
+      // AT-D890 ID database: written only when the Contacts part supplies a dual-bank context.
+      atD890Db = mergeLookupStoreContacts(
+        tgRx.digitalContacts,
+        directorySlice?.digitalContacts ?? [],
+        includeLibraryContacts,
+        includeDigitalIdDirectory,
+        requireNumericLimit(requireProfileExportLimits(egress).maxContacts, 'maxContacts', egress),
+        'AT-D890 ID database',
         warnings,
       );
     }
@@ -1498,6 +1582,14 @@ export function buildRadioWriteProjection(
     fkMaps,
   );
   warnings.push(...channelWarnings);
+
+  if (isAtD890RadioIoProfileId(egress.profileId)) {
+    pushAtD890UnlistedContactChannelWarning(
+      projectionAssembled,
+      fkMaps?.contactIdByEntityId,
+      warnings,
+    );
+  }
 
   const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
   let numbersBySourceChannelId = buildNumbersBySourceChannelId(
@@ -1567,9 +1659,7 @@ export function buildRadioWriteProjection(
       ...(mm9pdy ? { writeRxGroupTimeSlotOverrides: true } : {}),
       atD890SettingsTarget: mm9pdy ? 'mm9pdy' : 'stock',
       radioIds: dm32RadioIds,
-      ...(context?.singleBank?.digitalContacts !== undefined
-        ? { digitalContacts: context.singleBank.digitalContacts }
-        : {}),
+      ...(atD890Db !== undefined ? { digitalContacts: atD890Db } : {}),
       ...(amAir ? { amAirChannels: amAir.amAirChannels, amZones: amAir.amZones } : {}),
       aprs: radioAprsFromAnytoneLibrary(projectionAssembled, numbersBySourceChannelId, warnings),
     };

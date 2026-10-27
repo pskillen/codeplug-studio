@@ -57,7 +57,7 @@ describe('getProfileExportLimits', () => {
     expect(limits!.maxZones).toBe(250);
     expect(limits!.maxRxGroupLists).toBe(250);
     expect(limits!.maxTalkGroups).toBe(10_000);
-    expect(limits!.maxContacts).toBeNull();
+    expect(limits!.maxContacts).toBe(AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX);
   });
 
   it.each([
@@ -174,6 +174,7 @@ describe('getProfileExportLimits', () => {
     expect(limits!.maxScanLists).toBe(AT_D890UV_LIMITS.SCAN_LISTS_MAX);
     expect(limits!.scanListMembers).toBe(100);
     expect(limits!.zoneMembers).toBe(250);
+    expect(limits!.maxContacts).toBe(AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX);
     expect(limits!.powerLadder.map((e) => e.wire)).toEqual(['Turbo', 'High', 'Mid', 'Low']);
   });
 

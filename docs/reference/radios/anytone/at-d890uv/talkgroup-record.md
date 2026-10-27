@@ -8,15 +8,15 @@ Cite: anytone-cps `Talkgroup::encode_D890UV` + `Constants::CALL_TYPE` — facts 
 
 ## Geometry
 
-| Fact             | Value                                                                                     |
-| ---------------- | ----------------------------------------------------------------------------------------- |
-| Record size      | `0xc8` (200) bytes encode; CPS reads `0x80` (used fields fit)                             |
-| Stride           | `0xc8` inside a bank of 1000                                                              |
-| Bank pitch       | `0x80000` from bank n to bank n+1                                                         |
-| Max slots        | `TalkgroupSet` bitmap `0x4F0` bytes × 8 bits                                              |
-| Occupancy        | **Inverted** bitmap — bit **set** → slot **empty** ([memory-layout.md](memory-layout.md)) |
-| Name storage     | `0x20` bytes at offset `0x6` (wide-char / UTF-16 style packing)                           |
-| Name display cap | 16 chars (CSV / [limits.md](limits.md))                                                   |
+| Fact             | Value                                                                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Record size      | `0xc8` (200) bytes encode; CPS reads `0x80` (used fields fit)                                                                        |
+| Stride           | `0xc8` inside a bank of 1000                                                                                                         |
+| Bank pitch       | `0x80000` from bank n to bank n+1                                                                                                    |
+| Max slots        | `TalkgroupSet` bitmap `0x4F0` bytes × 8 bits                                                                                         |
+| Occupancy        | **Inverted** bitmap — bit **set** → slot **empty** ([memory-layout.md](memory-layout.md))                                            |
+| Name storage     | Offset `0x6`, wide-char (UTF-16 LE). Studio writes `0x20` bytes, the CPS `0x24`; both are terminated (bytes `0x26`–`0x29` stay zero) |
+| Name display cap | 16 chars (CSV / [limits.md](limits.md))                                                                                              |
 
 ## Address formula
 
@@ -57,6 +57,13 @@ Sparse serial/cache I/O uses a **16-aligned span** covering each banked slot bec
 | `0x1`      | Call alert | Bit flags (defer detail until adapter needs them)                                                                                                            |
 | `0x2–0x5`  | DMR ID     | BCD-as-hex: hex digit string parsed as **decimal** (no ×10 scale). Encode: `padStart(8)` of decimal `digitalId` → byte pairs. **Not** binary `toString(16)`. |
 | `0x6–0x25` | Name       | Wide-char name (`0x20` bytes)                                                                                                                                |
+| `0x2A`     | City       | `0x20` bytes wide-char; Studio caps 15 chars so a NUL fits `[I]`                                                                                             |
+| `0x4A`     | Callsign   | `0x18` bytes wide-char; Studio caps 8 chars `[I]`                                                                                                            |
+| `0x62`     | State      | `0x22` bytes wide-char; Studio caps 16 chars `[I]`                                                                                                           |
+| `0x84`     | Country    | `0x22` bytes wide-char; Studio caps 16 chars `[I]`                                                                                                           |
+| `0xA6`     | Remarks    | `0x22` bytes wide-char; Studio caps 16 chars `[I]`                                                                                                           |
+
+The five extra fields are CPS encoder offsets from the firmware repository's talk-group record reference (marked `[I]` there: inferred from the CPS, which writes all `0xC8` bytes). Studio fills them only for private (contact) entries; a talk group with none leaves `0x26`–`0xC7` zero.
 
 ### DMR ID packing examples
 
@@ -77,6 +84,17 @@ Same packing bridge as channel frequencies ([channel-record.md](channel-record.m
 | `2`        | All call     |
 
 Studio `RadioWriteProjection` carries NeonPlug quick-contact call types (`0x03` private, `0x04` group, `0x05` all) for DM-32. The AT-D890 adapter **remaps** those to Anytone `0/1/2` at encode time — never write NeonPlug `0x04` as group on D890 wire.
+
+## Studio writes (Contacts list, #1433)
+
+The talk-group list is the radio's **Contacts list**: the entries listed under Contacts and selectable as a channel TX contact or RX-group member. Studio writes:
+
+1. the build's talk groups as group calls (wire `1`), from index 1;
+2. then the build's library contacts as private calls (wire `0`), with the five extra fields above.
+
+Both share `TALK_GROUPS_MAX` (10,000). Talk groups take slots first; contacts past the cap are not written (a warning, and a channel that calls one gets no TX contact). A contact with DMR ID 0 gets no slot and leaves no gap. Channel TX contact (`+0x14`) and RX-group members point at these indices. The same ID as a group and as a private call gives two order keys one apart, so both stay in the order table.
+
+The separate DMR contact DB (the **ID database**, `DigitalContact*`) is written only when the Write's Contacts part is ticked. The firmware names a caller from that DB first and the talk-group list second, so a private ID in both is harmless.
 
 ## TalkgroupOrder (`0x3f00000`)
 
@@ -115,7 +133,7 @@ Studio writes the identity the CPS writes. Entry `i` is u32 little-endian `i` fo
 
 ## Studio module
 
-`src/integrations/radio-io/radios/at-d890uv/talkGroupCodec.ts` — `encodeAtD890TalkgroupRecord`, `encodeTalkgroupsIntoAtD890Image` (records, bitmap, order table, and position table), `encodeAtD890TalkgroupOrder`.
+`src/integrations/radio-io/radios/at-d890uv/talkGroupCodec.ts` — `encodeAtD890TalkgroupRecord` (incl. the private-entry text fields; caps in `contactFieldCaps.ts`), `encodeTalkgroupsIntoAtD890Image` (records, bitmap, order table, and position table), `encodeAtD890TalkgroupOrder`. The projection that appends contacts after talk groups is `buildTalkGroupsAndRx` in `src/app/services/radioIoWriteProjection.ts`.
 
 ## Related
 
@@ -123,3 +141,4 @@ Studio writes the identity the CPS writes. Entry `i` is u32 little-endian `i` fo
 - [#717](https://github.com/pskillen/codeplug-studio/issues/717) — channel BCD (same packing class with ×10)
 - [#725](https://github.com/pskillen/codeplug-studio/issues/725) — TalkgroupOrder rebuild on Write
 - [#1122](https://github.com/pskillen/codeplug-studio/issues/1122) — position table is the talkgroup list count
+- [#1433](https://github.com/pskillen/codeplug-studio/issues/1433) — library contacts written to the Contacts list as private entries

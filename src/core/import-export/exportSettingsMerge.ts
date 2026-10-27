@@ -83,9 +83,6 @@ function storedToCpsOptions(stored: BuildExportSettings): CpsExportOptions {
   if (stored.cpsDualBankDirectory !== undefined) {
     options.cpsDualBankDirectory = stored.cpsDualBankDirectory;
   }
-  if (stored.cpsSingleBankProjectionMode !== undefined) {
-    options.cpsSingleBankProjectionMode = stored.cpsSingleBankProjectionMode;
-  }
   return options;
 }
 

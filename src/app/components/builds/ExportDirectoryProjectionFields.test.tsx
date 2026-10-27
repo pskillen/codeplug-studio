@@ -56,3 +56,43 @@ describe('ExportDirectoryProjectionFields', () => {
     expect(screen.getByText(/does not add rows to that file or DMR-ID.csv/)).toBeInTheDocument();
   });
 });
+
+describe('ExportDirectoryProjectionFields — Anytone dual-bank (#1433)', () => {
+  it('renders the two checkboxes and the ID database note, with no select', () => {
+    const { build } = newRadioBuildForProfile('project-1', 'anytone-at-d890uv');
+    render(
+      <MantineProvider>
+        <ExportDirectoryProjectionFields
+          build={build}
+          formatId="anytone"
+          profileId="anytone-at-d890uv"
+          saving={false}
+          onPatch={vi.fn()}
+        />
+      </MantineProvider>,
+    );
+    expect(
+      screen.getByText(/Contacts always go to DMRTalkGroups.CSV as private calls/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Include contacts' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Include ID directory' })).not.toBeChecked();
+    expect(screen.queryByRole('textbox', { name: 'Digital contact projection' })).toBeNull();
+  });
+
+  it('shows a legacy single-bank merge setting as both ticked', () => {
+    const { build } = newRadioBuildForProfile('project-1', 'anytone-at-d890uv');
+    render(
+      <MantineProvider>
+        <ExportDirectoryProjectionFields
+          build={{ ...build, exportSettings: { cpsSingleBankProjectionMode: 'merge' } }}
+          formatId="anytone"
+          profileId="anytone-at-d890uv"
+          saving={false}
+          onPatch={vi.fn()}
+        />
+      </MantineProvider>,
+    );
+    expect(screen.getByRole('checkbox', { name: 'Include contacts' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Include ID directory' })).toBeChecked();
+  });
+});

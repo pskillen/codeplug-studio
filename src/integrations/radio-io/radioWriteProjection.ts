@@ -57,10 +57,19 @@ export interface RadioTalkGroupDto {
   index: number;
   wireName: string;
   digitalId: number;
-  /** NeonPlug quick-contact call type: 0x03 private, 0x04 group, 0x05 all — Studio DM-32UV Write always uses group (0x04). */
+  /**
+   * NeonPlug byte 0x03 private / 0x04 group / 0x05 all. DM-32 writes group.
+   * AT-D890 writes group for talk groups and private for library contacts.
+   */
   callType: number;
   /** OpenGD77 contact-bank clone: Force TS1 / TS2 (`0x17` on wire). */
   timeSlotOverride?: 1 | 2;
+  /** AT-D890 private entries: optional contact fields (same names as `RadioDigitalContactDto`). */
+  callsign?: string;
+  city?: string;
+  province?: string;
+  country?: string;
+  remark?: string;
 }
 
 /** RX group list for metadata 0x0F. */

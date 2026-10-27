@@ -38,7 +38,7 @@ function inChannelLocationTable(address: number): boolean {
 }
 
 export const AT_D890_DIGITAL_CONTACTS_WRITE_GAP =
-  'Boot images, analog address book, and other unmodelled regions stay as they were on the radio when you Write. Use Codeplug Write projection above for the digital contact bank.';
+  'Boot images, analog address book, and other unmodelled regions stay as they were on the radio when you Write. Contacts go to the radio Contacts list with the codeplug; tick Digital contacts on Write to fill the ID database.';
 
 /** Bitmap byte length → slot capacity (1 bit per slot). */
 function bitmapSlotCount(setBytes: number): number {

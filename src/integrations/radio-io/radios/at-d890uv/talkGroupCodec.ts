@@ -18,6 +18,13 @@ import {
 } from './memory.ts';
 import { encodeBcdAsHexU32 } from './bcd.ts';
 import { encodeWideCharName } from './wideChar.ts';
+import {
+  CALLSIGN_MAX_CHARS,
+  CITY_MAX_CHARS,
+  COUNTRY_MAX_CHARS,
+  REMARK_MAX_CHARS,
+  STATE_MAX_CHARS,
+} from './contactFieldCaps.ts';
 
 /** Anytone D890 wire call type: Private=0, Group=1, All=2. */
 const ANYTONE_CALL_TYPE_GROUP = 0x01;
@@ -148,6 +155,29 @@ export function encodeAtD890TalkgroupOrder(talkGroups: readonly RadioTalkGroupDt
   return padOddOrderEntry(raw);
 }
 
+// CPS record offsets (firmware talkgroup.md §Record, [I]).
+const TG_CITY_OFFSET = 0x2a;
+const TG_CITY_BYTES = 0x20;
+const TG_CALLSIGN_OFFSET = 0x4a;
+const TG_CALLSIGN_BYTES = 0x18;
+const TG_STATE_OFFSET = 0x62;
+const TG_STATE_BYTES = 0x22;
+const TG_COUNTRY_OFFSET = 0x84;
+const TG_COUNTRY_BYTES = 0x22;
+const TG_REMARK_OFFSET = 0xa6;
+const TG_REMARK_BYTES = 0x22;
+
+function writeTalkgroupTextField(
+  data: Uint8Array,
+  value: string | undefined,
+  maxChars: number,
+  offset: number,
+  bytes: number,
+): void {
+  if (!value) return;
+  data.set(encodeWideCharName(value.slice(0, maxChars), bytes), offset);
+}
+
 export function encodeAtD890TalkgroupRecord(tg: RadioTalkGroupDto): Uint8Array {
   const data = new Uint8Array(AT_D890_LIMITS.TALKGROUP_RECORD_SIZE);
   data.fill(0);
@@ -156,6 +186,17 @@ export function encodeAtD890TalkgroupRecord(tg: RadioTalkGroupDto): Uint8Array {
     data.set(encodeWideCharName(tg.wireName, 0x20), 0x6);
   }
   data.set(encodeBcdAsHexU32(tg.digitalId), 0x2);
+  writeTalkgroupTextField(data, tg.city, CITY_MAX_CHARS, TG_CITY_OFFSET, TG_CITY_BYTES);
+  writeTalkgroupTextField(
+    data,
+    tg.callsign,
+    CALLSIGN_MAX_CHARS,
+    TG_CALLSIGN_OFFSET,
+    TG_CALLSIGN_BYTES,
+  );
+  writeTalkgroupTextField(data, tg.province, STATE_MAX_CHARS, TG_STATE_OFFSET, TG_STATE_BYTES);
+  writeTalkgroupTextField(data, tg.country, COUNTRY_MAX_CHARS, TG_COUNTRY_OFFSET, TG_COUNTRY_BYTES);
+  writeTalkgroupTextField(data, tg.remark, REMARK_MAX_CHARS, TG_REMARK_OFFSET, TG_REMARK_BYTES);
   return data;
 }
 

@@ -11,11 +11,9 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   dualBankOptionsFromWriteSource,
-  singleBankProjectionFromWriteSource,
   writeSourceIncludesDirectory,
   type DigitalContactsWriteSource,
   type DualBankWriteMode,
-  type SingleBankWriteMode,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { isAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
@@ -168,7 +166,6 @@ export interface UseRadioWriteFlowArgs {
   descriptor: RadioDescriptor | undefined;
   activeProjectId: string | null;
   supportsDualBankWrite: boolean;
-  supportsSingleBankWrite: boolean;
   /** Keps adapter for this profile, when there is one. */
   kepsWriteFn?: SatelliteKepsWriteFn;
   /** The keps writer can share the codeplug's session (D890). Otherwise the radio restarts first. */
@@ -223,13 +220,12 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     descriptor,
     activeProjectId,
     supportsDualBankWrite,
-    supportsSingleBankWrite,
     kepsWriteFn,
     kepsSameSessionAfterUpload,
     onOpenSettingsPage,
   } = args;
   const isAtD890 = isAtD890RadioIoProfileId(egress.profileId);
-  const supportsDigitalContacts = supportsDualBankWrite || supportsSingleBankWrite;
+  const supportsDigitalContacts = supportsDualBankWrite;
   const writeVerifyHooks = descriptor?.writeVerify;
   const requiresReconnect = writeVerifyHooks?.requiresCrossSessionReconnect ?? true;
   const restartWaitSeconds = requiresReconnect ? RADIO_RESTART_WAIT_SECONDS : 0;
@@ -667,9 +663,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       }
       const granted = grantedPortRef.current;
       const source: DigitalContactsWriteSource = p.contacts ? contactSourceRef.current : 'none';
-      const mode: DualBankWriteMode | SingleBankWriteMode = p.codeplug
-        ? 'codeplug'
-        : 'digitalIdList';
+      const mode: DualBankWriteMode = p.codeplug ? 'codeplug' : 'digitalIdList';
 
       let prepared: Awaited<ReturnType<typeof prepareRadioWriteImage>> | undefined;
       if (writesToRadioImage(p)) {
@@ -686,14 +680,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
                 projectId: activeProjectId,
                 onProgress,
               }
-            : supportsSingleBankWrite
-              ? {
-                  singleBank: { mode, projectionMode: singleBankProjectionFromWriteSource(source) },
-                  persistence,
-                  projectId: activeProjectId,
-                  onProgress,
-                }
-              : undefined,
+            : undefined,
         );
         setProgress(null);
       }

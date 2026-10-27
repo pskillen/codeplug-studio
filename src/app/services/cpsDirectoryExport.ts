@@ -3,13 +3,10 @@
  */
 
 import {
-  defaultDualBankWriteOptions,
-  defaultSingleBankProjectionMode,
-  projectSingleBankDigitalContacts,
+  cpsDualBankOptionsForBuild,
+  libraryDigitalIdSet,
   shouldIncludeDirectoryRow,
   type DualBankRadioWriteOptions,
-  type ProjectedDigitalContactRow,
-  type SingleBankDigitalProjectionMode,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import {
   DM32_CPS_DIRECTORY_WARNING,
@@ -25,6 +22,8 @@ import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
 import { assemble } from '@core/services/assemble.ts';
+import type { DigitalContact } from '@core/models/library.ts';
+import type { AssembledEntity } from '@core/services/assemble.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
@@ -37,71 +36,50 @@ function hasSeparateDigitalIdList(profileId: string): boolean {
   );
 }
 
-function mapLibraryRowToProjected(
-  row: AssembledBuild['digitalContacts'][number],
-): ProjectedDigitalContactRow {
-  return {
-    digitalId: row.entity.digitalId,
-    wireName: row.wireName,
-    callsign: row.entity.callsign ?? '',
-    city: row.entity.city ?? '',
-    province: row.entity.state ?? '',
-    country: row.entity.country ?? '',
-    remark: row.entity.remarks ?? '',
-  };
-}
-
-async function collectSingleBankCpsProjection(
+/**
+ * Anytone (AT-D890) CPS: contacts always go to `DMRTalkGroups.CSV`; the toggles choose the rows of
+ * `DMRDigitalContactList.CSV` (the ID database). Directory rows for a build contact's ID skip.
+ */
+async function collectAnytoneCpsProjection(
   store: ProjectPersistence,
   projectId: string,
   assembled: AssembledBuild,
-  mode: SingleBankDigitalProjectionMode,
-  maxContacts: number,
+  egress: EgressPath,
+  options: DualBankRadioWriteOptions,
   warnings: ExportWarning[],
 ): Promise<CpsDirectoryProjectionPayload> {
-  if (mode === 'skip') {
-    return { omitDigitalContactList: true, warnings };
-  }
-
-  const libraryRows = assembled.digitalContacts.map(mapLibraryRowToProjected);
-  const includeDirectory = mode === 'directory-only' || mode === 'merge';
-  const directoryRows: ProjectedDigitalContactRow[] = [];
-
-  if (includeDirectory) {
-    const libraryIds = new Set(
-      mode === 'merge'
-        ? libraryRows.filter((row) => row.digitalId > 0).map((row) => row.digitalId)
-        : [],
-    );
-    const libraryUsed =
-      mode === 'merge'
-        ? Math.min(libraryRows.filter((row) => row.digitalId > 0).length, maxContacts)
-        : 0;
-    const directoryCap = maxContacts - libraryUsed;
+  const directoryDigitalContacts: AssembledEntity<DigitalContact>[] = [];
+  if (options.includeDigitalIdDirectory) {
+    const libraryIds = libraryDigitalIdSet(assembled.digitalContacts.map((row) => row.entity));
+    const limits = getProfileExportLimits('anytone', egress.profileId);
+    const cap = typeof limits?.maxContacts === 'number' ? limits.maxContacts : Infinity;
     let skippedOverlap = 0;
     let truncated = 0;
-
     await store.iterateDigitalIdDirectory(projectId, (row: DigitalIdDirectoryEntry) => {
       if (!shouldIncludeDirectoryRow(row.digitalId, libraryIds)) {
-        skippedOverlap++;
+        if (row.digitalId > 0) skippedOverlap++;
         return;
       }
-      if (directoryRows.length >= directoryCap) {
+      if (directoryDigitalContacts.length >= cap) {
         truncated++;
         return;
       }
       const dto = mapDirectoryEntryToRadioDigitalContactDto(row);
-      directoryRows.push({
-        digitalId: dto.digitalId,
-        wireName: dto.wireName,
-        callsign: dto.callsign,
-        city: dto.city,
-        province: dto.province,
-        country: dto.country,
-        remark: dto.remark,
-      });
+      directoryDigitalContacts.push(
+        projectedRowToAssembledDigitalContact(
+          {
+            digitalId: dto.digitalId,
+            wireName: dto.wireName,
+            callsign: dto.callsign,
+            city: dto.city,
+            province: dto.province,
+            country: dto.country,
+            remark: dto.remark,
+          },
+          projectId,
+        ),
+      );
     });
-
     if (skippedOverlap > 0) {
       pushGeneralWarning(
         warnings,
@@ -111,23 +89,18 @@ async function collectSingleBankCpsProjection(
     if (truncated > 0) {
       pushGeneralWarning(
         warnings,
-        `Directory has more contacts than the radio contact bank allows; only ${maxContacts} export from directory`,
+        `Directory has more contacts than the AT-D890 ID database allows; only ${cap} export from directory`,
       );
     }
   }
-
-  const { contacts, warnings: projectionWarnings } = projectSingleBankDigitalContacts({
-    mode,
-    libraryContacts: libraryRows,
-    directoryRows,
-    maxContacts,
-  });
-  warnings.push(...projectionWarnings);
-
   return {
-    singleBankDigitalContacts: contacts.map((row) =>
-      projectedRowToAssembledDigitalContact(row, projectId),
-    ),
+    dualBank: {
+      includeLibraryContacts: options.includeLibraryContacts,
+      directoryDigitalContacts,
+      dm32RadioIds: [],
+      includeDm32RadioIdFile: false,
+      keepLibraryContactsInAssembly: true,
+    },
     warnings,
   };
 }
@@ -177,11 +150,24 @@ export async function enrichCpsExportOptionsWithDirectory(
   const warnings: ExportWarning[] = [];
   let directoryProjection: CpsDirectoryProjectionPayload | undefined;
 
-  if (hasSeparateDigitalIdList(egress.profileId)) {
+  if (egress.formatId === 'anytone' && hasSeparateDigitalIdList(egress.profileId)) {
     const dualOptions =
-      merged.cpsDualBankDirectory ??
-      build.exportSettings?.cpsDualBankDirectory ??
-      defaultDualBankWriteOptions('codeplug');
+      merged.cpsDualBankDirectory ?? cpsDualBankOptionsForBuild(build.exportSettings);
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    directoryProjection = await collectAnytoneCpsProjection(
+      store,
+      projectId,
+      assembled,
+      egress,
+      dualOptions,
+      warnings,
+    );
+  } else if (hasSeparateDigitalIdList(egress.profileId)) {
+    const dualOptions =
+      merged.cpsDualBankDirectory ?? cpsDualBankOptionsForBuild(build.exportSettings);
     if (dualOptions.includeDigitalIdDirectory || !dualOptions.includeLibraryContacts) {
       directoryProjection = await collectDualBankCpsProjection(
         store,
@@ -192,25 +178,6 @@ export async function enrichCpsExportOptionsWithDirectory(
         warnings,
       );
     }
-  } else if (egress.formatId === 'anytone') {
-    const mode =
-      merged.cpsSingleBankProjectionMode ??
-      build.exportSettings?.cpsSingleBankProjectionMode ??
-      defaultSingleBankProjectionMode('codeplug');
-    const assembled = assemble(build, library, {
-      formatId: egress.formatId,
-      profileId: egress.profileId,
-    });
-    const limits = getProfileExportLimits('anytone', egress.profileId);
-    const maxContacts = typeof limits?.maxContacts === 'number' ? limits.maxContacts : 10_000;
-    directoryProjection = await collectSingleBankCpsProjection(
-      store,
-      projectId,
-      assembled,
-      mode,
-      maxContacts,
-      warnings,
-    );
   }
 
   if (!directoryProjection) {

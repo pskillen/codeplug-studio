@@ -3,10 +3,7 @@ import type {
   MultiTalkGroupExportNameMode,
   DigitalContactExportNameMode,
 } from '@core/import-export/types.ts';
-import type {
-  DualBankRadioWriteOptions,
-  SingleBankDigitalProjectionMode,
-} from '@core/domain/digitalIdDirectoryProjection.ts';
+import type { DualBankRadioWriteOptions } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type {
   AnalogSquelchMode,
   EffectiveForbidTransmit,
@@ -83,8 +80,11 @@ export interface BuildExportSettings {
   channelDistanceUnit?: ChannelDistanceUnit;
   /** CPS export: dual-bank directory toggles (`SeparateDigitalIdList` profiles). */
   cpsDualBankDirectory?: DualBankRadioWriteOptions;
-  /** CPS export: single-bank digital contact projection (Anytone). */
-  cpsSingleBankProjectionMode?: SingleBankDigitalProjectionMode;
+  /**
+   * @deprecated Pre-#1433 Anytone single-bank CPS mode. Read once as a fallback for
+   * cpsDualBankDirectory; never written.
+   */
+  cpsSingleBankProjectionMode?: 'contacts-only' | 'directory-only' | 'merge' | 'skip';
 }
 
 /**

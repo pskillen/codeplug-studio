@@ -54,9 +54,11 @@ export interface WriteStepperConfig {
   serialOk: boolean;
   writeHidden: boolean;
   support: WritePartSupport;
-  /** Contacts: shared-bank notes (OpenGD77, DM-32). */
+  /** Contacts: store notes (OpenGD77, DM-32, AT-D890). */
   sharedContactBankNote: boolean;
   sharedAddressBookNote: boolean;
+  /** AT-D890: contacts ride with the codeplug; this part writes the separate ID database. */
+  separateLookupDatabaseNote: boolean;
   /** Part summaries. */
   codeplugSummary?: string;
   kepsSummary?: string;
