@@ -1,7 +1,7 @@
 import { FileButton } from '@mantine/core';
 import { Button } from '../../../../../components/v2/index.ts';
 import classes from '../RangeChange.module.css';
-import { clock, COPY, rangeLabel, tail4 } from '../rangeChangeCopy.ts';
+import { clock, COPY, rangeLabel } from '../rangeChangeCopy.ts';
 import NoticeBlock from './NoticeBlock.tsx';
 import type { StepProps } from './stepTypes.ts';
 
@@ -24,7 +24,7 @@ export default function ResumeStep({ view, actions }: StepProps) {
                   size="sm"
                   onClick={() => actions.onChooseResume(c.serial)}
                 >
-                  {tail4(c.serial)} · {rangeLabel(c.toCode)} · {clock(c.updatedAt)}
+                  {c.serial} · {rangeLabel(c.toCode)} · {clock(c.updatedAt)}
                 </Button>
               </li>
             ))}

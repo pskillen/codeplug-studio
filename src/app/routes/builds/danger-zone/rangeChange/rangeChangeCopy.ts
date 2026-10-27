@@ -43,11 +43,6 @@ export function dayAndClock(iso: string): string {
   return `${d.toLocaleDateString([], { day: 'numeric', month: 'short' })} ${clock(iso)}`;
 }
 
-/** The last 4 characters of a serial. */
-export function tail4(serial: string): string {
-  return serial.length > 4 ? `…${serial.slice(-4)}` : serial;
-}
-
 export const STEP_LABELS = {
   read: 'Read',
   newRange: 'New range',
@@ -297,8 +292,8 @@ export const COPY = {
 
   footer: {
     fromFile: 'Finish a range change from a backup file',
-    last: (tail: string, from: string, to: string, when: string) =>
-      `Last change: ${tail}, ${from} → ${to}, ${when}`,
+    last: (serial: string, from: string, to: string, when: string) =>
+      `Last change: ${serial}, ${from} → ${to}, ${when}`,
     changeBack: 'Change back…',
   },
 
