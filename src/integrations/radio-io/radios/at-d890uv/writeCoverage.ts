@@ -45,16 +45,22 @@ export const AT_D890_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow[] = [
   { label: 'Local info and band settings', status: 'leftAlone' },
   { label: AT_D890_RADIO_SETTINGS_COVERAGE_LABEL, status: 'preserved' },
   { label: 'Channel positions (MM9PDY firmware)', status: 'leftAlone' },
+  { label: 'NXDN channel settings', status: 'preserved' },
 ] as const;
 
 /**
  * MM9PDY target rows: the same table, except channel positions are written from your
- * library (channels with a position and *Use location* on).
+ * library (channels with a position and *Use location* on) and NXDN channel settings are
+ * written when the radio reports NXDN enabled.
  */
 export const AT_D890_MM9PDY_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow[] =
-  AT_D890_WRITE_COVERAGE_ROWS.map((row) =>
-    row.label === 'Channel positions (MM9PDY firmware)' ? { ...row, status: 'written' } : row,
-  );
+  AT_D890_WRITE_COVERAGE_ROWS.map((row) => {
+    if (row.label === 'Channel positions (MM9PDY firmware)') return { ...row, status: 'written' };
+    if (row.label === 'NXDN channel settings') {
+      return { ...row, status: 'written', note: 'Updated when the radio reports NXDN enabled' };
+    }
+    return row;
+  });
 
 /**
  * The rows for a target. `settingsChangeCount` is how many Radio settings fields the user has set
