@@ -23,6 +23,7 @@ import {
 } from '@integrations/radio-io/radios/at-d890uv/__fixtures__/scriptedPipe.ts';
 import { encodeBcdFrequencyHz } from '@integrations/radio-io/radios/at-d890uv/bcd.ts';
 import { setBitmapBit } from '@integrations/radio-io/radios/at-d890uv/bitmap.ts';
+import { readCombinedChannelRecord } from '@integrations/radio-io/radios/at-d890uv/channelCodec.ts';
 import {
   channelPrimaryAddress,
   channelSecondaryAddress,
@@ -92,12 +93,12 @@ const library: LibrarySlice = {
 const { build, egress } = newRadioBuildForProfile(P, 'radio-io-at-d890uv-mm9pdy');
 
 /** A 32-byte MM9PDY settings-store record. */
-function storeRecord(unlock: number, goodSum = true): Uint8Array {
+function storeRecord(enabled: number, goodSum = true): Uint8Array {
   const r = new Uint8Array(32).fill(0);
   r[0] = 0x4d;
   r[1] = 0x36;
   r[2] = 1;
-  r[21] = unlock;
+  r[21] = enabled;
   let sum = 0;
   for (let i = 0; i < 31; i++) sum += r[i]!;
   r[31] = goodSum ? sum & 0xff : (sum + 1) & 0xff;
@@ -143,6 +144,13 @@ async function d890Session(store: Uint8Array | null): Promise<RadioSession> {
 beforeEach(() => clearAllAtD890PendingRecords());
 afterEach(() => clearAllAtD890PendingRecords());
 
+/** The 0x66-0x6E bytes of a slot in the image the Write resolved (what the frames are built from). */
+function slotNxdnBytes(session: RadioSession, slot: number): number[] {
+  const image = session.cachedImage;
+  expect(image, 'the Write resolved an image').toBeDefined();
+  return [...readCombinedChannelRecord(image!, slot).subarray(0x66, 0x6f)];
+}
+
 async function run(store: Uint8Array | null) {
   const prepared = await prepareRadioWriteImage(build, egress, library);
   const session = await d890Session(store);
@@ -156,7 +164,7 @@ async function run(store: Uint8Array | null) {
     },
   });
   await closeRadioSession(session);
-  return { prepared, result, seen: seen! };
+  return { prepared, result, seen: seen!, session };
 }
 
 const text = (ws: readonly Parameters<typeof formatExportWarning>[0][]) =>
@@ -176,20 +184,29 @@ describe('AT-D890 MM9PDY NXDN gate on Write', () => {
     expect(plain.nxdn).toBeUndefined();
   });
 
-  it('radio with nxdn_unlock = 1 sends the NXDN projection', async () => {
-    const { result, seen } = await run(storeRecord(1));
+  it('radio with the NXDN-enabled byte = 1 sends the NXDN projection', async () => {
+    const { result, seen, session } = await run(storeRecord(1));
     expect(result.channels).toHaveLength(2);
     expect(seen.channels).toHaveLength(2);
+    // The image the frames come from carries the NXDN bytes: rate bit 1 (nxdn96), TX RAN 5, RX RAN 7,
+    // no RX group list (0xff), in the slot that held a channel before and in the new one.
+    for (const slot of [0, 1]) {
+      const bytes = slotNxdnBytes(session, slot);
+      expect(bytes[0x66 - 0x66]! & 1, `slot ${slot} rate bit`).toBe(1);
+      expect(bytes[0x68 - 0x66], `slot ${slot} TX RAN`).toBe(5);
+      expect(bytes[0x69 - 0x66], `slot ${slot} RX RAN`).toBe(7);
+      expect(bytes[0x6b - 0x66], `slot ${slot} RX group list`).toBe(0xff);
+    }
     expect(text(result.projectionWarnings!)).not.toContain(ATD890_NXDN_NOT_WRITTEN_NOTICE);
   });
 
   for (const [label, store] of [
-    ['nxdn_unlock = 0', storeRecord(0)],
+    ['the NXDN-enabled byte = 0', storeRecord(0)],
     ['a bad sum', storeRecord(1, false)],
     ['no store record', null],
   ] as const) {
     it(`radio with ${label} sends the standard projection and one notice`, async () => {
-      const { prepared, result, seen } = await run(store);
+      const { prepared, result, seen, session } = await run(store);
       expect(result.channels).toHaveLength(1);
       expect(result.channels![0]!.nxdn).toBeUndefined();
       expect(seen.channels).toHaveLength(1);
@@ -198,6 +215,8 @@ describe('AT-D890 MM9PDY NXDN gate on Write', () => {
         formatExportWarning(w).includes(ATD890_NXDN_NOT_WRITTEN_NOTICE),
       );
       expect(notices).toHaveLength(1);
+      // Nothing NXDN reached the image the frames come from.
+      expect(slotNxdnBytes(session, 0)).toEqual(new Array(9).fill(0));
     });
   }
 });
