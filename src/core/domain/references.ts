@@ -1,4 +1,9 @@
-import type { ChannelModeProfileDMR, EntityRef, Library } from '../models/library.ts';
+import type {
+  ChannelModeProfileDMR,
+  ChannelModeProfileNxdn,
+  EntityRef,
+  Library,
+} from '../models/library.ts';
 import type { EntityRefKind } from '../models/libraryTypes.ts';
 import { directZoneMemberZoneIds, normalizeZoneMemberEntry } from './zoneMembers.ts';
 import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
