@@ -94,7 +94,7 @@ describe('BuildDangerZonePage', () => {
 
   it('shows the last finished change with the last 4 of the serial, and Change back…', () => {
     window.localStorage.setItem(
-      'codeplug-studio.radio-tools.range-change-journal.v1',
+      'codeplug-studio.danger-zone.range-change-journal.v1',
       JSON.stringify([
         {
           serial: 'TESTSERIAL01',

@@ -7,7 +7,7 @@
  * "Finish a range change from a backup file" path still works without it.
  */
 
-export const RANGE_CHANGE_JOURNAL_KEY = 'codeplug-studio.radio-tools.range-change-journal.v1';
+export const RANGE_CHANGE_JOURNAL_KEY = 'codeplug-studio.danger-zone.range-change-journal.v1';
 
 /** `sending` is written before the frame goes out; `done` entries stay as history. */
 export type RangeChangeStage = 'sending' | 'changed' | 'restored' | 'done';
