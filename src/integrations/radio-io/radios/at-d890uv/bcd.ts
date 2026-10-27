@@ -41,3 +41,24 @@ export function encodeBcdFrequencyHz(hz: number): Uint8Array {
   const units10Hz = Math.max(0, Math.round(hz / 10));
   return encodeBcdAsHexU32(units10Hz);
 }
+
+/** Big-endian packed BCD, `byteLength` bytes (two decimal digits each): 65519 in 3 bytes is `06 55 19`. */
+export function encodeBcdBytesBe(value: number, byteLength: number): Uint8Array {
+  const text = String(Math.max(0, Math.round(value)))
+    .padStart(byteLength * 2, '0')
+    .slice(-byteLength * 2);
+  const out = new Uint8Array(byteLength);
+  for (let i = 0; i < byteLength; i++) {
+    out[i] = Number.parseInt(text.slice(i * 2, i * 2 + 2), 16) & 0xff;
+  }
+  return out;
+}
+
+/** Inverse of {@link encodeBcdBytesBe}; `0` when a nibble is not a decimal digit. */
+export function decodeBcdBytesBe(data: Uint8Array): number {
+  const text = Array.from(data)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  if (!/^\d+$/.test(text)) return 0;
+  return Number.parseInt(text, 10);
+}

@@ -36,6 +36,7 @@ import type {
   Zone,
 } from '@core/models/library.ts';
 import type { RxGroupList, ScanList } from '@core/models/library.ts';
+import type { DigitalChannelMode } from '@core/models/libraryTypes.ts';
 import type { AssembledBuild, LibrarySlice } from './assemble.ts';
 import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
 import {
@@ -115,6 +116,12 @@ export interface ResolveWireNamesFromOptionsArgs {
   profileId?: string;
   options: CpsExportOptions;
   overrides?: readonly BuildEntityOverride[];
+  /**
+   * Talk groups and digital contacts only: resolve (and de-duplicate) just the entities of this
+   * mode, for a radio with a separate bank per mode (AT-D890: DMR and NXDN). Unset: every mode
+   * shares one name pool, as before. Analogue contacts are never filtered.
+   */
+  digitalMode?: DigitalChannelMode;
 }
 
 interface CandidateEntity {
@@ -232,7 +239,10 @@ function candidatesForKind(
   entityKind: WireNameEntityKind,
   library: LibrarySlice,
   options: CpsExportOptions,
+  digitalMode?: DigitalChannelMode,
 ): CandidateEntityWithSource[] {
+  const inMode = (entity: { mode?: DigitalChannelMode | null }) =>
+    digitalMode === undefined || (entity.mode ?? 'dmr') === digitalMode;
   switch (entityKind) {
     case 'channel':
       return library.channels.map((channel) => ({
@@ -260,7 +270,7 @@ function candidatesForKind(
         rawBase: list.name,
       }));
     case 'talkGroup':
-      return library.talkGroups.map((talkGroup: TalkGroup) => ({
+      return library.talkGroups.filter(inMode).map((talkGroup: TalkGroup) => ({
         id: talkGroup.id,
         libraryName: talkGroup.name,
         rawBase: talkGroup.name,
@@ -268,7 +278,7 @@ function candidatesForKind(
       }));
     case 'contact': {
       const mode = options.digitalContactExportNameMode ?? DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE;
-      const digital = library.digitalContacts.map((contact: DigitalContact) => ({
+      const digital = library.digitalContacts.filter(inMode).map((contact: DigitalContact) => ({
         id: contact.id,
         libraryName: contact.name,
         rawBase: digitalContactExportBaseName(contact, mode),
@@ -308,7 +318,7 @@ export function resolveWireNamesFromOptions(
 
   const overrides = overrideByEntityId(args.overrides);
 
-  const candidates = candidatesForKind(entityKind, library, options);
+  const candidates = candidatesForKind(entityKind, library, options, args.digitalMode);
   const reservedForEffective = new Set<string>();
   const results: WireNameResolution[] = [];
 

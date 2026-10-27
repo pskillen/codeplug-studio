@@ -11,6 +11,14 @@ export function isDmrDigitalEntity(entity: { mode?: DigitalChannelMode | null })
   return entity.mode == null || entity.mode === 'dmr';
 }
 
+/** True when the entity belongs to `mode`; a row with no mode counts as DMR. */
+export function isDigitalEntityOfMode(
+  entity: { mode?: DigitalChannelMode | null },
+  mode: DigitalChannelMode,
+): boolean {
+  return (entity.mode ?? 'dmr') === mode;
+}
+
 /**
  * DMR IDs of the build's DMR contacts: the set an ID-database directory row is skipped against.
  * Non-DMR contacts are not written, so a directory row sharing one's ID must still be written.
@@ -24,49 +32,60 @@ export function dmrContactDigitalIdSet(
 }
 
 /**
- * Keep only DMR talk groups and contacts for a radio whose talk-group and contact banks are
- * DMR-only. RX group lists lose their non-DMR members, and channel TX contacts that point at a
- * skipped entry no longer resolve (no contact). Pushes one warning when anything is skipped.
+ * Keep only the talk groups and contacts of one digital `mode`, for a radio whose talk-group and
+ * contact banks are per mode (the AT-D890: a DMR bank and an NXDN bank). RX group lists lose
+ * their members of other modes, and channel TX contacts that point at a skipped entry no longer
+ * resolve (no contact).
+ *
+ * DMR (the default bank): pushes one warning when anything is skipped. With `quiet`, nothing is
+ * pushed: the NXDN caller reports what it drops from the lists it actually writes, since a DMR
+ * talk group is not an NXDN problem.
  */
-export function keepDmrTalkGroupsAndContacts(
+export function keepDigitalModeTalkGroupsAndContacts(
   assembled: AssembledBuild,
+  mode: DigitalChannelMode,
   warnings: ExportWarning[],
+  options?: { quiet?: boolean },
 ): AssembledBuild {
-  const talkGroups = assembled.talkGroups.filter((row) => isDmrDigitalEntity(row.entity));
-  const digitalContacts = assembled.digitalContacts.filter((row) => isDmrDigitalEntity(row.entity));
+  const talkGroups = assembled.talkGroups.filter((row) => isDigitalEntityOfMode(row.entity, mode));
+  const digitalContacts = assembled.digitalContacts.filter((row) =>
+    isDigitalEntityOfMode(row.entity, mode),
+  );
   const skippedTalkGroups = assembled.talkGroups.length - talkGroups.length;
   const skippedContacts = assembled.digitalContacts.length - digitalContacts.length;
   if (skippedTalkGroups === 0 && skippedContacts === 0) return assembled;
 
   const skippedIds = new Set<string>();
   for (const row of assembled.talkGroups) {
-    if (!isDmrDigitalEntity(row.entity)) skippedIds.add(row.entity.id);
+    if (!isDigitalEntityOfMode(row.entity, mode)) skippedIds.add(row.entity.id);
   }
   for (const row of assembled.digitalContacts) {
-    if (!isDmrDigitalEntity(row.entity)) skippedIds.add(row.entity.id);
+    if (!isDigitalEntityOfMode(row.entity, mode)) skippedIds.add(row.entity.id);
   }
-  let channelsWithoutContact = 0;
-  for (const row of assembled.channels) {
-    const callsSkipped = row.entity.modeProfiles.some(
-      (profile) =>
-        profile.mode === 'dmr' &&
-        profile.contactRef != null &&
-        skippedIds.has(profile.contactRef.id),
-    );
-    if (callsSkipped) channelsWithoutContact++;
-  }
+  if (options?.quiet !== true) {
+    let channelsWithoutContact = 0;
+    for (const row of assembled.channels) {
+      const callsSkipped = row.entity.modeProfiles.some(
+        (profile) =>
+          profile.mode === 'dmr' &&
+          profile.contactRef != null &&
+          skippedIds.has(profile.contactRef.id),
+      );
+      if (callsSkipped) channelsWithoutContact++;
+    }
 
-  const channelNote =
-    channelsWithoutContact > 0
-      ? `; ${channelsWithoutContact} DMR channel(s) that call one are written with no TX contact`
-      : '';
-  pushGeneralWarning(
-    warnings,
-    `${skippedTalkGroups} talk group(s) and ${skippedContacts} contact(s) are not DMR (e.g. NXDN) and were left out of the radio's DMR contact lists and RX group lists${channelNote}`,
-  );
+    const channelNote =
+      channelsWithoutContact > 0
+        ? `; ${channelsWithoutContact} DMR channel(s) that call one are written with no TX contact`
+        : '';
+    pushGeneralWarning(
+      warnings,
+      `${skippedTalkGroups} talk group(s) and ${skippedContacts} contact(s) are not DMR (e.g. NXDN) and were left out of the radio's DMR contact lists and RX group lists${channelNote}`,
+    );
+  }
 
   // RX group lists drive both the radio's RX lists and the per-member channel fan-out, so drop
-  // non-DMR members here rather than in each consumer.
+  // other-mode members here rather than in each consumer.
   const rxGroupLists = assembled.rxGroupLists.map((row) => {
     const members = row.entity.members.filter((member) => !skippedIds.has(member.ref.id));
     return members.length === row.entity.members.length
@@ -75,4 +94,15 @@ export function keepDmrTalkGroupsAndContacts(
   });
 
   return { ...assembled, talkGroups, digitalContacts, rxGroupLists };
+}
+
+/**
+ * Keep only DMR talk groups and contacts for a radio whose talk-group and contact banks are
+ * DMR-only. Pushes one warning when anything is skipped.
+ */
+export function keepDmrTalkGroupsAndContacts(
+  assembled: AssembledBuild,
+  warnings: ExportWarning[],
+): AssembledBuild {
+  return keepDigitalModeTalkGroupsAndContacts(assembled, 'dmr', warnings);
 }

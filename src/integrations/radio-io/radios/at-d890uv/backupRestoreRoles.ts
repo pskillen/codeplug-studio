@@ -13,7 +13,16 @@
  */
 
 import type { RadioBackupRegionRole } from '../../backup/types.ts';
-import { AT_D890_LIMITS, AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
+import {
+  AT_D890_LIMITS,
+  AT_D890_NXDN,
+  AT_D890_NXDN_LIST_DATA_MAX_BYTES,
+  AT_D890_NXDN_LIST_ORDER_MAX_BYTES,
+  AT_D890_NXDN_LIST_SET_SPAN_BYTES,
+  AT_D890_NXDN_RX_GROUP_DATA_MAX_BYTES,
+  AT_D890_SAFE_SKIP_WRITE_ADDR,
+  D890_MAP,
+} from './constants.ts';
 
 export interface AtD890BackupRegionSpan {
   id: string;
@@ -261,6 +270,53 @@ export const AT_D890_BACKUP_REGION_SPANS: readonly AtD890BackupRegionSpan[] = [
     start: D890_MAP.ReceiveGroupData,
     length: D890_MAP.ReceiveGroupStride * RX_GROUP_SLOTS,
     restoreRole: 'restorable',
+  },
+  // NXDN talk groups and contacts: one list in four units (index, inverted set, records, order).
+  // Backed up, but inspect-only: the list sits above the virtual map (`AT_D890_MAP_SIZE`), which
+  // the restore image does not cover yet. The NXDN RX group lists (below) are inspect-only too:
+  // their members are slots in that list, so restoring them without it would point the members at
+  // the wrong entries. Both become restorable together when the list does.
+  {
+    id: 'nxdn-list-index',
+    label: 'NXDN contacts and talk groups (index)',
+    start: AT_D890_NXDN.ListIndex,
+    length: AT_D890_NXDN.ListIndexBytes,
+    restoreRole: 'inspect-only',
+  },
+  {
+    id: 'nxdn-list-set',
+    label: 'NXDN contacts and talk groups (bitmap)',
+    start: AT_D890_NXDN.ListSet,
+    length: AT_D890_NXDN_LIST_SET_SPAN_BYTES,
+    restoreRole: 'inspect-only',
+  },
+  {
+    id: 'nxdn-list-data',
+    label: 'NXDN contacts and talk groups',
+    start: AT_D890_NXDN.ListData,
+    length: AT_D890_NXDN_LIST_DATA_MAX_BYTES,
+    restoreRole: 'inspect-only',
+  },
+  {
+    id: 'nxdn-list-order',
+    label: 'NXDN contacts and talk groups (order)',
+    start: AT_D890_NXDN.ListOrder,
+    length: AT_D890_NXDN_LIST_ORDER_MAX_BYTES,
+    restoreRole: 'inspect-only',
+  },
+  {
+    id: 'nxdn-rx-group-data',
+    label: 'NXDN RX group lists',
+    start: AT_D890_NXDN.RxGroupData,
+    length: AT_D890_NXDN_RX_GROUP_DATA_MAX_BYTES,
+    restoreRole: 'inspect-only',
+  },
+  {
+    id: 'nxdn-rx-group-set',
+    label: 'NXDN RX group lists (bitmap)',
+    start: AT_D890_NXDN.RxGroupSet,
+    length: AT_D890_NXDN.RxGroupSetBytes,
+    restoreRole: 'inspect-only',
   },
   {
     id: 'radio-id-set',

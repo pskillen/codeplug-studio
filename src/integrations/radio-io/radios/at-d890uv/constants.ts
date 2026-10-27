@@ -290,6 +290,51 @@ export const AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES =
   AT_D890_CHANNEL_LOCATION.HEADER_BYTES +
   AT_D890_CHANNEL_LOCATION.ENTRY_BYTES * AT_D890_CHANNEL_LOCATION.MAX_ENTRIES;
 
+/**
+ * MM9PDY / NXDN codeplug regions (firmware RE, NXDN codeplug: records F291, F293-F295, F297; page
+ * `docs/reference/cps/records/nxdn.md` in the firmware repo). Deliberately **not** part of
+ * `D890_MAP`: the stock Write never names them. The list is four erase units that the firmware
+ * reads together (index, inverted set, records, order table); the RX groups are one unit of
+ * 250 strides plus a positive bitmap. Each unit has its own A/B flag; Studio addresses the A
+ * half and the radio's unit walk at `END` promotes the pending copy.
+ *
+ * The list and RX group units are written only by an MM9PDY intent built when the radio reports
+ * NXDN enabled; a stock intent clears them from the cache and never sends them.
+ */
+export const AT_D890_NXDN = {
+  /** Index table: 1000 x u32 LE (position to record slot), `FFFFFFFF` past the last entry. */
+  ListIndex: 0x1800_0000,
+  ListIndexEntries: 1000,
+  ListIndexBytes: 4000,
+  /** Inverted set (clear = used). The CPS writes `0x7E` bytes; the cache pads to the 16-byte block. */
+  ListSet: 0x1808_0000,
+  ListSetBytes: 0x7e,
+  /** Records, one bank of up to 1000 x `0xC8`. */
+  ListData: 0x1810_0000,
+  ListRecordSize: 0xc8,
+  /** Order table: `count` x (u32 key, u32 slot), sorted by key, padded to an even count with `FF` x 8. */
+  ListOrder: 0x1818_0000,
+  ListOrderEntryBytes: 8,
+  /** RX groups: 250 x `0x200`; members at `+0x00` (64 x u32 LE slots), name at `+0x100` (`0x22` bytes). */
+  RxGroupData: 0x04b8_0000,
+  RxGroupStride: 0x200,
+  RxGroupMemberBytes: 0x100,
+  RxGroupNameOffset: 0x100,
+  RxGroupNameBytes: 0x22,
+  /** Positive bitmap (set = used), in the same erase unit as the data. */
+  RxGroupSet: 0x04ba_0000,
+  RxGroupSetBytes: 0x20,
+} as const;
+
+/** Largest span Studio may write into each NXDN list unit, rounded to the 16-byte block. */
+export const AT_D890_NXDN_LIST_SET_SPAN_BYTES = 0x80;
+export const AT_D890_NXDN_LIST_DATA_MAX_BYTES =
+  AT_D890_NXDN.ListRecordSize * AT_D890UV_LIMITS.NXDN_LIST_MAX;
+export const AT_D890_NXDN_LIST_ORDER_MAX_BYTES =
+  AT_D890_NXDN.ListOrderEntryBytes * AT_D890UV_LIMITS.NXDN_LIST_MAX;
+export const AT_D890_NXDN_RX_GROUP_DATA_MAX_BYTES =
+  AT_D890_NXDN.RxGroupStride * AT_D890UV_LIMITS.NXDN_RX_GROUP_LISTS_MAX;
+
 /** Virtual MemoryMap span (absolute addresses; base 0). */
 export const AT_D890_MAP_SIZE = 0x500_0000;
 

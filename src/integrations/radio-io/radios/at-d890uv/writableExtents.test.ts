@@ -4,6 +4,7 @@ import {
   AT_D890_CHANNEL_LOCATION,
   AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES,
   AT_D890_LIMITS,
+  AT_D890_NXDN,
   AT_D890_SATELLITE,
   D890_MAP,
 } from './constants.ts';
@@ -253,6 +254,45 @@ describe('AT_D890 channel location table extent (#1383)', () => {
       assertAtD890WritableSpan(base, AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES + 0x10),
     ).toThrow(RadioProtocolError);
     expect(isAtD890TransmitAddress(AT_D890_CHANNEL_LOCATION.PAIR_B_ADDRESS, new Set())).toBe(false);
+  });
+});
+
+describe('AT_D890 NXDN list and RX group extents (#255)', () => {
+  const N = AT_D890_NXDN;
+  /** [id, start, exact length of the extent]. The set is padded to its 16-byte block. */
+  const spans = [
+    ['NxdnListIndex', N.ListIndex, 4000],
+    ['NxdnListSet', N.ListSet, 0x80],
+    ['NxdnListData', N.ListData, 1000 * 0xc8],
+    ['NxdnListOrder', N.ListOrder, 1000 * 8],
+    ['NxdnRxGroupData', N.RxGroupData, 250 * 0x200],
+    ['NxdnRxGroupSet', N.RxGroupSet, 0x20],
+  ] as const;
+
+  it.each(spans)(
+    '%s: first and last block allowed, one block past refused',
+    (id, start, length) => {
+      expect(findWritableExtentForAddress(start)?.id).toBe(id);
+      expect(isAtD890WritableAddress(start)).toBe(true);
+      expect(isAtD890WritableAddress(start + length - 0x10)).toBe(true);
+      expect(() => assertAtD890WritableSpan(start, length)).not.toThrow();
+      expect(isAtD890WritableAddress(start + length)).toBe(false);
+      expect(() => assertAtD890WritableSpan(start, length + 0x10)).toThrow(RadioProtocolError);
+      expect(isAtD890WritableAddress(start - 0x10)).toBe(false);
+    },
+  );
+
+  it('refuses the B halves and the rest of each unit', () => {
+    for (const [, start] of spans) {
+      expect(isAtD890WritableAddress(start + 0x4_0000)).toBe(false);
+      expect(isAtD890WritableAddress(start + 0x3_fbf0)).toBe(false);
+    }
+    expect(isAtD890TransmitAddress(N.ListIndex + 0x4_0000, new Set())).toBe(false);
+  });
+
+  it('refuses the neighbouring NXDN units this PR does not write (own ID unit, zone roaming bitmap)', () => {
+    expect(isAtD890WritableAddress(0x04b0_0000)).toBe(false);
+    expect(isAtD890WritableAddress(0x04c0_0000)).toBe(false);
   });
 });
 

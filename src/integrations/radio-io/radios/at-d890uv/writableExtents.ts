@@ -15,6 +15,11 @@ import {
   AT_D890_CHANNEL_LOCATION,
   AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES,
   AT_D890_LIMITS,
+  AT_D890_NXDN,
+  AT_D890_NXDN_LIST_DATA_MAX_BYTES,
+  AT_D890_NXDN_LIST_ORDER_MAX_BYTES,
+  AT_D890_NXDN_LIST_SET_SPAN_BYTES,
+  AT_D890_NXDN_RX_GROUP_DATA_MAX_BYTES,
   AT_D890_SAFE_SKIP_WRITE_ADDR,
   AT_D890_SATELLITE,
   D890_MAP,
@@ -153,6 +158,30 @@ export const AT_D890_WRITABLE_EXTENTS: readonly AtD890MemoryExtent[] = [
     start: AT_D890_CHANNEL_LOCATION.BASE_ADDRESS,
     length: AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES,
   },
+  /**
+   * MM9PDY NXDN intent only (the radio reports NXDN enabled): the NXDN talk-group / contact
+   * list is four units (index, inverted set, records, order table) and the NXDN RX group lists
+   * are one. Each extent is the A half, bank 0, at its largest size. A stock intent clears
+   * these from the cache and never sends them.
+   */
+  { id: 'NxdnListIndex', start: AT_D890_NXDN.ListIndex, length: AT_D890_NXDN.ListIndexBytes },
+  {
+    id: 'NxdnListSet',
+    start: AT_D890_NXDN.ListSet,
+    length: AT_D890_NXDN_LIST_SET_SPAN_BYTES,
+  },
+  { id: 'NxdnListData', start: AT_D890_NXDN.ListData, length: AT_D890_NXDN_LIST_DATA_MAX_BYTES },
+  {
+    id: 'NxdnListOrder',
+    start: AT_D890_NXDN.ListOrder,
+    length: AT_D890_NXDN_LIST_ORDER_MAX_BYTES,
+  },
+  {
+    id: 'NxdnRxGroupData',
+    start: AT_D890_NXDN.RxGroupData,
+    length: AT_D890_NXDN_RX_GROUP_DATA_MAX_BYTES,
+  },
+  { id: 'NxdnRxGroupSet', start: AT_D890_NXDN.RxGroupSet, length: AT_D890_NXDN.RxGroupSetBytes },
 ] as const;
 
 /** Never serial-written — pre-Write plausibility spans (refuse all-0xff). */

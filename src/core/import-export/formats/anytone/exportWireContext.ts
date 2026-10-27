@@ -86,6 +86,7 @@ export function buildAnytoneExportWireContext(
     entityKind: 'talkGroup',
     formatId: 'anytone',
     profileId,
+    digitalMode: 'dmr',
     options: options ?? {},
     overrides: overridesFromAssembledWireNames(assembled.talkGroups, (row) => row.entity.id),
   });
@@ -107,6 +108,7 @@ export function buildAnytoneExportWireContext(
     entityKind: 'contact',
     formatId: 'anytone',
     profileId,
+    digitalMode: 'dmr',
     options: options ?? {},
     overrides: options?.contactOverrides,
   });

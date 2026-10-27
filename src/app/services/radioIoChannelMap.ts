@@ -68,6 +68,10 @@ export interface RadioChannelFkMaps {
    * and the target writes a radio-ID list; absent leaves the byte as before.
    */
   dmrDefaultRadioIdIndex?: number;
+  /** AT-D890 MM9PDY NXDN: talk group / contact id → 0-based slot in the radio's NXDN list. */
+  nxdnListIndexByEntityId?: ReadonlyMap<string, number>;
+  /** AT-D890 MM9PDY NXDN: RX group list id → 0-based NXDN RX group list. */
+  nxdnRxGroupIndexById?: ReadonlyMap<string, number>;
   /** OpenGD77 Web Serial: the library's Digital IDs, so a channel's choice resolves to its number. */
   ownDigitalIds?: readonly OwnDigitalId[];
 }
@@ -179,6 +183,7 @@ const NXDN_RAN_MAX = 63;
 function nxdnFieldsFromProfile(
   profile: Extract<ChannelModeProfile, { mode: 'nxdn' }>,
   invalidRan: { count: number },
+  fkMaps?: RadioChannelFkMaps,
 ): RadioChannelNxdnDto {
   const nxdn: RadioChannelNxdnDto = {};
   const ran = (value: number | null | undefined): number | undefined => {
@@ -192,6 +197,14 @@ function nxdnFieldsFromProfile(
   if (rxRan != null) nxdn.rxRan = rxRan;
   if (txRan != null) nxdn.txRan = txRan;
   if (profile.nxdnRate != null) nxdn.rate = profile.nxdnRate;
+  const target = profile.contactRef
+    ? fkMaps?.nxdnListIndexByEntityId?.get(profile.contactRef.id)
+    : undefined;
+  if (target != null) nxdn.txTargetIndex = target;
+  const rxGroup = profile.rxGroupListId
+    ? fkMaps?.nxdnRxGroupIndexById?.get(profile.rxGroupListId)
+    : undefined;
+  if (rxGroup != null) nxdn.rxGroupIndex = rxGroup;
   return nxdn;
 }
 
@@ -205,7 +218,7 @@ function digitalFieldsFromChannel(
   const nxdnProfile = nxdnOptions ? channel.modeProfiles.find(isNxdnProfile) : undefined;
   const nxdnFields: Partial<RadioChannelDto> =
     nxdnProfile && nxdnOptions
-      ? { nxdn: nxdnFieldsFromProfile(nxdnProfile, nxdnOptions.invalidRan) }
+      ? { nxdn: nxdnFieldsFromProfile(nxdnProfile, nxdnOptions.invalidRan, fkMaps) }
       : {};
   // The mode byte follows the DMR rule; an NXDN profile counts as the digital half when there is
   // no DMR profile (NXDN mode forces A+D / D+A to D-Digital on the radio anyway).

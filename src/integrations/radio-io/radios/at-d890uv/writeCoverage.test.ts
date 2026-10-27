@@ -35,3 +35,23 @@ describe('What Write updates: the NXDN channel settings row', () => {
     expect(nxdnRow(false).note).toBeUndefined();
   });
 });
+
+describe('What Write updates: the NXDN list rows', () => {
+  const labels = ['NXDN talk groups and contacts', 'NXDN RX group lists'];
+  const row = (mm9pdy: boolean, label: string) =>
+    atD890WriteCoverageRows(mm9pdy).find((r) => r.label === label)!;
+
+  it('are written on MM9PDY when the radio reports NXDN enabled', () => {
+    for (const label of labels) {
+      expect(row(true, label).status).toBe('written');
+      expect(row(true, label).note).toMatch(/reports NXDN enabled/);
+    }
+  });
+
+  it('are left alone on the stock target', () => {
+    for (const label of labels) {
+      expect(row(false, label).status).toBe('leftAlone');
+      expect(row(false, label).note).toBeUndefined();
+    }
+  });
+});

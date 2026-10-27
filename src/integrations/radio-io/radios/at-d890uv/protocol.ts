@@ -20,13 +20,18 @@ import {
   amAirDataAddress,
   amZoneDataAddress,
   alignedSpanForAtD890Region,
+  alignAtD890ReadLength,
   AT_D890_CHANNEL_LOCATION_UNIT_BASE,
+  AT_D890_NXDN_UNIT_BASES,
+  atD890NxdnOwnedUnits,
   type AtD890DownloadCache,
   type AtD890UploadBankIntent,
 } from './memory.ts';
 import {
   AT_D890_BLOCK_SIZE,
   AT_D890_LIMITS,
+  AT_D890_NXDN,
+  AT_D890_NXDN_LIST_SET_SPAN_BYTES,
   AT_D890_SAFE_SKIP_WRITE_ADDR,
   D890_MAP,
 } from './constants.ts';
@@ -103,6 +108,7 @@ const DOWNLOAD_STAGES = [
   'Scan lists',
   'Talk groups',
   'RX groups',
+  'NXDN lists',
   'Radio IDs',
   'Master ID',
   'AM airband',
@@ -410,6 +416,75 @@ export async function downloadAtD890SparseRegions(
       cache,
       receiveGroupAddress(idx),
       AT_D890_LIMITS.RX_GROUP_STRIDE,
+      signal,
+      readBlockSize,
+    );
+  }
+
+  // NXDN talk-group / contact list and NXDN RX groups (MM9PDY NXDN; the stock CPS reads the same
+  // regions, so this is safe on any D890). Read for the backup, never re-sent unless an MM9PDY
+  // intent replaces them.
+  stage('Reading NXDN lists…');
+  await readRegion(
+    pipe,
+    cache,
+    AT_D890_NXDN.ListIndex,
+    AT_D890_NXDN.ListIndexBytes,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    AT_D890_NXDN.ListSet,
+    AT_D890_NXDN_LIST_SET_SPAN_BYTES,
+    signal,
+    readBlockSize,
+  );
+  const nxdnIndex = getCacheBytes(cache, AT_D890_NXDN.ListIndex, AT_D890_NXDN.ListIndexBytes);
+  let nxdnCount = 0;
+  while (
+    nxdnCount < AT_D890_NXDN.ListIndexEntries &&
+    nxdnIndex.subarray(nxdnCount * 4, nxdnCount * 4 + 4).some((byte) => byte !== 0xff)
+  ) {
+    nxdnCount++;
+  }
+  if (nxdnCount > 0) {
+    throwIfAborted(signal);
+    const nxdnSet = getCacheBytes(cache, AT_D890_NXDN.ListSet, AT_D890_NXDN_LIST_SET_SPAN_BYTES);
+    const lastSlot = Math.max(...listSetBits(nxdnSet, true).filter((i) => i < 1000), -1);
+    if (lastSlot >= 0) {
+      const { start, length } = alignedSpanForAtD890Region(
+        AT_D890_NXDN.ListData,
+        (lastSlot + 1) * AT_D890_NXDN.ListRecordSize,
+      );
+      await readRegion(pipe, cache, start, length, signal, readBlockSize);
+    }
+    await readRegion(
+      pipe,
+      cache,
+      AT_D890_NXDN.ListOrder,
+      alignAtD890ReadLength(Math.ceil(nxdnCount / 2) * 2 * AT_D890_NXDN.ListOrderEntryBytes),
+      signal,
+      readBlockSize,
+    );
+  }
+  await readRegion(
+    pipe,
+    cache,
+    AT_D890_NXDN.RxGroupSet,
+    AT_D890_NXDN.RxGroupSetBytes,
+    signal,
+    readBlockSize,
+  );
+  const nxdnRxSet = getCacheBytes(cache, AT_D890_NXDN.RxGroupSet, AT_D890_NXDN.RxGroupSetBytes);
+  for (const idx of listSetBits(nxdnRxSet)) {
+    throwIfAborted(signal);
+    await readRegion(
+      pipe,
+      cache,
+      AT_D890_NXDN.RxGroupData + idx * AT_D890_NXDN.RxGroupStride,
+      AT_D890_NXDN.RxGroupStride,
       signal,
       readBlockSize,
     );
@@ -776,7 +851,12 @@ export class AtD890uvProtocol implements CloneImageRadio {
       modelledChunks,
       touchedUnits: listTouchedEraseUnits(modelledChunks.map((c) => c.address)),
       settingsPatches: this.uploadBankIntent.settingsPatches ?? [],
-      ownsLocationUnit: this.uploadBankIntent.channelLocationTable !== undefined,
+      ownedUnits: [
+        ...(this.uploadBankIntent.channelLocationTable !== undefined
+          ? [AT_D890_CHANNEL_LOCATION_UNIT_BASE]
+          : []),
+        ...atD890NxdnOwnedUnits(this.uploadBankIntent),
+      ],
       preUploadCache,
       opts,
     });
@@ -811,7 +891,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
       modelledChunks: [],
       touchedUnits: [eraseUnitBaseFor(D890_MAP.OptionalSettingsMain)],
       settingsPatches: patches,
-      ownsLocationUnit: false,
+      ownedUnits: [],
       opts,
     });
   }
@@ -846,7 +926,11 @@ export class AtD890uvProtocol implements CloneImageRadio {
     modelledChunks: readonly AtD890StagingChunk[];
     touchedUnits: readonly number[];
     settingsPatches: readonly AtD890SettingsPatch[];
-    ownsLocationUnit: boolean;
+    /**
+     * Erase units Studio owns whole for this Write: they start from erased flash and only the
+     * staged bytes are sent (the MM9PDY channel location table, the NXDN lists).
+     */
+    ownedUnits: readonly number[];
     /** Mirror transmitted blocks into the download cache (false: leave it untouched). */
     updateDownloadCache: boolean;
     /** Cache as it stood before the write image was applied; unset skips the staleness guard. */
@@ -857,7 +941,8 @@ export class AtD890uvProtocol implements CloneImageRadio {
     if (!pipe) {
       throw new RadioProtocolError('AT-D890UV not connected');
     }
-    const { modelledChunks, settingsPatches, ownsLocationUnit, preUploadCache, opts } = args;
+    const { modelledChunks, settingsPatches, ownedUnits, preUploadCache, opts } = args;
+    const ownedUnitSet = new Set(ownedUnits);
     // Last line of defence: nothing outside the allow-list reaches the wire, whoever built the patch.
     assertAtD890SettingsPatchesPermitted(settingsPatches);
     const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
@@ -868,11 +953,22 @@ export class AtD890uvProtocol implements CloneImageRadio {
       touchedUnits.push(settingsUnit);
       touchedUnitSet.add(settingsUnit);
     }
-    if (!ownsLocationUnit && touchedUnitSet.has(AT_D890_CHANNEL_LOCATION_UNIT_BASE)) {
+    if (
+      !ownedUnitSet.has(AT_D890_CHANNEL_LOCATION_UNIT_BASE) &&
+      touchedUnitSet.has(AT_D890_CHANNEL_LOCATION_UNIT_BASE)
+    ) {
       // Stock intents clear the pair from the cache; reaching here is a staging bug.
       throw new RadioProtocolError(
         'AT-D890UV stock Write must not touch the MM9PDY channel location table',
       );
+    }
+    for (const base of AT_D890_NXDN_UNIT_BASES) {
+      if (touchedUnitSet.has(base) && !ownedUnitSet.has(base)) {
+        // Only an MM9PDY intent built with NXDN content stages these; reaching here is a staging bug.
+        throw new RadioProtocolError(
+          `AT-D890UV Write must not touch the NXDN unit 0x${base.toString(16)} without an NXDN intent`,
+        );
+      }
     }
     const transmitGuard = (address: number) => assertAtD890TransmitAddress(address, touchedUnitSet);
 
@@ -920,9 +1016,10 @@ export class AtD890uvProtocol implements CloneImageRadio {
 
       const mergedUnits = new Map<number, Uint8Array>();
       for (const [base, data] of freshUnits) {
-        if (ownsLocationUnit && base === AT_D890_CHANNEL_LOCATION_UNIT_BASE) {
-          // Studio owns this whole unit. Start from erased flash, never from the fresh
-          // read: the factory test pattern (and any older table) must not be carried over.
+        if (ownedUnitSet.has(base)) {
+          // Studio owns this whole unit (channel location table, NXDN lists). Start from erased
+          // flash, never from the fresh read: the factory test pattern, an older table or the
+          // radio's previous list must not be carried over.
           mergedUnits.set(base, new Uint8Array(AT_D890_ERASE_UNIT_BYTES).fill(0xff));
           continue;
         }

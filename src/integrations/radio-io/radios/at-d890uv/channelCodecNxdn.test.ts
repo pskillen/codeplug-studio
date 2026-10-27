@@ -55,15 +55,40 @@ describe('encodeAtD890ChannelRecord NXDN fields', () => {
     );
     // 0x66: only bit 0 changes (0xf2 -> 0xf3).
     expect(encoded[0x66]).toBe(0xf3);
-    expect(encoded[0x67]).toBe(prior[0x67]);
-    expect(encoded[0x6a]).toBe(prior[0x6a]);
-    // The contact slot is piece 4's: carried over. The RX group list is "none", not the old 0x03.
+    // Busy lock (0x67 b3:0) is carried over; PTT Call (b7:4) is Off with no call target.
+    expect(encoded[0x67]).toBe(prior[0x67]! & 0x0f);
+    // Encryption key slot: cleared, not carried over (a stale slot 1-32 would come up encrypted).
+    expect(prior[0x6a]).not.toBe(0);
+    expect(encoded[0x6a]).toBe(0);
+    // No call target: slot 0 and no status message. The RX group list is "none", not the old 0x03.
     expect(encoded[0x6b]).toBe(0xff);
-    expect(encoded[0x6c]).toBe(prior[0x6c]);
-    expect(encoded[0x6d]).toBe(prior[0x6d]);
-    expect(encoded[0x6e]).toBe(prior[0x6e]);
+    expect(encoded[0x6c]).toBe(0);
+    expect(encoded[0x6d]).toBe(0);
+    expect(encoded[0x6e]).toBe(0);
     expect(encoded[0x68]).toBe(5);
     expect(encoded[0x69]).toBe(7);
+  });
+
+  it('a call target sets PTT Call and the u16 slot; an RX group is its 0-based index', () => {
+    const prior = priorWithNxdnBytes();
+    const encoded = encodeAtD890ChannelRecord(
+      { ...base, nxdn: { rxRan: 1, txRan: 1, txTargetIndex: 0x1234 & 0x3ff, rxGroupIndex: 3 } },
+      prior,
+    );
+    expect(encoded[0x67]! >> 4).toBe(1);
+    expect(encoded[0x67]! & 0x0f).toBe(prior[0x67]! & 0x0f);
+    expect(encoded[0x6c]! | (encoded[0x6d]! << 8)).toBe(0x1234 & 0x3ff);
+    expect(encoded[0x6b]).toBe(3);
+    expect(encoded[0x6e]).toBe(0);
+  });
+
+  it('a call target at list slot 0 still turns PTT Call on', () => {
+    const encoded = encodeAtD890ChannelRecord({
+      ...base,
+      nxdn: { rxRan: 1, txRan: 1, txTargetIndex: 0 },
+    });
+    expect(encoded[0x67]! >> 4).toBe(1);
+    expect(encoded[0x6c]).toBe(0);
   });
 
   it('a missing rate or RAN leaves that byte as read', () => {
@@ -120,5 +145,47 @@ describe('encodeAtD890ChannelRecord NXDN fields', () => {
   it('an empty channel stays all zero even with nxdn set', () => {
     const encoded = encodeAtD890ChannelRecord({ ...base, empty: true, nxdn: { rxRan: 3 } });
     expect(encoded.every((b) => b === 0)).toBe(true);
+  });
+});
+
+describe('encodeAtD890ChannelRecord clearNxdnBytes (MM9PDY, channel without NXDN fields)', () => {
+  it('writes zeros into 0x66-0x6E over a slot that held NXDN bytes, and leaves 0x6F onward', () => {
+    const prior = priorWithNxdnBytes();
+    prior[0x6f] = 0x5a;
+    prior[0x7f] = 0x6b;
+    const encoded = encodeAtD890ChannelRecord({ ...base, clearNxdnBytes: true }, prior);
+    expect([...encoded.subarray(0x66, 0x6f)]).toEqual(Array(9).fill(0));
+    // Everything from 0x6F on is exactly what the encode did before the flag.
+    const without = encodeAtD890ChannelRecord(base, prior);
+    expect([...encoded.subarray(0x6f)]).toEqual([...without.subarray(0x6f)]);
+    expect([...encoded.subarray(0, 0x66)]).toEqual([...without.subarray(0, 0x66)]);
+  });
+
+  it('writes zeros over an erased FF slot', () => {
+    // A slot whose NXDN bytes read FF (erased), inside an otherwise used record.
+    const prior = encodeAtD890ChannelRecord(base);
+    prior.fill(0xff, 0x66, 0x6f);
+    const encoded = encodeAtD890ChannelRecord({ ...base, clearNxdnBytes: true }, prior);
+    expect([...encodeAtD890ChannelRecord(base, prior).subarray(0x66, 0x6f)]).toEqual(
+      Array(9).fill(0xff),
+    );
+    expect([...encoded.subarray(0x66, 0x6f)]).toEqual(Array(9).fill(0));
+    const without = encodeAtD890ChannelRecord(base, prior);
+    expect([...encoded.subarray(0x6f)]).toEqual([...without.subarray(0x6f)]);
+  });
+
+  it('the stock target (no flag) still carries the bytes over', () => {
+    const prior = priorWithNxdnBytes();
+    const encoded = encodeAtD890ChannelRecord(base, prior);
+    expect([...encoded.subarray(0x66, 0x6f)]).toEqual([...prior.subarray(0x66, 0x6f)]);
+  });
+
+  it('a channel with NXDN fields is not cleared by the flag', () => {
+    const encoded = encodeAtD890ChannelRecord({
+      ...base,
+      clearNxdnBytes: true,
+      nxdn: { rxRan: 7, txRan: 5 },
+    });
+    expect(encoded[0x69]).toBe(7);
   });
 });

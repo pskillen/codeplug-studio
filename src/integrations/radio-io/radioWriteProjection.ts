@@ -94,6 +94,35 @@ export interface RadioRxGroupDto {
   memberTimeSlotOverrides?: readonly (1 | 2 | undefined)[];
 }
 
+/**
+ * One entry of the radio's NXDN talk-group / contact list (MM9PDY AT-D890UV). The list slot is
+ * the entry's position in {@link RadioNxdnListsDto.entries}; talk groups (`group`) come first,
+ * then contacts (`individual`).
+ */
+export interface RadioNxdnListEntryDto {
+  wireName: string;
+  /** 1-65519, or 65535 (all-call) on a `group` entry. */
+  nxdnId: number;
+  kind: 'group' | 'individual';
+  callsign?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+}
+
+/** One NXDN RX group list. The list slot is its position in {@link RadioNxdnListsDto.rxGroups}. */
+export interface RadioNxdnRxGroupDto {
+  wireName: string;
+  /** 0-based NXDN list slots (positions in {@link RadioNxdnListsDto.entries}), at most 64. */
+  memberSlots: readonly number[];
+}
+
+/** The NXDN lists a Write stores (MM9PDY AT-D890UV, radio reports NXDN enabled). */
+export interface RadioNxdnListsDto {
+  entries: readonly RadioNxdnListEntryDto[];
+  rxGroups: readonly RadioNxdnRxGroupDto[];
+}
+
 /** Digital address-book contact (V-frame 0x0F). */
 export interface RadioDigitalContactDto {
   wireName: string;
@@ -214,6 +243,12 @@ export interface RadioWriteOrganisation {
    * boot. Unset: the byte stays as read.
    */
   atD890ResetDigitalProtocolOff?: boolean;
+  /**
+   * MM9PDY AT-D890UV only; set when the radio reports NXDN enabled and the build has NXDN talk
+   * groups, contacts or RX lists. Present replaces the radio's NXDN list and NXDN RX group lists;
+   * unset leaves them as the radio holds them.
+   */
+  nxdnLists?: RadioNxdnListsDto;
   /**
    * MM9PDY only (AT-D890UV, DM-32UV). When true, Write stores the channel location table
    * from {@link RadioChannelDto.location} on channels with `useLocation`: the dedicated

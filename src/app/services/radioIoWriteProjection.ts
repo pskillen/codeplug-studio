@@ -7,6 +7,11 @@ import type {
   DualBankWriteMode,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
+import type { DigitalChannelMode } from '@core/models/libraryTypes.ts';
+import {
+  atD890NxdnOrderKey,
+  isValidAtD890NxdnId,
+} from '@integrations/radio-io/radios/at-d890uv/nxdnListCodec.ts';
 import { channelOwnIdOverride, defaultOwnDigitalId } from '@core/domain/ownDigitalIds.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
@@ -81,6 +86,9 @@ import type {
   RadioDigitalContactDto,
   RadioRadioIdDto,
   RadioRxGroupDto,
+  RadioNxdnListEntryDto,
+  RadioNxdnListsDto,
+  RadioNxdnRxGroupDto,
   RadioScanListDto,
   RadioTalkGroupDto,
   RadioWriteProjection,
@@ -114,6 +122,7 @@ import {
 import {
   isDmrDigitalEntity,
   keepDmrTalkGroupsAndContacts,
+  keepDigitalModeTalkGroupsAndContacts,
 } from '@core/import-export/dmrContactBanks.ts';
 
 /**
@@ -129,6 +138,7 @@ function resolutionsByLibraryEntityId(
   library: LibrarySlice,
   entityKind: WireNameEntityKind,
   egress: RadioWireEgressIds,
+  digitalMode?: DigitalChannelMode,
 ): Map<string, WireNameResolution> {
   return new Map(
     resolveWireNames({
@@ -137,6 +147,7 @@ function resolutionsByLibraryEntityId(
       entityKind,
       formatId: egress.formatId,
       profileId: egress.profileId,
+      ...(digitalMode ? { digitalMode } : {}),
     }).map((resolution) => [resolution.libraryEntityId, resolution]),
   );
 }
@@ -528,8 +539,22 @@ function buildTalkGroupsAndRx(
       : requireNumericLimit(limits.maxContacts, 'maxContacts', egress);
   const maxRx = requireNumericLimit(limits.maxRxGroupLists, 'maxRxGroupLists', egress);
   const maxRxMembers = requireNumericLimit(limits.rxGroupListMembers, 'rxGroupListMembers', egress);
-  const talkGroupResolutions = resolutionsByLibraryEntityId(build, library, 'talkGroup', egress);
-  const contactResolutions = resolutionsByLibraryEntityId(build, library, 'contact', egress);
+  // The AT-D890 has a DMR bank and an NXDN bank: names are made unique within the DMR bank only.
+  const bankMode = isAtD890 ? 'dmr' : undefined;
+  const talkGroupResolutions = resolutionsByLibraryEntityId(
+    build,
+    library,
+    'talkGroup',
+    egress,
+    bankMode,
+  );
+  const contactResolutions = resolutionsByLibraryEntityId(
+    build,
+    library,
+    'contact',
+    egress,
+    bankMode,
+  );
   const rxGroupListResolutions = resolutionsByLibraryEntityId(
     build,
     library,
@@ -714,6 +739,251 @@ function buildTalkGroupsAndRx(
     digitalContacts,
     fkMaps: { contactIdByEntityId, rxGroupIndexById },
   };
+}
+
+/** What {@link buildAtD890NxdnLists} produces for the NXDN bank. */
+interface AtD890NxdnListsResult {
+  /** Unset when the build has no NXDN talk groups, contacts or RX lists (the radio's lists stay). */
+  lists?: RadioNxdnListsDto;
+  nxdnListIndexByEntityId: Map<string, number>;
+  nxdnRxGroupIndexById: Map<string, number>;
+}
+
+/** True when `assembled` has an NXDN talk group, contact or channel (so an NXDN-enabled Write differs). */
+export function assembledHasNxdnContent(assembled: AssembledBuild): boolean {
+  return (
+    assembledHasNxdnChannels(assembled) ||
+    assembled.talkGroups.some((row) => row.entity.mode === 'nxdn') ||
+    assembled.digitalContacts.some((row) => row.entity.mode === 'nxdn')
+  );
+}
+
+/**
+ * MM9PDY AT-D890 with NXDN enabled: the NXDN bank. Talk groups (group entries) first, then
+ * contacts (individual entries), at most `NXDN_LIST_MAX`; then the RX lists that hold an NXDN
+ * member or that an NXDN channel uses, with their NXDN members only (DMR members belong to the
+ * DMR bank and are dropped with a warning). IDs the radio refuses are skipped with a warning.
+ */
+function buildAtD890NxdnLists(
+  sourceAssembled: AssembledBuild,
+  build: RadioBuild,
+  library: LibrarySlice,
+  egress: RadioWireEgressIds,
+  warnings: ExportWarning[],
+): AtD890NxdnListsResult {
+  const nxdnListIndexByEntityId = new Map<string, number>();
+  const nxdnRxGroupIndexById = new Map<string, number>();
+  const assembled = keepDigitalModeTalkGroupsAndContacts(sourceAssembled, 'nxdn', warnings, {
+    quiet: true,
+  });
+  const listMax = AT_D890UV_LIMITS.NXDN_LIST_MAX;
+  const talkGroupResolutions = resolutionsByLibraryEntityId(
+    build,
+    library,
+    'talkGroup',
+    egress,
+    'nxdn',
+  );
+  const contactResolutions = resolutionsByLibraryEntityId(
+    build,
+    library,
+    'contact',
+    egress,
+    'nxdn',
+  );
+  const rxGroupListResolutions = resolutionsByLibraryEntityId(
+    build,
+    library,
+    'rxGroupList',
+    egress,
+  );
+
+  const entries: RadioNxdnListEntryDto[] = [];
+  let badId = 0;
+  let overCap = 0;
+  let duplicateIds = 0;
+  // The first entry for an ID and kind wins: the order table holds one row per key, so a second
+  // entry would be a row the caller-ID search cannot find. A duplicate's channels and RX group
+  // memberships use the first entry's slot (same ID, so the same call).
+  const slotByOrderKey = new Map<number, number>();
+  const add = (entityId: string, entry: RadioNxdnListEntryDto) => {
+    if (!isValidAtD890NxdnId(entry.nxdnId, entry.kind)) {
+      badId++;
+      return;
+    }
+    const orderKey = atD890NxdnOrderKey(entry.nxdnId, entry.kind);
+    const firstSlot = slotByOrderKey.get(orderKey);
+    if (firstSlot != null) {
+      duplicateIds++;
+      nxdnListIndexByEntityId.set(entityId, firstSlot);
+      return;
+    }
+    if (entries.length >= listMax) {
+      overCap++;
+      return;
+    }
+    slotByOrderKey.set(orderKey, entries.length);
+    nxdnListIndexByEntityId.set(entityId, entries.length);
+    entries.push(entry);
+  };
+  for (const row of assembled.talkGroups) {
+    add(row.entity.id, {
+      wireName: resolvedWireName(
+        warnings,
+        'Talk group',
+        egress,
+        talkGroupResolutions.get(row.entity.id),
+        row.wireName,
+      ),
+      nxdnId: row.entity.digitalId,
+      kind: 'group',
+    });
+  }
+  for (const row of assembled.digitalContacts) {
+    add(row.entity.id, {
+      wireName: resolvedWireName(
+        warnings,
+        'Contact',
+        egress,
+        contactResolutions.get(row.entity.id),
+        row.wireName,
+      ),
+      nxdnId: row.entity.digitalId,
+      kind: 'individual',
+      callsign: row.entity.callsign,
+      city: row.entity.city,
+      state: row.entity.state,
+      country: row.entity.country,
+    });
+  }
+  if (badId > 0) {
+    pushGeneralWarning(
+      warnings,
+      `${badId} NXDN talk group(s) or contact(s) have an ID the radio does not accept (1-65519, or 65535 for a talk group) and were not written`,
+    );
+  }
+  if (duplicateIds > 0) {
+    pushGeneralWarning(
+      warnings,
+      `${duplicateIds} NXDN talk group(s) or contact(s) repeat an ID and kind already in the list and were not written again (the first one is kept)`,
+    );
+  }
+  if (overCap > 0) {
+    pushGeneralWarning(
+      warnings,
+      `The radio's NXDN list holds ${listMax} entries shared by talk groups and contacts; ${overCap} were not written (talk groups go first)`,
+    );
+  }
+
+  // RX lists an NXDN channel uses, or that have at least one NXDN member.
+  const usedByNxdnChannel = new Set<string>();
+  for (const row of sourceAssembled.channels) {
+    for (const profile of row.entity.modeProfiles) {
+      if (profile.mode === 'nxdn' && profile.rxGroupListId) {
+        usedByNxdnChannel.add(profile.rxGroupListId);
+      }
+    }
+  }
+  const sourceListById = new Map(sourceAssembled.rxGroupLists.map((row) => [row.entity.id, row]));
+  const rxGroups: RadioNxdnRxGroupDto[] = [];
+  let droppedOtherMode = 0;
+  let droppedUnlisted = 0;
+  let droppedOverMembers = 0;
+  let listsOverCap = 0;
+  for (const row of assembled.rxGroupLists) {
+    if (row.entity.members.length === 0 && !usedByNxdnChannel.has(row.entity.id)) continue;
+    if (rxGroups.length >= AT_D890UV_LIMITS.NXDN_RX_GROUP_LISTS_MAX) {
+      listsOverCap++;
+      continue;
+    }
+    const memberSlots: number[] = [];
+    for (const member of row.entity.members) {
+      const slot = nxdnListIndexByEntityId.get(member.ref.id);
+      if (slot == null) {
+        droppedUnlisted++;
+        continue;
+      }
+      if (memberSlots.length >= AT_D890UV_LIMITS.NXDN_RX_GROUP_MEMBERS_MAX) {
+        droppedOverMembers++;
+        continue;
+      }
+      if (!memberSlots.includes(slot)) memberSlots.push(slot);
+    }
+    droppedOtherMode +=
+      (sourceListById.get(row.entity.id)?.entity.members.length ?? row.entity.members.length) -
+      row.entity.members.length;
+    nxdnRxGroupIndexById.set(row.entity.id, rxGroups.length);
+    rxGroups.push({
+      wireName: resolvedWireName(
+        warnings,
+        'RX group list',
+        egress,
+        rxGroupListResolutions.get(row.entity.id),
+        row.wireName,
+      ),
+      memberSlots,
+    });
+  }
+  if (droppedOtherMode > 0) {
+    pushGeneralWarning(
+      warnings,
+      `${droppedOtherMode} RX group list member(s) are not NXDN and were left out of the radio's NXDN RX group lists`,
+    );
+  }
+  if (droppedUnlisted > 0) {
+    pushGeneralWarning(
+      warnings,
+      `${droppedUnlisted} NXDN RX group list member(s) are not in the radio's NXDN list and were left out`,
+    );
+  }
+  if (droppedOverMembers > 0) {
+    pushGeneralWarning(
+      warnings,
+      `NXDN RX group lists hold ${AT_D890UV_LIMITS.NXDN_RX_GROUP_MEMBERS_MAX} members; ${droppedOverMembers} were left out`,
+    );
+  }
+  if (listsOverCap > 0) {
+    pushGeneralWarning(
+      warnings,
+      `The radio holds ${AT_D890UV_LIMITS.NXDN_RX_GROUP_LISTS_MAX} NXDN RX group lists; ${listsOverCap} were not written`,
+    );
+  }
+
+  // The radio's NXDN lists are left alone when the build has nothing for them.
+  if (entries.length === 0 && rxGroups.length === 0) {
+    return { nxdnListIndexByEntityId, nxdnRxGroupIndexById };
+  }
+  return { lists: { entries, rxGroups }, nxdnListIndexByEntityId, nxdnRxGroupIndexById };
+}
+
+/** NXDN channels whose call or RX list the NXDN bank could not hold: they are written without it. */
+function pushAtD890NxdnUnlistedChannelWarning(
+  assembled: AssembledBuild,
+  fk: AtD890NxdnListsResult,
+  warnings: ExportWarning[],
+): void {
+  let noTarget = 0;
+  let noRxList = 0;
+  for (const row of assembled.channels) {
+    const profile = row.entity.modeProfiles.find(
+      (p): p is Extract<ChannelModeProfile, { mode: 'nxdn' }> => p.mode === 'nxdn',
+    );
+    if (!profile) continue;
+    if (profile.contactRef && !fk.nxdnListIndexByEntityId.has(profile.contactRef.id)) noTarget++;
+    if (profile.rxGroupListId && !fk.nxdnRxGroupIndexById.has(profile.rxGroupListId)) noRxList++;
+  }
+  if (noTarget > 0) {
+    pushGeneralWarning(
+      warnings,
+      `${noTarget} NXDN channel(s) call a talk group or contact that is not in the radio's NXDN list (not NXDN, or not written); they are written with no call target`,
+    );
+  }
+  if (noRxList > 0) {
+    pushGeneralWarning(
+      warnings,
+      `${noRxList} NXDN channel(s) use an RX group list that is not in the radio's NXDN RX group lists; they are written with no RX group list`,
+    );
+  }
 }
 
 function isDmrProfile(
@@ -1578,6 +1848,7 @@ export function buildRadioWriteProjection(
   let atD890RadioIds: RadioRadioIdDto[] = [];
   let dm32AddressBook: RadioDigitalContactDto[] | undefined;
   let atD890Db: RadioDigitalContactDto[] | undefined;
+  let nxdnLists: AtD890NxdnListsResult | undefined;
 
   if (isDm32RadioIoProfileId(egress.profileId) || isAtD890RadioIoProfileId(egress.profileId)) {
     const tgRx = buildTalkGroupsAndRx(
@@ -1647,6 +1918,14 @@ export function buildRadioWriteProjection(
         );
       }
     }
+    if (isAtD890RadioIoProfileId(egress.profileId) && nxdnOn) {
+      nxdnLists = buildAtD890NxdnLists(sourceAssembled, build, library, egress, warnings);
+      fkMaps = {
+        ...fkMaps,
+        nxdnListIndexByEntityId: nxdnLists.nxdnListIndexByEntityId,
+        nxdnRxGroupIndexById: nxdnLists.nxdnRxGroupIndexById,
+      };
+    }
     if (isAtD890RadioIoProfileId(egress.profileId) && dualBank) {
       // AT-D890 ID database: written only when the Contacts part supplies a dual-bank context.
       atD890Db = mergeLookupStoreContacts(
@@ -1688,6 +1967,7 @@ export function buildRadioWriteProjection(
   );
   warnings.push(...channelWarnings);
 
+  if (nxdnLists) pushAtD890NxdnUnlistedChannelWarning(projectionAssembled, nxdnLists, warnings);
   if (isAtD890RadioIoProfileId(egress.profileId)) {
     pushAtD890UnlistedContactChannelWarning(
       projectionAssembled,
@@ -1769,6 +2049,11 @@ export function buildRadioWriteProjection(
       { deriveScanLists: !mm9pdy, emptyScanFloor: mm9pdy },
     );
     channels = stampAtD890AutoScan(org.channels, org.scanLists);
+    if (mm9pdy) {
+      // The MM9PDY firmware treats a channel as NXDN-capable in NXDN mode if any of 0x66-0x6E is
+      // non-zero, so a channel without NXDN fields gets zeros there, not the previous occupant's.
+      channels = channels.map((ch) => (ch.empty || ch.nxdn ? ch : { ...ch, clearNxdnBytes: true }));
+    }
     numbersBySourceChannelId = org.numbersBySourceChannelId;
     const amAir = buildAtD890AmAirOrganisation(assembled, build, egress, warnings);
     organisation = {
@@ -1778,6 +2063,7 @@ export function buildRadioWriteProjection(
       rxGroups,
       ...(mm9pdy ? { writeRxGroupTimeSlotOverrides: true } : {}),
       atD890SettingsTarget: mm9pdy ? 'mm9pdy' : 'stock',
+      ...(nxdnLists?.lists ? { nxdnLists: nxdnLists.lists } : {}),
       radioIds: atD890RadioIds,
       ...(atD890Db !== undefined ? { digitalContacts: atD890Db } : {}),
       ...(amAir ? { amAirChannels: amAir.amAirChannels, amZones: amAir.amZones } : {}),

@@ -23,6 +23,7 @@
 import type { BuildEntityOverride, RadioBuild } from '@core/models/radioBuild.ts';
 import type { OverrideField } from '@core/domain/formatBuildOverrides.ts';
 import type { LibrarySlice } from './assemble.ts';
+import type { DigitalChannelMode } from '@core/models/libraryTypes.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import {
   resolveWireNamesFromOptions,
@@ -58,6 +59,8 @@ export interface ResolveWireNamesArgs {
   entityKind: WireNameEntityKind;
   formatId: string;
   profileId?: string;
+  /** See `ResolveWireNamesFromOptionsArgs.digitalMode`. */
+  digitalMode?: DigitalChannelMode;
 }
 
 /**
@@ -67,7 +70,7 @@ export interface ResolveWireNamesArgs {
  * (hard-truncate policy) or a generated suggestion (smart-shorten policy).
  */
 export function resolveWireNames(args: ResolveWireNamesArgs): WireNameResolution[] {
-  const { build, library, entityKind, formatId, profileId } = args;
+  const { build, library, entityKind, formatId, profileId, digitalMode } = args;
   const options = mergeExportOptions(build, formatId, { profileId }, library);
   const overrideField = OVERRIDE_FIELD_BY_KIND[entityKind];
   const overrides = build[overrideField] as readonly BuildEntityOverride[] | undefined;
@@ -78,5 +81,6 @@ export function resolveWireNames(args: ResolveWireNamesArgs): WireNameResolution
     profileId,
     options,
     overrides,
+    ...(digitalMode ? { digitalMode } : {}),
   });
 }

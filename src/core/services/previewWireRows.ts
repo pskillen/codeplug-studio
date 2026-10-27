@@ -36,7 +36,12 @@ import {
 } from '@core/domain/channelEligibility.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.ts';
-import type { ChannelMode, DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
+import type {
+  ChannelMode,
+  DigitalChannelMode,
+  DMRTimeSlot,
+  EntityRef,
+} from '@core/models/libraryTypes.ts';
 import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
 import { sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
 import {
@@ -268,12 +273,17 @@ function resolutionsByLibraryEntityId(
   entityKind: WireNameEntityKind,
   formatId: string,
   profileId: string | undefined,
+  digitalMode?: DigitalChannelMode,
 ): Map<string, WireNameResolution> {
   return new Map(
-    resolveWireNames({ build, library, entityKind, formatId, profileId }).map((resolution) => [
-      resolution.libraryEntityId,
-      resolution,
-    ]),
+    resolveWireNames({
+      build,
+      library,
+      entityKind,
+      formatId,
+      profileId,
+      ...(digitalMode ? { digitalMode } : {}),
+    }).map((resolution) => [resolution.libraryEntityId, resolution]),
   );
 }
 
@@ -377,6 +387,8 @@ export function previewWireRows(
   // Same rule as keepDmrTalkGroupsAndContacts at the AT-D890 Write and Anytone CSV boundaries.
   const dmrOnlyContactBanks =
     formatId === 'anytone' || (profileId != null && isAtD890RadioIoProfileId(profileId));
+  // Names are made unique within the DMR bank only, as at Write and in the Anytone CSV export.
+  const bankMode: DigitalChannelMode | undefined = dmrOnlyContactBanks ? 'dmr' : undefined;
   const notWrittenAsNonDmr = (entity: Parameters<typeof isDmrDigitalEntity>[0]) =>
     dmrOnlyContactBanks && !isDmrDigitalEntity(entity);
   // Same settings resolveWireNames uses internally — kept alongside so expansion helpers
@@ -705,6 +717,7 @@ export function previewWireRows(
         'talkGroup',
         formatId,
         profileId,
+        bankMode,
       );
       return library.talkGroups.map((talkGroup) => {
         const nonDmr = notWrittenAsNonDmr(talkGroup);
@@ -754,6 +767,7 @@ export function previewWireRows(
         'contact',
         formatId,
         profileId,
+        bankMode,
       );
       const rows: WirePreviewRow[] = [];
       for (const contact of library.digitalContacts) {

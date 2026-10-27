@@ -12,7 +12,7 @@ export {
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import type { MemoryMap } from '../../types.ts';
-import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
+import type { RadioNxdnListsDto, RadioWriteOrganisation } from '../../radioWriteProjection.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import type { ChannelDistanceUnit } from '@core/models/radioBuild.ts';
 import {
@@ -20,8 +20,11 @@ import {
   AT_D890_CHANNEL_LOCATION,
   AT_D890_MAP_SIZE,
   AT_D890_LIMITS,
+  AT_D890_NXDN,
   D890_MAP,
 } from './constants.ts';
+import { encodeAtD890NxdnList } from './nxdnListCodec.ts';
+import { encodeAtD890NxdnRxGroups } from './nxdnRxGroupCodec.ts';
 import { eraseUnitBaseFor, AT_D890_ERASE_UNIT_BYTES } from './eraseUnits.ts';
 import {
   encodeAtD890ChannelLocationTable,
@@ -340,6 +343,13 @@ export type AtD890UploadBankIntent = {
     channels: readonly RadioChannelDto[];
     unit: ChannelDistanceUnit;
   };
+  /**
+   * MM9PDY AT-D890UV, radio reports NXDN enabled. When set, the cache merge stages the NXDN
+   * talk-group / contact list and the NXDN RX group lists. Upload owns every unit it stages
+   * ({@link atD890NxdnOwnedUnits}). Unset (every stock intent, and MM9PDY without NXDN content):
+   * the radio's NXDN lists are left as they are.
+   */
+  nxdnLists?: RadioNxdnListsDto;
 };
 
 export function atD890UploadBankIntentFromOrganisation(
@@ -367,6 +377,11 @@ export function atD890UploadBankIntentFromOrganisation(
             unit: organisation.channelDistanceUnit ?? 'km',
           },
         }
+      : {}),
+    // MM9PDY only: the projection sets `nxdnLists` only when the radio reports NXDN enabled, and
+    // this check keeps a stock intent from ever carrying them.
+    ...(target === 'mm9pdy' && organisation?.nxdnLists !== undefined
+      ? { nxdnLists: organisation.nxdnLists }
       : {}),
   };
 }
@@ -407,6 +422,78 @@ export function stageAtD890ChannelLocationTable(
   const { bytes } = encodeAtD890ChannelLocationTable(image, table.channels, table.unit);
   putWritableCacheBytes(cache, AT_D890_CHANNEL_LOCATION.BASE_ADDRESS, bytes);
   return bytes.length;
+}
+
+/**
+ * Erase-unit bases of the NXDN list (index, set, records, order) and of the NXDN RX group lists
+ * (data and bitmap share one unit). Each is the A half of an A/B pair.
+ */
+export const AT_D890_NXDN_LIST_UNIT_BASES: readonly number[] = [
+  eraseUnitBaseFor(AT_D890_NXDN.ListIndex),
+  eraseUnitBaseFor(AT_D890_NXDN.ListSet),
+  eraseUnitBaseFor(AT_D890_NXDN.ListData),
+  eraseUnitBaseFor(AT_D890_NXDN.ListOrder),
+];
+export const AT_D890_NXDN_RX_UNIT_BASE = eraseUnitBaseFor(AT_D890_NXDN.RxGroupData);
+
+/** Every NXDN unit base, list and RX groups. */
+export const AT_D890_NXDN_UNIT_BASES: readonly number[] = [
+  ...AT_D890_NXDN_LIST_UNIT_BASES,
+  AT_D890_NXDN_RX_UNIT_BASE,
+];
+
+/** True for an address in any NXDN unit, A half or B half of its pair. */
+export function isAtD890NxdnPairAddress(address: number): boolean {
+  return AT_D890_NXDN_UNIT_BASES.some(
+    (base) => address >= base && address < base + 2 * AT_D890_ERASE_UNIT_BYTES,
+  );
+}
+
+/** Drop every cached block in the NXDN units so nothing stale reaches upload. */
+export function clearNxdnBlocksFromCache(cache: AtD890DownloadCache): void {
+  for (const addr of [...cache.blocks.keys()]) {
+    if (isAtD890NxdnPairAddress(addr)) cache.blocks.delete(addr);
+  }
+}
+
+/**
+ * The erase units an intent stages NXDN bytes into (upload owns each: it starts from erased
+ * flash and sends every byte that must survive). The list's four units are staged only when
+ * there is at least one entry: an empty list is "leave the radio's list alone" (an RX group
+ * list with no talk groups or contacts to hold), while the RX group unit is always replaced
+ * with the lists, because its members are slots in the list.
+ */
+export function atD890NxdnOwnedUnits(intent: AtD890UploadBankIntent): number[] {
+  const lists = intent.nxdnLists;
+  if (!lists) return [];
+  return [
+    ...(lists.entries.length > 0 ? AT_D890_NXDN_LIST_UNIT_BASES : []),
+    AT_D890_NXDN_RX_UNIT_BASE,
+  ];
+}
+
+/**
+ * Stage the NXDN lists for this upload. Always clears the NXDN units from the cache first, so a
+ * stock intent (or an MM9PDY one without NXDN content) never sends a block a Read left there.
+ * Returns the staged byte length (0 when nothing was staged).
+ */
+export function stageAtD890NxdnLists(
+  cache: AtD890DownloadCache,
+  intent: AtD890UploadBankIntent,
+): number {
+  clearNxdnBlocksFromCache(cache);
+  const lists = intent.nxdnLists;
+  if (!lists) return 0;
+  const staged = [
+    ...(lists.entries.length > 0 ? encodeAtD890NxdnList(lists.entries) : []),
+    ...encodeAtD890NxdnRxGroups(lists.rxGroups),
+  ];
+  let total = 0;
+  for (const { address, bytes } of staged) {
+    putWritableCacheBytes(cache, address, bytes);
+    total += bytes.length;
+  }
+  return total;
 }
 
 /** Push modelled regions from a merged MemoryMap back into the upload cache. */
@@ -525,6 +612,7 @@ export function applyAtD890WriteImageToCache(
   }
 
   stageAtD890ChannelLocationTable(cache, image, intent);
+  stageAtD890NxdnLists(cache, intent);
 }
 
 export function mergeMapRegionsIntoCache(
