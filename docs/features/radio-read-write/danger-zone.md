@@ -22,11 +22,11 @@ Agent rules: [.claude/rules/danger-zone.md](../../../.claude/rules/danger-zone.m
 
 ## Implementation status
 
-| Piece                                                              | Status             | Notes                                                                                 |
-| ------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------- |
-| Range-change engine (core rules, frame, sender, session, verifier) | Shipped            | The "Engine" section below                                                            |
-| Danger zone area (page, registry, entry points, nav)               | Shipped            | PR 3 of #1369. **Start…** opens the wizard                                            |
-| Change frequency range wizard                                      | Shipped (pre-prod) | PR 4 of #1369, "The wizard" below. Not yet checked on a radio (RT-1 to RT-15 pending) |
+| Piece                                                              | Status             | Notes                                                                                                         |
+| ------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Range-change engine (core rules, frame, sender, session, verifier) | Shipped            | The "Engine" section below                                                                                    |
+| Danger zone area (page, registry, entry points, nav)               | Shipped            | PR 3 of #1369. **Start…** opens the wizard                                                                    |
+| Change frequency range wizard                                      | Shipped (pre-prod) | PR 4 of #1369, "The wizard" below. First hardware run 2026-10-27: RT-2 to RT-5 passed; the other rows pending |
 
 ## The area
 
@@ -73,6 +73,14 @@ A stale record can be forgotten with **Dismiss this record** on the banner, behi
 ### Decisions
 
 All in `src/app/services/dangerZone/decisions.ts` (owner decisions of 2026-10-26): area name and strap; confirm is a checkbox plus a button; all ranges shown; code 14 disabled without `890#`; tickbox backup check; restore anyway behind a second confirm; codes 6, 9, 12, 15 allowed behind a scary warning; no feature flag; the final Check never automatic; `restartCountdownSeconds` (60, RT-2 sets it) and `programErrorAdvice` (`stay-connected`, RT-8 decides). They are recorded as constants: the alternatives the first plan listed were not built because the owner chose.
+
+**Interlocks and why** (the rules are code with a refusal test each; these are the reasons a maintainer needs):
+
+- **No `END` while a stun or kill flag is set or unknown.** In a PC session the firmware's `END` rewrites LocalInfo from its in-RAM copy, which is stale when a flag is set, and that would undo the frame or clear the flag by rewriting the unit. So a set flag, an unreadable LocalInfo, and any failure that leaves the flag state unknown end the session without `END` and tell the user to power-cycle the radio. `END` is also the firmware's commit, so it follows only a clean ACK of the frame.
+- **One range-change `W` frame.** The firmware treats a `W` at the start of LocalInfo as a read-modify-write of its first `0x100` bytes, committed at `END`, so one 16-byte frame changes the range and the serial, dealer fields and the rest of LocalInfo survive from the radio's own copy. No other address in that session: never the upper half of the pair, never PC-link `H`, no codeplug frames. The sender validates its own payload instead of trusting its caller.
+- **No `R` after the `W`.** A read between the first `W` of a program session and `END` can stop the unit being written from being committed (found by the contact-write investigation, [#1406](https://github.com/pskillen/codeplug-studio/issues/1406), recorded in the firmware repo's PC-link notes). Session A therefore reads everything it needs before the frame and sends nothing but the frame and `END` after it.
+- **Restore after the restart, in a new session, everything together** (the order rule in [memory-layout.md](../../reference/radios/anytone/at-d890uv/memory-layout.md#what-depends-on-the-range-code-and-what-a-restore-does-with-it)).
+- **Hardware first-run facts that shaped the copy:** the radio's screen may stay on "PC Read" after `END`, so nothing promises a normal screen; Reconnect reuses the granted port.
 
 ## Registry and gate
 
