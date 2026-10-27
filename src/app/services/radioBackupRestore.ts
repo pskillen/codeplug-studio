@@ -29,7 +29,7 @@ import type {
   RadioSession,
 } from '@integrations/radio-io/types.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
-import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
+import { AT_D890_MAP_SIZE, D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import {
   cacheToMemoryMap,
   type AtD890DownloadCache,
@@ -320,9 +320,16 @@ export function inspectBagFromBackupImage(
 
 export function openRadioBackupZip(bytes: Uint8Array): RadioBackupSession {
   const parsed: ParsedRadioBackupZip = parseRadioBackupZip(bytes);
+  // AT-D890: regions above the virtual map (the NXDN list) stay in the zip as inspect-only files;
+  // they are not placed in the image, which would otherwise grow to cover their addresses.
+  const modelId = parsed.manifest.radioModelId.toLowerCase();
+  const isD890 = modelId.includes('d890') || modelId === 'id890uv';
+  const imageRegions = isD890
+    ? parsed.manifest.regions.filter((region) => region.address < AT_D890_MAP_SIZE)
+    : parsed.manifest.regions;
   const image = memoryMapFromBackupRegions(
     parsed.manifest.imageByteLength,
-    parsed.manifest.regions,
+    imageRegions,
     parsed.regions,
   );
   const inspectBag = inspectBagFromBackupImage(parsed.manifest, image);

@@ -20,6 +20,7 @@ import {
   amAirDataAddress,
   amZoneDataAddress,
   alignedSpanForAtD890Region,
+  alignAtD890ReadLength,
   AT_D890_CHANNEL_LOCATION_UNIT_BASE,
   AT_D890_NXDN_UNIT_BASES,
   atD890NxdnOwnedUnits,
@@ -29,6 +30,8 @@ import {
 import {
   AT_D890_BLOCK_SIZE,
   AT_D890_LIMITS,
+  AT_D890_NXDN,
+  AT_D890_NXDN_LIST_SET_SPAN_BYTES,
   AT_D890_SAFE_SKIP_WRITE_ADDR,
   D890_MAP,
 } from './constants.ts';
@@ -105,6 +108,7 @@ const DOWNLOAD_STAGES = [
   'Scan lists',
   'Talk groups',
   'RX groups',
+  'NXDN lists',
   'Radio IDs',
   'Master ID',
   'AM airband',
@@ -412,6 +416,75 @@ export async function downloadAtD890SparseRegions(
       cache,
       receiveGroupAddress(idx),
       AT_D890_LIMITS.RX_GROUP_STRIDE,
+      signal,
+      readBlockSize,
+    );
+  }
+
+  // NXDN talk-group / contact list and NXDN RX groups (MM9PDY NXDN; the stock CPS reads the same
+  // regions, so this is safe on any D890). Read for the backup, never re-sent unless an MM9PDY
+  // intent replaces them.
+  stage('Reading NXDN lists…');
+  await readRegion(
+    pipe,
+    cache,
+    AT_D890_NXDN.ListIndex,
+    AT_D890_NXDN.ListIndexBytes,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    AT_D890_NXDN.ListSet,
+    AT_D890_NXDN_LIST_SET_SPAN_BYTES,
+    signal,
+    readBlockSize,
+  );
+  const nxdnIndex = getCacheBytes(cache, AT_D890_NXDN.ListIndex, AT_D890_NXDN.ListIndexBytes);
+  let nxdnCount = 0;
+  while (
+    nxdnCount < AT_D890_NXDN.ListIndexEntries &&
+    nxdnIndex.subarray(nxdnCount * 4, nxdnCount * 4 + 4).some((byte) => byte !== 0xff)
+  ) {
+    nxdnCount++;
+  }
+  if (nxdnCount > 0) {
+    throwIfAborted(signal);
+    const nxdnSet = getCacheBytes(cache, AT_D890_NXDN.ListSet, AT_D890_NXDN_LIST_SET_SPAN_BYTES);
+    const lastSlot = Math.max(...listSetBits(nxdnSet, true).filter((i) => i < 1000), -1);
+    if (lastSlot >= 0) {
+      const { start, length } = alignedSpanForAtD890Region(
+        AT_D890_NXDN.ListData,
+        (lastSlot + 1) * AT_D890_NXDN.ListRecordSize,
+      );
+      await readRegion(pipe, cache, start, length, signal, readBlockSize);
+    }
+    await readRegion(
+      pipe,
+      cache,
+      AT_D890_NXDN.ListOrder,
+      alignAtD890ReadLength(Math.ceil(nxdnCount / 2) * 2 * AT_D890_NXDN.ListOrderEntryBytes),
+      signal,
+      readBlockSize,
+    );
+  }
+  await readRegion(
+    pipe,
+    cache,
+    AT_D890_NXDN.RxGroupSet,
+    AT_D890_NXDN.RxGroupSetBytes,
+    signal,
+    readBlockSize,
+  );
+  const nxdnRxSet = getCacheBytes(cache, AT_D890_NXDN.RxGroupSet, AT_D890_NXDN.RxGroupSetBytes);
+  for (const idx of listSetBits(nxdnRxSet)) {
+    throwIfAborted(signal);
+    await readRegion(
+      pipe,
+      cache,
+      AT_D890_NXDN.RxGroupData + idx * AT_D890_NXDN.RxGroupStride,
+      AT_D890_NXDN.RxGroupStride,
       signal,
       readBlockSize,
     );

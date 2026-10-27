@@ -21,7 +21,7 @@ import {
   enableAtD890AutoWriteAck,
   collectAtD890ReadRequestAddresses,
 } from './__fixtures__/scriptedPipe.ts';
-import { AT_D890_CHANNEL_LOCATION } from './constants.ts';
+import { AT_D890_CHANNEL_LOCATION, AT_D890_NXDN } from './constants.ts';
 import { atD890UploadBankIntentFromOrganisation } from './memory.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import { labelForAtD890SentinelId } from './sentinelVerify.ts';
@@ -845,6 +845,25 @@ describe('AtD890uvProtocol', () => {
       pipe,
       D890_MAP.ReceiveGroupSet,
       new Uint8Array(0x20),
+      NEGOTIATED_READ_BLOCK,
+    );
+    // NXDN lists: an empty list (index and set erased) and no RX groups.
+    enqueueAtD890ReadReply(
+      pipe,
+      AT_D890_NXDN.ListIndex,
+      new Uint8Array(AT_D890_NXDN.ListIndexBytes).fill(0xff),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      AT_D890_NXDN.ListSet,
+      new Uint8Array(0x80).fill(0xff),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      AT_D890_NXDN.RxGroupSet,
+      new Uint8Array(AT_D890_NXDN.RxGroupSetBytes),
       NEGOTIATED_READ_BLOCK,
     );
     enqueueAtD890ReadReply(pipe, D890_MAP.RadioIdSet, new Uint8Array(0x20), NEGOTIATED_READ_BLOCK);

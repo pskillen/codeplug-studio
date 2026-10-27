@@ -48,12 +48,15 @@ export const AT_D890_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow[] = [
   { label: AT_D890_RADIO_SETTINGS_COVERAGE_LABEL, status: 'preserved' },
   { label: 'Channel positions (MM9PDY firmware)', status: 'leftAlone' },
   { label: 'NXDN channel settings', status: 'preserved' },
+  { label: 'NXDN talk groups and contacts', status: 'leftAlone' },
+  { label: 'NXDN RX group lists', status: 'leftAlone' },
 ] as const;
 
 /**
  * MM9PDY target rows: the same table, except channel positions are written from your
  * library (channels with a position and *Use location* on) and NXDN channel settings are
- * written when the radio reports NXDN enabled.
+ * written when the radio reports NXDN enabled, as are the NXDN talk groups, contacts and RX
+ * group lists (when the build has any).
  */
 export const AT_D890_MM9PDY_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow[] =
   AT_D890_WRITE_COVERAGE_ROWS.map((row) => {
@@ -63,6 +66,13 @@ export const AT_D890_MM9PDY_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow
         ...row,
         status: 'written',
         note: 'Updated when the radio reports NXDN enabled; Reset Digital Protocol is then set to Off',
+      };
+    }
+    if (row.label === 'NXDN talk groups and contacts' || row.label === 'NXDN RX group lists') {
+      return {
+        ...row,
+        status: 'written',
+        note: 'Updated when the radio reports NXDN enabled and your library has NXDN entries',
       };
     }
     return row;

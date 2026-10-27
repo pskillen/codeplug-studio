@@ -13,6 +13,8 @@ import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
 import {
   AT_D890_BLOCK_SIZE,
   AT_D890_LIMITS,
+  AT_D890_NXDN,
+  AT_D890_NXDN_LIST_SET_SPAN_BYTES,
   AT_D890_SAFE_SKIP_WRITE_ADDR,
   D890_MAP,
 } from './constants.ts';
@@ -105,6 +107,13 @@ export function d890DownloadStages(counts: Counts = NOMINAL_COUNTS): PlannedStag
       weight: L.TALKGROUP_SET_BYTES + counts.talkGroups * L.TALKGROUP_RECORD_SIZE,
     },
     { label: 'RX groups', weight: L.RX_GROUP_SET_BYTES + counts.rxGroups * L.RX_GROUP_STRIDE },
+    {
+      label: 'NXDN lists',
+      weight:
+        AT_D890_NXDN.ListIndexBytes +
+        AT_D890_NXDN_LIST_SET_SPAN_BYTES +
+        AT_D890_NXDN.RxGroupSetBytes,
+    },
     { label: 'Radio IDs', weight: L.RADIO_ID_SET_BYTES + counts.radioIds * L.RADIO_ID_STRIDE },
     { label: 'Master ID', weight: M.MasterIdLength },
     {

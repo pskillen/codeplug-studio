@@ -12,6 +12,8 @@ import {
   channelSecondaryAddress,
 } from './memory.ts';
 import { AtD890uvProtocol } from './protocol.ts';
+import { encodeAtD890NxdnList } from './nxdnListCodec.ts';
+import { encodeAtD890NxdnRxGroups } from './nxdnRxGroupCodec.ts';
 import {
   assertAtD890NoReadAfterWrite,
   AtD890ScriptedPipe,
@@ -21,6 +23,7 @@ import {
   localInfoWithSerial,
   makeAtD890EraseUnitBuffer,
   scriptAtD890ConnectWithNegotiation,
+  scriptAtD890MinimalDownload,
   scriptAtD890UploadReadResponder,
   writePayloadAt,
 } from './__fixtures__/scriptedPipe.ts';
@@ -192,4 +195,39 @@ describe('AtD890uvProtocol MM9PDY NXDN lists (#255)', () => {
     expect(written).toContain(AT_D890_NXDN.RxGroupData + 0x100);
     expect(written).toContain(AT_D890_NXDN.RxGroupSet);
   }, 30_000);
+});
+
+describe('AtD890uvProtocol Read of the NXDN lists (backup)', () => {
+  it('reads the index, set, used records, order table and RX groups into the cache', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890MinimalDownload(pipe);
+    const memory = new Map<number, Uint8Array>();
+    for (const { address, bytes } of [
+      ...encodeAtD890NxdnList(LISTS.entries),
+      ...encodeAtD890NxdnRxGroups(LISTS.rxGroups),
+    ]) {
+      memory.set(address, bytes);
+    }
+    const base = pipe.readResponder!;
+    pipe.readResponder = (addr, len) => {
+      for (const [start, data] of memory) {
+        if (addr >= start && addr + len <= start + data.length + 0x10) {
+          const out = new Uint8Array(len).fill(0xff);
+          out.set(data.subarray(addr - start, addr - start + len));
+          return out;
+        }
+      }
+      return base(addr, len);
+    };
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    await radio.download({});
+    const cache = radio.getDownloadCache()!;
+    expect(cache.blocks.has(AT_D890_NXDN.ListIndex)).toBe(true);
+    expect(cache.blocks.get(AT_D890_NXDN.ListData)?.[0]).toBe(1);
+    expect(cache.blocks.has(AT_D890_NXDN.ListData + 0xc0)).toBe(true);
+    expect(cache.blocks.has(AT_D890_NXDN.ListOrder)).toBe(true);
+    expect(cache.blocks.get(AT_D890_NXDN.RxGroupSet)?.[0]).toBe(1);
+    expect(cache.blocks.has(AT_D890_NXDN.RxGroupData)).toBe(true);
+  });
 });
