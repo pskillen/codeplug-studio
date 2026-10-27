@@ -48,9 +48,9 @@ The MM9PDY firmware treats a channel as NXDN-capable in NXDN mode if any of `0x6
 
 ## The NXDN list and RX group lists
 
-Written in the same Write, from library entities with `mode: 'nxdn'` (DMR entities go to the DMR lists, never here). Layouts: firmware RE, NXDN codeplug (records F292–F295, F300).
+Written in the same Write, from library entities with `mode: 'nxdn'` (DMR entities go to the DMR lists, never here). Layouts: firmware RE, NXDN codeplug (records F291, F293–F295, F297).
 
-**List: four units, owned by Studio.** The radio's NXDN talk-group / contact list is one list: talk groups (group entries) first, then contacts (individual entries), at most 1000. Slot `i` is index `i`.
+**List: four units, owned by Studio.** The radio's NXDN talk-group / contact list is one list: talk groups (group entries) first, then contacts (individual entries), at most 1000. Slot `i` is index `i`. A talk group or contact whose ID and kind repeat an earlier entry is not written again (the order table holds one row per ID, so a second entry would be a row the caller-ID search cannot find); the Write warns, and a channel or RX group that used it points at the first entry.
 
 | Unit    | Address      | Content                                                                                                                                                                                                                              |
 | ------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

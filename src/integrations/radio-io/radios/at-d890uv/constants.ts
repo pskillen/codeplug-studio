@@ -291,7 +291,7 @@ export const AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES =
   AT_D890_CHANNEL_LOCATION.ENTRY_BYTES * AT_D890_CHANNEL_LOCATION.MAX_ENTRIES;
 
 /**
- * MM9PDY / NXDN codeplug regions (firmware RE, NXDN codeplug: records F292-F295, F300; page
+ * MM9PDY / NXDN codeplug regions (firmware RE, NXDN codeplug: records F291, F293-F295, F297; page
  * `docs/reference/cps/records/nxdn.md` in the firmware repo). Deliberately **not** part of
  * `D890_MAP`: the stock Write never names them. The list is four erase units that the firmware
  * reads together (index, inverted set, records, order table); the RX groups are one unit of

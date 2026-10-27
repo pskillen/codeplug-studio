@@ -254,6 +254,27 @@ describe('AT-D890 MM9PDY NXDN lists projection (#255)', () => {
     expect(text(p)).toMatch(/1 NXDN channel\(s\) call a talk group or contact that is not in/);
   });
 
+  it('drops a repeated ID and kind from the list with a warning; its channel uses the first slot', () => {
+    const twin = { ...newTalkGroup(PROJECT, 'NX TG twin', 1234, 'nxdn'), id: 'tg-nx-twin' };
+    const twinCh = channel('twin-ch', 430_700_000, [
+      nxdn({ contactRef: ref('talkGroup', 'tg-nx-twin') }),
+    ]);
+    const p = project(
+      'radio-io-at-d890uv-mm9pdy',
+      libraryOf({
+        channels: [callTg, twinCh],
+        talkGroups: [tg1234, twin],
+        digitalContacts: [],
+      }),
+      true,
+    );
+    const entries = p.organisation.nxdnLists!.entries;
+    expect(entries.map((e) => e.nxdnId)).toEqual([1234]);
+    expect(text(p)).toMatch(/1 NXDN talk group\(s\) or contact\(s\) repeat an ID/);
+    const byName = new Map(p.channels.map((c) => [c.wireName, c]));
+    expect(byName.get('twin-ch')!.nxdn!.txTargetIndex).toBe(0);
+  });
+
   it('the stock and the NXDN-off projections are identical to the base for a DMR-only build', () => {
     const dmrLib = libraryOf({
       channels: [dmrCh],

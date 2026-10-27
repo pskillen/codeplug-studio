@@ -8,7 +8,10 @@ import type {
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
 import type { DigitalChannelMode } from '@core/models/libraryTypes.ts';
-import { isValidAtD890NxdnId } from '@integrations/radio-io/radios/at-d890uv/nxdnListCodec.ts';
+import {
+  atD890NxdnOrderKey,
+  isValidAtD890NxdnId,
+} from '@integrations/radio-io/radios/at-d890uv/nxdnListCodec.ts';
 import { channelOwnIdOverride, defaultOwnDigitalId } from '@core/domain/ownDigitalIds.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
@@ -798,15 +801,28 @@ function buildAtD890NxdnLists(
   const entries: RadioNxdnListEntryDto[] = [];
   let badId = 0;
   let overCap = 0;
+  let duplicateIds = 0;
+  // The first entry for an ID and kind wins: the order table holds one row per key, so a second
+  // entry would be a row the caller-ID search cannot find. A duplicate's channels and RX group
+  // memberships use the first entry's slot (same ID, so the same call).
+  const slotByOrderKey = new Map<number, number>();
   const add = (entityId: string, entry: RadioNxdnListEntryDto) => {
     if (!isValidAtD890NxdnId(entry.nxdnId, entry.kind)) {
       badId++;
+      return;
+    }
+    const orderKey = atD890NxdnOrderKey(entry.nxdnId, entry.kind);
+    const firstSlot = slotByOrderKey.get(orderKey);
+    if (firstSlot != null) {
+      duplicateIds++;
+      nxdnListIndexByEntityId.set(entityId, firstSlot);
       return;
     }
     if (entries.length >= listMax) {
       overCap++;
       return;
     }
+    slotByOrderKey.set(orderKey, entries.length);
     nxdnListIndexByEntityId.set(entityId, entries.length);
     entries.push(entry);
   };
@@ -844,6 +860,12 @@ function buildAtD890NxdnLists(
     pushGeneralWarning(
       warnings,
       `${badId} NXDN talk group(s) or contact(s) have an ID the radio does not accept (1-65519, or 65535 for a talk group) and were not written`,
+    );
+  }
+  if (duplicateIds > 0) {
+    pushGeneralWarning(
+      warnings,
+      `${duplicateIds} NXDN talk group(s) or contact(s) repeat an ID and kind already in the list and were not written again (the first one is kept)`,
     );
   }
   if (overCap > 0) {
@@ -885,7 +907,7 @@ function buildAtD890NxdnLists(
         droppedOverMembers++;
         continue;
       }
-      memberSlots.push(slot);
+      if (!memberSlots.includes(slot)) memberSlots.push(slot);
     }
     droppedOtherMode +=
       (sourceListById.get(row.entity.id)?.entity.members.length ?? row.entity.members.length) -
