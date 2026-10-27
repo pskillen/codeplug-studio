@@ -18,7 +18,7 @@ import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import {
   encodeTxContactEntry,
   getTxContactOffset,
-  isDigitalChannelMode,
+  channelModeHasDigital,
   parseTxContactEntry,
 } from './txContactCodec.ts';
 
@@ -248,7 +248,7 @@ export function encodeDm32ChannelRecord(ch: RadioChannelDto): Uint8Array {
     ch.aprsReportMode === 'digital' ? 1 : ch.aprsReportMode === 'analog' ? 2 : 0;
   data[0x1c] = ((DM32_DEFAULT_SQUELCH_LEVEL & 0x0f) << 4) | ((aprsReportValue << 2) & 0x0c);
 
-  const isDigital = isDigitalChannelMode(ch.mode);
+  const isDigital = channelModeHasDigital(ch.mode);
   if (isDigital) {
     let digital = (ch.colorCode ?? 1) & 0x0f;
     if (ch.timeslot === 2) digital |= 0x10;
@@ -368,7 +368,7 @@ function writeChannelSlot(
   if (tx) {
     const [byte0, byte1] = encodeTxContactEntry(
       txContactId,
-      !ch.empty && isDigitalChannelMode(ch.mode),
+      !ch.empty && channelModeHasDigital(ch.mode),
     );
     const off = tx.offset + offset;
     image.bytes[off] = byte0;

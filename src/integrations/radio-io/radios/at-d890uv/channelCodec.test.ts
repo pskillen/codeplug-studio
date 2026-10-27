@@ -468,6 +468,20 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(parseAtD890ChannelRecord(repeater, 1).dmrOperatingMode).toBe('repeater');
   });
 
+  it('writes A+D TX A as type 2 with its DMO bit, contact and colour code (#1456)', () => {
+    const encoded = encodeAtD890ChannelRecord({
+      ...simplexDigital,
+      mode: 'fixed-analog',
+      dmrOperatingMode: 'dmo-simplex',
+      txContactId: 257,
+      colorCode: 6,
+    });
+    expect(encoded[8]! & 0x3).toBe(2);
+    expect((encoded[0x34]! >> 1) & 1).toBe(1);
+    expect(encoded[0x15]).toBe(0x01);
+    expect(encoded[0x20]).toBe(6);
+  });
+
   it('writes rxOnly on 0x34 bit 3 and leaves 0x09 bit 5 clear', () => {
     const encoded = encodeAtD890ChannelRecord({
       ...simplexDigital,
