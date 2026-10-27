@@ -9,26 +9,38 @@ export default function NewRangeStep({ view, actions }: StepProps) {
   return (
     <div className={classes.stack}>
       <p className={classes.text}>{COPY.newRange.intro}</p>
-      <ul className={classes.rangeList} role="radiogroup" aria-label="New frequency range">
+      <div className={classes.rangeList} role="radiogroup" aria-label="New frequency range">
         {view.rangeRows.map((row) => {
           const id = `range-${row.code}`;
+          // The current range keeps its tick (a mark, not a radio) while another row is picked.
           const selected = row.current || view.target === row.code;
           return (
-            <li key={row.code}>
+            <div key={row.code}>
               <label
                 className={classes.rangeRow}
                 data-selected={selected}
                 data-disabled={!row.selectable}
                 htmlFor={id}
               >
-                <input
-                  id={id}
-                  type="radio"
-                  name="new-range"
-                  checked={selected}
-                  disabled={!row.selectable}
-                  onChange={() => actions.onPickTarget(row.code)}
-                />
+                {row.current ? (
+                  <input
+                    id={id}
+                    type="checkbox"
+                    checked
+                    disabled
+                    readOnly
+                    data-testid="range-current-tick"
+                  />
+                ) : (
+                  <input
+                    id={id}
+                    type="radio"
+                    name="new-range"
+                    checked={view.target === row.code}
+                    disabled={!row.selectable}
+                    onChange={() => actions.onPickTarget(row.code)}
+                  />
+                )}
                 <span className={classes.rangeText}>
                   <span className={classes.rangeName}>
                     {row.caption} <span className={classes.muted}>(code {row.code})</span>
@@ -50,10 +62,10 @@ export default function NewRangeStep({ view, actions }: StepProps) {
                   ) : null}
                 </span>
               </label>
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
       {picked?.unlisted ? (
         <p className={classes.scary} role="alert" data-testid="range-unlisted-target">
           <strong>{COPY.newRange.unlistedTitle}</strong>
