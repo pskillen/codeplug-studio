@@ -18,6 +18,8 @@ import { RadioIoError } from '../../../kit/errors.ts';
 import { throwIfAborted } from '../../../kit/progress.ts';
 import { atD890ExitProgram, atD890ReadMemory } from '../connection.ts';
 import { D890_MAP } from '../constants.ts';
+import { eraseUnitBaseFor } from '../eraseUnits.ts';
+import { gateAtD890Write, recordAtD890AbandonedSession } from '../programSession.ts';
 import { assertAtD890NoStunKill } from '../stunKillGuard.ts';
 import {
   AT_D890_RANGE_CHANGE_EXTENT,
@@ -122,6 +124,11 @@ export async function changeAtD890FrequencyRange(
   // A flag means END would rewrite LocalInfo from stale RAM: rethrow unchanged, the caller must not END.
   assertAtD890NoStunKill(live);
 
+  // Units left pending by an interrupted Write (#1406): this session's `END` would promote them. The gate throws
+  // `AtD890PendingUnitsError` before anything is written, and it is not wrapped: `atD890RangeChangeMayEndAfter`
+  // fails closed on it, so the caller leaves PROGRAM without `END`. A range change never rewrites those units.
+  gateAtD890Write(pipe, [eraseUnitBaseFor(D890_MAP.LocalInfo)]);
+
   if (
     !bytesEqual(
       live.subarray(0, D890_MAP.LocalInfoLength),
@@ -159,6 +166,8 @@ export async function changeAtD890FrequencyRange(
     );
   } catch (err) {
     const refused = err instanceof AtD890RangeChangeSendRefusedError;
+    // The `W` was latched and no `END` follows: settle the in-progress marker (nothing finished to record).
+    if (!refused) recordAtD890AbandonedSession(pipe);
     throw new AtD890RangeChangeSessionError(
       refused ? 'send-refused' : 'send-failed',
       refused ? { frameSent: false, mayEnd: true } : { frameSent: true, mayEnd: false },
@@ -170,6 +179,7 @@ export async function changeAtD890FrequencyRange(
   try {
     await atD890ExitProgram(pipe);
   } catch (err) {
+    recordAtD890AbandonedSession(pipe);
     throw new AtD890RangeChangeSessionError(
       'end-failed',
       { frameSent: true, mayEnd: false },

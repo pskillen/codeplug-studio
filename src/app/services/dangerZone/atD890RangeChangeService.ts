@@ -21,6 +21,7 @@ import {
 import type { RadioBackupManifestV1 } from '@integrations/radio-io/backup/index.ts';
 import type { MemoryMap, ProgressFn, RadioSession } from '@integrations/radio-io/types.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
+import { AtD890PendingUnitsError } from '@integrations/radio-io/radios/at-d890uv/pendingUnits.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import {
   AtD890StunKillError,
@@ -305,6 +306,10 @@ export async function changeRange(
 function classify(err: unknown): RangeChangeOutcome {
   const detail = err instanceof Error ? err.message : String(err);
   if (err instanceof AtD890StunKillError) return { kind: 'stun-kill', detail };
+  // An interrupted Write is pending (#1406): nothing was sent, and no END (it would commit that Write).
+  if (err instanceof AtD890PendingUnitsError) {
+    return { kind: 'nothing-changed', reason: 'refused', detail };
+  }
   if (err instanceof AtD890RangeChangeRefusedError) {
     if (err.reason === 'stun-kill-flag') return { kind: 'stun-kill', detail };
     if (err.reason === 'short-local-info') return { kind: 'unreadable', detail };

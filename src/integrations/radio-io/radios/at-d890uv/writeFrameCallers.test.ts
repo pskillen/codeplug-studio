@@ -62,8 +62,12 @@ describe('AT-D890 write-frame builder callers', () => {
     for (const rel of ALLOWED_CALLERS) {
       const text = readFileSync(join(srcRoot, rel), 'utf8');
       expect(text).toMatch(/makeAnytoneDmrWriteFrame\(/);
-      expect(text).toMatch(/makeAnytoneDmrReadFrame\(/);
     }
+    // The generic connection is the one R sender: the range-change sender sends only its one W (its R frames
+    // go through connection.ts), so the R builder is required of connection.ts alone.
+    expect(
+      readFileSync(join(srcRoot, 'integrations/radio-io/radios/at-d890uv/connection.ts'), 'utf8'),
+    ).toMatch(/makeAnytoneDmrReadFrame\(/);
   });
 
   it('every frame built in an allow-listed caller sits in a function that calls the latch (or says why not)', () => {
@@ -95,7 +99,11 @@ describe('AT-D890 write-frame builder callers', () => {
           }
           from = text.indexOf(build, idx + build.length);
         }
-        expect(found, `${rel} no longer calls ${build}`).toBeGreaterThan(0);
+        // Only the generic connection sends R frames (the range-change sender's R frames go through it), so
+        // an R-free sender is fine; every sender must still call the W builder (checked above).
+        if (build.startsWith('makeAnytoneDmrWriteFrame')) {
+          expect(found, `${rel} no longer calls ${build}`).toBeGreaterThan(0);
+        }
       }
     }
   });

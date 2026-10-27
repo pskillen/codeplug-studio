@@ -131,6 +131,14 @@ session sends it only after a clean ACK.
 `+0x00..+0x0F` other than at `+0x03`; and a live LocalInfo whose model is not `D890UV` or whose model or serial differs
 from the backup. It therefore requires the live and backed-up LocalInfo from its caller.
 
+**Program-session latch and pending units (#1406).** The `W` goes through `noteAtD890WriteFrame`, so no `R` follows it
+until `END`; the session's `R` frames and its `END` already go through `connection.ts`, which guard and clear the latch.
+The session also calls `gateAtD890Write` right after the live read, before the journal: while units from an interrupted
+Write are recorded for this radio (or for an unknown one) the range change is refused with `AtD890PendingUnitsError`,
+nothing sent, and the caller leaves PROGRAM without `END`, since that `END` would commit those units. The record can be
+cleared in the Write dialog. If the `W` or the `END` fails, the session settles its in-progress marker so the failed
+range change does not itself block the next Write; the Danger zone's own journal covers the unfinished change.
+
 ## Radio checks
 
 First hardware run, 2026-10-27 (owner, Chrome on Ubuntu, a stock-range AT-D890UV): backup, change, Restore and the final Check all worked. The change went from code 3 (Amateur Europe) to code 0 (Commercial Europe), not to 7. Change and Restore gave a normal boot. The Check matched the backup apart from expected usage changes (current channel; see Usage-volatile bytes in [memory-layout.md](../../reference/radios/anytone/at-d890uv/memory-layout.md#usage-volatile-bytes)). Passed: RT-2, RT-3 (Reconnect reused the granted port, no browser prompt), RT-4 and RT-5 (TX confirmed on the new range). RT-1, RT-7 and RT-9 were not run because the radio is in daily use. Every other row stays pending. The emulator has no USB, so the `W` path is proved only on hardware.
