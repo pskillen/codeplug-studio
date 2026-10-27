@@ -25,7 +25,7 @@ const CONTACT_SOURCE_OPTIONS: {
 
 /** AT-D890: contacts ride with the codeplug; the part fills the ID database. */
 const AT_D890_CONTACTS_HINT =
-  "Contacts always go to the radio's Contacts list with the codeplug, after talk groups, so channels and RX group lists can call them. This part writes the radio's ID database, which names incoming calls: your contacts, the ID directory, or both. ID directory rows for a DMR ID that is already a contact are skipped, so the radio shows your name for it. Unticked leaves the ID database as it is.";
+  "Contacts always go to the radio's Contacts list with the codeplug, after talk groups, so channels and RX group lists can call them. This part writes the radio's ID database, which names incoming calls: your contacts, the ID directory, or both. ID directory rows for a DMR ID that is already a contact are skipped, so the radio shows your name for it. Unticked leaves the ID database as it is. Without Codeplug, the AT-D890UV still re-sends the codeplug image.";
 
 interface StepProps {
   config: WriteStepperConfig;
