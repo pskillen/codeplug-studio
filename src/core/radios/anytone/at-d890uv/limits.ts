@@ -13,6 +13,17 @@ export const AT_D890UV_LIMITS = {
   RX_GROUP_LISTS_MAX: 250,
   RX_GROUP_MEMBERS_MAX: 64,
   TALK_GROUPS_MAX: 10_000,
+  /**
+   * NXDN talk-group / contact list (one list, talk groups first). The index table holds 1000 u32
+   * slots and the record bank is one 1000-record bank (firmware RE, NXDN codeplug).
+   */
+  NXDN_LIST_MAX: 1000,
+  /** NXDN RX group lists (the radio's NXDN RX group unit: 250 strides of `0x200`). */
+  NXDN_RX_GROUP_LISTS_MAX: 250,
+  /** Members per NXDN RX group list: 64 u32 slots, stored contiguously. */
+  NXDN_RX_GROUP_MEMBERS_MAX: 64,
+  /** NXDN list and RX group list names: 16 characters (UTF-16, NUL-terminated on the wire). */
+  NXDN_NAME_MAX: 16,
   /** Operator radio-ID list entries (the master ID is separate). */
   RADIO_IDS_MAX: 250,
   NAME_LENGTH: 16,
