@@ -286,3 +286,21 @@ describe('assembledHasNxdnContent', () => {
     ).toBe(false);
   });
 });
+
+describe('MM9PDY zeroes the NXDN bytes of channels written without NXDN fields', () => {
+  const library = libraryOf({});
+  it('flags DMR channels, and every channel when the radio does not report NXDN enabled', () => {
+    const on = project('radio-io-at-d890uv-mm9pdy', library, true);
+    expect(on.channels.find((c) => c.wireName === 'dmr-ch')!.clearNxdnBytes).toBe(true);
+    expect(on.channels.find((c) => c.wireName === 'call-tg')!.clearNxdnBytes).toBeUndefined();
+    for (const flag of [false, undefined]) {
+      const off = project('radio-io-at-d890uv-mm9pdy', library, flag);
+      expect(off.channels.every((c) => c.empty || c.clearNxdnBytes === true)).toBe(true);
+    }
+  });
+
+  it('the stock target never sets it', () => {
+    const stock = project('radio-io-at-d890uv', library, true);
+    expect(stock.channels.some((c) => c.clearNxdnBytes !== undefined)).toBe(false);
+  });
+});

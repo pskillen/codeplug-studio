@@ -68,6 +68,8 @@ const CHANNEL_PRESERVE_RANGES: readonly (readonly [number, number])[] = [
  * `0x66` bit 0 = bandwidth (0 = 6.25 kHz NXDN48, 1 = 12.5 kHz NXDN96); `0x68` = TX RAN;
  * `0x69` = RX RAN; `0x6b` = RX group list (0-based, `0xff` = none, `0` would select list 0).
  */
+const NXDN_FIRST_BYTE = 0x66;
+const NXDN_LAST_BYTE = 0x6e;
 const NXDN_BYTE_RATE = 0x66;
 const NXDN_RATE_BIT = 0;
 const NXDN_BYTE_TX_RAN = 0x68;
@@ -461,6 +463,7 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   }
 
   if (ch.nxdn) applyAtD890NxdnChannelBytes(data, ch.nxdn, ch.slotIndex);
+  else if (ch.clearNxdnBytes) data.fill(0, NXDN_FIRST_BYTE, NXDN_LAST_BYTE + 1);
 
   data.set(encodeWideCharName(ch.wireName, 0x20), 0x44);
   return data;

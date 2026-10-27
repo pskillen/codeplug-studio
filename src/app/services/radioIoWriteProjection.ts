@@ -2027,6 +2027,11 @@ export function buildRadioWriteProjection(
       { deriveScanLists: !mm9pdy, emptyScanFloor: mm9pdy },
     );
     channels = stampAtD890AutoScan(org.channels, org.scanLists);
+    if (mm9pdy) {
+      // The MM9PDY firmware treats a channel as NXDN-capable in NXDN mode if any of 0x66-0x6E is
+      // non-zero, so a channel without NXDN fields gets zeros there, not the previous occupant's.
+      channels = channels.map((ch) => (ch.empty || ch.nxdn ? ch : { ...ch, clearNxdnBytes: true }));
+    }
     numbersBySourceChannelId = org.numbersBySourceChannelId;
     const amAir = buildAtD890AmAirOrganisation(assembled, build, egress, warnings);
     organisation = {

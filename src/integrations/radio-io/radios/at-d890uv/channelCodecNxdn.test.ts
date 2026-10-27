@@ -145,3 +145,45 @@ describe('encodeAtD890ChannelRecord NXDN fields', () => {
     expect(encoded.every((b) => b === 0)).toBe(true);
   });
 });
+
+describe('encodeAtD890ChannelRecord clearNxdnBytes (MM9PDY, channel without NXDN fields)', () => {
+  it('writes zeros into 0x66-0x6E over a slot that held NXDN bytes, and leaves 0x6F onward', () => {
+    const prior = priorWithNxdnBytes();
+    prior[0x6f] = 0x5a;
+    prior[0x7f] = 0x6b;
+    const encoded = encodeAtD890ChannelRecord({ ...base, clearNxdnBytes: true }, prior);
+    expect([...encoded.subarray(0x66, 0x6f)]).toEqual(Array(9).fill(0));
+    // Everything from 0x6F on is exactly what the encode did before the flag.
+    const without = encodeAtD890ChannelRecord(base, prior);
+    expect([...encoded.subarray(0x6f)]).toEqual([...without.subarray(0x6f)]);
+    expect([...encoded.subarray(0, 0x66)]).toEqual([...without.subarray(0, 0x66)]);
+  });
+
+  it('writes zeros over an erased FF slot', () => {
+    // A slot whose NXDN bytes read FF (erased), inside an otherwise used record.
+    const prior = encodeAtD890ChannelRecord(base);
+    prior.fill(0xff, 0x66, 0x6f);
+    const encoded = encodeAtD890ChannelRecord({ ...base, clearNxdnBytes: true }, prior);
+    expect([...encodeAtD890ChannelRecord(base, prior).subarray(0x66, 0x6f)]).toEqual(
+      Array(9).fill(0xff),
+    );
+    expect([...encoded.subarray(0x66, 0x6f)]).toEqual(Array(9).fill(0));
+    const without = encodeAtD890ChannelRecord(base, prior);
+    expect([...encoded.subarray(0x6f)]).toEqual([...without.subarray(0x6f)]);
+  });
+
+  it('the stock target (no flag) still carries the bytes over', () => {
+    const prior = priorWithNxdnBytes();
+    const encoded = encodeAtD890ChannelRecord(base, prior);
+    expect([...encoded.subarray(0x66, 0x6f)]).toEqual([...prior.subarray(0x66, 0x6f)]);
+  });
+
+  it('a channel with NXDN fields is not cleared by the flag', () => {
+    const encoded = encodeAtD890ChannelRecord({
+      ...base,
+      clearNxdnBytes: true,
+      nxdn: { rxRan: 7, txRan: 5 },
+    });
+    expect(encoded[0x69]).toBe(7);
+  });
+});

@@ -95,6 +95,12 @@ export interface RadioChannelDto {
    * channel that has an NXDN profile; an absent value inside leaves that byte as read.
    */
   nxdn?: RadioChannelNxdnDto;
+  /**
+   * AT-D890UV MM9PDY only: write zeros into the NXDN bytes `0x66`-`0x6E` of a channel that has no
+   * {@link nxdn} fields, so a previous occupant's bytes (or an erased slot's `FF`) cannot make a
+   * DMR or analogue channel look NXDN-capable. Stock projections never set it (carried over).
+   */
+  clearNxdnBytes?: boolean;
 }
 
 /** NXDN rate: 6.25 kHz (NXDN48) or 12.5 kHz (NXDN96). */
