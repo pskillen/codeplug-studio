@@ -84,4 +84,21 @@ export interface RadioChannelDto {
    * MM9PDY AT-D890UV / DM-32UV: the slot gets a table entry only when this is true.
    */
   useLocation?: boolean;
+  /**
+   * NXDN channel fields. AT-D890UV MM9PDY only, and only when the radio reports NXDN enabled;
+   * stock projections and every other radio never set it. Present (possibly empty) marks a
+   * channel that has an NXDN profile; an absent value inside leaves that byte as read.
+   */
+  nxdn?: RadioChannelNxdnDto;
+}
+
+/** NXDN rate: 6.25 kHz (NXDN48) or 12.5 kHz (NXDN96). */
+export type RadioNxdnRate = 'nxdn48' | 'nxdn96';
+
+export interface RadioChannelNxdnDto {
+  /** Receive RAN, 0-63. */
+  rxRan?: number;
+  /** Transmit RAN, 0-63. */
+  txRan?: number;
+  rate?: RadioNxdnRate;
 }

@@ -78,3 +78,15 @@ export function assertAtD890MrChannelFrequencies(ch: RadioChannelDto): void {
     );
   }
 }
+
+/** NXDN RAN is a 6-bit value, 0-63. */
+export const AT_D890_NXDN_RAN_MAX = 63;
+
+/** Throws unless `ran` is an integer 0-63. */
+export function assertAtD890NxdnRan(ran: number, label: string, slotIndex: number): void {
+  if (!Number.isInteger(ran) || ran < 0 || ran > AT_D890_NXDN_RAN_MAX) {
+    throw new AtD890ChannelEncodeError(
+      `AT-D890UV channel ${slotIndex}: NXDN ${label} must be a whole number 0-${AT_D890_NXDN_RAN_MAX}, got ${ran}`,
+    );
+  }
+}

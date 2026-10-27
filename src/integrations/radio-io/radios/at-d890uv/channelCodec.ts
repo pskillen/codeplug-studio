@@ -4,9 +4,14 @@
  */
 
 import type { MemoryMap } from '../../types.ts';
-import type { RadioChannelDto, RadioChannelMode, RadioTone } from '../../radioChannelDto.ts';
+import type {
+  RadioChannelDto,
+  RadioChannelMode,
+  RadioChannelNxdnDto,
+  RadioTone,
+} from '../../radioChannelDto.ts';
 import { encodeBcdFrequencyHz, decodeBcdFrequencyHz } from './bcd.ts';
-import { assertAtD890MrChannelFrequencies } from './channelEncodeGuards.ts';
+import { assertAtD890MrChannelFrequencies, assertAtD890NxdnRan } from './channelEncodeGuards.ts';
 import { clearBitmapBitsBelow, listSetBits, setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
@@ -56,6 +61,18 @@ const CHANNEL_PRESERVE_RANGES: readonly (readonly [number, number])[] = [
   [0x39, 0x42],
   [0x66, 0x6f],
 ];
+
+/**
+ * NXDN channel bytes (firmware RE, NXDN codeplug answers), all inside the preserved
+ * `0x66`-`0x6e` range. Studio writes only the three below; the rest are carried over.
+ * `0x66` bit 0 = bandwidth (0 = 6.25 kHz NXDN48, 1 = 12.5 kHz NXDN96); `0x68` = TX RAN;
+ * `0x69` = RX RAN; `0x6b` = RX group list (0-based, `0xff` = none, `0` would select list 0).
+ */
+const NXDN_BYTE_RATE = 0x66;
+const NXDN_RATE_BIT = 0;
+const NXDN_BYTE_TX_RAN = 0x68;
+const NXDN_BYTE_RX_RAN = 0x69;
+const NXDN_BYTE_RX_GROUP = 0x6b;
 
 function setBit(byte: number, bit: number, value: boolean): number {
   return value ? (byte | (1 << bit)) & 0xff : byte & ~(1 << bit) & 0xff;
@@ -312,13 +329,44 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
   };
 }
 
+/**
+ * Write the modelled NXDN bytes. `carriedOver` is true when `0x66`-`0x6e` came from a downloaded
+ * slot; a fresh slot gets "no RX group list" (`0xff`) because the zero it would hold selects list 0.
+ * An absent field leaves its byte (or bit) as it is. Bit fields use `setBit`.
+ */
+export function applyAtD890NxdnChannelBytes(
+  data: Uint8Array,
+  nxdn: RadioChannelNxdnDto,
+  slotIndex: number,
+  carriedOver: boolean,
+): void {
+  if (nxdn.txRan != null) assertAtD890NxdnRan(nxdn.txRan, 'TX RAN', slotIndex);
+  if (nxdn.rxRan != null) assertAtD890NxdnRan(nxdn.rxRan, 'RX RAN', slotIndex);
+  if (!carriedOver) data[NXDN_BYTE_RX_GROUP] = 0xff;
+  if (nxdn.rate != null) {
+    data[NXDN_BYTE_RATE] = setBit(data[NXDN_BYTE_RATE]!, NXDN_RATE_BIT, nxdn.rate === 'nxdn96');
+  }
+  if (nxdn.txRan != null) data[NXDN_BYTE_TX_RAN] = nxdn.txRan;
+  if (nxdn.rxRan != null) data[NXDN_BYTE_RX_RAN] = nxdn.rxRan;
+}
+
+/** NXDN fields of a combined `0x80` channel record. Separate from {@link parseAtD890ChannelRecord}. */
+export function decodeAtD890ChannelNxdn(record: Uint8Array): Required<RadioChannelNxdnDto> {
+  return {
+    rxRan: record[NXDN_BYTE_RX_RAN]!,
+    txRan: record[NXDN_BYTE_TX_RAN]!,
+    rate: ((record[NXDN_BYTE_RATE]! >> NXDN_RATE_BIT) & 1) === 1 ? 'nxdn96' : 'nxdn48',
+  };
+}
+
 export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Array): Uint8Array {
   const data = new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
   data.fill(0);
   if (ch.empty || ch.rxHz <= 0) {
     return data;
   }
-  if (prior != null && !channelPriorIsAbsent(prior)) {
+  const carriedOver = prior != null && !channelPriorIsAbsent(prior);
+  if (carriedOver) {
     copyPreservedChannelBytes(data, prior);
   }
   assertAtD890MrChannelFrequencies(ch);
@@ -397,6 +445,8 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   if (ch.aprsReportSlotIndex != null && ch.aprsReportMode === 'digital') {
     data[0x38] = Math.max(0, Math.min(7, ch.aprsReportSlotIndex - 1));
   }
+
+  if (ch.nxdn) applyAtD890NxdnChannelBytes(data, ch.nxdn, ch.slotIndex, carriedOver);
 
   data.set(encodeWideCharName(ch.wireName, 0x20), 0x44);
   return data;
