@@ -62,18 +62,21 @@ function resolveContactWireName(
   if (context) {
     if (ref.kind === 'talkGroup') {
       const tg = assembled.talkGroups.find((row) => row.entity.id === ref.id);
+      // Not in DMRTalkGroups.CSV (e.g. an NXDN talk group): no contact, not a dangling name.
+      if (!tg) return { name: '', callType: 'Group Call', digitalId: '' };
       return {
         name: context.talkGroupWireName(ref.id),
         callType: 'Group Call',
-        digitalId: tg ? String(tg.entity.digitalId) : '',
+        digitalId: String(tg.entity.digitalId),
       };
     }
     if (ref.kind === 'digitalContact') {
       const contact = assembled.digitalContacts.find((row) => row.entity.id === ref.id);
+      if (!contact) return { name: '', callType: 'Group Call', digitalId: '' };
       return {
         name: context.digitalContactWireName(ref.id),
         callType: 'Private Call',
-        digitalId: contact ? String(contact.entity.digitalId) : '',
+        digitalId: String(contact.entity.digitalId),
       };
     }
     return { name: '', callType: 'Group Call', digitalId: '' };

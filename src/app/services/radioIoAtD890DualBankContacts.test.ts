@@ -282,3 +282,65 @@ describe('AT-D890 ID database follows the Contacts part source', () => {
     ).toBe(true);
   });
 });
+
+describe('AT-D890 DMR banks keep only DMR talk groups and contacts (#1438)', () => {
+  const nxdnTg = { ...newTalkGroup(P, 'NXDN Local', 1234, 'nxdn'), id: 'tg-nx' };
+  const nxdnContact = { ...newDigitalContact(P, 'NX Carol', 4321, 'nxdn'), id: 'dc-nx' };
+  const rx = {
+    ...newRxGroupList(P, 'Mixed'),
+    id: 'rx-1',
+    members: [
+      { ref: { kind: 'talkGroup' as const, id: nxdnTg.id } },
+      { ref: { kind: 'talkGroup' as const, id: tgA.id } },
+      { ref: { kind: 'digitalContact' as const, id: nxdnContact.id } },
+      { ref: { kind: 'digitalContact' as const, id: dcA.id } },
+    ],
+  };
+  const library: LibrarySlice = {
+    ...emptyLibrary(),
+    channels: [dmrChannel('ch-1', 'NX PC', nxdnContact.id)],
+    talkGroups: [nxdnTg, tgA],
+    digitalContacts: [nxdnContact, dcA],
+    rxGroupLists: [rx],
+  };
+
+  for (const profileId of ['radio-io-at-d890uv', 'radio-io-at-d890uv-mm9pdy'] as const) {
+    it(`writes no NXDN entry to the Contacts list, RX groups or ID database (${profileId})`, () => {
+      const projection = project(library, profileId, {
+        dualBank: {
+          mode: 'codeplug',
+          options: dualBankOptionsFromWriteSource('library'),
+          directorySlice: { radioIds: [], digitalContacts: [] },
+        },
+      });
+      const tgs = projection.organisation.talkGroups ?? [];
+      expect(tgs.map((t) => [t.index, t.digitalId, t.callType])).toEqual([
+        [1, 9, 0x04],
+        [2, 2_351_234, 0x03],
+      ]);
+      expect(projection.organisation.rxGroups?.[0]?.memberDigitalIds).toEqual([0, 1]);
+      expect(projection.organisation.digitalContacts?.map((d) => d.digitalId)).toEqual([2_351_234]);
+    });
+  }
+
+  it('writes a channel that calls an NXDN contact with no TX contact, and warns once', () => {
+    const projection = project(library);
+    const digital = projection.channels.filter((c) => !c.empty && c.mode !== 'analog');
+    expect(digital.length).toBeGreaterThan(0);
+    expect(digital.every((c) => c.txContactId === undefined)).toBe(true);
+    const texts = warningTexts(projection);
+    expect(
+      texts.filter((t) =>
+        t.includes(
+          "1 talk group(s) and 1 contact(s) are not DMR (e.g. NXDN) and were left out of the radio's DMR contact lists and RX group lists; 1 DMR channel(s) that call one are written with no TX contact",
+        ),
+      ),
+    ).toHaveLength(1);
+    expect(texts.some((t) => t.includes("not in the radio's Contacts list"))).toBe(false);
+  });
+
+  it('adds no warning for a DMR-only library', () => {
+    const dmrOnly = { ...emptyLibrary(), talkGroups: [tgA], digitalContacts: [dcA] };
+    expect(warningTexts(project(dmrOnly)).some((t) => t.includes('are not DMR'))).toBe(false);
+  });
+});

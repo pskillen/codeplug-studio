@@ -19,6 +19,7 @@ import {
 } from './zoneDerivedScanLists.ts';
 import { getAnytoneProfile, DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import { keepDmrTalkGroupsAndContacts } from '@core/import-export/dmrContactBanks.ts';
 
 export interface AnytonePreparedExport {
   assembled: AssembledBuild;
@@ -50,11 +51,13 @@ function carrierChannelEntity(carrier: SyntheticScanCarrier, projectId: string):
 
 /** Merge library + zone-derived scan lists, carrier channels, and wire context. */
 export function prepareAnytoneExportAssembly(
-  assembled: AssembledBuild,
+  sourceAssembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
   warnings: ExportWarning[] = [],
 ): AnytonePreparedExport {
+  // DMRTalkGroups / DMRDigitalContactList / RX lists are DMR-only; NXDN etc. stay out.
+  const assembled = keepDmrTalkGroupsAndContacts(sourceAssembled, warnings);
   const derived = deriveAnytoneZoneDerivedScanLists(assembled, library, options, warnings);
   const mergedScanLists = [...assembled.scanLists, ...derived.scanLists];
 

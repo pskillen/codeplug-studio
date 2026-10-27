@@ -187,3 +187,73 @@ describe('collectAnytoneExportWarnings contacts list (#1433)', () => {
     ).toBe(true);
   });
 });
+
+describe('Anytone CSV keeps only DMR talk groups and contacts (#1438)', () => {
+  const nxdnTg = { ...newTalkGroup(PROJECT_ID, 'NXDN Local', 1234, 'nxdn'), id: 'tg-nx' };
+  const nxdnContact = { ...newDigitalContact(PROJECT_ID, 'NX Carol', 4321, 'nxdn'), id: 'dc-nx' };
+
+  function nxdnLibrary(): LibrarySlice {
+    const base = libraryWith();
+    const channel = dmrChannel();
+    return {
+      ...base,
+      channels: [
+        {
+          ...channel,
+          modeProfiles: channel.modeProfiles.map((profile) =>
+            profile.mode === 'dmr'
+              ? { ...profile, contactRef: { kind: 'talkGroup' as const, id: nxdnTg.id } }
+              : profile,
+          ),
+        },
+      ],
+      talkGroups: [nxdnTg, tg],
+      digitalContacts: [nxdnContact, alice],
+      rxGroupLists: [
+        {
+          ...base.rxGroupLists[0]!,
+          members: [
+            { ref: { kind: 'talkGroup' as const, id: nxdnTg.id } },
+            { ref: { kind: 'talkGroup' as const, id: tg.id } },
+            { ref: { kind: 'digitalContact' as const, id: nxdnContact.id } },
+            { ref: { kind: 'digitalContact' as const, id: alice.id } },
+          ],
+        },
+      ],
+    };
+  }
+
+  it('writes no NXDN row to DMRTalkGroups, DMRDigitalContactList or the RX list', () => {
+    const files = exportFiles(nxdnLibrary());
+    expect(column(files['DMRTalkGroups.CSV'], 'Radio ID')).toEqual(['950', '2351234']);
+    expect(column(files['DMRDigitalContactList.CSV'], 'Radio ID')).toEqual(['2351234']);
+    expect(column(files['DMRReceiveGroupCallList.CSV'], 'Contact TG/DMR ID')).toEqual([
+      '950|2351234',
+    ]);
+  });
+
+  it('fans out only DMR RX members and writes an NXDN TX talk group as no contact', () => {
+    const csv = exportFiles(nxdnLibrary())['Channel.CSV'];
+    // RX-list fan-out rows (DMR members only), then the scratch row with the channel's own contact.
+    expect(column(csv, 'Contact/Talk Group')).toEqual(['Scotland', 'Alice', '']);
+    expect(column(csv, 'Contact/Talk Group TG/DMR ID')).toEqual(['950', '2351234', '']);
+  });
+
+  it('warns once with the skipped counts', () => {
+    const library = nxdnLibrary();
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: { sections: [{ kind: 'zoneGrouping' as const, zones: [] }] },
+    };
+    const texts = collectAnytoneExportWarnings(assemble(build, library), library).map(
+      formatExportWarning,
+    );
+    expect(
+      texts.filter((t) =>
+        t.includes(
+          "1 talk group(s) and 1 contact(s) are not DMR (e.g. NXDN) and were left out of the radio's DMR contact lists and RX group lists; 1 DMR channel(s) that call one are written with no TX contact",
+        ),
+      ),
+    ).toHaveLength(1);
+  });
+});
