@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { RangeChangeJournalEntry } from '@integrations/persistence/rangeChangeJournal.ts';
 import {
+  removeRangeChangeJournalEntry,
   unfinishedRangeChanges,
   useRangeChangeJournal,
 } from '../../state/atD890RangeChangeJournal.ts';
@@ -9,7 +11,7 @@ import {
   COPY,
   rangeCaption,
 } from '../../routes/builds/danger-zone/rangeChange/rangeChangeCopy.ts';
-import { Button } from '../v2/index.ts';
+import { Button, ConfirmModal } from '../v2/index.ts';
 import classes from './RangeChangeBanner.module.css';
 
 export interface RangeChangeBannerProps {
@@ -33,6 +35,7 @@ export default function RangeChangeBanner({ buildId, serial }: RangeChangeBanner
     (e) => serial === undefined || e.serial === serial,
   );
   const navigate = useNavigate();
+  const [forgetting, setForgetting] = useState<string | null>(null);
   if (entries.length === 0) return null;
   return (
     <div className={classes.list}>
@@ -54,8 +57,30 @@ export default function RangeChangeBanner({ buildId, serial }: RangeChangeBanner
           >
             {e.stage === 'restored' ? COPY.banner.check : COPY.banner.resume}
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            data-testid="range-change-dismiss"
+            onClick={() => setForgetting(e.serial)}
+          >
+            {COPY.banner.dismiss}
+          </Button>
         </div>
       ))}
+      <ConfirmModal
+        open={forgetting !== null}
+        onClose={() => setForgetting(null)}
+        onConfirm={() => {
+          if (forgetting !== null) removeRangeChangeJournalEntry(forgetting);
+          setForgetting(null);
+        }}
+        title={COPY.banner.dismissTitle}
+        confirmLabel={COPY.banner.dismissConfirm}
+        cancelLabel={COPY.banner.dismissCancel}
+        tone="destructive"
+      >
+        <p>{COPY.banner.dismissBody}</p>
+      </ConfirmModal>
     </div>
   );
 }

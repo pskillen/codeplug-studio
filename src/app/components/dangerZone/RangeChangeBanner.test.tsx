@@ -91,4 +91,22 @@ describe('RangeChangeBanner', () => {
     );
     expect(screen.getByRole('button', { name: 'Check' })).toBeInTheDocument();
   });
+
+  it('Dismiss this record asks first, says what is lost, and forgets only on confirm', async () => {
+    seed([entry({ stage: 'changed' })]);
+    renderBanner();
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss this record' }));
+    expect(await screen.findByText(/The radio isn't touched/)).toBeInTheDocument();
+    // Keep it: the record stays.
+    fireEvent.click(screen.getByRole('button', { name: 'Keep it' }));
+    expect(screen.getByTestId('range-change-banner')).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(RANGE_CHANGE_JOURNAL_KEY)!)).toHaveLength(1);
+    // Forget it: banner and record are gone.
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss this record' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Forget this record' }));
+    expect(screen.queryByTestId('range-change-banner')).toBeNull();
+    expect(window.localStorage.getItem(RANGE_CHANGE_JOURNAL_KEY) ?? '[]').not.toContain(
+      'TESTSERIAL01',
+    );
+  });
 });

@@ -282,6 +282,12 @@ export const COPY = {
       `Unfinished range change. ${name} (${serial}) was changed to ${range} at ${time} and restored, but not checked.`,
     resume: 'Resume',
     check: 'Check',
+    dismiss: 'Dismiss this record',
+    dismissTitle: 'Forget this range change?',
+    dismissBody:
+      'Studio will forget its record of this change: this banner and Resume go away. The radio isn\'t touched, so if it is still wiped it stays wiped, and Studio can no longer finish the change for you from this record. Your backup files are not deleted, and you can still use "Finish a range change from a backup file".',
+    dismissConfirm: 'Forget this record',
+    dismissCancel: 'Keep it',
   },
 
   footer: {
