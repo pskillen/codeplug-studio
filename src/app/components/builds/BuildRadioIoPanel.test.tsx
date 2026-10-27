@@ -12,6 +12,11 @@ import { BuildLayoutProvider } from '../../routes/builds/BuildLayoutContext.tsx'
 import BuildRadioIoPanel from './BuildRadioIoPanel.tsx';
 import * as radioIoSession from '../../services/radioIoSession.ts';
 import { persistence } from '../../state/persistence.ts';
+import {
+  AtD890PendingUnitsError,
+  findAtD890PendingBlock,
+  recordAtD890PendingUnits,
+} from '@integrations/radio-io/radios/at-d890uv/pendingUnits.ts';
 
 vi.mock('../../lib/loadLibrarySlice.ts', () => ({
   loadLibrarySlice: vi.fn(async () => ({
@@ -354,6 +359,65 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(line));
     expect(writeText.mock.calls[0]![0]).toMatch(/^\[d890-write-timing\] /);
     expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
+  });
+
+  it('Done says so when the clipboard refuses the timings (#1406)', async () => {
+    const line = '[d890-write-timing] {"profileId":"radio-io-at-d890uv","rows":[]}';
+    vi.mocked(radioIoSession.uploadPreparedRadioWrite).mockImplementation(
+      async (_s, _e, _i, opts) => {
+        await opts?.beforeTransmit?.({
+          identity,
+          channelCount: 3,
+          plan: [{ label: 'Upload', weight: 4000 }],
+          identityOnly: false,
+        });
+        return { timings: line };
+      },
+    );
+    const writeText = vi.fn<(text: string) => Promise<void>>(async () => {
+      throw new Error('denied');
+    });
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    openStepper('radio-io-at-d890uv');
+    await connect();
+    fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug' }));
+    await screen.findByText('Codeplug written (3 channels).');
+    fireEvent.click(screen.getByRole('button', { name: 'Copy write timings' }));
+    expect(await screen.findByRole('button', { name: 'Copy failed' })).toBeInTheDocument();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('a D890 write blocked by pending units offers a confirmed clear action (#1406)', async () => {
+    recordAtD890PendingUnits('SN-A', [0x0348_0000, 0x0700_0000]);
+    const block = findAtD890PendingBlock('SN-A')!;
+    vi.mocked(radioIoSession.uploadPreparedRadioWrite).mockImplementation(
+      async (_s, _e, _i, opts) => {
+        await opts?.beforeTransmit?.({
+          identity,
+          channelCount: 3,
+          plan: [{ label: 'Upload', weight: 4000 }],
+          identityOnly: false,
+        });
+        throw new AtD890PendingUnitsError(block);
+      },
+    );
+    openStepper('radio-io-at-d890uv');
+    await connect();
+    fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug' }));
+    const error = await screen.findByTestId('write-stepper-error');
+    expect(error).toHaveTextContent('Codeplug and Digital contacts ticked');
+    const clear = 'I have rewritten this radio: clear warning';
+    fireEvent.click(screen.getByRole('button', { name: clear }));
+    // Nothing is cleared until the second, explicit click.
+    expect(findAtD890PendingBlock('SN-A')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Keep the warning' }));
+    expect(findAtD890PendingBlock('SN-A')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: clear }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, I have rewritten this radio' }));
+    expect(findAtD890PendingBlock('SN-A')).toBeNull();
+    await waitFor(() => expect(screen.queryByTestId('write-stepper-error')).toBeNull());
   });
 
   it('D890 keps need a new session: restart step, then Write keps (#1406)', async () => {

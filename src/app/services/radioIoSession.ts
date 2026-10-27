@@ -843,119 +843,130 @@ export async function uploadPreparedRadioWrite(
   // Per-stage timings with frame counts; the Review pause is excluded (#1406).
   const timing = startAtD890WriteTiming(session, opts?.onProgress);
   const onProgress = timing ? timing.timeline.onProgress : opts?.onProgress;
-  const hydration = getRadioCloneHydration(egress);
-  session.descriptor.hydration.seedProtocolForUpload?.(
-    session.radio,
-    hydration ?? undefined,
-    opts?.organisation,
-    opts?.channels,
-  );
-  const resolved = await resolveRadioWriteImageForUpload(
-    session,
-    egress,
-    {
-      image,
-      channels: opts?.channels ?? [],
-      organisation: opts?.organisation ?? {},
-    },
-    { ...opts, onProgress },
-  );
-  setCachedImage(session, resolved);
-  // A flagged radio is refused at open; this is the backstop before the pause and any frame.
-  if (session.radio instanceof AtD890uvProtocol) session.radio.assertNoStunKillFlag();
-  const overrides = opts?.settingsOverrides ?? [];
-  const isAtD890 = session.radio instanceof AtD890uvProtocol;
-  const withOverrides: RadioWriteOrganisation = {
-    ...(opts?.organisation ?? {}),
-    ...(overrides.length > 0 ? { atD890SettingsOverrides: overrides } : {}),
-  };
-  if (isAtD890 && overrides.length > 0) {
-    // Resolve now so a refused override (unknown field, duplicate, out of range) fails before the
-    // pause and before any frame.
-    atD890UploadBankIntentFromOrganisation(withOverrides, opts?.channels);
-  }
-  // Pack and validate the contacts before the pause and before the first W (#1406).
-  const isD890 = isAtD890RadioIoProfileId(egress.profileId);
-  const contactWrite = isD890
-    ? prepareAtD890DigitalContactsForWrite(opts?.organisation?.digitalContacts)
-    : undefined;
-  if (opts?.beforeTransmit) {
-    timing?.timeline.markPauseStart();
-    const result = await opts.beforeTransmit({
-      identity: radioWriteIdentityFromSession(session),
-      channelCount: opts.channels?.length ?? 0,
-      identityOnly: !writeReadsBeforeTransmit(session),
-      plan: planForOperation(session.descriptor, 'write', {
-        prepared: { channels: opts.channels ?? [], organisation: opts.organisation ?? {} },
-        session,
-        ...(opts.parts ? { parts: opts.parts } : {}),
-      }),
-      ...(session.radio instanceof AtD890uvProtocol
-        ? { atD890: buildAtD890PreTransmitContext(session.radio, withOverrides) }
-        : {}),
-    });
-    timing?.timeline.markPauseEnd();
-    const outcome = atD890PauseOutcome(result, overrides);
-    if (outcome.decision === 'cancel') throw new RadioWriteCancelledError();
-    if (outcome.decision === 'apply' && isAtD890 && outcome.overrides.length > 0) {
-      const chosen: RadioWriteOrganisation = {
-        ...(opts?.organisation ?? {}),
-        atD890SettingsOverrides: outcome.overrides,
-      };
-      // The radio re-forces its language from LocalInfo at every load: refuse one its region forbids.
-      const languageCache = session.radio.getDownloadCache();
-      // Fail closed: a language change with no LocalInfo in the cache cannot be checked against the lock.
-      if (
-        outcome.overrides.some((o) => o.fieldId === 'language') &&
-        !languageCache?.blocks.has(alignDownAtD890Address(D890_MAP.LocalInfo))
-      ) {
-        throw new RadioWriteBlockedError(
-          "Studio can't check this radio's language lock because its LocalInfo was not read; the Language change was not written.",
+  try {
+    const hydration = getRadioCloneHydration(egress);
+    session.descriptor.hydration.seedProtocolForUpload?.(
+      session.radio,
+      hydration ?? undefined,
+      opts?.organisation,
+      opts?.channels,
+    );
+    const resolved = await resolveRadioWriteImageForUpload(
+      session,
+      egress,
+      {
+        image,
+        channels: opts?.channels ?? [],
+        organisation: opts?.organisation ?? {},
+      },
+      { ...opts, onProgress },
+    );
+    setCachedImage(session, resolved);
+    // A flagged radio is refused at open; this is the backstop before the pause and any frame.
+    if (session.radio instanceof AtD890uvProtocol) session.radio.assertNoStunKillFlag();
+    const overrides = opts?.settingsOverrides ?? [];
+    const isAtD890 = session.radio instanceof AtD890uvProtocol;
+    const withOverrides: RadioWriteOrganisation = {
+      ...(opts?.organisation ?? {}),
+      ...(overrides.length > 0 ? { atD890SettingsOverrides: overrides } : {}),
+    };
+    if (isAtD890 && overrides.length > 0) {
+      // Resolve now so a refused override (unknown field, duplicate, out of range) fails before the
+      // pause and before any frame.
+      atD890UploadBankIntentFromOrganisation(withOverrides, opts?.channels);
+    }
+    // Pack and validate the contacts before the pause and before the first W (#1406).
+    const isD890 = isAtD890RadioIoProfileId(egress.profileId);
+    const contactWrite = isD890
+      ? prepareAtD890DigitalContactsForWrite(opts?.organisation?.digitalContacts)
+      : undefined;
+    if (opts?.beforeTransmit) {
+      timing?.timeline.markPauseStart();
+      const result = await opts.beforeTransmit({
+        identity: radioWriteIdentityFromSession(session),
+        channelCount: opts.channels?.length ?? 0,
+        identityOnly: !writeReadsBeforeTransmit(session),
+        plan: planForOperation(session.descriptor, 'write', {
+          prepared: { channels: opts.channels ?? [], organisation: opts.organisation ?? {} },
+          session,
+          ...(opts.parts ? { parts: opts.parts } : {}),
+        }),
+        ...(session.radio instanceof AtD890uvProtocol
+          ? { atD890: buildAtD890PreTransmitContext(session.radio, withOverrides) }
+          : {}),
+      });
+      timing?.timeline.markPauseEnd();
+      const outcome = atD890PauseOutcome(result, overrides);
+      if (outcome.decision === 'cancel') throw new RadioWriteCancelledError();
+      if (outcome.decision === 'apply' && isAtD890 && outcome.overrides.length > 0) {
+        const chosen: RadioWriteOrganisation = {
+          ...(opts?.organisation ?? {}),
+          atD890SettingsOverrides: outcome.overrides,
+        };
+        // The radio re-forces its language from LocalInfo at every load: refuse one its region forbids.
+        const languageCache = session.radio.getDownloadCache();
+        // Fail closed: a language change with no LocalInfo in the cache cannot be checked against the lock.
+        if (
+          outcome.overrides.some((o) => o.fieldId === 'language') &&
+          !languageCache?.blocks.has(alignDownAtD890Address(D890_MAP.LocalInfo))
+        ) {
+          throw new RadioWriteBlockedError(
+            "Studio can't check this radio's language lock because its LocalInfo was not read; the Language change was not written.",
+          );
+        }
+        const languageProblem = atD890LanguageLockProblem(
+          outcome.overrides,
+          languageLockFromLocalInfo(
+            getCacheBytes(
+              languageCache ?? { blocks: new Map<number, Uint8Array>() },
+              D890_MAP.LocalInfo,
+              D890_MAP.LocalInfoLength,
+            ),
+          ),
+        );
+        if (languageProblem) throw new RadioWriteBlockedError(languageProblem);
+        // Resolve again: the overrides may have changed at the pause. Refused ones fail here, before upload.
+        atD890UploadBankIntentFromOrganisation(chosen, opts?.channels);
+        session.descriptor.hydration.seedProtocolForUpload?.(
+          session.radio,
+          hydration ?? undefined,
+          chosen,
+          opts?.channels,
         );
       }
-      const languageProblem = atD890LanguageLockProblem(
-        outcome.overrides,
-        languageLockFromLocalInfo(
-          getCacheBytes(
-            languageCache ?? { blocks: new Map<number, Uint8Array>() },
-            D890_MAP.LocalInfo,
-            D890_MAP.LocalInfoLength,
-          ),
-        ),
-      );
-      if (languageProblem) throw new RadioWriteBlockedError(languageProblem);
-      // Resolve again: the overrides may have changed at the pause. Refused ones fail here, before upload.
-      atD890UploadBankIntentFromOrganisation(chosen, opts?.channels);
-      session.descriptor.hydration.seedProtocolForUpload?.(
-        session.radio,
-        hydration ?? undefined,
-        chosen,
-        opts?.channels,
-      );
     }
-  }
-  declareAtD890ContactUnitsForWrite(session, contactWrite);
-  await session.radio.upload(resolved, {
-    onProgress,
-    signal: opts?.signal,
-  });
-  if (isD890) {
-    await writePreparedAtD890DigitalContactsForWrite(session, contactWrite, {
-      ...opts,
+    declareAtD890ContactUnitsForWrite(session, contactWrite);
+    await session.radio.upload(resolved, {
       onProgress,
+      signal: opts?.signal,
     });
+    if (isD890) {
+      await writePreparedAtD890DigitalContactsForWrite(session, contactWrite, {
+        ...opts,
+        onProgress,
+      });
+    }
+    const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
+    const warnings = openGd77WriteWarnings(session);
+    const timings = timing?.finish({
+      profileId: egress.profileId,
+      contacts: opts?.organisation?.digitalContacts?.length ?? 0,
+    });
+    return {
+      ...(captured ? { writeVerifyPending: captured } : {}),
+      ...(warnings.length ? { warnings } : {}),
+      ...(timings ? { timings } : {}),
+    };
+  } catch (err) {
+    // A failed or cancelled Write keeps its partial timings in the console (#1406).
+    timing?.finish({
+      profileId: egress.profileId,
+      contacts: opts?.organisation?.digitalContacts?.length ?? 0,
+      outcome:
+        err instanceof RadioWriteCancelledError || opts?.signal?.aborted ? 'aborted' : 'failed',
+    });
+    throw err;
   }
-  const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
-  const warnings = openGd77WriteWarnings(session);
-  const timings = timing?.finish({
-    profileId: egress.profileId,
-    contacts: opts?.organisation?.digitalContacts?.length ?? 0,
-  });
-  return {
-    ...(captured ? { writeVerifyPending: captured } : {}),
-    ...(warnings.length ? { warnings } : {}),
-    ...(timings ? { timings } : {}),
-  };
 }
 
 /** Cross-session write verify — delegates to descriptor {@link WriteVerifyHooks}. */

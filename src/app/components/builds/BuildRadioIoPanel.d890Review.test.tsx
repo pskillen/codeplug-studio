@@ -50,6 +50,22 @@ vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
   };
 });
 
+const kepsWrite = vi.hoisted(() => vi.fn());
+
+vi.mock('../../services/satelliteKepsWriteAdapters.ts', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../../services/satelliteKepsWriteAdapters.ts')>();
+  return {
+    ...actual,
+    hasSatelliteKepsWriteAdapter: (profileId: string) =>
+      profileId === 'radio-io-at-d890uv' || actual.hasSatelliteKepsWriteAdapter(profileId),
+    getSatelliteKepsWriteAdapter: (profileId: string) =>
+      profileId === 'radio-io-at-d890uv'
+        ? kepsWrite
+        : actual.getSatelliteKepsWriteAdapter(profileId),
+  };
+});
+
 vi.mock('../../services/radioIoAtD890SettingsWrite.ts', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('../../services/radioIoAtD890SettingsWrite.ts')>();
@@ -412,6 +428,33 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Write settings' }));
     await waitFor(() => expect(settingsWrite.writeAtD890SettingsOnly).toHaveBeenCalledTimes(1));
     expect(results[0]).toMatchObject({ decision: 'apply' });
+    clearAllOverrides(build.id);
+  });
+
+  it('settings alone + keps: the restart step, then Write keps in a new session (#1406)', async () => {
+    kepsWrite.mockReset();
+    vi.mocked(settingsWrite.writeAtD890SettingsOnly).mockClear();
+    kepsWrite.mockResolvedValue({ written: 1 });
+    const build = renderPanel();
+    setRead(build.id, readOf(SERIAL));
+    setOverride(build.id, 'keyTone', keyToneOpposite());
+    await openStepper();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Codeplug' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Satellite keps' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Write settings + keps' }));
+    expect(await screen.findByTestId('write-stepper-restart-wait')).toBeInTheDocument();
+    // The settings-only session closed (END) before any keps frame.
+    expect(settingsWrite.writeAtD890SettingsOnly).toHaveBeenCalledTimes(1);
+    expect(kepsWrite).not.toHaveBeenCalled();
+    expect(radioIoSession.closeRadioSession).toHaveBeenCalledTimes(1);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.now() + 25_000);
+    const writeKeps = await screen.findByRole('button', { name: 'Write keps' });
+    await waitFor(() => expect(writeKeps).toBeEnabled(), { timeout: 3000 });
+    fireEvent.click(writeKeps);
+    await waitFor(() => expect(kepsWrite).toHaveBeenCalledTimes(1));
+    vi.useRealTimers();
     clearAllOverrides(build.id);
   });
 

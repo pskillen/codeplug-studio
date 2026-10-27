@@ -67,6 +67,7 @@ function checkLine(summary: WriteSummary): string {
 
 export function DoneBody({ config, view, actions }: StepProps) {
   const [timingsCopied, setTimingsCopied] = useState(false);
+  const [timingsCopyFailed, setTimingsCopyFailed] = useState(false);
   const summary = view.summary;
   if (!summary) return null;
   const who = summary.identity
@@ -137,10 +138,13 @@ export function DoneBody({ config, view, actions }: StepProps) {
               void navigator.clipboard
                 .writeText(text)
                 .then(() => setTimingsCopied(true))
-                .catch(() => undefined);
+                .catch(() => {
+                  console.warn('[d890-write-timing] clipboard write failed');
+                  setTimingsCopyFailed(true);
+                });
             }}
           >
-            {timingsCopied ? 'Copied' : 'Copy write timings'}
+            {timingsCopied ? 'Copied' : timingsCopyFailed ? 'Copy failed' : 'Copy write timings'}
           </Button>
         </div>
       ) : null}

@@ -20,7 +20,12 @@ export const D890_WRITE_TIMING_PREFIX = '[d890-write-timing] ';
 export interface AtD890WriteTiming {
   timeline: StageTimeline;
   /** Stop timing, log once to the console, and return the line (prefix plus JSON). */
-  finish(info: { profileId: string; contacts: number }): string;
+  finish(info: {
+    profileId: string;
+    contacts: number;
+    /** Omitted: `ok`. */
+    outcome?: 'ok' | 'failed' | 'aborted';
+  }): string;
 }
 
 /** `undefined` for any session that is not an AT-D890UV. */
@@ -35,10 +40,10 @@ export function startAtD890WriteTiming(
   });
   return {
     timeline,
-    finish({ profileId, contacts }) {
+    finish({ profileId, contacts, outcome = 'ok' }) {
       const line =
         D890_WRITE_TIMING_PREFIX +
-        JSON.stringify({ profileId, contacts, ...timeline.report(), untimed: ['END'] });
+        JSON.stringify({ profileId, contacts, outcome, ...timeline.report(), untimed: ['END'] });
       console.info(line);
       return line;
     },
