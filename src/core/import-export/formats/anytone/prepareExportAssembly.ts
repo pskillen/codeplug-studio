@@ -20,6 +20,7 @@ import {
 import { getAnytoneProfile, DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { keepDmrTalkGroupsAndContacts } from '@core/import-export/dmrContactBanks.ts';
+import { dropNxdnOnlyChannels } from './nxdnOnlyChannels.ts';
 
 export interface AnytonePreparedExport {
   assembled: AssembledBuild;
@@ -57,7 +58,11 @@ export function prepareAnytoneExportAssembly(
   warnings: ExportWarning[] = [],
 ): AnytonePreparedExport {
   // DMRTalkGroups / DMRDigitalContactList / RX lists are DMR-only; NXDN etc. stay out.
-  const assembled = keepDmrTalkGroupsAndContacts(sourceAssembled, warnings);
+  // The CSV has no NXDN columns we write: an NXDN-only channel (eligible on MM9PDY) is left out.
+  const assembled = dropNxdnOnlyChannels(
+    keepDmrTalkGroupsAndContacts(sourceAssembled, warnings),
+    warnings,
+  );
   const derived = deriveAnytoneZoneDerivedScanLists(assembled, library, options, warnings);
   const mergedScanLists = [...assembled.scanLists, ...derived.scanLists];
 
