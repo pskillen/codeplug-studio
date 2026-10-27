@@ -905,6 +905,41 @@ describe('previewWireRows', () => {
       });
     }
 
+    for (const profileId of [
+      'anytone-at-d890uv',
+      'radio-io-at-d890uv',
+      'radio-io-at-d890uv-mm9pdy',
+    ] as const) {
+      it(`keeps the DMR name plain when an NXDN entity shares it (${profileId})`, () => {
+        const clashTg = { ...newTalkGroup(projectId, 'Same', 1234, 'nxdn'), id: 'tg-clash-nx' };
+        const clashDmrTg = { ...newTalkGroup(projectId, 'Same', 91), id: 'tg-clash-dmr' };
+        const clashContact = {
+          ...newDigitalContact(projectId, 'Same Op', 4321, 'nxdn'),
+          id: 'dc-clash-nx',
+        };
+        const clashDmrContact = {
+          ...newDigitalContact(projectId, 'Same Op', 2_351_234),
+          id: 'dc-clash-dmr',
+        };
+        const clashLibrary = {
+          ...library,
+          talkGroups: [clashTg, clashDmrTg],
+          digitalContacts: [clashContact, clashDmrContact],
+        };
+        const build = newFormatBuild(projectId, profileId);
+        const tgRow = previewWireRows(build, clashLibrary, 'talkGroup').find(
+          (row) => row.libraryEntityId === clashDmrTg.id,
+        );
+        expect(tgRow?.effectiveWireName).toBe('Same');
+        expect(tgRow?.remediation).toBe('none');
+        const contactRow = previewWireRows(build, clashLibrary, 'contact').find(
+          (row) => row.libraryEntityId === clashDmrContact.id,
+        );
+        expect(contactRow?.effectiveWireName).toBe('Same Op');
+        expect(contactRow?.remediation).toBe('none');
+      });
+    }
+
     it('leaves NXDN rows alone for other radios', () => {
       const build = newFormatBuild(projectId, 'opengd77-1701');
       const rows = previewWireRows(build, library, 'talkGroup');
