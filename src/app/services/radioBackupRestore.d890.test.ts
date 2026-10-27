@@ -5,6 +5,7 @@ import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protoc
 import {
   AT_D890_MAP_SIZE,
   AT_D890_NXDN,
+  AT_D890_NXDN_SETTINGS,
 } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { putCacheBytes } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
 import {
@@ -142,7 +143,8 @@ describe('openRadioBackupZip with NXDN regions (AT-D890)', () => {
       ...cache,
       blocks: new Map(
         [...cache.blocks].filter(
-          ([a]) => a < AT_D890_NXDN.RxGroupData || (a >= 0x04c0_0000 && a < AT_D890_NXDN.ListIndex),
+          ([a]) =>
+            a < AT_D890_NXDN_SETTINGS.Address || (a >= 0x04c0_0000 && a < AT_D890_NXDN.ListIndex),
         ),
       ),
     };
