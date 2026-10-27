@@ -207,6 +207,12 @@ describe('validateModeProfiles (NXDN)', () => {
   const nxdn = (patch: Record<string, unknown>) =>
     ({ ...defaultModeProfile('nxdn'), ...patch }) as ChannelModeProfile;
 
+  it('rejects the all-call ID 65535 as an NXDN unit ID', () => {
+    expect(validateModeProfiles([nxdn({ unitId: 65535 })])).toContain(
+      'NXDN unit ID must be 1–65519',
+    );
+  });
+
   it('rejects NXDN unit IDs outside 1-65519', () => {
     expect(validateModeProfiles([nxdn({ unitId: 0 })])).toContain('NXDN unit ID must be 1–65519');
     expect(validateModeProfiles([nxdn({ unitId: 65520 })])).toContain(

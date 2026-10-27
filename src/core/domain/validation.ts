@@ -131,16 +131,26 @@ export function validateZoneMemberRefs(
 /** NXDN common air interface unit and group ID range. */
 export const NXDN_ID_MIN = 1;
 export const NXDN_ID_MAX = 65519;
+/** NXDN all-call group ID: valid for a talk group only, never a contact or unit ID. */
+export const NXDN_ALL_CALL_ID = 65535;
 
 /**
  * Library-level check for a talk group or contact ID in a given mode.
- * Only NXDN has a range today; other modes return `null`.
+ * Only NXDN has a range today; other modes return `null`. `kind` defaults to the strict
+ * contact/unit range; a `talkGroup` may also be the all-call ID 65535.
  */
-export function validateDigitalIdForMode(mode: DigitalChannelMode, id: number): string | null {
-  if (mode === 'nxdn' && (!Number.isInteger(id) || id < NXDN_ID_MIN || id > NXDN_ID_MAX)) {
-    return `NXDN IDs are ${NXDN_ID_MIN}–${NXDN_ID_MAX}`;
+export function validateDigitalIdForMode(
+  mode: DigitalChannelMode,
+  id: number,
+  kind: 'talkGroup' | 'contact' = 'contact',
+): string | null {
+  if (mode !== 'nxdn') return null;
+  const inRange = Number.isInteger(id) && id >= NXDN_ID_MIN && id <= NXDN_ID_MAX;
+  if (kind === 'talkGroup') {
+    if (inRange || id === NXDN_ALL_CALL_ID) return null;
+    return `NXDN talk group IDs are ${NXDN_ID_MIN}–${NXDN_ID_MAX}, or ${NXDN_ALL_CALL_ID} for all-call`;
   }
-  return null;
+  return inRange ? null : `NXDN IDs are ${NXDN_ID_MIN}–${NXDN_ID_MAX}`;
 }
 
 /** The distinct modes of the talk groups and contacts in an RX group list (dangling members skipped). */

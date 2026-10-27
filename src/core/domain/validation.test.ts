@@ -66,6 +66,19 @@ describe('validateDigitalIdForMode', () => {
     expect(validateDigitalIdForMode('nxdn', 65519)).toBeNull();
   });
 
+  it('allows 65535 (all-call) for an NXDN talk group only', () => {
+    expect(validateDigitalIdForMode('nxdn', 65535, 'talkGroup')).toBeNull();
+    expect(validateDigitalIdForMode('nxdn', 65535, 'contact')).toBe('NXDN IDs are 1–65519');
+    expect(validateDigitalIdForMode('nxdn', 65535)).toBe('NXDN IDs are 1–65519');
+  });
+
+  it('refuses 65520 and 0 for an NXDN talk group, with the all-call hint', () => {
+    const msg = 'NXDN talk group IDs are 1–65519, or 65535 for all-call';
+    expect(validateDigitalIdForMode('nxdn', 65520, 'talkGroup')).toBe(msg);
+    expect(validateDigitalIdForMode('nxdn', 0, 'talkGroup')).toBe(msg);
+    expect(validateDigitalIdForMode('nxdn', 65520, 'contact')).toBe('NXDN IDs are 1–65519');
+  });
+
   it('leaves other modes unchecked', () => {
     expect(validateDigitalIdForMode('dmr', 0)).toBeNull();
     expect(validateDigitalIdForMode('dmr', 16777215)).toBeNull();
