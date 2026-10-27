@@ -234,3 +234,16 @@ describe('RadioWriteStepper — steps 4 to 6', () => {
     expect(actions.onClose).toHaveBeenCalled();
   });
 });
+
+describe('RadioWriteStepper — AT-D890 contacts hint (#1433)', () => {
+  it('says contacts ride with the codeplug and the part writes the ID database', () => {
+    renderStepper(
+      { parts: { codeplug: true, contacts: true, settings: false, keps: false } },
+      { separateLookupDatabaseNote: true },
+    );
+    expect(
+      screen.getByText(/Contacts always go to the radio's Contacts list with the codeplug/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/This part writes the radio's ID database/)).toBeInTheDocument();
+  });
+});

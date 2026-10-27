@@ -240,6 +240,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     },
     sharedContactBankNote: isOpenGd77RadioIoEgress(egress.profileId),
     sharedAddressBookNote: isDm32RadioIoProfileId(egress.profileId),
+    separateLookupDatabaseNote: isAtD890Write,
     kepsSummary:
       kepsCount != null
         ? `${kepsCount} ${kepsCount === 1 ? 'satellite' : 'satellites'}`

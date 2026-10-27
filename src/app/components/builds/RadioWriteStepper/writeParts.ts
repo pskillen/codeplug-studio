@@ -5,7 +5,7 @@
 
 export interface WriteParts {
   codeplug: boolean;
-  /** Digital contacts (D890 single-bank modes, DM-32 and OpenGD77 contact banks). */
+  /** Digital contacts (dual-bank radios: DM-32, OpenGD77, AT-D890). */
   contacts: boolean;
   /** Radio settings (D890 only; PR 4c). Never offered in this PR. */
   settings: boolean;
