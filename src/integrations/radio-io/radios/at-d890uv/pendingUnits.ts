@@ -177,6 +177,17 @@ export function findAtD890PendingBlock(serial: string): AtD890PendingBlock | nul
   return rec.radios[serial] ? blockFrom([serial], rec, false) : null;
 }
 
+/**
+ * The record of exactly one bucket, for the warning shown next to that radio's failure: `serial`
+ * is the radio's LocalInfo serial, or `''` when it could not be read (the unknown-radio bucket).
+ * Unlike {@link findAtD890PendingBlock} it never pulls in another bucket.
+ */
+export function findAtD890PendingBlockExact(serial: string): AtD890PendingBlock | null {
+  const rec = load();
+  const bucket = serial || AT_D890_UNKNOWN_RADIO;
+  return blockFrom([bucket], rec, bucket === AT_D890_UNKNOWN_RADIO);
+}
+
 /** The most recently recorded block anywhere, for the warning shown next to a failure. */
 export function findLatestAtD890PendingBlock(): AtD890PendingBlock | null {
   const rec = load();

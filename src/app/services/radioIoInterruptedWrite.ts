@@ -13,7 +13,7 @@ import {
   AtD890PendingUnitsError,
   clearAtD890PendingRadios,
   describeAtD890PendingUnits,
-  findLatestAtD890PendingBlock,
+  findAtD890PendingBlockExact,
   type AtD890PendingBlock,
 } from '@integrations/radio-io/radios/at-d890uv/pendingUnits.ts';
 
@@ -25,20 +25,30 @@ export interface InterruptedWriteNotice {
   block: AtD890PendingBlock;
 }
 
+/**
+ * `serial` is the LocalInfo serial of the radio whose Write failed (`''` when it could not be
+ * read). Only that radio's record is shown, so radio B's failure never carries radio A's warning
+ * or clear button; the unknown-radio record shows only when the serial was unreadable.
+ */
 export function interruptedWriteNotice(
   profileId: string,
   err: unknown,
+  serial: string,
 ): InterruptedWriteNotice | null {
   if (!isAtD890RadioIoProfileId(profileId)) return null;
   // The refusal's own message already carries the text.
   if (err instanceof AtD890PendingUnitsError) return { text: null, block: err.block };
-  const block = findLatestAtD890PendingBlock();
+  const block = findAtD890PendingBlockExact(serial);
   return block ? { text: describeAtD890PendingUnits(block), block } : null;
 }
 
 /** The warning to append to a failed Write's message, or `null` when the radio is unaffected. */
-export function interruptedWriteWarning(profileId: string, err: unknown): string | null {
-  return interruptedWriteNotice(profileId, err)?.text ?? null;
+export function interruptedWriteWarning(
+  profileId: string,
+  err: unknown,
+  serial: string,
+): string | null {
+  return interruptedWriteNotice(profileId, err, serial)?.text ?? null;
 }
 
 /** The operator confirmed the radio has been rewritten: lift the warning and the block. */

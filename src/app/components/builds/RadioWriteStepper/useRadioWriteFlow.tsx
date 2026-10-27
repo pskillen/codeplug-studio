@@ -66,6 +66,7 @@ import {
   interruptedWriteNotice,
 } from '../../../services/radioIoInterruptedWrite.ts';
 import type { AtD890PendingBlock } from '@integrations/radio-io/radios/at-d890uv/pendingUnits.ts';
+import { getAtD890SessionSerial } from '@integrations/radio-io/radios/at-d890uv/programSession.ts';
 import { atD890SettingsReadFromSnapshot } from '../../../services/radioIoAtD890SettingsRead.ts';
 import { writeAtD890SettingsOnly } from '../../../services/radioIoAtD890SettingsWrite.ts';
 import {
@@ -849,6 +850,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   }
 
   async function onRunError(err: unknown): Promise<void> {
+    // The failed radio's serial, before the session (and its pipe) is released.
+    const failedSerial =
+      isAtD890 && sessionRef.current ? getAtD890SessionSerial(sessionRef.current.pipe) : '';
     await releaseSession().catch(() => undefined);
     decisionRef.current = null;
     if (err instanceof ReviewSettingsRequestedError) {
@@ -870,7 +874,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     }
     setBusyNotify(false);
     // A D890 Write interrupted after whole units were sent leaves them pending on the radio (#1406).
-    const notice = interruptedWriteNotice(egress.profileId, err);
+    const notice = interruptedWriteNotice(egress.profileId, err, failedSerial);
     setPendingBlock(notice?.block ?? null);
     setError(notice?.text ? `${errorMessage(err)} ${notice.text}` : errorMessage(err));
     // Before the first frame, a failure is recoverable by reading again.

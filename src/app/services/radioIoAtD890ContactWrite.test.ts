@@ -324,16 +324,17 @@ describe('AT-D890 interrupted Write leaves units pending (#1406)', () => {
     expect(pending).not.toContain(0x0708_0000); // contact order unit: the NAK hit its first frame
     expect(pending.length).toBeGreaterThan(1); // the codeplug units too
     // The failure carries the warning; a refusal does not repeat it; other radios get none.
-    expect(interruptedWriteWarning(egress.profileId, new Error('x'))).toMatch(
+    expect(interruptedWriteWarning(egress.profileId, new Error('x'), SERIAL)).toMatch(
       /Codeplug and Digital contacts ticked/,
     );
     expect(
       interruptedWriteWarning(
         egress.profileId,
         new AtD890PendingUnitsError(findAtD890PendingBlock(SERIAL)!),
+        SERIAL,
       ),
     ).toBeNull();
-    expect(interruptedWriteWarning('radio-io-dm32uv', new Error('x'))).toBeNull();
+    expect(interruptedWriteWarning('radio-io-dm32uv', new Error('x'), SERIAL)).toBeNull();
   });
 
   it('a failure before the second unit records nothing', async () => {
@@ -390,13 +391,14 @@ describe('AT-D890 interrupted Write leaves units pending (#1406)', () => {
 
   it('a failure carries the clear action behind the warning, and clearing lifts the block', async () => {
     await interruptedWrite();
-    const notice = interruptedWriteNotice(egress.profileId, new Error('x'))!;
+    const notice = interruptedWriteNotice(egress.profileId, new Error('x'), SERIAL)!;
     expect(notice.text).toMatch(/clear the warning/);
     expect(notice.block.radios).toEqual([SERIAL]);
     // A refusal carries the same record without repeating the text.
     const refusal = interruptedWriteNotice(
       egress.profileId,
       new AtD890PendingUnitsError(notice.block),
+      SERIAL,
     )!;
     expect(refusal.text).toBeNull();
     expect(refusal.block.units).toEqual(notice.block.units);
