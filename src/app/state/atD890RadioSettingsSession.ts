@@ -177,6 +177,14 @@ export function setRead(buildId: string, read: AtD890RadioSettingsRead): void {
 }
 
 /**
+ * Forget the stored read of a radio (its settings were wiped and restored, so the read is stale).
+ * Does nothing when the stored read is for another serial.
+ */
+export function clearReadForSerial(buildId: string, serial: string): void {
+  update(buildId, (s) => (s.read && s.read.serial === serial ? { ...s, read: undefined } : s));
+}
+
+/**
  * Every v1 field the radio holds with a value Studio offers becomes an override. Fields with no
  * decoded value are left as they are. Never called automatically.
  */

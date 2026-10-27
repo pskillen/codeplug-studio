@@ -15,6 +15,8 @@ describe('DANGER_ZONE_DECISIONS', () => {
       // Q7 (no prod gate) is the absence of any gate: see gate.test.ts and registry.test.ts.
       unlistedCodes: { codes: [6, 9, 12, 15], policy: 'allow-with-scary-warning' }, // Q8
       finalCheckAutomatic: false, // Q9
+      restartCountdownSeconds: 60, // RT-2
+      programErrorAdvice: 'stay-connected', // RT-8
     });
   });
 });

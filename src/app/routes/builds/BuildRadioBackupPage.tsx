@@ -29,11 +29,13 @@ import {
 } from '../../services/radioIoSession.ts';
 import {
   assertRestoreIdentity,
+  atD890RangeMismatch,
   backupLiveRadioSession,
   defaultRestorableRegionIds,
   descriptorSupportsRestore,
   downloadRadioBackupZip,
   openRadioBackupZip,
+  RESTORE_RANGE_MISMATCH_NOTE,
   restoreRadioBackup,
   type RadioBackupSession,
 } from '../../services/radioBackupRestore.ts';
@@ -51,6 +53,8 @@ import {
   useBackupsThisSession,
   type RadioBackupThisSession,
 } from '../../state/radioSessionBackups.ts';
+import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import RangeChangeBanner from '../../components/dangerZone/RangeChangeBanner.tsx';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 
 function coverageCopy(coverage: RadioBackupSession['manifest']['coverage']): string {
@@ -72,6 +76,11 @@ function BackupRadioLabel({ backup }: { backup: RadioBackupThisSession }) {
       {secondary ? (
         <Text size="xs" c="dimmed">
           {secondary}
+        </Text>
+      ) : null}
+      {backup.note ? (
+        <Text size="xs" c="dimmed">
+          {backup.note}
         </Text>
       ) : null}
     </>
@@ -99,6 +108,8 @@ export default function BuildRadioBackupPage() {
   const [selectedRegionIds, setSelectedRegionIds] = useState<ReadonlySet<string>>(new Set());
   const [vital, setVital] = useState<AtD890VitalSession | null>(null);
   const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
+  /** The connected D890's range differs from the zip's: every restorable region is restored together. */
+  const [rangeMismatch, setRangeMismatch] = useState(false);
   const [restoreIdentity, setRestoreIdentity] = useState<{
     label: string;
     serial?: string;
@@ -291,6 +302,12 @@ export default function BuildRadioBackupPage() {
         signal: abortRef.current!.signal,
       });
       setRestoreIdentity(identity);
+      const live = sessionRef.current;
+      const mismatch =
+        live?.radio instanceof AtD890uvProtocol &&
+        atD890RangeMismatch(backup, live.radio.getIdentBandCode());
+      setRangeMismatch(mismatch);
+      if (mismatch) setSelectedRegionIds(new Set(defaultRestorableRegionIds(backup.manifest)));
       setBusy(false);
       setProgress(null);
       setRestoreConfirmOpen(true);
@@ -308,6 +325,7 @@ export default function BuildRadioBackupPage() {
   function handleCancelRestoreConfirm(): void {
     setRestoreConfirmOpen(false);
     setRestoreIdentity(null);
+    setRangeMismatch(false);
     void releaseSession();
   }
 
@@ -321,7 +339,9 @@ export default function BuildRadioBackupPage() {
         sessionRef.current,
         { manifest: backup.manifest, image: backup.image },
         {
-          regionIds: [...selectedRegionIds],
+          regionIds: rangeMismatch
+            ? defaultRestorableRegionIds(backup.manifest)
+            : [...selectedRegionIds],
           onProgress,
           signal: abortRef.current!.signal,
         },
@@ -377,6 +397,7 @@ export default function BuildRadioBackupPage() {
           </Alert>
         ) : null}
         {error ? <Alert color="red">{error}</Alert> : null}
+        {d890Model ? <RangeChangeBanner buildId={build.id} /> : null}
 
         {d890Model ? (
           <AtD890VitalBackupPanel
@@ -512,8 +533,8 @@ export default function BuildRadioBackupPage() {
                         {region.restoreRole === 'restorable' ? (
                           <Group gap="xs">
                             <Checkbox
-                              checked={selectedRegionIds.has(region.id)}
-                              disabled={busy || !restoreAvailable}
+                              checked={rangeMismatch || selectedRegionIds.has(region.id)}
+                              disabled={busy || !restoreAvailable || rangeMismatch}
                               onCheckedChange={(checked) =>
                                 toggleRestorableRegion(region.id, checked)
                               }
@@ -598,6 +619,11 @@ export default function BuildRadioBackupPage() {
               <Text size="sm" fw={600}>
                 Radio: {restoreIdentity?.label ?? descriptor?.label ?? '—'}
               </Text>
+              {rangeMismatch ? (
+                <Text size="sm" fw={600} data-testid="restore-range-mismatch">
+                  {RESTORE_RANGE_MISMATCH_NOTE}
+                </Text>
+              ) : null}
               {restoreIdentity?.serial || backup.manifest.serial ? (
                 <Text size="sm" fw={600}>
                   Serial: {restoreIdentity?.serial ?? backup.manifest.serial}

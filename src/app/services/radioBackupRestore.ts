@@ -49,6 +49,10 @@ import {
   OPENGD77_BACKUP_USER_DATABASE_LABEL,
 } from '@integrations/radio-io/radios/opengd77/backupRestoreRoles.ts';
 import { OPENUV380_USER_DB_HEADER_ABS } from '@integrations/radio-io/radios/opengd77/constants.ts';
+import {
+  atD890MaintenanceUnlocked,
+  sanitiseAtD890RangeCode,
+} from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
 import { readAtD890ConnectedRadioIdentity } from './radioIoSession.ts';
 
 export type RadioBackupSession = {
@@ -497,3 +501,33 @@ export async function restoreRadioBackup(
     signal: opts?.signal,
   });
 }
+
+/**
+ * The frequency range a D890 backup was taken on, as the radio would enforce it (above 18 reads as 0, and 14
+ * without the `890#` unlock reads as 0). `undefined` when the archive holds no LocalInfo.
+ */
+export function atD890ArchiveRangeCode(archive: {
+  manifest: RadioBackupManifestV1;
+  image: MemoryMap;
+}): number | undefined {
+  if (!archive.manifest.regions.some((r) => r.id === 'local-info')) return undefined;
+  if (archive.image.size < D890_MAP.LocalInfo + D890_MAP.LocalInfoLength) return undefined;
+  const li = archive.image.get(D890_MAP.LocalInfo, D890_MAP.LocalInfoLength);
+  return sanitiseAtD890RangeCode(li[0x03]!, atD890MaintenanceUnlocked(li));
+}
+
+/**
+ * True when the connected D890's range (the sanitised code from its ident) differs from the one the archive was
+ * taken on. Such a radio was wiped by the range change, so Restore must write every restorable region together:
+ * the settings alone onto the still-default codeplug would stop the radio starting.
+ */
+export function atD890RangeMismatch(
+  archive: { manifest: RadioBackupManifestV1; image: MemoryMap },
+  liveIdentCode: number,
+): boolean {
+  const zipCode = atD890ArchiveRangeCode(archive);
+  return zipCode !== undefined && zipCode !== liveIdentCode;
+}
+
+export const RESTORE_RANGE_MISMATCH_NOTE =
+  "This radio's range has changed since the backup, so Studio restores everything together. Restoring settings alone would stop the radio starting.";

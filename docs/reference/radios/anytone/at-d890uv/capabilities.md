@@ -17,7 +17,7 @@ Radio settings: v1 fields per [optional-settings.md](optional-settings.md) (Web 
 
 Inclusive MHz bands used when filtering build lists and export ([#612](https://github.com/pskillen/codeplug-studio/issues/612)). See [channel-eligibility.md](../../../../features/builds/channel-eligibility.md).
 
-The radio's own range code (LocalInfo `+0x03`) decides what it will transmit on; how Studio changes it is in [band-code.md — Changing the range](band-code.md#changing-the-range).
+The radio's own range code (LocalInfo `+0x03`) decides what it will transmit on; how Studio changes it is in [band-code.md — Changing the range](band-code.md#changing-the-range). Studio can change it from the Danger zone's Change frequency range wizard (pre-prod; [danger-zone.md](../../../../features/radio-read-write/danger-zone.md)).
 
 | Band (MHz) | Modes   | TX                                      |
 | ---------- | ------- | --------------------------------------- |

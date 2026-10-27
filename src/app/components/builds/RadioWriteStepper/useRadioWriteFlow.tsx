@@ -43,6 +43,7 @@ import type {
   WriteVerifyPendingPayload,
   WriteVerifyResult,
 } from '@integrations/radio-io/writeVerify.ts';
+import { useRestartCountdown } from '../../radio-io/useRestartCountdown.ts';
 import { loadLibrarySlice } from '../../../lib/loadLibrarySlice.ts';
 import { persistence } from '../../../state/persistence.ts';
 import {
@@ -241,7 +242,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const [identity, setIdentity] = useState<RadioIdentityView | null>(null);
   const [review, setReview] = useState<WriteReviewView | null>(null);
   const [writeFinished, setWriteFinished] = useState(false);
-  const [restartSecondsLeft, setRestartSecondsLeft] = useState(0);
+  const restartCountdown = useRestartCountdown();
+  const restartSecondsLeft = restartCountdown.secondsLeft;
   const [checkStatus, setCheckStatus] = useState<CheckStatus>('none');
   const [checkResult, setCheckResult] = useState<WriteVerifyResult | null>(null);
   const [kepsAfterRestart, setKepsAfterRestart] =
@@ -268,7 +270,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const checkResultRef = useRef<WriteVerifyResult | null>(null);
   const kepsPendingRef = useRef(false);
   const satellitesRef = useRef<Satellite[]>([]);
-  const restartDeadlineRef = useRef(0);
   const pendingEmptyDirectoryRef = useRef<(() => void) | null>(null);
   const settingsAppliedRef = useRef<number | null>(null);
   const reviewUnsubscribeRef = useRef<(() => void) | null>(null);
@@ -309,15 +310,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       if (session) void closeRadioSession(session);
     };
   }, []);
-
-  // Restart countdown on step 5: counted from a deadline so a background tab cannot stall it.
-  useEffect(() => {
-    if (step !== 'restartCheck' || restartSecondsLeft <= 0) return;
-    const timer = window.setInterval(() => {
-      setRestartSecondsLeft(Math.max(0, Math.ceil((restartDeadlineRef.current - now()) / 1000)));
-    }, 500);
-    return () => window.clearInterval(timer);
-  }, [step, restartSecondsLeft]);
 
   function onProgress(p: ProgressUpdate) {
     setProgress(p);
@@ -370,7 +362,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     identityRef.current = null;
     setReview(null);
     setWriteFinished(false);
-    setRestartSecondsLeft(0);
+    restartCountdown.clear();
     setCheck('none');
     setCheckResult(null);
     checkResultRef.current = null;
@@ -835,8 +827,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         setWriteFinished(true);
         if (checkStatusRef.current === 'available' || kepsPendingRef.current) {
           setBusyNotify(false);
-          restartDeadlineRef.current = now() + restartWaitSeconds * 1000;
-          setRestartSecondsLeft(restartWaitSeconds);
+          restartCountdown.start(restartWaitSeconds);
           setStep('restartCheck');
         } else {
           goDone();

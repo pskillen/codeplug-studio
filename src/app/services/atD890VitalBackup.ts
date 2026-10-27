@@ -94,10 +94,13 @@ function summarise(
   };
 }
 
-/** Read the vital set twice, pack it, and offer the download. Throws without producing a file on any mismatch. */
+/**
+ * Read the vital set twice, pack it, and offer the download. Throws without producing a file on any mismatch.
+ * `download: false` packs without saving (the Danger zone saves both of its files together).
+ */
 export async function backupAtD890Vital(
   session: RadioSession,
-  opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
+  opts?: { onProgress?: ProgressFn; signal?: AbortSignal; download?: boolean },
 ): Promise<AtD890VitalSession> {
   const radio = session.radio;
   if (!(radio instanceof AtD890uvProtocol)) {
@@ -126,7 +129,7 @@ export async function backupAtD890Vital(
   const unitBytes = Object.fromEntries(result.units.map((u) => [u.def.id, u.bytes]));
   const zipBytes = packAtD890VitalZip(manifest, unitBytes);
   const summary = summarise('live-read', manifest, zipBytes, unitBytes);
-  downloadAtD890VitalZip(summary);
+  if (opts?.download !== false) downloadAtD890VitalZip(summary);
   return summary;
 }
 

@@ -70,6 +70,7 @@ import BuildExportPage from './routes/builds/BuildExportPage.tsx';
 import BuildExportSettingsPage from './routes/builds/BuildExportSettingsPage.tsx';
 import BuildRadioSettingsPage from './routes/builds/BuildRadioSettingsPage.tsx';
 import BuildDangerZonePage from './routes/builds/danger-zone/BuildDangerZonePage.tsx';
+import BuildRangeChangePage from './routes/builds/danger-zone/rangeChange/BuildRangeChangePage.tsx';
 import BuildSatelliteKepsPage from './routes/builds/BuildSatelliteKepsPage.tsx';
 import BuildChannelsWirePage from './routes/builds/wire-preview/BuildChannelsWirePage.tsx';
 import BuildChannelsBulkEditPage from './routes/builds/wire-preview/BuildChannelsBulkEditPage.tsx';
@@ -235,6 +236,14 @@ export const appRouter = createBrowserRouter([
                   { path: 'export/settings', element: <BuildExportSettingsPage /> },
                   { path: 'export/radio-settings', element: <BuildRadioSettingsPage /> },
                   { path: 'export/danger-zone', element: <BuildDangerZonePage /> },
+                  {
+                    path: 'export/danger-zone/frequency-range',
+                    element: <BuildRangeChangePage />,
+                  },
+                  {
+                    path: 'export/danger-zone/frequency-range/resume',
+                    element: <BuildRangeChangePage mode="resume" />,
+                  },
                   { path: 'satellite-keps', element: <BuildSatelliteKepsPage /> },
                   { path: 'neonplug-settings', element: <BuildNeonplugSettingsPage /> },
                   { path: 'backup', element: <BuildRadioBackupPage /> },

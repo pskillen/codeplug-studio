@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import { DesignSystemV2Provider } from '../../../components/v2/index.ts';
 import { BuildLayoutProvider } from '../BuildLayoutContext.tsx';
 import * as featureDetect from '@integrations/radio-io/transport/featureDetect.ts';
+import { resetRangeChangeJournalCache } from '../../../state/atD890RangeChangeJournal.ts';
 import BuildDangerZonePage from './BuildDangerZonePage.tsx';
 
 vi.mock('@integrations/radio-io/transport/featureDetect.ts', async (importOriginal) => {
@@ -13,6 +14,8 @@ vi.mock('@integrations/radio-io/transport/featureDetect.ts', async (importOrigin
 });
 
 afterEach(() => {
+  window.localStorage.clear();
+  resetRangeChangeJournalCache();
   vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
 });
 
@@ -46,7 +49,7 @@ function renderPage(profileId: string, options?: { csvOnly?: boolean }) {
 }
 
 describe('BuildDangerZonePage', () => {
-  it('lists the D890 range tool under the strap, with no Start button', () => {
+  it('lists the D890 range tool under the strap, with Start…', () => {
     renderPage('radio-io-at-d890uv');
     expect(screen.getByRole('heading', { level: 1, name: 'Danger zone' })).toBeInTheDocument();
     expect(
@@ -54,7 +57,7 @@ describe('BuildDangerZonePage', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Change frequency range' })).toBeInTheDocument();
     expect(screen.getByText(/About 10 minutes/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Start/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /Start/ })).toBeInTheDocument();
     expect(screen.queryByText(/coming soon/i)).toBeNull();
   });
 
@@ -79,5 +82,39 @@ describe('BuildDangerZonePage', () => {
     renderPage('radio-io-at-d890uv');
     expect(screen.getByText('EXPORT PAGE')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 1, name: 'Danger zone' })).toBeNull();
+  });
+
+  it('always offers "Finish a range change from a backup file"', () => {
+    renderPage('radio-io-at-d890uv');
+    expect(
+      screen.getByRole('button', { name: 'Finish a range change from a backup file' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('range-last-change')).toBeNull();
+  });
+
+  it('shows the last finished change with the last 4 of the serial, and Change back…', () => {
+    window.localStorage.setItem(
+      'codeplug-studio.danger-zone.range-change-journal.v1',
+      JSON.stringify([
+        {
+          serial: 'TESTSERIAL01',
+          model: 'AT-D890UV',
+          fromCode: 3,
+          toCode: 7,
+          stage: 'done',
+          backup: { fileName: 'b.zip', sha256: 'a'.repeat(64), savedAt: '2026-10-26T14:12:00Z' },
+          vital: { fileName: 'v.zip', sha256: 'b'.repeat(64) },
+          startedAt: '2026-10-26T14:10:00Z',
+          updatedAt: '2026-10-26T14:20:00Z',
+          studioVersion: 'test',
+        },
+      ]),
+    );
+    resetRangeChangeJournalCache();
+    renderPage('radio-io-at-d890uv');
+    const last = screen.getByTestId('range-last-change');
+    expect(last).toHaveTextContent('Last change: …AL01, Amateur Europe → Amateur US');
+    expect(last).not.toHaveTextContent('TESTSERIAL');
+    fireEvent.click(screen.getByRole('button', { name: 'Change back…' }));
   });
 });

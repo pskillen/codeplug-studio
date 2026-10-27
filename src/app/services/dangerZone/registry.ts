@@ -31,5 +31,6 @@ export const DANGER_ZONE_TOOLS: readonly DangerZoneToolDescriptor[] = [
     cost: 'The radio wipes its channels and settings when the range changes; Studio backs them up first and puts them back.',
     minutes: 10,
     radios: ['anytone-at-d890uv', 'anytone-at-d890uv-mm9pdy'],
+    route: 'export/danger-zone/frequency-range',
   },
 ];

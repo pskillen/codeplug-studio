@@ -96,6 +96,27 @@ The range change also re-defaults VFO A/B, which are channel slots 4000/4001 at 
 
 The flash sector-management markers at `+0x3FBF0` / `+0x3FFF0` of each half (including the bytes at `+0x3FFFC..+0x3FFFF`) are radio-managed. They are deliberately uncovered: never backed up, never restored (see [flash-sectors.md](flash-sectors.md)).
 
+### Usage-volatile bytes
+
+Bytes the radio rewrites in normal use (changing channel or zone, tuning a VFO). A difference from a backup at these
+bytes is expected after a Restore and is not a failed restore. The list is in code in
+`src/integrations/radio-io/radios/at-d890uv/usageVolatileBytes.ts` (one place); the range change's final Check reads
+it and reports them as "Changed since the restore, which is normal if you've used the radio", not as a failure.
+Everything else that differs still fails the Check.
+
+| Bytes                                                                 | What                                       |
+| --------------------------------------------------------------------- | ------------------------------------------ |
+| Optional settings (main) `+0xD7`, `+0xD8`                             | Zone A / zone B                            |
+| Optional settings (main) `+0xD9`, `+0xDA`                             | Channel A / channel B                      |
+| `ZoneAChannel` `0x3500400`, `ZoneBChannel` `0x3500600` (`0x200` each) | Current channel of each zone, u16 per zone |
+| `VfoChannels` `0x1F81000` (`0x100`)                                   | VFO A/B, channel slots 4000/4001           |
+
+Only offsets this page names are listed. `+0xD7..+0xDA` are named above as zone and channel A/B; the retain preview
+reads them as the power-on selection, so they may be the startup choice rather than the live one. They are listed
+anyway (a channel change on hardware showed a difference in Optional settings (main)); which of the four moved was
+not recorded. `+0xD6` (startup enable) is a setting and is not volatile. Other radio-state offsets in the main record
+(the list under Settings patches) are not included, because this page does not say they change in normal use.
+
 ### APRS (binary — [#758](https://github.com/pskillen/codeplug-studio/issues/758))
 
 Cite: anytone-cps `AprsSettings::decode_D890UV` / `encode_D890UV` — facts only. Deep field tables: [aprs.md](aprs.md).

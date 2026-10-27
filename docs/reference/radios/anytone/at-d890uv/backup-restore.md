@@ -23,6 +23,16 @@ A frequency-range change erases and re-defaults the whole settings unit (`0x3500
 
 Digital-contact FLASH is not in the codeplug backup. Calibration and identity are not in it either; they have their own file, the [vital-data backup](#vital-data-backup) below. (An earlier version of this page said calibration is not an isolated named bank. That was wrong: the tune bank at `0x04F00000` holds it, and hardware reads of it worked.)
 
+### After a range change
+
+The change itself wipes and re-defaults; Studio's job afterwards is to put the backup back in the right order.
+
+- **What the boot wipes:** channels, zone members, scan lists, zone names, the whole settings unit (it is re-defaulted for the new range), and VFO A/B. The tune bank is rewritten identically apart from its copy of the range.
+- **What Restore brings back:** every restorable region of the zip (see the table above), including the settings-unit extents and VFO A/B.
+- **The order rule:** Restore runs **after** the post-change restart, in a **new** session, and writes the codeplug and the settings **together**. Settings alone onto the defaulted codeplug make the radio start at "Program Error / Please Initialize The Radio!", because the restored zone A/B numbers point at empty zones. For the same reason a Restore from the Backup page onto a radio whose range differs from the zip's forces every restorable region.
+- **What it never touches:** LocalInfo and calibration. The wizard checks them against the vital backup before restoring and stops on a difference.
+- **Official CPS:** it refuses files saved before the change ("Band Error!") until it has read the radio again.
+
 ## Vital-data backup
 
 Calibration and identity cannot be recreated if lost, so Studio has a separate, read-only **Back up vital data** action on the D890 Backup / Restore page (tracking [#1288](https://github.com/pskillen/codeplug-studio/issues/1288)). It is not part of the codeplug zip and has **no restore**.

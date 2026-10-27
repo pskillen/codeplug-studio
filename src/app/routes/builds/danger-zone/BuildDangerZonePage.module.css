@@ -37,3 +37,17 @@
   gap: 12px;
   max-width: 42rem;
 }
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 42rem;
+}
+
+.last {
+  margin: 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}

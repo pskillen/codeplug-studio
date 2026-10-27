@@ -6,8 +6,8 @@
  * `prodDisabled` and nothing hides the area by build environment.
  *
  * `areaName` is the one name for the area: the page title, the Export card, its button and the Radio settings
- * pointer are all built from it. `strap` is read by the area page. The rest is recorded here for the Change
- * frequency range wizard PR (PR 4) to read; nothing reads them yet.
+ * pointer are all built from it. `strap` is read by the area page. The rest is read by the Change
+ * frequency range wizard.
  */
 export const DANGER_ZONE_DECISIONS = {
   /** Q1: the area's name. */
@@ -38,4 +38,11 @@ export const DANGER_ZONE_DECISIONS = {
   unlistedCodes: { codes: [6, 9, 12, 15], policy: 'allow-with-scary-warning' },
   /** Q9: the final Check is never automatic. The user clicks it; Skip stays available. */
   finalCheckAutomatic: false,
+  /** RT-2 sets this: how long the restart steps count down before Reconnect and Check are offered. */
+  restartCountdownSeconds: 60,
+  /**
+   * RT-8 decides: what the Check step says when the radio shows "Program Error". `stay-connected` tells the user
+   * to leave it on and press Restore again; `initialise-first` tells them to choose Initialize on the radio first.
+   */
+  programErrorAdvice: 'stay-connected',
 } as const;

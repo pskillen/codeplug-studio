@@ -346,3 +346,13 @@ export function atD890TxChangeSummary(fromCode: number, toCode: number): AtD890T
     closes: spansOnlyIn(from.tx, to.tx),
   };
 }
+
+/**
+ * The code the radio enforces for a stored LocalInfo `+0x03`: above 18 it uses code 0, and code 14 without the
+ * `890#` unlock it uses 0 too. (The ident reply carries the same sanitised code.)
+ */
+export function sanitiseAtD890RangeCode(rawCode: number, maintenanceUnlocked: boolean): number {
+  if (rawCode > 18) return 0;
+  if (rawCode === 14 && !maintenanceUnlocked) return 0;
+  return rawCode;
+}

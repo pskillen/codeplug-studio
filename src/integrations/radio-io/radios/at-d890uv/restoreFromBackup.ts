@@ -40,7 +40,8 @@ function canReadArchive(image: MemoryMap, address: number, length: number): bool
   return address >= 0 && length > 0 && address + length <= image.size;
 }
 
-function shouldOverlayArchiveAddress(address: number): boolean {
+/** True when Restore writes this block's archive bytes (the read-back check compares the same blocks). */
+export function shouldOverlayArchiveAddress(address: number): boolean {
   if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) return false;
   if (isAtD890EraseUnitBookkeepingAddress(address)) return false;
   if (isAtD890ChannelDataAddress(address) && !isAtD890ChannelDataRealAddress(address)) {

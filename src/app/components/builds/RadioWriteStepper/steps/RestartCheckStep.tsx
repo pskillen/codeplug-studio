@@ -4,6 +4,7 @@
  */
 
 import { Alert, Progress, Text } from '@mantine/core';
+import RestartCountdown from '../../../radio-io/RestartCountdown.tsx';
 import { Button } from '../../../v2/index.ts';
 import classes from '../RadioWriteStepper.module.css';
 import type { WriteFlowActions, WriteFlowView, WriteStepperConfig } from '../types.ts';
@@ -15,7 +16,6 @@ interface StepProps {
 }
 
 export function RestartCheckBody({ config, view }: StepProps) {
-  const waiting = view.restartSecondsLeft > 0;
   const percent = view.progress?.max
     ? Math.min(100, (100 * view.progress.cur) / view.progress.max)
     : undefined;
@@ -24,14 +24,11 @@ export function RestartCheckBody({ config, view }: StepProps) {
       <Text size="sm" fw={600}>
         {config.radioLabel}: transfer finished.
       </Text>
-      {waiting ? (
-        <Text size="sm" data-testid="write-stepper-restart-wait">
-          Waiting for the radio to restart (about {config.restartWaitSeconds} s):{' '}
-          {view.restartSecondsLeft} s
-        </Text>
-      ) : (
-        <Text size="sm">Wait until the radio shows its normal screen, then continue.</Text>
-      )}
+      <RestartCountdown
+        secondsLeft={view.restartSecondsLeft}
+        totalSeconds={config.restartWaitSeconds}
+        data-testid="write-stepper-restart-wait"
+      />
       {view.kepsFailure ? (
         <Alert color="yellow" title="Codeplug written, satellite keps not written">
           <Text size="sm" data-testid="write-stepper-keps-failure">
