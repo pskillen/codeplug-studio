@@ -143,6 +143,14 @@ Do **not** import old Radio Info debug zips (`hydration.json`). None are expecte
 
 Write-coverage tables stay on the **Export** write panel. They must not become the lead copy here.
 
+### Restore after a range change
+
+On the AT-D890UV, when the connected radio's range (the sanitised code from its ident) differs from the one in the zip's LocalInfo (above 18 reads as 0, and 14 without `890#` reads as 0), Restore **forces every restorable region** and the confirm modal says "This radio's range has changed since the backup, so Studio restores everything together. Restoring settings alone would stop the radio starting." A same-range Restore is unchanged. The Danger zone's wizard does the same restore itself ([danger-zone.md](danger-zone.md)).
+
+### Unfinished range change banner
+
+When this browser holds an unfinished range-change record (stage `sending`, `changed` or `restored`) the page shows the red banner with **Resume** (or **Check**) above its content, for D890 builds ([RangeChangeBanner](../../../src/app/components/dangerZone/RangeChangeBanner.md)).
+
 ### Restore
 
 Confirm modal: connected model + serial (or firmware / label when the archive has no serial). **Serial mismatch is an error, not a confirm option.**
