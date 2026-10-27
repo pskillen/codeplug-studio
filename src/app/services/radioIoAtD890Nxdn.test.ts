@@ -136,9 +136,10 @@ describe('AT-D890 MM9PDY NXDN channel projection', () => {
       expect(ch!.nxdn).toEqual({ rxRan: 7, txRan: 5, rate: 'nxdn96' });
     });
 
-    it('writes an FM + NXDN channel as fixed-digital, like FM + DMR, with NXDN fields', () => {
+    it('writes an FM + NXDN channel by its primary mode, like FM + DMR, with NXDN fields', () => {
+      // No primaryMode: the first profile (FM) is the primary, so A+D TX A (#1456).
       const ch = channels.get('fm-nxdn');
-      expect(ch!.mode).toBe('fixed-digital');
+      expect(ch!.mode).toBe('fixed-analog');
       expect(ch!.nxdn).toEqual({ rxRan: 7, txRan: 5, rate: 'nxdn48' });
     });
 

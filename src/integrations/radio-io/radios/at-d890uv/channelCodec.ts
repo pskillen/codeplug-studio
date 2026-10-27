@@ -90,7 +90,7 @@ function setBit(byte: number, bit: number, value: boolean): number {
  * so a later preserve copy of ranging / roaming / idle TX / compander / CRC-ignore survives.
  */
 function applyModelledByte34(data: Uint8Array, ch: RadioChannelDto): void {
-  const digitalDmo = isDigitalMode(ch.mode) && ch.dmrOperatingMode === 'dmo-simplex';
+  const digitalDmo = hasDigitalHalf(ch.mode) && ch.dmrOperatingMode === 'dmo-simplex';
   data[0x34] = setBit(data[0x34]!, BYTE_34_DMO_BIT, digitalDmo);
   data[0x34] = setBit(data[0x34]!, BYTE_34_RX_ONLY_BIT, ch.rxOnly === true);
   data[0x34] = setBit(data[0x34]!, BYTE_34_AUTO_SCAN_BIT, ch.scanAdd === true);
@@ -176,6 +176,11 @@ function wireFromMode(mode: RadioChannelMode | undefined): number {
 
 function isDigitalMode(mode: RadioChannelMode | undefined): boolean {
   return mode === 'digital' || mode === 'fixed-digital';
+}
+
+/** D-Digital, A+D TX A or D+A TX D: the channel has a DMR half whose settings are written. */
+function hasDigitalHalf(mode: RadioChannelMode | undefined): boolean {
+  return isDigitalMode(mode) || mode === 'fixed-analog';
 }
 
 function powerWireFromPercent(p: number | null): number {

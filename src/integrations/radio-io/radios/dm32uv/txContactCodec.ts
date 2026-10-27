@@ -44,6 +44,7 @@ export function getTxContactOffset(channelNumber: number): {
   return { blockMetadata: DM32_METADATA.TX_CONTACT_LOW, offset: 0 };
 }
 
-export function isDigitalChannelMode(mode: string | undefined): boolean {
-  return mode === 'digital' || mode === 'fixed-digital';
+/** True when the channel has a DMR half: Digital, Fixed Analog (A+D) or Fixed Digital (D+A). */
+export function channelModeHasDigital(mode: string | undefined): boolean {
+  return mode === 'digital' || mode === 'fixed-analog' || mode === 'fixed-digital';
 }

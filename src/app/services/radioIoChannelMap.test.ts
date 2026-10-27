@@ -794,3 +794,150 @@ describe('expandAssembledChannelsToRadioDtos — Anytone AT-D890UV site wire nam
     expect(dtos[0]?.rxGroupIndex).toBe(2);
   });
 });
+
+describe('analogue + digital channel type follows the primary mode (#1456)', () => {
+  const FM = {
+    mode: 'fm' as const,
+    squelch: null,
+    rxTone: 'none',
+    txTone: 'none',
+    bandwidthKHz: 12.5,
+  };
+  const DMR = {
+    mode: 'dmr' as const,
+    colourCode: 3,
+    timeslot: 2 as const,
+    ownDigitalIdId: null,
+    contactRef: null,
+    rxGroupListId: null,
+  };
+  const NXDN = {
+    mode: 'nxdn' as const,
+    rxRan: 7,
+    txRan: 5,
+    ownDigitalIdId: null,
+    contactRef: null,
+    rxGroupListId: null,
+    nxdnRate: 'nxdn96' as const,
+  };
+
+  const AM = { ...FM, mode: 'am' as const };
+
+  type Profile = typeof FM | typeof AM | typeof DMR | typeof NXDN;
+
+  function mixedChannel(
+    id: string,
+    modeProfiles: Profile[],
+    primaryMode: 'fm' | 'am' | 'dmr' | 'nxdn' | null,
+  ) {
+    return {
+      ...newChannel('p1', id),
+      id,
+      rxFrequency: 430_125_000,
+      txFrequency: 430_125_000,
+      modeProfiles,
+      primaryMode,
+    };
+  }
+
+  function project(
+    profileId: 'radio-io-at-d890uv' | 'radio-io-at-d890uv-mm9pdy' | 'radio-io-dm32uv',
+    channels: ReturnType<typeof mixedChannel>[],
+    options?: { nxdn?: boolean },
+  ) {
+    const { build, egress } = newRadioBuildForProfile('p1', profileId);
+    const library: LibrarySlice = {
+      channels,
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const { dtos } = expandAssembledChannelsToRadioDtos(
+      assembled,
+      build,
+      library,
+      egress,
+      undefined,
+      options,
+    );
+    return new Map(dtos.map((dto) => [dto.wireName, dto]));
+  }
+
+  const fmPrimary = mixedChannel('fm-primary', [FM, DMR], 'fm');
+  const dmrPrimary = mixedChannel('dmr-primary', [FM, DMR], 'dmr');
+  const dmrFirstNoPrimary = mixedChannel('dmr-first', [DMR, FM], null);
+  const fmFirstNoPrimary = mixedChannel('fm-first', [FM, DMR], null);
+  const amPrimary = mixedChannel('am-primary', [AM, DMR], 'am');
+  const all = [fmPrimary, dmrPrimary, dmrFirstNoPrimary, fmFirstNoPrimary, amPrimary];
+
+  // MM9PDY has no m×n expansion (digitalFieldsFromChannel); stock D890 and DM-32UV do
+  // (digitalFieldsFromProjection).
+  for (const profileId of [
+    'radio-io-at-d890uv-mm9pdy',
+    'radio-io-at-d890uv',
+    'radio-io-dm32uv',
+  ] as const) {
+    describe(profileId, () => {
+      const dtos = project(profileId, all);
+
+      it('writes an FM-primary FM + DMR channel as fixed-analog with its DMR fields', () => {
+        expect(dtos.get('fm-primary')).toMatchObject({
+          mode: 'fixed-analog',
+          colorCode: 3,
+          timeslot: 2,
+        });
+      });
+
+      it('writes an AM-primary AM + DMR channel as fixed-analog', () => {
+        expect(dtos.get('am-primary')?.mode).toBe('fixed-analog');
+      });
+
+      it('falls back to the first profile when there is no primary', () => {
+        expect(dtos.get('fm-first')?.mode).toBe('fixed-analog');
+        expect(dtos.get('dmr-first')?.mode).toBe('fixed-digital');
+      });
+
+      it('keeps a DMR-primary FM + DMR channel as fixed-digital', () => {
+        expect(dtos.get('dmr-primary')).toMatchObject({
+          mode: 'fixed-digital',
+          colorCode: 3,
+          timeslot: 2,
+        });
+      });
+    });
+  }
+
+  describe('NXDN as the digital half (MM9PDY, NXDN enabled)', () => {
+    const dtos = project(
+      'radio-io-at-d890uv-mm9pdy',
+      [
+        mixedChannel('fm-nxdn', [FM, NXDN], 'fm'),
+        mixedChannel('nxdn-fm', [FM, NXDN], 'nxdn'),
+        mixedChannel('fm-dmr-nxdn', [FM, DMR, NXDN], 'fm'),
+      ],
+      { nxdn: true },
+    );
+
+    it('writes an FM-primary FM + NXDN channel as fixed-analog with its NXDN fields', () => {
+      expect(dtos.get('fm-nxdn')).toMatchObject({
+        mode: 'fixed-analog',
+        nxdn: { rxRan: 7, txRan: 5, rate: 'nxdn96' },
+      });
+    });
+
+    it('writes an NXDN-primary FM + NXDN channel as fixed-digital', () => {
+      expect(dtos.get('nxdn-fm')?.mode).toBe('fixed-digital');
+    });
+
+    it('writes an FM-primary FM + DMR + NXDN channel as fixed-analog', () => {
+      expect(dtos.get('fm-dmr-nxdn')).toMatchObject({ mode: 'fixed-analog', colorCode: 3 });
+    });
+  });
+});

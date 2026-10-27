@@ -238,6 +238,38 @@ describe('dm32 channelCodec', () => {
     expect(image.bytes[firstOff]).toBe(1);
   });
 
+  it('writes Fixed Analog (A+D) as mode 2 and keeps its DMR fields and TX contact (#1456)', () => {
+    for (const [mode, wire] of [
+      ['fixed-analog', 2],
+      ['fixed-digital', 3],
+    ] as const) {
+      const record = encodeDm32ChannelRecord(
+        sampleDto({ mode, colorCode: 5, timeslot: 2, rxGroupIndex: 4 }),
+      );
+      expect((record[0x18]! >> 4) & 0x0f).toBe(wire);
+      expect(record[0x1d]).toBe(0x15);
+      expect(record[0x1f]).toBe(4);
+      expect(parseDm32ChannelRecord(record, 1).mode).toBe(mode);
+    }
+
+    const addressBase = 0x10_000;
+    const image = createMemoryMap(0x30_000);
+    const cache = {
+      addressBase,
+      discovered: [
+        { address: addressBase, metadata: DM32_METADATA.CHANNEL_FIRST },
+        { address: addressBase + 0x20_000, metadata: DM32_METADATA.TX_CONTACT_LOW },
+        { address: addressBase + 0x21_000, metadata: DM32_METADATA.TX_CONTACT_HIGH },
+      ],
+    };
+    encodeChannelsIntoDm32Image(image, cache, [
+      sampleDto({ slotIndex: 1, mode: 'fixed-analog', txContactId: 7 }),
+    ]);
+    const [tx0, tx1] = encodeTxContactEntry(7, true);
+    expect(image.bytes[0x20_000]).toBe(tx0);
+    expect(image.bytes[0x20_001]).toBe(tx1);
+  });
+
   it('encodeChannelsIntoDm32Image writes nibble-split TX contact at 2047/2048 boundary', () => {
     const addressBase = 0x10_000;
     const image = createMemoryMap(0x30_000);
