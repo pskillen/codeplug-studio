@@ -47,7 +47,7 @@ describe('TalkGroupEditor NXDN ID', () => {
     renderInRouter(
       <TalkGroupEditor projectId="p" entity={newTalkGroup('p', 'T', 70000, 'nxdn')} />,
     );
-    expect(screen.getAllByText(/NXDN IDs are 1.65519/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/NXDN talk group IDs are 1.65519/).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: 'Save talk group' }));
     expect(mocks.putTalkGroup).not.toHaveBeenCalled();
   });
@@ -58,17 +58,43 @@ describe('TalkGroupEditor NXDN ID', () => {
     expect(mocks.putTalkGroup).toHaveBeenCalledTimes(1);
   });
 
+  it('saves 65535 (all-call) as a talk group', () => {
+    renderInRouter(
+      <TalkGroupEditor projectId="p" entity={newTalkGroup('p', 'T', 65535, 'nxdn')} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Save talk group' }));
+    expect(mocks.putTalkGroup).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses 65520 as a talk group and names the all-call exception', () => {
+    renderInRouter(
+      <TalkGroupEditor projectId="p" entity={newTalkGroup('p', 'T', 65520, 'nxdn')} />,
+    );
+    expect(screen.getAllByText(/1.65519, or 65535 for all-call/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Save talk group' }));
+    expect(mocks.putTalkGroup).not.toHaveBeenCalled();
+  });
+
   it('does not show the range error for a blank ID until a save is tried', () => {
     renderInRouter(<TalkGroupEditor projectId="p" entity={newTalkGroup('p', 'T', 100, 'nxdn')} />);
     fireEvent.change(screen.getByLabelText('NXDN ID'), { target: { value: '' } });
-    expect(screen.queryByText(/NXDN IDs are 1.65519/)).toBeNull();
+    expect(screen.queryByText(/NXDN talk group IDs are 1.65519/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Save talk group' }));
     expect(mocks.putTalkGroup).not.toHaveBeenCalled();
-    expect(screen.getAllByText(/NXDN IDs are 1.65519/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/NXDN talk group IDs are 1.65519/).length).toBeGreaterThan(0);
   });
 });
 
 describe('DigitalContactEditor NXDN ID', () => {
+  it.each([65520, 65535])('refuses %i as a contact ID', (id) => {
+    renderInRouter(
+      <DigitalContactEditor projectId="p" entity={newDigitalContact('p', 'C', id, 'nxdn')} />,
+    );
+    expect(screen.getAllByText(/NXDN IDs are 1.65519/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Save contact' }));
+    expect(mocks.putDigitalContact).not.toHaveBeenCalled();
+  });
+
   it('blocks save for an out-of-range NXDN ID and shows the error', () => {
     renderInRouter(
       <DigitalContactEditor projectId="p" entity={newDigitalContact('p', 'C', 70000, 'nxdn')} />,
