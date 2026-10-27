@@ -41,6 +41,7 @@ import {
   rangeSummary,
   repeaterModeAdvice,
 } from '../../lib/atD890RadioSettingsText.ts';
+import { DANGER_ZONE_DECISIONS } from '../../services/dangerZone/decisions.ts';
 import classes from './AtD890RadioSettingsEditor.module.css';
 
 export interface AtD890RadioSettingsEditorProps {
@@ -48,6 +49,8 @@ export interface AtD890RadioSettingsEditorProps {
   target: AtD890SettingsTargetId;
   /** The build's Web Serial egress, used by Read a radio. */
   egress: EgressPath;
+  /** True when the Danger zone area is offered for this build on this deploy (gate open). */
+  dangerZoneOffered?: boolean;
 }
 
 const LARGE_FONT_HINT = 'Both lines 8 characters or fewer use the large font.';
@@ -68,6 +71,7 @@ export default function AtD890RadioSettingsEditor({
   buildId,
   target,
   egress,
+  dangerZoneOffered = false,
 }: AtD890RadioSettingsEditorProps) {
   const session = useAtD890RadioSettingsSession(buildId);
   const navigate = useNavigate();
@@ -117,7 +121,15 @@ export default function AtD890RadioSettingsEditor({
           <dl className={classes.readOnly}>
             <div>
               <dt>Frequency range</dt>
-              <dd>{rangeSummary(read.bandCode)}</dd>
+              <dd>
+                {rangeSummary(read.bandCode)}
+                {dangerZoneOffered ? (
+                  <>
+                    {' · '}
+                    <Link to={`/builds/${buildId}/export/danger-zone`}>Change…</Link>
+                  </>
+                ) : null}
+              </dd>
             </div>
             <div>
               <dt>Firmware</dt>
@@ -131,9 +143,12 @@ export default function AtD890RadioSettingsEditor({
           <details className={classes.why}>
             <summary>Why can&apos;t I change these?</summary>
             <p>
-              The frequency range is the radio&apos;s region, set at the factory; Studio can only
-              show it. Changing it is tracked in issue #1369. Studio cannot yet tell stock firmware
-              from MM9PDY, so the firmware shows as unknown (issue #613).
+              The frequency range is the radio&apos;s region, set at the factory.{' '}
+              {dangerZoneOffered
+                ? `You can change it from ${DANGER_ZONE_DECISIONS.areaName}.`
+                : 'Studio can only show it.'}{' '}
+              Studio cannot yet tell stock firmware from MM9PDY, so the firmware shows as unknown
+              (issue #613).
             </p>
           </details>
         </div>

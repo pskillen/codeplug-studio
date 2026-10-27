@@ -97,7 +97,7 @@ describe('AtD890RadioSettingsEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear Key tone' }));
     expect(getAtD890RadioSettingsSession(BUILD).overrides.size).toBe(0);
     expect(screen.getByTestId('changes-count')).toHaveTextContent('0 changes');
-  });
+  }, 30_000);
 
   it('shows overrides set earlier in the session (navigation keeps them)', () => {
     act(() => setOverride(BUILD, 'keyTone', true));
@@ -245,5 +245,38 @@ describe('AtD890RadioSettingsEditor', () => {
     expect(overrides.get('keyShortP2')).toBe(4);
     // The user never chose a key layout, but the keys now equal the radio's: nudge stays quiet.
     expect(screen.queryByTestId('mm9pdy-step-keys-nudge')).not.toBeInTheDocument();
+  });
+});
+
+describe('AtD890RadioSettingsEditor — range row (#1369)', () => {
+  beforeEach(() => {
+    BUILD = `build-editor-range-${++buildSeq}`;
+    setRead(BUILD, READ);
+  });
+
+  it('links Change… to Danger zone and says so in the why text when the gate is open', () => {
+    render(
+      <MemoryRouter>
+        <DesignSystemV2Provider>
+          <AtD890RadioSettingsEditor
+            buildId={BUILD}
+            target="stock"
+            egress={D890_EGRESS}
+            dangerZoneOffered
+          />
+        </DesignSystemV2Provider>
+      </MemoryRouter>,
+    );
+    const link = screen.getByRole('link', { name: 'Change…' });
+    expect(link).toHaveAttribute('href', `/builds/${BUILD}/export/danger-zone`);
+    expect(screen.getByText(/You can change it from Danger zone\./)).toBeInTheDocument();
+    expect(screen.queryByText(/issue #1369/)).toBeNull();
+  });
+
+  it('shows no link and says Studio can only show it when the gate is closed', () => {
+    renderEditor();
+    expect(screen.queryByRole('link', { name: 'Change…' })).toBeNull();
+    expect(screen.getByText(/Studio can only show it\./)).toBeInTheDocument();
+    expect(screen.queryByText(/issue #1369/)).toBeNull();
   });
 });

@@ -20,6 +20,7 @@ import {
 import { usesAtD890AirbandBankSplit } from '@core/services/anytoneChannelBanks.ts';
 import { findNeonplugDonorEgress, findRadioIoEgress } from '../../lib/buildEgressUi.ts';
 import { entityNavIcons } from '../../nav/entityNavIcons.ts';
+import { listOfferedDangerZoneTools } from '../../services/dangerZone/gate.ts';
 import { hasSatelliteKepsWriteAdapter } from '../../services/satelliteKepsWriteAdapters.ts';
 
 export type BuildNavSection =
@@ -107,6 +108,15 @@ export function showsBackupNav(_build: RadioBuild, options?: BuildNavOptions): b
 export function showsRadioSettingsNav(_build: RadioBuild, options?: BuildNavOptions): boolean {
   const radioIo = findRadioIoEgress(options?.egressPaths ?? []);
   return Boolean(radioIo && isAtD890RadioIoProfileId(radioIo.profileId));
+}
+
+/**
+ * Danger zone area (#1369): reachable (from the Export panel and the Radio settings range row) only when this
+ * build has a Web Serial egress and at least one tool is offered for its radio on this deploy. No strip tab.
+ */
+export function showsDangerZoneNav(build: RadioBuild, options?: BuildNavOptions): boolean {
+  if (!findRadioIoEgress(options?.egressPaths ?? [])) return false;
+  return listOfferedDangerZoneTools(build.radioTargetId).length > 0;
 }
 
 /** mk2 B2 — peer sections in the contextual strip; Satellite keps (#1085) is conditional. */
@@ -326,6 +336,7 @@ export function allBuildDetailPaths(build: RadioBuild, options?: BuildNavOptions
     `${base}/export`,
     `${base}/export/settings`,
     ...(showsRadioSettingsNav(build, options) ? [`${base}/export/radio-settings`] : []),
+    ...(showsDangerZoneNav(build, options) ? [`${base}/export/danger-zone`] : []),
     `${base}/overview`,
     ...buildWireEntityNavItems(build, options).map((item) => item.path),
     `${base}/channels/bulk`,
@@ -359,6 +370,7 @@ export function activeBuildSection(pathname: string, buildId: string): BuildNavS
   if (!suffix || suffix === 'export') return 'export';
   if (suffix === 'export/radio-settings' || suffix.startsWith('export/radio-settings/'))
     return 'radio-settings';
+  if (suffix === 'export/danger-zone' || suffix.startsWith('export/danger-zone/')) return 'export';
   if (suffix === 'export/settings' || suffix.startsWith('export/settings/'))
     return 'export-settings';
   if (suffix === 'overview' || suffix.startsWith('overview/')) return 'overview';

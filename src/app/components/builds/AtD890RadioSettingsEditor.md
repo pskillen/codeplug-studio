@@ -8,11 +8,12 @@ The body of the AT-D890UV Radio settings page (`/builds/:id/export/radio-setting
 
 ## Props
 
-| Prop      | Type                  | Notes                                                                |
-| --------- | --------------------- | -------------------------------------------------------------------- |
-| `buildId` | `string`              | Keys the session store                                               |
-| `target`  | `'stock' \| 'mm9pdy'` | Key function names, the exposure tag and the nudge follow the target |
-| `egress`  | `EgressPath`          | The build's AT-D890UV Web Serial egress; used to open the radio      |
+| Prop                | Type                  | Notes                                                                                                                                      |
+| ------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `buildId`           | `string`              | Keys the session store                                                                                                                     |
+| `target`            | `'stock' \| 'mm9pdy'` | Key function names, the exposure tag and the nudge follow the target                                                                       |
+| `egress`            | `EgressPath`          | The build's AT-D890UV Web Serial egress; used to open the radio                                                                            |
+| `dangerZoneOffered` | `boolean`             | Default `false`. True when the Danger zone area is offered for the build (gate open); the page passes it from `listOfferedDangerZoneTools` |
 
 ## Usage
 
@@ -25,7 +26,7 @@ The body of the AT-D890UV Radio settings page (`/builds/:id/export/radio-setting
 - **States.** Not read (every Radio column says "not read", values can still be set); Read (banner "Read from <name> (<serial>) at <hh:mm> · range <range>", read-only rows for frequency range, firmware ("unknown") and serial (shown in full)); Changed (sticky footer; under 40 rem the interim "Write arrives later" note is visually hidden, kept for screen readers, so the footer is one short row).
 - **Keep / Set.** Every field defaults to Keep radio's value. Setting a field adds a session override; **Clear** on the row returns it to Keep. A read never sets or clears an override.
 - **Copy all from this radio** (after a read) turns every readable value into an override after a confirm; **Clear all** (footer) clears every override after a confirm.
-- **Footer** (only with changes): "N changes", Clear all, **Write settings…** (sets a request in the session store and goes to the Export page, where the Write stepper opens with only Radio settings ticked), and a link to Back up a radio. The read-only range row gives name, code and transmit bands from `describeAtD890FrequencyRange`.
+- **Footer** (only with changes): "N changes", Clear all, **Write settings…** (sets a request in the session store and goes to the Export page, where the Write stepper opens with only Radio settings ticked), and a link to Back up a radio. The read-only range row gives name, code and transmit bands from `describeAtD890FrequencyRange`; with `dangerZoneOffered` it adds " · **Change…**", a link to `/builds/:id/export/danger-zone`. The "Why can't I change these?" text then says the range can be changed from Danger zone, otherwise "Studio can only show it".
 - **Start-up warning.** Power-on screen = Custom text with line 1 empty shows a warning in the Start-up section.
 - **Show advanced settings** (toolbar switch, off by default, per tab in the session store): shows an Advanced panel (the Repeater mode row adds an amber start-up check from the read radio's Sub-Channel Mode, NOAA alert and AM/FM function bytes, plus a note that channels cannot be checked; it never blocks a Write) with a warning banner and the advanced fields (language, power-on password, working mode, repeater mode, remote features, encryption type, auto repeater A/B). Turning it off while advanced changes are set asks first and discards them. Language is disabled before a read and offers only what the read radio's region lock keeps; the power-on password is [AtD890PowerOnPasswordRow](./AtD890PowerOnPasswordRow.md). Change counts count the password pair once.
 - **Step-key nudge** (MM9PDY target): [Mm9pdyStepKeysNudge](./Mm9pdyStepKeysNudge.md) above the Keys section.

@@ -48,6 +48,8 @@ import BeforeYouWriteRows from './RadioIoPanelCards/BeforeYouWriteRows.tsx';
 import AtD890RadioSettingsCard from './RadioIoPanelCards/AtD890RadioSettingsCard.tsx';
 import RadioBackupCard from './RadioIoPanelCards/RadioBackupCard.tsx';
 import ExperimentalNote from './RadioIoPanelCards/ExperimentalNote.tsx';
+import DangerZoneCard from './RadioIoPanelCards/DangerZoneCard.tsx';
+import { listOfferedDangerZoneTools } from '../../services/dangerZone/gate.ts';
 import {
   atD890OverrideCount,
   overridesForWrite,
@@ -383,6 +385,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             />
           ) : null}
         </div>
+      ) : null}
+      {isAtD890Write && listOfferedDangerZoneTools(build.radioTargetId).length > 0 ? (
+        <DangerZoneCard buildId={build.id} />
       ) : null}
       <ExperimentalNote
         details={

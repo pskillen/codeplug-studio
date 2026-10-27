@@ -287,6 +287,10 @@ Append here as adapters ship. Keep entries short; promote repeated patterns into
 
 ---
 
+## Optional: Danger zone
+
+A radio with a rare job that changes the radio itself (not the codeplug) adds a tool to the Danger zone area instead of a Write option. Add a registry entry in `src/app/services/dangerZone/registry.ts` (`radios` lists the radio target ids), give the tool its own wizard route and its own guarded send path with its own allow-list. There is no prod gate. A tool never runs from Write, Restore or Backup. See [danger-zone.md](danger-zone.md).
+
 ## Related
 
 - [protocol-kit-architecture.md](protocol-kit-architecture.md)

@@ -95,3 +95,66 @@
   font-size: var(--dsv2-font-body-sm);
   color: var(--dsv2-text-secondary);
 }
+
+.dangerCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: var(--dsv2-panel-padding-y, 12px) var(--dsv2-panel-padding-x, 16px);
+  border: 1px solid var(--dsv2-border);
+  border-left: 4px solid var(--dsv2-destructive);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-surface);
+}
+
+.dangerToggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.dangerToggle:hover .cardTitle {
+  text-decoration: underline;
+}
+
+.dangerToggle:focus-visible {
+  outline: 2px solid var(--dsv2-destructive);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.dangerChevron {
+  display: inline-block;
+  flex: none;
+  color: var(--dsv2-text-secondary);
+  transition: transform 0.15s;
+}
+
+.dangerToggle:hover .dangerChevron {
+  color: var(--dsv2-destructive);
+}
+
+.dangerChevronOpen {
+  transform: rotate(90deg);
+}
+
+.dangerDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dangerChevron {
+    transition: none;
+  }
+}

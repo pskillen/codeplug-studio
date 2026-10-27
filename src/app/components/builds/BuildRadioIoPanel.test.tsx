@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+import * as featureDetect from '@integrations/radio-io/transport/featureDetect.ts';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import {
   dualBankOptionsFromWriteSource,
@@ -34,6 +35,11 @@ vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
     openRadioSessionForEgress: vi.fn(() => new Promise(() => {})),
     closeRadioSession: vi.fn(async () => {}),
   };
+});
+
+vi.mock('@integrations/radio-io/transport/featureDetect.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof featureDetect>();
+  return { ...actual, isCapacitorSerialSupported: vi.fn(() => false) };
 });
 
 const kepsWrite = vi.hoisted(() => vi.fn());
@@ -73,6 +79,10 @@ vi.mock('../../state/persistence.ts', () => ({
   },
 }));
 
+function LocationProbe() {
+  return <span data-testid="location">{useLocation().pathname}</span>;
+}
+
 function renderPanel(profileId: string) {
   const { build, egress, egressPaths } = newRadioBuildForProfile('project-1', profileId);
   const layoutValue = {
@@ -88,6 +98,7 @@ function renderPanel(profileId: string) {
       <BuildLayoutProvider value={layoutValue}>
         <DesignSystemV2Provider>
           <BuildRadioIoPanel build={build} egress={egress} />
+          <LocationProbe />
         </DesignSystemV2Provider>
       </BuildLayoutProvider>
     </MemoryRouter>,
@@ -551,5 +562,71 @@ describe('BuildRadioIoPanel — no write-panel Read stash (#878)', () => {
     expect(
       screen.queryByText(/Write requires a prior Read on this egress/i),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe('BuildRadioIoPanel — Danger zone card (#1369)', () => {
+  it('is the last card on the D890 panel, collapsed, and opens the area', () => {
+    const { container, build } = renderPanel('radio-io-at-d890uv');
+    const card = screen.getByRole('region', { name: 'Danger zone' });
+    expect(card).toHaveTextContent('Danger zone · Changes the radio itself');
+    expect(screen.queryByRole('button', { name: 'Open danger zone' })).toBeNull();
+    const cards = Array.from(container.querySelectorAll('section'));
+    expect(cards[cards.length - 1]).toBe(card);
+    fireEvent.click(screen.getByRole('button', { name: /Danger zone/ }));
+    expect(
+      screen.getByText(
+        'Rare jobs that change the radio, not your codeplug. Each one backs up first.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open danger zone' })).toBeInTheDocument();
+    expect(build.id).toBeTruthy();
+  });
+
+  it('has a disclosure toggle wired to the revealed block, with a decorative chevron', () => {
+    renderPanel('radio-io-at-d890uv');
+    const toggle = screen.getByRole('button', { name: /Danger zone/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle.querySelector('[aria-hidden="true"]')).not.toBeNull();
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    const controlled = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
+    expect(controlled).not.toBeNull();
+    expect(controlled).toContainElement(screen.getByRole('button', { name: 'Open danger zone' }));
+  });
+
+  it("Open danger zone navigates to the build's Danger zone route", () => {
+    const { build } = renderPanel('radio-io-at-d890uv');
+    fireEvent.click(screen.getByRole('button', { name: /Danger zone/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open danger zone' }));
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      `/builds/${build.id}/export/danger-zone`,
+    );
+  });
+
+  it('is hidden in the native app (Capacitor) on both D890 targets', () => {
+    vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
+    try {
+      for (const profile of ['radio-io-at-d890uv', 'radio-io-at-d890uv-mm9pdy']) {
+        const { unmount } = renderPanel(profile);
+        expect(screen.queryByRole('region', { name: 'Danger zone' })).toBeNull();
+        unmount();
+      }
+    } finally {
+      vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
+    }
+  });
+
+  it('is present on the MM9PDY D890 panel', () => {
+    renderPanel('radio-io-at-d890uv-mm9pdy');
+    expect(screen.getByRole('region', { name: 'Danger zone' })).toBeInTheDocument();
+  });
+
+  it('is absent for DM-32 and OpenGD77', () => {
+    for (const profile of ['radio-io-dm32uv', 'radio-io-opengd77-1701']) {
+      const { unmount } = renderPanel(profile);
+      expect(screen.queryByRole('region', { name: 'Danger zone' })).toBeNull();
+      unmount();
+    }
   });
 });

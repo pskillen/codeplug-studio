@@ -423,3 +423,43 @@ describe('Radio settings strip entry (#1393)', () => {
     expect(activeBuildSection('/builds/b1/export/settings', 'b1')).toBe('export-settings');
   });
 });
+
+describe('Danger zone area (#1369)', () => {
+  it('maps its paths to Export (no strip tab)', () => {
+    expect(activeBuildSection('/builds/b1/export/danger-zone', 'b1')).toBe('export');
+    expect(activeBuildSection('/builds/b1/export/danger-zone/frequency-range', 'b1')).toBe(
+      'export',
+    );
+  });
+
+  it('is a detail path for D890 Web Serial builds only, and adds no strip tab', () => {
+    const d890 = newRadioBuildForProfile('proj', 'radio-io-at-d890uv');
+    expect(allBuildDetailPaths(d890.build, { egressPaths: d890.egressPaths })).toContain(
+      `/builds/${d890.build.id}/export/danger-zone`,
+    );
+    const csvOnly = d890.egressPaths.filter((p) => p.formatId !== 'radio-io');
+    expect(allBuildDetailPaths(d890.build, { egressPaths: csvOnly })).not.toContain(
+      `/builds/${d890.build.id}/export/danger-zone`,
+    );
+    const dm32 = newRadioBuildForProfile('proj', 'radio-io-dm32uv');
+    expect(allBuildDetailPaths(dm32.build, { egressPaths: dm32.egressPaths })).not.toContain(
+      `/builds/${dm32.build.id}/export/danger-zone`,
+    );
+    expect(
+      buildSectionNavItems(d890.build, { egressPaths: d890.egressPaths }).map((i) => i.label),
+    ).not.toContain('Danger zone');
+  });
+
+  it('keeps the route when switching D890 to D890 and falls back to Export for a DM-32', () => {
+    const from = newRadioBuildForProfile('proj', 'radio-io-at-d890uv');
+    const to = newRadioBuildForProfile('proj', 'radio-io-at-d890uv-mm9pdy');
+    const dm32 = newRadioBuildForProfile('proj', 'radio-io-dm32uv');
+    const path = `/builds/${from.build.id}/export/danger-zone`;
+    expect(
+      pathForSwitchedBuild(path, from.build.id, to.build, { egressPaths: to.egressPaths }),
+    ).toBe(`/builds/${to.build.id}/export/danger-zone`);
+    expect(
+      pathForSwitchedBuild(path, from.build.id, dm32.build, { egressPaths: dm32.egressPaths }),
+    ).toBe(`/builds/${dm32.build.id}/export`);
+  });
+});
