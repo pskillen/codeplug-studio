@@ -269,6 +269,36 @@ describe('AT-D890 MM9PDY NXDN lists projection (#255)', () => {
   });
 });
 
+describe('DMR and NXDN entities that share a name (stock target wire names)', () => {
+  // The DMR bank is the only bank written for DMR entities, so a name shared with an NXDN
+  // talk group or contact is not a clash there. Before #1454 the DMR entity got "NX TG 2".
+  const nxTg = { ...newTalkGroup(PROJECT, 'NX TG', 1234, 'nxdn'), id: 'tg-nx-clash' };
+  const dmrTgSame = { ...newTalkGroup(PROJECT, 'NX TG', 92, 'dmr'), id: 'tg-dmr-clash' };
+  const nxContact = { ...newDigitalContact(PROJECT, 'Same Op', 5678, 'nxdn'), id: 'dc-nx-clash' };
+  const dmrContactSame = {
+    ...newDigitalContact(PROJECT, 'Same Op', 2345, 'dmr'),
+    id: 'dc-dmr-clash',
+  };
+  const lib = libraryOf({
+    channels: [dmrCh],
+    talkGroups: [nxTg, dmrTgSame],
+    digitalContacts: [nxContact, dmrContactSame],
+    rxGroupLists: [dmrOnlyList],
+  });
+
+  for (const profileId of ['radio-io-at-d890uv', 'radio-io-at-d890uv-mm9pdy'] as const) {
+    it(`keeps the plain DMR name and raises no rename warning (${profileId})`, () => {
+      const p = project(profileId, lib, true);
+      // The AT-D890 DMR bank holds the DMR talk groups and the DMR contacts.
+      expect(p.organisation.talkGroups!.map((t) => t.wireName).sort()).toEqual([
+        'NX TG',
+        'Same Op',
+      ]);
+      expect(text(p)).not.toMatch(/NX TG 2|Same Op 2/);
+    });
+  }
+});
+
 describe('assembledHasNxdnContent', () => {
   it('is true for NXDN talk groups or contacts even with no NXDN channel', () => {
     const { build, egress } = newRadioBuildForProfile(PROJECT, 'radio-io-at-d890uv-mm9pdy');
