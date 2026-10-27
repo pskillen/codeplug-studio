@@ -1,7 +1,13 @@
 # AT-D890UV — digital contact Write
 
-How the digital contact database is written, by the official CPS and by Studio. Layout of the bank
-(meta, order table, block-hopped records) is in [memory-layout.md](memory-layout.md#digitalcontact-huge-bank).
+How the digital contact database (the **ID database**, which only names incoming calls) is written, by the
+official CPS and by Studio. Layout of the bank (meta, order table, block-hopped records) is in
+[memory-layout.md](memory-layout.md#digitalcontact-huge-bank).
+
+The AT-D890UV is dual-bank ([#1433](https://github.com/pskillen/codeplug-studio/issues/1433)): the build's
+library contacts go to the **Contacts list** (talk-group records, as private calls after the talk groups;
+[talkgroup-record.md](talkgroup-record.md)) with every image Write. This bank is filled only when the Write's
+**Digital contacts** part is ticked, from the build's contacts, the ID directory or both.
 Firmware facts are from the firmware repo's findings F274 to F278 (F279 is the emulator harness they were run in) and Q82 to Q83
 ([findings.md](https://github.com/pskillen/anytone-d890-firmware/blob/main/docs/initial-re/findings.md)).
 
@@ -77,4 +83,4 @@ Not yet checked on a radio.
 ## Related
 
 - [protocol.md](protocol.md) · [flash-sectors.md](flash-sectors.md) · [memory-layout.md](memory-layout.md)
-- [Contact directories](../../../../features/contact-directories/README.md#single-bank-web-serial-write-no-separatedigitalidlist)
+- [Contact directories](../../../../features/contact-directories/README.md#at-d890uv-dual-bank-contacts)
