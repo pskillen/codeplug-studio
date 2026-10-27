@@ -72,7 +72,7 @@ warning stands on the program-error incident above.
 
 ## Firmware semantics behind the markers
 
-What the firmware does on the PC link (anytone-d890-firmware F274 to F278, with F279, the emulator's PC-mode OS tick and frame-injection harness, behind them; Q82 asks for the radio check of the R-after-W loss and Q83 why task `0x08105D3C` blocks on hardware, [findings](https://github.com/pskillen/anytone-d890-firmware/blob/main/docs/initial-re/findings.md)), as confirmed by running its real handlers in the emulator:
+What the firmware does on the PC link (anytone-d890-firmware F274 to F278, with F279, the emulator's PC-mode OS tick and frame-injection harness, behind them; Q82 asks for the radio check of the R-after-W loss and Q83 why a firmware task blocks on hardware, [findings](https://github.com/pskillen/anytone-d890-firmware/blob/main/docs/initial-re/findings.md)), as confirmed by running its real handlers in the emulator:
 
 - **First `W` into a unit** erases that unit's non-live half. Bytes the host never sends read `FF`.
 - **Leaving a unit** for the next one writes the PC marker (`22 33 44 55` at `+0x3FBF4`) on the half just written. The marker survives a power-cycle.
