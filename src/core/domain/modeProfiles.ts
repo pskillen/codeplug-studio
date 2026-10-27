@@ -13,6 +13,7 @@ import type {
   SsbSideband,
 } from '../models/libraryTypes.ts';
 import { normalizeDmrModeProfile } from './dmrOperatingMode.ts';
+import { NXDN_ID_MAX, NXDN_ID_MIN, validateDigitalIdForMode } from './validation.ts';
 
 const ANALOG_MODES = new Set<AnalogChannelMode>(['fm', 'am', 'ssb']);
 
@@ -313,6 +314,13 @@ export function validateModeProfiles(profiles: ChannelModeProfile[]): string[] {
         if (ran != null && (ran < 0 || ran > 63)) {
           errors.push(`${label} must be 0–63`);
         }
+      }
+      if (profile.unitId != null && validateDigitalIdForMode('nxdn', profile.unitId) != null) {
+        errors.push(`NXDN unit ID must be ${NXDN_ID_MIN}–${NXDN_ID_MAX}`);
+      }
+      const callKind = profile.contactRef?.kind;
+      if (callKind != null && callKind !== 'talkGroup' && callKind !== 'digitalContact') {
+        errors.push('NXDN call must be a talk group or a digital contact');
       }
     }
     if (

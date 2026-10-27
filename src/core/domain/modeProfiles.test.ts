@@ -203,6 +203,32 @@ describe('validateModeProfiles', () => {
   });
 });
 
+describe('validateModeProfiles (NXDN)', () => {
+  const nxdn = (patch: Record<string, unknown>) =>
+    ({ ...defaultModeProfile('nxdn'), ...patch }) as ChannelModeProfile;
+
+  it('rejects NXDN unit IDs outside 1-65519', () => {
+    expect(validateModeProfiles([nxdn({ unitId: 0 })])).toContain('NXDN unit ID must be 1–65519');
+    expect(validateModeProfiles([nxdn({ unitId: 65520 })])).toContain(
+      'NXDN unit ID must be 1–65519',
+    );
+    expect(validateModeProfiles([nxdn({ unitId: 65519 })])).toEqual([]);
+    expect(validateModeProfiles([nxdn({ unitId: null })])).toEqual([]);
+  });
+
+  it('accepts a talk group or digital contact call, rejects other kinds', () => {
+    expect(
+      validateModeProfiles([nxdn({ contactRef: { kind: 'digitalContact', id: 'c' } })]),
+    ).toEqual([]);
+    expect(validateModeProfiles([nxdn({ contactRef: { kind: 'talkGroup', id: 'c' } })])).toEqual(
+      [],
+    );
+    expect(
+      validateModeProfiles([nxdn({ contactRef: { kind: 'analogContact', id: 'c' } })]),
+    ).toContain('NXDN call must be a talk group or a digital contact');
+  });
+});
+
 describe('isModeOnlyStub', () => {
   it('detects stub profiles', () => {
     expect(isModeOnlyStub({ mode: 'p25' })).toBe(true);

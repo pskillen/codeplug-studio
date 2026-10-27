@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMediaQuery } from '@mantine/hooks';
 import type { Library, RxGroupList } from '@core/models/library.ts';
 import { newRxGroupList } from '@core/domain/factories.ts';
+import { rxGroupListModes } from '@core/domain/validation.ts';
 import RxGroupListMemberPicker, {
   RxGroupListAddOverlay,
 } from '../../components/library/RxGroupListMemberPicker.tsx';
@@ -45,6 +46,11 @@ export default function RxGroupListEditor({
 
   const { permitNavigationOnce, modalOpen, stay, leave } = useEntityEditorUnsavedGuard(buildRow);
 
+  const mixedModes = useMemo(() => {
+    const modes = [...rxGroupListModes({ ...base, members }, library)];
+    return modes.length > 1 ? modes.map((m) => m.toUpperCase()) : null;
+  }, [base, members, library]);
+
   const subtitle = useMemo(
     () => `${members.length} member${members.length === 1 ? '' : 's'}`,
     [members.length],
@@ -69,6 +75,12 @@ export default function RxGroupListEditor({
         />
 
         {error ? <p className={classes.error}>{error}</p> : null}
+        {mixedModes ? (
+          <p className={classes.hint} role="status">
+            This list mixes {mixedModes.join(' and ')} members. Each radio writes only the members
+            that match the channel&apos;s mode.
+          </p>
+        ) : null}
 
         <div
           className={[classes.createScrollBody, isMobile ? classes.createScrollBodyCompact : '']

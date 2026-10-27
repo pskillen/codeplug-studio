@@ -17,6 +17,7 @@ import {
 } from '../../components/v2/index.ts';
 import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
 import { parseOptionalInt } from '../../lib/units.ts';
+import { validateDigitalIdForMode } from '@core/domain/validation.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { referenceCount } from '../../lib/listReferences.ts';
@@ -82,7 +83,10 @@ export function DigitalContactEditor({
   const { permitNavigationOnce, modalOpen, stay, leave, isDirty } =
     useEntityEditorUnsavedGuard(buildRow);
 
+  const idError = validateDigitalIdForMode(mode, parseOptionalInt(digitalId) ?? 0);
+
   function handleSave() {
+    if (idError) return;
     const row = buildRow();
     void save(() => persistence.putDigitalContact(row, entity ? entity.revision : null), {
       permitNavigation: permitNavigationOnce,
@@ -160,13 +164,18 @@ export function DigitalContactEditor({
                   aria-label="Country"
                 />
               </FormField>
-              <FormField label="DMR ID" mono>
+              <FormField
+                label={mode === 'nxdn' ? 'NXDN ID' : 'DMR ID'}
+                mono
+                error={idError ?? undefined}
+                hint={mode === 'nxdn' ? 'NXDN ID, 1–65519.' : undefined}
+              >
                 <TextInput
                   variant="plain"
                   value={digitalId}
                   onChange={(e) => setDigitalId(e.currentTarget.value)}
                   mono
-                  aria-label="DMR ID"
+                  aria-label={mode === 'nxdn' ? 'NXDN ID' : 'DMR ID'}
                 />
               </FormField>
             </div>

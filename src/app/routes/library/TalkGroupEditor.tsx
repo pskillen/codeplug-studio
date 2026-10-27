@@ -15,6 +15,7 @@ import {
   StickyFooter,
   TextInput,
 } from '../../components/v2/index.ts';
+import { validateDigitalIdForMode } from '@core/domain/validation.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
@@ -71,7 +72,10 @@ export function TalkGroupEditor({
   const { permitNavigationOnce, modalOpen, stay, leave, isDirty } =
     useEntityEditorUnsavedGuard(buildRow);
 
+  const idError = validateDigitalIdForMode(mode, parseOptionalInt(digitalId) ?? 0);
+
   function handleSave() {
+    if (idError) return;
     const row = buildRow();
     void save(() => persistence.putTalkGroup(row, entity ? entity.revision : null), {
       permitNavigation: permitNavigationOnce,
@@ -130,13 +134,18 @@ export function TalkGroupEditor({
               ].join(' ')}
               style={{ marginTop: 14 }}
             >
-              <FormField label="Talk group ID" mono>
+              <FormField
+                label={mode === 'nxdn' ? 'NXDN ID' : 'Talk group ID'}
+                mono
+                error={idError ?? undefined}
+                hint={mode === 'nxdn' ? 'NXDN ID, 1–65519.' : undefined}
+              >
                 <TextInput
                   variant="plain"
                   value={digitalId}
                   onChange={(e) => setDigitalId(e.currentTarget.value)}
                   mono
-                  aria-label="Talk group ID"
+                  aria-label={mode === 'nxdn' ? 'NXDN ID' : 'Talk group ID'}
                 />
               </FormField>
               <FormField label="Abbreviation">

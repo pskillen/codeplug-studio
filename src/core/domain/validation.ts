@@ -1,4 +1,5 @@
-import type { EntityRef, Library, ZoneMemberEntry } from '../models/library.ts';
+import type { EntityRef, Library, RxGroupList, ZoneMemberEntry } from '../models/library.ts';
+import type { DigitalChannelMode } from '../models/libraryTypes.ts';
 import { normalizeZoneMemberEntry } from './zoneMembers.ts';
 import { zoneMembershipHasCycle } from './zoneHierarchy.ts';
 
@@ -125,4 +126,34 @@ export function validateZoneMemberRefs(
     }
     validateEntityRef(ref, library);
   }
+}
+
+/** NXDN common air interface unit and group ID range. */
+export const NXDN_ID_MIN = 1;
+export const NXDN_ID_MAX = 65519;
+
+/**
+ * Library-level check for a talk group or contact ID in a given mode.
+ * Only NXDN has a range today; other modes return `null`.
+ */
+export function validateDigitalIdForMode(mode: DigitalChannelMode, id: number): string | null {
+  if (mode === 'nxdn' && (!Number.isInteger(id) || id < NXDN_ID_MIN || id > NXDN_ID_MAX)) {
+    return `NXDN IDs are ${NXDN_ID_MIN}–${NXDN_ID_MAX}`;
+  }
+  return null;
+}
+
+/** The distinct modes of the talk groups and contacts in an RX group list (dangling members skipped). */
+export function rxGroupListModes(list: RxGroupList, library: Library): Set<DigitalChannelMode> {
+  const modes = new Set<DigitalChannelMode>();
+  for (const member of list.members) {
+    const entity =
+      member.ref.kind === 'talkGroup'
+        ? library.talkGroups.find((t) => t.id === member.ref.id)
+        : member.ref.kind === 'digitalContact'
+          ? library.digitalContacts.find((c) => c.id === member.ref.id)
+          : undefined;
+    if (entity) modes.add(entity.mode);
+  }
+  return modes;
 }
