@@ -41,7 +41,7 @@ OpenGD77 `Channel Type` wire mapping (`Analogue` / `Digital` / passthrough): [op
 | Colour code, timeslot, DMR ID, contact, RX group list | `isDmrMode(mode)` — `dmr` only                                                           |
 | UR / RPT1 / RPT2 calls                                | `dstar` profile only                                                                     |
 | DG-ID, WIRES-X DTMF ID                                | `ysf` profile only                                                                       |
-| RX/TX RAN, unit ID, talk group ref                    | `nxdn` profile only                                                                      |
+| RX/TX RAN, rate, unit ID, call, RX group list         | `nxdn` profile only                                                                      |
 | MCC, MNC, GSSI, color code, talk group ref            | `tetra` profile only                                                                     |
 | (hidden) tones                                        | `isDigitalMode(mode)` — all digital modes                                                |
 
