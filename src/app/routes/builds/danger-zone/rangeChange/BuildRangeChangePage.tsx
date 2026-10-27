@@ -23,7 +23,14 @@ export interface BuildRangeChangePageProps {
   mode?: 'wizard' | 'resume';
 }
 
-export default function BuildRangeChangePage({ mode = 'wizard' }: BuildRangeChangePageProps) {
+export default function BuildRangeChangePage(props: BuildRangeChangePageProps) {
+  // A navigation to this same route (Change back… on Done, `?target=`) must start a fresh flow: React Router
+  // keeps the element, so the flow is keyed by the location and its state resets with it.
+  const location = useLocation();
+  return <RangeChangeFlowPage key={location.key} {...props} />;
+}
+
+function RangeChangeFlowPage({ mode = 'wizard' }: BuildRangeChangePageProps) {
   const { build, egressPaths } = useBuildLayout();
   const navigate = useNavigate();
   const location = useLocation();
