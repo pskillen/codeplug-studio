@@ -61,6 +61,7 @@ The **library** and domain layer are **vendor-neutral**. Radio caps, column name
 9. **New Web Serial radio adapter** — follow [adding-a-radio-adapter.md](docs/features/radio-read-write/adding-a-radio-adapter.md) (living checklist; update when implementation discovers cross-radio requirements). Write goes through FormatBuild + `assemble`; Read hydrates unmodelled/full-image state on the build.
 10. **UI rework** — follow [docs/reference/styleguide/](docs/reference/styleguide/) for list shells, Sort… / reorder, and chrome conventions (interactive demos at `/styleguide`).
 11. **Firmware flashing** — never vendor bytes in the repo (stock is user-supplied; tests are synthetic); hard interlocks are code; one guarded send path per updater. See [DESIGN.md — Firmware flashing](DESIGN.md#firmware-flashing).
+12. **Danger zone** — rare jobs that change the radio itself run only from their own wizard; one guarded send path per tool, as narrow as the change; hard interlocks are code with a refusal test each; the AT-D890 range-change sender is the only code that writes LocalInfo. See [DESIGN.md — Danger zone](DESIGN.md#danger-zone).
 
 ## Git workflow
 
