@@ -524,7 +524,7 @@ function pushNxdnProjectionWarnings(
   if (counts.nxdnWithAnalog > 0) {
     pushGeneralWarning(
       warnings,
-      `${counts.nxdnWithAnalog} channel(s) have analogue and NXDN settings. While the radio is on NXDN they run as NXDN only; the analogue half is not used.`,
+      `${counts.nxdnWithAnalog} channel(s) have analogue and NXDN settings. While the radio is on NXDN they run as NXDN only; the analogue half is not used. While it is on DMR they act as digital channels with default DMR fields.`,
     );
   }
   if (counts.invalidRan > 0) {
