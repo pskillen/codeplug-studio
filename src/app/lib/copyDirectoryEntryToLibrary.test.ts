@@ -1,7 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { newDigitalContact } from '@core/domain/factories.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
-import { prepareCopyDirectoryEntryToLibrary } from './copyDirectoryEntryToLibrary.ts';
+import {
+  addDirectoryEntryToContacts,
+  prepareCopyDirectoryEntryToLibrary,
+} from './copyDirectoryEntryToLibrary.ts';
 
 const entry: DigitalIdDirectoryEntry = {
   projectId: 'p1',
@@ -38,5 +41,37 @@ describe('prepareCopyDirectoryEntryToLibrary', () => {
     };
     const result = prepareCopyDirectoryEntryToLibrary(entry, [existing]);
     expect(result).toEqual({ kind: 'duplicate', existingContactId: 'dc-existing' });
+  });
+});
+
+describe('addDirectoryEntryToContacts', () => {
+  it('persists a new contact and returns its id', async () => {
+    const put = vi.fn().mockResolvedValue({ ok: true });
+    const result = await addDirectoryEntryToContacts(entry, [], put);
+    expect(result.kind).toBe('added');
+    if (result.kind !== 'added') return;
+    expect(put).toHaveBeenCalledTimes(1);
+    expect(put.mock.calls[0][0].id).toBe(result.contactId);
+    expect(put.mock.calls[0][1]).toBeNull();
+  });
+
+  it('does not persist when the digitalId is already a contact', async () => {
+    const existing = {
+      ...newDigitalContact('p1', 'Existing', entry.digitalId, 'dmr'),
+      id: 'dc-existing',
+    };
+    const put = vi.fn();
+    const result = await addDirectoryEntryToContacts(entry, [existing], put);
+    expect(result).toEqual({ kind: 'duplicate', existingContactId: 'dc-existing' });
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it('reports an error when the save is rejected or throws', async () => {
+    expect(
+      await addDirectoryEntryToContacts(entry, [], vi.fn().mockResolvedValue({ ok: false })),
+    ).toEqual({ kind: 'error' });
+    expect(
+      await addDirectoryEntryToContacts(entry, [], vi.fn().mockRejectedValue(new Error('x'))),
+    ).toEqual({ kind: 'error' });
   });
 });

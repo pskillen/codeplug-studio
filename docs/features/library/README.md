@@ -63,7 +63,7 @@ Shipped initiatives (mode profiles, membership order, zones revision-2, library 
 | `/library/channels/defaults` | Library-wide channel behavioural defaults (TX deny, TX permit, talker alias, analog squelch) — nested under Channels in section nav                 | No                                  |
 | `/library/zones`             | v2 `DataTable` — `reorderMode` grip + `Zone.order`; Sort zones…; members, comment; split map via `LibraryMapStack`                                  | Yes                                 |
 | `/library/talk-groups`       | v2 `DataTable` — mode, ID, Abbrev, channels/RX lists using, comment, `RowActionIcon` delete                                                         | No                                  |
-| `/library/contacts`          | Dual v2 `DataTable` in `Panel`s: digital `scale="extreme"` + Delete all; analog thin list; **Digital ID directory** link in header                  | No                                  |
+| `/library/contacts`          | Dual v2 `DataTable` in `Panel`s: digital `scale="extreme"` + Delete all; analog thin list; **ID directory** link in header                          | No                                  |
 | `/library/rx-group-lists`    | v2 `DataTable` — members, channels using, row delete                                                                                                | No                                  |
 | `/library/scan-lists`        | v2 `DataTable` — members, channels-using ref count, row delete                                                                                      | No                                  |
 

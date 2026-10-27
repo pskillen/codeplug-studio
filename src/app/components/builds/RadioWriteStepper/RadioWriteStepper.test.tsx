@@ -54,8 +54,8 @@ describe('RadioWriteStepper — step 1, what to write', () => {
 
   it('shows the contact source only while contacts is ticked', () => {
     renderStepper({ parts: { codeplug: true, contacts: true, settings: false, keps: false } });
-    expect(screen.getByRole('button', { name: 'Library' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'RadioID' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Contacts' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ID directory' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'None' })).toBeNull();
   });
 

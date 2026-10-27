@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Group, Pagination } from '@mantine/core';
 import { IconId, IconSearch } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +24,7 @@ import {
   type DataTableColumn,
 } from '../../../components/v2/index.ts';
 import { useDigitalIdDirectoryPage } from '../../../hooks/useDigitalIdDirectoryPage.ts';
+import { addDirectoryEntryToContacts } from '../../../lib/copyDirectoryEntryToLibrary.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useProjects } from '../../../state/useProjects.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
@@ -49,6 +50,19 @@ export default function DigitalIdDirectoryListPage() {
   const [clearOpen, setClearOpen] = useState(false);
   const [clearMode, setClearMode] = useState<ClearDigitalIdDirectoryMode>('all');
   const [partitionCount, setPartitionCount] = useState(0);
+  const [addingDigitalId, setAddingDigitalId] = useState<number | null>(null);
+  const [addMessage, setAddMessage] = useState<{
+    tone: 'success' | 'warning';
+    text: string;
+  } | null>(null);
+
+  const contactIdByDigitalId = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const contact of library.digitalContacts) {
+      if (!map.has(contact.digitalId)) map.set(contact.digitalId, contact.id);
+    }
+    return map;
+  }, [library.digitalContacts]);
 
   const filters = useMemo(
     () => ({
@@ -89,6 +103,27 @@ export default function DigitalIdDirectoryListPage() {
 
     return () => unsubscribe();
   }, [activeProjectId]);
+
+  const handleAddToContacts = useCallback(
+    async (entry: DigitalIdDirectoryEntry) => {
+      setAddingDigitalId(entry.digitalId);
+      setAddMessage(null);
+      const label = entry.callsign || entry.name || `ID ${entry.digitalId}`;
+      const result = await addDirectoryEntryToContacts(
+        entry,
+        library.digitalContacts,
+        (row, expectedRevision) => persistence.putDigitalContact(row, expectedRevision),
+      );
+      if (result.kind === 'added') {
+        await reload();
+        setAddMessage({ tone: 'success', text: `Added ${label} to contacts.` });
+      } else if (result.kind === 'error') {
+        setAddMessage({ tone: 'warning', text: `Could not add ${label} to contacts — try again.` });
+      }
+      setAddingDigitalId(null);
+    },
+    [library.digitalContacts, reload],
+  );
 
   function openClearDialog(mode: ClearDigitalIdDirectoryMode) {
     setClearMode(mode);
@@ -137,8 +172,41 @@ export default function DigitalIdDirectoryListPage() {
         render: (row) => row.country || '—',
         sortValue: (row) => row.country || '',
       },
+      {
+        key: 'actions',
+        header: '',
+        width: '160px',
+        hideable: false,
+        align: 'right',
+        render: (row) => {
+          const contactId = contactIdByDigitalId.get(row.digitalId);
+          return (
+            <span onClick={(event) => event.stopPropagation()}>
+              {contactId ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => navigate(`/library/digital-contacts/${contactId}`)}
+                >
+                  Open contact
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  loading={addingDigitalId === row.digitalId}
+                  disabled={addingDigitalId !== null}
+                  onClick={() => void handleAddToContacts(row)}
+                >
+                  Add to contacts
+                </Button>
+              )}
+            </span>
+          );
+        },
+      },
     ];
-  }, []);
+  }, [contactIdByDigitalId, addingDigitalId, handleAddToContacts, navigate]);
 
   const listActions = (
     <Button
@@ -159,24 +227,24 @@ export default function DigitalIdDirectoryListPage() {
         <Pagination total={pageCount} value={page} onChange={setPage} size="sm" />
       </Group>
     ) : (
-      'Read-only shadow store — copy rows into library contacts when you need them on channels or export.'
+      'Lookup-only IDs — add an entry to contacts to select, call, or use it on channels.'
     );
 
   return (
     <DesignSystemV2Provider>
       <div className={classes.page}>
         <LibraryInventoryHeader
-          title="Digital ID directory"
+          title="ID directory"
           subtitle={
             loading && total === 0
               ? 'Loading directory…'
-              : `${total.toLocaleString()} downloaded ID${total === 1 ? '' : 's'} in local shadow store`
+              : `${total.toLocaleString()} downloaded ID${total === 1 ? '' : 's'} in your ID directory`
           }
           actions={listActions}
         />
 
         <p className={classes.subtitle} style={{ marginBottom: 16 }}>
-          Bulk RadioID.net import lands here first. Library contacts below{' '}
+          Bulk RadioID.net downloads land here. Radios use these IDs only to show who is calling.{' '}
           <button
             type="button"
             className="libraryListNameLink"
@@ -184,10 +252,11 @@ export default function DigitalIdDirectoryListPage() {
           >
             Contacts
           </button>{' '}
-          are curated rows you edit and reference from channels.
+          are the ones you curate, select and call.
         </p>
 
         {error ? <StatusBanner tone="warning">{error}</StatusBanner> : null}
+        {addMessage ? <StatusBanner tone={addMessage.tone}>{addMessage.text}</StatusBanner> : null}
 
         <DigitalIdDirectoryInterchangeToolbar
           projectId={activeProjectId}
@@ -199,7 +268,7 @@ export default function DigitalIdDirectoryListPage() {
         {total === 0 && !loading && !hasFilters ? (
           <EmptyState
             title="No directory IDs yet"
-            description="Search RadioID.net and import DMR user listings into your local directory shadow store. Copy individual IDs into library contacts when you need them on channels or export."
+            description="Search RadioID.net and import DMR user listings into your ID directory. Add individual IDs to contacts when you want to select or call them."
             action={
               <Button
                 leftSection={<IconSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}

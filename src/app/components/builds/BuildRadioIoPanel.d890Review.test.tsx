@@ -465,7 +465,10 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     await screen.findByRole('button', { name: 'Write codeplug' });
     expect(screen.queryByTestId('d890-settings-review')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Use MM9PDY step keys' }));
-    expect(await screen.findByRole('button', { name: 'Write codeplug + settings' })).toBeEnabled();
+    // Applying the overrides re-renders the review; it has taken >1 s on a loaded CI runner.
+    expect(
+      await screen.findByRole('button', { name: 'Write codeplug + settings' }, { timeout: 5_000 }),
+    ).toBeEnabled();
     const overrides = getAtD890RadioSettingsSession(build.id).overrides;
     expect(overrides.get('keyShortP1')).toBe(14);
     expect(overrides.get('keyShortP2')).toBe(13);

@@ -176,12 +176,12 @@ describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
     expect(saved?.exportSettings?.assignMm9pdyStepKeys).toBe(true);
   });
 
-  it('warns when RadioID directory is selected and the shadow is empty', async () => {
+  it('warns when ID directory is selected and it is empty', async () => {
     openStepper('radio-io-opengd77-1701');
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
-    fireEvent.click(screen.getByRole('button', { name: 'RadioID' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ID directory' }));
     fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
-    expect(await screen.findByText('RadioID directory is empty')).toBeInTheDocument();
+    expect(await screen.findByText('ID directory is empty')).toBeInTheDocument();
   });
 });
 

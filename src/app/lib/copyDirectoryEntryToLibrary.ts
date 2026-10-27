@@ -26,3 +26,31 @@ export function prepareCopyDirectoryEntryToLibrary(
   }
   return { kind: 'success', contact: mapDirectoryEntryToDigitalContact(entry) };
 }
+
+export type AddDirectoryEntryResult =
+  CopyDirectoryDuplicateResult | { kind: 'added'; contactId: string } | { kind: 'error' };
+
+type PutDigitalContact = (
+  row: DigitalContact,
+  expectedRevision: number | null,
+) => Promise<{ ok: boolean }>;
+
+/**
+ * Add a directory row to contacts: block on duplicate `digitalId`, otherwise persist a new
+ * library contact. Shared by the ID directory table row action and the detail modal.
+ */
+export async function addDirectoryEntryToContacts(
+  entry: DigitalIdDirectoryEntry,
+  libraryContacts: DigitalContact[],
+  putDigitalContact: PutDigitalContact,
+): Promise<AddDirectoryEntryResult> {
+  const prepared = prepareCopyDirectoryEntryToLibrary(entry, libraryContacts);
+  if (prepared.kind === 'duplicate') return prepared;
+  try {
+    const result = await putDigitalContact(prepared.contact, null);
+    if (!result.ok) return { kind: 'error' };
+    return { kind: 'added', contactId: prepared.contact.id };
+  } catch {
+    return { kind: 'error' };
+  }
+}

@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { DigitalContact } from '@core/models/library.ts';
-import { prepareCopyDirectoryEntryToLibrary } from '../../lib/copyDirectoryEntryToLibrary.ts';
+import { findDigitalContactByDigitalId } from '@integrations/radioid/index.ts';
+import { addDirectoryEntryToContacts } from '../../lib/copyDirectoryEntryToLibrary.ts';
 import { persistence } from '../../state/persistence.ts';
 import Button from '../v2/Button.tsx';
 import ModalShell from '../v2/ModalShell.tsx';
 import StatusBanner from '../v2/StatusBanner.tsx';
-import classes from '../repeaters/RepeaterListingUpdateDialog.module.css';
+import classes from './DigitalIdDirectoryDetailDrawer.module.css';
 
 export interface DigitalIdDirectoryDetailDrawerProps {
   entry: DigitalIdDirectoryEntry | null;
@@ -17,11 +18,11 @@ export interface DigitalIdDirectoryDetailDrawerProps {
   onCopied?: (contactId: string) => void;
 }
 
-function FieldRow({ label, value }: { label: string; value: string }) {
+function FieldRow({ label, value, wide }: { label: string; value: string; wide?: boolean }) {
   return (
-    <div className={classes.fieldRow}>
-      <span className={classes.fieldLabel}>{label}</span>
-      <span className={classes.fieldValue}>{value || '—'}</span>
+    <div className={wide ? `${classes.field} ${classes.wide}` : classes.field}>
+      <dt className={classes.fieldLabel}>{label}</dt>
+      <dd className={classes.fieldValue}>{value || '—'}</dd>
     </div>
   );
 }
@@ -34,101 +35,100 @@ export default function DigitalIdDirectoryDetailDrawer({
   onCopied,
 }: DigitalIdDirectoryDetailDrawerProps) {
   const navigate = useNavigate();
-  const [copying, setCopying] = useState(false);
-  const [copyError, setCopyError] = useState<string | null>(null);
-  const [duplicateContactId, setDuplicateContactId] = useState<string | null>(null);
-  const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addedDigitalId, setAddedDigitalId] = useState<number | null>(null);
 
   if (!entry) return null;
 
-  async function handleCopy() {
-    setCopying(true);
-    setCopyError(null);
-    setDuplicateContactId(null);
-    setCopySuccess(null);
+  const existingContact = findDigitalContactByDigitalId(libraryContacts, entry.digitalId);
+  const justAdded = addedDigitalId === entry.digitalId;
 
-    const prepared = prepareCopyDirectoryEntryToLibrary(entry!, libraryContacts);
-    if (prepared.kind === 'duplicate') {
-      setDuplicateContactId(prepared.existingContactId);
-      setCopying(false);
+  function handleClose() {
+    setAddError(null);
+    setAddedDigitalId(null);
+    onClose();
+  }
+
+  async function handleAdd() {
+    setAdding(true);
+    setAddError(null);
+    const result = await addDirectoryEntryToContacts(entry!, libraryContacts, (row, revision) =>
+      persistence.putDigitalContact(row, revision),
+    );
+    setAdding(false);
+    if (result.kind === 'error') {
+      setAddError('Could not save the contact — try again.');
       return;
     }
-
-    try {
-      const result = await persistence.putDigitalContact(prepared.contact, null);
-      if (!result.ok) {
-        setCopyError('Could not save the library contact — try again.');
-        return;
-      }
-      const contactId = prepared.contact.id;
-      setCopySuccess('Copied to library contacts.');
-      onCopied?.(contactId);
-      navigate(`/library/digital-contacts/${contactId}`);
-    } catch {
-      setCopyError('Could not save the library contact — try again.');
-    } finally {
-      setCopying(false);
+    if (result.kind === 'added') {
+      setAddedDigitalId(entry!.digitalId);
+      onCopied?.(result.contactId);
     }
   }
+
+  const footer = (
+    <>
+      <Button variant="secondary" onClick={handleClose} disabled={adding}>
+        Close
+      </Button>
+      <Button
+        variant="secondary"
+        onClick={() => navigate('/library/contacts/add-from-radioid')}
+        disabled={adding}
+      >
+        Fetch from RadioID.net
+      </Button>
+      {existingContact ? (
+        <Button
+          variant="primary"
+          onClick={() => navigate(`/library/digital-contacts/${existingContact.id}`)}
+        >
+          Open contact
+        </Button>
+      ) : (
+        <Button variant="primary" onClick={() => void handleAdd()} loading={adding}>
+          Add to contacts
+        </Button>
+      )}
+    </>
+  );
 
   return (
     <ModalShell
       open={opened}
-      onClose={onClose}
+      onClose={handleClose}
       title={entry.name || `DMR ID ${entry.digitalId}`}
       size="md"
+      footer={footer}
     >
       <div className={classes.body}>
         <p className={classes.muted}>
-          Read-only directory row from your local RadioID shadow store. Copy creates a new library
-          contact with a fresh id for channels and export.
+          Lookup-only entry from your ID directory. Add it to contacts to select, call, or put it on
+          channels and RX lists.
         </p>
 
-        <FieldRow label="Name" value={entry.name} />
-        <FieldRow label="Callsign" value={entry.callsign} />
-        <FieldRow label="DMR ID" value={String(entry.digitalId)} />
-        <FieldRow label="Mode" value={entry.mode.toUpperCase()} />
-        <FieldRow label="City" value={entry.city} />
-        <FieldRow label="State" value={entry.state} />
-        <FieldRow label="Country" value={entry.country} />
-        <FieldRow label="Remarks" value={entry.remarks ?? ''} />
-        {entry.fetchedAt ? (
-          <FieldRow label="Fetched" value={new Date(entry.fetchedAt).toLocaleString()} />
-        ) : null}
-
-        {duplicateContactId ? (
-          <StatusBanner tone="warning">
-            A library contact with DMR ID {entry.digitalId} already exists. Open the existing
-            contact instead of copying a duplicate.
+        {justAdded ? <StatusBanner tone="success">Added to contacts.</StatusBanner> : null}
+        {existingContact && !justAdded ? (
+          <StatusBanner tone="info">
+            DMR ID {entry.digitalId} is already in your contacts.
           </StatusBanner>
         ) : null}
-        {copyError ? <StatusBanner tone="warning">{copyError}</StatusBanner> : null}
-        {copySuccess ? <StatusBanner tone="success">{copySuccess}</StatusBanner> : null}
+        {addError ? <StatusBanner tone="warning">{addError}</StatusBanner> : null}
 
-        <div className={classes.footer}>
-          <Button variant="secondary" onClick={onClose} disabled={copying}>
-            Close
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => navigate('/library/contacts/add-from-radioid')}
-            disabled={copying}
-          >
-            Refresh from RadioID.net
-          </Button>
-          {duplicateContactId ? (
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/library/digital-contacts/${duplicateContactId}`)}
-            >
-              Open existing contact
-            </Button>
-          ) : (
-            <Button variant="primary" onClick={() => void handleCopy()} loading={copying}>
-              Copy to library
-            </Button>
-          )}
-        </div>
+        <dl className={classes.fields}>
+          <FieldRow label="Callsign" value={entry.callsign} />
+          <FieldRow label="DMR ID" value={String(entry.digitalId)} />
+          <FieldRow label="Name" value={entry.name} wide />
+          <FieldRow label="City" value={entry.city} />
+          <FieldRow label="State" value={entry.state} />
+          <FieldRow label="Country" value={entry.country} />
+          <FieldRow label="Mode" value={entry.mode.toUpperCase()} />
+          <FieldRow label="Remarks" value={entry.remarks ?? ''} wide />
+          {entry.fetchedAt ? (
+            <FieldRow label="Fetched" value={new Date(entry.fetchedAt).toLocaleString()} wide />
+          ) : null}
+        </dl>
       </div>
     </ModalShell>
   );
