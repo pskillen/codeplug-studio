@@ -61,7 +61,11 @@ import {
   packAtD890BackupFromSession,
   downloadRadioBackupZip,
 } from '../../../services/radioBackupRestore.ts';
-import { interruptedWriteWarning } from '../../../services/radioIoInterruptedWrite.ts';
+import {
+  clearInterruptedWriteWarning,
+  interruptedWriteNotice,
+} from '../../../services/radioIoInterruptedWrite.ts';
+import type { AtD890PendingBlock } from '@integrations/radio-io/radios/at-d890uv/pendingUnits.ts';
 import { atD890SettingsReadFromSnapshot } from '../../../services/radioIoAtD890SettingsRead.ts';
 import { writeAtD890SettingsOnly } from '../../../services/radioIoAtD890SettingsWrite.ts';
 import {
@@ -236,6 +240,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canReconnect, setCanReconnect] = useState(false);
+  const [pendingBlock, setPendingBlock] = useState<AtD890PendingBlock | null>(null);
   const [reconnecting, setReconnecting] = useState(false);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   // Stage lists (4a's cursor): one track per list, kept in a ref so no event is lost between renders.
@@ -356,6 +361,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
 
   function resetRun() {
     setError(null);
+    setPendingBlock(null);
     setCanReconnect(false);
     setReconnecting(false);
     setProgress(null);
@@ -864,8 +870,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     }
     setBusyNotify(false);
     // A D890 Write interrupted after whole units were sent leaves them pending on the radio (#1406).
-    const interrupted = interruptedWriteWarning(egress.profileId, err);
-    setError(interrupted ? `${errorMessage(err)} ${interrupted}` : errorMessage(err));
+    const notice = interruptedWriteNotice(egress.profileId, err);
+    setPendingBlock(notice?.block ?? null);
+    setError(notice?.text ? `${errorMessage(err)} ${notice.text}` : errorMessage(err));
     // Before the first frame, a failure is recoverable by reading again.
     setCanReconnect(!transmitStartedRef.current && phaseRef.current !== 'keps');
   }
@@ -1007,6 +1014,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     busy,
     error,
     canReconnect,
+    pendingWarning:
+      error && pendingBlock
+        ? { recordedAt: pendingBlock.recordedAt, interrupted: pendingBlock.interrupted }
+        : null,
     reconnecting,
     progress,
     readRows: stageRows(readTrack, { finished: readFinished, startActive: true }),
@@ -1029,6 +1040,12 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     onWrite: () => decisionRef.current?.resolve(),
     onCancelReview: () => decisionRef.current?.reject(new WriteCancelledError()),
     onReconnect: () => void run({ reconnect: false }),
+    onClearPendingWarning: () => {
+      if (pendingBlock) clearInterruptedWriteWarning(pendingBlock);
+      setPendingBlock(null);
+      setError(null);
+      setCanReconnect(false);
+    },
     onCheckWrite: () => void checkWrite(),
     onSkipCheck: skipOutstanding,
     onWriteKepsAfterRestart: () => void writeKepsAfterRestart(),

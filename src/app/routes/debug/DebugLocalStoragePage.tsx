@@ -1,6 +1,6 @@
 import { Badge, Code, Text } from '@mantine/core';
-import { useMemo } from 'react';
-import { DataTable, DesignSystemV2Provider } from '@app/components/v2/index.ts';
+import { useMemo, useState } from 'react';
+import { Button, DataTable, DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { createNameColumn } from '@app/lib/libraryListTable.tsx';
 import {
@@ -11,7 +11,18 @@ import {
 } from '@integrations/debug/index.ts';
 
 export default function DebugLocalStoragePage() {
-  const rows = useMemo(() => listStorageKeys(), []);
+  const [rows, setRows] = useState<StorageKeyRow[]>(() => listStorageKeys());
+  const [confirmKey, setConfirmKey] = useState<string | null>(null);
+
+  function remove(key: string): void {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Storage blocked: the row stays "Set".
+    }
+    setConfirmKey(null);
+    setRows(listStorageKeys());
+  }
 
   const columns = useMemo(
     () => [
@@ -41,8 +52,22 @@ export default function DebugLocalStoragePage() {
           </Badge>
         ),
       },
+      {
+        key: 'actions',
+        header: 'Delete',
+        render: (row: StorageKeyRow) =>
+          !row.present ? null : confirmKey === row.key ? (
+            <Button size="sm" variant="secondary" onClick={() => remove(row.key)}>
+              Confirm delete
+            </Button>
+          ) : (
+            <Button size="sm" variant="secondary" onClick={() => setConfirmKey(row.key)}>
+              Delete
+            </Button>
+          ),
+      },
     ],
-    [],
+    [confirmKey],
   );
 
   return (
