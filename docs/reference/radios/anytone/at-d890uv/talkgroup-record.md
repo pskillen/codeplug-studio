@@ -92,6 +92,8 @@ The talk-group list is the radio's **Contacts list**: the entries listed under C
 1. the build's talk groups as group calls (wire `1`), from index 1;
 2. then the build's library contacts as private calls (wire `0`), with the five extra fields above.
 
+Only DMR talk groups and contacts are written, here, in RX-group members and in the ID database ([#1438](https://github.com/pskillen/codeplug-studio/issues/1438)). Entries with another `mode` (NXDN, TETRA, …) are skipped with one warning; a channel whose DMR TX contact is one of them is written with no TX contact. No NXDN bank is written.
+
 Both share `TALK_GROUPS_MAX` (10,000). Talk groups take slots first; contacts past the cap are not written (a warning, and a channel that calls one gets no TX contact). A contact with DMR ID 0 gets no slot and leaves no gap. Channel TX contact (`+0x14`) and RX-group members point at these indices. The same ID as a group and as a private call gives two order keys one apart, so both stay in the order table.
 
 The separate DMR contact DB (the **ID database**, `DigitalContact*`) is written only when the Write's Contacts part is ticked. The firmware names a caller from that DB first and the talk-group list second, so a private ID in both is harmless.
