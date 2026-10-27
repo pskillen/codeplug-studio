@@ -80,12 +80,21 @@ export interface ChannelModeProfileYsf {
   wiresDtmfId: string;
 }
 
+/** NXDN data rate. `null` / absent leaves the rate to the radio. */
+export type NxdnRate = 'nxdn48' | 'nxdn96';
+
 export interface ChannelModeProfileNxdn {
   mode: 'nxdn';
   rxRan: number | null;
   txRan: number | null;
+  /** The operator's NXDN ID on this channel (1–65519). */
   unitId: number | null;
-  talkGroupRef: EntityRef | null;
+  /** What the channel calls: an NXDN talk group (group call) or NXDN contact (private call). */
+  contactRef: EntityRef | null;
+  /** RX group list to listen to; may mix modes, each radio writes only the NXDN members. */
+  rxGroupListId?: string | null;
+  /** 6.25 kHz (NXDN48) or 12.5 kHz (NXDN96); `null` / absent = radio default. */
+  nxdnRate?: NxdnRate | null;
 }
 
 export interface ChannelModeProfileTetra {
