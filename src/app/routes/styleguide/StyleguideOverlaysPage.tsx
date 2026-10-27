@@ -13,6 +13,7 @@ import {
 } from '../../components/v2/index.ts';
 import RadioIoReplayDemo from './RadioIoReplayDemo.tsx';
 import RadioWriteStepperDemo from './RadioWriteStepperDemo.tsx';
+import RangeChangeDemo from './RangeChangeDemo.tsx';
 import RadioIoStageList, { type StageRow } from '../../components/builds/RadioIoStageList.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
@@ -253,6 +254,13 @@ export default function StyleguideOverlaysPage() {
         description="Build → Export → Write radio is one ModalShell dialog with six steps. Pick a step to preview it with dummy data; nothing talks to a radio."
       >
         <RadioWriteStepperDemo />
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="Danger zone: Change frequency range"
+        description="The AT-D890 range-change wizard, every step and the main failure screens, with demo data. Nothing talks to a radio."
+      >
+        <RangeChangeDemo />
       </StyleguideSection>
     </StyleguidePageShell>
   );

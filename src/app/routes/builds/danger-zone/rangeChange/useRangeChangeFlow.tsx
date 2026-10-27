@@ -11,7 +11,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   atD890MaintenanceUnlocked,
   atD890RangeChangeTargets,
-  atD890ReceiveNarrower,
   atD890TxChangeSummary,
   describeAtD890FrequencyRange,
   sanitiseAtD890RangeCode,
@@ -73,7 +72,8 @@ import {
   closeRadioSession,
   openRadioSessionForEgress,
 } from '../../../../services/radioIoSession.ts';
-import { clock, COPY, NOTHING_CHANGED, rangeLabel, rxText, txText } from './rangeChangeCopy.ts';
+import { buildRangeRows } from './rangeRows.ts';
+import { clock, COPY, NOTHING_CHANGED, rangeLabel } from './rangeChangeCopy.ts';
 import type {
   NoticeKind,
   NoticeTone,
@@ -231,32 +231,10 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
   const currentUnlisted =
     currentCode !== null && !describeAtD890FrequencyRange(currentCode).cpsListed;
 
-  const rangeRows: RangeChangeTargetRow[] = useMemo(() => {
-    if (!radio) return [];
-    const list = atD890RangeChangeTargets(radio.identCode, {
-      maintenanceUnlocked: radio.maintenanceUnlocked,
-    });
-    return list.map((t) => {
-      const sum = atD890TxChangeSummary(radio.identCode, t.code);
-      const same = rxText(t.code) === rxText(radio.identCode);
-      return {
-        code: t.code,
-        caption: t.caption,
-        current: t.isCurrent,
-        selectable: !t.isCurrent && t.available,
-        ...(!t.available ? { disabledReason: COPY.newRange.code14Reason } : {}),
-        unlisted: t.unlisted,
-        transmitLine: t.isCurrent
-          ? `Transmit ${txText(t.code)}`
-          : `Transmit ${sum.to} (was ${sum.from})`,
-        receiveLine: same ? COPY.newRange.receiveSame : `Receive ${rxText(t.code)}`,
-        ...(t.isCurrent ? {} : { direction: t.txChange }),
-        uhfOff: t.uhfTxInhibited,
-        narrowReceive: !t.isCurrent && atD890ReceiveNarrower(radio.identCode, t.code),
-        raw: t,
-      };
-    });
-  }, [radio]);
+  const rangeRows: RangeChangeTargetRow[] = useMemo(
+    () => (radio ? buildRangeRows(radio.identCode, radio.maintenanceUnlocked) : []),
+    [radio],
+  );
 
   // Change back…: preselect once the radio is read.
   useEffect(() => {
