@@ -200,7 +200,18 @@ function collectReferencedIds(channels: Channel[]): {
           rxGroupListIds.add(profile.rxGroupListId);
         }
       }
-      if (profile.mode === 'nxdn' || profile.mode === 'tetra') {
+      if (profile.mode === 'nxdn') {
+        if (profile.contactRef?.kind === 'digitalContact') {
+          digitalContactIds.add(profile.contactRef.id);
+        }
+        if (profile.contactRef?.kind === 'talkGroup') {
+          talkGroupIds.add(profile.contactRef.id);
+        }
+        if (profile.rxGroupListId) {
+          rxGroupListIds.add(profile.rxGroupListId);
+        }
+      }
+      if (profile.mode === 'tetra') {
         if (profile.talkGroupRef?.kind === 'talkGroup') {
           talkGroupIds.add(profile.talkGroupRef.id);
         }

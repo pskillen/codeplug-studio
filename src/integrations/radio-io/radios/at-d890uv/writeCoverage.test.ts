@@ -19,3 +19,19 @@ describe('What Write updates: the Radio settings row', () => {
     );
   });
 });
+
+describe('What Write updates: the NXDN channel settings row', () => {
+  const nxdnRow = (mm9pdy: boolean) =>
+    atD890WriteCoverageRows(mm9pdy).find((r) => r.label === 'NXDN channel settings')!;
+
+  it('is written on MM9PDY, with the radio condition in the note', () => {
+    expect(nxdnRow(true).status).toBe('written');
+    expect(nxdnRow(true).note).toMatch(/reports NXDN enabled/);
+    expect(nxdnRow(true).note).toMatch(/Reset Digital Protocol is then set to Off/);
+  });
+
+  it('is carried through unchanged on the stock target', () => {
+    expect(nxdnRow(false).status).toBe('preserved');
+    expect(nxdnRow(false).note).toBeUndefined();
+  });
+});

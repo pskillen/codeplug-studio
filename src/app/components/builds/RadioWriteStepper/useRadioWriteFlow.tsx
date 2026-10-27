@@ -712,10 +712,14 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
           signal,
           organisation: image.organisation,
           channels: image.channels,
+          ...(image.nxdn ? { nxdn: image.nxdn, warnings: image.warnings } : {}),
           parts: p,
           ...(isAtD890 && p.settings ? { settingsOverrides: overridesForWrite(build.id) } : {}),
           beforeTransmit: async (ctx: BeforeTransmitContext) => {
-            await awaitReview({ ...ctx, channels: image.channels }, { contactsNote, kepsCount });
+            await awaitReview(
+              { ...ctx, channels: ctx.channels ?? image.channels },
+              { contactsNote, kepsCount },
+            );
             enterWriting();
             if (!ctx.atD890) return undefined;
             const decision = settingsPauseResult();
@@ -728,8 +732,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
           codeplugWritten: p.codeplug,
           contactsWritten: p.contacts,
           settingsChanged: settingsAppliedRef.current,
-          channelCount: image.channels.length,
-          warnings: [...image.warnings, ...(result.warnings ?? [])],
+          channelCount: (result.channels ?? image.channels).length,
+          warnings: [...(result.projectionWarnings ?? image.warnings), ...(result.warnings ?? [])],
           writeTimings: result.timings ?? null,
         };
         await afterUpload(session, p, signal, result.writeVerifyPending);

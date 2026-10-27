@@ -9,6 +9,7 @@ import {
 } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
+import { atD890UploadBankIntentFromOrganisation } from './memory.ts';
 import {
   AT_D890_NEVER_PATCH_MAIN_OFFSETS,
   AT_D890_SETTINGS_FIELDS,
@@ -414,6 +415,50 @@ describe('AT-D890 v1 settings fields', () => {
     // 0xaa -> 0xaa | 0x02 changes nothing at +0x110 (bit 1 is already set), so it is not listed.
     expect(changed).toEqual([0x47, 0xbc, ...lineBytes]);
     expect(unit[0x110]).toBe(0xaa);
+  });
+
+  it('leaves the digital protocol byte +0x152, NXDN mic gain +0x153 and Reset Digital Protocol +0x154 as read when the radio does not report NXDN enabled (the Write session adds the +0x154 = Off patch only then)', () => {
+    for (const spec of AT_D890_SETTINGS_FIELDS.values()) {
+      const end = spec.address + spec.length;
+      for (const off of [0x152, 0x153, 0x154]) {
+        const at = 0x3500000 + off;
+        expect(spec.address <= at && at < end, `${spec.id} covers +0x${off.toString(16)}`).toBe(
+          false,
+        );
+      }
+    }
+    const unit = new Uint8Array(0x40000).fill(0xaa);
+    unit[0x152] = 1;
+    unit[0x153] = 3;
+    unit[0x154] = 2;
+    const patches = resolveAtD890SettingsPatches(
+      [
+        { fieldId: 'callSignColour', value: 7 },
+        { fieldId: 'volumeBar', value: false },
+        { fieldId: 'showTimeSlot', value: true },
+      ],
+      'mm9pdy',
+    );
+    expect(patches.length).toBeGreaterThan(0);
+    applyAtD890SettingsPatchesToUnit(0x3500000, unit, patches);
+    expect(unit[0x152]).toBe(1);
+    expect(unit[0x153]).toBe(3);
+    expect(unit[0x154]).toBe(2);
+  });
+
+  it('the +0x154 = Off patch is added only for the MM9PDY target with the session flag', () => {
+    const on = atD890UploadBankIntentFromOrganisation({
+      atD890SettingsTarget: 'mm9pdy',
+      atD890ResetDigitalProtocolOff: true,
+    });
+    expect(on.settingsPatches?.map((p) => [p.address, [...p.bytes]])).toEqual([[0x3500154, [0]]]);
+    for (const organisation of [
+      { atD890SettingsTarget: 'mm9pdy' as const },
+      { atD890SettingsTarget: 'stock' as const, atD890ResetDigitalProtocolOff: true },
+      { atD890ResetDigitalProtocolOff: true },
+    ]) {
+      expect(atD890UploadBankIntentFromOrganisation(organisation).settingsPatches).toBeUndefined();
+    }
   });
 
   it('never trips the erased-span guard for a valid encode, empty lines included', () => {

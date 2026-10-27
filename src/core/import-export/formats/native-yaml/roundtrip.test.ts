@@ -13,6 +13,8 @@ import {
   FIXTURE_PARENT_ZONE_ID,
   FIXTURE_PROJECT_ID,
   FIXTURE_APRS_CONFIG_ID,
+  FIXTURE_DIGITAL_CONTACT_ID,
+  FIXTURE_RX_LIST_ID,
   FIXTURE_TG_ID,
   FIXTURE_TIMESTAMP,
   FIXTURE_ZONE_ID,
@@ -262,5 +264,76 @@ describe('assignMm9pdyStepKeys on an AT-D890 build (#1393)', () => {
     const parsed = parseProjectDocument(serialiseProject(withKey));
     expect(parsed.radioBuilds[0]?.exportSettings?.assignMm9pdyStepKeys).toBe(true);
     expect(parsed.radioBuilds[0]?.radioTargetId).toBe('anytone-at-d890uv-mm9pdy');
+  });
+});
+
+describe('native-yaml NXDN profile', () => {
+  function nxdnAggregate(profile: Record<string, unknown>) {
+    const aggregate = fullLibraryAggregate();
+    const channel: Channel = {
+      ...newChannel(FIXTURE_PROJECT_ID, 'NXDN ch'),
+      modeProfiles: [{ mode: 'nxdn', ...profile } as Channel['modeProfiles'][number]],
+    };
+    return { ...aggregate, channels: [...aggregate.channels, channel] };
+  }
+
+  it('round-trips rate, call, RX group list and unit ID', () => {
+    const aggregate = nxdnAggregate({
+      rxRan: 3,
+      txRan: 4,
+      unitId: 1234,
+      contactRef: { kind: 'digitalContact', id: FIXTURE_DIGITAL_CONTACT_ID },
+      rxGroupListId: FIXTURE_RX_LIST_ID,
+      nxdnRate: 'nxdn96',
+    });
+    const yaml = serialiseProject(aggregate);
+    expect(yaml).toContain('contactRef');
+    expect(yaml).not.toContain('talkGroupRef');
+    const parsed = parseProjectDocument(yaml);
+    expect(parsed.channels.at(-1)?.modeProfiles[0]).toEqual({
+      mode: 'nxdn',
+      rxRan: 3,
+      txRan: 4,
+      unitId: 1234,
+      contactRef: { kind: 'digitalContact', id: FIXTURE_DIGITAL_CONTACT_ID },
+      rxGroupListId: FIXTURE_RX_LIST_ID,
+      nxdnRate: 'nxdn96',
+    });
+  });
+
+  it('loads a legacy talkGroupRef as contactRef', () => {
+    const yaml = serialiseProject(
+      nxdnAggregate({
+        rxRan: null,
+        txRan: null,
+        unitId: null,
+        contactRef: { kind: 'talkGroup', id: FIXTURE_TG_ID },
+      }),
+    ).replace('contactRef:', 'talkGroupRef:');
+    expect(yaml).toContain('talkGroupRef:');
+    const profile = parseProjectDocument(yaml).channels.at(-1)?.modeProfiles[0];
+    expect(profile).toMatchObject({
+      mode: 'nxdn',
+      contactRef: { kind: 'talkGroup', id: FIXTURE_TG_ID },
+      rxGroupListId: null,
+      nxdnRate: null,
+    });
+    expect(profile && 'talkGroupRef' in profile).toBe(false);
+  });
+
+  it('rejects a dangling NXDN call or RX group list', () => {
+    const dangling = serialiseProject(
+      nxdnAggregate({
+        rxRan: null,
+        txRan: null,
+        unitId: null,
+        contactRef: { kind: 'digitalContact', id: 'missing' },
+      }),
+    );
+    expect(() => parseProjectDocument(dangling)).toThrow(/not found/);
+    const danglingList = serialiseProject(
+      nxdnAggregate({ rxRan: null, txRan: null, unitId: null, rxGroupListId: 'missing' }),
+    );
+    expect(() => parseProjectDocument(danglingList)).toThrow(/not found/);
   });
 });

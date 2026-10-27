@@ -103,10 +103,21 @@ const AT_D890UV: RadioRfCapabilities = {
   frequencyRanges: AT_D890UV_BANDS,
 };
 
+/**
+ * MM9PDY adds NXDN on the two VHF/UHF voice bands. Whether a given Write carries it depends on the
+ * radio reporting NXDN enabled (see the AT-D890 NXDN reference); eligibility only says the target can.
+ */
+const AT_D890UV_MM9PDY_BANDS: readonly RadioFrequencyRange[] = [
+  range(136, 174, ['fm', 'dmr', 'nxdn']),
+  range(400, 480, ['fm', 'dmr', 'nxdn']),
+  range(108, 136, ['am']),
+  range(87.5, 108, ['fm'], false),
+];
+
 const AT_D890UV_MM9PDY: RadioRfCapabilities = {
   radioTargetId: 'anytone-at-d890uv-mm9pdy',
-  supportedModes: ['fm', 'am', 'dmr'],
-  frequencyRanges: AT_D890UV_BANDS,
+  supportedModes: ['fm', 'am', 'dmr', 'nxdn'],
+  frequencyRanges: AT_D890UV_MM9PDY_BANDS,
 };
 
 /** Authoritative RF capability tables keyed by {@link RadioTarget.id}. */

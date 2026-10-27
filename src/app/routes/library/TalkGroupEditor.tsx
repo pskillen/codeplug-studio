@@ -15,6 +15,7 @@ import {
   StickyFooter,
   TextInput,
 } from '../../components/v2/index.ts';
+import { validateDigitalIdForMode } from '@core/domain/validation.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
@@ -45,6 +46,7 @@ export function TalkGroupEditor({
   const [abbreviation, setAbbreviation] = useState(base.abbreviation ?? '');
   const [mode, setMode] = useState<DigitalChannelMode>(base.mode);
   const [digitalId, setDigitalId] = useState(String(base.digitalId));
+  const [saveAttempted, setSaveAttempted] = useState(false);
   const [comment, setComment] = useState(base.comment);
   const { save, saving, error } = useEntitySave('talk-groups');
   const { library } = useLibrary();
@@ -71,7 +73,16 @@ export function TalkGroupEditor({
   const { permitNavigationOnce, modalOpen, stay, leave, isDirty } =
     useEntityEditorUnsavedGuard(buildRow);
 
+  const idError = validateDigitalIdForMode(mode, parseOptionalInt(digitalId) ?? 0, 'talkGroup');
+
+  // A blank ID is invalid for NXDN, but the error only shows once the user typed one or tried to save.
+  const idErrorShown = digitalId.trim() === '' && !saveAttempted ? null : idError;
+
   function handleSave() {
+    if (idError) {
+      setSaveAttempted(true);
+      return;
+    }
     const row = buildRow();
     void save(() => persistence.putTalkGroup(row, entity ? entity.revision : null), {
       permitNavigation: permitNavigationOnce,
@@ -130,13 +141,18 @@ export function TalkGroupEditor({
               ].join(' ')}
               style={{ marginTop: 14 }}
             >
-              <FormField label="Talk group ID" mono>
+              <FormField
+                label={mode === 'nxdn' ? 'NXDN ID' : 'Talk group ID'}
+                mono
+                error={idErrorShown ?? undefined}
+                hint={mode === 'nxdn' ? 'NXDN ID, 1–65519, or 65535 for all-call.' : undefined}
+              >
                 <TextInput
                   variant="plain"
                   value={digitalId}
                   onChange={(e) => setDigitalId(e.currentTarget.value)}
                   mono
-                  aria-label="Talk group ID"
+                  aria-label={mode === 'nxdn' ? 'NXDN ID' : 'Talk group ID'}
                 />
               </FormField>
               <FormField label="Abbreviation">

@@ -102,6 +102,52 @@ describe('normalizeModeProfile', () => {
   });
 });
 
+describe('normalizeModeProfile (NXDN)', () => {
+  it('moves a legacy talkGroupRef to contactRef', () => {
+    const legacy = {
+      mode: 'nxdn',
+      rxRan: 1,
+      txRan: 2,
+      unitId: 77,
+      talkGroupRef: { kind: 'talkGroup', id: 'tg-1' },
+    } as unknown as ChannelModeProfile;
+    const out = normalizeModeProfile(legacy);
+    expect(out).toMatchObject({
+      mode: 'nxdn',
+      rxRan: 1,
+      unitId: 77,
+      contactRef: { kind: 'talkGroup', id: 'tg-1' },
+      rxGroupListId: null,
+      nxdnRate: null,
+    });
+    expect('talkGroupRef' in out).toBe(false);
+  });
+
+  it('keeps contactRef when both are present', () => {
+    const out = normalizeModeProfile({
+      mode: 'nxdn',
+      rxRan: null,
+      txRan: null,
+      unitId: null,
+      contactRef: { kind: 'digitalContact', id: 'c-1' },
+      talkGroupRef: { kind: 'talkGroup', id: 'tg-1' },
+    } as unknown as ChannelModeProfile);
+    expect(out).toMatchObject({ contactRef: { kind: 'digitalContact', id: 'c-1' } });
+  });
+
+  it('defaults the new fields on a profile that lacks them', () => {
+    expect(defaultModeProfile('nxdn')).toEqual({
+      mode: 'nxdn',
+      rxRan: null,
+      txRan: null,
+      unitId: null,
+      contactRef: null,
+      rxGroupListId: null,
+      nxdnRate: null,
+    });
+  });
+});
+
 describe('syncModeProfiles', () => {
   it('preserves existing profiles and adds defaults for new modes', () => {
     const fm: ChannelModeProfileAnalog = {
@@ -154,6 +200,38 @@ describe('validateModeProfiles', () => {
     const dmr = defaultModeProfile('dmr') as ChannelModeProfileDMR;
     dmr.colourCode = 20;
     expect(validateModeProfiles([dmr])).toContain('DMR colour code must be 0–15');
+  });
+});
+
+describe('validateModeProfiles (NXDN)', () => {
+  const nxdn = (patch: Record<string, unknown>) =>
+    ({ ...defaultModeProfile('nxdn'), ...patch }) as ChannelModeProfile;
+
+  it('rejects the all-call ID 65535 as an NXDN unit ID', () => {
+    expect(validateModeProfiles([nxdn({ unitId: 65535 })])).toContain(
+      'NXDN unit ID must be 1–65519',
+    );
+  });
+
+  it('rejects NXDN unit IDs outside 1-65519', () => {
+    expect(validateModeProfiles([nxdn({ unitId: 0 })])).toContain('NXDN unit ID must be 1–65519');
+    expect(validateModeProfiles([nxdn({ unitId: 65520 })])).toContain(
+      'NXDN unit ID must be 1–65519',
+    );
+    expect(validateModeProfiles([nxdn({ unitId: 65519 })])).toEqual([]);
+    expect(validateModeProfiles([nxdn({ unitId: null })])).toEqual([]);
+  });
+
+  it('accepts a talk group or digital contact call, rejects other kinds', () => {
+    expect(
+      validateModeProfiles([nxdn({ contactRef: { kind: 'digitalContact', id: 'c' } })]),
+    ).toEqual([]);
+    expect(validateModeProfiles([nxdn({ contactRef: { kind: 'talkGroup', id: 'c' } })])).toEqual(
+      [],
+    );
+    expect(
+      validateModeProfiles([nxdn({ contactRef: { kind: 'analogContact', id: 'c' } })]),
+    ).toContain('NXDN call must be a talk group or a digital contact');
   });
 });
 

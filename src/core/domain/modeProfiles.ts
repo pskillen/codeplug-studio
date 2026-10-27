@@ -3,6 +3,7 @@ import type {
   ChannelModeProfile,
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
+  ChannelModeProfileNxdn,
 } from '../models/library.ts';
 import { DEFAULT_MODE_PROFILE_BEHAVIOUR_OVERRIDES } from '../models/channelBehaviourDefaults.ts';
 import type {
@@ -12,6 +13,7 @@ import type {
   SsbSideband,
 } from '../models/libraryTypes.ts';
 import { normalizeDmrModeProfile } from './dmrOperatingMode.ts';
+import { NXDN_ID_MAX, NXDN_ID_MIN, validateDigitalIdForMode } from './validation.ts';
 
 const ANALOG_MODES = new Set<AnalogChannelMode>(['fm', 'am', 'ssb']);
 
@@ -73,7 +75,15 @@ export function defaultModeProfile(
     case 'ysf':
       return { mode: 'ysf', dgId: null, wiresDtmfId: '' };
     case 'nxdn':
-      return { mode: 'nxdn', rxRan: null, txRan: null, unitId: null, talkGroupRef: null };
+      return {
+        mode: 'nxdn',
+        rxRan: null,
+        txRan: null,
+        unitId: null,
+        contactRef: null,
+        rxGroupListId: null,
+        nxdnRate: null,
+      };
     case 'tetra':
       return {
         mode: 'tetra',
@@ -120,6 +130,22 @@ function normalizeAnalogProfile(
   };
 }
 
+/** Fill NXDN fields added after the first release; a legacy `talkGroupRef` becomes `contactRef`. */
+function normalizeNxdnProfile(
+  profile: ChannelModeProfileNxdn & { talkGroupRef?: ChannelModeProfileNxdn['contactRef'] },
+): ChannelModeProfileNxdn {
+  const { talkGroupRef, ...rest } = profile;
+  return {
+    ...rest,
+    rxRan: rest.rxRan ?? null,
+    txRan: rest.txRan ?? null,
+    unitId: rest.unitId ?? null,
+    contactRef: rest.contactRef ?? talkGroupRef ?? null,
+    rxGroupListId: rest.rxGroupListId ?? null,
+    nxdnRate: rest.nxdnRate ?? null,
+  };
+}
+
 /** Upgrade legacy `{ mode }` stubs and partial analog profiles to full typed shapes. */
 export function normalizeModeProfile(profile: ChannelModeProfile): ChannelModeProfile {
   const legacySideband = legacySsbSideband(profile.mode);
@@ -139,6 +165,9 @@ export function normalizeModeProfile(profile: ChannelModeProfile): ChannelModePr
   }
   if (profile.mode === 'dmr') {
     return normalizeDmrModeProfile(profile as ChannelModeProfileDMR);
+  }
+  if (profile.mode === 'nxdn') {
+    return normalizeNxdnProfile(profile as ChannelModeProfileNxdn);
   }
   return profile;
 }
@@ -285,6 +314,13 @@ export function validateModeProfiles(profiles: ChannelModeProfile[]): string[] {
         if (ran != null && (ran < 0 || ran > 63)) {
           errors.push(`${label} must be 0–63`);
         }
+      }
+      if (profile.unitId != null && validateDigitalIdForMode('nxdn', profile.unitId) != null) {
+        errors.push(`NXDN unit ID must be ${NXDN_ID_MIN}–${NXDN_ID_MAX}`);
+      }
+      const callKind = profile.contactRef?.kind;
+      if (callKind != null && callKind !== 'talkGroup' && callKind !== 'digitalContact') {
+        errors.push('NXDN call must be a talk group or a digital contact');
       }
     }
     if (

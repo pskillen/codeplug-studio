@@ -110,7 +110,7 @@ Arrays may be empty; `aprsConfiguration` may be `null`. Serialiser emits all key
 | `primaryMode`         | channel mode string                 | yes      | Optional; dual-mode CPS primary (`fm`, `dmr`, …)                                                |
 | `modeProfiles`        | `ChannelModeProfile[]`              | no       |
 
-Mode profile discriminant is `mode`. DMR profiles may include `dmrMode: dmo-simplex | repeater | null` (`null` = infer at export from RX/TX). See [data-model](../../../features/data-model/README.md) for per-mode fields. Analog `ssb` profiles may include `ssbSideband: usb | lsb` (defaults to `usb`). Import accepts legacy `ssb-usb` / `ssb-lsb` mode strings and normalises them on load.
+Mode profile discriminant is `mode`. DMR profiles may include `dmrMode: dmo-simplex | repeater | null` (`null` = infer at export from RX/TX). See [data-model](../../../features/data-model/README.md) for per-mode fields. NXDN profiles carry `rxRan`, `txRan`, `unitId`, `contactRef` (an `EntityRef` to an NXDN talk group or digital contact), `rxGroupListId` and `nxdnRate` (`nxdn48` \| `nxdn96` \| `null`); import accepts the legacy key `talkGroupRef` on NXDN profiles and reads it as `contactRef`. Import checks structure and references only, not ID ranges. Analog `ssb` profiles may include `ssbSideband: usb | lsb` (defaults to `usb`). Import accepts legacy `ssb-usb` / `ssb-lsb` mode strings and normalises them on load.
 
 ### `Zone`
 

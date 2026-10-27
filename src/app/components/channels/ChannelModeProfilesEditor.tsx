@@ -1,4 +1,16 @@
 import {
+  NXDN_FIELD_HINTS,
+  NXDN_FIELD_LABELS,
+  NXDN_RATE_DEFAULT_VALUE,
+  NXDN_RATE_OPTIONS,
+  nxdnCallFromSelectValue,
+  nxdnCallOptions,
+  nxdnCallValue,
+  nxdnRateFromSelectValue,
+  nxdnRxGroupListOptions,
+} from '../../lib/nxdnProfileFields.ts';
+import { NXDN_ID_MAX, NXDN_ID_MIN } from '@core/domain/validation.ts';
+import {
   Group,
   Input,
   NumberInput,
@@ -375,7 +387,7 @@ function NxdnPanel({
     <>
       <Group grow>
         <NumberInput
-          label="RX RAN"
+          label={NXDN_FIELD_LABELS.rxRan}
           value={profile.rxRan ?? undefined}
           onChange={(v) => onPatch({ rxRan: typeof v === 'number' ? v : null })}
           min={0}
@@ -383,7 +395,7 @@ function NxdnPanel({
           allowDecimal={false}
         />
         <NumberInput
-          label="TX RAN"
+          label={NXDN_FIELD_LABELS.txRan}
           value={profile.txRan ?? undefined}
           onChange={(v) => onPatch({ txRan: typeof v === 'number' ? v : null })}
           min={0}
@@ -391,23 +403,38 @@ function NxdnPanel({
           allowDecimal={false}
         />
       </Group>
+      <Select
+        label={NXDN_FIELD_LABELS.rate}
+        description={NXDN_FIELD_HINTS.rate}
+        data={[...NXDN_RATE_OPTIONS]}
+        value={profile.nxdnRate ?? NXDN_RATE_DEFAULT_VALUE}
+        onChange={(v) => onPatch({ nxdnRate: nxdnRateFromSelectValue(v) })}
+        allowDeselect={false}
+      />
       <NumberInput
-        label="Unit ID"
+        label={NXDN_FIELD_LABELS.unitId}
+        description={NXDN_FIELD_HINTS.unitId}
         value={profile.unitId ?? undefined}
         onChange={(v) => onPatch({ unitId: typeof v === 'number' ? v : null })}
-        min={1}
+        min={NXDN_ID_MIN}
+        max={NXDN_ID_MAX}
         allowDecimal={false}
       />
       <Select
-        label="Talk group"
-        data={[
-          { value: '', label: 'None' },
-          ...library.talkGroups
-            .filter((t) => t.mode === 'nxdn')
-            .map((t) => ({ value: t.id, label: t.name })),
-        ]}
-        value={profile.talkGroupRef?.id ?? ''}
-        onChange={(v) => onPatch({ talkGroupRef: v ? { kind: 'talkGroup', id: v } : null })}
+        label={NXDN_FIELD_LABELS.call}
+        description={NXDN_FIELD_HINTS.call}
+        data={nxdnCallOptions(library)}
+        value={nxdnCallValue(profile.contactRef)}
+        onChange={(v) => onPatch({ contactRef: nxdnCallFromSelectValue(v) })}
+        searchable
+        clearable
+      />
+      <Select
+        label={NXDN_FIELD_LABELS.rxGroupList}
+        description={NXDN_FIELD_HINTS.rxGroupList}
+        data={nxdnRxGroupListOptions(library, profile.rxGroupListId)}
+        value={profile.rxGroupListId ?? ''}
+        onChange={(v) => onPatch({ rxGroupListId: v || null })}
         searchable
         clearable
       />

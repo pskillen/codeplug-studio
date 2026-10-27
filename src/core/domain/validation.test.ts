@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { assertNonEmptyName, validateEntityRef } from './validation.ts';
-import { emptyLibrary, newChannel, newDigitalContact, newTalkGroup, newZone } from './factories.ts';
+import {
+  assertNonEmptyName,
+  rxGroupListModes,
+  validateDigitalIdForMode,
+  validateEntityRef,
+} from './validation.ts';
+import {
+  emptyLibrary,
+  newChannel,
+  newDigitalContact,
+  newRxGroupList,
+  newTalkGroup,
+  newZone,
+} from './factories.ts';
 
 describe('validation', () => {
   it('rejects empty names', () => {
@@ -43,5 +55,59 @@ describe('validation', () => {
     const ch = newChannel('p1', 'Local', 'GB3DA');
     expect(ch.callsign).toBe('GB3DA');
     expect(ch.revision).toBe(1);
+  });
+});
+
+describe('validateDigitalIdForMode', () => {
+  it('limits NXDN IDs to 1-65519', () => {
+    expect(validateDigitalIdForMode('nxdn', 0)).toBe('NXDN IDs are 1–65519');
+    expect(validateDigitalIdForMode('nxdn', 65520)).toBe('NXDN IDs are 1–65519');
+    expect(validateDigitalIdForMode('nxdn', 1)).toBeNull();
+    expect(validateDigitalIdForMode('nxdn', 65519)).toBeNull();
+  });
+
+  it('allows 65535 (all-call) for an NXDN talk group only', () => {
+    expect(validateDigitalIdForMode('nxdn', 65535, 'talkGroup')).toBeNull();
+    expect(validateDigitalIdForMode('nxdn', 65535, 'contact')).toBe('NXDN IDs are 1–65519');
+    expect(validateDigitalIdForMode('nxdn', 65535)).toBe('NXDN IDs are 1–65519');
+  });
+
+  it('refuses 65520 and 0 for an NXDN talk group, with the all-call hint', () => {
+    const msg = 'NXDN talk group IDs are 1–65519, or 65535 for all-call';
+    expect(validateDigitalIdForMode('nxdn', 65520, 'talkGroup')).toBe(msg);
+    expect(validateDigitalIdForMode('nxdn', 0, 'talkGroup')).toBe(msg);
+    expect(validateDigitalIdForMode('nxdn', 65520, 'contact')).toBe('NXDN IDs are 1–65519');
+  });
+
+  it('leaves other modes unchecked', () => {
+    expect(validateDigitalIdForMode('dmr', 0)).toBeNull();
+    expect(validateDigitalIdForMode('dmr', 16777215)).toBeNull();
+  });
+});
+
+describe('rxGroupListModes', () => {
+  it('collects the modes of the members, skipping dangling ones', () => {
+    const dmrTg = newTalkGroup('p', 'World', 91, 'dmr');
+    const nxdnTg = newTalkGroup('p', 'NX', 10, 'nxdn');
+    const nxdnContact = newDigitalContact('p', 'Bob', 12, 'nxdn');
+    const library = {
+      ...emptyLibrary(),
+      talkGroups: [dmrTg, nxdnTg],
+      digitalContacts: [nxdnContact],
+    };
+    const list = {
+      ...newRxGroupList('p', 'Mixed'),
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: dmrTg.id } },
+        { ref: { kind: 'talkGroup' as const, id: nxdnTg.id } },
+        { ref: { kind: 'digitalContact' as const, id: nxdnContact.id } },
+        { ref: { kind: 'talkGroup' as const, id: 'gone' } },
+      ],
+    };
+    expect([...rxGroupListModes(list, library)].sort()).toEqual(['dmr', 'nxdn']);
+    expect([...rxGroupListModes({ ...list, members: [list.members[1]] }, library)]).toEqual([
+      'nxdn',
+    ]);
+    expect(rxGroupListModes(newRxGroupList('p', 'Empty'), library).size).toBe(0);
   });
 });

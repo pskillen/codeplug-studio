@@ -54,7 +54,7 @@ Single global configuration row (42 columns): `OwnId`, `StationId`, `StationType
 | `NxdnStateNum`    | State number            |
 | `txcc`            | TX colour code (sample) |
 
-When `Channel Type` indicates NXDN operation, map to `ChannelModeProfileNxdn` (`rxRan`, `txRan`, `unitId`, `talkGroupRef`) — field-level mapping TBD when NXDN channel rows available in fixtures.
+When `Channel Type` indicates NXDN operation, map to `ChannelModeProfileNxdn` (`rxRan`, `txRan`, `unitId`, `contactRef`, `rxGroupListId`, `nxdnRate`) — field-level mapping TBD when NXDN channel rows available in fixtures.
 
 ## Internal model mapping summary
 

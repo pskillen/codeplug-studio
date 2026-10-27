@@ -121,9 +121,13 @@ Mode-specific channel fields live on `modeProfiles` entries. Union type `Channel
 | `ChannelModeProfileDMR`    | `dmr`             | colour code, timeslot, DMR ID, contact ref, RX group list                            |
 | `ChannelModeProfileDstar`  | `dstar`           | UR / RPT1 / RPT2 calls                                                               |
 | `ChannelModeProfileYsf`    | `ysf`             | DG-ID, WIRES-X DTMF ID                                                               |
-| `ChannelModeProfileNxdn`   | `nxdn`            | RX/TX RAN, unit ID, talk group ref                                                   |
+| `ChannelModeProfileNxdn`   | `nxdn`            | RX/TX RAN, rate (`nxdnRate`), unit ID, call (`contactRef`), RX group list            |
 | `ChannelModeProfileTetra`  | `tetra`           | MCC, MNC, GSSI, color code, talk group ref                                           |
 | `ChannelModeProfileStub`   | `p25`, `m17`      | mode label only (typed profiles deferred)                                            |
+
+**NXDN profile.** `rxRan` / `txRan` are 0–63. `nxdnRate` is `nxdn48` (6.25 kHz), `nxdn96` (12.5 kHz) or `null` (leave the rate to the radio). `contactRef` is the call: an NXDN talk group (group call) or an NXDN digital contact (private call), as the DMR profile's `contactRef`. `rxGroupListId` names an RX group list. `unitId` is the operator's NXDN ID on the channel. NXDN IDs (unit IDs, talk groups and contacts with `mode: 'nxdn'`) must be 1–65519, a library rule from the NXDN air interface; an NXDN talk group may also be 65535, the all-call group (contacts and unit IDs may not); a radio's own limits are export warnings. Earlier projects stored the call as `talkGroupRef`; it is moved to `contactRef` on load (IndexedDB, Drive and native YAML). An RX group list may mix modes; the library warns, and each radio writes only the members that match the channel's mode.
+
+**One build carries DMR and NXDN.** There is no per-protocol build split. Radios that switch protocol globally do so in their radio settings, not in the build's channel set.
 
 `maidenheadLocator` and `location` may both be set; export adapters prefer coordinates when they conflict. See `reconcileChannelLocation` in `src/core/domain/channelLocation.ts`.
 

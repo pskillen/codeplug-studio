@@ -17,6 +17,7 @@ import {
 } from '../../components/v2/index.ts';
 import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
 import { parseOptionalInt } from '../../lib/units.ts';
+import { validateDigitalIdForMode } from '@core/domain/validation.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { referenceCount } from '../../lib/listReferences.ts';
@@ -53,6 +54,7 @@ export function DigitalContactEditor({
   const [name, setName] = useState(base.name);
   const [mode, setMode] = useState<DigitalChannelMode>(base.mode);
   const [digitalId, setDigitalId] = useState(String(base.digitalId));
+  const [saveAttempted, setSaveAttempted] = useState(false);
   const [callsign, setCallsign] = useState(base.callsign);
   const [city, setCity] = useState(base.city);
   const [state, setState] = useState(base.state);
@@ -82,7 +84,16 @@ export function DigitalContactEditor({
   const { permitNavigationOnce, modalOpen, stay, leave, isDirty } =
     useEntityEditorUnsavedGuard(buildRow);
 
+  const idError = validateDigitalIdForMode(mode, parseOptionalInt(digitalId) ?? 0);
+
+  // A blank ID is invalid for NXDN, but the error only shows once the user typed one or tried to save.
+  const idErrorShown = digitalId.trim() === '' && !saveAttempted ? null : idError;
+
   function handleSave() {
+    if (idError) {
+      setSaveAttempted(true);
+      return;
+    }
     const row = buildRow();
     void save(() => persistence.putDigitalContact(row, entity ? entity.revision : null), {
       permitNavigation: permitNavigationOnce,
@@ -160,13 +171,18 @@ export function DigitalContactEditor({
                   aria-label="Country"
                 />
               </FormField>
-              <FormField label="DMR ID" mono>
+              <FormField
+                label={mode === 'nxdn' ? 'NXDN ID' : 'DMR ID'}
+                mono
+                error={idErrorShown ?? undefined}
+                hint={mode === 'nxdn' ? 'NXDN ID, 1–65519.' : undefined}
+              >
                 <TextInput
                   variant="plain"
                   value={digitalId}
                   onChange={(e) => setDigitalId(e.currentTarget.value)}
                   mono
-                  aria-label="DMR ID"
+                  aria-label={mode === 'nxdn' ? 'NXDN ID' : 'DMR ID'}
                 />
               </FormField>
             </div>

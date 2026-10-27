@@ -2,14 +2,14 @@
 
 ## Feature availability
 
-| Feature      | CPS files           | Studio v1 export                                                                                                                                                                           |
-| ------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| DMR channels | `Channel.CSV`, DMR* | Shipped ([#233](https://github.com/pskillen/codeplug-studio/issues/233))                                                                                                                   |
-| Scan lists   | `ScanList.CSV`      | Shipped                                                                                                                                                                                    |
-| AM air       | `AMAir.CSV`         | Channel bank export shipped ([#267](https://github.com/pskillen/codeplug-studio/issues/267)); `AMZone.CSV` export shipped ([#316](https://github.com/pskillen/codeplug-studio/issues/316)) |
-| Broadcast FM | `FM.CSV`            | Channel bank export shipped ([#268](https://github.com/pskillen/codeplug-studio/issues/268)); **no `FMZone.CSV` on D890**                                                                  |
-| NXDN         | `NX*.CSV`           | Wire documented; export deferred ([#247](https://github.com/pskillen/codeplug-studio/issues/247))                                                                                          |
-| APRS         | `APRS.CSV`          | Shipped — conditional when `library.aprsConfiguration` exists ([#251](https://github.com/pskillen/codeplug-studio/issues/251))                                                             |
+| Feature      | CPS files           | Studio v1 export                                                                                                                                                                                                 |
+| ------------ | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DMR channels | `Channel.CSV`, DMR* | Shipped ([#233](https://github.com/pskillen/codeplug-studio/issues/233))                                                                                                                                         |
+| Scan lists   | `ScanList.CSV`      | Shipped                                                                                                                                                                                                          |
+| AM air       | `AMAir.CSV`         | Channel bank export shipped ([#267](https://github.com/pskillen/codeplug-studio/issues/267)); `AMZone.CSV` export shipped ([#316](https://github.com/pskillen/codeplug-studio/issues/316))                       |
+| Broadcast FM | `FM.CSV`            | Channel bank export shipped ([#268](https://github.com/pskillen/codeplug-studio/issues/268)); **no `FMZone.CSV` on D890**                                                                                        |
+| NXDN         | `NX*.CSV`           | CSV export deferred ([#247](https://github.com/pskillen/codeplug-studio/issues/247)). MM9PDY Web Serial writes channel fields when the radio reports NXDN enabled ([nxdn.md](nxdn.md)); lists in a later release |
+| APRS         | `APRS.CSV`          | Shipped — conditional when `library.aprsConfiguration` exists ([#251](https://github.com/pskillen/codeplug-studio/issues/251))                                                                                   |
 
 Radio settings: v1 fields per [optional-settings.md](optional-settings.md) (Web Serial only).
 

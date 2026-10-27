@@ -120,4 +120,39 @@ describe('channelEligibility', () => {
     expect(channelEligibleForRadio(dmr, 'baofeng-uv5r-mini')).toBe(false);
     expect(getChannelIneligibilityReason(dmr, 'baofeng-uv5r-mini')).toBe('unsupported-mode');
   });
+  describe('NXDN', () => {
+    function nxdnChannel(rxHz: number) {
+      const ch = channelWith([], rxHz, 'Nxdn');
+      ch.modeProfiles = [
+        {
+          mode: 'nxdn',
+          rxRan: 1,
+          txRan: 1,
+          unitId: null,
+          contactRef: null,
+          rxGroupListId: null,
+          nxdnRate: null,
+        },
+      ];
+      return ch;
+    }
+
+    it('an NXDN-only channel is eligible on the MM9PDY AT-D890UV target', () => {
+      const ch = nxdnChannel(446_000_000);
+      expect(channelEligibleForRadio(ch, 'anytone-at-d890uv-mm9pdy')).toBe(true);
+      expect(getRadioRfCapabilities('anytone-at-d890uv-mm9pdy')!.supportedModes).toContain('nxdn');
+    });
+
+    it('an NXDN-only channel is unsupported-mode on the stock AT-D890UV target', () => {
+      const ch = nxdnChannel(446_000_000);
+      expect(channelEligibleForRadio(ch, 'anytone-at-d890uv')).toBe(false);
+      expect(getChannelIneligibilityReason(ch, 'anytone-at-d890uv')).toBe('unsupported-mode');
+    });
+
+    it('MM9PDY NXDN is limited to the 2 m and 70 cm bands', () => {
+      expect(channelEligibleForRadio(nxdnChannel(121_500_000), 'anytone-at-d890uv-mm9pdy')).toBe(
+        false,
+      );
+    });
+  });
 });

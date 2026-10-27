@@ -233,15 +233,26 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
         wiresDtmfId: expectOptionalString(record.wiresDtmfId, `modeProfiles[${index}].wiresDtmfId`),
       };
     case 'nxdn':
+      // Files written before the call target could be a contact name it `talkGroupRef`.
       return {
         mode: 'nxdn',
         rxRan: expectNullableNumber(record.rxRan, `modeProfiles[${index}].rxRan`),
         txRan: expectNullableNumber(record.txRan, `modeProfiles[${index}].txRan`),
         unitId: expectNullableNumber(record.unitId, `modeProfiles[${index}].unitId`),
-        talkGroupRef: parseNullableEntityRef(
-          record.talkGroupRef,
-          `modeProfiles[${index}].talkGroupRef`,
+        contactRef:
+          parseNullableEntityRef(record.contactRef, `modeProfiles[${index}].contactRef`) ??
+          parseNullableEntityRef(record.talkGroupRef, `modeProfiles[${index}].talkGroupRef`),
+        rxGroupListId: expectNullableString(
+          record.rxGroupListId,
+          `modeProfiles[${index}].rxGroupListId`,
         ),
+        nxdnRate:
+          record.nxdnRate === undefined || record.nxdnRate === null
+            ? null
+            : parseEnumField(record.nxdnRate, `modeProfiles[${index}].nxdnRate`, [
+                'nxdn48',
+                'nxdn96',
+              ] as const),
       };
     case 'tetra':
       return {
@@ -1508,7 +1519,23 @@ function validateForeignKeys(
           }
         }
       }
-      if (profile.mode === 'nxdn' || profile.mode === 'tetra') {
+      if (profile.mode === 'nxdn') {
+        if (profile.contactRef) {
+          try {
+            validateEntityRef(profile.contactRef, library);
+          } catch (error) {
+            throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
+          }
+        }
+        if (profile.rxGroupListId) {
+          try {
+            validateRxGroupListId(profile.rxGroupListId, library);
+          } catch (error) {
+            throw new NativeYamlImportError(error instanceof Error ? error.message : String(error));
+          }
+        }
+      }
+      if (profile.mode === 'tetra') {
         if (profile.talkGroupRef) {
           try {
             validateEntityRef(profile.talkGroupRef, library);

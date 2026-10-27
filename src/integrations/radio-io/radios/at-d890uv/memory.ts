@@ -28,7 +28,11 @@ import {
   radioChannelHasTablePosition,
 } from './channelLocationCodec.ts';
 import { listSetBits } from './bitmap.ts';
-import { resolveAtD890SettingsPatches, type AtD890SettingsPatch } from './settingsFields.ts';
+import {
+  atD890ResetDigitalProtocolOffPatch,
+  resolveAtD890SettingsPatches,
+  type AtD890SettingsPatch,
+} from './settingsFields.ts';
 import { assertAtD890WritableSpan, isAtD890WritableAddress } from './writableExtents.ts';
 import { syncAmAirRegionsToCache } from './amAirCodec.ts';
 import { syncAmZoneRegionsToCache } from './amZoneCodec.ts';
@@ -342,10 +346,15 @@ export function atD890UploadBankIntentFromOrganisation(
   organisation?: RadioWriteOrganisation,
   channels?: readonly RadioChannelDto[],
 ): AtD890UploadBankIntent {
+  const target = organisation?.atD890SettingsTarget ?? 'stock';
   const settingsPatches = resolveAtD890SettingsPatches(
     [...(organisation?.atD890SettingsOverrides ?? [])],
-    organisation?.atD890SettingsTarget ?? 'stock',
+    target,
   );
+  // Only the MM9PDY target, and only when the Write session found NXDN enabled on the radio.
+  if (target === 'mm9pdy' && organisation?.atD890ResetDigitalProtocolOff === true) {
+    settingsPatches.push(atD890ResetDigitalProtocolOffPatch());
+  }
   return {
     replaceAmAirBank:
       organisation?.amAirChannels !== undefined && organisation?.amZones !== undefined,

@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { parseProjectDocument } from './parse.ts';
+import { serialiseProject } from './serialise.ts';
+import { FIXTURE_PROJECT_ID, fullLibraryAggregate } from './testFixtures.ts';
+import { newChannel } from '@core/domain/factories.ts';
+import type { Channel } from '@core/models/library.ts';
 import {
   NativeYamlImportError,
   expectNullableNumber,
@@ -27,5 +32,30 @@ describe('native-yaml expect helpers', () => {
   it('rejects invalid nullable string types', () => {
     expect(() => expectNullableString(42, 'field')).toThrow(NativeYamlImportError);
     expect(() => expectNullableString(42, 'field')).toThrow(/must be a string/);
+  });
+});
+
+describe('native-yaml NXDN rate', () => {
+  it('rejects an unknown nxdnRate', () => {
+    const aggregate = fullLibraryAggregate();
+    const channel: Channel = {
+      ...newChannel(FIXTURE_PROJECT_ID, 'NXDN ch'),
+      modeProfiles: [
+        {
+          mode: 'nxdn',
+          rxRan: null,
+          txRan: null,
+          unitId: null,
+          contactRef: null,
+          nxdnRate: 'nxdn48',
+        },
+      ],
+    };
+    const yaml = serialiseProject({ ...aggregate, channels: [channel] }).replace(
+      'nxdnRate: nxdn48',
+      'nxdnRate: nxdn192',
+    );
+    expect(yaml).toContain('nxdn192');
+    expect(() => parseProjectDocument(yaml)).toThrow(/nxdnRate/);
   });
 });
