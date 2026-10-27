@@ -102,6 +102,7 @@ Plug in, **Write radio**, tick the parts, **Connect & read**, then **Review**: a
 - **Write every channel the hardware can receive; warn on the transmit range at Review.** Nothing about the range is stored.
 - **Read a radio closes with `END`**, as every Studio read does, so the radio is never left in PC mode. So do Cancel on Review, Review its settings and a settings-only session that writes nothing: `END` restarts the radio (about 20 s) and changes nothing, where leaving PROGRAM without it would leave the radio in PC mode until power-cycled (Q-C). The stepper tells the user the radio restarts.
 
+- **Owner rulings (2026-10-26), for every Write and settings screen.** (1) **The serial is shown in full everywhere** it is shown (Review, the This radio row, backup lists): nothing truncates it, because the user is deciding which radio gets written. (2) **Overrides are session-only**; no settings choice is stored in the project or the browser. (3) **Keep is the default** for every field and every part, so a Write changes only what the user asked it to. (4) **The latest user action wins** over any earlier choice or derived state (typing after Clear replaces it; a broken edit goes back to Keep), and **an indicator shows the state that will be written**, not the state last configured. (5) **The Write button names only what is sent** ("Write codeplug", "Write codeplug + settings", "Write 3 parts").
 - **Advanced fields are opt-in per tab and per field.** The switch, the per-field warning and "Keep" as the default keep a wrong value from being a one-click mistake; hiding the switch discards what it hid.
 - **The password is written whole or not at all** (enable and digits together, `00` padding, never `FF`), 1 to 8 digits, because the firmware compares until the first `00` and an erased password with the enable byte set is a lock nobody can type.
 - **Where the brief and the CPS audit disagree, the firmware wins.** The audit's addresses matched the brief for every advanced field; its value lists carry no ranges, so the ranges are the firmware's.
@@ -113,6 +114,8 @@ Plug in, **Write radio**, tick the parts, **Connect & read**, then **Review**: a
 - Fields the CPS offers but the firmware never reads, and the Bluetooth test mode: never offered.
 
 ## Radio checks (owner)
+
+**Hardware so far.** The owner's first range-change run on 2026-10-27 (see [danger-zone.md](danger-zone.md#radio-checks)) restored a full backup, settings included, onto the changed radio in one session; it booted normally with the settings as before. That is the Restore half of RS7 only. No RS row below has been run on a radio, so all stay pending.
 
 | Row   | Check                                                                                                                                                                                                                                                                                                | State   |
 | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
