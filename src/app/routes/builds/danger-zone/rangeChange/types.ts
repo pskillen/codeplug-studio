@@ -158,7 +158,7 @@ export interface RangeChangeView {
     rows: readonly StageRow[];
     result: RestoreCheckResult | null;
   };
-  done: { skipped: boolean; changeBackCode: number | null };
+  done: { skipped: boolean; changeBackCode: number | null; calibrationChecked: boolean };
   resume: RangeChangeResumeView;
 
   fromCode: number | null;

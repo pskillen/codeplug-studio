@@ -108,7 +108,7 @@ function base(): RangeChangeView {
     },
     restore: { rows: rows(RESTORE_LABELS, 0), failed: false, backupTime: '14:12' },
     check: { secondsLeft: 0, totalSeconds: 60, rows: rows(['Check'], 0), result: null },
-    done: { skipped: false, changeBackCode: null },
+    done: { skipped: false, changeBackCode: null, calibrationChecked: true },
     resume: {
       entry: null,
       choices: [],
@@ -329,7 +329,10 @@ export const RANGE_CHANGE_DEMO_STATES: readonly RangeChangeDemoState[] = [
   {
     id: 'done',
     label: 'Done',
-    view: withRadio({ step: 'done', done: { skipped: false, changeBackCode: 3 } }),
+    view: withRadio({
+      step: 'done',
+      done: { skipped: false, changeBackCode: 3, calibrationChecked: true },
+    }),
   },
   {
     id: 'resume-pick',

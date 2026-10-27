@@ -242,6 +242,7 @@ export const COPY = {
     ],
     calibrationTitle: 'Calibration',
     calibration: 'Rewritten by the radio, checked unchanged.',
+    calibrationNotCompared: 'Rewritten by the radio. Studio did not compare it with the backup.',
     cpsTitle: 'Official CPS',
     cps: "Files saved before today won't write to this radio (Band Error!). In the CPS, read the radio first, then save a new file.",
     keep: "Keep both backup files. They're your copy of the radio before the change.",

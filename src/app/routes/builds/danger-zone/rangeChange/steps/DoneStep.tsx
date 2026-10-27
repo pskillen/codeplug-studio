@@ -22,7 +22,8 @@ export default function DoneStep({ view, actions }: StepProps) {
         </ul>
       </section>
       <p className={classes.text}>
-        <strong>{COPY.done.calibrationTitle}.</strong> {COPY.done.calibration}
+        <strong>{COPY.done.calibrationTitle}.</strong>{' '}
+        {view.done.calibrationChecked ? COPY.done.calibration : COPY.done.calibrationNotCompared}
       </p>
       <p className={classes.text}>
         <strong>{COPY.done.cpsTitle}.</strong> {COPY.done.cps}

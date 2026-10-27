@@ -180,6 +180,8 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
   const [confirmTick, setConfirmTick] = useState(false);
   const [receiveOnly, setReceiveOnly] = useState<{ count: number; total: number } | null>(null);
   const [verified, setVerified] = useState(false);
+  /** The calibration was compared with the vital file and found unchanged (step 6). */
+  const [calibrationChecked, setCalibrationChecked] = useState(false);
   const [checklist, setChecklist] = useState<readonly RangeChangeChecklistItem[]>([]);
   const [anywayAvailable, setAnywayAvailable] = useState(false);
   const [anywayOpen, setAnywayOpen] = useState(false);
@@ -654,6 +656,7 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
     const tuneOk =
       ok || (outcome.kind === 'identity-differs' && outcome.result.tuneDiffs.length === 0);
     const tuneChecked = 'result' in outcome ? outcome.result.tuneChecked : false;
+    setCalibrationChecked(tuneChecked && tuneOk);
     setChecklist([
       { id: 'same', text: COPY.restart.checklist.same(serial), ok: true },
       { id: 'range', text: COPY.restart.checklist.range(rangeLabel(code)), ok: true },
@@ -1078,6 +1081,7 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
     setSavedTick(false);
     setConfirmTick(false);
     setVerified(false);
+    setCalibrationChecked(false);
     setChecklist([]);
     setWiped(false);
     setRestoreFailed(false);
@@ -1213,7 +1217,7 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
       rows: checkRows,
       result: checkResult,
     },
-    done: { skipped, changeBackCode: canChangeBack() },
+    done: { skipped, changeBackCode: canChangeBack(), calibrationChecked },
     resume: {
       entry: activeEntry,
       choices: fileMode ? [] : choices,

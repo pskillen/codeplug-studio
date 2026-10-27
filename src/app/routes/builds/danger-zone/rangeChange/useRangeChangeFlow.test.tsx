@@ -204,6 +204,8 @@ describe('useRangeChangeFlow', () => {
     await until(hook, () => hook.result.current.view.step === 'done');
     expect(journal()[0]?.stage).toBe('done');
     expect(stages).toEqual(['sending', 'changed', 'restored', 'done']);
+    // The calibration was compared against the vital file, so Done may say so.
+    expect(hook.result.current.view.done.calibrationChecked).toBe(true);
 
     // The wizard-wide proof: exactly one W ever went to the range address; none elsewhere in LocalInfo or the tune bank.
     const all = writes(fake());
@@ -706,6 +708,8 @@ describe('useRangeChangeFlow resume', () => {
     await act(async () => hook.result.current.actions.onCheck());
     await until(hook, () => hook.result.current.view.step === 'done');
     expect(journal()[0]?.stage).toBe('done');
+    // No vital file was picked: the calibration was not compared, and Done must not claim it was.
+    expect(hook.result.current.view.done.calibrationChecked).toBe(false);
     expect(
       (hoisted.fake as FakeD890Radio)
         .allWrites()
