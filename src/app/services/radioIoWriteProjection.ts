@@ -96,7 +96,7 @@ import {
   receiveBankChannelSlot,
 } from '@core/services/anytoneChannelBanks.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
-import { dropNxdnOnlyChannels } from '@core/import-export/formats/anytone/nxdnOnlyChannels.ts';
+import { dropNxdnOnlyChannels } from '@core/services/anytoneChannelBanks.ts';
 import { AT_D890_APRS_CURRENT_CHANNEL_WIRE } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import {
   expandAssembledChannelsToRadioDtos,

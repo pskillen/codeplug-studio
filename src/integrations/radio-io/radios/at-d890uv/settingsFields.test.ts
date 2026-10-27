@@ -416,6 +416,33 @@ describe('AT-D890 v1 settings fields', () => {
     expect(unit[0x110]).toBe(0xaa);
   });
 
+  it('leaves the digital protocol byte +0x152 and NXDN mic gain +0x153 as read (NXDN is switched on the radio)', () => {
+    for (const spec of AT_D890_SETTINGS_FIELDS.values()) {
+      const end = spec.address + spec.length;
+      for (const off of [0x152, 0x153, 0x154]) {
+        const at = 0x3500000 + off;
+        expect(spec.address <= at && at < end, `${spec.id} covers +0x${off.toString(16)}`).toBe(
+          false,
+        );
+      }
+    }
+    const unit = new Uint8Array(0x40000).fill(0xaa);
+    unit[0x152] = 1;
+    unit[0x153] = 3;
+    const patches = resolveAtD890SettingsPatches(
+      [
+        { fieldId: 'callSignColour', value: 7 },
+        { fieldId: 'volumeBar', value: false },
+        { fieldId: 'showTimeSlot', value: true },
+      ],
+      'mm9pdy',
+    );
+    expect(patches.length).toBeGreaterThan(0);
+    applyAtD890SettingsPatchesToUnit(0x3500000, unit, patches);
+    expect(unit[0x152]).toBe(1);
+    expect(unit[0x153]).toBe(3);
+  });
+
   it('never trips the erased-span guard for a valid encode, empty lines included', () => {
     const unit = new Uint8Array(0x40000).fill(0xff);
     const patches = resolveAtD890SettingsPatches(

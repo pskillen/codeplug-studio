@@ -47,9 +47,12 @@ import type {
   WriteVerifyResult,
 } from '@integrations/radio-io/writeVerify.ts';
 import {
+  assembledHasNxdnChannels,
   buildRadioWriteProjection,
   type BuildRadioWriteProjectionContext,
 } from './radioIoWriteProjection.ts';
+import { isMm9pdyAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
+import { isAtD890Mm9pdyNxdnEnabled } from '@integrations/radio-io/radios/at-d890uv/mm9pdySettingsStore.ts';
 import type { RadioWriteOrganisation } from '@integrations/radio-io/radioWriteProjection.ts';
 import {
   collectDualBankDirectorySlice,
@@ -391,6 +394,21 @@ export function atD890PauseOutcome(
   return { decision: result.decision, overrides: result.overrides };
 }
 
+/** Shown once when a Write skips NXDN because the radio does not report it enabled. */
+export const ATD890_NXDN_NOT_WRITTEN_NOTICE =
+  'NXDN not written: this radio does not have NXDN enabled';
+
+/**
+ * The AT-D890UV MM9PDY projection with NXDN output on. {@link prepareRadioWriteImage} builds it
+ * beside the standard projection when the build has NXDN channels, because the radio is not read
+ * until the upload starts; the upload keeps it only if the in-session read says NXDN is enabled.
+ */
+export interface AtD890NxdnWriteVariant {
+  channels: readonly RadioChannelDto[];
+  organisation: RadioWriteOrganisation;
+  warnings: ExportWarning[];
+}
+
 export class RadioWriteBlockedError extends Error {
   /** Present when the block reason is a cardinality overage (#859 §9) — absent otherwise. */
   readonly capacity?: RadioWriteBlockedCapacity;
@@ -422,6 +440,8 @@ export async function prepareRadioWriteImage(
   warnings: ExportWarning[];
   organisation: RadioWriteOrganisation;
   channels: readonly RadioChannelDto[];
+  /** AT-D890UV MM9PDY with NXDN channels in the build: the projection to use if the radio has NXDN enabled. */
+  nxdn?: AtD890NxdnWriteVariant;
 }> {
   const descriptor = descriptorsForEgress(egress)[0];
   if (descriptor && resolveRadioWriteGate(descriptor) === 'hidden') {
@@ -488,10 +508,23 @@ export async function prepareRadioWriteImage(
       build.exportSettings,
     ).deciseconds;
   }
+  let nxdn: AtD890NxdnWriteVariant | undefined;
+  if (isMm9pdyAtD890RadioIoProfileId(egress.profileId) && assembledHasNxdnChannels(assembled)) {
+    const withNxdn = buildRadioWriteProjection(assembled, build, library, egress, {
+      ...projectionContext,
+      atD890Nxdn: true,
+    });
+    nxdn = {
+      channels: withNxdn.channels,
+      organisation: { ...withNxdn.organisation },
+      warnings: [...projectionWarnings, ...withNxdn.warnings],
+    };
+  }
   return {
     warnings,
     organisation,
     channels: projection.channels,
+    ...(nxdn ? { nxdn } : {}),
   };
 }
 
@@ -690,6 +723,8 @@ export interface BeforeTransmitContext {
   identity: RadioWriteIdentity;
   /** Channels in the Write projection. */
   channelCount: number;
+  /** The channels this Write will send, when that differs from the prepared ones (NXDN gate). */
+  channels?: readonly RadioChannelDto[];
   /** The write plan sized from the session (after the in-session read). */
   plan?: PlannedStage[];
   /**
@@ -782,17 +817,50 @@ export async function uploadPreparedRadioWrite(
     beforeTransmit?: (ctx: BeforeTransmitContext) => Promise<void | AtD890PreTransmitResult>;
     /** AT-D890UV session settings overrides. Empty or unset: today's Write, byte for byte. */
     settingsOverrides?: readonly AtD890SettingsOverride[];
+    /**
+     * AT-D890UV MM9PDY: the projection with NXDN on, from {@link prepareRadioWriteImage}. Used only
+     * when the in-session read says the radio has NXDN enabled; otherwise `channels` and
+     * `organisation` are written and `warnings` gains one notice.
+     */
+    nxdn?: AtD890NxdnWriteVariant;
+    /** Warnings of the standard projection, used with `nxdn` to build the Write's warning list. */
+    warnings?: readonly ExportWarning[];
   },
 ): Promise<{
   writeVerifyPending?: WriteVerifyCaptureResult;
   warnings?: ExportWarning[];
+  /** The projection warnings that apply to what was sent; set only when `opts.nxdn` was given. */
+  projectionWarnings?: ExportWarning[];
+  /** The channels sent; set only when `opts.nxdn` was given. */
+  channels?: readonly RadioChannelDto[];
   /** AT-D890UV: the `[d890-write-timing]` console line (#1406), for the Done step's copy button. */
   timings?: string;
 }> {
   // Per-stage timings with frame counts; the Review pause is excluded (#1406).
   const timing = startAtD890WriteTiming(session, opts?.onProgress);
   const onProgress = timing ? timing.timeline.onProgress : opts?.onProgress;
+  let nxdnOutcome: { channels: readonly RadioChannelDto[]; warnings: ExportWarning[] } | undefined;
   try {
+    // AT-D890UV MM9PDY: the NXDN gate is the radio's own settings-store record, so it is decided
+    // here, from the in-session read, before anything is seeded, reviewed or sent.
+    if (opts?.nxdn && session.radio instanceof AtD890uvProtocol) {
+      let cache = session.radio.getDownloadCache();
+      if (!cache || cache.blocks.size === 0) {
+        await session.radio.download({ onProgress, signal: opts?.signal });
+        cache = session.radio.getDownloadCache();
+      }
+      if (isAtD890Mm9pdyNxdnEnabled(cache)) {
+        nxdnOutcome = { channels: opts.nxdn.channels, warnings: opts.nxdn.warnings };
+        opts = { ...opts, channels: opts.nxdn.channels, organisation: opts.nxdn.organisation };
+      } else {
+        const notice: ExportWarning[] = [];
+        pushGeneralWarning(notice, ATD890_NXDN_NOT_WRITTEN_NOTICE);
+        nxdnOutcome = {
+          channels: opts.channels ?? [],
+          warnings: [...(opts.warnings ?? []), ...notice],
+        };
+      }
+    }
     const hydration = getRadioCloneHydration(egress);
     session.descriptor.hydration.seedProtocolForUpload?.(
       session.radio,
@@ -835,6 +903,7 @@ export async function uploadPreparedRadioWrite(
         identity: radioWriteIdentityFromSession(session),
         channelCount: opts.channels?.length ?? 0,
         identityOnly: !writeReadsBeforeTransmit(session),
+        ...(nxdnOutcome ? { channels: nxdnOutcome.channels } : {}),
         plan: planForOperation(session.descriptor, 'write', {
           prepared: { channels: opts.channels ?? [], organisation: opts.organisation ?? {} },
           session,
@@ -904,6 +973,9 @@ export async function uploadPreparedRadioWrite(
     return {
       ...(captured ? { writeVerifyPending: captured } : {}),
       ...(warnings.length ? { warnings } : {}),
+      ...(nxdnOutcome
+        ? { projectionWarnings: nxdnOutcome.warnings, channels: nxdnOutcome.channels }
+        : {}),
       ...(timings ? { timings } : {}),
     };
   } catch (err) {
