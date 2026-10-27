@@ -65,7 +65,7 @@ Each unit is the A half of an A/B pair; Studio addresses the A half and the radi
 
 **When nothing is written.** A build with no NXDN talk groups, contacts or RX lists leaves the radio's NXDN lists as they are. A build with RX lists but no list entries replaces only the RX group unit. With NXDN entries, the RX group unit is always replaced with the build's lists, because its members are slots in the list. A stock Write, a Write to a radio that does not report NXDN enabled, and a contacts-only Write never touch these units; a stock Write also drops them from the session before sending.
 
-**Backup.** Read now also reads the NXDN list and RX groups (the stock CPS reads the same regions), so a backup holds them before the first Studio write. The RX group lists restore. The list is stored in the backup but is inspect-only: its units sit above the virtual map the restore image covers. Restoring it is not supported yet.
+**Backup.** Read now also reads the NXDN list and RX groups (the stock CPS reads the same regions), so a backup holds them before the first Studio write. The list and the RX group lists are stored in the backup but are both inspect-only. The list's units sit above the virtual map the restore image covers, and the RX groups' members are slots in that list, so restoring them without it would point them at the wrong entries. That holds for the range-change restore too. Restoring either is not supported yet.
 
 **Channels.** A channel's call target (`0x6C`) is the list slot of its NXDN profile's talk group or contact; its RX group (`0x6B`) is the position of its RX list among the NXDN RX lists. A channel whose target or list the NXDN lists could not hold is written with none, and the Write warns.
 

@@ -273,7 +273,9 @@ export const AT_D890_BACKUP_REGION_SPANS: readonly AtD890BackupRegionSpan[] = [
   },
   // NXDN talk groups and contacts: one list in four units (index, inverted set, records, order).
   // Backed up, but inspect-only: the list sits above the virtual map (`AT_D890_MAP_SIZE`), which
-  // the restore image does not cover yet. The RX group lists (below) restore.
+  // the restore image does not cover yet. The NXDN RX group lists (below) are inspect-only too:
+  // their members are slots in that list, so restoring them without it would point the members at
+  // the wrong entries. Both become restorable together when the list does.
   {
     id: 'nxdn-list-index',
     label: 'NXDN contacts and talk groups (index)',
@@ -307,14 +309,14 @@ export const AT_D890_BACKUP_REGION_SPANS: readonly AtD890BackupRegionSpan[] = [
     label: 'NXDN RX group lists',
     start: AT_D890_NXDN.RxGroupData,
     length: AT_D890_NXDN_RX_GROUP_DATA_MAX_BYTES,
-    restoreRole: 'restorable',
+    restoreRole: 'inspect-only',
   },
   {
     id: 'nxdn-rx-group-set',
     label: 'NXDN RX group lists (bitmap)',
     start: AT_D890_NXDN.RxGroupSet,
     length: AT_D890_NXDN.RxGroupSetBytes,
-    restoreRole: 'restorable',
+    restoreRole: 'inspect-only',
   },
   {
     id: 'radio-id-set',

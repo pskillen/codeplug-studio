@@ -125,9 +125,22 @@ describe('NXDN list and RX group spans', () => {
     expect(atD890BackupSpanForAddress(AT_D890_NXDN.RxGroupSet)?.id).toBe('nxdn-rx-group-set');
   });
 
-  it('restores the RX groups; the list is backed up but inspect-only (above the restore image)', () => {
-    expect(atD890BackupRestoreRole(AT_D890_NXDN.RxGroupData, 0x200)).toBe('restorable');
-    expect(atD890BackupRestoreRole(AT_D890_NXDN.RxGroupSet, 0x20)).toBe('restorable');
+  it('marks no NXDN span restorable, so the range-change session B restores none of them', () => {
+    const nxdn = AT_D890_BACKUP_REGION_SPANS.filter((span) => span.id.startsWith('nxdn-'));
+    expect(nxdn.map((span) => span.id)).toEqual([
+      'nxdn-list-index',
+      'nxdn-list-set',
+      'nxdn-list-data',
+      'nxdn-list-order',
+      'nxdn-rx-group-data',
+      'nxdn-rx-group-set',
+    ]);
+    expect(nxdn.every((span) => span.restoreRole === 'inspect-only')).toBe(true);
+  });
+
+  it('backs up the list and the RX groups but restores neither (RX members index the list)', () => {
+    expect(atD890BackupRestoreRole(AT_D890_NXDN.RxGroupData, 0x200)).toBe('inspect-only');
+    expect(atD890BackupRestoreRole(AT_D890_NXDN.RxGroupSet, 0x20)).toBe('inspect-only');
     expect(atD890BackupRestoreRole(AT_D890_NXDN.ListIndex, 16)).toBe('inspect-only');
     expect(atD890BackupRestoreRole(AT_D890_NXDN.ListData, 16)).toBe('inspect-only');
   });
