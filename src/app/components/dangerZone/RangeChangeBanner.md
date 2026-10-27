@@ -21,6 +21,7 @@ The red "Unfinished range change" banner (Danger zone, #1369). A range change wi
 
 - Copy: "Unfinished range change. AT-D890UV (serial) was changed to <range> at <time> and hasn't been restored. Its channels and settings may be wiped." with **Resume**. A record at `restored` reads "…and restored, but not checked." with **Check**.
 - **Resume** opens the wizard's resume path with the serial in router state (not in the URL). The wizard then asks for the saved backup file and checks its SHA-256 against the record.
+- **Dismiss this record** forgets the record, behind a confirm that says the banner and Resume go away, the radio is not touched, and the backup files stay. For a record that was finished another way (the Backup / Restore fallback) or a radio that is gone.
 - Renders nothing when there is no unfinished record, when storage is unavailable, or for a `done` record.
 - Shown on the Danger zone page, above the AT-D890 Export panel's header card, and on Backup / Restore.
 - Phone width: the button stacks under the text, full width.
