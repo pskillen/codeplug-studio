@@ -63,7 +63,7 @@ export const DM32_PROFILES: readonly Dm32RadioProfile[] = [
     rxGroupListNameLimit: DM32UV_LIMITS.NAME_LENGTH_RX_GROUP_LIST,
     powerLadder: DM32_POWER_LADDER,
     squelchLadder: DM32_SQUELCH_LADDER,
-    defaultDmrIdLabel: 'Paddy MM7IGV',
+    defaultDmrIdLabel: 'Radio ID 1',
   },
 ] as const;
 

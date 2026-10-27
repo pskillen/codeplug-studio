@@ -60,7 +60,7 @@ No.,Channel Name,Channel Type,RX Frequency[MHz],TX Frequency[MHz],Power,Band Wid
 59,HS Scot Multi,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 2,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
 60,HS Scot West,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,Disconnect,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
 61,HS Scot 23550,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,BM Scotland,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
-62,HS MM7IGV,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
+62,HS Home,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
 63,HS GB7EC,Digital,438.80000,434.00000,Low,12.5KHz,None,Channel Idle,None,1,Digital,0,1,0,0,0,0,0,0,0,None,None,1,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
 64,ISS UHF,Analog,437.80000,433.52500,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
 65,ISS VHF,Analog,145.80000,438.48750,High,12.5KHz,None,Channel Idle,None,1,Off,1,1,0,0,0,0,0,0,0,None,None,0,Slot 1,0,None,1,0,0,0,Paddy MM9DY,None,None,None,Carrier/CTC,None,OFF,0,0
