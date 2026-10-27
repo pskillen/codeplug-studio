@@ -117,6 +117,8 @@ export interface WriteSummary {
   checkStatus: CheckStatus;
   checkResult: WriteVerifyResult | null;
   identity: RadioIdentityView | null;
+  /** Per-stage write timings as one line of text to paste into a report; null when the radio has none. */
+  writeTimings: string | null;
 }
 
 export interface WriteReviewView {
@@ -148,6 +150,8 @@ export interface WriteFlowView {
   error: string | null;
   /** Offer "Reconnect and read again" with the error. */
   canReconnect: boolean;
+  /** AT-D890: a pending-units record sits behind the error; offers "I have rewritten this radio". */
+  pendingWarning: { recordedAt: string; interrupted: boolean } | null;
   /** "Reconnecting: the radio may have left programming mode". */
   reconnecting: boolean;
   progress: ProgressUpdate | null;
@@ -177,6 +181,8 @@ export interface WriteFlowActions {
   /** Review → Cancel: nothing is written. */
   onCancelReview: () => void;
   onReconnect: () => void;
+  /** The operator confirmed the radio was rewritten (CPS or Studio): clear the pending-units warning. */
+  onClearPendingWarning: () => void;
   onCheckWrite: () => void;
   onSkipCheck: () => void;
   onWriteKepsAfterRestart: () => void;

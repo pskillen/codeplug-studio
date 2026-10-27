@@ -66,14 +66,15 @@ export const SATELLITE_KEPS_WRITE_ADAPTERS: Readonly<Record<string, SatelliteKep
 
 /**
  * Profiles whose keps writer can run in the codeplug's own session, after `upload()` and before
- * END. The AT-D890UV keps unit (0x4A80000) is never touched by `upload()` and its writer does its
- * own fresh-read RMW on the open pipe, as the digital contacts do. OpenGD77's `upload()` ends with
- * SAVE_REBOOT, so its keps need a new session after the radio restarts.
+ * END. Empty today (#1406).
+ *
+ * The AT-D890UV keps writer preserve-reads the keps unit (0x4A80000). Once the codeplug's `W`
+ * frames have started, that read is an `R` after `W`: the firmware then never promotes the unit
+ * it was writing, and an `R` just before `END` makes `END` commit nothing. So D890 keps need a
+ * new session after the radio restarts, as OpenGD77's do (its `upload()` ends with SAVE_REBOOT).
+ * Owning the keps unit (no preserve read) would bring the D890 back here (#1417).
  */
-const KEPS_SAME_SESSION_AFTER_UPLOAD: ReadonlySet<string> = new Set([
-  'radio-io-at-d890uv',
-  'radio-io-at-d890uv-mm9pdy',
-]);
+const KEPS_SAME_SESSION_AFTER_UPLOAD: ReadonlySet<string> = new Set<string>();
 
 export function satelliteKepsSameSessionAfterUpload(profileId: string): boolean {
   return KEPS_SAME_SESSION_AFTER_UPLOAD.has(profileId);

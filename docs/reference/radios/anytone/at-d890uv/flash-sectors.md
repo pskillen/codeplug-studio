@@ -31,8 +31,9 @@ full codeplug write: 9,976 `WRITE_CMD` frames, zero hits on either offset).
 ### Never write them
 
 Studio must not transmit these addresses on any path (staging, transmit filter, or write fence). There
-is no diagnostic or debug exception. The deny is non-overridable: `atD890WriteMemory` and `atD890WriteBlockRaw`
-apply it before any caller-supplied transmit guard.
+is no diagnostic or debug exception. The deny is non-overridable: `atD890WriteMemory` (the only `W`
+sender)
+applies it before any caller-supplied transmit guard.
 
 **Consequence (hardware, 2026-07-30, one variable):** restoring marker writes made the radio display
 _"Program error please initialise the radio!"_ and **factory-reset itself**, destroying the operator's
@@ -68,6 +69,16 @@ selects the live half at run time from the end-of-unit words in
 [memory-layout.md — Alternate half](memory-layout.md#alternate-half-of-a-0x40000-unit). The PC-link
 address map is not settled. Studio still must not write the `+0x3fbf0` / `+0x3fff0` markers; that
 warning stands on the program-error incident above.
+
+## Firmware semantics behind the markers
+
+What the firmware does on the PC link (anytone-d890-firmware F274 to F278, with F279, the emulator's PC-mode OS tick and frame-injection harness, behind them; Q82 asks for the radio check of the R-after-W loss and Q83 why a firmware task blocks on hardware, [findings](https://github.com/pskillen/anytone-d890-firmware/blob/main/docs/initial-re/findings.md)), as confirmed by running its real handlers in the emulator:
+
+- **First `W` into a unit** erases that unit's non-live half. Bytes the host never sends read `FF`.
+- **Leaving a unit** for the next one writes the PC marker (`22 33 44 55` at `+0x3FBF4`) on the half just written. The marker survives a power-cycle.
+- **`END`** marks the unit in progress, then walks every bank and promotes each marked half to live, marking the old half stale. This is why a unit written but never marked is not committed, and why a marked unit is committed by a later session's `END`.
+- **An `R` after a `W`** switches the PC-link unit state: the unit being written when the `R` arrives is never marked, and an `R` as the last command before `END` makes `END` skip the walk entirely. See [protocol.md — Session rule](protocol.md#session-rule-no-r-after-the-first-w).
+- **Abandoning** a session without `END` leaves marked units pending until some later write-mode `END`: [protocol.md — Abandoned sessions](protocol.md#abandoned-sessions-units-left-pending).
 
 ## No commit / erase / swap command
 

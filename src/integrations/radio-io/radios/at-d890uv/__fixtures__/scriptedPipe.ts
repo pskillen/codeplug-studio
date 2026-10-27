@@ -20,6 +20,9 @@ export class AtD890ScriptedPipe implements BytePipe {
   /** When true, each `W` frame is ACKed with `0x06` automatically. */
   autoAckWrites = false;
 
+  /** With `autoAckWrites`, the reply byte for a `W` at `address` (default `0x06`; use `0x15` to NAK). */
+  writeAckResponder?: (address: number) => number;
+
   /**
    * When the byte queue is short, synthesize a read reply from the latest `R` frame.
    * Return `null` to simulate a silent radio (readExact will throw).
@@ -54,7 +57,7 @@ export class AtD890ScriptedPipe implements BytePipe {
     this.writes.push(copy);
     if (copy[0] === 0x52) this.lastReadFrame = copy;
     if (this.autoAckWrites && data[0] === 0x57) {
-      this.bytes.push(0x06);
+      this.bytes.push(this.writeAckResponder ? this.writeAckResponder(addr32(copy)) : 0x06);
     }
   }
 
@@ -96,6 +99,10 @@ export class AtD890ScriptedPipe implements BytePipe {
     if (!payload || payload.length !== len) return;
     this.enqueue(makeReadReply(addr, payload));
   }
+}
+
+function addr32(frame: Uint8Array): number {
+  return ((frame[1]! << 24) | (frame[2]! << 16) | (frame[3]! << 8) | frame[4]!) >>> 0;
 }
 
 function makeReadReply(addr: number, payload: Uint8Array): Uint8Array {
@@ -382,3 +389,24 @@ export function writePayloadAt(pipe: AtD890ScriptedPipe, address: number): Uint8
 }
 
 export { ANYTONE_DMR_BLOCK_SIZE };
+
+/**
+ * Independent model of the firmware rule (#1406): within one PROGRAM session (the frame log split
+ * at each `END`), no `R` frame may follow the first `W` frame. Deliberately does not import
+ * `programSession.ts`, so it checks the wire rather than the latch.
+ */
+export function assertAtD890NoReadAfterWrite(writes: readonly Uint8Array[]): void {
+  let seenWrite = false;
+  writes.forEach((f, i) => {
+    const isEnd = f.length === 3 && f[0] === 0x45 && f[1] === 0x4e && f[2] === 0x44;
+    if (isEnd) {
+      seenWrite = false;
+    } else if (f[0] === 0x57) {
+      seenWrite = true;
+    } else if (f[0] === 0x52 && seenWrite) {
+      throw new Error(
+        `R frame (log index ${i}, address 0x${addr32(f).toString(16)}) follows a W in the same PROGRAM session`,
+      );
+    }
+  });
+}

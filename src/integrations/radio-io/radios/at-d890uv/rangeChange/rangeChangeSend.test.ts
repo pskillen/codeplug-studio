@@ -1,7 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { RadioInterlockError, RadioProtocolError, RadioTimeoutError } from '../../../kit/errors.ts';
 import { AtD890ScriptedPipe } from '../__fixtures__/scriptedPipe.ts';
 import { syntheticLocalInfo } from '../__fixtures__/rangeChangeFixtures.ts';
+import {
+  AtD890PendingUnitsError,
+  clearAllAtD890PendingRecords,
+  recordAtD890PendingUnits,
+} from '../pendingUnits.ts';
+import {
+  AtD890ReadAfterWriteError,
+  assertAtD890ReadAllowed,
+  isAtD890WritePhase,
+  listAtD890UnitsEntered,
+  readAtD890ProgramCounters,
+} from '../programSession.ts';
 import { createAtD890RangeChangeSender } from './rangeChangeSend.ts';
 
 const ADDR = 0x04f80000;
@@ -19,6 +31,39 @@ function pipeWithAck(): AtD890ScriptedPipe {
   pipe.autoAckWrites = true;
   return pipe;
 }
+
+beforeEach(() => clearAllAtD890PendingRecords());
+afterEach(() => clearAllAtD890PendingRecords());
+
+describe('range-change sender and the program-session latch (#1406)', () => {
+  it('records its W, so an R before END is refused', async () => {
+    const pipe = pipeWithAck();
+    await createAtD890RangeChangeSender(pipe).send(ADDR, data(), ctx());
+    expect(isAtD890WritePhase(pipe)).toBe(true);
+    expect(readAtD890ProgramCounters(pipe).wFrames).toBe(1);
+    expect(listAtD890UnitsEntered(pipe)).toEqual([ADDR]);
+    expect(() => assertAtD890ReadAllowed(pipe, ADDR, 16)).toThrow(AtD890ReadAfterWriteError);
+  });
+
+  it('counts a resent frame and latches even when the ACK never arrives', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.pendingTimeouts = 3;
+    await expect(
+      createAtD890RangeChangeSender(pipe).send(ADDR, data(), ctx()),
+    ).rejects.toBeInstanceOf(RadioTimeoutError);
+    expect(readAtD890ProgramCounters(pipe).wFrames).toBe(3);
+    expect(isAtD890WritePhase(pipe)).toBe(true);
+  });
+
+  it('writes nothing while units from an interrupted Write are pending', async () => {
+    recordAtD890PendingUnits('unknown', [0x04000000]);
+    const pipe = pipeWithAck();
+    await expect(
+      createAtD890RangeChangeSender(pipe).send(ADDR, data(), ctx()),
+    ).rejects.toBeInstanceOf(AtD890PendingUnitsError);
+    expect(pipe.writes).toHaveLength(0);
+  });
+});
 
 describe('createAtD890RangeChangeSender', () => {
   it('sends one W frame at 0x04F80000 and resolves on ACK', async () => {

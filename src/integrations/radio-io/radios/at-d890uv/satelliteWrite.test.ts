@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import {
   AtD890ScriptedPipe,
+  assertAtD890NoReadAfterWrite,
   collectAtD890WriteDataAddresses,
   writePayloadAt,
 } from './__fixtures__/scriptedPipe.ts';
@@ -10,6 +11,9 @@ import { encodeSatelliteRecord } from './satelliteCodec.ts';
 import { uploadAtD890SatelliteRecords } from './satelliteWrite.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const BASE = AT_D890_SATELLITE.BASE_ADDRESS;
 const STRIDE = AT_D890_SATELLITE.RECORD_STRIDE;
@@ -87,6 +91,7 @@ describe('uploadAtD890SatelliteRecords', () => {
     ];
 
     await uploadAtD890SatelliteRecords(pipe, records);
+    assertAtD890NoReadAfterWrite(pipe.writes);
 
     const firstWriteIndex = pipe.writes.findIndex((w) => w[0] === 0x57);
     expect(firstWriteIndex).toBeGreaterThan(0);

@@ -9,6 +9,7 @@ import type { RadioBackupManifestV1, RadioBackupRegionV1 } from '../../backup/ty
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { atD890ReadMemory, atD890WriteMemory } from './connection.ts';
+import { gateAtD890Write } from './programSession.ts';
 import { AT_D890_BLOCK_SIZE, AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
 import {
   isAtD890ChannelDataAddress,
@@ -23,6 +24,8 @@ import {
 import { assertAtD890LocalInfoPlausible } from './identityCheck.ts';
 import {
   assertPreservedBytesMatchFreshRead,
+  eraseAnchorsFromModelled,
+  listEraseOnlyChunks,
   listSparseStagingChunks,
   modelledAddressSetFromChunks,
   overlayModelledChunksOntoUnit,
@@ -117,6 +120,9 @@ export async function restoreAtD890FromBackup(
     readBlockSize,
   );
   assertAtD890LocalInfoPlausible(liveLocal);
+  // The reads above tied the pipe to this radio. Units an interrupted Write left pending must be
+  // rewritten by this restore, which is then a valid repair (#1406).
+  const mustRewrite = gateAtD890Write(pipe, touchedUnits);
 
   const freshUnits = new Map<number, Uint8Array>();
   for (let u = 0; u < touchedUnits.length; u++) {
@@ -152,17 +158,25 @@ export async function restoreAtD890FromBackup(
   // Never LocalInfo, skip-addr, or flash bookkeeping. Live alarm in a touched
   // unit is retransmitted from the fresh read (not the archive) so erase RMW
   // does not blank it.
-  const transmittedChunks = stagingChunks.filter((c) => {
+  const inLocalInfo = (a: number) =>
+    a >= D890_MAP.LocalInfo && a < D890_MAP.LocalInfo + D890_MAP.LocalInfoLength;
+  const sendable = stagingChunks.filter((c) => {
     if (c.address === AT_D890_SAFE_SKIP_WRITE_ADDR) return false;
     if (isAtD890EraseUnitBookkeepingAddress(c.address)) return false;
-    if (
-      c.address >= D890_MAP.LocalInfo &&
-      c.address < D890_MAP.LocalInfo + D890_MAP.LocalInfoLength
-    ) {
-      return false;
-    }
-    return true;
+    return !inLocalInfo(c.address);
   });
+  // A pending unit with nothing to send into it still has to be erased (see Write).
+  const transmittedChunks = [
+    ...sendable,
+    ...listEraseOnlyChunks(
+      mustRewrite.filter((u) => touchedUnitSet.has(u)),
+      sendable,
+      eraseAnchorsFromModelled(
+        modelledChunks,
+        (a) => a === AT_D890_SAFE_SKIP_WRITE_ADDR || inLocalInfo(a),
+      ),
+    ),
+  ].sort((a, b) => a.address - b.address);
 
   const transmitGuard = (address: number) => {
     if (address >= D890_MAP.LocalInfo && address < D890_MAP.LocalInfo + D890_MAP.LocalInfoLength) {

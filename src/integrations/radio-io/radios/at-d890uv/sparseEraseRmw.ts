@@ -21,6 +21,51 @@ function isAllFf(data: Uint8Array): boolean {
   return data.every((b) => b === 0xff);
 }
 
+/**
+ * Lowest address per erase unit that a Write may send into, from the modelled chunks. Used to
+ * erase a unit whose staged blocks are all `0xff` (see {@link listEraseOnlyChunks}).
+ * `exclude` drops addresses the caller never transmits (family safe-skip, LocalInfo, ...);
+ * flash bookkeeping blocks are always excluded.
+ */
+export function eraseAnchorsFromModelled(
+  modelled: readonly AtD890StagingChunk[],
+  exclude: (address: number) => boolean = () => false,
+): Map<number, number> {
+  const anchors = new Map<number, number>();
+  for (const { address } of modelled) {
+    if (isAtD890EraseUnitBookkeepingAddress(address) || exclude(address)) continue;
+    const unit = eraseUnitBaseFor(address);
+    const cur = anchors.get(unit);
+    if (cur === undefined || address < cur) anchors.set(unit, address);
+  }
+  return anchors;
+}
+
+/**
+ * A unit left pending by an earlier Write has to be entered again, or its stale half is promoted
+ * by this session's `END`. When the staged blocks for such a unit are all `0xff` nothing would be
+ * sent into it, so send one `0xff` block at the unit's anchor: the first `W` erases the half.
+ */
+export function listEraseOnlyChunks(
+  units: readonly number[],
+  sent: readonly AtD890StagingChunk[],
+  anchors: ReadonlyMap<number, number>,
+): AtD890StagingChunk[] {
+  const entered = new Set(sent.map((c) => eraseUnitBaseFor(c.address)));
+  const out: AtD890StagingChunk[] = [];
+  for (const unit of units) {
+    if (entered.has(unit)) continue;
+    const address = anchors.get(unit);
+    if (address === undefined) {
+      throw new RadioProtocolError(
+        `D890 unit 0x${unit.toString(16)} is pending from an earlier Write but this Write has no block it can send into it`,
+      );
+    }
+    out.push({ address, data: new Uint8Array(AT_D890_BLOCK_SIZE).fill(0xff) });
+  }
+  return out.sort((a, b) => a.address - b.address);
+}
+
 /** Apply 16-byte modelled writes onto a unit buffer (in place). */
 export function overlayModelledChunksOntoUnit(
   unitBase: number,

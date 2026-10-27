@@ -200,6 +200,7 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
           checkStatus: 'skipped',
           checkResult: null,
           identity: IDENTITY,
+          writeTimings: null,
         },
       };
     default:

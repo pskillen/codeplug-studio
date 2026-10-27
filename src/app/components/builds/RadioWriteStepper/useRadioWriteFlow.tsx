@@ -61,6 +61,12 @@ import {
   packAtD890BackupFromSession,
   downloadRadioBackupZip,
 } from '../../../services/radioBackupRestore.ts';
+import {
+  clearInterruptedWriteWarning,
+  interruptedWriteNotice,
+} from '../../../services/radioIoInterruptedWrite.ts';
+import type { AtD890PendingBlock } from '@integrations/radio-io/radios/at-d890uv/pendingUnits.ts';
+import { getAtD890SessionSerial } from '@integrations/radio-io/radios/at-d890uv/programSession.ts';
 import { atD890SettingsReadFromSnapshot } from '../../../services/radioIoAtD890SettingsRead.ts';
 import { writeAtD890SettingsOnly } from '../../../services/radioIoAtD890SettingsWrite.ts';
 import {
@@ -191,6 +197,8 @@ interface WrittenFacts {
   kepsResult: SatelliteKepsWriteResult | null;
   kepsError: string | null;
   warnings: ExportWarning[];
+  /** Per-stage write timings from the upload (AT-D890); keps after a restart are not timed. */
+  writeTimings: string | null;
 }
 
 const EMPTY_FACTS: WrittenFacts = {
@@ -201,6 +209,7 @@ const EMPTY_FACTS: WrittenFacts = {
   kepsResult: null,
   kepsError: null,
   warnings: [],
+  writeTimings: null,
 };
 
 function errorMessage(err: unknown): string {
@@ -232,6 +241,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canReconnect, setCanReconnect] = useState(false);
+  const [pendingBlock, setPendingBlock] = useState<AtD890PendingBlock | null>(null);
   const [reconnecting, setReconnecting] = useState(false);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   // Stage lists (4a's cursor): one track per list, kept in a ref so no event is lost between renders.
@@ -352,6 +362,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
 
   function resetRun() {
     setError(null);
+    setPendingBlock(null);
     setCanReconnect(false);
     setReconnecting(false);
     setProgress(null);
@@ -399,6 +410,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       // A ref, not the render's state: check-then-keps reaches here from an older closure.
       checkResult: checkResultRef.current,
       identity: identityRef.current,
+      writeTimings: facts.writeTimings,
     });
     setBusyNotify(false);
     setStep('done');
@@ -731,6 +743,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
           settingsChanged: settingsAppliedRef.current,
           channelCount: image.channels.length,
           warnings: [...image.warnings, ...(result.warnings ?? [])],
+          writeTimings: result.timings ?? null,
         };
         await afterUpload(session, p, signal, result.writeVerifyPending);
         return;
@@ -837,6 +850,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   }
 
   async function onRunError(err: unknown): Promise<void> {
+    // The failed radio's serial, before the session (and its pipe) is released.
+    const failedSerial =
+      isAtD890 && sessionRef.current ? getAtD890SessionSerial(sessionRef.current.pipe) : '';
     await releaseSession().catch(() => undefined);
     decisionRef.current = null;
     if (err instanceof ReviewSettingsRequestedError) {
@@ -857,7 +873,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       return;
     }
     setBusyNotify(false);
-    setError(errorMessage(err));
+    // A D890 Write interrupted after whole units were sent leaves them pending on the radio (#1406).
+    const notice = interruptedWriteNotice(egress.profileId, err, failedSerial);
+    setPendingBlock(notice?.block ?? null);
+    setError(notice?.text ? `${errorMessage(err)} ${notice.text}` : errorMessage(err));
     // Before the first frame, a failure is recoverable by reading again.
     setCanReconnect(!transmitStartedRef.current && phaseRef.current !== 'keps');
   }
@@ -999,6 +1018,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     busy,
     error,
     canReconnect,
+    pendingWarning:
+      error && pendingBlock
+        ? { recordedAt: pendingBlock.recordedAt, interrupted: pendingBlock.interrupted }
+        : null,
     reconnecting,
     progress,
     readRows: stageRows(readTrack, { finished: readFinished, startActive: true }),
@@ -1021,6 +1044,12 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     onWrite: () => decisionRef.current?.resolve(),
     onCancelReview: () => decisionRef.current?.reject(new WriteCancelledError()),
     onReconnect: () => void run({ reconnect: false }),
+    onClearPendingWarning: () => {
+      if (pendingBlock) clearInterruptedWriteWarning(pendingBlock);
+      setPendingBlock(null);
+      setError(null);
+      setCanReconnect(false);
+    },
     onCheckWrite: () => void checkWrite(),
     onSkipCheck: skipOutstanding,
     onWriteKepsAfterRestart: () => void writeKepsAfterRestart(),

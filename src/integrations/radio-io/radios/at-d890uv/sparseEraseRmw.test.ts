@@ -4,6 +4,8 @@ import { AT_D890_ERASE_UNIT_BYTES } from './eraseUnits.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import {
   assertPreservedBytesMatchFreshRead,
+  eraseAnchorsFromModelled,
+  listEraseOnlyChunks,
   listSparseStagingChunks,
   modelledAddressSetFromChunks,
   overlayModelledChunksOntoUnit,
@@ -175,5 +177,33 @@ describe('modelledAddressSetFromChunks', () => {
       { address: 0x110, data: new Uint8Array(16) },
     ];
     expect(modelledAddressSetFromChunks(chunks)).toEqual(new Set([0x100, 0x110]));
+  });
+});
+
+describe('erase-only chunks for pending units (#1406)', () => {
+  const chunk = (address: number) => ({ address, data: new Uint8Array(16).fill(0xff) });
+
+  it('anchors are the lowest sendable modelled address per unit', () => {
+    const anchors = eraseAnchorsFromModelled(
+      [chunk(0x350_0030), chunk(0x350_0010), chunk(0x358_0000), chunk(0x350_0000 + 0x3fbf0)],
+      (a) => a === 0x350_0010,
+    );
+    expect(anchors.get(0x350_0000)).toBe(0x350_0030);
+    expect(anchors.get(0x358_0000)).toBe(0x358_0000);
+  });
+
+  it('a pending unit with no sent block gets one FF block; entered units get none', () => {
+    const anchors = new Map([
+      [0x350_0000, 0x350_0010],
+      [0x358_0000, 0x358_0000],
+    ]);
+    const out = listEraseOnlyChunks([0x350_0000, 0x358_0000], [chunk(0x358_0040)], anchors);
+    expect(out.map((c) => c.address)).toEqual([0x350_0010]);
+    expect(out[0]!.data.every((b) => b === 0xff)).toBe(true);
+    expect(out[0]!.data).toHaveLength(16);
+  });
+
+  it('refuses when a pending unit has no block it can send into', () => {
+    expect(() => listEraseOnlyChunks([0x350_0000], [], new Map())).toThrow(RadioProtocolError);
   });
 });

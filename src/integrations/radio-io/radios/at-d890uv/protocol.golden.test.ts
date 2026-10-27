@@ -33,6 +33,9 @@ import { UPLOAD_GOLDEN_FRAMES, type GoldenFrame } from './__fixtures__/uploadGol
 import { encodeBcdFrequencyHz } from './bcd.ts';
 import { setBitmapBit } from './bitmap.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const SERIAL = 'SN-TEST-UPLOAD01';
 

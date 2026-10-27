@@ -15,6 +15,15 @@ import {
 import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { throwIfAborted } from '../../kit/progress.ts';
 import { AT_D890_CONNECTION, AT_D890UV_MODEL_IDS } from './constants.ts';
+import {
+  AtD890ReadAfterWriteError,
+  assertAtD890ReadAllowed,
+  commitAtD890SessionUnits,
+  listAtD890UnitsEntered,
+  noteAtD890ProgramExited,
+  noteAtD890ReadCompleted,
+  noteAtD890WriteFrame,
+} from './programSession.ts';
 import { assertAtD890SpanNotHardDenied, assertAtD890WritableAddress } from './writableExtents.ts';
 
 const TD = new TextDecoder('ascii', { fatal: false });
@@ -69,7 +78,11 @@ export async function atD890ProbeIdent(pipe: BytePipe, signal?: AbortSignal): Pr
 }
 
 export async function atD890ExitProgram(pipe: BytePipe): Promise<void> {
+  // END commits (or, after an R, silently drops) the session's units: the write phase ends here.
+  const entered = listAtD890UnitsEntered(pipe);
+  noteAtD890ProgramExited(pipe);
   await exitAnytoneDmrProgramMode(pipe);
+  commitAtD890SessionUnits(pipe, entered);
 }
 
 /** Original send plus two resends of the same frame. */
@@ -117,7 +130,8 @@ async function readChunkWithFallback(
     // `atD890ReadBlockRaw` already spent its resend budget. This catch is the size fallback only.
     return await atD890ReadBlockRaw(pipe, address, chunkLen, signal);
   } catch (firstErr) {
-    if (chunkLen <= ANYTONE_DMR_BLOCK_SIZE) {
+    // A refused read sent nothing; a smaller read is refused the same way.
+    if (firstErr instanceof AtD890ReadAfterWriteError || chunkLen <= ANYTONE_DMR_BLOCK_SIZE) {
       throw firstErr;
     }
     const fallback = new Uint8Array(chunkLen);
@@ -160,6 +174,7 @@ export async function atD890ReadMemory(
     out.set(payload, off);
     off += chunkLen;
   }
+  noteAtD890ReadCompleted(pipe, address, out);
   return out;
 }
 
@@ -184,6 +199,8 @@ export async function atD890ReadBlockRaw(
     pipe,
     signal,
     async () => {
+      // Throws before any byte is sent once a W has gone out in this PROGRAM session (#1406).
+      assertAtD890ReadAllowed(pipe, address, length);
       await pipe.write(makeAnytoneDmrReadFrame(address, length));
       const reply = await pipe.readExact(length + 8, AT_D890_CONNECTION.TIMEOUT.READ_MS);
       return parseAnytoneDmrReadReply(reply, length, address);
@@ -220,6 +237,8 @@ export async function atD890WriteMemory(
       pipe,
       signal,
       async () => {
+        // Latches before the frame leaves, so a W whose ACK never arrives still counts (#1406).
+        noteAtD890WriteFrame(pipe, addr);
         await pipe.write(frame);
         const ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);
         if (ack[0] !== 0x06) {
@@ -234,46 +253,6 @@ export async function atD890WriteMemory(
       await new Promise((r) => setTimeout(r, AT_D890_CONNECTION.INTER_BLOCK_DELAY_MS));
     }
   }
-}
-
-/**
- * Single write frame at an arbitrary 16-aligned block length, bypassing the 16-byte loop.
- *
- * Counterpart to {@link atD890ReadBlockRaw}: the wire length field is a `u8`, and reads are
- * measured to honour 240 bytes, but whether writes do is untested. Used by the write-block
- * probe. Still address-fenced — this widens the block size, never the allow-list.
- */
-export async function atD890WriteBlockRaw(
-  pipe: BytePipe,
-  address: number,
-  data: Uint8Array,
-  signal?: AbortSignal,
-): Promise<void> {
-  throwIfAborted(signal);
-  if (data.length < 1 || data.length > 0xff) {
-    throw new RangeError(`D890 raw write length must be 1..255, got ${data.length}`);
-  }
-  assertAtD890SpanNotHardDenied(address, data.length);
-  // Every 16-byte boundary the frame spans must be allow-listed, so a long frame cannot
-  // straddle out of a permitted bank.
-  for (let off = 0; off < data.length; off += ANYTONE_DMR_BLOCK_SIZE) {
-    assertAtD890WritableAddress(address + off);
-  }
-  const frame = makeAnytoneDmrWriteFrame(address, data.length, data);
-  await exchangeWithResend(
-    pipe,
-    signal,
-    async () => {
-      await pipe.write(frame);
-      const ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);
-      if (ack[0] !== 0x06) {
-        throw new RadioProtocolError(
-          `D890 write not ACKed at 0x${address.toString(16)} (${data.length} bytes): got 0x${ack[0]?.toString(16) ?? '??'}`,
-        );
-      }
-    },
-    (err) => err instanceof RadioTimeoutError,
-  );
 }
 
 export function atD890ModelHints(): readonly string[] {

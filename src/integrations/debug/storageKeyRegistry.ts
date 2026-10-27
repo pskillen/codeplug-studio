@@ -14,6 +14,7 @@ import {
   DRIVE_REFRESH_TOKEN_KEY,
   DRIVE_TOKEN_EXPIRES_AT_KEY,
 } from '@integrations/cloud/drivePrefs.ts';
+import { AT_D890_PENDING_UNITS_KEY } from '@integrations/radio-io/radios/at-d890uv/pendingUnits.ts';
 import { parseStorageRaw, redactParsedValue } from './parseStorageValue.ts';
 
 export { LIST_PREFS_STORAGE_PREFIX };
@@ -47,6 +48,11 @@ const KNOWN_STORAGE_KEYS: StorageKeyDescriptor[] = [
   { key: DRIVE_LAST_ACCOUNT_KEY, label: 'Google Drive account', redact: false },
   { key: DRIVE_LAST_FOLDER_ID_KEY, label: 'Google Drive last folder id', redact: false },
   { key: DRIVE_LAST_FOLDER_PATH_KEY, label: 'Google Drive browse path', redact: false },
+  {
+    key: AT_D890_PENDING_UNITS_KEY,
+    label: 'AT-D890 units left by an interrupted Write',
+    redact: false,
+  },
 ];
 
 export function formatByteSize(bytes: number): string {

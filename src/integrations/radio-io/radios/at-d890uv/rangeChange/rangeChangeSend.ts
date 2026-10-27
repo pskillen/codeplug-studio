@@ -11,6 +11,10 @@
  * or any difference from the live LocalInfo `+0x00..+0x0F` other than a changed `+0x03`. It therefore requires the
  * live LocalInfo block (and the backed-up one) and refuses when the model or serial region differs between them.
  *
+ * Program-session latch (#1406): the `W` is recorded through `noteAtD890WriteFrame`. The `R` frames (LocalInfo, tune
+ * bank) and `END` are sent by `rangeChangeSession.ts` through `connection.ts`, which already guard and clear the
+ * latch, so this file sends no `R` and no `END` of its own.
+ *
  * Import boundary: only files under `rangeChange/` may import this module (rangeChangeBoundary.test.ts).
  */
 
@@ -22,6 +26,7 @@ import { AT_D890_CONNECTION } from '../constants.ts';
 import { isAtD890RangeChangeTarget } from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
 import { D890_MAP } from '../constants.ts';
 import { LOCAL_INFO_SERIAL_LENGTH, LOCAL_INFO_SERIAL_OFFSET } from '../identityCheck.ts';
+import { noteAtD890WriteFrame } from '../programSession.ts';
 import {
   AT_D890_LOCAL_INFO_RANGE_OFFSET,
   AT_D890_RANGE_CHANGE_EXTENT,
@@ -149,6 +154,9 @@ export function createAtD890RangeChangeSender(pipe: BytePipe): AtD890RangeChange
       );
       for (let attempt = 0; ; attempt++) {
         throwIfAborted(signal);
+        // Program-session latch (#1406): set before the frame leaves, resends included, so no `R` follows this
+        // `W` until `END`. It also refuses (nothing sent) while units from an interrupted Write are pending.
+        noteAtD890WriteFrame(pipe, AT_D890_RANGE_CHANGE_EXTENT.start);
         await pipe.write(frame);
         try {
           const ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);

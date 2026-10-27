@@ -26,6 +26,9 @@ import {
   scriptAtD890UploadReadResponder,
   writePayloadAt,
 } from './__fixtures__/scriptedPipe.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const SERIAL = 'SN-TEST-WIPED001';
 

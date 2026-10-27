@@ -6,7 +6,7 @@
  * component a view plus actions. Step bodies live in `steps/`.
  */
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Alert, Text } from '@mantine/core';
 import { ModalShell } from '../../v2/index.ts';
 import classes from './RadioWriteStepper.module.css';
@@ -56,6 +56,43 @@ function StepBar({ step }: { step: WriteFlowView['step'] }) {
   );
 }
 
+/** Lifts the D890 pending-units block for an operator who rewrote the radio some other way. */
+function PendingWarningClear({
+  warning,
+  onClear,
+}: {
+  warning: NonNullable<WriteFlowView['pendingWarning']>;
+  onClear: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const since = warning.recordedAt
+    ? ` (recorded ${warning.recordedAt.slice(0, 16).replace('T', ' ')} UTC)`
+    : '';
+  return (
+    <div style={{ marginTop: 8 }} data-testid="write-stepper-pending-clear">
+      {confirming ? (
+        <>
+          <Text size="sm" mb={4}>
+            Clear the warning{since}? Do this only if the radio has since been fully rewritten, by
+            the CPS or by Studio. Otherwise the next write will commit the unfinished parts of the
+            interrupted one.
+          </Text>
+          <Button size="sm" variant="secondary" onClick={onClear}>
+            Yes, I have rewritten this radio
+          </Button>{' '}
+          <Button size="sm" variant="secondary" onClick={() => setConfirming(false)}>
+            Keep the warning
+          </Button>
+        </>
+      ) : (
+        <Button size="sm" variant="secondary" onClick={() => setConfirming(true)}>
+          I have rewritten this radio: clear warning
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export default function RadioWriteStepper({ config, view, actions }: RadioWriteStepperProps) {
   const props = { config, view, actions };
   let body: ReactNode = null;
@@ -100,6 +137,12 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
       {view.error ? (
         <Alert color="red" mb="sm" data-testid="write-stepper-error">
           {view.error}
+          {view.pendingWarning ? (
+            <PendingWarningClear
+              warning={view.pendingWarning}
+              onClear={actions.onClearPendingWarning}
+            />
+          ) : null}
           {view.canReconnect ? (
             <div style={{ marginTop: 8 }}>
               <Button variant="secondary" size="sm" onClick={actions.onReconnect}>

@@ -121,6 +121,8 @@ Anytone AT-D890UV uses **one** digital contact bank (`DigitalContact*` regions) 
 | **Write codeplug**      | None (skip) · Library · RadioID · Both            |
 | **Write contacts only** | Library · RadioID · Both (no skip; bank replaced) |
 
+The contact units are written like the official CPS does ([#1406](https://github.com/pskillen/codeplug-studio/issues/1406)): each touched erase unit starts from erased flash, is filled from the projected contacts and is never read, so a shorter list leaves no stale tail and a 1,000-contact Write sends about 6,000 frames instead of 21,000 plus 3,000 reads. Wire detail: [digital-contacts.md](../../reference/radios/anytone/at-d890uv/digital-contacts.md).
+
 ## Related
 
 - [repeater-directories](../repeater-directories/README.md) — sibling remote-import pattern for channels

@@ -30,7 +30,14 @@ import {
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import type { CloneImageRadio, MemoryMap, RadioSession } from '@integrations/radio-io/types.ts';
 import { reviewNeedsReconnect } from '@integrations/radio-io/programHold.ts';
-import { uploadPreparedRadioWrite, type BeforeTransmitContext } from './radioIoSession.ts';
+import {
+  closeRadioSession,
+  uploadPreparedRadioWrite,
+  type BeforeTransmitContext,
+} from './radioIoSession.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const SERIAL = 'SN-TEST-UPLOAD01';
 
@@ -188,7 +195,10 @@ describe('uploadPreparedRadioWrite beforeTransmit', () => {
             }
           : {}),
       });
-      return { frames: pipe.writes.slice(before).map((f) => [...f]), atHook };
+      const frames = pipe.writes.slice(before).map((f) => [...f]);
+      // END commits the session; without it the in-progress marker would block the next run.
+      await closeRadioSession(session);
+      return { frames, atHook };
     }
     const plain = await run(false);
     const codeplugOnly = await run(false, false);

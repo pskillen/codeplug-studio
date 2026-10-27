@@ -3,7 +3,9 @@ import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { D890_MAP } from './constants.ts';
 import { listWriteChunks, cacheToMemoryMap, applyAtD890WriteImageToCache } from './memory.ts';
 import { AtD890uvProtocol } from './protocol.ts';
+import { atD890ExitProgram } from './connection.ts';
 import {
+  assertAtD890NoReadAfterWrite,
   AtD890ScriptedPipe,
   makeAtD890IdentFrame,
   scriptAtD890Connect,
@@ -32,6 +34,9 @@ import { mm9pdyStepKeyOverrides } from './mm9pdyStepKeys.ts';
 import { resolveAtD890SettingsPatches, type AtD890SettingsPatch } from './settingsFields.ts';
 
 import { isAtD890EraseUnitBookkeepingAddress, listTouchedEraseUnits } from './eraseUnits.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const NEGOTIATED_READ_BLOCK = 0xf0;
 const TEST_SERIAL = 'SN-TEST-UPLOAD01';
@@ -391,6 +396,25 @@ describe('AtD890uvProtocol', () => {
       return { pipe, radio };
     }
 
+    it('reads the settings unit before its first W and sends no R after it (#1406)', async () => {
+      const { pipe, radio } = await connected(
+        new Map([
+          [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
+          [0x350_0000, settingsUnit()],
+        ]),
+      );
+      await radio.uploadSettingsPatches(patches, {});
+      const firstW = pipe.writes.findIndex((w) => w[0] === 0x57);
+      expect(firstW).toBeGreaterThan(0);
+      const readsBefore = pipe.writes
+        .slice(0, firstW)
+        .filter((w) => w[0] === 0x52)
+        .map((w) => ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0);
+      // The whole settings unit is read before any W, through the latch.
+      expect(readsBefore.some((a) => a >= 0x350_0000 && a < 0x354_0000)).toBe(true);
+      assertAtD890NoReadAfterWrite(pipe.writes);
+    }, 20_000);
+
     it('transmits only the settings erase unit, no markers, with just the patched bytes changed', async () => {
       const settings = settingsUnit();
       const { pipe, radio } = await connected(
@@ -589,6 +613,8 @@ describe('AtD890uvProtocol', () => {
         scriptAtD890UploadReadResponder(pipe, memory);
         enableAtD890AutoWriteAck(pipe);
         await radio.uploadSettingsPatches(patches, {});
+        // The settings Write ends with END (the latch refuses the codeplug's first R before it).
+        await atD890ExitProgram(pipe);
         const writesBefore = pipe.writes.filter((w) => w[0] === 0x57).length;
         const image = seedChannelZeroUpload(radio);
         radio.getDownloadCache()!.blocks.clear();

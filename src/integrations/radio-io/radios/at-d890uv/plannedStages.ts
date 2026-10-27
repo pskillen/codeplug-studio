@@ -31,7 +31,6 @@ import {
   type AtD890DownloadCache,
 } from './memory.ts';
 import { AtD890uvProtocol } from './protocol.ts';
-import { SATELLITE_RECORD_BYTES } from './satelliteCodec.ts';
 
 /** Record counts the download weights are sized from. Nominal values suit a typical codeplug. */
 interface Counts {
@@ -199,12 +198,10 @@ function contactStages(ctx: RadioPlanContext): PlannedStage[] {
   const wanted = ctx.parts ? ctx.parts.contacts : (contacts?.length ?? 0) > 0;
   if (!wanted) return [];
   const optional = !contacts || contacts.length === 0;
-  let units = 1;
   let bytes = 0x4000;
   if (contacts && contacts.length > 0) {
     try {
       const chunks = packAtD890DigitalContacts(contacts).stagingChunks;
-      units = Math.max(1, listTouchedEraseUnits(chunks.map((c) => c.address)).length);
       bytes = chunks.length * BLOCK;
     } catch {
       // The plan is advisory: a contact set the packer rejects keeps the nominal sizes, and the
@@ -212,14 +209,8 @@ function contactStages(ctx: RadioPlanContext): PlannedStage[] {
     }
   }
   const flag = optional ? { optional: true } : {};
-  return [
-    {
-      label: 'Preserving untouched contact data',
-      weight: units * AT_D890_ERASE_UNIT_BYTES,
-      ...flag,
-    },
-    { label: 'Digital contacts', weight: bytes, ...flag },
-  ];
+  // The contact units are Studio-owned (#1406): no preserve read, only the write stage.
+  return [{ label: 'Digital contacts', weight: bytes, ...flag }];
 }
 
 /** Bytes a settings-only Write sends: the non-empty blocks of the one settings erase unit (nominal). */
@@ -231,26 +222,16 @@ function isSettingsOnly(ctx: RadioPlanContext): boolean {
   return p !== undefined && p.settings && !p.codeplug && !p.contacts;
 }
 
-function settingsOnlyPlan(ctx: RadioPlanContext): PlannedStage[] {
-  const stages: PlannedStage[] = [
+function settingsOnlyPlan(): PlannedStage[] {
+  // Keps after a restart are a separate session with no plan (#1406).
+  return [
     { label: 'Preserving untouched settings', weight: AT_D890_ERASE_UNIT_BYTES },
     { label: 'Upload', weight: SETTINGS_ONLY_UPLOAD_BYTES },
   ];
-  if (ctx.parts?.keps) {
-    stages.push(
-      {
-        label: 'Preserving untouched satellite data',
-        weight: AT_D890_ERASE_UNIT_BYTES,
-        optional: true,
-      },
-      { label: 'Upload', weight: AT_D890_LIMITS.MAX_SATELLITES * SATELLITE_RECORD_BYTES },
-    );
-  }
-  return stages;
 }
 
 function writePlan(ctx: RadioPlanContext): PlannedStage[] {
-  if (isSettingsOnly(ctx)) return settingsOnlyPlan(ctx);
+  if (isSettingsOnly(ctx)) return settingsOnlyPlan();
   const counts = countsFor(ctx);
   const cache = sessionCache(ctx.session);
   const stages: PlannedStage[] = [];
@@ -268,18 +249,7 @@ function writePlan(ctx: RadioPlanContext): PlannedStage[] {
     { label: 'Upload', weight: uploadBytes },
   );
   stages.push(...contactStages(ctx));
-  if (ctx.parts?.keps) {
-    // `satelliteWrite.ts` preserves, then emits 'Upload' again for its own blocks: a second
-    // 'Upload' slot, matched in order after the contact stages.
-    stages.push(
-      {
-        label: 'Preserving untouched satellite data',
-        weight: AT_D890_ERASE_UNIT_BYTES,
-        optional: true,
-      },
-      { label: 'Upload', weight: AT_D890_LIMITS.MAX_SATELLITES * SATELLITE_RECORD_BYTES },
-    );
-  }
+  // Keps after a restart are a separate session with no plan, as on OpenGD77 (#1406).
   return stages;
 }
 

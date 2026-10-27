@@ -39,6 +39,7 @@ import {
   atD890WriteMemory,
   atD890ModelHints,
 } from './connection.ts';
+import { gateAtD890Write, recordAtD890AbandonedSession } from './programSession.ts';
 import { negotiateAtD890ReadBlockSize } from './linkProbe.ts';
 import { decodeChannelsFromAtD890Cache, encodeChannelsIntoAtD890Image } from './channelCodec.ts';
 import { refreshScanListSetFromRadioBase } from './scanListCodec.ts';
@@ -60,6 +61,8 @@ import {
 import { assertAtD890LocalInfoPlausible } from './identityCheck.ts';
 import {
   assertPreservedBytesMatchFreshRead,
+  eraseAnchorsFromModelled,
+  listEraseOnlyChunks,
   type AtD890StagingChunk,
   listSparseStagingChunks,
   modelledAddressSetFromChunks,
@@ -666,6 +669,10 @@ export class AtD890uvProtocol implements CloneImageRadio {
    * Call on failed or aborted upload before disconnect().
    */
   abandonProgramMode(): void {
+    // Units this session had already finished keep their PC marker and are committed by the next
+    // write-mode END from any tool: record them so Studio refuses other writes until they are
+    // rewritten (#1406).
+    if (this.pipe && this.programming) recordAtD890AbandonedSession(this.pipe);
     this.programming = false;
   }
 
@@ -906,6 +913,10 @@ export class AtD890uvProtocol implements CloneImageRadio {
         this.readBlockSize,
       );
       assertAtD890LocalInfoPlausible(liveLocal);
+      // The radio is identified (that read tied the pipe to its serial). Units pending from an
+      // interrupted Write to it must be rewritten by this one: nothing is sent otherwise
+      // (#1406). Inside the try so a refusal abandons rather than ENDs.
+      const mustRewrite = gateAtD890Write(pipe, touchedUnits);
 
       const mergedUnits = new Map<number, Uint8Array>();
       for (const [base, data] of freshUnits) {
@@ -959,11 +970,21 @@ export class AtD890uvProtocol implements CloneImageRadio {
       // display "Program error please initialise the radio!" and factory-reset itself,
       // destroying the operator's configuration. Writing these addresses is not a
       // diagnostic option. See docs/reference/radios/anytone/at-d890uv/flash-sectors.md
-      const transmittedChunks = stagingChunks.filter(
+      const sendable = stagingChunks.filter(
         (c) =>
           c.address !== AT_D890_SAFE_SKIP_WRITE_ADDR &&
           !isAtD890EraseUnitBookkeepingAddress(c.address),
       );
+      // A pending unit whose staged blocks are all 0xff would not be entered, and this END would
+      // promote its stale half: send it one 0xff block so the first W erases it.
+      const transmittedChunks = [
+        ...sendable,
+        ...listEraseOnlyChunks(
+          mustRewrite.filter((u) => touchedUnitSet.has(u)),
+          sendable,
+          eraseAnchorsFromModelled(modelledChunks, (a) => a === AT_D890_SAFE_SKIP_WRITE_ADDR),
+        ),
+      ].sort((a, b) => a.address - b.address);
       const preWriteFromRadio = preWriteChunksFromFreshUnits(transmittedChunks, freshUnits);
       this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(transmittedChunks, {
         preWriteFromRadio,

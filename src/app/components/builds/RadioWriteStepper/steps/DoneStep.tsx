@@ -3,6 +3,7 @@
  * returns to step 2 with the same ticks; Close ends the dialog.
  */
 
+import { useState } from 'react';
 import { Alert, Stack, Text } from '@mantine/core';
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { Button, Checkbox } from '../../../v2/index.ts';
@@ -65,6 +66,8 @@ function checkLine(summary: WriteSummary): string {
 }
 
 export function DoneBody({ config, view, actions }: StepProps) {
+  const [timingsCopied, setTimingsCopied] = useState(false);
+  const [timingsCopyFailed, setTimingsCopyFailed] = useState(false);
   const summary = view.summary;
   if (!summary) return null;
   const who = summary.identity
@@ -121,6 +124,27 @@ export function DoneBody({ config, view, actions }: StepProps) {
         <div>
           <Button variant="ghost" size="sm" onClick={actions.onViewCheckReport}>
             View check report
+          </Button>
+        </div>
+      ) : null}
+      {summary.writeTimings ? (
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            data-testid="write-stepper-copy-timings"
+            onClick={() => {
+              const text = summary.writeTimings!;
+              void navigator.clipboard
+                .writeText(text)
+                .then(() => setTimingsCopied(true))
+                .catch(() => {
+                  console.warn('[d890-write-timing] clipboard write failed');
+                  setTimingsCopyFailed(true);
+                });
+            }}
+          >
+            {timingsCopied ? 'Copied' : timingsCopyFailed ? 'Copy failed' : 'Copy write timings'}
           </Button>
         </div>
       ) : null}

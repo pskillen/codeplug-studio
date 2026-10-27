@@ -11,6 +11,9 @@ import type {
 } from '@integrations/radio-io/types.ts';
 import { RadioWriteBlockedError } from './radioIoSession.ts';
 import { writeSatellitesToRadio } from './radioIoAtD890SatelliteWrite.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 function makeSatellite(overrides: Partial<Satellite> = {}): Satellite {
   return {

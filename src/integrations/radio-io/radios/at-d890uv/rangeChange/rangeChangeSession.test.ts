@@ -1,7 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AtD890StunKillError } from '../stunKillGuard.ts';
 import { syntheticLocalInfo } from '../__fixtures__/rangeChangeFixtures.ts';
 import { AtD890ScriptedPipe } from '../__fixtures__/scriptedPipe.ts';
+import {
+  AtD890PendingUnitsError,
+  clearAllAtD890PendingRecords,
+  recordAtD890PendingUnits,
+  readAtD890PendingUnits,
+} from '../pendingUnits.ts';
 import { AtD890RangeChangeRefusedError, buildAtD890RangeChangeFrame } from './rangeChangeFrame.ts';
 import {
   AtD890RangeChangeSessionError,
@@ -25,7 +31,62 @@ const kind = (w: Uint8Array) => (w[0] === 0x52 ? 'R' : w[0] === 0x57 ? 'W' : dec
 const writeFrames = (p: AtD890ScriptedPipe) => p.writes.filter((w) => w[0] === 0x57);
 const endFrames = (p: AtD890ScriptedPipe) => p.writes.filter((w) => dec.decode(w) === 'END');
 
+beforeEach(() => clearAllAtD890PendingRecords());
+afterEach(() => clearAllAtD890PendingRecords());
+
 describe('changeAtD890FrequencyRange', () => {
+  it('pending units from an interrupted Write: refused before the journal, no W, no END, not mayEnd', async () => {
+    const backup = syntheticLocalInfo(3);
+    const pipe = setup(backup);
+    pipe.autoAckWrites = true;
+    // The radio's serial is only known once LocalInfo is read, so the record sits under the unknown bucket,
+    // which blocks every D890.
+    recordAtD890PendingUnits('unknown', [0x04000000]);
+    let journalled = false;
+    const err = await changeAtD890FrequencyRange(pipe, {
+      backupLocalInfo: backup,
+      target: 7,
+      onBeforeSend: () => {
+        journalled = true;
+      },
+    }).catch((e) => e);
+    expect(err).toBeInstanceOf(AtD890PendingUnitsError);
+    expect(atD890RangeChangeMayEndAfter(err)).toBe(false);
+    expect(journalled).toBe(false);
+    expect(writeFrames(pipe)).toHaveLength(0);
+    expect(endFrames(pipe)).toHaveLength(0);
+    expect(readAtD890PendingUnits('unknown')).toEqual([0x04000000]);
+  });
+
+  it('a clean change leaves no in-progress marker behind', async () => {
+    const backup = syntheticLocalInfo(3);
+    const pipe = setup(backup);
+    pipe.autoAckWrites = true;
+    await changeAtD890FrequencyRange(pipe, {
+      backupLocalInfo: backup,
+      target: 7,
+      onBeforeSend: () => {},
+    });
+    expect(localStorage.getItem('codeplug-studio:d890-pending-units')).toBeNull();
+  });
+
+  it('END failing after the W leaves no marker that would block the next Write', async () => {
+    const backup = syntheticLocalInfo(3);
+    const pipe = setup(backup);
+    pipe.autoAckWrites = true;
+    const realWrite = pipe.write.bind(pipe);
+    pipe.write = async (b) => {
+      if (dec.decode(b) === 'END') throw new Error('port lost');
+      return realWrite(b);
+    };
+    await changeAtD890FrequencyRange(pipe, {
+      backupLocalInfo: backup,
+      target: 7,
+      onBeforeSend: () => {},
+    }).catch(() => undefined);
+    expect(localStorage.getItem('codeplug-studio:d890-pending-units')).toBeNull();
+  });
+
   it('happy path: reads, one W at 0x04F80000, then END; onBeforeSend runs before the W', async () => {
     const backup = syntheticLocalInfo(3);
     const pipe = setup(backup);
