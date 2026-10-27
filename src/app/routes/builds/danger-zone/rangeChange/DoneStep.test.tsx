@@ -29,3 +29,25 @@ describe('DoneStep calibration line', () => {
     expect(screen.getByText(/did not compare it/)).toBeInTheDocument();
   });
 });
+
+describe('DoneStep usage changes', () => {
+  it('shows the informational line only when something changed through use', () => {
+    const { rerender } = render(
+      <DesignSystemV2Provider>
+        <DoneStep view={done} actions={DEMO_ACTIONS} />
+      </DesignSystemV2Provider>,
+    );
+    expect(screen.queryByTestId('range-usage-changes')).toBeNull();
+    rerender(
+      <DesignSystemV2Provider>
+        <DoneStep
+          view={{ ...done, done: { ...done.done, usageChanges: ['current channel (Zone A)'] } }}
+          actions={DEMO_ACTIONS}
+        />
+      </DesignSystemV2Provider>,
+    );
+    expect(screen.getByTestId('range-usage-changes')).toHaveTextContent(
+      "Changed since the restore, which is normal if you've used the radio: current channel (Zone A).",
+    );
+  });
+});

@@ -158,7 +158,13 @@ export interface RangeChangeView {
     rows: readonly StageRow[];
     result: RestoreCheckResult | null;
   };
-  done: { skipped: boolean; changeBackCode: number | null; calibrationChecked: boolean };
+  done: {
+    skipped: boolean;
+    changeBackCode: number | null;
+    calibrationChecked: boolean;
+    /** Usage-volatile bytes that differ from the backup (informational, not a failure). */
+    usageChanges: string[];
+  };
   resume: RangeChangeResumeView;
 
   fromCode: number | null;

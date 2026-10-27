@@ -604,6 +604,19 @@ describe('useRangeChangeFlow', () => {
       expect(journal()[0]?.stage).toBe('done');
     }, 240_000);
 
+    it('a channel change after Restore passes the Check and is noted on Done', async () => {
+      const hook = await toRestore();
+      await act(async () => hook.result.current.actions.onRestore());
+      await until(hook, () => hook.result.current.view.step === 'check');
+      const ch = fake().getBytes(D890_MAP.ZoneAChannel, 2);
+      ch[0] ^= 0xff;
+      fake().setBytes(D890_MAP.ZoneAChannel, ch);
+      await act(async () => hook.result.current.actions.onCheck());
+      await until(hook, () => hook.result.current.view.step === 'done');
+      expect(hook.result.current.view.done.usageChanges).toEqual(['current channel (Zone A)']);
+      expect(hook.result.current.view.done.skipped).toBe(false);
+    }, 240_000);
+
     it('while the radio is wiped the leave guard is on; before the frame it is off', async () => {
       const guards: boolean[] = [];
       const hook = setup({ onGuardChange: (a) => guards.push(a) });

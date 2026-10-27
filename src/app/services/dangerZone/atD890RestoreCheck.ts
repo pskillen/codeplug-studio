@@ -10,6 +10,7 @@ import { throwIfAborted } from '@integrations/radio-io/kit/progress.ts';
 import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
 import { AT_D890_BLOCK_SIZE } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { shouldOverlayArchiveAddress } from '@integrations/radio-io/radios/at-d890uv/restoreFromBackup.ts';
+import { usageVolatileSpanAt } from '@integrations/radio-io/radios/at-d890uv/usageVolatileBytes.ts';
 import type { BytePipe, MemoryMap, ProgressFn } from '@integrations/radio-io/types.ts';
 
 export interface RestoreCheckDifference {
@@ -20,8 +21,15 @@ export interface RestoreCheckDifference {
 }
 
 export interface RestoreCheckResult {
+  /** No real differences. Usage changes do not count. */
   ok: boolean;
+  /** Real differences only. */
   differences: RestoreCheckDifference[];
+  /**
+   * Labels of bytes that differ only because the radio was used since the restore (current zone and channel,
+   * VFO A/B). Informational; see `usageVolatileBytes.ts`. Sorted, unique.
+   */
+  usageChanges: string[];
   /** Restorable regions that were read back. */
   regionsChecked: number;
 }
@@ -36,6 +44,7 @@ export async function checkAtD890RestoredRegions(
 ): Promise<RestoreCheckResult> {
   const regions = archive.manifest.regions.filter((r) => r.restoreRole === 'restorable');
   const differences: RestoreCheckDifference[] = [];
+  const usage = new Set<string>();
   for (let i = 0; i < regions.length; i++) {
     const region = regions[i]!;
     throwIfAborted(opts.signal);
@@ -62,16 +71,23 @@ export async function checkAtD890RestoredRegions(
         if (!shouldOverlayArchiveAddress(address)) continue;
         if (address + AT_D890_BLOCK_SIZE > archive.image.size) continue;
         const expected = archive.image.get(address, AT_D890_BLOCK_SIZE);
+        let real = false;
         for (let b = 0; b < AT_D890_BLOCK_SIZE; b++) {
-          if (live[off + b] !== expected[b]) {
-            blocks += 1;
-            break;
-          }
+          if (live[off + b] === expected[b]) continue;
+          const span = usageVolatileSpanAt(address + b);
+          if (span) usage.add(span.label);
+          else real = true;
         }
+        if (real) blocks += 1;
       }
       slice = sliceEnd;
     }
     if (blocks > 0) differences.push({ regionId: region.id, label: region.label, blocks });
   }
-  return { ok: differences.length === 0, differences, regionsChecked: regions.length };
+  return {
+    ok: differences.length === 0,
+    differences,
+    usageChanges: [...usage].sort(),
+    regionsChecked: regions.length,
+  };
 }

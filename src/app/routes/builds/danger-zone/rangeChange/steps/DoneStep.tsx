@@ -13,6 +13,11 @@ export default function DoneStep({ view, actions }: StepProps) {
       </h2>
       <p className={classes.text}>Transmit {txText(to)}.</p>
       {view.done.skipped ? <p className={classes.amber}>{COPY.done.notChecked}</p> : null}
+      {view.done.usageChanges.length > 0 ? (
+        <p className={classes.muted} data-testid="range-usage-changes">
+          {COPY.check.usageChanges(view.done.usageChanges.join(', '))}
+        </p>
+      ) : null}
       <section className={classes.card}>
         <h3 className={classes.heading}>{COPY.done.putBack}</h3>
         <ul className={classes.list}>

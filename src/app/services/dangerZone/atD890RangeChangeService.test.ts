@@ -287,4 +287,54 @@ describe('range change service', () => {
     expect(check.ok).toBe(false);
     expect(check.differences.map((d) => d.regionId)).toContain('zone-set');
   }, 60_000);
+
+  describe('the restore check and usage-volatile bytes', () => {
+    async function restored() {
+      const fake = new FakeD890Radio(3);
+      const { a, pair } = await sessionA(fake);
+      await changeRange(a, { backupLocalInfo: pair.localInfo, target: 7, onBeforeSend: () => {} });
+      const b = await open(fake);
+      await restoreAfterChange(b, pair.backup, {});
+      return { fake, pair };
+    }
+    const flip = (fake: FakeD890Radio, address: number) => {
+      const bytes = fake.getBytes(address, 1);
+      bytes[0] ^= 0xff;
+      fake.setBytes(address, bytes);
+    };
+
+    it('channel and zone changes pass, with an informational line', async () => {
+      const { fake, pair } = await restored();
+      flip(fake, D890_MAP.OptionalSettingsMain + 0xd9);
+      flip(fake, D890_MAP.ZoneAChannel);
+      flip(fake, D890_MAP.ZoneBChannel + 2);
+      flip(fake, D890_MAP.VfoChannels + 4);
+      const check = await checkRestored(await open(fake), pair.backup, {});
+      expect(check.ok).toBe(true);
+      expect(check.differences).toEqual([]);
+      expect(check.usageChanges).toEqual([
+        'VFO A/B',
+        'current channel (A)',
+        'current channel (Zone A)',
+        'current channel (Zone B)',
+      ]);
+    }, 60_000);
+
+    it('a real change in the same block as a usage byte still fails', async () => {
+      const { fake, pair } = await restored();
+      flip(fake, D890_MAP.OptionalSettingsMain + 0xd9);
+      // +0xD6 is the startup enable setting, in the same 16-byte block as +0xD9.
+      flip(fake, D890_MAP.OptionalSettingsMain + 0xd6);
+      const check = await checkRestored(await open(fake), pair.backup, {});
+      expect(check.ok).toBe(false);
+      expect(check.differences.map((d) => d.regionId)).toEqual(['optional-settings-main']);
+      expect(check.usageChanges).toEqual(['current channel (A)']);
+    }, 60_000);
+
+    it('an untouched radio reports nothing', async () => {
+      const { fake, pair } = await restored();
+      const check = await checkRestored(await open(fake), pair.backup, {});
+      expect(check).toMatchObject({ ok: true, differences: [], usageChanges: [] });
+    }, 60_000);
+  });
 });

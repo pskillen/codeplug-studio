@@ -190,6 +190,7 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
   const [wiped, setWiped] = useState(false);
   const [checkResult, setCheckResult] = useState<RestoreCheckResult | null>(null);
   const [checkFinished, setCheckFinished] = useState(false);
+  const [usageChanges, setUsageChanges] = useState<string[]>([]);
   const [skipped, setSkipped] = useState(false);
   const [fromCode, setFromCode] = useState<number | null>(null);
   const [toCode, setToCode] = useState<number | null>(null);
@@ -879,6 +880,7 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
     const signal = beginBusy();
     setCheckResult(null);
     setCheckFinished(false);
+    setUsageChanges([]);
     let session: RadioSession;
     try {
       session = await openSession('read', false, signal);
@@ -892,11 +894,19 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
       const result = await checkRestored(session, archive, { onProgress, signal });
       setCheckResult(result);
       setCheckFinished(true);
+      setUsageChanges(result.usageChanges);
       if (result.ok) {
         finishDone(false);
       } else {
         const labels = [...new Set(result.differences.map((d) => d.label))].join(', ');
-        say('check-differs', 'warning', COPY.check.differences(labels));
+        say(
+          'check-differs',
+          'warning',
+          COPY.check.differences(labels) +
+            (result.usageChanges.length > 0
+              ? ` ${COPY.check.usageChanges(result.usageChanges.join(', '))}`
+              : ''),
+        );
       }
     } catch (err) {
       if (err instanceof RangeChangeRefusedError) {
@@ -1217,7 +1227,7 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
       rows: checkRows,
       result: checkResult,
     },
-    done: { skipped, changeBackCode: canChangeBack(), calibrationChecked },
+    done: { skipped, changeBackCode: canChangeBack(), calibrationChecked, usageChanges },
     resume: {
       entry: activeEntry,
       choices: fileMode ? [] : choices,
