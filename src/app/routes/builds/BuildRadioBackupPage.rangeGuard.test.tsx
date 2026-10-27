@@ -144,6 +144,12 @@ describe('Backup page restore range guard', () => {
     expect(screen.getByTestId('restore-range-mismatch')).toHaveTextContent(
       "This radio's range has changed since the backup, so Studio restores everything together. Restoring settings alone would stop the radio starting.",
     );
+    // The boxes show what will happen: every region ticked, and locked.
+    for (const id of ['zone-set', 'optional-settings-main']) {
+      const box = screen.getByRole('checkbox', { name: `Restore ${id}` });
+      expect(box).toBeChecked();
+      expect(box).toBeDisabled();
+    }
     fireEvent.click(screen.getByRole('button', { name: 'Restore to this radio' }));
     await waitFor(() => expect(state.restoreCalls).toHaveLength(1));
     expect(state.restoreCalls[0]).toEqual(['zone-set', 'optional-settings-main']);

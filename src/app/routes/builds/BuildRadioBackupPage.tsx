@@ -533,8 +533,8 @@ export default function BuildRadioBackupPage() {
                         {region.restoreRole === 'restorable' ? (
                           <Group gap="xs">
                             <Checkbox
-                              checked={selectedRegionIds.has(region.id)}
-                              disabled={busy || !restoreAvailable}
+                              checked={rangeMismatch || selectedRegionIds.has(region.id)}
+                              disabled={busy || !restoreAvailable || rangeMismatch}
                               onCheckedChange={(checked) =>
                                 toggleRestorableRegion(region.id, checked)
                               }
