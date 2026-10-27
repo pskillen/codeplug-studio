@@ -54,14 +54,15 @@ Both share profile id **`anytone-at-d890uv`**.
 
 ### Recommended traits (wire spike [#230](https://github.com/pskillen/codeplug-studio/issues/230))
 
-| Trait                      | Include? | Evidence                                                                                                                                 |
-| -------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `zoneGrouping`             | Yes      | `DMRZone.CSV`                                                                                                                            |
-| `dedicatedScanLists`       | Yes      | Library `ScanList` + `ScanList.CSV`                                                                                                      |
-| `scanLists`                | No       | DM32 zone-derived scan — different trait                                                                                                 |
-| `zoneAsScanList`           | No       | Scan lists are first-class files                                                                                                         |
-| `multiTalkGroupPerChannel` | No       | OpenGD77-style native RGL selection on channel — not AT-D890UV workflow                                                                  |
-| `mxnChannelExpansion`      | Yes      | Optional export projection — lean row + native RGL still valid when off ([#305](https://github.com/pskillen/codeplug-studio/issues/305)) |
+| Trait                      | Include? | Evidence                                                                                                                                                         |
+| -------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `zoneGrouping`             | Yes      | `DMRZone.CSV`                                                                                                                                                    |
+| `dedicatedScanLists`       | Yes      | Library `ScanList` + `ScanList.CSV`                                                                                                                              |
+| `scanLists`                | No       | DM32 zone-derived scan — different trait                                                                                                                         |
+| `zoneAsScanList`           | No       | Scan lists are first-class files                                                                                                                                 |
+| `multiTalkGroupPerChannel` | No       | OpenGD77-style native RGL selection on channel — not AT-D890UV workflow                                                                                          |
+| `mxnChannelExpansion`      | Yes      | Optional export projection — lean row + native RGL still valid when off ([#305](https://github.com/pskillen/codeplug-studio/issues/305))                         |
+| `separateDigitalIdList`    | Yes      | Contacts list (`DMRTalkGroups.CSV` private rows) vs ID database (`DMRDigitalContactList.CSV`) — [#1433](https://github.com/pskillen/codeplug-studio/issues/1433) |
 
 Extended banks (AM air, broadcast FM, NXDN, APRS) need export projection or future traits — see [model gaps](#model-gaps).
 
