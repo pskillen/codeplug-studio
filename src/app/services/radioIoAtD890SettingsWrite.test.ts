@@ -19,6 +19,9 @@ import {
   RadioWriteCancelledError,
   type AtD890PreTransmitContext,
 } from './radioIoSession.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const SERIAL = 'SN-TEST-SETTINGS';
 

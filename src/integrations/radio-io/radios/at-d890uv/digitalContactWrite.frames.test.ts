@@ -26,6 +26,9 @@ import {
   isAtD890EraseUnitBookkeepingAddress,
 } from './eraseUnits.ts';
 import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const UNIT = AT_D890_ERASE_UNIT_BYTES;
 

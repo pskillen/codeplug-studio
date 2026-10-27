@@ -31,6 +31,9 @@ import {
   readAtD890ProgramCounters,
   getAtD890SessionSerial,
 } from './programSession.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const READ_AT = D890_MAP.ChannelSet;
 const WRITE_AT = D890_MAP.ChannelSet + 0x10;

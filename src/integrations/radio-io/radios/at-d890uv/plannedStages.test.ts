@@ -25,6 +25,9 @@ import {
   channelPrimaryAddress,
   channelSecondaryAddress,
 } from './memory.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const SERIAL = 'SN-TEST-UPLOAD01';
 

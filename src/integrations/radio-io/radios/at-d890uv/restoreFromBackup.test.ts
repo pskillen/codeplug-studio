@@ -34,6 +34,9 @@ import {
   scriptAtD890UploadReadResponder,
   writePayloadAt,
 } from './__fixtures__/scriptedPipe.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const TEST_SERIAL = 'SN-TEST-RESTORE0';
 const here = dirname(fileURLToPath(import.meta.url));

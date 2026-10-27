@@ -34,6 +34,9 @@ import { mm9pdyStepKeyOverrides } from './mm9pdyStepKeys.ts';
 import { resolveAtD890SettingsPatches, type AtD890SettingsPatch } from './settingsFields.ts';
 
 import { isAtD890EraseUnitBookkeepingAddress, listTouchedEraseUnits } from './eraseUnits.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const NEGOTIATED_READ_BLOCK = 0xf0;
 const TEST_SERIAL = 'SN-TEST-UPLOAD01';

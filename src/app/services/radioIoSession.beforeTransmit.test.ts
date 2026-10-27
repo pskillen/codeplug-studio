@@ -35,6 +35,9 @@ import {
   uploadPreparedRadioWrite,
   type BeforeTransmitContext,
 } from './radioIoSession.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const SERIAL = 'SN-TEST-UPLOAD01';
 

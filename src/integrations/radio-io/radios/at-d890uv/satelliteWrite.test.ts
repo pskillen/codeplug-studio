@@ -11,6 +11,9 @@ import { encodeSatelliteRecord } from './satelliteCodec.ts';
 import { uploadAtD890SatelliteRecords } from './satelliteWrite.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 const BASE = AT_D890_SATELLITE.BASE_ADDRESS;
 const STRIDE = AT_D890_SATELLITE.RECORD_STRIDE;

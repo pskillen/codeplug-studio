@@ -15,6 +15,9 @@ import {
   makeAtD890IdentFrame,
 } from './__fixtures__/scriptedPipe.ts';
 import { AtD890ReadAfterWriteError } from './programSession.ts';
+import { allowLeakedD890MarkersInThisFile } from '../../../../test/leakedD890Marker.ts';
+
+allowLeakedD890MarkersInThisFile();
 
 function makeReadReply(address: number, payload: Uint8Array): Uint8Array {
   const bodyLen = 6 + payload.length;
