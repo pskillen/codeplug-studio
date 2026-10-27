@@ -71,6 +71,29 @@ Each unit is the A half of an A/B pair; Studio addresses the A half and the radi
 
 Not checked on a radio. The zone NXDN roaming bitmap (`0x04C00000`) is left alone: the radio uses it only for NXDN roaming, and a stale one only changes which repeaters roaming tries.
 
+## NXDN own ID
+
+The radio has one NXDN ID (its "Own ID"), not one per channel. It lives in the NXDN settings block, unit `0x04B00000` `+0x000` (CPS `NXSetting.CSV`; firmware and CPS RE, U5):
+
+| Offset          | Field                                                              | Studio                    |
+| --------------- | ------------------------------------------------------------------ | ------------------------- |
+| `+0x00`–`+0x02` | `OwnId`, 3-byte big-endian BCD (1234 is `00 12 34`)                | Written on MM9PDY (below) |
+| `+0x03`–`+0x05` | `StationId`, 3-byte BCD (status sends only)                        | Left as read              |
+| `+0x06`–`+0x30` | Station type, own name, timers, beeps, monitor, RAN check, retries | Left as read              |
+
+All `FF` in `OwnId` is unset: the radio then sends source ID 0 and shows "NULL ID" at PTT on an NXDN channel. The firmware reads `0x32` bytes of the block; the CPS writes `0x50`. The same erase unit holds the NXDN encryption keys (`+0x200`) and the state messages (`+0x400`, 50 × `0x40`). `OwnIdAbleMin` / `OwnIdAbleMax` (`+0x07`, `+0x0A`) and `TxAliasEn` are never read by the firmware. The radio accepts IDs 1–65519 (U12; the library enforces the same range).
+
+**What Studio writes.** With the same gate as the rest of this page (MM9PDY target, the radio reports NXDN enabled), the Write sets `OwnId` to the library's **default NXDN Digital ID** (D17). It reads unit `0x04B00000` fresh before the first `W`, changes only `+0x00`–`+0x02`, and sends the rest of the unit back as read, so the station ID, the factory defaults (`+0x2A` = 2, `+0x30` = 2, and so on), the encryption keys and the state messages survive. Only those three bytes are allowed to differ from the fresh read; an out-of-range ID is refused before any frame. A default NXDN Digital ID alone (no NXDN channels) is enough for the Write to set it.
+
+- **No default NXDN ID:** `OwnId` stays as read. A build with NXDN channels gets one notice: "NXDN ID not written: set a default NXDN ID in Digital IDs."
+- **Channels that choose another NXDN ID:** the radio cannot send it. The Write writes the default and warns once, for example "The radio has one NXDN ID. Studio writes your default, Base (1234); 2 channels choose another NXDN ID."
+- **Review** shows "NXDN ID → Base (1234), your default NXDN ID" when the Write sets it.
+- Stock target, a radio that does not report NXDN enabled, and offline exports: the unit is not read for the Write and not written.
+
+**Backup.** Read also reads the `0x50`-byte settings block (not the keys or state messages) on every D890. It is in the backup as inspect-only: Restore does not write it back.
+
+Not checked on a radio.
+
 ## Channel modes
 
 The mode byte follows the DMR rule, with an NXDN profile counting as the digital half when there is no DMR profile. An analogue + digital channel follows its primary mode, as the CSV `Channel Type` does: primary FM or AM is `fixed-analog` (A+D TX A), any other primary is `fixed-digital` (D+A TX D) ([#1456](https://github.com/pskillen/codeplug-studio/issues/1456)):
@@ -84,4 +107,4 @@ The mode byte follows the DMR rule, with an NXDN profile counting as the digital
 
 ## Not covered
 
-NXDN own ID and the other NXDN settings, the 64,000-entry ID directory, encryption and status messages, several call targets per channel.
+The other NXDN settings (station ID, own name, beeps, monitor), the 64,000-entry ID directory, encryption and status messages, several call targets per channel.
