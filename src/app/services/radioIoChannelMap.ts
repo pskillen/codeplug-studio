@@ -35,6 +35,7 @@ import { pushGeneralWarning, type ExportWarning } from '@core/import-export/expo
 import { resolveWireNames } from '@core/services/resolveWireNames.ts';
 import { pushWireNameResolutionWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
 import { resolveDmrOperatingMode } from '@core/domain/dmrOperatingMode.ts';
+import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
 
 export interface RadioWireEgressIds {
   formatId: string;
@@ -208,6 +209,16 @@ function nxdnFieldsFromProfile(
   return nxdn;
 }
 
+/**
+ * Mode byte for a channel with an analogue and a digital profile. Same rule as the Anytone CSV
+ * `Channel Type` (`formatAnytoneChannelTypeFromChannel`): primary FM or AM transmits analogue
+ * (A+D TX A), any other primary transmits digital (D+A TX D).
+ */
+function mixedChannelMode(channel: Channel): RadioChannelMode {
+  const primary = resolveChannelPrimaryMode(channel);
+  return primary === 'fm' || primary === 'am' ? 'fixed-analog' : 'fixed-digital';
+}
+
 function digitalFieldsFromChannel(
   channel: Channel,
   fkMaps?: RadioChannelFkMaps,
@@ -221,10 +232,10 @@ function digitalFieldsFromChannel(
       ? { nxdn: nxdnFieldsFromProfile(nxdnProfile, nxdnOptions.invalidRan, fkMaps) }
       : {};
   // The mode byte follows the DMR rule; an NXDN profile counts as the digital half when there is
-  // no DMR profile (NXDN mode forces A+D / D+A to D-Digital on the radio anyway).
+  // no DMR profile. How the radio treats A+D / D+A while it is in NXDN mode is unverified.
   const digital = dmr ?? nxdnProfile;
   let mode: RadioChannelMode | undefined;
-  if (digital && analog) mode = 'fixed-digital';
+  if (digital && analog) mode = mixedChannelMode(channel);
   else if (digital) mode = 'digital';
   else if (analog) mode = 'analog';
 
@@ -398,7 +409,7 @@ function digitalFieldsFromProjection(
   const analog = channel.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
   const dmr = isDmrProfile(projection.modeProfile) ? projection.modeProfile : null;
   let mode: RadioChannelMode | undefined;
-  if (dmr && analog) mode = 'fixed-digital';
+  if (dmr && analog) mode = mixedChannelMode(channel);
   else if (dmr) mode = 'digital';
   else if (analog) mode = 'analog';
 
@@ -569,7 +580,7 @@ function pushNxdnProjectionWarnings(
   if (counts.nxdnWithAnalog > 0) {
     pushGeneralWarning(
       warnings,
-      `${counts.nxdnWithAnalog} channel(s) have analogue and NXDN settings. While the radio is on NXDN they run as NXDN only; the analogue half is not used. While it is on DMR they act as digital channels with default DMR fields.`,
+      `${counts.nxdnWithAnalog} channel(s) have analogue and NXDN settings. They are written as analogue + digital channels that transmit in the channel's primary mode; while the radio is on DMR the digital half has default DMR fields.`,
     );
   }
   if (counts.invalidRan > 0) {
