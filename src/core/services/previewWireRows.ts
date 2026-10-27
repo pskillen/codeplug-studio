@@ -283,10 +283,7 @@ function resolutionsByLibraryEntityId(
       formatId,
       profileId,
       ...(digitalMode ? { digitalMode } : {}),
-    }).map((resolution) => [
-      resolution.libraryEntityId,
-      resolution,
-    ]),
+    }).map((resolution) => [resolution.libraryEntityId, resolution]),
   );
 }
 
