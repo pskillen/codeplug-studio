@@ -1,10 +1,7 @@
 import type { EntityRef, Library, NxdnRate } from '@core/models/library.ts';
 import { NXDN_ID_MAX, NXDN_ID_MIN, rxGroupListModes } from '@core/domain/validation.ts';
 
-/**
- * UI wording for the NXDN channel fields, in one place. Provisional until the
- * owner confirms the names, so a relabel is a one-file change.
- */
+/** UI wording for the NXDN channel fields, kept in one place so a relabel is a one-file change. */
 export const NXDN_FIELD_LABELS = {
   rxRan: 'RX RAN',
   txRan: 'TX RAN',
