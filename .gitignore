@@ -20,7 +20,8 @@ desktop.ini
 
 # Logs and temp
 *.log
-tmp/
+# No trailing slash: also ignores a tmp symlink (e.g. from an agent worktree)
+tmp
 
 # Node / Vite build output
 # No trailing slash: also ignores a node_modules symlink (e.g. from an agent worktree)
