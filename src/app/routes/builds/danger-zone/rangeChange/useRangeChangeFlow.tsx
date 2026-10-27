@@ -924,12 +924,18 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
         say('resume-bad-file', 'refusal', COPY.resume.noLocalInfo);
         return;
       }
-      if (activeEntry) {
-        if (parsed.manifest.serial !== activeEntry.serial) {
+      // The record on file decides which file this is: the one the wizard picked, or, in file mode (no record
+      // chosen yet), the unfinished record for the zip's serial. Only with no record at all are the checks the zip's own.
+      const onFile = parsed.manifest.serial
+        ? getRangeChangeJournalEntry(parsed.manifest.serial)
+        : undefined;
+      const record = activeEntry ?? (onFile && onFile.stage !== 'done' ? onFile : undefined);
+      if (record) {
+        if (parsed.manifest.serial !== record.serial) {
           say('resume-wrong-serial', 'refusal', COPY.resume.wrongSerial);
           return;
         }
-        if ((await sha256Hex(bytes)) !== activeEntry.backup.sha256) {
+        if ((await sha256Hex(bytes)) !== record.backup.sha256) {
           say('resume-wrong-file', 'refusal', COPY.resume.wrongFile);
           return;
         }

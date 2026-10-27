@@ -808,6 +808,38 @@ describe('useRangeChangeFlow resume', () => {
       expect(journal()).toHaveLength(0);
     }, 180_000);
 
+    it('with a journal on file, a different backup of the same radio is refused, the saved one is taken', async () => {
+      // A second backup of the same radio (one codeplug byte differs): same serial, other hash.
+      const other = new FakeD890Radio(3);
+      const spanStart = 0x01000000;
+      const b = other.getBytes(spanStart, 1);
+      other.setBytes(spanStart, new Uint8Array([b[0]! ^ 0x55]));
+      const { backupForRangeChange } =
+        await import('../../../../services/dangerZone/atD890RangeChangeService.ts');
+      const pipe = other.open();
+      const radio = new AtD890uvProtocol();
+      await radio.connect(pipe);
+      const session = createRadioSession({
+        descriptor: getRadioDescriptor('AT-D890UV')!,
+        pipe,
+        radio,
+      });
+      const otherZip = (await backupForRangeChange(session, {})).backup.zipBytes;
+      expect(await sha256Hex(otherZip)).not.toBe(entry.backup.sha256);
+
+      hoisted.fake = changedRadio();
+      seed('changed');
+      const hook = setup({ resume: { serial: 'file' } });
+      await pickBackup(hook, otherZip);
+      expect(hook.result.current.view.resume.fileOk).toBe(false);
+      expect(hook.result.current.view.notice?.kind).toBe('resume-wrong-file');
+      await act(async () => hook.result.current.actions.onResumeConnect());
+      expect(hoisted.opens).toBe(0);
+
+      await pickBackup(hook, backupZip);
+      expect(hook.result.current.view.resume.fileOk).toBe(true);
+    }, 120_000);
+
     it('the serial of the radio differs from the zip', async () => {
       const f = changedRadio();
       const li = f.getBytes(LOCAL_INFO, 0x100);
