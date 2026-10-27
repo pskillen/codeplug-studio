@@ -30,4 +30,28 @@ describe('normalizeChannel', () => {
     };
     expect(normalizeChannel(channel).primaryMode).toBeNull();
   });
+
+  it('moves a stored NXDN talkGroupRef to contactRef (IndexedDB rows go through here)', () => {
+    const channel = {
+      ...newChannel('proj', 'Test'),
+      modeProfiles: [
+        {
+          mode: 'nxdn',
+          rxRan: 1,
+          txRan: 1,
+          unitId: 5,
+          talkGroupRef: { kind: 'talkGroup', id: 'tg-1' },
+        },
+      ],
+    } as unknown as Channel;
+    expect(normalizeChannel(channel).modeProfiles[0]).toEqual({
+      mode: 'nxdn',
+      rxRan: 1,
+      txRan: 1,
+      unitId: 5,
+      contactRef: { kind: 'talkGroup', id: 'tg-1' },
+      rxGroupListId: null,
+      nxdnRate: null,
+    });
+  });
 });
