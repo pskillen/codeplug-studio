@@ -63,6 +63,8 @@ import {
   zoneShowsOnAnytoneDmrBank,
 } from '@core/import-export/formats/anytone/zonePartition.ts';
 import { usesAtD890AirbandBankSplit } from './anytoneChannelBanks.ts';
+import { isDmrDigitalEntity } from '@core/import-export/dmrContactBanks.ts';
+import { isAtD890RadioIoProfileId } from '@core/import-export/formats/radio-io/profiles.ts';
 
 export type WirePreviewEntityKind =
   'channel' | 'zone' | 'scanList' | 'talkGroup' | 'contact' | 'rxGroupList';
@@ -74,6 +76,9 @@ export const PREVIEW_ROW_NOT_ZONE_LINKED_NOTE = 'Not linked to a zone';
 export const PREVIEW_ROW_NOT_IN_MEMORY_LIST_NOTE = 'Not in memory list';
 
 export const PREVIEW_ROW_NOT_ANALOGUE_CHIRP_NOTE = 'Not analogue — skipped on CHIRP export';
+
+/** AT-D890 talk-group and contact banks are DMR-only; NXDN etc. are left out on Write and CSV. */
+export const PREVIEW_ROW_NOT_DMR_NOTE = 'Not DMR: not written to this radio';
 
 export const PREVIEW_ROW_OMIT_FROM_EXPORT_NOTE =
   'Not exported as its own zone — channels still export inside parent zones (library setting)';
@@ -369,6 +374,11 @@ export function previewWireRows(
   const profileId = defaultEgress?.profileId;
   const atD890AirbandBankSplit = usesAtD890AirbandBankSplit(profileId);
   const projection = assemble(build, library, { formatId, profileId });
+  // Same rule as keepDmrTalkGroupsAndContacts at the AT-D890 Write and Anytone CSV boundaries.
+  const dmrOnlyContactBanks =
+    formatId === 'anytone' || (profileId != null && isAtD890RadioIoProfileId(profileId));
+  const notWrittenAsNonDmr = (entity: Parameters<typeof isDmrDigitalEntity>[0]) =>
+    dmrOnlyContactBanks && !isDmrDigitalEntity(entity);
   // Same settings resolveWireNames uses internally — kept alongside so expansion helpers
   // that resolveWireNames doesn't cover (m×n, multi-mode, CHIRP flat memory) stay WYSIWYG too.
   const exportOptions = mergeExportOptions(build, formatId, { profileId }, library);
@@ -697,8 +707,9 @@ export function previewWireRows(
         profileId,
       );
       return library.talkGroups.map((talkGroup) => {
+        const nonDmr = notWrittenAsNonDmr(talkGroup);
         const assembled = projection.talkGroups.find((row) => row.entity.id === talkGroup.id);
-        const referenced = assembled != null;
+        const referenced = assembled != null && !nonDmr;
         const resolution =
           resolutions.get(talkGroup.id) ??
           fallbackResolution(
@@ -727,7 +738,11 @@ export function previewWireRows(
           `${talkGroup.name} (ID ${talkGroup.digitalId})`,
           resolution,
           build.talkGroupOverrides,
-          referenced ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
+          nonDmr
+            ? PREVIEW_ROW_NOT_DMR_NOTE
+            : referenced
+              ? undefined
+              : PREVIEW_ROW_NOT_REFERENCED_NOTE,
           cloneDetails?.length ? cloneDetails : undefined,
         );
       });
@@ -760,7 +775,11 @@ export function previewWireRows(
             `${contact.name} (digital ${contact.digitalId})`,
             resolution,
             build.contactOverrides,
-            assembled ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
+            notWrittenAsNonDmr(contact)
+              ? PREVIEW_ROW_NOT_DMR_NOTE
+              : assembled
+                ? undefined
+                : PREVIEW_ROW_NOT_REFERENCED_NOTE,
             undefined,
             contact.callsign,
           ),
@@ -832,6 +851,7 @@ export function isPreviewRowIncludedInExport(
   row: WirePreviewRow,
 ): boolean {
   if (row.excluded) return false;
+  if (row.expansionNote === PREVIEW_ROW_NOT_DMR_NOTE) return false;
 
   switch (entityKind) {
     case 'channel':
