@@ -32,6 +32,7 @@ import {
   AT_D890_LIMITS,
   AT_D890_NXDN,
   AT_D890_NXDN_LIST_SET_SPAN_BYTES,
+  AT_D890_NXDN_SETTINGS,
   AT_D890_SAFE_SKIP_WRITE_ADDR,
   D890_MAP,
 } from './constants.ts';
@@ -84,6 +85,11 @@ import {
   assertAtD890SentinelSpansNotErased,
   atD890PatchMaskMap,
 } from './settingsPatch.ts';
+import {
+  AT_D890_NXDN_SETTINGS_UNIT_BASE,
+  assertAtD890NxdnOwnIdPatchPermitted,
+  atD890NxdnOwnIdPatch,
+} from './nxdnOwnId.ts';
 import {
   captureAtD890WriteStagingSnapshot,
   cloneAtD890WriteStagingSnapshot,
@@ -489,6 +495,16 @@ export async function downloadAtD890SparseRegions(
       readBlockSize,
     );
   }
+  // NXDN settings block (own ID and the other NX settings) for the backup. Never re-sent from the
+  // cache: only an MM9PDY intent with an NXDN own ID read-modify-writes that unit.
+  await readRegion(
+    pipe,
+    cache,
+    AT_D890_NXDN_SETTINGS.Address,
+    AT_D890_NXDN_SETTINGS.Bytes,
+    signal,
+    readBlockSize,
+  );
 
   stage('Reading operator radio IDs…');
   await readRegion(
@@ -814,6 +830,11 @@ export class AtD890uvProtocol implements CloneImageRadio {
     }
     this.assertNoStunKillFlag();
     assertAtD890SettingsPatchesPermitted(this.uploadBankIntent.settingsPatches ?? []);
+    // Encode (and range-check) the NXDN own ID before PROGRAM mode and before any frame.
+    const nxdnOwnIdPatches =
+      this.uploadBankIntent.nxdnOwnId !== undefined
+        ? [atD890NxdnOwnIdPatch(this.uploadBankIntent.nxdnOwnId)]
+        : [];
     if (!this.programming) {
       await atD890EnterProgram(this.pipe, opts.signal);
       this.programming = true;
@@ -851,6 +872,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
       modelledChunks,
       touchedUnits: listTouchedEraseUnits(modelledChunks.map((c) => c.address)),
       settingsPatches: this.uploadBankIntent.settingsPatches ?? [],
+      nxdnOwnIdPatches,
       ownedUnits: [
         ...(this.uploadBankIntent.channelLocationTable !== undefined
           ? [AT_D890_CHANNEL_LOCATION_UNIT_BASE]
@@ -891,6 +913,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
       modelledChunks: [],
       touchedUnits: [eraseUnitBaseFor(D890_MAP.OptionalSettingsMain)],
       settingsPatches: patches,
+      nxdnOwnIdPatches: [],
       ownedUnits: [],
       opts,
     });
@@ -927,6 +950,11 @@ export class AtD890uvProtocol implements CloneImageRadio {
     touchedUnits: readonly number[];
     settingsPatches: readonly AtD890SettingsPatch[];
     /**
+     * MM9PDY NXDN own ID: at most one patch of the three `OwnId` bytes. Applied to the fresh read of
+     * the NXDN settings unit, which is sent back otherwise unchanged.
+     */
+    nxdnOwnIdPatches: readonly AtD890SettingsPatch[];
+    /**
      * Erase units Studio owns whole for this Write: they start from erased flash and only the
      * staged bytes are sent (the MM9PDY channel location table, the NXDN lists).
      */
@@ -941,10 +969,15 @@ export class AtD890uvProtocol implements CloneImageRadio {
     if (!pipe) {
       throw new RadioProtocolError('AT-D890UV not connected');
     }
-    const { modelledChunks, settingsPatches, ownedUnits, preUploadCache, opts } = args;
+    const { modelledChunks, settingsPatches, nxdnOwnIdPatches, ownedUnits, preUploadCache, opts } =
+      args;
     const ownedUnitSet = new Set(ownedUnits);
     // Last line of defence: nothing outside the allow-list reaches the wire, whoever built the patch.
     assertAtD890SettingsPatchesPermitted(settingsPatches);
+    if (nxdnOwnIdPatches.length > 1) {
+      throw new RadioProtocolError('AT-D890UV Write has more than one NXDN own ID patch');
+    }
+    for (const patch of nxdnOwnIdPatches) assertAtD890NxdnOwnIdPatchPermitted(patch);
     const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
     const touchedUnits = [...args.touchedUnits];
     const touchedUnitSet = new Set(touchedUnits);
@@ -952,6 +985,22 @@ export class AtD890uvProtocol implements CloneImageRadio {
     if (settingsPatches.length > 0 && !touchedUnitSet.has(settingsUnit)) {
       touchedUnits.push(settingsUnit);
       touchedUnitSet.add(settingsUnit);
+    }
+    if (nxdnOwnIdPatches.length > 0) {
+      if (ownedUnitSet.has(AT_D890_NXDN_SETTINGS_UNIT_BASE)) {
+        throw new RadioProtocolError(
+          'AT-D890UV Write must read-modify-write the NXDN settings unit, never start it erased',
+        );
+      }
+      if (!touchedUnitSet.has(AT_D890_NXDN_SETTINGS_UNIT_BASE)) {
+        touchedUnits.push(AT_D890_NXDN_SETTINGS_UNIT_BASE);
+        touchedUnitSet.add(AT_D890_NXDN_SETTINGS_UNIT_BASE);
+      }
+    } else if (touchedUnitSet.has(AT_D890_NXDN_SETTINGS_UNIT_BASE)) {
+      // Only an MM9PDY intent with an NXDN own ID touches this unit; reaching here is a staging bug.
+      throw new RadioProtocolError(
+        'AT-D890UV Write must not touch the NXDN settings unit without an NXDN own ID',
+      );
     }
     if (
       !ownedUnitSet.has(AT_D890_CHANNEL_LOCATION_UNIT_BASE) &&
@@ -1042,13 +1091,22 @@ export class AtD890uvProtocol implements CloneImageRadio {
         applyAtD890SettingsPatchesToUnit(settingsUnit, merged, settingsPatches);
         assertAtD890SentinelSpansNotErased(settingsUnit, merged);
       }
+      if (nxdnOwnIdPatches.length > 0) {
+        // The NXDN ID rides on the fresh read of its unit: the other NXDN settings, the
+        // encryption keys and the state messages are sent back as the radio holds them.
+        applyAtD890SettingsPatchesToUnit(
+          AT_D890_NXDN_SETTINGS_UNIT_BASE,
+          mergedUnits.get(AT_D890_NXDN_SETTINGS_UNIT_BASE)!,
+          nxdnOwnIdPatches,
+        );
+      }
 
       const stagingChunks = listSparseStagingChunks(mergedUnits, modelledAddresses);
       assertPreservedBytesMatchFreshRead(
         stagingChunks,
         freshUnits,
         modelledAddresses,
-        atD890PatchMaskMap(settingsPatches),
+        atD890PatchMaskMap([...settingsPatches, ...nxdnOwnIdPatches]),
       );
       // Defence in depth: markers are already omitted in listSparseStagingChunks.
       // Keep this filter so a future staging change cannot put them on the wire.

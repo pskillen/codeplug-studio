@@ -21,7 +21,7 @@ import {
   enableAtD890AutoWriteAck,
   collectAtD890ReadRequestAddresses,
 } from './__fixtures__/scriptedPipe.ts';
-import { AT_D890_CHANNEL_LOCATION, AT_D890_NXDN } from './constants.ts';
+import { AT_D890_CHANNEL_LOCATION, AT_D890_NXDN, AT_D890_NXDN_SETTINGS } from './constants.ts';
 import { atD890UploadBankIntentFromOrganisation } from './memory.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import { labelForAtD890SentinelId } from './sentinelVerify.ts';
@@ -864,6 +864,13 @@ describe('AtD890uvProtocol', () => {
       pipe,
       AT_D890_NXDN.RxGroupSet,
       new Uint8Array(AT_D890_NXDN.RxGroupSetBytes),
+      NEGOTIATED_READ_BLOCK,
+    );
+    // NXDN settings block (own ID), for the backup.
+    enqueueAtD890ReadReply(
+      pipe,
+      AT_D890_NXDN_SETTINGS.Address,
+      new Uint8Array(AT_D890_NXDN_SETTINGS.Bytes).fill(0xff),
       NEGOTIATED_READ_BLOCK,
     );
     enqueueAtD890ReadReply(pipe, D890_MAP.RadioIdSet, new Uint8Array(0x20), NEGOTIATED_READ_BLOCK);
