@@ -64,17 +64,26 @@ export function buildReferenceCountIndex(library: Library): Map<string, number> 
       }
     }
 
+    // One reference per channel and target, however many mode profiles name it
+    // (matches findReferencesTo, which stops at a channel's first matching profile).
+    const profileTargets = new Set<string>();
+    const bumpProfileTarget = (target: ReferenceTarget) => {
+      const key = referenceTargetKey(target);
+      if (profileTargets.has(key)) return;
+      profileTargets.add(key);
+      bump(target);
+    };
     for (const profile of channel.modeProfiles) {
-      if (profile.mode === 'dmr') {
+      if (profile.mode === 'dmr' || profile.mode === 'nxdn') {
         if (profile.contactRef) {
-          bump(profile.contactRef);
+          bumpProfileTarget(profile.contactRef);
         }
         if (profile.rxGroupListId) {
-          bump({ kind: 'rxGroupList', id: profile.rxGroupListId });
+          bumpProfileTarget({ kind: 'rxGroupList', id: profile.rxGroupListId });
         }
         continue;
       }
-      if (profile.mode === 'nxdn' || profile.mode === 'tetra') {
+      if (profile.mode === 'tetra') {
         if (profile.talkGroupRef) {
           bump(profile.talkGroupRef);
           break;

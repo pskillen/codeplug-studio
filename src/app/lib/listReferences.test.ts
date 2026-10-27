@@ -76,7 +76,8 @@ describe('buildReferenceCountIndex', () => {
       rxRan: null,
       txRan: null,
       unitId: null,
-      talkGroupRef: { kind: 'talkGroup', id: talkGroup.id },
+      contactRef: { kind: 'talkGroup', id: talkGroup.id },
+      rxGroupListId: rxList.id,
     };
     const channel: Channel = {
       ...newChannel(projectId, 'DMR ch'),

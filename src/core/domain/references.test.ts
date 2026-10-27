@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { emptyLibrary, newChannel, newRxGroupList, newTalkGroup, newZone } from './factories.ts';
-import { findReferencesTo, isReferenced } from './references.ts';
+import {
+  emptyLibrary,
+  newChannel,
+  newDigitalContact,
+  newRxGroupList,
+  newTalkGroup,
+  newZone,
+} from './factories.ts';
+import { findDanglingReferences, findReferencesTo, isReferenced } from './references.ts';
 import type { ChannelModeProfileDMR, ChannelModeProfileNxdn, Library } from '../models/library.ts';
 
 const projectId = 'p1';
@@ -58,7 +65,7 @@ describe('findReferencesTo', () => {
       rxRan: null,
       txRan: null,
       unitId: null,
-      talkGroupRef: { kind: 'talkGroup', id: tg.id },
+      contactRef: { kind: 'talkGroup', id: tg.id },
     };
     const channel = { ...newChannel(projectId, 'NXDN ch'), modeProfiles: [nxdnProfile] };
     const library: Library = { ...emptyLibrary(), channels: [channel], talkGroups: [tg] };
@@ -67,8 +74,51 @@ describe('findReferencesTo', () => {
     expect(refs).toHaveLength(1);
     expect(refs[0]).toMatchObject({
       fromKind: 'channel',
-      relationship: 'channel NXDN talk group',
+      relationship: 'channel NXDN call',
     });
+  });
+
+  it('finds an NXDN profile that calls a digital contact and names an RX group list', () => {
+    const contact = newDigitalContact(projectId, 'Bob', 12, 'nxdn');
+    const list = newRxGroupList(projectId, 'NX list');
+    const profile: ChannelModeProfileNxdn = {
+      mode: 'nxdn',
+      rxRan: null,
+      txRan: null,
+      unitId: null,
+      contactRef: { kind: 'digitalContact', id: contact.id },
+      rxGroupListId: list.id,
+    };
+    const channel = { ...newChannel(projectId, 'NXDN ch'), modeProfiles: [profile] };
+    const library: Library = {
+      ...emptyLibrary(),
+      channels: [channel],
+      digitalContacts: [contact],
+      rxGroupLists: [list],
+    };
+    expect(findReferencesTo(library, { kind: 'digitalContact', id: contact.id })).toEqual([
+      expect.objectContaining({ fromId: channel.id, relationship: 'channel NXDN call' }),
+    ]);
+    expect(findReferencesTo(library, { kind: 'rxGroupList', id: list.id })).toEqual([
+      expect.objectContaining({ fromId: channel.id, relationship: 'channel NXDN RX group list' }),
+    ]);
+  });
+
+  it('reports a dangling NXDN call and RX group list', () => {
+    const profile: ChannelModeProfileNxdn = {
+      mode: 'nxdn',
+      rxRan: null,
+      txRan: null,
+      unitId: null,
+      contactRef: { kind: 'digitalContact', id: 'gone-contact' },
+      rxGroupListId: 'gone-list',
+    };
+    const channel = { ...newChannel(projectId, 'NXDN ch'), modeProfiles: [profile] };
+    const library: Library = { ...emptyLibrary(), channels: [channel] };
+    expect(findDanglingReferences(library).map((d) => d.relationship)).toEqual([
+      'channel NXDN call',
+      'channel NXDN RX group list',
+    ]);
   });
 
   it('finds zones that nest another zone', () => {

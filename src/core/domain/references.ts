@@ -22,6 +22,10 @@ function refMatches(ref: EntityRef, target: ReferenceTarget): boolean {
   return ref.kind === target.kind && ref.id === target.id;
 }
 
+function nxdnProfiles(channel: Library['channels'][number]): ChannelModeProfileNxdn[] {
+  return channel.modeProfiles.filter((p): p is ChannelModeProfileNxdn => p.mode === 'nxdn');
+}
+
 function dmrProfiles(channel: Library['channels'][number]): ChannelModeProfileDMR[] {
   return channel.modeProfiles.filter((p): p is ChannelModeProfileDMR => p.mode === 'dmr');
 }
@@ -121,13 +125,27 @@ export function findReferencesTo(library: Library, target: ReferenceTarget): Ent
         }
         continue;
       }
-      if (profile.mode === 'nxdn' || profile.mode === 'tetra') {
+      if (profile.mode === 'nxdn') {
+        const refsCall = profile.contactRef != null && refMatches(profile.contactRef, target);
+        const refsRxList = target.kind === 'rxGroupList' && profile.rxGroupListId === target.id;
+        if (refsCall || refsRxList) {
+          refs.push({
+            fromKind: 'channel',
+            fromId: channel.id,
+            fromName: channel.name,
+            relationship: refsCall ? 'channel NXDN call' : 'channel NXDN RX group list',
+          });
+          break;
+        }
+        continue;
+      }
+      if (profile.mode === 'tetra') {
         if (profile.talkGroupRef !== null && refMatches(profile.talkGroupRef, target)) {
           refs.push({
             fromKind: 'channel',
             fromId: channel.id,
             fromName: channel.name,
-            relationship: `channel ${profile.mode.toUpperCase()} talk group`,
+            relationship: 'channel TETRA talk group',
           });
           break;
         }
@@ -293,6 +311,28 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
           targetKind: slot.channelRef.kind,
           targetId: slot.channelRef.id,
           relationship: 'channel APRS report slot channel',
+        });
+      }
+    }
+    for (const profile of nxdnProfiles(channel)) {
+      if (profile.contactRef && !hasTarget(profile.contactRef)) {
+        dangling.push({
+          fromKind: 'channel',
+          fromId: channel.id,
+          fromName: channel.name,
+          targetKind: profile.contactRef.kind,
+          targetId: profile.contactRef.id,
+          relationship: 'channel NXDN call',
+        });
+      }
+      if (profile.rxGroupListId && !rxGroupListIds.has(profile.rxGroupListId)) {
+        dangling.push({
+          fromKind: 'channel',
+          fromId: channel.id,
+          fromName: channel.name,
+          targetKind: 'rxGroupList',
+          targetId: profile.rxGroupListId,
+          relationship: 'channel NXDN RX group list',
         });
       }
     }

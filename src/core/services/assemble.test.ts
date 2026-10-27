@@ -9,10 +9,12 @@ import {
   newDigitalContact,
   newFormatBuild,
   newRadioBuildForProfile,
+  newRxGroupList,
   newScanList,
   newTalkGroup,
   newZone,
 } from '@core/domain/factories.ts';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import {
   replaceZoneGroupingSection,
@@ -317,6 +319,54 @@ describe('assemble', () => {
 
     const projection = assemble(build, library);
     expect(projection.digitalContacts.map((row) => row.entity.id)).not.toContain(orphanContact.id);
+  });
+
+  it('links the NXDN contact and RX group list an NXDN profile names', () => {
+    const projectId = 'proj-nxdn-links';
+    const nxdnContact = newDigitalContact(projectId, 'NX Contact', 1234, 'nxdn');
+    const nxdnTg = newTalkGroup(projectId, 'NX TG', 10, 'nxdn');
+    const otherContact = newDigitalContact(projectId, 'Unlinked', 9999, 'nxdn');
+    const otherList = newRxGroupList(projectId, 'Unlinked list');
+    const rxList = {
+      ...newRxGroupList(projectId, 'NX only'),
+      members: [{ ref: { kind: 'talkGroup' as const, id: nxdnTg.id } }],
+    };
+    const channel = withExportEligibleDefaults({
+      ...newChannel(projectId, 'NXDN ch'),
+      // The D890 does not list NXDN as an RF mode yet, so a DMR profile keeps the channel eligible.
+      modeProfiles: [
+        defaultModeProfile('dmr'),
+        {
+          mode: 'nxdn' as const,
+          rxRan: 1,
+          txRan: 1,
+          unitId: 5,
+          contactRef: { kind: 'digitalContact' as const, id: nxdnContact.id },
+          rxGroupListId: rxList.id,
+          nxdnRate: null,
+        },
+      ],
+    });
+    const build = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      exportUnlinkedDigitalContacts: false,
+      exportUnlinkedRxGroupLists: false,
+      exportUnlinkedTalkGroups: false,
+    };
+    const library = {
+      channels: [channel],
+      zones: [],
+      talkGroups: [nxdnTg],
+      digitalContacts: [nxdnContact, otherContact],
+      analogContacts: [],
+      rxGroupLists: [rxList, otherList],
+      scanLists: [],
+    };
+
+    const assembled = assemble(build, library);
+    expect(assembled.digitalContacts.map((row) => row.entity.id)).toEqual([nxdnContact.id]);
+    expect(assembled.rxGroupLists.map((row) => row.entity.id)).toEqual([rxList.id]);
+    expect(assembled.talkGroups.map((row) => row.entity.id)).toEqual([nxdnTg.id]);
   });
 
   it('excludes unzoned channels when exportUnlinkedChannels is false', () => {
