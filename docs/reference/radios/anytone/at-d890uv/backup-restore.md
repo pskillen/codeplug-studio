@@ -17,6 +17,10 @@ Code table: `src/integrations/radio-io/radios/at-d890uv/backupRestoreRoles.ts`.
 
 Write-codeplug does not encode optional settings from a build: it preserves them through the RMW, apart from registered field patches (today the MM9PDY TG step keys; [#1393](https://github.com/pskillen/codeplug-studio/issues/1393), see [memory-layout.md](memory-layout.md)). Restore **does** replay optional settings and APRS from the zip onto live units. Alarm stays inspect-only; if a restore touches the shared `0x3480000` unit, live alarm bytes are retransmitted so erase does not blank them — they are not taken from the archive.
 
+### NXDN lists
+
+Read also takes the NXDN talk-group / contact list (`0x18000000` units) and the NXDN RX group lists (`0x04B80000` unit), on every D890, because the vendor CPS reads the same regions. The RX group lists are restorable. The NXDN list is stored in the backup but is **inspect-only**: it sits above the virtual map the restore image covers, so Restore does not write it back yet. See [nxdn.md](nxdn.md).
+
 ### What a range change wipes and what a Restore brings back
 
 A frequency-range change erases and re-defaults the whole settings unit (`0x3500000`, both halves), VFO A/B, channels, zone members, scan lists and zone names. A backup taken before the change holds all of it, and Restore with every region selected puts it back: everything in the [settings-unit map](memory-layout.md) (including the MM9PDY settings store, which the stock firmware never reads) plus VFO A/B (`vfo-channels`). It does not bring back calibration (that is the vital backup), LocalInfo (inspect-only) or the DTMF settings unit `0x3480000` (not wiped). Backups made before these spans existed lack the settings-unit regions; they still restore, and the bytes there stay as freshly read from the radio. VFO A/B are different: on a real radio they are bitmap-set channel slots, so older zips already carry them inside the `channel-data` regions and restore them.
