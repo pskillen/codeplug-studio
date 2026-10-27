@@ -494,7 +494,7 @@ function buildDm32Organisation(
 export interface BuildRadioWriteProjectionContext {
   /**
    * AT-D890UV MM9PDY only: write NXDN channel fields and NXDN-only channels. Set by the caller
-   * only when the radio reports NXDN enabled (a valid settings-store record with nxdn_unlock = 1).
+   * only when the radio reports NXDN enabled (a valid settings-store record with the NXDN-enabled byte = 1).
    * Unset or false: NXDN profiles are ignored and NXDN-only channels are left out.
    */
   atD890Nxdn?: boolean;

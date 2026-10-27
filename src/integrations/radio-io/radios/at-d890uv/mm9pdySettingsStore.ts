@@ -16,8 +16,8 @@ const MAGIC_6 = 0x36;
 /** The record layout this reader understands; any other version is treated as invalid (fail closed). */
 export const MM9PDY_SETTINGS_STORE_VERSION = 1;
 const OFFSET_VERSION = 2;
-/** `nxdn_unlock`: 0 = NXDN off (default), 1 = enabled. */
-export const MM9PDY_STORE_NXDN_UNLOCK_OFFSET = 21;
+/** NXDN-enabled flag: 0 = off (default), 1 = enabled. */
+export const MM9PDY_STORE_NXDN_ENABLED_OFFSET = 21;
 const OFFSET_SUM = 31;
 
 /** True when the 32-byte record has the magic, the known version and a matching 8-bit sum. */
@@ -31,11 +31,11 @@ export function isMm9pdySettingsStoreValid(record: Uint8Array): boolean {
 }
 
 /**
- * True only for a valid record whose `nxdn_unlock` byte is 1. A blank (`FF`), corrupt or
+ * True only for a valid record whose NXDN-enabled byte (21) is 1. A blank (`FF`), corrupt or
  * short record, or any other value, is NXDN off.
  */
 export function isMm9pdyNxdnEnabledInRecord(record: Uint8Array): boolean {
-  return isMm9pdySettingsStoreValid(record) && record[MM9PDY_STORE_NXDN_UNLOCK_OFFSET] === 1;
+  return isMm9pdySettingsStoreValid(record) && record[MM9PDY_STORE_NXDN_ENABLED_OFFSET] === 1;
 }
 
 /** The gate over an in-session download cache. No cache or no store block reads as off. */
