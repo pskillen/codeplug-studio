@@ -2,7 +2,7 @@
 
 How the digital contact database is written, by the official CPS and by Studio. Layout of the bank
 (meta, order table, block-hopped records) is in [memory-layout.md](memory-layout.md#digitalcontact-huge-bank).
-Firmware facts are from the firmware repo's findings F274 to F278 and Q82
+Firmware facts are from the firmware repo's findings F274 to F278 (F279 is the emulator harness they were run in) and Q82 to Q83
 ([findings.md](https://github.com/pskillen/anytone-d890-firmware/blob/main/docs/initial-re/findings.md)).
 
 ## What the CPS does
