@@ -23,7 +23,8 @@ desktop.ini
 tmp/
 
 # Node / Vite build output
-node_modules/
+# No trailing slash: also ignores a node_modules symlink (e.g. from an agent worktree)
+node_modules
 dist/
 coverage/
 test-results/
