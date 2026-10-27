@@ -92,7 +92,7 @@ describe('BuildDangerZonePage', () => {
     expect(screen.queryByTestId('range-last-change')).toBeNull();
   });
 
-  it('shows the last finished change with the last 4 of the serial, and Change back…', () => {
+  it('shows the last finished change with the full serial, and Change back…', () => {
     window.localStorage.setItem(
       'codeplug-studio.danger-zone.range-change-journal.v1',
       JSON.stringify([
@@ -113,8 +113,7 @@ describe('BuildDangerZonePage', () => {
     resetRangeChangeJournalCache();
     renderPage('radio-io-at-d890uv');
     const last = screen.getByTestId('range-last-change');
-    expect(last).toHaveTextContent('Last change: …AL01, Amateur Europe → Amateur US');
-    expect(last).not.toHaveTextContent('TESTSERIAL');
+    expect(last).toHaveTextContent('Last change: TESTSERIAL01, Amateur Europe → Amateur US');
     fireEvent.click(screen.getByRole('button', { name: 'Change back…' }));
   });
 });

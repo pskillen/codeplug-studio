@@ -12,7 +12,7 @@ import {
   lastDoneRangeChange,
   useRangeChangeJournal,
 } from '../../../state/atD890RangeChangeJournal.ts';
-import { COPY, dayAndClock, rangeCaption, tail4 } from './rangeChange/rangeChangeCopy.ts';
+import { COPY, dayAndClock, rangeCaption } from './rangeChange/rangeChangeCopy.ts';
 import { findRadioIoEgress } from '../../../lib/buildEgressUi.ts';
 import { DANGER_ZONE_DECISIONS } from '../../../services/dangerZone/decisions.ts';
 import { listOfferedDangerZoneTools } from '../../../services/dangerZone/gate.ts';
@@ -62,7 +62,7 @@ export default function BuildDangerZonePage() {
         {last ? (
           <p className={classes.last} data-testid="range-last-change">
             {COPY.footer.last(
-              tail4(last.serial),
+              last.serial,
               rangeCaption(last.fromCode),
               rangeCaption(last.toCode),
               dayAndClock(last.updatedAt),
