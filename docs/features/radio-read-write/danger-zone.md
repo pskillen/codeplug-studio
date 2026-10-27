@@ -125,29 +125,29 @@ from the backup. It therefore requires the live and backed-up LocalInfo from its
 
 ## Radio checks
 
-All pending. The wizard is shipped on pre-prod builds and is **not yet checked on a radio**. Nothing here has run on a radio; the emulator has no USB, so the `W` path is proved only on hardware.
+First hardware run, 2026-10-27 (owner, a real AT-D890UV): backup, change, Restore and the final Check all worked. Change and Restore gave a normal boot. The Check matched the backup apart from expected usage changes (the owner changed channel after the Restore; see Usage-volatile bytes in [memory-layout.md](../../reference/radios/anytone/at-d890uv/memory-layout.md#usage-volatile-bytes)). Only RT-4 is marked passed from that run; the other rows were not recorded and stay pending. The emulator has no USB, so the `W` path is proved only on hardware.
 
-| Row   | Check                                                                                                                                       | Status  |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| RT-1  | Abort: frame sent, port closed without `END`, power-cycle. Ident shows the old code; LocalInfo and tune byte-identical                      | Pending |
-| RT-2  | Change 3 to 7: reboot; ident 7; LocalInfo differs only at `+0x03`; tune differs only at `+0x28`; how long the boot wipe takes               | Pending |
-| RT-3  | Reconnect after the change: does the browser ask for the port again?                                                                        | Pending |
-| RT-4  | Restore in one session after the change: normal boot, settings and codeplug as before, no Program Error                                     | Pending |
-| RT-5  | TX on a dummy load: 445.000 MHz refused on code 3 and allowed on 7; 146.5 MHz likewise                                                      | Pending |
-| RT-6  | CPS: the old file is refused ("Band Error!"); a Read then a Write works                                                                     | Pending |
-| RT-7  | Revert 7 to 3 through the same flow; RT-2's checks again                                                                                    | Pending |
-| RT-8  | Program Error: can the radio enter PC mode in that loop?                                                                                    | Pending |
-| RT-9  | Resume: reload between `END` and Restore; resume from the saved zip                                                                         | Pending |
-| RT-10 | Code 18 at 220 MHz: change to 18, tune a 222.5 MHz signal. Does receive work, and is it flagged out of band? (Studio's row says RX 220–225) | Pending |
-| RT-11 | Pull the cable mid-`W` (step 5) and mid-Restore: journal state, banner, Resume works, and the radio is in the state the copy says           | Pending |
-| RT-12 | Check after a normal restart: no false differences (VFO, current channel). Run it twice, once after touching the radio                      | Pending |
-| RT-13 | Leave the page during step 5 and during step 7 (guard modal): radio and journal state; no second `END`                                      | Pending |
-| RT-14 | Backup page Restore of a pre-change zip onto a changed radio: every region forced, boots normally                                           | Pending |
-| RT-15 | A radio on an unlisted code (6, 9, 12, 15), if one exists: Read, change away, and back                                                      | Pending |
+| Row   | Check                                                                                                                                       | Status                        |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| RT-1  | Abort: frame sent, port closed without `END`, power-cycle. Ident shows the old code; LocalInfo and tune byte-identical                      | Pending                       |
+| RT-2  | Change 3 to 7: reboot; ident 7; LocalInfo differs only at `+0x03`; tune differs only at `+0x28`; how long the boot wipe takes               | Pending                       |
+| RT-3  | Reconnect after the change: does the browser ask for the port again?                                                                        | Pending                       |
+| RT-4  | Restore in one session after the change: normal boot, settings and codeplug as before, no Program Error                                     | Passed (hardware, 2026-10-27) |
+| RT-5  | TX on a dummy load: 445.000 MHz refused on code 3 and allowed on 7; 146.5 MHz likewise                                                      | Pending                       |
+| RT-6  | CPS: the old file is refused ("Band Error!"); a Read then a Write works                                                                     | Pending                       |
+| RT-7  | Revert 7 to 3 through the same flow; RT-2's checks again                                                                                    | Pending                       |
+| RT-8  | Program Error: can the radio enter PC mode in that loop?                                                                                    | Pending                       |
+| RT-9  | Resume: reload between `END` and Restore; resume from the saved zip                                                                         | Pending                       |
+| RT-10 | Code 18 at 220 MHz: change to 18, tune a 222.5 MHz signal. Does receive work, and is it flagged out of band? (Studio's row says RX 220–225) | Pending                       |
+| RT-11 | Pull the cable mid-`W` (step 5) and mid-Restore: journal state, banner, Resume works, and the radio is in the state the copy says           | Pending                       |
+| RT-12 | Check after a normal restart: no false differences (VFO, current channel). Run it twice, once after touching the radio                      | Pending                       |
+| RT-13 | Leave the page during step 5 and during step 7 (guard modal): radio and journal state; no second `END`                                      | Pending                       |
+| RT-14 | Backup page Restore of a pre-change zip onto a changed radio: every region forced, boots normally                                           | Pending                       |
+| RT-15 | A radio on an unlisted code (6, 9, 12, 15), if one exists: Read, change away, and back                                                      | Pending                       |
 
 Extensions to earlier rows:
 
-- **RT-2:** also diff LocalInfo and the tune bank against the vital zip: only `+0x03` and `+0x28` may differ. Note whether tune `+0x700..+0x711` is non-FF on the radio and whether it survives the change (if the firmware's rewrite omits those bytes the verify says "something else changed" and **Restore my channels anyway…** gets the user through).
+- **RT-2:** on hardware (2026-10-27) the radio's screen stayed on "PC Read" after `END`, and the owner could carry on anyway, so the restart copy no longer promises a normal screen. Still to record: the other RT-2 points below. Also diff LocalInfo and the tune bank against the vital zip: only `+0x03` and `+0x28` may differ. Note whether tune `+0x700..+0x711` is non-FF on the radio and whether it survives the change (if the firmware's rewrite omits those bytes the verify says "something else changed" and **Restore my channels anyway…** gets the user through).
 - **RT-3:** does the browser raise the Web Serial `connect` event for the radio after the restart (it enables Reconnect early)? Does it ask for the port again at Reconnect and at **Restore again** (each is a new session)?
 - **RT-9:** also resume via `?file=1` with a journal on file, and confirm a different backup of the same radio is refused.
 
