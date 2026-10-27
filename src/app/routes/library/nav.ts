@@ -62,6 +62,14 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
     icon: entityNavIcons.scanLists,
   },
   {
+    label: 'Digital ID',
+    plural: 'Digital IDs',
+    listPath: '/library/digital-ids',
+    editorSlugs: ['digital-ids'],
+    sectionNavTitle: 'Digital IDs',
+    icon: entityNavIcons.digitalIds,
+  },
+  {
     label: 'APRS configuration',
     plural: 'APRS configuration',
     listPath: '/library/aprs-configuration',

@@ -47,7 +47,7 @@ function dmrChannel(id: string, name: string, contactId: string): Channel {
         dmrMode: null,
         colourCode: 1,
         timeslot: 2,
-        dmrId: null,
+        ownDigitalIdId: null,
         contactRef: { kind: 'digitalContact' as const, id: contactId },
         rxGroupListId: null,
       },

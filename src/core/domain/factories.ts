@@ -10,6 +10,8 @@ import type {
   Channel,
   DigitalContact,
   Library,
+  OwnDigitalId,
+  OwnDigitalIdProtocol,
   RxGroupList,
   ScanList,
   TalkGroup,
@@ -30,6 +32,7 @@ export function emptyLibrary(): Library {
     analogContacts: [],
     talkGroups: [],
     digitalContacts: [],
+    ownDigitalIds: [],
     rxGroupLists: [],
     scanLists: [],
     zones: [],
@@ -318,6 +321,25 @@ export function newScanList(projectId: string, name: string): ScanList {
 }
 
 export { newAprsConfiguration } from './aprs/index.ts';
+
+/** A blank Digital ID. The save path decides `isDefault` (the first ID of a protocol is default). */
+export function newOwnDigitalId(
+  projectId: string,
+  protocol: OwnDigitalIdProtocol = 'dmr',
+  name = '',
+  number = 0,
+): OwnDigitalId {
+  return {
+    id: newId(),
+    projectId,
+    revision: initialRevision(),
+    updatedAt: isoNow(),
+    name,
+    protocol,
+    number,
+    isDefault: false,
+  };
+}
 
 export function newZone(projectId: string, name: string): Zone {
   const now = isoNow();

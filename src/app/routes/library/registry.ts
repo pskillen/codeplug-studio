@@ -1,4 +1,5 @@
 import type { Library } from '@core/models/library.ts';
+import { ownDigitalIdProtocolLabel } from '@core/domain/ownDigitalIds.ts';
 import type { PersistableRow } from '@core/models/revision.ts';
 import type { LibraryEntityKind } from '@integrations/persistence/index.ts';
 
@@ -31,6 +32,7 @@ export const LIBRARY_KINDS: LibraryKindMeta[] = [
     plural: 'Receive Group Lists',
   },
   { kind: 'scanList', slug: 'scan-lists', label: 'Scan list', plural: 'Scan lists' },
+  { kind: 'ownDigitalId', slug: 'digital-ids', label: 'Digital ID', plural: 'Digital IDs' },
   {
     kind: 'aprsConfiguration',
     slug: 'aprs-configuration',
@@ -72,6 +74,8 @@ export function entitiesForKind(library: Library, kind: LibraryEntityKind): Name
       return library.rxGroupLists;
     case 'scanList':
       return library.scanLists;
+    case 'ownDigitalId':
+      return library.ownDigitalIds;
     case 'aprsConfiguration':
       return library.aprsConfiguration ? [library.aprsConfiguration] : [];
     case 'zone':
@@ -107,6 +111,12 @@ export function describeEntity(library: Library, kind: LibraryEntityKind, id: st
     case 'rxGroupList': {
       const r = library.rxGroupLists.find((x) => x.id === id);
       return r ? `${r.members.length} member(s)` : '';
+    }
+    case 'ownDigitalId': {
+      const o = library.ownDigitalIds.find((x) => x.id === id);
+      return o
+        ? `${ownDigitalIdProtocolLabel(o.protocol)} · ID ${o.number}${o.isDefault ? ' · Default' : ''}`
+        : '';
     }
     case 'scanList': {
       const s = library.scanLists.find((x) => x.id === id);

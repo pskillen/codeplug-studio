@@ -1,4 +1,5 @@
-import type { Library } from '@core/models/library.ts';
+import type { Library, OwnDigitalId } from '@core/models/library.ts';
+import { newOwnDigitalIdIsDefault } from '@core/domain/ownDigitalIds.ts';
 import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
 import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
 import { normalizeZoneBehaviourDefaults } from '@core/domain/normalizeZoneBehaviourDefaults.ts';
@@ -8,7 +9,11 @@ import {
   zonesWithDirectChannelMember,
 } from '@core/domain/zoneMembership.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
-import type { LibraryEntityKind, ProjectPersistence } from '@integrations/persistence/index.ts';
+import type {
+  LibraryEntityKind,
+  ProjectPersistence,
+  PutResult,
+} from '@integrations/persistence/index.ts';
 
 export type DeleteOutcome = { ok: true } | { ok: false; references: EntityReference[] };
 
@@ -38,6 +43,7 @@ export class LibraryService {
       analogContacts,
       rxGroupLists,
       scanLists,
+      ownDigitalIds,
       aprsConfigurations,
       satellites,
     ] = await Promise.all([
@@ -49,6 +55,7 @@ export class LibraryService {
       this.persistence.listAnalogContacts(projectId),
       this.persistence.listRxGroupLists(projectId),
       this.persistence.listScanLists(projectId),
+      this.persistence.listOwnDigitalIds(projectId),
       this.persistence.listAprsConfigurations(projectId),
       this.persistence.listSatellites(projectId),
     ]);
@@ -60,6 +67,7 @@ export class LibraryService {
       zones,
       talkGroups,
       digitalContacts,
+      ownDigitalIds,
       analogContacts,
       rxGroupLists,
       scanLists,
@@ -68,6 +76,55 @@ export class LibraryService {
       channelDefaults,
       zoneDefaults,
     };
+  }
+
+  /**
+   * Save a Digital ID. The first ID created for a protocol becomes its default (D12); editing an
+   * ID keeps its default flag, unless the protocol changed (then the rule for a new ID applies).
+   */
+  async saveOwnDigitalId(row: OwnDigitalId, expectedRevision: number | null): Promise<PutResult> {
+    const others = (await this.persistence.listOwnDigitalIds(row.projectId)).filter(
+      (other) => other.id !== row.id,
+    );
+    const previous =
+      expectedRevision === null
+        ? null
+        : await this.persistence.getOwnDigitalId(row.projectId, row.id);
+    const keepsDefault = previous !== null && previous.protocol === row.protocol;
+    const isDefault = keepsDefault
+      ? previous.isDefault
+      : newOwnDigitalIdIsDefault(others, row.protocol);
+    return this.persistence.putOwnDigitalId({ ...row, isDefault }, expectedRevision);
+  }
+
+  /**
+   * Make one Digital ID the default for its protocol. The new default is written first, then the
+   * old one is cleared: a crash in between leaves two defaults, which `defaultOwnDigitalId`
+   * resolves the same way everywhere and the Library page reports.
+   */
+  async setDefaultOwnDigitalId(projectId: string, id: string): Promise<void> {
+    await this.persistence.runWithoutNotifications(async () => {
+      const rows = await this.persistence.listOwnDigitalIds(projectId);
+      const target = rows.find((row) => row.id === id);
+      if (!target) throw new Error('That Digital ID no longer exists.');
+      if (!target.isDefault) {
+        const result = await this.persistence.putOwnDigitalId(
+          { ...target, isDefault: true },
+          target.revision,
+        );
+        if (!result.ok)
+          throw new Error('The Digital ID was changed elsewhere. Reload and try again.');
+      }
+      for (const other of rows) {
+        if (other.id === id || other.protocol !== target.protocol || !other.isDefault) continue;
+        const result = await this.persistence.putOwnDigitalId(
+          { ...other, isDefault: false },
+          other.revision,
+        );
+        if (!result.ok)
+          throw new Error('A Digital ID was changed elsewhere. Reload and try again.');
+      }
+    });
   }
 
   /**

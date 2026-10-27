@@ -95,6 +95,8 @@ export interface AtD890WriteCoverageTableProps {
   mm9pdy?: boolean;
   /** Radio settings fields set this session (the Radio settings row says so). */
   settingsChangeCount?: number;
+  /** The library has a default DMR ID: radio IDs and the master ID are written from it. */
+  hasDefaultDmrId?: boolean;
 }
 
 export default function AtD890WriteCoverageTable({
@@ -102,6 +104,7 @@ export default function AtD890WriteCoverageTable({
   hasHydration = false,
   mm9pdy = false,
   settingsChangeCount = 0,
+  hasDefaultDmrId = false,
 }: AtD890WriteCoverageTableProps) {
   return (
     <Stack gap={4}>
@@ -121,7 +124,7 @@ export default function AtD890WriteCoverageTable({
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {atD890WriteCoverageRows(mm9pdy, settingsChangeCount).map((row) => (
+          {atD890WriteCoverageRows(mm9pdy, settingsChangeCount, hasDefaultDmrId).map((row) => (
             <Table.Tr key={row.label}>
               <Table.Td>{row.label}</Table.Td>
               <Table.Td>

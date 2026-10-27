@@ -108,7 +108,7 @@ describe('dominantMode', () => {
       mode: 'dmr',
       colourCode: 1,
       timeslot: 1,
-      dmrId: null,
+      ownDigitalIdId: null,
       contactRef: null,
       rxGroupListId: null,
     };

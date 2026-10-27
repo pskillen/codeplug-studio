@@ -8,7 +8,8 @@
 
 import type { AssembledBuild, AssembledChannel, LibrarySlice } from '@core/services/assemble.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
+import type { Channel, ChannelModeProfile, OwnDigitalId } from '@core/models/library.ts';
+import { channelOwnIdOverride } from '@core/domain/ownDigitalIds.ts';
 import { expandAllMxNChannels } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import type { ExpandedMxNChannelRow } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { mxnSiteWireNameResolverForRadioTarget } from '@core/services/anytoneChannelExpansion.ts';
@@ -60,8 +61,28 @@ export interface RadioChannelFkMaps {
   /** OpenGD77 TS clones: `${talkGroupId}:${slot}` → 1-based contact bank index. */
   contactIndexByTalkGroupSlot?: ReadonlyMap<string, number>;
   rxGroupIndexById?: ReadonlyMap<string, number>;
-  /** DM-32UV: DMR ID value → 0-based operator radio-ID bank index. */
-  dmrIdIndexByValue?: ReadonlyMap<number, number>;
+  /** Digital ID row id → 0-based operator radio-ID list index (AT-D890, DM-32UV). */
+  dmrRadioIdIndexByOwnIdId?: ReadonlyMap<string, number>;
+  /**
+   * List index a DMR channel on Default points at. Set only when the library has a default DMR ID
+   * and the target writes a radio-ID list; absent leaves the byte as before.
+   */
+  dmrDefaultRadioIdIndex?: number;
+  /** OpenGD77 Web Serial: the library's Digital IDs, so a channel's choice resolves to its number. */
+  ownDigitalIds?: readonly OwnDigitalId[];
+}
+
+/** Radio-ID list index for a DMR profile: its chosen Digital ID, else the default's slot. */
+function resolveDmrRadioIdIndex(
+  dmr: Extract<ChannelModeProfile, { mode: 'dmr' }>,
+  maps?: RadioChannelFkMaps,
+): number | undefined {
+  if (!maps) return undefined;
+  if (dmr.ownDigitalIdId) {
+    const chosen = maps.dmrRadioIdIndexByOwnIdId?.get(dmr.ownDigitalIdId);
+    if (chosen != null) return chosen;
+  }
+  return maps.dmrDefaultRadioIdIndex;
 }
 
 function resolveContactId(
@@ -201,7 +222,7 @@ function digitalFieldsFromChannel(
   const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
   const txContactId = resolveContactId(dmr.contactRef, fkMaps, timeslot);
   const rxGroupIndex = resolveRxGroupIndex(dmr.rxGroupListId, fkMaps);
-  const dmrRadioIdIndex = dmr.dmrId != null ? fkMaps?.dmrIdIndexByValue?.get(dmr.dmrId) : undefined;
+  const dmrRadioIdIndex = resolveDmrRadioIdIndex(dmr, fkMaps);
   return {
     mode: mode ?? 'digital',
     colorCode: dmr.colourCode ?? undefined,
@@ -213,6 +234,15 @@ function digitalFieldsFromChannel(
     ...nxdnFields,
     ...aprsFieldsFromChannel(channel),
   };
+}
+
+/** The DMR number a channel explicitly chose (never the default), for targets that write it per channel. */
+function resolveDmrOwnIdNumber(
+  dmr: Extract<ChannelModeProfile, { mode: 'dmr' }>,
+  maps?: RadioChannelFkMaps,
+): number | undefined {
+  if (!maps?.ownDigitalIds) return undefined;
+  return channelOwnIdOverride(dmr, maps.ownDigitalIds)?.number;
 }
 
 function digitalFieldsFromExpandedWireRow(
@@ -229,7 +259,8 @@ function digitalFieldsFromExpandedWireRow(
   const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
   const txContactId = resolveContactId(dmr.contactRef, fkMaps, timeslot);
   const rxGroupIndex = resolveRxGroupIndex(dmr.rxGroupListId, fkMaps);
-  const dmrRadioIdIndex = dmr.dmrId != null ? fkMaps?.dmrIdIndexByValue?.get(dmr.dmrId) : undefined;
+  const dmrRadioIdIndex = resolveDmrRadioIdIndex(dmr, fkMaps);
+  const ownDmrId = resolveDmrOwnIdNumber(dmr, fkMaps);
   return {
     mode: 'digital',
     colorCode: dmr.colourCode ?? undefined,
@@ -238,6 +269,7 @@ function digitalFieldsFromExpandedWireRow(
     ...(txContactId != null ? { txContactId } : {}),
     ...(rxGroupIndex != null ? { rxGroupIndex } : {}),
     ...(dmrRadioIdIndex != null ? { dmrRadioIdIndex } : {}),
+    ...(ownDmrId != null ? { dmrId: ownDmrId } : {}),
     ...aprsFieldsFromChannel(channel),
   };
 }
@@ -364,7 +396,7 @@ function digitalFieldsFromProjection(
   const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
   const txContactId = resolveContactId(projection.txContactRef ?? dmr.contactRef, fkMaps);
   const rxGroupIndex = resolveRxGroupIndex(projection.rxGroupListId, fkMaps);
-  const dmrRadioIdIndex = dmr.dmrId != null ? fkMaps?.dmrIdIndexByValue?.get(dmr.dmrId) : undefined;
+  const dmrRadioIdIndex = resolveDmrRadioIdIndex(dmr, fkMaps);
   return {
     mode: mode ?? 'digital',
     colorCode: dmr.colourCode ?? undefined,

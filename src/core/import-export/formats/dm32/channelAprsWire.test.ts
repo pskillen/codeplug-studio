@@ -30,7 +30,7 @@ function dmrChannel(name: string, overrides: Partial<Channel> = {}): Channel {
         mode: 'dmr',
         colourCode: 1,
         timeslot: 1,
-        dmrId: 1_234_567,
+        ownDigitalIdId: null,
         contactRef: null,
         rxGroupListId: null,
       },

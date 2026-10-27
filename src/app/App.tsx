@@ -21,6 +21,7 @@ import ZoneEditAddFromMapPage from './routes/library/zones/ZoneEditAddFromMapPag
 import ChannelsListPage from './routes/library/lists/ChannelsListPage.tsx';
 import ZonesListPage from './routes/library/lists/ZonesListPage.tsx';
 import TalkGroupsListPage from './routes/library/lists/TalkGroupsListPage.tsx';
+import DigitalIdsListPage from './routes/library/lists/DigitalIdsListPage.tsx';
 import ContactsListPage from './routes/library/lists/ContactsListPage.tsx';
 import DigitalIdDirectoryListPage from './routes/library/lists/DigitalIdDirectoryListPage.tsx';
 import RxGroupListsListPage from './routes/library/lists/RxGroupListsListPage.tsx';
@@ -160,6 +161,7 @@ export const appRouter = createBrowserRouter([
           },
           { path: '/library/talk-groups', element: <TalkGroupsListPage /> },
           { path: '/library/contacts', element: <ContactsListPage /> },
+          { path: '/library/digital-ids', element: <DigitalIdsListPage /> },
           {
             path: '/library/contacts/directory',
             element: <DigitalIdDirectoryListPage />,

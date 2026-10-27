@@ -9,8 +9,15 @@ import {
   nxdnRateFromSelectValue,
   nxdnRxGroupListOptions,
 } from '../../lib/nxdnProfileFields.ts';
-import { NXDN_ID_MAX, NXDN_ID_MIN } from '@core/domain/validation.ts';
 import {
+  OWN_ID_FIELD_HINTS,
+  OWN_ID_PAGE_PATH,
+  ownDigitalIdFromSelectValue,
+  ownDigitalIdSelectData,
+} from '../../lib/ownDigitalIdOptions.ts';
+import { Link } from 'react-router-dom';
+import {
+  Anchor,
   Group,
   Input,
   NumberInput,
@@ -32,6 +39,7 @@ import type {
   ChannelTone,
   DMRTimeSlot,
   Library,
+  OwnDigitalIdProtocol,
 } from '@core/models/library.ts';
 import { isAnalogChannelModeProfile, isModeOnlyStub } from '@core/domain/modeProfiles.ts';
 import ModePill from '../pills/ModePill.tsx';
@@ -48,6 +56,37 @@ import {
 } from '../../lib/channelFields/index.ts';
 import { isDmrMode, modeLabel } from '../../lib/channelModes.ts';
 import classes from './ChannelModeProfilesEditor.module.css';
+
+/** A channel's own-ID choice: Default, or one of the protocol's Digital IDs. */
+function OwnDigitalIdSelect({
+  label,
+  protocol,
+  library,
+  value,
+  onChange,
+}: {
+  label: string;
+  protocol: OwnDigitalIdProtocol;
+  library: Library;
+  value: string | null | undefined;
+  onChange: (ownDigitalIdId: string | null) => void;
+}) {
+  return (
+    <Stack gap={4}>
+      <Select
+        label={label}
+        description={OWN_ID_FIELD_HINTS[protocol]}
+        data={ownDigitalIdSelectData(library, protocol, value)}
+        value={value ?? ''}
+        onChange={(v) => onChange(ownDigitalIdFromSelectValue(v))}
+        allowDeselect={false}
+      />
+      <Anchor component={Link} to={OWN_ID_PAGE_PATH} size="sm">
+        Manage Digital IDs
+      </Anchor>
+    </Stack>
+  );
+}
 
 const bandwidthSelectData = [
   { value: '', label: '—' },
@@ -268,12 +307,12 @@ function DmrPanel({
           clearable
         />
       </Group>
-      <NumberInput
+      <OwnDigitalIdSelect
         label="DMR ID"
-        value={profile.dmrId ?? undefined}
-        onChange={(v) => onPatch({ dmrId: typeof v === 'number' && v > 0 ? v : null })}
-        min={1}
-        allowDecimal={false}
+        protocol="dmr"
+        library={library}
+        value={profile.ownDigitalIdId}
+        onChange={(ownDigitalIdId) => onPatch({ ownDigitalIdId })}
       />
       <Select
         label="TX contact"
@@ -411,14 +450,12 @@ function NxdnPanel({
         onChange={(v) => onPatch({ nxdnRate: nxdnRateFromSelectValue(v) })}
         allowDeselect={false}
       />
-      <NumberInput
+      <OwnDigitalIdSelect
         label={NXDN_FIELD_LABELS.unitId}
-        description={NXDN_FIELD_HINTS.unitId}
-        value={profile.unitId ?? undefined}
-        onChange={(v) => onPatch({ unitId: typeof v === 'number' ? v : null })}
-        min={NXDN_ID_MIN}
-        max={NXDN_ID_MAX}
-        allowDecimal={false}
+        protocol="nxdn"
+        library={library}
+        value={profile.ownDigitalIdId}
+        onChange={(ownDigitalIdId) => onPatch({ ownDigitalIdId })}
       />
       <Select
         label={NXDN_FIELD_LABELS.call}

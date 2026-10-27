@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { scratchWireKey } from '@core/import-export/channelExpansion/channelOverrideKey.ts';
 import { expansionWireKey } from '@core/import-export/channelExpansion/modeExportSuffix.ts';
@@ -14,6 +17,8 @@ import {
   FIXTURE_PROJECT_ID,
   FIXTURE_APRS_CONFIG_ID,
   FIXTURE_DIGITAL_CONTACT_ID,
+  FIXTURE_DMR_OWN_ID,
+  FIXTURE_NXDN_OWN_ID,
   FIXTURE_RX_LIST_ID,
   FIXTURE_TG_ID,
   FIXTURE_TIMESTAMP,
@@ -277,11 +282,11 @@ describe('native-yaml NXDN profile', () => {
     return { ...aggregate, channels: [...aggregate.channels, channel] };
   }
 
-  it('round-trips rate, call, RX group list and unit ID', () => {
+  it('round-trips rate, call, RX group list and Digital ID', () => {
     const aggregate = nxdnAggregate({
       rxRan: 3,
       txRan: 4,
-      unitId: 1234,
+      ownDigitalIdId: FIXTURE_NXDN_OWN_ID,
       contactRef: { kind: 'digitalContact', id: FIXTURE_DIGITAL_CONTACT_ID },
       rxGroupListId: FIXTURE_RX_LIST_ID,
       nxdnRate: 'nxdn96',
@@ -294,7 +299,7 @@ describe('native-yaml NXDN profile', () => {
       mode: 'nxdn',
       rxRan: 3,
       txRan: 4,
-      unitId: 1234,
+      ownDigitalIdId: FIXTURE_NXDN_OWN_ID,
       contactRef: { kind: 'digitalContact', id: FIXTURE_DIGITAL_CONTACT_ID },
       rxGroupListId: FIXTURE_RX_LIST_ID,
       nxdnRate: 'nxdn96',
@@ -306,7 +311,7 @@ describe('native-yaml NXDN profile', () => {
       nxdnAggregate({
         rxRan: null,
         txRan: null,
-        unitId: null,
+        ownDigitalIdId: null,
         contactRef: { kind: 'talkGroup', id: FIXTURE_TG_ID },
       }),
     ).replace('contactRef:', 'talkGroupRef:');
@@ -326,14 +331,124 @@ describe('native-yaml NXDN profile', () => {
       nxdnAggregate({
         rxRan: null,
         txRan: null,
-        unitId: null,
+        ownDigitalIdId: null,
         contactRef: { kind: 'digitalContact', id: 'missing' },
       }),
     );
     expect(() => parseProjectDocument(dangling)).toThrow(/not found/);
     const danglingList = serialiseProject(
-      nxdnAggregate({ rxRan: null, txRan: null, unitId: null, rxGroupListId: 'missing' }),
+      nxdnAggregate({ rxRan: null, txRan: null, ownDigitalIdId: null, rxGroupListId: 'missing' }),
     );
     expect(() => parseProjectDocument(danglingList)).toThrow(/not found/);
+  });
+});
+
+describe('native-yaml Digital IDs', () => {
+  const importFixture = (name: string) =>
+    readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/import', name),
+      'utf8',
+    );
+
+  it('round-trips a default per protocol and the channel choice', () => {
+    const aggregate = fullLibraryAggregate();
+    const parsed = parseProjectDocument(serialiseProject(aggregate));
+    expect(parsed.ownDigitalIds).toEqual(aggregate.ownDigitalIds);
+    expect(parsed.ownDigitalIds.filter((row) => row.isDefault).map((row) => row.protocol)).toEqual([
+      'dmr',
+      'nxdn',
+    ]);
+    const dmr = parsed.channels
+      .flatMap((channel) => channel.modeProfiles)
+      .find((profile) => profile.mode === 'dmr');
+    expect(dmr).toMatchObject({ ownDigitalIdId: FIXTURE_DMR_OWN_ID });
+  });
+
+  it('loads a schema 29 file with a typed DMR ID as an unnamed Digital ID with no default', () => {
+    const parsed = parseProjectDocument(importFixture('own-ids-schema29.yaml'));
+    expect(parsed.ownDigitalIds).toHaveLength(1);
+    const [row] = parsed.ownDigitalIds;
+    expect(row).toMatchObject({ name: '', protocol: 'dmr', number: 2351123, isDefault: false });
+    const dmr = parsed.channels
+      .flatMap((channel) => channel.modeProfiles)
+      .find((profile) => profile.mode === 'dmr');
+    expect(dmr).toMatchObject({ ownDigitalIdId: row!.id });
+    expect(dmr).not.toHaveProperty('dmrId');
+    // Idempotent: saving and loading again keeps the same row.
+    const again = parseProjectDocument(serialiseProject(parsed));
+    expect(again.ownDigitalIds).toEqual(parsed.ownDigitalIds);
+  });
+
+  it('loads a schema 29 NXDN unitId as an NXDN Digital ID', () => {
+    const yaml = serialiseProject(
+      (() => {
+        const aggregate = fullLibraryAggregate();
+        const channel: Channel = {
+          ...newChannel(FIXTURE_PROJECT_ID, 'NXDN ch'),
+          modeProfiles: [
+            {
+              mode: 'nxdn',
+              rxRan: null,
+              txRan: null,
+              ownDigitalIdId: FIXTURE_NXDN_OWN_ID,
+              contactRef: null,
+            },
+          ],
+        };
+        return { ...aggregate, channels: [...aggregate.channels, channel] };
+      })(),
+    )
+      .replace('studioSchemaVersion: 30', 'studioSchemaVersion: 29')
+      .replace(`ownDigitalIdId: ${FIXTURE_NXDN_OWN_ID}`, 'unitId: 77');
+    const parsed = parseProjectDocument(yaml);
+    expect(parsed.ownDigitalIds.some((row) => row.protocol === 'nxdn' && row.number === 77)).toBe(
+      true,
+    );
+  });
+
+  it('rejects the same protocol and number twice, and several defaults in a protocol', () => {
+    const aggregate = fullLibraryAggregate();
+    const dmrRow = aggregate.ownDigitalIds!.find((row) => row.protocol === 'dmr')!;
+    const twin = { ...dmrRow, id: '11111111-1111-4111-8111-111111111111', isDefault: false };
+    expect(() =>
+      parseProjectDocument(
+        serialiseProject({ ...aggregate, ownDigitalIds: [...aggregate.ownDigitalIds!, twin] }),
+      ),
+    ).toThrow(/more than once/);
+    const otherNumber = { ...twin, number: dmrRow.number + 1, isDefault: true };
+    expect(() =>
+      parseProjectDocument(
+        serialiseProject({
+          ...aggregate,
+          ownDigitalIds: [...aggregate.ownDigitalIds!, otherNumber],
+        }),
+      ),
+    ).toThrow(/more than one default/);
+  });
+
+  it('rejects a channel that names a Digital ID that does not exist', () => {
+    const yaml = serialiseProject(fullLibraryAggregate()).replace(
+      `ownDigitalIdId: ${FIXTURE_DMR_OWN_ID}`,
+      'ownDigitalIdId: 99999999-9999-4999-8999-999999999999',
+    );
+    expect(() => parseProjectDocument(yaml)).toThrow(/not a DMR Digital ID/);
+  });
+
+  it('rejects a DMR channel that names an NXDN Digital ID', () => {
+    const yaml = serialiseProject(fullLibraryAggregate()).replace(
+      `ownDigitalIdId: ${FIXTURE_DMR_OWN_ID}`,
+      `ownDigitalIdId: ${FIXTURE_NXDN_OWN_ID}`,
+    );
+    expect(() => parseProjectDocument(yaml)).toThrow(/not a DMR Digital ID/);
+  });
+
+  it('rejects the old dmrId field in a schema 30 file', () => {
+    const yaml = serialiseProject(fullLibraryAggregate()).replace(
+      `ownDigitalIdId: ${FIXTURE_DMR_OWN_ID}`,
+      'dmrId: 2351123',
+    );
+    expect(() => parseProjectDocument(yaml)).toThrow(
+      /dmrId is replaced by ownDigitalIdId in schema 30/,
+    );
   });
 });

@@ -8,6 +8,7 @@ import type {
   Channel,
   DigitalContact,
   Library,
+  OwnDigitalId,
   RxGroupList,
   ScanList,
   TalkGroup,
@@ -54,6 +55,7 @@ export interface ProjectAggregate {
   zones: Zone[];
   talkGroups: TalkGroup[];
   digitalContacts: DigitalContact[];
+  ownDigitalIds: OwnDigitalId[];
   analogContacts: AnalogContact[];
   rxGroupLists: RxGroupList[];
   scanLists: ScanList[];
@@ -71,6 +73,7 @@ export function emptyLibrary(): Library {
     analogContacts: [],
     talkGroups: [],
     digitalContacts: [],
+    ownDigitalIds: [],
     rxGroupLists: [],
     scanLists: [],
     zones: [],
@@ -91,6 +94,7 @@ export function documentFromAggregate(aggregate: ProjectAggregate): StudioProjec
       zones: aggregate.zones,
       talkGroups: aggregate.talkGroups,
       digitalContacts: aggregate.digitalContacts,
+      ownDigitalIds: aggregate.ownDigitalIds,
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
       scanLists: aggregate.scanLists,
@@ -124,6 +128,7 @@ export function aggregateFromDocument(doc: StudioProjectDocument): ProjectAggreg
     zones: doc.library.zones,
     talkGroups: doc.library.talkGroups,
     digitalContacts: doc.library.digitalContacts,
+    ownDigitalIds: doc.library.ownDigitalIds ?? [],
     analogContacts: doc.library.analogContacts,
     rxGroupLists: doc.library.rxGroupLists,
     scanLists: doc.library.scanLists ?? [],

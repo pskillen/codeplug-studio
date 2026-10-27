@@ -20,7 +20,7 @@ function dmrChannel(name: string): Channel {
         mode: 'dmr',
         colourCode: 1,
         timeslot: 1,
-        dmrId: 1_234_567,
+        ownDigitalIdId: null,
         contactRef: null,
         rxGroupListId: null,
       },

@@ -4,6 +4,7 @@ import type {
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
   ChannelModeProfileNxdn,
+  OwnDigitalId,
 } from '../models/library.ts';
 import { DEFAULT_MODE_PROFILE_BEHAVIOUR_OVERRIDES } from '../models/channelBehaviourDefaults.ts';
 import type {
@@ -13,7 +14,7 @@ import type {
   SsbSideband,
 } from '../models/libraryTypes.ts';
 import { normalizeDmrModeProfile } from './dmrOperatingMode.ts';
-import { NXDN_ID_MAX, NXDN_ID_MIN, validateDigitalIdForMode } from './validation.ts';
+import { channelOwnIdOverride } from './ownDigitalIds.ts';
 
 const ANALOG_MODES = new Set<AnalogChannelMode>(['fm', 'am', 'ssb']);
 
@@ -52,7 +53,7 @@ function defaultDmrProfile(): ChannelModeProfileDMR {
     dmrMode: null,
     colourCode: null,
     timeslot: null,
-    dmrId: null,
+    ownDigitalIdId: null,
     contactRef: null,
     rxGroupListId: null,
     sendTalkerAlias: DEFAULT_MODE_PROFILE_BEHAVIOUR_OVERRIDES.sendTalkerAlias,
@@ -79,7 +80,7 @@ export function defaultModeProfile(
         mode: 'nxdn',
         rxRan: null,
         txRan: null,
-        unitId: null,
+        ownDigitalIdId: null,
         contactRef: null,
         rxGroupListId: null,
         nxdnRate: null,
@@ -139,7 +140,7 @@ function normalizeNxdnProfile(
     ...rest,
     rxRan: rest.rxRan ?? null,
     txRan: rest.txRan ?? null,
-    unitId: rest.unitId ?? null,
+    ownDigitalIdId: rest.ownDigitalIdId ?? null,
     contactRef: rest.contactRef ?? talkGroupRef ?? null,
     rxGroupListId: rest.rxGroupListId ?? null,
     nxdnRate: rest.nxdnRate ?? null,
@@ -293,7 +294,14 @@ export function channelHasDmrProfile(channel: Pick<Channel, 'modeProfiles'>): bo
   return channel.modeProfiles.some((profile) => profile.mode === 'dmr');
 }
 
-export function validateModeProfiles(profiles: ChannelModeProfile[]): string[] {
+/**
+ * `ownIds` are the library's Digital IDs. When given, a DMR or NXDN profile that names an ID which
+ * is missing or belongs to the other protocol is an error; omit it to skip that check.
+ */
+export function validateModeProfiles(
+  profiles: ChannelModeProfile[],
+  ownIds?: readonly OwnDigitalId[],
+): string[] {
   const errors: string[] = [];
   const seen = new Set<ChannelMode>();
   for (const profile of profiles) {
@@ -306,6 +314,15 @@ export function validateModeProfiles(profiles: ChannelModeProfile[]): string[] {
         errors.push('DMR colour code must be 0–15');
       }
     }
+    if (
+      ownIds &&
+      (profile.mode === 'dmr' || profile.mode === 'nxdn') &&
+      profile.ownDigitalIdId &&
+      !channelOwnIdOverride(profile, ownIds)
+    ) {
+      const label = profile.mode === 'dmr' ? 'DMR' : 'NXDN';
+      errors.push(`This channel's ${label} ID is not in Digital IDs`);
+    }
     if (profile.mode === 'nxdn') {
       for (const [label, ran] of [
         ['RX RAN', profile.rxRan],
@@ -314,9 +331,6 @@ export function validateModeProfiles(profiles: ChannelModeProfile[]): string[] {
         if (ran != null && (ran < 0 || ran > 63)) {
           errors.push(`${label} must be 0–63`);
         }
-      }
-      if (profile.unitId != null && validateDigitalIdForMode('nxdn', profile.unitId) != null) {
-        errors.push(`NXDN unit ID must be ${NXDN_ID_MIN}–${NXDN_ID_MAX}`);
       }
       const callKind = profile.contactRef?.kind;
       if (callKind != null && callKind !== 'talkGroup' && callKind !== 'digitalContact') {

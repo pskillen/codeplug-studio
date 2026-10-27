@@ -31,7 +31,7 @@ describe('neonplug/rxGroups', () => {
           mode: 'dmr',
           colourCode: 1,
           timeslot: 1,
-          dmrId: null,
+          ownDigitalIdId: null,
           contactRef: { kind: 'talkGroup', id: 'tg-1' },
           rxGroupListId: 'rx-1',
         },

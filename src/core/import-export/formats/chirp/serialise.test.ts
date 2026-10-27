@@ -121,7 +121,7 @@ describe('chirp/serialise', () => {
           mode: 'dmr' as const,
           colourCode: 1,
           timeslot: 1 as const,
-          dmrId: 123,
+          ownDigitalIdId: null,
           contactRef: null,
           rxGroupListId: null,
         },

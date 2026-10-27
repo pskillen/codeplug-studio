@@ -9,6 +9,7 @@ library:
     txPermit: permitAlways
   channels: []
   digitalContacts: []
+  ownDigitalIds: []
   rxGroupLists: []
   satellites: []
   scanLists: []
@@ -35,5 +36,5 @@ project:
     includeInZoneDerivedScanList: true
 radioBuilds: []
 schemaVersion: 1
-studioSchemaVersion: 29
+studioSchemaVersion: 30
 trackingSettings: null

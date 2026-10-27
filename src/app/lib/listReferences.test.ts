@@ -67,7 +67,7 @@ describe('buildReferenceCountIndex', () => {
       mode: 'dmr',
       colourCode: 1,
       timeslot: 1,
-      dmrId: null,
+      ownDigitalIdId: null,
       contactRef: { kind: 'digitalContact', id: digitalContact.id },
       rxGroupListId: rxList.id,
     };
@@ -75,7 +75,7 @@ describe('buildReferenceCountIndex', () => {
       mode: 'nxdn',
       rxRan: null,
       txRan: null,
-      unitId: null,
+      ownDigitalIdId: null,
       contactRef: { kind: 'talkGroup', id: talkGroup.id },
       rxGroupListId: rxList.id,
     };
@@ -107,5 +107,41 @@ describe('buildReferenceCountIndex', () => {
         id: digitalContact.id,
       }),
     ).toBe(1);
+  });
+});
+
+describe('Digital ID reference counts', () => {
+  it('counts a channel that chooses an ID once, and not the default', () => {
+    const profile = (ownDigitalIdId: string | null): ChannelModeProfileDMR => ({
+      mode: 'dmr',
+      colourCode: 1,
+      timeslot: 1,
+      ownDigitalIdId,
+      contactRef: null,
+      rxGroupListId: null,
+    });
+    const row = (id: string, isDefault: boolean) => ({
+      id,
+      projectId,
+      revision: 1,
+      updatedAt: '',
+      name: '',
+      protocol: 'dmr' as const,
+      number: id === 'a' ? 1 : 2,
+      isDefault,
+    });
+    const library: Library = {
+      ...emptyLibrary(),
+      channels: [
+        { ...newChannel(projectId, 'One'), modeProfiles: [profile('a')] },
+        { ...newChannel(projectId, 'Two'), modeProfiles: [profile(null)] },
+      ],
+      ownDigitalIds: [row('a', false), row('b', true)],
+    };
+    expect(referenceCount(library, { kind: 'ownDigitalId', id: 'a' })).toBe(1);
+    expect(referenceCount(library, { kind: 'ownDigitalId', id: 'b' })).toBe(0);
+    const index = buildReferenceCountIndex(library);
+    expect(referenceCountFromIndex(index, { kind: 'ownDigitalId', id: 'a' })).toBe(1);
+    expect(referenceCountFromIndex(index, { kind: 'ownDigitalId', id: 'b' })).toBe(0);
   });
 });

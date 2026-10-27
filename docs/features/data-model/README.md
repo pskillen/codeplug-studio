@@ -100,32 +100,35 @@ See [storage.md](../../poc-migration/storage.md) — Phase 1 uses in-memory row 
 
 Vendor-neutral RF semantics only. UUID `id` FKs; `name` is a **human display label** — not the CPS wire string for a particular radio.
 
-| Entity              | Notes                                                                                                                                                                           |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Channel`           | Frequency (Hz), callsign, power, `location`, `maidenheadLocator`, `useLocation`, `hideFromInternalMap` (app-only map visibility), scan skip, `forbidTransmit`; `modeProfiles[]` |
-| `Zone`              | Inventory grouping — `members` as channel `EntityRef[]`; export flags on the zone row                                                                                           |
-| `TalkGroup`         | Digital group call — `mode`, `digitalId`                                                                                                                                        |
-| `DigitalContact`    | Digital private call — `mode`, `digitalId`                                                                                                                                      |
-| `AnalogContact`     | Analogue call sign / code                                                                                                                                                       |
-| `RxGroupList`       | Promiscuous RX list — `members` as talk-group `EntityRef[]`                                                                                                                     |
-| `ScanList`          | Dedicated scan list — ordered `memberChannelIds`                                                                                                                                |
-| `AprsConfiguration` | Digital APRS global config — beacon timing, position source, `channelSlots[]`; **one per project**; see [aprs](../aprs/README.md)                                               |
+| Entity              | Notes                                                                                                                                                                                                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Channel`           | Frequency (Hz), callsign, power, `location`, `maidenheadLocator`, `useLocation`, `hideFromInternalMap` (app-only map visibility), scan skip, `forbidTransmit`; `modeProfiles[]`                                                                                     |
+| `Zone`              | Inventory grouping — `members` as channel `EntityRef[]`; export flags on the zone row                                                                                                                                                                               |
+| `TalkGroup`         | Digital group call — `mode`, `digitalId`                                                                                                                                                                                                                            |
+| `DigitalContact`    | Digital private call — `mode`, `digitalId`                                                                                                                                                                                                                          |
+| `AnalogContact`     | Analogue call sign / code                                                                                                                                                                                                                                           |
+| `RxGroupList`       | Promiscuous RX list — `members` as talk-group `EntityRef[]`                                                                                                                                                                                                         |
+| `OwnDigitalId`      | Your own DMR or NXDN ID (what the radio sends) — `name` (may be empty), `protocol`, `number`, `isDefault`; at most one default per protocol (`defaultOwnDigitalId`); not a contact, talk group or ID-directory row; see [library](../library/README.md#digital-ids) |
+| `ScanList`          | Dedicated scan list — ordered `memberChannelIds`                                                                                                                                                                                                                    |
+| `AprsConfiguration` | Digital APRS global config — beacon timing, position source, `channelSlots[]`; **one per project**; see [aprs](../aprs/README.md)                                                                                                                                   |
 
 `Channel.aprs` (optional `ChannelAprsBinding`) holds per-channel digital APRS flags when enabled. Omit = APRS off for that channel.
 
 Mode-specific channel fields live on `modeProfiles` entries. Union type `ChannelModeProfile`:
 
-| Profile                    | `mode` values     | Key fields                                                                           |
-| -------------------------- | ----------------- | ------------------------------------------------------------------------------------ |
-| `ChannelModeProfileAnalog` | `fm`, `am`, `ssb` | bandwidth, squelch, RX/TX tone; `ssbSideband` (`usb` \| `lsb`) when `mode === 'ssb'` |
-| `ChannelModeProfileDMR`    | `dmr`             | colour code, timeslot, DMR ID, contact ref, RX group list                            |
-| `ChannelModeProfileDstar`  | `dstar`           | UR / RPT1 / RPT2 calls                                                               |
-| `ChannelModeProfileYsf`    | `ysf`             | DG-ID, WIRES-X DTMF ID                                                               |
-| `ChannelModeProfileNxdn`   | `nxdn`            | RX/TX RAN, rate (`nxdnRate`), unit ID, call (`contactRef`), RX group list            |
-| `ChannelModeProfileTetra`  | `tetra`           | MCC, MNC, GSSI, color code, talk group ref                                           |
-| `ChannelModeProfileStub`   | `p25`, `m17`      | mode label only (typed profiles deferred)                                            |
+| Profile                    | `mode` values     | Key fields                                                                                                    |
+| -------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| `ChannelModeProfileAnalog` | `fm`, `am`, `ssb` | bandwidth, squelch, RX/TX tone; `ssbSideband` (`usb` \| `lsb`) when `mode === 'ssb'`                          |
+| `ChannelModeProfileDMR`    | `dmr`             | colour code, timeslot, `ownDigitalIdId` (`null` = default DMR ID), contact ref, RX group list                 |
+| `ChannelModeProfileDstar`  | `dstar`           | UR / RPT1 / RPT2 calls                                                                                        |
+| `ChannelModeProfileYsf`    | `ysf`             | DG-ID, WIRES-X DTMF ID                                                                                        |
+| `ChannelModeProfileNxdn`   | `nxdn`            | RX/TX RAN, rate (`nxdnRate`), `ownDigitalIdId` (`null` = default NXDN ID), call (`contactRef`), RX group list |
+| `ChannelModeProfileTetra`  | `tetra`           | MCC, MNC, GSSI, color code, talk group ref                                                                    |
+| `ChannelModeProfileStub`   | `p25`, `m17`      | mode label only (typed profiles deferred)                                                                     |
 
 **NXDN profile.** `rxRan` / `txRan` are 0–63. `nxdnRate` is `nxdn48` (6.25 kHz), `nxdn96` (12.5 kHz) or `null` (leave the rate to the radio). `contactRef` is the call: an NXDN talk group (group call) or an NXDN digital contact (private call), as the DMR profile's `contactRef`. `rxGroupListId` names an RX group list. `unitId` is the operator's NXDN ID on the channel. NXDN IDs (unit IDs, talk groups and contacts with `mode: 'nxdn'`) must be 1–65519, a library rule from the NXDN air interface; an NXDN talk group may also be 65535, the all-call group (contacts and unit IDs may not); a radio's own limits are export warnings. Earlier projects stored the call as `talkGroupRef`; it is moved to `contactRef` on load (IndexedDB, Drive and native YAML). An RX group list may mix modes; the library warns, and each radio writes only the members that match the channel's mode.
+
+**Own IDs (schema 30).** `ownDigitalIdId` replaced the typed `dmrId` (DMR) and `unitId` (NXDN) numbers. `resolveChannelOwnId` returns the chosen row, else the protocol's default, else nothing; `channelOwnIdOverride` returns only an explicit choice. `migrateLegacyOwnIds` turns the old numbers into unnamed, non-default rows (pure, idempotent; run by the IndexedDB v30 upgrade and by `migrateProjectAggregate` for YAML, Drive and seed loads). Native YAML at schema 30 rejects the old keys.
 
 **One build carries DMR and NXDN.** There is no per-protocol build split. Radios that switch protocol globally do so in their radio settings, not in the build's channel set.
 

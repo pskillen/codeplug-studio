@@ -4,6 +4,7 @@ import {
   newAprsConfiguration,
   newChannel,
   newDigitalContact,
+  newOwnDigitalId,
   newProjectMeta,
   newRadioBuild,
   newRxGroupList,
@@ -26,7 +27,7 @@ function dmrProfile(contactId: string): ChannelModeProfileDMR {
     mode: 'dmr',
     colourCode: 1,
     timeslot: 1,
-    dmrId: null,
+    ownDigitalIdId: null,
     contactRef: { kind: 'digitalContact', id: contactId },
     rxGroupListId: null,
   };
@@ -166,6 +167,80 @@ describe('LibraryService', () => {
       clearedChannelRefs: 0,
       clearedRxMembers: 0,
       prunedBuildOverrides: 0,
+    });
+  });
+
+  describe('Digital IDs', () => {
+    it('the first ID of a protocol becomes its default, later ones do not', async () => {
+      const { persistence, service, projectId } = await setup();
+      await service.saveOwnDigitalId(newOwnDigitalId(projectId, 'dmr', 'Home', 2351234), null);
+      await service.saveOwnDigitalId(newOwnDigitalId(projectId, 'dmr', 'Club', 2351235), null);
+      await service.saveOwnDigitalId(newOwnDigitalId(projectId, 'nxdn', 'Home NXDN', 1234), null);
+      const rows = await persistence.listOwnDigitalIds(projectId);
+      const byName = new Map(rows.map((r) => [r.name, r.isDefault]));
+      expect(byName.get('Home')).toBe(true);
+      expect(byName.get('Club')).toBe(false);
+      expect(byName.get('Home NXDN')).toBe(true);
+    });
+
+    it('editing keeps the default flag', async () => {
+      const { persistence, service, projectId } = await setup();
+      await service.saveOwnDigitalId(newOwnDigitalId(projectId, 'dmr', 'Home', 2351234), null);
+      const [home] = await persistence.listOwnDigitalIds(projectId);
+      await service.saveOwnDigitalId(
+        { ...home!, name: 'Renamed', isDefault: false },
+        home!.revision,
+      );
+      const [after] = await persistence.listOwnDigitalIds(projectId);
+      expect(after).toMatchObject({ name: 'Renamed', isDefault: true });
+    });
+
+    it('Set as default moves the default within its protocol only', async () => {
+      const { persistence, service, projectId } = await setup();
+      await service.saveOwnDigitalId(newOwnDigitalId(projectId, 'dmr', 'Home', 2351234), null);
+      await service.saveOwnDigitalId(newOwnDigitalId(projectId, 'dmr', 'Club', 2351235), null);
+      await service.saveOwnDigitalId(newOwnDigitalId(projectId, 'nxdn', 'NX', 1234), null);
+      const club = (await persistence.listOwnDigitalIds(projectId)).find((r) => r.name === 'Club')!;
+      await service.setDefaultOwnDigitalId(projectId, club.id);
+      const defaults = (await persistence.listOwnDigitalIds(projectId))
+        .filter((r) => r.isDefault)
+        .map((r) => r.name)
+        .sort();
+      expect(defaults).toEqual(['Club', 'NX']);
+    });
+
+    it('deleting the default leaves none and promotes nothing', async () => {
+      const { persistence, service, projectId } = await setup();
+      await service.saveOwnDigitalId(newOwnDigitalId(projectId, 'dmr', 'Home', 2351234), null);
+      await service.saveOwnDigitalId(newOwnDigitalId(projectId, 'dmr', 'Club', 2351235), null);
+      const home = (await persistence.listOwnDigitalIds(projectId)).find((r) => r.name === 'Home')!;
+      expect(await service.deleteWithIntegrity(projectId, 'ownDigitalId', home.id)).toEqual({
+        ok: true,
+      });
+      const rows = await persistence.listOwnDigitalIds(projectId);
+      expect(rows.map((r) => [r.name, r.isDefault])).toEqual([['Club', false]]);
+    });
+
+    it('an ID a channel chooses cannot be deleted, the default alone can', async () => {
+      const { persistence, service, projectId } = await setup();
+      await service.saveOwnDigitalId(newOwnDigitalId(projectId, 'dmr', 'Home', 2351234), null);
+      const [home] = await persistence.listOwnDigitalIds(projectId);
+      const channel = {
+        ...newChannel(projectId, 'Chan'),
+        modeProfiles: [
+          {
+            mode: 'dmr' as const,
+            colourCode: 1,
+            timeslot: 1 as const,
+            ownDigitalIdId: home!.id,
+            contactRef: null,
+            rxGroupListId: null,
+          },
+        ],
+      };
+      await persistence.putChannel(channel, null);
+      const outcome = await service.deleteWithIntegrity(projectId, 'ownDigitalId', home!.id);
+      expect(outcome.ok).toBe(false);
     });
   });
 });

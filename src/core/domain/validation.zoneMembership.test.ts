@@ -20,6 +20,7 @@ function lib(zones: Zone[]): Library {
     analogContacts: [],
     talkGroups: [],
     digitalContacts: [],
+    ownDigitalIds: [],
     rxGroupLists: [],
     scanLists: [],
     satellites: [],

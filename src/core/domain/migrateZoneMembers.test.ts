@@ -30,6 +30,7 @@ describe('migrateZoneMemberEntries', () => {
       ],
       talkGroups: [],
       digitalContacts: [],
+      ownDigitalIds: [],
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],

@@ -17,6 +17,7 @@ export async function loadLibrarySlice(
     analogContacts,
     rxGroupLists,
     scanLists,
+    ownDigitalIds,
     aprsConfigurations,
   ] = await Promise.all([
     persistence.loadProjectMeta(projectId),
@@ -27,6 +28,7 @@ export async function loadLibrarySlice(
     persistence.listAnalogContacts(projectId),
     persistence.listRxGroupLists(projectId),
     persistence.listScanLists(projectId),
+    persistence.listOwnDigitalIds(projectId),
     persistence.listAprsConfigurations(projectId),
   ]);
   return {
@@ -37,6 +39,7 @@ export async function loadLibrarySlice(
     analogContacts,
     rxGroupLists,
     scanLists,
+    ownDigitalIds,
     aprsConfiguration: aprsConfigurations[0] ?? null,
     channelDefaults: normalizeChannelBehaviourDefaults(meta?.channelDefaults),
     zoneDefaults: normalizeZoneBehaviourDefaults(meta?.zoneDefaults),

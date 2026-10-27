@@ -40,9 +40,27 @@ describe('native-yaml parse', () => {
     // scalars set, so migration yields an empty transmitters array — unlike
     // `fullLibraryAggregate()`, which models a satellite with one transmitter for the
     // export-golden-fixture tests.
+    // Its channel carries the typed number `dmrId: 2351123`: loading turns it into one unnamed,
+    // non-default Digital ID that the channel chooses.
     const expected = fullLibraryAggregate();
-    aggregateEqual(parseProjectDocument(readFixture('valid-full.yaml')), {
+    const parsed = parseProjectDocument(readFixture('valid-full.yaml'));
+    expect(parsed.ownDigitalIds).toHaveLength(1);
+    const migrated = parsed.ownDigitalIds[0]!;
+    expect(migrated).toMatchObject({
+      name: '',
+      protocol: 'dmr',
+      number: 2351123,
+      isDefault: false,
+    });
+    aggregateEqual(parsed, {
       ...expected,
+      ownDigitalIds: [migrated],
+      channels: expected.channels.map((channel) => ({
+        ...channel,
+        modeProfiles: channel.modeProfiles.map((profile) =>
+          profile.mode === 'dmr' ? { ...profile, ownDigitalIdId: migrated.id } : profile,
+        ),
+      })),
       satellites: expected.satellites.map((satellite) => ({ ...satellite, transmitters: [] })),
     });
   });
@@ -75,7 +93,7 @@ describe('native-yaml parse', () => {
       expect(dmr.rxGroupListId).toBeNull();
       expect(dmr.timeslot).toBeNull();
       expect(dmr.colourCode).toBeNull();
-      expect(dmr.dmrId).toBeNull();
+      expect(dmr.ownDigitalIdId).toBeNull();
     }
     const ysf = channel.modeProfiles[2];
     expect(ysf?.mode).toBe('ysf');

@@ -26,6 +26,7 @@ describe('migrateChannelScanListFromBuildOverrides', () => {
       zones: [],
       talkGroups: [],
       digitalContacts: [],
+      ownDigitalIds: [],
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],

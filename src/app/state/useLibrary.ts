@@ -17,6 +17,8 @@ export interface UseLibraryResult {
   reload: () => Promise<void>;
   deleteEntity: (kind: LibraryEntityKind, id: string) => Promise<DeleteOutcome>;
   deleteAllDigitalContacts: () => Promise<DeleteAllDigitalContactsResult>;
+  /** Make a Digital ID the default for its protocol. */
+  setDefaultOwnDigitalId: (id: string) => Promise<void>;
 }
 
 export function useLibrary(): UseLibraryResult {
@@ -88,6 +90,15 @@ export function useLibrary(): UseLibraryResult {
       return outcome;
     }, [activeProjectId, reload]);
 
+  const setDefaultOwnDigitalId = useCallback(
+    async (id: string): Promise<void> => {
+      if (!activeProjectId) return;
+      await serviceRef.current!.setDefaultOwnDigitalId(activeProjectId, id);
+      await reload();
+    },
+    [activeProjectId, reload],
+  );
+
   return useMemo(
     () => ({
       projectId: activeProjectId,
@@ -96,7 +107,16 @@ export function useLibrary(): UseLibraryResult {
       reload,
       deleteEntity,
       deleteAllDigitalContacts,
+      setDefaultOwnDigitalId,
     }),
-    [activeProjectId, library, loading, reload, deleteEntity, deleteAllDigitalContacts],
+    [
+      activeProjectId,
+      library,
+      loading,
+      reload,
+      deleteEntity,
+      deleteAllDigitalContacts,
+      setDefaultOwnDigitalId,
+    ],
   );
 }

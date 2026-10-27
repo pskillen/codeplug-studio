@@ -8,6 +8,7 @@ import type {
   Channel,
   DigitalContact,
   RxGroupList,
+  OwnDigitalId,
   ScanList,
   TalkGroup,
   Zone,
@@ -49,6 +50,7 @@ export type EntityKind =
   | 'analogContact'
   | 'rxGroupList'
   | 'scanList'
+  | 'ownDigitalId'
   | 'aprsConfiguration'
   | 'satellite'
   | 'trackingSettings'
@@ -99,6 +101,7 @@ export interface ProjectSeed {
   analogContacts?: AnalogContact[];
   rxGroupLists?: RxGroupList[];
   scanLists?: ScanList[];
+  ownDigitalIds?: OwnDigitalId[];
   aprsConfigurations?: AprsConfiguration[];
   satellites?: Satellite[];
   trackingSettings?: TrackingSettings[];
@@ -153,6 +156,10 @@ export interface ProjectPersistence {
   getScanList(projectId: string, id: string): Promise<ScanList | null>;
   putScanList(row: ScanList, expectedRevision: number | null): Promise<PutResult>;
   listScanLists(projectId: string): Promise<ScanList[]>;
+
+  getOwnDigitalId(projectId: string, id: string): Promise<OwnDigitalId | null>;
+  putOwnDigitalId(row: OwnDigitalId, expectedRevision: number | null): Promise<PutResult>;
+  listOwnDigitalIds(projectId: string): Promise<OwnDigitalId[]>;
 
   getAprsConfiguration(projectId: string, id: string): Promise<AprsConfiguration | null>;
   putAprsConfiguration(row: AprsConfiguration, expectedRevision: number | null): Promise<PutResult>;

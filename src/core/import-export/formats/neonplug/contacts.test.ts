@@ -21,7 +21,7 @@ function dmrChannel(id: string, name: string, contactRef: EntityRef | null): Cha
         mode: 'dmr',
         colourCode: 1,
         timeslot: 1,
-        dmrId: null,
+        ownDigitalIdId: null,
         contactRef,
         rxGroupListId: null,
       },

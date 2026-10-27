@@ -47,7 +47,7 @@ Channel `dmrRadioIdIndex` references this list (0-based; omit/`255` = none).
 
 ### Studio export mapping (shipped #540)
 
-Studio has no first-class operator DMR-ID list. Export emits **`radioIds: []`** and leaves `dmrRadioIdIndex` at none (`0`). Documented omit — not a warning spam.
+Studio now has [Digital IDs](../../../features/library/README.md#digital-ids) (your own DMR and NXDN IDs), but the NeonPlug export does not write them yet ([#1448](https://github.com/pskillen/codeplug-studio/issues/1448)). Export still emits **`radioIds: []`** and leaves `dmrRadioIdIndex` at none (`0`). Documented omit — not a warning spam.
 
 ## Quick contacts (`quickContacts[]`)
 

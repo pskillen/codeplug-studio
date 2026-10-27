@@ -12,6 +12,7 @@ import {
 } from '@core/domain/factories.ts';
 import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
+import type { OwnDigitalId } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { assemble } from '@core/services/assemble.ts';
 import {
@@ -33,6 +34,20 @@ function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
     analogContacts: [],
     rxGroupLists: [],
     aprsConfiguration: null,
+  };
+}
+
+function ownId(id: string, number: number, over: Partial<OwnDigitalId> = {}): OwnDigitalId {
+  return {
+    id,
+    projectId: 'p1',
+    revision: 1,
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    name: '',
+    protocol: 'dmr',
+    number,
+    isDefault: false,
+    ...over,
   };
 }
 
@@ -235,7 +250,7 @@ describe('buildRadioWriteProjection', () => {
           mode: 'dmr' as const,
           colourCode: 1,
           timeslot: 1 as const,
-          dmrId: 123,
+          ownDigitalIdId: null,
           contactRef: null,
           rxGroupListId: null,
         },
@@ -611,7 +626,7 @@ describe('buildRadioWriteProjection', () => {
     ).toBe(true);
   });
 
-  it('projects operator radio IDs and channel bank indices from ModeProfile.dmrId', () => {
+  it('projects operator radio IDs and channel bank indices from the Digital IDs channels choose', () => {
     const projectId = 'p1';
     const ch = withExportEligibleDefaults({
       ...newChannel(projectId, 'Repeater'),
@@ -624,13 +639,13 @@ describe('buildRadioWriteProjection', () => {
           mode: 'dmr' as const,
           colourCode: 1,
           timeslot: 1 as const,
-          dmrId: 2_351_123,
+          ownDigitalIdId: 'oid-1',
           contactRef: null,
           rxGroupListId: null,
         },
       ],
     });
-    const library = emptyLibrary([ch]);
+    const library = { ...emptyLibrary([ch]), ownDigitalIds: [ownId('oid-1', 2_351_123)] };
     const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-dm32uv');
     const assembled = assemble(build, library, {
       formatId: egress.formatId,
@@ -693,7 +708,7 @@ describe('buildRadioWriteProjection', () => {
           mode: 'dmr' as const,
           colourCode: 1,
           timeslot: 1 as const,
-          dmrId: null,
+          ownDigitalIdId: null,
           contactRef: { kind: 'talkGroup' as const, id: tg.id },
           rxGroupListId: rxList.id,
         },
@@ -750,7 +765,7 @@ describe('buildRadioWriteProjection', () => {
           mode: 'dmr',
           colourCode: 1,
           timeslot: 1,
-          dmrId: 1234567,
+          ownDigitalIdId: null,
           contactRef: { kind: 'talkGroup', id: 'tg-long' },
           rxGroupListId: null,
         },
@@ -802,7 +817,7 @@ describe('buildRadioWriteProjection', () => {
           mode: 'dmr' as const,
           colourCode: 1,
           timeslot: 1 as const,
-          dmrId: 999,
+          ownDigitalIdId: null,
           contactRef: null,
           rxGroupListId: null,
         },
@@ -852,13 +867,17 @@ describe('buildRadioWriteProjection', () => {
           mode: 'dmr' as const,
           colourCode: 1,
           timeslot: 1 as const,
-          dmrId: 999,
+          ownDigitalIdId: 'oid-1',
           contactRef: null,
           rxGroupListId: null,
         },
       ],
     });
-    const library = { ...emptyLibrary([ch]), digitalContacts: [dc] };
+    const library = {
+      ...emptyLibrary([ch]),
+      digitalContacts: [dc],
+      ownDigitalIds: [ownId('oid-1', 999)],
+    };
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
     const assembled = assemble(build, library, {
       formatId: egress.formatId,

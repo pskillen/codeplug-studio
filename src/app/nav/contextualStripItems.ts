@@ -20,6 +20,7 @@ export const libraryStripItems: readonly ContextualStripItem[] = [
   { label: 'Zones', to: '/library/zones' },
   { label: 'Talk groups', to: '/library/talk-groups' },
   { label: 'Contacts', to: '/library/contacts' },
+  { label: 'Digital IDs', to: '/library/digital-ids' },
   { label: 'Receive group lists', to: '/library/rx-group-lists' },
   { label: 'Scan lists', to: '/library/scan-lists' },
   { label: 'APRS setup', to: '/library/aprs-configuration' },

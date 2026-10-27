@@ -82,9 +82,9 @@ library:
           contactRef:
             id: 66666666-6666-4666-8666-666666666666
             kind: digitalContact
-          dmrId: 2351123
           dmrMode: null
           mode: dmr
+          ownDigitalIdId: 13131313-1313-4313-8313-131313131313
           rxGroupListId: 88888888-8888-4888-8888-888888888888
           sendTalkerAlias: default
           timeslot: 2
@@ -112,6 +112,23 @@ library:
       remarks: ""
       revision: 1
       state: Scotland
+      updatedAt: 2026-07-02T10:00:00.000Z
+  ownDigitalIds:
+    - id: 13131313-1313-4313-8313-131313131313
+      isDefault: true
+      name: Home
+      number: 2351123
+      projectId: 11111111-1111-4111-8111-111111111111
+      protocol: dmr
+      revision: 1
+      updatedAt: 2026-07-02T10:00:00.000Z
+    - id: 14141414-1414-4414-8414-141414141414
+      isDefault: true
+      name: Home NXDN
+      number: 1234
+      projectId: 11111111-1111-4111-8111-111111111111
+      protocol: nxdn
+      revision: 1
       updatedAt: 2026-07-02T10:00:00.000Z
   rxGroupLists:
     - id: 88888888-8888-4888-8888-888888888888
@@ -247,7 +264,7 @@ radioBuilds:
       - libraryEntityId: 44444444-4444-4444-8444-444444444444
         wireName: Edinburgh
 schemaVersion: 1
-studioSchemaVersion: 29
+studioSchemaVersion: 30
 trackingSettings:
   id: ffffffff-ffff-4fff-8fff-ffffffffffff
   location:

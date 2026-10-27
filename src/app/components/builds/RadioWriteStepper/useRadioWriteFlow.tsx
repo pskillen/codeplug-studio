@@ -28,6 +28,7 @@ import {
   languageLockFromLocalInfo,
   mm9pdyStepKeyOverrides,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
+import { isAtD890MasterIdSelected } from '@integrations/radio-io/radios/at-d890uv/masterIdCodec.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import { d890DownloadStages } from '@integrations/radio-io/radios/at-d890uv/plannedStages.ts';
 import type {
@@ -512,6 +513,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       buildId: build.id,
       serial: atCtx.serial,
       masterIdName: atCtx.masterIdName,
+      masterIdSelected: isAtD890MasterIdSelected(atCtx.snapshot.masterId),
       range: atD890ReviewRange(atCtx.snapshot),
       receiveOnly: atD890ReceiveOnlyChannels(channels, atCtx.snapshot.bandCode),
       snapshot: atCtx.snapshot,

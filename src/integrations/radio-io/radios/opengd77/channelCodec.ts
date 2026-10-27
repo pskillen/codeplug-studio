@@ -24,6 +24,8 @@ import { readAbs, writeAbs } from './memory.ts';
 const TE = new TextEncoder();
 
 const OPENGD77_USE_LOCATION_FLAG = 0x08;
+/** Flags @ 0x26 bit 7: the record's own DMR ID overrides the radio's. */
+const OPENGD77_OVERRIDE_DMR_ID_FLAG = 0x80;
 const OPENGD77_LAT_BYTE_OFFSETS: [number, number, number] = [0x1a, 0x1c, 0x1d];
 const OPENGD77_LON_BYTE_OFFSETS: [number, number, number] = [0x1e, 0x1f, 0x24];
 
@@ -360,7 +362,14 @@ export function encodeChannelRecord(
   setU16Le(out, 0x22, encodeSelectiveCall(dto.txTone));
   out[0x26] = 0; // flags — simplex etc. not modelled; USE_LOCATION OR'd in writeChannelLocation
   writeChannelLocation(out, dto);
-  // dmrId @ 0x27 left 0
+  // dmrId @ 0x27: 24-bit BE per-channel override with the overrideDMRID flag (0x26 bit 7); 0 = the
+  // radio's own ID (Default).
+  if (dto.dmrId != null && Number.isInteger(dto.dmrId) && dto.dmrId > 0 && dto.dmrId <= 0xffffff) {
+    out[0x26] = (out[0x26]! | OPENGD77_OVERRIDE_DMR_ID_FLAG) & 0xff;
+    out[0x27] = (dto.dmrId >> 16) & 0xff;
+    out[0x28] = (dto.dmrId >> 8) & 0xff;
+    out[0x29] = dto.dmrId & 0xff;
+  }
   out[0x2b] = dto.rxGroupIndex != null && dto.rxGroupIndex >= 0 ? (dto.rxGroupIndex + 1) & 0xff : 0;
   out[0x2c] = (dto.colorCode ?? 0) & 0xff;
   out[0x2d] = 0; // aprsIndex clear

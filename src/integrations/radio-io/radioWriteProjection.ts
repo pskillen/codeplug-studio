@@ -112,6 +112,11 @@ export interface RadioRadioIdDto {
   dmrId: number;
   /** Up to 11 characters + null on wire. */
   name: string;
+  /**
+   * True when `name` is only a stand-in because the Digital ID has no name (for example "ID 2351234").
+   * The AT-D890UV master record keeps the name the radio already has in that case.
+   */
+  unnamed?: boolean;
 }
 
 /** APRS / GPS position slice on settings block (offsets 0x301–0x334). */

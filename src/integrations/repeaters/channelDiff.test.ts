@@ -140,7 +140,7 @@ describe('diffChannelFromListing', () => {
           colourCode: 3,
           dmrMode: null,
           timeslot: null,
-          dmrId: null,
+          ownDigitalIdId: null,
           contactRef: null,
           rxGroupListId: null,
           sendTalkerAlias: 'default',

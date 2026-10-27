@@ -49,6 +49,7 @@ describe('normalizeChannel', () => {
       rxRan: 1,
       txRan: 1,
       unitId: 5,
+      ownDigitalIdId: null,
       contactRef: { kind: 'talkGroup', id: 'tg-1' },
       rxGroupListId: null,
       nxdnRate: null,

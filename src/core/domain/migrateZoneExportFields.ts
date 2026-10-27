@@ -13,6 +13,7 @@ import { resolveEffectiveZoneChannelIds } from './zoneHierarchy.ts';
 import { migrateZoneMemberEntries } from './migrateZoneMembers.ts';
 import { migrateBuildScanListsToLibrary } from './migrateScanLists.ts';
 import { migrateChannelScanListFromBuildOverrides } from './migrateChannelScanList.ts';
+import { migrateOwnDigitalIdsAggregate } from './ownDigitalIds.ts';
 import { migrateAprsSingletonAggregate } from './migrateAprsSingleton.ts';
 import { normalizeChannelBehaviourDefaults } from './normalizeChannelBehaviourDefaults.ts';
 import { normalizeZoneBehaviourDefaults } from './normalizeZoneBehaviourDefaults.ts';
@@ -140,13 +141,15 @@ export function migrateDm32ProfileId(formatBuilds: RadioBuild[]): RadioBuild[] {
 }
 
 /** Normalise legacy library zone export fields and profile ids on load/import. */
-export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAggregate {
+export function migrateProjectAggregate(input: ProjectAggregate): ProjectAggregate {
+  const aggregate = migrateOwnDigitalIdsAggregate(input);
   const withMembers = migrateZoneMemberEntries(aggregate);
   const library: Library = {
     channels: withMembers.channels,
     zones: withMembers.zones,
     talkGroups: withMembers.talkGroups,
     digitalContacts: withMembers.digitalContacts,
+    ownDigitalIds: withMembers.ownDigitalIds,
     analogContacts: withMembers.analogContacts,
     rxGroupLists: withMembers.rxGroupLists,
     scanLists: withMembers.scanLists ?? [],
@@ -174,6 +177,7 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
         zones: migratedLibrary.zones,
         talkGroups: migratedLibrary.talkGroups,
         digitalContacts: migratedLibrary.digitalContacts,
+        ownDigitalIds: migratedLibrary.ownDigitalIds,
         analogContacts: migratedLibrary.analogContacts,
         rxGroupLists: migratedLibrary.rxGroupLists,
         scanLists: migratedLibrary.scanLists,

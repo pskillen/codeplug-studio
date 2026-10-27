@@ -100,7 +100,7 @@ describe('OpenGD77 CSV ↔ serial channel wire name parity (#777)', () => {
           mode: 'dmr' as const,
           colourCode: 1,
           timeslot: 1 as const,
-          dmrId: 123,
+          ownDigitalIdId: null,
           contactRef: null,
           rxGroupListId: null,
         },

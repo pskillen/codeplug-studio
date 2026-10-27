@@ -45,7 +45,7 @@ describe('native-yaml NXDN rate', () => {
           mode: 'nxdn',
           rxRan: null,
           txRan: null,
-          unitId: null,
+          ownDigitalIdId: null,
           contactRef: null,
           nxdnRate: 'nxdn48',
         },

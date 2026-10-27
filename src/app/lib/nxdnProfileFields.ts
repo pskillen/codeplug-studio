@@ -1,5 +1,5 @@
 import type { EntityRef, Library, NxdnRate } from '@core/models/library.ts';
-import { NXDN_ID_MAX, NXDN_ID_MIN, rxGroupListModes } from '@core/domain/validation.ts';
+import { rxGroupListModes } from '@core/domain/validation.ts';
 
 /** UI wording for the NXDN channel fields, kept in one place so a relabel is a one-file change. */
 export const NXDN_FIELD_LABELS = {
@@ -13,7 +13,6 @@ export const NXDN_FIELD_LABELS = {
 
 export const NXDN_FIELD_HINTS = {
   rate: 'NXDN48 is 6.25 kHz, NXDN96 is 12.5 kHz. Radio default leaves it to the radio.',
-  unitId: `Your NXDN ID on this channel, ${NXDN_ID_MIN}–${NXDN_ID_MAX}.`,
   call: 'The talk group or contact this channel calls.',
   rxGroupList: 'NXDN talk groups and contacts to listen to.',
 } as const;

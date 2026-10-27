@@ -17,7 +17,7 @@ function dmrChannel(name: string) {
         mode: 'dmr' as const,
         colourCode: 1,
         timeslot: 2 as const,
-        dmrId: 1234567,
+        ownDigitalIdId: null,
         contactRef: null,
         rxGroupListId: null,
       },

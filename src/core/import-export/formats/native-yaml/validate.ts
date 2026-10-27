@@ -46,6 +46,7 @@ import type {
   DigitalContact,
   EntityRef,
   Library,
+  OwnDigitalId,
   RxGroupList,
   RxGroupListMember,
   ScanInclusion,
@@ -61,6 +62,11 @@ import type {
   ProjectInterchange,
 } from '@core/models/interchange.ts';
 import { STUDIO_SCHEMA_VERSION } from '@core/models/schemaVersion.ts';
+
+/** Files below this schema carry the legacy APRS report-channel and zone export fields. */
+const LEGACY_APRS_ZONE_FIELDS_BELOW_SCHEMA = 29;
+/** From this schema a channel names a Digital ID (`ownDigitalIdId`) instead of a typed number. */
+const OWN_DIGITAL_IDS_MIN_SCHEMA = 30;
 import type {
   FlatMemoryLayout,
   TraitLayout,
@@ -185,7 +191,36 @@ function parseAnalogModeProfile(
   return normalizeModeProfile(profile as ChannelModeProfile);
 }
 
-function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
+/**
+ * Own-ID fields of a DMR or NXDN profile. Schema 30 names a Digital ID; older files carry the typed
+ * number, which is kept under its legacy key and turned into a Digital ID by the aggregate migration.
+ */
+function parseOwnIdFields(
+  record: Record<string, unknown>,
+  index: number,
+  legacyKey: 'dmrId' | 'unitId',
+  studioSchemaVersion: number,
+): { ownDigitalIdId: string | null } & Partial<Record<'dmrId' | 'unitId', number | null>> {
+  const label = `modeProfiles[${index}]`;
+  const hasLegacy = record[legacyKey] !== undefined;
+  if (studioSchemaVersion >= OWN_DIGITAL_IDS_MIN_SCHEMA && hasLegacy) {
+    throw new NativeYamlImportError(
+      `${label}.${legacyKey} is replaced by ownDigitalIdId in schema ${OWN_DIGITAL_IDS_MIN_SCHEMA}`,
+    );
+  }
+  return {
+    ownDigitalIdId: expectNullableString(record.ownDigitalIdId, `${label}.ownDigitalIdId`),
+    ...(hasLegacy
+      ? { [legacyKey]: expectNullableNumber(record[legacyKey], `${label}.${legacyKey}`) }
+      : {}),
+  };
+}
+
+function parseModeProfile(
+  raw: unknown,
+  index: number,
+  studioSchemaVersion: number,
+): ChannelModeProfile {
   const record = expectRecord(raw, `modeProfiles[${index}]`);
   const mode = expectString(record.mode, `modeProfiles[${index}].mode`);
 
@@ -208,7 +243,7 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
             : null,
         colourCode: expectNullableNumber(record.colourCode, `modeProfiles[${index}].colourCode`),
         timeslot: parseNullableDmrTimeslot(record.timeslot, `modeProfiles[${index}].timeslot`),
-        dmrId: expectNullableNumber(record.dmrId, `modeProfiles[${index}].dmrId`),
+        ...parseOwnIdFields(record, index, 'dmrId', studioSchemaVersion),
         contactRef: parseNullableEntityRef(record.contactRef, `modeProfiles[${index}].contactRef`),
         rxGroupListId: expectNullableString(
           record.rxGroupListId,
@@ -238,7 +273,7 @@ function parseModeProfile(raw: unknown, index: number): ChannelModeProfile {
         mode: 'nxdn',
         rxRan: expectNullableNumber(record.rxRan, `modeProfiles[${index}].rxRan`),
         txRan: expectNullableNumber(record.txRan, `modeProfiles[${index}].txRan`),
-        unitId: expectNullableNumber(record.unitId, `modeProfiles[${index}].unitId`),
+        ...parseOwnIdFields(record, index, 'unitId', studioSchemaVersion),
         contactRef:
           parseNullableEntityRef(record.contactRef, `modeProfiles[${index}].contactRef`) ??
           parseNullableEntityRef(record.talkGroupRef, `modeProfiles[${index}].talkGroupRef`),
@@ -431,7 +466,8 @@ function parseChannelAprsBinding(
       record.reportSlotIndex !== undefined && record.reportSlotIndex !== null
         ? expectNullableNumber(record.reportSlotIndex, `${label}.reportSlotIndex`)
         : null,
-    ...(studioSchemaVersion < STUDIO_SCHEMA_VERSION && record.reportChannelRef !== undefined
+    ...(studioSchemaVersion < LEGACY_APRS_ZONE_FIELDS_BELOW_SCHEMA &&
+    record.reportChannelRef !== undefined
       ? {
           reportChannelRef: parseNullableChannelEntityRef(
             record.reportChannelRef,
@@ -440,7 +476,7 @@ function parseChannelAprsBinding(
         }
       : {}),
   };
-  if (studioSchemaVersion < STUDIO_SCHEMA_VERSION) {
+  if (studioSchemaVersion < LEGACY_APRS_ZONE_FIELDS_BELOW_SCHEMA) {
     return binding as ChannelAprsBinding;
   }
   return normalizeOptionalChannelAprs(binding as ChannelAprsBinding);
@@ -564,7 +600,7 @@ function parseChannel(raw: unknown, index: number, studioSchemaVersion: number):
         }
       : { primaryMode: null }),
     modeProfiles: expectArray(record.modeProfiles, `library.channels[${index}].modeProfiles`).map(
-      (profile, profileIndex) => parseModeProfile(profile, profileIndex),
+      (profile, profileIndex) => parseModeProfile(profile, profileIndex, studioSchemaVersion),
     ),
     ...(aprsBinding !== undefined ? { aprs: aprsBinding } : {}),
     // Legacy channel-level behavioural fields — migrated onto mode profiles by normalizeChannel
@@ -620,7 +656,7 @@ function parseZone(raw: unknown, index: number, studioSchemaVersion: number): Zo
       : {}),
   };
 
-  if (studioSchemaVersion >= STUDIO_SCHEMA_VERSION) {
+  if (studioSchemaVersion >= LEGACY_APRS_ZONE_FIELDS_BELOW_SCHEMA) {
     return zone;
   }
 
@@ -669,6 +705,18 @@ function parseTalkGroup(raw: unknown, index: number): TalkGroup {
           ),
         }
       : {}),
+  };
+}
+
+function parseOwnDigitalId(raw: unknown, index: number): OwnDigitalId {
+  const label = `library.ownDigitalIds[${index}]`;
+  const record = expectRecord(raw, label);
+  return {
+    ...parsePersistableRow(record, label),
+    name: expectOptionalString(record.name, `${label}.name`),
+    protocol: parseEnumField(record.protocol, `${label}.protocol`, ['dmr', 'nxdn'] as const),
+    number: expectNumber(record.number, `${label}.number`),
+    isDefault: expectBoolean(record.isDefault, `${label}.isDefault`),
   };
 }
 
@@ -894,6 +942,12 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
       : expectArray(record.scanLists, 'library.scanLists').map((row, index) =>
           parseScanList(row, index),
         );
+  const ownDigitalIds =
+    record.ownDigitalIds === undefined || record.ownDigitalIds === null
+      ? []
+      : expectArray(record.ownDigitalIds, 'library.ownDigitalIds').map((row, index) =>
+          parseOwnDigitalId(row, index),
+        );
   const satellites =
     record.satellites === undefined || record.satellites === null
       ? []
@@ -928,6 +982,7 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
     analogContacts,
     rxGroupLists,
     scanLists,
+    ownDigitalIds,
     satellites,
     aprsConfiguration,
     aprsConfigurations: legacyAprsConfigurations,
@@ -1486,6 +1541,25 @@ function validateForeignKeys(
 ): void {
   const ids = libraryEntityIds(library);
 
+  const seenOwnIds = new Set<string>();
+  for (const protocol of ['dmr', 'nxdn'] as const) {
+    const rows = library.ownDigitalIds.filter((row) => row.protocol === protocol);
+    if (rows.filter((row) => row.isDefault).length > 1) {
+      throw new NativeYamlImportError(
+        `library.ownDigitalIds has more than one default ${protocol.toUpperCase()} Digital ID`,
+      );
+    }
+    for (const row of rows) {
+      const key = `${protocol}:${row.number}`;
+      if (seenOwnIds.has(key)) {
+        throw new NativeYamlImportError(
+          `library.ownDigitalIds lists ${protocol.toUpperCase()} ID ${row.number} more than once`,
+        );
+      }
+      seenOwnIds.add(key);
+    }
+  }
+
   for (const zone of library.zones) {
     try {
       validateZoneMembers(zone.id, zone.members, library);
@@ -1503,6 +1577,14 @@ function validateForeignKeys(
       }
     }
     for (const profile of channel.modeProfiles) {
+      if ((profile.mode === 'dmr' || profile.mode === 'nxdn') && profile.ownDigitalIdId) {
+        const target = library.ownDigitalIds.find((row) => row.id === profile.ownDigitalIdId);
+        if (!target || target.protocol !== profile.mode) {
+          throw new NativeYamlImportError(
+            `Channel "${channel.name}" ${profile.mode.toUpperCase()} profile names ownDigitalIdId ${profile.ownDigitalIdId}, which is not a ${profile.mode.toUpperCase()} Digital ID`,
+          );
+        }
+      }
       if (profile.mode === 'dmr') {
         if (profile.contactRef) {
           try {
@@ -1721,6 +1803,7 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 29 &&
     studioSchemaVersion !== 28 &&
     studioSchemaVersion !== 27 &&
     studioSchemaVersion !== 26 &&
@@ -1749,7 +1832,7 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 
@@ -1832,6 +1915,7 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
     analogContacts: library.analogContacts,
     rxGroupLists: library.rxGroupLists,
     scanLists: library.scanLists,
+    ownDigitalIds: library.ownDigitalIds,
     satellites: library.satellites,
     aprsConfiguration: library.aprsConfiguration,
     radioBuilds,

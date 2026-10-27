@@ -13,6 +13,14 @@ import { decodeWideCharName, encodeWideCharName } from './wideChar.ts';
 const MASTER_ID_NAME_BYTES = 0x20;
 const MASTER_ID_NAME_OFFSET = 4;
 
+/** `MasterIdData` `+0x26` (`0x03684026`): 1 when the radio sends the master ID on every channel. */
+const MASTER_ID_SELECTED_OFFSET = 0x26;
+
+/** Whether the radio's "Master Id" choice is on in a `MasterIdData` record. */
+export function isAtD890MasterIdSelected(masterId: Uint8Array): boolean {
+  return (masterId[MASTER_ID_SELECTED_OFFSET] ?? 0) !== 0;
+}
+
 /** Master radio ID name from the `MasterIdData` record bytes. */
 export function decodeAtD890MasterIdName(masterId: Uint8Array): string {
   return decodeWideCharName(
@@ -30,7 +38,10 @@ export function encodeMasterIdIntoAtD890Image(
   }
   const data = image.get(D890_MAP.MasterIdData, D890_MAP.MasterIdLength);
   data.set(encodeBcdAsHexU32(master.dmrId), 0);
-  data.set(encodeWideCharName(master.name, MASTER_ID_NAME_BYTES), MASTER_ID_NAME_OFFSET);
+  // An unnamed Digital ID has no name to give: keep the one the radio already has.
+  if (!master.unnamed) {
+    data.set(encodeWideCharName(master.name, MASTER_ID_NAME_BYTES), MASTER_ID_NAME_OFFSET);
+  }
   image.set(D890_MAP.MasterIdData, data);
   return image;
 }

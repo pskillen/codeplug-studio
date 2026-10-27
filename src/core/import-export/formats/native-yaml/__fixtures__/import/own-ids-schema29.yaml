@@ -1,0 +1,208 @@
+egressPaths: []
+library:
+  analogContacts:
+    - code: "12345"
+      comment: ""
+      id: 77777777-7777-4777-8777-777777777777
+      name: EchoLink
+      projectId: 11111111-1111-4111-8111-111111111111
+      revision: 1
+      updatedAt: 2026-07-02T10:00:00.000Z
+  aprsConfiguration:
+    autoTxIntervalSec: 300
+    channelSlots:
+      - callType: group
+        channelRef:
+          id: 33333333-3333-4333-8333-333333333333
+          kind: channel
+        targetDmrId: 234999
+        timeslot: 1
+    comment: Fixture APRS
+    fixedLocation: null
+    id: dddddddd-dddd-4ddd-8ddd-dddddddddddd
+    manualTxIntervalSec: null
+    name: Home APRS
+    positionSource: gps
+    projectId: 11111111-1111-4111-8111-111111111111
+    revision: 1
+    updatedAt: 2026-07-02T10:00:00.000Z
+  channelDefaults:
+    analogSquelchMode: carrier
+    forbidTransmit: false
+    sendTalkerAlias: on
+    txPermit: permitAlways
+  channels:
+    - callsign: GB3DA
+      comment: Analog FM
+      forbidTransmit: default
+      id: 22222222-2222-4222-8222-222222222222
+      location:
+        lat: 55.9533
+        lon: -3.1883
+      maidenheadLocator: IO85vs
+      modeProfiles:
+        - analogSquelchMode: default
+          bandwidthKHz: 12.5
+          mode: fm
+          rxTone: "88.5"
+          squelch: 50
+          txTone: none
+      name: GB3DA Demo
+      power: 25
+      primaryMode: null
+      projectId: 11111111-1111-4111-8111-111111111111
+      revision: 1
+      rxFrequency: 430912500
+      scanInclusion: default
+      txFrequency: 430912500
+      txPermit: default
+      updatedAt: 2026-07-02T10:00:00.000Z
+      useLocation: true
+    - aprs:
+        digitalPttMode: on
+        receiveEnabled: true
+        reportSlotIndex: 1
+        reportType: digital
+      callsign: GB7GL
+      comment: ""
+      forbidTransmit: default
+      id: 33333333-3333-4333-8333-333333333333
+      location: null
+      maidenheadLocator: null
+      modeProfiles:
+        - colourCode: 1
+          contactRef:
+            id: 66666666-6666-4666-8666-666666666666
+            kind: digitalContact
+          dmrMode: null
+          mode: dmr
+          dmrId: 2351123
+          rxGroupListId: 88888888-8888-4888-8888-888888888888
+          sendTalkerAlias: default
+          timeslot: 2
+      name: DMR Scotland
+      power: null
+      primaryMode: null
+      projectId: 11111111-1111-4111-8111-111111111111
+      revision: 1
+      rxFrequency: 439087500
+      scanInclusion: skip
+      txFrequency: 430587500
+      txPermit: default
+      updatedAt: 2026-07-02T10:00:00.000Z
+      useLocation: false
+  digitalContacts:
+    - callsign: MM0HAM
+      city: Edinburgh
+      comment: ""
+      country: United Kingdom
+      digitalId: 1234567
+      id: 66666666-6666-4666-8666-666666666666
+      mode: dmr
+      name: MM0HAM
+      projectId: 11111111-1111-4111-8111-111111111111
+      remarks: ""
+      revision: 1
+      state: Scotland
+      updatedAt: 2026-07-02T10:00:00.000Z
+  rxGroupLists:
+    - id: 88888888-8888-4888-8888-888888888888
+      members:
+        - ref:
+            id: 55555555-5555-4555-8555-555555555555
+            kind: talkGroup
+          timeSlotOverride: 2
+      name: Scotland TG list
+      projectId: 11111111-1111-4111-8111-111111111111
+      revision: 1
+      updatedAt: 2026-07-02T10:00:00.000Z
+  satellites:
+    - argPerigeeDeg: 130.536
+      bstar: 0.00030589
+      classification: U
+      eccentricity: 0.0006703
+      elementSetNumber: 999
+      enabled: true
+      epoch: 2024-02-14T12:25:40.104Z
+      id: eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee
+      inclinationDeg: 51.6416
+      meanAnomalyDeg: 325.0288
+      meanMotionRevPerDay: 15.4956032
+      name: ISS (ZARYA)
+      noradId: 25544
+      projectId: 11111111-1111-4111-8111-111111111111
+      raanDeg: 247.4627
+      revision: 1
+      revolutionNumber: 43000
+      source: celestrak
+      tleLine1: 1 25544U 98067A   24045.51782528  .00016717 00000-0   30589-3 0  9993
+      tleLine2: 2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.4956032 430001
+      transmitters:
+        - dismissed: false
+          downlinkHz: 437800000
+          downlinkToneHz: null
+          id: 12121212-1212-4212-8212-121212121212
+          includeInWrite: true
+          label: FM Voice Repeater
+          mode: FM
+          satnogsAlive: null
+          satnogsStatus: null
+          satnogsSyncedAt: null
+          satnogsUuid: null
+          source: manual
+          uplinkHz: 145990000
+          uplinkToneHz: 67
+      updatedAt: 2026-07-02T10:00:00.000Z
+  scanLists: []
+  talkGroups:
+    - abbreviation: Sco
+      comment: TG fixture
+      digitalId: 950
+      id: 55555555-5555-4555-8555-555555555555
+      mode: dmr
+      name: Scotland
+      projectId: 11111111-1111-4111-8111-111111111111
+      revision: 1
+      updatedAt: 2026-07-02T10:00:00.000Z
+  zoneDefaults:
+    includeInZoneDerivedScanList: true
+  zones:
+    - comment: Zone fixture
+      id: 44444444-4444-4444-8444-444444444444
+      members:
+        - channelId: 22222222-2222-4222-8222-222222222222
+          kind: channel
+      name: Edinburgh
+      projectId: 11111111-1111-4111-8111-111111111111
+      revision: 1
+      updatedAt: 2026-07-02T10:00:00.000Z
+project:
+  author: test
+  channelDefaults:
+    analogSquelchMode: carrier
+    forbidTransmit: false
+    sendTalkerAlias: on
+    txPermit: permitAlways
+  createdAt: 2026-07-02T10:00:00.000Z
+  description: Export golden fixture
+  id: 11111111-1111-4111-8111-111111111111
+  name: Fixture project
+  notes: ""
+  projectId: 11111111-1111-4111-8111-111111111111
+  revision: 1
+  updatedAt: 2026-07-02T10:00:00.000Z
+  zoneDefaults:
+    includeInZoneDerivedScanList: true
+radioBuilds: []
+schemaVersion: 1
+studioSchemaVersion: 29
+trackingSettings:
+  id: ffffffff-ffff-4fff-8fff-ffffffffffff
+  location:
+    lat: 55.9533
+    lon: -3.1883
+  maidenheadLocator: IO85vs
+  positionSource: maidenhead
+  projectId: 11111111-1111-4111-8111-111111111111
+  revision: 1
+  updatedAt: 2026-07-02T10:00:00.000Z

@@ -46,7 +46,7 @@ describe('findReferencesTo', () => {
       mode: 'dmr',
       colourCode: 1,
       timeslot: 1,
-      dmrId: null,
+      ownDigitalIdId: null,
       contactRef: null,
       rxGroupListId: list.id,
     };
@@ -64,7 +64,7 @@ describe('findReferencesTo', () => {
       mode: 'nxdn',
       rxRan: null,
       txRan: null,
-      unitId: null,
+      ownDigitalIdId: null,
       contactRef: { kind: 'talkGroup', id: tg.id },
     };
     const channel = { ...newChannel(projectId, 'NXDN ch'), modeProfiles: [nxdnProfile] };
@@ -85,7 +85,7 @@ describe('findReferencesTo', () => {
       mode: 'nxdn',
       rxRan: null,
       txRan: null,
-      unitId: null,
+      ownDigitalIdId: null,
       contactRef: { kind: 'digitalContact', id: contact.id },
       rxGroupListId: list.id,
     };
@@ -109,7 +109,7 @@ describe('findReferencesTo', () => {
       mode: 'nxdn',
       rxRan: null,
       txRan: null,
-      unitId: null,
+      ownDigitalIdId: null,
       contactRef: { kind: 'digitalContact', id: 'gone-contact' },
       rxGroupListId: 'gone-list',
     };
@@ -139,5 +139,64 @@ describe('findReferencesTo', () => {
     const library: Library = { ...emptyLibrary(), talkGroups: [tg] };
     expect(findReferencesTo(library, { kind: 'talkGroup', id: tg.id })).toEqual([]);
     expect(isReferenced(library, { kind: 'talkGroup', id: tg.id })).toBe(false);
+  });
+});
+
+describe('Digital ID references', () => {
+  const own = (id: string, protocol: 'dmr' | 'nxdn', isDefault = false) => ({
+    id,
+    projectId,
+    revision: 1,
+    updatedAt: '',
+    name: '',
+    protocol,
+    number: 1234,
+    isDefault,
+  });
+  const dmr = (ownDigitalIdId: string | null): ChannelModeProfileDMR => ({
+    mode: 'dmr',
+    colourCode: 1,
+    timeslot: 1,
+    ownDigitalIdId,
+    contactRef: null,
+    rxGroupListId: null,
+  });
+
+  it('a channel that chooses an ID references it, so the ID cannot be deleted', () => {
+    const channel = { ...newChannel(projectId, 'Chan'), modeProfiles: [dmr('d1')] };
+    const library: Library = {
+      ...emptyLibrary(),
+      channels: [channel],
+      ownDigitalIds: [own('d1', 'dmr')],
+    };
+    const refs = findReferencesTo(library, { kind: 'ownDigitalId', id: 'd1' });
+    expect(refs).toHaveLength(1);
+    expect(refs[0]).toMatchObject({ fromKind: 'channel', relationship: 'channel DMR ID' });
+  });
+
+  it('being the default is not a reference', () => {
+    const channel = { ...newChannel(projectId, 'Chan'), modeProfiles: [dmr(null)] };
+    const library: Library = {
+      ...emptyLibrary(),
+      channels: [channel],
+      ownDigitalIds: [own('d1', 'dmr', true)],
+    };
+    expect(findReferencesTo(library, { kind: 'ownDigitalId', id: 'd1' })).toEqual([]);
+  });
+
+  it('reports a channel that names a missing or wrong-protocol ID as dangling', () => {
+    const channel = {
+      ...newChannel(projectId, 'Chan'),
+      modeProfiles: [dmr('gone'), dmr('n1')],
+    };
+    const library: Library = {
+      ...emptyLibrary(),
+      channels: [channel],
+      ownDigitalIds: [own('n1', 'nxdn')],
+    };
+    expect(findDanglingReferences(library).map((d) => d.relationship)).toEqual([
+      'channel DMR ID',
+      'channel DMR ID',
+    ]);
   });
 });

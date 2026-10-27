@@ -8,6 +8,7 @@ import type {
   Channel,
   DigitalContact,
   RxGroupList,
+  OwnDigitalId,
   ScanList,
   TalkGroup,
   Zone,
@@ -72,6 +73,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   private analogContacts: RowMap<AnalogContact> = new Map();
   private rxGroupLists: RowMap<RxGroupList> = new Map();
   private scanLists: RowMap<ScanList> = new Map();
+  private ownDigitalIds: RowMap<OwnDigitalId> = new Map();
   private aprsConfigurations: RowMap<AprsConfiguration> = new Map();
   private satellites: RowMap<Satellite> = new Map();
   private trackingSettings: RowMap<TrackingSettings> = new Map();
@@ -339,6 +341,18 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     return this.listRows(this.scanLists, projectId);
   }
 
+  async getOwnDigitalId(projectId: string, id: string): Promise<OwnDigitalId | null> {
+    return this.ownDigitalIds.get(rowKey(projectId, id)) ?? null;
+  }
+
+  async putOwnDigitalId(row: OwnDigitalId, expectedRevision: number | null): Promise<PutResult> {
+    return this.putRow('ownDigitalId', this.ownDigitalIds, row, expectedRevision);
+  }
+
+  async listOwnDigitalIds(projectId: string): Promise<OwnDigitalId[]> {
+    return this.listRows(this.ownDigitalIds, projectId);
+  }
+
   async getAprsConfiguration(projectId: string, id: string): Promise<AprsConfiguration | null> {
     return this.aprsConfigurations.get(rowKey(projectId, id)) ?? null;
   }
@@ -472,6 +486,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       analogContacts,
       rxGroupLists,
       scanLists,
+      ownDigitalIds,
       aprsConfigurations,
       satellites,
       trackingSettings,
@@ -485,6 +500,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       this.listAnalogContacts(projectId),
       this.listRxGroupLists(projectId),
       this.listScanLists(projectId),
+      this.listOwnDigitalIds(projectId),
       this.listAprsConfigurations(projectId),
       this.listSatellites(projectId),
       this.listTrackingSettings(projectId),
@@ -500,6 +516,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       analogContacts,
       rxGroupLists,
       scanLists,
+      ownDigitalIds,
       aprsConfigurations,
       satellites,
       trackingSettings,
@@ -579,6 +596,9 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     for (const row of seed.scanLists ?? []) {
       this.scanLists.set(rowKey(row.projectId, row.id), { ...row });
     }
+    for (const row of seed.ownDigitalIds ?? []) {
+      this.ownDigitalIds.set(rowKey(row.projectId, row.id), { ...row });
+    }
     for (const row of seed.aprsConfigurations ?? []) {
       this.aprsConfigurations.set(rowKey(row.projectId, row.id), { ...row });
     }
@@ -606,6 +626,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       this.analogContacts,
       this.rxGroupLists,
       this.scanLists,
+      this.ownDigitalIds,
       this.aprsConfigurations,
       this.satellites,
       this.trackingSettings,
@@ -690,6 +711,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     | AnalogContact
     | RxGroupList
     | ScanList
+    | OwnDigitalId
     | AprsConfiguration
     | Satellite
     | TrackingSettings
@@ -711,6 +733,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
         return this.rxGroupLists;
       case 'scanList':
         return this.scanLists;
+      case 'ownDigitalId':
+        return this.ownDigitalIds;
       case 'aprsConfiguration':
         return this.aprsConfigurations;
       case 'satellite':

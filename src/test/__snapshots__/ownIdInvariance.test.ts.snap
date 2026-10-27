@@ -1,0 +1,141 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`own-ID output of a project saved before Digital IDs > AT-D890 MM9PDY Write leaves the radio IDs and master ID as read 1`] = `
+{
+  "channel0x18": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+  ],
+  "masterIdData": "fc3b6c7d40498fbd35b9283ace83ef4c5467fdee4bfc419e087533ce97b98077",
+  "radioIdData": "e91752f18e911db81f55e07c67dcace3e6d63a999ba931b49897cdf4b21ce8b7",
+  "radioIdSet": "01d0fabd251fcbbe2b93b4b927b26ad2a1a99077152e45ded1e678afa45dbec5",
+  "radioIds": [],
+}
+`;
+
+exports[`own-ID output of a project saved before Digital IDs > AT-D890 stock Write leaves the radio IDs and master ID as read 1`] = `
+{
+  "channel0x18": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+  ],
+  "masterIdData": "fc3b6c7d40498fbd35b9283ace83ef4c5467fdee4bfc419e087533ce97b98077",
+  "radioIdData": "e91752f18e911db81f55e07c67dcace3e6d63a999ba931b49897cdf4b21ce8b7",
+  "radioIdSet": "01d0fabd251fcbbe2b93b4b927b26ad2a1a99077152e45ded1e678afa45dbec5",
+  "radioIds": [],
+}
+`;
+
+exports[`own-ID output of a project saved before Digital IDs > Anytone CSV files 1`] = `
+{
+  "Channel.CSV": "f69b29043325d89748ba223ad07a5147d944eb4203178bf8881ab1f029cd35f1",
+  "DMRDigitalContactList.CSV": "9a2e99849e57439621b152dfc5a85c61261faf29400d4361ac74a9c9abe06d0c",
+  "DMRReceiveGroupCallList.CSV": "c54f49dd4a7762b9a375cf8be46a0a83dd052c143f0a31757d898e9df4f4fede",
+  "DMRTalkGroups.CSV": "e651138cca2c1af9eefbc32c571e64676847795567bb134759d60ef62de3a50a",
+  "DMRZone.CSV": "28e27522d8b913f4d099e5cdaf030aa4f3a2c12d90cfce67a9902bbe1d506dbe",
+  "ScanList.CSV": "4698dcc9bb0d25ade0530531a925c5e4ab1be7bb41b0d6683f71a632400873c6",
+}
+`;
+
+exports[`own-ID output of a project saved before Digital IDs > DM-32 CSV files 1`] = `
+{
+  "Channels.csv": "672845bfa72fd868595bc52981d64a2887122995190e015b1bdde4589f2894f5",
+  "Contacts.csv": "8a894d05edb4f958e43a83cd6ab7e342493c4e987cd9ecc0c5710637af2338bc",
+  "DTMFContacts.csv": "74a41466003845bdbdfbadcff8028d3cd8a1634b6013ece6c6a160f3f4cc9b4b",
+  "RXGroupLists.csv": "14e42b7ced495fedfb643d6b7548badf0635a22cbdf7026f5cc91e6e49c50996",
+  "Scan.csv": "3ba8c3cb729de89b4d29e922eed43d104db785fad722282eb17d34a86154b9bc",
+  "Talkgroups.csv": "0a40dbe226ac4ebfed91147ef61e948cc93068e6d4f6e48757b9d8853c0094f6",
+  "Zones.csv": "8d836ad7336134f4018eefdb2f9278425aa9cd49dbf8ce7a6dbd0b9a9385fe2c",
+}
+`;
+
+exports[`own-ID output of a project saved before Digital IDs > DM-32UV MM9PDY Write: radio-ID list and channel 0x2B 1`] = `
+{
+  "channel0x2b": [
+    0,
+    0,
+    1,
+    255,
+    1,
+    2,
+    255,
+  ],
+  "radioIdBlock": "bffa59991cd7a5636316c2b19b244e163224aff9f8f0cd7c2fe1ff86b120e824",
+  "radioIds": [
+    {
+      "dmrId": 2351234,
+      "index": 0,
+      "name": "N0CALL",
+    },
+    {
+      "dmrId": 2351235,
+      "index": 1,
+      "name": "N0CALL3",
+    },
+    {
+      "dmrId": 1,
+      "index": 2,
+      "name": "N0CALL6",
+    },
+  ],
+}
+`;
+
+exports[`own-ID output of a project saved before Digital IDs > DM-32UV stock Write: radio-ID list and channel 0x2B 1`] = `
+{
+  "channel0x2b": [
+    0,
+    0,
+    1,
+    255,
+    1,
+    2,
+    255,
+  ],
+  "radioIdBlock": "bffa59991cd7a5636316c2b19b244e163224aff9f8f0cd7c2fe1ff86b120e824",
+  "radioIds": [
+    {
+      "dmrId": 2351234,
+      "index": 0,
+      "name": "N0CALL",
+    },
+    {
+      "dmrId": 2351235,
+      "index": 1,
+      "name": "N0CALL3",
+    },
+    {
+      "dmrId": 1,
+      "index": 2,
+      "name": "N0CALL6",
+    },
+  ],
+}
+`;
+
+exports[`own-ID output of a project saved before Digital IDs > NeonPlug files 1`] = `
+{
+  "codeplug.json": "caaf790632cb7b5c128e67d1d2eff69151c629b57755962ca696428056b53a41",
+}
+`;
+
+exports[`own-ID output of a project saved before Digital IDs > OpenGD77 CSV files 1`] = `
+{
+  "APRS.csv": "176b6137ebe177cab5b2afff57884191bc23529f9a8da0ef4c7f6ccaf321a5bc",
+  "Channels.csv": "cda458de76217eef4bc46bf94f85a442ff15a0e63047461f3622d1f3d0ab6129",
+  "Contacts.csv": "418f4cdd154738acdf3a293471e2afc3b81fb74ce25308bffb1d2874ded6018a",
+  "DTMF.csv": "eec48f5a902da6b4dc10df5574141765e5e521513b794cd7d0a1ecbea5931d7e",
+  "TG_Lists.csv": "5eda580caebf965f5fdeb63c033c1adaf7e453460790a2e24d42304eb4eab931",
+  "Zones.csv": "a3f49caf7f39a0e39db2795a080a1376543bd5dcd6cc095e216cba31dad6b38b",
+}
+`;

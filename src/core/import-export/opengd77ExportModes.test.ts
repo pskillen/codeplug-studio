@@ -34,7 +34,7 @@ describe('OpenGD77 exportModes', () => {
           mode: 'dmr' as const,
           colourCode: 1,
           timeslot: 1 as const,
-          dmrId: 1,
+          ownDigitalIdId: null,
           contactRef: null,
           rxGroupListId: null,
         },
