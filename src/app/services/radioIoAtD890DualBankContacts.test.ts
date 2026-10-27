@@ -339,6 +339,54 @@ describe('AT-D890 DMR banks keep only DMR talk groups and contacts (#1438)', () 
     expect(texts.some((t) => t.includes("not in the radio's Contacts list"))).toBe(false);
   });
 
+  function fanOutChannel(id: string, name: string, rxGroupListId: string | null): Channel {
+    const base = dmrChannel(id, name, nxdnTg.id);
+    return {
+      ...base,
+      modeProfiles: [
+        {
+          ...(base.modeProfiles[0] as Extract<Channel['modeProfiles'][number], { mode: 'dmr' }>),
+          contactRef: { kind: 'talkGroup' as const, id: nxdnTg.id },
+          rxGroupListId,
+        },
+      ],
+    };
+  }
+
+  const fanOutLibrary: LibrarySlice = {
+    ...emptyLibrary(),
+    channels: [fanOutChannel('ch-fan', 'Fan', rx.id), fanOutChannel('ch-nx', 'NXTG', null)],
+    talkGroups: [nxdnTg, tgA],
+    digitalContacts: [nxdnContact, dcA],
+    rxGroupLists: [rx],
+  };
+
+  // Stock fans an RX list out to one channel per member plus a Scratch row; MM9PDY does not.
+  const expectedChannels = {
+    'radio-io-at-d890uv': [
+      ['Fan Local', 1],
+      ['Fan Alice', 2],
+      ['Fan Scratch', undefined],
+      ['NXTG', undefined],
+    ],
+    'radio-io-at-d890uv-mm9pdy': [
+      ['Fan', undefined],
+      ['NXTG', undefined],
+    ],
+  } as const;
+
+  for (const profileId of ['radio-io-at-d890uv', 'radio-io-at-d890uv-mm9pdy'] as const) {
+    it(`fans out only DMR RX members and writes an NXDN TX talk group as no contact (${profileId})`, () => {
+      const projection = project(fanOutLibrary, profileId);
+      const rows = projection.channels
+        .filter((c) => !c.empty)
+        .map((c) => [c.wireName, c.txContactId]);
+      expect(rows).toEqual(expectedChannels[profileId]);
+      expect(projection.organisation.talkGroups?.map((t) => t.digitalId)).toEqual([9, 2_351_234]);
+      expect(projection.organisation.rxGroups?.[0]?.memberDigitalIds).toEqual([0, 1]);
+    });
+  }
+
   it('adds no warning for a DMR-only library', () => {
     const dmrOnly = { ...emptyLibrary(), talkGroups: [tgA], digitalContacts: [dcA] };
     expect(warningTexts(project(dmrOnly)).some((t) => t.includes('are not DMR'))).toBe(false);
