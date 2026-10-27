@@ -73,14 +73,14 @@ Not checked on a radio. The zone NXDN roaming bitmap (`0x04C00000`) is left alon
 
 ## Channel modes
 
-The mode byte follows the DMR rule, with an NXDN profile counting as the digital half when there is no DMR profile:
+The mode byte follows the DMR rule, with an NXDN profile counting as the digital half when there is no DMR profile. An analogue + digital channel follows its primary mode, as the CSV `Channel Type` does: primary FM or AM is `fixed-analog` (A+D TX A), any other primary is `fixed-digital` (D+A TX D) ([#1456](https://github.com/pskillen/codeplug-studio/issues/1456)):
 
-| Library profiles  | Mode byte     | Note                                                                                                 |
-| ----------------- | ------------- | ---------------------------------------------------------------------------------------------------- |
-| NXDN only         | digital       | Warns: while the radio is on DMR it acts as a DMR channel with no contact                            |
-| DMR and NXDN      | digital       | Both field sets written                                                                              |
-| FM or AM and NXDN | fixed-digital | Warns: in NXDN mode the radio forces analogue + digital to digital, so the analogue half is not used |
-| FM or AM only     | analogue      | Unchanged                                                                                            |
+| Library profiles  | Mode byte                                      | Note                                                                                                             |
+| ----------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| NXDN only         | digital                                        | Warns: while the radio is on DMR it acts as a DMR channel with no contact                                        |
+| DMR and NXDN      | digital                                        | Both field sets written                                                                                          |
+| FM or AM and NXDN | fixed-analog or fixed-digital, by primary mode | Warns: the channel is analogue + digital. How the radio uses the analogue half while it is on NXDN is unverified |
+| FM or AM only     | analogue                                       | Unchanged                                                                                                        |
 
 ## Not covered
 
