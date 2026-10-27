@@ -4,9 +4,10 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * The AT-D890 hard deny lives in `connection.ts` (`atD890WriteMemory`).
- * A new D890 `W` frame builder elsewhere would bypass it, so every production use of the frame
- * builder must be a deliberate, reviewed entry here.
+ * The AT-D890 hard deny lives in `connection.ts` (`atD890WriteMemory`), and the program-session
+ * latch (no `R` after the first `W`, pending-units backstop; `programSession.ts`) sits beside it.
+ * A new D890 `R` or `W` frame builder elsewhere would bypass both, so every production use of
+ * either frame builder must be a deliberate, reviewed entry here, and must opt in to the latch.
  */
 const srcRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 
@@ -25,6 +26,11 @@ const ALLOWED_CALLERS = [
   'integrations/radio-io/radios/at-d890uv/connection.ts',
   'integrations/radio-io/radios/at-d890uv/rangeChange/rangeChangeSend.ts',
 ];
+
+const FRAME_BUILDERS = /makeAnytoneDmrWriteFrame|makeAnytoneDmrReadFrame|anytoneDmrRwCodec/;
+
+/** A sender that skips the latch carries this marker, with the reason, instead. */
+const LATCH_EXEMPT = /\/\/ latch-exempt: \S/;
 
 function listProductionSources(dir: string): string[] {
   const out: string[] = [];
@@ -47,14 +53,29 @@ describe('AT-D890 write-frame builder callers', () => {
       .filter((rel) => !ALLOWED_CALLERS.includes(rel))
       .filter((rel) => {
         const text = readFileSync(join(srcRoot, rel), 'utf8');
-        return /makeAnytoneDmrWriteFrame|anytoneDmrRwCodec/.test(text);
+        return FRAME_BUILDERS.test(text);
       });
     expect(offenders).toEqual([]);
   });
 
-  it('every allow-listed caller still exists and uses the builder', () => {
+  it('every allow-listed caller still exists and uses the builders', () => {
     for (const rel of ALLOWED_CALLERS) {
-      expect(readFileSync(join(srcRoot, rel), 'utf8')).toMatch(/makeAnytoneDmrWriteFrame\(/);
+      const text = readFileSync(join(srcRoot, rel), 'utf8');
+      expect(text).toMatch(/makeAnytoneDmrWriteFrame\(/);
+      expect(text).toMatch(/makeAnytoneDmrReadFrame\(/);
+    }
+  });
+
+  it('every allow-listed caller uses the program-session latch (or says why not)', () => {
+    for (const rel of ALLOWED_CALLERS) {
+      const text = readFileSync(join(srcRoot, rel), 'utf8');
+      if (LATCH_EXEMPT.test(text)) continue;
+      expect(text, `${rel} sends W frames without noteAtD890WriteFrame`).toMatch(
+        /noteAtD890WriteFrame\(/,
+      );
+      expect(text, `${rel} sends R frames without assertAtD890ReadAllowed`).toMatch(
+        /assertAtD890ReadAllowed\(/,
+      );
     }
   });
 });
