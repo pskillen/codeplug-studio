@@ -22,7 +22,7 @@ describe('ExportDirectoryProjectionFields', () => {
 
     expect(screen.getByText(/OpenGD77 CPS has no User Database file/)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Include library digital contacts' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Include contacts' }));
     expect(onPatch).toHaveBeenCalledWith({
       cpsDualBankDirectory: {
         includeLibraryContacts: false,
@@ -31,7 +31,7 @@ describe('ExportDirectoryProjectionFields', () => {
     });
 
     onPatch.mockClear();
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Include digital ID directory' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Include ID directory' }));
     expect(onPatch).toHaveBeenCalledWith({
       cpsDualBankDirectory: {
         includeLibraryContacts: true,
@@ -40,7 +40,7 @@ describe('ExportDirectoryProjectionFields', () => {
     });
   });
 
-  it('explains that DM-32 CPS cannot hold the RadioID directory', () => {
+  it('explains that DM-32 CPS cannot hold the ID directory', () => {
     const { build } = newRadioBuildForProfile('project-1', 'dm32-baofeng-dm32uv');
     render(
       <MantineProvider>

@@ -327,14 +327,14 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       <ConfirmModal
         open={flow.emptyDirectory.open}
         onClose={flow.emptyDirectory.cancel}
-        title="RadioID directory is empty"
+        title="ID directory is empty"
         confirmLabel="Write anyway"
         cancelLabel="Cancel"
         onConfirm={flow.emptyDirectory.confirm}
       >
         <Text size="sm">
-          The local RadioID directory shadow has no rows. Fetch or import a directory before
-          writing, or continue if you intend to write without directory contacts.
+          Your ID directory has no rows. Fetch or import IDs before writing, or continue if you
+          intend to write without ID directory entries.
         </Text>
       </ConfirmModal>
       <RadioWriteStepper

@@ -176,7 +176,7 @@ function DigitalContactsTable({
             ? `No digital contacts match “${nameFilter.trim()}”.`
             : 'No digital contacts match your filter.'
         }
-        caption="Library contacts only — not the RadioID directory shadow store."
+        caption="Your contacts only — not the ID directory."
         onRowActivate={(c) => navigate(`/library/digital-contacts/${c.id}`)}
       />
     </>
@@ -273,7 +273,7 @@ export default function ContactsListPage() {
 
   const digitalCount = library.digitalContacts.length;
   const analogCount = library.analogContacts.length;
-  const countSubtitle = `${digitalCount.toLocaleString()} digital · ${analogCount.toLocaleString()} analog · curated library contacts`;
+  const countSubtitle = `${digitalCount.toLocaleString()} digital · ${analogCount.toLocaleString()} analog · curated contacts`;
 
   const listActions = (
     <>
@@ -282,7 +282,7 @@ export default function ContactsListPage() {
         leftSection={<IconId size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
         onClick={() => navigate('/library/contacts/directory')}
       >
-        Digital ID directory
+        ID directory
       </Button>
       <Button
         variant="primary"
@@ -317,9 +317,9 @@ export default function ContactsListPage() {
             className="libraryListNameLink"
             onClick={() => navigate('/library/contacts/directory')}
           >
-            digital ID directory
+            ID directory
           </button>{' '}
-          — copy rows here when you need them in the library.
+          — add entries here when you want to select or call them.
         </p>
 
         <Panel title={`Digital contacts (${digitalCount})`}>

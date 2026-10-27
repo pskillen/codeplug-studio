@@ -93,12 +93,11 @@ function RadioidEntireDatabaseImportDialogBody({
       <div className={classes.body}>
         <StatusBanner tone="warning">
           <strong>Caution — 300,000+ records.</strong> This downloads RadioID.net&apos;s daily
-          worldwide user database into your local directory shadow store. The import may take
-          several minutes and can strain mobile browser tabs or IndexedDB quota. Library contacts
-          are not changed.
+          worldwide user database into your ID directory. The import may take several minutes and
+          can strain mobile browser tabs or IndexedDB quota. Your contacts are not changed.
         </StatusBanner>
         <Text size="sm" c="dimmed">
-          Community-maintained data — verify before use on air. Existing directory rows with the
+          Community-maintained data — verify before use on air. Existing ID directory rows with the
           same DMR ID are updated from the dump snapshot.
         </Text>
         <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13 }}>
@@ -107,8 +106,7 @@ function RadioidEntireDatabaseImportDialogBody({
             onCheckedChange={setConfirmed}
             aria-label="Confirm entire database import"
           />
-          I understand this imports the entire RadioID.net user database into my local directory
-          shadow store
+          I understand this imports the entire RadioID.net user database into my ID directory
         </label>
         {!projectId ? (
           <StatusBanner tone="warning">

@@ -18,8 +18,8 @@ const CONTACT_SOURCE_OPTIONS: {
   value: Exclude<DigitalContactsWriteSource, 'none'>;
   label: string;
 }[] = [
-  { value: 'library', label: 'Library' },
-  { value: 'directory', label: 'RadioID' },
+  { value: 'library', label: 'Contacts' },
+  { value: 'directory', label: 'ID directory' },
   { value: 'both', label: 'Both' },
 ];
 
@@ -96,10 +96,10 @@ export function WhatToWriteBody({ config, view, actions }: StepProps) {
               label="Contact source"
               hint={
                 config.sharedContactBankNote
-                  ? 'Library talk groups and privates use the 1024-slot DMR contact bank. RadioID directory writes the firmware User Database for incoming-call lookup. RadioID does not fill the 1024 contact bank; RadioID-only leaves prior FLASH contacts. Library or Both replaces talk groups and library privates in that bank.'
+                  ? 'Talk groups and contacts use the 1024-slot DMR contact bank. ID directory writes the firmware User Database for incoming-call lookup. ID directory does not fill the 1024 contact bank; ID directory alone leaves prior FLASH contacts. Contacts or Both replaces talk groups and contacts in that bank.'
                   : config.sharedAddressBookNote
-                    ? 'Library contacts and the RadioID directory share one address book. RadioID or Both replaces that book. Duplicate DMR IDs: library wins. Operator radio IDs come from channel DMR IDs when the codeplug is written; contacts alone do not rewrite them.'
-                    : 'Library contacts are curated project rows. RadioID directory is the local shadow book. Both: library wins on duplicate DMR ID.'
+                    ? 'Contacts and the ID directory share one address book. ID directory or Both replaces that book. Duplicate DMR IDs: contacts win. Operator radio IDs come from channel DMR IDs when the codeplug is written; contacts alone do not rewrite them.'
+                    : 'Contacts are the ones you curate and call. The ID directory is bulk lookup-only data. Both: contacts win on duplicate DMR ID.'
               }
             >
               <SegmentedControl

@@ -17,8 +17,8 @@ export interface ExportDirectoryProjectionFieldsProps {
 }
 
 const SINGLE_BANK_CPS_MODES: { value: SingleBankDigitalProjectionMode; label: string }[] = [
-  { value: 'contacts-only', label: 'Library contacts only' },
-  { value: 'directory-only', label: 'Digital ID directory only' },
+  { value: 'contacts-only', label: 'Contacts only' },
+  { value: 'directory-only', label: 'ID directory only' },
   { value: 'merge', label: 'Merge (library wins on duplicate ID)' },
   { value: 'skip', label: 'Skip (omit digital contact CPS file rows)' },
 ];
@@ -46,20 +46,20 @@ export default function ExportDirectoryProjectionFields({
 
   return (
     <FieldCard
-      title="Digital ID directory"
-      description="Project the local RadioID directory shadow into CPS digital contact / ID list files. Directory rows are streamed from IndexedDB — not included in project YAML."
+      title="ID directory"
+      description="Project your ID directory into CPS digital contact / ID list files. Directory rows are streamed from IndexedDB — not included in project YAML."
     >
       {supportsDualBank ? (
         <Stack gap="xs">
           <Text size="sm" c="dimmed">
             {formatId === 'opengd77'
-              ? 'OpenGD77 CPS has no User Database file. Include digital ID directory warns and does not add rows to Contacts.csv — use Web Serial Write for incoming-call lookup IDs. Library contacts stay in Contacts.csv. The radio may hold the same DMR ID in both stores.'
+              ? 'OpenGD77 CPS has no User Database file. Include ID directory warns and does not add rows to Contacts.csv — use Web Serial Write for incoming-call lookup IDs. Contacts stay in Contacts.csv. The radio may hold the same DMR ID in both stores.'
               : formatId === 'dm32'
-                ? 'DM-32 CPS DigitalContacts.csv is capped at 250 rows. Include digital ID directory warns and does not add rows to that file or DMR-ID.csv — use Web Serial Write for address-book lookup IDs. Library contacts stay in DigitalContacts.csv. Duplicate DMR IDs: library wins on Web Serial Both.'
-                : 'Dual-bank radios keep library contacts and the digital ID directory in separate CPS tables. When both are included, directory rows whose DMR ID matches a library contact are skipped.'}
+                ? 'DM-32 CPS DigitalContacts.csv is capped at 250 rows. Include ID directory warns and does not add rows to that file or DMR-ID.csv — use Web Serial Write for address-book lookup IDs. Contacts stay in DigitalContacts.csv. Duplicate DMR IDs: library wins on Web Serial Both.'
+                : 'Dual-bank radios keep contacts and the ID directory in separate CPS tables. When both are included, directory rows whose DMR ID matches a contact are skipped.'}
           </Text>
           <Checkbox
-            label="Include library digital contacts"
+            label="Include contacts"
             checked={dualToggles.includeLibraryContacts}
             disabled={saving}
             onChange={(event) => {
@@ -73,7 +73,7 @@ export default function ExportDirectoryProjectionFields({
             }}
           />
           <Checkbox
-            label="Include digital ID directory"
+            label="Include ID directory"
             checked={dualToggles.includeDigitalIdDirectory}
             disabled={saving}
             onChange={(event) => {

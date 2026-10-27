@@ -33,7 +33,7 @@ import RadioidContactUpdateDialog from './RadioidContactUpdateDialog.tsx';
 import RadioidContactPreviewDialog from './RadioidContactPreviewDialog.tsx';
 
 const GATED_SELECTION_CAPTION =
-  'IDs already in your directory are dimmed for bulk import. Library contacts use Update to refresh from RadioID.net. RadioID paginates server-side.';
+  'IDs already in your ID directory are dimmed for bulk import. Contacts use Update to refresh from RadioID.net. RadioID paginates server-side.';
 
 const EMPTY_DIRECTORY_IDS = new Set<number>();
 
@@ -299,14 +299,13 @@ export default function RadioidContactSearch() {
           >
             RadioID.net
           </a>{' '}
-          DMR user database and import IDs into your local <strong>digital ID directory</strong>{' '}
-          (shadow store). Copy into library contacts later when needed. Community data — verify
-          before use on air.
+          DMR user database and import IDs into your <strong>ID directory</strong>. Add them to
+          contacts later when needed. Community data — verify before use on air.
         </>
       }
       footer={
         <Button variant="secondary" onClick={() => navigate('/library/contacts/directory')}>
-          Back to directory
+          Back to ID directory
         </Button>
       }
     >
@@ -314,8 +313,7 @@ export default function RadioidContactSearch() {
         <Panel title="Search filters">
           <StatusBanner tone="info">
             RadioID.net listings are community-maintained. Bulk and single-row import saves to your
-            local digital ID directory shadow store — not library contacts. Use library Update for
-            contacts you have already copied.
+            ID directory — not your contacts. Use Update on contacts you have already added.
           </StatusBanner>
 
           <div className={pageClasses.filterGrid}>

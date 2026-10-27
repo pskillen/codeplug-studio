@@ -127,8 +127,8 @@ function RadioidContactBulkImportDialogBody({
       <div className={classes.body}>
         <Text size="sm">
           Import <strong>{scopeSummary(scope, listings, totalCount, totalPages)}</strong> into your
-          local <strong>digital ID directory</strong> (shadow store). Library contacts are not
-          changed — copy from the directory later when you are ready.
+          <strong>ID directory</strong>. Your contacts are not changed — add entries from the ID
+          directory later when you are ready.
         </Text>
         {scope === 'all' ? (
           <Text size="sm" c="dimmed">

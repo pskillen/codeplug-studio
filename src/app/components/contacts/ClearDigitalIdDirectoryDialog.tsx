@@ -28,9 +28,7 @@ function ClearDigitalIdDirectoryDialogBody({
       await onConfirm();
       onClose();
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : 'Failed to clear the directory shadow store.',
-      );
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to clear the ID directory.');
     } finally {
       setClearing(false);
     }
@@ -49,14 +47,13 @@ function ClearDigitalIdDirectoryDialogBody({
         ) : (
           <>
             Permanently delete all {entryCount.toLocaleString()} downloaded ID
-            {entryCount === 1 ? '' : 's'} from your local digital ID directory? This cannot be
-            undone.
+            {entryCount === 1 ? '' : 's'} from your ID directory? This cannot be undone.
           </>
         )}
       </Text>
       <Text size="sm" c="dimmed">
-        Library contacts are not affected. Channel and RX group list references stay intact — only
-        the shadow directory partition{isFiltered ? ' rows that match' : ''} is removed.
+        Contacts are not affected. Channel and RX group list references stay intact — only{' '}
+        {isFiltered ? 'the matching ID directory rows are' : 'the ID directory is'} removed.
       </Text>
 
       <Checkbox
@@ -65,8 +62,8 @@ function ClearDigitalIdDirectoryDialogBody({
         disabled={clearing}
         label={
           isFiltered
-            ? 'I understand this permanently deletes the matching directory rows for this project'
-            : 'I understand this permanently clears the directory shadow store for this project'
+            ? 'I understand this permanently deletes the matching ID directory rows for this project'
+            : 'I understand this permanently clears the ID directory for this project'
         }
       />
 
@@ -96,8 +93,7 @@ export default function ClearDigitalIdDirectoryDialog({
   entryCount,
   onConfirm,
 }: ClearDigitalIdDirectoryDialogProps) {
-  const title =
-    mode === 'filtered' ? 'Delete matching directory rows' : 'Clear digital ID directory';
+  const title = mode === 'filtered' ? 'Delete matching ID directory rows' : 'Clear ID directory';
 
   return (
     <Modal
