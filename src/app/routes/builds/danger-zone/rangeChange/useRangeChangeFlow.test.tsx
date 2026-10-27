@@ -461,6 +461,24 @@ describe('useRangeChangeFlow', () => {
       return hook;
     }
 
+    it('a Web Serial connect event enables Reconnect before the countdown ends', async () => {
+      const serial = Object.assign(new EventTarget(), { getPorts: async () => [] });
+      Object.defineProperty(navigator, 'serial', { configurable: true, value: serial });
+      try {
+        const hook = await changed();
+        expect(hook.result.current.view.restart.secondsLeft).toBeGreaterThan(0);
+        expect(hook.result.current.view.restart.canReconnect).toBe(false);
+        await act(async () => {
+          serial.dispatchEvent(new Event('connect'));
+        });
+        await waitFor(() => expect(hook.result.current.view.restart.canReconnect).toBe(true));
+        // The countdown is still the fallback: it has not finished.
+        expect(hook.result.current.view.restart.secondsLeft).toBeGreaterThan(0);
+      } finally {
+        delete (navigator as { serial?: unknown }).serial;
+      }
+    });
+
     it('no port: says what to do, Choose the port is offered', async () => {
       const hook = await changed();
       hoisted.openError = new Error('No port selected by the user.');

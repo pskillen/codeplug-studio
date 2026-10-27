@@ -201,6 +201,34 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
     wipedRef.current = wiped;
   }, [wiped]);
 
+  // The radio's port coming back (Web Serial `connect`) enables Reconnect before the countdown ends. The countdown
+  // stays as the fallback: some browsers and cables never raise the event.
+  const [portBack, setPortBack] = useState(false);
+  const waitingForRestart = step === 'restart' && restartCountdown.secondsLeft > 0;
+  useEffect(() => {
+    const serial = typeof navigator === 'undefined' ? undefined : navigator.serial;
+    if (!waitingForRestart || !serial) return;
+    const onConnect = (ev: Event): void => {
+      void (async () => {
+        try {
+          // Only the radio's own port: the one Studio would reuse, when the browser lists any.
+          const radioPort = (await serial.getPorts())[0];
+          const port = ev.target as SerialPort | null;
+          if (radioPort && port && port !== radioPort) {
+            const a = radioPort.getInfo();
+            const b = port.getInfo();
+            if (a.usbVendorId !== b.usbVendorId || a.usbProductId !== b.usbProductId) return;
+          }
+        } catch {
+          // Cannot tell which port: the radio is the likeliest, and Reconnect checks the serial anyway.
+        }
+        if (mountedRef.current) setPortBack(true);
+      })();
+    };
+    serial.addEventListener('connect', onConnect);
+    return () => serial.removeEventListener('connect', onConnect);
+  }, [waitingForRestart]);
+
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -564,6 +592,7 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
           writeJournal('changed');
           setWiped(true);
           setToCode(target);
+          setPortBack(false);
           restartCountdown.start(COUNTDOWN);
           setNotice(null);
           setStep('restart');
@@ -1171,7 +1200,7 @@ export function useRangeChangeFlow(opts: UseRangeChangeFlowOptions): {
     restart: {
       secondsLeft: restartCountdown.secondsLeft,
       totalSeconds: COUNTDOWN,
-      canReconnect: restartCountdown.secondsLeft === 0 && !busy,
+      canReconnect: (restartCountdown.secondsLeft === 0 || portBack) && !busy,
       checklist,
       verified,
       anywayOpen,
