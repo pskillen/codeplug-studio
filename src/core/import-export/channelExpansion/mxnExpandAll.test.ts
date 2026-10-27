@@ -473,7 +473,7 @@ describe('expandAllMxNChannels — anytoneFamily', () => {
       ],
     };
     const tgScotland = newTalkGroup(PROJECT_ID, 'Scotland', 23550);
-    const tgTs2 = newTalkGroup(PROJECT_ID, 'TS2', 2357910);
+    const tgTs2 = newTalkGroup(PROJECT_ID, 'TS2', 1234567);
     const rgl = {
       ...newRxGroupList(PROJECT_ID, 'Hotspot RX'),
       members: [

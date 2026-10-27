@@ -772,7 +772,7 @@ describe('DM32 export serialise', () => {
           includeLibraryContacts: false,
           directoryDigitalContacts: [],
           dm32RadioIds: [
-            { dmrId: 2_357_910, name: 'Radio ID 1' },
+            { dmrId: 1_234_567, name: 'Radio ID 1' },
             { dmrId: 123, name: 'Dir only' },
           ],
           includeDm32RadioIdFile: true,
@@ -782,7 +782,7 @@ describe('DM32 export serialise', () => {
     expect(resolveDm32ExportFileNames(assembled, options)).toContain(DM32_DMR_ID_FILE_NAME);
     const files = serialiseDm32Files(assembled, library, options);
     const rows = parseCsv(files[DM32_DMR_ID_FILE_NAME]!);
-    expect(rows[1]).toEqual(['1', '2357910', 'Radio ID 1']);
+    expect(rows[1]).toEqual(['1', '1234567', 'Radio ID 1']);
     expect(rows[2]).toEqual(['2', '123', 'Dir only']);
     expect(files['Contacts.csv']).not.toContain('Dir only');
   });
