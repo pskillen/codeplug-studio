@@ -7,6 +7,7 @@ import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } fr
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import {
   enterProgramQxMode,
+  enterProgramQxModeWithRetry,
   exitProgramQxMode,
   makeProgramQxReadFrame,
   makeProgramQxWriteFrame,
@@ -16,6 +17,7 @@ import {
   PROGRAM_QX_BLOCK_SIZE,
   PROGRAM_QX_READ_REPLY_LEN,
   sendProgramQxCommand,
+  type ProgramQxRetryOptions,
 } from '../../kit/codecs/programQx.ts';
 import { createMemoryMap, memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
@@ -41,18 +43,71 @@ import { intendedRt95RestoreImage } from './restoreFromBackup.ts';
 export interface Rt95ConnectOptions {
   signal?: AbortSignal;
   handshake?: 'read' | 'none';
+  onProgress?: ProgressFn;
+}
+
+/**
+ * After END the radio ignores PROGRAM for about 3–5 s (the head reloads from the main board).
+ * A session opened within this window of Studio's own END retries PROGRAM instead of failing.
+ */
+export const RT95_FOLLOW_ON_WINDOW_MS = 15_000;
+
+let lastRt95EndAt = 0;
+
+/** When this module last sent END (ms since epoch; 0 = never). */
+export function getLastRt95EndAt(): number {
+  return lastRt95EndAt;
+}
+
+/** Test seam: pretend END was sent at `at` (0 resets). */
+export function setRt95EndAtForTests(at: number): void {
+  lastRt95EndAt = at;
+}
+
+type Rt95RetryTuning = Pick<
+  ProgramQxRetryOptions,
+  'intervalMs' | 'budgetMs' | 'timeoutMs' | 'sleep' | 'now'
+>;
+let retryTuning: Rt95RetryTuning = {};
+
+/** Test seam: shrink the PROGRAM retry interval and budget ({} restores the defaults). */
+export function setRt95RetryTuningForTests(tuning: Rt95RetryTuning): void {
+  retryTuning = tuning;
+}
+
+function retryOptions(
+  signal: AbortSignal | undefined,
+  onProgress: ProgressFn | undefined,
+): ProgramQxRetryOptions {
+  return {
+    timeoutMs: RT95_IO_TIMEOUT_MS,
+    ...retryTuning,
+    signal,
+    onAttempt: (attempt) =>
+      reportProgress(
+        onProgress,
+        { cur: attempt, max: 0, msg: 'Waiting for the radio to finish restarting' },
+        signal,
+      ),
+  };
 }
 
 export class Rt95Protocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
   private radioBandlimit: number | null = null;
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
+  private inProgramMode = false;
 
   async connect(pipe: BytePipe, opts?: Rt95ConnectOptions): Promise<IdentResult> {
     this.pipe = pipe;
     if (opts?.handshake !== 'none') {
       await flushPipe(pipe);
-      await enterProgramQxMode(pipe, RT95_IO_TIMEOUT_MS);
+      if (Date.now() - lastRt95EndAt < RT95_FOLLOW_ON_WINDOW_MS) {
+        await enterProgramQxModeWithRetry(pipe, retryOptions(opts?.signal, opts?.onProgress));
+      } else {
+        await enterProgramQxMode(pipe, RT95_IO_TIMEOUT_MS);
+      }
+      this.inProgramMode = true;
       const identRaw = await probeProgramQxIdent(pipe, RT95_IO_TIMEOUT_MS);
       const ident = parseRt95IdentResponse(identRaw);
       this.radioBandlimit = ident.bandlimit;
@@ -69,13 +124,32 @@ export class Rt95Protocol implements CloneImageRadio {
     const pipe = this.pipe;
     this.pipe = null;
     this.radioBandlimit = null;
+    const wasInProgramMode = this.inProgramMode;
+    this.inProgramMode = false;
     if (pipe) {
       try {
+        if (wasInProgramMode) lastRt95EndAt = Date.now();
         await exitProgramQxMode(pipe);
       } catch {
         // best-effort
       }
     }
+  }
+
+  /**
+   * Make sure the radio is in PC mode (PROGRAM answered, ident still an allowed RT95).
+   * After Studio's own END the radio ignores PROGRAM for a few seconds, so this retries.
+   */
+  async ensureProgramMode(
+    opts: { signal?: AbortSignal; onProgress?: ProgressFn } = {},
+  ): Promise<void> {
+    const pipe = this.requirePipe();
+    if (this.inProgramMode) return;
+    await enterProgramQxModeWithRetry(pipe, retryOptions(opts.signal, opts.onProgress));
+    const identRaw = await probeProgramQxIdent(pipe, RT95_IO_TIMEOUT_MS);
+    const ident = parseRt95IdentResponse(identRaw);
+    this.radioBandlimit = ident.bandlimit;
+    this.inProgramMode = true;
   }
 
   private requirePipe(): BytePipe {
@@ -160,6 +234,7 @@ export class Rt95Protocol implements CloneImageRadio {
 
     await flushPipe(pipe);
     await enterProgramQxMode(pipe, RT95_IO_TIMEOUT_MS);
+    this.inProgramMode = true;
     const identRaw = await probeProgramQxIdent(pipe, RT95_IO_TIMEOUT_MS);
     const ident = parseRt95IdentResponse(identRaw);
     this.radioBandlimit = ident.bandlimit;
@@ -186,6 +261,8 @@ export class Rt95Protocol implements CloneImageRadio {
       }
       this.lastUploadStaging = captureWriteVerifyStaging(stagingChunks);
     } finally {
+      this.inProgramMode = false;
+      lastRt95EndAt = Date.now();
       await exitProgramQxMode(pipe);
     }
   }

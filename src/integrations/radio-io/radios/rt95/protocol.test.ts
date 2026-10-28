@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { BytePipe } from '../../types.ts';
 import { RadioTimeoutError } from '../../kit/errors.ts';
 import { memoryMapToBytes } from '../../kit/memoryMap.ts';
@@ -8,7 +8,14 @@ import {
   makeProgramQxWriteFrame,
 } from '../../kit/codecs/programQx.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
-import { Rt95Protocol } from './protocol.ts';
+import { exitProgramQxMode } from '../../kit/codecs/programQx.ts';
+import { createFakeRt95Pipe } from './__fixtures__/fakeRt95Pipe.ts';
+import {
+  Rt95Protocol,
+  getLastRt95EndAt,
+  setRt95EndAtForTests,
+  setRt95RetryTuningForTests,
+} from './protocol.ts';
 import { planRt95Stages } from './plannedStages.ts';
 import {
   expectEmittedWithinPlan,
@@ -177,3 +184,77 @@ describe('Rt95Protocol', () => {
 function makeProgramQxReadFrame(addr: number): Uint8Array {
   return new Uint8Array([0x52, (addr >>> 8) & 0xff, addr & 0xff, 0x10]);
 }
+
+describe('Rt95Protocol after END (#1461)', () => {
+  const decode = (w: Uint8Array) => new TextDecoder().decode(w);
+
+  beforeEach(() => {
+    setRt95EndAtForTests(0);
+    setRt95RetryTuningForTests({ intervalMs: 20, budgetMs: 400, timeoutMs: 10 });
+  });
+  afterEach(() => {
+    setRt95EndAtForTests(0);
+    setRt95RetryTuningForTests({});
+  });
+
+  function imageToWrite(): ReturnType<typeof createMemoryMap> {
+    const bytes = buildSyntheticRt95Image();
+    bytes[0x0100] = 0x42;
+    const image = createMemoryMap(RT95_IMAGE_SIZE);
+    image.set(0, bytes.subarray(0, RT95_IMAGE_SIZE));
+    return image;
+  }
+
+  it('upload, then ensureProgramMode waits out the deaf window and a download follows', async () => {
+    const pipe = createFakeRt95Pipe({ deafAfterEndMs: 40 });
+    const radio = new Rt95Protocol();
+    await radio.connect(pipe);
+    await radio.upload(imageToWrite(), {});
+    expect(getLastRt95EndAt()).toBeGreaterThan(0);
+
+    await radio.ensureProgramMode();
+
+    const endAt = pipe.writes.findIndex((w) => decode(w) === 'END');
+    const programsAfterEnd = pipe.writes.slice(endAt).filter((w) => decode(w) === 'PROGRAM');
+    expect(programsAfterEnd.length).toBeGreaterThanOrEqual(2);
+    const ops = pipe.log.map((e) => e.op);
+    expect(ops.slice(ops.lastIndexOf('END'))).toEqual(['END', 'PROGRAM', 'IDENT']);
+
+    const readsBefore = pipe.count('R');
+    const image = await radio.download();
+    expect(pipe.count('R') - readsBefore).toBe(
+      (RT95_BLOCK_ADDR_END - RT95_BLOCK_ADDR_START) / 16 + 1,
+    );
+    expect(image.bytes[0x0100]).toBe(0x42);
+  });
+
+  it('ensureProgramMode is a no-op while the session is already in PC mode', async () => {
+    const pipe = createFakeRt95Pipe();
+    const radio = new Rt95Protocol();
+    await radio.connect(pipe);
+    await radio.ensureProgramMode();
+    expect(pipe.count('PROGRAM')).toBe(1);
+  });
+
+  it("connect within 15 s of Studio's own END retries PROGRAM", async () => {
+    const pipe = createFakeRt95Pipe({ deafAfterEndMs: 40 });
+    await exitProgramQxMode(pipe);
+    setRt95EndAtForTests(Date.now());
+
+    await new Rt95Protocol().connect(pipe);
+
+    const programs = pipe.writes.filter((w) => decode(w) === 'PROGRAM');
+    expect(programs.length).toBeGreaterThanOrEqual(2);
+    expect(pipe.count('PROGRAM')).toBe(1);
+  });
+
+  it('connect with no recent END sends PROGRAM once and fails fast on a silent pipe', async () => {
+    const pipe = createFakeRt95Pipe({ deafAfterEndMs: 60_000 });
+    await exitProgramQxMode(pipe);
+    await new Promise((resolve) => setTimeout(resolve, 5)); // let the END echo land
+
+    await expect(new Rt95Protocol().connect(pipe)).rejects.toBeInstanceOf(RadioTimeoutError);
+
+    expect(pipe.writes.filter((w) => decode(w) === 'PROGRAM')).toHaveLength(1);
+  });
+});

@@ -94,15 +94,20 @@ export function createFakeRt95Pipe(options: FakeRt95PipeOptions = {}): FakeRt95P
   let pending: number[] = [];
   let lastEndAt: number | null = null;
   let closed = false;
+  const waiters: (() => void)[] = [];
+  const defer =
+    typeof setImmediate === 'function' ? setImmediate : (fn: () => void) => setTimeout(fn, 0);
 
   const isDeaf = (): boolean => lastEndAt !== null && now() - lastEndAt < deafAfterEndMs;
   // Bytes reach the host on a later tick, so a flush issued right after a write (as the
   // kit does) cannot swallow the reply; a flush before the next command drops stale bytes.
   const push = (bytes: Uint8Array): void => {
     const copy = bytes.slice();
-    setTimeout(() => {
+    defer(() => {
       for (const b of copy) rx.push(b);
-    }, 0);
+      const ready = waiters.splice(0);
+      for (const wake of ready) wake();
+    });
   };
 
   /** Consume complete frames from `pending`; stop at a partial frame. */
@@ -183,7 +188,12 @@ export function createFakeRt95Pipe(options: FakeRt95PipeOptions = {}): FakeRt95P
         if (Date.now() >= deadline) {
           throw new RadioTimeoutError('fakeRt95Pipe: timed out');
         }
-        await new Promise<void>((resolve) => setTimeout(resolve, 1));
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        await new Promise<void>((resolve) => {
+          waiters.push(resolve);
+          timer = setTimeout(resolve, Math.max(1, deadline - Date.now()));
+        });
+        clearTimeout(timer);
       }
     },
     async flush() {
