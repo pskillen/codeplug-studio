@@ -104,10 +104,25 @@ export default function PreflightStep({ state, dispatch, updater }: WizardStepPr
               ))}
             </ol>
             <div>
-              <Button variant="primary" onClick={() => void runProbe()} disabled={probing}>
+              <Button
+                variant="primary"
+                onClick={() => void runProbe()}
+                disabled={probing || state.probeSkipped}
+              >
                 Check the radio
               </Button>
             </div>
+            <LabeledCheck
+              label="I've already tested this radio with Codeplug Studio"
+              checked={state.probeSkipped}
+              onChange={(value) => dispatch({ type: 'setProbeSkipped', value })}
+            />
+            {state.probeSkipped ? (
+              <p className={classes.muted}>
+                Skipping the check means no reboot into normal mode and back. The flash still
+                verifies the image and the bootloader before it sends anything.
+              </p>
+            ) : null}
             {state.probe ? (
               <StatusBanner tone="success">Radio checked: {state.probe.summary}</StatusBanner>
             ) : null}

@@ -158,6 +158,16 @@ describe('firmwareWizardReducer', () => {
     expect(s.checks.risk).toBe(false);
   });
 
+  it('restart returns to a fresh first step', () => {
+    const s = through(
+      { type: 'selectRadio', radioId: 'baofeng-dm32uv' },
+      { type: 'next' },
+      { type: 'stockVerified', stock: STOCK },
+      { type: 'setCheck', check: 'risk', value: true },
+    );
+    expect(reduce(s, { type: 'restart' })).toEqual(INITIAL_FIRMWARE_WIZARD_STATE);
+  });
+
   describe('radio pre-flight requirements', () => {
     const REQ = { attestationIds: ['a', 'b'], probe: true };
     const atPreflight = () => {
@@ -191,6 +201,19 @@ describe('firmwareWizardReducer', () => {
       expect(canAdvance(s)).toBe(true);
       expect(reduce(s, { type: 'probeCleared' }).probe).toBeNull();
       expect(canAdvance(reduce(s, { type: 'probeCleared' }))).toBe(false);
+    });
+
+    it('needs the probe by default and lets the opt-in skip it', () => {
+      let s = atPreflight();
+      s = reduce(s, { type: 'setRadioCheck', id: 'a', value: true });
+      s = reduce(s, { type: 'setRadioCheck', id: 'b', value: true });
+      expect(s.probeSkipped).toBe(false);
+      expect(canAdvance(s)).toBe(false);
+      s = reduce(s, { type: 'setProbeSkipped', value: true });
+      expect(canAdvance(s)).toBe(true);
+      expect(canAdvance(reduce(s, { type: 'setCheck', check: 'risk', value: false }))).toBe(false);
+      expect(canAdvance(reduce(s, { type: 'setRadioCheck', id: 'a', value: false }))).toBe(false);
+      expect(reduce(s, { type: 'stockCleared' }).probeSkipped).toBe(false);
     });
 
     it('resets attestations and the probe on a new choice, new stock or cleared stock', () => {

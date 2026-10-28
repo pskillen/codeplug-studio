@@ -18,8 +18,35 @@
   line-height: 1.45;
 }
 
-.stepper {
+.stepperRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 20px;
+}
+
+.stepper {
+  flex: 1;
+  min-width: 0;
+}
+
+.startOver {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+.startOver:hover,
+.startOver:focus-visible {
+  opacity: 1;
 }
 
 .stack {
