@@ -38,6 +38,7 @@ export interface FakeRt95Pipe extends BytePipe {
   /** Every frame written by the host, in order. */
   readonly writes: Uint8Array[];
   count(op: FakeRt95Op): number;
+  flush(): Promise<void>;
 }
 
 const ENC = new TextEncoder();

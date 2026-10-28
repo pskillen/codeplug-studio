@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { BytePipe } from '../../types.ts';
-import { RadioProtocolError, RadioTimeoutError } from '../errors.ts';
+import { RadioAbortedError, RadioProtocolError, RadioTimeoutError } from '../errors.ts';
+import { createFakeRt95Pipe } from '../../radios/rt95/__fixtures__/fakeRt95Pipe.ts';
 import {
   enterProgramQxMode,
+  enterProgramQxModeWithRetry,
   exitProgramQxMode,
   makeProgramQxReadFrame,
   makeProgramQxWriteFrame,
@@ -191,5 +193,65 @@ describe('exitProgramQxMode', () => {
     const { pipe, writes } = mockEchoPipe([]);
     await exitProgramQxMode(pipe);
     expect(writes[0]).toEqual(new TextEncoder().encode('END'));
+  });
+});
+
+describe('enterProgramQxModeWithRetry', () => {
+  const fast = { intervalMs: 20, budgetMs: 200, timeoutMs: 10 };
+  const programWrites = (writes: Uint8Array[]) =>
+    writes.filter((w) => new TextDecoder().decode(w) === 'PROGRAM').length;
+
+  it('answers on the first try', async () => {
+    const pipe = createFakeRt95Pipe();
+    const result = await enterProgramQxModeWithRetry(pipe, fast);
+    expect(result.attempts).toBe(1);
+    expect(programWrites(pipe.writes)).toBe(1);
+  });
+
+  it('succeeds on a later attempt when the radio is deaf for a while after END', async () => {
+    const pipe = createFakeRt95Pipe({ deafAfterEndMs: 50 });
+    await exitProgramQxMode(pipe);
+    const seen: number[] = [];
+    const result = await enterProgramQxModeWithRetry(pipe, {
+      ...fast,
+      onAttempt: (n) => seen.push(n),
+    });
+    expect(result.attempts).toBeGreaterThan(1);
+    expect(programWrites(pipe.writes)).toBe(result.attempts);
+    expect(pipe.count('PROGRAM')).toBe(1);
+    expect(seen).toEqual(Array.from({ length: result.attempts }, (_, i) => i + 1));
+  });
+
+  it('gives up after the budget with the wait-and-retry message', async () => {
+    const pipe = createFakeRt95Pipe({ deafAfterEndMs: 60_000 });
+    await exitProgramQxMode(pipe);
+    const err = await enterProgramQxModeWithRetry(pipe, fast).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioTimeoutError);
+    expect((err as Error).message).toBe(
+      'The radio did not answer after the last write. Wait a few seconds, or turn it off and on, then try again.',
+    );
+    expect(programWrites(pipe.writes)).toBe(Math.floor(fast.budgetMs / fast.intervalMs) + 1);
+  });
+
+  it('rejects with the abort error and sends no further PROGRAM', async () => {
+    const pipe = createFakeRt95Pipe({ deafAfterEndMs: 60_000 });
+    await exitProgramQxMode(pipe);
+    const ctrl = new AbortController();
+    const run = enterProgramQxModeWithRetry(pipe, { ...fast, signal: ctrl.signal });
+    setTimeout(() => ctrl.abort(), 30);
+    await expect(run).rejects.toBeInstanceOf(RadioAbortedError);
+    const sent = programWrites(pipe.writes);
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    expect(programWrites(pipe.writes)).toBe(sent);
+    expect(sent).toBeLessThan(4);
+  });
+
+  it('rethrows errors other than timeout and protocol at once', async () => {
+    const pipe = createFakeRt95Pipe();
+    pipe.readExact = async () => {
+      throw new Error('port gone');
+    };
+    await expect(enterProgramQxModeWithRetry(pipe, fast)).rejects.toThrow('port gone');
+    expect(programWrites(pipe.writes)).toBe(1);
   });
 });
