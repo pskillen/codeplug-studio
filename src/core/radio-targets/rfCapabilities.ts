@@ -57,6 +57,8 @@ const RT95: RadioRfCapabilities = {
   frequencyRanges: [range(136, 174, ['fm']), range(400, 490, ['fm'])],
 };
 
+const RT95_MM9PDY: RadioRfCapabilities = { ...RT95, radioTargetId: 'retevis-rt95-mm9pdy' };
+
 const DM32UV: RadioRfCapabilities = {
   radioTargetId: 'baofeng-dm32uv',
   supportedModes: ['fm', 'am', 'dmr'],
@@ -125,6 +127,7 @@ export const RADIO_RF_CAPABILITIES: Record<string, RadioRfCapabilities> = {
   'baofeng-uv5r-mini': UV5R_MINI,
   'baofeng-uv21': UV21,
   'retevis-rt95': RT95,
+  'retevis-rt95-mm9pdy': RT95_MM9PDY,
   'baofeng-dm32uv': DM32UV,
   'baofeng-dm32uv-mm9pdy': DM32UV_MM9PDY,
   'baofeng-dm1701': DM1701,

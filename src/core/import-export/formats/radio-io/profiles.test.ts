@@ -1,18 +1,39 @@
 import { describe, expect, it } from 'vitest';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
+import { RT95_LIMITS } from '@core/radios/retevis/rt95/limits.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { getAnytoneProfile } from '../anytone/profiles.ts';
 import { getDm32Profile } from '../dm32/profiles.ts';
 import { getOpenGd77Profile } from '../opengd77/profiles.ts';
 import {
   getRadioIoProfile,
+  isMm9pdyRt95RadioIoProfileId,
   isRadioIoAtD890uvProfile,
+  isRt95RadioIoProfileId,
   isRadioIoDm32uvProfile,
   isRadioIoOpenGd771701Profile,
 } from './profiles.ts';
 
 describe('radio-io profiles', () => {
+  it('derives the RT95 MM9PDY caps from RT95_LIMITS and leaves stock without zones', () => {
+    const mm = getRadioIoProfile('radio-io-rt95-mm9pdy') as ReturnType<typeof getRadioIoProfile> & {
+      maxZones?: number;
+      zoneMembers?: number;
+      zoneNameLimit?: number;
+      descriptionLimit?: number;
+    };
+    expect(mm.maxZones).toBe(RT95_LIMITS.ZONE_MAX);
+    expect(mm.zoneMembers).toBe(RT95_LIMITS.ZONE_MEMBERS_MAX);
+    expect(mm.zoneNameLimit).toBe(RT95_LIMITS.ZONE_NAME_LENGTH);
+    expect(mm.descriptionLimit).toBe(RT95_LIMITS.DESCRIPTION_LENGTH);
+    expect((getRadioIoProfile('radio-io-rt95') as { maxZones?: number }).maxZones).toBeUndefined();
+    expect(isRt95RadioIoProfileId('radio-io-rt95')).toBe(true);
+    expect(isRt95RadioIoProfileId('radio-io-rt95-mm9pdy')).toBe(true);
+    expect(isMm9pdyRt95RadioIoProfileId('radio-io-rt95')).toBe(false);
+    expect(isMm9pdyRt95RadioIoProfileId('radio-io-rt95-mm9pdy')).toBe(true);
+  });
+
   it('keeps radio-io-dm32uv caps identical to dm32-baofeng-dm32uv', () => {
     const radioIo = getRadioIoProfile('radio-io-dm32uv');
     const dm32 = getDm32Profile('dm32-baofeng-dm32uv');

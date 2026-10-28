@@ -17,6 +17,20 @@ import {
 } from './catalog.ts';
 
 describe('radio target catalog', () => {
+  it('lists the RT95 MM9PDY target with zones, Web Serial only; stock RT95 stays flat', () => {
+    const mm = radioTargetFor('retevis-rt95-mm9pdy');
+    expect(mm?.label).toBe('Retevis RT95 VOX (MM9PDY modded firmware)');
+    expect(mm?.group).toBe('Retevis');
+    expect(mm?.compatibleEgress.map((e) => e.profileId)).toEqual(['radio-io-rt95-mm9pdy']);
+    expect(traitsForRadioTarget('retevis-rt95-mm9pdy')).toEqual([
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.PerChannelScanFlag,
+    ]);
+    expect(traitsForRadioTarget('retevis-rt95')).toContain(BuildCapabilityTrait.FlatMemoryList);
+    expect(radioTargetIdForProfile('radio-io-rt95-mm9pdy')).toBe('retevis-rt95-mm9pdy');
+  });
+
   it('lists UV-5R Mini with Web Serial, NeonPlug, and CHIRP egress', () => {
     const mini = radioTargetFor('baofeng-uv5r-mini');
     expect(mini).toBeDefined();
@@ -103,6 +117,7 @@ describe('radio target catalog', () => {
       'radio-io-opengd77-1701',
       'radio-io-opengd77-md9600',
       'radio-io-rt95',
+      'radio-io-rt95-mm9pdy',
     ]) {
       expect(ids).toContain(profileId);
     }

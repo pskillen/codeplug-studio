@@ -56,6 +56,14 @@ describe('mergeExportOptions', () => {
     expect(getFormatExportDefaults('radio-io', 'radio-io-at-d890uv').expandRxGroupLists).toBe(true);
   });
 
+  it('getFormatExportDefaults keeps the RT95 MM9PDY profile flat: no m×n, scratch or zone scans', () => {
+    const defaults = getFormatExportDefaults('radio-io', 'radio-io-rt95-mm9pdy');
+    expect(defaults.defaultScanInclusion).toBe('scan');
+    expect(defaults.expandRxGroupLists).toBe(false);
+    expect(defaults.exportScratchChannels).toBe(false);
+    expect(defaults.exportZoneDerivedScanLists).toBe(false);
+  });
+
   it('getFormatExportDefaults leaves m×n and zone-derived scans off for MM9PDY DM-32UV', () => {
     const defaults = getFormatExportDefaults('radio-io', 'radio-io-dm32uv-mm9pdy');
     expect(defaults.expandRxGroupLists).toBe(false);

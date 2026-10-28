@@ -101,6 +101,17 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
       egress('chirp', 'chirp-rt95', 'CHIRP CSV'),
     ],
   },
+  'retevis-rt95-mm9pdy': {
+    id: 'retevis-rt95-mm9pdy',
+    label: 'Retevis RT95 VOX (MM9PDY modded firmware)',
+    group: 'Retevis',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.PerChannelScanFlag,
+    ],
+    compatibleEgress: [egress('radio-io', 'radio-io-rt95-mm9pdy', 'Web Serial')],
+  },
   'baofeng-dm32uv': {
     id: 'baofeng-dm32uv',
     label: 'Baofeng DM-32UV',

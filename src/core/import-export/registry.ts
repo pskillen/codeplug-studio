@@ -164,6 +164,15 @@ const RADIO_IO_AT_D890UV_MM9PDY_EXPORT_DEFAULTS: FormatExportDefaults = {
   exportZoneDerivedScanLists: false,
 };
 
+/** RT95 MM9PDY: flat channels with one scan flag each; zones are the MMD1 table. */
+const RADIO_IO_RT95_MM9PDY_EXPORT_DEFAULTS: FormatExportDefaults = {
+  defaultScanInclusion: 'scan',
+  expandModes: false,
+  expandRxGroupLists: false,
+  exportScratchChannels: false,
+  exportZoneDerivedScanLists: false,
+};
+
 const FORMAT_EXPORT_DEFAULTS: Partial<Record<FormatId, FormatExportDefaults>> = {
   chirp: CHIRP_EXPORT_DEFAULTS,
   'radio-io': RADIO_IO_EXPORT_DEFAULTS,
@@ -176,6 +185,9 @@ export function getFormatExportDefaults(
   formatId: string,
   profileId?: string,
 ): FormatExportDefaults {
+  if (formatId === 'radio-io' && profileId === 'radio-io-rt95-mm9pdy') {
+    return RADIO_IO_RT95_MM9PDY_EXPORT_DEFAULTS;
+  }
   if (formatId === 'radio-io' && profileId === 'radio-io-dm32uv-mm9pdy') {
     return RADIO_IO_DM32UV_MM9PDY_EXPORT_DEFAULTS;
   }

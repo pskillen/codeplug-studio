@@ -41,6 +41,7 @@ describe('formatProfiles', () => {
       'radio-io-uv5r-mini',
       'radio-io-uv21',
       'radio-io-rt95',
+      'radio-io-rt95-mm9pdy',
       'radio-io-dm32uv',
       'radio-io-dm32uv-mm9pdy',
       'radio-io-at-d890uv',
@@ -56,8 +57,8 @@ describe('formatProfiles', () => {
     expect(profiles[0]?.maxChannels).toBe(999);
     expect(profiles[1]?.nameLimit).toBe(12);
     expect(profiles[1]?.maxChannels).toBe(1000);
-    expect(profiles[3]?.nameLimit).toBe(16);
-    expect(profiles[3]?.maxChannels).toBe(4000);
+    expect(profiles[4]?.nameLimit).toBe(16);
+    expect(profiles[4]?.maxChannels).toBe(4000);
   });
 
   it('returns wire hint for OpenGD77 and CHIRP profiles', () => {

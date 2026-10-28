@@ -165,6 +165,17 @@ describe('buildNavItems', () => {
     expect(buildNavItems(stock.build).map((item) => item.label)).toContain('Scan lists');
   });
 
+  it('gives the RT95 MM9PDY target Zones and no flat-memory list; the stock RT95 is unchanged', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-rt95-mm9pdy');
+    const labels = buildNavItems(build, { egressPaths }).map((item) => item.label);
+    expect(labels).toContain('Zones');
+    expect(labels).not.toContain('Scan lists');
+    const stock = newRadioBuildForProfile('proj', 'radio-io-rt95');
+    expect(
+      buildNavItems(stock.build, { egressPaths: stock.egressPaths }).map((i) => i.label),
+    ).not.toContain('Zones');
+  });
+
   it('hides dedicated scan lists on the MM9PDY DM-32UV target', () => {
     const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-dm32uv-mm9pdy');
     const labels = buildNavItems(build, { egressPaths }).map((item) => item.label);
