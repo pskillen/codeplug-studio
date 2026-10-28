@@ -1,15 +1,17 @@
 /** Retevis RT95 VOX PROGRAM→QX clone constants (CHIRP anytone778uv facts). */
 
+import { RT95_LIMITS } from '@core/radios/retevis/rt95/limits.ts';
+
 export const RT95_MODEL_ID = 'retevis-rt95';
 export const RT95_BAUD_RATE = 9600;
 export const RT95_IMAGE_SIZE = 0x32a0;
 export const RT95_BLOCK_SIZE = 0x10;
 export const RT95_BLOCK_ADDR_START = 0x0000;
 export const RT95_BLOCK_ADDR_END = 0x3290;
-export const RT95_CHANNEL_COUNT = 200;
+export const RT95_CHANNEL_COUNT = RT95_LIMITS.CHANNEL_MAX;
 export const RT95_CHANNEL_RECORD_SIZE = 32;
 export const RT95_CHANNEL_SPAN = RT95_CHANNEL_COUNT * RT95_CHANNEL_RECORD_SIZE;
-export const RT95_NAME_LENGTH = 6;
+export const RT95_NAME_LENGTH = RT95_LIMITS.NAME_LENGTH;
 
 export const RT95_OCCUPIED_BITFIELD_OFFSET = 0x1940;
 export const RT95_SCAN_BITFIELD_OFFSET = 0x1960;
