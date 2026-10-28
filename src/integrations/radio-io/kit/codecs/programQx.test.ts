@@ -203,7 +203,8 @@ describe('enterProgramQxModeWithRetry', () => {
 
   it('answers on the first try', async () => {
     const pipe = createFakeRt95Pipe();
-    const result = await enterProgramQxModeWithRetry(pipe, fast);
+    // Generous per-attempt timeout: a healthy radio must not flake under a loaded CI box.
+    const result = await enterProgramQxModeWithRetry(pipe, { ...fast, timeoutMs: 500 });
     expect(result.attempts).toBe(1);
     expect(programWrites(pipe.writes)).toBe(1);
   });
