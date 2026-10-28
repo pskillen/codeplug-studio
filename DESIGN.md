@@ -231,7 +231,9 @@ project, library or build. The flasher needs no open project and stores nothing.
    the bundle, a test fixture, or any network path Studio controls. Tests use synthetic images. No firmware-derived
    file is committed either: release patches are fetched from the firmware project's public release index.
 2. **The user supplies stock firmware** during the session: the vendor zip, or the files extracted from it. The wizard
-   shows the vendor's download link as a plain link; Studio never fetches it. The bytes stay in that browser tab's
+   lists where to get it: the vendor's download link, how to ask the vendor where it publishes nothing and, only where
+   no official copy exists, an unofficial copy labelled as such. All are plain links or text; Studio never fetches any
+   of them, and the pinned hashes decide what is accepted. The bytes stay in that browser tab's
    memory and are dropped when the user leaves the page.
 3. **Everything is pinned by SHA-256.** Each supported radio pins exactly one stock version: the hash and size of every
    file, and the zip hash. A patch applies only to that pinned stock, and its result must match the hashes recorded in
@@ -441,11 +443,12 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 
 ## Revision log
 
-| Date       | Change                                                                                                                                                                             |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-10-26 | Danger zone: rules for jobs that change the radio itself, first the AT-D890UV frequency range change ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369))            |
-| 2026-10-24 | Firmware releases are listed and fetched at run time from the firmware project's public release index (pskillen/mm9pdy-firmware) instead of being bundled                          |
-| 2026-10-21 | Firmware flashing: user-supplied stock, bundled and user-supplied patches, hard interlocks, per-radio prod gate ([#1359](https://github.com/pskillen/codeplug-studio/issues/1359)) |
-| 2026-07-22 | Browser WebSerial radio I/O as intentional goal; CPS/firmware versions ([#595](https://github.com/pskillen/codeplug-studio/issues/595))                                            |
-| 2026-06-29 | Initial draft on branch `2/pskil/design-md`                                                                                                                                        |
-| 2026-06-29 | Build capability traits; bidirectional mapping test strategy                                                                                                                       |
+| Date       | Change                                                                                                                                                                                         |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-28 | Firmware flashing rule 2: stock sources are a list (vendor link, ask the vendor, labelled unofficial mirror), never fetched ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460)) |
+| 2026-10-26 | Danger zone: rules for jobs that change the radio itself, first the AT-D890UV frequency range change ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369))                        |
+| 2026-10-24 | Firmware releases are listed and fetched at run time from the firmware project's public release index (pskillen/mm9pdy-firmware) instead of being bundled                                      |
+| 2026-10-21 | Firmware flashing: user-supplied stock, bundled and user-supplied patches, hard interlocks, per-radio prod gate ([#1359](https://github.com/pskillen/codeplug-studio/issues/1359))             |
+| 2026-07-22 | Browser WebSerial radio I/O as intentional goal; CPS/firmware versions ([#595](https://github.com/pskillen/codeplug-studio/issues/595))                                                        |
+| 2026-06-29 | Initial draft on branch `2/pskil/design-md`                                                                                                                                                    |
+| 2026-06-29 | Build capability traits; bidirectional mapping test strategy                                                                                                                                   |

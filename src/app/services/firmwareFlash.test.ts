@@ -14,11 +14,18 @@ import {
 import {
   formatFirmwareFlashSummary,
   runFirmwareFlash,
+  runFirmwarePreflightProbe,
   verifyStockFiles,
   type FirmwareFlashOutcome,
 } from './firmwareFlash.ts';
 
 const pipeClose = vi.fn(async () => {});
+const fakeProbe = {
+  title: 'Check the radio',
+  steps: ['Switch on.'],
+  link: { baudRate: 9600, usbFilters: [], raiseDtrRts: true },
+  run: vi.fn(),
+};
 const fakeUpdater = {
   identify: vi.fn(),
   flash: vi.fn(),
@@ -36,7 +43,13 @@ vi.mock('@integrations/radio-io', async (importOriginal) => {
     })),
     getFirmwareUpdater: vi.fn((radioId: string) => {
       const real = actual.getFirmwareUpdater(radioId as 'baofeng-dm32uv');
-      return real && { ...real, createUpdater: () => fakeUpdater as unknown as FirmwareUpdater };
+      return (
+        real && {
+          ...real,
+          preflight: { attestations: [], probe: fakeProbe },
+          createUpdater: () => fakeUpdater as unknown as FirmwareUpdater,
+        }
+      );
     }),
   };
 });
@@ -225,5 +238,34 @@ describe('verifyStockFiles', () => {
     ]).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(FirmwareError);
     expect((err as FirmwareError).code).toBe('stock-missing-member');
+  });
+});
+
+describe('runFirmwarePreflightProbe', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("opens at the probe's baud rate, returns the summary and closes", async () => {
+    fakeProbe.run.mockResolvedValue({ summary: 'RT95-P, version V100' });
+    const out = await runFirmwarePreflightProbe({ radioId: 'baofeng-dm32uv', port });
+    expect(out).toEqual({ ok: true, summary: 'RT95-P, version V100' });
+    expect(radioIo.openWebSerialPipe).toHaveBeenCalledWith(port, 9600);
+    expect(pipeClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps a refusal to { ok: false } and still closes', async () => {
+    fakeProbe.run.mockRejectedValue(new RadioWrongIdentError('Wrong model.'));
+    const out = await runFirmwarePreflightProbe({ radioId: 'baofeng-dm32uv', port });
+    expect(out).toEqual({ ok: false, code: 'wrongIdent', message: 'Wrong model.' });
+    expect(pipeClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the port when the pipe never opened', async () => {
+    vi.mocked(radioIo.openWebSerialPipe).mockRejectedValueOnce(new Error('busy'));
+    const out = await runFirmwarePreflightProbe({ radioId: 'baofeng-dm32uv', port });
+    expect(out).toMatchObject({ ok: false, message: 'busy' });
+    expect(port.close).toHaveBeenCalledTimes(1);
+    expect(fakeProbe.run).not.toHaveBeenCalled();
   });
 });

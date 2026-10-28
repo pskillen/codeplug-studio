@@ -4,7 +4,7 @@
  * See DESIGN.md — Firmware flashing.
  */
 
-export type FirmwareRadioId = 'baofeng-dm32uv' | 'anytone-at-d890uv';
+export type FirmwareRadioId = 'baofeng-dm32uv' | 'anytone-at-d890uv' | 'retevis-rt95-head';
 
 /** A file the user gave us (or, later, a remote source fetched). Name is the basename only. */
 export interface NamedBytes {
@@ -21,12 +21,30 @@ export interface StockFirmwareMember {
   readonly sha256: string;
 }
 
+/** Where an operator gets the stock files. Shown as text and plain links only; Studio never fetches any of them. */
+export type StockFirmwareSource =
+  | {
+      readonly kind: 'download';
+      readonly label: string; // 'Vendor download', 'Unofficial mirror'
+      readonly url: string;
+      readonly host: string;
+      /** false: not run by the vendor; the wizard says so next to the link. */
+      readonly official: boolean;
+      readonly note?: string;
+    }
+  | {
+      readonly kind: 'ask-vendor';
+      readonly label: string; // 'Email Retevis support'
+      readonly instructions: string;
+      readonly contact?: { readonly text: string; readonly href: string }; // mailto: or https:
+    };
+
 export interface StockFirmwareDescriptor {
   readonly radioId: FirmwareRadioId;
   readonly label: string;
   readonly version: string;
-  /** Shown as a link only. Never fetched by Studio code. */
-  readonly vendorDownload: { readonly url: string; readonly host: string; readonly note?: string };
+  /** Where an operator gets the stock files, in display order (at least one). Shown as text and links only. */
+  readonly stockSources: readonly StockFirmwareSource[];
   /** The vendor zip as published. Diagnostic: member hashes are authoritative. */
   readonly zip: { readonly fileName: string; readonly sha256: string };
   readonly members: readonly StockFirmwareMember[];

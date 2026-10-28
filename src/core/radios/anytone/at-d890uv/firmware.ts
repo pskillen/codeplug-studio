@@ -12,11 +12,16 @@ export const AT_D890UV_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   radioId: 'anytone-at-d890uv',
   label: 'AnyTone AT-D890UV',
   version: 'V1.05 (20260521)',
-  vendorDownload: {
-    url: 'https://anytoneusa.com/Files/D890UV%20V1.05%20DMR%20official%20release%20260521.zip',
-    host: 'anytoneusa.com (12 Volt Power, US dealer)',
-    note: 'About 44.5 MB: the zip also holds the ICON pack, which Studio does not use.',
-  },
+  stockSources: [
+    {
+      kind: 'download',
+      label: 'Vendor download',
+      official: true,
+      url: 'https://anytoneusa.com/Files/D890UV%20V1.05%20DMR%20official%20release%20260521.zip',
+      host: 'anytoneusa.com (12 Volt Power, US dealer)',
+      note: 'About 44.5 MB: the zip also holds the ICON pack, which Studio does not use.',
+    },
+  ],
   zip: {
     fileName: 'D890UV V1.05 DMR official release 260521.zip',
     sha256: '193a4c24956a13094d3d529975d1f16077418d6527afaeb3de96c8628547f731',

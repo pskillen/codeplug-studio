@@ -59,16 +59,50 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
           the files inside it) here. The files stay in this browser tab and are dropped when you
           leave the page.
         </p>
-        <p className={classes.copy}>
-          Download:{' '}
-          <a href={stock.vendorDownload.url} target="_blank" rel="noopener noreferrer">
-            {stock.zip.fileName}
-          </a>{' '}
-          <span className={classes.muted}>
-            from {stock.vendorDownload.host}
-            {stock.vendorDownload.note ? `. ${stock.vendorDownload.note}` : ''}
-          </span>
-        </p>
+        <div>
+          <span className={classes.muted}>Where to get it:</span>
+          <ul className={classes.list} aria-label="Where to get the stock firmware">
+            {stock.stockSources.map((src) => (
+              <li key={src.label}>
+                {src.kind === 'download' ? (
+                  <>
+                    <strong>{src.label}:</strong>{' '}
+                    <a href={src.url} target="_blank" rel="noopener noreferrer">
+                      {stock.zip.fileName}
+                    </a>{' '}
+                    <span className={classes.muted}>
+                      from {src.host}
+                      {src.note ? `. ${src.note}` : ''}
+                    </span>
+                    {!src.official ? (
+                      <div className={classes.muted}>
+                        Unofficial mirror, not run by the vendor. Studio checks every file against
+                        the pinned hashes before using it.
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <strong>{src.label}:</strong> {src.instructions}
+                    {src.contact ? (
+                      <>
+                        {' '}
+                        <a
+                          href={src.contact.href}
+                          {...(src.contact.href.startsWith('https:')
+                            ? { target: '_blank', rel: 'noopener noreferrer' }
+                            : {})}
+                        >
+                          {src.contact.text}
+                        </a>
+                      </>
+                    ) : null}
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
         <div>
           <span className={classes.muted}>Files Studio needs from the zip:</span>
           <ul className={classes.list}>

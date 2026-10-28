@@ -34,6 +34,7 @@ Mobile / base analogue FM radio (AnyTone 778UV family). Studio targets it via CH
 | [protocol.md](protocol.md)             | Baud, PROGRAM→QX, echo-strip, R/W frames, checksum, model allow-list    |
 | [backup-restore.md](backup-restore.md) | Zip clone region; Restore via clone `upload`; Write overlays in-session |
 | [fixtures.md](fixtures.md)             | How to capture dumps for tests without committing personal codeplugs    |
+| [firmware.md](firmware.md)             | Front panel firmware flasher: stock pin, sources, update mode, protocol |
 
 ## Adapter wire (files)
 

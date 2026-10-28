@@ -23,9 +23,13 @@ describe.skipIf(!repo)('public release repository', () => {
     : [];
   const source = createPublishedFirmwareReleaseSource(async () => rows);
 
-  it('lists every row and at least one final per radio', () => {
+  it('lists every row and at least one final per listed radio', () => {
     expect(rows.length).toBe((index as { releases: unknown[] }).releases.length);
-    for (const d of listStockFirmwareDescriptors()) {
+    // A radio needs a final once the public repository lists it in radios.json.
+    const listed = new Set(
+      Object.keys(JSON.parse(readFileSync(join(repo!, 'radios.json'), 'utf8')) as object),
+    );
+    for (const d of listStockFirmwareDescriptors().filter((x) => listed.has(x.radioId))) {
       expect(
         rows.some((r) => r.radioId === d.radioId && r.channel === 'final'),
         d.radioId,
