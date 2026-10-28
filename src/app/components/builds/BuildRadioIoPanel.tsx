@@ -105,7 +105,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const serialOk = isRadioSerialSupported();
   const descriptor = descriptors[0];
   const writeVerifyHooks = descriptor?.writeVerify;
-  const writeGate = resolveRadioWriteGate(descriptor);
+  const writeGate = resolveRadioWriteGate(descriptor, undefined, egress.profileId);
   const writeHidden = writeGate === 'hidden';
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);

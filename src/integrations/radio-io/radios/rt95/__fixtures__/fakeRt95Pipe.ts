@@ -28,10 +28,21 @@ export interface FakeRt95PipeOptions {
   deafAfterEndMs?: number;
   /** Clock for the deaf window (default Date.now). */
   now?: () => number;
+  /**
+   * Model a 16 KiB part: address bits 14-15 are ignored, so reads and writes at 0x4000+ hit 0x0000+
+   * (0x7B00 reads back the 0x3B00 ident). Can be switched later with `aliasing16k`.
+   */
+  aliasing16k?: boolean;
+  /** Reads at these addresses are logged and never answered (a timeout on the host side). */
+  silentReadAddrs?: readonly number[];
 }
 
 export interface FakeRt95Pipe extends BytePipe {
   readonly eeprom: Uint8Array;
+  /** Mutable: switch to a 16 KiB part between probes. */
+  aliasing16k: boolean;
+  /** Mutable: addresses whose reads go unanswered. */
+  readonly silentReadAddrs: Set<number>;
   readonly log: FakeRt95LogEntry[];
   /** Clock reading when the last END arrived, or null. */
   readonly lastEndAt: number | null;
@@ -89,6 +100,9 @@ export function createFakeRt95Pipe(options: FakeRt95PipeOptions = {}): FakeRt95P
   const deafAfterEndMs = options.deafAfterEndMs ?? 0;
   const now = options.now ?? Date.now;
   const log: FakeRt95LogEntry[] = [];
+  const silentReadAddrs = new Set<number>(options.silentReadAddrs ?? []);
+  let aliasing16k = options.aliasing16k ?? false;
+  const physical = (addr: number): number => (aliasing16k ? addr & 0x3fff : addr);
   const writes: Uint8Array[] = [];
   const rx: number[] = [];
   let pending: number[] = [];
@@ -146,7 +160,9 @@ export function createFakeRt95Pipe(options: FakeRt95PipeOptions = {}): FakeRt95P
         pending = pending.slice(4);
         if (isDeaf()) continue;
         log.push({ op: 'R', addr });
-        push(readReply(addr, eeprom.slice(addr, addr + len)));
+        if (silentReadAddrs.has(addr)) continue;
+        const at = physical(addr);
+        push(readReply(addr, eeprom.slice(at, at + len)));
       } else if (first === 0x57) {
         if (pending.length < 4) return;
         const len = pending[3]!;
@@ -157,7 +173,8 @@ export function createFakeRt95Pipe(options: FakeRt95PipeOptions = {}): FakeRt95P
         pending = pending.slice(total);
         if (isDeaf()) continue;
         log.push({ op: 'W', addr });
-        if (addr + len <= eeprom.length) eeprom.set(payload, addr);
+        const at = physical(addr);
+        if (at + len <= eeprom.length) eeprom.set(payload, at);
         push(new Uint8Array([0x06]));
       } else {
         pending.shift();
@@ -167,6 +184,13 @@ export function createFakeRt95Pipe(options: FakeRt95PipeOptions = {}): FakeRt95P
 
   return {
     eeprom,
+    get aliasing16k() {
+      return aliasing16k;
+    },
+    set aliasing16k(value: boolean) {
+      aliasing16k = value;
+    },
+    silentReadAddrs,
     log,
     writes,
     get lastEndAt() {

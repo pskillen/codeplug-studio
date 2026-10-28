@@ -39,6 +39,18 @@ import {
 } from './channelCodec.ts';
 import { parseRt95IdentResponse } from './ident.ts';
 import { intendedRt95RestoreImage } from './restoreFromBackup.ts';
+import {
+  assertRt95WriteAllowed,
+  encodeRt95ModData,
+  evaluateRt95ChipGuard,
+  rt95ChipGuardRefusalText,
+  Rt95WriteRefusedError,
+  RT95_GUARD_ALIAS_ADDR,
+  RT95_GUARD_IDENT_ADDR,
+  type Rt95ChipGuardResult,
+  type Rt95ModDataInput,
+  type Rt95WriteContext,
+} from './modData/index.ts';
 
 export interface Rt95ConnectOptions {
   signal?: AbortSignal;
@@ -97,6 +109,59 @@ export class Rt95Protocol implements CloneImageRadio {
   private radioBandlimit: number | null = null;
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
   private inProgramMode = false;
+  private modIntent: Rt95ModDataInput | null = null;
+  private lastChipGuard: Rt95ChipGuardResult | undefined;
+
+  /**
+   * MM9PDY target only: the zones and descriptions the next {@link upload} also writes (MMD1,
+   * 0x4000-0x5FF0). `null` (the default) is the stock target, which never touches that range.
+   */
+  setModDataIntent(intent: Rt95ModDataInput | null): void {
+    this.modIntent = intent;
+  }
+
+  getModDataIntent(): Rt95ModDataInput | null {
+    return this.modIntent;
+  }
+
+  /** Result of the last {@link probeChipGuard} (or the guard run inside upload). */
+  getLastChipGuard(): Rt95ChipGuardResult | undefined {
+    return this.lastChipGuard;
+  }
+
+  /**
+   * Chip-size probe: read the ident at 0x3B00 and the block at 0x7B00 (a 16 KiB part answers with the
+   * ident again). A read that throws counts as failed. Reads only; nothing is written.
+   */
+  async probeChipGuard(): Promise<Rt95ChipGuardResult> {
+    const pipe = this.requirePipe();
+    const readOrUndefined = async (addr: number): Promise<Uint8Array | undefined> => {
+      try {
+        return await this.readBlock(pipe, addr);
+      } catch {
+        return undefined;
+      }
+    };
+    const ident = await readOrUndefined(RT95_GUARD_IDENT_ADDR);
+    const alias = await readOrUndefined(RT95_GUARD_ALIAS_ADDR);
+    const result = evaluateRt95ChipGuard(ident, alias);
+    this.lastChipGuard = result;
+    return result;
+  }
+
+  /** Read 16-byte blocks at the given addresses (write verify of the MMD1 range). */
+  async readBlocks(
+    addresses: readonly number[],
+    opts: { signal?: AbortSignal } = {},
+  ): Promise<Map<number, Uint8Array>> {
+    const pipe = this.requirePipe();
+    const out = new Map<number, Uint8Array>();
+    for (const addr of addresses) {
+      throwIfAborted(opts.signal);
+      out.set(addr, await this.readBlock(pipe, addr));
+    }
+    return out;
+  }
 
   async connect(pipe: BytePipe, opts?: Rt95ConnectOptions): Promise<IdentResult> {
     this.pipe = pipe;
@@ -170,7 +235,14 @@ export class Rt95Protocol implements CloneImageRadio {
     return parseProgramQxReadReply(reply, PROGRAM_QX_BLOCK_SIZE);
   }
 
-  private async writeBlock(pipe: BytePipe, addr: number, payload: Uint8Array): Promise<void> {
+  /** Every `W` goes through here, behind the hard write interlock. No flag turns it off. */
+  private async writeBlock(
+    pipe: BytePipe,
+    addr: number,
+    payload: Uint8Array,
+    ctx: Rt95WriteContext,
+  ): Promise<void> {
+    assertRt95WriteAllowed(addr, payload.length, ctx);
     const frame = makeProgramQxWriteFrame(addr, PROGRAM_QX_BLOCK_SIZE, payload);
     const ack = await sendProgramQxCommand(pipe, frame, 1, RT95_IO_TIMEOUT_MS);
     if (ack.length !== 1) {
@@ -210,13 +282,22 @@ export class Rt95Protocol implements CloneImageRadio {
 
   async upload(
     image: MemoryMap,
-    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+    opts: {
+      onProgress?: ProgressFn;
+      signal?: AbortSignal;
+      /** Restore passes `'restore'`; Write is the default. */
+      operation?: 'write' | 'restore';
+    },
   ): Promise<void> {
     if (image.size < RT95_IMAGE_SIZE) {
       throw new RangeError(`Upload image must be at least 0x${RT95_IMAGE_SIZE.toString(16)} bytes`);
     }
 
     const pipe = this.requirePipe();
+    // Restore replays a stock backup image: it never carries the MMD1 intent (Backup PR extends this).
+    const intent = opts.operation === 'restore' ? null : this.modIntent;
+    // Encode first: an input outside the MMD1 limits fails before the radio sees a frame.
+    const modBlocks = intent ? encodeRt95ModData(intent, image.bytes).blocks : [];
     const imageBandlimit = readBandlimitFromImage(image);
     if (this.radioBandlimit != null && imageBandlimit !== this.radioBandlimit) {
       // warn only — CHIRP continues upload with bandlimit mismatch
@@ -242,20 +323,54 @@ export class Rt95Protocol implements CloneImageRadio {
     const primeFrame = makeProgramQxReadFrame(RT95_UPLOAD_PRIME_ADDR, PROGRAM_QX_BLOCK_SIZE);
     await sendProgramQxCommand(pipe, primeFrame, PROGRAM_QX_READ_REPLY_LEN, RT95_IO_TIMEOUT_MS);
 
-    const blockCount = (RT95_BLOCK_ADDR_END - RT95_BLOCK_ADDR_START) / RT95_BLOCK_SIZE + 1;
+    const blockCount =
+      (RT95_BLOCK_ADDR_END - RT95_BLOCK_ADDR_START) / RT95_BLOCK_SIZE + 1 + modBlocks.length;
     let done = 0;
     const stagingChunks: { address: number; data: Uint8Array }[] = [];
+    const ctx: Rt95WriteContext = {
+      profile: intent ? 'mm9pdy' : 'stock',
+      chipGuardPassed: false,
+      operation: opts.operation ?? 'write',
+    };
 
     try {
+      if (intent) {
+        // Run the guard again in this session: the pre-write probe may be minutes old.
+        const guard = await this.probeChipGuard();
+        if (!guard.ok) {
+          throw new Rt95WriteRefusedError(
+            RT95_GUARD_ALIAS_ADDR,
+            rt95ChipGuardRefusalText(guard.reason),
+          );
+        }
+        ctx.chipGuardPassed = true;
+      }
       for (let addr = RT95_BLOCK_ADDR_START; addr <= RT95_BLOCK_ADDR_END; addr += RT95_BLOCK_SIZE) {
         throwIfAborted(opts.signal);
         const payload = image.get(addr, RT95_BLOCK_SIZE);
-        await this.writeBlock(pipe, addr, payload);
+        await this.writeBlock(pipe, addr, payload, ctx);
         stagingChunks.push({ address: addr, data: payload.slice() });
         done += 1;
         reportProgress(
           opts.onProgress,
           { cur: done, max: blockCount, msg: `Writing 0x${addr.toString(16)}`, stage: 'Upload' },
+          opts.signal,
+        );
+      }
+      // MMD1: descriptions, member slots, zone names, then the header last.
+      for (const block of modBlocks) {
+        throwIfAborted(opts.signal);
+        await this.writeBlock(pipe, block.address, block.bytes, ctx);
+        stagingChunks.push({ address: block.address, data: block.bytes.slice() });
+        done += 1;
+        reportProgress(
+          opts.onProgress,
+          {
+            cur: done,
+            max: blockCount,
+            msg: `Writing 0x${block.address.toString(16)}`,
+            stage: 'Upload',
+          },
           opts.signal,
         );
       }
@@ -277,6 +392,7 @@ export class Rt95Protocol implements CloneImageRadio {
   ): Promise<void> {
     const intended = intendedRt95RestoreImage(archive, opts.regionIds);
     await this.upload(intended, {
+      operation: 'restore',
       signal: opts.signal,
       onProgress: (p) => {
         const msg =
