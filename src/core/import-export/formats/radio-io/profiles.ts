@@ -125,6 +125,12 @@ export type RadioIoRadioProfile =
   | RadioIoOpenGd771701Profile
   | RadioIoOpenGd77Md9600Profile;
 
+/** Per-channel description length for profiles that write one (RT95 MM9PDY), else `null`. */
+export function radioIoChannelDescriptionLimit(profileId: string): number | null {
+  if (!isRt95RadioIoProfileId(profileId)) return null;
+  return (getRadioIoProfile(profileId) as RadioIoRt95Profile).descriptionLimit ?? null;
+}
+
 /** Stock and MM9PDY RT95 Web Serial profiles share one codec. */
 export function isRt95RadioIoProfileId(profileId: string): boolean {
   return profileId === 'radio-io-rt95' || profileId === 'radio-io-rt95-mm9pdy';
