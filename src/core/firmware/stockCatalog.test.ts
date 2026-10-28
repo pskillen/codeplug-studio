@@ -14,7 +14,9 @@ describe('stock firmware catalog', () => {
   it('lists both radios with unique ids', () => {
     const ids = all.map((d) => d.radioId);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids).toEqual(expect.arrayContaining(['baofeng-dm32uv', 'anytone-at-d890uv']));
+    expect(ids).toEqual(
+      expect.arrayContaining(['baofeng-dm32uv', 'anytone-at-d890uv', 'retevis-rt95-head']),
+    );
   });
 
   it('has unique member roles within each descriptor', () => {
@@ -48,6 +50,13 @@ describe('stock firmware catalog', () => {
         }
       }
     }
+  });
+
+  it('pins the RT95 front panel as cdd, cdi and spi only, with a 10-byte spi', () => {
+    const d = getStockFirmwareDescriptor('retevis-rt95-head');
+    expect(d.members.map((m) => m.role).sort()).toEqual(['cdd', 'cdi', 'spi']);
+    expect(d.members.find((m) => m.role === 'spi')?.size).toBe(10);
+    expect(d.stockSources.map((s) => s.kind)).toEqual(['ask-vendor', 'download']);
   });
 
   it('looks up by radio id', () => {
