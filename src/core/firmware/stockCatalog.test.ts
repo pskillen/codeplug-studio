@@ -37,6 +37,19 @@ describe('stock firmware catalog', () => {
     expect(bin?.size).toBe(DM32UV_FIRMWARE_IMAGE_SIZE);
   });
 
+  it('has at least one stock source, with safe link schemes', () => {
+    for (const d of all) {
+      expect(d.stockSources.length).toBeGreaterThan(0);
+      for (const s of d.stockSources) {
+        if (s.kind === 'download') {
+          expect(['http:', 'https:']).toContain(new URL(s.url).protocol);
+        } else if (s.contact) {
+          expect(['mailto:', 'https:']).toContain(new URL(s.contact.href).protocol);
+        }
+      }
+    }
+  });
+
   it('looks up by radio id', () => {
     for (const d of all) expect(getStockFirmwareDescriptor(d.radioId)).toBe(d);
   });

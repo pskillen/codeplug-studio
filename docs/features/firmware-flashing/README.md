@@ -93,7 +93,8 @@ hidden there).
      version, a short sha256 and a risk
      statement, and needs **I understand** ticked before the wizard continues. That is in addition to the risk
      acknowledgement every flash needs. A patch for another radio is refused with its own message.
-3. **Stock firmware** — the vendor's download link (a plain link: Studio never fetches it), the expected zip and
+3. **Stock firmware** — the stock sources (the vendor's download link, or how to ask the vendor, and any unofficial
+   mirror, labelled; all plain links: Studio never fetches them), the expected zip and
    file names, and a drop zone for the zip or the extracted files. Studio checks every file against the pinned hashes.
 4. **Prepare** — builds the exact image (applying the patch and checking its result hash) and runs the updater's
    interlocks. Shows what will be flashed ("MM9PDY modded firmware 1.0.0 (published)", "MM9PDY modded firmware 1.1.0

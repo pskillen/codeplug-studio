@@ -19,10 +19,15 @@ export const DM32UV_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   radioId: 'baofeng-dm32uv',
   label: 'Baofeng DM-32UV',
   version: 'v1.01.048',
-  vendorDownload: {
-    url: 'https://baofeng.s3.amazonaws.com/Baofeng_DM-32UV_Firmware_v1.01.048.zip',
-    host: 'Baofeng (S3 bucket)',
-  },
+  stockSources: [
+    {
+      kind: 'download',
+      label: 'Vendor download',
+      official: true,
+      url: 'https://baofeng.s3.amazonaws.com/Baofeng_DM-32UV_Firmware_v1.01.048.zip',
+      host: 'Baofeng (S3 bucket)',
+    },
+  ],
   zip: {
     fileName: 'Baofeng_DM-32UV_Firmware_v1.01.048.zip',
     sha256: '79ee0f41de20231300d6cad1e3d063148cc03c8e3c6d40924fc7198601c6336d',
