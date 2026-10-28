@@ -41,15 +41,28 @@ describe('listOfferedFirmwareUpdaters', () => {
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
   });
 
-  it('offers both radios on prod', () => {
+  it('offers the two enabled radios on prod and hides the RT95 front panel', () => {
     expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toEqual([
       'baofeng-dm32uv',
       'anytone-at-d890uv',
     ]);
   });
 
+  it('offers the RT95 front panel on next, dev and staging', () => {
+    for (const env of ['staging', 'main', 'dev', 'local']) {
+      expect(listOfferedFirmwareUpdaters(env).map((d) => d.radioId)).toContain('retevis-rt95-head');
+    }
+  });
+
   it('offers the DM-32UV on dev', () => {
     expect(listOfferedFirmwareUpdaters('dev').map((d) => d.radioId)).toContain('baofeng-dm32uv');
+  });
+
+  it('hides the RT95 front panel on Capacitor', () => {
+    vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
+    expect(listOfferedFirmwareUpdaters('dev').map((d) => d.radioId)).not.toContain(
+      'retevis-rt95-head',
+    );
   });
 
   it('offers nothing on Capacitor', () => {

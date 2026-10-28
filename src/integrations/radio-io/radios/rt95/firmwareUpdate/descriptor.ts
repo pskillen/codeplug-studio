@@ -6,6 +6,7 @@ import { RT95_HEAD_STOCK_FIRMWARE } from '@core/radios/retevis/rt95/firmware.ts'
 
 import type { FirmwareUpdaterDescriptor } from '../../../firmware/types.ts';
 import { RT95_HEAD_FW_LINK } from './constants.ts';
+import { RT95_HEAD_PREFLIGHT } from './preflight.ts';
 import { createRt95HeadFirmwareUpdater } from './updater.ts';
 
 export const RT95_HEAD_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
@@ -17,6 +18,7 @@ export const RT95_HEAD_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   capacitorSupported: false,
   // Hidden on prod until Studio has flashed a release to an RT95 on hardware (#1460).
   prodFlashDisabled: true,
+  preflight: RT95_HEAD_PREFLIGHT,
   // Estimate from the vendor protocol (about 15 to 25 s for 104 frames); not yet measured.
   expectedDuration: 'under a minute',
 };

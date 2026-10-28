@@ -36,6 +36,7 @@ import {
   transferDetail,
   visibleFlashPhases,
 } from '../flashProgressThrottle.ts';
+import LabeledCheck from './LabeledCheck.tsx';
 import type { WizardStepProps } from './stepTypes.ts';
 
 /** The firmware-flashing hub's Recovery section. The steps are also on the recovery screen, for offline use. */
@@ -88,6 +89,9 @@ export default function FlashStep({
   const [portError, setPortError] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Local to this step, so it resets whenever the step is entered.
+  const [updateModeConfirmed, setUpdateModeConfirmed] = useState(false);
+  const updateModeConfirm = updater.preflight?.updateModeConfirm;
   const abortRef = useRef<AbortController | null>(null);
 
   useScreenWakeLock(running);
@@ -175,11 +179,22 @@ export default function FlashStep({
               {w}
             </StatusBanner>
           ))}
+          {updateModeConfirm ? (
+            <LabeledCheck
+              label={updateModeConfirm}
+              checked={updateModeConfirmed}
+              onChange={setUpdateModeConfirmed}
+            />
+          ) : null}
           <div>
             <Button
               variant="primary"
               onClick={() => void connectAndFlash()}
-              disabled={running || !isPreflightComplete(state)}
+              disabled={
+                running ||
+                !isPreflightComplete(state) ||
+                (!!updateModeConfirm && !updateModeConfirmed)
+              }
             >
               Connect and flash
             </Button>

@@ -89,6 +89,8 @@ export interface FirmwarePreflightProbe {
 export interface FirmwareRadioPreflight {
   readonly attestations: readonly FirmwarePreflightAttestation[];
   readonly probe?: FirmwarePreflightProbe;
+  /** When set, a confirmation ticked on the Flash step, right before Connect and flash. */
+  readonly updateModeConfirm?: string;
 }
 
 export interface FirmwareUpdaterDescriptor {

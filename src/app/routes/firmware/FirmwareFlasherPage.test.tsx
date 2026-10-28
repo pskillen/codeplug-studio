@@ -263,6 +263,18 @@ describe('FirmwareFlasherPage', () => {
     });
   });
 
+  it('asks for the update-mode confirmation before Connect and flash when the radio has one', async () => {
+    const CONFIRM = 'The screen is blank. It does not say UPDATE THE RF CPU.';
+    vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([
+      { ...DM32, preflight: { attestations: [], updateModeConfirm: CONFIRM } } as typeof DM32,
+    ]);
+    await walkToFlashStep();
+    const connect = screen.getByRole('button', { name: 'Connect and flash' });
+    expect(connect).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox', { name: CONFIRM }));
+    expect(connect).not.toBeDisabled();
+  });
+
   it('shows the done screen with the verify hint', async () => {
     vi.mocked(flash.runFirmwareFlash).mockResolvedValue({
       ok: true,

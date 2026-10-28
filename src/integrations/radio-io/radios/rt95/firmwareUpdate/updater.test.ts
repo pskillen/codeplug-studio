@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import { FirmwareFlashError } from '../../../firmware/errors.ts';
 import type { FirmwareFlashProgress } from '../../../firmware/types.ts';
+import { getFirmwareUpdater } from '../../../firmware/registry.ts';
 import { Rt95BootloaderMock } from './__fixtures__/rt95BootloaderMock.ts';
 import {
   preparedRt95HeadImage,
@@ -199,5 +200,22 @@ describe('one write call site', () => {
       .filter((p) => statSync(p).isFile() && p.endsWith('.ts') && !p.endsWith('.test.ts'));
     expect(files.length).toBeGreaterThan(4);
     for (const f of files) expect(readFileSync(f, 'utf8'), f).not.toContain('.write(');
+  });
+});
+
+describe('firmware registry', () => {
+  it('registers the RT95 front panel, prod-gated, with its pre-flight', () => {
+    const d = getFirmwareUpdater('retevis-rt95-head');
+    expect(d).toMatchObject({
+      label: 'Retevis RT95 front panel (LCD)',
+      prodFlashDisabled: true,
+      capacitorSupported: false,
+    });
+    expect(d!.preflight?.attestations.map((a) => a.id)).toEqual([
+      'serial-2101',
+      'test-screen-v111',
+    ]);
+    expect(d!.preflight?.probe).toBeDefined();
+    expect(d!.createUpdater().radioId).toBe('retevis-rt95-head');
   });
 });

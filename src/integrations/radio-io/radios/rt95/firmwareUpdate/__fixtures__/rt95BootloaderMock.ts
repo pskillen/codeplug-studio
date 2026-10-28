@@ -45,6 +45,8 @@ export class Rt95BootloaderMock implements BytePipe {
 
   private rx: number[] = [];
   private tx: number[] = [];
+  /** Bytes that were already pending when the last write began: what a flush after that write may discard. */
+  private stale = 0;
   private programsSeen = 0;
   private readonly mode: 'bootloader' | 'normal' | 'silent';
   private readonly echo: boolean;
@@ -72,6 +74,7 @@ export class Rt95BootloaderMock implements BytePipe {
 
   async write(data: Uint8Array): Promise<void> {
     if (this.closed) throw new RadioClosedError();
+    this.stale = this.tx.length;
     for (let i = 0; i < data.length; i++) {
       this.rx.push(data[i]!);
       this.received.push(data[i]!);
@@ -88,8 +91,10 @@ export class Rt95BootloaderMock implements BytePipe {
     return Uint8Array.from(this.tx.splice(0, n));
   }
 
+  /** Discards stale input only. The codeplug codecs flush right after a write, before the reply is read. */
   async flush(): Promise<void> {
-    this.tx = [];
+    this.tx.splice(0, Math.min(this.stale, this.tx.length));
+    this.stale = 0;
   }
 
   async close(): Promise<void> {
