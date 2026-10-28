@@ -167,6 +167,7 @@ const RADIO_IO_AT_D890UV_MM9PDY_EXPORT_DEFAULTS: FormatExportDefaults = {
 /** RT95 MM9PDY: flat channels with one scan flag each; zones are the MMD1 table. */
 const RADIO_IO_RT95_MM9PDY_EXPORT_DEFAULTS: FormatExportDefaults = {
   defaultScanInclusion: 'scan',
+  channelWireNameBase: 'callsign-first',
   expandModes: false,
   expandRxGroupLists: false,
   exportScratchChannels: false,

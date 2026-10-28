@@ -37,6 +37,10 @@ export function resolveMaxNameLength(
 }
 
 export function composeExportWireName(channel: Channel, options?: CpsExportOptions): string {
+  if (options?.channelWireNameBase === 'callsign-first') {
+    const callsign = channel.callsign?.trim();
+    if (callsign) return callsign;
+  }
   const pick = channelPickForWireExport(channel, {
     nameModeOverride: options?.nameModeOverride as ChannelExportNameMode | undefined,
   });

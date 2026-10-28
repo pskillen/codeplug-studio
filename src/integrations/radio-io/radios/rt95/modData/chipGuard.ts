@@ -38,7 +38,9 @@ function isAllZero(block: Uint8Array): boolean {
 }
 
 /** Operator-facing text for a failed chip guard. */
-export function rt95ChipGuardRefusalText(reason: Exclude<Rt95ChipGuardResult, { ok: true }>['reason']): string {
+export function rt95ChipGuardRefusalText(
+  reason: Exclude<Rt95ChipGuardResult, { ok: true }>['reason'],
+): string {
   if (reason === 'empty-block') {
     return 'The radio returned an empty block while its memory was being checked. Nothing was written. Try the Write again.';
   }

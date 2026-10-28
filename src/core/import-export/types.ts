@@ -42,6 +42,11 @@ export interface FormatExportDefaults {
   exportZoneDerivedScanLists?: boolean;
   /** When true with expandRxGroupLists, emit scratch companion rows. Format-specific default. */
   exportScratchChannels?: boolean;
+  /**
+   * How a channel's base wire name is chosen. `callsign-first`: the channel's Callsign when set,
+   * else the usual composed name. Profile default only (RT95 MM9PDY); not a build setting.
+   */
+  channelWireNameBase?: 'callsign-first';
 }
 
 export type FormatStatus = 'shipped' | 'planned';
@@ -118,6 +123,8 @@ export interface CpsExportOptions {
   exportZoneDerivedScanLists?: boolean;
   /** When true with expandRxGroupLists, emit one scratch companion row per expanded repeater channel. */
   exportScratchChannels?: boolean;
+  /** Profile default: base wire name from the channel Callsign when set. See `FormatExportDefaults`. */
+  channelWireNameBase?: 'callsign-first';
   /** Resolved default for channels with `scanInclusion: default`. From build or format adapter. */
   defaultScanInclusion?: DefaultScanInclusion;
   /** Library + build cascade for channel behavioural defaults at export. */
