@@ -110,9 +110,11 @@ Upload path also issues a priming read at radio address **`0x3b10`** (outside th
 5. For **Restore** (not Write): `restoreFromBackup` uploads selected zip clone bins with that same `upload()` handshake — never assemble / stash merge, and never a live pre-write read inside `upload()`. See [backup-restore.md](backup-restore.md). Hardware verify pending.
 6. Prefer RMW for settings / bandlimit — see [settings.md](settings.md).
 
+**After `END` the radio ignores `PROGRAM` for about 3–5 s** (measured on an RT95-P: the head reloads from the main board). Studio sends `END` after Write and when a session that was in PC mode closes. A session that needs PC mode again within that window retries `PROGRAM` every 1.5 s for up to 12 s (`enterProgramQxModeWithRetry`), then fails with "The radio did not answer after the last write". Retry applies to **Verify write** and to a `connect` within 15 s of Studio's own `END`; a connect with no recent `END` sends `PROGRAM` once, so a wrong port still fails in half a second.
+
 ## Write verify
 
-After upload, Studio stages every **16-byte** block written in `0x0000`…`0x3290`. **Verify write** reconnects (no reboot wait), runs a full download, and compares staged payloads byte-for-byte. Region rows follow [writeRole.ts](../../../../../src/integrations/radio-io/radios/rt95/writeRole.ts) (`replaced` vs `kept`). Feature: [write-verify.md](../../../../features/radio-read-write/write-verify.md).
+After upload, Studio stages every **16-byte** block written in `0x0000`…`0x3290`. **Verify write** first waits for the radio to answer `PROGRAM` again (see above; retry every 1.5 s, up to 12 s), then runs a full download, and compares staged payloads byte-for-byte. Region rows follow [writeRole.ts](../../../../../src/integrations/radio-io/radios/rt95/writeRole.ts) (`replaced` vs `kept`). Feature: [write-verify.md](../../../../features/radio-read-write/write-verify.md).
 
 ## Related
 
