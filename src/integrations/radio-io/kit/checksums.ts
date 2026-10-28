@@ -3,6 +3,8 @@
  *
  * - CRC-16/CCITT-FALSE: poly `0x1021`, init `0xFFFF`, MSB first, no reflection, no xorout.
  *   Check value: `crc16CcittFalse("123456789") === 0x29B1`.
+ * - CRC-8 (poly `0x07`): init `0x00`, MSB first, no reflection, no xorout.
+ *   Check value: `crc8Poly07("123456789") === 0xF4`.
  * - CRC-32 (IEEE 802.3, zlib): reflected poly `0xEDB88320`, init and xorout `0xFFFFFFFF`.
  *   Check value: `crc32Ieee("123456789") === 0xCBF43926`.
  */
@@ -13,6 +15,17 @@ export function crc16CcittFalse(data: Uint8Array): number {
     crc ^= byte << 8;
     for (let bit = 0; bit < 8; bit++) {
       crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+    }
+  }
+  return crc;
+}
+
+export function crc8Poly07(data: Uint8Array): number {
+  let crc = 0x00;
+  for (const byte of data) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) {
+      crc = crc & 0x80 ? ((crc << 1) ^ 0x07) & 0xff : (crc << 1) & 0xff;
     }
   }
   return crc;
