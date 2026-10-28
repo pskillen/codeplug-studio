@@ -152,12 +152,12 @@ packages from `__fixtures__/syntheticPackage.ts`.
 
 ### Link
 
-| Setting     | Value                                                                                                                                                      |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cable       | A programming cable with a USB-serial chip (Prolific PL2303, WCH CH340 or FTDI FT232R are in the picker filter). The ID identifies the cable, not the mode |
-| Serial      | 115,200 8N1; DTR and RTS raised                                                                                                                            |
-| Echo        | Single-wire cable: by default every byte sent comes back as an echo first                                                                                  |
-| Normal mode | The head's PC link runs at 9,600 (used only by the pre-flight probe)                                                                                       |
+| Setting     | Value                                                                                                                                                                                           |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cable       | A programming cable with a USB-serial chip (Prolific PL2303 `067b:2303` and PL2303GC `067b:23a3`, WCH CH340 or FTDI FT232R are in the picker filter). The ID identifies the cable, not the mode |
+| Serial      | 115,200 8N1; DTR and RTS raised                                                                                                                                                                 |
+| Echo        | Single-wire cable: by default every byte sent comes back as an echo first                                                                                                                       |
+| Normal mode | The head's PC link runs at 9,600 (used only by the pre-flight probe)                                                                                                                            |
 
 ### Package layout
 
