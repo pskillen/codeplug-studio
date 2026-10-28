@@ -148,6 +148,51 @@ export async function grantFirmwarePort(radioId: FirmwareRadioId): Promise<Seria
   return requestWebSerialPort(true, requireUpdater(radioId).link.usbFilters);
 }
 
+/** Fresh pick for the radio's normal-mode pre-flight probe. Call from a user gesture. */
+export async function grantFirmwarePreflightPort(
+  radioId: FirmwareRadioId,
+): Promise<SerialPortLike> {
+  const probe = requireUpdater(radioId).preflight?.probe;
+  if (!probe) throw new Error(`${radioId} has no pre-flight probe.`);
+  return requestWebSerialPort(true, probe.link.usbFilters);
+}
+
+export type FirmwarePreflightProbeOutcome =
+  { ok: true; summary: string } | { ok: false; code: string; message: string };
+
+/** Run the radio's read-only normal-mode probe. Always closes; never throws for a refusal. */
+export async function runFirmwarePreflightProbe(input: {
+  radioId: FirmwareRadioId;
+  port: SerialPortLike;
+  signal?: AbortSignal;
+}): Promise<FirmwarePreflightProbeOutcome> {
+  const { radioId, port, signal } = input;
+  let pipe: BytePipe | null = null;
+  try {
+    const probe = requireUpdater(radioId).preflight?.probe;
+    if (!probe) throw new Error(`${radioId} has no pre-flight probe.`);
+    pipe = await openWebSerialPipe(port, probe.link.baudRate);
+    const { summary } = await probe.run(pipe, { signal });
+    return { ok: true, summary };
+  } catch (err) {
+    return { ok: false, code: errorCode(err), message: errorMessage(err) };
+  } finally {
+    if (pipe) {
+      try {
+        await pipe.close();
+      } catch {
+        /* closing is best effort */
+      }
+    } else {
+      try {
+        await port.close();
+      } catch {
+        /* the port may never have opened */
+      }
+    }
+  }
+}
+
 export type FirmwareFlashOutcome =
   | {
       ok: true;

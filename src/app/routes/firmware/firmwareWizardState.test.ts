@@ -7,6 +7,7 @@ import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
 import type { FirmwareChoice, VerifiedStockFirmware } from '../../services/firmwareFlash.ts';
 import {
   canAdvance,
+  isPreflightComplete,
   firmwareWizardReducer as reduce,
   INITIAL_FIRMWARE_WIZARD_STATE,
   PREFLIGHT_CHECKS,
@@ -155,5 +156,62 @@ describe('firmwareWizardReducer', () => {
     );
     expect(s.image).toBeNull();
     expect(s.checks.risk).toBe(false);
+  });
+
+  describe('radio pre-flight requirements', () => {
+    const REQ = { attestationIds: ['a', 'b'], probe: true };
+    const atPreflight = () => {
+      let s = through(
+        { type: 'selectRadio', radioId: 'baofeng-dm32uv', preflight: REQ },
+        { type: 'next' },
+        { type: 'next' },
+        { type: 'stockVerified', stock: STOCK },
+        { type: 'next' },
+        { type: 'imagePrepared', image: IMAGE },
+        { type: 'next' },
+      );
+      for (const check of PREFLIGHT_CHECKS) s = reduce(s, { type: 'setCheck', check, value: true });
+      return s;
+    };
+
+    it('is unchanged for a radio with no requirements', () => {
+      let s = through({ type: 'selectRadio', radioId: 'baofeng-dm32uv' });
+      for (const check of PREFLIGHT_CHECKS) s = reduce(s, { type: 'setCheck', check, value: true });
+      expect(isPreflightComplete(s)).toBe(true);
+    });
+
+    it('blocks until every attestation is ticked and the probe passed', () => {
+      let s = atPreflight();
+      expect(s.step).toBe('preflight');
+      expect(canAdvance(s)).toBe(false);
+      s = reduce(s, { type: 'setRadioCheck', id: 'a', value: true });
+      s = reduce(s, { type: 'setRadioCheck', id: 'b', value: true });
+      expect(canAdvance(s)).toBe(false);
+      s = reduce(s, { type: 'probePassed', summary: 'ok' });
+      expect(canAdvance(s)).toBe(true);
+      expect(reduce(s, { type: 'probeCleared' }).probe).toBeNull();
+      expect(canAdvance(reduce(s, { type: 'probeCleared' }))).toBe(false);
+    });
+
+    it('resets attestations and the probe on a new choice, new stock or cleared stock', () => {
+      let s = atPreflight();
+      s = reduce(s, { type: 'setRadioCheck', id: 'a', value: true });
+      s = reduce(s, { type: 'probePassed', summary: 'ok' });
+      for (const a of [
+        { type: 'chooseFirmware', choice: { kind: 'stock' } },
+        { type: 'stockVerified', stock: STOCK },
+        { type: 'stockCleared' },
+      ] as const) {
+        const r = reduce(s, a);
+        expect(r.radioChecks).toEqual({});
+        expect(r.probe).toBeNull();
+        expect(r.radioPreflight).toEqual(REQ);
+      }
+    });
+
+    it('goTo respects the requirement', () => {
+      const s = atPreflight();
+      expect(reduce(s, { type: 'goTo', step: 'updateMode' }).step).toBe('preflight');
+    });
   });
 });

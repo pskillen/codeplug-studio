@@ -30,7 +30,7 @@ import {
   type FirmwareFlashOutcome,
 } from '../../../services/firmwareFlash.ts';
 import classes from '../FirmwareFlasherPage.module.css';
-import { PREFLIGHT_CHECKS } from '../firmwareWizardState.ts';
+import { isPreflightComplete } from '../firmwareWizardState.ts';
 import {
   createFlashProgressThrottle,
   transferDetail,
@@ -179,7 +179,7 @@ export default function FlashStep({
             <Button
               variant="primary"
               onClick={() => void connectAndFlash()}
-              disabled={running || !PREFLIGHT_CHECKS.every((c) => state.checks[c])}
+              disabled={running || !isPreflightComplete(state)}
             >
               Connect and flash
             </Button>

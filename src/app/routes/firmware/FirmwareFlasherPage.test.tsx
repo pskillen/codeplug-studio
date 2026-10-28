@@ -38,6 +38,8 @@ vi.mock('../../services/firmwareFlash.ts', () => ({
   listPublishedReleases: vi.fn(),
   loadChosenPatch: vi.fn(),
   grantFirmwarePort: vi.fn(),
+  grantFirmwarePreflightPort: vi.fn(),
+  runFirmwarePreflightProbe: vi.fn(),
   runFirmwareFlash: vi.fn(),
   formatFirmwareFlashSummary: vi.fn(() => 'SUMMARY TEXT'),
 }));
@@ -162,6 +164,7 @@ describe('FirmwareFlasherPage', () => {
       choice.kind === 'release' ? loadedFor(choice.summary.release!) : UNREVIEWED,
     );
     vi.mocked(flash.grantFirmwarePort).mockResolvedValue({} as radioIo.SerialPortLike);
+    vi.mocked(flash.grantFirmwarePreflightPort).mockResolvedValue({} as radioIo.SerialPortLike);
   });
 
   it('renders the radio card', () => {
@@ -186,6 +189,78 @@ describe('FirmwareFlasherPage', () => {
     expect(continueButton).toBeDisabled();
     fireEvent.click(checks[3]!);
     expect(continueButton).not.toBeDisabled();
+  });
+
+  it('lists the stock sources on the Stock step', async () => {
+    renderPage();
+    fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+    cont();
+    cont();
+    expect(screen.getByText('Where to get it:')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: DM32.stock.zip.fileName })).toHaveAttribute(
+      'href',
+      expect.stringMatching(/^https:/),
+    );
+  });
+
+  describe('a radio with its own pre-flight', () => {
+    const WITH_PREFLIGHT = {
+      ...DM32,
+      preflight: {
+        attestations: [
+          { id: 'one', label: 'Attestation one', help: 'Look at the screen.' },
+          { id: 'two', label: 'Attestation two' },
+        ],
+        probe: {
+          title: 'Check the radio',
+          steps: ['Switch the radio on normally.'],
+          link: DM32.link,
+          run: vi.fn(),
+        },
+      },
+    } as unknown as typeof DM32;
+
+    async function walkToPreflight() {
+      vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([WITH_PREFLIGHT]);
+      renderPage();
+      fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+      cont();
+      cont();
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [new File(['x'], 'stock.zip')] } });
+      await screen.findByText(/verified/);
+      cont();
+      await screen.findByText(/Ready to flash/);
+      cont();
+    }
+
+    it('blocks Continue until every attestation is ticked and the probe passed', async () => {
+      vi.mocked(flash.runFirmwarePreflightProbe).mockResolvedValue({
+        ok: true,
+        summary: 'Model X',
+      });
+      await walkToPreflight();
+      expect(screen.getByText('Look at the screen.')).toBeInTheDocument();
+      const continueButton = screen.getByRole('button', { name: 'Continue' });
+      for (const c of screen.getAllByRole('checkbox')) fireEvent.click(c);
+      expect(continueButton).toBeDisabled();
+      fireEvent.click(screen.getByRole('button', { name: 'Check the radio' }));
+      expect(await screen.findByText(/Radio checked: Model X/)).toBeInTheDocument();
+      expect(continueButton).not.toBeDisabled();
+    });
+
+    it('shows the refusal and keeps Continue disabled when the probe fails', async () => {
+      vi.mocked(flash.runFirmwarePreflightProbe).mockResolvedValue({
+        ok: false,
+        code: 'wrongIdent',
+        message: 'This radio reports something else.',
+      });
+      await walkToPreflight();
+      for (const c of screen.getAllByRole('checkbox')) fireEvent.click(c);
+      fireEvent.click(screen.getByRole('button', { name: 'Check the radio' }));
+      expect(await screen.findByText('This radio reports something else.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    });
   });
 
   it('shows the done screen with the verify hint', async () => {
