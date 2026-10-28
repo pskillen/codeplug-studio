@@ -1,5 +1,6 @@
 /** CHIRP radio profiles — import/export boundary (memory limits + power ladder). */
 
+import { RT95_LIMITS } from '@core/radios/retevis/rt95/limits.ts';
 import { percentToWire, wireToPercent, type PowerLadderEntry } from '../../profileLadder.ts';
 
 export interface ChirpRadioProfile {
@@ -54,9 +55,9 @@ export const CHIRP_PROFILES: readonly ChirpRadioProfile[] = [
     label: 'Retevis RT95 VOX',
     defaultFileName: 'Retevis_RT95 VOX_export.csv',
     /** CHIRP `memory_bounds` (1, 200) */
-    maxMemorySlots: 200,
+    maxMemorySlots: RT95_LIMITS.CHANNEL_MAX,
     /** CHIRP `AnyTone778UVvoxBase.NAME_LENGTH` */
-    nameLimit: 6,
+    nameLimit: RT95_LIMITS.NAME_LENGTH,
     powerLadder: RT95_LADDER,
   },
 ] as const;

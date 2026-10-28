@@ -6,6 +6,7 @@
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
+import { RT95_LIMITS } from '@core/radios/retevis/rt95/limits.ts';
 import type { PowerLadderEntry } from '../../profileLadder.ts';
 
 export interface RadioIoUv5rMiniProfile {
@@ -238,8 +239,8 @@ export const RADIO_IO_UV21_PROFILE: RadioIoUv21Profile = {
 export const RADIO_IO_RT95_PROFILE: RadioIoRt95Profile = {
   id: 'radio-io-rt95',
   label: 'Retevis RT95 VOX',
-  maxMemorySlots: 200,
-  nameLimit: 6,
+  maxMemorySlots: RT95_LIMITS.CHANNEL_MAX,
+  nameLimit: RT95_LIMITS.NAME_LENGTH,
   powerLadder: RT95_POWER_LADDER,
 };
 

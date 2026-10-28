@@ -13,7 +13,7 @@
  */
 
 import type { BlockCodec, BytePipe } from '../../types.ts';
-import { RadioProtocolError, RadioTimeoutError } from '../errors.ts';
+import { RadioAbortedError, RadioProtocolError, RadioTimeoutError } from '../errors.ts';
 
 export const PROGRAM_QX_ACK = 0x06;
 export const PROGRAM_QX_NACK = 0x0a;
@@ -217,6 +217,87 @@ export async function enterProgramQxMode(
       `PROGRAM→QX enter expected QX\\x06, got ${[...reply].map((b) => `0x${b.toString(16)}`).join(' ')}`,
     );
   }
+}
+
+export const PROGRAM_QX_REENTRY_INTERVAL_MS = 1500;
+export const PROGRAM_QX_REENTRY_BUDGET_MS = 12_000;
+
+export interface ProgramQxRetryOptions {
+  /** Gap between attempt starts (default {@link PROGRAM_QX_REENTRY_INTERVAL_MS}). */
+  intervalMs?: number;
+  /** Stop starting attempts after this long (default {@link PROGRAM_QX_REENTRY_BUDGET_MS}). */
+  budgetMs?: number;
+  /** Per-attempt echo timeout (default 500 ms). */
+  timeoutMs?: number;
+  signal?: AbortSignal;
+  /** Injectable for tests. */
+  sleep?: (ms: number) => Promise<void>;
+  now?: () => number;
+  /** 1-based attempt number, called before each PROGRAM. */
+  onAttempt?: (attempt: number) => void;
+}
+
+const defaultSleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Wait `ms`, rejecting with {@link RadioAbortedError} as soon as `signal` aborts. */
+async function abortableSleep(
+  sleep: (ms: number) => Promise<void>,
+  ms: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (signal?.aborted) throw new RadioAbortedError();
+  if (!signal) {
+    await sleep(ms);
+    return;
+  }
+  let onAbort: (() => void) | undefined;
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => reject(new RadioAbortedError());
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
+  try {
+    await Promise.race([sleep(ms), aborted]);
+  } finally {
+    if (onAbort) signal.removeEventListener('abort', onAbort);
+  }
+}
+
+/**
+ * Send PROGRAM until the radio answers QX 0x06: one attempt every `intervalMs`, for up to
+ * `budgetMs` (attempt k starts k · intervalMs after the first). For sessions that follow our own
+ * END, when the radio ignores PROGRAM while it reloads.
+ */
+export async function enterProgramQxModeWithRetry(
+  pipe: BytePipe,
+  opts: ProgramQxRetryOptions = {},
+): Promise<{ attempts: number }> {
+  const intervalMs = opts.intervalMs ?? PROGRAM_QX_REENTRY_INTERVAL_MS;
+  const budgetMs = opts.budgetMs ?? PROGRAM_QX_REENTRY_BUDGET_MS;
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_ECHO_TIMEOUT_MS;
+  const sleep = opts.sleep ?? defaultSleep;
+  const now = opts.now ?? Date.now;
+  const first = now();
+
+  for (let attempt = 0; ; attempt++) {
+    if (attempt > 0) {
+      if (attempt * intervalMs > budgetMs) break;
+      await abortableSleep(sleep, Math.max(0, first + attempt * intervalMs - now()), opts.signal);
+    }
+    if (opts.signal?.aborted) throw new RadioAbortedError();
+    opts.onAttempt?.(attempt + 1);
+    try {
+      if (pipe.flush) await pipe.flush();
+      await enterProgramQxMode(pipe, timeoutMs);
+      return { attempts: attempt + 1 };
+    } catch (e) {
+      if (!(e instanceof RadioTimeoutError) && !(e instanceof RadioProtocolError)) throw e;
+    }
+  }
+
+  throw new RadioTimeoutError(
+    'The radio did not answer after the last write. Wait a few seconds, or turn it off and on, then try again.',
+  );
 }
 
 /**

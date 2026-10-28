@@ -59,6 +59,8 @@ export const RT95_WRITE_VERIFY_HOOKS: WriteVerifyHooks = {
     if (!(session.radio instanceof Rt95Protocol)) {
       throw new Error('Write verify is only supported for RT95.');
     }
+    // Write ends with END; the radio ignores PROGRAM for a few seconds while it reloads.
+    await session.radio.ensureProgramMode({ signal: opts?.signal, onProgress: opts?.onProgress });
     const started = performance.now();
     const image = await session.radio.download({
       onProgress: opts?.onProgress,

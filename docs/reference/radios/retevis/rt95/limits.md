@@ -1,5 +1,7 @@
 # RT95 VOX — limits
 
+Code mirror: `src/core/radios/retevis/rt95/limits.ts` (`RT95_LIMITS`).
+
 Shared hardware / memory caps. Adapters warn or truncate at the **export / write boundary** — library CRUD stays unlimited.
 
 | Constraint                                             | Value       | Notes                                                  |

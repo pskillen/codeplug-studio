@@ -33,6 +33,7 @@ export {
 } from './codecs/programRw.ts';
 export {
   enterProgramQxMode,
+  enterProgramQxModeWithRetry,
   exitProgramQxMode,
   makeProgramQxReadFrame,
   makeProgramQxWriteFrame,
@@ -45,11 +46,14 @@ export {
   PROGRAM_QX_READ_HEADER_LEN,
   PROGRAM_QX_READ_OPCODE,
   PROGRAM_QX_READ_REPLY_LEN,
+  PROGRAM_QX_REENTRY_BUDGET_MS,
+  PROGRAM_QX_REENTRY_INTERVAL_MS,
   PROGRAM_QX_WRITE_OPCODE,
   programQxChecksum8AfterOpcode,
   programQxCodec,
   sendProgramQxCommand,
   stripProgramQxEcho,
+  type ProgramQxRetryOptions,
 } from './codecs/programQx.ts';
 export {
   ANYTONE_DMR_ACK,
