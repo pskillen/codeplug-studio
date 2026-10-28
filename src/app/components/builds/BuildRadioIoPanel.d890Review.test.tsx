@@ -508,9 +508,10 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     await screen.findByRole('button', { name: 'Write codeplug' });
     expect(screen.queryByTestId('d890-settings-review')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Use MM9PDY step keys' }));
-    // Applying the overrides re-renders the review; it has taken >1 s on a loaded CI runner.
+    // Applying the overrides re-renders the review; it has taken >1 s on a loaded CI runner. The
+    // findBy timeout must stay below the test's own (30 s): at equal values the test timed out first (#1463).
     expect(
-      await screen.findByRole('button', { name: 'Write codeplug + settings' }, { timeout: 5_000 }),
+      await screen.findByRole('button', { name: 'Write codeplug + settings' }, { timeout: 15_000 }),
     ).toBeEnabled();
     const overrides = getAtD890RadioSettingsSession(build.id).overrides;
     expect(overrides.get('keyShortP1')).toBe(14);
@@ -522,7 +523,7 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     // The nudge adds overrides at the pause, so the result carries them.
     expect(results[0]).toMatchObject({ decision: 'apply' });
     clearAllOverrides(build.id);
-  });
+  }, 30_000);
 
   it('shows no nudge on an MM9PDY radio whose keys are already TG next/previous, even with Radio settings ticked', async () => {
     const build = renderPanel('radio-io-at-d890uv-mm9pdy');
