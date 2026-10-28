@@ -29,6 +29,10 @@ Flat memory list only:
 
 Studio Build → Channels uses the shared **flat-memory** Channels page for this radio’s profile.
 
+## MM9PDY modded firmware
+
+The `retevis-rt95-mm9pdy` target (profile `radio-io-rt95-mm9pdy`) keeps the flat 200-channel list and the per-channel scan flag and adds **zone grouping** and **zone as scan list**: up to 32 zones, a channel in any number of zones, and a 12-character description per channel. Scan visits the zone's channels that have scan on, in channel-number order. Everything else on this page is unchanged. See [mm9pdy-data.md](mm9pdy-data.md).
+
 ## Related
 
 - [limits.md](limits.md) · [power.md](power.md)

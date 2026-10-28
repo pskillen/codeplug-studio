@@ -16,10 +16,11 @@ Mobile / base analogue FM radio (AnyTone 778UV family). Studio targets it via CH
 
 ## Studio profile ids
 
-| Adapter        | `profileId`     | Notes                                             |
-| -------------- | --------------- | ------------------------------------------------- |
-| CHIRP CSV      | `chirp-rt95`    | Generic CSV watt strings; 6-char names, 200 slots |
-| Web Serial I/O | `radio-io-rt95` | PROGRAM→QX @ 9600; `retevis-rt95` radio target    |
+| Adapter        | `profileId`            | Notes                                                                              |
+| -------------- | ---------------------- | ---------------------------------------------------------------------------------- |
+| CHIRP CSV      | `chirp-rt95`           | Generic CSV watt strings; 6-char names, 200 slots                                  |
+| Web Serial I/O | `radio-io-rt95`        | PROGRAM→QX @ 9600; `retevis-rt95` radio target                                     |
+| Web Serial I/O | `radio-io-rt95-mm9pdy` | MM9PDY modded firmware: zones and descriptions; `retevis-rt95-mm9pdy` radio target |
 
 ## Documentation map
 
