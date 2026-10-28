@@ -234,6 +234,14 @@ describe('FirmwareFlasherPage', () => {
       cont();
     }
 
+    const SKIP_LABEL = "I've already tested this radio with Codeplug Studio";
+    /** Tick every box except the opt-in to skip the radio check. */
+    const tickAcknowledgements = () => {
+      for (const c of screen.getAllByRole('checkbox')) {
+        if (c !== screen.getByLabelText(SKIP_LABEL)) fireEvent.click(c);
+      }
+    };
+
     it('blocks Continue until every attestation is ticked and the probe passed', async () => {
       vi.mocked(flash.runFirmwarePreflightProbe).mockResolvedValue({
         ok: true,
@@ -242,11 +250,29 @@ describe('FirmwareFlasherPage', () => {
       await walkToPreflight();
       expect(screen.getByText('Look at the screen.')).toBeInTheDocument();
       const continueButton = screen.getByRole('button', { name: 'Continue' });
-      for (const c of screen.getAllByRole('checkbox')) fireEvent.click(c);
+      tickAcknowledgements();
       expect(continueButton).toBeDisabled();
       fireEvent.click(screen.getByRole('button', { name: 'Check the radio' }));
       expect(await screen.findByText(/Radio checked: Model X/)).toBeInTheDocument();
       expect(continueButton).not.toBeDisabled();
+    });
+
+    it('leaves the skip box unticked by default and lets it replace the radio check', async () => {
+      await walkToPreflight();
+      const skip = screen.getByLabelText(SKIP_LABEL);
+      expect(skip).not.toBeChecked();
+      tickAcknowledgements();
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+      fireEvent.click(skip);
+      expect(screen.getByRole('button', { name: 'Check the radio' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Continue' })).not.toBeDisabled();
+      expect(flash.runFirmwarePreflightProbe).not.toHaveBeenCalled();
+    });
+
+    it('still needs the acknowledgements when the radio check is skipped', async () => {
+      await walkToPreflight();
+      fireEvent.click(screen.getByLabelText(SKIP_LABEL));
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
     });
 
     it('shows the refusal and keeps Continue disabled when the probe fails', async () => {
@@ -256,7 +282,7 @@ describe('FirmwareFlasherPage', () => {
         message: 'This radio reports something else.',
       });
       await walkToPreflight();
-      for (const c of screen.getAllByRole('checkbox')) fireEvent.click(c);
+      tickAcknowledgements();
       fireEvent.click(screen.getByRole('button', { name: 'Check the radio' }));
       expect(await screen.findByText('This radio reports something else.')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();

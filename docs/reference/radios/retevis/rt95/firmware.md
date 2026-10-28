@@ -81,6 +81,12 @@ disabled until all of these hold (`preflight` on the descriptor; code in `prefli
 4. **Confirmation on the Flash step:** "The screen is blank. It does not say UPDATE THE RF CPU." must be ticked before
    **Connect and flash** is enabled.
 
+   **Opt-out:** the step has an unticked-by-default box, "I've already tested this radio with Codeplug Studio". Ticking
+   it disables the **Check the radio** button and lets the operator continue without the reboot to normal mode and
+   back. The attestations and the Flash-step confirmation stay required. The probe is a wizard convenience, not an
+   interlock: the send path never reads its result, and the stock pin, image checks, prod gate and bootloader
+   handshake apply either way.
+
 The probe cannot prove which MCU a later P1 or P3 start-up reaches; the confirmation and the update-mode copy do.
 An automatic check would need further reverse engineering.
 

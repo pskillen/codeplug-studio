@@ -42,6 +42,11 @@ export interface FirmwareWizardState {
   readonly radioChecks: Readonly<Record<string, boolean>>;
   /** Set when the radio's normal-mode probe passed. */
   readonly probe: { readonly summary: string } | null;
+  /**
+   * Opt-in: the operator says they already tested this radio with Studio, so the normal-mode probe may be skipped.
+   * UI-level only; the flash send path never reads the probe result.
+   */
+  readonly probeSkipped: boolean;
 }
 
 export type FirmwareWizardAction =
@@ -63,7 +68,8 @@ export type FirmwareWizardAction =
   | { type: 'setCheck'; check: PreflightCheck; value: boolean }
   | { type: 'setRadioCheck'; id: string; value: boolean }
   | { type: 'probePassed'; summary: string }
-  | { type: 'probeCleared' };
+  | { type: 'probeCleared' }
+  | { type: 'setProbeSkipped'; value: boolean };
 
 const NO_CHECKS: Record<PreflightCheck, boolean> = {
   risk: false,
@@ -87,6 +93,7 @@ export const INITIAL_FIRMWARE_WIZARD_STATE: FirmwareWizardState = {
   radioPreflight: { attestationIds: [], probe: false },
   radioChecks: {},
   probe: null,
+  probeSkipped: false,
 };
 
 const indexOf = (step: FirmwareWizardStep) => FIRMWARE_WIZARD_STEPS.indexOf(step);
@@ -99,12 +106,12 @@ export function isChoiceReady(state: FirmwareWizardState): boolean {
   return loaded.provenance === 'published' || state.riskAccepted;
 }
 
-/** Generic checks ticked, every radio attestation ticked, and the probe passed when the radio has one. */
+/** Generic checks ticked, every radio attestation ticked, and the probe passed (or skipped by opt-in) when the radio has one. */
 export function isPreflightComplete(state: FirmwareWizardState): boolean {
   return (
     PREFLIGHT_CHECKS.every((c) => state.checks[c]) &&
     state.radioPreflight.attestationIds.every((id) => state.radioChecks[id] === true) &&
-    (!state.radioPreflight.probe || state.probe !== null)
+    (!state.radioPreflight.probe || state.probe !== null || state.probeSkipped)
   );
 }
 
@@ -171,6 +178,7 @@ export function firmwareWizardReducer(
         checks: NO_CHECKS,
         radioChecks: {},
         probe: null,
+        probeSkipped: false,
       };
     case 'setIncludeRc':
       return { ...state, includeRc: action.value };
@@ -184,6 +192,7 @@ export function firmwareWizardReducer(
         checks: NO_CHECKS,
         radioChecks: {},
         probe: null,
+        probeSkipped: false,
       };
     case 'stockCleared':
       return {
@@ -193,6 +202,7 @@ export function firmwareWizardReducer(
         checks: NO_CHECKS,
         radioChecks: {},
         probe: null,
+        probeSkipped: false,
       };
     case 'imagePrepared':
       return { ...state, image: action.image };
@@ -206,5 +216,7 @@ export function firmwareWizardReducer(
       return { ...state, probe: { summary: action.summary } };
     case 'probeCleared':
       return { ...state, probe: null };
+    case 'setProbeSkipped':
+      return { ...state, probeSkipped: action.value };
   }
 }

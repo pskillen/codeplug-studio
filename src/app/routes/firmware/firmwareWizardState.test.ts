@@ -193,6 +193,19 @@ describe('firmwareWizardReducer', () => {
       expect(canAdvance(reduce(s, { type: 'probeCleared' }))).toBe(false);
     });
 
+    it('needs the probe by default and lets the opt-in skip it', () => {
+      let s = atPreflight();
+      s = reduce(s, { type: 'setRadioCheck', id: 'a', value: true });
+      s = reduce(s, { type: 'setRadioCheck', id: 'b', value: true });
+      expect(s.probeSkipped).toBe(false);
+      expect(canAdvance(s)).toBe(false);
+      s = reduce(s, { type: 'setProbeSkipped', value: true });
+      expect(canAdvance(s)).toBe(true);
+      expect(canAdvance(reduce(s, { type: 'setCheck', check: 'risk', value: false }))).toBe(false);
+      expect(canAdvance(reduce(s, { type: 'setRadioCheck', id: 'a', value: false }))).toBe(false);
+      expect(reduce(s, { type: 'stockCleared' }).probeSkipped).toBe(false);
+    });
+
     it('resets attestations and the probe on a new choice, new stock or cleared stock', () => {
       let s = atPreflight();
       s = reduce(s, { type: 'setRadioCheck', id: 'a', value: true });
