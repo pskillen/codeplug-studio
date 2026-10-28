@@ -28,12 +28,19 @@ export interface RadioIoUv21Profile {
 }
 
 /** Retevis RT95 VOX Web Serial — mirrors chirp-rt95 caps. */
+export type Rt95RadioIoProfileId = 'radio-io-rt95' | 'radio-io-rt95-mm9pdy';
+
 export interface RadioIoRt95Profile {
-  id: 'radio-io-rt95';
+  id: Rt95RadioIoProfileId;
   label: string;
   maxMemorySlots: number;
   nameLimit: number;
   powerLadder: readonly PowerLadderEntry[];
+  /** MM9PDY modded firmware only: zone table caps and the per-channel description length. */
+  maxZones?: number;
+  zoneMembers?: number;
+  zoneNameLimit?: number;
+  descriptionLimit?: number;
 }
 
 export type Dm32RadioIoProfileId = 'radio-io-dm32uv' | 'radio-io-dm32uv-mm9pdy';
@@ -117,6 +124,22 @@ export type RadioIoRadioProfile =
   | RadioIoAtD890uvProfile
   | RadioIoOpenGd771701Profile
   | RadioIoOpenGd77Md9600Profile;
+
+/** Per-channel description length for profiles that write one (RT95 MM9PDY), else `null`. */
+export function radioIoChannelDescriptionLimit(profileId: string): number | null {
+  if (!isRt95RadioIoProfileId(profileId)) return null;
+  return (getRadioIoProfile(profileId) as RadioIoRt95Profile).descriptionLimit ?? null;
+}
+
+/** Stock and MM9PDY RT95 Web Serial profiles share one codec. */
+export function isRt95RadioIoProfileId(profileId: string): boolean {
+  return profileId === 'radio-io-rt95' || profileId === 'radio-io-rt95-mm9pdy';
+}
+
+/** MM9PDY modded firmware: zones and channel descriptions in the MMD1 table. */
+export function isMm9pdyRt95RadioIoProfileId(profileId: string): boolean {
+  return profileId === 'radio-io-rt95-mm9pdy';
+}
 
 /** Stock and MM9PDY DM-32UV Web Serial profiles share one codec. */
 export function isDm32RadioIoProfileId(profileId: string): boolean {
@@ -244,6 +267,16 @@ export const RADIO_IO_RT95_PROFILE: RadioIoRt95Profile = {
   powerLadder: RT95_POWER_LADDER,
 };
 
+export const RADIO_IO_RT95_MM9PDY_PROFILE: RadioIoRt95Profile = {
+  ...RADIO_IO_RT95_PROFILE,
+  id: 'radio-io-rt95-mm9pdy',
+  label: 'Retevis RT95 VOX (MM9PDY modded firmware)',
+  maxZones: RT95_LIMITS.ZONE_MAX,
+  zoneMembers: RT95_LIMITS.ZONE_MEMBERS_MAX,
+  zoneNameLimit: RT95_LIMITS.ZONE_NAME_LENGTH,
+  descriptionLimit: RT95_LIMITS.DESCRIPTION_LENGTH,
+};
+
 export const RADIO_IO_DM32UV_PROFILE: RadioIoDm32uvProfile = {
   id: 'radio-io-dm32uv',
   label: 'Baofeng DM-32UV',
@@ -329,6 +362,7 @@ export const RADIO_IO_PROFILES: readonly RadioIoRadioProfile[] = [
   RADIO_IO_UV5R_MINI_PROFILE,
   RADIO_IO_UV21_PROFILE,
   RADIO_IO_RT95_PROFILE,
+  RADIO_IO_RT95_MM9PDY_PROFILE,
   RADIO_IO_DM32UV_PROFILE,
   RADIO_IO_DM32UV_MM9PDY_PROFILE,
   RADIO_IO_AT_D890UV_PROFILE,

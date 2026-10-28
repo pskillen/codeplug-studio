@@ -7,6 +7,7 @@ import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts'
 import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.ts';
 import { buildSyntheticRt95Image } from '@integrations/radio-io/radios/rt95/__fixtures__/syntheticImage.ts';
 import { RT95_IMAGE_SIZE, RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
+import { createFakeRt95Pipe } from '@integrations/radio-io/radios/rt95/__fixtures__/fakeRt95Pipe.ts';
 import { Rt95Protocol } from '@integrations/radio-io/radios/rt95/protocol.ts';
 import type { MemoryMap, RadioSession } from '@integrations/radio-io/types.ts';
 import { prepareRadioWriteImage, uploadPreparedRadioWrite } from './radioIoSession.ts';
@@ -35,8 +36,14 @@ function stashBag(settingsByte: number) {
 }
 
 describe('RT95 in-session pre-write read', () => {
-  it('does not seed the write image from a protocol upload hook', () => {
-    expect(RT95_DESCRIPTOR.hydration.seedProtocolForUpload).toBeUndefined();
+  it('seeds only the MMD1 intent (never the write image) from the protocol upload hook', () => {
+    const seed = RT95_DESCRIPTOR.hydration.seedProtocolForUpload;
+    expect(seed).toBeDefined();
+    const radio = new Rt95Protocol();
+    seed!(radio, undefined, { writeRt95ModData: true, zones: [] }, []);
+    expect(radio.getModDataIntent()).toEqual({ zones: [], descriptions: [] });
+    seed!(radio, undefined, {}, []);
+    expect(radio.getModDataIntent()).toBeNull();
   });
 
   it('uploadPreparedRadioWrite overlays modelled channels onto live download, not stash', async () => {
@@ -211,5 +218,78 @@ describe('RT95 write without persisted hydration bag', () => {
 
   it('hardware verify pending — operator to confirm drop-stash Write on RT95 VOX', () => {
     expect(true).toBe(true);
+  });
+});
+
+describe('RT95 MM9PDY session path (fake pipe)', () => {
+  const channel: RadioChannelDto = {
+    slotIndex: 1,
+    empty: false,
+    wireName: 'TEST01',
+    description: 'Calling ch',
+    rxHz: 146_520_000,
+    txHz: 146_520_000,
+    rxTone: { kind: 'none' },
+    txTone: { kind: 'none' },
+    powerPercent: 100,
+    bandwidth: 'FM',
+  };
+  const organisation = {
+    writeRt95ModData: true,
+    zones: [{ wireName: 'LOCAL', channelNumbers: [1] }],
+  };
+
+  async function open(pipeOpts: Parameters<typeof createFakeRt95Pipe>[0], profileId: string) {
+    const pipe = createFakeRt95Pipe(pipeOpts);
+    const radio = new Rt95Protocol();
+    await radio.connect(pipe);
+    const session: RadioSession = { descriptor: RT95_DESCRIPTOR, pipe, radio };
+    const { egress } = newRadioBuildForProfile('p1', profileId);
+    return { pipe, session, egress };
+  }
+
+  it('stops with the memory text before the pause and before any W on an aliasing chip', async () => {
+    const { pipe, session, egress } = await open({ aliasing16k: true }, 'radio-io-rt95-mm9pdy');
+    const beforeTransmit = vi.fn(async () => undefined);
+    await expect(
+      uploadPreparedRadioWrite(session, egress, undefined, {
+        channels: [channel],
+        organisation,
+        beforeTransmit,
+      }),
+    ).rejects.toThrow(/memory is too small for MM9PDY zones and descriptions/);
+    expect(beforeTransmit).not.toHaveBeenCalled();
+    expect(pipe.count('W')).toBe(0);
+  });
+
+  it('reaches the pause with the passing chip guard, then writes the MMD1 blocks', async () => {
+    const { pipe, session, egress } = await open({}, 'radio-io-rt95-mm9pdy');
+    const seen: unknown[] = [];
+    await uploadPreparedRadioWrite(session, egress, undefined, {
+      channels: [channel],
+      organisation,
+      beforeTransmit: async (ctx) => {
+        seen.push(ctx.rt95);
+        expect(pipe.count('W')).toBe(0);
+      },
+    });
+    expect(seen).toEqual([{ chipGuard: { ok: true } }]);
+    const writes = pipe.log.filter((e) => e.op === 'W').map((e) => e.addr!);
+    expect(writes.slice(-5)).toEqual([0x5000, 0x4300, 0x4310, 0x4100, 0x4000]);
+    expect(writes.some((a) => a === 0x4010 || a >= 0x6000)).toBe(false);
+  });
+
+  it('the stock RT95 egress sends no MMD1 block and no chip context', async () => {
+    const { pipe, session, egress } = await open({}, 'radio-io-rt95');
+    const seen: unknown[] = [];
+    await uploadPreparedRadioWrite(session, egress, undefined, {
+      channels: [channel],
+      beforeTransmit: async (ctx) => {
+        seen.push(ctx.rt95);
+      },
+    });
+    expect(seen).toEqual([undefined]);
+    expect(pipe.log.some((e) => e.op === 'W' && e.addr! > 0x3290)).toBe(false);
+    expect(pipe.log.some((e) => e.op === 'R' && e.addr === 0x7b00)).toBe(false);
   });
 });

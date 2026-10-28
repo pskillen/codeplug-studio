@@ -23,6 +23,8 @@ export interface RadioChannelDto {
   empty: boolean;
   /** Wire/display name (profile length limits applied by assemble / app). */
   wireName: string;
+  /** Channel description (12 characters): written by the RT95 MM9PDY target only. */
+  description?: string;
   rxHz: number;
   txHz: number;
   rxTone: RadioTone;

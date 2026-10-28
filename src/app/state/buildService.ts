@@ -171,6 +171,25 @@ export class BuildService {
     };
   }
 
+  /**
+   * RT95 MM9PDY channel description override. `undefined` clears it (description follows the channel
+   * Name again); an explicit `''` means "no description".
+   */
+  withWireDescriptionOverride(
+    build: RadioBuild,
+    libraryEntityId: string,
+    wireDescription: string | undefined,
+  ): RadioBuild {
+    return {
+      ...build,
+      channelOverrides: upsertOverride(build.channelOverrides, libraryEntityId, {
+        wireDescription,
+      }),
+      updatedAt: isoNow(),
+      revision: nextRevision(build.revision),
+    };
+  }
+
   /** Per-channel scan inclusion override on channelOverrides (flat-memory / CHIRP Skip). */
   withScanInclusionOverride(
     build: RadioBuild,

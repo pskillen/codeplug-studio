@@ -189,6 +189,28 @@ describe('getProfileExportLimits', () => {
     expect(stock!.maxScanLists).not.toBe('not_used');
   });
 
+  it('gives the RT95 MM9PDY profile zones and leaves the stock RT95 profile without', () => {
+    const limits = getProfileExportLimits('radio-io', 'radio-io-rt95-mm9pdy');
+    expect(limits).not.toBeNull();
+    expect(limits!.maxChannels).toBe(200);
+    expect(limits!.nameLengthChannel).toBe(6);
+    expect(limits!.maxZones).toBe(32);
+    expect(limits!.zoneMembers).toBe(200);
+    expect(limits!.nameLengthZone).toBe(8);
+    for (const key of [
+      'maxScanLists',
+      'maxRxGroupLists',
+      'maxContacts',
+      'maxTalkGroups',
+      'maxRadioIds',
+    ] as const) {
+      expect(limits![key]).toBe('not_used');
+    }
+    const stock = getProfileExportLimits('radio-io', 'radio-io-rt95');
+    expect(stock!.maxZones).toBe('not_used');
+    expect(stock!.nameLengthZone).toBe('not_used');
+  });
+
   it('marks MM9PDY AT-D890UV scan-list limits not_used', () => {
     const limits = getProfileExportLimits('radio-io', 'radio-io-at-d890uv-mm9pdy');
     expect(limits).not.toBeNull();

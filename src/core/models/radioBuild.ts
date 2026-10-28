@@ -98,6 +98,11 @@ export interface BuildEntityOverride {
   forceInclude?: boolean;
   wireName?: string;
   /**
+   * RT95 MM9PDY channel description override; other targets ignore it. An explicit empty string
+   * means "no description" (distinct from unset, which derives it from the channel Name).
+   */
+  wireDescription?: string;
+  /**
    * 1-based position in this entity kind's top-level export list.
    * CHIRP: memory Location; gaps between values become blank memory slots.
    * Unset → default placement after any explicit slots (library order).

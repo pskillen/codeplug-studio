@@ -35,4 +35,20 @@ describe('evaluateRt95ChipGuard', () => {
       reason: 'read-failed',
     });
   });
+  it('reports empty-block when the 0x7B00 read is all zeros (head-synthesised block)', () => {
+    expect(evaluateRt95ChipGuard(ident(), new Uint8Array(16))).toEqual({
+      ok: false,
+      reason: 'empty-block',
+    });
+  });
+  it('reports empty-block when the ident read is all zeros', () => {
+    expect(evaluateRt95ChipGuard(new Uint8Array(16), blank)).toEqual({
+      ok: false,
+      reason: 'empty-block',
+    });
+    expect(evaluateRt95ChipGuard(new Uint8Array(16), new Uint8Array(16))).toEqual({
+      ok: false,
+      reason: 'empty-block',
+    });
+  });
 });

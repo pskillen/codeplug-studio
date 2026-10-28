@@ -6,7 +6,7 @@ What the Write stepper's Review step shows (#1393). `reviewSectionsFor(descripto
 
 ## Props
 
-`reviewSectionsFor(descriptor, ctx: ReviewContext)`; `ReviewContext` is `{ identity, parts, channelCount, contactsNote, kepsCount, estimateSeconds, identityOnly, restartsAfterWrite, atD890? }`. A provider can also add rows to the identity block (`identityRows`) and content under the Channels line (`channelNotes`).
+`reviewSectionsFor(descriptor, ctx: ReviewContext)`; `ReviewContext` is `{ identity, parts, channelCount, contactsNote, kepsCount, estimateSeconds, identityOnly, restartsAfterWrite, atD890?, rt95? }`. A provider can also add rows to the identity block (`identityRows`) and content under the Channels line (`channelNotes`).
 
 ## Usage
 
@@ -29,6 +29,8 @@ registerReviewSectionProvider({
 - Providers register once at module load. The AT-D890's (`d890/registerAtD890Review.tsx`, see [AtD890ReviewSections](./d890/AtD890ReviewSections.md)) adds the frequency range row, the receive-only channel warning, the Radio settings section, the backup section and the step-key nudge.
 
 > > > > > > > c15db049 (docs(app): AT-D890 Review and radio settings Write (#1393))
+
+- `rt95` (RT95 MM9PDY only) carries the zone and description counts once the chip-size check passed; `rt95/registerRt95Review.tsx` shows "Radio memory: 32 KiB, zones and descriptions can be written." and the counts. A failed check never reaches Review.
 
 ## Related
 

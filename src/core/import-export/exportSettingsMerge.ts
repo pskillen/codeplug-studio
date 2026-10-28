@@ -99,6 +99,9 @@ function applyFormatExportDefaults(defaults: FormatExportDefaults): CpsExportOpt
     ...(defaults.exportScratchChannels !== undefined
       ? { exportScratchChannels: defaults.exportScratchChannels }
       : {}),
+    ...(defaults.channelWireNameBase !== undefined
+      ? { channelWireNameBase: defaults.channelWireNameBase }
+      : {}),
   };
 }
 

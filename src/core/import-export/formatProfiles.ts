@@ -29,6 +29,8 @@ import {
   isDm32RadioIoProfileId,
   isMm9pdyAtD890RadioIoProfileId,
   isMm9pdyDm32RadioIoProfileId,
+  isMm9pdyRt95RadioIoProfileId,
+  radioIoChannelDescriptionLimit,
   isRadioIoAtD890uvProfile,
   isRadioIoDm32uvProfile,
   isRadioIoOpenGd771701Profile,
@@ -241,5 +243,8 @@ export {
   isDm32RadioIoProfileId,
   isMm9pdyAtD890RadioIoProfileId,
   isMm9pdyDm32RadioIoProfileId,
+  isMm9pdyRt95RadioIoProfileId,
+  radioIoChannelDescriptionLimit,
   resolveChirpExportProfileId,
 };
+export { rt95Mm9pdyChannelDescription, toRt95Ascii } from './formats/radio-io/rt95Mm9pdyText.ts';

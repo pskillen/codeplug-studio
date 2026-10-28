@@ -160,6 +160,9 @@ function parseOverrideRow(raw: unknown, label: string): BuildEntityOverride {
   if (record.wireName !== undefined && record.wireName !== null && record.wireName !== '') {
     result.wireName = String(record.wireName);
   }
+  if (record.wireDescription !== undefined && record.wireDescription !== null) {
+    result.wireDescription = String(record.wireDescription);
+  }
   if (record.orderOrSlot !== undefined && record.orderOrSlot !== null) {
     const orderOrSlot = Number(record.orderOrSlot);
     if (Number.isFinite(orderOrSlot) && orderOrSlot >= 1) {
@@ -207,6 +210,7 @@ export function upsertOverride(
       | 'excluded'
       | 'forceInclude'
       | 'wireName'
+      | 'wireDescription'
       | 'orderOrSlot'
       | 'scanInclusion'
       | 'satelliteBankSlot'
@@ -254,6 +258,11 @@ export function upsertOverride(
     }
   }
 
+  if ('wireDescription' in patch && patch.wireDescription == null) {
+    delete merged.wireDescription;
+  }
+  const hasWireDescription = merged.wireDescription !== undefined;
+
   const hasOrderOrSlot =
     merged.orderOrSlot != null && Number.isFinite(merged.orderOrSlot) && merged.orderOrSlot >= 1;
   const hasScanInclusion = merged.scanInclusion != null;
@@ -261,6 +270,7 @@ export function upsertOverride(
 
   if (
     !hasWireName &&
+    !hasWireDescription &&
     !isExcluded &&
     !isForceIncluded &&
     !hasOrderOrSlot &&

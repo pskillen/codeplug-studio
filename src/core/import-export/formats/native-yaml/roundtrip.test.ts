@@ -11,6 +11,7 @@ import { getExportAdapter, getImportAdapter } from '../../registry.ts';
 import { parseProjectDocument } from './parse.ts';
 import { serialiseProject } from './serialise.ts';
 import {
+  FIXTURE_CHANNEL_A_ID,
   FIXTURE_CHANNEL_B_ID,
   FIXTURE_CHILD_ZONE_ID,
   FIXTURE_PARENT_ZONE_ID,
@@ -209,6 +210,28 @@ describe('native-yaml round-trip smoke', () => {
     const parsed = parseProjectDocument(serialiseProject(withSlot));
     expect(parsed.radioBuilds[0]?.satelliteOverrides).toEqual([
       { libraryEntityId: 'tx-fm-2', satelliteBankSlot: 'fm' },
+    ]);
+  });
+
+  it('preserves wireDescription (including an explicit empty string) on channelOverrides', () => {
+    const aggregate = projectWithRadioBuildAggregate();
+    const build = aggregate.radioBuilds[0]!;
+    const withDescriptions = {
+      ...aggregate,
+      radioBuilds: [
+        {
+          ...build,
+          channelOverrides: [
+            { libraryEntityId: FIXTURE_CHANNEL_A_ID, wireDescription: 'Calling ch' },
+            { libraryEntityId: FIXTURE_CHANNEL_B_ID, wireDescription: '' },
+          ],
+        },
+      ],
+    };
+    const parsed = parseProjectDocument(serialiseProject(withDescriptions));
+    expect(parsed.radioBuilds[0]?.channelOverrides).toEqual([
+      { libraryEntityId: FIXTURE_CHANNEL_A_ID, wireDescription: 'Calling ch' },
+      { libraryEntityId: FIXTURE_CHANNEL_B_ID, wireDescription: '' },
     ]);
   });
 

@@ -17,6 +17,17 @@ export const RT95_WRITTEN_FROM_BUILD_LABELS: readonly string[] = [
   'Occupancy and scan bitfields',
 ] as const;
 
+/** MM9PDY target: the stock labels plus the MMD1 table it also writes (0x4000-0x5FF0). */
+export const RT95_MM9PDY_WRITTEN_FROM_BUILD_LABELS: readonly string[] = [
+  ...RT95_WRITTEN_FROM_BUILD_LABELS,
+  'Zones',
+  'Channel descriptions',
+] as const;
+
+export function rt95WrittenFromBuildLabels(opts?: { mm9pdy?: boolean }): readonly string[] {
+  return opts?.mm9pdy ? RT95_MM9PDY_WRITTEN_FROM_BUILD_LABELS : RT95_WRITTEN_FROM_BUILD_LABELS;
+}
+
 export interface Rt95RegionManifestEntry {
   id: string;
   label: string;

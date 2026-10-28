@@ -169,7 +169,27 @@ export function conceptsForCapabilities(
     });
   }
 
-  if (set.has(BuildCapabilityTrait.ZoneAsScanList)) {
+  if (
+    set.has(BuildCapabilityTrait.ZoneAsScanList) &&
+    set.has(BuildCapabilityTrait.PerChannelScanFlag)
+  ) {
+    // Zones over a flat channel list with one scan flag per channel (RT95 MM9PDY).
+    concepts.push({
+      id: 'zone-scan',
+      title: 'Scanning follows the zone',
+      body: "Scan visits the zone's channels that have scan on, in channel-number order.",
+    });
+    concepts.push({
+      id: 'zone-channel-order',
+      title: 'Zone order is channel order',
+      body: 'Zone order on the radio is channel-number order; Studio numbers channels in zone order where it can.',
+    });
+    concepts.push({
+      id: 'channel-descriptions',
+      title: 'Channel descriptions',
+      body: 'Descriptions show under the channel in single watch only.',
+    });
+  } else if (set.has(BuildCapabilityTrait.ZoneAsScanList)) {
     concepts.push({
       id: 'zone-scan',
       title: 'Scanning follows the zone',

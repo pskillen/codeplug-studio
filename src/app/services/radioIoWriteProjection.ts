@@ -38,6 +38,11 @@ import {
   isMm9pdyAtD890RadioIoProfileId,
   isMm9pdyDm32RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
+import { isMm9pdyRt95RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
+import {
+  projectRt95Mm9pdy,
+  rt95Mm9pdyZoneOrderedAssembled,
+} from './radioIoRt95Mm9pdyProjection.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import {
@@ -1490,6 +1495,8 @@ function buildOpenGd77Zones(
   egress: RadioWireEgressIds,
   numbersBySourceChannelId: Map<string, number[]>,
   warnings: ExportWarning[],
+  /** False: return every zone so the caller can drop empties before capping (RT95 MM9PDY). */
+  capZones = true,
 ): RadioZoneDto[] {
   const limits = requireProfileExportLimits(egress);
   const maxZones = requireNumericLimit(limits.maxZones, 'maxZones', egress);
@@ -1499,7 +1506,7 @@ function buildOpenGd77Zones(
   const zones: RadioZoneDto[] = [];
 
   for (const zone of assembled.zones) {
-    if (zones.length >= maxZones) break;
+    if (capZones && zones.length >= maxZones) break;
     let channelNumbers: number[] = [];
     for (const channelId of zone.memberChannelIds) {
       const nums = numbersBySourceChannelId.get(channelId);
@@ -2000,7 +2007,9 @@ export function buildRadioWriteProjection(
 
   const projectionAssembled = isAtD890RadioIoProfileId(egress.profileId)
     ? buildAtD890DmrBankAssembled(assembled, build, egress, warnings, nxdnOn)
-    : assembled;
+    : isMm9pdyRt95RadioIoProfileId(egress.profileId)
+      ? rt95Mm9pdyZoneOrderedAssembled(assembled)
+      : assembled;
 
   const { dtos, warnings: channelWarnings } = expandAssembledChannelsToRadioDtos(
     projectionAssembled,
@@ -2138,6 +2147,39 @@ export function buildRadioWriteProjection(
         ? { userDatabaseContacts: directorySlice?.digitalContacts ?? [] }
         : {}),
     };
+  } else if (isMm9pdyRt95RadioIoProfileId(egress.profileId)) {
+    const scanStamped = stampUv17ProFlatMemoryChannelBehaviour(
+      dtos,
+      projectionAssembled,
+      build,
+      egress,
+      numbersBySourceChannelId,
+    );
+    const maxZones = requireNumericLimit(
+      requireProfileExportLimits(egress).maxZones,
+      'maxZones',
+      egress,
+    );
+    const projected = projectRt95Mm9pdy({
+      channels: scanStamped,
+      zones: buildOpenGd77Zones(
+        projectionAssembled,
+        build,
+        library,
+        egress,
+        numbersBySourceChannelId,
+        warnings,
+        false,
+      ),
+      assembled: projectionAssembled,
+      build,
+      library,
+      numbersBySourceChannelId,
+      maxZones,
+      warnings,
+    });
+    channels = projected.channels;
+    organisation = { zones: projected.zones, writeRt95ModData: true };
   } else if (
     egress.profileId === 'radio-io-uv5r-mini' ||
     egress.profileId === 'radio-io-uv21' ||
