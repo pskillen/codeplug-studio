@@ -126,6 +126,17 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     label: 'Retevis RT95 VOX',
     traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
   },
+  /** Web Serial — RT95 MM9PDY modded firmware: zones (MMD1) over the flat 200-channel list. */
+  'radio-io-rt95-mm9pdy': {
+    profileId: 'radio-io-rt95-mm9pdy',
+    formatId: 'radio-io',
+    label: 'Retevis RT95 VOX (MM9PDY modded firmware)',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.PerChannelScanFlag,
+    ],
+  },
   /** Web Serial direct-write — UV-17Pro family (UV-21Pro V2). */
   'radio-io-uv21': {
     profileId: 'radio-io-uv21',

@@ -179,3 +179,16 @@
 - Build export setting for the distance unit (km default, miles)
 - Write radio popup note and `info` warnings (MM9PDY counts; stock D890/DM32 Web Serial and file exports point at the MM9PDY target)
 - Tests reuse the firmware repos' v1 golden vectors
+
+## RT95 MM9PDY target and Write
+
+**Status:** Studio side complete (PR 3 of 5), not checked on a radio
+**Issues:** [#1461](https://github.com/pskillen/codeplug-studio/issues/1461)
+
+**Delivered**
+
+- Target `retevis-rt95-mm9pdy` and profile `radio-io-rt95-mm9pdy` (zones, zone as scan list, per-channel scan flag); stock RT95 unchanged
+- Radio name from Callsign, description from Name (ASCII fold, `_` to `-`, shortened to 12), `wireDescription` build override
+- Projection numbers channels in zone order; warnings for dropped or capped zones, channel-number order, unzoned channels, per-zone scan choices ignored, spaces in names
+- Write: chip-size probe (fails closed, including on an all-zero block), MMD1 blocks after the stock image with the header last, every `W` behind the write interlock, verify reads the MMD1 blocks back
+- Write hidden on the production site for this profile only (`RadioCompatibleProfile.prodWriteDisabled`); to be cleared after the owner's radio check

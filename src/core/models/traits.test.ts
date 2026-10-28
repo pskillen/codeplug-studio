@@ -132,6 +132,16 @@ describe('trait profiles', () => {
     expect(profile?.traits).toContain(BuildCapabilityTrait.MxNChannelExpansion);
   });
 
+  it('registers radio-io-rt95-mm9pdy with zones over a per-channel scan flag, not a flat list', () => {
+    const profile = traitProfileFor('radio-io-rt95-mm9pdy');
+    expect(profile?.traits).toEqual([
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.PerChannelScanFlag,
+    ]);
+    expect(profile?.traits).not.toContain(BuildCapabilityTrait.FlatMemoryList);
+  });
+
   it('registers radio-io-at-d890uv-mm9pdy without m×n or dedicated scan lists', () => {
     const profile = traitProfileFor('radio-io-at-d890uv-mm9pdy');
     expect(profile?.formatId).toBe('radio-io');
@@ -177,6 +187,7 @@ describe('trait profiles', () => {
       'radio-io-opengd77-1701',
       'radio-io-opengd77-md9600',
       'radio-io-rt95',
+      'radio-io-rt95-mm9pdy',
       'radio-io-uv21',
       'radio-io-uv5r-mini',
     ]);

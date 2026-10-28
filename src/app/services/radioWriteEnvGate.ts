@@ -14,9 +14,20 @@ export function isProdBuildEnv(buildEnv: string = __BUILD_ENV__): boolean {
 
 /** Pure resolver — pass `buildEnv` in tests. */
 export function resolveRadioWriteGate(
-  descriptor: Pick<RadioDescriptor, 'prodWriteDisabled'> | undefined,
+  descriptor:
+    | (Pick<RadioDescriptor, 'prodWriteDisabled'> &
+        Partial<Pick<RadioDescriptor, 'compatibleProfiles'>>)
+    | undefined,
   buildEnv: string = __BUILD_ENV__,
+  profileId?: string,
 ): RadioWriteGate {
+  // Per-profile flag: hidden on prod, no native-platform exemption (RT95 MM9PDY, firmware unreleased).
+  const profileDisabled =
+    profileId !== undefined &&
+    (descriptor?.compatibleProfiles ?? []).some(
+      (p) => p.profileId === profileId && p.prodWriteDisabled === true,
+    );
+  if (profileDisabled && buildEnv === 'prod') return 'hidden';
   if (!descriptor?.prodWriteDisabled) return 'allowed';
 
   // Allow serial Write on native platforms (OTG) even in prod builds,

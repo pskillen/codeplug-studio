@@ -7,7 +7,7 @@ import { radioCloneImageBytes } from '@core/models/radioCloneHydration.ts';
 import { countOccupiedFromBitfield } from './bitfield.ts';
 import { RT95_MODEL_ID } from './constants.ts';
 import {
-  RT95_WRITTEN_FROM_BUILD_LABELS,
+  rt95WrittenFromBuildLabels,
   rt95KeptRegions,
   type Rt95RegionManifestEntry,
 } from './writeRole.ts';
@@ -32,7 +32,10 @@ export interface Rt95CloneSummary {
   inspectChannels: readonly CloneInspectNamedItem[];
 }
 
-export function summariseRt95Clone(bag: RadioCloneHydrationBag): Rt95CloneSummary | null {
+export function summariseRt95Clone(
+  bag: RadioCloneHydrationBag,
+  opts?: { mm9pdy?: boolean },
+): Rt95CloneSummary | null {
   if (bag.retain.radioModelId !== RT95_MODEL_ID) return null;
   const bytes = radioCloneImageBytes(bag);
   const occupied = countOccupiedFromBitfield(bytes);
@@ -44,7 +47,7 @@ export function summariseRt95Clone(bag: RadioCloneHydrationBag): Rt95CloneSummar
     capturedVia: bag.retain.capturedVia,
     occupiedChannelCount: occupied,
     emptyChannelCount: 200 - occupied,
-    writtenFromBuild: RT95_WRITTEN_FROM_BUILD_LABELS,
+    writtenFromBuild: rt95WrittenFromBuildLabels(opts),
     retainGroups: kept.map((r: Rt95RegionManifestEntry) => ({
       label: r.label,
       role: 'Kept from Read from radio — not changed when you write from your build',

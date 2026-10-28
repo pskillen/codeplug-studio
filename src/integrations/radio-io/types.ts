@@ -113,6 +113,12 @@ export type RadioWriteStrategy = 'selective-ranges' | 'full-image';
 export interface RadioCompatibleProfile {
   formatId: string;
   profileId: string;
+  /**
+   * When true, direct serial Write for this profile alone is hidden on production deploys (the
+   * descriptor's {@link RadioDescriptor.prodWriteDisabled} covers every profile). Unlike the
+   * descriptor flag it has no native-platform exemption.
+   */
+  prodWriteDisabled?: boolean;
 }
 
 /**

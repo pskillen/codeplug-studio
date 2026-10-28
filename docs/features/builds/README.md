@@ -75,7 +75,7 @@ Sidebar label is **Export for radio**; routes and code use `builds`. Secondary s
 
 **CPS export:** Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — the build front door. Project YAML backup lives on [Summary](../report/README.md), not on a separate Import/export page.
 
-**MM9PDY modded firmware** targets (`anytone-at-d890uv-mm9pdy`, and later the DM-32UV sibling) are separate catalog rows. They keep one channel per repeater and use the zone as the scan. Stock targets are unchanged. See [modded firmware](../modded-firmware/README.md).
+**MM9PDY modded firmware** targets (`anytone-at-d890uv-mm9pdy`, `baofeng-dm32uv-mm9pdy`, and `retevis-rt95-mm9pdy`, which adds zones and per-channel descriptions to the RT95) are separate catalog rows. They keep one channel per repeater and use the zone as the scan. Stock targets are unchanged. See [modded firmware](../modded-firmware/README.md).
 
 **Web Serial:** create a radio target that lists a Web Serial egress (e.g. Baofeng UV-5R Mini). On Export, pick the **Web Serial** pathway: `BuildRadioIoPanel` hosts Read (hydrate `radio-clone` on that egress) / Write (`assemble` into the hydrated image). Secondary nav **Radio image** appears after a successful Read stores hydration (even if another pathway is selected). CPS file egresses (NeonPlug, CHIRP, …) remain separate children under the same build. See [radio-read-write](../radio-read-write/README.md) and [adding-a-radio-adapter.md](../radio-read-write/adding-a-radio-adapter.md).
 

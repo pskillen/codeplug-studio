@@ -90,6 +90,10 @@ import {
 } from '@integrations/radio-io/radios/opengd77/protocol.ts';
 import { Uv17ProProtocol } from '@integrations/radio-io/radios/uv17pro-family/protocol.ts';
 import { Rt95Protocol } from '@integrations/radio-io/radios/rt95/protocol.ts';
+import {
+  rt95ChipGuardRefusalText,
+  type Rt95ChipGuardResult,
+} from '@integrations/radio-io/radios/rt95/modData/index.ts';
 import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
@@ -455,7 +459,7 @@ export async function prepareRadioWriteImage(
   nxdn?: AtD890NxdnWriteVariant;
 }> {
   const descriptor = descriptorsForEgress(egress)[0];
-  if (descriptor && resolveRadioWriteGate(descriptor) === 'hidden') {
+  if (descriptor && resolveRadioWriteGate(descriptor, undefined, egress.profileId) === 'hidden') {
     throw new RadioWriteBlockedError(resolveRadioWriteProdDisabledMessage(egress.profileId));
   }
 
@@ -635,6 +639,11 @@ async function resolveRadioWriteImageForUpload(
       signal: opts?.signal,
       progressStage: 'Pre-write read',
     });
+    if (session.radio.getModDataIntent()) {
+      // MM9PDY: refuse a 16 KiB chip (or an unreadable one) before the pause and before any W.
+      const guard = await session.radio.probeChipGuard();
+      if (!guard.ok) throw new RadioWriteBlockedError(rt95ChipGuardRefusalText(guard.reason));
+    }
     try {
       return session.radio.encodeChannels(prior, prepared.channels);
     } catch (err) {
@@ -750,6 +759,8 @@ export interface BeforeTransmitContext {
   identityOnly: boolean;
   /** AT-D890UV only: the settings spans from the in-session read, for Review and the fleet choice. */
   atD890?: AtD890PreTransmitContext;
+  /** RT95 MM9PDY only: the chip-size check that passed before the pause (a failure never reaches it). */
+  rt95?: { chipGuard: Rt95ChipGuardResult };
 }
 
 /** Whether `resolveRadioWriteImageForUpload` reads the radio itself (every protocol but the generic path). */
@@ -951,6 +962,9 @@ export async function uploadPreparedRadioWrite(
         }),
         ...(session.radio instanceof AtD890uvProtocol
           ? { atD890: buildAtD890PreTransmitContext(session.radio, withOverrides) }
+          : {}),
+        ...(session.radio instanceof Rt95Protocol && session.radio.getLastChipGuard()
+          ? { rt95: { chipGuard: session.radio.getLastChipGuard()! } }
           : {}),
       });
       timing?.timeline.markPauseEnd();

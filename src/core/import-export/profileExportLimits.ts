@@ -18,7 +18,9 @@ import { getOpenGd77Profile } from './formats/opengd77/profiles.ts';
 import { getNeonplugProfile, isNeonplugDm32uvProfile } from './formats/neonplug/profiles.ts';
 import {
   getRadioIoProfile,
+  isMm9pdyRt95RadioIoProfileId,
   isRadioIoAtD890uvProfile,
+  type RadioIoRt95Profile,
   isRadioIoDm32uvProfile,
   isRadioIoOpenGd771701Profile,
   isRadioIoOpenGd77Md9600Profile,
@@ -370,6 +372,32 @@ export function getProfileExportLimits(
           nameLengthTalkGroup: profile.nameLimit,
           nameLengthScanList: 'not_used',
           nameLengthRxGroupList: OPENGD77_FAMILY_LIMITS.RX_GROUP_NAME_LEN,
+          powerLadder: profile.powerLadder,
+          siblingLadders: [],
+        };
+      }
+      if (isMm9pdyRt95RadioIoProfileId(profile.id)) {
+        const rt95 = profile as RadioIoRt95Profile;
+        return {
+          formatId,
+          profileId: profile.id,
+          profileLabel: profile.label,
+          maxChannels: profile.maxMemorySlots,
+          maxZones: rt95.maxZones ?? 'not_used',
+          maxScanLists: 'not_used',
+          maxRxGroupLists: 'not_used',
+          maxContacts: 'not_used',
+          maxTalkGroups: 'not_used',
+          maxRadioIds: 'not_used',
+          zoneMembers: rt95.zoneMembers ?? 'not_used',
+          scanListMembers: 'not_used',
+          rxGroupListMembers: 'not_used',
+          nameLengthChannel: profile.nameLimit,
+          nameLengthZone: rt95.zoneNameLimit ?? 'not_used',
+          nameLengthContact: 'not_used',
+          nameLengthTalkGroup: 'not_used',
+          nameLengthScanList: 'not_used',
+          nameLengthRxGroupList: 'not_used',
           powerLadder: profile.powerLadder,
           siblingLadders: [],
         };

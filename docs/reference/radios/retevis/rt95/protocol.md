@@ -112,6 +112,16 @@ Upload path also issues a priming read at radio address **`0x3b10`** (outside th
 
 **After `END` the radio ignores `PROGRAM` for about 3–5 s** (measured on an RT95-P: the head reloads from the main board). Studio sends `END` after Write and when a session that was in PC mode closes. A session that needs PC mode again within that window retries `PROGRAM` every 1.5 s for up to 12 s (`enterProgramQxModeWithRetry`), then fails with "The radio did not answer after the last write". Retry applies to **Verify write** and to a `connect` within 15 s of Studio's own `END`; a connect with no recent `END` sends `PROGRAM` once, so a wrong port still fails in half a second.
 
+## MM9PDY Write (zones and descriptions)
+
+The MM9PDY target adds three things to the session above; the stock target does none of them.
+
+1. **Chip probe.** At the end of the pre-write read, Studio reads `0x3B00` and `0x7B00` and refuses the Write unless the first starts `RT95-P` NUL, neither block is all zeros, and the two differ. The same probe runs again inside `upload()` right after the priming read, before the first `W`. Refusals send no `W`; `END` still goes out.
+2. **Block order.** After the stock blocks `0x0000`-`0x3290`: description blocks (ascending), member slots, zone names, then the header at `0x4000` last. Every `W` is checked by the write interlock (16-byte aligned blocks only; `0x4010` and anything at or above `0x6000` refused; MMD1 blocks only with the MM9PDY context and a passing probe).
+3. **Verify.** Verify reads every staged block at or above `0x4000` back with `R` and compares it; the result has "Zones" (`0x4000`-`0x46FF`) and "Channel descriptions" (`0x5000`-`0x5C7F`) rows.
+
+An empty table is still written (a header with zero zones), so a Write retires an older table.
+
 ## Write verify
 
 After upload, Studio stages every **16-byte** block written in `0x0000`…`0x3290`. **Verify write** first waits for the radio to answer `PROGRAM` again (see above; retry every 1.5 s, up to 12 s), then runs a full download, and compares staged payloads byte-for-byte. Region rows follow [writeRole.ts](../../../../../src/integrations/radio-io/radios/rt95/writeRole.ts) (`replaced` vs `kept`). Feature: [write-verify.md](../../../../features/radio-read-write/write-verify.md).

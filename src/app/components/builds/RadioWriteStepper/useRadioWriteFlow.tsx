@@ -94,6 +94,7 @@ import {
   type SatelliteKepsWriteResult,
 } from '../../../services/satelliteKepsWriteAdapters.ts';
 import './d890/registerAtD890Review.tsx';
+import './rt95/registerRt95Review.tsx';
 import {
   createAtD890ReviewController,
   type AtD890ReviewController,
@@ -423,7 +424,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       atD890?: AtD890PreTransmitContext;
       channels?: readonly RadioChannelDto[];
     },
-    extra: { contactsNote: string | null; kepsCount: number | null },
+    extra: {
+      contactsNote: string | null;
+      kepsCount: number | null;
+      rt95?: { zones: number; descriptions: number };
+    },
   ): Promise<void> {
     const reviewIdentity: RadioIdentityView = ctx.atD890?.masterIdName
       ? { ...ctx.identity, name: ctx.atD890.masterIdName }
@@ -462,6 +467,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       estimateSeconds,
       identityOnly: ctx.identityOnly,
       restartsAfterWrite: requiresReconnect && writesToRadioImage(p),
+      ...(extra.rt95 ? { rt95: extra.rt95 } : {}),
       ...(d890ControllerRef.current ? { atD890: d890ControllerRef.current } : {}),
     };
     setReview({
@@ -721,7 +727,19 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
           beforeTransmit: async (ctx: BeforeTransmitContext) => {
             await awaitReview(
               { ...ctx, channels: ctx.channels ?? image.channels },
-              { contactsNote, kepsCount },
+              {
+                contactsNote,
+                kepsCount,
+                ...(ctx.rt95?.chipGuard.ok && image.organisation.writeRt95ModData
+                  ? {
+                      rt95: {
+                        zones: image.organisation.zones?.length ?? 0,
+                        descriptions: image.channels.filter((c) => !c.empty && c.description)
+                          .length,
+                      },
+                    }
+                  : {}),
+              },
             );
             enterWriting();
             if (!ctx.atD890) return undefined;
