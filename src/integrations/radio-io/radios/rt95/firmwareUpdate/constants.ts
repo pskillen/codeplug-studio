@@ -15,6 +15,7 @@ export const RT95_HEAD_FW_LINK: FirmwareLinkSpec = {
   // Programming-cable USB-serial chips. Identifies the cable, not the mode.
   usbFilters: [
     { usbVendorId: 0x067b, usbProductId: 0x2303 }, // Prolific PL2303
+    { usbVendorId: 0x067b, usbProductId: 0x23a3 }, // Prolific PL2303GC (the owner's cable, 2026-10-28)
     { usbVendorId: 0x1a86, usbProductId: 0x7523 }, // WCH CH340
     { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI FT232R
   ],
