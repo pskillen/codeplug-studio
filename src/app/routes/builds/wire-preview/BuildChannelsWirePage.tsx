@@ -2,7 +2,7 @@ import { buildUsesFlatMemoryList } from '@core/domain/exportOrderOrSlot.ts';
 import { ChannelsBulkEditAction } from '../../../components/builds/BuildEntityExportSettingsCard.tsx';
 import BuildFlatMemoryChannelsPage from '../BuildFlatMemoryChannelsPage.tsx';
 import BuildWirePreviewListPage from './BuildWirePreviewListPage.tsx';
-import { radioIoChannelDescriptionLimit } from '@core/import-export/formats/radio-io/profiles.ts';
+import { radioIoChannelDescriptionLimit } from '@core/import-export/formatProfiles.ts';
 import ChannelDescriptionsCard from '../../../components/builds/ChannelDescriptionsCard.tsx';
 import { useBuildLayout } from '../BuildLayoutContext.tsx';
 

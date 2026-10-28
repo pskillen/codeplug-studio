@@ -38,7 +38,7 @@ import {
   isMm9pdyAtD890RadioIoProfileId,
   isMm9pdyDm32RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
-import { isMm9pdyRt95RadioIoProfileId } from '@core/import-export/formats/radio-io/profiles.ts';
+import { isMm9pdyRt95RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import {
   projectRt95Mm9pdy,
   rt95Mm9pdyZoneOrderedAssembled,

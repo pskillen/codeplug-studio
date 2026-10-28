@@ -6,10 +6,7 @@
 
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { pushGeneralInfoWarning, pushGeneralWarning } from '@core/import-export/exportWarning.ts';
-import {
-  rt95Mm9pdyChannelDescription,
-  toRt95Ascii,
-} from '@core/import-export/formats/radio-io/rt95Mm9pdyText.ts';
+import { rt95Mm9pdyChannelDescription, toRt95Ascii } from '@core/import-export/formatProfiles.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
