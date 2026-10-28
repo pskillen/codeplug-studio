@@ -158,6 +158,16 @@ describe('firmwareWizardReducer', () => {
     expect(s.checks.risk).toBe(false);
   });
 
+  it('restart returns to a fresh first step', () => {
+    const s = through(
+      { type: 'selectRadio', radioId: 'baofeng-dm32uv' },
+      { type: 'next' },
+      { type: 'stockVerified', stock: STOCK },
+      { type: 'setCheck', check: 'risk', value: true },
+    );
+    expect(reduce(s, { type: 'restart' })).toEqual(INITIAL_FIRMWARE_WIZARD_STATE);
+  });
+
   describe('radio pre-flight requirements', () => {
     const REQ = { attestationIds: ['a', 'b'], probe: true };
     const atPreflight = () => {

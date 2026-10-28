@@ -55,6 +55,7 @@ export type FirmwareWizardAction =
       radioId: FirmwareRadioId;
       preflight?: { attestationIds: readonly string[]; probe: boolean };
     }
+  | { type: 'restart' }
   | { type: 'goTo'; step: FirmwareWizardStep }
   | { type: 'next' }
   | { type: 'back' }
@@ -156,6 +157,8 @@ export function firmwareWizardReducer(
         includeRc: state.includeRc,
         radioPreflight: action.preflight ?? INITIAL_FIRMWARE_WIZARD_STATE.radioPreflight,
       };
+    case 'restart':
+      return INITIAL_FIRMWARE_WIZARD_STATE;
     case 'goTo':
       return reachable(state, action.step) ? { ...state, step: action.step } : state;
     case 'next': {

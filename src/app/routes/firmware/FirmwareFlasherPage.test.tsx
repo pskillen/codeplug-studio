@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -342,6 +342,21 @@ describe('FirmwareFlasherPage', () => {
     expect(screen.getByRole('heading', { name: 'Done' })).toBeInTheDocument();
     expect(screen.queryByText(/Don't keep power-cycling the radio/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Nothing was written/)).not.toBeInTheDocument();
+  });
+
+  it('offers Start over after step 1, resets the wizard, and hides it while a flash runs', async () => {
+    vi.mocked(flash.runFirmwareFlash).mockReturnValue(new Promise(() => {}));
+    await walkToFlashStep();
+    expect(screen.getByRole('button', { name: 'Start over' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Connect and flash' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Start over' })).toBeNull());
+  });
+
+  it('Start over returns to step 1 with the choices cleared', async () => {
+    await walkToFlashStep();
+    fireEvent.click(screen.getByRole('button', { name: 'Start over' }));
+    expect(screen.queryByRole('button', { name: 'Start over' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
   });
 
   it('shows the recovery screen after a failure that touched the radio', async () => {

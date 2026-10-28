@@ -218,6 +218,8 @@ Studio pins are:
   bootloader and the activation page, image length and header, vector table), and checks the bootloader's ident,
   including that the radio is in update mode, before the first data frame.
 
+A small **Start over** link beside the step indicator (every radio) resets the wizard to step 1 with nothing carried over. It is hidden on step 1 and while a flash is running, so it can never interrupt a write.
+
 The RT95 front panel also runs its own pre-flight (attestations and a read-only normal-mode ident) before the wizard
 lets you continue (the read-only check can be skipped with the opt-in "I've already tested this radio with Codeplug Studio" box; the attestations cannot); see [RT95 firmware.md](../../reference/radios/retevis/rt95/firmware.md#pre-flight-gate).
 

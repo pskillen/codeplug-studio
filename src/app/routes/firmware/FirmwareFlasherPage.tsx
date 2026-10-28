@@ -135,7 +135,18 @@ export default function FirmwareFlasherPage() {
           Flash firmware to your radio over USB. Firmware belongs to the radio, not to a project:
           nothing here changes your codeplug, and nothing is stored.
         </p>
-        <Stepper className={classes.stepper} ariaLabel="Firmware flasher steps" steps={steps} />
+        <div className={classes.stepperRow}>
+          <Stepper className={classes.stepper} ariaLabel="Firmware flasher steps" steps={steps} />
+          {currentIndex > 0 && !running ? (
+            <button
+              type="button"
+              className={classes.startOver}
+              onClick={() => dispatch({ type: 'restart' })}
+            >
+              Start over
+            </button>
+          ) : null}
+        </div>
         {body}
         <div className={classes.actions}>
           <Button
