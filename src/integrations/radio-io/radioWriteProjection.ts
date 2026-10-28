@@ -264,6 +264,11 @@ export interface RadioWriteOrganisation {
    * touch those regions.
    */
   writeChannelLocationTable?: boolean;
+  /**
+   * RT95 MM9PDY only. When true, Write also stores the MMD1 table (zones from {@link zones},
+   * descriptions from {@link RadioChannelDto.description}) at EEPROM 0x4000-0x5FFF. Stock RT95 never sets it.
+   */
+  writeRt95ModData?: boolean;
   /** Unit written into the channel location table header. Unset → `'km'`. */
   channelDistanceUnit?: ChannelDistanceUnit;
   /**
