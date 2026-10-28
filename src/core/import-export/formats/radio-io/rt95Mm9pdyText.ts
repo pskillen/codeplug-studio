@@ -4,7 +4,7 @@
  * the operator's original text.
  */
 
-import type { Channel } from '@core/models/libraryTypes.ts';
+import type { Channel } from '@core/models/library.ts';
 import { RT95_LIMITS } from '@core/radios/retevis/rt95/limits.ts';
 import { shortenWireName } from '@core/import-export/channelExpansion/shortenName.ts';
 
@@ -42,7 +42,7 @@ export interface Rt95ChannelDescription {
  * the description limit (channel abbreviation first), and left empty when it equals the radio name.
  */
 export function rt95Mm9pdyChannelDescription(
-  channel: Pick<Channel, 'name' | 'abbreviation'>,
+  channel: Pick<Channel, 'name'> & Partial<Pick<Channel, 'abbreviation'>>,
   radioName: string,
   overrideText?: string,
 ): Rt95ChannelDescription {

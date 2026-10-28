@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Button, Group, Stack, Table, Text, TextInput } from '@mantine/core';
+import { Button, Group, Stack, Table, TextInput } from '@mantine/core';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
 import { assemble } from '@core/services/assemble.ts';
@@ -61,13 +61,11 @@ export default function ChannelDescriptionsCard({ egress, limit }: ChannelDescri
   if (rows.length === 0) return null;
 
   return (
-    <FieldCard>
+    <FieldCard
+      title="Descriptions"
+      description={`Shown under the channel in single watch (${limit} characters). Defaults to the channel Name; type to override, leave empty for none.`}
+    >
       <Stack gap="xs">
-        <Text fw={600}>Descriptions</Text>
-        <Text size="sm" c="dimmed">
-          Shown under the channel in single watch ({limit} characters). Defaults to the channel
-          Name; type to override, leave empty for none.
-        </Text>
         <Table.ScrollContainer minWidth={480}>
           <Table>
             <Table.Thead>
