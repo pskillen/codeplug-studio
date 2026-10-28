@@ -6,6 +6,7 @@ import { FirmwareError } from '../errors.ts';
 import type { FirmwarePackage } from '../types.ts';
 import { anytoneD890PatchFormat } from './formats/anytone-d890-firmware/index.ts';
 import { baofengDm32PatchFormat } from './formats/baofeng-dm32-firmware/index.ts';
+import { retevisRt95PatchFormat } from './formats/retevis-rt95-firmware/index.ts';
 import { isRecord } from './schema.ts';
 import type { FirmwarePatchFormat, ParsedFirmwarePatch } from './types.ts';
 
@@ -19,6 +20,7 @@ export type {
 const FORMATS: readonly FirmwarePatchFormat<unknown>[] = [
   baofengDm32PatchFormat,
   anytoneD890PatchFormat,
+  retevisRt95PatchFormat,
 ];
 
 export function listFirmwarePatchFormats(): readonly FirmwarePatchFormat<unknown>[] {

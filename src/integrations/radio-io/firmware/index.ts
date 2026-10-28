@@ -9,6 +9,10 @@ export type {
   FirmwareFlashResult,
   FirmwareFlashTiming,
   FirmwareLinkSpec,
+  FirmwarePreflightAttestation,
+  FirmwarePreflightProbe,
+  FirmwarePreflightProbeResult,
+  FirmwareRadioPreflight,
   FirmwareUpdater,
   FirmwareUpdaterDescriptor,
 } from './types.ts';

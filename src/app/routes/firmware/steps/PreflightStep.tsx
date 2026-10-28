@@ -1,9 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { radioTargetIdsForFirmwareRadio } from '@core/firmware/radioTargets.ts';
 
-import { Panel } from '../../../components/v2/index.ts';
+import { Button, Panel, StatusBanner } from '../../../components/v2/index.ts';
+import {
+  grantFirmwarePreflightPort,
+  runFirmwarePreflightProbe,
+} from '../../../services/firmwareFlash.ts';
 import { useFormatBuilds } from '../../../state/useFormatBuilds.ts';
 import classes from '../FirmwareFlasherPage.module.css';
 import type { PreflightCheck } from '../firmwareWizardState.ts';
@@ -26,6 +30,27 @@ export default function PreflightStep({ state, dispatch, updater }: WizardStepPr
     const ids = new Set(radioTargetIdsForFirmwareRadio(updater.radioId));
     return builds.filter((b) => ids.has(b.radioTargetId));
   }, [builds, updater.radioId]);
+
+  const preflight = updater.preflight;
+  const probe = preflight?.probe;
+  const [probing, setProbing] = useState(false);
+  const [probeError, setProbeError] = useState<string | null>(null);
+
+  const runProbe = async () => {
+    setProbing(true);
+    setProbeError(null);
+    dispatch({ type: 'probeCleared' });
+    try {
+      const port = await grantFirmwarePreflightPort(updater.radioId);
+      const out = await runFirmwarePreflightProbe({ radioId: updater.radioId, port });
+      if (out.ok) dispatch({ type: 'probePassed', summary: out.summary });
+      else setProbeError(out.message);
+    } catch (err) {
+      setProbeError(err instanceof Error ? err.message : 'The radio check did not run.');
+    } finally {
+      setProbing(false);
+    }
+  };
 
   const set = (check: PreflightCheck) => (value: boolean) =>
     dispatch({ type: 'setCheck', check, value });
@@ -55,8 +80,41 @@ export default function PreflightStep({ state, dispatch, updater }: WizardStepPr
               onChange={set(check)}
             />
           ))}
+          {preflight?.attestations.map((a) => (
+            <div key={a.id}>
+              <LabeledCheck
+                label={a.label}
+                checked={state.radioChecks[a.id] === true}
+                onChange={(value) => dispatch({ type: 'setRadioCheck', id: a.id, value })}
+              />
+              {a.help ? <p className={classes.muted}>{a.help}</p> : null}
+            </div>
+          ))}
         </div>
       </Panel>
+      {probe ? (
+        <Panel
+          title={probe.title}
+          sub="Reads the radio's model and version only. Nothing is written."
+        >
+          <div className={classes.stack}>
+            <ol className={classes.list}>
+              {probe.steps.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ol>
+            <div>
+              <Button variant="primary" onClick={() => void runProbe()} disabled={probing}>
+                Check the radio
+              </Button>
+            </div>
+            {state.probe ? (
+              <StatusBanner tone="success">Radio checked: {state.probe.summary}</StatusBanner>
+            ) : null}
+            {probeError ? <StatusBanner tone="warning">{probeError}</StatusBanner> : null}
+          </div>
+        </Panel>
+      ) : null}
       <Panel
         title="Back up first"
         sub="Flashing firmware doesn't touch your codeplug, but back up anyway."

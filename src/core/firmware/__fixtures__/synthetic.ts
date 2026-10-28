@@ -34,7 +34,15 @@ export async function syntheticDescriptor(
     radioId,
     label: `Synthetic ${radioId}`,
     version: 'v0.0.1-test',
-    vendorDownload: { url: 'https://example.invalid/stock.zip', host: 'example.invalid' },
+    stockSources: [
+      {
+        kind: 'download',
+        label: 'Vendor download',
+        official: true,
+        url: 'https://example.invalid/stock.zip',
+        host: 'example.invalid',
+      },
+    ],
     zip: { fileName: zip.fileName, sha256: await sha256Hex(zip.bytes) },
     members: await Promise.all(
       members.map(async (m) => ({

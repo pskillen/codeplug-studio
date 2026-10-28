@@ -66,6 +66,33 @@ export interface FirmwareUpdater {
   ): Promise<FirmwareFlashResult>;
 }
 
+export interface FirmwarePreflightAttestation {
+  readonly id: string;
+  readonly label: string;
+  /** How to check, one or two sentences. */
+  readonly help?: string;
+}
+
+export interface FirmwarePreflightProbeResult {
+  /** Shown to the operator, e.g. 'RT95-P, version V100'. */
+  readonly summary: string;
+}
+
+/** A read-only check of the radio in NORMAL mode, before update mode. Throws RadioIoError to refuse. */
+export interface FirmwarePreflightProbe {
+  readonly title: string;
+  readonly steps: readonly string[];
+  readonly link: FirmwareLinkSpec;
+  run(pipe: BytePipe, opts: { signal?: AbortSignal }): Promise<FirmwarePreflightProbeResult>;
+}
+
+export interface FirmwareRadioPreflight {
+  readonly attestations: readonly FirmwarePreflightAttestation[];
+  readonly probe?: FirmwarePreflightProbe;
+  /** When set, a confirmation ticked on the Flash step, right before Connect and flash. */
+  readonly updateModeConfirm?: string;
+}
+
 export interface FirmwareUpdaterDescriptor {
   readonly radioId: FirmwareRadioId;
   readonly label: string;
@@ -80,6 +107,11 @@ export interface FirmwareUpdaterDescriptor {
    * one patched release to this radio on hardware (the owner's hardware gate).
    */
   readonly prodFlashDisabled: boolean;
+  /**
+   * Radio-specific hard gate on the Before-you-flash step: every attestation ticked and, when present, the
+   * probe passed.
+   */
+  readonly preflight?: FirmwareRadioPreflight;
   /** Human text for the wizard, e.g. 'about 2 minutes'. */
   readonly expectedDuration: string;
 }

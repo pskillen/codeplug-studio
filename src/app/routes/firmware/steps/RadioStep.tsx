@@ -27,7 +27,16 @@ export default function RadioStep({
               role="radio"
               aria-checked={selected}
               className={`${classes.card} ${selected ? classes.cardSelected : ''}`}
-              onClick={() => dispatch({ type: 'selectRadio', radioId: d.radioId })}
+              onClick={() =>
+                dispatch({
+                  type: 'selectRadio',
+                  radioId: d.radioId,
+                  preflight: {
+                    attestationIds: d.preflight?.attestations.map((a) => a.id) ?? [],
+                    probe: !!d.preflight?.probe,
+                  },
+                })
+              }
             >
               <span className={classes.cardTitle}>{d.label}</span>
               <span className={classes.cardMeta}>Stock firmware {d.stock.version}</span>

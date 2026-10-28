@@ -37,10 +37,19 @@ export interface FirmwareWizardState {
   readonly stock: VerifiedStockFirmware | null;
   readonly image: PreparedFirmwareImage | null;
   readonly checks: Readonly<Record<PreflightCheck, boolean>>;
+  /** What the selected radio's descriptor asks for on top of the generic checks. */
+  readonly radioPreflight: { readonly attestationIds: readonly string[]; readonly probe: boolean };
+  readonly radioChecks: Readonly<Record<string, boolean>>;
+  /** Set when the radio's normal-mode probe passed. */
+  readonly probe: { readonly summary: string } | null;
 }
 
 export type FirmwareWizardAction =
-  | { type: 'selectRadio'; radioId: FirmwareRadioId }
+  | {
+      type: 'selectRadio';
+      radioId: FirmwareRadioId;
+      preflight?: { attestationIds: readonly string[]; probe: boolean };
+    }
   | { type: 'goTo'; step: FirmwareWizardStep }
   | { type: 'next' }
   | { type: 'back' }
@@ -51,7 +60,10 @@ export type FirmwareWizardAction =
   | { type: 'stockCleared' }
   | { type: 'imagePrepared'; image: PreparedFirmwareImage }
   | { type: 'imageCleared' }
-  | { type: 'setCheck'; check: PreflightCheck; value: boolean };
+  | { type: 'setCheck'; check: PreflightCheck; value: boolean }
+  | { type: 'setRadioCheck'; id: string; value: boolean }
+  | { type: 'probePassed'; summary: string }
+  | { type: 'probeCleared' };
 
 const NO_CHECKS: Record<PreflightCheck, boolean> = {
   risk: false,
@@ -72,6 +84,9 @@ export const INITIAL_FIRMWARE_WIZARD_STATE: FirmwareWizardState = {
   stock: null,
   image: null,
   checks: NO_CHECKS,
+  radioPreflight: { attestationIds: [], probe: false },
+  radioChecks: {},
+  probe: null,
 };
 
 const indexOf = (step: FirmwareWizardStep) => FIRMWARE_WIZARD_STEPS.indexOf(step);
@@ -82,6 +97,15 @@ export function isChoiceReady(state: FirmwareWizardState): boolean {
   const loaded = state.loadedPatch;
   if (!loaded) return false;
   return loaded.provenance === 'published' || state.riskAccepted;
+}
+
+/** Generic checks ticked, every radio attestation ticked, and the probe passed when the radio has one. */
+export function isPreflightComplete(state: FirmwareWizardState): boolean {
+  return (
+    PREFLIGHT_CHECKS.every((c) => state.checks[c]) &&
+    state.radioPreflight.attestationIds.every((id) => state.radioChecks[id] === true) &&
+    (!state.radioPreflight.probe || state.probe !== null)
+  );
 }
 
 /** Whether the operator may move past `state.step`. */
@@ -96,7 +120,7 @@ export function canAdvance(state: FirmwareWizardState): boolean {
     case 'prepare':
       return state.image !== null;
     case 'preflight':
-      return PREFLIGHT_CHECKS.every((c) => state.checks[c]);
+      return isPreflightComplete(state);
     case 'updateMode':
       return true;
     case 'flash':
@@ -123,6 +147,7 @@ export function firmwareWizardReducer(
         ...INITIAL_FIRMWARE_WIZARD_STATE,
         radioId: action.radioId,
         includeRc: state.includeRc,
+        radioPreflight: action.preflight ?? INITIAL_FIRMWARE_WIZARD_STATE.radioPreflight,
       };
     case 'goTo':
       return reachable(state, action.step) ? { ...state, step: action.step } : state;
@@ -144,20 +169,42 @@ export function firmwareWizardReducer(
         riskAccepted: false,
         image: null,
         checks: NO_CHECKS,
+        radioChecks: {},
+        probe: null,
       };
     case 'setIncludeRc':
       return { ...state, includeRc: action.value };
     case 'setRiskAccepted':
       return { ...state, riskAccepted: action.value };
     case 'stockVerified':
-      return { ...state, stock: action.stock, image: null, checks: NO_CHECKS };
+      return {
+        ...state,
+        stock: action.stock,
+        image: null,
+        checks: NO_CHECKS,
+        radioChecks: {},
+        probe: null,
+      };
     case 'stockCleared':
-      return { ...state, stock: null, image: null, checks: NO_CHECKS };
+      return {
+        ...state,
+        stock: null,
+        image: null,
+        checks: NO_CHECKS,
+        radioChecks: {},
+        probe: null,
+      };
     case 'imagePrepared':
       return { ...state, image: action.image };
     case 'imageCleared':
       return { ...state, image: null };
     case 'setCheck':
       return { ...state, checks: { ...state.checks, [action.check]: action.value } };
+    case 'setRadioCheck':
+      return { ...state, radioChecks: { ...state.radioChecks, [action.id]: action.value } };
+    case 'probePassed':
+      return { ...state, probe: { summary: action.summary } };
+    case 'probeCleared':
+      return { ...state, probe: null };
   }
 }
