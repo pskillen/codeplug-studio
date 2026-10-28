@@ -17,6 +17,7 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 | Published releases          | Shipped (DM-32UV, AT-D890UV)       | Listed and fetched at run time from the firmware project's public release index ([releases.md](releases.md)), checked before use; release list, RC toggle, notes and a retry when the list can't be fetched in the wizard. Replaced the bundled catalog ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
 | User-supplied patch         | Shipped: prod (DM-32UV, AT-D890UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                                                   |
 | AT-D890UV                   | Shipped: prod                      | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                                                    |
+| RT95 front panel (LCD)      | Pre-prod (next, dev, staging)      | Stock and published releases for the head; MAIN never offered; normal-mode ident and attestations before flashing; not yet checked on a radio ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460))                                                                                                           |
 | Recovery docs               | Shipped                            | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                          |
 | Browsers without Web Serial | Shipped                            | Phones, tablets, Firefox and Safari get a read-only list of the published releases for each offered radio (RC toggle, notes, retry) with a banner saying flashing needs Chrome or Edge on a desktop computer. No wizard, no port (`ReleaseBrowser.tsx`)                                                                    |
 | Android                     | Deferred                           | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                                                                                             |
@@ -29,6 +30,7 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 | [releases.md](releases.md)                                                                                             | Where releases come from: the public release index, its format, and what Studio checks |
 | [DM-32UV firmware.md](../../reference/radios/baofeng/dm-32uv/firmware.md)                                              | Stock pin, update mode, patch format, bootloader protocol                              |
 | [AT-D890UV firmware.md](../../reference/radios/anytone/at-d890uv/firmware.md)                                          | Stock pin, update mode, patch format, bootloader protocol                              |
+| [RT95 firmware.md](../../reference/radios/retevis/rt95/firmware.md)                                                    | Front panel stock pin and sources, update mode, patch format, protocol, pre-flight     |
 | [Adding a radio adapter — Firmware updater](../radio-read-write/adding-a-radio-adapter.md#8-firmware-updater-optional) | Checklist for a new radio's updater                                                    |
 | [Stepper.md](../../../src/app/components/v2/Stepper.md)                                                                | Wizard step indicator                                                                  |
 
@@ -66,6 +68,7 @@ flowchart LR
 | Updater seam | `src/integrations/radio-io/firmware/` (types, registry, guarded send, errors)              |
 | DM-32UV      | `src/integrations/radio-io/radios/dm32uv/firmwareUpdate/`                                  |
 | AT-D890UV    | `src/integrations/radio-io/radios/at-d890uv/firmwareUpdate/`                               |
+| RT95 (head)  | `src/integrations/radio-io/radios/rt95/firmwareUpdate/`                                    |
 | App          | `src/app/routes/firmware/`, `src/app/services/firmwareFlash.ts`, `firmwareFlashEnvGate.ts` |
 
 ## Browsers without Web Serial
@@ -104,11 +107,17 @@ hidden there).
 5. **Before you flash** — names what is being flashed ("You are flashing the MM9PDY modded firmware 1.0.0 to the
    Baofeng DM-32UV"), then a risk acknowledgement, required for every flash, plus battery, cable and "other programs
    closed" checks. A **Back up first** panel links to the Backup tab of any build for this radio in the open project.
-6. **Enter update mode** — the radio's own steps, indicator and warnings, from its descriptor.
+   Some radios add their own checks: the RT95 asks two questions (serial number 21xx or later; the FUNC + P4 test
+   screen shows LCD CPU V1.11 and RF CPU V1.11) and reads the radio's model and version in normal mode (**Check the
+   radio**) before you put it into update mode. Continue stays disabled until both are ticked and the check passed.
+6. **Enter update mode** — the radio's own steps, indicator and warnings, from its descriptor. The RT95's is P1 +
+   knob with a blank screen; the P3 mode (screen "UPDATE THE RF CPU") flashes the main board and is the wrong one.
 7. **Flash** — names the firmware and radio again, and repeats the radio's update-mode warnings right above
    **Connect and flash**, which opens a port picker narrowed to the radio's USB device. Progress shows the phases
    the radio's updater reports: Handshake → Erase → Transfer → Finish for the DM-32UV; Handshake → Transfer →
-   Finish for the AT-D890UV, which erases as part of the transfer. While the first block waits for the radio, the
+   Finish for the AT-D890UV, which erases as part of the transfer; Handshake → Transfer → Finish for the RT95 front panel.
+   The RT95 has one more tick on this step, "The screen is blank. It does not say UPDATE THE RF CPU.", before
+   **Connect and flash** is enabled. While the first block waits for the radio, the
    transfer step reads "Waiting for the radio (it may be erasing)…". Progress is redrawn at most every ~100 ms (a
    phase change, or the radio becoming touched, shows at once), so a 52,000-frame transfer stays responsive. While
    it runs, the screen is kept awake and leaving the page asks first. Cancelling after the radio has been touched
@@ -120,10 +129,11 @@ hidden there).
 
 ## What to expect
 
-| Radio     | Duration                                 | How the radio signals the end                                                                                        | How to check (release `1.1.0`)                                                 |
-| --------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| DM-32UV   | About 2 minutes (including a 13 s erase) | Studio sends the end byte; any reply, or none, is fine (`eot-sent`)                                                  | Settings > Device Info > Versions shows `mm9pdy-1.1.0` under `DM32.01.L01.048` |
-| AT-D890UV | Under a minute (about 25 s transfer)     | The radio restarts at once and its USB port disappears (`port-closed-by-radio`), or it replies `06` (`acknowledged`) | After the radio restarts, Device Info > Mod Ver shows `mm9pdy-1.1.0`           |
+| Radio            | Duration                                    | How the radio signals the end                                                                                                      | How to check (release `1.1.0`)                                                 |
+| ---------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| DM-32UV          | About 2 minutes (including a 13 s erase)    | Studio sends the end byte; any reply, or none, is fine (`eot-sent`)                                                                | Settings > Device Info > Versions shows `mm9pdy-1.1.0` under `DM32.01.L01.048` |
+| AT-D890UV        | Under a minute (about 25 s transfer)        | The radio restarts at once and its USB port disappears (`port-closed-by-radio`), or it replies `06` (`acknowledged`)               | After the radio restarts, Device Info > Mod Ver shows `mm9pdy-1.1.0`           |
+| RT95 front panel | Under a minute (estimate; not yet measured) | Studio sends the end byte; the radio replies `06` (`acknowledged`) or nothing (`no-reply`). Switch the radio off and on afterwards | Stock: FUNC + P4 test screen shows LCD CPU V1.11                               |
 
 The durations are the descriptors' `expectedDuration`, shown on the radio cards; the checks are the releases' verify
 hints.
@@ -178,7 +188,8 @@ Studio never writes the bootloader or the activation area.
 
 1. **Don't keep power-cycling the radio.** It can't start the incomplete firmware.
 2. **Re-enter update mode** with the radio's own steps: [DM-32UV](../../reference/radios/baofeng/dm-32uv/firmware.md#update-mode-entry),
-   [AT-D890UV](../../reference/radios/anytone/at-d890uv/firmware.md#update-mode-entry).
+   [AT-D890UV](../../reference/radios/anytone/at-d890uv/firmware.md#update-mode-entry),
+   [RT95 front panel](../../reference/radios/retevis/rt95/firmware.md#update-mode-entry) (P1 + knob, blank screen).
 3. **Flash again:** the same release, or **stock** from the wizard's **Stock firmware** entry (the **Flash stock
    instead** button goes straight to the firmware choice).
 4. Either way you need the vendor's stock download. A release is built from it, and stock is it.
@@ -195,6 +206,9 @@ Studio pins are:
 
 - DM-32UV: https://baofeng.s3.amazonaws.com/Baofeng_DM-32UV_Firmware_v1.01.048.zip
 - AT-D890UV: https://anytoneusa.com/Files/D890UV%20V1.05%20DMR%20official%20release%20260521.zip
+- RT95 front panel: Retevis's vendor updater (QXCodePro, Windows) is in the same package as the stock firmware. The
+  package has no single vendor URL: Studio lists its sources (ask Retevis support, and an unofficial mirror) on the
+  Stock step. The vendor tool can also recover the main board, which Studio never flashes.
 
 ### What Studio checks before any byte is sent
 
@@ -203,6 +217,9 @@ Studio pins are:
 - **Interlocks:** the radio's updater refuses an unsafe image or frame in code (address windows away from the
   bootloader and the activation page, image length and header, vector table), and checks the bootloader's ident,
   including that the radio is in update mode, before the first data frame.
+
+The RT95 front panel also runs its own pre-flight (attestations and a read-only normal-mode ident) before the wizard
+lets you continue; see [RT95 firmware.md](../../reference/radios/retevis/rt95/firmware.md#pre-flight-gate).
 
 Rules: [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing). Per-radio interlocks: the "Hard
 interlocks" sections of the two radios' `firmware.md`.
@@ -216,6 +233,10 @@ written to browser storage or uploaded. The flash summary is only kept if you co
 
 1. `npm run dev`, open `/firmware`. The DM-32UV card shows the pinned stock version.
 2. Drop a non-firmware file on the stock step: a refusal message appears and Continue stays disabled.
-3. `BUILD_ENV=prod npm run dev`: `/firmware` offers only the radios whose prod gate is cleared (both the DM-32UV and the AT-D890UV), and
+3. The RT95 front panel card ("Retevis RT95 front panel (LCD)") is offered on dev. Its Stock step lists "Email Retevis
+   support" and the unofficial mirror (marked unofficial); Before you flash shows the two attestations and **Check
+   the radio**, and Continue stays disabled until both are ticked and the check passed. Hidden under
+   `BUILD_ENV=prod npm run dev`.
+4. `BUILD_ENV=prod npm run dev`: `/firmware` offers only the radios whose prod gate is cleared (both the DM-32UV and the AT-D890UV), and
    the Tools strip has a Firmware flasher entry. With no radio offered, `/firmware` shows "not available on this
    site yet" and the strip has no entry.
