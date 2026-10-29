@@ -204,11 +204,11 @@ describe('one write call site', () => {
 });
 
 describe('firmware registry', () => {
-  it('registers the RT95 front panel, prod-gated, with its pre-flight', () => {
+  it('registers the RT95 front panel, offered on prod, with its pre-flight', () => {
     const d = getFirmwareUpdater('retevis-rt95-head');
     expect(d).toMatchObject({
       label: 'Retevis RT95 front panel (LCD)',
-      prodFlashDisabled: true,
+      prodFlashDisabled: false,
       capacitorSupported: false,
     });
     expect(d!.preflight?.attestations.map((a) => a.id)).toEqual([
