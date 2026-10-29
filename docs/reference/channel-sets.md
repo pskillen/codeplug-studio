@@ -11,7 +11,8 @@ Band pill classification for generated channels: [bands.md](./bands.md).
 | Set ID             | Label                             | Channels | Default RX-only        |
 | ------------------ | --------------------------------- | -------- | ---------------------- |
 | `pmr446`           | PMR446                            | 16       | yes (`forbidTransmit`) |
-| `pdmr`             | pDMR channels                     | 16       | yes (`forbidTransmit`) |
+| `pdmr`             | pDMR channels (16)                | 16       | yes (`forbidTransmit`) |
+| `pdmr-32`          | pDMR channels (32)                | 32       | yes (`forbidTransmit`) |
 | `uk-vhf-simplex-v` | UK VHF simplex (V-channels)       | 30       | no                     |
 | `uk-vhf-simplex-s` | UK VHF simplex (legacy S08–S23)   | 16       | no                     |
 | `uk-uhf-simplex-u` | UK UHF simplex (U-channels)       | 17       | no                     |
@@ -27,11 +28,17 @@ ETSI PMR446: 16 channels, 12.5 kHz spacing, 446.00625–446.19375 MHz. Names `PM
 
 Source: [ETSI PMR446](https://www.etsi.org/).
 
-## pDMR channels
+## pDMR channels (16)
 
 pDMR (DMR Tier 1, licence-free): the same 16 channels and frequencies as PMR446 (446.00625-446.19375 MHz, 12.5 kHz), named `pDMR-1`...`16`. Imported as **DMR** channels: direct-mode **simplex** (`dmo-simplex`), **colour code 1**, **timeslot 1**, RX = TX. No contact or RX group list is attached (vendor-neutral; assign a talk group such as the common simplex convention TG 99 in the library after import). Default `forbidTransmit`, like PMR446.
 
-Dedup compares RX frequency **per mode family**: a DMR pDMR channel is not skipped because an analogue PMR446 channel already sits on the same frequency (and vice versa). Names are checked as before.
+## pDMR channels (32)
+
+32 channels at 6.25 kHz spacing, 446.003125-446.196875 MHz (the digital PMR446 / dPMR FDMA grid, valid in-band since January 2018), named `pDMR32-1`...`32`. Same DMR parameters as the 16-channel set (`dmo-simplex`, CC1, TS1, default `forbidTransmit`). This grid is offset 3.125 kHz from the 12.5 kHz analogue grid, so it shares **no** frequency with the 16-channel set and the two can be imported side by side (distinct names, distinct frequencies). DMR is 12.5 kHz wide, so each channel overlaps its neighbours: use alternate channels, or the 16-channel set, when several groups are active nearby.
+
+Confidence: the 6.25 kHz / 32-position grid is documented for dPMR446 (FDMA); I found no source documenting a dedicated "pDMR 32" DMR channel plan, so treat it as a community-style extension rather than a standard. Sources: [dPMR Association](https://dpmrassociation.org/dPMR-446.html), [PMR446 (Wikipedia)](https://en.wikipedia.org/wiki/PMR446).
+
+**Dedup (both pDMR sets):** RX frequency is compared **per mode family**: a DMR pDMR channel is not skipped because an analogue PMR446 channel already sits on the same frequency (and vice versa). Names are checked as before.
 
 Assumptions: sources agree on the 12.5 kHz grid shared with analogue PMR446, with all 16 channels allowed for DMR Tier 1 since January 2018; CC1/TS1 is the common community convention, not a regulatory requirement. Sources: [PMR446 (Wikipedia)](https://en.wikipedia.org/wiki/PMR446), [Kenwood PMR446 white paper](https://kenwoodcommunications.co.uk/files/file/comms/uk/pmr446/PMR446-White-Paper-V6_18AUG2016_JT_KB.pdf), [DMR446](http://dmr446.hamstation.eu/index_en.htm).
 

@@ -5,6 +5,7 @@ import {
   UK_VHF_SIMPLEX_LEGACY_S_HZ,
   buildLinearGridHz,
   euCbCeptTemplates,
+  pdmr32Templates,
   pdmrTemplates,
   pmr446Templates,
   ukCb2781Templates,
@@ -40,6 +41,24 @@ describe('pDMR', () => {
     expect(templates.every((t) => t.rxFrequencyHz === t.txFrequencyHz)).toBe(true);
     expect(templates[0]?.name).toBe('pDMR-1');
     expect(templates[15]?.name).toBe('pDMR-16');
+  });
+});
+
+describe('pDMR (32)', () => {
+  it('has 32 channels at 6.25 kHz from 446.003125 to 446.196875 MHz', () => {
+    const templates = pdmr32Templates();
+    expect(templates).toHaveLength(32);
+    expect(templates[0]?.rxFrequencyHz).toBe(446_003_125);
+    expect(templates[31]?.rxFrequencyHz).toBe(446_196_875);
+    expect(templates[1]!.rxFrequencyHz - templates[0]!.rxFrequencyHz).toBe(6_250);
+    expect(templates[0]?.name).toBe('pDMR32-1');
+    expect(new Set(templates.map((t) => t.name)).size).toBe(32);
+  });
+
+  it('shares no frequency or name with the 16-channel set', () => {
+    const hz = new Set(pdmrTemplates().map((t) => t.rxFrequencyHz));
+    const names = new Set(pdmrTemplates().map((t) => t.name));
+    expect(pdmr32Templates().some((t) => hz.has(t.rxFrequencyHz) || names.has(t.name))).toBe(false);
   });
 });
 

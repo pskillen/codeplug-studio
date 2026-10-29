@@ -33,6 +33,18 @@ describe('generateChannelsFromSet', () => {
     });
   });
 
+  it('generates pDMR (32) as DMO simplex DMR CC1 TS1', () => {
+    const channels = generateChannelsFromSet(PROJECT_ID, 'pdmr-32');
+    expect(channels).toHaveLength(32);
+    expect(channels.every((ch) => ch.forbidTransmit === 'forbid')).toBe(true);
+    expect(channels[31]?.modeProfiles[0]).toMatchObject({
+      mode: 'dmr',
+      dmrMode: 'dmo-simplex',
+      colourCode: 1,
+      timeslot: 1,
+    });
+  });
+
   it('does not dedupe pDMR against analogue PMR446 on the same frequencies', () => {
     const existing = generateChannelsFromSet(PROJECT_ID, 'pmr446');
     const result = classifyChannelSetDedup(existing, generateChannelsFromSet(PROJECT_ID, 'pdmr'));

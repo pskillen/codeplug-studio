@@ -1,5 +1,6 @@
 import {
   euCbCeptTemplates,
+  pdmr32Templates,
   pdmrTemplates,
   pmr446Templates,
   ukCb2781Templates,
@@ -22,7 +23,7 @@ export const CHANNEL_SET_DEFINITIONS: readonly ChannelSetDefinition[] = [
   },
   {
     id: 'pdmr',
-    label: 'pDMR channels',
+    label: 'pDMR channels (16)',
     description:
       '16 licence-free pDMR (DMR Tier 1) simplex channels on the PMR446 frequencies (446.00625–446.19375 MHz, 12.5 kHz). Colour code 1, timeslot 1. RX-only typical on ham rigs.',
     defaultForbidTransmit: true,
@@ -30,6 +31,17 @@ export const CHANNEL_SET_DEFINITIONS: readonly ChannelSetDefinition[] = [
     mode: 'dmr',
     dmr: { colourCode: 1, timeslot: 1 },
     templates: pdmrTemplates,
+  },
+  {
+    id: 'pdmr-32',
+    label: 'pDMR channels (32)',
+    description:
+      '32 pDMR (DMR Tier 1) simplex channels on the 6.25 kHz digital PMR446 grid (446.003125–446.196875 MHz). DMR is 12.5 kHz wide, so adjacent channels overlap; the 16-channel set is the non-overlapping choice. Colour code 1, timeslot 1. RX-only typical on ham rigs.',
+    defaultForbidTransmit: true,
+    defaultBandwidthKHz: 12.5,
+    mode: 'dmr',
+    dmr: { colourCode: 1, timeslot: 1 },
+    templates: pdmr32Templates,
   },
   {
     id: 'uk-vhf-simplex-v',

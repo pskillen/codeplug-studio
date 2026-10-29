@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Library workflow for generating curated channel sets (PMR446, pDMR, UK V/U FM simplex grids, CB) into the active project with preview, dedup, and optional zone creation.
+Library workflow for generating curated channel sets (PMR446, pDMR 16 / 32, UK V/U FM simplex grids, CB) into the active project with preview, dedup, and optional zone creation.
 
 ## Props
 

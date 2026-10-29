@@ -86,6 +86,20 @@ export function pdmrTemplates(): ChannelSetTemplate[] {
   return pmr446Templates().map((t, i) => ({ ...t, name: `pDMR-${i + 1}` }));
 }
 
+/**
+ * pDMR (32): the 32 digital PMR446 channel positions on the 6.25 kHz grid,
+ * 446.003125-446.196875 MHz, named `pDMR32-1`..`32`. This grid sits 3.125 kHz below/above
+ * the 12.5 kHz analogue grid, so no frequency equals a `pdmrTemplates` channel. DMR occupies
+ * 12.5 kHz, so adjacent channels overlap.
+ */
+export function pdmr32Templates(): ChannelSetTemplate[] {
+  const startHz = 446_003_125;
+  return Array.from({ length: 32 }, (_, i) => {
+    const hz = startHz + i * 6_250;
+    return { name: `pDMR32-${i + 1}`, rxFrequencyHz: hz, txFrequencyHz: hz };
+  });
+}
+
 /** UK 27/81 CB: 40 channels, 10 kHz spacing from 27.60125 MHz. */
 export function ukCb2781Templates(): ChannelSetTemplate[] {
   const startHz = Math.round(27.60125 * MHZ);
