@@ -47,22 +47,34 @@ describe('radioWriteEnvGate', () => {
     expect(resolveRadioWriteGate(gated, 'local')).toBe('allowed');
   });
 
-  it('hides the RT95 MM9PDY profile on prod only; the stock RT95 profile stays allowed', () => {
-    const mm = 'radio-io-rt95-mm9pdy';
-    expect(resolveRadioWriteGate(RT95_DESCRIPTOR, 'prod', mm)).toBe('hidden');
+  const profileGated = {
+    compatibleProfiles: [
+      { formatId: 'radio-io', profileId: 'p-stock' },
+      { formatId: 'radio-io', profileId: 'p-mod', prodWriteDisabled: true },
+    ],
+  } as const;
+
+  it('hides a prod-disabled profile on prod only; the other profiles stay allowed', () => {
+    expect(resolveRadioWriteGate(profileGated, 'prod', 'p-mod')).toBe('hidden');
     for (const env of ['next', 'main', 'dev', 'staging', 'local']) {
-      expect(resolveRadioWriteGate(RT95_DESCRIPTOR, env, mm)).toBe('allowed');
+      expect(resolveRadioWriteGate(profileGated, env, 'p-mod')).toBe('allowed');
     }
     for (const env of ['prod', 'staging', 'local']) {
-      expect(resolveRadioWriteGate(RT95_DESCRIPTOR, env, 'radio-io-rt95')).toBe('allowed');
-      expect(resolveRadioWriteGate(RT95_DESCRIPTOR, env)).toBe('allowed');
+      expect(resolveRadioWriteGate(profileGated, env, 'p-stock')).toBe('allowed');
+      expect(resolveRadioWriteGate(profileGated, env)).toBe('allowed');
     }
   });
 
-  it('gives the RT95 MM9PDY profile no native-platform exemption (gate question Q1 unanswered)', () => {
+  it('gives a prod-disabled profile no native-platform exemption', () => {
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
-    expect(resolveRadioWriteGate(RT95_DESCRIPTOR, 'prod', 'radio-io-rt95-mm9pdy')).toBe('hidden');
+    expect(resolveRadioWriteGate(profileGated, 'prod', 'p-mod')).toBe('hidden');
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
+  });
+
+  it('allows RT95 Write on prod for both profiles, MM9PDY included', () => {
+    for (const p of ['radio-io-rt95', 'radio-io-rt95-mm9pdy']) {
+      expect(resolveRadioWriteGate(RT95_DESCRIPTOR, 'prod', p)).toBe('allowed');
+    }
   });
 
   it('allows write on native platforms even in prod', () => {

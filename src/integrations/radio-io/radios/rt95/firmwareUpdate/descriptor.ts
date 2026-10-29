@@ -17,7 +17,7 @@ export const RT95_HEAD_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   createUpdater: () => createRt95HeadFirmwareUpdater(),
   capacitorSupported: false,
   // Hidden on prod until Studio has flashed a release to an RT95 on hardware (#1460).
-  prodFlashDisabled: true,
+  prodFlashDisabled: false,
   preflight: RT95_HEAD_PREFLIGHT,
   // Estimate from the vendor protocol (about 15 to 25 s for 104 frames); not yet measured.
   expectedDuration: 'under a minute',

@@ -56,4 +56,4 @@ Owner backup, 2026-10-28: on the owner's chip the range from `0x4000` to `0x7FFF
 
 ## Status
 
-Shipped in Studio on the `retevis-rt95-mm9pdy` target; not yet checked on a radio. The RT95 MM9PDY firmware is not released, so Write is hidden on the production site for this profile until the owner's radio check.
+Shipped in Studio on the `retevis-rt95-mm9pdy` target, on every site. Checked on the owner's radio with the MM9PDY firmware 1.1.0 (zones and descriptions).

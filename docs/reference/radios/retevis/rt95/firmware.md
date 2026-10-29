@@ -7,9 +7,9 @@ accepts, where to get it, and how to put the radio into update mode. Product rul
 **Code mirror:** [`src/core/radios/retevis/rt95/firmware.ts`](../../../../../src/core/radios/retevis/rt95/firmware.ts)
 (`RT95_HEAD_STOCK_FIRMWARE`, `RT95_HEAD_FIRMWARE_ROLE`). Keep the two in step.
 
-**Pre-prod only, not yet checked on a radio.** The updater is registered with `prodFlashDisabled`, so it is offered on
-next, dev and staging and hidden on prod ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460)). Nothing has
-been flashed from Studio to an RT95.
+**Offered on every site, prod included** (`prodFlashDisabled: false`, [#1460](https://github.com/pskillen/codeplug-studio/issues/1460)).
+The owner has flashed stock V1.41, the ladder test builds and the MM9PDY zones build to an RT95 from Studio (Linux,
+PL2303GC cable).
 
 **The main board (MAIN) is never flashed by Studio.** The RT95 has two MCUs; the firmware project patches the front
 panel only and keeps MAIN stock. Studio offers no MAIN target, pin or updater.
