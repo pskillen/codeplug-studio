@@ -32,8 +32,8 @@ import ChannelModeProfilesEditor from '@app/components/channels/ChannelModeProfi
 
 ## Behaviour
 
-- Renders stacked blocks with a mode header (`ModePill` + label); empty state when `profiles` is empty.
-- Analog blocks: bandwidth, RX/TX tone, squelch slider, **`AnalogSquelchModeSegment`** (`layout="row"`).
+- Renders stacked blocks with a mode header (`ModePill` + label); empty state when `profiles` is empty (new channels start with no modes, so bandwidth/tones/squelch only appear once FM, AM or SSB is selected; the empty state says so, #1477).
+- Analog blocks: bandwidth (`bandwidthKHz`, 12.5 / 25 kHz; DMR has no bandwidth field, it is fixed 12.5 kHz TDMA), RX/TX tone, squelch slider, **`AnalogSquelchModeSegment`** (`layout="row"`).
 - DMR block: **`DmrOperatingModeSegment`** (`layout="row"`), colour code, timeslot, DMR ID, digital contact or talk group, RX group list, **`RxGroupListSummary`** when a list is selected, **`BrandmeisterRxListSyncAction`** when `channel` is set, then **`SendTalkerAliasSegment`** (`layout="row"`).
 - D-STAR / YSF / NXDN / TETRA: mode-specific fields per internal model.
 - P25 / M17 stubs show placeholder copy until typed profiles ship.
