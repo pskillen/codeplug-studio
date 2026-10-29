@@ -1,8 +1,6 @@
 import {
   euCbCeptTemplates,
   dmr446Templates,
-  dpmr446x16Templates,
-  dpmr446x32Templates,
   pmr446Templates,
   ukCb2781Templates,
   ukUhfSimplexLegacyTemplates,
@@ -32,24 +30,6 @@ export const CHANNEL_SET_DEFINITIONS: readonly ChannelSetDefinition[] = [
     mode: 'dmr',
     dmr: { colourCode: 1, timeslot: 1 },
     templates: dmr446Templates,
-  },
-  {
-    id: 'dpmr446-16',
-    label: 'dPMR446 (16 channels)',
-    description:
-      '16 dPMR446 (FDMA) channels on the 12.5 kHz PMR446 grid (446.00625–446.19375 MHz). No dPMR mode in the library yet: imported as frequency-only FM-style channels. RX-only typical on ham rigs.',
-    defaultForbidTransmit: true,
-    defaultBandwidthKHz: 12.5,
-    templates: dpmr446x16Templates,
-  },
-  {
-    id: 'dpmr446-32',
-    label: 'dPMR446 (32 channels)',
-    description:
-      '32 dPMR446 (FDMA) channels on the 6.25 kHz grid (446.003125–446.196875 MHz). No dPMR mode in the library yet: imported as frequency-only FM-style channels. RX-only typical on ham rigs.',
-    defaultForbidTransmit: true,
-    defaultBandwidthKHz: 12.5,
-    templates: dpmr446x32Templates,
   },
   {
     id: 'uk-vhf-simplex-v',

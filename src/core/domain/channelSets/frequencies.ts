@@ -83,27 +83,6 @@ export function dmr446Templates(): ChannelSetTemplate[] {
   return pmr446Templates().map((t, i) => ({ ...t, name: `DMR446-${i + 1}` }));
 }
 
-/**
- * dPMR446 (16): FDMA digital on the 12.5 kHz PMR446 grid, named `dPMR446-1`..`16`.
- * No dPMR mode exists in the library model yet; generated as frequency-only FM-style channels.
- */
-export function dpmr446x16Templates(): ChannelSetTemplate[] {
-  return pmr446Templates().map((t, i) => ({ ...t, name: `dPMR446-${i + 1}` }));
-}
-
-/**
- * dPMR446 (32): the 32 digital PMR446 channel positions on the 6.25 kHz grid,
- * 446.003125-446.196875 MHz, named `dPMR32-1`..`32`. The grid sits 3.125 kHz off the 12.5 kHz
- * grid, so no frequency equals a 16-channel set. Generated as frequency-only FM-style channels.
- */
-export function dpmr446x32Templates(): ChannelSetTemplate[] {
-  const startHz = 446_003_125;
-  return Array.from({ length: 32 }, (_, i) => {
-    const hz = startHz + i * 6_250;
-    return { name: `dPMR32-${i + 1}`, rxFrequencyHz: hz, txFrequencyHz: hz };
-  });
-}
-
 /** UK 27/81 CB: 40 channels, 10 kHz spacing from 27.60125 MHz. */
 export function ukCb2781Templates(): ChannelSetTemplate[] {
   const startHz = Math.round(27.60125 * MHZ);

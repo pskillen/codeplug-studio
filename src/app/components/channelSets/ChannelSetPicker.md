@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Library workflow for generating curated channel sets (PMR446, DMR446, dPMR446 16 / 32, UK V/U FM simplex grids, CB) into the active project with preview, dedup, and optional zone creation.
+Library workflow for generating curated channel sets (PMR446, DMR446, UK V/U FM simplex grids, CB) into the active project with preview, dedup, and optional zone creation.
 
 ## Props
 
@@ -25,7 +25,7 @@ Routed at `/library/channels/add-channel-set` via `AddChannelSetPage`.
 - mk2 D4 layout on `DirectoryIngestPage` — filter `Panel`, v2 `DataTable` preview, status `Pill`s for dedup/skip
 - Set selector lists all channel sets with channel counts
 - Live preview table: per-channel checkbox (default on; skip rows disabled), name, frequency (`<MHz> simplex` for simplex rows; RX/TX column reserved for future split channels), mode, dedup status; selectable addable rows
-- Options: name prefix, power %, **bandwidth** (12.5 or 25 kHz; hidden for DMR sets such as DMR446, which generate DMR simplex CC1/TS1 channels; dPMR446 sets import as frequency-only FM-style channels because the library has no dPMR mode yet), forbid transmit, optional zone
+- Options: name prefix, power %, **bandwidth** (12.5 or 25 kHz; hidden for DMR sets such as DMR446, which generate DMR simplex CC1/TS1 channels), forbid transmit, optional zone
 - Persists via `persistChannelSetImport` → `putChannel` loop and optional `putZone`
 - Navigates to channels list or new zone on success
 

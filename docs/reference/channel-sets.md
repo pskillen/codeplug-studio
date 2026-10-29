@@ -12,8 +12,6 @@ Band pill classification for generated channels: [bands.md](./bands.md).
 | ------------------ | --------------------------------- | -------- | ---------------------- |
 | `pmr446`           | PMR446                            | 16       | yes (`forbidTransmit`) |
 | `dmr446`           | DMR446 (16 channels)              | 16       | yes (`forbidTransmit`) |
-| `dpmr446-16`       | dPMR446 (16 channels)             | 16       | yes (`forbidTransmit`) |
-| `dpmr446-32`       | dPMR446 (32 channels)             | 32       | yes (`forbidTransmit`) |
 | `uk-vhf-simplex-v` | UK VHF simplex (V-channels)       | 30       | no                     |
 | `uk-vhf-simplex-s` | UK VHF simplex (legacy S08–S23)   | 16       | no                     |
 | `uk-uhf-simplex-u` | UK UHF simplex (U-channels)       | 17       | no                     |
@@ -33,15 +31,11 @@ Source: [ETSI PMR446](https://www.etsi.org/).
 
 DMR446 (DMR Tier 1, licence-free, TDMA): the same 16 channels as analogue PMR446 (446.00625-446.19375 MHz, 12.5 kHz), named `DMR446-1`...`16`. Imported as **DMR** channels: direct-mode **simplex** (`dmo-simplex`), **colour code 1**, **timeslot 1**, RX = TX. No contact or RX group list is attached (vendor-neutral; assign a talk group such as the common simplex convention TG 99 after import). Default `forbidTransmit`, like PMR446. CC1/TS1 are community convention, not regulation; the 12.5 kHz grid is shared with analogue PMR446 (all 16 channels allowed for DMR Tier 1 since January 2018).
 
-## dPMR446 (16 and 32 channels)
+**Dedup:** RX frequency is compared **per mode family**: DMR446 channels are not skipped because analogue PMR446 channels sit on the same frequencies.
 
-dPMR446 is a different licence-free digital standard: **FDMA** (not DMR/TDMA), 6.25 kHz channels. The 446.0-446.2 MHz band holds 16 channels on the 12.5 kHz grid (`dpmr446-16`, 446.00625-446.19375 MHz, `dPMR446-1`...`16`) or 32 on the 6.25 kHz grid (`dpmr446-32`, 446.003125-446.196875 MHz, `dPMR32-1`...`32`). The 6.25 kHz grid is offset 3.125 kHz from the 12.5 kHz grid, so the two sets share no frequency.
+dPMR446 (FDMA, 6.25 kHz) is deliberately **not** offered: it is not DMR/TDMA, the target radios cannot do it and the library model has no dPMR mode. Do not re-add it as FM-style channels.
 
-**Known gap:** the library has no dPMR channel mode yet, so both sets import as frequency-only **FM-style** channels (12.5 kHz bandwidth, no colour code or timeslot). Do not export them to a radio as analogue FM expecting dPMR behaviour. A follow-up should add a vendor-neutral `dpmr` mode profile (and export mapping where radios support it), then switch these sets to it.
-
-Sources: [dPMR Association](https://dpmrassociation.org/dPMR-446.html), [PMR446 (Wikipedia)](https://en.wikipedia.org/wiki/PMR446), [DMR446 notes](http://dmr446.hamstation.eu/index_en.htm).
-
-**Dedup:** RX frequency is compared **per mode family**: DMR446 channels are not skipped because analogue PMR446 channels sit on the same frequencies. dPMR446 (16) is FM-style, so it is skipped on RX Hz when analogue PMR446 is already imported. All three new sets use distinct channel names and can be imported side by side.
+Sources: [PMR446 (Wikipedia)](https://en.wikipedia.org/wiki/PMR446), [DMR446 notes](http://dmr446.hamstation.eu/index_en.htm).
 
 ## UK 2 m FM simplex (V-channels)
 

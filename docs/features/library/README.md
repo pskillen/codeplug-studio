@@ -147,14 +147,13 @@ Channel editor DMR tab shows `RxGroupListSummary` below the RX group list select
 
 Generate curated frequency inventories into the library:
 
-| Set                                            | Channels | Notes                                                       |
-| ---------------------------------------------- | -------- | ----------------------------------------------------------- |
-| PMR446                                         | 16       | Default `forbidTransmit`                                    |
-| DMR446 (16)                                    | 16       | DMR simplex, CC1 / TS1; default `forbidTransmit`            |
-| dPMR446 (16 / 32 on the 6.25 kHz grid)         | 16 / 32  | FM-style until a dPMR mode exists; default `forbidTransmit` |
-| UK VHF simplex (V-channels or legacy S08–S23)  | 30 / 16  | Pick naming scheme                                          |
-| UK UHF simplex (U272–U288 or legacy SU16–SU32) | 17       | Pick naming scheme                                          |
-| UK CB / EU CEPT CB                             | 40 each  |                                                             |
+| Set                                            | Channels | Notes                                            |
+| ---------------------------------------------- | -------- | ------------------------------------------------ |
+| PMR446                                         | 16       | Default `forbidTransmit`                         |
+| DMR446 (16)                                    | 16       | DMR simplex, CC1 / TS1; default `forbidTransmit` |
+| UK VHF simplex (V-channels or legacy S08–S23)  | 30 / 16  | Pick naming scheme                               |
+| UK UHF simplex (U272–U288 or legacy SU16–SU32) | 17       | Pick naming scheme                               |
+| UK CB / EU CEPT CB                             | 40 each  |                                                  |
 
 Workflow: pick set → preview `DataTable` (per-channel checkboxes, dedup status) → optional power, **bandwidth** (12.5 or 25 kHz; analogue sets only), forbid-TX, name prefix, **also create zone** → bulk `putChannel` (+ optional `putZone`). Duplicate RX frequencies in the library are skipped.
 
