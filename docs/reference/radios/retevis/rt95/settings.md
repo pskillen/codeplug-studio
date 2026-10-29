@@ -19,6 +19,10 @@ Cite: CHIRP `anytone778uv.py` `MEM_FORMAT` / `get_settings` (facts only).
 | `0x3250` | PF keys mode 1/2 (P1–P6 each)                                                |
 | `0x3260` | `radio_settings` — MR A/B, VFO/MR flags, **bandlimit** @ `0x326D`            |
 
+## PF key table (`0x3250`)
+
+Twelve bytes: P1-P6 for FUNC group 1, then P1-P6 for group 2. The byte for group _g_ (1-2), key _k_ (1-6) is at `0x3250 + (g - 1) * 6 + (k - 1)`. The value is the function's CHIRP option index plus one; **DIR = `0x0E`**. On the MM9PDY target the optional "Put Zone on a P-key" export setting writes `0x0E` to one chosen byte (the MM9PDY firmware opens the zone selector on DIR; CPS and CHIRP show DIR). No other byte changes, and the stock target never does this.
+
 ## Settings block (`0x3200`)
 
 Notable fields (CHIRP UI names):
