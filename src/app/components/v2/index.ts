@@ -93,7 +93,7 @@ export type { ProjectChipProps } from './ProjectChip.tsx';
 export { default as BottomTabBar } from './BottomTabBar.tsx';
 export type { BottomTabBarProps, BottomTabItem } from './BottomTabBar.tsx';
 export { default as ContextualStrip } from './ContextualStrip.tsx';
-export type { ContextualStripProps } from './ContextualStrip.tsx';
+export type { ContextualStripEntry, ContextualStripProps } from './ContextualStrip.tsx';
 export { default as SectionNav } from './SectionNav.tsx';
 export type { SectionNavItem, SectionNavOrientation, SectionNavProps } from './SectionNav.tsx';
 export { default as EditorHeader } from './EditorHeader.tsx';

@@ -87,7 +87,10 @@ function AppLayoutShell() {
 
   const visibleTabs = primaryNavItems.filter((item) => !item.requiresProject || hasActiveProject);
   const tabLabels = visibleTabs.map((item) => item.label);
-  const activePrimary = visibleTabs.find((item) => navActive(location.pathname, item.to)) ?? null;
+  const activePrimary =
+    visibleTabs.find((item) =>
+      [item.to, ...(item.alsoActiveFor ?? [])].some((to) => navActive(location.pathname, to)),
+    ) ?? null;
 
   const staticStrip = resolveContextualStripItems(location.pathname);
   const buildStrip = useBuildContextualStrip(location.pathname);
@@ -293,8 +296,20 @@ function AppLayoutBody({
         />
         {stripItems && stripItems.length > 0 ? (
           <ContextualStrip
-            items={stripItems.map((i) => i.label)}
+            items={stripItems.map(({ label, icon: Icon, external }) => ({
+              label,
+              icon: Icon ? <Icon size={ICON_SIZE_NAV} stroke={ICON_STROKE} /> : undefined,
+              external,
+            }))}
             active={stripActive ?? undefined}
+            sectionLabel={
+              activePrimary
+                ? {
+                    label: activePrimary.label,
+                    icon: <activePrimary.icon size={ICON_SIZE_NAV} stroke={ICON_STROKE} />,
+                  }
+                : undefined
+            }
             onChange={goToStrip}
             leading={
               showBuildSwitcher && buildDetailId ? (

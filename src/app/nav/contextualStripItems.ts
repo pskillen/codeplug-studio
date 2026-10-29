@@ -3,6 +3,14 @@
  * Labels match the design-system reference kit (`libStrip` / Tools / Help).
  */
 
+import {
+  IconCpu,
+  IconGridDots,
+  IconListDetails,
+  IconRadar,
+  IconWaveSine,
+} from '@tabler/icons-react';
+import type { TablerIcon } from '@tabler/icons-react';
 import { listOfferedFirmwareUpdaters } from '../services/firmwareFlashEnvGate.ts';
 
 export interface ContextualStripItem {
@@ -10,6 +18,8 @@ export interface ContextualStripItem {
   to: string;
   /** When true, `to` is an off-Studio URL — open in a new tab instead of routing. */
   external?: boolean;
+  /** Optional icon shown before the label. */
+  icon?: TablerIcon;
 }
 
 const PROPAGATION_VISUALISER_URL = 'https://propagation.mm9pdy.net/';
@@ -29,25 +39,39 @@ export const libraryStripItems: readonly ContextualStripItem[] = [
 
 /**
  * Tools strip. **Propagation Visualiser** moved off-Studio to
- * propagation.mm9pdy.net — shown on every build env (including prod) as an
- * external link, not gated by `isProdBuildEnv`.
+ * propagation.mm9pdy.net. It is hidden for now (the site is down) but kept so it can come back by flipping
+ * {@link SHOW_PROPAGATION_VISUALISER}.
  */
 export const FIRMWARE_FLASHER_STRIP_ITEM: ContextualStripItem = {
   label: 'Firmware flasher',
   to: '/firmware',
+  icon: IconCpu,
 };
+
+export const PROPAGATION_VISUALISER_STRIP_ITEM: ContextualStripItem = {
+  label: 'Propagation Visualiser',
+  to: PROPAGATION_VISUALISER_URL,
+  external: true,
+  icon: IconWaveSine,
+};
+
+/** False while propagation.mm9pdy.net is down; set true to bring the link back to the strip and Tools page. */
+export const SHOW_PROPAGATION_VISUALISER = false;
 
 /**
  * Tools strip items for a build. The firmware flasher appears only when this build and platform offer at least
  * one radio (per-radio prod gate; hidden on Capacitor). Pure: pass `firmwareOffered` in tests.
  */
-export function buildToolsStripItems(firmwareOffered: boolean): readonly ContextualStripItem[] {
+export function buildToolsStripItems(
+  firmwareOffered: boolean,
+  showPropagation: boolean = SHOW_PROPAGATION_VISUALISER,
+): readonly ContextualStripItem[] {
   return [
-    { label: 'Maidenhead locator', to: '/reference/maidenhead' },
-    { label: 'Band plan', to: '/reference/bands' },
-    { label: 'Tracking Dashboard', to: '/tracking' },
+    { label: 'Maidenhead locator', to: '/reference/maidenhead', icon: IconGridDots },
+    { label: 'Band plan', to: '/reference/bands', icon: IconListDetails },
+    { label: 'Tracking Dashboard', to: '/tracking', icon: IconRadar },
     ...(firmwareOffered ? [FIRMWARE_FLASHER_STRIP_ITEM] : []),
-    { label: 'Propagation Visualiser', to: PROPAGATION_VISUALISER_URL, external: true },
+    ...(showPropagation ? [PROPAGATION_VISUALISER_STRIP_ITEM] : []),
   ];
 }
 

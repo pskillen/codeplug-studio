@@ -24,6 +24,8 @@ export interface PrimaryNavItem {
    * Export for radio). Tools and Help stay reachable without a project.
    */
   requiresProject?: boolean;
+  /** Other route prefixes that belong to this tab (e.g. Tools pages outside `/reference`). */
+  alsoActiveFor?: readonly string[];
 }
 
 /**
@@ -45,7 +47,7 @@ export const primaryNavItems: PrimaryNavItem[] = [
     requiresProject: true,
   },
   { to: '/builds', label: 'Export for radio', icon: IconHammer, requiresProject: true },
-  { to: '/reference', label: 'Tools', icon: IconTool },
+  { to: '/reference', label: 'Tools', icon: IconTool, alsoActiveFor: ['/tracking', '/firmware'] },
   { to: '/help', label: 'Help', icon: IconHelp },
 ];
 
