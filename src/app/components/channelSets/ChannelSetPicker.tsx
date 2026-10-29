@@ -294,18 +294,20 @@ export default function ChannelSetPicker() {
               onChange={(e) => setPower(e.currentTarget.value)}
             />
           </FormField>
-          <FormField
-            label="Bandwidth (kHz)"
-            hint="FM channel bandwidth applied to every generated channel"
-            className={pageClasses.filterField}
-          >
-            <Select
-              data={BANDWIDTH_OPTIONS}
-              value={bandwidthKHz}
-              onChange={(value) => setBandwidthKHz(value ?? '12.5')}
-              variant="unstyled"
-            />
-          </FormField>
+          {definition.mode === 'dmr' ? null : (
+            <FormField
+              label="Bandwidth (kHz)"
+              hint="FM channel bandwidth applied to every generated channel"
+              className={pageClasses.filterField}
+            >
+              <Select
+                data={BANDWIDTH_OPTIONS}
+                value={bandwidthKHz}
+                onChange={(value) => setBandwidthKHz(value ?? '12.5')}
+                variant="unstyled"
+              />
+            </FormField>
+          )}
         </div>
         <ToggleSwitch
           label="Forbid transmit"

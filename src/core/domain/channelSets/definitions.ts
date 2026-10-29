@@ -1,5 +1,6 @@
 import {
   euCbCeptTemplates,
+  pdmrTemplates,
   pmr446Templates,
   ukCb2781Templates,
   ukUhfSimplexLegacyTemplates,
@@ -18,6 +19,17 @@ export const CHANNEL_SET_DEFINITIONS: readonly ChannelSetDefinition[] = [
     defaultForbidTransmit: true,
     defaultBandwidthKHz: 12.5,
     templates: pmr446Templates,
+  },
+  {
+    id: 'pdmr',
+    label: 'pDMR channels',
+    description:
+      '16 licence-free pDMR (DMR Tier 1) simplex channels on the PMR446 frequencies (446.00625–446.19375 MHz, 12.5 kHz). Colour code 1, timeslot 1. RX-only typical on ham rigs.',
+    defaultForbidTransmit: true,
+    defaultBandwidthKHz: 12.5,
+    mode: 'dmr',
+    dmr: { colourCode: 1, timeslot: 1 },
+    templates: pdmrTemplates,
   },
   {
     id: 'uk-vhf-simplex-v',

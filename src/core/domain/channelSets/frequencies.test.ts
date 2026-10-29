@@ -5,6 +5,7 @@ import {
   UK_VHF_SIMPLEX_LEGACY_S_HZ,
   buildLinearGridHz,
   euCbCeptTemplates,
+  pdmrTemplates,
   pmr446Templates,
   ukCb2781Templates,
   ukUhfSimplexLegacyTemplates,
@@ -27,6 +28,18 @@ describe('PMR446', () => {
     expect(templates[0]?.rxFrequencyHz).toBe(446_006_250);
     expect(templates[15]?.rxFrequencyHz).toBe(446_193_750);
     expect(templates[0]?.name).toBe('PMR446-1');
+  });
+});
+
+describe('pDMR', () => {
+  it('reuses the PMR446 grid with pDMR-N names', () => {
+    const templates = pdmrTemplates();
+    const pmr = pmr446Templates();
+    expect(templates).toHaveLength(16);
+    expect(templates.map((t) => t.rxFrequencyHz)).toEqual(pmr.map((t) => t.rxFrequencyHz));
+    expect(templates.every((t) => t.rxFrequencyHz === t.txFrequencyHz)).toBe(true);
+    expect(templates[0]?.name).toBe('pDMR-1');
+    expect(templates[15]?.name).toBe('pDMR-16');
   });
 });
 
