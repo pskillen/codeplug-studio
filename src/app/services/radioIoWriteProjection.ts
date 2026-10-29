@@ -2179,7 +2179,13 @@ export function buildRadioWriteProjection(
       warnings,
     });
     channels = projected.channels;
-    organisation = { zones: projected.zones, writeRt95ModData: true };
+    organisation = {
+      zones: projected.zones,
+      writeRt95ModData: true,
+      ...(build.exportSettings?.rt95ZoneKey
+        ? { rt95ZoneKey: build.exportSettings.rt95ZoneKey }
+        : {}),
+    };
   } else if (
     egress.profileId === 'radio-io-uv5r-mini' ||
     egress.profileId === 'radio-io-uv21' ||

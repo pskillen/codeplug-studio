@@ -74,6 +74,11 @@ export interface BuildExportSettings {
    */
   assignMm9pdyStepKeys?: boolean;
   /**
+   * RT95 MM9PDY only. Put Zone on a P-key: Write sets that one key-table byte to the stock DIR
+   * function (the MM9PDY firmware opens the zone selector on it). Absent = off, key table as read.
+   */
+  rt95ZoneKey?: { group: 1 | 2; key: 1 | 2 | 3 | 4 | 5 | 6 };
+  /**
    * MM9PDY AT-D890UV and DM-32UV only. Unit the modded firmware shows channel distances in;
    * written into the channel location table header on Write. Unset → kilometres.
    */

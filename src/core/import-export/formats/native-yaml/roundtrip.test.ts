@@ -475,3 +475,25 @@ describe('native-yaml Digital IDs', () => {
     );
   });
 });
+
+describe('rt95ZoneKey export setting', () => {
+  it('round-trips and rejects out-of-range values', () => {
+    const aggregate = projectWithRadioBuildAggregate();
+    const build = aggregate.radioBuilds[0]!;
+    const withKey = {
+      ...aggregate,
+      radioBuilds: [
+        {
+          ...build,
+          exportSettings: { ...build.exportSettings, rt95ZoneKey: { group: 2, key: 3 } },
+        },
+      ],
+    };
+    const text = serialiseProject(withKey as typeof aggregate);
+    expect(parseProjectDocument(text).radioBuilds[0]?.exportSettings?.rt95ZoneKey).toEqual({
+      group: 2,
+      key: 3,
+    });
+    expect(() => parseProjectDocument(text.replace(/key: 3/, 'key: 9'))).toThrow();
+  });
+});
