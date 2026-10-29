@@ -1,19 +1,20 @@
 # ContextualStrip
 
-Section sub-view pill strip — typically directly under `AppShell`.
+Section sub-view tab strip — typically directly under `AppShell`.
 
 ## Purpose
 
-Matches the design-system Library strip (Channels / Zones / …). Solid accent fill on the active pill. Horizontally scrollable at any width.
+The section's own navigation (Channels / Zones / …). A raised bar with a shadow, an accent section label (e.g. **TOOLS**) before the tabs, optional icons, and an accent underline on the active tab, so it reads as separate from the main toolbar (#1472). Horizontally scrollable at any width; the section label hides below 768px.
 
 ## Props
 
-| Prop       | Type                     | Notes                                                  |
-| ---------- | ------------------------ | ------------------------------------------------------ |
-| `items`    | `readonly string[]`      | Pill labels                                            |
-| `active`   | `string`                 | Selected label                                         |
-| `onChange` | `(item: string) => void` | Selection handler                                      |
-| `leading`  | `ReactNode`              | Optional leading control before tabs (e.g. build chip) |
+| Prop           | Type                              | Notes                                                   |
+| -------------- | --------------------------------- | ------------------------------------------------------- |
+| `items`        | `readonly ContextualStripEntry[]` | Labels, or `{ label, icon?, external? }`                |
+| `active`       | `string`                          | Selected label                                          |
+| `onChange`     | `(item: string) => void`          | Selection handler                                       |
+| `leading`      | `ReactNode`                       | Optional leading control before tabs (e.g. build chip)  |
+| `sectionLabel` | `{ label, icon? }`                | Section name before the tabs when there is no `leading` |
 
 ## Usage
 

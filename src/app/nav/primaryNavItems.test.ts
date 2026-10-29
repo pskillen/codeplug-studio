@@ -6,6 +6,7 @@ import {
   libraryStripItems,
   resolveContextualStripItems,
   toolsStripItems,
+  SHOW_PROPAGATION_VISUALISER,
 } from './contextualStripItems.ts';
 import { primaryNavItems, projectNavItems } from './primaryNavItems.ts';
 
@@ -49,20 +50,28 @@ describe('contextualStripItems', () => {
     expect(resolveContextualStripItems('/attributions')).toEqual(helpStripItems);
   });
 
-  it('includes Tracking Dashboard and an external Propagation Visualiser link in the Tools strip, on every env', () => {
+  it('includes Tracking Dashboard in the Tools strip and hides the Propagation Visualiser by default', () => {
     expect(buildToolsStripItems(false).map((i) => i.label)).toEqual([
       'Maidenhead locator',
       'Band plan',
       'Tracking Dashboard',
-      'Propagation Visualiser',
     ]);
+    expect(SHOW_PROPAGATION_VISUALISER).toBe(false);
     expect(toolsStripItems.find((i) => i.label === 'Tracking Dashboard')?.to).toBe('/tracking');
-    const propagation = toolsStripItems.find((i) => i.label === 'Propagation Visualiser');
+    expect(toolsStripItems.some((i) => i.label === 'Propagation Visualiser')).toBe(false);
+
+    const withPropagation = buildToolsStripItems(false, true);
+    const propagation = withPropagation.find((i) => i.label === 'Propagation Visualiser');
     expect(propagation?.to).toBe('https://propagation.mm9pdy.net/');
     expect(propagation?.external).toBe(true);
 
     expect(resolveContextualStripItems('/tracking')).toEqual(toolsStripItems);
     expect(resolveContextualStripItems('/reference/rf-propagation')).toEqual(toolsStripItems);
+  });
+
+  it('treats the tracking and firmware pages as part of the Tools tab', () => {
+    const tools = primaryNavItems.find((i) => i.label === 'Tools');
+    expect(tools?.alsoActiveFor).toEqual(['/tracking', '/firmware']);
   });
 
   it('adds the firmware flasher to the Tools strip only when a radio is offered', () => {
@@ -71,7 +80,6 @@ describe('contextualStripItems', () => {
       'Band plan',
       'Tracking Dashboard',
       'Firmware flasher',
-      'Propagation Visualiser',
     ]);
     expect(buildToolsStripItems(false).some((i) => i.to === '/firmware')).toBe(false);
     // Tests run as the `local` build: the flasher is offered.
@@ -87,6 +95,8 @@ describe('contextualStripItems', () => {
     expect(activeContextualStripLabel('/reference/maidenhead', toolsStripItems)).toBe(
       'Maidenhead locator',
     );
-    expect(activeContextualStripLabel('/reference/rf-propagation', toolsStripItems)).toBeNull();
+    expect(
+      activeContextualStripLabel('/reference/rf-propagation', buildToolsStripItems(false, true)),
+    ).toBeNull();
   });
 });

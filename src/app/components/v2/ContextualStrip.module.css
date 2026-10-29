@@ -1,19 +1,25 @@
 .root {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 12px var(--dsv2-page-padding-x);
+  align-items: stretch;
+  gap: 4px;
+  min-height: 52px;
+  padding: 0 var(--dsv2-page-padding-x);
   border-bottom: 1px solid var(--dsv2-border-strip);
-  background: var(--dsv2-surface-quiet);
+  background: var(--dsv2-surface);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
   overflow-x: auto;
+  position: relative;
 }
 
 .leading {
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
   max-width: min(200px, 42vw);
 }
 
 .divider {
+  align-self: center;
   width: 1px;
   height: 20px;
   margin: 0 8px;
@@ -21,21 +27,67 @@
   flex-shrink: 0;
 }
 
+.sectionLabel {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  gap: 8px;
+  height: 28px;
+  padding-right: 18px;
+  margin-right: 10px;
+  border-right: 1px solid var(--dsv2-border-strip);
+  color: var(--dsv2-accent);
+  font-family: var(--dsv2-font-family);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .item {
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
   border: none;
-  border-radius: var(--dsv2-radius-pill);
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   background: transparent;
   color: var(--dsv2-text-secondary);
   font-family: var(--dsv2-font-family);
-  font-size: var(--dsv2-font-body-sm);
-  font-weight: 400;
+  font-size: var(--dsv2-font-body);
+  font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.item:hover {
+  color: var(--dsv2-text-primary);
+  border-bottom-color: var(--dsv2-accent-border);
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--dsv2-accent);
+}
+
+.external {
+  opacity: 0.6;
 }
 
 .active {
   font-weight: 600;
-  color: var(--dsv2-bg);
-  background: var(--dsv2-accent);
+  color: var(--dsv2-text-primary);
+  border-bottom-color: var(--dsv2-accent);
+}
+
+@media (max-width: 767px) {
+  .sectionLabel {
+    display: none;
+  }
 }
