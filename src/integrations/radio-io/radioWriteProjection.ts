@@ -229,6 +229,8 @@ export interface RadioWriteOrganisation {
    * bytes as read.
    */
   assignMm9pdyStepKeys?: boolean;
+  /** RT95 MM9PDY only: set this P-key to DIR (zone selector) on the write image. */
+  rt95ZoneKey?: { group: 1 | 2; key: 1 | 2 | 3 | 4 | 5 | 6 };
   /**
    * AT-D890UV radio settings overrides for this Write (session state, supplied by the app; never
    * stored in the build). Each is applied as a field patch onto the fresh settings-unit read.

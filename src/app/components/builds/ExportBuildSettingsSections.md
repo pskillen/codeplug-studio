@@ -24,6 +24,7 @@ order. Individual controls within a section gate on `build.radioTargetId` catalo
    always shown (fields inside gate by mode support)
 7. **Digital ID directory** — `ExportDirectoryProjectionFields`; self-gates and renders
    nothing when the target has no dual-bank directory trait
+   8a. **Put Zone on a P-key** — RT95 MM9PDY target only. Optional (`exportSettings.rt95ZoneKey`, off by default); P1-P6 and FUNC group 1/2. Write sets that one key to DIR.
 8. **MM9PDY key assignment** and **MM9PDY channel distance** — MM9PDY AT-D890UV and
    DM-32UV targets only. The distance unit (`exportSettings.channelDistanceUnit`, km
    default) is written into the channel location table header on Write

@@ -90,6 +90,7 @@ import {
 } from '@integrations/radio-io/radios/opengd77/protocol.ts';
 import { Uv17ProProtocol } from '@integrations/radio-io/radios/uv17pro-family/protocol.ts';
 import { Rt95Protocol } from '@integrations/radio-io/radios/rt95/protocol.ts';
+import { applyRt95ZoneKey } from '@integrations/radio-io/radios/rt95/zoneKey.ts';
 import {
   rt95ChipGuardRefusalText,
   type Rt95ChipGuardResult,
@@ -610,7 +611,9 @@ async function resolveRadioWriteImageForUpload(
       progressStage: 'Pre-write read',
     });
     try {
-      return session.radio.encodeChannels(prior, prepared.channels);
+      const image = session.radio.encodeChannels(prior, prepared.channels);
+      applyRt95ZoneKey(image, prepared.organisation?.rt95ZoneKey);
+      return image;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new RadioWriteBlockedError(message);

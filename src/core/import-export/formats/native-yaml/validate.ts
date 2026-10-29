@@ -1227,6 +1227,18 @@ function parseExportSettings(raw: unknown, label: string): BuildExportSettings |
       `${label}.assignMm9pdyStepKeys`,
     );
   }
+  if (record.rt95ZoneKey !== undefined && record.rt95ZoneKey !== null) {
+    const zk = expectRecord(record.rt95ZoneKey, `${label}.rt95ZoneKey`);
+    const group = expectNumber(zk.group, `${label}.rt95ZoneKey.group`);
+    const key = expectNumber(zk.key, `${label}.rt95ZoneKey.key`);
+    if (group !== 1 && group !== 2) {
+      throw new NativeYamlImportError(`${label}.rt95ZoneKey.group must be 1 or 2`);
+    }
+    if (!Number.isInteger(key) || key < 1 || key > 6) {
+      throw new NativeYamlImportError(`${label}.rt95ZoneKey.key must be 1 to 6`);
+    }
+    settings.rt95ZoneKey = { group, key: key as 1 | 2 | 3 | 4 | 5 | 6 };
+  }
   if (record.channelDistanceUnit !== undefined && record.channelDistanceUnit !== null) {
     const value = expectString(record.channelDistanceUnit, `${label}.channelDistanceUnit`);
     if (value !== 'km' && value !== 'mi') {

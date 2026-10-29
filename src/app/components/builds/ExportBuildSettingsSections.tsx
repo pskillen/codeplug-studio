@@ -77,6 +77,8 @@ export default function ExportBuildSettingsSections({
     radioTargetHasCompatibleFormat(build.radioTargetId, 'anytone');
   const showD890ScanListTiming = build.radioTargetId === 'anytone-at-d890uv';
   const showMm9pdyStepKeys = isMm9pdyStepKeyTarget(build.radioTargetId);
+  const showRt95ZoneKey = build.radioTargetId === 'retevis-rt95-mm9pdy';
+  const zoneKey = build.exportSettings?.rt95ZoneKey;
   const showStepKeySwitch = hasPersistedStepKeySwitch(build.radioTargetId);
 
   return (
@@ -301,6 +303,60 @@ export default function ExportBuildSettingsSections({
                 onExportSettingsPatch({ channelDistanceUnit: value === 'mi' ? 'mi' : 'km' })
               }
             />
+          </Stack>
+        </FieldCard>
+      ) : null}
+
+      {showRt95ZoneKey ? (
+        <FieldCard
+          title="Put Zone on a P-key"
+          description="Sets the chosen key to the stock DIR function, which the MM9PDY firmware uses for Zone. The official CPS and CHIRP show this key as DIR. The radio shows ZON."
+        >
+          <Stack gap="xs">
+            <Switch
+              label="Put Zone on a P-key"
+              checked={zoneKey !== undefined}
+              disabled={saving}
+              onChange={(event) =>
+                onExportSettingsPatch({
+                  rt95ZoneKey: event.currentTarget.checked ? { group: 1, key: 1 } : undefined,
+                })
+              }
+            />
+            {zoneKey ? (
+              <>
+                <SegmentedControl
+                  size="sm"
+                  aria-label="Zone key"
+                  data={['P1', 'P2', 'P3', 'P4', 'P5', 'P6'].map((label, i) => ({
+                    value: String(i + 1),
+                    label,
+                  }))}
+                  value={String(zoneKey.key)}
+                  disabled={saving}
+                  onChange={(value) =>
+                    onExportSettingsPatch({
+                      rt95ZoneKey: { ...zoneKey, key: Number(value) as 1 | 2 | 3 | 4 | 5 | 6 },
+                    })
+                  }
+                />
+                <SegmentedControl
+                  size="sm"
+                  aria-label="Zone key FUNC group"
+                  data={[
+                    { value: '1', label: 'FUNC group 1' },
+                    { value: '2', label: 'FUNC group 2' },
+                  ]}
+                  value={String(zoneKey.group)}
+                  disabled={saving}
+                  onChange={(value) =>
+                    onExportSettingsPatch({
+                      rt95ZoneKey: { ...zoneKey, group: value === '2' ? 2 : 1 },
+                    })
+                  }
+                />
+              </>
+            ) : null}
           </Stack>
         </FieldCard>
       ) : null}
