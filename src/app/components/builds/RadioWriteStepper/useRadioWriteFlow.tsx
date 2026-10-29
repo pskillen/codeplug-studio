@@ -427,7 +427,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     extra: {
       contactsNote: string | null;
       kepsCount: number | null;
-      rt95?: { zones: number; descriptions: number };
+      rt95?: { zones: number; descriptions: number; zoneKey?: { group: number; key: number } };
     },
   ): Promise<void> {
     const reviewIdentity: RadioIdentityView = ctx.atD890?.masterIdName
@@ -736,6 +736,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
                         zones: image.organisation.zones?.length ?? 0,
                         descriptions: image.channels.filter((c) => !c.empty && c.description)
                           .length,
+                        ...(image.organisation.rt95ZoneKey
+                          ? { zoneKey: image.organisation.rt95ZoneKey }
+                          : {}),
                       },
                     }
                   : {}),

@@ -6,6 +6,7 @@
 import { Text } from '@mantine/core';
 import { RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
 import { registerReviewSectionProvider } from '../reviewSections.tsx';
+import Rt95ZoneKeyNudge from '../../Rt95ZoneKeyNudge.tsx';
 import { Section } from '../reviewSectionParts.tsx';
 
 registerReviewSectionProvider({
@@ -22,6 +23,13 @@ registerReviewSectionProvider({
                 : `${ctx.rt95.descriptions} channel descriptions`}{' '}
               will be written.
             </Text>
+            {ctx.rt95.zoneKey ? (
+              <Text size="sm">
+                Zone key: P{ctx.rt95.zoneKey.key}, FUNC group {ctx.rt95.zoneKey.group}. Written as
+                DIR; the radio shows ZON.
+              </Text>
+            ) : null}
+            <Rt95ZoneKeyNudge zones={ctx.rt95.zones} zoneKeySet={ctx.rt95.zoneKey !== undefined} />
           </Section>,
         ]
       : [],

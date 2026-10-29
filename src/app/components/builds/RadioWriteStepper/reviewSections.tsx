@@ -27,7 +27,7 @@ export interface ReviewContext {
   /** AT-D890UV only: this Review's range, receive-only channels and live choices. */
   atD890?: AtD890ReviewController;
   /** RT95 MM9PDY only: the memory check passed, and what the MMD1 table will hold. */
-  rt95?: { zones: number; descriptions: number };
+  rt95?: { zones: number; descriptions: number; zoneKey?: { group: number; key: number } };
 }
 
 export interface ReviewSectionProvider {
