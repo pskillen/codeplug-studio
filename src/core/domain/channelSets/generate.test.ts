@@ -16,10 +16,10 @@ describe('generateChannelsFromSet', () => {
     });
   });
 
-  it('generates pDMR as DMO simplex DMR channels, CC1 TS1, RX-only by default', () => {
-    const channels = generateChannelsFromSet(PROJECT_ID, 'pdmr');
+  it('generates DMR446 as DMO simplex DMR channels, CC1 TS1, RX-only by default', () => {
+    const channels = generateChannelsFromSet(PROJECT_ID, 'dmr446');
     expect(channels).toHaveLength(16);
-    expect(channels[0]?.name).toBe('pDMR-1');
+    expect(channels[0]?.name).toBe('DMR446-1');
     expect(channels[0]?.rxFrequency).toBe(446_006_250);
     expect(channels.every((ch) => ch.forbidTransmit === 'forbid')).toBe(true);
     expect(channels.every((ch) => ch.modeProfiles.length === 1)).toBe(true);
@@ -33,27 +33,37 @@ describe('generateChannelsFromSet', () => {
     });
   });
 
-  it('generates pDMR (32) as DMO simplex DMR CC1 TS1', () => {
-    const channels = generateChannelsFromSet(PROJECT_ID, 'pdmr-32');
-    expect(channels).toHaveLength(32);
-    expect(channels.every((ch) => ch.forbidTransmit === 'forbid')).toBe(true);
-    expect(channels[31]?.modeProfiles[0]).toMatchObject({
-      mode: 'dmr',
-      dmrMode: 'dmo-simplex',
-      colourCode: 1,
-      timeslot: 1,
-    });
+  it('generates dPMR446 sets as frequency-only FM-style channels (no DMR params)', () => {
+    for (const [id, count] of [
+      ['dpmr446-16', 16],
+      ['dpmr446-32', 32],
+    ] as const) {
+      const channels = generateChannelsFromSet(PROJECT_ID, id);
+      expect(channels).toHaveLength(count);
+      expect(channels.every((ch) => ch.forbidTransmit === 'forbid')).toBe(true);
+      expect(channels[0]?.modeProfiles[0]).toMatchObject({ mode: 'fm', bandwidthKHz: 12.5 });
+      expect(channels[0]?.modeProfiles[0]).not.toHaveProperty('colourCode');
+    }
   });
 
-  it('does not dedupe pDMR against analogue PMR446 on the same frequencies', () => {
+  it('does not dedupe DMR446 against analogue PMR446 on the same frequencies', () => {
     const existing = generateChannelsFromSet(PROJECT_ID, 'pmr446');
-    const result = classifyChannelSetDedup(existing, generateChannelsFromSet(PROJECT_ID, 'pdmr'));
+    const result = classifyChannelSetDedup(existing, generateChannelsFromSet(PROJECT_ID, 'dmr446'));
     expect(result.toAdd).toHaveLength(16);
     const again = classifyChannelSetDedup(
-      generateChannelsFromSet(PROJECT_ID, 'pdmr'),
-      generateChannelsFromSet(PROJECT_ID, 'pdmr'),
+      generateChannelsFromSet(PROJECT_ID, 'dmr446'),
+      generateChannelsFromSet(PROJECT_ID, 'dmr446'),
     );
     expect(again.skippedByRxHz).toHaveLength(16);
+  });
+
+  it('imports the 32-channel dPMR446 set alongside the 16-channel one', () => {
+    const existing = generateChannelsFromSet(PROJECT_ID, 'dpmr446-16');
+    const result = classifyChannelSetDedup(
+      existing,
+      generateChannelsFromSet(PROJECT_ID, 'dpmr446-32'),
+    );
+    expect(result.toAdd).toHaveLength(32);
   });
 
   it('applies name prefix and overrides', () => {

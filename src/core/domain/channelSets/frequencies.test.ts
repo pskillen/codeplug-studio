@@ -5,8 +5,9 @@ import {
   UK_VHF_SIMPLEX_LEGACY_S_HZ,
   buildLinearGridHz,
   euCbCeptTemplates,
-  pdmr32Templates,
-  pdmrTemplates,
+  dmr446Templates,
+  dpmr446x16Templates,
+  dpmr446x32Templates,
   pmr446Templates,
   ukCb2781Templates,
   ukUhfSimplexLegacyTemplates,
@@ -32,33 +33,44 @@ describe('PMR446', () => {
   });
 });
 
-describe('pDMR', () => {
-  it('reuses the PMR446 grid with pDMR-N names', () => {
-    const templates = pdmrTemplates();
-    const pmr = pmr446Templates();
+describe('DMR446 / dPMR446', () => {
+  it('DMR446 reuses the PMR446 grid with DMR446-N names', () => {
+    const templates = dmr446Templates();
     expect(templates).toHaveLength(16);
-    expect(templates.map((t) => t.rxFrequencyHz)).toEqual(pmr.map((t) => t.rxFrequencyHz));
+    expect(templates.map((t) => t.rxFrequencyHz)).toEqual(
+      pmr446Templates().map((t) => t.rxFrequencyHz),
+    );
     expect(templates.every((t) => t.rxFrequencyHz === t.txFrequencyHz)).toBe(true);
-    expect(templates[0]?.name).toBe('pDMR-1');
-    expect(templates[15]?.name).toBe('pDMR-16');
+    expect(templates[0]?.name).toBe('DMR446-1');
+    expect(templates[15]?.name).toBe('DMR446-16');
   });
-});
 
-describe('pDMR (32)', () => {
-  it('has 32 channels at 6.25 kHz from 446.003125 to 446.196875 MHz', () => {
-    const templates = pdmr32Templates();
+  it('dPMR446 (16) uses the 12.5 kHz grid with dPMR446-N names', () => {
+    const templates = dpmr446x16Templates();
+    expect(templates).toHaveLength(16);
+    expect(templates[0]?.rxFrequencyHz).toBe(446_006_250);
+    expect(templates[15]?.rxFrequencyHz).toBe(446_193_750);
+    expect(templates[0]?.name).toBe('dPMR446-1');
+  });
+
+  it('dPMR446 (32) has 32 channels at 6.25 kHz from 446.003125 to 446.196875 MHz', () => {
+    const templates = dpmr446x32Templates();
     expect(templates).toHaveLength(32);
     expect(templates[0]?.rxFrequencyHz).toBe(446_003_125);
     expect(templates[31]?.rxFrequencyHz).toBe(446_196_875);
     expect(templates[1]!.rxFrequencyHz - templates[0]!.rxFrequencyHz).toBe(6_250);
-    expect(templates[0]?.name).toBe('pDMR32-1');
+    expect(templates[0]?.name).toBe('dPMR32-1');
     expect(new Set(templates.map((t) => t.name)).size).toBe(32);
   });
 
-  it('shares no frequency or name with the 16-channel set', () => {
-    const hz = new Set(pdmrTemplates().map((t) => t.rxFrequencyHz));
-    const names = new Set(pdmrTemplates().map((t) => t.name));
-    expect(pdmr32Templates().some((t) => hz.has(t.rxFrequencyHz) || names.has(t.name))).toBe(false);
+  it('all three sets use distinct channel names', () => {
+    const all = [...dmr446Templates(), ...dpmr446x16Templates(), ...dpmr446x32Templates()];
+    expect(new Set(all.map((t) => t.name)).size).toBe(all.length);
+  });
+
+  it('dPMR446 (32) shares no frequency with the 16-channel grid', () => {
+    const hz = new Set(dpmr446x16Templates().map((t) => t.rxFrequencyHz));
+    expect(dpmr446x32Templates().some((t) => hz.has(t.rxFrequencyHz))).toBe(false);
   });
 });
 

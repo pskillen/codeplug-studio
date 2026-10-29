@@ -2,8 +2,9 @@ import type { Channel } from '../../models/library.ts';
 
 export type ChannelSetId =
   | 'pmr446'
-  | 'pdmr'
-  | 'pdmr-32'
+  | 'dmr446'
+  | 'dpmr446-16'
+  | 'dpmr446-32'
   | 'uk-vhf-simplex-v'
   | 'uk-vhf-simplex-s'
   | 'uk-uhf-simplex-u'

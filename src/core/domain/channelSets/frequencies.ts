@@ -78,25 +78,29 @@ export function pmr446Templates(): ChannelSetTemplate[] {
   });
 }
 
-/**
- * pDMR (DMR Tier 1, licence-free): the same 16 x 12.5 kHz grid as analogue PMR446,
- * named `pDMR-1`..`16`.
- */
-export function pdmrTemplates(): ChannelSetTemplate[] {
-  return pmr446Templates().map((t, i) => ({ ...t, name: `pDMR-${i + 1}` }));
+/** DMR446 (DMR Tier 1, licence-free): the 16 x 12.5 kHz PMR446 grid, named `DMR446-1`..`16`. */
+export function dmr446Templates(): ChannelSetTemplate[] {
+  return pmr446Templates().map((t, i) => ({ ...t, name: `DMR446-${i + 1}` }));
 }
 
 /**
- * pDMR (32): the 32 digital PMR446 channel positions on the 6.25 kHz grid,
- * 446.003125-446.196875 MHz, named `pDMR32-1`..`32`. This grid sits 3.125 kHz below/above
- * the 12.5 kHz analogue grid, so no frequency equals a `pdmrTemplates` channel. DMR occupies
- * 12.5 kHz, so adjacent channels overlap.
+ * dPMR446 (16): FDMA digital on the 12.5 kHz PMR446 grid, named `dPMR446-1`..`16`.
+ * No dPMR mode exists in the library model yet; generated as frequency-only FM-style channels.
  */
-export function pdmr32Templates(): ChannelSetTemplate[] {
+export function dpmr446x16Templates(): ChannelSetTemplate[] {
+  return pmr446Templates().map((t, i) => ({ ...t, name: `dPMR446-${i + 1}` }));
+}
+
+/**
+ * dPMR446 (32): the 32 digital PMR446 channel positions on the 6.25 kHz grid,
+ * 446.003125-446.196875 MHz, named `dPMR32-1`..`32`. The grid sits 3.125 kHz off the 12.5 kHz
+ * grid, so no frequency equals a 16-channel set. Generated as frequency-only FM-style channels.
+ */
+export function dpmr446x32Templates(): ChannelSetTemplate[] {
   const startHz = 446_003_125;
   return Array.from({ length: 32 }, (_, i) => {
     const hz = startHz + i * 6_250;
-    return { name: `pDMR32-${i + 1}`, rxFrequencyHz: hz, txFrequencyHz: hz };
+    return { name: `dPMR32-${i + 1}`, rxFrequencyHz: hz, txFrequencyHz: hz };
   });
 }
 

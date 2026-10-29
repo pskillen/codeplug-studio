@@ -6,8 +6,8 @@ import { buildChannelSetImportPlan } from './channelSetImport.ts';
 const PROJECT_ID = 'proj-1';
 
 describe('buildChannelSetImportPlan', () => {
-  it('plans a pDMR import as 16 DMR channels', () => {
-    const plan = buildChannelSetImportPlan(emptyLibrary(), PROJECT_ID, 'pdmr');
+  it('plans a DMR446 import as 16 DMR channels', () => {
+    const plan = buildChannelSetImportPlan(emptyLibrary(), PROJECT_ID, 'dmr446');
     expect(plan.channelsToAdd).toHaveLength(16);
     expect(plan.channelsToAdd.every((ch) => ch.modeProfiles[0]?.mode === 'dmr')).toBe(true);
   });
