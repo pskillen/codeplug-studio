@@ -26,8 +26,7 @@ export const RT95_DESCRIPTOR: RadioDescriptor = {
   attributionIds: ['chirp'],
   compatibleProfiles: [
     { formatId: 'radio-io', profileId: 'radio-io-rt95' },
-    // Hidden on prod until the owner has checked the MM9PDY firmware on a radio.
-    { formatId: 'radio-io', profileId: 'radio-io-rt95-mm9pdy', prodWriteDisabled: true },
+    { formatId: 'radio-io', profileId: 'radio-io-rt95-mm9pdy' },
   ],
   writeStrategy: 'full-image',
   baudRate: RT95_BAUD_RATE,

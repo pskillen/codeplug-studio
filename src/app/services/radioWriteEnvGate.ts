@@ -21,7 +21,7 @@ export function resolveRadioWriteGate(
   buildEnv: string = __BUILD_ENV__,
   profileId?: string,
 ): RadioWriteGate {
-  // Per-profile flag: hidden on prod, no native-platform exemption (RT95 MM9PDY, firmware unreleased).
+  // Per-profile flag: hidden on prod, no native-platform exemption (for a profile whose firmware is unreleased).
   const profileDisabled =
     profileId !== undefined &&
     (descriptor?.compatibleProfiles ?? []).some(
