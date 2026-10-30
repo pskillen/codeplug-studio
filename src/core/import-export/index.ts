@@ -8,8 +8,10 @@ export {
 } from './projectDocument.ts';
 export {
   adapterSupportsKind,
+  isBinaryCpsImportAdapter,
   isMultiFileImportAdapter,
   isSingleFileProjectImportAdapter,
+  type BinaryCpsImportAdapter,
   type ImportAdapter,
   type ImportParseContext,
   type MultiFileImportAdapter,
@@ -37,6 +39,7 @@ export type {
   FormatCatalogEntry,
   FormatId,
   FormatStatus,
+  BinaryCpsImportResult,
   ImportAdapterCapabilities,
   ImportDelivery,
   ImportDocumentResult,

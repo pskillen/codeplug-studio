@@ -4,7 +4,10 @@ import { dm32ExportAdapter } from './formats/dm32/adapter.ts';
 import { chirpExportAdapter } from './formats/chirp/adapter.ts';
 import { anytoneExportAdapter } from './formats/anytone/adapter.ts';
 import { neonplugExportAdapter } from './formats/neonplug/adapter.ts';
-import { radiofoundryExportAdapter } from './formats/radiofoundry/adapter.ts';
+import {
+  radiofoundryExportAdapter,
+  radiofoundryImportAdapter,
+} from './formats/radiofoundry/adapter.ts';
 import type { ExportAdapter } from './exportAdapter.ts';
 import type { ImportAdapter } from './importAdapter.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
@@ -39,7 +42,7 @@ export const formatCatalog: readonly FormatCatalogEntry[] = [
   {
     id: 'radiofoundry',
     label: 'RadioFoundry codeplug',
-    importStatus: 'planned',
+    importStatus: 'shipped',
     exportStatus: 'shipped',
     issue: '1483',
   },
@@ -72,7 +75,10 @@ export const formatCatalog: readonly FormatCatalogEntry[] = [
   },
 ];
 
-export const importAdapters: readonly ImportAdapter[] = [nativeYamlImportAdapter];
+export const importAdapters: readonly ImportAdapter[] = [
+  nativeYamlImportAdapter,
+  radiofoundryImportAdapter,
+];
 
 export const exportAdapters: readonly ExportAdapter[] = [
   nativeYamlExportAdapter,

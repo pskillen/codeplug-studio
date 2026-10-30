@@ -24,6 +24,15 @@ export const ZONE_BITMAP = 0x8010;
 export const ZONE_BITMAP_SIZE = 0x20;
 export const ZONE_RECORD_SIZE = 0xb0;
 
+/**
+ * Layout selector at the high byte of zone 0's 24th member (spec §7.2).
+ * 0x00–0x04 is the 80-channel record. 0xFF is the 16-channel record.
+ */
+export const ZONE_LAYOUT_BYTE = 0x806f;
+
+/** Open-firmware 16-channel zone record. 68 of these (spec §7.2). */
+export const ZONE_RECORD_SIZE_16 = 0x30;
+
 export const CONTACT_BASE = 0xa7620;
 export const CONTACT_RECORD_SIZE = 24;
 

@@ -5,7 +5,7 @@ import {
   isSingleFileCpsExportAdapter,
   isSingleFileProjectExportAdapter,
 } from './exportAdapter.ts';
-import { isSingleFileProjectImportAdapter } from './importAdapter.ts';
+import { isBinaryCpsImportAdapter, isSingleFileProjectImportAdapter } from './importAdapter.ts';
 import { nativeYamlExportAdapter, nativeYamlImportAdapter } from './formats/native-yaml/adapter.ts';
 import { formatCatalog, getExportAdapter, getImportAdapter } from './registry.ts';
 
@@ -82,7 +82,7 @@ describe('adapter contracts', () => {
     }
   });
 
-  it('registry resolves radiofoundry export and leaves import unregistered', () => {
+  it('registry resolves radiofoundry export and import', () => {
     const adapter = getExportAdapter('radiofoundry');
     expect(adapter.id).toBe('radiofoundry');
     expect(adapter.status).toBe('shipped');
@@ -93,10 +93,13 @@ describe('adapter contracts', () => {
       expect(adapter.defaultExportSettings?.expandModes).toBe(false);
       expect(adapter.defaultExportSettings?.expandRxGroupLists).toBe(false);
     }
-    expect(() => getImportAdapter('radiofoundry')).toThrow(/No import adapter/);
+    const imported = getImportAdapter('radiofoundry');
+    expect(imported.id).toBe('radiofoundry');
+    expect(imported.status).toBe('shipped');
+    expect(isBinaryCpsImportAdapter(imported)).toBe(true);
     const entry = formatCatalog.find((f) => f.id === 'radiofoundry');
     expect(entry?.exportStatus).toBe('shipped');
-    expect(entry?.importStatus).toBe('planned');
+    expect(entry?.importStatus).toBe('shipped');
   });
 
   it('registry throws for planned CPS import adapters', () => {
