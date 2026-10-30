@@ -223,6 +223,58 @@ describe('Rt95Protocol', () => {
     expect(writeAddrs).toEqual([0x3200]);
     expect(writeAddrs.some((a) => a >= 0x3b00)).toBe(false);
   });
+
+  it('upload with settings patch aborts on drift outside the mask before any W frame', async () => {
+    const eeprom = buildFakeRt95Eeprom();
+    eeprom[0x3200] = 0x10;
+    const map = createMemoryMap(RT95_IMAGE_SIZE);
+    map.set(0, eeprom.subarray(0, RT95_IMAGE_SIZE));
+    eeprom[0x3200] = 0x20;
+    const pipe = createFakeRt95Pipe({ eeprom });
+    const radio = new Rt95Protocol();
+    await radio.connect(pipe);
+    const patches = resolveRt95SettingsPatches([{ fieldId: 'beepVolume', value: 3 }], 'stock');
+    await expect(radio.upload(map, { settingsPatches: patches })).rejects.toThrow(/aborted/);
+    expect(pipe.count('W')).toBe(0);
+  });
+
+  it('uploadSettingsPatches aborts on second-block drift before any W frame', async () => {
+    const eeprom = buildFakeRt95Eeprom();
+    eeprom[0x3200] = 0xaa;
+    eeprom[0x321c] = 0x01;
+    const map = createMemoryMap(RT95_IMAGE_SIZE);
+    map.set(0, eeprom.subarray(0, RT95_IMAGE_SIZE));
+    eeprom[0x321c] = 0x03;
+    const pipe = createFakeRt95Pipe({ eeprom });
+    const radio = new Rt95Protocol();
+    await radio.connect(pipe);
+    const patches = resolveRt95SettingsPatches(
+      [
+        { fieldId: 'beepVolume', value: 2 },
+        { fieldId: 'voxOnOff', value: true },
+      ],
+      'stock',
+    );
+    await expect(radio.uploadSettingsPatches(patches, map, {})).rejects.toThrow(/aborted/);
+    expect(pipe.count('W')).toBe(0);
+  });
+
+  it('upload tolerates drift only inside the settings patch mask', async () => {
+    const eeprom = buildFakeRt95Eeprom();
+    eeprom[0x3200] = 0x05;
+    const map = createMemoryMap(RT95_IMAGE_SIZE);
+    map.set(0, eeprom.subarray(0, RT95_IMAGE_SIZE));
+    eeprom[0x3200] = 0x07;
+    const pipe = createFakeRt95Pipe({ eeprom });
+    const radio = new Rt95Protocol();
+    await radio.connect(pipe);
+    const patches = resolveRt95SettingsPatches([{ fieldId: 'beepVolume', value: 2 }], 'stock');
+    await radio.upload(map, { settingsPatches: patches });
+    const w3200 = pipe.writes.find((w) => w[0] === 0x57 && w[1] === 0x32 && w[2] === 0x00);
+    expect(w3200).toBeDefined();
+    expect(w3200![4]! & 0x07).toBe(2);
+    expect(w3200![4]! & 0xf8).toBe(0x00);
+  });
 });
 
 function makeProgramQxReadFrame(addr: number): Uint8Array {

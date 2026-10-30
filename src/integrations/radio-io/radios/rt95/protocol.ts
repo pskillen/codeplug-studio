@@ -377,17 +377,19 @@ export class Rt95Protocol implements CloneImageRadio {
         }
         ctx.chipGuardPassed = true;
       }
-      for (let addr = RT95_BLOCK_ADDR_START; addr <= RT95_BLOCK_ADDR_END; addr += RT95_BLOCK_SIZE) {
-        throwIfAborted(opts.signal);
-        let payload: Uint8Array;
-        if (touchedBlocks.has(addr) && patches.length > 0) {
+      const mergedTouchedBlocks = new Map<number, Uint8Array>();
+      if (patches.length > 0) {
+        for (const addr of [...touchedBlocks].sort((a, b) => a - b)) {
+          throwIfAborted(opts.signal);
           const fresh = await this.readBlock(pipe, addr);
           const pre = prePauseBytes.subarray(addr, addr + RT95_BLOCK_SIZE);
           assertRt95FreshBlockMatchesPrePause(addr, pre, fresh, patchMask);
-          payload = mergeRt95SettingsPatchIntoBlock(fresh, addr, patches);
-        } else {
-          payload = image.get(addr, RT95_BLOCK_SIZE);
+          mergedTouchedBlocks.set(addr, mergeRt95SettingsPatchIntoBlock(fresh, addr, patches));
         }
+      }
+      for (let addr = RT95_BLOCK_ADDR_START; addr <= RT95_BLOCK_ADDR_END; addr += RT95_BLOCK_SIZE) {
+        throwIfAborted(opts.signal);
+        const payload = mergedTouchedBlocks.get(addr) ?? image.get(addr, RT95_BLOCK_SIZE);
         await this.writeBlock(pipe, addr, payload, ctx);
         stagingChunks.push({ address: addr, data: payload.slice() });
         done += 1;
@@ -468,12 +470,17 @@ export class Rt95Protocol implements CloneImageRadio {
     const stagingChunks: { address: number; data: Uint8Array }[] = [];
     let done = 0;
     try {
+      const mergedByBlock = new Map<number, Uint8Array>();
       for (const addr of [...touchedBlocks].sort((a, b) => a - b)) {
         throwIfAborted(opts.signal);
         const fresh = await this.readBlock(pipe, addr);
         const pre = prePauseBytes.subarray(addr, addr + RT95_BLOCK_SIZE);
         assertRt95FreshBlockMatchesPrePause(addr, pre, fresh, patchMask);
-        const payload = mergeRt95SettingsPatchIntoBlock(fresh, addr, patches);
+        mergedByBlock.set(addr, mergeRt95SettingsPatchIntoBlock(fresh, addr, patches));
+      }
+      for (const addr of [...touchedBlocks].sort((a, b) => a - b)) {
+        throwIfAborted(opts.signal);
+        const payload = mergedByBlock.get(addr)!;
         await this.writeBlock(pipe, addr, payload, ctx);
         stagingChunks.push({ address: addr, data: payload.slice() });
         done += 1;
