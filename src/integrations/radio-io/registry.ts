@@ -7,6 +7,7 @@ import type { RadioCompatibleProfile, RadioDescriptor } from './types.ts';
 import { UV5R_MINI_DESCRIPTOR } from './radios/uv5r-mini/descriptor.ts';
 import { UV21_PRO_V2_DESCRIPTOR } from './radios/uv21-pro-v2/descriptor.ts';
 import { DM32UV_DESCRIPTOR } from './radios/dm32uv/descriptor.ts';
+import { DM32_RADIOFOUNDRY_DESCRIPTOR } from './radios/dm32uv-radiofoundry/descriptor.ts';
 import { OPENGD77_DM1701_DESCRIPTOR } from './radios/opengd77/dm1701/descriptor.ts';
 import { OPENGD77_MD9600_DESCRIPTOR } from './radios/opengd77/md9600/descriptor.ts';
 import { AT_D890UV_DESCRIPTOR } from './radios/at-d890uv/descriptor.ts';
@@ -16,6 +17,7 @@ const DESCRIPTORS: readonly RadioDescriptor[] = [
   UV5R_MINI_DESCRIPTOR,
   UV21_PRO_V2_DESCRIPTOR,
   DM32UV_DESCRIPTOR,
+  DM32_RADIOFOUNDRY_DESCRIPTOR,
   AT_D890UV_DESCRIPTOR,
   RT95_DESCRIPTOR,
   OPENGD77_DM1701_DESCRIPTOR,

@@ -211,6 +211,24 @@ describe('getProfileExportLimits', () => {
     expect(stock!.nameLengthZone).toBe('not_used');
   });
 
+  it('projects DM-32 RadioFoundry cable limits from the radiofoundry profile', () => {
+    const limits = getProfileExportLimits('radio-io', 'radio-io-dm32uv-radiofoundry');
+    const file = getProfileExportLimits('radiofoundry', 'radiofoundry-dm32uv');
+    expect(limits).not.toBeNull();
+    expect(file).not.toBeNull();
+    expect(limits!.maxChannels).toBe(file!.maxChannels);
+    expect(limits!.maxZones).toBe(file!.maxZones);
+    expect(limits!.maxScanLists).toBe('not_used');
+    expect(limits!.maxContacts).toBe(file!.maxContacts);
+    expect(limits!.maxTalkGroups).toBe('not_used');
+    expect(limits!.maxRadioIds).toBe(file!.maxRadioIds);
+    expect(limits!.zoneMembers).toBe(file!.zoneMembers);
+    expect(limits!.nameLengthChannel).toBe(file!.nameLengthChannel);
+    expect(limits!.powerLadder.map((entry) => entry.wire)).toEqual(
+      file!.powerLadder.map((entry) => entry.wire),
+    );
+  });
+
   it('marks MM9PDY AT-D890UV scan-list limits not_used', () => {
     const limits = getProfileExportLimits('radio-io', 'radio-io-at-d890uv-mm9pdy');
     expect(limits).not.toBeNull();

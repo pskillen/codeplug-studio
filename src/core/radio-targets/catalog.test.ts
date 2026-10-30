@@ -119,6 +119,7 @@ describe('radio target catalog', () => {
       'radio-io-rt95',
       'radio-io-rt95-mm9pdy',
       'radiofoundry-dm32uv',
+      'radio-io-dm32uv-radiofoundry',
     ]) {
       expect(ids).toContain(profileId);
     }
@@ -188,6 +189,12 @@ describe('radio target catalog', () => {
         profileId: 'radiofoundry-dm32uv',
         kind: 'cps-file',
         label: 'RadioFoundry codeplug',
+      },
+      {
+        formatId: 'radio-io',
+        profileId: 'radio-io-dm32uv-radiofoundry',
+        kind: 'web-serial',
+        label: 'Web Serial',
       },
     ]);
     expect(

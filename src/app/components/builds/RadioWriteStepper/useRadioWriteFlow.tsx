@@ -722,6 +722,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
           organisation: image.organisation,
           channels: image.channels,
           ...(image.nxdn ? { nxdn: image.nxdn, warnings: image.warnings } : {}),
+          ...(image.radioFoundryWrite ? { radioFoundryWrite: image.radioFoundryWrite } : {}),
           parts: p,
           ...(isAtD890 && p.settings ? { settingsOverrides: overridesForWrite(build.id) } : {}),
           beforeTransmit: async (ctx: BeforeTransmitContext) => {

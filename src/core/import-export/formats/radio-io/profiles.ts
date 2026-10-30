@@ -6,6 +6,7 @@
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
+import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { RT95_LIMITS } from '@core/radios/retevis/rt95/limits.ts';
 import type { PowerLadderEntry } from '../../profileLadder.ts';
 
@@ -116,11 +117,27 @@ export interface RadioIoOpenGd77Md9600Profile {
   powerLadder: readonly PowerLadderEntry[];
 }
 
+/** DM-32UV RadioFoundry cable write. Caps are the open-firmware codeplug, not stock DM-32. */
+export interface RadioIoDm32uvRadioFoundryProfile {
+  id: 'radio-io-dm32uv-radiofoundry';
+  label: string;
+  maxMemorySlots: number;
+  nameLimit: number;
+  maxZones: number;
+  zoneMembers: number;
+  maxContacts: number;
+  maxRxGroupLists: number;
+  rxGroupListMembers: number;
+  maxRadioIds: number;
+  powerLadder: readonly PowerLadderEntry[];
+}
+
 export type RadioIoRadioProfile =
   | RadioIoUv5rMiniProfile
   | RadioIoUv21Profile
   | RadioIoRt95Profile
   | RadioIoDm32uvProfile
+  | RadioIoDm32uvRadioFoundryProfile
   | RadioIoAtD890uvProfile
   | RadioIoOpenGd771701Profile
   | RadioIoOpenGd77Md9600Profile;
@@ -155,6 +172,12 @@ export function isRadioIoDm32uvProfile(
   profile: RadioIoRadioProfile,
 ): profile is RadioIoDm32uvProfile {
   return isDm32RadioIoProfileId(profile.id);
+}
+
+export function isRadioIoDm32uvRadioFoundryProfile(
+  profile: RadioIoRadioProfile,
+): profile is RadioIoDm32uvRadioFoundryProfile {
+  return profile.id === 'radio-io-dm32uv-radiofoundry';
 }
 
 /** Stock and MM9PDY AT-D890UV Web Serial profiles share one codec. */
@@ -344,6 +367,32 @@ export const RADIO_IO_OPENGD77_1701_PROFILE: RadioIoOpenGd771701Profile = {
   powerLadder: OPENGD77_1701_POWER_LADDER,
 };
 
+/** Nine steps, same percent split as the RadioFoundry codeplug file. Watts are unmeasured. */
+const DM32_RADIOFOUNDRY_POWER_LADDER: readonly PowerLadderEntry[] = Array.from(
+  { length: DM32UV_RADIOFOUNDRY_LIMITS.POWER_LEVELS },
+  (_, index) => ({
+    percent:
+      index === DM32UV_RADIOFOUNDRY_LIMITS.POWER_LEVELS - 1
+        ? 100
+        : Math.floor((index * 100) / DM32UV_RADIOFOUNDRY_LIMITS.POWER_LEVELS) + 1,
+    wire: String(index + 1),
+  }),
+);
+
+export const RADIO_IO_DM32UV_RADIOFOUNDRY_PROFILE: RadioIoDm32uvRadioFoundryProfile = {
+  id: 'radio-io-dm32uv-radiofoundry',
+  label: 'Baofeng DM-32UV (RadioFoundry)',
+  maxMemorySlots: DM32UV_RADIOFOUNDRY_LIMITS.CHANNEL_MAX,
+  nameLimit: DM32UV_RADIOFOUNDRY_LIMITS.NAME_MAX,
+  maxZones: DM32UV_RADIOFOUNDRY_LIMITS.ZONE_MAX,
+  zoneMembers: DM32UV_RADIOFOUNDRY_LIMITS.ZONE_MEMBERS_MAX,
+  maxContacts: DM32UV_RADIOFOUNDRY_LIMITS.CONTACTS_MAX,
+  maxRxGroupLists: DM32UV_RADIOFOUNDRY_LIMITS.RX_GROUPS_MAX,
+  rxGroupListMembers: DM32UV_RADIOFOUNDRY_LIMITS.RX_GROUP_MEMBERS_MAX,
+  maxRadioIds: DM32UV_RADIOFOUNDRY_LIMITS.RADIO_IDS_MAX,
+  powerLadder: DM32_RADIOFOUNDRY_POWER_LADDER,
+};
+
 export const RADIO_IO_OPENGD77_MD9600_PROFILE: RadioIoOpenGd77Md9600Profile = {
   id: 'radio-io-opengd77-md9600',
   label: 'TYT MD-9600 / RT-90 (OpenGD77)',
@@ -369,6 +418,7 @@ export const RADIO_IO_PROFILES: readonly RadioIoRadioProfile[] = [
   RADIO_IO_AT_D890UV_MM9PDY_PROFILE,
   RADIO_IO_OPENGD77_1701_PROFILE,
   RADIO_IO_OPENGD77_MD9600_PROFILE,
+  RADIO_IO_DM32UV_RADIOFOUNDRY_PROFILE,
 ];
 
 export function getRadioIoProfile(profileId: string): RadioIoRadioProfile {
