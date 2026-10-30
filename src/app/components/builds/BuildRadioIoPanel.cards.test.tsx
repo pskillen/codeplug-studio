@@ -227,6 +227,17 @@ describe('BuildRadioIoPanel layout, AT-D890UV (#1393)', () => {
   });
 });
 
+describe('BuildRadioIoPanel layout, RT95 (#1476)', () => {
+  it.each([['radio-io-rt95'], ['radio-io-rt95-mm9pdy']])(
+    '%s shows the radio settings card',
+    async (profileId) => {
+      renderPanel(profileId);
+      expect(await screen.findByRole('region', { name: 'Radio settings' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Edit settings' })).toBeInTheDocument();
+    },
+  );
+});
+
 describe('BuildRadioIoPanel layout, other radios (#1393)', () => {
   it('DM-32UV: header and backup card, no radio settings card, no transmit-limits line', async () => {
     renderPanel('radio-io-dm32uv');
