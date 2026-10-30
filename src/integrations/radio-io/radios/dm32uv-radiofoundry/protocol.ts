@@ -48,6 +48,9 @@ import {
 const REPLY_COMMAND = CODEPLUG_COMMAND | 0x80;
 const PRE_WRITE_STAGE = 'Pre-write read';
 const BLOCKS_STAGE = 'Codeplug blocks';
+// Status 3 is busy: wait 5 s and sleep 20 ms between replies, then fail.
+const BUSY_WAIT_MS = 5000;
+const BUSY_GAP_MS = 20;
 const COMMIT_STAGE = 'Commit';
 
 interface FastInfo {
@@ -373,7 +376,7 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
     if (payload.length > 64) {
       throw new RadioProtocolError('RadioFoundry codeplug request is longer than 64 bytes.');
     }
-    let busy = 0;
+    const busyUntil = performance.now() + BUSY_WAIT_MS;
     for (;;) {
       const seq = this.seq & 0xff;
       this.seq = (this.seq + 1) & 0xff;
@@ -390,8 +393,8 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
         throw new RadioProtocolError('Unexpected RadioFoundry codeplug reply.');
       }
       const status = frame.payload[0]!;
-      if (status === 3 && busy < 4) {
-        busy += 1;
+      if (status === 3 && performance.now() < busyUntil) {
+        await delay(BUSY_GAP_MS);
         continue;
       }
       if (status !== 0) {
@@ -531,6 +534,12 @@ function readU32(source: Uint8Array, offset: number): number {
 
 function hex(addr: number): string {
   return `0x${(addr >>> 0).toString(16)}`;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 async function readFrame(pipe: BytePipe, timeoutMs: number): Promise<DebugFrame> {
