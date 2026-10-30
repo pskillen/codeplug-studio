@@ -16,6 +16,34 @@ describe('generateChannelsFromSet', () => {
     });
   });
 
+  it('generates DMR446 as DMO simplex DMR channels, CC1 TS1, RX-only by default', () => {
+    const channels = generateChannelsFromSet(PROJECT_ID, 'dmr446');
+    expect(channels).toHaveLength(16);
+    expect(channels[0]?.name).toBe('DMR446-1');
+    expect(channels[0]?.rxFrequency).toBe(446_006_250);
+    expect(channels.every((ch) => ch.forbidTransmit === 'forbid')).toBe(true);
+    expect(channels.every((ch) => ch.modeProfiles.length === 1)).toBe(true);
+    expect(channels[0]?.modeProfiles[0]).toMatchObject({
+      mode: 'dmr',
+      dmrMode: 'dmo-simplex',
+      colourCode: 1,
+      timeslot: 1,
+      contactRef: null,
+      rxGroupListId: null,
+    });
+  });
+
+  it('does not dedupe DMR446 against analogue PMR446 on the same frequencies', () => {
+    const existing = generateChannelsFromSet(PROJECT_ID, 'pmr446');
+    const result = classifyChannelSetDedup(existing, generateChannelsFromSet(PROJECT_ID, 'dmr446'));
+    expect(result.toAdd).toHaveLength(16);
+    const again = classifyChannelSetDedup(
+      generateChannelsFromSet(PROJECT_ID, 'dmr446'),
+      generateChannelsFromSet(PROJECT_ID, 'dmr446'),
+    );
+    expect(again.skippedByRxHz).toHaveLength(16);
+  });
+
   it('applies name prefix and overrides', () => {
     const channels = generateChannelsFromSet(PROJECT_ID, 'uk-vhf-simplex-v', {
       namePrefix: 'TEST-',

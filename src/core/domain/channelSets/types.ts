@@ -2,6 +2,7 @@ import type { Channel } from '../../models/library.ts';
 
 export type ChannelSetId =
   | 'pmr446'
+  | 'dmr446'
   | 'uk-vhf-simplex-v'
   | 'uk-vhf-simplex-s'
   | 'uk-uhf-simplex-u'
@@ -21,6 +22,10 @@ export interface ChannelSetDefinition {
   description: string;
   defaultForbidTransmit: boolean;
   defaultBandwidthKHz: number;
+  /** Channel mode generated for every template; defaults to analogue `fm`. */
+  mode?: 'fm' | 'dmr';
+  /** DMR sets only: simplex (DMO) colour code and timeslot applied to every channel. */
+  dmr?: { colourCode: number; timeslot: 1 | 2 };
   templates: () => ChannelSetTemplate[];
 }
 

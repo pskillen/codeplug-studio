@@ -126,7 +126,8 @@ export default function ChannelModeProfilesEditor({
   if (profiles.length === 0) {
     return (
       <p className={classes.empty}>
-        Select at least one mode above to configure mode-specific settings.
+        Select at least one mode above to configure mode-specific settings. Bandwidth, tones and
+        squelch appear for analogue modes (FM, AM, SSB).
       </p>
     );
   }

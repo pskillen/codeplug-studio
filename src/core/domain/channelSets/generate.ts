@@ -1,7 +1,7 @@
 import { newChannel } from '../factories.ts';
 import { defaultModeProfile } from '../modeProfiles.ts';
 import type { Channel } from '../../models/library.ts';
-import type { ChannelModeProfileAnalog } from '../../models/library.ts';
+import type { ChannelModeProfileAnalog, ChannelModeProfileDMR } from '../../models/library.ts';
 import { channelSetDefinition } from './definitions.ts';
 import type { ChannelSetGenerateOptions, ChannelSetId } from './types.ts';
 
@@ -16,6 +16,11 @@ function fmNfmProfile(bandwidthKHz: number): ChannelModeProfileAnalog {
   return { ...base, bandwidthKHz };
 }
 
+function dmrSimplexProfile(colourCode: number, timeslot: 1 | 2): ChannelModeProfileDMR {
+  const base = defaultModeProfile('dmr') as ChannelModeProfileDMR;
+  return { ...base, dmrMode: 'dmo-simplex', colourCode, timeslot };
+}
+
 export function generateChannelsFromSet(
   projectId: string,
   setId: ChannelSetId,
@@ -26,7 +31,10 @@ export function generateChannelsFromSet(
     (options.forbidTransmit ?? def.defaultForbidTransmit) ? 'forbid' : 'default';
   const power = options.power !== undefined ? options.power : null;
   const bandwidthKHz = options.bandwidthKHz ?? def.defaultBandwidthKHz;
-  const modeProfiles = [fmNfmProfile(bandwidthKHz)];
+  const modeProfiles =
+    def.mode === 'dmr' && def.dmr
+      ? [dmrSimplexProfile(def.dmr.colourCode, def.dmr.timeslot)]
+      : [fmNfmProfile(bandwidthKHz)];
 
   return def.templates().map((template) => {
     const name = applyNamePrefix(template.name, options.namePrefix);

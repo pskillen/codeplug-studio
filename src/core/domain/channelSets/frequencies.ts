@@ -78,6 +78,11 @@ export function pmr446Templates(): ChannelSetTemplate[] {
   });
 }
 
+/** DMR446 (DMR Tier 1, licence-free): the 16 x 12.5 kHz PMR446 grid, named `DMR446-1`..`16`. */
+export function dmr446Templates(): ChannelSetTemplate[] {
+  return pmr446Templates().map((t, i) => ({ ...t, name: `DMR446-${i + 1}` }));
+}
+
 /** UK 27/81 CB: 40 channels, 10 kHz spacing from 27.60125 MHz. */
 export function ukCb2781Templates(): ChannelSetTemplate[] {
   const startHz = Math.round(27.60125 * MHZ);

@@ -11,6 +11,7 @@ Band pill classification for generated channels: [bands.md](./bands.md).
 | Set ID             | Label                             | Channels | Default RX-only        |
 | ------------------ | --------------------------------- | -------- | ---------------------- |
 | `pmr446`           | PMR446                            | 16       | yes (`forbidTransmit`) |
+| `dmr446`           | DMR446 (16 channels)              | 16       | yes (`forbidTransmit`) |
 | `uk-vhf-simplex-v` | UK VHF simplex (V-channels)       | 30       | no                     |
 | `uk-vhf-simplex-s` | UK VHF simplex (legacy S08–S23)   | 16       | no                     |
 | `uk-uhf-simplex-u` | UK UHF simplex (U-channels)       | 17       | no                     |
@@ -18,13 +19,23 @@ Band pill classification for generated channels: [bands.md](./bands.md).
 | `uk-cb-2781`       | UK CB (27/81)                     | 40       | no                     |
 | `eu-cb-cept`       | EU / CEPT CB                      | 40       | no                     |
 
-All sets default to **12.5 kHz** FM bandwidth in the library model; the UI allows **25 kHz** override. VHF and UHF simplex grids are also available under **legacy naming** — pick one set per band when adding to the library.
+All analogue sets default to **12.5 kHz** FM bandwidth in the library model; the UI allows **25 kHz** override (hidden for the DMR set `dmr446`, which is fixed 12.5 kHz TDMA). VHF and UHF simplex grids are also available under **legacy naming** — pick one set per band when adding to the library.
 
 ## PMR446
 
 ETSI PMR446: 16 channels, 12.5 kHz spacing, 446.00625–446.19375 MHz. Names `PMR446-1`…`16`. Analogue FM in the library model.
 
 Source: [ETSI PMR446](https://www.etsi.org/).
+
+## DMR446 (16 channels)
+
+DMR446 (DMR Tier 1, licence-free, TDMA): the same 16 channels as analogue PMR446 (446.00625-446.19375 MHz, 12.5 kHz), named `DMR446-1`...`16`. Imported as **DMR** channels: direct-mode **simplex** (`dmo-simplex`), **colour code 1**, **timeslot 1**, RX = TX. No contact or RX group list is attached (vendor-neutral; assign a talk group such as the common simplex convention TG 99 after import). Default `forbidTransmit`, like PMR446. CC1/TS1 are community convention, not regulation; the 12.5 kHz grid is shared with analogue PMR446 (all 16 channels allowed for DMR Tier 1 since January 2018).
+
+**Dedup:** RX frequency is compared **per mode family**: DMR446 channels are not skipped because analogue PMR446 channels sit on the same frequencies.
+
+dPMR446 (FDMA, 6.25 kHz) is deliberately **not** offered: it is not DMR/TDMA, the target radios cannot do it and the library model has no dPMR mode. Do not re-add it as FM-style channels.
+
+Sources: [PMR446 (Wikipedia)](https://en.wikipedia.org/wiki/PMR446), [DMR446 notes](http://dmr446.hamstation.eu/index_en.htm).
 
 ## UK 2 m FM simplex (V-channels)
 
@@ -87,7 +98,7 @@ Source: [Ofcom CB guidance](https://www.ofcom.org.uk/).
 
 ## Deferred sets
 
-Full ITU marine VHF, airband subsets, US FRS/GMRS, DMR simplex grids, extended simplex beyond V45 / U288.
+Full ITU marine VHF, airband subsets, US FRS/GMRS, other DMR simplex grids, extended simplex beyond V45 / U288.
 
 ## Related
 

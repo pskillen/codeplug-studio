@@ -147,14 +147,15 @@ Channel editor DMR tab shows `RxGroupListSummary` below the RX group list select
 
 Generate curated frequency inventories into the library:
 
-| Set                                            | Channels | Notes                    |
-| ---------------------------------------------- | -------- | ------------------------ |
-| PMR446                                         | 16       | Default `forbidTransmit` |
-| UK VHF simplex (V-channels or legacy S08–S23)  | 30 / 16  | Pick naming scheme       |
-| UK UHF simplex (U272–U288 or legacy SU16–SU32) | 17       | Pick naming scheme       |
-| UK CB / EU CEPT CB                             | 40 each  |                          |
+| Set                                            | Channels | Notes                                            |
+| ---------------------------------------------- | -------- | ------------------------------------------------ |
+| PMR446                                         | 16       | Default `forbidTransmit`                         |
+| DMR446 (16)                                    | 16       | DMR simplex, CC1 / TS1; default `forbidTransmit` |
+| UK VHF simplex (V-channels or legacy S08–S23)  | 30 / 16  | Pick naming scheme                               |
+| UK UHF simplex (U272–U288 or legacy SU16–SU32) | 17       | Pick naming scheme                               |
+| UK CB / EU CEPT CB                             | 40 each  |                                                  |
 
-Workflow: pick set → preview `DataTable` (per-channel checkboxes, dedup status) → optional power, **bandwidth** (12.5 or 25 kHz), forbid-TX, name prefix, **also create zone** → bulk `putChannel` (+ optional `putZone`). Duplicate RX frequencies in the library are skipped.
+Workflow: pick set → preview `DataTable` (per-channel checkboxes, dedup status) → optional power, **bandwidth** (12.5 or 25 kHz; analogue sets only), forbid-TX, name prefix, **also create zone** → bulk `putChannel` (+ optional `putZone`). Duplicate RX frequencies in the library are skipped.
 
 - Core: `src/core/domain/channelSets/`, `src/core/services/channelSetImport.ts`
 - UI: `ChannelSetPicker` on `DirectoryIngestPage` — sidecar `src/app/components/channelSets/ChannelSetPicker.md`
@@ -241,7 +242,7 @@ Details: [data-model](../data-model/README.md), [D890 Write contract](../../refe
 - **Scanning:** scan inclusion + optional `scanListId` FK only (TX controls are under RF).
 - **No default mode** on new channels — operator selects modes via `ChannelModesField` in Identity; `modeProfiles` starts empty.
 - **Location:** `ChannelLocationSection` + `MapLocationPicker` in v2 `MapPanel`. Save reconciles locator ↔ coords via `reconcileChannelLocation`. When the channel has a callsign but no location yet, the panel shows a "Set from a directory in Identity" jump-link instead of a static hint.
-- **Mode profiles:** stacked per-mode blocks in `ChannelModeProfilesEditor`; v2 `SegmentedControl` for **Primary mode** when multiple modes; DMR panel includes **DMR operating mode** and [`BrandmeisterRxListSyncAction`](../../../src/app/components/repeaters/BrandmeisterRxListSyncAction.tsx) below RX group list on saved channels.
+- **Mode profiles:** stacked per-mode blocks in `ChannelModeProfilesEditor` (analogue blocks carry **Bandwidth**, RX/TX tone, squelch; a new channel has no modes until one is picked, [#1477](https://github.com/pskillen/codeplug-studio/issues/1477)); v2 `SegmentedControl` for **Primary mode** when multiple modes; DMR panel includes **DMR operating mode** and [`BrandmeisterRxListSyncAction`](../../../src/app/components/repeaters/BrandmeisterRxListSyncAction.tsx) below RX group list on saved channels.
 - **Zone membership** (edit only): light inverse chips + zone add (`ChannelZoneMembershipSection`) — not full Membership shuttle ([#942](https://github.com/pskillen/codeplug-studio/issues/942)); shows "Not in a zone yet." when the channel has no direct or nested-only membership.
 - **Duplicate** and **Delete channel** on saved channels ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).
 - Component sidecars: `ChannelModesField.md`, `EditorHeader.md`, `StickyFooter.md`, `SectionNav.md`, `GradientSegmentedControl.md`, and siblings under `src/app/components/channels/`; directory verify sidecars under `src/app/components/repeaters/`.
