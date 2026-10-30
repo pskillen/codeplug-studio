@@ -681,7 +681,7 @@ async function resolveRadioWriteImageForUpload(
       throw new RadioWriteBlockedError('RadioFoundry write needs the serialised codeplug image.');
     }
     session.radio.armWriteSource({ ...prepared.radioFoundryWrite, warnings: [] });
-    if (!session.radio.hasReadImage()) {
+    if (!session.radio.hasReadImage() || !session.radio.hasDirectoryImage()) {
       await session.radio.download({
         onProgress: opts?.onProgress,
         signal: opts?.signal,

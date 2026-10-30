@@ -19,7 +19,6 @@ import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
 import { BLOCK_SIZE } from './constants.ts';
 import {
   DMR_ID_DATABASE_ADDRESS,
-  DMR_ID_DATABASE_AREA1_BYTES,
   encodeDmrIdDatabase,
   type DmrIdDatabaseRow,
 } from './idDatabase.ts';
@@ -32,6 +31,13 @@ export interface Dm32RadioFoundryWriteSource {
   bytes: Uint8Array;
   owned: Uint8Array;
   warnings: ExportWarning[];
+  /**
+   * Records past area 1, placed at image `0xD8000`. Absent when the directory
+   * fits in area 1 or is not part of this write. The gap before `0xD8000` is
+   * not owned.
+   */
+  area2?: Uint8Array;
+  area2Owned?: Uint8Array;
 }
 
 export interface RadioFoundryCableWriteOptions {
@@ -53,10 +59,16 @@ export function radioFoundryWriteSourceFromAssembled(
     releasePrivateContacts(image.bytes, image.owned);
   }
   const directory = options?.directoryRows ?? [];
-  if (directory.length > 0) {
-    writeIdDatabase(image.bytes, image.owned, directory, image.warnings);
-  }
-  return { bytes: image.bytes, owned: image.owned, warnings: image.warnings };
+  const area2 =
+    directory.length > 0
+      ? writeIdDatabase(image.bytes, image.owned, directory, image.warnings)
+      : undefined;
+  return {
+    bytes: image.bytes,
+    owned: image.owned,
+    warnings: image.warnings,
+    ...(area2 ? { area2: area2.bytes, area2Owned: area2.owned } : {}),
+  };
 }
 
 /**
@@ -132,12 +144,15 @@ function writeIdDatabase(
   owned: Uint8Array,
   rows: readonly RadioDigitalContactDto[],
   warnings: ExportWarning[],
-): void {
-  const room = Math.min(DMR_ID_DATABASE_AREA1_BYTES, bytes.length - DMR_ID_DATABASE_ADDRESS);
-  const encoded = encodeDmrIdDatabase(rows.map(directoryRow), warnings, room);
-  if (!encoded) return;
-  bytes.set(encoded, DMR_ID_DATABASE_ADDRESS);
-  owned.fill(1, DMR_ID_DATABASE_ADDRESS, DMR_ID_DATABASE_ADDRESS + encoded.length);
+): { bytes: Uint8Array; owned: Uint8Array } | undefined {
+  const encoded = encodeDmrIdDatabase(rows.map(directoryRow), warnings);
+  if (!encoded) return undefined;
+  bytes.set(encoded.area1, DMR_ID_DATABASE_ADDRESS);
+  owned.fill(1, DMR_ID_DATABASE_ADDRESS, DMR_ID_DATABASE_ADDRESS + encoded.area1.length);
+  if (encoded.area2.length === 0) return undefined;
+  const area2Owned = new Uint8Array(encoded.area2.length);
+  area2Owned.fill(1);
+  return { bytes: encoded.area2, owned: area2Owned };
 }
 
 function directoryRow(row: RadioDigitalContactDto): DmrIdDatabaseRow {

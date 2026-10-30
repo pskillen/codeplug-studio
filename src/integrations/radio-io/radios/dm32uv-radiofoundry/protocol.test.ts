@@ -29,7 +29,13 @@ import {
 import { decodeDebugFrame, encodeDebugFrame } from './frame.ts';
 import { decodeBlock, encodeBlock } from './lz4.ts';
 import { planDm32RadioFoundryStages } from './plannedStages.ts';
-import { DMR_ID_DATABASE_ADDRESS } from './idDatabase.ts';
+import {
+  DMR_ID_DATABASE_ADDRESS,
+  DMR_ID_DATABASE_AREA1_RECORDS,
+  DMR_ID_DATABASE_AREA2_ADDRESS,
+  DMR_ID_DATABASE_IMAGE_END,
+  DMR_ID_DATABASE_RECORD_BYTES,
+} from './idDatabase.ts';
 import { Dm32uvRadioFoundryProtocol } from './protocol.ts';
 import {
   radioFoundryWriteSourceFromAssembled,
@@ -64,8 +70,14 @@ class ScriptedPipe implements BytePipe {
 
   block(addr: number): Uint8Array {
     const found = this.blocks.get(addr);
-    if (!found) throw new Error(`no block ${addr.toString(16)}`);
-    return found;
+    if (found) return found;
+    if (addr >= DMR_ID_DATABASE_AREA2_ADDRESS && addr + BLOCK_SIZE <= DMR_ID_DATABASE_IMAGE_END) {
+      const block = new Uint8Array(BLOCK_SIZE);
+      block.fill(0xff);
+      this.blocks.set(addr, block);
+      return block;
+    }
+    throw new Error(`no block ${addr.toString(16)}`);
   }
 
   async write(data: Uint8Array): Promise<void> {
@@ -446,6 +458,46 @@ describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
     const quiet = new ScriptedPipe(0xff);
     await uploadSource(quiet, off);
     expect(writtenBlockAddresses(quiet)).not.toContain(DMR_ID_DATABASE_ADDRESS);
+    expect(writtenBlockAddresses(quiet)).not.toContain(DMR_ID_DATABASE_AREA2_ADDRESS);
     expect(writtenBlockAddresses(quiet)).not.toContain(PHYSICAL_CODEPLUG_BASE);
+  });
+
+  it('writes the overflow at 0xD8000 and stops before the native codeplug', async () => {
+    const rows = Array.from({ length: DMR_ID_DATABASE_AREA1_RECORDS + 1 }, (_, index) => ({
+      wireName: 'N',
+      digitalId: index + 1,
+      callsign: 'N',
+      city: '',
+      province: '',
+      country: '',
+      remark: '',
+    }));
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled(), {
+      includeLibraryContacts: false,
+      directoryRows: rows,
+    });
+    expect(source.area2?.length).toBe(DMR_ID_DATABASE_RECORD_BYTES);
+    const pipe = new ScriptedPipe(0xff);
+    await uploadSource(pipe, source);
+    const written = writtenBlockAddresses(pipe);
+    expect(written).toContain(DMR_ID_DATABASE_ADDRESS);
+    expect(written).toContain(DMR_ID_DATABASE_AREA2_ADDRESS);
+    expect(written.some((addr) => addr >= DMR_ID_DATABASE_IMAGE_END)).toBe(false);
+    expect(
+      written.some(
+        (addr) => addr >= DM32_RADIOFOUNDRY_IMAGE_SIZE && addr < DMR_ID_DATABASE_AREA2_ADDRESS,
+      ),
+    ).toBe(false);
+    const countBlock = pipe.block(DMR_ID_DATABASE_ADDRESS);
+    const count =
+      countBlock[8]! | (countBlock[9]! << 8) | (countBlock[10]! << 16) | (countBlock[11]! << 24);
+    expect(count).toBe(DMR_ID_DATABASE_AREA1_RECORDS + 1);
+    const spill = pipe.block(DMR_ID_DATABASE_AREA2_ADDRESS);
+    const id = DMR_ID_DATABASE_AREA1_RECORDS + 1;
+    expect([spill[0], spill[1], spill[2]]).toEqual([
+      id & 0xff,
+      (id >> 8) & 0xff,
+      (id >> 16) & 0xff,
+    ]);
   });
 });
