@@ -132,7 +132,9 @@ class ScriptedPipe implements BytePipe {
     const blank = isBlank(block);
     const stream = blank ? new Uint8Array(0) : encodeBlock(block);
     const chunk = stream.subarray(offset, Math.min(stream.length, offset + 1000));
-    const body = new Uint8Array(13 + chunk.length);
+    // 13 field bytes, one unused pad, then the LZ4 stream. A parser that
+    // starts the stream at byte 13 fails the non-blank round-trip below.
+    const body = new Uint8Array(14 + chunk.length);
     writeU32(body, 0, addr);
     body[4] = blank ? FMT_BLANK : FMT_LZ4;
     body[5] = stream.length & 0xff;
@@ -140,7 +142,7 @@ class ScriptedPipe implements BytePipe {
     writeU32(body, 7, crc32Ieee(block));
     body[11] = offset & 0xff;
     body[12] = (offset >> 8) & 0xff;
-    body.set(chunk, 13);
+    body.set(chunk, 14);
     return body;
   }
 

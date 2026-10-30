@@ -307,7 +307,13 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
       total = length;
       crc = gotCrc;
       if (format === FMT_BLANK) break;
-      const chunk = body.subarray(13, Math.min(body.length, 13 + info.readMax));
+      // READ_HDR is 15 including the status byte already stripped. The body is
+      // 13 field bytes, one unused pad, then the LZ4 stream. A 14-byte body is
+      // that pad and no stream: an empty window.
+      if (body.length === 14) {
+        throw new RadioProtocolError(`Block ${hex(addr)} read returned no bytes.`);
+      }
+      const chunk = body.subarray(14, Math.min(body.length, 14 + info.readMax));
       if (chunk.length === 0) {
         throw new RadioProtocolError(`Block ${hex(addr)} read returned no bytes.`);
       }
