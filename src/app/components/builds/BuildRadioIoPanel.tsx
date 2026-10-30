@@ -62,8 +62,12 @@ import {
 } from '../../state/atD890RadioSettingsSession.ts';
 import {
   setWriteSettingsRequested as setRt95WriteSettingsRequested,
+  overridesForWrite as rt95OverridesForWrite,
+  rt95OverrideCount,
   useRt95RadioSettingsSession,
 } from '../../state/rt95RadioSettingsSession.ts';
+import { rt95SettingsTargetForEgress } from '../../services/radioIoRt95SettingsWrite.ts';
+import { rt95OverrideWords } from './RadioWriteStepper/rt95/rt95ReviewFacts.ts';
 import { radioIoProfileSupportsRadioSettings } from '../../lib/radioIoRadioSettingsSupport.ts';
 import { atD890OverrideWords } from './RadioWriteStepper/d890/atD890ReviewFacts.ts';
 import WriteVerifyReport from './WriteVerifyReport.tsx';
@@ -271,6 +275,19 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             applyToEveryRadio: d890SettingsSession.applyToEveryRadio,
             onApplyToEveryRadioChange: (checked: boolean) =>
               setApplyToEveryRadio(build.id, checked),
+          },
+        }
+      : {}),
+    ...(isRt95Write
+      ? {
+          radioSettings: {
+            count: rt95OverrideCount(rt95SettingsSession.overrides),
+            words: rt95OverrideWords(
+              rt95OverridesForWrite(build.id),
+              rt95SettingsTargetForEgress(egress),
+            ),
+            applyToEveryRadio: false,
+            onApplyToEveryRadioChange: () => undefined,
           },
         }
       : {}),

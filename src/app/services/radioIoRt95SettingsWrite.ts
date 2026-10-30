@@ -15,7 +15,13 @@ import {
 } from '@integrations/radio-io/radios/rt95/settingsFields.ts';
 import type { WriteVerifyCaptureResult } from '@integrations/radio-io/writeVerify.ts';
 import { createMemoryMap } from '@integrations/radio-io/kit/memoryMap.ts';
-import { RadioWriteBlockedError } from './radioIoSession.ts';
+import {
+  RadioWriteBlockedError,
+  RadioWriteCancelledError,
+  rt95PauseOutcome,
+  type Rt95PreTransmitContext,
+  type Rt95PreTransmitResult,
+} from './radioIoSession.ts';
 
 function requireRt95(session: RadioSession): Rt95Protocol {
   if (!(session.radio instanceof Rt95Protocol)) {
@@ -35,12 +41,16 @@ export interface WriteRt95SettingsOnlyResult {
   writeVerifyPending?: WriteVerifyCaptureResult;
 }
 
+/**
+ * Write only registered settings overrides. Reads the clone image first, pauses for Review, then
+ * patches only the touched blocks (never the full 0x32A0 upload).
+ */
 export async function writeRt95SettingsOnly(
   session: RadioSession,
   egress: EgressPath,
   overrides: readonly Rt95SettingsOverride[],
-  prePauseImage: Uint8Array,
   opts?: {
+    beforeTransmit?: (ctx: Rt95PreTransmitContext) => Promise<Rt95PreTransmitResult>;
     onProgress?: ProgressFn;
     signal?: AbortSignal;
   },
@@ -50,12 +60,32 @@ export async function writeRt95SettingsOnly(
   }
   const radio = requireRt95(session);
   const target = rt95SettingsTargetForProfile(egress.profileId);
-  const existingDigits = rt95PasswordDigitsFromImage(prePauseImage);
-  const patches = resolveRt95SettingsPatches(overrides, target, {
+  resolveRt95SettingsPatches(overrides, target, {
+    existingPasswordDigits: undefined,
+  });
+
+  const snapshot = await radio.readSettingsSnapshot({
+    signal: opts?.signal,
+    onProgress: opts?.onProgress,
+  });
+  const prePauseCtx: Rt95PreTransmitContext = {
+    bandlimit: snapshot.bandlimit,
+    snapshot,
+    overrides,
+    target,
+  };
+  const result = opts?.beforeTransmit ? await opts.beforeTransmit(prePauseCtx) : 'cancel';
+  const outcome = rt95PauseOutcome(result, overrides);
+  if (outcome.decision !== 'apply') throw new RadioWriteCancelledError();
+  if (outcome.overrides.length === 0) {
+    throw new RadioWriteBlockedError('There are no radio settings to write.');
+  }
+  const existingDigits = rt95PasswordDigitsFromImage(snapshot.image);
+  const patches = resolveRt95SettingsPatches(outcome.overrides, target, {
     existingPasswordDigits: existingDigits,
   });
-  const image = createMemoryMap(prePauseImage.length);
-  image.bytes.set(prePauseImage);
+  const image = createMemoryMap(snapshot.image.length);
+  image.bytes.set(snapshot.image);
   await radio.uploadSettingsPatches(patches, image, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,
@@ -73,3 +103,5 @@ export function rt95SettingsTargetForEgress(
 export function isRt95SettingsMm9pdyTarget(egress: EgressPath): boolean {
   return isMm9pdyRt95RadioIoProfileId(egress.profileId);
 }
+
+export type { Rt95PreTransmitContext, Rt95PreTransmitResult };
