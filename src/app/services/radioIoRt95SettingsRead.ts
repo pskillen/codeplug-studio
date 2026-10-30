@@ -39,6 +39,10 @@ export function rt95SettingsReadFromSnapshot(
 
 export type Rt95SettingsReadStage = 'connecting' | 'reading';
 
+/** Shown after a settings Read: the radio has just been sent `END`. */
+export const RT95_SETTINGS_READ_RESTART_NOTE =
+  'The radio restarts after a read. Wait before the next read or a Write.';
+
 export async function readRt95SettingsFromRadio(
   egress: EgressPath,
   opts?: { signal?: AbortSignal; onStage?: (stage: Rt95SettingsReadStage) => void },

@@ -515,6 +515,41 @@ export const RT95_ADVANCED_SETTINGS_FIELD_IDS: readonly string[] = RT95_SETTING_
 
 export const RT95_ALL_SETTINGS_FIELD_IDS: readonly string[] = RT95_SETTING_FIELDS.map((f) => f.id);
 
+/** Non-advanced fields (Copy all from this radio). */
+export const RT95_BASIC_SETTINGS_FIELD_IDS: readonly string[] = RT95_SETTING_FIELDS.filter(
+  (f) => !f.advanced,
+).map((f) => f.id);
+
+const RT95_DTMF_CHAR = /^[0-9ABCD*# ]$/;
+
+/** Why a typed value cannot be written, or `undefined` when it can. */
+export function rt95FieldValueProblem(
+  field: Rt95SettingFieldDef,
+  text: string,
+): string | undefined {
+  if (field.kind !== 'text' && field.kind !== 'dtmfCode') return undefined;
+  const max = field.maxLength ?? (field.kind === 'text' ? RT95_STARTING_DISPLAY_MAX_LENGTH : 16);
+  if (text.length > max) return `At most ${max} characters.`;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (field.kind === 'text') {
+      if (c < 0x20 || c > 0x7e) {
+        return 'Printable ASCII only (no accents or control characters).';
+      }
+    } else if (!RT95_DTMF_CHAR.test(text[i]!)) {
+      return 'Only DTMF digits A–D, * # and space.';
+    }
+  }
+  return undefined;
+}
+
+export function rt95SettingValueLabel(
+  field: Rt95SettingFieldDef,
+  value: number,
+): string | undefined {
+  return field.options?.find((o) => o.value === value)?.label;
+}
+
 export function rt95SettingField(id: string): Rt95SettingFieldDef | undefined {
   return FIELD_BY_ID.get(id);
 }
