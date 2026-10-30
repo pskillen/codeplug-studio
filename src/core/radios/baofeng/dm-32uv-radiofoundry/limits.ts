@@ -1,7 +1,7 @@
 /**
  * Baofeng DM-32UV running RadioFoundry firmware.
  * Code mirror of [limits.md](../../../../docs/reference/radios/baofeng/dm-32uv-radiofoundry/limits.md).
- * Source of truth for this radio target. No CPS or Web Serial adapter yet — not library CRUD.
+ * Source of truth for this radio target. The codeplug exporter reads these caps. Not library CRUD.
  */
 
 export const DM32UV_RADIOFOUNDRY_LIMITS = {

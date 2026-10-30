@@ -1,6 +1,6 @@
 # DM-32UV (RadioFoundry) — limits
 
-Hardware caps for a Baofeng DM-32UV running RadioFoundry. There is no CPS or Web Serial egress yet. These numbers are the radio target's source of truth until a file format lands. Adapters, when they exist, warn or truncate at the export boundary. Library CRUD stays unlimited.
+Hardware caps for a Baofeng DM-32UV running RadioFoundry. The codeplug file is the [RadioFoundry codeplug](../../../export-formats/radiofoundry/README.md). These numbers are the radio target's source of truth. The exporter warns or truncates at the export boundary. Library CRUD stays unlimited. There is no Web Serial egress.
 
 **Code:** `src/core/radios/baofeng/dm-32uv-radiofoundry/limits.ts` (`DM32UV_RADIOFOUNDRY_LIMITS`).
 

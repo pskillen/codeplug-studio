@@ -154,6 +154,18 @@ describe('trait profiles', () => {
     expect(profile?.traits).not.toContain(BuildCapabilityTrait.TalkGroupTimeslotClones);
   });
 
+  it('registers radiofoundry-dm32uv as a codeplug file with zone scan', () => {
+    const profile = traitProfileFor('radiofoundry-dm32uv');
+    expect(profile?.formatId).toBe('radiofoundry');
+    expect(profile?.label).toBe('RadioFoundry codeplug');
+    expect(profile?.traits).toEqual([
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.SeparateDigitalIdList,
+    ]);
+  });
+
   it('registers radio-io-dm32uv-mm9pdy with zone scan and a separate digital ID list', () => {
     const profile = traitProfileFor('radio-io-dm32uv-mm9pdy');
     expect(profile?.formatId).toBe('radio-io');
@@ -190,6 +202,7 @@ describe('trait profiles', () => {
       'radio-io-rt95-mm9pdy',
       'radio-io-uv21',
       'radio-io-uv5r-mini',
+      'radiofoundry-dm32uv',
     ]);
   });
 });

@@ -13,6 +13,7 @@ export type FormatId =
   | 'opengd77'
   | 'chirp'
   | 'dm32'
+  | 'radiofoundry'
   | 'anytone'
   | 'qdmr'
   | 'neonplug'

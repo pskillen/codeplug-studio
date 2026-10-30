@@ -8,6 +8,7 @@ import { prepareBuildForFrequencyRangeExportPatch } from '../../lib/frequencyRan
 import { traitProfileFor } from '@core/models/traits.ts';
 import { formatCatalogEntry, getExportAdapter } from '@core/import-export/registry.ts';
 import {
+  isBinaryCpsExportAdapter,
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
 } from '@core/import-export/exportAdapter.ts';
@@ -497,6 +498,43 @@ export default function ExportBuildCpsPanel({
       <Alert color="gray" title="Export not available">
         No exporter is registered for {formatEntry?.label ?? formatId}.
       </Alert>
+    );
+  }
+
+  if (isBinaryCpsExportAdapter(adapter)) {
+    const imageFileName = adapter.defaultFileName;
+    return (
+      <Stack gap="sm">
+        {egressSwitcher}
+        <Text size="sm">
+          Export as{' '}
+          <Text span fw={600}>
+            {formatEntry?.label ?? formatId}
+          </Text>
+          . This downloads one <code>{imageFileName}</code> image.
+        </Text>
+        {wireHint ? (
+          <Text size="sm" c="dimmed">
+            {wireHint}
+          </Text>
+        ) : null}
+        {!hasChannels ? (
+          <Text size="sm" c="dimmed">
+            Add channels to the library before exporting this build.
+          </Text>
+        ) : null}
+        {error ? <Alert color="red">{error}</Alert> : null}
+        {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
+        <Button
+          leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+          variant="filled"
+          disabled={!hasChannels || exporting}
+          loading={exporting}
+          onClick={() => void handleDownloadZip()}
+        >
+          Download {imageFileName}
+        </Button>
+      </Stack>
     );
   }
 

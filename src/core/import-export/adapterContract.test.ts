@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isBinaryCpsExportAdapter,
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
   isSingleFileProjectExportAdapter,
@@ -79,6 +80,23 @@ describe('adapter contracts', () => {
       expect(adapter.defaultFileName('chirp-rt95')).toContain('RT95');
       expect(typeof adapter.serialise).toBe('function');
     }
+  });
+
+  it('registry resolves radiofoundry export and leaves import unregistered', () => {
+    const adapter = getExportAdapter('radiofoundry');
+    expect(adapter.id).toBe('radiofoundry');
+    expect(adapter.status).toBe('shipped');
+    expect(adapter.label).toBe('RadioFoundry codeplug');
+    expect(isBinaryCpsExportAdapter(adapter)).toBe(true);
+    if (isBinaryCpsExportAdapter(adapter)) {
+      expect(adapter.defaultFileName).toBe('codeplug.bin');
+      expect(adapter.defaultExportSettings?.expandModes).toBe(false);
+      expect(adapter.defaultExportSettings?.expandRxGroupLists).toBe(false);
+    }
+    expect(() => getImportAdapter('radiofoundry')).toThrow(/No import adapter/);
+    const entry = formatCatalog.find((f) => f.id === 'radiofoundry');
+    expect(entry?.exportStatus).toBe('shipped');
+    expect(entry?.importStatus).toBe('planned');
   });
 
   it('registry throws for planned CPS import adapters', () => {

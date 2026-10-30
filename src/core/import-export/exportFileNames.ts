@@ -1,5 +1,6 @@
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import {
+  isBinaryCpsExportAdapter,
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
   type MultiFileExportAdapter,
@@ -20,6 +21,9 @@ export function resolveEffectiveExportFileNames(
   if (isSingleFileCpsExportAdapter(adapter)) {
     const profileId = assembled.profileId ?? '';
     return [adapter.defaultFileName(profileId)];
+  }
+  if (isBinaryCpsExportAdapter(adapter)) {
+    return [adapter.defaultFileName];
   }
   return [];
 }

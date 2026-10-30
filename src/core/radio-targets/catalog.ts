@@ -138,7 +138,7 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
     label: 'Baofeng DM-32UV (RadioFoundry)',
     group: 'Baofeng',
     traits: dm32Mm9pdyTraits,
-    compatibleEgress: [],
+    compatibleEgress: [egress('radiofoundry', 'radiofoundry-dm32uv', 'RadioFoundry codeplug')],
   },
   'baofeng-dm1701': {
     id: 'baofeng-dm1701',

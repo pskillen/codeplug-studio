@@ -6,13 +6,18 @@ import { isSingleFileCpsExportAdapter } from '@core/import-export/exportAdapter.
 import { getExportAdapter } from '@core/import-export/registry.ts';
 import {
   exportBuildAll,
+  exportBuildBinary,
   exportBuildFile,
   exportBuildSingleFile,
   exportBuildZip,
   listExportBuildFileNames,
 } from '@core/services/exportBuild.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
-import { downloadTextFile, downloadZip } from '@integrations/download/browserDownload.ts';
+import {
+  downloadBinaryFile,
+  downloadTextFile,
+  downloadZip,
+} from '@integrations/download/browserDownload.ts';
 import { googleDrivePort } from '@integrations/cloud/index.ts';
 import { persistence } from '../state/persistence.ts';
 import { loadLibrarySlice } from '../lib/loadLibrarySlice.ts';
@@ -260,13 +265,30 @@ export {
   type NeonplugDonorRetainSummary,
 } from '@core/services/exportBuild.ts';
 
-/** Download all CPS CSV files for a build as a ZIP archive. */
+/** Download all CPS CSV files for a build as a ZIP archive. RadioFoundry downloads codeplug.bin. */
 export async function downloadCpsZip(
   projectId: string,
   buildId: string,
   options?: CpsZipExportOptions,
   store: ProjectPersistence = persistence,
 ): Promise<CpsDownloadResult> {
+  const { egressId, baseNeonplugBytes, ...cpsOptions } = options ?? {};
+  void baseNeonplugBytes;
+  const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
+  if (egress.formatId === 'radiofoundry') {
+    const library = await loadLibrarySlice(store, projectId);
+    const exportOptions = await mergeCpsExportOptions(
+      store,
+      projectId,
+      build,
+      egress,
+      library,
+      cpsOptions,
+    );
+    const result = exportBuildBinary({ build, egress, library, options: exportOptions });
+    downloadBinaryFile(result.bytes, result.fileName);
+    return { warnings: result.warnings };
+  }
   const { zip, fileName, warnings } = await buildCpsZipBytes(projectId, buildId, options, store);
   downloadZip(zip, fileName);
   return { warnings };

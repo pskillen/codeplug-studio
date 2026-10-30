@@ -16,6 +16,7 @@ import { getChirpProfile } from './formats/chirp/profiles.ts';
 import { getDm32Profile } from './formats/dm32/profiles.ts';
 import { getOpenGd77Profile } from './formats/opengd77/profiles.ts';
 import { getNeonplugProfile, isNeonplugDm32uvProfile } from './formats/neonplug/profiles.ts';
+import { getRadioFoundryProfile } from './formats/radiofoundry/profiles.ts';
 import {
   getRadioIoProfile,
   isMm9pdyRt95RadioIoProfileId,
@@ -138,6 +139,32 @@ export function getProfileExportLimits(
   profileId: string,
 ): ProfileExportLimits | null {
   try {
+    if (formatId === 'radiofoundry') {
+      const profile = getRadioFoundryProfile(profileId);
+      return blankDigitalOrganisation({
+        formatId,
+        profileId: profile.id,
+        profileLabel: profile.label,
+        maxChannels: profile.maxChannels,
+        nameLengthChannel: profile.nameLimit,
+        powerLadder: profile.powerLadder,
+        maxZones: profile.maxZones,
+        maxScanLists: 'not_used',
+        maxRxGroupLists: profile.maxRxGroupLists,
+        maxContacts: profile.maxContacts,
+        maxTalkGroups: 'not_used',
+        maxRadioIds: profile.maxRadioIds,
+        zoneMembers: profile.zoneMembers,
+        scanListMembers: 'not_used',
+        rxGroupListMembers: profile.rxGroupListMembers,
+        nameLengthZone: profile.nameLimit,
+        nameLengthContact: profile.nameLimit,
+        nameLengthTalkGroup: profile.nameLimit,
+        nameLengthRxGroupList: profile.nameLimit,
+        nameLengthScanList: 'not_used',
+      });
+    }
+
     if (formatId === 'opengd77') {
       const profile = getOpenGd77Profile(profileId);
       return blankDigitalOrganisation({

@@ -34,6 +34,16 @@ export interface SingleFileCpsExportAdapter extends BaseExportAdapter {
   ): ExportResult & { content: string };
 }
 
+/** One raw codeplug image (RadioFoundry `codeplug.bin`). Not a ZIP. */
+export interface BinaryCpsExportAdapter extends BaseExportAdapter {
+  readonly delivery: 'binary-cps';
+  readonly defaultFileName: string;
+  serialise(
+    assembled: AssembledBuild,
+    options?: CpsExportOptions,
+  ): ExportResult & { bytes: Uint8Array };
+}
+
 /** CPS multi-file export (Phase 4+). */
 export interface MultiFileExportAdapter extends BaseExportAdapter {
   readonly delivery: 'multi-file';
@@ -50,7 +60,10 @@ export interface MultiFileExportAdapter extends BaseExportAdapter {
 }
 
 export type ExportAdapter =
-  SingleFileProjectExportAdapter | SingleFileCpsExportAdapter | MultiFileExportAdapter;
+  | SingleFileProjectExportAdapter
+  | SingleFileCpsExportAdapter
+  | BinaryCpsExportAdapter
+  | MultiFileExportAdapter;
 
 export function isSingleFileProjectExportAdapter(
   adapter: ExportAdapter,
@@ -62,6 +75,12 @@ export function isSingleFileCpsExportAdapter(
   adapter: ExportAdapter,
 ): adapter is SingleFileCpsExportAdapter {
   return adapter.delivery === 'single-file-cps';
+}
+
+export function isBinaryCpsExportAdapter(
+  adapter: ExportAdapter,
+): adapter is BinaryCpsExportAdapter {
+  return adapter.delivery === 'binary-cps';
 }
 
 export function isMultiFileExportAdapter(

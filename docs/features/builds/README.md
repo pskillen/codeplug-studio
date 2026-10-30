@@ -77,7 +77,7 @@ Sidebar label is **Export for radio**; routes and code use `builds`. Secondary s
 
 **MM9PDY modded firmware** targets (`anytone-at-d890uv-mm9pdy`, `baofeng-dm32uv-mm9pdy`, and `retevis-rt95-mm9pdy`, which adds zones and per-channel descriptions to the RT95) are separate catalog rows. They keep one channel per repeater and use the zone as the scan. Stock targets are unchanged. See [modded firmware](../modded-firmware/README.md).
 
-The **RadioFoundry** DM-32UV target (`baofeng-dm32uv-radiofoundry`) uses zone grouping, zone-as-scan, multiple talk groups per channel, and a separate digital ID list, and has no egress until a file format lands.
+The **RadioFoundry** DM-32UV target (`baofeng-dm32uv-radiofoundry`) uses zone grouping, zone-as-scan, multiple talk groups per channel, and a separate digital ID list. Export downloads one `codeplug.bin` ([RadioFoundry codeplug](../../reference/export-formats/radiofoundry/README.md)).
 
 **Web Serial:** create a radio target that lists a Web Serial egress (e.g. Baofeng UV-5R Mini). On Export, pick the **Web Serial** pathway: `BuildRadioIoPanel` hosts Read (hydrate `radio-clone` on that egress) / Write (`assemble` into the hydrated image). Secondary nav **Radio image** appears after a successful Read stores hydration (even if another pathway is selected). CPS file egresses (NeonPlug, CHIRP, …) remain separate children under the same build. See [radio-read-write](../radio-read-write/README.md) and [adding-a-radio-adapter.md](../radio-read-write/adding-a-radio-adapter.md).
 
