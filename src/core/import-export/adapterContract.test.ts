@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isBinaryCpsExportAdapter,
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
   isSingleFileProjectExportAdapter,
 } from './exportAdapter.ts';
-import { isSingleFileProjectImportAdapter } from './importAdapter.ts';
+import { isBinaryCpsImportAdapter, isSingleFileProjectImportAdapter } from './importAdapter.ts';
 import { nativeYamlExportAdapter, nativeYamlImportAdapter } from './formats/native-yaml/adapter.ts';
 import { formatCatalog, getExportAdapter, getImportAdapter } from './registry.ts';
 
@@ -79,6 +80,26 @@ describe('adapter contracts', () => {
       expect(adapter.defaultFileName('chirp-rt95')).toContain('RT95');
       expect(typeof adapter.serialise).toBe('function');
     }
+  });
+
+  it('registry resolves radiofoundry export and import', () => {
+    const adapter = getExportAdapter('radiofoundry');
+    expect(adapter.id).toBe('radiofoundry');
+    expect(adapter.status).toBe('shipped');
+    expect(adapter.label).toBe('RadioFoundry codeplug');
+    expect(isBinaryCpsExportAdapter(adapter)).toBe(true);
+    if (isBinaryCpsExportAdapter(adapter)) {
+      expect(adapter.defaultFileName).toBe('codeplug.bin');
+      expect(adapter.defaultExportSettings?.expandModes).toBe(false);
+      expect(adapter.defaultExportSettings?.expandRxGroupLists).toBe(false);
+    }
+    const imported = getImportAdapter('radiofoundry');
+    expect(imported.id).toBe('radiofoundry');
+    expect(imported.status).toBe('shipped');
+    expect(isBinaryCpsImportAdapter(imported)).toBe(true);
+    const entry = formatCatalog.find((f) => f.id === 'radiofoundry');
+    expect(entry?.exportStatus).toBe('shipped');
+    expect(entry?.importStatus).toBe('shipped');
   });
 
   it('registry throws for planned CPS import adapters', () => {

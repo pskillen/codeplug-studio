@@ -30,6 +30,7 @@ IndexedDB remains the **edit store**; YAML and Drive are portable layers on top 
 | OpenGD77 CSV import                                     | Planned     | Epic [#502](https://github.com/pskillen/codeplug-studio/issues/502) — [#522](https://github.com/pskillen/codeplug-studio/issues/522)–[#526](https://github.com/pskillen/codeplug-studio/issues/526)                                                                    |
 | CHIRP CSV export                                        | Shipped     | Epic [#504](https://github.com/pskillen/codeplug-studio/issues/504) — [chirp/README.md](chirp/README.md); import [#222](https://github.com/pskillen/codeplug-studio/issues/222)–[#226](https://github.com/pskillen/codeplug-studio/issues/226)                         |
 | DM32 CSV export                                         | Shipped     | Epic [#503](https://github.com/pskillen/codeplug-studio/issues/503) — [dm32/README.md](dm32/README.md); import [#124](https://github.com/pskillen/codeplug-studio/issues/124)–[#128](https://github.com/pskillen/codeplug-studio/issues/128)                           |
+| RadioFoundry `codeplug.bin`                             | Shipped     | Export [#1483](https://github.com/pskillen/codeplug-studio/issues/1483), import [#1484](https://github.com/pskillen/codeplug-studio/issues/1484) — [reference](../../reference/export-formats/radiofoundry/README.md)                                                  |
 | Anytone CPS export                                      | Shipped     | Epic [#505](https://github.com/pskillen/codeplug-studio/issues/505) — AT-D890UV DMR MVP; [anytone/README.md](anytone/README.md); import [#238](https://github.com/pskillen/codeplug-studio/issues/238)–[#242](https://github.com/pskillen/codeplug-studio/issues/242)  |
 | NeonPlug `.neonplug`                                    | In progress | Epic [#536](https://github.com/pskillen/codeplug-studio/issues/536) — channels + ZIP [#539](https://github.com/pskillen/codeplug-studio/issues/539); scaffold [#538](https://github.com/pskillen/codeplug-studio/issues/538); [neonplug/README.md](neonplug/README.md) |
 | Export pathway parity (contract + harness)              | Shipped     | [#776](https://github.com/pskillen/codeplug-studio/issues/776) epic — [export-pathway-parity.md](export-pathway-parity.md) ([#778](https://github.com/pskillen/codeplug-studio/issues/778)/[#779](https://github.com/pskillen/codeplug-studio/issues/779))             |
@@ -62,15 +63,16 @@ Routes and UI call **application services** (`importProjectYaml`, `exportProject
 
 ## Format registry
 
-| Format        | Import  | Export  | Delivery                   |
-| ------------- | ------- | ------- | -------------------------- |
-| `native-yaml` | Shipped | Shipped | Single file — full project |
-| `opengd77`    | Planned | Shipped | Multi-file CSV             |
-| `chirp`       | Planned | Shipped | Single-file memory CSV     |
-| `dm32`        | Planned | Shipped | Multi-file CSV             |
-| `anytone`     | Planned | Shipped | Multi-file CSV             |
-| `neonplug`    | Planned | Shipped | Single ZIP (`.neonplug`)   |
-| `qdmr`        | Planned | Planned | YAML (vendor)              |
+| Format         | Import  | Export  | Delivery                                                                                |
+| -------------- | ------- | ------- | --------------------------------------------------------------------------------------- |
+| `native-yaml`  | Shipped | Shipped | Single file — full project                                                              |
+| `opengd77`     | Planned | Shipped | Multi-file CSV                                                                          |
+| `chirp`        | Planned | Shipped | Single-file memory CSV                                                                  |
+| `dm32`         | Planned | Shipped | Multi-file CSV                                                                          |
+| `anytone`      | Planned | Shipped | Multi-file CSV                                                                          |
+| `neonplug`     | Planned | Shipped | Single ZIP (`.neonplug`)                                                                |
+| `radiofoundry` | Shipped | Shipped | One `codeplug.bin` — [reference](../../reference/export-formats/radiofoundry/README.md) |
+| `qdmr`         | Planned | Planned | YAML (vendor)                                                                           |
 
 Wire mapping for CPS formats lives in `docs/reference/export-formats/<format>/` — not here. Radio caps, power ladders, and hardware facts live under `docs/reference/radios/<manufacturer>/<model>/`. Per-adapter `profiles.md` maps Studio `profileId` → radio home. Nested `export-formats/*/radios/` trees no longer exist ([#621](https://github.com/pskillen/codeplug-studio/issues/621)).
 

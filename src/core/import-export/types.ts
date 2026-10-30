@@ -1,3 +1,11 @@
+import type {
+  Channel,
+  DigitalContact,
+  OwnDigitalId,
+  RxGroupList,
+  TalkGroup,
+  Zone,
+} from '@core/models/library.ts';
 import type { ChannelBehaviourContext } from './channelBehaviourDefaults/resolve.ts';
 import type { ZoneBehaviourContext } from './zoneBehaviourDefaults/resolve.ts';
 import type { DefaultScanInclusion } from '@core/models/formatBuild.ts';
@@ -13,6 +21,7 @@ export type FormatId =
   | 'opengd77'
   | 'chirp'
   | 'dm32'
+  | 'radiofoundry'
   | 'anytone'
   | 'qdmr'
   | 'neonplug'
@@ -51,7 +60,7 @@ export interface FormatExportDefaults {
 
 export type FormatStatus = 'shipped' | 'planned';
 
-export type ImportDelivery = 'single-file' | 'multi-file';
+export type ImportDelivery = 'single-file' | 'multi-file' | 'binary-cps';
 
 export type ExportDelivery = 'single-file' | 'multi-file';
 
@@ -71,6 +80,16 @@ export interface ImportAdapterCapabilities {
   delivery: ImportDelivery;
   /** Entity kinds this adapter can parse (CPS multi-file adapters). */
   entityKinds: readonly ImportEntityKind[];
+}
+
+/** Library rows parsed from one binary codeplug image. */
+export interface BinaryCpsImportResult {
+  channels: Channel[];
+  talkGroups: TalkGroup[];
+  digitalContacts: DigitalContact[];
+  rxGroupLists: RxGroupList[];
+  zones: Zone[];
+  ownDigitalIds: OwnDigitalId[];
 }
 
 export interface FormatCatalogEntry {

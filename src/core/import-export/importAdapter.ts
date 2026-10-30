@@ -1,5 +1,6 @@
 import type { ProjectAggregate } from './projectDocument.ts';
 import type {
+  BinaryCpsImportResult,
   FormatId,
   FormatStatus,
   ImportAdapterCapabilities,
@@ -33,7 +34,14 @@ export interface MultiFileImportAdapter extends BaseImportAdapter {
   parseChannels(text: string, ctx?: ImportParseContext): never;
 }
 
-export type ImportAdapter = SingleFileProjectImportAdapter | MultiFileImportAdapter;
+/** One raw codeplug image (RadioFoundry `codeplug.bin`). */
+export interface BinaryCpsImportAdapter extends BaseImportAdapter {
+  readonly capabilities: ImportAdapterCapabilities & { delivery: 'binary-cps' };
+  parse(bytes: Uint8Array, projectId?: string): BinaryCpsImportResult;
+}
+
+export type ImportAdapter =
+  SingleFileProjectImportAdapter | MultiFileImportAdapter | BinaryCpsImportAdapter;
 
 export function isSingleFileProjectImportAdapter(
   adapter: ImportAdapter,
@@ -45,6 +53,12 @@ export function isMultiFileImportAdapter(
   adapter: ImportAdapter,
 ): adapter is MultiFileImportAdapter {
   return adapter.capabilities.delivery === 'multi-file';
+}
+
+export function isBinaryCpsImportAdapter(
+  adapter: ImportAdapter,
+): adapter is BinaryCpsImportAdapter {
+  return adapter.capabilities.delivery === 'binary-cps';
 }
 
 export function adapterSupportsKind(

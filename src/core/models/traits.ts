@@ -205,6 +205,18 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
+  /** Open-firmware codeplug image for the DM-32UV on RadioFoundry. */
+  'radiofoundry-dm32uv': {
+    profileId: 'radiofoundry-dm32uv',
+    formatId: 'radiofoundry',
+    label: 'RadioFoundry codeplug',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.SeparateDigitalIdList,
+    ],
+  },
   /** Web Serial direct-write — OpenGD77 / OpenUV380 (MD-9600 / RT-90). */
   'radio-io-opengd77-md9600': {
     profileId: 'radio-io-opengd77-md9600',

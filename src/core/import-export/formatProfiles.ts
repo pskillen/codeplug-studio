@@ -23,6 +23,11 @@ import {
   type NeonplugRadioProfile,
 } from './formats/neonplug/profiles.ts';
 import {
+  RADIOFOUNDRY_PROFILES,
+  getRadioFoundryProfile,
+  type RadioFoundryRadioProfile,
+} from './formats/radiofoundry/profiles.ts';
+import {
   RADIO_IO_PROFILES,
   getRadioIoProfile,
   isAtD890RadioIoProfileId,
@@ -52,6 +57,7 @@ export function getFormatProfiles(formatId: 'dm32'): FormatProfileOption[];
 export function getFormatProfiles(formatId: 'chirp'): FormatProfileOption[];
 export function getFormatProfiles(formatId: 'anytone'): FormatProfileOption[];
 export function getFormatProfiles(formatId: 'neonplug'): FormatProfileOption[];
+export function getFormatProfiles(formatId: 'radiofoundry'): FormatProfileOption[];
 export function getFormatProfiles(formatId: 'radio-io'): FormatProfileOption[];
 export function getFormatProfiles(formatId: FormatId): FormatProfileOption[];
 export function getFormatProfiles(formatId: FormatId): FormatProfileOption[] {
@@ -69,6 +75,9 @@ export function getFormatProfiles(formatId: FormatId): FormatProfileOption[] {
   }
   if (formatId === 'neonplug') {
     return NEONPLUG_PROFILES.map(neonplugProfileToOption);
+  }
+  if (formatId === 'radiofoundry') {
+    return RADIOFOUNDRY_PROFILES.map(radioFoundryProfileToOption);
   }
   if (formatId === 'radio-io') {
     return RADIO_IO_PROFILES.map(radioIoProfileToOption);
@@ -132,6 +141,16 @@ function neonplugProfileToOption(profile: NeonplugRadioProfile): FormatProfileOp
     formatId: 'neonplug',
     nameLimit: profile.nameLimit,
     maxChannels: profile.maxMemorySlots,
+  };
+}
+
+function radioFoundryProfileToOption(profile: RadioFoundryRadioProfile): FormatProfileOption {
+  return {
+    profileId: profile.id,
+    label: profile.label,
+    formatId: 'radiofoundry',
+    nameLimit: profile.nameLimit,
+    maxChannels: profile.maxChannels,
   };
 }
 
@@ -231,6 +250,14 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
         return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} channels max · Web Serial`;
       }
       return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} memory slots · Web Serial only`;
+    } catch {
+      return null;
+    }
+  }
+  if (formatId === 'radiofoundry') {
+    try {
+      const profile = getRadioFoundryProfile(profileId);
+      return `${profile.nameLimit}-char names · ${profile.maxChannels} channels · codeplug.bin`;
     } catch {
       return null;
     }

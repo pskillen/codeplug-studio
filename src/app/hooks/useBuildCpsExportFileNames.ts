@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RadioBuild } from '@core/models/formatBuild.ts';
 import {
+  isBinaryCpsExportAdapter,
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
 } from '@core/import-export/exportAdapter.ts';
@@ -21,6 +22,7 @@ function staticExportFileNames(
     if (isSingleFileCpsExportAdapter(adapter)) {
       return [adapter.defaultFileName(exportProfileId ?? profileId)];
     }
+    if (isBinaryCpsExportAdapter(adapter)) return [adapter.defaultFileName];
     return [];
   } catch {
     return [];

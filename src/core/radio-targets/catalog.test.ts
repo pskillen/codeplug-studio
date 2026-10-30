@@ -118,6 +118,7 @@ describe('radio target catalog', () => {
       'radio-io-opengd77-md9600',
       'radio-io-rt95',
       'radio-io-rt95-mm9pdy',
+      'radiofoundry-dm32uv',
     ]) {
       expect(ids).toContain(profileId);
     }
@@ -169,6 +170,34 @@ describe('radio target catalog', () => {
     expect(
       radioTargetFor('baofeng-dm32uv-mm9pdy')?.compatibleEgress.map((e) => e.formatId),
     ).toEqual(['radio-io']);
+    expect(hasMxNChannelExpansion('baofeng-dm32uv-radiofoundry')).toBe(false);
+    expect(hasTalkGroupTimeslotClones('baofeng-dm32uv-radiofoundry')).toBe(false);
+    expect(traitsForRadioTarget('baofeng-dm32uv-radiofoundry')).toEqual([
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.SeparateDigitalIdList,
+    ]);
+    expect(radioTargetFor('baofeng-dm32uv-radiofoundry')?.label).toBe(
+      'Baofeng DM-32UV (RadioFoundry)',
+    );
+    expect(radioTargetFor('baofeng-dm32uv-radiofoundry')?.group).toBe('Baofeng');
+    expect(radioTargetFor('baofeng-dm32uv-radiofoundry')?.compatibleEgress).toEqual([
+      {
+        formatId: 'radiofoundry',
+        profileId: 'radiofoundry-dm32uv',
+        kind: 'cps-file',
+        label: 'RadioFoundry codeplug',
+      },
+    ]);
+    expect(
+      radioTargetFor('baofeng-dm32uv')?.compatibleEgress.some((e) => e.formatId === 'radiofoundry'),
+    ).toBe(false);
+    expect(
+      radioTargetFor('baofeng-dm32uv-mm9pdy')?.compatibleEgress.some(
+        (e) => e.formatId === 'radiofoundry',
+      ),
+    ).toBe(false);
     expect(traitsForRadioTarget('baofeng-dm32uv')).toEqual([
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ScanLists,

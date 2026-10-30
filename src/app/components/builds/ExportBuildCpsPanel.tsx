@@ -1,13 +1,14 @@
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { dedupeWarnings } from '@core/import-export/dedupeWarnings.ts';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
+import { Alert, Button, FileButton, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
 import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
 import { prepareBuildForFrequencyRangeExportPatch } from '../../lib/frequencyRangeExportSettingsPatch.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import { formatCatalogEntry, getExportAdapter } from '@core/import-export/registry.ts';
 import {
+  isBinaryCpsExportAdapter,
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
 } from '@core/import-export/exportAdapter.ts';
@@ -58,6 +59,13 @@ import {
 import { useBuildCpsExportFileNames } from '../../hooks/useBuildCpsExportFileNames.ts';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
+import { importRadioFoundryCodeplug } from '../../services/radiofoundryCodeplugImportService.ts';
+
+function describeCodeplugImport(channelCount: number, zoneCount: number): string {
+  const channels = channelCount === 1 ? '1 channel' : `${channelCount} channels`;
+  const zones = zoneCount === 1 ? '1 zone' : `${zoneCount} zones`;
+  return `Imported ${channels} and ${zones}.`;
+}
 
 export interface ExportBuildCpsPanelProps {
   build: RadioBuild;
@@ -88,6 +96,9 @@ export default function ExportBuildCpsPanel({
   const [exportWarnings, setExportWarnings] = useState<ExportWarning[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [importingCodeplug, setImportingCodeplug] = useState(false);
+  const [codeplugImportMessage, setCodeplugImportMessage] = useState<string | null>(null);
+  const [codeplugImportFailed, setCodeplugImportFailed] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [driveBrowserOpen, setDriveBrowserOpen] = useState(false);
@@ -270,6 +281,30 @@ export default function ExportBuildCpsPanel({
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleImportCodeplug(file: File | null) {
+    if (!file || !activeProjectId) return;
+    setImportingCodeplug(true);
+    setCodeplugImportMessage(null);
+    setCodeplugImportFailed(false);
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const result = await importRadioFoundryCodeplug(activeProjectId, bytes);
+      if (!result.ok) {
+        setCodeplugImportFailed(true);
+        setCodeplugImportMessage(result.message);
+        return;
+      }
+      setCodeplugImportMessage(describeCodeplugImport(result.channelCount, result.zoneCount));
+      const channels = await persistence.listChannels(activeProjectId);
+      setChannelCount(channels.length);
+    } catch (err) {
+      setCodeplugImportFailed(true);
+      setCodeplugImportMessage(err instanceof Error ? err.message : String(err));
+    } finally {
+      setImportingCodeplug(false);
     }
   }
 
@@ -497,6 +532,63 @@ export default function ExportBuildCpsPanel({
       <Alert color="gray" title="Export not available">
         No exporter is registered for {formatEntry?.label ?? formatId}.
       </Alert>
+    );
+  }
+
+  if (isBinaryCpsExportAdapter(adapter)) {
+    const imageFileName = adapter.defaultFileName;
+    return (
+      <Stack gap="sm">
+        {egressSwitcher}
+        <Text size="sm">
+          Export as{' '}
+          <Text span fw={600}>
+            {formatEntry?.label ?? formatId}
+          </Text>
+          . This downloads one <code>{imageFileName}</code> image.
+        </Text>
+        {wireHint ? (
+          <Text size="sm" c="dimmed">
+            {wireHint}
+          </Text>
+        ) : null}
+        {!hasChannels ? (
+          <Text size="sm" c="dimmed">
+            Add channels to the library before exporting this build.
+          </Text>
+        ) : null}
+        {error ? <Alert color="red">{error}</Alert> : null}
+        {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
+        <Button
+          leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+          variant="filled"
+          disabled={!hasChannels || exporting}
+          loading={exporting}
+          onClick={() => void handleDownloadZip()}
+        >
+          Download {imageFileName}
+        </Button>
+        <Text size="sm">
+          Import a <code>{imageFileName}</code> into this project. Channels, zones, and the other
+          library rows in the file are added.
+        </Text>
+        <FileButton
+          onChange={(file) => void handleImportCodeplug(file)}
+          accept=".bin,application/octet-stream"
+          disabled={importingCodeplug || !activeProjectId}
+        >
+          {(props) => (
+            <Button {...props} variant="light" loading={importingCodeplug}>
+              Import {imageFileName}
+            </Button>
+          )}
+        </FileButton>
+        {codeplugImportMessage ? (
+          <Text size="sm" c={codeplugImportFailed ? 'red' : undefined}>
+            {codeplugImportMessage}
+          </Text>
+        ) : null}
+      </Stack>
     );
   }
 

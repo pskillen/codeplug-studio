@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { CpsPreviewResult } from '../../services/buildCpsExportService.ts';
 import { BuildLayoutProvider } from '../../routes/builds/BuildLayoutContext.tsx';
@@ -16,8 +17,14 @@ const {
   previewCpsExport,
   previewCpsSingleFile,
   listCpsExportFileNames,
+  importRadioFoundryCodeplug,
 } = vi.hoisted(() => ({
-  downloadCpsZip: vi.fn(async () => ({ warnings: [] as string[] })),
+  downloadCpsZip: vi.fn(async () => ({ warnings: [] as ExportWarning[] })),
+  importRadioFoundryCodeplug: vi.fn(async () => ({
+    ok: true as const,
+    channelCount: 1,
+    zoneCount: 1,
+  })),
   downloadCpsFile: vi.fn(async () => ({ warnings: [] as string[] })),
   downloadCpsSingleFile: vi.fn(async () => ({ warnings: [] as string[] })),
   previewCpsExport: vi.fn(async (): Promise<CpsPreviewResult> => ({
@@ -82,6 +89,10 @@ vi.mock('../../state/useFormatBuilds.ts', () => ({
   useFormatBuilds: () => ({
     putBuild: vi.fn(async () => ({ ok: true as const, revision: 2 })),
   }),
+}));
+
+vi.mock('../../services/radiofoundryCodeplugImportService.ts', () => ({
+  importRadioFoundryCodeplug,
 }));
 
 vi.mock('../../state/persistence.ts', () => ({
@@ -552,5 +563,34 @@ describe('ExportBuildCpsPanel', () => {
     await waitFor(() => {
       expect(screen.getByText('Naming')).toBeInTheDocument();
     });
+  });
+
+  it('downloads codeplug.bin, shows export warnings, and imports a chosen file', async () => {
+    downloadCpsZip.mockResolvedValueOnce({
+      warnings: [
+        {
+          kind: 'general',
+          severity: 'problem',
+          message: 'Scan list "Evening" was not written',
+        },
+      ],
+    });
+    renderExportPanel('radiofoundry-dm32uv');
+
+    const download = await screen.findByRole('button', { name: 'Download codeplug.bin' });
+    expect(download).not.toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Download ZIP' })).not.toBeInTheDocument();
+    expect(screen.getByText(/This downloads one/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Write radio/i })).not.toBeInTheDocument();
+
+    fireEvent.click(download);
+    expect(await screen.findByText('Scan list "Evening" was not written')).toBeInTheDocument();
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input.accept).toContain('.bin');
+    const file = new File([new Uint8Array([1, 2, 3])], 'codeplug.bin');
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(await screen.findByText('Imported 1 channel and 1 zone.')).toBeInTheDocument();
+    expect(importRadioFoundryCodeplug).toHaveBeenCalledWith('project-1', expect.any(Uint8Array));
   });
 });

@@ -4,6 +4,7 @@ import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
 import { pushStockChannelLocationNote } from '@core/radio-targets/channelLocationNotes.ts';
 import {
+  isBinaryCpsExportAdapter,
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
 } from '@core/import-export/exportAdapter.ts';
@@ -317,6 +318,46 @@ export function exportBuildSingleFile({
   };
 }
 
+export interface ExportBuildBinaryResult {
+  assembled: AssembledBuild;
+  bytes: Uint8Array;
+  fileName: string;
+  warnings: ExportWarning[];
+}
+
+/** Serialise a raw codeplug image. RadioFoundry downloads this file; it is not a ZIP. */
+export function exportBuildBinary({
+  build,
+  egress,
+  library,
+  options,
+}: Omit<ExportBuildParams, 'fileName'>): ExportBuildBinaryResult {
+  const exportOptions = exportOptionsForEgress(build, egress, options, library);
+  const { assembled, projectionWarnings } = assembleForExport(
+    build,
+    library,
+    egress,
+    exportOptions,
+  );
+  const adapter = getExportAdapter(egress.formatId as FormatId);
+  if (!isBinaryCpsExportAdapter(adapter)) {
+    throw new Error(`Format ${egress.formatId} does not support binary CPS export`);
+  }
+  const result = adapter.serialise(assembled, exportOptions);
+  const warnings = dedupeWarnings([
+    ...projectionWarnings,
+    ...exportInclusionWarnings(build, library, assembled),
+    ...channelLocationExportNotes(build, assembled),
+    ...result.warnings,
+  ]);
+  return {
+    assembled,
+    bytes: result.bytes,
+    fileName: adapter.defaultFileName,
+    warnings,
+  };
+}
+
 /** Serialise all CPS files and package as a ZIP byte array. */
 export function exportBuildZip({
   build,
@@ -325,6 +366,9 @@ export function exportBuildZip({
   options,
   baseNeonplugBytes,
 }: ExportBuildZipParams): ExportBuildAllResult & { zip: Uint8Array } {
+  if (egress.formatId === 'radiofoundry') {
+    throw new Error('RadioFoundry export is codeplug.bin, not a ZIP');
+  }
   const result = exportBuildAll({ build, egress, library, options });
 
   if (egress.formatId === 'neonplug') {
