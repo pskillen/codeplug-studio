@@ -51,6 +51,18 @@ import {
   type Rt95ModDataInput,
   type Rt95WriteContext,
 } from './modData/index.ts';
+import {
+  assertRt95SettingsPatchesPermitted,
+  rt95PasswordDigitsFromImage,
+  type Rt95RadioSettingsSnapshot,
+  type Rt95SettingsPatch,
+} from './settingsFields.ts';
+import {
+  assertRt95FreshBlockMatchesPrePause,
+  mergeRt95SettingsPatchIntoBlock,
+  rt95PatchMaskMap,
+  touchedRt95Blocks,
+} from './settingsPatch.ts';
 
 export interface Rt95ConnectOptions {
   signal?: AbortSignal;
@@ -111,6 +123,19 @@ export class Rt95Protocol implements CloneImageRadio {
   private inProgramMode = false;
   private modIntent: Rt95ModDataInput | null = null;
   private lastChipGuard: Rt95ChipGuardResult | undefined;
+  private pendingSettingsPatches: readonly Rt95SettingsPatch[] = [];
+
+  /** Field patches for the next {@link upload} or settings-only upload. */
+  setUploadSettingsPatches(patches: readonly Rt95SettingsPatch[]): void {
+    assertRt95SettingsPatchesPermitted(patches);
+    this.pendingSettingsPatches = patches;
+  }
+
+  takeUploadSettingsPatches(): readonly Rt95SettingsPatch[] {
+    const p = this.pendingSettingsPatches;
+    this.pendingSettingsPatches = [];
+    return p;
+  }
 
   /**
    * MM9PDY target only: the zones and descriptions the next {@link upload} also writes (MMD1,
@@ -287,13 +312,20 @@ export class Rt95Protocol implements CloneImageRadio {
       signal?: AbortSignal;
       /** Restore passes `'restore'`; Write is the default. */
       operation?: 'write' | 'restore';
-    },
+      /** Defaults to {@link uploadSettingsPatches} set on the protocol before upload. */
+      settingsPatches?: readonly Rt95SettingsPatch[];
+    } = {},
   ): Promise<void> {
     if (image.size < RT95_IMAGE_SIZE) {
       throw new RangeError(`Upload image must be at least 0x${RT95_IMAGE_SIZE.toString(16)} bytes`);
     }
 
     const pipe = this.requirePipe();
+    const patches = opts.settingsPatches ?? this.pendingSettingsPatches;
+    assertRt95SettingsPatchesPermitted(patches);
+    const prePauseBytes = image.bytes.slice();
+    const patchMask = rt95PatchMaskMap(patches);
+    const touchedBlocks = touchedRt95Blocks(patches);
     // Restore replays a stock backup image: it never carries the MMD1 intent (Backup PR extends this).
     const intent = opts.operation === 'restore' ? null : this.modIntent;
     // Encode first: an input outside the MMD1 limits fails before the radio sees a frame.
@@ -347,7 +379,15 @@ export class Rt95Protocol implements CloneImageRadio {
       }
       for (let addr = RT95_BLOCK_ADDR_START; addr <= RT95_BLOCK_ADDR_END; addr += RT95_BLOCK_SIZE) {
         throwIfAborted(opts.signal);
-        const payload = image.get(addr, RT95_BLOCK_SIZE);
+        let payload: Uint8Array;
+        if (touchedBlocks.has(addr) && patches.length > 0) {
+          const fresh = await this.readBlock(pipe, addr);
+          const pre = prePauseBytes.subarray(addr, addr + RT95_BLOCK_SIZE);
+          assertRt95FreshBlockMatchesPrePause(addr, pre, fresh, patchMask);
+          payload = mergeRt95SettingsPatchIntoBlock(fresh, addr, patches);
+        } else {
+          payload = image.get(addr, RT95_BLOCK_SIZE);
+        }
         await this.writeBlock(pipe, addr, payload, ctx);
         stagingChunks.push({ address: addr, data: payload.slice() });
         done += 1;
@@ -375,6 +415,7 @@ export class Rt95Protocol implements CloneImageRadio {
         );
       }
       this.lastUploadStaging = captureWriteVerifyStaging(stagingChunks);
+      this.pendingSettingsPatches = [];
     } finally {
       this.inProgramMode = false;
       lastRt95EndAt = Date.now();
@@ -383,9 +424,99 @@ export class Rt95Protocol implements CloneImageRadio {
   }
 
   /**
-   * Replay selected restorable clone bins via the same PROGRAM→QX upload path
-   * as Write. Does not merge channels, assemble, or seed from a project bag.
+   * Settings-only write: fresh-read each touched block, abort on drift outside the patch mask,
+   * merge patches, and write only those blocks. Never writes channels, MMD1, or ident.
    */
+  async uploadSettingsPatches(
+    patches: readonly Rt95SettingsPatch[],
+    prePauseImage: MemoryMap,
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal } = {},
+  ): Promise<void> {
+    if (!this.pipe) {
+      throw new RadioProtocolError('RT95 not connected');
+    }
+    if (patches.length === 0) {
+      throw new RadioProtocolError('RT95 settings upload has no patches');
+    }
+    assertRt95SettingsPatchesPermitted(patches);
+    const prePauseBytes = prePauseImage.bytes.slice();
+    const patchMask = rt95PatchMaskMap(patches);
+    const touchedBlocks = touchedRt95Blocks(patches);
+    const pipe = this.requirePipe();
+    const ctx: Rt95WriteContext = {
+      profile: this.modIntent ? 'mm9pdy' : 'stock',
+      chipGuardPassed: false,
+      operation: 'write',
+    };
+
+    reportProgress(
+      opts.onProgress,
+      { cur: 0, max: touchedBlocks.size, msg: 'Upload handshake', stage: 'Upload' },
+      opts.signal,
+    );
+
+    await flushPipe(pipe);
+    await enterProgramQxMode(pipe, RT95_IO_TIMEOUT_MS);
+    this.inProgramMode = true;
+    const identRaw = await probeProgramQxIdent(pipe, RT95_IO_TIMEOUT_MS);
+    const ident = parseRt95IdentResponse(identRaw);
+    this.radioBandlimit = ident.bandlimit;
+
+    const primeFrame = makeProgramQxReadFrame(RT95_UPLOAD_PRIME_ADDR, PROGRAM_QX_BLOCK_SIZE);
+    await sendProgramQxCommand(pipe, primeFrame, PROGRAM_QX_READ_REPLY_LEN, RT95_IO_TIMEOUT_MS);
+
+    const stagingChunks: { address: number; data: Uint8Array }[] = [];
+    let done = 0;
+    try {
+      for (const addr of [...touchedBlocks].sort((a, b) => a - b)) {
+        throwIfAborted(opts.signal);
+        const fresh = await this.readBlock(pipe, addr);
+        const pre = prePauseBytes.subarray(addr, addr + RT95_BLOCK_SIZE);
+        assertRt95FreshBlockMatchesPrePause(addr, pre, fresh, patchMask);
+        const payload = mergeRt95SettingsPatchIntoBlock(fresh, addr, patches);
+        await this.writeBlock(pipe, addr, payload, ctx);
+        stagingChunks.push({ address: addr, data: payload.slice() });
+        done += 1;
+        reportProgress(
+          opts.onProgress,
+          {
+            cur: done,
+            max: touchedBlocks.size,
+            msg: `Writing 0x${addr.toString(16)}`,
+            stage: 'Upload',
+          },
+          opts.signal,
+        );
+      }
+      this.lastUploadStaging = captureWriteVerifyStaging(stagingChunks);
+    } finally {
+      this.inProgramMode = false;
+      lastRt95EndAt = Date.now();
+      await exitProgramQxMode(pipe);
+    }
+  }
+
+  /** Download the clone image for settings read/decode. */
+  async readSettingsSnapshot(opts?: {
+    signal?: AbortSignal;
+    onProgress?: ProgressFn;
+  }): Promise<Rt95RadioSettingsSnapshot> {
+    const image = await this.download({
+      signal: opts?.signal,
+      onProgress: opts?.onProgress,
+      progressStage: 'Read settings',
+    });
+    return {
+      image: image.bytes.slice(),
+      bandlimit: readBandlimitFromImage(image),
+    };
+  }
+
+  /** Exposed for password enable checks against the pre-pause image. */
+  rt95PasswordDigitsFromPrePauseImage(image: MemoryMap): string | undefined {
+    return rt95PasswordDigitsFromImage(image.bytes);
+  }
+
   async restoreFromBackup(
     archive: { manifest: RadioBackupManifestV1; image: MemoryMap },
     opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },

@@ -9,7 +9,7 @@ import {
 } from '../../kit/codecs/programQx.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { exitProgramQxMode } from '../../kit/codecs/programQx.ts';
-import { createFakeRt95Pipe } from './__fixtures__/fakeRt95Pipe.ts';
+import { createFakeRt95Pipe, buildFakeRt95Eeprom } from './__fixtures__/fakeRt95Pipe.ts';
 import {
   Rt95Protocol,
   getLastRt95EndAt,
@@ -23,6 +23,7 @@ import {
   stageRecorder,
 } from '../../plannedStagesTestKit.ts';
 import { buildSyntheticRt95Image } from './__fixtures__/syntheticImage.ts';
+import { resolveRt95SettingsPatches } from './settingsFields.ts';
 import {
   RT95_BLOCK_ADDR_END,
   RT95_BLOCK_ADDR_START,
@@ -178,6 +179,49 @@ describe('Rt95Protocol', () => {
     await radio.upload(upImage, { onProgress: rec.onProgress });
     expectEventsFollowPlan(planRt95Stages('write', {}), rec.events);
     expect(rec.stages).toEqual(['Pre-write read', 'Upload']);
+  });
+
+  it('upload without settings patches matches the pre-pause image bytes written', async () => {
+    const eeprom = buildFakeRt95Eeprom();
+    eeprom[0x3200] = 0x55;
+    const map = createMemoryMap(RT95_IMAGE_SIZE);
+    map.set(0, eeprom.subarray(0, RT95_IMAGE_SIZE));
+    const pipe = createFakeRt95Pipe({ eeprom });
+    const radio = new Rt95Protocol();
+    await radio.connect(pipe);
+    await radio.upload(map, {});
+    const w3200 = pipe.writes.find((w) => w[0] === 0x57 && w[1] === 0x32 && w[2] === 0x00);
+    expect(w3200?.[4]).toBe(0x55);
+  });
+
+  it('upload applies a registered settings patch after a fresh read of the touched block', async () => {
+    const eeprom = buildFakeRt95Eeprom();
+    eeprom[0x3200] = 0xf0;
+    const map = createMemoryMap(RT95_IMAGE_SIZE);
+    map.set(0, eeprom.subarray(0, RT95_IMAGE_SIZE));
+    const pipe = createFakeRt95Pipe({ eeprom });
+    const radio = new Rt95Protocol();
+    await radio.connect(pipe);
+    const patches = resolveRt95SettingsPatches([{ fieldId: 'beepVolume', value: 3 }], 'stock');
+    await radio.upload(map, { settingsPatches: patches });
+    const w3200 = pipe.writes.find((w) => w[0] === 0x57 && w[1] === 0x32 && w[2] === 0x00);
+    expect(w3200).toBeDefined();
+    expect(w3200![4]! & 0x07).toBe(3);
+    expect(w3200![4]! & 0xf8).toBe(0xf0);
+  });
+
+  it('upload settings-only writes a single block and never 0x3B00', async () => {
+    const eeprom = buildFakeRt95Eeprom();
+    const map = createMemoryMap(RT95_IMAGE_SIZE);
+    map.set(0, eeprom.subarray(0, RT95_IMAGE_SIZE));
+    const pipe = createFakeRt95Pipe({ eeprom });
+    const radio = new Rt95Protocol();
+    await radio.connect(pipe);
+    const patches = resolveRt95SettingsPatches([{ fieldId: 'beepVolume', value: 2 }], 'stock');
+    await radio.uploadSettingsPatches(patches, map, {});
+    const writeAddrs = pipe.writes.filter((w) => w[0] === 0x57).map((w) => (w[1]! << 8) | w[2]!);
+    expect(writeAddrs).toEqual([0x3200]);
+    expect(writeAddrs.some((a) => a >= 0x3b00)).toBe(false);
   });
 });
 

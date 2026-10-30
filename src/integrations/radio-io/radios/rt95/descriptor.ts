@@ -7,6 +7,7 @@ import { RT95_BAUD_RATE, RT95_CHANNEL_COUNT, RT95_MODEL_ID } from './constants.t
 import { extractRt95Hydration, mergeChannelsIntoRt95Hydration } from './hydration.ts';
 import { createRt95Protocol, Rt95Protocol } from './protocol.ts';
 import { rt95ModDataIntentFromOrganisation } from './modDataIntent.ts';
+import { rt95UploadSettingsFromOrganisation } from './settingsFields.ts';
 import { RT95_WRITE_VERIFY_HOOKS } from './writeVerifyHooks.ts';
 import { planRt95Stages } from './plannedStages.ts';
 
@@ -36,6 +37,10 @@ export const RT95_DESCRIPTOR: RadioDescriptor = {
     seedProtocolForUpload(protocol, _bag, organisation, channels) {
       if (protocol instanceof Rt95Protocol) {
         protocol.setModDataIntent(rt95ModDataIntentFromOrganisation(organisation, channels));
+        const profileId = protocol.getModDataIntent() ? 'radio-io-rt95-mm9pdy' : 'radio-io-rt95';
+        protocol.setUploadSettingsPatches(
+          rt95UploadSettingsFromOrganisation(organisation, profileId),
+        );
       }
     },
   },

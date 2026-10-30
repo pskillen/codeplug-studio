@@ -10,6 +10,7 @@ import { channelLocationWriteRadioNote } from '@core/radio-targets/channelLocati
 import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
+  isRt95RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
 import { resolveAtD890ScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
@@ -98,6 +99,11 @@ import {
 } from '@integrations/radio-io/radios/opengd77/protocol.ts';
 import { Uv17ProProtocol } from '@integrations/radio-io/radios/uv17pro-family/protocol.ts';
 import { Rt95Protocol } from '@integrations/radio-io/radios/rt95/protocol.ts';
+import {
+  resolveRt95SettingsPatches,
+  rt95SettingsTargetForProfile,
+  type Rt95SettingsOverride,
+} from '@integrations/radio-io/radios/rt95/settingsFields.ts';
 import { applyRt95ZoneKey } from '@integrations/radio-io/radios/rt95/zoneKey.ts';
 import {
   rt95ChipGuardRefusalText,
@@ -907,6 +913,8 @@ export async function uploadPreparedRadioWrite(
     beforeTransmit?: (ctx: BeforeTransmitContext) => Promise<void | AtD890PreTransmitResult>;
     /** AT-D890UV session settings overrides. Empty or unset: today's Write, byte for byte. */
     settingsOverrides?: readonly AtD890SettingsOverride[];
+    /** RT95 session settings overrides. Empty or unset: settings bytes stay as the pre-write read. */
+    rt95SettingsOverrides?: readonly Rt95SettingsOverride[];
     /**
      * AT-D890UV MM9PDY: the projection with NXDN on, from {@link prepareRadioWriteImage}. Used only
      * when the in-session read says the radio has NXDN enabled; otherwise `channels` and
@@ -973,10 +981,14 @@ export async function uploadPreparedRadioWrite(
       }
     }
     const hydration = getRadioCloneHydration(egress);
+    const rt95Overrides = opts?.rt95SettingsOverrides ?? [];
     session.descriptor.hydration.seedProtocolForUpload?.(
       session.radio,
       hydration ?? undefined,
-      opts?.organisation,
+      {
+        ...(opts?.organisation ?? {}),
+        ...(rt95Overrides.length > 0 ? { rt95SettingsOverrides: rt95Overrides } : {}),
+      },
       opts?.channels,
     );
     const resolved = await resolveRadioWriteImageForUpload(
@@ -991,6 +1003,15 @@ export async function uploadPreparedRadioWrite(
       { ...opts, onProgress },
     );
     setCachedImage(session, resolved);
+    if (
+      session.radio instanceof Rt95Protocol &&
+      isRt95RadioIoProfileId(egress.profileId) &&
+      rt95Overrides.length > 0
+    ) {
+      resolveRt95SettingsPatches(rt95Overrides, rt95SettingsTargetForProfile(egress.profileId), {
+        existingPasswordDigits: session.radio.rt95PasswordDigitsFromPrePauseImage(resolved),
+      });
+    }
     // A flagged radio is refused at open; this is the backstop before the pause and any frame.
     if (session.radio instanceof AtD890uvProtocol) session.radio.assertNoStunKillFlag();
     const overrides = opts?.settingsOverrides ?? [];
@@ -1067,6 +1088,14 @@ export async function uploadPreparedRadioWrite(
           opts?.channels,
         );
       }
+    }
+    if (session.radio instanceof Rt95Protocol && rt95Overrides.length > 0) {
+      session.descriptor.hydration.seedProtocolForUpload?.(
+        session.radio,
+        hydration ?? undefined,
+        { ...(opts?.organisation ?? {}), rt95SettingsOverrides: rt95Overrides },
+        opts?.channels,
+      );
     }
     declareAtD890ContactUnitsForWrite(session, contactWrite);
     await session.radio.upload(resolved, {
