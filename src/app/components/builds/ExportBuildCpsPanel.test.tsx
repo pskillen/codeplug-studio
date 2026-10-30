@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { CpsPreviewResult } from '../../services/buildCpsExportService.ts';
 import { BuildLayoutProvider } from '../../routes/builds/BuildLayoutContext.tsx';
@@ -18,7 +19,7 @@ const {
   listCpsExportFileNames,
   importRadioFoundryCodeplug,
 } = vi.hoisted(() => ({
-  downloadCpsZip: vi.fn(async () => ({ warnings: [] as string[] })),
+  downloadCpsZip: vi.fn(async () => ({ warnings: [] as ExportWarning[] })),
   importRadioFoundryCodeplug: vi.fn(async () => ({
     ok: true as const,
     channelCount: 1,
