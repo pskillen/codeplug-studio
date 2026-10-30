@@ -169,6 +169,19 @@ describe('radio target catalog', () => {
     expect(
       radioTargetFor('baofeng-dm32uv-mm9pdy')?.compatibleEgress.map((e) => e.formatId),
     ).toEqual(['radio-io']);
+    expect(hasMxNChannelExpansion('baofeng-dm32uv-radiofoundry')).toBe(false);
+    expect(hasTalkGroupTimeslotClones('baofeng-dm32uv-radiofoundry')).toBe(false);
+    expect(traitsForRadioTarget('baofeng-dm32uv-radiofoundry')).toEqual([
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.SeparateDigitalIdList,
+    ]);
+    expect(radioTargetFor('baofeng-dm32uv-radiofoundry')?.label).toBe(
+      'Baofeng DM-32UV (RadioFoundry)',
+    );
+    expect(radioTargetFor('baofeng-dm32uv-radiofoundry')?.group).toBe('Baofeng');
+    expect(radioTargetFor('baofeng-dm32uv-radiofoundry')?.compatibleEgress).toEqual([]);
     expect(traitsForRadioTarget('baofeng-dm32uv')).toEqual([
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ScanLists,
