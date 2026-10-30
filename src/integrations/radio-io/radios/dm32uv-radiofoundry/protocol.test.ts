@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { newDigitalContact, newOwnDigitalId } from '@core/domain/factories.ts';
+import { CONTACT_BASE } from '@core/import-export/formats/radiofoundry/layout.ts';
+import type { AssembledBuild } from '@core/services/assemble.ts';
 import { crc32Ieee } from '../../kit/checksums.ts';
 import { RadioTimeoutError } from '../../kit/errors.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
@@ -26,7 +29,12 @@ import {
 import { decodeDebugFrame, encodeDebugFrame } from './frame.ts';
 import { decodeBlock, encodeBlock } from './lz4.ts';
 import { planDm32RadioFoundryStages } from './plannedStages.ts';
+import { DMR_ID_DATABASE_ADDRESS } from './idDatabase.ts';
 import { Dm32uvRadioFoundryProtocol } from './protocol.ts';
+import {
+  radioFoundryWriteSourceFromAssembled,
+  type Dm32RadioFoundryWriteSource,
+} from './writeSource.ts';
 
 const REPLY = CODEPLUG_COMMAND | 0x80;
 
@@ -308,5 +316,136 @@ describe('DM-32 RadioFoundry fast codeplug', () => {
 
     expectEventsFollowPlan(planDm32RadioFoundryStages('write', {}), rec.events);
     expect(rec.stages).toEqual(['Pre-write read', 'Codeplug blocks', 'Commit']);
+  });
+});
+
+function cableAssembled(contactName?: string): AssembledBuild {
+  const digitalContacts = contactName
+    ? [
+        {
+          entity: {
+            ...newDigitalContact('p', contactName, 1001, 'dmr'),
+            callsign: 'M7ABC',
+          },
+          wireName: contactName,
+        },
+      ]
+    : [];
+  return {
+    buildId: 'b',
+    formatId: 'radiofoundry',
+    profileId: 'radiofoundry-dm32uv',
+    buildName: 'DM-32',
+    channels: [],
+    zones: [],
+    scanLists: [],
+    talkGroups: [],
+    digitalContacts,
+    analogContacts: [],
+    rxGroupLists: [],
+    ownDigitalIds: [{ ...newOwnDigitalId('p', 'dmr', 'MM9PDY', 2_351_234), isDefault: true }],
+  };
+}
+
+function writtenBlockAddresses(pipe: ScriptedPipe): number[] {
+  return pipe.writes
+    .map((frame) => decodeDebugFrame(frame))
+    .filter((frame) => frame.payload[0] === OP_BLOCK)
+    .map((frame) => u32(frame.payload, 1));
+}
+
+function covers(addr: number, target: number): boolean {
+  return addr <= target && target < addr + BLOCK_SIZE;
+}
+
+async function uploadSource(
+  pipe: ScriptedPipe,
+  source: Dm32RadioFoundryWriteSource,
+): Promise<ReturnType<typeof stageRecorder>> {
+  const proto = new Dm32uvRadioFoundryProtocol();
+  await proto.connect(pipe);
+  proto.armWriteSource(source);
+  const rec = stageRecorder();
+  await proto.download({ progressStage: 'Pre-write read', onProgress: rec.onProgress });
+  await proto.upload(memoryMapFromBytes(source.bytes), { onProgress: rec.onProgress });
+  return rec;
+}
+
+describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
+  it('writes a BLOCK covering the contact table when the radio slot is empty', async () => {
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
+      includeLibraryContacts: true,
+    });
+    const pipe = new ScriptedPipe(0xff);
+    await uploadSource(pipe, source);
+    const written = writtenBlockAddresses(pipe);
+    expect(written.some((addr) => covers(addr, CONTACT_BASE))).toBe(true);
+    const block = CONTACT_BASE & ~(BLOCK_SIZE - 1);
+    expect(pipe.block(block)[CONTACT_BASE - block]).toBe('A'.charCodeAt(0));
+    expect(written).not.toContain(PHYSICAL_CODEPLUG_BASE);
+  });
+
+  it('says no contact blocks changed when the contact table already matches', async () => {
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
+      includeLibraryContacts: true,
+    });
+    const pipe = new ScriptedPipe(0xff);
+    const block = CONTACT_BASE & ~(BLOCK_SIZE - 1);
+    const radio = pipe.block(block);
+    for (let i = 0; i < BLOCK_SIZE && block + i < source.bytes.length; i += 1) {
+      if (source.owned[block + i]) radio[i] = source.bytes[block + i]!;
+    }
+    const rec = await uploadSource(pipe, source);
+    expect(writtenBlockAddresses(pipe).some((addr) => covers(addr, CONTACT_BASE))).toBe(false);
+    expect(rec.events.some((event) => event.msg === 'No contact blocks changed')).toBe(true);
+  });
+
+  it('does not clear the contact table when library contacts are off', async () => {
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
+      includeLibraryContacts: false,
+    });
+    expect(source.owned[CONTACT_BASE]).toBe(0);
+    const pipe = new ScriptedPipe(0x5a);
+    await uploadSource(pipe, source);
+    const block = CONTACT_BASE & ~(BLOCK_SIZE - 1);
+    expect(writtenBlockAddresses(pipe).some((addr) => covers(addr, CONTACT_BASE))).toBe(false);
+    expect(pipe.block(block)[CONTACT_BASE - block]).toBe(0x5a);
+  });
+
+  it('writes one directory row at 0x50000 and leaves that address alone when the directory is off', async () => {
+    const row = {
+      wireName: 'Ada',
+      digitalId: 123456,
+      callsign: 'M7ABC',
+      city: '',
+      province: '',
+      country: '',
+      remark: '',
+    };
+    const on = radioFoundryWriteSourceFromAssembled(cableAssembled(), {
+      includeLibraryContacts: false,
+      directoryRows: [row],
+    });
+    expect(on.owned[DMR_ID_DATABASE_ADDRESS]).toBe(1);
+    expect(on.owned[DMR_ID_DATABASE_ADDRESS + 12 + 27]).toBe(0);
+    const pipe = new ScriptedPipe(0xff);
+    await uploadSource(pipe, on);
+    expect(writtenBlockAddresses(pipe)).toContain(DMR_ID_DATABASE_ADDRESS);
+    const block = pipe.block(DMR_ID_DATABASE_ADDRESS);
+    expect(block[0]).toBe(0x49);
+    expect(block[1]).toBe(0x64);
+    expect(block[2]).toBe(0x4e);
+    expect(block[3]).toBe(0x65);
+    expect(block[8]).toBe(1);
+    expect([block[12], block[13], block[14]]).toEqual([0x40, 0xe2, 0x01]);
+
+    const off = radioFoundryWriteSourceFromAssembled(cableAssembled(), {
+      includeLibraryContacts: false,
+    });
+    expect(off.owned[DMR_ID_DATABASE_ADDRESS]).toBe(0);
+    const quiet = new ScriptedPipe(0xff);
+    await uploadSource(quiet, off);
+    expect(writtenBlockAddresses(quiet)).not.toContain(DMR_ID_DATABASE_ADDRESS);
+    expect(writtenBlockAddresses(quiet)).not.toContain(PHYSICAL_CODEPLUG_BASE);
   });
 });

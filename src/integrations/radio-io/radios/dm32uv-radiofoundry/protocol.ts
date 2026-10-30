@@ -41,6 +41,7 @@ import {
 import { decodeDebugFrame, encodeDebugFrame, type DebugFrame } from './frame.ts';
 import { decodeBlock, encodeBlock } from './lz4.ts';
 import {
+  ownedPrivateContactBlocks,
   radioFoundryWriteSourceFromAssembled,
   type Dm32RadioFoundryWriteSource,
 } from './writeSource.ts';
@@ -177,6 +178,13 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
       await this.download({ ...opts, progressStage: PRE_WRITE_STAGE });
     }
     const jobs = this.changedBlocks();
+    if (this.privateContactTableMatches()) {
+      reportProgress(
+        opts.onProgress,
+        { cur: 1, max: 1, stage: BLOCKS_STAGE, msg: 'No contact blocks changed' },
+        opts.signal,
+      );
+    }
     if (jobs.length === 0) {
       reportProgress(
         opts.onProgress,
@@ -226,6 +234,20 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
   readFirmware(image: MemoryMap): string | undefined {
     void image;
     return undefined;
+  }
+
+  /** Owned private-contact records already match the bytes read from the radio. */
+  private privateContactTableMatches(): boolean {
+    const source = this.requireArmed();
+    const blocks = this.requireReadBlocks();
+    const addrs = ownedPrivateContactBlocks(source);
+    if (addrs.length === 0) return false;
+    for (const addr of addrs) {
+      const radio = blocks.get(addr);
+      if (!radio) return false;
+      if (!sameBytes(mergeBlock(radio, addr, source), radio)) return false;
+    }
+    return true;
   }
 
   private changedBlocks(): { addr: number; data: Uint8Array }[] {

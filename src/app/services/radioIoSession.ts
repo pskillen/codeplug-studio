@@ -57,6 +57,7 @@ import { isAtD890Mm9pdyNxdnEnabled } from '@integrations/radio-io/radios/at-d890
 import type { RadioWriteOrganisation } from '@integrations/radio-io/radioWriteProjection.ts';
 import {
   collectDualBankDirectorySlice,
+  type DualBankDirectorySlice,
   type DualBankRadioWritePrepareOptions,
 } from './dualBankRadioWrite.ts';
 import { startAtD890WriteTiming } from './radioIoAtD890WriteTimings.ts';
@@ -85,7 +86,11 @@ import { encodeDm32uvWriteImageFromDownloadCache } from '@integrations/radio-io/
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { DM32_RADIOFOUNDRY_PROFILE_ID } from '@integrations/radio-io/radios/dm32uv-radiofoundry/constants.ts';
 import { Dm32uvRadioFoundryProtocol } from '@integrations/radio-io/radios/dm32uv-radiofoundry/protocol.ts';
-import { radioFoundryWriteSourceFromAssembled } from '@integrations/radio-io/radios/dm32uv-radiofoundry/writeSource.ts';
+import { DMR_ID_DATABASE_MAX_RECORDS } from '@integrations/radio-io/radios/dm32uv-radiofoundry/idDatabase.ts';
+import {
+  radioFoundryReviewContacts,
+  radioFoundryWriteSourceFromAssembled,
+} from '@integrations/radio-io/radios/dm32uv-radiofoundry/writeSource.ts';
 import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
 import {
   OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE,
@@ -476,6 +481,7 @@ export async function prepareRadioWriteImage(
 
   let projectionContext: BuildRadioWriteProjectionContext | undefined;
   const projectionWarnings: ExportWarning[] = [];
+  let directorySlice: DualBankDirectorySlice = { radioIds: [], digitalContacts: [] };
   if (opts?.dualBank) {
     const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
     const maxRadioIds = typeof limits?.maxRadioIds === 'number' ? limits.maxRadioIds : undefined;
@@ -483,10 +489,12 @@ export async function prepareRadioWriteImage(
       ? OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX
       : isDm32RadioIoProfileId(egress.profileId)
         ? DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX
-        : typeof limits?.maxContacts === 'number'
-          ? limits.maxContacts
-          : undefined;
-    const directorySlice =
+        : egress.profileId === DM32_RADIOFOUNDRY_PROFILE_ID
+          ? DMR_ID_DATABASE_MAX_RECORDS
+          : typeof limits?.maxContacts === 'number'
+            ? limits.maxContacts
+            : undefined;
+    directorySlice =
       opts.persistence && opts.projectId
         ? await collectDualBankDirectorySlice({
             store: opts.persistence,
@@ -515,9 +523,15 @@ export async function prepareRadioWriteImage(
     };
   }
 
+  const radioFoundryOptions = opts?.dualBank?.options;
   const radioFoundry =
     egress.profileId === DM32_RADIOFOUNDRY_PROFILE_ID
-      ? radioFoundryWriteSourceFromAssembled(assembled)
+      ? radioFoundryWriteSourceFromAssembled(assembled, {
+          includeLibraryContacts: radioFoundryOptions?.includeLibraryContacts ?? true,
+          directoryRows: radioFoundryOptions?.includeDigitalIdDirectory
+            ? directorySlice.digitalContacts
+            : [],
+        })
       : undefined;
 
   const projection = buildRadioWriteProjection(
@@ -533,6 +547,14 @@ export async function prepareRadioWriteImage(
     ...(radioFoundry?.warnings ?? []),
   ];
   const organisation: RadioWriteOrganisation = { ...projection.organisation };
+  if (radioFoundry && radioFoundryOptions) {
+    const reviewed = radioFoundryReviewContacts(
+      assembled,
+      directorySlice.digitalContacts,
+      radioFoundryOptions,
+    );
+    if (reviewed !== undefined) organisation.digitalContacts = reviewed;
+  }
   if (build.radioTargetId === 'anytone-at-d890uv') {
     organisation.atD890ScanListTiming = resolveAtD890ScanListTiming(
       build.exportSettings,

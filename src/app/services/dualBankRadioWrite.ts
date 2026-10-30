@@ -19,6 +19,8 @@ import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { mapDirectoryEntryToRadioDigitalContactDto } from '@integrations/radioid/mapDirectoryEntryToRadioDto.ts';
+import { DM32_RADIOFOUNDRY_PROFILE_ID } from '@integrations/radio-io/radios/dm32uv-radiofoundry/constants.ts';
+import { DMR_ID_DATABASE_MAX_RECORDS } from '@integrations/radio-io/radios/dm32uv-radiofoundry/idDatabase.ts';
 import type {
   RadioDigitalContactDto,
   RadioRadioIdDto,
@@ -60,17 +62,22 @@ export interface CollectDualBankDirectorySliceArgs {
 function dualBankDirectoryTargets(
   formatId: string | undefined,
   egressProfileId: string,
-): { forDm32: boolean; forOpenGd77: boolean; forAtD890: boolean } {
+): { forDm32: boolean; forOpenGd77: boolean; forAtD890: boolean; forRadioFoundry: boolean } {
+  // RadioFoundry keeps library contacts in the codeplug table and the ID
+  // directory in the DMR ID database. It is not the stock DM-32 address book.
+  if (egressProfileId === DM32_RADIOFOUNDRY_PROFILE_ID) {
+    return { forDm32: false, forOpenGd77: false, forAtD890: false, forRadioFoundry: true };
+  }
   if (formatId === 'dm32' || isDm32RadioIoProfileId(egressProfileId)) {
-    return { forDm32: true, forOpenGd77: false, forAtD890: false };
+    return { forDm32: true, forOpenGd77: false, forAtD890: false, forRadioFoundry: false };
   }
   if (formatId === 'opengd77' || isOpenGd77RadioIoEgress(egressProfileId)) {
-    return { forDm32: false, forOpenGd77: true, forAtD890: false };
+    return { forDm32: false, forOpenGd77: true, forAtD890: false, forRadioFoundry: false };
   }
   if (formatId === 'anytone' || isAtD890RadioIoProfileId(egressProfileId)) {
-    return { forDm32: false, forOpenGd77: false, forAtD890: true };
+    return { forDm32: false, forOpenGd77: false, forAtD890: true, forRadioFoundry: false };
   }
-  return { forDm32: false, forOpenGd77: false, forAtD890: false };
+  return { forDm32: false, forOpenGd77: false, forAtD890: false, forRadioFoundry: false };
 }
 
 export async function collectDualBankDirectorySlice(
@@ -81,11 +88,11 @@ export async function collectDualBankDirectorySlice(
   }
 
   const libraryIds = args.libraryDigitalIds ?? libraryDigitalIdSet(args.library.digitalContacts);
-  const { forDm32, forOpenGd77, forAtD890 } = dualBankDirectoryTargets(
+  const { forDm32, forOpenGd77, forAtD890, forRadioFoundry } = dualBankDirectoryTargets(
     args.formatId,
     args.egressProfileId,
   );
-  if (!forDm32 && !forOpenGd77 && !forAtD890) {
+  if (!forDm32 && !forOpenGd77 && !forAtD890 && !forRadioFoundry) {
     return { radioIds: [], digitalContacts: [] };
   }
 
@@ -94,7 +101,14 @@ export async function collectDualBankDirectorySlice(
   const openGd77Cap = args.maxDirectoryContacts ?? OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX;
   const dm32Cap = args.maxDirectoryContacts ?? DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX;
   const atD890Cap = args.maxDirectoryContacts ?? AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX;
-  const cap = forOpenGd77 ? openGd77Cap : forAtD890 ? atD890Cap : dm32Cap;
+  const radioFoundryCap = args.maxDirectoryContacts ?? DMR_ID_DATABASE_MAX_RECORDS;
+  const cap = forOpenGd77
+    ? openGd77Cap
+    : forAtD890
+      ? atD890Cap
+      : forRadioFoundry
+        ? radioFoundryCap
+        : dm32Cap;
   // DM-32 shared 0x0F bank: skip library IDs only when Both (library is also written).
   // AT-D890 ID database: always skip build contacts, so the radio (which names callers from
   // the ID database first) shows the contact's own name.
@@ -137,6 +151,11 @@ export async function collectDualBankDirectorySlice(
       pushGeneralWarning(
         args.warnings,
         `Directory has more contacts than the AT-D890 ID database allows; only ${atD890Cap} write from directory`,
+      );
+    } else if (forRadioFoundry) {
+      pushGeneralWarning(
+        args.warnings,
+        `Directory has more contacts than the RadioFoundry DMR ID database allows; only ${radioFoundryCap} write from directory`,
       );
     } else {
       pushGeneralWarning(
