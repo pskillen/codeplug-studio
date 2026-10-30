@@ -49,6 +49,11 @@ export class RadioFoundryExportError extends Error {
 
 export interface RadioFoundryImage {
   bytes: Uint8Array;
+  /**
+   * 1 where this serialiser stored a byte, 0 where the image is still the
+   * initial 0xFF hole. A cable write may replace only the owned addresses.
+   */
+  owned: Uint8Array;
   warnings: ExportWarning[];
 }
 
@@ -77,20 +82,25 @@ export function radioFoundryPowerByte(percent: number | null): number {
   return index + 1;
 }
 
+function markOwned(owned: Uint8Array, offset: number, length: number): void {
+  owned.fill(1, offset, offset + length);
+}
+
 export function serialiseRadioFoundryCodeplug(assembled: AssembledBuild): RadioFoundryImage {
   const warnings: ExportWarning[] = [];
   const radio = requireDefaultDmrId(assembled.ownDigitalIds);
   const image = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
   image.fill(0xff);
+  const owned = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
 
-  writeRadioIdentity(image, radio, warnings);
-  const contacts = writeContacts(image, assembled, warnings);
-  writeRxLists(image, assembled, contacts, warnings);
-  const channels = writeChannels(image, assembled, radio, contacts, warnings);
-  writeZones(image, assembled, channels, warnings);
+  writeRadioIdentity(image, owned, radio, warnings);
+  const contacts = writeContacts(image, owned, assembled, warnings);
+  writeRxLists(image, owned, assembled, contacts, warnings);
+  const channels = writeChannels(image, owned, assembled, radio, contacts, warnings);
+  writeZones(image, owned, assembled, channels, warnings);
   warnScanLists(assembled, warnings);
 
-  return { bytes: image, warnings };
+  return { bytes: image, owned, warnings };
 }
 
 function requireDefaultDmrId(ids: readonly OwnDigitalId[] | undefined): OwnDigitalId {
@@ -110,9 +120,11 @@ function requireDefaultDmrId(ids: readonly OwnDigitalId[] | undefined): OwnDigit
 
 function writeRadioIdentity(
   image: Uint8Array,
+  owned: Uint8Array,
   radio: OwnDigitalId,
   warnings: ExportWarning[],
 ): void {
+  markOwned(owned, GENERAL_SETTINGS, LIMITS.RADIO_NAME_MAX + 4);
   writeAsciiField(
     image,
     GENERAL_SETTINGS,
@@ -126,12 +138,13 @@ function writeRadioIdentity(
 
 function writeChannels(
   image: Uint8Array,
+  owned: Uint8Array,
   assembled: AssembledBuild,
   radio: OwnDigitalId,
   contacts: Map<string, number>,
   warnings: ExportWarning[],
 ): Map<string, number> {
-  zeroChannelBitmaps(image);
+  zeroChannelBitmaps(image, owned);
   const pending: Array<{ row: AssembledChannel; mode: KeptMode }> = [];
   for (const row of assembled.channels) {
     const mode = selectMode(row, warnings);
@@ -151,7 +164,7 @@ function writeChannels(
   for (const item of pending) {
     const channel: KeptChannel = { ...item, number: numbers.size + 1 };
     numbers.set(channel.row.entity.id, channel.number);
-    writeChannelRecord(image, channel, assembled, radio, contacts, warnings);
+    writeChannelRecord(image, owned, channel, assembled, radio, contacts, warnings);
     markInUse(image, channel.number);
   }
   return numbers;
@@ -190,6 +203,7 @@ function selectMode(row: AssembledChannel, warnings: ExportWarning[]): KeptMode 
 
 function writeChannelRecord(
   image: Uint8Array,
+  owned: Uint8Array,
   channel: KeptChannel,
   assembled: AssembledBuild,
   radio: OwnDigitalId,
@@ -200,6 +214,7 @@ function writeChannelRecord(
   const entity = row.entity;
   const label = row.wireName || entity.name;
   const slot = channelSlotAddress(channel.number);
+  markOwned(owned, slot.record, CHANNEL_RECORD_SIZE);
   const record = image.subarray(slot.record, slot.record + CHANNEL_RECORD_SIZE);
   record.fill(0);
   writeAsciiField(record, 0, row.wireName || entity.name, LIMITS.NAME_MAX, 'Channel', warnings);
@@ -366,6 +381,7 @@ interface WireContact {
 
 function writeContacts(
   image: Uint8Array,
+  owned: Uint8Array,
   assembled: AssembledBuild,
   warnings: ExportWarning[],
 ): Map<string, number> {
@@ -383,6 +399,7 @@ function writeContacts(
     const number = index + 1;
     indexByKey.set(contact.key, number);
     const offset = CONTACT_BASE + index * CONTACT_RECORD_SIZE;
+    markOwned(owned, offset, CONTACT_RECORD_SIZE);
     const record = image.subarray(offset, offset + CONTACT_RECORD_SIZE);
     record.fill(0xff);
     writeAsciiField(record, 0, contact.name, LIMITS.NAME_MAX, 'Contact', warnings);
@@ -449,11 +466,13 @@ function fitsContactId(id: number): boolean {
 
 function writeRxLists(
   image: Uint8Array,
+  owned: Uint8Array,
   assembled: AssembledBuild,
   contactIndexByKey: Map<string, number>,
   warnings: ExportWarning[],
 ): void {
   image.fill(0, RX_LIST_LENGTH, RX_LIST_LENGTH + RX_LIST_LENGTH_SIZE);
+  markOwned(owned, RX_LIST_LENGTH, RX_LIST_LENGTH_SIZE);
   const lists = assembled.rxGroupLists.slice(0, LIMITS.RX_GROUPS_MAX);
   if (assembled.rxGroupLists.length > LIMITS.RX_GROUPS_MAX) {
     const dropped = assembled.rxGroupLists.length - LIMITS.RX_GROUPS_MAX;
@@ -497,6 +516,7 @@ function writeRxLists(
     image[RX_LIST_LENGTH + index] = members.length === 0 ? 0 : members.length + 1;
     if (members.length === 0) return;
     const offset = RX_LIST_BASE + index * RX_LIST_RECORD_SIZE;
+    markOwned(owned, offset, RX_LIST_RECORD_SIZE);
     const record = image.subarray(offset, offset + RX_LIST_RECORD_SIZE);
     record.fill(0);
     writeAsciiField(record, 0, row.wireName, LIMITS.NAME_MAX, 'RX list', warnings);
@@ -510,12 +530,14 @@ function writeRxLists(
 
 function writeZones(
   image: Uint8Array,
+  owned: Uint8Array,
   assembled: AssembledBuild,
   channelNumbers: Map<string, number>,
   warnings: ExportWarning[],
 ): void {
   const zoneBytes = ZONE_BITMAP_SIZE + LIMITS.ZONE_MAX * ZONE_RECORD_SIZE;
   image.fill(0, ZONE_BITMAP, ZONE_BITMAP + zoneBytes);
+  markOwned(owned, ZONE_BITMAP, zoneBytes);
 
   const zones = assembled.zones.slice(0, LIMITS.ZONE_MAX);
   if (assembled.zones.length > LIMITS.ZONE_MAX) {
@@ -591,11 +613,12 @@ function contactKey(ref: EntityRef): string {
   return `${ref.kind}:${ref.id}`;
 }
 
-function zeroChannelBitmaps(image: Uint8Array): void {
+function zeroChannelBitmaps(image: Uint8Array, owned: Uint8Array): void {
   const banks = LIMITS.CHANNEL_MAX / CHANNELS_PER_BANK;
   for (let bank = 0; bank < banks; bank++) {
     const slot = channelSlotAddress(bank * CHANNELS_PER_BANK + 1);
     image.fill(0, slot.bitmap, slot.bitmap + 16);
+    markOwned(owned, slot.bitmap, 16);
   }
 }
 
