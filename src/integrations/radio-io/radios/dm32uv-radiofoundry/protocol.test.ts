@@ -69,7 +69,7 @@ class ScriptedPipe implements BytePipe {
     const op = request.payload[0]!;
     const args = request.payload.subarray(1);
     let status = op === OP_INFO ? this.infoStatus : 0;
-    let body = new Uint8Array(0);
+    let body: Uint8Array<ArrayBufferLike> = new Uint8Array(0);
     if (status === 0) {
       if (op === OP_INFO) body = infoBody();
       else if (op === OP_SUMS) body = this.sums(args);

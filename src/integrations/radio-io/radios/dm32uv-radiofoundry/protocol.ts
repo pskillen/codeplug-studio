@@ -13,14 +13,8 @@ import { crc32Ieee } from '../../kit/checksums.ts';
 import { RadioProtocolError, RadioTimeoutError } from '../../kit/errors.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { reportProgress } from '../../kit/progress.ts';
-import type {
-  BytePipe,
-  CloneImageRadio,
-  IdentResult,
-  MemoryMap,
-  ProgressFn,
-  RadioChannelDto,
-} from '../../types.ts';
+import type { RadioChannelDto } from '../../radioChannelDto.ts';
+import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
 import {
   BLOCK_SIZE,
   CODEPLUG_COMMAND,

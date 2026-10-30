@@ -3,14 +3,18 @@
  * Labels match the strings `download` / `upload` emit, in that order.
  */
 
-import type { PlannedStage, RadioOperation } from '../../types.ts';
+import type { PlannedStage, RadioOperation, RadioPlanContext } from '../../types.ts';
 import { BLOCK_SIZE, DM32_RADIOFOUNDRY_IMAGE_SIZE, servedBlockAddresses } from './constants.ts';
 
 const READ_BYTES = servedBlockAddresses(DM32_RADIOFOUNDRY_IMAGE_SIZE).length * BLOCK_SIZE;
 /** Sized before the read. A real write sends only the blocks that differ. */
 const NOMINAL_CHANGED_BLOCKS = 8;
 
-export function planDm32RadioFoundryStages(op: RadioOperation): PlannedStage[] {
+export function planDm32RadioFoundryStages(
+  op: RadioOperation,
+  ctx: RadioPlanContext,
+): PlannedStage[] {
+  void ctx;
   if (op !== 'write') return [];
   return [
     { label: 'Pre-write read', weight: READ_BYTES },
