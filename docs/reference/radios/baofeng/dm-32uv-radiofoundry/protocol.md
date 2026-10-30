@@ -12,6 +12,18 @@ Cable write for a Baofeng DM-32UV running RadioFoundry. The [codeplug file](../.
 
 The image is the one [RadioFoundry codeplug](../../../export-formats/radiofoundry/README.md) export builds (`assemble`, then the codeplug serialiser).
 
+## Digital contacts
+
+Ticking **Digital contacts** chooses Contacts, ID directory, or Both. Leaving it unticked does not clear the contact table, and it does not change channels, zones, talk groups, or RX lists.
+
+| Source       | What is sent                                                                                                                                                                                           |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Contacts     | Private DMR contacts already stored in the codeplug contact table. If those bytes match the radio, progress says no contact blocks changed.                                                            |
+| ID directory | DMR ID database at image `0x50000` (flash image `0x30000`). The radio adds `0x700000`. Studio does not send that base. Header `Id`, format `N`, 27-byte records sorted by DMR ID. Area 1 only, 256 KB. |
+| Both         | The contact table and the DMR ID database.                                                                                                                                                             |
+
+Rows that do not fit in area 1 are dropped with a warning. Area 2 and the voice-prompt area are not written. A codeplug-only write leaves `0x50000` unowned. An empty chosen source does not claim that contacts will be written.
+
 ## What is not written
 
 - A byte the serialiser leaves as `0xFF` because it does not own that address. The byte read from the radio stays.
