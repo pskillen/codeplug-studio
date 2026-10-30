@@ -7,7 +7,7 @@ import { setRead, clearAllOverrides } from '../../state/atD890RadioSettingsSessi
 import { DesignSystemV2Provider } from '../../components/v2/index.ts';
 import { BuildLayoutProvider } from './BuildLayoutContext.tsx';
 import BuildRadioSettingsPage, {
-  RADIO_SETTINGS_ONLY_D890_MESSAGE,
+  RADIO_SETTINGS_UNSUPPORTED_MESSAGE,
 } from './BuildRadioSettingsPage.tsx';
 
 vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
@@ -52,10 +52,24 @@ function renderPage(profileId: string) {
 }
 
 describe('BuildRadioSettingsPage', () => {
-  it('says settings are only available for the AT-D890UV on another radio', () => {
+  it('shows an info banner on a radio without a settings page', () => {
     renderPage('radio-io-uv5r-mini');
-    expect(screen.getByText(RADIO_SETTINGS_ONLY_D890_MESSAGE)).toBeInTheDocument();
+    expect(screen.getByText(RADIO_SETTINGS_UNSUPPORTED_MESSAGE)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Read a radio' })).not.toBeInTheDocument();
+  });
+
+  it('shows the RT95 editor for stock RT95 Web Serial', () => {
+    renderPage('radio-io-rt95');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Radio settings — RT95$/);
+    expect(screen.getByRole('button', { name: 'Read a radio' })).toBeInTheDocument();
+    expect(screen.queryByText(RADIO_SETTINGS_UNSUPPORTED_MESSAGE)).not.toBeInTheDocument();
+  });
+
+  it('adds MM9PDY firmware to the RT95 title', () => {
+    renderPage('radio-io-rt95-mm9pdy');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Radio settings — RT95 (MM9PDY firmware)',
+    );
   });
 
   it('shows the editor for a stock D890, with a plain title', () => {
@@ -64,7 +78,7 @@ describe('BuildRadioSettingsPage', () => {
       /^Radio settings — AT-D890UV$/,
     );
     expect(screen.getByRole('button', { name: 'Read a radio' })).toBeInTheDocument();
-    expect(screen.queryByText(RADIO_SETTINGS_ONLY_D890_MESSAGE)).not.toBeInTheDocument();
+    expect(screen.queryByText(RADIO_SETTINGS_UNSUPPORTED_MESSAGE)).not.toBeInTheDocument();
   });
 
   it('adds the MM9PDY firmware to the title for an MM9PDY D890', () => {
