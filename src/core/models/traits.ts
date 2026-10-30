@@ -205,6 +205,18 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
+  /** Web Serial — DM-32UV RadioFoundry. Same traits as the codeplug file. */
+  'radio-io-dm32uv-radiofoundry': {
+    profileId: 'radio-io-dm32uv-radiofoundry',
+    formatId: 'radio-io',
+    label: 'Baofeng DM-32UV (RadioFoundry)',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.SeparateDigitalIdList,
+    ],
+  },
   /** Open-firmware codeplug image for the DM-32UV on RadioFoundry. */
   'radiofoundry-dm32uv': {
     profileId: 'radiofoundry-dm32uv',

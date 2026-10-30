@@ -23,6 +23,7 @@ import {
   isRadioIoAtD890uvProfile,
   type RadioIoRt95Profile,
   isRadioIoDm32uvProfile,
+  isRadioIoDm32uvRadioFoundryProfile,
   isRadioIoOpenGd771701Profile,
   isRadioIoOpenGd77Md9600Profile,
 } from './formats/radio-io/profiles.ts';
@@ -326,6 +327,30 @@ export function getProfileExportLimits(
 
     if (formatId === 'radio-io') {
       const profile = getRadioIoProfile(profileId);
+      if (isRadioIoDm32uvRadioFoundryProfile(profile)) {
+        return blankDigitalOrganisation({
+          formatId,
+          profileId: profile.id,
+          profileLabel: profile.label,
+          maxChannels: profile.maxMemorySlots,
+          nameLengthChannel: profile.nameLimit,
+          powerLadder: profile.powerLadder,
+          maxZones: profile.maxZones,
+          maxScanLists: 'not_used',
+          maxRxGroupLists: profile.maxRxGroupLists,
+          maxContacts: profile.maxContacts,
+          maxTalkGroups: 'not_used',
+          maxRadioIds: profile.maxRadioIds,
+          zoneMembers: profile.zoneMembers,
+          scanListMembers: 'not_used',
+          rxGroupListMembers: profile.rxGroupListMembers,
+          nameLengthZone: profile.nameLimit,
+          nameLengthContact: profile.nameLimit,
+          nameLengthTalkGroup: profile.nameLimit,
+          nameLengthRxGroupList: profile.nameLimit,
+          nameLengthScanList: 'not_used',
+        });
+      }
       if (isRadioIoDm32uvProfile(profile)) {
         return {
           formatId,

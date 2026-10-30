@@ -11,6 +11,7 @@ import type { Channel, OwnDigitalId, TalkGroup } from '@core/models/library.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { exportBuildBinary, exportBuildZip } from '@core/services/exportBuild.ts';
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
+import { channelSlotAddress } from './layout.ts';
 import { serialiseRadioFoundryCodeplug, radioFoundryPowerByte } from './serialise.ts';
 
 const LIMITS = DM32UV_RADIOFOUNDRY_LIMITS;
@@ -102,6 +103,24 @@ describe('serialiseRadioFoundryCodeplug', () => {
     expect(bytes[0x00e9]).toBe(0x35);
     expect(bytes[0x00ea]).toBe(0x12);
     expect(bytes[0x00eb]).toBe(0x34);
+  });
+
+  it('owns the records it stores and leaves 0xFF holes unowned', () => {
+    const { bytes, owned } = serialiseRadioFoundryCodeplug(
+      assembled({ channels: [fmChannel('Local')] }),
+    );
+    expect(owned.length).toBe(bytes.length);
+    expect(owned[0]).toBe(0);
+    expect(bytes[0]).toBe(0xff);
+    expect(owned[0x00e0]).toBe(1);
+    expect(owned[0x3780]).toBe(1);
+    expect(owned[0x3790]).toBe(1);
+    expect(owned[0x3790 + 0x20]).toBe(1);
+    expect(bytes[0x3790 + 0x20]).toBe(0xff);
+    expect(owned[0x15000]).toBe(0);
+    expect(bytes[0x15000]).toBe(0xff);
+    const secondChannel = channelSlotAddress(2);
+    expect(owned[secondChannel.record]).toBe(0);
   });
 
   it('truncates a 17th name character and warns', () => {

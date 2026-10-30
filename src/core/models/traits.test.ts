@@ -154,6 +154,14 @@ describe('trait profiles', () => {
     expect(profile?.traits).not.toContain(BuildCapabilityTrait.TalkGroupTimeslotClones);
   });
 
+  it('registers radio-io-dm32uv-radiofoundry with the codeplug file traits', () => {
+    const profile = traitProfileFor('radio-io-dm32uv-radiofoundry');
+    expect(profile?.formatId).toBe('radio-io');
+    expect(profile?.traits).toEqual(traitProfileFor('radiofoundry-dm32uv')?.traits);
+    expect(profile?.traits).not.toContain(BuildCapabilityTrait.TalkGroupTimeslotClones);
+    expect(profile?.traits).not.toContain(BuildCapabilityTrait.MxNChannelExpansion);
+  });
+
   it('registers radiofoundry-dm32uv as a codeplug file with zone scan', () => {
     const profile = traitProfileFor('radiofoundry-dm32uv');
     expect(profile?.formatId).toBe('radiofoundry');
@@ -196,6 +204,7 @@ describe('trait profiles', () => {
       'radio-io-at-d890uv-mm9pdy',
       'radio-io-dm32uv',
       'radio-io-dm32uv-mm9pdy',
+      'radio-io-dm32uv-radiofoundry',
       'radio-io-opengd77-1701',
       'radio-io-opengd77-md9600',
       'radio-io-rt95',

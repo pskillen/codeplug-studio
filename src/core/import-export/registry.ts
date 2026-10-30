@@ -210,6 +210,9 @@ export function getFormatExportDefaults(
   if (formatId === 'radio-io' && profileId === 'radio-io-dm32uv') {
     return RADIO_IO_DM32UV_EXPORT_DEFAULTS;
   }
+  if (formatId === 'radio-io' && profileId === 'radio-io-dm32uv-radiofoundry') {
+    return radiofoundryExportAdapter.defaultExportSettings;
+  }
   if (formatId === 'radio-io' && profileId === 'radio-io-at-d890uv') {
     return RADIO_IO_AT_D890UV_EXPORT_DEFAULTS;
   }

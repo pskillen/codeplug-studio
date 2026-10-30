@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
+import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { RT95_LIMITS } from '@core/radios/retevis/rt95/limits.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { getAnytoneProfile } from '../anytone/profiles.ts';
@@ -12,6 +13,7 @@ import {
   isRadioIoAtD890uvProfile,
   isRt95RadioIoProfileId,
   isRadioIoDm32uvProfile,
+  isRadioIoDm32uvRadioFoundryProfile,
   isRadioIoOpenGd771701Profile,
 } from './profiles.ts';
 
@@ -115,5 +117,21 @@ describe('radio-io profiles', () => {
     expect(profile.scanListMembers).toBe('not_used');
     expect(profile.maxMemorySlots).toBe(stock.maxMemorySlots);
     expect(profile.maxRxGroupLists).toBe(stock.maxRxGroupLists);
+  });
+
+  it('re-exports DM-32 RadioFoundry caps and stays off the stock DM-32 profile', () => {
+    const profile = getRadioIoProfile('radio-io-dm32uv-radiofoundry');
+    expect(isRadioIoDm32uvRadioFoundryProfile(profile)).toBe(true);
+    expect(isRadioIoDm32uvProfile(profile)).toBe(false);
+    if (!isRadioIoDm32uvRadioFoundryProfile(profile)) return;
+    expect(profile.maxMemorySlots).toBe(DM32UV_RADIOFOUNDRY_LIMITS.CHANNEL_MAX);
+    expect(profile.nameLimit).toBe(DM32UV_RADIOFOUNDRY_LIMITS.NAME_MAX);
+    expect(profile.maxZones).toBe(DM32UV_RADIOFOUNDRY_LIMITS.ZONE_MAX);
+    expect(profile.zoneMembers).toBe(DM32UV_RADIOFOUNDRY_LIMITS.ZONE_MEMBERS_MAX);
+    expect(profile.maxContacts).toBe(DM32UV_RADIOFOUNDRY_LIMITS.CONTACTS_MAX);
+    expect(profile.maxRxGroupLists).toBe(DM32UV_RADIOFOUNDRY_LIMITS.RX_GROUPS_MAX);
+    expect(profile.rxGroupListMembers).toBe(DM32UV_RADIOFOUNDRY_LIMITS.RX_GROUP_MEMBERS_MAX);
+    expect(profile.maxRadioIds).toBe(DM32UV_RADIOFOUNDRY_LIMITS.RADIO_IDS_MAX);
+    expect(profile.powerLadder).toHaveLength(DM32UV_RADIOFOUNDRY_LIMITS.POWER_LEVELS);
   });
 });
