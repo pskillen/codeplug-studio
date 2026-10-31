@@ -417,6 +417,17 @@ describe('Radio settings strip entry (#1393)', () => {
     }
   });
 
+  it('appears after Export settings for RT95 Web Serial builds, both targets (#1476)', () => {
+    for (const profile of ['radio-io-rt95', 'radio-io-rt95-mm9pdy'] as const) {
+      const { build, egressPaths } = newRadioBuildForProfile('proj', profile);
+      const labels = buildSectionNavItems(build, { egressPaths }).map((item) => item.label);
+      expect(labels).toContain(BUILD_SECTION_RADIO_SETTINGS);
+      expect(allBuildDetailPaths(build, { egressPaths })).toContain(
+        `/builds/${build.id}/export/radio-settings`,
+      );
+    }
+  });
+
   it('is absent for other radios and for D890 builds without a Web Serial egress', () => {
     const other = newRadioBuildForProfile('proj', 'radio-io-opengd77-1701');
     expect(

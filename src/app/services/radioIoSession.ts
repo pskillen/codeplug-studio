@@ -10,6 +10,7 @@ import { channelLocationWriteRadioNote } from '@core/radio-targets/channelLocati
 import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
+  isRt95RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
 import { resolveAtD890ScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
@@ -99,6 +100,13 @@ import {
 } from '@integrations/radio-io/radios/opengd77/protocol.ts';
 import { Uv17ProProtocol } from '@integrations/radio-io/radios/uv17pro-family/protocol.ts';
 import { Rt95Protocol } from '@integrations/radio-io/radios/rt95/protocol.ts';
+import {
+  resolveRt95SettingsPatches,
+  rt95SettingsTargetForProfile,
+  type Rt95RadioSettingsSnapshot,
+  type Rt95SettingsOverride,
+} from '@integrations/radio-io/radios/rt95/settingsFields.ts';
+import { readBandlimitFromImage } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
 import { applyRt95ZoneKey } from '@integrations/radio-io/radios/rt95/zoneKey.ts';
 import {
   rt95ChipGuardRefusalText,
@@ -391,6 +399,27 @@ export interface AtD890PreTransmitContext {
    * reads only the settings.
    */
   downloadCache?: AtD890DownloadCache;
+}
+
+/** RT95 settings at the pause: snapshot from the pre-write read (or settings-only read). */
+export interface Rt95PreTransmitContext {
+  bandlimit: number;
+  snapshot: Rt95RadioSettingsSnapshot;
+  overrides: readonly Rt95SettingsOverride[];
+  target: ReturnType<typeof rt95SettingsTargetForProfile>;
+}
+
+export type Rt95PreTransmitResult =
+  AtD890PreTransmitDecision | { decision: 'apply'; overrides: readonly Rt95SettingsOverride[] };
+
+/** Same rules as {@link atD890PauseOutcome} for RT95 overrides. */
+export function rt95PauseOutcome(
+  result: Rt95PreTransmitResult | void,
+  startOverrides: readonly Rt95SettingsOverride[],
+): { decision: AtD890PreTransmitDecision; overrides: readonly Rt95SettingsOverride[] } {
+  if (result === undefined) return { decision: 'keep', overrides: startOverrides };
+  if (typeof result === 'string') return { decision: result, overrides: startOverrides };
+  return { decision: result.decision, overrides: result.overrides };
 }
 
 /** `'apply'` writes the overrides, `'keep'` writes without them, `'cancel'` stops before any frame. */
@@ -825,6 +854,8 @@ export interface BeforeTransmitContext {
   atD890?: AtD890PreTransmitContext;
   /** RT95 MM9PDY only: the chip-size check that passed before the pause (a failure never reaches it). */
   rt95?: { chipGuard: Rt95ChipGuardResult };
+  /** RT95: settings snapshot and overrides for Review and the fleet choice. */
+  rt95Settings?: Rt95PreTransmitContext;
 }
 
 /** Whether `resolveRadioWriteImageForUpload` reads the radio itself (every protocol but the generic path). */
@@ -893,6 +924,20 @@ function buildAtD890PreTransmitContext(
   };
 }
 
+function buildRt95PreTransmitContext(
+  image: MemoryMap,
+  overrides: readonly Rt95SettingsOverride[],
+  profileId: string,
+): Rt95PreTransmitContext {
+  const bandlimit = readBandlimitFromImage(image);
+  return {
+    bandlimit,
+    snapshot: { image: image.bytes.slice(), bandlimit },
+    overrides,
+    target: rt95SettingsTargetForProfile(profileId),
+  };
+}
+
 /** Upload a prepared clone image after {@link prepareRadioWriteImage} and session connect. */
 export async function uploadPreparedRadioWrite(
   session: RadioSession,
@@ -911,9 +956,13 @@ export async function uploadPreparedRadioWrite(
      * the path is unchanged. On the AT-D890UV the callback may resolve `'apply'` (write the session
      * settings overrides), `'keep'` or nothing (write without them), or `'cancel'` (stop).
      */
-    beforeTransmit?: (ctx: BeforeTransmitContext) => Promise<void | AtD890PreTransmitResult>;
+    beforeTransmit?: (
+      ctx: BeforeTransmitContext,
+    ) => Promise<void | AtD890PreTransmitResult | Rt95PreTransmitResult>;
     /** AT-D890UV session settings overrides. Empty or unset: today's Write, byte for byte. */
     settingsOverrides?: readonly AtD890SettingsOverride[];
+    /** RT95 session settings overrides. Empty or unset: settings bytes stay as the pre-write read. */
+    rt95SettingsOverrides?: readonly Rt95SettingsOverride[];
     /**
      * AT-D890UV MM9PDY: the projection with NXDN on, from {@link prepareRadioWriteImage}. Used only
      * when the in-session read says the radio has NXDN enabled; otherwise `channels` and
@@ -980,10 +1029,15 @@ export async function uploadPreparedRadioWrite(
       }
     }
     const hydration = getRadioCloneHydration(egress);
+    const rt95Overrides = opts?.rt95SettingsOverrides ?? [];
+    let effectiveRt95Overrides = rt95Overrides;
     session.descriptor.hydration.seedProtocolForUpload?.(
       session.radio,
       hydration ?? undefined,
-      opts?.organisation,
+      {
+        ...(opts?.organisation ?? {}),
+        ...(rt95Overrides.length > 0 ? { rt95SettingsOverrides: rt95Overrides } : {}),
+      },
       opts?.channels,
     );
     const resolved = await resolveRadioWriteImageForUpload(
@@ -998,6 +1052,15 @@ export async function uploadPreparedRadioWrite(
       { ...opts, onProgress },
     );
     setCachedImage(session, resolved);
+    if (
+      session.radio instanceof Rt95Protocol &&
+      isRt95RadioIoProfileId(egress.profileId) &&
+      rt95Overrides.length > 0
+    ) {
+      resolveRt95SettingsPatches(rt95Overrides, rt95SettingsTargetForProfile(egress.profileId), {
+        existingPasswordDigits: session.radio.rt95PasswordDigitsFromPrePauseImage(resolved),
+      });
+    }
     // A flagged radio is refused at open; this is the backstop before the pause and any frame.
     if (session.radio instanceof AtD890uvProtocol) session.radio.assertNoStunKillFlag();
     const overrides = opts?.settingsOverrides ?? [];
@@ -1034,10 +1097,20 @@ export async function uploadPreparedRadioWrite(
         ...(session.radio instanceof Rt95Protocol && session.radio.getLastChipGuard()
           ? { rt95: { chipGuard: session.radio.getLastChipGuard()! } }
           : {}),
+        ...(session.radio instanceof Rt95Protocol && rt95Overrides.length > 0
+          ? {
+              rt95Settings: buildRt95PreTransmitContext(resolved, rt95Overrides, egress.profileId),
+            }
+          : {}),
       });
       timing?.timeline.markPauseEnd();
-      const outcome = atD890PauseOutcome(result, overrides);
+      const outcome = atD890PauseOutcome(result as AtD890PreTransmitResult | void, overrides);
       if (outcome.decision === 'cancel') throw new RadioWriteCancelledError();
+      if (session.radio instanceof Rt95Protocol && rt95Overrides.length > 0) {
+        const rt95Outcome = rt95PauseOutcome(result as Rt95PreTransmitResult | void, rt95Overrides);
+        if (rt95Outcome.decision === 'cancel') throw new RadioWriteCancelledError();
+        effectiveRt95Overrides = rt95Outcome.decision === 'apply' ? rt95Outcome.overrides : [];
+      }
       if (outcome.decision === 'apply' && isAtD890 && outcome.overrides.length > 0) {
         const chosen: RadioWriteOrganisation = {
           ...(opts?.organisation ?? {}),
@@ -1074,6 +1147,19 @@ export async function uploadPreparedRadioWrite(
           opts?.channels,
         );
       }
+    }
+    if (session.radio instanceof Rt95Protocol) {
+      session.descriptor.hydration.seedProtocolForUpload?.(
+        session.radio,
+        hydration ?? undefined,
+        {
+          ...(opts?.organisation ?? {}),
+          ...(effectiveRt95Overrides.length > 0
+            ? { rt95SettingsOverrides: effectiveRt95Overrides }
+            : {}),
+        },
+        opts?.channels,
+      );
     }
     declareAtD890ContactUnitsForWrite(session, contactWrite);
     await session.radio.upload(resolved, {

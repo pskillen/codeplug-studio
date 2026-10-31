@@ -57,9 +57,16 @@ const RT95_MM9PDY_VERIFY_REGIONS: readonly WriteVerifyRegionManifestEntry[] = [
 function manifestFor(
   staging: WriteVerifyStagingSnapshot,
 ): readonly WriteVerifyRegionManifestEntry[] {
-  return staging.chunks.some((c) => c.address >= MMD1_BASE)
+  const base = staging.chunks.some((c) => c.address >= MMD1_BASE)
     ? [...RT95_VERIFY_MANIFEST, ...RT95_MM9PDY_VERIFY_REGIONS]
     : RT95_VERIFY_MANIFEST;
+  return base.map((region) => {
+    if (region.group !== 'kept') return region;
+    const touched = staging.chunks.some(
+      (c) => c.address >= region.start && c.address < region.start + region.length,
+    );
+    return touched ? { ...region, group: 'replaced' as const } : region;
+  });
 }
 
 function regionBytesRead(imageSize: number, region: WriteVerifyRegionManifestEntry): number {

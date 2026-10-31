@@ -10,6 +10,7 @@ import { Text } from '@mantine/core';
 import type { RadioDescriptor } from '@integrations/radio-io/types.ts';
 import { IdentitySection, Section, TimeSection } from './reviewSectionParts.tsx';
 import type { AtD890ReviewController } from './d890/atD890ReviewController.ts';
+import type { Rt95ReviewController } from './rt95/rt95ReviewController.ts';
 import type { RadioIdentityView } from './types.ts';
 import type { WriteParts } from './writeParts.ts';
 
@@ -26,8 +27,11 @@ export interface ReviewContext {
   restartsAfterWrite: boolean;
   /** AT-D890UV only: this Review's range, receive-only channels and live choices. */
   atD890?: AtD890ReviewController;
-  /** RT95 MM9PDY only: the memory check passed, and what the MMD1 table will hold. */
-  rt95?: { zones: number; descriptions: number; zoneKey?: { group: number; key: number } };
+  /** RT95: optional settings Review controller and/or MM9PDY mod-data summary. */
+  rt95?: {
+    settings?: Rt95ReviewController;
+    modData?: { zones: number; descriptions: number; zoneKey?: { group: number; key: number } };
+  };
 }
 
 export interface ReviewSectionProvider {

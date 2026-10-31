@@ -35,6 +35,7 @@ import {
   isMm9pdyAtD890RadioIoProfileId,
   isMm9pdyDm32RadioIoProfileId,
   isMm9pdyRt95RadioIoProfileId,
+  isRt95RadioIoProfileId,
   radioIoChannelDescriptionLimit,
   isRadioIoAtD890uvProfile,
   isRadioIoDm32uvProfile,
@@ -275,6 +276,7 @@ export {
   isMm9pdyAtD890RadioIoProfileId,
   isMm9pdyDm32RadioIoProfileId,
   isMm9pdyRt95RadioIoProfileId,
+  isRt95RadioIoProfileId,
   radioIoChannelDescriptionLimit,
   resolveChirpExportProfileId,
 };

@@ -13,6 +13,7 @@ import type {
   AtD890SettingsOverride,
   AtD890SettingsTarget,
 } from './radios/at-d890uv/settingsFields.ts';
+import type { Rt95SettingsOverride } from './radios/rt95/settingsFields.ts';
 
 /** Zone membership as radio channel numbers (1-based). */
 export interface RadioZoneDto {
@@ -237,6 +238,11 @@ export interface RadioWriteOrganisation {
    * Omit for a Write that leaves every setting as the radio holds it.
    */
   atD890SettingsOverrides?: readonly AtD890SettingsOverride[];
+  /**
+   * RT95 radio settings overrides for this Write (session state). Applied as field patches onto a
+   * fresh read of each touched 16-byte block inside {@link Rt95Protocol.upload}.
+   */
+  rt95SettingsOverrides?: readonly Rt95SettingsOverride[];
   /** AT-D890UV firmware target, selects which settings fields exist. Unset → `'stock'`. */
   atD890SettingsTarget?: AtD890SettingsTarget;
   /**

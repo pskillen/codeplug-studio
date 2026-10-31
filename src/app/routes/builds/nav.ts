@@ -8,7 +8,6 @@ import {
   IconAdjustmentsHorizontal,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
-import { isAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
@@ -19,6 +18,7 @@ import {
 } from '@core/radio-targets/index.ts';
 import { usesAtD890AirbandBankSplit } from '@core/services/anytoneChannelBanks.ts';
 import { findNeonplugDonorEgress, findRadioIoEgress } from '../../lib/buildEgressUi.ts';
+import { radioIoProfileSupportsRadioSettings } from '../../lib/radioIoRadioSettingsSupport.ts';
 import { entityNavIcons } from '../../nav/entityNavIcons.ts';
 import { listOfferedDangerZoneTools } from '../../services/dangerZone/gate.ts';
 import { hasSatelliteKepsWriteAdapter } from '../../services/satelliteKepsWriteAdapters.ts';
@@ -102,12 +102,12 @@ export function showsBackupNav(_build: RadioBuild, options?: BuildNavOptions): b
 }
 
 /**
- * Radio settings strip tab (#1393): AT-D890UV Web Serial builds only, whichever egress is active
- * (same "any egress path matches" rule as Backup / Restore).
+ * Radio settings strip tab (#1393, #1476): AT-D890UV and RT95 Web Serial builds, whichever egress is
+ * active (same "any egress path matches" rule as Backup / Restore).
  */
 export function showsRadioSettingsNav(_build: RadioBuild, options?: BuildNavOptions): boolean {
   const radioIo = findRadioIoEgress(options?.egressPaths ?? []);
-  return Boolean(radioIo && isAtD890RadioIoProfileId(radioIo.profileId));
+  return Boolean(radioIo && radioIoProfileSupportsRadioSettings(radioIo.profileId));
 }
 
 /**
