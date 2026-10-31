@@ -272,3 +272,80 @@ describe('collectDualBankDirectorySlice AT-D890 ID database (#1433)', () => {
     ).toBe(true);
   });
 });
+
+describe('collectDualBankDirectorySlice RadioFoundry DMR ID database (#1495)', () => {
+  it('keeps directory rows, including IDs that are already library contacts', async () => {
+    const store = new InMemoryProjectPersistence();
+    await store.putDigitalIdDirectoryEntriesBatch([
+      {
+        projectId: 'p1',
+        digitalId: 1001,
+        mode: 'dmr',
+        name: 'Alpha',
+        callsign: 'A1',
+        city: '',
+        state: '',
+        country: '',
+      },
+      {
+        projectId: 'p1',
+        digitalId: 2002,
+        mode: 'dmr',
+        name: 'Beta',
+        callsign: 'B2',
+        city: '',
+        state: '',
+        country: '',
+      },
+    ]);
+    const warnings: ExportWarning[] = [];
+    const slice = await collectDualBankDirectorySlice({
+      store,
+      projectId: 'p1',
+      library: {
+        ...emptyLibrary(),
+        digitalContacts: [{ ...newDigitalContact('p1', 'Curated', 1001, 'dmr'), id: 'dc-1' }],
+      },
+      egressProfileId: 'radio-io-dm32uv-radiofoundry',
+      options: { includeLibraryContacts: true, includeDigitalIdDirectory: true },
+      warnings,
+    });
+    expect(slice.digitalContacts.map((row) => row.digitalId).sort()).toEqual([1001, 2002]);
+    expect(warnings.some((w) => formatExportWarning(w).includes('address book'))).toBe(false);
+  });
+
+  it('warns with the DMR ID database label when the directory exceeds the cap', async () => {
+    const store = new InMemoryProjectPersistence();
+    await store.putDigitalIdDirectoryEntriesBatch(
+      Array.from({ length: 12 }, (_, i) => ({
+        projectId: 'p1',
+        digitalId: 50_000 + i,
+        mode: 'dmr' as const,
+        name: `Row ${i}`,
+        callsign: `M0${i}`,
+        city: '',
+        state: '',
+        country: '',
+      })),
+    );
+    const warnings: ExportWarning[] = [];
+    const slice = await collectDualBankDirectorySlice({
+      store,
+      projectId: 'p1',
+      library: emptyLibrary(),
+      egressProfileId: 'radio-io-dm32uv-radiofoundry',
+      options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
+      maxDirectoryContacts: 4,
+      warnings,
+    });
+    expect(slice.digitalContacts).toHaveLength(4);
+    expect(
+      warnings.some((w) =>
+        formatExportWarning(w).includes(
+          'than the RadioFoundry DMR ID database allows; only 4 write from directory',
+        ),
+      ),
+    ).toBe(true);
+    expect(warnings.some((w) => formatExportWarning(w).includes('address book'))).toBe(false);
+  });
+});

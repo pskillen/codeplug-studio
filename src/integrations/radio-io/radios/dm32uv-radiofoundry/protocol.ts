@@ -39,8 +39,14 @@ import {
   servedBlockAddresses,
 } from './constants.ts';
 import { decodeDebugFrame, encodeDebugFrame, type DebugFrame } from './frame.ts';
+import {
+  DMR_ID_DATABASE_AREA2_ADDRESS,
+  DMR_ID_DATABASE_IMAGE_END,
+  dmrIdDatabaseArea2Blocks,
+} from './idDatabase.ts';
 import { decodeBlock, encodeBlock } from './lz4.ts';
 import {
+  ownedPrivateContactBlocks,
   radioFoundryWriteSourceFromAssembled,
   type Dm32RadioFoundryWriteSource,
 } from './writeSource.ts';
@@ -57,6 +63,8 @@ interface FastInfo {
   dataChunk: number;
   readMax: number;
   sumsMax: number;
+  /** Exclusive image end, never past the native codeplug. */
+  imageEnd: number;
 }
 
 interface BlockSum {
@@ -102,6 +110,17 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
     ) {
       throw new RadioProtocolError('RadioFoundry write image is the wrong length.');
     }
+    const area2 = source.area2;
+    const area2Owned = source.area2Owned;
+    if (area2 || area2Owned) {
+      if (!area2 || !area2Owned || area2.length !== area2Owned.length || area2.length === 0) {
+        throw new RadioProtocolError('DMR ID database area 2 is the wrong length.');
+      }
+      const end = DMR_ID_DATABASE_AREA2_ADDRESS + area2.length;
+      if (end > DMR_ID_DATABASE_IMAGE_END) {
+        throw new RadioProtocolError('DMR ID database area 2 passes the native codeplug.');
+      }
+    }
     this.armed = source;
   }
 
@@ -115,6 +134,13 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
     return this.readBlocks != null;
   }
 
+  /** True when a directory spill is already in the read cache, or there is no spill. */
+  hasDirectoryImage(): boolean {
+    const area2 = this.armed?.area2;
+    if (!area2?.length || !this.readBlocks) return !area2?.length;
+    return dmrIdDatabaseArea2Blocks(area2.length).every((addr) => this.readBlocks!.has(addr));
+  }
+
   async download(opts: {
     onProgress?: ProgressFn;
     signal?: AbortSignal;
@@ -122,7 +148,7 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
   }): Promise<MemoryMap> {
     this.requireLink();
     const stage = opts.progressStage ?? 'Codeplug';
-    const addresses = servedBlockAddresses();
+    const addresses = this.readAddresses();
     const sums = await this.readSums(addresses, opts.signal);
     const image = new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE);
     image.fill(0xff);
@@ -136,8 +162,10 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
         throw new RadioProtocolError(`Block ${hex(addr)} checksum does not match the radio.`);
       }
       blocks.set(addr, block);
-      const n = Math.min(BLOCK_SIZE, DM32_RADIOFOUNDRY_IMAGE_SIZE - addr);
-      image.set(block.subarray(0, n), addr);
+      if (addr < DM32_RADIOFOUNDRY_IMAGE_SIZE) {
+        const n = Math.min(BLOCK_SIZE, DM32_RADIOFOUNDRY_IMAGE_SIZE - addr);
+        image.set(block.subarray(0, n), addr);
+      }
       reportProgress(
         opts.onProgress,
         {
@@ -177,6 +205,13 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
       await this.download({ ...opts, progressStage: PRE_WRITE_STAGE });
     }
     const jobs = this.changedBlocks();
+    if (this.privateContactTableMatches()) {
+      reportProgress(
+        opts.onProgress,
+        { cur: 1, max: 1, stage: BLOCKS_STAGE, msg: 'No contact blocks changed' },
+        opts.signal,
+      );
+    }
     if (jobs.length === 0) {
       reportProgress(
         opts.onProgress,
@@ -228,11 +263,32 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
     return undefined;
   }
 
+  /** Owned private-contact records already match the bytes read from the radio. */
+  private privateContactTableMatches(): boolean {
+    const source = this.requireArmed();
+    const blocks = this.requireReadBlocks();
+    const addrs = ownedPrivateContactBlocks(source);
+    if (addrs.length === 0) return false;
+    for (const addr of addrs) {
+      const radio = blocks.get(addr);
+      if (!radio) return false;
+      if (!sameBytes(mergeBlock(radio, addr, source), radio)) return false;
+    }
+    return true;
+  }
+
+  private readAddresses(): number[] {
+    const addresses = servedBlockAddresses();
+    const area2 = this.armed?.area2;
+    if (!area2?.length) return addresses;
+    return addresses.concat(dmrIdDatabaseArea2Blocks(area2.length));
+  }
+
   private changedBlocks(): { addr: number; data: Uint8Array }[] {
     const blocks = this.requireReadBlocks();
     const source = this.requireArmed();
     const jobs: { addr: number; data: Uint8Array }[] = [];
-    for (const addr of servedBlockAddresses()) {
+    for (const addr of this.readAddresses()) {
       const radio = blocks.get(addr);
       if (!radio) throw new RadioProtocolError(`Block ${hex(addr)} was not read.`);
       const want = mergeBlock(radio, addr, source);
@@ -258,7 +314,7 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
         count += 1;
       }
       const start = addresses[i]!;
-      assertImageBlock(start);
+      assertImageBlock(start, info.imageEnd);
       const args = new Uint8Array(5);
       writeU32(args, 0, start);
       args[4] = count;
@@ -282,8 +338,8 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
     expectCrc: number,
     signal?: AbortSignal,
   ): Promise<Uint8Array> {
-    assertImageBlock(addr);
     const info = this.requireInfo();
+    assertImageBlock(addr, info.imageEnd);
     let stream = new Uint8Array(0);
     let total: number | null = null;
     let crc = 0;
@@ -338,11 +394,11 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
   }
 
   private async writeBlock(addr: number, data: Uint8Array, signal?: AbortSignal): Promise<void> {
-    assertImageBlock(addr);
+    const info = this.requireInfo();
+    assertImageBlock(addr, info.imageEnd);
     if (data.length !== BLOCK_SIZE) {
       throw new RadioProtocolError(`Block ${hex(addr)} is not 4096 bytes.`);
     }
-    const info = this.requireInfo();
     const blank = isBlank(data);
     const stream = blank ? new Uint8Array(0) : encodeBlock(data);
     const args = new Uint8Array(11);
@@ -466,6 +522,7 @@ function parseInfo(body: Uint8Array): FastInfo {
     sumsMax: Math.min(sumsMax, 16),
     dataChunk: Math.min(dataMax, DATA_CHUNK_MAX),
     readMax: Math.min(readMax, 1000),
+    imageEnd: Math.min(imageEnd, DMR_ID_DATABASE_IMAGE_END),
   };
 }
 
@@ -475,6 +532,17 @@ function mergeBlock(
   source: Dm32RadioFoundryWriteSource,
 ): Uint8Array {
   const want = radio.slice();
+  if (addr >= DMR_ID_DATABASE_AREA2_ADDRESS) {
+    const area2 = source.area2;
+    const owned = source.area2Owned;
+    if (!area2 || !owned) return want;
+    const base = addr - DMR_ID_DATABASE_AREA2_ADDRESS;
+    for (let i = 0; i < BLOCK_SIZE; i += 1) {
+      const at = base + i;
+      if (at < owned.length && owned[at]) want[i] = area2[at]!;
+    }
+    return want;
+  }
   const n = Math.min(BLOCK_SIZE, source.bytes.length - addr);
   for (let i = 0; i < n; i += 1) {
     if (source.owned[addr + i]) want[i] = source.bytes[addr + i]!;
@@ -482,7 +550,7 @@ function mergeBlock(
   return want;
 }
 
-function assertImageBlock(addr: number): void {
+function assertImageBlock(addr: number, imageEnd: number): void {
   if (!Number.isInteger(addr) || addr < 0 || addr >= PHYSICAL_CODEPLUG_BASE) {
     throw new RadioProtocolError(
       `Refusing wire address ${hex(addr)}. RadioFoundry codeplug writes use image offsets.`,
@@ -491,9 +559,11 @@ function assertImageBlock(addr: number): void {
   if (addr % BLOCK_SIZE !== 0) {
     throw new RadioProtocolError(`Codeplug block ${hex(addr)} is not 4 KB aligned.`);
   }
+  const ceiling = Math.min(imageEnd, DMR_ID_DATABASE_IMAGE_END);
   const inEeprom = addr + BLOCK_SIZE <= EEPROM_IMAGE_END;
   const inFlash = addr >= FLASH_IMAGE_START && addr < DM32_RADIOFOUNDRY_IMAGE_SIZE;
-  if (!inEeprom && !inFlash) {
+  const inArea2 = addr >= DMR_ID_DATABASE_AREA2_ADDRESS && addr + BLOCK_SIZE <= ceiling;
+  if (!inEeprom && !inFlash && !inArea2) {
     throw new RadioProtocolError(`Codeplug block ${hex(addr)} is outside the image.`);
   }
 }
