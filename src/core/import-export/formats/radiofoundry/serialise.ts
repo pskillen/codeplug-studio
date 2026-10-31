@@ -24,6 +24,14 @@ import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireSt
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   ALL_CALL_DMR_ID,
+  APRS_BASE,
+  APRS_COMMENT_LEN,
+  APRS_COMMENT_OFFSET,
+  APRS_MAGIC_OFFSET,
+  APRS_NAME_LEN,
+  APRS_PATH1_OFFSET,
+  APRS_RECORD_COUNT,
+  APRS_RECORD_SIZE,
   CHANNEL_RECORD_SIZE,
   CHANNELS_PER_BANK,
   CONTACT_BASE,
@@ -109,6 +117,7 @@ export function serialiseRadioFoundryCodeplug(
   writeRxLists(image, owned, assembled, contacts, warnings);
   const channels = writeChannels(image, owned, assembled, radio, contacts, warnings, options);
   writeZones(image, owned, assembled, channels, warnings);
+  writeAprs(image, owned, assembled, warnings);
   warnScanLists(assembled, warnings);
 
   return { bytes: image, owned, warnings };
@@ -233,9 +242,10 @@ function writeChannelRecord(
   // The whole record is sent. Unmodelled fields stay 0: the radio uses its
   // own TX timeout, SFR is off, beep and power saving stay on, and roaming,
   // out of band, VOX, talkaround, and the vendor power and squelch bits stay
-  // off. There is no APRS configuration. Talker-alias APRS bits stay clear,
-  // flag2 holds only the timeslot, STE is off, and the VFO offset and step
-  // are zero.
+  // off. Byte 0x2D, the OpenGD77 APRS index, stays 0. This firmware does not
+  // read it, so the channel report slot is not stored there. Talker-alias
+  // APRS bits stay clear, flag2 holds only the timeslot, STE is off, and the
+  // VFO offset and step are zero.
   writeAsciiField(record, 0, row.wireName || entity.name, LIMITS.NAME_MAX, 'Channel', warnings);
   writeFrequency(record, 0x10, entity.rxFrequency, label, 'RX', warnings);
   writeFrequency(record, 0x14, entity.txFrequency ?? entity.rxFrequency, label, 'TX', warnings);
@@ -763,6 +773,79 @@ function writeBcdBigEndian(
     const lo = digits.charCodeAt(i * 2 + 1) - 48;
     target[offset + i] = (hi << 4) | lo;
   }
+}
+
+/** Magic 0x4153, little endian, at the end of a record the firmware will accept. */
+const APRS_MAGIC_LO = 0x53;
+const APRS_MAGIC_HI = 0x41;
+const APRS_PATH_CALL_LEN = 6;
+/** Used when the library name is empty. A first byte of 0x00 or 0xFF is an empty record. */
+const APRS_EMPTY_NAME = 'APRS';
+
+function writeAprs(
+  image: Uint8Array,
+  owned: Uint8Array,
+  assembled: AssembledBuild,
+  warnings: ExportWarning[],
+): void {
+  const span = APRS_RECORD_COUNT * APRS_RECORD_SIZE;
+  image.fill(0xff, APRS_BASE, APRS_BASE + span);
+  markOwned(owned, APRS_BASE, span);
+  const config = assembled.aprsConfiguration;
+  if (config == null) return;
+
+  const record = image.subarray(APRS_BASE, APRS_BASE + APRS_RECORD_SIZE);
+  record.fill(0);
+  writeAsciiField(
+    record,
+    0,
+    aprsRecordName(config.name, warnings),
+    APRS_NAME_LEN,
+    'APRS configuration',
+    warnings,
+  );
+  // Sender SSID, symbol, fixed latitude, longitude, and TX frequency stay 0.
+  // The firmware parses SSID and symbol and does not apply them. It does not
+  // use the fixed position or the TX frequency. Destination, interval, and
+  // position source live in the settings ring, which the cable protocol
+  // refuses, so they are not written here.
+  writeAprsPath(record);
+  writeAsciiField(
+    record,
+    APRS_COMMENT_OFFSET,
+    config.comment,
+    APRS_COMMENT_LEN,
+    'APRS comment',
+    warnings,
+  );
+  record[APRS_MAGIC_OFFSET] = APRS_MAGIC_LO;
+  record[APRS_MAGIC_OFFSET + 1] = APRS_MAGIC_HI;
+}
+
+function aprsRecordName(name: string, warnings: ExportWarning[]): string {
+  const sanitised = sanitiseAsciiWireString(name);
+  if (sanitised.length > 0) return name;
+  if (name.length > 0) {
+    pushGeneralWarning(
+      warnings,
+      `APRS configuration "${name}" had characters this codeplug cannot store and was written as "${APRS_EMPTY_NAME}".`,
+    );
+  }
+  return APRS_EMPTY_NAME;
+}
+
+function writeAprsPath(record: Uint8Array): void {
+  // The library has no digipeater path. A blank path would be read as None
+  // and would replace the path the radio is already using. Path 1 is the
+  // callsign X, which is not one of the five paths this firmware applies, so
+  // the radio keeps its current path. Path 2 is empty.
+  const path1 = APRS_PATH1_OFFSET;
+  record.fill(0x20, path1, path1 + APRS_PATH_CALL_LEN);
+  record[path1] = 'X'.charCodeAt(0);
+  record[path1 + APRS_PATH_CALL_LEN] = 0;
+  const path2 = path1 + APRS_PATH_CALL_LEN + 1;
+  record.fill(0x20, path2, path2 + APRS_PATH_CALL_LEN);
+  record[path2 + APRS_PATH_CALL_LEN] = 0;
 }
 
 function writeAsciiField(

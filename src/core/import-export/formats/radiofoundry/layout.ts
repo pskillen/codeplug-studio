@@ -42,6 +42,22 @@ export const RX_LIST_LENGTH_SIZE = 0x80;
 export const RX_LIST_BASE = 0xad6a0;
 export const RX_LIST_RECORD_SIZE = 80;
 
+/**
+ * APRS configurations (open-firmware-cps.md 7.3.8). Eight records of 64 bytes.
+ * The firmware reads record 1 only.
+ */
+export const APRS_BASE = 0x1588;
+export const APRS_RECORD_SIZE = 0x40;
+export const APRS_RECORD_COUNT = 8;
+/** A first byte of 0x00 or 0xFF means the record is empty. */
+export const APRS_NAME_LEN = 8;
+/** The firmware copies 23 bytes. The spec field is 24. */
+export const APRS_COMMENT_LEN = 23;
+export const APRS_COMMENT_OFFSET = 0x1f;
+export const APRS_PATH1_OFFSET = 0x0f;
+/** Little-endian magic 0x4153. */
+export const APRS_MAGIC_OFFSET = 0x3e;
+
 /** Squelch byte: 0 = radio default, 1–21 = level. */
 export const SQUELCH_LEVEL_MAX = 21;
 

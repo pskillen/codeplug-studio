@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { newChannel, newDigitalContact, newOwnDigitalId } from '@core/domain/factories.ts';
 import {
+  newAprsConfiguration,
+  newChannel,
+  newDigitalContact,
+  newOwnDigitalId,
+} from '@core/domain/factories.ts';
+import {
+  APRS_BASE,
+  APRS_PATH1_OFFSET,
+  APRS_RECORD_COUNT,
+  APRS_RECORD_SIZE,
   CONTACT_BASE,
   CONTACT_RECORD_SIZE,
   channelSlotAddress,
@@ -587,5 +596,38 @@ describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
     expect(written[at(0x36)]).toBe(0);
     const next = channelSlotAddress(2).record - blockAddr;
     expect(written[next]).toBe(0x00);
+  });
+});
+
+describe('DM-32 RadioFoundry APRS', () => {
+  it('replaces a previous APRS record and does not keep a WIDE1-1 path', async () => {
+    const source = radioFoundryWriteSourceFromAssembled({
+      ...cableAssembled(),
+      aprsConfiguration: { ...newAprsConfiguration('p', 'Home'), comment: 'On the hill' },
+    });
+    const span = APRS_RECORD_COUNT * APRS_RECORD_SIZE;
+    for (let i = 0; i < span; i += 1) expect(source.owned[APRS_BASE + i]).toBe(1);
+
+    const pipe = new ScriptedPipe(0x5a);
+    const blockAddr = APRS_BASE & ~(BLOCK_SIZE - 1);
+    const prior = pipe.block(blockAddr);
+    const at = APRS_BASE - blockAddr;
+    prior.set(new TextEncoder().encode('OLDNAME'), at);
+    // Firmware path entry: callsign space-padded, then the SSID byte. WIDE1-1 is SSID 1.
+    prior.set(new TextEncoder().encode('WIDE1 '), at + APRS_PATH1_OFFSET);
+    prior[at + APRS_PATH1_OFFSET + 6] = 1;
+    prior[at + 0x3e] = 0x53;
+    prior[at + 0x3f] = 0x41;
+
+    await uploadSource(pipe, source);
+    const written = pipe.block(blockAddr);
+    for (let i = 0; i < span; i += 1) {
+      expect(written[at + i]).toBe(source.bytes[APRS_BASE + i]);
+    }
+    expect(written[at + APRS_PATH1_OFFSET]).toBe('X'.charCodeAt(0));
+    expect(new TextDecoder().decode(written.subarray(at, at + APRS_RECORD_SIZE))).not.toContain(
+      'WIDE1',
+    );
+    expect(written[at - 1]).toBe(0x5a);
   });
 });

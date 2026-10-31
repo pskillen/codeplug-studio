@@ -28,15 +28,28 @@ Rows that do not fit before the native codeplug are dropped with a warning. The 
 
 A cable write replaces every byte of a channel, zone, contact, talk group, or RX-list slot it writes. The radio read is not a source for those bytes.
 
-- A channel that is in use is all 56 bytes. Unmodelled fields are zero, which means: TX timeout follows the radio-wide timeout, SFR is off, beep is on, power saving is on, the channel is not roaming or out of band, VOX and talkaround are off, the vendor power and squelch bits are clear, there is no APRS configuration, talker-alias APRS bits are clear, flag 2 holds only the timeslot, STE is off, and the VFO offset and step are zero. The text bit of talker alias still follows the library. APRS is not implemented.
+- A channel that is in use is all 56 bytes. Unmodelled fields are zero, which means: TX timeout follows the radio-wide timeout, SFR is off, beep is on, power saving is on, the channel is not roaming or out of band, VOX and talkaround are off, the vendor power and squelch bits are clear, channel byte 0x2D is 0, talker-alias APRS bits are clear, flag 2 holds only the timeslot, STE is off, and the VFO offset and step are zero. The text bit of talker alias still follows the library. Byte 0x2D is the OpenGD77 APRS index. This firmware does not read it, so the channel report slot is not stored there.
 - An unused channel record is not written. The in-use bitmap is owned and cleared, and a clear bit means that record is empty.
 - The zone bitmap and every zone record are owned. An unused zone slot is the zeroed empty record.
 - Every contact slot is owned. Talk groups and private contacts share the table. An unused slot is `0xFF` throughout, the empty record. A slot after the last written contact does not keep the contact that used to be there. Unticking Digital contacts releases only the private-contact records, as above.
 - The RX-list length table is owned and zeroed. 0 means unused. The firmware does not read a list record whose length byte is 0, so that record is not written. A list with members is replaced in full.
 
+## APRS
+
+The cable write owns all 8 APRS records in the [codeplug image](../../../export-formats/radiofoundry/README.md) (EEPROM image 0x1588, 64 bytes each). Owning those bytes is enough: the overlay already sends every owned address. There is no separate APRS writer.
+
+Sent from the library configuration: the name and the comment, in record 1. Records 2–8 are 0xFF throughout, so a previous configuration cannot remain. With no library configuration, all eight records are that empty record.
+
+Not sent, and why:
+
+- Digipeater path. The library does not have one. A blank path in the record would be read as None and would change the path the radio is using. Record 1's first path callsign is `X`, which is not one of the five paths this firmware applies, so the radio keeps the path it already has.
+- Destination ID, beacon interval, and position source. They live in the settings ring. The cable protocol refuses that region.
+- The per-channel report slot, and channel index byte 0x2D. This firmware does not read that byte. It stays 0.
+- Fixed latitude, longitude, and TX frequency in the record. The firmware does not use them. Sender SSID and symbol are parsed and not applied, so they stay 0.
+
 ## What is not written
 
-- An address the serialiser does not own. The byte read from the radio stays. That includes general settings other than the callsign and the radio DMR ID, voice prompts, factory calibration, the settings ring, the sector journal, and the native codeplug area. The DMR ID database stays unowned unless that source is selected.
+- An address the serialiser does not own. The byte read from the radio stays. That includes general settings other than the callsign and the radio DMR ID, voice prompts, factory calibration, the settings ring (including digital APRS destination, beacon interval, and position source), the sector journal, and the native codeplug area. The DMR ID database stays unowned unless that source is selected.
 - Anything below the open-firmware image.
 
 Studio does not speak the stock DM-32 programmer, and it does not speak the OpenGD77 `R` / `X` / `W` codec. If the radio does not answer the fast command, the write stops.
