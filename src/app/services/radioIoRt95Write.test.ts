@@ -293,3 +293,82 @@ describe('RT95 MM9PDY session path (fake pipe)', () => {
     expect(pipe.log.some((e) => e.op === 'R' && e.addr === 0x7b00)).toBe(false);
   });
 });
+
+describe('RT95 settings on Write (#1476)', () => {
+  const channel: RadioChannelDto = {
+    slotIndex: 1,
+    empty: false,
+    wireName: 'TEST01',
+    rxHz: 146_520_000,
+    txHz: 146_520_000,
+    rxTone: { kind: 'none' },
+    txTone: { kind: 'none' },
+    powerPercent: 100,
+    bandwidth: 'FM',
+  };
+
+  async function open(profileId: string) {
+    const pipe = createFakeRt95Pipe({});
+    const radio = new Rt95Protocol();
+    await radio.connect(pipe);
+    const session: RadioSession = { descriptor: RT95_DESCRIPTOR, pipe, radio };
+    const { egress } = newRadioBuildForProfile('p1', profileId);
+    return { pipe, session, egress };
+  }
+
+  it('settings-only Write sends no W at or above 0x32A0 and only on touched blocks', async () => {
+    const { pipe, session, egress } = await open('radio-io-rt95');
+    const { writeRt95SettingsOnly } = await import('./radioIoRt95SettingsWrite.ts');
+    pipe.eeprom[0x3202] = 0x00;
+    await writeRt95SettingsOnly(session, egress, [{ fieldId: 'displayMode', value: 1 }], {
+      beforeTransmit: async () => 'apply',
+    });
+    const writes = pipe.log.filter((e) => e.op === 'W').map((e) => e.addr!);
+    expect(writes.every((a) => a < 0x32a0)).toBe(true);
+    expect(writes.length).toBeGreaterThan(0);
+    expect(writes.length).toBeLessThan(200);
+  });
+
+  it('stock codeplug+settings sends no W at or above 0x32A0 and changes the registered field', async () => {
+    const { pipe, session, egress } = await open('radio-io-rt95');
+    pipe.eeprom[0x3202] = 0x00;
+    await uploadPreparedRadioWrite(session, egress, undefined, {
+      channels: [channel],
+      rt95SettingsOverrides: [{ fieldId: 'displayMode', value: 1 }],
+      beforeTransmit: async () => 'apply',
+    });
+    expect(pipe.log.some((e) => e.op === 'W' && e.addr! >= 0x32a0)).toBe(false);
+    expect(pipe.eeprom[0x3202]).not.toBe(0x00);
+  });
+
+  it('MM9PDY codeplug+settings still writes MMD1 and passes chip context', async () => {
+    const { pipe, session, egress } = await open('radio-io-rt95-mm9pdy');
+    const organisation = {
+      writeRt95ModData: true,
+      zones: [{ wireName: 'LOCAL', channelNumbers: [1] }],
+    };
+    const seen: unknown[] = [];
+    await uploadPreparedRadioWrite(session, egress, undefined, {
+      channels: [{ ...channel, description: 'Calling ch' }],
+      organisation,
+      rt95SettingsOverrides: [{ fieldId: 'beepVolume', value: 5 }],
+      beforeTransmit: async (ctx) => {
+        seen.push(ctx.rt95);
+      },
+    });
+    expect(seen).toEqual([{ chipGuard: { ok: true } }]);
+    expect(pipe.log.some((e) => e.op === 'W' && e.addr === 0x4000)).toBe(true);
+  });
+
+  it('settings-only planned stages match a single-field override', async () => {
+    const { planRt95Stages } = await import('@integrations/radio-io/radios/rt95/plannedStages.ts');
+    const plan = planRt95Stages('write', {
+      parts: { codeplug: false, contacts: false, settings: true, keps: false },
+      prepared: {
+        channels: [],
+        organisation: { rt95SettingsOverrides: [{ fieldId: 'displayMode', value: 1 }] },
+      },
+    });
+    expect(plan.map((s) => s.label)).toEqual(['Read settings', 'Upload']);
+  });
+});

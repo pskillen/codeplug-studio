@@ -11,6 +11,7 @@ import {
   isDm32RadioIoProfileId,
   isMm9pdyAtD890RadioIoProfileId,
   isMm9pdyDm32RadioIoProfileId,
+  isRt95RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import {
@@ -46,6 +47,7 @@ import { descriptorSupportsBackup } from '../../services/radioBackupRestore.ts';
 import WriteHeaderCard from './RadioIoPanelCards/WriteHeaderCard.tsx';
 import BeforeYouWriteRows from './RadioIoPanelCards/BeforeYouWriteRows.tsx';
 import AtD890RadioSettingsCard from './RadioIoPanelCards/AtD890RadioSettingsCard.tsx';
+import Rt95RadioSettingsCard from './RadioIoPanelCards/Rt95RadioSettingsCard.tsx';
 import RadioBackupCard from './RadioIoPanelCards/RadioBackupCard.tsx';
 import ExperimentalNote from './RadioIoPanelCards/ExperimentalNote.tsx';
 import RangeChangeBanner from '../dangerZone/RangeChangeBanner.tsx';
@@ -58,6 +60,15 @@ import {
   setWriteSettingsRequested,
   useAtD890RadioSettingsSession,
 } from '../../state/atD890RadioSettingsSession.ts';
+import {
+  setWriteSettingsRequested as setRt95WriteSettingsRequested,
+  overridesForWrite as rt95OverridesForWrite,
+  rt95OverrideCount,
+  useRt95RadioSettingsSession,
+} from '../../state/rt95RadioSettingsSession.ts';
+import { rt95SettingsTargetForEgress } from '../../services/radioIoRt95SettingsWrite.ts';
+import { rt95OverrideWords } from './RadioWriteStepper/rt95/rt95ReviewFacts.ts';
+import { radioIoProfileSupportsRadioSettings } from '../../lib/radioIoRadioSettingsSupport.ts';
 import { atD890OverrideWords } from './RadioWriteStepper/d890/atD890ReviewFacts.ts';
 import WriteVerifyReport from './WriteVerifyReport.tsx';
 import { mapWriteVerifyResultToV2Report } from './writeVerifyReportV2Adapter.ts';
@@ -110,6 +121,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);
   const isAtD890Write = isAtD890RadioIoProfileId(egress.profileId);
+  const isRt95Write = isRt95RadioIoProfileId(egress.profileId);
+  const supportsRadioSettings = radioIoProfileSupportsRadioSettings(egress.profileId);
   const supportsKepsWrite = hasSatelliteKepsWriteAdapter(egress.profileId);
   const kepsWriteFn = getSatelliteKepsWriteAdapter(egress.profileId);
   const dualBankTraitProfile = traitProfileFor(egress.profileId);
@@ -129,16 +142,20 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     onOpenSettingsPage: () => navigate(`/builds/${build.id}/export/radio-settings`),
   });
   const { view: flowView, actions: flowActions } = flow;
-  const settingsSession = useAtD890RadioSettingsSession(build.id);
+  const d890SettingsSession = useAtD890RadioSettingsSession(build.id);
+  const rt95SettingsSession = useRt95RadioSettingsSession(build.id);
   const openFlow = flow.open;
-  const writeSettingsRequested = isAtD890Write && settingsSession.writeSettingsRequested;
+  const writeSettingsRequested =
+    (isAtD890Write && d890SettingsSession.writeSettingsRequested) ||
+    (isRt95Write && rt95SettingsSession.writeSettingsRequested);
 
   // The settings page's "Write settings…" lands here and opens the stepper with only Radio settings ticked.
   useEffect(() => {
     if (!writeSettingsRequested) return;
-    setWriteSettingsRequested(build.id, false);
+    if (isAtD890Write) setWriteSettingsRequested(build.id, false);
+    if (isRt95Write) setRt95WriteSettingsRequested(build.id, false);
     openFlow({ codeplug: false, contacts: false, keps: false, settings: true });
-  }, [writeSettingsRequested, build.id, openFlow]);
+  }, [writeSettingsRequested, build.id, openFlow, isAtD890Write, isRt95Write]);
 
   // Counts and receive-range rows for the header and Before you write. Informational only.
   useEffect(() => {
@@ -236,7 +253,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     support: {
       contacts: supportsDigitalContacts,
       keps: supportsKepsWrite,
-      settings: isAtD890Write,
+      settings: supportsRadioSettings,
     },
     sharedContactBankNote: isOpenGd77RadioIoEgress(egress.profileId),
     sharedAddressBookNote: isDm32RadioIoProfileId(egress.profileId),
@@ -250,14 +267,27 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     ...(isAtD890Write
       ? {
           radioSettings: {
-            count: atD890OverrideCount(settingsSession.overrides),
+            count: atD890OverrideCount(d890SettingsSession.overrides),
             words: atD890OverrideWords(
               overridesForWrite(build.id),
               isMm9pdyAtD890RadioIoProfileId(egress.profileId) ? 'mm9pdy' : 'stock',
             ),
-            applyToEveryRadio: settingsSession.applyToEveryRadio,
+            applyToEveryRadio: d890SettingsSession.applyToEveryRadio,
             onApplyToEveryRadioChange: (checked: boolean) =>
               setApplyToEveryRadio(build.id, checked),
+          },
+        }
+      : {}),
+    ...(isRt95Write
+      ? {
+          radioSettings: {
+            count: rt95OverrideCount(rt95SettingsSession.overrides),
+            words: rt95OverrideWords(
+              rt95OverridesForWrite(build.id),
+              rt95SettingsTargetForEgress(egress),
+            ),
+            applyToEveryRadio: false,
+            onApplyToEveryRadioChange: () => undefined,
           },
         }
       : {}),
@@ -349,7 +379,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
                 channels: facts.channelCount,
                 zones: facts.zoneCount,
                 ...(isAtD890Write
-                  ? { settingChanges: atD890OverrideCount(settingsSession.overrides) }
+                  ? { settingChanges: atD890OverrideCount(d890SettingsSession.overrides) }
                   : {}),
               })
             : undefined
@@ -365,6 +395,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         txRangeInfo={isAtD890Write}
       />
       {isAtD890Write ? <AtD890RadioSettingsCard buildId={build.id} egress={egress} /> : null}
+      {isRt95Write ? <Rt95RadioSettingsCard buildId={build.id} egress={egress} /> : null}
       {descriptorSupportsBackup(descriptor) ? <RadioBackupCard buildId={build.id} /> : null}
       {isAtD890Write ? (
         <div>
@@ -378,7 +409,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           </Button>
           {coverageOpen ? (
             <AtD890WriteCoverageTable
-              settingsChangeCount={atD890OverrideCount(settingsSession.overrides)}
+              settingsChangeCount={atD890OverrideCount(d890SettingsSession.overrides)}
               buildId={build.id}
               hasHydration={hasHydration}
               mm9pdy={isMm9pdyAtD890RadioIoProfileId(egress.profileId)}

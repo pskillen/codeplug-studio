@@ -50,7 +50,10 @@ export function summariseRt95Clone(
     writtenFromBuild: rt95WrittenFromBuildLabels(opts),
     retainGroups: kept.map((r: Rt95RegionManifestEntry) => ({
       label: r.label,
-      role: 'Kept from Read from radio — not changed when you write from your build',
+      role:
+        r.id === 'settings' || r.id === 'password' || r.id === 'pfkeys' || r.id === 'display'
+          ? 'Kept from Read from radio — unchanged by a codeplug Write unless you set Radio settings overrides'
+          : 'Kept from Read from radio — not changed when you write from your build',
     })),
     settingsRetain: settingsRetainPreview(bytes),
     inspectChannels: inspectOccupiedChannels(decodeChannelsFromImage(bytes)),

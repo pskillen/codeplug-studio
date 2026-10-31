@@ -30,7 +30,7 @@ registerReviewSectionProvider({
 
 > > > > > > > c15db049 (docs(app): AT-D890 Review and radio settings Write (#1393))
 
-- `rt95` (RT95 MM9PDY only) carries the zone and description counts once the chip-size check passed; `rt95/registerRt95Review.tsx` shows "Radio memory: 32 KiB, zones and descriptions can be written." and the counts. A failed check never reaches Review.
+- `rt95` is `{ settings?, modData? }`. `settings` (both RT95 targets, when radio settings overrides exist) drives the "Radio settings" section. `modData` (RT95 MM9PDY only) carries the zone and description counts once the chip-size check passed; `rt95/registerRt95Review.tsx` shows "Radio memory: 32 KiB, zones and descriptions can be written." and the counts. A failed check never reaches Review.
 
 ## Related
 
