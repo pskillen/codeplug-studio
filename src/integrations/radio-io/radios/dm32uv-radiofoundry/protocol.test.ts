@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { newDigitalContact, newOwnDigitalId } from '@core/domain/factories.ts';
-import { CONTACT_BASE } from '@core/import-export/formats/radiofoundry/layout.ts';
+import { newChannel, newDigitalContact, newOwnDigitalId } from '@core/domain/factories.ts';
+import {
+  CONTACT_BASE,
+  channelSlotAddress,
+} from '@core/import-export/formats/radiofoundry/layout.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { crc32Ieee } from '../../kit/checksums.ts';
 import { RadioTimeoutError } from '../../kit/errors.ts';
@@ -499,5 +502,47 @@ describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
       (id >> 8) & 0xff,
       (id >> 16) & 0xff,
     ]);
+  });
+
+  it('keeps the timeout, SFR, no-beep, and VOX while writing receive-only', async () => {
+    const entity = {
+      ...newChannel('p', 'Local'),
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      forbidTransmit: 'forbid' as const,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: 12.5,
+        },
+      ],
+    };
+    const source = radioFoundryWriteSourceFromAssembled({
+      ...cableAssembled(),
+      channels: [{ entity, wireName: 'Local' }],
+    });
+    const record = channelSlotAddress(1).record;
+    expect(source.owned[record + 0x1b]).toBe(0);
+    expect(source.owned[record + 0x25]).toBe(0);
+    const pipe = new ScriptedPipe(0x00);
+    const blockAddr = record & ~(BLOCK_SIZE - 1);
+    const prior = pipe.block(blockAddr);
+    const at = (offset: number) => record - blockAddr + offset;
+    prior[at(0x1b)] = 0x04;
+    prior[at(0x25)] = 0xaa;
+    prior[at(0x2a)] = 0x5a;
+    prior[at(0x26)] = 0x63;
+    prior[at(0x33)] = 0x40;
+    await uploadSource(pipe, source);
+    const written = pipe.block(blockAddr);
+    expect(written[at(0x1b)]).toBe(0x04);
+    expect(written[at(0x25)]).toBe(0xaa);
+    expect(written[at(0x2a)]).toBe(0x5a);
+    expect(written[at(0x26)]! & 0x63).toBe(0x63);
+    expect(written[at(0x33)]! & 0x40).toBe(0x40);
+    expect(written[at(0x33)]! & 0x04).toBe(0x04);
   });
 });

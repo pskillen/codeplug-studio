@@ -7,6 +7,7 @@
  */
 
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
+import type { CpsExportOptions } from '@core/import-export/types.ts';
 import {
   ALL_CALL_DMR_ID,
   CONTACT_BASE,
@@ -48,13 +49,15 @@ export interface RadioFoundryCableWriteOptions {
   includeLibraryContacts?: boolean;
   /** ID-directory rows. Omitted or empty leaves 0x50000 unowned. */
   directoryRows?: readonly RadioDigitalContactDto[];
+  /** Build and library defaults for scan, receive-only, and talker alias. */
+  exportOptions?: CpsExportOptions;
 }
 
 export function radioFoundryWriteSourceFromAssembled(
   assembled: AssembledBuild,
   options?: RadioFoundryCableWriteOptions,
 ): Dm32RadioFoundryWriteSource {
-  const image = serialiseRadioFoundryCodeplug(assembled);
+  const image = serialiseRadioFoundryCodeplug(assembled, options?.exportOptions);
   if (options?.includeLibraryContacts === false) {
     releasePrivateContacts(image.bytes, image.owned);
   }

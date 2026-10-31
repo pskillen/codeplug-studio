@@ -27,6 +27,7 @@ Rows that do not fit before the native codeplug are dropped with a warning. The 
 ## What is not written
 
 - A byte the serialiser leaves as `0xFF` because it does not own that address. The byte read from the radio stays.
+- The per-channel TX timeout, the SFR bytes, and the flag bits for no beep, no power saving, roaming, and VOX. Studio writes the other bits in those flag bytes.
 - The settings ring, the sector journal, the native codeplug area, and factory calibration.
 - Anything below the open-firmware image.
 

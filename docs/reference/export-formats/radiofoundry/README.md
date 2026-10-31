@@ -27,6 +27,8 @@ References on the wire are 1-based indexes assigned at export. Names are labels,
 - Bandwidth: 25 kHz sets the bit. 12.5 kHz clears it. Any other value is written as 12.5 kHz, with a warning.
 - Squelch percent maps onto 0–21. Null writes 0.
 - FM RX and TX tones. None is `0xFFFF`. CTCSS is BCD tenths of Hz (88.5 Hz is `0x0885`). DCS sets bit 15, and bit 14 when inverted (`D023N` is `0x8023`, `D023I` and `D023P` are `0xC023`). A tone the radio would ignore is written as none, with a warning.
+- Receive-only, from the channel's transmit setting. Scan skip sets both scan-skip bits; otherwise both are clear. A fixed location is the 24-bit coordinate and its flag. A DMR channel in direct mode sets that flag. Talker alias sets the text bit for the channel's timeslot.
+- A cable write does not send the per-channel TX timeout, the SFR bytes, or the flag bits for no beep, no power saving, roaming, VOX, and the other bits Studio does not model. The radio keeps those. The file still stores 0 in the timeout and SFR bytes.
 - Frequencies are BCD of 10 Hz units, stored as a little-endian 32-bit word. A frequency outside 136–174 MHz and 400–480 MHz is a warning, not a failed export.
 
 ## What is read

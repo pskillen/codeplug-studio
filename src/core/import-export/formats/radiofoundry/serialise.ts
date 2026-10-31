@@ -4,6 +4,13 @@
  * is zeroed so slot 0 cannot be read as the 16-channel layout.
  */
 
+import type { CpsExportOptions } from '@core/import-export/types.ts';
+import {
+  resolveEffectiveForbidTransmit,
+  resolveEffectiveSendTalkerAlias,
+} from '@core/import-export/channelBehaviourDefaults/resolve.ts';
+import { resolveChannelScanInclusionForExport } from '@core/import-export/scanInclusion/resolve.ts';
+import { resolveDmrOperatingMode } from '@core/domain/dmrOperatingMode.ts';
 import type { AssembledBuild, AssembledChannel, AssembledZone } from '@core/services/assemble.ts';
 import type {
   ChannelModeProfileAnalog,
@@ -86,7 +93,14 @@ function markOwned(owned: Uint8Array, offset: number, length: number): void {
   owned.fill(1, offset, offset + length);
 }
 
-export function serialiseRadioFoundryCodeplug(assembled: AssembledBuild): RadioFoundryImage {
+function releaseOwned(owned: Uint8Array, offset: number, length: number): void {
+  owned.fill(0, offset, offset + length);
+}
+
+export function serialiseRadioFoundryCodeplug(
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+): RadioFoundryImage {
   const warnings: ExportWarning[] = [];
   const radio = requireDefaultDmrId(assembled.ownDigitalIds);
   const image = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
@@ -96,7 +110,7 @@ export function serialiseRadioFoundryCodeplug(assembled: AssembledBuild): RadioF
   writeRadioIdentity(image, owned, radio, warnings);
   const contacts = writeContacts(image, owned, assembled, warnings);
   writeRxLists(image, owned, assembled, contacts, warnings);
-  const channels = writeChannels(image, owned, assembled, radio, contacts, warnings);
+  const channels = writeChannels(image, owned, assembled, radio, contacts, warnings, options);
   writeZones(image, owned, assembled, channels, warnings);
   warnScanLists(assembled, warnings);
 
@@ -143,6 +157,7 @@ function writeChannels(
   radio: OwnDigitalId,
   contacts: Map<string, number>,
   warnings: ExportWarning[],
+  options: CpsExportOptions | undefined,
 ): Map<string, number> {
   zeroChannelBitmaps(image, owned);
   const pending: Array<{ row: AssembledChannel; mode: KeptMode }> = [];
@@ -164,7 +179,7 @@ function writeChannels(
   for (const item of pending) {
     const channel: KeptChannel = { ...item, number: numbers.size + 1 };
     numbers.set(channel.row.entity.id, channel.number);
-    writeChannelRecord(image, owned, channel, assembled, radio, contacts, warnings);
+    writeChannelRecord(image, owned, channel, assembled, radio, contacts, warnings, options);
     markInUse(image, channel.number);
   }
   return numbers;
@@ -209,12 +224,16 @@ function writeChannelRecord(
   radio: OwnDigitalId,
   contacts: Map<string, number>,
   warnings: ExportWarning[],
+  options: CpsExportOptions | undefined,
 ): void {
   const { row, mode } = channel;
   const entity = row.entity;
   const label = row.wireName || entity.name;
   const slot = channelSlotAddress(channel.number);
   markOwned(owned, slot.record, CHANNEL_RECORD_SIZE);
+  releaseOwned(owned, slot.record + 0x1b, 1);
+  releaseOwned(owned, slot.record + 0x25, 1);
+  releaseOwned(owned, slot.record + 0x2a, 1);
   const record = image.subarray(slot.record, slot.record + CHANNEL_RECORD_SIZE);
   record.fill(0);
   writeAsciiField(record, 0, row.wireName || entity.name, LIMITS.NAME_MAX, 'Channel', warnings);
@@ -238,8 +257,9 @@ function writeChannelRecord(
   if (profile?.mode === 'fm') {
     writeAnalogChannel(record, profile, label, warnings);
   } else if (profile?.mode === 'dmr') {
-    writeDmrChannel(record, profile, label, assembled, radio, contacts, warnings);
+    writeDmrChannel(record, profile, label, entity, assembled, radio, contacts, warnings, options);
   }
+  writeSharedChannelFields(record, channel, options);
 }
 
 function writeAnalogChannel(
@@ -254,14 +274,52 @@ function writeAnalogChannel(
   writeTone(record, 0x22, profile.txTone, 'TX', label, warnings);
 }
 
+function writeSharedChannelFields(
+  record: Uint8Array,
+  channel: KeptChannel,
+  options: CpsExportOptions | undefined,
+): void {
+  const entity = channel.row.entity;
+  if (resolveEffectiveForbidTransmit(entity, options?.channelBehaviourContext) === 'forbid') {
+    record[0x33] |= 0x04;
+  }
+  const scan = resolveChannelScanInclusionForExport(entity, channel.row.scanInclusionOverride, {
+    buildDefault: options?.defaultScanInclusion,
+    formatDefault: 'scan',
+  });
+  if (scan === 'skip') record[0x33] |= 0x30;
+  if (!entity.useLocation || entity.location == null) return;
+  const lat = encodeCoordinate(entity.location.lat);
+  const lon = encodeCoordinate(entity.location.lon);
+  record[0x1a] = lat & 0xff;
+  record[0x1c] = (lat >> 8) & 0xff;
+  record[0x1d] = (lat >> 16) & 0xff;
+  record[0x1e] = lon & 0xff;
+  record[0x1f] = (lon >> 8) & 0xff;
+  record[0x24] = (lon >> 16) & 0xff;
+  record[0x26] |= 0x08;
+}
+
+/** 24-bit fixed coordinate: sign, whole degrees, then 1/10000 degree. */
+function encodeCoordinate(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  const sign = value < 0 ? 0x800000 : 0;
+  const abs = Math.abs(value);
+  const degrees = Math.min(255, Math.floor(abs));
+  const fraction = Math.min(9999, Math.round((abs - degrees) * 10000));
+  return sign | (degrees << 15) | fraction;
+}
+
 function writeDmrChannel(
   record: Uint8Array,
   profile: ChannelModeProfileDMR,
   label: string,
+  entity: KeptChannel['row']['entity'],
   assembled: AssembledBuild,
   radio: OwnDigitalId,
   contacts: Map<string, number>,
   warnings: ExportWarning[],
+  options: CpsExportOptions | undefined,
 ): void {
   const color = profile.colourCode ?? 0;
   const storedColor = color >= 0 && color <= 15 ? color : 0;
@@ -273,6 +331,10 @@ function writeDmrChannel(
     );
   }
   if (profile.timeslot === 2) record[0x31] = 0x40;
+  if (resolveDmrOperatingMode(entity) === 'dmo-simplex') record[0x26] |= 0x04;
+  if (resolveEffectiveSendTalkerAlias(profile, options?.channelBehaviourContext) === 'on') {
+    record[0x30] |= profile.timeslot === 2 ? 0x08 : 0x02;
+  }
   const contact =
     profile.contactRef == null ? 0 : (contacts.get(contactKey(profile.contactRef)) ?? 0);
   record[0x2e] = contact & 0xff;

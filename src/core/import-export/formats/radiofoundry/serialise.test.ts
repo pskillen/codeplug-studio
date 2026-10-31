@@ -147,6 +147,52 @@ describe('serialiseRadioFoundryCodeplug', () => {
     expect([positive.bytes[record + 0x22], positive.bytes[record + 0x23]]).toEqual([0x23, 0xc0]);
   });
 
+  it('writes receive-only, scan skip, and a fixed location, and does not own the timeout or SFR bytes', () => {
+    const channel = fmChannel('Local');
+    channel.entity.forbidTransmit = 'forbid';
+    channel.entity.scanInclusion = 'skip';
+    channel.entity.useLocation = true;
+    channel.entity.location = { lat: 55.95, lon: -3.2 };
+    const { bytes, owned } = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    const record = channelSlotAddress(1).record;
+    expect(bytes[record + 0x33]! & 0x04).toBe(0x04);
+    expect(bytes[record + 0x33]! & 0x30).toBe(0x30);
+    expect(bytes[record + 0x26]! & 0x08).toBe(0x08);
+    expect([bytes[record + 0x1a], bytes[record + 0x1c], bytes[record + 0x1d]]).toEqual([
+      0x1c, 0xa5, 0x1b,
+    ]);
+    expect([bytes[record + 0x1e], bytes[record + 0x1f], bytes[record + 0x24]]).toEqual([
+      0xd0, 0x87, 0x81,
+    ]);
+    expect(owned[record + 0x1b]).toBe(0);
+    expect(owned[record + 0x25]).toBe(0);
+    expect(owned[record + 0x2a]).toBe(0);
+  });
+
+  it('writes direct mode and the talker-alias text bit for the channel timeslot', () => {
+    const channel = fmChannel('Local');
+    channel.entity.primaryMode = 'dmr';
+    channel.entity.rxFrequency = 438_500_000;
+    channel.entity.txFrequency = 438_500_000;
+    channel.entity.modeProfiles = [
+      {
+        mode: 'dmr',
+        colourCode: 1,
+        timeslot: 2,
+        ownDigitalIdId: null,
+        contactRef: null,
+        rxGroupListId: null,
+        dmrMode: 'dmo-simplex',
+        sendTalkerAlias: 'on',
+      },
+    ];
+    const { bytes } = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    const record = channelSlotAddress(1).record;
+    expect(bytes[record + 0x26]! & 0x04).toBe(0x04);
+    expect(bytes[record + 0x30]! & 0x08).toBe(0x08);
+    expect(bytes[record + 0x31]! & 0x40).toBe(0x40);
+  });
+
   it('truncates a 17th name character and warns', () => {
     const name = 'ABCDEFGHIJKLMNOPQ';
     const { bytes, warnings } = serialiseRadioFoundryCodeplug(

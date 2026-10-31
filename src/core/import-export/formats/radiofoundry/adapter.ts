@@ -30,7 +30,7 @@ export const radiofoundryExportAdapter = {
     exportScratchChannels: false,
     exportZoneDerivedScanLists: false,
   },
-  serialise(assembled) {
-    return serialiseRadioFoundryCodeplug(assembled);
+  serialise(assembled, options) {
+    return serialiseRadioFoundryCodeplug(assembled, options);
   },
 } satisfies BinaryCpsExportAdapter;

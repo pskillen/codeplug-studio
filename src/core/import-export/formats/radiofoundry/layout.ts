@@ -72,3 +72,40 @@ export function channelSlotAddress(number: number): {
     record: bitmap + 16 + within * CHANNEL_RECORD_SIZE,
   };
 }
+
+/**
+ * Bits a cable write must leave as the radio had them. The same byte also
+ * holds fields Studio writes, so the overlay keeps these bits and replaces
+ * the rest. SFR payload and the per-channel timeout are whole bytes and are
+ * left unowned instead.
+ */
+const CHANNEL_KEPT_BITS: Readonly<Record<number, number>> = {
+  /** No beep, no power saving, out of band, SFR enable, roaming. */
+  0x26: 0x73,
+  /** Talker-alias bits other than the text bit of each timeslot. */
+  0x30: 0xf5,
+  /** Flag bits other than timeslot 2. */
+  0x31: 0xbf,
+  /** Vendor power, VOX, talkaround, vendor squelch. */
+  0x33: 0xc9,
+};
+
+/** Preserve mask for one image address, or 0 when the address is not one of those flag bytes. */
+export function channelKeptBits(addr: number): number {
+  const offset = channelRecordOffset(addr);
+  if (offset == null) return 0;
+  return CHANNEL_KEPT_BITS[offset] ?? 0;
+}
+
+function channelRecordOffset(addr: number): number | null {
+  const banks = Math.ceil(1024 / CHANNELS_PER_BANK);
+  for (let bank = 0; bank < banks; bank += 1) {
+    const bitmap =
+      bank === 0 ? BANK0_BITMAP : CHANNEL_BANKS_BITMAP + (bank - 1) * CHANNEL_BANK_STRIDE;
+    const start = bitmap + 16;
+    const end = start + CHANNELS_PER_BANK * CHANNEL_RECORD_SIZE;
+    if (addr < start || addr >= end) continue;
+    return (addr - start) % CHANNEL_RECORD_SIZE;
+  }
+  return null;
+}
