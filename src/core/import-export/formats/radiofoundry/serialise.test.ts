@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import {
   emptyLibrary,
+  newAprsConfiguration,
   newChannel,
   newOwnDigitalId,
   newRadioBuildWithEgresses,
@@ -12,6 +13,14 @@ import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.t
 import { exportBuildBinary, exportBuildZip } from '@core/services/exportBuild.ts';
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import {
+  APRS_BASE,
+  APRS_COMMENT_LEN,
+  APRS_COMMENT_OFFSET,
+  APRS_MAGIC_OFFSET,
+  APRS_NAME_LEN,
+  APRS_PATH1_OFFSET,
+  APRS_RECORD_COUNT,
+  APRS_RECORD_SIZE,
   CONTACT_BASE,
   CONTACT_RECORD_SIZE,
   RX_LIST_BASE,
@@ -61,6 +70,13 @@ function assembled(overrides: Partial<AssembledBuild> = {}): AssembledBuild {
     ownDigitalIds: [ownId()],
     ...overrides,
   };
+}
+
+function fieldText(bytes: Uint8Array, offset: number, length: number): string {
+  let end = offset;
+  const stop = offset + length;
+  while (end < stop && bytes[end] !== 0xff && bytes[end] !== 0x00) end += 1;
+  return new TextDecoder().decode(bytes.subarray(offset, end));
 }
 
 function includesAscii(image: Uint8Array, text: string): boolean {
@@ -209,6 +225,103 @@ describe('serialiseRadioFoundryCodeplug', () => {
         expect(bytes[offset + i]).toBe(0xff);
       }
     }
+  });
+
+  it('owns eight empty APRS records when the library has no configuration', () => {
+    const { bytes, owned } = serialiseRadioFoundryCodeplug(assembled());
+    const span = APRS_RECORD_COUNT * APRS_RECORD_SIZE;
+    for (let i = 0; i < span; i += 1) {
+      expect(owned[APRS_BASE + i]).toBe(1);
+      expect(bytes[APRS_BASE + i]).toBe(0xff);
+    }
+    expect(owned[APRS_BASE - 1]).toBe(0);
+    expect(owned[APRS_BASE + span]).toBe(0);
+  });
+
+  it('writes the library APRS name and comment into record 1', () => {
+    const config = {
+      ...newAprsConfiguration('p', 'Home'),
+      comment: 'On the hill',
+      manualTxIntervalSec: 60,
+      autoTxIntervalSec: 600,
+      positionSource: 'fixed' as const,
+      fixedLocation: { lat: 55.95, lon: -3.2 },
+      channelSlots: [
+        {
+          channelRef: null,
+          timeslot: 1 as const,
+          targetDmrId: 5057,
+          callType: 'group' as const,
+        },
+      ],
+    };
+    const { bytes, owned, warnings } = serialiseRadioFoundryCodeplug(
+      assembled({ aprsConfiguration: config }),
+    );
+    expect(fieldText(bytes, APRS_BASE, APRS_NAME_LEN)).toBe('Home');
+    expect(bytes[APRS_BASE + 'Home'.length]).toBe(0xff);
+    expect(bytes[APRS_BASE + 0x08]).toBe(0);
+    expect(bytes[APRS_BASE + 0x09]).toBe(0);
+    expect(bytes[APRS_BASE + 0x0c]).toBe(0);
+    expect([
+      ...bytes.subarray(APRS_BASE + APRS_PATH1_OFFSET, APRS_BASE + APRS_PATH1_OFFSET + 7),
+    ]).toEqual(['X'.charCodeAt(0), 0x20, 0x20, 0x20, 0x20, 0x20, 0]);
+    expect([...bytes.subarray(APRS_BASE + 0x16, APRS_BASE + 0x1d)]).toEqual([
+      0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0,
+    ]);
+    expect(bytes[APRS_BASE + 0x1d]).toBe(0);
+    expect(bytes[APRS_BASE + 0x1e]).toBe(0);
+    expect(fieldText(bytes, APRS_BASE + APRS_COMMENT_OFFSET, APRS_COMMENT_LEN)).toBe('On the hill');
+    expect(bytes[APRS_BASE + APRS_COMMENT_OFFSET + 'On the hill'.length]).toBe(0xff);
+    expect(bytes[APRS_BASE + 0x37]).toBe(0);
+    expect(bytes[APRS_BASE + APRS_MAGIC_OFFSET]).toBe(0x53);
+    expect(bytes[APRS_BASE + APRS_MAGIC_OFFSET + 1]).toBe(0x41);
+    for (let n = 1; n < APRS_RECORD_COUNT; n += 1) {
+      for (let i = 0; i < APRS_RECORD_SIZE; i += 1) {
+        const at = APRS_BASE + n * APRS_RECORD_SIZE + i;
+        expect(owned[at]).toBe(1);
+        expect(bytes[at]).toBe(0xff);
+      }
+    }
+    expect(warnings).toEqual([]);
+  });
+
+  it('uses APRS for an empty configuration name and shortens a long comment', () => {
+    const comment = 'C'.repeat(APRS_COMMENT_LEN + 1);
+    const { bytes, warnings } = serialiseRadioFoundryCodeplug(
+      assembled({
+        aprsConfiguration: { ...newAprsConfiguration('p', ''), comment },
+      }),
+    );
+    expect(fieldText(bytes, APRS_BASE, APRS_NAME_LEN)).toBe('APRS');
+    expect(bytes[APRS_BASE]).not.toBe(0x00);
+    expect(bytes[APRS_BASE]).not.toBe(0xff);
+    expect(fieldText(bytes, APRS_BASE + APRS_COMMENT_OFFSET, APRS_COMMENT_LEN)).toBe(
+      'C'.repeat(APRS_COMMENT_LEN),
+    );
+    const warning = warnings.find((item) => item.kind === 'wire_name');
+    expect(warning).toMatchObject({
+      remediation: 'shortened',
+      entityKind: 'APRS comment',
+      limit: APRS_COMMENT_LEN,
+    });
+  });
+
+  it('leaves channel byte 0x2D at 0 when the channel has an APRS report slot', () => {
+    const channel = fmChannel('Local');
+    channel.entity.aprs = {
+      receiveEnabled: true,
+      reportType: 'digital',
+      digitalPttMode: 'on',
+      reportSlotIndex: 3,
+    };
+    const { bytes } = serialiseRadioFoundryCodeplug(
+      assembled({
+        channels: [channel],
+        aprsConfiguration: { ...newAprsConfiguration('p', 'Home'), comment: 'On the hill' },
+      }),
+    );
+    expect(bytes[channelSlotAddress(1).record + 0x2d]).toBe(0);
   });
 
   it('writes direct mode and the talker-alias text bit for the channel timeslot', () => {
