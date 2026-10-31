@@ -1,7 +1,8 @@
 /**
  * Project an assembled build into a headerless open-firmware codeplug image.
  * Bytes outside the records written here stay 0xFF, except the zone table, which
- * is zeroed so slot 0 cannot be read as the 16-channel layout.
+ * is zeroed so slot 0 cannot be read as the 16-channel layout. The contact
+ * table is filled out to its cap; an unused slot is the empty record.
  */
 
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -91,10 +92,6 @@ export function radioFoundryPowerByte(percent: number | null): number {
 
 function markOwned(owned: Uint8Array, offset: number, length: number): void {
   owned.fill(1, offset, offset + length);
-}
-
-function releaseOwned(owned: Uint8Array, offset: number, length: number): void {
-  owned.fill(0, offset, offset + length);
 }
 
 export function serialiseRadioFoundryCodeplug(
@@ -231,11 +228,14 @@ function writeChannelRecord(
   const label = row.wireName || entity.name;
   const slot = channelSlotAddress(channel.number);
   markOwned(owned, slot.record, CHANNEL_RECORD_SIZE);
-  releaseOwned(owned, slot.record + 0x1b, 1);
-  releaseOwned(owned, slot.record + 0x25, 1);
-  releaseOwned(owned, slot.record + 0x2a, 1);
   const record = image.subarray(slot.record, slot.record + CHANNEL_RECORD_SIZE);
   record.fill(0);
+  // The whole record is sent. Unmodelled fields stay 0: the radio uses its
+  // own TX timeout, SFR is off, beep and power saving stay on, and roaming,
+  // out of band, VOX, talkaround, and the vendor power and squelch bits stay
+  // off. There is no APRS configuration. Talker-alias APRS bits stay clear,
+  // flag2 holds only the timeslot, STE is off, and the VFO offset and step
+  // are zero.
   writeAsciiField(record, 0, row.wireName || entity.name, LIMITS.NAME_MAX, 'Channel', warnings);
   writeFrequency(record, 0x10, entity.rxFrequency, label, 'RX', warnings);
   writeFrequency(record, 0x14, entity.txFrequency ?? entity.rxFrequency, label, 'TX', warnings);
@@ -495,6 +495,12 @@ function writeContacts(
   assembled: AssembledBuild,
   warnings: ExportWarning[],
 ): Map<string, number> {
+  // A scan of this table still sees a slot whose first byte is not 0xFF.
+  // Own every slot. Unused ones are the empty record the firmware writes
+  // when it deletes a contact: 0xFF throughout.
+  const tableBytes = LIMITS.CONTACTS_MAX * CONTACT_RECORD_SIZE;
+  image.fill(0xff, CONTACT_BASE, CONTACT_BASE + tableBytes);
+  markOwned(owned, CONTACT_BASE, tableBytes);
   const contacts = collectContacts(assembled, warnings);
   if (contacts.length > LIMITS.CONTACTS_MAX) {
     const dropped = contacts.length - LIMITS.CONTACTS_MAX;
@@ -583,6 +589,9 @@ function writeRxLists(
 ): void {
   image.fill(0, RX_LIST_LENGTH, RX_LIST_LENGTH + RX_LIST_LENGTH_SIZE);
   markOwned(owned, RX_LIST_LENGTH, RX_LIST_LENGTH_SIZE);
+  // Length 0 (or 0xFF) is unused. The firmware returns before it reads the
+  // list record in that case, and deleting a list writes only this byte.
+  // The record itself stays unowned.
   const lists = assembled.rxGroupLists.slice(0, LIMITS.RX_GROUPS_MAX);
   if (assembled.rxGroupLists.length > LIMITS.RX_GROUPS_MAX) {
     const dropped = assembled.rxGroupLists.length - LIMITS.RX_GROUPS_MAX;
@@ -645,6 +654,8 @@ function writeZones(
   channelNumbers: Map<string, number>,
   warnings: ExportWarning[],
 ): void {
+  // Bitmap and every record, including unused slots. An unused slot is the
+  // zeroed empty record. The firmware counts zones from the bitmap.
   const zoneBytes = ZONE_BITMAP_SIZE + LIMITS.ZONE_MAX * ZONE_RECORD_SIZE;
   image.fill(0, ZONE_BITMAP, ZONE_BITMAP + zoneBytes);
   markOwned(owned, ZONE_BITMAP, zoneBytes);
@@ -724,6 +735,8 @@ function contactKey(ref: EntityRef): string {
 }
 
 function zeroChannelBitmaps(image: Uint8Array, owned: Uint8Array): void {
+  // A channel record is empty when its in-use bit is clear. Own the bitmaps
+  // and leave unused record bodies alone.
   const banks = LIMITS.CHANNEL_MAX / CHANNELS_PER_BANK;
   for (let bank = 0; bank < banks; bank++) {
     const slot = channelSlotAddress(bank * CHANNELS_PER_BANK + 1);

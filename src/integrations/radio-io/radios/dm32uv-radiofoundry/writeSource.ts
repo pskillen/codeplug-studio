@@ -3,7 +3,8 @@
  * mask of addresses that serialiser stored. The DMR ID database is added only
  * when the write source includes the directory. Private contacts stay in the
  * contact table the serialiser already fills; leaving them out clears their
- * ownership and does not blank the table.
+ * ownership so those slots stay as the radio had them. Unused slots stay
+ * owned and empty.
  */
 
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
@@ -44,7 +45,8 @@ export interface Dm32RadioFoundryWriteSource {
 export interface RadioFoundryCableWriteOptions {
   /**
    * Private contacts from the assembled build. Default keeps them.
-   * False releases their ownership so the radio's contact slots stay.
+   * False releases ownership of those records so the radio's bytes stay.
+   * Unused contact slots are still written empty.
    */
   includeLibraryContacts?: boolean;
   /** ID-directory rows. Omitted or empty leaves 0x50000 unowned. */

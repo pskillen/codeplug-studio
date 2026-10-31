@@ -44,7 +44,6 @@ import {
   DMR_ID_DATABASE_IMAGE_END,
   dmrIdDatabaseArea2Blocks,
 } from './idDatabase.ts';
-import { channelKeptBits } from '@core/import-export/formats/radiofoundry/layout.ts';
 import { decodeBlock, encodeBlock } from './lz4.ts';
 import {
   ownedPrivateContactBlocks,
@@ -547,11 +546,6 @@ function mergeBlock(
   const n = Math.min(BLOCK_SIZE, source.bytes.length - addr);
   for (let i = 0; i < n; i += 1) {
     if (source.owned[addr + i]) want[i] = source.bytes[addr + i]!;
-  }
-  for (let i = 0; i < n; i += 1) {
-    const keep = channelKeptBits(addr + i);
-    if (keep === 0) continue;
-    want[i] = (radio[i]! & keep) | (want[i]! & ~keep);
   }
   return want;
 }

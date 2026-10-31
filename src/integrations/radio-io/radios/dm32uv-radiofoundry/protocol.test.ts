@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newChannel, newDigitalContact, newOwnDigitalId } from '@core/domain/factories.ts';
 import {
   CONTACT_BASE,
+  CONTACT_RECORD_SIZE,
   channelSlotAddress,
 } from '@core/import-export/formats/radiofoundry/layout.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
@@ -415,16 +416,42 @@ describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
     expect(rec.events.some((event) => event.msg === 'No contact blocks changed')).toBe(true);
   });
 
-  it('does not clear the contact table when library contacts are off', async () => {
+  it('leaves a private contact slot as the radio had it when library contacts are off', async () => {
     const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
       includeLibraryContacts: false,
     });
+    const next = CONTACT_BASE + CONTACT_RECORD_SIZE;
     expect(source.owned[CONTACT_BASE]).toBe(0);
+    expect(source.owned[next]).toBe(1);
+    expect(source.bytes[next]).toBe(0xff);
     const pipe = new ScriptedPipe(0x5a);
     await uploadSource(pipe, source);
     const block = CONTACT_BASE & ~(BLOCK_SIZE - 1);
-    expect(writtenBlockAddresses(pipe).some((addr) => covers(addr, CONTACT_BASE))).toBe(false);
-    expect(pipe.block(block)[CONTACT_BASE - block]).toBe(0x5a);
+    const written = pipe.block(block);
+    for (let i = 0; i < CONTACT_RECORD_SIZE; i += 1) {
+      expect(written[CONTACT_BASE - block + i]).toBe(0x5a);
+      expect(written[next - block + i]).toBe(0xff);
+    }
+  });
+
+  it('owns and empties the contact slot after the last written contact', async () => {
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
+      includeLibraryContacts: true,
+    });
+    const next = CONTACT_BASE + CONTACT_RECORD_SIZE;
+    for (let i = 0; i < CONTACT_RECORD_SIZE; i += 1) {
+      expect(source.owned[next + i]).toBe(1);
+      expect(source.bytes[next + i]).toBe(0xff);
+    }
+    const pipe = new ScriptedPipe(0x5a);
+    await uploadSource(pipe, source);
+    const block = CONTACT_BASE & ~(BLOCK_SIZE - 1);
+    const written = pipe.block(block);
+    expect(written[CONTACT_BASE - block]).toBe('A'.charCodeAt(0));
+    expect(written[CONTACT_BASE - block - 1]).toBe(0x5a);
+    for (let i = 0; i < CONTACT_RECORD_SIZE; i += 1) {
+      expect(written[next - block + i]).toBe(0xff);
+    }
   });
 
   it('writes one directory row at 0x50000 and leaves that address alone when the directory is off', async () => {
@@ -504,7 +531,7 @@ describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
     ]);
   });
 
-  it('keeps the timeout, SFR, no-beep, and VOX while writing receive-only', async () => {
+  it('replaces timeout, SFR, no-beep, and VOX when writing a channel', async () => {
     const entity = {
       ...newChannel('p', 'Local'),
       rxFrequency: 145_500_000,
@@ -525,8 +552,8 @@ describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
       channels: [{ entity, wireName: 'Local' }],
     });
     const record = channelSlotAddress(1).record;
-    expect(source.owned[record + 0x1b]).toBe(0);
-    expect(source.owned[record + 0x25]).toBe(0);
+    for (let i = 0; i < 56; i += 1) expect(source.owned[record + i]).toBe(1);
+    expect(source.owned[channelSlotAddress(2).record]).toBe(0);
     const pipe = new ScriptedPipe(0x00);
     const blockAddr = record & ~(BLOCK_SIZE - 1);
     const prior = pipe.block(blockAddr);
@@ -534,15 +561,31 @@ describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
     prior[at(0x1b)] = 0x04;
     prior[at(0x25)] = 0xaa;
     prior[at(0x2a)] = 0x5a;
-    prior[at(0x26)] = 0x63;
-    prior[at(0x33)] = 0x40;
+    prior[at(0x26)] = 0x73;
+    prior[at(0x2d)] = 0x02;
+    prior[at(0x30)] = 0xf5;
+    prior[at(0x31)] = 0xbf;
+    prior[at(0x32)] = 0xe0;
+    prior[at(0x33)] = 0xc9;
+    prior[at(0x34)] = 0x11;
+    prior[at(0x35)] = 0x22;
+    prior[at(0x36)] = 0x30;
     await uploadSource(pipe, source);
     const written = pipe.block(blockAddr);
-    expect(written[at(0x1b)]).toBe(0x04);
-    expect(written[at(0x25)]).toBe(0xaa);
-    expect(written[at(0x2a)]).toBe(0x5a);
-    expect(written[at(0x26)]! & 0x63).toBe(0x63);
-    expect(written[at(0x33)]! & 0x40).toBe(0x40);
+    expect(written[at(0x1b)]).toBe(0);
+    expect(written[at(0x25)]).toBe(0);
+    expect(written[at(0x2a)]).toBe(0);
+    expect(written[at(0x26)]! & 0x73).toBe(0);
+    expect(written[at(0x2d)]).toBe(0);
+    expect(written[at(0x30)]! & 0xf5).toBe(0);
+    expect(written[at(0x31)]! & 0xbf).toBe(0);
+    expect(written[at(0x32)]).toBe(0);
+    expect(written[at(0x33)]! & 0xc9).toBe(0);
     expect(written[at(0x33)]! & 0x04).toBe(0x04);
+    expect(written[at(0x34)]).toBe(0);
+    expect(written[at(0x35)]).toBe(0);
+    expect(written[at(0x36)]).toBe(0);
+    const next = channelSlotAddress(2).record - blockAddr;
+    expect(written[next]).toBe(0x00);
   });
 });
