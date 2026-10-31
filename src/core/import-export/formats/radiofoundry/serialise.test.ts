@@ -123,6 +123,30 @@ describe('serialiseRadioFoundryCodeplug', () => {
     expect(owned[secondChannel.record]).toBe(0);
   });
 
+  it('writes FM CTCSS and DCS, and drops a tone the radio would ignore', () => {
+    const channel = fmChannel('Local');
+    const profile = channel.entity.modeProfiles[0];
+    if (profile?.mode !== 'fm') throw new Error('expected an FM profile');
+    profile.rxTone = '88.5';
+    profile.txTone = 'D023N';
+    const written = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    const record = channelSlotAddress(1).record;
+    expect([written.bytes[record + 0x20], written.bytes[record + 0x21]]).toEqual([0x85, 0x08]);
+    expect([written.bytes[record + 0x22], written.bytes[record + 0x23]]).toEqual([0x23, 0x80]);
+    expect(written.warnings).toEqual([]);
+
+    profile.rxTone = 'D023I';
+    profile.txTone = '12.5';
+    const dropped = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    expect([dropped.bytes[record + 0x20], dropped.bytes[record + 0x21]]).toEqual([0x23, 0xc0]);
+    expect([dropped.bytes[record + 0x22], dropped.bytes[record + 0x23]]).toEqual([0xff, 0xff]);
+    expect(dropped.warnings.map(formatExportWarning).join('\n')).toMatch(/TX tone 12.5/);
+
+    profile.txTone = 'D023P';
+    const positive = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    expect([positive.bytes[record + 0x22], positive.bytes[record + 0x23]]).toEqual([0x23, 0xc0]);
+  });
+
   it('truncates a 17th name character and warns', () => {
     const name = 'ABCDEFGHIJKLMNOPQ';
     const { bytes, warnings } = serialiseRadioFoundryCodeplug(

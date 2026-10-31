@@ -26,6 +26,7 @@ References on the wire are 1-based indexes assigned at export. Names are labels,
 - Power: null writes 0 (the radio's own default). A percent from 1 to 100 is split into nine equal steps and written as step + 1 (1 through 9). The watt value of each step is unmeasured.
 - Bandwidth: 25 kHz sets the bit. 12.5 kHz clears it. Any other value is written as 12.5 kHz, with a warning.
 - Squelch percent maps onto 0–21. Null writes 0.
+- FM RX and TX tones. None is `0xFFFF`. CTCSS is BCD tenths of Hz (88.5 Hz is `0x0885`). DCS sets bit 15, and bit 14 when inverted (`D023N` is `0x8023`, `D023I` and `D023P` are `0xC023`). A tone the radio would ignore is written as none, with a warning.
 - Frequencies are BCD of 10 Hz units, stored as a little-endian 32-bit word. A frequency outside 136–174 MHz and 400–480 MHz is a warning, not a failed export.
 
 ## What is read
@@ -47,7 +48,6 @@ Contact byte 0x17 equal to `0x01` means no timeslot override. The library has no
 Left as `0xFF`, with no records written:
 
 - DMR ID database, LUCZ, APRS, boot text, VFOs, quick keys
-- CTCSS/DCS (tone bytes are `0xFFFF`)
 - DTMF / analog contacts
 - Scan lists. Each scan list produces a warning. Studio does not add a carrier channel, does not run repeater-times-talk-group expansion, and does not clone talk groups per timeslot.
 

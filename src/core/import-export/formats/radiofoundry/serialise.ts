@@ -250,6 +250,8 @@ function writeAnalogChannel(
 ): void {
   record[0x37] = squelchByte(profile.squelch);
   writeBandwidth(record, profile.bandwidthKHz, label, warnings);
+  writeTone(record, 0x20, profile.rxTone, 'RX', label, warnings);
+  writeTone(record, 0x22, profile.txTone, 'TX', label, warnings);
 }
 
 function writeDmrChannel(
@@ -364,6 +366,52 @@ function writeFrequency(
 
 function inBand(hz: number): boolean {
   return (hz >= VHF_MIN_HZ && hz <= VHF_MAX_HZ) || (hz >= UHF_MIN_HZ && hz <= UHF_MAX_HZ);
+}
+
+/**
+ * Open-firmware tone word. 0xFFFF is none. CTCSS is BCD tenths of Hz
+ * (88.5 Hz is 0x0885). DCS sets bit 15, bit 14 when inverted, and stores the
+ * octal digits as hex digits (D023N is 0x8023, D023I is 0xC023).
+ */
+function writeTone(
+  record: Uint8Array,
+  offset: number,
+  tone: string,
+  which: 'RX' | 'TX',
+  label: string,
+  warnings: ExportWarning[],
+): void {
+  const word = toneWord(tone);
+  if (word == null) {
+    pushGeneralWarning(
+      warnings,
+      `Channel "${label}" ${which} tone ${tone} cannot be stored and was written as none.`,
+    );
+    record[offset] = 0xff;
+    record[offset + 1] = 0xff;
+    return;
+  }
+  record[offset] = word & 0xff;
+  record[offset + 1] = (word >> 8) & 0xff;
+}
+
+function toneWord(tone: string): number | null {
+  const text = tone.trim();
+  if (!text || text === '—' || text.toLowerCase() === 'none') return 0xffff;
+  const dcs = /^D(\d{1,3})([NPI]?)$/i.exec(text);
+  if (dcs) {
+    const digits = dcs[1]!.padStart(3, '0');
+    if ([...digits].some((digit) => digit > '7')) return null;
+    const inverted = dcs[2]?.toUpperCase() === 'I' || dcs[2]?.toUpperCase() === 'P';
+    return Number.parseInt(digits, 16) | 0x8000 | (inverted ? 0x4000 : 0);
+  }
+  const hz = Number.parseFloat(text);
+  if (!Number.isFinite(hz) || hz <= 0) return null;
+  const tenths = Math.round(hz * 10);
+  if (tenths < 300 || tenths > 3000) return null;
+  const bcd = tenths.toString(10).padStart(4, '0');
+  if (bcd.length > 4) return null;
+  return Number.parseInt(bcd, 16);
 }
 
 function squelchByte(percent: number | null): number {
