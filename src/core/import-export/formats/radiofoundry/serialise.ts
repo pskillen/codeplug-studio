@@ -1,9 +1,17 @@
 /**
  * Project an assembled build into a headerless open-firmware codeplug image.
  * Bytes outside the records written here stay 0xFF, except the zone table, which
- * is zeroed so slot 0 cannot be read as the 16-channel layout.
+ * is zeroed so slot 0 cannot be read as the 16-channel layout. The contact
+ * table is filled out to its cap; an unused slot is the empty record.
  */
 
+import type { CpsExportOptions } from '@core/import-export/types.ts';
+import {
+  resolveEffectiveForbidTransmit,
+  resolveEffectiveSendTalkerAlias,
+} from '@core/import-export/channelBehaviourDefaults/resolve.ts';
+import { resolveChannelScanInclusionForExport } from '@core/import-export/scanInclusion/resolve.ts';
+import { resolveDmrOperatingMode } from '@core/domain/dmrOperatingMode.ts';
 import type { AssembledBuild, AssembledChannel, AssembledZone } from '@core/services/assemble.ts';
 import type {
   ChannelModeProfileAnalog,
@@ -86,7 +94,10 @@ function markOwned(owned: Uint8Array, offset: number, length: number): void {
   owned.fill(1, offset, offset + length);
 }
 
-export function serialiseRadioFoundryCodeplug(assembled: AssembledBuild): RadioFoundryImage {
+export function serialiseRadioFoundryCodeplug(
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+): RadioFoundryImage {
   const warnings: ExportWarning[] = [];
   const radio = requireDefaultDmrId(assembled.ownDigitalIds);
   const image = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
@@ -96,7 +107,7 @@ export function serialiseRadioFoundryCodeplug(assembled: AssembledBuild): RadioF
   writeRadioIdentity(image, owned, radio, warnings);
   const contacts = writeContacts(image, owned, assembled, warnings);
   writeRxLists(image, owned, assembled, contacts, warnings);
-  const channels = writeChannels(image, owned, assembled, radio, contacts, warnings);
+  const channels = writeChannels(image, owned, assembled, radio, contacts, warnings, options);
   writeZones(image, owned, assembled, channels, warnings);
   warnScanLists(assembled, warnings);
 
@@ -143,6 +154,7 @@ function writeChannels(
   radio: OwnDigitalId,
   contacts: Map<string, number>,
   warnings: ExportWarning[],
+  options: CpsExportOptions | undefined,
 ): Map<string, number> {
   zeroChannelBitmaps(image, owned);
   const pending: Array<{ row: AssembledChannel; mode: KeptMode }> = [];
@@ -164,7 +176,7 @@ function writeChannels(
   for (const item of pending) {
     const channel: KeptChannel = { ...item, number: numbers.size + 1 };
     numbers.set(channel.row.entity.id, channel.number);
-    writeChannelRecord(image, owned, channel, assembled, radio, contacts, warnings);
+    writeChannelRecord(image, owned, channel, assembled, radio, contacts, warnings, options);
     markInUse(image, channel.number);
   }
   return numbers;
@@ -209,6 +221,7 @@ function writeChannelRecord(
   radio: OwnDigitalId,
   contacts: Map<string, number>,
   warnings: ExportWarning[],
+  options: CpsExportOptions | undefined,
 ): void {
   const { row, mode } = channel;
   const entity = row.entity;
@@ -217,6 +230,12 @@ function writeChannelRecord(
   markOwned(owned, slot.record, CHANNEL_RECORD_SIZE);
   const record = image.subarray(slot.record, slot.record + CHANNEL_RECORD_SIZE);
   record.fill(0);
+  // The whole record is sent. Unmodelled fields stay 0: the radio uses its
+  // own TX timeout, SFR is off, beep and power saving stay on, and roaming,
+  // out of band, VOX, talkaround, and the vendor power and squelch bits stay
+  // off. There is no APRS configuration. Talker-alias APRS bits stay clear,
+  // flag2 holds only the timeslot, STE is off, and the VFO offset and step
+  // are zero.
   writeAsciiField(record, 0, row.wireName || entity.name, LIMITS.NAME_MAX, 'Channel', warnings);
   writeFrequency(record, 0x10, entity.rxFrequency, label, 'RX', warnings);
   writeFrequency(record, 0x14, entity.txFrequency ?? entity.rxFrequency, label, 'TX', warnings);
@@ -238,8 +257,9 @@ function writeChannelRecord(
   if (profile?.mode === 'fm') {
     writeAnalogChannel(record, profile, label, warnings);
   } else if (profile?.mode === 'dmr') {
-    writeDmrChannel(record, profile, label, assembled, radio, contacts, warnings);
+    writeDmrChannel(record, profile, label, entity, assembled, radio, contacts, warnings, options);
   }
+  writeSharedChannelFields(record, channel, options);
 }
 
 function writeAnalogChannel(
@@ -250,16 +270,56 @@ function writeAnalogChannel(
 ): void {
   record[0x37] = squelchByte(profile.squelch);
   writeBandwidth(record, profile.bandwidthKHz, label, warnings);
+  writeTone(record, 0x20, profile.rxTone, 'RX', label, warnings);
+  writeTone(record, 0x22, profile.txTone, 'TX', label, warnings);
+}
+
+function writeSharedChannelFields(
+  record: Uint8Array,
+  channel: KeptChannel,
+  options: CpsExportOptions | undefined,
+): void {
+  const entity = channel.row.entity;
+  if (resolveEffectiveForbidTransmit(entity, options?.channelBehaviourContext) === 'forbid') {
+    record[0x33] |= 0x04;
+  }
+  const scan = resolveChannelScanInclusionForExport(entity, channel.row.scanInclusionOverride, {
+    buildDefault: options?.defaultScanInclusion,
+    formatDefault: 'scan',
+  });
+  if (scan === 'skip') record[0x33] |= 0x30;
+  if (!entity.useLocation || entity.location == null) return;
+  const lat = encodeCoordinate(entity.location.lat);
+  const lon = encodeCoordinate(entity.location.lon);
+  record[0x1a] = lat & 0xff;
+  record[0x1c] = (lat >> 8) & 0xff;
+  record[0x1d] = (lat >> 16) & 0xff;
+  record[0x1e] = lon & 0xff;
+  record[0x1f] = (lon >> 8) & 0xff;
+  record[0x24] = (lon >> 16) & 0xff;
+  record[0x26] |= 0x08;
+}
+
+/** 24-bit fixed coordinate: sign, whole degrees, then 1/10000 degree. */
+function encodeCoordinate(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  const sign = value < 0 ? 0x800000 : 0;
+  const abs = Math.abs(value);
+  const degrees = Math.min(255, Math.floor(abs));
+  const fraction = Math.min(9999, Math.round((abs - degrees) * 10000));
+  return sign | (degrees << 15) | fraction;
 }
 
 function writeDmrChannel(
   record: Uint8Array,
   profile: ChannelModeProfileDMR,
   label: string,
+  entity: KeptChannel['row']['entity'],
   assembled: AssembledBuild,
   radio: OwnDigitalId,
   contacts: Map<string, number>,
   warnings: ExportWarning[],
+  options: CpsExportOptions | undefined,
 ): void {
   const color = profile.colourCode ?? 0;
   const storedColor = color >= 0 && color <= 15 ? color : 0;
@@ -271,6 +331,10 @@ function writeDmrChannel(
     );
   }
   if (profile.timeslot === 2) record[0x31] = 0x40;
+  if (resolveDmrOperatingMode(entity) === 'dmo-simplex') record[0x26] |= 0x04;
+  if (resolveEffectiveSendTalkerAlias(profile, options?.channelBehaviourContext) === 'on') {
+    record[0x30] |= profile.timeslot === 2 ? 0x08 : 0x02;
+  }
   const contact =
     profile.contactRef == null ? 0 : (contacts.get(contactKey(profile.contactRef)) ?? 0);
   record[0x2e] = contact & 0xff;
@@ -366,6 +430,52 @@ function inBand(hz: number): boolean {
   return (hz >= VHF_MIN_HZ && hz <= VHF_MAX_HZ) || (hz >= UHF_MIN_HZ && hz <= UHF_MAX_HZ);
 }
 
+/**
+ * Open-firmware tone word. 0xFFFF is none. CTCSS is BCD tenths of Hz
+ * (88.5 Hz is 0x0885). DCS sets bit 15, bit 14 when inverted, and stores the
+ * octal digits as hex digits (D023N is 0x8023, D023I is 0xC023).
+ */
+function writeTone(
+  record: Uint8Array,
+  offset: number,
+  tone: string,
+  which: 'RX' | 'TX',
+  label: string,
+  warnings: ExportWarning[],
+): void {
+  const word = toneWord(tone);
+  if (word == null) {
+    pushGeneralWarning(
+      warnings,
+      `Channel "${label}" ${which} tone ${tone} cannot be stored and was written as none.`,
+    );
+    record[offset] = 0xff;
+    record[offset + 1] = 0xff;
+    return;
+  }
+  record[offset] = word & 0xff;
+  record[offset + 1] = (word >> 8) & 0xff;
+}
+
+function toneWord(tone: string): number | null {
+  const text = tone.trim();
+  if (!text || text === '—' || text.toLowerCase() === 'none') return 0xffff;
+  const dcs = /^D(\d{1,3})([NPI]?)$/i.exec(text);
+  if (dcs) {
+    const digits = dcs[1]!.padStart(3, '0');
+    if ([...digits].some((digit) => digit > '7')) return null;
+    const inverted = dcs[2]?.toUpperCase() === 'I' || dcs[2]?.toUpperCase() === 'P';
+    return Number.parseInt(digits, 16) | 0x8000 | (inverted ? 0x4000 : 0);
+  }
+  const hz = Number.parseFloat(text);
+  if (!Number.isFinite(hz) || hz <= 0) return null;
+  const tenths = Math.round(hz * 10);
+  if (tenths < 300 || tenths > 3000) return null;
+  const bcd = tenths.toString(10).padStart(4, '0');
+  if (bcd.length > 4) return null;
+  return Number.parseInt(bcd, 16);
+}
+
 function squelchByte(percent: number | null): number {
   if (percent == null || !Number.isFinite(percent)) return 0;
   const clamped = Math.min(100, Math.max(0, percent));
@@ -385,6 +495,12 @@ function writeContacts(
   assembled: AssembledBuild,
   warnings: ExportWarning[],
 ): Map<string, number> {
+  // A scan of this table still sees a slot whose first byte is not 0xFF.
+  // Own every slot. Unused ones are the empty record the firmware writes
+  // when it deletes a contact: 0xFF throughout.
+  const tableBytes = LIMITS.CONTACTS_MAX * CONTACT_RECORD_SIZE;
+  image.fill(0xff, CONTACT_BASE, CONTACT_BASE + tableBytes);
+  markOwned(owned, CONTACT_BASE, tableBytes);
   const contacts = collectContacts(assembled, warnings);
   if (contacts.length > LIMITS.CONTACTS_MAX) {
     const dropped = contacts.length - LIMITS.CONTACTS_MAX;
@@ -473,6 +589,9 @@ function writeRxLists(
 ): void {
   image.fill(0, RX_LIST_LENGTH, RX_LIST_LENGTH + RX_LIST_LENGTH_SIZE);
   markOwned(owned, RX_LIST_LENGTH, RX_LIST_LENGTH_SIZE);
+  // Length 0 (or 0xFF) is unused. The firmware returns before it reads the
+  // list record in that case, and deleting a list writes only this byte.
+  // The record itself stays unowned.
   const lists = assembled.rxGroupLists.slice(0, LIMITS.RX_GROUPS_MAX);
   if (assembled.rxGroupLists.length > LIMITS.RX_GROUPS_MAX) {
     const dropped = assembled.rxGroupLists.length - LIMITS.RX_GROUPS_MAX;
@@ -535,6 +654,8 @@ function writeZones(
   channelNumbers: Map<string, number>,
   warnings: ExportWarning[],
 ): void {
+  // Bitmap and every record, including unused slots. An unused slot is the
+  // zeroed empty record. The firmware counts zones from the bitmap.
   const zoneBytes = ZONE_BITMAP_SIZE + LIMITS.ZONE_MAX * ZONE_RECORD_SIZE;
   image.fill(0, ZONE_BITMAP, ZONE_BITMAP + zoneBytes);
   markOwned(owned, ZONE_BITMAP, zoneBytes);
@@ -614,6 +735,8 @@ function contactKey(ref: EntityRef): string {
 }
 
 function zeroChannelBitmaps(image: Uint8Array, owned: Uint8Array): void {
+  // A channel record is empty when its in-use bit is clear. Own the bitmaps
+  // and leave unused record bodies alone.
   const banks = LIMITS.CHANNEL_MAX / CHANNELS_PER_BANK;
   for (let bank = 0; bank < banks; bank++) {
     const slot = channelSlotAddress(bank * CHANNELS_PER_BANK + 1);

@@ -13,6 +13,7 @@ import {
   isRt95RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
 import { resolveAtD890ScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
+import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import {
   isRadioCloneHydrationBag,
@@ -560,6 +561,12 @@ export async function prepareRadioWriteImage(
           directoryRows: radioFoundryOptions?.includeDigitalIdDirectory
             ? directorySlice.digitalContacts
             : [],
+          exportOptions: mergeExportOptions(
+            build,
+            egress.formatId,
+            { profileId: egress.profileId },
+            library,
+          ),
         })
       : undefined;
 

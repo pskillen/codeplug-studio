@@ -26,6 +26,13 @@ References on the wire are 1-based indexes assigned at export. Names are labels,
 - Power: null writes 0 (the radio's own default). A percent from 1 to 100 is split into nine equal steps and written as step + 1 (1 through 9). The watt value of each step is unmeasured.
 - Bandwidth: 25 kHz sets the bit. 12.5 kHz clears it. Any other value is written as 12.5 kHz, with a warning.
 - Squelch percent maps onto 0–21. Null writes 0.
+- FM RX and TX tones. None is `0xFFFF`. CTCSS is BCD tenths of Hz (88.5 Hz is `0x0885`). DCS sets bit 15, and bit 14 when inverted (`D023N` is `0x8023`, `D023I` and `D023P` are `0xC023`). A tone the radio would ignore is written as none, with a warning.
+- Receive-only, from the channel's transmit setting. Scan skip sets both scan-skip bits; otherwise both are clear. A fixed location is the 24-bit coordinate and its flag. A DMR channel in direct mode sets that flag. Talker alias sets the text bit for the channel's timeslot. The APRS bits in that byte stay clear.
+- A written channel slot replaces all 56 bytes. Fields the library does not model are zero, which means the radio uses its own TX timeout, SFR is off, beep is on, power saving is on, the channel is not roaming or out of band, VOX and talkaround are off, the vendor power and squelch bits are clear, there is no APRS configuration, talker-alias APRS bits are clear, flag 2 holds only the timeslot, STE is off, and the VFO offset and step are zero. APRS itself is not written. A cable write sends those zeros. It does not keep the radio's previous bytes in that slot.
+- Unused channel records are not written. A channel is empty when its in-use bit is clear, and those bitmaps are cleared and owned.
+- The contact table is fully replaced, up to the contact cap. An unused slot is `0xFF` throughout, which the firmware treats as empty. A later slot does not keep a contact that used to sit there.
+- An RX list is unused when its length-table byte is 0. That byte is owned. The list record is not written: the firmware does not read it when the length is 0. A list that has members is replaced in full.
+- Zones: the bitmap and every zone record are owned. Unused zone slots are the zeroed empty record.
 - Frequencies are BCD of 10 Hz units, stored as a little-endian 32-bit word. A frequency outside 136–174 MHz and 400–480 MHz is a warning, not a failed export.
 
 ## What is read
@@ -47,7 +54,6 @@ Contact byte 0x17 equal to `0x01` means no timeslot override. The library has no
 Left as `0xFF`, with no records written:
 
 - DMR ID database, LUCZ, APRS, boot text, VFOs, quick keys
-- CTCSS/DCS (tone bytes are `0xFFFF`)
 - DTMF / analog contacts
 - Scan lists. Each scan list produces a warning. Studio does not add a carrier channel, does not run repeater-times-talk-group expansion, and does not clone talk groups per timeslot.
 

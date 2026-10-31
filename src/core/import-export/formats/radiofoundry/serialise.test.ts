@@ -11,7 +11,13 @@ import type { Channel, OwnDigitalId, TalkGroup } from '@core/models/library.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { exportBuildBinary, exportBuildZip } from '@core/services/exportBuild.ts';
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
-import { channelSlotAddress } from './layout.ts';
+import {
+  CONTACT_BASE,
+  CONTACT_RECORD_SIZE,
+  RX_LIST_BASE,
+  RX_LIST_LENGTH,
+  channelSlotAddress,
+} from './layout.ts';
 import { serialiseRadioFoundryCodeplug, radioFoundryPowerByte } from './serialise.ts';
 
 const LIMITS = DM32UV_RADIOFOUNDRY_LIMITS;
@@ -119,8 +125,114 @@ describe('serialiseRadioFoundryCodeplug', () => {
     expect(bytes[0x3790 + 0x20]).toBe(0xff);
     expect(owned[0x15000]).toBe(0);
     expect(bytes[0x15000]).toBe(0xff);
+    expect(owned[0x00ec]).toBe(0);
     const secondChannel = channelSlotAddress(2);
     expect(owned[secondChannel.record]).toBe(0);
+    expect(owned[0x8010]).toBe(1);
+    expect(bytes[0x8010]).toBe(0);
+    expect(owned[0x80e0]).toBe(1);
+    expect(bytes[0x80e0]).toBe(0);
+    expect(owned[RX_LIST_LENGTH]).toBe(1);
+    expect(bytes[RX_LIST_LENGTH]).toBe(0);
+    expect(owned[RX_LIST_BASE]).toBe(0);
+  });
+
+  it('writes FM CTCSS and DCS, and drops a tone the radio would ignore', () => {
+    const channel = fmChannel('Local');
+    const profile = channel.entity.modeProfiles[0];
+    if (profile?.mode !== 'fm') throw new Error('expected an FM profile');
+    profile.rxTone = '88.5';
+    profile.txTone = 'D023N';
+    const written = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    const record = channelSlotAddress(1).record;
+    expect([written.bytes[record + 0x20], written.bytes[record + 0x21]]).toEqual([0x85, 0x08]);
+    expect([written.bytes[record + 0x22], written.bytes[record + 0x23]]).toEqual([0x23, 0x80]);
+    expect(written.warnings).toEqual([]);
+
+    profile.rxTone = 'D023I';
+    profile.txTone = '12.5';
+    const dropped = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    expect([dropped.bytes[record + 0x20], dropped.bytes[record + 0x21]]).toEqual([0x23, 0xc0]);
+    expect([dropped.bytes[record + 0x22], dropped.bytes[record + 0x23]]).toEqual([0xff, 0xff]);
+    expect(dropped.warnings.map(formatExportWarning).join('\n')).toMatch(/TX tone 12.5/);
+
+    profile.txTone = 'D023P';
+    const positive = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    expect([positive.bytes[record + 0x22], positive.bytes[record + 0x23]]).toEqual([0x23, 0xc0]);
+  });
+
+  it('writes receive-only, scan skip, and a fixed location, and owns the timeout and SFR bytes', () => {
+    const channel = fmChannel('Local');
+    channel.entity.forbidTransmit = 'forbid';
+    channel.entity.scanInclusion = 'skip';
+    channel.entity.useLocation = true;
+    channel.entity.location = { lat: 55.95, lon: -3.2 };
+    const { bytes, owned } = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    const record = channelSlotAddress(1).record;
+    expect(bytes[record + 0x33]! & 0x04).toBe(0x04);
+    expect(bytes[record + 0x33]! & 0x30).toBe(0x30);
+    expect(bytes[record + 0x33]! & 0xc9).toBe(0);
+    expect(bytes[record + 0x26]! & 0x08).toBe(0x08);
+    expect(bytes[record + 0x26]! & 0x73).toBe(0);
+    expect([bytes[record + 0x1a], bytes[record + 0x1c], bytes[record + 0x1d]]).toEqual([
+      0x1c, 0xa5, 0x1b,
+    ]);
+    expect([bytes[record + 0x1e], bytes[record + 0x1f], bytes[record + 0x24]]).toEqual([
+      0xd0, 0x87, 0x81,
+    ]);
+    expect(owned[record + 0x1b]).toBe(1);
+    expect(bytes[record + 0x1b]).toBe(0);
+    expect(owned[record + 0x25]).toBe(1);
+    expect(bytes[record + 0x25]).toBe(0);
+    expect(owned[record + 0x2a]).toBe(1);
+    expect(bytes[record + 0x2a]).toBe(0);
+    expect(bytes[record + 0x2d]).toBe(0);
+    expect(bytes[record + 0x30]! & 0xf5).toBe(0);
+    expect(bytes[record + 0x32]).toBe(0);
+    expect(bytes[record + 0x34]).toBe(0);
+    expect(bytes[record + 0x36]).toBe(0);
+    for (let i = 0; i < 56; i += 1) expect(owned[record + i]).toBe(1);
+  });
+
+  it('owns every contact slot and writes the one after the last contact as empty', () => {
+    const talkGroup = newTalkGroup('p', 'Town', 9);
+    const { bytes, owned } = serialiseRadioFoundryCodeplug(
+      assembled({ talkGroups: [{ entity: talkGroup, wireName: talkGroup.name }] }),
+    );
+    const next = CONTACT_BASE + CONTACT_RECORD_SIZE;
+    const last = CONTACT_BASE + (LIMITS.CONTACTS_MAX - 1) * CONTACT_RECORD_SIZE;
+    expect(owned[CONTACT_BASE]).toBe(1);
+    expect(bytes[CONTACT_BASE]).toBe('T'.charCodeAt(0));
+    for (const offset of [next, last]) {
+      for (let i = 0; i < CONTACT_RECORD_SIZE; i += 1) {
+        expect(owned[offset + i]).toBe(1);
+        expect(bytes[offset + i]).toBe(0xff);
+      }
+    }
+  });
+
+  it('writes direct mode and the talker-alias text bit for the channel timeslot', () => {
+    const channel = fmChannel('Local');
+    channel.entity.primaryMode = 'dmr';
+    channel.entity.rxFrequency = 438_500_000;
+    channel.entity.txFrequency = 438_500_000;
+    channel.entity.modeProfiles = [
+      {
+        mode: 'dmr',
+        colourCode: 1,
+        timeslot: 2,
+        ownDigitalIdId: null,
+        contactRef: null,
+        rxGroupListId: null,
+        dmrMode: 'dmo-simplex',
+        sendTalkerAlias: 'on',
+      },
+    ];
+    const { bytes } = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    const record = channelSlotAddress(1).record;
+    expect(bytes[record + 0x26]! & 0x04).toBe(0x04);
+    expect(bytes[record + 0x30]! & 0x08).toBe(0x08);
+    expect(bytes[record + 0x31]! & 0x40).toBe(0x40);
   });
 
   it('truncates a 17th name character and warns', () => {
