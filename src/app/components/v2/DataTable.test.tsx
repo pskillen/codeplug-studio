@@ -5,6 +5,7 @@ import DataTable, {
   compareDataTableValues,
   sortRowsByColumn,
 } from './DataTable.tsx';
+import { trackMinWidth } from '../../lib/dataTable/trackMinWidth.ts';
 import DesignSystemV2Provider from './DesignSystemV2Provider.tsx';
 
 function mockMobileViewport() {
@@ -510,5 +511,63 @@ describe('DataTable v2', () => {
 
     expect(document.querySelector('[data-virtualized="true"]')).not.toBeNull();
     expect(screen.getAllByRole('row').length).toBeLessThan(rows.length);
+  });
+});
+
+describe('DataTable sticky header and first column', () => {
+  const renderTable = (props: Partial<React.ComponentProps<typeof DataTable<Row>>> = {}) =>
+    render(
+      <DesignSystemV2Provider>
+        <DataTable columns={COLUMNS} rows={ROWS} getRowId={(r) => r.id} {...props} />
+      </DesignSystemV2Provider>,
+    );
+
+  it('sticks the header on list tables by default', () => {
+    renderTable();
+    const table = screen.getByRole('table');
+    expect(table).toHaveAttribute('data-sticky-header', 'true');
+    expect(table).toHaveAttribute('data-split', 'true');
+    expect(table).not.toHaveAttribute('data-sticky-column');
+  });
+
+  it('leaves embedded tables and extreme scale alone', () => {
+    const { unmount } = renderTable({ variant: 'embedded' });
+    expect(screen.getByRole('table')).not.toHaveAttribute('data-sticky-header');
+    unmount();
+    renderTable({ scale: 'extreme' });
+    expect(screen.getByRole('table')).not.toHaveAttribute('data-sticky-header');
+    expect(screen.getByRole('table')).not.toHaveAttribute('data-split');
+  });
+
+  it('can switch the sticky header off', () => {
+    renderTable({ stickyHeader: false });
+    expect(screen.getByRole('table')).not.toHaveAttribute('data-sticky-header');
+  });
+
+  it('pins the first column with the checkbox column in front', () => {
+    renderTable({ stickyFirstColumn: true, selectable: true });
+    const table = screen.getByRole('table');
+    expect(table).toHaveAttribute('data-sticky-column', 'true');
+    const headers = screen.getAllByRole('columnheader');
+    expect(headers[0]!.style.left).toBe('0px');
+    expect(headers[1]!.style.left).toBe('40px');
+    expect(headers[1]!.className).toMatch(/pinnedLast/);
+    expect(headers[2]!.className).not.toMatch(/pinned/);
+    const firstRowCells = screen.getAllByRole('row')[1]!.querySelectorAll('[role=cell]');
+    expect((firstRowCells[1] as HTMLElement).style.left).toBe('40px');
+  });
+
+  it('does not pin anything by default', () => {
+    renderTable({ selectable: true });
+    expect(screen.getAllByRole('columnheader')[1]!.style.left).toBe('');
+  });
+});
+
+describe('trackMinWidth', () => {
+  it('reads the floor of a track', () => {
+    expect(trackMinWidth('minmax(8rem, 1fr)')).toBe('8rem');
+    expect(trackMinWidth('120px')).toBe('120px');
+    expect(trackMinWidth('1fr')).toBe('0px');
+    expect(trackMinWidth('minmax(max-content, 1fr)')).toBe('8rem');
   });
 });

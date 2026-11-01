@@ -139,6 +139,92 @@
   }
 }
 
+/**
+ * Split mode (sticky header and/or pinned first column): the header row sits outside the sideways
+ * scroller so `position: sticky` follows the page (or surrounding pane) scroll, and the body
+ * scrolls sideways on its own; JS mirrors scrollLeft onto the header. The shell clips instead of
+ * scrolling (overflow: clip creates no scroll container, so sticky keeps working). Any ancestor
+ * with overflow-x set would break the stick — keep the list pane free of it.
+ */
+.table[data-split] {
+  overflow: clip;
+}
+
+.headerScroller,
+.bodyScroller {
+  display: contents;
+}
+
+.table[data-split] .headerScroller,
+.table[data-split] .bodyScroller {
+  display: block;
+}
+
+.table[data-split] .headerScroller {
+  overflow: hidden;
+  background: var(--dsv2-surface-quiet);
+}
+
+.table[data-split] .bodyScroller {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+/* Sticks below any chrome a page pins above the table (default: top of the scroll container). */
+.table[data-sticky-header] .headerScroller {
+  position: sticky;
+  top: var(--dsv2-table-sticky-top, 0px);
+  z-index: 3;
+  box-shadow: 0 1px 0 var(--dsv2-border);
+}
+
+[data-variant='embedded'] .table[data-split] .headerScroller {
+  background: var(--dsv2-surface);
+}
+
+[data-variant='embedded'] .table[data-sticky-header] .headerRow {
+  background: var(--dsv2-surface);
+}
+
+/* Pinned first column (and the lead controls before it). */
+.pinned {
+  position: sticky;
+  z-index: 1;
+  /* Fill the whole row height so the opaque background has no gaps; centre the content again. */
+  align-self: stretch;
+  display: grid;
+  align-content: center;
+  background:
+    linear-gradient(var(--dt-row-tint, transparent), var(--dt-row-tint, transparent)),
+    var(--dsv2-table-bg, var(--dsv2-bg));
+}
+
+.leadCell.pinned,
+.orderCell.pinned {
+  display: flex;
+}
+
+.headerRow .pinned {
+  z-index: 2;
+  background: var(--dsv2-surface-quiet);
+}
+
+[data-variant='embedded'] .headerRow .pinned {
+  background: var(--dsv2-surface);
+}
+
+.pinnedLast {
+  box-shadow: inset -1px 0 0 transparent;
+  transition: box-shadow 0.12s ease;
+}
+
+.table[data-scrolled-x] .pinnedLast {
+  box-shadow:
+    inset -1px 0 0 var(--dsv2-border),
+    6px 0 8px -6px rgba(0, 0, 0, 0.45);
+}
+
 [data-variant='embedded'] .table {
   border-color: var(--dsv2-border-quiet);
 }
@@ -226,6 +312,7 @@
 }
 
 .dataRow {
+  --dt-row-tint: transparent;
   display: grid;
   align-items: center;
   border-bottom: 1px solid var(--dsv2-border-quiet);
@@ -244,11 +331,13 @@
 }
 
 .rowNestParent {
+  --dt-row-tint: var(--dsv2-surface-quiet);
   background: var(--dsv2-surface-quiet);
 }
 
 .rowActive {
-  background: color-mix(in srgb, var(--dsv2-accent) 12%, transparent);
+  --dt-row-tint: color-mix(in srgb, var(--dsv2-accent) 12%, transparent);
+  background: var(--dt-row-tint);
 }
 
 .rowActivatable {
@@ -256,6 +345,7 @@
 }
 
 .rowActivatable:hover {
+  --dt-row-tint: var(--dsv2-surface-quiet);
   background: var(--dsv2-surface-quiet);
 }
 

@@ -8,7 +8,7 @@ See the [app-shell hub](README.md) for routes and section nav. List-route behavi
 
 ## Purpose
 
-Ported from [codeplug-tool](https://github.com/pskillen/codeplug-tool) `DataTable`. Provides sortable tabular lists with an optional toolbar search, hideable optional columns (channels), row selection (future), and empty states. All library **list routes** use `variant="list"` except embedded pickers (not yet shipped here).
+Ported from [codeplug-tool](https://github.com/pskillen/codeplug-tool) `DataTable`. Provides sortable tabular lists with an optional toolbar search, hideable optional columns (channels), row selection (future), and empty states. List tables keep their header on screen while scrolling (`stickyHeader`, default for `variant="list"`) and can pin the identity column (`stickyFirstColumn`) — see the [sidecar](../../../src/app/components/v2/DataTable.md) ([#1516](https://github.com/pskillen/codeplug-studio/issues/1516)). All library **list routes** use `variant="list"` except embedded pickers (not yet shipped here).
 
 ## Code anchors
 
