@@ -43,6 +43,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
   const [overwriteTitle, setOverwriteTitle] = useState('Overwrite local project?');
   const [overwriteProjectName, setOverwriteProjectName] = useState('');
   const [diff, setDiff] = useState<ProjectSyncDiff | null>(null);
+  const [overwriteSource, setOverwriteSource] = useState<'drive' | 'file'>('file');
   const [idMismatch, setIdMismatch] = useState(false);
   const [localProjectId, setLocalProjectId] = useState('');
   const [remoteProjectId, setRemoteProjectId] = useState('');
@@ -115,11 +116,16 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
 
       if (activeId) {
         const mismatch = preview.projectId !== activeId;
-        const nextDiff = await buildImportOverwriteDiff(activeId, preview.remoteSummary);
+        const nextDiff = await buildImportOverwriteDiff(
+          activeId,
+          preview.remoteSummary,
+          preview.remoteEntities,
+        );
         pendingRef.current = { preview, source, targetProjectId: activeId };
         setIdMismatch(mismatch);
         setLocalProjectId(activeId);
         setRemoteProjectId(preview.projectId);
+        setOverwriteSource(source.kind === 'googleDrive' ? 'drive' : 'file');
         setOverwriteProjectName(preview.projectName);
         setOverwriteTitle('Replace active project?');
         setDiff(nextDiff);
@@ -129,8 +135,15 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
 
       const exists = projects.some((project) => project.projectId === preview.projectId);
       if (exists) {
-        const nextDiff = await buildImportOverwriteDiff(preview.projectId, preview.remoteSummary);
+        const nextDiff = await buildImportOverwriteDiff(
+          preview.projectId,
+          preview.remoteSummary,
+          preview.remoteEntities,
+        );
         pendingRef.current = { preview, source, targetProjectId: preview.projectId };
+        setLocalProjectId(preview.projectId);
+        setRemoteProjectId(preview.projectId);
+        setOverwriteSource(source.kind === 'googleDrive' ? 'drive' : 'file');
         setOverwriteProjectName(preview.projectName);
         setOverwriteTitle('Overwrite existing project?');
         setDiff(nextDiff);
@@ -190,6 +203,7 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
     overwriteOpen,
     overwriteTitle,
     diff,
+    overwriteSource,
     projectName: overwriteProjectName,
     idMismatch,
     localProjectId,
@@ -378,6 +392,12 @@ export function useRefreshFromDrivePrompt() {
     setBannerOpen(false);
   }
 
+  /** Keep the browser copy: close the dialog and dismiss the banner for this session. */
+  function keepLocal() {
+    dismissBanner();
+    closeOverwrite();
+  }
+
   function openOverwrite() {
     setError(null);
     setOverwriteOpen(true);
@@ -404,6 +424,7 @@ export function useRefreshFromDrivePrompt() {
     remoteProjectId: remoteProjectId ?? '',
     setOverwriteOpen,
     dismissBanner,
+    keepLocal,
     openOverwrite,
     closeOverwrite,
     confirmRefresh,
