@@ -10,6 +10,7 @@ import {
 } from '@core/domain/mapProjection.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
+import { ZONE_MAP_HEIGHT } from './zones/ZoneMapSection.tsx';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
 import { UnsavedChangesModal } from '../../components/v2/index.ts';
 import {
@@ -222,7 +223,7 @@ export default function ZoneEditor({
 
           <MapPanel
             title="Map"
-            height={360}
+            height={ZONE_MAP_HEIGHT}
             legend={
               mapSkipped.length > 0 ? (
                 <p className={classes.mapSkipped}>

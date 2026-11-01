@@ -79,4 +79,19 @@ describe('Panel', () => {
     expect(screen.getByText('2 changes')).toBeInTheDocument();
     expect(screen.queryByText('Body')).not.toBeInTheDocument();
   });
+
+  it('shows the one-line summary only while folded', () => {
+    render(
+      <DesignSystemV2Provider>
+        <Panel title="Centre point" collapsible defaultCollapsed summary="IO85uk · 16 mi">
+          <span>Body</span>
+        </Panel>
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.getByText('IO85uk · 16 mi')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Centre point' }));
+    expect(screen.getByText('Body')).toBeInTheDocument();
+    expect(screen.queryByText('IO85uk · 16 mi')).not.toBeInTheDocument();
+  });
 });

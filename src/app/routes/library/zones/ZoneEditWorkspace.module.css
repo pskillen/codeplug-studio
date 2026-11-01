@@ -12,6 +12,9 @@
 .mapColumn {
   flex: 1;
   min-width: 0;
+  /* Stays in view while the member list scrolls. */
+  position: sticky;
+  top: 12px;
 }
 
 .scanningSection {
@@ -26,5 +29,9 @@
   .membersColumn,
   .mapColumn {
     width: 100%;
+  }
+
+  .mapColumn {
+    position: static;
   }
 }

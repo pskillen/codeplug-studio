@@ -114,6 +114,10 @@ export type {
 } from './AddMembersScreen.tsx';
 export { default as ListMapLayout } from './ListMapLayout.tsx';
 export type { ListMapLayoutProps } from './ListMapLayout.tsx';
+export { default as FullScreenMapSheet } from './FullScreenMapSheet.tsx';
+export type { FullScreenMapSheetProps } from './FullScreenMapSheet.tsx';
+export { default as MapThumbnail } from './MapThumbnail.tsx';
+export type { MapThumbnailProps } from './MapThumbnail.tsx';
 export { default as MapSheet } from './MapSheet.tsx';
 export type { MapSheetProps } from './MapSheet.tsx';
 export {

@@ -5,11 +5,14 @@ import { MapPanel } from '../../../components/v2/index.ts';
 import { useZoneEdit } from './ZoneEditContext.tsx';
 import { useZoneEditMap } from './useZoneEditMap.ts';
 
+/** Viewport-relative: the map takes the screen below the chrome, never a fixed pixel box (#1498). */
+export const ZONE_MAP_HEIGHT = 'clamp(280px, calc(100dvh - 240px), 720px)';
+
 export default function ZoneMapSection({
-  height = 360,
+  height = ZONE_MAP_HEIGHT,
   title = 'Map',
 }: {
-  height?: number;
+  height?: number | string;
   title?: string;
 }) {
   const navigate = useNavigate();

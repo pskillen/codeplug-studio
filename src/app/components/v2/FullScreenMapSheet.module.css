@@ -1,0 +1,65 @@
+.root {
+  position: fixed;
+  inset: 0;
+  /* Above Leaflet panes and controls, the sheet (1100) and the app chrome. */
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  background: var(--dsv2-bg);
+  color: var(--dsv2-text-primary);
+}
+
+.bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--dsv2-border);
+}
+
+.title {
+  font-size: var(--dsv2-font-body);
+  font-weight: 700;
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--dsv2-radius-sm);
+  border: 1px solid var(--dsv2-border);
+  background: transparent;
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
+.map {
+  flex: 1 1 0;
+  min-height: 0;
+  position: relative;
+}
+
+.map > * {
+  width: 100%;
+  height: 100%;
+}
+
+.footer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--dsv2-border);
+  background: var(--dsv2-surface-quiet);
+}
+
+.hint {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}

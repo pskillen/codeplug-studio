@@ -21,7 +21,8 @@ import {
   DesignSystemV2Provider,
   EditorHeader,
   FormField,
-  MapPanel,
+  FullScreenMapSheet,
+  MapThumbnail,
   Panel,
   Pill,
   StickyFooter,
@@ -48,6 +49,11 @@ import { hzToMhzString } from '../../lib/units.ts';
 import classes from './ZoneFromLocationPage.module.css';
 
 const CHANNEL_SEARCH_DEBOUNCE_MS = 500;
+/**
+ * Viewport-relative so the desktop map fills the screen beside the controls (#1498).
+ * Leaves room for the page header, the map's toggle row and the sticky footer.
+ */
+const ZONE_FROM_LOCATION_MAP_HEIGHT = 'clamp(320px, calc(100dvh - 420px), 680px)';
 const RADIUS_CHIP_KM = [10, 25, 50, 100] as const;
 
 interface ReferenceCentre {
@@ -77,7 +83,11 @@ export default function ZoneFromLocationPage() {
   const navigate = useNavigate();
   const { library, loading, projectId } = useLibrary();
   const { mapboxToken } = useMapSettings();
-  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
+  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY, false, {
+    getInitialValueInEffect: false,
+  });
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pending, setPending] = useState<{ lat: number; lon: number } | null>(null);
 
   const [centre, setCentre] = useState<ReferenceCentre | null>(null);
   const [locator, setLocator] = useState('');
@@ -272,6 +282,171 @@ export default function ZoneFromLocationPage() {
     ? `Channels found — ${selectedRows.length} within range`
     : 'Channels found';
 
+  const openPicker = () => {
+    setPending(centre ? { lat: centre.lat, lon: centre.lon } : null);
+    setPickerOpen(true);
+  };
+
+  const confirmPicker = () => {
+    if (pending) applyCentre(pending.lat, pending.lon);
+    setPickerOpen(false);
+  };
+
+  const channelCountLabel = `${selectedChannelIds.length} channel${selectedChannelIds.length === 1 ? '' : 's'}`;
+
+  const centreSummary = centre
+    ? `${centre.label ?? coordsToLocator(centre.lat, centre.lon, 6)} · ${kmToMilesLabel(radiusKm)}`
+    : 'Not set';
+  const channelsSummary = centre
+    ? `${selectedRows.length} within range · ${selectedChannelIds.length} selected`
+    : 'Set a centre first';
+
+  const renderMainMap = (height: number | string) => (
+    <CodeplugMap
+      channels={library.channels}
+      zones={library.zones}
+      allChannels={library.channels}
+      height={height}
+      mapControlMode="zoneFromLocation"
+      referencePosition={centre}
+      referenceRadiusM={centre ? radiusKm * 1000 : null}
+      dimmedChannelIds={centre ? dimmedChannelIds : []}
+      provisionalZone={
+        selectedChannelIds.length > 0
+          ? {
+              channelIds: selectedChannelIds,
+              label: resolvedZoneName.trim() || 'New zone',
+            }
+          : null
+      }
+      onMapClick={(lat, lon) => applyCentre(lat, lon)}
+      onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+      onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+    />
+  );
+
+  const centreControls = (
+    <>
+      <GeocodeCentreField
+        mapboxToken={mapboxToken}
+        centre={centre}
+        onCentreChange={applyCentre}
+        onClearCentre={clearCentre}
+        geocodeProvider={geocodeProvider}
+        onGeocodeProviderChange={setGeocodeProvider}
+      />
+
+      <div className={classes.radiusRow}>
+        <span className={classes.radiusLabel}>Radius</span>
+        {RADIUS_CHIP_KM.map((km) => (
+          <button
+            key={km}
+            type="button"
+            className={[classes.radiusChip, radiusKm === km ? classes.radiusChipActive : '']
+              .filter(Boolean)
+              .join(' ')}
+            onClick={() => {
+              setRadiusKm(km);
+              setSelectedChannelIdsOverride(null);
+            }}
+          >
+            {kmToMilesLabel(km)}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+
+  const secondaryTools = (
+    <div className={classes.secondaryStack}>
+      <p className={classes.secondaryLabel}>Or set centre another way</p>
+      <TextInput
+        label="Maidenhead locator"
+        placeholder="e.g. IO85uk"
+        value={locator}
+        onChange={(e) => handleLocatorChange(e.currentTarget.value)}
+        error={locatorError}
+        size="sm"
+      />
+      <div className={classes.secondaryActions}>
+        <UseMyLocationButton onLocation={(lat, lon) => applyCentre(lat, lon)} />
+      </div>
+      <Autocomplete
+        label="Channel with location"
+        placeholder="Search channels…"
+        data={channelOptions}
+        value={channelSearch}
+        onChange={handleChannelSearchChange}
+        onOptionSubmit={(value) => {
+          const channelId =
+            resolveChannelOptionId(value, channelOptions, geolocatedChannels) ?? value;
+          setSelectedChannelId(channelId);
+          const ch = channelById.get(channelId);
+          if (ch) setChannelSearch(channelOptionLabel(ch));
+        }}
+        limit={25}
+        size="sm"
+      />
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={handleApplyChannelLocation}
+        disabled={!selectedChannel || !channelHasLocation(selectedChannel)}
+      >
+        Use channel location
+      </Button>
+    </div>
+  );
+
+  const channelsPanel = (
+    <Panel
+      title={channelsPanelTitle}
+      collapsible={isMobile}
+      defaultCollapsed={isMobile}
+      summary={channelsSummary}
+    >
+      <DataTable
+        variant="embedded"
+        columns={tableColumns}
+        rows={selectedRows}
+        getRowId={(ch) => ch.id}
+        totalRowCount={selectedRows.length}
+        resultCount={selectedRows.length}
+        countLabel={(displayed) => `${displayed} channel${displayed === 1 ? '' : 's'}`}
+        selectable
+        selectedKeys={selectedChannelIds}
+        onSelectionChange={setSelectedChannelIdsOverride}
+        emptyMessage={
+          centre
+            ? 'No geolocated channels within this radius.'
+            : 'Set a centre point to preview channels in range.'
+        }
+        onRowActivate={(ch) => navigate(`/library/channels/${ch.id}`)}
+      />
+    </Panel>
+  );
+
+  const namePanel = (
+    <Panel
+      title="Name this zone"
+      collapsible={isMobile}
+      defaultCollapsed={isMobile}
+      summary={resolvedZoneName.trim() || 'Not named yet'}
+    >
+      <FormField label="Zone name">
+        <V2TextInput
+          variant="plain"
+          value={resolvedZoneName}
+          onChange={(e) => {
+            setNameEdited(true);
+            setZoneName(e.currentTarget.value);
+          }}
+          aria-label="Zone name"
+        />
+      </FormField>
+    </Panel>
+  );
+
   return (
     <DesignSystemV2Provider>
       <div className={classes.root}>
@@ -284,148 +459,69 @@ export default function ZoneFromLocationPage() {
         />
 
         <div className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}>
-          <Panel title="Centre point">
-            <GeocodeCentreField
-              mapboxToken={mapboxToken}
-              centre={centre}
-              onCentreChange={applyCentre}
-              onClearCentre={clearCentre}
-              geocodeProvider={geocodeProvider}
-              onGeocodeProviderChange={setGeocodeProvider}
-            />
-
-            <div className={classes.radiusRow}>
-              <span className={classes.radiusLabel}>Radius</span>
-              {RADIUS_CHIP_KM.map((km) => (
-                <button
-                  key={km}
-                  type="button"
-                  className={[classes.radiusChip, radiusKm === km ? classes.radiusChipActive : '']
-                    .filter(Boolean)
-                    .join(' ')}
-                  onClick={() => {
-                    setRadiusKm(km);
-                    setSelectedChannelIdsOverride(null);
-                  }}
-                >
-                  {kmToMilesLabel(km)}
-                </button>
-              ))}
-            </div>
-
-            <div className={classes.mapWrap}>
-              <MapPanel height={isMobile ? 140 : 200}>
-                <CodeplugMap
-                  channels={library.channels}
-                  zones={library.zones}
-                  allChannels={library.channels}
-                  height="100%"
-                  mapControlMode="zoneFromLocation"
-                  referencePosition={centre}
-                  referenceRadiusM={centre ? radiusKm * 1000 : null}
-                  dimmedChannelIds={centre ? dimmedChannelIds : []}
-                  provisionalZone={
-                    selectedChannelIds.length > 0
-                      ? {
-                          channelIds: selectedChannelIds,
-                          label: resolvedZoneName.trim() || 'New zone',
-                        }
-                      : null
-                  }
-                  onMapClick={(lat, lon) => applyCentre(lat, lon)}
-                  onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-                  onZoneClick={(id) => navigate(`/library/zones/${id}`)}
-                />
-              </MapPanel>
-            </div>
-
-            <div className={classes.secondaryStack}>
-              <p className={classes.secondaryLabel}>Or set centre another way</p>
-              <TextInput
-                label="Maidenhead locator"
-                placeholder="e.g. IO85uk"
-                value={locator}
-                onChange={(e) => handleLocatorChange(e.currentTarget.value)}
-                error={locatorError}
-                size="sm"
-              />
-              <div className={classes.secondaryActions}>
-                <UseMyLocationButton onLocation={(lat, lon) => applyCentre(lat, lon)} />
+          {isMobile ? (
+            <Panel title="Centre point" collapsible summary={centreSummary}>
+              {centreControls}
+              <div className={classes.mapWrap}>
+                <MapThumbnail label="Open map to pick the centre" onOpen={openPicker}>
+                  {renderMainMap('100%')}
+                </MapThumbnail>
               </div>
-              <Autocomplete
-                label="Channel with location"
-                placeholder="Search channels…"
-                data={channelOptions}
-                value={channelSearch}
-                onChange={handleChannelSearchChange}
-                onOptionSubmit={(value) => {
-                  const channelId =
-                    resolveChannelOptionId(value, channelOptions, geolocatedChannels) ?? value;
-                  setSelectedChannelId(channelId);
-                  const ch = channelById.get(channelId);
-                  if (ch) setChannelSearch(channelOptionLabel(ch));
-                }}
-                limit={25}
-                size="sm"
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleApplyChannelLocation}
-                disabled={!selectedChannel || !channelHasLocation(selectedChannel)}
-              >
-                Use channel location
-              </Button>
+              {secondaryTools}
+            </Panel>
+          ) : (
+            <div className={classes.desktopGrid}>
+              <Panel title="Centre point">
+                {centreControls}
+                {secondaryTools}
+              </Panel>
+              <div className={classes.mapColumn}>
+                {renderMainMap(ZONE_FROM_LOCATION_MAP_HEIGHT)}
+              </div>
             </div>
-          </Panel>
+          )}
 
-          <Panel title={channelsPanelTitle}>
-            <DataTable
-              variant="embedded"
-              columns={tableColumns}
-              rows={selectedRows}
-              getRowId={(ch) => ch.id}
-              totalRowCount={selectedRows.length}
-              resultCount={selectedRows.length}
-              countLabel={(displayed) => `${displayed} channel${displayed === 1 ? '' : 's'}`}
-              selectable
-              selectedKeys={selectedChannelIds}
-              onSelectionChange={setSelectedChannelIdsOverride}
-              emptyMessage={
-                centre
-                  ? 'No geolocated channels within this radius.'
-                  : 'Set a centre point to preview channels in range.'
-              }
-              onRowActivate={(ch) => navigate(`/library/channels/${ch.id}`)}
-            />
-          </Panel>
-
-          <Panel title="Name this zone">
-            <FormField label="Zone name">
-              <V2TextInput
-                variant="plain"
-                value={resolvedZoneName}
-                onChange={(e) => {
-                  setNameEdited(true);
-                  setZoneName(e.currentTarget.value);
-                }}
-                aria-label="Zone name"
-              />
-            </FormField>
-          </Panel>
+          {channelsPanel}
+          {namePanel}
 
           {error ? <p className={classes.error}>{error}</p> : null}
         </div>
 
+        <FullScreenMapSheet
+          open={isMobile && pickerOpen}
+          title="Pick the centre point"
+          onClose={() => setPickerOpen(false)}
+          confirmLabel="Use this point"
+          onConfirm={confirmPicker}
+          confirmDisabled={!pending}
+          hint={
+            pending
+              ? `${coordsToLocator(pending.lat, pending.lon, 6)} · ${kmToMilesLabel(radiusKm)} radius`
+              : 'Tap the map to pick a point'
+          }
+        >
+          <CodeplugMap
+            channels={library.channels}
+            zones={[]}
+            allChannels={library.channels}
+            height="100%"
+            mapControlMode="zoneFromLocation"
+            showControls={false}
+            referencePosition={pending}
+            referenceRadiusM={pending ? radiusKm * 1000 : null}
+            onMapClick={(lat, lon) => setPending({ lat, lon })}
+          />
+        </FullScreenMapSheet>
+
         <StickyFooter
-          saveLabel={`Create zone with ${selectedChannelIds.length} channel${selectedChannelIds.length === 1 ? '' : 's'}`}
+          saveLabel={`Create zone with ${channelCountLabel}`}
           onCancel={() => navigate('/library/zones')}
           onSave={handleCreate}
           saving={saving}
           compact={isMobile}
           statusText={
             canCreate
-              ? `${selectedChannelIds.length} channel${selectedChannelIds.length === 1 ? '' : 's'} selected`
+              ? `${channelCountLabel} selected`
               : 'Set a centre and select channels to create'
           }
         />
