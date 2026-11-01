@@ -11,6 +11,7 @@ export const MAPBOX_TOKEN_KEY = 'codeplug-studio:mapboxToken';
 export const OPENAIP_API_KEY = 'codeplug-studio:openaipApiKey';
 export const REPEATERBOOK_TOKEN_KEY = 'codeplug-studio:repeaterbookToken';
 export const MAIDENHEAD_GRID_KEY = 'codeplug-studio:maidenheadGrid';
+export const DISTANCE_UNIT_KEY = 'codeplug-studio:distanceUnit';
 export const PREFERENCES_STORAGE_PREFIX = 'codeplug-studio:';
 
 const MAIDENHEAD_GRID_MODES = new Set<MaidenheadGridMode>(['off', '4', '6']);
@@ -119,6 +120,27 @@ export function saveMaidenheadGridMode(mode: MaidenheadGridMode): void {
     } else {
       globalThis.localStorage?.setItem(MAIDENHEAD_GRID_KEY, mode);
     }
+  } catch {
+    // Ignore write failures.
+  }
+}
+
+export type DistanceUnitPreference = 'km' | 'mi';
+
+/** Distance unit for the Field tools; defaults to miles (UK amateur convention). */
+export function loadDistanceUnit(): DistanceUnitPreference {
+  try {
+    const raw = globalThis.localStorage?.getItem(DISTANCE_UNIT_KEY);
+    if (raw === 'km' || raw === 'mi') return raw;
+  } catch {
+    // localStorage may be unavailable.
+  }
+  return 'mi';
+}
+
+export function saveDistanceUnit(unit: DistanceUnitPreference): void {
+  try {
+    globalThis.localStorage?.setItem(DISTANCE_UNIT_KEY, unit);
   } catch {
     // Ignore write failures.
   }
