@@ -111,6 +111,7 @@ export default function RxGroupListsListPage() {
           columns={columns}
           rows={filtered}
           getRowId={(r) => r.id}
+          stickyFirstColumn
           totalRowCount={rxGroupLists.length}
           search={{
             value: nameFilterInput,

@@ -104,6 +104,7 @@ export default function ScanListsListPage() {
           columns={columns}
           rows={filtered}
           getRowId={(r) => r.id}
+          stickyFirstColumn
           totalRowCount={scanLists.length}
           search={{
             value: nameFilterInput,

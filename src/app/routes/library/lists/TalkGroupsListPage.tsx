@@ -131,6 +131,7 @@ export default function TalkGroupsListPage() {
           columns={columns}
           rows={filtered}
           getRowId={(tg) => tg.id}
+          stickyFirstColumn
           totalRowCount={talkGroups.length}
           search={{
             value: nameFilterInput,

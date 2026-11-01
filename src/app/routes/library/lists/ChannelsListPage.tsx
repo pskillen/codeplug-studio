@@ -461,7 +461,7 @@ export default function ChannelsListPage() {
     );
 
     return [
-      { ...nameColumn, width: 'minmax(max-content, 1fr)' },
+      { ...nameColumn, width: 'minmax(11rem, 1fr)' },
       ...tableOptionalColumnDefs,
       {
         key: 'actions',
@@ -775,6 +775,7 @@ export default function ChannelsListPage() {
           sort={effectiveV2Sort}
           onSortChange={handleSortChange}
           selectable
+          stickyFirstColumn
           selectedKeys={selectedKeys}
           onSelectionChange={setSelectedKeys}
           bulkActions={
