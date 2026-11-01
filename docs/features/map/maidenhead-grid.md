@@ -45,7 +45,7 @@ Intentionally reworked from the archive `codeplug-tool` overlay:
 - Viewport-scoped: lines and labels recompute on pan/zoom (`moveend` / `zoomend`).
 - Setting value is **maximum resolution**; actual detail is the finest level allowed at the current zoom (6-char at zoom **≥ 10** when max permits).
 - Rendered below zone hulls and channel markers.
-- Applies to `CodeplugMap` on `/library/channels` and `/library/zones`, and to `MapLocationPicker` on `/reference/maidenhead` (and the channel editor location section).
+- Applies to `CodeplugMap` on `/library/channels` and `/library/zones`, to `FieldMap` on the Field tools (`/tools/*`), and to `MapLocationPicker` in the channel editor location section.
 
 ## Manual verify
 

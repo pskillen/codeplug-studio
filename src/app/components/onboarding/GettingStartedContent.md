@@ -34,7 +34,7 @@ import GettingStartedModal from '../onboarding/GettingStartedModal.tsx';
 - Shown **inline** on Home when `projects.length === 0` (after load).
 - Same body opens from **Quick start** on Home and Help when the operator chooses it — never auto-forced.
 - Flow steps are a semantic ordered list with numbered badges; arrows between steps are decorative (`aria-hidden`).
-- Reference links go to `/reference/bands` and `/reference/maidenhead`.
+- Reference links go to `/reference/bands` and `/tools/locator`.
 
 ## Related
 

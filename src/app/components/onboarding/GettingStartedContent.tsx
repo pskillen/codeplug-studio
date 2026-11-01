@@ -145,10 +145,10 @@ export default function GettingStartedContent({ compact = false }: GettingStarte
                 — band edges and common services at a glance
               </List.Item>
               <List.Item>
-                <Anchor component={Link} to="/reference/maidenhead" size="sm">
-                  Maidenhead locator
+                <Anchor component={Link} to="/tools/locator" size="sm">
+                  My locator
                 </Anchor>{' '}
-                — convert between locator, map, and coordinates
+                — your locator from GPS, distance and bearing, repeaters near a point
               </List.Item>
             </List>
           </Stack>

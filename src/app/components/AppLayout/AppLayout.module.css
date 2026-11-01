@@ -53,3 +53,38 @@
     margin-right: auto;
   }
 }
+
+/**
+ * Full-bleed map tools (`/tools/*`): lock the shell to the viewport on every breakpoint and let the
+ * page fill the space under the chrome. The page owns its own scrolling.
+ */
+.rootFullBleed {
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.main.mainFullBleed {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.pageContentFullBleed {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* The page's DesignSystemV2Provider scope div must pass the height through. */
+.pageContentFullBleed > :global(.dsv2-scope) {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}

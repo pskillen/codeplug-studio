@@ -7,7 +7,7 @@ export interface MapPanelProps {
   title?: string;
   /** Map body height in px (design system default 200). */
   height?: number;
-  /** Live map content (CodeplugMap, MapLocationPicker, MapPairPlot). */
+  /** Live map content (CodeplugMap, MapLocationPicker). */
   children?: ReactNode;
   /** Overlay caption inside the hatch when no children (default `[ map ]`). */
   caption?: ReactNode;

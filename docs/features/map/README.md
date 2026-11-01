@@ -34,7 +34,7 @@ ChannelsListPage / ZonesListPage / SummaryPage / …
       └─ mapView — auto bounds / single-point zoom
 ```
 
-Location pickers (`MapLocationPicker`, `MapPairPlot`) use the same `MapPanel` chrome on channel editor, APRS geo editor, and Maidenhead reference tools.
+Location pickers (`MapLocationPicker`) use the same `MapPanel` chrome on channel editor, APRS geo editor, and the My locator tool (the Field tools use `FieldMap`).
 
 Mode marker colours come from `src/app/lib/channelModes.ts` (`modeColor`). The core layer returns `ChannelMode` values only — no UI colours in `src/core/`.
 

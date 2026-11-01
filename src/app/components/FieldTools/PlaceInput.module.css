@@ -1,0 +1,48 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+}
+
+.badge {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 24px;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  gap: 2px;
+}
+
+.caption {
+  font-family: var(--dsv2-font-mono, ui-monospace, monospace);
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+  padding-left: 2px;
+}
+
+.error {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-danger, #fa5252);
+  padding-left: 2px;
+}
