@@ -107,7 +107,6 @@ import {
   type Rt95SettingsOverride,
 } from '@integrations/radio-io/radios/rt95/settingsFields.ts';
 import { readBandlimitFromImage } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
-import { applyRt95ZoneKey } from '@integrations/radio-io/radios/rt95/zoneKey.ts';
 import {
   rt95ChipGuardRefusalText,
   type Rt95ChipGuardResult,
@@ -687,9 +686,7 @@ async function resolveRadioWriteImageForUpload(
       progressStage: 'Pre-write read',
     });
     try {
-      const image = session.radio.encodeChannels(prior, prepared.channels);
-      applyRt95ZoneKey(image, prepared.organisation?.rt95ZoneKey);
-      return image;
+      return session.radio.encodeChannels(prior, prepared.channels);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new RadioWriteBlockedError(message);

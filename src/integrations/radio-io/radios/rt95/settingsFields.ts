@@ -13,6 +13,7 @@ import { isMm9pdyRt95RadioIoProfileId } from '@core/import-export/formats/radio-
 import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { RT95_BANDLIMIT_OFFSET, RT95_IMAGE_SIZE } from './constants.ts';
+import { RT95_KEY_FUNCTION_DIR, rt95ZoneKeyAddress, type Rt95ZoneKey } from './zoneKey.ts';
 
 export type Rt95SettingsTarget = 'stock' | 'mm9pdy';
 export type Rt95SettingValue = number | boolean | string;
@@ -463,7 +464,7 @@ export function assertRt95PowerOnPasswordPair(
 
 /**
  * When a PF-key override and the MM9PDY zone-key projection target the same byte, the explicit
- * PF-key override wins (zone key is not applied on the RT95 write branch today).
+ * PF-key override wins ({@link rt95UploadSettingsFromOrganisation} puts the zone-key patch first).
  */
 export function resolveRt95SettingsPatches(
   overrides: readonly Rt95SettingsOverride[],
@@ -515,13 +516,30 @@ export function rt95SettingsTargetForProfile(profileId: string): Rt95SettingsTar
   return isMm9pdyRt95RadioIoProfileId(profileId) ? 'mm9pdy' : 'stock';
 }
 
+/** The MM9PDY "Zone on a P-key" byte as a patch, so it is read-checked and merged like a setting. */
+export function rt95ZoneKeyPatch(zoneKey: Rt95ZoneKey): Rt95SettingsPatch {
+  const patch: Rt95SettingsPatch = {
+    fieldId: 'zoneKey',
+    address: rt95ZoneKeyAddress(zoneKey.group, zoneKey.key),
+    bytes: Uint8Array.of(RT95_KEY_FUNCTION_DIR),
+    mask: Uint8Array.of(0xff),
+  };
+  assertRt95SettingsPatchPermitted(patch);
+  return patch;
+}
+
 export function rt95UploadSettingsFromOrganisation(
   organisation: RadioWriteOrganisation | undefined,
   profileId: string,
 ): readonly Rt95SettingsPatch[] {
   const overrides = organisation?.rt95SettingsOverrides;
-  if (!overrides?.length) return [];
-  return resolveRt95SettingsPatches(overrides, rt95SettingsTargetForProfile(profileId));
+  const settings = overrides?.length
+    ? resolveRt95SettingsPatches(overrides, rt95SettingsTargetForProfile(profileId))
+    : [];
+  const zoneKey = organisation?.rt95ZoneKey;
+  // MM9PDY only; first, so an explicit PF-key override on the same byte merges after it and wins.
+  if (!zoneKey || !isMm9pdyRt95RadioIoProfileId(profileId)) return settings;
+  return [rt95ZoneKeyPatch(zoneKey), ...settings];
 }
 
 export { RT95_POWER_ON_PASSWORD_FIELD_IDS };

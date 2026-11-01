@@ -47,9 +47,9 @@ Field-by-field option lists live in CHIRP `get_settings` — extract further enu
 
 ## Studio settings registry (#1476)
 
-Studio’s Web Serial settings path writes only the fields below. Each patch is resolved twice (registry + protocol), merged onto a **fresh read** of each touched 16-byte block inside `upload`, and aborted if the radio changed outside the patch mask since the pre-pause image. Settings-only upload writes **only** touched blocks. An explicit PF-key override wins over the MM9PDY zone-key projection when both target the same byte (zone key is still not applied on the RT95 write branch today — see gap note below).
+Studio’s Web Serial settings path writes only the fields below. Each patch is resolved twice (registry + protocol), merged onto a **fresh read** of each touched 16-byte block inside `upload`, and aborted if the radio changed outside the patch mask since the pre-pause image. Settings-only upload writes **only** touched blocks. An explicit PF-key override wins over the MM9PDY zone-key projection when both target the same byte (the zone key is the first patch, so the override merges after it).
 
-**Gap (not fixed in patch core):** `applyRt95ZoneKey` is only called from the UV-17 Pro write path; RT95 codeplug Write does not set the zone DIR byte despite Review copy.
+The MM9PDY zone key (`rt95ZoneKey`) is written as a patch on the key-table byte (0x3250-0x325B) with the same fresh-read and drift check; stock RT95 never writes it.
 
 ### Supported fields (registry)
 
