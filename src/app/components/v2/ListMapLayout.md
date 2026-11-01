@@ -51,6 +51,8 @@ Dev-only experiment, used by the Channels list only. Instead of the bottom sheet
 
 - The visible map sets `touch-action: none` so Leaflet keeps its own pan and zoom; dragging across the map never swipes the track.
 - Switching panes: swipe or tap the peeking strip (a transparent button covers the inactive pane, `Show list` / `Show map`), or use the Map | List toggle in the top bar, which follows the current pane.
+- Grab handle: each peek button draws a vertical pill (5 x 48 px) with a small chevron, centred vertically on the seam edge of the peeking pane (left edge of the peeking map, right edge of the peeking list). It is decorative (`aria-hidden`); the button is the control (`Show map` / `Show list`), its hit area is the whole 48 px strip, and `touch-action: pan-x` lets a drag on it swipe the track while a tap switches panes. Keyboard focus draws a ring around the handle. Colours come from DSV2 tokens, so it works in light and dark.
+- On the map pane the map's option row (labels, zones, Map settings) wraps within the pane instead of scrolling off the right edge.
 - The list pane scrolls vertically on its own. Smooth scrolling is off under `prefers-reduced-motion`.
 - On becoming the map pane the layout dispatches a window `resize` so Leaflet re-measures.
 - `sheetHeader` and `initialSnap` are ignored in this mode.

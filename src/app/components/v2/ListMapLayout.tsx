@@ -45,6 +45,25 @@ function paneForScroll(el: HTMLElement): SwipePane {
   return max > 0 && el.scrollLeft > max / 2 ? 'map' : 'list';
 }
 
+/** Grab handle drawn on the seam: a vertical pill with a chevron hinting which way the pane is. */
+function SwipeHandle({ direction }: { direction: 'left' | 'right' }) {
+  return (
+    <span className={classes.swipeHandle} aria-hidden="true">
+      <svg viewBox="0 0 8 12" width="8" height="12" className={classes.swipeChevron}>
+        <path
+          d={direction === 'left' ? 'M6 1 2 6l4 5' : 'M2 1l4 5-4 5'}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <span className={classes.swipePill} />
+    </span>
+  );
+}
+
 /**
  * EXPERIMENTAL mobile body for `mobile="swipe"`: two ~88%-wide full-height panes in a CSS scroll-snap
  * track. The hidden pane peeks in at the screen edge, and is covered by a button so tapping or
@@ -147,8 +166,11 @@ function SwipePanes({
               type="button"
               className={classes.swipeCover}
               aria-label="Show list"
+              data-edge="end"
               onClick={() => goTo('list')}
-            />
+            >
+              <SwipeHandle direction="right" />
+            </button>
           ) : null}
         </section>
         <section className={classes.swipeMapPane} aria-label={`${sheetLabel} map`}>
@@ -158,8 +180,11 @@ function SwipePanes({
               type="button"
               className={classes.swipeCover}
               aria-label="Show map"
+              data-edge="start"
               onClick={() => goTo('map')}
-            />
+            >
+              <SwipeHandle direction="left" />
+            </button>
           ) : null}
         </section>
       </div>

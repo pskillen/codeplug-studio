@@ -84,6 +84,18 @@ describe('ListMapLayout', () => {
     expect(screen.getByRole('button', { name: 'Show list' })).toBeInTheDocument();
   });
 
+  it('mobile swipe: each peek button carries a decorative grab handle on its seam edge', () => {
+    setMobile(true);
+    renderLayout(undefined, 'swipe');
+    const showMap = screen.getByRole('button', { name: 'Show map' });
+    expect(showMap).toHaveAttribute('data-edge', 'start');
+    expect(showMap.querySelector('[aria-hidden="true"]')).not.toBeNull();
+    fireEvent.click(showMap);
+    const showList = screen.getByRole('button', { name: 'Show list' });
+    expect(showList).toHaveAttribute('data-edge', 'end');
+    expect(showList.querySelector('[aria-hidden="true"]')).not.toBeNull();
+  });
+
   it('desktop ignores mobile="swipe"', () => {
     setMobile(false);
     renderLayout(undefined, 'swipe');
