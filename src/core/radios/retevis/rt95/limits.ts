@@ -10,8 +10,8 @@ export const RT95_LIMITS = {
   NAME_LENGTH: 6,
   /** MM9PDY modded firmware, MMD1 v1: zones in the head's table. */
   ZONE_MAX: 32,
-  /** MM9PDY modded firmware, MMD1 v1: zone name length (printable ASCII). */
-  ZONE_NAME_LENGTH: 8,
+  /** MM9PDY modded firmware, MMD1 v1: zone name length (printable ASCII). Bytes 0–11 of the name block; the head copies all 12. */
+  ZONE_NAME_LENGTH: 12,
   /** MM9PDY modded firmware, MMD1 v1: members per zone (any of the channels). */
   ZONE_MEMBERS_MAX: 200,
   /** MM9PDY modded firmware, MMD1 v1: channel description length (printable ASCII, no `_`). */

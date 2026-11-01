@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { emptyLibrary, newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
+import {
+  emptyLibrary,
+  newChannel,
+  newRadioBuildForProfile,
+  newZone,
+} from '@core/domain/factories.ts';
 import { upsertOverride } from '@core/domain/formatBuildOverrides.ts';
 import { librarySliceFrom } from '@core/services/assemble.ts';
 import { resolveWireNames } from './resolveWireNames.ts';
@@ -44,5 +49,22 @@ describe('RT95 MM9PDY radio name', () => {
   it('leaves the stock RT95 profile on the composed name', () => {
     const stock = effectiveNames('radio-io-rt95', 'GB3GL', 'Glasgow');
     expect(stock.suggestion).not.toBe('GB3GL');
+  });
+});
+
+describe('RT95 MM9PDY zone name', () => {
+  it('keeps a name that fits in the 12-character field', () => {
+    const lib = emptyLibrary();
+    const zone = newZone('proj', 'Home Shack');
+    lib.zones.push(zone);
+    const { build } = newRadioBuildForProfile('proj', 'radio-io-rt95-mm9pdy');
+    const rows = resolveWireNames({
+      build,
+      library: librarySliceFrom(lib),
+      entityKind: 'zone',
+      formatId: 'radio-io',
+      profileId: 'radio-io-rt95-mm9pdy',
+    });
+    expect(rows[0]!.effective).toBe('Home Shack');
   });
 });
