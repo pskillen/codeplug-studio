@@ -2,7 +2,7 @@ import { Button, Menu } from '@mantine/core';
 import { IconArrowsRightLeft } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import { radioTargetFor } from '@core/radio-targets/index.ts';
+import { manufacturerForRadioTarget } from '@core/radio-targets/index.ts';
 import { ICON_STROKE } from '../../../lib/iconSizes.ts';
 
 export interface CopyOrderFromBuildStats {
@@ -24,7 +24,7 @@ function buildMenuGroups(builds: RadioBuild[]) {
   const byGroup = new Map<string, RadioBuild[]>();
 
   for (const build of builds) {
-    const group = radioTargetFor(build.radioTargetId)?.group ?? 'Other';
+    const group = manufacturerForRadioTarget(build.radioTargetId);
     const items = byGroup.get(group) ?? [];
     items.push(build);
     byGroup.set(group, items);

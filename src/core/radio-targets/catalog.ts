@@ -13,8 +13,10 @@ export interface CompatibleEgress {
 export interface RadioTarget {
   id: string;
   label: string;
-  /** Manufacturer / family for list grouping. */
-  group: string;
+  /** Hardware model id — key into `RADIO_MODELS`. */
+  modelId: string;
+  /** Firmware variant id on that model — one of `RADIO_MODELS[modelId].firmware[].id`. */
+  firmwareId: string;
   traits: readonly Trait[];
   compatibleEgress: readonly CompatibleEgress[];
 }
@@ -76,7 +78,8 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
   'baofeng-uv5r-mini': {
     id: 'baofeng-uv5r-mini',
     label: 'Baofeng UV-5R Mini',
-    group: 'Baofeng',
+    modelId: 'baofeng-uv5r-mini',
+    firmwareId: 'stock',
     traits: flatAnalog,
     compatibleEgress: [
       egress('radio-io', 'radio-io-uv5r-mini', 'Web Serial'),
@@ -87,7 +90,8 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
   'baofeng-uv21': {
     id: 'baofeng-uv21',
     label: 'Baofeng UV-21Pro V2',
-    group: 'Baofeng',
+    modelId: 'baofeng-uv21',
+    firmwareId: 'stock',
     traits: flatAnalog,
     compatibleEgress: [
       egress('radio-io', 'radio-io-uv21', 'Web Serial'),
@@ -97,7 +101,8 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
   'retevis-rt95': {
     id: 'retevis-rt95',
     label: 'Retevis RT95 VOX',
-    group: 'Retevis',
+    modelId: 'retevis-rt95',
+    firmwareId: 'stock',
     traits: flatAnalog,
     compatibleEgress: [
       egress('radio-io', 'radio-io-rt95', 'Web Serial'),
@@ -107,7 +112,8 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
   'retevis-rt95-mm9pdy': {
     id: 'retevis-rt95-mm9pdy',
     label: 'Retevis RT95 VOX (MM9PDY modded firmware)',
-    group: 'Retevis',
+    modelId: 'retevis-rt95',
+    firmwareId: 'mm9pdy',
     traits: [
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
@@ -118,7 +124,8 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
   'baofeng-dm32uv': {
     id: 'baofeng-dm32uv',
     label: 'Baofeng DM-32UV',
-    group: 'Baofeng',
+    modelId: 'baofeng-dm32uv',
+    firmwareId: 'stock',
     traits: dm32Traits,
     compatibleEgress: [
       egress('radio-io', 'radio-io-dm32uv', 'Web Serial'),
@@ -129,14 +136,16 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
   'baofeng-dm32uv-mm9pdy': {
     id: 'baofeng-dm32uv-mm9pdy',
     label: 'Baofeng DM-32UV (MM9PDY modded firmware)',
-    group: 'Baofeng',
+    modelId: 'baofeng-dm32uv',
+    firmwareId: 'mm9pdy',
     traits: dm32Mm9pdyTraits,
     compatibleEgress: [egress('radio-io', 'radio-io-dm32uv-mm9pdy', 'Web Serial')],
   },
   'baofeng-dm32uv-radiofoundry': {
     id: 'baofeng-dm32uv-radiofoundry',
     label: 'Baofeng DM-32UV (RadioFoundry)',
-    group: 'Baofeng',
+    modelId: 'baofeng-dm32uv',
+    firmwareId: 'radiofoundry',
     traits: dm32Mm9pdyTraits,
     compatibleEgress: [
       egress('radiofoundry', 'radiofoundry-dm32uv', 'RadioFoundry codeplug'),
@@ -146,7 +155,8 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
   'baofeng-dm1701': {
     id: 'baofeng-dm1701',
     label: 'Baofeng DM-1701 / RT-84 (OpenGD77)',
-    group: 'Baofeng',
+    modelId: 'baofeng-dm1701',
+    firmwareId: 'opengd77',
     traits: opengd77Traits,
     compatibleEgress: [
       egress('radio-io', 'radio-io-opengd77-1701', 'Web Serial'),
@@ -156,7 +166,8 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
   'tyt-md9600': {
     id: 'tyt-md9600',
     label: 'TYT MD-9600 / RT-90 (OpenGD77)',
-    group: 'TYT',
+    modelId: 'tyt-md9600',
+    firmwareId: 'opengd77',
     traits: opengd77Traits,
     compatibleEgress: [
       egress('radio-io', 'radio-io-opengd77-md9600', 'Web Serial'),
@@ -166,7 +177,8 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
   'anytone-at-d890uv': {
     id: 'anytone-at-d890uv',
     label: 'Anytone AT-D890UV',
-    group: 'Anytone',
+    modelId: 'anytone-at-d890uv',
+    firmwareId: 'stock',
     traits: anytoneTraits,
     compatibleEgress: [
       egress('radio-io', 'radio-io-at-d890uv', 'Web Serial'),
@@ -176,7 +188,8 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
   'anytone-at-d890uv-mm9pdy': {
     id: 'anytone-at-d890uv-mm9pdy',
     label: 'Anytone AT-D890UV (MM9PDY modded firmware)',
-    group: 'Anytone',
+    modelId: 'anytone-at-d890uv',
+    firmwareId: 'mm9pdy',
     traits: anytoneMm9pdyTraits,
     compatibleEgress: [egress('radio-io', 'radio-io-at-d890uv-mm9pdy', 'Web Serial')],
   },

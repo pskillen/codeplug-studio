@@ -2,7 +2,11 @@ import { IconPlus, IconRadio } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import { radioTargetFor } from '@core/radio-targets/index.ts';
+import {
+  egressSummary,
+  radioTargetDisplayLabel,
+  radioTargetFor,
+} from '@core/radio-targets/index.ts';
 import {
   Button,
   DataTable,
@@ -18,14 +22,20 @@ import { useDebouncedNameFilter } from '../../hooks/useDebouncedNameFilter.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
 import { createNameColumn } from '../../lib/libraryListTable.tsx';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
-import BuildListCard, { BuildsListSection } from '../../components/builds/BuildListCard.tsx';
-import { groupFormatBuilds, type BuildsListGroupMode } from './groupFormatBuilds.ts';
+import BuildsByRadio from '../../components/builds/BuildsByRadio.tsx';
 import classes from './BuildsListPage.module.css';
 
+type BuildsListGroupMode = 'list' | 'radio';
+
 const GROUP_OPTIONS = [
-  { value: 'radio', label: 'By radio' },
+  { value: 'radio', label: 'Radio' },
   { value: 'list', label: 'List' },
 ] as const;
+
+function summaryFor(radioTargetId: string): string {
+  const target = radioTargetFor(radioTargetId);
+  return target ? egressSummary(target) : '';
+}
 
 export default function BuildsListPage() {
   const { builds, loading } = useFormatBuilds();
@@ -46,10 +56,7 @@ export default function BuildsListPage() {
     () => filterRowsByName(builds, nameFilter, (b) => b.name),
     [builds, nameFilter],
   );
-  const groups = useMemo(() => {
-    if (groupMode === 'list') return null;
-    return groupFormatBuilds(filtered, 'radio');
-  }, [filtered, groupMode]);
+  const radioCount = useMemo(() => new Set(builds.map((b) => b.radioTargetId)).size, [builds]);
 
   const columns = useMemo((): DataTableColumn<RadioBuild>[] => {
     return [
@@ -61,21 +68,15 @@ export default function BuildsListPage() {
         key: 'radio',
         header: 'Radio',
         sortable: true,
-        render: (b) => radioTargetFor(b.radioTargetId)?.label ?? b.radioTargetId,
-        sortValue: (b) => radioTargetFor(b.radioTargetId)?.label ?? b.radioTargetId,
+        render: (b) => radioTargetDisplayLabel(b.radioTargetId),
+        sortValue: (b) => radioTargetDisplayLabel(b.radioTargetId),
       },
       {
         key: 'egress',
         header: 'Export paths',
         sortable: true,
-        render: (b) =>
-          radioTargetFor(b.radioTargetId)
-            ?.compatibleEgress.map((entry) => entry.label)
-            .join(' · ') ?? '—',
-        sortValue: (b) =>
-          radioTargetFor(b.radioTargetId)
-            ?.compatibleEgress.map((entry) => entry.label)
-            .join(' · ') ?? '',
+        render: (b) => summaryFor(b.radioTargetId) || '—',
+        sortValue: (b) => summaryFor(b.radioTargetId),
       },
       {
         key: 'updated',
@@ -101,12 +102,14 @@ export default function BuildsListPage() {
         <div>
           <h1 className={classes.title}>Export for radio</h1>
           <p className={classes.subtitle}>
-            Each build packages your library for one radio target — wire names, layout, and export
-            pathway per handheld.
+            Each build is one way of loading your library into one radio — wire names, layout, and
+            export pathway. {builds.length} {builds.length === 1 ? 'build' : 'builds'} across{' '}
+            {radioCount} {radioCount === 1 ? 'radio' : 'radios'}.
           </p>
         </div>
         <div className={classes.headerActions}>
           <Button
+            className={classes.newBuild}
             variant="primary"
             onClick={() => navigate('/builds/new')}
             leftSection={<IconPlus size={16} stroke={1.75} />}
@@ -138,6 +141,7 @@ export default function BuildsListPage() {
               className={classes.search}
             />
             {nameFilterPending ? <Loader size="xs" /> : null}
+            <span className={classes.groupLabel}>Group by</span>
             <SegmentedControl
               size="md"
               value={groupMode}
@@ -147,20 +151,13 @@ export default function BuildsListPage() {
           </div>
 
           {groupMode === 'radio' ? (
-            <div className={classes.groups}>
-              {groups?.length === 0 ? (
-                <Text size="sm" c="dimmed">
-                  No builds match this filter.
-                </Text>
-              ) : null}
-              {groups?.map((group) => (
-                <BuildsListSection key={group.key} title={group.label}>
-                  {group.builds.map((build) => (
-                    <BuildListCard key={build.id} build={build} />
-                  ))}
-                </BuildsListSection>
-              ))}
-            </div>
+            filtered.length === 0 ? (
+              <Text size="sm" c="dimmed">
+                No builds match this filter.
+              </Text>
+            ) : (
+              <BuildsByRadio builds={filtered} />
+            )
           ) : (
             <DataTable
               variant="list"

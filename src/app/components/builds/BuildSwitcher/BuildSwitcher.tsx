@@ -1,6 +1,6 @@
 import { Select, Stack, Text } from '@mantine/core';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import { radioTargetFor } from '@core/radio-targets/index.ts';
+import { manufacturerForRadioTarget, radioTargetFor } from '@core/radio-targets/index.ts';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { pathForSwitchedBuild } from '../../../routes/builds/nav.ts';
 import { useFormatBuild, useFormatBuilds } from '../../../state/useFormatBuilds.ts';
@@ -10,7 +10,7 @@ function buildSelectGroups(builds: RadioBuild[]) {
   const byGroup = new Map<string, { value: string; label: string }[]>();
 
   for (const build of builds) {
-    const group = radioTargetFor(build.radioTargetId)?.group ?? 'Other';
+    const group = manufacturerForRadioTarget(build.radioTargetId);
     const items = byGroup.get(group) ?? [];
     items.push({ value: build.id, label: build.name });
     byGroup.set(group, items);

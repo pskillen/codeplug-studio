@@ -20,7 +20,8 @@ describe('radio target catalog', () => {
   it('lists the RT95 MM9PDY target with zones, Web Serial only; stock RT95 stays flat', () => {
     const mm = radioTargetFor('retevis-rt95-mm9pdy');
     expect(mm?.label).toBe('Retevis RT95 VOX (MM9PDY modded firmware)');
-    expect(mm?.group).toBe('Retevis');
+    expect(mm?.modelId).toBe('retevis-rt95');
+    expect(mm?.firmwareId).toBe('mm9pdy');
     expect(mm?.compatibleEgress.map((e) => e.profileId)).toEqual(['radio-io-rt95-mm9pdy']);
     expect(traitsForRadioTarget('retevis-rt95-mm9pdy')).toEqual([
       BuildCapabilityTrait.ZoneGrouping,
@@ -182,7 +183,7 @@ describe('radio target catalog', () => {
     expect(radioTargetFor('baofeng-dm32uv-radiofoundry')?.label).toBe(
       'Baofeng DM-32UV (RadioFoundry)',
     );
-    expect(radioTargetFor('baofeng-dm32uv-radiofoundry')?.group).toBe('Baofeng');
+    expect(radioTargetFor('baofeng-dm32uv-radiofoundry')?.firmwareId).toBe('radiofoundry');
     expect(radioTargetFor('baofeng-dm32uv-radiofoundry')?.compatibleEgress).toEqual([
       {
         formatId: 'radiofoundry',

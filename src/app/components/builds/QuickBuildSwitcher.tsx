@@ -2,7 +2,7 @@ import { Drawer, Popover } from '@mantine/core';
 import { IconCheck } from '@tabler/icons-react';
 import { useMemo, type ReactNode } from 'react';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import { radioTargetFor } from '@core/radio-targets/index.ts';
+import { manufacturerForRadioTarget, radioTargetFor } from '@core/radio-targets/index.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { DSV2_SCOPE_SELECTOR } from '../../theme-v2.ts';
 import Button from '../v2/Button.tsx';
@@ -23,7 +23,7 @@ export interface QuickBuildSwitcherProps {
 function buildGroups(builds: RadioBuild[]) {
   const byGroup = new Map<string, RadioBuild[]>();
   for (const build of builds) {
-    const group = radioTargetFor(build.radioTargetId)?.group ?? 'Other';
+    const group = manufacturerForRadioTarget(build.radioTargetId);
     const list = byGroup.get(group) ?? [];
     list.push(build);
     byGroup.set(group, list);

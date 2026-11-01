@@ -1,21 +1,19 @@
-import { IconRadio } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { shouldRedirectHomeToLibrary } from './homeRedirect.ts';
 import {
   DesignSystemV2Provider,
   Button,
-  EmptyState,
   ModalShell,
   TextInput,
   ConfirmModal,
 } from '../components/v2/index.ts';
 import ImportProjectYamlPanel from '../components/import-export/ImportProjectYamlPanel.tsx';
+import LandingSupport from '../components/landing/LandingSupport.tsx';
 import ProjectManageCard from '../components/shell/ProjectManageCard.tsx';
 import { GettingStartedContent, GettingStartedModal } from '../components/onboarding/index.ts';
 import { useProjectStatsMap } from '../hooks/useProjectStatsMap.ts';
 import { useProjects } from '../state/useProjects.ts';
-import { ICON_SIZE_ACTION, ICON_STROKE } from '../lib/iconSizes.ts';
 import classes from './HomePage.module.css';
 
 export default function HomePage() {
@@ -93,25 +91,10 @@ export default function HomePage() {
       <div className={classes.page}>
         {empty ? (
           <div className={classes.emptyStack}>
-            <div style={{ maxWidth: 440, width: '100%' }}>
-              <EmptyState
-                icon={<IconRadio size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-                title="No projects yet"
-                description="Create a project to start building a codeplug, or import one from a YAML file you already have."
-                action={
-                  <div
-                    style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}
-                  >
-                    <Button variant="secondary" size="sm" onClick={scrollToImport}>
-                      Import project
-                    </Button>
-                    <Button size="sm" onClick={() => setNewProjectOpen(true)}>
-                      New project
-                    </Button>
-                  </div>
-                }
-              />
-            </div>
+            <LandingSupport
+              onStartProject={() => setNewProjectOpen(true)}
+              onImport={scrollToImport}
+            />
             <div className={classes.quickStartPanel}>
               <div className={classes.quickStartTitle}>Quick start guide</div>
               <GettingStartedContent compact />

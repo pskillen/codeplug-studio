@@ -44,7 +44,11 @@ export type {
   FirmwareReleaseSummary,
   LoadedFirmwarePatch,
 } from './releases/types.ts';
-export { radioTargetIdsForFirmwareRadio } from './radioTargets.ts';
+export {
+  firmwareRadioIdForModel,
+  modelIdForFirmwareRadio,
+  radioTargetIdsForFirmwareRadio,
+} from './radioTargets.ts';
 export {
   applyFirmwarePatch,
   listFirmwarePatchFormats,
