@@ -37,6 +37,23 @@ Existing builds keep their `radioTargetId`; grouping is derived, so there is no 
 - Not shown: "last written" per build — the model has no such field.
 - Mobile: rows keep name, routes and Open; **+ New build** becomes a floating button above the tab bar; New build's footer is fixed above the tab bar.
 
+## Support matrix (landing page)
+
+`supportMatrix.ts` projects the catalog into the radio x feature matrix on the empty Home page ([onboarding](../onboarding/README.md)). Nothing is hand-ticked. Adding a model, firmware or target updates the page; a model with a new flasher needs its entry in `src/core/firmware/radioTargets.ts` (`modelIdForFirmwareRadio`).
+
+| Column                      | Derived from                                                                                                                                                                                        |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Write via cable / Read back | A `web-serial` entry in the target's `compatibleEgress`, filtered by the site (radio-io descriptor exists; per-profile Write gate) via `supportMatrixAvailability`                                  |
+| CPS file                    | Any `cps-file` entry in `compatibleEgress`                                                                                                                                                          |
+| Zones                       | `ZoneGrouping`                                                                                                                                                                                      |
+| Scan lists                  | `ScanLists` / `DedicatedScanLists` = supported; `ZoneAsScanList` or `PerChannelScanFlag` only = partial                                                                                             |
+| Zone = scan                 | `ZoneAsScanList`                                                                                                                                                                                    |
+| Talk groups                 | DMR model with a target = supported; FM model = not applicable                                                                                                                                      |
+| Multi-TG channel            | `MultiTalkGroupPerChannel` (FM = not applicable)                                                                                                                                                    |
+| Flash                       | Stock = not applicable. A `mod` firmware on a model with a flasher = supported when the site offers that flasher (prod gate, platform). Open firmware = not supported (the flasher installs MM9PDY) |
+
+A model + firmware with no target is "not supported" in every column. The "Most features" card is the supported firmware with the highest score (supported = 1, partial = 0.5), shown only when a model has more than one supported firmware.
+
 ## Adding a radio or firmware
 
 1. Add the model (or a firmware to an existing model) in `models.ts`.
