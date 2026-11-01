@@ -4,12 +4,13 @@ import classes from './landing.module.css';
 
 const GLYPH: Record<SupportState, string> = {
   supported: '✓',
-  partial: '◐',
+  // `◐` falls back to a tiny dot in common system fonts; `~` reads at any size.
+  partial: '~',
   unsupported: '✕',
   na: '–',
 };
 
-/** Tick / half / cross / dash mark for one support state. Text label is exposed to screen readers. */
+/** Tick / tilde / cross / dash mark for one support state. Text label is exposed to screen readers. */
 export default function SupportMark({ state }: { state: SupportState }) {
   return (
     <span
