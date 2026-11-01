@@ -42,9 +42,9 @@ export default function ImportYamlIntoActivePanel() {
       />
       <InterchangeOverwriteModal
         opened={resolver.overwriteOpen}
-        title={resolver.overwriteTitle}
         projectName={resolver.projectName || activeProject.name}
         diff={resolver.diff}
+        source={resolver.overwriteSource}
         loading={resolver.importing}
         error={resolver.error}
         idMismatch={resolver.idMismatch}

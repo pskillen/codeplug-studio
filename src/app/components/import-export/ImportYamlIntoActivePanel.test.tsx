@@ -17,6 +17,7 @@ function mockResolver(overrides: Record<string, unknown> = {}) {
     overwriteOpen: true,
     overwriteTitle: 'Replace active project?',
     diff: testProjectSyncDiff({}, { counts: { channels: 1 } }),
+    overwriteSource: 'file',
     projectName: 'Active project',
     idMismatch: false,
     localProjectId: 'proj-1',
@@ -104,8 +105,8 @@ describe('ImportYamlIntoActivePanel', () => {
 
   it('confirms overwrite through interchange modal', () => {
     renderPanel();
-    expect(screen.getByText('Channels')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Overwrite local copy' }));
+    expect(screen.getByRole('region', { name: 'File' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Use file copy' }));
     expect(confirmOverwrite).toHaveBeenCalledOnce();
   });
 
@@ -126,8 +127,8 @@ describe('ImportYamlIntoActivePanel', () => {
     });
     renderPanel();
 
-    expect(screen.getByText(/Local project id: proj-1/)).toBeInTheDocument();
-    expect(screen.getByText(/Remote project id: remote-proj/)).toBeInTheDocument();
+    expect(screen.getByText(/This browser: proj-1/)).toBeInTheDocument();
+    expect(screen.getByText(/File: remote-proj/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Replace local content' }));
     fireEvent.click(screen.getByRole('button', { name: 'Import as new project' }));
     expect(confirmOverwrite).toHaveBeenCalledOnce();

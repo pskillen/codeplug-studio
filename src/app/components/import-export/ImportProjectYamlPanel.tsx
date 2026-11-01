@@ -40,9 +40,11 @@ export default function ImportProjectYamlPanel() {
       />
       <InterchangeOverwriteModal
         opened={resolver.overwriteOpen}
-        title={resolver.overwriteTitle}
         projectName={resolver.projectName}
         diff={resolver.diff}
+        source={resolver.overwriteSource}
+        localProjectId={resolver.localProjectId}
+        remoteProjectId={resolver.remoteProjectId}
         loading={resolver.importing}
         error={resolver.error}
         onClose={() => resolver.resetOverwrite()}

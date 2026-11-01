@@ -1,6 +1,12 @@
 import { getImportAdapter } from '@core/import-export/registry.ts';
 import { isSingleFileProjectImportAdapter } from '@core/import-export/importAdapter.ts';
 import {
+  diffProjectEntities,
+  entitySetsFromAggregate,
+  entitySetsFromSeed,
+  type ProjectEntitySets,
+} from '@core/services/projectEntityDiff.ts';
+import {
   buildProjectSyncDiff,
   summariseProjectAggregate,
   summariseProjectSeed,
@@ -15,6 +21,7 @@ export interface YamlImportPreview {
   projectName: string;
   yamlText: string;
   remoteSummary: ProjectSyncSummary;
+  remoteEntities: ProjectEntitySets;
 }
 
 export function parseYamlImportPreview(yamlText: string): YamlImportPreview {
@@ -29,6 +36,7 @@ export function parseYamlImportPreview(yamlText: string): YamlImportPreview {
     projectName: project.meta.name,
     yamlText,
     remoteSummary,
+    remoteEntities: entitySetsFromAggregate(project),
   };
 }
 
@@ -39,13 +47,17 @@ export async function findExistingProjectMeta(projectId: string): Promise<Projec
 export async function buildImportOverwriteDiff(
   projectId: string,
   remoteSummary: ProjectSyncSummary,
+  remoteEntities?: ProjectEntitySets,
 ): Promise<ProjectSyncDiff> {
   const seed = await persistence.loadProjectSeed(projectId);
   if (!seed) {
     return buildProjectSyncDiff(remoteSummary, remoteSummary);
   }
   const localSummary = summariseProjectSeed(seed);
-  return buildProjectSyncDiff(localSummary, remoteSummary);
+  const entityChanges = remoteEntities
+    ? diffProjectEntities(entitySetsFromSeed(seed), remoteEntities)
+    : [];
+  return buildProjectSyncDiff(localSummary, remoteSummary, entityChanges);
 }
 
 export function projectExistsInList(projectId: string, projects: ProjectMeta[]): boolean {

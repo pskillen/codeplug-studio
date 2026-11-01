@@ -15,6 +15,7 @@ export default function RefreshFromDriveBanner() {
     remoteProjectId,
     closeOverwrite,
     dismissBanner,
+    keepLocal,
     openOverwrite,
     confirmRefresh,
     confirmImportAsNew,
@@ -65,7 +66,6 @@ export default function RefreshFromDriveBanner() {
       </Alert>
       <InterchangeOverwriteModal
         opened={overwriteOpen}
-        title={idMismatch ? 'Refresh from Google Drive?' : 'Refresh from Google Drive?'}
         projectName={projectName}
         diff={diff}
         loading={importing}
@@ -74,6 +74,7 @@ export default function RefreshFromDriveBanner() {
         localProjectId={localProjectId}
         remoteProjectId={remoteProjectId}
         onClose={closeOverwrite}
+        onKeepLocal={keepLocal}
         onConfirm={() => void confirmRefresh()}
         onImportAsNew={idMismatch ? () => void confirmImportAsNew() : undefined}
       />

@@ -155,7 +155,7 @@ Implementation: `src/integrations/cloud/googleDrive.ts`, `src/integrations/cloud
 ### Import workflow
 
 - **Home** and **Summary** panels: **Open from Drive** → select YAML
-- If YAML `project.id` matches an existing IndexedDB project → **overwrite** modal with a left/right **diff table** (**Last edited** / **Last Drive or file save**, all entity counts including APRS)
+- If YAML `project.id` matches an existing IndexedDB project → **overwrite** dialog ("Which copy of _project_ do you want?"): **This browser** vs **Google Drive / File** cards, a loss warning only when local edits post-date the last sync, and an itemised by-UUID list of added / removed / changed entities
 - If YAML `project.id` is **not** in IndexedDB → `seedPreservingId` — seeds with the YAML's portable id ([#361](https://github.com/pskillen/codeplug-studio/issues/361)); same for local file drop on Home
 - **Import as new project** (refresh / mismatch modals only) → `createNew` — fresh UUID by explicit operator choice
 - Replace-active panel requires matching active project id, or offers `adoptRemote` / import-as-new on mismatch ([#334](https://github.com/pskillen/codeplug-studio/issues/334))
@@ -167,18 +167,17 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 
 ## Components
 
-| Component                       | Role                                                                                                                        |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `GoogleDriveButton`             | Presentational CTA styling                                                                                                  |
-| `GoogleDriveActionButton`       | Open/save CTAs — inline connect, then Drive browser                                                                         |
-| `GoogleDriveNotConfiguredModal` | Settings redirect when the platform client id env is missing                                                                |
-| `DriveBrowserModal`             | Folder browser when connected                                                                                               |
-| `SidebarDriveControls`          | Sidebar Save / Check Drive icon buttons ([#368](https://github.com/pskillen/codeplug-studio/issues/368))                    |
-| `DriveRefreshProvider`          | Shared remote-check state for sidebar + refresh banner                                                                      |
-| `RefreshFromDriveBanner`        | Newer remote YAML available — optional refresh                                                                              |
-| `InterchangeOverwriteModal`     | Overwrite / adopt-remote with tabular local vs remote diff ([#477](https://github.com/pskillen/codeplug-studio/issues/477)) |
-| `DriveSaveConflictModal`        | Pre-save conflict when remote is newer or id mismatches                                                                     |
-| `ProjectSyncDiffTable`          | Shared Metric / Local / Remote / Δ table for overwrite and save conflict                                                    |
+| Component                       | Role                                                                                                                                                                                                                                                   |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GoogleDriveButton`             | Presentational CTA styling                                                                                                                                                                                                                             |
+| `GoogleDriveActionButton`       | Open/save CTAs — inline connect, then Drive browser                                                                                                                                                                                                    |
+| `GoogleDriveNotConfiguredModal` | Settings redirect when the platform client id env is missing                                                                                                                                                                                           |
+| `DriveBrowserModal`             | Folder browser when connected                                                                                                                                                                                                                          |
+| `SidebarDriveControls`          | Sidebar Save / Check Drive icon buttons ([#368](https://github.com/pskillen/codeplug-studio/issues/368))                                                                                                                                               |
+| `DriveRefreshProvider`          | Shared remote-check state for sidebar + refresh banner                                                                                                                                                                                                 |
+| `RefreshFromDriveBanner`        | Newer remote YAML available — optional refresh                                                                                                                                                                                                         |
+| `InterchangeOverwriteModal`     | "Which copy?" dialog: two-card summary, itemised changes, Back up local YAML / Keep this browser's / Use Drive copy ([#477](https://github.com/pskillen/codeplug-studio/issues/477), [#1509](https://github.com/pskillen/codeplug-studio/issues/1509)) |
+| `DriveSaveConflictModal`        | Pre-save conflict when remote is newer or id mismatches                                                                                                                                                                                                |
 
 ## Error states
 
@@ -200,24 +199,24 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 
 ## Implementation status
 
-| Area                              | Status  | Notes                                                                                                                                                                                |
-| --------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| OAuth + Drive API port            | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)                                                                                                                         |
-| Settings status / disconnect      | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                                                                                                         |
-| Drive browser modal               | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                                                                                                         |
-| Summary project interchange       | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62); YAML on Summary [#569](https://github.com/pskillen/codeplug-studio/issues/569)                                         |
-| Disconnected Drive CTA UX         | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action                                                                                            |
-| Shared session + reconnect        | Shipped | [#286](https://github.com/pskillen/codeplug-studio/issues/286)                                                                                                                       |
-| App chrome Save bar               | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                                                                                                       |
-| UUID-match import overwrite       | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                                                                                                       |
-| Refresh from Drive prompt         | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                                                                                                       |
-| Refresh id-mismatch override      | Shipped | [#334](https://github.com/pskillen/codeplug-studio/issues/334)                                                                                                                       |
-| Save conflict detection           | Shipped | [#335](https://github.com/pskillen/codeplug-studio/issues/335)                                                                                                                       |
-| Tabular overwrite / conflict diff | Shipped | [#477](https://github.com/pskillen/codeplug-studio/issues/477) — full entity counts + timestamps                                                                                     |
-| Portable project id on open       | Shipped | [#361](https://github.com/pskillen/codeplug-studio/issues/361) — `seedPreservingId` default                                                                                          |
-| Sidebar Drive controls            | Shipped | [#368](https://github.com/pskillen/codeplug-studio/issues/368) — Save/Check in primary nav                                                                                           |
-| Android native OAuth (PKCE)       | Shipped | [#895](https://github.com/pskillen/codeplug-studio/issues/895) — Custom Tabs + deep link; on-device verify pending                                                                   |
-| `drive.file` scope narrowing      | Shipped | [#909](https://github.com/pskillen/codeplug-studio/issues/909) — app-owned "Codeplug Studio" root folder; cross-device rediscovery unverified against a real account (see checklist) |
+| Area                                         | Status  | Notes                                                                                                                                                                                               |
+| -------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OAuth + Drive API port                       | Shipped | [#61](https://github.com/pskillen/codeplug-studio/issues/61)                                                                                                                                        |
+| Settings status / disconnect                 | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                                                                                                                        |
+| Drive browser modal                          | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62)                                                                                                                                        |
+| Summary project interchange                  | Shipped | [#62](https://github.com/pskillen/codeplug-studio/issues/62); YAML on Summary [#569](https://github.com/pskillen/codeplug-studio/issues/569)                                                        |
+| Disconnected Drive CTA UX                    | Shipped | [#141](https://github.com/pskillen/codeplug-studio/issues/141) — inline connect on action                                                                                                           |
+| Shared session + reconnect                   | Shipped | [#286](https://github.com/pskillen/codeplug-studio/issues/286)                                                                                                                                      |
+| App chrome Save bar                          | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                                                                                                                      |
+| UUID-match import overwrite                  | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                                                                                                                      |
+| Refresh from Drive prompt                    | Shipped | [#285](https://github.com/pskillen/codeplug-studio/issues/285)                                                                                                                                      |
+| Refresh id-mismatch override                 | Shipped | [#334](https://github.com/pskillen/codeplug-studio/issues/334)                                                                                                                                      |
+| Save conflict detection                      | Shipped | [#335](https://github.com/pskillen/codeplug-studio/issues/335)                                                                                                                                      |
+| Which-copy dialog (cards + itemised changes) | Shipped | [#1509](https://github.com/pskillen/codeplug-studio/issues/1509) — replaces the tabular diff of [#477](https://github.com/pskillen/codeplug-studio/issues/477); core diff in `projectEntityDiff.ts` |
+| Portable project id on open                  | Shipped | [#361](https://github.com/pskillen/codeplug-studio/issues/361) — `seedPreservingId` default                                                                                                         |
+| Sidebar Drive controls                       | Shipped | [#368](https://github.com/pskillen/codeplug-studio/issues/368) — Save/Check in primary nav                                                                                                          |
+| Android native OAuth (PKCE)                  | Shipped | [#895](https://github.com/pskillen/codeplug-studio/issues/895) — Custom Tabs + deep link; on-device verify pending                                                                                  |
+| `drive.file` scope narrowing                 | Shipped | [#909](https://github.com/pskillen/codeplug-studio/issues/909) — app-owned "Codeplug Studio" root folder; cross-device rediscovery unverified against a real account (see checklist)                |
 
 ## Manual verify checklist
 
@@ -230,7 +229,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 - [ ] **Save to Drive** in sidebar overwrites remembered file when project is dirty
 - [ ] **Check Drive** finds newer remote copy and shows refresh banner
 - [ ] Open YAML from Drive on fresh browser (unknown UUID) → IndexedDB `project.id` matches YAML ([#361](https://github.com/pskillen/codeplug-studio/issues/361))
-- [ ] Open YAML from Drive with matching `project.id` → tabular diff modal (all entity counts) → overwrite local
+- [ ] Open YAML from Drive with matching `project.id` → which-copy dialog (cards + itemised changes) → use file copy
 - [ ] Switch project with newer Drive file → **Refresh from Drive** banner
 - [ ] Linked Drive file with mismatched `project.id` → mismatch banner → adopt or import as new
 - [ ] Failed refresh import → error shown in modal (not console-only)

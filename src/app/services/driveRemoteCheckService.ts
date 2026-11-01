@@ -48,7 +48,7 @@ export async function checkDriveRemoteUpdates({
     ...preview.remoteSummary,
     lastModifiedAt: remoteTime ?? preview.remoteSummary.portableSyncedAt,
   };
-  const diff = await buildImportOverwriteDiff(projectId, remoteSummary);
+  const diff = await buildImportOverwriteDiff(projectId, remoteSummary, preview.remoteEntities);
   return {
     newer: true,
     diff,

@@ -12,6 +12,7 @@ import {
   type ImportProjectYamlResult,
 } from '@core/services/importProjectYaml.ts';
 import type { ProjectPersistence, ProjectSeed } from '@integrations/persistence/index.ts';
+import { downloadTextFile } from '@integrations/download/browserDownload.ts';
 import { persistence } from '../state/persistence.ts';
 
 function asInterchangePort(store: ProjectPersistence): ProjectInterchangePort {
@@ -37,6 +38,14 @@ export async function exportProjectToYaml(
   options?: ExportProjectYamlOptions,
 ): Promise<ExportProjectYamlResult> {
   return exportProjectYaml(port, projectId, options);
+}
+
+/** Download the current local project as native YAML (no destination recorded). */
+export async function backupLocalProjectYaml(projectId: string): Promise<string> {
+  const result = await exportProjectToYaml(projectId);
+  const fileName = result.fileName.replace(/\.ya?ml$/i, '') + '-local-backup.yaml';
+  downloadTextFile(result.content, fileName, 'text/yaml;charset=utf-8');
+  return fileName;
 }
 
 export interface RecordProjectImportDestinationInput {
