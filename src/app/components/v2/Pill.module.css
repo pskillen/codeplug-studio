@@ -47,6 +47,12 @@ button.root {
   font-weight: 600;
 }
 
+.destructive {
+  background: var(--dsv2-destructive-tint);
+  color: var(--dsv2-destructive);
+  font-weight: 600;
+}
+
 .semantic {
   font-weight: 700;
   /* Fill/text set via inline style from props. */
