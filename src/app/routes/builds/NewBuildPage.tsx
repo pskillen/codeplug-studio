@@ -1,7 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { listRadioTargets, type RadioTarget } from '@core/radio-targets/index.ts';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  countBuildsByTarget,
+  radioTargetDisplayLabel,
+  radioTargetFor,
+} from '@core/radio-targets/index.ts';
 import { EgressPathwayPills } from '../../components/builds/EgressPathwayPills.tsx';
+import RadioTargetPicker from '../../components/builds/RadioTargetPicker.tsx';
 import { Button, TextInput } from '../../components/v2/index.ts';
 import { Text } from '@mantine/core';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
@@ -9,31 +14,23 @@ import classes from './NewBuildPage.module.css';
 
 type Step = 'radio' | 'name';
 
-function targetsByGroup(
-  targets: readonly RadioTarget[],
-): { group: string; targets: RadioTarget[] }[] {
-  const map = new Map<string, RadioTarget[]>();
-  for (const target of targets) {
-    const list = map.get(target.group) ?? [];
-    list.push(target);
-    map.set(target.group, list);
-  }
-  return [...map.entries()].map(([group, groupTargets]) => ({ group, targets: groupTargets }));
-}
-
 export default function NewBuildPage() {
   const navigate = useNavigate();
-  const { createBuild } = useFormatBuilds();
+  const [searchParams] = useSearchParams();
+  const { createBuild, builds } = useFormatBuilds();
   const [step, setStep] = useState<Step>('radio');
-  const [radioTargetId, setRadioTargetId] = useState<string | null>(null);
+  const [radioTargetId, setRadioTargetId] = useState<string | null>(() => {
+    const preselected = searchParams.get('target');
+    return preselected && radioTargetFor(preselected) ? preselected : null;
+  });
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const groups = useMemo(() => targetsByGroup(listRadioTargets()), []);
-  const selectedTarget = radioTargetId
-    ? listRadioTargets().find((target) => target.id === radioTargetId)
-    : undefined;
+  const buildCounts = useMemo(() => countBuildsByTarget(builds ?? []), [builds]);
+  const selectedTarget = radioTargetId ? radioTargetFor(radioTargetId) : undefined;
+  const selectedLabel = radioTargetId ? radioTargetDisplayLabel(radioTargetId) : '';
+  const existingCount = radioTargetId ? (buildCounts.get(radioTargetId) ?? 0) : 0;
 
   async function handleCreate() {
     if (!radioTargetId) return;
@@ -56,37 +53,47 @@ export default function NewBuildPage() {
         </Link>
         <h1 className={classes.title}>New build</h1>
         <p className={classes.subtitle}>
-          Choose a radio target, then give this build a name. Compatible export pathways are seeded
-          automatically — pick the pathway on Export.
+          Find your radio, then pick the firmware it runs. Builds are cheap — make one per handset
+          or per role. Compatible export pathways are seeded automatically; pick the pathway on
+          Export.
         </p>
       </div>
 
       {step === 'radio' ? (
         <div className={classes.section}>
           <h2 className={classes.sectionTitle}>Radio target</h2>
-          <div className={classes.targetGroups}>
-            {groups.map(({ group, targets }) => (
-              <div key={group} className={classes.targetGroup}>
-                <div className={classes.groupLabel}>{group}</div>
-                <div className={classes.targetGrid}>
-                  {targets.map((target) => (
-                    <button
-                      key={target.id}
-                      type="button"
-                      className={classes.targetCard}
-                      onClick={() => {
-                        setRadioTargetId(target.id);
-                        setName(target.label);
-                        setStep('name');
-                      }}
-                    >
-                      <div className={classes.targetName}>{target.label}</div>
-                      <EgressPathwayPills egress={target.compatibleEgress} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+          <RadioTargetPicker
+            value={radioTargetId}
+            onChange={setRadioTargetId}
+            buildCounts={buildCounts}
+          />
+          <div className={classes.footer} data-testid="new-build-footer">
+            <span className={classes.footerSelection}>
+              {radioTargetId ? (
+                <>
+                  <b>{selectedLabel}</b>
+                  {existingCount > 0 ? (
+                    <span className={classes.footerHint}>
+                      {' '}
+                      · you have {existingCount} {existingCount === 1 ? 'build' : 'builds'} for this
+                      already
+                    </span>
+                  ) : null}
+                </>
+              ) : (
+                <span className={classes.footerHint}>Choose a radio and firmware</span>
+              )}
+            </span>
+            <Button
+              disabled={!radioTargetId}
+              onClick={() => {
+                if (!radioTargetId) return;
+                setName(radioTargetDisplayLabel(radioTargetId));
+                setStep('name');
+              }}
+            >
+              Next: name it →
+            </Button>
           </div>
         </div>
       ) : null}
@@ -96,7 +103,7 @@ export default function NewBuildPage() {
           <h2 className={classes.sectionTitle}>Build name</h2>
           <div className={classes.namePanel}>
             <Text size="sm" c="dimmed">
-              Radio: {selectedTarget.label}
+              Radio: {selectedLabel}
             </Text>
             <EgressPathwayPills egress={selectedTarget.compatibleEgress} />
             <TextInput
@@ -105,7 +112,8 @@ export default function NewBuildPage() {
               onChange={(e) => setName(e.currentTarget.value)}
             />
             <Text size="xs" c="dimmed">
-              Defaults to the radio label — change when you run multiple builds for the same radio.
+              Defaults to the radio name — change it when you run several builds for the same radio
+              (Team A / Team B, one per handset).
             </Text>
             {error ? (
               <Text c="red" size="sm">
@@ -116,13 +124,7 @@ export default function NewBuildPage() {
               <Button loading={creating} onClick={() => void handleCreate()}>
                 Create build
               </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setStep('radio');
-                  setRadioTargetId(null);
-                }}
-              >
+              <Button variant="ghost" onClick={() => setStep('radio')}>
                 Change radio
               </Button>
             </div>
