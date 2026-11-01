@@ -37,6 +37,21 @@ export {
   type RadioModel,
 } from './models.ts';
 export {
+  SUPPORT_COLUMNS,
+  SUPPORT_GROUPS,
+  buildSupportMatrix,
+  filterSupportMatrix,
+  type SupportCells,
+  type SupportColumn,
+  type SupportColumnId,
+  type SupportFirmwareRow,
+  type SupportGroupId,
+  type SupportMatrixAvailability,
+  type SupportMatrixInput,
+  type SupportModelRow,
+  type SupportState,
+} from './supportMatrix.ts';
+export {
   UNKNOWN_MANUFACTURER,
   countBuildsByTarget,
   egressSummary,
