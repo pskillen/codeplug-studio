@@ -855,6 +855,7 @@ export default function ChannelsListPage() {
       <ListMapLayout
         desktopClassName={pageClasses.page}
         title="Channels"
+        mobile="swipe" // EXPERIMENT: swipe panes instead of the bottom sheet
         head={
           <LibraryInventoryHeader title="Channels" subtitle={countLabel} actions={listActions} />
         }
