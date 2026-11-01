@@ -1,0 +1,362 @@
+.hero {
+  text-align: center;
+  padding: 12px 0 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.heroTitle {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  font-family: var(--dsv2-font-family);
+}
+
+.heroLead {
+  margin: 0;
+  max-width: 60ch;
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-secondary);
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.heroNote {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+.landing {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+  min-width: 0;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  font-family: var(--dsv2-font-family);
+}
+
+.sectionLead {
+  margin: 4px 0 14px;
+  color: var(--dsv2-text-secondary);
+  font-size: var(--dsv2-font-body);
+}
+
+.muted {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+/* Finder */
+.finder {
+  min-width: 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.chip {
+  padding: 7px 12px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-pill);
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-secondary);
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--dsv2-font-body-sm);
+  cursor: pointer;
+}
+
+.chipOn {
+  border-color: var(--dsv2-accent-border);
+  color: var(--dsv2-text-primary);
+  background: var(--dsv2-accent-tint-06);
+}
+
+.radioHead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.radioHead h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--dsv2-text-primary);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.fwCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-surface);
+  min-width: 0;
+}
+
+.fwCardBest {
+  border-color: var(--dsv2-accent-border);
+  box-shadow: 0 0 0 1px var(--dsv2-accent-border);
+}
+
+.fwHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dsv2-text-primary);
+}
+
+.bestTag {
+  margin-left: auto;
+  font-size: var(--dsv2-font-micro);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dsv2-accent);
+}
+
+.groupLabel {
+  margin: 10px 0 4px;
+  font-size: var(--dsv2-font-micro);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dsv2-text-tertiary);
+}
+
+.featureList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.featureList li {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  color: var(--dsv2-text-primary);
+}
+
+.feature_unsupported,
+.feature_na {
+  color: var(--dsv2-text-tertiary);
+}
+
+.notSupported {
+  margin: 8px 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.cardLink {
+  color: var(--dsv2-text-link);
+  font-size: var(--dsv2-font-body-sm);
+  font-weight: 600;
+}
+
+/* Marks */
+.mark {
+  display: inline-block;
+  width: 16px;
+  text-align: center;
+  font-weight: 800;
+  flex: none;
+}
+
+.mark_supported {
+  color: var(--dsv2-success);
+}
+
+.mark_partial {
+  color: var(--dsv2-warning);
+}
+
+.mark_unsupported {
+  color: var(--dsv2-destructive);
+  font-weight: 400;
+}
+
+.mark_na {
+  color: var(--dsv2-text-tertiary);
+  font-weight: 400;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Matrix */
+.matrixSection {
+  min-width: 0;
+}
+
+.matrixHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.matrixScroll {
+  overflow-x: auto;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-surface);
+}
+
+.matrix {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.matrix th,
+.matrix td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--dsv2-border-quiet);
+  text-align: center;
+  color: var(--dsv2-text-primary);
+}
+
+.groupHead,
+.colHead {
+  font-size: var(--dsv2-font-micro);
+  font-weight: 600;
+  color: var(--dsv2-text-tertiary);
+  white-space: nowrap;
+}
+
+.groupHead {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-left: 1px solid var(--dsv2-border-quiet);
+}
+
+/* Radio column stays visible while the table scrolls sideways. */
+.radioCol {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 150px;
+  text-align: left !important;
+  background: var(--dsv2-surface);
+  white-space: nowrap;
+}
+
+.modelRow .modelCell {
+  position: sticky;
+  left: 0;
+  text-align: left;
+  background: var(--dsv2-surface-quiet);
+  font-weight: 700;
+}
+
+.modelCellInner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fwCell {
+  font-weight: 500;
+  padding-left: 22px !important;
+}
+
+.markCell {
+  white-space: nowrap;
+}
+
+.legend {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 47.99em) {
+  .heroTitle {
+    font-size: 22px;
+  }
+
+  .chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -16px 18px;
+    padding: 0 16px 4px;
+  }
+
+  .chip {
+    flex: none;
+  }
+
+  .cards {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin: 0 -16px;
+    padding: 0 16px 6px;
+    gap: 10px;
+  }
+
+  .fwCard {
+    flex: 0 0 84%;
+    scroll-snap-align: start;
+  }
+}
