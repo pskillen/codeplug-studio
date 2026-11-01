@@ -59,6 +59,10 @@
 }
 
 @media (max-width: 48em) {
+  .groupLabel {
+    display: none;
+  }
+
   /* Floating action: sits above the bottom tab bar. */
   .newBuild {
     position: fixed;
