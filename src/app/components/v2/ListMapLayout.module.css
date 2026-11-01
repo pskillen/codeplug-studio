@@ -1,0 +1,137 @@
+.desktop {
+  min-width: 0;
+}
+
+.split {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.listPane {
+  flex: 1.7;
+  min-width: 0;
+  /* Wide tables scroll inside their pane instead of sliding under the map. */
+  overflow-x: auto;
+}
+
+.mapPane {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+}
+
+/* Fills the viewport below the app chrome; sticks while the list scrolls. */
+.stickyMap {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: clamp(360px, calc(100dvh - 150px), 1100px);
+}
+
+.mapFrame {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.mapFrame > * {
+  width: 100%;
+  height: 100%;
+}
+
+.extras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.note {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+/* Mobile: fills the full-bleed route. */
+.mobile {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topBar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px var(--dsv2-page-padding-x, 16px);
+  border-bottom: 1px solid var(--dsv2-border);
+  background: var(--dsv2-bg);
+}
+
+.topTitle {
+  font-size: var(--dsv2-font-heading-md, 16px);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sheetArea {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.fullMap {
+  position: absolute;
+  inset: 0;
+}
+
+.fullMap > * {
+  width: 100%;
+  height: 100%;
+}
+
+/* Map controls sit above a map that runs edge to edge. */
+.fullMap :global(.codeplug-map-wrap) {
+  gap: 4px;
+  padding-top: 6px;
+}
+
+.fullMap :global(.codeplug-map-toolbar) {
+  --group-wrap: nowrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-inline: var(--dsv2-page-padding-x, 16px);
+  scrollbar-width: none;
+}
+
+.fullMap :global(.codeplug-map-toolbar) > * {
+  --group-wrap: nowrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.fullMap :global(.codeplug-map) {
+  border: 0;
+  border-radius: 0;
+}
+
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 var(--dsv2-page-padding-x, 16px) 20px;
+  min-width: 0;
+}

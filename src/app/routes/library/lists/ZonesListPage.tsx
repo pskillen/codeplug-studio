@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useMediaQuery } from '@mantine/hooks';
 import { IconMapPin, IconPlus } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import type { Zone } from '@core/models/library.ts';
@@ -11,20 +10,18 @@ import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import EntityListRowDeleteAction from '../../../components/library/EntityListRowDeleteAction.tsx';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
-import LibraryMapStack from '../../../components/library/LibraryMapStack.tsx';
 import MembershipSortMenu from '../../../components/library/MembershipSortMenu.tsx';
 import {
   Button,
   DataTable,
   DesignSystemV2Provider,
-  MapPanel,
+  ListMapLayout,
   SearchInput,
   type DataTableColumn,
 } from '../../../components/v2/index.ts';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { createNameColumn } from '../../../lib/libraryListTable.tsx';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
-import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../../lib/breakpoints.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { persistence } from '../../../state/persistence.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
@@ -40,7 +37,6 @@ export default function ZonesListPage() {
     useListNameQuery('zones');
   const [savingOrder, setSavingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
-  const isMobileMap = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
 
   const orderedZones = useMemo(() => sortZonesByExportOrder(zones), [zones]);
   const filtered = useMemo(
@@ -155,50 +151,42 @@ export default function ZonesListPage() {
 
   const tableRows = filterActive ? filtered : orderedZones;
 
-  const mapPanel = (
+  const mapExtras = position ? (
     <>
-      <div className={classes.mapMeta}>
-        {position ? (
-          <>
-            {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
-              <span>My location accuracy ±{Math.round(position.accuracyMeters)} m</span>
-            ) : null}
-            <Button variant="ghost" size="sm" onClick={clearPosition}>
-              Clear my location
-            </Button>
-          </>
-        ) : (
-          <UseMyLocationButton
-            label="Show my location"
-            onLocation={(lat, lon, accuracyMeters) =>
-              setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
-            }
-          />
-        )}
-      </div>
-      <MapPanel
-        title="Zone map"
-        height={isMobileMap ? 560 : 420}
-        legend={
-          mapSkipped.length > 0 ? (
-            <p className={classes.mapSkipped}>
-              {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
-              (missing coordinates, Use Location = No, or 0,0).
-            </p>
-          ) : undefined
-        }
-      >
-        <CodeplugMap
-          channels={channels}
-          zones={zones}
-          allChannels={channels}
-          height="100%"
-          operatorPosition={position}
-          onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-          onZoneClick={(id) => navigate(`/library/zones/${id}`)}
-        />
-      </MapPanel>
+      {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
+        <span>My location accuracy ±{Math.round(position.accuracyMeters)} m</span>
+      ) : null}
+      <Button variant="ghost" size="sm" onClick={clearPosition}>
+        Clear my location
+      </Button>
     </>
+  ) : (
+    <UseMyLocationButton
+      label="Show my location"
+      onLocation={(lat, lon, accuracyMeters) =>
+        setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
+      }
+    />
+  );
+
+  const mapNote =
+    mapSkipped.length > 0 ? (
+      <p className={classes.mapSkipped}>
+        {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map (missing
+        coordinates, Use Location = No, or 0,0).
+      </p>
+    ) : undefined;
+
+  const mapContent = (
+    <CodeplugMap
+      channels={channels}
+      zones={zones}
+      allChannels={channels}
+      height="100%"
+      operatorPosition={position}
+      onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+      onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+    />
   );
 
   const listContent = (
@@ -257,11 +245,25 @@ export default function ZonesListPage() {
 
   return (
     <DesignSystemV2Provider>
-      <div className={pageClasses.page}>
-        <LibraryInventoryHeader title="Zones" subtitle={countLabel} actions={listActions} />
-
-        <LibraryMapStack layout="split" list={listContent} map={mapPanel} />
-      </div>
+      <ListMapLayout
+        desktopClassName={pageClasses.page}
+        title="Zones"
+        head={<LibraryInventoryHeader title="Zones" subtitle={countLabel} actions={listActions} />}
+        list={listContent}
+        map={mapContent}
+        mapExtras={mapExtras}
+        mapNote={mapNote}
+        sheetLabel="Zones"
+        initialSnap={channels.length > mapSkipped.length ? 'half' : 'full'}
+        sheetHeader={
+          <div className={classes.sheetSummary}>
+            <strong>
+              {zones.length} zone{zones.length === 1 ? '' : 's'}
+            </strong>
+            <span>{channels.length - mapSkipped.length} channels on map</span>
+          </div>
+        }
+      />
     </DesignSystemV2Provider>
   );
 }

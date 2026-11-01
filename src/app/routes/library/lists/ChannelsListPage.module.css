@@ -131,14 +131,19 @@
   font-size: var(--dsv2-font-body-sm);
 }
 
-.mapMeta {
+.sheetSummary {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 10px;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0 var(--dsv2-page-padding-x, 16px) 10px;
   font-size: var(--dsv2-font-body-sm);
   color: var(--dsv2-text-tertiary);
+}
+
+.sheetSummary strong {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-primary);
 }
 
 .searchRow {

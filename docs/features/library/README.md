@@ -57,18 +57,18 @@ Shipped initiatives (mode profiles, membership order, zones revision-2, library 
 
 `/library` redirects to `/library/channels`. Each entity kind has a dedicated list page; section nav order matches `routes/library/nav.ts`:
 
-| List route                   | UI                                                                                                                                                  | Map                                 |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| `/library/channels`          | v2 `DataTable` — tabbed `FilterPopover` filters, selection bulk footer, `ModalShell` bulk edit, hideable columns, URL + `localStorage` filter prefs | Yes — stacked via `LibraryMapStack` |
-| `/library/channels/defaults` | Library-wide channel behavioural defaults (TX deny, TX permit, talker alias, analog squelch) — nested under Channels in section nav                 | No                                  |
-| `/library/zones`             | v2 `DataTable` — `reorderMode` grip + `Zone.order`; Sort zones…; members, comment; split map via `LibraryMapStack`                                  | Yes                                 |
-| `/library/talk-groups`       | v2 `DataTable` — mode, ID, Abbrev, channels/RX lists using, comment, `RowActionIcon` delete                                                         | No                                  |
-| `/library/contacts`          | Dual v2 `DataTable` in `Panel`s: digital `scale="extreme"` + Delete all; analog thin list; **ID directory** link in header                          | No                                  |
-| `/library/rx-group-lists`    | v2 `DataTable` — members, channels using, row delete                                                                                                | No                                  |
-| `/library/scan-lists`        | v2 `DataTable` — members, channels-using ref count, row delete                                                                                      | No                                  |
-| `/library/digital-ids`       | Your own DMR and NXDN IDs, grouped by protocol — Default badge, Set as default, channels using, row delete; notice when a protocol has no default   | No                                  |
+| List route                   | UI                                                                                                                                                  | Map                             |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| `/library/channels`          | v2 `DataTable` — tabbed `FilterPopover` filters, selection bulk footer, `ModalShell` bulk edit, hideable columns, URL + `localStorage` filter prefs | Yes — split via `ListMapLayout` |
+| `/library/channels/defaults` | Library-wide channel behavioural defaults (TX deny, TX permit, talker alias, analog squelch) — nested under Channels in section nav                 | No                              |
+| `/library/zones`             | v2 `DataTable` — `reorderMode` grip + `Zone.order`; Sort zones…; members, comment; split map via `ListMapLayout`                                    | Yes                             |
+| `/library/talk-groups`       | v2 `DataTable` — mode, ID, Abbrev, channels/RX lists using, comment, `RowActionIcon` delete                                                         | No                              |
+| `/library/contacts`          | Dual v2 `DataTable` in `Panel`s: digital `scale="extreme"` + Delete all; analog thin list; **ID directory** link in header                          | No                              |
+| `/library/rx-group-lists`    | v2 `DataTable` — members, channels using, row delete                                                                                                | No                              |
+| `/library/scan-lists`        | v2 `DataTable` — members, channels-using ref count, row delete                                                                                      | No                              |
+| `/library/digital-ids`       | Your own DMR and NXDN IDs, grouped by protocol — Default badge, Set as default, channels using, row delete; notice when a protocol has no default   | No                              |
 
-Shared L1 chrome: `LibraryInventoryHeader`, optional `FilterPopover` (channels — tabbed flyout on desktop, edge-to-edge on mobile, `≤48em`), `LibraryMapStack` (C7 map+list). List tables use `components/v2/DataTable` — see [design-system-v2](../design-system-v2/README.md) ([#940](https://github.com/pskillen/codeplug-studio/issues/940)).
+Shared L1 chrome: `LibraryInventoryHeader`, optional `FilterPopover` (channels — tabbed flyout on desktop, edge-to-edge on mobile, `≤48em`), `ListMapLayout` (map+list: sticky map on desktop, map-first bottom sheet on mobile, #1498). List tables use `components/v2/DataTable` — see [design-system-v2](../design-system-v2/README.md) ([#940](https://github.com/pskillen/codeplug-studio/issues/940)).
 
 ### Channels list (#24)
 

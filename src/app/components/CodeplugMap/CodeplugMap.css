@@ -9,8 +9,10 @@
 }
 
 .codeplug-map {
-  height: 400px;
-  min-height: 300px;
+  /* Viewport-relative default; callers that fill a container pass height="100%". */
+  height: clamp(300px, 60dvh, 640px);
+  min-height: 240px;
+  flex: 1 1 auto;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid var(--mantine-color-dark-4);

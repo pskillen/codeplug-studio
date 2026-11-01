@@ -12,11 +12,11 @@ Tier-1 reference for the **embedded channel map** — plotting library channels 
 
 There is **no** top-level Map nav item. Legacy `/map` bookmarks redirect to `/library/channels`.
 
-| List route          | Map behaviour                                                                            |
-| ------------------- | ---------------------------------------------------------------------------------------- |
-| `/library/channels` | Map plots the same filtered channel set as the list (name, band, mode, duplex, distance) |
-| `/library/zones`    | Full library map below the zone DataTable                                                |
-| `/summary`          | Full-library overview map with click-through to channel and zone editors                 |
+| List route          | Map behaviour                                                                                                                                                                                 |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/library/channels` | Map plots the same filtered channel set as the list (name, band, mode, duplex, distance). Desktop: table left, sticky viewport-height map right. Mobile: full-screen map under a bottom sheet |
+| `/library/zones`    | Full library map beside the zone DataTable (same desktop / mobile pattern)                                                                                                                    |
+| `/summary`          | Full-library overview map with click-through to channel and zone editors                                                                                                                      |
 
 Summary and list routes each embed a map — list pages keep contextual maps for their workflow; Summary provides the library-wide overview.
 
@@ -24,8 +24,7 @@ Summary and list routes each embed a map — list pages keep contextual maps for
 
 ```text
 ChannelsListPage / ZonesListPage / SummaryPage / …
-└─ LibraryMapStack (optional — stacked or split list+map, mobile toggle) ([#940](https://github.com/pskillen/codeplug-studio/issues/940))
-   └─ MapPanel (src/app/components/v2/) — title, gear, legend chrome
+└─ ListMapLayout (src/app/components/v2/) — desktop sticky split, mobile map + bottom sheet ([#1498](https://github.com/pskillen/codeplug-studio/issues/1498))
    └─ CodeplugMap (src/app/components/CodeplugMap/)
       ├─ MapControls — label + zone toggles
       ├─ MaidenheadGridLayer — optional locator grid (Settings)
@@ -48,7 +47,8 @@ Tiles: OpenStreetMap via react-leaflet. Leaflet default marker assets are not us
 
 ## Related
 
-- [LibraryMapStack](../../../src/app/components/library/LibraryMapStack.md) — list+map composition, mobile toggle (visible by default)
+- [ListMapLayout](../../../src/app/components/v2/ListMapLayout.md) — list+map composition: sticky map on desktop, map-first bottom sheet on mobile
+- [MapSheet](../../../src/app/components/v2/MapSheet.md) — the mobile bottom sheet
 - [channels.md](channels.md) — marker filters, labels, popups
 - [zones.md](zones.md) — hull geometry, member resolution
 - [#261](https://github.com/pskillen/codeplug-studio/issues/261) — `hideFromInternalMap` channel flag (Location tab checkbox)

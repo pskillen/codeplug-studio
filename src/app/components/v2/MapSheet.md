@@ -4,7 +4,7 @@ Bottom sheet with three snap points (peek / half / full) that floats over a full
 
 ## Purpose
 
-Lets a map-first page keep its list, controls or readout in a sheet the user can pull up or push down. A Map | List toggle is just a shortcut for the sheet's snap point: Map snaps to `peek`, List to `full`. Used by the Field tools (My locator, Distance & bearing, Nearby repeaters); intended for reuse on other map pages (#1498).
+Lets a map-first page keep its list, controls or readout in a sheet the user can pull up or push down. A Map | List toggle is just a shortcut for the sheet's snap point: Map snaps to `peek`, List to `full`. Used by the Field tools (Nearby repeaters, Distance & bearing) and, through [ListMapLayout](./ListMapLayout.md), the Channels and Zones lists (#1498).
 
 ## Props
 
@@ -44,6 +44,7 @@ const [snap, setSnap] = useState<MapSheetSnap>('half');
 - The parent must be `position: relative` with a definite height; the sheet is absolutely positioned on its bottom edge and measures the parent with a `ResizeObserver`.
 - Dragging the handle follows the pointer, then settles on the nearest snap (a fast flick moves one snap further). Tapping the handle cycles peek, half, full. The handle is a keyboard-operable slider (ArrowUp / ArrowDown, Enter).
 - Snap maths lives in `mapSheetSnap.ts` (`snapHeights`, `snapAfterDrag`, `nextSnap`, `snapForView`, `viewForSnap`) and is unit tested without the DOM.
+- At `peek` only the handle and header show; the body is hidden.
 - No third-party dependency.
 
 ## Related

@@ -277,7 +277,7 @@ function AppLayoutBody({
   bottomItems,
 }: AppLayoutBodyProps) {
   const navigate = useNavigate();
-  const fullBleed = isFullBleedPath(pathname);
+  const fullBleed = isFullBleedPath(pathname, isDesktopNav === false);
 
   return (
     <div

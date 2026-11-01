@@ -54,3 +54,8 @@
   overscroll-behavior: contain;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
+
+/* Only the handle and header show at peek; keep the clipped body out of sight and out of reach. */
+.root[data-snap='peek'] .body {
+  visibility: hidden;
+}

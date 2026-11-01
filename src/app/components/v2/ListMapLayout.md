@@ -1,0 +1,50 @@
+# ListMapLayout
+
+List + map composition for pages whose rows have a location (Channels, Zones; directory search follows) ([#1498](https://github.com/pskillen/codeplug-studio/issues/1498)). Replaces `LibraryMapStack`.
+
+## Purpose
+
+One component for both form factors. Desktop: the list scrolls with the page and the map is sticky and as tall as the first screen below the app chrome. Mobile: a full-screen map under a [MapSheet](./MapSheet.md) (peek / half / full) with a Map | List toggle that only snaps the sheet.
+
+## Props
+
+| Prop               | Type                         | Notes                                                                                              |
+| ------------------ | ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| `head`             | `ReactNode`                  | Page header. Above the split on desktop; top of the sheet body on mobile                           |
+| `list`             | `ReactNode`                  | Table or cards. Left pane on desktop, sheet body on mobile                                         |
+| `map`              | `ReactNode`                  | Live map, rendered once, fills its container (pass `height="100%"` to `CodeplugMap`)               |
+| `mapExtras`        | `ReactNode`                  | Controls tied to the map (e.g. Show my location). Above the map on desktop, in the sheet on mobile |
+| `mapNote`          | `ReactNode`                  | Legend under the map on desktop; after the extras on mobile                                        |
+| `title`            | `string`                     | Mobile top bar title (next to the toggle)                                                          |
+| `sheetHeader`      | `ReactNode`                  | Mobile peek summary (e.g. "128 channels / 74 on map")                                              |
+| `initialSnap`      | `'peek' \| 'half' \| 'full'` | Default `half`. Pass `full` when nothing is on the map so the sheet starts as the list             |
+| `sheetLabel`       | `string`                     | Accessible name of the sheet                                                                       |
+| `desktopClassName` | `string`                     | Class for the desktop root (page padding)                                                          |
+
+## Usage
+
+```tsx
+<DesignSystemV2Provider>
+  <ListMapLayout
+    desktopClassName={pageClasses.page}
+    title="Channels"
+    head={<LibraryInventoryHeader title="Channels" actions={actions} />}
+    list={table}
+    map={<CodeplugMap channels={channels} height="100%" />}
+    mapExtras={<UseMyLocationButton />}
+    sheetHeader={<Summary />}
+  />
+</DesignSystemV2Provider>
+```
+
+## Behaviour
+
+- Desktop map height comes from `stickyMapHeight` (`lib/stickyMapHeight.ts`): the viewport minus the space above the pane, clamped to at least 360 px and at most the viewport minus gutters. It is re-measured on resize and when the page body changes size. The list pane scrolls horizontally if its table is wider than the pane.
+- Mobile fills the viewport, so the route must be full-bleed on mobile: add it to `MOBILE_FULL_BLEED_PATHS` in `src/app/nav/fullBleedRoutes.ts`. The page root must be the `DesignSystemV2Provider` (AppLayout passes the height through its scope div).
+- The mobile map's own toolbar (label / zone toggles, Map settings link) is a single scrollable row above the edge-to-edge map.
+- The Map | List toggle maps Map to `peek` and List to `full`; `half` counts as Map.
+
+## Related
+
+- [docs/features/map/README.md](../../../../docs/features/map/README.md)
+- [docs/features/design-system-v2/README.md](../../../../docs/features/design-system-v2/README.md)
