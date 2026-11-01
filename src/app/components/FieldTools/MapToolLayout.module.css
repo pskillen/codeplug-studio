@@ -1,0 +1,138 @@
+.desktop {
+  display: grid;
+  grid-template-columns: 420px minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.column {
+  min-height: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--dsv2-border);
+  background: var(--dsv2-bg);
+  padding: var(--dsv2-space-4, 16px) 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.column > * {
+  padding-inline: 20px;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: var(--dsv2-font-heading-lg);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 3px;
+}
+
+.description {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.mapArea {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 450;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(14, 18, 28, 0.88);
+  color: #fff;
+  font-size: var(--dsv2-font-body-sm);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.stack {
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 16px;
+}
+
+.stackBody {
+  padding: var(--dsv2-space-4, 16px) var(--dsv2-page-padding-x, 16px) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stackMap {
+  position: relative;
+  flex-shrink: 0;
+  height: 260px;
+  margin-inline: var(--dsv2-page-padding-x, 16px);
+  border: 1px solid var(--dsv2-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.sheetRoot {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.fullMap {
+  position: absolute;
+  inset: 0;
+}
+
+.topRow {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  z-index: 450;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.overlay,
+.toggle {
+  pointer-events: auto;
+  background: var(--dsv2-surface);
+  border: 1px solid var(--dsv2-border);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.overlay {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+}
+
+.toggle {
+  padding: 4px;
+}
+
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 var(--dsv2-page-padding-x, 16px) 20px;
+}

@@ -47,7 +47,12 @@ export const primaryNavItems: PrimaryNavItem[] = [
     requiresProject: true,
   },
   { to: '/builds', label: 'Export for radio', icon: IconHammer, requiresProject: true },
-  { to: '/reference', label: 'Tools', icon: IconTool, alsoActiveFor: ['/tracking', '/firmware'] },
+  {
+    to: '/reference',
+    label: 'Tools',
+    icon: IconTool,
+    alsoActiveFor: ['/tools', '/tracking', '/firmware'],
+  },
   { to: '/help', label: 'Help', icon: IconHelp },
 ];
 

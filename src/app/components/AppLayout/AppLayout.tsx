@@ -10,6 +10,7 @@ import {
   DesignSystemV2Provider,
   ProjectChip,
 } from '../v2/index.ts';
+import { isFullBleedPath } from '../../nav/fullBleedRoutes.ts';
 import type { BottomTabItem } from '../v2/BottomTabBar.tsx';
 import BuildFooter from '../BuildFooter/BuildFooter.tsx';
 import BuildStripLeading from '../builds/BuildStripLeading.tsx';
@@ -276,10 +277,15 @@ function AppLayoutBody({
   bottomItems,
 }: AppLayoutBodyProps) {
   const navigate = useNavigate();
+  const fullBleed = isFullBleedPath(pathname);
 
   return (
     <div
-      className={[classes.root, showBottomNav ? classes.rootWithBottomNav : '']
+      className={[
+        classes.root,
+        showBottomNav ? classes.rootWithBottomNav : '',
+        fullBleed ? classes.rootFullBleed : '',
+      ]
         .filter(Boolean)
         .join(' ')}
     >
@@ -323,14 +329,18 @@ function AppLayoutBody({
       </DesignSystemV2Provider>
 
       <main
-        className={[classes.main, showBottomNav ? classes.mainScroll : '']
+        className={[
+          classes.main,
+          showBottomNav ? classes.mainScroll : '',
+          fullBleed ? classes.mainFullBleed : '',
+        ]
           .filter(Boolean)
           .join(' ')}
       >
         <CookieConsentBanner />
-        <div className={classes.pageContent}>
+        <div className={fullBleed ? classes.pageContentFullBleed : classes.pageContent}>
           <Outlet />
-          <BuildFooter />
+          {fullBleed ? null : <BuildFooter />}
         </div>
       </main>
 

@@ -52,7 +52,9 @@ describe('contextualStripItems', () => {
 
   it('includes Tracking Dashboard in the Tools strip and hides the Propagation Visualiser by default', () => {
     expect(buildToolsStripItems(false).map((i) => i.label)).toEqual([
-      'Maidenhead locator',
+      'My locator',
+      'Distance & bearing',
+      'Nearby repeaters',
       'Band plan',
       'Tracking Dashboard',
     ]);
@@ -69,14 +71,22 @@ describe('contextualStripItems', () => {
     expect(resolveContextualStripItems('/reference/rf-propagation')).toEqual(toolsStripItems);
   });
 
+  it('resolves the Field tools to the Tools strip', () => {
+    expect(resolveContextualStripItems('/tools/locator')).toEqual(toolsStripItems);
+    const tools = primaryNavItems.find((i) => i.label === 'Tools');
+    expect(tools?.alsoActiveFor).toContain('/tools');
+  });
+
   it('treats the tracking and firmware pages as part of the Tools tab', () => {
     const tools = primaryNavItems.find((i) => i.label === 'Tools');
-    expect(tools?.alsoActiveFor).toEqual(['/tracking', '/firmware']);
+    expect(tools?.alsoActiveFor).toEqual(['/tools', '/tracking', '/firmware']);
   });
 
   it('adds the firmware flasher to the Tools strip only when a radio is offered', () => {
     expect(buildToolsStripItems(true).map((i) => i.label)).toEqual([
-      'Maidenhead locator',
+      'My locator',
+      'Distance & bearing',
+      'Nearby repeaters',
       'Band plan',
       'Tracking Dashboard',
       'Firmware flasher',
@@ -92,9 +102,10 @@ describe('contextualStripItems', () => {
     expect(activeContextualStripLabel('/library/channels/defaults', libraryStripItems)).toBe(
       'Channels',
     );
-    expect(activeContextualStripLabel('/reference/maidenhead', toolsStripItems)).toBe(
-      'Maidenhead locator',
+    expect(activeContextualStripLabel('/tools/bearing', toolsStripItems)).toBe(
+      'Distance & bearing',
     );
+    expect(activeContextualStripLabel('/tools/nearby', toolsStripItems)).toBe('Nearby repeaters');
     expect(
       activeContextualStripLabel('/reference/rf-propagation', buildToolsStripItems(false, true)),
     ).toBeNull();

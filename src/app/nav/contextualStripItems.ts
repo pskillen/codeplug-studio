@@ -4,9 +4,11 @@
  */
 
 import {
+  IconBroadcast,
   IconCpu,
-  IconGridDots,
+  IconCurrentLocation,
   IconListDetails,
+  IconRoute,
   IconRadar,
   IconWaveSine,
 } from '@tabler/icons-react';
@@ -58,6 +60,13 @@ export const PROPAGATION_VISUALISER_STRIP_ITEM: ContextualStripItem = {
 /** False while propagation.mm9pdy.net is down; set true to bring the link back to the strip and Tools page. */
 export const SHOW_PROPAGATION_VISUALISER = false;
 
+/** Field tools: ephemeral, map-first, no project needed (#1497). */
+export const FIELD_TOOL_STRIP_ITEMS: readonly ContextualStripItem[] = [
+  { label: 'My locator', to: '/tools/locator', icon: IconCurrentLocation },
+  { label: 'Distance & bearing', to: '/tools/bearing', icon: IconRoute },
+  { label: 'Nearby repeaters', to: '/tools/nearby', icon: IconBroadcast },
+];
+
 /**
  * Tools strip items for a build. The firmware flasher appears only when this build and platform offer at least
  * one radio (per-radio prod gate; hidden on Capacitor). Pure: pass `firmwareOffered` in tests.
@@ -67,7 +76,7 @@ export function buildToolsStripItems(
   showPropagation: boolean = SHOW_PROPAGATION_VISUALISER,
 ): readonly ContextualStripItem[] {
   return [
-    { label: 'Maidenhead locator', to: '/reference/maidenhead', icon: IconGridDots },
+    ...FIELD_TOOL_STRIP_ITEMS,
     { label: 'Band plan', to: '/reference/bands', icon: IconListDetails },
     { label: 'Tracking Dashboard', to: '/tracking', icon: IconRadar },
     ...(firmwareOffered ? [FIRMWARE_FLASHER_STRIP_ITEM] : []),
@@ -106,6 +115,7 @@ export function resolveContextualStripItems(
   if (pathname.startsWith('/library')) return libraryStripItems;
   if (
     pathname.startsWith('/reference') ||
+    pathname.startsWith('/tools') ||
     pathname.startsWith('/tracking') ||
     pathname.startsWith('/firmware')
   ) {
