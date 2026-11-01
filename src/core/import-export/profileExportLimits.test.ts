@@ -196,7 +196,7 @@ describe('getProfileExportLimits', () => {
     expect(limits!.nameLengthChannel).toBe(6);
     expect(limits!.maxZones).toBe(32);
     expect(limits!.zoneMembers).toBe(200);
-    expect(limits!.nameLengthZone).toBe(8);
+    expect(limits!.nameLengthZone).toBe(12);
     for (const key of [
       'maxScanLists',
       'maxRxGroupLists',

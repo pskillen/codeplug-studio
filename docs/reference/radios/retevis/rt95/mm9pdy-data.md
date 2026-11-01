@@ -31,7 +31,7 @@ image is `0x0000`-`0x329F`; nothing of ours lives between `0x32A0` and `0x3AFF`.
 | Stock targets        | Never write, read-modify or clear `0x4000`-`0x5FFF`                                                                                                                                                                                                                                   |
 | Empty table          | Zero zones and no descriptions is a valid header and is written; it retires an older table                                                                                                                                                                                            |
 
-The guard and the allowed-address rules are interlocks in code, each with a refusal test; no flag turns one off. Limits (32 zones, 8-character
+The guard and the allowed-address rules are interlocks in code, each with a refusal test; no flag turns one off. Limits (32 zones, 12-character
 zone names, 12-character descriptions) are in [limits.md](limits.md).
 
 ## Where the code is
@@ -43,14 +43,14 @@ zone names, 12-character descriptions) are in [limits.md](limits.md).
 
 ## How Studio fills it
 
-| Field            | Source                                                                                                                                                                                         |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Radio name (6)   | The channel's Callsign when set, otherwise the usual wire name. A build `wireName` override wins                                                                                               |
-| Description (12) | The channel's Name, shortened (channel abbreviation first); empty when it equals the radio name. A build `wireDescription` override wins, and an explicit empty one means none                 |
-| Text             | Accents are folded (`Café` becomes `Cafe`), any other character outside `0x20`-`0x7E` becomes `-`, and in descriptions `_` becomes `-`. Zone and radio names go through the same ASCII rules   |
-| Numbering        | Channels are numbered in zone order (zones in build order, members in zone order, first appearance wins), then the rest; pinned slots keep their pin. A channel in two zones has one number    |
-| Zones            | Up to 32, 8-character names. Empty zones are dropped with a warning; more than 32 keeps the first 32 with a warning. The radio visits a zone's channels in channel-number order (an info note) |
-| Scan             | One scan flag per channel; per-zone scan choices are ignored with one warning                                                                                                                  |
+| Field            | Source                                                                                                                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Radio name (6)   | The channel's Callsign when set, otherwise the usual wire name. A build `wireName` override wins                                                                                                |
+| Description (12) | The channel's Name, shortened (channel abbreviation first); empty when it equals the radio name. A build `wireDescription` override wins, and an explicit empty one means none                  |
+| Text             | Accents are folded (`Café` becomes `Cafe`), any other character outside `0x20`-`0x7E` becomes `-`, and in descriptions `_` becomes `-`. Zone and radio names go through the same ASCII rules    |
+| Numbering        | Channels are numbered in zone order (zones in build order, members in zone order, first appearance wins), then the rest; pinned slots keep their pin. A channel in two zones has one number     |
+| Zones            | Up to 32, 12-character names. Empty zones are dropped with a warning; more than 32 keeps the first 32 with a warning. The radio visits a zone's channels in channel-number order (an info note) |
+| Scan             | One scan flag per channel; per-zone scan choices are ignored with one warning                                                                                                                   |
 
 Owner backup, 2026-10-28: on the owner's chip the range from `0x4000` to `0x7FFF` is erased (all `0xFF`) with no all-zero blocks, so refusing a zero read cannot wrongly block that radio.
 

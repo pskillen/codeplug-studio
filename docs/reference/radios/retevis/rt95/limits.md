@@ -16,12 +16,12 @@ Caps match CHIRP `RetevisRT95vox` — see [enum-verification.md](../../../export
 
 Code mirror: the `ZONE_*` and `DESCRIPTION_LENGTH` entries of `RT95_LIMITS`. These apply only to the MM9PDY modded firmware (MMD1 v1 data table, see [mm9pdy-data.md](mm9pdy-data.md)); the stock target has no zones or descriptions.
 
-| Constraint          | Value                                 | Notes                                                      |
-| ------------------- | ------------------------------------- | ---------------------------------------------------------- |
-| Zones               | **32**                                | Zones with no members are dropped before writing           |
-| Zone name           | **8** chars, printable ASCII          | 0x20-0x7E                                                  |
-| Zone members        | any of the **200** channels           | A zone is a set; the radio visits members in channel order |
-| Channel description | **12** chars, printable ASCII, no `_` | `_` renders blank in the head's font; empty is not written |
+| Constraint          | Value                                 | Notes                                                           |
+| ------------------- | ------------------------------------- | --------------------------------------------------------------- |
+| Zones               | **32**                                | Zones with no members are dropped before writing                |
+| Zone name           | **12** chars, printable ASCII         | Bytes 0–11 of the name block; the head copies all 12. 0x20-0x7E |
+| Zone members        | any of the **200** channels           | A zone is a set; the radio visits members in channel order      |
+| Channel description | **12** chars, printable ASCII, no `_` | `_` renders blank in the head's font; empty is not written      |
 
 ## Adapter application
 
