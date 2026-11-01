@@ -64,7 +64,7 @@ export const SUPPORT_COLUMNS: readonly SupportColumn[] = [
     id: 'scanLists',
     group: 'organise',
     label: 'Scan lists',
-    hint: 'Dedicated scan lists. Partial when scanning is a per-channel flag or follows the zone.',
+    hint: 'Scan lists, either dedicated or with the zone as the scan. Partial when scanning is only a per-channel flag.',
   },
   {
     id: 'zoneIsScan',
@@ -140,16 +140,15 @@ function yes(value: boolean): SupportState {
 }
 
 function scanListState(target: RadioTarget): SupportState {
+  // Zone-as-scan is a different organisation, not a lesser one: both count as full support.
   if (
     has(target, BuildCapabilityTrait.ScanLists) ||
-    has(target, BuildCapabilityTrait.DedicatedScanLists)
+    has(target, BuildCapabilityTrait.DedicatedScanLists) ||
+    has(target, BuildCapabilityTrait.ZoneAsScanList)
   ) {
     return 'supported';
   }
-  if (
-    has(target, BuildCapabilityTrait.ZoneAsScanList) ||
-    has(target, BuildCapabilityTrait.PerChannelScanFlag)
-  ) {
+  if (has(target, BuildCapabilityTrait.PerChannelScanFlag)) {
     return 'partial';
   }
   return 'unsupported';

@@ -40,9 +40,9 @@ describe('buildSupportMatrix', () => {
     expect(uv5r.cells.zones).toBe('unsupported');
   });
 
-  it('shows per-channel scan flags and zone-as-scan as partial scan lists', () => {
+  it('shows per-channel scan flags as partial and zone-as-scan as full scan lists', () => {
     expect(row('baofeng-uv5r-mini', 'stock').cells.scanLists).toBe('partial');
-    expect(row('baofeng-dm32uv', 'mm9pdy').cells.scanLists).toBe('partial');
+    expect(row('baofeng-dm32uv', 'mm9pdy').cells.scanLists).toBe('supported');
     expect(row('baofeng-dm32uv', 'mm9pdy').cells.zoneIsScan).toBe('supported');
     expect(row('baofeng-dm32uv', 'stock').cells.scanLists).toBe('supported');
     expect(row('anytone-at-d890uv', 'stock').cells.scanLists).toBe('supported');
