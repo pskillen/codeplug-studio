@@ -195,6 +195,9 @@
 
 /* Marks */
 .mark {
+  /* Contain the absolutely positioned `.srOnly` label; otherwise it escapes the matrix's
+     horizontal scroll box and widens the mobile layout viewport. */
+  position: relative;
   display: inline-block;
   width: 16px;
   text-align: center;
@@ -244,6 +247,7 @@
 }
 
 .matrixScroll {
+  position: relative;
   overflow-x: auto;
   border: 1px solid var(--dsv2-border);
   border-radius: var(--dsv2-radius-panel);
