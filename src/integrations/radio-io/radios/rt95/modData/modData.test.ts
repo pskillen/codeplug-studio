@@ -189,6 +189,17 @@ describe('MMD1 encoder behaviour', () => {
 
   it('uses limits from RT95_LIMITS', () => {
     expect(RT95_LIMITS.ZONE_MAX).toBe(32);
+    expect(RT95_LIMITS.ZONE_NAME_LENGTH).toBe(12);
+  });
+
+  it('stores a 12-character zone name in the name field', () => {
+    const enc = encodeRt95ModData(
+      { zones: [{ name: 'Home Shack!!', channelIndexes: [0] }], descriptions: [] },
+      image,
+    );
+    const name = enc.blocks[enc.blocks.length - 2]!.bytes;
+    expect(new TextDecoder().decode(name.subarray(0, 12))).toBe('Home Shack!!');
+    expect(name[12]).toBe(1);
   });
 
   const bad: [string, Rt95ModDataInput][] = [
@@ -200,7 +211,7 @@ describe('MMD1 encoder behaviour', () => {
       },
     ],
     ['empty zone', { zones: [{ name: 'Z', channelIndexes: [] }], descriptions: [] }],
-    ['9-char name', { zones: [{ name: 'ABCDEFGHI', channelIndexes: [0] }], descriptions: [] }],
+    ['13-char name', { zones: [{ name: 'ABCDEFGHIJKLM', channelIndexes: [0] }], descriptions: [] }],
     ['non-ASCII name', { zones: [{ name: 'café', channelIndexes: [0] }], descriptions: [] }],
     ['empty name', { zones: [{ name: '', channelIndexes: [0] }], descriptions: [] }],
     [
