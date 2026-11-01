@@ -52,3 +52,24 @@
   flex-direction: column;
   gap: 20px;
 }
+
+.groupLabel {
+  font-size: 12px;
+  color: var(--dsv2-text-tertiary);
+}
+
+@media (max-width: 48em) {
+  /* Floating action: sits above the bottom tab bar. */
+  .newBuild {
+    position: fixed;
+    right: 16px;
+    bottom: 72px;
+    z-index: 4;
+    border-radius: 999px;
+    box-shadow: var(--dsv2-shadow-popover);
+  }
+
+  .page {
+    padding-bottom: 130px;
+  }
+}
