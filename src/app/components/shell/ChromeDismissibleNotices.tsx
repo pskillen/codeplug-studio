@@ -27,6 +27,7 @@ export default function ChromeDismissibleNotices() {
     localProjectId,
     remoteProjectId,
     dismissBanner,
+    keepLocal,
     openOverwrite,
     closeOverwrite,
     confirmRefresh,
@@ -87,7 +88,6 @@ export default function ChromeDismissibleNotices() {
       />
       <InterchangeOverwriteModal
         opened={overwriteOpen}
-        title="Refresh from Google Drive?"
         projectName={projectName}
         diff={diff}
         loading={importing}
@@ -96,6 +96,7 @@ export default function ChromeDismissibleNotices() {
         localProjectId={localProjectId}
         remoteProjectId={remoteProjectId}
         onClose={closeOverwrite}
+        onKeepLocal={keepLocal}
         onConfirm={() => void confirmRefresh()}
         onImportAsNew={idMismatch ? () => void confirmImportAsNew() : undefined}
       />

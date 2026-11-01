@@ -1,3 +1,4 @@
+import type { ProjectEntityChange } from '@core/services/projectEntityDiff.ts';
 import {
   buildProjectSyncDiff,
   type ProjectSyncCounts,
@@ -10,6 +11,7 @@ export interface TestProjectSyncSummaryOverrides {
   projectName?: string;
   lastModifiedAt?: string | null;
   portableSyncedAt?: string | null;
+  libraryModifiedAt?: string | null;
   counts?: Partial<ProjectSyncCounts>;
 }
 
@@ -43,9 +45,11 @@ export function testProjectSyncSummary(
 export function testProjectSyncDiff(
   localOverrides: TestProjectSyncSummaryOverrides = {},
   remoteOverrides: TestProjectSyncSummaryOverrides = {},
+  entityChanges: ProjectEntityChange[] = [],
 ): ProjectSyncDiff {
   return buildProjectSyncDiff(
     testProjectSyncSummary(localOverrides),
     testProjectSyncSummary(remoteOverrides),
+    entityChanges,
   );
 }
