@@ -1,5 +1,5 @@
 import { useMediaQuery } from '@mantine/hooks';
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { stickyMapHeight } from '../../lib/stickyMapHeight.ts';
 import MapSheet from './MapSheet.tsx';
@@ -32,8 +32,139 @@ export interface ListMapLayoutProps {
   /**
    * Mobile layout. `sheet` (default): full-screen map under a bottom sheet; the route must be full-bleed.
    * `stack`: map above the list in normal page flow, for pages that scroll a long form first.
+   * `swipe` (EXPERIMENTAL, full-bleed route): list and map as two side-by-side panes you swipe between.
    */
-  mobile?: 'sheet' | 'stack';
+  mobile?: 'sheet' | 'stack' | 'swipe';
+}
+
+type SwipePane = 'list' | 'map';
+
+/** Which pane a horizontal scroll position of the swipe track is nearest to. */
+function paneForScroll(el: HTMLElement): SwipePane {
+  const max = el.scrollWidth - el.clientWidth;
+  return max > 0 && el.scrollLeft > max / 2 ? 'map' : 'list';
+}
+
+/**
+ * EXPERIMENTAL mobile body for `mobile="swipe"`: two ~88%-wide full-height panes in a CSS scroll-snap
+ * track. The hidden pane peeks in at the screen edge, and is covered by a button so tapping or
+ * dragging the strip switches panes. The visible map is not covered and sets `touch-action: none`,
+ * so Leaflet keeps its own pan/zoom.
+ */
+function SwipePanes({
+  title,
+  head,
+  list,
+  map,
+  mapExtras,
+  mapNote,
+  sheetLabel,
+}: Pick<ListMapLayoutProps, 'title' | 'head' | 'list' | 'map' | 'mapExtras' | 'mapNote'> & {
+  sheetLabel: string;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [pane, setPane] = useState<SwipePane>('list');
+  const lock = useRef<{ target: SwipePane; timer: number } | null>(null);
+
+  const onScroll = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const next = paneForScroll(el);
+    if (lock.current) {
+      // A programmatic scroll is animating: wait until it arrives rather than flip-flopping.
+      if (next !== lock.current.target) return;
+      window.clearTimeout(lock.current.timer);
+      lock.current = null;
+    }
+    setPane(next);
+  }, []);
+
+  const goTo = useCallback((target: SwipePane) => {
+    const el = trackRef.current;
+    setPane(target);
+    if (!el) return;
+    if (lock.current) window.clearTimeout(lock.current.timer);
+    lock.current = {
+      target,
+      timer: window.setTimeout(() => {
+        lock.current = null;
+      }, 900),
+    };
+    const left = target === 'map' ? el.scrollWidth - el.clientWidth : 0;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (typeof el.scrollTo === 'function') {
+      el.scrollTo({ left, behavior: reduce ? 'auto' : 'smooth' });
+    } else {
+      el.scrollLeft = left;
+    }
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (lock.current) window.clearTimeout(lock.current.timer);
+    },
+    [],
+  );
+
+  // The map can be laid out while peeking; nudge Leaflet to re-measure once it is the active pane.
+  useEffect(() => {
+    if (pane === 'map') window.dispatchEvent(new Event('resize'));
+  }, [pane]);
+
+  return (
+    <div className={classes.mobile} data-swipe-experiment="">
+      <div className={classes.topBar}>
+        <span className={classes.topTitle}>{title}</span>
+        <SegmentedControl
+          value={pane}
+          onChange={(v) => goTo(v as SwipePane)}
+          options={[
+            { value: 'map', label: 'Map' },
+            { value: 'list', label: 'List' },
+          ]}
+        />
+      </div>
+      <div
+        ref={trackRef}
+        className={classes.swipeTrack}
+        onScroll={onScroll}
+        data-pane={pane}
+        aria-label={sheetLabel}
+      >
+        <section className={classes.swipeListPane} aria-label={`${sheetLabel} list`}>
+          <div className={classes.sheetBody}>
+            {head}
+            {mapExtras || mapNote ? (
+              <div className={classes.extras}>
+                {mapExtras}
+                {mapNote}
+              </div>
+            ) : null}
+            {list}
+          </div>
+          {pane !== 'list' ? (
+            <button
+              type="button"
+              className={classes.swipeCover}
+              aria-label="Show list"
+              onClick={() => goTo('list')}
+            />
+          ) : null}
+        </section>
+        <section className={classes.swipeMapPane} aria-label={`${sheetLabel} map`}>
+          <div className={`${classes.fullMap} ${classes.swipeMapFill}`}>{map}</div>
+          {pane !== 'map' ? (
+            <button
+              type="button"
+              className={classes.swipeCover}
+              aria-label="Show map"
+              onClick={() => goTo('map')}
+            />
+          ) : null}
+        </section>
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -110,6 +241,20 @@ export default function ListMapLayout({
         {mapNote ? <div className={classes.note}>{mapNote}</div> : null}
         {list}
       </div>
+    );
+  }
+
+  if (mobile === 'swipe') {
+    return (
+      <SwipePanes
+        title={title}
+        head={head}
+        list={list}
+        map={map}
+        mapExtras={mapExtras}
+        mapNote={mapNote}
+        sheetLabel={sheetLabel}
+      />
     );
   }
 

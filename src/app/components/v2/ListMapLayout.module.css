@@ -152,3 +152,70 @@
   width: 100%;
   height: 100%;
 }
+
+/* Mobile `swipe` (experimental): two panes in a scroll-snap track; the hidden one peeks ~12%. */
+.swipeTrack {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.swipeTrack::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .swipeTrack {
+    scroll-behavior: smooth;
+  }
+}
+
+.swipeListPane,
+.swipeMapPane {
+  position: relative;
+  flex: 0 0 88%;
+  min-width: 0;
+  height: 100%;
+  scroll-snap-stop: always;
+}
+
+.swipeListPane {
+  scroll-snap-align: start;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  background: var(--dsv2-bg);
+  border-right: 1px solid var(--dsv2-border);
+}
+
+.swipeMapPane {
+  scroll-snap-align: end;
+  overflow: hidden;
+  /* Leaflet owns every gesture on the visible map; swiping back is done from the peek strip. */
+  touch-action: none;
+  border-left: 1px solid var(--dsv2-border);
+  box-shadow: -6px 0 12px -8px rgb(0 0 0 / 0.25);
+}
+
+.swipeMapFill {
+  position: absolute;
+  inset: 0;
+}
+
+/* Covers the pane that is only peeking: tap or drag it to switch panes. */
+.swipeCover {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-x;
+}

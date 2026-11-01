@@ -18,7 +18,7 @@ function setMobile(mobile: boolean) {
   })) as typeof window.matchMedia;
 }
 
-function renderLayout(initialSnap?: 'peek' | 'half' | 'full') {
+function renderLayout(initialSnap?: 'peek' | 'half' | 'full', mobile?: 'sheet' | 'swipe') {
   return render(
     <DesignSystemV2Provider>
       <ListMapLayout
@@ -29,6 +29,7 @@ function renderLayout(initialSnap?: 'peek' | 'half' | 'full') {
         mapExtras={<span>extras</span>}
         sheetHeader={<b>12 rows</b>}
         initialSnap={initialSnap}
+        mobile={mobile}
       />
     </DesignSystemV2Provider>,
   );
@@ -64,5 +65,30 @@ describe('ListMapLayout', () => {
     setMobile(true);
     renderLayout('full');
     expect(screen.getByRole('region', { name: 'Results' })).toHaveAttribute('data-snap', 'full');
+  });
+
+  it('mobile swipe (experimental): renders both panes, no sheet, and the toggle and peek strips switch', () => {
+    setMobile(true);
+    renderLayout(undefined, 'swipe');
+    expect(screen.queryByRole('region', { name: 'Results' })).not.toBeInTheDocument();
+    expect(screen.getByText('the list')).toBeInTheDocument();
+    expect(screen.getByTestId('map')).toBeInTheDocument();
+    // List is the default pane: the map is covered by its peek button.
+    expect(screen.queryByRole('button', { name: 'Show list' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Map' }));
+    expect(screen.getByRole('button', { name: 'Show list' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show map' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Show list' }));
+    expect(screen.getByRole('button', { name: 'Show map' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Show map' }));
+    expect(screen.getByRole('button', { name: 'Show list' })).toBeInTheDocument();
+  });
+
+  it('desktop ignores mobile="swipe"', () => {
+    setMobile(false);
+    renderLayout(undefined, 'swipe');
+    expect(screen.getByText('Header')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show map' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show list' })).not.toBeInTheDocument();
   });
 });

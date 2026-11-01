@@ -8,19 +8,19 @@ One component for both form factors. Desktop: the list scrolls with the page and
 
 ## Props
 
-| Prop               | Type                         | Notes                                                                                                                                                                               |
-| ------------------ | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `head`             | `ReactNode`                  | Page header. Above the split on desktop; top of the sheet body on mobile                                                                                                            |
-| `list`             | `ReactNode`                  | Table or cards. Left pane on desktop, sheet body on mobile                                                                                                                          |
-| `map`              | `ReactNode`                  | Live map, rendered once, fills its container (pass `height="100%"` to `CodeplugMap`)                                                                                                |
-| `mapExtras`        | `ReactNode`                  | Controls tied to the map (e.g. Show my location). Above the map on desktop, in the sheet on mobile                                                                                  |
-| `mapNote`          | `ReactNode`                  | Legend under the map on desktop; after the extras on mobile                                                                                                                         |
-| `title`            | `string`                     | Mobile top bar title (next to the toggle)                                                                                                                                           |
-| `sheetHeader`      | `ReactNode`                  | Mobile peek summary (e.g. "128 channels / 74 on map")                                                                                                                               |
-| `initialSnap`      | `'peek' \| 'half' \| 'full'` | Default `half`. Pass `full` when nothing is on the map so the sheet starts as the list                                                                                              |
-| `sheetLabel`       | `string`                     | Accessible name of the sheet                                                                                                                                                        |
-| `desktopClassName` | `string`                     | Class for the desktop root (page padding)                                                                                                                                           |
-| `mobile`           | `'sheet' \| 'stack'`         | `sheet` (default): full-screen map under the bottom sheet, full-bleed route. `stack`: map above the list in normal flow, for pages that scroll a long form first (directory search) |
+| Prop               | Type                            | Notes                                                                                                                                                                               |
+| ------------------ | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `head`             | `ReactNode`                     | Page header. Above the split on desktop; top of the sheet body on mobile                                                                                                            |
+| `list`             | `ReactNode`                     | Table or cards. Left pane on desktop, sheet body on mobile                                                                                                                          |
+| `map`              | `ReactNode`                     | Live map, rendered once, fills its container (pass `height="100%"` to `CodeplugMap`)                                                                                                |
+| `mapExtras`        | `ReactNode`                     | Controls tied to the map (e.g. Show my location). Above the map on desktop, in the sheet on mobile                                                                                  |
+| `mapNote`          | `ReactNode`                     | Legend under the map on desktop; after the extras on mobile                                                                                                                         |
+| `title`            | `string`                        | Mobile top bar title (next to the toggle)                                                                                                                                           |
+| `sheetHeader`      | `ReactNode`                     | Mobile peek summary (e.g. "128 channels / 74 on map")                                                                                                                               |
+| `initialSnap`      | `'peek' \| 'half' \| 'full'`    | Default `half`. Pass `full` when nothing is on the map so the sheet starts as the list                                                                                              |
+| `sheetLabel`       | `string`                        | Accessible name of the sheet                                                                                                                                                        |
+| `desktopClassName` | `string`                        | Class for the desktop root (page padding)                                                                                                                                           |
+| `mobile`           | `'sheet' \| 'stack' \| 'swipe'` | `sheet` (default): full-screen map under the bottom sheet, full-bleed route. `stack`: map above the list in normal flow, for pages that scroll a long form first (directory search) |
 
 ## Usage
 
@@ -44,6 +44,16 @@ One component for both form factors. Desktop: the list scrolls with the page and
 - Mobile fills the viewport, so the route must be full-bleed on mobile: add it to `MOBILE_FULL_BLEED_PATHS` in `src/app/nav/fullBleedRoutes.ts`. The page root must be the `DesignSystemV2Provider` (AppLayout passes the height through its scope div).
 - The mobile map's own toolbar (label / zone toggles, Map settings link) is a single scrollable row above the edge-to-edge map.
 - The Map | List toggle maps Map to `peek` and List to `full`; `half` counts as Map.
+
+## Experimental: `mobile="swipe"`
+
+Dev-only experiment, used by the Channels list only. Instead of the bottom sheet, mobile shows two side-by-side full-height panes (list left, map right, each 88% of the width) in a CSS scroll-snap track (`scroll-snap-type: x mandatory`), so a swipe always settles on one pane. The other pane peeks in at the screen edge (about 12%, 48 px on a 390 px phone). The route must still be full-bleed on mobile.
+
+- The visible map sets `touch-action: none` so Leaflet keeps its own pan and zoom; dragging across the map never swipes the track.
+- Switching panes: swipe or tap the peeking strip (a transparent button covers the inactive pane, `Show list` / `Show map`), or use the Map | List toggle in the top bar, which follows the current pane.
+- The list pane scrolls vertically on its own. Smooth scrolling is off under `prefers-reduced-motion`.
+- On becoming the map pane the layout dispatches a window `resize` so Leaflet re-measures.
+- `sheetHeader` and `initialSnap` are ignored in this mode.
 
 ## Related
 
