@@ -45,22 +45,39 @@ function paneForScroll(el: HTMLElement): SwipePane {
   return max > 0 && el.scrollLeft > max / 2 ? 'map' : 'list';
 }
 
-/** Grab handle drawn on the seam: a vertical pill with a chevron hinting which way the pane is. */
-function SwipeHandle({ direction }: { direction: 'left' | 'right' }) {
+/**
+ * Grab handle: a solid tab straddling the seam between the active pane and the peeking one. It is a
+ * descendant of the scroll track (inside a zero-width sticky anchor), so a horizontal drag on it
+ * scrolls the track, and a tap switches panes.
+ */
+function SwipeHandle({ pane, onGo }: { pane: SwipePane; onGo: (target: SwipePane) => void }) {
+  const toMap = pane === 'list';
   return (
-    <span className={classes.swipeHandle} aria-hidden="true">
-      <svg viewBox="0 0 8 12" width="8" height="12" className={classes.swipeChevron}>
-        <path
-          d={direction === 'left' ? 'M6 1 2 6l4 5' : 'M2 1l4 5-4 5'}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <span className={classes.swipePill} />
-    </span>
+    <div className={classes.swipeAnchor} data-pane={pane}>
+      <button
+        type="button"
+        className={classes.swipeHandle}
+        aria-label={toMap ? 'Show map' : 'Show list'}
+        onClick={() => onGo(toMap ? 'map' : 'list')}
+      >
+        <span className={classes.swipeTab} aria-hidden="true">
+          <svg viewBox="0 0 8 12" width="9" height="14" className={classes.swipeChevron}>
+            <path
+              d={toMap ? 'M6 1 2 6l4 5' : 'M2 1l4 5-4 5'}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className={classes.swipeGrip}>
+            <span />
+            <span />
+          </span>
+        </span>
+      </button>
+    </div>
   );
 }
 
@@ -150,6 +167,7 @@ function SwipePanes({
         data-pane={pane}
         aria-label={sheetLabel}
       >
+        <SwipeHandle pane={pane} onGo={goTo} />
         <section className={classes.swipeListPane} aria-label={`${sheetLabel} list`}>
           <div className={classes.sheetBody}>
             {head}
@@ -165,12 +183,10 @@ function SwipePanes({
             <button
               type="button"
               className={classes.swipeCover}
-              aria-label="Show list"
-              data-edge="end"
+              tabIndex={-1}
+              aria-hidden="true"
               onClick={() => goTo('list')}
-            >
-              <SwipeHandle direction="right" />
-            </button>
+            />
           ) : null}
         </section>
         <section className={classes.swipeMapPane} aria-label={`${sheetLabel} map`}>
@@ -179,12 +195,10 @@ function SwipePanes({
             <button
               type="button"
               className={classes.swipeCover}
-              aria-label="Show map"
-              data-edge="start"
+              tabIndex={-1}
+              aria-hidden="true"
               onClick={() => goTo('map')}
-            >
-              <SwipeHandle direction="left" />
-            </button>
+            />
           ) : null}
         </section>
       </div>

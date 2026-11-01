@@ -84,16 +84,15 @@ describe('ListMapLayout', () => {
     expect(screen.getByRole('button', { name: 'Show list' })).toBeInTheDocument();
   });
 
-  it('mobile swipe: each peek button carries a decorative grab handle on its seam edge', () => {
+  it('mobile swipe: one grab handle button follows the active pane', () => {
     setMobile(true);
     renderLayout(undefined, 'swipe');
-    const showMap = screen.getByRole('button', { name: 'Show map' });
-    expect(showMap).toHaveAttribute('data-edge', 'start');
-    expect(showMap.querySelector('[aria-hidden="true"]')).not.toBeNull();
-    fireEvent.click(showMap);
-    const showList = screen.getByRole('button', { name: 'Show list' });
-    expect(showList).toHaveAttribute('data-edge', 'end');
-    expect(showList.querySelector('[aria-hidden="true"]')).not.toBeNull();
+    const handle = screen.getByRole('button', { name: 'Show map' });
+    expect(handle.querySelector('[aria-hidden="true"]')).not.toBeNull();
+    expect(screen.getAllByRole('button', { name: /Show (map|list)/ })).toHaveLength(1);
+    fireEvent.click(handle);
+    expect(screen.getAllByRole('button', { name: /Show (map|list)/ })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Show list' })).toBeInTheDocument();
   });
 
   it('desktop ignores mobile="swipe"', () => {

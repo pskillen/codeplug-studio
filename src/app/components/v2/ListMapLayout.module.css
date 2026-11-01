@@ -220,59 +220,87 @@
   touch-action: pan-x;
 }
 
-/* Visible hit area is the whole 48px peek strip, which is wider than the 44px minimum. */
-.swipeCover {
+/* Grab handle: a solid tab straddling the seam. The zero-width sticky anchor pins it to the scrollport. */
+.swipeTrack {
+  container-type: inline-size;
+}
+
+.swipeAnchor {
+  position: sticky;
+  left: 0;
+  z-index: 1100;
+  flex: 0 0 0;
+  width: 0;
+  height: 100%;
+}
+
+.swipeHandle {
+  position: absolute;
+  top: 50%;
+  /* The seam sits at 88% (list showing) or 12% (map showing) of the track width. */
+  left: calc(88cqw - 22px);
+  width: 44px;
+  height: 88px;
+  margin-top: -44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   display: flex;
   align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: pan-x;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.swipeCover[data-edge='start'] {
-  justify-content: flex-start;
+.swipeAnchor[data-pane='map'] .swipeHandle {
+  left: calc(12cqw - 22px);
 }
 
-.swipeCover[data-edge='end'] {
-  justify-content: flex-end;
-}
-
-.swipeCover:focus-visible {
-  outline: none;
-}
-
-/* Grab handle on the seam, centred vertically in the peek strip. */
-.swipeHandle {
+.swipeTab {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  width: 48px;
-  color: var(--dsv2-text-secondary);
+  width: 24px;
+  height: 64px;
+  border-radius: 12px;
+  border: 1px solid var(--dsv2-border);
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-primary);
+  box-shadow: var(--dsv2-shadow-popover);
   pointer-events: none;
-}
-
-.swipePill {
-  display: block;
-  width: 5px;
-  height: 48px;
-  border-radius: 999px;
-  background: var(--dsv2-text-secondary);
-  /* Halo keeps the pill readable over both the map tiles and the list. */
-  box-shadow: 0 0 0 2px var(--dsv2-bg);
-  transition: background-color 120ms ease;
 }
 
 .swipeChevron {
   display: block;
-  filter: drop-shadow(0 0 2px var(--dsv2-bg));
 }
 
-.swipeCover:active .swipePill {
-  background: var(--dsv2-text-primary);
+.swipeGrip {
+  display: flex;
+  gap: 3px;
 }
 
-.swipeCover:focus-visible .swipeHandle {
+.swipeGrip > span {
+  display: block;
+  width: 2px;
+  height: 22px;
+  border-radius: 1px;
+  background: var(--dsv2-text-secondary);
+}
+
+.swipeHandle:active .swipeTab {
+  background: var(--dsv2-surface-quiet);
+}
+
+.swipeHandle:focus-visible {
+  outline: none;
+}
+
+.swipeHandle:focus-visible .swipeTab {
   outline: 2px solid var(--dsv2-text-primary);
-  outline-offset: -2px;
-  border-radius: 12px;
+  outline-offset: 2px;
 }
 
 /* The map pane is narrower than the screen: its option row wraps instead of running off the edge. */
