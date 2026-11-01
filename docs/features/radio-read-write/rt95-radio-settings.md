@@ -9,7 +9,7 @@ Operators read and set general settings, PF keys, starting display text, and DTM
 - **Overrides are session state.** Typed `{ fieldId, value }` pairs in memory for the build session. They are not stored in the project, IndexedDB, or YAML, and are not written unless a Write passes them to the radio layer.
 - **Patch on the fresh read.** Each override becomes a masked byte patch. On a codeplug Write, patches merge onto the pre-pause full clone inside `upload()` (with a second fresh read per touched block and an abort if the radio changed outside the mask). A **settings-only** Write reads the clone once for Review, then `uploadSettingsPatches()` reads and writes **only** touched 16-byte blocks — never the full `0x32A0` image and never MMD1.
 - **Allow-list.** Registered fields only; the registry is checked at resolve time and again in the protocol before any `W`.
-- **User input wins.** An explicit override beats the value read from the radio; **Keep** on the page means no patch. An explicit PF-key override beats the MM9PDY zone-key projection when both target the same byte (zone key is still not applied on the RT95 write branch — known gap).
+- **User input wins.** An explicit override beats the value read from the radio; **Keep** on the page means no patch. An explicit PF-key override beats the MM9PDY zone-key projection when both target the same byte (the zone key is a leading patch, so the override merges after it).
 - **No serial.** The RT95 ident has model, version, and band-limit code only. Review matches “same radio” as the settings read by **band-limit code**, not serial. There is no “apply to every radio until reload” toggle (unlike the AT-D890UV).
 
 ## Tiers
@@ -32,16 +32,16 @@ Route `/builds/:id/export/radio-settings` for RT95 Web Serial egresses. Same int
 
 ## Implementation status
 
-| Area                        | Status    | Notes                                                      |
-| --------------------------- | --------- | ---------------------------------------------------------- |
-| Field registry + patch core | Shipped   | Stage 1                                                    |
-| Radio settings page + card  | Shipped   | Stage 2                                                    |
-| Write stepper + Review      | Shipped   | Stage 3                                                    |
-| Settings-only upload path   | Shipped   | `uploadSettingsPatches`                                    |
-| Codeplug + settings patches | Shipped   | Inside full `upload()`                                     |
-| MM9PDY zone key on Write    | Not wired | Pre-existing; `applyRt95ZoneKey` not called on RT95 branch |
-| In-Review backup save       | Not wired | Text nudge only; use Backup / Restore                      |
-| Hardware verify             | Pending   | Same as other RT95 Write paths                             |
+| Area                        | Status    | Notes                                                  |
+| --------------------------- | --------- | ------------------------------------------------------ |
+| Field registry + patch core | Shipped   | Stage 1                                                |
+| Radio settings page + card  | Shipped   | Stage 2                                                |
+| Write stepper + Review      | Shipped   | Stage 3                                                |
+| Settings-only upload path   | Shipped   | `uploadSettingsPatches`                                |
+| Codeplug + settings patches | Shipped   | Inside full `upload()`                                 |
+| MM9PDY zone key on Write    | Supported | One DIR byte, patched and drift-checked like a setting |
+| In-Review backup save       | Not wired | Text nudge only; use Backup / Restore                  |
+| Hardware verify             | Pending   | Same as other RT95 Write paths                         |
 
 ## Related
 
