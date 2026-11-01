@@ -125,6 +125,8 @@ Map-first workflow to create a zone from geolocated channels within a radius of 
 4. Review the **selected channels** table (nearest-first order).
 5. **Create zone** — persists a new `Zone` with channel members and opens the zone editor.
 
+**Layout ([#1498](https://github.com/pskillen/codeplug-studio/issues/1498)):** desktop shows the centre controls beside a sticky viewport-height map, with the channels table and name below. On mobile the page folds into collapsible panels (Centre point, Channels found, Name this zone), each with a one-line summary when folded; the map is a thumbnail that opens a full-screen picker (tap to place a point, **Use this point** to apply it), and **Create zone** stays pinned above the tab bar.
+
 Core selection: `selectChannelsWithinRadius` in `src/core/domain/proximityZone.ts`. Channels without coordinates are excluded. Membership is a static snapshot at creation time.
 
 ### RX group list member picker ([#107](https://github.com/pskillen/codeplug-studio/issues/107), [#108](https://github.com/pskillen/codeplug-studio/issues/108))
@@ -279,7 +281,7 @@ All contextual Library destinations use `DesignSystemV2Provider` with v2 list ch
 
 ### Zone-from-location & grow (M2/M3, r2 [#943](https://github.com/pskillen/codeplug-studio/issues/943))
 
-- **M2** `/library/zones/new-from-location`: `EditorHeader`, `GeocodeCentreField` (`Combobox` geocode), radius chips, v2 `DataTable` multi-select, create footer.
+- **M2** `/library/zones/new-from-location`: `EditorHeader`, `GeocodeCentreField` (`Combobox` geocode), radius chips, v2 `DataTable` multi-select, create footer; folding panels + `MapThumbnail` / `FullScreenMapSheet` on mobile ([#1498](https://github.com/pskillen/codeplug-studio/issues/1498)).
 - **M3** `/library/zones/:id/add-from-map`: table-first grow recommendations with distance column, multi-select + bulk add, `GeocodeCentreField` in near-locator mode.
 - Sidecar: `GrowZoneRecommendations.md`; geocode field: `GeocodeCentreField.tsx` (library glue, no sidecar).
 

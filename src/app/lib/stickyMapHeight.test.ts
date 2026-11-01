@@ -8,7 +8,10 @@ describe('stickyMapHeight', () => {
   it('never exceeds the viewport minus gutters', () => {
     expect(stickyMapHeight(900, 0)).toBe(876);
   });
+  it('uses the full height for a pane that starts below the fold', () => {
+    expect(stickyMapHeight(900, 800)).toBe(876);
+  });
   it('keeps a usable minimum on short viewports', () => {
-    expect(stickyMapHeight(500, 400)).toBe(360);
+    expect(stickyMapHeight(300, 100)).toBe(360);
   });
 });

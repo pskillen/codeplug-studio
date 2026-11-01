@@ -135,3 +135,20 @@
   padding: 0 var(--dsv2-page-padding-x, 16px) 20px;
   min-width: 0;
 }
+
+/* Mobile `stack`: the map sits above the list at a viewport-relative height. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.stackMap {
+  height: clamp(240px, 45dvh, 460px);
+}
+
+.stackMap > * {
+  width: 100%;
+  height: 100%;
+}

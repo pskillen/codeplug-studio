@@ -20,6 +20,18 @@ There is **no** top-level Map nav item. Legacy `/map` bookmarks redirect to `/li
 
 Summary and list routes each embed a map — list pages keep contextual maps for their workflow; Summary provides the library-wide overview.
 
+## Layout patterns ([#1498](https://github.com/pskillen/codeplug-studio/issues/1498))
+
+| Surface                                                                     | Status      | Desktop                                                     | Mobile                                                                                                                             |
+| --------------------------------------------------------------------------- | ----------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Channels / Zones lists                                                      | Shipped     | List left, sticky map filling the viewport below the chrome | Full-screen map, bottom sheet (peek / half / full), Map \| List toggle; full-bleed route                                           |
+| Zone editor map                                                             | Shipped     | Sticky column beside members, viewport-relative height      | After the members, viewport-relative height                                                                                        |
+| New zone from location                                                      | Shipped     | Controls + sticky map, results and name below               | Folding panels with summaries; map thumbnail opens a full-screen picker ("Use this point"); create button pinned above the tab bar |
+| Repeater directory search                                                   | Shipped     | Sticky map beside the results table                         | Map above results, `clamp(240px, 45dvh, 460px)`                                                                                    |
+| Tracking / satellite maps, aviation airport search, channel location editor | Not started | Fixed heights unchanged                                     | Fixed heights unchanged                                                                                                            |
+
+See the [styleguide map layouts](../../reference/styleguide/README.md#map-layouts) for when to pick which.
+
 ## Component stack
 
 ```text

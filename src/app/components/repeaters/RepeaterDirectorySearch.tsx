@@ -43,7 +43,7 @@ import {
   Checkbox,
   DataTable,
   FormField,
-  MapPanel,
+  ListMapLayout,
   ModalShell,
   Panel,
   SegmentedControl,
@@ -468,6 +468,37 @@ export default function RepeaterDirectorySearch({
     await search.search(locator);
   }
 
+  const resultsTable = (
+    <DataTable
+      variant="embedded"
+      rows={rows}
+      getRowId={(row) => row.key}
+      columns={resultColumns}
+      caption={GATED_SELECTION_CAPTION}
+      selectable
+      selectedKeys={selectedKeys}
+      onSelectionChange={setSelectedKeys}
+      isRowSelectable={(row) => !row.existing}
+      bulkActions={
+        <>
+          <Button
+            size="sm"
+            disabled={selectedKeys.length === 0 || adding}
+            loading={adding}
+            onClick={() => void handleAddSelected()}
+          >
+            Add selected ({selectedKeys.length})
+          </Button>
+          {added.size > 0 ? (
+            <Button variant="secondary" size="sm" onClick={() => navigate('/library/channels')}>
+              View library
+            </Button>
+          ) : null}
+        </>
+      }
+    />
+  );
+
   const kindHint = isUk ? queryKindHint(search.kind) : null;
 
   const dialogChannel =
@@ -673,54 +704,31 @@ export default function RepeaterDirectorySearch({
 
       {rows.length > 0 ? (
         <Panel title="Results">
-          {mapChannels.length > 0 ? (
-            <MapPanel title="Results map" height={360}>
-              <CodeplugMap
-                channels={mapChannels}
-                zones={[]}
-                allChannels={mapChannels}
-                height="100%"
-              />
-            </MapPanel>
-          ) : null}
-          {mapSkippedCount > 0 ? (
-            <p className={pageClasses.attribution}>
-              {mapSkippedCount} listing{mapSkippedCount === 1 ? '' : 's'} without coordinates not
-              shown on map.
-            </p>
-          ) : null}
-          <DataTable
-            variant="embedded"
-            rows={rows}
-            getRowId={(row) => row.key}
-            columns={resultColumns}
-            caption={GATED_SELECTION_CAPTION}
-            selectable
-            selectedKeys={selectedKeys}
-            onSelectionChange={setSelectedKeys}
-            isRowSelectable={(row) => !row.existing}
-            bulkActions={
-              <>
-                <Button
-                  size="sm"
-                  disabled={selectedKeys.length === 0 || adding}
-                  loading={adding}
-                  onClick={() => void handleAddSelected()}
-                >
-                  Add selected ({selectedKeys.length})
-                </Button>
-                {added.size > 0 ? (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => navigate('/library/channels')}
-                  >
-                    View library
-                  </Button>
-                ) : null}
-              </>
-            }
-          />
+          {mapChannels.length === 0 ? (
+            resultsTable
+          ) : (
+            <ListMapLayout
+              mobile="stack"
+              title="Results"
+              list={resultsTable}
+              map={
+                <CodeplugMap
+                  channels={mapChannels}
+                  zones={[]}
+                  allChannels={mapChannels}
+                  height="100%"
+                />
+              }
+              mapNote={
+                mapSkippedCount > 0 ? (
+                  <p className={pageClasses.attribution}>
+                    {mapSkippedCount} listing{mapSkippedCount === 1 ? '' : 's'} without coordinates
+                    not shown on map.
+                  </p>
+                ) : undefined
+              }
+            />
+          )}
         </Panel>
       ) : null}
 

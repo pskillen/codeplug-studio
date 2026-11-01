@@ -29,6 +29,11 @@ export interface ListMapLayoutProps {
   sheetLabel?: string;
   /** Class for the desktop root (page padding). */
   desktopClassName?: string;
+  /**
+   * Mobile layout. `sheet` (default): full-screen map under a bottom sheet; the route must be full-bleed.
+   * `stack`: map above the list in normal page flow, for pages that scroll a long form first.
+   */
+  mobile?: 'sheet' | 'stack';
 }
 
 /**
@@ -48,6 +53,7 @@ export default function ListMapLayout({
   initialSnap = 'half',
   sheetLabel = 'Results',
   desktopClassName,
+  mobile = 'sheet',
 }: ListMapLayoutProps) {
   const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY, false, {
     getInitialValueInEffect: false,
@@ -91,6 +97,18 @@ export default function ListMapLayout({
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (mobile === 'stack') {
+    return (
+      <div className={classes.stack}>
+        {head}
+        {mapExtras ? <div className={classes.extras}>{mapExtras}</div> : null}
+        <div className={classes.stackMap}>{map}</div>
+        {mapNote ? <div className={classes.note}>{mapNote}</div> : null}
+        {list}
       </div>
     );
   }

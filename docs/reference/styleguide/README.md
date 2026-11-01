@@ -27,6 +27,20 @@ This is **not** user-facing help copy. For wording aimed at operators, use [help
 | [design-system-v2](../../features/design-system-v2/README.md)               | Theme, component map, implementation status                                    |
 | [help writing styleguide](../writing-styleguide/help-writing-styleguide.md) | Operator-facing prose                                                          |
 
+## Map layouts
+
+Pages with a map follow one of these patterns (sizes are viewport-relative, never fixed pixel boxes — [#1498](https://github.com/pskillen/codeplug-studio/issues/1498)):
+
+| Page shape                                              | Desktop                                                                          | Mobile (`≤48em`)                                                                                                                                         | Component                                                                         |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| List of geolocated rows (Channels, Zones)               | Table scrolls with the page; map is sticky and fills the screen below the chrome | Full-screen map under a bottom sheet (peek / half / full) with a Map \| List toggle that only snaps the sheet; route is full-bleed                       | `ListMapLayout` + `MapSheet`; add the route to `fullBleedRoutes.ts`               |
+| Results below a long search form (directory search)     | Same sticky split inside the Results panel                                       | Map above the results at `clamp(240px, 45dvh, 460px)`                                                                                                    | `ListMapLayout mobile="stack"`                                                    |
+| Editor with a coverage map (zone editor)                | Map column sticky beside the member list, `clamp(280px, 100dvh − 240px, 720px)`  | Map after the members, same clamp                                                                                                                        | `ZoneMapSection`                                                                  |
+| Long editor that needs a point (New zone from location) | Controls left, sticky map right                                                  | Panels fold with a one-line summary; map is a thumbnail that opens a full-screen picker with **Use this point**; primary action pinned above the tab bar | `Panel collapsible summary`, `MapThumbnail`, `FullScreenMapSheet`, `StickyFooter` |
+| Map tools (`/tools/*`)                                  | Left column + map                                                                | Map-first sheet                                                                                                                                          | `MapToolLayout` (Field tools)                                                     |
+
+Defaults for bare maps (`CodeplugMap`, `MapLocationPicker`) are `clamp(300px, 60dvh, 640px)`; pass `height="100%"` inside a sized container.
+
 ## Common UI categories
 
 Name the job first, then pick a shell.
