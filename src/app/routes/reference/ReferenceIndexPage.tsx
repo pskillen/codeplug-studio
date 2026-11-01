@@ -7,8 +7,10 @@ import { openExternalUrl } from '../../lib/openExternalUrl.ts';
 import { listOfferedFirmwareUpdaters } from '../../services/firmwareFlashEnvGate.ts';
 import {
   BandPlanArt,
+  BearingArt,
   FirmwareArt,
   MaidenheadArt,
+  NearbyArt,
   PropagationArt,
   TrackingArt,
 } from './ToolArt.tsx';
@@ -28,9 +30,17 @@ const TOOL_CARDS: Record<string, ToolCardMeta> = {
     Art: FirmwareArt,
     featured: true,
   },
-  '/reference/maidenhead': {
-    description: 'Turn a grid square into a position and back, with a map.',
+  '/tools/locator': {
+    description: 'Your Maidenhead locator from GPS, ready to copy or share. Look up any place too.',
     Art: MaidenheadArt,
+  },
+  '/tools/bearing': {
+    description: 'Drop two pins for the distance, the bearing and the return bearing.',
+    Art: BearingArt,
+  },
+  '/tools/nearby': {
+    description: 'Repeaters around a point, nearest first, with distance and bearing.',
+    Art: NearbyArt,
   },
   '/reference/bands': {
     description: 'UK amateur band plan: who uses which part of each band.',

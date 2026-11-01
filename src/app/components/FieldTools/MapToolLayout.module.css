@@ -1,7 +1,8 @@
 .desktop {
   display: grid;
   grid-template-columns: 420px minmax(0, 1fr);
-  height: 100%;
+  grid-template-rows: minmax(0, 1fr);
+  flex: 1 1 0;
   min-height: 0;
 }
 
@@ -10,14 +11,14 @@
   overflow-y: auto;
   border-right: 1px solid var(--dsv2-border);
   background: var(--dsv2-bg);
-  padding: var(--dsv2-space-4, 16px) 0 24px;
+}
+
+.columnBody {
+  --dsv2-page-padding-x: 20px;
+  padding: 16px 20px 24px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-}
-
-.column > * {
-  padding-inline: 20px;
 }
 
 .head {
@@ -62,7 +63,8 @@
 }
 
 .stack {
-  height: 100%;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -89,7 +91,8 @@
 
 .sheetRoot {
   position: relative;
-  height: 100%;
+  flex: 1 1 0;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -103,7 +106,7 @@
   top: 10px;
   left: 12px;
   right: 12px;
-  z-index: 450;
+  z-index: 1100;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;

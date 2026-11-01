@@ -342,7 +342,7 @@ export default function GrowZoneRecommendations() {
                   </Button>
                   <p className={classes.hint}>
                     Default locator is the zone centre from member coordinates.{' '}
-                    <Link to="/reference/maidenhead">Maidenhead reference</Link>
+                    <Link to="/tools/locator">My locator</Link>
                   </p>
                 </div>
               ) : null}

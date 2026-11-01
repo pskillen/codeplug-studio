@@ -173,3 +173,15 @@ export function parseLatLon(
 export function formatCoordParam(value: number): string {
   return String(Math.round(value * 1e5) / 1e5);
 }
+
+/** Conventional Maidenhead casing: field upper-case, subsquare letters lower-case ("IO75ui23"). */
+export function formatLocatorDisplay(locator: string): string {
+  const s = locator.trim().replace(/\s/g, '');
+  return (
+    s.slice(0, 2).toUpperCase() +
+    s.slice(2, 4) +
+    s.slice(4, 6).toLowerCase() +
+    s.slice(6, 8) +
+    s.slice(8).toLowerCase()
+  );
+}

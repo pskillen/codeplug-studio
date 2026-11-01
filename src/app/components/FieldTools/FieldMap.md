@@ -4,7 +4,7 @@ Full-size Leaflet map for the Field tools.
 
 ## Purpose
 
-One map component for the three Field tools. Unlike `MapLocationPicker` / `MapPairPlot` it fills its parent (`height: 100%`), draws any number of pins and numbered markers, and fits the view only when asked.
+One map component for the three Field tools. Unlike `MapLocationPicker` it fills its parent (`height: 100%`), draws any number of pins and numbered markers, and fits the view only when asked.
 
 ## Props
 

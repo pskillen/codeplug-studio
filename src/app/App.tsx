@@ -34,7 +34,10 @@ import SummaryPage from './routes/SummaryPage.tsx';
 import TrackingDashboardPage from './routes/tracking/TrackingDashboardPage.tsx';
 import SatelliteDetailPage from './routes/tracking/SatelliteDetailPage.tsx';
 import BandsReferencePage from './routes/reference/BandsReferencePage.tsx';
-import MaidenheadReferencePage from './routes/reference/MaidenheadReferencePage.tsx';
+import MaidenheadRedirectPage from './routes/tools/MaidenheadRedirectPage.tsx';
+import LocatorPage from './routes/tools/LocatorPage.tsx';
+import BearingPage from './routes/tools/BearingPage.tsx';
+import NearbyPage from './routes/tools/NearbyPage.tsx';
 import ReferenceIndexPage from './routes/reference/ReferenceIndexPage.tsx';
 import RfPropagationRedirectPage from './routes/reference/RfPropagationRedirectPage.tsx';
 import FirmwareFlasherPage from './routes/firmware/FirmwareFlasherPage.tsx';
@@ -102,7 +105,10 @@ export const appRouter = createBrowserRouter([
       { path: '/terms', element: <TermsOfUsePage /> },
       { path: '/cookies', element: <CookiesPage /> },
       { path: '/reference', element: <ReferenceIndexPage /> },
-      { path: '/reference/maidenhead', element: <MaidenheadReferencePage /> },
+      { path: '/reference/maidenhead', element: <MaidenheadRedirectPage /> },
+      { path: '/tools/locator', element: <LocatorPage /> },
+      { path: '/tools/bearing', element: <BearingPage /> },
+      { path: '/tools/nearby', element: <NearbyPage /> },
       { path: '/reference/bands', element: <BandsReferencePage /> },
       { path: '/reference/rf-propagation', element: <RfPropagationRedirectPage /> },
       { path: '/firmware', element: <FirmwareFlasherPage /> },

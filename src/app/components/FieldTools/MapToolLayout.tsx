@@ -29,6 +29,8 @@ export interface MapToolLayoutProps {
   sheetHeader?: ReactNode;
   /** Initial sheet snap (mobile `sheet`). Default `half`. */
   initialSnap?: MapSheetSnap;
+  /** Rendered under the heading on desktop only (e.g. the readout the mobile sheet shows as its header). */
+  desktopLead?: ReactNode;
   /** Show the floating Map | List toggle over the map (mobile `sheet`). */
   showViewToggle?: boolean;
   /** Floating chip over the top-left of the map (mobile `sheet`), e.g. the current point. */
@@ -53,6 +55,7 @@ export default function MapToolLayout({
   children,
   mobile = 'sheet',
   sheetHeader,
+  desktopLead,
   initialSnap = 'half',
   showViewToggle = false,
   mapOverlay,
@@ -77,8 +80,12 @@ export default function MapToolLayout({
       <DesignSystemV2Provider>
         <div className={classes.desktop}>
           <aside className={classes.column}>
-            {head}
-            {children}
+            <div className={classes.columnBody}>
+              {head}
+              {desktopLead}
+              {children}
+              {afterMap}
+            </div>
           </aside>
           <div className={classes.mapArea}>
             {map}

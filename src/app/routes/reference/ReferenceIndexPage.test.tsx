@@ -24,7 +24,9 @@ describe('ReferenceIndexPage', () => {
     // Tests run as the `local` build, where the flasher is offered.
     expect(titles).toEqual([
       'Firmware flasherNEW',
-      'Maidenhead locator',
+      'My locator',
+      'Distance & bearing',
+      'Nearby repeaters',
       'Band plan',
       'Tracking Dashboard',
     ]);

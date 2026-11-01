@@ -233,3 +233,88 @@ export function PropagationArt() {
     </Art>
   );
 }
+
+export function BearingArt() {
+  return (
+    <Art>
+      <rect x="20" y="14" width="280" height="112" rx="10" fill={PANEL} stroke={LINE} />
+      <path d="M20 96 Q110 70 170 88 T300 60" stroke={LINE} fill="none" />
+      <path d="M20 50 Q90 64 150 40 T300 100" stroke={LINE} fill="none" />
+      <path d="M92 98 L232 44" stroke={ACCENT} strokeWidth={3} strokeDasharray="8 7" fill="none" />
+      <circle cx="92" cy="98" r="13" fill={ACCENT} stroke={PAPER} strokeWidth={3} />
+      <text
+        x="92"
+        y="103"
+        textAnchor="middle"
+        fontFamily={SANS}
+        fontSize="14"
+        fontWeight="700"
+        fill={PAPER}
+      >
+        A
+      </text>
+      <circle cx="232" cy="44" r="13" fill={AMBER} stroke={PAPER} strokeWidth={3} />
+      <text
+        x="232"
+        y="49"
+        textAnchor="middle"
+        fontFamily={SANS}
+        fontSize="14"
+        fontWeight="700"
+        fill={PAPER}
+      >
+        B
+      </text>
+      <text x="160" y="116" textAnchor="middle" fontFamily={MONO} fontSize="12" fill={MUTED}>
+        21.3 mi · 35° NE
+      </text>
+    </Art>
+  );
+}
+
+export function NearbyArt() {
+  return (
+    <Art>
+      <rect x="20" y="14" width="280" height="112" rx="10" fill={PANEL} stroke={LINE} />
+      <circle cx="160" cy="70" r="26" stroke={ACCENT} strokeOpacity={0.5} fill="none" />
+      <circle
+        cx="160"
+        cy="70"
+        r="50"
+        stroke={ACCENT}
+        strokeOpacity={0.35}
+        strokeDasharray="6 6"
+        fill="none"
+      />
+      <circle cx="160" cy="70" r="7" fill={ACCENT} stroke={PAPER} strokeWidth={2} />
+      {[
+        [138, 56, '1'],
+        [196, 86, '2'],
+        [124, 98, '3'],
+        [212, 48, '4'],
+      ].map(([x, y, n]) => (
+        <g key={String(n)}>
+          <circle
+            cx={x as number}
+            cy={y as number}
+            r="9"
+            fill={AMBER}
+            stroke={PAPER}
+            strokeWidth={2}
+          />
+          <text
+            x={x as number}
+            y={(y as number) + 4}
+            textAnchor="middle"
+            fontFamily={SANS}
+            fontSize="10"
+            fontWeight="700"
+            fill={PAPER}
+          >
+            {n}
+          </text>
+        </g>
+      ))}
+    </Art>
+  );
+}

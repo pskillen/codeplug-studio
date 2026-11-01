@@ -4,6 +4,7 @@ import {
   formatBearingLabel,
   formatCoordParam,
   formatDistanceInUnit,
+  formatLocatorDisplay,
   locatorSquareBounds,
   parseLatLon,
   rankByDistance,
@@ -92,5 +93,14 @@ describe('point params', () => {
 
   it('rounds coordinates for URLs', () => {
     expect(formatCoordParam(55.8642123456)).toBe('55.86421');
+  });
+});
+
+describe('formatLocatorDisplay', () => {
+  it('applies conventional casing', () => {
+    expect(formatLocatorDisplay('IO75UI')).toBe('IO75ui');
+    expect(formatLocatorDisplay('io75ui23')).toBe('IO75ui23');
+    expect(formatLocatorDisplay('io75')).toBe('IO75');
+    expect(formatLocatorDisplay('IO75UI23AB')).toBe('IO75ui23ab');
   });
 });

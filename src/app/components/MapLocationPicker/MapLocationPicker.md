@@ -40,4 +40,4 @@ import MapLocationPicker from '@app/components/MapLocationPicker/MapLocationPick
 ## Related
 
 - [ChannelLocationSection](../channels/ChannelLocationSection.md)
-- `/reference/maidenhead` route
+- `/tools/locator` and `/tools/bearing` (Field tools; `/reference/maidenhead` redirects there)

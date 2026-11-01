@@ -4,7 +4,7 @@ Map chrome for live Leaflet maps and hatch placeholder empty states.
 
 ## Purpose
 
-Presentational map panel matching the design-system layout: optional title + settings gear, map body, optional legend. Hosts `CodeplugMap`, `MapLocationPicker`, or `MapPairPlot` via `children`; without children, shows a diagonal-hatch placeholder.
+Presentational map panel matching the design-system layout: optional title + settings gear, map body, optional legend. Hosts `CodeplugMap`, or `MapLocationPicker` via `children`; without children, shows a diagonal-hatch placeholder.
 
 ## Props
 

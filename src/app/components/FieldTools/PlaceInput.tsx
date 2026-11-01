@@ -1,6 +1,7 @@
 import { ActionIcon, Autocomplete, Loader } from '@mantine/core';
 import { IconCurrentLocation, IconSearch, IconX } from '@tabler/icons-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { formatLocatorDisplay } from '@core/domain/fieldGeo.ts';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import type { Channel } from '@core/models/library.ts';
 import { useGeolocation } from '../../hooks/useGeolocation.ts';
@@ -55,10 +56,13 @@ export default function PlaceInput({
   const [error, setError] = useState<string | null>(null);
 
   // Show the current place's label whenever it is set from outside (map click, GPS, swap).
-  useEffect(() => {
+  const placeKey = place ? `${place.lat},${place.lon},${place.label}` : '';
+  const [seenPlaceKey, setSeenPlaceKey] = useState(placeKey);
+  if (placeKey !== seenPlaceKey) {
+    setSeenPlaceKey(placeKey);
     setText(place?.label ?? '');
     setError(null);
-  }, [place]);
+  }
 
   const located = useMemo(() => channels.filter(channelHasLocation), [channels]);
   const options = useMemo(() => filterChannelOptions(located, text), [located, text]);
@@ -88,13 +92,13 @@ export default function PlaceInput({
     }
   };
 
-  const useGps = async () => {
+  const locate = async () => {
     const result = await requestLocation();
     if (result) onPlace(placeFromCoords(result.lat, result.lon, 'gps', 'My location'));
   };
 
   const caption = place
-    ? `${coordsToLocator(place.lat, place.lon, 6)} · ${place.lat.toFixed(4)}, ${place.lon.toFixed(4)}`
+    ? `${formatLocatorDisplay(coordsToLocator(place.lat, place.lon, 6))} · ${place.lat.toFixed(4)}, ${place.lon.toFixed(4)}`
     : null;
   const shownError = error ?? gpsError;
 
@@ -137,7 +141,7 @@ export default function PlaceInput({
                   variant="subtle"
                   aria-label={`Use my location for ${label}`}
                   loading={gpsLoading}
-                  onClick={() => void useGps()}
+                  onClick={() => void locate()}
                 >
                   <IconCurrentLocation size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
                 </ActionIcon>
