@@ -1,6 +1,7 @@
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { portableSyncedAt } from './interchangeMeta.ts';
+import type { ProjectEntityChange, ProjectEntityKind } from './projectEntityDiff.ts';
 import type { ProjectSeed } from './projectInterchangePort.ts';
 
 export interface ProjectSyncCounts {
@@ -23,6 +24,8 @@ export interface ProjectSyncSummary {
   projectName: string;
   lastModifiedAt: string | null;
   portableSyncedAt: string | null;
+  /** Latest library entity edit (excludes project meta). Used to detect unsynced local edits. */
+  libraryModifiedAt?: string | null;
   counts: ProjectSyncCounts;
 }
 
@@ -51,6 +54,8 @@ export interface ProjectSyncDiff {
   remote: ProjectSyncSummary;
   timestamps: ProjectSyncTimestampRow[];
   counts: ProjectSyncCountRow[];
+  /** Entities that differ by UUID; empty when the caller had no remote aggregate to compare. */
+  entityChanges: ProjectEntityChange[];
 }
 
 const COUNT_LABELS: Record<ProjectSyncCountKey, string> = {
@@ -135,6 +140,7 @@ export function summariseProjectSeed(seed: ProjectSeed): ProjectSyncSummary {
     projectName: seed.meta.name,
     lastModifiedAt: lastModifiedFromSeed(seed),
     portableSyncedAt: portableSyncedAt(seed.meta),
+    libraryModifiedAt: lastLibraryModifiedFromSeed(seed),
     counts: countsFromSeed(seed),
   };
 }
@@ -223,6 +229,7 @@ export function formatSyncDelta(delta: number): string {
 export function buildProjectSyncDiff(
   local: ProjectSyncSummary,
   remote: ProjectSyncSummary,
+  entityChanges: ProjectEntityChange[] = [],
 ): ProjectSyncDiff {
   const timestamps: ProjectSyncTimestampRow[] = [
     {
@@ -253,7 +260,7 @@ export function buildProjectSyncDiff(
     };
   });
 
-  return { local, remote, timestamps, counts };
+  return { local, remote, timestamps, counts, entityChanges };
 }
 
 /** Compact string lines for logs / legacy tests — prefer {@link buildProjectSyncDiff} in UI. */
@@ -322,4 +329,61 @@ export function portableInterchangeLabel(meta: ProjectMeta): string | null {
     return `Local file · ${local.fileName}`;
   }
   return null;
+}
+
+/** True when the summarised copy has library edits made after its last Drive / file sync. */
+export function hasUnsyncedLocalEdits(summary: ProjectSyncSummary): boolean {
+  return isLocalPortableDirty(summary.libraryModifiedAt, summary.portableSyncedAt);
+}
+
+const ENTITY_NOUNS: Record<ProjectEntityKind, [singular: string, plural: string]> = {
+  channels: ['channel', 'channels'],
+  zones: ['zone', 'zones'],
+  talkGroups: ['talk group', 'talk groups'],
+  digitalContacts: ['digital contact', 'digital contacts'],
+  analogContacts: ['analog contact', 'analog contacts'],
+  rxGroupLists: ['RX group list', 'RX group lists'],
+  scanLists: ['scan list', 'scan lists'],
+  aprsConfigurations: ['APRS configuration', 'APRS configurations'],
+  radioBuilds: ['radio build', 'radio builds'],
+  egressPaths: ['egress path', 'egress paths'],
+};
+
+/** Singular, capitalised label for one entity kind ("Talk group"). */
+export function entityKindLabel(kind: ProjectEntityKind): string {
+  const singular = ENTITY_NOUNS[kind][0];
+  return singular.charAt(0).toUpperCase() + singular.slice(1);
+}
+
+/** Plain-language review of a {@link ProjectSyncDiff} for the "which copy?" dialog. */
+export interface ProjectSyncReview {
+  /** Local copy has edits after its last sync — adopting remote would discard them. */
+  hasUnsyncedLocalEdits: boolean;
+  /** Last sync time of the local copy (the "edits after" boundary). */
+  localSyncedAt: string | null;
+  remoteNewer: boolean;
+  /** Count rows with a non-zero delta only. */
+  changedCounts: ProjectSyncCountRow[];
+  /** e.g. "+1 radio build, +1 egress path"; empty when counts are identical. */
+  countSummary: string;
+  entityChanges: ProjectEntityChange[];
+}
+
+export function buildProjectSyncReview(diff: ProjectSyncDiff): ProjectSyncReview {
+  const changedCounts = diff.counts.filter((row) => row.delta !== 0);
+  const countSummary = changedCounts
+    .map((row) => {
+      const [singular, plural] = ENTITY_NOUNS[row.key];
+      return `${formatSyncDelta(row.delta)} ${Math.abs(row.delta) === 1 ? singular : plural}`;
+    })
+    .join(', ');
+  const lastEdited = diff.timestamps.find((row) => row.key === 'lastEdited');
+  return {
+    hasUnsyncedLocalEdits: hasUnsyncedLocalEdits(diff.local),
+    localSyncedAt: diff.local.portableSyncedAt,
+    remoteNewer: lastEdited?.newerSide === 'remote',
+    changedCounts,
+    countSummary,
+    entityChanges: diff.entityChanges,
+  };
 }

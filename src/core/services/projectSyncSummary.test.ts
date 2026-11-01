@@ -6,6 +6,8 @@ import {
 } from '@core/import-export/formats/native-yaml/testFixtures.ts';
 import {
   buildProjectSyncDiff,
+  buildProjectSyncReview,
+  hasUnsyncedLocalEdits,
   formatSyncDiffSummary,
   formatSyncTimestamp,
   hasPortableInterchange,
@@ -133,5 +135,54 @@ describe('projectSyncSummary', () => {
       'Last edited',
       'Last Drive or file save',
     ]);
+  });
+});
+
+describe('sync review', () => {
+  const base = {
+    projectId: 'p',
+    projectName: 'P',
+    lastModifiedAt: '2026-07-10T10:00:00.000Z',
+    portableSyncedAt: '2026-07-10T09:00:00.000Z',
+    counts: {
+      channels: 1,
+      zones: 0,
+      talkGroups: 0,
+      digitalContacts: 0,
+      analogContacts: 0,
+      rxGroupLists: 0,
+      scanLists: 0,
+      aprsConfigurations: 0,
+      radioBuilds: 1,
+      egressPaths: 0,
+    },
+  };
+
+  it('flags unsynced local edits only when library edits post-date the last sync', () => {
+    const at = (libraryModifiedAt: string) => hasUnsyncedLocalEdits({ ...base, libraryModifiedAt });
+    expect(at('2026-07-10T09:30:00.000Z')).toBe(true);
+    expect(at('2026-07-10T08:59:00.000Z')).toBe(false);
+    expect(at('2026-07-10T09:00:01.000Z')).toBe(false);
+    expect(hasUnsyncedLocalEdits(base)).toBe(false);
+    expect(
+      hasUnsyncedLocalEdits({
+        ...base,
+        libraryModifiedAt: '2026-07-10T09:30:00.000Z',
+        portableSyncedAt: null,
+      }),
+    ).toBe(false);
+  });
+
+  it('summarises only non-zero count deltas and which side is newer', () => {
+    const remote = {
+      ...base,
+      lastModifiedAt: '2026-07-10T11:00:00.000Z',
+      counts: { ...base.counts, radioBuilds: 2, egressPaths: 1, channels: 0 },
+    };
+    const review = buildProjectSyncReview(buildProjectSyncDiff(base, remote));
+    expect(review.countSummary).toBe('-1 channel, +1 radio build, +1 egress path');
+    expect(review.changedCounts).toHaveLength(3);
+    expect(review.remoteNewer).toBe(true);
+    expect(review.hasUnsyncedLocalEdits).toBe(false);
   });
 });
