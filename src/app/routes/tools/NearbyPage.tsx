@@ -23,14 +23,16 @@ import PlaceInput from '../../components/FieldTools/PlaceInput.tsx';
 import { Button, Pill } from '../../components/v2/index.ts';
 import { useDistanceUnit } from '../../hooks/useDistanceUnit.ts';
 import { useGeolocation } from '../../hooks/useGeolocation.ts';
+import { useNearbyQuery } from '../../hooks/useNearbyQuery.ts';
 import { useUkRepeatersNear } from '../../hooks/useUkRepeatersNear.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { getModeDefinition } from '../../lib/channelModes.ts';
 import {
+  NEARBY_BAND_CHOICES,
+  NEARBY_MODE_CHOICES,
   applyNearbyFilters,
   buildNearbyItems,
   type NearbyItem,
-  type NearbySource,
 } from '../../lib/nearbyRepeaters.ts';
 import { placeFromCoords, type Place } from '../../lib/resolvePlace.ts';
 import { hzToMhzString } from '../../lib/units.ts';
@@ -42,30 +44,9 @@ import Chip from './Chip.tsx';
 import classes from './FieldTools.module.css';
 
 const RADIUS_CHOICES = [10, 25, 50, 100] as const;
-const DEFAULT_RADIUS_KM = 25 * 1.609344;
-const BAND_CHOICES: { id: string; label: string }[] = [
-  { id: '4m', label: '4m' },
-  { id: '2m', label: '2m' },
-  { id: '70cm', label: '70cm' },
-  { id: '23cm', label: '23cm' },
-];
-const MODE_CHOICES: { id: ChannelMode; label: string }[] = [
-  { id: 'fm', label: 'FM' },
-  { id: 'dmr', label: 'DMR' },
-  { id: 'dstar', label: 'D-STAR' },
-  { id: 'ysf', label: 'YSF' },
-];
 const PIN_COLOUR = '#4f8cff';
 const MARKER_COLOUR = '#e8890c';
 const MAX_ROWS = 60;
-
-function csv(value: string | null): string[] {
-  return value ? value.split(',').filter(Boolean) : [];
-}
-
-function toggle<T>(list: readonly T[], value: T): T[] {
-  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
-}
 
 function radiusKmToChoice(km: number, unit: DistanceUnit): number {
   return unit === 'mi' ? Math.round(km / 1.609344) : Math.round(km);
@@ -118,14 +99,18 @@ export default function NearbyPage() {
 
   const point = parseLatLon(params.get('lat'), params.get('lon'));
   const pointLabel = params.get('pl') || undefined;
-  const radiusKm = Number(params.get('r')) > 0 ? Number(params.get('r')) : DEFAULT_RADIUS_KM;
-  const sourceParam = params.get('s');
-  const sources: NearbySource[] = (
-    sourceParam != null ? csv(sourceParam) : hasProject ? ['ukrepeater', 'library'] : ['ukrepeater']
-  ).filter((s): s is NearbySource => s === 'ukrepeater' || s === 'library');
-  const bands = csv(params.get('b'));
-  const modes = csv(params.get('m')) as ChannelMode[];
-  const operationalOnly = params.get('op') === '1';
+  const {
+    radiusKm,
+    sources,
+    bands,
+    modes,
+    operationalOnly,
+    setRadiusKm,
+    toggleSource,
+    toggleBand,
+    toggleMode,
+    setOperationalOnly,
+  } = useNearbyQuery();
 
   const patch = useCallback(
     (changes: Record<string, string | null>) => {
@@ -177,7 +162,17 @@ export default function NearbyPage() {
     );
     return rankByDistance(items, point, (i) => i.location, radiusM);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [point?.lat, point?.lon, uk.listings, channels, sourceParam, hasProject, params, radiusM]);
+  }, [
+    point?.lat,
+    point?.lon,
+    uk.listings,
+    channels,
+    sources,
+    bands,
+    modes,
+    operationalOnly,
+    radiusM,
+  ]);
 
   const shown = ranked.slice(0, MAX_ROWS);
   const radiusLabel = `${radiusKmToChoice(radiusKm, unit)} ${unit}`;
@@ -258,11 +253,7 @@ export default function NearbyPage() {
           {RADIUS_CHOICES.map((n) => {
             const km = unitToMetres(n, unit) / 1000;
             return (
-              <Chip
-                key={n}
-                active={Math.abs(radiusKm - km) < 0.5}
-                onClick={() => patch({ r: String(Math.round(km * 100) / 100) })}
-              >
+              <Chip key={n} active={Math.abs(radiusKm - km) < 0.5} onClick={() => setRadiusKm(km)}>
                 {n} {unit}
               </Chip>
             );
@@ -282,17 +273,14 @@ export default function NearbyPage() {
       <div className={classes.chipRow}>
         <span className={classes.chipLabel}>Source</span>
         <div className={classes.chips} role="group" aria-label="Source">
-          <Chip
-            active={sources.includes('ukrepeater')}
-            onClick={() => patch({ s: toggle(sources, 'ukrepeater').join(',') || 'none' })}
-          >
+          <Chip active={sources.includes('ukrepeater')} onClick={() => toggleSource('ukrepeater')}>
             ukrepeater.net
           </Chip>
           <Chip
             active={sources.includes('library')}
             disabled={!hasProject}
             title={hasProject ? undefined : 'Open a project to search its library'}
-            onClick={() => patch({ s: toggle(sources, 'library').join(',') || 'none' })}
+            onClick={() => toggleSource('library')}
           >
             My library
           </Chip>
@@ -301,28 +289,17 @@ export default function NearbyPage() {
       <div className={classes.chipRow}>
         <span className={classes.chipLabel}>Filter</span>
         <div className={classes.chips} role="group" aria-label="Band, mode and status filters">
-          {BAND_CHOICES.map((b) => (
-            <Chip
-              key={b.id}
-              active={bands.includes(b.id)}
-              onClick={() => patch({ b: toggle(bands, b.id).join(',') })}
-            >
+          {NEARBY_BAND_CHOICES.map((b) => (
+            <Chip key={b.id} active={bands.includes(b.id)} onClick={() => toggleBand(b.id)}>
               {b.label}
             </Chip>
           ))}
-          {MODE_CHOICES.map((m) => (
-            <Chip
-              key={m.id}
-              active={modes.includes(m.id)}
-              onClick={() => patch({ m: toggle(modes, m.id).join(',') })}
-            >
+          {NEARBY_MODE_CHOICES.map((m) => (
+            <Chip key={m.id} active={modes.includes(m.id)} onClick={() => toggleMode(m.id)}>
               {m.label}
             </Chip>
           ))}
-          <Chip
-            active={operationalOnly}
-            onClick={() => patch({ op: operationalOnly ? null : '1' })}
-          >
+          <Chip active={operationalOnly} onClick={() => setOperationalOnly(!operationalOnly)}>
             Operational
           </Chip>
         </div>
