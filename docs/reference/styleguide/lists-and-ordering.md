@@ -69,6 +69,7 @@ column sorts                  →  persisted prefs, no model rewrite
 | `variant="embedded"` | Inside forms, wizards, import pickers                                                                                                                             |
 | `scale="extreme"`    | Digital contacts (D) — virtualise-first, cheap cells                                                                                                              |
 | `stickyHeader`       | Header stays on screen while scrolling a long table; default on for `list`, off for `embedded` ([#1516](https://github.com/pskillen/codeplug-studio/issues/1516)) |
+| `mobileIdentity`     | Phone only: per-row identity line (checkbox + name) that stays put while the cells below scroll sideways; replaces the pinned column on mobile                    |
 | `stickyFirstColumn`  | Pins the identity (name) column, with any checkbox / Order column, on the left while scrolling sideways; use when column 1 is the identity                        |
 | `selectable`         | Multi-select when every row is eligible; implied by `bulkReorder` (reorderable rows only)                                                                         |
 | Custom select column | When some rows must not be selectable (e.g. existing repeater matches)                                                                                            |

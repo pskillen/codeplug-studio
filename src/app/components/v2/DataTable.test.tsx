@@ -563,6 +563,66 @@ describe('DataTable sticky header and first column', () => {
   });
 });
 
+describe('DataTable mobile identity line', () => {
+  afterEach(() => vi.restoreAllMocks());
+  const COLS: DataTableColumn<Row>[] = [
+    { ...COLUMNS[0]!, hideOnMobile: true },
+    { key: 'badges', header: 'Badges', mobileOnly: true, render: (row) => `badge-${row.id}` },
+    COLUMNS[1]!,
+  ];
+  const renderTable = (props: Partial<React.ComponentProps<typeof DataTable<Row>>> = {}) =>
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLS}
+          rows={ROWS}
+          getRowId={(r) => r.id}
+          mobileIdentity={(row) => <span>ident-{row.name}</span>}
+          mobileIdentityLabel="Thing"
+          {...props}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+  it('renders the identity line, mobile-only column and no name column on mobile', () => {
+    mockMobileViewport();
+    renderTable();
+    expect(screen.getByText('ident-Bravo')).toBeInTheDocument();
+    expect(screen.getByText('badge-1')).toBeInTheDocument();
+    expect(screen.getByText('Thing')).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Name' })).not.toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Badges' })).toBeInTheDocument();
+    // identity line is a cell of the same row, not a separate row
+    expect(screen.getAllByRole('row')).toHaveLength(ROWS.length + 1);
+    expect(screen.getByRole('table')).toHaveAttribute('data-split', 'true');
+  });
+
+  it('moves the checkbox onto the identity line and keeps selection and activation working', () => {
+    mockMobileViewport();
+    const onSelectionChange = vi.fn();
+    const onRowActivate = vi.fn();
+    renderTable({ selectable: true, onSelectionChange, onRowActivate });
+    const row = screen.getAllByRole('row')[1]!;
+    const identityCell = screen.getByText('ident-Bravo').parentElement!.parentElement!;
+    const box = identityCell.querySelector('input[type=checkbox], [role=checkbox]') as HTMLElement;
+    expect(box).toBeTruthy();
+    // grid has no lead track: 2 columns (badges, score)
+    expect(row.style.gridTemplateColumns).toBe('minmax(8rem, 1fr) minmax(8rem, 1fr)');
+    fireEvent.click(box);
+    expect(onSelectionChange).toHaveBeenCalledWith(['1']);
+    expect(onRowActivate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('ident-Bravo'));
+    expect(onRowActivate).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it('is ignored on desktop: normal columns, no identity line, no mobile-only column', () => {
+    renderTable({ selectable: true });
+    expect(screen.queryByText('ident-Bravo')).not.toBeInTheDocument();
+    expect(screen.queryByText('badge-1')).not.toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toBeInTheDocument();
+  });
+});
+
 describe('trackMinWidth', () => {
   it('reads the floor of a track', () => {
     expect(trackMinWidth('minmax(8rem, 1fr)')).toBe('8rem');

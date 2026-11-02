@@ -49,6 +49,8 @@ export interface DataTableColumn<T> {
   defaultVisible?: boolean;
   /** Dropped on narrow viewports unless re-enabled via the column-visibility popover. */
   hideOnMobile?: boolean;
+  /** Only present on narrow viewports (e.g. the badges column that sits beside a `mobileIdentity` line). */
+  mobileOnly?: boolean;
 }
 
 export type DataTableSortDirection = 'asc' | 'desc';
@@ -136,6 +138,18 @@ export interface DataTableProps<T> {
    * and `nested`/`reorderMode` cells are hidden while this is active.
    */
   mobileCard?: (row: T) => ReactNode;
+  /**
+   * Narrow viewports only (below `MOBILE_MAX_WIDTH_MEDIA_QUERY`): renders this as an identity line
+   * at the top of every row, pinned to the scroller's visible width so it never scrolls sideways,
+   * above that row's column cells (which still scroll, in sync with the header). The selection
+   * checkbox moves onto the line, left of the content. Pair with `hideOnMobile` on the column(s) it
+   * replaces and `mobileOnly` on any column that carries the leftovers. Ignored with `nested` /
+   * `reorderMode` / `mobileCard`. Not combined with `stickyFirstColumn` (nothing is pinned in the
+   * cell line).
+   */
+  mobileIdentity?: (row: T) => ReactNode;
+  /** Label for the identity line in the header (beside the select-all checkbox). Default `'Name'`. */
+  mobileIdentityLabel?: ReactNode;
   className?: string;
 }
 
@@ -234,6 +248,7 @@ interface DataTableBodyRowProps<T> {
   onActivate: () => void;
   useCardLayout: boolean;
   mobileCard: ((row: T) => ReactNode) | undefined;
+  mobileIdentity: ((row: T) => ReactNode) | undefined;
   /** Left offsets (px) of the pinned lead columns, in order; empty when nothing is pinned. */
   pin: PinLayout;
 }
@@ -258,6 +273,7 @@ function DataTableBodyRow<T>({
   onActivate,
   useCardLayout,
   mobileCard,
+  mobileIdentity,
   pin,
 }: DataTableBodyRowProps<T>) {
   const { row, key, depth, hasChildren } = flat;
@@ -327,7 +343,24 @@ function DataTableBodyRow<T>({
           ) : null}
         </div>
       ) : null}
-      {selectable && !useCardLayout ? (
+      {mobileIdentity ? (
+        <div role="cell" className={classes.identityCell}>
+          {selectable ? (
+            <span className={classes.identityCheckbox}>
+              {rowSelectable ? (
+                <Checkbox
+                  checked={selected}
+                  onCheckedChange={() => onToggleRow(key)}
+                  onClick={(event) => event.stopPropagation()}
+                  aria-label={`Select row ${key}`}
+                />
+              ) : null}
+            </span>
+          ) : null}
+          <div className={classes.identityContent}>{mobileIdentity(row)}</div>
+        </div>
+      ) : null}
+      {selectable && !useCardLayout && !mobileIdentity ? (
         <div
           role="cell"
           className={[classes.leadCell, pinProps(pin.select).className].filter(Boolean).join(' ')}
@@ -430,6 +463,8 @@ export default function DataTable<T>({
   onRowActivate,
   getRowVariant,
   mobileCard,
+  mobileIdentity,
+  mobileIdentityLabel = 'Name',
   className,
 }: DataTableProps<T>) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
@@ -496,7 +531,16 @@ export default function DataTable<T>({
     );
   };
 
+  const useIdentity =
+    !!mobileIdentity &&
+    isMobileViewport &&
+    !useCardLayout &&
+    !nested &&
+    !reorderMode &&
+    scale !== 'extreme';
+
   const visibleColumns = columns.filter((col) => {
+    if (col.mobileOnly && !isMobileViewport) return false;
     if (col.hideable && !visibleHideableKeys.includes(col.key)) return false;
     if (isMobileViewport && col.hideOnMobile) {
       return col.hideable && visibleHideableKeys.includes(col.key);
@@ -595,7 +639,7 @@ export default function DataTable<T>({
     ? '1fr'
     : [
         nested ? '36px' : null,
-        selectable ? '40px' : null,
+        selectable && !useIdentity ? '40px' : null,
         reorderMode ? '68px' : null,
         // Flexible default uses a min floor so overflow:auto on .table can scroll
         // horizontally on narrow viewports instead of collapsing every column.
@@ -608,7 +652,7 @@ export default function DataTable<T>({
   // page / pane scroll) and its scrollLeft follows the body's. `extreme` scale keeps its own
   // bounded scroll region with a sticky header inside it.
   const headerSticks = (stickyHeader ?? variant === 'list') && scale !== 'extreme';
-  const pinFirst = stickyFirstColumn && !useCardLayout && visibleColumns.length > 0;
+  const pinFirst = stickyFirstColumn && !useCardLayout && !useIdentity && visibleColumns.length > 0;
   const pin: PinLayout = (() => {
     let left = 0;
     const next = (px: number) => {
@@ -624,7 +668,7 @@ export default function DataTable<T>({
     };
   })();
 
-  const split = headerSticks || (pinFirst && scale !== 'extreme');
+  const split = headerSticks || ((pinFirst || useIdentity) && scale !== 'extreme');
 
   const headerScrollRef = useRef<HTMLDivElement>(null);
   const [scrolledX, setScrolledX] = useState(false);
@@ -638,7 +682,7 @@ export default function DataTable<T>({
     ? undefined
     : `calc(${[
         nested ? `${NESTED_TRACK_PX}px` : null,
-        selectable ? `${SELECT_TRACK_PX}px` : null,
+        selectable && !useIdentity ? `${SELECT_TRACK_PX}px` : null,
         reorderMode ? `${ORDER_TRACK_PX}px` : null,
         ...visibleColumns.map((col) => trackMinWidth(col.width ?? 'minmax(8rem, 1fr)')),
       ]
@@ -748,7 +792,22 @@ export default function DataTable<T>({
                 style={pinProps(pin.nested).style}
               />
             ) : null}
-            {selectable && !useCardLayout ? (
+            {useIdentity ? (
+              <div role="columnheader" className={classes.identityHeader}>
+                {selectable ? (
+                  <span className={classes.identityCheckbox}>
+                    <Checkbox
+                      checked={allSelected}
+                      indeterminate={someSelected}
+                      onCheckedChange={toggleAll}
+                      aria-label="Select all rows"
+                    />
+                  </span>
+                ) : null}
+                <span className={classes.identityHeaderLabel}>{mobileIdentityLabel}</span>
+              </div>
+            ) : null}
+            {selectable && !useCardLayout && !useIdentity ? (
               <div
                 role="columnheader"
                 className={[classes.leadCell, pinProps(pin.select).className]
@@ -884,6 +943,7 @@ export default function DataTable<T>({
                         onActivate={() => onRowActivate?.(flat.row)}
                         useCardLayout={useCardLayout}
                         mobileCard={mobileCard}
+                        mobileIdentity={useIdentity ? mobileIdentity : undefined}
                         pin={pin}
                       />
                     );

@@ -161,11 +161,13 @@
 }
 
 .table[data-split] .headerScroller {
+  container-type: inline-size;
   overflow: hidden;
   background: var(--dsv2-surface-quiet);
 }
 
 .table[data-split] .bodyScroller {
+  container-type: inline-size;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
@@ -407,4 +409,56 @@
 .caption {
   font-size: var(--dsv2-font-body-sm);
   color: var(--dsv2-text-tertiary);
+}
+
+/**
+ * Mobile identity line: a full-row-width grid item above the row's cells. It is as wide as the
+ * scroller's visible area (container query units) and sticks to the left edge, so it never
+ * scrolls sideways while the cells below do.
+ */
+.identityCell,
+.identityHeader {
+  grid-column: 1 / -1;
+  position: sticky;
+  left: 0;
+  box-sizing: border-box;
+  width: 100cqw;
+  display: flex;
+  align-items: center;
+  gap: var(--dsv2-space-2);
+  min-width: 0;
+}
+
+.identityCell {
+  padding: var(--dsv2-row-padding-y) var(--dsv2-row-padding-x) 0 6px;
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-primary);
+}
+
+.identityHeader {
+  padding: 6px var(--dsv2-row-padding-x) 0 6px;
+  font-size: var(--dsv2-font-micro);
+  font-weight: 600;
+  color: var(--dsv2-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--dsv2-tracking-eyebrow);
+}
+
+.identityCheckbox {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+}
+
+.identityContent,
+.identityHeaderLabel {
+  min-width: 0;
+  flex: 1;
+}
+
+.identityContent {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
