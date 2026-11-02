@@ -5,8 +5,12 @@ import {
   DEFAULT_NEARBY_RADIUS_KM,
   applyNearbyFilters,
   buildNearbyItems,
+  formatHeardAgo,
+  nearbySourcesSummary,
   parseNearbyFilters,
 } from './nearbyRepeaters.ts';
+import type { MeshtasticInfrastructureNode } from '@integrations/meshflow/index.ts';
+import { rankByDistance } from '@core/domain/fieldGeo.ts';
 
 function listing(over: Partial<RepeaterListing>): RepeaterListing {
   return {
@@ -145,5 +149,141 @@ describe('parseNearbyFilters', () => {
 
   it('keeps a valid radius', () => {
     expect(parse('r=50').radiusKm).toBe(50);
+  });
+});
+
+describe('Meshtastic rows', () => {
+  const NOW = Date.parse('2026-11-02T12:00:00Z');
+  const node = (
+    over: Partial<MeshtasticInfrastructureNode> = {},
+  ): MeshtasticInfrastructureNode => ({
+    nodeId: '!0000a001',
+    longName: 'Test Hill Router',
+    shortName: 'THR',
+    role: 'Router',
+    hardwareModel: '',
+    lastHeardAt: '2026-11-02T09:00:00Z',
+    location: { lat: 55.9, lon: -4.3 },
+    altitudeM: null,
+    ...over,
+  });
+  const base = { listings: [], channels: [], now: NOW };
+
+  it('ignores nodes unless the source is on', () => {
+    expect(
+      buildNearbyItems({ ...base, sources: ['ukrepeater'], meshtasticNodes: [node()] }),
+    ).toEqual([]);
+  });
+
+  it('maps a node to a display-only row', () => {
+    const [item] = buildNearbyItems({
+      ...base,
+      sources: ['meshtastic'],
+      meshtasticNodes: [node()],
+    });
+    expect(item).toEqual({
+      key: 'meshtastic:!0000a001',
+      source: 'meshtastic',
+      callsign: 'THR',
+      name: 'Test Hill Router',
+      rxFrequencyHz: null,
+      band: '',
+      modes: [],
+      status: '',
+      detail: 'Router · heard 3 h ago',
+      location: { lat: 55.9, lon: -4.3 },
+      inLibrary: false,
+    });
+    expect(item.listing).toBeUndefined();
+  });
+
+  it('falls back to the node id and blanks a duplicate name', () => {
+    const [a, b] = buildNearbyItems({
+      ...base,
+      sources: ['meshtastic'],
+      meshtasticNodes: [
+        node({ shortName: '' }),
+        node({
+          nodeId: '!0000a002',
+          shortName: 'SAME',
+          longName: 'SAME',
+          role: '',
+          lastHeardAt: null,
+        }),
+      ],
+    });
+    expect(a.callsign).toBe('!0000a001');
+    expect(b.name).toBe('');
+    expect(b.detail).toBe('');
+  });
+
+  it('does not fold with or hide a library channel of the same callsign', () => {
+    const items = buildNearbyItems({
+      ...base,
+      channels: [channel({ callsign: 'THR', name: 'THR' })],
+      sources: ['library', 'meshtastic'],
+      meshtasticNodes: [node()],
+    });
+    expect(items.map((i) => i.source).sort()).toEqual(['library', 'meshtastic']);
+    expect(items.find((i) => i.source === 'meshtastic')?.inLibrary).toBe(false);
+  });
+
+  it('keeps mesh rows through band, mode and operational filters', () => {
+    const items = [
+      ...buildNearbyItems({
+        listings: [listing({ callsign: 'GB3PA', band: '70CM', modes: ['fm'], status: 'OFF AIR' })],
+        channels: [],
+        sources: ['ukrepeater', 'meshtastic'],
+        meshtasticNodes: [node()],
+        now: NOW,
+      }),
+    ];
+    const out = applyNearbyFilters(items, { bands: ['2m'], modes: ['dmr'], operationalOnly: true });
+    expect(out.map((i) => i.source)).toEqual(['meshtastic']);
+  });
+
+  it('never gives mesh rows an add listing', () => {
+    const items = buildNearbyItems({ ...base, sources: ['meshtastic'], meshtasticNodes: [node()] });
+    expect(items.every((i) => i.listing === undefined)).toBe(true);
+  });
+
+  it('ranks by computed distance, ignoring any wire distance', () => {
+    const near = node({ nodeId: '!n', location: { lat: 55.86, lon: -4.26 } });
+    const far = node({ nodeId: '!f', location: { lat: 56.5, lon: -4.0 } });
+    const items = buildNearbyItems({
+      ...base,
+      sources: ['meshtastic'],
+      meshtasticNodes: [far, near],
+    });
+    const ranked = rankByDistance(items, { lat: 55.86, lon: -4.25 }, (i) => i.location, 200_000);
+    expect(ranked.map((r) => r.item.key)).toEqual(['meshtastic:!n', 'meshtastic:!f']);
+  });
+});
+
+describe('formatHeardAgo', () => {
+  const NOW = Date.parse('2026-11-02T12:00:00Z');
+  const ago = (ms: number) => new Date(NOW - ms).toISOString();
+  it.each([
+    [null, ''],
+    ['garbage', ''],
+    [new Date(NOW + 60_000).toISOString(), 'heard just now'],
+    [new Date(NOW - 30_000).toISOString(), 'heard just now'],
+    [ago(5 * 60_000), 'heard 5 min ago'],
+    [ago(3 * 3_600_000), 'heard 3 h ago'],
+    [ago(47 * 3_600_000), 'heard 47 h ago'],
+    [ago(72 * 3_600_000), 'heard 3 d ago'],
+  ])('formats %s', (iso, expected) => {
+    expect(formatHeardAgo(iso, NOW)).toBe(expected);
+  });
+});
+
+describe('nearbySourcesSummary', () => {
+  it('summarises the selection', () => {
+    expect(nearbySourcesSummary([], true)).toBe('no sources');
+    expect(nearbySourcesSummary(['library'], true)).toBe('My library');
+    expect(nearbySourcesSummary(['ukrepeater', 'meshtastic'], true)).toBe('2 sources');
+    expect(nearbySourcesSummary(['ukrepeater', 'library', 'meshtastic'], true)).toBe('all sources');
+    expect(nearbySourcesSummary(['ukrepeater', 'meshtastic'], false)).toBe('all sources');
+    expect(nearbySourcesSummary(['meshtastic'], false)).toBe('Meshtastic');
   });
 });

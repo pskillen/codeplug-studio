@@ -109,10 +109,16 @@ describe('useNearbyQuery', () => {
     });
     await waitFor(() => expect(result.current.params.get('b')).toBe('70cm'));
 
+    act(() => result.current.query.toggleSource('meshtastic'));
+    expect(result.current.params.get('s')).toBe('ukrepeater,library,meshtastic');
+    expect(JSON.parse(localStorage.getItem(nearbyPrefsKey()) ?? '{}').sources).toContain(
+      'meshtastic',
+    );
+
     act(() => result.current.query.toggleSource('library'));
-    expect(result.current.params.get('s')).toBe('ukrepeater');
+    expect(result.current.params.get('s')).toBe('ukrepeater,meshtastic');
     expect(JSON.parse(localStorage.getItem(nearbyPrefsKey()) ?? '{}')).toMatchObject({
-      sources: ['ukrepeater'],
+      sources: ['ukrepeater', 'meshtastic'],
       bands: ['70cm'],
     });
 

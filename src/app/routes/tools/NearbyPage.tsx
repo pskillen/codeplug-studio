@@ -23,6 +23,7 @@ import PlaceInput from '../../components/FieldTools/PlaceInput.tsx';
 import { Button, Pill } from '../../components/v2/index.ts';
 import { useDistanceUnit } from '../../hooks/useDistanceUnit.ts';
 import { useGeolocation } from '../../hooks/useGeolocation.ts';
+import { useMeshtasticNodesNear } from '../../hooks/useMeshtasticNodesNear.ts';
 import { useNearbyQuery } from '../../hooks/useNearbyQuery.ts';
 import { useUkRepeatersNear } from '../../hooks/useUkRepeatersNear.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
@@ -32,6 +33,7 @@ import {
   NEARBY_MODE_CHOICES,
   applyNearbyFilters,
   buildNearbyItems,
+  nearbySourcesSummary,
   type NearbyItem,
 } from '../../lib/nearbyRepeaters.ts';
 import { placeFromCoords, type Place } from '../../lib/resolvePlace.ts';
@@ -153,11 +155,18 @@ export default function NearbyPage() {
 
   const radiusM = radiusKm * 1000;
   const uk = useUkRepeatersNear(point, radiusM, sources.includes('ukrepeater'));
+  const mesh = useMeshtasticNodesNear(point, radiusM, sources.includes('meshtastic'));
+  const loading = uk.loading || mesh.loading;
 
   const ranked = useMemo(() => {
     if (!point) return [];
     const items = applyNearbyFilters(
-      buildNearbyItems({ listings: uk.listings, channels, sources }),
+      buildNearbyItems({
+        listings: uk.listings,
+        channels,
+        sources,
+        meshtasticNodes: mesh.nodes,
+      }),
       { bands, modes, operationalOnly },
     );
     return rankByDistance(items, point, (i) => i.location, radiusM);
@@ -166,6 +175,7 @@ export default function NearbyPage() {
     point?.lat,
     point?.lon,
     uk.listings,
+    mesh.nodes,
     channels,
     sources,
     bands,
@@ -230,6 +240,7 @@ export default function NearbyPage() {
     }
   };
 
+  // Display-only rows (e.g. Meshtastic) have no `listing`, so they are never addable.
   const addable = shown.filter(
     (r) => r.item.listing && !r.item.inLibrary && !added.has(r.item.key),
   );
@@ -284,6 +295,9 @@ export default function NearbyPage() {
           >
             My library
           </Chip>
+          <Chip active={sources.includes('meshtastic')} onClick={() => toggleSource('meshtastic')}>
+            Meshtastic
+          </Chip>
         </div>
       </div>
       <div className={classes.chipRow}>
@@ -314,7 +328,7 @@ export default function NearbyPage() {
           ? gpsLoading
             ? 'Finding you…'
             : 'Pick a point'
-          : uk.loading
+          : loading
             ? 'Searching…'
             : `${ranked.length} repeater${ranked.length === 1 ? '' : 's'} within ${radiusLabel}`}
       </span>
@@ -346,8 +360,19 @@ export default function NearbyPage() {
           {uk.error}
         </div>
       ) : null}
+      {mesh.error ? (
+        <div className={classes.error} role="alert">
+          {mesh.error}
+        </div>
+      ) : null}
+      {mesh.radiusCapped ? (
+        <div className={classes.status}>Meshtastic nodes are only searched within 100 km.</div>
+      ) : null}
+      {mesh.truncated ? (
+        <div className={classes.status}>Meshflow returned only the nearest 500 nodes.</div>
+      ) : null}
       {addMessage ? <div className={classes.status}>{addMessage}</div> : null}
-      {point && !uk.loading && shown.length === 0 ? (
+      {point && !loading && shown.length === 0 ? (
         <div className={classes.empty}>
           No repeaters within {radiusLabel}. Try a larger radius or fewer filters.
         </div>
@@ -390,6 +415,7 @@ export default function NearbyPage() {
                   {item.rxFrequencyHz != null ? (
                     <span className={classes.mono}>{hzToMhzString(item.rxFrequencyHz)}</span>
                   ) : null}
+                  {item.detail ? <span>{item.detail}</span> : null}
                   {isIn ? <span className={classes.inLibrary}>✓ In library</span> : null}
                 </span>
               </span>
@@ -467,7 +493,7 @@ export default function NearbyPage() {
       {isMobile ? (
         <div>
           <Chip active={filtersOpen} onClick={() => setFiltersOpen((o) => !o)}>
-            {`${radiusLabel} · ${sources.length === 2 ? 'all sources' : sources[0] === 'library' ? 'My library' : 'ukrepeater.net'}${
+            {`${radiusLabel} · ${nearbySourcesSummary(sources, hasProject)}${
               bands.length + modes.length + (operationalOnly ? 1 : 0) > 0
                 ? ` · ${bands.length + modes.length + (operationalOnly ? 1 : 0)} filters`
                 : ''
