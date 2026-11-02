@@ -35,6 +35,12 @@ export interface MapSheetProps {
   /** Accessible name of the sheet. */
   label?: string;
   className?: string;
+  /** Slim peek: a shorter grab area and a one-line header, for a control bar (pair with a small `peekPx`). */
+  compact?: boolean;
+  /** Dim the page behind the sheet above `peek`; tapping the dimmed area collapses to `peek`. */
+  backdrop?: boolean;
+  /** Tapping the grab handle toggles `peek` <-> `half` instead of cycling through all three. */
+  toggleOnTap?: boolean;
 }
 
 /**
@@ -51,6 +57,9 @@ export default function MapSheet({
   fullTopInsetPx = DEFAULT_FULL_TOP_INSET_PX,
   label = 'Results',
   className,
+  compact = false,
+  backdrop = false,
+  toggleOnTap = false,
 }: MapSheetProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [containerPx, setContainerPx] = useState(0);
@@ -97,6 +106,12 @@ export default function MapSheet({
     setDragHeight(Math.max(heights.peek, Math.min(heights.full, d.startH + dy)));
   };
 
+  const tapSnap = useCallback(
+    (current: MapSheetSnap): MapSheetSnap =>
+      toggleOnTap ? (current === 'peek' ? 'half' : 'peek') : nextSnap(current),
+    [toggleOnTap],
+  );
+
   const endDrag = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {
       const d = drag.current;
@@ -105,7 +120,7 @@ export default function MapSheet({
       e.currentTarget.releasePointerCapture?.(e.pointerId);
       if (!moved.current) {
         setDragHeight(null);
-        onSnapChange(nextSnap(snap));
+        onSnapChange(tapSnap(snap));
         return;
       }
       const finalH = Math.max(
@@ -115,7 +130,7 @@ export default function MapSheet({
       setDragHeight(null);
       onSnapChange(snapAfterDrag(finalH, heights, d.v));
     },
-    [heights, onSnapChange, snap],
+    [heights, onSnapChange, snap, tapSnap],
   );
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -127,7 +142,7 @@ export default function MapSheet({
       onSnapChange(snap === 'full' ? 'half' : 'peek');
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onSnapChange(nextSnap(snap));
+      onSnapChange(tapSnap(snap));
     }
   };
 
@@ -138,38 +153,54 @@ export default function MapSheet({
   }, [snap]);
 
   return (
-    <div
-      ref={rootRef}
-      className={[classes.root, dragHeight != null ? classes.dragging : '', className]
-        .filter(Boolean)
-        .join(' ')}
-      style={{ height }}
-      role="region"
-      aria-label={label}
-      data-snap={snap}
-    >
+    <>
+      {backdrop && snap !== 'peek' ? (
+        <button
+          type="button"
+          className={classes.backdrop}
+          aria-label={`Close ${label.toLowerCase()}`}
+          tabIndex={-1}
+          onClick={() => onSnapChange('peek')}
+        />
+      ) : null}
       <div
-        className={classes.handleZone}
-        role="slider"
-        tabIndex={0}
-        aria-label={`${label} sheet size`}
-        aria-orientation="vertical"
-        aria-valuemin={0}
-        aria-valuemax={2}
-        aria-valuenow={snap === 'peek' ? 0 : snap === 'half' ? 1 : 2}
-        aria-valuetext={snap}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-        onKeyDown={onKeyDown}
+        ref={rootRef}
+        className={[
+          classes.root,
+          dragHeight != null ? classes.dragging : '',
+          compact ? classes.compact : '',
+          className,
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        style={{ height }}
+        role="region"
+        aria-label={label}
+        data-snap={snap}
       >
-        <span className={classes.handle} />
+        <div
+          className={classes.handleZone}
+          role="slider"
+          tabIndex={0}
+          aria-label={`${label} sheet size`}
+          aria-orientation="vertical"
+          aria-valuemin={0}
+          aria-valuemax={2}
+          aria-valuenow={snap === 'peek' ? 0 : snap === 'half' ? 1 : 2}
+          aria-valuetext={snap}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onKeyDown={onKeyDown}
+        >
+          <span className={classes.handle} />
+        </div>
+        {header ? <div className={classes.header}>{header}</div> : null}
+        <div ref={bodyRef} className={classes.body}>
+          {children}
+        </div>
       </div>
-      {header ? <div className={classes.header}>{header}</div> : null}
-      <div ref={bodyRef} className={classes.body}>
-        {children}
-      </div>
-    </div>
+    </>
   );
 }

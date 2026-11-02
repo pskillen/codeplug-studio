@@ -85,11 +85,13 @@
   white-space: nowrap;
 }
 
-.sheetArea {
+.swipeArea {
   position: relative;
   flex: 1 1 0;
   min-height: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .fullMap {
@@ -136,24 +138,51 @@
   min-width: 0;
 }
 
-/* Mobile `stack`: the map sits above the list at a viewport-relative height. */
-.stack {
+/* The list pane's last row must clear the controls sheet's peek bar. */
+.swipeListPane .sheetBody {
+  padding-top: 12px;
+  padding-bottom: calc(var(--controls-peek, 0px) + 20px);
+}
+
+/* One-line peek bar of the controls sheet: summary on the left, compact action on the right. */
+.peekBar {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+}
+
+.peekSummary {
+  flex: 1 1 0;
   min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--dsv2-text-primary);
+  font: inherit;
+  font-size: var(--dsv2-font-body-sm, 13px);
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.stackMap {
-  height: clamp(240px, 45dvh, 460px);
+.peekSummary:focus-visible {
+  outline: 2px solid var(--dsv2-text-primary);
+  outline-offset: 2px;
 }
 
-.stackMap > * {
-  width: 100%;
-  height: 100%;
+.peekAction {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-/* Mobile `swipe` (experimental): two panes in a scroll-snap track; the hidden one peeks ~8%. */
+/* Mobile: two panes in a scroll-snap track; the hidden one peeks ~8%. The controls sheet overlays the bottom. */
 .swipeTrack {
   flex: 1 1 0;
   min-height: 0;
@@ -205,7 +234,8 @@
 
 .swipeMapFill {
   position: absolute;
-  inset: 0;
+  /* Ends above the controls sheet's peek bar, so the map's attribution stays visible. */
+  inset: 0 0 var(--controls-peek, 0px) 0;
   /* Leaflet owns every gesture on the visible map; on the pane's own (sibling) cover, pan-x still swipes. */
   touch-action: none;
 }

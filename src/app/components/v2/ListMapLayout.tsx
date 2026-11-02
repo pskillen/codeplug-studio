@@ -1,40 +1,59 @@
 import { useMediaQuery } from '@mantine/hooks';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { stickyMapHeight } from '../../lib/stickyMapHeight.ts';
 import MapSheet from './MapSheet.tsx';
 import SegmentedControl from './SegmentedControl.tsx';
-import { snapForView, viewForSnap, type MapListView, type MapSheetSnap } from './mapSheetSnap.ts';
+import type { MapSheetSnap } from './mapSheetSnap.ts';
 import classes from './ListMapLayout.module.css';
 
-const PEEK_PX = 96;
+/** Height of the controls sheet's slim peek bar (grabber + one line). */
+const PEEK_PX = 56;
+/** Room left above the controls sheet at `full`: the top bar's toggle stays reachable. */
+const FULL_TOP_INSET_PX = 16;
 
 export interface ListMapLayoutProps {
-  /** Page header (title, count, actions). Above the split on desktop; top of the sheet body on mobile. */
+  /** Page header (title, count, actions). Above the split on desktop; top of the controls sheet on mobile. */
   head?: ReactNode;
-  /** The list or table. Left pane on desktop, sheet body on mobile. */
+  /** The list or table. Left pane on desktop, the list swipe pane on mobile. */
   list: ReactNode;
+  /** Feedback about the list (e.g. a bulk-edit result). Top of the list pane on desktop and mobile, above `controls`. */
+  notices?: ReactNode;
+  /**
+   * Filters, search, view switches and other page controls that sit above the list. On desktop they
+   * render at the top of the list pane; on mobile they move into the bottom controls sheet so the
+   * list pane starts at the table.
+   */
+  controls?: ReactNode;
   /** The live map. Rendered once and fills its container (`height: 100%`). */
   map: ReactNode;
-  /** Small controls tied to the map (e.g. Show my location). Above the map on desktop, above the list on mobile. */
+  /** Small controls tied to the map (e.g. Show my location). Above the map on desktop, in the controls sheet on mobile. */
   mapExtras?: ReactNode;
-  /** Note under the map on desktop (legend); at the end of the extras on mobile. */
+  /** Note under the map on desktop (legend); at the end of the extras in the controls sheet on mobile. */
   mapNote?: ReactNode;
   /** Short title in the mobile top bar, next to the Map | List toggle. */
   title: string;
-  /** Always-visible sheet summary on mobile. */
-  sheetHeader?: ReactNode;
-  /** Initial sheet snap on mobile. Use `full` when there is nothing useful on the map. Default `half`. */
-  initialSnap?: MapSheetSnap;
+  /** One-line summary in the mobile controls sheet's peek bar (e.g. "128 channels · 3 filters"). */
+  controlsSummary?: ReactNode;
+  /** Compact action at the right of the peek bar (e.g. a small New button). */
+  controlsAction?: ReactNode;
+  /** Initial controls sheet snap on mobile. Default `peek`; use `full` for a form to fill in first. */
+  initialControlsSnap?: MapSheetSnap;
+  /** Controlled controls sheet snap (mobile). Omit to let the layout manage it. */
+  controlsSnap?: MapSheetSnap;
+  onControlsSnapChange?: (snap: MapSheetSnap) => void;
+  /** Accessible name stem for the panes and the controls sheet ("Channels" -> "Channels controls"). */
   sheetLabel?: string;
   /** Class for the desktop root (page padding). */
   desktopClassName?: string;
-  /**
-   * Mobile layout. `sheet` (default): full-screen map under a bottom sheet; the route must be full-bleed.
-   * `stack`: map above the list in normal page flow, for pages that scroll a long form first.
-   * `swipe` (EXPERIMENTAL, full-bleed route): list and map as two side-by-side panes you swipe between.
-   */
-  mobile?: 'sheet' | 'stack' | 'swipe';
 }
 
 type SwipePane = 'list' | 'map';
@@ -83,25 +102,41 @@ function SwipeHandle({ pane, onGo }: { pane: SwipePane; onGo: (target: SwipePane
 }
 
 /**
- * EXPERIMENTAL mobile body for `mobile="swipe"`: two ~92%-wide full-height panes in a CSS scroll-snap
- * track. The hidden pane peeks in at the screen edge, and is covered by a button so tapping or
- * dragging the strip switches panes. The visible map is not covered and sets `touch-action: none`,
- * so Leaflet keeps its own pan/zoom.
+ * Mobile body: two ~92%-wide full-height panes (list, map) in a CSS scroll-snap track. The hidden
+ * pane peeks in at the screen edge, and is covered by a button so tapping or dragging the strip
+ * switches panes; a grab handle on the seam does the same. The visible map is not covered and sets
+ * `touch-action: none`, so Leaflet keeps its own pan/zoom. A {@link MapSheet} of page controls
+ * overlays the bottom of both panes.
  */
 function SwipePanes({
   title,
   head,
   list,
+  notices,
+  controls,
   map,
   mapExtras,
   mapNote,
+  controlsSummary,
+  controlsAction,
+  initialControlsSnap = 'peek',
+  controlsSnap,
+  onControlsSnapChange,
   sheetLabel,
-}: Pick<ListMapLayoutProps, 'title' | 'head' | 'list' | 'map' | 'mapExtras' | 'mapNote'> & {
-  sheetLabel: string;
-}) {
+}: Omit<ListMapLayoutProps, 'desktopClassName'> & { sheetLabel: string }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [pane, setPane] = useState<SwipePane>('list');
+  const [ownSnap, setOwnSnap] = useState<MapSheetSnap>(initialControlsSnap);
+  const snap = controlsSnap ?? ownSnap;
+  const setSnap = useCallback(
+    (next: MapSheetSnap) => {
+      setOwnSnap(next);
+      onControlsSnapChange?.(next);
+    },
+    [onControlsSnapChange],
+  );
   const lock = useRef<{ target: SwipePane; timer: number } | null>(null);
+  const hasSheet = Boolean(head || controls || mapExtras || mapNote || controlsSummary);
 
   const onScroll = useCallback(() => {
     const el = trackRef.current;
@@ -148,8 +183,14 @@ function SwipePanes({
     if (pane === 'map') window.dispatchEvent(new Event('resize'));
   }, [pane]);
 
+  const peekPx = hasSheet ? PEEK_PX : 0;
+
   return (
-    <div className={classes.mobile} data-swipe-experiment="">
+    <div
+      className={classes.mobile}
+      style={{ '--controls-peek': `${peekPx}px` } as CSSProperties}
+      data-swipe-layout=""
+    >
       <div className={classes.topBar}>
         <span className={classes.topTitle}>{title}</span>
         <SegmentedControl
@@ -161,75 +202,110 @@ function SwipePanes({
           ]}
         />
       </div>
-      <div
-        ref={trackRef}
-        className={classes.swipeTrack}
-        onScroll={onScroll}
-        data-pane={pane}
-        aria-label={sheetLabel}
-      >
-        <SwipeHandle pane={pane} onGo={goTo} />
-        <section className={classes.swipeListPane} aria-label={`${sheetLabel} list`}>
-          <div className={classes.sheetBody}>
-            {head}
-            {mapExtras || mapNote ? (
-              <div className={classes.extras}>
-                {mapExtras}
-                {mapNote}
-              </div>
+      <div className={classes.swipeArea}>
+        <div
+          ref={trackRef}
+          className={classes.swipeTrack}
+          onScroll={onScroll}
+          data-pane={pane}
+          aria-label={sheetLabel}
+        >
+          <SwipeHandle pane={pane} onGo={goTo} />
+          <section className={classes.swipeListPane} aria-label={`${sheetLabel} list`}>
+            <div className={classes.sheetBody}>
+              {notices}
+              {list}
+            </div>
+            {pane !== 'list' ? (
+              <button
+                type="button"
+                className={classes.swipeCover}
+                tabIndex={-1}
+                aria-hidden="true"
+                onClick={() => goTo('list')}
+              />
             ) : null}
-            {list}
-          </div>
-          {pane !== 'list' ? (
-            <button
-              type="button"
-              className={classes.swipeCover}
-              tabIndex={-1}
-              aria-hidden="true"
-              onClick={() => goTo('list')}
-            />
-          ) : null}
-        </section>
-        <section className={classes.swipeMapPane} aria-label={`${sheetLabel} map`}>
-          <div className={`${classes.fullMap} ${classes.swipeMapFill}`}>{map}</div>
-          {pane !== 'map' ? (
-            <button
-              type="button"
-              className={classes.swipeCover}
-              tabIndex={-1}
-              aria-hidden="true"
-              onClick={() => goTo('map')}
-            />
-          ) : null}
-        </section>
+          </section>
+          <section className={classes.swipeMapPane} aria-label={`${sheetLabel} map`}>
+            <div className={`${classes.fullMap} ${classes.swipeMapFill}`}>{map}</div>
+            {pane !== 'map' ? (
+              <button
+                type="button"
+                className={classes.swipeCover}
+                tabIndex={-1}
+                aria-hidden="true"
+                onClick={() => goTo('map')}
+              />
+            ) : null}
+          </section>
+        </div>
+        {hasSheet ? (
+          <MapSheet
+            snap={snap}
+            onSnapChange={setSnap}
+            label={`${sheetLabel} controls`}
+            peekPx={PEEK_PX}
+            fullTopInsetPx={FULL_TOP_INSET_PX}
+            compact
+            backdrop
+            toggleOnTap
+            header={
+              <div className={classes.peekBar}>
+                <button
+                  type="button"
+                  className={classes.peekSummary}
+                  aria-expanded={snap !== 'peek'}
+                  onClick={() => setSnap(snap === 'peek' ? 'half' : 'peek')}
+                >
+                  {controlsSummary ?? title}
+                </button>
+                {controlsAction ? <div className={classes.peekAction}>{controlsAction}</div> : null}
+              </div>
+            }
+          >
+            <div className={classes.sheetBody}>
+              {head}
+              {mapExtras || mapNote ? (
+                <div className={classes.extras}>
+                  {mapExtras}
+                  {mapNote}
+                </div>
+              ) : null}
+              {controls}
+            </div>
+          </MapSheet>
+        ) : null}
       </div>
     </div>
   );
 }
 
 /**
- * List + map composition for library list pages (#1498). Desktop: the list scrolls with the page and
- * the map is sticky, filling the viewport height. Mobile: a full-screen map under a three-snap
- * {@link MapSheet} with a Map | List toggle that only snaps the sheet. The mobile layout fills the
- * viewport, so the route must be full-bleed on mobile (see `fullBleedRoutes.ts`).
+ * List + map composition for library list pages (#1498). Desktop: the controls and list scroll
+ * with the page and the map is sticky, filling the viewport height. Mobile: list and map are two
+ * swipeable panes, with the page header and controls in a bottom {@link MapSheet}. The mobile
+ * layout fills the viewport, so the route must be full-bleed on mobile (see `fullBleedRoutes.ts`).
  */
 export default function ListMapLayout({
   head,
   list,
+  notices,
+  controls,
   map,
   mapExtras,
   mapNote,
   title,
-  sheetHeader,
-  initialSnap = 'half',
+  controlsSummary,
+  controlsAction,
+  initialControlsSnap,
+  controlsSnap,
+  onControlsSnapChange,
   sheetLabel = 'Results',
   desktopClassName,
-  mobile = 'sheet',
 }: ListMapLayoutProps) {
   const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY, false, {
     getInitialValueInEffect: false,
   });
-  const [snap, setSnap] = useState<MapSheetSnap>(initialSnap);
   const paneRef = useRef<HTMLDivElement>(null);
   const [mapHeight, setMapHeight] = useState<number | null>(null);
 
@@ -256,7 +332,11 @@ export default function ListMapLayout({
       <div className={[classes.desktop, desktopClassName].filter(Boolean).join(' ')}>
         {head}
         <div className={classes.split}>
-          <div className={classes.listPane}>{list}</div>
+          <div className={classes.listPane}>
+            {notices}
+            {controls}
+            {list}
+          </div>
           <div ref={paneRef} className={classes.mapPane}>
             <div
               className={classes.stickyMap}
@@ -272,66 +352,22 @@ export default function ListMapLayout({
     );
   }
 
-  if (mobile === 'stack') {
-    return (
-      <div className={classes.stack}>
-        {head}
-        {mapExtras ? <div className={classes.extras}>{mapExtras}</div> : null}
-        <div className={classes.stackMap}>{map}</div>
-        {mapNote ? <div className={classes.note}>{mapNote}</div> : null}
-        {list}
-      </div>
-    );
-  }
-
-  if (mobile === 'swipe') {
-    return (
-      <SwipePanes
-        title={title}
-        head={head}
-        list={list}
-        map={map}
-        mapExtras={mapExtras}
-        mapNote={mapNote}
-        sheetLabel={sheetLabel}
-      />
-    );
-  }
-
   return (
-    <div className={classes.mobile}>
-      <div className={classes.topBar}>
-        <span className={classes.topTitle}>{title}</span>
-        <SegmentedControl
-          value={viewForSnap(snap)}
-          onChange={(v) => setSnap(snapForView(v as MapListView))}
-          options={[
-            { value: 'map', label: 'Map' },
-            { value: 'list', label: 'List' },
-          ]}
-        />
-      </div>
-      <div className={classes.sheetArea}>
-        <div className={classes.fullMap}>{map}</div>
-        <MapSheet
-          snap={snap}
-          onSnapChange={setSnap}
-          header={sheetHeader}
-          label={sheetLabel}
-          peekPx={PEEK_PX}
-        >
-          <div className={classes.sheetBody}>
-            {head}
-            {mapExtras || mapNote ? (
-              <div className={classes.extras}>
-                {mapExtras}
-                {mapNote}
-              </div>
-            ) : null}
-            {list}
-          </div>
-        </MapSheet>
-      </div>
-    </div>
+    <SwipePanes
+      title={title}
+      head={head}
+      list={list}
+      notices={notices}
+      controls={controls}
+      map={map}
+      mapExtras={mapExtras}
+      mapNote={mapNote}
+      controlsSummary={controlsSummary}
+      controlsAction={controlsAction}
+      initialControlsSnap={initialControlsSnap}
+      controlsSnap={controlsSnap}
+      onControlsSnapChange={onControlsSnapChange}
+      sheetLabel={sheetLabel}
+    />
   );
 }
