@@ -8,4 +8,20 @@ describe('isFullBleedPath', () => {
     expect(isFullBleedPath('/reference')).toBe(false);
     expect(isFullBleedPath('/toolsmith')).toBe(false);
   });
+
+  it('is true for the repeater directory searches with a map on mobile only', () => {
+    expect(isFullBleedPath('/library/channels/add-from-ukrepeater', true)).toBe(true);
+    expect(isFullBleedPath('/library/channels/add-from-irts/', true)).toBe(true);
+    expect(isFullBleedPath('/library/channels/add-from-repeaterbook', true)).toBe(true);
+    expect(isFullBleedPath('/library/channels/add-from-brandmeister', true)).toBe(false);
+    expect(isFullBleedPath('/library/channels/add-from-ukrepeater')).toBe(false);
+  });
+
+  it('is true for the Channels and Zones lists on mobile only', () => {
+    expect(isFullBleedPath('/library/channels', true)).toBe(true);
+    expect(isFullBleedPath('/library/zones/', true)).toBe(true);
+    expect(isFullBleedPath('/library/channels')).toBe(false);
+    expect(isFullBleedPath('/library/channels/new', true)).toBe(false);
+    expect(isFullBleedPath('/library/zones/abc', true)).toBe(false);
+  });
 });

@@ -22,6 +22,8 @@ export interface PanelProps {
    * override counts, e.g. `2 changes`.
    */
   badge?: string;
+  /** One-line summary shown under the title while a `collapsible` panel is folded (e.g. the chosen value). */
+  summary?: ReactNode;
 }
 
 /**
@@ -39,6 +41,7 @@ export default function Panel({
   collapsible = false,
   defaultCollapsed = false,
   badge,
+  summary,
 }: PanelProps) {
   const [collapsed, setCollapsed] = useState(collapsible && defaultCollapsed);
   const hasHeader = title != null;
@@ -88,6 +91,7 @@ export default function Panel({
           )}
         </h2>
       ) : null}
+      {collapsible && collapsed && summary ? <p className={classes.summary}>{summary}</p> : null}
       {sub ? <p className={classes.sub}>{sub}</p> : null}
       {children && showBody ? <div className={classes.body}>{children}</div> : null}
     </section>

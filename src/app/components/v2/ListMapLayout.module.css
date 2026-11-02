@@ -1,0 +1,373 @@
+.desktop {
+  min-width: 0;
+}
+
+.split {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.listPane {
+  flex: 1.7;
+  min-width: 0;
+  /* Wide tables scroll inside their pane instead of sliding under the map. */
+  overflow-x: auto;
+}
+
+.mapPane {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+}
+
+/* Fills the viewport below the app chrome; sticks while the list scrolls. */
+.stickyMap {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: clamp(360px, calc(100dvh - 150px), 1100px);
+}
+
+.mapFrame {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.mapFrame > * {
+  width: 100%;
+  height: 100%;
+}
+
+.extras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.note {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+/* Mobile: fills the full-bleed route. */
+.mobile {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topBar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px var(--dsv2-page-padding-x, 16px);
+  border-bottom: 1px solid var(--dsv2-border);
+  background: var(--dsv2-bg);
+}
+
+.topTitle {
+  font-size: var(--dsv2-font-heading-md, 16px);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.swipeArea {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.fullMap {
+  position: absolute;
+  inset: 0;
+}
+
+.fullMap > * {
+  width: 100%;
+  height: 100%;
+}
+
+/* Map controls sit above a map that runs edge to edge. */
+.fullMap :global(.codeplug-map-wrap) {
+  gap: 4px;
+  padding-top: 6px;
+}
+
+.fullMap :global(.codeplug-map-toolbar) {
+  --group-wrap: nowrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-inline: var(--dsv2-page-padding-x, 16px);
+  scrollbar-width: none;
+}
+
+.fullMap :global(.codeplug-map-toolbar) > * {
+  --group-wrap: nowrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.fullMap :global(.codeplug-map) {
+  border: 0;
+  border-radius: 0;
+}
+
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 var(--dsv2-page-padding-x, 16px) 20px;
+  min-width: 0;
+}
+
+/* The list pane's last row must clear the controls sheet's peek bar. */
+.swipeListPane .sheetBody {
+  padding-top: 12px;
+  padding-bottom: calc(var(--controls-peek, 0px) + 20px);
+}
+
+/* One-line peek bar of the controls sheet: summary on the left, compact action on the right. */
+.peekBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+}
+
+.peekSummary {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--dsv2-text-primary);
+  font: inherit;
+  font-size: var(--dsv2-font-body-sm, 13px);
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.peekSummary:focus-visible {
+  outline: 2px solid var(--dsv2-text-primary);
+  outline-offset: 2px;
+}
+
+.peekAction {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Mobile: two panes in a scroll-snap track; the hidden one peeks ~8%. The controls sheet overlays the bottom. */
+.swipeTrack {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.swipeTrack::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .swipeTrack {
+    scroll-behavior: smooth;
+  }
+}
+
+.swipeListPane,
+.swipeMapPane {
+  position: relative;
+  flex: 0 0 92%;
+  min-width: 0;
+  height: 100%;
+  scroll-snap-stop: always;
+}
+
+.swipeListPane {
+  scroll-snap-align: start;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  background: var(--dsv2-bg);
+  border-right: 1px solid var(--dsv2-border);
+  /* Keep the content (and so the table's horizontal scroller) clear of the seam dead zone. */
+  padding-right: var(--swipe-dead, 24px);
+}
+
+.swipeMapPane {
+  scroll-snap-align: end;
+  overflow: hidden;
+  border-left: 1px solid var(--dsv2-border);
+  box-shadow: -6px 0 12px -8px rgb(0 0 0 / 0.25);
+}
+
+.swipeMapFill {
+  position: absolute;
+  /* Ends above the controls sheet's peek bar, so the map's attribution stays visible. */
+  inset: 0 0 var(--controls-peek, 0px) 0;
+  /* Leaflet owns every gesture on the visible map; on the pane's own (sibling) cover, pan-x still swipes. */
+  touch-action: none;
+}
+
+/* Covers the pane that is only peeking: tap or drag it to switch panes. */
+.swipeCover {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-x;
+}
+
+/* Grab handle: a solid tab straddling the seam. The zero-width sticky anchor pins it to the scrollport. */
+.swipeTrack {
+  container-type: inline-size;
+  --swipe-dead: 24px;
+}
+
+.swipeAnchor {
+  position: sticky;
+  left: 0;
+  z-index: 1100;
+  flex: 0 0 0;
+  width: 0;
+  height: 100%;
+}
+
+.swipeHandle {
+  position: absolute;
+  top: 50%;
+  /* The seam sits at 92% (list showing) or 8% (map showing) of the track width. */
+  left: calc(92cqw - 22px);
+  width: 44px;
+  height: 88px;
+  margin-top: -44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: pan-x;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.swipeAnchor[data-pane='map'] .swipeHandle {
+  left: calc(8cqw - 22px);
+}
+
+/* Invisible input-swallowing strip on the active pane's edge, under the handle tab. */
+.swipeDead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(92cqw - var(--swipe-dead, 24px));
+  width: var(--swipe-dead, 24px);
+  touch-action: pan-x;
+  background: transparent;
+}
+
+.swipeAnchor[data-pane='map'] .swipeDead {
+  left: 8cqw;
+}
+
+.swipeTab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 24px;
+  height: 64px;
+  border-radius: 12px;
+  border: 1px solid var(--dsv2-border);
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-primary);
+  box-shadow: var(--dsv2-shadow-popover);
+  pointer-events: none;
+}
+
+.swipeChevron {
+  display: block;
+}
+
+.swipeGrip {
+  display: flex;
+  gap: 3px;
+}
+
+.swipeGrip > span {
+  display: block;
+  width: 2px;
+  height: 22px;
+  border-radius: 1px;
+  background: var(--dsv2-text-secondary);
+}
+
+.swipeHandle:active .swipeTab {
+  background: var(--dsv2-surface-quiet);
+}
+
+.swipeHandle:focus-visible {
+  outline: none;
+}
+
+.swipeHandle:focus-visible .swipeTab {
+  outline: 2px solid var(--dsv2-text-primary);
+  outline-offset: 2px;
+}
+
+/* The map pane is narrower than the screen: its option row wraps instead of running off the edge. */
+.swipeMapFill :global(.codeplug-map-toolbar) {
+  --group-wrap: wrap;
+  flex-wrap: wrap;
+  overflow: visible;
+  white-space: normal;
+  padding-inline: 12px;
+}
+
+.swipeMapFill :global(.codeplug-map-toolbar) > * {
+  --group-wrap: wrap;
+  flex-wrap: wrap;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+/* Keep Leaflet's left-hand controls (zoom) clear of the dead zone. */
+.swipeMapFill :global(.leaflet-left .leaflet-control) {
+  margin-left: calc(var(--swipe-dead, 24px) + 10px);
+}

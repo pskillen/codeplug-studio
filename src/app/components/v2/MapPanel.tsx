@@ -5,8 +5,11 @@ import classes from './MapPanel.module.css';
 
 export interface MapPanelProps {
   title?: string;
-  /** Map body height in px (design system default 200). */
-  height?: number;
+  /**
+   * Map body height: px number or any CSS length (`'clamp(260px, 50dvh, 520px)'`, `'100%'`).
+   * Default 200 px for the placeholder; prefer a viewport-relative value for live maps (#1498).
+   */
+  height?: number | string;
   /** Live map content (CodeplugMap, MapLocationPicker). */
   children?: ReactNode;
   /** Overlay caption inside the hatch when no children (default `[ map ]`). */

@@ -1,0 +1,49 @@
+.root {
+  position: relative;
+  height: 140px;
+  border-radius: var(--dsv2-radius-control);
+  border: 1px solid var(--dsv2-border);
+  overflow: hidden;
+}
+
+.map {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.map > * {
+  width: 100%;
+  height: 100%;
+}
+
+/* The thumbnail shows the map only: hide the live map's own toolbar. */
+.map :global(.codeplug-map-toolbar) {
+  display: none;
+}
+
+.hit {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 8px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.caption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--dsv2-radius-pill);
+  background: var(--dsv2-surface);
+  border: 1px solid var(--dsv2-border);
+  color: var(--dsv2-text-primary);
+  font-size: var(--dsv2-font-body-sm);
+  font-weight: 600;
+}

@@ -27,4 +27,4 @@ Title + optional count/description subtitle + primary action cluster for Batch 2
 ## Related
 
 - [docs/features/library/README.md](../../../../docs/features/library/README.md)
-- [LibraryMapStack.md](./LibraryMapStack.md)
+- [ListMapLayout.md](../v2/ListMapLayout.md)

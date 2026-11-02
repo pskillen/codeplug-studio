@@ -401,7 +401,7 @@ export default function CodeplugMap({
   channels,
   zones = [],
   allChannels,
-  height = 400,
+  height,
   showControls = true,
   defaultShowZones = true,
   defaultShowLabels = false,
@@ -557,7 +557,12 @@ export default function CodeplugMap({
     return overlays;
   }, [isEmphasisMode, showThisZone, showOtherZones, emphasisZoneId, zoneHulls, provisionalHull]);
 
-  const mapStyle = typeof height === 'number' ? { height: `${height}px` } : { height };
+  const mapStyle =
+    height == null
+      ? undefined
+      : typeof height === 'number'
+        ? { height: `${height}px` }
+        : { height };
 
   const boundsHullPoints = useMemo(() => {
     if (isEmphasisMode) {

@@ -131,16 +131,6 @@
   font-size: var(--dsv2-font-body-sm);
 }
 
-.mapMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 10px;
-  font-size: var(--dsv2-font-body-sm);
-  color: var(--dsv2-text-tertiary);
-}
-
 .searchRow {
   display: flex;
   align-items: center;

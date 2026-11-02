@@ -105,3 +105,16 @@
   gap: 8px;
   align-items: center;
 }
+
+.desktopGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.mapColumn {
+  position: sticky;
+  top: 12px;
+  min-width: 0;
+}

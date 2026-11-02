@@ -8,17 +8,18 @@ Standard v2 content panel — `18px 20px` padding, `10px` radius, `1px` border. 
 
 ## Props
 
-| Prop               | Type                    | Notes                                                                         |
-| ------------------ | ----------------------- | ----------------------------------------------------------------------------- |
-| `id`               | `string`                | Anchor id for `SectionNav` scroll targets                                     |
-| `title`            | `string`                | Section heading                                                               |
-| `sub`              | `string`                | Optional description below title                                              |
-| `children`         | `ReactNode`             | Panel body                                                                    |
-| `className`        | `string`                | Optional root class                                                           |
-| `variant`          | `'default' \| 'danger'` | `danger` — destructive tint for delete zones                                  |
-| `collapsible`      | `boolean`               | When true, `title` becomes a disclosure toggle that shows/hides the body      |
-| `defaultCollapsed` | `boolean`               | Initial state when `collapsible` is set. Defaults to expanded                 |
-| `badge`            | `string`                | Optional header count (visible open or collapsed), e.g. bulk-edit `2 changes` |
+| Prop               | Type                    | Notes                                                                                               |
+| ------------------ | ----------------------- | --------------------------------------------------------------------------------------------------- |
+| `id`               | `string`                | Anchor id for `SectionNav` scroll targets                                                           |
+| `title`            | `string`                | Section heading                                                                                     |
+| `sub`              | `string`                | Optional description below title                                                                    |
+| `children`         | `ReactNode`             | Panel body                                                                                          |
+| `className`        | `string`                | Optional root class                                                                                 |
+| `variant`          | `'default' \| 'danger'` | `danger` — destructive tint for delete zones                                                        |
+| `collapsible`      | `boolean`               | When true, `title` becomes a disclosure toggle that shows/hides the body                            |
+| `defaultCollapsed` | `boolean`               | Initial state when `collapsible` is set. Defaults to expanded                                       |
+| `summary`          | `ReactNode`             | One-line summary under the title while a `collapsible` panel is folded (long mobile editors, #1498) |
+| `badge`            | `string`                | Optional header count (visible open or collapsed), e.g. bulk-edit `2 changes`                       |
 
 ## Usage
 

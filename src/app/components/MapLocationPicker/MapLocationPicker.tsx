@@ -85,14 +85,19 @@ export default function MapLocationPicker({
   lat,
   lon,
   onPick,
-  height = 280,
+  height,
   active = true,
 }: MapLocationPickerProps) {
   const mapLayoutReady = useDocumentLayoutReady();
   const { maidenheadGrid } = useMapSettings();
   const hasPosition = lat != null && lon != null;
   const center: [number, number] = hasPosition ? [lat, lon] : DEFAULT_CENTER;
-  const mapStyle = typeof height === 'number' ? { height: `${height}px` } : { height };
+  const mapStyle =
+    height == null
+      ? undefined
+      : typeof height === 'number'
+        ? { height: `${height}px` }
+        : { height };
 
   return (
     <div className="codeplug-map-wrap">

@@ -21,13 +21,17 @@
   transition: none;
 }
 
-.handleZone {
+/* Handle and header: the whole strip is the drag target. */
+.grab {
   flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.handleZone {
   display: flex;
   justify-content: center;
   padding: 10px 0 8px;
-  cursor: grab;
-  touch-action: none;
   outline: none;
 }
 
@@ -43,7 +47,6 @@
 }
 
 .header {
-  flex-shrink: 0;
   padding: 0 var(--dsv2-page-padding-x, 16px) 10px;
 }
 
@@ -53,4 +56,30 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Only the handle and header show at peek; keep the clipped body out of sight and out of reach. */
+.root[data-snap='peek'] .body {
+  visibility: hidden;
+}
+
+/* Slim control bar: short grab area, one-line header. */
+.compact .handleZone {
+  padding: 7px 0 3px;
+}
+
+.compact .header {
+  padding-bottom: 7px;
+}
+
+/* Dims the page behind an open sheet; the sheet itself sits above it. */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 1099;
+  border: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  touch-action: manipulation;
 }

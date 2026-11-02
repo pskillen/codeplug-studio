@@ -109,3 +109,22 @@ export function parseCsvParam(raw: string | null): string[] {
 export function serializeCsvParam(values: string[]): string | null {
   return values.length > 0 ? values.join(',') : null;
 }
+
+/** How many list filters are narrowing the channel list: bands, zones, modes, simplex/split, distance and the name search. */
+export function countActiveChannelFilters(query: {
+  nameFilter: string;
+  bandFilter: string[];
+  modeFilter: string[];
+  zoneFilter: string[];
+  duplexFilter: string | null;
+  distanceFilterEnabled: boolean;
+}): number {
+  return (
+    query.bandFilter.length +
+    query.modeFilter.length +
+    query.zoneFilter.length +
+    (query.duplexFilter ? 1 : 0) +
+    (query.distanceFilterEnabled ? 1 : 0) +
+    (query.nameFilter.trim() ? 1 : 0)
+  );
+}

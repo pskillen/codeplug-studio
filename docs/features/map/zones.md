@@ -39,7 +39,7 @@ Duplicate member ids within one zone are deduplicated while preserving first-occ
 
 ### Zone emphasis maps (`zoneEmphasis` / `zoneFromLocation`)
 
-Used on the zone editor and **zone from location** page.
+Used on the zone editor and **zone from location** page. Both size the map from the viewport (`clamp(...)` on `dvh`) and keep it sticky beside the controls on desktop ([#1498](https://github.com/pskillen/codeplug-studio/issues/1498)).
 
 | Control          | Default | Effect                                                                    |
 | ---------------- | ------- | ------------------------------------------------------------------------- |

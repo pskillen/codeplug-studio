@@ -1,5 +1,4 @@
 import { Alert, Loader } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
 import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
 import { Fragment, useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -20,7 +19,7 @@ import {
   DataTable,
   DesignSystemV2Provider,
   DismissibleNotice,
-  MapPanel,
+  ListMapLayout,
   Pill,
   SearchInput,
   SegmentedControl,
@@ -40,13 +39,13 @@ import ChannelListFilters, {
 } from '../../../components/library/ChannelListFilters.tsx';
 import ChannelZonesListCell from '../../../components/library/ChannelZonesListCell.tsx';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
-import LibraryMapStack from '../../../components/library/LibraryMapStack.tsx';
 import {
   CHANNEL_OPTIONAL_COLUMNS,
   CHANNEL_TABLE_TONE_COLUMN,
   channelListCardColumnsKey,
   channelListColumnsKey,
   channelTableHideableColumns,
+  countActiveChannelFilters,
   loadChannelCardVisibleColumns,
   loadChannelVisibleColumns,
 } from '../../../hooks/channelListQueryUtils.ts';
@@ -70,7 +69,6 @@ import {
 import { bandFromChannel } from '../../../lib/bands.ts';
 import { getModeDefinition, type ChannelMode } from '../../../lib/channelModes.ts';
 import { channelModesForFilter } from '../../../lib/channels.ts';
-import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../../lib/breakpoints.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import {
   createNameColumn,
@@ -223,7 +221,6 @@ export default function ChannelsListPage() {
   const { channels, zones } = library;
   const { position, setPosition, clearPosition } = useOperatorPosition();
   const query = useChannelListQuery();
-  const isMobileTable = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
   const filtered = useFilteredChannels(channels, query, position, zones, { skipSort: true });
   const [columnSortOverride, setColumnSortOverride] = usePersistedChannelColumnSort();
   const [layoutState, { setLayout, setCardGroup }] = usePersistedChannelListLayout();
@@ -611,7 +608,8 @@ export default function ChannelsListPage() {
     </div>
   );
 
-  const listContent = (
+  // Shown at the top of the list pane on every layout: feedback about the list, not controls.
+  const listNotices = (
     <>
       {distanceSortPending ? (
         <DismissibleNotice tone="info">
@@ -630,7 +628,12 @@ export default function ChannelsListPage() {
           {bulkEditMessage}
         </Alert>
       ) : null}
+    </>
+  );
 
+  // Above the list on desktop; in the bottom controls sheet on mobile.
+  const listControls = (
+    <>
       <div className={classes.filterRow}>
         <ChannelListFilters />
         {!position ? (
@@ -674,7 +677,11 @@ export default function ChannelsListPage() {
           className={classes.groupModeControl}
         />
       ) : null}
+    </>
+  );
 
+  const listContent = (
+    <>
       {layoutState.layout === 'cards' ? (
         <div className={classes.cardChrome}>
           <div className={classes.cardMetaRow}>
@@ -799,50 +806,42 @@ export default function ChannelsListPage() {
     </>
   );
 
-  const mapContent = (
+  const mapExtras = position ? (
     <>
-      <div className={classes.mapMeta}>
-        {position ? (
-          <>
-            {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
-              <span>My location accuracy ±{Math.round(position.accuracyMeters)} m</span>
-            ) : null}
-            <Button variant="ghost" size="sm" onClick={clearPosition}>
-              Clear my location
-            </Button>
-          </>
-        ) : (
-          <UseMyLocationButton
-            label="Show my location"
-            onLocation={(lat, lon, accuracyMeters) =>
-              setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
-            }
-          />
-        )}
-      </div>
-      <MapPanel
-        title="Channel locations"
-        height={isMobileTable ? 560 : 420}
-        legend={
-          skipped.length > 0 ? (
-            <span>
-              {skipped.length} channel{skipped.length === 1 ? '' : 's'} not shown on map (missing
-              coordinates, Use Location = No, or 0,0).
-            </span>
-          ) : undefined
-        }
-      >
-        <CodeplugMap
-          channels={mapChannels}
-          zones={zones}
-          allChannels={mapChannels}
-          height="100%"
-          operatorPosition={position}
-          onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-          onZoneClick={(id) => navigate(`/library/zones/${id}`)}
-        />
-      </MapPanel>
+      {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
+        <span>My location accuracy ±{Math.round(position.accuracyMeters)} m</span>
+      ) : null}
+      <Button variant="ghost" size="sm" onClick={clearPosition}>
+        Clear my location
+      </Button>
     </>
+  ) : (
+    <UseMyLocationButton
+      label="Show my location"
+      onLocation={(lat, lon, accuracyMeters) =>
+        setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
+      }
+    />
+  );
+
+  const mapNote =
+    skipped.length > 0 ? (
+      <span>
+        {skipped.length} channel{skipped.length === 1 ? '' : 's'} not shown on map (missing
+        coordinates, Use Location = No, or 0,0).
+      </span>
+    ) : undefined;
+
+  const mapContent = (
+    <CodeplugMap
+      channels={mapChannels}
+      zones={zones}
+      allChannels={mapChannels}
+      height="100%"
+      operatorPosition={position}
+      onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+      onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+    />
   );
 
   if (loading) {
@@ -860,13 +859,46 @@ export default function ChannelsListPage() {
       ? '1 channel in this project'
       : `${channels.length} channels in this project`;
 
+  const activeFilterCount = countActiveChannelFilters(query);
+  const channelWord = (n: number) => `${n} channel${n === 1 ? '' : 's'}`;
+  const controlsSummary = [
+    activeFilterCount > 0 && filtered.length !== channels.length
+      ? `${filtered.length} of ${channelWord(channels.length)}`
+      : channelWord(channels.length),
+    activeFilterCount > 0
+      ? `${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <DesignSystemV2Provider>
-      <div className={pageClasses.page}>
-        <LibraryInventoryHeader title="Channels" subtitle={countLabel} actions={listActions} />
-
-        <LibraryMapStack layout="stacked" list={listContent} map={mapContent} />
-      </div>
+      <ListMapLayout
+        desktopClassName={pageClasses.page}
+        title="Channels"
+        head={
+          <LibraryInventoryHeader title="Channels" subtitle={countLabel} actions={listActions} />
+        }
+        notices={listNotices}
+        controls={listControls}
+        list={listContent}
+        map={mapContent}
+        mapExtras={mapExtras}
+        mapNote={mapNote}
+        sheetLabel="Channels"
+        controlsSummary={controlsSummary}
+        controlsAction={
+          <Button
+            size="sm"
+            variant="primary"
+            leftSection={<IconPlus size={14} stroke={ICON_STROKE} />}
+            onClick={() => navigate('/library/channels/new')}
+          >
+            New
+          </Button>
+        }
+      />
     </DesignSystemV2Provider>
   );
 }
