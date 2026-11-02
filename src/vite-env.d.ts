@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_GOOGLE_ANDROID_CLIENT_ID?: string;
   readonly VITE_GA_MEASUREMENT_ID?: string;
   readonly VITE_FIRMWARE_RELEASE_INDEX_URL?: string;
+  readonly VITE_MESHFLOW_API_BASE_URL?: string;
 }
 
 interface ImportMeta {

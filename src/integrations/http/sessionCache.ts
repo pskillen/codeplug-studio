@@ -10,6 +10,7 @@ export const CELESTRAK_CACHE_PREFIX = 'celestrak-api:';
 export const AMSAT_CACHE_PREFIX = 'amsat-api:';
 export const NOMINATIM_CACHE_PREFIX = 'nominatim-api:';
 export const SATNOGS_CACHE_PREFIX = 'satnogs-api:';
+export const MESHFLOW_CACHE_PREFIX = 'meshflow-api:';
 
 interface CacheEntry {
   body: string;
