@@ -11,8 +11,8 @@
 .listPane {
   flex: 1.7;
   min-width: 0;
-  /* Wide tables scroll inside their pane instead of sliding under the map. */
-  overflow-x: auto;
+  /* No overflow here: the table scrolls sideways itself, and an overflow-x ancestor would stop its
+     header sticking to the page scroll. min-width: 0 keeps wide tables inside the pane. */
 }
 
 .mapPane {
@@ -131,6 +131,8 @@
 }
 
 .sheetBody {
+  /* Pinned table cells paint over scrolled content, so they need the colour behind the table. */
+  --dsv2-table-bg: var(--dsv2-surface);
   display: flex;
   flex-direction: column;
   gap: 12px;

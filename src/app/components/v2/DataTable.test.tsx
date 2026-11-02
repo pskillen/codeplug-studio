@@ -5,6 +5,7 @@ import DataTable, {
   compareDataTableValues,
   sortRowsByColumn,
 } from './DataTable.tsx';
+import { trackMinWidth } from '../../lib/dataTable/trackMinWidth.ts';
 import DesignSystemV2Provider from './DesignSystemV2Provider.tsx';
 
 function mockMobileViewport() {
@@ -510,5 +511,116 @@ describe('DataTable v2', () => {
 
     expect(document.querySelector('[data-virtualized="true"]')).not.toBeNull();
     expect(screen.getAllByRole('row').length).toBeLessThan(rows.length);
+  });
+});
+
+describe('DataTable sticky header and first column', () => {
+  const renderTable = (props: Partial<React.ComponentProps<typeof DataTable<Row>>> = {}) =>
+    render(
+      <DesignSystemV2Provider>
+        <DataTable columns={COLUMNS} rows={ROWS} getRowId={(r) => r.id} {...props} />
+      </DesignSystemV2Provider>,
+    );
+
+  it('sticks the header on list tables by default', () => {
+    renderTable();
+    const table = screen.getByRole('table');
+    expect(table).toHaveAttribute('data-sticky-header', 'true');
+    expect(table).toHaveAttribute('data-split', 'true');
+    expect(table).not.toHaveAttribute('data-sticky-column');
+  });
+
+  it('leaves embedded tables and extreme scale alone', () => {
+    const { unmount } = renderTable({ variant: 'embedded' });
+    expect(screen.getByRole('table')).not.toHaveAttribute('data-sticky-header');
+    unmount();
+    renderTable({ scale: 'extreme' });
+    expect(screen.getByRole('table')).not.toHaveAttribute('data-sticky-header');
+    expect(screen.getByRole('table')).not.toHaveAttribute('data-split');
+  });
+
+  it('can switch the sticky header off', () => {
+    renderTable({ stickyHeader: false });
+    expect(screen.getByRole('table')).not.toHaveAttribute('data-sticky-header');
+  });
+
+  it('pins the first column with the checkbox column in front', () => {
+    renderTable({ stickyFirstColumn: true, selectable: true });
+    const table = screen.getByRole('table');
+    expect(table).toHaveAttribute('data-sticky-column', 'true');
+    const headers = screen.getAllByRole('columnheader');
+    expect(headers[0]!.style.left).toBe('0px');
+    expect(headers[1]!.style.left).toBe('40px');
+    expect(headers[1]!.className).toMatch(/pinnedLast/);
+    expect(headers[2]!.className).not.toMatch(/pinned/);
+    const firstRowCells = screen.getAllByRole('row')[1]!.querySelectorAll('[role=cell]');
+    expect((firstRowCells[1] as HTMLElement).style.left).toBe('40px');
+  });
+
+  it('does not pin anything by default', () => {
+    renderTable({ selectable: true });
+    expect(screen.getAllByRole('columnheader')[1]!.style.left).toBe('');
+  });
+});
+
+describe('DataTable mobile identity line', () => {
+  afterEach(() => vi.restoreAllMocks());
+  const COLS: DataTableColumn<Row>[] = [{ ...COLUMNS[0]!, hideOnMobile: true }, COLUMNS[1]!];
+  const renderTable = (props: Partial<React.ComponentProps<typeof DataTable<Row>>> = {}) =>
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLS}
+          rows={ROWS}
+          getRowId={(r) => r.id}
+          mobileIdentity={(row) => <span>ident-{row.name}</span>}
+          mobileIdentityLabel="Thing"
+          {...props}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+  it('renders the identity line and no name column on mobile', () => {
+    mockMobileViewport();
+    renderTable();
+    expect(screen.getByText('ident-Bravo')).toBeInTheDocument();
+    expect(screen.getByText('Thing')).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Name' })).not.toBeInTheDocument();
+    // identity line is a cell of the same row, not a separate row
+    expect(screen.getAllByRole('row')).toHaveLength(ROWS.length + 1);
+    expect(screen.getByRole('table')).toHaveAttribute('data-split', 'true');
+  });
+
+  it('moves the checkbox onto the identity line and keeps selection and activation working', () => {
+    mockMobileViewport();
+    const onSelectionChange = vi.fn();
+    const onRowActivate = vi.fn();
+    renderTable({ selectable: true, onSelectionChange, onRowActivate });
+    const row = screen.getAllByRole('row')[1]!;
+    const identityCell = screen.getByText('ident-Bravo').parentElement!.parentElement!;
+    const box = identityCell.querySelector('input[type=checkbox], [role=checkbox]') as HTMLElement;
+    expect(box).toBeTruthy();
+    // grid has no lead track: 1 column (score)
+    expect(row.style.gridTemplateColumns).toBe('minmax(8rem, 1fr)');
+    fireEvent.click(box);
+    expect(onSelectionChange).toHaveBeenCalledWith(['1']);
+    expect(onRowActivate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('ident-Bravo'));
+    expect(onRowActivate).toHaveBeenCalledWith(ROWS[0]);
+  });
+
+  it('is ignored on desktop: normal columns, no identity line', () => {
+    renderTable({ selectable: true });
+    expect(screen.queryByText('ident-Bravo')).not.toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toBeInTheDocument();
+  });
+});
+
+describe('trackMinWidth', () => {
+  it('reads the floor of a track', () => {
+    expect(trackMinWidth('minmax(8rem, 1fr)')).toBe('8rem');
+    expect(trackMinWidth('120px')).toBe('120px');
+    expect(trackMinWidth('1fr')).toBe('0px');
+    expect(trackMinWidth('minmax(max-content, 1fr)')).toBe('8rem');
   });
 });

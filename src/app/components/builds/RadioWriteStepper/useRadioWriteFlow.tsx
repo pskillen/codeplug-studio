@@ -529,27 +529,22 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     if (controller) {
       // Keep the footer's Write button in step with the choice (settings alone with Keep writes nothing).
       reviewUnsubscribeRef.current = controller.subscribe(() => {
-        setReview((r) =>
-          r
-            ? {
-                ...r,
-                writeDisabled: reviewDisabled(),
-                effectiveParts: effectivePartsFor(partsRef.current),
-              }
-            : r,
-        );
+        // Read the refs now, not in the updater: React runs updaters at render time, after any
+        // pending effects, and the effect that mirrors `parts` into partsRef can still hold the
+        // ticks from before this change.
+        const update = {
+          writeDisabled: reviewDisabled(),
+          effectiveParts: effectivePartsFor(partsRef.current),
+        };
+        setReview((r) => (r ? { ...r, ...update } : r));
       });
     } else if (rt95Controller) {
       reviewUnsubscribeRef.current = rt95Controller.subscribe(() => {
-        setReview((r) =>
-          r
-            ? {
-                ...r,
-                writeDisabled: reviewDisabled(),
-                effectiveParts: effectivePartsFor(partsRef.current),
-              }
-            : r,
-        );
+        const update = {
+          writeDisabled: reviewDisabled(),
+          effectiveParts: effectivePartsFor(partsRef.current),
+        };
+        setReview((r) => (r ? { ...r, ...update } : r));
       });
     } else {
       reviewUnsubscribeRef.current = null;

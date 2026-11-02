@@ -10,7 +10,7 @@ import {
   IconChevronUp,
   IconSelector,
 } from '@tabler/icons-react';
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from 'react';
 import { reorderSelectedKeys } from '@core/domain/zoneOrder.ts';
 import {
   DataTableBulkReorderProvider,
@@ -18,6 +18,7 @@ import {
 } from '../../lib/dataTable/DataTableBulkReorder.tsx';
 import { useVirtualDataTableRows } from '../../lib/dataTable/useVirtualDataTableRows.ts';
 import type { DataTableVirtualizeMode } from '../../lib/dataTable/virtualization.ts';
+import { trackMinWidth } from '../../lib/dataTable/trackMinWidth.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import SelectedItemDragHandle, {
@@ -105,6 +106,17 @@ export interface DataTableProps<T> {
   defaultExpandedKeys?: string[];
   /** `'extreme'` adds a sticky header and a max-height scroll region for dense tables. */
   scale?: 'default' | 'extreme';
+  /**
+   * Keeps the header row on screen while the page (or the surrounding pane) scrolls down a long
+   * table. Default `true` for `variant="list"`, off for `embedded`. `scale="extreme"` always has
+   * its own sticky header inside its bounded scroll region.
+   */
+  stickyHeader?: boolean;
+  /**
+   * Pins the identity column on the left while the table scrolls sideways: the first visible data
+   * column plus any leading controls (expander, checkbox, order). Default off.
+   */
+  stickyFirstColumn?: boolean;
   /** Window tbody rows when the row count is large. `'extreme'` scale forces this on. */
   virtualize?: DataTableVirtualizeMode;
   estimatedRowHeight?: number;
@@ -124,6 +136,18 @@ export interface DataTableProps<T> {
    * and `nested`/`reorderMode` cells are hidden while this is active.
    */
   mobileCard?: (row: T) => ReactNode;
+  /**
+   * Narrow viewports only (below `MOBILE_MAX_WIDTH_MEDIA_QUERY`): renders this as an identity line
+   * at the top of every row, pinned to the scroller's visible width so it never scrolls sideways,
+   * above that row's column cells (which still scroll, in sync with the header). The selection
+   * checkbox moves onto the line, left of the content. Pair with `hideOnMobile` on the column(s) it
+   * replaces. Ignored with `nested` /
+   * `reorderMode` / `mobileCard`. Not combined with `stickyFirstColumn` (nothing is pinned in the
+   * cell line).
+   */
+  mobileIdentity?: (row: T) => ReactNode;
+  /** Label for the identity line in the header (beside the select-all checkbox). Default `'Name'`. */
+  mobileIdentityLabel?: ReactNode;
   className?: string;
 }
 
@@ -181,6 +205,27 @@ function defaultCountLabel(displayed: number, total: number | undefined) {
   return `Showing ${displayed} of ${total}`;
 }
 
+/** Which leading cells are pinned and where (px from the left edge of the scrolling grid). */
+interface PinLayout {
+  nested: number | null;
+  select: number | null;
+  order: number | null;
+  /** Left offset for the pinned first data column. */
+  firstColumn: number | null;
+}
+
+const NESTED_TRACK_PX = 36;
+const SELECT_TRACK_PX = 40;
+const ORDER_TRACK_PX = 68;
+
+function pinProps(left: number | null, last = false) {
+  if (left == null) return { className: '', style: undefined };
+  return {
+    className: [classes.pinned, last ? classes.pinnedLast : ''].filter(Boolean).join(' '),
+    style: { left } as CSSProperties,
+  };
+}
+
 interface DataTableBodyRowProps<T> {
   flat: FlatRow<T>;
   columns: DataTableColumn<T>[];
@@ -201,6 +246,9 @@ interface DataTableBodyRowProps<T> {
   onActivate: () => void;
   useCardLayout: boolean;
   mobileCard: ((row: T) => ReactNode) | undefined;
+  mobileIdentity: ((row: T) => ReactNode) | undefined;
+  /** Left offsets (px) of the pinned lead columns, in order; empty when nothing is pinned. */
+  pin: PinLayout;
 }
 
 /** One data row. Always calls `useSortable` (inert when `reorderDragEnabled` is false or there's no ancestor `DndContext`) so hook order stays stable regardless of mode. */
@@ -223,6 +271,8 @@ function DataTableBodyRow<T>({
   onActivate,
   useCardLayout,
   mobileCard,
+  mobileIdentity,
+  pin,
 }: DataTableBodyRowProps<T>) {
   const { row, key, depth, hasChildren } = flat;
   const {
@@ -266,7 +316,11 @@ function DataTableBodyRow<T>({
       onClick={activatable ? onActivate : undefined}
     >
       {!useCardLayout && nested ? (
-        <div role="cell" className={classes.leadCell} style={{ paddingLeft: 6 + depth * 16 }}>
+        <div
+          role="cell"
+          className={[classes.leadCell, pinProps(pin.nested).className].filter(Boolean).join(' ')}
+          style={{ paddingLeft: 6 + depth * 16, ...pinProps(pin.nested).style }}
+        >
           {hasChildren ? (
             <button
               type="button"
@@ -287,8 +341,29 @@ function DataTableBodyRow<T>({
           ) : null}
         </div>
       ) : null}
-      {selectable && !useCardLayout ? (
-        <div role="cell" className={classes.leadCell}>
+      {mobileIdentity ? (
+        <div role="cell" className={classes.identityCell}>
+          {selectable ? (
+            <span className={classes.identityCheckbox}>
+              {rowSelectable ? (
+                <Checkbox
+                  checked={selected}
+                  onCheckedChange={() => onToggleRow(key)}
+                  onClick={(event) => event.stopPropagation()}
+                  aria-label={`Select row ${key}`}
+                />
+              ) : null}
+            </span>
+          ) : null}
+          <div className={classes.identityContent}>{mobileIdentity(row)}</div>
+        </div>
+      ) : null}
+      {selectable && !useCardLayout && !mobileIdentity ? (
+        <div
+          role="cell"
+          className={[classes.leadCell, pinProps(pin.select).className].filter(Boolean).join(' ')}
+          style={pinProps(pin.select).style}
+        >
           {rowSelectable ? (
             <Checkbox
               checked={selected}
@@ -300,7 +375,11 @@ function DataTableBodyRow<T>({
         </div>
       ) : null}
       {!useCardLayout && reorderMode ? (
-        <div role="cell" className={classes.orderCell}>
+        <div
+          role="cell"
+          className={[classes.orderCell, pinProps(pin.order).className].filter(Boolean).join(' ')}
+          style={pinProps(pin.order).style}
+        >
           {depth === 0 ? (
             <>
               <span className={classes.orderIndex}>{topLevelIndex + 1}</span>
@@ -316,12 +395,14 @@ function DataTableBodyRow<T>({
           {mobileCard!(row)}
         </div>
       ) : (
-        visibleColumns.map((col) => (
+        visibleColumns.map((col, colIndex) => (
           <div
             role="cell"
             key={col.key}
+            style={colIndex === 0 ? pinProps(pin.firstColumn).style : undefined}
             className={[
               classes.dataCell,
+              colIndex === 0 ? pinProps(pin.firstColumn, true).className : '',
               col.key === 'actions' ? classes.actionCell : '',
               col.align === 'right' ? classes.alignRight : '',
               col.dim ? classes.dim : '',
@@ -370,6 +451,8 @@ export default function DataTable<T>({
   getChildren,
   defaultExpandedKeys,
   scale = 'default',
+  stickyHeader,
+  stickyFirstColumn = false,
   virtualize = 'auto',
   estimatedRowHeight,
   virtualizeOverscan,
@@ -378,6 +461,8 @@ export default function DataTable<T>({
   onRowActivate,
   getRowVariant,
   mobileCard,
+  mobileIdentity,
+  mobileIdentityLabel = 'Name',
   className,
 }: DataTableProps<T>) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
@@ -443,6 +528,14 @@ export default function DataTable<T>({
       checked ? [...visibleHideableKeys, key] : visibleHideableKeys.filter((k) => k !== key),
     );
   };
+
+  const useIdentity =
+    !!mobileIdentity &&
+    isMobileViewport &&
+    !useCardLayout &&
+    !nested &&
+    !reorderMode &&
+    scale !== 'extreme';
 
   const visibleColumns = columns.filter((col) => {
     if (col.hideable && !visibleHideableKeys.includes(col.key)) return false;
@@ -543,7 +636,7 @@ export default function DataTable<T>({
     ? '1fr'
     : [
         nested ? '36px' : null,
-        selectable ? '40px' : null,
+        selectable && !useIdentity ? '40px' : null,
         reorderMode ? '68px' : null,
         // Flexible default uses a min floor so overflow:auto on .table can scroll
         // horizontally on narrow viewports instead of collapsing every column.
@@ -551,6 +644,47 @@ export default function DataTable<T>({
       ]
         .filter(Boolean)
         .join(' ');
+
+  // Sticky header: the header row lives outside the horizontal scroller (so it can stick to the
+  // page / pane scroll) and its scrollLeft follows the body's. `extreme` scale keeps its own
+  // bounded scroll region with a sticky header inside it.
+  const headerSticks = (stickyHeader ?? variant === 'list') && scale !== 'extreme';
+  const pinFirst = stickyFirstColumn && !useCardLayout && !useIdentity && visibleColumns.length > 0;
+  const pin: PinLayout = (() => {
+    let left = 0;
+    const next = (px: number) => {
+      const at = left;
+      left += px;
+      return at;
+    };
+    return {
+      nested: pinFirst && nested ? next(NESTED_TRACK_PX) : null,
+      select: pinFirst && selectable ? next(SELECT_TRACK_PX) : null,
+      order: pinFirst && reorderMode ? next(ORDER_TRACK_PX) : null,
+      firstColumn: pinFirst ? left : null,
+    };
+  })();
+
+  const split = headerSticks || ((pinFirst || useIdentity) && scale !== 'extreme');
+
+  const headerScrollRef = useRef<HTMLDivElement>(null);
+  const [scrolledX, setScrolledX] = useState(false);
+  const handleBodyScroll = (event: UIEvent<HTMLDivElement>) => {
+    const left = event.currentTarget.scrollLeft;
+    if (headerScrollRef.current) headerScrollRef.current.scrollLeft = left;
+    if (pinFirst) setScrolledX(left > 0);
+  };
+
+  const gridMinWidth = useCardLayout
+    ? undefined
+    : `calc(${[
+        nested ? `${NESTED_TRACK_PX}px` : null,
+        selectable && !useIdentity ? `${SELECT_TRACK_PX}px` : null,
+        reorderMode ? `${ORDER_TRACK_PX}px` : null,
+        ...visibleColumns.map((col) => trackMinWidth(col.width ?? 'minmax(8rem, 1fr)')),
+      ]
+        .filter(Boolean)
+        .join(' + ')})`;
 
   return (
     <div className={[classes.root, className].filter(Boolean).join(' ')} data-variant={variant}>
@@ -634,140 +768,194 @@ export default function DataTable<T>({
         data-scale={scale}
         ref={scrollRef}
         data-virtualized={virtualized || undefined}
+        data-split={split || undefined}
+        onScroll={scale === 'extreme' ? handleBodyScroll : undefined}
+        data-sticky-header={headerSticks || undefined}
+        data-sticky-column={pinFirst || undefined}
+        data-scrolled-x={(pinFirst && scrolledX) || undefined}
       >
-        <div className={classes.headerRow} role="row" style={{ gridTemplateColumns }}>
-          {!useCardLayout && nested ? (
-            <div role="columnheader" className={classes.leadCell} />
-          ) : null}
-          {selectable && !useCardLayout ? (
-            <div role="columnheader" className={classes.leadCell}>
-              <Checkbox
-                checked={allSelected}
-                indeterminate={someSelected}
-                onCheckedChange={toggleAll}
-                aria-label="Select all rows"
+        <div className={classes.headerScroller} ref={headerScrollRef}>
+          <div
+            className={classes.headerRow}
+            role="row"
+            style={{ gridTemplateColumns, minWidth: gridMinWidth }}
+          >
+            {!useCardLayout && nested ? (
+              <div
+                role="columnheader"
+                className={[classes.leadCell, pinProps(pin.nested).className]
+                  .filter(Boolean)
+                  .join(' ')}
+                style={pinProps(pin.nested).style}
               />
-            </div>
-          ) : null}
-          {!useCardLayout && reorderMode ? (
-            <div role="columnheader" className={classes.headerCell}>
-              Order
-            </div>
-          ) : null}
-          {!useCardLayout &&
-            visibleColumns.map((col) => {
-              const active = sortState?.key === col.key;
-              const Icon = active
-                ? sortState!.direction === 'asc'
-                  ? IconChevronUp
-                  : IconChevronDown
-                : IconSelector;
-              const sortable = !reorderMode && col.sortable !== false && !!col.sortValue;
+            ) : null}
+            {useIdentity ? (
+              <div role="columnheader" className={classes.identityHeader}>
+                {selectable ? (
+                  <span className={classes.identityCheckbox}>
+                    <Checkbox
+                      checked={allSelected}
+                      indeterminate={someSelected}
+                      onCheckedChange={toggleAll}
+                      aria-label="Select all rows"
+                    />
+                  </span>
+                ) : null}
+                <span className={classes.identityHeaderLabel}>{mobileIdentityLabel}</span>
+              </div>
+            ) : null}
+            {selectable && !useCardLayout && !useIdentity ? (
+              <div
+                role="columnheader"
+                className={[classes.leadCell, pinProps(pin.select).className]
+                  .filter(Boolean)
+                  .join(' ')}
+                style={pinProps(pin.select).style}
+              >
+                <Checkbox
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onCheckedChange={toggleAll}
+                  aria-label="Select all rows"
+                />
+              </div>
+            ) : null}
+            {!useCardLayout && reorderMode ? (
+              <div
+                role="columnheader"
+                className={[classes.headerCell, pinProps(pin.order).className]
+                  .filter(Boolean)
+                  .join(' ')}
+                style={pinProps(pin.order).style}
+              >
+                Order
+              </div>
+            ) : null}
+            {!useCardLayout &&
+              visibleColumns.map((col, colIndex) => {
+                const active = sortState?.key === col.key;
+                const Icon = active
+                  ? sortState!.direction === 'asc'
+                    ? IconChevronUp
+                    : IconChevronDown
+                  : IconSelector;
+                const sortable = !reorderMode && col.sortable !== false && !!col.sortValue;
 
-              return (
-                <div
-                  key={col.key}
-                  role="columnheader"
-                  aria-sort={
-                    active ? (sortState!.direction === 'asc' ? 'ascending' : 'descending') : 'none'
-                  }
-                  className={[
-                    classes.headerCell,
-                    col.key === 'actions' ? classes.actionCell : '',
-                    col.align === 'right' ? classes.alignRight : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                >
-                  {sortable ? (
-                    <button
-                      type="button"
-                      className={classes.sortButton}
-                      onClick={() => handleSort(col.key)}
-                    >
-                      <span>{col.header}</span>
-                      <Icon
-                        size={14}
-                        stroke={ICON_STROKE}
-                        className={active ? classes.sortIconActive : classes.sortIcon}
-                        aria-hidden
-                      />
-                    </button>
-                  ) : (
-                    col.header
-                  )}
-                </div>
-              );
-            })}
+                return (
+                  <div
+                    key={col.key}
+                    role="columnheader"
+                    style={colIndex === 0 ? pinProps(pin.firstColumn).style : undefined}
+                    aria-sort={
+                      active
+                        ? sortState!.direction === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                    }
+                    className={[
+                      classes.headerCell,
+                      colIndex === 0 ? pinProps(pin.firstColumn, true).className : '',
+                      col.key === 'actions' ? classes.actionCell : '',
+                      col.align === 'right' ? classes.alignRight : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    {sortable ? (
+                      <button
+                        type="button"
+                        className={classes.sortButton}
+                        onClick={() => handleSort(col.key)}
+                      >
+                        <span>{col.header}</span>
+                        <Icon
+                          size={14}
+                          stroke={ICON_STROKE}
+                          className={active ? classes.sortIconActive : classes.sortIcon}
+                          aria-hidden
+                        />
+                      </button>
+                    ) : (
+                      col.header
+                    )}
+                  </div>
+                );
+              })}
+          </div>
         </div>
 
-        <div className={classes.body}>
-          {flattenedRows.length === 0 ? (
-            <div className={classes.emptyRow} role="row">
-              <div role="cell" className={classes.emptyCell}>
-                {isFilteredEmpty ? filteredEmptyMessage : emptyMessage}
+        <div className={classes.bodyScroller} onScroll={handleBodyScroll}>
+          <div className={classes.body} style={{ minWidth: gridMinWidth }}>
+            {flattenedRows.length === 0 ? (
+              <div className={classes.emptyRow} role="row">
+                <div role="cell" className={classes.emptyCell}>
+                  {isFilteredEmpty ? filteredEmptyMessage : emptyMessage}
+                </div>
               </div>
-            </div>
-          ) : (
-            <DataTableBulkReorderProvider
-              sortableKeys={dragSortableKeys}
-              orderedKeys={rows.map((row) => getRowId(row))}
-              selectedKeys={selectedKeys}
-              onSetOrder={setOrder}
-            >
-              <DataTableBulkReorderSortable sortableKeys={dragSortableKeys}>
-                {virtualized && paddingTop > 0 ? (
-                  <div
-                    className={classes.virtualSpacer}
-                    style={{ height: paddingTop }}
-                    aria-hidden
-                  />
-                ) : null}
-                {(virtualized
-                  ? virtualRows.map((virtualRow) => flattenedRows[virtualRow.index]!)
-                  : flattenedRows
-                ).map((flat) => {
-                  const rowSelectable = rowIsSelectable(flat.row);
-                  const topLevelIndex =
-                    flat.depth === 0 ? rows.findIndex((r) => getRowId(r) === flat.key) : -1;
-                  const rowVariant = getRowVariant?.(flat.row);
-                  const activatable = !!onRowActivate && (!selectable || rowSelectable);
-
-                  return (
-                    <DataTableBodyRow
-                      key={flat.key}
-                      flat={flat}
-                      columns={columns}
-                      visibleColumns={visibleColumns}
-                      gridTemplateColumns={gridTemplateColumns}
-                      nested={nested}
-                      selectable={selectable}
-                      selected={selectedKeys.includes(flat.key)}
-                      rowSelectable={rowSelectable}
-                      onToggleRow={toggleRow}
-                      reorderMode={reorderMode}
-                      reorderDragEnabled={dragSortableKeys.includes(flat.key)}
-                      topLevelIndex={topLevelIndex}
-                      isExpanded={expandedKeys.has(flat.key)}
-                      onToggleExpanded={toggleExpanded}
-                      rowVariant={rowVariant}
-                      activatable={activatable}
-                      onActivate={() => onRowActivate?.(flat.row)}
-                      useCardLayout={useCardLayout}
-                      mobileCard={mobileCard}
+            ) : (
+              <DataTableBulkReorderProvider
+                sortableKeys={dragSortableKeys}
+                orderedKeys={rows.map((row) => getRowId(row))}
+                selectedKeys={selectedKeys}
+                onSetOrder={setOrder}
+              >
+                <DataTableBulkReorderSortable sortableKeys={dragSortableKeys}>
+                  {virtualized && paddingTop > 0 ? (
+                    <div
+                      className={classes.virtualSpacer}
+                      style={{ height: paddingTop }}
+                      aria-hidden
                     />
-                  );
-                })}
-                {virtualized && paddingBottom > 0 ? (
-                  <div
-                    className={classes.virtualSpacer}
-                    style={{ height: paddingBottom }}
-                    aria-hidden
-                  />
-                ) : null}
-              </DataTableBulkReorderSortable>
-            </DataTableBulkReorderProvider>
-          )}
+                  ) : null}
+                  {(virtualized
+                    ? virtualRows.map((virtualRow) => flattenedRows[virtualRow.index]!)
+                    : flattenedRows
+                  ).map((flat) => {
+                    const rowSelectable = rowIsSelectable(flat.row);
+                    const topLevelIndex =
+                      flat.depth === 0 ? rows.findIndex((r) => getRowId(r) === flat.key) : -1;
+                    const rowVariant = getRowVariant?.(flat.row);
+                    const activatable = !!onRowActivate && (!selectable || rowSelectable);
+
+                    return (
+                      <DataTableBodyRow
+                        key={flat.key}
+                        flat={flat}
+                        columns={columns}
+                        visibleColumns={visibleColumns}
+                        gridTemplateColumns={gridTemplateColumns}
+                        nested={nested}
+                        selectable={selectable}
+                        selected={selectedKeys.includes(flat.key)}
+                        rowSelectable={rowSelectable}
+                        onToggleRow={toggleRow}
+                        reorderMode={reorderMode}
+                        reorderDragEnabled={dragSortableKeys.includes(flat.key)}
+                        topLevelIndex={topLevelIndex}
+                        isExpanded={expandedKeys.has(flat.key)}
+                        onToggleExpanded={toggleExpanded}
+                        rowVariant={rowVariant}
+                        activatable={activatable}
+                        onActivate={() => onRowActivate?.(flat.row)}
+                        useCardLayout={useCardLayout}
+                        mobileCard={mobileCard}
+                        mobileIdentity={useIdentity ? mobileIdentity : undefined}
+                        pin={pin}
+                      />
+                    );
+                  })}
+                  {virtualized && paddingBottom > 0 ? (
+                    <div
+                      className={classes.virtualSpacer}
+                      style={{ height: paddingBottom }}
+                      aria-hidden
+                    />
+                  ) : null}
+                </DataTableBulkReorderSortable>
+              </DataTableBulkReorderProvider>
+            )}
+          </div>
         </div>
       </div>
 

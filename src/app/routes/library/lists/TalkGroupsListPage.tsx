@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { IconPlus } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { TalkGroup } from '@core/models/library.ts';
 import EntityListRowDeleteAction from '../../../components/library/EntityListRowDeleteAction.tsx';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
@@ -40,11 +40,13 @@ export default function TalkGroupsListPage() {
       createNameColumn<TalkGroup>({
         getName: (tg) => tg.name,
         getPath: (tg) => `/library/talk-groups/${tg.id}`,
+        hideOnMobile: true,
       }),
       {
         key: 'mode',
         header: 'Mode',
         render: (tg) => <ModePill mode={tg.mode} size="xs" />,
+        hideOnMobile: true,
         sortValue: (tg) => tg.mode,
       },
       {
@@ -131,6 +133,18 @@ export default function TalkGroupsListPage() {
           columns={columns}
           rows={filtered}
           getRowId={(tg) => tg.id}
+          stickyFirstColumn
+          mobileIdentity={(tg) => (
+            <div className={classes.identityLine}>
+              <Link
+                to={`/library/talk-groups/${tg.id}`}
+                className={`libraryListNameLink ${classes.identityLink}`}
+              >
+                <strong className={classes.identityName}>{tg.name}</strong>
+              </Link>
+              <ModePill mode={tg.mode} size="xs" />
+            </div>
+          )}
           totalRowCount={talkGroups.length}
           search={{
             value: nameFilterInput,

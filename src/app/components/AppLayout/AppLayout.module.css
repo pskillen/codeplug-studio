@@ -19,6 +19,8 @@
 }
 
 .main {
+  /* Page colour as seen from outside the v2 scope: pinned DataTable cells repaint it. */
+  --dsv2-table-bg: var(--mantine-color-body);
   flex: 1;
   min-width: 0;
   min-height: 0;
