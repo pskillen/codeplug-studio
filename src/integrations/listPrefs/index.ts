@@ -9,6 +9,7 @@ export {
   entityListColumnsKey,
   entityListPrefsKey,
   LIST_PREFS_STORAGE_PREFIX,
+  nearbyPrefsKey,
   trackingDashboardPrefsKey,
 } from './keys.ts';
 export {
@@ -26,12 +27,16 @@ export {
 export {
   loadChannelListPrefs,
   loadEntityListPrefs,
+  loadNearbyPrefs,
   loadTrackingDashboardPrefs,
   mergeChannelListPrefs,
   mergeEntityListPrefs,
+  mergeNearbyPrefs,
   mergeTrackingDashboardPrefs,
+  sanitizeNearbyPrefs,
   saveChannelListPrefs,
   saveEntityListPrefs,
+  saveNearbyPrefs,
   saveTrackingDashboardPrefs,
 } from './storage.ts';
 export type {
@@ -44,5 +49,6 @@ export type {
   DataTableSortState,
   EntityListEntity,
   EntityListPrefs,
+  NearbyPrefs,
   TrackingDashboardPrefs,
 } from './types.ts';

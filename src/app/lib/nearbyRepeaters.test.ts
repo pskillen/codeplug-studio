@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import type { RepeaterListing } from '@integrations/repeaters/index.ts';
-import { applyNearbyFilters, buildNearbyItems } from './nearbyRepeaters.ts';
+import {
+  DEFAULT_NEARBY_RADIUS_KM,
+  applyNearbyFilters,
+  buildNearbyItems,
+  parseNearbyFilters,
+} from './nearbyRepeaters.ts';
 
 function listing(over: Partial<RepeaterListing>): RepeaterListing {
   return {
@@ -110,5 +115,35 @@ describe('applyNearbyFilters', () => {
     expect(
       applyNearbyFilters(items, { ...none, operationalOnly: true }).map((i) => i.callsign),
     ).toEqual(['GB7GL']);
+  });
+});
+
+describe('parseNearbyFilters', () => {
+  const parse = (qs: string, hasProject = false) =>
+    parseNearbyFilters(new URLSearchParams(qs), { hasProject });
+
+  it('defaults sources by project state', () => {
+    expect(parse('').sources).toEqual(['ukrepeater']);
+    expect(parse('', true).sources).toEqual(['ukrepeater', 'library']);
+  });
+
+  it('treats s=none as no sources and drops unknown ids', () => {
+    expect(parse('s=none').sources).toEqual([]);
+    expect(parse('s=ukrepeater,bogus').sources).toEqual(['ukrepeater']);
+  });
+
+  it('drops unknown band and mode ids', () => {
+    const f = parse('b=2m,9km&m=dmr,zzz&op=1');
+    expect(f.bands).toEqual(['2m']);
+    expect(f.modes).toEqual(['dmr']);
+    expect(f.operationalOnly).toBe(true);
+  });
+
+  it.each(['NaN', '-3', '0', '201', 'abc'])('falls back to the default radius for r=%s', (r) => {
+    expect(parse(`r=${r}`).radiusKm).toBe(DEFAULT_NEARBY_RADIUS_KM);
+  });
+
+  it('keeps a valid radius', () => {
+    expect(parse('r=50').radiusKm).toBe(50);
   });
 });

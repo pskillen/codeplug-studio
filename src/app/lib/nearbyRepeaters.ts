@@ -29,6 +29,71 @@ export interface NearbyItem {
   inLibrary: boolean;
 }
 
+export const NEARBY_BAND_CHOICES: { id: string; label: string }[] = [
+  { id: '4m', label: '4m' },
+  { id: '2m', label: '2m' },
+  { id: '70cm', label: '70cm' },
+  { id: '23cm', label: '23cm' },
+];
+
+export const NEARBY_MODE_CHOICES: { id: ChannelMode; label: string }[] = [
+  { id: 'fm', label: 'FM' },
+  { id: 'dmr', label: 'DMR' },
+  { id: 'dstar', label: 'D-STAR' },
+  { id: 'ysf', label: 'YSF' },
+];
+
+export const DEFAULT_NEARBY_RADIUS_KM = 25 * 1.609344;
+const MAX_NEARBY_RADIUS_KM = 200;
+
+export interface ParsedNearbyFilters {
+  radiusKm: number;
+  sources: NearbySource[];
+  bands: string[];
+  modes: ChannelMode[];
+  operationalOnly: boolean;
+}
+
+function csvList(value: string | null): string[] {
+  return value ? value.split(',').filter(Boolean) : [];
+}
+
+/**
+ * Validate the Nearby filter params (`r s b m op`) against the page's known choices. Both URL
+ * params and hydrated stored prefs go through here, so stale stored values are cleaned the same
+ * way as a hand-edited URL. Pure: no storage access.
+ */
+export function parseNearbyFilters(
+  params: URLSearchParams,
+  opts: { hasProject: boolean },
+): ParsedNearbyFilters {
+  const r = Number(params.get('r'));
+  const radiusKm =
+    params.has('r') && Number.isFinite(r) && r > 0 && r <= MAX_NEARBY_RADIUS_KM
+      ? r
+      : DEFAULT_NEARBY_RADIUS_KM;
+  const s = params.get('s');
+  const sources: NearbySource[] =
+    s == null
+      ? opts.hasProject
+        ? ['ukrepeater', 'library']
+        : ['ukrepeater']
+      : s === 'none'
+        ? []
+        : csvList(s).filter((id): id is NearbySource =>
+            (NEARBY_SOURCES as readonly string[]).includes(id),
+          );
+  const bandIds = NEARBY_BAND_CHOICES.map((b) => b.id);
+  const modeIds = NEARBY_MODE_CHOICES.map((m) => m.id as string);
+  return {
+    radiusKm,
+    sources,
+    bands: csvList(params.get('b')).filter((id) => bandIds.includes(id)),
+    modes: csvList(params.get('m')).filter((id) => modeIds.includes(id)) as ChannelMode[],
+    operationalOnly: params.get('op') === '1',
+  };
+}
+
 export interface NearbyFilters {
   /** Band ids to keep; empty keeps all. */
   bands: readonly string[];

@@ -1,7 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { channelListPrefsKey, entityListPrefsKey, trackingDashboardPrefsKey } from './keys.ts';
+import {
+  channelListPrefsKey,
+  entityListPrefsKey,
+  nearbyPrefsKey,
+  trackingDashboardPrefsKey,
+} from './keys.ts';
 import {
   loadChannelListPrefs,
+  loadNearbyPrefs,
+  mergeNearbyPrefs,
+  saveNearbyPrefs,
   loadTrackingDashboardPrefs,
   mergeChannelListPrefs,
   mergeEntityListPrefs,
@@ -119,5 +127,60 @@ describe('listPrefs storage fail-soft', () => {
       },
     });
     expect(() => saveChannelListPrefs('proj-1', { q: 'x' })).not.toThrow();
+  });
+});
+
+describe('nearby prefs storage', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', createLocalStorageMock());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('uses a global key', () => {
+    expect(nearbyPrefsKey()).toBe('mm9pdy-codeplug-studio.list.nearby');
+  });
+
+  it('round-trips and merges', () => {
+    expect(loadNearbyPrefs()).toBeNull();
+    saveNearbyPrefs({ radiusKm: 40, sources: ['ukrepeater'], bands: ['2m'] });
+    expect(loadNearbyPrefs()).toEqual({ radiusKm: 40, sources: ['ukrepeater'], bands: ['2m'] });
+    mergeNearbyPrefs({ operationalOnly: true });
+    expect(loadNearbyPrefs()).toEqual({
+      radiusKm: 40,
+      sources: ['ukrepeater'],
+      bands: ['2m'],
+      operationalOnly: true,
+    });
+  });
+
+  it.each(['not json', 'null', '[]', '"x"', '42'])('returns null for stored %s', (raw) => {
+    localStorage.setItem(nearbyPrefsKey(), raw);
+    expect(loadNearbyPrefs()).toBeNull();
+  });
+
+  it('keeps only structurally valid fields', () => {
+    localStorage.setItem(
+      nearbyPrefsKey(),
+      JSON.stringify({
+        radiusKm: '25',
+        sources: 'meshtastic',
+        bands: [1, '2m'],
+        operationalOnly: 'yes',
+        junk: 1,
+      }),
+    );
+    expect(loadNearbyPrefs()).toEqual({ bands: ['2m'] });
+  });
+
+  it('returns null when storage throws', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => {
+        throw new Error('blocked');
+      },
+    });
+    expect(loadNearbyPrefs()).toBeNull();
   });
 });

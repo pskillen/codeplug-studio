@@ -5,7 +5,11 @@ import {
   serializeCsvParam,
   type ChannelSortMode,
 } from '../../hooks/channelListQueryUtils.ts';
-import type { ChannelListPrefs, EntityListPrefs } from '@integrations/listPrefs/index.ts';
+import type {
+  ChannelListPrefs,
+  EntityListPrefs,
+  NearbyPrefs,
+} from '@integrations/listPrefs/index.ts';
 
 const CHANNEL_LIST_PARAM_KEYS = [
   'q',
@@ -60,6 +64,40 @@ export function channelListPrefsToSearchParams(prefs: ChannelListPrefs): URLSear
   const maxKm = prefs.maxDistanceKm ?? defaultMaxDistanceKm();
   setOrDelete(params, 'maxKm', maxKm === defaultMaxDistanceKm() ? null : String(maxKm));
   return params;
+}
+
+/** Nearby filter params. `lat lon pl` (the search point) are deliberately not part of the prefs. */
+export const NEARBY_FILTER_PARAM_KEYS = ['r', 's', 'b', 'm', 'op'] as const;
+
+export function hasNearbyFilterUrlParams(params: URLSearchParams): boolean {
+  return NEARBY_FILTER_PARAM_KEYS.some((key) => params.has(key));
+}
+
+/** Only non-default values are emitted: `s=none` for no sources, `s` omitted when undefined. */
+export function nearbyPrefsToSearchParams(prefs: NearbyPrefs): URLSearchParams {
+  const params = new URLSearchParams();
+  if (prefs.radiusKm != null && prefs.radiusKm > 0) {
+    params.set('r', String(Math.round(prefs.radiusKm * 100) / 100));
+  }
+  if (prefs.sources) params.set('s', prefs.sources.join(',') || 'none');
+  setOrDelete(params, 'b', serializeCsvParam(prefs.bands ?? []));
+  setOrDelete(params, 'm', serializeCsvParam(prefs.modes ?? []));
+  if (prefs.operationalOnly) params.set('op', '1');
+  return params;
+}
+
+export function nearbyPrefsFromSearchParams(params: URLSearchParams): NearbyPrefs {
+  const prefs: NearbyPrefs = {};
+  const r = Number(params.get('r'));
+  if (params.has('r') && Number.isFinite(r) && r > 0) prefs.radiusKm = r;
+  const s = params.get('s');
+  if (s != null) prefs.sources = s === 'none' ? [] : parseCsvParam(s);
+  const b = parseCsvParam(params.get('b'));
+  if (b.length > 0) prefs.bands = b;
+  const m = parseCsvParam(params.get('m'));
+  if (m.length > 0) prefs.modes = m;
+  if (params.get('op') === '1') prefs.operationalOnly = true;
+  return prefs;
 }
 
 export function entityListPrefsFromSearchParams(params: URLSearchParams): EntityListPrefs {

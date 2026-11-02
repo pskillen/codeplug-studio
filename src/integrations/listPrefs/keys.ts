@@ -38,4 +38,9 @@ export function trackingDashboardPrefsKey(projectId: string): string {
   return `${APP_PREFIX}tracking-dashboard.${projectId}`;
 }
 
+/** Global (not per project): Nearby works without a project. */
+export function nearbyPrefsKey(): string {
+  return `${APP_PREFIX}nearby`;
+}
+
 export const LIST_PREFS_STORAGE_PREFIX = APP_PREFIX;

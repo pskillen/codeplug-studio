@@ -38,6 +38,16 @@ export interface ChannelListLayoutPrefs {
   cardGroup?: ChannelListCardGroupMode;
 }
 
+/** Nearby repeaters filter chips. Source ids stay plain strings: integrations never import app unions. */
+export interface NearbyPrefs {
+  radiusKm?: number;
+  /** [] persists "no sources" (URL `s=none`). */
+  sources?: string[];
+  bands?: string[];
+  modes?: string[];
+  operationalOnly?: boolean;
+}
+
 export interface EntityListPrefs {
   q?: string;
   columnSort?: DataTableSortState;
