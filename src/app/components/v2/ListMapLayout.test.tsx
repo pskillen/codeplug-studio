@@ -95,6 +95,17 @@ describe('ListMapLayout', () => {
     expect(screen.getByRole('button', { name: 'Show list' })).toBeInTheDocument();
   });
 
+  it('mobile swipe: an aria-hidden dead zone sits under the handle and swallows clicks', () => {
+    setMobile(true);
+    const { container } = renderLayout(undefined, 'swipe');
+    const dead = container.querySelector('[data-swipe-dead]');
+    expect(dead).not.toBeNull();
+    expect(dead).toHaveAttribute('aria-hidden', 'true');
+    expect(dead?.querySelector('button')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show map' }));
+    expect(container.querySelectorAll('[data-swipe-dead]')).toHaveLength(1);
+  });
+
   it('desktop ignores mobile="swipe"', () => {
     setMobile(false);
     renderLayout(undefined, 'swipe');

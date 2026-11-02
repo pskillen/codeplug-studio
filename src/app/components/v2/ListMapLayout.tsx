@@ -46,7 +46,7 @@ function paneForScroll(el: HTMLElement): SwipePane {
 }
 
 /**
- * Grab handle: a solid tab straddling the seam between the active pane and the peeking one. It is a
+ * Grab handle (and the invisible dead zone beneath it): a solid tab straddling the seam between the active pane and the peeking one. It is a
  * descendant of the scroll track (inside a zero-width sticky anchor), so a horizontal drag on it
  * scrolls the track, and a tap switches panes.
  */
@@ -54,6 +54,7 @@ function SwipeHandle({ pane, onGo }: { pane: SwipePane; onGo: (target: SwipePane
   const toMap = pane === 'list';
   return (
     <div className={classes.swipeAnchor} data-pane={pane}>
+      <div className={classes.swipeDead} data-swipe-dead="" aria-hidden="true" />
       <button
         type="button"
         className={classes.swipeHandle}
@@ -82,7 +83,7 @@ function SwipeHandle({ pane, onGo }: { pane: SwipePane; onGo: (target: SwipePane
 }
 
 /**
- * EXPERIMENTAL mobile body for `mobile="swipe"`: two ~88%-wide full-height panes in a CSS scroll-snap
+ * EXPERIMENTAL mobile body for `mobile="swipe"`: two ~92%-wide full-height panes in a CSS scroll-snap
  * track. The hidden pane peeks in at the screen edge, and is covered by a button so tapping or
  * dragging the strip switches panes. The visible map is not covered and sets `touch-action: none`,
  * so Leaflet keeps its own pan/zoom.
