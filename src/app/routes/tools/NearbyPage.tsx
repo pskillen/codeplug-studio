@@ -458,7 +458,7 @@ export default function NearbyPage() {
   return (
     <MapToolLayout
       title="Repeaters near a point"
-      description="What can I hit from here? Nothing is saved unless you add a repeater to your project."
+      description="What can I hit from here? Your filters are remembered in this browser; repeaters are saved only when you add one to your project."
       mapHint="Click the map or drag the pin to move the point"
       mapOverlay={placeInput}
       desktopLead={
