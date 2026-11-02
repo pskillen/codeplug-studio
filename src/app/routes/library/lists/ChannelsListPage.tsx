@@ -45,6 +45,7 @@ import {
   channelListCardColumnsKey,
   channelListColumnsKey,
   channelTableHideableColumns,
+  countActiveChannelFilters,
   loadChannelCardVisibleColumns,
   loadChannelVisibleColumns,
 } from '../../../hooks/channelListQueryUtils.ts';
@@ -607,7 +608,8 @@ export default function ChannelsListPage() {
     </div>
   );
 
-  const listContent = (
+  // Shown at the top of the list pane on every layout: feedback about the list, not controls.
+  const listNotices = (
     <>
       {distanceSortPending ? (
         <DismissibleNotice tone="info">
@@ -626,7 +628,12 @@ export default function ChannelsListPage() {
           {bulkEditMessage}
         </Alert>
       ) : null}
+    </>
+  );
 
+  // Above the list on desktop; in the bottom controls sheet on mobile.
+  const listControls = (
+    <>
       <div className={classes.filterRow}>
         <ChannelListFilters />
         {!position ? (
@@ -670,7 +677,11 @@ export default function ChannelsListPage() {
           className={classes.groupModeControl}
         />
       ) : null}
+    </>
+  );
 
+  const listContent = (
+    <>
       {layoutState.layout === 'cards' ? (
         <div className={classes.cardChrome}>
           <div className={classes.cardMetaRow}>
@@ -795,8 +806,6 @@ export default function ChannelsListPage() {
     </>
   );
 
-  const mappedCount = filtered.length - skipped.length;
-
   const mapExtras = position ? (
     <>
       {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
@@ -850,28 +859,44 @@ export default function ChannelsListPage() {
       ? '1 channel in this project'
       : `${channels.length} channels in this project`;
 
+  const activeFilterCount = countActiveChannelFilters(query);
+  const channelWord = (n: number) => `${n} channel${n === 1 ? '' : 's'}`;
+  const controlsSummary = [
+    activeFilterCount > 0 && filtered.length !== channels.length
+      ? `${filtered.length} of ${channelWord(channels.length)}`
+      : channelWord(channels.length),
+    activeFilterCount > 0
+      ? `${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <DesignSystemV2Provider>
       <ListMapLayout
         desktopClassName={pageClasses.page}
         title="Channels"
-        mobile="swipe" // EXPERIMENT: swipe panes instead of the bottom sheet
         head={
           <LibraryInventoryHeader title="Channels" subtitle={countLabel} actions={listActions} />
         }
+        notices={listNotices}
+        controls={listControls}
         list={listContent}
         map={mapContent}
         mapExtras={mapExtras}
         mapNote={mapNote}
         sheetLabel="Channels"
-        initialSnap={mappedCount > 0 ? 'half' : 'full'}
-        sheetHeader={
-          <div className={classes.sheetSummary}>
-            <strong>
-              {filtered.length} channel{filtered.length === 1 ? '' : 's'}
-            </strong>
-            <span>{mappedCount} on map</span>
-          </div>
+        controlsSummary={controlsSummary}
+        controlsAction={
+          <Button
+            size="sm"
+            variant="primary"
+            leftSection={<IconPlus size={14} stroke={ICON_STROKE} />}
+            onClick={() => navigate('/library/channels/new')}
+          >
+            New
+          </Button>
         }
       />
     </DesignSystemV2Provider>

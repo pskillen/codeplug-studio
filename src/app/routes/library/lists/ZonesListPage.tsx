@@ -189,23 +189,26 @@ export default function ZonesListPage() {
     />
   );
 
+  const listControls = (
+    <div className={classes.toolbarRow}>
+      <SearchInput
+        value={nameFilterInput}
+        onChange={(e) => setNameFilter(e.currentTarget.value)}
+        placeholder="Filter name…"
+        detectedTag={nameFilterPending ? 'Filtering…' : undefined}
+        aria-label="Filter zones by name"
+      />
+      <MembershipSortMenu
+        modes={['name']}
+        disabled={filterActive || savingOrder || !zones.length}
+        onSort={() => void sortZonesAlphabetically()}
+        label="Sort zones…"
+      />
+    </div>
+  );
+
   const listContent = (
     <>
-      <div className={classes.toolbarRow}>
-        <SearchInput
-          value={nameFilterInput}
-          onChange={(e) => setNameFilter(e.currentTarget.value)}
-          placeholder="Filter name…"
-          detectedTag={nameFilterPending ? 'Filtering…' : undefined}
-          aria-label="Filter zones by name"
-        />
-        <MembershipSortMenu
-          modes={['name']}
-          disabled={filterActive || savingOrder || !zones.length}
-          onSort={() => void sortZonesAlphabetically()}
-          label="Sort zones…"
-        />
-      </div>
       {filterActive ? (
         <p className={classes.warning}>
           Reorder is locked while searching. Clear the filter to rearrange export order.
@@ -243,25 +246,33 @@ export default function ZonesListPage() {
   const countLabel =
     zones.length === 1 ? '1 zone in this project' : `${zones.length} zones in this project`;
 
+  const zoneWord = (n: number) => `${n} zone${n === 1 ? '' : 's'}`;
+  const controlsSummary = filterActive
+    ? `${filtered.length} of ${zoneWord(zones.length)} · 1 filter`
+    : zoneWord(zones.length);
+
   return (
     <DesignSystemV2Provider>
       <ListMapLayout
         desktopClassName={pageClasses.page}
         title="Zones"
         head={<LibraryInventoryHeader title="Zones" subtitle={countLabel} actions={listActions} />}
+        controls={listControls}
         list={listContent}
         map={mapContent}
         mapExtras={mapExtras}
         mapNote={mapNote}
         sheetLabel="Zones"
-        initialSnap={channels.length > mapSkipped.length ? 'half' : 'full'}
-        sheetHeader={
-          <div className={classes.sheetSummary}>
-            <strong>
-              {zones.length} zone{zones.length === 1 ? '' : 's'}
-            </strong>
-            <span>{channels.length - mapSkipped.length} channels on map</span>
-          </div>
+        controlsSummary={controlsSummary}
+        controlsAction={
+          <Button
+            size="sm"
+            variant="primary"
+            leftSection={<IconPlus size={14} stroke={ICON_STROKE} />}
+            onClick={() => navigate('/library/zones/new')}
+          >
+            New
+          </Button>
         }
       />
     </DesignSystemV2Provider>

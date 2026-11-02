@@ -1,6 +1,7 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Anchor, MultiSelect } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { IconSearch } from '@tabler/icons-react';
 import type { Channel } from '@core/models/library.ts';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
@@ -20,6 +21,7 @@ import {
 } from '@integrations/repeaters/index.ts';
 import { useRepeaterDirectorySearch } from '../../hooks/useRepeaterDirectorySearch.ts';
 import { useMapSettings } from '../../hooks/useMapSettings.ts';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { isSimplex } from '../../lib/channels.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { isOperationalStatus, queryKindHint } from '../../lib/repeaters.ts';
@@ -43,6 +45,7 @@ import {
   Checkbox,
   DataTable,
   FormField,
+  DesignSystemV2Provider,
   ListMapLayout,
   ModalShell,
   Panel,
@@ -51,6 +54,7 @@ import {
   TextInput,
   ToggleSwitch,
   type DataTableColumn,
+  type MapSheetSnap,
 } from '../v2/index.ts';
 import { findChannelByCallsign } from './findChannelByCallsign.ts';
 import { buildRepeaterDirectoryRows } from './repeaterDirectoryRows.ts';
@@ -165,11 +169,18 @@ export default function RepeaterDirectorySearch({
   const [tgLookupProgress, setTgLookupProgress] =
     useState<BrandMeisterTalkGroupLookupProgress | null>(null);
   const [locationHint, setLocationHint] = useState<string | null>(null);
+  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY, false, {
+    getInitialValueInEffect: false,
+  });
+  // The form opens at full height; once results arrive it collapses so the results get the screen.
+  const [controlsSnap, setControlsSnap] = useState<MapSheetSnap>('full');
 
   const isUk = source === 'ukrepeater';
   const isBrandmeister = source === 'brandmeister';
   const isRepeaterbook = source === 'repeaterbook';
   const sourceMeta = SOURCE_META[source];
+  // BrandMeister listings carry no coordinates, so there is no map to swipe to.
+  const swipeMobile = isMobile && source !== 'brandmeister';
   const capabilities = repeaterSearchCapabilities(source);
   const useTitleCaseNames = capabilities.titleCaseNames && search.titleCaseNames;
 
@@ -195,6 +206,14 @@ export default function RepeaterDirectorySearch({
     () => buildRepeaterDirectoryRows(search.listings, library.channels, listingKey),
     [search.listings, library.channels],
   );
+
+  const hadResults = useRef(false);
+  useEffect(() => {
+    if (rows.length > 0 && !hadResults.current) {
+      hadResults.current = true;
+      setControlsSnap('peek');
+    }
+  }, [rows.length]);
 
   const mapChannels = useMemo(() => {
     if (!activeProjectId || search.listings.length === 0) return [];
@@ -506,6 +525,300 @@ export default function RepeaterDirectorySearch({
       ? (library.channels.find((c) => c.id === updateChannel.id) ?? updateChannel)
       : updateChannel;
 
+  const searchFormBody = (
+    <>
+      {isRepeaterbook && !search.hasToken ? (
+        <CredentialMissingNotice guide={REPEATERBOOK_TOKEN_GUIDE} action="Searching RepeaterBook" />
+      ) : null}
+
+      {capabilities.regionSelector ? (
+        <div className={pageClasses.filterGrid}>
+          <FormField label="Region" className={pageClasses.filterField}>
+            <SegmentedControl
+              options={REGION_OPTIONS}
+              value={search.region}
+              onChange={(value) => search.setRegion(value)}
+            />
+          </FormField>
+          {search.region === 'na' ? (
+            <FormField label="State ID (FIPS)" className={pageClasses.filterField}>
+              <TextInput
+                variant="plain"
+                placeholder="e.g. 06 for California"
+                value={search.stateId}
+                onChange={(e) => search.setStateId(e.currentTarget.value)}
+              />
+            </FormField>
+          ) : null}
+          {capabilities.countryAutocomplete ? (
+            <CountryComboboxField
+              label={search.region === 'row' ? 'Country' : 'Country (optional)'}
+              value={search.country}
+              onChange={search.setCountry}
+              placeholder={
+                search.region === 'row'
+                  ? 'Start typing — e.g. United Kingdom'
+                  : 'United States or Canada'
+              }
+              className={pageClasses.filterFieldWide}
+            />
+          ) : (
+            <FormField
+              label={search.region === 'row' ? 'Country' : 'Country (optional)'}
+              className={pageClasses.filterFieldWide}
+            >
+              <TextInput
+                variant="plain"
+                placeholder={
+                  search.region === 'row' ? 'e.g. Switzerland' : 'United States or Canada'
+                }
+                value={search.country}
+                onChange={(e) => search.setCountry(e.currentTarget.value)}
+              />
+            </FormField>
+          )}
+        </div>
+      ) : null}
+
+      {locationHint ? <p className={pageClasses.attribution}>{locationHint}</p> : null}
+
+      {capabilities.locatorFilter ? (
+        <FormField
+          label="Locator filter"
+          hint="Client-side Maidenhead prefix filter (e.g. JO22) to narrow large country result sets."
+          className={pageClasses.filterField}
+        >
+          <TextInput
+            variant="plain"
+            placeholder="e.g. JO22"
+            value={search.locatorFilter}
+            onChange={(e) => search.setLocatorFilter(e.currentTarget.value.toUpperCase())}
+          />
+        </FormField>
+      ) : null}
+
+      <div className={pageClasses.filterGrid}>
+        <FormField label="Search" className={pageClasses.filterFieldWide}>
+          <TextInput
+            variant="plain"
+            placeholder={
+              capabilities.unifiedQuery
+                ? 'Callsign, locator, or town'
+                : source === 'irts'
+                  ? 'Callsign or location (optional)'
+                  : isRepeaterbook
+                    ? 'Callsign (optional; % wildcards supported)'
+                    : 'e.g. GB3RF'
+            }
+            value={search.query}
+            onChange={(e) => search.setQuery(e.currentTarget.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void search.search();
+            }}
+          />
+        </FormField>
+        {capabilities.bandFilter ? (
+          <FormField label="Band filter" className={pageClasses.filterField}>
+            <MultiSelect
+              placeholder="Any band"
+              data={BAND_OPTIONS}
+              value={search.bandFilter}
+              onChange={search.setBandFilter}
+              clearable
+              variant="unstyled"
+            />
+          </FormField>
+        ) : null}
+        {capabilities.geometryFilter ? (
+          <FormField label="Geometry" className={pageClasses.filterField}>
+            <SegmentedControl
+              options={GEOMETRY_FILTER_OPTIONS}
+              value={search.geometryFilter}
+              onChange={(value) => search.setGeometryFilter(value)}
+            />
+          </FormField>
+        ) : null}
+        {capabilities.modeFilter ? (
+          <FormField label="Mode filter" className={pageClasses.filterField}>
+            <MultiSelect
+              placeholder="Any mode"
+              data={UK_MODE_FILTER_OPTIONS}
+              value={search.modeFilter}
+              onChange={search.setModeFilter}
+              clearable
+              variant="unstyled"
+            />
+          </FormField>
+        ) : null}
+      </div>
+
+      <div className={pageClasses.filterActions}>
+        {capabilities.operationalOnly ? (
+          <ToggleSwitch
+            label="Operational only"
+            checked={search.operationalOnly}
+            onChange={search.setOperationalOnly}
+          />
+        ) : null}
+        {capabilities.titleCaseNames ? (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <Checkbox
+              checked={search.titleCaseNames}
+              onCheckedChange={search.setTitleCaseNames}
+              aria-label="Title case names"
+            />
+            Title case names
+          </label>
+        ) : null}
+        {isBrandmeister ? (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <Checkbox
+              checked={importTalkGroups}
+              onCheckedChange={setImportTalkGroups}
+              aria-label="Import talk groups and RX group list"
+            />
+            Import talk groups and RX group list
+          </label>
+        ) : null}
+        {capabilities.useMyLocation ? (
+          <UseMyLocationButton onLocation={(lat, lon) => void handleUseMyLocation(lat, lon)} />
+        ) : null}
+        <Button
+          leftSection={<IconSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+          onClick={() => void search.search()}
+          loading={search.loading}
+          disabled={isRepeaterbook && !search.hasToken}
+        >
+          Search
+        </Button>
+      </div>
+
+      {kindHint && !search.error ? <p className={pageClasses.attribution}>{kindHint}</p> : null}
+
+      {search.error ? (
+        <StatusBanner tone="warning">
+          {search.error}{' '}
+          <Anchor href={sourceMeta.url} target="_blank" rel="noopener noreferrer">
+            {sourceMeta.label}
+          </Anchor>
+        </StatusBanner>
+      ) : null}
+
+      {addMessage ? <StatusBanner tone="success">{addMessage}</StatusBanner> : null}
+    </>
+  );
+
+  const attribution = (
+    <p className={pageClasses.attribution}>
+      Data from{' '}
+      <a href={sourceMeta.url} target="_blank" rel="noopener noreferrer">
+        {sourceMeta.label}
+      </a>
+      {sourceMeta.attributionSuffix}
+    </p>
+  );
+
+  const updateDialogs = (
+    <>
+      {dialogChannel && updateListing ? (
+        <RepeaterListingUpdateDialog
+          channel={dialogChannel}
+          listing={updateListing}
+          mapOptions={mapOptions}
+          opened={updateOpen}
+          onClose={() => setUpdateOpen(false)}
+          onApplyAndSave={() => undefined}
+        />
+      ) : null}
+
+      <ModalShell
+        open={Boolean(tgLookupProgress)}
+        onClose={() => undefined}
+        title="Loading BrandMeister talk groups"
+        dismissible={false}
+      >
+        <BrandMeisterTalkGroupLookupProgressBar progress={tgLookupProgress} />
+      </ModalShell>
+    </>
+  );
+
+  // Mobile: search form in the controls sheet, results as list | map swipe panes (full-bleed route).
+  if (swipeMobile) {
+    const resultCount = rows.length;
+    return (
+      <DesignSystemV2Provider>
+        <ListMapLayout
+          title={title}
+          sheetLabel="Search"
+          controlsSnap={controlsSnap}
+          onControlsSnapChange={setControlsSnap}
+          controlsSummary={
+            resultCount > 0
+              ? `${resultCount} result${resultCount === 1 ? '' : 's'}${
+                  selectedKeys.length > 0 ? ` · ${selectedKeys.length} selected` : ''
+                }`
+              : `Search ${sourceMeta.label}`
+          }
+          controlsAction={
+            selectedKeys.length > 0 ? (
+              <Button size="sm" loading={adding} onClick={() => void handleAddSelected()}>
+                Add ({selectedKeys.length})
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                leftSection={<IconSearch size={14} stroke={ICON_STROKE} />}
+                loading={search.loading}
+                disabled={isRepeaterbook && !search.hasToken}
+                onClick={() => void search.search()}
+              >
+                Search
+              </Button>
+            )
+          }
+          head={<p className={pageClasses.attribution}>{description}</p>}
+          controls={
+            <>
+              {searchFormBody}
+              {attribution}
+              <Button variant="secondary" onClick={() => navigate('/library/channels')}>
+                Back to library
+              </Button>
+            </>
+          }
+          list={
+            rows.length > 0 ? (
+              resultsTable
+            ) : (
+              <p className={pageClasses.attribution}>
+                {search.loading
+                  ? 'Searching…'
+                  : 'Results appear here. Open Search below to run a query.'}
+              </p>
+            )
+          }
+          map={
+            <CodeplugMap
+              channels={mapChannels}
+              zones={[]}
+              allChannels={mapChannels}
+              height="100%"
+            />
+          }
+          mapNote={
+            mapSkippedCount > 0 ? (
+              <p className={pageClasses.attribution}>
+                {mapSkippedCount} listing{mapSkippedCount === 1 ? '' : 's'} without coordinates not
+                shown on map.
+              </p>
+            ) : undefined
+          }
+        />
+        {updateDialogs}
+      </DesignSystemV2Provider>
+    );
+  }
+
   return (
     <DirectoryIngestPage
       crumb="Channels"
@@ -519,187 +832,7 @@ export default function RepeaterDirectorySearch({
       }
     >
       <Panel title="Search" sub={`Query ${sourceMeta.label} and add matches to your library.`}>
-        {isRepeaterbook && !search.hasToken ? (
-          <CredentialMissingNotice
-            guide={REPEATERBOOK_TOKEN_GUIDE}
-            action="Searching RepeaterBook"
-          />
-        ) : null}
-
-        {capabilities.regionSelector ? (
-          <div className={pageClasses.filterGrid}>
-            <FormField label="Region" className={pageClasses.filterField}>
-              <SegmentedControl
-                options={REGION_OPTIONS}
-                value={search.region}
-                onChange={(value) => search.setRegion(value)}
-              />
-            </FormField>
-            {search.region === 'na' ? (
-              <FormField label="State ID (FIPS)" className={pageClasses.filterField}>
-                <TextInput
-                  variant="plain"
-                  placeholder="e.g. 06 for California"
-                  value={search.stateId}
-                  onChange={(e) => search.setStateId(e.currentTarget.value)}
-                />
-              </FormField>
-            ) : null}
-            {capabilities.countryAutocomplete ? (
-              <CountryComboboxField
-                label={search.region === 'row' ? 'Country' : 'Country (optional)'}
-                value={search.country}
-                onChange={search.setCountry}
-                placeholder={
-                  search.region === 'row'
-                    ? 'Start typing — e.g. United Kingdom'
-                    : 'United States or Canada'
-                }
-                className={pageClasses.filterFieldWide}
-              />
-            ) : (
-              <FormField
-                label={search.region === 'row' ? 'Country' : 'Country (optional)'}
-                className={pageClasses.filterFieldWide}
-              >
-                <TextInput
-                  variant="plain"
-                  placeholder={
-                    search.region === 'row' ? 'e.g. Switzerland' : 'United States or Canada'
-                  }
-                  value={search.country}
-                  onChange={(e) => search.setCountry(e.currentTarget.value)}
-                />
-              </FormField>
-            )}
-          </div>
-        ) : null}
-
-        {locationHint ? <p className={pageClasses.attribution}>{locationHint}</p> : null}
-
-        {capabilities.locatorFilter ? (
-          <FormField
-            label="Locator filter"
-            hint="Client-side Maidenhead prefix filter (e.g. JO22) to narrow large country result sets."
-            className={pageClasses.filterField}
-          >
-            <TextInput
-              variant="plain"
-              placeholder="e.g. JO22"
-              value={search.locatorFilter}
-              onChange={(e) => search.setLocatorFilter(e.currentTarget.value.toUpperCase())}
-            />
-          </FormField>
-        ) : null}
-
-        <div className={pageClasses.filterGrid}>
-          <FormField label="Search" className={pageClasses.filterFieldWide}>
-            <TextInput
-              variant="plain"
-              placeholder={
-                capabilities.unifiedQuery
-                  ? 'Callsign, locator, or town'
-                  : source === 'irts'
-                    ? 'Callsign or location (optional)'
-                    : isRepeaterbook
-                      ? 'Callsign (optional; % wildcards supported)'
-                      : 'e.g. GB3RF'
-              }
-              value={search.query}
-              onChange={(e) => search.setQuery(e.currentTarget.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void search.search();
-              }}
-            />
-          </FormField>
-          {capabilities.bandFilter ? (
-            <FormField label="Band filter" className={pageClasses.filterField}>
-              <MultiSelect
-                placeholder="Any band"
-                data={BAND_OPTIONS}
-                value={search.bandFilter}
-                onChange={search.setBandFilter}
-                clearable
-                variant="unstyled"
-              />
-            </FormField>
-          ) : null}
-          {capabilities.geometryFilter ? (
-            <FormField label="Geometry" className={pageClasses.filterField}>
-              <SegmentedControl
-                options={GEOMETRY_FILTER_OPTIONS}
-                value={search.geometryFilter}
-                onChange={(value) => search.setGeometryFilter(value)}
-              />
-            </FormField>
-          ) : null}
-          {capabilities.modeFilter ? (
-            <FormField label="Mode filter" className={pageClasses.filterField}>
-              <MultiSelect
-                placeholder="Any mode"
-                data={UK_MODE_FILTER_OPTIONS}
-                value={search.modeFilter}
-                onChange={search.setModeFilter}
-                clearable
-                variant="unstyled"
-              />
-            </FormField>
-          ) : null}
-        </div>
-
-        <div className={pageClasses.filterActions}>
-          {capabilities.operationalOnly ? (
-            <ToggleSwitch
-              label="Operational only"
-              checked={search.operationalOnly}
-              onChange={search.setOperationalOnly}
-            />
-          ) : null}
-          {capabilities.titleCaseNames ? (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-              <Checkbox
-                checked={search.titleCaseNames}
-                onCheckedChange={search.setTitleCaseNames}
-                aria-label="Title case names"
-              />
-              Title case names
-            </label>
-          ) : null}
-          {isBrandmeister ? (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-              <Checkbox
-                checked={importTalkGroups}
-                onCheckedChange={setImportTalkGroups}
-                aria-label="Import talk groups and RX group list"
-              />
-              Import talk groups and RX group list
-            </label>
-          ) : null}
-          {capabilities.useMyLocation ? (
-            <UseMyLocationButton onLocation={(lat, lon) => void handleUseMyLocation(lat, lon)} />
-          ) : null}
-          <Button
-            leftSection={<IconSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-            onClick={() => void search.search()}
-            loading={search.loading}
-            disabled={isRepeaterbook && !search.hasToken}
-          >
-            Search
-          </Button>
-        </div>
-
-        {kindHint && !search.error ? <p className={pageClasses.attribution}>{kindHint}</p> : null}
-
-        {search.error ? (
-          <StatusBanner tone="warning">
-            {search.error}{' '}
-            <Anchor href={sourceMeta.url} target="_blank" rel="noopener noreferrer">
-              {sourceMeta.label}
-            </Anchor>
-          </StatusBanner>
-        ) : null}
-
-        {addMessage ? <StatusBanner tone="success">{addMessage}</StatusBanner> : null}
+        {searchFormBody}
       </Panel>
 
       {rows.length > 0 ? (
@@ -708,7 +841,6 @@ export default function RepeaterDirectorySearch({
             resultsTable
           ) : (
             <ListMapLayout
-              mobile="stack"
               title="Results"
               list={resultsTable}
               map={
@@ -732,33 +864,9 @@ export default function RepeaterDirectorySearch({
         </Panel>
       ) : null}
 
-      <p className={pageClasses.attribution}>
-        Data from{' '}
-        <a href={sourceMeta.url} target="_blank" rel="noopener noreferrer">
-          {sourceMeta.label}
-        </a>
-        {sourceMeta.attributionSuffix}
-      </p>
+      {attribution}
 
-      {dialogChannel && updateListing ? (
-        <RepeaterListingUpdateDialog
-          channel={dialogChannel}
-          listing={updateListing}
-          mapOptions={mapOptions}
-          opened={updateOpen}
-          onClose={() => setUpdateOpen(false)}
-          onApplyAndSave={() => undefined}
-        />
-      ) : null}
-
-      <ModalShell
-        open={Boolean(tgLookupProgress)}
-        onClose={() => undefined}
-        title="Loading BrandMeister talk groups"
-        dismissible={false}
-      >
-        <BrandMeisterTalkGroupLookupProgressBar progress={tgLookupProgress} />
-      </ModalShell>
+      {updateDialogs}
     </DirectoryIngestPage>
   );
 }
