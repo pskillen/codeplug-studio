@@ -28,6 +28,14 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
     usedIn: ['Add from ukrepeater.net', 'Channel editor repeater verify'],
   },
   {
+    id: 'meshflow',
+    name: 'Meshflow',
+    description:
+      'Meshtastic infrastructure node positions (routers and repeaters) from the Meshflow mesh monitoring service. No login; your search point is rounded to about 1 km before it is sent.',
+    homeUrl: 'https://meshflow.pskillen.xyz/',
+    usedIn: ['Tools → Nearby repeaters (Meshtastic source)'],
+  },
+  {
     id: 'brandmeister',
     name: 'BrandMeister',
     description: 'DMR repeater and talk-group directory for BrandMeister-connected repeaters.',

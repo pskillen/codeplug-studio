@@ -3,15 +3,52 @@ import { channelHasGeolocation, channelModes } from '@core/domain/mapProjection.
 import type { GeoPoint } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import type { MeshtasticInfrastructureNode } from '@integrations/meshflow/index.ts';
 import type { RepeaterListing } from '@integrations/repeaters/index.ts';
 import { findChannelByCallsign } from '../components/repeaters/findChannelByCallsign.ts';
+import type { ChannelMode as DisplayMode } from './channelModes.ts';
 import { isOperationalStatus } from './repeaters.ts';
 
-export type NearbySource = 'ukrepeater' | 'library';
+export type NearbySource = 'ukrepeater' | 'library' | 'meshtastic';
 
-export const NEARBY_SOURCES: readonly NearbySource[] = ['ukrepeater', 'library'];
+export const NEARBY_SOURCES: readonly NearbySource[] = ['ukrepeater', 'library', 'meshtastic'];
 
-/** One row in the Nearby repeaters list, from a directory listing or a library channel. */
+export const NEARBY_SOURCE_LABELS: Record<NearbySource, string> = {
+  ukrepeater: 'ukrepeater.net',
+  library: 'My library',
+  meshtastic: 'Meshtastic',
+};
+
+/**
+ * Compact label for the mobile filter chip. "All" means every source this user can pick: the
+ * library source needs an open project.
+ */
+export function nearbySourcesSummary(
+  allSources: readonly NearbySource[],
+  hasProject: boolean,
+): string {
+  const sources = hasProject ? allSources : allSources.filter((s) => s !== 'library');
+  if (sources.length === 0) return 'no sources';
+  const available = hasProject ? NEARBY_SOURCES.length : NEARBY_SOURCES.length - 1;
+  if (sources.length >= available) return 'all sources';
+  if (sources.length === 1) return NEARBY_SOURCE_LABELS[sources[0]];
+  return `${sources.length} sources`;
+}
+
+/** "heard 3 h ago" for a last-heard ISO timestamp; '' when unknown. A future time (clock skew) counts as now. */
+export function formatHeardAgo(iso: string | null, now: number): string {
+  if (!iso) return '';
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return '';
+  const minutes = Math.floor((now - t) / 60_000);
+  if (minutes < 1) return 'heard just now';
+  if (minutes < 60) return `heard ${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return `heard ${hours} h ago`;
+  return `heard ${Math.floor(hours / 24)} d ago`;
+}
+
+/** One row in the Nearby repeaters list, from a directory listing, a library channel or a mesh node. */
 export interface NearbyItem {
   key: string;
   source: NearbySource;
@@ -22,11 +59,78 @@ export interface NearbyItem {
   band: string;
   modes: ChannelMode[];
   status: string;
+  /** Short muted secondary line shown in the row meta; unset for most sources. */
+  detail?: string;
   location: GeoPoint;
   /** Directory listing, present for directory rows (what "+ Add" imports). */
   listing?: RepeaterListing;
   /** True when the open project's library already has this callsign. */
   inLibrary: boolean;
+}
+
+export const NEARBY_BAND_CHOICES: { id: string; label: string }[] = [
+  { id: '4m', label: '4m' },
+  { id: '2m', label: '2m' },
+  { id: '70cm', label: '70cm' },
+  { id: '23cm', label: '23cm' },
+];
+
+export const NEARBY_MODE_CHOICES: { id: ChannelMode; label: string }[] = [
+  { id: 'fm', label: 'FM' },
+  { id: 'dmr', label: 'DMR' },
+  { id: 'dstar', label: 'D-STAR' },
+  { id: 'ysf', label: 'YSF' },
+];
+
+export const DEFAULT_NEARBY_RADIUS_KM = 25 * 1.609344;
+const MAX_NEARBY_RADIUS_KM = 200;
+
+export interface ParsedNearbyFilters {
+  radiusKm: number;
+  sources: NearbySource[];
+  bands: string[];
+  modes: ChannelMode[];
+  operationalOnly: boolean;
+}
+
+function csvList(value: string | null): string[] {
+  return value ? value.split(',').filter(Boolean) : [];
+}
+
+/**
+ * Validate the Nearby filter params (`r s b m op`) against the page's known choices. Both URL
+ * params and hydrated stored prefs go through here, so stale stored values are cleaned the same
+ * way as a hand-edited URL. Pure: no storage access.
+ */
+export function parseNearbyFilters(
+  params: URLSearchParams,
+  opts: { hasProject: boolean },
+): ParsedNearbyFilters {
+  const r = Number(params.get('r'));
+  const radiusKm =
+    params.has('r') && Number.isFinite(r) && r > 0 && r <= MAX_NEARBY_RADIUS_KM
+      ? r
+      : DEFAULT_NEARBY_RADIUS_KM;
+  const s = params.get('s');
+  const sources: NearbySource[] =
+    s == null
+      ? opts.hasProject
+        ? ['ukrepeater', 'library']
+        : ['ukrepeater']
+      : s === 'none'
+        ? []
+        : csvList(s).filter((id): id is NearbySource =>
+            (NEARBY_SOURCES as readonly string[]).includes(id),
+          );
+  const bandIds = NEARBY_BAND_CHOICES.map((b) => b.id);
+  const modeIds = NEARBY_MODE_CHOICES.map((m) => m.id as string);
+  return {
+    radiusKm,
+    sources,
+    bands: csvList(params.get('b')).filter((id) => bandIds.includes(id)),
+    modes: csvList(params.get('m')).filter((id) => modeIds.includes(id)) as ChannelMode[],
+    operationalOnly: params.get('op') === '1',
+  };
 }
 
 export interface NearbyFilters {
@@ -54,8 +158,11 @@ export function buildNearbyItems(input: {
   listings: readonly RepeaterListing[];
   channels: readonly Channel[];
   sources: readonly NearbySource[];
+  meshtasticNodes?: readonly MeshtasticInfrastructureNode[];
+  /** Clock for "heard … ago"; defaults to now (tests pass a fixed value). */
+  now?: number;
 }): NearbyItem[] {
-  const { listings, channels, sources } = input;
+  const { listings, channels, sources, meshtasticNodes = [], now = Date.now() } = input;
   const items: NearbyItem[] = [];
   const directoryCallsigns = new Set<string>();
 
@@ -98,11 +205,43 @@ export function buildNearbyItems(input: {
       });
     }
   }
+
+  // Display-only: no listing, never in the library, and never folded with library callsigns.
+  if (sources.includes('meshtastic')) {
+    for (const node of meshtasticNodes) {
+      const callsign = node.shortName || node.nodeId;
+      items.push({
+        key: `meshtastic:${node.nodeId}`,
+        source: 'meshtastic',
+        callsign,
+        name: node.longName === callsign ? '' : node.longName,
+        rxFrequencyHz: null,
+        band: '',
+        modes: [],
+        status: '',
+        detail: [node.role, formatHeardAgo(node.lastHeardAt, now)].filter(Boolean).join(' · '),
+        location: node.location,
+        inLibrary: false,
+      });
+    }
+  }
   return items;
+}
+
+/**
+ * Colour key for a row's map marker, from the shared mode table (`channelModes.ts`): the reserved
+ * `meshtastic` colour for mesh nodes, else the row's first mode, else `other`.
+ */
+export function nearbyMarkerMode(item: NearbyItem): DisplayMode {
+  if (item.source === 'meshtastic') return 'meshtastic';
+  return item.modes[0] ?? 'other';
 }
 
 export function applyNearbyFilters(items: readonly NearbyItem[], f: NearbyFilters): NearbyItem[] {
   return items.filter((item) => {
+    // Mesh nodes have no amateur band or mode: only the Meshtastic source chip controls them
+    // (docs/features/field-tools/README.md). They have no status, so Operational keeps them too.
+    if (item.source === 'meshtastic') return true;
     if (f.bands.length > 0 && !f.bands.includes(item.band)) return false;
     if (f.modes.length > 0 && !item.modes.some((m) => f.modes.includes(m))) return false;
     if (f.operationalOnly && item.status && !isOperationalStatus(item.status)) return false;

@@ -1,8 +1,14 @@
-import { channelListPrefsKey, entityListPrefsKey, trackingDashboardPrefsKey } from './keys.ts';
+import {
+  channelListPrefsKey,
+  entityListPrefsKey,
+  nearbyPrefsKey,
+  trackingDashboardPrefsKey,
+} from './keys.ts';
 import type {
   ChannelListPrefs,
   EntityListEntity,
   EntityListPrefs,
+  NearbyPrefs,
   TrackingDashboardPrefs,
 } from './types.ts';
 
@@ -74,6 +80,43 @@ export function loadTrackingDashboardPrefs(projectId: string): TrackingDashboard
 
 export function saveTrackingDashboardPrefs(projectId: string, prefs: TrackingDashboardPrefs): void {
   writeJson(trackingDashboardPrefsKey(projectId), prefs);
+}
+
+function stringArray(v: unknown): string[] | undefined {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : undefined;
+}
+
+/** Structural clean-up of stored Nearby prefs (types only; value validation is the app's job). */
+export function sanitizeNearbyPrefs(raw: unknown): NearbyPrefs | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const r = raw as Record<string, unknown>;
+  const out: NearbyPrefs = {};
+  if (typeof r.radiusKm === 'number' && Number.isFinite(r.radiusKm) && r.radiusKm > 0) {
+    out.radiusKm = r.radiusKm;
+  }
+  const sources = stringArray(r.sources);
+  if (sources) out.sources = sources;
+  const bands = stringArray(r.bands);
+  if (bands) out.bands = bands;
+  const modes = stringArray(r.modes);
+  if (modes) out.modes = modes;
+  if (typeof r.operationalOnly === 'boolean') out.operationalOnly = r.operationalOnly;
+  return out;
+}
+
+export function loadNearbyPrefs(): NearbyPrefs | null {
+  return sanitizeNearbyPrefs(readJson<unknown>(nearbyPrefsKey()));
+}
+
+export function saveNearbyPrefs(prefs: NearbyPrefs): void {
+  writeJson(nearbyPrefsKey(), prefs);
+}
+
+export function mergeNearbyPrefs(patch: Partial<NearbyPrefs>): NearbyPrefs {
+  const current = loadNearbyPrefs() ?? {};
+  const next = { ...current, ...patch };
+  saveNearbyPrefs(next);
+  return next;
 }
 
 export function mergeTrackingDashboardPrefs(

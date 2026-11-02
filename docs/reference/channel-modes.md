@@ -9,6 +9,7 @@ Canonical reference for channel mode labels, categories, UI pill colours, and fo
 | `analog`  | Analog voice modes — show RX/TX tone fields in the edit form                |
 | `digital` | Digital voice modes — hide tone fields; DMR-only fields apply only to `dmr` |
 | `other`   | Unknown or unclassified                                                     |
+| `mesh`    | Display-only colour reserved for mesh nodes; never a channel mode           |
 
 ## Colour design
 
@@ -16,19 +17,22 @@ Canonical reference for channel mode labels, categories, UI pill colours, and fo
 
 ## Mode table
 
-| ID      | Label  | Category | Hex       | Mantine    |
-| ------- | ------ | -------- | --------- | ---------- |
-| `fm`    | FM     | analog   | `#f0c419` | `yellow.5` |
-| `am`    | AM     | analog   | `#fab005` | `yellow.6` |
-| `ssb`   | SSB    | analog   | `#fd7e14` | `orange.6` |
-| `dmr`   | DMR    | digital  | `#e03131` | `red.7`    |
-| `ysf`   | YSF    | digital  | `#339af0` | `blue.5`   |
-| `dstar` | D-STAR | digital  | `#7950f2` | `violet.6` |
-| `p25`   | P25    | digital  | `#12b886` | `teal.6`   |
-| `nxdn`  | NXDN   | digital  | `#868e96` | `gray.6`   |
-| `m17`   | M17    | digital  | `#20c997` | `teal.5`   |
-| `tetra` | Tetra  | digital  | `#6741d9` | `indigo.6` |
-| `other` | Other  | other    | `#9c36b5` | `grape.6`  |
+| ID           | Label      | Category | Hex       | Mantine    |
+| ------------ | ---------- | -------- | --------- | ---------- |
+| `fm`         | FM         | analog   | `#f0c419` | `yellow.5` |
+| `am`         | AM         | analog   | `#fab005` | `yellow.6` |
+| `ssb`        | SSB        | analog   | `#fd7e14` | `orange.6` |
+| `dmr`        | DMR        | digital  | `#e03131` | `red.7`    |
+| `ysf`        | YSF        | digital  | `#339af0` | `blue.5`   |
+| `dstar`      | D-STAR     | digital  | `#7950f2` | `violet.6` |
+| `p25`        | P25        | digital  | `#12b886` | `teal.6`   |
+| `nxdn`       | NXDN       | digital  | `#868e96` | `gray.6`   |
+| `m17`        | M17        | digital  | `#20c997` | `teal.5`   |
+| `tetra`      | Tetra      | digital  | `#6741d9` | `indigo.6` |
+| `other`      | Other      | other    | `#9c36b5` | `grape.6`  |
+| `meshtastic` | Meshtastic | mesh     | `#82c91e` | `lime.6`   |
+
+`meshtastic` reserves a colour for Meshtastic nodes on **Nearby repeaters** map markers. It is not a library mode: mode filters and pickers leave it out, and a stored `meshtastic` mode normalises to `other`.
 
 OpenGD77 `Channel Type` wire mapping (`Analogue` / `Digital` / passthrough): [opengd77/channels.md](formats/opengd77/channels.md).
 

@@ -1,0 +1,88 @@
+{
+  "results": [
+    {
+      "internal_id": "00000000-0000-4000-8000-000000000001",
+      "node_id_str": "!0000a001",
+      "long_name": "Test Hill Router",
+      "short_name": "THR",
+      "meshtastic_role": 2,
+      "meshtastic_role_label": "ROUTER",
+      "meshtastic_hw_model": "RAK4631",
+      "last_heard": "2026-11-02T11:03:17Z",
+      "latitude": 55.87,
+      "longitude": -4.24,
+      "altitude": 190,
+      "distance_km": 99.0
+    },
+    {
+      "internal_id": "00000000-0000-4000-8000-000000000002",
+      "node_id_str": "!0000a002",
+      "long_name": "Example Repeater",
+      "short_name": null,
+      "meshtastic_role": 4,
+      "meshtastic_role_label": "REPEATER",
+      "meshtastic_hw_model": "HELTEC_V3",
+      "last_heard": "2026-11-01T08:00:00Z",
+      "latitude": 55.9,
+      "longitude": -4.3,
+      "altitude": null,
+      "distance_km": 5.1
+    },
+    {
+      "internal_id": "00000000-0000-4000-8000-000000000003",
+      "node_id_str": "!0000a003",
+      "long_name": "Sample Late Router",
+      "short_name": "SLR",
+      "meshtastic_role": 11,
+      "meshtastic_role_label": "ROUTER_LATE",
+      "meshtastic_hw_model": "TBEAM",
+      "last_heard": "2026-10-30T20:15:00Z",
+      "latitude": 55.8,
+      "longitude": -4.2,
+      "altitude": 40.5,
+      "distance_km": 9.2
+    },
+    {
+      "internal_id": "00000000-0000-4000-8000-000000000004",
+      "node_id_str": "!0000a004",
+      "long_name": "No Position Node",
+      "short_name": "NPN",
+      "meshtastic_role_label": "ROUTER",
+      "last_heard": "2026-11-02T10:00:00Z",
+      "latitude": null,
+      "longitude": null,
+      "distance_km": 10.0
+    },
+    {
+      "internal_id": "00000000-0000-4000-8000-000000000005",
+      "node_id_str": "!0000a001",
+      "long_name": "Duplicate Of First",
+      "short_name": "DUP",
+      "meshtastic_role_label": "ROUTER",
+      "last_heard": "2026-11-02T10:00:00Z",
+      "latitude": 55.5,
+      "longitude": -4.0,
+      "distance_km": 40.0
+    },
+    {
+      "internal_id": "00000000-0000-4000-8000-000000000006",
+      "node_id_str": "!0000a006",
+      "long_name": "Unknown Role Node",
+      "short_name": "URN",
+      "meshtastic_role_label": "SOMETHING_NEW",
+      "last_heard": null,
+      "latitude": 55.85,
+      "longitude": -4.28,
+      "altitude": 12,
+      "distance_km": 2.0
+    }
+  ],
+  "meta": {
+    "lat": 55.86,
+    "lon": -4.25,
+    "radius_km": 25,
+    "last_heard_within_days": 30,
+    "count": 6,
+    "truncated": false
+  }
+}
