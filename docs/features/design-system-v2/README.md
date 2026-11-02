@@ -117,9 +117,6 @@ Legacy `/styleguide/v2/*` redirects to the paths above.
 
 Multi-PR epic — see:
 
-- [design-system-v2-progress.md](design-system-v2-progress.md)
-- [design-system-v2-outstanding.md](design-system-v2-outstanding.md)
-
 ## Related
 
 - Epic [#915](https://github.com/pskillen/codeplug-studio/issues/915) · Foundations [#916](https://github.com/pskillen/codeplug-studio/issues/916) · Chrome [#917](https://github.com/pskillen/codeplug-studio/issues/917) · r2 foundations gap-fill [#938](https://github.com/pskillen/codeplug-studio/issues/938) · Milestone 2 [#495](https://github.com/pskillen/codeplug-studio/issues/495)

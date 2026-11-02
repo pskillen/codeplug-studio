@@ -4,8 +4,6 @@ Tier-1 hub for **digital APRS** in Codeplug Studio — vendor-neutral library en
 
 **Tracking:** [#353](https://github.com/pskillen/codeplug-studio/issues/353) (persistence) · [#354](https://github.com/pskillen/codeplug-studio/issues/354) (UI) · [#248](https://github.com/pskillen/codeplug-studio/issues/248) (reconciliation) · Epic [#501](https://github.com/pskillen/codeplug-studio/issues/501) (supersedes M1 [#246](https://github.com/pskillen/codeplug-studio/issues/246))
 
-**Outstanding:** [aprs-model-outstanding.md](aprs-model-outstanding.md)
-
 **Components:** [AprsChannelSlotsEditor](../../../src/app/components/library/AprsChannelSlotsEditor.md) · [ChannelAprsBindingSection](../../../src/app/components/library/ChannelAprsBindingSection.md) · [AprsChannelAssignmentPanel](../../../src/app/components/library/AprsChannelAssignmentPanel.md)
 
 ---
@@ -87,6 +85,16 @@ Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
 | mk2 A1 configuration chrome (r2 #945)                                  | Shipped                                                                                                                                                                                                                                                                                                                                                                                                                                         | v2 slots `Panel`/`DataTable`/`ModalShell`/`EmptyState`; assignment matrix `SearchInput` + bulk toolbar ([#945](https://github.com/pskillen/codeplug-studio/issues/945)) |
 
 ---
+
+## Known gaps
+
+What this doesn't do yet. Delete a line when its gap is fixed.
+
+### APRS
+
+- OpenGD77 APRS export (analog named configs) — [#442](https://github.com/pskillen/codeplug-studio/issues/442)
+- Analog APRS modelling / UI — paired with [#442](https://github.com/pskillen/codeplug-studio/issues/442) / epic [#501](https://github.com/pskillen/codeplug-studio/issues/501)
+- Call Type **all-call** (wire `2`) — [#530](https://github.com/pskillen/codeplug-studio/issues/530)
 
 ## Related
 

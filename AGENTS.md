@@ -80,7 +80,7 @@ All from [`pskillen/agent-skills`](https://github.com/pskillen/agent-skills):
 - Plan from GitHub issues: `make-a-plan`. Epic-sized work: `multi-phase-plan`.
 - Ship a ticket without a plan: `/drive-by-ticket` with `#N` + title.
 - Feature documentation: `feature-docs`, plus the tiers and sidecars in `codeplug-conventions`.
-- Multi-phase progress: `delivery-tracking` (`tmp/features/<name>/PROGRESS.md`). Existing `*-progress.md` / `*-outstanding.md` pairs under `docs/` stay until their initiative ships.
+- Multi-phase progress: `delivery-tracking` (`tmp/features/<name>/PROGRESS.md`). No progress or outstanding files in `docs/`; open gaps go under the hub's _Known gaps_ with their issue link.
 
 ## Disclaimer
 

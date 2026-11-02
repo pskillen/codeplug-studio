@@ -2,7 +2,7 @@
 
 External **wire-shape** checks for CPS CSV bundles (directory or ZIP). Complements directional mapping/golden tests: this suite proves mechanical CPS rules (line endings, quoting, headers, name FKs, cardinality, required files), not semantic projection equality.
 
-**Tracking:** [#480](https://github.com/pskillen/codeplug-studio/issues/480) verifier · [#481](https://github.com/pskillen/codeplug-studio/issues/481) export smoke · [#491](https://github.com/pskillen/codeplug-studio/issues/491) granular Dorny report (parent [Epic #161](https://github.com/pskillen/codeplug-studio/issues/161)). Progress: [cps-verify-progress.md](cps-verify-progress.md).
+**Tracking:** [#480](https://github.com/pskillen/codeplug-studio/issues/480) verifier · [#481](https://github.com/pskillen/codeplug-studio/issues/481) export smoke · [#491](https://github.com/pskillen/codeplug-studio/issues/491) granular Dorny report (parent [Epic #161](https://github.com/pskillen/codeplug-studio/issues/161)). Open items: [testing known gaps](README.md#known-gaps).
 
 ## Terminology
 

@@ -8,8 +8,7 @@ Per-radio map: [anytone profiles.md](../../../reference/export-formats/anytone/p
 
 **Source:** `src/core/import-export/formats/anytone/`
 
-**Outstanding:** [anytone-outstanding.md](../anytone-outstanding.md)  
-**CSV reconciliation ([#297](https://github.com/pskillen/codeplug-studio/issues/297)):** [gaps](csv-reconciliation-gaps.md) · [outstanding](csv-reconciliation-outstanding.md)
+**CSV reconciliation ([#297](https://github.com/pskillen/codeplug-studio/issues/297)):** [gaps](csv-reconciliation-gaps.md) · [known gaps](#known-gaps)
 
 ## Implementation status
 
@@ -84,6 +83,31 @@ Library CRUD does **not** enforce radio caps. Export adapters warn or truncate a
 ## Operator lifecycle
 
 Create an `anytone-at-d890uv` build, curate library zones and **scan lists** (`/library/scan-lists`), assign per-channel scan lists on the build **Channels** page, optionally enable **zone-derived scan lists** per zone on **Zones** + Export toggle ([#318](https://github.com/pskillen/codeplug-studio/issues/318)), optionally enable **m×n channel expansion** and **scratch channels** on Export ([#305](https://github.com/pskillen/codeplug-studio/issues/305), [#325](https://github.com/pskillen/codeplug-studio/issues/325)) — see [export-projections.md](export-projections.md), preview wire rows, and export a CPS CSV ZIP from the build Export page — no DM32-style **Default scan behaviour** control ([#258](https://github.com/pskillen/codeplug-studio/issues/258)). Exported CSV files use **Windows (CRLF) line endings** for AT-D890UV CPS import ([#291](https://github.com/pskillen/codeplug-studio/issues/291)). Cross-file name consistency on export ([#292](https://github.com/pskillen/codeplug-studio/issues/292)). See [operator lifecycle](../workflows/operator-lifecycle.md) and [library scan lists](../../library/scan-lists.md).
+
+## Known gaps
+
+What this doesn't do yet. Delete a line when its gap is fixed.
+
+### Anytone CPS CSV
+
+- Export / wire: [#393](https://github.com/pskillen/codeplug-studio/issues/393) — ScanList Scan Mode readiness
+- Export / wire: [#395](https://github.com/pskillen/codeplug-studio/issues/395) — Slot Suit export
+- Export / wire: [#418](https://github.com/pskillen/codeplug-studio/issues/418) — exclude FM broadcast from `DMRZone.CSV`
+- Export / wire: [#484](https://github.com/pskillen/codeplug-studio/issues/484) — omit AM airband from `ScanList.CSV`
+- Export / wire: [#400](https://github.com/pskillen/codeplug-studio/issues/400) — NXDN wire elicitation (under [#247](https://github.com/pskillen/codeplug-studio/issues/247))
+- Export / wire: NXDN multi-protocol build / export — after [#400](https://github.com/pskillen/codeplug-studio/issues/400); see [#233](https://github.com/pskillen/codeplug-studio/issues/233) notes
+- Export / wire: [#531](https://github.com/pskillen/codeplug-studio/issues/531) — remaining CSV elicitation (Digital Duplex, TX-from-RGL)
+- Import: [#238](https://github.com/pskillen/codeplug-studio/issues/238)–[#242](https://github.com/pskillen/codeplug-studio/issues/242) — import parse / adapter / UI / tests / docs
+- Cross-cutting (not Anytone-only): [#388](https://github.com/pskillen/codeplug-studio/issues/388) — library defaults / override cascade ([#147](https://github.com/pskillen/codeplug-studio/issues/147))
+- Cross-cutting (not Anytone-only): [#397](https://github.com/pskillen/codeplug-studio/issues/397) — operator radio ID list
+- Cross-cutting (not Anytone-only): [#399](https://github.com/pskillen/codeplug-studio/issues/399) — analog compander ([#498](https://github.com/pskillen/codeplug-studio/issues/498))
+- Cross-cutting (not Anytone-only): [#389](https://github.com/pskillen/codeplug-studio/issues/389) — analog FM ident tones ([#497](https://github.com/pskillen/codeplug-studio/issues/497))
+- Cross-cutting (not Anytone-only): [#390](https://github.com/pskillen/codeplug-studio/issues/390) — DMR roaming ([#497](https://github.com/pskillen/codeplug-studio/issues/497))
+
+### Anytone CSV reconciliation
+
+- [#531](https://github.com/pskillen/codeplug-studio/issues/531) — Digital Duplex elicitation + TX contact from RGL question
+- [#393](https://github.com/pskillen/codeplug-studio/issues/393) — Scan Mode modelling (timing defaults already `5.0` via [#402](https://github.com/pskillen/codeplug-studio/issues/402))
 
 ## Related
 

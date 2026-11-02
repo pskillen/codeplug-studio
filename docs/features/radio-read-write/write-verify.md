@@ -82,5 +82,4 @@ Tier-3 protocol notes: each radio's `protocol.md` under `docs/reference/radios/`
 
 ## Related
 
-- [write-verify-platform-progress.md](write-verify-platform-progress.md)
 - [WriteVerifyReport.md](../../../src/app/components/builds/WriteVerifyReport.md)

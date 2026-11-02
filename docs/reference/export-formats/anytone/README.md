@@ -75,7 +75,7 @@ Evidence from wire layout — code change deferred to scaffold ticket:
 | _(not)_ `multiTalkGroupPerChannel` | Native `DMRReceiveGroupCallList.CSV`                                                               |
 | _(not)_ `mxnChannelExpansion`      | Single TG + RGL per channel row in sample                                                          |
 
-Extended banks: AM air / broadcast FM / APRS export shipped when applicable; NXDN deferred — see [anytone-outstanding.md](../../../features/import-export/anytone-outstanding.md).
+Extended banks: AM air / broadcast FM / APRS export shipped when applicable; NXDN deferred — see [Anytone known gaps](../../../features/import-export/anytone/README.md#known-gaps).
 
 ## Classification (`detectKind` — target for import #229)
 

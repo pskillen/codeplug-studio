@@ -494,7 +494,7 @@ Document and test known non-round-trip behaviour in tier-3 reference + format be
 - [ ] Columns genuinely not in the internal model — listed explicitly, not faked with stash
 - [ ] Nested zones denormalise to flat wire lists — nesting is Studio-only
 - [ ] `Zone.omitFromExport` — Studio export rule, not a CPS import concept
-- [ ] File open gaps as GitHub issues under the format epic; optionally list them in `docs/features/import-export/<format>-outstanding.md` (each checkbox must link an issue — see the `delivery-tracking` skill)
+- [ ] File open gaps as GitHub issues under the format epic; list each under the format hub's _Known gaps_ with its issue link
 
 ---
 

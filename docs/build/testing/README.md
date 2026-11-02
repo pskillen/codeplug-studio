@@ -97,6 +97,18 @@ Docs-only PRs: `format:check` + link audit is sufficient.
 | [component.md](component.md)                 | RTL patterns — **status: planned**                                                                             |
 | [e2e.md](e2e.md)                             | Playwright scope — **status: planned**                                                                         |
 
+## Known gaps
+
+What this doesn't do yet. Delete a line when its gap is fixed.
+
+### CPS wire verify
+
+- [#482](https://github.com/pskillen/codeplug-studio/issues/482) — content projection suite
+- [#484](https://github.com/pskillen/codeplug-studio/issues/484) — AM-in-ScanList verifier rule (with Anytone export fix)
+- Extra profile plugin: OpenGD77 MD9600 — layout ready; file under [#161](https://github.com/pskillen/codeplug-studio/issues/161) when scheduled (CHIRP `chirp-uv21` / `chirp-rt95` cps-verify shipped)
+- Stretch: CI check that every enforced rule cites a tier-3 path
+- Optional: cull baked `cps-verify/fixtures/**/good` once [#482](https://github.com/pskillen/codeplug-studio/issues/482) is trusted
+
 ## Related
 
 | Resource             | Link                                                                                         |

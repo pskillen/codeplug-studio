@@ -93,8 +93,6 @@ The **RadioFoundry** DM-32UV target (`baofeng-dm32uv-radiofoundry`) uses zone gr
 | [wire-name-composition.md](wire-name-composition.md)                                    | Traits → fields for auto-generated wire names      |
 | [channel-eligibility.md](channel-eligibility.md)                                        | RF mode/band filtering on build lists + export     |
 | [zone-grouping.md](zone-grouping.md)                                                    | Build zone layout editor                           |
-| [radio-build-egress-progress.md](radio-build-egress-progress.md)                        | #654 execution log (shipped)                       |
-| [radio-build-egress-outstanding.md](radio-build-egress-outstanding.md)                  | #654 discovered debt                               |
 | [`BuildSwitcher.md`](../../../src/app/components/builds/BuildSwitcher/BuildSwitcher.md) | Secondary-nav build identity + switcher            |
 
 ## Persistence
