@@ -21,13 +21,17 @@
   transition: none;
 }
 
-.handleZone {
+/* Handle and header: the whole strip is the drag target. */
+.grab {
   flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.handleZone {
   display: flex;
   justify-content: center;
   padding: 10px 0 8px;
-  cursor: grab;
-  touch-action: none;
   outline: none;
 }
 
@@ -43,7 +47,6 @@
 }
 
 .header {
-  flex-shrink: 0;
   padding: 0 var(--dsv2-page-padding-x, 16px) 10px;
 }
 

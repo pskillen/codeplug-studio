@@ -14,7 +14,7 @@ Lets a map-first page keep its list, controls or readout in a sheet the user can
 | `onSnapChange`   | `(snap) => void`             | Fired after a drag settles, a handle tap or an arrow key                                   |
 | `header`         | `ReactNode`                  | Always visible under the handle (fills the peek height)                                    |
 | `children`       | `ReactNode`                  | Scrollable body, visible from `half` up                                                    |
-| `peekPx`         | `number`                     | Height at `peek` in px (default 148)                                                       |
+| `peekPx`         | `number`                     | Height at `peek` in px (default: measured handle + header)                                 |
 | `fullTopInsetPx` | `number`                     | Space left above the sheet at `full` (default 84, for map chips)                           |
 | `label`          | `string`                     | Accessible name (default `Results`)                                                        |
 | `compact`        | `boolean`                    | Slim grab area and one-line header, for a control bar (use with a small `peekPx`, e.g. 56) |
@@ -45,7 +45,7 @@ const [snap, setSnap] = useState<MapSheetSnap>('half');
 ## Behaviour
 
 - The parent must be `position: relative` with a definite height; the sheet is absolutely positioned on its bottom edge and measures the parent with a `ResizeObserver`.
-- Dragging the handle follows the pointer, then settles on the nearest snap (a fast flick moves one snap further). Tapping the handle cycles peek, half, full. The handle is a keyboard-operable slider (ArrowUp / ArrowDown, Enter).
+- Dragging the handle or the header follows the pointer (a drag that starts on a header button moves the sheet instead of clicking it), then settles on the nearest snap (a fast flick moves one snap further). Tapping the handle cycles peek, half, full; a tap on the header goes to whatever was tapped. The handle is a keyboard-operable slider (ArrowUp / ArrowDown, Enter).
 - Snap maths lives in `mapSheetSnap.ts` (`snapHeights`, `snapAfterDrag`, `nextSnap`, `snapForView`, `viewForSnap`) and is unit tested without the DOM.
 - At `peek` only the handle and header show; the body is hidden.
 - No third-party dependency.

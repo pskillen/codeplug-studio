@@ -20,6 +20,16 @@ import classes from './MapSheet.module.css';
 
 export type { MapSheetSnap } from './mapSheetSnap.ts';
 
+/** Swallow the click a browser fires after a drag that ended over a header button. */
+function suppressNextClick() {
+  const stop = (ev: Event) => {
+    ev.stopPropagation();
+    ev.preventDefault();
+  };
+  window.addEventListener('click', stop, { capture: true, once: true });
+  setTimeout(() => window.removeEventListener('click', stop, { capture: true }), 0);
+}
+
 export interface MapSheetProps {
   /** Current snap point (controlled). */
   snap: MapSheetSnap;
@@ -28,7 +38,7 @@ export interface MapSheetProps {
   header?: ReactNode;
   /** Scrollable body; visible from `half` upward. */
   children?: ReactNode;
-  /** Sheet height at `peek` in px (default 148). */
+  /** Sheet height at `peek` in px. Default: the measured height of the handle and header. */
   peekPx?: number;
   /** Room left above the sheet at `full` in px (default 84). */
   fullTopInsetPx?: number;
@@ -46,14 +56,14 @@ export interface MapSheetProps {
 /**
  * Bottom sheet with three snap points (peek / half / full) over a map. The parent must be
  * `position: relative` and sized (the sheet is absolutely positioned along its bottom edge).
- * Dependency-free: pointer events on the handle, CSS height transition.
+ * Dependency-free: pointer events on the handle and header, CSS height transition.
  */
 export default function MapSheet({
   snap,
   onSnapChange,
   header,
   children,
-  peekPx = DEFAULT_PEEK_PX,
+  peekPx,
   fullTopInsetPx = DEFAULT_FULL_TOP_INSET_PX,
   label = 'Results',
   className,
@@ -62,11 +72,18 @@ export default function MapSheet({
   toggleOnTap = false,
 }: MapSheetProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const grabRef = useRef<HTMLDivElement>(null);
   const [containerPx, setContainerPx] = useState(0);
+  const [grabPx, setGrabPx] = useState(0);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
-  const drag = useRef<{ startY: number; startH: number; lastY: number; lastT: number; v: number }>(
-    null,
-  );
+  const drag = useRef<{
+    startY: number;
+    startH: number;
+    lastY: number;
+    lastT: number;
+    v: number;
+    onHeader: boolean;
+  }>(null);
   const moved = useRef(false);
 
   useLayoutEffect(() => {
@@ -79,11 +96,26 @@ export default function MapSheet({
     return () => ro.disconnect();
   }, []);
 
-  const heights = snapHeights(containerPx || 640, { peekPx, fullTopInsetPx });
+  // Without an explicit `peekPx`, peek is exactly the handle and header (plus the sheet's top border).
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    const grab = grabRef.current;
+    if (peekPx != null || !root || !grab) return;
+    const measure = () => setGrabPx(grab.offsetHeight + (root.offsetHeight - root.clientHeight));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(grab);
+    return () => ro.disconnect();
+  }, [peekPx]);
+
+  const heights = snapHeights(containerPx || 640, {
+    peekPx: peekPx ?? (grabPx || DEFAULT_PEEK_PX),
+    fullTopInsetPx,
+  });
   const height = dragHeight ?? heights[snap];
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    e.currentTarget.setPointerCapture?.(e.pointerId);
+    const target = e.target as Element;
     moved.current = false;
     drag.current = {
       startY: e.clientY,
@@ -91,6 +123,7 @@ export default function MapSheet({
       lastY: e.clientY,
       lastT: e.timeStamp,
       v: 0,
+      onHeader: !target.closest('[role="slider"]'),
     };
   };
 
@@ -98,7 +131,12 @@ export default function MapSheet({
     const d = drag.current;
     if (!d) return;
     const dy = d.startY - e.clientY;
-    if (Math.abs(dy) > 4) moved.current = true;
+    if (!moved.current && Math.abs(dy) > 4) {
+      moved.current = true;
+      // Capture only once it is a drag, so a plain tap still reaches a header button.
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    }
+    if (!moved.current) return;
     const dt = Math.max(1, e.timeStamp - d.lastT);
     d.v = (d.lastY - e.clientY) / dt;
     d.lastY = e.clientY;
@@ -120,9 +158,11 @@ export default function MapSheet({
       e.currentTarget.releasePointerCapture?.(e.pointerId);
       if (!moved.current) {
         setDragHeight(null);
-        onSnapChange(tapSnap(snap));
+        // Only the grabber is a tap target; header taps go to whatever was tapped.
+        if (!d.onHeader) onSnapChange(tapSnap(snap));
         return;
       }
+      if (d.onHeader) suppressNextClick();
       const finalH = Math.max(
         heights.peek,
         Math.min(heights.full, d.startH + d.startY - e.clientY),
@@ -179,24 +219,29 @@ export default function MapSheet({
         data-snap={snap}
       >
         <div
-          className={classes.handleZone}
-          role="slider"
-          tabIndex={0}
-          aria-label={`${label} sheet size`}
-          aria-orientation="vertical"
-          aria-valuemin={0}
-          aria-valuemax={2}
-          aria-valuenow={snap === 'peek' ? 0 : snap === 'half' ? 1 : 2}
-          aria-valuetext={snap}
+          ref={grabRef}
+          className={classes.grab}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
-          onKeyDown={onKeyDown}
         >
-          <span className={classes.handle} />
+          <div
+            className={classes.handleZone}
+            role="slider"
+            tabIndex={0}
+            aria-label={`${label} sheet size`}
+            aria-orientation="vertical"
+            aria-valuemin={0}
+            aria-valuemax={2}
+            aria-valuenow={snap === 'peek' ? 0 : snap === 'half' ? 1 : 2}
+            aria-valuetext={snap}
+            onKeyDown={onKeyDown}
+          >
+            <span className={classes.handle} />
+          </div>
+          {header ? <div className={classes.header}>{header}</div> : null}
         </div>
-        {header ? <div className={classes.header}>{header}</div> : null}
         <div ref={bodyRef} className={classes.body}>
           {children}
         </div>

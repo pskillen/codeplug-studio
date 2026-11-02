@@ -108,4 +108,75 @@ describe('MapSheet', () => {
     );
     expect(screen.queryByRole('button', { name: /Close/ })).not.toBeInTheDocument();
   });
+
+  it('drags from the header as well as the handle', () => {
+    const onSnapChange = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <div style={{ position: 'relative' }}>
+          <MapSheet snap="half" onSnapChange={onSnapChange} header={<span>3 repeaters</span>} />
+        </div>
+      </DesignSystemV2Provider>,
+    );
+    const header = screen.getByText('3 repeaters');
+    fireEvent.pointerDown(header, { clientY: 400, pointerId: 1 });
+    fireEvent.pointerMove(header, { clientY: 900, pointerId: 1 });
+    fireEvent.pointerUp(header, { clientY: 900, pointerId: 1 });
+    expect(onSnapChange).toHaveBeenCalledWith('peek');
+  });
+
+  it('a tap on the header text or a header button does not change the snap', () => {
+    const onSnapChange = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <div style={{ position: 'relative' }}>
+          <MapSheet
+            snap="peek"
+            onSnapChange={onSnapChange}
+            header={
+              <>
+                <span>3 repeaters</span>
+                <button type="button">New</button>
+              </>
+            }
+          />
+        </div>
+      </DesignSystemV2Provider>,
+    );
+    for (const el of [
+      screen.getByText('3 repeaters'),
+      screen.getByRole('button', { name: 'New' }),
+    ]) {
+      fireEvent.pointerDown(el, { clientY: 400, pointerId: 1 });
+      fireEvent.pointerUp(el, { clientY: 400, pointerId: 1 });
+    }
+    expect(onSnapChange).not.toHaveBeenCalled();
+  });
+
+  it('a drag that starts on a header button moves the sheet and does not click it', () => {
+    const onSnapChange = vi.fn();
+    const onClick = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <div style={{ position: 'relative' }}>
+          <MapSheet
+            snap="peek"
+            onSnapChange={onSnapChange}
+            header={
+              <button type="button" onClick={onClick}>
+                128 channels
+              </button>
+            }
+          />
+        </div>
+      </DesignSystemV2Provider>,
+    );
+    const button = screen.getByRole('button', { name: '128 channels' });
+    fireEvent.pointerDown(button, { clientY: 800, pointerId: 1 });
+    fireEvent.pointerMove(button, { clientY: 200, pointerId: 1 });
+    fireEvent.pointerUp(button, { clientY: 200, pointerId: 1 });
+    fireEvent.click(button);
+    expect(onSnapChange).toHaveBeenCalledWith('full');
+    expect(onClick).not.toHaveBeenCalled();
+  });
 });
