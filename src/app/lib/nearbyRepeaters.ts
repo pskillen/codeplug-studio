@@ -6,6 +6,7 @@ import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import type { MeshtasticInfrastructureNode } from '@integrations/meshflow/index.ts';
 import type { RepeaterListing } from '@integrations/repeaters/index.ts';
 import { findChannelByCallsign } from '../components/repeaters/findChannelByCallsign.ts';
+import type { ChannelMode as DisplayMode } from './channelModes.ts';
 import { isOperationalStatus } from './repeaters.ts';
 
 export type NearbySource = 'ukrepeater' | 'library' | 'meshtastic';
@@ -225,6 +226,15 @@ export function buildNearbyItems(input: {
     }
   }
   return items;
+}
+
+/**
+ * Colour key for a row's map marker, from the shared mode table (`channelModes.ts`): the reserved
+ * `meshtastic` colour for mesh nodes, else the row's first mode, else `other`.
+ */
+export function nearbyMarkerMode(item: NearbyItem): DisplayMode {
+  if (item.source === 'meshtastic') return 'meshtastic';
+  return item.modes[0] ?? 'other';
 }
 
 export function applyNearbyFilters(items: readonly NearbyItem[], f: NearbyFilters): NearbyItem[] {

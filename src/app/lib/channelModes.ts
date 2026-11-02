@@ -5,10 +5,14 @@ import type {
   DigitalChannelMode,
 } from '@core/models/libraryTypes.ts';
 
-export type ChannelModeCategory = 'analog' | 'digital' | 'other';
+/** `mesh` is display-only: a colour reserved for mesh nodes that are not amateur channels. */
+export type ChannelModeCategory = 'analog' | 'digital' | 'other' | 'mesh';
 
-/** Core channel modes plus a display-only fallback for unclassified repeater listings. */
-export type ChannelMode = CoreChannelMode | 'other';
+/**
+ * Core channel modes plus display-only values: `other` for unclassified repeater listings and
+ * `meshtastic` for Meshtastic nodes on Nearby. Neither is a library mode.
+ */
+export type ChannelMode = CoreChannelMode | 'other' | 'meshtastic';
 
 export interface ChannelModeDefinition {
   id: ChannelMode;
@@ -30,6 +34,7 @@ export const CHANNEL_MODES: ChannelModeDefinition[] = [
   { id: 'm17', label: 'M17', category: 'digital', color: '#20c997', mantine: 'teal.5' },
   { id: 'tetra', label: 'Tetra', category: 'digital', color: '#6741d9', mantine: 'indigo.6' },
   { id: 'other', label: 'Other', category: 'other', color: '#9c36b5', mantine: 'grape.6' },
+  { id: 'meshtastic', label: 'Meshtastic', category: 'mesh', color: '#82c91e', mantine: 'lime.6' },
 ];
 
 const modeById = new Map(CHANNEL_MODES.map((m) => [m.id, m]));
@@ -77,7 +82,10 @@ export function isDmrMode(mode: ChannelMode): boolean {
 }
 
 export function modeFilterOptions(): { value: ChannelMode; label: string }[] {
-  return CHANNEL_MODES.map((m) => ({ value: m.id, label: m.label }));
+  return CHANNEL_MODES.filter((m) => m.category !== 'mesh').map((m) => ({
+    value: m.id,
+    label: m.label,
+  }));
 }
 
 /** OpenGD77 `Channel Type` column → internal mode. */
@@ -100,7 +108,8 @@ export function mapLegacyChannelMode(mode: string): ChannelMode {
   if (mode === 'analogue') return 'fm';
   if (mode === 'digital') return 'dmr';
   if (mode === 'ssb-usb' || mode === 'ssb-lsb') return 'ssb';
-  if (modeById.has(mode as ChannelMode)) return mode as ChannelMode;
+  const def = modeById.get(mode as ChannelMode);
+  if (def && def.category !== 'mesh') return def.id;
   return 'other';
 }
 

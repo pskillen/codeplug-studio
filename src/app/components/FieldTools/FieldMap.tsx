@@ -36,6 +36,8 @@ export interface FieldMapMarker {
   /** Rank number shown in the marker. */
   label: string;
   colour: string;
+  /** Label colour; defaults to white. */
+  textColour?: string;
   selected?: boolean;
 }
 
@@ -80,7 +82,7 @@ function markerIcon(m: FieldMapMarker): L.DivIcon {
   const label = m.label.replace(/[<>&]/g, '');
   return L.divIcon({
     className: 'field-map-marker',
-    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${m.colour};border:2px solid #fff;box-shadow:${ring}0 1px 5px rgba(0,0,0,.5);color:#fff;font:700 12px/${size - 4}px system-ui,sans-serif;text-align:center">${label}</div>`,
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${m.colour};border:2px solid #fff;box-shadow:${ring}0 1px 5px rgba(0,0,0,.5);color:${m.textColour ?? '#fff'};font:700 12px/${size - 4}px system-ui,sans-serif;text-align:center">${label}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });

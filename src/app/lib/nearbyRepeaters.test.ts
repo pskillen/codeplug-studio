@@ -6,6 +6,7 @@ import {
   applyNearbyFilters,
   buildNearbyItems,
   formatHeardAgo,
+  nearbyMarkerMode,
   nearbySourcesSummary,
   parseNearbyFilters,
 } from './nearbyRepeaters.ts';
@@ -257,6 +258,26 @@ describe('Meshtastic rows', () => {
     });
     const ranked = rankByDistance(items, { lat: 55.86, lon: -4.25 }, (i) => i.location, 200_000);
     expect(ranked.map((r) => r.item.key)).toEqual(['meshtastic:!n', 'meshtastic:!f']);
+  });
+});
+
+describe('nearbyMarkerMode', () => {
+  const [ukItem] = buildNearbyItems({
+    listings: [listing({ modes: ['dmr', 'fm'] })],
+    channels: [],
+    sources: ['ukrepeater'],
+  });
+
+  it('uses the first mode of a repeater row', () => {
+    expect(nearbyMarkerMode(ukItem)).toBe('dmr');
+  });
+
+  it('falls back to other when a row has no mode', () => {
+    expect(nearbyMarkerMode({ ...ukItem, modes: [] })).toBe('other');
+  });
+
+  it('uses the reserved meshtastic colour for mesh rows', () => {
+    expect(nearbyMarkerMode({ ...ukItem, source: 'meshtastic', modes: [] })).toBe('meshtastic');
   });
 });
 

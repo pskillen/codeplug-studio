@@ -27,12 +27,13 @@ import { useMeshtasticNodesNear } from '../../hooks/useMeshtasticNodesNear.ts';
 import { useNearbyQuery } from '../../hooks/useNearbyQuery.ts';
 import { useUkRepeatersNear } from '../../hooks/useUkRepeatersNear.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
-import { getModeDefinition } from '../../lib/channelModes.ts';
+import { getModeDefinition, type ChannelMode as DisplayMode } from '../../lib/channelModes.ts';
 import {
   NEARBY_BAND_CHOICES,
   NEARBY_MODE_CHOICES,
   applyNearbyFilters,
   buildNearbyItems,
+  nearbyMarkerMode,
   nearbySourcesSummary,
   type NearbyItem,
 } from '../../lib/nearbyRepeaters.ts';
@@ -47,23 +48,22 @@ import classes from './FieldTools.module.css';
 
 const RADIUS_CHOICES = [10, 25, 50, 100] as const;
 const PIN_COLOUR = '#4f8cff';
-const MARKER_COLOUR = '#e8890c';
 const MAX_ROWS = 60;
 
 function radiusKmToChoice(km: number, unit: DistanceUnit): number {
   return unit === 'mi' ? Math.round(km / 1.609344) : Math.round(km);
 }
 
+/** Text colour on a mode fill: light on the dark fills, dark elsewhere. */
+function modeTextColour(mode: DisplayMode): string {
+  const light = mode === 'dstar' || mode === 'dmr' || mode === 'tetra';
+  return light ? DSV2_TOKENS.colors.pillTextLight : DSV2_TOKENS.colors.pillTextDark;
+}
+
 function modePill(mode: ChannelMode) {
   const def = getModeDefinition(mode);
-  const light = mode === 'dstar' || mode === 'dmr' || mode === 'tetra';
   return (
-    <Pill
-      key={mode}
-      tone="semantic"
-      color={def.color}
-      textColor={light ? DSV2_TOKENS.colors.pillTextLight : DSV2_TOKENS.colors.pillTextDark}
-    >
+    <Pill key={mode} tone="semantic" color={def.color} textColor={modeTextColour(mode)}>
       {def.label}
     </Pill>
   );
@@ -199,14 +199,18 @@ export default function NearbyPage() {
         },
       ]
     : [];
-  const markers: FieldMapMarker[] = shown.map((r, i) => ({
-    id: r.item.key,
-    lat: r.item.location.lat,
-    lon: r.item.location.lon,
-    label: String(i + 1),
-    colour: MARKER_COLOUR,
-    selected: r.item.key === selectedKey,
-  }));
+  const markers: FieldMapMarker[] = shown.map((r, i) => {
+    const mode = nearbyMarkerMode(r.item);
+    return {
+      id: r.item.key,
+      lat: r.item.location.lat,
+      lon: r.item.location.lon,
+      label: String(i + 1),
+      colour: getModeDefinition(mode).color,
+      textColour: modeTextColour(mode),
+      selected: r.item.key === selectedKey,
+    };
+  });
 
   const selectKey = (key: string, scroll: boolean) => {
     setSelectedKey(key);
