@@ -262,9 +262,6 @@
 }
 
 .identityCallsign {
+  flex: none;
   font-weight: 700;
-}
-
-.identityName {
-  font-weight: 400;
 }

@@ -49,3 +49,47 @@
 :global(.libraryListNameLink:hover) {
   text-decoration: underline;
 }
+
+/* Mobile identity line shared by library lists: one non-wrapping row (name link, then pills). */
+.identityLine {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.identityLink {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.identityName {
+  /* Keep a few characters (with ellipsis) before the pills start clipping. */
+  min-width: 4em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 400;
+}
+
+strong.identityName {
+  font-weight: 700;
+}
+
+.identityPills {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Pills keep their size; the row clips at the right edge instead of squashing them. */
+.identityPills > * {
+  flex: none;
+}

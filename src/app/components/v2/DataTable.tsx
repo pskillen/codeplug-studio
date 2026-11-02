@@ -49,8 +49,6 @@ export interface DataTableColumn<T> {
   defaultVisible?: boolean;
   /** Dropped on narrow viewports unless re-enabled via the column-visibility popover. */
   hideOnMobile?: boolean;
-  /** Only present on narrow viewports (e.g. the badges column that sits beside a `mobileIdentity` line). */
-  mobileOnly?: boolean;
 }
 
 export type DataTableSortDirection = 'asc' | 'desc';
@@ -143,7 +141,7 @@ export interface DataTableProps<T> {
    * at the top of every row, pinned to the scroller's visible width so it never scrolls sideways,
    * above that row's column cells (which still scroll, in sync with the header). The selection
    * checkbox moves onto the line, left of the content. Pair with `hideOnMobile` on the column(s) it
-   * replaces and `mobileOnly` on any column that carries the leftovers. Ignored with `nested` /
+   * replaces. Ignored with `nested` /
    * `reorderMode` / `mobileCard`. Not combined with `stickyFirstColumn` (nothing is pinned in the
    * cell line).
    */
@@ -540,7 +538,6 @@ export default function DataTable<T>({
     scale !== 'extreme';
 
   const visibleColumns = columns.filter((col) => {
-    if (col.mobileOnly && !isMobileViewport) return false;
     if (col.hideable && !visibleHideableKeys.includes(col.key)) return false;
     if (isMobileViewport && col.hideOnMobile) {
       return col.hideable && visibleHideableKeys.includes(col.key);
