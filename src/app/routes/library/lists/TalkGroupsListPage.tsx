@@ -46,6 +46,7 @@ export default function TalkGroupsListPage() {
         key: 'mode',
         header: 'Mode',
         render: (tg) => <ModePill mode={tg.mode} size="xs" />,
+        hideOnMobile: true,
         sortValue: (tg) => tg.mode,
       },
       {
@@ -134,9 +135,15 @@ export default function TalkGroupsListPage() {
           getRowId={(tg) => tg.id}
           stickyFirstColumn
           mobileIdentity={(tg) => (
-            <Link to={`/library/talk-groups/${tg.id}`} className="libraryListNameLink">
-              <strong>{tg.name}</strong>
-            </Link>
+            <div className={classes.identityLine}>
+              <Link
+                to={`/library/talk-groups/${tg.id}`}
+                className={`libraryListNameLink ${classes.identityLink}`}
+              >
+                <strong className={classes.identityName}>{tg.name}</strong>
+              </Link>
+              <ModePill mode={tg.mode} size="xs" />
+            </div>
           )}
           totalRowCount={talkGroups.length}
           search={{
