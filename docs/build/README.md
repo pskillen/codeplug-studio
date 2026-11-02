@@ -64,10 +64,10 @@ If `git status` still shows phantom whole-file edits with empty diffs, run `git 
 
 ## Documentation map
 
-| Doc                                                                  | Contents                                    |
-| -------------------------------------------------------------------- | ------------------------------------------- |
-| [testing/](testing/README.md)                                        | Test layers, mapping strategy, CI alignment |
-| [version-number skill](../../.cursor/skills/version-number/SKILL.md) | Footer build info                           |
+| Doc                                            | Contents                                    |
+| ---------------------------------------------- | ------------------------------------------- |
+| [testing/](testing/README.md)                  | Test layers, mapping strategy, CI alignment |
+| `version-number` skill (pskillen/agent-skills) | Footer build info                           |
 
 ## CI
 
@@ -220,7 +220,7 @@ See [analytics feature docs](../features/analytics/README.md) for what is and is
 
 `BUILD_ENV` and `BUILD_VERSION` are injected via Vite `define` in `vite.config.ts`. `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_ANDROID_CLIENT_ID`, and `VITE_GA_MEASUREMENT_ID` are read from the environment at build time by Vite (`import.meta.env`).
 
-Displayed in [`BuildFooter`](../../src/app/components/BuildFooter/BuildFooter.tsx). See [version-number skill](../../.cursor/skills/version-number/SKILL.md).
+Displayed in [`BuildFooter`](../../src/app/components/BuildFooter/BuildFooter.tsx). See the `version-number` and `codeplug-conventions` skills in [pskillen/agent-skills](https://github.com/pskillen/agent-skills).
 
 ## Post-deploy check
 

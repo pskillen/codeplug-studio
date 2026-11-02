@@ -57,7 +57,7 @@ flowchart TB
 | System      | —                                                                  | **Planned** — no `src/test/system/` yet                                                                                          |
 | E2e         | `npm run test:e2e`                                                 | Playwright — cookie consent smoke shipped ([#176](https://github.com/pskillen/codeplug-studio/issues/176)); see [e2e.md](e2e.md) |
 
-Run before commit when touching application code: `npm run lint`, `npm run format:check`, `npm test`, and `npm run build` when types or build config change. See [git-workflow](../../.cursor/skills/git-workflow/SKILL.md).
+Run before commit when touching application code: `npm run lint`, `npm run format:check`, `npm test`, and `npm run build` when types or build config change. See the `git-workflow` skill.
 
 ## CI on pull requests
 

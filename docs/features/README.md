@@ -4,8 +4,7 @@ Contributor-oriented docs for features in Codeplug Studio. User-facing overview 
 
 Agent skills for documentation and execution tracking:
 
-- [feature-docs](../../.cursor/skills/feature-docs/SKILL.md)
-- [progress-tracking](../../.cursor/skills/progress-tracking/SKILL.md)
+- `feature-docs` and `delivery-tracking`, from [pskillen/agent-skills](https://github.com/pskillen/agent-skills)
 
 **Tier boundaries:** [`.cursor/rules/documentation-boundaries.mdc`](../../.cursor/rules/documentation-boundaries.mdc) — tier 1 here; domain reference in `docs/reference/`; adapter wire under `docs/reference/export-formats/<format>/`; radio homes under `docs/reference/radios/<mfr>/<model>/`.
 

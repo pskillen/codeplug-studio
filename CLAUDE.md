@@ -5,24 +5,20 @@ Read [DESIGN.md](DESIGN.md) (product constitution) before substantial work — [
 ## Rules and skills
 
 - `.claude/rules/*.md` — path-scoped conventions (ported from `.cursor/rules/`; kept in sync manually, so update both when conventions change).
-- `.claude/skills/*` — symlinked to `.cursor/skills/*`, so editing either location updates both tools at once.
+- Skills and agents live in the owner's shared library, [`pskillen/agent-skills`](https://github.com/pskillen/agent-skills) (private): `core@pskillen` for how we work and the role agents, `codeplug-studio@pskillen` for this repo's conventions (`codeplug-conventions`), `debounced-inputs` and `wire-name-preview`.
+
+```bash
+claude plugin marketplace add pskillen/agent-skills
+claude plugin install core@pskillen && claude plugin install codeplug-studio@pskillen
+```
 
 ## Multi-phase agents
 
-Project subagents in `.claude/agents/` encode the [multi-phase-plan](.claude/skills/multi-phase-plan/SKILL.md) roles. Do not set a default `agent` in settings — pick one per session:
+The `core` plugin's agents run the multi-phase-plan roles. Pick one per session and have it load `codeplug-conventions`:
 
-| Agent          | Job                                                                                                                     |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `designer`     | Brainstorm → `hl-delivery-plan.md` RFC. Iterate in place until review. No tickets, no product code.                     |
-| `planner`      | After the design exists: tickets, phases, file issues, concrete `plans/`. One step, then stop. No product code.         |
-| `orchestrator` | Drive a ready `plans/` series by spawning `implementor` once per phase on stacked branches. No product code, no merges. |
-| `implementor`  | Execute **one** phase file: branch, atomic commits, docs, local gates, PR.                                              |
-
-```bash
-claude --agent designer
-claude --agent planner
-claude --agent orchestrator
-claude --agent implementor
-```
-
-From a normal session, ask Claude to use the named agent. First session after adding `.claude/agents/` may need a restart so the watcher picks up the new directory.
+| Agent              | Job                                                                                                                          |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `core:designer`    | Brainstorm → `hl-delivery-plan.md` RFC. Iterate in place until review. No tickets, no product code.                          |
+| `core:planner`     | After the design exists: tickets, phases, file issues, concrete `plans/`. One step, then stop. No product code.              |
+| `core:coordinator` | Drive a ready `plans/` series by spawning `core:implementor` once per phase on stacked branches. No product code, no merges. |
+| `core:implementor` | Execute **one** phase file: branch, atomic commits, docs, local gates, PR.                                                   |

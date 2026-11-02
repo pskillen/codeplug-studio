@@ -26,7 +26,6 @@ Application code lives under `src/core/`, `src/integrations/`, and `src/app/` wi
 | `src/integrations/`          | Browser I/O: persistence, cloud, repeater APIs                                                                                                                         |
 | `src/app/`                   | React routes, features, components, thin state                                                                                                                         |
 | `.cursor/rules/`             | File-scoped editor rules (+ always-applied deliverables)                                                                                                               |
-| `.cursor/skills/`            | Agent skills — git workflow, plans, docs, progress                                                                                                                     |
 
 **Dependency rule:** `app` → `core`; `integrations` → `core`. Never `core` → `app`.
 
@@ -56,7 +55,7 @@ The **library** and domain layer are **vendor-neutral**. Radio caps, column name
 4. **Parse by header name** — CPS CSV column order varies; never hard-code column positions.
 5. **Minimize scope** — one feature per PR; match existing patterns once scaffold exists.
 6. **Privacy** — operator data and tokens stay in browser storage only; never in the repo.
-7. **Docs ship with behaviour** — tier-1 feature hubs, component sidecars, and index rows in the same PR as the code ([documentation-deliverables.mdc](.cursor/rules/documentation-deliverables.mdc), [feature-docs](.cursor/skills/feature-docs/SKILL.md)).
+7. **Docs ship with behaviour** — tier-1 feature hubs, component sidecars, and index rows in the same PR as the code ([documentation-deliverables.mdc](.cursor/rules/documentation-deliverables.mdc), the `feature-docs` skill).
 8. **New CPS format** — follow [adding-a-new-format.md](docs/features/import-export/adding-a-new-format.md) for adapter, trait, test, and UI checklist.
 9. **New Web Serial radio adapter** — follow [adding-a-radio-adapter.md](docs/features/radio-read-write/adding-a-radio-adapter.md) (living checklist; update when implementation discovers cross-radio requirements). Write goes through FormatBuild + `assemble`; Read hydrates unmodelled/full-image state on the build.
 10. **UI rework** — follow [docs/reference/styleguide/](docs/reference/styleguide/) for list shells, Sort… / reorder, and chrome conventions (interactive demos at `/styleguide`).
@@ -65,7 +64,7 @@ The **library** and domain layer are **vendor-neutral**. Radio caps, column name
 
 ## Git workflow
 
-Follow [`.cursor/skills/git-workflow/SKILL.md`](.cursor/skills/git-workflow/SKILL.md).
+Follow the `git-workflow` and `codeplug-conventions` skills from [`pskillen/agent-skills`](https://github.com/pskillen/agent-skills) (Claude Code: `core@pskillen` + `codeplug-studio@pskillen`; Cursor: `npx skills add pskillen/agent-skills`).
 
 **GitHub operations use the `gh` CLI.** Issues, pull requests, comments, reviews, checks, merges, and releases are `gh` commands. A GitHub MCP tool that shows an interactive form (`create_pull_request`, `issue_write`, and any other call that asks the user to submit a card) is a failed operation: the form does not submit, and waiting for it does not create the issue or pull request. Do not call those tools. Do not wait on a form.
 
@@ -76,10 +75,12 @@ Follow [`.cursor/skills/git-workflow/SKILL.md`](.cursor/skills/git-workflow/SKIL
 
 ## Plans and feature docs
 
-- Plan from GitHub issues: [make-a-plan](.cursor/skills/make-a-plan/SKILL.md).
-- Ship a ticket without a plan: paste `#N` + title and `@drive-by-ticket` — [drive-by-ticket](.cursor/skills/drive-by-ticket/SKILL.md).
-- Feature documentation: [feature-docs](.cursor/skills/feature-docs/SKILL.md).
-- Multi-commit work: [progress-tracking](.cursor/skills/progress-tracking/SKILL.md) under `docs/poc-migration/` or `docs/features/`.
+All from [`pskillen/agent-skills`](https://github.com/pskillen/agent-skills):
+
+- Plan from GitHub issues: `make-a-plan`. Epic-sized work: `multi-phase-plan`.
+- Ship a ticket without a plan: `/drive-by-ticket` with `#N` + title.
+- Feature documentation: `feature-docs`, plus the tiers and sidecars in `codeplug-conventions`.
+- Multi-phase progress: `delivery-tracking` (`tmp/features/<name>/PROGRESS.md`). Existing `*-progress.md` / `*-outstanding.md` pairs under `docs/` stay until their initiative ships.
 
 ## Disclaimer
 
