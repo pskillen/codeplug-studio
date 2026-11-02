@@ -4,19 +4,22 @@ Bottom sheet with three snap points (peek / half / full) that floats over a full
 
 ## Purpose
 
-Lets a map-first page keep its list, controls or readout in a sheet the user can pull up or push down. A Map | List toggle is just a shortcut for the sheet's snap point: Map snaps to `peek`, List to `full`. Used by the Field tools (Nearby repeaters, Distance & bearing) and, through [ListMapLayout](./ListMapLayout.md), the Channels and Zones lists (#1498).
+Lets a map-first page keep its list, controls or readout in a sheet the user can pull up or push down. A Map | List toggle is just a shortcut for the sheet's snap point: Map snaps to `peek`, List to `full`. Used by the Field tools (Nearby repeaters, Distance & bearing) and, through [ListMapLayout](./ListMapLayout.md), as the controls container over the list | map swipe panes of Channels, Zones and the repeater directory searches (#1498).
 
 ## Props
 
-| Prop             | Type                         | Notes                                                            |
-| ---------------- | ---------------------------- | ---------------------------------------------------------------- |
-| `snap`           | `'peek' \| 'half' \| 'full'` | Controlled snap point                                            |
-| `onSnapChange`   | `(snap) => void`             | Fired after a drag settles, a handle tap or an arrow key         |
-| `header`         | `ReactNode`                  | Always visible under the handle (fills the peek height)          |
-| `children`       | `ReactNode`                  | Scrollable body, visible from `half` up                          |
-| `peekPx`         | `number`                     | Height at `peek` in px (default 148)                             |
-| `fullTopInsetPx` | `number`                     | Space left above the sheet at `full` (default 84, for map chips) |
-| `label`          | `string`                     | Accessible name (default `Results`)                              |
+| Prop             | Type                         | Notes                                                                                      |
+| ---------------- | ---------------------------- | ------------------------------------------------------------------------------------------ |
+| `snap`           | `'peek' \| 'half' \| 'full'` | Controlled snap point                                                                      |
+| `onSnapChange`   | `(snap) => void`             | Fired after a drag settles, a handle tap or an arrow key                                   |
+| `header`         | `ReactNode`                  | Always visible under the handle (fills the peek height)                                    |
+| `children`       | `ReactNode`                  | Scrollable body, visible from `half` up                                                    |
+| `peekPx`         | `number`                     | Height at `peek` in px (default 148)                                                       |
+| `fullTopInsetPx` | `number`                     | Space left above the sheet at `full` (default 84, for map chips)                           |
+| `label`          | `string`                     | Accessible name (default `Results`)                                                        |
+| `compact`        | `boolean`                    | Slim grab area and one-line header, for a control bar (use with a small `peekPx`, e.g. 56) |
+| `backdrop`       | `boolean`                    | Dims the page behind the sheet above `peek`; tapping it collapses to `peek`                |
+| `toggleOnTap`    | `boolean`                    | A grabber tap toggles `peek` and `half` instead of cycling all three                       |
 
 ## Usage
 

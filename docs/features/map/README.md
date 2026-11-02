@@ -22,13 +22,13 @@ Summary and list routes each embed a map — list pages keep contextual maps for
 
 ## Layout patterns ([#1498](https://github.com/pskillen/codeplug-studio/issues/1498))
 
-| Surface                                                                     | Status      | Desktop                                                     | Mobile                                                                                                                             |
-| --------------------------------------------------------------------------- | ----------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Channels / Zones lists                                                      | Shipped     | List left, sticky map filling the viewport below the chrome | Full-screen map, bottom sheet (peek / half / full), Map \| List toggle; full-bleed route                                           |
-| Zone editor map                                                             | Shipped     | Sticky column beside members, viewport-relative height      | After the members, viewport-relative height                                                                                        |
-| New zone from location                                                      | Shipped     | Controls + sticky map, results and name below               | Folding panels with summaries; map thumbnail opens a full-screen picker ("Use this point"); create button pinned above the tab bar |
-| Repeater directory search                                                   | Shipped     | Sticky map beside the results table                         | Map above results, `clamp(240px, 45dvh, 460px)`                                                                                    |
-| Tracking / satellite maps, aviation airport search, channel location editor | Not started | Fixed heights unchanged                                     | Fixed heights unchanged                                                                                                            |
+| Surface                                                                     | Status      | Desktop                                                     | Mobile                                                                                                                                                                                        |
+| --------------------------------------------------------------------------- | ----------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Channels / Zones lists                                                      | Shipped     | List left, sticky map filling the viewport below the chrome | List \| map swipe panes (Map \| List toggle, grab handle on the seam); filters, search and actions in a bottom controls sheet; full-bleed route                                               |
+| Zone editor map                                                             | Shipped     | Sticky column beside members, viewport-relative height      | After the members, viewport-relative height                                                                                                                                                   |
+| New zone from location                                                      | Shipped     | Controls + sticky map, results and name below               | Folding panels with summaries; map thumbnail opens a full-screen picker ("Use this point"); create button pinned above the tab bar                                                            |
+| Repeater directory search                                                   | Shipped     | Sticky map beside the results table                         | List \| map swipe panes behind a bottom sheet holding the search form (open at full before the first search, peek once results arrive); full-bleed route (not BrandMeister, which has no map) |
+| Tracking / satellite maps, aviation airport search, channel location editor | Not started | Fixed heights unchanged                                     | Fixed heights unchanged                                                                                                                                                                       |
 
 See the [styleguide map layouts](../../reference/styleguide/README.md#map-layouts) for when to pick which.
 
@@ -36,7 +36,7 @@ See the [styleguide map layouts](../../reference/styleguide/README.md#map-layout
 
 ```text
 ChannelsListPage / ZonesListPage / SummaryPage / …
-└─ ListMapLayout (src/app/components/v2/) — desktop sticky split, mobile map + bottom sheet ([#1498](https://github.com/pskillen/codeplug-studio/issues/1498))
+└─ ListMapLayout (src/app/components/v2/) — desktop sticky split, mobile list | map swipe panes + bottom controls sheet ([#1498](https://github.com/pskillen/codeplug-studio/issues/1498))
    └─ CodeplugMap (src/app/components/CodeplugMap/)
       ├─ MapControls — label + zone toggles
       ├─ MaidenheadGridLayer — optional locator grid (Settings)
@@ -59,8 +59,8 @@ Tiles: OpenStreetMap via react-leaflet. Leaflet default marker assets are not us
 
 ## Related
 
-- [ListMapLayout](../../../src/app/components/v2/ListMapLayout.md) — list+map composition: sticky map on desktop, map-first bottom sheet on mobile
-- [MapSheet](../../../src/app/components/v2/MapSheet.md) — the mobile bottom sheet
+- [ListMapLayout](../../../src/app/components/v2/ListMapLayout.md) — list+map composition: sticky map on desktop, list | map swipe panes with a bottom controls sheet on mobile
+- [MapSheet](../../../src/app/components/v2/MapSheet.md) — the bottom sheet (page controls over the swipe panes; Field tools)
 - [channels.md](channels.md) — marker filters, labels, popups
 - [zones.md](zones.md) — hull geometry, member resolution
 - [#261](https://github.com/pskillen/codeplug-studio/issues/261) — `hideFromInternalMap` channel flag (Location tab checkbox)

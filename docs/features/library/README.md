@@ -68,7 +68,7 @@ Shipped initiatives (mode profiles, membership order, zones revision-2, library 
 | `/library/scan-lists`        | v2 `DataTable` — members, channels-using ref count, row delete                                                                                      | No                              |
 | `/library/digital-ids`       | Your own DMR and NXDN IDs, grouped by protocol — Default badge, Set as default, channels using, row delete; notice when a protocol has no default   | No                              |
 
-Shared L1 chrome: `LibraryInventoryHeader`, optional `FilterPopover` (channels — tabbed flyout on desktop, edge-to-edge on mobile, `≤48em`), `ListMapLayout` (map+list: sticky map on desktop, map-first bottom sheet on mobile, #1498). List tables use `components/v2/DataTable` — see [design-system-v2](../design-system-v2/README.md) ([#940](https://github.com/pskillen/codeplug-studio/issues/940)).
+Shared L1 chrome: `LibraryInventoryHeader`, optional `FilterPopover` (channels — tabbed flyout on desktop, edge-to-edge on mobile, `≤48em`), `ListMapLayout` (map+list: sticky map on desktop, list | map swipe panes with filters and actions in a bottom controls sheet on mobile, #1498). List tables use `components/v2/DataTable` — see [design-system-v2](../design-system-v2/README.md) ([#940](https://github.com/pskillen/codeplug-studio/issues/940)).
 
 ### Channels list (#24)
 
