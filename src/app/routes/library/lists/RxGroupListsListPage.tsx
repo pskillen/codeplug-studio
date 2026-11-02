@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { IconPlus } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { RxGroupList } from '@core/models/library.ts';
 import EntityListRowDeleteAction from '../../../components/library/EntityListRowDeleteAction.tsx';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
@@ -44,6 +44,7 @@ export default function RxGroupListsListPage() {
       createNameColumn<RxGroupList>({
         getName: (r) => r.name,
         getPath: (r) => `/library/rx-group-lists/${r.id}`,
+        hideOnMobile: true,
       }),
       {
         key: 'members',
@@ -112,6 +113,11 @@ export default function RxGroupListsListPage() {
           rows={filtered}
           getRowId={(r) => r.id}
           stickyFirstColumn
+          mobileIdentity={(r) => (
+            <Link to={`/library/rx-group-lists/${r.id}`} className="libraryListNameLink">
+              <strong>{r.name}</strong>
+            </Link>
+          )}
           totalRowCount={rxGroupLists.length}
           search={{
             value: nameFilterInput,

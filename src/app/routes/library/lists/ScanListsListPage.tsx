@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { IconPlus } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { ScanList } from '@core/models/library.ts';
 import EntityListRowDeleteAction from '../../../components/library/EntityListRowDeleteAction.tsx';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
@@ -44,6 +44,7 @@ export default function ScanListsListPage() {
       createNameColumn<ScanList>({
         getName: (r) => r.name,
         getPath: (r) => `/library/scan-lists/${r.id}`,
+        hideOnMobile: true,
       }),
       {
         key: 'members',
@@ -105,6 +106,11 @@ export default function ScanListsListPage() {
           rows={filtered}
           getRowId={(r) => r.id}
           stickyFirstColumn
+          mobileIdentity={(r) => (
+            <Link to={`/library/scan-lists/${r.id}`} className="libraryListNameLink">
+              <strong>{r.name}</strong>
+            </Link>
+          )}
           totalRowCount={scanLists.length}
           search={{
             value: nameFilterInput,

@@ -169,6 +169,41 @@ function renderChannelNameCell(channel: Channel): ReactNode {
   );
 }
 
+/** Mobile identity line: bold callsign (when set), then the name; name alone in the primary style otherwise. */
+function renderChannelIdentity(channel: Channel): ReactNode {
+  const name = channel.name || '—';
+  const callsign = channel.callsign?.trim();
+  return (
+    <Link to={`/library/channels/${channel.id}`} className="libraryListNameLink">
+      {callsign ? (
+        <>
+          <strong className={classes.identityCallsign}>{callsign}</strong>
+          <span className={classes.identityName}> · {name}</span>
+        </>
+      ) : (
+        <strong className={classes.identityCallsign}>{name}</strong>
+      )}
+    </Link>
+  );
+}
+
+/** Mobile-only column beside the identity line: band pill and joined mode pills. */
+function renderChannelBadgesCell(channel: Channel): ReactNode {
+  const band = bandFromChannel(channel.rxFrequency, channel.txFrequency);
+  const modes = channelModesForFilter(channel);
+  const primary = modes.length > 1 ? resolveChannelPrimaryMode(channel) : null;
+  return (
+    <div className={classes.pillRow}>
+      {band ? (
+        <Pill tone="semantic" color={band.color} textColor={DSV2_TOKENS.colors.pillTextLight}>
+          {band.label}
+        </Pill>
+      ) : null}
+      {renderJoinedModePills(modes, primary)}
+    </div>
+  );
+}
+
 function formatChannelToneValue(tone: ChannelTone): string {
   return tone === 'none' ? '-' : tone;
 }
@@ -446,6 +481,7 @@ export default function ChannelsListPage() {
       getName: (ch) => ch.name || '—',
       getPath: (ch) => `/library/channels/${ch.id}`,
       render: renderChannelNameCell,
+      hideOnMobile: true,
     });
 
     // Band and Mode are merged into the Name column above; Tone (table-only) is
@@ -462,6 +498,13 @@ export default function ChannelsListPage() {
 
     return [
       { ...nameColumn, width: 'minmax(11rem, 1fr)' },
+      {
+        key: 'badges',
+        header: 'Band / mode',
+        mobileOnly: true,
+        width: 'minmax(10rem, 1fr)',
+        render: renderChannelBadgesCell,
+      },
       ...tableOptionalColumnDefs,
       {
         key: 'actions',
@@ -776,6 +819,8 @@ export default function ChannelsListPage() {
           onSortChange={handleSortChange}
           selectable
           stickyFirstColumn
+          mobileIdentity={renderChannelIdentity}
+          mobileIdentityLabel="Channel"
           selectedKeys={selectedKeys}
           onSelectionChange={setSelectedKeys}
           bulkActions={
