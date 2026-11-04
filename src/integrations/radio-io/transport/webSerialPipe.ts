@@ -144,11 +144,30 @@ class WebSerialBytePipe implements WebSerialPipe {
     if (!old || !port) {
       throw new RadioClosedError('Not connected.');
     }
-    await old.close();
+    try {
+      await old.close();
+    } catch (err) {
+      // The old stream is errored or closed and cannot be renewed reliably: leave a defined state (no writer, so
+      // later writes fail with "Not connected." and close() still runs) and report a transport error.
+      this.writer = null;
+      try {
+        old.releaseLock();
+      } catch {
+        /* already released */
+      }
+      throw new RadioClosedError(
+        `Serial write stream could not be closed for renewal: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
     try {
       old.releaseLock();
     } catch {
       /* already released */
+    }
+    if (this.closed) {
+      // close() ran while the old stream was flushing: do not take a new writer nobody will release.
+      this.writer = null;
+      throw new RadioClosedError('Not connected.');
     }
     const next = port.writable;
     if (!next) {

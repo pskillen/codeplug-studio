@@ -16,6 +16,7 @@ import {
   requestWebSerialPipe,
   requestWebSerialPort,
   WEB_SERIAL_HOST_BUFFER_SIZE,
+  type SerialPortLike,
   type WebSerialPipe,
 } from './webSerialPipe.ts';
 
@@ -238,6 +239,64 @@ describe('openWebSerialPipe write guard (no frame straddles the host buffer boun
       [4, 9],
     ]);
     await pipe.close();
+  });
+});
+
+describe('openWebSerialPipe writer rotation failure modes', () => {
+  const B = WEB_SERIAL_HOST_BUFFER_SIZE;
+
+  /** Port whose first writable has a controllable `close`; later `writable` reads hand out fresh streams. */
+  function makeRotatingPort(firstClose: () => Promise<void>) {
+    const handed: WritableStream<Uint8Array>[] = [];
+    let firstClosed = false;
+    const first = new WritableStream<Uint8Array>({
+      close() {
+        firstClosed = true;
+        return firstClose();
+      },
+    });
+    handed.push(first);
+    const port: SerialPortLike = {
+      readable: new ReadableStream<Uint8Array>(),
+      get writable() {
+        if (!firstClosed) return first;
+        const next = new WritableStream<Uint8Array>();
+        handed.push(next);
+        return next;
+      },
+      async open() {},
+      async close() {},
+    };
+    return { port, handed };
+  }
+
+  it('wraps a failing close of the old writer in a transport error and leaves the pipe closed to writes', async () => {
+    const { port } = makeRotatingPort(async () => {
+      throw new Error('boom');
+    });
+    const pipe = await openWebSerialPipe(port, 115200);
+    await pipe.write(new Uint8Array(B - 1));
+    const err = await pipe.write(new Uint8Array(2)).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioClosedError);
+    expect((err as Error).message).toMatch(/could not be closed for renewal: boom/);
+    await expect(pipe.write(new Uint8Array(1))).rejects.toBeInstanceOf(RadioClosedError);
+    await expect(pipe.close()).resolves.toBeUndefined();
+  });
+
+  it('close() racing a rotation does not leave a new writer locked', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const { port, handed } = makeRotatingPort(() => gate);
+    const pipe = await openWebSerialPipe(port, 115200);
+    await pipe.write(new Uint8Array(B - 1));
+    const rotating = pipe.write(new Uint8Array(2)).catch((e: unknown) => e);
+    await new Promise((r) => setTimeout(r, 0)); // rotation is now awaiting the old stream's close
+    const closing = pipe.close();
+    await new Promise((r) => setTimeout(r, 0));
+    release();
+    await closing;
+    expect(await rotating).toBeInstanceOf(RadioClosedError);
+    expect(handed.every((s) => !s.locked)).toBe(true);
   });
 });
 
