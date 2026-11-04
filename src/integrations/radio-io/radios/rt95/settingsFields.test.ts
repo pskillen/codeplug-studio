@@ -136,3 +136,22 @@ describe('RT95 zone key patch', () => {
     expect(block[2]).toBe(1);
   });
 });
+
+describe('RT95 settings: CPS-comparison fixes (#1464)', () => {
+  it('caps remote stun and kill codes at 14 characters', () => {
+    for (const id of ['remoteStun', 'remoteKill']) {
+      const spec = RT95_SETTINGS_FIELDS.get(id)!;
+      expect(spec.length).toBe(14);
+      expect(spec.encode('12345678901234').length).toBe(14);
+      expect(() => spec.encode('123456789012345')).toThrow(RadioProtocolError);
+    }
+  });
+
+  it('speaker volume: wire 0 is Off, 1-36 are levels, above 36 is unknown', () => {
+    const spec = RT95_SETTINGS_FIELDS.get('speakerVolume')!;
+    expect(spec.decode(Uint8Array.of(0))).toBe(0);
+    expect(spec.decode(Uint8Array.of(36))).toBe(36);
+    expect(spec.decode(Uint8Array.of(37))).toBeUndefined();
+    expect(spec.encode(0)[0]).toBe(0);
+  });
+});

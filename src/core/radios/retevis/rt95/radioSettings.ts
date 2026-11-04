@@ -84,9 +84,12 @@ export const RT95_POWER_ON_PASSWORD_FIELD_IDS: readonly string[] = [
   'powerOnPasswordDigits',
 ];
 
+/** Remote stun / kill codes are 14-character strings in the stock CPS (F-series: dtmf-tone record). */
+export const RT95_REMOTE_CODE_MAX_LENGTH = 14;
+
 const BEEP_VOLUME = list(['Off', '1', '2', '3', '4', '5']);
 const BACKLIGHT = range(1, 3, (n) => String(n));
-const SPEAKER_VOLUME = range(1, 36, (n) => String(n));
+const SPEAKER_VOLUME = [{ value: 0, label: 'Off' }, ...range(1, 36, (n) => String(n))];
 const SPEAKER_SWITCH = list([
   'Host On | Hand Mic Off',
   'Host On | Hand Mic On',
@@ -496,14 +499,14 @@ export const RT95_SETTING_FIELDS: readonly Rt95SettingFieldDef[] = [
     label: 'Remote stun',
     help: 'DTMF code that can disable another radio.',
     warning: 'Can disable a radio that receives this code.',
-    maxLength: 16,
+    maxLength: RT95_REMOTE_CODE_MAX_LENGTH,
   }),
   advDtmf({
     id: 'remoteKill',
     label: 'Remote kill',
     help: 'DTMF code that can kill another radio.',
     warning: 'Can permanently disable a radio that receives this code.',
-    maxLength: 16,
+    maxLength: RT95_REMOTE_CODE_MAX_LENGTH,
   }),
 ];
 
