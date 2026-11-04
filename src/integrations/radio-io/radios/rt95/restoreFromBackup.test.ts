@@ -238,11 +238,11 @@ describe('Rt95Protocol.restoreFromBackup', () => {
     expect(RT95_BLOCK_ADDR_START).toBe(0);
   });
 
-  it('refuses a backup whose band differs from the connected radio, sending nothing', async () => {
+  it('refuses a backup whose band differs from the connected radio, writing no block', async () => {
+    // The app opens a Restore session with handshake 'none' and never calls ensureProgramMode.
     const pipe = new ScriptedQxPipe();
     const proto = new Rt95Protocol();
     await proto.connect(pipe, { handshake: 'none' });
-    await proto.ensureProgramMode();
     const writesBefore = pipe.writes.length;
 
     const bytes = buildSyntheticRt95Image();
@@ -258,14 +258,15 @@ describe('Rt95Protocol.restoreFromBackup', () => {
         { regionIds: [RT95_PROGRAMMING_IMAGE_REGION_ID] },
       ),
     ).rejects.toThrow(/different band/);
-    expect(pipe.writes.length).toBe(writesBefore);
+    const sent = pipe.writes.slice(writesBefore);
+    expect(sent.filter((w) => w[0] === PROGRAM_QX_WRITE_OPCODE)).toHaveLength(0);
+    expect(sent.filter((w) => w[0] === PROGRAM_QX_READ_OPCODE)).toHaveLength(0);
   });
 
   it('restores a backup of the same band as the connected radio', async () => {
     const pipe = new ScriptedQxPipe();
     const proto = new Rt95Protocol();
     await proto.connect(pipe, { handshake: 'none' });
-    await proto.ensureProgramMode();
 
     const bytes = buildSyntheticRt95Image();
     bytes[RT95_BANDLIMIT_OFFSET] = 0x01;

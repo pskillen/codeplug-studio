@@ -352,6 +352,19 @@ export class Rt95Protocol implements CloneImageRadio {
     const ident = parseRt95IdentResponse(identRaw);
     this.radioBandlimit = ident.bandlimit;
 
+    // Restore: a backup from a radio of another band (ident byte 8, stored at 0x326D) would put its
+    // frequency limits on this radio, and MAIN keeps its own copy of the byte. The Restore session
+    // opens with handshake 'none', so this ident read is the first time the band is known. Refuse
+    // before the priming read and the first W frame.
+    if (opts.operation === 'restore' && imageBandlimit !== ident.bandlimit) {
+      this.inProgramMode = false;
+      lastRt95EndAt = Date.now();
+      await exitProgramQxMode(pipe);
+      throw new RadioProtocolError(
+        `This backup is from a radio with a different band (band code 0x${imageBandlimit.toString(16).padStart(2, '0')}) than the connected radio (0x${ident.bandlimit.toString(16).padStart(2, '0')}). Restore refused, no block was written.`,
+      );
+    }
+
     const primeFrame = makeProgramQxReadFrame(RT95_UPLOAD_PRIME_ADDR, PROGRAM_QX_BLOCK_SIZE);
     await sendProgramQxCommand(pipe, primeFrame, PROGRAM_QX_READ_REPLY_LEN, RT95_IO_TIMEOUT_MS);
 
@@ -529,14 +542,6 @@ export class Rt95Protocol implements CloneImageRadio {
     opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
   ): Promise<void> {
     const intended = intendedRt95RestoreImage(archive, opts.regionIds);
-    // A backup from a radio of another band (ident byte 8, stored at 0x326D) would put its
-    // frequency limits on this radio; MAIN also keeps its own copy of the byte. Refuse, send nothing.
-    const backupBandlimit = readBandlimitFromImage(archive.image);
-    if (this.radioBandlimit != null && backupBandlimit !== this.radioBandlimit) {
-      throw new RadioProtocolError(
-        `This backup is from a radio with a different band (band code 0x${backupBandlimit.toString(16).padStart(2, '0')}) than the connected radio (0x${this.radioBandlimit.toString(16).padStart(2, '0')}). Restore refused, nothing was written.`,
-      );
-    }
     await this.upload(intended, {
       operation: 'restore',
       signal: opts.signal,
