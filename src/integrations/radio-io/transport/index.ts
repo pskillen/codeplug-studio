@@ -13,6 +13,7 @@ export {
   requestWebSerialPort,
   WEB_SERIAL_HOST_BUFFER_SIZE,
   type SerialPortLike,
+  type WebSerialPipe,
   type WebSerialPipeOptions,
   type WebSerialPortFilter,
 } from './webSerialPipe.ts';
