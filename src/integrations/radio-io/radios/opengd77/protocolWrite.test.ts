@@ -15,6 +15,7 @@ import type { MemoryMap } from '../../types.ts';
 import { OPENUV380_FLASH_SPANS } from './constants.ts';
 import { createOpenUv380Image, writeAbs } from './memory.ts';
 import { OpenGd77Protocol } from './protocol.ts';
+import { SATELLITE_BANK_BYTES } from './satelliteCodec.ts';
 import { OpenGd77ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
 import {
   OpenGd77WriteDesyncError,
@@ -146,7 +147,7 @@ describe('OpenGD77 write NACK handling', () => {
     expect(err.message).toContain('FINISH for FLASH sector 0x0 (sector 1 of 3)');
   });
 
-  it('a sector left open by an earlier interrupted write NACKs the first SET_SECTOR, and the error says so', async () => {
+  it('a sector left open by an earlier interrupted write NACKs the first SET_SECTOR as a typed error naming the sector', async () => {
     const { pipe, proto } = await connected();
     pipe.openSector = 0x1000;
     const err = await failure(() => proto.upload(threeSectorImage(), {}));
@@ -243,8 +244,9 @@ describe('OpenGD77 CPS screen is entered once per session', () => {
     expect(udb.pipe.commands.filter((c) => c[0] === 0x00)).toHaveLength(1);
 
     const keps = await connected();
-    await keps.proto.uploadSatelliteBank(new Uint8Array(0), {}).catch(() => undefined);
+    await keps.proto.uploadSatelliteBank(new Uint8Array(SATELLITE_BANK_BYTES), {});
     expect(keps.pipe.commands.filter((c) => c[0] === 0x00)).toHaveLength(1);
+    expect(keps.pipe.writesOf(SET).length).toBeGreaterThan(0);
   });
 
   it('a write-only connect (no handshake) enters CPS once', async () => {
@@ -329,6 +331,37 @@ describe('OpenGD77 recovery on failure', () => {
     expect(err).toBeInstanceOf(RadioAbortedError);
     expect(pipe.controls).toEqual([1]);
     expect(pipe.writesOf(SET)).toHaveLength(1);
+  });
+});
+
+describe('OpenGD77 recovery in the other write phases', () => {
+  /** A failed phase reboots once (reboot-only), never saves, never closes CPS, entered CPS once. */
+  function expectRebootOnly(pipe: OpenGd77ScriptedPipe) {
+    expect(pipe.controls.filter((c) => c === 1)).toHaveLength(1);
+    expect(pipe.controls).not.toContain(0);
+    expect(pipe.commands.filter((c) => c[0] === 0x05)).toHaveLength(0);
+    expect(pipe.commands.filter((c) => c[0] === 0x00)).toHaveLength(1);
+    expect(pipe.rebooted).toBe(true);
+  }
+
+  it('a User Database failure sends reboot-only, not save-and-reboot', async () => {
+    const { pipe, proto } = await connected();
+    pipe.nackOn(SET, 1);
+    const err = await failure(() => proto.uploadUserDatabase([UDB_CONTACT], {}));
+    expect((err as OpenGd77WriteNackError).context.phase).toBe('user-database');
+    expectRebootOnly(pipe);
+    expect(err.message).toContain('restart command');
+  });
+
+  it('a keps failure sends reboot-only, not save-and-reboot', async () => {
+    const { pipe, proto } = await connected();
+    pipe.nackOn(SET, 1);
+    const err = await failure(() =>
+      proto.uploadSatelliteBank(new Uint8Array(SATELLITE_BANK_BYTES), {}),
+    );
+    expect(err).toBeInstanceOf(OpenGd77WriteNackError);
+    expect((err as OpenGd77WriteNackError).context.phase).toBe('keps');
+    expectRebootOnly(pipe);
   });
 });
 

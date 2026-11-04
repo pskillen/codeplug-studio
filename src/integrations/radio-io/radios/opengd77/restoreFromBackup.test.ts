@@ -181,6 +181,42 @@ describe('OpenGd77Protocol.restoreFromBackup', () => {
     expect(proto.getLastDirtySectorCount()).toBeGreaterThan(0);
   });
 
+  it('enters the CPS screen once on restore, and a failed restore sends reboot-only', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    const proto = new OpenGd77Protocol();
+    await proto.connect(pipe);
+    pipe.nackOn(OPENGD77_WRITE_CMD_SET_SECTOR, 1);
+    const image = createOpenUv380Image();
+    fillRestorableSpans(image, 0xa5);
+    let err: unknown;
+    try {
+      await proto.restoreFromBackup(
+        { manifest: manifest(restorableManifestRegions()), image },
+        { regionIds: OPENGD77_BACKUP_FLASH_SPANS.map((s) => s.id) },
+      );
+    } catch (e) {
+      err = e;
+    }
+    expect((err as Error).message).toContain('restart command');
+    expect(pipe.commands.filter((c) => c[0] === 0x00)).toHaveLength(1);
+    expect(pipe.controls).toEqual([1]);
+    expect(pipe.commands.filter((c) => c[0] === 0x05)).toHaveLength(0);
+  });
+
+  it('a successful restore sends SHOW_CPS once and save-and-reboot once', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    const proto = new OpenGd77Protocol();
+    await proto.connect(pipe);
+    const image = createOpenUv380Image();
+    fillRestorableSpans(image, 0xa5);
+    await proto.restoreFromBackup(
+      { manifest: manifest(restorableManifestRegions()), image },
+      { regionIds: OPENGD77_BACKUP_FLASH_SPANS.map((s) => s.id) },
+    );
+    expect(pipe.commands.filter((c) => c[0] === 0x00)).toHaveLength(1);
+    expect(pipe.controls).toEqual([0]);
+  });
+
   it('is available on the MD-9600 protocol instance', async () => {
     const pipe = new OpenGd77ScriptedPipe(0x05);
     const proto = createOpenGd77Md9600Protocol() as OpenGd77Protocol;
