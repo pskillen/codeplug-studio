@@ -94,6 +94,7 @@ import { migrateAprsSingletonLibrary } from '@core/domain/migrateAprsSingleton.t
 import { normalizeZoneMemberEntry } from '@core/domain/zoneMembers.ts';
 import { migrateProjectAggregate } from '@core/domain/migrateZoneExportFields.ts';
 import { parseOverrideArray } from '@core/domain/formatBuildOverrides.ts';
+import { pruneStaleBuildReferences } from '@core/domain/pruneStaleBuildReferences.ts';
 import { NATIVE_YAML_SCHEMA_VERSION, type ProjectAggregate } from '../../projectDocument.ts';
 import {
   NativeYamlImportError,
@@ -1908,6 +1909,18 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
   if (trackingSettings) {
     assertUniqueIds([trackingSettings], 'trackingSettings');
   }
+
+  // Build layouts and overrides can lag behind library deletes; drop stale ids rather
+  // than refuse a project Studio itself wrote. See pruneStaleBuildReferences.
+  radioBuilds = radioBuilds.map((build) => {
+    const pruned = pruneStaleBuildReferences(build, library);
+    if (pruned.removed.length > 0) {
+      warnings.push(
+        `Radio build "${build.name}": dropped references to deleted library entries — ${pruned.removed.join('; ')}`,
+      );
+    }
+    return pruned.build;
+  });
 
   validateForeignKeys(library, radioBuilds, egressPaths);
 

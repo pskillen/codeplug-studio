@@ -74,6 +74,47 @@ describe('LibraryService', () => {
     expect(await persistence.getTalkGroup(projectId, tg.id)).toBeNull();
   });
 
+  it('deleting a zone removes it from radio build layouts and overrides', async () => {
+    const { persistence, service, projectId } = await setup();
+    const channel = newChannel(projectId, 'Local');
+    const zone = {
+      ...newZone(projectId, 'Airband'),
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
+    };
+    const keptZone = newZone(projectId, 'Home');
+    const build = {
+      ...newRadioBuild(projectId, 'baofeng-dm1701'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              { id: zone.id, name: zone.name, channelIds: [channel.id] },
+              { id: keptZone.id, name: keptZone.name, channelIds: [] },
+            ],
+          },
+        ],
+      },
+      zoneOverrides: [
+        { libraryEntityId: zone.id, excluded: true },
+        { libraryEntityId: keptZone.id, wireName: 'Home' },
+      ],
+    };
+    await persistence.putChannel(channel, null);
+    await persistence.putZone(zone, null);
+    await persistence.putZone(keptZone, null);
+    await persistence.putRadioBuild(build, null);
+
+    const outcome = await service.deleteWithIntegrity(projectId, 'zone', zone.id);
+    expect(outcome.ok).toBe(true);
+
+    const [saved] = await persistence.listRadioBuilds(projectId);
+    expect(saved?.layout.sections).toEqual([
+      { kind: 'zoneGrouping', zones: [{ id: keptZone.id, name: 'Home', channelIds: [] }] },
+    ]);
+    expect(saved?.zoneOverrides).toEqual([{ libraryEntityId: keptZone.id, wireName: 'Home' }]);
+  });
+
   it('blocks deleting a zone referenced as a nested member', async () => {
     const { persistence, service, projectId } = await setup();
     const inner = newZone(projectId, 'Inner');

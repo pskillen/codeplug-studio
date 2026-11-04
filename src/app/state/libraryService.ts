@@ -4,6 +4,7 @@ import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
 import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
 import { normalizeZoneBehaviourDefaults } from '@core/domain/normalizeZoneBehaviourDefaults.ts';
 import { findReferencesTo, type EntityReference } from '@core/domain/references.ts';
+import { pruneStaleBuildReferences } from '@core/domain/pruneStaleBuildReferences.ts';
 import {
   removeChannelsFromZoneMembers,
   zonesWithDirectChannelMember,
@@ -142,7 +143,30 @@ export class LibraryService {
       return { ok: false, references };
     }
     await this.persistence.deleteEntity(projectId, kind, id);
+    await this.pruneBuildsAfterDelete(projectId);
     return { ok: true };
+  }
+
+  /**
+   * Drop build layout entries and override rows that point at entities no
+   * longer in the library, so a library delete never leaves a build (and the
+   * project YAML) with dangling ids.
+   */
+  private async pruneBuildsAfterDelete(projectId: string): Promise<void> {
+    const library = await this.loadLibrary(projectId);
+    const builds = await this.persistence.listRadioBuilds(projectId);
+    for (const build of builds) {
+      const pruned = pruneStaleBuildReferences(build, library);
+      if (pruned.removed.length === 0) continue;
+      const result = await this.persistence.putRadioBuild(pruned.build, build.revision);
+      if (!result.ok) {
+        throw new Error(
+          result.reason === 'revision_conflict'
+            ? 'A radio build was changed elsewhere. Reload and try again.'
+            : 'Failed to remove deleted entries from radio builds.',
+        );
+      }
+    }
   }
 
   /**
