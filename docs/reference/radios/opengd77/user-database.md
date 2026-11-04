@@ -51,7 +51,7 @@ Builds before the frame-split fix could damage a Write of this size (a full data
 - Linux attempts on earlier builds failed before FINISHing the header sector, which left the old database intact.
 - Power-cycle a radio that showed a failed write before the next attempt, so a sector left open is cleared.
 
-For the codeplug itself: re-write it once and run Check write. The Write diffs against a fresh read, so any sector that is mixed or wrong is rewritten, and an unchanged radio sends nothing. If a failed Write got past sector `0x6000` on the earliest builds, also look over the radio's menu settings (the old gap fill could wipe `0x6060`-`0x6FFF`); a successful re-Write saves the radio's settings again. Keps need nothing.
+For the codeplug itself: re-write it once and run Check write. The Write diffs against a fresh read, so any sector that is mixed or wrong is rewritten, and an unchanged radio sends nothing. On a **DM-1701**, if a failed Write got past sector `0x6000` on the earliest builds, also look over the radio's menu settings (the old gap fill could wipe `0x6060`-`0x6FFF`, where that radio keeps its only copy of them); a successful re-Write saves the radio's settings again. An **MD-9600** keeps its live settings in battery RAM and rewrites the flash copy from them at every boot (`settings.c:133-163`, R20260131 MD-9600 source) and on the CPS save commands `C 06 00` / `C 06 02` (`usb_com.c:758, 802`), so a failed old-build Write is unlikely to have lost them; only a flat or removed backup battery at the same time would let it read the wiped flash copy. Keps need nothing.
 
 ## Related
 
