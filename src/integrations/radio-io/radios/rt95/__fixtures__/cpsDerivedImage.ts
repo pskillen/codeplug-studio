@@ -246,7 +246,7 @@ export const CPS_CHANNEL_FIXTURES = {
     power: 2,
     name: 'UHF-03',
   },
-  /** Duplex 3 (split): rx only is asserted, the offset meaning on slots 1-200 is open (O2). */
+  /** Duplex 3 (split): rx only is asserted, the offset meaning on slots 1-200 is still open. */
   split: { slot: 4, rxHz: 433.5 * MHZ, offsetHz: 433.6 * MHZ, duplex: 3, name: 'SPLIT4' },
   /** TX off (receive only) with the reverse flag and both unresolved flags set. */
   rxOnly: {
