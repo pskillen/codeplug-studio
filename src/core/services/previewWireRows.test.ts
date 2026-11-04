@@ -9,6 +9,7 @@ import {
   newChannel,
   newDigitalContact,
   newFormatBuild,
+  newRadioBuildForProfile,
   newRadioBuild,
   newRxGroupList,
   newScanList,
@@ -1556,5 +1557,40 @@ describe('previewWireRows', () => {
 
     const rows = previewWireRows(build, library, 'channel');
     expect(rows.map((row) => row.libraryEntityId)).toEqual([fm.id]);
+  });
+});
+
+describe('previewWireRows: stock RT95 name note (#1464)', () => {
+  function library(channels: Channel[]) {
+    return {
+      channels,
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+  }
+  const named = (name: string): Channel =>
+    withExportEligibleDefaults({
+      ...newChannel('p1', name, ''),
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+    });
+
+  it('notes names the stock CPS would show as spaces, and only on the stock target', () => {
+    const lib = library([named('Gb3'), named('GB3')]);
+    for (const [profileId, expectNote] of [
+      ['radio-io-rt95', true],
+      ['radio-io-rt95-mm9pdy', false],
+    ] as const) {
+      const { build } = newRadioBuildForProfile('p1', profileId);
+      const rows = previewWireRows(build, lib, 'channel');
+      const lower = rows.find((r) => r.effectiveWireName === 'Gb3')!;
+      const upper = rows.find((r) => r.effectiveWireName === 'GB3')!;
+      expect(Boolean(lower.wireNameNote)).toBe(expectNote);
+      expect(upper.wireNameNote).toBeUndefined();
+    }
   });
 });

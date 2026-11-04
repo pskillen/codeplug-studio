@@ -1,5 +1,5 @@
-import { Group, Text } from '@mantine/core';
-import { IconPencil } from '@tabler/icons-react';
+import { Group, Text, Tooltip } from '@mantine/core';
+import { IconInfoCircle, IconPencil } from '@tabler/icons-react';
 import { useState } from 'react';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { RowActionIcon } from '../../v2/index.ts';
@@ -65,6 +65,13 @@ export default function WirePreviewExportNameCell({
         originalName={row.displayLabel}
         limit={nameLimit}
       />
+      {row.wireNameNote ? (
+        <Tooltip label={row.wireNameNote} multiline w={280}>
+          <Text span size="xs" c="dimmed" aria-label="Name note" data-testid="wire-name-note">
+            <IconInfoCircle size={14} stroke={ICON_STROKE} style={{ verticalAlign: 'middle' }} />
+          </Text>
+        </Tooltip>
+      ) : null}
       <RowActionIcon
         icon={<IconPencil size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
         label="Edit export name"

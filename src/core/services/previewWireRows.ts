@@ -8,6 +8,7 @@ import {
   type OverrideField,
 } from '@core/domain/formatBuildOverrides.ts';
 import { channelDisplayLabel, defaultChannelWireName } from '@core/domain/channelNaming.ts';
+import { rt95StockCpsNameNote } from '@core/import-export/formats/radio-io/rt95StockText.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import {
   expandAllMxNChannels,
@@ -129,6 +130,11 @@ export interface WirePreviewRow {
    */
   hasMemberOrderOverride?: boolean;
   excluded: boolean;
+  /**
+   * Non-blocking note about the effective wire name (not a Write warning) — e.g. the stock RT95
+   * CPS would show some characters as spaces. Shown beside the name in the Export name cell.
+   */
+  wireNameNote?: string;
   expansionNote?: string;
   displayDetails?: WirePreviewDisplayLine[];
   /** Library zone flagged omitFromExport — no standalone Zones.csv row. */
@@ -630,6 +636,14 @@ export function previewWireRows(
             channelMode: generated.mode,
             ...channelBandFields(channel),
           });
+        }
+      }
+      if (profileId === 'radio-io-rt95') {
+        // Stock RT95: the radio takes any printable ASCII; the stock CPS shows the rest as
+        // spaces. A note beside the name, not a Write warning (#1464).
+        for (const row of rows) {
+          const note = rt95StockCpsNameNote(row.effectiveWireName);
+          if (note) row.wireNameNote = note;
         }
       }
       return rows;
