@@ -42,10 +42,20 @@ Wire-name composition for CPS export lives at the import/export boundary. In lib
 | **Name**        | Human qualifier in lists and detail — not the composed CPS wire string |
 | **Comment**     | Internal notes; not exported to CPS                                    |
 
-**Callsign is at least as important as name for a fixed station** — it is the licensed identifier (what Ofcom or a foreign administration actually cares about), while `name` is an operator-chosen convenience label. Display surfaces should give callsign equal or greater visual priority, not bury it as secondary detail under the name:
+### Channel identity: callsign and name together
 
-- **Channel editor heading:** `<Callsign> <Name>` (callsign first) when a callsign is set, falling back to name alone.
-- **List / table rows:** lead with callsign (+ band) on its own line, name below — not the other way round.
+**Callsign is at least as important as name for a fixed station** — it is the licensed identifier (what Ofcom or a foreign administration actually cares about), while `name` is an operator-chosen convenience label. Not every channel has one (simplex, PMR446, marine, satellites), but **where a channel has a callsign, it outranks the name**.
+
+The rule: **wherever a channel is identified, show its callsign and its name together**, callsign first, name alone when there is no callsign. Leaving either out needs a clear, written reason (for example a CPS wire-name preview, which shows the exported string).
+
+- **Channel editor heading:** `<Callsign> <Name>` when a callsign is set, falling back to name alone.
+- **List / table rows:** lead with callsign (+ band) on its own line, name below — not the other way round. A table that splits them into columns puts **Callsign** before **Name** and shows `—` when it is empty.
+- **Phone identity lines:** bold callsign, then `· name`.
+- **Pickers, comboboxes, member rows, map tooltips and popups, confirm dialogs:** callsign and name, not name alone.
+- **Search** on any channel table or picker matches callsign as well as name.
+- **Sort:** where a table sorts by name, offer callsign too.
+
+New channel tables, pickers and summaries must follow this from the start; agents get it as a rule ([`.claude/rules/channel-identity.md`](../../../.claude/rules/channel-identity.md), mirrored in `.cursor/rules/`).
 
 CPS wire naming rules: [callsigns.md](../callsigns.md) and per-format channel docs under `docs/reference/export-formats/<format>/`.
 
