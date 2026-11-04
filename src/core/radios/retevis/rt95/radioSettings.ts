@@ -84,7 +84,7 @@ export const RT95_POWER_ON_PASSWORD_FIELD_IDS: readonly string[] = [
   'powerOnPasswordDigits',
 ];
 
-/** Remote stun / kill codes are 14-character strings in the stock CPS (F-series: dtmf-tone record). */
+/** Remote stun / kill codes are 14-character strings in the stock CPS (stock CPS reference, records/dtmf-tone.md). */
 export const RT95_REMOTE_CODE_MAX_LENGTH = 14;
 
 const BEEP_VOLUME = list(['Off', '1', '2', '3', '4', '5']);

@@ -214,8 +214,19 @@ describe('RT95 stock projection (#1464)', () => {
     expect(foldRt95StockNames([dto('Ünïcod')], warnings)[0]?.wireName).toBe('Unicod');
     expect(foldRt95StockNames([dto('a€b')], warnings)[0]?.wireName).toBe('a-b');
     expect(
-      warnings.map(formatExportWarning).filter((t) => t.includes('replaced with "-"')),
+      warnings
+        .map(formatExportWarning)
+        .filter((t) => t.includes('were replaced in the radio name')),
     ).toHaveLength(2);
+  });
+
+  it('strips a non-ASCII library name to printable ASCII on the real projection path', () => {
+    const a = ch('a', 'Ünïcod', 145.5);
+    const { projection } = project(STOCK, lib([a], []));
+    const name = projection.channels[0]!.wireName;
+    expect(name).toBe('ncod');
+    for (const c of name) expect(c.charCodeAt(0)).toBeGreaterThanOrEqual(0x20);
+    for (const c of name) expect(c.charCodeAt(0)).toBeLessThanOrEqual(0x7e);
   });
 
   it('keeps lower case on the stock target', () => {

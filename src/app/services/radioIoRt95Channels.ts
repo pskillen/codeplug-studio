@@ -25,7 +25,7 @@ export function foldRt95StockNames(
     if (name.replaced) {
       pushGeneralWarning(
         warnings,
-        `Channel ${dto.slotIndex}: characters the RT95 cannot show were replaced with "-" in the radio name "${name.text}".`,
+        `Channel ${dto.slotIndex}: characters the RT95 cannot show were replaced in the radio name "${name.text}".`,
       );
     }
     return { ...dto, wireName: name.text };
