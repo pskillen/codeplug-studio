@@ -64,6 +64,7 @@ import {
   formatBrandMeisterImportMessage,
   persistBrandMeisterImport,
 } from '../../lib/brandmeisterImport.ts';
+import { channelViewPath } from '../../lib/channelPaths.ts';
 
 const BAND_OPTIONS = [
   { value: '2M', label: '2 m' },
@@ -254,7 +255,7 @@ export default function RepeaterDirectorySearch({
           const id = libraryChannelIdForRow(row);
           if (id) {
             return (
-              <Link to={`/library/channels/${id}`} className="libraryListNameLink">
+              <Link to={channelViewPath(id)} className="libraryListNameLink">
                 {row.listing.callsign}
               </Link>
             );
@@ -335,7 +336,7 @@ export default function RepeaterDirectorySearch({
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => navigate(`/library/channels/${libraryChannelId}`)}
+                onClick={() => navigate(channelViewPath(libraryChannelId))}
               >
                 Open
               </Button>

@@ -47,6 +47,7 @@ import { useLibrary } from '../../state/useLibrary.ts';
 import { DSV2_TOKENS } from '../../theme-v2.ts';
 import { hzToMhzString } from '../../lib/units.ts';
 import classes from './ZoneFromLocationPage.module.css';
+import { channelViewPath } from '../../lib/channelPaths.ts';
 
 const CHANNEL_SEARCH_DEBOUNCE_MS = 500;
 /**
@@ -234,7 +235,7 @@ export default function ZoneFromLocationPage() {
       createChannelCallsignColumn<Channel>(),
       createNameColumn<Channel>({
         getName: (ch) => ch.name,
-        getPath: (ch) => `/library/channels/${ch.id}`,
+        getPath: (ch) => channelViewPath(ch.id),
       }),
       {
         key: 'band',
@@ -321,7 +322,7 @@ export default function ZoneFromLocationPage() {
           : null
       }
       onMapClick={(lat, lon) => applyCentre(lat, lon)}
-      onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+      onChannelClick={(id) => navigate(channelViewPath(id))}
       onZoneClick={(id) => navigate(`/library/zones/${id}`)}
     />
   );
@@ -422,7 +423,7 @@ export default function ZoneFromLocationPage() {
             ? 'No geolocated channels within this radius.'
             : 'Set a centre point to preview channels in range.'
         }
-        onRowActivate={(ch) => navigate(`/library/channels/${ch.id}`)}
+        onRowActivate={(ch) => navigate(channelViewPath(ch.id))}
       />
     </Panel>
   );

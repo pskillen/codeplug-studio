@@ -95,6 +95,7 @@ import {
 import pageClasses from '../../../components/library/LibraryInventoryPage.module.css';
 import { groupChannelsForCardView } from './groupChannels.ts';
 import classes from './ChannelsListPage.module.css';
+import { channelEditPath, channelViewPath } from '../../../lib/channelPaths.ts';
 
 const CHANNEL_LAYOUT_OPTIONS = [
   { value: 'table', label: 'Table' },
@@ -161,7 +162,7 @@ function renderChannelNameCell(channel: Channel): ReactNode {
           ) : null}
         </div>
       ) : null}
-      <Link to={`/library/channels/${channel.id}`} className="libraryListNameLink">
+      <Link to={channelViewPath(channel.id)} className="libraryListNameLink">
         {name}
       </Link>
       {renderJoinedModePills(modes, primary)}
@@ -182,7 +183,7 @@ function renderChannelIdentity(channel: Channel): ReactNode {
   return (
     <div className={pageClasses.identityLine}>
       <Link
-        to={`/library/channels/${channel.id}`}
+        to={channelViewPath(channel.id)}
         className={`libraryListNameLink ${pageClasses.identityLink}`}
       >
         {callsign ? (
@@ -481,7 +482,7 @@ export default function ChannelsListPage() {
   const columns = useMemo((): DataTableColumn<Channel>[] => {
     const nameColumn = createNameColumn<Channel>({
       getName: (ch) => ch.name || '—',
-      getPath: (ch) => `/library/channels/${ch.id}`,
+      getPath: (ch) => channelViewPath(ch.id),
       render: renderChannelNameCell,
       hideOnMobile: true,
     });
@@ -595,7 +596,7 @@ export default function ChannelsListPage() {
   const handleBulkEdit = useCallback(() => {
     if (selectedChannels.length === 0) return;
     if (selectedChannels.length === 1) {
-      navigate(`/library/channels/${selectedChannels[0]!.id}`);
+      navigate(channelEditPath(selectedChannels[0]!.id));
       return;
     }
     setBulkEditMessage(null);
@@ -827,7 +828,7 @@ export default function ChannelsListPage() {
           }
           emptyMessage={channelsEmptyMessage}
           filteredEmptyMessage={channelsFilteredEmptyMessage}
-          onRowActivate={(ch) => navigate(`/library/channels/${ch.id}`)}
+          onRowActivate={(ch) => navigate(channelViewPath(ch.id))}
         />
       )}
 
@@ -880,7 +881,7 @@ export default function ChannelsListPage() {
       allChannels={mapChannels}
       height="100%"
       operatorPosition={position}
-      onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+      onChannelClick={(id) => navigate(channelViewPath(id))}
       onZoneClick={(id) => navigate(`/library/zones/${id}`)}
     />
   );

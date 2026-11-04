@@ -66,6 +66,7 @@ export {
   computeZoneMemberPickerMapFilters,
   zoneMembershipExclusionLabel,
 } from './zoneMemberPickerUtils.ts';
+import { channelViewPath } from '../../lib/channelPaths.ts';
 
 export interface ZoneMemberEditorProps {
   channels: Channel[];
@@ -314,7 +315,7 @@ export default function ZoneMemberEditor({
         onRemove={options.showRemove ? () => removeKeys([memberKey]) : undefined}
         trailing={
           options.showOpenLink ? (
-            <Link to={`/library/channels/${channel.id}`} style={{ fontSize: 11.5 }}>
+            <Link to={channelViewPath(channel.id)} style={{ fontSize: 11.5 }}>
               Open
             </Link>
           ) : undefined

@@ -100,8 +100,8 @@ describe('WirePreviewBulkEditTable', () => {
 
     const links = screen.getAllByRole('link', { name: 'Edit in library' });
     expect(links).toHaveLength(2);
-    expect(links[0]).toHaveAttribute('href', '/library/channels/ch-1');
-    expect(links[1]).toHaveAttribute('href', '/library/channels/ch-2');
+    expect(links[0]).toHaveAttribute('href', '/library/channels/ch-1/edit');
+    expect(links[1]).toHaveAttribute('href', '/library/channels/ch-2/edit');
   });
 
   it('accumulates pending wire names without a per-row Apply control', () => {

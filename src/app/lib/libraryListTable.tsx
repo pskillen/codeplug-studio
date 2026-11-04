@@ -5,6 +5,7 @@ import type { DataTableSortState as V1Sort } from './dataTable/sort.ts';
 import { DATATABLE_NAME_SORT_KEY } from './dataTable/sort.ts';
 import { loadStringArray, saveStringArray } from '@integrations/listPrefs/columnVisibility.ts';
 import { useCallback, useMemo, useState } from 'react';
+import { channelViewPath } from './channelPaths.ts';
 
 export function v1SortToV2(sort: V1Sort): V2Sort {
   return { key: sort.columnKey, direction: sort.direction };
@@ -61,7 +62,7 @@ export function createChannelCallsignColumn<
       const callsign = row.callsign?.trim();
       if (!callsign) return '—';
       return (
-        <Link to={`/library/channels/${row.id}`} className="libraryListNameLink">
+        <Link to={channelViewPath(row.id)} className="libraryListNameLink">
           <strong>{callsign}</strong>
         </Link>
       );
