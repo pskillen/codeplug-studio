@@ -12,11 +12,14 @@ import {
   OPENGD77_TYPE_COMMAND,
   OPENGD77_TYPE_READ,
   OPENGD77_TYPE_WRITE_UV380,
+  OPENGD77_WRITE_CMD_FINISH_SECTOR,
   OPENGD77_WRITE_CMD_SET_SECTOR,
 } from '../../kit/codecs/opengd77Serial.ts';
 import {
   OPENGD77_CMD_CONTROL,
   OPENGD77_CONTROL_SAVE_REBOOT,
+  OPENGD77_QUICKKEYS_END,
+  OPENGD77_QUICKKEYS_START,
   OPENUV380_IMAGE_SIZE,
 } from './constants.ts';
 import { OPENGD77_BACKUP_FLASH_SPANS } from './backupRestoreRoles.ts';
@@ -185,6 +188,35 @@ describe('OpenGd77Protocol.restoreFromBackup', () => {
       { regionIds: OPENGD77_BACKUP_FLASH_SPANS.map((s) => s.id) },
     );
     expect(proto.getLastDirtySectorCount()).toBeGreaterThan(0);
+  });
+
+  it('restores a backup whose QuickKeys differ: the radio keeps its own and the read-back does not retry', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    for (let a = OPENGD77_QUICKKEYS_START; a < OPENGD77_QUICKKEYS_END; a++) pipe.plantByte(a, 0x11);
+    const proto = new OpenGd77Protocol();
+    await proto.connect(pipe, { settleScale: 0 });
+
+    const image = createOpenUv380Image();
+    fillRestorableSpans(image, 0xa5);
+    writeAbs(
+      image,
+      OPENGD77_QUICKKEYS_START,
+      new Uint8Array(OPENGD77_QUICKKEYS_END - OPENGD77_QUICKKEYS_START).fill(0x22),
+    );
+    await proto.restoreFromBackup(
+      { manifest: manifest(restorableManifestRegions()), image },
+      { regionIds: OPENGD77_BACKUP_FLASH_SPANS.map((s) => s.id) },
+    );
+
+    expect(pipe.flashByte(OPENGD77_QUICKKEYS_START)).toBe(0x11);
+    expect(pipe.flashByte(OPENGD77_QUICKKEYS_END - 1)).toBe(0x11);
+    expect(pipe.flashByte(OPENGD77_QUICKKEYS_START - 1)).toBe(0xa5);
+    expect(pipe.flashByte(OPENGD77_QUICKKEYS_END)).toBe(0xa5);
+    // One pass per sector: a compare of the kept bytes would have burned all three attempts.
+    expect(pipe.writesOf(OPENGD77_WRITE_CMD_FINISH_SECTOR)).toHaveLength(
+      proto.getLastDirtySectorCount(),
+    );
+    expect(pipe.controls).toEqual([0]);
   });
 
   it('enters the CPS screen once on restore, and a failed restore sends reboot-only', async () => {

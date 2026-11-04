@@ -57,6 +57,15 @@ export const OPENUV380_FLASH_SPANS = Object.freeze([
   { start: 0x0009_b000, length: 0x0001_3e60 },
 ] as const);
 
+/**
+ * QuickKeys (10 x uint16, `0x7524..0x7537`), inside the second span. The firmware drops these
+ * bytes from every SECTOR_BUFFER write on MDUV380 / DM-1701 (`usb_com.c`, "prevent the QuickKeys
+ * getting overwritten by the codeplug"), so whatever the host sends there, the radio keeps its
+ * own. The write read-back must not compare them.
+ */
+export const OPENGD77_QUICKKEYS_START = 0x0000_7524;
+export const OPENGD77_QUICKKEYS_END = 0x0000_7538;
+
 /** Named region absolute FLASH bases. */
 export const OPENUV380_OFFSET = Object.freeze({
   settings: 0x0000_0080,

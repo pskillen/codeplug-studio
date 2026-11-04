@@ -64,6 +64,8 @@ import {
   OPENGD77_1701_POWER_STEPS,
   OPENGD77_MD9600_POWER_STEPS,
   MD9600_RADIO_TYPES,
+  OPENGD77_QUICKKEYS_END,
+  OPENGD77_QUICKKEYS_START,
 } from './constants.ts';
 import {
   countOccupiedChannels,
@@ -641,7 +643,12 @@ export class OpenGd77Protocol implements CloneImageRadio {
         throw err;
       }
       const want = sector.payload.subarray(off, off + OPENGD77_BLOCK);
-      const bad = want.findIndex((b, i) => got[i] !== b);
+      // The radio keeps its own QuickKeys whatever was sent (restore carries the backup's).
+      const bad = want.findIndex((b, i) => {
+        const at = sector.sectorAbs + off + i;
+        if (at >= OPENGD77_QUICKKEYS_START && at < OPENGD77_QUICKKEYS_END) return false;
+        return got[i] !== b;
+      });
       if (bad >= 0) {
         throw new OpenGd77WriteVerifyError(
           ctx,

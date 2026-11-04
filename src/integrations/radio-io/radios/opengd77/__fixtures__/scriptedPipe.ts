@@ -13,7 +13,11 @@ import {
   OPENGD77_WRITE_CMD_SECTOR_BUFFER,
   OPENGD77_WRITE_CMD_SET_SECTOR,
 } from '../../../kit/codecs/opengd77Serial.ts';
-import { OPENUV380_FLASH_SPANS } from '../constants.ts';
+import {
+  OPENGD77_QUICKKEYS_END,
+  OPENGD77_QUICKKEYS_START,
+  OPENUV380_FLASH_SPANS,
+} from '../constants.ts';
 import { OPENGD77_FIRMWARE_INFO_SIZE } from '../protocol.ts';
 
 function putU32Le(buf: Uint8Array, offset: number, value: number): void {
@@ -57,7 +61,8 @@ type WriteFault = 'nack' | 'nack-then-ack' | 'wrong-echo' | 'silent' | 'split' |
  * `'-'`, an open sector (`sector`) NACKs the next SET_SECTOR, SECTOR_BUFFER / FINISH without an
  * open sector NACK, a NACK closes the sector, SHOW_CPS stacks (`cpsDepth`) and CLOSE_CPS pops one,
  * control 6 sub 0/1 reboot (clearing sector and CPS depth). SET_SECTOR loads the sector from flash
- * into a buffer, SECTOR_BUFFER fills the buffer, and only FINISH programs it.
+ * into a buffer, SECTOR_BUFFER fills the buffer (except the QuickKeys bytes, which it keeps), and
+ * only FINISH programs it.
  */
 export class OpenGd77ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
@@ -230,6 +235,9 @@ export class OpenGd77ScriptedPipe implements BytePipe {
         const length = ((data[6]! << 8) | data[7]!) >>> 0;
         for (let i = 0; i < length && !dropData; i++) {
           const at = addr + i - this.openSector;
+          const abs = addr + i;
+          // Firmware hack: the QuickKeys are never overwritten by the codeplug.
+          if (abs >= OPENGD77_QUICKKEYS_START && abs < OPENGD77_QUICKKEYS_END) continue;
           if (at >= 0 && at < 4096) this.staged[at] = this.splitting ? 0 : data[8 + i]!;
         }
         this.enqueueWriteAck(cmd);
