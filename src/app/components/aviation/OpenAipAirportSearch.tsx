@@ -56,6 +56,7 @@ import {
   ToggleSwitch,
 } from '../v2/index.ts';
 import classes from './OpenAipAirportSearch.module.css';
+import { channelViewPath } from '../../lib/channelPaths.ts';
 
 const DEFAULT_ZONE_NAME = 'Airband';
 
@@ -214,8 +215,14 @@ function ExistingFrequencyRow({
       wireLabel={wireLabel}
       nameContent={
         <div className={classes.nameCellStack}>
-          <Anchor component={Link} to={`/library/channels/${channel.id}`} size="sm" lineClamp={2}>
-            {channel.name}
+          <Anchor component={Link} to={channelViewPath(channel.id)} size="sm" lineClamp={2}>
+            {channel.callsign.trim() ? (
+              <>
+                <strong>{channel.callsign.trim()}</strong> · {channel.name}
+              </>
+            ) : (
+              channel.name
+            )}
           </Anchor>
           <Text className={classes.inLibraryHint}>In library</Text>
         </div>

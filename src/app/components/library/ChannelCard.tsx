@@ -4,6 +4,7 @@ import { Checkbox } from '../v2/index.ts';
 import type { DataTableColumn } from '../v2/DataTable.tsx';
 import ChannelListDeleteAction from './ChannelListDeleteAction.tsx';
 import classes from './ChannelCard.module.css';
+import { channelViewPath } from '../../lib/channelPaths.ts';
 
 export interface ChannelCardProps {
   channel: Channel;
@@ -37,10 +38,18 @@ export default function ChannelCard({
             />
           ) : null}
           <div className={classes.titleBlock}>
-            <Link to={`/library/channels/${channel.id}`} className={classes.name}>
-              {channel.name || '—'}
+            <Link to={channelViewPath(channel.id)} className={classes.name}>
+              {callsign ? (
+                <>
+                  <span className={classes.callsignLead}>{callsign}</span>
+                  {channel.name ? (
+                    <span className={classes.nameAfter}>&nbsp;· {channel.name}</span>
+                  ) : null}
+                </>
+              ) : (
+                channel.name || '—'
+              )}
             </Link>
-            {callsign ? <div className={classes.callsign}>{callsign}</div> : null}
           </div>
         </div>
         <ChannelListDeleteAction channel={channel} />

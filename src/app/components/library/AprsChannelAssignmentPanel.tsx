@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { Link } from 'react-router-dom';
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
@@ -25,7 +24,7 @@ import {
   type DataTableSortState,
 } from '../v2/index.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
-import { createNameColumn } from '../../lib/libraryListTable.tsx';
+import { createChannelCallsignColumn, createNameColumn } from '../../lib/libraryListTable.tsx';
 import {
   ALL_BANDS,
   bandsFromFrequencies,
@@ -50,6 +49,7 @@ import AprsChannelBulkAssignModal, {
   type AprsChannelBulkPatch,
 } from './AprsChannelBulkAssignModal.tsx';
 import { persistence } from '../../state/persistence.ts';
+import { channelViewPath } from '../../lib/channelPaths.ts';
 
 const REPORT_TYPE_OPTIONS = [
   { value: 'off', label: 'Off' },
@@ -220,21 +220,11 @@ function AprsChannelAssignmentPanelInner({
 
   const columns = useMemo((): DataTableColumn<Channel>[] => {
     return [
+      createChannelCallsignColumn<Channel>(),
       createNameColumn<Channel>({
         getName: (row) => row.name,
-        getPath: (row) => `/library/channels/${row.id}`,
+        getPath: (row) => channelViewPath(row.id),
       }),
-      {
-        key: 'callsign',
-        header: 'Callsign',
-        sortable: true,
-        sortValue: (row) => row.callsign || '',
-        render: (row) => (
-          <Link to={`/library/channels/${row.id}`} className="libraryListNameLink">
-            {row.callsign || '—'}
-          </Link>
-        ),
-      },
       {
         key: 'band',
         header: 'Band',

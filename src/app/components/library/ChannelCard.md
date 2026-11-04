@@ -1,6 +1,6 @@
 # ChannelCard
 
-Stacked-field card for one channel — name/callsign header, optional labeled field rows, optional selection checkbox, and delete action. Used on `/library/channels` when the operator chooses **Cards** layout ([#1205](https://github.com/pskillen/codeplug-studio/issues/1205)).
+Stacked-field card for one channel — callsign + name header, optional labeled field rows, optional selection checkbox, and delete action. Used on `/library/channels` when the operator chooses **Cards** layout ([#1205](https://github.com/pskillen/codeplug-studio/issues/1205)).
 
 ## Purpose
 
@@ -30,8 +30,8 @@ import ChannelCard from '@app/components/library/ChannelCard.tsx';
 
 ## Behaviour
 
-- **Name** links to `/library/channels/:id`, matching the table name column.
-- **Callsign** appears below the name when `channel.callsign` is non-empty; omitted entirely when absent (no placeholder row).
+- The header link reads **callsign · name** (callsign first, monospace) when `channel.callsign` is non-empty, otherwise the name alone — see [display styleguide — Channel identity](../../../../docs/reference/styleguide/display.md#channel-identity-callsign-and-name-together).
+- The link opens the channel view page, `/library/channels/:id` ([#1533](https://github.com/pskillen/codeplug-studio/issues/1533)).
 - **Selection** — checkbox only when `onSelectedChange` is provided; clicking the checkbox does not navigate.
 - **Delete** reuses `ChannelListDeleteAction` (same confirmation flow as the table row action).
 - Renders nothing extra when `fieldColumns` is empty (header + delete only).
