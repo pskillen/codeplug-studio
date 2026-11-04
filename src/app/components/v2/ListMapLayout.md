@@ -47,6 +47,7 @@ One component for both form factors. Desktop: the controls and list scroll with 
 ## Behaviour
 
 - Desktop map height comes from `stickyMapHeight` (`lib/stickyMapHeight.ts`): the viewport minus the space above the pane, clamped to at least 360 px and at most the viewport minus gutters. It is re-measured on resize and when the page body changes size. The list pane scrolls horizontally if its table is wider than the pane.
+- Desktop split: list and map share the width 1.7 : 1, and the map pane never drops below `min(420px, 40%)` (the list gives way first). The routes in `MOBILE_FULL_BLEED_PATHS` also skip AppLayout's centred 75% column on desktop (`isWideDesktopPath`), so the split gets the whole window ([#1524](https://github.com/pskillen/codeplug-studio/issues/1524)).
 - Mobile fills the viewport, so the route must be full-bleed on mobile: add it to `MOBILE_FULL_BLEED_PATHS` in `src/app/nav/fullBleedRoutes.ts` (Channels, Zones and the UK, IRTS and RepeaterBook directory searches today). The page root must be the `DesignSystemV2Provider` (AppLayout passes the height through its scope div).
 - The mobile map's own toolbar (label / zone toggles, Map settings link) wraps within the map pane.
 

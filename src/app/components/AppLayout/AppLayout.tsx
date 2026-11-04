@@ -10,7 +10,7 @@ import {
   DesignSystemV2Provider,
   ProjectChip,
 } from '../v2/index.ts';
-import { isFullBleedPath } from '../../nav/fullBleedRoutes.ts';
+import { isFullBleedPath, isWideDesktopPath } from '../../nav/fullBleedRoutes.ts';
 import type { BottomTabItem } from '../v2/BottomTabBar.tsx';
 import BuildFooter from '../BuildFooter/BuildFooter.tsx';
 import BuildStripLeading from '../builds/BuildStripLeading.tsx';
@@ -278,6 +278,7 @@ function AppLayoutBody({
 }: AppLayoutBodyProps) {
   const navigate = useNavigate();
   const fullBleed = isFullBleedPath(pathname, isDesktopNav === false);
+  const wide = !fullBleed && isWideDesktopPath(pathname);
 
   return (
     <div
@@ -338,7 +339,13 @@ function AppLayoutBody({
           .join(' ')}
       >
         <CookieConsentBanner />
-        <div className={fullBleed ? classes.pageContentFullBleed : classes.pageContent}>
+        <div
+          className={
+            fullBleed
+              ? classes.pageContentFullBleed
+              : [classes.pageContent, wide ? classes.pageContentWide : ''].filter(Boolean).join(' ')
+          }
+        >
           <Outlet />
           {fullBleed ? null : <BuildFooter />}
         </div>

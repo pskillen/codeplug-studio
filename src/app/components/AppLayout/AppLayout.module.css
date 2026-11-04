@@ -54,6 +54,12 @@
     margin-left: auto;
     margin-right: auto;
   }
+
+  /* List + map pages (`isWideDesktopPath`): the map pane needs the whole window (#1524). */
+  .pageContentWide {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 /**

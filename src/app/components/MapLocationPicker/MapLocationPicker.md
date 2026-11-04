@@ -6,13 +6,13 @@ Small Leaflet map for picking WGS84 coordinates by click or draggable marker. Us
 
 ## Props
 
-| Prop     | Type                                 | Default                                          | Description                                                        |
-| -------- | ------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------ |
-| `lat`    | `number \| null`                     | —                                                | Marker latitude; null shows default UK-centred view without marker |
-| `lon`    | `number \| null`                     | —                                                | Marker longitude                                                   |
-| `onPick` | `(lat: number, lon: number) => void` | —                                                | Called on map click or marker drag end                             |
-| `height` | `number \| string`                   | viewport-relative (`clamp(300px, 60dvh, 640px)`) | Map container height                                               |
-| `active` | `boolean`                            | `true`                                           | When `false`, renders a sized placeholder without `MapContainer`   |
+| Prop     | Type                                 | Default                                          | Description                                                                                                                                                            |
+| -------- | ------------------------------------ | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lat`    | `number \| null`                     | —                                                | Marker latitude; null shows default UK-centred view without marker                                                                                                     |
+| `lon`    | `number \| null`                     | —                                                | Marker longitude                                                                                                                                                       |
+| `onPick` | `(lat: number, lon: number) => void` | —                                                | Called on map click or marker drag end                                                                                                                                 |
+| `height` | `number \| string`                   | viewport-relative (`clamp(300px, 60dvh, 640px)`) | Map container height. When set, the map may shrink below its default minimum so the toolbar and map together fit a sized parent (e.g. `MapPanel` with `height="100%"`) |
+| `active` | `boolean`                            | `true`                                           | When `false`, renders a sized placeholder without `MapContainer`                                                                                                       |
 
 ## Usage
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isFullBleedPath } from './fullBleedRoutes.ts';
+import { isFullBleedPath, isWideDesktopPath } from './fullBleedRoutes.ts';
 
 describe('isFullBleedPath', () => {
   it('is true for the Field tools only', () => {
@@ -23,5 +23,16 @@ describe('isFullBleedPath', () => {
     expect(isFullBleedPath('/library/channels')).toBe(false);
     expect(isFullBleedPath('/library/channels/new', true)).toBe(false);
     expect(isFullBleedPath('/library/zones/abc', true)).toBe(false);
+  });
+});
+
+describe('isWideDesktopPath', () => {
+  it('is true for the list + map pages only', () => {
+    expect(isWideDesktopPath('/library/channels')).toBe(true);
+    expect(isWideDesktopPath('/library/zones/')).toBe(true);
+    expect(isWideDesktopPath('/library/channels/add-from-repeaterbook')).toBe(true);
+    expect(isWideDesktopPath('/library/channels/new')).toBe(false);
+    expect(isWideDesktopPath('/library/talk-groups')).toBe(false);
+    expect(isWideDesktopPath('/tools/nearby')).toBe(false);
   });
 });
