@@ -21,6 +21,7 @@ import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { createRt95Protocol, Rt95Protocol } from './protocol.ts';
 import { buildSyntheticRt95Image } from './__fixtures__/syntheticImage.ts';
 import {
+  RT95_BANDLIMIT_OFFSET,
   RT95_BLOCK_ADDR_END,
   RT95_BLOCK_ADDR_START,
   RT95_BLOCK_COUNT,
@@ -235,6 +236,49 @@ describe('Rt95Protocol.restoreFromBackup', () => {
     expect((last[1]! << 8) | last[2]!).toBe(lastAddr);
     expect(last.subarray(4, 4 + RT95_BLOCK_SIZE)).toEqual(image.get(lastAddr, RT95_BLOCK_SIZE));
     expect(RT95_BLOCK_ADDR_START).toBe(0);
+  });
+
+  it('refuses a backup whose band differs from the connected radio, sending nothing', async () => {
+    const pipe = new ScriptedQxPipe();
+    const proto = new Rt95Protocol();
+    await proto.connect(pipe, { handshake: 'none' });
+    await proto.ensureProgramMode();
+    const writesBefore = pipe.writes.length;
+
+    const bytes = buildSyntheticRt95Image();
+    bytes[RT95_BANDLIMIT_OFFSET] = 0x02; // the scripted radio reports band 0x01
+    await expect(
+      proto.restoreFromBackup(
+        {
+          manifest: cloneManifest([
+            region(RT95_PROGRAMMING_IMAGE_REGION_ID, 0, RT95_IMAGE_SIZE, 'restorable'),
+          ]),
+          image: memoryMapFromBytes(bytes),
+        },
+        { regionIds: [RT95_PROGRAMMING_IMAGE_REGION_ID] },
+      ),
+    ).rejects.toThrow(/different band/);
+    expect(pipe.writes.length).toBe(writesBefore);
+  });
+
+  it('restores a backup of the same band as the connected radio', async () => {
+    const pipe = new ScriptedQxPipe();
+    const proto = new Rt95Protocol();
+    await proto.connect(pipe, { handshake: 'none' });
+    await proto.ensureProgramMode();
+
+    const bytes = buildSyntheticRt95Image();
+    bytes[RT95_BANDLIMIT_OFFSET] = 0x01;
+    await proto.restoreFromBackup(
+      {
+        manifest: cloneManifest([
+          region(RT95_PROGRAMMING_IMAGE_REGION_ID, 0, RT95_IMAGE_SIZE, 'restorable'),
+        ]),
+        image: memoryMapFromBytes(bytes),
+      },
+      { regionIds: [RT95_PROGRAMMING_IMAGE_REGION_ID] },
+    );
+    expect(pipe.writes.some((w) => w[0] === PROGRAM_QX_WRITE_OPCODE)).toBe(true);
   });
 
   it('protocolFactory exposes restoreFromBackup', () => {

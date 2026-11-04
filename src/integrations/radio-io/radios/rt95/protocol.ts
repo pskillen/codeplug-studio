@@ -529,6 +529,14 @@ export class Rt95Protocol implements CloneImageRadio {
     opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
   ): Promise<void> {
     const intended = intendedRt95RestoreImage(archive, opts.regionIds);
+    // A backup from a radio of another band (ident byte 8, stored at 0x326D) would put its
+    // frequency limits on this radio; MAIN also keeps its own copy of the byte. Refuse, send nothing.
+    const backupBandlimit = readBandlimitFromImage(archive.image);
+    if (this.radioBandlimit != null && backupBandlimit !== this.radioBandlimit) {
+      throw new RadioProtocolError(
+        `This backup is from a radio with a different band (band code 0x${backupBandlimit.toString(16).padStart(2, '0')}) than the connected radio (0x${this.radioBandlimit.toString(16).padStart(2, '0')}). Restore refused, nothing was written.`,
+      );
+    }
     await this.upload(intended, {
       operation: 'restore',
       signal: opts.signal,
