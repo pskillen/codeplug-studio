@@ -233,7 +233,7 @@ const EMPTY_FACTS: WrittenFacts = {
 };
 
 /** Copyable protocol trace a radio module attached to its error (`RadioIoError.debugText`). */
-function errorDebugText(err: unknown): string | null {
+export function errorDebugText(err: unknown): string | null {
   return err instanceof RadioIoError && err.debugText ? err.debugText : null;
 }
 
