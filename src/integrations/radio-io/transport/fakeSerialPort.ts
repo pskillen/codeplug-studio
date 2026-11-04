@@ -25,10 +25,10 @@ export function createFakeSerialPort(options?: {
   /** Start with streams already "open" (default true). */
   initiallyOpen?: boolean;
   /**
-   * Called synchronously for every chunk the pipe writes (any writable stream). Lets a test play an auto-replying
-   * radio by calling `pushRead` from inside.
+   * Called with every chunk the pipe writes, before the write resolves. A radio simulator uses it to feed
+   * its replies back through {@link FakeSerialController.pushRead} (the write promise waits for it).
    */
-  onWrite?: (chunk: Uint8Array) => void;
+  onWrite?: (chunk: Uint8Array) => void | Promise<void>;
 }): FakeSerialController {
   const initiallyOpen = options?.initiallyOpen ?? true;
   const onWrite = options?.onWrite;
@@ -49,11 +49,11 @@ export function createFakeSerialPort(options?: {
     const chunks: Uint8Array[] = [];
     writeStreams.push(chunks);
     const stream: WritableStream<Uint8Array> = new WritableStream<Uint8Array>({
-      write(chunk) {
+      async write(chunk) {
         const copy = chunk.slice();
         chunks.push(copy);
         written.push(copy);
-        onWrite?.(copy);
+        await onWrite?.(copy);
       },
       close() {
         // Spec "handle closing the writable stream": [[writable]] becomes null; the port stays open.

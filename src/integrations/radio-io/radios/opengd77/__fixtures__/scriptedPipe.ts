@@ -54,6 +54,24 @@ function enqueue(buf: Uint8Array, chunks: readonly Uint8Array[]): Uint8Array {
  * whole frame (a SECTOR_BUFFER payload arrives as zeros), and the rest earns a busy `'-'` that
  * lands ahead of the real reply. `lose-data`: SECTOR_BUFFER is ACKed but its bytes never stage.
  * `nack`: one `'-'`. `nack-then-ack`: `'-'` then the ACK in one chunk. `wrong-echo`: two bytes that are not the ACK. `silent`: no reply. */
+/**
+ * A frame that straddles the host buffer boundary reaches the radio as two USB packets (A: the first `k`
+ * bytes, B: the rest). Firmware rules modelled (`usbd_cdc_if.c` `CDC_Receive_FS`, `usb_com.c`):
+ * - A short packet is a whole frame; the request buffer is zero-filled past it (so A is A padded with zeros).
+ * - `busy`: B arrives while A is still pending, so the ISR answers `'-'` and A's own reply is lost to the busy
+ *   IN endpoint. The host sees only `'-'`.
+ * - not busy: A is handled and answered, then B is parsed from its first byte (`R`, `X`, `C` run as frames; any
+ *   other byte earns `'-'`).
+ * - `dropBReply`: (not busy only) B's reply is dropped because the host had not yet collected A's. The host
+ *   then sees A's reply alone, which for a zero-filled SECTOR_BUFFER is a good ACK: the silent case.
+ */
+export interface SplitSpec {
+  /** Cumulative host TX byte (0-based) at which the packet boundary falls; the frame holding it is split. */
+  readonly txByte: number;
+  readonly busy: boolean;
+  readonly dropBReply?: boolean;
+}
+
 type WriteFault = 'nack' | 'nack-then-ack' | 'wrong-echo' | 'silent' | 'split' | 'lose-data';
 
 /**
@@ -79,6 +97,11 @@ export class OpenGd77ScriptedPipe implements BytePipe {
   private readonly faults: { cmd: number; nth: number; last: number; kind: WriteFault }[] = [];
   private staged = new Uint8Array(4096);
   private splitting = false;
+  /** Cumulative bytes the host has written. */
+  txBytes = 0;
+  private splitSpec: SplitSpec | undefined;
+  /** The straddling frame, once a {@link SplitSpec} fired: `[txByte offset of the frame, k]`. */
+  splitFired: { frameStart: number; k: number; frame: Uint8Array } | undefined;
   private readonly seen = new Map<number, number>();
   /** `C` commands (by flag, 1-based nth) whose reply the radio withholds. */
   private readonly silentCommands: { flag: number; nth: number }[] = [];
@@ -107,6 +130,12 @@ export class OpenGd77ScriptedPipe implements BytePipe {
   /** The `nth` (1-based) `C` command with this flag is executed but never answered. */
   silenceCommand(flag: number, nth = 1): void {
     this.silentCommands.push({ flag, nth });
+  }
+
+  /** Arm a one-shot packet split at a cumulative TX byte; see {@link SplitSpec}. */
+  splitAt(spec: SplitSpec): void {
+    this.splitSpec = spec;
+    this.splitFired = undefined;
   }
 
   /** Put bytes on the line as if the radio had sent them unprompted. */
@@ -141,6 +170,14 @@ export class OpenGd77ScriptedPipe implements BytePipe {
   }
 
   async write(data: Uint8Array): Promise<void> {
+    const start = this.txBytes;
+    this.txBytes += data.length;
+    const spec = this.splitSpec;
+    if (spec && spec.txByte > start && spec.txByte < start + data.length) {
+      this.splitSpec = undefined;
+      await this.writeSplit(data, spec, spec.txByte - start, start);
+      return;
+    }
     this.splitting = false;
     const before = this.readBuf.length;
     await this.handle(data);
@@ -151,6 +188,54 @@ export class OpenGd77ScriptedPipe implements BytePipe {
       next.set(this.readBuf.subarray(before), before + 1);
       this.readBuf = next;
     }
+  }
+
+  /** Run one packet through the firmware and return the replies it produced (not yet on the line). */
+  private async packetReplies(packet: Uint8Array): Promise<Uint8Array> {
+    const mark = this.readBuf.length;
+    const kept = this.readBuf.slice(0, mark);
+    this.readBuf = new Uint8Array(0);
+    try {
+      await this.handle(packet);
+    } catch {
+      // A frame the firmware cannot parse (e.g. `R` with its mem code cut off) is refused.
+      this.enqueueChunks(new Uint8Array([OPENGD77_CMD_OK]));
+    }
+    const replies = this.readBuf;
+    this.readBuf = kept;
+    return replies;
+  }
+
+  private async writeSplit(
+    frame: Uint8Array,
+    spec: SplitSpec,
+    k: number,
+    frameStart: number,
+  ): Promise<void> {
+    this.splitFired = { frameStart, k, frame: frame.slice() };
+    const a = new Uint8Array(frame.length);
+    a.set(frame.subarray(0, k));
+    const aReplies = await this.packetReplies(a);
+    if (spec.busy) {
+      this.enqueueChunks(new Uint8Array([OPENGD77_CMD_OK]));
+      return;
+    }
+    this.enqueueChunks(aReplies);
+    const b = frame.slice(k);
+    const first = b[0];
+    let bReplies: Uint8Array;
+    if (
+      first === OPENGD77_TYPE_READ ||
+      first === OPENGD77_TYPE_COMMAND ||
+      first === OPENGD77_TYPE_WRITE_UV380
+    ) {
+      const padded = new Uint8Array(Math.max(8, b.length));
+      padded.set(b);
+      bReplies = await this.packetReplies(padded);
+    } else {
+      bReplies = new Uint8Array([OPENGD77_CMD_OK]);
+    }
+    if (!spec.dropBReply) this.enqueueChunks(bReplies);
   }
 
   private async handle(data: Uint8Array): Promise<void> {
@@ -253,6 +338,9 @@ export class OpenGd77ScriptedPipe implements BytePipe {
         this.enqueueWriteAck(cmd);
         return;
       }
+      // Any other write command (including a bare `X` cut off after its type byte): refused, sector closed.
+      this.openSector = -1;
+      this.enqueueChunks(new Uint8Array([OPENGD77_CMD_OK]));
     }
   }
 
