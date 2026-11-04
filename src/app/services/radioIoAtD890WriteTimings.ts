@@ -4,7 +4,8 @@
  * Wraps the progress callback in a stage timeline that also samples the pipe's `R` and `W` frame
  * counters, so each stage reports its duration and the frames it sent. `END` is sent later, when
  * the session closes, so it is not timed. The result is a single console line, and the same line
- * is returned to the stepper for its Copy write timings button.
+ * is returned to the stepper for its Copy write timings button. It also carries the bytes written and
+ * the Web Serial writer rotation count (#1548), when the pipe reports them.
  */
 
 import {
@@ -41,9 +42,18 @@ export function startAtD890WriteTiming(
   return {
     timeline,
     finish({ profileId, contacts, outcome = 'ok' }) {
+      const pipe = session.pipe as { txBytesWritten?: number; writerRotations?: number };
       const line =
         D890_WRITE_TIMING_PREFIX +
-        JSON.stringify({ profileId, contacts, outcome, ...timeline.report(), untimed: ['END'] });
+        JSON.stringify({
+          profileId,
+          contacts,
+          outcome,
+          ...timeline.report(),
+          untimed: ['END'],
+          txBytesWritten: pipe.txBytesWritten,
+          writerRotations: pipe.writerRotations,
+        });
       console.info(line);
       return line;
     },
