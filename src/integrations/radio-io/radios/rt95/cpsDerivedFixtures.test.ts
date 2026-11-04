@@ -90,7 +90,7 @@ describe('CPS-derived channel fixtures, direction A: parse a CPS-shaped image by
     expect(minus.txHz).toBe(mhz(431.2));
   });
 
-  it('reads split duplex without asserting the TX meaning (open question O2)', () => {
+  it('reads split duplex without asserting the TX meaning (still open: offset or absolute TX on slots 1-200)', () => {
     const split = channelAt(image, F.split.slot);
     expect(split).toMatchObject({ empty: false, rxHz: mhz(433.5), wireName: 'SPLIT4' });
   });
@@ -353,9 +353,6 @@ describe('CPS-derived image through the real Read, library, Write (fake cable)',
   });
 });
 
-/** Fields the sweep cannot round trip because of a known bug (see the `it.fails` below). */
-const KNOWN_BROKEN = ['monKeyFunction'];
-
 describe('CPS-derived settings fixtures', () => {
   const blank = (fill = 0xa5): Uint8Array => new Uint8Array(RT95_IMAGE_SIZE).fill(fill);
 
@@ -367,7 +364,6 @@ describe('CPS-derived settings fixtures', () => {
 
   it('writes and reads back every option, boolean and string of every field, touching only its bytes', () => {
     for (const def of RT95_SWEEP_FIELDS) {
-      if (KNOWN_BROKEN.includes(def.id)) continue;
       const spec = RT95_SETTINGS_FIELDS.get(def.id)!;
       for (const value of rt95FixtureValues(def)) {
         const base = blank();
@@ -393,17 +389,56 @@ describe('CPS-derived settings fixtures', () => {
     }
   });
 
-  // MON Key Function is an enum on mask 0x20 (0x321B bit 5) but encodes its value unshifted, so
-  // option 1 masks to 0 and is never written, and a set bit reads back as 0x20 (not an option).
-  // Found by the all-fields sweep (#1465). `it.fails` flips to an error when it is fixed.
-  it.fails('writes and reads back MON Key Function option 1 (known bug, see follow-up)', () => {
+  // MON Key Function is an enum on mask 0x20 (0x321B bit 5). The CPS sums the bits as
+  // `32 * field` (F117), so option 1 is bit 5 set. The value is shifted by the mask's lowest bit.
+  it('writes and reads back MON Key Function in bit 5 of 0x321B, leaving the other bits alone', () => {
     const spec = RT95_SETTINGS_FIELDS.get('monKeyFunction')!;
-    const map = memoryMapFromBytes(blank(0x00));
-    applyRt95SettingsPatchesToImage(
-      map,
-      resolveRt95SettingsPatches([{ fieldId: 'monKeyFunction', value: 1 }], 'stock'),
-    );
-    expect(spec.decode(map.bytes.subarray(0x321b, 0x321c))).toBe(1);
+    for (const fill of [0x00, 0xff, 0xc3]) {
+      for (const value of [0, 1]) {
+        const map = memoryMapFromBytes(blank(fill));
+        applyRt95SettingsPatchesToImage(
+          map,
+          resolveRt95SettingsPatches([{ fieldId: 'monKeyFunction', value }], 'stock'),
+        );
+        const label = `fill 0x${fill.toString(16)} value ${value}`;
+        expect(map.bytes[0x321b]! & 0x20, label).toBe(value === 1 ? 0x20 : 0);
+        expect(map.bytes[0x321b]! & ~0x20 & 0xff, label).toBe(fill & ~0x20 & 0xff);
+        expect(spec.decode(map.bytes.subarray(0x321b, 0x321c)), label).toBe(value);
+      }
+    }
+  });
+
+  it('every masked field encodes every option inside its own mask', () => {
+    for (const def of RT95_SWEEP_FIELDS) {
+      const spec = RT95_SETTINGS_FIELDS.get(def.id)!;
+      if (spec.mask === undefined) continue;
+      for (const value of rt95FixtureValues(def)) {
+        const byte = spec.encode(value)[0]!;
+        expect(byte & ~spec.mask & 0xff, `${def.id} = ${String(value)}`).toBe(0);
+      }
+    }
+  });
+
+  it('puts the offset fields at the CPS addresses and touches nothing else (F124)', () => {
+    const at: [string, number][] = [
+      ['voxOnOff', 0x321c],
+      ['voxLevel', 0x321d],
+      ...Array.from({ length: 12 }, (_, i): [string, number] => [
+        `pfKeyMode${i < 6 ? 1 : 2}P${(i % 6) + 1}`,
+        0x3250 + i,
+      ]),
+    ];
+    for (const [id, address] of at) {
+      const def = RT95_SETTING_FIELDS.find((f) => f.id === id)!;
+      const value = rt95FixtureValues(def).at(-1)!;
+      const map = memoryMapFromBytes(blank(0x00));
+      applyRt95SettingsPatchesToImage(
+        map,
+        resolveRt95SettingsPatches([{ fieldId: id, value }], 'stock'),
+      );
+      const changed = [...map.bytes.keys()].filter((a) => map.bytes[a] !== 0);
+      expect(changed, id).toEqual([address]);
+    }
   });
 
   it('survives Read -> library -> Write: decode an image, write the decoded values onto another', () => {
@@ -439,28 +474,39 @@ describe('CPS-derived settings fixtures', () => {
       ['tbstFrequency', 0x3210],
       ['steType', 0x3218],
       ['steFrequency', 0x3219],
+      ['displayMode', 0x3202],
+      ['scanType', 0x3208],
+      ['scanRecoveryTime', 0x3209],
+      ['autoPowerOn', 0x320a],
+      ['main', 0x320b],
+      ['rxWaySelect', 0x320c],
+      ['screenDirection', 0x3211],
+      ['speakerSwitch', 0x3213],
     ];
     for (const [id, address] of raw) {
       const def = RT95_SETTING_FIELDS.find((f) => f.id === id)!;
-      for (const option of def.options!) {
+      // A two-state combo (Off/On) is a boolean in the registry; its ListIndex is 0 or 1.
+      const values: (number | boolean)[] = def.options?.map((o) => o.value) ?? [false, true];
+      for (const value of values) {
         const map = memoryMapFromBytes(blank(0x00));
         applyRt95SettingsPatchesToImage(
           map,
-          resolveRt95SettingsPatches([{ fieldId: id, value: option.value }], 'stock'),
+          resolveRt95SettingsPatches([{ fieldId: id, value }], 'stock'),
         );
-        expect(map.bytes[address], `${id} ${option.value}`).toBe(option.value);
+        expect(map.bytes[address], `${id} ${String(value)}`).toBe(Number(value));
       }
     }
   });
 
-  it('packs 0x321B as the CPS bits (MON key aside, see above) and never sets bits 6 and 7', () => {
-    // Knob mode is an enum (option 1 = bit 0); the other four are switches.
+  it('packs 0x321B as the CPS bits (`b0 + 2*b1 + ... + 32*b5`) and never sets bits 6 and 7', () => {
+    // Knob mode and MON key are enums (option 1 = their bit); the other four are switches.
     const bits: [string, number, number | boolean][] = [
       ['knobMode', 0x01, 1],
       ['trfEnable', 0x02, true],
       ['powerOnResetEnable', 0x04, true],
       ['saveChannelParameter', 0x08, true],
       ['channelLocked', 0x10, true],
+      ['monKeyFunction', 0x20, 1],
     ];
     const map = memoryMapFromBytes(blank(0x00));
     applyRt95SettingsPatchesToImage(
@@ -470,7 +516,7 @@ describe('CPS-derived settings fixtures', () => {
         'stock',
       ),
     );
-    expect(map.bytes[0x321b]).toBe(0x1f);
+    expect(map.bytes[0x321b]).toBe(0x3f);
     for (const [id, bit, value] of bits) {
       const one = memoryMapFromBytes(blank(0x00));
       applyRt95SettingsPatchesToImage(
@@ -526,6 +572,6 @@ describe('CPS-derived settings fixtures', () => {
   });
 
   it.todo(
-    'keeps the DTMF memory in-use mask at 0x326E-0x326F consistent with edited PTT-ID memories (F119, F124): Studio writes the memories and never the mask',
+    'keeps the DTMF memory in-use mask at 0x326E-0x326F consistent (#1534) with edited PTT-ID memories (F119, F124): Studio writes the memories and never the mask',
   );
 });
