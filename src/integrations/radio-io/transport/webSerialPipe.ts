@@ -117,6 +117,12 @@ class WebSerialBytePipe implements BytePipe {
     this.buf = new Uint8Array(0);
   }
 
+  async drain(): Promise<Uint8Array> {
+    const pending = this.buf;
+    this.buf = new Uint8Array(0);
+    return pending;
+  }
+
   async close(): Promise<void> {
     this.closed = true;
     this.notifyWaiters();

@@ -23,6 +23,11 @@ export interface BytePipe {
   /** Block until `n` bytes or throw typed timeout / closed errors. */
   readExact(n: number, timeoutMs: number): Promise<Uint8Array>;
   flush?(): Promise<void>;
+  /**
+   * Discard and return whatever is already buffered (no waiting). Lets a protocol notice
+   * stray bytes instead of silently dropping them the way {@link flush} does.
+   */
+  drain?(): Promise<Uint8Array>;
   close(): Promise<void>;
 }
 

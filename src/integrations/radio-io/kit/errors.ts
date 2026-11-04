@@ -15,6 +15,11 @@ export type RadioIoErrorCode =
 
 export class RadioIoError extends Error {
   readonly code: RadioIoErrorCode;
+  /**
+   * Copyable debug text a protocol attaches when it fails (for example the last radio frames).
+   * The UI shows it next to the message; it is never part of `message`.
+   */
+  debugText?: string;
 
   constructor(code: RadioIoErrorCode, message: string) {
     super(message);
