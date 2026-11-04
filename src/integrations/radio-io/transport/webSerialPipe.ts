@@ -6,7 +6,12 @@
  */
 
 import type { BytePipe } from '../types.ts';
-import { RadioClosedError, RadioTimeoutError, RadioUnsupportedError } from '../kit/errors.ts';
+import {
+  RadioClosedError,
+  RadioProtocolError,
+  RadioTimeoutError,
+  RadioUnsupportedError,
+} from '../kit/errors.ts';
 import { assertWebSerialSupported } from './featureDetect.ts';
 
 /** USB vendor / product filter for the Web Serial port picker. */
@@ -35,15 +40,38 @@ export interface SerialPortLike {
 }
 
 /**
- * Web Serial default `bufferSize` is 255 — far too small for DM-32UV 4KB block
- * replies (and stressful on macOS CDC). Open with a larger host-side buffer so
- * the OS→browser queue can absorb a full R/W frame without dropping / stalling
- * the radio (see WICG/serial#164, MDN SerialPort.open).
+ * `bufferSize` for `SerialPort.open`. Two reasons it is large:
+ *
+ * - **Read side.** The Web Serial default is 255 — far too small for DM-32UV 4KB block replies (and stressful on
+ *   macOS CDC). A large host-side buffer lets the OS→browser queue absorb a full R/W frame without dropping or
+ *   stalling the radio (WICG/serial#164, MDN SerialPort.open). 1 MiB is ample for the largest replies (4 KB).
+ * - **Write side.** Chromium backs the writable with a ring of `bufferSize` bytes (a Mojo data pipe). A single
+ *   `write` straddling a multiple of that size reaches the OS as two writes, i.e. two USB packets, and native-USB
+ *   radios that take each short packet as a whole frame (OpenGD77 CDC) see a corrupt frame. A bigger ring only
+ *   makes the boundary rarer; the pipe also guarantees no frame straddles it (see `WebSerialBytePipe.write`).
  */
-export const WEB_SERIAL_HOST_BUFFER_SIZE = 65_536;
+export const WEB_SERIAL_HOST_BUFFER_SIZE = 1_048_576;
 
-class WebSerialBytePipe implements BytePipe {
+/**
+ * What `openWebSerialPipe` actually returns (typed as BytePipe, whose optional `txBytesWritten` is the trace hook);
+ * the extra accessors are for tests and diagnostics.
+ */
+export interface WebSerialPipe extends BytePipe {
+  /** Cumulative bytes written since the pipe opened (across stream rotations). */
+  readonly txBytesWritten: number;
+  /** Bytes written on the current writable stream (0 right after a rotation); the ring position modulo bufferSize. */
+  readonly streamBytesWritten: number;
+  /** How many times the writable stream was renewed to keep a frame off the ring boundary. */
+  readonly writerRotations: number;
+}
+
+class WebSerialBytePipe implements WebSerialPipe {
   readonly baudRate: number;
+  txBytesWritten = 0;
+  streamBytesWritten = 0;
+  writerRotations = 0;
+  private readonly bufferSize: number;
+  private writeChain: Promise<void> = Promise.resolve();
   private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private writer: WritableStreamDefaultWriter<Uint8Array> | null = null;
   private buf = new Uint8Array(0);
@@ -53,8 +81,9 @@ class WebSerialBytePipe implements BytePipe {
   private pumpPromise: Promise<void> | null = null;
   private waiters: Array<() => void> = [];
 
-  constructor(baudRate: number) {
+  constructor(baudRate: number, bufferSize: number) {
     this.baudRate = baudRate;
+    this.bufferSize = bufferSize;
   }
 
   async attach(port: SerialPortLike): Promise<void> {
@@ -72,14 +101,82 @@ class WebSerialBytePipe implements BytePipe {
     }
     this.reader = port.readable.getReader();
     this.writer = port.writable.getWriter();
+    this.txBytesWritten = 0;
+    this.streamBytesWritten = 0;
+    this.writerRotations = 0;
     this.pumpPromise = this.pump();
   }
 
-  async write(data: Uint8Array): Promise<void> {
+  /**
+   * Write one frame, never letting it straddle a `bufferSize` boundary of the current writable stream.
+   *
+   * If it would, the stream is closed (flushing everything before it) and a fresh one taken from `port.writable`:
+   * a new stream has a new ring starting at offset 0, and the port, DTR/RTS and the reader are untouched
+   * (WICG Serial "handle closing the writable stream"; Chromium `SerialPort::writable` builds a new data pipe).
+   * Calls are serialised, so concurrent writes cannot interleave a rotation.
+   */
+  write(data: Uint8Array): Promise<void> {
+    const run = this.writeChain.then(() => this.writeFrame(data));
+    this.writeChain = run.catch(() => undefined);
+    return run;
+  }
+
+  private async writeFrame(data: Uint8Array): Promise<void> {
     if (!this.writer || this.closed) {
       throw new RadioClosedError('Not connected.');
     }
+    if (data.length > this.bufferSize) {
+      throw new RadioProtocolError(
+        `Serial frame of ${data.length} bytes exceeds the ${this.bufferSize}-byte write buffer; it cannot be kept off the buffer boundary. Split it into smaller frames.`,
+      );
+    }
+    if ((this.streamBytesWritten % this.bufferSize) + data.length > this.bufferSize) {
+      await this.rotateWriter();
+    }
     await this.writer.write(data);
+    this.streamBytesWritten += data.length;
+    this.txBytesWritten += data.length;
+  }
+
+  private async rotateWriter(): Promise<void> {
+    const old = this.writer;
+    const port = this.port;
+    if (!old || !port) {
+      throw new RadioClosedError('Not connected.');
+    }
+    try {
+      await old.close();
+    } catch (err) {
+      // The old stream is errored or closed and cannot be renewed reliably: leave a defined state (no writer, so
+      // later writes fail with "Not connected." and close() still runs) and report a transport error.
+      this.writer = null;
+      try {
+        old.releaseLock();
+      } catch {
+        /* already released */
+      }
+      throw new RadioClosedError(
+        `Serial write stream could not be closed for renewal: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+    try {
+      old.releaseLock();
+    } catch {
+      /* already released */
+    }
+    if (this.closed) {
+      // close() ran while the old stream was flushing: do not take a new writer nobody will release.
+      this.writer = null;
+      throw new RadioClosedError('Not connected.');
+    }
+    const next = port.writable;
+    if (!next) {
+      this.writer = null;
+      throw new RadioClosedError('Serial port write stream could not be renewed.');
+    }
+    this.writer = next.getWriter();
+    this.streamBytesWritten = 0;
+    this.writerRotations += 1;
   }
 
   async readExact(n: number, timeoutMs: number): Promise<Uint8Array> {
@@ -115,6 +212,12 @@ class WebSerialBytePipe implements BytePipe {
 
   async flush(): Promise<void> {
     this.buf = new Uint8Array(0);
+  }
+
+  async drain(): Promise<Uint8Array> {
+    const pending = this.buf;
+    this.buf = new Uint8Array(0);
+    return pending;
   }
 
   async close(): Promise<void> {
@@ -250,6 +353,9 @@ async function assertSerialSignals(port: SerialPortLike): Promise<void> {
 
 /**
  * Open an already-obtained port at `baudRate` and return a BytePipe.
+ *
+ * The write guard assumes the port was opened with `WEB_SERIAL_HOST_BUFFER_SIZE` (this function does so itself) and
+ * that its writable stream is fresh (nothing written yet). Ports opened elsewhere must use the same `bufferSize`.
  */
 export async function openWebSerialPipe(port: SerialPortLike, baudRate: number): Promise<BytePipe> {
   if (!port.readable || !port.writable) {
@@ -260,7 +366,7 @@ export async function openWebSerialPipe(port: SerialPortLike, baudRate: number):
       'Serial port is busy from a previous operation. Reconnect the cable or reload the page.',
     );
   }
-  const pipe = new WebSerialBytePipe(baudRate);
+  const pipe = new WebSerialBytePipe(baudRate, WEB_SERIAL_HOST_BUFFER_SIZE);
   await pipe.attach(port);
   return pipe;
 }

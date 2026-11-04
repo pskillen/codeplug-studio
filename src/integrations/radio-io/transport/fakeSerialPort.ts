@@ -10,8 +10,13 @@ export interface FakeSerialController {
   pushRead(data: Uint8Array): void;
   /** Close the readable side (simulates cable unplug / port close). */
   endRead(): void;
-  /** Bytes written by the pipe so far. */
+  /** Bytes written by the pipe so far (every chunk, all writable streams, in order). */
   written: Uint8Array[];
+  /**
+   * Chunks per writable stream instance, in creation order. Like a real SerialPort, a new stream appears (from the
+   * `writable` getter) after the previous one is closed while the port stays open.
+   */
+  writeStreams: Uint8Array[][];
   /** Concatenate all written chunks. */
   writtenBytes(): Uint8Array;
 }
@@ -19,8 +24,14 @@ export interface FakeSerialController {
 export function createFakeSerialPort(options?: {
   /** Start with streams already "open" (default true). */
   initiallyOpen?: boolean;
+  /**
+   * Called with every chunk the pipe writes, before the write resolves. A radio simulator uses it to feed
+   * its replies back through {@link FakeSerialController.pushRead} (the write promise waits for it).
+   */
+  onWrite?: (chunk: Uint8Array) => void | Promise<void>;
 }): FakeSerialController {
   const initiallyOpen = options?.initiallyOpen ?? true;
+  const onWrite = options?.onWrite;
   const written: Uint8Array[] = [];
   let controller: ReadableStreamDefaultController<Uint8Array> | null = null;
 
@@ -30,30 +41,56 @@ export function createFakeSerialPort(options?: {
     },
   });
 
-  const writable = new WritableStream<Uint8Array>({
-    write(chunk) {
-      written.push(chunk.slice());
-    },
-  });
+  const writeStreams: Uint8Array[][] = [];
+  let portOpen = initiallyOpen;
+  let currentWritable: WritableStream<Uint8Array> | null = null;
+
+  const makeWritable = (): WritableStream<Uint8Array> => {
+    const chunks: Uint8Array[] = [];
+    writeStreams.push(chunks);
+    const stream: WritableStream<Uint8Array> = new WritableStream<Uint8Array>({
+      async write(chunk) {
+        const copy = chunk.slice();
+        chunks.push(copy);
+        written.push(copy);
+        await onWrite?.(copy);
+      },
+      close() {
+        // Spec "handle closing the writable stream": [[writable]] becomes null; the port stays open.
+        if (currentWritable === stream) {
+          currentWritable = null;
+        }
+      },
+    });
+    return stream;
+  };
 
   let openReadable: ReadableStream<Uint8Array> | null = initiallyOpen ? readable : null;
-  let openWritable: WritableStream<Uint8Array> | null = initiallyOpen ? writable : null;
+  if (initiallyOpen) {
+    currentWritable = makeWritable();
+  }
 
   const port: SerialPortLike = {
     get readable() {
       return openReadable;
     },
     get writable() {
-      return openWritable;
+      if (!portOpen) {
+        return null;
+      }
+      currentWritable ??= makeWritable();
+      return currentWritable;
     },
     async open(options?: { baudRate: number; bufferSize?: number }) {
       void options;
+      portOpen = true;
       openReadable = readable;
-      openWritable = writable;
+      currentWritable ??= makeWritable();
     },
     async close() {
+      portOpen = false;
       openReadable = null;
-      openWritable = null;
+      currentWritable = null;
       try {
         controller?.close();
       } catch {
@@ -65,6 +102,7 @@ export function createFakeSerialPort(options?: {
   return {
     port,
     written,
+    writeStreams,
     pushRead(data: Uint8Array) {
       if (!controller) {
         throw new Error('ReadableStream controller not ready');

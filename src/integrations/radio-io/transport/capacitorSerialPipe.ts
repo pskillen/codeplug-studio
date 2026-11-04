@@ -161,6 +161,12 @@ export class CapacitorSerialBytePipe implements BytePipe {
     this.buf = new Uint8Array(0);
   }
 
+  async drain(): Promise<Uint8Array> {
+    const pending = this.buf;
+    this.buf = new Uint8Array(0);
+    return pending;
+  }
+
   async close(): Promise<void> {
     if (this.closed) {
       return;

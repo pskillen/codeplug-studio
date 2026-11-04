@@ -207,6 +207,12 @@ export class Uv17ProProtocol implements CloneImageRadio {
     const readResponseLen = 4 + this.layout.blockSize;
     const raw = await waitForReadResponse(pipe, readResponseLen, this.layout.ioTimeoutMs);
     const encrypted = parseProgramRwReadReply(raw, this.layout.blockSize);
+    const echoed = (raw[1]! << 8) | raw[2]!;
+    if (echoed !== radioAddr) {
+      throw new RadioProtocolError(
+        `${this.layout.protocolLabel} read reply echoed address 0x${echoed.toString(16)}, expected 0x${radioAddr.toString(16)}`,
+      );
+    }
     return uv17ProCrypt(encrypted, this.layout.defaultEncrsym);
   }
 

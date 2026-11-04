@@ -19,10 +19,20 @@ export interface MemoryMap {
 /** Browser-agnostic byte pipe — Web Serial and BLE both implement this. */
 export interface BytePipe {
   readonly baudRate?: number;
+  /**
+   * Cumulative bytes handed to the transport since the pipe opened (Web Serial pipe only). For radio frame traces:
+   * a frame's TX offset is this value just before `write`. Never reset by the Web Serial stream rotation.
+   */
+  readonly txBytesWritten?: number;
   write(data: Uint8Array): Promise<void>;
   /** Block until `n` bytes or throw typed timeout / closed errors. */
   readExact(n: number, timeoutMs: number): Promise<Uint8Array>;
   flush?(): Promise<void>;
+  /**
+   * Discard and return whatever is already buffered (no waiting). Lets a protocol notice
+   * stray bytes instead of silently dropping them the way {@link flush} does.
+   */
+  drain?(): Promise<Uint8Array>;
   close(): Promise<void>;
 }
 

@@ -54,6 +54,12 @@ export interface WriteVerifyMismatch {
   readonly expected: Uint8Array;
   /** Absent when {@link kind} is `not_read` — never fabricate unread bytes. */
   readonly actual: Uint8Array | null;
+  /**
+   * Set when the adapter kept a digest of the transmitted bytes, not the bytes (a region too large for
+   * session storage). {@link expected} / {@link actual} are then empty and these carry the comparison.
+   */
+  readonly expectedDigest?: string;
+  readonly actualDigest?: string;
 }
 
 export interface WriteVerifyKeptMismatch {

@@ -160,8 +160,8 @@ export default function WriteVerifyReport({
           address: m.address,
           regionId: m.regionId,
           regionLabel: m.regionLabel,
-          expected: bytesToHex(m.expected),
-          actual: m.actual ? bytesToHex(m.actual) : null,
+          expected: m.expectedDigest ?? bytesToHex(m.expected),
+          actual: m.actualDigest ?? (m.actual ? bytesToHex(m.actual) : null),
         })),
       },
     };
@@ -337,7 +337,7 @@ export default function WriteVerifyReport({
                         (not read back)
                       </Text>
                     ) : (
-                      <Code>{bytesToHex(m.expected)}</Code>
+                      <Code>{m.expectedDigest ?? bytesToHex(m.expected)}</Code>
                     )}
                   </Table.Td>
                   <Table.Td>
@@ -346,7 +346,7 @@ export default function WriteVerifyReport({
                         —
                       </Text>
                     ) : (
-                      <Code>{bytesToHex(m.actual!)}</Code>
+                      <Code>{m.actualDigest ?? bytesToHex(m.actual!)}</Code>
                     )}
                   </Table.Td>
                 </Table.Tr>

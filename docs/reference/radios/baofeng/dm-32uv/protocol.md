@@ -36,6 +36,35 @@ Cite: NeonPlug `connection.ts`, `constants.ts`, `protocol.ts` (facts only — do
 | `TIMEOUT.VFRAME_QUERY`     | 5000  | Per V-frame                    |
 | `TIMEOUT.PORT_OPEN`        | 5000  | Port open                      |
 
+## Transport and framing
+
+The radio has no USB data path. Its programming and update jack is the two-pin K1 jack, which carries UART0 at 115200 baud. The USB-C socket is on the battery pack and only charges it. The PC link is a USB-serial cable: the owner's is a WCH CH340, USB `1A86:7523`, which is also the filter Studio's firmware picker uses. Other cables may use other bridge chips; the radio only ever sees UART bytes, so USB packet boundaries and Web Serial `write()` boundaries are invisible to it.
+
+**Receive path (stock firmware 048, static disassembly).**
+
+- The UART0 RX interrupt handler (`0x0002CC64`) copies bytes into a ring at `0x3A6B8`. The write index (`0x3B9A6`) wraps at **4,608 bytes** (`0x1200`) and the byte count (`0x30DE6`) is incremented with **no overflow check**.
+- A timer-5 interrupt handler (`0x0002CAB8`) counts idle ticks (`0x3A64E`) and posts semaphore `0x3B8BC` after 21 ticks. The tick is about 1 ms (_inferred_ from the timer reload `clk/1000`, not confirmed), so the PC-link task is woken about 21 ms after the line goes quiet. This is a wake-up, not a frame delimiter.
+- `read(buf, n, ms, &st)` (`0x0302A648`) copies from the ring until `n` bytes are held. With the ring empty it pends on the semaphore with the caller's full `ms` every time, and returns short only when the ring is empty and that wait timed out. The timeouts are therefore **gap timeouts**, not deadlines for a whole frame.
+- Framing is by byte count (no checksum at any layer): the `PROGRAM` loop (`0x03029438`) reads a 5-byte header (2,000 ms gap), a sixth byte (1,000 ms), then for `57` the payload (2,000 ms). The idle task reads 7-byte tokens (500 ms). `57` always answers `06`.
+
+**Consequences for Studio.**
+
+- **Stay lock-step.** Never send a second `57` before the `06` for the first. Two 4,102-byte frames in flight would overwrite the 4,608-byte ring silently. Studio's `dm32WriteMemory` sends one frame in one `pipe.write` and reads the `06` before returning (test: `protocol.test.ts`, "dm32WriteMemory framing"). The Web Serial writer's no-straddle guard also relies on one frame per `write()`.
+- **A split is harmless.** Splitting a frame across two host writes adds at most a few milliseconds of idle line, against a 1,000-2,000 ms tolerance. If a gap ever did exceed it, the `PROGRAM` session would end before the erase and program in the `57` branch, nothing would be written, and Studio would fail loudly with no `06` inside 5 s.
+- **Past writes are not suspect.** Studio's own DM-32 updater flashed successfully with the old 64 KiB writer buffer, in a session with 13 predicted splits.
+
+**Measured TX per session, and splits with the old 64 KiB buffer** (modelled from frame sizes; the largest stock frame is the 4,102-byte `57`):
+
+| Session                                            | TX          | Splits at 64 KiB |
+| -------------------------------------------------- | ----------- | ---------------- |
+| Codeplug Write, small (20 blocks read and written) | 84,676 B    | 1                |
+| Codeplug Write, medium (47 blocks)                 | 195,592 B   | 2                |
+| Codeplug Write, worst case (72 read, 340 written)  | 1,397,628 B | 21               |
+| Restore, whole config window (199 blocks)          | 816,408 B   | 12               |
+| Firmware flash (840 blocks, stock length)          | 864,507 B   | 13               |
+
+**Bootloader.** The firmware-update receiver is the bootloader, which we have no copy of, so its framing is unread. On the wire it is a YMODEM-like dialect (CRC16 on each 1,024-byte block, a `C`/`06` handshake per block, a 10 s reply timeout).
+
 ## Handshake (ASCII)
 
 1. Open serial at **115200**.
@@ -101,7 +130,7 @@ Radio is then ready for memory R/W.
 
 NeonPlug discovery reads **1 byte** at `blockAddr + 0xFFF` for metadata; bulk paths request full **4096** bytes.
 
-**Host note (Web Serial):** open the port with a large `bufferSize` (Studio uses 64 KiB). The Web Serial default is **255** bytes — too small for a 4KB reply on macOS CDC and can stall the host / reboot the radio ([#663](https://github.com/pskillen/codeplug-studio/issues/663)).
+**Host note (Web Serial):** open the port with a large `bufferSize` (Studio uses 1 MiB: the read side needs only a few KB, but the same value sizes the write ring so no frame is split across it). The Web Serial default is **255** bytes — too small for a 4KB reply on macOS CDC and can stall the host / reboot the radio ([#663](https://github.com/pskillen/codeplug-studio/issues/663)).
 
 ### Write (codeplug 4KB block)
 

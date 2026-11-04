@@ -69,12 +69,18 @@ describe('OpenGD77 User Database sidecar write', () => {
     );
     const sectorIndex = (setSector[0]![2]! << 16) | (setSector[0]![3]! << 8) | setSector[0]![4]!;
     expect(sectorIndex).toBe(0x50000 / 4096);
+    // No pre-write read of the sector: the first read of it comes after its FINISH (read-back).
+    const firstSetAt = pipe.writes.findIndex(
+      (w) => w[0] === OPENGD77_TYPE_WRITE_UV380 && w[1] === OPENGD77_WRITE_CMD_SET_SECTOR,
+    );
     expect(
-      pipe.writes.some(
-        (w) =>
-          w[0] === OPENGD77_TYPE_READ &&
-          ((w[2]! << 24) | (w[3]! << 16) | (w[4]! << 8) | w[5]!) >>> 0 === 0x50000,
-      ),
+      pipe.writes
+        .slice(0, firstSetAt)
+        .some(
+          (w) =>
+            w[0] === OPENGD77_TYPE_READ &&
+            ((w[2]! << 24) | (w[3]! << 16) | (w[4]! << 8) | w[5]!) >>> 0 === 0x50000,
+        ),
     ).toBe(false);
     expect(
       pipe.writes.some(

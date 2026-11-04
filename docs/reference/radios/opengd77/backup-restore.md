@@ -27,6 +27,14 @@ Write-codeplug still overlays modelled channels/zones/contacts/RX lists onto a *
 
 Progress copy is **Restore**, not “Writing codeplug.” Write `upload` is unchanged (in-session pre-write read + projection overlay).
 
+## After a failed Restore, or a Backup on an older build
+
+- Re-run any **Restore** that failed: builds before the frame-split fix failed part-way on Linux, leaving a part-restored radio. Power-cycle the radio first so a sector left open is cleared.
+- A **Backup** of a radio holding more than about 5,050 User Database entries failed on those builds (nothing was damaged); it works after the fix.
+- After a Restore, re-write the codeplug once and run Check write if you want it confirmed; Check write covers the codeplug, not Restore's own sectors.
+
+See [user-database.md](user-database.md#if-you-wrote-a-user-database-before-the-transport-fix) and [protocol.md](protocol.md#framing-rule-dm-1701-and-md-9600).
+
 ## Related
 
 - [protocol.md](protocol.md) — `SAVE_REBOOT` control action; hung-session `'R'` can still complete ([i006](../../../investigations/i006-md9600-serial-read-ident/README.md))

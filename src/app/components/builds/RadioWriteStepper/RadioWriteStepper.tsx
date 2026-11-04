@@ -25,6 +25,28 @@ import { WritingBody, WritingFooter } from './steps/WritingStep.tsx';
 import { RestartCheckBody, RestartCheckFooter } from './steps/RestartCheckStep.tsx';
 import { DoneBody, DoneFooter } from './steps/DoneStep.tsx';
 
+/** Collapsed protocol trace under the error, with a copy button for bug reports. */
+function ErrorDebug({ message, debug }: { message: string; debug: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(`${message}\n\n${debug}`);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+  return (
+    <details style={{ marginTop: 8 }} data-testid="write-stepper-error-debug">
+      <summary>Debug details</summary>
+      <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, margin: '8px 0' }}>{debug}</pre>
+      <Button variant="secondary" size="sm" onClick={() => void copy()}>
+        {copied ? 'Copied' : 'Copy debug text'}
+      </Button>
+    </details>
+  );
+}
+
 export interface RadioWriteStepperProps {
   config: WriteStepperConfig;
   view: WriteFlowView;
@@ -137,6 +159,7 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
       {view.error ? (
         <Alert color="red" mb="sm" data-testid="write-stepper-error">
           {view.error}
+          {view.errorDebug ? <ErrorDebug message={view.error} debug={view.errorDebug} /> : null}
           {view.pendingWarning ? (
             <PendingWarningClear
               warning={view.pendingWarning}

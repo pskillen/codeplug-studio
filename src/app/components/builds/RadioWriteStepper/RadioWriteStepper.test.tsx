@@ -155,6 +155,20 @@ describe('RadioWriteStepper — steps 2 and 3', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reconnect and read again' }));
     expect(actions.onReconnect).toHaveBeenCalled();
   });
+
+  it('shows the error message intact with the protocol trace under Debug details', () => {
+    renderStepper({
+      step: 'writing',
+      error:
+        "OpenGD77 refused FINISH for FLASH sector 0x9c000 (sector 3 of 12): radio answered '-'.",
+      errorDebug: 'Last 2 radio frames (oldest first):\n+000010ms TX    58 03\n+000012ms RX    2d',
+    });
+    expect(screen.getByTestId('write-stepper-error')).toHaveTextContent(
+      "OpenGD77 refused FINISH for FLASH sector 0x9c000 (sector 3 of 12): radio answered '-'.",
+    );
+    expect(screen.getByTestId('write-stepper-error-debug')).toHaveTextContent('TX 58 03');
+    expect(screen.getByRole('button', { name: 'Copy debug text' })).toBeInTheDocument();
+  });
 });
 
 describe('RadioWriteStepper — steps 4 to 6', () => {

@@ -139,6 +139,12 @@ After a successful DM-32 Write, stock and MM9PDY tell the operator to power the 
 
 What this doesn't do yet. Delete a line when its gap is fixed.
 
+### OpenGD77 write failure handling
+
+- Hardware verify on a DM-1701: a flash-write failure now names the command, sector and block, the stepper error has copyable **Debug details** (last 24 frames), CPS is entered once per session, a failure after a sector began restarts the radio (reboot-only), and only in-span 32-byte blocks are sent. None of it is confirmed on hardware yet. Behaviour: [OpenGD77 protocol](../../reference/radios/opengd77/protocol.md#ack-and-nack-framing). Tracking: [#1537](https://github.com/pskillen/codeplug-studio/issues/1537)
+- Check write covers the OpenGD77 User Database (header plus a per-sector CRC-32 of the entries, so a bad sector is reported by digest, not bytes) but not keps; it costs a read about as long as the User Database Write. Not confirmed on hardware.
+- Debug details appear in the Write stepper only; backup, restore, standalone keps and User Database flows show the message without the trace
+
 ### AT-D890UV APRS serial Write
 
 - Hardware Read→Write→Read-back of modelled digital APRS fields after [#884](https://github.com/pskillen/codeplug-studio/issues/884) cache-sync fix

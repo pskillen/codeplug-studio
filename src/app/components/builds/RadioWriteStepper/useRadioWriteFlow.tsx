@@ -24,6 +24,7 @@ import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
+import { RadioIoError } from '@integrations/radio-io/kit/errors.ts';
 import { reviewNeedsReconnect } from '@integrations/radio-io/programHold.ts';
 import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
 import {
@@ -231,6 +232,11 @@ const EMPTY_FACTS: WrittenFacts = {
   writeTimings: null,
 };
 
+/** Copyable protocol trace a radio module attached to its error (`RadioIoError.debugText`). */
+export function errorDebugText(err: unknown): string | null {
+  return err instanceof RadioIoError && err.debugText ? err.debugText : null;
+}
+
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
@@ -260,6 +266,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const [contactSource, setContactSource] = useState<ContactSource>('library');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDebug, setErrorDebug] = useState<string | null>(null);
   const [canReconnect, setCanReconnect] = useState(false);
   const [pendingBlock, setPendingBlock] = useState<AtD890PendingBlock | null>(null);
   const [reconnecting, setReconnecting] = useState(false);
@@ -383,6 +390,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
 
   function resetRun() {
     setError(null);
+    setErrorDebug(null);
     setPendingBlock(null);
     setCanReconnect(false);
     setReconnecting(false);
@@ -1032,6 +1040,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     const notice = interruptedWriteNotice(egress.profileId, err, failedSerial);
     setPendingBlock(notice?.block ?? null);
     setError(notice?.text ? `${errorMessage(err)} ${notice.text}` : errorMessage(err));
+    setErrorDebug(errorDebugText(err));
     // Before the first frame, a failure is recoverable by reading again.
     setCanReconnect(!transmitStartedRef.current && phaseRef.current !== 'keps');
   }
@@ -1109,6 +1118,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       setBusyNotify(false);
       setCheck('available');
       setError(errorMessage(err));
+      setErrorDebug(errorDebugText(err));
     }
   }
 
@@ -1133,6 +1143,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       setBusyNotify(false);
       setKepsAfterRestart('pending');
       setError(errorMessage(err));
+      setErrorDebug(errorDebugText(err));
     }
   }
 
@@ -1172,6 +1183,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     contactSource,
     busy,
     error,
+    errorDebug: error ? errorDebug : null,
     canReconnect,
     pendingWarning:
       error && pendingBlock

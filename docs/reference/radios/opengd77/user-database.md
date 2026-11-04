@@ -38,6 +38,21 @@ Library CRUD stays unlimited.
 
 FirmwareInfo **features bit 1** = extended callsign DB. Studio still uses these Offset bases if the bit is clear, and warns.
 
+## Check write
+
+Web Serial Write checks the User Database after the radio restarts: the header and every occupied entry are read back and compared with what the Write sent (header byte for byte, entries per 4 KB sector by CRC-32). It reports under **User Database** in the check report; details in [protocol.md](protocol.md#write-verify).
+
+## If you wrote a User Database before the transport fix
+
+Builds before the frame-split fix could damage a Write of this size (a full database Write crossed about 36 transport boundaries), and nothing could check it. Re-write the full User Database once from a fixed build:
+
+- **Required** after any User Database write that failed: the header count is committed first, so the tail can be stale.
+- **Recommended** after writes that reported success, because nothing could confirm them. Check write now can.
+- Linux attempts on earlier builds failed before FINISHing the header sector, which left the old database intact.
+- Power-cycle a radio that showed a failed write before the next attempt, so a sector left open is cleared.
+
+For the codeplug itself: re-write it once and run Check write. The Write diffs against a fresh read, so any sector that is mixed or wrong is rewritten, and an unchanged radio sends nothing. On a **DM-1701**, if a failed Write got past sector `0x6000` on the earliest builds, also look over the radio's menu settings (the old gap fill could wipe `0x6060`-`0x6FFF`, where that radio keeps its only copy of them); a successful re-Write saves the radio's settings again. An **MD-9600** keeps its live settings in battery RAM and rewrites the flash copy from them at every boot (`settings.c:133-163`, R20260131 MD-9600 source) and on the CPS save commands `C 06 00` / `C 06 02` (`usb_com.c:758, 802`), so a failed old-build Write is unlikely to have lost them; only a flat or removed backup battery at the same time would let it read the wiped flash copy. Keps need nothing.
+
 ## Related
 
 - [memory-layout.md](memory-layout.md) · [backup-restore.md](backup-restore.md) · [protocol.md](protocol.md)

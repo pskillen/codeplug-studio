@@ -24,7 +24,10 @@ export const OPENGD77_WRITE_VARIANT = 'X' as const;
 export const OPENGD77_CMD_SHOW_CPS = 0x00;
 export const OPENGD77_CMD_CLOSE_CPS = 0x05;
 export const OPENGD77_CMD_CONTROL = 0x06;
+/** Control sub 0: save RAM settings and LUCZ, then reset (firmware `usb_com.c` control 6). */
 export const OPENGD77_CONTROL_SAVE_REBOOT = 0x00;
+/** Control sub 1: reset only, no save. Used on failure paths; the same as a manual power cycle. */
+export const OPENGD77_CONTROL_REBOOT_ONLY = 0x01;
 /** qdmr write_start: save settings and VFOs, no reboot. */
 export const OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS = 0x02;
 /** qdmr write_start before FLASH programming. */
@@ -53,6 +56,15 @@ export const OPENUV380_FLASH_SPANS = Object.freeze([
   { start: 0x0002_0000, length: 0x11a0 },
   { start: 0x0009_b000, length: 0x0001_3e60 },
 ] as const);
+
+/**
+ * QuickKeys (10 x uint16, `0x7524..0x7537`), inside the second span. The firmware drops these
+ * bytes from every SECTOR_BUFFER write on MDUV380 / DM-1701 (`usb_com.c`, "prevent the QuickKeys
+ * getting overwritten by the codeplug"), so whatever the host sends there, the radio keeps its
+ * own. The write read-back must not compare them.
+ */
+export const OPENGD77_QUICKKEYS_START = 0x0000_7524;
+export const OPENGD77_QUICKKEYS_END = 0x0000_7538;
 
 /** Named region absolute FLASH bases. */
 export const OPENUV380_OFFSET = Object.freeze({
@@ -120,7 +132,16 @@ export const OPENGD77_SETTINGS_SIZE = 0x90;
 export const OPENGD77_VFO_SIZE = OPENGD77_CHANNEL_RECORD_SIZE;
 
 export const OPENGD77_IO_TIMEOUT_MS = 5000;
+/** How long recovery waits for the one-byte reply to reboot-only; the radio may reset first. */
+export const OPENGD77_RECOVERY_REPLY_TIMEOUT_MS = 500;
 export const OPENGD77_IDENT_TIMEOUT_MS = 8000;
+/** Attempts per flash sector (the first plus restarts) before the write fails. */
+export const OPENGD77_SECTOR_ATTEMPTS = 3;
+/**
+ * Quiet time before a sector restart (and before reboot-only): lets the radio finish answering the
+ * fragment of a split frame so the drain that follows catches its reply.
+ */
+export const OPENGD77_SETTLE_MS = 150;
 
 /**
  * P1…P9 binary power steps (1…9) ↔ Studio percent — same ladder as opengd77-1701 CSV.

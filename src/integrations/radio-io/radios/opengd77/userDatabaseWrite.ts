@@ -60,7 +60,8 @@ export function overlayUserDatabaseSpanOnSector(
 /**
  * Occupied-sector payloads from encode only (0x00 fill). Do not RMW-read FLASH —
  * qdmr callsign upload writes encoded blocks after write_start, never a prior read
- * of 0x50000. Mixing 'R' then 'X' after codeplug sectors NACKs with '-'.
+ * of 0x50000. The host owns the whole sector here, so every block is sent (unlike
+ * codeplug sectors, which send only in-span blocks).
  */
 export function buildUserDatabaseSectorPayloads(
   encoded: OpenGd77UserDatabaseEncodeResult,

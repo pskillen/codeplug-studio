@@ -300,7 +300,12 @@ export function formatWriteVerifyDebugMarkdown(
     lines.push('', '## Staging issues', '');
     for (const m of result.staging.mismatches) {
       lines.push(`- **${m.kind}** @ 0x${m.address.toString(16)} (${m.regionLabel})`);
-      if (m.kind === 'mismatch') {
+      if (m.kind === 'mismatch' && m.expectedDigest !== undefined) {
+        lines.push(
+          `  - expected: ${m.expectedDigest}`,
+          `  - actual: ${m.actualDigest ?? '(none)'}`,
+        );
+      } else if (m.kind === 'mismatch') {
         lines.push(
           `  - expected: ${[...m.expected].map((b) => b.toString(16).padStart(2, '0')).join(' ')}`,
           `  - actual: ${[...m.actual!].map((b) => b.toString(16).padStart(2, '0')).join(' ')}`,

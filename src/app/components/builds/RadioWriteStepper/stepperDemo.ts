@@ -30,6 +30,7 @@ export function demoFlowView(overrides: Partial<WriteFlowView> = {}): WriteFlowV
     contactSource: 'library',
     busy: false,
     error: null,
+    errorDebug: null,
     canReconnect: false,
     pendingWarning: null,
     reconnecting: false,

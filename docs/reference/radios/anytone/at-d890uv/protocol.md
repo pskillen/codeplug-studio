@@ -73,6 +73,12 @@ Unlike RT95, anytone-cps does **not** implement echo-strip for this path — TX/
 
 ## Frames
 
+### USB framing
+
+The D890 talks over the MCU's own USB device (native ST CDC-ACM `0483:5740`, no bridge chip). Its receive path has no USB framing: each OUT packet is appended to a 2 KiB byte ring, and a byte-count state machine cuts frames by opcode (`W` 24 bytes, `R` 6, the bootloader `01` frame 40; `PROGRAM`, `END` and `UPDATE` by string match). A host write that is split across USB packets is reassembled and is harmless; nothing needs re-writing. Evidence is a static read of the stock V1.05 decompile (anytone-d890-firmware F274 and F279; `CDC_Receive_FS` at `0x0801B770`, ring `0x2001BF18`, PC-link task `0x0812D63C`, dispatcher `0x080D4664`, completion check `0x080CB99C`). A partial frame is dropped when no byte arrives for 50 SysTick ticks, about 250 ms at the 5 ms tick (timer `0x2001AF6A`, handler `0x0812F848`; the tick length is static analysis too, not measured on a radio, F201). Studio's resend waits 10 s, so a resend never lands on a half-parsed frame.
+
+Measured and predicted TX per session (one port open): a codeplug Write is about 164 KB (the full-unit preserve read alone is 98 KB); with 19,158 contacts about 3.05 MB (the owner's 2026-10-27 run); a restore about 161 KB; a firmware flash 1.0.0 about 2.10 MB (52,515 frames); keps, a settings-only Write and a range change stay under 20 KB. Before the Web Serial writer guard the Chrome writer split one frame per 64 KiB: about 2 splits in a codeplug Write or restore, about 46 with 19,158 contacts, about 32 in a firmware flash (the contact and codeplug counts come from the measured frame counts, the rest are estimates, so positions are good to a few hundred bytes). Past writes are not suspect: the radio reassembled those frames, the owner's range change plus full restore plus read-back on Chrome on Ubuntu matched, and a mis-framed `W` could not pass silently anyway (the parser waits for 24 bytes, a bad 8-bit sum is NAKed `0x0A`, and Studio fails on any non-`06` ACK). The one real limit is unchanged: never more than about 2 KiB in flight, which matters for any pipelining of `W`, not for the lock-step writes Studio sends.
+
 ### Read
 
 | Field   | Encoding                                                                                                                                                         |

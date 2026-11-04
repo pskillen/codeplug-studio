@@ -10,6 +10,7 @@
  * No EEPROM/FLASH region tables or radio adapters — those stay in radios/<id>/.
  */
 
+import type { BytePipe } from '../../types.ts';
 import { RadioProtocolError } from '../errors.ts';
 
 export const OPENGD77_BLOCK = 32;
@@ -210,6 +211,35 @@ export function makeWriteEepromFrame(
   putU16BE(frame, 6, payload.length);
   frame.set(payload, 8);
   return frame;
+}
+
+/** What the radio answered to a write command (`X 01/02/03/04`). */
+export type OpenGd77WriteAckResult =
+  { kind: 'ack' } | { kind: 'nack' } | { kind: 'unexpected'; bytes: Uint8Array };
+
+/**
+ * Read a write ACK the way the firmware sends it: success is two bytes `{type, cmd}`, a NACK is
+ * ONE byte `'-'` (firmware `usb_com.c` `cpsHandleWriteCommand` error path). Read one byte first;
+ * only a non-`'-'` byte is followed by the second. Waiting for two bytes turns a real NACK into a
+ * timeout, and taking `'-'` plus the next byte as a pair hides a desync.
+ *
+ * Pipe timeouts propagate unchanged for the caller to wrap with context.
+ */
+export async function readOpenGd77WriteAck(
+  pipe: BytePipe,
+  expectedType: OpenGd77WriteVariant,
+  expectedCmd: number,
+  timeoutMs: number,
+): Promise<OpenGd77WriteAckResult> {
+  assertU8(expectedCmd, 'OpenGD77 write command');
+  const first = await pipe.readExact(1, timeoutMs);
+  if (first[0] === OPENGD77_CMD_OK) return { kind: 'nack' };
+  const second = await pipe.readExact(1, timeoutMs);
+  const bytes = new Uint8Array([first[0]!, second[0]!]);
+  if (bytes[0] !== writeVariantByte(expectedType) || bytes[1] !== expectedCmd) {
+    return { kind: 'unexpected', bytes };
+  }
+  return { kind: 'ack' };
 }
 
 /**

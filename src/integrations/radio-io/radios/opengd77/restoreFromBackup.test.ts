@@ -12,11 +12,14 @@ import {
   OPENGD77_TYPE_COMMAND,
   OPENGD77_TYPE_READ,
   OPENGD77_TYPE_WRITE_UV380,
+  OPENGD77_WRITE_CMD_FINISH_SECTOR,
   OPENGD77_WRITE_CMD_SET_SECTOR,
 } from '../../kit/codecs/opengd77Serial.ts';
 import {
   OPENGD77_CMD_CONTROL,
   OPENGD77_CONTROL_SAVE_REBOOT,
+  OPENGD77_QUICKKEYS_END,
+  OPENGD77_QUICKKEYS_START,
   OPENUV380_IMAGE_SIZE,
 } from './constants.ts';
 import { OPENGD77_BACKUP_FLASH_SPANS } from './backupRestoreRoles.ts';
@@ -125,7 +128,7 @@ describe('OpenGd77Protocol.restoreFromBackup', () => {
     const pipe = new OpenGd77ScriptedPipe(0x08);
     pipe.plantByte(OPENGD77_BACKUP_FLASH_SPANS[0]!.start, 0xa5);
     const proto = new OpenGd77Protocol();
-    await proto.connect(pipe);
+    await proto.connect(pipe, { settleScale: 0 });
     const writesAfterConnect = pipe.writes.length;
 
     const image = createOpenUv380Image();
@@ -143,7 +146,13 @@ describe('OpenGd77Protocol.restoreFromBackup', () => {
     );
 
     const restoreWrites = pipe.writes.slice(writesAfterConnect);
-    const flashReads = restoreWrites.filter((w) => w[0] === OPENGD77_TYPE_READ && w[1] === 0x01);
+    // No pre-write read: nothing reads FLASH before the first SET_SECTOR (read-back comes after).
+    const firstSet = restoreWrites.findIndex(
+      (w) => w[0] === OPENGD77_TYPE_WRITE_UV380 && w[1] === OPENGD77_WRITE_CMD_SET_SECTOR,
+    );
+    const flashReads = restoreWrites
+      .slice(0, firstSet)
+      .filter((w) => w[0] === OPENGD77_TYPE_READ && w[1] === 0x01);
     expect(flashReads).toHaveLength(0);
 
     const setSectors = restoreWrites.filter(
@@ -170,7 +179,7 @@ describe('OpenGd77Protocol.restoreFromBackup', () => {
       for (let i = 0; i < span.length; i++) pipe.plantByte(span.start + i, 0x5a);
     }
     const proto = new OpenGd77Protocol();
-    await proto.connect(pipe);
+    await proto.connect(pipe, { settleScale: 0 });
 
     const image = createOpenUv380Image();
     fillRestorableSpans(image, 0x5a);
@@ -181,10 +190,75 @@ describe('OpenGd77Protocol.restoreFromBackup', () => {
     expect(proto.getLastDirtySectorCount()).toBeGreaterThan(0);
   });
 
+  it('restores a backup whose QuickKeys differ: the radio keeps its own and the read-back does not retry', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    for (let a = OPENGD77_QUICKKEYS_START; a < OPENGD77_QUICKKEYS_END; a++) pipe.plantByte(a, 0x11);
+    const proto = new OpenGd77Protocol();
+    await proto.connect(pipe, { settleScale: 0 });
+
+    const image = createOpenUv380Image();
+    fillRestorableSpans(image, 0xa5);
+    writeAbs(
+      image,
+      OPENGD77_QUICKKEYS_START,
+      new Uint8Array(OPENGD77_QUICKKEYS_END - OPENGD77_QUICKKEYS_START).fill(0x22),
+    );
+    await proto.restoreFromBackup(
+      { manifest: manifest(restorableManifestRegions()), image },
+      { regionIds: OPENGD77_BACKUP_FLASH_SPANS.map((s) => s.id) },
+    );
+
+    expect(pipe.flashByte(OPENGD77_QUICKKEYS_START)).toBe(0x11);
+    expect(pipe.flashByte(OPENGD77_QUICKKEYS_END - 1)).toBe(0x11);
+    expect(pipe.flashByte(OPENGD77_QUICKKEYS_START - 1)).toBe(0xa5);
+    expect(pipe.flashByte(OPENGD77_QUICKKEYS_END)).toBe(0xa5);
+    // One pass per sector: a compare of the kept bytes would have burned all three attempts.
+    expect(pipe.writesOf(OPENGD77_WRITE_CMD_FINISH_SECTOR)).toHaveLength(
+      proto.getLastDirtySectorCount(),
+    );
+    expect(pipe.controls).toEqual([0]);
+  });
+
+  it('enters the CPS screen once on restore, and a failed restore sends reboot-only', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    const proto = new OpenGd77Protocol();
+    await proto.connect(pipe, { settleScale: 0 });
+    pipe.nackOn(OPENGD77_WRITE_CMD_SET_SECTOR, 1, 'nack', 99);
+    const image = createOpenUv380Image();
+    fillRestorableSpans(image, 0xa5);
+    let err: unknown;
+    try {
+      await proto.restoreFromBackup(
+        { manifest: manifest(restorableManifestRegions()), image },
+        { regionIds: OPENGD77_BACKUP_FLASH_SPANS.map((s) => s.id) },
+      );
+    } catch (e) {
+      err = e;
+    }
+    expect((err as Error).message).toContain('restart command');
+    expect(pipe.commands.filter((c) => c[0] === 0x00)).toHaveLength(1);
+    expect(pipe.controls).toEqual([1]);
+    expect(pipe.commands.filter((c) => c[0] === 0x05)).toHaveLength(0);
+  });
+
+  it('a successful restore sends SHOW_CPS once and save-and-reboot once', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    const proto = new OpenGd77Protocol();
+    await proto.connect(pipe, { settleScale: 0 });
+    const image = createOpenUv380Image();
+    fillRestorableSpans(image, 0xa5);
+    await proto.restoreFromBackup(
+      { manifest: manifest(restorableManifestRegions()), image },
+      { regionIds: OPENGD77_BACKUP_FLASH_SPANS.map((s) => s.id) },
+    );
+    expect(pipe.commands.filter((c) => c[0] === 0x00)).toHaveLength(1);
+    expect(pipe.controls).toEqual([0]);
+  });
+
   it('is available on the MD-9600 protocol instance', async () => {
     const pipe = new OpenGd77ScriptedPipe(0x05);
     const proto = createOpenGd77Md9600Protocol() as OpenGd77Protocol;
-    await proto.connect(pipe);
+    await proto.connect(pipe, { settleScale: 0 });
     const image = createOpenUv380Image();
     fillRestorableSpans(image, 0x22);
     await proto.restoreFromBackup(
