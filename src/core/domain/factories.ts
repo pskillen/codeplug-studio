@@ -240,6 +240,34 @@ export function newChannel(projectId: string, name: string, callsign = ''): Chan
   };
 }
 
+/**
+ * A new channel copying every RF and library field of `source`, with a fresh id and revision
+ * and " (copy)" appended to the name.
+ */
+export function duplicateChannel(projectId: string, source: Channel): Channel {
+  const copyName = `${source.name.trim() || 'Untitled channel'} (copy)`;
+  const copy = newChannel(projectId, copyName, source.callsign);
+  return {
+    ...copy,
+    abbreviation: source.abbreviation,
+    rxFrequency: source.rxFrequency,
+    txFrequency: source.txFrequency,
+    power: source.power,
+    scanInclusion: source.scanInclusion,
+    scanListId: source.scanListId,
+    forbidTransmit: source.forbidTransmit,
+    txPermit: source.txPermit,
+    comment: source.comment,
+    location: source.location,
+    useLocation: source.useLocation,
+    maidenheadLocator: source.maidenheadLocator,
+    hideFromInternalMap: source.hideFromInternalMap,
+    modeProfiles: source.modeProfiles.map((profile) => ({ ...profile })),
+    primaryMode: source.primaryMode ?? null,
+    aprs: source.aprs ? { ...source.aprs } : undefined,
+  };
+}
+
 export function newTalkGroup(
   projectId: string,
   name: string,

@@ -163,3 +163,24 @@ export function formatChannelEligibilityWarning(
   }
   return warnings;
 }
+
+export type ChannelBuildStatus =
+  | { kind: 'included'; wireName: string | null }
+  | { kind: 'excluded' }
+  | { kind: ChannelIneligibilityReason };
+
+/**
+ * Whether one channel reaches a build: excluded by the build's own override, ruled out by the
+ * radio's modes or frequency ranges, or included (with the build's wire-name override, if any).
+ */
+export function channelStatusInBuild(channel: Channel, build: RadioBuild): ChannelBuildStatus {
+  const override = build.channelOverrides.find((o) => o.libraryEntityId === channel.id);
+  if (override?.excluded) return { kind: 'excluded' };
+  const reason = getChannelIneligibilityReason(
+    channel,
+    build.radioTargetId,
+    resolveChannelEligibilityOptions(build),
+  );
+  if (reason) return { kind: reason };
+  return { kind: 'included', wireName: override?.wireName?.trim() || null };
+}
