@@ -16,6 +16,7 @@ import {
   requestWebSerialPipe,
   requestWebSerialPort,
   WEB_SERIAL_HOST_BUFFER_SIZE,
+  type WebSerialPipe,
 } from './webSerialPipe.ts';
 
 describe('featureDetect', () => {
@@ -150,7 +151,7 @@ describe('openWebSerialPipe write guard (no frame straddles the host buffer boun
 
   it('rotates the writable before a frame that would straddle the boundary and writes it whole', async () => {
     const fake = createFakeSerialPort();
-    const pipe = await openWebSerialPipe(fake.port, 115200);
+    const pipe = (await openWebSerialPipe(fake.port, 115200)) as WebSerialPipe;
     await pipe.write(frame(B - 10, 1));
     await pipe.write(frame(10, 2)); // ends exactly on the boundary: no rotation yet
     expect(pipe.writerRotations).toBe(0);
@@ -172,7 +173,7 @@ describe('openWebSerialPipe write guard (no frame straddles the host buffer boun
 
   it('does not rotate for frames that stay within the boundary, and counts reset after a rotation', async () => {
     const fake = createFakeSerialPort();
-    const pipe = await openWebSerialPipe(fake.port, 115200);
+    const pipe = (await openWebSerialPipe(fake.port, 115200)) as WebSerialPipe;
     for (let i = 0; i < 100; i++) await pipe.write(frame(1000, i & 0xff));
     expect(pipe.writerRotations).toBe(0);
     expect(fake.writeStreams).toHaveLength(1);
@@ -190,7 +191,7 @@ describe('openWebSerialPipe write guard (no frame straddles the host buffer boun
 
   it('keeps the byte order intact across rotations', async () => {
     const fake = createFakeSerialPort();
-    const pipe = await openWebSerialPipe(fake.port, 115200);
+    const pipe = (await openWebSerialPipe(fake.port, 115200)) as WebSerialPipe;
     // 70 KiB frames: 15 writes cross the 1 MiB boundary once
     for (let i = 0; i < 16; i++) {
       const f = frame(70 * 1024, i + 1);
@@ -205,7 +206,7 @@ describe('openWebSerialPipe write guard (no frame straddles the host buffer boun
 
   it('throws a clear error for a frame larger than the buffer, writing nothing', async () => {
     const fake = createFakeSerialPort();
-    const pipe = await openWebSerialPipe(fake.port, 115200);
+    const pipe = (await openWebSerialPipe(fake.port, 115200)) as WebSerialPipe;
     await expect(pipe.write(frame(B + 1))).rejects.toBeInstanceOf(RadioProtocolError);
     await expect(pipe.write(frame(B + 1))).rejects.toThrow(/exceeds the 1048576-byte write buffer/);
     expect(fake.written).toHaveLength(0);
@@ -216,7 +217,7 @@ describe('openWebSerialPipe write guard (no frame straddles the host buffer boun
 
   it('a frame of exactly bufferSize fits on a fresh stream and rotates on the next', async () => {
     const fake = createFakeSerialPort();
-    const pipe = await openWebSerialPipe(fake.port, 115200);
+    const pipe = (await openWebSerialPipe(fake.port, 115200)) as WebSerialPipe;
     await pipe.write(frame(B));
     expect(pipe.writerRotations).toBe(0);
     await pipe.write(frame(1));
@@ -228,7 +229,7 @@ describe('openWebSerialPipe write guard (no frame straddles the host buffer boun
 
   it('serialises concurrent writes so a rotation cannot interleave', async () => {
     const fake = createFakeSerialPort();
-    const pipe = await openWebSerialPipe(fake.port, 115200);
+    const pipe = (await openWebSerialPipe(fake.port, 115200)) as WebSerialPipe;
     await pipe.write(frame(B - 1));
     await Promise.all([pipe.write(frame(2, 7)), pipe.write(frame(3, 8)), pipe.write(frame(4, 9))]);
     expect(fake.writeStreams[1].map((c) => [c.length, c[0]])).toEqual([
