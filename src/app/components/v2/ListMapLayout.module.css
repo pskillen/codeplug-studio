@@ -9,15 +9,16 @@
 }
 
 .listPane {
-  flex: 1.7;
+  flex: 1.7 1 0;
   min-width: 0;
   /* No overflow here: the table scrolls sideways itself, and an overflow-x ancestor would stop its
      header sticking to the page scroll. min-width: 0 keeps wide tables inside the pane. */
 }
 
 .mapPane {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 0;
+  /* Never a sliver: the list gives way first and its table scrolls sideways (#1524). */
+  min-width: min(420px, 40%);
   align-self: stretch;
 }
 
