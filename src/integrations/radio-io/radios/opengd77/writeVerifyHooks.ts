@@ -150,6 +150,7 @@ export function createOpenGd77WriteVerifyHooks(modelId: string): WriteVerifyHook
             await session.radio.downloadUserDatabaseOccupied({
               onProgress: opts?.onProgress,
               signal: opts?.signal,
+              keepInvalidHeader: true,
             }),
           )
         : undefined;

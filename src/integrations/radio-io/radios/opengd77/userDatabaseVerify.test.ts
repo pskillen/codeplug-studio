@@ -73,20 +73,36 @@ describe('compareUserDatabaseReadback', () => {
     expect(m.actual![0]).toBe(0x00);
   });
 
-  it('marks slices the radio no longer holds as not read, never fabricated', () => {
-    const out = compareUserDatabaseReadback(snapshot, occupiedFor(100));
-    expect(
-      out.mismatches.some((m) => m.kind === 'mismatch' && m.address === snapshot.headerAbs),
-    ).toBe(true);
+  it('marks slices a good-header read-back is too short to cover as not read, never fabricated', () => {
+    const out = compareUserDatabaseReadback(snapshot, occupiedFor(400).subarray(0, 5000));
     const notRead = out.mismatches.filter((m) => m.kind === 'not_read');
-    expect(notRead.length).toBeGreaterThan(0);
+    expect(notRead.length).toBe(snapshot.slices.length - 1);
     expect(notRead.every((m) => m.actual === null)).toBe(true);
+    expect(out.mismatches.some((m) => m.kind === 'mismatch')).toBe(false);
   });
 
-  it('reports an empty database read-back (no header) as not read', () => {
+  it('reports a lower header count as one header mismatch and does not compare entries', () => {
+    const out = compareUserDatabaseReadback(snapshot, occupiedFor(100));
+    expect(out.mismatches).toHaveLength(1);
+    expect(out.mismatches[0]!.kind).toBe('mismatch');
+    expect(out.mismatches[0]!.address).toBe(snapshot.headerAbs);
+  });
+
+  it('reports a bad-magic header as one header mismatch, not a not-read row per sector', () => {
+    const bad = new Uint8Array(12).fill(0xff);
+    const out = compareUserDatabaseReadback(snapshot, bad);
+    expect(out.mismatches).toHaveLength(1);
+    const m = out.mismatches[0]!;
+    expect(m.kind).toBe('mismatch');
+    expect(m.address).toBe(snapshot.headerAbs);
+    expect(m.actual).toEqual(bad);
+    expect(out.region.status).toBe('mismatch');
+  });
+
+  it('reports a read-back with no bytes as one not-read header row', () => {
     const out = compareUserDatabaseReadback(snapshot, new Uint8Array(0));
-    expect(out.mismatches.every((m) => m.kind === 'not_read')).toBe(true);
-    expect(out.mismatches).toHaveLength(1 + snapshot.slices.length);
+    expect(out.mismatches).toHaveLength(1);
+    expect(out.mismatches[0]!.kind).toBe('not_read');
   });
 });
 
@@ -130,6 +146,17 @@ describe('OpenGD77 write verify covers the User Database', () => {
     expect(result.staging.mismatchedChunks).toBe(1);
     expect(result.staging.mismatches[0]!.regionLabel).toBe('User Database');
     expect(result.regions.find((r) => r.group === 'user-database')!.status).toBe('mismatch');
+  });
+
+  it('a wiped header fails the check with one header mismatch', async () => {
+    const { pipe, captured, checker } = await writeThenReconnect(400);
+    for (let i = 0; i < 12; i++) pipe.plantByte(0x50000 + i, 0xff);
+    const result = await hooks.runVerify(asSession(checker), captured!);
+    expect(result.ok).toBe(false);
+    const udb = result.staging.mismatches.filter((m) => m.regionLabel === 'User Database');
+    expect(udb).toHaveLength(1);
+    expect(udb[0]!.kind).toBe('mismatch');
+    expect(udb[0]!.address).toBe(0x50000);
   });
 
   it('a Write that sent no User Database leaves nothing to capture for it', async () => {

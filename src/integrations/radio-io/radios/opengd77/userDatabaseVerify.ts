@@ -75,8 +75,9 @@ function hex32(n: number): string {
 
 /**
  * Compare read-back occupied bytes (header, then entries, as `downloadUserDatabaseOccupied` returns
- * them) with the snapshot. A radio whose header count is lower than what was sent returns fewer
- * bytes: the missing slices are `not_read`, never fabricated.
+ * them) with the snapshot. A header that does not match is reported alone and the entries are not
+ * compared. With a good header, slices the read-back is too short to cover are `not_read`, never
+ * fabricated.
  */
 export function compareUserDatabaseReadback(
   snapshot: OpenGd77UserDatabaseVerifySnapshot,
@@ -110,8 +111,11 @@ export function compareUserDatabaseReadback(
     }
   }
 
+  // A header that does not match is the finding: the entry slices are not meaningful against it
+  // (a wiped header would otherwise add one "not read" row per sector).
+  const headerBad = mismatches.length > 0;
   let offset = 0;
-  for (const slice of snapshot.slices) {
+  for (const slice of headerBad ? [] : snapshot.slices) {
     const end = offset + slice.length;
     if (end > occupied.length) {
       mismatches.push({

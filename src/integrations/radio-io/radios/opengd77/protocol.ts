@@ -922,11 +922,13 @@ export class OpenGd77Protocol implements CloneImageRadio {
 
   /**
    * Occupied User Database bytes (header + packed entries). Empty when FLASH
-   * has no `Id` header. Does not walk qdmr size1.
+   * has no `Id` header, unless `keepInvalidHeader` is set: then the 12 raw header bytes come back so
+   * a verify can report them. Does not walk qdmr size1.
    */
   async downloadUserDatabaseOccupied(opts?: {
     onProgress?: ProgressFn;
     signal?: AbortSignal;
+    keepInvalidHeader?: boolean;
   }): Promise<Uint8Array> {
     return this.guarded(() => this.downloadUserDatabaseOccupiedImpl(opts));
   }
@@ -934,6 +936,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
   private async downloadUserDatabaseOccupiedImpl(opts?: {
     onProgress?: ProgressFn;
     signal?: AbortSignal;
+    keepInvalidHeader?: boolean;
   }): Promise<Uint8Array> {
     const pipe = this.pipe;
     if (!pipe) throw new RadioProtocolError('OpenGD77 User Database read: not connected');
@@ -955,7 +958,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
         OPENGD77_USER_DATABASE_MAX,
       );
     } catch {
-      return new Uint8Array(0);
+      return opts?.keepInvalidHeader ? header : new Uint8Array(0);
     }
     const n0 = Math.min(entryCount, OPENUV380_USER_DB_ENTRIES0_MAX);
     const n1 = Math.max(0, entryCount - n0);
