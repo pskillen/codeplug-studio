@@ -1,6 +1,9 @@
 /**
- * Golden write-range test (#1465): drive each real RT95 write path through the fake cable and
- * check every `W` frame sent against the allowed set in `__fixtures__/writeRangeKit.ts`.
+ * Golden write-range test, protocol level (#1465): drive `Rt95Protocol` through the fake cable and
+ * check every `W` frame sent against the allowed set in `__fixtures__/writeRangeKit.ts`. This file
+ * pins the protocol's own limits (a widened constant or a removed chip guard fails here). The
+ * app's write entry points, which decide what the protocol is asked to send, are covered by
+ * `src/app/services/radioIoRt95WriteRange.golden.test.ts`.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -16,6 +19,8 @@ import { createFakeRt95Pipe, type FakeRt95Pipe } from './__fixtures__/fakeRt95Pi
 import { MMD1_VECTORS, MMD1_VECTOR_CHANNELS } from './__fixtures__/mmd1Vectors.ts';
 import { rt95OverridesAt } from './__fixtures__/settingsFixtures.ts';
 import {
+  RT95_CPS_WRITE_RANGES,
+  RT95_GOLDEN_ALLOWED_WRITE_SET,
   RT95_MM9PDY_WRITE_RANGE,
   RT95_STUDIO_EXTRA_WRITE_RANGE,
   rt95WriteRangeViolations,
@@ -26,7 +31,7 @@ import {
 import type { Rt95ModDataInput } from './modData/index.ts';
 import { Rt95Protocol, setRt95EndAtForTests, setRt95RetryTuningForTests } from './protocol.ts';
 import { RT95_PROGRAMMING_IMAGE_REGION_ID } from './restoreFromBackup.ts';
-import { resolveRt95SettingsPatches, rt95ZoneKeyPatch } from './settingsFields.ts';
+import { resolveRt95SettingsPatches } from './settingsFields.ts';
 
 function dtos(): RadioChannelDto[] {
   return MMD1_VECTOR_CHANNELS.map((c) => ({
@@ -57,16 +62,15 @@ async function write(pipe: FakeRt95Pipe, target: Rt95WriteTarget): Promise<void>
   await radio.upload(radio.encodeChannels(prior, dtos()));
 }
 
-/** Settings-only Write: every registered setting at its first value, optionally the zone key. */
-async function settingsOnly(pipe: FakeRt95Pipe, withZoneKey: boolean): Promise<void> {
+/** Protocol settings patches: every registered setting at its first value, on the stock target. */
+async function settingsPatches(pipe: FakeRt95Pipe): Promise<void> {
   const radio = new Rt95Protocol();
   await radio.connect(pipe);
   const image = await radio.download();
-  const patches = [
-    ...(withZoneKey ? [rt95ZoneKeyPatch({ group: 1, key: 1 })] : []),
-    ...resolveRt95SettingsPatches(rt95OverridesAt('first'), withZoneKey ? 'mm9pdy' : 'stock'),
-  ];
-  await radio.uploadSettingsPatches(patches, image);
+  await radio.uploadSettingsPatches(
+    resolveRt95SettingsPatches(rt95OverridesAt('first'), 'stock'),
+    image,
+  );
 }
 
 function backupManifest(): RadioBackupManifestV1 {
@@ -111,12 +115,7 @@ const PATHS: {
 }[] = [
   { name: 'stock Write', target: 'stock', run: (p) => write(p, 'stock') },
   { name: 'MM9PDY Write', target: 'mm9pdy', run: (p) => write(p, 'mm9pdy') },
-  { name: 'settings-only Write', target: 'stock', run: (p) => settingsOnly(p, false) },
-  {
-    name: 'settings-only Write with the zone key',
-    target: 'mm9pdy',
-    run: (p) => settingsOnly(p, true),
-  },
+  { name: 'settings patches', target: 'stock', run: settingsPatches },
   { name: 'Restore', target: 'stock', run: restore },
 ];
 
@@ -129,7 +128,7 @@ afterEach(() => {
   setRt95RetryTuningForTests({});
 });
 
-describe('RT95 golden write range (#1465)', () => {
+describe('RT95 golden write range, protocol level (#1465)', () => {
   for (const path of PATHS) {
     it(`${path.name} sends only 16-byte aligned blocks inside the allowed set`, async () => {
       const pipe = createFakeRt95Pipe();
@@ -181,7 +180,7 @@ describe('RT95 golden write range (#1465)', () => {
     await write(pipe, 'stock');
     const sent = new Set(sentRt95WriteFrames(pipe).map((f) => f.address));
     const { start, end } = RT95_STUDIO_EXTRA_WRITE_RANGE;
-    // Studio uploads 0x0000-0x3290 contiguously; the CPS skips this gap (F113-F117, D2 on #1464).
+    // Studio uploads 0x0000-0x3290 contiguously; the CPS skips this gap (F114, F115).
     for (let a = start; a <= end; a += 16) expect(sent.has(a), `0x${a.toString(16)}`).toBe(true);
     // Everything else the stock path sends is a block the CPS sends too.
     expect(sent.size).toBe(0x3290 / 16 + 1);
@@ -203,5 +202,17 @@ describe('RT95 golden write range (#1465)', () => {
     expect(rt95WriteRangeViolations([frame(0x3201)], 'stock').length).toBeGreaterThan(0);
     expect(rt95WriteRangeViolations([frame(0x3200, 8)], 'stock').length).toBeGreaterThan(0);
     expect(rt95WriteRangeViolations([frame(0x3290), frame(0x4000)], 'mm9pdy')).toEqual([]);
+  });
+
+  it('0x30F0-0x31FF is allowed only because of the named Studio exception', () => {
+    const frame = (address: number): Rt95WriteFrame => ({ address, length: 16, frameBytes: 22 });
+    const allowed = RT95_GOLDEN_ALLOWED_WRITE_SET.stock;
+    expect(rt95WriteRangeViolations([frame(0x3100)], 'stock')).toEqual([]);
+    expect(allowed).toContain(RT95_STUDIO_EXTRA_WRITE_RANGE);
+    for (const r of RT95_CPS_WRITE_RANGES) {
+      expect(0x3100 >= r.start && 0x3100 <= r.end).toBe(false);
+    }
+    expect(rt95WriteRangeViolations([frame(0x30f0), frame(0x31f0)], 'stock')).toEqual([]);
+    expect(rt95WriteRangeViolations([frame(0x3200)], 'stock')).toEqual([]);
   });
 });
