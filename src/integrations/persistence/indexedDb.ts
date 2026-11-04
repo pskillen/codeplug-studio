@@ -590,10 +590,12 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     const tx = db.transaction(storeName, 'readonly');
     const os = tx.objectStore(storeName);
     const scan = planDirectoryScan(os, args);
-    const [rows, total] = await Promise.all([
-      idbCollectDirectoryPage(scan, args),
-      idbCountMatchingDirectoryRows(scan, args),
-    ]);
+    // Unfiltered, the total is the partition size: count the primary range, which is cheap and
+    // unaffected by index debris, rather than an index range.
+    const totalRequest = hasDirectoryPageFilters(args)
+      ? idbCountMatchingDirectoryRows(scan, args)
+      : promisifyRequest(os.count(directoryPrimaryRange(args.projectId)));
+    const [rows, total] = await Promise.all([idbCollectDirectoryPage(scan, args), totalRequest]);
     return { rows, total };
   }
 
@@ -725,8 +727,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     const db = await this.db();
     const storeName = DIRECTORY_STORES.digitalIdDirectory;
     const tx = db.transaction(storeName, 'readonly');
-    const index = tx.objectStore(storeName).index('byProject');
-    return promisifyRequest(index.count(projectId));
+    return promisifyRequest(tx.objectStore(storeName).count(directoryPrimaryRange(projectId)));
   }
 
   async getAnalogContact(projectId: string, id: string): Promise<AnalogContact | null> {
