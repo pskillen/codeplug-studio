@@ -13,7 +13,7 @@ import {
   reconcileChannelLocation,
 } from '@core/domain/channelLocation.ts';
 import { normalizeOptionalChannelAprs } from '@core/domain/aprs/index.ts';
-import { duplicateChannel, newChannel } from '@core/domain/factories.ts';
+import { newChannel } from '@core/domain/factories.ts';
 import {
   syncModeProfiles,
   validateModeProfiles,
@@ -54,6 +54,7 @@ import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMe
 import PowerLadderHints from '../../components/library/PowerLadderHints.tsx';
 import ScanListSummary from '../../components/library/ScanListSummary.tsx';
 import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.tsx';
+import ChannelDuplicateButton from '../../components/library/ChannelDuplicateButton.tsx';
 import ChannelAprsBindingSection, {
   channelAprsBindingFromChannel,
 } from '../../components/library/ChannelAprsBindingSection.tsx';
@@ -166,14 +167,6 @@ export default function ChannelEditor({
   const { permitNavigationOnce, modalOpen, stay, leave, isDirty } =
     useEntityEditorUnsavedGuard(buildRow);
 
-  function handleDuplicate() {
-    if (!entity) return;
-    const row = duplicateChannel(projectId, buildRow());
-    void persistence.putChannel(row, null).then((result) => {
-      if (result.ok) navigate(channelEditPath(row.id));
-    });
-  }
-
   // "Apply only": fills form state from a directory match, nothing persisted. Same fan-out
   // either way — only the fields ChannelDiffField can carry need handling (channelDiff.ts:
   // callsign, name, rxFrequency, txFrequency, rxTone, txTone, colourCode, mode, location,
@@ -194,7 +187,7 @@ export default function ChannelEditor({
   // unchanged). On a saved channel that's the whole job — the page's own key={revision}
   // remount (EntityEditorPage.tsx) picks up the change. On New channel there is no remount to
   // rely on yet, so land the operator on the freshly created channel's edit page, matching
-  // handleDuplicate's existing navigate-to-new-row pattern above.
+  // ChannelDuplicateButton's navigate-to-new-row pattern.
   function handleApplyAndSave(patched: Channel) {
     permitNavigationOnce();
     if (!entity) {
@@ -559,9 +552,12 @@ export default function ChannelEditor({
 
           {entity ? (
             <div className={classes.legacyActions}>
-              <Button variant="ghost" size="sm" onClick={() => void handleDuplicate()}>
-                Duplicate
-              </Button>
+              <ChannelDuplicateButton
+                projectId={projectId}
+                getSource={buildRow}
+                includesUnsavedEdits={isDirty}
+                variant="ghost"
+              />
               <ChannelDeleteButton
                 channel={entity}
                 onDeleted={() => navigate('/library/channels')}
