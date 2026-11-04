@@ -138,6 +138,8 @@ data), then `06`.
 timeout, Studio clears the receive buffer and resends the same frame **once**. A second failure aborts; nothing more is
 sent, and in particular no end byte.
 
+**Bootloader framing unknown.** The bootloader (`0x08000000-0x0800BFFF`) is not in the package and has not been read, so whether it frames the `01` data frame by byte count (as the application does, see [protocol.md — USB framing](protocol.md#usb-framing)) or by USB packet is unconfirmed. This is harmless: frames carry a 16-bit sum and their own `06`, and the Web Serial writer guard (#1548) keeps every frame whole, so a frame is never split.
+
 Frame counts: stock V1.05 `.CDD` is 1,675,272 bytes, **52,353** frames; release `1.0.0` is 1,680,476 bytes, **52,515**
 frames. Each frame waits for its own `06`; frames are never pipelined.
 
