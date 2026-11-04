@@ -285,6 +285,23 @@ describe('OpenGD77 recovery on failure', () => {
     expect(err.message).toContain('restart command');
   });
 
+  it('records the reply to reboot-only in the trace and says in the error that it may not have taken', async () => {
+    const { pipe, proto } = await connected();
+    pipe.nackOn(SET, 2);
+    const err = await failure(() => proto.upload(threeSectorImage(), {}));
+    expect((err as RadioProtocolError).debugText).toMatch(/NOTE\s+sent reboot-only.*reply 2d/);
+    expect(err.message).toContain('may still be on the CPS screen');
+  });
+
+  it('a silent radio after reboot-only is recorded and the original error still surfaces', async () => {
+    const { pipe, proto } = await connected();
+    pipe.nackOn(SET, 2);
+    pipe.silenceCommand(0x06, 1);
+    const err = await failure(() => proto.upload(threeSectorImage(), {}));
+    expect(err).toBeInstanceOf(OpenGd77WriteNackError);
+    expect((err as RadioProtocolError).debugText).toMatch(/NOTE\s+sent reboot-only.*no reply/);
+  });
+
   it('a failure before any sector began sends a single CLOSE_CPS and no reboot', async () => {
     const { pipe, proto } = await connected();
     const abort = new AbortController();

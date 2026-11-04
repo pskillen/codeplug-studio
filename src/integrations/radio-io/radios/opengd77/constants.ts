@@ -123,6 +123,8 @@ export const OPENGD77_SETTINGS_SIZE = 0x90;
 export const OPENGD77_VFO_SIZE = OPENGD77_CHANNEL_RECORD_SIZE;
 
 export const OPENGD77_IO_TIMEOUT_MS = 5000;
+/** How long recovery waits for the one-byte reply to reboot-only; the radio may reset first. */
+export const OPENGD77_RECOVERY_REPLY_TIMEOUT_MS = 500;
 export const OPENGD77_IDENT_TIMEOUT_MS = 8000;
 
 /**

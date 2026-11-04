@@ -31,7 +31,7 @@ import {
   RadioTimeoutError,
   RadioWrongIdentError,
 } from '../../kit/errors.ts';
-import { FrameTrace, TracingPipe } from '../../kit/frameTrace.ts';
+import { FrameTrace, TracingPipe, hexBytes } from '../../kit/frameTrace.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import {
   DM1701_RADIO_TYPES,
@@ -46,6 +46,7 @@ import {
   OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS,
   OPENGD77_IDENT_TIMEOUT_MS,
   OPENGD77_IO_TIMEOUT_MS,
+  OPENGD77_RECOVERY_REPLY_TIMEOUT_MS,
   OPENGD77_MEM_FIRMWARE_INFO,
   OPENGD77_MEM_FLASH,
   OPENGD77_WRITE_VARIANT,
@@ -359,17 +360,28 @@ export class OpenGd77Protocol implements CloneImageRadio {
     if (this.programmingStarted) {
       this.programmingStarted = false;
       this.cpsShown = false;
+      let sent = false;
       try {
         await pipe.write(
           makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_REBOOT_ONLY])),
         );
+        sent = true;
       } catch {
         /* the port may already be gone */
       }
-      this.trace.push(
-        'NOTE',
-        'sent reboot-only (C 06 01) after a failed write; not waiting for a reply',
-      );
+      // Best-effort one-byte read, recorded in the trace. Every `C` command is answered `'-'`
+      // (usb_com.c:913-917), also one the radio dropped as busy (usbd_cdc_if.c:475-481), so the
+      // reply cannot confirm the restart. Never throws: the port may drop on reset.
+      let reply = 'not sent (write failed)';
+      if (sent) {
+        try {
+          const ack = await pipe.readExact(1, OPENGD77_RECOVERY_REPLY_TIMEOUT_MS);
+          reply = `reply ${hexBytes(ack)}`;
+        } catch {
+          reply = 'no reply (the port may have dropped on reset)';
+        }
+      }
+      this.trace.push('NOTE', `sent reboot-only (C 06 01) after a failed write; ${reply}`);
       return 'rebooted';
     }
     if (this.cpsShown) {
@@ -398,7 +410,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
       if (err instanceof RadioIoError) {
         if (outcome === 'rebooted') {
           err.message +=
-            ' The radio was sent a restart command and may hold a partly written codeplug.';
+            " The radio was sent a restart command and may hold a partly written codeplug. The radio answers '-' to every command, including one it dropped because it was busy, so it may still be on the CPS screen: power-cycle it if it does not restart.";
         }
         const text = this.trace.format();
         if (text) err.debugText = text;
