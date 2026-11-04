@@ -7,6 +7,7 @@ import {
   groupDm32BlocksForProgress,
   selectBlocksToBulkRead,
 } from './memory.ts';
+import { dm32WriteMemory } from './connection.ts';
 import { Dm32uvProtocol } from './protocol.ts';
 import { planDm32Stages } from './plannedStages.ts';
 import {
@@ -680,5 +681,43 @@ describe('Dm32uvProtocol', () => {
     expect(runs).toEqual(expect.arrayContaining(['Pre-write read', 'Channels']));
     const all = rec.events.map((e) => e.stage).filter((l, i, a) => l !== a[i - 1]);
     expect(all.filter((l) => l === 'Discover memory map')).toHaveLength(2);
+  });
+});
+
+describe('dm32WriteMemory framing', () => {
+  // The radio's 4,608-byte RX ring has no overflow check, and the Web Serial writer's
+  // no-straddle guard counts one frame per write(). Both rely on this shape.
+  it('issues exactly one 4,102-byte pipe.write per 0x57 frame and waits for the 0x06 before the next', async () => {
+    const pipe = new Dm32ScriptedPipe();
+    const log: string[] = [];
+    const realWrite = pipe.write.bind(pipe);
+    const realRead = pipe.readExact.bind(pipe);
+    pipe.write = async (data) => {
+      log.push(`write:${data[0]!.toString(16)}:${data.length}`);
+      await realWrite(data);
+    };
+    pipe.readExact = async (n, ms) => {
+      log.push(`read:${n}`);
+      return realRead(n, ms);
+    };
+    pipe.enqueue(new Uint8Array([0x06]), new Uint8Array([0x06]));
+    const block = new Uint8Array(DM32_BLOCK_SIZE).fill(0xaa);
+
+    await dm32WriteMemory(pipe, 0x1000, block, { settleScale: 0 });
+    await dm32WriteMemory(pipe, 0x2000, block, { settleScale: 0 });
+
+    expect(pipe.writes).toHaveLength(2);
+    expect(pipe.writes.every((w) => w[0] === 0x57 && w.length === 4102)).toBe(true);
+    expect(log).toEqual(['write:57:4102', 'read:1', 'write:57:4102', 'read:1']);
+  });
+
+  it('does not send a second 0x57 when the first is not ACKed', async () => {
+    const pipe = new Dm32ScriptedPipe();
+    pipe.enqueue(new Uint8Array([0xc0]));
+    const block = new Uint8Array(DM32_BLOCK_SIZE);
+    await expect(dm32WriteMemory(pipe, 0x1000, block, { settleScale: 0 })).rejects.toThrow(
+      /not ACKed/,
+    );
+    expect(pipe.writes).toHaveLength(1);
   });
 });
