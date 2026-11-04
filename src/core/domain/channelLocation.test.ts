@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  placeQueryFromChannelName,
   channelHasUsableLocation,
   coordsFromChannelLocation,
   geoPointIsUsable,
@@ -155,5 +156,24 @@ describe('channelHasUsableLocation', () => {
       false,
     );
     expect(geoPointIsUsable({ lat: -33.9, lon: 151.2 })).toBe(true);
+  });
+});
+
+describe('placeQueryFromChannelName', () => {
+  it('keeps a plain town name', () => {
+    expect(placeQueryFromChannelName('Tandragee')).toBe('Tandragee');
+    expect(placeQueryFromChannelName('Milton Keynes')).toBe('Milton Keynes');
+  });
+
+  it('drops the callsign, digits and radio words', () => {
+    expect(placeQueryFromChannelName('GB3TA Tandragee DMR', 'GB3TA')).toBe('Tandragee');
+    expect(placeQueryFromChannelName('Belfast RPT TS2')).toBe('Belfast');
+    expect(placeQueryFromChannelName('MB7IAB / Newry - FM')).toBe('Newry');
+  });
+
+  it('is null when nothing place-like is left', () => {
+    expect(placeQueryFromChannelName('GB3TA', 'GB3TA')).toBeNull();
+    expect(placeQueryFromChannelName('DMR TG 2350')).toBeNull();
+    expect(placeQueryFromChannelName('  ')).toBeNull();
   });
 });
