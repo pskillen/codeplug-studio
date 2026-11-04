@@ -95,7 +95,7 @@ Typical flash path: set sector → write 32-byte buffers → finish sector. EEPR
 | `'R'` read          | `'R'` + u16 BE length + payload | one byte `'-'` (`usb_com.c:322-329`)     |
 | `'W'` / `'X'` write | **two** bytes `{type, cmd}`     | **one** byte `'-'` (`usb_com.c:593-599`) |
 
-A `C` command is answered `'-'` whether it worked or not (the firmware replies after every `C`, and also when it drops a frame because it is busy, `usbd_cdc_if.c:475-481`), so a `C` ACK carries no success information; only a stale byte could fake one, which is why the line is drained before each. A write NACK is **one byte**, so a host must read **one** byte first: `'-'` is a NACK and nothing follows; any other byte is followed by the second byte, which must be `{type, cmd}`. Waiting for two bytes turns a real NACK into a timeout; accepting a `'-'` plus the next byte as a pair hides a desync (a stray `'-'` ahead of a good ACK). Studio reads write ACKs this way (`readOpenGd77WriteAck`), and drains and records any bytes already pending before every SET_SECTOR and every `C` command, so a leftover byte can never pass for the next ACK.
+A `C` command is answered `'-'` whether it worked or not (the firmware replies after every `C`, and also when it drops a frame because it is busy, `usbd_cdc_if.c:475-481`), so a `C` ACK carries no success information; only a stale byte could fake one, which is why the line is drained before each. A write NACK is **one byte**, so a host must read **one** byte first: `'-'` is a NACK and nothing follows; any other byte is followed by the second byte, which must be `{type, cmd}`. Waiting for two bytes turns a real NACK into a timeout; accepting a `'-'` plus the next byte as a pair hides a desync (a stray `'-'` ahead of a good ACK). Studio reads write ACKs this way (`readOpenGd77WriteAck`), and drains the line before every `C` command and before every frame of a flash sector, so a leftover byte can never pass for the next ACK. Bytes found at a flash-sector frame are not ignored: they restart the sector (see [Split frames and sector recovery](#split-frames-and-sector-recovery)).
 
 ### Why the firmware answers `'-'` to a write
 
@@ -116,9 +116,32 @@ The firmware checks **no address bounds, alignment or protected range** on flash
 
 The firmware reads the whole sector into its buffer at SET_SECTOR (`usb_com.c:353`) and overwrites only the bytes it is sent before FINISH writes the sector back. A host therefore **sends only the 32-byte blocks it owns**. Studio sends only the blocks inside the registered FLASH spans ([memory-layout.md](memory-layout.md)), which lie on 32-byte boundaries (asserted in code). Filling the rest of a sector with `0xff` and sending all of it would erase what the radio keeps there: the radio's own settings struct starts at `0x604B` on MDUV380 (`application/source/interfaces/settingsStorage.c:31`) and extends past the end of the first span at `0x6060`. User Database sectors are the exception: the host owns the whole sector, so all 128 blocks are sent.
 
+### Split frames and sector recovery
+
+**Frame assembly.** The firmware treats each USB packet shorter than 64 bytes as a whole frame and zero-fills the rest of its request buffer, so a host must send each frame in one USB packet (`usbd_cdc_if.c:350-466`). Chrome's Web Serial can split one `write()` into two OS writes, and so two packets, when it straddles a wrap of its host-side buffer (the Web Serial transport rotates its writer before the wrap). When it happens the radio takes the first fragment as a complete frame and answers the remainder with a busy `'-'` from the interrupt handler, ahead of the real reply. The consequences:
+
+| What the radio saw                                         | What the host sees                                                                          |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| A short SET_SECTOR or FINISH fragment                      | A stray `'-'`, then the real `X cmd` ACK (or a NACK)                                        |
+| A SECTOR_BUFFER fragment                                   | A stray `'-'`, then a good ACK; the block reached the sector buffer as zeros or only partly |
+| A fragment parsed as a different command or another sector | A refusal, or a different sector open                                                       |
+
+So a `'-'` may be a stray byte ahead of a real ACK rather than a refusal, and a split can corrupt the sector buffer under good ACKs. The firmware state after any of these is unknown (the sector open or closed, the wrong sector open, the buffer holding zeros). Nothing reaches flash before FINISH, SET_SECTOR re-reads the sector from flash, and a refused SET_SECTOR closes any open sector without writing (`usb_com.c:338-354`, `:596`).
+
+**Recovery sequence.** On any `'-'`, wrong reply, timeout, bytes already on the line at a frame, or read-back mismatch within a sector, Studio restarts that one sector:
+
+1. Record a trace note (`NOTE sector 0x… attempt 2: <reason>`), wait about 150 ms, and drain the line.
+2. Send SET_SECTOR for the sector. If it is refused, the refusal closed whatever was open without writing: wait, drain again and send SET_SECTOR once more (this one must be ACKed).
+3. Resend **every** owned block of the sector from the first (the fresh sector load discarded the earlier ones), then FINISH.
+4. Read the owned bytes back (below). A mismatch restarts the sector.
+
+At most 3 attempts per sector; the third failure throws the typed error of the last anomaly with "Gave up after 3 attempts at this sector", and the session recovers with reboot-only. Only the open sector is at risk, so restarting it is enough. Reboot-only (`C 06 01`) is also preceded by a settle and a drain, because sent while a reply is still pending it is dropped as busy.
+
+**Read-back.** After each sector's FINISH the owned 32-byte blocks are read back with `R` and compared with what was sent. A mismatch (or a failed read) counts as an anomaly in the same attempt budget. The cost is one `R` round trip per owned block, so a Write takes roughly twice the frames and noticeably longer than before; User Database writes (every block of every sector) pay it most.
+
 ### Error reporting
 
-A failed flash write throws a typed error naming the command, the sector and the block, for example `OpenGD77 refused FINISH for FLASH sector 0x9c000 (sector 3 of 12): radio answered '-'`, and the Write stepper attaches the last 24 TX/RX frames under **Debug details** with a copy button. Stale bytes found on the line before the failing sector are listed in the message.
+A failed flash write throws a typed error naming the command, the sector and the block, for example `OpenGD77 refused FINISH for FLASH sector 0x9c000 (sector 3 of 12): radio answered '-'. Gave up after 3 attempts at this sector.`, and the Write stepper attaches the last 24 TX/RX frames under **Debug details** with a copy button. Each TX line shows the cumulative byte offset at which its frame starts (`TX @65529 58 02 …`), which shows whether a failure sits on a buffer-wrap boundary, and each sector restart shows as a `NOTE` line. Bytes found on the line mid-sector are a `STALE` line and a restart, not a message to read afterwards.
 
 ## FirmwareInfo (`'R'` mem `09h`)
 
