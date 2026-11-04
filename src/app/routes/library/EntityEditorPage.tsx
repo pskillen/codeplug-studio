@@ -28,8 +28,10 @@ const V2_SELF_SHELLED_EDITORS = new Set<LibraryEntityKind>([
   'ownDigitalId',
 ]);
 
-export default function EntityEditorPage() {
-  const { kind: slug, id } = useParams();
+export default function EntityEditorPage({ kindSlug }: { kindSlug?: string } = {}) {
+  const params = useParams();
+  const slug = kindSlug ?? params.kind;
+  const id = params.id;
   const meta = slug ? kindBySlug(slug) : undefined;
   const { library, loading, projectId } = useLibrary();
   const [channelPageTitle, setChannelPageTitle] = useState<{

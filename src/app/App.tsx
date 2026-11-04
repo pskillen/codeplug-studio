@@ -3,6 +3,7 @@ import AppLayout from './components/AppLayout/AppLayout.tsx';
 import RequireActiveProject from './components/RequireActiveProject/RequireActiveProject.tsx';
 import HomePage from './routes/HomePage.tsx';
 import EntityEditorPage from './routes/library/EntityEditorPage.tsx';
+import ChannelViewPage from './routes/library/ChannelViewPage.tsx';
 import AddFromUkRepeaterPage from './routes/library/AddFromUkRepeaterPage.tsx';
 import AddFromOpenAipPage from './routes/library/AddFromOpenAipPage.tsx';
 import AddFromBrandmeisterPage from './routes/library/AddFromBrandmeisterPage.tsx';
@@ -148,6 +149,12 @@ export const appRouter = createBrowserRouter([
           { path: '/library', element: <Navigate to="/library/channels" replace /> },
           { path: '/library/channels', element: <ChannelsListPage /> },
           { path: '/library/channels/defaults', element: <ChannelDefaultsPage /> },
+          { path: '/library/channels/new', element: <EntityEditorPage kindSlug="channels" /> },
+          { path: '/library/channels/:channelId', element: <ChannelViewPage /> },
+          {
+            path: '/library/channels/:id/edit',
+            element: <EntityEditorPage kindSlug="channels" />,
+          },
           { path: '/library/zones/defaults', element: <ZoneDefaultsPage /> },
           { path: '/library/zones', element: <ZonesListPage /> },
           { path: '/library/zones/new', element: <ZoneCreatePage /> },

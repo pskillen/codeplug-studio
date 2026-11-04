@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Directory verify/lookup buttons for a library channel, placed in the channel editor **Identity** section next to **Callsign** — on both saved channels and the blank New-channel screen. Opens [`RepeaterListingUpdateDialog`](./RepeaterListingUpdateDialog.tsx) to diff and apply repeater field updates from ukrepeater.net, IRTS, RepeaterBook, or BrandMeister (when the channel has a DMR profile).
+Directory verify/lookup buttons for a library channel, placed in the channel editor **Identity** section next to **Callsign** — on both saved channels and the blank New-channel screen — and in the channel view page's collapsed **Directory** panel (Apply & save only). Opens [`RepeaterListingUpdateDialog`](./RepeaterListingUpdateDialog.tsx) to diff and apply repeater field updates from ukrepeater.net, IRTS, RepeaterBook, or BrandMeister (when the channel has a DMR profile).
 
 ## Props
 
@@ -10,7 +10,7 @@ Directory verify/lookup buttons for a library channel, placed in the channel edi
 | -------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `channel`            | `Channel`                                   | Live channel row (includes typed callsign)                                                                             |
 | `onApplyAndSave`     | `(patched: Channel) => void`                | Forwarded to the dialog's primary "Apply & save" button. Omit to hide it.                                              |
-| `onApplyAndContinue` | `(patched: Channel) => void`                | Forwarded to the dialog's secondary "Apply only" button — required, no I/O.                                            |
+| `onApplyAndContinue` | `(patched: Channel) => void`                | Forwarded to the dialog's secondary "Apply only" button — no I/O. Omit to hide it (the read-only channel view).        |
 | `mode`               | `'verify' \| 'lookup'` (default `'verify'`) | `'verify'` — saved-channel copy ("Check ukrepeater.net"). `'lookup'` — New-channel copy ("Look up on ukrepeater.net"). |
 
 ## Usage

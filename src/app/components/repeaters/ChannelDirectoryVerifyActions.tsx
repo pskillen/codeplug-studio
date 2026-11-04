@@ -16,8 +16,9 @@ export interface ChannelDirectoryVerifyActionsProps {
   channel: Channel;
   /** Primary button — "Apply & save". Omit to hide the button. */
   onApplyAndSave?: (patched: Channel) => void;
-  /** Secondary button — "Apply only". Fills the caller's form state; writes nothing. */
-  onApplyAndContinue: (patched: Channel) => void;
+  /** Secondary button — "Apply only". Fills the caller's form state; writes nothing. Omit to hide
+   * the button (the read-only channel view has no form to fill). */
+  onApplyAndContinue?: (patched: Channel) => void;
   /** Copy variant — 'verify' (default, saved channel) vs 'lookup' (New channel). */
   mode?: RepeaterListingUpdateDialogMode;
 }

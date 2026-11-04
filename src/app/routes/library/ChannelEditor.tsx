@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Select, Stack } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { ChannelAprsBinding } from '@core/models/aprs.ts';
 import type {
   ForbidTransmitOverride,
@@ -13,7 +13,7 @@ import {
   reconcileChannelLocation,
 } from '@core/domain/channelLocation.ts';
 import { normalizeOptionalChannelAprs } from '@core/domain/aprs/index.ts';
-import { newChannel } from '@core/domain/factories.ts';
+import { duplicateChannel, newChannel } from '@core/domain/factories.ts';
 import {
   syncModeProfiles,
   validateModeProfiles,
@@ -35,6 +35,7 @@ import {
 } from '../../components/v2/index.ts';
 import { type ChannelMode as UiChannelMode, modeLabel } from '../../lib/channelModes.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
+import { channelEditPath, channelViewPath } from '../../lib/channelPaths.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
 import TxPermitSegment from '../../components/channels/TxPermitSegment.tsx';
 import TxOffsetControls from '../../components/channels/TxOffsetControls.tsx';
@@ -103,7 +104,7 @@ export default function ChannelEditor({
   const [validationError, setValidationError] = useState<string | null>(null);
   const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
 
-  const { save, saving, error } = useEntitySave('channels');
+  const { save, saving, error } = useEntitySave('channels', { navigateOnSave: false });
   const navigate = useNavigate();
 
   const selectedModes = modeProfiles.map((p) => p.mode as ChannelMode);
@@ -167,30 +168,9 @@ export default function ChannelEditor({
 
   function handleDuplicate() {
     if (!entity) return;
-    const source = buildRow();
-    const copyName = `${source.name.trim() || 'Untitled channel'} (copy)`;
-    const copy = newChannel(projectId, copyName, source.callsign);
-    const row: Channel = {
-      ...copy,
-      abbreviation: source.abbreviation,
-      rxFrequency: source.rxFrequency,
-      txFrequency: source.txFrequency,
-      power: source.power,
-      scanInclusion: source.scanInclusion,
-      scanListId: source.scanListId,
-      forbidTransmit: source.forbidTransmit,
-      txPermit: source.txPermit,
-      comment: source.comment,
-      location: source.location,
-      useLocation: source.useLocation,
-      maidenheadLocator: source.maidenheadLocator,
-      hideFromInternalMap: source.hideFromInternalMap,
-      modeProfiles: source.modeProfiles.map((profile) => ({ ...profile })),
-      primaryMode: source.primaryMode ?? null,
-      aprs: source.aprs ? { ...source.aprs } : undefined,
-    };
+    const row = duplicateChannel(projectId, buildRow());
     void persistence.putChannel(row, null).then((result) => {
-      if (result.ok) navigate(`/library/channels/${row.id}`);
+      if (result.ok) navigate(channelEditPath(row.id));
     });
   }
 
@@ -218,7 +198,7 @@ export default function ChannelEditor({
   function handleApplyAndSave(patched: Channel) {
     permitNavigationOnce();
     if (!entity) {
-      navigate(`/library/channels/${patched.id}`);
+      navigate(channelEditPath(patched.id));
     }
   }
 
@@ -238,11 +218,13 @@ export default function ChannelEditor({
     const row = buildRow();
     void save(() => persistence.putChannel(row, entity ? entity.revision : null), {
       permitNavigation: permitNavigationOnce,
+    }).then((saved) => {
+      if (saved) navigate(channelViewPath(row.id));
     });
   }
 
   function handleCancel() {
-    navigate('/library/channels');
+    navigate(entity ? channelViewPath(entity.id) : '/library/channels');
   }
 
   function handleModesChange(modes: UiChannelMode[]) {
@@ -274,6 +256,14 @@ export default function ChannelEditor({
   useEffect(() => {
     onPageTitle?.(editorPageTitle);
   }, [editorPageTitle, onPageTitle]);
+
+  // The channel view links straight to a section (e.g. `/edit#location`).
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!hash || loadingProp) return;
+    const frame = requestAnimationFrame(() => scrollToPageSection(hash.slice(1)));
+    return () => cancelAnimationFrame(frame);
+  }, [hash, loadingProp]);
 
   const scanListOptions = [
     { value: '', label: 'None' },
@@ -310,8 +300,8 @@ export default function ChannelEditor({
     <DesignSystemV2Provider>
       <div className={classes.root}>
         <EditorHeader
-          crumb="Channels"
-          crumbTo="/library/channels"
+          crumb={entity ? 'View channel' : 'Channels'}
+          crumbTo={entity ? channelViewPath(entity.id) : '/library/channels'}
           title={headerTitle}
           subtitle={headerSubtitle}
           compact={isMobile}
@@ -550,7 +540,7 @@ export default function ChannelEditor({
                   variant="outline"
                   size="sm"
                   disabled={!prevChannelId}
-                  onClick={() => prevChannelId && navigate(`/library/channels/${prevChannelId}`)}
+                  onClick={() => prevChannelId && navigate(channelEditPath(prevChannelId))}
                 >
                   ← Previous
                 </Button>
@@ -558,7 +548,7 @@ export default function ChannelEditor({
                   variant="outline"
                   size="sm"
                   disabled={!nextChannelId}
-                  onClick={() => nextChannelId && navigate(`/library/channels/${nextChannelId}`)}
+                  onClick={() => nextChannelId && navigate(channelEditPath(nextChannelId))}
                 >
                   Next →
                 </Button>

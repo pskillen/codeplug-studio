@@ -11,8 +11,13 @@ describe('analyticsPagePath', () => {
 
   it('replaces dynamic segments with route templates', () => {
     expect(analyticsPagePath('/library/channels/550e8400-e29b-41d4-a716-446655440000')).toBe(
-      '/library/:kind/:id',
+      '/library/channels/:id',
     );
+    expect(analyticsPagePath('/library/channels/550e8400-e29b-41d4-a716-446655440000/edit')).toBe(
+      '/library/channels/:id/edit',
+    );
+    expect(analyticsPagePath('/library/channels/new')).toBe('/library/channels/new');
+    expect(analyticsPagePath('/library/talk-groups/abc-123')).toBe('/library/:kind/:id');
     expect(analyticsPagePath('/builds/abc-123/export')).toBe('/builds/:id/export');
     expect(analyticsPagePath('/builds/abc-123/overview')).toBe('/builds/:id/overview');
   });
