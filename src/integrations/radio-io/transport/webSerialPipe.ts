@@ -52,7 +52,10 @@ export interface SerialPortLike {
  */
 export const WEB_SERIAL_HOST_BUFFER_SIZE = 1_048_576;
 
-/** A BytePipe over Web Serial; adds the TX offset accessors for frame traces. */
+/**
+ * What `openWebSerialPipe` actually returns (typed as BytePipe, whose optional `txBytesWritten` is the trace hook);
+ * the extra accessors are for tests and diagnostics.
+ */
 export interface WebSerialPipe extends BytePipe {
   /** Cumulative bytes written since the pipe opened (across stream rotations). */
   readonly txBytesWritten: number;
@@ -335,10 +338,7 @@ async function assertSerialSignals(port: SerialPortLike): Promise<void> {
  * The write guard assumes the port was opened with `WEB_SERIAL_HOST_BUFFER_SIZE` (this function does so itself) and
  * that its writable stream is fresh (nothing written yet). Ports opened elsewhere must use the same `bufferSize`.
  */
-export async function openWebSerialPipe(
-  port: SerialPortLike,
-  baudRate: number,
-): Promise<WebSerialPipe> {
+export async function openWebSerialPipe(port: SerialPortLike, baudRate: number): Promise<BytePipe> {
   if (!port.readable || !port.writable) {
     await port.open({ baudRate, bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE });
     await assertSerialSignals(port);
@@ -355,7 +355,7 @@ export async function openWebSerialPipe(
 /**
  * Request (or reuse) a Web Serial port and open a BytePipe at `baudRate`.
  */
-export async function requestWebSerialPipe(options: WebSerialPipeOptions): Promise<WebSerialPipe> {
+export async function requestWebSerialPipe(options: WebSerialPipeOptions): Promise<BytePipe> {
   const port = await requestWebSerialPort(options.forceSelection ?? false, options.filters);
   return openWebSerialPipe(port, options.baudRate);
 }
