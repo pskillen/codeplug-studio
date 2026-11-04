@@ -262,6 +262,19 @@ function specFromLayout(layout: Layout): Rt95SettingsFieldSpec {
   }
 
   const allowed = optionValues(id);
+  // A masked enum lives in the mask's bits, so the value is shifted up by the mask's lowest set bit
+  // on the wire (the CPS encodes 0x321B as a sum of bit weights) and shifted back on read.
+  const shift = mask !== undefined && mask !== 0 ? 31 - Math.clz32(mask & -mask) : 0;
+  if (mask !== undefined) {
+    for (const value of allowed) {
+      const wire = layout.wireOffset ? layout.wireOffset(value) : value;
+      if (((wire << shift) & ~mask & 0xff) !== 0 || wire << shift > 0xff) {
+        throw new Error(
+          `RT95 setting ${id}: option ${value} does not fit mask 0x${mask.toString(16)}`,
+        );
+      }
+    }
+  }
   return {
     ...base,
     ...(mask === undefined ? {} : { mask }),
@@ -270,10 +283,10 @@ function specFromLayout(layout: Layout): Rt95SettingsFieldSpec {
         refuse(id, value, 'not an offered value');
       }
       const wire = layout.wireOffset ? layout.wireOffset(value) : value;
-      return Uint8Array.of(wire);
+      return Uint8Array.of(wire << shift);
     },
     decode(bytes) {
-      const raw = mask !== undefined ? (bytes[0] ?? 0) & mask : (bytes[0] ?? 0);
+      const raw = mask !== undefined ? ((bytes[0] ?? 0) & mask) >> shift : (bytes[0] ?? 0);
       const ui = layout.uiFromWire ? layout.uiFromWire(raw) : raw;
       if (ui === undefined || !allowed.has(ui)) return undefined;
       return ui;
