@@ -12,7 +12,7 @@ import {
   type Rt95RegionManifestEntry,
 } from './writeRole.ts';
 import { settingsRetainPreview, type Rt95RetainPreviewRow } from './retainPreview.ts';
-import { decodeChannelsFromImage } from './channelCodec.ts';
+import { decodeChannelsFromImage, findRt95UnrepresentableChannels } from './channelCodec.ts';
 import { inspectOccupiedChannels, type CloneInspectNamedItem } from '../../cloneInspect.ts';
 
 export interface Rt95RetainGroupSummary {
@@ -30,6 +30,30 @@ export interface Rt95CloneSummary {
   retainGroups: readonly Rt95RetainGroupSummary[];
   settingsRetain: readonly Rt95RetainPreviewRow[];
   inspectChannels: readonly CloneInspectNamedItem[];
+  /** Read-time notes for channel values Studio cannot round-trip (empty when none). */
+  roundTripWarnings: readonly string[];
+}
+
+function slotList(slots: readonly number[]): string {
+  return slots.length > 6
+    ? `${slots.slice(0, 6).join(', ')} and ${slots.length - 6} more`
+    : slots.join(', ');
+}
+
+function roundTripWarnings(bytes: Uint8Array): string[] {
+  const { width20kHz, customCtcss } = findRt95UnrepresentableChannels(bytes);
+  const out: string[] = [];
+  if (width20kHz.length > 0) {
+    out.push(
+      `${width20kHz.length} channel(s) use a 20 kHz width (slots ${slotList(width20kHz)}). Studio reads them as 25 kHz and a Write from Studio saves them as 25 kHz.`,
+    );
+  }
+  if (customCtcss.length > 0) {
+    out.push(
+      `${customCtcss.length} channel(s) use a custom CTCSS tone (slots ${slotList(customCtcss)}). Studio reads them with no tone and a Write from Studio drops the tone.`,
+    );
+  }
+  return out;
 }
 
 export function summariseRt95Clone(
@@ -57,5 +81,6 @@ export function summariseRt95Clone(
     })),
     settingsRetain: settingsRetainPreview(bytes),
     inspectChannels: inspectOccupiedChannels(decodeChannelsFromImage(bytes)),
+    roundTripWarnings: roundTripWarnings(bytes),
   };
 }

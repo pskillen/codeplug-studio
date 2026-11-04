@@ -5,7 +5,7 @@
  * `variant="write-coverage"` only if this view must show Written / Kept sections.
  */
 
-import { Accordion, Code, List, Stack, Table, Text } from '@mantine/core';
+import { Accordion, Alert, Code, List, Stack, Table, Text } from '@mantine/core';
 import { type RadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
 import {
   summariseUv5rMiniClone,
@@ -971,6 +971,15 @@ function Rt95RadioImageSections({
       </FormSection>
 
       <Rt95OnRadioSection summary={summary} variant={variant} />
+      {summary.roundTripWarnings.length > 0 ? (
+        <Alert color="yellow" title="Some channels will not round-trip">
+          <List size="sm" spacing="xs">
+            {summary.roundTripWarnings.map((w) => (
+              <List.Item key={w}>{w}</List.Item>
+            ))}
+          </List>
+        </Alert>
+      ) : null}
       {variant === 'inspect' ? (
         <InspectNamedLists
           lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]}
