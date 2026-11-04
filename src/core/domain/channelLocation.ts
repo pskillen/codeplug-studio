@@ -185,3 +185,52 @@ export function geoPointIsUsable(point: GeoPoint | null | undefined): point is G
   if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
   return !(lat === 0 && lon === 0);
 }
+
+/** Words in a channel name that describe the radio, not the place. */
+const NON_PLACE_WORDS = new Set([
+  'RPT',
+  'RPTR',
+  'REPEATER',
+  'GATEWAY',
+  'NODE',
+  'SIMPLEX',
+  'BEACON',
+  'DMR',
+  'FM',
+  'NFM',
+  'WFM',
+  'AM',
+  'DSTAR',
+  'D-STAR',
+  'YSF',
+  'FUSION',
+  'C4FM',
+  'NXDN',
+  'TETRA',
+  'ECHOLINK',
+  'ALLSTAR',
+  'VHF',
+  'UHF',
+  'TG',
+]);
+
+/**
+ * A place name to search for from a channel name, e.g. "GB3TA Tandragee DMR" -> "Tandragee".
+ * Drops the callsign, words with digits (callsigns, slots, bands) and radio words. Null when no
+ * place-like text is left.
+ */
+export function placeQueryFromChannelName(name: string, callsign?: string | null): string | null {
+  const ownCallsign = callsign?.trim().toUpperCase() ?? '';
+  const words = name
+    .split(/[\s/|,()[\]_]+/)
+    .map((word) => word.trim())
+    .filter((word) => {
+      if (!/\p{L}/u.test(word)) return false;
+      const upper = word.toUpperCase();
+      if (ownCallsign && upper === ownCallsign) return false;
+      if (/\d/.test(word)) return false;
+      return !NON_PLACE_WORDS.has(upper);
+    });
+  const query = words.join(' ').trim();
+  return query.replace(/\P{L}/gu, '').length >= 3 ? query : null;
+}

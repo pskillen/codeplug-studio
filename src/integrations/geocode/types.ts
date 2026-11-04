@@ -4,6 +4,8 @@ export interface GeocodeResult {
   lat: number;
   lon: number;
   label: string;
+  /** What the match is ("village", "street", "postcode"), when the provider says. */
+  kind?: string;
 }
 
 export interface ReverseGeocodeResult {

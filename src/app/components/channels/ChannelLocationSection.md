@@ -2,15 +2,17 @@
 
 ## Purpose
 
-Location block for the channel editor: Maidenhead locator, lat/lon inputs, use-location flag, clear control, and interactive map. Keeps locator and coordinates in sync; parent calls `reconcileChannelLocation` on save.
+Location block for the channel editor: Maidenhead locator, lat/lon inputs, use-location flag, clear control, place search ([ChannelPlaceSearch](ChannelPlaceSearch.md)), and interactive map. Keeps locator and coordinates in sync; parent calls `reconcileChannelLocation` on save.
 
 ## Props
 
-| Prop        | Type                                     | Description                                                                            |
-| ----------- | ---------------------------------------- | -------------------------------------------------------------------------------------- |
-| `value`     | `ChannelLocationValues`                  | Current locator, coords, useLocation, hideFromInternalMap, and `lastEdited` source     |
-| `onChange`  | `(value: ChannelLocationValues) => void` | Called on any field or map change                                                      |
-| `mapActive` | `boolean`                                | When `false`, locator/coords fields stay mounted but the map unmounts (default `true`) |
+| Prop         | Type                                     | Description                                                                                   |
+| ------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `value`      | `ChannelLocationValues`                  | Current locator, coords, useLocation, hideFromInternalMap, and `lastEdited` source            |
+| `onChange`   | `(value: ChannelLocationValues) => void` | Called on any field or map change                                                             |
+| `mapActive`  | `boolean`                                | When `false`, locator/coords fields stay mounted but the map unmounts (default `true`)        |
+| `compact`    | `boolean`                                | Shorter map (mobile)                                                                          |
+| `placeQuery` | `string \| null`                         | Place name from the channel name (`placeQueryFromChannelName`), offered as a one-click search |
 
 ## Usage
 
@@ -51,6 +53,7 @@ const reconciled = reconcileChannelLocation({
 - **No** “Use my location” button on this page (reference tool / list maps only).
 - `clearPosition` resets locator, coords, and `useLocation` (does not change `hideFromInternalMap`).
 - **Hide from map:** `hideFromInternalMap` is app-only — omits the channel from embedded Codeplug Studio maps; coordinates and distance sort are unchanged.
+- **Find a place** ([#1525](https://github.com/pskillen/codeplug-studio/issues/1525)): `ChannelPlaceSearch` sits under the coordinates. Picking a result goes through the same path as a map click (6-character locator, `lastEdited: 'coords'`, `useLocation` on).
 - **Map height:** `clamp(300px, 45dvh, 480px)`, or `clamp(240px, 40dvh, 340px)` when `compact` (mobile) ([#1524](https://github.com/pskillen/codeplug-studio/issues/1524)).
 - **Map mount:** `ChannelEditor` passes `mapActive` so the map unmounts when another tab is selected (Leaflet container reuse constraint).
 - **No directory-check hint here.** The channel editor's Location panel renders a conditional "Set from a directory in Identity" jump-link above this component (only when the channel has a callsign but no location yet) — this component itself has no directory-lookup awareness.
@@ -58,6 +61,7 @@ const reconciled = reconcileChannelLocation({
 ## Related
 
 - [MapLocationPicker](../MapLocationPicker/MapLocationPicker.md)
+- [ChannelPlaceSearch](ChannelPlaceSearch.md)
 - [docs/features/maidenhead.md](../../../docs/features/maidenhead.md)
 - [#28](https://github.com/pskillen/codeplug-studio/issues/28)
 - [#261](https://github.com/pskillen/codeplug-studio/issues/261)

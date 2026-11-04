@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { LocationEditSource } from '@core/domain/channelLocation.ts';
 import { coordsToLocator, isValidLocator, locatorToCoords } from '@core/domain/maidenhead.ts';
 import MapLocationPicker from '../MapLocationPicker/MapLocationPicker.tsx';
+import ChannelPlaceSearch from './ChannelPlaceSearch.tsx';
 import { Button as V2Button, FormField, MapPanel, TextInput } from '../v2/index.ts';
 
 export interface ChannelLocationValues {
@@ -26,6 +27,8 @@ export interface ChannelLocationSectionProps {
   /** When false, the map unmounts while locator/coords fields stay mounted. */
   mapActive?: boolean;
   compact?: boolean;
+  /** Place name from the channel name (`placeQueryFromChannelName`), offered as a one-click search. */
+  placeQuery?: string | null;
 }
 
 export default function ChannelLocationSection({
@@ -33,6 +36,7 @@ export default function ChannelLocationSection({
   onChange,
   mapActive = true,
   compact = false,
+  placeQuery = null,
 }: ChannelLocationSectionProps) {
   const [locatorError, setLocatorError] = useState<string | null>(null);
 
@@ -85,6 +89,10 @@ export default function ChannelLocationSection({
   };
 
   // Tall enough to place a marker on a street, but never taller than most of the screen (#1524).
+  const latN = parseCoord(value.lat);
+  const lonN = parseCoord(value.lon);
+  const near = latN != null && lonN != null ? { lat: latN, lon: lonN } : null;
+
   const mapHeight = compact ? 'clamp(240px, 40dvh, 340px)' : 'clamp(300px, 45dvh, 480px)';
 
   return (
@@ -137,6 +145,11 @@ export default function ChannelLocationSection({
           decimalScale={6}
         />
       </Group>
+      <ChannelPlaceSearch
+        nameQuery={placeQuery}
+        near={near}
+        onPick={(lat, lon) => applyCoords(lat, lon)}
+      />
       <Checkbox
         label="Use location"
         description="Use coordinates for distance sort and export when the format supports location"
@@ -159,8 +172,8 @@ export default function ChannelLocationSection({
       </Group>
       <MapPanel height={mapHeight}>
         <MapLocationPicker
-          lat={parseCoord(value.lat)}
-          lon={parseCoord(value.lon)}
+          lat={latN}
+          lon={lonN}
           onPick={applyCoords}
           height="100%"
           active={mapActive}

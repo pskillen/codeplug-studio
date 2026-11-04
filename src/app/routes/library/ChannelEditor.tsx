@@ -8,7 +8,10 @@ import type {
   TxPermitOverride,
 } from '@core/models/channelBehaviourDefaults.ts';
 import type { Channel, ChannelModeProfile, Library, ScanInclusion } from '@core/models/library.ts';
-import { reconcileChannelLocation } from '@core/domain/channelLocation.ts';
+import {
+  placeQueryFromChannelName,
+  reconcileChannelLocation,
+} from '@core/domain/channelLocation.ts';
 import { normalizeOptionalChannelAprs } from '@core/domain/aprs/index.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import {
@@ -501,7 +504,12 @@ export default function ChannelEditor({
                 Set from a directory in Identity
               </button>
             ) : null}
-            <ChannelLocationSection value={location} onChange={setLocation} compact={isMobile} />
+            <ChannelLocationSection
+              value={location}
+              onChange={setLocation}
+              compact={isMobile}
+              placeQuery={placeQueryFromChannelName(name, callsign)}
+            />
           </Panel>
 
           {entity ? (

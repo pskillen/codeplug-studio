@@ -33,6 +33,31 @@ export function parsePhotonGeocodeBody(body: string, fallbackLabel: string): Geo
   return { lat, lon, label };
 }
 
+/** Every feature of a Photon search, labelled "name, county or state, country". */
+export function parsePhotonSearchBody(body: string): GeocodeResult[] {
+  const data = JSON.parse(body) as {
+    features?: {
+      geometry: { coordinates: [number, number] };
+      properties: {
+        name?: string;
+        county?: string;
+        state?: string;
+        country?: string;
+        osm_value?: string;
+      };
+    }[];
+  };
+  return (data.features ?? []).map((feature) => {
+    const [lon, lat] = feature.geometry.coordinates;
+    const { name, county, state, country, osm_value } = feature.properties;
+    const label =
+      [name, county ?? state, country].filter(Boolean).join(', ') ||
+      `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+    const kind = osm_value?.replace(/_/g, ' ').trim();
+    return kind ? { lat, lon, label, kind } : { lat, lon, label };
+  });
+}
+
 export function parsePhotonReverseBody(
   body: string,
   lat: number,
@@ -65,6 +90,22 @@ export async function fetchPhotonGeocode(query: string): Promise<GeocodeResult |
     throw new GeocodeError(`Photon geocoding failed (${status})`);
   }
   return parsePhotonGeocodeBody(body, query);
+}
+
+/** Up to `limit` Photon matches, ranked towards `near` when given. */
+export async function fetchPhotonSearch(
+  query: string,
+  opts: { near?: { lat: number; lon: number }; limit: number },
+): Promise<GeocodeResult[]> {
+  const bias = opts.near
+    ? `&lat=${encodeURIComponent(String(opts.near.lat))}&lon=${encodeURIComponent(String(opts.near.lon))}`
+    : '';
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=${opts.limit}${bias}`;
+  const { body, status } = await fetchPhotonText(url);
+  if (status < 200 || status >= 300) {
+    throw new GeocodeError(`Photon geocoding failed (${status})`);
+  }
+  return parsePhotonSearchBody(body);
 }
 
 export async function fetchPhotonReverseGeocode(
