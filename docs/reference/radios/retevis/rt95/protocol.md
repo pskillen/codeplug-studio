@@ -167,7 +167,7 @@ After upload, Studio stages every **16-byte** block written in `0x0000`…`0x329
 
 - Write, then Check, are separate port-opens (the session is released between them), as is the flash pre-flight.
 - The codeplug image is about 13 KB; the **TX** for a codeplug Write is 21-28 KB because every 16-byte block is echoed-and-acked frame by frame. Neither reaches 64 KiB, so no codeplug session was ever split by the host.
-- The **flasher** is the only RT95 path that crossed 64 KiB (frame 64, `0x08011C00`, cut at byte 513) before the Web Serial buffer fix. Every owner flash in that state passed and booted, one with a self-check of the image bytes (F101), so the pre-fix split did no harm. With the fix, even the 495 KB worst case stays under the 1 MiB ring and no stream rotation happens on this radio.
+- The **flasher** is the only RT95 path that crossed 64 KiB (frame 64, `0x08011C00`, cut at byte 513) before the Web Serial buffer fix. Every owner flash in that state passed and booted, and the head boots and runs, which is the evidence for frame 64 itself (stock app code); F101 self-checked the fill bytes after frame 64, not frame 64. With the fix, even the 495 KB worst case stays under the 1 MiB ring and no stream rotation happens on this radio.
 
 ## Related
 
