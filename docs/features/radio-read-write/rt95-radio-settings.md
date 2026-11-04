@@ -27,6 +27,7 @@ Route `/builds/:id/export/radio-settings` for RT95 Web Serial egresses. Same int
 
 - **Radio settings part** appears when the profile supports radio settings and this session has overrides (or the user ticks it after **Set up…**).
 - **Review** — **Radio settings** section lists each change as _now → after_ (advanced fields labelled). **Apply / Keep its settings** when the band limit of the connected radio differs from the settings read (or nothing was read). **Backup** section is a nudge only (no in-Review zip on RT95 yet). MM9PDY **Zones and descriptions** stays a separate section when mod data is written.
+- **Review — Channels** says how many channels will be written and that channel signalling settings (DTMF ID, 5-Tone ID, optional signalling) are reset: Studio writes only what is in the library, so signalling set on the radio or in the stock CPS does not survive a codeplug Write ([channel write principle](../../reference/radios/retevis/rt95/channel-record.md#write-principle)). Channels Studio cannot carry exactly appear as Write warnings: a 20 kHz width (written as 25 kHz) and a CTCSS tone outside the radio's list (written without the tone).
 - **Codeplug + settings** passes `rt95SettingsOverrides` into `uploadPreparedRadioWrite`; the pause can answer Keep and drop patches before upload.
 - **Settings only** uses `writeRt95SettingsOnly` and a dedicated stage plan (**Read settings** + **Upload** on touched blocks only).
 

@@ -22,31 +22,31 @@ Kit codec for this family is shipped as [#641](https://github.com/pskillen/codep
 
 ## Identity
 
-| Item          | Value                                                          |
-| ------------- | -------------------------------------------------------------- |
-| Baud          | **9600**                                                       |
-| Enter         | ASCII `PROGRAM`                                                |
-| Enter reply   | ASCII `QX` + `0x06`                                            |
-| Version probe | `0x02` after enter                                             |
-| Exit          | ASCII `END`                                                    |
-| Block size    | `0x10` (16)                                                    |
-| Read opcode   | `0x52` (`R`)                                                   |
-| Write opcode  | `0x57` (`W`)                                                   |
-| Write ACK     | Trailing `0x06` on command; radio replies with `0x06` (1 byte) |
-| Write NACK    | `0x0a`                                                         |
-| Image span    | `MEMORY_ADDRESS_RANGE = (0x0000, 0x3290)` → assembled `0x32A0` |
+| Item          | Value                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| Baud          | **9600**                                                                                       |
+| Enter         | ASCII `PROGRAM`                                                                                |
+| Enter reply   | ASCII `QX` + `0x06`                                                                            |
+| Version probe | `0x02` after enter                                                                             |
+| Exit          | ASCII `END`                                                                                    |
+| Block size    | `0x10` (16)                                                                                    |
+| Read opcode   | `0x52` (`R`)                                                                                   |
+| Write opcode  | `0x57` (`W`)                                                                                   |
+| Write ACK     | Trailing `0x06` on command; radio replies with `0x06` (1 byte)                                 |
+| Write NACK    | `0x0a` (Studio treats any non-`0x06` reply as a failure; the stock CPS recognises only `0x06`) |
+| Image span    | `MEMORY_ADDRESS_RANGE = (0x0000, 0x3290)` → assembled `0x32A0`                                 |
 
 ## Model allow-list (version response)
 
 After `PROGRAM` → `QX\x06`, host sends `0x02`. Radio replies with a version blob (CHIRP `VER_FORMAT`):
 
-| Field     | Notes                                                      |
-| --------- | ---------------------------------------------------------- |
-| Header    | `0x49`                                                     |
-| Model     | 7-char ASCII (NUL-padded / trimmed)                        |
-| Bandlimit | 1 byte — band table index (see [settings.md](settings.md)) |
-| Version   | 6-char ASCII                                               |
-| Trailer   | ACK `0x06`                                                 |
+| Field     | Notes                                                                                            |
+| --------- | ------------------------------------------------------------------------------------------------ |
+| Header    | `0x49`                                                                                           |
+| Model     | 7-char ASCII (NUL-padded / trimmed)                                                              |
+| Bandlimit | 1 byte — band table index (see [settings.md](settings.md))                                       |
+| Version   | 4 characters (`V100`) in bytes 9-12; bytes 13-14 are reserved and not inspected by the stock CPS |
+| Trailer   | ACK `0x06`                                                                                       |
 
 Studio’s RT95 **VOX** target matches CHIRP `RetevisRT95vox`:
 
@@ -99,7 +99,7 @@ Address steps: `0x0000` … `0x3290` inclusive, step `0x10`.
 
 Checksum (CHIRP): 8-bit sum over command bytes after the opcode (`cmd[1:]` before checksum/trailer).
 
-Upload path also issues a priming read at radio address **`0x3b10`** (outside the clone image span) before writing the contiguous map — reply shape matches a normal read frame; purpose undocumented beyond “initial response”.
+Upload path also issues a priming read at radio address **`0x3b10`** (outside the clone image span) before writing the contiguous map — reply shape matches a normal read frame. The stock CPS reads `0x3B18`–`0x3B1B` from that reply and compares it with its own "Program PassWord" string, prompting if non-empty (C; meaning I). Studio ignores the reply; surfacing a non-empty program password is backlog.
 
 ## Typical session flow
 
@@ -108,9 +108,24 @@ Upload path also issues a priming read at radio address **`0x3b10`** (outside th
 3. Read all blocks `0x0000`…`0x3290` step `0x10` → assemble contiguous `0x32A0` image ([memory-layout.md](memory-layout.md)).
 4. For **Write** upload: in-session full-clone pre-write read of blocks `0x0000`…`0x3290` (progress **Pre-write read**), overlay modelled channels onto that live image, then upload handshake → priming read `0x3b10` → write each `0x10` block → `END`. No persisted stash. Hardware verify pending.
 5. For **Restore** (not Write): `restoreFromBackup` uploads selected zip clone bins with that same `upload()` handshake — never assemble / stash merge, and never a live pre-write read inside `upload()`. See [backup-restore.md](backup-restore.md). Hardware verify pending.
-6. Prefer RMW for settings / bandlimit — see [settings.md](settings.md).
+6. Prefer RMW for settings / bandlimit — see [settings.md](settings.md). Channel records are the exception: they are written fresh ([channel-record.md — Write principle](channel-record.md#write-principle)).
 
 **After `END` the radio ignores `PROGRAM` for about 3–5 s** (measured on an RT95-P: the head reloads from the main board). Studio sends `END` after Write and when a session that was in PC mode closes. A session that needs PC mode again within that window retries `PROGRAM` every 1.5 s for up to 12 s (`enterProgramQxModeWithRetry`), then fails with "The radio did not answer after the last write". Retry applies to **Verify write** and to a `connect` within 15 s of Studio's own `END`; a connect with no recent `END` sends `PROGRAM` once, so a wrong port still fails in half a second.
+
+## Stock CPS comparison
+
+What the stock CPS 2.01/2.02 does differently on the same link ([#1464](https://github.com/pskillen/codeplug-studio/issues/1464); firmware findings F110-F112, F114, F119, F126; C = read in the CPS code, I = inferred). Nothing was observed on a radio.
+
+| Topic              | Stock CPS                                                                                                            | Studio                                                                                                         |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Frames             | `PROGRAM`, `02`, `R 3B10`, `R`, `W`, `END` only (C). It never sends calibration or factory frames                    | Same set                                                                                                       |
+| Write set          | Every block `0x0000`–`0x3290` except `0x30F0`–`0x31FF` and the slot of each absent channel; no read-modify-write (C) | Every block `0x0000`–`0x3290` (a harmless superset), after a full pre-write read, so unmodelled bytes are kept |
+| Retries            | 3 attempts per frame, about 300 ms apart (I); a Retry/Cancel box only in the first steps (C)                         | 500 ms per frame, no resend; a timeout or non-ACK aborts the Write. Per-frame retry is backlog                 |
+| `END`              | Sent only after an orderly finish; an error leaves the radio in PC mode (C)                                          | Sent in a `finally`, also after an error                                                                       |
+| Ident check        | Model `RT95-P` and version `V100`, else it ends with no `END` (C)                                                    | Same strings                                                                                                   |
+| Band check         | Write refuses when the radio's band differs from the file's (C)                                                      | Write warns only (the main board protects `0x326D`, F120). **Restore refuses** a backup of another band        |
+| Address range      | Cannot form an address at or above `0x4000` (F115)                                                                   | MM9PDY adds `0x4000`–`0x5FF0` ([mm9pdy-data.md](mm9pdy-data.md)); never `0x3B00`–`0x3FFF`                      |
+| Empty channel list | Refuses to Write with no normal channel or an empty VFO (C)                                                          | Writes zero channels if the build has none                                                                     |
 
 ## MM9PDY Write (zones and descriptions)
 

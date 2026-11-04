@@ -4,7 +4,9 @@ Settings, DTMF, PTT-ID, keys, VOX, and bandlimit regions in the PROGRAM→QX ima
 
 **Hub:** [README.md](README.md) · **Regions:** [memory-layout.md](memory-layout.md)
 
-Cite: CHIRP `anytone778uv.py` `MEM_FORMAT` / `get_settings` (facts only).
+Cite: CHIRP `anytone778uv.py` `MEM_FORMAT` / `get_settings` (facts only). The stock CPS encoder agrees with every `CPS+CHIRP` offset below (F124).
+
+Trust levels below follow the stock-CPS comparison ([#1464](https://github.com/pskillen/codeplug-studio/issues/1464)): **C** read in the stock CPS code, **C+F** also read in the main-board firmware, **I** inferred, **U** unconfirmed. Nothing here was observed on a radio. Records cited by id (F110-F130) are in the firmware project's finding ledger.
 
 ## Region summary
 
@@ -60,7 +62,7 @@ The MM9PDY zone key (`rt95ZoneKey`) is written as a patch on the key-table byte 
 | backlightBrightness               | Backlight Brightness   | `0x320D` low 3                     | basic    | CPS+CHIRP |
 | screenDirection                   | Screen Direction       | `0x3211` bit 0                     | basic    | CPS+CHIRP |
 | beepVolume                        | Beep Volume            | `0x3200` low 3                     | basic    | CPS+CHIRP |
-| speakerVolume                     | Speaker Volume         | `0x3206` low 6                     | basic    | CPS+CHIRP |
+| speakerVolume                     | Speaker Volume         | `0x3206` low 6 (0 = Off, 1-36)     | basic    | CPS+CHIRP |
 | speakerSwitch                     | Speaker Switch         | `0x3213` low 2                     | basic    | CPS+CHIRP |
 | steFrequency                      | STE Frequency          | `0x3219` low 2                     | basic    | CPS+CHIRP |
 | steType                           | STE Type               | `0x3218` low 3                     | basic    | CPS+CHIRP |
@@ -88,25 +90,35 @@ The MM9PDY zone key (`rt95ZoneKey`) is written as a patch on the key-table byte 
 | powerOnResetEnable                | Power On Reset Enable  | `0x321B` bit 2                     | advanced | CPS+CHIRP |
 | trfEnable                         | TRF Enable             | `0x321B` bit 1                     | advanced | CPS+CHIRP |
 | channelLocked                     | Channel Locked         | `0x321B` bit 4                     | advanced | CPS+CHIRP |
-| remoteStun / remoteKill           | Remote stun / kill     | `0x1AB0` / `0x1AC0` ×16            | advanced | CHIRP     |
+| remoteStun / remoteKill           | Remote stun / kill     | `0x1AB0` / `0x1AC0` ×14            | advanced | CHIRP     |
 
 Never patched: channel records `0x0000`–`0x193F`, bitfields `0x1940`–`0x197F`, bandlimit `0x326D`, `0x321B` bits 6–7 (bit 7 PC-write marker), anything ≥ `0x32A0`.
 
 ### Not supported (by design)
 
-| Surface                                                       | Reason                                             |
-| ------------------------------------------------------------- | -------------------------------------------------- |
-| Display Mode B                                                | No EEPROM byte recovered                           |
-| VFO/MR A/B, MR channel A/B                                    | Radio state; radio rewrites                        |
-| Hand-mic key brightness                                       | Off encoding unknown                               |
-| Mic keys PA–PD                                                | CPS vs CHIRP encodings disagree                    |
-| Mic Level (`0x321F`)                                          | Byte inferred only                                 |
-| Auto reset time (`0x1AD5`)                                    | CPS ini vs CHIRP unit conflict                     |
-| Band `0x326D`                                                 | Danger-zone class; not a CPS Function Setup picker |
-| `0x3203`, `0x326E` mask                                       | No CPS control recovered                           |
-| 2-tone, 5-tone, scan groups, emergency, roger beep, comm book | Layouts not recovered                              |
-| Factory test modes                                            | Not user settings                                  |
-| PC language, port, skin, `mysetup.ini`                        | Not in the radio                                   |
+| Surface                                                       | Reason                                                                                                                                                                      |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Display Mode B                                                | No EEPROM byte recovered                                                                                                                                                    |
+| VFO/MR A/B, MR channel A/B                                    | Radio state; radio rewrites                                                                                                                                                 |
+| Hand-mic key brightness (`0x3212`)                            | Understood, not yet a setting: Off = 0, levels 1-31 (C). Backlog                                                                                                            |
+| Mic keys PA–PD                                                | CPS vs CHIRP encodings disagree (open)                                                                                                                                      |
+| Mic Level (`0x321F`)                                          | Understood, not yet a setting: stored 0-2, shown as 1-3 (C); the main board resets a value above 2 to 0 (C+F). Backlog                                                      |
+| Auto reset time (`0x1AD5`)                                    | Raw byte in the CPS (no scaling), main-board default `0x64`; unit label inferred (I). Not exposed                                                                           |
+| Band `0x326D`                                                 | Danger-zone class; not a CPS Function Setup picker                                                                                                                          |
+| `0x3203`                                                      | The stock CPS neither reads nor writes it (C)                                                                                                                               |
+| `0x326E`–`0x326F` DTMF memory mask                            | The CPS sets bit _i_ iff DTMF memory _i_ is non-empty and the main board uses it (C+F). **Studio gap:** a `pttIdM*` edit does not update it. Backlog (bit order to confirm) |
+| 2-tone, 5-tone, scan groups, emergency, roger beep, comm book | Layouts not recovered                                                                                                                                                       |
+| Factory test modes                                            | Not user settings                                                                                                                                                           |
+| PC language, port, skin, `mysetup.ini`                        | Not in the radio                                                                                                                                                            |
+
+### What the stock CPS explains (F124)
+
+- **Mic Level `0x321F`:** label "Mic Level", items 1/2/3, stored 0-2. The offset is no longer only inferred.
+- **Power On Reset Enable `0x321B` bit 2:** the head's FUNC+P6 factory reset proceeds only when this bit is 1 (C+F). Studio ships it as an advanced field.
+- **Hand-mic key brightness `0x3212`:** Off is 0, then 1-31.
+- **Speaker volume:** Off plus 1-36, so wire `0` is Off. Studio decodes and encodes it.
+- **Remote stun / kill:** 14-character strings at `0x1AB0` and `0x1AC0`; Studio caps them at 14.
+- **Display Mode B:** the CPS has no byte for it. Confirmed.
 
 ## DTMF / PTT-ID (`0x1990` / `0x1A90`)
 

@@ -35,6 +35,7 @@ ux-proposal.md §2/§3). Read state is a label + [`WireNameRemediationMarker`](.
 
 - Stops click propagation so the pencil/editor never triggers the table row's `onRowActivate`
   (which, on the CPS wire-preview page, only still opens a modal for zone rows).
+- When `row.wireNameNote` is set, a dimmed info icon with the note as a tooltip follows the remediation marker (e.g. the stock RT95 CPS character set). Information only; not a Write warning.
 - Local `editing` state — not lifted; each row edits independently.
 
 ## Related
