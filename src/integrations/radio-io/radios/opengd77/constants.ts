@@ -126,6 +126,13 @@ export const OPENGD77_IO_TIMEOUT_MS = 5000;
 /** How long recovery waits for the one-byte reply to reboot-only; the radio may reset first. */
 export const OPENGD77_RECOVERY_REPLY_TIMEOUT_MS = 500;
 export const OPENGD77_IDENT_TIMEOUT_MS = 8000;
+/** Attempts per flash sector (the first plus restarts) before the write fails. */
+export const OPENGD77_SECTOR_ATTEMPTS = 3;
+/**
+ * Quiet time before a sector restart (and before reboot-only): lets the radio finish answering the
+ * fragment of a split frame so the drain that follows catches its reply.
+ */
+export const OPENGD77_SETTLE_MS = 150;
 
 /**
  * P1…P9 binary power steps (1…9) ↔ Studio percent — same ladder as opengd77-1701 CSV.

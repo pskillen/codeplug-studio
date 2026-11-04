@@ -21,6 +21,7 @@ import {
   OpenGd77WriteDesyncError,
   OpenGd77WriteNackError,
   OpenGd77WriteTimeoutError,
+  OpenGd77WriteVerifyError,
 } from './writeErrors.ts';
 
 const SET = OPENGD77_WRITE_CMD_SET_SECTOR;
@@ -38,12 +39,19 @@ function threeSectorImage(): MemoryMap {
 
 async function connected(pipe = new OpenGd77ScriptedPipe(0x08)) {
   const proto = new OpenGd77Protocol();
-  await proto.connect(pipe);
+  await proto.connect(pipe, { settleScale: 0 });
   return { pipe, proto };
 }
 
 function addr(frame: Uint8Array): number {
   return ((frame[2]! << 24) | (frame[3]! << 16) | (frame[4]! << 8) | frame[5]!) >>> 0;
+}
+
+/** SET_SECTOR frames sent for one sector. */
+function setsFor(pipe: OpenGd77ScriptedPipe, sectorAbs: number): number {
+  return pipe
+    .writesOf(SET)
+    .filter((w) => ((w[2]! << 16) | (w[3]! << 8) | w[4]!) * 4096 === sectorAbs).length;
 }
 
 async function failure(run: () => Promise<unknown>): Promise<Error> {
@@ -68,7 +76,7 @@ const UDB_CONTACT = {
 describe('OpenGD77 write NACK handling', () => {
   it('a one-byte NACK on SET_SECTOR is a typed error naming the sector, and nothing more is written', async () => {
     const { pipe, proto } = await connected();
-    pipe.nackOn(SET, 2);
+    pipe.nackOn(SET, 2, 'nack', 99);
     const err = await failure(() => proto.upload(threeSectorImage(), {}));
     expect(err).toBeInstanceOf(OpenGd77WriteNackError);
     const ctx = (err as OpenGd77WriteNackError).context;
@@ -82,30 +90,32 @@ describe('OpenGD77 write NACK handling', () => {
     expect(err.message).toContain(
       "OpenGD77 refused SET_SECTOR for FLASH sector 0x20000 (sector 2 of 3): radio answered '-'",
     );
-    expect(pipe.writesOf(SET)).toHaveLength(2);
+    expect(err.message).toContain('Gave up after 3 attempts');
+    expect(setsFor(pipe, 0x9b000)).toBe(0);
     expect(pipe.writesOf(FIN)).toHaveLength(1);
   });
 
   it('a NACK on a mid-sector SECTOR_BUFFER names the block and stops before FINISH', async () => {
     const { pipe, proto } = await connected();
-    pipe.nackOn(BUF, 5);
+    pipe.nackOn(BUF, 5, 'nack', 99);
     const err = await failure(() => proto.upload(threeSectorImage(), {}));
     expect(err).toBeInstanceOf(OpenGd77WriteNackError);
     const ctx = (err as OpenGd77WriteNackError).context;
-    const fifth = pipe.writesOf(BUF)[4]!;
+    const last = pipe.writesOf(BUF).at(-1)!;
     expect(ctx.command).toBe('sector-buffer');
     expect(ctx.sectorAbs).toBe(0);
-    expect(ctx.offset).toBe(addr(fifth));
+    expect(ctx.offset).toBe(addr(last));
     expect(err.message).toMatch(
       /refused SECTOR_BUFFER for FLASH sector 0x0 at \+0x[0-9a-f]+ \(sector 1 of 3\)/,
     );
-    expect(pipe.writesOf(BUF)).toHaveLength(5);
+    // Five blocks, then the first block of each of the two restarts.
+    expect(pipe.writesOf(BUF)).toHaveLength(7);
     expect(pipe.writesOf(FIN)).toHaveLength(0);
   });
 
   it('a NACK on FINISH names the sector and stops before the next SET_SECTOR', async () => {
     const { pipe, proto } = await connected();
-    pipe.nackOn(FIN, 3);
+    pipe.nackOn(FIN, 3, 'nack', 99);
     const err = await failure(() => proto.upload(threeSectorImage(), {}));
     expect(err).toBeInstanceOf(OpenGd77WriteNackError);
     expect((err as OpenGd77WriteNackError).context).toMatchObject({
@@ -117,42 +127,49 @@ describe('OpenGD77 write NACK handling', () => {
     expect(err.message).toContain(
       "OpenGD77 refused FINISH for FLASH sector 0x9b000 (sector 3 of 3): radio answered '-'",
     );
-    expect(pipe.writesOf(SET)).toHaveLength(3);
+    expect(pipe.writesOf(SET)).toHaveLength(5);
+    expect(setsFor(pipe, 0x9b000)).toBe(3);
   });
 
-  it("'-' followed by the X 01 ACK in one chunk is a NACK, never success, and nothing more is written", async () => {
+  it("'-' followed by the X 01 ACK in one chunk is a NACK, never success: nothing is sent on it, the sector restarts", async () => {
     const { pipe, proto } = await connected();
     pipe.nackOn(SET, 1, 'nack-then-ack');
-    const err = await failure(() => proto.upload(threeSectorImage(), {}));
-    expect(err).toBeInstanceOf(OpenGd77WriteNackError);
-    expect(pipe.writesOf(BUF)).toHaveLength(0);
+    await proto.upload(threeSectorImage(), {});
+    const sets = pipe.writes
+      .map((w, i) => (w[0] === 0x58 && w[1] === SET ? i : -1))
+      .filter((i) => i >= 0);
+    const firstBuf = pipe.writes.findIndex((w) => w[0] === 0x58 && w[1] === BUF);
+    expect(sets.length).toBeGreaterThanOrEqual(2);
+    expect(firstBuf).toBeGreaterThan(sets[1]!);
+    expect(pipe.writesOf(FIN)).toHaveLength(3);
   });
 
   it('an unexpected two-byte reply is a desync error', async () => {
     const { pipe, proto } = await connected();
-    pipe.nackOn(BUF, 1, 'wrong-echo');
+    pipe.nackOn(BUF, 1, 'wrong-echo', 99);
     const err = await failure(() => proto.upload(threeSectorImage(), {}));
     expect(err).toBeInstanceOf(OpenGd77WriteDesyncError);
     expect(err).toBeInstanceOf(RadioProtocolError);
     expect(err.message).toContain('58 7f');
-    expect(pipe.writesOf(BUF)).toHaveLength(1);
+    expect(pipe.writesOf(BUF)).toHaveLength(3);
   });
 
   it('no reply is a timeout that still names the command and sector', async () => {
     const { pipe, proto } = await connected();
-    pipe.nackOn(FIN, 1, 'silent');
+    pipe.nackOn(FIN, 1, 'silent', 99);
     const err = await failure(() => proto.upload(threeSectorImage(), {}));
     expect(err).toBeInstanceOf(OpenGd77WriteTimeoutError);
     expect(err).toBeInstanceOf(RadioTimeoutError);
     expect(err.message).toContain('FINISH for FLASH sector 0x0 (sector 1 of 3)');
   });
 
-  it('a sector left open by an earlier interrupted write NACKs the first SET_SECTOR as a typed error naming the sector', async () => {
+  it('a sector left open by an earlier interrupted write refuses the first SET_SECTOR; the restart closes it and the write completes', async () => {
     const { pipe, proto } = await connected();
     pipe.openSector = 0x1000;
-    const err = await failure(() => proto.upload(threeSectorImage(), {}));
-    expect(err).toBeInstanceOf(OpenGd77WriteNackError);
-    expect(err.message).toContain('refused SET_SECTOR for FLASH sector 0x0 (sector 1 of 3)');
+    await proto.upload(threeSectorImage(), {});
+    expect(setsFor(pipe, 0)).toBe(2);
+    expect(pipe.writesOf(FIN)).toHaveLength(3);
+    expect(pipe.flashByte(0x80)).toBe(0x01);
   });
 });
 
@@ -168,7 +185,7 @@ describe('OpenGD77 stale bytes before a sector', () => {
     };
   }
 
-  it('drains a stale - instead of mistaking it for a write failure, and the write completes', async () => {
+  it('a stale - before a sector restarts that sector instead of passing for an ACK, and the write completes', async () => {
     const { pipe, proto } = await connected();
     await proto.upload(threeSectorImage(), {
       onProgress: injectAfterPreWriteRead(pipe, new Uint8Array([0x2d])),
@@ -177,17 +194,17 @@ describe('OpenGD77 stale bytes before a sector', () => {
     expect(pipe.controls).toEqual([0]);
   });
 
-  it('reports the stale bytes in the error and the trace when the sector then fails', async () => {
+  it('records the stale bytes and the restart in the trace when the sector then fails', async () => {
     const { pipe, proto } = await connected();
-    pipe.nackOn(SET, 1);
+    pipe.nackOn(BUF, 1, 'nack', 99);
     const err = await failure(() =>
       proto.upload(threeSectorImage(), {
         onProgress: injectAfterPreWriteRead(pipe, new Uint8Array([0x2d, 0x52])),
       }),
     );
-    expect(err.message).toContain('2 unexpected byte(s) were already on the line');
-    expect(err.message).toContain('2d 52');
-    expect((err as RadioProtocolError).debugText).toMatch(/STALE\s+2d 52/);
+    const trace = (err as RadioProtocolError).debugText!;
+    expect(trace).toMatch(/STALE\s+2d 52/);
+    expect(trace).toMatch(/NOTE\s+sector 0x0 attempt 2: .*2 unexpected byte\(s\).*2d 52/);
   });
 });
 
@@ -207,12 +224,12 @@ describe('OpenGD77 stale bytes before a command', () => {
 describe('OpenGD77 frame trace', () => {
   it('attaches at most the last 24 frames to a protocol error as debugText', async () => {
     const { pipe, proto } = await connected();
-    pipe.nackOn(BUF, 40);
+    pipe.nackOn(BUF, 40, 'nack', 99);
     const err = (await failure(() => proto.upload(threeSectorImage(), {}))) as RadioProtocolError;
     const lines = err.debugText!.split('\n');
     expect(lines[0]).toBe('Last 24 radio frames (oldest first):');
     expect(lines).toHaveLength(25);
-    expect(err.debugText).toMatch(/TX\s+58 02/);
+    expect(err.debugText).toMatch(/TX\s+@\d+ 58 02/);
     expect(err.debugText).toMatch(/RX\s+2d/);
     // The recovery frame is recorded too.
     expect(err.debugText).toMatch(/NOTE\s+sent reboot-only/);
@@ -277,7 +294,7 @@ describe('OpenGD77 CPS screen is entered once per session', () => {
 describe('OpenGD77 recovery on failure', () => {
   it('a failure after the first sector began sends reboot-only C 06 01, never C 06 00', async () => {
     const { pipe, proto } = await connected();
-    pipe.nackOn(SET, 2);
+    pipe.nackOn(SET, 2, 'nack', 99);
     const err = await failure(() => proto.upload(threeSectorImage(), {}));
     await proto.disconnect();
     expect(pipe.controls).toEqual([1]);
@@ -289,7 +306,7 @@ describe('OpenGD77 recovery on failure', () => {
 
   it('records the reply to reboot-only in the trace and says in the error that it may not have taken', async () => {
     const { pipe, proto } = await connected();
-    pipe.nackOn(SET, 2);
+    pipe.nackOn(SET, 2, 'nack', 99);
     const err = await failure(() => proto.upload(threeSectorImage(), {}));
     expect((err as RadioProtocolError).debugText).toMatch(/NOTE\s+sent reboot-only.*reply 2d/);
     expect(err.message).toContain('may still be on the CPS screen');
@@ -297,7 +314,7 @@ describe('OpenGD77 recovery on failure', () => {
 
   it('a silent radio after reboot-only is recorded and the original error still surfaces', async () => {
     const { pipe, proto } = await connected();
-    pipe.nackOn(SET, 2);
+    pipe.nackOn(SET, 2, 'nack', 99);
     pipe.silenceCommand(0x06, 1);
     const err = await failure(() => proto.upload(threeSectorImage(), {}));
     expect(err).toBeInstanceOf(OpenGd77WriteNackError);
@@ -346,7 +363,7 @@ describe('OpenGD77 recovery in the other write phases', () => {
 
   it('a User Database failure sends reboot-only, not save-and-reboot', async () => {
     const { pipe, proto } = await connected();
-    pipe.nackOn(SET, 1);
+    pipe.nackOn(SET, 1, 'nack', 99);
     const err = await failure(() => proto.uploadUserDatabase([UDB_CONTACT], {}));
     expect((err as OpenGd77WriteNackError).context.phase).toBe('user-database');
     expectRebootOnly(pipe);
@@ -355,7 +372,7 @@ describe('OpenGD77 recovery in the other write phases', () => {
 
   it('a keps failure sends reboot-only, not save-and-reboot', async () => {
     const { pipe, proto } = await connected();
-    pipe.nackOn(SET, 1);
+    pipe.nackOn(SET, 1, 'nack', 99);
     const err = await failure(() =>
       proto.uploadSatelliteBank(new Uint8Array(SATELLITE_BANK_BYTES), {}),
     );
@@ -401,5 +418,108 @@ describe('OpenGD77 sends only blocks inside the registered spans', () => {
     const sent = pipe.writesOf(BUF).map(addr);
     expect(sent.filter((a) => a < 0x1000).every((a) => a >= 0x80)).toBe(true);
     expect(sent).toContain(0x80);
+  });
+});
+
+describe('OpenGD77 sector recovery', () => {
+  /** Frames sent by the host from the first SET_SECTOR on. */
+  function afterFirstSet(pipe: OpenGd77ScriptedPipe): Uint8Array[] {
+    const first = pipe.writes.findIndex((w) => w[0] === 0x58 && w[1] === SET);
+    return pipe.writes.slice(first);
+  }
+
+  it('the happy path sends one read per block after FINISH and nothing else extra', async () => {
+    const { pipe, proto } = await connected();
+    await proto.upload(threeSectorImage(), {});
+    const frames = afterFirstSet(pipe);
+    const reads = frames.filter((w) => w[0] === 0x52);
+    expect(pipe.writesOf(SET)).toHaveLength(3);
+    expect(pipe.writesOf(FIN)).toHaveLength(3);
+    expect(reads).toHaveLength(pipe.writesOf(BUF).length);
+    const kinds = frames.map((w) => (w[0] === 0x52 ? 'R' : w[0] === 0x58 ? `X${w[1]}` : 'C'));
+    const firstFin = kinds.indexOf(`X${FIN}`);
+    expect(kinds[firstFin + 1]).toBe('R');
+    expect(pipe.controls).toEqual([0]);
+  });
+
+  it('a split frame (stray - ahead of a real ACK, zeros in the buffer) restarts the sector and resends it whole', async () => {
+    const { pipe, proto } = await connected();
+    pipe.nackOn(BUF, 3, 'split');
+    await proto.upload(threeSectorImage(), {});
+    const sectorBlocks = pipe
+      .writesOf(BUF)
+      .map(addr)
+      .filter((a) => a < 0x1000);
+    // The first three blocks, then every block again from the first.
+    expect(sectorBlocks.indexOf(sectorBlocks[0]!, 1)).toBe(3);
+    // The restart is SET (refused: closes the half-filled sector), then SET again.
+    expect(setsFor(pipe, 0)).toBe(3);
+    expect(pipe.flashByte(0x80)).toBe(0x01);
+    expect(pipe.flashByte(0x20000)).toBe(0x02);
+    expect(pipe.flashByte(0x9b000)).toBe(0x03);
+    expect(pipe.writesOf(FIN)).toHaveLength(3);
+    expect(pipe.controls).toEqual([0]);
+  });
+
+  it('data lost under a good ACK is caught by the read-back, never left in flash', async () => {
+    const { pipe, proto } = await connected();
+    pipe.nackOn(BUF, 1, 'lose-data');
+    await proto.upload(threeSectorImage(), {});
+    expect(pipe.flashByte(0x80)).toBe(0x01);
+    expect(pipe.writesOf(FIN)).toHaveLength(4);
+  });
+
+  it('a refused SET_SECTOR during recovery is handled: the refusal closes the sector, the next one opens it', async () => {
+    const { pipe, proto } = await connected();
+    pipe.nackOn(SET, 1, 'nack', 2);
+    await proto.upload(threeSectorImage(), {});
+    expect(setsFor(pipe, 0)).toBe(3);
+    expect(pipe.writesOf(FIN)).toHaveLength(3);
+    expect(pipe.flashByte(0x80)).toBe(0x01);
+  });
+
+  it('a timeout restarts the sector too', async () => {
+    const { pipe, proto } = await connected();
+    pipe.nackOn(BUF, 2, 'silent');
+    await proto.upload(threeSectorImage(), {});
+    expect(pipe.writesOf(FIN)).toHaveLength(3);
+    expect(pipe.flashByte(0x80)).toBe(0x01);
+  });
+
+  it('three failed attempts fail with the typed error, say so, and show every retry in the trace', async () => {
+    const { pipe, proto } = await connected();
+    pipe.nackOn(BUF, 1, 'nack', 3);
+    const err = await failure(() => proto.upload(threeSectorImage(), {}));
+    expect(err).toBeInstanceOf(OpenGd77WriteNackError);
+    expect(err.message).toContain('Gave up after 3 attempts');
+    const trace = (err as RadioProtocolError).debugText!;
+    expect(trace).toMatch(/NOTE\s+sector 0x0 attempt 2: /);
+    expect(trace).toMatch(/NOTE\s+sector 0x0 attempt 3: /);
+    expect(trace).toMatch(/NOTE\s+sent reboot-only/);
+    expect(pipe.controls).toEqual([1]);
+    expect(setsFor(pipe, 0)).toBe(3);
+  });
+
+  it('a read-back that keeps failing is a typed verify error after three attempts', async () => {
+    const { pipe, proto } = await connected();
+    pipe.nackOn(BUF, 1, 'lose-data', 99999);
+    const err = await failure(() => proto.upload(threeSectorImage(), {}));
+    expect(err).toBeInstanceOf(OpenGd77WriteVerifyError);
+    expect(err.message).toContain('read-back of');
+    expect(err.message).toContain('Gave up after 3 attempts');
+    expect(pipe.writesOf(FIN)).toHaveLength(3);
+  });
+});
+
+describe('OpenGD77 trace byte offsets', () => {
+  it('each TX line carries the cumulative offset of its frame', async () => {
+    const { pipe, proto } = await connected();
+    pipe.nackOn(SET, 1, 'nack', 99);
+    const err = await failure(() => proto.upload(threeSectorImage(), {}));
+    const offsets = [...(err as RadioProtocolError).debugText!.matchAll(/TX\s+@(\d+) /g)].map((m) =>
+      Number(m[1]),
+    );
+    expect(offsets.length).toBeGreaterThan(2);
+    for (let i = 1; i < offsets.length; i++) expect(offsets[i]).toBeGreaterThan(offsets[i - 1]!);
   });
 });

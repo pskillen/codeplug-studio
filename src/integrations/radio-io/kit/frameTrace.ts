@@ -55,6 +55,9 @@ export class FrameTrace {
 
 /** Forwards to `inner`, recording each write and read in `trace`. */
 export class TracingPipe implements BytePipe {
+  /** Bytes written through this pipe so far; each TX line shows the offset its frame starts at. */
+  private txBytes = 0;
+
   constructor(
     private readonly inner: BytePipe,
     readonly trace: FrameTrace,
@@ -65,7 +68,8 @@ export class TracingPipe implements BytePipe {
   }
 
   async write(data: Uint8Array): Promise<void> {
-    this.trace.push('TX', hexBytes(data));
+    this.trace.push('TX', `@${this.txBytes} ${hexBytes(data)}`);
+    this.txBytes += data.length;
     await this.inner.write(data);
   }
 

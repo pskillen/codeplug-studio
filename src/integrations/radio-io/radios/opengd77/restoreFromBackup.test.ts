@@ -125,7 +125,7 @@ describe('OpenGd77Protocol.restoreFromBackup', () => {
     const pipe = new OpenGd77ScriptedPipe(0x08);
     pipe.plantByte(OPENGD77_BACKUP_FLASH_SPANS[0]!.start, 0xa5);
     const proto = new OpenGd77Protocol();
-    await proto.connect(pipe);
+    await proto.connect(pipe, { settleScale: 0 });
     const writesAfterConnect = pipe.writes.length;
 
     const image = createOpenUv380Image();
@@ -143,7 +143,13 @@ describe('OpenGd77Protocol.restoreFromBackup', () => {
     );
 
     const restoreWrites = pipe.writes.slice(writesAfterConnect);
-    const flashReads = restoreWrites.filter((w) => w[0] === OPENGD77_TYPE_READ && w[1] === 0x01);
+    // No pre-write read: nothing reads FLASH before the first SET_SECTOR (read-back comes after).
+    const firstSet = restoreWrites.findIndex(
+      (w) => w[0] === OPENGD77_TYPE_WRITE_UV380 && w[1] === OPENGD77_WRITE_CMD_SET_SECTOR,
+    );
+    const flashReads = restoreWrites
+      .slice(0, firstSet)
+      .filter((w) => w[0] === OPENGD77_TYPE_READ && w[1] === 0x01);
     expect(flashReads).toHaveLength(0);
 
     const setSectors = restoreWrites.filter(
@@ -170,7 +176,7 @@ describe('OpenGd77Protocol.restoreFromBackup', () => {
       for (let i = 0; i < span.length; i++) pipe.plantByte(span.start + i, 0x5a);
     }
     const proto = new OpenGd77Protocol();
-    await proto.connect(pipe);
+    await proto.connect(pipe, { settleScale: 0 });
 
     const image = createOpenUv380Image();
     fillRestorableSpans(image, 0x5a);
@@ -184,8 +190,8 @@ describe('OpenGd77Protocol.restoreFromBackup', () => {
   it('enters the CPS screen once on restore, and a failed restore sends reboot-only', async () => {
     const pipe = new OpenGd77ScriptedPipe(0x08);
     const proto = new OpenGd77Protocol();
-    await proto.connect(pipe);
-    pipe.nackOn(OPENGD77_WRITE_CMD_SET_SECTOR, 1);
+    await proto.connect(pipe, { settleScale: 0 });
+    pipe.nackOn(OPENGD77_WRITE_CMD_SET_SECTOR, 1, 'nack', 99);
     const image = createOpenUv380Image();
     fillRestorableSpans(image, 0xa5);
     let err: unknown;
@@ -206,7 +212,7 @@ describe('OpenGd77Protocol.restoreFromBackup', () => {
   it('a successful restore sends SHOW_CPS once and save-and-reboot once', async () => {
     const pipe = new OpenGd77ScriptedPipe(0x08);
     const proto = new OpenGd77Protocol();
-    await proto.connect(pipe);
+    await proto.connect(pipe, { settleScale: 0 });
     const image = createOpenUv380Image();
     fillRestorableSpans(image, 0xa5);
     await proto.restoreFromBackup(
@@ -220,7 +226,7 @@ describe('OpenGd77Protocol.restoreFromBackup', () => {
   it('is available on the MD-9600 protocol instance', async () => {
     const pipe = new OpenGd77ScriptedPipe(0x05);
     const proto = createOpenGd77Md9600Protocol() as OpenGd77Protocol;
-    await proto.connect(pipe);
+    await proto.connect(pipe, { settleScale: 0 });
     const image = createOpenUv380Image();
     fillRestorableSpans(image, 0x22);
     await proto.restoreFromBackup(

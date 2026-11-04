@@ -45,14 +45,19 @@ function enqueue(buf: Uint8Array, chunks: readonly Uint8Array[]): Uint8Array {
   return next;
 }
 
-/** `nack`: one `'-'`. `nack-then-ack`: `'-'` then the ACK in one chunk. `wrong-echo`: two bytes that are not the ACK. `silent`: no reply. */
-type WriteFault = 'nack' | 'nack-then-ack' | 'wrong-echo' | 'silent';
+/**
+ * `split`: the frame reached the radio as two USB packets. The first short packet is taken as a
+ * whole frame (a SECTOR_BUFFER payload arrives as zeros), and the rest earns a busy `'-'` that
+ * lands ahead of the real reply. `lose-data`: SECTOR_BUFFER is ACKed but its bytes never stage.
+ * `nack`: one `'-'`. `nack-then-ack`: `'-'` then the ACK in one chunk. `wrong-echo`: two bytes that are not the ACK. `silent`: no reply. */
+type WriteFault = 'nack' | 'nack-then-ack' | 'wrong-echo' | 'silent' | 'split' | 'lose-data';
 
 /**
  * Firmware-faithful OpenGD77 radio (R20260130 `usb_com.c`): a NACK to a write command is ONE byte
  * `'-'`, an open sector (`sector`) NACKs the next SET_SECTOR, SECTOR_BUFFER / FINISH without an
  * open sector NACK, a NACK closes the sector, SHOW_CPS stacks (`cpsDepth`) and CLOSE_CPS pops one,
- * control 6 sub 0/1 reboot (clearing sector and CPS depth).
+ * control 6 sub 0/1 reboot (clearing sector and CPS depth). SET_SECTOR loads the sector from flash
+ * into a buffer, SECTOR_BUFFER fills the buffer, and only FINISH programs it.
  */
 export class OpenGd77ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
@@ -66,7 +71,9 @@ export class OpenGd77ScriptedPipe implements BytePipe {
   openSector = -1;
   private readBuf: Uint8Array = new Uint8Array(0);
   private flash = new Map<number, number>();
-  private readonly faults: { cmd: number; nth: number; kind: WriteFault }[] = [];
+  private readonly faults: { cmd: number; nth: number; last: number; kind: WriteFault }[] = [];
+  private staged = new Uint8Array(4096);
+  private splitting = false;
   private readonly seen = new Map<number, number>();
   /** `C` commands (by flag, 1-based nth) whose reply the radio withholds. */
   private readonly silentCommands: { flag: number; nth: number }[] = [];
@@ -84,9 +91,12 @@ export class OpenGd77ScriptedPipe implements BytePipe {
     this.flash.set(abs, value & 0xff);
   }
 
-  /** The `nth` (1-based) write command `cmd` is NACKed with the one-byte `'-'`. */
-  nackOn(cmd: number, nth = 1, kind: WriteFault = 'nack'): void {
-    this.faults.push({ cmd, nth, kind });
+  /**
+   * The `nth` (1-based) write command `cmd` meets `kind` (default: the one-byte `'-'` NACK); with
+   * `times` > 1 so do the following `times - 1` commands of that kind.
+   */
+  nackOn(cmd: number, nth = 1, kind: WriteFault = 'nack', times = 1): void {
+    this.faults.push({ cmd, nth, last: nth + times - 1, kind });
   }
 
   /** The `nth` (1-based) `C` command with this flag is executed but never answered. */
@@ -126,6 +136,19 @@ export class OpenGd77ScriptedPipe implements BytePipe {
   }
 
   async write(data: Uint8Array): Promise<void> {
+    this.splitting = false;
+    const before = this.readBuf.length;
+    await this.handle(data);
+    if (this.splitting) {
+      const next = new Uint8Array(this.readBuf.length + 1);
+      next.set(this.readBuf.subarray(0, before));
+      next[before] = OPENGD77_CMD_OK;
+      next.set(this.readBuf.subarray(before), before + 1);
+      this.readBuf = next;
+    }
+  }
+
+  private async handle(data: Uint8Array): Promise<void> {
     this.writes.push(data.slice());
     if (data[0] === OPENGD77_TYPE_COMMAND) {
       this.commands.push(Array.from(data.subarray(1, 3)));
@@ -171,9 +194,10 @@ export class OpenGd77ScriptedPipe implements BytePipe {
       const cmd = data[1]!;
       const nth = (this.seen.get(cmd) ?? 0) + 1;
       this.seen.set(cmd, nth);
-      const faultIdx = this.faults.findIndex((f) => f.cmd === cmd && f.nth === nth);
-      if (faultIdx >= 0) {
-        const fault = this.faults.splice(faultIdx, 1)[0]!;
+      const fault = this.faults.find((f) => f.cmd === cmd && nth >= f.nth && nth <= f.last);
+      if (fault?.kind === 'split') this.splitting = true;
+      const dropData = fault?.kind === 'lose-data';
+      if (fault && fault.kind !== 'split' && fault.kind !== 'lose-data') {
         if (fault.kind === 'silent') return;
         if (fault.kind === 'wrong-echo') {
           this.enqueueChunks(new Uint8Array([OPENGD77_TYPE_WRITE_UV380, 0x7f]));
@@ -191,6 +215,9 @@ export class OpenGd77ScriptedPipe implements BytePipe {
           return;
         }
         this.openSector = (((data[2]! << 16) | (data[3]! << 8) | data[4]!) >>> 0) * 4096;
+        for (let i = 0; i < 4096; i++) {
+          this.staged[i] = this.flash.get(this.openSector + i) ?? 0xff;
+        }
         this.enqueueWriteAck(cmd);
         return;
       }
@@ -201,8 +228,9 @@ export class OpenGd77ScriptedPipe implements BytePipe {
       if (cmd === OPENGD77_WRITE_CMD_SECTOR_BUFFER) {
         const addr = ((data[2]! << 24) | (data[3]! << 16) | (data[4]! << 8) | data[5]!) >>> 0;
         const length = ((data[6]! << 8) | data[7]!) >>> 0;
-        for (let i = 0; i < length; i++) {
-          this.flash.set(addr + i, data[8 + i]!);
+        for (let i = 0; i < length && !dropData; i++) {
+          const at = addr + i - this.openSector;
+          if (at >= 0 && at < 4096) this.staged[at] = this.splitting ? 0 : data[8 + i]!;
         }
         this.enqueueWriteAck(cmd);
         return;
@@ -212,6 +240,7 @@ export class OpenGd77ScriptedPipe implements BytePipe {
           this.enqueueChunks(new Uint8Array([OPENGD77_CMD_OK]));
           return;
         }
+        for (let i = 0; i < 4096; i++) this.flash.set(this.openSector + i, this.staged[i]!);
         this.openSector = -1;
         this.enqueueWriteAck(cmd);
         return;

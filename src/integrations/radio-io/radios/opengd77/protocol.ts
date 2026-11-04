@@ -47,6 +47,8 @@ import {
   OPENGD77_IDENT_TIMEOUT_MS,
   OPENGD77_IO_TIMEOUT_MS,
   OPENGD77_RECOVERY_REPLY_TIMEOUT_MS,
+  OPENGD77_SECTOR_ATTEMPTS,
+  OPENGD77_SETTLE_MS,
   OPENGD77_MEM_FIRMWARE_INFO,
   OPENGD77_MEM_FLASH,
   OPENGD77_WRITE_VARIANT,
@@ -82,7 +84,9 @@ import {
 import {
   OpenGd77WriteDesyncError,
   OpenGd77WriteNackError,
+  OpenGd77WriteStaleBytesError,
   OpenGd77WriteTimeoutError,
+  OpenGd77WriteVerifyError,
   type OpenGd77WriteCommand,
   type OpenGd77WriteContext,
   type OpenGd77WritePhase,
@@ -161,6 +165,10 @@ async function drainPipe(pipe: BytePipe): Promise<Uint8Array> {
   return new Uint8Array(0);
 }
 
+function sleep(ms: number): Promise<void> {
+  return ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
+}
+
 /**
  * Send a `C` command and read its one-byte `'-'` ACK. Stale bytes are drained first, so a
  * leftover `'-'` (for example from an earlier NACK) cannot pass for this command's ACK.
@@ -200,6 +208,24 @@ async function readFlashRange(pipe: BytePipe, abs: number, length: number): Prom
     out.set(payload, off);
   }
   return out;
+}
+
+/** Failures a sector restart can clear: a refusal, a wrong or missing reply, stray bytes, bad read-back. */
+function isSectorAnomaly(
+  err: unknown,
+): err is
+  | OpenGd77WriteNackError
+  | OpenGd77WriteDesyncError
+  | OpenGd77WriteTimeoutError
+  | OpenGd77WriteStaleBytesError
+  | OpenGd77WriteVerifyError {
+  return (
+    err instanceof OpenGd77WriteNackError ||
+    err instanceof OpenGd77WriteDesyncError ||
+    err instanceof OpenGd77WriteTimeoutError ||
+    err instanceof OpenGd77WriteStaleBytesError ||
+    err instanceof OpenGd77WriteVerifyError
+  );
 }
 
 /** Which sector of the current write is being programmed, for error context. */
@@ -247,6 +273,8 @@ export class OpenGd77Protocol implements CloneImageRadio {
   /** Set when the first SET_SECTOR of a write is sent; cleared by a successful save-and-reboot. */
   private programmingStarted = false;
   private guardDepth = 0;
+  /** Scales the settle waits (tests pass 0). */
+  private settleScale = 1;
   private readonly allowedRadioTypes: readonly number[];
   private readonly modelHints: readonly string[];
   private readonly powerSteps: readonly OpenGd77PowerStep[];
@@ -299,6 +327,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
     this.trace = new FrameTrace();
     this.cpsShown = false;
     this.programmingStarted = false;
+    this.settleScale = opts?.settleScale ?? 1;
     this.pipe = new TracingPipe(pipe, this.trace);
     pipe = this.pipe;
     if (opts?.handshake === 'none') {
@@ -361,6 +390,13 @@ export class OpenGd77Protocol implements CloneImageRadio {
       this.programmingStarted = false;
       this.cpsShown = false;
       let sent = false;
+      // A reply still pending (a split frame's second half) keeps the radio busy, and a frame sent
+      // meanwhile is dropped; let it finish and clear the line first.
+      try {
+        await this.settleAndDrain(pipe);
+      } catch {
+        /* best-effort */
+      }
       try {
         await pipe.write(
           makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_REBOOT_ONLY])),
@@ -456,11 +492,20 @@ export class OpenGd77Protocol implements CloneImageRadio {
     }
   }
 
+  /** Wait for the radio to go quiet, then discard (and return) whatever it sent meanwhile. */
+  private async settleAndDrain(pipe: BytePipe): Promise<Uint8Array> {
+    await sleep(OPENGD77_SETTLE_MS * this.settleScale);
+    return drainPipe(pipe);
+  }
+
   /**
-   * One flash sector: SET_SECTOR, one SECTOR_BUFFER per block in `sector.blocks`, FINISH. The
-   * firmware loads the sector at SET_SECTOR and keeps bytes it is not sent, so only owned blocks go.
-   * Each reply is read as the firmware frames it (1-byte NACK, 2-byte ACK); any error names the
-   * command, sector and block.
+   * One flash sector, restarted cleanly on any anomaly. The host can split one frame into two USB
+   * packets; the radio takes the first as a whole frame and answers the rest with a busy `'-'`, so
+   * a `'-'` may precede a real ACK and a split can leave zeros or the wrong sector in its buffer
+   * under good ACKs. Nothing reaches flash before FINISH and SET_SECTOR re-reads the sector, so a
+   * restart is: settle, drain, SET_SECTOR again (a refused one closes any open sector without
+   * writing), resend every owned block, FINISH, then read the owned bytes back. At most
+   * {@link OPENGD77_SECTOR_ATTEMPTS} attempts; the last failure is thrown, noting the count.
    */
   private async writeFlashSector(
     pipe: BytePipe,
@@ -471,21 +516,48 @@ export class OpenGd77Protocol implements CloneImageRadio {
     if (sector.payload.length !== OPENGD77_SECTOR) {
       throw new RangeError(`Flash sector payload must be ${OPENGD77_SECTOR} bytes`);
     }
-    throwIfAborted(signal);
-    const stale = await drainPipe(pipe);
-    const base = {
+    for (let attempt = 1; ; attempt++) {
+      throwIfAborted(signal);
+      try {
+        await this.programSectorOnce(pipe, sector, place, attempt, signal);
+        return;
+      } catch (err) {
+        if (!isSectorAnomaly(err)) throw err;
+        if (attempt >= OPENGD77_SECTOR_ATTEMPTS) {
+          err.message += ` Gave up after ${attempt} attempts at this sector.`;
+          throw err;
+        }
+        this.trace.push(
+          'NOTE',
+          `sector 0x${sector.sectorAbs.toString(16)} attempt ${attempt + 1}: ${err.message}`,
+        );
+        await this.settleAndDrain(pipe);
+      }
+    }
+  }
+
+  /** One attempt at a sector; throws a typed anomaly error for {@link writeFlashSector} to act on. */
+  private async programSectorOnce(
+    pipe: BytePipe,
+    sector: DirtySector,
+    place: WriteSectorPlace,
+    attempt: number,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const ctxOf = (command: OpenGd77WriteCommand, offset: number): OpenGd77WriteContext => ({
       sectorAbs: sector.sectorAbs,
       sectorIndex: place.index,
       sectorsTotal: place.total,
       phase: place.phase,
-      staleBytes: stale.length > 0 ? stale : undefined,
+      command,
+      offset,
+    });
+    /** Any byte already on the line when a frame is about to go means the framing is suspect. */
+    const requireQuietLine = async (ctx: OpenGd77WriteContext): Promise<void> => {
+      const stale = await drainPipe(pipe);
+      if (stale.length > 0) throw new OpenGd77WriteStaleBytesError(ctx, stale);
     };
-    const expectAck = async (
-      command: OpenGd77WriteCommand,
-      cmdByte: number,
-      offset: number,
-    ): Promise<void> => {
-      const ctx: OpenGd77WriteContext = { ...base, command, offset };
+    const readAck = async (ctx: OpenGd77WriteContext, cmdByte: number): Promise<'ack' | 'nack'> => {
       let result;
       try {
         result = await readOpenGd77WriteAck(
@@ -500,25 +572,83 @@ export class OpenGd77Protocol implements CloneImageRadio {
         }
         throw err;
       }
-      if (result.kind === 'nack') throw new OpenGd77WriteNackError(ctx);
       if (result.kind === 'unexpected') throw new OpenGd77WriteDesyncError(ctx, result.bytes);
+      return result.kind;
+    };
+    const send = async (
+      command: OpenGd77WriteCommand,
+      cmdByte: number,
+      offset: number,
+      frame: Uint8Array,
+    ): Promise<'ack' | 'nack'> => {
+      const ctx = ctxOf(command, offset);
+      await requireQuietLine(ctx);
+      await pipe.write(frame);
+      return readAck(ctx, cmdByte);
+    };
+    const expectAck = async (
+      command: OpenGd77WriteCommand,
+      cmdByte: number,
+      offset: number,
+      frame: Uint8Array,
+    ): Promise<void> => {
+      if ((await send(command, cmdByte, offset, frame)) === 'nack') {
+        throw new OpenGd77WriteNackError(ctxOf(command, offset));
+      }
     };
 
+    const setFrame = makeSetFlashSectorFrame(OPENGD77_WRITE_VARIANT, sector.sectorAbs);
     this.programmingStarted = true;
-    await pipe.write(makeSetFlashSectorFrame(OPENGD77_WRITE_VARIANT, sector.sectorAbs));
-    await expectAck('set-sector', OPENGD77_WRITE_CMD_SET_SECTOR, 0);
+    if (attempt === 1) {
+      await expectAck('set-sector', OPENGD77_WRITE_CMD_SET_SECTOR, 0, setFrame);
+    } else if ((await send('set-sector', OPENGD77_WRITE_CMD_SET_SECTOR, 0, setFrame)) === 'nack') {
+      // A sector was open (this one half-filled, a wrong one, or none we know of): the refusal
+      // closed it without writing. Settle, clear the line, and open the target for real.
+      await this.settleAndDrain(pipe);
+      await expectAck('set-sector', OPENGD77_WRITE_CMD_SET_SECTOR, 0, setFrame);
+    }
 
     for (const off of sector.blocks) {
       throwIfAborted(signal);
       const chunk = sector.payload.subarray(off, off + OPENGD77_BLOCK);
-      await pipe.write(
+      await expectAck(
+        'sector-buffer',
+        OPENGD77_WRITE_CMD_SECTOR_BUFFER,
+        off,
         makeWriteSectorBufferFrame(OPENGD77_WRITE_VARIANT, sector.sectorAbs + off, chunk),
       );
-      await expectAck('sector-buffer', OPENGD77_WRITE_CMD_SECTOR_BUFFER, off);
     }
 
-    await pipe.write(makeFinishFlashSectorFrame(OPENGD77_WRITE_VARIANT));
-    await expectAck('finish', OPENGD77_WRITE_CMD_FINISH_SECTOR, 0);
+    await expectAck(
+      'finish',
+      OPENGD77_WRITE_CMD_FINISH_SECTOR,
+      0,
+      makeFinishFlashSectorFrame(OPENGD77_WRITE_VARIANT),
+    );
+
+    // Read the owned bytes back: a split can corrupt the sector buffer under good ACKs.
+    for (const off of sector.blocks) {
+      throwIfAborted(signal);
+      const ctx = ctxOf('verify', off);
+      await requireQuietLine(ctx);
+      let got: Uint8Array;
+      try {
+        got = await readMem(pipe, OPENGD77_MEM_FLASH, sector.sectorAbs + off, OPENGD77_BLOCK);
+      } catch (err) {
+        if (err instanceof RadioIoError && err.code !== 'aborted' && err.code !== 'closed') {
+          throw new OpenGd77WriteVerifyError(ctx, err.message);
+        }
+        throw err;
+      }
+      const want = sector.payload.subarray(off, off + OPENGD77_BLOCK);
+      const bad = want.findIndex((b, i) => got[i] !== b);
+      if (bad >= 0) {
+        throw new OpenGd77WriteVerifyError(
+          ctx,
+          `byte +0x${(off + bad).toString(16)} is 0x${got[bad]!.toString(16)}, sent 0x${want[bad]!.toString(16)}`,
+        );
+      }
+    }
   }
 
   async download(opts: {
