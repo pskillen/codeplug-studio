@@ -22,7 +22,7 @@ Mounted from [AprsConfigurationPage](../../routes/library/AprsConfigurationPage.
 - **Channel type** filter (`Digital` | `Analog` | `Both`) on the search row — digital = DMR profile; analog = no DMR profile.
 - **Band** multi-select filter and **Band** column (`BandPill` from RX/TX frequencies).
 - Toolbar filters: report slot, report type, receive; labelled **Search** field filters name/callsign on the same row as channel type.
-- Inline assignment grid uses v2 `DataTable` (`variant="embedded"`) with name/callsign links, selection, and column sort.
+- Inline assignment grid uses v2 `DataTable` (`variant="embedded"`) with **Callsign** before **Name** (both link to the channel view page), selection, and column sort.
 - **Bulk set…** opens [AprsChannelBulkAssignModal](./AprsChannelBulkAssignModal.tsx) for selected rows.
 - **Save assignments** persists dirty `Channel.aprs` bindings via `persistence.putChannel`.
 - Slot labels and list column text use [aprsBindingHelpers](../../lib/aprsBindingHelpers.ts).

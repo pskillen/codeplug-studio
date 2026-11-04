@@ -48,9 +48,8 @@ describe('ChannelCard', () => {
   it('renders the name link, callsign, field rows, and delete action', () => {
     renderCard({ channel: CHANNEL, fieldColumns: FIELD_COLUMNS });
 
-    const nameLink = screen.getByRole('link', { name: 'Repeater 1' });
+    const nameLink = screen.getByRole('link', { name: /^GB3TEST\s*· Repeater 1$/ });
     expect(nameLink).toHaveAttribute('href', '/library/channels/ch-1');
-    expect(screen.getByText('GB3TEST')).toBeInTheDocument();
     expect(screen.getByText('Band')).toBeInTheDocument();
     expect(screen.getByText('2m')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Delete channel/ })).toBeInTheDocument();
@@ -70,8 +69,8 @@ describe('ChannelCard', () => {
     expect(screen.queryByText('Band')).not.toBeInTheDocument();
   });
 
-  it('falls back to an em dash when the channel has no name', () => {
-    renderCard({ channel: { ...CHANNEL, name: '' }, fieldColumns: [] });
+  it('falls back to an em dash when the channel has no name or callsign', () => {
+    renderCard({ channel: { ...CHANNEL, name: '', callsign: '' }, fieldColumns: [] });
 
     expect(screen.getByRole('link', { name: '—' })).toBeInTheDocument();
   });

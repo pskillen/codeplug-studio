@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { newChannel } from '@core/domain/factories.ts';
+import { newChannel, newRadioBuild } from '@core/domain/factories.ts';
 import {
   channelEligibleForRadio,
+  channelStatusInBuild,
   getChannelIneligibilityReason,
   supportedChannelModes,
 } from './channelEligibility.ts';
@@ -154,5 +155,23 @@ describe('channelEligibility', () => {
         false,
       );
     });
+  });
+});
+
+describe('channelStatusInBuild', () => {
+  it('reports included, with the build wire-name override when set', () => {
+    const fm = channelWith(['fm'], 145_500_000);
+    const build = newRadioBuild(projectId, 'retevis-rt95');
+    expect(channelStatusInBuild(fm, build)).toEqual({ kind: 'included', wireName: null });
+    build.channelOverrides = [{ libraryEntityId: fm.id, wireName: ' S20 ' }];
+    expect(channelStatusInBuild(fm, build)).toEqual({ kind: 'included', wireName: 'S20' });
+  });
+
+  it('reports a build exclusion before RF eligibility', () => {
+    const air = channelWith(['am'], 118_800_000);
+    const build = newRadioBuild(projectId, 'retevis-rt95');
+    expect(channelStatusInBuild(air, build)).toEqual({ kind: 'unsupported-mode' });
+    build.channelOverrides = [{ libraryEntityId: air.id, excluded: true }];
+    expect(channelStatusInBuild(air, build)).toEqual({ kind: 'excluded' });
   });
 });

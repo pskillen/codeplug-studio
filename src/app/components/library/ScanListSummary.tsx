@@ -2,6 +2,7 @@ import { Anchor, Group, Stack, Table, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import type { Library } from '@core/models/library.ts';
+import { channelViewPath } from '../../lib/channelPaths.ts';
 
 export interface ScanListSummaryProps {
   listId: string | null;
@@ -61,7 +62,7 @@ export default function ScanListSummary({ listId, library }: ScanListSummaryProp
                       {row.label}
                     </Text>
                   ) : (
-                    <Anchor component={Link} to={`/library/channels/${row.channelId}`} size="sm">
+                    <Anchor component={Link} to={channelViewPath(row.channelId)} size="sm">
                       {row.label}
                     </Anchor>
                   )}

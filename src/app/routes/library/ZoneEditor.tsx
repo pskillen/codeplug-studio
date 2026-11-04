@@ -37,6 +37,7 @@ import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import { readInitialChannelIds } from './zoneEditorState.ts';
 import classes from './zones/ZoneEditLayout.module.css';
+import { channelViewPath } from '../../lib/channelPaths.ts';
 
 export default function ZoneEditor({
   projectId,
@@ -242,7 +243,7 @@ export default function ZoneEditor({
               emphasisZoneId={base.id}
               fitBoundsChannelIds={fitBoundsChannelIds}
               dimmedChannelIds={dimmedChannelIds}
-              onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+              onChannelClick={(id) => navigate(channelViewPath(id))}
             />
           </MapPanel>
         </div>

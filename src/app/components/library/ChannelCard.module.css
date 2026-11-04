@@ -38,11 +38,13 @@
   color: var(--dsv2-text-primary);
 }
 
-.callsign {
-  font-size: var(--dsv2-font-body-sm);
-  line-height: 1.3;
-  color: var(--dsv2-text-secondary);
+.callsignLead {
   font-family: var(--dsv2-font-mono, ui-monospace, monospace);
+}
+
+.nameAfter {
+  font-weight: 400;
+  color: var(--dsv2-text-secondary);
 }
 
 .fields {

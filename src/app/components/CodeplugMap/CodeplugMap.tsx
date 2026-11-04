@@ -33,7 +33,9 @@ import {
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { convexHullLatLon, uniqueLatLon, zoneColor, type LatLon } from '@core/domain/geo.ts';
 import { collectMapPoints, computeMapView } from '@core/domain/mapView.ts';
+import { greatCirclePath } from '@core/domain/geoDistance.ts';
 import type { Channel, Zone } from '@core/models/library.ts';
+import type { GeoPoint } from '@core/models/libraryTypes.ts';
 import { modeColor, modeLabel } from '../../lib/channelModes.ts';
 import { hzToMhzString } from '../../lib/units.ts';
 import { useDocumentLayoutReady } from '../../hooks/useDocumentLayoutReady.ts';
@@ -135,6 +137,18 @@ function operatorDivIcon(): L.DivIcon {
       <div class="operator-marker-dot"></div>
       <div class="operator-marker-label">You</div>
     </div>`,
+    iconAnchor: [0, 0],
+  });
+}
+
+function distanceLabelDivIcon(label: string): L.DivIcon {
+  const span = document.createElement('span');
+  span.className = 'distance-line-label';
+  span.textContent = label;
+  return L.divIcon({
+    className: 'distance-line-label-wrap',
+    html: span.outerHTML,
+    iconSize: [0, 0],
     iconAnchor: [0, 0],
   });
 }
@@ -389,6 +403,9 @@ export interface CodeplugMapProps {
   operatorPosition?: { lat: number; lon: number } | null;
   referencePosition?: { lat: number; lon: number } | null;
   referenceRadiusM?: number | null;
+  /** Dashed great-circle line between two points with a permanent label at its midpoint
+   * (e.g. operator → channel distance on the channel view). Both ends join the auto bounds. */
+  distanceLine?: { from: GeoPoint; to: GeoPoint; label: string } | null;
   dimmedChannelIds?: readonly string[];
   /** When set, auto-fit bounds use only these channel markers (plus emphasis hull). */
   fitBoundsChannelIds?: readonly string[];
@@ -412,6 +429,7 @@ export default function CodeplugMap({
   operatorPosition = null,
   referencePosition = null,
   referenceRadiusM = null,
+  distanceLine = null,
   dimmedChannelIds = [],
   fitBoundsChannelIds,
   onMapClick,
@@ -426,6 +444,13 @@ export default function CodeplugMap({
   const [showOtherZones, setShowOtherZones] = useState(true);
 
   const dimmedIdSet = useMemo(() => new Set(dimmedChannelIds), [dimmedChannelIds]);
+  const distanceLinePath = useMemo((): LatLon[] | null => {
+    if (!distanceLine) return null;
+    return greatCirclePath(distanceLine.from, distanceLine.to).map((p): LatLon => [p.lat, p.lon]);
+  }, [distanceLine]);
+  const distanceLineMid = distanceLinePath
+    ? distanceLinePath[Math.floor(distanceLinePath.length / 2)]
+    : null;
   const isEmphasisMode = mapControlMode !== 'standard';
 
   const channelPool = allChannels ?? channels;
@@ -790,6 +815,21 @@ export default function CodeplugMap({
               </Marker>
             ) : null}
 
+            {distanceLinePath ? (
+              <Polyline
+                positions={distanceLinePath}
+                pathOptions={{ color: '#228be6', weight: 3, dashArray: '8 6', opacity: 0.9 }}
+              />
+            ) : null}
+            {distanceLine && distanceLineMid ? (
+              <Marker
+                position={distanceLineMid}
+                icon={distanceLabelDivIcon(distanceLine.label)}
+                interactive={false}
+                keyboard={false}
+              />
+            ) : null}
+
             {operatorPosition != null &&
             Number.isFinite(operatorPosition.lat) &&
             Number.isFinite(operatorPosition.lon) ? (
@@ -810,7 +850,7 @@ export default function CodeplugMap({
                 zoneHulls={zoneHulls}
                 showZoneHulls={!isEmphasisMode && showZoneHulls}
                 hullPoints={isEmphasisMode ? boundsHullPoints : undefined}
-                operatorPosition={operatorPosition}
+                operatorPosition={operatorPosition ?? distanceLine?.from ?? null}
                 referencePosition={referencePosition}
                 referenceRadiusM={referenceRadiusM}
               />

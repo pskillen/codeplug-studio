@@ -1,4 +1,5 @@
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
+import { channelEditPath } from './channelPaths.ts';
 
 function editorSlugForRow(row: WirePreviewRow): string | null {
   switch (row.entityKind) {
@@ -20,5 +21,7 @@ function editorSlugForRow(row: WirePreviewRow): string | null {
 export function libraryEditPathForWirePreviewRow(row: WirePreviewRow): string | null {
   const slug = editorSlugForRow(row);
   if (slug === null) return null;
+  // Channels have a read-first view at the bare path; "Edit in library" means the editor.
+  if (row.entityKind === 'channel') return channelEditPath(row.libraryEntityId);
   return `/library/${slug}/${row.libraryEntityId}`;
 }

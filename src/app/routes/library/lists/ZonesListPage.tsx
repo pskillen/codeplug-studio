@@ -27,6 +27,7 @@ import { persistence } from '../../../state/persistence.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
 import pageClasses from '../../../components/library/LibraryInventoryPage.module.css';
 import classes from './ZonesListPage.module.css';
+import { channelViewPath } from '../../../lib/channelPaths.ts';
 
 export default function ZonesListPage() {
   const { library, loading, reload } = useLibrary();
@@ -184,7 +185,7 @@ export default function ZonesListPage() {
       allChannels={channels}
       height="100%"
       operatorPosition={position}
-      onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+      onChannelClick={(id) => navigate(channelViewPath(id))}
       onZoneClick={(id) => navigate(`/library/zones/${id}`)}
     />
   );

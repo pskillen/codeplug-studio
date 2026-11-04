@@ -115,3 +115,16 @@ export function destinationPoint(
 
   return { lat: toDegrees(destLatRad), lon: ((toDegrees(destLonRad) + 540) % 360) - 180 };
 }
+
+/** Points along the great circle from `from` to `to` (both ends included), for drawing a path
+ * whose length matches {@link pathMetricsBetween}. */
+export function greatCirclePath(from: GeoPoint, to: GeoPoint, segments = 32): GeoPoint[] {
+  const { distanceM, bearingAB } = pathMetricsBetween(from, to);
+  if (!(distanceM > 0)) return [from, to];
+  const points: GeoPoint[] = [from];
+  for (let i = 1; i < segments; i++) {
+    points.push(destinationPoint(from.lat, from.lon, bearingAB, (distanceM * i) / segments));
+  }
+  points.push(to);
+  return points;
+}

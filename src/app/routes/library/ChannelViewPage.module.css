@@ -1,0 +1,176 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-block: calc(-1 * var(--mantine-spacing-md));
+}
+
+.loading {
+  padding: 24px var(--dsv2-page-padding-x);
+  color: var(--dsv2-text-tertiary);
+}
+
+.callsign {
+  font-family: var(--dsv2-font-mono);
+}
+
+.titleName {
+  font-weight: 400;
+  color: var(--dsv2-text-secondary);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 var(--dsv2-page-padding-x) 12px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px var(--dsv2-page-padding-x) 48px;
+  min-width: 0;
+}
+
+/* Phone: the same 16px gutter as the compact EditorHeader and the channel editor. */
+.compact .actions,
+.compact .body {
+  padding-inline: 16px;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.frequency {
+  margin: 0;
+  font-family: var(--dsv2-font-mono);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--dsv2-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.frequencyLabel {
+  font-family: var(--dsv2-font-family);
+  font-size: var(--dsv2-font-body-sm);
+  font-weight: 500;
+  color: var(--dsv2-text-tertiary);
+}
+
+.frequencySub {
+  margin: 2px 0 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.heroPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.comment {
+  margin: 0;
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-secondary);
+}
+
+/* Two columns from 62em: settings left, map and directory right. */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+@media (min-width: 62em) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 16px;
+  margin: 0;
+}
+
+.fact {
+  display: contents;
+}
+
+.fact dt {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+.fact dd {
+  margin: 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.mono {
+  font-family: var(--dsv2-font-mono);
+}
+
+.muted {
+  margin: 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+.map {
+  margin-bottom: 12px;
+  border-radius: var(--dsv2-radius-control);
+  overflow: hidden;
+}
+
+.distance {
+  margin: 0 0 12px;
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.distanceAction {
+  margin-bottom: 12px;
+}
+
+.linkList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.buildRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.included {
+  color: var(--dsv2-success);
+}

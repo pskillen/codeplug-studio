@@ -46,6 +46,7 @@ import { DSV2_TOKENS } from '../../theme-v2.ts';
 import { createChannelCallsignColumn, createNameColumn } from '../../lib/libraryListTable.tsx';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
 import classes from './GrowZoneRecommendations.module.css';
+import { channelViewPath } from '../../lib/channelPaths.ts';
 
 const CHANNEL_SEARCH_DEBOUNCE_MS = 500;
 
@@ -216,7 +217,7 @@ export default function GrowZoneRecommendations() {
       createChannelCallsignColumn<Channel>(),
       createNameColumn<Channel>({
         getName: (ch) => ch.name,
-        getPath: (ch) => `/library/channels/${ch.id}`,
+        getPath: (ch) => channelViewPath(ch.id),
         sortValue: (ch) => ch.name,
       }),
       {

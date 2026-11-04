@@ -4,6 +4,7 @@ import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import { MapPanel } from '../../../components/v2/index.ts';
 import { useZoneEdit } from './ZoneEditContext.tsx';
 import { useZoneEditMap } from './useZoneEditMap.ts';
+import { channelViewPath } from '../../../lib/channelPaths.ts';
 
 /** Viewport-relative: the map takes the screen below the chrome, never a fixed pixel box (#1498). */
 export const ZONE_MAP_HEIGHT = 'clamp(280px, calc(100dvh - 240px), 720px)';
@@ -42,7 +43,7 @@ export default function ZoneMapSection({
         emphasisZoneId={previewZone.id}
         fitBoundsChannelIds={fitBoundsChannelIds}
         dimmedChannelIds={dimmedChannelIds}
-        onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+        onChannelClick={(id) => navigate(channelViewPath(id))}
       />
     </MapPanel>
   );

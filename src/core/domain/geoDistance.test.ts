@@ -5,6 +5,7 @@ import {
   destinationPoint,
   formatDistanceKmAndMi,
   formatDistanceM,
+  greatCirclePath,
   haversineDistanceM,
   initialBearingDeg,
   pathMetricsBetween,
@@ -85,5 +86,26 @@ describe('geoDistance', () => {
     const dest = destinationPoint(51.5, -0.13, 45, 0);
     expect(dest.lat).toBeCloseTo(51.5, 10);
     expect(dest.lon).toBeCloseTo(-0.13, 10);
+  });
+});
+
+describe('greatCirclePath', () => {
+  it('runs from start to end with evenly spaced points on the same path', () => {
+    const from = { lat: 54.17, lon: -6.34 };
+    const to = { lat: 55.95, lon: -3.19 };
+    const path = greatCirclePath(from, to, 4);
+    expect(path).toHaveLength(5);
+    expect(path[0]).toEqual(from);
+    expect(path[4]).toEqual(to);
+    const total = pathMetricsBetween(from, to).distanceM;
+    const firstLeg = pathMetricsBetween(from, path[1]!).distanceM;
+    const lastLeg = pathMetricsBetween(path[3]!, to).distanceM;
+    expect(firstLeg).toBeCloseTo(total / 4, 0);
+    expect(lastLeg).toBeCloseTo(total / 4, 0);
+  });
+
+  it('returns just the two ends when they coincide', () => {
+    const p = { lat: 54, lon: -6 };
+    expect(greatCirclePath(p, p)).toEqual([p, p]);
   });
 });

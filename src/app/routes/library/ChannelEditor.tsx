@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Select, Stack } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { ChannelAprsBinding } from '@core/models/aprs.ts';
 import type {
   ForbidTransmitOverride,
@@ -35,6 +35,7 @@ import {
 } from '../../components/v2/index.ts';
 import { type ChannelMode as UiChannelMode, modeLabel } from '../../lib/channelModes.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
+import { channelEditPath, channelViewPath } from '../../lib/channelPaths.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
 import TxPermitSegment from '../../components/channels/TxPermitSegment.tsx';
 import TxOffsetControls from '../../components/channels/TxOffsetControls.tsx';
@@ -53,6 +54,7 @@ import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMe
 import PowerLadderHints from '../../components/library/PowerLadderHints.tsx';
 import ScanListSummary from '../../components/library/ScanListSummary.tsx';
 import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.tsx';
+import ChannelDuplicateButton from '../../components/library/ChannelDuplicateButton.tsx';
 import ChannelAprsBindingSection, {
   channelAprsBindingFromChannel,
 } from '../../components/library/ChannelAprsBindingSection.tsx';
@@ -103,7 +105,7 @@ export default function ChannelEditor({
   const [validationError, setValidationError] = useState<string | null>(null);
   const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
 
-  const { save, saving, error } = useEntitySave('channels');
+  const { save, saving, error } = useEntitySave('channels', { navigateOnSave: false });
   const navigate = useNavigate();
 
   const selectedModes = modeProfiles.map((p) => p.mode as ChannelMode);
@@ -165,35 +167,6 @@ export default function ChannelEditor({
   const { permitNavigationOnce, modalOpen, stay, leave, isDirty } =
     useEntityEditorUnsavedGuard(buildRow);
 
-  function handleDuplicate() {
-    if (!entity) return;
-    const source = buildRow();
-    const copyName = `${source.name.trim() || 'Untitled channel'} (copy)`;
-    const copy = newChannel(projectId, copyName, source.callsign);
-    const row: Channel = {
-      ...copy,
-      abbreviation: source.abbreviation,
-      rxFrequency: source.rxFrequency,
-      txFrequency: source.txFrequency,
-      power: source.power,
-      scanInclusion: source.scanInclusion,
-      scanListId: source.scanListId,
-      forbidTransmit: source.forbidTransmit,
-      txPermit: source.txPermit,
-      comment: source.comment,
-      location: source.location,
-      useLocation: source.useLocation,
-      maidenheadLocator: source.maidenheadLocator,
-      hideFromInternalMap: source.hideFromInternalMap,
-      modeProfiles: source.modeProfiles.map((profile) => ({ ...profile })),
-      primaryMode: source.primaryMode ?? null,
-      aprs: source.aprs ? { ...source.aprs } : undefined,
-    };
-    void persistence.putChannel(row, null).then((result) => {
-      if (result.ok) navigate(`/library/channels/${row.id}`);
-    });
-  }
-
   // "Apply only": fills form state from a directory match, nothing persisted. Same fan-out
   // either way — only the fields ChannelDiffField can carry need handling (channelDiff.ts:
   // callsign, name, rxFrequency, txFrequency, rxTone, txTone, colourCode, mode, location,
@@ -214,11 +187,11 @@ export default function ChannelEditor({
   // unchanged). On a saved channel that's the whole job — the page's own key={revision}
   // remount (EntityEditorPage.tsx) picks up the change. On New channel there is no remount to
   // rely on yet, so land the operator on the freshly created channel's edit page, matching
-  // handleDuplicate's existing navigate-to-new-row pattern above.
+  // ChannelDuplicateButton's navigate-to-new-row pattern.
   function handleApplyAndSave(patched: Channel) {
     permitNavigationOnce();
     if (!entity) {
-      navigate(`/library/channels/${patched.id}`);
+      navigate(channelEditPath(patched.id));
     }
   }
 
@@ -238,11 +211,13 @@ export default function ChannelEditor({
     const row = buildRow();
     void save(() => persistence.putChannel(row, entity ? entity.revision : null), {
       permitNavigation: permitNavigationOnce,
+    }).then((saved) => {
+      if (saved) navigate(channelViewPath(row.id));
     });
   }
 
   function handleCancel() {
-    navigate('/library/channels');
+    navigate(entity ? channelViewPath(entity.id) : '/library/channels');
   }
 
   function handleModesChange(modes: UiChannelMode[]) {
@@ -274,6 +249,14 @@ export default function ChannelEditor({
   useEffect(() => {
     onPageTitle?.(editorPageTitle);
   }, [editorPageTitle, onPageTitle]);
+
+  // The channel view links straight to a section (e.g. `/edit#location`).
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!hash || loadingProp) return;
+    const frame = requestAnimationFrame(() => scrollToPageSection(hash.slice(1)));
+    return () => cancelAnimationFrame(frame);
+  }, [hash, loadingProp]);
 
   const scanListOptions = [
     { value: '', label: 'None' },
@@ -310,8 +293,8 @@ export default function ChannelEditor({
     <DesignSystemV2Provider>
       <div className={classes.root}>
         <EditorHeader
-          crumb="Channels"
-          crumbTo="/library/channels"
+          crumb={entity ? 'View channel' : 'Channels'}
+          crumbTo={entity ? channelViewPath(entity.id) : '/library/channels'}
           title={headerTitle}
           subtitle={headerSubtitle}
           compact={isMobile}
@@ -550,7 +533,7 @@ export default function ChannelEditor({
                   variant="outline"
                   size="sm"
                   disabled={!prevChannelId}
-                  onClick={() => prevChannelId && navigate(`/library/channels/${prevChannelId}`)}
+                  onClick={() => prevChannelId && navigate(channelEditPath(prevChannelId))}
                 >
                   ← Previous
                 </Button>
@@ -558,7 +541,7 @@ export default function ChannelEditor({
                   variant="outline"
                   size="sm"
                   disabled={!nextChannelId}
-                  onClick={() => nextChannelId && navigate(`/library/channels/${nextChannelId}`)}
+                  onClick={() => nextChannelId && navigate(channelEditPath(nextChannelId))}
                 >
                   Next →
                 </Button>
@@ -569,9 +552,12 @@ export default function ChannelEditor({
 
           {entity ? (
             <div className={classes.legacyActions}>
-              <Button variant="ghost" size="sm" onClick={() => void handleDuplicate()}>
-                Duplicate
-              </Button>
+              <ChannelDuplicateButton
+                projectId={projectId}
+                getSource={buildRow}
+                includesUnsavedEdits={isDirty}
+                variant="ghost"
+              />
               <ChannelDeleteButton
                 channel={entity}
                 onDeleted={() => navigate('/library/channels')}
