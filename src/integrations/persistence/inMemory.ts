@@ -506,6 +506,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   async deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void> {
     if (kind === 'project') {
       this.deleteAllProjectRows(projectId);
+      // The directory is outside the seed (replaceProject keeps it) but goes with the project.
+      await this.deleteDigitalIdDirectoryForProject(projectId);
       this.emit({ projectId, kind, id, op: 'delete' });
       return;
     }

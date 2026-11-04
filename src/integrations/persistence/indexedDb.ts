@@ -98,6 +98,63 @@ function directoryPrimaryRange(projectId: string, afterDigitalId?: number): IDBK
   );
 }
 
+/**
+ * Delete one project's directory rows with a single primary-key range delete (no per-row requests
+ * and no secondary-index scan). Counts the range first, in the same transaction, for the result.
+ * The range is bounded by `projectId` in the key, so no other project's rows can match.
+ */
+function deleteDirectoryPartition(
+  os: IDBObjectStore,
+  projectId: string,
+  onCount: (count: number) => void,
+): void {
+  const range = directoryPrimaryRange(projectId);
+  const countReq = os.count(range);
+  countReq.onsuccess = () => {
+    onCount(countReq.result);
+    if (countReq.result > 0) os.delete(range);
+  };
+}
+
+/**
+ * Delete directory rows whose project no longer exists. Reads the project IDs, then walks the
+ * directory's primary keys by jumping from one project's range to the next, so the cost is one
+ * step per project rather than per row. Runs in one transaction, so a project created meanwhile
+ * is never swept. Returns the number of projects whose rows were removed.
+ */
+function sweepOrphanDirectoryRows(db: IDBDatabase): Promise<number> {
+  return new Promise<number>((resolve, reject) => {
+    const directoryStore = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction([STORES.project, directoryStore], 'readwrite');
+    let swept = 0;
+    const projectKeys = tx.objectStore(STORES.project).getAllKeys();
+    projectKeys.onsuccess = () => {
+      const existing = new Set<string>();
+      for (const key of projectKeys.result) {
+        if (Array.isArray(key) && typeof key[0] === 'string') existing.add(key[0]);
+      }
+      const os = tx.objectStore(directoryStore);
+      const cursorReq = os.openKeyCursor();
+      cursorReq.onsuccess = () => {
+        const cursor = cursorReq.result;
+        if (!cursor) return;
+        const projectId = (cursor.key as [string, number])[0];
+        if (!existing.has(projectId)) {
+          os.delete(directoryPrimaryRange(projectId));
+          swept += 1;
+        }
+        // Skip the rest of this project's rows.
+        cursor.continue([projectId, Number.POSITIVE_INFINITY]);
+      };
+      cursorReq.onerror = () => reject(cursorReq.error);
+    };
+    projectKeys.onerror = () => reject(projectKeys.error);
+    tx.oncomplete = () => resolve(swept);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
 function ensureDigitalIdDirectoryIndexes(os: IDBObjectStore): void {
   if (!os.indexNames.contains('byProject')) {
     os.createIndex('byProject', 'projectId', { unique: false });
@@ -399,9 +456,23 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
           }
         }
       };
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        const db = request.result;
+        // Once per open, before any other request: drop directory rows whose project is gone
+        // (project delete used to leave them behind). Failure only leaves the rows for next time.
+        void sweepOrphanDirectoryRows(db).catch(() => {});
+        resolve(db);
+      };
       request.onerror = () => reject(request.error);
     });
+  }
+
+  /**
+   * Delete directory rows whose project no longer exists. Runs automatically once each time the
+   * database is opened; exposed for tests. Returns the number of orphaned projects removed.
+   */
+  async sweepOrphanDirectoryRows(): Promise<number> {
+    return sweepOrphanDirectoryRows(await this.db());
   }
 
   async listProjects(): Promise<ProjectMeta[]> {
@@ -657,16 +728,9 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(storeName, 'readwrite');
       const os = tx.objectStore(storeName);
-      const req = os.index('byProject').openKeyCursor(IDBKeyRange.only(projectId));
-      req.onsuccess = () => {
-        const cursor = req.result;
-        if (cursor) {
-          os.delete(cursor.primaryKey);
-          deletedCount += 1;
-          cursor.continue();
-        }
-      };
-      req.onerror = () => reject(req.error);
+      deleteDirectoryPartition(os, projectId, (count) => {
+        deletedCount = count;
+      });
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error);
@@ -1160,8 +1224,10 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
 
   private async deleteAllProjectRows(projectId: string): Promise<void> {
     const db = await this.db();
+    const directoryStore = DIRECTORY_STORES.digitalIdDirectory;
+    let deletedDirectoryRows = 0;
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE_NAMES, 'readwrite');
+      const tx = db.transaction([...STORE_NAMES, directoryStore], 'readwrite');
 
       for (const storeName of STORE_NAMES) {
         const os = tx.objectStore(storeName);
@@ -1176,10 +1242,18 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
         req.onerror = () => reject(req.error);
       }
 
+      // The directory is outside the project seed but belongs to the project.
+      deleteDirectoryPartition(tx.objectStore(directoryStore), projectId, (count) => {
+        deletedDirectoryRows = count;
+      });
+
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error);
     });
+    if (deletedDirectoryRows > 0) {
+      this.emitDirectory({ projectId, digitalId: 0, op: 'delete' });
+    }
   }
 
   private emit(change: PersistenceChange): void {
