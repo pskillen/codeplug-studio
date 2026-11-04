@@ -7,9 +7,11 @@ import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts'
 import { NativeYamlImportError } from './errors.ts';
 import { parseProjectDocument, parseProjectDocumentWithWarnings } from './parse.ts';
 import {
+  FIXTURE_ZONE_ID,
   fullLibraryAggregate,
   minimalProjectAggregate,
   nestedZonesAggregate,
+  projectWithRadioBuildAggregate,
 } from './testFixtures.ts';
 import { serialiseProject } from './serialise.ts';
 import { validateDocument } from './validate.ts';
@@ -282,10 +284,31 @@ describe('native-yaml validate', () => {
     expect(warnings).toEqual([expect.stringContaining('Ignoring 1 legacy format build')]);
   });
 
-  it('rejects broken build selection FK on new-style radioBuilds', () => {
-    expect(() => parseProjectDocument(readFixture('broken-fk-radio-build.yaml'))).toThrow(
-      /not found in library/,
+  it('drops a build override for a deleted channel with a warning', () => {
+    const { aggregate, warnings } = parseProjectDocumentWithWarnings(
+      readFixture('broken-fk-radio-build.yaml'),
     );
+    expect(aggregate.radioBuilds[0]?.channelOverrides).toEqual([]);
+    expect(warnings).toEqual([expect.stringMatching(/1 channel override/)]);
+  });
+
+  it('drops a deleted zone from build layouts and overrides instead of failing (#1528)', () => {
+    const base = projectWithRadioBuildAggregate();
+    const withoutZone = {
+      ...base,
+      zones: base.zones.filter((zone) => zone.id !== FIXTURE_ZONE_ID),
+    };
+
+    const { aggregate, warnings } = parseProjectDocumentWithWarnings(serialiseProject(withoutZone));
+
+    const build = aggregate.radioBuilds[0]!;
+    const zoneSection = build.layout.sections.find((section) => section.kind === 'zoneGrouping');
+    expect(zoneSection).toEqual({ kind: 'zoneGrouping', zones: [] });
+    expect(build.zoneOverrides).toEqual([]);
+    expect(build.channelOverrides).toEqual(base.radioBuilds[0]!.channelOverrides);
+    expect(warnings).toEqual([
+      expect.stringMatching(/OpenGD77 1701.*zone "Edinburgh".*1 zone override/),
+    ]);
   });
 
   it('soft-warns out-of-range APRS report slot index instead of hard-failing', () => {

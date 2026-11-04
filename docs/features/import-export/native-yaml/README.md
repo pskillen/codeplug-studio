@@ -29,6 +29,8 @@ The **RadioID directory shadow** (`digitalIdDirectory` IndexedDB partition) is *
 
 Envelope fields `schemaVersion` and `studioSchemaVersion` are documented in the tier 3 reference.
 
+**Stale build references.** Library foreign keys must resolve or import fails. Radio build layouts and override rows are derived from the library, so an id there that is no longer in the library (for example a zone deleted before [#1528](https://github.com/pskillen/codeplug-studio/issues/1528) cascaded deletes into builds) is dropped on import with one warning per build, instead of failing a Drive refresh or file open.
+
 ## Code anchors
 
 | Module                          | Role                                                          |
