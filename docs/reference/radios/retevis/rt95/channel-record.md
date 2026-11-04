@@ -6,7 +6,7 @@
 
 Cite: CHIRP `anytone778uv.py` `MEM_FORMAT` memory struct (facts only — no GPL paste). Byte meanings the CHIRP struct leaves open are resolved from the stock CPS (F121, F123).
 
-Trust levels below follow the stock-CPS comparison ([#1464](https://github.com/pskillen/codeplug-studio/issues/1464)): **C** read in the stock CPS code, **C+F** also read in the main-board firmware, **I** inferred, **U** unconfirmed. Nothing here was observed on a radio. Records cited by id (F110-F130) are in the firmware project's finding ledger.
+Trust levels below follow the stock-CPS comparison: **C** read in the stock CPS code, **C+F** also read in the main-board firmware, **I** inferred, **U** unconfirmed. Nothing here was observed on a radio. Records cited by id (F110-F130) are in the firmware project's finding ledger.
 
 ## Geometry
 
@@ -129,7 +129,7 @@ Library % for file adapters: [power.md](power.md).
 | `0x01` | 20 kHz         |
 | `0x02` | 25 kHz (FM)    |
 
-The 20 kHz setting is a real option in the stock CPS (C+F: the main board's default record uses the 25 kHz value). CHIRP `valid_modes` for this family: `FM`, `NFM`. **Studio gap:** the radio DTO has only FM and NFM, so a library channel of 20 kHz is written as 25 kHz and the Write review warns about it. Full 20 kHz support is backlog.
+The 20 kHz setting is a real option in the stock CPS (C+F: the main board's default record uses the 25 kHz value). CHIRP `valid_modes` for this family: `FM`, `NFM`. **Studio gap:** a Read warns when a channel on the radio uses 20 kHz (the clone summary lists the slots); the radio DTO has only FM and NFM, so a library channel of 20 kHz is written as 25 kHz and the Write review warns about it. Full 20 kHz support is backlog.
 
 ## Busy channel lockout (byte 18)
 
@@ -153,7 +153,7 @@ Not modelled by Studio (backlog); described so the write principle is clear.
 
 ## CTCSS tone indices (summary)
 
-Wire byte → tone Hz via CHIRP `TONE_MAP_VAL_TO_TONE` (`0x00` = 62.5 Hz … `0x32` = 254.1 Hz). the stock CPS offers the same 51 tones (C). Index **`0x33`** = custom CTCSS: the tone is the little-endian word in bytes 30-31 in 0.1 Hz (so 88.6 Hz is 886). The CPS resets an index above `0x33` to 0. Studio gap: a custom tone is not decoded or encoded yet, a channel whose library tone is outside the 51-tone list is written without it, and the Write review warns. Do not paste the full table as GPL source — cite the driver path when implementing; Studio may keep a vendor-neutral Hz table at the adapter edge.
+Wire byte → tone Hz via CHIRP `TONE_MAP_VAL_TO_TONE` (`0x00` = 62.5 Hz … `0x32` = 254.1 Hz). The stock CPS offers the same 51 tones (C). Index **`0x33`** = custom CTCSS: the tone is the little-endian word in bytes 30-31 in 0.1 Hz (so 88.6 Hz is 886). The CPS resets an index above `0x33` to 0. Studio gap: a custom tone is not decoded or encoded yet, a Read warns when a channel on the radio uses one (the clone summary lists the slots), a channel whose library tone is outside the 51-tone list is written without it, and the Write review warns. Do not paste the full table as GPL source — cite the driver path when implementing; Studio may keep a vendor-neutral Hz table at the adapter edge.
 
 DTCS uses CHIRP `ALL_DTCS_CODES` index split across low byte + high bit, with separate invert bits for encode/decode.
 
@@ -171,14 +171,14 @@ Besides slots 1-200 the stock CPS writes three special 32-byte slots: **VFO A at
 
 ## Web Serial Write (Studio)
 
-| Behaviour           | Implementation                                                                                                                                                                                                                                            |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Scan inclusion      | Effective scan resolution (build default + per-channel override) → `scan_enabled_bitfield` @ `0x1960` via `scanAdd` on `RadioChannelDto` ([#734](https://github.com/pskillen/codeplug-studio/issues/734))                                                 |
-| DTCS reverse        | Library `DnnnI` / CHIRP invert → byte `15`/`17` bit **1** on decode/encode ([#735](https://github.com/pskillen/codeplug-studio/issues/735); corrected [#1234](https://github.com/pskillen/codeplug-studio/issues/1234))                                   |
-| DTCS code index     | `ALL_DTCS_CODES` wire index (512 codes 000–777); low byte + bit 0 highbit — not the 104-code subset index ([#1234](https://github.com/pskillen/codeplug-studio/issues/1234))                                                                              |
-| Simplex offset      | Offset BCD `0` when duplex is none — not RX frequency ([#1234](https://github.com/pskillen/codeplug-studio/issues/1234))                                                                                                                                  |
-| Custom CTCSS `0x33` | **Gap:** Studio does not decode or encode custom CTCSS on Web Serial yet (the encoding is now known, see above); a tone outside the 51-tone list is dropped and the Write review warns ([#1464](https://github.com/pskillen/codeplug-studio/issues/1464)) |
-| Stock names         | Folded to printable ASCII (`0x20`-`0x7E`, case kept) at write time; the wire-name preview notes names the stock CPS would show as spaces ([#1464](https://github.com/pskillen/codeplug-studio/issues/1464))                                               |
+| Behaviour           | Implementation                                                                                                                                                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scan inclusion      | Effective scan resolution (build default + per-channel override) → `scan_enabled_bitfield` @ `0x1960` via `scanAdd` on `RadioChannelDto` ([#734](https://github.com/pskillen/codeplug-studio/issues/734))               |
+| DTCS reverse        | Library `DnnnI` / CHIRP invert → byte `15`/`17` bit **1** on decode/encode ([#735](https://github.com/pskillen/codeplug-studio/issues/735); corrected [#1234](https://github.com/pskillen/codeplug-studio/issues/1234)) |
+| DTCS code index     | `ALL_DTCS_CODES` wire index (512 codes 000–777); low byte + bit 0 highbit — not the 104-code subset index ([#1234](https://github.com/pskillen/codeplug-studio/issues/1234))                                            |
+| Simplex offset      | Offset BCD `0` when duplex is none — not RX frequency ([#1234](https://github.com/pskillen/codeplug-studio/issues/1234))                                                                                                |
+| Custom CTCSS `0x33` | **Gap:** Studio does not decode or encode custom CTCSS on Web Serial yet (the encoding is now known, see above); a tone outside the 51-tone list is dropped and the Write review warns                                  |
+| Stock names         | Folded to printable ASCII (`0x20`-`0x7E`, case kept) at write time; the wire-name preview notes names the stock CPS would show as spaces                                                                                |
 
 Read from radio does not import scan flags into library `scanInclusion` — scan bitfield is write-projection only (same pattern as UV-17Pro flat-memory adapters).
 

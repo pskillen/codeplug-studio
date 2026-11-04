@@ -20,7 +20,7 @@ Write-codeplug overlays modelled channels onto an **in-session** full-clone read
 ## Restore path
 
 1. App identity: model match; no serial in this layout — confirm firmware / label. Serial mismatch is a hard refuse when a zip has a serial.
-   **Band check:** the backup's band code (image `0x326D`) must equal the connected radio's ident band. A mismatch is refused before any frame is sent: "This backup is from a radio with a different band … Restore refused, nothing was written." ([#1464](https://github.com/pskillen/codeplug-studio/issues/1464)). The stock CPS refuses a Write on the same test (F112).
+   **Band check:** the backup's band code (image `0x326D`) must equal the connected radio's ident band. A mismatch is refused before any block is written: "This backup is from a radio with a different band … Restore refused, no block was written.". The stock CPS refuses a Write on the same test (F112).
 2. `Rt95Protocol.restoreFromBackup` — connect purpose `restore` (handshake `none`); restore runs the **upload** handshake itself.
 3. Copy selected restorable clone bins onto a `0x32A0` map; program `0x10` blocks `0x0000`…`0x3290`. Unselected / inspect-only bins are not written.
 4. Never LocalInfo. Never a separate calibration write (none in this layout).

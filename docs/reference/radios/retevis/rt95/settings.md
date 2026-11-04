@@ -6,7 +6,7 @@ Settings, DTMF, PTT-ID, keys, VOX, and bandlimit regions in the PROGRAM→QX ima
 
 Cite: CHIRP `anytone778uv.py` `MEM_FORMAT` / `get_settings` (facts only). The stock CPS encoder agrees with every `CPS+CHIRP` offset below (F124).
 
-Trust levels below follow the stock-CPS comparison ([#1464](https://github.com/pskillen/codeplug-studio/issues/1464)): **C** read in the stock CPS code, **C+F** also read in the main-board firmware, **I** inferred, **U** unconfirmed. Nothing here was observed on a radio. Records cited by id (F110-F130) are in the firmware project's finding ledger.
+Trust levels below follow the stock-CPS comparison: **C** read in the stock CPS code, **C+F** also read in the main-board firmware, **I** inferred, **U** unconfirmed. Nothing here was observed on a radio. Records cited by id (F110-F130) are in the firmware project's finding ledger.
 
 ## Region summary
 

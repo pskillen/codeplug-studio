@@ -40,7 +40,7 @@ Mobile / base analogue FM radio (AnyTone 778UV family). Studio targets it via CH
 
 ## Mixing Studio and the stock CPS
 
-If you program the same radio with both tools, know what each leaves behind ([#1464](https://github.com/pskillen/codeplug-studio/issues/1464); stock-CPS facts from the firmware project's CPS reference, F110-F130, read in the CPS code and not observed on a radio):
+If you program the same radio with both tools, know what each leaves behind (stock-CPS facts from the firmware project's CPS reference, F110-F130, read in the CPS code and not observed on a radio):
 
 | Sequence                                  | What happens                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -51,7 +51,7 @@ If you program the same radio with both tools, know what each leaves behind ([#1
 | Stock CPS Write                           | Refused with no normal channel ("Leave at least one normal channel!"), with an empty VFO, or when the radio's band differs from the file's                                                                                                                                                                        |
 | Stock CPS Write after Studio DTMF edits   | The CPS recomputes the DTMF memory in-use mask `0x326E`; Studio does not (known gap)                                                                                                                                                                                                                              |
 
-The stock CPS is documented for serial numbers 202101-202312 only; do not use it on units outside that range.
+Retevis's 2024 firmware update set is documented for serial numbers 202101-202312 only; do not flash it on other units. This limit is about firmware, not the stock CPS.
 
 ## Adapter wire (files)
 

@@ -37,7 +37,7 @@ The stock CPS also maps VFO A (`0x1900`) and VFO B (`0x1920`), the tone groups, 
 
 ### `0x30F0`–`0x31FF` and `0x326E`
 
-- **`0x30F0`–`0x31FF` (272 bytes):** Studio writes it, the stock CPS never does. The main board never uses the range (F22) and Studio sends back the bytes it read, so the write changes nothing. Do not skip it on Restore, which replays the whole clone. A golden test of the write set is [#1465](https://github.com/pskillen/codeplug-studio/issues/1465).
+- **`0x30F0`–`0x31FF` (272 bytes):** Studio writes it, the stock CPS never does. The main board never uses the range (F22) and Studio sends back the bytes it read, so the write changes nothing. Do not skip it on Restore, which replays the whole clone. A golden test of the write set is planned.
 - **`0x326E`–`0x326F`:** the DTMF memory in-use mask (bit _i_ set iff memory _i_ is non-empty; the main board serves it to the head). The stock CPS recomputes it on every Write. Studio does not, so a `pttIdM*` edit leaves it stale: **known gap, backlog** (the bit order within the pair is not confirmed). What the head does with a stale mask is open.
 - **Unused channel slots:** Studio writes `0xFF` records for slots with no channel; the stock CPS does not send those slots at all and leaves the old bytes, with bitmap bit 0. Both read as empty because the head tests the occupied bit.
 
