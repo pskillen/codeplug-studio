@@ -16,7 +16,9 @@ import {
   parseCommandAck,
   parseOpenGd77ReadReply,
   parseWriteAck,
+  readOpenGd77WriteAck,
 } from './opengd77Serial.ts';
+import type { BytePipe } from '../../types.ts';
 
 describe('OpenGD77 command frames', () => {
   it('builds minimal ping C fe', () => {
@@ -111,5 +113,52 @@ describe('OpenGD77 write frames W vs X', () => {
     expect(() =>
       parseWriteAck(new Uint8Array([0x57, 0x02]), 'W', OPENGD77_WRITE_CMD_SET_SECTOR),
     ).toThrow(RadioProtocolError);
+  });
+});
+
+function pipeWith(bytes: number[]): BytePipe & { left: () => number } {
+  let buf = Uint8Array.from(bytes);
+  return {
+    async write() {},
+    async readExact(n) {
+      if (buf.length < n) throw new Error(`needed ${n}, have ${buf.length}`);
+      const out = buf.slice(0, n);
+      buf = buf.slice(n);
+      return out;
+    },
+    async close() {},
+    left: () => buf.length,
+  };
+}
+
+describe('readOpenGd77WriteAck (firmware framing)', () => {
+  it('a one-byte - is a NACK and does not wait for a second byte', async () => {
+    const pipe = pipeWith([OPENGD77_CMD_OK]);
+    await expect(readOpenGd77WriteAck(pipe, 'X', 0x03, 100)).resolves.toEqual({ kind: 'nack' });
+  });
+
+  it('a two-byte {type, cmd} echo is an ACK', async () => {
+    const pipe = pipeWith([0x58, 0x01]);
+    await expect(readOpenGd77WriteAck(pipe, 'X', 0x01, 100)).resolves.toEqual({ kind: 'ack' });
+  });
+
+  it("'-' followed by X 01 in one chunk is a NACK, never a success, and leaves the X 01 unread", async () => {
+    const pipe = pipeWith([OPENGD77_CMD_OK, 0x58, 0x01]);
+    await expect(readOpenGd77WriteAck(pipe, 'X', 0x01, 100)).resolves.toEqual({ kind: 'nack' });
+    expect(pipe.left()).toBe(2);
+  });
+
+  it('a stale byte ahead of the ACK is reported as unexpected, not accepted', async () => {
+    const pipe = pipeWith([0x52, 0x58, 0x01]);
+    await expect(readOpenGd77WriteAck(pipe, 'X', 0x01, 100)).resolves.toEqual({
+      kind: 'unexpected',
+      bytes: new Uint8Array([0x52, 0x58]),
+    });
+  });
+
+  it('a wrong command echo is unexpected', async () => {
+    const pipe = pipeWith([0x58, 0x02]);
+    const result = await readOpenGd77WriteAck(pipe, 'X', 0x03, 100);
+    expect(result.kind).toBe('unexpected');
   });
 });

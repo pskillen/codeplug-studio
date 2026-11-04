@@ -135,3 +135,30 @@ export function collectDirtySectors(prior: MemoryMap, next: MemoryMap): DirtySec
 export function openUv380DownloadByteCount(): number {
   return OPENUV380_FLASH_SPANS.reduce((sum, s) => sum + s.length, 0);
 }
+
+/**
+ * Contiguous runs of a sector's sent blocks as `{ address, data }` chunks, for write-verify
+ * staging (only bytes actually transmitted are compared).
+ */
+export function dirtySectorChunks(sector: DirtySector): { address: number; data: Uint8Array }[] {
+  const chunks: { address: number; data: Uint8Array }[] = [];
+  let runStart = -1;
+  let prev = -OPENGD77_BLOCK;
+  const flush = (end: number): void => {
+    if (runStart < 0) return;
+    chunks.push({
+      address: sector.sectorAbs + runStart,
+      data: sector.payload.slice(runStart, end),
+    });
+    runStart = -1;
+  };
+  for (const off of sector.blocks) {
+    if (off !== prev + OPENGD77_BLOCK) {
+      flush(prev + OPENGD77_BLOCK);
+      runStart = off;
+    }
+    prev = off;
+  }
+  flush(prev + OPENGD77_BLOCK);
+  return chunks;
+}

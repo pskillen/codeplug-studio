@@ -215,9 +215,7 @@ export function makeWriteEepromFrame(
 
 /** What the radio answered to a write command (`X 01/02/03/04`). */
 export type OpenGd77WriteAckResult =
-  | { kind: 'ack' }
-  | { kind: 'nack' }
-  | { kind: 'unexpected'; bytes: Uint8Array };
+  { kind: 'ack' } | { kind: 'nack' } | { kind: 'unexpected'; bytes: Uint8Array };
 
 /**
  * Read a write ACK the way the firmware sends it: success is two bytes `{type, cmd}`, a NACK is

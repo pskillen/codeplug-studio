@@ -23,9 +23,15 @@ import {
   OPENGD77_WRITE_CMD_SET_SECTOR,
   parseCommandAck,
   parseOpenGd77ReadReply,
-  parseWriteAck,
+  readOpenGd77WriteAck,
 } from '../../kit/codecs/opengd77Serial.ts';
-import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
+import {
+  RadioIoError,
+  RadioProtocolError,
+  RadioTimeoutError,
+  RadioWrongIdentError,
+} from '../../kit/errors.ts';
+import { FrameTrace, TracingPipe } from '../../kit/frameTrace.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import {
   DM1701_RADIO_TYPES,
@@ -35,6 +41,7 @@ import {
   OPENGD77_CMD_CONTROL,
   OPENGD77_CMD_SHOW_CPS,
   OPENGD77_CONTROL_FLASH_RED_LED,
+  OPENGD77_CONTROL_REBOOT_ONLY,
   OPENGD77_CONTROL_SAVE_REBOOT,
   OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS,
   OPENGD77_IDENT_TIMEOUT_MS,
@@ -61,13 +68,24 @@ import {
   encodeChannelsIntoImage,
 } from './channelCodec.ts';
 import {
+  allSectorBlocks,
   collectDirtySectors,
   createOpenUv380Image,
+  dirtySectorChunks,
+  type DirtySector,
   openUv380DownloadByteCount,
   openUv380ImageFromBytes,
   readAbs,
   writeAbs,
 } from './memory.ts';
+import {
+  OpenGd77WriteDesyncError,
+  OpenGd77WriteNackError,
+  OpenGd77WriteTimeoutError,
+  type OpenGd77WriteCommand,
+  type OpenGd77WriteContext,
+  type OpenGd77WritePhase,
+} from './writeErrors.ts';
 import { openGd77KeptRegionLength, openGd77KeptRegions } from './writeVerifySupport.ts';
 import { encodeOpenGd77WriteImageFromPrior } from './hydration.ts';
 import { ADDITIONAL_SETTINGS_BYTES, overlaySatelliteBank } from './satelliteCodec.ts';
@@ -135,7 +153,19 @@ async function flushPipe(pipe: BytePipe): Promise<void> {
   if (pipe.flush) await pipe.flush();
 }
 
+/** Discard (and return) anything already buffered; pipes without `drain` just flush. */
+async function drainPipe(pipe: BytePipe): Promise<Uint8Array> {
+  if (pipe.drain) return pipe.drain();
+  await flushPipe(pipe);
+  return new Uint8Array(0);
+}
+
+/**
+ * Send a `C` command and read its one-byte `'-'` ACK. Stale bytes are drained first, so a
+ * leftover `'-'` (for example from an earlier NACK) cannot pass for this command's ACK.
+ */
 async function sendCommand(pipe: BytePipe, flag: number, payload?: Uint8Array): Promise<void> {
+  await drainPipe(pipe);
   await pipe.write(makeCommandFrame(flag, payload));
   const ack = await pipe.readExact(1, OPENGD77_IO_TIMEOUT_MS);
   parseCommandAck(ack);
@@ -171,54 +201,12 @@ async function readFlashRange(pipe: BytePipe, abs: number, length: number): Prom
   return out;
 }
 
-async function prepareCallsignDbFlashWrite(pipe: BytePipe): Promise<void> {
-  try {
-    await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
-  } catch {
-    /* may already be in CPS */
-  }
-  await sendCommand(pipe, OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_FLASH_RED_LED]));
-  await sendCommand(
-    pipe,
-    OPENGD77_CMD_CONTROL,
-    new Uint8Array([OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS]),
-  );
-}
-
-async function writeFlashSector(
-  pipe: BytePipe,
-  sectorAbs: number,
-  payload: Uint8Array,
-  signal?: AbortSignal,
-): Promise<void> {
-  if (payload.length !== OPENGD77_SECTOR) {
-    throw new RangeError(`Flash sector payload must be ${OPENGD77_SECTOR} bytes`);
-  }
-  throwIfAborted(signal);
-  await pipe.write(makeSetFlashSectorFrame(OPENGD77_WRITE_VARIANT, sectorAbs));
-  parseWriteAck(
-    await pipe.readExact(2, OPENGD77_IO_TIMEOUT_MS),
-    OPENGD77_WRITE_VARIANT,
-    OPENGD77_WRITE_CMD_SET_SECTOR,
-  );
-
-  for (let off = 0; off < OPENGD77_SECTOR; off += OPENGD77_BLOCK) {
-    throwIfAborted(signal);
-    const chunk = payload.subarray(off, off + OPENGD77_BLOCK);
-    await pipe.write(makeWriteSectorBufferFrame(OPENGD77_WRITE_VARIANT, sectorAbs + off, chunk));
-    parseWriteAck(
-      await pipe.readExact(2, OPENGD77_IO_TIMEOUT_MS),
-      OPENGD77_WRITE_VARIANT,
-      OPENGD77_WRITE_CMD_SECTOR_BUFFER,
-    );
-  }
-
-  await pipe.write(makeFinishFlashSectorFrame(OPENGD77_WRITE_VARIANT));
-  parseWriteAck(
-    await pipe.readExact(2, OPENGD77_IO_TIMEOUT_MS),
-    OPENGD77_WRITE_VARIANT,
-    OPENGD77_WRITE_CMD_FINISH_SECTOR,
-  );
+/** Which sector of the current write is being programmed, for error context. */
+interface WriteSectorPlace {
+  phase: OpenGd77WritePhase;
+  /** 1-based. */
+  index: number;
+  total: number;
 }
 
 export interface OpenGd77ProtocolOptions {
@@ -248,6 +236,16 @@ export class OpenGd77Protocol implements CloneImageRadio {
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
   private lastUploadKept: Map<string, Uint8Array> | undefined;
   private lastUserDatabaseWarning: string | undefined;
+  /** Last frames on the wire; attached to protocol errors as `debugText`. */
+  private trace = new FrameTrace();
+  /**
+   * Whether this session has pushed the radio's CPS screen. SHOW_CPS stacks a menu level every time
+   * (firmware `menuSystem.c:263-279`) and CLOSE_CPS pops one, so it is sent once and closed once.
+   */
+  private cpsShown = false;
+  /** Set when the first SET_SECTOR of a write is sent; cleared by a successful save-and-reboot. */
+  private programmingStarted = false;
+  private guardDepth = 0;
   private readonly allowedRadioTypes: readonly number[];
   private readonly modelHints: readonly string[];
   private readonly powerSteps: readonly OpenGd77PowerStep[];
@@ -297,7 +295,11 @@ export class OpenGd77Protocol implements CloneImageRadio {
     pipe: BytePipe,
     opts?: { signal?: AbortSignal; settleScale?: number; handshake?: 'read' | 'none' },
   ): Promise<IdentResult> {
-    this.pipe = pipe;
+    this.trace = new FrameTrace();
+    this.cpsShown = false;
+    this.programmingStarted = false;
+    this.pipe = new TracingPipe(pipe, this.trace);
+    pipe = this.pipe;
     if (opts?.handshake === 'none') {
       return { raw: new Uint8Array(0), modelHints: [...this.modelHints] };
     }
@@ -332,6 +334,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
     }
 
     await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
+    this.cpsShown = true;
     return {
       raw: infoPayload,
       firmwareHint: info.fwRevision || undefined,
@@ -340,20 +343,184 @@ export class OpenGd77Protocol implements CloneImageRadio {
   }
 
   async disconnect(): Promise<void> {
-    if (this.pipe) {
+    await this.recoverRadio();
+    this.pipe = null;
+  }
+
+  /**
+   * Put the radio back after a session, once: reboot-only (`C 06 01`) when a flash sector write
+   * began (the only thing that clears the firmware's open sector and CPS screen; no settings
+   * re-save, same as a power cycle), else CLOSE_CPS once if this session showed the CPS screen.
+   * Never `C 06 00`: that re-saves RAM settings over a half-written FLASH. Best effort.
+   */
+  private async recoverRadio(): Promise<'rebooted' | 'closed' | 'none'> {
+    const pipe = this.pipe;
+    if (!pipe) return 'none';
+    if (this.programmingStarted) {
+      this.programmingStarted = false;
+      this.cpsShown = false;
       try {
-        await sendCommand(this.pipe, OPENGD77_CMD_CLOSE_CPS);
+        await pipe.write(
+          makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_REBOOT_ONLY])),
+        );
+      } catch {
+        /* the port may already be gone */
+      }
+      this.trace.push(
+        'NOTE',
+        'sent reboot-only (C 06 01) after a failed write; not waiting for a reply',
+      );
+      return 'rebooted';
+    }
+    if (this.cpsShown) {
+      this.cpsShown = false;
+      try {
+        await sendCommand(pipe, OPENGD77_CMD_CLOSE_CPS);
       } catch {
         /* best-effort */
       }
+      return 'closed';
     }
-    this.pipe = null;
+    return 'none';
+  }
+
+  /**
+   * Run a public operation; on failure put the radio back, then attach the frame trace (and, when
+   * a reboot was sent, say so) to the error. Nested calls leave that to the outermost one.
+   */
+  private async guarded<T>(fn: () => Promise<T>): Promise<T> {
+    this.guardDepth++;
+    try {
+      return await fn();
+    } catch (err) {
+      if (this.guardDepth > 1) throw err;
+      const outcome = await this.recoverRadio();
+      if (err instanceof RadioIoError) {
+        if (outcome === 'rebooted') {
+          err.message +=
+            ' The radio was sent a restart command and may hold a partly written codeplug.';
+        }
+        const text = this.trace.format();
+        if (text) err.debugText = text;
+      }
+      throw err;
+    } finally {
+      this.guardDepth--;
+    }
+  }
+
+  /** SHOW_CPS once per session. A failure is swallowed (the radio may already be in CPS). */
+  private async ensureCps(pipe: BytePipe): Promise<void> {
+    if (this.cpsShown) return;
+    try {
+      await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
+      this.cpsShown = true;
+    } catch {
+      /* may already be in CPS */
+    }
+  }
+
+  private async prepareCallsignDbFlashWrite(pipe: BytePipe): Promise<void> {
+    await this.ensureCps(pipe);
+    await sendCommand(pipe, OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_FLASH_RED_LED]));
+    await sendCommand(
+      pipe,
+      OPENGD77_CMD_CONTROL,
+      new Uint8Array([OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS]),
+    );
+  }
+
+  /** Save RAM settings and reboot (success path only); the reboot clears all firmware write state. */
+  private async saveAndReboot(pipe: BytePipe): Promise<void> {
+    await pipe.write(
+      makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),
+    );
+    this.programmingStarted = false;
+    this.cpsShown = false;
+    try {
+      parseCommandAck(await pipe.readExact(1, OPENGD77_IO_TIMEOUT_MS));
+    } catch {
+      /* reboot may drop the port */
+    }
+  }
+
+  /**
+   * One flash sector: SET_SECTOR, one SECTOR_BUFFER per block in `sector.blocks`, FINISH. The
+   * firmware loads the sector at SET_SECTOR and keeps bytes it is not sent, so only owned blocks go.
+   * Each reply is read as the firmware frames it (1-byte NACK, 2-byte ACK); any error names the
+   * command, sector and block.
+   */
+  private async writeFlashSector(
+    pipe: BytePipe,
+    sector: DirtySector,
+    place: WriteSectorPlace,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    if (sector.payload.length !== OPENGD77_SECTOR) {
+      throw new RangeError(`Flash sector payload must be ${OPENGD77_SECTOR} bytes`);
+    }
+    throwIfAborted(signal);
+    const stale = await drainPipe(pipe);
+    const base = {
+      sectorAbs: sector.sectorAbs,
+      sectorIndex: place.index,
+      sectorsTotal: place.total,
+      phase: place.phase,
+      staleBytes: stale.length > 0 ? stale : undefined,
+    };
+    const expectAck = async (
+      command: OpenGd77WriteCommand,
+      cmdByte: number,
+      offset: number,
+    ): Promise<void> => {
+      const ctx: OpenGd77WriteContext = { ...base, command, offset };
+      let result;
+      try {
+        result = await readOpenGd77WriteAck(
+          pipe,
+          OPENGD77_WRITE_VARIANT,
+          cmdByte,
+          OPENGD77_IO_TIMEOUT_MS,
+        );
+      } catch (err) {
+        if (err instanceof RadioTimeoutError) {
+          throw new OpenGd77WriteTimeoutError(ctx, OPENGD77_IO_TIMEOUT_MS, err.message);
+        }
+        throw err;
+      }
+      if (result.kind === 'nack') throw new OpenGd77WriteNackError(ctx);
+      if (result.kind === 'unexpected') throw new OpenGd77WriteDesyncError(ctx, result.bytes);
+    };
+
+    this.programmingStarted = true;
+    await pipe.write(makeSetFlashSectorFrame(OPENGD77_WRITE_VARIANT, sector.sectorAbs));
+    await expectAck('set-sector', OPENGD77_WRITE_CMD_SET_SECTOR, 0);
+
+    for (const off of sector.blocks) {
+      throwIfAborted(signal);
+      const chunk = sector.payload.subarray(off, off + OPENGD77_BLOCK);
+      await pipe.write(
+        makeWriteSectorBufferFrame(OPENGD77_WRITE_VARIANT, sector.sectorAbs + off, chunk),
+      );
+      await expectAck('sector-buffer', OPENGD77_WRITE_CMD_SECTOR_BUFFER, off);
+    }
+
+    await pipe.write(makeFinishFlashSectorFrame(OPENGD77_WRITE_VARIANT));
+    await expectAck('finish', OPENGD77_WRITE_CMD_FINISH_SECTOR, 0);
   }
 
   async download(opts: {
     onProgress?: ProgressFn;
     signal?: AbortSignal;
     /** Override default progress step label (`FLASH image`). */
+    progressStage?: string;
+  }): Promise<MemoryMap> {
+    return this.guarded(() => this.downloadImpl(opts));
+  }
+
+  private async downloadImpl(opts: {
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
     progressStage?: string;
   }): Promise<MemoryMap> {
     const pipe = this.pipe;
@@ -389,15 +556,18 @@ export class OpenGd77Protocol implements CloneImageRadio {
     image: MemoryMap,
     opts: { onProgress?: ProgressFn; signal?: AbortSignal },
   ): Promise<void> {
+    return this.guarded(() => this.uploadImpl(image, opts));
+  }
+
+  private async uploadImpl(
+    image: MemoryMap,
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
     const pipe = this.pipe;
     if (!pipe) throw new RadioProtocolError('OpenGD77 upload: not connected');
 
-    // Ensure CPS mode for write-only connect.
-    try {
-      await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
-    } catch {
-      /* may already be in CPS */
-    }
+    // CPS mode is entered once per session (connect already did, unless handshake was 'none').
+    await this.ensureCps(pipe);
 
     // Live radio flash is the encode base and the dirty-sector diff prior.
     // Never overlay onto a blank 0xff map — empty prior after this read refuses Write.
@@ -445,7 +615,12 @@ export class OpenGd77Protocol implements CloneImageRadio {
     for (let i = 0; i < sectors.length; i++) {
       throwIfAborted(opts.signal);
       const sector = sectors[i]!;
-      await writeFlashSector(pipe, sector.sectorAbs, sector.payload, opts.signal);
+      await this.writeFlashSector(
+        pipe,
+        sector,
+        { phase: 'codeplug', index: i + 1, total: sectors.length },
+        opts.signal,
+      );
       reportProgress(opts.onProgress, {
         cur: i + 1,
         max: Math.max(sectors.length, 1),
@@ -454,22 +629,13 @@ export class OpenGd77Protocol implements CloneImageRadio {
       });
     }
 
-    this.lastUploadStaging = captureWriteVerifyStaging(
-      sectors.map((sector) => ({ address: sector.sectorAbs, data: sector.payload })),
-    );
+    this.lastUploadStaging = captureWriteVerifyStaging(sectors.flatMap(dirtySectorChunks));
 
     if (userDatabaseContacts !== undefined) {
       await this.programUserDatabaseSectors(pipe, userDatabaseContacts, opts);
     }
 
-    await pipe.write(
-      makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),
-    );
-    try {
-      parseCommandAck(await pipe.readExact(1, OPENGD77_IO_TIMEOUT_MS));
-    } catch {
-      /* reboot may drop the port */
-    }
+    await this.saveAndReboot(pipe);
 
     this.priorImage = openUv380ImageFromBytes(intended.bytes);
   }
@@ -482,22 +648,18 @@ export class OpenGd77Protocol implements CloneImageRadio {
     contacts: readonly RadioDigitalContactDto[],
     opts: { onProgress?: ProgressFn; signal?: AbortSignal },
   ): Promise<void> {
+    return this.guarded(() => this.uploadUserDatabaseImpl(contacts, opts));
+  }
+
+  private async uploadUserDatabaseImpl(
+    contacts: readonly RadioDigitalContactDto[],
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
     const pipe = this.pipe;
     if (!pipe) throw new RadioProtocolError('OpenGD77 User Database write: not connected');
-    try {
-      await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
-    } catch {
-      /* may already be in CPS */
-    }
+    await this.ensureCps(pipe);
     await this.programUserDatabaseSectors(pipe, contacts, opts);
-    await pipe.write(
-      makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),
-    );
-    try {
-      parseCommandAck(await pipe.readExact(1, OPENGD77_IO_TIMEOUT_MS));
-    } catch {
-      /* reboot may drop the port */
-    }
+    await this.saveAndReboot(pipe);
   }
 
   private async programUserDatabaseSectors(
@@ -508,14 +670,19 @@ export class OpenGd77Protocol implements CloneImageRadio {
     this.lastUserDatabaseWarning = openGd77MissingExtendedCallsignDbWarning(
       this.firmwareInfo?.features ?? 0,
     );
-    await prepareCallsignDbFlashWrite(pipe);
+    await this.prepareCallsignDbFlashWrite(pipe);
     const encoded = encodeOpenGd77UserDatabase(contacts);
     const payloads = buildUserDatabaseSectorPayloads(encoded);
     const sectorAbsList = [...payloads.keys()].sort((a, b) => a - b);
     let i = 0;
     for (const sectorAbs of sectorAbsList) {
       throwIfAborted(opts.signal);
-      await writeFlashSector(pipe, sectorAbs, payloads.get(sectorAbs)!, opts.signal);
+      await this.writeFlashSector(
+        pipe,
+        { sectorAbs, payload: payloads.get(sectorAbs)!, blocks: allSectorBlocks() },
+        { phase: 'user-database', index: i + 1, total: sectorAbsList.length },
+        opts.signal,
+      );
       i++;
       reportProgress(opts.onProgress, {
         cur: i,
@@ -535,16 +702,19 @@ export class OpenGd77Protocol implements CloneImageRadio {
     bank: Uint8Array,
     opts: { onProgress?: ProgressFn; signal?: AbortSignal },
   ): Promise<void> {
+    return this.guarded(() => this.uploadSatelliteBankImpl(bank, opts));
+  }
+
+  private async uploadSatelliteBankImpl(
+    bank: Uint8Array,
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
     const pipe = this.pipe;
     if (!pipe) throw new RadioProtocolError('OpenGD77 satellite write: not connected');
 
     this.pendingWriteProjection = null;
 
-    try {
-      await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
-    } catch {
-      /* may already be in CPS */
-    }
+    await this.ensureCps(pipe);
 
     await this.download({
       onProgress: opts.onProgress,
@@ -573,7 +743,12 @@ export class OpenGd77Protocol implements CloneImageRadio {
     for (let i = 0; i < sectors.length; i++) {
       throwIfAborted(opts.signal);
       const sector = sectors[i]!;
-      await writeFlashSector(pipe, sector.sectorAbs, sector.payload, opts.signal);
+      await this.writeFlashSector(
+        pipe,
+        sector,
+        { phase: 'keps', index: i + 1, total: sectors.length },
+        opts.signal,
+      );
       reportProgress(opts.onProgress, {
         cur: i + 1,
         max: Math.max(sectors.length, 1),
@@ -582,14 +757,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
       });
     }
 
-    await pipe.write(
-      makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),
-    );
-    try {
-      parseCommandAck(await pipe.readExact(1, OPENGD77_IO_TIMEOUT_MS));
-    } catch {
-      /* reboot may drop the port */
-    }
+    await this.saveAndReboot(pipe);
 
     this.priorImage = openUv380ImageFromBytes(intended.bytes);
   }
@@ -599,6 +767,13 @@ export class OpenGd77Protocol implements CloneImageRadio {
    * has no `Id` header. Does not walk qdmr size1.
    */
   async downloadUserDatabaseOccupied(opts?: {
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
+  }): Promise<Uint8Array> {
+    return this.guarded(() => this.downloadUserDatabaseOccupiedImpl(opts));
+  }
+
+  private async downloadUserDatabaseOccupiedImpl(opts?: {
     onProgress?: ProgressFn;
     signal?: AbortSignal;
   }): Promise<Uint8Array> {
@@ -667,16 +842,19 @@ export class OpenGd77Protocol implements CloneImageRadio {
     archive: { manifest: RadioBackupManifestV1; image: MemoryMap },
     opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
   ): Promise<void> {
+    return this.guarded(() => this.restoreFromBackupImpl(archive, opts));
+  }
+
+  private async restoreFromBackupImpl(
+    archive: { manifest: RadioBackupManifestV1; image: MemoryMap },
+    opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
     const pipe = this.pipe;
     if (!pipe) throw new RadioProtocolError('OpenGD77 restore: not connected');
 
     this.pendingWriteProjection = null;
 
-    try {
-      await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
-    } catch {
-      /* may already be in CPS */
-    }
+    await this.ensureCps(pipe);
 
     const intended = intendedOpenGd77RestoreImage(archive, opts.regionIds);
     const sectors = collectDirtySectors(createOpenUv380Image(), intended);
@@ -692,7 +870,12 @@ export class OpenGd77Protocol implements CloneImageRadio {
     for (let i = 0; i < sectors.length; i++) {
       throwIfAborted(opts.signal);
       const sector = sectors[i]!;
-      await writeFlashSector(pipe, sector.sectorAbs, sector.payload, opts.signal);
+      await this.writeFlashSector(
+        pipe,
+        sector,
+        { phase: 'restore', index: i + 1, total: sectors.length },
+        opts.signal,
+      );
       reportProgress(opts.onProgress, {
         cur: i + 1,
         max: Math.max(sectors.length, 1),
@@ -701,14 +884,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
       });
     }
 
-    await pipe.write(
-      makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),
-    );
-    try {
-      parseCommandAck(await pipe.readExact(1, OPENGD77_IO_TIMEOUT_MS));
-    } catch {
-      /* reboot may drop the port */
-    }
+    await this.saveAndReboot(pipe);
 
     this.priorImage = openUv380ImageFromBytes(intended.bytes);
   }

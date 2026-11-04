@@ -24,7 +24,10 @@ export const OPENGD77_WRITE_VARIANT = 'X' as const;
 export const OPENGD77_CMD_SHOW_CPS = 0x00;
 export const OPENGD77_CMD_CLOSE_CPS = 0x05;
 export const OPENGD77_CMD_CONTROL = 0x06;
+/** Control sub 0: save RAM settings and LUCZ, then reset (firmware `usb_com.c` control 6). */
 export const OPENGD77_CONTROL_SAVE_REBOOT = 0x00;
+/** Control sub 1: reset only, no save. Used on failure paths; the same as a manual power cycle. */
+export const OPENGD77_CONTROL_REBOOT_ONLY = 0x01;
 /** qdmr write_start: save settings and VFOs, no reboot. */
 export const OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS = 0x02;
 /** qdmr write_start before FLASH programming. */
