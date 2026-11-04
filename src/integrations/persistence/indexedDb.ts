@@ -21,6 +21,7 @@ import type {
   BatchPutItemResult,
   BatchPutResult,
   DigitalContactPut,
+  DigitalIdDirectoryBatchOptions,
   DirectoryPersistenceChange,
   DirectoryPersistenceListener,
   EntityKind,
@@ -33,6 +34,7 @@ import type {
 } from './types.ts';
 import { DEFAULT_DB_NAME, DIRECTORY_STORES, STORES, STORE_NAMES } from './stores.ts';
 import {
+  DIRECTORY_STREAM_BATCH_SIZE,
   directoryPrefixUpperBound,
   directoryProjectNameRangeUpper,
   hasDirectoryPageFilters,
@@ -81,6 +83,19 @@ function openDirectoryWriteTransaction(db: IDBDatabase, storeName: string): IDBT
   } catch {
     return db.transaction(storeName, 'readwrite');
   }
+}
+
+/**
+ * Primary-key range over one project's directory rows (`[projectId, digitalId]`), optionally
+ * strictly after `afterDigitalId`. Primary-key reads do not touch the secondary indexes.
+ */
+function directoryPrimaryRange(projectId: string, afterDigitalId?: number): IDBKeyRange {
+  return IDBKeyRange.bound(
+    [projectId, afterDigitalId ?? Number.NEGATIVE_INFINITY],
+    [projectId, Number.POSITIVE_INFINITY],
+    afterDigitalId !== undefined,
+    false,
+  );
 }
 
 function ensureDigitalIdDirectoryIndexes(os: IDBObjectStore): void {
@@ -545,13 +560,26 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
 
   async listDigitalIdDirectoryEntries(projectId: string): Promise<DigitalIdDirectoryEntry[]> {
-    const page = await this.queryDigitalIdDirectoryPage({
-      projectId,
-      offset: 0,
-      limit: Number.MAX_SAFE_INTEGER,
-      orderBy: 'name',
+    const rows: DigitalIdDirectoryEntry[] = [];
+    await this.iterateDigitalIdDirectory(projectId, (row) => {
+      rows.push(row);
     });
-    return page.rows;
+    return rows;
+  }
+
+  async readDigitalIdDirectoryBatch(
+    projectId: string,
+    options: DigitalIdDirectoryBatchOptions,
+  ): Promise<DigitalIdDirectoryEntry[]> {
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction(storeName, 'readonly');
+    const rows = await promisifyRequest<DigitalIdDirectoryIdbRow[]>(
+      tx
+        .objectStore(storeName)
+        .getAll(directoryPrimaryRange(projectId, options.afterDigitalId), options.limit),
+    );
+    return rows.map((row) => stripDirectoryIdbRowIfNeeded(row));
   }
 
   async queryDigitalIdDirectoryPage(
@@ -572,26 +600,19 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   async iterateDigitalIdDirectory(
     projectId: string,
     onRow: (row: DigitalIdDirectoryEntry) => void | Promise<void>,
+    options?: { batchSize?: number },
   ): Promise<void> {
-    const db = await this.db();
-    const storeName = DIRECTORY_STORES.digitalIdDirectory;
-    const tx = db.transaction(storeName, 'readonly');
-    const index = tx.objectStore(storeName).index('byProject');
-
-    await new Promise<void>((resolve, reject) => {
-      const req = index.openCursor(IDBKeyRange.only(projectId));
-      req.onsuccess = () => {
-        const cursor = req.result;
-        if (!cursor) {
-          resolve();
-          return;
-        }
-        Promise.resolve(onRow(cursor.value as DigitalIdDirectoryEntry))
-          .then(() => cursor.continue())
-          .catch(reject);
-      };
-      req.onerror = () => reject(req.error);
-    });
+    const limit = options?.batchSize ?? DIRECTORY_STREAM_BATCH_SIZE;
+    let afterDigitalId: number | undefined;
+    while (true) {
+      const rows = await this.readDigitalIdDirectoryBatch(projectId, { afterDigitalId, limit });
+      for (const row of rows) {
+        const pending = onRow(row);
+        if (pending) await pending;
+      }
+      if (rows.length < limit) return;
+      afterDigitalId = rows[rows.length - 1]!.digitalId;
+    }
   }
 
   async getDigitalIdDirectoryEntry(

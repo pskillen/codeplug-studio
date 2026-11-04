@@ -68,18 +68,69 @@ describe.each(implementations)('DigitalIdDirectory — %s', (_label, makeStore) 
     expect(await store.countDigitalIdDirectoryEntries(meta.projectId)).toBe(2);
   });
 
-  it('lists entries sorted by name', async () => {
+  it('lists entries in Digital ID order', async () => {
     const store = makeStore();
     const meta = newProjectMeta('Test');
     await store.seedProject({ meta });
 
     await store.putDigitalIdDirectoryEntriesBatch([
-      sampleEntry(meta.projectId, 2, { name: 'Zulu' }),
-      sampleEntry(meta.projectId, 1, { name: 'Alpha' }),
+      sampleEntry(meta.projectId, 2, { name: 'Alpha' }),
+      sampleEntry(meta.projectId, 10, { name: 'Bravo' }),
+      sampleEntry(meta.projectId, 1, { name: 'Zulu' }),
     ]);
 
-    const names = (await store.listDigitalIdDirectoryEntries(meta.projectId)).map((e) => e.name);
-    expect(names).toEqual(['Alpha', 'Zulu']);
+    const ids = (await store.listDigitalIdDirectoryEntries(meta.projectId)).map((e) => e.digitalId);
+    expect(ids).toEqual([1, 2, 10]);
+  });
+
+  it('reads primary-key batches by keyset and never leaks another project or index fields', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    const other = newProjectMeta('Other');
+    await store.seedProject({ meta });
+    await store.seedProject({ meta: other });
+    await store.putDigitalIdDirectoryEntriesBatch(
+      [7, 3, 9, 1, 5].map((id) => sampleEntry(meta.projectId, id)),
+    );
+    await store.putDigitalIdDirectoryEntriesBatch([sampleEntry(other.projectId, 4)]);
+
+    const first = await store.readDigitalIdDirectoryBatch(meta.projectId, { limit: 2 });
+    expect(first.map((r) => r.digitalId)).toEqual([1, 3]);
+    expect(Object.keys(first[0]!)).not.toContain('nameLower');
+
+    const second = await store.readDigitalIdDirectoryBatch(meta.projectId, {
+      afterDigitalId: 3,
+      limit: 2,
+    });
+    expect(second.map((r) => r.digitalId)).toEqual([5, 7]);
+
+    const rest = await store.readDigitalIdDirectoryBatch(meta.projectId, {
+      afterDigitalId: 7,
+      limit: 10,
+    });
+    expect(rest.map((r) => r.digitalId)).toEqual([9]);
+    expect(
+      await store.readDigitalIdDirectoryBatch(meta.projectId, { afterDigitalId: 9, limit: 10 }),
+    ).toEqual([]);
+  });
+
+  it('streams the partition across batch boundaries, including after later writes', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    await store.putDigitalIdDirectoryEntriesBatch(
+      [5, 1, 4].map((id) => sampleEntry(meta.projectId, id)),
+    );
+    await store.readDigitalIdDirectoryBatch(meta.projectId, { limit: 1 });
+    await store.putDigitalIdDirectoryEntriesBatch(
+      [3, 2, 6].map((id) => sampleEntry(meta.projectId, id)),
+    );
+
+    const seen: number[] = [];
+    await store.iterateDigitalIdDirectory(meta.projectId, (row) => void seen.push(row.digitalId), {
+      batchSize: 2,
+    });
+    expect(seen).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   it('clears only the requested project partition', async () => {

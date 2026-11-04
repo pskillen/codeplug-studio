@@ -20,6 +20,7 @@ import type {
   BatchPutItemResult,
   BatchPutResult,
   DigitalContactPut,
+  DigitalIdDirectoryBatchOptions,
   DigitalIdDirectoryPageQuery,
   DigitalIdDirectoryPageResult,
   DirectoryPersistenceChange,
@@ -33,6 +34,7 @@ import type {
   SatellitePut,
 } from './types.ts';
 import {
+  DIRECTORY_STREAM_BATCH_SIZE,
   hasDirectoryPageFilters,
   matchesDirectoryFilters,
   normalizedDirectoryFilterQuery,
@@ -80,6 +82,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   private radioBuilds: RowMap<RadioBuild> = new Map();
   private egressPaths: RowMap<EgressPath> = new Map();
   private digitalIdDirectory: Map<string, DigitalIdDirectoryEntry> = new Map();
+  /** Per-project Digital IDs, sorted lazily on read: batch reads never sort per call. */
+  private directoryIdIndex: Map<string, { ids: number[]; sorted: boolean }> = new Map();
   private listeners = new Set<PersistenceListener>();
   private directoryListeners = new Set<DirectoryPersistenceListener>();
   private notificationDepth = 0;
@@ -209,7 +213,14 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     if (entries.length === 0) return { written: 0 };
 
     for (const entry of entries) {
-      this.digitalIdDirectory.set(directoryRowKey(entry.projectId, entry.digitalId), { ...entry });
+      const key = directoryRowKey(entry.projectId, entry.digitalId);
+      const isNew = !this.digitalIdDirectory.has(key);
+      this.digitalIdDirectory.set(key, { ...entry });
+      const index = this.directoryIdIndex.get(entry.projectId);
+      if (isNew && index) {
+        index.ids.push(entry.digitalId);
+        index.sorted = false;
+      }
     }
     const first = entries[0]!;
     this.emitDirectory({ projectId: first.projectId, digitalId: first.digitalId, op: 'put' });
@@ -217,12 +228,33 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   }
 
   async listDigitalIdDirectoryEntries(projectId: string): Promise<DigitalIdDirectoryEntry[]> {
-    return queryDigitalIdDirectoryPageInMemory(this.digitalIdDirectory.values(), {
-      projectId,
-      offset: 0,
-      limit: Number.MAX_SAFE_INTEGER,
-      orderBy: 'name',
-    }).rows;
+    const rows: DigitalIdDirectoryEntry[] = [];
+    await this.iterateDigitalIdDirectory(projectId, (row) => {
+      rows.push(row);
+    });
+    return rows;
+  }
+
+  async readDigitalIdDirectoryBatch(
+    projectId: string,
+    options: DigitalIdDirectoryBatchOptions,
+  ): Promise<DigitalIdDirectoryEntry[]> {
+    const ids = this.sortedDirectoryIds(projectId);
+    let lo = 0;
+    if (options.afterDigitalId !== undefined) {
+      let hi = ids.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1;
+        if (ids[mid]! <= options.afterDigitalId) lo = mid + 1;
+        else hi = mid;
+      }
+    }
+    const rows: DigitalIdDirectoryEntry[] = [];
+    for (let i = lo; i < ids.length && rows.length < options.limit; i++) {
+      const row = this.digitalIdDirectory.get(directoryRowKey(projectId, ids[i]!));
+      if (row) rows.push({ ...row });
+    }
+    return rows;
   }
 
   async queryDigitalIdDirectoryPage(
@@ -234,12 +266,18 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   async iterateDigitalIdDirectory(
     projectId: string,
     onRow: (row: DigitalIdDirectoryEntry) => void | Promise<void>,
+    options?: { batchSize?: number },
   ): Promise<void> {
-    const rows = [...this.digitalIdDirectory.values()]
-      .filter((row) => row.projectId === projectId)
-      .sort((a, b) => a.name.localeCompare(b.name));
-    for (const row of rows) {
-      await onRow(row);
+    const limit = options?.batchSize ?? DIRECTORY_STREAM_BATCH_SIZE;
+    let afterDigitalId: number | undefined;
+    while (true) {
+      const rows = await this.readDigitalIdDirectoryBatch(projectId, { afterDigitalId, limit });
+      for (const row of rows) {
+        const pending = onRow(row);
+        if (pending) await pending;
+      }
+      if (rows.length < limit) return;
+      afterDigitalId = rows[rows.length - 1]!.digitalId;
     }
   }
 
@@ -270,6 +308,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
         deletedCount += 1;
       }
     }
+    this.directoryIdIndex.delete(projectId);
     if (deletedCount > 0) {
       this.emitDirectory({ projectId, digitalId: 0, op: 'delete' });
     }
@@ -291,6 +330,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
         deletedCount += 1;
       }
     }
+    this.directoryIdIndex.delete(query.projectId);
     if (deletedCount > 0) {
       this.emitDirectory({ projectId: query.projectId, digitalId: 0, op: 'delete' });
     }
@@ -639,6 +679,23 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
         }
       }
     }
+  }
+
+  private sortedDirectoryIds(projectId: string): number[] {
+    let index = this.directoryIdIndex.get(projectId);
+    if (!index) {
+      const ids: number[] = [];
+      for (const row of this.digitalIdDirectory.values()) {
+        if (row.projectId === projectId) ids.push(row.digitalId);
+      }
+      index = { ids, sorted: false };
+      this.directoryIdIndex.set(projectId, index);
+    }
+    if (!index.sorted) {
+      index.ids.sort((a, b) => a - b);
+      index.sorted = true;
+    }
+    return index.ids;
   }
 
   private emit(change: PersistenceChange): void {

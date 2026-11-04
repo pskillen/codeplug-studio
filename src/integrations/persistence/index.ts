@@ -12,6 +12,7 @@ export type {
   DigitalIdDirectoryPageQuery,
   DigitalIdDirectoryPageResult,
   DigitalIdDirectoryOrderBy,
+  DigitalIdDirectoryBatchOptions,
   ProjectPersistence,
   ProjectSeed,
 } from './types.ts';
@@ -24,4 +25,5 @@ export {
   matchesDirectoryFilters,
   compareDirectoryRows,
   directoryPrefixUpperBound,
+  DIRECTORY_STREAM_BATCH_SIZE,
 } from './digitalIdDirectoryQuery.ts';
