@@ -13,6 +13,10 @@ Mobile DMR + analogue radio running **OpenGD77** firmware. Same CPS CSV wire lay
 
 Shares OpenGD77 CPS and codeplug format with Baofeng DM-1701 / Retevis RT-84 (same CSV layout; watt mapping differs — see [power.md](power.md)).
 
+## USB
+
+Native USB CDC, `1fc9:0094`. The OpenGD77 receive path is the DM-1701's (inferred from the shared source tree's `PLATFORM_MD9600` branches; the MD-9600 release itself was not read) — see [protocol.md](../../opengd77/protocol.md#framing-rule-dm-1701-and-md-9600).
+
 ## Studio profile ids
 
 | Adapter      | `profileId`                | Notes                                                                                                                                                    |

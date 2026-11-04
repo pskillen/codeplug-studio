@@ -58,13 +58,13 @@ Radios without `writeVerify` skip the prompt entirely.
 
 ## Shipped adapters (Phase 0 + Phase 1)
 
-| Family                 | Hooks module                         | Staging source                | Read-back                        | Reconnect |
-| ---------------------- | ------------------------------------ | ----------------------------- | -------------------------------- | --------- |
-| AT-D890UV              | `at-d890uv/writeVerifyHooks.ts`      | upload staging + sentinel     | modelled regions + spill         | hard      |
-| RT95                   | `rt95/writeVerifyHooks.ts`           | 16 B blocks `0x0000`–`0x3290` | full `download()`                | soft      |
-| UV-5R Mini / UV-21     | `uv17pro-family/writeVerifyHooks.ts` | 64 B plaintext @ radio addr   | full `download()` (decrypt)      | soft      |
-| OpenGD77 1701 / MD9600 | `opengd77/writeVerifyHooks.ts`       | `collectDirtySectors`         | full `download()` + kept compare | hard      |
-| DM-32UV                | `dm32uv/writeVerifyHooks.ts`         | post-remap 4 KB upload blocks | bulk read staged addresses only  | soft      |
+| Family                 | Hooks module                         | Staging source                | Read-back                                               | Reconnect |
+| ---------------------- | ------------------------------------ | ----------------------------- | ------------------------------------------------------- | --------- |
+| AT-D890UV              | `at-d890uv/writeVerifyHooks.ts`      | upload staging + sentinel     | modelled regions + spill                                | hard      |
+| RT95                   | `rt95/writeVerifyHooks.ts`           | 16 B blocks `0x0000`–`0x3290` | full `download()`                                       | soft      |
+| UV-5R Mini / UV-21     | `uv17pro-family/writeVerifyHooks.ts` | 64 B plaintext @ radio addr   | full `download()` (decrypt)                             | soft      |
+| OpenGD77 1701 / MD9600 | `opengd77/writeVerifyHooks.ts`       | `collectDirtySectors`         | full `download()` + kept compare + User Database digest | hard      |
+| DM-32UV                | `dm32uv/writeVerifyHooks.ts`         | post-remap 4 KB upload blocks | bulk read staged addresses only                         | soft      |
 
 Tier-3 protocol notes: each radio's `protocol.md` under `docs/reference/radios/`.
 
