@@ -10,16 +10,17 @@ Operator zip snapshot of the **PROGRAM→QX programming clone** (`0x32A0` bytes,
 
 Backup packing: `src/integrations/radio-io/backup/regionsFromDownload.ts` (`fromRt95`). Restore payload: `src/integrations/radio-io/radios/rt95/restoreFromBackup.ts`.
 
-| Role             | Regions                                                                                                                                                                                                                        |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Restorable**   | `programming-image` — contiguous `0x0000`–`0x3290` clone (`0x32A0` bytes), including settings / DTMF / bandlimit that live in that span                                                                                        |
-| **Inspect-only** | None on this map. Studio has **no** isolated calibration or LocalInfo table, and **no serial** in the layout. Residual: if the vendor hid cal inside the clone, Restore will send those bytes — do **not** invent a cal offset |
+| Role             | Regions                                                                                                                                                                                                                                                                                   |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Restorable**   | `programming-image` — contiguous `0x0000`–`0x3290` clone (`0x32A0` bytes), including settings / DTMF / bandlimit that live in that span                                                                                                                                                   |
+| **Inspect-only** | None on this map. Studio has **no** isolated calibration or LocalInfo table, and **no serial** in the layout. Residual: the factory calibration is outside the clone (`0x3CC0`–`0x3FBF`, beyond the `0x32A0` image; F24, F115), so Restore never sends it; do **not** invent a cal offset |
 
 Write-codeplug overlays modelled channels onto an **in-session** full-clone read (`resolveRadioWriteImageForUpload`). Restore **does not** use a project bag or that pre-write read; it replays zip clone bins via `upload()` only.
 
 ## Restore path
 
 1. App identity: model match; no serial in this layout — confirm firmware / label. Serial mismatch is a hard refuse when a zip has a serial.
+   **Band check:** the backup's band code (image `0x326D`) must equal the connected radio's ident band. A mismatch is refused before any block is written: "This backup is from a radio with a different band … Restore refused, no block was written.". The stock CPS refuses a Write on the same test (F112).
 2. `Rt95Protocol.restoreFromBackup` — connect purpose `restore` (handshake `none`); restore runs the **upload** handshake itself.
 3. Copy selected restorable clone bins onto a `0x32A0` map; program `0x10` blocks `0x0000`…`0x3290`. Unselected / inspect-only bins are not written.
 4. Never LocalInfo. Never a separate calibration write (none in this layout).

@@ -248,6 +248,7 @@ Build `inspectBag` with `descriptor.hydration.extractHydration(image, { protocol
 5. If `restoreFragileAfterFactoryReset` and live discovery bases ≠ manifest: **refuse**. Remap is out of scope.
 6. If the protocol has no `restoreFromBackup`: inspect only; Restore stays disabled.
 7. Do **not** gate Restore on vestigial `prodWriteDisabled` (no adapter sets it). Deleting that flag is not this feature.
+8. **RT95:** the backup's band code (image `0x326D`) must equal the connected radio's ident band, or Restore is **refused** before any block is written with a message naming both codes. A radio of another band would otherwise get this backup's frequency limits.
 
 **Must not** call: `assemble()`, `buildRadioWriteProjection`, `prepareRadioWriteImage`, `mergeChannelsIntoHydration`, or D890 encode/assemble-from-build helpers.
 

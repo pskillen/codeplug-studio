@@ -122,6 +122,39 @@ describe('rt95 channelCodec', () => {
     expect(map.bytes.subarray(0, RT95_CHANNEL_SPAN).every((b) => b === 0xff)).toBe(true);
   });
 
+  it('writes a fresh record: signalling bytes a slot held before come out cleared (#1464)', () => {
+    // A slot that held a channel with CPS-only signalling set: byte 8 (never used by the CPS),
+    // byte 9 bits 7-4, byte 10 bits 7-4 and 1, byte 11 high nibble (DTMF ID), byte 18 (lockout),
+    // 19, 21 (optional signalling), 22, 23 (5-Tone ID) and 30-31 (custom CTCSS word).
+    const image = new Uint8Array(RT95_IMAGE_SIZE);
+    image.fill(0xff);
+    const slot = image.subarray(0, 32);
+    slot.fill(0);
+    for (const i of [8, 18, 19, 21, 22, 23, 30, 31]) slot[i] = 0xa5;
+    slot[9] = 0xf0;
+    slot[10] = 0xf2;
+    slot[11] = 0xf0;
+
+    encodeChannelsIntoImage(image, [sampleDto({ wireName: 'NEW', rxHz: 145_500_000 })]);
+
+    const rec = image.subarray(0, 32);
+    for (const i of [8, 18, 19, 21, 22, 23, 30, 31]) expect(rec[i], `byte ${i}`).toBe(0);
+    expect(rec[9]! & 0xf0).toBe(0);
+    expect(rec[10]! & 0xf2).toBe(0);
+    expect(rec[11]! & 0xf0).toBe(0);
+    expect(decodeChannelsFromImage(image).find((c) => c.slotIndex === 1)!.wireName).toBe('NEW');
+  });
+
+  it('a channel moved to another slot leaves no shadow of the previous occupant', () => {
+    const image = new Uint8Array(RT95_IMAGE_SIZE);
+    image.fill(0xff);
+    image.subarray(32, 64).fill(0x77); // slot 2 held something else, with signalling bytes
+    encodeChannelsIntoImage(image, [sampleDto({ slotIndex: 2 })]);
+    expect([...image.subarray(0, 32)].every((b) => b === 0xff)).toBe(true);
+    const rec = image.subarray(32, 64);
+    for (const i of [8, 18, 19, 21, 22, 23, 30, 31]) expect(rec[i], `byte ${i}`).toBe(0);
+  });
+
   it('round-trips a channel through encode/decode', () => {
     const dto = sampleDto({
       txTone: { kind: 'ctcss', hz: 100.0 },

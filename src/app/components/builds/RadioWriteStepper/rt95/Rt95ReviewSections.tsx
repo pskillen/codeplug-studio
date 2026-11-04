@@ -119,6 +119,19 @@ function BackupSection({ controller }: { controller: Rt95ReviewController }) {
   );
 }
 
+/**
+ * Under the Channels line: a channel write replaces each channel's record with what the library
+ * holds, so signalling set on the radio (or in the stock CPS) is reset (#1464).
+ */
+export function Rt95ChannelSignallingNote() {
+  return (
+    <Text size="sm" data-testid="rt95-channel-signalling-note">
+      Channel signalling settings (DTMF ID, 5-Tone ID, optional signalling) are reset: Studio writes
+      only what is in your library.
+    </Text>
+  );
+}
+
 function Mm9pdyModDataSection({
   modData,
 }: {

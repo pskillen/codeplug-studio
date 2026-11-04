@@ -38,11 +38,15 @@ import {
   isMm9pdyAtD890RadioIoProfileId,
   isMm9pdyDm32RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
-import { isMm9pdyRt95RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
+import {
+  isMm9pdyRt95RadioIoProfileId,
+  isRt95RadioIoProfileId,
+} from '@core/import-export/formatProfiles.ts';
 import {
   projectRt95Mm9pdy,
   rt95Mm9pdyZoneOrderedAssembled,
 } from './radioIoRt95Mm9pdyProjection.ts';
+import { foldRt95StockNames, pushRt95ChannelRoundTripWarnings } from './radioIoRt95Channels.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import {
@@ -2198,6 +2202,17 @@ export function buildRadioWriteProjection(
       egress,
       numbersBySourceChannelId,
     );
+    if (egress.profileId === 'radio-io-rt95') {
+      channels = foldRt95StockNames(channels, warnings);
+    }
+  }
+  if (isRt95RadioIoProfileId(egress.profileId)) {
+    pushRt95ChannelRoundTripWarnings({
+      channels,
+      assembled: projectionAssembled,
+      numbersBySourceChannelId,
+      warnings,
+    });
   }
 
   let channelLocations: RadioWriteProjection['channelLocations'];

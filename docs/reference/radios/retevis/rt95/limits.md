@@ -4,11 +4,15 @@ Code mirror: `src/core/radios/retevis/rt95/limits.ts` (`RT95_LIMITS`).
 
 Shared hardware / memory caps. Adapters warn or truncate at the **export / write boundary** — library CRUD stays unlimited.
 
-| Constraint                                             | Value       | Notes                                                  |
-| ------------------------------------------------------ | ----------- | ------------------------------------------------------ |
-| Max memory slots / channels                            | **200**     | CHIRP `memory_bounds=(1, 200)`                         |
-| Channel name                                           | **6** chars | Tightest CHIRP profile in Studio; shortening at export |
-| Zone / scan-list / contact / TG / RX-list organisation | N/A         | Flat-memory radio — those entities unused              |
+| Constraint                                             | Value                                    | Notes                                                                                                                                                   |
+| ------------------------------------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Max memory slots / channels                            | **200**                                  | CHIRP `memory_bounds=(1, 200)`                                                                                                                          |
+| Channel name                                           | **6** chars                              | Tightest CHIRP profile in Studio; shortening at export                                                                                                  |
+| Channel name characters (stock target)                 | printable ASCII                          | Folded at write time, case kept. The stock CPS accepts only `0-9 A-Z -` and shows the rest as spaces (F122); Studio notes this in the wire-name preview |
+| Frequency step                                         | 9 steps                                  | 2.5, 5, 6.25, 10, 12.5, 20, 25, 30, 50 kHz, stored 0-8 at `0x3201`; no per-channel step is stored (F125)                                                |
+| CTCSS / DCS                                            | 51 tones + custom / any 9-bit octal code | Studio writes the 51 tones and the 512-code DCS index; custom CTCSS is a gap ([channel-record.md](channel-record.md))                                   |
+| Channel width                                          | 12.5 / 20 / 25 kHz                       | Studio writes 12.5 and 25; 20 is written as 25 with a warning                                                                                           |
+| Zone / scan-list / contact / TG / RX-list organisation | N/A                                      | Flat-memory radio — those entities unused                                                                                                               |
 
 Caps match CHIRP `RetevisRT95vox` — see [enum-verification.md](../../../export-formats/chirp/enum-verification.md).
 

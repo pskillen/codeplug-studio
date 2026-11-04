@@ -88,6 +88,10 @@ Satellite keps has no resolver `remediation` (fixed-width radio name field, its 
 `nameTruncated` flag: a result under the write budget was shortened cleanly, one that fills the
 whole budget was cut.
 
+### Name notes (non-blocking)
+
+A row can carry a `wireNameNote`: a dimmed info icon with a tooltip beside the Export name. It is information, not a remediation and not a Write warning. Today the stock RT95 target uses it for names with characters outside `0-9 A-Z -` (including lower case), which the stock CPS shows as spaces and writes back as spaces; the MM9PDY target has no such note. See [RT95 mixing tools](../../reference/radios/retevis/rt95/README.md#mixing-studio-and-the-stock-cps).
+
 ### Suggestion rule
 
 One row offers **one suggestion per identity**, with one explicit exception: a **channel**
