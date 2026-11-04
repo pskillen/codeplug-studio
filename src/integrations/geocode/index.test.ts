@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { geocodeQuery, reverseGeocode } from './geocode.ts';
+import { geocodeQuery, reverseGeocode, searchPlaces } from './geocode.ts';
 import {
   setupIntegrationHttpTestMocks,
   teardownIntegrationHttpTestMocks,
@@ -133,5 +133,81 @@ describe('reverseGeocode', () => {
     await reverseGeocode(coords, { provider: 'photon' });
     await reverseGeocode(coords, { provider: 'photon' });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('searchPlaces', () => {
+  const tandrageeBody = JSON.stringify({
+    features: [
+      {
+        geometry: { coordinates: [-6.416, 54.355] },
+        properties: {
+          name: 'Tandragee',
+          county: 'County Armagh',
+          country: 'United Kingdom',
+          osm_value: 'village',
+        },
+      },
+      {
+        geometry: { coordinates: [-6.5, 54.4] },
+        properties: {
+          name: 'Tandragee Road',
+          state: 'Northern Ireland',
+          country: 'United Kingdom',
+        },
+      },
+    ],
+  });
+
+  it('throws when query is empty', async () => {
+    await expect(searchPlaces(' ')).rejects.toBeInstanceOf(GeocodeError);
+  });
+
+  it('returns every Photon match, biased towards near', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(tandrageeBody, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const results = await searchPlaces('Tandragee', { near: { lat: 54.5, lon: -6.0 } });
+    expect(results).toEqual([
+      {
+        lat: 54.355,
+        lon: -6.416,
+        label: 'Tandragee, County Armagh, United Kingdom',
+        kind: 'village',
+      },
+      { lat: 54.4, lon: -6.5, label: 'Tandragee Road, Northern Ireland, United Kingdom' },
+    ]);
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain('q=Tandragee');
+    expect(url).toContain('limit=5');
+    expect(url).toContain('lat=54.5');
+    expect(url).toContain('lon=-6');
+  });
+
+  it('returns an empty list when nothing matches', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({ features: [] }), { status: 200 })),
+    );
+    await expect(searchPlaces('Nowhere at all', { provider: 'photon' })).resolves.toEqual([]);
+  });
+
+  it('uses Mapbox proximity when a token is set', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({ features: [{ center: [-6.416, 54.355], place_name: 'Tandragee, UK' }] }),
+          { status: 200 },
+        ),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const results = await searchPlaces('Tandragee', {
+      mapboxToken: 'pk.test',
+      near: { lat: 54.5, lon: -6.0 },
+    });
+    expect(results).toEqual([{ lat: 54.355, lon: -6.416, label: 'Tandragee, UK' }]);
+    expect(String(fetchMock.mock.calls[0][0])).toContain('proximity=-6,54.5');
   });
 });
