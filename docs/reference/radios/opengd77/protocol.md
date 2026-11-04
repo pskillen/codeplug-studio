@@ -44,13 +44,21 @@ OpenUV380-class radios use `'X'` for write requests; GD-77-class use `'W'`. Read
 | Code  | Meaning                            |
 | ----- | ---------------------------------- |
 | `00h` | Save settings and reboot           |
-| `01h` | Reboot                             |
+| `01h` | Reboot only (no save)              |
 | `02h` | Save settings and VFOs (no reboot) |
 | `03h` | Flash LED green                    |
 | `04h` | Flash LED red                      |
 | `05h` | Re-init internal buffers           |
 | `06h` | Re-init sound buffers              |
 | `07h` | Update date-time from GPS          |
+
+Firmware citations below are the official OpenGD77 MDUV380/DM-1701 source, release R20260130 (the build the DM-1701 hardware report in #1537 runs; R20240908 is identical in this code). Paths are relative to `MDUV380_firmware/application/source/usb/` unless noted. They cite facts only; no firmware code or bytes are copied.
+
+### CPS screen stacking and control 6 sub-commands
+
+- **SHOW_CPS (`C 00`) stacks.** Every `C 00` pushes the CPS menu (`usb_com.c:664-665`) and the push does not check whether it is already on top (`application/source/user_interface/menuSystem.c:263-279`). **CLOSE_CPS (`C 05`) pops exactly one level** (`usb_com.c:683-693`). The CPS screen ignores keys and the radio stops scanning and showing the S-meter. Send `C 00` **once per session** and `C 05` once; Studio tracks whether it has shown the screen and does not send it again from the codeplug, User Database, keps or restore paths.
+- **Control 6 sub 0 (save and reboot)** switches the current zone to All Channels if channels were rewritten, saves the radio's RAM settings with `settingsSaveSettings` and the last-used-channel-in-zone table, then resets 500 ms later (`usb_com.c:702-798`). It is the normal end of a successful Write.
+- **Control 6 sub 1 (reboot only)** resets 500 ms later and saves nothing (`usb_com.c:799-807`). It is equivalent to the operator's manual power cycle and is what Studio sends **after a failed Write once any FLASH sector write began**. A reboot is the only command that clears the firmware's open-sector state and the CPS menu stack together. Studio never sends sub 0 on a failure path, because it would re-save RAM settings over a half-written FLASH. Before any sector write began, a failure sends CLOSE_CPS once instead.
 
 ## Read (`'R'`)
 
@@ -77,7 +85,40 @@ Read request carries address (BE) and length (BE); response returns up to 32 byt
 | `4`     | Write EEPROM                |
 | `7`     | Write WAV buffer            |
 
-Typical flash path: set sector → write 32-byte buffers → finish sector. EEPROM writes use command `4` with address + payload.
+Typical flash path: set sector → write 32-byte buffers → finish sector. EEPROM writes use command `4` with address + payload (GD-77 class only; the MDUV380 firmware ignores it).
+
+### ACK and NACK framing
+
+| Message             | Success                         | Failure                                  |
+| ------------------- | ------------------------------- | ---------------------------------------- |
+| `'C'` command       | one byte `'-'`                  | no reply                                 |
+| `'R'` read          | `'R'` + u16 BE length + payload | one byte `'-'` (`usb_com.c:322-329`)     |
+| `'W'` / `'X'` write | **two** bytes `{type, cmd}`     | **one** byte `'-'` (`usb_com.c:593-599`) |
+
+A write NACK is **one byte**, so a host must read **one** byte first: `'-'` is a NACK and nothing follows; any other byte is followed by the second byte, which must be `{type, cmd}`. Waiting for two bytes turns a real NACK into a timeout; accepting a `'-'` plus the next byte as a pair hides a desync (a stray `'-'` ahead of a good ACK). Studio reads write ACKs this way (`readOpenGd77WriteAck`), and drains and records any bytes already pending before every SET_SECTOR and every `C` command, so a leftover byte can never pass for the next ACK.
+
+### Why the firmware answers `'-'` to a write
+
+From `cpsHandleWriteCommand` (`usb_com.c:331-600`) and `CDC_Receive_FS` (`MDUV380_firmware/USB_DEVICE/App/usbd_cdc_if.c:280-487`):
+
+| Command                                                    | `'-'` when                                                                                                                                                                      | Evidence                |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `X 01` SET_SECTOR                                          | a sector is **already open** (a previous SET_SECTOR was never FINISHed, or a calibration write is staged). Sector index `0x10` (abs `0x10000`) is special-cased as calibration. | `usb_com.c:337-356`     |
+| `X 02` SECTOR_BUFFER                                       | **no sector is open**. Bytes outside the open sector are silently dropped, not refused.                                                                                         | `usb_com.c:358-469`     |
+| `X 03` FINISH                                              | no sector is open, or erase / page program is still busy after the wait loop.                                                                                                   | `usb_com.c:471-500`     |
+| any frame                                                  | it arrives while the previous request is **still being processed**: the USB interrupt answers `'-'` at once and drops the frame.                                                | `usbd_cdc_if.c:475-481` |
+| any frame                                                  | it overflows the 2048-byte request buffer.                                                                                                                                      | `usbd_cdc_if.c:335-344` |
+| unknown type byte (for example the `'A'` of an `AT` probe) | always.                                                                                                                                                                         | `usb_com.c:972-976`     |
+
+The firmware checks **no address bounds, alignment or protected range** on flash writes (apart from the calibration sector above). Every NACK also clears the open sector (`usb_com.c:596`), so the next SET_SECTOR after a NACK succeeds. The open-sector state is cleared only by FINISH, a NACK or a reboot: neither CLOSE_CPS nor a new USB session clears it.
+
+### Partial-sector writes
+
+The firmware reads the whole sector into its buffer at SET_SECTOR (`usb_com.c:353`) and overwrites only the bytes it is sent before FINISH writes the sector back. A host therefore **sends only the 32-byte blocks it owns**. Studio sends only the blocks inside the registered FLASH spans ([memory-layout.md](memory-layout.md)), which lie on 32-byte boundaries (asserted in code). Filling the rest of a sector with `0xff` and sending all of it would erase what the radio keeps there: the radio's own settings struct starts at `0x604B` on MDUV380 (`application/source/interfaces/settingsStorage.c:31`) and extends past the end of the first span at `0x6060`. User Database sectors are the exception: the host owns the whole sector, so all 128 blocks are sent.
+
+### Error reporting
+
+A failed flash write throws a typed error naming the command, the sector and the block, for example `OpenGD77 refused FINISH for FLASH sector 0x9c000 (sector 3 of 12): radio answered '-'`, and the Write stepper attaches the last 24 TX/RX frames under **Debug details** with a copy button. Stale bytes found on the line before the failing sector are listed in the message.
 
 ## FirmwareInfo (`'R'` mem `09h`)
 
@@ -114,6 +155,14 @@ Typical flash path: set sector → write 32-byte buffers → finish sector. EEPR
 5. Read/write 32-byte blocks against registered spans ([memory-layout.md](memory-layout.md)).
 6. Save / reboot via control commands as required; close CPS screen (`05h`).
 
+## Linux: ModemManager probes the port
+
+The DM-1701 advertises a CDC-ACM interface with the "Common AT commands" protocol, so ModemManager on Linux probes the port after every enumeration (power-up, replug, reboot from a Write) and each `AT…` byte it sends is answered `'-'`. This is **hygiene, not the cause** of the Write failure in #1537: stopping ModemManager did not make that failure go away. To stop the probing anyway, add a udev rule for the radio (`1fc9:0094`):
+
+```text
+ATTRS{idVendor}=="1fc9", ATTRS{idProduct}=="0094", ENV{ID_MM_DEVICE_IGNORE}="1"
+```
+
 ## Hung or unresponsive radio
 
 A completed `download()` is evidence of 32-byte replies, not of FLASH content. On one hung TYT MD-9600 session ([i006](../../../investigations/i006-md9600-serial-read-ident/README.md)), every FLASH (and EEPROM) `'R'` of length 32 returned the **first 32 bytes of FirmwareInfo**, and the session still finished — `expectedLength` 32 would have thrown on a 46-byte ident frame. Inspect then decoded firmware revision / build-date ASCII as channel names.
@@ -122,7 +171,7 @@ That dump shape is an **edge case**, not a hang detector. The next unresponsive 
 
 ## Write verify
 
-Upload stages each **dirty 4096-byte FLASH sector** from `collectDirtySectors` (not untouched image gaps) plus a pre-upload snapshot of **kept** regions from `writeRole.ts`. Write encode overlays modelled banks onto the **in-session pre-write FLASH prior** (same download as the dirty-sector base) — not a persisted clone bag and not a virgin `0xff` image. **Zero dirty sectors** means the modelled overlay already matched live FLASH: Studio still sends `SAVE_REBOOT`, but the DM-1701 does **not** drop to All Channels (that kick happens when FLASH is actually programmed). Digital contact names on Write use `digitalContactExportNameMode` (same map as CPS / Contacts wire preview). After codeplug dirty sectors, **RadioID directory** Write starts a qdmr-style FLASH write_start (red LED + save-settings-no-reboot) then programs occupied User Database sectors from the encoded image only — **no** read-modify-write of `0x50000`. Mixing `'R'` then `'X'` after codeplug sectors is what produced `OpenGD77 write failed (radio returned '-')` on hardware. User Database is not part of `OPENUV380_FLASH_SPANS` and not a verify-image region. **Verify write** runs after `SAVE_REBOOT` — operator waits for restart, reconnects, full `download()`, and compares sector payloads plus kept spans. Feature: [write-verify.md](../../../features/radio-read-write/write-verify.md).
+Upload stages each **dirty 4096-byte FLASH sector** from `collectDirtySectors` (not untouched image gaps) plus a pre-upload snapshot of **kept** regions from `writeRole.ts`. Write encode overlays modelled banks onto the **in-session pre-write FLASH prior** (same download as the dirty-sector base) — not a persisted clone bag and not a virgin `0xff` image. **Zero dirty sectors** means the modelled overlay already matched live FLASH: Studio still sends `SAVE_REBOOT`, but the DM-1701 does **not** drop to All Channels (that kick happens when FLASH is actually programmed). Digital contact names on Write use `digitalContactExportNameMode` (same map as CPS / Contacts wire preview). After codeplug dirty sectors, **RadioID directory** Write starts a qdmr-style FLASH write_start (red LED + save-settings-no-reboot) then programs occupied User Database sectors from the encoded image only — **no** read-modify-write of `0x50000`. The firmware's write state does not depend on earlier `'R'` reads (the open sector is the only write state), so reading before writing is not what makes a write fail; an earlier hardware `radio returned '-'` was a framing desync or another cause (see [ACK and NACK framing](#ack-and-nack-framing)). User Database is not part of `OPENUV380_FLASH_SPANS` and not a verify-image region. **Verify write** runs after `SAVE_REBOOT` — operator waits for restart, reconnects, full `download()`, and compares sector payloads plus kept spans. Feature: [write-verify.md](../../../features/radio-read-write/write-verify.md).
 
 For **Restore** (not Write): `restoreFromBackup` copies zip FLASH spans onto a **blank** prior, programs those dirty sectors, then **SAVE_REBOOT**. It does not pre-write-read live FLASH and does not arm a write projection. See [backup-restore.md](backup-restore.md). Hardware verify pending.
 
