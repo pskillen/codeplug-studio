@@ -289,6 +289,41 @@ describe('Dm32uvProtocol', () => {
     ).toBe(true);
   });
 
+  it('upload stops after a bad ACK on the first block and sends no further 0x57 frame', async () => {
+    const pipe = new Dm32ScriptedPipe();
+    const start = 0x1000;
+    scriptDm32Connect(pipe, { start, end: 0x2fff });
+    const radio = new Dm32uvProtocol();
+    await radio.connect(pipe, { settleScale: 0 });
+
+    const channelBlock = makeFirstChannelBlock(1);
+    const settingsBlock = makeEmptyBlock(DM32_METADATA.VFO_SETTINGS);
+    radio.seedDownloadCache({
+      addressBase: start,
+      mapSize: DM32_BLOCK_SIZE * 2,
+      discovered: [
+        { address: start, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' },
+        { address: 0x2000, metadata: DM32_METADATA.VFO_SETTINGS, type: 'vfo' },
+      ],
+      blocks: new Map([
+        [start, channelBlock],
+        [0x2000, settingsBlock],
+      ]),
+    });
+    const image = createMemoryMap(DM32_BLOCK_SIZE * 2);
+    image.fill(0, image.size, 0xff);
+    image.set(0, channelBlock);
+    image.set(DM32_BLOCK_SIZE, settingsBlock);
+
+    enqueueReadReply(pipe, start + 0xfff, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
+    enqueueReadReply(pipe, 0x2000 + 0xfff, new Uint8Array([DM32_METADATA.VFO_SETTINGS]));
+    pipe.enqueue(new Uint8Array([0xc0]));
+    pipe.enqueue(new Uint8Array([0x06]));
+
+    await expect(radio.upload(image, {})).rejects.toThrow(/not ACKed/);
+    expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(1);
+  });
+
   it('discovers live map and remaps VFO to a new absolute address before upload', async () => {
     const pipe = new Dm32ScriptedPipe();
     const start = 0x1000;
