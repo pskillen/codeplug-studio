@@ -92,12 +92,11 @@ export default function MapLocationPicker({
   const { maidenheadGrid } = useMapSettings();
   const hasPosition = lat != null && lon != null;
   const center: [number, number] = hasPosition ? [lat, lon] : DEFAULT_CENTER;
+  // A caller-sized map shrinks to fit beside the toolbar instead of overflowing its container (#1524).
   const mapStyle =
     height == null
       ? undefined
-      : typeof height === 'number'
-        ? { height: `${height}px` }
-        : { height };
+      : { height: typeof height === 'number' ? `${height}px` : height, minHeight: 0 };
 
   return (
     <div className="codeplug-map-wrap">

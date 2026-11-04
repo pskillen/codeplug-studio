@@ -84,7 +84,8 @@ export default function ChannelLocationSection({
     });
   };
 
-  const mapHeight = compact ? 140 : 180;
+  // Tall enough to place a marker on a street, but never taller than most of the screen (#1524).
+  const mapHeight = compact ? 'clamp(240px, 40dvh, 340px)' : 'clamp(300px, 45dvh, 480px)';
 
   return (
     <Stack gap="md">
