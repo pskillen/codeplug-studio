@@ -4,7 +4,7 @@
  * reboot-only recovery, and only in-span blocks on the wire.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   OPENGD77_WRITE_CMD_FINISH_SECTOR,
   OPENGD77_WRITE_CMD_SECTOR_BUFFER,
@@ -12,7 +12,8 @@ import {
 } from '../../kit/codecs/opengd77Serial.ts';
 import { RadioAbortedError, RadioProtocolError, RadioTimeoutError } from '../../kit/errors.ts';
 import type { MemoryMap } from '../../types.ts';
-import { OPENUV380_FLASH_SPANS } from './constants.ts';
+import type { FrameTrace } from '../../kit/frameTrace.ts';
+import { OPENGD77_SETTLE_MS, OPENUV380_FLASH_SPANS } from './constants.ts';
 import { createOpenUv380Image, writeAbs } from './memory.ts';
 import { OpenGd77Protocol } from './protocol.ts';
 import { SATELLITE_BANK_BYTES } from './satelliteCodec.ts';
@@ -422,6 +423,31 @@ describe('OpenGD77 sends only blocks inside the registered spans', () => {
 });
 
 describe('OpenGD77 sector recovery', () => {
+  /**
+   * `NOTE ... attempt N` entries the protocol traces (one per restart). The trace ring keeps only
+   * the last frames, so record the pushes as they happen; call before `upload`.
+   */
+  function watchRestartNotes(proto: OpenGd77Protocol): () => string[] {
+    const trace = (proto as unknown as { trace: FrameTrace }).trace;
+    const seen: string[] = [];
+    const push = trace.push.bind(trace);
+    trace.push = (dir, text) => {
+      if (dir === 'NOTE' && /^sector 0x\w+ attempt \d+:/.test(text)) seen.push(text);
+      push(dir, text);
+    };
+    return () => seen;
+  }
+
+  /** SECTOR_BUFFER frames the clean write sends into sector 0x0000: one pass. */
+  async function cleanPassBlocks(): Promise<number> {
+    const { pipe, proto } = await connected();
+    await proto.upload(threeSectorImage(), {});
+    return pipe
+      .writesOf(BUF)
+      .map(addr)
+      .filter((a) => a < 0x1000).length;
+  }
+
   /** Frames sent by the host from the first SET_SECTOR on. */
   function afterFirstSet(pipe: OpenGd77ScriptedPipe): Uint8Array[] {
     const first = pipe.writes.findIndex((w) => w[0] === 0x58 && w[1] === SET);
@@ -445,6 +471,7 @@ describe('OpenGD77 sector recovery', () => {
   it('a split frame (stray - ahead of a real ACK, zeros in the buffer) restarts the sector and resends it whole', async () => {
     const { pipe, proto } = await connected();
     pipe.nackOn(BUF, 3, 'split');
+    const notesOf = watchRestartNotes(proto);
     await proto.upload(threeSectorImage(), {});
     const sectorBlocks = pipe
       .writesOf(BUF)
@@ -454,6 +481,11 @@ describe('OpenGD77 sector recovery', () => {
     expect(sectorBlocks.indexOf(sectorBlocks[0]!, 1)).toBe(3);
     // The restart is SET (refused: closes the half-filled sector), then SET again.
     expect(setsFor(pipe, 0)).toBe(3);
+    // Exactly one restart: three blocks, then one whole pass, no third attempt.
+    expect(sectorBlocks).toHaveLength(3 + (await cleanPassBlocks()));
+    const notes = notesOf();
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatch(/attempt 2:/);
     expect(pipe.flashByte(0x80)).toBe(0x01);
     expect(pipe.flashByte(0x20000)).toBe(0x02);
     expect(pipe.flashByte(0x9b000)).toBe(0x03);
@@ -472,17 +504,54 @@ describe('OpenGD77 sector recovery', () => {
   it('a refused SET_SECTOR during recovery is handled: the refusal closes the sector, the next one opens it', async () => {
     const { pipe, proto } = await connected();
     pipe.nackOn(SET, 1, 'nack', 2);
+    const notesOf = watchRestartNotes(proto);
     await proto.upload(threeSectorImage(), {});
     expect(setsFor(pipe, 0)).toBe(3);
     expect(pipe.writesOf(FIN)).toHaveLength(3);
     expect(pipe.flashByte(0x80)).toBe(0x01);
+    // The second SET is retried at once, so the one restart sends exactly one pass of blocks.
+    // A refusal taken as success would send a block into a closed sector and burn attempt 3.
+    const blocks = pipe
+      .writesOf(BUF)
+      .map(addr)
+      .filter((a) => a < 0x1000);
+    expect(blocks).toHaveLength(await cleanPassBlocks());
+    const notes = notesOf();
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatch(/attempt 2:/);
   });
 
   it('a timeout restarts the sector too', async () => {
     const { pipe, proto } = await connected();
     pipe.nackOn(BUF, 2, 'silent');
+    const notesOf = watchRestartNotes(proto);
     await proto.upload(threeSectorImage(), {});
     expect(pipe.writesOf(FIN)).toHaveLength(3);
+    expect(pipe.flashByte(0x80)).toBe(0x01);
+    const blocks = pipe
+      .writesOf(BUF)
+      .map(addr)
+      .filter((a) => a < 0x1000);
+    expect(blocks).toHaveLength(2 + (await cleanPassBlocks()));
+    const notes = notesOf();
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatch(/attempt 2:/);
+  });
+
+  it('waits for the radio to settle before every restart SET_SECTOR (150 ms, twice per split)', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    const proto = new OpenGd77Protocol();
+    await proto.connect(pipe);
+    pipe.nackOn(BUF, 3, 'split');
+    const spy = vi.spyOn(globalThis, 'setTimeout');
+    try {
+      await proto.upload(threeSectorImage(), {});
+      // After the anomaly, and again after the refused SET that closes the half-filled sector.
+      const settles = spy.mock.calls.filter(([, ms]) => ms === OPENGD77_SETTLE_MS);
+      expect(settles).toHaveLength(2);
+    } finally {
+      spy.mockRestore();
+    }
     expect(pipe.flashByte(0x80)).toBe(0x01);
   });
 
