@@ -141,6 +141,34 @@ An empty table is still written (a header with zero zones), so a Write retires a
 
 After upload, Studio stages every **16-byte** block written in `0x0000`…`0x3290`. **Verify write** first waits for the radio to answer `PROGRAM` again (see above; retry every 1.5 s, up to 12 s), then runs a full download, and compares staged payloads byte-for-byte. Region rows follow [writeRole.ts](../../../../../src/integrations/radio-io/radios/rt95/writeRole.ts) (`replaced` vs `kept`). Feature: [write-verify.md](../../../../features/radio-read-write/write-verify.md).
 
+## Link framing and TX budget
+
+**Cable.** The host talks to the radio through a USB-serial bridge chip (the owner's is a Prolific PL2303GC `067b:23a3`; the picker also allows PL2303 `067b:2303`, CH340 `1a86:7523` and FT232R `0403:6001`), never native CDC. The bridge drives the mic jack's single-wire 9,600 8N1 line, which echoes every byte. The head MCU's USART1 ends the link; the radio has no USB of its own. The chip re-packetises into 64-byte bulk packets, so the host's write boundaries do not survive on the wire.
+
+**How the head app frames (static disassembly, firmware findings F73, F83, F100; not run on a bus trace).**
+
+- The USART1 ISR at `0x08014688` stores each byte into `0x20000460[idx]`. The **first byte sets the expected length**; at the last byte the ISR switches RX off and raises the frame-ready flag `*0x20000010`.
+- **Idle-gap discard:** every byte received while no frame is pending reloads a timeout, `*0x20000012 = 0x32` (`0x080146A8`). The OS-timer callback `0x0800F57C` counts it down; at 0 it re-enables RX and drops the partial frame. About 250-500 ms, inferred from the timer period in F59/F100 (not measured for this counter).
+- While a frame is pending, RX is off and further bytes are dropped. The protocol is strict request/reply and Studio waits for each reply, so that never happens.
+- Consequence: a host write cut in two pieces is reassembled, because the head counts bytes from the first. A gap inside a frame only matters above about 250 ms. At 9,600 baud a 22-byte `W` takes about 23 ms, so a split cannot reach that. Pinned by the fake-pipe test `linkSplit.test.ts` (it models the length framing; it does not prove the radio).
+- The **head bootloader** (the flasher's target) has never been seen. How it frames, and whether it checks each frame's sum, is unknown.
+
+**TX bytes per port-open** (the Web Serial writable stream; measured with the real `Rt95Protocol` against the fake radio):
+
+| Session                                                             | TX bytes | Writes | Largest frame |
+| ------------------------------------------------------------------- | -------- | ------ | ------------- |
+| Read (connect + download)                                           | 3,251    | 813    | 7 (`PROGRAM`) |
+| Stock Write / Restore (connect + pre-write read + upload)           | 21,086   | 1,627  | 22 (`W`)      |
+| MM9PDY Write, worst MMD1 (32 zones x 200 members, 200 descriptions) | 27,636   | 1,928  | 22            |
+| Check (verify session after an MM9PDY Write)                        | 4,439    | 1,110  | 7             |
+| Head firmware flash, stock V1.41 (104 frames)                       | 107,336  | 106    | 1,032         |
+| Head flash, whole 120-frame window                                  | 123,848  | -      | 1,032         |
+| Head flash, worst case (every frame sent 4 times)                   | 495,368  | -      | 1,032         |
+
+- Write, then Check, are separate port-opens (the session is released between them), as is the flash pre-flight.
+- The codeplug image is about 13 KB; the **TX** for a codeplug Write is 21-28 KB because every 16-byte block is echoed-and-acked frame by frame. Neither reaches 64 KiB, so no codeplug session was ever split by the host.
+- The **flasher** is the only RT95 path that crossed 64 KiB (frame 64, `0x08011C00`, cut at byte 513) before the Web Serial buffer fix. Every owner flash in that state passed and booted, one with a self-check of the image bytes (F101), so the pre-fix split did no harm. With the fix, even the 495 KB worst case stays under the 1 MiB ring and no stream rotation happens on this radio.
+
 ## Related
 
 - [fixtures.md](fixtures.md) · [memory-layout.md](memory-layout.md) · [settings.md](settings.md) · [backup-restore.md](backup-restore.md)
