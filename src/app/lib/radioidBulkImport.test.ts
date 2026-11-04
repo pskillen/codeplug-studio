@@ -88,6 +88,40 @@ describe('runRadioidBulkImport', () => {
     expect(await persistence.listDigitalContacts('p1')).toHaveLength(0);
   });
 
+  it('looks up only the IDs of each page and never lists the whole directory', async () => {
+    const persistence = new InMemoryProjectPersistence();
+    await persistence.putDigitalIdDirectoryEntriesBatch(
+      Array.from({ length: 50 }, (_, i) => ({
+        projectId: 'p1',
+        digitalId: 100 + i,
+        mode: 'dmr' as const,
+        name: `Other ${i}`,
+        callsign: `O${i}`,
+        city: '',
+        state: '',
+        country: '',
+      })),
+    );
+    const listSpy = vi.spyOn(persistence, 'listDigitalIdDirectoryEntries');
+    const batchSpy = vi.spyOn(persistence, 'readDigitalIdDirectoryBatch');
+    const byIdsSpy = vi.spyOn(persistence, 'getDigitalIdDirectoryEntriesByIds');
+
+    const result = await runRadioidBulkImport({
+      scope: 'page',
+      updateExisting: false,
+      projectId: 'p1',
+      listings: [listing, listingTwo],
+      persistence,
+      onProgress: () => {},
+    });
+
+    expect(result).toMatchObject({ added: 2, error: null });
+    expect(listSpy).not.toHaveBeenCalled();
+    expect(batchSpy).not.toHaveBeenCalled();
+    expect(byIdsSpy).toHaveBeenCalledTimes(1);
+    expect(byIdsSpy).toHaveBeenCalledWith('p1', [listing.id, listingTwo.id]);
+  });
+
   it('updates existing directory entries when enabled', async () => {
     const persistence = new InMemoryProjectPersistence();
     await persistence.putDigitalIdDirectoryEntriesBatch([
