@@ -26,7 +26,6 @@ import { RT95_CTCSS_VAL_TO_HZ } from './ctcssToneTable.ts';
 import {
   buildCpsImage,
   CPS_CHANNEL_FIXTURES as F,
-  cpsChannelRecord,
   cpsCtcssSweep,
   cpsNameView,
   mhz,
