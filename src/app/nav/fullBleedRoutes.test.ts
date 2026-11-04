@@ -35,4 +35,13 @@ describe('isWideDesktopPath', () => {
     expect(isWideDesktopPath('/library/talk-groups')).toBe(false);
     expect(isWideDesktopPath('/tools/nearby')).toBe(false);
   });
+
+  it('is true for the zone editor main page only', () => {
+    expect(isWideDesktopPath('/library/zones/c93dc48c-5207-4f01-b94b-e56f46e0bf3d')).toBe(true);
+    expect(isWideDesktopPath('/library/zones/c93dc48c/')).toBe(true);
+    expect(isWideDesktopPath('/library/zones/c93dc48c/add-from-map')).toBe(false);
+    expect(isWideDesktopPath('/library/zones/new')).toBe(false);
+    expect(isWideDesktopPath('/library/zones/new-from-location')).toBe(false);
+    expect(isWideDesktopPath('/library/zones/defaults')).toBe(false);
+  });
 });

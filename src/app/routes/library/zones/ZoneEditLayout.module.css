@@ -26,6 +26,16 @@
   padding: 0 16px var(--dsv2-sticky-footer-height, 3.25rem);
 }
 
+/* Zone editor main page: the members + map workspace takes the full width (#1531). */
+.scrollBodyWide {
+  max-width: none;
+}
+
+/* Form panels keep a readable width on the wide main page. */
+.formPanel {
+  max-width: 1200px;
+}
+
 .stickyHeader {
   position: sticky;
   top: 0;
