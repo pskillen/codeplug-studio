@@ -81,6 +81,21 @@ Do not paste CHIRP’s full table into Studio as GPL source — cite NeonPlug `b
 4. For **Write** upload: **Write connect uses the read handshake** so ident runs before any `R` ([#1275](https://github.com/pskillen/codeplug-studio/issues/1275)). Then in-session pre-write read of all `MEM_*` blocks (progress **Pre-write read**), overlay modelled channels onto that live packed image, then **`W` with no second handshake**. A second ident or second `F` (`needed 16 bytes`) stays silent. Restore still idents + upload magics. See [settings.md](settings.md). No persisted stash. Hardware verify pending.
 5. For **Restore** (not Write): connect skips ident; `restoreFromBackup` sends ident + upload magics, then selected zip MEM bins — never assemble / stash merge. See [backup-restore.md](backup-restore.md). Hardware verify pending.
 
+## Transport and TX budget
+
+- **Cable:** CH340 (`1a86:7523`) on the K-plug cable; the radio has no USB data port (owner RE of the Mini). The radio sees a plain 115200 8N1 UART, so a USB packet boundary never reaches it. A Web Serial split can add at most one host-side gap (milliseconds) inside a frame. The radio's inter-byte receive timeout is **unknown** (no firmware image); a gap that long would show as `Expected ACK 0x06, timed out`.
+- **Frames:** read request 4 B; write frame 68 B (4 + 0x40), the largest frame of any Read, Write, Check write or Restore (the 43 B handshake is the largest of a read-only session). 521 blocks per image.
+- **TX bytes per port open** (counted by running the real protocol against a scripted radio):
+
+| Session                                                      | TX bytes                 |
+| ------------------------------------------------------------ | ------------------------ |
+| Write (connect, pre-write read, upload; no second handshake) | 37,555 B (57% of 64 KiB) |
+| Read, or Check write (handshake + download)                  | 2,127 B                  |
+| Restore (handshake + all spans)                              | 35,471 B                 |
+
+- **Fresh port per phase:** Write releases the session after upload; Check write opens its own port (new grant, new `port.open`), as does Restore and the baud-fallback reopen. Each open starts a fresh writable stream, so no phase comes near the 1 MiB write buffer ring. Only two Writes on one stream (not a Studio flow) would pass 64 KiB. The pipe also rotates the writable before any frame that would straddle the ring boundary, pinned by `uv17pro-family/webSerialSplit.test.ts`.
+- **Read replies:** `readBlock` checks opcode, length and the echoed address (`R`+addr in the reply header); the write ACK is a bare `0x06` with no address and ACK seeking stays tolerant of leading junk.
+
 ## Write verify
 
 Upload stages **plaintext** 64-byte blocks at each radio `MEM_*` address. **Verify write** reconnects without a reboot wait, downloads and decrypts the full packed image, and compares staged payloads via packed-offset mapping. Regions follow `uv17pro-family/writeRole.ts`. Feature: [write-verify.md](../../../../features/radio-read-write/write-verify.md).
