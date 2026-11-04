@@ -39,11 +39,11 @@ import {
   filterChannelOptions,
   resolveChannelOptionId,
 } from '../../lib/channelLookup.ts';
-import { filterRowsByName } from '../../hooks/useListNameQuery.ts';
+import { filterRowsBySearchFields } from '../../hooks/useListNameQuery.ts';
 import { useMapSettings } from '../../hooks/useMapSettings.ts';
 import { useZoneEdit } from '../../routes/library/zones/ZoneEditContext.tsx';
 import { DSV2_TOKENS } from '../../theme-v2.ts';
-import { createNameColumn } from '../../lib/libraryListTable.tsx';
+import { createChannelCallsignColumn, createNameColumn } from '../../lib/libraryListTable.tsx';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
 import classes from './GrowZoneRecommendations.module.css';
 
@@ -144,7 +144,11 @@ export default function GrowZoneRecommendations() {
   }, [suggestions.channelIds, channelById]);
 
   const filteredRows = useMemo(
-    () => filterRowsByName(suggestionRows, tableSearch, (ch) => ch.name),
+    () =>
+      filterRowsBySearchFields(suggestionRows, tableSearch, [
+        (ch) => ch.callsign ?? '',
+        (ch) => ch.name,
+      ]),
     [suggestionRows, tableSearch],
   );
 
@@ -209,6 +213,7 @@ export default function GrowZoneRecommendations() {
 
   const tableColumns = useMemo((): DataTableColumn<Channel>[] => {
     return [
+      createChannelCallsignColumn<Channel>(),
       createNameColumn<Channel>({
         getName: (ch) => ch.name,
         getPath: (ch) => `/library/channels/${ch.id}`,
@@ -359,7 +364,7 @@ export default function GrowZoneRecommendations() {
             search={{
               value: tableSearch,
               onChange: setTableSearch,
-              placeholder: 'Search candidates…',
+              placeholder: 'Search callsign or name…',
             }}
             selectable
             selectedKeys={selectedSuggestionIds}

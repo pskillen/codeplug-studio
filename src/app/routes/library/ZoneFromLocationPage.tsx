@@ -41,7 +41,7 @@ import {
   filterChannelOptions,
   resolveChannelOptionId,
 } from '../../lib/channelLookup.ts';
-import { createNameColumn } from '../../lib/libraryListTable.tsx';
+import { createChannelCallsignColumn, createNameColumn } from '../../lib/libraryListTable.tsx';
 import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { DSV2_TOKENS } from '../../theme-v2.ts';
@@ -231,6 +231,7 @@ export default function ZoneFromLocationPage() {
 
   const tableColumns = useMemo((): DataTableColumn<Channel>[] => {
     return [
+      createChannelCallsignColumn<Channel>(),
       createNameColumn<Channel>({
         getName: (ch) => ch.name,
         getPath: (ch) => `/library/channels/${ch.id}`,

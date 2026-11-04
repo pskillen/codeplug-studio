@@ -27,6 +27,7 @@ export default function ZoneEditAddFromMapPage() {
 ## Behaviour
 
 - **Chrome (mk2 M3, [#943](https://github.com/pskillen/codeplug-studio/issues/943)):** `EditorHeader`, mode `SegmentedControl`, v2 `DataTable` with **Nearest member** column, multi-select + bulk add, optional map `Panel` below.
+- **Callsign** column before **Name** (both tabs share the table); the table search matches callsign or name ([channel identity](../../../docs/reference/styleguide/display.md#channel-identity-callsign-and-name-together)).
 - Computes member geolocated points via `resolveZoneMemberGeolocatedPoints`.
 - Excludes effective zone members (`resolveEffectiveZoneChannelIds`).
 - **Near locator:** `GeocodeCentreField` (`Combobox` geocode) plus Maidenhead, **Use my location**, channel pick, map click, reset to zone centre.

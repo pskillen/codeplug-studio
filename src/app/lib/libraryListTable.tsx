@@ -44,6 +44,31 @@ export function createNameColumn<T>(options: NameColumnOptions<T>): DataTableCol
   };
 }
 
+/**
+ * Callsign column for channel tables: goes before the Name column, links to the channel, `—` when
+ * empty. Callsign and name are always shown together (styleguide — channel identity).
+ */
+export function createChannelCallsignColumn<
+  T extends { id: string; callsign?: string | null },
+>(): DataTableColumn<T> {
+  return {
+    key: 'callsign',
+    header: 'Callsign',
+    width: '0.8fr',
+    sortable: true,
+    sortValue: (row) => row.callsign?.trim() ?? '',
+    render: (row) => {
+      const callsign = row.callsign?.trim();
+      if (!callsign) return '—';
+      return (
+        <Link to={`/library/channels/${row.id}`} className="libraryListNameLink">
+          <strong>{callsign}</strong>
+        </Link>
+      );
+    },
+  };
+}
+
 export function usePersistedColumnVisibility(
   storageKey: string | undefined,
   hideableColumns: { key: string; defaultVisible?: boolean }[],
