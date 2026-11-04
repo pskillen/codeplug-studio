@@ -190,6 +190,19 @@ describe('OpenGD77 stale bytes before a sector', () => {
   });
 });
 
+describe('OpenGD77 stale bytes before a command', () => {
+  it("a stale '-' is drained, so a command whose own reply never comes times out instead of succeeding", async () => {
+    const { pipe, proto } = await connected();
+    // The first control-6 command of a User Database write is the red-LED command.
+    pipe.silenceCommand(0x06, 1);
+    pipe.injectStale(new Uint8Array([0x2d]));
+    const err = await failure(() => proto.uploadUserDatabase([UDB_CONTACT], {}));
+    expect(err).toBeInstanceOf(RadioTimeoutError);
+    expect(pipe.writesOf(SET)).toHaveLength(0);
+    expect((err as RadioTimeoutError).debugText).toMatch(/STALE\s+2d/);
+  });
+});
+
 describe('OpenGD77 frame trace', () => {
   it('attaches at most the last 24 frames to a protocol error as debugText', async () => {
     const { pipe, proto } = await connected();

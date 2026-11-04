@@ -68,6 +68,9 @@ export class OpenGd77ScriptedPipe implements BytePipe {
   private flash = new Map<number, number>();
   private readonly faults: { cmd: number; nth: number; kind: WriteFault }[] = [];
   private readonly seen = new Map<number, number>();
+  /** `C` commands (by flag, 1-based nth) whose reply the radio withholds. */
+  private readonly silentCommands: { flag: number; nth: number }[] = [];
+  private readonly seenCommands = new Map<number, number>();
 
   constructor(private readonly radioType = 0x08) {
     for (const span of OPENUV380_FLASH_SPANS) {
@@ -84,6 +87,11 @@ export class OpenGd77ScriptedPipe implements BytePipe {
   /** The `nth` (1-based) write command `cmd` is NACKed with the one-byte `'-'`. */
   nackOn(cmd: number, nth = 1, kind: WriteFault = 'nack'): void {
     this.faults.push({ cmd, nth, kind });
+  }
+
+  /** The `nth` (1-based) `C` command with this flag is executed but never answered. */
+  silenceCommand(flag: number, nth = 1): void {
+    this.silentCommands.push({ flag, nth });
   }
 
   /** Put bytes on the line as if the radio had sent them unprompted. */
@@ -130,6 +138,13 @@ export class OpenGd77ScriptedPipe implements BytePipe {
           this.cpsDepth = 0;
           this.openSector = -1;
         }
+      }
+      const nth = (this.seenCommands.get(data[1]!) ?? 0) + 1;
+      this.seenCommands.set(data[1]!, nth);
+      const silentIdx = this.silentCommands.findIndex((f) => f.flag === data[1] && f.nth === nth);
+      if (silentIdx >= 0) {
+        this.silentCommands.splice(silentIdx, 1);
+        return;
       }
       this.enqueueCmdAck();
       return;
