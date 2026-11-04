@@ -9,6 +9,7 @@ import type { LibrarySlice } from '@core/services/assemble.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
 import { projectRt95Mm9pdy } from './radioIoRt95Mm9pdyProjection.ts';
+import { foldRt95StockNames } from './radioIoRt95Channels.ts';
 
 const MM = 'radio-io-rt95-mm9pdy';
 
@@ -191,5 +192,63 @@ describe('RT95 MM9PDY projection', () => {
     expect(projection.organisation.writeRt95ModData).toBeUndefined();
     expect(projection.channels[0]?.description).toBeUndefined();
     expect(projection.channels[0]?.wireName).not.toBe('TEST01');
+  });
+});
+
+describe('RT95 stock projection (#1464)', () => {
+  const STOCK = 'radio-io-rt95';
+
+  it('folds a non-ASCII radio name to printable ASCII with a hyphen, keeping case, and warns', () => {
+    const warnings: ExportWarning[] = [];
+    const dto = (wireName: string) => ({
+      slotIndex: 1,
+      empty: false,
+      wireName,
+      rxHz: 145_500_000,
+      txHz: 145_500_000,
+      rxTone: { kind: 'none' as const },
+      txTone: { kind: 'none' as const },
+      powerPercent: null,
+      bandwidth: 'FM' as const,
+    });
+    expect(foldRt95StockNames([dto('Ünïcod')], warnings)[0]?.wireName).toBe('Unicod');
+    expect(foldRt95StockNames([dto('a€b')], warnings)[0]?.wireName).toBe('a-b');
+    expect(
+      warnings.map(formatExportWarning).filter((t) => t.includes('replaced with "-"')),
+    ).toHaveLength(2);
+  });
+
+  it('keeps lower case on the stock target', () => {
+    const a = ch('a', 'Gb3', 145.5);
+    const { projection } = project(STOCK, lib([a], []));
+    expect(projection.channels[0]?.wireName).toBe('Gb3');
+  });
+
+  it('warns about a 20 kHz channel and a CTCSS tone outside the radio list, on both targets', () => {
+    const a = ch('a', 'Wide', 145.5, 'W1');
+    a.modeProfiles = [
+      {
+        mode: 'fm',
+        squelch: null,
+        rxTone: 'none',
+        txTone: 'none',
+        bandwidthKHz: 20,
+      },
+    ];
+    const b = ch('b', 'Odd', 145.6, 'O1');
+    b.modeProfiles = [
+      {
+        mode: 'fm',
+        squelch: null,
+        rxTone: 'none',
+        txTone: '88.6',
+        bandwidthKHz: 12.5,
+      },
+    ];
+    for (const id of [STOCK, MM]) {
+      const { texts } = project(id, lib([a, b], [zone('z1', 'Local', ['a', 'b'])]));
+      expect(texts.some((t) => t.includes('20 kHz channel width'))).toBe(true);
+      expect(texts.some((t) => t.includes('88.6 Hz is not in the RT95'))).toBe(true);
+    }
   });
 });

@@ -7,7 +7,7 @@ import {
   setOverride,
 } from '../../../../state/rt95RadioSettingsSession.ts';
 import type { ReviewContext } from '../reviewSections.tsx';
-import { rt95ReviewSections } from './Rt95ReviewSections.tsx';
+import { Rt95ChannelSignallingNote, rt95ReviewSections } from './Rt95ReviewSections.tsx';
 import { createRt95ReviewController } from './rt95ReviewController.ts';
 import { buildSyntheticRt95Image } from '@integrations/radio-io/radios/rt95/__fixtures__/syntheticImage.ts';
 
@@ -53,5 +53,18 @@ describe('RT95 Review settings', () => {
   it('shows backup reminder copy', () => {
     renderSections(controller());
     expect(screen.getByText(/Back up the radio before changing advanced settings/)).toBeTruthy();
+  });
+});
+
+describe('RT95 Review channel signalling note (#1464)', () => {
+  it('says channel signalling settings are reset', () => {
+    render(
+      <DesignSystemV2Provider>
+        <Rt95ChannelSignallingNote />
+      </DesignSystemV2Provider>,
+    );
+    expect(screen.getByTestId('rt95-channel-signalling-note').textContent).toMatch(
+      /DTMF ID, 5-Tone ID, optional signalling\) are reset/,
+    );
   });
 });
