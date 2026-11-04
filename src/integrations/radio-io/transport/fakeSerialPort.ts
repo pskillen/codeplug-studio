@@ -24,8 +24,14 @@ export interface FakeSerialController {
 export function createFakeSerialPort(options?: {
   /** Start with streams already "open" (default true). */
   initiallyOpen?: boolean;
+  /**
+   * Called synchronously for every chunk the pipe writes (any writable stream). Lets a test play an auto-replying
+   * radio by calling `pushRead` from inside.
+   */
+  onWrite?: (chunk: Uint8Array) => void;
 }): FakeSerialController {
   const initiallyOpen = options?.initiallyOpen ?? true;
+  const onWrite = options?.onWrite;
   const written: Uint8Array[] = [];
   let controller: ReadableStreamDefaultController<Uint8Array> | null = null;
 
@@ -47,6 +53,7 @@ export function createFakeSerialPort(options?: {
         const copy = chunk.slice();
         chunks.push(copy);
         written.push(copy);
+        onWrite?.(copy);
       },
       close() {
         // Spec "handle closing the writable stream": [[writable]] becomes null; the port stays open.
