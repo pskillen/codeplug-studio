@@ -68,7 +68,9 @@ export class TracingPipe implements BytePipe {
   }
 
   async write(data: Uint8Array): Promise<void> {
-    this.trace.push('TX', `@${this.txBytes} ${hexBytes(data)}`);
+    // Prefer the transport's own cumulative count (Web Serial pipe) over this wrapper's.
+    const offset = this.inner.txBytesWritten ?? this.txBytes;
+    this.trace.push('TX', `@${offset} ${hexBytes(data)}`);
     this.txBytes += data.length;
     await this.inner.write(data);
   }
