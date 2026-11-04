@@ -228,17 +228,17 @@ function applyToneEncode(raw: Uint8Array, tone: RadioTone, direction: 'rx' | 'tx
   }
 }
 
-export function encodeChannelRecord(dto: RadioChannelDto, prior?: Uint8Array): Uint8Array {
+/**
+ * Encode one channel as a fresh 32-byte record: Studio writes what the library holds and nothing
+ * else (#1464). Bytes it does not model (the CPS-explained DTMF ID, optional signalling, 5-Tone ID,
+ * busy-channel lockout and the other unresolved bytes) come out as their default, Off / 0. There is
+ * no read-modify-write of a channel slot, so nothing of a slot's previous occupant survives.
+ */
+export function encodeChannelRecord(dto: RadioChannelDto): Uint8Array {
   const out = new Uint8Array(RT95_CHANNEL_RECORD_SIZE);
   if (dto.empty || dto.rxHz <= 0) {
     out.fill(0xff);
     return out;
-  }
-
-  if (prior && prior.length === RT95_CHANNEL_RECORD_SIZE && !isRecordBlank(prior)) {
-    out.set(prior);
-  } else {
-    out.fill(0);
   }
 
   out.set(encodeBcdFreq(dto.rxHz), 0);
@@ -299,7 +299,10 @@ export function decodeChannelsFromImage(image: Uint8Array | MemoryMap): RadioCha
   return channels;
 }
 
-/** Clear full channel span, write DTOs, sync occupied (+ scan) bitfields. */
+/**
+ * Clear the full channel span, write each DTO as a fresh record, sync the occupied (+ scan)
+ * bitfields. A slot's earlier bytes are never carried over (see {@link encodeChannelRecord}).
+ */
 export function encodeChannelsIntoImage(
   image: Uint8Array | MemoryMap,
   channels: readonly RadioChannelDto[],
@@ -315,9 +318,7 @@ export function encodeChannelsIntoImage(
     const offset = (ch.slotIndex - 1) * RT95_CHANNEL_RECORD_SIZE;
     if (ch.empty || ch.rxHz <= 0) continue;
 
-    const prior = bytes.subarray(offset, offset + RT95_CHANNEL_RECORD_SIZE);
-    const encoded = encodeChannelRecord(ch, prior);
-    bytes.set(encoded, offset);
+    bytes.set(encodeChannelRecord(ch), offset);
     occupied.push(ch.slotIndex);
     if (ch.scanAdd) {
       scanEnabled.push(ch.slotIndex);
