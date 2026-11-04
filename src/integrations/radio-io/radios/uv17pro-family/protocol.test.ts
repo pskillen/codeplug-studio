@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BytePipe } from '../../types.ts';
+import { RadioProtocolError } from '../../kit/errors.ts';
 import { PROGRAM_RW_ACK } from '../../kit/codecs/programRw.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { createSyntheticImageBase } from '../uv5r-mini/__fixtures__/syntheticImage.ts';
@@ -232,5 +233,20 @@ describe('Uv17ProProtocol pre-write read', () => {
     expect(pipe.writes[0]).toEqual(UV5R_MINI_IDENT);
     const uploadTrailer = UV5R_MINI_MAGICS_UPLOAD[UV5R_MINI_MAGICS_UPLOAD.length - 1]!.send;
     expect(pipe.writes.some((w) => bytesEqual(w, uploadTrailer))).toBe(true);
+  });
+});
+
+describe('Uv17ProProtocol read reply address echo', () => {
+  it('fails with a protocol error when the reply echoes another address', async () => {
+    const pipe = new ScriptedPipe();
+    // The first request is for 0x0000; the scripted radio answers with a block for 0x1234 (a stale reply).
+    pipe.armReadBlocks([{ addr: 0x1234, plain: new Uint8Array(UV5R_MINI_BLOCK_SIZE) }]);
+
+    const radio = new Uv17ProProtocol(UV5R_MINI_LAYOUT);
+    await radio.connect(pipe, { settleScale: 0 });
+
+    const err = await radio.download({}).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioProtocolError);
+    expect((err as Error).message).toMatch(/echoed address 0x1234, expected 0x0/);
   });
 });
