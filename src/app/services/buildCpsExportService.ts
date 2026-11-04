@@ -21,7 +21,10 @@ import {
 import { googleDrivePort } from '@integrations/cloud/index.ts';
 import { persistence } from '../state/persistence.ts';
 import { loadLibrarySlice } from '../lib/loadLibrarySlice.ts';
-import { enrichCpsExportOptionsWithDirectory } from './cpsDirectoryExport.ts';
+import {
+  enrichCpsExportOptionsWithDirectory,
+  type EnrichCpsExportOptionsWithDirectoryOptions,
+} from './cpsDirectoryExport.ts';
 
 export interface CpsDriveUploadTarget {
   folderId: string;
@@ -84,6 +87,7 @@ async function mergeCpsExportOptions(
   egress: EgressPath,
   library: Awaited<ReturnType<typeof loadLibrarySlice>>,
   options?: CpsExportOptions,
+  enrichOptions?: EnrichCpsExportOptionsWithDirectoryOptions,
 ): Promise<CpsExportOptions> {
   const withProjectName = await mergeProjectExportOptions(store, projectId, options);
   return enrichCpsExportOptionsWithDirectory(
@@ -93,6 +97,7 @@ async function mergeCpsExportOptions(
     egress,
     library,
     withProjectName,
+    enrichOptions,
   );
 }
 
@@ -172,6 +177,7 @@ export async function listCpsExportFileNames(
     egress,
     library,
     cpsOptions,
+    { namesOnly: true },
   );
   return listExportBuildFileNames({ build, egress, library, options: exportOptions });
 }

@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { listExportBuildFileNames } from '@core/services/exportBuild.ts';
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   DM32_CPS_DIRECTORY_WARNING,
@@ -129,6 +130,43 @@ describe('enrichCpsExportOptionsWithDirectory — Anytone ID database (#1433)', 
     const texts = options.directoryProjection?.warnings?.map((w) => formatExportWarning(w)) ?? [];
     expect(texts).not.toContain(OPENGD77_CPS_DIRECTORY_WARNING);
     expect(texts).not.toContain(DM32_CPS_DIRECTORY_WARNING);
+  });
+
+  it('reads no directory rows to list file names, and the names match the full projection', async () => {
+    const { build, egress } = newRadioBuildForProfile('p1', 'anytone-at-d890uv');
+    const store = await storeWith([1001, 2002, 3003]);
+    const base = {
+      profileId: egress.profileId,
+      cpsDualBankDirectory: { includeLibraryContacts: true, includeDigitalIdDirectory: true },
+    };
+    const batchSpy = vi.spyOn(store, 'readDigitalIdDirectoryBatch');
+    const iterateSpy = vi.spyOn(store, 'iterateDigitalIdDirectory');
+
+    const namesOnly = await enrichCpsExportOptionsWithDirectory(
+      store,
+      'p1',
+      build,
+      egress,
+      library,
+      base,
+      { namesOnly: true },
+    );
+    expect(batchSpy).not.toHaveBeenCalled();
+    expect(iterateSpy).not.toHaveBeenCalled();
+    expect(namesOnly.directoryProjection?.dualBank?.directoryDigitalContacts).toEqual([]);
+
+    const full = await enrichCpsExportOptionsWithDirectory(
+      store,
+      'p1',
+      build,
+      egress,
+      library,
+      base,
+    );
+    expect(full.directoryProjection?.dualBank?.directoryDigitalContacts).toHaveLength(2);
+    expect(listExportBuildFileNames({ build, egress, library, options: namesOnly })).toEqual(
+      listExportBuildFileNames({ build, egress, library, options: full }),
+    );
   });
 
   it('adds directory rows except those for a build contact ID', async () => {

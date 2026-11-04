@@ -2,7 +2,7 @@ import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 /** CPS file export projection from directory shadow — vendor-neutral; wire at serialise boundary. */
 
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import { newDigitalContact } from '@core/domain/factories.ts';
+import { initialRevision } from '@core/models/revision.ts';
 import type { DigitalContact } from '@core/models/library.ts';
 import type { AssembledBuild, AssembledEntity } from '@core/services/assemble.ts';
 import type { ProjectedDigitalContactRow } from './digitalIdDirectoryProjection.ts';
@@ -38,6 +38,18 @@ export interface CpsDirectoryProjectionPayload {
   };
 }
 
+/**
+ * Shared fields of every projected directory contact. These entities exist only inside one export
+ * and are never stored, so there is no per-row id or clock: minting them (a UUID and a timestamp)
+ * for every row of a 300k-row directory cost seconds for nothing.
+ */
+const DIRECTORY_PROJECTION_CONTACT_BASE = {
+  revision: initialRevision(),
+  updatedAt: '1970-01-01T00:00:00.000Z',
+  mode: 'dmr',
+  comment: '',
+} as const;
+
 export function projectedRowToAssembledDigitalContact(
   row: ProjectedDigitalContactRow,
   projectId: string,
@@ -45,8 +57,11 @@ export function projectedRowToAssembledDigitalContact(
   const id = `directory-proj:${row.digitalId}`;
   return {
     entity: {
-      ...newDigitalContact(projectId, row.wireName, row.digitalId, 'dmr'),
+      ...DIRECTORY_PROJECTION_CONTACT_BASE,
       id,
+      projectId,
+      name: row.wireName,
+      digitalId: row.digitalId,
       callsign: row.callsign,
       city: row.city,
       state: row.province,
