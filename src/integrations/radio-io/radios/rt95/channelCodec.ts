@@ -318,7 +318,7 @@ export function findRt95UnrepresentableChannels(image: Uint8Array | MemoryMap): 
     const slotIndex = i + 1;
     const offset = i * RT95_CHANNEL_RECORD_SIZE;
     const raw = bytes.subarray(offset, offset + RT95_CHANNEL_RECORD_SIZE);
-    if (!isMemoryOccupied(image, slotIndex) || isRecordBlank(raw)) continue;
+    if (!isMemoryOccupied(bytes, slotIndex) || isRecordBlank(raw)) continue;
     if (getBits(raw[10]!, BIT_CHANNEL_WIDTH, 2) === WIDTH_20KHZ) width20kHz.push(slotIndex);
     const txCustom = getBit(raw[11]!, BIT_CTCSS_ENCODE_EN) && raw[13] === CTCSS_INDEX_CUSTOM;
     const rxCustom = getBit(raw[11]!, BIT_CTCSS_DECODE_EN) && raw[12] === CTCSS_INDEX_CUSTOM;
