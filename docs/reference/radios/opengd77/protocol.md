@@ -124,7 +124,7 @@ Both radios are native USB CDC (`1fc9:0094`, 64-byte packets, no bridge chip). T
 - A packet that arrives while the previous frame is still pending is answered `'-'` from the interrupt handler and dropped.
 - The write and `C` handlers treat `PLATFORM_MD9600` like the DM-1701 (`usb_com.c:66-75, 365, 398, 446`), and the flash map, settings offset and User Database geometry are shared.
 
-This is read from the DM-1701 source tree's `PLATFORM_MD9600` branches. The MD-9600's own release was not read (its tree is separate on opengd77.com), so "same receive path" for the MD-9600 is inferred, not confirmed.
+The MD-9600 receive path is confirmed, not inferred: in the MD-9600 R20260131 source, `usbd_cdc_if.c`, `usbd_desc.c` and the whole CDC library are byte-identical to the DM-1701 tree, `usb_com.c` differs only in unrelated hunks, and `usbd_conf.c` only in an interrupt priority. This is source reading only: it has not been run on an MD-9600, and older MD-9600 releases (the owner's firmware version is unknown) were not read.
 
 Every frame Studio sends is under 64 bytes (largest is the 40-byte SECTOR_BUFFER), so each is one packet, and the Web Serial writer keeps each `write()` off the host buffer boundary. No OpenGD77-specific framing change is needed.
 
