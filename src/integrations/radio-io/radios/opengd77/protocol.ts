@@ -99,6 +99,10 @@ import { ADDITIONAL_SETTINGS_BYTES, overlaySatelliteBank } from './satelliteCode
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 import { intendedOpenGd77RestoreImage } from './restoreFromBackup.ts';
+import {
+  buildUserDatabaseVerifySnapshot,
+  type OpenGd77UserDatabaseVerifySnapshot,
+} from './userDatabaseVerify.ts';
 import { encodeOpenGd77UserDatabase, decodeUserDatabaseHeader } from './userDatabaseCodec.ts';
 import {
   openGd77MissingExtendedCallsignDbWarning,
@@ -264,6 +268,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
   private lastDirtySectorCount = 0;
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
   private lastUploadKept: Map<string, Uint8Array> | undefined;
+  private lastUploadUserDatabase: OpenGd77UserDatabaseVerifySnapshot | undefined;
   private lastUserDatabaseWarning: string | undefined;
   /** Last frames on the wire; attached to protocol errors as `debugText`. */
   private trace = new FrameTrace();
@@ -744,6 +749,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
 
     const sectors = collectDirtySectors(prior, intended);
     this.lastDirtySectorCount = sectors.length;
+    this.lastUploadUserDatabase = undefined;
 
     const kept = new Map<string, Uint8Array>();
     for (const region of openGd77KeptRegions()) {
@@ -822,6 +828,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
     await this.prepareCallsignDbFlashWrite(pipe);
     const encoded = encodeOpenGd77UserDatabase(contacts);
     const payloads = buildUserDatabaseSectorPayloads(encoded);
+    this.lastUploadUserDatabase = undefined;
     const sectorAbsList = [...payloads.keys()].sort((a, b) => a - b);
     let i = 0;
     for (const sectorAbs of sectorAbsList) {
@@ -840,6 +847,8 @@ export class OpenGd77Protocol implements CloneImageRadio {
         stage: 'User Database',
       });
     }
+    // Only after every sector was programmed: a failed Write leaves nothing to check.
+    this.lastUploadUserDatabase = buildUserDatabaseVerifySnapshot(encoded);
   }
 
   /**
@@ -1041,6 +1050,13 @@ export class OpenGd77Protocol implements CloneImageRadio {
   takeUploadStagingSnapshot(): WriteVerifyStagingSnapshot | undefined {
     const snap = this.lastUploadStaging;
     this.lastUploadStaging = undefined;
+    return snap;
+  }
+
+  /** The User Database bytes the last Write sent (digested), once; undefined if it sent none. */
+  takeUploadUserDatabaseSnapshot(): OpenGd77UserDatabaseVerifySnapshot | undefined {
+    const snap = this.lastUploadUserDatabase;
+    this.lastUploadUserDatabase = undefined;
     return snap;
   }
 
