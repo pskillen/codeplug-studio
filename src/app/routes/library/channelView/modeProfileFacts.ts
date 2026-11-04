@@ -31,14 +31,10 @@ function ownIdName(library: Library, id: string | null): string | null {
   return row.name.trim() ? `${row.name} (${row.number})` : String(row.number);
 }
 
-function rxGroupListName(library: Library, id: string | null | undefined): string | null {
-  if (!id) return null;
-  return library.rxGroupLists.find((r) => r.id === id)?.name ?? null;
-}
-
 /**
  * Read-only facts for one mode profile on the channel view page. Only fields that are set are
- * returned — the view hides what the editor shows as empty inputs.
+ * returned — the view hides what the editor shows as empty inputs. The RX group list is not a
+ * fact: the view summarises it separately (`RxGroupListBrief`).
  */
 export function modeProfileFacts(profile: ChannelModeProfile, library: Library): ChannelFact[] {
   const facts: ChannelFact[] = [];
@@ -65,7 +61,6 @@ export function modeProfileFacts(profile: ChannelModeProfile, library: Library):
       push(facts, 'Colour code', profile.colourCode, true);
       push(facts, 'Timeslot', profile.timeslot != null ? `TS${profile.timeslot}` : null);
       push(facts, 'Talk group', entityRefDisplayName(profile.contactRef, library));
-      push(facts, 'RX group list', rxGroupListName(library, profile.rxGroupListId));
       push(
         facts,
         'DMR mode',
@@ -94,7 +89,6 @@ export function modeProfileFacts(profile: ChannelModeProfile, library: Library):
         push(facts, 'RX RAN', profile.rxRan, true);
       }
       push(facts, 'Talk group', entityRefDisplayName(profile.contactRef, library));
-      push(facts, 'RX group list', rxGroupListName(library, profile.rxGroupListId));
       push(
         facts,
         'Rate',
@@ -114,4 +108,10 @@ export function modeProfileFacts(profile: ChannelModeProfile, library: Library):
       break;
   }
   return facts;
+}
+
+/** The profile's RX group list id, for modes that have one (DMR, NXDN). */
+export function modeProfileRxGroupListId(profile: ChannelModeProfile): string | null {
+  if (profile.mode === 'dmr' || profile.mode === 'nxdn') return profile.rxGroupListId ?? null;
+  return null;
 }

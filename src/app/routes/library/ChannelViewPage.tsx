@@ -3,7 +3,6 @@ import { useHotkeys, useMediaQuery } from '@mantine/hooks';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { Channel, Library } from '@core/models/library.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import { duplicateChannel } from '@core/domain/factories.ts';
 import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
 import { zonesWithEffectiveChannelMembership } from '@core/domain/zoneMembership.ts';
 import { channelStatusInBuild, type ChannelBuildStatus } from '@core/domain/channelEligibility.ts';
@@ -18,6 +17,7 @@ import { radioTargetFor } from '@core/radio-targets/index.ts';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
 import UseMyLocationButton from '../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import ChannelDeleteButton from '../../components/library/ChannelDeleteButton.tsx';
+import ChannelDuplicateButton from '../../components/library/ChannelDuplicateButton.tsx';
 import ChannelDirectoryVerifyActions from '../../components/repeaters/ChannelDirectoryVerifyActions.tsx';
 import { BandPillForChannel } from '../../components/pills/BandPill.tsx';
 import {
@@ -33,12 +33,16 @@ import { channelEditPath } from '../../lib/channelPaths.ts';
 import { getModeDefinition } from '../../lib/channelModes.ts';
 import { formatFrequencyHz, formatMhzNumber } from '../../lib/formatFrequency.ts';
 import { formatAprsAssignmentSummary } from '../../lib/aprsBindingHelpers.ts';
-import { persistence } from '../../state/persistence.ts';
 import { useOperatorPosition, type OperatorPosition } from '../../state/operatorPosition.tsx';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { DSV2_TOKENS } from '../../theme-v2.ts';
-import { modeProfileFacts, type ChannelFact } from './channelView/modeProfileFacts.ts';
+import {
+  modeProfileFacts,
+  modeProfileRxGroupListId,
+  type ChannelFact,
+} from './channelView/modeProfileFacts.ts';
+import RxGroupListBrief from './channelView/RxGroupListBrief.tsx';
 import classes from './ChannelViewPage.module.css';
 
 /** Read-first channel page (#1533): what is set, where it is, and where it is used. */
@@ -97,13 +101,6 @@ function ChannelView({
   const primary = modes.length > 1 ? resolveChannelPrimaryMode(channel) : null;
   const details = detailFacts(channel, library);
 
-  function handleDuplicate() {
-    const copy = duplicateChannel(projectId, channel);
-    void persistence.putChannel(copy, null).then((result) => {
-      if (result.ok) navigate(channelEditPath(copy.id));
-    });
-  }
-
   return (
     <DesignSystemV2Provider>
       <div className={[classes.root, isMobile ? classes.compact : ''].join(' ')}>
@@ -133,9 +130,7 @@ function ChannelView({
           >
             Edit
           </Button>
-          <Button variant="outline" size="sm" onClick={handleDuplicate}>
-            Duplicate
-          </Button>
+          <ChannelDuplicateButton projectId={projectId} getSource={() => channel} />
           <ChannelDeleteButton channel={channel} onDeleted={() => navigate('/library/channels')} />
         </div>
 
@@ -171,15 +166,17 @@ function ChannelView({
             <div className={classes.column}>
               {channel.modeProfiles.map((profile) => {
                 const facts = modeProfileFacts(profile, library);
+                const rxGroupListId = modeProfileRxGroupListId(profile);
+                const label = getModeDefinition(profile.mode).label;
                 return (
-                  <Panel key={profile.mode} title={getModeDefinition(profile.mode).label}>
-                    {facts.length > 0 ? (
-                      <FactList facts={facts} />
-                    ) : (
-                      <p className={classes.muted}>
-                        No {getModeDefinition(profile.mode).label} settings set.
-                      </p>
-                    )}
+                  <Panel key={profile.mode} title={label}>
+                    {facts.length > 0 ? <FactList facts={facts} /> : null}
+                    {rxGroupListId ? (
+                      <RxGroupListBrief listId={rxGroupListId} library={library} />
+                    ) : null}
+                    {facts.length === 0 && !rxGroupListId ? (
+                      <p className={classes.muted}>No {label} settings set.</p>
+                    ) : null}
                   </Panel>
                 );
               })}
@@ -340,6 +337,11 @@ function LocationPanel({
           channels={channels}
           highlightChannelId={channel.id}
           operatorPosition={position}
+          distanceLine={
+            position && metrics
+              ? { from: position, to: location, label: formatDistanceKmAndMi(metrics.distanceM) }
+              : null
+          }
           showControls={false}
           defaultShowZones={false}
           height={isMobile ? 'clamp(220px, 35dvh, 300px)' : 'clamp(280px, 40dvh, 420px)'}

@@ -1,7 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
-import { emptyLibrary, newChannel, newRadioBuild, newZone } from '@core/domain/factories.ts';
+import {
+  emptyLibrary,
+  newChannel,
+  newRadioBuild,
+  newRxGroupList,
+  newTalkGroup,
+  newZone,
+} from '@core/domain/factories.ts';
 import { addChannelsToZoneMembers } from '@core/domain/zoneMembership.ts';
 import type { Channel } from '@core/models/library.ts';
 import DesignSystemV2Provider from '../../components/v2/DesignSystemV2Provider.tsx';
@@ -9,6 +16,17 @@ import { OperatorPositionProvider } from '../../state/operatorPosition.tsx';
 import ChannelViewPage from './ChannelViewPage.tsx';
 
 vi.mock('../../components/CodeplugMap/CodeplugMap.tsx', () => ({ default: () => null }));
+
+const talkGroups = Array.from({ length: 14 }, (_, i) =>
+  newTalkGroup('p1', i === 0 ? 'Scotland' : `TG ${i}`, 2350 + i),
+);
+const rxList = {
+  ...newRxGroupList('p1', 'BrandMeister NI'),
+  members: talkGroups.map((tg, i) => ({
+    ref: { kind: 'talkGroup' as const, id: tg.id },
+    ...(i === 0 ? { timeSlotOverride: 1 as const } : {}),
+  })),
+};
 
 const channel: Channel = {
   ...newChannel('p1', 'Newry', 'GB3NY'),
@@ -19,13 +37,27 @@ const channel: Channel = {
   maidenheadLocator: 'IO64tf',
   modeProfiles: [
     { mode: 'fm', rxTone: '110.9', txTone: '110.9', squelch: null, bandwidthKHz: 12.5 },
+    {
+      mode: 'dmr',
+      colourCode: 1,
+      timeslot: 2,
+      ownDigitalIdId: null,
+      contactRef: null,
+      rxGroupListId: rxList.id,
+    },
   ],
 };
 const zone = {
   ...newZone('p1', 'Mourne'),
   members: addChannelsToZoneMembers([], [channel.id]),
 };
-const library = { ...emptyLibrary(), channels: [channel], zones: [zone] };
+const library = {
+  ...emptyLibrary(),
+  channels: [channel],
+  zones: [zone],
+  talkGroups,
+  rxGroupLists: [rxList],
+};
 const build = { ...newRadioBuild('p1', 'retevis-rt95'), name: 'Handheld' };
 
 vi.mock('../../state/useLibrary.ts', () => ({
@@ -65,6 +97,18 @@ describe('ChannelViewPage', () => {
     expect(screen.getByRole('link', { name: 'Handheld' })).toBeInTheDocument();
     expect(screen.getByText('Included')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'How far is this from me?' })).toBeInTheDocument();
+  });
+
+  it('summarises the DMR RX group list, capped with a link to the rest', () => {
+    renderAt(`/library/channels/${channel.id}`);
+    expect(screen.getAllByRole('link', { name: 'BrandMeister NI' })[0]).toHaveAttribute(
+      'href',
+      `/library/rx-group-lists/${rxList.id}`,
+    );
+    expect(screen.getByText('14 talk groups · 1 on TS1')).toBeInTheDocument();
+    const members = screen.getByRole('list', { name: 'BrandMeister NI members' });
+    expect(members).toHaveTextContent('Scotland2350TS1');
+    expect(screen.getByRole('link', { name: '+2 more' })).toBeInTheDocument();
   });
 
   it('opens the editor from the Edit button', () => {
