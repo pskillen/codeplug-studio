@@ -148,6 +148,23 @@ describe('OpenGD77 write verify covers the User Database', () => {
     expect(result.regions.find((r) => r.group === 'user-database')!.status).toBe('mismatch');
   });
 
+  it('a silent split that passed the protocol layer is caught by Check write', async () => {
+    // Every split the fake can model (busy or not, B reply dropped or not, at any frame) is caught
+    // and restarted by the protocol's own sector read-back, so none gets through to this check. What
+    // a silent split would leave, if one did, is the firmware's view of the cut frame: a zero-padded
+    // SECTOR_BUFFER, ACKed, programmed as zeros. Plant exactly that after a Write that reported success.
+    const { pipe, captured, checker } = await writeThenReconnect(400);
+    const at = 0x50000 + 4096 + 64;
+    for (let i = 0; i < 32; i++) pipe.plantByte(at + i, 0x00);
+    const result = await hooks.runVerify(asSession(checker), captured!);
+    expect(result.ok).toBe(false);
+    const udb = result.staging.mismatches.filter((m) => m.regionLabel === 'User Database');
+    expect(udb).toHaveLength(1);
+    expect(udb[0]!.kind).toBe('mismatch');
+    expect(udb[0]!.expectedDigest).toMatch(/^crc32:/);
+    expect(udb[0]!.actualDigest).not.toBe(udb[0]!.expectedDigest);
+  });
+
   it('a wiped header fails the check with one header mismatch', async () => {
     const { pipe, captured, checker } = await writeThenReconnect(400);
     for (let i = 0; i < 12; i++) pipe.plantByte(0x50000 + i, 0xff);
