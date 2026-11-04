@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RadioDigitalContactDto } from '../../radioChannelDto.ts';
+import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
 import type { RadioSession } from '../../types.ts';
 import { OpenGd77Protocol } from './protocol.ts';
 import { createOpenGd77WriteVerifyHooks } from './writeVerifyHooks.ts';

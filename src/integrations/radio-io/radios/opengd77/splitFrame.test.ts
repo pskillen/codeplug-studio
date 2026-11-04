@@ -13,7 +13,7 @@ import {
   OPENGD77_WRITE_CMD_SET_SECTOR,
 } from '../../kit/codecs/opengd77Serial.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
-import type { RadioDigitalContactDto } from '../../radioChannelDto.ts';
+import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
 import { createFakeSerialPort } from '../../transport/fakeSerialPort.ts';
 import {
   openWebSerialPipe,
