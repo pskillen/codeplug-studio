@@ -11,7 +11,7 @@ Deep dive for **`ZoneMemberEditor`** and the mk2 zone edit workspace (E2).
 Manages zone membership on the **Membership** family (`MembershipPanel`, `MembershipRow`, `AddMembersScreen`, `MembershipPoolRow`). The zone edit workspace (`/library/zones/:id`) is one coherent screen:
 
 1. **Members** — reorderable list (export order) with find-in-list, Sort…, bulk move/remove, drag; **Add members** opens the pool overlay.
-2. **Coverage** — map stack (C7) beside members on desktop; stacked on narrow.
+2. **Coverage** — map stack (C7) beside members on desktop (1.7 : 1, map never below `min(420px, 40%)`); stacked, with a full-width map, below `70em`. The main page uses the full window width on desktop (no 75% column, no 1200px body cap; the Identity panel keeps a 1200px width) ([#1531](https://github.com/pskillen/codeplug-studio/issues/1531)).
 3. **Scanning behaviour** — per direct channel member Auto / Force / Skip (`includeInScanList`); not on member rows.
 
 **Create** (`/library/zones/new`) uses `mode="full"` — members panel + inline add pool.

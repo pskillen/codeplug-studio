@@ -47,7 +47,7 @@ export default function ZoneEditMainPage() {
 
   return (
     <>
-      <Panel title="Identity">
+      <Panel title="Identity" className={classes.formPanel}>
         <div className={classes.fieldStack}>
           <FormField label="Name">
             <TextInput

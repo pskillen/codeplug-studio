@@ -23,11 +23,21 @@ export function isFullBleedPath(pathname: string, mobile = false): boolean {
   return MOBILE_FULL_BLEED_PATHS.includes(trimmed);
 }
 
+/** Zone routes under `/library/zones/` that are not a zone id. */
+const ZONE_NON_ID_SEGMENTS: readonly string[] = ['new', 'new-from-location', 'defaults'];
+
+/** The zone editor's main page (`/library/zones/:zoneId`): members beside the Coverage map. */
+function isZoneEditMainPath(trimmed: string): boolean {
+  const match = /^\/library\/zones\/([^/]+)$/.exec(trimmed);
+  return match != null && !ZONE_NON_ID_SEGMENTS.includes(match[1]);
+}
+
 /**
  * Pages whose desktop body uses the full window width instead of the centred 75% column: the
- * list + map pages above, where the column left the map pane a sliver at mid-width windows (#1524).
+ * list + map pages above (#1524) and the zone editor's main page (#1531), where the column left
+ * the map a sliver at mid-width windows.
  */
 export function isWideDesktopPath(pathname: string): boolean {
   const trimmed = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
-  return MOBILE_FULL_BLEED_PATHS.includes(trimmed);
+  return MOBILE_FULL_BLEED_PATHS.includes(trimmed) || isZoneEditMainPath(trimmed);
 }

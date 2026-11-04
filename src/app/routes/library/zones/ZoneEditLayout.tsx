@@ -1,4 +1,4 @@
-import { Link, Navigate, Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, Outlet, useMatch, useNavigate, useParams } from 'react-router-dom';
 import { useMediaQuery } from '@mantine/hooks';
 import { useMemo } from 'react';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
@@ -16,6 +16,8 @@ import classes from './ZoneEditLayout.module.css';
 function ZoneEditChrome() {
   const navigate = useNavigate();
   const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
+  // The main page puts members beside the map, so it drops the body width cap (#1531).
+  const isMainPage = useMatch('/library/zones/:zoneId') != null;
   const {
     previewZone,
     library,
@@ -51,7 +53,11 @@ function ZoneEditChrome() {
       {displayError ? <p className={classes.error}>{displayError}</p> : null}
 
       <div
-        className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : '']
+        className={[
+          classes.scrollBody,
+          isMainPage ? classes.scrollBodyWide : '',
+          isMobile ? classes.scrollBodyCompact : '',
+        ]
           .filter(Boolean)
           .join(' ')}
       >

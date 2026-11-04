@@ -5,13 +5,14 @@
 }
 
 .membersColumn {
-  flex: 1.5;
+  flex: 1.7 1 0;
   min-width: 0;
 }
 
+/* Same split as ListMapLayout: never a sliver, the members list gives way first (#1531). */
 .mapColumn {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 0;
+  min-width: min(420px, 40%);
   /* Stays in view while the member list scrolls. */
   position: sticky;
   top: 12px;
@@ -21,7 +22,8 @@
   scroll-margin-top: 80px;
 }
 
-@media (max-width: 48em) {
+/* Stack (members, then a full-width map) until side by side leaves the map a usable width (#1531). */
+@media (max-width: 70em) {
   .workspace {
     flex-direction: column;
   }
@@ -29,6 +31,7 @@
   .membersColumn,
   .mapColumn {
     width: 100%;
+    min-width: 0;
   }
 
   .mapColumn {
