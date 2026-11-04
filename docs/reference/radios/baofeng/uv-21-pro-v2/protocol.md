@@ -84,11 +84,11 @@ Do not paste CHIRP’s full table into Studio as GPL source — cite CHIRP drive
 - **Frames:** read request 4 B; write frame 68 B (4 + 0x40), the largest frame of any Read, Write, Check write or Restore (the 43 B handshake is the largest of a read-only session). 526 blocks per image.
 - **TX bytes per port open** (counted by running the real protocol against a scripted radio):
 
-| Session                                                      | TX bytes                 |
-| ------------------------------------------------------------ | ------------------------ |
+| Session                                                      | TX bytes                                                                   |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------- |
 | Write (connect, pre-write read, upload; no second handshake) | 37,915 B (58% of the old 64 KiB buffer, about 4% of the 1 MiB host buffer) |
-| Read, or Check write (handshake + download)                  | 2,147 B                  |
-| Restore (handshake + all spans)                              | 35,811 B                 |
+| Read, or Check write (handshake + download)                  | 2,147 B                                                                    |
+| Restore (handshake + all spans)                              | 35,811 B                                                                   |
 
 - **Fresh port per phase:** Write releases the session after upload; Check write opens its own port (new grant, new `port.open`), as does Restore and the baud-fallback reopen. Each open starts a fresh writable stream, so no phase comes near the 1 MiB write buffer ring. A Write stayed under the old 64 KiB buffer as well; about 28 Writes on one stream (not a Studio flow) would be needed to pass 1 MiB. The pipe also rotates the writable before any frame that would straddle the ring boundary, pinned by `uv17pro-family/webSerialSplit.test.ts`.
 - **Read replies:** `readBlock` checks opcode, length and the echoed address (`R`+addr in the reply header); the write ACK is a bare `0x06` with no address and ACK seeking stays tolerant of leading junk.
