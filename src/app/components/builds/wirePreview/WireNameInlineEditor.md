@@ -1,7 +1,7 @@
 ## Purpose
 
 Shared wire-name inline editor (wire-preview rework phase 6) — the one place a wire name gets
-edited without a modal, per [wire-name-preview SKILL](../../../../.claude/skills/wire-name-preview/SKILL.md).
+edited without a modal, per the `wire-name-preview` skill.
 Used by [`WirePreviewExportNameCell`](./WirePreviewExportNameCell.md) (CPS list),
 [`WirePreviewBulkEditTable`](./WirePreviewBulkEditTable.md) (bulk edit, `deferCommit`),
 [`CommonOverrideSection`](./overrideModalSections/CommonOverrideSection.tsx) (zone/CHIRP modal),
@@ -52,4 +52,4 @@ and `SatelliteEncodedNameCell` (satellite keps).
 - [wire-preview.md](../../../../docs/features/builds/wire-preview.md)
 - [WireNameRemediationMarker.md](./WireNameRemediationMarker.md)
 - [WirePreviewExportNameCell.md](./WirePreviewExportNameCell.md)
-- `.claude/skills/wire-name-preview/SKILL.md`
+- the `wire-name-preview` skill (pskillen/agent-skills)

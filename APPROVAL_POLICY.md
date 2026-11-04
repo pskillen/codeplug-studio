@@ -66,7 +66,7 @@ CI still runs on every PR via [`.github/workflows/pull-request.yaml`](.github/wo
 
 ## Documentation expectations (not blocking alone)
 
-Per [documentation-deliverables](.cursor/rules/documentation-deliverables.mdc) and [git-workflow](.cursor/skills/git-workflow/SKILL.md):
+Per [documentation-deliverables](.cursor/rules/documentation-deliverables.mdc) and the `git-workflow` skill ([pskillen/agent-skills](https://github.com/pskillen/agent-skills)):
 
 - Feature behaviour changes should update tier-1 docs under `docs/features/` in the same PR
 - New reusable components under `src/app/components/` should include a sidecar `.md`

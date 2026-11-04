@@ -22,4 +22,3 @@ Used by repeater directory search, OpenAIP, RadioID, and channel-set import page
 ## Related
 
 - [EditorHeader](../v2/EditorHeader.md)
-- [design-system-v2 Batch 5](../../../docs/features/design-system-v2/design-system-v2-progress.md)

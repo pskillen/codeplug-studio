@@ -2,7 +2,7 @@
 
 Generic column reference for deferred OpenGD77 CPS files. **Feature availability varies by radio** — see [profiles.md](profiles.md).
 
-**App status:** Both files are **skipped on import**. Export includes **header-only** bodies inside the ZIP bundle. OpenGD77 APRS body export: [#442](https://github.com/pskillen/codeplug-studio/issues/442); see [opengd77-outstanding.md](../../../features/import-export/opengd77-outstanding.md).
+**App status:** Both files are **skipped on import**. Export includes **header-only** bodies inside the ZIP bundle. OpenGD77 APRS body export: [#442](https://github.com/pskillen/codeplug-studio/issues/442); see [import/export known gaps](../../../features/import-export/README.md#known-gaps).
 
 ## DTMF.csv
 
@@ -68,4 +68,4 @@ When APRS/DTMF are modelled, add first-class entities or profile-scoped config s
 
 - [Channels — APRS column](channels.md)
 - [OpenGD77 hub](README.md)
-- [opengd77-outstanding.md](../../../features/import-export/opengd77-outstanding.md) · APRS [#442](https://github.com/pskillen/codeplug-studio/issues/442)
+- [Import/export known gaps](../../../features/import-export/README.md#known-gaps) · APRS [#442](https://github.com/pskillen/codeplug-studio/issues/442)

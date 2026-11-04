@@ -1,5 +1,6 @@
 # Protocol kit architecture (WebSerial spike)
 
+**Shipped:** transport + kit core + sibling codecs + **UV-5R Mini adapter + registry** ([#615](https://github.com/pskillen/codeplug-studio/issues/615)–[#617](https://github.com/pskillen/codeplug-studio/issues/617), [#630](https://github.com/pskillen/codeplug-studio/issues/630), [#631](https://github.com/pskillen/codeplug-studio/issues/631), [#646](https://github.com/pskillen/codeplug-studio/issues/646)). **Next:** connect UI [#618](https://github.com/pskillen/codeplug-studio/issues/618), firmware gate [#619](https://github.com/pskillen/codeplug-studio/issues/619); OpenGD77 adapters [#624](https://github.com/pskillen/codeplug-studio/issues/624)/[#625](https://github.com/pskillen/codeplug-studio/issues/625); AT-D890UV adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649). Listed under the hub's [known gaps](README.md#known-gaps).
 **Purpose:** Document recommended module boundaries and TypeScript shapes for reusable browser radio I/O. Originated as the [#603](https://github.com/pskillen/codeplug-studio/issues/603) spike deliverable; transport + kit core are now implemented under `src/integrations/radio-io/` ([#615](https://github.com/pskillen/codeplug-studio/issues/615), [#616](https://github.com/pskillen/codeplug-studio/issues/616)).
 
 **Hub:** [radio-read-write/README.md](README.md) · **Epic:** [#594](https://github.com/pskillen/codeplug-studio/issues/594)
@@ -314,13 +315,10 @@ src/integrations/radio-io/
   index.ts
 ```
 
-**Shipped:** transport + kit core + sibling codecs + **UV-5R Mini adapter + registry** ([#615](https://github.com/pskillen/codeplug-studio/issues/615)–[#617](https://github.com/pskillen/codeplug-studio/issues/617), [#630](https://github.com/pskillen/codeplug-studio/issues/630), [#631](https://github.com/pskillen/codeplug-studio/issues/631), [#646](https://github.com/pskillen/codeplug-studio/issues/646)). **Next:** connect UI [#618](https://github.com/pskillen/codeplug-studio/issues/618), firmware gate [#619](https://github.com/pskillen/codeplug-studio/issues/619); OpenGD77 adapters [#624](https://github.com/pskillen/codeplug-studio/issues/624)/[#625](https://github.com/pskillen/codeplug-studio/issues/625); AT-D890UV adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649). Listed in [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md).
-
 New adapters: [adding-a-radio-adapter.md](adding-a-radio-adapter.md).
 
 ## Related
 
-- [browser-radio-io-progress.md](browser-radio-io-progress.md)
 - [DESIGN.md — intentional goals](../../../DESIGN.md)
 - [AGENTS.md — vendor boundaries](../../../AGENTS.md)
 - NeonPlug [`src/radios/README.md`](https://github.com/infamy/NeonPlug/blob/main/src/radios/README.md)

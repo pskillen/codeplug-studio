@@ -20,7 +20,7 @@ import BuildFooter from './components/BuildFooter/BuildFooter.tsx';
 
 ## Behaviour
 
-Reads `__BUILD_ENV__` and `__BUILD_VERSION__` from Vite `define` (see `.cursor/skills/version-number/SKILL.md`).
+Reads `__BUILD_ENV__` and `__BUILD_VERSION__` from Vite `define` (see the `version-number` skill (pskillen/agent-skills)).
 
 In-app **Cookies**, **Privacy**, and **Terms** links use React Router (`Link`). **Repository** and **Report a bug** use external anchors from `src/app/lib/githubLinks.ts` (`target="_blank"`, `rel="noreferrer"`).
 

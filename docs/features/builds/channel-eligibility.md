@@ -69,4 +69,3 @@ A confirm dialog warns that slot/member order may need redoing.
 
 - [builds hub](README.md)
 - [cps-services.md](../import-export/cps-services.md) — `assemble` pipeline
-- Execution log: [rf-channel-eligibility-progress.md](rf-channel-eligibility-progress.md)

@@ -98,8 +98,6 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [export-pathway-parity.md](../import-export/export-pathway-parity.md) | Web Serial Write must match sibling CPS/NeonPlug egresses for the same radio ([#776](https://github.com/pskillen/codeplug-studio/issues/776))                                             |
 | [adding-a-radio-adapter.md](adding-a-radio-adapter.md)                | Checklist for new Web Serial radio modules (living — update as we learn)                                                                                                                  |
-| [browser-radio-io-progress.md](browser-radio-io-progress.md)          | Program progress for epic #594                                                                                                                                                            |
-| [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md)    | Open debt with linked issues                                                                                                                                                              |
 | [danger-zone.md](danger-zone.md)                                      | Danger zone: jobs that change the radio itself (AT-D890 frequency range change). Rules, the range-change wizard, journal and resume, engine anchors, radio checks RT-1 to RT-10 (pending) |
 | [protocol-kit-architecture.md](protocol-kit-architecture.md)          | Spike deep-dive — kit vs per-radio modules                                                                                                                                                |
 | [backup-restore.md](backup-restore.md)                                | Operator backup zip + inspect + restore (not Write-codeplug). Restore shipped for D890 / OpenGD77 / UV-17Pro / DM-32 / RT95; **hardware verify pending**.                                 |
@@ -136,6 +134,40 @@ New adapters: follow [adding-a-radio-adapter.md](adding-a-radio-adapter.md).
 After a successful DM-32 Write, stock and MM9PDY tell the operator to power the radio off and on before keypad use, because the session leaves the previous page map in place ([protocol](../../reference/radios/baofeng/dm-32uv/protocol.md#write-codeplug-4kb-block)).
 
 **Residual gap:** [#688](https://github.com/pskillen/codeplug-studio/issues/688) hardware/research backlog under [#636](https://github.com/pskillen/codeplug-studio/issues/636) (lab smoke for zone membership, emergency tag, scan IDs 16–32, etc.). Encode fidelity tickets ([#661](https://github.com/pskillen/codeplug-studio/issues/661), [#666](https://github.com/pskillen/codeplug-studio/issues/666), [#708](https://github.com/pskillen/codeplug-studio/issues/708)) closed 2026-07-25.
+
+## Known gaps
+
+What this doesn't do yet. Delete a line when its gap is fixed.
+
+### AT-D890UV APRS serial Write
+
+- Hardware Read→Write→Read-back of modelled digital APRS fields after [#884](https://github.com/pskillen/codeplug-studio/issues/884) cache-sync fix
+- AmAir/FM cross-bank `channelN` refs on serial Write — [#756](https://github.com/pskillen/codeplug-studio/issues/756)
+
+### AT-D890UV radio settings
+
+- PR 4d (Export and Backup pages: backups this session)
+- Start-up channel `+0xD6..+0xDA` (zone and channel byte encodings not settled: the settings page leaves it out; a later slice settles it with an emulator boot pair; PR 5 left it off the page) and the key-lock scope `+0xBE` (bits not settled statically)
+- Last-caller value order and the time-slot / colour-code bits on a DMR channel (radio checks RS8b, RS8c)
+- Rescue path (firmware Q75): can a Read open while the boot password prompt is up? Try it in RS9. Until known the password warning says a forgotten password blocks programming
+- Auto-repeater limits (`+0xC4..+0xD3`, `+0xF4..+0x103`) and offset indexes: needs the per-range clamp tables and the offset list storage before they can be offered
+- Owner radio checks RS1, RS2, RS4–RS7, RS8, RS8b, RS8c, RS9, RS10, RS10c, RS12, RS18 (see the feature page)
+
+### AT-D890UV Write-path safety (WATCH-08)
+
+- Full firmware band-mode table validation — defer to follow-up issue under [#645](https://github.com/pskillen/codeplug-studio/issues/645)
+
+### Browser radio I/O
+
+- Gate direct-write on firmware catalog — [#619](https://github.com/pskillen/codeplug-studio/issues/619) (depends on [#613](https://github.com/pskillen/codeplug-studio/issues/613))
+- TYT MD-9600 / RT-90 OpenGD77 adapter — [#625](https://github.com/pskillen/codeplug-studio/issues/625) (depends on [#623](https://github.com/pskillen/codeplug-studio/issues/623) docs + [#631](https://github.com/pskillen/codeplug-studio/issues/631) serial kit)
+- D878UVII Web Serial adapter — [#650](https://github.com/pskillen/codeplug-studio/issues/650) (depends on [#648](https://github.com/pskillen/codeplug-studio/issues/648) docs; parent epic [#645](https://github.com/pskillen/codeplug-studio/issues/645))
+
+### Generic write verify platform
+
+- Hardware verify (post-merge): Manual AT-D890UV Write → reboot → Verify write smoke (regression)
+- Hardware verify (post-merge): Manual RT95 / UV / DM32 soft-reconnect verify smoke
+- Hardware verify (post-merge): Manual OpenGD77 hard-reconnect verify smoke after `SAVE_REBOOT`
 
 ## Related
 

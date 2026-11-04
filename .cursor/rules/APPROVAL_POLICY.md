@@ -20,7 +20,7 @@ These files define the internal model, layer direction, and documentation tiers.
 
 ## Out of scope for this policy
 
-Changes to `.cursor/skills/**` and non-boundary rules inherit the root [`APPROVAL_POLICY.md`](../../APPROVAL_POLICY.md) permissive default.
+Non-boundary rules inherit the root [`APPROVAL_POLICY.md`](../../APPROVAL_POLICY.md) permissive default.
 
 ## Auto-approve
 

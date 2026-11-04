@@ -18,12 +18,10 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 ## Documentation map
 
-| Doc                                                      | Purpose                                                  |
-| -------------------------------------------------------- | -------------------------------------------------------- |
-| [android-app-progress.md](android-app-progress.md)       | Execution log for Epic #747                              |
-| [android-app-outstanding.md](android-app-outstanding.md) | Discovered debt and follow-ups                           |
-| [store-assets/README.md](store-assets/README.md)         | Play Store graphics + listing copy (#898)                |
-| [play-store-publish.md](play-store-publish.md)           | AAB build + Open testing / Production publish CI (#1206) |
+| Doc                                              | Purpose                                                  |
+| ------------------------------------------------ | -------------------------------------------------------- |
+| [store-assets/README.md](store-assets/README.md) | Play Store graphics + listing copy (#898)                |
+| [play-store-publish.md](play-store-publish.md)   | AAB build + Open testing / Production publish CI (#1206) |
 
 ## Concepts
 

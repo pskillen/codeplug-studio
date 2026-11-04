@@ -1,7 +1,7 @@
 # AT-D890UV radio settings
 
 **Tracking:** [#1393](https://github.com/pskillen/codeplug-studio/issues/1393) · fixes [#1394](https://github.com/pskillen/codeplug-studio/issues/1394)  
-**Progress:** [at-d890uv-radio-settings-progress.md](at-d890uv-radio-settings-progress.md) · [outstanding](at-d890uv-radio-settings-outstanding.md)
+**Known gaps:** [radio read/write hub](README.md#known-gaps)
 
 Operators read and set the radio's general settings (key tone, backlight, power-on text, side-key functions, …) from Studio on both D890 targets. This page covers the **patch core** that all of it rests on, the **v1 field set** with its session store, the **Radio settings page** that reads a radio and sets overrides, and the **Write stepper's D890 Review step** that writes them, on their own or with the codeplug.
 

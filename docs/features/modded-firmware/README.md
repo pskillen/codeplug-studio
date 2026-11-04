@@ -33,12 +33,10 @@ Wire layouts stay in the stock radio docs: [AT-D890UV](../../reference/radios/an
 
 ## Documentation map
 
-| Doc                                                              | Topic                               |
-| ---------------------------------------------------------------- | ----------------------------------- |
-| [modded-firmware-progress.md](modded-firmware-progress.md)       | What has landed on the branch       |
-| [modded-firmware-outstanding.md](modded-firmware-outstanding.md) | Debt found while shipping           |
-| [builds](../builds/README.md)                                    | Radio targets, nav, export settings |
-| [radio-read-write](../radio-read-write/README.md)                | Web Serial write path               |
+| Doc                                               | Topic                               |
+| ------------------------------------------------- | ----------------------------------- |
+| [builds](../builds/README.md)                     | Radio targets, nav, export settings |
+| [radio-read-write](../radio-read-write/README.md) | Web Serial write path               |
 
 ## Write rules
 
@@ -62,3 +60,11 @@ Assigning TG previous / TG next on the MM9PDY targets is an optional export sett
 | `baofeng-dm32uv` (stock)    | Web Serial, NeonPlug, and DM32 CSV     | Unchanged: m×n and zone-derived scan lists                                   |
 | `retevis-rt95-mm9pdy`       | Web Serial `radio-io-rt95-mm9pdy`      | Zone grouping, zone as scan list, per-channel scan flag                      |
 | `retevis-rt95` (stock)      | Web Serial and CHIRP CSV               | Unchanged: flat 200-channel list, per-channel scan flag                      |
+
+## Known gaps
+
+What this doesn't do yet. Delete a line when its gap is fixed.
+
+### MM9PDY modded firmware
+
+- DM-32 C2: Whether the official CPS keeps the DM-32 timeslot store on a read and write (firmware Q106); only decides if a CPS edit after a Studio write keeps the slots

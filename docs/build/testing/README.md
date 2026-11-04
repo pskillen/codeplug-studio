@@ -57,7 +57,7 @@ flowchart TB
 | System      | —                                                                  | **Planned** — no `src/test/system/` yet                                                                                          |
 | E2e         | `npm run test:e2e`                                                 | Playwright — cookie consent smoke shipped ([#176](https://github.com/pskillen/codeplug-studio/issues/176)); see [e2e.md](e2e.md) |
 
-Run before commit when touching application code: `npm run lint`, `npm run format:check`, `npm test`, and `npm run build` when types or build config change. See [git-workflow](../../.cursor/skills/git-workflow/SKILL.md).
+Run before commit when touching application code: `npm run lint`, `npm run format:check`, `npm test`, and `npm run build` when types or build config change. See the `git-workflow` skill.
 
 ## CI on pull requests
 
@@ -96,6 +96,18 @@ Docs-only PRs: `format:check` + link audit is sufficient.
 | [system.md](system.md)                       | Workflow harness — **status: planned**                                                                         |
 | [component.md](component.md)                 | RTL patterns — **status: planned**                                                                             |
 | [e2e.md](e2e.md)                             | Playwright scope — **status: planned**                                                                         |
+
+## Known gaps
+
+What this doesn't do yet. Delete a line when its gap is fixed.
+
+### CPS wire verify
+
+- [#482](https://github.com/pskillen/codeplug-studio/issues/482) — content projection suite
+- [#484](https://github.com/pskillen/codeplug-studio/issues/484) — AM-in-ScanList verifier rule (with Anytone export fix)
+- Extra profile plugin: OpenGD77 MD9600 — layout ready; file under [#161](https://github.com/pskillen/codeplug-studio/issues/161) when scheduled (CHIRP `chirp-uv21` / `chirp-rt95` cps-verify shipped)
+- Stretch: CI check that every enforced rule cites a tier-3 path
+- Optional: cull baked `cps-verify/fixtures/**/good` once [#482](https://github.com/pskillen/codeplug-studio/issues/482) is trusted
 
 ## Related
 
