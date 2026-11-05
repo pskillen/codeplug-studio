@@ -8,23 +8,24 @@ One component for both form factors. Desktop: the controls and list scroll with 
 
 ## Props
 
-| Prop                   | Type                         | Notes                                                                                                              |
-| ---------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `head`                 | `ReactNode`                  | Page header. Above the split on desktop; top of the controls sheet on mobile                                       |
-| `notices`              | `ReactNode`                  | Feedback about the list (bulk-edit result, sort hint). Top of the list pane on both form factors, above `controls` |
-| `controls`             | `ReactNode`                  | Filters, search, view switches. Top of the list pane on desktop; in the controls sheet on mobile                   |
-| `list`                 | `ReactNode`                  | Table or cards. Left pane on desktop, the list swipe pane on mobile (it starts straight at the table)              |
-| `map`                  | `ReactNode`                  | Live map, rendered once, fills its container (pass `height="100%"` to `CodeplugMap`)                               |
-| `mapExtras`            | `ReactNode`                  | Controls tied to the map (e.g. Show my location). Above the map on desktop, in the controls sheet on mobile        |
-| `mapNote`              | `ReactNode`                  | Legend under the map on desktop; after the extras in the controls sheet on mobile                                  |
-| `title`                | `string`                     | Mobile top bar title (next to the Map \| List toggle)                                                              |
-| `controlsSummary`      | `ReactNode`                  | One line in the sheet's peek bar, e.g. "128 channels · 3 filters". Tapping it opens the sheet                      |
-| `controlsAction`       | `ReactNode`                  | Compact action at the right of the peek bar (a small `Button`, e.g. New or Search)                                 |
-| `initialControlsSnap`  | `'peek' \| 'half' \| 'full'` | Default `peek`                                                                                                     |
-| `controlsSnap`         | `'peek' \| 'half' \| 'full'` | Controlled snap. The directory search uses it to open at `full` and drop to `peek` when results arrive             |
-| `onControlsSnapChange` | `(snap) => void`             | Fired on every snap change, controlled or not                                                                      |
-| `sheetLabel`           | `string`                     | Accessible name stem: panes are "X list" / "X map", the sheet "X controls"                                         |
-| `desktopClassName`     | `string`                     | Class for the desktop root (page padding)                                                                          |
+| Prop                   | Type                         | Notes                                                                                                                                                           |
+| ---------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `head`                 | `ReactNode`                  | Page header. Above the split on desktop; top of the controls sheet on mobile                                                                                    |
+| `notices`              | `ReactNode`                  | Feedback about the list (bulk-edit result, sort hint). Top of the list pane on both form factors, above `controls`                                              |
+| `controls`             | `ReactNode`                  | Filters, search, view switches. Top of the list pane on desktop; in the controls sheet on mobile                                                                |
+| `listHeadControls`     | `ReactNode`                  | Mobile only: controls pinned at the top of the list pane, above the list (search, filters), so active filters are never hidden in the sheet. Ignored on desktop |
+| `list`                 | `ReactNode`                  | Table or cards. Left pane on desktop, the list swipe pane on mobile (it starts straight at the table)                                                           |
+| `map`                  | `ReactNode`                  | Live map, rendered once, fills its container (pass `height="100%"` to `CodeplugMap`)                                                                            |
+| `mapExtras`            | `ReactNode`                  | Controls tied to the map (e.g. Show my location). Above the map on desktop, in the controls sheet on mobile                                                     |
+| `mapNote`              | `ReactNode`                  | Legend under the map on desktop; after the extras in the controls sheet on mobile                                                                               |
+| `title`                | `string`                     | Mobile top bar title (next to the Map \| List toggle)                                                                                                           |
+| `controlsSummary`      | `ReactNode`                  | One line in the sheet's peek bar, e.g. "128 channels · 3 filters". Tapping it opens the sheet                                                                   |
+| `controlsAction`       | `ReactNode`                  | Compact action at the right of the peek bar (a small `Button`, e.g. New or Search)                                                                              |
+| `initialControlsSnap`  | `'peek' \| 'half' \| 'full'` | Default `peek`                                                                                                                                                  |
+| `controlsSnap`         | `'peek' \| 'half' \| 'full'` | Controlled snap. The directory search uses it to open at `full` and drop to `peek` when results arrive                                                          |
+| `onControlsSnapChange` | `(snap) => void`             | Fired on every snap change, controlled or not                                                                                                                   |
+| `sheetLabel`           | `string`                     | Accessible name stem: panes are "X list" / "X map", the sheet "X controls"                                                                                      |
+| `desktopClassName`     | `string`                     | Class for the desktop root (page padding)                                                                                                                       |
 
 ## Usage
 

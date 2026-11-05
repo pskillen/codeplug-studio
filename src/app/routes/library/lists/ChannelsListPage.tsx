@@ -1,5 +1,6 @@
 import { Alert, Loader } from '@mantine/core';
 import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
+import { useMediaQuery } from '@mantine/hooks';
 import { Fragment, useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Channel, ChannelTone } from '@core/models/library.ts';
@@ -28,6 +29,7 @@ import {
 } from '../../../components/v2/index.ts';
 import { sortRowsByColumn } from '../../../components/v2/DataTable.tsx';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../../lib/breakpoints.ts';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import AddFromDataSourceModal from '../../../components/library/AddFromDataSourceModal.tsx';
 import ChannelBulkEditModal from '../../../components/library/ChannelBulkEditModal.tsx';
@@ -253,6 +255,9 @@ const CHANNEL_TONE_COLUMN: DataTableColumn<Channel> = {
 };
 
 export default function ChannelsListPage() {
+  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY, false, {
+    getInitialValueInEffect: false,
+  });
   const navigate = useNavigate();
   const { library, loading, projectId, deleteEntity, reload } = useLibrary();
   const { activeProjectId } = useProjects();
@@ -670,52 +675,83 @@ export default function ChannelsListPage() {
     </>
   );
 
-  // Above the list on desktop; in the bottom controls sheet on mobile.
-  const listControls = (
+  const locationButton = !position ? (
+    <div className={classes.filterUseLocation}>
+      <UseMyLocationButton
+        onLocation={(lat, lon, accuracyMeters) =>
+          setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
+        }
+      />
+    </div>
+  ) : null;
+
+  const searchRow = (
+    <div className={classes.searchRow}>
+      <SearchInput
+        value={query.nameFilterInput}
+        onChange={(event) => query.setNameFilter(event.currentTarget.value)}
+        placeholder="Filter name or callsign…"
+        aria-label="Search table"
+        className={classes.search}
+      />
+      {query.nameFilterPending ? <Loader size={16} /> : null}
+    </div>
+  );
+
+  const layoutSwitch = (
+    <SegmentedControl
+      value={layoutState.layout}
+      onChange={(value) => setLayout(value as 'table' | 'cards')}
+      options={CHANNEL_LAYOUT_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+      className={classes.filterViewSwitch}
+    />
+  );
+
+  const cardGroupControl =
+    layoutState.layout === 'cards' ? (
+      <SegmentedControl
+        value={layoutState.cardGroup}
+        onChange={(value) => setCardGroup(value as 'none' | 'zone' | 'band' | 'duplex')}
+        options={CHANNEL_CARD_GROUP_OPTIONS.map((opt) => ({
+          value: opt.value,
+          label: opt.label,
+        }))}
+        className={classes.groupModeControl}
+      />
+    ) : null;
+
+  // Mobile: search, Filters, Use my location and the applied-filter pills stay directly above the
+  // list so an active filter is never hidden behind the controls sheet.
+  const listHeadControls = (
+    <div className={classes.mobileListHead}>
+      <div className={classes.mobileFilterRow}>
+        <ChannelListFilters />
+        {locationButton}
+      </div>
+      <ChannelListAppliedFilters />
+      {searchRow}
+    </div>
+  );
+
+  // Above the list on desktop; on mobile only the view switches go in the bottom controls sheet.
+  const listControls = isMobile ? (
+    <>
+      <div className={classes.filterRow}>{layoutSwitch}</div>
+      {cardGroupControl}
+    </>
+  ) : (
     <>
       <div className={classes.filterRow}>
         <ChannelListFilters />
-        {!position ? (
-          <div className={classes.filterUseLocation}>
-            <UseMyLocationButton
-              onLocation={(lat, lon, accuracyMeters) =>
-                setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
-              }
-            />
-          </div>
-        ) : null}
-        <SegmentedControl
-          value={layoutState.layout}
-          onChange={(value) => setLayout(value as 'table' | 'cards')}
-          options={CHANNEL_LAYOUT_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
-          className={classes.filterViewSwitch}
-        />
+        {locationButton}
+        {layoutSwitch}
       </div>
 
       <ChannelListAppliedFilters />
 
-      <div className={classes.searchRow}>
-        <SearchInput
-          value={query.nameFilterInput}
-          onChange={(event) => query.setNameFilter(event.currentTarget.value)}
-          placeholder="Filter name or callsign…"
-          aria-label="Search table"
-          className={classes.search}
-        />
-        {query.nameFilterPending ? <Loader size={16} /> : null}
-      </div>
+      {searchRow}
 
-      {layoutState.layout === 'cards' ? (
-        <SegmentedControl
-          value={layoutState.cardGroup}
-          onChange={(value) => setCardGroup(value as 'none' | 'zone' | 'band' | 'duplex')}
-          options={CHANNEL_CARD_GROUP_OPTIONS.map((opt) => ({
-            value: opt.value,
-            label: opt.label,
-          }))}
-          className={classes.groupModeControl}
-        />
-      ) : null}
+      {cardGroupControl}
     </>
   );
 
@@ -924,6 +960,7 @@ export default function ChannelsListPage() {
         }
         notices={listNotices}
         controls={listControls}
+        listHeadControls={isMobile ? listHeadControls : undefined}
         list={listContent}
         map={mapContent}
         mapExtras={mapExtras}
