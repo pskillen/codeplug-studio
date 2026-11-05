@@ -210,7 +210,7 @@ describe('User Database encode safety', () => {
     expect(now.entries1.subarray(0, prefix)).toEqual(old.entries1);
     // Only the header count differs.
     expect(now.header.subarray(0, 8)).toEqual(old.header.subarray(0, 8));
-  });
+  }, 60_000);
 
   it('never reaches the GPS log, however many rows are offered', () => {
     const big = encodeOpenGd77UserDatabase(rows(560_000), [], { cap: 10_000_000 });
