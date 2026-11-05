@@ -150,6 +150,7 @@ describe('radio target catalog', () => {
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
       BuildCapabilityTrait.SeparateDigitalIdList,
+      BuildCapabilityTrait.IdDatabaseFieldChoice,
     ]);
     expect(radioTargetFor('anytone-at-d890uv-mm9pdy')?.label).toBe(
       'Anytone AT-D890UV (MM9PDY modded firmware)',

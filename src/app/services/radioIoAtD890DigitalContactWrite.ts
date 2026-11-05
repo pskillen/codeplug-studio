@@ -6,10 +6,12 @@
  * `session.radio.upload`), {@link writePreparedAtD890DigitalContactsForWrite} sends.
  */
 
+import { DEFAULT_ID_DATABASE_FIELDS, type IdDatabaseFields } from '@core/models/radioBuild.ts';
 import { declareAtD890PlannedUnits } from '@integrations/radio-io/radios/at-d890uv/programSession.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import {
   prepareAtD890DigitalContactWrite,
+  preparedContactWriteBytes,
   writePreparedAtD890DigitalContacts,
   type AtD890PreparedContactWrite,
 } from '@integrations/radio-io/radios/at-d890uv/digitalContactWrite.ts';
@@ -19,11 +21,14 @@ import type { ProgressFn, RadioSession } from '@integrations/radio-io/types.ts';
 /** Pack and validate the contacts without touching the radio. `undefined` when not writing contacts. */
 export function prepareAtD890DigitalContactsForWrite(
   digitalContacts: readonly RadioDigitalContactDto[] | undefined,
+  fields: IdDatabaseFields = DEFAULT_ID_DATABASE_FIELDS,
 ): AtD890PreparedContactWrite | undefined {
   return digitalContacts === undefined
     ? undefined
-    : prepareAtD890DigitalContactWrite(digitalContacts);
+    : prepareAtD890DigitalContactWrite(digitalContacts, fields);
 }
+
+export { preparedContactWriteBytes };
 
 /**
  * Tell the session's pending-units gate which contact units this Write will rewrite, before
@@ -61,10 +66,11 @@ export async function uploadAtD890DigitalContactsForWrite(
   session: RadioSession,
   digitalContacts: readonly RadioDigitalContactDto[] | undefined,
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
+  fields: IdDatabaseFields = DEFAULT_ID_DATABASE_FIELDS,
 ): Promise<void> {
   await writePreparedAtD890DigitalContactsForWrite(
     session,
-    prepareAtD890DigitalContactsForWrite(digitalContacts),
+    prepareAtD890DigitalContactsForWrite(digitalContacts, fields),
     opts,
   );
 }

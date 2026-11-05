@@ -81,6 +81,11 @@ export interface RadioPlanContext {
   readonly prepared?: {
     readonly channels: readonly RadioChannelDto[];
     readonly organisation: RadioWriteOrganisation;
+    /**
+     * Bytes the adapter's prepared digital-contact write will send, when the caller has already
+     * prepared it. Lets a plan size the contact stage without packing the contacts again.
+     */
+    readonly digitalContactBytes?: number;
   };
   /** Write: which parts are being written. Omitted means the codeplug alone. */
   readonly parts?: {

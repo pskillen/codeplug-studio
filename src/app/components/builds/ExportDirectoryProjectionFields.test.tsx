@@ -95,4 +95,55 @@ describe('ExportDirectoryProjectionFields — Anytone dual-bank (#1433)', () => 
     expect(screen.getByRole('checkbox', { name: 'Include contacts' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Include ID directory' })).toBeChecked();
   });
+
+  it('offers the ID database field choice on the AT-D890UV only, defaulting to essentials', () => {
+    const d890 = newRadioBuildForProfile('project-1', 'radio-io-at-d890uv').build;
+    const onPatch = vi.fn();
+    const { unmount } = render(
+      <MantineProvider>
+        <ExportDirectoryProjectionFields
+          build={{ ...d890, radioTargetId: 'anytone-at-d890uv' }}
+          formatId="radio-io"
+          profileId="radio-io-at-d890uv"
+          saving={false}
+          onPatch={onPatch}
+        />
+      </MantineProvider>,
+    );
+    expect(screen.getByRole('radio', { name: 'Name, callsign and city' })).toBeChecked();
+    fireEvent.click(screen.getByRole('radio', { name: 'All fields' }));
+    expect(onPatch).toHaveBeenCalledWith({ idDatabaseFields: 'all' });
+    unmount();
+
+    const gd77 = newRadioBuildForProfile('project-1', 'opengd77-1701').build;
+    render(
+      <MantineProvider>
+        <ExportDirectoryProjectionFields
+          build={gd77}
+          formatId="opengd77"
+          profileId="opengd77-1701"
+          saving={false}
+          onPatch={onPatch}
+        />
+      </MantineProvider>,
+    );
+    expect(screen.queryByText('ID database fields')).not.toBeInTheDocument();
+  });
+
+  it('hides the ID database field choice when the egress is a CPS file, not Web Serial', () => {
+    const { build } = newRadioBuildForProfile('project-1', 'anytone-at-d890uv');
+    render(
+      <MantineProvider>
+        <ExportDirectoryProjectionFields
+          build={{ ...build, radioTargetId: 'anytone-at-d890uv' }}
+          formatId="anytone"
+          profileId="anytone-at-d890uv"
+          saving={false}
+          onPatch={vi.fn()}
+        />
+      </MantineProvider>,
+    );
+    expect(screen.getByRole('checkbox', { name: 'Include contacts' })).toBeInTheDocument();
+    expect(screen.queryByText('ID database fields')).not.toBeInTheDocument();
+  });
 });

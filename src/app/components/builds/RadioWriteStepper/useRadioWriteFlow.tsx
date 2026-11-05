@@ -48,6 +48,7 @@ import type {
 } from '@integrations/radio-io/writeVerify.ts';
 import { useRestartCountdown } from '../../radio-io/useRestartCountdown.ts';
 import { loadLibrarySlice } from '../../../lib/loadLibrarySlice.ts';
+import { createProgressCoalescer, type ProgressCoalescer } from '../../../lib/progressCoalescer.ts';
 import { persistence } from '../../../state/persistence.ts';
 import {
   clearOverride,
@@ -341,6 +342,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   // Leaving the page drops the session; the radio is closed the way a read-only session is.
   useEffect(() => {
     return () => {
+      coalescerRef.current?.cancel();
       abortRef.current?.abort();
       decisionRef.current?.reject(new WriteCancelledError());
       const session = sessionRef.current;
@@ -349,19 +351,41 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     };
   }, []);
 
+  // Every event is folded into the track refs at once (so none is lost or reordered); React state
+  // is flushed at about 10 Hz, and immediately on a stage change or a stage's last event (#1558).
+  const coalescerRef = useRef<ProgressCoalescer | null>(null);
+  function coalescer(): ProgressCoalescer {
+    coalescerRef.current ??= createProgressCoalescer((p) => {
+      setProgress(p);
+      setReadTrack(readTrackRef.current);
+      setWriteTrack(writeTrackRef.current);
+    });
+    return coalescerRef.current;
+  }
+
+  function clearProgress() {
+    coalescerRef.current?.cancel();
+    setProgress(null);
+    // A cancelled flush must not leave the stage lists behind the refs.
+    setReadTrack(readTrackRef.current);
+    setWriteTrack(writeTrackRef.current);
+  }
+
   function onProgress(p: ProgressUpdate) {
-    setProgress(p);
     const stage = p.stage;
-    if (!stage) return;
-    if (phaseRef.current === 'read') {
-      readLabelsRef.current.add(stage);
-      updateReadTrack((t) => trackWithEvent(t, p));
-      return;
+    if (stage) {
+      if (phaseRef.current === 'read') {
+        readLabelsRef.current.add(stage);
+        readTrackRef.current = trackWithEvent(readTrackRef.current, p);
+      } else {
+        if (phaseRef.current === 'write') transmitStartedRef.current = true;
+        // The read's stages are not part of the write list (DM-32 re-emits 'Discover memory map').
+        if (!readLabelsRef.current.has(stage)) {
+          writeTrackRef.current = trackWithEvent(writeTrackRef.current, p);
+        }
+      }
     }
-    if (phaseRef.current === 'write') transmitStartedRef.current = true;
-    // The read's stages are not part of the write list (DM-32 re-emits 'Discover memory map').
-    if (readLabelsRef.current.has(stage)) return;
-    updateWriteTrack((t) => trackWithEvent(t, p));
+    coalescer().push(p);
   }
 
   function updateReadTrack(fn: (t: StageTrack) => StageTrack) {
@@ -394,7 +418,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setPendingBlock(null);
     setCanReconnect(false);
     setReconnecting(false);
-    setProgress(null);
+    clearProgress();
     readPlanRef.current = [];
     updateReadTrack(() => newTrack());
     updateWriteTrack(() => newTrack());
@@ -723,7 +747,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       throw new ReconnectRequiredError();
     }
     setPhaseBoth('write');
-    setProgress(null);
+    clearProgress();
     setStep('writing');
     setReconnecting(false);
     setBusyNotify(true);
@@ -747,7 +771,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setError(null);
     setCanReconnect(false);
     setReconnecting(opts.reconnect);
-    setProgress(null);
+    clearProgress();
     updateReadTrack(() => newTrack());
     updateWriteTrack(() => newTrack());
     setReview(null);
@@ -785,7 +809,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
               }
             : undefined,
         );
-        setProgress(null);
+        clearProgress();
       }
 
       const session = await ensureSession(true, granted);
@@ -958,6 +982,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       enterWriting();
       await writeKeps(session);
       await releaseSession();
+      coalescerRef.current?.flush();
       setWriteFinished(true);
       goDone();
     } catch (err) {
@@ -1000,6 +1025,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         } else {
           setCheck('none');
         }
+        coalescerRef.current?.flush();
         setWriteFinished(true);
         if (checkStatusRef.current === 'available' || kepsPendingRef.current) {
           setBusyNotify(false);
@@ -1035,6 +1061,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       await run({ reconnect: true });
       return;
     }
+    coalescerRef.current?.flush();
     setBusyNotify(false);
     // A D890 Write interrupted after whole units were sent leaves them pending on the radio (#1406).
     const notice = interruptedWriteNotice(egress.profileId, err, failedSerial);
@@ -1096,7 +1123,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setError(null);
     setCheck('running');
     setPhaseBoth('check');
-    setProgress(null);
+    clearProgress();
     setBusyNotify(true);
     abortRef.current = new AbortController();
     try {
@@ -1127,7 +1154,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setError(null);
     setKepsAfterRestart('running');
     setPhaseBoth('keps');
-    setProgress(null);
+    clearProgress();
     setBusyNotify(true);
     abortRef.current = new AbortController();
     try {

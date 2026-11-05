@@ -3,7 +3,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import type { BytePipe, RadioSession } from '@integrations/radio-io/types.ts';
-import { D890_WRITE_TIMING_PREFIX, startAtD890WriteTiming } from './radioIoAtD890WriteTimings.ts';
+import {
+  D890_WRITE_TIMING_PREFIX,
+  startAtD890WriteTiming,
+  withFrameTimes,
+} from './radioIoAtD890WriteTimings.ts';
 
 function sessionWith(pipe: object): RadioSession {
   return { radio: new AtD890uvProtocol(), pipe: pipe as BytePipe } as unknown as RadioSession;
@@ -32,5 +36,30 @@ describe('startAtD890WriteTiming finish line', () => {
     const out = parse(timing!.finish({ profileId: 'p', contacts: 0 }));
     expect('txBytesWritten' in out).toBe(false);
     expect('writerRotations' in out).toBe(false);
+  });
+});
+
+describe('withFrameTimes', () => {
+  it('splits a stage into the radio ACK wait and Studio time per frame', () => {
+    const out = withFrameTimes({
+      pauseMs: 0,
+      totalMs: 1000,
+      rows: [
+        {
+          stage: 'Digital contacts',
+          events: 1000,
+          firstAtMs: 0,
+          lastAtMs: 1000,
+          durationMs: 1000,
+          counters: { wFrames: 1000, wAckWaitMs: 700 },
+        },
+        { stage: 'Read', events: 3, firstAtMs: 0, lastAtMs: 5, durationMs: 5, counters: {} },
+      ],
+    });
+    expect(out.rows[0]!.counters).toMatchObject({
+      ackWaitMsPerFrame: 0.7,
+      studioMsPerFrame: 0.3,
+    });
+    expect(out.rows[1]!.counters).toEqual({});
   });
 });

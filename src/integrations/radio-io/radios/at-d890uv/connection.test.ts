@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { ANYTONE_DMR_ACK, anytoneDmrChecksum8AfterOpcode } from '../../kit/codecs/anytoneDmrRw.ts';
 import { AT_D890_CONNECTION, D890_MAP } from './constants.ts';
@@ -14,7 +14,7 @@ import {
   assertAtD890NoReadAfterWrite,
   makeAtD890IdentFrame,
 } from './__fixtures__/scriptedPipe.ts';
-import { AtD890ReadAfterWriteError } from './programSession.ts';
+import { AtD890ReadAfterWriteError, readAtD890ProgramCounters } from './programSession.ts';
 import { allowLeakedD890MarkersInThisFile } from '../../../../test/leakedD890Marker.ts';
 
 allowLeakedD890MarkersInThisFile();
@@ -256,6 +256,35 @@ describe('atD890 frame resend', () => {
     await atD890WriteMemory(pipe, D890_MAP.ChannelSet, new Uint8Array(0x10));
     expect(writeFrames(pipe)).toHaveLength(3);
     expect(pipe.flushCount).toBe(2);
+  });
+
+  describe('ACK wait accounting (#1558)', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    /** A clock that advances 1000 ms per read: each attempt's send-to-ACK span is 1000 ms. */
+    function steppedClock(): void {
+      let t = 0;
+      vi.spyOn(performance, 'now').mockImplementation(() => (t += 1000));
+    }
+
+    it('counts every attempt of a re-sent write, not only the one that was ACKed', async () => {
+      steppedClock();
+      const pipe = new AtD890ScriptedPipe();
+      pipe.pendingTimeouts = 2;
+      pipe.replyAfterTimeouts = new Uint8Array([ANYTONE_DMR_ACK]);
+      await atD890WriteMemory(pipe, D890_MAP.ChannelSet, new Uint8Array(0x10));
+      expect(readAtD890ProgramCounters(pipe).wAckWaitMs).toBe(3000);
+    });
+
+    it('counts the wait of a write that finally fails', async () => {
+      steppedClock();
+      const pipe = new AtD890ScriptedPipe();
+      pipe.pendingTimeouts = 5;
+      await expect(
+        atD890WriteMemory(pipe, D890_MAP.ChannelSet, new Uint8Array(0x10)),
+      ).rejects.toBeInstanceOf(RadioTimeoutError);
+      expect(readAtD890ProgramCounters(pipe).wAckWaitMs).toBe(3000);
+    });
   });
 
   it('stops after two write resends when every attempt times out', async () => {

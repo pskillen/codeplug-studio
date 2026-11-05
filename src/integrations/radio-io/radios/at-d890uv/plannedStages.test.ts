@@ -128,10 +128,53 @@ describe('AT-D890UV planned stages', () => {
     const pipe = new AtD890ScriptedPipe();
     pipe.autoAckWrites = true;
     const rec = stageRecorder();
-    await uploadAtD890DigitalContacts(pipe, contacts, { onProgress: rec.onProgress });
+    await uploadAtD890DigitalContacts(pipe, contacts, 'essentials', { onProgress: rec.onProgress });
     // The tail of the plan is what this writer emits; the codeplug part is covered above.
     expectEventsFollowPlan(plan.slice(labels.indexOf('Digital contacts')), rec.events);
     expect(rec.stages).toEqual(['Digital contacts']);
+  });
+
+  it('sizes the contact stage from the chosen ID database fields', () => {
+    const contacts = Array.from({ length: 400 }, (_, i) => ({
+      wireName: `Contact ${i}`,
+      digitalId: 1_000_000 + i,
+      callsign: 'CALL',
+      city: 'City',
+      province: 'State',
+      country: 'Country',
+      remark: 'Note',
+    }));
+    const weight = (idDatabaseFields?: 'essentials' | 'all') =>
+      planForOperation(AT_D890UV_DESCRIPTOR, 'write', {
+        prepared: {
+          channels: [],
+          organisation: { zones: [], digitalContacts: contacts, idDatabaseFields },
+        },
+        parts: { codeplug: false, contacts: true, settings: false, keps: false },
+      })!.find((s) => s.label === 'Digital contacts')!.weight;
+    expect(weight('essentials')).toBeLessThan(weight('all'));
+    expect(weight(undefined)).toBe(weight('essentials'));
+  });
+
+  it('sizes the contact stage from the prepared write when the caller has one', () => {
+    const contact = {
+      wireName: 'Contact 1',
+      digitalId: 1234567,
+      callsign: 'CALL',
+      city: 'City',
+      province: 'State',
+      country: 'Country',
+      remark: 'Note',
+    };
+    const plan = planForOperation(AT_D890UV_DESCRIPTOR, 'write', {
+      prepared: {
+        channels: [],
+        organisation: { zones: [], digitalContacts: [contact] },
+        digitalContactBytes: 123_456,
+      },
+      parts: { codeplug: false, contacts: true, settings: false, keps: false },
+    })!;
+    expect(plan.find((s) => s.label === 'Digital contacts')?.weight).toBe(123_456);
   });
 
   it('the keps writer, in its own session after the restart, emits preserve then Upload', async () => {

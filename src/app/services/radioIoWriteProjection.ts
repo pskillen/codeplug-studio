@@ -17,7 +17,7 @@ import {
   defaultOwnDigitalId,
   ownDigitalIdOptionLabel,
 } from '@core/domain/ownDigitalIds.ts';
-import type { RadioBuild } from '@core/models/radioBuild.ts';
+import { DEFAULT_ID_DATABASE_FIELDS, type RadioBuild } from '@core/models/radioBuild.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
 import type { DualBankDirectorySlice } from './dualBankRadioWrite.ts';
 import {
@@ -2130,7 +2130,12 @@ export function buildRadioWriteProjection(
       ...(nxdnLists?.lists ? { nxdnLists: nxdnLists.lists } : {}),
       ...(ownId ?? {}),
       radioIds: atD890RadioIds,
-      ...(atD890Db !== undefined ? { digitalContacts: atD890Db } : {}),
+      ...(atD890Db !== undefined
+        ? {
+            digitalContacts: atD890Db,
+            idDatabaseFields: build.exportSettings?.idDatabaseFields ?? DEFAULT_ID_DATABASE_FIELDS,
+          }
+        : {}),
       ...(amAir ? { amAirChannels: amAir.amAirChannels, amZones: amAir.amZones } : {}),
       aprs: radioAprsFromAnytoneLibrary(projectionAssembled, numbersBySourceChannelId, warnings),
     };

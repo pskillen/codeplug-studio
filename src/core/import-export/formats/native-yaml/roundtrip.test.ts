@@ -497,3 +497,28 @@ describe('rt95ZoneKey export setting', () => {
     expect(() => parseProjectDocument(text.replace(/key: 3/, 'key: 9'))).toThrow();
   });
 });
+
+describe('idDatabaseFields export setting', () => {
+  it('round-trips, loads old builds as unset, and rejects unknown values', () => {
+    const aggregate = projectWithRadioBuildAggregate();
+    const build = aggregate.radioBuilds[0]!;
+    const withField = (value: 'essentials' | 'all') =>
+      serialiseProject({
+        ...aggregate,
+        radioBuilds: [
+          { ...build, exportSettings: { ...build.exportSettings, idDatabaseFields: value } },
+        ],
+      } as typeof aggregate);
+    for (const value of ['essentials', 'all'] as const) {
+      expect(
+        parseProjectDocument(withField(value)).radioBuilds[0]?.exportSettings?.idDatabaseFields,
+      ).toBe(value);
+    }
+    expect(
+      parseProjectDocument(serialiseProject(aggregate)).radioBuilds[0]?.exportSettings
+        ?.idDatabaseFields,
+    ).toBeUndefined();
+    const bad = withField('all').replace('idDatabaseFields: all', 'idDatabaseFields: some');
+    expect(() => parseProjectDocument(bad)).toThrow();
+  });
+});

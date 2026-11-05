@@ -121,6 +121,15 @@ const CAPABILITY_COPY: Record<CapabilityId, CapabilityCopy> = {
       'On the AT-D890UV, contacts also go to the radio Contacts list with the codeplug; the source picks what fills the ID lookup store.',
     ],
   },
+  [BuildCapabilityTrait.IdDatabaseFieldChoice]: {
+    label: 'ID database fields',
+    summary:
+      'The incoming-call ID database can be written with fewer fields per record, which makes a large directory Write much faster.',
+    consequences: [
+      'The build chooses between the essentials (name, callsign, city) and all fields.',
+      'Your library keeps every field either way; only the radio Write leaves the rest empty.',
+    ],
+  },
 };
 
 /** Display labels for badges and export toggles — same source as characteristics. */

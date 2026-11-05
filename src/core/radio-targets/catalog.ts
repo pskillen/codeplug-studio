@@ -53,6 +53,7 @@ const anytoneTraits: readonly Trait[] = [
   BuildCapabilityTrait.DedicatedScanLists,
   BuildCapabilityTrait.MxNChannelExpansion,
   BuildCapabilityTrait.SeparateDigitalIdList,
+  BuildCapabilityTrait.IdDatabaseFieldChoice,
 ];
 
 /**
@@ -71,6 +72,7 @@ const anytoneMm9pdyTraits: readonly Trait[] = [
   BuildCapabilityTrait.ZoneAsScanList,
   BuildCapabilityTrait.MultiTalkGroupPerChannel,
   BuildCapabilityTrait.SeparateDigitalIdList,
+  BuildCapabilityTrait.IdDatabaseFieldChoice,
 ];
 
 /** Authoritative radio-target catalog (#654). */

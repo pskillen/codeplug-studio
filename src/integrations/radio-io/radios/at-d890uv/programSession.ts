@@ -69,6 +69,8 @@ export interface AtD890ProgramCounters {
   wFrames: number;
   /** W frames whose erase unit differs from the previous W's. */
   wUnitsEntered: number;
+  /** Milliseconds spent from sending a `W` to its reply arriving, summed over every `W` (#1558). */
+  wAckWaitMs: number;
 }
 
 interface AtD890ProgramSessionState {
@@ -101,7 +103,7 @@ function stateFor(pipe: BytePipe): AtD890ProgramSessionState {
   let st = sessions.get(pipe);
   if (!st) {
     st = {
-      counters: { rFrames: 0, rBytes: 0, wFrames: 0, wUnitsEntered: 0 },
+      counters: { rFrames: 0, rBytes: 0, wFrames: 0, wUnitsEntered: 0, wAckWaitMs: 0 },
       unitsEntered: [],
       declaredUnits: new Set(),
       gated: false,
@@ -137,6 +139,11 @@ export function noteAtD890WriteFrame(pipe: BytePipe, address: number): void {
     st.markedRadio = st.serial || AT_D890_UNKNOWN_RADIO;
     markAtD890WriteInProgress(st.markedRadio, st.sessionId, st.unitsEntered);
   }
+}
+
+/** Call after each `W` frame's reply arrives, with the time the frame waited for it. */
+export function noteAtD890WriteAckWait(pipe: BytePipe, ms: number): void {
+  stateFor(pipe).counters.wAckWaitMs += ms;
 }
 
 /**

@@ -66,6 +66,7 @@ import { startAtD890WriteTiming } from './radioIoAtD890WriteTimings.ts';
 import {
   declareAtD890ContactUnitsForWrite,
   prepareAtD890DigitalContactsForWrite,
+  preparedContactWriteBytes,
   writePreparedAtD890DigitalContactsForWrite,
 } from './radioIoAtD890DigitalContactWrite.ts';
 import { dmrContactDigitalIdSet } from '@core/import-export/dmrContactBanks.ts';
@@ -794,7 +795,10 @@ export async function writeBuildToRadio(
   // known up front, which would leave a half-written session (#1406).
   const isD890 = isAtD890RadioIoProfileId(egress.profileId);
   const contactWrite = isD890
-    ? prepareAtD890DigitalContactsForWrite(prepared.organisation.digitalContacts)
+    ? prepareAtD890DigitalContactsForWrite(
+        prepared.organisation.digitalContacts,
+        prepared.organisation.idDatabaseFields,
+      )
     : undefined;
   declareAtD890ContactUnitsForWrite(session, contactWrite);
   await session.radio.upload(image, {
@@ -1062,7 +1066,10 @@ export async function uploadPreparedRadioWrite(
     // Pack and validate the contacts before the pause and before the first W (#1406).
     const isD890 = isAtD890RadioIoProfileId(egress.profileId);
     const contactWrite = isD890
-      ? prepareAtD890DigitalContactsForWrite(opts?.organisation?.digitalContacts)
+      ? prepareAtD890DigitalContactsForWrite(
+          opts?.organisation?.digitalContacts,
+          opts?.organisation?.idDatabaseFields,
+        )
       : undefined;
     if (opts?.beforeTransmit) {
       timing?.timeline.markPauseStart();
@@ -1072,7 +1079,13 @@ export async function uploadPreparedRadioWrite(
         identityOnly: !writeReadsBeforeTransmit(session),
         ...(nxdnOutcome ? { channels: nxdnOutcome.channels } : {}),
         plan: planForOperation(session.descriptor, 'write', {
-          prepared: { channels: opts.channels ?? [], organisation: opts.organisation ?? {} },
+          prepared: {
+            channels: opts.channels ?? [],
+            organisation: opts.organisation ?? {},
+            ...(contactWrite
+              ? { digitalContactBytes: preparedContactWriteBytes(contactWrite) }
+              : {}),
+          },
           session,
           ...(opts.parts ? { parts: opts.parts } : {}),
         }),

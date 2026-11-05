@@ -75,6 +75,31 @@ describe('etaSeconds', () => {
   });
 });
 
+describe('etaSeconds with sub-millisecond frames', () => {
+  it('does not overstate the time left when frames arrive faster than the 1 ms clock', () => {
+    const total = 1_000_000;
+    const r = rows(['active'], [total]);
+    // 0.65 ms per frame, sampled on a 1 ms-resolution clock (as Date.now() would give).
+    const frameMs = 0.65;
+    let t = advanceTracker(EMPTY_TRACKER, r, { cur: 0, max: total, msg: '' }, 0);
+    let cur = 0;
+    let now = 0;
+    for (let i = 0; i < 20_000; i++) {
+      cur += 1;
+      now = Math.floor((i + 1) * frameMs);
+      const row = r.map((x) => ({ ...x, fraction: cur / total }));
+      t = advanceTracker(t, row, { cur, max: total, msg: '' }, now);
+    }
+    const row = r.map((x) => ({ ...x, fraction: cur / total }));
+    const eta = etaSeconds(row, t, { cur, max: total, msg: '' }, now);
+    const truth = ((total - cur) * frameMs) / 1000;
+    expect(eta).not.toBeNull();
+    // Within 10% of the true time left (the old per-frame 1 ms sampling gave about 1.5x).
+    expect(eta!).toBeGreaterThan(truth * 0.9);
+    expect(eta!).toBeLessThan(truth * 1.1);
+  });
+});
+
 describe('formatEta', () => {
   it('formats seconds and minutes', () => {
     expect(formatEta(2)).toBe('Almost done');

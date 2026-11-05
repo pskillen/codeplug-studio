@@ -61,7 +61,7 @@ function makeStaleFlash(): Map<number, Uint8Array> {
     }
     return u;
   };
-  for (const c of packAtD890DigitalContacts(contacts(18_894)).stagingChunks) {
+  for (const c of packAtD890DigitalContacts(contacts(18_894), 'all').stagingChunks) {
     const base = eraseUnitBaseFor(c.address);
     unit(base).set(c.data, c.address - base);
   }
@@ -121,7 +121,7 @@ async function runWrite(n: number) {
     stageOfFrame[pipe.writes.length] = currentStage;
     return origWrite(data);
   };
-  await uploadAtD890DigitalContacts(pipe, contacts(n), {
+  await uploadAtD890DigitalContacts(pipe, contacts(n), 'all', {
     onProgress: (p) => {
       currentStage = p.stage ?? '(none)';
     },
@@ -132,7 +132,8 @@ async function runWrite(n: number) {
 }
 
 describe('AT-D890 digital contact write frame counts (#1406)', () => {
-  const nonFfChunks = (n: number) => packAtD890DigitalContacts(contacts(n)).stagingChunks.length;
+  const nonFfChunks = (n: number) =>
+    packAtD890DigitalContacts(contacts(n), 'all').stagingChunks.length;
 
   it.each([2, 100, 1000])(
     'writes %i contacts over a stale 18,894 contact list',
@@ -170,7 +171,7 @@ describe('AT-D890 contact write: a pending unit with nothing to send is still er
   const DATA_UNIT = D890_MAP.DigitalContactData;
 
   async function setup(pending: boolean) {
-    const prepared = prepareAtD890DigitalContactWrite(contacts(2));
+    const prepared = prepareAtD890DigitalContactWrite(contacts(2), 'all');
     // As if every staged block of the data unit were FF: nothing would be sent into it.
     const trimmed = {
       ...prepared,

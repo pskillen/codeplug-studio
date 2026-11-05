@@ -92,6 +92,8 @@ export function overlayModelledChunksOntoUnit(
 export function listSparseStagingChunks(
   unitBuffers: ReadonlyMap<number, Uint8Array>,
   modelledAddressSet: ReadonlySet<number>,
+  /** `false`: chunks are views of the unit buffers (they must not be written to). Default copies. */
+  copy = true,
 ): AtD890StagingChunk[] {
   void modelledAddressSet;
   const out: AtD890StagingChunk[] = [];
@@ -122,7 +124,7 @@ export function listSparseStagingChunks(
       if (isAtD890EraseUnitBookkeepingAddress(address)) continue;
       const chunk = buffer.subarray(off, off + AT_D890_BLOCK_SIZE);
       if (isAllFf(chunk)) continue;
-      out.push({ address, data: chunk.slice() });
+      out.push({ address, data: copy ? chunk.slice() : chunk });
     }
   }
   return out;

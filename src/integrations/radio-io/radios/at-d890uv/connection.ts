@@ -22,6 +22,7 @@ import {
   listAtD890UnitsEntered,
   noteAtD890ProgramExited,
   noteAtD890ReadCompleted,
+  noteAtD890WriteAckWait,
   noteAtD890WriteFrame,
 } from './programSession.ts';
 import { assertAtD890SpanNotHardDenied, assertAtD890WritableAddress } from './writableExtents.ts';
@@ -239,8 +240,15 @@ export async function atD890WriteMemory(
       async () => {
         // Latches before the frame leaves, so a W whose ACK never arrives still counts (#1406).
         noteAtD890WriteFrame(pipe, addr);
-        await pipe.write(frame);
-        const ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);
+        const sentAt = performance.now();
+        let ack: Uint8Array;
+        try {
+          await pipe.write(frame);
+          ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);
+        } finally {
+          // A timed-out attempt's wait is radio time too, not Studio time on the retry (#1558).
+          noteAtD890WriteAckWait(pipe, performance.now() - sentAt);
+        }
         if (ack[0] !== 0x06) {
           throw new RadioProtocolError(
             `D890 write not ACKed at 0x${addr.toString(16)}: got 0x${ack[0]?.toString(16) ?? '??'}`,

@@ -11,6 +11,7 @@
 import {
   createStageTimeline,
   type StageTimeline,
+  type StageTimelineReport,
 } from '@integrations/radio-io/kit/stageTimeline.ts';
 import { readAtD890ProgramCounters } from '@integrations/radio-io/radios/at-d890uv/programSession.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
@@ -29,6 +30,31 @@ export interface AtD890WriteTiming {
   }): string;
 }
 
+/**
+ * Per stage with `W` frames: `ackWaitMsPerFrame` is the radio round trip (time awaiting ACKs) and
+ * `studioMsPerFrame` is Studio's own time (stage time minus the ACK wait), both per frame (#1558).
+ */
+export function withFrameTimes(report: StageTimelineReport): StageTimelineReport {
+  return {
+    ...report,
+    rows: report.rows.map((r) => {
+      const frames = r.counters?.wFrames ?? 0;
+      if (!r.counters || frames <= 0) return r;
+      const wait = r.counters.wAckWaitMs ?? 0;
+      const round = (n: number) => Math.round(n * 1000) / 1000;
+      return {
+        ...r,
+        counters: {
+          ...r.counters,
+          wAckWaitMs: round(wait),
+          ackWaitMsPerFrame: round(wait / frames),
+          studioMsPerFrame: round(Math.max(0, r.durationMs - wait) / frames),
+        },
+      };
+    }),
+  };
+}
+
 /** `undefined` for any session that is not an AT-D890UV. */
 export function startAtD890WriteTiming(
   session: RadioSession,
@@ -37,7 +63,13 @@ export function startAtD890WriteTiming(
   if (!(session.radio instanceof AtD890uvProtocol)) return undefined;
   const timeline = createStageTimeline(onProgress, Date.now, () => {
     const c = readAtD890ProgramCounters(session.pipe);
-    return { rFrames: c.rFrames, rBytes: c.rBytes, wFrames: c.wFrames, wUnits: c.wUnitsEntered };
+    return {
+      rFrames: c.rFrames,
+      rBytes: c.rBytes,
+      wFrames: c.wFrames,
+      wUnits: c.wUnitsEntered,
+      wAckWaitMs: c.wAckWaitMs,
+    };
   });
   return {
     timeline,
@@ -49,7 +81,7 @@ export function startAtD890WriteTiming(
           profileId,
           contacts,
           outcome,
-          ...timeline.report(),
+          ...withFrameTimes(timeline.report()),
           untimed: ['END'],
           txBytesWritten: pipe.txBytesWritten,
           writerRotations: pipe.writerRotations,
