@@ -6,8 +6,8 @@
  * modelled chunks once per unit, a 2M-entry address set, and a copy of every staged block.
  */
 import { describe, expect, it } from 'vitest';
-import { D890_MAP } from './constants.ts';
-import { packAtD890DigitalContacts } from './digitalContactCodec.ts';
+import { AT_D890_BLOCK_SIZE, D890_MAP } from './constants.ts';
+import { atD890BlockHoppedAddress, packAtD890DigitalContacts } from './digitalContactCodec.ts';
 import {
   bucketChunksByUnit,
   prepareAtD890DigitalContactWrite,
@@ -58,15 +58,45 @@ function seededDirectory(n: number, seed: number): RadioDigitalContactDto[] {
   return out;
 }
 
-/** The original prepare, verbatim apart from the chunk source. */
+/**
+ * The original codec's chunking: every 16-byte block of a linear stream copied into its own
+ * 0xFF-padded buffer. Built from the linear streams, never from the codec's own chunks.
+ */
+function legacyChunksFromLinear(
+  base: number,
+  linear: Uint8Array,
+  blockLength: number,
+  stride: number,
+): AtD890StagingChunk[] {
+  if (linear.length === 0) return [];
+  const aligned = Math.ceil(linear.length / AT_D890_BLOCK_SIZE) * AT_D890_BLOCK_SIZE;
+  const out: AtD890StagingChunk[] = [];
+  for (let off = 0; off < aligned; off += AT_D890_BLOCK_SIZE) {
+    const padded = new Uint8Array(AT_D890_BLOCK_SIZE).fill(0xff);
+    padded.set(linear.slice(off, Math.min(off + AT_D890_BLOCK_SIZE, linear.length)));
+    out.push({ address: atD890BlockHoppedAddress(base, off, blockLength, stride), data: padded });
+  }
+  return out;
+}
+
+/** The original prepare: chunks rebuilt independently, a filter over all chunks per unit. */
 function legacyPrepare(contacts: readonly RadioDigitalContactDto[]) {
   const pack = packAtD890DigitalContacts(contacts);
-  // The original codec padded every block into its own buffer; rebuild the chunks that way.
-  const modelledChunks: AtD890StagingChunk[] = pack.stagingChunks.map((c) => {
-    const padded = new Uint8Array(16).fill(0xff);
-    padded.set(c.data);
-    return { address: c.address, data: padded };
-  });
+  const modelledChunks: AtD890StagingChunk[] = [
+    { address: D890_MAP.DigitalContactMeta, data: pack.meta.slice() },
+    ...legacyChunksFromLinear(
+      D890_MAP.DigitalContactOrder,
+      pack.orderLinear,
+      D890_MAP.DigitalContactOrderBlockLength,
+      D890_MAP.DigitalContactOrderBlockStride,
+    ),
+    ...legacyChunksFromLinear(
+      D890_MAP.DigitalContactData,
+      pack.dataLinear,
+      D890_MAP.DigitalContactDataBlockLength,
+      D890_MAP.DigitalContactDataStride,
+    ),
+  ];
   const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
   const units = listTouchedEraseUnits(modelledChunks.map((c) => c.address));
   const mergedUnits = new Map<number, Uint8Array>();
@@ -83,6 +113,19 @@ function legacyPrepare(contacts: readonly RadioDigitalContactDto[]) {
   return { chunks, units, anchors: eraseAnchorsFromModelled(modelledChunks) };
 }
 
+/** Fixed-size records: every contact encodes to the same length, so counts step predictably. */
+function fixedDirectory(n: number): RadioDigitalContactDto[] {
+  return Array.from({ length: n }, (_, i) => ({
+    wireName: 'N' + String(i).padStart(5, '0'),
+    digitalId: 1 + i,
+    callsign: 'AB1CDE',
+    city: 'City',
+    province: 'Prov',
+    country: 'Land',
+    remark: '',
+  }));
+}
+
 function frames(chunks: readonly AtD890StagingChunk[]): string {
   return chunks
     .map((c) => `${c.address.toString(16)}:${Buffer.from(c.data).toString('hex')}`)
@@ -90,6 +133,15 @@ function frames(chunks: readonly AtD890StagingChunk[]): string {
 }
 
 describe('prepareAtD890DigitalContactWrite (#1558)', () => {
+  function expectIdentical(contacts: readonly RadioDigitalContactDto[]): void {
+    const next = prepareAtD890DigitalContactWrite(contacts);
+    const ref = legacyPrepare(contacts);
+    expect(next.units).toEqual(ref.units);
+    expect(frames(next.chunks)).toBe(frames(ref.chunks));
+    expect([...next.anchors.entries()]).toEqual([...ref.anchors.entries()]);
+    expect(preparedContactWriteBytes(next)).toBe(ref.chunks.length * 16);
+  }
+
   it.each([
     [1, 11],
     [37, 12],
@@ -97,13 +149,38 @@ describe('prepareAtD890DigitalContactWrite (#1558)', () => {
     // Spans the order table's and the data region's unit boundaries (several 256 KiB units).
     [12_000, 14],
   ])('sends byte-identical frames to the original for %i seeded contacts', (n, seed) => {
-    const contacts = seededDirectory(n, seed);
-    const next = prepareAtD890DigitalContactWrite(contacts);
-    const ref = legacyPrepare(contacts);
-    expect(next.units).toEqual(ref.units);
-    expect(frames(next.chunks)).toBe(frames(ref.chunks));
-    expect([...next.anchors.entries()]).toEqual([...ref.anchors.entries()]);
-    expect(preparedContactWriteBytes(next)).toBe(ref.chunks.length * 16);
+    expectIdentical(seededDirectory(n, seed));
+  });
+
+  it.each([0, 1, 2, 3, 15, 16, 17])('matches the original for %i fixed-size contacts', (n) => {
+    expectIdentical(fixedDirectory(n));
+  });
+
+  it('matches the original around a unit-count change (n-1, n, n+1)', () => {
+    // Find the first count whose data region needs one more erase unit than the count before.
+    const unitsFor = (n: number) =>
+      prepareAtD890DigitalContactWrite(fixedDirectory(n)).units.length;
+    let lo = 1;
+    let hi = 6_000;
+    while (lo + 1 < hi) {
+      const mid = (lo + hi) >> 1;
+      if (unitsFor(mid) === unitsFor(lo)) lo = mid;
+      else hi = mid;
+    }
+    const n = hi;
+    expect(unitsFor(n)).toBeGreaterThan(unitsFor(n - 1));
+    for (const count of [n - 1, n, n + 1]) expectIdentical(fixedDirectory(count));
+  });
+
+  it('matches the original when the data stream is block-aligned and when it is not', () => {
+    const lengths = new Set<number>();
+    for (let n = 1; n <= 40; n++) {
+      const pack = packAtD890DigitalContacts(fixedDirectory(n));
+      lengths.add(pack.dataLinear.length % AT_D890_BLOCK_SIZE === 0 ? 0 : 1);
+      expectIdentical(fixedDirectory(n));
+    }
+    // Both shapes are exercised: a padded last block and an exact multiple.
+    expect(lengths.size).toBe(2);
   });
 
   it('handles an empty directory', () => {
