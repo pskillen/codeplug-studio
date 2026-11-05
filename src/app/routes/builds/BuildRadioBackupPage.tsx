@@ -4,7 +4,6 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { createProgressCoalescer, type ProgressCoalescer } from '../../lib/progressCoalescer.ts';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Alert, FileButton, Group, Stack, Table, Text } from '@mantine/core';
 import { isDm32RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
@@ -20,6 +19,7 @@ import RadioIoProgressModal, {
 import WebSerialExperimentalAlert from '../../components/builds/WebSerialExperimentalAlert.tsx';
 import { findAttribution } from '../../lib/attributions.ts';
 import { findRadioIoEgress } from '../../lib/buildEgressUi.ts';
+import { createProgressCoalescer, type ProgressCoalescer } from '../../lib/progressCoalescer.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
 import {
   closeRadioSession,
