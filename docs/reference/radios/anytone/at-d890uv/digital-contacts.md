@@ -38,6 +38,29 @@ overlaid, all-`FF` blocks are skipped, and **no byte of a contact unit is read**
 - Every check that can throw (packing, the hard deny, the unit list) runs before the first `W` of the
   session, so a Write does not fail midway for a reason known up front.
 
+### Record layout and field choice
+
+One record is a 6-byte header (call type, call alert, four BCD ID bytes) and then six wide-char
+strings, each ended by `00 00`: name (16 chars), city (15), callsign (8), state (16), country (16),
+remark (16). The header holds **no length**: a record ends where its last string ends, and the
+order table gives the byte offset of each record start ([memory-layout.md](memory-layout.md#digitalcontact-huge-bank)).
+So a field written empty is just its two terminator bytes and the record stays valid.
+
+The build's **ID database fields** setting picks what Studio writes:
+
+| Setting                           | Written                                            | Left empty (`00 00`)   |
+| --------------------------------- | -------------------------------------------------- | ---------------------- |
+| Name, callsign and city (default) | name, city, callsign                               | state, country, remark |
+| All fields                        | all six strings (the bytes the earlier Write sent) | none                   |
+
+Records are packed back to back, so dropping the three strings shrinks every record and cuts the
+`W` frames (16 bytes each) by roughly a third on a typical directory (the saving grows with long
+state, country and remark text). The library keeps every field either way.
+
+Whether the radio shows city, state, country or remark on a call or in contact search is **not
+established** by the firmware notes (they cover the lookup path, not what the screen draws). City
+stays in the default until a radio check says otherwise.
+
 ### Why no byte needs preserving
 
 | Source                    | What it shows                                                                                                                                                                                                             |
