@@ -50,6 +50,15 @@ export default defineConfig(({ mode }) => {
     server: {
       // Allow ngrok public hostnames when tunneling local Vite (Run Dev Server).
       allowedHosts: ['.ngrok-free.app', '.ngrok-free.dev', '.ngrok.app', '.ngrok.io'],
+      // tmp/ (agent notes, harness browser profiles) and .claude/ (agent worktrees, each a full
+      // checkout) can hold tens of thousands of files and exhaust the OS file-watch limit.
+      // Vite adds these to its own defaults (.git, node_modules).
+      watch: {
+        ignored: [
+          path.resolve(__dirname, 'tmp') + '/**',
+          path.resolve(__dirname, '.claude') + '/**',
+        ],
+      },
       proxy: {
         '/api/irts/repeaters': {
           target: 'https://www.irts.ie',
