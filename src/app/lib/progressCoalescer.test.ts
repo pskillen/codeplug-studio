@@ -59,4 +59,14 @@ describe('createProgressCoalescer', () => {
     vi.advanceTimersByTime(500);
     expect(out.map((e) => e.cur)).toEqual([1, 2]);
   });
+
+  it('cancel forgets the last emit time, so the first event of a new run is not delayed', () => {
+    const out: ProgressUpdate[] = [];
+    const c = createProgressCoalescer((e) => out.push(e), { now: () => Date.now() });
+    c.push(ev('A', 1));
+    vi.advanceTimersByTime(10);
+    c.cancel();
+    c.push(ev('A', 1)); // 10 ms after the last emit: would be coalesced if cancel kept it
+    expect(out.map((e) => e.cur)).toEqual([1, 1]);
+  });
 });

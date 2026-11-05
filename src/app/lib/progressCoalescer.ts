@@ -92,6 +92,7 @@ export function createProgressCoalescer(
       pending = null;
       seen = false;
       lastStage = undefined;
+      lastEmitAt = Number.NEGATIVE_INFINITY;
       clearPendingTimer();
     },
   };
