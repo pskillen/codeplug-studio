@@ -3,8 +3,8 @@
  * restart in `sessionStorage`, and the compare against the occupied bytes read back afterwards.
  *
  * The header (12 B) is kept in full. Entries are kept as one CRC-32 per FLASH-sector slice of the
- * occupied spans: a 69,600-entry database is about 1.9 MB, which as JSON would not fit the
- * browser's session storage quota. A mismatching sector is therefore reported with digests, not bytes.
+ * occupied spans: a full database (up to about 14 MB) would not fit the browser's
+ * session storage quota as JSON. A mismatching sector is therefore reported with digests, not bytes.
  */
 
 import { crc32Ieee } from '../../kit/checksums.ts';
