@@ -44,7 +44,7 @@ function fakeKepsWriter(
   outcome: 'ok' | 'fail',
 ): SatelliteKepsWriteFn {
   return async (_session: RadioSession, _sats, opts) => {
-    for (const e of events) opts.onProgress?.(e);
+    for (const e of events) opts?.onProgress?.(e);
     await gate;
     if (outcome === 'fail') throw new Error('radio went away');
     return { written: 1 } as never;
