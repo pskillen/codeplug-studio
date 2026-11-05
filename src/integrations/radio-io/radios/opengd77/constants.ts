@@ -4,7 +4,11 @@
  * qdmr openuv380_codeplug.hh / opengd77base_codeplug.hh (facts only; GPL-3).
  */
 
-import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
+import {
+  OPENGD77_FAMILY_LIMITS,
+  OPENUV380_USER_DB_GEOMETRY,
+  OPENUV380_USER_DB_SEGMENT0_ENTRIES,
+} from '@core/radios/opengd77/limits.ts';
 
 /** USB serial baud (qdmr opengd77_interface.cc). */
 export const OPENGD77_BAUD_RATE = 115_200;
@@ -97,19 +101,32 @@ export const OPENGD77_CONTACT_SIZE = 0x18;
 export const OPENGD77_CONTACT_COUNT = OPENGD77_FAMILY_LIMITS.CONTACTS_MAX;
 export const OPENGD77_CONTACT_NAME_LEN = OPENGD77_FAMILY_LIMITS.NAME_LENGTH_CHANNEL_ZONE_CONTACT_TG;
 
-/** OpenUV380 User Database / call-sign DB (qdmr OpenUV380CallsignDB Offset, not live dump). */
-export const OPENUV380_USER_DB_HEADER_ABS = 0x0005_0000;
-export const OPENUV380_USER_DB_HEADER_SIZE = 12;
+/**
+ * OpenUV380 User Database / call-sign DB layout. Geometry (and so the cap) lives in core
+ * `limits.ts`; these are the protocol-side names for it (qdmr OpenUV380CallsignDB Offset).
+ */
+export const OPENUV380_USER_DB_HEADER_ABS = OPENUV380_USER_DB_GEOMETRY.HEADER_ABS;
+export const OPENUV380_USER_DB_HEADER_SIZE = OPENUV380_USER_DB_GEOMETRY.HEADER_SIZE;
 export const OPENUV380_USER_DB_ENTRIES0_ABS =
   OPENUV380_USER_DB_HEADER_ABS + OPENUV380_USER_DB_HEADER_SIZE;
-export const OPENUV380_USER_DB_ENTRIES1_ABS = 0x000d_8000;
-export const OPENUV380_USER_DB_SIZE0 = 0x0004_0000;
-export const OPENUV380_USER_DB_ENTRY_SIZE = 0x1b;
+export const OPENUV380_USER_DB_ENTRIES1_ABS = OPENUV380_USER_DB_GEOMETRY.SEGMENT1_ABS;
+export const OPENUV380_USER_DB_SIZE0 = OPENUV380_USER_DB_GEOMETRY.SEGMENT0_SIZE;
+export const OPENUV380_USER_DB_ENTRY_SIZE = OPENUV380_USER_DB_GEOMETRY.ENTRY_SIZE;
 export const OPENUV380_USER_DB_TEXT_CHARS = 32;
-/** Segment 0 capacity — integer division of size0 minus header. Not USER_DATABASE_MAX. */
-export const OPENUV380_USER_DB_ENTRIES0_MAX = Math.floor(
-  (OPENUV380_USER_DB_SIZE0 - OPENUV380_USER_DB_HEADER_SIZE) / OPENUV380_USER_DB_ENTRY_SIZE,
-);
+/** Segment 0 capacity — whole entries after the header. Not USER_DATABASE_MAX. */
+export const OPENUV380_USER_DB_ENTRIES0_MAX = OPENUV380_USER_DB_SEGMENT0_ENTRIES;
+/** First byte no User Database write may reach (the GPS log). */
+export const OPENUV380_USER_DB_WRITE_LIMIT_ABS = OPENUV380_USER_DB_GEOMETRY.FLASH_WRITE_LIMIT_ABS;
+
+/** Voice prompts header: current location, and the legacy slot a long segment 1 overwrites. */
+export const OPENUV380_VOICE_PROMPTS_ABS = 0x000a_f400;
+export const OPENUV380_VOICE_PROMPTS_LEGACY_ABS =
+  OPENUV380_USER_DB_GEOMETRY.LEGACY_VOICE_PROMPTS_ABS;
+/** Voice prompts header magic, u32 LE `'VP'` (firmware `voicePrompts.c`). */
+export const OPENUV380_VOICE_PROMPTS_MAGIC = 0x5056;
+
+/** FirmwareInfo `flashId` of the 16 MiB W25Q128 part; the 1701 and MD-9600 only boot on it. */
+export const OPENUV380_FLASH_ID_16MIB = 0x4018;
 export const OPENGD77_USER_DATABASE_MAX = OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX;
 
 export const OPENGD77_ZONE_SIZE = 0xb0;
