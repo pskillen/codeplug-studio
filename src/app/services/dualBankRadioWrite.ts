@@ -114,14 +114,9 @@ export async function collectDualBankDirectorySlice(
   // the ID database first) shows the contact's own name.
   const skipOverlap = forDm32 ? args.options.includeLibraryContacts : forAtD890;
 
-  const acceptRow = (row: DigitalIdDirectoryEntry): boolean => {
-    if (skipOverlap && !shouldIncludeDirectoryRow(row.digitalId, libraryIds)) {
-      skippedOverlap++;
-      return false;
-    }
-    if (row.digitalId <= 0) return false;
-    return true;
-  };
+  const isOverlap = (row: DigitalIdDirectoryEntry): boolean =>
+    skipOverlap && !shouldIncludeDirectoryRow(row.digitalId, libraryIds);
+  const acceptRow = (row: DigitalIdDirectoryEntry): boolean => !isOverlap(row) && row.digitalId > 0;
 
   const { total, collected } = await pageDigitalIdDirectoryForWrite({
     store: args.store,
@@ -132,6 +127,9 @@ export async function collectDualBankDirectorySlice(
     acceptRow,
     onAcceptedRow: (row) => {
       digitalContacts.push(mapDirectoryEntryToRadioDigitalContactDto(row));
+    },
+    onRejectedRow: (row) => {
+      if (isOverlap(row)) skippedOverlap++;
     },
   });
 

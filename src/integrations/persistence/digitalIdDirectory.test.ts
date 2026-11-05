@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { newChannel, newProjectMeta } from '@core/domain/factories.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import { IndexedDbProjectPersistence } from './indexedDb.ts';
@@ -68,18 +68,69 @@ describe.each(implementations)('DigitalIdDirectory — %s', (_label, makeStore) 
     expect(await store.countDigitalIdDirectoryEntries(meta.projectId)).toBe(2);
   });
 
-  it('lists entries sorted by name', async () => {
+  it('lists entries in Digital ID order', async () => {
     const store = makeStore();
     const meta = newProjectMeta('Test');
     await store.seedProject({ meta });
 
     await store.putDigitalIdDirectoryEntriesBatch([
-      sampleEntry(meta.projectId, 2, { name: 'Zulu' }),
-      sampleEntry(meta.projectId, 1, { name: 'Alpha' }),
+      sampleEntry(meta.projectId, 2, { name: 'Alpha' }),
+      sampleEntry(meta.projectId, 10, { name: 'Bravo' }),
+      sampleEntry(meta.projectId, 1, { name: 'Zulu' }),
     ]);
 
-    const names = (await store.listDigitalIdDirectoryEntries(meta.projectId)).map((e) => e.name);
-    expect(names).toEqual(['Alpha', 'Zulu']);
+    const ids = (await store.listDigitalIdDirectoryEntries(meta.projectId)).map((e) => e.digitalId);
+    expect(ids).toEqual([1, 2, 10]);
+  });
+
+  it('reads primary-key batches by keyset and never leaks another project or index fields', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    const other = newProjectMeta('Other');
+    await store.seedProject({ meta });
+    await store.seedProject({ meta: other });
+    await store.putDigitalIdDirectoryEntriesBatch(
+      [7, 3, 9, 1, 5].map((id) => sampleEntry(meta.projectId, id)),
+    );
+    await store.putDigitalIdDirectoryEntriesBatch([sampleEntry(other.projectId, 4)]);
+
+    const first = await store.readDigitalIdDirectoryBatch(meta.projectId, { limit: 2 });
+    expect(first.map((r) => r.digitalId)).toEqual([1, 3]);
+    expect(Object.keys(first[0]!)).not.toContain('nameLower');
+
+    const second = await store.readDigitalIdDirectoryBatch(meta.projectId, {
+      afterDigitalId: 3,
+      limit: 2,
+    });
+    expect(second.map((r) => r.digitalId)).toEqual([5, 7]);
+
+    const rest = await store.readDigitalIdDirectoryBatch(meta.projectId, {
+      afterDigitalId: 7,
+      limit: 10,
+    });
+    expect(rest.map((r) => r.digitalId)).toEqual([9]);
+    expect(
+      await store.readDigitalIdDirectoryBatch(meta.projectId, { afterDigitalId: 9, limit: 10 }),
+    ).toEqual([]);
+  });
+
+  it('streams the partition across batch boundaries, including after later writes', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    await store.putDigitalIdDirectoryEntriesBatch(
+      [5, 1, 4].map((id) => sampleEntry(meta.projectId, id)),
+    );
+    await store.readDigitalIdDirectoryBatch(meta.projectId, { limit: 1 });
+    await store.putDigitalIdDirectoryEntriesBatch(
+      [3, 2, 6].map((id) => sampleEntry(meta.projectId, id)),
+    );
+
+    const seen: number[] = [];
+    await store.iterateDigitalIdDirectory(meta.projectId, (row) => void seen.push(row.digitalId), {
+      batchSize: 2,
+    });
+    expect(seen).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   it('clears only the requested project partition', async () => {
@@ -230,5 +281,237 @@ describe.each(implementations)('DigitalIdDirectory — %s', (_label, makeStore) 
     });
     expect(result.deletedCount).toBe(2);
     expect(await store.countDigitalIdDirectoryEntries(meta.projectId)).toBe(1);
+  });
+
+  it('deletes the directory with its project and never touches another project', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Doomed');
+    const other = newProjectMeta('Survivor');
+    await store.seedProject({ meta });
+    await store.seedProject({ meta: other });
+    await store.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(meta.projectId, 1),
+      sampleEntry(meta.projectId, 2),
+    ]);
+    await store.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(other.projectId, 1),
+      sampleEntry(other.projectId, 3),
+    ]);
+    const seen: DirectoryPersistenceChange[] = [];
+    store.subscribeDirectory((change) => seen.push(change));
+
+    await store.deleteEntity(meta.projectId, 'project', meta.projectId);
+
+    expect(await store.countDigitalIdDirectoryEntries(meta.projectId)).toBe(0);
+    expect(await store.loadProjectMeta(meta.projectId)).toBeNull();
+    expect(await store.countDigitalIdDirectoryEntries(other.projectId)).toBe(2);
+    expect(
+      (await store.listDigitalIdDirectoryEntries(other.projectId)).map((r) => r.digitalId),
+    ).toEqual([1, 3]);
+    expect(seen).toContainEqual({ projectId: meta.projectId, digitalId: 0, op: 'delete' });
+  });
+
+  it('range-deletes one project without touching a project whose ID shares its prefix', async () => {
+    const store = makeStore();
+    await store.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry('p1', 5),
+      sampleEntry('p1', 6),
+      sampleEntry('p10', 5),
+      sampleEntry('p', 5),
+      sampleEntry('p2', 5),
+    ]);
+
+    expect(await store.deleteDigitalIdDirectoryForProject('p1')).toEqual({ deletedCount: 2 });
+
+    for (const projectId of ['p10', 'p', 'p2']) {
+      expect(await store.countDigitalIdDirectoryEntries(projectId)).toBe(1);
+    }
+    expect(await store.countDigitalIdDirectoryEntries('p1')).toBe(0);
+    expect(await store.deleteDigitalIdDirectoryForProject('p1')).toEqual({ deletedCount: 0 });
+  });
+
+  it('a filtered delete removes only the matches of its own project', async () => {
+    const store = makeStore();
+    await store.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry('p1', 1, { country: 'Scotland' }),
+      sampleEntry('p1', 2, { country: 'England' }),
+    ]);
+    await store.putDigitalIdDirectoryEntriesBatch([sampleEntry('p2', 1, { country: 'Scotland' })]);
+
+    const result = await store.deleteDigitalIdDirectoryMatching({
+      projectId: 'p1',
+      countryEquals: 'Scotland',
+    });
+
+    expect(result.deletedCount).toBe(1);
+    expect(await store.countDigitalIdDirectoryEntries('p1')).toBe(1);
+    expect(await store.countDigitalIdDirectoryEntries('p2')).toBe(1);
+  });
+});
+
+describe('IndexedDb orphan directory sweep', () => {
+  it('removes rows whose project is gone and keeps every row of every existing project', async () => {
+    const dbName = `dir-sweep-${idbCounter++}`;
+    const first = new IndexedDbProjectPersistence(dbName);
+    openIdb.add(first);
+    const a = newProjectMeta('A');
+    const b = newProjectMeta('B');
+    await first.seedProject({ meta: a });
+    await first.seedProject({ meta: b });
+    await first.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(a.projectId, 1),
+      sampleEntry(a.projectId, 2),
+      sampleEntry(a.projectId, 3),
+    ]);
+    await first.putDigitalIdDirectoryEntriesBatch([sampleEntry(b.projectId, 1)]);
+    await first.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry('gone-1', 1),
+      sampleEntry('gone-1', 2),
+      sampleEntry('gone-2', 7),
+    ]);
+    // A project whose ID prefixes an orphan's, and the reverse.
+    await first.putDigitalIdDirectoryEntriesBatch([sampleEntry(`${a.projectId}-x`, 9)]);
+
+    expect(await first.sweepOrphanDirectoryRows()).toBe(3);
+
+    expect(await first.countDigitalIdDirectoryEntries(a.projectId)).toBe(3);
+    expect(await first.countDigitalIdDirectoryEntries(b.projectId)).toBe(1);
+    expect(await first.countDigitalIdDirectoryEntries('gone-1')).toBe(0);
+    expect(await first.countDigitalIdDirectoryEntries('gone-2')).toBe(0);
+    expect(await first.countDigitalIdDirectoryEntries(`${a.projectId}-x`)).toBe(0);
+    // Nothing left to sweep, and a second run changes nothing.
+    expect(await first.sweepOrphanDirectoryRows()).toBe(0);
+    expect(await first.countDigitalIdDirectoryEntries(a.projectId)).toBe(3);
+  });
+
+  it('runs when the database is opened', async () => {
+    const dbName = `dir-sweep-${idbCounter++}`;
+    const first = new IndexedDbProjectPersistence(dbName);
+    openIdb.add(first);
+    const keep = newProjectMeta('Keep');
+    await first.seedProject({ meta: keep });
+    await first.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(keep.projectId, 1),
+      sampleEntry('orphan', 1),
+    ]);
+
+    const second = new IndexedDbProjectPersistence(dbName);
+    openIdb.add(second);
+
+    // The sweep runs in the background after open, so wait for it.
+    await vi.waitFor(async () =>
+      expect(await second.countDigitalIdDirectoryEntries('orphan')).toBe(0),
+    );
+    expect(await second.countDigitalIdDirectoryEntries(keep.projectId)).toBe(1);
+  });
+
+  it('with no projects at all, every directory row is an orphan and is deleted', async () => {
+    const store = new IndexedDbProjectPersistence(`dir-sweep-${idbCounter++}`);
+    openIdb.add(store);
+    expect(await store.sweepOrphanDirectoryRows()).toBe(0);
+    await store.putDigitalIdDirectoryEntriesBatch([sampleEntry('x', 1), sampleEntry('y', 2)]);
+    expect(await store.sweepOrphanDirectoryRows()).toBe(2);
+    expect(await store.countDigitalIdDirectoryEntries('x')).toBe(0);
+    expect(await store.countDigitalIdDirectoryEntries('y')).toBe(0);
+  });
+
+  it('deletes an orphan larger than one chunk completely, and nothing else', async () => {
+    const store = new IndexedDbProjectPersistence(`dir-sweep-${idbCounter++}`);
+    openIdb.add(store);
+    const keep = newProjectMeta('Keep');
+    await store.seedProject({ meta: keep });
+    await store.putDigitalIdDirectoryEntriesBatch([sampleEntry(keep.projectId, 1)]);
+    const many = Array.from({ length: 5001 }, (_, i) => sampleEntry('big', i + 1));
+    for (let i = 0; i < many.length; i += 2000) {
+      await store.putDigitalIdDirectoryEntriesBatch(many.slice(i, i + 2000));
+    }
+    expect(await store.sweepOrphanDirectoryRows()).toBe(1);
+    expect(await store.countDigitalIdDirectoryEntries('big')).toBe(0);
+    expect(await store.countDigitalIdDirectoryEntries(keep.projectId)).toBe(1);
+  }, 60_000);
+
+  it('does not sweep a project created on a second connection while the sweep runs', async () => {
+    const dbName = `dir-sweep-${idbCounter++}`;
+    const a = new IndexedDbProjectPersistence(dbName);
+    const b = new IndexedDbProjectPersistence(dbName);
+    openIdb.add(a);
+    openIdb.add(b);
+    await a.countDigitalIdDirectoryEntries('warm');
+    await b.countDigitalIdDirectoryEntries('warm');
+    const meta = newProjectMeta('Late');
+    // Orphan rows give the sweep work; B creates its project and directory in the meantime.
+    await a.putDigitalIdDirectoryEntriesBatch([sampleEntry('old-orphan', 1)]);
+    const sweep = a.sweepOrphanDirectoryRows();
+    await b.seedProject({ meta });
+    await b.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(meta.projectId, 1),
+      sampleEntry(meta.projectId, 2),
+    ]);
+    await sweep;
+    await a.sweepOrphanDirectoryRows();
+    expect(await b.countDigitalIdDirectoryEntries(meta.projectId)).toBe(2);
+    expect(await b.countDigitalIdDirectoryEntries('old-orphan')).toBe(0);
+  });
+
+  it('keeps a project row that has no directory rows yet, and the rows written after it', async () => {
+    const store = new IndexedDbProjectPersistence(`dir-sweep-${idbCounter++}`);
+    openIdb.add(store);
+    const meta = newProjectMeta('Row first');
+    await store.seedProject({ meta });
+    expect(await store.sweepOrphanDirectoryRows()).toBe(0);
+    await store.putDigitalIdDirectoryEntriesBatch([sampleEntry(meta.projectId, 1)]);
+    expect(await store.sweepOrphanDirectoryRows()).toBe(0);
+    expect(await store.countDigitalIdDirectoryEntries(meta.projectId)).toBe(1);
+  });
+
+  it('an aborted project delete leaves the project and its directory rows', async () => {
+    const store = new IndexedDbProjectPersistence(`dir-sweep-${idbCounter++}`);
+    openIdb.add(store);
+    const meta = newProjectMeta('Abort');
+    await store.seedProject({ meta });
+    await store.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(meta.projectId, 1),
+      sampleEntry(meta.projectId, 2),
+    ]);
+    const original = IDBObjectStore.prototype.delete;
+    let aborted = false;
+    IDBObjectStore.prototype.delete = function (this: IDBObjectStore, ...args) {
+      const result = original.apply(this, args);
+      if (!aborted) {
+        aborted = true;
+        this.transaction.abort();
+      }
+      return result;
+    };
+    try {
+      await expect(
+        store.deleteEntity(meta.projectId, 'project', meta.projectId),
+      ).rejects.toBeDefined();
+    } finally {
+      IDBObjectStore.prototype.delete = original;
+    }
+    expect(aborted).toBe(true);
+    expect(await store.loadProjectMeta(meta.projectId)).not.toBeNull();
+    expect(await store.countDigitalIdDirectoryEntries(meta.projectId)).toBe(2);
+  });
+
+  it('replaceProject keeps the project directory rows across a reopen', async () => {
+    const dbName = `dir-sweep-${idbCounter++}`;
+    const first = new IndexedDbProjectPersistence(dbName);
+    openIdb.add(first);
+    const meta = newProjectMeta('Replace');
+    await first.seedProject({ meta });
+    await first.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(meta.projectId, 1),
+      sampleEntry(meta.projectId, 2),
+    ]);
+    await first.replaceProject(meta.projectId, { meta: { ...meta, name: 'Replaced' } });
+    expect(await first.countDigitalIdDirectoryEntries(meta.projectId)).toBe(2);
+    first.close();
+
+    const second = new IndexedDbProjectPersistence(dbName);
+    openIdb.add(second);
+    expect(await second.sweepOrphanDirectoryRows()).toBe(0);
+    expect(await second.countDigitalIdDirectoryEntries(meta.projectId)).toBe(2);
   });
 });

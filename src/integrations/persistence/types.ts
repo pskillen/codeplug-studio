@@ -76,6 +76,13 @@ export interface PersistenceChange {
 
 export type PersistenceListener = (change: PersistenceChange) => void;
 
+/** Keyset position and size of one {@link ProjectPersistence.readDigitalIdDirectoryBatch}. */
+export interface DigitalIdDirectoryBatchOptions {
+  /** Exclusive lower bound: read rows with a greater Digital ID. Omit to start at the first row. */
+  afterDigitalId?: number;
+  limit: number;
+}
+
 /** Change notification for directory shadow rows — separate from {@link EntityKind} seed entities. */
 export interface DirectoryPersistenceChange {
   projectId: string;
@@ -190,20 +197,36 @@ export interface ProjectPersistence {
   loadProjectSeed(projectId: string): Promise<ProjectSeed | null>;
   replaceProject(projectId: string, seed: ProjectSeed): Promise<void>;
 
+  /**
+   * Upsert directory rows. The project's row must already exist: rows for a `projectId` with no
+   * project are treated as orphans and deleted by the sweep at the next open.
+   */
   putDigitalIdDirectoryEntriesBatch(
     entries: readonly DigitalIdDirectoryEntry[],
   ): Promise<{ written: number }>;
   /**
-   * Full partition hydrate — for tests and export streaming only.
-   * App UI must use {@link queryDigitalIdDirectoryPage} instead.
+   * Full partition hydrate in Digital ID order — for tests only. Builds the whole directory in
+   * memory: app code streams with {@link iterateDigitalIdDirectory} or
+   * {@link readDigitalIdDirectoryBatch}, and the UI pages with {@link queryDigitalIdDirectoryPage}.
    */
   listDigitalIdDirectoryEntries(projectId: string): Promise<DigitalIdDirectoryEntry[]>;
+  /**
+   * One primary-key batch of the partition: up to `limit` rows in Digital ID order, strictly after
+   * `afterDigitalId` (from the start when omitted). Linear and keyset-based: pass the last row's ID
+   * to get the next batch. Prefer this over offset paging, which re-walks every skipped row.
+   */
+  readDigitalIdDirectoryBatch(
+    projectId: string,
+    options: DigitalIdDirectoryBatchOptions,
+  ): Promise<DigitalIdDirectoryEntry[]>;
   queryDigitalIdDirectoryPage(
     args: DigitalIdDirectoryPageQuery,
   ): Promise<DigitalIdDirectoryPageResult>;
+  /** Stream the partition in Digital ID order, one {@link readDigitalIdDirectoryBatch} at a time. */
   iterateDigitalIdDirectory(
     projectId: string,
     onRow: (row: DigitalIdDirectoryEntry) => void | Promise<void>,
+    options?: { batchSize?: number },
   ): Promise<void>;
   getDigitalIdDirectoryEntry(
     projectId: string,

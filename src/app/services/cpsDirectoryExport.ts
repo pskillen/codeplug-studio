@@ -47,9 +47,10 @@ async function collectAnytoneCpsProjection(
   egress: EgressPath,
   options: DualBankRadioWriteOptions,
   warnings: ExportWarning[],
+  namesOnly: boolean,
 ): Promise<CpsDirectoryProjectionPayload> {
   const directoryDigitalContacts: AssembledEntity<DigitalContact>[] = [];
-  if (options.includeDigitalIdDirectory) {
+  if (options.includeDigitalIdDirectory && !namesOnly) {
     // Only DMR contacts are written (#1438), so only their IDs shadow directory rows.
     const libraryIds = dmrContactDigitalIdSet(assembled.digitalContacts);
     const limits = getProfileExportLimits('anytone', egress.profileId);
@@ -135,6 +136,14 @@ async function collectDualBankCpsProjection(
   };
 }
 
+export interface EnrichCpsExportOptionsWithDirectoryOptions {
+  /**
+   * The options are only used to list file names. No CPS file name depends on the directory's
+   * rows (the ID database file is always listed), so the rows are not read.
+   */
+  namesOnly?: boolean;
+}
+
 /** Stream directory rows and attach `directoryProjection` to CPS export options. */
 export async function enrichCpsExportOptionsWithDirectory(
   store: ProjectPersistence,
@@ -143,6 +152,7 @@ export async function enrichCpsExportOptionsWithDirectory(
   egress: EgressPath,
   library: LibrarySlice,
   baseOptions: CpsExportOptions,
+  enrichOptions: EnrichCpsExportOptionsWithDirectoryOptions = {},
 ): Promise<CpsExportOptions> {
   const merged = mergeExportOptions(build, egress.formatId, {
     ...baseOptions,
@@ -165,6 +175,7 @@ export async function enrichCpsExportOptionsWithDirectory(
       egress,
       dualOptions,
       warnings,
+      enrichOptions.namesOnly === true,
     );
   } else if (hasSeparateDigitalIdList(egress.profileId)) {
     const dualOptions =

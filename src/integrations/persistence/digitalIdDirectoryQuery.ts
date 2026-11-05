@@ -23,6 +23,9 @@ export type DigitalIdDirectoryPageResult = {
   total: number;
 };
 
+/** Rows per primary-key batch when streaming the whole directory. */
+export const DIRECTORY_STREAM_BATCH_SIZE = 2000;
+
 const UNICODE_MAX = '\uffff';
 
 export function directoryPrefixUpperBound(prefix: string): string {

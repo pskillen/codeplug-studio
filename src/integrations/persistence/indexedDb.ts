@@ -21,6 +21,7 @@ import type {
   BatchPutItemResult,
   BatchPutResult,
   DigitalContactPut,
+  DigitalIdDirectoryBatchOptions,
   DirectoryPersistenceChange,
   DirectoryPersistenceListener,
   EntityKind,
@@ -33,6 +34,7 @@ import type {
 } from './types.ts';
 import { DEFAULT_DB_NAME, DIRECTORY_STORES, STORES, STORE_NAMES } from './stores.ts';
 import {
+  DIRECTORY_STREAM_BATCH_SIZE,
   directoryPrefixUpperBound,
   directoryProjectNameRangeUpper,
   hasDirectoryPageFilters,
@@ -81,6 +83,125 @@ function openDirectoryWriteTransaction(db: IDBDatabase, storeName: string): IDBT
   } catch {
     return db.transaction(storeName, 'readwrite');
   }
+}
+
+/**
+ * Primary-key range over one project's directory rows (`[projectId, digitalId]`), optionally
+ * strictly after `afterDigitalId`. Primary-key reads do not touch the secondary indexes.
+ */
+function directoryPrimaryRange(projectId: string, afterDigitalId?: number): IDBKeyRange {
+  return IDBKeyRange.bound(
+    [projectId, afterDigitalId ?? Number.NEGATIVE_INFINITY],
+    [projectId, Number.POSITIVE_INFINITY],
+    afterDigitalId !== undefined,
+    false,
+  );
+}
+
+/**
+ * Delete one project's directory rows with a single primary-key range delete (no per-row requests
+ * and no secondary-index scan). Counts the range first, in the same transaction, for the result.
+ * The range is bounded by `projectId` in the key, so no other project's rows can match.
+ */
+function deleteDirectoryPartition(
+  os: IDBObjectStore,
+  projectId: string,
+  onCount: (count: number) => void,
+): void {
+  const range = directoryPrimaryRange(projectId);
+  const countReq = os.count(range);
+  countReq.onsuccess = () => {
+    onCount(countReq.result);
+    if (countReq.result > 0) os.delete(range);
+  };
+}
+
+/** Directory rows deleted per transaction by the orphan sweep, so no one transaction runs long. */
+const ORPHAN_SWEEP_CHUNK = 5000;
+
+/**
+ * Find the IDs of projects that have directory rows but no `projects` row. Read-only: it reads the
+ * project IDs, then walks the directory's primary keys by jumping from one project's range to the
+ * next, so the cost is one step per project rather than per row.
+ */
+function findOrphanDirectoryProjectIds(db: IDBDatabase): Promise<string[]> {
+  return new Promise<string[]>((resolve, reject) => {
+    const tx = db.transaction([STORES.project, DIRECTORY_STORES.digitalIdDirectory], 'readonly');
+    const orphans: string[] = [];
+    const projectKeys = tx.objectStore(STORES.project).getAllKeys();
+    projectKeys.onsuccess = () => {
+      const existing = new Set<string>();
+      for (const key of projectKeys.result) {
+        if (Array.isArray(key) && typeof key[0] === 'string') existing.add(key[0]);
+      }
+      const cursorReq = tx.objectStore(DIRECTORY_STORES.digitalIdDirectory).openKeyCursor();
+      cursorReq.onsuccess = () => {
+        const cursor = cursorReq.result;
+        if (!cursor) return;
+        const projectId = (cursor.key as [string, number])[0];
+        if (!existing.has(projectId)) orphans.push(projectId);
+        // Skip the rest of this project's rows.
+        cursor.continue([projectId, Number.POSITIVE_INFINITY]);
+      };
+      cursorReq.onerror = () => reject(cursorReq.error);
+    };
+    projectKeys.onerror = () => reject(projectKeys.error);
+    tx.oncomplete = () => resolve(orphans);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+/**
+ * Delete one chunk (up to {@link ORPHAN_SWEEP_CHUNK} rows) of an orphan project's directory rows
+ * in its own transaction. The transaction first re-reads the `projects` row and does nothing if it
+ * now exists, so a project created since the read-only pass is never swept. Resolves true when
+ * more rows may remain. (IndexedDB has one mode per transaction, so `projects` is in scope but
+ * only read; the chunk size keeps each transaction short.)
+ */
+function deleteOrphanChunk(db: IDBDatabase, projectId: string): Promise<boolean> {
+  return new Promise<boolean>((resolve, reject) => {
+    const tx = db.transaction([STORES.project, DIRECTORY_STORES.digitalIdDirectory], 'readwrite');
+    let more = false;
+    const exists = tx.objectStore(STORES.project).count(IDBKeyRange.only([projectId, projectId]));
+    exists.onsuccess = () => {
+      if (exists.result > 0) return;
+      const os = tx.objectStore(DIRECTORY_STORES.digitalIdDirectory);
+      const range = directoryPrimaryRange(projectId);
+      const keysReq = os.getAllKeys(range, ORPHAN_SWEEP_CHUNK);
+      keysReq.onsuccess = () => {
+        const keys = keysReq.result;
+        if (keys.length === 0) return;
+        if (keys.length < ORPHAN_SWEEP_CHUNK) {
+          os.delete(range);
+        } else {
+          os.delete(IDBKeyRange.bound(keys[0], keys[keys.length - 1]));
+          more = true;
+        }
+      };
+      keysReq.onerror = () => reject(keysReq.error);
+    };
+    exists.onerror = () => reject(exists.error);
+    tx.oncomplete = () => resolve(more);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+/**
+ * Delete directory rows whose project no longer exists: a short read-only pass finds the orphan
+ * project IDs, then each is deleted in short chunked transactions that never hold up the
+ * `projects` store for long. Returns the number of orphaned projects found.
+ */
+async function sweepOrphanDirectoryRows(db: IDBDatabase): Promise<number> {
+  const orphans = await findOrphanDirectoryProjectIds(db);
+  for (const projectId of orphans) {
+    while (await deleteOrphanChunk(db, projectId)) {
+      // Let other transactions (the home page's reads) in between chunks.
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    }
+  }
+  return orphans.length;
 }
 
 function ensureDigitalIdDirectoryIndexes(os: IDBObjectStore): void {
@@ -384,9 +505,23 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
           }
         }
       };
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        const db = request.result;
+        // Once per open, before any other request: drop directory rows whose project is gone
+        // (project delete used to leave them behind). Failure only leaves the rows for next time.
+        void sweepOrphanDirectoryRows(db).catch(() => {});
+        resolve(db);
+      };
       request.onerror = () => reject(request.error);
     });
+  }
+
+  /**
+   * Delete directory rows whose project no longer exists. Runs automatically once each time the
+   * database is opened; exposed for tests. Returns the number of orphaned projects removed.
+   */
+  async sweepOrphanDirectoryRows(): Promise<number> {
+    return sweepOrphanDirectoryRows(await this.db());
   }
 
   async listProjects(): Promise<ProjectMeta[]> {
@@ -545,13 +680,26 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
 
   async listDigitalIdDirectoryEntries(projectId: string): Promise<DigitalIdDirectoryEntry[]> {
-    const page = await this.queryDigitalIdDirectoryPage({
-      projectId,
-      offset: 0,
-      limit: Number.MAX_SAFE_INTEGER,
-      orderBy: 'name',
+    const rows: DigitalIdDirectoryEntry[] = [];
+    await this.iterateDigitalIdDirectory(projectId, (row) => {
+      rows.push(row);
     });
-    return page.rows;
+    return rows;
+  }
+
+  async readDigitalIdDirectoryBatch(
+    projectId: string,
+    options: DigitalIdDirectoryBatchOptions,
+  ): Promise<DigitalIdDirectoryEntry[]> {
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction(storeName, 'readonly');
+    const rows = await promisifyRequest<DigitalIdDirectoryIdbRow[]>(
+      tx
+        .objectStore(storeName)
+        .getAll(directoryPrimaryRange(projectId, options.afterDigitalId), options.limit),
+    );
+    return rows.map((row) => stripDirectoryIdbRowIfNeeded(row));
   }
 
   async queryDigitalIdDirectoryPage(
@@ -562,36 +710,31 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     const tx = db.transaction(storeName, 'readonly');
     const os = tx.objectStore(storeName);
     const scan = planDirectoryScan(os, args);
-    const [rows, total] = await Promise.all([
-      idbCollectDirectoryPage(scan, args),
-      idbCountMatchingDirectoryRows(scan, args),
-    ]);
+    // Unfiltered, the total is the partition size: count the primary range, which is cheap and
+    // unaffected by index debris, rather than an index range.
+    const totalRequest = hasDirectoryPageFilters(args)
+      ? idbCountMatchingDirectoryRows(scan, args)
+      : promisifyRequest(os.count(directoryPrimaryRange(args.projectId)));
+    const [rows, total] = await Promise.all([idbCollectDirectoryPage(scan, args), totalRequest]);
     return { rows, total };
   }
 
   async iterateDigitalIdDirectory(
     projectId: string,
     onRow: (row: DigitalIdDirectoryEntry) => void | Promise<void>,
+    options?: { batchSize?: number },
   ): Promise<void> {
-    const db = await this.db();
-    const storeName = DIRECTORY_STORES.digitalIdDirectory;
-    const tx = db.transaction(storeName, 'readonly');
-    const index = tx.objectStore(storeName).index('byProject');
-
-    await new Promise<void>((resolve, reject) => {
-      const req = index.openCursor(IDBKeyRange.only(projectId));
-      req.onsuccess = () => {
-        const cursor = req.result;
-        if (!cursor) {
-          resolve();
-          return;
-        }
-        Promise.resolve(onRow(cursor.value as DigitalIdDirectoryEntry))
-          .then(() => cursor.continue())
-          .catch(reject);
-      };
-      req.onerror = () => reject(req.error);
-    });
+    const limit = options?.batchSize ?? DIRECTORY_STREAM_BATCH_SIZE;
+    let afterDigitalId: number | undefined;
+    while (true) {
+      const rows = await this.readDigitalIdDirectoryBatch(projectId, { afterDigitalId, limit });
+      for (const row of rows) {
+        const pending = onRow(row);
+        if (pending) await pending;
+      }
+      if (rows.length < limit) return;
+      afterDigitalId = rows[rows.length - 1]!.digitalId;
+    }
   }
 
   async getDigitalIdDirectoryEntry(
@@ -634,16 +777,9 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(storeName, 'readwrite');
       const os = tx.objectStore(storeName);
-      const req = os.index('byProject').openKeyCursor(IDBKeyRange.only(projectId));
-      req.onsuccess = () => {
-        const cursor = req.result;
-        if (cursor) {
-          os.delete(cursor.primaryKey);
-          deletedCount += 1;
-          cursor.continue();
-        }
-      };
-      req.onerror = () => reject(req.error);
+      deleteDirectoryPartition(os, projectId, (count) => {
+        deletedCount = count;
+      });
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error);
@@ -704,8 +840,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     const db = await this.db();
     const storeName = DIRECTORY_STORES.digitalIdDirectory;
     const tx = db.transaction(storeName, 'readonly');
-    const index = tx.objectStore(storeName).index('byProject');
-    return promisifyRequest(index.count(projectId));
+    return promisifyRequest(tx.objectStore(storeName).count(directoryPrimaryRange(projectId)));
   }
 
   async getAnalogContact(projectId: string, id: string): Promise<AnalogContact | null> {
@@ -1138,8 +1273,10 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
 
   private async deleteAllProjectRows(projectId: string): Promise<void> {
     const db = await this.db();
+    const directoryStore = DIRECTORY_STORES.digitalIdDirectory;
+    let deletedDirectoryRows = 0;
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE_NAMES, 'readwrite');
+      const tx = db.transaction([...STORE_NAMES, directoryStore], 'readwrite');
 
       for (const storeName of STORE_NAMES) {
         const os = tx.objectStore(storeName);
@@ -1154,10 +1291,18 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
         req.onerror = () => reject(req.error);
       }
 
+      // The directory is outside the project seed but belongs to the project.
+      deleteDirectoryPartition(tx.objectStore(directoryStore), projectId, (count) => {
+        deletedDirectoryRows = count;
+      });
+
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error);
     });
+    if (deletedDirectoryRows > 0) {
+      this.emitDirectory({ projectId, digitalId: 0, op: 'delete' });
+    }
   }
 
   private emit(change: PersistenceChange): void {

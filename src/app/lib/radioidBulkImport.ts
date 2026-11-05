@@ -137,10 +137,6 @@ async function runRadioidBulkImportInner(
   options: RadioidBulkImportOptions,
 ): Promise<RadioidBulkImportResult> {
   const startedAt = Date.now();
-  const existingEntries = await options.persistence.listDigitalIdDirectoryEntries(
-    options.projectId,
-  );
-  const entryByDigitalId = directoryMapFromRows(existingEntries);
   const counts = { added: 0, updated: 0, skipped: 0, failed: 0 };
   let processed = 0;
   let cancelled = false;
@@ -154,6 +150,13 @@ async function runRadioidBulkImportInner(
     pageInfo?: { currentPage: number; totalPages: number },
   ): Promise<boolean> {
     const pending: PendingListingWrite[] = [];
+    // Look up only this page's IDs: a directory can hold hundreds of thousands of rows.
+    const entryByDigitalId = directoryMapFromRows(
+      await options.persistence.getDigitalIdDirectoryEntriesByIds(
+        options.projectId,
+        listings.map((listing) => listing.id),
+      ),
+    );
 
     for (const listing of listings) {
       if (isCancelled()) {
