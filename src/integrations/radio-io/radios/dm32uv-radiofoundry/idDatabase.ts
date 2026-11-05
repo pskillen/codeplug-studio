@@ -6,6 +6,7 @@
  */
 
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { BLOCK_SIZE } from './constants.ts';
 
 /** Image offset of area 1. Not 0x700000. */
@@ -48,9 +49,12 @@ export const DMR_ID_DATABASE_AREA2_RECORDS = Math.floor(
   DMR_ID_DATABASE_AREA2_BYTES / DMR_ID_DATABASE_RECORD_BYTES,
 );
 
-/** Area 1 plus the part of area 2 that ends at the native codeplug. */
-export const DMR_ID_DATABASE_MAX_RECORDS =
+/** Area 1 plus the part of area 2 that ends at the native codeplug, from the layout above. */
+export const DMR_ID_DATABASE_LAYOUT_RECORDS =
   DMR_ID_DATABASE_AREA1_RECORDS + DMR_ID_DATABASE_AREA2_RECORDS;
+
+/** The cap the Write enforces. The number lives in core; a test pins it to the layout. */
+export const DMR_ID_DATABASE_MAX_RECORDS = DM32UV_RADIOFOUNDRY_LIMITS.ID_DATABASE_MAX;
 
 /** 4 KB blocks that cover `byteLength` of area 2. Empty when there is no spill. */
 export function dmrIdDatabaseArea2Blocks(byteLength: number): number[] {

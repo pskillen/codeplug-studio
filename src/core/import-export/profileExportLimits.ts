@@ -11,6 +11,9 @@
 import type { FormatId } from './types.ts';
 import type { PowerLadderEntry } from './profileLadder.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
+import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { getAnytoneProfile } from './formats/anytone/profiles.ts';
 import { getChirpProfile } from './formats/chirp/profiles.ts';
 import { getDm32Profile } from './formats/dm32/profiles.ts';
@@ -46,7 +49,13 @@ export interface ProfileExportLimits {
   maxZones: ExportLimitValue;
   maxScanLists: ExportLimitValue;
   maxRxGroupLists: ExportLimitValue;
+  /** The codeplug's own contact list (written with the codeplug). */
   maxContacts: ExportLimitValue;
+  /**
+   * The caller-ID lookup bank, written as its own image: the most directory rows a Write sends.
+   * Separate from `maxContacts`. `'not_used'` where the target has no such bank.
+   */
+  maxDigitalIdDatabase: ExportLimitValue;
   maxTalkGroups: ExportLimitValue;
   maxRadioIds: ExportLimitValue;
 
@@ -98,6 +107,7 @@ function blankDigitalOrganisation(partial: {
   maxScanLists?: ExportLimitValue;
   maxRxGroupLists?: ExportLimitValue;
   maxContacts?: ExportLimitValue;
+  maxDigitalIdDatabase?: ExportLimitValue;
   maxTalkGroups?: ExportLimitValue;
   maxRadioIds?: ExportLimitValue;
   zoneMembers?: ExportLimitValue;
@@ -118,6 +128,7 @@ function blankDigitalOrganisation(partial: {
     maxScanLists: partial.maxScanLists ?? null,
     maxRxGroupLists: partial.maxRxGroupLists ?? null,
     maxContacts: partial.maxContacts ?? null,
+    maxDigitalIdDatabase: partial.maxDigitalIdDatabase ?? null,
     maxTalkGroups: partial.maxTalkGroups ?? null,
     maxRadioIds: partial.maxRadioIds ?? null,
     zoneMembers: partial.zoneMembers ?? null,
@@ -153,6 +164,7 @@ export function getProfileExportLimits(
         maxScanLists: 'not_used',
         maxRxGroupLists: profile.maxRxGroupLists,
         maxContacts: profile.maxContacts,
+        maxDigitalIdDatabase: 'not_used', // RadioFoundry file carries no ID database
         maxTalkGroups: 'not_used',
         maxRadioIds: profile.maxRadioIds,
         zoneMembers: profile.zoneMembers,
@@ -179,6 +191,7 @@ export function getProfileExportLimits(
         maxScanLists: 'not_used',
         maxRxGroupLists: profile.maxRxGroupLists,
         maxContacts: profile.maxContacts,
+        maxDigitalIdDatabase: 'not_used', // the CPS zip has no User Database file
         maxTalkGroups: 'not_used',
         zoneMembers: profile.zoneMembers,
         scanListMembers: 'not_used',
@@ -205,6 +218,7 @@ export function getProfileExportLimits(
         maxScanLists: profile.maxScanLists,
         maxRxGroupLists: profile.maxRxGroupLists,
         maxContacts: profile.maxContacts,
+        maxDigitalIdDatabase: 'not_used', // the DM32 CSV set has no directory file
         maxTalkGroups: profile.maxTalkGroups,
         maxRadioIds: profile.maxRadioIds,
         zoneMembers: profile.zoneMembers,
@@ -230,7 +244,10 @@ export function getProfileExportLimits(
         maxZones: profile.maxZones,
         maxScanLists: profile.maxScanLists,
         maxRxGroupLists: profile.maxRxGroupLists,
-        maxContacts: profile.maxDigitalContacts,
+        // The Contacts list is the talk-group list: one list, shared with talk groups.
+        maxContacts: profile.maxTalkGroups,
+        maxDigitalIdDatabase: profile.maxDigitalContacts,
+        maxRadioIds: AT_D890UV_LIMITS.RADIO_IDS_MAX,
         maxTalkGroups: profile.maxTalkGroups,
         zoneMembers: profile.zoneMembers,
         scanListMembers: profile.scanListMembers,
@@ -257,6 +274,7 @@ export function getProfileExportLimits(
         maxScanLists: 'not_used',
         maxRxGroupLists: 'not_used',
         maxContacts: 'not_used',
+        maxDigitalIdDatabase: 'not_used',
         maxTalkGroups: 'not_used',
         maxRadioIds: 'not_used',
         zoneMembers: 'not_used',
@@ -288,6 +306,7 @@ export function getProfileExportLimits(
           maxScanLists: profile.maxScanLists,
           maxRxGroupLists: profile.maxRxGroupLists,
           maxContacts: profile.maxContacts,
+          maxDigitalIdDatabase: 'not_used', // NeonPlug exports no directory
           maxTalkGroups: profile.maxTalkGroups,
           maxRadioIds: profile.maxRadioIds,
           zoneMembers: profile.zoneMembers,
@@ -309,6 +328,7 @@ export function getProfileExportLimits(
         maxScanLists: 'not_used',
         maxRxGroupLists: 'not_used',
         maxContacts: 'not_used',
+        maxDigitalIdDatabase: 'not_used',
         maxTalkGroups: 'not_used',
         maxRadioIds: 'not_used',
         zoneMembers: 'not_used',
@@ -339,6 +359,7 @@ export function getProfileExportLimits(
           maxScanLists: 'not_used',
           maxRxGroupLists: profile.maxRxGroupLists,
           maxContacts: profile.maxContacts,
+          maxDigitalIdDatabase: DM32UV_RADIOFOUNDRY_LIMITS.ID_DATABASE_MAX,
           maxTalkGroups: 'not_used',
           maxRadioIds: profile.maxRadioIds,
           zoneMembers: profile.zoneMembers,
@@ -361,6 +382,7 @@ export function getProfileExportLimits(
           maxScanLists: profile.maxScanLists,
           maxRxGroupLists: profile.maxRxGroupLists,
           maxContacts: profile.maxContacts,
+          maxDigitalIdDatabase: DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX,
           maxTalkGroups: profile.maxTalkGroups,
           maxRadioIds: profile.maxRadioIds,
           zoneMembers: profile.zoneMembers,
@@ -386,10 +408,11 @@ export function getProfileExportLimits(
           maxZones: profile.maxZones,
           maxScanLists: profile.maxScanLists,
           maxRxGroupLists: profile.maxRxGroupLists,
-          // ID database (DMR contact DB) cap; the Contacts list shares maxTalkGroups.
-          maxContacts: profile.maxContacts,
+          // The Contacts list is the talk-group list: one list, shared with talk groups.
+          maxContacts: profile.maxTalkGroups,
+          maxDigitalIdDatabase: profile.maxDigitalIdDatabase,
           maxTalkGroups: profile.maxTalkGroups,
-          maxRadioIds: null,
+          maxRadioIds: AT_D890UV_LIMITS.RADIO_IDS_MAX,
           zoneMembers: profile.zoneMembers,
           scanListMembers: profile.scanListMembers,
           rxGroupListMembers: profile.rxGroupListMembers,
@@ -413,7 +436,9 @@ export function getProfileExportLimits(
           maxScanLists: profile.maxScanLists,
           maxRxGroupLists: profile.maxRxGroupLists,
           maxContacts: OPENGD77_FAMILY_LIMITS.CONTACTS_MAX,
-          maxTalkGroups: null,
+          maxDigitalIdDatabase: OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX,
+          // Each talk group is a contact row: no separate talk-group table.
+          maxTalkGroups: 'not_used',
           maxRadioIds: null,
           zoneMembers: profile.zoneMembers,
           scanListMembers: profile.scanListMembers,
@@ -439,6 +464,7 @@ export function getProfileExportLimits(
           maxScanLists: 'not_used',
           maxRxGroupLists: 'not_used',
           maxContacts: 'not_used',
+          maxDigitalIdDatabase: 'not_used',
           maxTalkGroups: 'not_used',
           maxRadioIds: 'not_used',
           zoneMembers: rt95.zoneMembers ?? 'not_used',
@@ -463,6 +489,7 @@ export function getProfileExportLimits(
         maxScanLists: 'not_used',
         maxRxGroupLists: 'not_used',
         maxContacts: 'not_used',
+        maxDigitalIdDatabase: 'not_used',
         maxTalkGroups: 'not_used',
         maxRadioIds: 'not_used',
         zoneMembers: 'not_used',

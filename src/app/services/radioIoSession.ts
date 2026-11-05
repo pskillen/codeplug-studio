@@ -520,8 +520,8 @@ export async function prepareRadioWriteImage(
         ? DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX
         : egress.profileId === DM32_RADIOFOUNDRY_PROFILE_ID
           ? DMR_ID_DATABASE_MAX_RECORDS
-          : typeof limits?.maxContacts === 'number'
-            ? limits.maxContacts
+          : typeof limits?.maxDigitalIdDatabase === 'number'
+            ? limits.maxDigitalIdDatabase
             : undefined;
     directorySlice =
       opts.persistence && opts.projectId

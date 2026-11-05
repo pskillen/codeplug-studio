@@ -546,8 +546,9 @@ function buildTalkGroupsAndRx(
   const limits = requireProfileExportLimits(egress);
   const isAtD890 = isAtD890RadioIoProfileId(egress.profileId);
   const maxTalkGroups = requireNumericLimit(limits.maxTalkGroups, 'maxTalkGroups', egress);
-  const maxDigitalContacts =
-    limits.maxContacts === 'not_used'
+  const maxDigitalContacts = isAtD890
+    ? requireNumericLimit(limits.maxDigitalIdDatabase, 'maxDigitalIdDatabase', egress)
+    : limits.maxContacts === 'not_used'
       ? 0
       : requireNumericLimit(limits.maxContacts, 'maxContacts', egress);
   const maxRx = requireNumericLimit(limits.maxRxGroupLists, 'maxRxGroupLists', egress);
@@ -1989,7 +1990,11 @@ export function buildRadioWriteProjection(
         directorySlice?.digitalContacts ?? [],
         includeLibraryContacts,
         includeDigitalIdDirectory,
-        requireNumericLimit(requireProfileExportLimits(egress).maxContacts, 'maxContacts', egress),
+        requireNumericLimit(
+          requireProfileExportLimits(egress).maxDigitalIdDatabase,
+          'maxDigitalIdDatabase',
+          egress,
+        ),
         'AT-D890 ID database',
         warnings,
       );

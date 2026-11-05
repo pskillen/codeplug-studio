@@ -54,7 +54,8 @@ async function collectAnytoneCpsProjection(
     // Only DMR contacts are written (#1438), so only their IDs shadow directory rows.
     const libraryIds = dmrContactDigitalIdSet(assembled.digitalContacts);
     const limits = getProfileExportLimits('anytone', egress.profileId);
-    const cap = typeof limits?.maxContacts === 'number' ? limits.maxContacts : Infinity;
+    const cap =
+      typeof limits?.maxDigitalIdDatabase === 'number' ? limits.maxDigitalIdDatabase : Infinity;
     let skippedOverlap = 0;
     let truncated = 0;
     await store.iterateDigitalIdDirectory(projectId, (row: DigitalIdDirectoryEntry) => {

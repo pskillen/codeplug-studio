@@ -8,6 +8,7 @@ import {
   DMR_ID_DATABASE_AREA2_RECORDS,
   DMR_ID_DATABASE_HEADER_BYTES,
   DMR_ID_DATABASE_IMAGE_END,
+  DMR_ID_DATABASE_LAYOUT_RECORDS,
   DMR_ID_DATABASE_MAX_RECORDS,
   DMR_ID_DATABASE_RECORD_BYTES,
   DMR_ID_DATABASE_SIZE_BYTE,
@@ -85,6 +86,8 @@ describe('encodeDmrIdDatabase', () => {
     expect(DMR_ID_DATABASE_AREA1_RECORDS).toBe(9708);
     expect(DMR_ID_DATABASE_AREA2_RECORDS).toBe(277921);
     expect(DMR_ID_DATABASE_MAX_RECORDS).toBe(287629);
+    // The cap lives in core limits; the layout must still arrive at the same number.
+    expect(DMR_ID_DATABASE_LAYOUT_RECORDS).toBe(DMR_ID_DATABASE_MAX_RECORDS);
   });
 
   it('owns nothing when every row is dropped', () => {

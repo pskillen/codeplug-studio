@@ -41,6 +41,7 @@ function limitRows(limits: ProfileExportLimits): LimitRow[] {
     { label: 'Max scan lists', value: limits.maxScanLists },
     { label: 'Max RX group lists', value: limits.maxRxGroupLists },
     { label: 'Max contacts', value: limits.maxContacts },
+    { label: 'Max digital ID database entries', value: limits.maxDigitalIdDatabase },
     { label: 'Max talk groups', value: limits.maxTalkGroups },
     { label: 'Max members per zone', value: limits.zoneMembers },
     { label: 'Max members per scan list', value: limits.scanListMembers },
