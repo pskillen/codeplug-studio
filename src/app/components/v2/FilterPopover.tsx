@@ -106,7 +106,7 @@ export default function FilterPopover<T extends string = string>({
           title={triggerLabel}
           withinPortal
           portalProps={{ target: DSV2_SCOPE_SELECTOR }}
-          zIndex={400}
+          zIndex={1300}
           classNames={{
             content: classes.sheet,
             header: classes.sheetHeader,
