@@ -157,9 +157,40 @@ describe('pageDigitalIdDirectoryForWrite', () => {
 
     expect(onProgress).toHaveBeenCalled();
     const last = onProgress.mock.calls.at(-1)![0]!;
-    expect(last.cur).toBe(10);
-    expect(last.max).toBe(10);
+    // Progress is rows read out of the directory, not accepted rows out of the cap.
+    expect(last.cur).toBe(20);
+    expect(last.max).toBe(20);
     expect(last.msg).toContain('Loading directory contacts');
+  });
+
+  it('keeps progress below full while rows are still being read under a binding cap', async () => {
+    const store = new InMemoryProjectPersistence();
+    await store.putDigitalIdDirectoryEntriesBatch(
+      Array.from({ length: 100 }, (_, i) => makeEntry('p1', 20_000 + i)),
+    );
+    const seen: { cur: number; max: number }[] = [];
+    let now = 0;
+    const dateSpy = vi.spyOn(Date, 'now').mockImplementation(() => (now += 1000));
+    try {
+      await pageDigitalIdDirectoryForWrite({
+        store,
+        projectId: 'p1',
+        cap: 5,
+        batchSize: 10,
+        onProgress: (p) => void seen.push({ cur: p.cur, max: p.max }),
+        acceptRow: () => true,
+        onAcceptedRow: () => {},
+      });
+    } finally {
+      dateSpy.mockRestore();
+    }
+    const mid = seen.slice(1, -1);
+    expect(mid.length).toBeGreaterThan(3);
+    for (const p of mid) expect(p.max).toBe(100);
+    // The cap (5) is reached after the first batch; the bar must not be full by then.
+    expect(mid[0]!.cur).toBeLessThan(100);
+    expect(new Set(mid.map((p) => p.cur)).size).toBe(mid.length);
+    expect(seen.at(-1)!.cur).toBe(100);
   });
 
   it('emits in name order with Digital ID as the tie-break, case-insensitively', async () => {
@@ -233,6 +264,7 @@ describe('pageDigitalIdDirectoryForWrite', () => {
     await store.putDigitalIdDirectoryEntriesBatch(seededDirectory('p1', 3000, 11));
     const accept = vi.fn(() => true);
     const out: number[] = [];
+    let peak = 0;
     await pageDigitalIdDirectoryForWrite({
       store,
       projectId: 'p1',
@@ -240,8 +272,12 @@ describe('pageDigitalIdDirectoryForWrite', () => {
       batchSize: 100,
       acceptRow: accept,
       onAcceptedRow: (row) => void out.push(row.digitalId),
+      onBufferLength: (n) => void (peak = Math.max(peak, n)),
     });
     expect(out).toHaveLength(100);
     expect(accept).toHaveBeenCalledTimes(3000);
+    // The buffer is cut at twice the cap, so it never holds more than that plus one batch.
+    expect(peak).toBeGreaterThan(100);
+    expect(peak).toBeLessThanOrEqual(2 * 100 + 100);
   });
 });

@@ -33,6 +33,8 @@ export interface PageDigitalIdDirectoryForWriteArgs {
   onRejectedRow?: (row: DigitalIdDirectoryEntry) => void;
   /** Rows per primary-key batch. Defaults to {@link DIRECTORY_STREAM_BATCH_SIZE}. */
   batchSize?: number;
+  /** Test hook: called with the buffer length after each batch is added, before it is cut. */
+  onBufferLength?: (length: number) => void;
 }
 
 export interface PageDigitalIdDirectoryForWriteResult {
@@ -79,7 +81,7 @@ export async function pageDigitalIdDirectoryForWrite(
   const total = await args.store.countDigitalIdDirectoryEntries(args.projectId);
   if (cap <= 0) return { total, collected: 0 };
 
-  let seenAccepted = 0;
+  let seenRows = 0;
   let lastProgressAt = 0;
 
   const reportProgress = (force = false): void => {
@@ -87,9 +89,10 @@ export async function pageDigitalIdDirectoryForWrite(
     const now = Date.now();
     if (!force && now - lastProgressAt < PROGRESS_THROTTLE_MS) return;
     lastProgressAt = now;
-    const max = total > 0 ? Math.min(total, cap) : Math.max(cap, 1);
+    // Rows read out of the directory, so the bar still moves while a binding cap holds the buffer.
+    const max = Math.max(total, 1);
     args.onProgress({
-      cur: Math.min(seenAccepted, max),
+      cur: Math.min(seenRows, max),
       max,
       msg: args.progressMsg ?? 'Loading directory contacts',
     });
@@ -113,10 +116,11 @@ export async function pageDigitalIdDirectoryForWrite(
         nameLower: row.name.toLocaleLowerCase('en'),
         accepted: args.acceptRow(row),
       };
-      if (candidate.accepted) seenAccepted++;
+      seenRows++;
       if (cutoff && compareNameOrder(candidate, cutoff) > 0) continue;
       buffer.push(candidate);
     }
+    args.onBufferLength?.(buffer.length);
     if (buffer.length > truncateAt) {
       const selected = selectToCap(buffer, cap);
       buffer = selected.kept;
@@ -141,7 +145,7 @@ export async function pageDigitalIdDirectoryForWrite(
       args.onRejectedRow?.(candidate.row);
     }
   }
-  seenAccepted = collected;
+  seenRows = total;
   reportProgress(true);
   return { total, collected };
 }
