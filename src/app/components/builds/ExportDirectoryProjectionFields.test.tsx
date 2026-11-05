@@ -129,4 +129,21 @@ describe('ExportDirectoryProjectionFields — Anytone dual-bank (#1433)', () => 
     );
     expect(screen.queryByText('ID database fields')).not.toBeInTheDocument();
   });
+
+  it('hides the ID database field choice when the egress is a CPS file, not Web Serial', () => {
+    const { build } = newRadioBuildForProfile('project-1', 'anytone-at-d890uv');
+    render(
+      <MantineProvider>
+        <ExportDirectoryProjectionFields
+          build={{ ...build, radioTargetId: 'anytone-at-d890uv' }}
+          formatId="anytone"
+          profileId="anytone-at-d890uv"
+          saving={false}
+          onPatch={vi.fn()}
+        />
+      </MantineProvider>,
+    );
+    expect(screen.getByRole('checkbox', { name: 'Include contacts' })).toBeInTheDocument();
+    expect(screen.queryByText('ID database fields')).not.toBeInTheDocument();
+  });
 });
