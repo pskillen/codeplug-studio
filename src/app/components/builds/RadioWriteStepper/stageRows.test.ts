@@ -100,4 +100,22 @@ describe('stageRows (4a stage cursor)', () => {
     expect(rows.map((r) => r.label)).toEqual(plan.map((p) => p.label));
     expect(rows.find((r) => r.status === 'active')?.label).toBe('Pre-write read');
   });
+
+  it('keeps a bounded event log over a long run and replays to the same cursor', () => {
+    const plan: PlannedStage[] = [
+      { label: 'One', weight: 1 },
+      { label: 'Two', weight: 10 },
+      { label: 'Three', weight: 1 },
+    ];
+    const emit = (t: ReturnType<typeof newTrack>) => {
+      t = trackWithEvent(t, ev('One', 1, 1));
+      for (let i = 1; i <= 5000; i++) t = trackWithEvent(t, ev('Two', i, 5000));
+      return trackWithEvent(t, ev('Three', 1, 4));
+    };
+    const live = emit(trackWithPlan(newTrack(), plan));
+    expect(live.events.length).toBeLessThanOrEqual(8);
+    const late = trackWithPlan(emit(newTrack()), plan);
+    expect(late.cursor).toEqual(live.cursor);
+    expect(summary(stageRows(late))).toBe(summary(stageRows(live)));
+  });
 });

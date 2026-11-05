@@ -93,11 +93,36 @@ export function trackWithPlan(
   return { ...next, cursor: replay(next) };
 }
 
+/**
+ * Keep the event for a late plan to replay, without keeping every frame (#1558). Inside a run of
+ * same-stage events whose `cur` only rises, the first and the latest are enough: replay folds to
+ * the same cursor (the held fraction is a max, `cur` never drops so there is no pass change, and
+ * the cursor keeps the last `cur` / `max`). A different stage or a drop in `cur` starts a new run,
+ * so every stage change and pass restart is still kept.
+ */
+export function keepEvent(events: ProgressUpdate[], event: ProgressUpdate): void {
+  const n = events.length;
+  const last = events[n - 1];
+  const prev = events[n - 2];
+  if (
+    last &&
+    prev &&
+    last.stage === event.stage &&
+    prev.stage === event.stage &&
+    event.cur >= last.cur &&
+    last.cur >= prev.cur
+  ) {
+    events[n - 1] = event;
+    return;
+  }
+  events.push(event);
+}
+
 /** Fold one event with a stage label into the track, appending the label as a row if unplanned. */
 export function trackWithEvent(track: StageTrack, event: ProgressUpdate): StageTrack {
   const label = event.stage;
   if (!label) return track;
-  track.events.push(event);
+  keepEvent(track.events, event);
   const known = (track.plan ?? []).some((p) => p.label === label) || track.grown.includes(label);
   if (known) {
     return { ...track, cursor: foldStageEvent(track.cursor, cursorRowsOf(track), event) };
