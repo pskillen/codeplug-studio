@@ -54,6 +54,12 @@ export const EMPTY_TRACKER: StageTracker = {
 
 /** Time constant of the rate average, in seconds. */
 export const RATE_TIME_CONSTANT_S = 5;
+/**
+ * Rate samples span at least this long. Frames arriving faster than this (the D890 contact write
+ * is under 1 ms per frame) are folded into the next sample instead of each being timed on its own,
+ * which with a 1 ms clock capped the measured rate near one frame per millisecond (#1558).
+ */
+export const RATE_MIN_WINDOW_MS = 250;
 /** ETA appears after this much time since the first progress event. */
 export const ETA_MIN_ELAPSED_MS = 2000;
 /** When done weight has not moved for this long, the whole-run average rate replaces the moving one. */
@@ -132,7 +138,9 @@ export function advanceTracker(
     // Sample only when done weight moves, over the time since it last moved: a long read between
     // sparse events then counts as slow progress instead of decaying the rate.
     const origin = prev.lastAt ?? firstAt;
-    if (origin != null && firstAt != null && now > origin) {
+    // A sample needs a window of at least RATE_MIN_WINDOW_MS; until then the movement stays
+    // unsampled (lastAt / lastDone untouched) and is counted in the next sample.
+    if (origin != null && firstAt != null && now - origin >= RATE_MIN_WINDOW_MS) {
       const dt = (now - origin) / 1000;
       const inst = (done - prev.lastDone) / dt;
       if (rate == null) {
@@ -141,9 +149,13 @@ export function advanceTracker(
         const alpha = 1 - Math.exp(-dt / RATE_TIME_CONSTANT_S);
         rate = rate + alpha * (inst - rate);
       }
+      lastAt = now;
+      lastDone = done;
+    } else if (prev.firstAt == null) {
+      // The very first event: work before the clock started is the baseline, not a sample.
+      lastAt = now;
+      lastDone = done;
     }
-    lastAt = now;
-    lastDone = done;
   }
   return { ...next, firstDone, rate, lastAt, lastDone };
 }
