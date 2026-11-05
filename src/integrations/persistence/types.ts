@@ -197,6 +197,10 @@ export interface ProjectPersistence {
   loadProjectSeed(projectId: string): Promise<ProjectSeed | null>;
   replaceProject(projectId: string, seed: ProjectSeed): Promise<void>;
 
+  /**
+   * Upsert directory rows. The project's row must already exist: rows for a `projectId` with no
+   * project are treated as orphans and deleted by the sweep at the next open.
+   */
   putDigitalIdDirectoryEntriesBatch(
     entries: readonly DigitalIdDirectoryEntry[],
   ): Promise<{ written: number }>;
