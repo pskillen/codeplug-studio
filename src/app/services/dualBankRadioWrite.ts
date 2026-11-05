@@ -130,7 +130,7 @@ export async function collectDualBankDirectorySlice(
     if (forOpenGd77) {
       pushGeneralWarning(
         args.warnings,
-        `Directory has more contacts than the OpenGD77 User Database allows; only ${cap} write from directory`,
+        `Directory has ${total} contacts and the OpenGD77 User Database holds ${cap}; only ${cap} write from directory`,
       );
     } else if (forAtD890) {
       pushGeneralWarning(
