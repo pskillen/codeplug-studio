@@ -746,8 +746,9 @@ function openGd77WriteWarnings(session: RadioSession): ExportWarning[] {
   if (session.radio.getLastDirtySectorCount() === 0) {
     pushGeneralWarning(warnings, OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE);
   }
-  const userDb = session.radio.getLastUserDatabaseWarning();
-  if (userDb) pushGeneralWarning(warnings, userDb);
+  for (const userDb of session.radio.getLastUserDatabaseWarnings()) {
+    pushGeneralWarning(warnings, userDb);
+  }
   return warnings;
 }
 

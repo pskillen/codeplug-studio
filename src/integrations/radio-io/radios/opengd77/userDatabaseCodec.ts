@@ -14,6 +14,7 @@ import {
   OPENUV380_USER_DB_HEADER_ABS,
   OPENUV380_USER_DB_HEADER_SIZE,
   OPENUV380_USER_DB_TEXT_CHARS,
+  OPENUV380_USER_DB_WRITE_LIMIT_ABS,
 } from './constants.ts';
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
@@ -173,13 +174,19 @@ function decodeEntry(rec: Uint8Array): OpenGd77UserDatabaseDecodedEntry {
   };
 }
 
+export interface OpenGd77UserDatabaseEncodeOptions {
+  /** Entries to keep. Never above the layout ceiling, whatever the caller passes. */
+  cap?: number;
+}
+
 export function encodeOpenGd77UserDatabase(
   rows: readonly RadioDigitalContactDto[],
   warnings: ExportWarning[] = [],
+  opts: OpenGd77UserDatabaseEncodeOptions = {},
 ): OpenGd77UserDatabaseEncodeResult {
   const valid = rows.filter((row) => row.digitalId > 0);
   valid.sort((a, b) => a.digitalId - b.digitalId);
-  const cap = OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX;
+  const cap = Math.min(opts.cap ?? Infinity, OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX);
   const truncated = Math.max(0, valid.length - cap);
   if (truncated > 0) {
     pushGeneralWarning(
@@ -192,6 +199,10 @@ export function encodeOpenGd77UserDatabase(
   const n1 = kept.length - n0;
   const entries0 = new Uint8Array(n0 * OPENUV380_USER_DB_ENTRY_SIZE);
   const entries1 = new Uint8Array(n1 * OPENUV380_USER_DB_ENTRY_SIZE);
+  // Hard interlock: segment 1 must end below the GPS log, whatever the cap said.
+  if (OPENUV380_USER_DB_ENTRIES1_ABS + entries1.byteLength > OPENUV380_USER_DB_WRITE_LIMIT_ABS) {
+    throw new RangeError('User Database would reach the GPS log; refusing to encode');
+  }
   for (let i = 0; i < n0; i++) {
     entries0.set(encodeEntry(kept[i]!), i * OPENUV380_USER_DB_ENTRY_SIZE);
   }

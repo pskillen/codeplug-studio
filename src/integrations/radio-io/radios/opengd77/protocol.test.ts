@@ -27,6 +27,38 @@ describe('parseFirmwareInfo', () => {
   });
 });
 
+describe('parseFirmwareInfo flashId and features', () => {
+  /** 46 bytes by hand: flashId u32 LE at 40, features u16 LE at 44 (usb_com.c:259-267). */
+  function handBuilt(): Uint8Array {
+    const p = new Uint8Array(46);
+    p[0] = 3; // struct version
+    p[4] = 0x08; // radio type
+    p.set(new TextEncoder().encode('R20260130'), 8);
+    p[40] = 0x18;
+    p[41] = 0x40; // 0x4018
+    p[44] = 0x06;
+    p[45] = 0x01; // 0x0106: bit 1 and bit 2 and bit 8
+    return p;
+  }
+  it('reads flashId at offset 40 and features at offset 44', () => {
+    const info = parseFirmwareInfo(handBuilt());
+    expect(info.flashId).toBe(0x4018);
+    expect(info.features).toBe(0x0106);
+    expect(info.fwRevision).toBe('R20260130');
+  });
+  it('reads a flashId above 16 bits and does not mix it into features', () => {
+    const p = handBuilt();
+    p[42] = 0x01;
+    p[43] = 0x80;
+    expect(parseFirmwareInfo(p).flashId).toBe(0x8001_4018);
+    expect(parseFirmwareInfo(p).features).toBe(0x0106);
+  });
+  it('refuses a payload shorter than 46 bytes', () => {
+    expect(() => parseFirmwareInfo(handBuilt().subarray(0, 44))).toThrow(/46 bytes, got 44/);
+    expect(() => parseFirmwareInfo(new Uint8Array(0))).toThrow(/46 bytes/);
+  });
+});
+
 describe('OpenGd77Protocol', () => {
   it('connects, downloads registered spans, rejects wrong radioType', async () => {
     const bad = new OpenGd77ScriptedPipe(0x05); // MD-9600

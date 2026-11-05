@@ -8,22 +8,31 @@ Cite: qdmr `OpenUV380CallsignDB` **Offset** + `encode()` (facts only). The class
 
 ## FLASH (OpenUV380)
 
-| Item              | Value                                                                                                              |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Header            | `0x00050000` (12 bytes, magic `Id`)                                                                                |
-| Segment 0 entries | immediately after header; segment size `0x40000`                                                                   |
-| Segment 1 entries | `0x000d8000` (overflow)                                                                                            |
-| Entry size        | `0x1b` (3-byte LE DMR ID + 24 bytes packed 6-bit text, 32 chars)                                                   |
-| Programming image | **not** in `OPENUV380_IMAGE_END` (`0xaee60`). Segment 0 sits in an untransferred gap; segment 1 is past the image. |
+| Item              | Value                                                                                                                                                                                                           |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Header            | `0x00050000` (12 bytes, magic `Id`)                                                                                                                                                                             |
+| Segment 0 entries | immediately after header; segment size `0x40000`                                                                                                                                                                |
+| Segment 1 entries | `0x000d8000` (overflow); the firmware does not bound it, so it runs to whatever sits above                                                                                                                      |
+| Entry size        | `0x1b` (3-byte LE DMR ID + 24 bytes packed 6-bit text, 32 chars)                                                                                                                                                |
+| Mode byte         | Header byte 2. `'N'` (78): 3-byte IDs, segment 1 at `0xd8000`, voice prompts kept. Studio always writes this. `'n'`: segment 1 at `0xaf400`, **overwrites the voice prompts**; gains about 1% and is never used |
+| Flash above       | `0xaf400`-`0xd7fff` voice prompts; `0x100000` legacy voice-prompt slot (read only when `0xaf400` has no `VP` header); `0xe00000`-`0xffffff` GPS log (2 MiB)                                                     |
+| Programming image | **not** in `OPENUV380_IMAGE_END` (`0xaee60`). Segment 0 sits in an untransferred gap; segment 1 is past the image.                                                                                              |
 
 Studio Write programs **occupied sectors only** (header + packed entries). Do not copy qdmr `size1 = 0xd28000` as an entry count.
 
 ## Cardinality
 
-| Cap           | Value                  | Notes                                                                                                                      |
-| ------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Contact bank  | **1024**               | Talk groups + library privates                                                                                             |
-| User Database | **69 600** preliminary | User-guide range ~13 800–69 600 by chars/entry. Code: `OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX`. Packing may yield fewer. |
+| Cap           | Value       | Notes                                                                                                                                                                    |
+| ------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Contact bank  | **1024**    | Talk groups + library privates                                                                                                                                           |
+| User Database | **520 646** | 9 708 entries in segment 0 plus 510 938 in segment 1, which stops at the GPS log (`0xe00000`). Code: `OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX`, derived from the layout |
+
+The Write holds the cap lower when it must:
+
+- **Voice prompts in the legacy slot.** Before the first sector of a Write that sends more than 15 776 entries (in a combined Write, before the codeplug sectors too), Studio reads the 8-byte voice-prompt header at `0xaf400` and at `0x100000`. The `0xaf400` copy counts only when the firmware would load it: magic `VP` and version `0x0009` (`voicePrompts.c`, `voicePromptsCheckMagicAndVersion`). Any other header there is ignored, as the firmware ignores it. If it does not count and a `VP` magic sits at `0x100000` (any version), or either read fails or comes back short, the Write stops at **15 776** entries (segment 1 ends below that slot). The Write result says why and how many rows were left out; the pre-send Review does not show it. A loadable header at `0xaf400`, or no prompts at all, allows the full cap.
+- **Flash part not confirmed.** Unless FirmwareInfo reports the 16 MiB part, the Write is held to the older tested size, 69 600 entries.
+
+A full database is about 14 MB of transfer, so the Write takes correspondingly longer. Check write reads it all back.
 
 Library CRUD stays unlimited.
 
@@ -36,7 +45,7 @@ Library CRUD stays unlimited.
 | CPS zip                           | No User Database file. Directory toggle **warns** and does **not** append to `Contacts.csv` (CPS “Write DMR IDs” is a separate CPS tool)                                                            |
 | Backup / Restore                  | Occupied User Database is an **inspect-only** zip region (`user-database`). Restore does not replay it. Inspect shows lookup count separately from “DMR contacts”                                   |
 
-FirmwareInfo **features bit 1** = extended callsign DB. Studio still uses these Offset bases if the bit is clear, and warns.
+FirmwareInfo **features bit 1** means the database loaded at boot is in `'n'` mode: an earlier upload already overwrote the voice prompts. It is not a capability, and is clear on a normal radio. Studio warns only when it is set. Bit 2 is voice prompts loaded; `flashId` (offset 40) is the flash part.
 
 ## Check write
 

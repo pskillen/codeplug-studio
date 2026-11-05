@@ -172,22 +172,22 @@ A failed flash write throws a typed error naming the command, the sector and the
 
 ## FirmwareInfo (`'R'` mem `09h`)
 
-| Field           | Notes                                      |
-| --------------- | ------------------------------------------ |
-| structVersion   | Currently observed as 3 in qdmr            |
-| radioType       | See [README.md](README.md) radioType table |
-| fw_revision[16] | ASCII, 0-padded                            |
-| build_date[16]  | `YYYYMMDDhhmmss`, 0-padded                 |
-| flashChipSerial | u32                                        |
-| features        | LE bitflags                                |
+| Field           | Notes                                                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| structVersion   | Currently observed as 3 in qdmr                                                                                        |
+| radioType       | See [README.md](README.md) radioType table                                                                             |
+| fw_revision[16] | ASCII, 0-padded                                                                                                        |
+| build_date[16]  | `YYYYMMDDhhmmss`, 0-padded                                                                                             |
+| flashId         | u32 at offset 40, the SPI flash part id. `0x4018` is the 16 MiB W25Q128; the 1701 and MD-9600 only boot normally on it |
+| features        | LE bitflags                                                                                                            |
 
 ### Feature bits (LE)
 
-| Bit | Meaning              |
-| --- | -------------------- |
-| 0   | Inverted display     |
-| 1   | Extended callsign DB |
-| 2   | Voice prompt loaded  |
+| Bit | Meaning                                                                                                                                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0   | Inverted display                                                                                                                            |
+| 1   | The User Database loaded at boot is in `'n'` mode (second segment on the voice prompts). A state, not a capability: clear on a normal radio |
+| 2   | Voice prompts loaded                                                                                                                        |
 
 ### Protocol variant from radioType
 
@@ -221,7 +221,7 @@ That dump shape is an **edge case**, not a hang detector. The next unresponsive 
 
 ## Write verify
 
-Upload stages the **contiguous runs of 32-byte blocks actually sent** for each dirty FLASH sector (`dirtySectorChunks`, from `collectDirtySectors`; never whole 4096-byte sectors, and not untouched image gaps or `0xff` filler over bytes the radio keeps) plus a pre-upload snapshot of **kept** regions from `writeRole.ts`. Write encode overlays modelled banks onto the **in-session pre-write FLASH prior** (same download as the dirty-sector base) — not a persisted clone bag and not a virgin `0xff` image. **Zero dirty sectors** means the modelled overlay already matched live FLASH: Studio still sends `SAVE_REBOOT`, but the DM-1701 does **not** drop to All Channels (that kick happens when FLASH is actually programmed). Digital contact names on Write use `digitalContactExportNameMode` (same map as CPS / Contacts wire preview). After codeplug dirty sectors, **RadioID directory** Write starts a qdmr-style FLASH write_start (red LED + save-settings-no-reboot) then programs occupied User Database sectors from the encoded image only — **no** read-modify-write of `0x50000`. The firmware's write state does not depend on earlier `'R'` reads (the open sector is the only write state), so reading before writing is not what makes a write fail; an earlier hardware `radio returned '-'` was a framing desync or another cause (see [ACK and NACK framing](#ack-and-nack-framing)). User Database is not part of `OPENUV380_FLASH_SPANS` and not a verify-image region; it has its own check. **Verify write** runs after `SAVE_REBOOT` — operator waits for restart, reconnects, full `download()`, and compares sector payloads plus kept spans. When the Write sent a User Database (programmed completely), Verify also reads back the header (12 bytes) and the occupied entries (`downloadUserDatabaseOccupied`) and reports them as the **User Database** region group: the header is compared byte for byte and the entries per 4 KB sector slice by CRC-32 (the bytes themselves are not kept: 69,600 entries are about 1.9 MB, over the session-storage quota), so a mismatching sector is reported with both digests, not bytes. If the radio's header count is below what was sent, the missing slices are `not read`. The read-back costs roughly the length of the Write's data. Keps are not checked (their sessions never cross 64 KiB). Feature: [write-verify.md](../../../features/radio-read-write/write-verify.md).
+Upload stages the **contiguous runs of 32-byte blocks actually sent** for each dirty FLASH sector (`dirtySectorChunks`, from `collectDirtySectors`; never whole 4096-byte sectors, and not untouched image gaps or `0xff` filler over bytes the radio keeps) plus a pre-upload snapshot of **kept** regions from `writeRole.ts`. Write encode overlays modelled banks onto the **in-session pre-write FLASH prior** (same download as the dirty-sector base) — not a persisted clone bag and not a virgin `0xff` image. **Zero dirty sectors** means the modelled overlay already matched live FLASH: Studio still sends `SAVE_REBOOT`, but the DM-1701 does **not** drop to All Channels (that kick happens when FLASH is actually programmed). Digital contact names on Write use `digitalContactExportNameMode` (same map as CPS / Contacts wire preview). After codeplug dirty sectors, **RadioID directory** Write starts a qdmr-style FLASH write_start (red LED + save-settings-no-reboot) then programs occupied User Database sectors from the encoded image only — **no** read-modify-write of `0x50000`. The firmware's write state does not depend on earlier `'R'` reads (the open sector is the only write state), so reading before writing is not what makes a write fail; an earlier hardware `radio returned '-'` was a framing desync or another cause (see [ACK and NACK framing](#ack-and-nack-framing)). User Database is not part of `OPENUV380_FLASH_SPANS` and not a verify-image region; it has its own check. **Verify write** runs after `SAVE_REBOOT` — operator waits for restart, reconnects, full `download()`, and compares sector payloads plus kept spans. When the Write sent a User Database (programmed completely), Verify also reads back the header (12 bytes) and the occupied entries (`downloadUserDatabaseOccupied`) and reports them as the **User Database** region group: the header is compared byte for byte and the entries per 4 KB sector slice by CRC-32 (the bytes themselves are not kept: a full database is up to about 14 MB, over the session-storage quota), so a mismatching sector is reported with both digests, not bytes. If the radio's header count is below what was sent, the missing slices are `not read`. The read-back costs roughly the length of the Write's data. Keps are not checked (their sessions never cross 64 KiB). Feature: [write-verify.md](../../../features/radio-read-write/write-verify.md).
 
 For **Restore** (not Write): `restoreFromBackup` copies zip FLASH spans onto a **blank** prior, programs those dirty sectors, then **SAVE_REBOOT**. It does not pre-write-read live FLASH and does not arm a write projection. See [backup-restore.md](backup-restore.md). Hardware verify pending.
 
