@@ -70,8 +70,9 @@ These section names are the vocabulary phase 8's Resolution view attributes valu
   On Anytone they choose the ID database file rows; contacts
   always go to the talk-group file. Radios with the `idDatabaseFieldChoice` trait (AT-D890UV)
   also get an **ID database fields** control (`exportSettings.idDatabaseFields`:
-  `essentials`, the default, or `all`) for Web Serial Write; the library keeps every field. The component returns `null` (no empty card) when
-  the trait does not apply.
+  `essentials`, the default, or `all`) when the build writes over Web Serial; the library
+  keeps every field. The component returns `null` (no empty card) when the trait does not
+  apply.
 - **Naming** delegates to [`ExportNameSettingsFields`](./ExportNameSettingsFields.md) —
   see that sidecar for the abbreviations / shorten-length grouping.
 
