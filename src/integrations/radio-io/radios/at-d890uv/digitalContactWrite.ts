@@ -7,6 +7,7 @@
  * units on every contact write), and it keeps a Write free of any `R` after the first `W`.
  */
 
+import type { IdDatabaseFields } from '@core/models/radioBuild.ts';
 import type { BytePipe, ProgressFn } from '../../types.ts';
 import { AT_D890_BLOCK_SIZE } from './constants.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
@@ -75,8 +76,9 @@ export function preparedContactWriteBytes(prepared: AtD890PreparedContactWrite):
  */
 export function prepareAtD890DigitalContactWrite(
   contacts: readonly RadioDigitalContactDto[],
+  fields: IdDatabaseFields,
 ): AtD890PreparedContactWrite {
-  const modelledChunks = packAtD890DigitalContacts(contacts).stagingChunks;
+  const modelledChunks = packAtD890DigitalContacts(contacts, fields).stagingChunks;
   if (modelledChunks.length === 0) return { chunks: [], units: [], anchors: new Map() };
 
   for (const c of modelledChunks) {
@@ -155,7 +157,12 @@ export async function writePreparedAtD890DigitalContacts(
 export async function uploadAtD890DigitalContacts(
   pipe: BytePipe,
   contacts: readonly RadioDigitalContactDto[],
+  fields: IdDatabaseFields,
   opts: { onProgress?: ProgressFn; signal?: AbortSignal } = {},
 ): Promise<void> {
-  await writePreparedAtD890DigitalContacts(pipe, prepareAtD890DigitalContactWrite(contacts), opts);
+  await writePreparedAtD890DigitalContacts(
+    pipe,
+    prepareAtD890DigitalContactWrite(contacts, fields),
+    opts,
+  );
 }

@@ -16,6 +16,16 @@ import type { TraitLayout } from './traitLayout.ts';
 
 /** How channels with `scanInclusion: default` serialise when build omits an override. */
 
+/**
+ * Which fields a radio's incoming-call ID database Write includes. `essentials` is the name,
+ * the callsign and the city; `all` adds the rest the radio stores (state, country, remark).
+ * Radio-neutral: a radio that has the `idDatabaseFieldChoice` trait maps it to its own fields.
+ */
+export type IdDatabaseFields = 'essentials' | 'all';
+
+/** Default when a build has no stored choice: the smaller, faster Write. */
+export const DEFAULT_ID_DATABASE_FIELDS: IdDatabaseFields = 'essentials';
+
 /** Channel distance display unit for the MM9PDY channel location table. */
 export type ChannelDistanceUnit = 'km' | 'mi';
 
@@ -83,6 +93,11 @@ export interface BuildExportSettings {
    * written into the channel location table header on Write. Unset → kilometres.
    */
   channelDistanceUnit?: ChannelDistanceUnit;
+  /**
+   * Fields the radio's ID database Write includes (`idDatabaseFieldChoice` radios, Web Serial).
+   * Unset (old builds) means `essentials`. The library keeps every field either way.
+   */
+  idDatabaseFields?: IdDatabaseFields;
   /** CPS export: dual-bank directory toggles (`SeparateDigitalIdList` profiles). */
   cpsDualBankDirectory?: DualBankRadioWriteOptions;
   /**

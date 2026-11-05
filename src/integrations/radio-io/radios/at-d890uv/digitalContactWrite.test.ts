@@ -17,7 +17,7 @@ describe('uploadAtD890DigitalContacts hard deny', () => {
     const pipe = new AtD890ScriptedPipe();
     pipe.readResponder = (_addr, len) => new Uint8Array(len).fill(0xff);
     pipe.autoAckWrites = true;
-    const run = () => uploadAtD890DigitalContacts(pipe, []);
+    const run = () => uploadAtD890DigitalContacts(pipe, [], 'all');
     await expect(run()).rejects.toThrow(RadioProtocolError);
     await expect(run()).rejects.toThrow(/LocalInfo \/ calibration/);
     expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(0);

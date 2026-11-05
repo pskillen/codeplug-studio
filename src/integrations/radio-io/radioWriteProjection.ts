@@ -6,7 +6,7 @@ import type { ExportWarning } from '@core/import-export/exportWarning.ts';
  */
 
 import type { RadioChannelDto } from './radioChannelDto.ts';
-import type { ChannelDistanceUnit } from '@core/models/radioBuild.ts';
+import type { ChannelDistanceUnit, IdDatabaseFields } from '@core/models/radioBuild.ts';
 import type { ChannelLocationWriteCounts } from '@core/radio-targets/channelLocationNotes.ts';
 import type { AtD890ResolvedScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import type {
@@ -197,6 +197,11 @@ export interface RadioWriteOrganisation {
   talkGroups?: readonly RadioTalkGroupDto[];
   rxGroups?: readonly RadioRxGroupDto[];
   digitalContacts?: readonly RadioDigitalContactDto[];
+  /**
+   * AT-D890UV: which fields the ID database Write includes. Unset means `essentials`. The
+   * contacts above always carry every field; only the radio-io encoder drops the others.
+   */
+  idDatabaseFields?: IdDatabaseFields;
   /** Operator DMR radio IDs (metadata 0x67) — DM-32UV Web Serial Write. */
   radioIds?: readonly RadioRadioIdDto[];
   aprs?: RadioAprsDto | null;

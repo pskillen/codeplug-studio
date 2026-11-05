@@ -795,7 +795,10 @@ export async function writeBuildToRadio(
   // known up front, which would leave a half-written session (#1406).
   const isD890 = isAtD890RadioIoProfileId(egress.profileId);
   const contactWrite = isD890
-    ? prepareAtD890DigitalContactsForWrite(prepared.organisation.digitalContacts)
+    ? prepareAtD890DigitalContactsForWrite(
+        prepared.organisation.digitalContacts,
+        prepared.organisation.idDatabaseFields,
+      )
     : undefined;
   declareAtD890ContactUnitsForWrite(session, contactWrite);
   await session.radio.upload(image, {
@@ -1063,7 +1066,10 @@ export async function uploadPreparedRadioWrite(
     // Pack and validate the contacts before the pause and before the first W (#1406).
     const isD890 = isAtD890RadioIoProfileId(egress.profileId);
     const contactWrite = isD890
-      ? prepareAtD890DigitalContactsForWrite(opts?.organisation?.digitalContacts)
+      ? prepareAtD890DigitalContactsForWrite(
+          opts?.organisation?.digitalContacts,
+          opts?.organisation?.idDatabaseFields,
+        )
       : undefined;
     if (opts?.beforeTransmit) {
       timing?.timeline.markPauseStart();

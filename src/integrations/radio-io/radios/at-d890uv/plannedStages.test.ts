@@ -128,7 +128,7 @@ describe('AT-D890UV planned stages', () => {
     const pipe = new AtD890ScriptedPipe();
     pipe.autoAckWrites = true;
     const rec = stageRecorder();
-    await uploadAtD890DigitalContacts(pipe, contacts, { onProgress: rec.onProgress });
+    await uploadAtD890DigitalContacts(pipe, contacts, 'essentials', { onProgress: rec.onProgress });
     // The tail of the plan is what this writer emits; the codeplug part is covered above.
     expectEventsFollowPlan(plan.slice(labels.indexOf('Digital contacts')), rec.events);
     expect(rec.stages).toEqual(['Digital contacts']);

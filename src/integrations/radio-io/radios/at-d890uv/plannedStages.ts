@@ -19,6 +19,7 @@ import {
   AT_D890_SAFE_SKIP_WRITE_ADDR,
   D890_MAP,
 } from './constants.ts';
+import { DEFAULT_ID_DATABASE_FIELDS } from '@core/models/radioBuild.ts';
 import { packAtD890DigitalContacts } from './digitalContactCodec.ts';
 import {
   AT_D890_ERASE_UNIT_BYTES,
@@ -216,7 +217,10 @@ function contactStages(ctx: RadioPlanContext): PlannedStage[] {
     bytes = prepared;
   } else if (contacts && contacts.length > 0) {
     try {
-      const chunks = packAtD890DigitalContacts(contacts).stagingChunks;
+      const chunks = packAtD890DigitalContacts(
+        contacts,
+        ctx.prepared?.organisation.idDatabaseFields ?? DEFAULT_ID_DATABASE_FIELDS,
+      ).stagingChunks;
       bytes = chunks.length * BLOCK;
     } catch {
       // The plan is advisory: a contact set the packer rejects keeps the nominal sizes, and the

@@ -3,6 +3,7 @@
  * Cite: docs/reference/radios/anytone/at-d890uv/memory-layout.md (facts only).
  */
 
+import type { IdDatabaseFields } from '@core/models/radioBuild.ts';
 import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
 import { AT_D890_BLOCK_SIZE, D890_MAP } from './constants.ts';
 import { encodeBcdAsHexU32 } from './bcd.ts';
@@ -58,8 +59,18 @@ function digitalContactOrderKey(digitalId: number): number {
   return (bcdHex * 2 + (ANYTONE_CALL_TYPE_PRIVATE & 1)) >>> 0;
 }
 
-/** Variable-length wire record for one private digital contact. */
-export function encodeAtD890DigitalContactRecord(contact: RadioDigitalContactDto): Uint8Array {
+/**
+ * Variable-length wire record for one private digital contact.
+ *
+ * `essentials` writes name, city and callsign; state, country and remark are written empty, as
+ * just their `00 00` terminator, so the record stays self-terminating (the firmware finds each
+ * field by its terminator; the 6-byte header carries no length). `all` writes every field.
+ */
+export function encodeAtD890DigitalContactRecord(
+  contact: RadioDigitalContactDto,
+  fields: IdDatabaseFields,
+): Uint8Array {
+  const all = fields === 'all';
   const header = new Uint8Array(6);
   header[0] = ANYTONE_CALL_TYPE_PRIVATE;
   header[1] = ANYTONE_CALL_ALERT_NONE;
@@ -69,9 +80,9 @@ export function encodeAtD890DigitalContactRecord(contact: RadioDigitalContactDto
     encodeWideCharCString(contact.wireName, NAME_MAX_CHARS),
     encodeWideCharCString(contact.city, CITY_MAX_CHARS),
     encodeWideCharCString(contact.callsign, CALLSIGN_MAX_CHARS),
-    encodeWideCharCString(contact.province, STATE_MAX_CHARS),
-    encodeWideCharCString(contact.country, COUNTRY_MAX_CHARS),
-    encodeWideCharCString(contact.remark, REMARK_MAX_CHARS),
+    encodeWideCharCString(all ? contact.province : '', STATE_MAX_CHARS),
+    encodeWideCharCString(all ? contact.country : '', COUNTRY_MAX_CHARS),
+    encodeWideCharCString(all ? contact.remark : '', REMARK_MAX_CHARS),
   ]);
 }
 
@@ -106,6 +117,7 @@ export interface AtD890DigitalContactPack {
 /** Pack contacts into meta / order / data linear streams and upload staging chunks. */
 export function packAtD890DigitalContacts(
   contacts: readonly RadioDigitalContactDto[],
+  fields: IdDatabaseFields,
 ): AtD890DigitalContactPack {
   const orderEntries: { key: number; dataOffset: number }[] = [];
   const dataParts: Uint8Array[] = [];
@@ -113,7 +125,7 @@ export function packAtD890DigitalContacts(
 
   for (const contact of contacts) {
     if (contact.digitalId <= 0) continue;
-    const record = encodeAtD890DigitalContactRecord(contact);
+    const record = encodeAtD890DigitalContactRecord(contact, fields);
     orderEntries.push({ key: digitalContactOrderKey(contact.digitalId), dataOffset });
     dataParts.push(record);
     dataOffset += record.length;

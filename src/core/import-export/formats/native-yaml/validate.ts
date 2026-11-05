@@ -1247,6 +1247,13 @@ function parseExportSettings(raw: unknown, label: string): BuildExportSettings |
     }
     settings.channelDistanceUnit = value;
   }
+  if (record.idDatabaseFields !== undefined && record.idDatabaseFields !== null) {
+    const value = expectString(record.idDatabaseFields, `${label}.idDatabaseFields`);
+    if (value !== 'essentials' && value !== 'all') {
+      throw new NativeYamlImportError(`${label}.idDatabaseFields is invalid: ${value}`);
+    }
+    settings.idDatabaseFields = value;
+  }
   return Object.keys(settings).length > 0 ? settings : undefined;
 }
 

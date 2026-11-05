@@ -81,7 +81,7 @@ function legacyChunksFromLinear(
 
 /** The original prepare: chunks rebuilt independently, a filter over all chunks per unit. */
 function legacyPrepare(contacts: readonly RadioDigitalContactDto[]) {
-  const pack = packAtD890DigitalContacts(contacts);
+  const pack = packAtD890DigitalContacts(contacts, 'all');
   const modelledChunks: AtD890StagingChunk[] = [
     { address: D890_MAP.DigitalContactMeta, data: pack.meta.slice() },
     ...legacyChunksFromLinear(
@@ -134,7 +134,7 @@ function frames(chunks: readonly AtD890StagingChunk[]): string {
 
 describe('prepareAtD890DigitalContactWrite (#1558)', () => {
   function expectIdentical(contacts: readonly RadioDigitalContactDto[]): void {
-    const next = prepareAtD890DigitalContactWrite(contacts);
+    const next = prepareAtD890DigitalContactWrite(contacts, 'all');
     const ref = legacyPrepare(contacts);
     expect(next.units).toEqual(ref.units);
     expect(frames(next.chunks)).toBe(frames(ref.chunks));
@@ -159,7 +159,7 @@ describe('prepareAtD890DigitalContactWrite (#1558)', () => {
   it('matches the original around a unit-count change (n-1, n, n+1)', () => {
     // Find the first count whose data region needs one more erase unit than the count before.
     const unitsFor = (n: number) =>
-      prepareAtD890DigitalContactWrite(fixedDirectory(n)).units.length;
+      prepareAtD890DigitalContactWrite(fixedDirectory(n), 'all').units.length;
     let lo = 1;
     let hi = 6_000;
     while (lo + 1 < hi) {
@@ -175,7 +175,7 @@ describe('prepareAtD890DigitalContactWrite (#1558)', () => {
   it('matches the original when the data stream is block-aligned and when it is not', () => {
     const lengths = new Set<number>();
     for (let n = 1; n <= 40; n++) {
-      const pack = packAtD890DigitalContacts(fixedDirectory(n));
+      const pack = packAtD890DigitalContacts(fixedDirectory(n), 'all');
       lengths.add(pack.dataLinear.length % AT_D890_BLOCK_SIZE === 0 ? 0 : 1);
       expectIdentical(fixedDirectory(n));
     }
@@ -184,13 +184,13 @@ describe('prepareAtD890DigitalContactWrite (#1558)', () => {
   });
 
   it('handles an empty directory', () => {
-    expect(frames(prepareAtD890DigitalContactWrite([]).chunks)).toBe(
+    expect(frames(prepareAtD890DigitalContactWrite([], 'all').chunks)).toBe(
       frames(legacyPrepare([]).chunks),
     );
   });
 
   it('crosses more than one erase unit in the data region at 12,000 contacts', () => {
-    const { units } = prepareAtD890DigitalContactWrite(seededDirectory(12_000, 14));
+    const { units } = prepareAtD890DigitalContactWrite(seededDirectory(12_000, 14), 'all');
     expect(units.length).toBeGreaterThan(3);
     expect(units).toContain(eraseUnitBaseFor(D890_MAP.DigitalContactMeta));
   });

@@ -19,6 +19,11 @@ export const BuildCapabilityTrait = {
    * Gates the dual-bank Write / CPS directory UX.
    */
   SeparateDigitalIdList: 'separateDigitalIdList',
+  /**
+   * The incoming-call ID database Write can include fewer fields per record (a smaller, faster
+   * Write). Gates the build's "ID database fields" setting; the library keeps every field.
+   */
+  IdDatabaseFieldChoice: 'idDatabaseFieldChoice',
 } as const;
 
 export type BuildCapabilityTrait = (typeof BuildCapabilityTrait)[keyof typeof BuildCapabilityTrait];
@@ -178,6 +183,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.DedicatedScanLists,
       BuildCapabilityTrait.MxNChannelExpansion,
       BuildCapabilityTrait.SeparateDigitalIdList,
+      BuildCapabilityTrait.IdDatabaseFieldChoice,
     ],
   },
   /** Web Serial — AT-D890UV MM9PDY modded firmware. Same codec, no m×n or scan lists. */
@@ -190,6 +196,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
       BuildCapabilityTrait.SeparateDigitalIdList,
+      BuildCapabilityTrait.IdDatabaseFieldChoice,
     ],
   },
   /** Web Serial direct-write — OpenGD77 / OpenUV380 (DM-1701). */

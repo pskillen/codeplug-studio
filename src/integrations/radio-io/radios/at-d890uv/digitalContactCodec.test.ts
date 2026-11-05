@@ -7,15 +7,18 @@ import { D890_MAP } from './constants.ts';
 
 describe('encodeAtD890DigitalContactRecord', () => {
   it('encodes private call type and BCD radio id', () => {
-    const record = encodeAtD890DigitalContactRecord({
-      wireName: 'Contact 1',
-      digitalId: 1234567,
-      callsign: 'CALL',
-      city: 'City',
-      province: 'State',
-      country: 'Country',
-      remark: 'Note',
-    });
+    const record = encodeAtD890DigitalContactRecord(
+      {
+        wireName: 'Contact 1',
+        digitalId: 1234567,
+        callsign: 'CALL',
+        city: 'City',
+        province: 'State',
+        country: 'Country',
+        remark: 'Note',
+      },
+      'all',
+    );
     expect(record[0]).toBe(0);
     expect(record[1]).toBe(0);
     expect(record.length).toBeGreaterThan(6);
@@ -24,17 +27,20 @@ describe('encodeAtD890DigitalContactRecord', () => {
 
 describe('packAtD890DigitalContacts', () => {
   it('encodes contact order as a little-endian BCD key with an odd-count pad', () => {
-    const pack = packAtD890DigitalContacts([
-      {
-        wireName: 'Contact 9',
-        digitalId: 9,
-        callsign: '',
-        city: '',
-        province: '',
-        country: '',
-        remark: '',
-      },
-    ]);
+    const pack = packAtD890DigitalContacts(
+      [
+        {
+          wireName: 'Contact 9',
+          digitalId: 9,
+          callsign: '',
+          city: '',
+          province: '',
+          country: '',
+          remark: '',
+        },
+      ],
+      'essentials',
+    );
     expect([...pack.orderLinear.subarray(0, 8)]).toEqual([
       0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     ]);
@@ -45,26 +51,29 @@ describe('packAtD890DigitalContacts', () => {
   });
 
   it('does not pad an even contact order past the entries', () => {
-    const pack = packAtD890DigitalContacts([
-      {
-        wireName: 'Contact 9',
-        digitalId: 9,
-        callsign: '',
-        city: '',
-        province: '',
-        country: '',
-        remark: '',
-      },
-      {
-        wireName: 'Contact 99',
-        digitalId: 99,
-        callsign: '',
-        city: '',
-        province: '',
-        country: '',
-        remark: '',
-      },
-    ]);
+    const pack = packAtD890DigitalContacts(
+      [
+        {
+          wireName: 'Contact 9',
+          digitalId: 9,
+          callsign: '',
+          city: '',
+          province: '',
+          country: '',
+          remark: '',
+        },
+        {
+          wireName: 'Contact 99',
+          digitalId: 99,
+          callsign: '',
+          city: '',
+          province: '',
+          country: '',
+          remark: '',
+        },
+      ],
+      'essentials',
+    );
     expect(pack.contactCount).toBe(2);
     expect(pack.orderLinear.length).toBe(16);
   });
@@ -80,7 +89,7 @@ describe('packAtD890DigitalContacts', () => {
       remark: '',
     }));
 
-    const pack = packAtD890DigitalContacts(contacts);
+    const pack = packAtD890DigitalContacts(contacts, 'essentials');
     expect(pack.contactCount).toBe(500);
     expect(pack.dataLinear.length).toBeGreaterThan(0);
     expect(pack.orderLinear.length).toBeGreaterThan(0);
