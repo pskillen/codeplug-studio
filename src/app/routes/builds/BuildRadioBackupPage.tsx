@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { createProgressCoalescer, type ProgressCoalescer } from '../../lib/progressCoalescer.ts';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Alert, FileButton, Group, Stack, Table, Text } from '@mantine/core';
 import { isDm32RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
@@ -95,6 +96,8 @@ export default function BuildRadioBackupPage() {
 
   const sessionRef = useRef<RadioSession | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const progressCoalescerRef = useRef<ProgressCoalescer | null>(null);
+  useEffect(() => () => progressCoalescerRef.current?.cancel(), []);
   const fileResetRef = useRef<() => void>(null);
 
   const [busy, setBusy] = useState(false);
@@ -154,9 +157,15 @@ export default function BuildRadioBackupPage() {
     .filter(Boolean)
     .join(' / ');
 
+  // Progress reaches React state at about 10 Hz; a stage change or a stage's last event at once (#1558).
+  function clearProgress() {
+    progressCoalescerRef.current?.cancel();
+    setProgress(null);
+  }
   function onProgress(p: ProgressUpdate) {
     setPhase('transfer');
-    setProgress(p);
+    progressCoalescerRef.current ??= createProgressCoalescer(setProgress);
+    progressCoalescerRef.current.push(p);
     if (p.stage) {
       setTransferStages((prev) => (prev.includes(p.stage!) ? prev : [...prev, p.stage!]));
     }
@@ -167,7 +176,7 @@ export default function BuildRadioBackupPage() {
     setOperation(next);
     setBusy(true);
     setPhase('connecting');
-    setProgress(null);
+    clearProgress();
     setTransferStages([]);
     setPlan(undefined);
     abortRef.current = new AbortController();
@@ -213,7 +222,7 @@ export default function BuildRadioBackupPage() {
       setError(err instanceof Error ? err.message : String(err));
       await releaseSession();
       setBusy(false);
-      setProgress(null);
+      clearProgress();
       abortRef.current = null;
     }
   }
@@ -240,7 +249,7 @@ export default function BuildRadioBackupPage() {
       setError(err instanceof Error ? err.message : String(err));
       await releaseSession();
       setBusy(false);
-      setProgress(null);
+      clearProgress();
       abortRef.current = null;
     }
   }
@@ -263,12 +272,12 @@ export default function BuildRadioBackupPage() {
     setRestoreIdentity(null);
     void releaseSession();
     setBusy(false);
-    setProgress(null);
+    clearProgress();
   }
 
   function handleProgressClose(): void {
     setBusy(false);
-    setProgress(null);
+    clearProgress();
     abortRef.current = null;
   }
 
@@ -309,7 +318,7 @@ export default function BuildRadioBackupPage() {
       setRangeMismatch(mismatch);
       if (mismatch) setSelectedRegionIds(new Set(defaultRestorableRegionIds(backup.manifest)));
       setBusy(false);
-      setProgress(null);
+      clearProgress();
       setRestoreConfirmOpen(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -317,7 +326,7 @@ export default function BuildRadioBackupPage() {
       setRestoreIdentity(null);
       await releaseSession();
       setBusy(false);
-      setProgress(null);
+      clearProgress();
       abortRef.current = null;
     }
   }
@@ -352,7 +361,7 @@ export default function BuildRadioBackupPage() {
       setError(err instanceof Error ? err.message : String(err));
       await releaseSession();
       setBusy(false);
-      setProgress(null);
+      clearProgress();
       abortRef.current = null;
     }
   }

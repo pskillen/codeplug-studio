@@ -51,22 +51,30 @@ const ICON_CLASS: Record<StageRowStatus, string> = {
   error: classes.iconError ?? '',
 };
 
+/** Monotonic clock for the rate window (`Date.now` is 1 ms and can step). */
+function clockMs(): number {
+  return typeof performance !== 'undefined' ? performance.now() : Date.now();
+}
+
 export default function RadioIoStageList({
   rows,
   progress,
   hideOverall = false,
 }: RadioIoStageListProps) {
   const [tracker, setTracker] = useState(EMPTY_TRACKER);
-  const [now, setNow] = useState(() => Date.now());
+  const [etaText, setEtaText] = useState('');
   const activeRef = useRef<HTMLLIElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
+  // What the 1 s timer reads: the latest rows, progress and tracker, without re-rendering for them.
+  const latestRef = useRef({ rows, progress, tracker: EMPTY_TRACKER });
+  const clockRef = useRef(clockMs);
 
-  // Fold each progress event into the tracker.
+  // Fold each progress event into the tracker (one state update; the estimate text is separate).
   useEffect(() => {
-    const t = Date.now();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- folds an external event stream (progress) into the tracker
-    setTracker((prev) => advanceTracker(prev, rows, progress, t));
-    setNow(t);
+    const prev = latestRef.current.tracker;
+    const next = advanceTracker(prev, rows, progress, clockRef.current());
+    latestRef.current = { rows, progress, tracker: next };
+    setTracker(next);
   }, [rows, progress]);
 
   // Keep the current row visible inside the fixed-height list, about a third from the top so the
@@ -80,19 +88,20 @@ export default function RadioIoStageList({
     list.scrollTop = Math.max(0, target);
   }, [activeId]);
 
-  // Let the estimate appear after 2 s even if no event arrives in between.
+  // The estimate text refreshes from this timer only, about once a second (it also lets the
+  // estimate appear after 2 s even if no event arrives in between).
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    const id = window.setInterval(() => {
+      const { rows: r, progress: p, tracker: t } = latestRef.current;
+      const secs = etaSeconds(r, t, p, clockRef.current());
+      setEtaText(secs != null ? formatEta(secs) : '');
+    }, 1000);
     return () => window.clearInterval(id);
   }, []);
 
   const overall = useMemo(
     () => overallProgress(rows, tracker, progress),
     [rows, tracker, progress],
-  );
-  const eta = useMemo(
-    () => etaSeconds(rows, tracker, progress, now),
-    [rows, tracker, progress, now],
   );
   const showOverall = !hideOverall && overall.total > 0;
 
@@ -107,7 +116,7 @@ export default function RadioIoStageList({
           />
           <div className={classes.overallText}>
             <span>{Math.round(overall.fraction * 100)}%</span>
-            <span data-testid="stage-list-eta">{eta != null ? formatEta(eta) : ''}</span>
+            <span data-testid="stage-list-eta">{etaText}</span>
           </div>
         </div>
       ) : null}
