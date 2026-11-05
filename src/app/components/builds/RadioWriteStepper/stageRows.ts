@@ -48,7 +48,9 @@ export function writePartOfPlan(
 /**
  * One list's progress: its plan, the unplanned labels adapters emitted, the events seen (kept so a
  * plan that arrives late can be replayed) and the stage cursor folded from them. The `events`
- * array is shared between versions of a track and only ever appended to.
+ * array is shared between versions of a track and mutated in place: events are appended, and
+ * `keepEvent` overwrites the latest one while a same-stage run only advances (so it holds a
+ * run's first and latest events, not every frame).
  */
 export interface StageTrack {
   plan: readonly PlannedStage[] | undefined;
