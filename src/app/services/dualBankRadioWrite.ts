@@ -7,20 +7,16 @@ import {
   shouldIncludeDirectoryRow,
   type DualBankRadioWriteOptions,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
-import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
-import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
-import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import type { DualBankWriteMode } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { mapDirectoryEntryToRadioDigitalContactDto } from '@integrations/radioid/mapDirectoryEntryToRadioDto.ts';
 import { DM32_RADIOFOUNDRY_PROFILE_ID } from '@integrations/radio-io/radios/dm32uv-radiofoundry/constants.ts';
-import { DMR_ID_DATABASE_MAX_RECORDS } from '@integrations/radio-io/radios/dm32uv-radiofoundry/idDatabase.ts';
 import type {
   RadioDigitalContactDto,
   RadioRadioIdDto,
@@ -28,6 +24,7 @@ import type {
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
 import { isOpenGd77RadioIoEgress } from './radioIoChannelMap.ts';
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import { digitalIdDatabaseCap } from '@core/import-export/profileExportLimits.ts';
 import { pageDigitalIdDirectoryForWrite } from './directoryWritePaging.ts';
 
 export interface DualBankRadioWritePrepareOptions {
@@ -48,7 +45,6 @@ export interface CollectDualBankDirectorySliceArgs {
   formatId?: string;
   egressProfileId: string;
   options: DualBankRadioWriteOptions;
-  maxRadioIds?: number;
   maxDirectoryContacts?: number;
   /**
    * DMR IDs that count as contacts for the overlap skip. Defaults to every library contact;
@@ -98,17 +94,8 @@ export async function collectDualBankDirectorySlice(
 
   const digitalContacts: RadioDigitalContactDto[] = [];
   let skippedOverlap = 0;
-  const openGd77Cap = args.maxDirectoryContacts ?? OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX;
-  const dm32Cap = args.maxDirectoryContacts ?? DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX;
-  const atD890Cap = args.maxDirectoryContacts ?? AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX;
-  const radioFoundryCap = args.maxDirectoryContacts ?? DMR_ID_DATABASE_MAX_RECORDS;
-  const cap = forOpenGd77
-    ? openGd77Cap
-    : forAtD890
-      ? atD890Cap
-      : forRadioFoundry
-        ? radioFoundryCap
-        : dm32Cap;
+  const cap =
+    args.maxDirectoryContacts ?? digitalIdDatabaseCap('radio-io', args.egressProfileId) ?? 0;
   // DM-32 shared 0x0F bank: skip library IDs only when Both (library is also written).
   // AT-D890 ID database: always skip build contacts, so the radio (which names callers from
   // the ID database first) shows the contact's own name.
@@ -143,22 +130,22 @@ export async function collectDualBankDirectorySlice(
     if (forOpenGd77) {
       pushGeneralWarning(
         args.warnings,
-        `Directory has more contacts than the OpenGD77 User Database allows; only ${openGd77Cap} write from directory`,
+        `Directory has more contacts than the OpenGD77 User Database allows; only ${cap} write from directory`,
       );
     } else if (forAtD890) {
       pushGeneralWarning(
         args.warnings,
-        `Directory has more contacts than the AT-D890 ID database allows; only ${atD890Cap} write from directory`,
+        `Directory has more contacts than the AT-D890 ID database allows; only ${cap} write from directory`,
       );
     } else if (forRadioFoundry) {
       pushGeneralWarning(
         args.warnings,
-        `Directory has more contacts than the RadioFoundry DMR ID database allows; only ${radioFoundryCap} write from directory`,
+        `Directory has more contacts than the RadioFoundry DMR ID database allows; only ${cap} write from directory`,
       );
     } else {
       pushGeneralWarning(
         args.warnings,
-        `Directory has more contacts than the DM-32 address book allows; only ${dm32Cap} write from directory`,
+        `Directory has more contacts than the DM-32 address book allows; only ${cap} write from directory`,
       );
     }
   }

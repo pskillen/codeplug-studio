@@ -145,6 +145,17 @@ function blankDigitalOrganisation(partial: {
   };
 }
 
+/**
+ * The most rows a Write or export puts in a profile's digital ID database, from the
+ * profile's `maxDigitalIdDatabase` limit. `undefined` when the profile has no numeric cap
+ * (unknown profile, `not_used`, or unspecified). One resolver for every caller, so the
+ * Build characteristics page and the directory Write cannot disagree.
+ */
+export function digitalIdDatabaseCap(formatId: FormatId, profileId: string): number | undefined {
+  const cap = getProfileExportLimits(formatId, profileId)?.maxDigitalIdDatabase;
+  return typeof cap === 'number' ? cap : undefined;
+}
+
 /** Export limits + ladders for a format profile — export boundary only. */
 export function getProfileExportLimits(
   formatId: FormatId,

@@ -68,10 +68,8 @@ import {
   prepareAtD890DigitalContactsForWrite,
   writePreparedAtD890DigitalContactsForWrite,
 } from './radioIoAtD890DigitalContactWrite.ts';
-import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
-import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { dmrContactDigitalIdSet } from '@core/import-export/dmrContactBanks.ts';
-import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
+import { digitalIdDatabaseCap } from '@core/import-export/profileExportLimits.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import {
@@ -88,7 +86,6 @@ import { encodeDm32uvWriteImageFromDownloadCache } from '@integrations/radio-io/
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { DM32_RADIOFOUNDRY_PROFILE_ID } from '@integrations/radio-io/radios/dm32uv-radiofoundry/constants.ts';
 import { Dm32uvRadioFoundryProtocol } from '@integrations/radio-io/radios/dm32uv-radiofoundry/protocol.ts';
-import { DMR_ID_DATABASE_MAX_RECORDS } from '@integrations/radio-io/radios/dm32uv-radiofoundry/idDatabase.ts';
 import {
   radioFoundryReviewContacts,
   radioFoundryWriteSourceFromAssembled,
@@ -132,7 +129,6 @@ import {
   type AtD890SettingsTarget,
 } from '@integrations/radio-io/radios/at-d890uv/settingsFields.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
-import { isOpenGd77RadioIoEgress } from './radioIoChannelMap.ts';
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export {
@@ -512,17 +508,10 @@ export async function prepareRadioWriteImage(
   const projectionWarnings: ExportWarning[] = [];
   let directorySlice: DualBankDirectorySlice = { radioIds: [], digitalContacts: [] };
   if (opts?.dualBank) {
-    const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
-    const maxRadioIds = typeof limits?.maxRadioIds === 'number' ? limits.maxRadioIds : undefined;
-    const maxDirectoryContacts = isOpenGd77RadioIoEgress(egress.profileId)
-      ? OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX
-      : isDm32RadioIoProfileId(egress.profileId)
-        ? DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX
-        : egress.profileId === DM32_RADIOFOUNDRY_PROFILE_ID
-          ? DMR_ID_DATABASE_MAX_RECORDS
-          : typeof limits?.maxDigitalIdDatabase === 'number'
-            ? limits.maxDigitalIdDatabase
-            : undefined;
+    const maxDirectoryContacts = digitalIdDatabaseCap(
+      egress.formatId as FormatId,
+      egress.profileId,
+    );
     directorySlice =
       opts.persistence && opts.projectId
         ? await collectDualBankDirectorySlice({
@@ -531,7 +520,6 @@ export async function prepareRadioWriteImage(
             library,
             egressProfileId: egress.profileId,
             options: opts.dualBank.options,
-            maxRadioIds,
             maxDirectoryContacts,
             // AT-D890: skip directory rows for this build's contacts, not every library contact.
             ...(isAtD890RadioIoProfileId(egress.profileId)
