@@ -57,9 +57,11 @@ Records are packed back to back, so dropping the three strings shrinks every rec
 `W` frames (16 bytes each) by roughly a third on a typical directory (the saving grows with long
 state, country and remark text). The library keeps every field either way.
 
-Whether the radio shows city, state, country or remark on a call or in contact search is **not
-established** by the firmware notes (they cover the lookup path, not what the screen draws). City
-stays in the default until a radio check says otherwise.
+On stock V1.05 the call screen shows the ID, callsign, name, city, state and country of a
+matched record; remark is never shown. A long state is cut off at the screen edge (for example
+"North Caroli…"). With the default setting the state and country lines are blank, with no stray
+characters, and lookups match across the whole ID range (owner radio check, 2026-11-05). What
+contact search shows was not checked.
 
 ### Why no byte needs preserving
 
