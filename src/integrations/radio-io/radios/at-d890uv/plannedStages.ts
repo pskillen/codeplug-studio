@@ -210,7 +210,11 @@ function contactStages(ctx: RadioPlanContext): PlannedStage[] {
   if (!wanted) return [];
   const optional = !contacts || contacts.length === 0;
   let bytes = 0x4000;
-  if (contacts && contacts.length > 0) {
+  const prepared = ctx.prepared?.digitalContactBytes;
+  if (prepared !== undefined && contacts && contacts.length > 0) {
+    // The caller prepared the write already: size from it, do not pack 300k contacts again.
+    bytes = prepared;
+  } else if (contacts && contacts.length > 0) {
     try {
       const chunks = packAtD890DigitalContacts(contacts).stagingChunks;
       bytes = chunks.length * BLOCK;

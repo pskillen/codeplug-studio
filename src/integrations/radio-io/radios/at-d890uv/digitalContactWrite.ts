@@ -8,23 +8,25 @@
  */
 
 import type { BytePipe, ProgressFn } from '../../types.ts';
+import { AT_D890_BLOCK_SIZE } from './constants.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { atD890WriteMemory } from './connection.ts';
 import { gateAtD890Write } from './programSession.ts';
 import { isAtD890DigitalContactUnit } from './digitalContactUnits.ts';
-import { AT_D890_ERASE_UNIT_BYTES, eraseUnitBaseFor, listTouchedEraseUnits } from './eraseUnits.ts';
+import { AT_D890_ERASE_UNIT_BYTES, eraseUnitBaseFor } from './eraseUnits.ts';
 import {
   eraseAnchorsFromModelled,
   listEraseOnlyChunks,
   listSparseStagingChunks,
-  modelledAddressSetFromChunks,
   overlayModelledChunksOntoUnit,
   type AtD890StagingChunk,
 } from './sparseEraseRmw.ts';
 import { assertAtD890SpanNotHardDenied, assertAtD890TransmitAddress } from './writableExtents.ts';
 import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
 import { packAtD890DigitalContacts } from './digitalContactCodec.ts';
+
+const EMPTY_ADDRESSES: ReadonlySet<number> = new Set();
 
 function assertContactUnit(address: number): void {
   const unit = eraseUnitBaseFor(address);
@@ -46,6 +48,28 @@ export interface AtD890PreparedContactWrite {
 }
 
 /**
+ * Group chunks by erase unit in one pass (#1558). Replaces a filter over every chunk once per
+ * unit (units x chunks predicate calls). Chunks keep their order inside a unit.
+ */
+export function bucketChunksByUnit(
+  chunks: readonly AtD890StagingChunk[],
+): Map<number, AtD890StagingChunk[]> {
+  const byUnit = new Map<number, AtD890StagingChunk[]>();
+  for (const c of chunks) {
+    const unit = eraseUnitBaseFor(c.address);
+    const bucket = byUnit.get(unit);
+    if (bucket) bucket.push(c);
+    else byUnit.set(unit, [c]);
+  }
+  return byUnit;
+}
+
+/** Bytes a prepared contact Write sends: one 16-byte block per frame. */
+export function preparedContactWriteBytes(prepared: AtD890PreparedContactWrite): number {
+  return prepared.chunks.length * AT_D890_BLOCK_SIZE;
+}
+
+/**
  * Pack and validate. Every check that can throw runs here, so a caller can do this before the
  * first `W` of a PROGRAM session and never fail mid-write for a reason known up front.
  */
@@ -59,30 +83,31 @@ export function prepareAtD890DigitalContactWrite(
     assertAtD890SpanNotHardDenied(c.address, c.data.length);
     assertContactUnit(c.address);
   }
-  const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
-  const units = listTouchedEraseUnits(modelledChunks.map((c) => c.address));
+  const byUnit = bucketChunksByUnit(modelledChunks);
+  const units = [...byUnit.keys()].sort((a, b) => a - b);
   const touchedUnitSet = new Set(units);
 
-  // Studio owns these units outright: start from erased flash, never from a read.
-  const mergedUnits = new Map<number, Uint8Array>();
+  // Studio owns these units outright: start from erased flash, never from a read. One unit at a
+  // time, so only one 256 KiB buffer is built at once; the staged blocks are views of it.
+  const chunks: AtD890StagingChunk[] = [];
   for (const unitBase of units) {
     const buffer = new Uint8Array(AT_D890_ERASE_UNIT_BYTES).fill(0xff);
-    overlayModelledChunksOntoUnit(
-      unitBase,
-      buffer,
-      modelledChunks.filter((c) => eraseUnitBaseFor(c.address) === unitBase),
-    );
-    mergedUnits.set(unitBase, buffer);
-  }
-  const chunks = listSparseStagingChunks(mergedUnits, modelledAddresses);
-  for (const c of chunks) {
-    if (!modelledAddresses.has(c.address)) {
-      throw new RadioProtocolError(
-        `D890 contact write staged an unmodelled block at 0x${c.address.toString(16)}`,
-      );
+    const unitChunks = byUnit.get(unitBase)!;
+    overlayModelledChunksOntoUnit(unitBase, buffer, unitChunks);
+    // A block is modelled when a chunk covers it: a flag per block instead of a set of addresses.
+    const modelled = new Uint8Array(AT_D890_ERASE_UNIT_BYTES / AT_D890_BLOCK_SIZE);
+    for (const c of unitChunks) modelled[(c.address - unitBase) / AT_D890_BLOCK_SIZE] = 1;
+    const staged = listSparseStagingChunks(new Map([[unitBase, buffer]]), EMPTY_ADDRESSES, false);
+    for (const c of staged) {
+      if (!modelled[(c.address - unitBase) / AT_D890_BLOCK_SIZE]) {
+        throw new RadioProtocolError(
+          `D890 contact write staged an unmodelled block at 0x${c.address.toString(16)}`,
+        );
+      }
+      assertAtD890TransmitAddress(c.address, touchedUnitSet);
+      assertContactUnit(c.address);
+      chunks.push(c);
     }
-    assertAtD890TransmitAddress(c.address, touchedUnitSet);
-    assertContactUnit(c.address);
   }
   return { chunks, units, anchors: eraseAnchorsFromModelled(modelledChunks) };
 }

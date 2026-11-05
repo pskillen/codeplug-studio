@@ -134,6 +134,27 @@ describe('AT-D890UV planned stages', () => {
     expect(rec.stages).toEqual(['Digital contacts']);
   });
 
+  it('sizes the contact stage from the prepared write when the caller has one', () => {
+    const contact = {
+      wireName: 'Contact 1',
+      digitalId: 1234567,
+      callsign: 'CALL',
+      city: 'City',
+      province: 'State',
+      country: 'Country',
+      remark: 'Note',
+    };
+    const plan = planForOperation(AT_D890UV_DESCRIPTOR, 'write', {
+      prepared: {
+        channels: [],
+        organisation: { zones: [], digitalContacts: [contact] },
+        digitalContactBytes: 123_456,
+      },
+      parts: { codeplug: false, contacts: true, settings: false, keps: false },
+    })!;
+    expect(plan.find((s) => s.label === 'Digital contacts')?.weight).toBe(123_456);
+  });
+
   it('the keps writer, in its own session after the restart, emits preserve then Upload', async () => {
     const pipe = new AtD890ScriptedPipe();
     pipe.readResponder = (_addr, len) => new Uint8Array(len).fill(0xff);

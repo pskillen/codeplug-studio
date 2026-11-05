@@ -66,6 +66,7 @@ import { startAtD890WriteTiming } from './radioIoAtD890WriteTimings.ts';
 import {
   declareAtD890ContactUnitsForWrite,
   prepareAtD890DigitalContactsForWrite,
+  preparedContactWriteBytes,
   writePreparedAtD890DigitalContactsForWrite,
 } from './radioIoAtD890DigitalContactWrite.ts';
 import { dmrContactDigitalIdSet } from '@core/import-export/dmrContactBanks.ts';
@@ -1072,7 +1073,13 @@ export async function uploadPreparedRadioWrite(
         identityOnly: !writeReadsBeforeTransmit(session),
         ...(nxdnOutcome ? { channels: nxdnOutcome.channels } : {}),
         plan: planForOperation(session.descriptor, 'write', {
-          prepared: { channels: opts.channels ?? [], organisation: opts.organisation ?? {} },
+          prepared: {
+            channels: opts.channels ?? [],
+            organisation: opts.organisation ?? {},
+            ...(contactWrite
+              ? { digitalContactBytes: preparedContactWriteBytes(contactWrite) }
+              : {}),
+          },
           session,
           ...(opts.parts ? { parts: opts.parts } : {}),
         }),

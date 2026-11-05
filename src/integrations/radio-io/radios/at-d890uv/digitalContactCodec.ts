@@ -191,11 +191,14 @@ function stagingChunksFromLinearRegion(
   const chunks: AtD890StagingChunk[] = [];
   for (let off = 0; off < alignedLength; off += AT_D890_BLOCK_SIZE) {
     const addr = atD890BlockHoppedAddress(base, off, blockLength, stride);
-    const sliceEnd = Math.min(off + AT_D890_BLOCK_SIZE, linear.length);
-    const slice = linear.subarray(off, sliceEnd);
+    if (off + AT_D890_BLOCK_SIZE <= linear.length) {
+      // A full block is a view of the linear stream: no second 16-byte buffer per frame (#1558).
+      chunks.push({ address: addr, data: linear.subarray(off, off + AT_D890_BLOCK_SIZE) });
+      continue;
+    }
     const padded = new Uint8Array(AT_D890_BLOCK_SIZE);
     padded.fill(0xff);
-    padded.set(slice);
+    padded.set(linear.subarray(off));
     chunks.push({ address: addr, data: padded });
   }
   return chunks;

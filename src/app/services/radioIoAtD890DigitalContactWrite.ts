@@ -10,6 +10,7 @@ import { declareAtD890PlannedUnits } from '@integrations/radio-io/radios/at-d890
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import {
   prepareAtD890DigitalContactWrite,
+  preparedContactWriteBytes,
   writePreparedAtD890DigitalContacts,
   type AtD890PreparedContactWrite,
 } from '@integrations/radio-io/radios/at-d890uv/digitalContactWrite.ts';
@@ -24,6 +25,8 @@ export function prepareAtD890DigitalContactsForWrite(
     ? undefined
     : prepareAtD890DigitalContactWrite(digitalContacts);
 }
+
+export { preparedContactWriteBytes };
 
 /**
  * Tell the session's pending-units gate which contact units this Write will rewrite, before
