@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
@@ -353,7 +354,49 @@ describe('User Database cap in a combined Write', () => {
 });
 
 describe('User Database encode safety', () => {
-  it('the first 69,600 entries are byte-identical to the old 69,600-entry encode', () => {
+  /**
+   * Deterministic directory with empty callsigns, cities, provinces and countries, ids out of
+   * order. The digests below were computed by running origin/main's encoder (cap 69,600) on it,
+   * not this branch's.
+   */
+  function pinnedFixture(n: number): RadioDigitalContactDto[] {
+    const out: RadioDigitalContactDto[] = [];
+    for (let i = 1; i <= n; i++) {
+      out.push({
+        wireName: `N${i}`,
+        digitalId: ((i * 7919) % 1_000_003) + 1,
+        callsign: i % 5 === 0 ? '' : `C${i % 997}X`,
+        city: i % 3 === 0 ? '' : `Town ${i % 211}`,
+        province: i % 4 === 0 ? '' : `Shire ${i % 53}`,
+        country: i % 7 === 0 ? '' : i % 2 === 0 ? 'UK' : 'Eire',
+        remark: '',
+      });
+    }
+    return out;
+  }
+  const sha256 = (b: Uint8Array): string => createHash('sha256').update(b).digest('hex');
+  const MAIN_ENTRIES0_SHA256 = '1bc8677117fb3ac79ab3aed156ec2690ca1205834883bc6fc314a489d72a144e';
+  const MAIN_ENTRIES1_SHA256 = '8ad0b0072016b7405755fece974a5a3b4b82796cd6d6ae5e730d87bd5207f1ff';
+  const MAIN_ENTRIES1_BYTES = 1_617_084;
+
+  it('the first 69,600 entries match digests of the old encoder (origin/main)', () => {
+    const all = pinnedFixture(100_000);
+    const capped = encodeOpenGd77UserDatabase(all, [], {
+      cap: LIMITS.USER_DATABASE_MAX_UNCONFIRMED_FLASH,
+    });
+    expect(capped.entryCount).toBe(69_600);
+    expect(capped.entries0.byteLength).toBe(262_116);
+    expect(capped.entries1.byteLength).toBe(MAIN_ENTRIES1_BYTES);
+    expect(sha256(capped.entries0)).toBe(MAIN_ENTRIES0_SHA256);
+    expect(sha256(capped.entries1)).toBe(MAIN_ENTRIES1_SHA256);
+
+    const now = encodeOpenGd77UserDatabase(all);
+    expect(now.entryCount).toBe(100_000);
+    expect(sha256(now.entries0)).toBe(MAIN_ENTRIES0_SHA256);
+    expect(sha256(now.entries1.subarray(0, MAIN_ENTRIES1_BYTES))).toBe(MAIN_ENTRIES1_SHA256);
+  }, 120_000);
+
+  it('the first 69,600 entries are byte-identical to the same encoder at the old cap', () => {
     const all = rows(100_000);
     const old = encodeOpenGd77UserDatabase(all, [], {
       cap: LIMITS.USER_DATABASE_MAX_UNCONFIRMED_FLASH,
