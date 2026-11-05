@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
+import { RADIO_IO_PROFILES } from '@core/import-export/formats/radio-io/profiles.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
+import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
+import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 
 describe('getProfileExportLimits', () => {
   it('maps OpenGD77 entity caps and name lengths from profile', () => {
@@ -57,7 +61,10 @@ describe('getProfileExportLimits', () => {
     expect(limits!.maxZones).toBe(250);
     expect(limits!.maxRxGroupLists).toBe(250);
     expect(limits!.maxTalkGroups).toBe(10_000);
-    expect(limits!.maxContacts).toBe(AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX);
+    // The Contacts list is the talk-group list; the ID database is a separate bank.
+    expect(limits!.maxContacts).toBe(AT_D890UV_LIMITS.TALK_GROUPS_MAX);
+    expect(limits!.maxDigitalIdDatabase).toBe(AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX);
+    expect(limits!.maxRadioIds).toBe(AT_D890UV_LIMITS.RADIO_IDS_MAX);
   });
 
   it.each([
@@ -174,7 +181,8 @@ describe('getProfileExportLimits', () => {
     expect(limits!.maxScanLists).toBe(AT_D890UV_LIMITS.SCAN_LISTS_MAX);
     expect(limits!.scanListMembers).toBe(100);
     expect(limits!.zoneMembers).toBe(250);
-    expect(limits!.maxContacts).toBe(AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX);
+    expect(limits!.maxContacts).toBe(AT_D890UV_LIMITS.TALK_GROUPS_MAX);
+    expect(limits!.maxDigitalIdDatabase).toBe(AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX);
     expect(limits!.powerLadder.map((e) => e.wire)).toEqual(['Turbo', 'High', 'Mid', 'Low']);
   });
 
@@ -201,6 +209,7 @@ describe('getProfileExportLimits', () => {
       'maxScanLists',
       'maxRxGroupLists',
       'maxContacts',
+      'maxDigitalIdDatabase',
       'maxTalkGroups',
       'maxRadioIds',
     ] as const) {
@@ -239,5 +248,56 @@ describe('getProfileExportLimits', () => {
     expect(limits!.maxRxGroupLists).toBe(
       getProfileExportLimits('radio-io', 'radio-io-at-d890uv')!.maxRxGroupLists,
     );
+  });
+
+  describe('digital ID database', () => {
+    it.each([
+      ['radio-io', 'radio-io-opengd77-1701', OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX],
+      ['radio-io', 'radio-io-opengd77-md9600', OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX],
+      ['radio-io', 'radio-io-dm32uv', DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX],
+      ['radio-io', 'radio-io-dm32uv-mm9pdy', DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX],
+      ['radio-io', 'radio-io-dm32uv-radiofoundry', DM32UV_RADIOFOUNDRY_LIMITS.ID_DATABASE_MAX],
+      ['radio-io', 'radio-io-at-d890uv', AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX],
+      ['radio-io', 'radio-io-at-d890uv-mm9pdy', AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX],
+      ['anytone', 'anytone-at-d890uv', AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX],
+    ] as const)('%s %s holds its own bank, apart from contacts', (formatId, profileId, cap) => {
+      const limits = getProfileExportLimits(formatId, profileId);
+      expect(limits!.maxDigitalIdDatabase).toBe(cap);
+      expect(limits!.maxDigitalIdDatabase).not.toBe(limits!.maxContacts);
+    });
+
+    it.each([
+      ['opengd77', 'opengd77-1701'],
+      ['opengd77', 'opengd77-md9600'],
+      ['dm32', 'dm32-baofeng-dm32uv'],
+      ['neonplug', 'neonplug-dm32uv'],
+      ['neonplug', 'neonplug-uv5rmini'],
+      ['radiofoundry', 'radiofoundry-dm32uv'],
+      ['chirp', 'chirp-uv5r'],
+      ['chirp', 'chirp-uv21'],
+      ['chirp', 'chirp-rt95'],
+      ['radio-io', 'radio-io-uv5r-mini'],
+      ['radio-io', 'radio-io-uv21'],
+      ['radio-io', 'radio-io-rt95'],
+      ['radio-io', 'radio-io-rt95-mm9pdy'],
+    ] as const)('%s %s has no ID database bank', (formatId, profileId) => {
+      expect(getProfileExportLimits(formatId, profileId)!.maxDigitalIdDatabase).toBe('not_used');
+    });
+
+    it('gives every profile a defined value, never undefined', () => {
+      for (const p of RADIO_IO_PROFILES) {
+        const limits = getProfileExportLimits('radio-io', p.id);
+        expect(limits).not.toBeNull();
+        expect(limits!.maxDigitalIdDatabase).not.toBeUndefined();
+      }
+    });
+  });
+
+  it('shares the OpenGD77 contact bank between contacts and talk groups on Direct radio too', () => {
+    for (const id of ['radio-io-opengd77-1701', 'radio-io-opengd77-md9600']) {
+      const limits = getProfileExportLimits('radio-io', id)!;
+      expect(limits.maxContacts).toBe(OPENGD77_FAMILY_LIMITS.CONTACTS_MAX);
+      expect(limits.maxTalkGroups).toBe('not_used');
+    }
   });
 });

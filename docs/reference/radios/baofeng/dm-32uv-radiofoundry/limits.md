@@ -4,17 +4,18 @@ Hardware caps for a Baofeng DM-32UV running RadioFoundry. The codeplug file is t
 
 **Code:** `src/core/radios/baofeng/dm-32uv-radiofoundry/limits.ts` (`DM32UV_RADIOFOUNDRY_LIMITS`).
 
-| Constraint            | Value    | Notes                                                        |
-| --------------------- | -------- | ------------------------------------------------------------ |
-| Channels              | **1024** |                                                              |
-| Zones                 | **68**   |                                                              |
-| Zone members          | **80**   |                                                              |
-| Contacts              | **1024** | Talk groups and private contacts share this bank             |
-| RX group lists        | **76**   |                                                              |
-| RX group list members | **32**   |                                                              |
-| Names                 | **16**   | Channel, zone, contact, and talk-group names                 |
-| Radio name            | **8**    |                                                              |
-| Radio DMR IDs         | **1**    | Maximum ID **16776415**                                      |
-| Power levels          | **9**    | Watt values are unmeasured. Do not invent a watt ladder yet. |
+| Constraint            | Value      | Notes                                                                                                                                                                                                                  |
+| --------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Channels              | **1024**   |                                                                                                                                                                                                                        |
+| Zones                 | **68**     |                                                                                                                                                                                                                        |
+| Zone members          | **80**     |                                                                                                                                                                                                                        |
+| Contacts              | **1024**   | Talk groups and private contacts share this bank                                                                                                                                                                       |
+| ID database           | **287629** | DMR ID database records the Write sends: area 1 plus the part of area 2 that ends at the native codeplug, 27 bytes each. `ID_DATABASE_MAX`; a test pins it to the layout in `idDatabase.ts`. Not the 1024 contact bank |
+| RX group lists        | **76**     |                                                                                                                                                                                                                        |
+| RX group list members | **32**     |                                                                                                                                                                                                                        |
+| Names                 | **16**     | Channel, zone, contact, and talk-group names                                                                                                                                                                           |
+| Radio name            | **8**      |                                                                                                                                                                                                                        |
+| Radio DMR IDs         | **1**      | Maximum ID **16776415**                                                                                                                                                                                                |
+| Power levels          | **9**      | Watt values are unmeasured. Do not invent a watt ladder yet.                                                                                                                                                           |
 
 Do not bake these into library CRUD.

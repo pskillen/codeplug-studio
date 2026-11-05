@@ -23,7 +23,7 @@ Changing the preferred pathway on Export updates `defaultEgressPathId` so the ne
 **Radio characteristics** (`/builds/:id/characteristics`) is the read-only place operators see:
 
 - How this **radio target** organises the build (zones, scan behaviour, expansion, …)
-- Export limits for the **active egress** profile (entity counts, member caps, name lengths)
+- Export limits for the **active egress** profile (entity counts, member caps, name lengths). **Max contacts** is the codeplug's own contact list; **Max digital ID database entries** is the separate caller-ID lookup bank, which is the most directory rows a Write sends. Targets with no such bank show the row as not used and hide it.
 - Power ladder (and sibling ladders such as DM32 squelch)
 
 Copy lives in [`buildCapabilityCopy.ts`](../../../src/app/lib/buildCapabilityCopy.ts). Limits are projected by [`getProfileExportLimits`](../../../src/core/import-export/profileExportLimits.ts).

@@ -81,7 +81,10 @@ export interface RadioIoAtD890uvProfile {
   scanListMembers: number | 'not_used';
   maxRxGroupLists: number;
   rxGroupListMembers: number;
+  /** Contacts list entries: one list shared with talk groups. */
   maxContacts: number;
+  /** ID database (caller-ID lookup bank) entries. */
+  maxDigitalIdDatabase: number;
   maxTalkGroups: number;
   powerLadder: readonly PowerLadderEntry[];
 }
@@ -339,7 +342,8 @@ export const RADIO_IO_AT_D890UV_PROFILE: RadioIoAtD890uvProfile = {
   scanListMembers: AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX,
   maxRxGroupLists: AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX,
   rxGroupListMembers: AT_D890UV_LIMITS.RX_GROUP_MEMBERS_MAX,
-  maxContacts: AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX,
+  maxContacts: AT_D890UV_LIMITS.TALK_GROUPS_MAX,
+  maxDigitalIdDatabase: AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX,
   maxTalkGroups: AT_D890UV_LIMITS.TALK_GROUPS_MAX,
   powerLadder: AT_D890UV_POWER_LADDER,
 };

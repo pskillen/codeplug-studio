@@ -16,7 +16,7 @@ import {
 import { isDm32RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import { dmrContactDigitalIdSet } from '@core/import-export/dmrContactBanks.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
+import { digitalIdDatabaseCap } from '@core/import-export/profileExportLimits.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
@@ -53,8 +53,7 @@ async function collectAnytoneCpsProjection(
   if (options.includeDigitalIdDirectory && !namesOnly) {
     // Only DMR contacts are written (#1438), so only their IDs shadow directory rows.
     const libraryIds = dmrContactDigitalIdSet(assembled.digitalContacts);
-    const limits = getProfileExportLimits('anytone', egress.profileId);
-    const cap = typeof limits?.maxContacts === 'number' ? limits.maxContacts : Infinity;
+    const cap = digitalIdDatabaseCap('anytone', egress.profileId) ?? Infinity;
     let skippedOverlap = 0;
     let truncated = 0;
     await store.iterateDigitalIdDirectory(projectId, (row: DigitalIdDirectoryEntry) => {
