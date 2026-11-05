@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
+import type { RadioChannelDto } from '../../radioChannelDto.ts';
+import { OPENGD77_WRITE_CMD_SET_SECTOR } from '../../kit/codecs/opengd77Serial.ts';
+import { createOpenUv380Image } from './memory.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import {
   OPENUV380_USER_DB_ENTRIES1_ABS,
@@ -57,6 +60,34 @@ function headerCount(pipe: OpenGd77ScriptedPipe): number {
     0
   );
 }
+
+/** Every FLASH read frame sent, in order, with its position in the whole frame log. */
+function flashReads(pipe: OpenGd77ScriptedPipe): { index: number; addr: number }[] {
+  const out: { index: number; addr: number }[] = [];
+  pipe.writes.forEach((w, index) => {
+    if (w[0] !== 0x52 || w[1] !== 0x01) return;
+    out.push({ index, addr: ((w[2]! << 24) | (w[3]! << 16) | (w[4]! << 8) | w[5]!) >>> 0 });
+  });
+  return out;
+}
+
+/** Index of the first frame that programs FLASH (`X` + SET_SECTOR). */
+function firstSectorWrite(pipe: OpenGd77ScriptedPipe): number {
+  return pipe.writes.findIndex((w) => w[0] === 0x58 && w[1] === OPENGD77_WRITE_CMD_SET_SECTOR);
+}
+
+const CHANNEL: RadioChannelDto = {
+  slotIndex: 1,
+  empty: false,
+  wireName: 'LIVE',
+  rxHz: 145_500_000,
+  txHz: 145_500_000,
+  rxTone: { kind: 'none' },
+  txTone: { kind: 'none' },
+  powerPercent: 100,
+  bandwidth: 'NFM',
+  mode: 'analog',
+};
 
 async function writeWith(
   n: number,
@@ -221,18 +252,104 @@ describe('User Database Write cap against the radio', () => {
   it('a small write sends no probe at all', async () => {
     const { pipe } = await writeWith(100, (p) => p.failReadsAt.add(OPENUV380_VOICE_PROMPTS_ABS));
     expect(headerCount(pipe)).toBe(100);
+    const addrs = flashReads(pipe).map((r) => r.addr);
+    expect(addrs).not.toContain(OPENUV380_VOICE_PROMPTS_ABS);
+    expect(addrs).not.toContain(OPENUV380_VOICE_PROMPTS_LEGACY_ABS);
   });
 
+  it('a probe that times out: capped at 15,776, with a warning', async () => {
+    const { pipe, proto } = await writeWith(WANT, (p) =>
+      p.silentReadsAt.add(OPENUV380_VOICE_PROMPTS_ABS),
+    );
+    expect(headerCount(pipe)).toBe(15_776);
+    expect(proto.getLastUserDatabaseWarnings().join(' ')).toMatch(/could not check/);
+  }, 60_000);
+
+  it('a probe that comes back short: capped at 15,776, with a warning', async () => {
+    const { pipe, proto } = await writeWith(WANT, (p) =>
+      p.shortReadsAt.add(OPENUV380_VOICE_PROMPTS_LEGACY_ABS),
+    );
+    expect(headerCount(pipe)).toBe(15_776);
+    expect(proto.getLastUserDatabaseWarnings().join(' ')).toMatch(/could not check/);
+  }, 60_000);
+
   it('unconfirmed flash part: held to 69,600 entries', async () => {
-    const { pipe, proto } = await writeWith(WANT, undefined, { flashId: 0x4014 });
-    expect(headerCount(pipe)).toBe(WANT);
+    const { pipe, proto } = await writeWith(
+      70_000,
+      (p) => plantVp(p, OPENUV380_VOICE_PROMPTS_ABS),
+      { flashId: 0x4014 },
+    );
+    expect(headerCount(pipe)).toBe(69_600);
     expect(proto.getLastUserDatabaseWarnings().join(' ')).toMatch(/16 MiB/);
+  }, 120_000);
+
+  it('says how many rows the held cap left out', async () => {
+    const { proto } = await writeWith(WANT, (p) => plantVp(p, OPENUV380_VOICE_PROMPTS_LEGACY_ABS));
+    expect(proto.getLastUserDatabaseWarnings().join(' ')).toMatch(
+      /20000 entries; 4224 were left out.*15776/,
+    );
+  }, 60_000);
+
+  it('does not claim rows were left out when the whole list fits', async () => {
+    const { proto } = await writeWith(WANT, (p) => plantVp(p, OPENUV380_VOICE_PROMPTS_ABS));
+    expect(proto.getLastUserDatabaseWarnings().join(' ')).not.toMatch(/left out/);
   }, 60_000);
 
   it('bit 1 set: warns that an earlier n upload overwrote the voice prompts', async () => {
     const { proto } = await writeWith(10, undefined, { features: 0b10 });
     expect(proto.getLastUserDatabaseWarnings().join(' ')).toMatch(/voice prompts/);
   });
+});
+
+describe('User Database cap in a combined Write', () => {
+  async function combined(
+    n: number,
+    setup: (pipe: OpenGd77ScriptedPipe) => void,
+  ): Promise<{ pipe: OpenGd77ScriptedPipe; proto: OpenGd77Protocol }> {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    setup(pipe);
+    const proto = new OpenGd77Protocol();
+    await proto.connect(pipe, { settleScale: 0 });
+    proto.armWriteProjection([CHANNEL], { zones: [], userDatabaseContacts: rows(n) });
+    await proto.upload(createOpenUv380Image(), {});
+    return { pipe, proto };
+  }
+
+  it('reads the voice prompts before any FLASH sector is programmed', async () => {
+    const { pipe, proto } = await combined(20_000, (p) =>
+      plantVp(p, OPENUV380_VOICE_PROMPTS_LEGACY_ABS),
+    );
+    const first = firstSectorWrite(pipe);
+    expect(first).toBeGreaterThan(0);
+    const probes = flashReads(pipe).filter(
+      (r) =>
+        r.addr === OPENUV380_VOICE_PROMPTS_ABS || r.addr === OPENUV380_VOICE_PROMPTS_LEGACY_ABS,
+    );
+    expect(probes.map((r) => r.addr)).toEqual([
+      OPENUV380_VOICE_PROMPTS_ABS,
+      OPENUV380_VOICE_PROMPTS_LEGACY_ABS,
+    ]);
+    for (const probe of probes) expect(probe.index).toBeLessThan(first);
+    expect(headerCount(pipe)).toBe(15_776);
+    expect(proto.getLastUserDatabaseWarnings().join(' ')).toMatch(/older flash slot/);
+  }, 60_000);
+
+  it('a codeplug-only Write after a held one reports nothing', async () => {
+    const { pipe, proto } = await combined(20_000, (p) =>
+      plantVp(p, OPENUV380_VOICE_PROMPTS_LEGACY_ABS),
+    );
+    expect(proto.getLastUserDatabaseWarnings().length).toBeGreaterThan(0);
+    proto.armWriteProjection([CHANNEL], { zones: [] });
+    await proto.upload(createOpenUv380Image(), {});
+    expect(pipe.rebooted).toBe(true);
+    expect(proto.getLastUserDatabaseWarnings()).toEqual([]);
+  }, 60_000);
+
+  it('a User Database-only Write resets the warnings of the one before', async () => {
+    const { proto } = await combined(20_000, (p) => plantVp(p, OPENUV380_VOICE_PROMPTS_LEGACY_ABS));
+    await proto.uploadUserDatabase(rows(10), {});
+    expect(proto.getLastUserDatabaseWarnings()).toEqual([]);
+  }, 60_000);
 });
 
 describe('User Database encode safety', () => {

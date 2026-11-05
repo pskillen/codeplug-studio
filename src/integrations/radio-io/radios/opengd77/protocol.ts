@@ -111,6 +111,7 @@ import { encodeOpenGd77UserDatabase, decodeUserDatabaseHeader } from './userData
 import {
   buildUserDatabaseSectorPayloads,
   classifyVoicePrompts,
+  type UserDatabaseCapDecision,
   resolveUserDatabaseCap,
   type VoicePromptProbe,
 } from './userDatabaseWrite.ts';
@@ -728,6 +729,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
   ): Promise<void> {
     const pipe = this.pipe;
     if (!pipe) throw new RadioProtocolError('OpenGD77 upload: not connected');
+    this.lastUserDatabaseWarnings = [];
 
     // CPS mode is entered once per session (connect already did, unless handshake was 'none').
     await this.ensureCps(pipe);
@@ -755,6 +757,13 @@ export class OpenGd77Protocol implements CloneImageRadio {
         powerSteps: this.powerSteps,
       });
     }
+
+    // Decide the User Database cap (probing the voice prompts) before the first sector is
+    // programmed, so a refusal to send everything leaves nothing half-written.
+    const userDatabaseDecision =
+      userDatabaseContacts !== undefined
+        ? await this.resolveUserDatabaseCapForWrite(pipe, userDatabaseContacts.length)
+        : undefined;
 
     const sectors = collectDirtySectors(prior, intended);
     this.lastDirtySectorCount = sectors.length;
@@ -795,8 +804,8 @@ export class OpenGd77Protocol implements CloneImageRadio {
 
     this.lastUploadStaging = captureWriteVerifyStaging(sectors.flatMap(dirtySectorChunks));
 
-    if (userDatabaseContacts !== undefined) {
-      await this.programUserDatabaseSectors(pipe, userDatabaseContacts, opts);
+    if (userDatabaseContacts !== undefined && userDatabaseDecision) {
+      await this.programUserDatabaseSectors(pipe, userDatabaseContacts, userDatabaseDecision, opts);
     }
 
     await this.saveAndReboot(pipe);
@@ -821,8 +830,10 @@ export class OpenGd77Protocol implements CloneImageRadio {
   ): Promise<void> {
     const pipe = this.pipe;
     if (!pipe) throw new RadioProtocolError('OpenGD77 User Database write: not connected');
+    this.lastUserDatabaseWarnings = [];
     await this.ensureCps(pipe);
-    await this.programUserDatabaseSectors(pipe, contacts, opts);
+    const decision = await this.resolveUserDatabaseCapForWrite(pipe, contacts.length);
+    await this.programUserDatabaseSectors(pipe, contacts, decision, opts);
     await this.saveAndReboot(pipe);
   }
 
@@ -850,23 +861,38 @@ export class OpenGd77Protocol implements CloneImageRadio {
     }
   }
 
-  private async programUserDatabaseSectors(
+  /**
+   * Probe the voice prompts and settle the User Database cap. Runs before any FLASH sector of the
+   * Write is programmed: a larger write must not run over voice prompts kept in the legacy slot.
+   */
+  private async resolveUserDatabaseCapForWrite(
     pipe: BytePipe,
-    contacts: readonly RadioDigitalContactDto[],
-    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
-  ): Promise<void> {
-    // Probe before anything is sent that changes the radio: a larger write must not run over voice
-    // prompts kept in the legacy slot.
-    const probe = await this.probeVoicePrompts(pipe, contacts.length);
+    wanted: number,
+  ): Promise<UserDatabaseCapDecision> {
+    const probe = await this.probeVoicePrompts(pipe, wanted);
     const decision = resolveUserDatabaseCap({
       flashId: this.firmwareInfo?.flashId,
       features: this.firmwareInfo?.features ?? 0,
-      wanted: contacts.length,
+      wanted,
       probe,
     });
     this.lastUserDatabaseWarnings = [...decision.warnings];
+    return decision;
+  }
+
+  private async programUserDatabaseSectors(
+    pipe: BytePipe,
+    contacts: readonly RadioDigitalContactDto[],
+    decision: UserDatabaseCapDecision,
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
     await this.prepareCallsignDbFlashWrite(pipe);
     const encoded = encodeOpenGd77UserDatabase(contacts, [], { cap: decision.cap });
+    if (encoded.truncated > 0 && decision.cap < OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX) {
+      this.lastUserDatabaseWarnings.push(
+        `The directory has ${contacts.length} entries; ${encoded.truncated} were left out because this write holds the User Database to ${decision.cap}.`,
+      );
+    }
     const payloads = buildUserDatabaseSectorPayloads(encoded);
     this.lastUploadUserDatabase = undefined;
     const sectorAbsList = [...payloads.keys()].sort((a, b) => a - b);

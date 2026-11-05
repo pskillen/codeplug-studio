@@ -132,6 +132,10 @@ export class OpenGd77ScriptedPipe implements BytePipe {
 
   /** Reads of FLASH starting at these addresses are refused. */
   readonly failReadsAt = new Set<number>();
+  /** Reads of FLASH starting at these addresses get no reply at all (the host times out). */
+  readonly silentReadsAt = new Set<number>();
+  /** Reads of FLASH starting at these addresses come back with half the bytes asked for. */
+  readonly shortReadsAt = new Set<number>();
 
   plantByte(abs: number, value: number): void {
     this.flash.set(abs, value & 0xff);
@@ -294,8 +298,10 @@ export class OpenGd77ScriptedPipe implements BytePipe {
           this.enqueueChunks(new Uint8Array([0x2d, 0x2d, 0x2d]));
           return;
         }
-        const payload = new Uint8Array(length);
-        for (let i = 0; i < length; i++) {
+        if (this.silentReadsAt.has(addr)) return;
+        const returned = this.shortReadsAt.has(addr) ? length >> 1 : length;
+        const payload = new Uint8Array(returned);
+        for (let i = 0; i < returned; i++) {
           payload[i] = this.flash.get(addr + i) ?? 0xff;
         }
         this.enqueueReadReply(payload);
