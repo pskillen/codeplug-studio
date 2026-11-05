@@ -44,7 +44,7 @@ Replaces a stacked wall of always-visible filter chip rows with one **Filters** 
 
 ## Behaviour
 
-- Built on Mantine `Popover` (`withinPortal`, scoped to `.dsv2-scope`) — no bottom-sheet/Drawer fallback on mobile; the dropdown itself goes edge-to-edge (`calc(100vw - 16px)`) at `≤48em` instead of a fixed 440px float.
+- Built on Mantine `Popover` (`withinPortal`, scoped to `.dsv2-scope`) — on mobile (`≤48em`) the same panel renders in a Mantine bottom `Drawer` (sheet with a title and a full-width Done) instead of the floating dropdown, so a swipe/scroll container can't clip it.
 - The tab strip is a plain v2 `SegmentedControl` — it only picks a value; the caller is responsible for rendering the matching `children` for `activeTab`.
 - `footer` renders regardless of which tab is active — use it for filter facets that aren't tab-scoped (e.g. a duplex toggle or distance slider that applies globally).
 - Done both invokes `onDone` and closes the popover (`onOpenChange(false)`).

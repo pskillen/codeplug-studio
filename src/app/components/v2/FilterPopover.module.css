@@ -40,12 +40,32 @@
   overflow: hidden;
 }
 
-@media (max-width: 48em) {
-  .dropdown {
-    width: calc(100vw - 16px);
-    max-width: calc(100vw - 16px);
-  }
+.sheet {
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-primary);
+  border-radius: 18px 18px 0 0;
+  border-top: 1px solid var(--dsv2-border);
+  max-height: 85dvh;
+}
 
+.sheetHeader {
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-primary);
+  padding: 14px 16px 0;
+}
+
+.sheetTitle {
+  font-family: var(--dsv2-font-family);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.sheetBody {
+  padding: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (max-width: 48em) {
   /* 44px+ tap targets for the trigger and every button slotted into the
      panel (tab strip, tab-panel chips, footer chips, Done) — type selector
      so it reaches FacetChip/SplitFilter/SegmentedControl/Button regardless
@@ -83,4 +103,10 @@
 .doneRow {
   display: flex;
   justify-content: flex-end;
+}
+
+@media (max-width: 48em) {
+  .doneRow button {
+    width: 100%;
+  }
 }
