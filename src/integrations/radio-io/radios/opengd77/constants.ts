@@ -124,6 +124,15 @@ export const OPENUV380_VOICE_PROMPTS_LEGACY_ABS =
   OPENUV380_USER_DB_GEOMETRY.LEGACY_VOICE_PROMPTS_ABS;
 /** Voice prompts header magic, u32 LE `'VP'` (firmware `voicePrompts.c`). */
 export const OPENUV380_VOICE_PROMPTS_MAGIC = 0x5056;
+/**
+ * Voice prompts header version the firmware loads: R20260130 `voicePrompts.c:126-131`
+ * (`voicePromptsCheckMagicAndVersion`) needs magic AND this version; the colour builds
+ * (`HAS_COLOURS`, the 1701 and MD-9600) define it as 0x0009. A header with another version is
+ * not loaded, and the firmware falls back to the legacy slot (`:103-111`).
+ */
+export const OPENUV380_VOICE_PROMPTS_VERSION = 0x0009;
+/** Bytes of the voice prompts header the probe reads: u32 magic, u32 version. */
+export const OPENUV380_VOICE_PROMPTS_HEADER_SIZE = 8;
 
 /** FirmwareInfo `flashId` of the 16 MiB W25Q128 part; the 1701 and MD-9600 only boot on it. */
 export const OPENUV380_FLASH_ID_16MIB = 0x4018;

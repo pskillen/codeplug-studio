@@ -19,6 +19,10 @@ import { OpenGd77ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
 
 const LIMITS = OPENGD77_FAMILY_LIMITS;
 const VP_MAGIC = [0x56, 0x50, 0x00, 0x00];
+/** Magic then the version the firmware loads (0x0009), both u32 LE. */
+const VP_HEADER = [...VP_MAGIC, 0x09, 0x00, 0x00, 0x00];
+/** Magic then a version the firmware does not load (0x0007). */
+const VP_HEADER_OLD = [...VP_MAGIC, 0x07, 0x00, 0x00, 0x00];
 
 function rows(n: number): RadioDigitalContactDto[] {
   const out: RadioDigitalContactDto[] = [];
@@ -36,8 +40,12 @@ function rows(n: number): RadioDigitalContactDto[] {
   return out;
 }
 
-function plantVp(pipe: OpenGd77ScriptedPipe, abs: number): void {
-  VP_MAGIC.forEach((b, i) => pipe.plantByte(abs + i, b));
+function plantVp(
+  pipe: OpenGd77ScriptedPipe,
+  abs: number,
+  header: readonly number[] = VP_HEADER,
+): void {
+  header.forEach((b, i) => pipe.plantByte(abs + i, b));
 }
 
 function headerCount(pipe: OpenGd77ScriptedPipe): number {
@@ -84,8 +92,9 @@ describe('User Database bit-1 warning', () => {
 });
 
 describe('voice-prompt probe classification', () => {
-  const vp = new Uint8Array(VP_MAGIC);
-  const blank = new Uint8Array([0xff, 0xff, 0xff, 0xff]);
+  const vp = new Uint8Array(VP_HEADER);
+  const oldVersion = new Uint8Array(VP_HEADER_OLD);
+  const blank = new Uint8Array(8).fill(0xff);
   it('classifies each placement', () => {
     expect(classifyVoicePrompts(vp, blank)).toBe('current');
     expect(classifyVoicePrompts(vp, vp)).toBe('current');
@@ -93,6 +102,19 @@ describe('voice-prompt probe classification', () => {
     expect(classifyVoicePrompts(blank, blank)).toBe('none');
     expect(classifyVoicePrompts(undefined, blank)).toBe('unknown');
     expect(classifyVoicePrompts(blank, undefined)).toBe('unknown');
+  });
+  it('counts the current slot only when the firmware would load its version', () => {
+    expect(classifyVoicePrompts(oldVersion, blank)).toBe('none');
+    expect(classifyVoicePrompts(oldVersion, vp)).toBe('legacy-only');
+    // Magic alone, no version bytes: not loadable.
+    expect(classifyVoicePrompts(new Uint8Array([...VP_MAGIC, 0, 0, 0, 0]), blank)).toBe('none');
+  });
+  it('guards the legacy slot on the magic, whatever its version', () => {
+    expect(classifyVoicePrompts(blank, oldVersion)).toBe('legacy-only');
+  });
+  it('treats a short reply as unknown', () => {
+    expect(classifyVoicePrompts(new Uint8Array(4), blank)).toBe('unknown');
+    expect(classifyVoicePrompts(vp, new Uint8Array(4))).toBe('unknown');
   });
 });
 
@@ -157,6 +179,23 @@ describe('User Database Write cap against the radio', () => {
     // Nothing was written at or above the legacy slot.
     expect(pipe.flashByte(OPENUV380_VOICE_PROMPTS_LEGACY_ABS)).toBe(0x56);
     expect(pipe.flashByte(OPENUV380_VOICE_PROMPTS_LEGACY_ABS + 1)).toBe(0x50);
+  }, 60_000);
+
+  it('a stale-version header at the current slot does not shield prompts in the legacy slot', async () => {
+    const { pipe, proto } = await writeWith(WANT, (p) => {
+      plantVp(p, OPENUV380_VOICE_PROMPTS_ABS, VP_HEADER_OLD);
+      plantVp(p, OPENUV380_VOICE_PROMPTS_LEGACY_ABS);
+    });
+    expect(headerCount(pipe)).toBe(15_776);
+    expect(proto.getLastUserDatabaseWarnings().join(' ')).toMatch(/older flash slot/);
+  }, 60_000);
+
+  it('a good header at the current slot allows the full cap even with a stale legacy copy', async () => {
+    const { pipe } = await writeWith(WANT, (p) => {
+      plantVp(p, OPENUV380_VOICE_PROMPTS_ABS);
+      plantVp(p, OPENUV380_VOICE_PROMPTS_LEGACY_ABS, VP_HEADER_OLD);
+    });
+    expect(headerCount(pipe)).toBe(WANT);
   }, 60_000);
 
   it('no prompts anywhere: the full list is written', async () => {

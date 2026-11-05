@@ -8,6 +8,7 @@ import {
   OPENGD77_SECTOR,
   OPENUV380_FLASH_ID_16MIB,
   OPENUV380_VOICE_PROMPTS_MAGIC,
+  OPENUV380_VOICE_PROMPTS_VERSION,
 } from './constants.ts';
 import { type OpenGd77UserDatabaseEncodeResult } from './userDatabaseCodec.ts';
 
@@ -26,17 +27,31 @@ export function openGd77NModeDatabaseWarning(features: number): string | undefin
 /** What the voice-prompt probe found, or `unknown` when a read failed. */
 export type VoicePromptProbe = 'current' | 'legacy-only' | 'none' | 'unknown';
 
-/** Classify the two 4-byte reads (`undefined` = the read failed). */
+function readU32(b: Uint8Array, at: number): number {
+  return (b[at]! | (b[at + 1]! << 8) | (b[at + 2]! << 16) | (b[at + 3]! << 24)) >>> 0;
+}
+
+/**
+ * Classify the two 8-byte header reads (`undefined` = the read failed or came back short).
+ *
+ * The current slot counts only when the firmware would load it: magic AND
+ * `OPENUV380_VOICE_PROMPTS_VERSION` (`voicePrompts.c:126-131`). The legacy slot is guarded on the
+ * magic alone: a Write that holds back for prompts the firmware may not load costs entries, one
+ * that runs over prompts it does load costs the operator's voice.
+ */
 export function classifyVoicePrompts(
   current: Uint8Array | undefined,
   legacy: Uint8Array | undefined,
 ): VoicePromptProbe {
   if (!current || !legacy) return 'unknown';
-  const hasMagic = (b: Uint8Array): boolean =>
-    b.byteLength >= 4 &&
-    (b[0]! | (b[1]! << 8) | (b[2]! << 16) | (b[3]! << 24)) >>> 0 === OPENUV380_VOICE_PROMPTS_MAGIC;
-  if (hasMagic(current)) return 'current';
-  return hasMagic(legacy) ? 'legacy-only' : 'none';
+  if (current.byteLength < 8 || legacy.byteLength < 8) return 'unknown';
+  if (
+    readU32(current, 0) === OPENUV380_VOICE_PROMPTS_MAGIC &&
+    readU32(current, 4) === OPENUV380_VOICE_PROMPTS_VERSION
+  ) {
+    return 'current';
+  }
+  return readU32(legacy, 0) === OPENUV380_VOICE_PROMPTS_MAGIC ? 'legacy-only' : 'none';
 }
 
 export interface UserDatabaseCapDecision {

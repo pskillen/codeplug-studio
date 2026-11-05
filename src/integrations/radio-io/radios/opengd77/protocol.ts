@@ -62,6 +62,7 @@ import {
   OPENUV380_USER_DB_HEADER_SIZE,
   OPENGD77_USER_DATABASE_MAX,
   OPENUV380_VOICE_PROMPTS_ABS,
+  OPENUV380_VOICE_PROMPTS_HEADER_SIZE,
   OPENUV380_VOICE_PROMPTS_LEGACY_ABS,
   OPENGD77_1701_POWER_STEPS,
   OPENGD77_MD9600_POWER_STEPS,
@@ -833,8 +834,16 @@ export class OpenGd77Protocol implements CloneImageRadio {
     if (wanted <= OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX_LEGACY_VOICE_PROMPTS) return undefined;
     await this.ensureCps(pipe);
     try {
-      const current = await readFlashRange(pipe, OPENUV380_VOICE_PROMPTS_ABS, 4);
-      const legacy = await readFlashRange(pipe, OPENUV380_VOICE_PROMPTS_LEGACY_ABS, 4);
+      const current = await readFlashRange(
+        pipe,
+        OPENUV380_VOICE_PROMPTS_ABS,
+        OPENUV380_VOICE_PROMPTS_HEADER_SIZE,
+      );
+      const legacy = await readFlashRange(
+        pipe,
+        OPENUV380_VOICE_PROMPTS_LEGACY_ABS,
+        OPENUV380_VOICE_PROMPTS_HEADER_SIZE,
+      );
       return classifyVoicePrompts(current, legacy);
     } catch {
       return 'unknown';
