@@ -33,6 +33,12 @@ export interface ListMapLayoutProps {
    * list pane starts at the table.
    */
   controls?: ReactNode;
+  /**
+   * Controls that must stay visible next to the list on mobile (search, filters): rendered at the
+   * top of the list pane, above the list, instead of in the controls sheet. Ignored on desktop,
+   * where `controls` already sits above the list.
+   */
+  listHeadControls?: ReactNode;
   /** The live map. Rendered once and fills its container (`height: 100%`). */
   map: ReactNode;
   /** Small controls tied to the map (e.g. Show my location). Above the map on desktop, in the controls sheet on mobile. */
@@ -114,6 +120,7 @@ function SwipePanes({
   list,
   notices,
   controls,
+  listHeadControls,
   map,
   mapExtras,
   mapNote,
@@ -214,6 +221,7 @@ function SwipePanes({
           <section className={classes.swipeListPane} aria-label={`${sheetLabel} list`}>
             <div className={classes.sheetBody}>
               {notices}
+              {listHeadControls}
               {list}
             </div>
             {pane !== 'list' ? (
@@ -291,6 +299,7 @@ export default function ListMapLayout({
   list,
   notices,
   controls,
+  listHeadControls,
   map,
   mapExtras,
   mapNote,
@@ -359,6 +368,7 @@ export default function ListMapLayout({
       list={list}
       notices={notices}
       controls={controls}
+      listHeadControls={listHeadControls}
       map={map}
       mapExtras={mapExtras}
       mapNote={mapNote}

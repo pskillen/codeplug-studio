@@ -64,6 +64,31 @@
   }
 }
 
+.mobileListHead {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobileListHead .searchRow {
+  margin-bottom: 0;
+}
+
+.mobileFilterRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mobileFilterRow .filterUseLocation {
+  width: auto;
+  order: 0;
+}
+
+.mobileFilterRow .filterUseLocation button {
+  width: auto;
+}
+
 .searchWrap {
   flex: 1;
   min-width: 200px;

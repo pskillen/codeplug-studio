@@ -13,7 +13,7 @@ import ChannelListFilters, {
 <ChannelListAppliedFilters />;
 ```
 
-Two exports, composed as siblings by `ChannelsListPage` alongside `UseMyLocationButton` and the Cards/Table view switch, so mobile can reorder them independently (Filters → view switch → Use my location, each full width) while desktop keeps Filters and Use my location adjacent with the view switch pushed right.
+Two exports, composed as siblings by `ChannelsListPage` alongside `UseMyLocationButton` and the Cards/Table view switch, so mobile can pin Filters, Use my location, pills and search above the table while the view switch stays in the controls sheet, and desktop keeps Filters and Use my location adjacent with the view switch pushed right.
 
 - **Default export** — the **Filters** trigger button + popover. Bands/Zones/Modes are tabs (one chip wall visible at a time); Simplex/Split and the distance-radius slider sit in the popover footer, visible regardless of the active tab. The trigger shows a count badge when any filter is active.
 - **`ChannelListAppliedFilters`** — a removable pill row (one pill per active band/zone/mode, one for duplex, one for the distance toggle) rendered below the row. Stays visible even when the popover is closed, so active filters never hide silently. Renders nothing when no filter is active.
