@@ -172,22 +172,22 @@ A failed flash write throws a typed error naming the command, the sector and the
 
 ## FirmwareInfo (`'R'` mem `09h`)
 
-| Field           | Notes                                      |
-| --------------- | ------------------------------------------ |
-| structVersion   | Currently observed as 3 in qdmr            |
-| radioType       | See [README.md](README.md) radioType table |
-| fw_revision[16] | ASCII, 0-padded                            |
-| build_date[16]  | `YYYYMMDDhhmmss`, 0-padded                 |
-| flashChipSerial | u32                                        |
-| features        | LE bitflags                                |
+| Field           | Notes                                                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| structVersion   | Currently observed as 3 in qdmr                                                                                        |
+| radioType       | See [README.md](README.md) radioType table                                                                             |
+| fw_revision[16] | ASCII, 0-padded                                                                                                        |
+| build_date[16]  | `YYYYMMDDhhmmss`, 0-padded                                                                                             |
+| flashId         | u32 at offset 40, the SPI flash part id. `0x4018` is the 16 MiB W25Q128; the 1701 and MD-9600 only boot normally on it |
+| features        | LE bitflags                                                                                                            |
 
 ### Feature bits (LE)
 
-| Bit | Meaning              |
-| --- | -------------------- |
-| 0   | Inverted display     |
-| 1   | Extended callsign DB |
-| 2   | Voice prompt loaded  |
+| Bit | Meaning                                                                                                                                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0   | Inverted display                                                                                                                            |
+| 1   | The User Database loaded at boot is in `'n'` mode (second segment on the voice prompts). A state, not a capability: clear on a normal radio |
+| 2   | Voice prompts loaded                                                                                                                        |
 
 ### Protocol variant from radioType
 

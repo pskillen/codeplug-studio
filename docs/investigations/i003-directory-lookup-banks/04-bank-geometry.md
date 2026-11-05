@@ -21,16 +21,16 @@ Permanent homes when settled: `docs/reference/radios/opengd77/`, `docs/reference
 
 ## OpenUV380 call-sign DB (qdmr `OpenUV380CallsignDB`)
 
-| Item                       | Value                              | Confidence                                      |
-| -------------------------- | ---------------------------------- | ----------------------------------------------- |
-| Header (encode)            | `0x00050000`                       | qdmr `Offset`, not live dump                    |
-| Segment 0 size             | `0x00040000`                       | qdmr `size0()`                                  |
-| Segment 1 start            | `0x000d8000`                       | qdmr `Offset::entries1()`                       |
-| Segment 1 size             | `0xd28000`                         | qdmr `size1()` — do not copy as entry count SoT |
-| UV380 entry size           | `0x1b` (27), packed text 32 chars  | qdmr; official CPS may be variable-length       |
-| Header size                | 12 bytes (`DatabaseHeaderElement`) | qdmr                                            |
-| GD-77 header (other radio) | `0x00030000`                       | qdmr `OpenGD77CallsignDB`                       |
-| FirmwareInfo bit 1         | Extended callsign DB               | Studio `protocol.md`                            |
+| Item                       | Value                              | Confidence                                                           |
+| -------------------------- | ---------------------------------- | -------------------------------------------------------------------- |
+| Header (encode)            | `0x00050000`                       | qdmr `Offset`, not live dump                                         |
+| Segment 0 size             | `0x00040000`                       | qdmr `size0()`                                                       |
+| Segment 1 start            | `0x000d8000`                       | qdmr `Offset::entries1()`                                            |
+| Segment 1 size             | `0xd28000`                         | qdmr `size1()` — do not copy as entry count SoT                      |
+| UV380 entry size           | `0x1b` (27), packed text 32 chars  | qdmr; official CPS may be variable-length                            |
+| Header size                | 12 bytes (`DatabaseHeaderElement`) | qdmr                                                                 |
+| GD-77 header (other radio) | `0x00030000`                       | qdmr `OpenGD77CallsignDB`                                            |
+| FirmwareInfo bit 1         | DB loaded in `'n'` mode (state)    | Studio `protocol.md` (corrected; was read as "extended callsign DB") |
 
 User guide (operator): ~13 800–69 600 IDs depending on characters per entry.
 
