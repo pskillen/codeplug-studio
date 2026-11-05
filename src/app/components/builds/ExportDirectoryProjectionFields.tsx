@@ -3,7 +3,6 @@ import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import { cpsDualBankOptionsForBuild } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
 import { DEFAULT_ID_DATABASE_FIELDS } from '@core/models/radioBuild.ts';
-import { isAtD890RadioIoProfileId } from '@core/import-export/formats/radio-io/profiles.ts';
 import { radioTargetHasTrait } from '@core/radio-targets/catalog.ts';
 import { FieldCard } from '../fields/Fields.tsx';
 
@@ -83,7 +82,7 @@ export default function ExportDirectoryProjectionFields({
           }}
         />
         {/* Web Serial Write only: hidden when the build's egress is a CPS file format. */}
-        {isAtD890RadioIoProfileId(profileId) &&
+        {formatId === 'radio-io' &&
         radioTargetHasTrait(build.radioTargetId, BuildCapabilityTrait.IdDatabaseFieldChoice) ? (
           <Stack gap={4}>
             <Text size="sm" fw={500}>
