@@ -43,6 +43,20 @@ describe('listSparseStagingChunks', () => {
     expect(addrs).not.toContain(UNIT_350 + 0x10);
   });
 
+  it('copies each block by default, and returns views of the unit buffer with copy=false (#1558)', () => {
+    const buffer = unitBuffer(0xff);
+    buffer[0x05] = 0x01;
+    const copied = listSparseStagingChunks(new Map([[UNIT_350, buffer]]), new Set())[0]!;
+    const view = listSparseStagingChunks(new Map([[UNIT_350, buffer]]), new Set(), false)[0]!;
+    expect(copied.data.buffer).not.toBe(buffer.buffer);
+    expect(view.data.buffer).toBe(buffer.buffer);
+    // Same bytes either way; only the view follows a later write to the unit buffer.
+    expect([...view.data]).toEqual([...copied.data]);
+    buffer[0x05] = 0x7e;
+    expect(view.data[5]).toBe(0x7e);
+    expect(copied.data[5]).toBe(0x01);
+  });
+
   it('returns ascending addresses across units', () => {
     const u348 = unitBuffer(0xff);
     u348[0x2a00] = 0x01; // ChannelSet region offset within 0x3480000 unit
