@@ -29,7 +29,7 @@ Studio Write programs **occupied sectors only** (header + packed entries). Do no
 
 The Write holds the cap lower when it must:
 
-- **Voice prompts in the legacy slot.** Before a Write of more than 15 776 entries, Studio reads the `VP` header at `0xaf400` and `0x100000`. If the prompts live only at `0x100000`, or the read fails, the Write stops at **15 776** entries (segment 1 ends below that slot) and the review says why. Prompts at `0xaf400`, or none, allow the full cap.
+- **Voice prompts in the legacy slot.** Before the first sector of a Write that sends more than 15 776 entries (in a combined Write, before the codeplug sectors too), Studio reads the 8-byte voice-prompt header at `0xaf400` and at `0x100000`. The `0xaf400` copy counts only when the firmware would load it: magic `VP` and version `0x0009` (`voicePrompts.c`, `voicePromptsCheckMagicAndVersion`). Any other header there is ignored, as the firmware ignores it. If it does not count and a `VP` magic sits at `0x100000` (any version), or either read fails or comes back short, the Write stops at **15 776** entries (segment 1 ends below that slot). The Write result says why and how many rows were left out; the pre-send Review does not show it. A loadable header at `0xaf400`, or no prompts at all, allows the full cap.
 - **Flash part not confirmed.** Unless FirmwareInfo reports the 16 MiB part, the Write is held to the older tested size, 69 600 entries.
 
 A full database is about 14 MB of transfer, so the Write takes correspondingly longer. Check write reads it all back.
