@@ -49,6 +49,9 @@ import {
 } from './radioIoSession.ts';
 import { uploadAtD890DigitalContactsForWrite } from './radioIoAtD890DigitalContactWrite.ts';
 
+// Each test runs a whole scripted Write; give them room when the machine is loaded.
+vi.setConfig({ testTimeout: 30_000 });
+
 const SERIAL = 'SN-TEST-UPLOAD01';
 
 async function d890Session(): Promise<{ session: RadioSession; pipe: AtD890ScriptedPipe }> {
@@ -182,6 +185,61 @@ describe('AT-D890 Write flows send no R after the first W (#1406)', () => {
     expect(pipe.writes.filter((f) => f[0] === 0x52)).toHaveLength(readsBefore);
     await closeRadioSession(session);
     assertAtD890NoReadAfterWrite(pipe.writes);
+  });
+});
+
+describe('AT-D890 ID database fields reach the encoder (#1561)', () => {
+  const manyContacts = Array.from({ length: 300 }, (_, i) => ({
+    wireName: `Contact ${i}`,
+    digitalId: 2_000_000 + i,
+    callsign: `CALL${i}`,
+    city: 'City',
+    province: 'Some State Name',
+    country: 'Some Country Name',
+    remark: 'A fairly long remark',
+  }));
+
+  function projectWith(fields: 'all' | 'essentials' | undefined) {
+    const withSetting = {
+      ...build,
+      ...(fields ? { exportSettings: { idDatabaseFields: fields } } : {}),
+    };
+    return buildRadioWriteProjection(
+      assemble(withSetting, library, { formatId: egress.formatId, profileId: egress.profileId }),
+      withSetting,
+      library,
+      egress,
+      {
+        dualBank: {
+          mode: 'codeplug',
+          options: { includeLibraryContacts: true, includeDigitalIdDirectory: false },
+        },
+      },
+    ).organisation.idDatabaseFields;
+  }
+
+  it('projects the build setting, defaulting to essentials', () => {
+    expect(projectWith('all')).toBe('all');
+    expect(projectWith('essentials')).toBe('essentials');
+    expect(projectWith(undefined)).toBe('essentials');
+  });
+
+  it('sends more W frames with all fields than with essentials', async () => {
+    const counts: Record<string, number> = {};
+    for (const fields of ['all', 'essentials'] as const) {
+      const { session, pipe } = await d890Session();
+      await uploadPreparedRadioWrite(session, egress, undefined, {
+        ...projected,
+        organisation: {
+          ...projected.organisation,
+          digitalContacts: manyContacts,
+          idDatabaseFields: fields,
+        },
+      });
+      counts[fields] = contactFrameCount(pipe);
+      await closeRadioSession(session);
+    }
+    expect(counts.all).toBeGreaterThan(counts.essentials);
   });
 });
 
