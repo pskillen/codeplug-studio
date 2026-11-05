@@ -4,6 +4,7 @@ import {
   digitalIdDatabaseCap,
   getProfileExportLimits,
 } from '@core/import-export/profileExportLimits.ts';
+import type { FormatId } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
 
@@ -59,7 +60,10 @@ describe('digital ID database cap', () => {
       expect(collectSpy).toHaveBeenCalledTimes(1);
       const handed = collectSpy.mock.calls[0]![0].maxDirectoryContacts as number;
 
-      const row = getProfileExportLimits(egress.formatId, egress.profileId)?.maxDigitalIdDatabase;
+      const row = getProfileExportLimits(
+        egress.formatId as FormatId,
+        egress.profileId,
+      )?.maxDigitalIdDatabase;
       expect(typeof row).toBe('number');
       expect(handed).toBe(row);
       expect(handed).toBeGreaterThan(0);
