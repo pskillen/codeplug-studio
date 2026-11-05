@@ -116,43 +116,92 @@ function deleteDirectoryPartition(
   };
 }
 
+/** Directory rows deleted per transaction by the orphan sweep, so no one transaction runs long. */
+const ORPHAN_SWEEP_CHUNK = 5000;
+
 /**
- * Delete directory rows whose project no longer exists. Reads the project IDs, then walks the
- * directory's primary keys by jumping from one project's range to the next, so the cost is one
- * step per project rather than per row. Runs in one transaction, so a project created meanwhile
- * is never swept. Returns the number of projects whose rows were removed.
+ * Find the IDs of projects that have directory rows but no `projects` row. Read-only: it reads the
+ * project IDs, then walks the directory's primary keys by jumping from one project's range to the
+ * next, so the cost is one step per project rather than per row.
  */
-function sweepOrphanDirectoryRows(db: IDBDatabase): Promise<number> {
-  return new Promise<number>((resolve, reject) => {
-    const directoryStore = DIRECTORY_STORES.digitalIdDirectory;
-    const tx = db.transaction([STORES.project, directoryStore], 'readwrite');
-    let swept = 0;
+function findOrphanDirectoryProjectIds(db: IDBDatabase): Promise<string[]> {
+  return new Promise<string[]>((resolve, reject) => {
+    const tx = db.transaction([STORES.project, DIRECTORY_STORES.digitalIdDirectory], 'readonly');
+    const orphans: string[] = [];
     const projectKeys = tx.objectStore(STORES.project).getAllKeys();
     projectKeys.onsuccess = () => {
       const existing = new Set<string>();
       for (const key of projectKeys.result) {
         if (Array.isArray(key) && typeof key[0] === 'string') existing.add(key[0]);
       }
-      const os = tx.objectStore(directoryStore);
-      const cursorReq = os.openKeyCursor();
+      const cursorReq = tx.objectStore(DIRECTORY_STORES.digitalIdDirectory).openKeyCursor();
       cursorReq.onsuccess = () => {
         const cursor = cursorReq.result;
         if (!cursor) return;
         const projectId = (cursor.key as [string, number])[0];
-        if (!existing.has(projectId)) {
-          os.delete(directoryPrimaryRange(projectId));
-          swept += 1;
-        }
+        if (!existing.has(projectId)) orphans.push(projectId);
         // Skip the rest of this project's rows.
         cursor.continue([projectId, Number.POSITIVE_INFINITY]);
       };
       cursorReq.onerror = () => reject(cursorReq.error);
     };
     projectKeys.onerror = () => reject(projectKeys.error);
-    tx.oncomplete = () => resolve(swept);
+    tx.oncomplete = () => resolve(orphans);
     tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error);
   });
+}
+
+/**
+ * Delete one chunk (up to {@link ORPHAN_SWEEP_CHUNK} rows) of an orphan project's directory rows
+ * in its own transaction. The transaction first re-reads the `projects` row and does nothing if it
+ * now exists, so a project created since the read-only pass is never swept. Resolves true when
+ * more rows may remain. (IndexedDB has one mode per transaction, so `projects` is in scope but
+ * only read; the chunk size keeps each transaction short.)
+ */
+function deleteOrphanChunk(db: IDBDatabase, projectId: string): Promise<boolean> {
+  return new Promise<boolean>((resolve, reject) => {
+    const tx = db.transaction([STORES.project, DIRECTORY_STORES.digitalIdDirectory], 'readwrite');
+    let more = false;
+    const exists = tx.objectStore(STORES.project).count(IDBKeyRange.only([projectId, projectId]));
+    exists.onsuccess = () => {
+      if (exists.result > 0) return;
+      const os = tx.objectStore(DIRECTORY_STORES.digitalIdDirectory);
+      const range = directoryPrimaryRange(projectId);
+      const keysReq = os.getAllKeys(range, ORPHAN_SWEEP_CHUNK);
+      keysReq.onsuccess = () => {
+        const keys = keysReq.result;
+        if (keys.length === 0) return;
+        if (keys.length < ORPHAN_SWEEP_CHUNK) {
+          os.delete(range);
+        } else {
+          os.delete(IDBKeyRange.bound(keys[0], keys[keys.length - 1]));
+          more = true;
+        }
+      };
+      keysReq.onerror = () => reject(keysReq.error);
+    };
+    exists.onerror = () => reject(exists.error);
+    tx.oncomplete = () => resolve(more);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+/**
+ * Delete directory rows whose project no longer exists: a short read-only pass finds the orphan
+ * project IDs, then each is deleted in short chunked transactions that never hold up the
+ * `projects` store for long. Returns the number of orphaned projects found.
+ */
+async function sweepOrphanDirectoryRows(db: IDBDatabase): Promise<number> {
+  const orphans = await findOrphanDirectoryProjectIds(db);
+  for (const projectId of orphans) {
+    while (await deleteOrphanChunk(db, projectId)) {
+      // Let other transactions (the home page's reads) in between chunks.
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    }
+  }
+  return orphans.length;
 }
 
 function ensureDigitalIdDirectoryIndexes(os: IDBObjectStore): void {
