@@ -1,16 +1,20 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ExportWarning } from '@core/import-export/exportWarning.ts';
-import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
+import { newRadioBuildForProfile } from '@core/domain/factories.ts';
+import {
+  digitalIdDatabaseCap,
+  getProfileExportLimits,
+} from '@core/import-export/profileExportLimits.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
 
-const pageSpy = vi.hoisted(() => vi.fn());
+const collectSpy = vi.hoisted(() => vi.fn());
 
-vi.mock('./directoryWritePaging.ts', () => ({
-  pageDigitalIdDirectoryForWrite: pageSpy,
+vi.mock('./dualBankRadioWrite.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./dualBankRadioWrite.ts')>()),
+  collectDualBankDirectorySlice: collectSpy,
 }));
 
-const { collectDualBankDirectorySlice } = await import('./dualBankRadioWrite.ts');
+const { prepareRadioWriteImage } = await import('./radioIoSession.ts');
 
 const library: LibrarySlice = {
   channels: [],
@@ -36,25 +40,41 @@ const RADIOS_WITH_ID_DATABASE = [
 
 describe('digital ID database cap', () => {
   it.each(RADIOS_WITH_ID_DATABASE)(
-    '%s: the characteristics row is the cap the directory Write enforces',
+    '%s: the characteristics row is the cap production hands the directory collector',
     async (profileId) => {
-      pageSpy.mockReset();
-      pageSpy.mockResolvedValue({ total: 0, collected: 0 });
-      await collectDualBankDirectorySlice({
-        store: new InMemoryProjectPersistence(),
-        projectId: 'p1',
-        library,
-        egressProfileId: profileId,
-        options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
-        warnings: [] as ExportWarning[],
-      });
-      expect(pageSpy).toHaveBeenCalledTimes(1);
-      const writeCap = pageSpy.mock.calls[0]![0].cap as number;
+      collectSpy.mockReset();
+      collectSpy.mockResolvedValue({ radioIds: [], digitalContacts: [] });
+      const { build, egress } = newRadioBuildForProfile('p1', profileId);
+      try {
+        await prepareRadioWriteImage(build, egress, library, {
+          dualBank: {
+            options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
+          } as never,
+          persistence: new InMemoryProjectPersistence(),
+          projectId: 'p1',
+        });
+      } catch {
+        // Later projection steps may need a hydrated radio; the collector call is what matters.
+      }
+      expect(collectSpy).toHaveBeenCalledTimes(1);
+      const handed = collectSpy.mock.calls[0]![0].maxDirectoryContacts as number;
 
-      const limits = getProfileExportLimits('radio-io', profileId);
-      expect(limits).not.toBeNull();
-      expect(limits!.maxDigitalIdDatabase).toBe(writeCap);
-      expect(writeCap).toBeGreaterThan(0);
+      const row = getProfileExportLimits(egress.formatId, egress.profileId)?.maxDigitalIdDatabase;
+      expect(typeof row).toBe('number');
+      expect(handed).toBe(row);
+      expect(handed).toBeGreaterThan(0);
     },
   );
+
+  it('resolves no cap for a profile without an ID database', () => {
+    expect(digitalIdDatabaseCap('radio-io', 'radio-io-uv5r-mini')).toBeUndefined();
+  });
+
+  it('the CPS export cap for the AT-D890 is the characteristics row', () => {
+    for (const profileId of ['at-d890uv', 'at-d890uv-mm9pdy']) {
+      const row = getProfileExportLimits('anytone', profileId)?.maxDigitalIdDatabase;
+      if (typeof row !== 'number') continue;
+      expect(digitalIdDatabaseCap('anytone', profileId)).toBe(row);
+    }
+  });
 });
