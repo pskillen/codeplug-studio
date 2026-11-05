@@ -1,7 +1,9 @@
-import { Checkbox, Stack, Text } from '@mantine/core';
+import { Checkbox, SegmentedControl, Stack, Text } from '@mantine/core';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import { cpsDualBankOptionsForBuild } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
+import { DEFAULT_ID_DATABASE_FIELDS } from '@core/models/radioBuild.ts';
+import { radioTargetHasTrait } from '@core/radio-targets/catalog.ts';
 import { FieldCard } from '../fields/Fields.tsx';
 
 export interface ExportDirectoryProjectionFieldsProps {
@@ -79,6 +81,31 @@ export default function ExportDirectoryProjectionFields({
             });
           }}
         />
+        {radioTargetHasTrait(build.radioTargetId, BuildCapabilityTrait.IdDatabaseFieldChoice) ? (
+          <Stack gap={4}>
+            <Text size="sm" fw={500}>
+              ID database fields
+            </Text>
+            <SegmentedControl
+              size="sm"
+              aria-label="ID database fields"
+              data={[
+                { value: 'essentials', label: 'Name, callsign and city' },
+                { value: 'all', label: 'All fields' },
+              ]}
+              value={build.exportSettings?.idDatabaseFields ?? DEFAULT_ID_DATABASE_FIELDS}
+              disabled={saving}
+              onChange={(value) =>
+                onPatch({ idDatabaseFields: value === 'all' ? 'all' : 'essentials' })
+              }
+            />
+            <Text size="xs" c="dimmed">
+              Web Serial Write only. Name, callsign and city is much smaller and faster for a large
+              directory; the other fields are left empty on the radio. Your library keeps every
+              field.
+            </Text>
+          </Stack>
+        ) : null}
       </Stack>
     </FieldCard>
   );

@@ -134,6 +134,28 @@ describe('AT-D890UV planned stages', () => {
     expect(rec.stages).toEqual(['Digital contacts']);
   });
 
+  it('sizes the contact stage from the chosen ID database fields', () => {
+    const contacts = Array.from({ length: 400 }, (_, i) => ({
+      wireName: `Contact ${i}`,
+      digitalId: 1_000_000 + i,
+      callsign: 'CALL',
+      city: 'City',
+      province: 'State',
+      country: 'Country',
+      remark: 'Note',
+    }));
+    const weight = (idDatabaseFields?: 'essentials' | 'all') =>
+      planForOperation(AT_D890UV_DESCRIPTOR, 'write', {
+        prepared: {
+          channels: [],
+          organisation: { zones: [], digitalContacts: contacts, idDatabaseFields },
+        },
+        parts: { codeplug: false, contacts: true, settings: false, keps: false },
+      })!.find((s) => s.label === 'Digital contacts')!.weight;
+    expect(weight('essentials')).toBeLessThan(weight('all'));
+    expect(weight(undefined)).toBe(weight('essentials'));
+  });
+
   it('sizes the contact stage from the prepared write when the caller has one', () => {
     const contact = {
       wireName: 'Contact 1',
