@@ -106,6 +106,6 @@ describe('OpenGD77 User Database sidecar write', () => {
           w[2] === OPENGD77_CONTROL_SAVE_REBOOT,
       ),
     ).toBe(true);
-    expect(proto.getLastUserDatabaseWarning()).toMatch(/extended callsign DB/);
+    expect(proto.getLastUserDatabaseWarnings()).toEqual([]);
   });
 });

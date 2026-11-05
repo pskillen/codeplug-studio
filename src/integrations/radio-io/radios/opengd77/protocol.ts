@@ -61,6 +61,8 @@ import {
   OPENUV380_USER_DB_HEADER_ABS,
   OPENUV380_USER_DB_HEADER_SIZE,
   OPENGD77_USER_DATABASE_MAX,
+  OPENUV380_VOICE_PROMPTS_ABS,
+  OPENUV380_VOICE_PROMPTS_LEGACY_ABS,
   OPENGD77_1701_POWER_STEPS,
   OPENGD77_MD9600_POWER_STEPS,
   MD9600_RADIO_TYPES,
@@ -97,6 +99,7 @@ import { openGd77KeptRegionLength, openGd77KeptRegions } from './writeVerifySupp
 import { encodeOpenGd77WriteImageFromPrior } from './hydration.ts';
 import { ADDITIONAL_SETTINGS_BYTES, overlaySatelliteBank } from './satelliteCodec.ts';
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
+import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 import { intendedOpenGd77RestoreImage } from './restoreFromBackup.ts';
 import {
@@ -105,8 +108,10 @@ import {
 } from './userDatabaseVerify.ts';
 import { encodeOpenGd77UserDatabase, decodeUserDatabaseHeader } from './userDatabaseCodec.ts';
 import {
-  openGd77MissingExtendedCallsignDbWarning,
   buildUserDatabaseSectorPayloads,
+  classifyVoicePrompts,
+  resolveUserDatabaseCap,
+  type VoicePromptProbe,
 } from './userDatabaseWrite.ts';
 
 /** Packed FirmwareInfo size (qdmr FirmwareInfo). */
@@ -117,8 +122,10 @@ export interface OpenGd77FirmwareInfo {
   radioType: number;
   fwRevision: string;
   buildDate: string;
-  /** FirmwareInfo features bitflags (bit 1 = extended callsign DB). */
+  /** FirmwareInfo features bitflags (bit 1 = DB loaded in `'n'` mode, bit 2 = voice prompts loaded). */
   features: number;
+  /** SPI flash part id (offset 40); 0x4018 is the 16 MiB W25Q128 the 1701 and MD-9600 boot on. */
+  flashId: number;
 }
 
 function readU32Le(buf: Uint8Array, offset: number): number {
@@ -152,6 +159,7 @@ export function parseFirmwareInfo(payload: Uint8Array): OpenGd77FirmwareInfo {
     radioType: readU32Le(payload, 4),
     fwRevision: readAsciiPad(payload, 8, 16),
     buildDate: readAsciiPad(payload, 24, 16),
+    flashId: readU32Le(payload, 40),
     features: payload.length >= 46 ? payload[44]! | (payload[45]! << 8) : 0,
   };
 }
@@ -269,7 +277,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
   private lastUploadKept: Map<string, Uint8Array> | undefined;
   private lastUploadUserDatabase: OpenGd77UserDatabaseVerifySnapshot | undefined;
-  private lastUserDatabaseWarning: string | undefined;
+  private lastUserDatabaseWarnings: string[] = [];
   /** Last frames on the wire; attached to protocol errors as `debugText`. */
   private trace = new FrameTrace();
   /**
@@ -311,8 +319,8 @@ export class OpenGd77Protocol implements CloneImageRadio {
     return this.lastDirtySectorCount;
   }
 
-  getLastUserDatabaseWarning(): string | undefined {
-    return this.lastUserDatabaseWarning;
+  getLastUserDatabaseWarnings(): readonly string[] {
+    return this.lastUserDatabaseWarnings;
   }
 
   /** Arm modelled overlay; {@link upload} encodes onto the live pre-write prior, not this image. */
@@ -817,16 +825,39 @@ export class OpenGd77Protocol implements CloneImageRadio {
     await this.saveAndReboot(pipe);
   }
 
+  /** Read the voice-prompt magic at both slots; only when a write could reach the legacy one. */
+  private async probeVoicePrompts(
+    pipe: BytePipe,
+    wanted: number,
+  ): Promise<VoicePromptProbe | undefined> {
+    if (wanted <= OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX_LEGACY_VOICE_PROMPTS) return undefined;
+    await this.ensureCps(pipe);
+    try {
+      const current = await readFlashRange(pipe, OPENUV380_VOICE_PROMPTS_ABS, 4);
+      const legacy = await readFlashRange(pipe, OPENUV380_VOICE_PROMPTS_LEGACY_ABS, 4);
+      return classifyVoicePrompts(current, legacy);
+    } catch {
+      return 'unknown';
+    }
+  }
+
   private async programUserDatabaseSectors(
     pipe: BytePipe,
     contacts: readonly RadioDigitalContactDto[],
     opts: { onProgress?: ProgressFn; signal?: AbortSignal },
   ): Promise<void> {
-    this.lastUserDatabaseWarning = openGd77MissingExtendedCallsignDbWarning(
-      this.firmwareInfo?.features ?? 0,
-    );
+    // Probe before anything is sent that changes the radio: a larger write must not run over voice
+    // prompts kept in the legacy slot.
+    const probe = await this.probeVoicePrompts(pipe, contacts.length);
+    const decision = resolveUserDatabaseCap({
+      flashId: this.firmwareInfo?.flashId,
+      features: this.firmwareInfo?.features ?? 0,
+      wanted: contacts.length,
+      probe,
+    });
+    this.lastUserDatabaseWarnings = [...decision.warnings];
     await this.prepareCallsignDbFlashWrite(pipe);
-    const encoded = encodeOpenGd77UserDatabase(contacts);
+    const encoded = encodeOpenGd77UserDatabase(contacts, [], { cap: decision.cap });
     const payloads = buildUserDatabaseSectorPayloads(encoded);
     this.lastUploadUserDatabase = undefined;
     const sectorAbsList = [...payloads.keys()].sort((a, b) => a - b);

@@ -27,7 +27,16 @@ function putU32Le(buf: Uint8Array, offset: number, value: number): void {
   buf[offset + 3] = (value >> 24) & 0xff;
 }
 
-export function makeOpenGd77FirmwareInfoPayload(radioType = 0x08): Uint8Array {
+export interface OpenGd77FirmwareInfoOptions {
+  /** SPI flash part id; the 1701 and MD-9600 boot on 0x4018 only. */
+  flashId?: number;
+  features?: number;
+}
+
+export function makeOpenGd77FirmwareInfoPayload(
+  radioType = 0x08,
+  opts: OpenGd77FirmwareInfoOptions = {},
+): Uint8Array {
   const payload = new Uint8Array(OPENGD77_FIRMWARE_INFO_SIZE);
   putU32Le(payload, 0, 3);
   putU32Le(payload, 4, radioType);
@@ -35,6 +44,9 @@ export function makeOpenGd77FirmwareInfoPayload(radioType = 0x08): Uint8Array {
   payload.set(rev.subarray(0, 16), 8);
   const date = new TextEncoder().encode('20240101120000');
   payload.set(date.subarray(0, 16), 24);
+  putU32Le(payload, 40, opts.flashId ?? 0x4018);
+  payload[44] = (opts.features ?? 0) & 0xff;
+  payload[45] = ((opts.features ?? 0) >> 8) & 0xff;
   return payload;
 }
 
@@ -107,13 +119,19 @@ export class OpenGd77ScriptedPipe implements BytePipe {
   private readonly silentCommands: { flag: number; nth: number }[] = [];
   private readonly seenCommands = new Map<number, number>();
 
-  constructor(private readonly radioType = 0x08) {
+  constructor(
+    private readonly radioType = 0x08,
+    private readonly firmwareOpts: OpenGd77FirmwareInfoOptions = {},
+  ) {
     for (const span of OPENUV380_FLASH_SPANS) {
       for (let i = 0; i < span.length; i++) {
         this.flash.set(span.start + i, 0xff);
       }
     }
   }
+
+  /** Reads of FLASH starting at these addresses are refused. */
+  readonly failReadsAt = new Set<number>();
 
   plantByte(abs: number, value: number): void {
     this.flash.set(abs, value & 0xff);
@@ -267,10 +285,15 @@ export class OpenGd77ScriptedPipe implements BytePipe {
       const addr = ((data[2]! << 24) | (data[3]! << 16) | (data[4]! << 8) | data[5]!) >>> 0;
       const length = ((data[6]! << 8) | data[7]!) >>> 0;
       if (mem === 0x09) {
-        this.enqueueReadReply(makeOpenGd77FirmwareInfoPayload(this.radioType));
+        this.enqueueReadReply(makeOpenGd77FirmwareInfoPayload(this.radioType, this.firmwareOpts));
         return;
       }
       if (mem === 0x01) {
+        if (this.failReadsAt.has(addr)) {
+          // Refused read: three dashes so the host's header read completes and rejects.
+          this.enqueueChunks(new Uint8Array([0x2d, 0x2d, 0x2d]));
+          return;
+        }
         const payload = new Uint8Array(length);
         for (let i = 0; i < length; i++) {
           payload[i] = this.flash.get(addr + i) ?? 0xff;
