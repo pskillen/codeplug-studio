@@ -4,7 +4,7 @@
  */
 
 import { Link } from 'react-router-dom';
-import { Anchor, Switch, Text } from '@mantine/core';
+import { Alert, Anchor, Switch, Text } from '@mantine/core';
 import type { DigitalContactsWriteSource } from '@core/domain/digitalIdDirectoryProjection.ts';
 import KepsLastUpdated from '../../../library/KepsLastUpdated.tsx';
 import { Button, FormField, SegmentedControl } from '../../../v2/index.ts';
@@ -96,6 +96,21 @@ export function WhatToWriteBody({ config, view, actions }: StepProps) {
             checked={parts.contacts}
             onCheckedChange={(contacts) => set({ contacts })}
           >
+            {view.contactDirectoryStatus === 'checking' ? (
+              <Text size="sm" role="status">
+                Checking ID directory…
+              </Text>
+            ) : view.contactDirectoryStatus === 'empty' ? (
+              <Alert color="yellow" title="ID directory is empty">
+                Fetch or import IDs before writing the ID directory, or select Contacts or untick
+                Digital contacts.
+              </Alert>
+            ) : view.contactDirectoryStatus === 'error' ? (
+              <Alert color="red" title="Could not check the ID directory">
+                Select Contacts or untick Digital contacts to continue. To retry the directory
+                check, select Contacts, then ID directory or Both again.
+              </Alert>
+            ) : null}
             <FormField
               label="Contact source"
               hint={
@@ -143,6 +158,7 @@ export function WhatToWriteBody({ config, view, actions }: StepProps) {
           </WritePartRow>
         ) : null}
       </div>
+
       <Text size="sm" c="dimmed">
         Anything not ticked stays as it is on the radio.
       </Text>
@@ -152,7 +168,11 @@ export function WhatToWriteBody({ config, view, actions }: StepProps) {
 
 export function WhatToWriteFooter({ config, view, actions }: StepProps) {
   const disabled =
-    !config.serialOk || config.writeHidden || tickedPartCount(view.parts) === 0 || view.busy;
+    !config.serialOk ||
+    config.writeHidden ||
+    tickedPartCount(view.parts) === 0 ||
+    view.busy ||
+    (view.contactDirectoryStatus != null && view.contactDirectoryStatus !== 'ready');
   return (
     <>
       <Button variant="secondary" size="sm" onClick={actions.onClose}>

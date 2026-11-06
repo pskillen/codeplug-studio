@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import * as featureDetect from '@integrations/radio-io/transport/featureDetect.ts';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
@@ -182,12 +182,61 @@ describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
     expect(saved?.exportSettings?.assignMm9pdyStepKeys).toBe(true);
   });
 
-  it('warns when ID directory is selected and it is empty', async () => {
-    openStepper('radio-io-opengd77-1701');
+  it.each(['ID directory', 'Both'])(
+    'blocks an empty %s selection inline before connecting',
+    async (source) => {
+      openStepper('radio-io-opengd77-1701');
+      fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
+      fireEvent.click(screen.getByRole('button', { name: source }));
+      expect(await screen.findByText('ID directory is empty')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Connect & read' })).toBeDisabled();
+      expect(screen.queryByRole('button', { name: 'Write anyway' })).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Contacts', exact: true }));
+      expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled();
+      expect(screen.queryByText('ID directory is empty')).not.toBeInTheDocument();
+    },
+  );
+  it('allows codeplug writing after unticking contacts with an empty directory', async () => {
+    openStepper('radio-io-at-d890uv');
+    const contacts = await screen.findByRole('checkbox', { name: 'Digital contacts' });
+    fireEvent.click(contacts);
+    fireEvent.click(screen.getByRole('button', { name: 'Both' }));
+    await screen.findByText('ID directory is empty');
+    fireEvent.click(contacts);
+    expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled();
+    expect(screen.queryByText('ID directory is empty')).not.toBeInTheDocument();
+  });
+
+  it('blocks while checking the directory and allows a populated directory', async () => {
+    let finish!: (count: number) => void;
+    vi.mocked(persistence.countDigitalIdDirectoryEntries).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    openStepper('radio-io-dm32uv');
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
     fireEvent.click(screen.getByRole('button', { name: 'ID directory' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
-    expect(await screen.findByText('ID directory is empty')).toBeInTheDocument();
+    expect(screen.getByText('Checking ID directory…')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Connect & read' })).toBeDisabled();
+    finish(12);
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled(),
+    );
+  });
+
+  it('shows a recoverable inline directory-check error', async () => {
+    vi.mocked(persistence.countDigitalIdDirectoryEntries).mockRejectedValueOnce(
+      new Error('Storage unavailable'),
+    );
+    openStepper('radio-io-opengd77-1701');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Both' }));
+    await screen.findByText('Could not check the ID directory');
+    expect(screen.getByRole('button', { name: 'Connect & read' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Contacts', exact: true }));
+    expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled();
   });
 });
 
@@ -251,6 +300,53 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
   async function connect() {
     fireEvent.click(await screen.findByRole('button', { name: 'Connect & read' }));
   }
+
+  it('rechecks directory availability before opening a serial port', async () => {
+    openStepper('radio-io-at-d890uv');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Both' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled(),
+    );
+    vi.mocked(persistence.countDigitalIdDirectoryEntries).mockResolvedValueOnce(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
+    await screen.findByText('ID directory is empty');
+    expect(grant).not.toHaveBeenCalled();
+    expect(prepare).not.toHaveBeenCalled();
+  });
+
+  it.each(['close', 'unmount', 'source', 'parts', 'edit settings'])(
+    'cancels a pending directory preflight on %s',
+    async (cancel) => {
+      const panel = openStepper('radio-io-at-d890uv');
+      fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Both' }));
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled(),
+      );
+      let finish!: (count: number) => void;
+      vi.mocked(persistence.countDigitalIdDirectoryEntries).mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
+      if (cancel === 'close') fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      if (cancel === 'unmount') panel.unmount();
+      if (cancel === 'edit settings')
+        fireEvent.click(screen.getByRole('button', { name: 'Set up…' }));
+      if (cancel === 'source')
+        fireEvent.click(screen.getByRole('button', { name: 'Contacts', exact: true }));
+      if (cancel === 'parts')
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Digital contacts' }));
+      await act(async () => {
+        finish(12);
+      });
+      expect(grant).not.toHaveBeenCalled();
+      expect(prepare).not.toHaveBeenCalled();
+    },
+  );
 
   it('grants the port before prepare and opens a write session with it (#1247)', async () => {
     openStepper('radio-io-opengd77-1701');

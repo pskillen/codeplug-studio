@@ -147,6 +147,8 @@ export interface WriteFlowView {
   step: WriteStep;
   parts: WriteParts;
   contactSource: Exclude<DigitalContactsWriteSource, 'none'>;
+  /** Present only when the selected contacts source requires the ID directory. */
+  contactDirectoryStatus?: 'checking' | 'empty' | 'error' | 'ready';
   /** A read or transfer is in flight (abort is possible, leaving is blocked). */
   busy: boolean;
   error: string | null;
