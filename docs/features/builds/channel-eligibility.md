@@ -56,6 +56,12 @@ A confirm dialog warns that slot/member order may need redoing.
 | `src/app/components/builds/FrequencyRangeEligibilityFields.tsx` | Export toggle UI                                |
 | `src/app/components/builds/RadioRfCapabilitiesSection.tsx`      | Characteristics display                         |
 
+## Receive-only channels
+
+Eligibility and transmit permission are separate. An eligible channel with **Forbid TX** still exports and receives normally. AT-D890UV stock and MM9PDY direct-radio writes enforce the effective channel/build transmit policy for analog, DMR, and dual-mode channels. An explicit build transmit override takes precedence over the channel setting. An allowed replacement channel clears the previous slot's transmit prohibition.
+
+The D890 write codec programs PTT prohibition as well as its separate receive-only flag; the [channel-record reference](../../reference/radios/anytone/at-d890uv/channel-record.md) describes the boundary mapping. The library model stays vendor-neutral.
+
 ## Manual verify
 
 1. **RT95 build** — AM/airband library channel hidden on Channels; FM in 136–174 / 400–490 visible.
