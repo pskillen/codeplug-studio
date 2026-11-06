@@ -70,7 +70,7 @@ export interface RadioChannelDto {
   skipScan?: boolean;
   /** OpenGD77: skipZoneScan bit @ 0x33 bit 5. */
   skipZoneScan?: boolean;
-  /** OpenGD77 / DM-32 / UV-5R Mini: RX-only (forbid TX). */
+  /** Receive-only / forbid TX. D890 writes both PTT prohibit and its separate RX-only flag. */
   rxOnly?: boolean;
   /** DM-32UV: 0-based operator radio-ID bank index; omit or 0xFF on wire when unset. */
   dmrRadioIdIndex?: number;

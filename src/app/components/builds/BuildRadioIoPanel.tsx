@@ -18,7 +18,6 @@ import {
   ModalShell,
   WriteVerifyReport as WriteVerifyReportV2,
   Button as V2Button,
-  ConfirmModal,
 } from '../v2/index.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
@@ -352,19 +351,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           </Stack>
         ) : null}
       </ModalShell>
-      <ConfirmModal
-        open={flow.emptyDirectory.open}
-        onClose={flow.emptyDirectory.cancel}
-        title="ID directory is empty"
-        confirmLabel="Write anyway"
-        cancelLabel="Cancel"
-        onConfirm={flow.emptyDirectory.confirm}
-      >
-        <Text size="sm">
-          Your ID directory has no rows. Fetch or import IDs before writing, or continue if you
-          intend to write without ID directory entries.
-        </Text>
-      </ConfirmModal>
       <RadioWriteStepper
         config={stepperConfig}
         view={flowView}

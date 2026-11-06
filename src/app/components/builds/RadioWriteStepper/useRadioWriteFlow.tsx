@@ -205,8 +205,6 @@ export interface RadioWriteFlow {
   open: (initialParts?: Partial<WriteParts>) => void;
   /** The check's result, once a check ran. */
   checkResult: WriteVerifyResult | null;
-  /** Empty-RadioID-directory prompt shown before the read starts. */
-  emptyDirectory: { open: boolean; confirm: () => void; cancel: () => void };
 }
 
 interface WrittenFacts {
@@ -288,8 +286,37 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     useState<WriteFlowView['kepsAfterRestart']>('none');
   const [kepsFailure, setKepsFailure] = useState<string | null>(null);
   const [summary, setSummary] = useState<WriteSummary | null>(null);
-  const [emptyDirectoryOpen, setEmptyDirectoryOpen] = useState(false);
+  const directoryAttemptRef = useRef(0);
+  useEffect(
+    () => () => {
+      directoryAttemptRef.current += 1;
+    },
+    [],
+  );
+  const [directoryStatus, setDirectoryStatus] =
+    useState<NonNullable<WriteFlowView['contactDirectoryStatus']>>('checking');
+  const needsDirectory =
+    supportsDigitalContacts && parts.contacts && writeSourceIncludesDirectory(contactSource);
 
+  useEffect(() => {
+    if (!isOpen || !needsDirectory) return;
+    let cancelled = false;
+    if (!activeProjectId) return;
+    void persistence.countDigitalIdDirectoryEntries(activeProjectId).then(
+      (count) => {
+        if (!cancelled) setDirectoryStatus(count === 0 ? 'empty' : 'ready');
+      },
+      () => {
+        if (!cancelled) setDirectoryStatus('error');
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, needsDirectory, activeProjectId, contactSource]);
+
+  // React state cannot prevent a second click before the next render (including port picking).
+  const writeActionPendingRef = useRef(false);
   const sessionRef = useRef<RadioSession | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const grantedPortRef = useRef<GrantedRadioSerialPort | null>(null);
@@ -308,7 +335,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const checkResultRef = useRef<WriteVerifyResult | null>(null);
   const kepsPendingRef = useRef(false);
   const satellitesRef = useRef<Satellite[]>([]);
-  const pendingEmptyDirectoryRef = useRef<(() => void) | null>(null);
   const settingsAppliedRef = useRef<number | null>(null);
   const reviewUnsubscribeRef = useRef<(() => void) | null>(null);
   const d890ControllerRef = useRef<AtD890ReviewController | null>(null);
@@ -769,6 +795,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     const p = partsRef.current;
     setStep('connectRead');
     setError(null);
+    setErrorDebug(null);
     setCanReconnect(false);
     setReconnecting(opts.reconnect);
     clearProgress();
@@ -786,7 +813,26 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     try {
       if (!activeProjectId) throw new Error('No active project.');
       if (!grantedPortRef.current) {
-        grantedPortRef.current = await grantRadioSerialPortForEgress({ forcePortSelection: true });
+        try {
+          grantedPortRef.current = await grantRadioSerialPortForEgress({
+            forcePortSelection: true,
+          });
+        } catch (err) {
+          // Cancelling the browser picker is not a failed radio read. Scope this to the picker:
+          // a NotFoundError from an established session must still be reported.
+          if (
+            typeof err === 'object' &&
+            err !== null &&
+            'name' in err &&
+            err.name === 'NotFoundError'
+          ) {
+            setBusyNotify(false);
+            setReconnecting(false);
+            setStep('whatToWrite');
+            return;
+          }
+          throw err;
+        }
       }
       const granted = grantedPortRef.current;
       const source: DigitalContactsWriteSource = p.contacts ? contactSourceRef.current : 'none';
@@ -1095,6 +1141,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   }
 
   async function guardedConnectAndRead(): Promise<void> {
+    const attempt = directoryAttemptRef.current;
     const p = partsRef.current;
     if (
       supportsDigitalContacts &&
@@ -1102,10 +1149,15 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       writeSourceIncludesDirectory(contactSourceRef.current) &&
       activeProjectId
     ) {
-      const count = await persistence.countDigitalIdDirectoryEntries(activeProjectId);
-      if (count === 0) {
-        pendingEmptyDirectoryRef.current = () => void connectAndRead();
-        setEmptyDirectoryOpen(true);
+      setDirectoryStatus('checking');
+      try {
+        const count = await persistence.countDigitalIdDirectoryEntries(activeProjectId);
+        if (attempt !== directoryAttemptRef.current) return;
+        setDirectoryStatus(count === 0 ? 'empty' : 'ready');
+        if (count === 0) return;
+      } catch {
+        if (attempt !== directoryAttemptRef.current) return;
+        setDirectoryStatus('error');
         return;
       }
     }
@@ -1182,6 +1234,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   }
 
   function close() {
+    directoryAttemptRef.current += 1;
     if (step === 'review') {
       decisionRef.current?.reject(new WriteCancelledError());
       return;
@@ -1202,12 +1255,25 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     await run({ reconnect: false });
   }
 
+  function startWriteAction(action: () => Promise<void>) {
+    if (writeActionPendingRef.current) return;
+    writeActionPendingRef.current = true;
+    void action().finally(() => {
+      writeActionPendingRef.current = false;
+    });
+  }
+
   const readFinished = step !== 'connectRead';
   const view: WriteFlowView = {
     open: isOpen,
     step,
     parts,
     contactSource,
+    contactDirectoryStatus: needsDirectory
+      ? activeProjectId
+        ? directoryStatus
+        : 'error'
+      : undefined,
     busy,
     error,
     errorDebug: error ? errorDebug : null,
@@ -1231,13 +1297,22 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
 
   const actions: WriteFlowActions = {
     onClose: close,
-    onPartsChange: setParts,
-    onContactSourceChange: setContactSource,
-    onConnectAndRead: () => void guardedConnectAndRead(),
+    onPartsChange: (next) => {
+      directoryAttemptRef.current += 1;
+      if (next.contacts !== parts.contacts) setDirectoryStatus('checking');
+      setParts(next);
+    },
+    onContactSourceChange: (next) => {
+      if (next === contactSource) return;
+      directoryAttemptRef.current += 1;
+      setDirectoryStatus('checking');
+      setContactSource(next);
+    },
+    onConnectAndRead: () => startWriteAction(guardedConnectAndRead),
     onAbort: () => abortRef.current?.abort(),
     onWrite: () => decisionRef.current?.resolve(),
     onCancelReview: () => decisionRef.current?.reject(new WriteCancelledError()),
-    onReconnect: () => void run({ reconnect: false }),
+    onReconnect: () => startWriteAction(() => run({ reconnect: false })),
     onClearPendingWarning: () => {
       if (pendingBlock) clearInterruptedWriteWarning(pendingBlock);
       setPendingBlock(null);
@@ -1247,9 +1322,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     onCheckWrite: () => void checkWrite(),
     onSkipCheck: skipOutstanding,
     onWriteKepsAfterRestart: () => void writeKepsAfterRestart(),
-    onWriteAnother: () => void writeAnother(),
+    onWriteAnother: () => startWriteAction(writeAnother),
     onViewCheckReport: () => undefined,
     onEditSettings: () => {
+      directoryAttemptRef.current += 1;
       // Keep the ticks for when the user comes back; the dialog closes (nothing has been read yet).
       setStepperTicks(build.id, { ...partsRef.current });
       setIsOpen(false);
@@ -1261,6 +1337,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     view,
     actions,
     open: (initialParts?: Partial<WriteParts>) => {
+      directoryAttemptRef.current += 1;
       const d890Store = getAtD890RadioSettingsSession(build.id);
       const rt95Store = getRt95RadioSettingsSession(build.id);
       const hasD890Changes = isAtD890 && d890Store.overrides.size > 0;
@@ -1283,22 +1360,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         ),
       );
       setContactSource('library');
+      setDirectoryStatus('checking');
       setStep('whatToWrite');
       resetRun();
       setIsOpen(true);
     },
     checkResult,
-    emptyDirectory: {
-      open: emptyDirectoryOpen,
-      confirm: () => {
-        setEmptyDirectoryOpen(false);
-        pendingEmptyDirectoryRef.current?.();
-        pendingEmptyDirectoryRef.current = null;
-      },
-      cancel: () => {
-        setEmptyDirectoryOpen(false);
-        pendingEmptyDirectoryRef.current = null;
-      },
-    },
   };
 }

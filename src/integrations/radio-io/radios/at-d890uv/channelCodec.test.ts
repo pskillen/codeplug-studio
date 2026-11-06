@@ -482,7 +482,7 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(encoded[0x20]).toBe(6);
   });
 
-  it('writes rxOnly on 0x34 bit 3 and leaves 0x09 bit 5 clear', () => {
+  it('writes receive-only and PTT prohibition together without changing DMO or auto scan', () => {
     const encoded = encodeAtD890ChannelRecord({
       ...simplexDigital,
       rxOnly: true,
@@ -490,28 +490,65 @@ describe('encodeAtD890ChannelRecord', () => {
       scanAdd: true,
     });
     expect((encoded[0x34]! >> 3) & 1).toBe(1);
-    expect((encoded[9]! >> 5) & 1).toBe(0);
+    expect((encoded[9]! >> 5) & 1).toBe(1);
     expect((encoded[0x34]! >> 1) & 1).toBe(1);
     expect((encoded[0x34]! >> 4) & 1).toBe(1);
     expect(parseAtD890ChannelRecord(encoded, 1).rxOnly).toBe(true);
   });
 
-  it('leaves 0x34 bit 3 clear when rxOnly is omitted or false', () => {
+  it('clears both prohibition bits when rxOnly is omitted or false', () => {
     const omitted = encodeAtD890ChannelRecord(simplexDigital);
     const explicitFalse = encodeAtD890ChannelRecord({ ...simplexDigital, rxOnly: false });
     expect((omitted[0x34]! >> 3) & 1).toBe(0);
     expect((explicitFalse[0x34]! >> 3) & 1).toBe(0);
     expect((omitted[9]! >> 5) & 1).toBe(0);
+    expect((explicitFalse[9]! >> 5) & 1).toBe(0);
   });
 
-  it('decodes rxOnly from 0x34 bit 3 only', () => {
+  it('decodes receive-only policy from either CPS prohibition bit', () => {
     const rxOnlyRecord = encodeAtD890ChannelRecord(simplexDigital);
     rxOnlyRecord[0x34] = 1 << 3;
     expect(parseAtD890ChannelRecord(rxOnlyRecord, 1).rxOnly).toBe(true);
 
     const pttProhibit = encodeAtD890ChannelRecord(simplexDigital);
     pttProhibit[9] = 1 << 5;
-    expect(parseAtD890ChannelRecord(pttProhibit, 1).rxOnly).toBe(false);
+    expect(parseAtD890ChannelRecord(pttProhibit, 1).rxOnly).toBe(true);
+  });
+
+  it.each(['analog', 'digital', 'fixed-analog', 'fixed-digital'] as const)(
+    'keeps PTT prohibition alongside tone selectors for %s channels',
+    (mode) => {
+      const dto: RadioChannelDto = {
+        ...simplexDigital,
+        mode,
+        rxOnly: true,
+        rxTone: { kind: 'ctcss', hz: 88.5 },
+        txTone: { kind: 'dcs', code: 23, polarity: 'I' },
+      };
+      const encoded = encodeAtD890ChannelRecord(dto);
+      expect(encoded[9]! & 0x2f).toBe(0x29);
+      expect(parseAtD890ChannelRecord(encoded, 1)).toMatchObject({
+        rxOnly: true,
+        rxTone: dto.rxTone,
+        txTone: dto.txTone,
+      });
+    },
+  );
+
+  it("replaces a previous occupant's prohibition with the current DTO policy", () => {
+    const prohibited = encodeAtD890ChannelRecord({ ...simplexDigital, rxOnly: true });
+    for (const rxOnly of [undefined, false]) {
+      const allowed = encodeAtD890ChannelRecord({ ...simplexDigital, rxOnly }, prohibited);
+      expect(allowed[9]! & 0x20).toBe(0);
+      expect(allowed[0x34]! & 0x08).toBe(0);
+    }
+    const allowed = encodeAtD890ChannelRecord(simplexDigital);
+    const prohibitedRewrite = encodeAtD890ChannelRecord(
+      { ...simplexDigital, rxOnly: true },
+      allowed,
+    );
+    expect(prohibitedRewrite[9]! & 0x20).toBe(0x20);
+    expect(prohibitedRewrite[0x34]! & 0x08).toBe(0x08);
   });
 
   it('writes DMR MODE repeater on 0x34 bit 1 and SMS confirm On', () => {
