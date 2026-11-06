@@ -191,7 +191,7 @@ describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
       expect(await screen.findByText('ID directory is empty')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Connect & read' })).toBeDisabled();
       expect(screen.queryByRole('button', { name: 'Write anyway' })).not.toBeInTheDocument();
-      fireEvent.click(screen.getByRole('button', { name: 'Contacts', exact: true }));
+      fireEvent.click(screen.getByRole('button', { name: 'Contacts' }));
       expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled();
       expect(screen.queryByText('ID directory is empty')).not.toBeInTheDocument();
     },
@@ -235,7 +235,7 @@ describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Both' }));
     await screen.findByText('Could not check the ID directory');
     expect(screen.getByRole('button', { name: 'Connect & read' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Contacts', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Contacts' }));
     expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled();
   });
 });
@@ -336,8 +336,7 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
       if (cancel === 'unmount') panel.unmount();
       if (cancel === 'edit settings')
         fireEvent.click(screen.getByRole('button', { name: 'Set up…' }));
-      if (cancel === 'source')
-        fireEvent.click(screen.getByRole('button', { name: 'Contacts', exact: true }));
+      if (cancel === 'source') fireEvent.click(screen.getByRole('button', { name: 'Contacts' }));
       if (cancel === 'parts')
         fireEvent.click(screen.getByRole('checkbox', { name: 'Digital contacts' }));
       await act(async () => {
