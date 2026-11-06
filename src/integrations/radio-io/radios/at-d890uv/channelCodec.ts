@@ -40,7 +40,9 @@ const BYTE_21_DCDM_MASK = 0x0c;
 const BYTE_21_APRS_RX_BIT = 5;
 /** Digital DMO vs repeater (CPS-written SoT): `1` = DMO/simplex, `0` = repeater. */
 const BYTE_34_DMO_BIT = 1;
-/** CPS RX-only. Not `0x09` bit 5 (that bit is TX/PTT prohibit and stays clear). */
+/** TX/PTT prohibit: the library forbid-TX policy must prevent a PTT transmission. */
+const BYTE_09_PTT_PROHIBIT_BIT = 5;
+/** Separate CPS RX-only flag; kept in sync with DTO receive-only policy on write. */
 const BYTE_34_RX_ONLY_BIT = 3;
 /** Auto scan ("start scanning on channel select"), not scan-list membership. */
 const BYTE_34_AUTO_SCAN_BIT = 4;
@@ -305,7 +307,9 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
   if (duplex === 1) txHz = rxHz + offHz;
   if (duplex === 2) txHz = Math.max(0, rxHz - offHz);
   const autoScan = ((data[0x34]! >> BYTE_34_AUTO_SCAN_BIT) & 1) === 1;
-  const rxOnly = ((data[0x34]! >> BYTE_34_RX_ONLY_BIT) & 1) === 1;
+  const rxOnly =
+    ((b9 >> BYTE_09_PTT_PROHIBIT_BIT) & 1) === 1 ||
+    ((data[0x34]! >> BYTE_34_RX_ONLY_BIT) & 1) === 1;
   const txContactId = decodeTxContactId(data, channelType);
   return {
     slotIndex,
@@ -412,7 +416,7 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   const rxDcs = ch.rxTone.kind === 'dcs';
   b9 |= (txDcs ? 2 : ch.txTone.kind === 'ctcss' ? 1 : 0) << 2;
   b9 |= rxDcs ? 2 : ch.rxTone.kind === 'ctcss' ? 1 : 0;
-  data[9] = b9;
+  data[9] = setBit(b9, BYTE_09_PTT_PROHIBIT_BIT, ch.rxOnly === true);
 
   if (txDcs) {
     const enc = encodeDcsTone(ch.txTone);
