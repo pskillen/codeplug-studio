@@ -6,12 +6,14 @@ import type { FirmwareRadioId } from '@core/firmware/types.ts';
 import { AT_D890UV_FIRMWARE_UPDATER } from '../radios/at-d890uv/firmwareUpdate/descriptor.ts';
 import { RT95_HEAD_FIRMWARE_UPDATER } from '../radios/rt95/firmwareUpdate/descriptor.ts';
 import { DM32UV_FIRMWARE_UPDATER } from '../radios/dm32uv/firmwareUpdate/descriptor.ts';
+import { UV5RMINI_FIRMWARE_UPDATER } from '../radios/uv5r-mini/firmwareUpdate/descriptor.ts';
 import type { FirmwareUpdaterDescriptor } from './types.ts';
 
 const FIRMWARE_UPDATERS: readonly FirmwareUpdaterDescriptor[] = [
   DM32UV_FIRMWARE_UPDATER,
   AT_D890UV_FIRMWARE_UPDATER,
   RT95_HEAD_FIRMWARE_UPDATER,
+  UV5RMINI_FIRMWARE_UPDATER,
 ];
 
 export function listFirmwareUpdaters(): readonly FirmwareUpdaterDescriptor[] {
