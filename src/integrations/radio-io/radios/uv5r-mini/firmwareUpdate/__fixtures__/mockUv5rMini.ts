@@ -69,6 +69,12 @@ export interface Uv5rMiniMockOptions {
   readonly appResult?: number;
   /** The app never answers the ping. */
   readonly ignorePing?: boolean;
+  /**
+   * The radio hears a host frame only once its last byte has crossed the wire (`bytes x 10 / host rate`), so a long reply
+   * at 9600 takes its real time and the next request comes after it. Off by default (frames are heard at once); the
+   * updater's tests turn it on, because a pipe's reopen must wait for what is still queued.
+   */
+  readonly modelWire?: boolean;
   readonly timing?: {
     /** App finished reading to its cmd 1 in the loader. Default 100. */
     readonly handoverDelayMs?: number;
@@ -177,6 +183,8 @@ export function createMockUv5rMini(options: Uv5rMiniMockOptions = {}): MockUv5rM
   let recordKept = false;
   let appReads = 0;
   let cutDone = false;
+  /** When the host's bytes so far have all crossed the wire, at the host's rate. */
+  let wireFreeAt = 0;
   let current: FakeSerialController;
 
   const later = (ms: number, fn: () => void) => {
@@ -357,10 +365,22 @@ export function createMockUv5rMini(options: Uv5rMiniMockOptions = {}): MockUv5rM
       if (e.kind === 'frame')
         hostFrames.push({ cmd: e.cmd, data: e.data.slice(), rate: hostRate, heard });
     }
-    // What the radio's own parser sees: the bytes as they arrive at its rate.
-    for (const e of radioParser.feed(heard ? chunk : garbleUv5rMiniBytes(chunk))) {
-      if (e.kind === 'frame') onHostFrame(e.cmd, e.data);
+    // What the radio's own parser sees: the bytes as they arrive at its rate, once they have crossed the wire. A frame
+    // is not heard until its last byte has been sent, so a long reply at a slow rate takes its real time and the radio
+    // asks for the next slice only after that.
+    const bytes = heard ? chunk : garbleUv5rMiniBytes(chunk);
+    const deliver = () => {
+      for (const e of radioParser.feed(bytes)) {
+        if (e.kind === 'frame') onHostFrame(e.cmd, e.data);
+      }
+    };
+    if (!options.modelWire) {
+      deliver();
+      return;
     }
+    const now = Date.now();
+    wireFreeAt = Math.max(wireFreeAt, now) + (chunk.length * 10 * 1000) / Math.max(hostRate, 1);
+    later(Math.ceil(wireFreeAt - now), deliver);
   };
 
   const makeLink = (initiallyOpen: boolean) => createFakeSerialPort({ initiallyOpen, onWrite });
