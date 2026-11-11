@@ -478,6 +478,28 @@ describe('WebSerialPipe.reopen', () => {
     await pipe.close();
   });
 
+  it('waits only for the backlog still on the wire, not for every byte since the open', async () => {
+    vi.useFakeTimers();
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    // 4800 bytes are 5 s on the wire at 9600; they were sent over 30 s, then a short frame goes just before the reopen.
+    for (let i = 0; i < 8; i++) {
+      await pipe.write(new Uint8Array(600));
+      await vi.advanceTimersByTimeAsync(4_000);
+    }
+    await pipe.write(new Uint8Array(11));
+    let done = false;
+    const reopening = pipe.reopen!(38400).then(() => {
+      done = true;
+    });
+    await vi.advanceTimersByTimeAsync(31);
+    expect(closeCalls(fake)).toBe(0);
+    await vi.advanceTimersByTimeAsync(1);
+    await reopening;
+    expect(done).toBe(true);
+    await pipe.close();
+  });
+
   it('never delivers bytes read before the reopen', async () => {
     const fake = createFakeSerialPort();
     const pipe = await openWebSerialPipe(fake.port, 9600);

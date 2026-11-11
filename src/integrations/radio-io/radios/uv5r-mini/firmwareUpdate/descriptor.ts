@@ -1,0 +1,44 @@
+/**
+ * UV-5R Mini firmware updater descriptor, registered in `firmware/registry.ts`. Hidden on the prod build until Studio
+ * has flashed a patched release to a Mini on hardware (DESIGN.md — Firmware flashing, rule 7).
+ */
+import { UV5RMINI_STOCK_FIRMWARE } from '@core/radios/baofeng/uv-5r-mini/firmware.ts';
+
+import type { FirmwareRadioPreflight, FirmwareUpdaterDescriptor } from '../../../firmware/types.ts';
+import { UV5RMINI_FW_LINK, UV5RMINI_FW_RADIO_ID } from './constants.ts';
+import { createUv5rMiniFirmwareUpdater } from './updater.ts';
+
+export const UV5RMINI_PREFLIGHT: FirmwareRadioPreflight = {
+  attestations: [
+    {
+      id: 'battery-full',
+      label: 'The battery is fully charged',
+      help: 'A power cut in the last moment of the write can leave the radio needing a case-open repair.',
+    },
+    {
+      id: 'dummy-load',
+      label: 'A dummy load is fitted, or the radio is on low power',
+      help: 'Nothing transmits during an update, but the radio must never be keyed with no antenna.',
+    },
+    {
+      id: 'stock-from-this-radio',
+      label: 'This stock image was built from this radio',
+      help: "The image is tied to the radio's own key. An image built from a different radio is refused by the radio before anything is written.",
+    },
+  ],
+  updateModeConfirm:
+    'The radio shows UPDATE..., or its screen stays dark after an interrupted update',
+};
+
+export const UV5RMINI_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
+  radioId: UV5RMINI_FW_RADIO_ID,
+  label: UV5RMINI_STOCK_FIRMWARE.label,
+  stock: UV5RMINI_STOCK_FIRMWARE,
+  link: UV5RMINI_FW_LINK,
+  createUpdater: () => createUv5rMiniFirmwareUpdater(),
+  capacitorSupported: false,
+  // Cleared in its own commit once Studio has flashed a patched release to a Mini on hardware.
+  prodFlashDisabled: true,
+  preflight: UV5RMINI_PREFLIGHT,
+  expectedDuration: 'about 3 minutes',
+};

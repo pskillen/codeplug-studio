@@ -6,6 +6,8 @@
  */
 import { UV5RMINI_FIRMWARE_ROLE_UFW } from '@core/radios/baofeng/uv-5r-mini/firmware.ts';
 
+import type { FirmwareLinkSpec } from '../../../firmware/types.ts';
+
 export const UV5RMINI_FW_RADIO_ID = 'baofeng-uv5rmini' as const;
 export const UV5RMINI_FW_ROLE = UV5RMINI_FIRMWARE_ROLE_UFW;
 
@@ -72,3 +74,29 @@ export const UV5RMINI_PINNED_LOADERS: readonly PinnedLoader[] = [
     lists: ['nrfb-v0.04', 'mm9pdy-0.1.0-rc.1'],
   },
 ];
+
+/** The updater's real-time waits, in milliseconds. Tests run them on fake timers. */
+export const UV5RMINI_FW_TIMEOUT_MS = {
+  /** Send nothing and listen: a loader restarted from its record talks first. */
+  LISTEN: 2_000,
+  /** Between pings while waiting for the app's pong. */
+  PING_INTERVAL: 1_000,
+  /** Give up pinging after this long. */
+  PING_TOTAL: 30_000,
+  /** After the first pong, soak up pongs answering earlier pings so none is mistaken for the hand-over. */
+  PONG_SETTLE: 300,
+  /** No frame at all, once the radio has answered (the loader erases first). */
+  IDLE: 60_000,
+  /** The longest single read, so an abort is noticed. */
+  SLICE: 250,
+} as const;
+
+/**
+ * The update link: the app's update stage runs at 9600 (the loader's 38400 is reached by `reopen`). DTR and RTS stay low
+ * after every open and reopen. The filter names the CH340 cable, not the radio's mode.
+ */
+export const UV5RMINI_FW_LINK: FirmwareLinkSpec = {
+  baudRate: 9600,
+  usbFilters: [{ usbVendorId: 0x1a86, usbProductId: 0x7523 }],
+  raiseDtrRts: false,
+};

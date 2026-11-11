@@ -11,8 +11,8 @@
  * off, macOS is unverified. So the lines can pulse high for the duration of `open()` even with `false`.
  *
  * `reopen(baudRate)`: Web Serial cannot retune an open port. The pipe waits for written bytes to leave the adapter
- * (`webSerialDrainMs`: bytes x 10 / old rate + 20 ms, because Chromium's close flushes and discards what is still
- * queued), releases reader and writer, closes the port, opens it at the new rate with the same `bufferSize`,
+ * (what is still queued at the old rate, bytes x 10 / rate, + 20 ms, because Chromium's close flushes and discards what
+ * is still queued; bytes sent earlier have already left), releases reader and writer, closes the port, opens it at the new rate with the same `bufferSize`,
  * reapplies the signal choice and reattaches with a fresh write ring. Guarantees: queued writes leave first; no byte
  * read before the reopen is delivered after it; `txBytesWritten` stays cumulative. Not guaranteed: how long it takes
  * (adapter and OS dependent: time it with `/debug/serial-reopen`), or that the device sees no gap while the port is
@@ -100,6 +100,12 @@ class WebSerialBytePipe implements WebSerialPipe {
   txBytesWritten = 0;
   /** Bytes handed to the writable since the pipe opened or last reopened: what the next reopen must let drain. */
   private bytesSinceDrain = 0;
+  /**
+   * When (ms, `Date.now()`) the bytes handed over so far will have left the adapter, at the line rate: each write
+   * starts when the previous one ends, or now if the line was idle. A long exchange at a slow rate has sent most of
+   * its bytes long before a reopen, so the reopen waits for this backlog, not for every byte since the open.
+   */
+  private wireFreeAt = 0;
   /** Bumped by `reopen`; a pump of an older generation delivers and signals nothing. */
   private generation = 0;
   streamBytesWritten = 0;
@@ -149,6 +155,7 @@ class WebSerialBytePipe implements WebSerialPipe {
     this.streamBytesWritten = 0;
     this.writerRotations = 0;
     this.bytesSinceDrain = 0;
+    this.wireFreeAt = 0;
     this.pumpPromise = this.pump();
   }
 
@@ -173,7 +180,11 @@ class WebSerialBytePipe implements WebSerialPipe {
     if (!port || !this.writer || this.closed) {
       throw new RadioClosedError('Not connected.');
     }
-    const drainMs = webSerialDrainMs(this.bytesSinceDrain, this.baudRate);
+    // Only what is still queued on the wire: the backlog's remaining time plus the margin (see `webSerialDrainMs`).
+    const drainMs =
+      this.bytesSinceDrain > 0
+        ? Math.ceil(Math.max(0, this.wireFreeAt - Date.now())) + WEB_SERIAL_DRAIN_MARGIN_MS
+        : 0;
     if (drainMs > 0) {
       await new Promise<void>((resolve) => setTimeout(resolve, drainMs));
       if (this.closed) {
@@ -262,6 +273,8 @@ class WebSerialBytePipe implements WebSerialPipe {
     this.streamBytesWritten += data.length;
     this.txBytesWritten += data.length;
     this.bytesSinceDrain += data.length;
+    this.wireFreeAt =
+      Math.max(this.wireFreeAt, Date.now()) + (data.length * 10 * 1000) / this.baudRate;
   }
 
   private async rotateWriter(): Promise<void> {

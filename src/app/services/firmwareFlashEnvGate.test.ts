@@ -59,6 +59,15 @@ describe('listOfferedFirmwareUpdaters', () => {
     expect(listOfferedFirmwareUpdaters('dev').map((d) => d.radioId)).toContain('baofeng-dm32uv');
   });
 
+  it('hides the UV-5R Mini on prod and offers it on next, dev and staging', () => {
+    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).not.toContain(
+      'baofeng-uv5rmini',
+    );
+    for (const env of ENVS_PRE_PROD) {
+      expect(listOfferedFirmwareUpdaters(env).map((d) => d.radioId)).toContain('baofeng-uv5rmini');
+    }
+  });
+
   it('hides the RT95 front panel on Capacitor', () => {
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
     expect(listOfferedFirmwareUpdaters('dev').map((d) => d.radioId)).not.toContain(

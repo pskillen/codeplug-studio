@@ -248,11 +248,12 @@ describe('one write call site', () => {
 });
 
 describe('firmware registry', () => {
-  it('lists the radios; the DM-32UV and the D890 are enabled in prod', () => {
+  it('lists the radios; the DM-32UV and the D890 are enabled in prod, the Mini is not', () => {
     expect(listFirmwareUpdaters().map((d) => d.radioId)).toEqual([
       'baofeng-dm32uv',
       'anytone-at-d890uv',
       'retevis-rt95-head',
+      'baofeng-uv5rmini',
     ]);
     const d890 = getFirmwareUpdater('anytone-at-d890uv');
     expect(d890).toMatchObject({

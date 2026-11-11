@@ -171,6 +171,14 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
                 </div>
               </>
             ) : null}
+            {list && list.length === 0 && !current?.error ? (
+              <p className={classes.muted}>
+                No firmware release is published for the {updater.label} yet.{' '}
+                {updater.stock.stockFlashOffered === false
+                  ? 'Use a patch file from disk, under Advanced below.'
+                  : 'You can flash stock firmware, or use a patch file from disk under Advanced below.'}
+              </p>
+            ) : null}
             {list?.map((summary) => {
               const release = summary.release!;
               const selected = choice?.kind === 'release' && choice.summary.key === summary.key;

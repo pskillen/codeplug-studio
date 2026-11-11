@@ -20,6 +20,8 @@ export interface FirmwareBootloaderIdent {
   readonly model: string;
   readonly version?: string;
   readonly raw: Uint8Array;
+  /** Operator text the wizard shows once this ident is known (for example, that Studio is continuing a cut update). */
+  readonly notice?: string;
 }
 
 export type FirmwareFlashPhase = 'handshake' | 'erase' | 'transfer' | 'finish';
@@ -46,6 +48,8 @@ export interface FirmwareFlashResult {
   readonly end: FirmwareFlashEnd;
   /** Set by updaters that time each data frame's round trip. */
   readonly timing?: FirmwareFlashTiming;
+  /** Operator text the wizard shows with the success banner (what the radio does next, what to check). */
+  readonly note?: string;
 }
 
 export interface FirmwareUpdater {
@@ -56,7 +60,8 @@ export interface FirmwareUpdater {
   /** Non-destructive handshake up to and including the bootloader ident. Binds `pipe` for flash(). */
   identify(pipe: BytePipe, opts?: { signal?: AbortSignal }): Promise<FirmwareBootloaderIdent>;
   /**
-   * Re-runs checkImage, checks ident against image, precomputes every frame, then sends.
+   * Re-runs checkImage, checks ident against image, precomputes every frame, then sends. A radio-driven updater (the
+   * radio picks the slices) precomputes the checked image instead, and every reply is a pure function of it.
    * Must follow identify() straight away in the same session, without waiting for user input.
    * Every failure is thrown as FirmwareFlashError.
    */

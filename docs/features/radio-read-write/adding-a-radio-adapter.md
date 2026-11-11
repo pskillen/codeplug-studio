@@ -179,6 +179,12 @@ Reference implementation: `src/integrations/radio-io/radios/dm32uv/firmwareUpdat
       normal-mode probe through its own guarded send)
 - [ ] Stock sources as a list (`stockSources`): vendor download, how to ask the vendor, and, only where no official
       copy exists, a labelled unofficial copy
+- [ ] If the radio drives the update (it asks for slices, so every reply is a pure function of the checked image), keep
+      the rules in a pure session and the clock and link in the updater; the guard allows only the replies the session
+      can produce (UV-5R Mini: `session.ts`, `outgoing.ts`, `updater.ts`)
+- [ ] If the rate changes mid-session, the descriptor's `link` is the starting rate; send the reply at the old rate,
+      then `pipe.reopen(newRate)`, and budget the gap against the radio's retry window (time it with
+      `/debug/serial-reopen`). A radio that wires DTR/RTS to PTT needs `raiseDtrRts: false`
 - [ ] Tier-3 `docs/reference/radios/<mfr>/<model>/firmware.md`: stock pin, update-mode entry, bootloader protocol and
       interlocks
 

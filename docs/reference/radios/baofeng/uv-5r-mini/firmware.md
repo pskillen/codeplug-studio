@@ -129,3 +129,60 @@ are equal plain bytes. Studio never descrambles anything. The stock bytes come f
 
 The loader hash is computed synchronously (a small in-module SHA-256, checked against Web Crypto in its test) because
 the updater's `checkImage` is synchronous.
+
+## Update mode
+
+Hold PTT-A and `=`, then switch the radio on. Release the keys when the computer icon and `UPDATE...` appear. If the red
+TX LED lights or the normal screen appears, switch off at once. The update cable is the USB serial cable (CH340,
+USB id `1a86:7523`). Studio opens it at 9600 baud with DTR and RTS low after every open.
+
+After an update that was cut, switch on with no keys: the screen stays dark and the radio's loader restarts from where
+it was. Studio continues that write when you press **Connect and flash** again.
+
+## The update session
+
+The radio drives the update: its stock app and then its loader ask for slices of the image, and Studio answers each one
+from the checked image. Studio never originates a length, a result or an address; it only repeats the radio's.
+Frames are `AA 55`, a length, a command, data and a CRC-16/XMODEM. Code: `session.ts` (the rules, no I/O),
+`outgoing.ts` (what may be written), `updater.ts` (the clock, the link and the wording).
+
+1. **Listen** 2 s, sending nothing. A good rate frame (command 1) heard here means the loader is already running from an
+   earlier, cut update: Studio continues it ("Your radio was part-way through an update. Studio is continuing it").
+2. **Ping** (command 6, empty) once a second for up to 30 s. An empty command 1 back is the stock app in update mode.
+   Studio stops pinging at the first answer; answers to earlier pings are absorbed for 300 ms so one is not mistaken for
+   the hand-over below. No answer: "No radio in update mode answered. Nothing was sent that the radio acted on."
+3. **App stage** at 9600. Studio asks for the same rate, then answers the app's reads (about 21 s). The radio is not
+   touched yet: a stop here leaves the stock app.
+4. **Hand-over.** The app resets into the loader, which says hello at 9600. Studio replies `{38400}` at 9600, then
+   reopens the link at 38400 (`BytePipe.reopen`). The loader repeats its hello at the new rate for about 700 ms and then
+   resets back to 9600, keeping its record, so the reopen must fit well inside that. The radio counts as touched from
+   this hello.
+5. **Loader stage** at 38400. Studio answers the loader's reads, echoes its length (command 4, the size of the area it
+   is about to erase: "The radio is erasing its firmware area"), serves the area, and echoes its result (command 3).
+6. **Idle limit:** 60 s with no frame once the radio has answered (the loader erases first).
+
+Every frame written passes `checkUv5rMiniOutgoing`: a ping, the two rates, a read reply that is exactly the image bytes
+the radio asked for (at most 0x1000, inside the image), and an echo of the radio's own last result or length.
+
+## Results
+
+| Result                                                 | Wording                                                                                                                                                                 |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Loader `0`                                             | "The radio restarts by itself. Check the power-on screen shows `<build name>`." With a length of 0: "The radio already had this firmware." first                        |
+| App `0x01`, `0x86`, `0x8A`, `0x83`                     | "Nothing was written to the firmware. Switch the radio off and on." `0x01` adds that the image is not for this radio's key; `0x8A` that it is for another stock version |
+| Loader `0x86` before the length, fresh session         | "This firmware is already on the radio, or the radio holds firmware this image can't replace. Nothing was erased."                                                      |
+| Loader `0x86` before the length, continued session     | "The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair."          |
+| Loader `0x87` before the length, continued session     | "Stop and ask for help; don't retry."                                                                                                                                   |
+| Loader non-zero after the length, or no frame for 60 s | The recover text below                                                                                                                                                  |
+
+The summary always says to check the power-on name: a torn last page also ends in `0`.
+
+## Recovery
+
+If the flash stops after the loader started, the radio is touched. Leave the cable in, switch the radio off and on with
+no keys held, then press **Connect and flash** again with the same files. The loader keeps its record, so Studio hears
+it talk first and continues. A power cut in the last moment of the write can leave the radio needing a case-open repair:
+keep the battery charged and the cable in until the radio restarts.
+
+The real-time waits are in `UV5RMINI_FW_TIMEOUT_MS` (`constants.ts`): listen 2 s, ping every 1 s for 30 s, pong settle
+300 ms, idle 60 s.
