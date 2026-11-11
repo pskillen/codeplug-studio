@@ -97,6 +97,35 @@ from the result.
 
 ## What Studio checks
 
-- **Patch format (this page):** everything in the refusal list above, in the parser and in `apply`.
-- **Image checks:** the checks on the built image itself are not part of the format and get their own section when they
-  land.
+- **Patch format (above):** everything in the refusal list, in the parser and in `apply`.
+- **Image checks (below):** the checks on the built image itself, which are not part of the format.
+
+## What Studio checks before flashing
+
+Hard interlocks on the image, in code, with no setting, flag or patch field that turns one off. They run when the
+image is prepared and again as the flash starts; each refusal says nothing was sent. Code:
+`src/integrations/radio-io/radios/uv5r-mini/firmwareUpdate/` (`interlocks.ts`, `ufw.ts`, `constants.ts`).
+
+| Check             | Refused unless                                                                                                                                                                                        |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Target            | The image is for the UV-5R Mini and the package is exactly one `ufw` file                                                                                                                             |
+| Known build       | The image has a build name (the patch's `build.name`) and is not the plain stock image, which its own loader lists                                                                                    |
+| Container         | The `.ufw` header CRC, file-table CRC and each file's data CRC are good; it holds exactly `flash.bin` (type 0) and `ota.bin` (type 100), both inside the file                                         |
+| Loader            | `ota.bin` holds exactly one entry, `uart_user.bin`, attribute `0x41`, with good CRCs, and the SHA-256 of the packed loader is on the pinned list below                                                |
+| Area              | `flash.bin` starts at SoC address `0x1000` and ends at or below the base's area end (`0x7C000` for `nrfb-v0.04`), never past `0x94000`                                                                |
+| Stock bytes       | `flash.bin` has the stock's length and every byte equals the stock's at the same address, except inside the app windows (SoC, half-open): `[0x4000, 0x4004)`, `[0x4020, 0x4024)`, `[0x4100, 0x7BE1C)` |
+| Not listed itself | The image's build name is not on its own loader's list: flashing it again, or after a cut update, would leave the radio stuck in its loader                                                           |
+
+The stock comparison needs no key: the image is scrambled by an address-keyed XOR, so equal stored bytes at an address
+are equal plain bytes. Studio never descrambles anything. The stock bytes come from the image's own verified stock
+(`PreparedFirmwareImage.stockPackage`); an image without them is refused.
+
+**Pinned loaders** (SHA-256 over the packed loader bytes, with the builds each one lists):
+
+| Loader     | Packed SHA-256                                                     | Lists                             |
+| ---------- | ------------------------------------------------------------------ | --------------------------------- |
+| `stock`    | `5382ce4d20dfc7a57cb2a86c836dbbe8c46f6f02625f6f91675df88066e9acb4` | `nrfb-v0.04`                      |
+| `stock+c4` | `87f53dec40c4335ec0c38734c7e3ee08af8847e795da15068f5c9ba876939867` | `nrfb-v0.04`, `mm9pdy-0.1.0-rc.1` |
+
+The loader hash is computed synchronously (a small in-module SHA-256, checked against Web Crypto in its test) because
+the updater's `checkImage` is synchronous.
