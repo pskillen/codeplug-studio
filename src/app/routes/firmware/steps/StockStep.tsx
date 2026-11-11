@@ -55,9 +55,10 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
     <Panel title="Stock firmware" sub={`${stock.label} ${stock.version}`}>
       <div className={classes.stack}>
         <p className={classes.copy}>
-          Studio does not ship vendor firmware. Download it from the vendor, then drop the zip (or
-          the files inside it) here. The files stay in this browser tab and are dropped when you
-          leave the page.
+          {stock.zip
+            ? 'Studio does not ship vendor firmware. Download it from the vendor, then drop the zip (or the files inside it) here.'
+            : 'Supply the stock firmware file listed below.'}{' '}
+          The files stay in this browser tab and are dropped when you leave the page.
         </p>
         <div>
           <span className={classes.muted}>Where to get it:</span>
@@ -68,7 +69,7 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
                   <>
                     <strong>{src.label}:</strong>{' '}
                     <a href={src.url} target="_blank" rel="noopener noreferrer">
-                      {stock.zip.fileName}
+                      {stock.zip?.fileName ?? stock.members.map((m) => m.fileName).join(', ')}
                     </a>{' '}
                     <span className={classes.muted}>
                       from {src.host}
@@ -84,7 +85,7 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
                 ) : (
                   <>
                     <strong>{src.label}:</strong> {src.instructions}
-                    {src.contact ? (
+                    {src.kind === 'ask-vendor' && src.contact ? (
                       <>
                         {' '}
                         <a
@@ -104,7 +105,9 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
           </ul>
         </div>
         <div>
-          <span className={classes.muted}>Files Studio needs from the zip:</span>
+          <span className={classes.muted}>
+            {stock.zip ? 'Files Studio needs from the zip:' : 'Files Studio needs:'}
+          </span>
           <ul className={classes.list}>
             {stock.members.map((m) => (
               <li key={m.role}>
@@ -115,7 +118,11 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
         </div>
         <FileDropzone
           label="Stock firmware"
-          hint={`Drop ${stock.zip.fileName}, or the files listed above`}
+          hint={
+            stock.zip
+              ? `Drop ${stock.zip.fileName}, or the files listed above`
+              : `Drop ${stock.members.map((m) => m.fileName).join(', ')}`
+          }
           accept={accept}
           multiple
           disabled={busy}

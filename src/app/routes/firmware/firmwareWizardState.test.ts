@@ -238,3 +238,14 @@ describe('firmwareWizardReducer', () => {
     });
   });
 });
+
+it('requires a firmware choice when plain stock is unavailable', () => {
+  const selected = through(
+    { type: 'selectRadio', radioId: 'baofeng-uv5rmini', stockFlashOffered: false },
+    { type: 'next' },
+  );
+  expect(selected.choice).toBeNull();
+  expect(canAdvance(selected)).toBe(false);
+  const cleared = reduce(selected, { type: 'chooseFirmware', choice: null });
+  expect(canAdvance(cleared)).toBe(false);
+});

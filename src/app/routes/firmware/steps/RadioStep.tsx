@@ -31,6 +31,7 @@ export default function RadioStep({
                 dispatch({
                   type: 'selectRadio',
                   radioId: d.radioId,
+                  stockFlashOffered: d.stock.stockFlashOffered,
                   preflight: {
                     attestationIds: d.preflight?.attestations.map((a) => a.id) ?? [],
                     probe: !!d.preflight?.probe,

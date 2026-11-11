@@ -34,7 +34,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
       : null;
 
   useEffect(() => {
-    if (!stock || image) return;
+    if (!stock || !choice || image) return;
     let cancelled = false;
     prepareFlash(updater.radioId, stock, choice, loadedPatch ?? undefined)
       .then((prepared) => {
