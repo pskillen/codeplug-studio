@@ -205,6 +205,7 @@ export default function FlashStep({
               Bootloader: <span className={classes.mono}>{ident.model}</span>
             </p>
           ) : null}
+          {ident?.notice ? <StatusBanner tone="info">{ident.notice}</StatusBanner> : null}
         </div>
       </Panel>
 
@@ -348,7 +349,11 @@ function FlashResult({
         );
         break;
       default:
-        banner = (
+        banner = outcome.result.note ? (
+          <StatusBanner tone="success">
+            The {title} is on the radio. {outcome.result.note}
+          </StatusBanner>
+        ) : (
           <StatusBanner tone="success">
             The {title} is on the radio. Power-cycle the radio if it hasn&apos;t restarted, then
             check: {verifyHint}

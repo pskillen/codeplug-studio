@@ -332,6 +332,7 @@ export function formatFirmwareFlashSummary(outcome: FirmwareFlashOutcome): strin
   if (image.versionStamp) lines.push(`Version stamp: ${image.versionStamp}`);
   if (outcome.ident) {
     lines.push(`Bootloader: ${outcome.ident.model} (${shortHex(outcome.ident.raw)})`);
+    if (outcome.ident.version) lines.push(`Radio state: ${outcome.ident.version}`);
   }
   if (outcome.ok) {
     const { result } = outcome;
@@ -341,6 +342,7 @@ export function formatFirmwareFlashSummary(outcome: FirmwareFlashOutcome): strin
       `End: ${result.end}`,
     );
     if (result.timing) lines.push(timingLine(result.timing));
+    if (result.note) lines.push(`Note: ${result.note}`);
   } else {
     lines.push(
       `Error code: ${outcome.code}`,
