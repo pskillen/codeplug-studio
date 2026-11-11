@@ -3,6 +3,20 @@
  * No radio handshake or memory layout (architecture §1 / #615).
  *
  * Buffering pattern adapted from NeonPlug BaseSerialConnection (cite only).
+ *
+ * DTR/RTS: `openWebSerialPipe(port, baud, { raiseDtrRts })` sets both lines right after `open()` resolves, high by
+ * default (every codeplug caller), low with `false` (a cable may wire them to PTT). The pipe remembers the choice and
+ * reapplies it after every `reopen`. It cannot stop what the OS does while opening: Linux asserts DTR/RTS on open
+ * (and drops them on the last close), Chromium on Windows enables them while configuring the port with flow control
+ * off, macOS is unverified. So the lines can pulse high for the duration of `open()` even with `false`.
+ *
+ * `reopen(baudRate)`: Web Serial cannot retune an open port. The pipe waits for written bytes to leave the adapter
+ * (`webSerialDrainMs`: bytes x 10 / old rate + 20 ms, because Chromium's close flushes and discards what is still
+ * queued), releases reader and writer, closes the port, opens it at the new rate with the same `bufferSize`,
+ * reapplies the signal choice and reattaches with a fresh write ring. Guarantees: queued writes leave first; no byte
+ * read before the reopen is delivered after it; `txBytesWritten` stays cumulative. Not guaranteed: how long it takes
+ * (adapter and OS dependent: time it with `/debug/serial-reopen`), or that the device sees no gap while the port is
+ * closed. A radio that repeats a hello at the new rate for only a short window needs the whole switch well inside it.
  */
 
 import type { BytePipe } from '../types.ts';
