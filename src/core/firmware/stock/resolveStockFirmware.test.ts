@@ -266,7 +266,7 @@ describe('resolveStockFirmware — refusals', () => {
 describe('resolveStockFirmware — zip handling', () => {
   it('accepts a re-zipped download and notes the zip mismatch', async () => {
     const rezipped = zipSync({ 'other folder/ONE_STOCK.img': oneBin }, { level: 1 });
-    expect(await sha256Hex(rezipped)).not.toBe(one.zip.sha256);
+    expect(await sha256Hex(rezipped)).not.toBe(one.zip!.sha256);
     const v = await resolveStockFirmware(one, [{ name: 'one.zip', bytes: rezipped }], ctxOne());
     expect(v.zipMismatchNoted).toBe(true);
     expect(v.package.files.img).toEqual(oneBin);
@@ -298,5 +298,45 @@ describe('createUserFileStockSource', () => {
     const src = createUserFileStockSource(files);
     expect(src.kind).toBe('user-files');
     expect(await src.load(one)).toEqual(files);
+  });
+});
+
+describe('stock without a published zip', () => {
+  it('verifies a synthetic image at the Mini size, including when supplied in a zip', async () => {
+    const bytes = seededBytes(7, 520192);
+    const synthetic = await syntheticDescriptor(
+      'baofeng-uv5rmini',
+      [{ role: 'ufw', fileName: 'stock.ufw', bytes }],
+      { fileName: 'unused.zip', bytes: oneZip },
+    );
+    const descriptor = { ...synthetic, zip: undefined };
+    const loose = await resolveStockFirmware(descriptor, [{ name: 'stock.ufw', bytes }], {
+      otherDescriptors: [one],
+    });
+    expect(loose.via).toBe('files');
+    expect(loose.zipMismatchNoted).toBe(false);
+    const zipped = await resolveStockFirmware(
+      descriptor,
+      [{ name: 'stock.zip', bytes: zipSync({ 'stock.ufw': bytes }) }],
+      { otherDescriptors: [one] },
+    );
+    expect(zipped.via).toBe('zip');
+    expect(zipped.zipMismatchNoted).toBe(false);
+    expect(
+      await codeOf(
+        resolveStockFirmware(
+          descriptor,
+          [{ name: 'wrong.zip', bytes: zipSync({ 'stock.ufw': seededBytes(8, 520192) }) }],
+          { otherDescriptors: [one] },
+        ),
+      ),
+    ).toBe('stock-wrong-version');
+    expect(
+      await codeOf(
+        resolveStockFirmware(one, [{ name: 'renamed.ufw', bytes }], {
+          otherDescriptors: [descriptor],
+        }),
+      ),
+    ).toBe('stock-wrong-radio');
   });
 });

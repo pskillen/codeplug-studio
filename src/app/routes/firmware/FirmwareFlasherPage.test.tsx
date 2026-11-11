@@ -174,6 +174,34 @@ describe('FirmwareFlasherPage', () => {
     );
   });
 
+  it('requires a patch and shows own-image instructions for a radio without stock flash', async () => {
+    const stock = {
+      ...DM32.stock,
+      zip: undefined,
+      stockFlashOffered: false,
+      stockSources: [
+        {
+          kind: 'own-image' as const,
+          label: 'Your image',
+          instructions: 'Build it from your radio.',
+        },
+      ],
+      members: [{ ...DM32.stock.members[0]!, fileName: 'stock.ufw' }],
+    };
+    vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([{ ...DM32, stock }]);
+    renderPage();
+    fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+    cont();
+    expect(screen.queryByText(/Stock firmware \(v1/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    fireEvent.click(await screen.findByRole('radio', { name: /MM9PDY modded firmware 1.0.0/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled());
+    cont();
+    expect(screen.getByText(/Build it from your radio/)).toBeInTheDocument();
+    expect(screen.getByText('Drop stock.ufw')).toBeInTheDocument();
+    expect(screen.queryByText(/Files Studio needs from the zip/)).not.toBeInTheDocument();
+  });
+
   it('shows the unavailable message when nothing is offered', () => {
     vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([]);
     renderPage();
@@ -197,7 +225,7 @@ describe('FirmwareFlasherPage', () => {
     cont();
     cont();
     expect(screen.getByText('Where to get it:')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: DM32.stock.zip.fileName })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: DM32.stock.zip!.fileName })).toHaveAttribute(
       'href',
       expect.stringMatching(/^https:/),
     );

@@ -4,7 +4,8 @@
  * See DESIGN.md — Firmware flashing.
  */
 
-export type FirmwareRadioId = 'baofeng-dm32uv' | 'anytone-at-d890uv' | 'retevis-rt95-head';
+export type FirmwareRadioId =
+  'baofeng-dm32uv' | 'anytone-at-d890uv' | 'retevis-rt95-head' | 'baofeng-uv5rmini';
 
 /** A file the user gave us (or, later, a remote source fetched). Name is the basename only. */
 export interface NamedBytes {
@@ -37,7 +38,8 @@ export type StockFirmwareSource =
       readonly label: string; // 'Email Retevis support'
       readonly instructions: string;
       readonly contact?: { readonly text: string; readonly href: string }; // mailto: or https:
-    };
+    }
+  | { readonly kind: 'own-image'; readonly label: string; readonly instructions: string };
 
 export interface StockFirmwareDescriptor {
   readonly radioId: FirmwareRadioId;
@@ -45,8 +47,10 @@ export interface StockFirmwareDescriptor {
   readonly version: string;
   /** Where an operator gets the stock files, in display order (at least one). Shown as text and links only. */
   readonly stockSources: readonly StockFirmwareSource[];
-  /** The vendor zip as published. Diagnostic: member hashes are authoritative. */
-  readonly zip: { readonly fileName: string; readonly sha256: string };
+  /** The vendor zip as published; absent when no zip is published. Member hashes are authoritative. */
+  readonly zip?: { readonly fileName: string; readonly sha256: string };
+  /** False hides plain stock flashing; defaults to true. */
+  readonly stockFlashOffered?: boolean;
   readonly members: readonly StockFirmwareMember[];
   /** Patch `name` values whose releases apply to this radio. */
   readonly patchNames: readonly string[];

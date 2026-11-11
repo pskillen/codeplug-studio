@@ -132,13 +132,16 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
         loaded: null,
         error: messageOf(err, 'This file is not a readable firmware patch.'),
       });
-      if (choice.kind === 'user-patch')
-        dispatch({ type: 'chooseFirmware', choice: { kind: 'stock' } });
+      if (choice?.kind === 'user-patch')
+        dispatch({
+          type: 'chooseFirmware',
+          choice: updater.stock.stockFlashOffered === false ? null : { kind: 'stock' },
+        });
     }
   }
 
   const unreviewed =
-    choice.kind === 'user-patch' && state.loadedPatch?.provenance === 'unreviewed'
+    choice?.kind === 'user-patch' && state.loadedPatch?.provenance === 'unreviewed'
       ? state.loadedPatch
       : null;
 
@@ -156,7 +159,10 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
             {current?.error ? (
               <>
                 <StatusBanner tone="warning">
-                  {current.error} Stock firmware and a patch file from disk still work.
+                  {current.error}{' '}
+                  {updater.stock.stockFlashOffered === false
+                    ? 'A patch file from disk still works.'
+                    : 'Stock firmware and a patch file from disk still work.'}
                 </StatusBanner>
                 <div>
                   <Button variant="secondary" size="sm" onClick={() => setAttempt((n) => n + 1)}>
@@ -167,7 +173,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
             ) : null}
             {list?.map((summary) => {
               const release = summary.release!;
-              const selected = choice.kind === 'release' && choice.summary.key === summary.key;
+              const selected = choice?.kind === 'release' && choice.summary.key === summary.key;
               return (
                 <div
                   key={summary.key}
@@ -190,28 +196,30 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
                 </div>
               );
             })}
-            <div
-              className={`${classes.card} ${choice.kind === 'stock' ? classes.cardSelected : ''}`}
-            >
-              <label className={classes.cardTitle}>
-                <input
-                  type="radio"
-                  name="firmware-choice"
-                  checked={choice.kind === 'stock'}
-                  onChange={() => dispatch({ type: 'chooseFirmware', choice: { kind: 'stock' } })}
-                />
-                Stock firmware ({updater.stock.version})
-              </label>
-              <span className={classes.cardMeta}>
-                The vendor&apos;s own firmware. Also the way back if a flash goes wrong.
-              </span>
-            </div>
+            {updater.stock.stockFlashOffered !== false && (
+              <div
+                className={`${classes.card} ${choice?.kind === 'stock' ? classes.cardSelected : ''}`}
+              >
+                <label className={classes.cardTitle}>
+                  <input
+                    type="radio"
+                    name="firmware-choice"
+                    checked={choice?.kind === 'stock'}
+                    onChange={() => dispatch({ type: 'chooseFirmware', choice: { kind: 'stock' } })}
+                  />
+                  Stock firmware ({updater.stock.version})
+                </label>
+                <span className={classes.cardMeta}>
+                  The vendor&apos;s own firmware. Also the way back if a flash goes wrong.
+                </span>
+              </div>
+            )}
           </div>
           {error ? <StatusBanner tone="warning">{error}</StatusBanner> : null}
         </div>
       </Panel>
 
-      <details className={classes.disclosure} open={choice.kind === 'user-patch' || undefined}>
+      <details className={classes.disclosure} open={choice?.kind === 'user-patch' || undefined}>
         <summary>Advanced: use a patch file from disk</summary>
         <Panel title="Patch file">
           <div className={classes.stack}>
@@ -222,8 +230,11 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
               onFilesSelected={(files) => void onPatchFile(files)}
               onClear={() => {
                 setUserFile(null);
-                if (choice.kind === 'user-patch') {
-                  dispatch({ type: 'chooseFirmware', choice: { kind: 'stock' } });
+                if (choice?.kind === 'user-patch') {
+                  dispatch({
+                    type: 'chooseFirmware',
+                    choice: updater.stock.stockFlashOffered === false ? null : { kind: 'stock' },
+                  });
                 }
               }}
             />

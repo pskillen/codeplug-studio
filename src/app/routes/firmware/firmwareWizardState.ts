@@ -26,8 +26,8 @@ export type PreflightCheck = (typeof PREFLIGHT_CHECKS)[number];
 export interface FirmwareWizardState {
   readonly step: FirmwareWizardStep;
   readonly radioId: FirmwareRadioId | null;
-  /** What to flash. Stock by default: it is always available. */
-  readonly choice: FirmwareChoice;
+  /** What to flash; null until a choice is made when stock flashing is unavailable. */
+  readonly choice: FirmwareChoice | null;
   /** The checked patch for a release or user-patch choice. */
   readonly loadedPatch: LoadedFirmwarePatch | null;
   readonly includeRc: boolean;
@@ -53,13 +53,18 @@ export type FirmwareWizardAction =
   | {
       type: 'selectRadio';
       radioId: FirmwareRadioId;
+      stockFlashOffered?: boolean;
       preflight?: { attestationIds: readonly string[]; probe: boolean };
     }
   | { type: 'restart' }
   | { type: 'goTo'; step: FirmwareWizardStep }
   | { type: 'next' }
   | { type: 'back' }
-  | { type: 'chooseFirmware'; choice: FirmwareChoice; loadedPatch?: LoadedFirmwarePatch | null }
+  | {
+      type: 'chooseFirmware';
+      choice: FirmwareChoice | null;
+      loadedPatch?: LoadedFirmwarePatch | null;
+    }
   | { type: 'setIncludeRc'; value: boolean }
   | { type: 'setRiskAccepted'; value: boolean }
   | { type: 'stockVerified'; stock: VerifiedStockFirmware }
@@ -101,6 +106,7 @@ const indexOf = (step: FirmwareWizardStep) => FIRMWARE_WIZARD_STEPS.indexOf(step
 
 /** A chosen patch is ready: loaded, and accepted when it is unreviewed. */
 export function isChoiceReady(state: FirmwareWizardState): boolean {
+  if (!state.choice) return false;
   if (state.choice.kind === 'stock') return true;
   const loaded = state.loadedPatch;
   if (!loaded) return false;
@@ -154,6 +160,7 @@ export function firmwareWizardReducer(
       return {
         ...INITIAL_FIRMWARE_WIZARD_STATE,
         radioId: action.radioId,
+        choice: action.stockFlashOffered === false ? null : STOCK_CHOICE,
         includeRc: state.includeRc,
         radioPreflight: action.preflight ?? INITIAL_FIRMWARE_WIZARD_STATE.radioPreflight,
       };
@@ -175,7 +182,8 @@ export function firmwareWizardReducer(
       return {
         ...state,
         choice: action.choice,
-        loadedPatch: action.choice.kind === 'stock' ? null : (action.loadedPatch ?? null),
+        loadedPatch:
+          !action.choice || action.choice.kind === 'stock' ? null : (action.loadedPatch ?? null),
         riskAccepted: false,
         image: null,
         checks: NO_CHECKS,

@@ -230,13 +230,13 @@ project, library or build. The flasher needs no open project and stores nothing.
 1. **Studio never ships, hosts, mirrors or proxies vendor firmware.** No vendor file, image or excerpt goes in the repo,
    the bundle, a test fixture, or any network path Studio controls. Tests use synthetic images. No firmware-derived
    file is committed either: release patches are fetched from the firmware project's public release index.
-2. **The user supplies stock firmware** during the session: the vendor zip, or the files extracted from it. The wizard
+2. **The user supplies stock firmware** during the session: the vendor zip, its extracted files, or an image built from a read of the operator's own radio. The wizard
    lists where to get it: the vendor's download link, how to ask the vendor where it publishes nothing and, only where
-   no official copy exists, an unofficial copy labelled as such. All are plain links or text; Studio never fetches any
+   no official copy exists, an unofficial copy labelled as such; for an own-radio image it explains how the image is built. All are plain links or text; Studio never fetches any
    of them, and the pinned hashes decide what is accepted. The bytes stay in that browser tab's
    memory and are dropped when the user leaves the page.
 3. **Everything is pinned by SHA-256.** Each supported radio pins exactly one stock version: the hash and size of every
-   file, and the zip hash. A patch applies only to that pinned stock, and its result must match the hashes recorded in
+   file, and the zip hash where the vendor publishes a zip. A patch applies only to that pinned stock, and its result must match the hashes recorded in
    the patch. Anything else is refused before any radio contact.
 4. **Hard interlocks can't be bypassed.** Each radio's updater refuses unsafe images and frames in code, before the
    first byte is sent and again on every write. Examples: address windows that keep away from the bootloader and the
@@ -244,7 +244,7 @@ project, library or build. The flasher needs no open project and stores nothing.
    it. No setting, flag, environment value or patch field can switch one off.
 5. **One pipeline.** Published release, user-supplied patch, and stock all take the same path:
    verify stock → (apply patch → verify result) → interlocks → bootloader ident → flash.
-   "Flash stock" is the zero-patch case and is the documented recovery route; the vendor CPS stays the fallback.
+   "Flash stock" is the zero-patch case where offered. A radio may omit it when its stock image cannot be installed on its own; recovery uses a release patch. The vendor CPS stays the fallback where applicable.
 6. **Flash is not Write.** Codeplug Write rules, its env gate and the build/egress model don't apply to firmware, and
    firmware rules don't apply to Write.
 7. **Per-radio prod gate.** Each radio's firmware updater has its own prod-disabled flag. A gated radio is hidden on
@@ -445,6 +445,7 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 
 | Date       | Change                                                                                                                                                                                         |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-11 | Firmware flashing: own-radio stock images without a zip and radios without plain stock flash ([#1582](https://github.com/pskillen/codeplug-studio/issues/1582))                                |
 | 2026-10-28 | Firmware flashing rule 2: stock sources are a list (vendor link, ask the vendor, labelled unofficial mirror), never fetched ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460)) |
 | 2026-10-26 | Danger zone: rules for jobs that change the radio itself, first the AT-D890UV frequency range change ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369))                        |
 | 2026-10-24 | Firmware releases are listed and fetched at run time from the firmware project's public release index (pskillen/mm9pdy-firmware) instead of being bundled                                      |

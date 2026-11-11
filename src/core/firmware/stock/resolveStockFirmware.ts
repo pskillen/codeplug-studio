@@ -132,7 +132,10 @@ export async function resolveStockFirmware(
     }
     for (const o of others) {
       const memberHashes = new Set(o.members.map((m) => m.sha256));
-      if (zipHashes.includes(o.zip.sha256) || looseHashes.some((h) => memberHashes.has(h))) {
+      if (
+        (o.zip !== undefined && zipHashes.includes(o.zip.sha256)) ||
+        looseHashes.some((h) => memberHashes.has(h))
+      ) {
         throw wrongRadioError(descriptor, o);
       }
     }
@@ -151,7 +154,9 @@ export async function resolveStockFirmware(
     if (pool.length === 0) {
       throw new FirmwareError(
         'stock-missing-member',
-        `${member.fileName} is missing. Supply the ${descriptor.label} ${descriptor.version} zip, or every file extracted from it.`,
+        descriptor.zip
+          ? `${member.fileName} is missing. Supply the ${descriptor.label} ${descriptor.version} zip, or every file extracted from it.`
+          : `${member.fileName} is missing. Supply the ${descriptor.label} ${descriptor.version} stock file.`,
       );
     }
     if (pool.length > 1) {
@@ -182,7 +187,10 @@ export async function resolveStockFirmware(
     package: { radioId: descriptor.radioId, files },
     sha256,
     via: usedZip ? 'zip' : 'files',
-    zipMismatchNoted: usedZip && zipHashes.some((h) => h !== descriptor.zip.sha256),
+    zipMismatchNoted:
+      usedZip &&
+      descriptor.zip !== undefined &&
+      zipHashes.some((h) => h !== descriptor.zip!.sha256),
   };
 }
 
@@ -204,7 +212,10 @@ function diagnoseMismatch(
     );
   }
   for (const o of others) {
-    if (o.members.some((m) => m.sha256 === hash) || zipHashes.includes(o.zip.sha256)) {
+    if (
+      o.members.some((m) => m.sha256 === hash) ||
+      (o.zip !== undefined && zipHashes.includes(o.zip.sha256))
+    ) {
       return wrongRadioError(descriptor, o);
     }
   }
