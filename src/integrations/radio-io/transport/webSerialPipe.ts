@@ -71,6 +71,7 @@ class WebSerialBytePipe implements WebSerialPipe {
   streamBytesWritten = 0;
   writerRotations = 0;
   private readonly bufferSize: number;
+  private readonly raiseDtrRts: boolean;
   private writeChain: Promise<void> = Promise.resolve();
   private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private writer: WritableStreamDefaultWriter<Uint8Array> | null = null;
@@ -81,9 +82,10 @@ class WebSerialBytePipe implements WebSerialPipe {
   private pumpPromise: Promise<void> | null = null;
   private waiters: Array<() => void> = [];
 
-  constructor(baudRate: number, bufferSize: number) {
+  constructor(baudRate: number, bufferSize: number, raiseDtrRts: boolean) {
     this.baudRate = baudRate;
     this.bufferSize = bufferSize;
+    this.raiseDtrRts = raiseDtrRts;
   }
 
   async attach(port: SerialPortLike): Promise<void> {
@@ -343,12 +345,24 @@ export async function requestWebSerialPort(
   return resolvePort(forceSelection, filters);
 }
 
-async function assertSerialSignals(port: SerialPortLike): Promise<void> {
+/**
+ * Set DTR/RTS to the caller's choice right after an open. `raise: false` drives both low (a cable may wire them to
+ * PTT); `true` raises both. Best effort: a port or driver without `setSignals` is left as the OS configured it.
+ */
+async function applySerialSignals(port: SerialPortLike, raise: boolean): Promise<void> {
   try {
-    await port.setSignals?.({ dataTerminalReady: true, requestToSend: true });
+    await port.setSignals?.({ dataTerminalReady: raise, requestToSend: raise });
   } catch {
     /* RTS/DTR unsupported or rejected — best effort (CHIRP WANTS_RTS/DTR). */
   }
+}
+
+export interface OpenWebSerialPipeOptions {
+  /**
+   * Raise DTR and RTS after every open (default `true`, as every codeplug caller needs). `false` sets both low
+   * instead, for cables that wire them to PTT. The pipe remembers the choice and reapplies it on `reopen`.
+   */
+  raiseDtrRts?: boolean;
 }
 
 /**
@@ -356,17 +370,24 @@ async function assertSerialSignals(port: SerialPortLike): Promise<void> {
  *
  * The write guard assumes the port was opened with `WEB_SERIAL_HOST_BUFFER_SIZE` (this function does so itself) and
  * that its writable stream is fresh (nothing written yet). Ports opened elsewhere must use the same `bufferSize`.
+ *
+ * DTR/RTS are set only after `open()` resolves; the pipe cannot stop an OS-level pulse during the open itself.
  */
-export async function openWebSerialPipe(port: SerialPortLike, baudRate: number): Promise<BytePipe> {
+export async function openWebSerialPipe(
+  port: SerialPortLike,
+  baudRate: number,
+  options?: OpenWebSerialPipeOptions,
+): Promise<BytePipe> {
+  const raiseDtrRts = options?.raiseDtrRts ?? true;
   if (!port.readable || !port.writable) {
     await port.open({ baudRate, bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE });
-    await assertSerialSignals(port);
+    await applySerialSignals(port, raiseDtrRts);
   } else if (port.readable.locked || port.writable.locked) {
     throw new RadioClosedError(
       'Serial port is busy from a previous operation. Reconnect the cable or reload the page.',
     );
   }
-  const pipe = new WebSerialBytePipe(baudRate, WEB_SERIAL_HOST_BUFFER_SIZE);
+  const pipe = new WebSerialBytePipe(baudRate, WEB_SERIAL_HOST_BUFFER_SIZE, raiseDtrRts);
   await pipe.attach(port);
   return pipe;
 }

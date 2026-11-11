@@ -365,3 +365,44 @@ describe('requestWebSerialPipe', () => {
     expect(requestPort).not.toHaveBeenCalled();
   });
 });
+
+describe('openWebSerialPipe DTR/RTS choice', () => {
+  const high = { type: 'setSignals', signals: { dataTerminalReady: true, requestToSend: true } };
+  const low = { type: 'setSignals', signals: { dataTerminalReady: false, requestToSend: false } };
+
+  it('raises DTR and RTS right after open by default', async () => {
+    const fake = createFakeSerialPort({ initiallyOpen: false });
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    expect(fake.calls).toEqual([
+      { type: 'open', baudRate: 9600, bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE },
+      high,
+    ]);
+    await pipe.close();
+  });
+
+  it('raises them for an explicit raiseDtrRts: true', async () => {
+    const fake = createFakeSerialPort({ initiallyOpen: false });
+    const pipe = await openWebSerialPipe(fake.port, 9600, { raiseDtrRts: true });
+    expect(fake.calls.at(-1)).toEqual(high);
+    await pipe.close();
+  });
+
+  it('sets both low right after open with raiseDtrRts: false, and never raises them', async () => {
+    const fake = createFakeSerialPort({ initiallyOpen: false });
+    const pipe = await openWebSerialPipe(fake.port, 9600, { raiseDtrRts: false });
+    expect(fake.calls).toEqual([
+      { type: 'open', baudRate: 9600, bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE },
+      low,
+    ]);
+    await pipe.close();
+  });
+
+  it('tolerates a port whose setSignals rejects', async () => {
+    const fake = createFakeSerialPort({ initiallyOpen: false });
+    fake.port.setSignals = async () => {
+      throw new Error('unsupported');
+    };
+    const pipe = await openWebSerialPipe(fake.port, 9600, { raiseDtrRts: false });
+    await pipe.close();
+  });
+});

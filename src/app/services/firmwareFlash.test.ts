@@ -110,6 +110,13 @@ describe('runFirmwareFlash', () => {
     expect(pipeClose).toHaveBeenCalledTimes(1);
   });
 
+  it("opens the pipe with the updater's DTR/RTS choice", async () => {
+    fakeUpdater.identify.mockResolvedValue(IDENT);
+    fakeUpdater.flash.mockResolvedValue({ framesSent: 1, dataFrames: 1, elapsedMs: 1, end: 'x' });
+    await run();
+    expect(radioIo.openWebSerialPipe).toHaveBeenCalledWith(port, 115200, { raiseDtrRts: true });
+  });
+
   it('passes radioTouched through on a failure after touch, and still closes', async () => {
     fakeUpdater.identify.mockResolvedValue(IDENT);
     fakeUpdater.flash.mockRejectedValue(
@@ -250,7 +257,7 @@ describe('runFirmwarePreflightProbe', () => {
     fakeProbe.run.mockResolvedValue({ summary: 'RT95-P, version V100' });
     const out = await runFirmwarePreflightProbe({ radioId: 'baofeng-dm32uv', port });
     expect(out).toEqual({ ok: true, summary: 'RT95-P, version V100' });
-    expect(radioIo.openWebSerialPipe).toHaveBeenCalledWith(port, 9600);
+    expect(radioIo.openWebSerialPipe).toHaveBeenCalledWith(port, 9600, { raiseDtrRts: true });
     expect(pipeClose).toHaveBeenCalledTimes(1);
   });
 
