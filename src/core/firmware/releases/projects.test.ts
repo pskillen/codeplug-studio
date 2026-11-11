@@ -11,9 +11,7 @@ import {
 
 describe('firmware projects', () => {
   it("names every radio's patch project", () => {
-    for (const d of listStockFirmwareDescriptors().filter(
-      (d) => d.radioId !== 'baofeng-uv5rmini',
-    )) {
+    for (const d of listStockFirmwareDescriptors()) {
       for (const name of d.patchNames) {
         expect(
           FIRMWARE_PROJECTS.some((p) => p.patchName === name),
@@ -28,6 +26,9 @@ describe('firmware projects', () => {
       'MM9PDY modded firmware 1.0.0',
     );
     expect(firmwareReleaseTitle('anytone-d890-firmware', '1.0.0')).toBe(
+      'MM9PDY modded firmware 1.0.0',
+    );
+    expect(firmwareReleaseTitle('baofeng-uv5rmini-firmware', '1.0.0')).toBe(
       'MM9PDY modded firmware 1.0.0',
     );
   });

@@ -34,6 +34,7 @@ Handheld analogue FM/AM radio (UV-17Pro lineage). Studio targets it via CHIRP CS
 | [protocol.md](protocol.md)             | Ident, magics, R/W frames, XOR crypt, baud disagreement                                                                 |
 | [backup-restore.md](backup-restore.md) | Zip MEM regions; Restore clone upload vs stash Write ([#1143](https://github.com/pskillen/codeplug-studio/issues/1143)) |
 | [fixtures.md](fixtures.md)             | How to capture dumps for tests without committing personal codeplugs                                                    |
+| [firmware.md](firmware.md)             | Stock `.ufw` pin, release patch format and what Studio checks                                                           |
 
 ## Adapter wire (files)
 
