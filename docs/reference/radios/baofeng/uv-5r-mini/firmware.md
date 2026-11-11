@@ -186,3 +186,28 @@ keep the battery charged and the cable in until the radio restarts.
 
 The real-time waits are in `UV5RMINI_FW_TIMEOUT_MS` (`constants.ts`): listen 2 s, ping every 1 s for 30 s, pong settle
 300 ms, idle 60 s.
+
+## Testing against the emulator
+
+`uv5rMiniEmuBridge.test.ts` (in `firmwareUpdate/`) runs Studio's real pipeline against an emulated radio: stock
+resolution, `prepareFirmwareImage` with a release patch, `checkImage`, `openWebSerialPipe` at 9600 with DTR and RTS low,
+then the updater's `identify` and `flash`, including the reopen at 38400. The radio is the firmware project's emulator,
+reached through its local TCP serial bridge, so no serial device is opened. Two cases: a clean update that ends with
+result 0, and a power cut part-way through the loader's write followed by a continued session that ends with result 0.
+Both check that the emulated flash changed only inside the update area (`0x4000` to `0x7C000`) and matches the firmware
+project's predicted result.
+
+It is local-only and skipped in CI: it needs the firmware project's bridge, the operator's own stock image and a release
+patch for it. Start one bridge per case (a bridge serves one client, then exits), then set:
+
+| Variable                  | Meaning                                                                   |
+| ------------------------- | ------------------------------------------------------------------------- |
+| `UV5RMINI_STOCK_UFW`      | The stock `.ufw` (`nrfb-v0.04`), outside the repository                   |
+| `UV5RMINI_PATCH`          | A release patch for that stock                                            |
+| `UV5RMINI_EMU_BRIDGE`     | `127.0.0.1:<port>` of a fresh bridge, for the clean case                  |
+| `UV5RMINI_EMU_BRIDGE_CUT` | `127.0.0.1:<port>` of another fresh bridge, for the cut-and-continue case |
+| `UV5RMINI_EMU_CUT_AFTER`  | Loader erase and program count the power is cut after (default 100)       |
+
+Then `npx vitest run src/integrations/radio-io/radios/uv5r-mini/firmwareUpdate/uv5rMiniEmuBridge.test.ts`. Emulated time
+passes only while the host reads, so the test does not prove the reopen fits the loader's 700 ms window; time that on a
+real adapter. `__fixtures__/bridgeSerialPort.ts` is the test-only `SerialPortLike` that speaks the bridge's protocol.
