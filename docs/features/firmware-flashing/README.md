@@ -11,28 +11,30 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 
 ## Implementation status
 
-| Area                        | Status                                               | Notes                                                                                                                                                                                                                                                                                                                      |
-| --------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DM-32UV flash               | Shipped: prod                                        | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                                                                                    |
-| Published releases          | Shipped (DM-32UV, AT-D890UV, RT95 front panel)       | Listed and fetched at run time from the firmware project's public release index ([releases.md](releases.md)), checked before use; release list, RC toggle, notes and a retry when the list can't be fetched in the wizard. Replaced the bundled catalog ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
-| User-supplied patch         | Shipped: prod (DM-32UV, AT-D890UV, RT95 front panel) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                                                   |
-| AT-D890UV                   | Shipped: prod                                        | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                                                    |
-| RT95 front panel (LCD)      | Shipped: prod                                        | Stock and published releases for the head; MAIN never offered; normal-mode ident and attestations before flashing. Enabled on the prod site after the owner flashed stock V1.41, test builds and the MM9PDY zones build from Studio ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460))                     |
-| Recovery docs               | Shipped                                              | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                          |
-| Browsers without Web Serial | Shipped                                              | Phones, tablets, Firefox and Safari get a read-only list of the published releases for each offered radio (RC toggle, notes, retry) with a banner saying flashing needs Chrome or Edge on a desktop computer. No wizard, no port (`ReleaseBrowser.tsx`)                                                                    |
-| Android                     | Deferred                                             | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                                                                                             |
+| Area                        | Status                                               | Notes                                                                                                                                                                                                                                                                                                                                                                                    |
+| --------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DM-32UV flash               | Shipped: prod                                        | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                                                                                                                                                  |
+| Published releases          | Shipped (DM-32UV, AT-D890UV, RT95 front panel)       | Listed and fetched at run time from the firmware project's public release index ([releases.md](releases.md)), checked before use; release list, RC toggle, notes and a retry when the list can't be fetched in the wizard. Replaced the bundled catalog ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362))                                                               |
+| User-supplied patch         | Shipped: prod (DM-32UV, AT-D890UV, RT95 front panel) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                                                                                                                 |
+| AT-D890UV                   | Shipped: prod                                        | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                                                                                                                  |
+| RT95 front panel (LCD)      | Shipped: prod                                        | Stock and published releases for the head; MAIN never offered; normal-mode ident and attestations before flashing. Enabled on the prod site after the owner flashed stock V1.41, test builds and the MM9PDY zones build from Studio ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460))                                                                                   |
+| UV-5R Mini                  | Shipped: pre-prod only (next, dev, staging)          | The radio drives the update: its app, then its loader, ask for slices of the image and Studio serves them; a power-cut update is continued by flashing again. Patch file from disk only until a release is published; no stock flash. Hidden on prod until Studio has flashed a patched release to a Mini on hardware ([#1587](https://github.com/pskillen/codeplug-studio/issues/1587)) |
+| Recovery docs               | Shipped                                              | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                                                                                        |
+| Browsers without Web Serial | Shipped                                              | Phones, tablets, Firefox and Safari get a read-only list of the published releases for each offered radio (RC toggle, notes, retry) with a banner saying flashing needs Chrome or Edge on a desktop computer. No wizard, no port (`ReleaseBrowser.tsx`)                                                                                                                                  |
+| Android                     | Deferred                                             | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                                                                                                                                                           |
 
 ## Documentation map
 
-| Doc                                                                                                                    | Topic                                                                                  |
-| ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing)                                                  | Product rules: no vendor firmware, pinning, interlocks, gates                          |
-| [releases.md](releases.md)                                                                                             | Where releases come from: the public release index, its format, and what Studio checks |
-| [DM-32UV firmware.md](../../reference/radios/baofeng/dm-32uv/firmware.md)                                              | Stock pin, update mode, patch format, bootloader protocol                              |
-| [AT-D890UV firmware.md](../../reference/radios/anytone/at-d890uv/firmware.md)                                          | Stock pin, update mode, patch format, bootloader protocol                              |
-| [RT95 firmware.md](../../reference/radios/retevis/rt95/firmware.md)                                                    | Front panel stock pin and sources, update mode, patch format, protocol, pre-flight     |
-| [Adding a radio adapter — Firmware updater](../radio-read-write/adding-a-radio-adapter.md#8-firmware-updater-optional) | Checklist for a new radio's updater                                                    |
-| [Stepper.md](../../../src/app/components/v2/Stepper.md)                                                                | Wizard step indicator                                                                  |
+| Doc                                                                                                                    | Topic                                                                                     |
+| ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing)                                                  | Product rules: no vendor firmware, pinning, interlocks, gates                             |
+| [releases.md](releases.md)                                                                                             | Where releases come from: the public release index, its format, and what Studio checks    |
+| [DM-32UV firmware.md](../../reference/radios/baofeng/dm-32uv/firmware.md)                                              | Stock pin, update mode, patch format, bootloader protocol                                 |
+| [AT-D890UV firmware.md](../../reference/radios/anytone/at-d890uv/firmware.md)                                          | Stock pin, update mode, patch format, bootloader protocol                                 |
+| [RT95 firmware.md](../../reference/radios/retevis/rt95/firmware.md)                                                    | Front panel stock pin and sources, update mode, patch format, protocol, pre-flight        |
+| [UV-5R Mini firmware.md](../../reference/radios/baofeng/uv-5r-mini/firmware.md)                                        | Stock pin, patch format, image checks, update mode, the update session, results, recovery |
+| [Adding a radio adapter — Firmware updater](../radio-read-write/adding-a-radio-adapter.md#8-firmware-updater-optional) | Checklist for a new radio's updater                                                       |
+| [Stepper.md](../../../src/app/components/v2/Stepper.md)                                                                | Wizard step indicator                                                                     |
 
 ## Concepts
 
@@ -69,6 +71,7 @@ flowchart LR
 | DM-32UV      | `src/integrations/radio-io/radios/dm32uv/firmwareUpdate/`                                  |
 | AT-D890UV    | `src/integrations/radio-io/radios/at-d890uv/firmwareUpdate/`                               |
 | RT95 (head)  | `src/integrations/radio-io/radios/rt95/firmwareUpdate/`                                    |
+| UV-5R Mini   | `src/integrations/radio-io/radios/uv5r-mini/firmwareUpdate/`                               |
 | App          | `src/app/routes/firmware/`, `src/app/services/firmwareFlash.ts`, `firmwareFlashEnvGate.ts` |
 
 ## Browsers without Web Serial
@@ -91,6 +94,8 @@ hidden there).
      **Try again**; stock and a patch file from disk still work. Finals only by default; **Show release
      candidates** adds RCs, labelled **Pre-release**.
    - **Stock firmware** ("Stock firmware (v1.01.048)"), always listed: it is also the recovery path.
+     A radio with no stock flash (the UV-5R Mini) lists no Stock card; when it has no published release either, the
+     step says "No firmware release is published for the Baofeng UV-5R Mini yet" and points to the Advanced patch file.
    - **Advanced: use a patch file from disk.** A `.patch.json` identical to a published release is treated as that
      release ("This is the MM9PDY modded firmware 1.0.0 (published)"). Any other patch shows its project name and
      version, a short sha256 and a risk
@@ -112,10 +117,16 @@ hidden there).
    radio**) before you put it into update mode. Continue stays disabled until both are ticked and the check passed.
 6. **Enter update mode** — the radio's own steps, indicator and warnings, from its descriptor. The RT95's is P1 +
    knob with a blank screen; the P3 mode (screen "UPDATE THE RF CPU") flashes the main board and is the wrong one.
+   The UV-5R Mini's is PTT-A and = held while switching on (the screen shows UPDATE...); after a cut update, switch on
+   with no keys instead: the screen stays dark and Studio continues the write.
 7. **Flash** — names the firmware and radio again, and repeats the radio's update-mode warnings right above
    **Connect and flash**, which opens a port picker narrowed to the radio's USB device. Progress shows the phases
    the radio's updater reports: Handshake → Erase → Transfer → Finish for the DM-32UV; Handshake → Transfer →
    Finish for the AT-D890UV, which erases as part of the transfer; Handshake → Transfer → Finish for the RT95 front panel.
+   The UV-5R Mini shows Handshake → Erase → Transfer → Finish: Handshake while its stock app reads the image (about 21
+   s; the radio is not yet touched), Erase from the first hello of its loader (the radio is touched from there), Transfer
+   as the loader reads the firmware area, Finish at the result. It has a tick too, "The radio shows UPDATE..., or its
+   screen stays dark after an interrupted update".
    The RT95 has one more tick on this step, "The screen is blank. It does not say UPDATE THE RF CPU.", before
    **Connect and flash** is enabled. While the first block waits for the radio, the
    transfer step reads "Waiting for the radio (it may be erasing)…". Progress is redrawn at most every ~100 ms (a
@@ -129,11 +140,12 @@ hidden there).
 
 ## What to expect
 
-| Radio            | Duration                                    | How the radio signals the end                                                                                                      | How to check (release `1.1.0`)                                                 |
-| ---------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| DM-32UV          | About 2 minutes (including a 13 s erase)    | Studio sends the end byte; any reply, or none, is fine (`eot-sent`)                                                                | Settings > Device Info > Versions shows `mm9pdy-1.1.0` under `DM32.01.L01.048` |
-| AT-D890UV        | Under a minute (about 25 s transfer)        | The radio restarts at once and its USB port disappears (`port-closed-by-radio`), or it replies `06` (`acknowledged`)               | After the radio restarts, Device Info > Mod Ver shows `mm9pdy-1.1.0`           |
-| RT95 front panel | Under a minute (estimate; not yet measured) | Studio sends the end byte; the radio replies `06` (`acknowledged`) or nothing (`no-reply`). Switch the radio off and on afterwards | Stock: FUNC + P4 test screen shows LCD CPU V1.11                               |
+| Radio            | Duration                                     | How the radio signals the end                                                                                                      | How to check (release `1.1.0`)                                                 |
+| ---------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| DM-32UV          | About 2 minutes (including a 13 s erase)     | Studio sends the end byte; any reply, or none, is fine (`eot-sent`)                                                                | Settings > Device Info > Versions shows `mm9pdy-1.1.0` under `DM32.01.L01.048` |
+| AT-D890UV        | Under a minute (about 25 s transfer)         | The radio restarts at once and its USB port disappears (`port-closed-by-radio`), or it replies `06` (`acknowledged`)               | After the radio restarts, Device Info > Mod Ver shows `mm9pdy-1.1.0`           |
+| RT95 front panel | Under a minute (estimate; not yet measured)  | Studio sends the end byte; the radio replies `06` (`acknowledged`) or nothing (`no-reply`). Switch the radio off and on afterwards | Stock: FUNC + P4 test screen shows LCD CPU V1.11                               |
+| UV-5R Mini       | About 3 minutes (estimate; not yet measured) | The loader reports result `0`; Studio echoes it (`acknowledged`) and the radio restarts by itself                                  | The power-on screen shows the release's build name                             |
 
 The durations are the descriptors' `expectedDuration`, shown on the radio cards; the checks are the releases' verify
 hints.
@@ -190,6 +202,9 @@ Studio never writes the bootloader or the activation area.
 2. **Re-enter update mode** with the radio's own steps: [DM-32UV](../../reference/radios/baofeng/dm-32uv/firmware.md#update-mode-entry),
    [AT-D890UV](../../reference/radios/anytone/at-d890uv/firmware.md#update-mode-entry),
    [RT95 front panel](../../reference/radios/retevis/rt95/firmware.md#update-mode-entry) (P1 + knob, blank screen).
+   The [UV-5R Mini](../../reference/radios/baofeng/uv-5r-mini/firmware.md#recovery): leave the cable in, switch the
+   radio off and on with no keys held, then press **Connect and flash** with the same files; Studio hears the radio's
+   loader and continues.
 3. **Flash again:** the same release, or **stock** from the wizard's **Stock firmware** entry (the **Flash stock
    instead** button goes straight to the firmware choice).
 4. Either way you need the vendor's stock download. A release is built from it, and stock is it.
