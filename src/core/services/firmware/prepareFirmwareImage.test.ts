@@ -32,6 +32,7 @@ describe('prepareFirmwareImage — stock target', () => {
     expect(prepared.package.files.img).toEqual(bin);
     expect(prepared.sha256.img).toBe(descriptor.members[0]!.sha256);
     expect(prepared.releaseTag).toBeUndefined();
+    expect(prepared.stockPackage).toBe(stock.package);
     expect(prepared.title).toBe(`stock firmware ${descriptor.version}`);
   });
 
@@ -83,6 +84,7 @@ describe('prepareFirmwareImage — patch target', () => {
     expect(prepared.versionStamp).toBe('9.9.9');
     expect(prepared.verifyHint).toBe(row.verifyHint);
     expect(prepared.package.files.bin).toEqual(built);
+    expect(prepared.stockPackage).toBe(stock.package);
     expect(prepared.sha256.bin).toBe(row.resultSha256.bin);
   });
 
