@@ -52,6 +52,22 @@ export interface SerialPortLike {
  */
 export const WEB_SERIAL_HOST_BUFFER_SIZE = 1_048_576;
 
+/** Margin added to the wire time of the written bytes before a reopen (a CH340 FIFO stall fix). */
+export const WEB_SERIAL_DRAIN_MARGIN_MS = 20;
+
+/**
+ * How long `reopen` waits before closing the port: `bytes × 10 / baudRate` seconds (10 bits per byte on the wire)
+ * plus {@link WEB_SERIAL_DRAIN_MARGIN_MS}, rounded up; 0 when nothing was written. Chromium's `close()` discards
+ * what the adapter has not sent (tcflush / PurgeComm), and nothing proves the adapter's own FIFO is empty once the
+ * writable resolves, so the wait comes first. E.g. 11 bytes at 9600 baud: 32 ms.
+ */
+export function webSerialDrainMs(bytesWritten: number, baudRate: number): number {
+  if (bytesWritten <= 0) {
+    return 0;
+  }
+  return Math.ceil((bytesWritten * 10 * 1000) / baudRate) + WEB_SERIAL_DRAIN_MARGIN_MS;
+}
+
 /**
  * What `openWebSerialPipe` actually returns (typed as BytePipe, whose optional `txBytesWritten` is the trace hook);
  * the extra accessors are for tests and diagnostics.
@@ -66,8 +82,12 @@ export interface WebSerialPipe extends BytePipe {
 }
 
 class WebSerialBytePipe implements WebSerialPipe {
-  readonly baudRate: number;
+  baudRate: number;
   txBytesWritten = 0;
+  /** Bytes handed to the writable since the pipe opened or last reopened: what the next reopen must let drain. */
+  private bytesSinceDrain = 0;
+  /** Bumped by `reopen`; a pump of an older generation delivers and signals nothing. */
+  private generation = 0;
   streamBytesWritten = 0;
   writerRotations = 0;
   private readonly bufferSize: number;
@@ -101,12 +121,101 @@ class WebSerialBytePipe implements WebSerialPipe {
         'Serial port is busy from a previous operation. Reconnect the cable or reload the page.',
       );
     }
-    this.reader = port.readable.getReader();
-    this.writer = port.writable.getWriter();
     this.txBytesWritten = 0;
+    this.bindStreams(port.readable, port.writable);
+  }
+
+  /** Take the reader and writer of a freshly opened port and start the pump (fresh ring, fresh pump generation). */
+  private bindStreams(
+    readable: ReadableStream<Uint8Array>,
+    writable: WritableStream<Uint8Array>,
+  ): void {
+    this.reader = readable.getReader();
+    this.writer = writable.getWriter();
     this.streamBytesWritten = 0;
     this.writerRotations = 0;
+    this.bytesSinceDrain = 0;
     this.pumpPromise = this.pump();
+  }
+
+  /**
+   * Change the line rate. Web Serial cannot retune an open port, so this closes it and opens it again at
+   * `baudRate`; see {@link BytePipe.reopen}. Serialised with writes, so queued frames leave first.
+   *
+   * Order: wait for the written bytes to leave the adapter ({@link webSerialDrainMs}), discard everything read so
+   * far, release reader and writer, `close()`, `open({ baudRate, bufferSize })`, reapply the DTR/RTS choice,
+   * reattach with a fresh write ring. Bytes read before the reopen are never delivered after it. `txBytesWritten`
+   * stays cumulative. A failed close or open leaves the pipe unusable (reads and writes throw `RadioClosedError`);
+   * call `close()`.
+   */
+  reopen(baudRate: number): Promise<void> {
+    const run = this.writeChain.then(() => this.reopenNow(baudRate));
+    this.writeChain = run.catch(() => undefined);
+    return run;
+  }
+
+  private async reopenNow(baudRate: number): Promise<void> {
+    const port = this.port;
+    if (!port || !this.writer || this.closed) {
+      throw new RadioClosedError('Not connected.');
+    }
+    const drainMs = webSerialDrainMs(this.bytesSinceDrain, this.baudRate);
+    if (drainMs > 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, drainMs));
+      if (this.closed) {
+        throw new RadioClosedError('Not connected.');
+      }
+    }
+
+    // From here nothing read on the old stream may reach a reader: the pump of the old generation drops its data.
+    this.generation += 1;
+    this.buf = new Uint8Array(0);
+    this.eof = false;
+    const { reader, writer, pumpPromise } = this;
+    this.reader = null;
+    this.writer = null;
+    try {
+      await reader?.cancel();
+    } catch {
+      /* ignore */
+    }
+    try {
+      await writer?.close();
+    } catch {
+      /* ignore */
+    }
+    for (const lock of [reader, writer]) {
+      try {
+        lock?.releaseLock();
+      } catch {
+        /* already released */
+      }
+    }
+    try {
+      await pumpPromise;
+    } catch {
+      /* ignore */
+    }
+    this.buf = new Uint8Array(0);
+    this.eof = false;
+
+    try {
+      await port.close();
+      await port.open({ baudRate, bufferSize: this.bufferSize });
+    } catch (err) {
+      throw new RadioClosedError(
+        `Serial port could not be reopened at ${baudRate} baud: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+    await applySerialSignals(port, this.raiseDtrRts);
+    if (this.closed) {
+      throw new RadioClosedError('Not connected.');
+    }
+    if (!port.readable || !port.writable) {
+      throw new RadioClosedError('Port streams unavailable after reopen.');
+    }
+    this.baudRate = baudRate;
+    this.bindStreams(port.readable, port.writable);
   }
 
   /**
@@ -138,6 +247,7 @@ class WebSerialBytePipe implements WebSerialPipe {
     await this.writer.write(data);
     this.streamBytesWritten += data.length;
     this.txBytesWritten += data.length;
+    this.bytesSinceDrain += data.length;
   }
 
   private async rotateWriter(): Promise<void> {
@@ -258,9 +368,13 @@ class WebSerialBytePipe implements WebSerialPipe {
     if (!reader) {
       return;
     }
+    const generation = this.generation;
     try {
       while (!this.closed) {
         const { value, done } = await reader.read();
+        if (generation !== this.generation) {
+          return;
+        }
         if (done) {
           this.eof = true;
           this.notifyWaiters();
@@ -275,6 +389,9 @@ class WebSerialBytePipe implements WebSerialPipe {
         }
       }
     } catch {
+      if (generation !== this.generation) {
+        return;
+      }
       this.eof = true;
       this.notifyWaiters();
     }
