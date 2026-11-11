@@ -17,8 +17,11 @@
  * | B>C | 0x86 | JSON    | STATUS                                                                        |
  * | B>C | 0xEE | text    | ERROR; the bridge then closes                                                 |
  *
- * Emulated time passes only while the host reads: the readable asks for `BRIDGE_RX_SLICE_MS` of it per pull. A
- * `reopen` is a `close()` plus an `open()` on the same connection, and costs no emulated time while the port is closed.
+ * Emulated time passes only while the host reads, and the readable keeps it in step with real time: each read request
+ * asks for the real milliseconds since the last one (at least `BRIDGE_RX_MIN_STEP_MS` apart, at most `BRIDGE_RX_MAX_MS`),
+ * so the host's real-time timeouts and the loader's emulated hello window mean the same thing. A `reopen` is a `close()`
+ * plus an `open()` on the same connection; the radio keeps running while the port is closed (open catches the emulated
+ * clock up and drops what the radio said meanwhile), as a real radio does.
  */
 import { connect, type Socket } from 'node:net';
 
@@ -36,8 +39,9 @@ const T = {
   ERROR: 0xee,
 } as const;
 
-/** Emulated milliseconds the radio runs for per read request. */
-export const BRIDGE_RX_SLICE_MS = 20;
+/** Fewest real milliseconds between read requests, and most emulated milliseconds one request asks for. */
+export const BRIDGE_RX_MIN_STEP_MS = 10;
+export const BRIDGE_RX_MAX_MS = 50;
 
 export interface BridgeStatus {
   readonly stage: string;
@@ -52,6 +56,7 @@ export interface BridgeStatus {
 export type BridgeCall =
   | { type: 'open'; baudRate: number; at: number }
   | { type: 'close'; at: number }
+  | { type: 'write'; bytes: number; at: number }
   | {
       type: 'setSignals';
       signals: { dataTerminalReady?: boolean; requestToSend?: boolean };
@@ -62,6 +67,8 @@ export interface BridgeSerialPort {
   readonly port: SerialPortLike;
   /** Every port call in order, with `Date.now()`. */
   readonly calls: BridgeCall[];
+  /** One line per chunk written or read (rate, length, first bytes), for a failure report. */
+  readonly trace: string[];
   /** Power cut after the loader's nth erase or program (0 disarms). */
   cut(n: number): Promise<void>;
   /** Switch the radio on after a cut: the loader restarts from its record. */
@@ -146,32 +153,51 @@ export async function connectBridgeSerialPort(hostPort: string): Promise<BridgeS
     });
 
   const calls: BridgeCall[] = [];
+  const trace: string[] = [];
+  let rate = 0;
+  let lastRxAt = 0;
+  const note = (dir: string, b: Uint8Array) =>
+    trace.push(`${dir} @${rate} ${b.length}B ${Buffer.from(b.subarray(0, 12)).toString('hex')}`);
   let isOpen = false;
   let readable: ReadableStream<Uint8Array> | null = null;
   let writable: WritableStream<Uint8Array> | null = null;
   let writableClosed = false;
 
-  const makeReadable = () =>
-    new ReadableStream<Uint8Array>(
+  const makeReadable = () => {
+    let cancelled = false;
+    return new ReadableStream<Uint8Array>(
       {
+        // One pull runs the radio until it says something: an empty answer does not re-trigger a pull by itself.
         async pull(controller) {
-          const data = await request(rxWaiters, T.RX, u32(BRIDGE_RX_SLICE_MS));
-          if (data.length > 0) {
-            try {
+          while (!cancelled) {
+            const idle = BRIDGE_RX_MIN_STEP_MS - (Date.now() - lastRxAt);
+            if (idle > 0) await new Promise((resolve) => setTimeout(resolve, idle));
+            if (cancelled) return;
+            const ms = Math.min(Math.max(Date.now() - lastRxAt, 1), BRIDGE_RX_MAX_MS);
+            lastRxAt = Date.now();
+            const data = await request(rxWaiters, T.RX, u32(ms));
+            if (cancelled) return; // what was in flight at a reopen is lost, as on a real port
+            if (data.length > 0) {
+              note('rx', data);
               controller.enqueue(data);
-            } catch {
-              /* cancelled by a reopen: what was in flight is lost, as on a real port */
+              return;
             }
           }
+        },
+        cancel() {
+          cancelled = true;
         },
       },
       { highWaterMark: 1 },
     );
+  };
 
   const makeWritable = () => {
     writableClosed = false;
     return new WritableStream<Uint8Array>({
       async write(chunk) {
+        note('tx', chunk);
+        calls.push({ type: 'write', bytes: chunk.length, at: Date.now() });
         // A message carries at most 65535 bytes.
         for (let i = 0; i < chunk.length; i += 0xffff) {
           await send(T.TX, chunk.subarray(i, i + 0xffff));
@@ -193,8 +219,17 @@ export async function connectBridgeSerialPort(hostPort: string): Promise<BridgeS
       return writable;
     },
     async open({ baudRate }) {
+      rate = baudRate;
+      if (lastRxAt > 0) {
+        // The radio ran while the port was closed; what it said then reached nobody.
+        const closedMs = Math.min(Date.now() - lastRxAt, 2000);
+        lastRxAt = Date.now();
+        await request(rxWaiters, T.RX, u32(closedMs));
+      }
+      // Stamped once the port is usable again: close to open is the reopen's whole cost.
       calls.push({ type: 'open', baudRate, at: Date.now() });
       await send(T.BAUD, u32(baudRate));
+      lastRxAt = Date.now();
       isOpen = true;
       readable = makeReadable();
       writable = makeWritable();
@@ -213,6 +248,7 @@ export async function connectBridgeSerialPort(hostPort: string): Promise<BridgeS
   return {
     port,
     calls,
+    trace,
     cut: (n) => send(T.CUT, u32(n)),
     powerOn: () => send(T.POWER_ON),
     status: () => request(statusWaiters, T.STATUS),

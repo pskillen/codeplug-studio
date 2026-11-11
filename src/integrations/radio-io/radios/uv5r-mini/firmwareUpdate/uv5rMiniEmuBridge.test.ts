@@ -81,19 +81,15 @@ function phaseRecorder() {
 
 const secs = (ms: number) => (ms / 1000).toFixed(1);
 
-/** Close to the next open at the loader rate: the reopen, as the port saw it. */
+/** From the last byte written to the next open at the loader rate: what a reopen costs the host (drain, close, open). */
 function reopenMs(bridge: BridgeSerialPort, from = 0, to?: number): number[] {
   const out: number[] = [];
-  let closedAt: number | undefined;
+  let wroteAt: number | undefined;
   for (const c of bridge.calls.slice(from, to)) {
-    if (c.type === 'close') closedAt = c.at;
-    else if (
-      c.type === 'open' &&
-      closedAt !== undefined &&
-      c.baudRate === UV5RMINI_FW_LOADER_BAUD
-    ) {
-      out.push(c.at - closedAt);
-      closedAt = undefined;
+    if (c.type === 'write') wroteAt = c.at;
+    else if (c.type === 'open' && c.baudRate === UV5RMINI_FW_LOADER_BAUD && wroteAt !== undefined) {
+      out.push(c.at - wroteAt);
+      wroteAt = undefined;
     }
   }
   return out;
@@ -125,7 +121,16 @@ describe.skipIf(!stockPath || !patchPath)('UV-5R Mini updater against the emulat
         const updater = createUv5rMiniFirmwareUpdater();
         const ident = await updater.identify(pipe, {});
         const { phases, onProgress } = phaseRecorder();
-        const result = await updater.flash(image, { onProgress });
+        let result;
+        try {
+          result = await updater.flash(image, { onProgress });
+        } catch (err) {
+          console.log(
+            `[uv5rmini-emu-bridge] clean failed at ${(err as FirmwareFlashError).position}, phases ${phases.join(',')}\n` +
+              bridge.trace.slice(-30).join('\n'),
+          );
+          throw err;
+        }
         const wall = Date.now() - started;
         const status = await bridge.status();
 
