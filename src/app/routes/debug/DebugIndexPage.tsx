@@ -27,6 +27,10 @@ export default function DebugIndexPage() {
           erase unit that Write must read-modify-write, plus a read-only config-region alias check
           (#792). <strong>Erase passes write to the radio;</strong> the alias check does not.
         </Text>
+        <Text size="sm">
+          <Link to="/debug/serial-reopen">Serial reopen timing</Link> — times a Web Serial close and
+          reopen at a new baud rate with a USB serial cable alone (no radio) (#1584).
+        </Text>
       </Stack>
     </Page>
   );
