@@ -28,7 +28,7 @@ describe('stock firmware catalog', () => {
 
   it('pins every hash as 64 lowercase hex', () => {
     for (const d of all) {
-      expect(d.zip.sha256).toMatch(SHA_RE);
+      if (d.zip) expect(d.zip.sha256).toMatch(SHA_RE);
       for (const m of d.members) expect(m.sha256).toMatch(SHA_RE);
     }
   });
@@ -45,7 +45,7 @@ describe('stock firmware catalog', () => {
       for (const s of d.stockSources) {
         if (s.kind === 'download') {
           expect(['http:', 'https:']).toContain(new URL(s.url).protocol);
-        } else if (s.contact) {
+        } else if (s.kind === 'ask-vendor' && s.contact) {
           expect(['mailto:', 'https:']).toContain(new URL(s.contact.href).protocol);
         }
       }
@@ -57,6 +57,18 @@ describe('stock firmware catalog', () => {
     expect(d.members.map((m) => m.role).sort()).toEqual(['cdd', 'cdi', 'spi']);
     expect(d.members.find((m) => m.role === 'spi')?.size).toBe(10);
     expect(d.stockSources.map((s) => s.kind)).toEqual(['ask-vendor', 'download']);
+  });
+
+  it('pins the Mini own-radio image without offering stock flash', () => {
+    const d = getStockFirmwareDescriptor('baofeng-uv5rmini');
+    expect(d.zip).toBeUndefined();
+    expect(d.stockFlashOffered).toBe(false);
+    expect(d.stockSources[0]?.kind).toBe('own-image');
+    expect(d.members[0]).toMatchObject({
+      fileName: 'stock-nrfb-v0.04.ufw',
+      size: 520192,
+      sha256: '02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e',
+    });
   });
 
   it('looks up by radio id', () => {

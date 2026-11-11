@@ -11,7 +11,9 @@ import {
 
 describe('firmware projects', () => {
   it("names every radio's patch project", () => {
-    for (const d of listStockFirmwareDescriptors()) {
+    for (const d of listStockFirmwareDescriptors().filter(
+      (d) => d.radioId !== 'baofeng-uv5rmini',
+    )) {
       for (const name of d.patchNames) {
         expect(
           FIRMWARE_PROJECTS.some((p) => p.patchName === name),

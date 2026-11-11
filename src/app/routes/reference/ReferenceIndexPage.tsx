@@ -60,6 +60,7 @@ const FIRMWARE_RADIO_SHORT_NAMES: Record<FirmwareRadioId, string> = {
   'retevis-rt95-head': 'RT95',
   'anytone-at-d890uv': 'AT-D890UV',
   'baofeng-dm32uv': 'DM-32UV',
+  'baofeng-uv5rmini': 'UV-5R Mini',
 };
 
 function badgesFor(item: ContextualStripItem): string[] {
