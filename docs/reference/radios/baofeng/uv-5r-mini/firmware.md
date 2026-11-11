@@ -208,6 +208,8 @@ patch for it. Start one bridge per case (a bridge serves one client, then exits)
 | `UV5RMINI_EMU_BRIDGE_CUT` | `127.0.0.1:<port>` of another fresh bridge, for the cut-and-continue case |
 | `UV5RMINI_EMU_CUT_AFTER`  | Loader erase and program count the power is cut after (default 100)       |
 
-Then `npx vitest run src/integrations/radio-io/radios/uv5r-mini/firmwareUpdate/uv5rMiniEmuBridge.test.ts`. Emulated time
-passes only while the host reads, so the test does not prove the reopen fits the loader's 700 ms window; time that on a
-real adapter. `__fixtures__/bridgeSerialPort.ts` is the test-only `SerialPortLike` that speaks the bridge's protocol.
+Then `npx vitest run src/integrations/radio-io/radios/uv5r-mini/firmwareUpdate/uv5rMiniEmuBridge.test.ts`. A whole
+session takes minutes (the emulated radio is kept in step with real time). The test port keeps the emulated clock
+running while the port is closed, so a slow reopen would miss the loader's hello window as it would on a radio; but a
+fake port reopens instantly, so the cost of a real adapter's close and open is not tested: time that with
+`/debug/serial-reopen`. `__fixtures__/bridgeSerialPort.ts` is the test-only `SerialPortLike` that speaks the bridge's protocol.
