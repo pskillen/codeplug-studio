@@ -62,6 +62,7 @@ import DebugIndexedDbRowViewerPage from './routes/debug/DebugIndexedDbRowViewerP
 import DebugLocalStoragePage from './routes/debug/DebugLocalStoragePage.tsx';
 import DebugLocalStorageViewerPage from './routes/debug/DebugLocalStorageViewerPage.tsx';
 import DebugD890EraseProbePage from './routes/debug/DebugD890EraseProbePage.tsx';
+import DebugSerialReopenPage from './routes/debug/DebugSerialReopenPage.tsx';
 import BuildsListPage from './routes/builds/BuildsListPage.tsx';
 import BuildsV2Layout from './routes/builds/BuildsV2Layout.tsx';
 import NewBuildPage from './routes/builds/NewBuildPage.tsx';
@@ -143,6 +144,7 @@ export const appRouter = createBrowserRouter([
         element: <DebugLocalStorageViewerPage />,
       },
       { path: '/debug/d890-erase-probe', element: <DebugD890EraseProbePage /> },
+      { path: '/debug/serial-reopen', element: <DebugSerialReopenPage /> },
       {
         element: <RequireActiveProject />,
         children: [

@@ -4,9 +4,15 @@
 
 import type { SerialPortLike } from './webSerialPipe.ts';
 
+/** One call the pipe made on the port, in order (`calls`). */
+export type FakeSerialCall =
+  | { type: 'open'; baudRate: number; bufferSize?: number }
+  | { type: 'close' }
+  | { type: 'setSignals'; signals: { dataTerminalReady?: boolean; requestToSend?: boolean } };
+
 export interface FakeSerialController {
   port: SerialPortLike;
-  /** Push bytes into the readable side. */
+  /** Push bytes into the readable side (of the current open; a reopen starts a fresh readable). */
   pushRead(data: Uint8Array): void;
   /** Close the readable side (simulates cable unplug / port close). */
   endRead(): void;
@@ -17,6 +23,8 @@ export interface FakeSerialController {
    * `writable` getter) after the previous one is closed while the port stays open.
    */
   writeStreams: Uint8Array[][];
+  /** `open` / `close` / `setSignals` calls the port received, in order. */
+  calls: FakeSerialCall[];
   /** Concatenate all written chunks. */
   writtenBytes(): Uint8Array;
 }
@@ -29,17 +37,25 @@ export function createFakeSerialPort(options?: {
    * its replies back through {@link FakeSerialController.pushRead} (the write promise waits for it).
    */
   onWrite?: (chunk: Uint8Array) => void | Promise<void>;
+  /**
+   * Like a real SerialPort, reject `close()` while the readable or writable is still locked by a reader or
+   * writer (default false: the pre-existing pipe `close()` never releases its locks).
+   */
+  strictLocks?: boolean;
 }): FakeSerialController {
   const initiallyOpen = options?.initiallyOpen ?? true;
   const onWrite = options?.onWrite;
+  const strictLocks = options?.strictLocks ?? false;
   const written: Uint8Array[] = [];
+  const calls: FakeSerialCall[] = [];
   let controller: ReadableStreamDefaultController<Uint8Array> | null = null;
 
-  const readable = new ReadableStream<Uint8Array>({
-    start(c) {
-      controller = c;
-    },
-  });
+  const makeReadable = (): ReadableStream<Uint8Array> =>
+    new ReadableStream<Uint8Array>({
+      start(c) {
+        controller = c;
+      },
+    });
 
   const writeStreams: Uint8Array[][] = [];
   let portOpen = initiallyOpen;
@@ -65,7 +81,7 @@ export function createFakeSerialPort(options?: {
     return stream;
   };
 
-  let openReadable: ReadableStream<Uint8Array> | null = initiallyOpen ? readable : null;
+  let openReadable: ReadableStream<Uint8Array> | null = initiallyOpen ? makeReadable() : null;
   if (initiallyOpen) {
     currentWritable = makeWritable();
   }
@@ -81,13 +97,17 @@ export function createFakeSerialPort(options?: {
       currentWritable ??= makeWritable();
       return currentWritable;
     },
-    async open(options?: { baudRate: number; bufferSize?: number }) {
-      void options;
+    async open(openOptions: { baudRate: number; bufferSize?: number }) {
+      calls.push({ type: 'open', ...openOptions });
       portOpen = true;
-      openReadable = readable;
+      openReadable ??= makeReadable();
       currentWritable ??= makeWritable();
     },
     async close() {
+      calls.push({ type: 'close' });
+      if (strictLocks && (openReadable?.locked || currentWritable?.locked)) {
+        throw new TypeError('InvalidStateError: streams are still locked.');
+      }
       portOpen = false;
       openReadable = null;
       currentWritable = null;
@@ -97,12 +117,16 @@ export function createFakeSerialPort(options?: {
         /* already closed */
       }
     },
+    async setSignals(signals: { dataTerminalReady?: boolean; requestToSend?: boolean }) {
+      calls.push({ type: 'setSignals', signals: { ...signals } });
+    },
   };
 
   return {
     port,
     written,
     writeStreams,
+    calls,
     pushRead(data: Uint8Array) {
       if (!controller) {
         throw new Error('ReadableStream controller not ready');

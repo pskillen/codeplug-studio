@@ -64,6 +64,8 @@ interface BytePipe {
   /** Block until `n` bytes or throw typed timeout / closed errors. */
   readExact(n: number, timeoutMs: number): Promise<Uint8Array>;
   flush?(): Promise<void>;
+  /** Web Serial only: close and reopen at a new rate (firmware updaters that switch rate). */
+  reopen?(baudRate: number): Promise<void>;
   close(): Promise<void>;
 }
 

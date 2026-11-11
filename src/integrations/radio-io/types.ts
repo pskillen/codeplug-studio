@@ -33,6 +33,14 @@ export interface BytePipe {
    * stray bytes instead of silently dropping them the way {@link flush} does.
    */
   drain?(): Promise<Uint8Array>;
+  /**
+   * Change the line rate (Web Serial pipe only; firmware updaters that switch rate need it). Web Serial cannot
+   * retune an open port, so the pipe lets written bytes leave the adapter, closes the port, opens it at `baudRate`
+   * with the same buffer size and signal choice, and reattaches. Bytes read before the call are discarded: none is
+   * delivered after it. The port is briefly closed, so the radio's side of the link sees a gap; callers with a
+   * reply deadline must budget for it. Throws `RadioClosedError` if the port cannot be closed or reopened.
+   */
+  reopen?(baudRate: number): Promise<void>;
   close(): Promise<void>;
 }
 

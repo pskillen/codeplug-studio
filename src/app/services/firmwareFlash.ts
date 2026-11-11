@@ -171,7 +171,9 @@ export async function runFirmwarePreflightProbe(input: {
   try {
     const probe = requireUpdater(radioId).preflight?.probe;
     if (!probe) throw new Error(`${radioId} has no pre-flight probe.`);
-    pipe = await openWebSerialPipe(port, probe.link.baudRate);
+    pipe = await openWebSerialPipe(port, probe.link.baudRate, {
+      raiseDtrRts: probe.link.raiseDtrRts,
+    });
     const { summary } = await probe.run(pipe, { signal });
     return { ok: true, summary };
   } catch (err) {
@@ -244,7 +246,9 @@ export async function runFirmwareFlash(input: {
   let stage = 'connect';
   try {
     const descriptor = requireUpdater(radioId);
-    pipe = await openWebSerialPipe(port, descriptor.link.baudRate);
+    pipe = await openWebSerialPipe(port, descriptor.link.baudRate, {
+      raiseDtrRts: descriptor.link.raiseDtrRts,
+    });
     const updater = descriptor.createUpdater();
     stage = 'identify';
     ident = await updater.identify(pipe, { signal });

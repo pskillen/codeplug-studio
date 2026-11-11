@@ -3,6 +3,20 @@
  * No radio handshake or memory layout (architecture §1 / #615).
  *
  * Buffering pattern adapted from NeonPlug BaseSerialConnection (cite only).
+ *
+ * DTR/RTS: `openWebSerialPipe(port, baud, { raiseDtrRts })` sets both lines right after `open()` resolves, high by
+ * default (every codeplug caller), low with `false` (a cable may wire them to PTT). The pipe remembers the choice and
+ * reapplies it after every `reopen`. It cannot stop what the OS does while opening: Linux asserts DTR/RTS on open
+ * (and drops them on the last close), Chromium on Windows enables them while configuring the port with flow control
+ * off, macOS is unverified. So the lines can pulse high for the duration of `open()` even with `false`.
+ *
+ * `reopen(baudRate)`: Web Serial cannot retune an open port. The pipe waits for written bytes to leave the adapter
+ * (`webSerialDrainMs`: bytes x 10 / old rate + 20 ms, because Chromium's close flushes and discards what is still
+ * queued), releases reader and writer, closes the port, opens it at the new rate with the same `bufferSize`,
+ * reapplies the signal choice and reattaches with a fresh write ring. Guarantees: queued writes leave first; no byte
+ * read before the reopen is delivered after it; `txBytesWritten` stays cumulative. Not guaranteed: how long it takes
+ * (adapter and OS dependent: time it with `/debug/serial-reopen`), or that the device sees no gap while the port is
+ * closed. A radio that repeats a hello at the new rate for only a short window needs the whole switch well inside it.
  */
 
 import type { BytePipe } from '../types.ts';
@@ -52,6 +66,22 @@ export interface SerialPortLike {
  */
 export const WEB_SERIAL_HOST_BUFFER_SIZE = 1_048_576;
 
+/** Margin added to the wire time of the written bytes before a reopen (a CH340 FIFO stall fix). */
+export const WEB_SERIAL_DRAIN_MARGIN_MS = 20;
+
+/**
+ * How long `reopen` waits before closing the port: `bytes × 10 / baudRate` seconds (10 bits per byte on the wire)
+ * plus {@link WEB_SERIAL_DRAIN_MARGIN_MS}, rounded up; 0 when nothing was written. Chromium's `close()` discards
+ * what the adapter has not sent (tcflush / PurgeComm), and nothing proves the adapter's own FIFO is empty once the
+ * writable resolves, so the wait comes first. E.g. 11 bytes at 9600 baud: 32 ms.
+ */
+export function webSerialDrainMs(bytesWritten: number, baudRate: number): number {
+  if (bytesWritten <= 0) {
+    return 0;
+  }
+  return Math.ceil((bytesWritten * 10 * 1000) / baudRate) + WEB_SERIAL_DRAIN_MARGIN_MS;
+}
+
 /**
  * What `openWebSerialPipe` actually returns (typed as BytePipe, whose optional `txBytesWritten` is the trace hook);
  * the extra accessors are for tests and diagnostics.
@@ -66,11 +96,16 @@ export interface WebSerialPipe extends BytePipe {
 }
 
 class WebSerialBytePipe implements WebSerialPipe {
-  readonly baudRate: number;
+  baudRate: number;
   txBytesWritten = 0;
+  /** Bytes handed to the writable since the pipe opened or last reopened: what the next reopen must let drain. */
+  private bytesSinceDrain = 0;
+  /** Bumped by `reopen`; a pump of an older generation delivers and signals nothing. */
+  private generation = 0;
   streamBytesWritten = 0;
   writerRotations = 0;
   private readonly bufferSize: number;
+  private readonly raiseDtrRts: boolean;
   private writeChain: Promise<void> = Promise.resolve();
   private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private writer: WritableStreamDefaultWriter<Uint8Array> | null = null;
@@ -81,9 +116,10 @@ class WebSerialBytePipe implements WebSerialPipe {
   private pumpPromise: Promise<void> | null = null;
   private waiters: Array<() => void> = [];
 
-  constructor(baudRate: number, bufferSize: number) {
+  constructor(baudRate: number, bufferSize: number, raiseDtrRts: boolean) {
     this.baudRate = baudRate;
     this.bufferSize = bufferSize;
+    this.raiseDtrRts = raiseDtrRts;
   }
 
   async attach(port: SerialPortLike): Promise<void> {
@@ -99,12 +135,101 @@ class WebSerialBytePipe implements WebSerialPipe {
         'Serial port is busy from a previous operation. Reconnect the cable or reload the page.',
       );
     }
-    this.reader = port.readable.getReader();
-    this.writer = port.writable.getWriter();
     this.txBytesWritten = 0;
+    this.bindStreams(port.readable, port.writable);
+  }
+
+  /** Take the reader and writer of a freshly opened port and start the pump (fresh ring, fresh pump generation). */
+  private bindStreams(
+    readable: ReadableStream<Uint8Array>,
+    writable: WritableStream<Uint8Array>,
+  ): void {
+    this.reader = readable.getReader();
+    this.writer = writable.getWriter();
     this.streamBytesWritten = 0;
     this.writerRotations = 0;
+    this.bytesSinceDrain = 0;
     this.pumpPromise = this.pump();
+  }
+
+  /**
+   * Change the line rate. Web Serial cannot retune an open port, so this closes it and opens it again at
+   * `baudRate`; see {@link BytePipe.reopen}. Serialised with writes, so queued frames leave first.
+   *
+   * Order: wait for the written bytes to leave the adapter ({@link webSerialDrainMs}), discard everything read so
+   * far, release reader and writer, `close()`, `open({ baudRate, bufferSize })`, reapply the DTR/RTS choice,
+   * reattach with a fresh write ring. Bytes read before the reopen are never delivered after it. `txBytesWritten`
+   * stays cumulative. A failed close or open leaves the pipe unusable (reads and writes throw `RadioClosedError`);
+   * call `close()`.
+   */
+  reopen(baudRate: number): Promise<void> {
+    const run = this.writeChain.then(() => this.reopenNow(baudRate));
+    this.writeChain = run.catch(() => undefined);
+    return run;
+  }
+
+  private async reopenNow(baudRate: number): Promise<void> {
+    const port = this.port;
+    if (!port || !this.writer || this.closed) {
+      throw new RadioClosedError('Not connected.');
+    }
+    const drainMs = webSerialDrainMs(this.bytesSinceDrain, this.baudRate);
+    if (drainMs > 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, drainMs));
+      if (this.closed) {
+        throw new RadioClosedError('Not connected.');
+      }
+    }
+
+    // From here nothing read on the old stream may reach a reader: the pump of the old generation drops its data.
+    this.generation += 1;
+    this.buf = new Uint8Array(0);
+    this.eof = false;
+    const { reader, writer, pumpPromise } = this;
+    this.reader = null;
+    this.writer = null;
+    try {
+      await reader?.cancel();
+    } catch {
+      /* ignore */
+    }
+    try {
+      await writer?.close();
+    } catch {
+      /* ignore */
+    }
+    for (const lock of [reader, writer]) {
+      try {
+        lock?.releaseLock();
+      } catch {
+        /* already released */
+      }
+    }
+    try {
+      await pumpPromise;
+    } catch {
+      /* ignore */
+    }
+    this.buf = new Uint8Array(0);
+    this.eof = false;
+
+    try {
+      await port.close();
+      await port.open({ baudRate, bufferSize: this.bufferSize });
+    } catch (err) {
+      throw new RadioClosedError(
+        `Serial port could not be reopened at ${baudRate} baud: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+    await applySerialSignals(port, this.raiseDtrRts);
+    if (this.closed) {
+      throw new RadioClosedError('Not connected.');
+    }
+    if (!port.readable || !port.writable) {
+      throw new RadioClosedError('Port streams unavailable after reopen.');
+    }
+    this.baudRate = baudRate;
+    this.bindStreams(port.readable, port.writable);
   }
 
   /**
@@ -136,6 +261,7 @@ class WebSerialBytePipe implements WebSerialPipe {
     await this.writer.write(data);
     this.streamBytesWritten += data.length;
     this.txBytesWritten += data.length;
+    this.bytesSinceDrain += data.length;
   }
 
   private async rotateWriter(): Promise<void> {
@@ -256,9 +382,13 @@ class WebSerialBytePipe implements WebSerialPipe {
     if (!reader) {
       return;
     }
+    const generation = this.generation;
     try {
       while (!this.closed) {
         const { value, done } = await reader.read();
+        if (generation !== this.generation) {
+          return;
+        }
         if (done) {
           this.eof = true;
           this.notifyWaiters();
@@ -273,6 +403,9 @@ class WebSerialBytePipe implements WebSerialPipe {
         }
       }
     } catch {
+      if (generation !== this.generation) {
+        return;
+      }
       this.eof = true;
       this.notifyWaiters();
     }
@@ -343,12 +476,24 @@ export async function requestWebSerialPort(
   return resolvePort(forceSelection, filters);
 }
 
-async function assertSerialSignals(port: SerialPortLike): Promise<void> {
+/**
+ * Set DTR/RTS to the caller's choice right after an open. `raise: false` drives both low (a cable may wire them to
+ * PTT); `true` raises both. Best effort: a port or driver without `setSignals` is left as the OS configured it.
+ */
+async function applySerialSignals(port: SerialPortLike, raise: boolean): Promise<void> {
   try {
-    await port.setSignals?.({ dataTerminalReady: true, requestToSend: true });
+    await port.setSignals?.({ dataTerminalReady: raise, requestToSend: raise });
   } catch {
     /* RTS/DTR unsupported or rejected — best effort (CHIRP WANTS_RTS/DTR). */
   }
+}
+
+export interface OpenWebSerialPipeOptions {
+  /**
+   * Raise DTR and RTS after every open (default `true`, as every codeplug caller needs). `false` sets both low
+   * instead, for cables that wire them to PTT. The pipe remembers the choice and reapplies it on `reopen`.
+   */
+  raiseDtrRts?: boolean;
 }
 
 /**
@@ -356,17 +501,24 @@ async function assertSerialSignals(port: SerialPortLike): Promise<void> {
  *
  * The write guard assumes the port was opened with `WEB_SERIAL_HOST_BUFFER_SIZE` (this function does so itself) and
  * that its writable stream is fresh (nothing written yet). Ports opened elsewhere must use the same `bufferSize`.
+ *
+ * DTR/RTS are set only after `open()` resolves; the pipe cannot stop an OS-level pulse during the open itself.
  */
-export async function openWebSerialPipe(port: SerialPortLike, baudRate: number): Promise<BytePipe> {
+export async function openWebSerialPipe(
+  port: SerialPortLike,
+  baudRate: number,
+  options?: OpenWebSerialPipeOptions,
+): Promise<BytePipe> {
+  const raiseDtrRts = options?.raiseDtrRts ?? true;
   if (!port.readable || !port.writable) {
     await port.open({ baudRate, bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE });
-    await assertSerialSignals(port);
+    await applySerialSignals(port, raiseDtrRts);
   } else if (port.readable.locked || port.writable.locked) {
     throw new RadioClosedError(
       'Serial port is busy from a previous operation. Reconnect the cable or reload the page.',
     );
   }
-  const pipe = new WebSerialBytePipe(baudRate, WEB_SERIAL_HOST_BUFFER_SIZE);
+  const pipe = new WebSerialBytePipe(baudRate, WEB_SERIAL_HOST_BUFFER_SIZE, raiseDtrRts);
   await pipe.attach(port);
   return pipe;
 }

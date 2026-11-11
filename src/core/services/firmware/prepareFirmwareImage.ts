@@ -37,6 +37,11 @@ export interface PreparedFirmwareImage {
   readonly versionStamp?: string;
   /** The bytes that will be flashed. */
   readonly package: FirmwarePackage;
+  /**
+   * The verified stock the image was built from; set for every target. An updater's `checkImage` compares the image
+   * against it where the radio's rules need the stock bytes (UV-5R Mini).
+   */
+  readonly stockPackage?: FirmwarePackage;
   /** Per role, recomputed here. */
   readonly sha256: Readonly<Record<string, string>>;
   readonly verifyHint: string;
@@ -84,6 +89,7 @@ export async function prepareFirmwareImage(input: {
         stockVersion: descriptor.version,
         title: stockFirmwareTitle(descriptor.version),
         package: pkg,
+        stockPackage: stock.package,
         sha256,
         verifyHint: descriptor.stockVerifyHint,
       } as PreparedFirmwareImage;
@@ -136,6 +142,7 @@ export async function prepareFirmwareImage(input: {
         patchSha256: patch.sha256,
         versionStamp: readFirmwarePatchVersionStamp(pkg, patch.parsed),
         package: pkg,
+        stockPackage: stock.package,
         sha256,
         verifyHint: patch.release?.verifyHint ?? DEFAULT_PATCH_VERIFY_HINT,
       } as PreparedFirmwareImage;

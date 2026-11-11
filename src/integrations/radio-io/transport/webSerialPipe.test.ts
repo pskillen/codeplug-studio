@@ -16,6 +16,7 @@ import {
   requestWebSerialPipe,
   requestWebSerialPort,
   WEB_SERIAL_HOST_BUFFER_SIZE,
+  webSerialDrainMs,
   type SerialPortLike,
   type WebSerialPipe,
 } from './webSerialPipe.ts';
@@ -363,5 +364,256 @@ describe('requestWebSerialPipe', () => {
     const port = await requestWebSerialPort(false, [{ usbVendorId: 0x1234 }]);
     expect(port).toBe(fake.port);
     expect(requestPort).not.toHaveBeenCalled();
+  });
+});
+
+describe('openWebSerialPipe DTR/RTS choice', () => {
+  const high = { type: 'setSignals', signals: { dataTerminalReady: true, requestToSend: true } };
+  const low = { type: 'setSignals', signals: { dataTerminalReady: false, requestToSend: false } };
+
+  it('raises DTR and RTS right after open by default', async () => {
+    const fake = createFakeSerialPort({ initiallyOpen: false });
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    expect(fake.calls).toEqual([
+      { type: 'open', baudRate: 9600, bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE },
+      high,
+    ]);
+    await pipe.close();
+  });
+
+  it('raises them for an explicit raiseDtrRts: true', async () => {
+    const fake = createFakeSerialPort({ initiallyOpen: false });
+    const pipe = await openWebSerialPipe(fake.port, 9600, { raiseDtrRts: true });
+    expect(fake.calls.at(-1)).toEqual(high);
+    await pipe.close();
+  });
+
+  it('sets both low right after open with raiseDtrRts: false, and never raises them', async () => {
+    const fake = createFakeSerialPort({ initiallyOpen: false });
+    const pipe = await openWebSerialPipe(fake.port, 9600, { raiseDtrRts: false });
+    expect(fake.calls).toEqual([
+      { type: 'open', baudRate: 9600, bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE },
+      low,
+    ]);
+    await pipe.close();
+  });
+
+  it('tolerates a port whose setSignals rejects', async () => {
+    const fake = createFakeSerialPort({ initiallyOpen: false });
+    fake.port.setSignals = async () => {
+      throw new Error('unsupported');
+    };
+    const pipe = await openWebSerialPipe(fake.port, 9600, { raiseDtrRts: false });
+    await pipe.close();
+  });
+});
+
+describe('webSerialDrainMs', () => {
+  it('is bytes x 10 / baud plus a 20 ms margin, rounded up', () => {
+    expect(webSerialDrainMs(11, 9600)).toBe(32); // 11.46 ms on the wire + 20
+    expect(webSerialDrainMs(1, 115200)).toBe(21);
+    expect(webSerialDrainMs(960, 9600)).toBe(1020);
+  });
+
+  it('is zero when nothing was written', () => {
+    expect(webSerialDrainMs(0, 9600)).toBe(0);
+  });
+});
+
+describe('WebSerialPipe.reopen', () => {
+  const closeCalls = (fake: ReturnType<typeof createFakeSerialPort>) =>
+    fake.calls.filter((c) => c.type === 'close').length;
+  const tick = () => new Promise<void>((r) => setTimeout(r, 0));
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('waits the drain time for written bytes before closing the port', async () => {
+    vi.useFakeTimers();
+    const fake = createFakeSerialPort();
+    const pipe = (await openWebSerialPipe(fake.port, 9600)) as WebSerialPipe;
+    await pipe.write(new Uint8Array(11));
+
+    let done = false;
+    const reopening = pipe.reopen!(115200).then(() => {
+      done = true;
+    });
+    await vi.advanceTimersByTimeAsync(31);
+    expect(closeCalls(fake)).toBe(0);
+    expect(done).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    await reopening;
+    expect(fake.calls.map((c) => c.type)).toEqual(['close', 'open', 'setSignals']);
+    expect(fake.calls[1]).toEqual({
+      type: 'open',
+      baudRate: 115200,
+      bufferSize: WEB_SERIAL_HOST_BUFFER_SIZE,
+    });
+    expect(pipe.baudRate).toBe(115200);
+    await pipe.close();
+  });
+
+  it('does not wait when nothing was written', async () => {
+    vi.useFakeTimers();
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    await pipe.reopen!(57600);
+    expect(closeCalls(fake)).toBe(1);
+    expect(pipe.baudRate).toBe(57600);
+    await pipe.close();
+  });
+
+  it('only waits for bytes written since the last reopen', async () => {
+    vi.useFakeTimers();
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    await pipe.write(new Uint8Array(11));
+    const first = pipe.reopen!(115200);
+    await vi.advanceTimersByTimeAsync(32);
+    await first;
+    await pipe.reopen!(9600); // nothing written at 115200: no wait, so no timer needed
+    expect(closeCalls(fake)).toBe(2);
+    await pipe.close();
+  });
+
+  it('never delivers bytes read before the reopen', async () => {
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    fake.pushRead(new Uint8Array([1, 2, 3]));
+    await tick();
+    await expect(pipe.readExact(1, 200)).resolves.toEqual(new Uint8Array([1]));
+    fake.pushRead(new Uint8Array([8, 9])); // still unread when the reopen starts
+
+    await pipe.reopen!(115200);
+    fake.pushRead(new Uint8Array([7]));
+    await expect(pipe.readExact(1, 500)).resolves.toEqual(new Uint8Array([7]));
+    await expect(pipe.readExact(1, 30)).rejects.toBeInstanceOf(RadioTimeoutError);
+    await pipe.close();
+  });
+
+  it('drops bytes that arrive on the old stream while it drains', async () => {
+    vi.useFakeTimers();
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    await pipe.write(new Uint8Array(11));
+    const reopening = pipe.reopen!(115200);
+    fake.pushRead(new Uint8Array([0xaa, 0xbb]));
+    await vi.advanceTimersByTimeAsync(40);
+    await reopening;
+    fake.pushRead(new Uint8Array([0xcc]));
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(pipe.readExact(1, 100)).resolves.toEqual(new Uint8Array([0xcc]));
+    await pipe.close();
+  });
+
+  it('reapplies the DTR/RTS choice after the reopen', async () => {
+    const low = { type: 'setSignals', signals: { dataTerminalReady: false, requestToSend: false } };
+    const fake = createFakeSerialPort({ initiallyOpen: false });
+    const pipe = await openWebSerialPipe(fake.port, 9600, { raiseDtrRts: false });
+    await pipe.reopen!(115200);
+    expect(fake.calls.map((c) => c.type)).toEqual([
+      'open',
+      'setSignals',
+      'close',
+      'open',
+      'setSignals',
+    ]);
+    expect(fake.calls.filter((c) => c.type === 'setSignals')).toEqual([low, low]);
+    await pipe.close();
+  });
+
+  it('raises them again after the reopen by default', async () => {
+    const fake = createFakeSerialPort({ initiallyOpen: false });
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    await pipe.reopen!(115200);
+    expect(fake.calls.at(-1)).toEqual({
+      type: 'setSignals',
+      signals: { dataTerminalReady: true, requestToSend: true },
+    });
+    await pipe.close();
+  });
+
+  it('starts a fresh write ring: a frame right after the reopen never straddles', async () => {
+    vi.useFakeTimers();
+    const fake = createFakeSerialPort();
+    const pipe = (await openWebSerialPipe(fake.port, 115200)) as WebSerialPipe;
+    const nearEnd = WEB_SERIAL_HOST_BUFFER_SIZE - 2;
+    await pipe.write(new Uint8Array(nearEnd));
+    expect(pipe.streamBytesWritten).toBe(nearEnd);
+
+    const reopening = pipe.reopen!(9600);
+    await vi.runAllTimersAsync();
+    await reopening;
+    expect(pipe.streamBytesWritten).toBe(0);
+    expect(pipe.writerRotations).toBe(0);
+
+    await pipe.write(new Uint8Array(10)); // would have straddled the old ring
+    expect(pipe.writerRotations).toBe(0);
+    expect(pipe.streamBytesWritten).toBe(10);
+    expect(pipe.txBytesWritten).toBe(nearEnd + 10); // cumulative across the reopen
+    expect(fake.writeStreams).toHaveLength(2);
+    expect(fake.writeStreams[1]).toHaveLength(1);
+    await pipe.close();
+  });
+
+  it('lets writes and reads work on the new stream', async () => {
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    await pipe.reopen!(115200);
+    await pipe.write(new Uint8Array([0x55]));
+    expect(fake.writeStreams.at(-1)).toEqual([new Uint8Array([0x55])]);
+    await pipe.close();
+  });
+
+  it('serialises with queued writes: they leave before the reopen', async () => {
+    vi.useFakeTimers();
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    const w = pipe.write(new Uint8Array([1, 2, 3]));
+    const reopening = pipe.reopen!(115200);
+    await vi.runAllTimersAsync();
+    await w;
+    await reopening;
+    expect(fake.writeStreams[0]).toEqual([new Uint8Array([1, 2, 3])]);
+    await pipe.close();
+  });
+
+  it('releases the stream locks so a strict port accepts the close', async () => {
+    const fake = createFakeSerialPort({ strictLocks: true });
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    await expect(pipe.reopen!(115200)).resolves.toBeUndefined();
+    await pipe.close();
+  });
+
+  it('close() after a reopen closes the port exactly once more', async () => {
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    await pipe.reopen!(115200);
+    expect(closeCalls(fake)).toBe(1);
+    await pipe.close();
+    expect(closeCalls(fake)).toBe(2);
+    await pipe.close();
+    expect(closeCalls(fake)).toBe(2);
+  });
+
+  it('turns a failed reopen into RadioClosedError and leaves the pipe closeable', async () => {
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    fake.port.open = async () => {
+      throw new Error('device gone');
+    };
+    await expect(pipe.reopen!(115200)).rejects.toBeInstanceOf(RadioClosedError);
+    await expect(pipe.write(new Uint8Array([1]))).rejects.toBeInstanceOf(RadioClosedError);
+    await expect(pipe.readExact(1, 20)).rejects.toBeInstanceOf(RadioClosedError);
+    await expect(pipe.close()).resolves.toBeUndefined();
+  });
+
+  it('rejects when the pipe is already closed', async () => {
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 9600);
+    await pipe.close();
+    await expect(pipe.reopen!(115200)).rejects.toBeInstanceOf(RadioClosedError);
   });
 });
