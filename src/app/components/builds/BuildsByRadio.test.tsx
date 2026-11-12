@@ -51,15 +51,16 @@ describe('BuildsByRadio', () => {
     const stock = screen.getAllByRole('link', { name: '+ Another Stock build' });
     expect(stock.map((l) => l.getAttribute('href'))).toEqual([
       '/builds/new?target=baofeng-dm32uv',
+      '/builds/new?target=baofeng-uv5r-mini',
       '/builds/new?target=retevis-rt95',
     ]);
   });
 
   it('gives single-firmware models a header "+ New" for their target', () => {
-    renderTree([build('baofeng-uv5r-mini', 'Mini')]);
+    renderTree([build('baofeng-uv21', 'UV21')]);
     expect(screen.getByRole('link', { name: '+ New' })).toHaveAttribute(
       'href',
-      '/builds/new?target=baofeng-uv5r-mini',
+      '/builds/new?target=baofeng-uv21',
     );
     expect(screen.queryByText(/Another/)).not.toBeInTheDocument();
   });
