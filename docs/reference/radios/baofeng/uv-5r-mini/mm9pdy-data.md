@@ -43,7 +43,9 @@ Write is hidden on the production site until the MM9PDY Mini firmware ships, and
   interlock refuses one.
 - **An empty table is still written.** A build with no zones writes the header with zero zones, which retires an older
   table on the radio.
-- **Restore** writes the clone regions only; it never carries the table.
+- **Backup and Restore.** On this target, Backup adds the table as a fourth region (`zones`) and Restore writes it
+  back header first, after the clone. Restore is disabled on the production site like Write. A stock target leaves
+  the table out of Restore and refuses a request that names it. Details: [backup-restore.md](backup-restore.md).
 
 Channels are numbered in zone order: the first zone's channels first, then the next zone's new channels, then any
 channel in no zone. A pinned channel keeps its number. Zones point at channel numbers.

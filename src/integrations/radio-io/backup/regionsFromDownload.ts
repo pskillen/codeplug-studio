@@ -61,7 +61,7 @@ export interface RegionsFromDownloadInput {
    * Tag `0x02` is calibration only inside this window.
    */
   dm32ConfigWindow?: Dm32ConfigWindow;
-  /** Extra named bins (OpenGD77 occupied User Database). */
+  /** Extra named bins (OpenGD77 occupied User Database, UV-5R Mini MM9PDY zone table). */
   extraRegions?: readonly { region: RadioBackupRegionV1; bytes: Uint8Array }[];
 }
 
@@ -338,7 +338,8 @@ export function regionsFromDownload(input: RegionsFromDownloadInput): BackupRegi
 
   const uv = uvLayoutFor(modelId);
   if (uv) {
-    return fromUvLayout(uv, image);
+    // UV-5R Mini MM9PDY: the zone table, after the clone regions.
+    return appendExtraRegions(fromUvLayout(uv, image), input.extraRegions);
   }
   if (isOpenGd77Model(modelId)) {
     return fromOpenGd77(image, input.extraRegions);

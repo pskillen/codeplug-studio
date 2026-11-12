@@ -53,7 +53,16 @@ import {
   atD890MaintenanceUnlocked,
   sanitiseAtD890RangeCode,
 } from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
+import { Uv5rMiniProtocol } from '@integrations/radio-io/radios/uv5r-mini/protocol.ts';
+import {
+  UV5R_MINI_ZONES_REGION_ID,
+  uv5rMiniArchiveImageWithZoneTable,
+  uv5rMiniBackupRestoreProfile,
+  uv5rMiniZoneBackupRegion,
+} from '@integrations/radio-io/radios/uv5r-mini/zoneBackup.ts';
+import { UV5R_MINI_MODEL_ID } from '@integrations/radio-io/radios/uv5r-mini/hydration.ts';
 import { readAtD890ConnectedRadioIdentity } from './radioIoSession.ts';
+import { resolveRadioWriteGate } from './radioWriteEnvGate.ts';
 
 export type RadioBackupSession = {
   source: 'live-read' | 'file';
@@ -217,8 +226,16 @@ function packAtD890BackupFromImage(
 
 export async function backupLiveRadioSession(
   session: RadioSession,
-  opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
+  opts?: {
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
+    /** The build's Web Serial profile. The UV-5R Mini MM9PDY profile also backs up the zone table. */
+    profileId?: string;
+  },
 ): Promise<RadioBackupSession> {
+  if (session.radio instanceof Uv5rMiniProtocol) {
+    session.radio.setBackupRestoreProfile(uv5rMiniBackupRestoreProfile(opts?.profileId));
+  }
   const image = await session.radio.download({
     onProgress: opts?.onProgress,
     signal: opts?.signal,
@@ -259,6 +276,18 @@ export async function backupLiveRadioSession(
       ];
     }
   }
+  let archiveImage = image;
+  if (
+    session.radio instanceof Uv5rMiniProtocol &&
+    session.radio.getBackupRestoreProfile() === 'mm9pdy'
+  ) {
+    const sector = await session.radio.downloadZoneTable({
+      onProgress: opts?.onProgress,
+      signal: opts?.signal,
+    });
+    extraRegions = [uv5rMiniZoneBackupRegion(sector)];
+    archiveImage = uv5rMiniArchiveImageWithZoneTable(image, sector);
+  }
   const dm32ConfigWindow =
     session.radio instanceof Dm32uvProtocol
       ? (session.radio.getLiveConfigWindow() ?? undefined)
@@ -293,7 +322,7 @@ export async function backupLiveRadioSession(
   return {
     source: 'live-read',
     manifest,
-    image,
+    image: archiveImage,
     inspectBag,
     zipBytes,
     userDatabaseOccupied,
@@ -351,7 +380,8 @@ export type RadioRestoreErrorCode =
   | 'serial-mismatch'
   | 'address-map-mismatch'
   | 'no-restore-hook'
-  | 'no-restorable-regions';
+  | 'no-restorable-regions'
+  | 'prod-disabled';
 
 export class RadioRestoreError extends Error {
   readonly code: RadioRestoreErrorCode;
@@ -384,8 +414,48 @@ export function descriptorSupportsRestore(descriptor: RadioDescriptor | undefine
   return protocolSupportsRestore(descriptor.protocolFactory());
 }
 
-export function defaultRestorableRegionIds(manifest: RadioBackupManifestV1): string[] {
-  return manifest.regions.filter((r) => r.restoreRole === 'restorable').map((r) => r.id);
+export function defaultRestorableRegionIds(
+  manifest: RadioBackupManifestV1,
+  /** The build's Web Serial profile: leaves out regions it cannot restore ({@link restoreRegionUnavailableReason}). */
+  profileId?: string,
+): string[] {
+  return manifest.regions
+    .filter((r) => r.restoreRole === 'restorable')
+    .filter(
+      (r) => profileId === undefined || !restoreRegionUnavailableReason(manifest, r, profileId),
+    )
+    .map((r) => r.id);
+}
+
+/**
+ * Why a restorable region cannot be restored from this build's profile, or `null`. The UV-5R Mini zone table
+ * restores on the MM9PDY profile only; the protocol refuses it on any other (a stock Restore leaves it out).
+ */
+export function restoreRegionUnavailableReason(
+  manifest: RadioBackupManifestV1,
+  region: RadioBackupManifestV1['regions'][number],
+  profileId: string | undefined,
+): string | null {
+  if (
+    manifest.radioModelId === UV5R_MINI_MODEL_ID &&
+    region.id === UV5R_MINI_ZONES_REGION_ID &&
+    uv5rMiniBackupRestoreProfile(profileId) !== 'mm9pdy'
+  ) {
+    return 'Restores from the UV-5R Mini (MM9PDY) target only';
+  }
+  return null;
+}
+
+export const RADIO_RESTORE_PROD_DISABLED_MESSAGE =
+  'Restore to this radio target is disabled on the production site.';
+
+/** Restore follows the Write gate: a profile whose Write is hidden on prod has no Restore there either. */
+export function isRestoreHiddenForProfile(
+  descriptor: RadioDescriptor | undefined,
+  profileId: string | undefined,
+  buildEnv?: string,
+): boolean {
+  return resolveRadioWriteGate(descriptor, buildEnv, profileId) === 'hidden';
 }
 
 /**
@@ -484,6 +554,10 @@ export async function restoreRadioBackup(
     liveAddressMap?: RestoreAddressMapLive;
     onProgress?: ProgressFn;
     signal?: AbortSignal;
+    /** The build's Web Serial profile: the prod gate, and the UV-5R Mini MM9PDY zone table. */
+    profileId?: string;
+    /** Tests only: the deploy environment for the prod gate (default `__BUILD_ENV__`). */
+    buildEnv?: string;
   },
 ): Promise<void> {
   if (!protocolSupportsRestore(session.radio) || !session.radio.restoreFromBackup) {
@@ -491,6 +565,15 @@ export async function restoreRadioBackup(
       'no-restore-hook',
       `Restore is not available for ${session.descriptor.label} yet.`,
     );
+  }
+  if (
+    opts?.profileId !== undefined &&
+    isRestoreHiddenForProfile(session.descriptor, opts.profileId, opts.buildEnv)
+  ) {
+    throw new RadioRestoreError('prod-disabled', RADIO_RESTORE_PROD_DISABLED_MESSAGE);
+  }
+  if (session.radio instanceof Uv5rMiniProtocol) {
+    session.radio.setBackupRestoreProfile(uv5rMiniBackupRestoreProfile(opts?.profileId));
   }
   await assertRestoreIdentity(session, archive.manifest, { signal: opts?.signal });
   const liveAddressMap = opts?.liveAddressMap ?? readLiveRestoreAddressMap(session);
