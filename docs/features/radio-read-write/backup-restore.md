@@ -111,6 +111,8 @@ Two actions:
 
 On the AT-D890UV a third section, **Vital data**, offers **Back up vital data** (calibration and identity, read twice, own zip, sensitivity warning) and **Open vital data file** (read-only summary: serial, frequency range, per-unit hash, local info decode). It is separate from the codeplug zip and has no restore.
 
+On the Retevis RT95 a **Safety backup** section offers **Back up calibration** (EEPROM `0x3B00`–`0x3FFF`, the part a codeplug write cannot rebuild), **Back up full EEPROM** and **Use a backup file I already have**. It asks first for the serial number typed from the radio's label, which is how a backup is matched to a radio. The file downloads, and a saved record is made only when the operator confirms they saved it (or verifies a file they already have). Read-only; Studio has no restore for it. Details: [rt95/backup-restore.md](../../reference/radios/retevis/rt95/backup-restore.md#safety-backup-calibration-region).
+
 Copy: this is not Write; the zip stays on the operator’s disk; the file may contain contact banks / callsigns.
 
 For radios whose restore depends on a live address map (DM-32): **warn at backup** that restore will not work after a factory reset. A factory-reset radio is already in a working state; remapping is out of scope.
@@ -303,7 +305,7 @@ Do not revive stash-vs-live asserts against project hydration.
 
 ## Privacy
 
-In-app warning that the zip can contain contact banks and callsigns. Filename is operator-visible. No analytics of zip contents.
+In-app warning that the zip can contain contact banks and callsigns. Filename is operator-visible. No analytics of zip contents. The RT95 safety-backup record in browser storage holds the serial, file name, fingerprint and date, never the backup bytes.
 
 ---
 
