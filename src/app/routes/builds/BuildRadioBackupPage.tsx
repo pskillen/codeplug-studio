@@ -35,9 +35,12 @@ import {
   defaultRestorableRegionIds,
   descriptorSupportsRestore,
   downloadRadioBackupZip,
+  isRestoreHiddenForProfile,
   openRadioBackupZip,
+  RADIO_RESTORE_PROD_DISABLED_MESSAGE,
   RESTORE_RANGE_MISMATCH_NOTE,
   restoreRadioBackup,
+  restoreRegionUnavailableReason,
   type RadioBackupSession,
 } from '../../services/radioBackupRestore.ts';
 import { Button, Checkbox, ConfirmModal } from '../../components/v2/index.ts';
@@ -141,7 +144,9 @@ export default function BuildRadioBackupPage() {
   const descriptors = descriptorsForEgress(radioEgress);
   const descriptor = descriptors[0];
   const serialOk = isRadioSerialSupported();
-  const restoreAvailable = descriptorSupportsRestore(descriptor);
+  const restoreProdHidden = isRestoreHiddenForProfile(descriptor, radioEgress.profileId);
+  const restoreAvailable = descriptorSupportsRestore(descriptor) && !restoreProdHidden;
+  const profileId = radioEgress.profileId;
   const dm32Model = (descriptor?.modelIds ?? []).some((id) => /dm-?32/i.test(id));
   const d890Model = (descriptor?.modelIds ?? []).includes('AT-D890UV');
   const warnFactoryReset = dm32Model;
@@ -184,7 +189,7 @@ export default function BuildRadioBackupPage() {
 
   function applyBackupSession(next: RadioBackupSession): void {
     setBackup(next);
-    setSelectedRegionIds(new Set(defaultRestorableRegionIds(next.manifest)));
+    setSelectedRegionIds(new Set(defaultRestorableRegionIds(next.manifest, profileId)));
   }
 
   async function releaseSession(): Promise<void> {
@@ -208,6 +213,7 @@ export default function BuildRadioBackupPage() {
       const result = await backupLiveRadioSession(session, {
         onProgress,
         signal: abortRef.current!.signal,
+        profileId,
       });
       await releaseSession();
       addBackupThisSession(build.id, {
@@ -316,7 +322,9 @@ export default function BuildRadioBackupPage() {
         live?.radio instanceof AtD890uvProtocol &&
         atD890RangeMismatch(backup, live.radio.getIdentBandCode());
       setRangeMismatch(mismatch);
-      if (mismatch) setSelectedRegionIds(new Set(defaultRestorableRegionIds(backup.manifest)));
+      if (mismatch) {
+        setSelectedRegionIds(new Set(defaultRestorableRegionIds(backup.manifest, profileId)));
+      }
       setBusy(false);
       clearProgress();
       setRestoreConfirmOpen(true);
@@ -349,10 +357,11 @@ export default function BuildRadioBackupPage() {
         { manifest: backup.manifest, image: backup.image },
         {
           regionIds: rangeMismatch
-            ? defaultRestorableRegionIds(backup.manifest)
+            ? defaultRestorableRegionIds(backup.manifest, profileId)
             : [...selectedRegionIds],
           onProgress,
           signal: abortRef.current!.signal,
+          profileId,
         },
       );
       await releaseSession();
@@ -470,9 +479,11 @@ export default function BuildRadioBackupPage() {
                 Restore to radio
               </Button>
               <Text size="sm" mt="sm" c="dimmed">
-                {restoreAvailable
-                  ? 'Restore writes selected restorable regions from this zip. Inspect-only regions are never sent.'
-                  : 'Restore not available for this radio yet. Backup and inspect are available.'}
+                {restoreProdHidden
+                  ? RADIO_RESTORE_PROD_DISABLED_MESSAGE
+                  : restoreAvailable
+                    ? 'Restore writes selected restorable regions from this zip. Inspect-only regions are never sent.'
+                    : 'Restore not available for this radio yet. Backup and inspect are available.'}
               </Text>
             </FormSection>
             <FormSection title="Archive">
@@ -529,36 +540,47 @@ export default function BuildRadioBackupPage() {
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {backup.manifest.regions.map((region) => (
-                    <Table.Tr key={region.id}>
-                      <Table.Td>{region.label}</Table.Td>
-                      <Table.Td>
-                        <Text ff="monospace" size="sm">
-                          0x{region.address.toString(16)}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>{region.byteLength}</Table.Td>
-                      <Table.Td>
-                        {region.restoreRole === 'restorable' ? (
-                          <Group gap="xs">
-                            <Checkbox
-                              checked={rangeMismatch || selectedRegionIds.has(region.id)}
-                              disabled={busy || !restoreAvailable || rangeMismatch}
-                              onCheckedChange={(checked) =>
-                                toggleRestorableRegion(region.id, checked)
-                              }
-                              aria-label={`Restore ${region.label}`}
-                            />
-                            <Text size="sm">Restorable</Text>
-                          </Group>
-                        ) : (
-                          <Text size="sm" c="dimmed">
-                            Inspect only
+                  {backup.manifest.regions.map((region) => {
+                    const unavailable = restoreRegionUnavailableReason(
+                      backup.manifest,
+                      region,
+                      profileId,
+                    );
+                    return (
+                      <Table.Tr key={region.id}>
+                        <Table.Td>{region.label}</Table.Td>
+                        <Table.Td>
+                          <Text ff="monospace" size="sm">
+                            0x{region.address.toString(16)}
                           </Text>
-                        )}
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
+                        </Table.Td>
+                        <Table.Td>{region.byteLength}</Table.Td>
+                        <Table.Td>
+                          {region.restoreRole === 'restorable' && unavailable ? (
+                            <Text size="sm" c="dimmed">
+                              {unavailable}
+                            </Text>
+                          ) : region.restoreRole === 'restorable' ? (
+                            <Group gap="xs">
+                              <Checkbox
+                                checked={rangeMismatch || selectedRegionIds.has(region.id)}
+                                disabled={busy || !restoreAvailable || rangeMismatch}
+                                onCheckedChange={(checked) =>
+                                  toggleRestorableRegion(region.id, checked)
+                                }
+                                aria-label={`Restore ${region.label}`}
+                              />
+                              <Text size="sm">Restorable</Text>
+                            </Group>
+                          ) : (
+                            <Text size="sm" c="dimmed">
+                              Inspect only
+                            </Text>
+                          )}
+                        </Table.Td>
+                      </Table.Tr>
+                    );
+                  })}
                 </Table.Tbody>
               </Table>
             </FormSection>
