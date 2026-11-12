@@ -74,6 +74,12 @@ export function checkRt95Package(pkg: Rt95HeadPackage, target: Rt95FirmwareTarge
   if (rule.kind === 'range' && sp <= rule.minExclusive) {
     throw new RadioInterlockError(target.copy.otherTargetImage);
   }
+  if (rule.kind === 'exact' && rule.otherTargetRange) {
+    const o = rule.otherTargetRange;
+    if (sp > o.minExclusive && sp <= o.maxInclusive) {
+      throw new RadioInterlockError(target.copy.otherTargetImage);
+    }
+  }
   const spBad = rule.kind === 'range' ? sp > rule.maxInclusive : sp !== rule.value;
   if (
     spBad ||

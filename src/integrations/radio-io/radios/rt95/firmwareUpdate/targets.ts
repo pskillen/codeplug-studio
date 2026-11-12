@@ -34,7 +34,15 @@ export interface Rt95FirmwareTarget {
   /** Initial-SP rule. `range`: an SP at or below `minExclusive` is the other target's image. */
   readonly sp:
     | { readonly kind: 'range'; readonly minExclusive: number; readonly maxInclusive: number }
-    | { readonly kind: 'exact'; readonly value: number };
+    | {
+        readonly kind: 'exact';
+        readonly value: number;
+        /** An SP in this range (> min, <= max) is the other target's image: `copy.otherTargetImage`. */
+        readonly otherTargetRange?: {
+          readonly minExclusive: number;
+          readonly maxInclusive: number;
+        };
+      };
   /** `.CDD` offset of the `RT95-P\0` model string. */
   readonly modelOffset: number;
   /**
@@ -105,7 +113,12 @@ export function createRt95MainTarget(
     label: 'RT95 main board',
     limit: RT95_MAIN_FW_LIMIT,
     maxFrames: RT95_MAIN_FW_MAX_FRAMES,
-    sp: { kind: 'exact', value: RT95_MAIN_FW_SP },
+    sp: {
+      kind: 'exact',
+      value: RT95_MAIN_FW_SP,
+      // The head's SP range: a head image gets the plain-words refusal.
+      otherTargetRange: { minExclusive: RT95_HEAD_FW_SP_MIN, maxInclusive: RT95_HEAD_FW_SP_MAX },
+    },
     modelOffset: RT95_MAIN_FW_MODEL_OFFSET,
     checkImageIdentity: createRt95MainImageIdentityCheck(stock),
     copy: {
