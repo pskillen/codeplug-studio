@@ -61,7 +61,10 @@ export const UV5RMINI_MSG = {
     "This firmware is already on the radio, or the radio holds firmware this image can't replace. Nothing was erased.",
   loaderFinished:
     'The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair.',
-  loaderUnexpected: "Stop and ask for help; don't retry.",
+  loaderOtherLayout: 'The file is for the other hardware layout; nothing was erased.',
+  loaderNothingWritten: 'Nothing was written; the radio boots the installed app.',
+  loaderNothingWrittenAgain:
+    " Don't send this file again: it can only end the same way. If the radio doesn't reach its normal screen, it needs a case-open repair.",
   recover:
     'Recover the radio: leave the cable in, switch the radio off and on with no keys held, then press Connect and flash again with the same files.',
   alreadyHad: 'The radio already had this firmware.',
@@ -434,7 +437,16 @@ function describeResult(
     if (code === 0x86) {
       return { error: s.continued ? UV5RMINI_MSG.loaderFinished : UV5RMINI_MSG.loaderAlready };
     }
-    if (code === 0x87 && s.continued) return { error: UV5RMINI_MSG.loaderUnexpected };
+    // 0x8F: the layout loader's check found the radio's installed layout is not its own. It refuses before cmd 4.
+    if (code === 0x8f) return { error: UV5RMINI_MSG.loaderOtherLayout };
+    // 0x87 before cmd 4: the loader erased and programmed nothing, and the radio boots its installed app.
+    if (code === 0x87) {
+      return {
+        error: s.continued
+          ? UV5RMINI_MSG.loaderNothingWritten + UV5RMINI_MSG.loaderNothingWrittenAgain
+          : UV5RMINI_MSG.loaderNothingWritten,
+      };
+    }
     return {
       error: `The radio's loader refused the image (result ${hex2(code ?? 0)}). Nothing was erased.`,
     };

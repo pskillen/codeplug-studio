@@ -211,12 +211,35 @@ describe('UV-5R Mini updater: refusals and silence', () => {
     expect((run.error as FirmwareFlashError).message).toBe(UV5RMINI_MSG.loaderFinished);
   });
 
-  it('0x87 before cmd 4 in a continued session says to stop and ask for help', async () => {
+  it('0x87 before cmd 4 (fresh session) says nothing was written and the radio boots the installed app', async () => {
+    const m = make({ loaderRefuses: 0x87 });
+    const updater = createUv5rMiniFirmwareUpdater();
+    expect((await connect(m, updater)).error).toBeUndefined();
+    const run = await settle(updater.flash(imageFor(m), {}), 20_000);
+    const err = run.error as FirmwareFlashError;
+    expect(err.message).toBe('Nothing was written; the radio boots the installed app.');
+    expect(m.areaReads).toBe(0);
+  });
+
+  it('0x87 before cmd 4 in a continued session says the same, and not to send the file again', async () => {
     const m = make({ restartFromRecord: true, loaderRefuses: 0x87 });
     const updater = createUv5rMiniFirmwareUpdater();
     await connect(m, updater, 100);
     const run = await settle(updater.flash(imageFor(m), {}), 20_000);
-    expect((run.error as FirmwareFlashError).message).toBe(UV5RMINI_MSG.loaderUnexpected);
+    const msg = (run.error as FirmwareFlashError).message;
+    expect(msg.startsWith(UV5RMINI_MSG.loaderNothingWritten)).toBe(true);
+    expect(msg).toContain("Don't send this file again");
+  });
+
+  it('0x8F before cmd 4 says the file is for the other hardware layout, nothing erased', async () => {
+    const m = make({ loaderRefuses: 0x8f });
+    const updater = createUv5rMiniFirmwareUpdater();
+    expect((await connect(m, updater)).error).toBeUndefined();
+    const run = await settle(updater.flash(imageFor(m), {}), 20_000);
+    const err = run.error as FirmwareFlashError;
+    expect(err.message).toBe('The file is for the other hardware layout; nothing was erased.');
+    expect(err.radioTouched).toBe(true);
+    expect(m.areaReads).toBe(0);
   });
 
   it('an app result 0x01 writes nothing: radio untouched, the image is not for this radio’s key', async () => {
