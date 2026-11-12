@@ -110,6 +110,9 @@ hidden there).
    (unreviewed user-supplied patch)" or "stock firmware v1.01.048"), the
    version stamp and the result hashes. A failure, such as a patch made for different stock, stops here; nothing is
    sent.
+   For a radio that comes in more than one hardware layout (the UV-5R Mini), the step first asks for the lines of the
+   radio's Radio Info screen and prepares the image for that layout
+   ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md)).
 5. **Before you flash** — names what is being flashed ("You are flashing the MM9PDY modded firmware 1.0.0 to the
    Baofeng DM-32UV"), then a risk acknowledgement, required for every flash, plus battery, cable and "other programs
    closed" checks. A **Back up first** panel links to the Backup tab of any build for this radio in the open project.
