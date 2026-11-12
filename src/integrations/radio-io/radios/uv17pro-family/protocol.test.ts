@@ -48,10 +48,6 @@ class ScriptedPipe implements BytePipe {
     this.enqueue(new Uint8Array([PROGRAM_RW_ACK]));
   }
 
-  private enqueueMagic(len: number): void {
-    this.enqueue(new Uint8Array(len));
-  }
-
   private enqueueReadReply(plain: Uint8Array, addr: number): void {
     const encrypted = uv5rMiniCrypt(plain);
     const frame = new Uint8Array(UV5R_MINI_READ_RESPONSE_LEN);

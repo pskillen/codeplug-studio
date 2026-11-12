@@ -47,10 +47,6 @@ class ScriptedPipe implements BytePipe {
     this.enqueue(new Uint8Array([PROGRAM_RW_ACK]));
   }
 
-  private enqueueMagic(len: number): void {
-    this.enqueue(new Uint8Array(len));
-  }
-
   private enqueueReadReply(plain: Uint8Array, addr: number, leadingJunk = false): void {
     if (leadingJunk) {
       this.enqueue(new Uint8Array([0x00, 0x00]));
