@@ -69,10 +69,34 @@ describe('assertUv5rMiniWriteAllowed', () => {
     refused(0xaf80);
   });
 
-  it('refuses 0xC000 on every profile until a later profile adds it', () => {
-    refused(0xc000);
-    refused(0xcfc0);
-    refused(0xc000, 0x40, { profile: 'mm9pdy', operation: 'write' });
+  describe('the MM9PDY zone table sector 0xC000-0xCFFF', () => {
+    const mm = { profile: 'mm9pdy', operation: 'write' } as const;
+    const stockRestore = { profile: 'stock', operation: 'restore' } as const;
+
+    it('is allowed on mm9pdy at both edges and in between', () => {
+      for (const a of [0xc000, 0xc040, 0xc200, 0xc400, 0xcfc0]) {
+        expect(() => assertUv5rMiniWriteAllowed(a, 0x40, mm)).not.toThrow();
+      }
+    });
+    it('is refused on stock, write and restore', () => {
+      for (const a of [0xc000, 0xc200, 0xcfc0]) {
+        refused(a);
+        refused(a, 0x40, stockRestore);
+      }
+    });
+    it('refuses unaligned and wrong-length frames on mm9pdy', () => {
+      refused(0xc020, 0x40, mm);
+      refused(0xc001, 0x40, mm);
+      refused(0xc000, 63, mm);
+      refused(0xc000, 65, mm);
+      refused(0xc000, 128, mm);
+    });
+    it('refuses the neighbours on both profiles', () => {
+      for (const c of [ctx, mm]) {
+        refused(0xbfc0, 0x40, c);
+        refused(0xd000, 0x40, c);
+      }
+    });
   });
 
   it('refuses the same ranges on the mm9pdy profile and for restore', () => {
