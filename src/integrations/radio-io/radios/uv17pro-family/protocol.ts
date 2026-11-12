@@ -32,6 +32,14 @@ import {
 
 type HandshakeMode = 'read' | 'upload';
 
+/** Frames a modified-firmware target writes after the clone blocks, under their own progress stage. */
+export interface Uv17ProExtraUploadFrames {
+  /** Progress stage label; the descriptor's plan names it too. */
+  stage: string;
+  /** In write order. Each is one `blockSize` frame at a radio address outside the clone. */
+  frames: readonly { address: number; bytes: Uint8Array }[];
+}
+
 export interface Uv17ProConnectOptions {
   signal?: AbortSignal;
   settleScale?: number;
@@ -236,6 +244,37 @@ export class Uv17ProProtocol implements CloneImageRadio {
   /** Write profile; `stock` until a modified-firmware target sets it. */
   private writeProfile: Uv17ProWriteContext['profile'] = 'stock';
 
+  /** For a subclass whose radio has a modified-firmware target (the UV-5R Mini MM9PDY). */
+  protected setWriteProfile(profile: Uv17ProWriteContext['profile']): void {
+    this.writeProfile = profile;
+  }
+
+  getWriteProfile(): Uv17ProWriteContext['profile'] {
+    return this.writeProfile;
+  }
+
+  /**
+   * Frames to write after the clone blocks, or `null`. Called once per upload before the first frame, so an
+   * encode error refuses the Write before the radio sees anything. Restore never calls it.
+   */
+  protected extraUploadFrames(): Uv17ProExtraUploadFrames | null {
+    return null;
+  }
+
+  /** Read arbitrary 64-byte blocks by radio address (write verify of frames outside the clone). */
+  async readBlocks(
+    addresses: readonly number[],
+    opts: { signal?: AbortSignal } = {},
+  ): Promise<Map<number, Uint8Array>> {
+    const pipe = this.requirePipe();
+    const out = new Map<number, Uint8Array>();
+    for (const addr of addresses) {
+      throwIfAborted(opts.signal);
+      out.set(addr, await this.readBlock(pipe, addr));
+    }
+    return out;
+  }
+
   /** Refuse the whole plan before any frame (handshake included) when the layout has an interlock. */
   private assertPlanAllowed(
     addrs: readonly number[],
@@ -307,7 +346,14 @@ export class Uv17ProProtocol implements CloneImageRadio {
     }
     const pipe = this.requirePipe();
     const addrs = listRadioBlockAddresses(this.layout);
-    this.assertPlanAllowed(addrs, 'write');
+    const extra = this.extraUploadFrames();
+    const extraFrames = extra?.frames ?? [];
+    for (const f of extraFrames) {
+      if (f.bytes.length !== this.layout.blockSize) {
+        throw new RangeError(`Block must be ${this.layout.blockSize} bytes`);
+      }
+    }
+    this.assertPlanAllowed([...addrs, ...extraFrames.map((f) => f.address)], 'write');
     reportProgress(
       opts.onProgress,
       { cur: 0, max: addrs.length, msg: 'Upload handshake', stage: 'Upload' },
@@ -332,6 +378,30 @@ export class Uv17ProProtocol implements CloneImageRadio {
         { cur: done, max, msg: `Writing 0x${addr.toString(16)}`, stage: 'Upload' },
         opts.signal,
       );
+    }
+    if (extra && extraFrames.length > 0) {
+      let extraDone = 0;
+      reportProgress(
+        opts.onProgress,
+        { cur: 0, max: extraFrames.length, msg: extra.stage, stage: extra.stage },
+        opts.signal,
+      );
+      for (const { address, bytes } of extraFrames) {
+        throwIfAborted(opts.signal);
+        await this.writeBlock(pipe, address, bytes, 'write');
+        stagingChunks.push({ address, data: bytes.slice() });
+        extraDone += 1;
+        reportProgress(
+          opts.onProgress,
+          {
+            cur: extraDone,
+            max: extraFrames.length,
+            msg: `Writing 0x${address.toString(16)}`,
+            stage: extra.stage,
+          },
+          opts.signal,
+        );
+      }
     }
     this.lastUploadStaging = captureWriteVerifyStaging(stagingChunks);
   }

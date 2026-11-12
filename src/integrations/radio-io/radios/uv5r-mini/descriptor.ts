@@ -13,10 +13,12 @@ import {
   mergeChannelsIntoUv5rMiniHydration,
   UV5R_MINI_MODEL_ID,
 } from './hydration.ts';
-import { createUv5rMiniProtocol } from './protocol.ts';
+import { createUv5rMiniProtocol, Uv5rMiniProtocol } from './protocol.ts';
 import { createUv17ProWriteVerifyHooks } from '../uv17pro-family/writeVerifyHooks.ts';
-import { createUv17ProPlanStages } from '../uv17pro-family/plannedStages.ts';
 import { UV5R_MINI_LAYOUT } from '../uv17pro-family/layout.ts';
+import { uv5rMiniZoneIntentFromOrganisation } from './modDataIntent.ts';
+import { planUv5rMiniStages } from './plannedStages.ts';
+import { MMZ1_BASE, MMZ1_END } from './modData/index.ts';
 
 export { UV5R_MINI_MODEL_ID };
 
@@ -46,7 +48,15 @@ export const UV5R_MINI_DESCRIPTOR: RadioDescriptor = {
   hydration: {
     extractHydration: extractUv5rMiniHydration,
     mergeChannelsIntoHydration: mergeChannelsIntoUv5rMiniHydration,
+    // Every Write re-seeds: a stock projection clears the intent and the write profile goes back to stock.
+    seedProtocolForUpload(protocol, _bag, organisation) {
+      if (protocol instanceof Uv5rMiniProtocol) {
+        protocol.setZoneIntent(uv5rMiniZoneIntentFromOrganisation(organisation));
+      }
+    },
   },
-  writeVerify: createUv17ProWriteVerifyHooks(UV5R_MINI_LAYOUT),
-  planStages: createUv17ProPlanStages(UV5R_MINI_LAYOUT),
+  writeVerify: createUv17ProWriteVerifyHooks(UV5R_MINI_LAYOUT, {
+    extraSpan: { id: 'mm9pdy-zone-table', label: 'Zone table', start: MMZ1_BASE, end: MMZ1_END },
+  }),
+  planStages: planUv5rMiniStages,
 };
