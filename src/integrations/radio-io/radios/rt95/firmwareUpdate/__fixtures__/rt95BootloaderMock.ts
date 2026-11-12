@@ -24,6 +24,11 @@ export interface Rt95BootloaderMockOptions {
   readonly endReply?: boolean;
   /** Ignore this many `PROGRAM`s (echo only), for the pre-flight's retry after `END`. */
   readonly ignoreProgramFor?: number;
+  /**
+   * MAIN through the head's bridge: a frame with a bad sum gets `15` and is not stored (as without it); a frame at or
+   * above `limit` (or below 0x08002000) is recorded in `violations`, which a test asserts stays empty.
+   */
+  readonly bridge?: { readonly limit: number };
   /** Normal mode ident fields. */
   readonly model?: string;
   readonly version?: string;
@@ -39,6 +44,8 @@ export class Rt95BootloaderMock implements BytePipe {
   /** Every byte the host wrote, in order (no echo bytes). */
   readonly received: number[] = [];
   readonly mem = new Map<number, Uint8Array>();
+  /** Bridge mode: addresses of good frames outside the window. */
+  readonly violations: number[] = [];
   frames = 0;
   ended = false;
   closed = false;
@@ -53,6 +60,7 @@ export class Rt95BootloaderMock implements BytePipe {
   private readonly faults: { nak: Set<number>; silent: Set<number>; corruptEcho: Set<number> };
   private readonly endReply: boolean;
   private readonly ignoreProgramFor: number;
+  private readonly bridge?: { readonly limit: number };
   private readonly model: string;
   private readonly version: string;
   private readonly band: number;
@@ -67,6 +75,7 @@ export class Rt95BootloaderMock implements BytePipe {
     };
     this.endReply = opts.endReply ?? true;
     this.ignoreProgramFor = opts.ignoreProgramFor ?? 0;
+    this.bridge = opts.bridge;
     this.model = opts.model ?? 'RT95-P';
     this.version = opts.version ?? 'V100';
     this.band = opts.band ?? 0x01;
@@ -192,6 +201,9 @@ export class Rt95BootloaderMock implements BytePipe {
       return;
     }
     const addr = (f[1]! | (f[2]! << 8) | (f[3]! << 16) | (f[4]! << 24)) >>> 0;
+    if (this.bridge && (addr < 0x08002000 || addr + BLOCK > this.bridge.limit)) {
+      this.violations.push(addr);
+    }
     if (this.faults.silent.delete(n)) return;
     if (this.faults.nak.delete(n)) {
       this.tx.push(0x15);

@@ -253,6 +253,7 @@ describe('firmware registry', () => {
       'baofeng-dm32uv',
       'anytone-at-d890uv',
       'retevis-rt95-head',
+      'retevis-rt95-main',
       'baofeng-uv5rmini',
     ]);
     const d890 = getFirmwareUpdater('anytone-at-d890uv');

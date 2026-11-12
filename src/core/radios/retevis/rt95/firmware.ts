@@ -2,8 +2,8 @@
  * Retevis RT95 pinned stock firmware and update-mode facts, for both MCUs: the front panel (LCD / "head") and the
  * main board (MAIN, "RF CPU"). Each is its own firmware radio; both ship in one vendor zip.
  * Code mirror of [firmware.md](../../../../../docs/reference/radios/retevis/rt95/firmware.md).
- * Used by the firmware flasher only — not library CRUD or codeplug Write. MAIN is flashed through the head's bridge;
- * no MAIN updater is registered yet, so it is not offered.
+ * Used by the firmware flasher only — not library CRUD or codeplug Write. MAIN is flashed through the head's bridge
+ * (stock MAIN only, hidden on prod).
  */
 import type { StockFirmwareDescriptor } from '../../../firmware/types.ts';
 

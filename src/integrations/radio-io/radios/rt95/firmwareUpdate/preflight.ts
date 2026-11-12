@@ -5,7 +5,18 @@
  * itself. See docs/reference/radios/retevis/rt95/firmware.md.
  */
 import { createGuardedSend } from '../../../firmware/guardedSend.ts';
-import type { FirmwarePreflightProbe, FirmwareRadioPreflight } from '../../../firmware/types.ts';
+import type {
+  FirmwarePreflightProbe,
+  FirmwarePreflightSafetyBackup,
+  FirmwareRadioPreflight,
+} from '../../../firmware/types.ts';
+import {
+  normaliseRadioSerial,
+  parseRt95SafetyZip,
+  RT95_SAFETY_RECORD_FAMILY,
+  rt95SafetyBackupRadioKey,
+} from '../safetyBackup/files.ts';
+import { runRt95SafetyBackupUnlessSaved } from '../safetyBackup/runner.ts';
 import {
   enterProgramQxMode,
   exitProgramQxMode,
@@ -15,6 +26,7 @@ import {
   RadioAbortedError,
   RadioInterlockError,
   RadioNoResponseError,
+  RadioProtocolError,
   RadioTimeoutError,
   RadioWrongIdentError,
 } from '../../../kit/errors.ts';
@@ -76,8 +88,9 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 export function createRt95HeadPreflightProbe(
-  opts: { retryDelayMs?: number } = {},
+  opts: { retryDelayMs?: number; targetName?: 'front panel' | 'main board' } = {},
 ): FirmwarePreflightProbe {
+  const targetName = opts.targetName ?? 'front panel';
   const retryDelayMs = opts.retryDelayMs ?? RT95_PREFLIGHT_RETRY_DELAY_MS;
   return {
     title: 'Check the radio',
@@ -122,7 +135,7 @@ export function createRt95HeadPreflightProbe(
           return { summary: `${ident.model}, version ${ident.version}` };
         } catch (err) {
           if (err instanceof RadioWrongIdentError) {
-            throw new RadioWrongIdentError(wrongRadioMessage(raw));
+            throw new RadioWrongIdentError(wrongRadioMessage(raw, targetName));
           }
           throw err;
         }
@@ -138,7 +151,7 @@ export function createRt95HeadPreflightProbe(
   };
 }
 
-function wrongRadioMessage(raw: Uint8Array): string {
+function wrongRadioMessage(raw: Uint8Array, targetName: string): string {
   const text = (bytes: Uint8Array) => {
     let s = '';
     for (const b of bytes) {
@@ -149,7 +162,7 @@ function wrongRadioMessage(raw: Uint8Array): string {
   };
   const model = text(raw.subarray(1, 8)) || 'an unknown model';
   const version = text(raw.subarray(9, 15)) || 'an unknown version';
-  return `This radio reports ${model} ${version}. Studio flashes only the ${RT95_ALLOWED_MODEL} front panel (${RT95_ALLOWED_VERSION}). First-revision radios report RT95. Nothing was written.`;
+  return `This radio reports ${model} ${version}. Studio flashes only the ${RT95_ALLOWED_MODEL} ${targetName} (${RT95_ALLOWED_VERSION}). First-revision radios report RT95. Nothing was written.`;
 }
 
 /** Ticked on the Flash step: the only guard against sending a head image to the MAIN board. */
@@ -178,3 +191,80 @@ export function createRt95HeadPreflight(
 }
 
 export const RT95_HEAD_PREFLIGHT: FirmwareRadioPreflight = createRt95HeadPreflight();
+
+/** Ticked on the Flash step: the only guard against sending a MAIN image to the head (the wire cannot tell P1 from P3). */
+export const RT95_MAIN_UPDATE_MODE_CONFIRM = 'The screen says UPDATE THE RF CPU.';
+
+function createRt95MainSafetyBackup(): FirmwarePreflightSafetyBackup {
+  return {
+    title: 'Safety backup',
+    why: "Your radio's calibration and identity (EEPROM 0x3B00–0x3FFF) cannot be rebuilt if a main-board flash goes wrong. Studio needs one saved copy for this radio; once it has one, this step is skipped.",
+    steps: [
+      'Switch the radio on normally (no keys held).',
+      'Connect the programming cable.',
+      'Close CHIRP, the Retevis CPS and other Studio tabs.',
+    ],
+    link: { ...RT95_HEAD_FW_LINK, baudRate: RT95_BAUD_RATE },
+    expectedDuration: 'about 30 seconds',
+    recordFamily: RT95_SAFETY_RECORD_FAMILY,
+    serialHint: "The serial number is on the label on the radio's back (21xx or later).",
+    normaliseSerial: normaliseRadioSerial,
+    async run(pipe, opts) {
+      const out = await runRt95SafetyBackupUnlessSaved(pipe, {
+        region: 'cal',
+        serial: opts.serial,
+        signal: opts.signal,
+        onProgress: opts.onProgress,
+        isSaved: opts.isSaved,
+      });
+      if (out.kind === 'already-saved') {
+        return {
+          kind: 'already-saved',
+          radioKey: out.radioKey,
+          summary: `${out.ident.model}, version ${out.ident.version}: a safety backup is already saved`,
+        };
+      }
+      const { result } = out;
+      return {
+        kind: 'taken',
+        radioKey: result.radioKey,
+        summary: `${result.ident.model} ${result.ident.version}, calibration region, fingerprint ${result.manifest.fingerprint}`,
+        region: result.region,
+        fileName: result.fileName,
+        zipBytes: result.zipBytes,
+        sha256: result.manifest.sha256,
+        fingerprint: result.manifest.fingerprint,
+      };
+    },
+    async verifyFile(bytes, opts) {
+      const parsed = await parseRt95SafetyZip(bytes);
+      const serial = parsed.serial || opts.fallbackSerial;
+      if (!normaliseRadioSerial(serial)) {
+        throw new RadioProtocolError(
+          'This backup file has no serial number. Type the serial from the radio label first.',
+        );
+      }
+      return {
+        radioKey: rt95SafetyBackupRadioKey(serial),
+        region: parsed.region,
+        fileName: `${parsed.baseName}.zip`,
+        sha256: parsed.manifest.sha256,
+        fingerprint: parsed.manifest.fingerprint,
+        summary: `calibration backup, fingerprint ${parsed.manifest.fingerprint}`,
+      };
+    },
+  };
+}
+
+export function createRt95MainPreflight(
+  opts: { retryDelayMs?: number } = {},
+): FirmwareRadioPreflight {
+  return {
+    attestations: createRt95HeadPreflight(opts).attestations,
+    probe: createRt95HeadPreflightProbe({ ...opts, targetName: 'main board' }),
+    safetyBackup: createRt95MainSafetyBackup(),
+    updateModeConfirm: RT95_MAIN_UPDATE_MODE_CONFIRM,
+  };
+}
+
+export const RT95_MAIN_PREFLIGHT: FirmwareRadioPreflight = createRt95MainPreflight();

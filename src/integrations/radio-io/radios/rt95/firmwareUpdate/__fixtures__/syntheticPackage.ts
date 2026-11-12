@@ -69,6 +69,59 @@ export function synthRt95HeadPackage(
   return { cdd, cdi, spi };
 }
 
+/**
+ * The MAIN golden package, shared with the firmware project's `tools/test_rt95update.py` (`MAIN_GOLDEN`, phase 06b).
+ * `.CDD` is the image plus a 40-byte tail that is never sent; 55 frames; SP 0x200013E8, reset 0x08002869.
+ */
+export const RT95_MAIN_GOLDEN_LEN = 0xd93c;
+export const RT95_MAIN_GOLDEN_SHA256 = {
+  cdd: 'b774f2897c0cac9761f3bab363c580bcbf4ea42ea52d7d876ef3d774fd27c5a4',
+  cdi: '99fb0f983dd1ad1f563709025a6a3eddb60838653c3da8a40f20fbcae48b4d82',
+  spi: '3d096d4788e747417c669f5348ac4b4c6aa3d31a2bd8dd7799300203729714c3',
+  /** Host-to-radio stream: PROGRAM, 55 frames, `18`; no echo bytes. */
+  stream: '3dc0d44c6ef7a141d5b8b245c2f42d0d21e171be1594cca2f8cd2e017a6cc2d3',
+} as const;
+export const RT95_MAIN_GOLDEN_FRAMES = 55;
+export const RT95_MAIN_GOLDEN_STREAM_LEN = 56_768;
+
+export interface SynthRt95MainOptions {
+  readonly sp?: number;
+  readonly reset?: number;
+  /** false: leave the bytes at the model offset as the filler. */
+  readonly model?: boolean;
+  /** Extra bytes in the `.CDD` after the image (the stock tail is 40). */
+  readonly tail?: number;
+  /** Extra byte changed in the image at this offset (a non-stock MAIN-shaped image). */
+  readonly flipAt?: number;
+}
+
+/** The three files of the MAIN golden package, or a variant of it. */
+export function synthRt95MainPackage(
+  length = RT95_MAIN_GOLDEN_LEN,
+  opts: SynthRt95MainOptions = {},
+): Rt95HeadFiles {
+  const cdd = new Uint8Array(length + (opts.tail ?? 40));
+  for (let i = 0; i < cdd.length; i++) cdd[i] = (i * 7 + 3) & 0xff;
+  putU32(cdd, 0, opts.sp ?? 0x200013e8);
+  putU32(cdd, 4, opts.reset ?? 0x08002869);
+  if (opts.model ?? true) cdd.set(enc('RT95-P\0'), 0xd65c);
+  cdd.set([0x08, 0xf0, 0x81, 0xfe], 0x382);
+  if (opts.flipAt !== undefined) cdd[opts.flipAt] = cdd[opts.flipAt]! ^ 0xff;
+
+  const cdi = new Uint8Array(278);
+  cdi.fill(0x20, 0, 0x100);
+  cdi.set(enc('RT95_MAIN.bin'), 0);
+  putU32(cdi, 0x100, 0x08002000);
+  putU32(cdi, 0x104, length);
+  putU32(cdi, 0x108, 0);
+  putU32(cdi, 0x10c, 0x00010000);
+
+  const spi = new Uint8Array(10);
+  spi[0] = 1;
+  putU32(spi, 2, length);
+  return { cdd, cdi, spi };
+}
+
 /** Tests only: the real constructor is `prepareFirmwareImage`. */
 export function preparedRt95HeadImage(
   files: Rt95HeadFiles,

@@ -17,7 +17,7 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 | Published releases          | Shipped (DM-32UV, AT-D890UV, RT95 front panel)       | Listed and fetched at run time from the firmware project's public release index ([releases.md](releases.md)), checked before use; release list, RC toggle, notes and a retry when the list can't be fetched in the wizard. Replaced the bundled catalog ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362))                                                               |
 | User-supplied patch         | Shipped: prod (DM-32UV, AT-D890UV, RT95 front panel) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                                                                                                                 |
 | AT-D890UV                   | Shipped: prod                                        | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                                                                                                                  |
-| RT95 front panel (LCD)      | Shipped: prod                                        | Stock and published releases for the head; MAIN never offered; normal-mode ident and attestations before flashing. Enabled on the prod site after the owner flashed stock V1.41, test builds and the MM9PDY zones build from Studio ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460))                                                                                   |
+| RT95 front panel (LCD)      | Shipped: prod                                        | Stock and published releases for the head; the main board is a separate card, stock MAIN only, on next/dev/staging (hidden on prod); normal-mode ident and attestations before flashing. Enabled on the prod site after the owner flashed stock V1.41, test builds and the MM9PDY zones build from Studio ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460))             |
 | UV-5R Mini                  | Shipped: pre-prod only (next, dev, staging)          | The radio drives the update: its app, then its loader, ask for slices of the image and Studio serves them; a power-cut update is continued by flashing again. Patch file from disk only until a release is published; no stock flash. Hidden on prod until Studio has flashed a patched release to a Mini on hardware ([#1587](https://github.com/pskillen/codeplug-studio/issues/1587)) |
 | Recovery docs               | Shipped                                              | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                                                                                        |
 | Browsers without Web Serial | Shipped                                              | Phones, tablets, Firefox and Safari get a read-only list of the published releases for each offered radio (RC toggle, notes, retry) with a banner saying flashing needs Chrome or Edge on a desktop computer. No wizard, no port (`ReleaseBrowser.tsx`)                                                                                                                                  |
@@ -71,6 +71,7 @@ flowchart LR
 | DM-32UV      | `src/integrations/radio-io/radios/dm32uv/firmwareUpdate/`                                  |
 | AT-D890UV    | `src/integrations/radio-io/radios/at-d890uv/firmwareUpdate/`                               |
 | RT95 (head)  | `src/integrations/radio-io/radios/rt95/firmwareUpdate/`                                    |
+| RT95 (MAIN)  | Same folder: `RT95_MAIN_FIRMWARE_UPDATER` in `descriptor.ts`, profile in `targets.ts`      |
 | UV-5R Mini   | `src/integrations/radio-io/radios/uv5r-mini/firmwareUpdate/`                               |
 | App          | `src/app/routes/firmware/`, `src/app/services/firmwareFlash.ts`, `firmwareFlashEnvGate.ts` |
 
@@ -124,6 +125,8 @@ hidden there).
    "already tested this radio" opt-out for the read-only check does not skip it.
 6. **Enter update mode** — the radio's own steps, indicator and warnings, from its descriptor. The RT95's is P1 +
    knob with a blank screen; the P3 mode (screen "UPDATE THE RF CPU") flashes the main board and is the wrong one.
+   The RT95 main board's is the other way round: remove power (a Power-key off and on is not enough), hold P3 and the
+   knob, restore power; the screen says "UPDATE THE RF CPU".
    The UV-5R Mini's is PTT-A and = held while switching on (the screen shows UPDATE...); after a cut update, switch on
    with no keys instead: the screen stays dark and Studio continues the write.
 7. **Flash** — names the firmware and radio again, and repeats the radio's update-mode warnings right above
@@ -134,8 +137,8 @@ hidden there).
    s; the radio is not yet touched), Erase from the first hello of its loader (the radio is touched from there), Transfer
    as the loader reads the firmware area, Finish at the result. It has a tick too, "The radio shows UPDATE..., or its
    screen stays dark after an interrupted update".
-   The RT95 has one more tick on this step, "The screen is blank. It does not say UPDATE THE RF CPU.", before
-   **Connect and flash** is enabled. While the first block waits for the radio, the
+   The RT95 has one more tick on this step, "The screen is blank. It does not say UPDATE THE RF CPU." (front panel)
+   or "The screen says UPDATE THE RF CPU." (main board), before **Connect and flash** is enabled. While the first block waits for the radio, the
    transfer step reads "Waiting for the radio (it may be erasing)…". Progress is redrawn at most every ~100 ms (a
    phase change, or the radio becoming touched, shows at once), so a 52,000-frame transfer stays responsive. While
    it runs, the screen is kept awake and leaving the page asks first. Cancelling after the radio has been touched
@@ -147,12 +150,13 @@ hidden there).
 
 ## What to expect
 
-| Radio            | Duration                                     | How the radio signals the end                                                                                                      | How to check (release `1.1.0`)                                                 |
-| ---------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| DM-32UV          | About 2 minutes (including a 13 s erase)     | Studio sends the end byte; any reply, or none, is fine (`eot-sent`)                                                                | Settings > Device Info > Versions shows `mm9pdy-1.1.0` under `DM32.01.L01.048` |
-| AT-D890UV        | Under a minute (about 25 s transfer)         | The radio restarts at once and its USB port disappears (`port-closed-by-radio`), or it replies `06` (`acknowledged`)               | After the radio restarts, Device Info > Mod Ver shows `mm9pdy-1.1.0`           |
-| RT95 front panel | Under a minute (estimate; not yet measured)  | Studio sends the end byte; the radio replies `06` (`acknowledged`) or nothing (`no-reply`). Switch the radio off and on afterwards | Stock: FUNC + P4 test screen shows LCD CPU V1.11                               |
-| UV-5R Mini       | About 3 minutes (estimate; not yet measured) | The loader reports result `0`; Studio echoes it (`acknowledged`) and the radio restarts by itself                                  | The power-on screen shows the release's build name                             |
+| Radio            | Duration                                      | How the radio signals the end                                                                                                      | How to check (release `1.1.0`)                                                 |
+| ---------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| DM-32UV          | About 2 minutes (including a 13 s erase)      | Studio sends the end byte; any reply, or none, is fine (`eot-sent`)                                                                | Settings > Device Info > Versions shows `mm9pdy-1.1.0` under `DM32.01.L01.048` |
+| AT-D890UV        | Under a minute (about 25 s transfer)          | The radio restarts at once and its USB port disappears (`port-closed-by-radio`), or it replies `06` (`acknowledged`)               | After the radio restarts, Device Info > Mod Ver shows `mm9pdy-1.1.0`           |
+| RT95 front panel | Under a minute (estimate; not yet measured)   | Studio sends the end byte; the radio replies `06` (`acknowledged`) or nothing (`no-reply`). Switch the radio off and on afterwards | Stock: FUNC + P4 test screen shows LCD CPU V1.11                               |
+| RT95 main board  | About 20 to 25 s (estimate; not yet measured) | As the front panel; the head relays each frame to the main board. Stock only: FUNC + P4 test screen shows RF CPU V1.11             |
+| UV-5R Mini       | About 3 minutes (estimate; not yet measured)  | The loader reports result `0`; Studio echoes it (`acknowledged`) and the radio restarts by itself                                  | The power-on screen shows the release's build name                             |
 
 The durations are the descriptors' `expectedDuration`, shown on the radio cards; the checks are the releases' verify
 hints.
@@ -208,7 +212,8 @@ Studio never writes the bootloader or the activation area.
 1. **Don't keep power-cycling the radio.** It can't start the incomplete firmware.
 2. **Re-enter update mode** with the radio's own steps: [DM-32UV](../../reference/radios/baofeng/dm-32uv/firmware.md#update-mode-entry),
    [AT-D890UV](../../reference/radios/anytone/at-d890uv/firmware.md#update-mode-entry),
-   [RT95 front panel](../../reference/radios/retevis/rt95/firmware.md#update-mode-entry) (P1 + knob, blank screen).
+   [RT95 front panel](../../reference/radios/retevis/rt95/firmware.md#update-mode-entry) (P1 + knob, blank screen),
+   [RT95 main board](../../reference/radios/retevis/rt95/firmware.md#recovery) (head first, then main board).
    The [UV-5R Mini](../../reference/radios/baofeng/uv-5r-mini/firmware.md#recovery): leave the cable in, switch the
    radio off and on with no keys held, then press **Connect and flash** with the same files; Studio hears the radio's
    loader and continues.
@@ -230,7 +235,8 @@ Studio pins are:
 - AT-D890UV: https://anytoneusa.com/Files/D890UV%20V1.05%20DMR%20official%20release%20260521.zip
 - RT95 front panel: Retevis's vendor updater (QXCodePro, Windows) is in the same package as the stock firmware. The
   package has no single vendor URL: Studio lists its sources (ask Retevis support, and an unofficial mirror) on the
-  Stock step. The vendor tool can also recover the main board, which Studio never flashes.
+  Stock step. The vendor tool can also recover the main board. Studio flashes the main board only as the pinned
+  stock MAIN (next, dev and staging builds), never anything else.
 
 ### What Studio checks before any byte is sent
 
