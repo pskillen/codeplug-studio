@@ -139,9 +139,10 @@ are equal plain bytes. Studio never descrambles anything. The stock bytes come f
 
 **Pinned loaders** (SHA-256 over the packed loader bytes). Two kinds:
 
-- **Layout loaders**, one per flash layout. They carry no list of builds. Before erasing anything, each one checks the
-  radio's installed VM, PRCT and BTIF directory entries against its own 16-byte layout record, and refuses a radio of
-  the other layout with result `0x8F`. Each loader always builds to the same bytes, so its packed hash is its pin.
+- **Layout loaders**, one per flash layout. They carry no list of builds. Before it erases the firmware area, each one
+  checks the radio's installed VM, PRCT and BTIF directory entries against its own 16-byte layout record, and refuses a
+  radio of the other layout with result `0x8F`. By then the stock app's update stage has already reset the FM presets
+  and volume (below). Each loader always builds to the same bytes, so its packed hash is its pin.
 - **List-carrying loaders**: the older loaders, each with a list of the builds it may install. They stay pinned so that
   images already built on them still pass the checks.
 
@@ -160,12 +161,28 @@ are equal plain bytes. Studio never descrambles anything. The stock bytes come f
 file for the other layout, that stage already loses some of the radio's settings (its FM presets and volume) before
 the loader can refuse. So Studio checks the layout itself, before it sends anything. For an image whose loader is `L1`
 or `L2`, the radio's layout must be on the prepared image (`PreparedFirmwareImage.radioLayout`, passed to
-`prepareFirmwareImage` as `radioLayout`; the operator reads it from the radio's Radio Info screen):
+`prepareFirmwareImage` as `radioLayout`; the wizard asks for it, below):
 
 - the layouts differ: "This file is for the other hardware layout; nothing was sent."
 - no layout given: refused, because Studio can't check the file is for this radio.
 
 A list-carrying loader's image ignores the layout.
+
+**Radio Info.** On the Prepare step, before the image is built, the wizard asks for the two lines of the radio's Radio
+Info screen, `Firmware` and `Hardware` (case, spaces and a missing `V` are ignored). Only the proven pairs map to a
+layout:
+
+| Firmware | Hardware | Layout |
+| -------- | -------- | ------ |
+| `V0.04`  | `V1.7`   | `L1`   |
+| `V0.27`  | `V1.7`   | `L2`   |
+
+Any other pair stops the wizard: "Studio doesn't recognise this radio's Radio Info; nothing was sent." A radio moved
+from V0.04 to V0.27 by an MM9PDY update shows the `L2` pair but keeps layout 1, so the step has an explicit choice, "My
+radio is layout 1 (it was moved to v0.27)", which makes a proven pair `L1`. A wrong choice reaches the radio: its
+loader refuses it with `0x8F` and erases no firmware, but the FM presets and volume are reset. The answers live in the
+wizard's memory only. Code: `src/core/radios/baofeng/uv-5r-mini/radioInfo.ts`, rendered by the Prepare step from
+`StockFirmwareDescriptor.radioLayout`.
 
 **Not listed itself** applies only to list-carrying loaders. A layout loader has no list, and the patch's own
 `loader.list` (now written as `[]`) is descriptive: the check follows the pinned loader, never the patch.
@@ -219,7 +236,7 @@ the radio asked for (at most 0x1000, inside the image), and an echo of the radio
 | App `0x01`, `0x86`, `0x8A`, `0x83`                     | "Nothing was written to the firmware. Switch the radio off and on." `0x01` adds that the image is not for this radio's key; `0x8A` that it is for another stock version |
 | Loader `0x86` before the length, fresh session         | "This firmware is already on the radio, or the radio holds firmware this image can't replace. Nothing was erased."                                                      |
 | Loader `0x86` before the length, continued session     | "The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair."          |
-| Loader `0x8F` before the length                        | "The file is for the other hardware layout; nothing was erased." (A layout loader's check refused the radio)                                                            |
+| Loader `0x8F` before the length                        | "The file is for the other hardware layout; the radio refused it. Its FM presets and volume may have been reset; nothing else changed."                                 |
 | Loader `0x87` before the length, fresh session         | "Nothing was written; the radio boots the installed app."                                                                                                               |
 | Loader `0x87` before the length, continued session     | The same, plus: don't send this file again (it can only end the same way); if the radio doesn't reach its normal screen, it needs a case-open repair                    |
 | Loader non-zero after the length, or no frame for 60 s | The recover text below                                                                                                                                                  |
