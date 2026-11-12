@@ -398,3 +398,88 @@ describe('resolveStockFirmware — a radio that accepts a second stock version',
     expect(await codeOf(resolveStockFirmware(d, [], ctxOne()))).toBe('stock-missing-member');
   });
 });
+
+describe('resolveStockFirmware — two radios sharing one vendor zip', () => {
+  const headX = seededBytes(11, 900);
+  const headY = seededBytes(12, 64);
+  const mainX = seededBytes(13, 700);
+  const mainY = seededBytes(14, 32);
+  const sharedZip = zipSync({
+    'Pkg/HEAD.X': headX,
+    'Pkg/HEAD.Y': headY,
+    'Pkg/MAIN.X': mainX,
+    'Pkg/MAIN.Y': mainY,
+  });
+  const zip = { fileName: 'shared.zip', bytes: sharedZip };
+  let head: StockFirmwareDescriptor;
+  let main: StockFirmwareDescriptor;
+
+  beforeAll(async () => {
+    head = await syntheticDescriptor(
+      'retevis-rt95-head',
+      [
+        { role: 'x', fileName: 'HEAD.X', bytes: headX },
+        { role: 'y', fileName: 'HEAD.Y', bytes: headY },
+      ],
+      zip,
+    );
+    main = await syntheticDescriptor(
+      'retevis-rt95-main',
+      [
+        { role: 'x', fileName: 'MAIN.X', bytes: mainX },
+        { role: 'y', fileName: 'MAIN.Y', bytes: mainY },
+      ],
+      zip,
+    );
+  });
+
+  it('resolves each radio its own members from the shared zip', async () => {
+    const inputs = [{ name: 'shared.zip', bytes: sharedZip }];
+    const h = await resolveStockFirmware(head, inputs, { otherDescriptors: [main, one] });
+    const m = await resolveStockFirmware(main, inputs, { otherDescriptors: [head, one] });
+    expect(h.package.files.x).toEqual(headX);
+    expect(m.package.files.x).toEqual(mainX);
+    expect(m.package.radioId).toBe('retevis-rt95-main');
+  });
+
+  it('calls a wrong-version member wrong-version, not the other radio', async () => {
+    const wrongMain: StockFirmwareDescriptor = {
+      ...main,
+      members: main.members.map((mem) =>
+        mem.role === 'x' ? { ...mem, sha256: '0'.repeat(64) } : mem,
+      ),
+    };
+    expect(
+      await codeOf(
+        resolveStockFirmware(wrongMain, [{ name: 'shared.zip', bytes: sharedZip }], {
+          otherDescriptors: [head],
+        }),
+      ),
+    ).toBe('stock-wrong-version');
+  });
+
+  it('still blames the other radio for its loose files (member-hash rule)', async () => {
+    expect(
+      await codeOf(
+        resolveStockFirmware(
+          main,
+          [
+            { name: 'HEAD.X', bytes: headX },
+            { name: 'HEAD.Y', bytes: headY },
+          ],
+          { otherDescriptors: [head] },
+        ),
+      ),
+    ).toBe('stock-wrong-radio');
+  });
+
+  it("still blames an unrelated radio's zip", async () => {
+    expect(
+      await codeOf(
+        resolveStockFirmware(main, [{ name: 'one.zip', bytes: oneZip }], {
+          otherDescriptors: [head, one],
+        }),
+      ),
+    ).toBe('stock-wrong-radio');
+  });
+});
