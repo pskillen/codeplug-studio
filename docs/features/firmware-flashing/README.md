@@ -25,16 +25,16 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 
 ## Documentation map
 
-| Doc                                                                                                                    | Topic                                                                                     |
-| ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing)                                                  | Product rules: no vendor firmware, pinning, interlocks, gates                             |
-| [releases.md](releases.md)                                                                                             | Where releases come from: the public release index, its format, and what Studio checks    |
-| [DM-32UV firmware.md](../../reference/radios/baofeng/dm-32uv/firmware.md)                                              | Stock pin, update mode, patch format, bootloader protocol                                 |
-| [AT-D890UV firmware.md](../../reference/radios/anytone/at-d890uv/firmware.md)                                          | Stock pin, update mode, patch format, bootloader protocol                                 |
-| [RT95 firmware.md](../../reference/radios/retevis/rt95/firmware.md)                                                    | Front panel stock pin and sources, update mode, patch format, protocol, pre-flight        |
-| [UV-5R Mini firmware.md](../../reference/radios/baofeng/uv-5r-mini/firmware.md)                                        | Stock pin, patch format, image checks, update mode, the update session, results, recovery |
-| [Adding a radio adapter — Firmware updater](../radio-read-write/adding-a-radio-adapter.md#8-firmware-updater-optional) | Checklist for a new radio's updater                                                       |
-| [Stepper.md](../../../src/app/components/v2/Stepper.md)                                                                | Wizard step indicator                                                                     |
+| Doc                                                                                                                    | Topic                                                                                        |
+| ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing)                                                  | Product rules: no vendor firmware, pinning, interlocks, gates                                |
+| [releases.md](releases.md)                                                                                             | Where releases come from: the public release index, its format, and what Studio checks       |
+| [DM-32UV firmware.md](../../reference/radios/baofeng/dm-32uv/firmware.md)                                              | Stock pin, update mode, patch format, bootloader protocol                                    |
+| [AT-D890UV firmware.md](../../reference/radios/anytone/at-d890uv/firmware.md)                                          | Stock pin, update mode, patch format, bootloader protocol                                    |
+| [RT95 firmware.md](../../reference/radios/retevis/rt95/firmware.md)                                                    | Front and main board stock pins and sources, update mode, patch format, protocol, pre-flight |
+| [UV-5R Mini firmware.md](../../reference/radios/baofeng/uv-5r-mini/firmware.md)                                        | Stock pin, patch format, image checks, update mode, the update session, results, recovery    |
+| [Adding a radio adapter — Firmware updater](../radio-read-write/adding-a-radio-adapter.md#8-firmware-updater-optional) | Checklist for a new radio's updater                                                          |
+| [Stepper.md](../../../src/app/components/v2/Stepper.md)                                                                | Wizard step indicator                                                                        |
 
 ## Concepts
 
