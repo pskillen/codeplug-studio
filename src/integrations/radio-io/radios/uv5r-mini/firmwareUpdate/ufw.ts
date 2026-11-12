@@ -97,14 +97,39 @@ export interface OtaEntry {
   readonly name: string;
 }
 
-export interface Uv5rMiniUfw {
+export interface Uv5rMiniUfwContainer {
   readonly header: UfwHeader;
   readonly entries: { readonly flash: UfwEntry; readonly ota: UfwEntry };
+}
+
+export interface Uv5rMiniUfw extends Uv5rMiniUfwContainer {
   readonly loader: { readonly packed: Uint8Array; readonly entry: OtaEntry };
+}
+
+/** A stock base: the container, and a loader only when the file carries one. */
+export interface Uv5rMiniStockUfw extends Uv5rMiniUfwContainer {
+  readonly loader: Uv5rMiniUfw['loader'] | null;
 }
 
 /** Parse and check the container: I1 (framing, CRCs, entry set) and I2 (the one `uart_user.bin` loader). */
 export function parseUv5rMiniUfw(bytes: Uint8Array): Uv5rMiniUfw {
+  const container = parseContainer(bytes);
+  return { ...container, loader: parseLoader(container.entries.ota) };
+}
+
+/**
+ * Parse a file used as a stock base only. As `parseUv5rMiniUfw`, except that an `ota.bin` of all `0xFF` (no loader,
+ * by design: the file of a build no pinned loader lists) is accepted. An `ota.bin` that holds anything else must
+ * still be a well-formed loader entry. An image to flash never goes through here: it keeps I2.
+ */
+export function parseUv5rMiniStockUfw(bytes: Uint8Array): Uv5rMiniStockUfw {
+  const container = parseContainer(bytes);
+  const { data } = container.entries.ota;
+  const blank = data.length > 0 && data.every((b) => b === 0xff);
+  return { ...container, loader: blank ? null : parseLoader(container.entries.ota) };
+}
+
+function parseContainer(bytes: Uint8Array): Uv5rMiniUfwContainer {
   if (bytes.length < UFW_HEADER_SIZE) {
     throw new Uv5rMiniUfwError('too-short', 'The image is too short to hold a header.');
   }
@@ -168,7 +193,11 @@ export function parseUv5rMiniUfw(bytes: Uint8Array): Uv5rMiniUfw {
     );
   }
 
-  // ota.bin: a plaintext directory of exactly one entry, the loader following it.
+  return { header, entries: { flash, ota } };
+}
+
+/** `ota.bin`: a plaintext directory of exactly one entry, the loader following it. */
+function parseLoader(ota: UfwEntry): Uv5rMiniUfw['loader'] {
   const d = ota.data;
   if (d.length < OTA_ENTRY_SIZE) {
     throw new Uv5rMiniUfwError('ota-directory', 'ota.bin is too short to hold a loader entry.');
@@ -204,5 +233,5 @@ export function parseUv5rMiniUfw(bytes: Uint8Array): Uv5rMiniUfw {
   if (crc16Xmodem(packed) !== entry.dcrc) {
     throw new Uv5rMiniUfwError('ota-data-crc', 'The loader fails its checksum.');
   }
-  return { header, entries: { flash, ota }, loader: { packed, entry } };
+  return { packed, entry };
 }

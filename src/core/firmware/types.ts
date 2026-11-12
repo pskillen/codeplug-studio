@@ -41,6 +41,12 @@ export type StockFirmwareSource =
     }
   | { readonly kind: 'own-image'; readonly label: string; readonly instructions: string };
 
+/** One more stock version a radio's patches may be built on. Same sources and hint as the descriptor that lists it. */
+export interface StockFirmwareVariant {
+  readonly version: string;
+  readonly members: readonly StockFirmwareMember[];
+}
+
 export interface StockFirmwareDescriptor {
   readonly radioId: FirmwareRadioId;
   readonly label: string;
@@ -52,6 +58,11 @@ export interface StockFirmwareDescriptor {
   /** False hides plain stock flashing; defaults to true. */
   readonly stockFlashOffered?: boolean;
   readonly members: readonly StockFirmwareMember[];
+  /**
+   * Further stock versions accepted for the same radio, each its own member set. The patch's own `stock` hashes pick
+   * the one in use; a user never chooses. Read through `stockVariants`, never directly.
+   */
+  readonly alsoAccepts?: readonly StockFirmwareVariant[];
   /** Patch `name` values whose releases apply to this radio. */
   readonly patchNames: readonly string[];
   /** Human-facing update-mode entry, rendered generically by the wizard. */

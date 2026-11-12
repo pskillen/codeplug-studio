@@ -9,7 +9,9 @@
  *      `ota.bin` (type 100); entries inside the file (`parseUv5rMiniUfw`).
  *  I2. `ota.bin` holds exactly one entry, `uart_user.bin`, attribute 0x41, both CRCs good, and the SHA-256 of the
  *      packed loader is pinned.
- *  I3. `0x1000 + flash.bin.size` is at most the base's area end, and never past 0x94000.
+ *  I3. `0x1000 + flash.bin.size` is at most the base's area end, and never past the base's own hard limit (the start
+ *      of its first per-unit record sector: 0x94000 or 0x93000 by layout).
+ *  Base. The patch's `base` names an entry in the base table, and the verified stock hashes to that entry's stock.
  *  I4. Every `flash.bin` byte equals the stock image's byte at the same SoC address, except inside the base's app
  *      windows, and both have the same length. (The per-radio scramble is a keystream XOR by address, so equal stored
  *      bytes at an address are equal plain bytes; Studio never descrambles.)
@@ -22,25 +24,33 @@ import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmw
 
 import { RadioInterlockError } from '../../../kit/errors.ts';
 import {
-  UV5RMINI_BASE,
+  UV5RMINI_BASES,
   UV5RMINI_FLASH_BASE,
-  UV5RMINI_FLASH_HARD_LIMIT,
   UV5RMINI_FW_RADIO_ID,
   UV5RMINI_FW_ROLE,
   UV5RMINI_PINNED_LOADERS,
   type PinnedLoader,
+  uv5rMiniHardLimit,
   type Uv5rMiniBase,
 } from './constants.ts';
 import { sha256HexSync } from './sha256Sync.ts';
-import { parseUv5rMiniUfw, Uv5rMiniUfwError, type Uv5rMiniUfw } from './ufw.ts';
+import {
+  parseUv5rMiniStockUfw,
+  parseUv5rMiniUfw,
+  Uv5rMiniUfwError,
+  type Uv5rMiniStockUfw,
+  type Uv5rMiniUfw,
+} from './ufw.ts';
 
 export { UV5RMINI_FW_RADIO_ID };
 
 const hex = (n: number) => `0x${n.toString(16).toUpperCase()}`;
 
-function parseOrRefuse(bytes: Uint8Array, what: string): Uv5rMiniUfw {
+function parseOrRefuse(bytes: Uint8Array, what: string): Uv5rMiniUfw;
+function parseOrRefuse(bytes: Uint8Array, what: string, stock: true): Uv5rMiniStockUfw;
+function parseOrRefuse(bytes: Uint8Array, what: string, stock?: true): Uv5rMiniStockUfw {
   try {
-    return parseUv5rMiniUfw(bytes);
+    return stock ? parseUv5rMiniStockUfw(bytes) : parseUv5rMiniUfw(bytes);
   } catch (e) {
     if (e instanceof Uv5rMiniUfwError) {
       throw new RadioInterlockError(
@@ -77,15 +87,14 @@ export function firstDifferenceOutsideWindows(
 /**
  * Check a prepared image. Throws RadioInterlockError on the first failure; returns nothing.
  *
- * `pins` is a test-only seam: production callers never pass it, and nothing user-reachable may. The default is the
- * pinned table in constants.ts.
+ * `pins` and `bases` are test-only seams: production callers never pass them, and nothing user-reachable may. The
+ * defaults are the tables in constants.ts.
  */
 export function checkUv5rMiniImage(
   image: PreparedFirmwareImage,
   pins: readonly PinnedLoader[] = UV5RMINI_PINNED_LOADERS,
+  bases: Readonly<Record<string, Uv5rMiniBase>> = UV5RMINI_BASES,
 ): void {
-  const base = UV5RMINI_BASE;
-
   // Target binding.
   if (image.radioId !== UV5RMINI_FW_RADIO_ID) {
     throw new RadioInterlockError(
@@ -112,6 +121,19 @@ export function checkUv5rMiniImage(
     );
   }
 
+  // The base: named by the patch, and the stock it was built from must be that base's stock.
+  const base = image.baseName === undefined ? undefined : bases[image.baseName];
+  if (!base) {
+    throw new RadioInterlockError(
+      "This image's base is not one Studio knows, so its flash limits can't be checked. Nothing was sent.",
+    );
+  }
+  if (sha256HexSync(image.stockPackage.files[UV5RMINI_FW_ROLE]) !== base.stockSha256) {
+    throw new RadioInterlockError(
+      `This image names the base ${base.name}, but the stock firmware it was built from is not that base's stock. Nothing was sent.`,
+    );
+  }
+
   // I1, I2: the container and its loader.
   const ufw = parseOrRefuse(ufwBytes, 'This image');
   const loaderSha = sha256HexSync(ufw.loader.packed);
@@ -123,9 +145,10 @@ export function checkUv5rMiniImage(
   // I3: the area.
   const flash = ufw.entries.flash.data;
   const end = UV5RMINI_FLASH_BASE + flash.length;
-  if (end > UV5RMINI_FLASH_HARD_LIMIT) {
+  const hardLimit = uv5rMiniHardLimit(base);
+  if (end > hardLimit) {
     throw new RadioInterlockError(
-      `This image reaches ${hex(end)}, past the limit ${hex(UV5RMINI_FLASH_HARD_LIMIT)}. Nothing was sent.`,
+      `This image reaches ${hex(end)}, past the limit ${hex(hardLimit)}. Nothing was sent.`,
     );
   }
   if (end > base.areaEnd) {
@@ -135,7 +158,11 @@ export function checkUv5rMiniImage(
   }
 
   // I4: nothing but the app windows differs from the stock.
-  const stockUfw = parseOrRefuse(image.stockPackage.files[UV5RMINI_FW_ROLE], 'The stock firmware');
+  const stockUfw = parseOrRefuse(
+    image.stockPackage.files[UV5RMINI_FW_ROLE],
+    'The stock firmware',
+    true,
+  );
   const stockFlash = stockUfw.entries.flash.data;
   if (stockFlash.length !== flash.length) {
     throw new RadioInterlockError(

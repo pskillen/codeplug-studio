@@ -56,6 +56,34 @@ describe('prepareFirmwareImage — stock target', () => {
   });
 });
 
+describe('prepareFirmwareImage — a radio with a second stock version', () => {
+  it('prepares the stock version that was verified, not the primary one', async () => {
+    const a = seededBytes(31, 1024);
+    const b = seededBytes(32, 1536);
+    const zip = { fileName: 'z.zip', bytes: seededBytes(33, 16) };
+    const first = await syntheticDescriptor(
+      'baofeng-dm32uv',
+      [{ role: 'img', fileName: 'A.img', bytes: a }],
+      zip,
+    );
+    const second = await syntheticDescriptor(
+      'baofeng-dm32uv',
+      [{ role: 'img', fileName: 'B.img', bytes: b }],
+      zip,
+    );
+    const descriptor = {
+      ...first,
+      alsoAccepts: [{ version: 'v0.0.2-test', members: second.members }],
+    };
+    const stock = await resolveStockFirmware(descriptor, [{ name: 'B.img', bytes: b }], {
+      otherDescriptors: [],
+    });
+    const prepared = await prepareFirmwareImage({ descriptor, stock, target: { kind: 'stock' } });
+    expect(prepared.stockVersion).toBe('v0.0.2-test');
+    expect(prepared.package.files.img).toEqual(b);
+  });
+});
+
 describe('prepareFirmwareImage — patch target', () => {
   async function loaded(provenance: 'published' | 'unreviewed' = 'published') {
     const r = await syntheticDm32Release();

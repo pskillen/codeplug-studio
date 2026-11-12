@@ -6,6 +6,7 @@ import { unzipSync } from 'fflate';
 
 import { FirmwareError } from '../errors.ts';
 import { sha256Hex } from '../hash.ts';
+import { stockVariants } from '../stockVariants.ts';
 import type {
   FirmwarePackage,
   KnownPatchedResult,
@@ -90,14 +91,17 @@ async function scanZip(bytes: Uint8Array, wanted: ReadonlySet<string>): Promise<
 
 /** Pure. Every source, present and future, goes through this one verifier. */
 export async function resolveStockFirmware(
-  descriptor: StockFirmwareDescriptor,
+  radioDescriptor: StockFirmwareDescriptor,
   inputs: readonly NamedBytes[],
   context: ResolveStockContext,
 ): Promise<VerifiedStockFirmware> {
-  const others = context.otherDescriptors.filter((d) => d.radioId !== descriptor.radioId);
-  const ownNames = new Set(descriptor.members.map((m) => m.fileName));
+  const variants = stockVariants(radioDescriptor);
+  const others = context.otherDescriptors.filter((d) => d.radioId !== radioDescriptor.radioId);
+  const ownNames = new Set(variants.flatMap((v) => v.members.map((m) => m.fileName)));
   const otherNames = new Map<string, StockFirmwareDescriptor>();
-  for (const o of others) for (const m of o.members) otherNames.set(m.fileName, o);
+  for (const o of others) {
+    for (const v of stockVariants(o)) for (const m of v.members) otherNames.set(m.fileName, o);
+  }
   const wanted = new Set<string>([...ownNames, ...otherNames.keys()]);
 
   const candidates = new Map<string, Candidate[]>();
@@ -124,22 +128,32 @@ export async function resolveStockFirmware(
   }
 
   // Nothing of this radio's: diagnose another radio's stock before calling it missing.
-  const anyOwn = descriptor.members.some((m) => candidates.has(m.fileName));
+  const anyOwn = [...ownNames].some((n) => candidates.has(n));
   if (!anyOwn) {
     for (const name of candidates.keys()) {
       const other = otherNames.get(name);
-      if (other) throw wrongRadioError(descriptor, other);
+      if (other) throw wrongRadioError(radioDescriptor, other);
     }
     for (const o of others) {
-      const memberHashes = new Set(o.members.map((m) => m.sha256));
+      const memberHashes = new Set(stockVariants(o).flatMap((v) => v.members.map((m) => m.sha256)));
       if (
         (o.zip !== undefined && zipHashes.includes(o.zip.sha256)) ||
         looseHashes.some((h) => memberHashes.has(h))
       ) {
-        throw wrongRadioError(descriptor, o);
+        throw wrongRadioError(radioDescriptor, o);
       }
     }
   }
+
+  // The files supplied pick the stock version; a radio's variants never share a file name.
+  const present = variants.filter((v) => v.members.some((m) => candidates.has(m.fileName)));
+  if (present.length > 1) {
+    throw new FirmwareError(
+      'stock-duplicate-member',
+      `Files for more than one ${radioDescriptor.label} stock version were supplied. Supply exactly one.`,
+    );
+  }
+  const descriptor = present[0] ?? variants[0]!;
 
   const files: Record<string, Uint8Array> = {};
   const sha256: Record<string, string> = {};
@@ -213,7 +227,7 @@ function diagnoseMismatch(
   }
   for (const o of others) {
     if (
-      o.members.some((m) => m.sha256 === hash) ||
+      stockVariants(o).some((v) => v.members.some((m) => m.sha256 === hash)) ||
       (o.zip !== undefined && zipHashes.includes(o.zip.sha256))
     ) {
       return wrongRadioError(descriptor, o);

@@ -32,6 +32,8 @@ export interface SyntheticUfwOptions {
   otaAttr?: number;
   badOtaHeaderCrc?: boolean;
   badOtaDataCrc?: boolean;
+  /** `ota.bin` is 0x200 bytes of 0xFF: a stock file with no loader. */
+  blankOta?: boolean;
 }
 
 export interface SyntheticUfw {
@@ -73,7 +75,7 @@ function otaBin(loader: Uint8Array, o: SyntheticUfwOptions): Uint8Array {
 export function makeSyntheticUfw(o: SyntheticUfwOptions = {}): SyntheticUfw {
   const flash = o.flash ?? seededBytes(o.flashSeed ?? 1, o.flashSize ?? 0x4000);
   const loader = o.loader ?? seededBytes(o.loaderSeed ?? 2, 600);
-  const ota = otaBin(loader, o);
+  const ota = o.blankOta ? new Uint8Array(0x200).fill(0xff) : otaBin(loader, o);
   const bodies: { type: number; name: string; data: Uint8Array; badCrc: boolean }[] = [
     { type: 0, name: 'flash.bin', data: flash, badCrc: !!o.badFlashCrc },
     o.noOta

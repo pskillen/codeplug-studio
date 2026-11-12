@@ -6,6 +6,7 @@
 import { FirmwareError } from '../errors.ts';
 import type { ParsedFirmwarePatch } from '../patch/types.ts';
 import { listStockFirmwareDescriptors } from '../stockCatalog.ts';
+import { stockVariants } from '../stockVariants.ts';
 import type { StockFirmwareDescriptor } from '../types.ts';
 import type { PublishedFirmwareRelease } from './types.ts';
 
@@ -61,7 +62,7 @@ export function parsePublishedReleaseIndex(
     const descriptor = descriptors.find((d) => d.radioId === radioId);
     if (!descriptor) continue;
     const stockVersion = str(row, 'stockVersion', where);
-    if (stockVersion !== descriptor.version) continue;
+    if (!stockVariants(descriptor).some((v) => v.version === stockVersion)) continue;
 
     const channel = str(row, 'channel', where);
     const patchSha256 = str(row, 'patchSha256', where);
@@ -127,14 +128,17 @@ export function checkPublishedPatch(
     throw fail('it is for a different radio');
   }
   if (description.version !== release.tag) throw fail('its version does not match the release');
-  const roles = descriptor.members.map((m) => m.role).sort();
+  // Built on the release's own stock version, which must be one the radio accepts.
+  const variant = stockVariants(descriptor).find((v) => v.version === release.stockVersion);
+  if (!variant) throw fail(`it is not built on a stock version Studio accepts`);
+  const roles = variant.members.map((m) => m.role).sort();
   if (Object.keys(description.stock).sort().join() !== roles.join()) {
-    throw fail(`it is not built on stock ${descriptor.version}`);
+    throw fail(`it is not built on stock ${variant.version}`);
   }
-  for (const m of descriptor.members) {
+  for (const m of variant.members) {
     const s = description.stock[m.role];
     if (s?.sha256 !== m.sha256 || s.size !== m.size) {
-      throw fail(`it is not built on stock ${descriptor.version}`);
+      throw fail(`it is not built on stock ${variant.version}`);
     }
   }
   const results = Object.entries(description.result);
