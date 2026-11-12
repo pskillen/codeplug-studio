@@ -13,9 +13,9 @@ The owner has flashed stock V1.41, the ladder test builds and the MM9PDY zones b
 PL2303GC cable).
 
 **The main board is a separate firmware radio, `retevis-rt95-main`,** one radio id per MCU, sharing the head's stock
-zip. Only its stock pin and update-mode facts exist so far (see [Main board stock pin](#main-board-stock-pin) and
-[Main board update mode](#main-board-update-mode)); **the MAIN updater is not offered yet**, so the flasher lists
-the same radios as before.
+zip. Its facts are the [stock pin](#main-board-stock-pin), [update mode](#main-board-update-mode), the
+[pre-flight](#main-board-pre-flight) and the [interlocks](#main-board-interlocks). **The MAIN updater flashes the
+pinned stock MAIN only and is hidden on prod** (`prodFlashDisabled: true`): it is listed on next, dev and staging.
 
 ## Stock firmware pin
 
@@ -77,6 +77,40 @@ again. **Warning:** never flash a radio with a serial number before 2101.
 
 Verify: hold FUNC + P4 while switching on; the test screen shows `RF CPU: V1.11` (a patched MAIN shows the same: the
 constant is protected). Turn the knob only, then switch off.
+
+## Main board pre-flight
+
+The wire cannot tell P1 from P3, so the gate is the same hard gate as the head's, with these differences
+(`RT95_MAIN_PREFLIGHT` in `preflight.ts`):
+
+- **Attestations:** the head's two (serial 21xx or later; the FUNC + P4 test screen shows LCD CPU V1.11 and RF CPU
+  V1.11).
+- **Probe:** the head's normal-mode probe (9,600 baud; exactly `PROGRAM`, `02`, `END`). The wrong-radio text names the
+  main board ("Studio flashes only the RT95-P main board …").
+- **Safety backup (required):** "Your radio's calibration and identity (EEPROM 0x3B00–0x3FFF) cannot be rebuilt if a
+  main-board flash goes wrong." Once per radio, keyed by the serial the operator types from the label. If Studio holds a
+  record for that serial, the step sends only `PROGRAM`, `02` and `END`; otherwise it reads 0x3B00–0x3FFF (and the
+  0x7B00 alias) and offers the zip to save.- **Confirmation on the Flash step (the inverse of the head's):** "The screen says UPDATE THE RF CPU." must be ticked.
+
+## Main board interlocks
+
+Code only; none can be switched off. The head's checks run against the main-board profile (`RT95_MAIN_TARGET`,
+`targets.ts`), plus an image rule:
+
+| Fact                    | Value                                                                                                                |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Window                  | frames inside `0x08002000` to `0x0800FC00` (D35); at most 55 data frames                                             |
+| Initial SP              | exactly `0x200013E8`; a head-range SP (above `0x20002000`, at most `0x20005000`) is refused as "a front-panel image" |
+| Reset vector            | odd, inside the image (stock `0x08002869`)                                                                           |
+| Model                   | `RT95-P\0` at `.CDD` offset `0xD65C`                                                                                 |
+| Image                   | the `.CDI` length is `0xD93C`; the stock `.CDD` has a 40-byte tail that is never sent                                |
+| Identity (this version) | stock only: every role's SHA-256, computed at flash time, equals the pinned MAIN member, and the image is stock      |
+| Outgoing gate           | a data frame at or above `0x0800FC00`, or below `0x08002000`, is refused                                             |
+
+Transfer: the PC side is the head's protocol unchanged (115,200 8N1, same cable echo, `PROGRAM` then `06`, 1,032-byte
+frames, end byte `18`). The head re-checks each frame's sum and relays it to MAIN at 37,500 baud; only MAIN's `06`
+comes back. If MAIN is not in its bootloader the bridge loops and the PC sees silence (a timeout, then a resend, then
+the "Is the main board in update mode?" message). About 20 to 25 s for 55 frames (estimate, not measured).
 
 ## Update-mode entry
 
@@ -269,5 +303,8 @@ stock from the wizard's **Stock firmware** entry. Full steps:
 [Firmware flashing — Recovery](../../../../features/firmware-flashing/README.md#recovery).
 
 - **Vendor fallback.** The vendor's updater (QXCodePro, Windows) is in the same Retevis package as the stock firmware.
-- **Main board.** Studio does not flash it yet. Recovering the main board needs the vendor tool and a working front panel,
-  so recovery is always front panel first.
+- **Main board.** Recovery order is **head first, then MAIN**: the main board is reached through the front panel's
+  bridge, so a working front panel (stock V1.41 from the wizard if needed) comes first. Then re-enter MAIN update mode
+  (cold power-up, P3 + knob, the screen says UPDATE THE RF CPU) and flash the pinned stock MAIN V1.61; stock MAIN is
+  the way back. The safety backup holds the calibration and identity (EEPROM 0x3B00–0x3FFF); Studio has no
+  restore for it yet, use the firmware project's restore tools.
