@@ -140,6 +140,31 @@ export async function runRt95SafetyBackup(
   pipe: BytePipe,
   opts: RunRt95SafetyBackupOptions,
 ): Promise<Rt95SafetyBackupResult> {
+  const out = await runCore(pipe, opts);
+  if (out.kind !== 'taken') throw new RadioInterlockError('Unexpected safety backup state.');
+  return out.result;
+}
+
+export type Rt95SafetyBackupOnceOutcome =
+  | { kind: 'already-saved'; ident: Rt95IdentResult; radioKey: string }
+  | { kind: 'taken'; result: Rt95SafetyBackupResult };
+
+/**
+ * As {@link runRt95SafetyBackup}, but stops right after the ident when `isSaved(radioKey)` is true: nothing is read
+ * from the calibration region. `radioKey` is the normalised typed serial (decision 33), never the ident.
+ */
+export function runRt95SafetyBackupUnlessSaved(
+  pipe: BytePipe,
+  opts: RunRt95SafetyBackupOptions & { isSaved: (radioKey: string) => boolean },
+): Promise<Rt95SafetyBackupOnceOutcome> {
+  return runCore(pipe, opts, opts.isSaved);
+}
+
+async function runCore(
+  pipe: BytePipe,
+  opts: RunRt95SafetyBackupOptions,
+  isSaved?: (radioKey: string) => boolean,
+): Promise<Rt95SafetyBackupOnceOutcome> {
   const guarded = createGuardedSend(pipe, checkRt95SafetyBackupOutgoing);
   const wrapped: BytePipe = {
     write: guarded,
@@ -168,6 +193,8 @@ export async function runRt95SafetyBackup(
       );
     }
     const ident = parseRt95IdentResponse(await probeProgramQxIdent(wrapped, RT95_IO_TIMEOUT_MS));
+    const key = rt95SafetyBackupRadioKey(opts.serial);
+    if (isSaved?.(key)) return { kind: 'already-saved', ident, radioKey: key };
     const { bytes, rereads } = await readRt95SafetyRegion(
       async (addr) =>
         parseProgramQxReadReply(
@@ -181,7 +208,7 @@ export async function runRt95SafetyBackup(
         ),
       { region: opts.region, signal: opts.signal, onProgress: opts.onProgress },
     );
-    return await packRt95SafetyResult({
+    const result = await packRt95SafetyResult({
       region: opts.region,
       serial: opts.serial,
       ident,
@@ -189,6 +216,7 @@ export async function runRt95SafetyBackup(
       rereads,
       now: opts.now?.(),
     });
+    return { kind: 'taken', result };
   } finally {
     // END leaves clone mode and puts the main board back, on every path.
     if (entered) {

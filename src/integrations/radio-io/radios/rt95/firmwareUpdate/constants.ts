@@ -2,7 +2,9 @@
  * RT95 front panel (head) bootloader update: protocol-only facts (link, frame bytes, address window, timeouts).
  * Spec: the firmware project's `tools/rt95update.py` and `docs/reference/update-protocol.md`.
  * Human mirror: docs/reference/radios/retevis/rt95/firmware.md — "Bootloader update protocol".
- * Head only: the main board (MAIN) is never offered. Per-target facts are read through a profile (targets.ts).
+ * Shared by both MCUs: the head's constants are RT95_HEAD_*, the main board's (MAIN) RT95_MAIN_*. MAIN is flashed
+ * through the head's bridge, so the link and frames are the head's. Per-target facts are read through a profile
+ * (targets.ts).
  */
 import type { FirmwareLinkSpec } from '../../../firmware/types.ts';
 
@@ -63,3 +65,15 @@ export const RT95_HEAD_FW_FRAME_START = 0x01;
 
 /** The stock head V1.41 image is this many frames (0x08002000 to 0x0801C000). */
 export const RT95_HEAD_FW_FRAMES_STOCK = 104;
+
+/** Main board (MAIN, "RF CPU"): firmware radio id. Flashed through the head's bridge (P3 + knob at a cold power-up). */
+export const RT95_MAIN_FW_RADIO_ID = 'retevis-rt95-main' as const;
+/** D35 window: frames inside [0x08002000, 0x0800FC00). */
+export const RT95_MAIN_FW_LIMIT = 0x0800fc00;
+/** MAIN's initial SP is exactly this (the head's is in (0x20002000, 0x20005000]). */
+export const RT95_MAIN_FW_SP = 0x200013e8;
+/** `.CDD` file offset of the model string (0x0800F65C). */
+export const RT95_MAIN_FW_MODEL_OFFSET = 0xd65c;
+export const RT95_MAIN_FW_MAX_FRAMES = 55;
+/** The stock MAIN V1.61 image is this many frames (0xD93C bytes). */
+export const RT95_MAIN_FW_FRAMES_STOCK = 55;

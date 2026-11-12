@@ -9,7 +9,8 @@
  *     limit (head: 0x08020000); optional frame cap.
  *  4. Vector table: the target's SP rule (head: range, refuses the main-board image), odd reset inside the image.
  *  5. Model string `RT95-P\0` at the target's `.CDD` offset (head: 0x15360).
- *  6. Outgoing gate on every write.
+ *  6. Target image rule (`checkImageIdentity`; MAIN: the pinned stock only, no flag turns it off).
+ *  7. Outgoing gate on every write.
  */
 import { RT95_HEAD_FIRMWARE_ROLE } from '@core/radios/retevis/rt95/firmware.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
@@ -119,6 +120,7 @@ export function checkRt95FirmwareImage(
     spi: files[RT95_HEAD_FIRMWARE_ROLE.SPI]!,
   });
   checkRt95Package(pkg, target);
+  target.checkImageIdentity?.(image);
   return pkg;
 }
 
