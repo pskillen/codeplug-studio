@@ -1,6 +1,7 @@
+import { fakeMagicReply } from './magicReplyTestKit.ts';
 import { describe, expect, it } from 'vitest';
 import type { BytePipe } from '../../types.ts';
-import { RadioProtocolError } from '../../kit/errors.ts';
+import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { PROGRAM_RW_ACK } from '../../kit/codecs/programRw.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { createSyntheticImageBase } from '../uv5r-mini/__fixtures__/syntheticImage.ts';
@@ -25,6 +26,8 @@ function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
 
 class ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
+  /** Prefix of the `M` reply; default is the Mini's. */
+  modelPrefix: Uint8Array | undefined = UV5R_MINI_LAYOUT.modelReplyPrefix;
   private readBuf = new Uint8Array(0);
   private readBlockQueue: Array<{ addr: number; plain: Uint8Array }> = [];
 
@@ -45,10 +48,6 @@ class ScriptedPipe implements BytePipe {
     this.enqueue(new Uint8Array([PROGRAM_RW_ACK]));
   }
 
-  private enqueueMagic(len: number): void {
-    this.enqueue(new Uint8Array(len));
-  }
-
   private enqueueReadReply(plain: Uint8Array, addr: number): void {
     const encrypted = uv5rMiniCrypt(plain);
     const frame = new Uint8Array(UV5R_MINI_READ_RESPONSE_LEN);
@@ -63,7 +62,7 @@ class ScriptedPipe implements BytePipe {
   private respondToMagic(data: Uint8Array): boolean {
     for (const magic of [...UV5R_MINI_MAGICS_READ, ...UV5R_MINI_MAGICS_UPLOAD]) {
       if (bytesEqual(data, magic.send)) {
-        this.enqueueMagic(magic.responseLen);
+        this.enqueue(fakeMagicReply(magic.send, magic.responseLen, this.modelPrefix));
         return true;
       }
     }
@@ -248,5 +247,54 @@ describe('Uv17ProProtocol read reply address echo', () => {
     const err = await radio.download({}).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(RadioProtocolError);
     expect((err as Error).message).toMatch(/echoed address 0x1234, expected 0x0/);
+  });
+});
+
+describe('Uv17ProProtocol UV-5R Mini model-reply check', () => {
+  const OTHER_MODEL = new TextEncoder().encode('UV21PRO');
+  const REFUSAL = /doesn't answer as a UV-5R Mini\. Nothing was written\./;
+  const writeFrames = (pipe: ScriptedPipe) => pipe.writes.filter((w) => w[0] === 0x57);
+
+  it('Read refuses another model', async () => {
+    const pipe = new ScriptedPipe();
+    pipe.modelPrefix = OTHER_MODEL;
+    const radio = new Uv17ProProtocol(UV5R_MINI_LAYOUT);
+    const err = await radio.connect(pipe, { settleScale: 0 }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioWrongIdentError);
+    expect((err as Error).message).toMatch(REFUSAL);
+    expect(pipe.writes.filter((w) => w[0] === 0x52)).toHaveLength(0);
+  });
+
+  it('Write (handshake at upload) refuses another model before any W frame', async () => {
+    const pipe = new ScriptedPipe();
+    pipe.modelPrefix = OTHER_MODEL;
+    const radio = new Uv17ProProtocol(UV5R_MINI_LAYOUT);
+    await radio.connect(pipe, { handshake: 'none' });
+    const err = await radio
+      .upload(memoryMapFromBytes(createSyntheticImageBase()), {})
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioWrongIdentError);
+    expect((err as Error).message).toMatch(REFUSAL);
+    expect(writeFrames(pipe)).toHaveLength(0);
+  });
+
+  it('an all-zero M reply is refused', async () => {
+    const pipe = new ScriptedPipe();
+    pipe.modelPrefix = undefined;
+    const radio = new Uv17ProProtocol(UV5R_MINI_LAYOUT);
+    await radio.connect(pipe, { handshake: 'none' });
+    const err = await radio
+      .upload(memoryMapFromBytes(createSyntheticImageBase()), {})
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioWrongIdentError);
+    expect(writeFrames(pipe)).toHaveLength(0);
+  });
+
+  it('a Mini reply lets the Write proceed', async () => {
+    const pipe = new ScriptedPipe();
+    const radio = new Uv17ProProtocol(UV5R_MINI_LAYOUT);
+    await radio.connect(pipe, { handshake: 'none' });
+    await radio.upload(memoryMapFromBytes(createSyntheticImageBase()), {});
+    expect(writeFrames(pipe)).toHaveLength(UV5R_MINI_CLONE_BLOCK_COUNT);
   });
 });

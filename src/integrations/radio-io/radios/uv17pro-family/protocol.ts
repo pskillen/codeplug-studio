@@ -115,6 +115,8 @@ async function waitForReadResponse(
   );
 }
 
+const MODEL_MAGIC = 0x4d;
+
 async function runMagics(
   layout: Uv17ProLayout,
   pipe: BytePipe,
@@ -126,7 +128,21 @@ async function runMagics(
     throwIfAborted(signal);
     await flushPipe(pipe);
     await pipe.write(send);
-    await pipe.readExact(responseLen, layout.ioTimeoutMs);
+    const reply = await pipe.readExact(responseLen, layout.ioTimeoutMs);
+    if (send.length === 1 && send[0] === MODEL_MAGIC) {
+      assertModelReply(layout, reply);
+    }
+  }
+}
+
+/** The `M` magic's reply names the model. Refuse a mismatch before any write frame. */
+function assertModelReply(layout: Uv17ProLayout, reply: Uint8Array): void {
+  const prefix = layout.modelReplyPrefix;
+  if (!prefix) return;
+  if (prefix.length > reply.length || !prefix.every((b, i) => reply[i] === b)) {
+    throw new RadioWrongIdentError(
+      `This radio doesn't answer as a ${layout.protocolLabel}. Nothing was written.`,
+    );
   }
 }
 

@@ -1,3 +1,5 @@
+import { UV5R_MINI_LAYOUT } from '../uv17pro-family/layout.ts';
+import { fakeMagicReply } from '../uv17pro-family/magicReplyTestKit.ts';
 import { describe, expect, it } from 'vitest';
 import type { BytePipe } from '../../types.ts';
 import { PROGRAM_RW_ACK } from '../../kit/codecs/programRw.ts';
@@ -45,10 +47,6 @@ class ScriptedPipe implements BytePipe {
     this.enqueue(new Uint8Array([PROGRAM_RW_ACK]));
   }
 
-  private enqueueMagic(len: number): void {
-    this.enqueue(new Uint8Array(len));
-  }
-
   private enqueueReadReply(plain: Uint8Array, addr: number, leadingJunk = false): void {
     if (leadingJunk) {
       this.enqueue(new Uint8Array([0x00, 0x00]));
@@ -73,7 +71,9 @@ class ScriptedPipe implements BytePipe {
   private respondToMagic(data: Uint8Array): boolean {
     for (const magic of [...UV5R_MINI_MAGICS_READ, ...UV5R_MINI_MAGICS_UPLOAD]) {
       if (bytesEqual(data, magic.send)) {
-        this.enqueueMagic(magic.responseLen);
+        this.enqueue(
+          fakeMagicReply(magic.send, magic.responseLen, UV5R_MINI_LAYOUT.modelReplyPrefix),
+        );
         return true;
       }
     }

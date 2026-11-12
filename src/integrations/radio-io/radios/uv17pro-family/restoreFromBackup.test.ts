@@ -1,3 +1,5 @@
+import { RadioWrongIdentError } from '../../kit/errors.ts';
+import { fakeMagicReply } from './magicReplyTestKit.ts';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,7 +32,12 @@ class ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
   private readBuf = new Uint8Array(0);
 
-  constructor(private readonly layout: typeof UV5R_MINI_LAYOUT) {}
+  /** Prefix of the `M` reply; default follows the layout. */
+  modelPrefix: Uint8Array | undefined;
+
+  constructor(private readonly layout: typeof UV5R_MINI_LAYOUT) {
+    this.modelPrefix = layout.modelReplyPrefix;
+  }
 
   private enqueue(...chunks: Uint8Array[]): void {
     for (const chunk of chunks) {
@@ -44,7 +51,7 @@ class ScriptedPipe implements BytePipe {
   private respondToMagic(data: Uint8Array): boolean {
     for (const magic of [...this.layout.magics.read, ...this.layout.magics.upload]) {
       if (bytesEqual(data, magic.send)) {
-        this.enqueue(new Uint8Array(magic.responseLen));
+        this.enqueue(fakeMagicReply(magic.send, magic.responseLen, this.modelPrefix));
         return true;
       }
     }
@@ -189,6 +196,26 @@ describe('intendedUv17ProRestoreImage', () => {
     expect(src).not.toMatch(/mergeChannelsInto/);
     expect(src).not.toMatch(/prepareRadioWriteImage/);
     expect(src).not.toMatch(/\bassemble\(/);
+  });
+});
+
+describe('Uv17ProProtocol.restoreFromBackup model-reply check', () => {
+  it('refuses another model before any W frame', async () => {
+    const layout = UV5R_MINI_LAYOUT;
+    const pipe = new ScriptedPipe(layout);
+    pipe.modelPrefix = new TextEncoder().encode('UV21PRO');
+    const proto = new Uv17ProProtocol(layout);
+    await proto.connect(pipe, { handshake: 'none' });
+    const ids = uv17ProBackupMemSpans(layout).map((s) => s.id);
+    const err = await proto
+      .restoreFromBackup(
+        { manifest: manifestFor(layout, restorableRegions(layout)), image: patternedImage(layout) },
+        { regionIds: ids },
+      )
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioWrongIdentError);
+    expect((err as Error).message).toMatch(/Nothing was written/);
+    expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(0);
   });
 });
 
