@@ -34,6 +34,18 @@ describe('prepareFirmwareImage — stock target', () => {
     expect(prepared.releaseTag).toBeUndefined();
     expect(prepared.stockPackage).toBe(stock.package);
     expect(prepared.title).toBe(`stock firmware ${descriptor.version}`);
+    expect(prepared.radioLayout).toBeUndefined();
+  });
+
+  it("carries the radio's layout when the operator gave one", async () => {
+    const { descriptor, stock } = await verifiedStock();
+    const prepared = await prepareFirmwareImage({
+      descriptor,
+      stock,
+      target: { kind: 'stock' },
+      radioLayout: 'L2',
+    });
+    expect(prepared.radioLayout).toBe('L2');
   });
 
   it('refuses stock whose bytes no longer match the verified hashes', async () => {
