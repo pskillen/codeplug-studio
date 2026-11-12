@@ -50,6 +50,17 @@ function RadioLayoutQuestion({
         onChange={(e) => onChange({ hardware: e.target.value })}
         mono
       />
+      {question.build ? (
+        <>
+          <TextInput
+            label={question.build.label}
+            value={answers.build}
+            onChange={(e) => onChange({ build: e.target.value })}
+            mono
+          />
+          <p className={classes.muted}>{question.build.help}</p>
+        </>
+      ) : null}
       <LabeledCheck
         label={question.override.label}
         checked={answers.override}

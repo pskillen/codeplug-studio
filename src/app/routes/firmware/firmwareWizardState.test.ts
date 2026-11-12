@@ -169,7 +169,7 @@ describe('firmwareWizardReducer', () => {
     );
     expect(s.image).toBeNull();
     expect(s.checks.risk).toBe(false);
-    expect(s.radioInfo).toEqual({ firmware: 'V0.27', hardware: '', override: true });
+    expect(s.radioInfo).toEqual({ firmware: 'V0.27', hardware: '', build: '', override: true });
     expect(reduce(s, { type: 'restart' }).radioInfo.firmware).toBe('');
   });
 

@@ -110,6 +110,41 @@ describe('PrepareStep: the UV-5R Mini Radio Info question', () => {
     expect(screen.queryByRole('button', { name: 'Connect and flash' })).toBeNull();
   });
 
+  it('refuses a crossed pick before Connect: the build name says L1, the file is L2', async () => {
+    render(<Harness updater={MINI} />);
+    type('Radio Info: Firmware', 'V0.27');
+    type('Radio Info: Hardware', 'V1.7');
+    await screen.findByText(/Ready to flash/);
+    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L1-1.0.0');
+    expect(
+      await screen.findByText(new RegExp(OTHER_LAYOUT.replace(/[.;]/g, '.'))),
+    ).toBeInTheDocument();
+    expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![4]).toBe('L1');
+    await waitFor(() => expect(latest.image).toBeNull());
+    expect(canAdvance(latest)).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Connect and flash' })).toBeNull();
+  });
+
+  it('prepares an L2 file for a radio whose build name says L2', async () => {
+    render(<Harness updater={MINI} />);
+    type('Radio Info: Firmware', 'V0.27');
+    type('Radio Info: Hardware', 'V1.7');
+    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L2-pr140-g1c0a');
+    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![4]).toBe('L2');
+  });
+
+  it('refuses a build name outside the grammar without building anything', () => {
+    render(<Harness updater={MINI} />);
+    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L3-1.0.0');
+    type('Radio Info: Firmware', 'V0.27');
+    type('Radio Info: Hardware', 'V1.7');
+    expect(
+      screen.getByText("Studio doesn't recognise this radio's Radio Info; nothing was sent."),
+    ).toBeInTheDocument();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+  });
+
   it('warns that a wrong override resets the FM presets and volume', () => {
     render(<Harness updater={MINI} />);
     expect(screen.getByText(/FM presets and volume are reset/)).toBeInTheDocument();

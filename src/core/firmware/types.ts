@@ -88,6 +88,8 @@ export interface StockFirmwareDescriptor {
 export interface RadioInfoAnswers {
   readonly firmware: string;
   readonly hardware: string;
+  /** The build name a modded radio shows on Radio Info; empty on stock or when not given. */
+  readonly build: string;
   readonly override: boolean;
 }
 
@@ -102,6 +104,8 @@ export interface FirmwareRadioLayoutQuestion {
   readonly steps: readonly string[];
   readonly firmwareLabel: string;
   readonly hardwareLabel: string;
+  /** An optional line for a modded radio's build name, which decides the layout when given. */
+  readonly build?: { readonly label: string; readonly help: string };
   readonly override: { readonly label: string; readonly help: string };
   readonly resolve: (answers: RadioInfoAnswers) => RadioLayoutAnswer;
 }
