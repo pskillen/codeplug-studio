@@ -6,6 +6,7 @@ import {
   type RadioBackupManifestV1,
   type RadioBackupRegionV1,
 } from '../../backup/types.ts';
+import { fakeMagicReply } from '../uv17pro-family/magicReplyTestKit.ts';
 import { PROGRAM_RW_ACK } from '../../kit/codecs/programRw.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { UV5R_MINI_LAYOUT as layout } from '../uv17pro-family/layout.ts';
@@ -33,7 +34,8 @@ class FakePipe implements BytePipe {
     this.writes.push(data.slice());
     if (bytesEqual(data, layout.ident)) return this.enqueue(new Uint8Array([PROGRAM_RW_ACK]));
     for (const m of [...layout.magics.read, ...layout.magics.upload]) {
-      if (bytesEqual(data, m.send)) return this.enqueue(new Uint8Array(m.responseLen));
+      if (bytesEqual(data, m.send))
+        return this.enqueue(fakeMagicReply(m.send, m.responseLen, layout.modelReplyPrefix));
     }
     if (data[0] === 0x57) this.enqueue(new Uint8Array([PROGRAM_RW_ACK]));
   }
