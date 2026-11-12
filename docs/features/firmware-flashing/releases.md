@@ -50,6 +50,14 @@ A new firmware release reaches Studio users as soon as it is published there. No
 The public repository generates it from each release's patch and sidecar notes (`tools/release_index.py` there).
 `resultSha256` is keyed by the radio's stock member roles.
 
+### RT95 main board rows
+
+The RT95 main board is its own firmware radio, so its releases live under their own path and project: `radioId`
+`retevis-rt95-main`, `patchName` `retevis-rt95-main-firmware`, `patchPath` `releases/retevis-rt95-main/rt95-main-fw-<label>.patch.json`,
+`stockVersion` `MAIN V1.61 (20231202)`. The same patch can be loaded from disk as a user patch (CI artifact
+`rt95-main-fw-<label>`). Format and limits: [RT95 firmware.md](../../reference/radios/retevis/rt95/firmware.md#main-board-patch-format).
+The main board stays hidden on prod.
+
 ## What Studio checks
 
 | When              | Check                                                                                                                                                                                                                                                                                          | Code                                                                          |

@@ -110,8 +110,7 @@ export const RT95_MAIN_STOCK_FIRMWARE: StockFirmwareDescriptor = {
       sha256: '3d096d4788e747417c669f5348ac4b4c6aa3d31a2bd8dd7799300203729714c3',
     },
   ],
-  // S3 adds the MAIN patch name.
-  patchNames: [],
+  patchNames: ['retevis-rt95-main-firmware'],
   bootloaderEntry: {
     steps: [
       'Studio checks that a safety backup of this radio is saved first.',

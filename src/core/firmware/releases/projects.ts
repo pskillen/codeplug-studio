@@ -16,6 +16,7 @@ export const FIRMWARE_PROJECTS: readonly FirmwareProject[] = [
   { patchName: 'baofeng-dm32-firmware', displayName: 'MM9PDY modded firmware' },
   { patchName: 'anytone-d890-firmware', displayName: 'MM9PDY modded firmware' },
   { patchName: 'retevis-rt95-firmware', displayName: 'MM9PDY modded firmware' },
+  { patchName: 'retevis-rt95-main-firmware', displayName: 'MM9PDY modded firmware' },
   { patchName: 'baofeng-uv5rmini-firmware', displayName: 'MM9PDY modded firmware' },
 ];
 

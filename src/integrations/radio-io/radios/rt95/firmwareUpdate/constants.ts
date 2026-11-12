@@ -77,3 +77,13 @@ export const RT95_MAIN_FW_MODEL_OFFSET = 0xd65c;
 export const RT95_MAIN_FW_MAX_FRAMES = 55;
 /** The stock MAIN V1.61 image is this many frames (0xD93C bytes). */
 export const RT95_MAIN_FW_FRAMES_STOCK = 55;
+/** Stock MAIN V1.61 image length in bytes; the stock `.CDD` carries 40 more that are never sent. */
+export const RT95_MAIN_FW_IMAGE_LEN = 0xd93c;
+/** The one D35 hook site: `.CDD` file offsets [0x382, 0x386). The only stock bytes a patched MAIN may change. */
+export const RT95_MAIN_FW_HOOK_START = 0x382;
+export const RT95_MAIN_FW_HOOK_END = 0x386;
+/** A patched MAIN image ends at or before this file offset (address 0x0800FC00). */
+export const RT95_MAIN_FW_WINDOW_END = RT95_MAIN_FW_LIMIT - 0x08002000;
+/** u32 LE length fields: `.CDI` +0x104, `.spi` +2. */
+export const RT95_FW_CDI_LEN_OFFSET = 0x104;
+export const RT95_FW_SPI_LEN_OFFSET = 2;
