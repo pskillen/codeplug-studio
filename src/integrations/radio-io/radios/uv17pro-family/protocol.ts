@@ -261,6 +261,20 @@ export class Uv17ProProtocol implements CloneImageRadio {
     return null;
   }
 
+  /**
+   * Restore frames outside the clone (the UV-5R Mini MM9PDY zone table), or `null`. Called once per Restore before
+   * the first frame with the region ids the caller selected; it names the ids it consumes, and may throw to refuse
+   * the Restore. Written after the clone blocks, in the order given, under the same interlock.
+   */
+  protected restoreExtraFrames(
+    archive: { manifest: RadioBackupManifestV1; image: MemoryMap },
+    regionIds: readonly string[],
+  ): (Uv17ProExtraUploadFrames & { regionIds: readonly string[] }) | null {
+    void archive;
+    void regionIds;
+    return null;
+  }
+
   /** Read arbitrary 64-byte blocks by radio address (write verify of frames outside the clone). */
   async readBlocks(
     addresses: readonly number[],
@@ -407,7 +421,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
   }
 
   /**
-   * Replay selected restorable MEM bins as a packed clone upload.
+   * Replay selected restorable MEM bins as a packed clone upload, then any {@link restoreExtraFrames}.
    * Does not merge channels, assemble, or seed from a project bag.
    */
   async restoreFromBackup(
@@ -415,21 +429,37 @@ export class Uv17ProProtocol implements CloneImageRadio {
     opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
   ): Promise<void> {
     const pipe = this.requirePipe();
+    const memIds = new Set(uv17ProBackupMemSpans(this.layout).map((s) => s.id));
+    const extra = this.restoreExtraFrames(archive, opts.regionIds);
+    const extraIds = new Set(extra?.regionIds ?? []);
+    const extraFrames = extra?.frames ?? [];
     if (this.layout.assertWriteAllowed) {
-      const known = new Set(uv17ProBackupMemSpans(this.layout).map((s) => s.id));
-      const unknown = opts.regionIds.filter((id) => !known.has(id));
+      const unknown = opts.regionIds.filter((id) => !memIds.has(id) && !extraIds.has(id));
       if (unknown.length > 0) {
         throw new RadioProtocolError(
           `${this.layout.protocolLabel} restore names regions outside the write set: ${unknown.join(', ')}`,
         );
       }
     }
-    const intended = intendedUv17ProRestoreImage(this.layout, archive, opts.regionIds);
-    const addrs = listUv17ProRestoreWriteAddresses(this.layout, archive, opts.regionIds);
-    this.assertPlanAllowed(addrs, 'restore');
+    for (const f of extraFrames) {
+      if (f.bytes.length !== this.layout.blockSize) {
+        throw new RangeError(`Block must be ${this.layout.blockSize} bytes`);
+      }
+    }
+    const cloneIds = opts.regionIds.filter((id) => memIds.has(id));
+    // A Restore of only the extra frames writes no clone block; otherwise the clone rules apply as before.
+    const cloneOnlyExtra = cloneIds.length === 0 && extraFrames.length > 0;
+    const intended = cloneOnlyExtra
+      ? null
+      : intendedUv17ProRestoreImage(this.layout, archive, cloneIds);
+    const addrs = cloneOnlyExtra
+      ? []
+      : listUv17ProRestoreWriteAddresses(this.layout, archive, cloneIds);
+    this.assertPlanAllowed([...addrs, ...extraFrames.map((f) => f.address)], 'restore');
+    const max = addrs.length + extraFrames.length;
     reportProgress(
       opts.onProgress,
-      { cur: 0, max: addrs.length, msg: 'Restore handshake', stage: 'Restore' },
+      { cur: 0, max, msg: 'Restore handshake', stage: 'Restore' },
       opts.signal,
     );
     if (!this.identComplete) {
@@ -438,19 +468,24 @@ export class Uv17ProProtocol implements CloneImageRadio {
     }
     let done = 0;
     const stagingChunks: { address: number; data: Uint8Array }[] = [];
-    for (const addr of addrs) {
+    const frames = [
+      ...addrs.map((addr) => ({
+        address: addr,
+        bytes: intended!.get(packedOffsetForRadioAddr(this.layout, addr), this.layout.blockSize),
+      })),
+      ...extraFrames,
+    ];
+    for (const { address, bytes } of frames) {
       throwIfAborted(opts.signal);
-      const packed = packedOffsetForRadioAddr(this.layout, addr);
-      const plain = intended.get(packed, this.layout.blockSize);
-      await this.writeBlock(pipe, addr, plain, 'restore');
-      stagingChunks.push({ address: addr, data: plain.slice() });
+      await this.writeBlock(pipe, address, bytes, 'restore');
+      stagingChunks.push({ address, data: bytes.slice() });
       done += 1;
       reportProgress(
         opts.onProgress,
         {
           cur: done,
-          max: addrs.length,
-          msg: `Restoring 0x${addr.toString(16)}`,
+          max,
+          msg: `Restoring 0x${address.toString(16)}`,
           stage: 'Restore',
         },
         opts.signal,

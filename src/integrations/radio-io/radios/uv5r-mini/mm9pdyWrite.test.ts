@@ -5,20 +5,18 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { BytePipe, ProgressUpdate, RadioSession } from '../../types.ts';
+import type { MemoryMap, ProgressUpdate, RadioSession } from '../../types.ts';
 import {
   RADIO_BACKUP_FORMAT,
   RADIO_BACKUP_VERSION,
   type RadioBackupManifestV1,
 } from '../../backup/types.ts';
-import { PROGRAM_RW_ACK } from '../../kit/codecs/programRw.ts';
 import { RadioWrongIdentError } from '../../kit/errors.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { uv17ProBackupMemSpans } from '../uv17pro-family/backupRestoreRoles.ts';
-import { uv17ProCrypt } from '../uv17pro-family/crypt.ts';
 import { UV5R_MINI_LAYOUT as layout } from '../uv17pro-family/layout.ts';
-import { fakeMagicReply } from '../uv17pro-family/magicReplyTestKit.ts';
 import type { Uv17ProExtraUploadFrames } from '../uv17pro-family/protocol.ts';
+import { FakeMiniRadio as FakeRadio } from './__fixtures__/fakeMiniRadio.ts';
 import { UV5R_MINI_DESCRIPTOR } from './descriptor.ts';
 import {
   decodeUv5rMiniZoneTable,
@@ -33,79 +31,12 @@ import {
   Uv5rMiniWriteRefusedError,
   type Uv5rMiniWriteContext,
 } from './writeInterlock.ts';
-
-function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
-  return a.length === b.length && a.every((v, i) => v === b[i]);
-}
-
-/** Fake radio over a 64 KiB external flash. Acks every W; answers R from flash. */
-class FakeRadio implements BytePipe {
-  readonly writes: Uint8Array[] = [];
-  readonly flash = new Uint8Array(0x10000).fill(0xff);
-  private buf = new Uint8Array(0);
-  /** Stop acking (and storing) after this many W frames: an interrupted Write. */
-  ackLimit = Infinity;
-  /** Corrupt the stored copy of the frame at this address (verify must catch it). */
-  corruptAt: number | undefined;
-
-  constructor(private readonly modelPrefix: Uint8Array | undefined = layout.modelReplyPrefix) {}
-
-  private enqueue(chunk: Uint8Array): void {
-    const next = new Uint8Array(this.buf.length + chunk.length);
-    next.set(this.buf);
-    next.set(chunk, this.buf.length);
-    this.buf = next;
-  }
-
-  async write(data: Uint8Array): Promise<void> {
-    this.writes.push(data.slice());
-    if (bytesEqual(data, layout.ident)) return this.enqueue(new Uint8Array([PROGRAM_RW_ACK]));
-    for (const m of [...layout.magics.read, ...layout.magics.upload]) {
-      if (bytesEqual(data, m.send))
-        return this.enqueue(fakeMagicReply(m.send, m.responseLen, this.modelPrefix));
-    }
-    const addr = (data[1]! << 8) | data[2]!;
-    if (data[0] === 0x57) {
-      if (this.wAddresses().length > this.ackLimit) return;
-      const plain = uv17ProCrypt(data.subarray(4, 4 + layout.blockSize), layout.defaultEncrsym);
-      if (addr % 0x1000 === 0) this.flash.fill(0xff, addr, addr + 0x1000);
-      this.flash.set(plain, addr);
-      if (addr === this.corruptAt) this.flash[addr + 5] ^= 0x01;
-      this.enqueue(new Uint8Array([PROGRAM_RW_ACK]));
-      return;
-    }
-    if (data[0] === 0x52) {
-      const plain = this.flash.slice(addr, addr + layout.blockSize);
-      const frame = new Uint8Array(4 + layout.blockSize);
-      frame.set([0x52, (addr >> 8) & 0xff, addr & 0xff, layout.blockSize]);
-      frame.set(uv17ProCrypt(plain, layout.defaultEncrsym), 4);
-      this.enqueue(frame);
-    }
-  }
-
-  async readExact(n: number): Promise<Uint8Array> {
-    if (this.buf.length < n) throw new Error(`FakeRadio: needed ${n}, have ${this.buf.length}`);
-    const out = this.buf.slice(0, n);
-    this.buf = this.buf.slice(n);
-    return out;
-  }
-
-  async flush(): Promise<void> {
-    this.buf = new Uint8Array(0);
-  }
-
-  async close(): Promise<void> {
-    /* no-op */
-  }
-
-  wAddresses(): number[] {
-    return this.writes.filter((w) => w[0] === 0x57).map((w) => (w[1]! << 8) | w[2]!);
-  }
-
-  sector(): Uint8Array {
-    return this.flash.slice(MMZ1_BASE, MMZ1_END);
-  }
-}
+import {
+  uv5rMiniArchiveImageWithZoneTable,
+  uv5rMiniZoneBackupRegion,
+  uv5rMiniZoneRestoreFrames,
+  uv5rMiniZoneTableFrameAddresses,
+} from './zoneBackup.ts';
 
 function range(start: number, size: number): number[] {
   const out: number[] = [];
@@ -254,6 +185,42 @@ describe('UV-5R Mini MM9PDY table generation across two Writes', () => {
   });
 });
 
+function blankSector(): Uint8Array {
+  return new Uint8Array(MMZ1_END - MMZ1_BASE).fill(0xff);
+}
+
+/** A backup archive as `openRadioBackupZip` rebuilds it: the packed clone at 0, the table (if any) at 0xC000. */
+function archiveFor(
+  sector: Uint8Array,
+  opts: { withZones: boolean; clone?: Uint8Array },
+): { manifest: RadioBackupManifestV1; image: MemoryMap } {
+  const clone = createMemoryMap(layout.memTotal);
+  if (opts.clone) clone.set(0, opts.clone);
+  const regions: RadioBackupManifestV1['regions'] = uv17ProBackupMemSpans(layout).map((s) => ({
+    id: s.id,
+    label: s.id,
+    address: s.packedOffset,
+    byteLength: s.size,
+    path: `regions/${s.id}.bin`,
+    restoreRole: 'restorable' as const,
+  }));
+  if (opts.withZones) regions.push(uv5rMiniZoneBackupRegion(sector).region);
+  const manifest: RadioBackupManifestV1 = {
+    format: RADIO_BACKUP_FORMAT,
+    version: RADIO_BACKUP_VERSION,
+    capturedAt: '2026-11-12T12:00:00.000Z',
+    capturedVia: 'web-serial',
+    app: { buildEnv: 'test', buildVersion: '0' },
+    radioModelId: layout.radioModelId,
+    descriptorLabel: layout.protocolLabel,
+    coverage: 'full-clone',
+    imageByteLength: layout.memTotal,
+    regions,
+  };
+  const image = opts.withZones ? uv5rMiniArchiveImageWithZoneTable(clone, sector) : clone;
+  return { manifest, image };
+}
+
 describe('UV-5R Mini MM9PDY write safety', () => {
   const STOCK_SPANS: readonly (readonly [number, number])[] = [
     [0x0000, 0x8040],
@@ -320,55 +287,52 @@ describe('UV-5R Mini MM9PDY write safety', () => {
     }
   });
 
-  it('Restore on the mm9pdy profile writes only the stock spans and never the zone table', async () => {
+  // SZ6 relaxed SZ5's "Restore never carries the table": the zone table region now restores on the MM9PDY
+  // Backup / Restore profile (see the Backup and Restore describe below). What still holds is tested here.
+  it("a Write's zone intent does not widen Restore: it runs on the Backup / Restore profile, stock by default", async () => {
     const { pipe, proto } = await connected();
     proto.setZoneIntent(zones(3));
     expect(proto.getWriteProfile()).toBe('mm9pdy');
-    const manifest: RadioBackupManifestV1 = {
-      format: RADIO_BACKUP_FORMAT,
-      version: RADIO_BACKUP_VERSION,
-      capturedAt: '2026-11-12T12:00:00.000Z',
-      capturedVia: 'web-serial',
-      app: { buildEnv: 'test', buildVersion: '0' },
-      radioModelId: layout.radioModelId,
-      descriptorLabel: layout.protocolLabel,
-      coverage: 'full-clone',
-      imageByteLength: layout.memTotal,
-      regions: uv17ProBackupMemSpans(layout).map((s) => ({
-        id: s.id,
-        label: s.id,
-        address: s.packedOffset,
-        byteLength: s.size,
-        path: `regions/${s.id}.bin`,
-        restoreRole: 'restorable' as const,
-      })),
-    };
-    const image = createMemoryMap(layout.memTotal);
-    await proto.restoreFromBackup({ manifest, image }, { regionIds: ['mem-0', 'mem-1', 'mem-2'] });
-    expect(pipe.wAddresses()).toEqual(STOCK_PLAN);
-
-    pipe.writes.length = 0;
-    const extra = {
-      ...manifest,
-      regions: [
-        ...manifest.regions,
-        {
-          id: 'mem-3',
-          label: 'mem-3',
-          address: 0xc000,
-          byteLength: 0x40,
-          path: 'regions/mem-3.bin',
-          restoreRole: 'restorable' as const,
-        },
-      ],
-    };
+    const { manifest, image } = archiveFor(blankSector(), { withZones: true });
     await expect(
       proto.restoreFromBackup(
-        { manifest: extra, image },
-        { regionIds: ['mem-0', 'mem-1', 'mem-2', 'mem-3'] },
+        { manifest, image },
+        { regionIds: ['mem-0', 'mem-1', 'mem-2', 'zones'] },
       ),
-    ).rejects.toThrow(/outside the write set/);
+    ).rejects.toThrow(/MM9PDY target only/);
     expect(pipe.writes).toHaveLength(0);
+    expect(proto.getWriteProfile()).toBe('stock');
+    await proto.restoreFromBackup({ manifest, image }, { regionIds: ['mem-0', 'mem-1', 'mem-2'] });
+    expect(pipe.wAddresses()).toEqual(STOCK_PLAN);
+  });
+
+  it('a crafted region outside the clone and the table is refused on both profiles, before any frame', async () => {
+    for (const profile of ['stock', 'mm9pdy'] as const) {
+      const { pipe, proto } = await connected();
+      proto.setBackupRestoreProfile(profile);
+      const { manifest, image } = archiveFor(blankSector(), { withZones: true });
+      const extra = {
+        ...manifest,
+        regions: [
+          ...manifest.regions,
+          {
+            id: 'mem-3',
+            label: 'mem-3',
+            address: 0xc000,
+            byteLength: 0x40,
+            path: 'regions/mem-3.bin',
+            restoreRole: 'restorable' as const,
+          },
+        ],
+      };
+      await expect(
+        proto.restoreFromBackup(
+          { manifest: extra, image },
+          { regionIds: ['mem-0', 'mem-1', 'mem-2', 'mem-3'] },
+        ),
+      ).rejects.toThrow(/outside the write set/);
+      expect(pipe.writes).toHaveLength(0);
+    }
   });
 
   it('a Restore outside the spans is refused on the mm9pdy profile', () => {
@@ -518,5 +482,191 @@ describe('UV-5R Mini MM9PDY write verify', () => {
     const { result, reads } = await verify(new FakeRadio(), null);
     expect(reads.every((a) => a < 0xc000)).toBe(true);
     expect(result.regions.some((r) => r.id === 'mm9pdy-zone-table')).toBe(false);
+  });
+});
+
+describe('UV-5R Mini MM9PDY Backup and Restore of the zone table', () => {
+  const TABLE_FRAMES = range(0xc000, 0x1000);
+
+  it('Backup plan: the stock profile reads the clone only and refuses the table', async () => {
+    const { pipe, proto } = await connected();
+    expect(proto.getBackupRestoreProfile()).toBe('stock');
+    await proto.download();
+    expect(pipe.rAddresses()).toEqual(STOCK_PLAN);
+    await expect(proto.downloadZoneTable()).rejects.toThrow(/MM9PDY target only/);
+    expect(pipe.rAddresses()).toEqual(STOCK_PLAN);
+  });
+
+  it('Backup plan: the mm9pdy profile reads the clone, then 0xC000-0xCFC0 (64 frames), and nothing else', async () => {
+    const radio = new FakeRadio();
+    await writeZones(zones(5), radio);
+    const { pipe, proto } = await connected(new Uv5rMiniProtocol(), radio);
+    proto.setBackupRestoreProfile('mm9pdy');
+    await proto.download();
+    const sector = await proto.downloadZoneTable();
+    expect(pipe.rAddresses()).toEqual([...STOCK_PLAN, ...TABLE_FRAMES]);
+    expect(uv5rMiniZoneTableFrameAddresses()).toEqual(TABLE_FRAMES);
+    expect(pipe.wAddresses()).toEqual([]);
+    expect(sector).toEqual(radio.sector());
+    const region = uv5rMiniZoneBackupRegion(sector).region;
+    expect(region).toMatchObject({
+      id: 'zones',
+      address: 0xc000,
+      byteLength: 0x1000,
+      path: 'regions/zones.bin',
+      restoreRole: 'restorable',
+    });
+    expect(region.label).toContain('5 zones');
+    expect(uv5rMiniZoneBackupRegion(blankSector()).region.label).toContain('no table');
+  });
+
+  it('Restore plan, stock profile: the stock blocks only, the same with or without a table in the backup', async () => {
+    for (const withZones of [false, true]) {
+      const { pipe, proto } = await connected();
+      const { manifest, image } = archiveFor(encodeUv5rMiniZoneTable(zones(3)).sector, {
+        withZones,
+      });
+      await proto.restoreFromBackup(
+        { manifest, image },
+        { regionIds: ['mem-0', 'mem-1', 'mem-2'] },
+      );
+      expect(pipe.wAddresses()).toEqual(STOCK_PLAN);
+    }
+  });
+
+  it('Restore plan, mm9pdy profile: the stock blocks, then the header at 0xC000, then the non-FF frames', async () => {
+    const enc = encodeUv5rMiniZoneTable(zones(3));
+    const { pipe, proto } = await connected();
+    proto.setBackupRestoreProfile('mm9pdy');
+    const { manifest, image } = archiveFor(enc.sector, { withZones: true });
+    await proto.restoreFromBackup(
+      { manifest, image },
+      { regionIds: ['mem-0', 'mem-1', 'mem-2', 'zones'] },
+    );
+    const tableFrames = uv5rMiniZoneRestoreFrames(manifest, image).map((f) => f.address);
+    expect(tableFrames[0]).toBe(0xc000);
+    expect(tableFrames).toEqual([...tableFrames].sort((a, b) => a - b));
+    expect(pipe.wAddresses()).toEqual([...STOCK_PLAN, ...tableFrames]);
+    // The encoder writes only non-FF frames after the header too, so the plans agree frame for frame.
+    expect(tableFrames).toEqual(enc.frames.map((f) => f.address).sort((a, b) => a - b));
+    expect(pipe.sector()).toEqual(enc.sector);
+    const decoded = decodeUv5rMiniZoneTable(pipe.sector());
+    expect('reject' in decoded).toBe(false);
+  });
+
+  it('a table-only Restore writes the header first and no clone block, over an older table', async () => {
+    const radio = new FakeRadio();
+    await writeZones(zones(12), radio);
+    const backup = encodeUv5rMiniZoneTable(zones(2));
+    const { pipe, proto } = await connected(new Uv5rMiniProtocol(), radio);
+    proto.setBackupRestoreProfile('mm9pdy');
+    const { manifest, image } = archiveFor(backup.sector, { withZones: true });
+    await proto.restoreFromBackup({ manifest, image }, { regionIds: ['zones'] });
+    expect(pipe.wAddresses()[0]).toBe(0xc000);
+    expect(pipe.wAddresses().every((a) => a >= 0xc000 && a <= 0xcfc0)).toBe(true);
+    expect(radio.sector()).toEqual(backup.sector);
+  });
+
+  it('a backup with a blank table restores as "no table": the header alone, which erases an older table', async () => {
+    const radio = new FakeRadio();
+    await writeZones(zones(6), radio);
+    const { pipe, proto } = await connected(new Uv5rMiniProtocol(), radio);
+    proto.setBackupRestoreProfile('mm9pdy');
+    const { manifest, image } = archiveFor(blankSector(), { withZones: true });
+    await proto.restoreFromBackup({ manifest, image }, { regionIds: ['zones'] });
+    expect(pipe.wAddresses()).toEqual([0xc000]);
+    expect(radio.sector()).toEqual(blankSector());
+    expect(decodeUv5rMiniZoneTable(radio.sector())).toEqual({ reject: 'blank header' });
+  });
+
+  it('a stock-profile Restore that names the table is refused before the first frame', async () => {
+    const { pipe, proto } = await connected();
+    proto.setBackupRestoreProfile('stock');
+    const { manifest, image } = archiveFor(encodeUv5rMiniZoneTable(zones(3)).sector, {
+      withZones: true,
+    });
+    for (const regionIds of [['zones'], ['mem-0', 'mem-1', 'mem-2', 'zones']]) {
+      await expect(proto.restoreFromBackup({ manifest, image }, { regionIds })).rejects.toThrow(
+        /MM9PDY target only/,
+      );
+      expect(pipe.writes).toHaveLength(0);
+    }
+  });
+
+  it('a crafted table region at another address or size is refused before the first frame', async () => {
+    const sector = encodeUv5rMiniZoneTable(zones(3)).sector;
+    const bad: Partial<RadioBackupManifestV1['regions'][number]>[] = [
+      { address: 0xd000 },
+      { address: 0xb000 },
+      { address: 0xe000 },
+      { byteLength: 0x2000 },
+      { byteLength: 0x40 },
+      { restoreRole: 'inspect-only' },
+    ];
+    for (const patch of bad) {
+      const { pipe, proto } = await connected();
+      proto.setBackupRestoreProfile('mm9pdy');
+      const { manifest, image } = archiveFor(sector, { withZones: true });
+      const crafted = {
+        ...manifest,
+        regions: manifest.regions.map((r) => (r.id === 'zones' ? { ...r, ...patch } : r)),
+      };
+      await expect(
+        proto.restoreFromBackup({ manifest: crafted, image }, { regionIds: ['zones'] }),
+      ).rejects.toThrow(/zone table/);
+      expect(pipe.writes).toHaveLength(0);
+    }
+  });
+
+  it('every frame a table Restore can write stays inside 0xC000-0xCFC0, whatever the backup bytes', () => {
+    const noisy = new Uint8Array(0x1000).map((_, i) => (i * 37) & 0xff);
+    for (const sector of [noisy, blankSector(), encodeUv5rMiniZoneTable(zones(24)).sector]) {
+      const { manifest, image } = archiveFor(sector, { withZones: true });
+      for (const f of uv5rMiniZoneRestoreFrames(manifest, image)) {
+        expect(f.address).toBeGreaterThanOrEqual(0xc000);
+        expect(f.address).toBeLessThanOrEqual(0xcfc0);
+        expect(f.bytes).toHaveLength(0x40);
+        assertUv5rMiniWriteAllowed(f.address, 0x40, { profile: 'mm9pdy', operation: 'restore' });
+      }
+    }
+  });
+
+  it('the model check runs before any Restore frame: a radio that is not a Mini gets no W frame', async () => {
+    const pipe = new FakeRadio(new TextEncoder().encode('NOTAMINI'));
+    const { proto } = await connected(new Uv5rMiniProtocol(), pipe);
+    proto.setBackupRestoreProfile('mm9pdy');
+    const { manifest, image } = archiveFor(encodeUv5rMiniZoneTable(zones(3)).sector, {
+      withZones: true,
+    });
+    await expect(
+      proto.restoreFromBackup(
+        { manifest, image },
+        { regionIds: ['mem-0', 'mem-1', 'mem-2', 'zones'] },
+      ),
+    ).rejects.toThrow(RadioWrongIdentError);
+    expect(pipe.wAddresses()).toEqual([]);
+  });
+
+  it('the interlock checks the whole Restore plan before the handshake', async () => {
+    class BadRestore extends Uv5rMiniProtocol {
+      protected override restoreExtraFrames() {
+        return {
+          stage: 'Zone table',
+          frames: [
+            { address: 0xc000, bytes: new Uint8Array(0x40) },
+            { address: 0xd000, bytes: new Uint8Array(0x40) },
+          ],
+          regionIds: ['zones'],
+        };
+      }
+    }
+    const proto = new BadRestore();
+    proto.setBackupRestoreProfile('mm9pdy');
+    const { pipe } = await connected(proto);
+    const { manifest, image } = archiveFor(blankSector(), { withZones: true });
+    await expect(
+      proto.restoreFromBackup({ manifest, image }, { regionIds: ['zones'] }),
+    ).rejects.toThrow(Uv5rMiniWriteRefusedError);
+    expect(pipe.writes).toHaveLength(0);
   });
 });
