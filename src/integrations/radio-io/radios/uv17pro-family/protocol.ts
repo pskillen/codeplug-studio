@@ -17,7 +17,8 @@ import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
-import type { Uv17ProLayout } from './layout.ts';
+import type { Uv17ProLayout, Uv17ProWriteContext } from './layout.ts';
+import { uv17ProBackupMemSpans } from './backupRestoreRoles.ts';
 import { uv17ProCrypt } from './crypt.ts';
 import {
   intendedUv17ProRestoreImage,
@@ -232,7 +233,31 @@ export class Uv17ProProtocol implements CloneImageRadio {
     return uv17ProCrypt(encrypted, this.layout.defaultEncrsym);
   }
 
-  private async writeBlock(pipe: BytePipe, radioAddr: number, plain: Uint8Array): Promise<void> {
+  /** Write profile; `stock` until a modified-firmware target sets it. */
+  private writeProfile: Uv17ProWriteContext['profile'] = 'stock';
+
+  /** Refuse the whole plan before any frame (handshake included) when the layout has an interlock. */
+  private assertPlanAllowed(
+    addrs: readonly number[],
+    operation: Uv17ProWriteContext['operation'],
+  ): void {
+    const guard = this.layout.assertWriteAllowed;
+    if (!guard) return;
+    for (const addr of addrs) {
+      guard(addr, this.layout.blockSize, { profile: this.writeProfile, operation });
+    }
+  }
+
+  private async writeBlock(
+    pipe: BytePipe,
+    radioAddr: number,
+    plain: Uint8Array,
+    operation: Uv17ProWriteContext['operation'],
+  ): Promise<void> {
+    this.layout.assertWriteAllowed?.(radioAddr, plain.length, {
+      profile: this.writeProfile,
+      operation,
+    });
     if (plain.length !== this.layout.blockSize) {
       throw new RangeError(`Block must be ${this.layout.blockSize} bytes`);
     }
@@ -282,6 +307,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
     }
     const pipe = this.requirePipe();
     const addrs = listRadioBlockAddresses(this.layout);
+    this.assertPlanAllowed(addrs, 'write');
     reportProgress(
       opts.onProgress,
       { cur: 0, max: addrs.length, msg: 'Upload handshake', stage: 'Upload' },
@@ -298,7 +324,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
       throwIfAborted(opts.signal);
       const packed = packedOffsetForRadioAddr(this.layout, addr);
       const plain = image.get(packed, this.layout.blockSize);
-      await this.writeBlock(pipe, addr, plain);
+      await this.writeBlock(pipe, addr, plain, 'write');
       stagingChunks.push({ address: addr, data: plain.slice() });
       done += 1;
       reportProgress(
@@ -319,8 +345,18 @@ export class Uv17ProProtocol implements CloneImageRadio {
     opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
   ): Promise<void> {
     const pipe = this.requirePipe();
+    if (this.layout.assertWriteAllowed) {
+      const known = new Set(uv17ProBackupMemSpans(this.layout).map((s) => s.id));
+      const unknown = opts.regionIds.filter((id) => !known.has(id));
+      if (unknown.length > 0) {
+        throw new RadioProtocolError(
+          `${this.layout.protocolLabel} restore names regions outside the write set: ${unknown.join(', ')}`,
+        );
+      }
+    }
     const intended = intendedUv17ProRestoreImage(this.layout, archive, opts.regionIds);
     const addrs = listUv17ProRestoreWriteAddresses(this.layout, archive, opts.regionIds);
+    this.assertPlanAllowed(addrs, 'restore');
     reportProgress(
       opts.onProgress,
       { cur: 0, max: addrs.length, msg: 'Restore handshake', stage: 'Restore' },
@@ -336,7 +372,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
       throwIfAborted(opts.signal);
       const packed = packedOffsetForRadioAddr(this.layout, addr);
       const plain = intended.get(packed, this.layout.blockSize);
-      await this.writeBlock(pipe, addr, plain);
+      await this.writeBlock(pipe, addr, plain, 'restore');
       stagingChunks.push({ address: addr, data: plain.slice() });
       done += 1;
       reportProgress(
