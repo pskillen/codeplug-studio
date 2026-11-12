@@ -55,6 +55,15 @@ describe('listOfferedFirmwareUpdaters', () => {
     }
   });
 
+  it('hides the RT95 main board on prod and offers it on next, dev and staging', () => {
+    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).not.toContain(
+      'retevis-rt95-main',
+    );
+    for (const env of ENVS_PRE_PROD) {
+      expect(listOfferedFirmwareUpdaters(env).map((d) => d.radioId)).toContain('retevis-rt95-main');
+    }
+  });
+
   it('offers the DM-32UV on dev', () => {
     expect(listOfferedFirmwareUpdaters('dev').map((d) => d.radioId)).toContain('baofeng-dm32uv');
   });
