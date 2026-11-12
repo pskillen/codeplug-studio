@@ -282,6 +282,11 @@ export interface RadioWriteOrganisation {
    * descriptions from {@link RadioChannelDto.description}) at EEPROM 0x4000-0x5FFF. Stock RT95 never sets it.
    */
   writeRt95ModData?: boolean;
+  /**
+   * UV-5R Mini MM9PDY only. When true, Write also stores the MMZ1 zone table (from {@link zones}) in the
+   * radio's external flash. Stock UV-5R Mini never sets it.
+   */
+  writeUv5rMiniZones?: boolean;
   /** Unit written into the channel location table header. Unset → `'km'`. */
   channelDistanceUnit?: ChannelDistanceUnit;
   /**
