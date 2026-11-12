@@ -35,6 +35,7 @@ export default function RadioStep({
                   preflight: {
                     attestationIds: d.preflight?.attestations.map((a) => a.id) ?? [],
                     probe: !!d.preflight?.probe,
+                    safetyBackup: !!d.preflight?.safetyBackup,
                   },
                 })
               }

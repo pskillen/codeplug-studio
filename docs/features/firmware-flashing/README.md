@@ -115,6 +115,13 @@ hidden there).
    Some radios add their own checks: the RT95 asks two questions (serial number 21xx or later; the FUNC + P4 test
    screen shows LCD CPU V1.11 and RF CPU V1.11) and reads the radio's model and version in normal mode (**Check the
    radio**) before you put it into update mode. Continue stays disabled until both are ticked and the check passed.
+   A radio may also require a **saved safety backup** of its irreplaceable data (calibration, identity). You type the
+   serial number from the radio's label; if Studio already has a record of a backup for that serial, the step passes
+   and reads nothing. Otherwise **Check / take safety backup** reads the radio (read-only), downloads the backup zip
+   and asks you to tick "I've saved <file>" before it records that one was saved. **Use a backup file I already
+   have** records an existing backup file for the serial. Studio keeps only a small record in this browser (serial,
+   file name, fingerprint, date; never the bytes), so the same radio skips the step next time. It is required: the
+   "already tested this radio" opt-out for the read-only check does not skip it.
 6. **Enter update mode** — the radio's own steps, indicator and warnings, from its descriptor. The RT95's is P1 +
    knob with a blank screen; the P3 mode (screen "UPDATE THE RF CPU") flashes the main board and is the wrong one.
    The UV-5R Mini's is PTT-A and = held while switching on (the screen shows UPDATE...); after a cut update, switch on
@@ -232,6 +239,8 @@ Studio pins are:
 - **Interlocks:** the radio's updater refuses an unsafe image or frame in code (address windows away from the
   bootloader and the activation page, image length and header, vector table), and checks the bootloader's ident,
   including that the radio is in update mode, before the first data frame.
+- **Radio-specific pre-flight:** attestations, a read-only normal-mode check and, for some radios, a saved safety
+  backup of the radio's irreplaceable data.
 
 A small **Start over** link beside the step indicator (every radio) resets the wizard to step 1 with nothing carried over. It is hidden on step 1 and while a flash is running, so it can never interrupt a write.
 

@@ -49,7 +49,10 @@ import {
   openAtD890VitalZip,
   type AtD890VitalSession,
 } from '../../services/atD890VitalBackup.ts';
+import { backupRt95Safety, type Rt95SafetyBackupResult } from '../../services/rt95SafetyBackup.ts';
+import type { Rt95SafetyRegion } from '@integrations/radio-io/radios/rt95/safetyBackup/reader.ts';
 import AtD890VitalBackupPanel from './AtD890VitalBackupPanel.tsx';
+import Rt95SafetyBackupPanel from './Rt95SafetyBackupPanel.tsx';
 import Dm32CalibrationBackupPanel from './Dm32CalibrationBackupPanel.tsx';
 import {
   addBackupThisSession,
@@ -113,6 +116,7 @@ export default function BuildRadioBackupPage() {
   const [backup, setBackup] = useState<RadioBackupSession | null>(null);
   const [selectedRegionIds, setSelectedRegionIds] = useState<ReadonlySet<string>>(new Set());
   const [vital, setVital] = useState<AtD890VitalSession | null>(null);
+  const [safety, setSafety] = useState<Rt95SafetyBackupResult | null>(null);
   const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
   /** The connected D890's range differs from the zip's: every restorable region is restored together. */
   const [rangeMismatch, setRangeMismatch] = useState(false);
@@ -149,6 +153,7 @@ export default function BuildRadioBackupPage() {
   const profileId = radioEgress.profileId;
   const dm32Model = (descriptor?.modelIds ?? []).some((id) => /dm-?32/i.test(id));
   const d890Model = (descriptor?.modelIds ?? []).includes('AT-D890UV');
+  const rt95Model = (descriptor?.modelIds ?? []).includes('RT95-P');
   const warnFactoryReset = dm32Model;
   const dm32PowerCycle =
     dm32Model ||
@@ -252,6 +257,35 @@ export default function BuildRadioBackupPage() {
       setPhase('done');
     } catch (err) {
       setVital(null);
+      setError(err instanceof Error ? err.message : String(err));
+      await releaseSession();
+      setBusy(false);
+      clearProgress();
+      abortRef.current = null;
+    }
+  }
+
+  async function handleBackupSafety(region: Rt95SafetyRegion, serial: string) {
+    setSafety(null);
+    beginBusy('safety-read');
+    try {
+      const { session } = await openRadioSessionForEgress(radioEgress!, {
+        forcePortSelection: true,
+        purpose: 'read',
+      });
+      sessionRef.current = session;
+      setPhase('transfer');
+      const result = await backupRt95Safety(session, {
+        region,
+        serial,
+        onProgress,
+        signal: abortRef.current!.signal,
+      });
+      await releaseSession();
+      setSafety(result);
+      setPhase('done');
+    } catch (err) {
+      setSafety(null);
       setError(err instanceof Error ? err.message : String(err));
       await releaseSession();
       setBusy(false);
@@ -425,6 +459,16 @@ export default function BuildRadioBackupPage() {
             onBackup={() => void handleBackupVital()}
             onOpenFile={(f) => void handleOpenVitalFile(f)}
             onClear={() => setVital(null)}
+          />
+        ) : null}
+
+        {rt95Model ? (
+          <Rt95SafetyBackupPanel
+            busy={busy}
+            serialOk={serialOk}
+            result={safety}
+            onBackup={(region, serial) => void handleBackupSafety(region, serial)}
+            onClear={() => setSafety(null)}
           />
         ) : null}
 

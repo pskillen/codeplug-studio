@@ -8,6 +8,7 @@ import type { FirmwareChoice, VerifiedStockFirmware } from '../../services/firmw
 import {
   canAdvance,
   isPreflightComplete,
+  isSafetyBackupDone,
   firmwareWizardReducer as reduce,
   INITIAL_FIRMWARE_WIZARD_STATE,
   PREFLIGHT_CHECKS,
@@ -236,6 +237,67 @@ describe('firmwareWizardReducer', () => {
       const s = atPreflight();
       expect(reduce(s, { type: 'goTo', step: 'updateMode' }).step).toBe('preflight');
     });
+  });
+});
+
+describe('safety backup requirement', () => {
+  const REQ = { attestationIds: [], probe: true, safetyBackup: true };
+  const TAKEN = {
+    kind: 'taken' as const,
+    radioKey: 'AB 1',
+    summary: 's',
+    region: 'cal',
+    fileName: 'f.zip',
+    sha256: 'aa',
+    fingerprint: 'ff',
+    ticked: false,
+  };
+  const atPreflight = () => {
+    let s = through(
+      { type: 'selectRadio', radioId: 'baofeng-dm32uv', preflight: REQ },
+      { type: 'next' },
+      { type: 'next' },
+      { type: 'stockVerified', stock: STOCK },
+      { type: 'next' },
+      { type: 'imagePrepared', image: IMAGE },
+      { type: 'next' },
+    );
+    for (const check of PREFLIGHT_CHECKS) s = reduce(s, { type: 'setCheck', check, value: true });
+    return reduce(s, { type: 'setProbeSkipped', value: true });
+  };
+
+  it('blocks Continue, even with the probe skipped, until saved', () => {
+    const s = atPreflight();
+    expect(s.probeSkipped).toBe(true);
+    expect(canAdvance(s)).toBe(false);
+    expect(canAdvance(reduce(s, { type: 'safetyBackupResult', status: TAKEN }))).toBe(false);
+  });
+
+  it('already saved passes; a taken backup needs the tick', () => {
+    const saved = reduce(atPreflight(), {
+      type: 'safetyBackupResult',
+      status: { kind: 'saved', radioKey: 'AB 1', summary: 's' },
+    });
+    expect(canAdvance(saved)).toBe(true);
+    let taken = reduce(atPreflight(), { type: 'safetyBackupResult', status: TAKEN });
+    expect(isSafetyBackupDone(taken)).toBe(false);
+    taken = reduce(taken, { type: 'safetyBackupTicked' });
+    expect(canAdvance(taken)).toBe(true);
+  });
+
+  it('typing another serial discards the result; picking another radio clears everything', () => {
+    let s = reduce(atPreflight(), { type: 'setSafetyBackupSerial', value: 'AB 1' });
+    s = reduce(s, { type: 'safetyBackupResult', status: TAKEN });
+    expect(reduce(s, { type: 'setSafetyBackupSerial', value: 'AB 2' }).safetyBackup).toBeNull();
+    const other = reduce(s, { type: 'selectRadio', radioId: 'baofeng-uv5rmini' });
+    expect(other.safetyBackup).toBeNull();
+    expect(other.safetyBackupSerial).toBe('');
+  });
+
+  it('a radio without the requirement is unaffected', () => {
+    let s = through({ type: 'selectRadio', radioId: 'baofeng-dm32uv' });
+    for (const check of PREFLIGHT_CHECKS) s = reduce(s, { type: 'setCheck', check, value: true });
+    expect(isPreflightComplete(s)).toBe(true);
   });
 });
 

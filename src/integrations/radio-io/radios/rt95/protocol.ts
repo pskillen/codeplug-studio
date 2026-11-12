@@ -37,7 +37,7 @@ import {
   encodeChannelsIntoImage,
   readBandlimitFromImage,
 } from './channelCodec.ts';
-import { parseRt95IdentResponse } from './ident.ts';
+import { parseRt95IdentResponse, type Rt95IdentResult } from './ident.ts';
 import { intendedRt95RestoreImage } from './restoreFromBackup.ts';
 import {
   assertRt95WriteAllowed,
@@ -119,6 +119,7 @@ function retryOptions(
 export class Rt95Protocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
   private radioBandlimit: number | null = null;
+  private connectIdent: Rt95IdentResult | null = null;
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
   private inProgramMode = false;
   private modIntent: Rt95ModDataInput | null = null;
@@ -201,6 +202,7 @@ export class Rt95Protocol implements CloneImageRadio {
       const identRaw = await probeProgramQxIdent(pipe, RT95_IO_TIMEOUT_MS);
       const ident = parseRt95IdentResponse(identRaw);
       this.radioBandlimit = ident.bandlimit;
+      this.connectIdent = ident;
       return {
         raw: identRaw.slice(),
         modelHints: [ident.model],
@@ -210,10 +212,16 @@ export class Rt95Protocol implements CloneImageRadio {
     return { raw: new Uint8Array(0), modelHints: ['RT95-P'] };
   }
 
+  /** The ident parsed when {@link connect} entered PROGRAM, or null (no handshake / not connected). */
+  getConnectIdent(): Rt95IdentResult | null {
+    return this.connectIdent;
+  }
+
   async disconnect(): Promise<void> {
     const pipe = this.pipe;
     this.pipe = null;
     this.radioBandlimit = null;
+    this.connectIdent = null;
     const wasInProgramMode = this.inProgramMode;
     this.inProgramMode = false;
     if (pipe) {

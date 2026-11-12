@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
+import { RADIO_SAFETY_BACKUP_KEY } from '@integrations/persistence/radioSafetyBackupRecords.ts';
 import * as radioIo from '@integrations/radio-io';
 import {
   FirmwareFlashError,
@@ -14,7 +15,10 @@ import {
 import {
   formatFirmwareFlashSummary,
   runFirmwareFlash,
+  recordFirmwareSafetyBackupSaved,
   runFirmwarePreflightProbe,
+  runFirmwareSafetyBackup,
+  recordFirmwareSafetyBackupFile,
   verifyStockFiles,
   type FirmwareFlashOutcome,
 } from './firmwareFlash.ts';
@@ -25,6 +29,18 @@ const fakeProbe = {
   steps: ['Switch on.'],
   link: { baudRate: 9600, usbFilters: [], raiseDtrRts: true },
   run: vi.fn(),
+};
+const fakeSafety = {
+  title: 'Safety backup',
+  why: 'why',
+  steps: ['Switch on.'],
+  link: { baudRate: 19200, usbFilters: [], raiseDtrRts: false },
+  expectedDuration: '1 minute',
+  recordFamily: 'fake-family',
+  serialHint: 'On the label.',
+  normaliseSerial: (t: string) => t.trim().replace(/\s+/g, ' ').toUpperCase(),
+  run: vi.fn(),
+  verifyFile: vi.fn(),
 };
 const fakeUpdater = {
   identify: vi.fn(),
@@ -46,7 +62,7 @@ vi.mock('@integrations/radio-io', async (importOriginal) => {
       return (
         real && {
           ...real,
-          preflight: { attestations: [], probe: fakeProbe },
+          preflight: { attestations: [], probe: fakeProbe, safetyBackup: fakeSafety },
           createUpdater: () => fakeUpdater as unknown as FirmwareUpdater,
         }
       );
@@ -69,6 +85,9 @@ const IDENT = {
   model: 'MODEL',
   raw: Uint8Array.of(0x41, 0x42),
 };
+
+const downloadZip = vi.hoisted(() => vi.fn());
+vi.mock('@integrations/download/browserDownload.ts', () => ({ downloadZip }));
 
 const port = { close: vi.fn(async () => {}) } as unknown as SerialPortLike;
 
@@ -274,5 +293,91 @@ describe('runFirmwarePreflightProbe', () => {
     expect(out).toMatchObject({ ok: false, message: 'busy' });
     expect(port.close).toHaveBeenCalledTimes(1);
     expect(fakeProbe.run).not.toHaveBeenCalled();
+  });
+});
+
+describe('firmware safety backup', () => {
+  const TAKEN = {
+    kind: 'taken' as const,
+    radioKey: 'AB 123',
+    summary: 'RT95-P V100, fingerprint 1a2b3c4d',
+    region: 'cal',
+    fileName: 'x.zip',
+    zipBytes: Uint8Array.of(1, 2),
+    sha256: 'ab'.repeat(32),
+    fingerprint: '1a2b3c4d',
+  };
+  const records = () => JSON.parse(window.localStorage.getItem(RADIO_SAFETY_BACKUP_KEY) ?? '[]');
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.localStorage.clear();
+  });
+
+  it('already-saved downloads nothing, and asks isSaved with the normalised serial', async () => {
+    recordFirmwareSafetyBackupSaved('baofeng-dm32uv', TAKEN);
+    fakeSafety.run.mockImplementation(async (_p, o) => ({
+      kind: 'already-saved',
+      radioKey: o.radioKey,
+      summary: o.isSaved(o.radioKey) ? 'saved' : 'not saved',
+    }));
+    const out = await runFirmwareSafetyBackup({
+      radioId: 'baofeng-dm32uv',
+      port,
+      serial: '  ab  123 ',
+    });
+    expect(out).toMatchObject({ ok: true, outcome: { kind: 'already-saved', summary: 'saved' } });
+    expect(fakeSafety.run.mock.calls[0]![1]).toMatchObject({
+      serial: 'ab  123',
+      radioKey: 'AB 123',
+    });
+    expect(downloadZip).not.toHaveBeenCalled();
+    expect(pipeClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('taken downloads once and records nothing until the tick', async () => {
+    fakeSafety.run.mockResolvedValue(TAKEN);
+    const out = await runFirmwareSafetyBackup({
+      radioId: 'baofeng-dm32uv',
+      port,
+      serial: 'AB 123',
+    });
+    expect(out.ok).toBe(true);
+    expect(downloadZip).toHaveBeenCalledTimes(1);
+    expect(downloadZip).toHaveBeenCalledWith(TAKEN.zipBytes, 'x.zip');
+    expect(records()).toEqual([]);
+    expect(recordFirmwareSafetyBackupSaved('baofeng-dm32uv', TAKEN)).toBe(true);
+    expect(records()).toHaveLength(1);
+    expect(records()[0]).toMatchObject({ family: 'fake-family', radioKey: 'AB 123' });
+  });
+
+  it('refuses an empty serial before opening anything, and closes the port', async () => {
+    const out = await runFirmwareSafetyBackup({ radioId: 'baofeng-dm32uv', port, serial: '  ' });
+    expect(out).toMatchObject({ ok: false });
+    expect(radioIo.openWebSerialPipe).not.toHaveBeenCalled();
+    expect(port.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('a thrown run returns { ok: false } and closes the pipe', async () => {
+    fakeSafety.run.mockRejectedValue(new RadioWrongIdentError('Wrong model.'));
+    const out = await runFirmwareSafetyBackup({ radioId: 'baofeng-dm32uv', port, serial: 'AB' });
+    expect(out).toEqual({ ok: false, code: 'wrongIdent', message: 'Wrong model.' });
+    expect(pipeClose).toHaveBeenCalledTimes(1);
+    expect(downloadZip).not.toHaveBeenCalled();
+  });
+
+  it('a good backup file is recorded; a bad one records nothing', async () => {
+    fakeSafety.verifyFile.mockResolvedValueOnce({ ...TAKEN });
+    const ok = await recordFirmwareSafetyBackupFile('baofeng-dm32uv', Uint8Array.of(1), 'AB 123');
+    expect(ok).toMatchObject({ ok: true, recorded: true });
+    expect(fakeSafety.verifyFile).toHaveBeenCalledWith(expect.anything(), {
+      fallbackSerial: 'AB 123',
+    });
+    expect(records()).toHaveLength(1);
+    window.localStorage.clear();
+    fakeSafety.verifyFile.mockRejectedValueOnce(new Error('Not a backup.'));
+    const bad = await recordFirmwareSafetyBackupFile('baofeng-dm32uv', Uint8Array.of(1), '');
+    expect(bad).toEqual({ ok: false, message: 'Not a backup.' });
+    expect(records()).toEqual([]);
   });
 });

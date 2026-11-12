@@ -6,7 +6,7 @@
 import type { FirmwareRadioId, StockFirmwareDescriptor } from '@core/firmware/types.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 
-import type { BytePipe, ProgressUpdate } from '../types.ts';
+import type { BytePipe, ProgressFn, ProgressUpdate } from '../types.ts';
 
 export interface FirmwareLinkSpec {
   readonly baudRate: number;
@@ -91,9 +91,79 @@ export interface FirmwarePreflightProbe {
   run(pipe: BytePipe, opts: { signal?: AbortSignal }): Promise<FirmwarePreflightProbeResult>;
 }
 
+/** Result of a safety-backup step. `radioKey` is the normalised serial the operator typed from the radio's label. */
+export type FirmwareSafetyBackupOutcome =
+  | { readonly kind: 'already-saved'; readonly radioKey: string; readonly summary: string }
+  | {
+      readonly kind: 'taken';
+      readonly radioKey: string;
+      /** e.g. 'RT95-P V100, calibration region, fingerprint 1a2b3c4d'. */
+      readonly summary: string;
+      readonly region: string;
+      readonly fileName: string;
+      readonly zipBytes: Uint8Array;
+      readonly sha256: string;
+      readonly fingerprint: string;
+    };
+
+/** A backup file the operator already has, checked. */
+export interface FirmwareSafetyBackupFileInfo {
+  readonly radioKey: string;
+  readonly region: string;
+  readonly fileName: string;
+  readonly sha256: string;
+  readonly fingerprint: string;
+  readonly summary: string;
+}
+
+/**
+ * A required "a safety backup of this radio's irreplaceable data is saved" step on Before you flash. Once per
+ * radio, any age. "This radio" is the serial number the operator types from the label (never read from the radio).
+ */
+export interface FirmwarePreflightSafetyBackup {
+  readonly title: string;
+  /** One paragraph of operator copy. */
+  readonly why: string;
+  /** e.g. switch on normally, connect the cable. */
+  readonly steps: readonly string[];
+  /** Normal-mode link (may differ from the update link). */
+  readonly link: FirmwareLinkSpec;
+  readonly expectedDuration: string;
+  /** Record family in browser storage, e.g. 'retevis-rt95'. */
+  readonly recordFamily: string;
+  /** Hint under the serial field, e.g. where the label is. */
+  readonly serialHint: string;
+  /** Trim, uppercase, collapse whitespace; '' means invalid. The one place that says which radio a record is for. */
+  normaliseSerial(text: string): string;
+  /**
+   * Read-only. Identifies the radio, then when isSaved(radioKey) is true returns 'already-saved' and reads nothing
+   * more. `serial` is as typed; `radioKey` is `normaliseSerial(serial)`.
+   */
+  run(
+    pipe: BytePipe,
+    opts: {
+      serial: string;
+      radioKey: string;
+      signal?: AbortSignal;
+      onProgress?: ProgressFn;
+      isSaved: (radioKey: string) => boolean;
+    },
+  ): Promise<FirmwareSafetyBackupOutcome>;
+  /**
+   * Verify a backup file the operator already has; throws on a bad file. `fallbackSerial` (as typed) is used when
+   * the file carries none; throws when neither has one.
+   */
+  verifyFile(
+    bytes: Uint8Array,
+    opts: { fallbackSerial: string },
+  ): Promise<FirmwareSafetyBackupFileInfo>;
+}
+
 export interface FirmwareRadioPreflight {
   readonly attestations: readonly FirmwarePreflightAttestation[];
   readonly probe?: FirmwarePreflightProbe;
+  /** Required before the flash: a saved safety backup for this radio. The probe opt-out does not skip it. */
+  readonly safetyBackup?: FirmwarePreflightSafetyBackup;
   /** When set, a confirmation ticked on the Flash step, right before Connect and flash. */
   readonly updateModeConfirm?: string;
 }

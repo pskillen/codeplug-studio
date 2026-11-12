@@ -38,9 +38,17 @@ import {
   type FirmwareFlashProgress,
   type FirmwareFlashResult,
   type FirmwareFlashTiming,
+  type FirmwareSafetyBackupFileInfo,
+  type FirmwareSafetyBackupOutcome,
+  type ProgressFn,
   type FirmwareUpdaterDescriptor,
   type SerialPortLike,
 } from '@integrations/radio-io';
+import { downloadZip } from '@integrations/download/browserDownload.ts';
+import {
+  findSafetyBackupRecord,
+  recordSafetyBackup,
+} from '@integrations/persistence/radioSafetyBackupRecords.ts';
 import { createPublicReleaseIndexLoader } from '@integrations/firmware-releases/publicReleaseIndex.ts';
 
 export type { VerifiedStockFirmware };
@@ -193,6 +201,113 @@ export async function runFirmwarePreflightProbe(input: {
         /* the port may never have opened */
       }
     }
+  }
+}
+
+function requireSafetyBackup(radioId: FirmwareRadioId) {
+  const sb = requireUpdater(radioId).preflight?.safetyBackup;
+  if (!sb) throw new Error(`${radioId} has no safety backup step.`);
+  return sb;
+}
+
+/** Normalised radio key for a typed serial; '' when invalid. */
+export function safetyBackupRadioKey(radioId: FirmwareRadioId, serial: string): string {
+  return requireSafetyBackup(radioId).normaliseSerial(serial);
+}
+
+/** Fresh pick for the safety backup's normal-mode link. Call from a user gesture. */
+export async function grantFirmwareSafetyBackupPort(
+  radioId: FirmwareRadioId,
+): Promise<SerialPortLike> {
+  return requestWebSerialPort(true, requireSafetyBackup(radioId).link.usbFilters);
+}
+
+export type FirmwareSafetyBackupRunOutcome =
+  { ok: true; outcome: FirmwareSafetyBackupOutcome } | { ok: false; code: string; message: string };
+
+/**
+ * Identify the radio, and take a read-only backup unless one is already recorded for this serial. A taken
+ * backup is downloaded here but NOT recorded: recording waits for {@link recordFirmwareSafetyBackupSaved}.
+ * Always closes; never throws for a refusal.
+ */
+export async function runFirmwareSafetyBackup(input: {
+  radioId: FirmwareRadioId;
+  port: SerialPortLike;
+  serial: string;
+  signal?: AbortSignal;
+  onProgress?: ProgressFn;
+}): Promise<FirmwareSafetyBackupRunOutcome> {
+  const { radioId, port, serial, signal, onProgress } = input;
+  let pipe: BytePipe | null = null;
+  try {
+    const sb = requireSafetyBackup(radioId);
+    const radioKey = sb.normaliseSerial(serial);
+    if (!radioKey) throw new Error("Type the radio's serial number first (it is on the label).");
+    pipe = await openWebSerialPipe(port, sb.link.baudRate, { raiseDtrRts: sb.link.raiseDtrRts });
+    const outcome = await sb.run(pipe, {
+      serial: serial.trim(),
+      radioKey,
+      signal,
+      onProgress,
+      isSaved: (k) => findSafetyBackupRecord(sb.recordFamily, k) !== undefined,
+    });
+    if (outcome.kind === 'taken') downloadZip(outcome.zipBytes, outcome.fileName);
+    return { ok: true, outcome };
+  } catch (err) {
+    return { ok: false, code: errorCode(err), message: errorMessage(err) };
+  } finally {
+    if (pipe) {
+      try {
+        await pipe.close();
+      } catch {
+        /* closing is best effort */
+      }
+    } else {
+      try {
+        await port.close();
+      } catch {
+        /* the port may never have opened */
+      }
+    }
+  }
+}
+
+/** Write the "saved" record (no bytes). Call only from the operator's tick. False when storage refused. */
+export function recordFirmwareSafetyBackupSaved(
+  radioId: FirmwareRadioId,
+  saved: Pick<
+    FirmwareSafetyBackupFileInfo,
+    'radioKey' | 'region' | 'fileName' | 'sha256' | 'fingerprint'
+  >,
+): boolean {
+  const sb = requireSafetyBackup(radioId);
+  return recordSafetyBackup({
+    family: sb.recordFamily,
+    radioKey: saved.radioKey,
+    region: saved.region === 'full' ? 'full' : 'cal',
+    fileName: saved.fileName,
+    sha256: saved.sha256,
+    fingerprint: saved.fingerprint,
+    savedAt: new Date().toISOString(),
+    studioVersion: typeof __BUILD_VERSION__ === 'string' ? __BUILD_VERSION__ : 'local',
+  });
+}
+
+export type FirmwareSafetyBackupFileOutcome =
+  | { ok: true; info: FirmwareSafetyBackupFileInfo; recorded: boolean }
+  | { ok: false; message: string };
+
+/** Verify a backup file the operator already has and record it. A bad file records nothing. */
+export async function recordFirmwareSafetyBackupFile(
+  radioId: FirmwareRadioId,
+  bytes: Uint8Array,
+  fallbackSerial: string,
+): Promise<FirmwareSafetyBackupFileOutcome> {
+  try {
+    const info = await requireSafetyBackup(radioId).verifyFile(bytes, { fallbackSerial });
+    return { ok: true, info, recorded: recordFirmwareSafetyBackupSaved(radioId, info) };
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : String(err) };
   }
 }
 

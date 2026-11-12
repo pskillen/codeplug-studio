@@ -40,6 +40,10 @@ vi.mock('../../services/firmwareFlash.ts', () => ({
   grantFirmwarePort: vi.fn(),
   grantFirmwarePreflightPort: vi.fn(),
   runFirmwarePreflightProbe: vi.fn(),
+  grantFirmwareSafetyBackupPort: vi.fn(),
+  runFirmwareSafetyBackup: vi.fn(),
+  recordFirmwareSafetyBackupSaved: vi.fn(() => true),
+  recordFirmwareSafetyBackupFile: vi.fn(),
   runFirmwareFlash: vi.fn(),
   formatFirmwareFlashSummary: vi.fn(() => 'SUMMARY TEXT'),
 }));
@@ -165,6 +169,7 @@ describe('FirmwareFlasherPage', () => {
     );
     vi.mocked(flash.grantFirmwarePort).mockResolvedValue({} as radioIo.SerialPortLike);
     vi.mocked(flash.grantFirmwarePreflightPort).mockResolvedValue({} as radioIo.SerialPortLike);
+    vi.mocked(flash.grantFirmwareSafetyBackupPort).mockResolvedValue({} as radioIo.SerialPortLike);
   });
 
   it('renders the radio card', () => {
@@ -314,6 +319,120 @@ describe('FirmwareFlasherPage', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Check the radio' }));
       expect(await screen.findByText('This radio reports something else.')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    });
+  });
+
+  describe('a radio that requires a safety backup', () => {
+    const SAFETY = {
+      title: 'Safety backup of the radio',
+      why: 'Calibration cannot be rebuilt.',
+      steps: ['Switch on normally.'],
+      link: DM32.link,
+      expectedDuration: '1 minute',
+      recordFamily: 'fake',
+      serialHint: 'On the label.',
+      normaliseSerial: (t: string) => t.trim().toUpperCase(),
+      run: vi.fn(),
+      verifyFile: vi.fn(),
+    };
+    const WITH = {
+      ...DM32,
+      preflight: { attestations: [], probe: undefined, safetyBackup: SAFETY },
+    } as unknown as typeof DM32;
+    const BUTTON = 'Check / take safety backup';
+
+    async function walk(descriptor: typeof DM32 = WITH) {
+      vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([descriptor]);
+      renderPage();
+      fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+      cont();
+      cont();
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [new File(['x'], 'stock.zip')] } });
+      await screen.findByText(/verified/);
+      cont();
+      await screen.findByText(/Ready to flash/);
+      cont();
+      for (const c of screen.getAllByRole('checkbox')) fireEvent.click(c);
+    }
+    const typeSerial = (v: string) =>
+      fireEvent.change(screen.getByLabelText('Radio serial number'), { target: { value: v } });
+    const continueButton = () => screen.getByRole('button', { name: 'Continue' });
+
+    it('needs the serial, and keeps Continue disabled until done', async () => {
+      await walk();
+      expect(screen.getByText('Calibration cannot be rebuilt.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: BUTTON })).toBeDisabled();
+      expect(continueButton()).toBeDisabled();
+    });
+
+    it('already saved enables Continue', async () => {
+      vi.mocked(flash.runFirmwareSafetyBackup).mockResolvedValue({
+        ok: true,
+        outcome: { kind: 'already-saved', radioKey: 'AB 1', summary: 'RT V100' },
+      });
+      await walk();
+      typeSerial('ab 1');
+      fireEvent.click(screen.getByRole('button', { name: BUTTON }));
+      expect(await screen.findByText(/already saved/)).toBeInTheDocument();
+      expect(flash.runFirmwareSafetyBackup).toHaveBeenCalledWith(
+        expect.objectContaining({ serial: 'ab 1' }),
+      );
+      expect(continueButton()).not.toBeDisabled();
+    });
+
+    it('a taken backup needs the tick, which records it', async () => {
+      vi.mocked(flash.runFirmwareSafetyBackup).mockResolvedValue({
+        ok: true,
+        outcome: {
+          kind: 'taken',
+          radioKey: 'AB 1',
+          summary: 'RT V100',
+          region: 'cal',
+          fileName: 'cal-AB1.zip',
+          zipBytes: new Uint8Array(1),
+          sha256: 'aa',
+          fingerprint: '1a2b3c4d',
+        },
+      });
+      await walk();
+      typeSerial('AB 1');
+      fireEvent.click(screen.getByRole('button', { name: BUTTON }));
+      const tick = await screen.findByRole('checkbox', {
+        name: "I've saved cal-AB1.zip (fingerprint 1a2b3c4d)",
+      });
+      expect(flash.recordFirmwareSafetyBackupSaved).not.toHaveBeenCalled();
+      expect(continueButton()).toBeDisabled();
+      fireEvent.click(tick);
+      expect(flash.recordFirmwareSafetyBackupSaved).toHaveBeenCalledTimes(1);
+      expect(continueButton()).not.toBeDisabled();
+    });
+
+    it('shows a refusal and the probe skip does not stand in for it', async () => {
+      vi.mocked(flash.runFirmwareSafetyBackup).mockResolvedValue({
+        ok: false,
+        code: 'wrongIdent',
+        message: 'Not an RT95.',
+      });
+      await walk({
+        ...WITH,
+        preflight: {
+          attestations: [],
+          probe: { title: 'Check the radio', steps: [], link: DM32.link, run: vi.fn() },
+          safetyBackup: SAFETY,
+        },
+      } as unknown as typeof DM32);
+      fireEvent.click(screen.getByLabelText("I've already tested this radio with Codeplug Studio"));
+      expect(continueButton()).toBeDisabled();
+      typeSerial('AB 1');
+      fireEvent.click(screen.getByRole('button', { name: BUTTON }));
+      expect(await screen.findByText('Not an RT95.')).toBeInTheDocument();
+      expect(continueButton()).toBeDisabled();
+    });
+
+    it('shows no safety backup section for a radio without one', async () => {
+      await walk(DM32);
+      expect(screen.queryByLabelText('Radio serial number')).not.toBeInTheDocument();
     });
   });
 
