@@ -107,9 +107,7 @@ describe('groupRadioCatalog', () => {
     const modded = groupRadioCatalog({ firmware: 'modded' });
     const moddedRows = modded.flatMap((g) => g.models.flatMap((m) => m.firmware));
     expect(moddedRows.every((r) => r.firmware.kind !== 'stock')).toBe(true);
-    expect(modded.flatMap((g) => g.models.map((m) => m.model.id))).not.toContain(
-      'baofeng-uv5r-mini',
-    );
+    expect(modded.flatMap((g) => g.models.map((m) => m.model.id))).not.toContain('baofeng-uv21');
     const stockRows = groupRadioCatalog({ firmware: 'stock' }).flatMap((g) =>
       g.models.flatMap((m) => m.firmware),
     );

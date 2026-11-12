@@ -40,8 +40,13 @@ import {
 } from '@core/import-export/formatProfiles.ts';
 import {
   isMm9pdyRt95RadioIoProfileId,
+  isMm9pdyUv5rMiniProfileId,
   isRt95RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
+import {
+  projectUv5rMiniMm9pdy,
+  uv5rMiniMm9pdyZoneOrderedAssembled,
+} from './radioIoUv5rMiniMm9pdyProjection.ts';
 import {
   projectRt95Mm9pdy,
   rt95Mm9pdyZoneOrderedAssembled,
@@ -2018,7 +2023,9 @@ export function buildRadioWriteProjection(
     ? buildAtD890DmrBankAssembled(assembled, build, egress, warnings, nxdnOn)
     : isMm9pdyRt95RadioIoProfileId(egress.profileId)
       ? rt95Mm9pdyZoneOrderedAssembled(assembled)
-      : assembled;
+      : isMm9pdyUv5rMiniProfileId(egress.profileId)
+        ? uv5rMiniMm9pdyZoneOrderedAssembled(assembled)
+        : assembled;
 
   const { dtos, warnings: channelWarnings } = expandAssembledChannelsToRadioDtos(
     projectionAssembled,
@@ -2200,6 +2207,28 @@ export function buildRadioWriteProjection(
         ? { rt95ZoneKey: build.exportSettings.rt95ZoneKey }
         : {}),
     };
+  } else if (isMm9pdyUv5rMiniProfileId(egress.profileId)) {
+    // Channels are numbered in zone order above (projectionAssembled); zones point at those numbers.
+    channels = stampUv17ProFlatMemoryChannelBehaviour(
+      dtos,
+      projectionAssembled,
+      build,
+      egress,
+      numbersBySourceChannelId,
+    );
+    const projected = projectUv5rMiniMm9pdy({
+      zones: buildOpenGd77Zones(
+        projectionAssembled,
+        build,
+        library,
+        egress,
+        numbersBySourceChannelId,
+        warnings,
+        false,
+      ),
+      warnings,
+    });
+    organisation = { zones: projected.zones, writeUv5rMiniZones: true };
   } else if (
     egress.profileId === 'radio-io-uv5r-mini' ||
     egress.profileId === 'radio-io-uv21' ||

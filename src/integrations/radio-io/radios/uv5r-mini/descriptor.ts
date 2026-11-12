@@ -35,7 +35,11 @@ export const UV5R_MINI_DESCRIPTOR: RadioDescriptor = {
     supportsBulkRead: true,
   },
   attributionIds: ['chirp', 'neonplug'],
-  compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
+  compatibleProfiles: [
+    { formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' },
+    // Hidden on prod until the MM9PDY Mini firmware ships; shown in every pre-prod build.
+    { formatId: 'radio-io', profileId: 'radio-io-uv5r-mini-mm9pdy', prodWriteDisabled: true },
+  ],
   writeStrategy: 'full-image',
   baudRate: UV5R_MINI_BAUD_RATE,
   baudRateFallback: UV5R_MINI_BAUD_RATE_FALLBACK,

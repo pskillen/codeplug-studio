@@ -2,17 +2,24 @@ import { describe, expect, it } from 'vitest';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import { newChannel, newRadioBuildForProfile, newZone } from '@core/domain/factories.ts';
 import { upsertOverride } from '@core/domain/formatBuildOverrides.ts';
+import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { Channel, Zone } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { assemble } from '@core/services/assemble.ts';
 import type { RadioWriteOrganisation } from '@integrations/radio-io/radioWriteProjection.ts';
 import { uv5rMiniZoneIntentFromOrganisation } from '@integrations/radio-io/radios/uv5r-mini/modDataIntent.ts';
-import { encodeUv5rMiniZoneTable } from '@integrations/radio-io/radios/uv5r-mini/modData/index.ts';
+import {
+  decodeUv5rMiniZoneTable,
+  encodeUv5rMiniZoneTable,
+} from '@integrations/radio-io/radios/uv5r-mini/modData/index.ts';
+import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
 import {
   projectUv5rMiniMm9pdy,
   uv5rMiniMm9pdyZoneOrderedAssembled,
 } from './radioIoUv5rMiniMm9pdyProjection.ts';
+
+const MM = 'radio-io-uv5r-mini-mm9pdy';
 
 function ch(id: string, name: string, mhz: number): Channel {
   return withExportEligibleDefaults({
@@ -56,7 +63,7 @@ describe('UV-5R Mini MM9PDY projection', () => {
       [ch('a', 'Alpha', 145.5), ch('b', 'Bravo', 145.6), ch('c', 'Charlie', 145.7)],
       [zone('z1', 'First', ['c', 'a']), zone('z2', 'Second', ['a', 'b'])],
     );
-    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-rt95-mm9pdy');
+    const { build, egress } = newRadioBuildForProfile('p1', MM);
     const assembled = assemble(build, library, {
       formatId: egress.formatId,
       profileId: egress.profileId,
@@ -73,7 +80,7 @@ describe('UV-5R Mini MM9PDY projection', () => {
 
   it('keeps a pinned slot on the reordered row', () => {
     const library = lib([ch('a', 'Alpha', 145.5), ch('b', 'Bravo', 145.6)], []);
-    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-rt95-mm9pdy');
+    const { build, egress } = newRadioBuildForProfile('p1', MM);
     build.channelOverrides = upsertOverride(build.channelOverrides, 'b', { orderOrSlot: 5 });
     const assembled = assemble(build, library, {
       formatId: egress.formatId,
@@ -154,5 +161,101 @@ describe('UV-5R Mini MM9PDY projection', () => {
     const encoded = encodeUv5rMiniZoneTable(intent!);
     expect(encoded.sector).toHaveLength(4096);
     expect(encoded.generation).toBeGreaterThan(0);
+  });
+});
+
+/** The whole Write wiring: assemble, number, project, flag, intent, encode. */
+function writeProjection(
+  library: LibrarySlice,
+  tweak?: (b: ReturnType<typeof newRadioBuildForProfile>['build']) => void,
+) {
+  const { build, egress } = newRadioBuildForProfile('p1', MM);
+  build.layout = { sections: [seedZoneGroupingFromLibrary(library)] };
+  tweak?.(build);
+  const assembled = assemble(build, library, {
+    formatId: egress.formatId,
+    profileId: egress.profileId,
+  });
+  const projection = buildRadioWriteProjection(assembled, build, library, egress);
+  const intent = uv5rMiniZoneIntentFromOrganisation(projection.organisation);
+  return {
+    projection,
+    intent,
+    encoded: intent ? encodeUv5rMiniZoneTable(intent) : null,
+    texts: projection.warnings.map(formatExportWarning),
+  };
+}
+
+describe('UV-5R Mini MM9PDY Write projection wiring', () => {
+  it('numbers channels in zone order, sets the flag, and encodes zones at those numbers', () => {
+    const library = lib(
+      [ch('a', 'Alpha', 145.5), ch('b', 'Bravo', 145.6), ch('c', 'Charlie', 145.7)],
+      [zone('z1', 'First', ['c', 'a']), zone('z2', 'Second', ['a', 'b'])],
+    );
+    const { projection, intent, encoded } = writeProjection(library);
+    expect(projection.numbersBySourceChannelId.get('c')).toEqual([1]);
+    expect(projection.numbersBySourceChannelId.get('a')).toEqual([2]);
+    expect(projection.numbersBySourceChannelId.get('b')).toEqual([3]);
+    expect(projection.organisation.writeUv5rMiniZones).toBe(true);
+    expect(projection.organisation.zones).toEqual([
+      { wireName: 'First', channelNumbers: [1, 2] },
+      { wireName: 'Second', channelNumbers: [2, 3] },
+    ]);
+    expect(intent).toEqual({
+      zones: [
+        { name: 'First', slotIndexes: [0, 1] },
+        { name: 'Second', slotIndexes: [1, 2] },
+      ],
+    });
+    const decoded = decodeUv5rMiniZoneTable(encoded!.sector);
+    expect('zones' in decoded && decoded.zones).toEqual(intent!.zones);
+  });
+
+  it('keeps a pinned channel at its slot and points the zone at the pinned number', () => {
+    const library = lib(
+      [ch('a', 'Alpha', 145.5), ch('b', 'Bravo', 145.6)],
+      [zone('z1', 'Pinned', ['a', 'b'])],
+    );
+    const { projection, intent } = writeProjection(library, (build) => {
+      build.channelOverrides = upsertOverride(build.channelOverrides, 'b', { orderOrSlot: 7 });
+    });
+    expect(projection.numbersBySourceChannelId.get('b')).toEqual([7]);
+    const a = projection.numbersBySourceChannelId.get('a')![0]!;
+    expect(projection.organisation.zones).toEqual([
+      { wireName: 'Pinned', channelNumbers: [a, 7].sort((x, y) => x - y) },
+    ]);
+    expect(intent?.zones[0]?.slotIndexes).toContain(6);
+  });
+
+  it('drops a zone with no channels on the radio and still encodes the rest', () => {
+    // 50 MHz is outside the Mini's bands, so the zone has nothing on the radio.
+    const library = lib(
+      [ch('a', 'Alpha', 145.5), ch('x', 'SixMetre', 50.5)],
+      [zone('z1', 'Local', ['a']), zone('z2', 'Empty', ['x'])],
+    );
+    const { projection, intent, encoded } = writeProjection(library);
+    expect(projection.organisation.zones?.map((z) => z.wireName)).toEqual(['Local']);
+    expect(intent?.zones).toEqual([{ name: 'Local', slotIndexes: [0] }]);
+    // Header, one name frame, the zone's two bitmap frames.
+    expect(encoded?.frames.map((f) => f.address)).toEqual([0xc000, 0xc200, 0xc400, 0xc440]);
+  });
+
+  it('writes an empty table (an intent with no zones) when the build has no zones', () => {
+    const { projection, intent, encoded } = writeProjection(lib([ch('a', 'Alpha', 145.5)], []));
+    expect(projection.organisation.writeUv5rMiniZones).toBe(true);
+    expect(intent).toEqual({ zones: [] });
+    expect(encoded?.frames.map((f) => f.address)).toEqual([0xc000]);
+  });
+
+  it('stock Mini projection carries no zones and no flag', () => {
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
+    const library = lib([ch('a', 'Alpha', 145.5)], [zone('z1', 'Local', ['a'])]);
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.writeUv5rMiniZones).toBeUndefined();
+    expect(uv5rMiniZoneIntentFromOrganisation(projection.organisation)).toBeNull();
   });
 });

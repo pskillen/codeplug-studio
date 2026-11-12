@@ -32,6 +32,24 @@ describe('radio target catalog', () => {
     expect(radioTargetIdForProfile('radio-io-rt95-mm9pdy')).toBe('retevis-rt95-mm9pdy');
   });
 
+  it('lists the UV-5R Mini MM9PDY target with zones, Web Serial only; stock Mini stays flat', () => {
+    const mm = radioTargetFor('baofeng-uv5r-mini-mm9pdy');
+    expect(mm?.label).toBe('Baofeng UV-5R Mini (MM9PDY modded firmware)');
+    expect(mm?.modelId).toBe('baofeng-uv5r-mini');
+    expect(mm?.firmwareId).toBe('mm9pdy');
+    expect(mm?.compatibleEgress.map((e) => e.profileId)).toEqual(['radio-io-uv5r-mini-mm9pdy']);
+    expect(mm?.compatibleEgress.map((e) => e.kind)).toEqual(['web-serial']);
+    expect(traitsForRadioTarget('baofeng-uv5r-mini-mm9pdy')).toEqual([
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.PerChannelScanFlag,
+    ]);
+    expect(traitsForRadioTarget('baofeng-uv5r-mini')).toContain(
+      BuildCapabilityTrait.FlatMemoryList,
+    );
+    expect(radioTargetIdForProfile('radio-io-uv5r-mini-mm9pdy')).toBe('baofeng-uv5r-mini-mm9pdy');
+  });
+
   it('lists UV-5R Mini with Web Serial, NeonPlug, and CHIRP egress', () => {
     const mini = radioTargetFor('baofeng-uv5r-mini');
     expect(mini).toBeDefined();
@@ -110,6 +128,7 @@ describe('radio target catalog', () => {
       'neonplug-dm32uv',
       'neonplug-uv5rmini',
       'radio-io-uv5r-mini',
+      'radio-io-uv5r-mini-mm9pdy',
       'radio-io-uv21',
       'radio-io-dm32uv',
       'radio-io-dm32uv-mm9pdy',

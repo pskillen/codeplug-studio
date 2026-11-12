@@ -89,6 +89,18 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
       egress('chirp', 'chirp-uv5r', 'CHIRP CSV'),
     ],
   },
+  'baofeng-uv5r-mini-mm9pdy': {
+    id: 'baofeng-uv5r-mini-mm9pdy',
+    label: 'Baofeng UV-5R Mini (MM9PDY modded firmware)',
+    modelId: 'baofeng-uv5r-mini',
+    firmwareId: 'mm9pdy',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.PerChannelScanFlag,
+    ],
+    compatibleEgress: [egress('radio-io', 'radio-io-uv5r-mini-mm9pdy', 'Web Serial')],
+  },
   'baofeng-uv21': {
     id: 'baofeng-uv21',
     label: 'Baofeng UV-21Pro V2',

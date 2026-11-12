@@ -124,6 +124,17 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     label: 'Baofeng UV-5R Mini',
     traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
   },
+  /** Web Serial — UV-5R Mini MM9PDY modded firmware: zones (MMZ1) over the flat 999-channel list. */
+  'radio-io-uv5r-mini-mm9pdy': {
+    profileId: 'radio-io-uv5r-mini-mm9pdy',
+    formatId: 'radio-io',
+    label: 'Baofeng UV-5R Mini (MM9PDY modded firmware)',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.PerChannelScanFlag,
+    ],
+  },
   /** Web Serial direct-write — Retevis RT95 VOX PROGRAM→QX. */
   'radio-io-rt95': {
     profileId: 'radio-io-rt95',
