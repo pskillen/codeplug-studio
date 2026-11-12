@@ -4,7 +4,12 @@ import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmw
 
 import { RadioInterlockError } from '../../../kit/errors.ts';
 import { makeSyntheticUfw, type SyntheticUfwOptions } from './__fixtures__/makeSyntheticUfw.ts';
-import { UV5RMINI_BASE, UV5RMINI_FLASH_BASE, type PinnedLoader } from './constants.ts';
+import {
+  UV5RMINI_BASE,
+  UV5RMINI_FLASH_BASE,
+  UV5RMINI_PINNED_LOADERS,
+  type PinnedLoader,
+} from './constants.ts';
 import { checkUv5rMiniImage, firstDifferenceOutsideWindows } from './interlocks.ts';
 import { sha256HexSync } from './sha256Sync.ts';
 
@@ -101,6 +106,20 @@ describe('checkUv5rMiniImage — I2 loader', () => {
 
   it('refuses every loader when the production table is used (the fake is not pinned there)', () => {
     expect(() => checkUv5rMiniImage(prepared())).toThrow(/loader is not one Studio knows/);
+  });
+});
+
+describe('UV5RMINI_PINNED_LOADERS', () => {
+  it('pins stock+c4+w1 with its packed hash and the three builds it lists', () => {
+    const w1 = UV5RMINI_PINNED_LOADERS.find((p) => p.label === 'stock+c4+w1');
+    expect(w1?.sha256).toBe('3ec9a37db41f98bcf9e2b2a75200fd3450ac48807860470f5ca11b08a11724e8');
+    expect(w1?.lists).toEqual(['nrfb-v0.04', 'mm9pdy-0.1.0-rc.1', 'mm9pdy-pr125-g1c0a9df']);
+  });
+
+  it('pins three distinct loaders, and an unknown hash is in none of them', () => {
+    const hashes = UV5RMINI_PINNED_LOADERS.map((p) => p.sha256);
+    expect(new Set(hashes).size).toBe(3);
+    expect(hashes).not.toContain(FAKE_PACKED_SHA);
   });
 });
 

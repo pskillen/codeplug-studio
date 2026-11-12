@@ -122,10 +122,11 @@ are equal plain bytes. Studio never descrambles anything. The stock bytes come f
 
 **Pinned loaders** (SHA-256 over the packed loader bytes, with the builds each one lists):
 
-| Loader     | Packed SHA-256                                                     | Lists                             |
-| ---------- | ------------------------------------------------------------------ | --------------------------------- |
-| `stock`    | `5382ce4d20dfc7a57cb2a86c836dbbe8c46f6f02625f6f91675df88066e9acb4` | `nrfb-v0.04`                      |
-| `stock+c4` | `87f53dec40c4335ec0c38734c7e3ee08af8847e795da15068f5c9ba876939867` | `nrfb-v0.04`, `mm9pdy-0.1.0-rc.1` |
+| Loader        | Packed SHA-256                                                     | Lists                                                      |
+| ------------- | ------------------------------------------------------------------ | ---------------------------------------------------------- |
+| `stock`       | `5382ce4d20dfc7a57cb2a86c836dbbe8c46f6f02625f6f91675df88066e9acb4` | `nrfb-v0.04`                                               |
+| `stock+c4`    | `87f53dec40c4335ec0c38734c7e3ee08af8847e795da15068f5c9ba876939867` | `nrfb-v0.04`, `mm9pdy-0.1.0-rc.1`                          |
+| `stock+c4+w1` | `3ec9a37db41f98bcf9e2b2a75200fd3450ac48807860470f5ca11b08a11724e8` | `nrfb-v0.04`, `mm9pdy-0.1.0-rc.1`, `mm9pdy-pr125-g1c0a9df` |
 
 The loader hash is computed synchronously (a small in-module SHA-256, checked against Web Crypto in its test) because
 the updater's `checkImage` is synchronous.
