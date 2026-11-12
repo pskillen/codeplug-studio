@@ -4,13 +4,17 @@
 import { AT_D890UV_STOCK_FIRMWARE } from '../radios/anytone/at-d890uv/firmware.ts';
 import { DM32UV_STOCK_FIRMWARE } from '../radios/baofeng/dm-32uv/firmware.ts';
 import { UV5RMINI_STOCK_FIRMWARE } from '../radios/baofeng/uv-5r-mini/firmware.ts';
-import { RT95_HEAD_STOCK_FIRMWARE } from '../radios/retevis/rt95/firmware.ts';
+import {
+  RT95_HEAD_STOCK_FIRMWARE,
+  RT95_MAIN_STOCK_FIRMWARE,
+} from '../radios/retevis/rt95/firmware.ts';
 import type { FirmwareRadioId, StockFirmwareDescriptor } from './types.ts';
 
 const STOCK_FIRMWARE: readonly StockFirmwareDescriptor[] = [
   DM32UV_STOCK_FIRMWARE,
   AT_D890UV_STOCK_FIRMWARE,
   RT95_HEAD_STOCK_FIRMWARE,
+  RT95_MAIN_STOCK_FIRMWARE,
   UV5RMINI_STOCK_FIRMWARE,
 ];
 

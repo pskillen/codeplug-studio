@@ -4,6 +4,7 @@ import {
   DM32UV_FIRMWARE_IMAGE_SIZE,
   DM32UV_FIRMWARE_ROLE_BIN,
 } from '../radios/baofeng/dm-32uv/firmware.ts';
+import { firmwareRadioIdForModel } from './radioTargets.ts';
 import { getStockFirmwareDescriptor, listStockFirmwareDescriptors } from './stockCatalog.ts';
 
 const SHA_RE = /^[0-9a-f]{64}$/;
@@ -57,6 +58,24 @@ describe('stock firmware catalog', () => {
     expect(d.members.map((m) => m.role).sort()).toEqual(['cdd', 'cdi', 'spi']);
     expect(d.members.find((m) => m.role === 'spi')?.size).toBe(10);
     expect(d.stockSources.map((s) => s.kind)).toEqual(['ask-vendor', 'download']);
+  });
+
+  it('pins the RT95 main board in the same vendor zip as the front panel', () => {
+    const head = getStockFirmwareDescriptor('retevis-rt95-head');
+    const main = getStockFirmwareDescriptor('retevis-rt95-main');
+    expect(main.zip?.sha256).toBe(head.zip?.sha256);
+    expect(main.version).toBe('MAIN V1.61 (20231202)');
+    expect(main.members.map((m) => [m.role, m.size, m.sha256])).toEqual([
+      ['cdd', 55652, 'ca7918ffd242362b39bda5457b2350ab69d112d4704129187909bcfa1f609551'],
+      ['cdi', 278, '75fce5bd6093449b6a5cd04d2319019b1c4689ea81ac6e8328e2f40fa76af9d9'],
+      ['spi', 10, '3d096d4788e747417c669f5348ac4b4c6aa3d31a2bd8dd7799300203729714c3'],
+    ]);
+    expect(main.bootloaderEntry.indicator).toBe('The screen says UPDATE THE RF CPU');
+    expect(main.bootloaderEntry.steps.join(' ')).toContain('a Power-key off/on is not enough');
+  });
+
+  it("keeps the front panel as the RT95 model's firmware radio", () => {
+    expect(firmwareRadioIdForModel('retevis-rt95')).toBe('retevis-rt95-head');
   });
 
   it('pins the Mini own-radio image without offering stock flash', () => {

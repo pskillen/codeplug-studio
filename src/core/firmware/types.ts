@@ -5,7 +5,11 @@
  */
 
 export type FirmwareRadioId =
-  'baofeng-dm32uv' | 'anytone-at-d890uv' | 'retevis-rt95-head' | 'baofeng-uv5rmini';
+  | 'baofeng-dm32uv'
+  | 'anytone-at-d890uv'
+  | 'retevis-rt95-head'
+  | 'retevis-rt95-main'
+  | 'baofeng-uv5rmini';
 
 /** A file the user gave us (or, later, a remote source fetched). Name is the basename only. */
 export interface NamedBytes {

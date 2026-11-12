@@ -58,6 +58,7 @@ const TOOL_CARDS: Record<string, ToolCardMeta> = {
 
 const FIRMWARE_RADIO_SHORT_NAMES: Record<FirmwareRadioId, string> = {
   'retevis-rt95-head': 'RT95',
+  'retevis-rt95-main': 'RT95 main board',
   'anytone-at-d890uv': 'AT-D890UV',
   'baofeng-dm32uv': 'DM-32UV',
   'baofeng-uv5rmini': 'UV-5R Mini',
