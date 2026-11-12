@@ -3,6 +3,7 @@
  * Cite: CHIRP baofeng_uv17Pro.py; tier-3 docs under baofeng/uv-*.
  */
 
+import { assertUv5rMiniWriteAllowed } from '../uv5r-mini/writeInterlock.ts';
 import { buildUv17ProMagics, type Uv17ProMagicSet } from './magics.ts';
 
 export interface Uv17ProRetainRegion {
@@ -56,6 +57,16 @@ export interface Uv17ProLayout {
   readonly downcodeSize: number;
   /** Extra kept regions after the standard manifest (e.g. UV-21 fourth MEM block). */
   readonly extraKeptRegions: readonly Uv17ProRetainRegion[];
+  /**
+   * Optional write interlock, called for the whole plan before the first frame and again before each
+   * block. Throws to refuse. Unset on layouts without one.
+   */
+  readonly assertWriteAllowed?: (address: number, length: number, ctx: Uv17ProWriteContext) => void;
+}
+
+export interface Uv17ProWriteContext {
+  profile: 'stock' | 'mm9pdy';
+  operation: 'write' | 'restore';
 }
 
 const BLOCK_SIZE = 0x40;
@@ -117,6 +128,7 @@ export const UV5R_MINI_LAYOUT: Uv17ProLayout = {
   downcodeOffset: UV5R_MINI_DOWNCODE_OFFSET,
   downcodeSize: UV5R_MINI_MEM_TOTAL - UV5R_MINI_DOWNCODE_OFFSET,
   extraKeptRegions: [],
+  assertWriteAllowed: assertUv5rMiniWriteAllowed,
 };
 
 const UV21_MEM_STARTS = [0x0000, 0x9000, 0xa000, 0xd000] as const;
