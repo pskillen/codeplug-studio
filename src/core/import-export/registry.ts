@@ -189,6 +189,13 @@ const RADIO_IO_RT95_MM9PDY_EXPORT_DEFAULTS: FormatExportDefaults = {
   exportZoneDerivedScanLists: false,
 };
 
+/** UV-5R Mini MM9PDY: the stock Mini's channel defaults; zones are the MMZ1 table. */
+const RADIO_IO_UV5R_MINI_MM9PDY_EXPORT_DEFAULTS: FormatExportDefaults = {
+  ...RADIO_IO_EXPORT_DEFAULTS,
+  exportScratchChannels: false,
+  exportZoneDerivedScanLists: false,
+};
+
 const FORMAT_EXPORT_DEFAULTS: Partial<Record<FormatId, FormatExportDefaults>> = {
   chirp: CHIRP_EXPORT_DEFAULTS,
   'radio-io': RADIO_IO_EXPORT_DEFAULTS,
@@ -203,6 +210,9 @@ export function getFormatExportDefaults(
 ): FormatExportDefaults {
   if (formatId === 'radio-io' && profileId === 'radio-io-rt95-mm9pdy') {
     return RADIO_IO_RT95_MM9PDY_EXPORT_DEFAULTS;
+  }
+  if (formatId === 'radio-io' && profileId === 'radio-io-uv5r-mini-mm9pdy') {
+    return RADIO_IO_UV5R_MINI_MM9PDY_EXPORT_DEFAULTS;
   }
   if (formatId === 'radio-io' && profileId === 'radio-io-dm32uv-mm9pdy') {
     return RADIO_IO_DM32UV_MM9PDY_EXPORT_DEFAULTS;

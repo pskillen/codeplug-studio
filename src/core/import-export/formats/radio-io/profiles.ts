@@ -8,16 +8,23 @@ import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { RT95_LIMITS } from '@core/radios/retevis/rt95/limits.ts';
+import { UV5R_MINI_LIMITS } from '@core/radios/baofeng/uv-5r-mini/limits.ts';
 import type { PowerLadderEntry } from '../../profileLadder.ts';
 
+/** UV-5R Mini Web Serial: stock firmware, or the MM9PDY modded firmware (zones in the MMZ1 table). */
+export type Uv5rMiniRadioIoProfileId = 'radio-io-uv5r-mini' | 'radio-io-uv5r-mini-mm9pdy';
+
 export interface RadioIoUv5rMiniProfile {
-  id: 'radio-io-uv5r-mini';
+  id: Uv5rMiniRadioIoProfileId;
   label: string;
   /** Binary memory slots (UV-5R Mini channel count). */
   maxMemorySlots: number;
   /** Name bytes in channel record (Mini codec truncates to 12). */
   nameLimit: number;
   powerLadder: readonly PowerLadderEntry[];
+  /** MM9PDY modded firmware only: zone table caps. */
+  maxZones?: number;
+  zoneNameLimit?: number;
 }
 
 export interface RadioIoUv21Profile {
@@ -161,6 +168,16 @@ export function isMm9pdyRt95RadioIoProfileId(profileId: string): boolean {
   return profileId === 'radio-io-rt95-mm9pdy';
 }
 
+/** Stock and MM9PDY UV-5R Mini Web Serial profiles share one channel codec. */
+export function isUv5rMiniRadioIoProfileId(profileId: string): boolean {
+  return profileId === 'radio-io-uv5r-mini' || profileId === 'radio-io-uv5r-mini-mm9pdy';
+}
+
+/** MM9PDY modded firmware: zones in the MMZ1 table at external SPI 0xC000. */
+export function isMm9pdyUv5rMiniProfileId(profileId: string): boolean {
+  return profileId === 'radio-io-uv5r-mini-mm9pdy';
+}
+
 /** Stock and MM9PDY DM-32UV Web Serial profiles share one codec. */
 export function isDm32RadioIoProfileId(profileId: string): boolean {
   return profileId === 'radio-io-dm32uv' || profileId === 'radio-io-dm32uv-mm9pdy';
@@ -275,6 +292,14 @@ export const RADIO_IO_UV5R_MINI_PROFILE: RadioIoUv5rMiniProfile = {
   maxMemorySlots: 999,
   nameLimit: 12,
   powerLadder: UV5R_MINI_POWER_LADDER,
+};
+
+export const RADIO_IO_UV5R_MINI_MM9PDY_PROFILE: RadioIoUv5rMiniProfile = {
+  ...RADIO_IO_UV5R_MINI_PROFILE,
+  id: 'radio-io-uv5r-mini-mm9pdy',
+  label: 'Baofeng UV-5R Mini (MM9PDY modded firmware)',
+  maxZones: UV5R_MINI_LIMITS.ZONE_MAX,
+  zoneNameLimit: UV5R_MINI_LIMITS.ZONE_NAME_LENGTH,
 };
 
 export const RADIO_IO_UV21_PROFILE: RadioIoUv21Profile = {
@@ -413,6 +438,7 @@ export const RADIO_IO_OPENGD77_MD9600_PROFILE: RadioIoOpenGd77Md9600Profile = {
 
 export const RADIO_IO_PROFILES: readonly RadioIoRadioProfile[] = [
   RADIO_IO_UV5R_MINI_PROFILE,
+  RADIO_IO_UV5R_MINI_MM9PDY_PROFILE,
   RADIO_IO_UV21_PROFILE,
   RADIO_IO_RT95_PROFILE,
   RADIO_IO_RT95_MM9PDY_PROFILE,

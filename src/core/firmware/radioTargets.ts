@@ -8,7 +8,7 @@ const RADIO_TARGET_IDS: Readonly<Record<FirmwareRadioId, readonly string[]>> = {
   'baofeng-dm32uv': ['baofeng-dm32uv', 'baofeng-dm32uv-mm9pdy'],
   'anytone-at-d890uv': ['anytone-at-d890uv', 'anytone-at-d890uv-mm9pdy'],
   'retevis-rt95-head': ['retevis-rt95'],
-  'baofeng-uv5rmini': ['baofeng-uv5r-mini'],
+  'baofeng-uv5rmini': ['baofeng-uv5r-mini', 'baofeng-uv5r-mini-mm9pdy'],
 };
 
 export function radioTargetIdsForFirmwareRadio(radioId: FirmwareRadioId): readonly string[] {

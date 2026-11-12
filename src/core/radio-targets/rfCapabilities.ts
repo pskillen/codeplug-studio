@@ -38,6 +38,11 @@ const UV5R_MINI: RadioRfCapabilities = {
   ],
 };
 
+const UV5R_MINI_MM9PDY: RadioRfCapabilities = {
+  ...UV5R_MINI,
+  radioTargetId: 'baofeng-uv5r-mini-mm9pdy',
+};
+
 const UV21: RadioRfCapabilities = {
   radioTargetId: 'baofeng-uv21',
   supportedModes: ['fm', 'am'],
@@ -125,6 +130,7 @@ const AT_D890UV_MM9PDY: RadioRfCapabilities = {
 /** Authoritative RF capability tables keyed by {@link RadioTarget.id}. */
 export const RADIO_RF_CAPABILITIES: Record<string, RadioRfCapabilities> = {
   'baofeng-uv5r-mini': UV5R_MINI,
+  'baofeng-uv5r-mini-mm9pdy': UV5R_MINI_MM9PDY,
   'baofeng-uv21': UV21,
   'retevis-rt95': RT95,
   'retevis-rt95-mm9pdy': RT95_MM9PDY,

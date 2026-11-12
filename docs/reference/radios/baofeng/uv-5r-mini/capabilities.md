@@ -32,6 +32,12 @@ Flat memory list only:
 
 Studio Build → Channels uses the shared **flat-memory** Channels page for this radio’s profiles.
 
+### MM9PDY modded firmware
+
+The `baofeng-uv5r-mini-mm9pdy` target (profile `radio-io-uv5r-mini-mm9pdy`) keeps the flat 999-channel list and the
+per-channel scan flag and adds **zone grouping** and **zone as scan list**: up to 24 zones of 12 characters, a channel
+in any number of zones. See [mm9pdy-data.md](mm9pdy-data.md).
+
 ### Web Serial Write — scan bit
 
 Binary Web Serial Write maps **effective** scan inclusion (build override → library `scanInclusion` → `exportSettings.defaultScanInclusion` → radio-io format default) to channel record byte `15` bit 2 (`scan` = participate). Same resolution as CHIRP `Skip` and NeonPlug file `scanAdd` — see [scan-inclusion.md](../../../scan-inclusion.md). Shipped [#696](https://github.com/pskillen/codeplug-studio/issues/696); NeonPlug UV-5R default aligned [#806](https://github.com/pskillen/codeplug-studio/issues/806).

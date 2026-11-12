@@ -23,8 +23,10 @@ import { getRadioFoundryProfile } from './formats/radiofoundry/profiles.ts';
 import {
   getRadioIoProfile,
   isMm9pdyRt95RadioIoProfileId,
+  isMm9pdyUv5rMiniProfileId,
   isRadioIoAtD890uvProfile,
   type RadioIoRt95Profile,
+  type RadioIoUv5rMiniProfile,
   isRadioIoDm32uvProfile,
   isRadioIoDm32uvRadioFoundryProfile,
   isRadioIoOpenGd771701Profile,
@@ -460,6 +462,34 @@ export function getProfileExportLimits(
           nameLengthTalkGroup: profile.nameLimit,
           nameLengthScanList: 'not_used',
           nameLengthRxGroupList: OPENGD77_FAMILY_LIMITS.RX_GROUP_NAME_LEN,
+          powerLadder: profile.powerLadder,
+          siblingLadders: [],
+        };
+      }
+      if (isMm9pdyUv5rMiniProfileId(profile.id)) {
+        const mini = profile as RadioIoUv5rMiniProfile;
+        return {
+          formatId,
+          profileId: profile.id,
+          profileLabel: profile.label,
+          maxChannels: profile.maxMemorySlots,
+          maxZones: mini.maxZones ?? 'not_used',
+          maxScanLists: 'not_used',
+          maxRxGroupLists: 'not_used',
+          maxContacts: 'not_used',
+          maxDigitalIdDatabase: 'not_used',
+          maxTalkGroups: 'not_used',
+          maxRadioIds: 'not_used',
+          // A zone may hold any of the radio's channels.
+          zoneMembers: profile.maxMemorySlots,
+          scanListMembers: 'not_used',
+          rxGroupListMembers: 'not_used',
+          nameLengthChannel: profile.nameLimit,
+          nameLengthZone: mini.zoneNameLimit ?? 'not_used',
+          nameLengthContact: 'not_used',
+          nameLengthTalkGroup: 'not_used',
+          nameLengthScanList: 'not_used',
+          nameLengthRxGroupList: 'not_used',
           powerLadder: profile.powerLadder,
           siblingLadders: [],
         };
