@@ -2,6 +2,7 @@
  * UV-family Write sessions through the real `openWebSerialPipe` (with the fake serial port): no frame is ever cut
  * by the writable-stream ring boundary, and a normal Write session never reaches it (#1547).
  */
+import { fakeMagicReply } from './magicReplyTestKit.ts';
 import { describe, expect, it } from 'vitest';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { createFakeSerialPort } from '../../transport/fakeSerialPort.ts';
@@ -32,7 +33,7 @@ function createRadioBehindFakePort(layout: Uv17ProLayout) {
       }
       for (const magic of [...layout.magics.read, ...layout.magics.upload]) {
         if (bytesEqual(data, magic.send)) {
-          fake.pushRead(new Uint8Array(magic.responseLen));
+          fake.pushRead(fakeMagicReply(magic.send, magic.responseLen, layout.modelReplyPrefix));
           return;
         }
       }

@@ -36,6 +36,11 @@ export interface Uv17ProLayout {
   readonly ioTimeoutMs: number;
   readonly writeAckTimeoutMs: number;
   readonly magics: Uv17ProMagicSet;
+  /**
+   * When set, the 15-byte reply to the `M` magic must start with these bytes (ASCII model name),
+   * or the handshake refuses before any write.
+   */
+  readonly modelReplyPrefix?: Uint8Array;
   readonly vfoAOffset: number;
   readonly vfoBOffset: number;
   readonly vfoSize: number;
@@ -107,6 +112,7 @@ export const UV5R_MINI_LAYOUT: Uv17ProLayout = {
   ioTimeoutMs: 6000,
   writeAckTimeoutMs: 400,
   magics: buildUv17ProMagics(0x00, 0x01),
+  modelReplyPrefix: new TextEncoder().encode('5RMINI'),
   ...SHARED_RETAIN,
   downcodeOffset: UV5R_MINI_DOWNCODE_OFFSET,
   downcodeSize: UV5R_MINI_MEM_TOTAL - UV5R_MINI_DOWNCODE_OFFSET,

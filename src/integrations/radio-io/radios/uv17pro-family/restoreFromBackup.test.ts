@@ -1,3 +1,4 @@
+import { fakeMagicReply } from './magicReplyTestKit.ts';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,7 +45,7 @@ class ScriptedPipe implements BytePipe {
   private respondToMagic(data: Uint8Array): boolean {
     for (const magic of [...this.layout.magics.read, ...this.layout.magics.upload]) {
       if (bytesEqual(data, magic.send)) {
-        this.enqueue(new Uint8Array(magic.responseLen));
+        this.enqueue(fakeMagicReply(magic.send, magic.responseLen, this.layout.modelReplyPrefix));
         return true;
       }
     }
