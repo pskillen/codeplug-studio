@@ -8,6 +8,7 @@ import { applyFirmwarePatch, readFirmwarePatchVersionStamp } from '../../firmwar
 import { loadedFirmwarePatchTitle, stockFirmwareTitle } from '../../firmware/releases/projects.ts';
 import type { LoadedFirmwarePatch } from '../../firmware/releases/types.ts';
 import type { VerifiedStockFirmware } from '../../firmware/stock/resolveStockFirmware.ts';
+import { stockVariantFor } from '../../firmware/stockVariants.ts';
 import type {
   FirmwarePackage,
   FirmwareProvenance,
@@ -29,6 +30,11 @@ export interface PreparedFirmwareImage {
   readonly radioId: FirmwareRadioId;
   readonly provenance: FirmwareProvenance;
   readonly stockVersion: string;
+  /**
+   * The stock base the patch names (`base`), where the format has one. A radio's interlocks key their per-base
+   * windows and limits by it, and check it against the verified stock's hash.
+   */
+  readonly baseName?: string;
   /** Operator-facing name of what is flashed: 'MM9PDY modded firmware 1.0.0' or 'stock firmware v1.01.048'. */
   readonly title: string;
   readonly releaseTag?: string;
@@ -58,14 +64,22 @@ export async function prepareFirmwareImage(input: {
   stock: VerifiedStockFirmware;
   target: FirmwareTarget;
 }): Promise<PreparedFirmwareImage> {
-  const { descriptor, stock, target } = input;
+  const { descriptor: radioDescriptor, stock, target } = input;
   if (
-    stock.descriptor.radioId !== descriptor.radioId ||
-    stock.package.radioId !== descriptor.radioId
+    stock.descriptor.radioId !== radioDescriptor.radioId ||
+    stock.package.radioId !== radioDescriptor.radioId
   ) {
     throw new FirmwareError(
       'stock-wrong-radio',
-      `The stock firmware supplied is not for the ${descriptor.label}.`,
+      `The stock firmware supplied is not for the ${radioDescriptor.label}.`,
+    );
+  }
+  // The verified stock is one of the radio's accepted versions; everything below uses that one.
+  const descriptor = stockVariantFor(radioDescriptor, stock.descriptor.version);
+  if (!descriptor) {
+    throw new FirmwareError(
+      'stock-wrong-version',
+      `The stock firmware supplied is not a version Studio accepts for the ${radioDescriptor.label}.`,
     );
   }
 
@@ -139,6 +153,7 @@ export async function prepareFirmwareImage(input: {
         title: loadedFirmwarePatchTitle(patch),
         releaseTag: patch.release?.tag,
         patchVersion: description.version,
+        baseName: description.base,
         patchSha256: patch.sha256,
         versionStamp: readFirmwarePatchVersionStamp(pkg, patch.parsed),
         package: pkg,

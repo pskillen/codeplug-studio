@@ -20,6 +20,7 @@ import {
   getStockFirmwareDescriptor,
   listStockFirmwareDescriptors,
 } from '@core/firmware/stockCatalog.ts';
+import { stockVariantFor } from '@core/firmware/stockVariants.ts';
 import type { FirmwareRadioId, NamedBytes } from '@core/firmware/types.ts';
 import {
   prepareFirmwareImage,
@@ -317,7 +318,8 @@ function timingLine(t: FirmwareFlashTiming): string {
 /** Plain-text summary for the operator to copy or download. Not persisted. */
 export function formatFirmwareFlashSummary(outcome: FirmwareFlashOutcome): string {
   const { image } = outcome;
-  const stock = getStockFirmwareDescriptor(outcome.radioId);
+  const radioStock = getStockFirmwareDescriptor(outcome.radioId);
+  const stock = stockVariantFor(radioStock, image.stockVersion) ?? radioStock;
   const lines: string[] = [
     'Codeplug Studio firmware flash',
     `Result: ${outcome.ok ? 'OK' : 'FAILED'}`,

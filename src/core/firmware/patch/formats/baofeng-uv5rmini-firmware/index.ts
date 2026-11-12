@@ -22,6 +22,7 @@ export const baofengUv5rMiniPatchFormat: FirmwarePatchFormat<Uv5rMiniPatchV1> = 
     name: p.name,
     format: p.format,
     version: p.version,
+    base: p.base,
     stock: p.stock,
     result: p.result,
   }),

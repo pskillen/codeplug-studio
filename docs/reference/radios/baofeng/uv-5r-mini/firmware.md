@@ -1,28 +1,33 @@
 # Baofeng UV-5R Mini — firmware
 
-Facts the firmware flasher needs for the UV-5R Mini: the one stock firmware file Studio accepts, and the release patch
+Facts the firmware flasher needs for the UV-5R Mini: the stock firmware files Studio accepts (one per stock base), and the release patch
 format that turns it into a modded build. Product rules: [DESIGN.md — Firmware flashing](../../../../../DESIGN.md#firmware-flashing).
 
 **Code mirror:** [`src/core/radios/baofeng/uv-5r-mini/firmware.ts`](../../../../../src/core/radios/baofeng/uv-5r-mini/firmware.ts)
-(`UV5RMINI_STOCK_FIRMWARE`, `UV5RMINI_FIRMWARE_ROLE_UFW`) and
+(`UV5RMINI_STOCK_FIRMWARE`, `UV5RMINI_FIRMWARE_ROLE_UFW`), the base table in
+[`firmwareUpdate/constants.ts`](../../../../../src/integrations/radio-io/radios/uv5r-mini/firmwareUpdate/constants.ts) (`UV5RMINI_BASES`) and
 [`src/core/firmware/patch/formats/baofeng-uv5rmini-firmware/`](../../../../../src/core/firmware/patch/formats/baofeng-uv5rmini-firmware/).
 Keep them in step.
 
 ## Stock firmware pin
 
-The firmware is one `.ufw` file, member role `ufw`. Studio never fetches, hosts or commits it, and no vendor download
+A stock base is one `.ufw` file, member role `ufw`; Studio accepts two bases. Studio never fetches, hosts or commits it, and no vendor download
 is offered: the stock image is the radio's own, which the firmware project builds from a read of that radio. The
 image is scrambled per radio, so Studio treats it as opaque bytes and cannot read anything out of it.
 
-| Field     | Value                                                              |
-| --------- | ------------------------------------------------------------------ |
-| Version   | `v0.04 (NRFB)`                                                     |
-| Role      | `ufw`                                                              |
-| File name | `stock-nrfb-v0.04.ufw`                                             |
-| Size      | 520,192 bytes                                                      |
-| sha256    | `02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e` |
+| Base         | Version        | File name              | Size          | sha256                                                             |
+| ------------ | -------------- | ---------------------- | ------------- | ------------------------------------------------------------------ |
+| `nrfb-v0.04` | `v0.04 (NRFB)` | `stock-nrfb-v0.04.ufw` | 520,192 bytes | `02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e` |
+| `nrf-v0.27`  | `v0.27 (NRF)`  | `stock-nrf-v0.27.ufw`  | 504,832 bytes | `811b4b37253e0685c7efbd3ff0a24aac2bcad223e5453d95b5bfc3f42c089128` |
 
-Studio does not flash stock (`stockFlashOffered: false`); the pin is the base a release patch is checked against.
+Studio does not flash stock (`stockFlashOffered: false`); the pins are the bases a release patch is checked against.
+The patch's `stock` hashes decide which file is the stock, never a user choice, and a patch's `base` must name the
+base whose file hashes to it. The descriptor carries `nrfb-v0.04` as its primary version and `nrf-v0.27` as
+`alsoAccepts`.
+
+The `nrf-v0.27` file carries **no loader** (`ota.bin` is `0x200` bytes of `0xFF`), by design. A file is accepted as a
+stock base with no loader only when `ota.bin` is blank; anything else in `ota.bin` must still be a well-formed loader
+entry. An image to flash never gets this allowance: it must carry a pinned loader (see Loader below).
 
 ## Release patch format
 
@@ -106,15 +111,26 @@ Hard interlocks on the image, in code, with no setting, flag or patch field that
 image is prepared and again as the flash starts; each refusal says nothing was sent. Code:
 `src/integrations/radio-io/radios/uv5r-mini/firmwareUpdate/` (`interlocks.ts`, `ufw.ts`, `constants.ts`).
 
-| Check             | Refused unless                                                                                                                                                                                        |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Target            | The image is for the UV-5R Mini and the package is exactly one `ufw` file                                                                                                                             |
-| Known build       | The image has a build name (the patch's `build.name`) and is not the plain stock image, which its own loader lists                                                                                    |
-| Container         | The `.ufw` header CRC, file-table CRC and each file's data CRC are good; it holds exactly `flash.bin` (type 0) and `ota.bin` (type 100), both inside the file                                         |
-| Loader            | `ota.bin` holds exactly one entry, `uart_user.bin`, attribute `0x41`, with good CRCs, and the SHA-256 of the packed loader is on the pinned list below                                                |
-| Area              | `flash.bin` starts at SoC address `0x1000` and ends at or below the base's area end (`0x7C000` for `nrfb-v0.04`), never past `0x94000`                                                                |
-| Stock bytes       | `flash.bin` has the stock's length and every byte equals the stock's at the same address, except inside the app windows (SoC, half-open): `[0x4000, 0x4004)`, `[0x4020, 0x4024)`, `[0x4100, 0x7BE1C)` |
-| Not listed itself | The image's build name is not on its own loader's list: flashing it again, or after a cut update, would leave the radio stuck in its loader                                                           |
+| Check             | Refused unless                                                                                                                                                                                       |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Target            | The image is for the UV-5R Mini and the package is exactly one `ufw` file                                                                                                                            |
+| Known build       | The image has a build name (the patch's `build.name`) and is not the plain stock image, which its own loader lists                                                                                   |
+| Container         | The `.ufw` header CRC, file-table CRC and each file's data CRC are good; it holds exactly `flash.bin` (type 0) and `ota.bin` (type 100), both inside the file                                        |
+| Loader            | `ota.bin` holds exactly one entry, `uart_user.bin`, attribute `0x41`, with good CRCs, and the SHA-256 of the packed loader is on the pinned list below                                               |
+| Base              | The patch's `base` names a base in the table below, and the verified stock hashes to that base's stock file                                                                                          |
+| Area              | `flash.bin` starts at SoC address `0x1000` and ends at or below the base's area end (`0x7C000` for both bases), never past the base's own hard limit (the start of its first per-unit record sector) |
+| Stock bytes       | `flash.bin` has the stock's length and every byte equals the stock's at the same address, except inside the base's app windows (SoC, half-open), from the table below                                |
+| Not listed itself | The image's build name is not on its own loader's list: flashing it again, or after a cut update, would leave the radio stuck in its loader                                                          |
+
+**Bases** (keyed by the patch's `base`; the windows are SoC half-open ranges, both also hold `[0x4000, 0x4004)` and `[0x4020, 0x4024)`):
+
+| Base         | App window          | Hard limit (record sector) |
+| ------------ | ------------------- | -------------------------- |
+| `nrfb-v0.04` | `[0x4100, 0x7BE1C)` | `0x94000`                  |
+| `nrf-v0.27`  | `[0x4100, 0x7BBC8)` | `0x93000`                  |
+
+The hard limit comes from each base's flash layout, never from one shared constant. A base built on another (a stock
+file plus a small layout patch) is one more row, with its own stock hash, windows and limit.
 
 The stock comparison needs no key: the image is scrambled by an address-keyed XOR, so equal stored bytes at an address
 are equal plain bytes. Studio never descrambles anything. The stock bytes come from the image's own verified stock

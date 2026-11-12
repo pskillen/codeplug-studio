@@ -24,6 +24,20 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
       sha256: '02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e',
     },
   ],
+  // The second stock base: the vendor's v0.27 app. Its file carries no loader, by design; it is only ever a stock.
+  alsoAccepts: [
+    {
+      version: 'v0.27 (NRF)',
+      members: [
+        {
+          role: UV5RMINI_FIRMWARE_ROLE_UFW,
+          fileName: 'stock-nrf-v0.27.ufw',
+          size: 504832,
+          sha256: '811b4b37253e0685c7efbd3ff0a24aac2bcad223e5453d95b5bfc3f42c089128',
+        },
+      ],
+    },
+  ],
   patchNames: ['baofeng-uv5rmini-firmware'],
   bootloaderEntry: {
     steps: [

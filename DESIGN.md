@@ -235,8 +235,8 @@ project, library or build. The flasher needs no open project and stores nothing.
    no official copy exists, an unofficial copy labelled as such; for an own-radio image it explains how the image is built. All are plain links or text; Studio never fetches any
    of them, and the pinned hashes decide what is accepted. The bytes stay in that browser tab's
    memory and are dropped when the user leaves the page.
-3. **Everything is pinned by SHA-256.** Each supported radio pins exactly one stock version: the hash and size of every
-   file, and the zip hash where the vendor publishes a zip. A patch applies only to that pinned stock, and its result must match the hashes recorded in
+3. **Everything is pinned by SHA-256.** Each supported radio pins one stock version (the UV-5R Mini pins a short list of stock bases, and the patch's own
+   stock hashes pick which): the hash and size of every file, and the zip hash where the vendor publishes a zip. A patch applies only to that pinned stock, and its result must match the hashes recorded in
    the patch. Anything else is refused before any radio contact.
 4. **Hard interlocks can't be bypassed.** Each radio's updater refuses unsafe images and frames in code, before the
    first byte is sent and again on every write. Examples: address windows that keep away from the bootloader and the

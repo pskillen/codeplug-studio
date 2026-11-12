@@ -32,26 +32,53 @@ export const OTA_LOADER_NAME = 'uart_user.bin';
 
 /** `flash.bin[i]` is SoC flash address `UV5RMINI_FLASH_BASE + i`. */
 export const UV5RMINI_FLASH_BASE = 0x1000;
-/** No image may reach this address, whatever any base table says. */
-export const UV5RMINI_FLASH_HARD_LIMIT = 0x94000;
-
+/**
+ * A stock base, keyed by the name a release patch gives in `base`. Windows, area end and the hard write limit are the
+ * base's own, because the flash layout differs between bases. A base built on another by a small layout patch (a
+ * derived base) is one more entry here: its `stockSha256` is the file it is built on, its windows add the layout
+ * patch's own.
+ */
 export interface Uv5rMiniBase {
   readonly name: string;
+  /** SHA-256 of the stock `.ufw` this base's images are built from. The verified stock must hash to it. */
+  readonly stockSha256: string;
   /** Exclusive end of the area the image may occupy. */
   readonly areaEnd: number;
   /** SoC address windows, half-open, where the image may differ from the stock base. */
   readonly windows: readonly (readonly [start: number, end: number])[];
+  readonly layout: {
+    /** First SoC address of the first per-unit record sector. No image may reach it, whatever else the table says. */
+    readonly recordSector: number;
+  };
 }
 
-/** The one stock base Studio accepts (`UV5RMINI_STOCK_FIRMWARE`). */
-export const UV5RMINI_BASE: Uv5rMiniBase = {
-  name: 'nrfb-v0.04',
-  areaEnd: 0x7c000,
-  windows: [
-    [0x4000, 0x4004],
-    [0x4020, 0x4024],
-    [0x4100, 0x7be1c],
-  ],
+/** The hard write limit of a base: the start of its first per-unit record sector. */
+export const uv5rMiniHardLimit = (base: Uv5rMiniBase): number => base.layout.recordSector;
+
+/** The stock bases Studio accepts, by `base` name. `UV5RMINI_STOCK_FIRMWARE` pins the files. */
+export const UV5RMINI_BASES: Readonly<Record<string, Uv5rMiniBase>> = {
+  'nrfb-v0.04': {
+    name: 'nrfb-v0.04',
+    stockSha256: '02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e',
+    areaEnd: 0x7c000,
+    windows: [
+      [0x4000, 0x4004],
+      [0x4020, 0x4024],
+      [0x4100, 0x7be1c],
+    ],
+    layout: { recordSector: 0x94000 },
+  },
+  'nrf-v0.27': {
+    name: 'nrf-v0.27',
+    stockSha256: '811b4b37253e0685c7efbd3ff0a24aac2bcad223e5453d95b5bfc3f42c089128',
+    areaEnd: 0x7c000,
+    windows: [
+      [0x4000, 0x4004],
+      [0x4020, 0x4024],
+      [0x4100, 0x7bbc8],
+    ],
+    layout: { recordSector: 0x93000 },
+  },
 };
 
 export interface PinnedLoader {

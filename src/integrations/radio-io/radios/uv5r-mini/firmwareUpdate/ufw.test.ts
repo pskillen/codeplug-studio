@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { makeSyntheticUfw, type SyntheticUfwOptions } from './__fixtures__/makeSyntheticUfw.ts';
-import { encDecode, parseUv5rMiniUfw, Uv5rMiniUfwError } from './ufw.ts';
+import { encDecode, parseUv5rMiniStockUfw, parseUv5rMiniUfw, Uv5rMiniUfwError } from './ufw.ts';
 
 function codeOf(o: SyntheticUfwOptions): string | undefined {
   try {
@@ -53,5 +53,35 @@ describe('parseUv5rMiniUfw', () => {
     expect(() => parseUv5rMiniUfw(s.bytes.subarray(0, s.bytes.length - 1))).toThrow(
       /outside the image file/,
     );
+  });
+});
+
+describe('parseUv5rMiniStockUfw', () => {
+  it('accepts a loaderless file as a stock base', () => {
+    const s = makeSyntheticUfw({ flashSize: 0x2000, blankOta: true });
+    const u = parseUv5rMiniStockUfw(s.bytes);
+    expect(u.loader).toBeNull();
+    expect(u.entries.flash.data).toEqual(s.flash);
+  });
+
+  it('still reads a stock base that carries a loader', () => {
+    const s = makeSyntheticUfw({ flashSize: 0x2000 });
+    expect(parseUv5rMiniStockUfw(s.bytes).loader?.packed).toEqual(s.loader);
+  });
+
+  it('refuses a stock file whose ota.bin is neither blank nor a loader entry', () => {
+    expect(() => parseUv5rMiniStockUfw(makeSyntheticUfw({ otaAttr: 0x40 }).bytes)).toThrow(
+      Uv5rMiniUfwError,
+    );
+  });
+
+  it('keeps the container checks for a loaderless file', () => {
+    expect(() =>
+      parseUv5rMiniStockUfw(makeSyntheticUfw({ blankOta: true, badFlashCrc: true }).bytes),
+    ).toThrow(/checksum/);
+  });
+
+  it('an image never takes the loaderless path: parseUv5rMiniUfw refuses it', () => {
+    expect(codeOf({ blankOta: true })).toBe('ota-directory');
   });
 });

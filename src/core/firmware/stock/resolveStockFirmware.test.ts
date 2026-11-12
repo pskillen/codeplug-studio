@@ -340,3 +340,61 @@ describe('stock without a published zip', () => {
     ).toBe('stock-wrong-radio');
   });
 });
+
+describe('resolveStockFirmware — a radio that accepts a second stock version', () => {
+  const second = seededBytes(7, 2500);
+
+  async function twoVersions(): Promise<StockFirmwareDescriptor> {
+    const other = await syntheticDescriptor(
+      'baofeng-dm32uv',
+      [{ role: 'img', fileName: 'SECOND.img', bytes: second }],
+      { fileName: 'second.zip', bytes: second },
+    );
+    return {
+      ...one,
+      alsoAccepts: [{ version: 'v0.0.2-test', members: other.members }],
+    };
+  }
+
+  it('verifies either file and names the version it matched', async () => {
+    const d = await twoVersions();
+    const first = await resolveStockFirmware(
+      d,
+      [{ name: 'ONE_STOCK.img', bytes: oneBin }],
+      ctxOne(),
+    );
+    expect(first.descriptor.version).toBe('v0.0.1-test');
+    const next = await resolveStockFirmware(d, [{ name: 'SECOND.img', bytes: second }], ctxOne());
+    expect(next.descriptor.version).toBe('v0.0.2-test');
+    expect(next.descriptor.alsoAccepts).toBeUndefined();
+    expect(next.package.files.img).toEqual(second);
+  });
+
+  it('refuses the wrong bytes under the second version file name', async () => {
+    const d = await twoVersions();
+    expect(
+      await codeOf(resolveStockFirmware(d, [{ name: 'SECOND.img', bytes: oneBin }], ctxOne())),
+    ).toBe('stock-wrong-version');
+  });
+
+  it('refuses files for both versions at once', async () => {
+    const d = await twoVersions();
+    expect(
+      await codeOf(
+        resolveStockFirmware(
+          d,
+          [
+            { name: 'ONE_STOCK.img', bytes: oneBin },
+            { name: 'SECOND.img', bytes: second },
+          ],
+          ctxOne(),
+        ),
+      ),
+    ).toBe('stock-duplicate-member');
+  });
+
+  it('still calls a missing file missing, naming the primary version', async () => {
+    const d = await twoVersions();
+    expect(await codeOf(resolveStockFirmware(d, [], ctxOne()))).toBe('stock-missing-member');
+  });
+});

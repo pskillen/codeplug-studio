@@ -10,6 +10,8 @@ export interface FirmwarePatchDescription {
   readonly name: string;
   readonly format: number;
   readonly version: string;
+  /** The stock base's name, for formats that name one (UV-5R Mini). The patch's claim: radios check it against hashes. */
+  readonly base?: string;
   readonly stock: Readonly<Record<string, FirmwarePatchHashes>>;
   readonly result: Readonly<Record<string, FirmwarePatchHashes>>;
 }
