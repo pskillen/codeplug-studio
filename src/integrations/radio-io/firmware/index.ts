@@ -12,7 +12,10 @@ export type {
   FirmwarePreflightAttestation,
   FirmwarePreflightProbe,
   FirmwarePreflightProbeResult,
+  FirmwarePreflightSafetyBackup,
   FirmwareRadioPreflight,
+  FirmwareSafetyBackupFileInfo,
+  FirmwareSafetyBackupOutcome,
   FirmwareUpdater,
   FirmwareUpdaterDescriptor,
 } from './types.ts';
