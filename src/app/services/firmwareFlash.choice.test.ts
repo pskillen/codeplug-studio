@@ -76,6 +76,11 @@ describe('prepareFlash', () => {
     expect(checkImage).toHaveBeenCalled();
   });
 
+  it("passes the radio's layout to the image", async () => {
+    await prepareFlash('baofeng-dm32uv', STOCK, { kind: 'stock' }, undefined, 'L2');
+    expect(vi.mocked(prepareModule.prepareFirmwareImage).mock.calls[0]![0].radioLayout).toBe('L2');
+  });
+
   it('does not build an image when the interlocks refuse it', async () => {
     checkImage.mockImplementation(() => {
       throw new radioIo.RadioInterlockError('no');

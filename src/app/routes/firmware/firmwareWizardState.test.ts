@@ -159,6 +159,20 @@ describe('firmwareWizardReducer', () => {
     expect(s.checks.risk).toBe(false);
   });
 
+  it('a new Radio Info answer drops the prepared image and checks', () => {
+    const s = through(
+      { type: 'selectRadio', radioId: 'baofeng-uv5rmini' },
+      { type: 'imagePrepared', image: IMAGE },
+      { type: 'setCheck', check: 'risk', value: true },
+      { type: 'setRadioInfo', patch: { firmware: 'V0.27' } },
+      { type: 'setRadioInfo', patch: { override: true } },
+    );
+    expect(s.image).toBeNull();
+    expect(s.checks.risk).toBe(false);
+    expect(s.radioInfo).toEqual({ firmware: 'V0.27', hardware: '', override: true });
+    expect(reduce(s, { type: 'restart' }).radioInfo.firmware).toBe('');
+  });
+
   it('restart returns to a fresh first step', () => {
     const s = through(
       { type: 'selectRadio', radioId: 'baofeng-dm32uv' },

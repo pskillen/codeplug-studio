@@ -120,13 +120,14 @@ export async function loadChosenPatch(
 
 /**
  * Build the image for the choice, then run the updater's interlocks before any radio contact.
- * A patch choice needs its `loaded` patch.
+ * A patch choice needs its `loaded` patch. `radioLayout` is the radio's hardware layout, where the operator gave one.
  */
 export async function prepareFlash(
   radioId: FirmwareRadioId,
   stock: VerifiedStockFirmware,
   choice: FirmwareChoice,
   loaded?: LoadedFirmwarePatch,
+  radioLayout?: string,
 ): Promise<PreparedFirmwareImage> {
   let target: FirmwareTarget;
   if (choice.kind === 'stock') {
@@ -139,6 +140,7 @@ export async function prepareFlash(
     descriptor: getStockFirmwareDescriptor(radioId),
     stock,
     target,
+    radioLayout,
   });
   requireUpdater(radioId).createUpdater().checkImage(image);
   return image;
