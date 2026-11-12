@@ -51,6 +51,13 @@ Cite: NeonPlug `baofengProtocol.ts`, `serialConnection.ts`, `constants.ts`; CHIR
 | 2    | `0x4d` (`M`)                                                        | 15 bytes |
 | 3    | `SEND!` + trailer; **last byte `0x00` = read**, **`0x01` = upload** | 1 byte   |
 
+### Model-reply check
+
+The 15-byte reply to the `M` magic names the model. Studio requires it to start with ASCII `5RMINI`; on any other
+reply (another model, or all zeros) the session stops with "This radio doesn't answer as a UV-5R Mini. Nothing was
+written." The check runs on the `M` step of both magic sets, so Read, Write and Restore all stop at the handshake,
+before the first `W` frame. Sibling layouts that share the code set no prefix and are unchanged.
+
 CHIRP `_do_ident` uses the same ident + fingerprint, then magics with **last byte `0x00` for both** download and upload (no separate upload trailer).
 
 ## Frames
