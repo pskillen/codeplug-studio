@@ -83,7 +83,8 @@ Restore plans are pinned in `writePlan.test.ts`.
 - **Allowed:** 64-byte blocks, 64-aligned, inside `0x0000–0x803F`, `0x9000–0x903F` or `0xA000–0xA1BF` (521 blocks).
 - **Always refused, whatever the profile:** `0xE000` and above (the top 4 KiB sector, `0xF000–0xFFFF`, is RF
   calibration and a `W` there erases the whole sector), `0xB000–0xBFFF` and `0xD000–0xDFFF` (firmware logs),
-  `0x8040–0x8FFF` and `0x9040–0x9FFF` (gaps). `0xC000–0xCFFF` is refused too until a later profile adds it.
+  `0x8040–0x8FFF` and `0x9040–0x9FFF` (gaps). `0xC000–0xCFFF` is refused on `stock`; the `mm9pdy` profile alone
+  also allows 64-byte blocks, 64-aligned, in it (the zone table, [mm9pdy-data.md](mm9pdy-data.md)).
 - A Restore whose region selection names anything but the three layout spans is refused before the first frame.
 - The context carries `profile` (`stock`, or `mm9pdy` once that target sets it) and `operation` (`write`, `restore`).
   Other family layouts (UV-17Pro, UV-21Pro V2) have no interlock.
