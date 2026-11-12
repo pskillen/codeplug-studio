@@ -185,7 +185,8 @@ loader refuses it with `0x8F` and erases no firmware, but the FM presets and vol
 **MM9PDY build name.** A radio running an MM9PDY build keeps the vendor's `Firmware` line and shows the build's name
 on Radio Info's fourth, unlabelled line (the whole name: at most 21 characters, never cut). The step asks for it as an
 optional third line, "Radio Info: MM9PDY build (if shown)". When it is given, the pair must still be a proven one, and
-the name decides the layout. It is matched exactly (only surrounding spaces are dropped):
+the name decides the layout. The match ignores case (the LCD's text and a phone's capitals both work) and drops surrounding spaces; every other
+character counts:
 
 | Name                                                                                                            | Layout |
 | --------------------------------------------------------------------------------------------------------------- | ------ |
@@ -193,7 +194,7 @@ the name decides the layout. It is matched exactly (only surrounding spaces are 
 | `mm9pdy-L2-X.Y.Z[-rc.N]`, `mm9pdy-L2-pr<N>-g<hex>`, `mm9pdy-L2-g<hex>[-dirty]`                                  | `L2`   |
 | Untagged, from before the layout tag: `mm9pdy-X.Y.Z[-rc.N]`, `mm9pdy-pr<N>[-g<hex>]`, `mm9pdy-g<7 hex>[-dirty]` | `L1`   |
 
-`<hex>` is 4–7 lowercase hex digits and `<N>` a PR number without leading zeros. Untagged builds were only ever made
+`<hex>` is 4–7 hex digits and `<N>` a PR number without leading zeros. Untagged builds were only ever made
 for V0.04. Refused with the same text: any other name (the bare unstamped `mm9pdy` among them), an `L2` name with
 Firmware V0.04, an untagged name with V0.27, and an `L2` name with the layout-1 choice ticked. An `L1` name on V0.27
 needs no choice. The answers live in the wizard's memory only. Code: `src/core/radios/baofeng/uv-5r-mini/radioInfo.ts`,

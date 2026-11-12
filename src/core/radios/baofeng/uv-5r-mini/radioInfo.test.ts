@@ -92,6 +92,42 @@ describe('parseUv5rMiniBuildName', () => {
 
   it('drops only surrounding spaces', () => {
     expect(parseUv5rMiniBuildName('  mm9pdy-L2-1.0.0 ')).toEqual({ layout: 'L2', tagged: true });
+    expect(parseUv5rMiniBuildName('\t MM9PDY-L1-1.0.0  ')).toEqual({ layout: 'L1', tagged: true });
+  });
+
+  it('ignores case in every form', () => {
+    const l1 = [
+      'MM9PDY-L1-0.1.0',
+      'Mm9pdy-l1-1.0.0-RC.1',
+      'mm9pdy-l1-PR141-G038B',
+      'MM9PDY-L1-G1C0A-DIRTY',
+    ];
+    const l2 = ['Mm9pdy-l2-1.0.0', 'MM9PDY-L2-PR140-G1C0A', 'mm9pdy-L2-g9F3E-Dirty'];
+    const untagged = [
+      'MM9PDY-0.1.0-RC.1',
+      'Mm9pdy-PR125-G1C0A9DF',
+      'mm9pdy-G1234567',
+      'MM9PDY-G1C0A9DF-DIRTY',
+    ];
+    for (const name of l1)
+      expect(parseUv5rMiniBuildName(name)).toEqual({ layout: 'L1', tagged: true });
+    for (const name of l2)
+      expect(parseUv5rMiniBuildName(name)).toEqual({ layout: 'L2', tagged: true });
+    for (const name of untagged)
+      expect(parseUv5rMiniBuildName(name)).toEqual({ layout: 'L1', tagged: false });
+  });
+
+  it('still refuses junk in uppercase', () => {
+    for (const name of [
+      'MM9PDY',
+      'MM9PDY-L3-1.0.0',
+      'MM9PDY-L1',
+      'MM9PDY-L1-1.0.0-BETA',
+      'XMM9PDY-L1-1.0.0',
+      'MM9PDY-G1C0A',
+    ]) {
+      expect(parseUv5rMiniBuildName(name)).toBeNull();
+    }
   });
 
   it('refuses anything outside the grammar, loose prefixes included', () => {
@@ -99,8 +135,6 @@ describe('parseUv5rMiniBuildName', () => {
       'mm9pdy', // unstamped: emulator only, says nothing about the layout
       'mm9pdy-',
       'mm9pdy-L3-1.0.0',
-      'mm9pdy-l1-1.0.0',
-      'MM9PDY-L1-1.0.0',
       'mm9pdy-L1',
       'mm9pdy-L1-',
       'mm9pdy-L1-1.0',
@@ -108,7 +142,6 @@ describe('parseUv5rMiniBuildName', () => {
       'mm9pdy-L1-pr141', // a tagged PR build always carries its hash
       'mm9pdy-L1-pr0-g1c0a',
       'mm9pdy-L1-pr14-g1c0', // 3 hash digits
-      'mm9pdy-L1-g1C0A9DF',
       'mm9pdy-L1-g1c0a9df0', // 8 hash digits
       'mm9pdy-L1-g1c0a9df-dirty', // 24 characters: longer than the screen
       'mm9pdy-L1-1.0.0x',

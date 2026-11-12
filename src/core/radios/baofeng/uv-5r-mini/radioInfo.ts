@@ -33,10 +33,12 @@ const PR = String.raw`pr[1-9]\d*`;
 /** Current names carry the layout: release, PR build (hash trimmed to 4–7 digits) and ad hoc. */
 const TAGGED = new RegExp(
   String.raw`^mm9pdy-(L1|L2)-(?:${SEMVER}|${PR}-g[0-9a-f]{4,7}|g[0-9a-f]{4,7}(?:-dirty)?)$`,
+  'i',
 );
 /** Names from before the layout tag: release, PR build (hash optional at first) and ad hoc. */
 const UNTAGGED = new RegExp(
   String.raw`^mm9pdy-(?:${SEMVER}|${PR}(?:-g[0-9a-f]{4,7})?|g[0-9a-f]{7}(?:-dirty)?)$`,
+  'i',
 );
 
 export interface Uv5rMiniBuildName {
@@ -47,14 +49,14 @@ export interface Uv5rMiniBuildName {
 
 /**
  * The layout an MM9PDY build name was built for: `mm9pdy-L1-…` and `mm9pdy-L2-…` say so, and the untagged names from
- * before the tag are layout 1. Anything else, the bare unstamped `mm9pdy` included, is null. Exact: case and every
- * character count; only surrounding spaces are dropped.
+ * before the tag are layout 1. Anything else, the bare unstamped `mm9pdy` included, is null. Case is ignored (users type what
+ * the LCD shows, and phones capitalise); every other character counts, and surrounding spaces are dropped.
  */
 export function parseUv5rMiniBuildName(name: string): Uv5rMiniBuildName | null {
   const s = name.trim();
   if (s.length > BUILD_NAME_MAX) return null;
   const tagged = TAGGED.exec(s);
-  if (tagged) return { layout: tagged[1] as 'L1' | 'L2', tagged: true };
+  if (tagged) return { layout: tagged[1]!.toUpperCase() as 'L1' | 'L2', tagged: true };
   return UNTAGGED.test(s) ? { layout: 'L1', tagged: false } : null;
 }
 
