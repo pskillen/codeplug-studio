@@ -8,7 +8,6 @@ import {
   MMZ1_SECTOR_BYTES,
   Uv5rMiniZoneTableError,
   zoneTableGeneration,
-  type Uv5rMiniZoneTable,
 } from './index.ts';
 
 function hex(b: Uint8Array): string {
