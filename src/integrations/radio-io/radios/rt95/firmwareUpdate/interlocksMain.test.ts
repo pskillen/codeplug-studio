@@ -80,11 +80,11 @@ describe('RT95 MAIN image interlocks', () => {
     );
   });
 
-  it('refuses a non-stock provenance even when the bytes match', () => {
+  it('refuses a non-stock provenance with no verified stock behind it', () => {
     const image = { ...prepared(), provenance: 'patched' } as unknown as ReturnType<
       typeof prepared
     >;
-    refuse(image, /only the pinned stock main-board firmware/);
+    refuse(image, /changes more than D35 allows/);
   });
 
   it('refuses another radio id, including the head', () => {

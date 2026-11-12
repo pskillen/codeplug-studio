@@ -16,11 +16,17 @@ import {
   RT95_HEAD_FW_RADIO_ID,
   RT95_HEAD_FW_SP_MAX,
   RT95_HEAD_FW_SP_MIN,
+  RT95_FW_CDI_LEN_OFFSET,
+  RT95_FW_SPI_LEN_OFFSET,
+  RT95_MAIN_FW_HOOK_END,
+  RT95_MAIN_FW_HOOK_START,
+  RT95_MAIN_FW_IMAGE_LEN,
   RT95_MAIN_FW_LIMIT,
   RT95_MAIN_FW_MAX_FRAMES,
   RT95_MAIN_FW_MODEL_OFFSET,
   RT95_MAIN_FW_RADIO_ID,
   RT95_MAIN_FW_SP,
+  RT95_MAIN_FW_WINDOW_END,
 } from './constants.ts';
 
 export interface Rt95FirmwareTarget {
@@ -47,7 +53,7 @@ export interface Rt95FirmwareTarget {
   readonly modelOffset: number;
   /**
    * Target-specific image rule, run after the package checks. Throws RadioInterlockError. Code only: no flag turns
-   * it off. MAIN: the pinned stock only (D35) until S3 widens it to the gated patched MAIN.
+   * it off. MAIN: the pinned stock, or the pinned stock changed only at the D35 hook site and the append window.
    */
   readonly checkImageIdentity?: (image: PreparedFirmwareImage) => void;
   readonly copy: {
@@ -83,24 +89,71 @@ export const RT95_HEAD_TARGET: Rt95FirmwareTarget = {
   },
 };
 
+const MAIN_REFUSE_STOCK_ONLY =
+  'Studio flashes only the pinned stock main-board firmware (MAIN V1.61) in this version.';
+const MAIN_REFUSE_CHANGES = 'This main-board image changes more than D35 allows.';
+
+function sameBytes(a: Uint8Array, b: Uint8Array, from: number, to: number): boolean {
+  for (let i = from; i < to; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+function u32le(b: Uint8Array, off: number): number {
+  return (b[off]! | (b[off + 1]! << 8) | (b[off + 2]! << 16) | (b[off + 3]! << 24)) >>> 0;
+}
+
+/** Bytes equal except the u32 length field at `off`, which must hold `len`. */
+function equalButLength(image: Uint8Array, stock: Uint8Array, off: number, len: number): boolean {
+  return (
+    image.length === stock.length &&
+    sameBytes(image, stock, 0, off) &&
+    sameBytes(image, stock, off + 4, stock.length) &&
+    u32le(image, off) === len
+  );
+}
+
 /**
- * MAIN image identity (this phase): stock only. Every pinned role's bytes, hashed here (not read from
- * `image.sha256`), equal the pinned stock member, and the image is stock. S3 widens this to "stock, or stock changed
- * only at the hook site and in the append window"; keep it, and `RT95_MAIN_TARGET`, in this one place.
+ * MAIN image identity, in this one place with `RT95_MAIN_TARGET`. Hashed here (not read from `image.sha256`).
+ * Accepts the pinned stock as is, or a patched image built from the pinned stock (`stockPackage`) whose `.CDD` is
+ * stock[0, 0xD93C) changed only at the D35 hook site [0x382, 0x386), then appended bytes up to the window end, and
+ * whose `.CDI` / `.spi` differ from stock only in the length field. Repeats the patch format's rules on purpose
+ * (defence in depth: a patch is untrusted input and never trusted).
  */
 export function createRt95MainImageIdentityCheck(
   stock: StockFirmwareDescriptor,
 ): (image: PreparedFirmwareImage) => void {
+  const pinned = (files: Readonly<Record<string, Uint8Array>>) =>
+    stock.members.every((m) => {
+      const bytes = files[m.role];
+      return !!bytes && sha256HexSync(bytes) === m.sha256;
+    });
   return (image) => {
-    const refuse = () =>
-      new RadioInterlockError(
-        'Studio flashes only the pinned stock main-board firmware (MAIN V1.61) in this version.',
-      );
-    if (image.provenance !== 'stock') throw refuse();
-    const files = image.package.files;
-    for (const member of stock.members) {
-      const bytes = files[member.role];
-      if (!bytes || sha256HexSync(bytes) !== member.sha256) throw refuse();
+    if (image.provenance === 'stock') {
+      if (!pinned(image.package.files)) throw new RadioInterlockError(MAIN_REFUSE_STOCK_ONLY);
+      return;
+    }
+    const refuse = () => new RadioInterlockError(MAIN_REFUSE_CHANGES);
+    const base = image.stockPackage?.files;
+    if (!base || !pinned(base)) throw refuse();
+    const { cdd, cdi, spi } = image.package.files;
+    const sCdd = base.cdd;
+    if (
+      !cdd ||
+      !cdi ||
+      !spi ||
+      !sCdd ||
+      !base.cdi ||
+      !base.spi ||
+      Object.keys(image.package.files).length !== 3 ||
+      cdd.length < RT95_MAIN_FW_IMAGE_LEN ||
+      cdd.length > RT95_MAIN_FW_WINDOW_END ||
+      sCdd.length < RT95_MAIN_FW_IMAGE_LEN ||
+      !sameBytes(cdd, sCdd, 0, RT95_MAIN_FW_HOOK_START) ||
+      !sameBytes(cdd, sCdd, RT95_MAIN_FW_HOOK_END, RT95_MAIN_FW_IMAGE_LEN) ||
+      !equalButLength(cdi, base.cdi, RT95_FW_CDI_LEN_OFFSET, cdd.length) ||
+      !equalButLength(spi, base.spi, RT95_FW_SPI_LEN_OFFSET, cdd.length)
+    ) {
+      throw refuse();
     }
   };
 }
