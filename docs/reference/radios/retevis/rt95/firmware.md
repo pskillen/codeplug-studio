@@ -152,7 +152,8 @@ Studio's updater is a port of the firmware project's `tools/rt95update.py`; prot
 from Studio yet.
 
 **Code:** `src/integrations/radio-io/radios/rt95/firmwareUpdate/` — `constants.ts`, `package.ts`
-(`parseRt95HeadPackage`, `rt95HeadBlocks`), `frames.ts`, `echo.ts`, `interlocks.ts`, `updater.ts`, `preflight.ts`,
+(`parseRt95HeadPackage`, `rt95HeadBlocks`), `frames.ts`, `echo.ts`, `targets.ts` (`RT95_HEAD_TARGET`: the per-MCU window, SP rule, model offset and refusal copy that
+`interlocks.ts` and `updater.ts` read), `interlocks.ts`, `updater.ts`, `preflight.ts`,
 `descriptor.ts` (`RT95_HEAD_FIRMWARE_UPDATER`). Test radio: `__fixtures__/rt95BootloaderMock.ts` with the synthetic
 packages from `__fixtures__/syntheticPackage.ts`.
 
