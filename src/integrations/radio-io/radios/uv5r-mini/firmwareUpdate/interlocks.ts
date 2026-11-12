@@ -15,8 +15,12 @@
  *  I4. Every `flash.bin` byte equals the stock image's byte at the same SoC address, except inside the base's app
  *      windows, and both have the same length. (The per-radio scramble is a keystream XOR by address, so equal stored
  *      bytes at an address are equal plain bytes; Studio never descrambles.)
- *  I7. The image's build name is not on the pinned list of its own loader: a re-flash or a late cut of an image its
- *      loader already lists would leave the radio looping in the loader.
+ *  Layout. When the pinned loader is a layout loader (`L1`, `L2`), the radio's layout is known
+ *      (`PreparedFirmwareImage.radioLayout`) and is the loader's. The radio's stock "UPDATE..." stage loses settings on
+ *      a crossed pick before the loader can refuse, so this is checked before anything is sent.
+ *  I7. For a list-carrying loader only: the image's build name is not on its loader's list (a re-flash or a late cut
+ *      of an image its loader already lists would leave the radio looping in the loader). A layout loader has no
+ *      list, so I7 does not apply to it. Keyed on the pin, never on the patch's descriptive `loader.list`.
  *
  * I5 (outgoing frames) and I6 (line control) belong to the session code, not to this file.
  */
@@ -43,6 +47,10 @@ import {
 } from './ufw.ts';
 
 export { UV5RMINI_FW_RADIO_ID };
+
+/** The refusal for an image whose loader is for the other layout than the radio's. */
+export const UV5RMINI_OTHER_LAYOUT_REFUSAL =
+  'This file is for the other hardware layout; nothing was sent.';
 
 const hex = (n: number) => `0x${n.toString(16).toUpperCase()}`;
 
@@ -142,6 +150,18 @@ export function checkUv5rMiniImage(
     throw new RadioInterlockError("This image's loader is not one Studio knows: nothing was sent.");
   }
 
+  // Layout: a layout loader's image goes only to a radio of that layout, and only when Studio knows the radio's.
+  if (pin.layout !== undefined) {
+    if (image.radioLayout === undefined) {
+      throw new RadioInterlockError(
+        "Studio doesn't know this radio's hardware layout, so it can't check this file is for it. Nothing was sent.",
+      );
+    }
+    if (image.radioLayout !== pin.layout) {
+      throw new RadioInterlockError(UV5RMINI_OTHER_LAYOUT_REFUSAL);
+    }
+  }
+
   // I3: the area.
   const flash = ufw.entries.flash.data;
   const end = UV5RMINI_FLASH_BASE + flash.length;
@@ -176,8 +196,8 @@ export function checkUv5rMiniImage(
     );
   }
 
-  // I7: unlisted self.
-  if (pin.lists.includes(image.versionStamp)) {
+  // I7: unlisted self, for a loader that carries a list.
+  if (pin.lists?.includes(image.versionStamp)) {
     throw new RadioInterlockError(
       'This firmware is already listed by its own loader: flashing it could leave the radio stuck in update mode. Nothing was sent.',
     );

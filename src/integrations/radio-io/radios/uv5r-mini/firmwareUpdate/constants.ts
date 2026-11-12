@@ -81,15 +81,73 @@ export const UV5RMINI_BASES: Readonly<Record<string, Uv5rMiniBase>> = {
   },
 };
 
-export interface PinnedLoader {
+/** The UV-5R Mini's two flash layouts in the field. Which one a radio has follows from its Radio Info screen. */
+export type Uv5rMiniLayout = 'L1' | 'L2';
+
+/** An older loader that carries a list of installable builds; I7 applies to it. */
+export interface ListedPinnedLoader {
   readonly label: string;
   /** SHA-256 over the packed loader bytes. */
   readonly sha256: string;
   /** Build names the loader lists as installable. */
   readonly lists: readonly string[];
+  readonly layout?: undefined;
 }
 
+/**
+ * A no-list layout loader: one fixed loader per flash layout, with no build list. It checks the radio's installed VM,
+ * PRCT and BTIF directory entries against its own layout record and refuses another layout (result `0x8F`) before
+ * erasing. The record is here for reference; Studio checks the packed hash.
+ */
+export interface LayoutPinnedLoader {
+  readonly label: string;
+  /** SHA-256 over the packed loader bytes. The loader is deterministic, so the packed hash is the pin. */
+  readonly sha256: string;
+  readonly layout: Uv5rMiniLayout;
+  readonly rawSize: number;
+  readonly packedSize: number;
+  readonly layoutRecord: {
+    readonly vmOff: number;
+    readonly vmSize: number;
+    readonly hcrcVm: number;
+    readonly hcrcPrct: number;
+    readonly hcrcBtif: number;
+  };
+  readonly lists?: undefined;
+}
+
+export type PinnedLoader = ListedPinnedLoader | LayoutPinnedLoader;
+
 export const UV5RMINI_PINNED_LOADERS: readonly PinnedLoader[] = [
+  {
+    label: 'L1',
+    sha256: 'b748e39af6caa7968a7eb74099e35dce0714876a0949a70d9279adc870ed7e09',
+    layout: 'L1',
+    rawSize: 17_904,
+    packedSize: 15_648,
+    layoutRecord: {
+      vmOff: 0x95000,
+      vmSize: 0x68000,
+      hcrcVm: 0x06d9,
+      hcrcPrct: 0xd9bb,
+      hcrcBtif: 0xf13a,
+    },
+  },
+  {
+    label: 'L2',
+    sha256: '2f1b8999ea6dcc858ef076b20564e0339c1fb665add46efdafc4bd40222aadae',
+    layout: 'L2',
+    rawSize: 17_904,
+    packedSize: 15_648,
+    layoutRecord: {
+      vmOff: 0x94000,
+      vmSize: 0x6a000,
+      hcrcVm: 0x2074,
+      hcrcPrct: 0x48f9,
+      hcrcBtif: 0xf13a,
+    },
+  },
+  // The older list-carrying loaders, kept so images already built on them still verify.
   {
     label: 'stock',
     sha256: '5382ce4d20dfc7a57cb2a86c836dbbe8c46f6f02625f6f91675df88066e9acb4',
