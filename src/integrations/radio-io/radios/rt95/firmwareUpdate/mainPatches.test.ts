@@ -110,22 +110,22 @@ describe('RT95 MAIN identity check with patches', () => {
     const out = await patched({ hook: true, append });
     const cdi = out.files.cdi!.slice();
     cdi[0x108] = 1;
-    expect(() => identity(image({ ...out.files, cdi }), TARGET)).toThrow(CHANGES);
+    expect(() => identity(image({ ...out.files, cdi }))).toThrow(CHANGES);
     const spi = out.files.spi!.slice();
     spi[0] = 2;
-    expect(() => identity(image({ ...out.files, spi }), TARGET)).toThrow(CHANGES);
+    expect(() => identity(image({ ...out.files, spi }))).toThrow(CHANGES);
     const badLen = out.files.cdi!.slice();
     badLen[0x104] ^= 1;
-    expect(() => identity(image({ ...out.files, cdi: badLen }), TARGET)).toThrow(CHANGES);
+    expect(() => identity(image({ ...out.files, cdi: badLen }))).toThrow(CHANGES);
   });
 
   it('refuses an image over the window end and one shorter than the stock image', async () => {
     const out = await patched({ hook: true, append });
     const big = new Uint8Array(0xdc00 + 1);
     big.set(out.files.cdd!);
-    expect(() => identity(image({ ...out.files, cdd: big }), TARGET)).toThrow(CHANGES);
+    expect(() => identity(image({ ...out.files, cdd: big }))).toThrow(CHANGES);
     const short = out.files.cdd!.slice(0, 0xd93b);
-    expect(() => identity(image({ ...out.files, cdd: short }), TARGET)).toThrow(CHANGES);
+    expect(() => identity(image({ ...out.files, cdd: short }))).toThrow(CHANGES);
   });
 
   it('still refuses a patched image on the real pinned stock (not the synthetic one)', async () => {
@@ -148,7 +148,7 @@ describe('RT95 MAIN patch binding', () => {
       { name: 'rt95-main-fw-x.patch.json', bytes },
       { rows: [], descriptors: [RT95_HEAD_STOCK_FIRMWARE, RT95_MAIN_STOCK_FIRMWARE] },
     );
-    const [summary] = await source.listReleases('retevis-rt95-main');
+    const [summary] = await source.listReleases('retevis-rt95-main', { includeRc: true });
     expect(summary).toMatchObject({ provenance: 'unreviewed', radioId: 'retevis-rt95-main' });
   });
 
@@ -159,7 +159,7 @@ describe('RT95 MAIN patch binding', () => {
       createUserPatchSource(
         { name: 'm.json', bytes: mainBytes },
         { rows: [], descriptors },
-      ).listReleases('retevis-rt95-head'),
+      ).listReleases('retevis-rt95-head', { includeRc: true }),
     ).rejects.toMatchObject({ code: 'patch-wrong-radio' });
     const head = synthRt95Stock();
     const headBytes = encode(await makeSyntheticRt95Patch(head, head, '1'));
@@ -167,7 +167,7 @@ describe('RT95 MAIN patch binding', () => {
       createUserPatchSource(
         { name: 'h.json', bytes: headBytes },
         { rows: [], descriptors },
-      ).listReleases('retevis-rt95-main'),
+      ).listReleases('retevis-rt95-main', { includeRc: true }),
     ).rejects.toMatchObject({ code: 'patch-wrong-radio' });
   });
 

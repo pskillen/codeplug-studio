@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { FirmwareError } from '../../../errors.ts';
 import { sha256Hex } from '../../../hash.ts';
-import type { FirmwarePackage } from '../../../types.ts';
+import type { FirmwarePackage, FirmwareRadioId } from '../../../types.ts';
 import { applyFirmwarePatch, parseFirmwarePatch } from '../../index.ts';
 import {
   makeSyntheticRt95Patch,
@@ -19,7 +19,10 @@ import { synthMainStock, type SyntheticMainFiles } from './__fixtures__/synthMai
 
 const stock = synthMainStock();
 
-function pkg(f: SyntheticMainFiles, radioId = 'retevis-rt95-main'): FirmwarePackage {
+function pkg(
+  f: SyntheticMainFiles,
+  radioId: FirmwareRadioId = 'retevis-rt95-main',
+): FirmwarePackage {
   return { radioId, files: { cdd: f.cdd, cdi: f.cdi, spi: f.spi } };
 }
 
