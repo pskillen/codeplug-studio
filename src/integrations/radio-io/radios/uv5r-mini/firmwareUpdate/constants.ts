@@ -73,6 +73,11 @@ export const UV5RMINI_PINNED_LOADERS: readonly PinnedLoader[] = [
     sha256: '87f53dec40c4335ec0c38734c7e3ee08af8847e795da15068f5c9ba876939867',
     lists: ['nrfb-v0.04', 'mm9pdy-0.1.0-rc.1'],
   },
+  {
+    label: 'stock+c4+w1',
+    sha256: '3ec9a37db41f98bcf9e2b2a75200fd3450ac48807860470f5ca11b08a11724e8',
+    lists: ['nrfb-v0.04', 'mm9pdy-0.1.0-rc.1', 'mm9pdy-pr125-g1c0a9df'],
+  },
 ];
 
 /** The updater's real-time waits, in milliseconds. Tests run them on fake timers. */
