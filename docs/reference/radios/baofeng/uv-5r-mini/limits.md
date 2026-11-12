@@ -21,3 +21,8 @@ Re-verified against CHIRP after UV-5R Mini cap fix ([#584](https://github.com/ps
 | NeonPlug `neonplug-uv5rmini` | Export warnings from Studio profile constants                             |
 
 See [capabilities.md](capabilities.md) for mode skip rules.
+
+## MM9PDY zone table
+
+On the MM9PDY modded firmware only, the radio shows zones from a table (see [mm9pdy-data.md](mm9pdy-data.md)).
+Code: `ZONE_MAX` 24, `ZONE_NAME_LENGTH` 12, `ZONE_SLOTS` 999 in `UV5R_MINI_LIMITS`.

@@ -25,6 +25,9 @@ export const UV5R_MINI_WRITE_ALLOWED_SPANS: readonly (readonly [number, number])
   [0xa000, 0xa1c0],
 ];
 
+/** The MM9PDY zone table sector (MMZ1), allowed on the `mm9pdy` profile only. */
+export const UV5R_MINI_MM9PDY_WRITE_SPAN: readonly [number, number] = [0xc000, 0xd000];
+
 /** Spans refused whatever the profile, with the reason shown in the error. */
 const ALWAYS_REFUSED: readonly { from: number; to: number; rule: string }[] = [
   { from: 0xe000, to: Infinity, rule: 'at or above 0xE000 (calibration and reserved flash)' },
@@ -42,14 +45,13 @@ function hex(n: number): string {
  * Throws `Uv5rMiniWriteRefusedError` unless this 64-byte block may be written. Pure. No flag disables it.
  *
  * Allowed: 64-aligned 64-byte blocks inside 0x0000-0x803F, 0x9000-0x903F or 0xA000-0xA1BF. The `mm9pdy`
- * profile is accepted but adds no range yet.
+ * profile also allows 0xC000-0xCFFF (the zone table). The refused ranges apply to both profiles.
  */
 export function assertUv5rMiniWriteAllowed(
   address: number,
   length: number,
   ctx: Uv5rMiniWriteContext,
 ): void {
-  void ctx;
   if (length !== BLOCK) {
     throw new Uv5rMiniWriteRefusedError(address, `length ${length} is not ${BLOCK}`);
   }
@@ -64,7 +66,11 @@ export function assertUv5rMiniWriteAllowed(
       throw new Uv5rMiniWriteRefusedError(address, r.rule);
     }
   }
-  if (!UV5R_MINI_WRITE_ALLOWED_SPANS.some(([s, e]) => address >= s && address + BLOCK <= e)) {
+  const spans =
+    ctx.profile === 'mm9pdy'
+      ? [...UV5R_MINI_WRITE_ALLOWED_SPANS, UV5R_MINI_MM9PDY_WRITE_SPAN]
+      : UV5R_MINI_WRITE_ALLOWED_SPANS;
+  if (!spans.some(([s, e]) => address >= s && address + BLOCK <= e)) {
     throw new Uv5rMiniWriteRefusedError(address, 'outside the write set');
   }
 }
