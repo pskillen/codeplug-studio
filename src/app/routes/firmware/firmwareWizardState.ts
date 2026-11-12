@@ -3,7 +3,7 @@
  * nothing here is persisted. The flash run itself (progress, outcome) lives in the page.
  */
 import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
-import type { FirmwareRadioId } from '@core/firmware/types.ts';
+import type { FirmwareRadioId, RadioInfoAnswers } from '@core/firmware/types.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 
 import type { FirmwareChoice, VerifiedStockFirmware } from '../../services/firmwareFlash.ts';
@@ -36,6 +36,8 @@ export interface FirmwareWizardState {
   /** Verified stock bytes, in memory only. Kept on back-navigation; cleared when the radio changes. */
   readonly stock: VerifiedStockFirmware | null;
   readonly image: PreparedFirmwareImage | null;
+  /** The radio's Radio Info lines, for a radio whose stock descriptor asks for its layout. In memory only. */
+  readonly radioInfo: RadioInfoAnswers;
   readonly checks: Readonly<Record<PreflightCheck, boolean>>;
   /** What the selected radio's descriptor asks for on top of the generic checks. */
   readonly radioPreflight: {
@@ -100,6 +102,7 @@ export type FirmwareWizardAction =
   | { type: 'stockCleared' }
   | { type: 'imagePrepared'; image: PreparedFirmwareImage }
   | { type: 'imageCleared' }
+  | { type: 'setRadioInfo'; patch: Partial<RadioInfoAnswers> }
   | { type: 'setCheck'; check: PreflightCheck; value: boolean }
   | { type: 'setRadioCheck'; id: string; value: boolean }
   | { type: 'probePassed'; summary: string }
@@ -128,6 +131,7 @@ export const INITIAL_FIRMWARE_WIZARD_STATE: FirmwareWizardState = {
   riskAccepted: false,
   stock: null,
   image: null,
+  radioInfo: { firmware: '', hardware: '', build: '', override: false },
   checks: NO_CHECKS,
   radioPreflight: { attestationIds: [], probe: false },
   radioChecks: {},
@@ -261,6 +265,17 @@ export function firmwareWizardReducer(
       return { ...state, image: action.image };
     case 'imageCleared':
       return { ...state, image: null };
+    case 'setRadioInfo':
+      // A new layout means a new image and fresh checks.
+      return {
+        ...state,
+        radioInfo: { ...state.radioInfo, ...action.patch },
+        image: null,
+        checks: NO_CHECKS,
+        radioChecks: {},
+        probe: null,
+        probeSkipped: false,
+      };
     case 'setCheck':
       return { ...state, checks: { ...state.checks, [action.check]: action.value } };
     case 'setRadioCheck':

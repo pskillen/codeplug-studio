@@ -11,10 +11,16 @@ import {
   UV5RMINI_FLASH_BASE,
   UV5RMINI_PINNED_LOADERS,
   uv5rMiniHardLimit,
+  type LayoutPinnedLoader,
   type PinnedLoader,
   type Uv5rMiniBase,
+  type Uv5rMiniLayout,
 } from './constants.ts';
-import { checkUv5rMiniImage, firstDifferenceOutsideWindows } from './interlocks.ts';
+import {
+  checkUv5rMiniImage,
+  firstDifferenceOutsideWindows,
+  UV5RMINI_OTHER_LAYOUT_REFUSAL,
+} from './interlocks.ts';
 import { sha256HexSync } from './sha256Sync.ts';
 
 const FLASH_SIZE = 0x7c000 - 0x1000; // fills the area exactly
@@ -47,6 +53,7 @@ function prepared(
     extraRole?: boolean;
     noStock?: boolean;
     base?: string | undefined;
+    radioLayout?: string;
   } = {},
 ): PreparedFirmwareImage {
   const built = makeSyntheticUfw({ flash: stock.flash, loader: stock.loader, ...o.ufw });
@@ -60,6 +67,7 @@ function prepared(
     baseName: 'base' in o ? o.base : 'nrfb-v0.04',
     title: 'synthetic',
     versionStamp: 'stamp' in o ? o.stamp : 'mm9pdy-test',
+    radioLayout: o.radioLayout,
     package: { radioId, files },
     stockPackage: o.noStock ? undefined : { radioId, files: { ufw: stock.bytes } },
     sha256: {},
@@ -124,16 +132,109 @@ describe('checkUv5rMiniImage — I2 loader', () => {
   });
 });
 
+/** The fake loader pinned as a layout loader: no list, tied to `layout`. */
+const layoutPin = (layout: Uv5rMiniLayout): LayoutPinnedLoader => ({
+  label: `fake-${layout}`,
+  sha256: FAKE_PACKED_SHA,
+  layout,
+  rawSize: 0,
+  packedSize: stock.loader.length,
+  layoutRecord: { vmOff: 0, vmSize: 0, hcrcVm: 0, hcrcPrct: 0, hcrcBtif: 0 },
+});
+
+describe('checkUv5rMiniImage — layout loaders', () => {
+  const checkWith = (layout: Uv5rMiniLayout, img: PreparedFirmwareImage) => () =>
+    checkUv5rMiniImage(img, [layoutPin(layout)], bases);
+
+  it("accepts an image whose loader is for the radio's layout", () => {
+    expect(checkWith('L1', prepared({ radioLayout: 'L1' }))).not.toThrow();
+    expect(checkWith('L2', prepared({ radioLayout: 'L2' }))).not.toThrow();
+  });
+
+  it('refuses an L1 file for a layout-2 radio and an L2 file for a layout-1 radio', () => {
+    for (const [loader, radio] of [
+      ['L1', 'L2'],
+      ['L2', 'L1'],
+    ] as const) {
+      const run = checkWith(loader, prepared({ radioLayout: radio }));
+      expect(run).toThrow(RadioInterlockError);
+      expect(run).toThrow(UV5RMINI_OTHER_LAYOUT_REFUSAL);
+    }
+    expect(UV5RMINI_OTHER_LAYOUT_REFUSAL).toBe(
+      'This file is for the other hardware layout; nothing was sent.',
+    );
+  });
+
+  it("refuses a layout loader's image when Studio does not know the radio's layout", () => {
+    expect(checkWith('L2', prepared())).toThrow(/doesn't know this radio's hardware layout/);
+    expect(checkWith('L2', prepared({ radioLayout: 'L3' }))).toThrow(UV5RMINI_OTHER_LAYOUT_REFUSAL);
+  });
+
+  it('checks the layout before the area and the stock bytes', () => {
+    const f = flashWith([0x1000, stock.flash[0]! ^ 0xff]);
+    expect(checkWith('L1', prepared({ ufw: { flash: f }, radioLayout: 'L2' }))).toThrow(
+      UV5RMINI_OTHER_LAYOUT_REFUSAL,
+    );
+  });
+
+  it('does not apply I7: a layout loader has no list', () => {
+    expect(checkWith('L1', prepared({ stamp: 'nrfb-v0.04', radioLayout: 'L1' }))).not.toThrow();
+  });
+
+  it('a list-carrying loader ignores the radio layout', () => {
+    check(prepared({ radioLayout: 'L2' }));
+    check(prepared());
+  });
+});
+
 describe('UV5RMINI_PINNED_LOADERS', () => {
+  it('pins the two layout loaders exactly, one per layout, with no list', () => {
+    const byLabel = (l: string) => UV5RMINI_PINNED_LOADERS.find((p) => p.label === l);
+    expect(byLabel('L1')).toMatchObject({
+      sha256: 'b748e39af6caa7968a7eb74099e35dce0714876a0949a70d9279adc870ed7e09',
+      layout: 'L1',
+      rawSize: 17_904,
+      packedSize: 15_648,
+      layoutRecord: {
+        vmOff: 0x95000,
+        vmSize: 0x68000,
+        hcrcVm: 0x06d9,
+        hcrcPrct: 0xd9bb,
+        hcrcBtif: 0xf13a,
+      },
+    });
+    expect(byLabel('L2')).toMatchObject({
+      sha256: '2f1b8999ea6dcc858ef076b20564e0339c1fb665add46efdafc4bd40222aadae',
+      layout: 'L2',
+      rawSize: 17_904,
+      packedSize: 15_648,
+      layoutRecord: {
+        vmOff: 0x94000,
+        vmSize: 0x6a000,
+        hcrcVm: 0x2074,
+        hcrcPrct: 0x48f9,
+        hcrcBtif: 0xf13a,
+      },
+    });
+    expect(byLabel('L1')?.lists).toBeUndefined();
+    expect(byLabel('L2')?.lists).toBeUndefined();
+  });
+
+  it('keeps every list-carrying pin without a layout', () => {
+    const listed = UV5RMINI_PINNED_LOADERS.filter((p) => p.lists !== undefined);
+    expect(listed.map((p) => p.label)).toEqual(['stock', 'stock+c4', 'stock+c4+w1']);
+    expect(listed.every((p) => p.layout === undefined)).toBe(true);
+  });
+
   it('pins stock+c4+w1 with its packed hash and the three builds it lists', () => {
     const w1 = UV5RMINI_PINNED_LOADERS.find((p) => p.label === 'stock+c4+w1');
     expect(w1?.sha256).toBe('3ec9a37db41f98bcf9e2b2a75200fd3450ac48807860470f5ca11b08a11724e8');
     expect(w1?.lists).toEqual(['nrfb-v0.04', 'mm9pdy-0.1.0-rc.1', 'mm9pdy-pr125-g1c0a9df']);
   });
 
-  it('pins three distinct loaders, and an unknown hash is in none of them', () => {
+  it('pins five distinct loaders, and an unknown hash is in none of them', () => {
     const hashes = UV5RMINI_PINNED_LOADERS.map((p) => p.sha256);
-    expect(new Set(hashes).size).toBe(3);
+    expect(new Set(hashes).size).toBe(5);
     expect(hashes).not.toContain(FAKE_PACKED_SHA);
   });
 });

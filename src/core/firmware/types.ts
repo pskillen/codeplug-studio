@@ -77,6 +77,37 @@ export interface StockFirmwareDescriptor {
   };
   /** How the operator confirms stock is running after a flash. */
   readonly stockVerifyHint: string;
+  /**
+   * For a radio that comes in more than one hardware layout: the question the wizard asks before Prepare, from the
+   * radio's Radio Info screen. The answer becomes `radioLayout` on the prepared image.
+   */
+  readonly radioLayout?: FirmwareRadioLayoutQuestion;
+}
+
+/** What the operator typed from the radio's Radio Info screen, and an explicit layout override. */
+export interface RadioInfoAnswers {
+  readonly firmware: string;
+  readonly hardware: string;
+  /** The build name a modded radio shows on Radio Info; empty on stock or when not given. */
+  readonly build: string;
+  readonly override: boolean;
+}
+
+export type RadioLayoutAnswer =
+  | { readonly kind: 'incomplete' }
+  | { readonly kind: 'layout'; readonly layout: string }
+  | { readonly kind: 'refused'; readonly message: string };
+
+/** Rendered generically by the wizard's Prepare step. */
+export interface FirmwareRadioLayoutQuestion {
+  readonly intro: string;
+  readonly steps: readonly string[];
+  readonly firmwareLabel: string;
+  readonly hardwareLabel: string;
+  /** An optional line for a modded radio's build name, which decides the layout when given. */
+  readonly build?: { readonly label: string; readonly help: string };
+  readonly override: { readonly label: string; readonly help: string };
+  readonly resolve: (answers: RadioInfoAnswers) => RadioLayoutAnswer;
 }
 
 /** Bytes keyed by member role. Stock and patched packages share this shape. */

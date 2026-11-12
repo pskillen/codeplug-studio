@@ -120,7 +120,8 @@ image is prepared and again as the flash starts; each refusal says nothing was s
 | Base              | The patch's `base` names a base in the table below, and the verified stock hashes to that base's stock file                                                                                          |
 | Area              | `flash.bin` starts at SoC address `0x1000` and ends at or below the base's area end (`0x7C000` for both bases), never past the base's own hard limit (the start of its first per-unit record sector) |
 | Stock bytes       | `flash.bin` has the stock's length and every byte equals the stock's at the same address, except inside the base's app windows (SoC, half-open), from the table below                                |
-| Not listed itself | The image's build name is not on its own loader's list: flashing it again, or after a cut update, would leave the radio stuck in its loader                                                          |
+| Layout            | For a layout loader (`L1`, `L2`): Studio knows the radio's hardware layout and it is the loader's. Checked before anything is sent                                                                   |
+| Not listed itself | For a list-carrying loader only: the image's build name is not on its loader's list. Flashing it again, or after a cut update, would leave the radio stuck in its loader                             |
 
 **Bases** (keyed by the patch's `base`; the windows are SoC half-open ranges, both also hold `[0x4000, 0x4004)` and `[0x4020, 0x4024)`):
 
@@ -136,13 +137,75 @@ The stock comparison needs no key: the image is scrambled by an address-keyed XO
 are equal plain bytes. Studio never descrambles anything. The stock bytes come from the image's own verified stock
 (`PreparedFirmwareImage.stockPackage`); an image without them is refused.
 
-**Pinned loaders** (SHA-256 over the packed loader bytes, with the builds each one lists):
+**Pinned loaders** (SHA-256 over the packed loader bytes). Two kinds:
+
+- **Layout loaders**, one per flash layout. They carry no list of builds. Before it erases the firmware area, each one
+  checks the radio's installed VM, PRCT and BTIF directory entries against its own 16-byte layout record, and refuses a
+  radio of the other layout with result `0x8F`. By then the stock app's update stage has already reset the FM presets
+  and volume (below). Each loader always builds to the same bytes, so its packed hash is its pin.
+- **List-carrying loaders**: the older loaders, each with a list of the builds it may install. They stay pinned so that
+  images already built on them still pass the checks.
+
+| Loader | Packed SHA-256                                                     | Raw / packed size   | Layout record: VM offset, VM size, VM / PRCT / BTIF header CRCs |
+| ------ | ------------------------------------------------------------------ | ------------------- | --------------------------------------------------------------- |
+| `L1`   | `b748e39af6caa7968a7eb74099e35dce0714876a0949a70d9279adc870ed7e09` | 17,904 B / 15,648 B | `0x95000`, `0x68000`, `0x06D9` / `0xD9BB` / `0xF13A`            |
+| `L2`   | `2f1b8999ea6dcc858ef076b20564e0339c1fb665add46efdafc4bd40222aadae` | 17,904 B / 15,648 B | `0x94000`, `0x6A000`, `0x2074` / `0x48F9` / `0xF13A`            |
 
 | Loader        | Packed SHA-256                                                     | Lists                                                      |
 | ------------- | ------------------------------------------------------------------ | ---------------------------------------------------------- |
 | `stock`       | `5382ce4d20dfc7a57cb2a86c836dbbe8c46f6f02625f6f91675df88066e9acb4` | `nrfb-v0.04`                                               |
 | `stock+c4`    | `87f53dec40c4335ec0c38734c7e3ee08af8847e795da15068f5c9ba876939867` | `nrfb-v0.04`, `mm9pdy-0.1.0-rc.1`                          |
 | `stock+c4+w1` | `3ec9a37db41f98bcf9e2b2a75200fd3450ac48807860470f5ca11b08a11724e8` | `nrfb-v0.04`, `mm9pdy-0.1.0-rc.1`, `mm9pdy-pr125-g1c0a9df` |
+
+**Layout match.** The radio's stock app runs the first stage of an update ("UPDATE..."), before any loader. Sent a
+file for the other layout, that stage already loses some of the radio's settings (its FM presets and volume) before
+the loader can refuse. So Studio checks the layout itself, before it sends anything. For an image whose loader is `L1`
+or `L2`, the radio's layout must be on the prepared image (`PreparedFirmwareImage.radioLayout`, passed to
+`prepareFirmwareImage` as `radioLayout`; the wizard asks for it, below):
+
+- the layouts differ: "This file is for the other hardware layout; nothing was sent."
+- no layout given: refused, because Studio can't check the file is for this radio.
+
+A list-carrying loader's image ignores the layout.
+
+**Radio Info.** On the Prepare step, before the image is built, the wizard asks for the two lines of the radio's Radio
+Info screen, `Firmware` and `Hardware` (case, spaces and a missing `V` are ignored). Only the proven pairs map to a
+layout:
+
+| Firmware | Hardware | Layout |
+| -------- | -------- | ------ |
+| `V0.04`  | `V1.7`   | `L1`   |
+| `V0.27`  | `V1.7`   | `L2`   |
+
+Any other pair stops the wizard: "Studio doesn't recognise this radio's Radio Info; nothing was sent." A radio moved
+from V0.04 to V0.27 by an MM9PDY update shows the `L2` pair but keeps layout 1, so the step has an explicit choice, "My
+radio is layout 1 (it was moved to v0.27)", which makes a proven pair `L1`. A wrong choice reaches the radio: its
+loader refuses it with `0x8F` and erases no firmware, but the FM presets and volume are reset.
+
+**MM9PDY build name.** A radio running an MM9PDY build keeps the vendor's `Firmware` line and shows the build's name
+on Radio Info's fourth, unlabelled line (the whole name: at most 21 characters, never cut). The step asks for it as an
+optional third line, "Radio Info: MM9PDY build (if shown)". When it is given, the pair must still be a proven one, and
+the name decides the layout. The match ignores case (the LCD's text and a phone's capitals both work) and drops surrounding spaces; every other
+character counts:
+
+| Name                                                                                                            | Layout |
+| --------------------------------------------------------------------------------------------------------------- | ------ |
+| `mm9pdy-L1-X.Y.Z[-rc.N]`, `mm9pdy-L1-pr<N>-g<hex>`, `mm9pdy-L1-g<hex>[-dirty]`                                  | `L1`   |
+| `mm9pdy-L2-X.Y.Z[-rc.N]`, `mm9pdy-L2-pr<N>-g<hex>`, `mm9pdy-L2-g<hex>[-dirty]`                                  | `L2`   |
+| Untagged, from before the layout tag: `mm9pdy-X.Y.Z[-rc.N]`, `mm9pdy-pr<N>[-g<hex>]`, `mm9pdy-g<7 hex>[-dirty]` | `L1`   |
+
+`<hex>` is 4–7 hex digits and `<N>` a PR number without leading zeros. Untagged builds were only ever made
+for V0.04. Refused with the same text: any other name (the bare unstamped `mm9pdy` among them), an `L2` name with
+Firmware V0.04, an untagged name with V0.27, and an `L2` name with the layout-1 choice ticked. An `L1` name on V0.27
+needs no choice. The answers live in the wizard's memory only. Code: `src/core/radios/baofeng/uv-5r-mini/radioInfo.ts`,
+rendered by the Prepare step from `StockFirmwareDescriptor.radioLayout`.
+
+**Not listed itself** applies only to list-carrying loaders. A layout loader has no list, and the patch's own
+`loader.list` (now written as `[]`) is descriptive: the check follows the pinned loader, never the patch.
+
+Studio does not refuse a build that is already installed, because the updater has no way to read which app the radio
+holds. The layout loader does not check the installed build either: an image whose app directory equals the
+installed one ends with `0x87` before the length, having written nothing.
 
 The loader hash is computed synchronously (a small in-module SHA-256, checked against Web Crypto in its test) because
 the updater's `checkImage` is synchronous.
@@ -189,7 +252,9 @@ the radio asked for (at most 0x1000, inside the image), and an echo of the radio
 | App `0x01`, `0x86`, `0x8A`, `0x83`                     | "Nothing was written to the firmware. Switch the radio off and on." `0x01` adds that the image is not for this radio's key; `0x8A` that it is for another stock version |
 | Loader `0x86` before the length, fresh session         | "This firmware is already on the radio, or the radio holds firmware this image can't replace. Nothing was erased."                                                      |
 | Loader `0x86` before the length, continued session     | "The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair."          |
-| Loader `0x87` before the length, continued session     | "Stop and ask for help; don't retry."                                                                                                                                   |
+| Loader `0x8F` before the length                        | "The file is for the other hardware layout; the radio refused it. Its FM presets and volume may have been reset; nothing else changed."                                 |
+| Loader `0x87` before the length, fresh session         | "Nothing was written; the radio boots the installed app."                                                                                                               |
+| Loader `0x87` before the length, continued session     | The same, plus: don't send this file again (it can only end the same way); if the radio doesn't reach its normal screen, it needs a case-open repair                    |
 | Loader non-zero after the length, or no frame for 60 s | The recover text below                                                                                                                                                  |
 
 The summary always says to check the power-on name: a torn last page also ends in `0`.
@@ -224,6 +289,7 @@ patch for it. Start one bridge per case (a bridge serves one client, then exits)
 | `UV5RMINI_EMU_BRIDGE`     | `127.0.0.1:<port>` of a fresh bridge, for the clean case                  |
 | `UV5RMINI_EMU_BRIDGE_CUT` | `127.0.0.1:<port>` of another fresh bridge, for the cut-and-continue case |
 | `UV5RMINI_EMU_CUT_AFTER`  | Loader erase and program count the power is cut after (default 100)       |
+| `UV5RMINI_RADIO_LAYOUT`   | The emulated radio's layout, `L1` or `L2`, when the patch's loader is one |
 
 Then `npx vitest run src/integrations/radio-io/radios/uv5r-mini/firmwareUpdate/uv5rMiniEmuBridge.test.ts`. A whole
 session takes minutes (the emulated radio is kept in step with real time). The test port keeps the emulated clock

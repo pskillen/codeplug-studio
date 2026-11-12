@@ -47,6 +47,8 @@ const patchPath = process.env.UV5RMINI_PATCH;
 const cleanBridge = process.env.UV5RMINI_EMU_BRIDGE;
 const cutBridge = process.env.UV5RMINI_EMU_BRIDGE_CUT;
 const cutAfter = Number(process.env.UV5RMINI_EMU_CUT_AFTER ?? '100');
+/** The emulated radio's layout (`L1`, `L2`), needed when the patch's loader is a layout loader. */
+const radioLayout = process.env.UV5RMINI_RADIO_LAYOUT;
 
 const file = (path: string) => ({
   name: basename(path),
@@ -63,7 +65,12 @@ async function prepare(): Promise<PreparedFirmwareImage> {
   const [summary] = await source.listReleases(RADIO_ID, { includeRc: true });
   const patch = await source.loadPatch(RADIO_ID, summary!.key);
   expect(patch.provenance).toBe('unreviewed');
-  const image = await prepareFirmwareImage({ descriptor, stock, target: { kind: 'patch', patch } });
+  const image = await prepareFirmwareImage({
+    descriptor,
+    stock,
+    target: { kind: 'patch', patch },
+    radioLayout,
+  });
   createUv5rMiniFirmwareUpdater().checkImage(image);
   return image;
 }

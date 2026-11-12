@@ -41,6 +41,12 @@ export interface PreparedFirmwareImage {
   readonly patchVersion?: string;
   readonly patchSha256?: string;
   readonly versionStamp?: string;
+  /**
+   * The hardware layout of the radio this image is prepared for, as the operator gave it, where the radio comes in more
+   * than one layout (UV-5R Mini: `L1` or `L2`, from its Radio Info screen). Unset when Studio has not been told. An
+   * updater whose image is tied to one layout refuses an image prepared for the other layout, or for none.
+   */
+  readonly radioLayout?: string;
   /** The bytes that will be flashed. */
   readonly package: FirmwarePackage;
   /**
@@ -63,8 +69,11 @@ export async function prepareFirmwareImage(input: {
   descriptor: StockFirmwareDescriptor;
   stock: VerifiedStockFirmware;
   target: FirmwareTarget;
+  /** The radio's hardware layout, where the operator has said (see `PreparedFirmwareImage.radioLayout`). */
+  radioLayout?: string;
 }): Promise<PreparedFirmwareImage> {
   const { descriptor: radioDescriptor, stock, target } = input;
+  const layout = input.radioLayout === undefined ? {} : { radioLayout: input.radioLayout };
   if (
     stock.descriptor.radioId !== radioDescriptor.radioId ||
     stock.package.radioId !== radioDescriptor.radioId
@@ -104,6 +113,7 @@ export async function prepareFirmwareImage(input: {
         title: stockFirmwareTitle(descriptor.version),
         package: pkg,
         stockPackage: stock.package,
+        ...layout,
         sha256,
         verifyHint: descriptor.stockVerifyHint,
       } as PreparedFirmwareImage;
@@ -158,6 +168,7 @@ export async function prepareFirmwareImage(input: {
         versionStamp: readFirmwarePatchVersionStamp(pkg, patch.parsed),
         package: pkg,
         stockPackage: stock.package,
+        ...layout,
         sha256,
         verifyHint: patch.release?.verifyHint ?? DEFAULT_PATCH_VERIFY_HINT,
       } as PreparedFirmwareImage;
