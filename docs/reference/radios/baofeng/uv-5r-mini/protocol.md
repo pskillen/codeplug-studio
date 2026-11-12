@@ -72,6 +72,22 @@ CHIRP `_do_ident` uses the same ident + fingerprint, then magics with **last byt
 - Request: `0x57` + address (u16 BE) + `0x40` + **encrypted** 64-byte block
 - Response: ACK `0x06`
 
+### Write interlock
+
+Write and Restore both send every `W` frame through one funnel (`Uv17ProProtocol.writeBlock`), which calls the Mini's
+`assertUv5rMiniWriteAllowed` (`uv5r-mini/writeInterlock.ts`) before any byte of the block goes out. The whole plan is
+also checked before the first frame (handshake included), so a refused address sends nothing. Pure, no flag disables
+it; a refusal throws `Uv5rMiniWriteRefusedError`. Each rule has a test (`writeInterlock.test.ts`); the exact Write and
+Restore plans are pinned in `writePlan.test.ts`.
+
+- **Allowed:** 64-byte blocks, 64-aligned, inside `0x0000–0x803F`, `0x9000–0x903F` or `0xA000–0xA1BF` (521 blocks).
+- **Always refused, whatever the profile:** `0xE000` and above (the top 4 KiB sector, `0xF000–0xFFFF`, is RF
+  calibration and a `W` there erases the whole sector), `0xB000–0xBFFF` and `0xD000–0xDFFF` (firmware logs),
+  `0x8040–0x8FFF` and `0x9040–0x9FFF` (gaps). `0xC000–0xCFFF` is refused too until a later profile adds it.
+- A Restore whose region selection names anything but the three layout spans is refused before the first frame.
+- The context carries `profile` (`stock`, or `mm9pdy` once that target sets it) and `operation` (`write`, `restore`).
+  Other family layouts (UV-17Pro, UV-21Pro V2) have no interlock.
+
 ## XOR crypt (summary)
 
 - Table of 20 four-byte symbols; default index **1** → `0x43,0x4F,0x20,0x37` (`CO 7`)
