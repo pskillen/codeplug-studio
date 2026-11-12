@@ -2,7 +2,7 @@
  * RT95 front panel (head) bootloader update: protocol-only facts (link, frame bytes, address window, timeouts).
  * Spec: the firmware project's `tools/rt95update.py` and `docs/reference/update-protocol.md`.
  * Human mirror: docs/reference/radios/retevis/rt95/firmware.md — "Bootloader update protocol".
- * Head only: the main board (MAIN) is never offered.
+ * Head only: the main board (MAIN) is never offered. Per-target facts are read through a profile (targets.ts).
  */
 import type { FirmwareLinkSpec } from '../../../firmware/types.ts';
 

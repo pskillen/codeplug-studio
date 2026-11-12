@@ -137,7 +137,7 @@ export async function resolveStockFirmware(
     for (const o of others) {
       const memberHashes = new Set(stockVariants(o).flatMap((v) => v.members.map((m) => m.sha256)));
       if (
-        (o.zip !== undefined && zipHashes.includes(o.zip.sha256)) ||
+        zipProvesOther(radioDescriptor, o, zipHashes) ||
         looseHashes.some((h) => memberHashes.has(h))
       ) {
         throw wrongRadioError(radioDescriptor, o);
@@ -208,6 +208,19 @@ export async function resolveStockFirmware(
   };
 }
 
+/**
+ * A supplied zip proves "another radio" only when that radio's zip is not also this radio's zip: the RT95 head and
+ * main board ship in one vendor zip, so that zip says nothing about which of the two the user meant.
+ */
+function zipProvesOther(
+  descriptor: StockFirmwareDescriptor,
+  other: StockFirmwareDescriptor,
+  zipHashes: readonly string[],
+): boolean {
+  if (other.zip === undefined || !zipHashes.includes(other.zip.sha256)) return false;
+  return other.zip.sha256 !== descriptor.zip?.sha256;
+}
+
 function diagnoseMismatch(
   descriptor: StockFirmwareDescriptor,
   member: StockFirmwareMember,
@@ -228,7 +241,7 @@ function diagnoseMismatch(
   for (const o of others) {
     if (
       stockVariants(o).some((v) => v.members.some((m) => m.sha256 === hash)) ||
-      (o.zip !== undefined && zipHashes.includes(o.zip.sha256))
+      zipProvesOther(descriptor, o, zipHashes)
     ) {
       return wrongRadioError(descriptor, o);
     }

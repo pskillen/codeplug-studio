@@ -1,18 +1,21 @@
-# Retevis RT95 — firmware (front panel)
+# Retevis RT95 — firmware (front panel and main board)
 
-Facts the firmware flasher needs for the RT95 **front panel** (the LCD / "head" MCU): the one stock firmware Studio
-accepts, where to get it, and how to put the radio into update mode. Product rules:
+Facts the firmware flasher needs for the RT95's two MCUs: the **front panel** (the LCD / "head" MCU) and the **main
+board** (MAIN, the "RF CPU"). For each, the one stock firmware Studio accepts, where to get it, and how to put the
+radio into update mode. Sections below are about the front panel unless headed **Main board**. Product rules:
 [DESIGN.md — Firmware flashing](../../../../../DESIGN.md#firmware-flashing).
 
 **Code mirror:** [`src/core/radios/retevis/rt95/firmware.ts`](../../../../../src/core/radios/retevis/rt95/firmware.ts)
-(`RT95_HEAD_STOCK_FIRMWARE`, `RT95_HEAD_FIRMWARE_ROLE`). Keep the two in step.
+(`RT95_HEAD_STOCK_FIRMWARE`, `RT95_MAIN_STOCK_FIRMWARE`, `RT95_HEAD_FIRMWARE_ROLE`). Keep the two in step.
 
 **Offered on every site, prod included** (`prodFlashDisabled: false`, [#1460](https://github.com/pskillen/codeplug-studio/issues/1460)).
 The owner has flashed stock V1.41, the ladder test builds and the MM9PDY zones build to an RT95 from Studio (Linux,
 PL2303GC cable).
 
-**The main board (MAIN) is never flashed by Studio.** The RT95 has two MCUs; the firmware project patches the front
-panel only and keeps MAIN stock. Studio offers no MAIN target, pin or updater.
+**The main board is a separate firmware radio, `retevis-rt95-main`,** one radio id per MCU, sharing the head's stock
+zip. Only its stock pin and update-mode facts exist so far (see [Main board stock pin](#main-board-stock-pin) and
+[Main board update mode](#main-board-update-mode)); **the MAIN updater is not offered yet**, so the flasher lists
+the same radios as before.
 
 ## Stock firmware pin
 
@@ -40,6 +43,40 @@ The wizard lists both as plain text or links; Studio never fetches either.
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Email Retevis support | Retevis sends the 2024 mic-gain update package on request. Contact: [the Retevis contact page](https://www.retevis.com/pages/contactus)                                                                                                                                                 |
 | Unofficial mirror     | `http://47.253.5.16/soft/RT95%20Upgrade%20software-Microphone%20gain%20adjustment.zip`. A bare IP, **not run by Retevis**, over **plain HTTP**: the browser may warn that the download is not secure. Safe to use only because Studio checks every file against the pinned hashes above |
+
+## Main board stock pin
+
+The same vendor zip as the head (directory `RT95_MAIN(zb)`); Studio inflates only the three MAIN members, matched by
+file name. A zip shared by two firmware radios proves nothing about which one the user meant, so a wrong MAIN member
+in the right zip is reported as the wrong version, not as front-panel firmware.
+
+| Field   | Value                   |
+| ------- | ----------------------- |
+| Version | `MAIN V1.61 (20231202)` |
+| Zip     | As for the front panel  |
+
+| Role  | File name                      | Size (bytes) | sha256                                                             |
+| ----- | ------------------------------ | ------------ | ------------------------------------------------------------------ |
+| `cdd` | `RT95_MAIN_V1.61_20231202.CDD` | 55,652       | `ca7918ffd242362b39bda5457b2350ab69d112d4704129187909bcfa1f609551` |
+| `cdi` | `RT95_MAIN_V1.61_20231202.CDI` | 278          | `75fce5bd6093449b6a5cd04d2319019b1c4689ea81ac6e8328e2f40fa76af9d9` |
+| `spi` | `RT95_MAIN_V1.61_20231202.spi` | 10           | `3d096d4788e747417c669f5348ac4b4c6aa3d31a2bd8dd7799300203729714c3` |
+
+## Main board update mode
+
+Indicator: **the screen says `UPDATE THE RF CPU`** (two lines: `UPDATE THE` / `RF CPU`). Inferred from static analysis
+until the owner's first MAIN flash proves it.
+
+1. Studio checks that a safety backup of this radio is saved first.
+2. Remove power from the radio; a Power-key off/on is not enough.
+3. Hold **P3** and the **channel knob**.
+4. Restore power while holding them.
+5. Connect the programming cable.
+
+**Warning:** if the screen stays blank you pressed P1: that mode updates the front panel. Remove power and start
+again. **Warning:** never flash a radio with a serial number before 2101.
+
+Verify: hold FUNC + P4 while switching on; the test screen shows `RF CPU: V1.11` (a patched MAIN shows the same: the
+constant is protected). Turn the knob only, then switch off.
 
 ## Update-mode entry
 
@@ -152,7 +189,8 @@ Studio's updater is a port of the firmware project's `tools/rt95update.py`; prot
 from Studio yet.
 
 **Code:** `src/integrations/radio-io/radios/rt95/firmwareUpdate/` — `constants.ts`, `package.ts`
-(`parseRt95HeadPackage`, `rt95HeadBlocks`), `frames.ts`, `echo.ts`, `interlocks.ts`, `updater.ts`, `preflight.ts`,
+(`parseRt95HeadPackage`, `rt95HeadBlocks`), `frames.ts`, `echo.ts`, `targets.ts` (`RT95_HEAD_TARGET`: the per-MCU window, SP rule, model offset and refusal copy that
+`interlocks.ts` and `updater.ts` read), `interlocks.ts`, `updater.ts`, `preflight.ts`,
 `descriptor.ts` (`RT95_HEAD_FIRMWARE_UPDATER`). Test radio: `__fixtures__/rt95BootloaderMock.ts` with the synthetic
 packages from `__fixtures__/syntheticPackage.ts`.
 
@@ -231,5 +269,5 @@ stock from the wizard's **Stock firmware** entry. Full steps:
 [Firmware flashing — Recovery](../../../../features/firmware-flashing/README.md#recovery).
 
 - **Vendor fallback.** The vendor's updater (QXCodePro, Windows) is in the same Retevis package as the stock firmware.
-- **Main board.** Studio never flashes it. Recovering the main board needs the vendor tool and a working front panel,
+- **Main board.** Studio does not flash it yet. Recovering the main board needs the vendor tool and a working front panel,
   so recovery is always front panel first.

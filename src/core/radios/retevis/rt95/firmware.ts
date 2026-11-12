@@ -1,44 +1,50 @@
 /**
- * Retevis RT95 front panel (LCD / "head") pinned stock firmware and update-mode facts.
+ * Retevis RT95 pinned stock firmware and update-mode facts, for both MCUs: the front panel (LCD / "head") and the
+ * main board (MAIN, "RF CPU"). Each is its own firmware radio; both ship in one vendor zip.
  * Code mirror of [firmware.md](../../../../../docs/reference/radios/retevis/rt95/firmware.md).
- * Used by the firmware flasher only — not library CRUD or codeplug Write. The main board (MAIN) is never offered.
+ * Used by the firmware flasher only — not library CRUD or codeplug Write. MAIN is flashed through the head's bridge;
+ * no MAIN updater is registered yet, so it is not offered.
  */
 import type { StockFirmwareDescriptor } from '../../../firmware/types.ts';
 
 /** Member roles of the three-file firmware package. */
 export const RT95_HEAD_FIRMWARE_ROLE = { CDD: 'cdd', CDI: 'cdi', SPI: 'spi' } as const;
 
+const RT95_STOCK_SOURCES: StockFirmwareDescriptor['stockSources'] = [
+  {
+    kind: 'ask-vendor',
+    label: 'Email Retevis support',
+    instructions:
+      'Ask for the RT95 mic-gain update package (2024). It holds the front panel LCD V1.41 and main board ' +
+      'MAIN V1.61 files; Retevis sends it on request. Contact Retevis through',
+    contact: {
+      text: 'the Retevis contact page',
+      href: 'https://www.retevis.com/pages/contactus',
+    },
+  },
+  {
+    kind: 'download',
+    label: 'Unofficial mirror',
+    url: 'http://47.253.5.16/soft/RT95%20Upgrade%20software-Microphone%20gain%20adjustment.zip',
+    host: '47.253.5.16 (unofficial mirror, plain HTTP)',
+    official: false,
+    note:
+      'About 6 MB. Your browser may warn that the download is not secure (plain HTTP). Studio checks every file ' +
+      'against the pinned hashes.',
+  },
+];
+
+const RT95_STOCK_ZIP: NonNullable<StockFirmwareDescriptor['zip']> = {
+  fileName: 'RT95 Upgrade software-Microphone gain adjustment.zip',
+  sha256: '4cbddc96bce718a9990137f3a83cb21dafb78101f0204ebd4fb41da6b8241089',
+};
+
 export const RT95_HEAD_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   radioId: 'retevis-rt95-head',
   label: 'Retevis RT95 front panel (LCD)',
   version: 'LCD V1.41 (20231202)',
-  stockSources: [
-    {
-      kind: 'ask-vendor',
-      label: 'Email Retevis support',
-      instructions:
-        'Ask for the RT95 mic-gain update package (2024). It holds the front panel LCD V1.41 and main board ' +
-        'MAIN V1.61 files; Retevis sends it on request. Contact Retevis through',
-      contact: {
-        text: 'the Retevis contact page',
-        href: 'https://www.retevis.com/pages/contactus',
-      },
-    },
-    {
-      kind: 'download',
-      label: 'Unofficial mirror',
-      url: 'http://47.253.5.16/soft/RT95%20Upgrade%20software-Microphone%20gain%20adjustment.zip',
-      host: '47.253.5.16 (unofficial mirror, plain HTTP)',
-      official: false,
-      note:
-        'About 6 MB. Your browser may warn that the download is not secure (plain HTTP). Studio checks every file ' +
-        'against the pinned hashes.',
-    },
-  ],
-  zip: {
-    fileName: 'RT95 Upgrade software-Microphone gain adjustment.zip',
-    sha256: '4cbddc96bce718a9990137f3a83cb21dafb78101f0204ebd4fb41da6b8241089',
-  },
+  stockSources: RT95_STOCK_SOURCES,
+  zip: RT95_STOCK_ZIP,
   members: [
     {
       role: RT95_HEAD_FIRMWARE_ROLE.CDD,
@@ -76,4 +82,50 @@ export const RT95_HEAD_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   },
   stockVerifyHint:
     'Hold FUNC + P4 while switching on: the test screen shows LCD CPU: V1.11. Turn the knob only, then switch off.',
+};
+
+export const RT95_MAIN_STOCK_FIRMWARE: StockFirmwareDescriptor = {
+  radioId: 'retevis-rt95-main',
+  label: 'Retevis RT95 main board (RF CPU)',
+  version: 'MAIN V1.61 (20231202)',
+  stockSources: RT95_STOCK_SOURCES,
+  zip: RT95_STOCK_ZIP,
+  members: [
+    {
+      role: RT95_HEAD_FIRMWARE_ROLE.CDD,
+      fileName: 'RT95_MAIN_V1.61_20231202.CDD',
+      size: 55_652,
+      sha256: 'ca7918ffd242362b39bda5457b2350ab69d112d4704129187909bcfa1f609551',
+    },
+    {
+      role: RT95_HEAD_FIRMWARE_ROLE.CDI,
+      fileName: 'RT95_MAIN_V1.61_20231202.CDI',
+      size: 278,
+      sha256: '75fce5bd6093449b6a5cd04d2319019b1c4689ea81ac6e8328e2f40fa76af9d9',
+    },
+    {
+      role: RT95_HEAD_FIRMWARE_ROLE.SPI,
+      fileName: 'RT95_MAIN_V1.61_20231202.spi',
+      size: 10,
+      sha256: '3d096d4788e747417c669f5348ac4b4c6aa3d31a2bd8dd7799300203729714c3',
+    },
+  ],
+  // S3 adds the MAIN patch name.
+  patchNames: [],
+  bootloaderEntry: {
+    steps: [
+      'Studio checks that a safety backup of this radio is saved first.',
+      'Remove power from the radio; a Power-key off/on is not enough.',
+      'Hold P3 and the channel knob.',
+      'Restore power while holding them.',
+      'Connect the programming cable.',
+    ],
+    indicator: 'The screen says UPDATE THE RF CPU',
+    warnings: [
+      'If the screen stays blank you pressed P1: that mode updates the front panel. Remove power and start again.',
+      'Never flash a radio with a serial number before 2101.',
+    ],
+  },
+  stockVerifyHint:
+    'Hold FUNC + P4 while switching on: the test screen shows RF CPU: V1.11. Turn the knob only, then switch off.',
 };

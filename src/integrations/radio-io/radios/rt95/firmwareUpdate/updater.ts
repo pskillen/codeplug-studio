@@ -1,6 +1,6 @@
 /**
- * RT95 front panel firmware updater: a port of `Sender` in the firmware project's `tools/rt95update.py`.
- * Every byte goes through `createGuardedSend` (the only write site) with `checkRt95HeadOutgoing` as the guard.
+ * RT95 firmware updater (protocol shared by both MCUs through a target profile, targets.ts): a port of `Sender` in the firmware project's `tools/rt95update.py`.
+ * Every byte goes through `createGuardedSend` (the only write site) with `checkRt95Outgoing` as the guard.
  * The bootloader has no ident, so there is nothing to compare against the package: the pre-flight gate and the
  * operator's choice of key combination decide which MCU listens (see preflight.ts).
  * Up to 3 resends per frame (the vendor resends forever); a final failure aborts and nothing more is sent.
@@ -33,17 +33,11 @@ import {
 } from './constants.ts';
 import { createEchoChannel, type Rt95EchoChannel } from './echo.ts';
 import { makeRt95UpdateFrame } from './frames.ts';
-import {
-  RT95_HEAD_FW_RADIO_ID,
-  checkRt95HeadFirmwareImage,
-  checkRt95HeadOutgoing,
-  type Rt95OutgoingState,
-} from './interlocks.ts';
+import { checkRt95FirmwareImage, checkRt95Outgoing, type Rt95OutgoingState } from './interlocks.ts';
 import { rt95HeadBlockCount, rt95HeadBlocks } from './package.ts';
+import { RT95_HEAD_TARGET, type Rt95FirmwareTarget } from './targets.ts';
 
 const END_BYTE = Uint8Array.of(RT95_HEAD_FW_END);
-const NOT_IN_UPDATE_MODE =
-  "The radio didn't answer. Is it in update mode? Hold P1 and the knob while switching on; the screen stays blank.";
 
 const hexBytes = (b: ArrayLike<number>) =>
   Array.from(b, (x) => x.toString(16).padStart(2, '0')).join(' ');
@@ -82,21 +76,24 @@ async function readByte(pipe: BytePipe, timeoutMs: number): Promise<number | nul
   }
 }
 
-export function createRt95HeadFirmwareUpdater(): FirmwareUpdater {
+export const createRt95HeadFirmwareUpdater = (): FirmwareUpdater =>
+  createRt95FirmwareUpdater(RT95_HEAD_TARGET);
+
+export function createRt95FirmwareUpdater(target: Rt95FirmwareTarget): FirmwareUpdater {
   let session: BoundSession | null = null;
 
   return {
-    radioId: RT95_HEAD_FW_RADIO_ID,
+    radioId: target.radioId,
     link: RT95_HEAD_FW_LINK,
 
     checkImage(image: PreparedFirmwareImage): void {
-      checkRt95HeadFirmwareImage(image);
+      checkRt95FirmwareImage(image, target);
     },
 
     async identify(pipe, identifyOpts) {
       session = null;
       const gate: Rt95OutgoingState = { cloneEndAllowed: false };
-      const guarded = createGuardedSend(pipe, (f) => checkRt95HeadOutgoing(f, gate));
+      const guarded = createGuardedSend(pipe, (f) => checkRt95Outgoing(f, gate, target));
       const writes = { count: 0 };
       const send = async (frame: Uint8Array) => {
         await guarded(frame);
@@ -150,7 +147,7 @@ export function createRt95HeadFirmwareUpdater(): FirmwareUpdater {
         if (reply === RT95_HEAD_FW_ACK) {
           session = { pipe, echo, writes };
           const ident: FirmwareBootloaderIdent = {
-            radioId: RT95_HEAD_FW_RADIO_ID,
+            radioId: target.radioId,
             model: 'RT95 bootloader (no ident)',
             raw: Uint8Array.from(raw),
           };
@@ -169,15 +166,13 @@ export function createRt95HeadFirmwareUpdater(): FirmwareUpdater {
           } finally {
             gate.cloneEndAllowed = false;
           }
-          throw new RadioProtocolError(
-            'The radio is switched on normally, not in update mode. Nothing was written. Switch it off, then hold P1 and the knob while switching on; the screen stays blank.',
-          );
+          throw new RadioProtocolError(target.copy.normalMode);
         }
         throw new RadioProtocolError(
           `Unexpected reply to the update request: ${hexBytes(raw)}. Nothing was written.`,
         );
       }
-      throw new RadioProtocolError(NOT_IN_UPDATE_MODE);
+      throw new RadioProtocolError(target.copy.notInUpdateMode);
     },
 
     async flash(image, flashOpts) {
@@ -193,7 +188,7 @@ export function createRt95HeadFirmwareUpdater(): FirmwareUpdater {
         if (!bound) {
           throw new RadioProtocolError('The bootloader has not been identified in this session.');
         }
-        const pkg = checkRt95HeadFirmwareImage(image);
+        const pkg = checkRt95FirmwareImage(image, target);
         const { pipe, echo } = bound;
 
         const total = rt95HeadBlockCount(pkg);
