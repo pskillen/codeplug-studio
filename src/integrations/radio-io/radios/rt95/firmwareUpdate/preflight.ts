@@ -152,6 +152,10 @@ function wrongRadioMessage(raw: Uint8Array): string {
   return `This radio reports ${model} ${version}. Studio flashes only the ${RT95_ALLOWED_MODEL} front panel (${RT95_ALLOWED_VERSION}). First-revision radios report RT95. Nothing was written.`;
 }
 
+/** Ticked on the Flash step: the only guard against sending a head image to the MAIN board. */
+export const RT95_HEAD_UPDATE_MODE_CONFIRM =
+  'The screen is blank. It does not say UPDATE THE RF CPU.';
+
 export function createRt95HeadPreflight(
   opts: { retryDelayMs?: number } = {},
 ): FirmwareRadioPreflight {
@@ -169,6 +173,7 @@ export function createRt95HeadPreflight(
       },
     ],
     probe: createRt95HeadPreflightProbe(opts),
+    updateModeConfirm: RT95_HEAD_UPDATE_MODE_CONFIRM,
   };
 }
 

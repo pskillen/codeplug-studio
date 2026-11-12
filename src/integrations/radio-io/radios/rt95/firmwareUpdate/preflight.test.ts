@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { RadioInterlockError, RadioWrongIdentError } from '../../../kit/errors.ts';
 import { Rt95BootloaderMock } from './__fixtures__/rt95BootloaderMock.ts';
-import { checkRt95PreflightOutgoing, createRt95HeadPreflightProbe } from './preflight.ts';
+import { RT95_HEAD_FIRMWARE_UPDATER } from './descriptor.ts';
+import {
+  checkRt95PreflightOutgoing,
+  createRt95HeadPreflightProbe,
+  RT95_HEAD_PREFLIGHT,
+  RT95_HEAD_UPDATE_MODE_CONFIRM,
+} from './preflight.ts';
 
 const probe = createRt95HeadPreflightProbe({ retryDelayMs: 0 });
 const run = (mock: Rt95BootloaderMock, signal?: AbortSignal) => probe.run(mock, { signal });
@@ -73,5 +79,19 @@ describe('RT95 pre-flight outgoing gate', () => {
     for (const f of [w, Uint8Array.of(0x18), new Uint8Array(1032), new Uint8Array(0)]) {
       expect(() => checkRt95PreflightOutgoing(f)).toThrow(RadioInterlockError);
     }
+  });
+});
+
+describe('RT95 head update-mode confirmation', () => {
+  it('uses the documented wording', () => {
+    expect(RT95_HEAD_PREFLIGHT.updateModeConfirm).toBe(
+      'The screen is blank. It does not say UPDATE THE RF CPU.',
+    );
+  });
+
+  it('is carried by the registered head descriptor', () => {
+    expect(RT95_HEAD_FIRMWARE_UPDATER.preflight?.updateModeConfirm).toBe(
+      RT95_HEAD_UPDATE_MODE_CONFIRM,
+    );
   });
 });
