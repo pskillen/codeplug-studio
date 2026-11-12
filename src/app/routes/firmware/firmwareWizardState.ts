@@ -38,7 +38,12 @@ export interface FirmwareWizardState {
   readonly image: PreparedFirmwareImage | null;
   readonly checks: Readonly<Record<PreflightCheck, boolean>>;
   /** What the selected radio's descriptor asks for on top of the generic checks. */
-  readonly radioPreflight: { readonly attestationIds: readonly string[]; readonly probe: boolean };
+  readonly radioPreflight: {
+    readonly attestationIds: readonly string[];
+    readonly probe: boolean;
+    /** The radio requires a saved safety backup (never skippable). */
+    readonly safetyBackup?: boolean;
+  };
   readonly radioChecks: Readonly<Record<string, boolean>>;
   /** Set when the radio's normal-mode probe passed. */
   readonly probe: { readonly summary: string } | null;
@@ -47,14 +52,38 @@ export interface FirmwareWizardState {
    * UI-level only; the flash send path never reads the probe result.
    */
   readonly probeSkipped: boolean;
+  /** Serial typed from the radio's label, as typed. The backup is filed under its normalised form. */
+  readonly safetyBackupSerial: string;
+  /**
+   * Safety backup status: 'saved' (already recorded, or a file was recorded) or 'taken' (downloaded, waiting for the
+   * operator's "I've saved it" tick; `ticked` once recorded). No bytes are held here.
+   */
+  readonly safetyBackup: SafetyBackupStatus | null;
 }
+
+export type SafetyBackupStatus =
+  | { readonly kind: 'saved'; readonly radioKey: string; readonly summary: string }
+  | {
+      readonly kind: 'taken';
+      readonly radioKey: string;
+      readonly summary: string;
+      readonly region: string;
+      readonly fileName: string;
+      readonly sha256: string;
+      readonly fingerprint: string;
+      readonly ticked: boolean;
+    };
 
 export type FirmwareWizardAction =
   | {
       type: 'selectRadio';
       radioId: FirmwareRadioId;
       stockFlashOffered?: boolean;
-      preflight?: { attestationIds: readonly string[]; probe: boolean };
+      preflight?: {
+        attestationIds: readonly string[];
+        probe: boolean;
+        safetyBackup?: boolean;
+      };
     }
   | { type: 'restart' }
   | { type: 'goTo'; step: FirmwareWizardStep }
@@ -75,7 +104,11 @@ export type FirmwareWizardAction =
   | { type: 'setRadioCheck'; id: string; value: boolean }
   | { type: 'probePassed'; summary: string }
   | { type: 'probeCleared' }
-  | { type: 'setProbeSkipped'; value: boolean };
+  | { type: 'setProbeSkipped'; value: boolean }
+  | { type: 'setSafetyBackupSerial'; value: string }
+  | { type: 'safetyBackupResult'; status: SafetyBackupStatus }
+  | { type: 'safetyBackupTicked' }
+  | { type: 'safetyBackupCleared' };
 
 const NO_CHECKS: Record<PreflightCheck, boolean> = {
   risk: false,
@@ -100,6 +133,8 @@ export const INITIAL_FIRMWARE_WIZARD_STATE: FirmwareWizardState = {
   radioChecks: {},
   probe: null,
   probeSkipped: false,
+  safetyBackupSerial: '',
+  safetyBackup: null,
 };
 
 const indexOf = (step: FirmwareWizardStep) => FIRMWARE_WIZARD_STEPS.indexOf(step);
@@ -118,8 +153,15 @@ export function isPreflightComplete(state: FirmwareWizardState): boolean {
   return (
     PREFLIGHT_CHECKS.every((c) => state.checks[c]) &&
     state.radioPreflight.attestationIds.every((id) => state.radioChecks[id] === true) &&
-    (!state.radioPreflight.probe || state.probe !== null || state.probeSkipped)
+    (!state.radioPreflight.probe || state.probe !== null || state.probeSkipped) &&
+    (!state.radioPreflight.safetyBackup || isSafetyBackupDone(state))
   );
+}
+
+/** Recorded already, or a taken backup the operator ticked as saved. The probe opt-out never counts. */
+export function isSafetyBackupDone(state: FirmwareWizardState): boolean {
+  const sb = state.safetyBackup;
+  return sb !== null && (sb.kind === 'saved' || sb.ticked);
 }
 
 /** Whether the operator may move past `state.step`. */
@@ -229,5 +271,18 @@ export function firmwareWizardReducer(
       return { ...state, probe: null };
     case 'setProbeSkipped':
       return { ...state, probeSkipped: action.value };
+    case 'setSafetyBackupSerial':
+      // A result belongs to one serial: typing another discards it.
+      return action.value === state.safetyBackupSerial
+        ? state
+        : { ...state, safetyBackupSerial: action.value, safetyBackup: null };
+    case 'safetyBackupResult':
+      return { ...state, safetyBackup: action.status };
+    case 'safetyBackupTicked':
+      return state.safetyBackup?.kind === 'taken'
+        ? { ...state, safetyBackup: { ...state.safetyBackup, ticked: true } }
+        : state;
+    case 'safetyBackupCleared':
+      return { ...state, safetyBackup: null };
   }
 }

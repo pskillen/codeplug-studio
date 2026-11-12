@@ -18,7 +18,7 @@ import {
   recordFirmwareSafetyBackupSaved,
   runFirmwarePreflightProbe,
   runFirmwareSafetyBackup,
-  useFirmwareSafetyBackupFile,
+  recordFirmwareSafetyBackupFile,
   verifyStockFiles,
   type FirmwareFlashOutcome,
 } from './firmwareFlash.ts';
@@ -368,7 +368,7 @@ describe('firmware safety backup', () => {
 
   it('a good backup file is recorded; a bad one records nothing', async () => {
     fakeSafety.verifyFile.mockResolvedValueOnce({ ...TAKEN });
-    const ok = await useFirmwareSafetyBackupFile('baofeng-dm32uv', Uint8Array.of(1), 'AB 123');
+    const ok = await recordFirmwareSafetyBackupFile('baofeng-dm32uv', Uint8Array.of(1), 'AB 123');
     expect(ok).toMatchObject({ ok: true, recorded: true });
     expect(fakeSafety.verifyFile).toHaveBeenCalledWith(expect.anything(), {
       fallbackSerial: 'AB 123',
@@ -376,7 +376,7 @@ describe('firmware safety backup', () => {
     expect(records()).toHaveLength(1);
     window.localStorage.clear();
     fakeSafety.verifyFile.mockRejectedValueOnce(new Error('Not a backup.'));
-    const bad = await useFirmwareSafetyBackupFile('baofeng-dm32uv', Uint8Array.of(1), '');
+    const bad = await recordFirmwareSafetyBackupFile('baofeng-dm32uv', Uint8Array.of(1), '');
     expect(bad).toEqual({ ok: false, message: 'Not a backup.' });
     expect(records()).toEqual([]);
   });

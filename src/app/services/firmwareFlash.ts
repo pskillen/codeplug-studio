@@ -298,7 +298,7 @@ export type FirmwareSafetyBackupFileOutcome =
   | { ok: false; message: string };
 
 /** Verify a backup file the operator already has and record it. A bad file records nothing. */
-export async function useFirmwareSafetyBackupFile(
+export async function recordFirmwareSafetyBackupFile(
   radioId: FirmwareRadioId,
   bytes: Uint8Array,
   fallbackSerial: string,

@@ -12,6 +12,7 @@ import { useFormatBuilds } from '../../../state/useFormatBuilds.ts';
 import classes from '../FirmwareFlasherPage.module.css';
 import type { PreflightCheck } from '../firmwareWizardState.ts';
 import LabeledCheck from './LabeledCheck.tsx';
+import SafetyBackupSection from './SafetyBackupSection.tsx';
 import type { WizardStepProps } from './stepTypes.ts';
 
 export const RISK_ACKNOWLEDGEMENT =
@@ -129,6 +130,14 @@ export default function PreflightStep({ state, dispatch, updater }: WizardStepPr
             {probeError ? <StatusBanner tone="warning">{probeError}</StatusBanner> : null}
           </div>
         </Panel>
+      ) : null}
+      {preflight?.safetyBackup ? (
+        <SafetyBackupSection
+          state={state}
+          dispatch={dispatch}
+          updater={updater}
+          safety={preflight.safetyBackup}
+        />
       ) : null}
       <Panel
         title="Back up first"
