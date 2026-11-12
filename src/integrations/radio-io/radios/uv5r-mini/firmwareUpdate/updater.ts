@@ -61,7 +61,8 @@ export const UV5RMINI_MSG = {
     "This firmware is already on the radio, or the radio holds firmware this image can't replace. Nothing was erased.",
   loaderFinished:
     'The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair.',
-  loaderOtherLayout: 'The file is for the other hardware layout; nothing was erased.',
+  loaderOtherLayout:
+    'The file is for the other hardware layout; the radio refused it. Its FM presets and volume may have been reset; nothing else changed.',
   loaderNothingWritten: 'Nothing was written; the radio boots the installed app.',
   loaderNothingWrittenAgain:
     " Don't send this file again: it can only end the same way. If the radio doesn't reach its normal screen, it needs a case-open repair.",
@@ -437,7 +438,8 @@ function describeResult(
     if (code === 0x86) {
       return { error: s.continued ? UV5RMINI_MSG.loaderFinished : UV5RMINI_MSG.loaderAlready };
     }
-    // 0x8F: the layout loader's check found the radio's installed layout is not its own. It refuses before cmd 4.
+    // 0x8F: the layout loader's check found the radio's installed layout is not its own. It refuses before cmd 4, but
+    // the stock app's update stage has already cleared the settings sector holding the FM presets and volume.
     if (code === 0x8f) return { error: UV5RMINI_MSG.loaderOtherLayout };
     // 0x87 before cmd 4: the loader erased and programmed nothing, and the radio boots its installed app.
     if (code === 0x87) {
