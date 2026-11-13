@@ -126,6 +126,7 @@ import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { dropNxdnOnlyChannels } from '@core/services/anytoneChannelBanks.ts';
 import { AT_D890_APRS_CURRENT_CHANNEL_WIRE } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import {
+  channelSlotIndexMap,
   expandAssembledChannelsToRadioDtos,
   isOpenGd77RadioIoEgress,
   openGd77NumbersBySourceChannelId,
@@ -248,17 +249,17 @@ function buildNumbersBySourceChannelId(
         maxSlots,
       );
     }
-    let autoSlot = 1;
-    for (const row of assembled.channels) {
+    // Same numbering as the channel DTOs: pinned slots keep theirs, unpinned channels fill after.
+    const slotByChannelId = channelSlotIndexMap(assembled.channels, assembled.channelMemorySlots);
+    assembled.channels.forEach((row, index) => {
       const rxHz = row.entity.rxFrequency;
-      if (rxHz == null || rxHz <= 0) continue;
-      const slot = row.orderOrSlot != null && row.orderOrSlot > 0 ? row.orderOrSlot : autoSlot;
-      if (maxSlots != null && slot > maxSlots) continue;
+      if (rxHz == null || rxHz <= 0) return;
+      const slot = slotByChannelId.get(row.entity.id) ?? index + 1;
+      if (maxSlots != null && slot > maxSlots) return;
       const list = map.get(row.entity.id) ?? [];
       list.push(slot);
       map.set(row.entity.id, list);
-      if (row.orderOrSlot == null || row.orderOrSlot <= 0) autoSlot += 1;
-    }
+    });
     return map;
   }
 
