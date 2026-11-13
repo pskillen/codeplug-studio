@@ -8,6 +8,7 @@ import type { ParsedFirmwarePatch } from '../patch/types.ts';
 import { listStockFirmwareDescriptors } from '../stockCatalog.ts';
 import { stockVariants } from '../stockVariants.ts';
 import type { StockFirmwareDescriptor } from '../types.ts';
+import { layoutFromBuildName } from './layouts.ts';
 import type { PublishedFirmwareRelease } from './types.ts';
 
 export const PUBLISHED_RELEASE_INDEX_FORMAT = 1;
@@ -36,9 +37,26 @@ function str(row: Record<string, unknown>, key: string, where: string): string {
   return v;
 }
 
+/** A row's optional `layout`: only for a radio with release layouts, and only one of them. */
+function rowLayout(
+  row: Record<string, unknown>,
+  descriptor: StockFirmwareDescriptor,
+  where: string,
+): string | undefined {
+  const layout = row.layout;
+  if (layout === undefined) return undefined;
+  if (typeof layout !== 'string' || !layout) throw indexError(`${where}: bad layout`);
+  const layouts = descriptor.releaseLayouts?.layouts;
+  if (!layouts) throw indexError(`${where}: this radio's releases have no layouts`);
+  if (!layouts.includes(layout)) throw indexError(`${where}: ${layout} is not a release layout`);
+  return layout;
+}
+
 /**
  * Parse the index into release rows. A malformed index or row throws. A row for a radio Studio does not know, or
  * built on a stock version other than the radio's pin, is left out: the index can run ahead of a Studio deploy.
+ * For a radio with release layouts a release is one row per layout, each with an optional `layout`; a row without one
+ * takes it from the patch's build name when it is loaded ({@link resolvePublishedLayout}).
  */
 export function parsePublishedReleaseIndex(
   json: unknown,
@@ -88,8 +106,13 @@ export function parsePublishedReleaseIndex(
     ) {
       throw indexError(`${where}: bad result hashes`);
     }
-    if (seen.has(where)) throw indexError(`${where} is listed twice`);
-    seen.add(where);
+    const layout = rowLayout(row, descriptor, where);
+    // A layout radio's row without a layout is checked against its partners once loaded.
+    const key = descriptor.releaseLayouts ? (layout ? `${where} ${layout}` : null) : where;
+    if (key !== null) {
+      if (seen.has(key)) throw indexError(`${key} is listed twice`);
+      seen.add(key);
+    }
 
     out.push({
       radioId: descriptor.radioId,
@@ -99,6 +122,7 @@ export function parsePublishedReleaseIndex(
       patchFile: str(row, 'patchFile', where),
       patchSha256,
       stockVersion,
+      ...(layout ? { layout } : {}),
       publishedOn,
       summary: str(row, 'summary', where),
       verifyHint: str(row, 'verifyHint', where),
@@ -148,4 +172,35 @@ export function checkPublishedPatch(
   ) {
     throw fail('its result hashes do not match the release list');
   }
+}
+
+/**
+ * The flash layout of a loaded published patch, for a radio with release layouts: the row's `layout`, or else the one
+ * its build name names. Both present must agree; neither is a refusal, and so is a build name with a test-only tag.
+ * Undefined for a radio without layouts. Throws FirmwareError('patch-wrong-layout').
+ */
+export function resolvePublishedLayout(
+  release: PublishedFirmwareRelease,
+  parsed: ParsedFirmwarePatch,
+  descriptor: StockFirmwareDescriptor,
+): string | undefined {
+  if (!descriptor.releaseLayouts) return undefined;
+  const fail = (why: string) =>
+    new FirmwareError(
+      'patch-wrong-layout',
+      `Release ${release.tag} failed Studio's checks: ${why}.`,
+    );
+  const buildName = parsed.description.buildName;
+  let fromName: string | undefined;
+  try {
+    fromName = layoutFromBuildName(descriptor, buildName);
+  } catch {
+    throw fail(`its build ${buildName ?? ''} is not for one of the flash layouts`);
+  }
+  if (release.layout !== undefined && fromName !== undefined && release.layout !== fromName) {
+    throw fail(`the release list says ${release.layout}, but its build is for ${fromName}`);
+  }
+  const layout = release.layout ?? fromName;
+  if (layout === undefined) throw fail("Studio can't tell which flash layout it is for");
+  return layout;
 }

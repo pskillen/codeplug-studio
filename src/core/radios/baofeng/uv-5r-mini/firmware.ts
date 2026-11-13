@@ -4,6 +4,18 @@ import { UV5RMINI_RADIO_LAYOUT_QUESTION } from './radioInfo.ts';
 
 export const UV5RMINI_FIRMWARE_ROLE_UFW = 'ufw';
 
+/** A release's two files, one per flash layout (the factory firmware's packing, not the board). */
+export const UV5RMINI_RELEASE_LAYOUTS = ['L1', 'L2'] as const;
+
+/**
+ * The layout tag in an MM9PDY build name, `mm9pdy-<tag>-…`: `L1`, `L2`, or a test-only tag such as `V4` (v0.04
+ * builds, never a release file). Undefined for a name with no tag: a to-stock patch (`nrfb-v0.04`) or an older build
+ * (`mm9pdy-0.1.0-rc.1`).
+ */
+export function uv5rMiniLayoutFromBuildName(buildName: string): string | undefined {
+  return /^mm9pdy-([A-Z][0-9])-/.exec(buildName.trim())?.[1];
+}
+
 export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   radioId: 'baofeng-uv5rmini',
   label: 'Baofeng UV-5R Mini',
@@ -59,4 +71,8 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   },
   stockVerifyHint: 'The radio boots to its normal screen.',
   radioLayout: UV5RMINI_RADIO_LAYOUT_QUESTION,
+  releaseLayouts: {
+    layouts: UV5RMINI_RELEASE_LAYOUTS,
+    fromBuildName: uv5rMiniLayoutFromBuildName,
+  },
 };

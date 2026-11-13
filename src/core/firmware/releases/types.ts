@@ -22,6 +22,11 @@ export interface PublishedFirmwareRelease {
   readonly stockVersion: string;
   /** ISO date. */
   readonly publishedOn: string;
+  /**
+   * The flash layout this row's file is for, for a radio whose releases ship one file per layout (UV-5R Mini `L1`,
+   * `L2`). Optional in the index: a row without one takes it from the patch's build name once downloaded.
+   */
+  readonly layout?: string;
   /** One or two sentences for the release list. */
   readonly summary: string;
   /** How the operator confirms this release is running. */
@@ -54,6 +59,13 @@ export interface LoadedFirmwarePatch {
   readonly provenance: 'published' | 'unreviewed';
   /** Set when published, or a user file matching a published one. */
   readonly release?: PublishedFirmwareRelease;
+  /** The flash layout this file is for, for a radio whose releases ship one file per layout. */
+  readonly layout?: string;
+  /**
+   * The same release's files for the radio's other layouts, each with its own `layout`. Prepare picks the file for
+   * the radio's layout (`patchForLayout`); a refusal of that one offers the other (`partnerFor`).
+   */
+  readonly otherLayouts?: readonly LoadedFirmwarePatch[];
 }
 
 export interface FirmwareReleaseSource {

@@ -101,6 +101,23 @@ export interface StockFirmwareDescriptor {
    * on the prepared image.
    */
   readonly radioLayout?: FirmwareRadioLayoutQuestion;
+  /**
+   * For a radio whose releases ship one file per flash layout: the layouts a release file may be for, and how a
+   * patch's build name names its layout. A release is one published row per layout; Studio picks the file for the
+   * radio's layout at Prepare and keeps the other for a retry.
+   */
+  readonly releaseLayouts?: FirmwareReleaseLayouts;
+}
+
+/** The flash layouts a radio's release files are built for (see `StockFirmwareDescriptor.releaseLayouts`). */
+export interface FirmwareReleaseLayouts {
+  /** The release layouts, in the order Studio lists them (UV-5R Mini `L1`, `L2`). */
+  readonly layouts: readonly string[];
+  /**
+   * The layout tag a patch's build name carries, or undefined when it carries none (a to-stock patch, an older
+   * build). A tag outside `layouts` (a test-only build) is returned as is, for the caller to refuse.
+   */
+  readonly fromBuildName: (buildName: string) => string | undefined;
 }
 
 /** What the operator typed from the radio's Radio Info screen. */

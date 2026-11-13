@@ -7,6 +7,7 @@ import {
 } from '@core/firmware/patch/formats/baofeng-uv5rmini-firmware/__fixtures__/makeSyntheticPatch.ts';
 import { syntheticDm32Release } from '@core/firmware/releases/__fixtures__/syntheticReleases.ts';
 import type {
+  FirmwareReleaseSummary,
   LoadedFirmwarePatch,
   PublishedFirmwareRelease,
 } from '@core/firmware/releases/types.ts';
@@ -19,7 +20,9 @@ import {
   formatFirmwareFlashSummary,
   listPublishedReleases,
   loadChosenPatch,
+  NO_FILE_FOR_LAYOUT,
   NOT_TO_STOCK_PATCH_MESSAGE,
+  pickPatchForLayout,
   prepareFlash,
   type VerifiedStockFirmware,
 } from './firmwareFlash.ts';
@@ -129,6 +132,52 @@ describe('prepareFlash', () => {
     await expect(prepareFlash('baofeng-dm32uv', STOCK, { kind: 'stock' })).rejects.toBeInstanceOf(
       radioIo.RadioInterlockError,
     );
+  });
+});
+
+describe('prepareFlash: a release with one file per flash layout', () => {
+  const fileFor = (layout: string) =>
+    ({ provenance: 'published', layout, sha256: layout }) as unknown as LoadedFirmwarePatch;
+  const PAIR: LoadedFirmwarePatch = { ...fileFor('L1'), otherLayouts: [fileFor('L2')] };
+  const RELEASE = {
+    kind: 'release' as const,
+    source: 'published' as const,
+    summary: {} as FirmwareReleaseSummary,
+  };
+  const target = () => vi.mocked(prepareModule.prepareFirmwareImage).mock.calls[0]![0].target;
+
+  beforeEach(() => {
+    vi.mocked(prepareModule.prepareFirmwareImage).mockReset().mockResolvedValue(IMAGE);
+    checkImage.mockReset();
+  });
+
+  it('prepares the L2 file for an L2 radio, keeping the L1 file as its partner', async () => {
+    await prepareFlash('baofeng-uv5rmini', STOCK, RELEASE, PAIR, 'L2');
+    const t = target();
+    expect(t.kind === 'patch' && t.patch.layout).toBe('L2');
+    expect(t.kind === 'patch' && t.patch.otherLayouts?.map((f) => f.layout)).toEqual(['L1']);
+    expect(checkImage).toHaveBeenCalledWith(IMAGE);
+  });
+
+  it('prepares the L1 file for an L1 radio', async () => {
+    await prepareFlash('baofeng-uv5rmini', STOCK, RELEASE, PAIR, 'L1');
+    const t = target();
+    expect(t.kind === 'patch' && t.patch.layout).toBe('L1');
+  });
+
+  it("refuses a release with no file for the radio's layout, before building anything", async () => {
+    const err = await prepareFlash('baofeng-uv5rmini', STOCK, RELEASE, fileFor('L2'), 'L1').catch(
+      (e: unknown) => e,
+    );
+    expect((err as FirmwareError).code).toBe('patch-wrong-layout');
+    expect((err as FirmwareError).message).toBe(NO_FILE_FOR_LAYOUT('L1', ['L2']));
+    expect(prepareModule.prepareFirmwareImage).not.toHaveBeenCalled();
+    expect(checkImage).not.toHaveBeenCalled();
+  });
+
+  it('passes a file with no layout through for the interlocks to decide', async () => {
+    expect(pickPatchForLayout(LOADED, 'L1')).toBe(LOADED);
+    expect(pickPatchForLayout(PAIR, undefined)).toBe(PAIR);
   });
 });
 

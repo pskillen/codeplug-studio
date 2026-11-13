@@ -71,13 +71,19 @@ const STOCK_FLASH = new Uint8Array(64).fill(0xff);
 
 let latest: FirmwareWizardState;
 
-function Harness({ updater }: { updater: typeof MINI }) {
+function Harness({
+  updater,
+  loaded = LOADED,
+}: {
+  updater: typeof MINI;
+  loaded?: LoadedFirmwarePatch;
+}) {
   const [state, dispatch] = useReducer(firmwareWizardReducer, {
     ...INITIAL_FIRMWARE_WIZARD_STATE,
     step: 'prepare',
     radioId: updater.radioId,
     choice: { kind: 'user-patch', file: { name: 'p.json', bytes: new Uint8Array(0) } },
-    loadedPatch: LOADED,
+    loadedPatch: loaded,
     stock: STOCK,
   } satisfies FirmwareWizardState);
   useEffect(() => {
@@ -148,6 +154,29 @@ beforeEach(() => {
       sha256: {},
       radioLayout,
     } as unknown as PreparedFirmwareImage;
+  });
+});
+
+describe('PrepareStep: a release with one file per flash layout', () => {
+  const fileFor = (layout: string) =>
+    ({ provenance: 'published', layout }) as unknown as LoadedFirmwarePatch;
+  const NO_PARTNER =
+    'This release has only the L2 file. If the radio refuses it, Studio has no file for the other flash layout to try.';
+
+  it('says so when the release has no file for the other layout', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(<Harness updater={MINI} loaded={fileFor('L2')} />);
+    await readRadio(reportBlock({}));
+    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(screen.getByText(NO_PARTNER)).toBeInTheDocument();
+  });
+
+  it('says nothing when the release has both files', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(<Harness updater={MINI} loaded={{ ...fileFor('L1'), otherLayouts: [fileFor('L2')] }} />);
+    await readRadio(reportBlock({}));
+    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(screen.queryByText(/has no file for the other flash layout/)).toBeNull();
   });
 });
 

@@ -5,6 +5,7 @@ import type {
   RadioInfoAnswers,
   RadioLayoutAnswer,
 } from '@core/firmware/types.ts';
+import { loadedLayouts, partnerFor } from '@core/firmware/releases/layouts.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 import { RadioIoError } from '@integrations/radio-io';
 
@@ -131,6 +132,10 @@ function ReadRadio({
   );
 }
 
+/** Shown with the image when the release has no file for the radio's other layout. */
+const NO_PARTNER_NOTE = (layout: string): string =>
+  `This release has only the ${layout} file. If the radio refuses it, Studio has no file for the other flash layout to try.`;
+
 /** The confirm for an updater's "already runs this build" warning. */
 const REINSTALL_CONFIRM_LABEL = 'Write it again anyway';
 
@@ -178,6 +183,12 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
       : null;
   const warning = warningFor && sameInputs(warningFor.for) ? warningFor.message : null;
   const awaitingConfirm = warning !== null && !reinstallConfirmed;
+  // A release with files by layout but none for the other layout: no retry if the radio refuses this one.
+  const noPartner =
+    !!image?.radioLayout &&
+    !!loadedPatch &&
+    loadedLayouts(loadedPatch).length > 0 &&
+    !partnerFor(loadedPatch, image.radioLayout);
 
   useEffect(() => {
     if (!stock || !choice || image || radioLayout === null) return;
@@ -285,6 +296,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
               <li>Stock firmware: {image.stockVersion}</li>
               {image.versionStamp ? <li>Version stamp: {image.versionStamp}</li> : null}
               {image.radioLayout ? <li>Flash layout: {image.radioLayout}</li> : null}
+              {noPartner ? <li>{NO_PARTNER_NOTE(image.radioLayout!)}</li> : null}
               {Object.entries(image.sha256).map(([role, sha]) => (
                 <li key={role}>
                   {role}: <span className={classes.mono}>{shortHash(sha)}</span>
