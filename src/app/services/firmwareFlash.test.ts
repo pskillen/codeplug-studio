@@ -322,14 +322,14 @@ describe('readFirmwareRadioReport', () => {
     vi.clearAllMocks();
   });
 
-  it('opens the UV-5R Mini at the clone baud rate with DTR and RTS low, returns the bytes and closes', async () => {
+  it('opens the UV-5R Mini at the clone baud rate with DTR and RTS raised, returns the bytes and closes', async () => {
     const reader = radioIo.getFirmwareUpdater('baofeng-uv5rmini')!.radioReport!;
     const bytes = new Uint8Array(64).fill(0xff);
     const read = vi.spyOn(reader, 'read').mockResolvedValueOnce(bytes);
     const out = await readFirmwareRadioReport({ radioId: 'baofeng-uv5rmini', port });
     expect(out).toEqual({ ok: true, bytes });
     expect(read).toHaveBeenCalledTimes(1);
-    expect(radioIo.openWebSerialPipe).toHaveBeenCalledWith(port, 115200, { raiseDtrRts: false });
+    expect(radioIo.openWebSerialPipe).toHaveBeenCalledWith(port, 115200, { raiseDtrRts: true });
     expect(pipeClose).toHaveBeenCalledTimes(1);
   });
 

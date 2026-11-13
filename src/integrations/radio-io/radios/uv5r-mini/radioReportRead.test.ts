@@ -11,6 +11,7 @@ import { UV5R_MINI_LAYOUT } from '../uv17pro-family/layout.ts';
 import { fakeMagicReply } from '../uv17pro-family/magicReplyTestKit.ts';
 import { UV5R_MINI_BLOCK_SIZE, UV5R_MINI_IDENT, UV5R_MINI_READ_RESPONSE_LEN } from './constants.ts';
 import { uv5rMiniCrypt } from './crypt.ts';
+import { UV5R_MINI_DESCRIPTOR } from './descriptor.ts';
 import { UV5R_MINI_MAGICS_READ } from './magics.ts';
 import { readUv5rMiniRadioReport, UV5RMINI_RADIO_REPORT_LINK } from './radioReportRead.ts';
 import { assertUv5rMiniWriteAllowed, Uv5rMiniWriteRefusedError } from './writeInterlock.ts';
@@ -89,8 +90,9 @@ describe('readUv5rMiniRadioReport', () => {
     expect(decodeUv5rMiniRadioReport(bytes)).toEqual({ kind: 'stock', reason: 'magic' });
   });
 
-  it('opens the cable with DTR and RTS low', () => {
-    expect(UV5RMINI_RADIO_REPORT_LINK.raiseDtrRts).toBe(false);
+  it("opens the cable as the codeplug session does: DTR and RTS raised, the clone's baud rate", () => {
+    expect(UV5RMINI_RADIO_REPORT_LINK.raiseDtrRts).toBe(true);
+    expect(UV5RMINI_RADIO_REPORT_LINK.baudRate).toBe(UV5R_MINI_DESCRIPTOR.baudRate);
   });
 });
 

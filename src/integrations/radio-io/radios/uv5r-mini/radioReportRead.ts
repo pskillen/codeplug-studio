@@ -15,13 +15,15 @@ import { UV5R_MINI_BAUD_RATE } from './constants.ts';
 import { Uv5rMiniProtocol } from './protocol.ts';
 
 /**
- * The normal-mode clone link for the report read: the clone's own baud rate, on the same cable as the update. DTR and
- * RTS stay low: the read needs neither, and some cables wire them to PTT.
+ * The normal-mode clone link for the report read: the clone's own baud rate, on the same cable as the update. The line
+ * handling is the codeplug session's, exactly: DTR and RTS raised after the open (`openWebSerialPipe`'s default) and
+ * the handshake's own settle. That is the normal-mode path proven on the Mini's cable without keying the radio; Studio
+ * doesn't use any other line handling in normal mode.
  */
 export const UV5RMINI_RADIO_REPORT_LINK: FirmwareLinkSpec = {
   baudRate: UV5R_MINI_BAUD_RATE,
   usbFilters: [{ usbVendorId: 0x1a86, usbProductId: 0x7523 }],
-  raiseDtrRts: false,
+  raiseDtrRts: true,
 };
 
 /** The 64 decoded bytes at `0xEFC0`. One handshake, one read. */
