@@ -8,6 +8,7 @@ import { DesignSystemV2Provider } from '../v2/index.ts';
 import { BuildLayoutProvider } from '../../routes/builds/BuildLayoutContext.tsx';
 import BuildRadioIoPanel from './BuildRadioIoPanel.tsx';
 import * as radioIoSession from '../../services/radioIoSession.ts';
+import { registerReviewSectionProvider } from './RadioWriteStepper/reviewSections.tsx';
 import { persistence } from '../../state/persistence.ts';
 import {
   AtD890PendingUnitsError,
@@ -128,7 +129,7 @@ function openStepper(profileId: string) {
 describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
   it('opens the stepper at "What to write" with keps offered for D890', async () => {
     openStepper('radio-io-at-d890uv');
-    expect(await screen.findByRole('button', { name: 'Connect & read' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Read & write' })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Codeplug' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Digital contacts' })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).not.toBeChecked();
@@ -141,13 +142,13 @@ describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
 
   it('does not offer Radio settings on a radio without a settings page', async () => {
     openStepper('radio-io-dm32uv');
-    await screen.findByRole('button', { name: 'Connect & read' });
+    await screen.findByRole('button', { name: 'Read & write' });
     expect(screen.queryByRole('checkbox', { name: 'Radio settings' })).toBeNull();
   });
 
   it('does not show keps or contacts for a profile with no adapter', async () => {
     openStepper('radio-io-uv5r-mini');
-    await screen.findByRole('button', { name: 'Connect & read' });
+    await screen.findByRole('button', { name: 'Read & write' });
     expect(screen.queryByRole('checkbox', { name: 'Satellite keps' })).toBeNull();
     expect(screen.queryByRole('checkbox', { name: 'Digital contacts' })).toBeNull();
   });
@@ -160,13 +161,13 @@ describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
 
   it('hides TG step keys on the stock AT-D890 popup', async () => {
     openStepper('radio-io-at-d890uv');
-    await screen.findByRole('button', { name: 'Connect & read' });
+    await screen.findByRole('button', { name: 'Read & write' });
     expect(screen.queryByRole('switch', { name: /Assign TG previous and TG next/ })).toBeNull();
   });
 
   it('has no step-key switch on the MM9PDY AT-D890: Review offers a nudge instead', async () => {
     openStepper('radio-io-at-d890uv-mm9pdy');
-    await screen.findByRole('button', { name: 'Connect & read' });
+    await screen.findByRole('button', { name: 'Read & write' });
     expect(screen.queryByRole('switch', { name: /Assign TG previous and TG next/ })).toBeNull();
   });
 
@@ -189,10 +190,10 @@ describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
       fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
       fireEvent.click(screen.getByRole('button', { name: source }));
       expect(await screen.findByText('ID directory is empty')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Connect & read' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Read & write' })).toBeDisabled();
       expect(screen.queryByRole('button', { name: 'Write anyway' })).not.toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Contacts' }));
-      expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'Read & write' })).toBeEnabled();
       expect(screen.queryByText('ID directory is empty')).not.toBeInTheDocument();
     },
   );
@@ -203,7 +204,7 @@ describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Both' }));
     await screen.findByText('ID directory is empty');
     fireEvent.click(contacts);
-    expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Read & write' })).toBeEnabled();
     expect(screen.queryByText('ID directory is empty')).not.toBeInTheDocument();
   });
 
@@ -219,11 +220,9 @@ describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
     fireEvent.click(screen.getByRole('button', { name: 'ID directory' }));
     expect(screen.getByText('Checking ID directory…')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Connect & read' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Read & write' })).toBeDisabled();
     finish(12);
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled(),
-    );
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Read & write' })).toBeEnabled());
   });
 
   it('shows a recoverable inline directory-check error', async () => {
@@ -234,9 +233,9 @@ describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
     fireEvent.click(screen.getByRole('button', { name: 'Both' }));
     await screen.findByText('Could not check the ID directory');
-    expect(screen.getByRole('button', { name: 'Connect & read' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Read & write' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Contacts' }));
-    expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Read & write' })).toBeEnabled();
   });
 });
 
@@ -256,7 +255,19 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     } as never;
   }
 
+  // These fakes carry no per-radio Review context, so nothing would stop on Review (#1638). The
+  // tests of Review itself (Cancel, the hold time, the button labels) force one reason to stop;
+  // the one-go tests turn it off.
+  const forcePause = { on: true };
+  let unregisterPause: () => void;
+
   beforeEach(() => {
+    forcePause.on = true;
+    unregisterPause = registerReviewSectionProvider({
+      matches: () => true,
+      sections: () => [],
+      pauseReasons: () => (forcePause.on ? ['settings-choice'] : []),
+    });
     hookRan = false;
     uploaded = 0;
     kepsWrite.mockReset();
@@ -293,23 +304,22 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
   });
 
   afterEach(() => {
+    unregisterPause();
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
   async function connect() {
-    fireEvent.click(await screen.findByRole('button', { name: 'Connect & read' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Read & write' }));
   }
 
   it('rechecks directory availability before opening a serial port', async () => {
     openStepper('radio-io-at-d890uv');
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
     fireEvent.click(screen.getByRole('button', { name: 'Both' }));
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled(),
-    );
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Read & write' })).toBeEnabled());
     vi.mocked(persistence.countDigitalIdDirectoryEntries).mockResolvedValueOnce(0);
-    fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Read & write' }));
     await screen.findByText('ID directory is empty');
     expect(grant).not.toHaveBeenCalled();
     expect(prepare).not.toHaveBeenCalled();
@@ -322,7 +332,7 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
       fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
       fireEvent.click(screen.getByRole('button', { name: 'Both' }));
       await waitFor(() =>
-        expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled(),
+        expect(screen.getByRole('button', { name: 'Read & write' })).toBeEnabled(),
       );
       let finish!: (count: number) => void;
       vi.mocked(persistence.countDigitalIdDirectoryEntries).mockImplementationOnce(
@@ -331,7 +341,7 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
             finish = resolve;
           }),
       );
-      fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Read & write' }));
       if (cancel === 'close') fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
       if (cancel === 'unmount') panel.unmount();
       if (cancel === 'edit settings')
@@ -358,7 +368,69 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     );
   });
 
-  it('always shows Review with the identity (full serial) and the channel count', async () => {
+  it.each([
+    'radio-io-at-d890uv',
+    'radio-io-at-d890uv-mm9pdy',
+    'radio-io-dm32uv',
+    'radio-io-dm32uv-mm9pdy',
+    'radio-io-dm32uv-radiofoundry',
+    'radio-io-rt95',
+    'radio-io-rt95-mm9pdy',
+    'radio-io-uv5r-mini',
+    'radio-io-uv5r-mini-mm9pdy',
+    'radio-io-uv21',
+    'radio-io-opengd77-1701',
+    'radio-io-opengd77-md9600',
+  ])('%s: a clean build reads then writes in one go, with no Review stop (#1638)', async (id) => {
+    forcePause.on = false;
+    openStepper(id);
+    await connect();
+    // No Write click: Read & write was the consent, and nothing needed the user.
+    expect(await screen.findByText('Codeplug written (3 channels).')).toBeInTheDocument();
+    expect(uploaded).toBe(1);
+    expect(radioIoSession.uploadPreparedRadioWrite).toHaveBeenCalledTimes(1);
+    expect(radioIoSession.openRadioSessionForEgress).toHaveBeenCalledTimes(1);
+  });
+
+  it('UV-5R Mini: a clean run does not reconnect, however long the read took (#1638)', async () => {
+    forcePause.on = false;
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.mocked(radioIoSession.uploadPreparedRadioWrite).mockImplementation(
+      async (_s, _e, _i, opts) => {
+        // A read far longer than the Mini's 1.5 s hold: only time spent paused on Review counts.
+        vi.setSystemTime(Date.now() + 10_000);
+        await opts?.beforeTransmit?.({
+          identity,
+          channelCount: 3,
+          plan: [{ label: 'Upload', weight: 4000 }],
+          identityOnly: false,
+        });
+        uploaded += 1;
+        return {};
+      },
+    );
+    openStepper('radio-io-uv5r-mini');
+    await connect();
+    expect(await screen.findByText('Codeplug written (3 channels).')).toBeInTheDocument();
+    expect(uploaded).toBe(1);
+    expect(radioIoSession.uploadPreparedRadioWrite).toHaveBeenCalledTimes(1);
+    expect(radioIoSession.openRadioSessionForEgress).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/Reconnecting/)).toBeNull();
+  });
+
+  it('UV-5R Mini: a Review that stops for the user past the hold time still reconnects', async () => {
+    openStepper('radio-io-uv5r-mini');
+    await connect();
+    const write = await screen.findByRole('button', { name: 'Write codeplug' });
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.now() + 2_000);
+    fireEvent.click(write);
+    expect(await screen.findByText('Codeplug written (3 channels).')).toBeInTheDocument();
+    expect(radioIoSession.uploadPreparedRadioWrite).toHaveBeenCalledTimes(2);
+    expect(uploaded).toBe(1);
+  });
+
+  it('shows Review, when it has a reason to stop, with the identity (full serial) and the channel count', async () => {
     openStepper('radio-io-at-d890uv');
     await connect();
     await screen.findByRole('button', { name: 'Write codeplug' });

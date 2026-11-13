@@ -1,7 +1,7 @@
 /**
  * The Write flow's progress coalescing (#1558): events fold into the stage refs at once but reach
  * React state at about 10 Hz. Driven through the keps-only path, where a fake keps writer emits the
- * events: connect, Review, Write, then the writer's burst of progress.
+ * events: connect, then (nothing needs Review) the writer's burst of progress.
  */
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -71,16 +71,13 @@ function mount(kepsWriteFn: SatelliteKepsWriteFn) {
   );
 }
 
-/** Open the dialog for keps only, connect, and press Write at Review: the writer starts. */
+/** Open the dialog for keps only and press Read & write: nothing needs Review, the writer starts. */
 async function startWrite(flow: { current: RadioWriteFlow }): Promise<void> {
   act(() => flow.current.open({ codeplug: false, contacts: false, settings: false, keps: true }));
   await act(async () => {
     flow.current.actions.onConnectAndRead();
   });
-  expect(flow.current.view.step).toBe('review');
-  await act(async () => {
-    flow.current.actions.onWrite();
-  });
+  expect(flow.current.view.step).toBe('writing');
 }
 
 describe('useRadioWriteFlow progress coalescing (#1558)', () => {

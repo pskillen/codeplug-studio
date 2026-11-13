@@ -5,6 +5,7 @@ import { DesignSystemV2Provider } from '../../v2/index.ts';
 import type { RadioDescriptor } from '@integrations/radio-io/types.ts';
 import {
   registerReviewSectionProvider,
+  reviewPauseReasons,
   reviewSectionsFor,
   type ReviewContext,
 } from './reviewSections.tsx';
@@ -31,6 +32,37 @@ const ctx: ReviewContext = {
   identityOnly: false,
   restartsAfterWrite: true,
 };
+
+describe('reviewPauseReasons (#1638)', () => {
+  it('has no reason for a radio whose Review shows only facts', () => {
+    expect(reviewPauseReasons(descriptor, ctx)).toEqual([]);
+  });
+
+  it('collects the reasons of matching providers only, once each', () => {
+    const offA = registerReviewSectionProvider({
+      matches: (d) => d.modelIds.includes('X'),
+      sections: () => [],
+      pauseReasons: () => ['settings-choice', 'receive-only-channels'],
+    });
+    const offB = registerReviewSectionProvider({
+      matches: (d) => d.modelIds.includes('X'),
+      sections: () => [],
+      pauseReasons: () => ['settings-choice'],
+    });
+    const offOther = registerReviewSectionProvider({
+      matches: (d) => d.modelIds.includes('Y'),
+      sections: () => [],
+      pauseReasons: () => ['zone-key-nudge'],
+    });
+    expect(reviewPauseReasons(descriptor, ctx)).toEqual([
+      'settings-choice',
+      'receive-only-channels',
+    ]);
+    offA();
+    offB();
+    offOther();
+  });
+});
 
 describe('reviewSectionsFor', () => {
   it('gives identity, channels and time for a radio with no extras', () => {

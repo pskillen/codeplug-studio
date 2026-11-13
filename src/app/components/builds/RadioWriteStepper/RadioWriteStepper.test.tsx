@@ -37,7 +37,7 @@ describe('RadioWriteStepper — step 1, what to write', () => {
     expect(
       screen.getByText('Anything not ticked stays as it is on the radio.'),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Connect & read' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Read & write' })).toBeEnabled();
   });
 
   it('does not show rows the radio does not support, nor a Radio settings row', () => {
@@ -47,9 +47,9 @@ describe('RadioWriteStepper — step 1, what to write', () => {
     expect(screen.queryByRole('checkbox', { name: 'Radio settings' })).toBeNull();
   });
 
-  it('disables Connect & read with nothing ticked', () => {
+  it('disables Read & write with nothing ticked', () => {
     renderStepper({ parts: { codeplug: false, contacts: false, settings: false, keps: false } });
-    expect(screen.getByRole('button', { name: 'Connect & read' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Read & write' })).toBeDisabled();
   });
 
   it('shows the contact source only while contacts is ticked', () => {
@@ -59,7 +59,7 @@ describe('RadioWriteStepper — step 1, what to write', () => {
     expect(screen.queryByRole('button', { name: 'None' })).toBeNull();
   });
 
-  it('reports ticks and Connect & read', () => {
+  it('reports ticks and Read & write', () => {
     const actions = renderStepper();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Satellite keps' }));
     expect(actions.onPartsChange).toHaveBeenCalledWith({
@@ -68,7 +68,7 @@ describe('RadioWriteStepper — step 1, what to write', () => {
       settings: false,
       keps: true,
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Read & write' }));
     expect(actions.onConnectAndRead).toHaveBeenCalled();
   });
 
