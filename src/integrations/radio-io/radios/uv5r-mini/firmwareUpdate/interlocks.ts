@@ -284,18 +284,18 @@ export function checkUv5rMiniImage(
   }
 
   // Already installed: last, so a hard refusal always wins over the warning.
-  const typedIsImage =
+  const reportedIsImage =
     image.radioBuild !== undefined &&
     image.radioBuild.trim().toLowerCase() === image.versionStamp.toLowerCase();
   const stockOnStock = toStock && image.radioLayout !== undefined && image.radioBuild === undefined;
-  if (!typedIsImage && !stockOnStock) return;
+  if (!reportedIsImage && !stockOnStock) return;
   if (pin.layout === undefined) {
     // A list-carrying loader plans nothing for the installed build: it would end with nothing written.
     throw new RadioInterlockError(UV5RMINI_ALREADY_INSTALLED_REFUSAL(image.versionStamp));
   }
   if (!image.reinstallConfirmed) {
     throw new RadioConfirmRequiredError(
-      typedIsImage
+      reportedIsImage
         ? UV5RMINI_REINSTALL_WARNING(image.versionStamp)
         : UV5RMINI_REINSTALL_STOCK_WARNING(image.versionStamp),
     );

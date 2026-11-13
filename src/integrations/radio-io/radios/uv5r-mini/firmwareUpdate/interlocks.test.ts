@@ -102,8 +102,8 @@ const layoutPin = (layout: Uv5rMiniLayout): LayoutPinnedLoader => ({
 
 describe('checkUv5rMiniImage — already installed, list-carrying loader', () => {
   it('refuses an image whose build is the one the radio names, ignoring case and spaces', () => {
-    for (const typed of ['mm9pdy-test', '  MM9PDY-Test ', 'Mm9Pdy-TEST']) {
-      refused(prepared({ radioBuild: typed }), /already installed; nothing was sent/);
+    for (const reported of ['mm9pdy-test', '  MM9PDY-Test ', 'Mm9Pdy-TEST']) {
+      refused(prepared({ radioBuild: reported }), /already installed; nothing was sent/);
     }
     refused(prepared({ radioBuild: 'mm9pdy-test' }), /already runs mm9pdy-test/);
   });
@@ -122,7 +122,7 @@ describe('checkUv5rMiniImage — already installed, list-carrying loader', () =>
     );
   });
 
-  it('accepts a different build, no typed build, or one that only contains the name', () => {
+  it('accepts a different build, no build from the radio, or one that only contains the name', () => {
     check(prepared({ radioBuild: 'mm9pdy-other' }));
     check(prepared({ radioBuild: undefined }));
     check(prepared({ radioBuild: 'mm9pdy-test-2' }));
@@ -133,9 +133,9 @@ describe('checkUv5rMiniImage — already installed, always-write layout loader',
   const checkL1 = (o: Parameters<typeof prepared>[0]) => () =>
     checkUv5rMiniImage(prepared({ radioLayout: 'L1', ...o }), [layoutPin('L1')], bases);
 
-  it('asks for a confirm, not a refusal, when the typed build is the image, ignoring case and spaces', () => {
-    for (const typed of ['mm9pdy-test', '  MM9PDY-Test ', 'Mm9Pdy-TEST']) {
-      const run = checkL1({ radioBuild: typed });
+  it("asks for a confirm, not a refusal, when the radio's build is the image, ignoring case and spaces", () => {
+    for (const reported of ['mm9pdy-test', '  MM9PDY-Test ', 'Mm9Pdy-TEST']) {
+      const run = checkL1({ radioBuild: reported });
       expect(run).toThrow(RadioConfirmRequiredError);
       expect(run).not.toThrow(RadioInterlockError);
       expect(run).toThrow(UV5RMINI_REINSTALL_WARNING('mm9pdy-test'));
@@ -149,7 +149,7 @@ describe('checkUv5rMiniImage — already installed, always-write layout loader',
     expect(checkL1({ radioBuild: 'mm9pdy-test', reinstallConfirmed: true })).not.toThrow();
   });
 
-  it('asks for nothing when the build differs or none was typed', () => {
+  it("asks for nothing when the radio's build differs or it gave none", () => {
     expect(checkL1({ radioBuild: 'mm9pdy-other' })).not.toThrow();
     expect(checkL1({ radioBuild: undefined })).not.toThrow();
   });
