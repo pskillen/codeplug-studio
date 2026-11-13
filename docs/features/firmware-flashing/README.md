@@ -18,7 +18,7 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 | User-supplied patch         | Shipped: prod (DM-32UV, AT-D890UV, RT95 front panel) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                                                                                                                                                                                  |
 | AT-D890UV                   | Shipped: prod                                        | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                                                                                                                                                                                   |
 | RT95 front panel (LCD)      | Shipped: prod                                        | Stock and published releases for the head; the main board is a separate card, stock MAIN or a MAIN patch file (published `retevis-rt95-main` releases or a file from disk), on next/dev/staging (hidden on prod); normal-mode ident and attestations before flashing. Enabled on the prod site after the owner flashed stock V1.41, test builds and the MM9PDY zones build from Studio ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460)) |
-| UV-5R Mini                  | Shipped: pre-prod only (next, dev, staging)          | The radio drives the update: its app, then its loader, ask for slices of the image and Studio serves them; a power-cut update is continued by flashing again. Patch file from disk only until a release is published; no stock flash. Hidden on prod until Studio has flashed a patched release to a Mini on hardware ([#1587](https://github.com/pskillen/codeplug-studio/issues/1587))                                                                  |
+| UV-5R Mini                  | Shipped: pre-prod only (next, dev, staging)          | The radio drives the update: its app, then its loader, ask for slices of the image and Studio serves them; a power-cut update is continued by flashing again. Patch file from disk only until a release is published; no plain stock flash, Back to stock takes the to-stock patch. Hidden on prod until Studio has flashed a patched release to a Mini on hardware ([#1587](https://github.com/pskillen/codeplug-studio/issues/1587))                    |
 | Recovery docs               | Shipped                                              | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                                                                                                                                                         |
 | Browsers without Web Serial | Shipped                                              | Phones, tablets, Firefox and Safari get a read-only list of the published releases for each offered radio (RC toggle, notes, retry) with a banner saying flashing needs Chrome or Edge on a desktop computer. No wizard, no port (`ReleaseBrowser.tsx`)                                                                                                                                                                                                   |
 | Android                     | Deferred                                             | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                                                                                                                                                                                                                            |
@@ -97,6 +97,11 @@ hidden there).
    - **Stock firmware** ("Stock firmware (v1.01.048)"), always listed: it is also the recovery path.
      A radio with no stock flash (the UV-5R Mini) lists no Stock card; when it has no published release either, the
      step says "No firmware release is published for the Baofeng UV-5R Mini yet" and points to the Advanced patch file.
+   - **Back to stock**, for a radio whose way back is a to-stock patch (the UV-5R Mini): one line saying the
+     to-stock file comes from the firmware project's release artifact and that the plain stock file can't be
+     flashed, and a file picker for it. Any other patch is refused there. A recognised file shows "This file puts back
+     the stock firmware v0.04 (NRFB)" and needs no **I understand** tick: the radio's checks pin everything it
+     installs ([UV-5R Mini: Back to stock](../../reference/radios/baofeng/uv-5r-mini/firmware.md#back-to-stock)).
    - **Advanced: use a patch file from disk.** A `.patch.json` identical to a published release is treated as that
      release ("This is the MM9PDY modded firmware 1.0.0 (published)"). Any other patch shows its project name and
      version, a short sha256 and a risk
@@ -188,6 +193,9 @@ name.
 
 The summary also records the version stamp read from the patched image, when the patch format has one.
 
+A to-stock patch (its build name is the stock's own base name) keeps its patch provenance but reads as the stock:
+`Firmware: back to stock, stock firmware <version> (…)`, with the stock's verify hint.
+
 ### DM-32UV `1.0.0`: checking it worked
 
 The DM-32UV `1.0.0` doesn't show the mod's version: Device Info still reads `DM32.01.L01.048` after a `1.0.0` flash. The
@@ -227,6 +235,8 @@ Studio never writes the bootloader or the activation area.
 ### Going back to stock on purpose
 
 Choose **Stock firmware** on the Firmware step and flash as usual. The radio then runs the vendor's pinned version.
+On the UV-5R Mini, choose **Back to stock** and pick the to-stock file (`uv5rmini-fw-to-stock-<base>.patch.json`)
+from the firmware project's release artifact; the plain stock file can't be flashed.
 
 ### Fallback: the vendor's programming software
 
