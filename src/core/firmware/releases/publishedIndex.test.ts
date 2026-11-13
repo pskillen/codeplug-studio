@@ -184,6 +184,29 @@ describe('parsePublishedReleaseIndex: one row per flash layout', () => {
     expect(messageOf(() => parse({ ...entryOf(l1.row), base: 7 }))).toMatch(/bad base/);
   });
 
+  it("refuses a row whose base is a known base of another stock version than the row's", async () => {
+    const { l1 } = await mini();
+    // Two stocks: base A (`synthetic`) on the row's stock version, base B on another one.
+    const twoStocks = {
+      ...l1.descriptor,
+      alsoAccepts: [
+        { version: 'v0.0.2-test', baseName: 'synthetic-b', members: l1.descriptor.members },
+      ],
+    };
+    const parse = (...entries: Record<string, unknown>[]) =>
+      parsePublishedReleaseIndex(
+        { format: 1, releases: entries },
+        { descriptors: [twoStocks], loadPatchBytes: async () => new Uint8Array(0) },
+      );
+    expect(parse({ ...entryOf(l1.row), base: 'synthetic' })[0]!.base).toBe('synthetic');
+    expect(
+      parse({ ...entryOf(l1.row), stockVersion: 'v0.0.2-test', base: 'synthetic-b' })[0]!.base,
+    ).toBe('synthetic-b');
+    expect(messageOf(() => parse({ ...entryOf(l1.row), base: 'synthetic-b' }))).toMatch(
+      /base synthetic-b is not stock v0\.0\.1-test/,
+    );
+  });
+
   it('refuses a base on a radio without layouts', async () => {
     const { dm32, parse } = await mini();
     expect(messageOf(() => parse({ ...entryOf(dm32.row), base: 'x' }))).toMatch(
