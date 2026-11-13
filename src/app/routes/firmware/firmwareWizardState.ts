@@ -3,7 +3,7 @@
  * nothing here is persisted. The flash run itself (progress, outcome) lives in the page.
  */
 import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
-import type { FirmwareRadioId, RadioInfoAnswers } from '@core/firmware/types.ts';
+import type { FirmwareRadioId, RadioInfoAnswers, RadioLayoutAnswer } from '@core/firmware/types.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 
 import type { FirmwareChoice, VerifiedStockFirmware } from '../../services/firmwareFlash.ts';
@@ -38,6 +38,8 @@ export interface FirmwareWizardState {
   readonly image: PreparedFirmwareImage | null;
   /** The radio's Radio Info lines, for a radio whose stock descriptor asks for its layout. In memory only. */
   readonly radioInfo: RadioInfoAnswers;
+  /** What Prepare's read of the radio found, for a radio that may report about itself. In memory only. */
+  readonly radioRead: RadioReadStatus | null;
   /**
    * The operator's explicit confirm to write the build the radio already runs (a repair), after reading the updater's
    * warning at Prepare. Cleared whenever the image would change.
@@ -67,6 +69,15 @@ export interface FirmwareWizardState {
    */
   readonly safetyBackup: SafetyBackupStatus | null;
 }
+
+/**
+ * The radio report read: a report and what it decides; no report (the Radio Info question is asked); or the read
+ * failed (the question is asked, with the reason shown).
+ */
+export type RadioReadStatus =
+  | { readonly kind: 'report'; readonly answer: RadioLayoutAnswer }
+  | { readonly kind: 'none' }
+  | { readonly kind: 'failed'; readonly message: string };
 
 export type SafetyBackupStatus =
   | { readonly kind: 'saved'; readonly radioKey: string; readonly summary: string }
@@ -108,6 +119,7 @@ export type FirmwareWizardAction =
   | { type: 'imagePrepared'; image: PreparedFirmwareImage }
   | { type: 'imageCleared' }
   | { type: 'setRadioInfo'; patch: Partial<RadioInfoAnswers> }
+  | { type: 'radioRead'; status: RadioReadStatus | null }
   | { type: 'setReinstallConfirmed'; value: boolean }
   | { type: 'setCheck'; check: PreflightCheck; value: boolean }
   | { type: 'setRadioCheck'; id: string; value: boolean }
@@ -138,6 +150,7 @@ export const INITIAL_FIRMWARE_WIZARD_STATE: FirmwareWizardState = {
   stock: null,
   image: null,
   radioInfo: { firmware: '', hardware: '' },
+  radioRead: null,
   reinstallConfirmed: false,
   checks: NO_CHECKS,
   radioPreflight: { attestationIds: [], probe: false },
@@ -284,6 +297,18 @@ export function firmwareWizardReducer(
       return {
         ...state,
         radioInfo: { ...state.radioInfo, ...action.patch },
+        image: null,
+        reinstallConfirmed: false,
+        checks: NO_CHECKS,
+        radioChecks: {},
+        probe: null,
+        probeSkipped: false,
+      };
+    case 'radioRead':
+      // A new read (or a cleared one) may mean a new layout or build: a new image and fresh checks.
+      return {
+        ...state,
+        radioRead: action.status,
         image: null,
         reinstallConfirmed: false,
         checks: NO_CHECKS,

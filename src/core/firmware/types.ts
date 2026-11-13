@@ -135,6 +135,15 @@ export interface FirmwareRadioLayoutQuestion {
   readonly firmwareLabel: string;
   readonly hardwareLabel: string;
   readonly resolve: (answers: RadioInfoAnswers) => RadioLayoutAnswer;
+  /**
+   * For a radio whose firmware may report about itself: Prepare reads the radio first (the updater's `radioReport`)
+   * and asks the question above only when there is no report. `resolve` returns null for no report.
+   */
+  readonly report?: {
+    readonly intro: string;
+    readonly steps: readonly string[];
+    readonly resolve: (bytes: Uint8Array) => RadioLayoutAnswer | null;
+  };
 }
 
 /** Bytes keyed by member role. Stock and patched packages share this shape. */

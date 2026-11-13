@@ -232,6 +232,44 @@ export async function runFirmwarePreflightProbe(input: {
   }
 }
 
+/** Fresh pick for the radio report read on Prepare. Call from a user gesture. */
+export async function grantFirmwareRadioReportPort(
+  radioId: FirmwareRadioId,
+): Promise<SerialPortLike> {
+  const report = requireUpdater(radioId).radioReport;
+  if (!report) throw new Error(`${radioId} has no radio report.`);
+  return requestWebSerialPort(true, report.link.usbFilters);
+}
+
+export type FirmwareRadioReportOutcome =
+  { ok: true; bytes: Uint8Array } | { ok: false; code: string; message: string };
+
+/** Read the radio's report in normal mode: read-only, one handshake and one read. Always closes; never throws. */
+export async function readFirmwareRadioReport(input: {
+  radioId: FirmwareRadioId;
+  port: SerialPortLike;
+  signal?: AbortSignal;
+}): Promise<FirmwareRadioReportOutcome> {
+  const { radioId, port, signal } = input;
+  let pipe: BytePipe | null = null;
+  try {
+    const report = requireUpdater(radioId).radioReport;
+    if (!report) throw new Error(`${radioId} has no radio report.`);
+    pipe = await openWebSerialPipe(port, report.link.baudRate, {
+      raiseDtrRts: report.link.raiseDtrRts,
+    });
+    return { ok: true, bytes: await report.read(pipe, { signal }) };
+  } catch (err) {
+    return { ok: false, code: errorCode(err), message: errorMessage(err) };
+  } finally {
+    try {
+      await (pipe ?? port).close();
+    } catch {
+      /* closing is best effort; the port may never have opened */
+    }
+  }
+}
+
 function requireSafetyBackup(radioId: FirmwareRadioId) {
   const sb = requireUpdater(radioId).preflight?.safetyBackup;
   if (!sb) throw new Error(`${radioId} has no safety backup step.`);

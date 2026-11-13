@@ -172,6 +172,22 @@ describe('firmwareWizardReducer', () => {
     expect(s.checks.risk).toBe(false);
   });
 
+  it('a new radio read drops the prepared image, the confirm and checks; a restart forgets it', () => {
+    const s = through(
+      { type: 'selectRadio', radioId: 'baofeng-uv5rmini' },
+      { type: 'imagePrepared', image: IMAGE },
+      { type: 'setReinstallConfirmed', value: true },
+      { type: 'setCheck', check: 'risk', value: true },
+      { type: 'radioRead', status: { kind: 'none' } },
+    );
+    expect(s.radioRead).toEqual({ kind: 'none' });
+    expect(s.image).toBeNull();
+    expect(s.reinstallConfirmed).toBe(false);
+    expect(s.checks.risk).toBe(false);
+    expect(reduce(s, { type: 'restart' }).radioRead).toBeNull();
+    expect(reduce(s, { type: 'selectRadio', radioId: 'baofeng-dm32uv' }).radioRead).toBeNull();
+  });
+
   it('a new Radio Info answer drops the prepared image and checks', () => {
     const s = through(
       { type: 'selectRadio', radioId: 'baofeng-uv5rmini' },
