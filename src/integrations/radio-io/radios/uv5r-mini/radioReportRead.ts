@@ -11,7 +11,7 @@ import {
 
 import type { FirmwareLinkSpec } from '../../firmware/types.ts';
 import type { BytePipe } from '../../types.ts';
-import { UV5R_MINI_BAUD_RATE } from './constants.ts';
+import { UV5R_MINI_BAUD_RATE, UV5R_MINI_BAUD_RATE_FALLBACK } from './constants.ts';
 import { Uv5rMiniProtocol } from './protocol.ts';
 
 /**
@@ -25,6 +25,9 @@ export const UV5RMINI_RADIO_REPORT_LINK: FirmwareLinkSpec = {
   usbFilters: [{ usbVendorId: 0x1a86, usbProductId: 0x7523 }],
   raiseDtrRts: true,
 };
+
+/** The codeplug session's fallback rate, tried once when the handshake gets no answer at 115200. */
+export const UV5RMINI_RADIO_REPORT_BAUD_FALLBACK = UV5R_MINI_BAUD_RATE_FALLBACK;
 
 /** The 64 decoded bytes at `0xEFC0`. One handshake, one read. */
 export async function readUv5rMiniRadioReport(

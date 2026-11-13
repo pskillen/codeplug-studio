@@ -230,8 +230,10 @@ pair. The build name decides [Already installed](#already-installed).
 **In the wizard.** Prepare starts with **Read the radio**: the radio switched on normally (not in update mode), the
 programming cable in, and a fresh pick of its port. Studio opens the clone link exactly as the codeplug session does:
 115200 baud, DTR and RTS raised after the open, and the handshake's own settle. That is the normal-mode line handling
-proven on the Mini's cable without keying the radio. It then runs the ordinary clone handshake (ident, then the read magics with the model check), sends the one `R` at `0xEFC0`
-and closes the port. Nothing else is sent, and no `W` frame can be: the read calls only the clone protocol's handshake
+proven on the Mini's cable without keying the radio. It then runs the ordinary clone handshake (ident, then the read
+magics with the model check), sends the one `R` at `0xEFC0` and closes the port. As in the session, a handshake that
+gets no answer at 115200 is tried once more at 38400 (`openWithBaudFallback` in `src/app/services/serialBaudFallback.ts`,
+which both use). Nothing else is sent, and no `W` frame can be: the read calls only the clone protocol's handshake
 and block read (`readUv5rMiniRadioReport` in `src/integrations/radio-io/radios/uv5r-mini/radioReportRead.ts`, reached
 through the updater descriptor's `radioReport`). Until the radio is read, nothing is asked and nothing is prepared.
 

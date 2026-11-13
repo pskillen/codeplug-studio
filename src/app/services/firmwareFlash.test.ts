@@ -333,11 +333,41 @@ describe('readFirmwareRadioReport', () => {
     expect(pipeClose).toHaveBeenCalledTimes(1);
   });
 
-  it('maps a failed read to { ok: false } and still closes', async () => {
+  it('retries once at 38400 when the handshake gets no answer, as the codeplug session does', async () => {
     const reader = radioIo.getFirmwareUpdater('baofeng-uv5rmini')!.radioReport!;
-    vi.spyOn(reader, 'read').mockRejectedValueOnce(new RadioTimeoutError('No answer.'));
+    const bytes = new Uint8Array(64).fill(0xff);
+    const read = vi
+      .spyOn(reader, 'read')
+      .mockRejectedValueOnce(new RadioTimeoutError('No answer.'))
+      .mockResolvedValueOnce(bytes);
     const out = await readFirmwareRadioReport({ radioId: 'baofeng-uv5rmini', port });
-    expect(out).toMatchObject({ ok: false, message: 'No answer.' });
+    expect(out).toEqual({ ok: true, bytes });
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(radioIo.openWebSerialPipe).mock.calls).toEqual([
+      [port, 115200, { raiseDtrRts: true }],
+      [port, 38400, { raiseDtrRts: true }],
+    ]);
+    // The first pipe is closed before the retry, the second once the read is done.
+    expect(pipeClose).toHaveBeenCalledTimes(2);
+  });
+
+  it('maps a read that fails at both rates to { ok: false } and closes each pipe', async () => {
+    const reader = radioIo.getFirmwareUpdater('baofeng-uv5rmini')!.radioReport!;
+    vi.spyOn(reader, 'read')
+      .mockRejectedValueOnce(new RadioTimeoutError('No answer.'))
+      .mockRejectedValueOnce(new RadioWrongIdentError('Wrong radio.'));
+    const out = await readFirmwareRadioReport({ radioId: 'baofeng-uv5rmini', port });
+    expect(out).toMatchObject({ ok: false, message: 'Wrong radio.' });
+    expect(radioIo.openWebSerialPipe).toHaveBeenCalledTimes(2);
+    expect(pipeClose).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry a failure that is not a handshake one', async () => {
+    const reader = radioIo.getFirmwareUpdater('baofeng-uv5rmini')!.radioReport!;
+    vi.spyOn(reader, 'read').mockRejectedValueOnce(new Error('Port lost.'));
+    const out = await readFirmwareRadioReport({ radioId: 'baofeng-uv5rmini', port });
+    expect(out).toMatchObject({ ok: false, message: 'Port lost.' });
+    expect(radioIo.openWebSerialPipe).toHaveBeenCalledTimes(1);
     expect(pipeClose).toHaveBeenCalledTimes(1);
   });
 

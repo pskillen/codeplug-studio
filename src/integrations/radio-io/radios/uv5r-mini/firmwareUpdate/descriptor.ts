@@ -5,7 +5,11 @@
 import { UV5RMINI_STOCK_FIRMWARE } from '@core/radios/baofeng/uv-5r-mini/firmware.ts';
 
 import type { FirmwareRadioPreflight, FirmwareUpdaterDescriptor } from '../../../firmware/types.ts';
-import { readUv5rMiniRadioReport, UV5RMINI_RADIO_REPORT_LINK } from '../radioReportRead.ts';
+import {
+  readUv5rMiniRadioReport,
+  UV5RMINI_RADIO_REPORT_BAUD_FALLBACK,
+  UV5RMINI_RADIO_REPORT_LINK,
+} from '../radioReportRead.ts';
 import { UV5RMINI_FW_LINK, UV5RMINI_FW_RADIO_ID } from './constants.ts';
 import { createUv5rMiniFirmwareUpdater } from './updater.ts';
 
@@ -43,6 +47,7 @@ export const UV5RMINI_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   preflight: UV5RMINI_PREFLIGHT,
   radioReport: {
     link: UV5RMINI_RADIO_REPORT_LINK,
+    baudRateFallback: UV5RMINI_RADIO_REPORT_BAUD_FALLBACK,
     read: (pipe, opts) => readUv5rMiniRadioReport(pipe, opts),
   },
   expectedDuration: 'about 3 minutes',

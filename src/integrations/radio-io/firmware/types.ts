@@ -203,5 +203,7 @@ export interface FirmwareUpdaterDescriptor {
 /** Read-only: one handshake and one read in normal mode. Sends no write frame. */
 export interface FirmwareRadioReportReader {
   readonly link: FirmwareLinkSpec;
+  /** Tried once more at this rate when the handshake gets no answer at `link.baudRate`, as the codeplug session does. */
+  readonly baudRateFallback?: number;
   read(pipe: BytePipe, opts: { signal?: AbortSignal }): Promise<Uint8Array>;
 }

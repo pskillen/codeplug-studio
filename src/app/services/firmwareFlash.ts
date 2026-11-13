@@ -51,6 +51,8 @@ import {
 } from '@integrations/persistence/radioSafetyBackupRecords.ts';
 import { createPublicReleaseIndexLoader } from '@integrations/firmware-releases/publicReleaseIndex.ts';
 
+import { openWithBaudFallback } from './serialBaudFallback.ts';
+
 export type { VerifiedStockFirmware };
 
 /** The firmware project's published releases, fetched once per page load (and again after a failure). */
@@ -244,7 +246,11 @@ export async function grantFirmwareRadioReportPort(
 export type FirmwareRadioReportOutcome =
   { ok: true; bytes: Uint8Array } | { ok: false; code: string; message: string };
 
-/** Read the radio's report in normal mode: read-only, one handshake and one read. Always closes; never throws. */
+/**
+ * Read the radio's report in normal mode: read-only, one handshake and one read. Opens and retries as the codeplug
+ * session does: when the handshake gets no answer at the link's rate, once more at the reader's fallback rate. Always
+ * closes; never throws.
+ */
 export async function readFirmwareRadioReport(input: {
   radioId: FirmwareRadioId;
   port: SerialPortLike;
@@ -255,10 +261,16 @@ export async function readFirmwareRadioReport(input: {
   try {
     const report = requireUpdater(radioId).radioReport;
     if (!report) throw new Error(`${radioId} has no radio report.`);
-    pipe = await openWebSerialPipe(port, report.link.baudRate, {
-      raiseDtrRts: report.link.raiseDtrRts,
+    const bauds = report.baudRateFallback
+      ? [report.link.baudRate, report.baudRateFallback]
+      : [report.link.baudRate];
+    const opened = await openWithBaudFallback({
+      bauds,
+      open: (baud) => openWebSerialPipe(port, baud, { raiseDtrRts: report.link.raiseDtrRts }),
+      handshake: (p) => report.read(p, { signal }),
     });
-    return { ok: true, bytes: await report.read(pipe, { signal }) };
+    pipe = opened.pipe;
+    return { ok: true, bytes: opened.result };
   } catch (err) {
     return { ok: false, code: errorCode(err), message: errorMessage(err) };
   } finally {
