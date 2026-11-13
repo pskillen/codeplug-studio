@@ -24,12 +24,9 @@ import {
   listDescriptorsForProfile,
   openCapacitorSerialPipe,
   openWebSerialPipe,
-  RadioTimeoutError,
-  RadioWrongIdentError,
   requestCapacitorSerialPort,
   requestWebSerialPort,
   setCachedImage,
-  type BytePipe,
   type MemoryMap,
   type ProgressFn,
   type RadioDescriptor,
@@ -63,6 +60,7 @@ import {
   type DualBankRadioWritePrepareOptions,
 } from './dualBankRadioWrite.ts';
 import { startAtD890WriteTiming } from './radioIoAtD890WriteTimings.ts';
+import { openWithBaudFallback } from './serialBaudFallback.ts';
 import {
   declareAtD890ContactUnitsForWrite,
   prepareAtD890DigitalContactsForWrite,
@@ -183,10 +181,6 @@ export async function grantRadioSerialPortForEgress(opts?: {
   return { transport: 'web', port };
 }
 
-function isHandshakeConnectFailure(err: unknown): boolean {
-  return err instanceof RadioWrongIdentError || err instanceof RadioTimeoutError;
-}
-
 function withBaudsTriedMessage(err: unknown, baudsTried: readonly number[]): Error {
   const list = baudsTried.join(', ');
   if (err instanceof Error) {
@@ -254,27 +248,15 @@ export async function openRadioSessionForEgress(
     webPort = isNative ? null : await requestWebSerialPort(opts?.forcePortSelection ?? true);
   }
 
-  let pipe: BytePipe | null = null;
-
-  for (let attempt = 0; attempt < bauds.length; attempt++) {
-    if (pipe) {
-      try {
-        await pipe.close();
-      } catch {
-        /* ignore close errors before baud retry */
-      }
-    }
-
-    if (isNative && nativeDevice) {
-      pipe = await openCapacitorSerialPipe(nativeDevice, bauds[attempt]!);
-    } else if (webPort) {
-      pipe = await openWebSerialPipe(webPort, bauds[attempt]!);
-    } else {
+  const { result } = await openWithBaudFallback({
+    bauds,
+    open: async (baud) => {
+      if (isNative && nativeDevice) return openCapacitorSerialPipe(nativeDevice, baud);
+      if (webPort) return openWebSerialPipe(webPort, baud);
       throw new Error('No available serial transport found.');
-    }
-
-    const radio = descriptor.protocolFactory();
-    try {
+    },
+    handshake: async (pipe) => {
+      const radio = descriptor.protocolFactory();
       await radio.connect(pipe, {
         signal: opts?.signal,
         handshake: opts?.purpose === 'restore' ? 'none' : 'read',
@@ -291,22 +273,10 @@ export async function openRadioSessionForEgress(
         }
       }
       return { session, descriptor };
-    } catch (err) {
-      const baudsTried = bauds.slice(0, attempt + 1);
-      const canRetry =
-        attempt < bauds.length - 1 && isHandshakeConnectFailure(err) && descriptor.baudRateFallback;
-      if (!canRetry) {
-        try {
-          await pipe.close();
-        } catch {
-          /* ignore close errors while surfacing connect failure */
-        }
-        throw withBaudsTriedMessage(err, baudsTried);
-      }
-    }
-  }
-
-  throw new Error('Radio connect failed unexpectedly.');
+    },
+    mapError: withBaudsTriedMessage,
+  });
+  return result;
 }
 
 /** @deprecated Prefer {@link openRadioSessionForEgress}. */

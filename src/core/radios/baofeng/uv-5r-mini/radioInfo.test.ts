@@ -53,10 +53,25 @@ describe('uv5rMiniLayoutFromRadioInfo', () => {
   it('asks only the two lines and never calls L1/L2 a hardware layout', () => {
     const q = UV5RMINI_RADIO_LAYOUT_QUESTION;
     expect(Object.keys(q).sort()).toEqual(
-      ['firmwareLabel', 'hardwareLabel', 'intro', 'resolve', 'steps'].sort(),
+      ['firmwareLabel', 'hardwareLabel', 'intro', 'report', 'resolve', 'steps'].sort(),
     );
-    const text = [q.intro, ...q.steps].join(' ');
+    const text = [q.intro, ...q.steps, q.report!.intro, ...q.report!.steps].join(' ');
     expect(text).not.toMatch(/hardware layout/i);
     expect(text).toMatch(/flash layouts/);
+  });
+
+  it('reads the radio report first: a report decides, no report means the question', () => {
+    const resolve = UV5RMINI_RADIO_LAYOUT_QUESTION.report!.resolve;
+    expect(resolve(new Uint8Array(64).fill(0xff))).toBeNull();
+    const example = Uint8Array.from(
+      '4d4d3952010000000040090000a0060000400900341200006d6d397064792d4c322d302e322e302d72632e31000000000000000000000000000000000000cf95'
+        .match(/../g)!
+        .map((x) => parseInt(x, 16)),
+    );
+    expect(resolve(example)).toMatchObject({
+      kind: 'layout',
+      layout: 'L2',
+      build: 'mm9pdy-L2-0.2.0-rc.1',
+    });
   });
 });

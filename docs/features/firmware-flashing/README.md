@@ -116,9 +116,10 @@ hidden there).
    version stamp and the result hashes. A failure, such as a patch made for different stock, stops here; nothing is
    sent.
    For a radio whose firmware comes in more than one flash layout (the UV-5R Mini; the factory firmware's packing,
-   not the board), the step first finds the radio's layout and prepares the image for it: from the radio report an
-   MM9PDY build answers, or, with no report, from the Firmware and Hardware lines of its Radio Info screen
-   ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md)).
+   not the board), the step first finds the radio's layout and prepares the image for it. **Read the radio** reads, in
+   normal mode and read-only, the radio report an MM9PDY build answers; with no report, or when the read fails, the
+   step asks the Firmware and Hardware lines of its Radio Info screen
+   ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md#the-radio-report)).
    When the radio already runs the image's build (on the UV-5R Mini: the build name the radio reports is the image's,
    or a to-stock file for a radio that names no build), the step shows a warning instead: writing it again rewrites the
    same firmware, a repair, with the usual power-cut risk. Nothing is prepared, and the wizard can't move on, until

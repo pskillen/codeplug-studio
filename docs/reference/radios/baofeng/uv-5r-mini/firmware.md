@@ -227,6 +227,25 @@ With a report, Studio asks no question. The build name, the layout and `rf0` (he
 nothing gates on `rf0`. A `vm_bank0` different from `vm_start` is shown too, and the layout is still decided on the
 pair. The build name decides [Already installed](#already-installed).
 
+**In the wizard.** Prepare starts with **Read the radio**: the radio switched on normally (not in update mode), the
+programming cable in, and a fresh pick of its port. Studio opens the clone link exactly as the codeplug session does:
+115200 baud, DTR and RTS raised after the open, and the handshake's own settle. That is the normal-mode line handling
+proven on the Mini's cable without keying the radio. It then runs the ordinary clone handshake (ident, then the read
+magics with the model check), sends the one `R` at `0xEFC0` and closes the port. As in the session, a handshake that
+gets no answer at 115200 is tried once more at 38400 (`openWithBaudFallback` in `src/app/services/serialBaudFallback.ts`,
+which both use). Nothing else is sent, and no `W` frame can be: the read calls only the clone protocol's handshake
+and block read (`readUv5rMiniRadioReport` in `src/integrations/radio-io/radios/uv5r-mini/radioReportRead.ts`, reached
+through the updater descriptor's `radioReport`). Until the radio is read, nothing is asked and nothing is prepared.
+
+- A report: no question. The build name, layout and `rf0` are listed, with the one-way warning where it applies.
+- No report: "Studio found no MM9PDY radio report: the radio runs stock firmware, or an MM9PDY build from before the
+  report." Then the [Radio Info](#radio-info) question.
+- A read that fails (no answer, wrong port, a radio in update mode): the reason, and the Radio Info question as a
+  fallback, so a radio that can't answer can still be updated. **Read the radio again** stays offered.
+
+Reading again drops the prepared image and the "Write it again anyway" confirm. The read's result lives in the wizard's
+memory only.
+
 **The one-way warning.** A report with flags bit 0 set on `L1` is an MM9PDY radio on the v0.04 code base. Prepare
 shows: "This radio's MM9PDY build is on Baofeng's v0.04 code. The next L1 release moves it to the v0.27 code for good:
 channels and settings are kept, and the radio can go back to stock V0.27, but never to V0.04." It is information; it

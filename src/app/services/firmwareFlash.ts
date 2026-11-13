@@ -51,6 +51,8 @@ import {
 } from '@integrations/persistence/radioSafetyBackupRecords.ts';
 import { createPublicReleaseIndexLoader } from '@integrations/firmware-releases/publicReleaseIndex.ts';
 
+import { openWithBaudFallback } from './serialBaudFallback.ts';
+
 export type { VerifiedStockFirmware };
 
 /** The firmware project's published releases, fetched once per page load (and again after a failure). */
@@ -228,6 +230,54 @@ export async function runFirmwarePreflightProbe(input: {
       } catch {
         /* the port may never have opened */
       }
+    }
+  }
+}
+
+/** Fresh pick for the radio report read on Prepare. Call from a user gesture. */
+export async function grantFirmwareRadioReportPort(
+  radioId: FirmwareRadioId,
+): Promise<SerialPortLike> {
+  const report = requireUpdater(radioId).radioReport;
+  if (!report) throw new Error(`${radioId} has no radio report.`);
+  return requestWebSerialPort(true, report.link.usbFilters);
+}
+
+export type FirmwareRadioReportOutcome =
+  { ok: true; bytes: Uint8Array } | { ok: false; code: string; message: string };
+
+/**
+ * Read the radio's report in normal mode: read-only, one handshake and one read. Opens and retries as the codeplug
+ * session does: when the handshake gets no answer at the link's rate, once more at the reader's fallback rate. Always
+ * closes; never throws.
+ */
+export async function readFirmwareRadioReport(input: {
+  radioId: FirmwareRadioId;
+  port: SerialPortLike;
+  signal?: AbortSignal;
+}): Promise<FirmwareRadioReportOutcome> {
+  const { radioId, port, signal } = input;
+  let pipe: BytePipe | null = null;
+  try {
+    const report = requireUpdater(radioId).radioReport;
+    if (!report) throw new Error(`${radioId} has no radio report.`);
+    const bauds = report.baudRateFallback
+      ? [report.link.baudRate, report.baudRateFallback]
+      : [report.link.baudRate];
+    const opened = await openWithBaudFallback({
+      bauds,
+      open: (baud) => openWebSerialPipe(port, baud, { raiseDtrRts: report.link.raiseDtrRts }),
+      handshake: (p) => report.read(p, { signal }),
+    });
+    pipe = opened.pipe;
+    return { ok: true, bytes: opened.result };
+  } catch (err) {
+    return { ok: false, code: errorCode(err), message: errorMessage(err) };
+  } finally {
+    try {
+      await (pipe ?? port).close();
+    } catch {
+      /* closing is best effort; the port may never have opened */
     }
   }
 }

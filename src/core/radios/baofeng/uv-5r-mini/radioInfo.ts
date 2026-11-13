@@ -9,6 +9,7 @@ import type {
   RadioInfoAnswers,
   RadioLayoutAnswer,
 } from '../../../firmware/types.ts';
+import { decodeUv5rMiniRadioReport, uv5rMiniLayoutFromReport } from './radioReport.ts';
 
 export const UV5RMINI_RADIO_INFO_REFUSAL =
   "Studio hasn't been proven on this radio's Hardware version; nothing was sent.";
@@ -46,4 +47,13 @@ export const UV5RMINI_RADIO_LAYOUT_QUESTION: FirmwareRadioLayoutQuestion = {
   firmwareLabel: 'Radio Info: Firmware',
   hardwareLabel: 'Radio Info: Hardware',
   resolve: uv5rMiniLayoutFromRadioInfo,
+  report: {
+    intro:
+      "The UV-5R Mini's factory firmware is packed in one of two flash layouts, and each release has one file per layout. Studio reads the radio to find out which one it has. The read writes nothing.",
+    steps: [
+      'Switch the radio on normally (not in update mode) and connect the programming cable.',
+      "Choose Read the radio and pick the cable's port.",
+    ],
+    resolve: (bytes) => uv5rMiniLayoutFromReport(decodeUv5rMiniRadioReport(bytes)),
+  },
 };

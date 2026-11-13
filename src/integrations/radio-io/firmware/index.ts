@@ -14,6 +14,7 @@ export type {
   FirmwarePreflightProbeResult,
   FirmwarePreflightSafetyBackup,
   FirmwareRadioPreflight,
+  FirmwareRadioReportReader,
   FirmwareSafetyBackupFileInfo,
   FirmwareSafetyBackupOutcome,
   FirmwareUpdater,

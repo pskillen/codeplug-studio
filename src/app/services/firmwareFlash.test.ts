@@ -14,6 +14,7 @@ import {
 
 import {
   formatFirmwareFlashSummary,
+  readFirmwareRadioReport,
   runFirmwareFlash,
   recordFirmwareSafetyBackupSaved,
   runFirmwarePreflightProbe,
@@ -313,6 +314,68 @@ describe('runFirmwarePreflightProbe', () => {
     expect(out).toMatchObject({ ok: false, message: 'busy' });
     expect(port.close).toHaveBeenCalledTimes(1);
     expect(fakeProbe.run).not.toHaveBeenCalled();
+  });
+});
+
+describe('readFirmwareRadioReport', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('opens the UV-5R Mini at the clone baud rate with DTR and RTS raised, returns the bytes and closes', async () => {
+    const reader = radioIo.getFirmwareUpdater('baofeng-uv5rmini')!.radioReport!;
+    const bytes = new Uint8Array(64).fill(0xff);
+    const read = vi.spyOn(reader, 'read').mockResolvedValueOnce(bytes);
+    const out = await readFirmwareRadioReport({ radioId: 'baofeng-uv5rmini', port });
+    expect(out).toEqual({ ok: true, bytes });
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(radioIo.openWebSerialPipe).toHaveBeenCalledWith(port, 115200, { raiseDtrRts: true });
+    expect(pipeClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries once at 38400 when the handshake gets no answer, as the codeplug session does', async () => {
+    const reader = radioIo.getFirmwareUpdater('baofeng-uv5rmini')!.radioReport!;
+    const bytes = new Uint8Array(64).fill(0xff);
+    const read = vi
+      .spyOn(reader, 'read')
+      .mockRejectedValueOnce(new RadioTimeoutError('No answer.'))
+      .mockResolvedValueOnce(bytes);
+    const out = await readFirmwareRadioReport({ radioId: 'baofeng-uv5rmini', port });
+    expect(out).toEqual({ ok: true, bytes });
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(radioIo.openWebSerialPipe).mock.calls).toEqual([
+      [port, 115200, { raiseDtrRts: true }],
+      [port, 38400, { raiseDtrRts: true }],
+    ]);
+    // The first pipe is closed before the retry, the second once the read is done.
+    expect(pipeClose).toHaveBeenCalledTimes(2);
+  });
+
+  it('maps a read that fails at both rates to { ok: false } and closes each pipe', async () => {
+    const reader = radioIo.getFirmwareUpdater('baofeng-uv5rmini')!.radioReport!;
+    vi.spyOn(reader, 'read')
+      .mockRejectedValueOnce(new RadioTimeoutError('No answer.'))
+      .mockRejectedValueOnce(new RadioWrongIdentError('Wrong radio.'));
+    const out = await readFirmwareRadioReport({ radioId: 'baofeng-uv5rmini', port });
+    expect(out).toMatchObject({ ok: false, message: 'Wrong radio.' });
+    expect(radioIo.openWebSerialPipe).toHaveBeenCalledTimes(2);
+    expect(pipeClose).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry a failure that is not a handshake one', async () => {
+    const reader = radioIo.getFirmwareUpdater('baofeng-uv5rmini')!.radioReport!;
+    vi.spyOn(reader, 'read').mockRejectedValueOnce(new Error('Port lost.'));
+    const out = await readFirmwareRadioReport({ radioId: 'baofeng-uv5rmini', port });
+    expect(out).toMatchObject({ ok: false, message: 'Port lost.' });
+    expect(radioIo.openWebSerialPipe).toHaveBeenCalledTimes(1);
+    expect(pipeClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a radio with no report reader without opening the port', async () => {
+    const out = await readFirmwareRadioReport({ radioId: 'baofeng-dm32uv', port });
+    expect(out).toMatchObject({ ok: false });
+    expect(radioIo.openWebSerialPipe).not.toHaveBeenCalled();
+    expect(port.close).toHaveBeenCalledTimes(1);
   });
 });
 

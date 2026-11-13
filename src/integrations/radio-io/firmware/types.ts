@@ -191,6 +191,19 @@ export interface FirmwareUpdaterDescriptor {
    * probe passed.
    */
   readonly preflight?: FirmwareRadioPreflight;
+  /**
+   * For a radio whose firmware may report about itself (UV-5R Mini): the read-only normal-mode read Prepare runs before
+   * update mode. Its bytes go to the stock descriptor's `radioLayout.report.resolve`.
+   */
+  readonly radioReport?: FirmwareRadioReportReader;
   /** Human text for the wizard, e.g. 'about 2 minutes'. */
   readonly expectedDuration: string;
+}
+
+/** Read-only: one handshake and one read in normal mode. Sends no write frame. */
+export interface FirmwareRadioReportReader {
+  readonly link: FirmwareLinkSpec;
+  /** Tried once more at this rate when the handshake gets no answer at `link.baudRate`, as the codeplug session does. */
+  readonly baudRateFallback?: number;
+  read(pipe: BytePipe, opts: { signal?: AbortSignal }): Promise<Uint8Array>;
 }
