@@ -27,8 +27,8 @@ of the sector stays erased (`FF`). The stock clone image does not reach this ran
 ## The MM9PDY target
 
 Radio target `baofeng-uv5r-mini-mm9pdy`, Web Serial profile `radio-io-uv5r-mini-mm9pdy`, on the stock Mini driver.
-Write is hidden on the production site until the MM9PDY Mini firmware ships, and shown on every pre-production site
-(the profile's `prodWriteDisabled` flag; no native-app exemption).
+Write (and Restore) is available on every site, production included. The radio needs the MM9PDY firmware for the
+zones to show: a stock radio ignores the zone table and behaves as stock.
 
 - **Write order.** Studio encodes the table before the first frame, so a bad input fails before the radio sees
   anything. Then the stock clone blocks exactly as the stock target writes them, then the table frames in the codec's

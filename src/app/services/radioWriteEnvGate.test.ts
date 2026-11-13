@@ -77,23 +77,12 @@ describe('radioWriteEnvGate', () => {
     }
   });
 
-  it('hides UV-5R Mini MM9PDY Write on prod only; stock Mini Write stays allowed', () => {
-    expect(resolveRadioWriteGate(UV5R_MINI_DESCRIPTOR, 'prod', 'radio-io-uv5r-mini-mm9pdy')).toBe(
-      'hidden',
-    );
-    expect(resolveRadioWriteGate(UV5R_MINI_DESCRIPTOR, 'prod', 'radio-io-uv5r-mini')).toBe(
-      'allowed',
-    );
-    for (const env of ['next', 'dev', 'staging', 'local']) {
-      expect(resolveRadioWriteGate(UV5R_MINI_DESCRIPTOR, env, 'radio-io-uv5r-mini-mm9pdy')).toBe(
-        'allowed',
-      );
+  it('allows UV-5R Mini Write on prod for both profiles, MM9PDY included', () => {
+    for (const p of ['radio-io-uv5r-mini', 'radio-io-uv5r-mini-mm9pdy']) {
+      for (const env of ['prod', 'next', 'dev', 'staging', 'local']) {
+        expect(resolveRadioWriteGate(UV5R_MINI_DESCRIPTOR, env, p)).toBe('allowed');
+      }
     }
-    vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
-    expect(resolveRadioWriteGate(UV5R_MINI_DESCRIPTOR, 'prod', 'radio-io-uv5r-mini-mm9pdy')).toBe(
-      'hidden',
-    );
-    vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
   });
 
   it('allows write on native platforms even in prod', () => {

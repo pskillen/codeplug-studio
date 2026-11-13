@@ -1,6 +1,6 @@
 /**
  * UV-5R Mini Backup and Restore through the app service: the MM9PDY profile carries the zone table as a fourth
- * region, a stock profile leaves it out, and Restore on the MM9PDY profile is hidden on prod like its Write.
+ * region, a stock profile leaves it out, and Restore on the MM9PDY profile is open on prod like its Write.
  * Fakes only.
  */
 
@@ -27,7 +27,6 @@ import {
   defaultRestorableRegionIds,
   isRestoreHiddenForProfile,
   openRadioBackupZip,
-  RadioRestoreError,
   restoreRadioBackup,
   restoreRegionUnavailableReason,
 } from './radioBackupRestore.ts';
@@ -145,22 +144,21 @@ describe('UV-5R Mini Restore by profile', () => {
     expect(target.sector()).toEqual(before);
   });
 
-  it('MM9PDY Restore is hidden on prod like its Write, before any frame; stock Restore is not', async () => {
-    expect(isRestoreHiddenForProfile(UV5R_MINI_DESCRIPTOR, MM9PDY, 'prod')).toBe(true);
-    expect(isRestoreHiddenForProfile(UV5R_MINI_DESCRIPTOR, MM9PDY, 'staging')).toBe(false);
-    expect(isRestoreHiddenForProfile(UV5R_MINI_DESCRIPTOR, STOCK, 'prod')).toBe(false);
+  it('MM9PDY Restore is open on prod like its Write; stock Restore too', async () => {
+    for (const env of ['prod', 'staging']) {
+      expect(isRestoreHiddenForProfile(UV5R_MINI_DESCRIPTOR, MM9PDY, env)).toBe(false);
+      expect(isRestoreHiddenForProfile(UV5R_MINI_DESCRIPTOR, STOCK, env)).toBe(false);
+    }
 
     const source = await radioWithTable(3);
     const backup = await backupLiveRadioSession(await sessionOn(source), { profileId: MM9PDY });
     const archive = openRadioBackupZip(backup.zipBytes);
     const target = await radioWithTable(10);
-    const err = await restoreRadioBackup(await sessionOn(target), archive, {
+    await restoreRadioBackup(await sessionOn(target), archive, {
       regionIds: ['mem-0', 'mem-1', 'mem-2', 'zones'],
       profileId: MM9PDY,
       buildEnv: 'prod',
-    }).catch((e: unknown) => e);
-    expect(err).toBeInstanceOf(RadioRestoreError);
-    expect((err as RadioRestoreError).code).toBe('prod-disabled');
-    expect(target.writes).toEqual([]);
+    });
+    expect(target.sector()).toEqual(source.sector());
   });
 });
