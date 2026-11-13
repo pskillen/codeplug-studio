@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 
 import { FirmwareFlashError } from '../../../firmware/errors.ts';
-import { RadioAlreadyInstalledError } from '../../../kit/errors.ts';
+import { RadioAlreadyInstalledError, RadioConfirmRequiredError } from '../../../kit/errors.ts';
 import type {
   FirmwareFlashProgress,
   FirmwareFlashResult,
@@ -172,6 +172,57 @@ describe('UV-5R Mini updater: a clean update', () => {
     expect((run.value as FirmwareFlashResult).note).toBe(
       'The radio restarts by itself, back to stock. The radio boots to its normal screen.',
     );
+  });
+});
+
+describe('UV-5R Mini updater: rewriting the installed build', () => {
+  // The interlock (interlocks.test.ts) asks for a confirm when the radio already runs the image's build; here it is
+  // stood in for, so the run can show what the updater does with that answer.
+  const askUnlessConfirmed = (img: PreparedFirmwareImage) => {
+    if (!img.reinstallConfirmed) throw new RadioConfirmRequiredError('This radio already runs it.');
+  };
+
+  it('sends nothing at all until the operator has confirmed', async () => {
+    vi.mocked(interlocks.checkUv5rMiniImage).mockImplementation(askUnlessConfirmed);
+    try {
+      const m = make();
+      const updater = createUv5rMiniFirmwareUpdater();
+      const image = { ...imageFor(m), radioBuild: BUILD } as PreparedFirmwareImage;
+      expect(() => updater.checkImage(image)).toThrow(RadioConfirmRequiredError);
+
+      expect((await connect(m, updater)).error).toBeUndefined();
+      const sentBefore = m.hostFrames.length;
+      const run = await settle(updater.flash(image, {}), 20_000);
+      const err = run.error as FirmwareFlashError;
+      expect(err).toBeInstanceOf(FirmwareFlashError);
+      expect(err.cause).toBeInstanceOf(RadioConfirmRequiredError);
+      expect(err.radioTouched).toBe(false);
+      expect(m.hostFrames.length).toBe(sentBefore);
+      expect(m.areaReads).toBe(0);
+    } finally {
+      vi.mocked(interlocks.checkUv5rMiniImage).mockReset();
+    }
+  });
+
+  it('runs the update once the confirm is on the image', async () => {
+    vi.mocked(interlocks.checkUv5rMiniImage).mockImplementation(askUnlessConfirmed);
+    try {
+      const m = make();
+      const updater = createUv5rMiniFirmwareUpdater();
+      const image = {
+        ...imageFor(m),
+        radioBuild: BUILD,
+        reinstallConfirmed: true,
+      } as PreparedFirmwareImage;
+      updater.checkImage(image);
+      expect((await connect(m, updater)).error).toBeUndefined();
+      const run = await settle(updater.flash(image, {}), 20_000);
+      expect(run.error).toBeUndefined();
+      expect(run.value?.end).toBe('acknowledged');
+      expect(m.state).toBe('finished');
+    } finally {
+      vi.mocked(interlocks.checkUv5rMiniImage).mockReset();
+    }
   });
 });
 

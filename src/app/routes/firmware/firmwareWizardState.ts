@@ -38,6 +38,11 @@ export interface FirmwareWizardState {
   readonly image: PreparedFirmwareImage | null;
   /** The radio's Radio Info lines, for a radio whose stock descriptor asks for its layout. In memory only. */
   readonly radioInfo: RadioInfoAnswers;
+  /**
+   * The operator's explicit confirm to write the build the radio already runs (a repair), after reading the updater's
+   * warning at Prepare. Cleared whenever the image would change.
+   */
+  readonly reinstallConfirmed: boolean;
   readonly checks: Readonly<Record<PreflightCheck, boolean>>;
   /** What the selected radio's descriptor asks for on top of the generic checks. */
   readonly radioPreflight: {
@@ -103,6 +108,7 @@ export type FirmwareWizardAction =
   | { type: 'imagePrepared'; image: PreparedFirmwareImage }
   | { type: 'imageCleared' }
   | { type: 'setRadioInfo'; patch: Partial<RadioInfoAnswers> }
+  | { type: 'setReinstallConfirmed'; value: boolean }
   | { type: 'setCheck'; check: PreflightCheck; value: boolean }
   | { type: 'setRadioCheck'; id: string; value: boolean }
   | { type: 'probePassed'; summary: string }
@@ -132,6 +138,7 @@ export const INITIAL_FIRMWARE_WIZARD_STATE: FirmwareWizardState = {
   stock: null,
   image: null,
   radioInfo: { firmware: '', hardware: '', build: '', override: false },
+  reinstallConfirmed: false,
   checks: NO_CHECKS,
   radioPreflight: { attestationIds: [], probe: false },
   radioChecks: {},
@@ -236,6 +243,7 @@ export function firmwareWizardReducer(
           !action.choice || action.choice.kind === 'stock' ? null : (action.loadedPatch ?? null),
         riskAccepted: false,
         image: null,
+        reinstallConfirmed: false,
         checks: NO_CHECKS,
         radioChecks: {},
         probe: null,
@@ -250,6 +258,7 @@ export function firmwareWizardReducer(
         ...state,
         stock: action.stock,
         image: null,
+        reinstallConfirmed: false,
         checks: NO_CHECKS,
         radioChecks: {},
         probe: null,
@@ -260,6 +269,7 @@ export function firmwareWizardReducer(
         ...state,
         stock: null,
         image: null,
+        reinstallConfirmed: false,
         checks: NO_CHECKS,
         radioChecks: {},
         probe: null,
@@ -274,6 +284,19 @@ export function firmwareWizardReducer(
       return {
         ...state,
         radioInfo: { ...state.radioInfo, ...action.patch },
+        image: null,
+        reinstallConfirmed: false,
+        checks: NO_CHECKS,
+        radioChecks: {},
+        probe: null,
+        probeSkipped: false,
+      };
+    case 'setReinstallConfirmed':
+      // The confirm is part of the image: a change rebuilds it, and the checks start again.
+      if (action.value === state.reinstallConfirmed) return state;
+      return {
+        ...state,
+        reinstallConfirmed: action.value,
         image: null,
         checks: NO_CHECKS,
         radioChecks: {},

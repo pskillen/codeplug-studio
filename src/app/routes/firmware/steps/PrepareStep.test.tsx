@@ -4,7 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
-import { getFirmwareUpdater, RadioInterlockError } from '@integrations/radio-io';
+import {
+  getFirmwareUpdater,
+  RadioConfirmRequiredError,
+  RadioInterlockError,
+} from '@integrations/radio-io';
 
 import { DesignSystemV2Provider } from '../../../components/v2/index.ts';
 import * as flash from '../../../services/firmwareFlash.ts';
@@ -141,6 +145,78 @@ describe('PrepareStep: the UV-5R Mini Radio Info question', () => {
     type('Radio Info: MM9PDY build (if shown)', ' mm9pdy-L2-pr140-g1c0a ');
     await screen.findByText(/Ready to flash: L2 build/);
     expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![5]).toBe('mm9pdy-L2-pr140-g1c0a');
+  });
+
+  it('shows a same-build warning with an explicit confirm, and builds nothing until it is ticked', async () => {
+    const WARNING =
+      'This radio already runs mm9pdy-L2-pr140-g1c0a. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.';
+    vi.mocked(flash.prepareFlash).mockImplementation(
+      async (_r, _s, _c, _l, radioLayout, _b, reinstallConfirmed) => {
+        if (!reinstallConfirmed) throw new RadioConfirmRequiredError(WARNING);
+        return {
+          provenance: 'published',
+          title: 'L2 build',
+          sha256: {},
+          radioLayout,
+          reinstallConfirmed: true,
+        } as unknown as PreparedFirmwareImage;
+      },
+    );
+    render(<Harness updater={MINI} />);
+    type('Radio Info: Firmware', 'V0.27');
+    type('Radio Info: Hardware', 'V1.7');
+    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L2-pr140-g1c0a');
+    expect(await screen.findByText(WARNING)).toBeInTheDocument();
+    expect(
+      screen.getByText('Nothing is sent to the radio unless you confirm.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Preparing/)).toBeNull();
+    expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![6]).toBe(false);
+    // Not prepared: the wizard can't reach the update-mode and flash steps, so nothing is sent.
+    expect(latest.image).toBeNull();
+    expect(canAdvance(latest)).toBe(false);
+
+    const confirm = screen.getByRole('checkbox', { name: 'Write it again anyway' });
+    fireEvent.click(confirm);
+    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![6]).toBe(true);
+    expect(latest.reinstallConfirmed).toBe(true);
+    expect(canAdvance(latest)).toBe(true);
+    // The warning stays in view, ticked, so the operator can take it back.
+    expect(screen.getByText(WARNING)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Write it again anyway' }));
+    await waitFor(() => expect(latest.image).toBeNull());
+    expect(
+      await screen.findByText('Nothing is sent to the radio unless you confirm.'),
+    ).toBeInTheDocument();
+    expect(canAdvance(latest)).toBe(false);
+  });
+
+  it('drops the confirm when the Radio Info answers change', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(
+      async (_r, _s, _c, _l, radioLayout, radioBuild, reinstallConfirmed) => {
+        if (radioBuild === 'mm9pdy-L2-pr140-g1c0a' && !reinstallConfirmed) {
+          throw new RadioConfirmRequiredError('This radio already runs it.');
+        }
+        return {
+          provenance: 'published',
+          title: 'L2 build',
+          sha256: {},
+          radioLayout,
+        } as unknown as PreparedFirmwareImage;
+      },
+    );
+    render(<Harness updater={MINI} />);
+    type('Radio Info: Firmware', 'V0.27');
+    type('Radio Info: Hardware', 'V1.7');
+    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L2-pr140-g1c0a');
+    await screen.findByText('This radio already runs it.');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Write it again anyway' }));
+    await screen.findByText(/Ready to flash/);
+    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L2-pr141-g2d0b');
+    await waitFor(() => expect(latest.reinstallConfirmed).toBe(false));
+    expect(screen.queryByText('This radio already runs it.')).toBeNull();
   });
 
   it('shows the already-installed refusal from the interlock and builds no Connect step', async () => {

@@ -1,6 +1,7 @@
 /**
  * UV-5R Mini firmware image hard interlocks. Code only: no setting, flag, environment value or patch field can
- * switch one off. Pure and synchronous; run by the updater's `checkImage` at Prepare and again at the start of
+ * switch one off. The one exception is the "already installed" warning at the end, which the operator passes with an
+ * explicit confirm. Pure and synchronous; run by the updater's `checkImage` at Prepare and again at the start of
  * `flash()`. See DESIGN.md — Firmware flashing and docs/reference/radios/baofeng/uv-5r-mini/firmware.md.
  *
  *  - Target binding: radio id `baofeng-uv5rmini`, the package holds exactly the role `ufw`.
@@ -15,8 +16,6 @@
  *  I4. Every `flash.bin` byte equals the stock image's byte at the same SoC address, except inside the base's app
  *      windows, and both have the same length. (The per-radio scramble is a keystream XOR by address, so equal stored
  *      bytes at an address are equal plain bytes; Studio never descrambles.)
- *  Already installed. The build name the operator typed from Radio Info (`radioBuild`) is not the image's own, compared
- *      ignoring case and surrounding spaces. Studio can't read the installed app, so this is the only evidence there is.
  *  Layout. When the pinned loader is a layout loader (`L1`, `L2`), the radio's layout is known
  *      (`PreparedFirmwareImage.radioLayout`) and is the loader's. The radio's stock "UPDATE..." stage loses settings on
  *      a crossed pick before the loader can refuse, so this is checked before anything is sent.
@@ -27,18 +26,27 @@
  *  I7. For a list-carrying loader only: the image's build name is not on its loader's list (a re-flash or a late cut
  *      of an image its loader already lists would leave the radio looping in the loader). A layout loader has no
  *      list, so I7 does not apply to it. Keyed on the pin, never on the patch's descriptive `loader.list`.
+ *  Already installed. Checked last, once every check above has passed. The radio already runs this image's build when
+ *      the build name the operator typed from Radio Info (`radioBuild`) is the image's own (ignoring case and
+ *      surrounding spaces), or, for a to-stock image, when Radio Info was read (`radioLayout` set) and shows no MM9PDY
+ *      build. Studio can't read the installed app, so this is the only evidence there is.
+ *      - A layout loader (`L1`, `L2`) always writes, so the image is allowed, but only once the operator has confirmed
+ *        the warning (`reinstallConfirmed`): without it, `RadioConfirmRequiredError` and nothing is sent. This is the
+ *        one check an operator can pass, and only with that explicit confirm.
+ *      - A list-carrying loader writes nothing for the build it is given again, so it stays a refusal.
  *
  * I5 (outgoing frames) and I6 (line control) belong to the session code, not to this file.
  */
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 
-import { RadioInterlockError } from '../../../kit/errors.ts';
+import { RadioConfirmRequiredError, RadioInterlockError } from '../../../kit/errors.ts';
 import {
   UV5RMINI_BASES,
   UV5RMINI_FLASH_BASE,
   UV5RMINI_FW_RADIO_ID,
   UV5RMINI_FW_ROLE,
   UV5RMINI_PINNED_LOADERS,
+  UV5RMINI_RETIRED_LOADERS,
   type PinnedLoader,
   uv5rMiniHardLimit,
   type Uv5rMiniBase,
@@ -69,9 +77,28 @@ export function isUv5rMiniToStockImage(
 export const UV5RMINI_OTHER_LAYOUT_REFUSAL =
   'This file is for the other hardware layout; nothing was sent.';
 
-/** The refusal for an image whose build is the one Radio Info says the radio already runs. */
+/**
+ * The refusal for an image on a list-carrying loader whose build is the one Radio Info says the radio already runs:
+ * that loader would write nothing.
+ */
 export const UV5RMINI_ALREADY_INSTALLED_REFUSAL = (build: string): string =>
   `Radio Info says this radio already runs ${build}. This firmware is already installed; nothing was sent. Flash a different build.`;
+
+/** The warning, confirmed before anything is sent, for an image whose build the radio already runs. */
+export const UV5RMINI_REINSTALL_WARNING = (build: string): string =>
+  `This radio already runs ${build}. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.`;
+
+/**
+ * The warning for a to-stock image when Radio Info shows no MM9PDY build: the radio may be on that stock. The text
+ * only says "may", because the typed Firmware line is not compared with the stock's version (a radio moved to v0.27
+ * shows V0.27 and is offered the nrfb-v0.04 file).
+ */
+export const UV5RMINI_REINSTALL_STOCK_WARNING = (stock: string): string =>
+  `Radio Info shows no MM9PDY build, so this radio may already run the stock ${stock}. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.`;
+
+/** The refusal for an image built with a retired loader. */
+export const UV5RMINI_RETIRED_LOADER_REFUSAL =
+  'This image was built with an older loader that Studio no longer sends. Use a newer build of this firmware. Nothing was sent.';
 
 const hex = (n: number) => `0x${n.toString(16).toUpperCase()}`;
 
@@ -116,13 +143,14 @@ export function firstDifferenceOutsideWindows(
 /**
  * Check a prepared image. Throws RadioInterlockError on the first failure; returns nothing.
  *
- * `pins` and `bases` are test-only seams: production callers never pass them, and nothing user-reachable may. The
- * defaults are the tables in constants.ts.
+ * `pins`, `bases` and `retired` are test-only seams: production callers never pass them, and nothing user-reachable
+ * may. The defaults are the tables in constants.ts.
  */
 export function checkUv5rMiniImage(
   image: PreparedFirmwareImage,
   pins: readonly PinnedLoader[] = UV5RMINI_PINNED_LOADERS,
   bases: Readonly<Record<string, Uv5rMiniBase>> = UV5RMINI_BASES,
+  retired: readonly { readonly sha256: string }[] = UV5RMINI_RETIRED_LOADERS,
 ): void {
   // Target binding.
   if (image.radioId !== UV5RMINI_FW_RADIO_ID) {
@@ -143,14 +171,6 @@ export function checkUv5rMiniImage(
     throw new RadioInterlockError(
       "Studio can't tell which build this image installs, and the plain stock image is listed by its own loader. Use a release patch. Nothing was sent.",
     );
-  }
-  // Already installed: the build name the operator read off the radio's own Radio Info is this image's build. Flashing
-  // it again can only end with the loader writing nothing, after the app stage has already run.
-  if (
-    image.radioBuild !== undefined &&
-    image.radioBuild.trim().toLowerCase() === image.versionStamp.toLowerCase()
-  ) {
-    throw new RadioInterlockError(UV5RMINI_ALREADY_INSTALLED_REFUSAL(image.versionStamp));
   }
   if (!image.stockPackage?.files[UV5RMINI_FW_ROLE]) {
     throw new RadioInterlockError(
@@ -176,6 +196,9 @@ export function checkUv5rMiniImage(
   const loaderSha = sha256HexSync(ufw.loader.packed);
   const pin = pins.find((p) => p.sha256 === loaderSha);
   if (!pin) {
+    if (retired.some((r) => r.sha256 === loaderSha)) {
+      throw new RadioInterlockError(UV5RMINI_RETIRED_LOADER_REFUSAL);
+    }
     throw new RadioInterlockError("This image's loader is not one Studio knows: nothing was sent.");
   }
 
@@ -257,6 +280,24 @@ export function checkUv5rMiniImage(
   if (pin.lists?.includes(image.versionStamp)) {
     throw new RadioInterlockError(
       'This firmware is already listed by its own loader: flashing it could leave the radio stuck in update mode. Nothing was sent.',
+    );
+  }
+
+  // Already installed: last, so a hard refusal always wins over the warning.
+  const typedIsImage =
+    image.radioBuild !== undefined &&
+    image.radioBuild.trim().toLowerCase() === image.versionStamp.toLowerCase();
+  const stockOnStock = toStock && image.radioLayout !== undefined && image.radioBuild === undefined;
+  if (!typedIsImage && !stockOnStock) return;
+  if (pin.layout === undefined) {
+    // A list-carrying loader plans nothing for the installed build: it would end with nothing written.
+    throw new RadioInterlockError(UV5RMINI_ALREADY_INSTALLED_REFUSAL(image.versionStamp));
+  }
+  if (!image.reinstallConfirmed) {
+    throw new RadioConfirmRequiredError(
+      typedIsImage
+        ? UV5RMINI_REINSTALL_WARNING(image.versionStamp)
+        : UV5RMINI_REINSTALL_STOCK_WARNING(image.versionStamp),
     );
   }
 }

@@ -2,6 +2,7 @@ export {
   RadioAbortedError,
   RadioClosedError,
   RadioAlreadyInstalledError,
+  RadioConfirmRequiredError,
   RadioInterlockError,
   RadioIoError,
   type RadioIoErrorCode,
