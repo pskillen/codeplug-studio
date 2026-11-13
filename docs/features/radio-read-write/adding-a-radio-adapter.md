@@ -131,7 +131,7 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 - [ ] Radio limits module exists or is extended under `src/core/radios/<mfr>/<model>/limits.ts`; radio-io profile imports cardinality from it (protocol offsets may stay in `integrations/radio-io/`)
 - [ ] On failed connect/read/write: always close `BytePipe` / clear UI session so the OS port is not held
 - [ ] Write-strategy flag for UI/docs (`selective-ranges` vs `full-image`); Write always uses in-session overlay
-- [ ] **`prodWriteDisabled`** when direct serial Write is not safe for production deploys — `BuildRadioIoPanel` + `prepareRadioWriteImage` gate via `__BUILD_ENV__` (`hidden` on `prod` only); prefer the radio target's CPS file egress until cleared
+- [ ] **`prodWriteDisabled`** when direct serial Write is not safe for production deploys — `BuildRadioIoPanel` + `prepareRadioWriteImage` gate via `__BUILD_ENV__` (`hidden` on `prod` only, unless [developer mode](../developer-mode/README.md) is on for the device); prefer the radio target's CPS file egress until cleared
 - [ ] Register in `registry.ts`; UI picks only via registry (no `instanceof`)
 
 ### 5. App / RadioBuild + egress integration

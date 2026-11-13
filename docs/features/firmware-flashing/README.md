@@ -50,7 +50,9 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 - **Per-radio prod gate.** Each `FirmwareUpdaterDescriptor` has `prodFlashDisabled`. A gated radio is hidden on the
   prod site and available on next, dev and staging. When no radio is offered, the Tools strip has no flasher entry
   and `/firmware` says the flasher is not available on this site yet. The gate has no Capacitor exemption: the
-  flasher is hidden in the Android app for now.
+  flasher is hidden in the Android app for now. **On prod, [developer mode](../developer-mode/README.md)** (five taps
+  on the footer version) offers the gated radios on that device; the gate is `resolveFirmwareFlashGate` over the one
+  prod gate, and no interlock reads developer mode. The flasher page reads it when it opens.
 
 ```mermaid
 flowchart LR
