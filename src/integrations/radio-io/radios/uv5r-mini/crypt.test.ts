@@ -38,9 +38,8 @@ describe('synthetic image fixture', () => {
     expect(image.every((b) => b === 0xff)).toBe(true);
   });
 
-  it('writes a printable firmware string at 0x1EF0', () => {
+  it('base image is blank (no firmware string inside the channel span)', () => {
     const image = createSyntheticImageBase();
-    const slice = image.subarray(0x1ef0, 0x1ef0 + 12);
-    expect(String.fromCharCode(...slice)).toBe('UV5RMINI-TES');
+    expect(image.every((b) => b === 0xff)).toBe(true);
   });
 });

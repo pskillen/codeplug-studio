@@ -26,8 +26,13 @@ export interface Uv17ProLayout {
   readonly channelSpan: number;
   readonly blockSize: number;
   readonly cloneBlockCount: number;
-  readonly fwVerOffset: number;
-  readonly fwVerLen: number;
+  /**
+   * Offset of a firmware version string in the packed image, when the layout has one outside the channel
+   * records. Unset on the UV-5R Mini and UV-21Pro V2: CHIRP's `_fw_ver_start` (`0x1EF0`) falls inside their
+   * channel span (the second half of slot 248 and the RX/TX of slot 249), so it is channel data, not a string.
+   */
+  readonly fwVerOffset?: number;
+  readonly fwVerLen?: number;
   readonly defaultEncrsym: number;
   readonly baudRate: number;
   readonly baudRateFallback?: number;
@@ -82,8 +87,6 @@ export interface Uv17ProWriteContext {
 
 const BLOCK_SIZE = 0x40;
 const CHANNEL_SIZE = 32;
-const FW_VER_OFFSET = 0x1ef0;
-const FW_VER_LEN = 24;
 
 const SHARED_RETAIN = {
   vfoAOffset: 0x8000,
@@ -123,8 +126,6 @@ export const UV5R_MINI_LAYOUT: Uv17ProLayout = {
   channelSpan: UV5R_MINI_CHANNEL_SPAN,
   blockSize: BLOCK_SIZE,
   cloneBlockCount: cloneBlockCount(UV5R_MINI_MEM_SIZES),
-  fwVerOffset: FW_VER_OFFSET,
-  fwVerLen: FW_VER_LEN,
   defaultEncrsym: 1,
   baudRate: 115_200,
   baudRateFallback: 38_400,
@@ -167,8 +168,6 @@ export const UV21_PRO_V2_LAYOUT: Uv17ProLayout = {
   channelSpan: UV21_CHANNEL_SPAN,
   blockSize: BLOCK_SIZE,
   cloneBlockCount: cloneBlockCount(UV21_MEM_SIZES),
-  fwVerOffset: FW_VER_OFFSET,
-  fwVerLen: FW_VER_LEN,
   defaultEncrsym: 1,
   baudRate: 115_200,
   initDelayMs: 300,

@@ -171,6 +171,99 @@ export function encodeChannelRecord(layout: Uv17ProLayout, dto: RadioChannelDto)
   return out;
 }
 
+/**
+ * Record bytes Studio does not model, decoded for reference (`+0x0C..+0x13` and the spare bits of `+0x0E`
+ * and `+0x0F`). Field names follow CHIRP `baofeng_uv17Pro.py`. Write keeps them only for a channel that is
+ * unchanged since the Read (see {@link encodeChannelRecordOverPrior}); nothing in the library sets them.
+ */
+export interface Uv17ProChannelExtras {
+  /** `+0x0C`: DTMF signal code (CHIRP `scode`). */
+  signalCode: number;
+  /** `+0x0D`: PTT ID mode (CHIRP `pttid`). */
+  pttId: number;
+  /** `+0x0E` bits 5–4: voice scramble (CHIRP `scramble`). */
+  scramble: number;
+  /** `+0x0E` bits 7–6 and 3–2: unnamed in CHIRP. */
+  powerSpareBits: number;
+  /** `+0x0F` bits 5–4: CHIRP `sqmode`, shown as "RX DTMF" (unmute on DTMF plus CTCSS/DCS). */
+  rxDtmf: number;
+  /** `+0x0F` bit 3: busy channel lockout (CHIRP `bcl`). */
+  busyLockout: boolean;
+  /** `+0x0F` bit 0: frequency hopping (CHIRP `fhss`). */
+  fhss: boolean;
+  /** `+0x0F` bits 7 and 1: unnamed in CHIRP. */
+  flagSpareBits: number;
+  /** `+0x10..+0x13`: unnamed in CHIRP. */
+  reserved: Uint8Array;
+}
+
+export function decodeChannelExtras(raw: Uint8Array): Uv17ProChannelExtras {
+  if (raw.length < 0x14) throw new RangeError('Channel record must reach +0x13');
+  const flags = raw[15]!;
+  return {
+    signalCode: raw[12]!,
+    pttId: raw[13]!,
+    scramble: (raw[14]! >> 4) & 0x03,
+    powerSpareBits: raw[14]! & 0xcc,
+    rxDtmf: (flags >> 4) & 0x03,
+    busyLockout: (flags & 0x08) !== 0,
+    fhss: (flags & 0x01) !== 0,
+    flagSpareBits: flags & 0x82,
+    reserved: raw.slice(16, 20),
+  };
+}
+
+function sameTone(a: RadioTone, b: RadioTone): boolean {
+  if (a.kind !== b.kind) return false;
+  if (a.kind === 'ctcss' && b.kind === 'ctcss') return a.hz === b.hz;
+  if (a.kind === 'dcs' && b.kind === 'dcs') {
+    return a.code === b.code && (a.polarity ?? 'N') === (b.polarity ?? 'N');
+  }
+  return true;
+}
+
+/** Whether two decoded records agree on every field Studio models. */
+function sameModelledFields(a: RadioChannelDto, b: RadioChannelDto): boolean {
+  return (
+    a.rxHz === b.rxHz &&
+    a.txHz === b.txHz &&
+    Boolean(a.rxOnly) === Boolean(b.rxOnly) &&
+    sameTone(a.rxTone, b.rxTone) &&
+    sameTone(a.txTone, b.txTone) &&
+    a.powerPercent === b.powerPercent &&
+    a.bandwidth === b.bandwidth &&
+    Boolean(a.scanAdd) === Boolean(b.scanAdd) &&
+    a.wireName === b.wireName
+  );
+}
+
+/**
+ * Encode `dto` over the slot's prior record, whole record at a time.
+ *
+ * - `dto` empty: `0xFF × 32`, unless the prior slot was already empty, when its bytes are kept as read.
+ * - Prior slot live and every modelled field of `dto` (RX, TX / RX only, both tones, power, bandwidth, scan,
+ *   name) decodes the same as the prior: the prior 32 bytes, exactly as read.
+ * - Otherwise (prior empty, a different channel in the slot, or any edit): today's encoding
+ *   ({@link encodeChannelRecord}), with the unmodelled fields at its defaults. A moved or edited channel never
+ *   inherits the prior's PTT ID, RX DTMF, BCL, FHSS, scramble, signal code or reserved bytes.
+ */
+export function encodeChannelRecordOverPrior(
+  layout: Uv17ProLayout,
+  dto: RadioChannelDto,
+  prior: Uint8Array | null | undefined,
+): Uint8Array {
+  const fresh = encodeChannelRecord(layout, dto);
+  if (!prior || prior.length < layout.channelSize) return fresh;
+  const priorEmpty = prior[0] === 0xff;
+  const freshEmpty = fresh[0] === 0xff;
+  if (freshEmpty) return priorEmpty ? prior.slice(0, layout.channelSize) : fresh;
+  if (priorEmpty) return fresh;
+
+  const want = decodeChannelRecord(layout, fresh, dto.slotIndex);
+  const have = decodeChannelRecord(layout, prior, dto.slotIndex);
+  return sameModelledFields(have, want) ? prior.slice(0, layout.channelSize) : fresh;
+}
+
 export function decodeChannelsFromImage(
   layout: Uv17ProLayout,
   image: Uint8Array | MemoryMap,
@@ -190,7 +283,13 @@ export function decodeChannelsFromImage(
   return channels;
 }
 
-/** Write channel DTOs into image (mutates). Clears the full channel span to empty (`0xFF`) first. */
+/**
+ * Write channel DTOs into image (mutates). The image holds the prior Read on entry.
+ *
+ * Every slot in the channel span is rewritten: listed slots via {@link encodeChannelRecordOverPrior},
+ * unlisted slots become empty (`0xFF × 32`, or the prior bytes when the slot was already empty).
+ * With an unchanged library the span comes out byte for byte as read.
+ */
 export function encodeChannelsIntoImage(
   layout: Uv17ProLayout,
   image: Uint8Array | MemoryMap,
@@ -198,13 +297,18 @@ export function encodeChannelsIntoImage(
 ): void {
   const bytes = 'bytes' in image ? image.bytes : image;
   const span = Math.min(bytes.length, layout.channelSpan);
+  const prior = bytes.slice(0, span);
   const fwSlice =
-    bytes.length > layout.fwVerOffset
+    layout.fwVerOffset != null && layout.fwVerLen != null && bytes.length > layout.fwVerOffset
       ? bytes.subarray(layout.fwVerOffset, layout.fwVerOffset + layout.fwVerLen).slice()
       : null;
   bytes.fill(0xff, 0, span);
+  for (let offset = 0; offset + layout.channelSize <= span; offset += layout.channelSize) {
+    if (prior[offset] === 0xff)
+      bytes.set(prior.subarray(offset, offset + layout.channelSize), offset);
+  }
   if (fwSlice) {
-    bytes.set(fwSlice, layout.fwVerOffset);
+    bytes.set(fwSlice, layout.fwVerOffset!);
   }
   for (const dto of channels) {
     const index = dto.slotIndex - 1;
@@ -215,7 +319,11 @@ export function encodeChannelsIntoImage(
     if (offset + layout.channelSize > bytes.length) {
       throw new RangeError('Channel offset exceeds image size');
     }
-    bytes.set(encodeChannelRecord(layout, dto), offset);
+    const priorRecord =
+      offset + layout.channelSize <= span
+        ? prior.subarray(offset, offset + layout.channelSize)
+        : null;
+    bytes.set(encodeChannelRecordOverPrior(layout, dto, priorRecord), offset);
   }
 }
 
@@ -224,6 +332,7 @@ export function readFirmwareFromImage(
   image: Uint8Array | MemoryMap,
 ): string | undefined {
   const bytes = 'bytes' in image ? image.bytes : image;
+  if (layout.fwVerOffset == null || layout.fwVerLen == null) return undefined;
   if (bytes.length <= layout.fwVerOffset) return undefined;
   const slice = bytes.subarray(layout.fwVerOffset);
   let end = 0;

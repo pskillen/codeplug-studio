@@ -24,9 +24,10 @@ How to obtain binary dumps for **directional** codec tests without committing pe
 
 1. Allocate `Uint8Array(0x8240)` filled with `0xFF`.
 2. Place one known-good channel at index 0 using [channel-record.md](channel-record.md) (fixed RX/TX BCD, tones none, High power, FM, name `TEST`).
-3. Optionally set a fake FW string at `0x1EF0` (ASCII, padded).
-4. Keep callsigns / IDs fake.
-5. When adapters land, store under `src/integrations/radio-io/**/__fixtures__/` — never under docs with real operator data.
+3. Keep callsigns / IDs fake.
+4. When adapters land, store under `src/integrations/radio-io/**/__fixtures__/` — never under docs with real operator data.
+
+`uv5r-mini/__fixtures__/realisticPriorImage.ts` is the synthetic "realistic prior Read" used by the Write round-trip tests: every unmodelled byte and bit set, live slots 248 and 249, non-`0xFF` kept regions.
 
 ## What this ticket verified without a dump
 

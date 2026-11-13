@@ -18,7 +18,7 @@ describe('UV-5R Mini hydration', () => {
     expect(isRadioCloneHydrationBag(bag)).toBe(true);
     expect(bag.formatId).toBe('radio-clone');
     expect(bag.retain.radioModelId).toBe('UV5R-Mini');
-    expect(bag.retain.firmware).toBe('UV5RMINI-TEST');
+    expect(bag.retain.firmware).toBeUndefined();
 
     const restored = memoryMapFromUv5rMiniHydration(bag);
     expect(restored.bytes[0x8040]).toBe(0x42);
@@ -82,22 +82,23 @@ describe('UV-5R Mini hydration', () => {
     expect(String.fromCharCode(...merged.bytes.subarray(20, 24))).toBe('HYDR');
   });
 
-  it('encode into image then hydrate still keeps firmware', () => {
+  it('reads no firmware string from live slots 248 and 249', () => {
     const source = createSyntheticImageBase();
-    encodeChannelsIntoImage(source, [
-      {
-        slotIndex: 5,
+    encodeChannelsIntoImage(
+      source,
+      [248, 249].map((slotIndex) => ({
+        slotIndex,
         empty: false,
-        wireName: 'FIVE',
+        wireName: `SLOT${slotIndex}`,
         rxHz: 146_520_000,
         txHz: 146_520_000,
-        rxTone: { kind: 'none' },
-        txTone: { kind: 'none' },
+        rxTone: { kind: 'none' as const },
+        txTone: { kind: 'none' as const },
         powerPercent: 20,
-        bandwidth: 'NFM',
-      },
-    ]);
+        bandwidth: 'NFM' as const,
+      })),
+    );
     const bag = extractUv5rMiniHydration(memoryMapFromBytes(source));
-    expect(bag.retain.firmware).toBe('UV5RMINI-TEST');
+    expect(bag.retain.firmware).toBeUndefined();
   });
 });

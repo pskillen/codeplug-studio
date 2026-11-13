@@ -24,9 +24,8 @@ There is no NeonPlug file path for UV-21Pro V2.
 
 1. Allocate `Uint8Array(0x8380)` filled with `0xFF`.
 2. Place one known-good channel at index 0 using [channel-record.md](channel-record.md) (fixed RX/TX BCD, tones none, High power, FM, name `TEST`).
-3. Optionally set a fake FW string at `0x1EF0` (ASCII, padded).
-4. Keep callsigns / IDs fake.
-5. Store under `src/integrations/radio-io/**/__fixtures__/` — never under docs with real operator data.
+3. Keep callsigns / IDs fake.
+4. Store under `src/integrations/radio-io/**/__fixtures__/` — never under docs with real operator data.
 
 ## What docs verify without a dump
 

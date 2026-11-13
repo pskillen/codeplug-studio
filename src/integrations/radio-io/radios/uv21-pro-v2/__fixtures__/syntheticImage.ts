@@ -12,19 +12,10 @@ export function createBlankSyntheticImage(): Uint8Array {
   return image;
 }
 
-export function writeFakeFirmware(image: Uint8Array, fw = 'UV21PROV2-TEST'): void {
-  const bytes = new TextEncoder().encode(fw.slice(0, UV21_PRO_V2_LAYOUT.fwVerLen));
-  image.fill(
-    0xff,
-    UV21_PRO_V2_LAYOUT.fwVerOffset,
-    UV21_PRO_V2_LAYOUT.fwVerOffset + UV21_PRO_V2_LAYOUT.fwVerLen,
-  );
-  image.set(bytes, UV21_PRO_V2_LAYOUT.fwVerOffset);
-}
-
-/** Blank image with a fake firmware string at 0x1EF0. */
+/**
+ * Base image for tests: blank. The UV-17Pro family has no firmware string in the clone image; CHIRP's
+ * `_fw_ver_start` (`0x1EF0`) is channel data (slots 248 and 249).
+ */
 export function createSyntheticImageBase(): Uint8Array {
-  const image = createBlankSyntheticImage();
-  writeFakeFirmware(image);
-  return image;
+  return createBlankSyntheticImage();
 }
