@@ -460,12 +460,16 @@ The summary always says to check the power-on name: a torn last page also ends i
 **Nothing installed, and the retry.** The two rows marked above say the file is for the other flash layout and that
 nothing was installed. The updater throws `RadioNothingInstalledError` (code `nothingInstalled`) for them, so the
 wizard shows **Nothing was installed** rather than **Recover the radio**, although after a `0x8F` the loader has run.
-A loader `0x83` after cmd 4 stays the recover text; every other result keeps its words. When the release has the other
-layout's file, the wizard offers it once: it prepares that file with the radio's layout set to the file's (the refusal
-is the evidence Studio's layout was wrong, so the layout check passes by construction; every other interlock runs
-again, at Prepare and at the start of `flash()`), keeps the preflight ticks, probe and safety backup, drops the
-reinstall confirm, and returns to update mode. The operator re-enters UPDATE... and presses Connect; Studio never
-resends by itself. With no file for the other layout, or after one retry, nothing more is offered. A crossed pick
+A loader `0x83` after cmd 4 stays the recover text; every other result keeps its words. When the release has a file
+for the other layout **of the same suffix** (NRF or NRFB, `releaseLayouts.variantOfBase`), the wizard offers it once:
+it prepares that file with the radio's layout set to the file's (the refusal is the evidence Studio's layout was wrong,
+so the layout check passes by construction; every other interlock runs again, at Prepare and at the start of
+`flash()`), keeps the preflight ticks, probe and safety backup, drops the reinstall confirm, and returns to update
+mode. The file is picked and built on its own stock base: for a radio without a report, the partner's base is taken as
+the radio's (the answers were wrong); a reported code base stands, so the code-base check refuses a retry that would
+change it. The operator re-enters UPDATE... and presses Connect; Studio never resends by itself. With no such file,
+or after one retry, nothing more is offered. Today's two bases (`L1` NRFB, `L2` NRF) cross the suffix, so no retry is
+offered for them. A crossed pick
 costs the FM presets and volume each time, until the firmware keeps them across a refused update.
 
 ## Recovery

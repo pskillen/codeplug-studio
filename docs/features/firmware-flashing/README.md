@@ -183,10 +183,12 @@ hidden there).
    A refusal before anything was installed (on the UV-5R Mini: the loader's `0x8F`, or the app's `0x83` before any
    erase; the file is for the other flash layout) shows **Nothing was installed** instead, even though the loader ran,
    with the updater's words (the FM presets and volume may have been reset). When the release has a file for the
-   other layout, the panel offers **Enter update mode again with the L2 file** (or L1): Studio prepares that file for
-   that layout and runs every check again, keeps the before-you-flash ticks, probe and safety backup, and goes back to
-   **Enter update mode**. Nothing is sent until you put the radio into update mode and press **Connect and flash**.
-   It is offered once per flash; a second refusal, or a release with no file for the other layout, offers nothing more
+   other layout of the same variant (UV-5R Mini: the same NRF/NRFB suffix), the panel offers **Enter update mode
+   again with the L2 file** (or L1): Studio prepares that file, on its own stock, for that layout and runs every check
+   again, keeps the before-you-flash ticks, probe and safety backup, and goes back to **Enter update mode**. Nothing is
+   sent until you put the radio into update mode and press **Connect and flash**. It is offered once per flash; a
+   second refusal, or a release with no such file (today's Mini releases: their two files differ in suffix), offers
+   nothing more
    ([UV-5R Mini results](../../reference/radios/baofeng/uv-5r-mini/firmware.md#results)).
 
 ## What to expect
