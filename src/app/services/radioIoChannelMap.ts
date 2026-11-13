@@ -128,7 +128,11 @@ function bandwidthFromAnalogProfile(
   return bandwidthFromKHz(analog.bandwidthKHz);
 }
 
-function channelSlotIndexMap(
+/**
+ * Channel id to wire slot for a flat-memory build. The one numbering both the DTOs and every
+ * slot-to-row map (zones, scan stamp) must use.
+ */
+export function channelSlotIndexMap(
   channels: readonly AssembledChannel[],
   channelMemorySlots?: readonly ExportMemorySlot[],
 ): Map<string, number> {

@@ -481,6 +481,56 @@ describe('buildRadioWriteProjection', () => {
     expect(projection.channels[0]?.scanAdd).toBe(true);
   });
 
+  it.each(['radio-io-uv5r-mini', 'radio-io-uv21', 'radio-io-rt95'] as const)(
+    'stamps scanAdd on each slot from its own channel when pinned and unpinned channels mix (%s)',
+    (profileId) => {
+      const mk = (id: string, mhz: number, scanInclusion: 'skip' | 'alwaysScan') =>
+        withExportEligibleDefaults({
+          ...newChannel('p1', id),
+          id,
+          rxFrequency: mhz,
+          txFrequency: mhz,
+          scanInclusion,
+        });
+      // Two unpinned channels ahead of the pinned ones; their old auto slots (1, 2) collide with the pins.
+      const library = emptyLibrary([
+        mk('free-on', 145_500_000, 'alwaysScan'),
+        mk('free-off', 145_525_000, 'skip'),
+        mk('pin-off', 145_550_000, 'skip'),
+        mk('pin-on', 145_575_000, 'alwaysScan'),
+      ]);
+      const { build: baseBuild, egress } = newRadioBuildForProfile('p1', profileId);
+      const build = {
+        ...baseBuild,
+        exportSettings: { defaultScanInclusion: 'skip' as const },
+        channelOverrides: [
+          { libraryEntityId: 'pin-off', orderOrSlot: 1 },
+          { libraryEntityId: 'pin-on', orderOrSlot: 2 },
+        ],
+      };
+      const assembled = assemble(build, library, {
+        formatId: egress.formatId,
+        profileId: egress.profileId,
+      });
+      const projection = buildRadioWriteProjection(assembled, build, library, egress);
+      const bySlot = new Map(projection.channels.map((c) => [c.slotIndex, c]));
+      const wantScan: Record<string, boolean> = {
+        'free-on': true,
+        'free-off': false,
+        'pin-off': false,
+        'pin-on': true,
+      };
+      for (const [id, want] of Object.entries(wantScan)) {
+        const slot = projection.numbersBySourceChannelId.get(id)?.[0];
+        expect(slot, id).toBeDefined();
+        expect(bySlot.get(slot!)?.scanAdd, id).toBe(want);
+      }
+      expect(projection.numbersBySourceChannelId.get('pin-off')).toEqual([1]);
+      expect(projection.numbersBySourceChannelId.get('pin-on')).toEqual([2]);
+      expect(projection.numbersBySourceChannelId.get('free-on')).toEqual([3]);
+    },
+  );
+
   it('uses radio-io default skip when build omits defaultScanInclusion', () => {
     const ch = withExportEligibleDefaults({
       ...newChannel('p1', 'A'),
