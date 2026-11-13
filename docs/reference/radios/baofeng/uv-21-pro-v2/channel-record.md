@@ -20,24 +20,25 @@ There is **no** separate channel-count field in the image — occupancy is per-s
 
 ## Field offsets
 
-| Offset         | Field                  | Encoding / notes                                                                                                                |
-| -------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `0–3`          | RX frequency           | Little-endian BCD; value × 10 → Hz                                                                                              |
-| `4–7`          | TX frequency           | Same; duplex off / RX-only → all `0xFF`                                                                                         |
-| `8–9`          | RX tone                | `u16` LE; `0` / `0xFFFF` = none; `≥ 0x258` = CTCSS × 10; else DTCS index (`index+1` normal, `index+1+0x69` reverse — CHIRP `R`) |
-| `10–11`        | TX tone                | Same                                                                                                                            |
-| `12`           | `scode`                | DTMF signal code (CHIRP). Not modelled; `decodeChannelExtras` reads it                                                          |
-| `13`           | `pttid`                | PTT ID mode (CHIRP). Not modelled                                                                                               |
-| `14` bits 0–1  | `lowpower`             | `0` = High; non-zero → Low (see [power.md](power.md))                                                                           |
-| `14` bits 2–7  | rest of the power byte | Not modelled                                                                                                                    |
-| `15` bit 6     | `wide`                 | **Polarity:** `1` = NFM, `0` = FM (inverted vs classic UV-5R)                                                                   |
-| `15` bit 2     | `scan`                 | `1` = participate in scan (CHIRP not Skip); Studio maps effective scan inclusion on Write                                       |
-| `15` bits 5–4  | `sqmode`               | CHIRP squelch mode. Not modelled                                                                                                |
-| `15` bit 3     | `bcl`                  | CHIRP busy channel lockout. Not modelled                                                                                        |
-| `15` bit 0     | `fhss`                 | CHIRP frequency hopping. Not modelled                                                                                           |
-| `15` bits 7, 1 | unnamed                | Not modelled                                                                                                                    |
-| `16–19`        | unnamed                | CHIRP reserved. Not modelled                                                                                                    |
-| `20–31`        | name                   | 12 chars; stop at `0x00` / `0xFF`                                                                                               |
+| Offset             | Field        | Encoding / notes                                                                                                                |
+| ------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| `0–3`              | RX frequency | Little-endian BCD; value × 10 → Hz                                                                                              |
+| `4–7`              | TX frequency | Same; duplex off / RX-only → all `0xFF`                                                                                         |
+| `8–9`              | RX tone      | `u16` LE; `0` / `0xFFFF` = none; `≥ 0x258` = CTCSS × 10; else DTCS index (`index+1` normal, `index+1+0x69` reverse — CHIRP `R`) |
+| `10–11`            | TX tone      | Same                                                                                                                            |
+| `12`               | `scode`      | DTMF signal code (CHIRP). Not modelled; `decodeChannelExtras` reads it                                                          |
+| `13`               | `pttid`      | PTT ID mode (CHIRP). Not modelled                                                                                               |
+| `14` bits 0–1      | `lowpower`   | `0` = High; non-zero → Low (see [power.md](power.md))                                                                           |
+| `14` bits 5–4      | `scramble`   | CHIRP voice scramble. Not modelled                                                                                              |
+| `14` bits 7–6, 3–2 | unnamed      | Not modelled                                                                                                                    |
+| `15` bit 6         | `wide`       | **Polarity:** `1` = NFM, `0` = FM (inverted vs classic UV-5R)                                                                   |
+| `15` bit 2         | `scan`       | `1` = participate in scan (CHIRP not Skip); Studio maps effective scan inclusion on Write                                       |
+| `15` bits 5–4      | `sqmode`     | CHIRP shows it as **RX DTMF**: the speaker opens only on DTMF plus CTCSS/DCS. Not modelled                                      |
+| `15` bit 3         | `bcl`        | CHIRP busy channel lockout. Not modelled                                                                                        |
+| `15` bit 0         | `fhss`       | CHIRP frequency hopping. Not modelled                                                                                           |
+| `15` bits 7, 1     | unnamed      | Not modelled                                                                                                                    |
+| `16–19`            | unnamed      | CHIRP reserved. Not modelled                                                                                                    |
+| `20–31`            | name         | 12 chars; stop at `0x00` / `0xFF`                                                                                               |
 
 ## Power
 

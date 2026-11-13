@@ -181,10 +181,12 @@ export interface Uv17ProChannelExtras {
   signalCode: number;
   /** `+0x0D`: PTT ID mode (CHIRP `pttid`). */
   pttId: number;
-  /** `+0x0E` bits 7–2: the power byte above the two bits Studio reads as High / Low. */
-  powerHighBits: number;
-  /** `+0x0F` bits 5–4: squelch mode (CHIRP `sqmode`). */
-  squelchMode: number;
+  /** `+0x0E` bits 5–4: voice scramble (CHIRP `scramble`). */
+  scramble: number;
+  /** `+0x0E` bits 7–6 and 3–2: unnamed in CHIRP. */
+  powerSpareBits: number;
+  /** `+0x0F` bits 5–4: CHIRP `sqmode`, shown as "RX DTMF" (unmute on DTMF plus CTCSS/DCS). */
+  rxDtmf: number;
   /** `+0x0F` bit 3: busy channel lockout (CHIRP `bcl`). */
   busyLockout: boolean;
   /** `+0x0F` bit 0: frequency hopping (CHIRP `fhss`). */
@@ -201,8 +203,9 @@ export function decodeChannelExtras(raw: Uint8Array): Uv17ProChannelExtras {
   return {
     signalCode: raw[12]!,
     pttId: raw[13]!,
-    powerHighBits: raw[14]! & 0xfc,
-    squelchMode: (flags >> 4) & 0x03,
+    scramble: (raw[14]! >> 4) & 0x03,
+    powerSpareBits: raw[14]! & 0xcc,
+    rxDtmf: (flags >> 4) & 0x03,
     busyLockout: (flags & 0x08) !== 0,
     fhss: (flags & 0x01) !== 0,
     flagSpareBits: flags & 0x82,

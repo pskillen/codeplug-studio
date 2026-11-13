@@ -149,15 +149,17 @@ describe('UV-17Pro record merge over the prior (#1578)', () => {
     const extras = decodeChannelExtras(priorRecord);
     expect(extras.signalCode).toBe(0x03);
     expect(extras.pttId).toBe(0x02);
-    expect(extras.powerHighBits).toBe(0x00);
-    expect(extras.squelchMode).toBe(0);
+    expect(extras.scramble).toBe(0);
+    expect(extras.powerSpareBits).toBe(0);
+    expect(extras.rxDtmf).toBe(0);
     expect(extras.busyLockout).toBe(true);
     expect(extras.fhss).toBe(false);
     expect(extras.flagSpareBits).toBe(0);
     expect([...extras.reserved]).toEqual([0x11, 0x22, 0x33, 0x44]);
     const other = decodeChannelExtras(encodeSyntheticRecord(SYNTHETIC_RECORDS[3]!));
-    expect(other.powerHighBits).toBe(0x10);
-    expect(other.squelchMode).toBe(2);
+    expect(other.scramble).toBe(1);
+    expect(other.powerSpareBits).toBe(0);
+    expect(other.rxDtmf).toBe(2);
     expect(other.fhss).toBe(true);
   });
 
@@ -205,10 +207,10 @@ describe('UV-17Pro record merge over the prior (#1578)', () => {
     const before = decodeChannelExtras(occupant);
     expect(before).toMatchObject({
       pttId: 3,
-      squelchMode: 3,
+      rxDtmf: 3,
       busyLockout: true,
       fhss: true,
-      powerHighBits: 0x30,
+      scramble: 3,
     });
 
     const shifted = decodeChannelRecord(layout, encodeSyntheticRecord(SYNTHETIC_RECORDS[5]!), 1);
@@ -218,10 +220,10 @@ describe('UV-17Pro record merge over the prior (#1578)', () => {
     expect(decodeChannelExtras(out)).toMatchObject({
       signalCode: 1,
       pttId: 0,
-      squelchMode: 0,
+      rxDtmf: 0,
       busyLockout: false,
       fhss: false,
-      powerHighBits: 0,
+      scramble: 0,
     });
   });
 
