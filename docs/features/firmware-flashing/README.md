@@ -123,15 +123,16 @@ hidden there).
    version stamp and the result hashes. A failure, such as a patch made for different stock, stops here; nothing is
    sent.
    For a radio whose firmware comes in more than one flash layout (the UV-5R Mini; the factory firmware's packing,
-   not the board), the step first finds the radio's layout and prepares the release's file for that layout. A release
-   with no file for it shows "Not available in this release" and prepares nothing; one with no file for the other
-   layout says "This release has only the L2 file. If the radio refuses it, Studio has no file for the other flash
-   layout to try." **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers;
-   with no report, or when the read fails, the step asks the Firmware and Hardware lines of its Radio Info screen as
-   dropdowns of the supported values (Firmware `V0.04`, `V0.27`, `Other`; Hardware `V1.7`, `Other`; `Other` is
-   refused), under a warning that a Firmware line that doesn't match the radio is refused with nothing installed but
-   may reset its FM presets and volume
-   ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md#the-radio-report)). Studio never
+   not the board), the step first finds the radio's stock base (UV-5R Mini: suffix and Firmware version) and layout,
+   and prepares the release's file for exactly that; it never offers the nearest build. A release with no file for it
+   shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." and prepares nothing; one
+   with no other file for this radio says "If the radio refuses this L2 file, this release has no other file for this
+   radio to try." **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers;
+   with no report, or when the read fails, the step asks three dropdowns of the supported values: Firmware (`V0.04`,
+   `V0.27`, `Other`) and Hardware (`V1.7`, `Other`) from Radio Info, and the suffix (`NRF`, `NRFB`, `Other`) from the
+   start-up screen shown while holding `8`. `Other` is refused, and so is a combination with no build. A warning says a
+   pick that doesn't match the radio is refused with nothing installed but may reset its FM presets and volume
+   ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md#radio-info)). Studio never
    changes a radio's code base: the radio's interlocks refuse a file built on another one.
    When the radio already runs the image's build (on the UV-5R Mini: the build name the radio reports is the image's,
    or a to-stock file for a radio that names no build), the step shows a warning instead: writing it again rewrites the

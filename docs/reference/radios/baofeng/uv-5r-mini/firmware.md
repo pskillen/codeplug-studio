@@ -277,24 +277,42 @@ code-base check refuses a file on the other base.
 
 ### Radio Info
 
-With no radio report, the wizard asks for two lines of the radio's Radio Info screen on one screen, `Firmware` and
-`Hardware`, as dropdowns of the supported values. The Firmware line decides the layout, and with it the code base; the
-Hardware line is the board variant, asked only to refuse a board an update hasn't been proven on:
+With no radio report, the wizard asks three things on one screen, as dropdowns of the supported values. Studio can't
+read any of them over the K-plug, so nothing is pre-filled for a stock radio.
 
-| Firmware | Hardware | Result                                                                                   |
-| -------- | -------- | ---------------------------------------------------------------------------------------- |
-| `V0.04`  | `V1.7`   | `L1` (v0.04)                                                                             |
-| `V0.27`  | `V1.7`   | `L2` (v0.27)                                                                             |
-| `Other`  | `V1.7`   | Refused: "Studio doesn't support this radio's Firmware version; nothing was sent."       |
-| Any      | `Other`  | Refused: "Studio hasn't been proven on this radio's Hardware version; nothing was sent." |
+- **Firmware** (`V0.04`, `V0.27`, `Other`) and **Hardware** (`V1.7`, `Other`): "From Radio Info (MENU → Radio Info)."
+- **Suffix** (`NRF`, `NRFB`, `Other`): not on Radio Info. Its help says: switch the radio off, then hold `8` while
+  switching it on: for about a second it shows `5RMINI NRF` or `5RMINI NRFB`, then boots normally; repeat it, or film
+  the screen with your phone, if you miss it.
 
-A pick whose layout the chosen release has no file for shows "Not available in this release" and stops before
-anything is prepared. A release with only the `L2` file (1.0.0) stops there for `V0.04`.
+NRF and NRFB radios get separate builds, so the suffix and the Firmware version together name the radio's stock base,
+and with it the flash layout. The Hardware line is the board version, asked only to refuse a board an update hasn't
+been proven on:
 
-Above the dropdowns, a warning: "Pick exactly what the radio's Radio Info screen shows. If the Firmware line you pick
-doesn't match the radio, the radio refuses the file and nothing is installed, but its FM presets and volume may be
-reset." That is what a wrong pick does: the loader refuses it with `0x8F` and erases no firmware, but the stock update
-stage has already reset the FM presets and volume. The answers live in the wizard's memory only.
+| Firmware | Suffix  | Hardware | Result                                                                                   |
+| -------- | ------- | -------- | ---------------------------------------------------------------------------------------- |
+| `V0.04`  | `NRFB`  | `V1.7`   | `nrfb-v0.04`, `L1`                                                                       |
+| `V0.27`  | `NRF`   | `V1.7`   | `nrf-v0.27`, `L2`                                                                        |
+| `V0.04`  | `NRF`   | `V1.7`   | Refused: "There is no MM9PDY build for this radio (NRF V0.04) yet; nothing was sent."    |
+| `V0.27`  | `NRFB`  | `V1.7`   | Refused the same way: no build for `NRFB V0.27`                                          |
+| `Other`  | Any     | `V1.7`   | Refused: "Studio doesn't support this radio's Firmware version; nothing was sent."       |
+| Listed   | `Other` | `V1.7`   | Refused: "Studio doesn't support this radio's suffix; nothing was sent."                 |
+| Any      | Any     | `Other`  | Refused: "Studio hasn't been proven on this radio's Hardware version; nothing was sent." |
+
+A release row is identified by its whole base (its stock version, and the optional row `base`), not by `layout` alone.
+Prepare picks the file on the radio's base and layout and never offers the nearest build: a base the chosen release
+has no file for shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." and stops
+before anything is prepared. In 1.0.0 only `NRF` + `V0.27` + `V1.7` gets a file.
+
+Above the dropdowns, a warning: "Pick exactly what the radio shows. If what you pick doesn't match
+the radio, the radio refuses the file and nothing is installed, but its FM presets and volume may be reset." For the
+two bases Studio knows that is what a wrong pick does: a combination with no base is refused by Studio, and one that
+names the other base names the other flash layout, which the loader refuses with `0x8F` and erases no firmware, though
+the stock update stage has already reset the FM presets and volume. The answers live in the wizard's memory only.
+
+**Retry partner.** After a refusal before anything was installed, the retry goes only to a file of the same suffix
+(`releaseLayouts.variantOfBase`). Today's `L1` file is NRFB and the `L2` file NRF, so the retry always crosses the
+suffix and no partner is offered.
 Code: `src/core/radios/baofeng/uv-5r-mini/radioInfo.ts`, rendered by the Prepare step from
 `StockFirmwareDescriptor.radioLayout`.
 

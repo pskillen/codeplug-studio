@@ -68,17 +68,22 @@ each has an optional `layout` field, `"L1"` or `"L2"`:
 
 - **Without `layout`**, a Mini row takes its layout from the patch's build name (`mm9pdy-L1-…`, `mm9pdy-L2-…`) once
   the patch is downloaded. A row whose `layout` disagrees with its build name, or that has neither, is refused.
-- **Only `L1` and `L2`** are release layouts: the `L1` file is built on v0.04 and the `L2` file on v0.27, since a
-  radio's code base never changes. A release may ship only one of them. `V4` (`mm9pdy-V4-…`) is retired: a `V4` row
-  makes the index invalid, and a `V4` file from disk is refused.
-- **Other radios' rows carry no `layout`**; a `layout` on one is a malformed row.
-- Studio lists a Mini release once per version and loads every row of that version. Prepare picks the file for the
-  radio's layout (from its radio report or Radio Info screen) and keeps the other. A release with one row has no file
-  for the other layout, and Prepare says so.
+- **Only `L1` and `L2`** are release layouts. NRF and NRFB radios get separate builds and a radio's code base never
+  changes, so a row is identified by its whole stock base, not by `layout` alone: today `nrfb-v0.04` (`L1`) and
+  `nrf-v0.27` (`L2`). A release may ship only some bases (1.0.0: `nrf-v0.27` only). `V4` (`mm9pdy-V4-…`) is retired: a
+  `V4` row makes the index invalid, and a `V4` file from disk is refused.
+- **`base`** (optional, Mini only), e.g. `"base": "nrf-v0.27"`: the row's stock base. It must be a base Studio knows
+  and the base of the row's `stockVersion`; a downloaded patch whose `base` disagrees with it, or with its stock's base,
+  is refused. One row per layout and stock version.
+- **Other radios' rows carry no `layout` or `base`**; either on one is a malformed row.
+- Studio lists a Mini release once per version and loads every row of that version. Prepare picks the file on the
+  radio's base and layout (from its radio report, or its Firmware, suffix and Hardware answers) and never the nearest
+  build; a radio with no file in the release is told there is no MM9PDY build for it yet. The retry after a refusal
+  goes only to a file of the same suffix.
 - The patch-file dropzone takes one file, or the release's two files at once (layouts from their build names). Two
   files must be one release: the same version, both published or both not, one per layout.
 
-The public repository's index format doc and `tools/release_index.py` don't have the `layout` field yet.
+The public repository's index format doc and `tools/release_index.py` don't have the `layout` and `base` fields yet.
 
 ### RT95 main board rows
 
