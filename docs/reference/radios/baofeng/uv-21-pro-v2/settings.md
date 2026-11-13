@@ -29,14 +29,14 @@ Same family layout as UV-5R Mini — squelch, save mode, VOX, backlight, dual wa
 
 ## Studio upload behaviour
 
-| Behaviour             | Studio Web Serial                                                                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Full clone **read**   | All four `MEM_*` regions → packed `0x8380` (`radio-clone` hydration)                                                                        |
-| Full clone **upload** | **Yes** — `writeStrategy: 'full-image'`                                                                                                     |
-| Channel write         | Merges channels into hydrated image — **full channel span cleared** to empty then encoded from build; **all four** `MEM_*` regions uploaded |
-| Settings write        | Retained from Read via full-image upload (no separate settings RMW)                                                                         |
+| Behaviour             | Studio Web Serial                                                                                                                         |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Full clone **read**   | All four `MEM_*` regions → packed `0x8380` (`radio-clone` hydration)                                                                      |
+| Full clone **upload** | **Yes** — `writeStrategy: 'full-image'`                                                                                                   |
+| Channel write         | Encodes the build's channels over the Read (unmodelled bytes kept; slots not in the build emptied); **all four** `MEM_*` regions uploaded |
+| Settings write        | Retained from Read via full-image upload (no separate settings RMW)                                                                       |
 
-**Channel encode contract:** Write clears the packed channel span (`0x7D00`) to empty (`0xFF`) and encodes only slots from the build projection (firmware string at `0x1EF0` preserved inside the span).
+**Channel encode contract:** Write encodes the build's slots over the Read, keeping the bytes Studio does not model, and empties the rest of the span (`0x7D00`). See [channel-record.md — What Write keeps](channel-record.md#what-write-keeps).
 
 ## Packed `0x8040` vs radio address
 

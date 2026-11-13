@@ -18,7 +18,7 @@ export interface Uv17ProRegionManifestEntry {
 export const UV17PRO_WRITTEN_FROM_BUILD_LABELS: readonly string[] = ['Channels'] as const;
 
 const REPLACED_ROLE_COPY =
-  'Replaced from your build on Write — the full channel span is cleared then encoded from your library; unlisted slots become empty';
+  'Replaced from your build on Write — each channel is encoded from your library over what was read, keeping settings Studio does not edit; unlisted slots become empty';
 const KEPT_ROLE_COPY = 'Kept from Read from radio — not changed when you write from your build';
 
 export function buildUv17ProRegionManifest(

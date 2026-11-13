@@ -45,20 +45,20 @@ Sum: `0x8040 + 0x40 + 0x2C0 + 0x40 = 0x8380`.
 
 ## Notable packed-image offsets
 
-| Offset     | Size / role                                                                                                                                     |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `0x0000` … | Channel records (`1000 × 32 = 0x7D00`)                                                                                                          |
-| `0x1EF0`   | Firmware version string (`_fw_ver_start`) — **overlays channel span**; preserved via Read hydration unless a channel Write overwrites that slot |
-| `0x8000`   | VFO A (32 bytes)                                                                                                                                |
-| `0x8020`   | VFO B (32 bytes)                                                                                                                                |
-| `0x8040`   | Settings (64 bytes) — see [settings.md](settings.md)                                                                                            |
-| `0x8080`   | ANI (`_mem_params.ani`)                                                                                                                         |
-| `0x80A0`   | PTT ID (`_mem_params.pttid`)                                                                                                                    |
-| `0x81E0`   | Upcode                                                                                                                                          |
-| `0x8210`   | Downcode                                                                                                                                        |
-| `0x8220`   | Modes / end-format area (CHIRP `_end_fmt` seeks here)                                                                                           |
-| `0x8280`   | Name bank (`_mem_params.names`) — CHIRP bank-name support (not modelled in Studio v1)                                                           |
-| `0x8340` … | Fourth `MEM_*` region (radio `0xD000`) — retain on Write                                                                                        |
+| Offset     | Size / role                                                                                                                                                                                   |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0x0000` … | Channel records (`1000 × 32 = 0x7D00`)                                                                                                                                                        |
+| `0x1EF0`   | Inside slot 248 (second half); `0x1F00` starts slot 249. CHIRP's `_fw_ver_start` points here, but with 32-byte records from `0x0000` it is channel data, and Studio reads no firmware from it |
+| `0x8000`   | VFO A (32 bytes)                                                                                                                                                                              |
+| `0x8020`   | VFO B (32 bytes)                                                                                                                                                                              |
+| `0x8040`   | Settings (64 bytes) — see [settings.md](settings.md)                                                                                                                                          |
+| `0x8080`   | ANI (`_mem_params.ani`)                                                                                                                                                                       |
+| `0x80A0`   | PTT ID (`_mem_params.pttid`)                                                                                                                                                                  |
+| `0x81E0`   | Upcode                                                                                                                                                                                        |
+| `0x8210`   | Downcode                                                                                                                                                                                      |
+| `0x8220`   | Modes / end-format area (CHIRP `_end_fmt` seeks here)                                                                                                                                         |
+| `0x8280`   | Name bank (`_mem_params.names`) — CHIRP bank-name support (not modelled in Studio v1)                                                                                                         |
+| `0x8340` … | Fourth `MEM_*` region (radio `0xD000`) — retain on Write                                                                                                                                      |
 
 **Address caveat:** Packed image offset `0x8040` is radio address **`0x9000`** (second `MEM_*` region). Studio uses full-image hydrated upload with the correct packed ↔ radio map — see [settings.md](settings.md).
 
