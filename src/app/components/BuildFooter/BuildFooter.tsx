@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Anchor, Group, Notification, Portal, Text, UnstyledButton } from '@mantine/core';
 import { Link } from 'react-router-dom';
+import { isDeveloperModeOn } from '@integrations/preferences/developerMode.ts';
 import { useDeveloperMode } from '../../hooks/useDeveloperMode.ts';
 import { GITHUB_ISSUES_URL, GITHUB_REPO_URL } from '../../lib/githubLinks.ts';
 import {
+  developerModeToggleMessage,
   INITIAL_VERSION_TAP_STATE,
   registerVersionTap,
   versionTapMessage,
@@ -39,8 +41,11 @@ function VersionTapTarget() {
   const onTap = () => {
     const { state, result } = registerVersionTap(tapState.current, Date.now());
     tapState.current = state;
-    const text = versionTapMessage(result, developerMode);
-    if (result.kind === 'toggle') setDeveloperMode(!developerMode);
+    let text = versionTapMessage(result, developerMode);
+    if (result.kind === 'toggle') {
+      setDeveloperMode(!developerMode);
+      text = developerModeToggleMessage(developerMode, isDeveloperModeOn());
+    }
     if (text) setToast({ text, id: Date.now() });
   };
 

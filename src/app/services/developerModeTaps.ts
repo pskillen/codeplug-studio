@@ -42,3 +42,12 @@ export function versionTapMessage(result: VersionTapResult, onBefore: boolean): 
   const taps = result.remaining === 1 ? '1 more tap' : `${result.remaining} more taps`;
   return `${taps} to turn ${onBefore ? 'off' : 'on'} developer mode`;
 }
+
+/**
+ * Toast text after a toggle, from developer mode as stored before and after it. When storage refused the change
+ * (private mode, blocked storage) the two match, and the toast says so rather than claiming the switch flipped.
+ */
+export function developerModeToggleMessage(before: boolean, after: boolean): string {
+  if (after === before) return 'Developer mode could not be changed: this browser blocks storage';
+  return after ? 'Developer mode is on' : 'Developer mode is off';
+}

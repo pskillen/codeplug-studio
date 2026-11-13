@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEVELOPER_MODE_TAP_GAP_MS,
+  developerModeToggleMessage,
   INITIAL_VERSION_TAP_STATE,
   registerVersionTap,
   versionTapMessage,
@@ -56,5 +57,15 @@ describe('versionTapMessage', () => {
     );
     expect(versionTapMessage({ kind: 'toggle' }, false)).toBe('Developer mode is on');
     expect(versionTapMessage({ kind: 'toggle' }, true)).toBe('Developer mode is off');
+  });
+});
+
+describe('developerModeToggleMessage', () => {
+  it('reports the stored state after the toggle, or that it could not change', () => {
+    expect(developerModeToggleMessage(false, true)).toBe('Developer mode is on');
+    expect(developerModeToggleMessage(true, false)).toBe('Developer mode is off');
+    expect(developerModeToggleMessage(false, false)).toBe(
+      'Developer mode could not be changed: this browser blocks storage',
+    );
   });
 });

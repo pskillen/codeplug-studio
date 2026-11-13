@@ -1,0 +1,48 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { MantineProvider } from '@mantine/core';
+import { MemoryRouter } from 'react-router-dom';
+import { DEVELOPER_MODE_KEY } from '@integrations/preferences/developerMode.ts';
+import BuildFooter from './BuildFooter.tsx';
+
+function renderFooter() {
+  return render(
+    <MantineProvider>
+      <MemoryRouter>
+        <BuildFooter />
+      </MemoryRouter>
+    </MantineProvider>,
+  );
+}
+
+function tapVersion(times: number) {
+  const version = screen.getByTestId('build-version');
+  for (let i = 0; i < times; i += 1) fireEvent.click(version);
+}
+
+describe('BuildFooter developer-mode gesture', () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it('turns developer mode on with five taps and says so', () => {
+    renderFooter();
+    tapVersion(5);
+    expect(localStorage.getItem(DEVELOPER_MODE_KEY)).toBe('on');
+    expect(screen.getByRole('status')).toHaveTextContent('Developer mode is on');
+  });
+
+  it('does not claim developer mode is on when storage refuses the write', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError');
+    });
+    renderFooter();
+    tapVersion(5);
+    expect(localStorage.getItem(DEVELOPER_MODE_KEY)).toBeNull();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Developer mode could not be changed: this browser blocks storage',
+    );
+  });
+});
