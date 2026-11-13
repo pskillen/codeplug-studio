@@ -33,7 +33,7 @@ The build's Web Serial profile decides whether Backup and Restore carry the MM9P
   plan (clone blocks and table frames, all inside `0xC000`-`0xCFC0` for the table) before the handshake, and the
   model check runs before any frame. A region named `zones` at any address or size other than `0xC000` / 4096 is
   refused.
-- On the production site the MM9PDY target's Restore is disabled like its Write. Backup stays available.
+- The MM9PDY target's Restore follows its Write and is available on every site, production included.
 - A Restore of a stock backup on the MM9PDY profile writes the clone only; the radio's table stays as it was.
 
 ## Restore path
