@@ -171,6 +171,125 @@ export function encodeChannelRecord(layout: Uv17ProLayout, dto: RadioChannelDto)
   return out;
 }
 
+/**
+ * Record bytes Studio does not model, decoded for reference (`+0x0C..+0x13` and the spare bits of `+0x0E`
+ * and `+0x0F`). Field names follow CHIRP `baofeng_uv17Pro.py`. Write carries them over from the prior Read;
+ * nothing in the library sets them.
+ */
+export interface Uv17ProChannelExtras {
+  /** `+0x0C`: DTMF signal code (CHIRP `scode`). */
+  signalCode: number;
+  /** `+0x0D`: PTT ID mode (CHIRP `pttid`). */
+  pttId: number;
+  /** `+0x0E` bits 7–2: the power byte above the two bits Studio reads as High / Low. */
+  powerHighBits: number;
+  /** `+0x0F` bits 5–4: squelch mode (CHIRP `sqmode`). */
+  squelchMode: number;
+  /** `+0x0F` bit 3: busy channel lockout (CHIRP `bcl`). */
+  busyLockout: boolean;
+  /** `+0x0F` bit 0: frequency hopping (CHIRP `fhss`). */
+  fhss: boolean;
+  /** `+0x0F` bits 7 and 1: unnamed in CHIRP. */
+  flagSpareBits: number;
+  /** `+0x10..+0x13`: unnamed in CHIRP. */
+  reserved: Uint8Array;
+}
+
+export function decodeChannelExtras(raw: Uint8Array): Uv17ProChannelExtras {
+  if (raw.length < 0x14) throw new RangeError('Channel record must reach +0x13');
+  const flags = raw[15]!;
+  return {
+    signalCode: raw[12]!,
+    pttId: raw[13]!,
+    powerHighBits: raw[14]! & 0xfc,
+    squelchMode: (flags >> 4) & 0x03,
+    busyLockout: (flags & 0x08) !== 0,
+    fhss: (flags & 0x01) !== 0,
+    flagSpareBits: flags & 0x82,
+    reserved: raw.slice(16, 20),
+  };
+}
+
+function sameTone(a: RadioTone, b: RadioTone): boolean {
+  if (a.kind !== b.kind) return false;
+  if (a.kind === 'ctcss' && b.kind === 'ctcss') return a.hz === b.hz;
+  if (a.kind === 'dcs' && b.kind === 'dcs') {
+    return a.code === b.code && (a.polarity ?? 'N') === (b.polarity ?? 'N');
+  }
+  return true;
+}
+
+/**
+ * One modelled field of the record: whether two decoded records agree on it, and how to copy it from a
+ * fresh encoding into the output. Bytes and bits outside every group are never touched by a merge.
+ */
+interface ModelledField {
+  same(a: RadioChannelDto, b: RadioChannelDto): boolean;
+  copy(out: Uint8Array, fresh: Uint8Array): void;
+}
+
+function copyBytes(from: number, to: number): ModelledField['copy'] {
+  return (out, fresh) => out.set(fresh.subarray(from, to), from);
+}
+
+function copyBits(byte: number, mask: number): ModelledField['copy'] {
+  return (out, fresh) => {
+    out[byte] = (out[byte]! & ~mask) | (fresh[byte]! & mask);
+  };
+}
+
+const MODELLED_FIELDS: readonly ModelledField[] = [
+  { same: (a, b) => a.rxHz === b.rxHz, copy: copyBytes(0, 4) },
+  {
+    same: (a, b) => a.txHz === b.txHz && Boolean(a.rxOnly) === Boolean(b.rxOnly),
+    copy: copyBytes(4, 8),
+  },
+  { same: (a, b) => sameTone(a.rxTone, b.rxTone), copy: copyBytes(8, 10) },
+  { same: (a, b) => sameTone(a.txTone, b.txTone), copy: copyBytes(10, 12) },
+  { same: (a, b) => a.powerPercent === b.powerPercent, copy: copyBits(14, 0x03) },
+  { same: (a, b) => a.bandwidth === b.bandwidth, copy: copyBits(15, UV17PRO_WIDE_BIT) },
+  {
+    same: (a, b) => Boolean(a.scanAdd) === Boolean(b.scanAdd),
+    copy: copyBits(15, UV17PRO_SCAN_BIT),
+  },
+  { same: (a, b) => a.wireName === b.wireName, copy: copyBytes(20, 32) },
+];
+
+/**
+ * Encode `dto` over the slot's prior record.
+ *
+ * - `dto` empty: `0xFF × 32`, unless the prior slot was already empty, when its bytes are kept as read.
+ * - Prior slot empty (or none): today's encoding ({@link encodeChannelRecord}).
+ * - Prior slot live: the prior record, with each modelled field that differs (compared as decoded) taken
+ *   from today's encoding. An unchanged channel comes out byte for byte as read; a changed one keeps the
+ *   prior's unmodelled bytes and bits (`+0x0C..+0x13`, spare bits of `+0x0E`/`+0x0F`, and the raw bytes of
+ *   every unchanged field, such as tone `0xFFFF` or name padding).
+ */
+export function encodeChannelRecordOverPrior(
+  layout: Uv17ProLayout,
+  dto: RadioChannelDto,
+  prior: Uint8Array | null | undefined,
+): Uint8Array {
+  const fresh = encodeChannelRecord(layout, dto);
+  if (!prior || prior.length < layout.channelSize) return fresh;
+  const priorEmpty = prior[0] === 0xff;
+  const freshEmpty = fresh[0] === 0xff;
+  if (freshEmpty) return priorEmpty ? prior.slice(0, layout.channelSize) : fresh;
+  if (priorEmpty) return fresh;
+
+  const want = decodeChannelRecord(layout, fresh, dto.slotIndex);
+  const out = prior.slice(0, layout.channelSize);
+  // Two passes: a field can decode differently once another is copied (TX `00×4` reads as "same as RX").
+  for (let pass = 0; pass < 2; pass++) {
+    const have = decodeChannelRecord(layout, out, dto.slotIndex);
+    for (const field of MODELLED_FIELDS) {
+      if (!field.same(have, want)) field.copy(out, fresh);
+    }
+  }
+  const check = decodeChannelRecord(layout, out, dto.slotIndex);
+  return MODELLED_FIELDS.every((f) => f.same(check, want)) ? out : fresh;
+}
+
 export function decodeChannelsFromImage(
   layout: Uv17ProLayout,
   image: Uint8Array | MemoryMap,
@@ -190,7 +309,13 @@ export function decodeChannelsFromImage(
   return channels;
 }
 
-/** Write channel DTOs into image (mutates). Clears the full channel span to empty (`0xFF`) first. */
+/**
+ * Write channel DTOs into image (mutates). The image holds the prior Read on entry.
+ *
+ * Every slot in the channel span is rewritten: listed slots via {@link encodeChannelRecordOverPrior},
+ * unlisted slots become empty (`0xFF × 32`, or the prior bytes when the slot was already empty).
+ * With an unchanged library the span comes out byte for byte as read.
+ */
 export function encodeChannelsIntoImage(
   layout: Uv17ProLayout,
   image: Uint8Array | MemoryMap,
@@ -198,11 +323,16 @@ export function encodeChannelsIntoImage(
 ): void {
   const bytes = 'bytes' in image ? image.bytes : image;
   const span = Math.min(bytes.length, layout.channelSpan);
+  const prior = bytes.slice(0, span);
   const fwSlice =
     layout.fwVerOffset != null && layout.fwVerLen != null && bytes.length > layout.fwVerOffset
       ? bytes.subarray(layout.fwVerOffset, layout.fwVerOffset + layout.fwVerLen).slice()
       : null;
   bytes.fill(0xff, 0, span);
+  for (let offset = 0; offset + layout.channelSize <= span; offset += layout.channelSize) {
+    if (prior[offset] === 0xff)
+      bytes.set(prior.subarray(offset, offset + layout.channelSize), offset);
+  }
   if (fwSlice) {
     bytes.set(fwSlice, layout.fwVerOffset!);
   }
@@ -215,7 +345,11 @@ export function encodeChannelsIntoImage(
     if (offset + layout.channelSize > bytes.length) {
       throw new RangeError('Channel offset exceeds image size');
     }
-    bytes.set(encodeChannelRecord(layout, dto), offset);
+    const priorRecord =
+      offset + layout.channelSize <= span
+        ? prior.subarray(offset, offset + layout.channelSize)
+        : null;
+    bytes.set(encodeChannelRecordOverPrior(layout, dto, priorRecord), offset);
   }
 }
 
