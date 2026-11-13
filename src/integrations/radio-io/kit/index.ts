@@ -7,6 +7,7 @@ export {
   RadioIoError,
   type RadioIoErrorCode,
   RadioNoResponseError,
+  RadioNothingInstalledError,
   RadioProtocolError,
   RadioTimeoutError,
   RadioUnsupportedError,

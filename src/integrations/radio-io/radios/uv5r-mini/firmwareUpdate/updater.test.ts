@@ -3,7 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 
 import { FirmwareFlashError } from '../../../firmware/errors.ts';
-import { RadioAlreadyInstalledError, RadioConfirmRequiredError } from '../../../kit/errors.ts';
+import {
+  RadioAlreadyInstalledError,
+  RadioConfirmRequiredError,
+  RadioNothingInstalledError,
+} from '../../../kit/errors.ts';
 import type {
   FirmwareFlashProgress,
   FirmwareFlashResult,
@@ -18,7 +22,7 @@ import {
 } from './__fixtures__/mockUv5rMini.ts';
 import { UV5RMINI_FW_CMD, UV5RMINI_FW_LOADER_BAUD } from './frames.ts';
 import * as interlocks from './interlocks.ts';
-import { createUv5rMiniFirmwareUpdater, UV5RMINI_MSG } from './updater.ts';
+import { createUv5rMiniFirmwareUpdater, describeUv5rMiniResult, UV5RMINI_MSG } from './updater.ts';
 
 // The mock radio serves a synthetic image, not a real `.ufw`: the image interlocks have their own tests
 // (interlocks.test.ts) and a spy here records that the updater runs them.
@@ -39,6 +43,62 @@ const imageFor = (mock: MockUv5rMini): PreparedFirmwareImage =>
     sha256: {},
     verifyHint: 'x',
   }) as unknown as PreparedFirmwareImage;
+
+describe('describeUv5rMiniResult: which refusals mean nothing was installed', () => {
+  const image = { versionStamp: BUILD, title: 't' } as unknown as PreparedFirmwareImage;
+  type S = Parameters<typeof describeUv5rMiniResult>[0];
+  const ended = (o: Partial<S>): S => ({
+    result: undefined,
+    resultPhase: undefined,
+    areaLength: undefined,
+    continued: false,
+    lengthHeard: o.areaLength !== undefined,
+    ...o,
+  });
+
+  it("the loader's 0x8F (before cmd 4) is nothing installed", () => {
+    const r = describeUv5rMiniResult(ended({ result: 0x8f, resultPhase: 'loader' }), image);
+    expect(r).toEqual({ error: UV5RMINI_MSG.loaderOtherLayout, nothingInstalled: true });
+  });
+
+  it("the app's 0x83 with no cmd 4 heard is nothing installed", () => {
+    const r = describeUv5rMiniResult(ended({ result: 0x83, resultPhase: 'app' }), image);
+    expect(r).toEqual({ error: UV5RMINI_MSG.appOtherLayout, nothingInstalled: true });
+  });
+
+  it("the app's 0x83 after an (ignored) cmd 4 keeps today's words, not nothing installed", () => {
+    const r = describeUv5rMiniResult(
+      ended({ result: 0x83, resultPhase: 'app', lengthHeard: true }),
+      image,
+    );
+    expect(r).toEqual({ error: UV5RMINI_MSG.appRefused });
+  });
+
+  it("the loader's 0x83 after cmd 4 stays the recover path", () => {
+    const r = describeUv5rMiniResult(
+      ended({ result: 0x83, resultPhase: 'loader', areaLength: 0x1000 }),
+      image,
+    );
+    expect(r.nothingInstalled).toBeUndefined();
+    expect(r.error).toBe(`${UV5RMINI_MSG.recover} (Result 0x83.)`);
+  });
+
+  it('any other refusal is not nothing installed', () => {
+    for (const [result, resultPhase] of [
+      [0x87, 'loader'],
+      [0x86, 'loader'],
+      [0x83, 'loader'],
+      [0x01, 'app'],
+      [0x86, 'app'],
+      [0x8a, 'app'],
+      [0x8f, 'app'],
+    ] as const) {
+      const r = describeUv5rMiniResult(ended({ result, resultPhase }), image);
+      expect(r.error).toBeDefined();
+      expect(r.nothingInstalled).toBeUndefined();
+    }
+  });
+});
 
 let mock: MockUv5rMini | undefined;
 let pipe: BytePipe | undefined;
@@ -339,6 +399,21 @@ describe('UV-5R Mini updater: refusals and silence', () => {
     );
     expect(err.radioTouched).toBe(true);
     expect(m.areaReads).toBe(0);
+    // Typed, so the wizard says "nothing was installed" and not "recover the radio", although the loader ran.
+    expect(err.code).toBe('nothingInstalled');
+    expect(err.cause).toBeInstanceOf(RadioNothingInstalledError);
+  });
+
+  it('an app result 0x83 with no cmd 4 heard is the other layout: nothing installed, radio untouched', async () => {
+    const m = make({ appResult: 0x83 });
+    const updater = createUv5rMiniFirmwareUpdater();
+    expect((await connect(m, updater)).error).toBeUndefined();
+    const run = await settle(updater.flash(imageFor(m), {}), 20_000);
+    const err = run.error as FirmwareFlashError;
+    expect(err.code).toBe('nothingInstalled');
+    expect(err.message).toBe(UV5RMINI_MSG.appOtherLayout);
+    expect(err.radioTouched).toBe(false);
+    expect(m.loaderResets).toBe(0);
   });
 
   it('an app result 0x01 writes nothing: radio untouched, the image is not for this radio’s key', async () => {
