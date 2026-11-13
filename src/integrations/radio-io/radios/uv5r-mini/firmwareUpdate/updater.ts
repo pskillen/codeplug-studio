@@ -67,7 +67,7 @@ export const UV5RMINI_MSG = {
   loaderFinished:
     'The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair.',
   loaderOtherLayout:
-    'The file is for the other hardware layout; the radio refused it. Its FM presets and volume may have been reset; nothing else changed.',
+    'The file is for the other flash layout; the radio refused it. Its FM presets and volume may have been reset; nothing else changed.',
   loaderNothingWritten: 'Nothing was written; the radio boots the installed app.',
   loaderNothingWrittenAgain:
     " Don't send this file again: it can only end the same way. If the radio doesn't reach its normal screen, it needs a case-open repair.",

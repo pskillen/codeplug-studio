@@ -27,9 +27,9 @@
  *      of an image its loader already lists would leave the radio looping in the loader). A layout loader has no
  *      list, so I7 does not apply to it. Keyed on the pin, never on the patch's descriptive `loader.list`.
  *  Already installed. Checked last, once every check above has passed. The radio already runs this image's build when
- *      the build name the operator typed from Radio Info (`radioBuild`) is the image's own (ignoring case and
- *      surrounding spaces), or, for a to-stock image, when Radio Info was read (`radioLayout` set) and shows no MM9PDY
- *      build. Studio can't read the installed app, so this is the only evidence there is.
+ *      the build name the radio gave in its radio report (`radioBuild`) is the image's own (ignoring case and
+ *      surrounding spaces), or, for a to-stock image, when the radio's layout is known (`radioLayout` set) and it
+ *      named no MM9PDY build. Studio can't read the installed app, so this is the only evidence there is.
  *      - A layout loader (`L1`, `L2`) always writes, so the image is allowed, but only once the operator has confirmed
  *        the warning (`reinstallConfirmed`): without it, `RadioConfirmRequiredError` and nothing is sent. This is the
  *        one check an operator can pass, and only with that explicit confirm.
@@ -75,26 +75,26 @@ export function isUv5rMiniToStockImage(
 
 /** The refusal for an image whose loader is for the other layout than the radio's. */
 export const UV5RMINI_OTHER_LAYOUT_REFUSAL =
-  'This file is for the other hardware layout; nothing was sent.';
+  'This file is for the other flash layout; nothing was sent.';
 
 /**
- * The refusal for an image on a list-carrying loader whose build is the one Radio Info says the radio already runs:
- * that loader would write nothing.
+ * The refusal for an image on a list-carrying loader whose build is the one the radio says it already runs: that
+ * loader would write nothing.
  */
 export const UV5RMINI_ALREADY_INSTALLED_REFUSAL = (build: string): string =>
-  `Radio Info says this radio already runs ${build}. This firmware is already installed; nothing was sent. Flash a different build.`;
+  `This radio already runs ${build}. This firmware is already installed; nothing was sent. Flash a different build.`;
 
 /** The warning, confirmed before anything is sent, for an image whose build the radio already runs. */
 export const UV5RMINI_REINSTALL_WARNING = (build: string): string =>
   `This radio already runs ${build}. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.`;
 
 /**
- * The warning for a to-stock image when Radio Info shows no MM9PDY build: the radio may be on that stock. The text
- * only says "may", because the typed Firmware line is not compared with the stock's version (a radio moved to v0.27
- * shows V0.27 and is offered the nrfb-v0.04 file).
+ * The warning for a to-stock image when the radio names no MM9PDY build: the radio may be on that stock. The text
+ * only says "may", because Studio doesn't compare the radio's stock version with the file's (an MM9PDY build from
+ * before the radio report names no build either).
  */
 export const UV5RMINI_REINSTALL_STOCK_WARNING = (stock: string): string =>
-  `Radio Info shows no MM9PDY build, so this radio may already run the stock ${stock}. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.`;
+  `Studio sees no MM9PDY build on this radio, so it may already run the stock ${stock}. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.`;
 
 /** The refusal for an image built with a retired loader. */
 export const UV5RMINI_RETIRED_LOADER_REFUSAL =
@@ -226,7 +226,7 @@ export function checkUv5rMiniImage(
   if (pin.layout !== undefined) {
     if (image.radioLayout === undefined) {
       throw new RadioInterlockError(
-        "Studio doesn't know this radio's hardware layout, so it can't check this file is for it. Nothing was sent.",
+        "Studio doesn't know this radio's flash layout, so it can't check this file is for it. Nothing was sent.",
       );
     }
     if (image.radioLayout !== pin.layout) {
