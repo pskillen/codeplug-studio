@@ -1,6 +1,6 @@
 # Debug — browser storage inspection
 
-Read-only contributor tooling to inspect **browser-local app state** without DevTools. Useful for debugging CRUD persistence, multi-tab revision conflicts, list-prefs hydration, and storage quota.
+Read-only contributor tooling to inspect **browser-local app state** without DevTools. Radio pages under `/debug` (the AT-D890UV erase probe, serial reopen timing, the [UV-5R Mini full read](uv5r-mini-full-read.md)) are contributor tools too. Useful for debugging CRUD persistence, multi-tab revision conflicts, list-prefs hydration, and storage quota.
 
 **On prod:** the Debug pages and the avatar menu's Debug item are hidden unless [developer mode](../developer-mode/README.md) is on for the device (tap the footer version five times). Every `/debug` route is mounted under `DebugGate` from `debugRoutes` in `src/app/routes/debug/debugRoutes.tsx`; add new pages there. The index page has a "Developer mode on this device" switch.
 
@@ -26,14 +26,15 @@ Mapbox tokens are **masked** in the LocalStorage viewer (`••••` + last f
 
 ## Routes
 
-| Path                                          | Purpose                                                                                               |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `/debug`                                      | Overview and privacy warning                                                                          |
-| `/debug/indexed-db`                           | Object store row counts per project                                                                   |
-| `/debug/indexed-db/:storeName`                | Rows in a store — channels show callsign; name, project id, and entity id are sortable and filterable |
-| `/debug/indexed-db/:storeName/:projectId/:id` | Single row JSON tree                                                                                  |
-| `/debug/local-storage`                        | Known + discovered localStorage keys                                                                  |
-| `/debug/local-storage/:storageKey`            | Parsed JSON for one key                                                                               |
+| Path                                          | Purpose                                                                                                                      |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `/debug`                                      | Overview and privacy warning                                                                                                 |
+| `/debug/indexed-db`                           | Object store row counts per project                                                                                          |
+| `/debug/indexed-db/:storeName`                | Rows in a store — channels show callsign; name, project id, and entity id are sortable and filterable                        |
+| `/debug/indexed-db/:storeName/:projectId/:id` | Single row JSON tree                                                                                                         |
+| `/debug/local-storage`                        | Known + discovered localStorage keys                                                                                         |
+| `/debug/local-storage/:storageKey`            | Parsed JSON for one key                                                                                                      |
+| `/debug/uv5r-mini`                            | UV-5R Mini read-only full clone read, span hashes, tab history and compare: [uv5r-mini-full-read.md](uv5r-mini-full-read.md) |
 
 Routes do **not** require an active project (same class as Settings and Reference).
 
