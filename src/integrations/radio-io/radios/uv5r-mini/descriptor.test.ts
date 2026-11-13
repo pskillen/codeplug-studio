@@ -18,8 +18,11 @@ describe('UV-5R Mini descriptor / registry', () => {
     expect(d?.baudRateFallback).toBe(38400);
     expect(d?.compatibleProfiles).toEqual([
       { formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' },
-      { formatId: 'radio-io', profileId: 'radio-io-uv5r-mini-mm9pdy', prodWriteDisabled: true },
+      { formatId: 'radio-io', profileId: 'radio-io-uv5r-mini-mm9pdy' },
     ]);
+    for (const profile of d?.compatibleProfiles ?? []) {
+      expect(profile.prodWriteDisabled).toBeUndefined();
+    }
     expect(d?.prodWriteDisabled).toBeUndefined();
     expect(listDescriptorsForProfile('radio-io', 'radio-io-uv5r-mini')).toHaveLength(1);
     expect(listDescriptorsForProfile('radio-io', 'radio-io-uv5r-mini-mm9pdy')).toHaveLength(1);
