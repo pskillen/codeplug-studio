@@ -404,7 +404,7 @@ describe('PrepareStep: the UV-5R Mini Radio Info question, with no report', () =
     expect(screen.queryByLabelText(/MM9PDY build/)).toBeNull();
     expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.queryByText(/hardware layout/i)).toBeNull();
-    expect(screen.getByText(/Give both Radio Info lines/)).toBeInTheDocument();
+    expect(screen.getByText('Answer each line to prepare the image.')).toBeInTheDocument();
     expect(flash.prepareFlash).not.toHaveBeenCalled();
   });
 

@@ -354,7 +354,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
           <StatusBanner tone="warning">{answer.warning}</StatusBanner>
         ) : null}
         {answer?.kind === 'incomplete' && asksQuestion ? (
-          <p className={classes.muted}>Give both Radio Info lines to prepare the image.</p>
+          <p className={classes.muted}>Answer each line to prepare the image.</p>
         ) : null}
         {unavailable && !image ? (
           <StatusBanner tone="warning">

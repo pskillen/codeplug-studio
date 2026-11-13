@@ -68,8 +68,9 @@ export interface PreparedFirmwareImage {
    */
   readonly radioReported?: true;
   /**
-   * The stock base the radio's own code is built on, where the radio said so itself (UV-5R Mini: its radio report's
-   * code-base flag). An updater refuses an image on another base: a radio's code base never changes.
+   * The stock base the radio's own code is built on (UV-5R Mini: from its radio report's code-base flag, from the
+   * operator's suffix and Firmware answers, or after a retry the partner file's base). An updater refuses an image on
+   * another base: a radio's code base never changes.
    */
   readonly radioCodeBase?: string;
   /**

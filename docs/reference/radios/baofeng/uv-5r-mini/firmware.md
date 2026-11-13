@@ -212,9 +212,9 @@ no override in Studio.
 `mm9pdy-L1-<version>` and `mm9pdy-L2-<version>`; a release may ship only one of them. The release index lists them as
 rows of one version, each with its `layout`
 ([releases](../../../../features/firmware-flashing/releases.md#uv-5r-mini-rows-one-per-flash-layout)), and the
-patch-file dropzone takes both files at once. Prepare picks the file for the radio's layout (`pickPatchForLayout`)
-and keeps the other. A release with no file for the radio's layout stops Prepare before anything is built: "Not
-available in this release: it has no file for this radio's flash layout (L1), only for L2." `V4` (`mm9pdy-V4-…`) is
+patch-file dropzone takes both files at once. Prepare picks the file for the radio's layout and base (`pickPatchForLayout`).
+A release with no file for the radio's base stops Prepare before anything is built: "Not available in this release:
+there is no MM9PDY build for this radio (nrfb-v0.04) yet. This release has a file only for nrf-v0.27." `V4` (`mm9pdy-V4-…`) is
 retired: never a release row, and refused from disk. The build-name rule is `uv5rMiniLayoutFromBuildName` in
 `src/core/radios/baofeng/uv-5r-mini/firmware.ts`.
 
