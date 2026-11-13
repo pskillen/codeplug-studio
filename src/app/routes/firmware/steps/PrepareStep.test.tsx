@@ -177,6 +177,15 @@ describe('PrepareStep: reading the UV-5R Mini', () => {
     expect(canAdvance(latest)).toBe(true);
   });
 
+  it('a report with an empty name is prepared as reported, with no build name', async () => {
+    render(<Harness updater={MINI} />);
+    await readRadio(reportBlock({ name: '' }));
+    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(lastPrepare()[4]).toBe('L2');
+    expect(lastPrepare()[5]).toBeUndefined();
+    expect(lastPrepare()[7]).toBe(true);
+  });
+
   it('a report for L1 on the v0.04 code base shows the one-way warning and picks L1', async () => {
     vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(<Harness updater={MINI} />);
@@ -259,12 +268,23 @@ describe('PrepareStep: reading the UV-5R Mini', () => {
   });
 
   it('reading again drops the prepared image and the confirm', async () => {
-    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    vi.mocked(flash.prepareFlash).mockImplementation(
+      async (_r, _s, _c, _l, radioLayout, radioBuild, reinstallConfirmed) => {
+        if (radioBuild !== undefined && !reinstallConfirmed) {
+          throw new RadioConfirmRequiredError('This radio already runs it.');
+        }
+        return anyLayout(_r, _s, _c, _l, radioLayout);
+      },
+    );
     render(<Harness updater={MINI} />);
     await readRadio(reportBlock({}));
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Write it again anyway' }));
     await screen.findByText(/Ready to flash: L2 build/);
+    expect(latest.reinstallConfirmed).toBe(true);
+    expect(latest.image).not.toBeNull();
     await readRadio(STOCK_FLASH);
     expect(latest.image).toBeNull();
+    expect(latest.reinstallConfirmed).toBe(false);
     expect(screen.getByText(NO_REPORT)).toBeInTheDocument();
     expect(screen.getByLabelText('Radio Info: Firmware')).toBeInTheDocument();
   });
@@ -291,6 +311,7 @@ describe('PrepareStep: the UV-5R Mini Radio Info question, with no report', () =
     expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
     expect(lastPrepare()[4]).toBe('L2');
     expect(lastPrepare()[5]).toBeUndefined();
+    expect(lastPrepare()[7]).toBe(false);
     expect(screen.getByText('Flash layout: L2')).toBeInTheDocument();
     expect(canAdvance(latest)).toBe(true);
   });
