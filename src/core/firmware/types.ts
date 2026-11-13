@@ -96,24 +96,31 @@ export interface StockFirmwareDescriptor {
   /** How the operator confirms stock is running after a flash. */
   readonly stockVerifyHint: string;
   /**
-   * For a radio that comes in more than one hardware layout: the question the wizard asks before Prepare, from the
-   * radio's Radio Info screen. The answer becomes `radioLayout` on the prepared image.
+   * For a radio whose firmware comes in more than one flash layout (the factory firmware's packing, not the board):
+   * the question the wizard asks before Prepare, from the radio's Radio Info screen. The answer becomes `radioLayout`
+   * on the prepared image.
    */
   readonly radioLayout?: FirmwareRadioLayoutQuestion;
 }
 
-/** What the operator typed from the radio's Radio Info screen, and an explicit layout override. */
+/** What the operator typed from the radio's Radio Info screen. */
 export interface RadioInfoAnswers {
   readonly firmware: string;
   readonly hardware: string;
-  /** The build name a modded radio shows on Radio Info; empty on stock or when not given. */
-  readonly build: string;
-  readonly override: boolean;
 }
 
 export type RadioLayoutAnswer =
   | { readonly kind: 'incomplete' }
-  | { readonly kind: 'layout'; readonly layout: string }
+  | {
+      readonly kind: 'layout';
+      readonly layout: string;
+      /** The build the radio runs, where the radio said so itself; decides "already installed". */
+      readonly build?: string;
+      /** Shown with the answer; it does not stop the wizard. */
+      readonly warning?: string;
+      /** What the radio said about itself, shown as information only. */
+      readonly details?: readonly string[];
+    }
   | { readonly kind: 'refused'; readonly message: string };
 
 /** Rendered generically by the wizard's Prepare step. */
@@ -122,9 +129,6 @@ export interface FirmwareRadioLayoutQuestion {
   readonly steps: readonly string[];
   readonly firmwareLabel: string;
   readonly hardwareLabel: string;
-  /** An optional line for a modded radio's build name, which decides the layout when given. */
-  readonly build?: { readonly label: string; readonly help: string };
-  readonly override: { readonly label: string; readonly help: string };
   readonly resolve: (answers: RadioInfoAnswers) => RadioLayoutAnswer;
 }
 
