@@ -20,7 +20,9 @@ image is scrambled per radio, so Studio treats it as opaque bytes and cannot rea
 | `nrfb-v0.04` | `v0.04 (NRFB)` | `stock-nrfb-v0.04.ufw` | 520,192 bytes | `02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e` |
 | `nrf-v0.27`  | `v0.27 (NRF)`  | `stock-nrf-v0.27.ufw`  | 504,832 bytes | `811b4b37253e0685c7efbd3ff0a24aac2bcad223e5453d95b5bfc3f42c089128` |
 
-Studio does not flash stock (`stockFlashOffered: false`); the pins are the bases a release patch is checked against.
+Studio does not flash the plain stock file (`stockFlashOffered: false`); the pins are the bases a release patch is
+checked against. The way back to stock is a to-stock patch (below). Each base's name is on the descriptor
+(`baseName`), matching the base table's keys.
 The patch's `stock` hashes decide which file is the stock, never a user choice, and a patch's `base` must name the
 base whose file hashes to it. The descriptor carries `nrfb-v0.04` as its primary version and `nrf-v0.27` as
 `alsoAccepts`.
@@ -122,6 +124,7 @@ image is prepared and again as the flash starts; each refusal says nothing was s
 | Stock bytes       | `flash.bin` has the stock's length and every byte equals the stock's at the same address, except inside the base's app windows (SoC, half-open), from the table below                                |
 | Layout            | For a layout loader (`L1`, `L2`): Studio knows the radio's hardware layout and it is the loader's. Checked before anything is sent                                                                   |
 | Not listed itself | For a list-carrying loader only: the image's build name is not on its loader's list. Flashing it again, or after a cut update, would leave the radio stuck in its loader                             |
+| To stock          | For a to-stock image (build name is a base's own name): see [Back to stock](#back-to-stock). Its loader and stock-byte rules replace the general ones above, never loosen them                       |
 
 **Bases** (keyed by the patch's `base`; the windows are SoC half-open ranges, both also hold `[0x4000, 0x4004)` and `[0x4020, 0x4024)`):
 
@@ -209,6 +212,44 @@ installed one ends with `0x87` before the length, having written nothing.
 
 The loader hash is computed synchronously (a small in-module SHA-256, checked against Web Crypto in its test) because
 the updater's `checkImage` is synchronous.
+
+## Back to stock
+
+Studio can't flash the plain stock file. The way back is the firmware project's **to-stock patch**,
+`uv5rmini-fw-to-stock-<base>.patch.json`, one in each release artifact: `nrfb-v0.04` for a layout-1 radio,
+`nrf-v0.27` for a layout-2 radio. It is an ordinary format-1 patch with no extra field. Its result is the radio's own
+stock with the layout's loader appended: `flash.bin` equals the stock's byte for byte, so the result differs from the
+stock file only in `ota.bin`.
+
+| Field                           | To-stock value                                         |
+| ------------------------------- | ------------------------------------------------------ |
+| `base`, `build.name`            | The same: the stock base's name                        |
+| `build.appSize`, `build.appCrc` | The stock app's own pair                               |
+| `loader.sha256`, `loader.list`  | The base's layout loader (`L1` or `L2`, exactly), `[]` |
+
+**Recognised by the build name.** An image whose build name is a base's own name is a to-stock image; no patch field
+can say otherwise. For one, the interlocks also require:
+
+| Check             | Refused unless                                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Own base          | The build name is the patch's own `base`: a to-stock file for one base built on the other is refused               |
+| Exact loader      | The loader is a layout loader, never a list-carrying one                                                           |
+| The base's layout | The loader's layout is the base's: `nrfb-v0.04` takes `L1`, `nrf-v0.27` takes `L2` (`UV5RMINI_BASES.loaderLayout`) |
+| Stock bytes       | `flash.bin` equals the stock's at **every** address, app windows included                                          |
+| Layout match      | As for any layout loader: the radio's layout (from Radio Info) is the loader's, checked before anything is sent    |
+
+Studio knows only these two bases, so a layout-1 radio moved to v0.27 goes back with the `nrfb-v0.04` file; an
+`nrf-v0.27` to-stock file carries `L2` and the layout match refuses it for that radio.
+
+Studio doesn't refuse a to-stock flash to a radio already on stock, for the reason above: it can't read the installed
+app's size and CRC, and Radio Info's empty build line doesn't prove the radio runs stock.
+
+**In the wizard.** The Firmware step offers **Back to stock** (`StockFirmwareDescriptor.stockReturn`), with one line on
+where the file comes from. It asks for the to-stock file through the same file picker as a patch from disk, and refuses
+any other patch there ("This file isn't a to-stock patch…"). A recognised file needs no "I understand" tick: the
+checks above pin everything it installs. Radio Info, and the build-name line, are asked on Prepare as for any image.
+The image reads as the stock ("stock firmware v0.04 (NRFB)") with the stock's verify hint; the flash summary's
+`Firmware:` line starts "back to stock", and the loader's closing note says the radio restarts back to stock.
 
 ## Update mode
 

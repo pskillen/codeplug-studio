@@ -8,6 +8,7 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   radioId: 'baofeng-uv5rmini',
   label: 'Baofeng UV-5R Mini',
   version: 'v0.04 (NRFB)',
+  baseName: 'nrfb-v0.04',
   stockSources: [
     {
       kind: 'own-image',
@@ -17,6 +18,9 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
     },
   ],
   stockFlashOffered: false,
+  stockReturn: {
+    help: "Use the to-stock file (uv5rmini-fw-to-stock-….patch.json) from the firmware project's release artifact; Studio can't flash the plain stock file.",
+  },
   members: [
     {
       role: UV5RMINI_FIRMWARE_ROLE_UFW,
@@ -29,6 +33,7 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   alsoAccepts: [
     {
       version: 'v0.27 (NRF)',
+      baseName: 'nrf-v0.27',
       members: [
         {
           role: UV5RMINI_FIRMWARE_ROLE_UFW,

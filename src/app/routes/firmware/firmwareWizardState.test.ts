@@ -148,6 +148,19 @@ describe('firmwareWizardReducer', () => {
     ).toBe(true);
   });
 
+  it('lets a loaded to-stock patch through without acceptance, but not before it is loaded', () => {
+    const choice: FirmwareChoice = { ...USER_CHOICE, kind: 'back-to-stock' };
+    const s = through(
+      { type: 'selectRadio', radioId: 'baofeng-uv5rmini', stockFlashOffered: false },
+      { type: 'next' },
+      { type: 'chooseFirmware', choice },
+    );
+    expect(canAdvance(s)).toBe(false);
+    const loaded = reduce(s, { type: 'chooseFirmware', choice, loadedPatch: UNREVIEWED });
+    expect(loaded.riskAccepted).toBe(false);
+    expect(reduce(loaded, { type: 'next' }).step).toBe('stock');
+  });
+
   it('drops the prepared image and checks when new stock is verified', () => {
     const s = through(
       { type: 'selectRadio', radioId: 'baofeng-dm32uv' },

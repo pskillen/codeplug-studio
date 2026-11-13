@@ -18,6 +18,10 @@
  *  Layout. When the pinned loader is a layout loader (`L1`, `L2`), the radio's layout is known
  *      (`PreparedFirmwareImage.radioLayout`) and is the loader's. The radio's stock "UPDATE..." stage loses settings on
  *      a crossed pick before the loader can refuse, so this is checked before anything is sent.
+ *  To stock. An image whose build name is a base's own name (`nrfb-v0.04`, `nrf-v0.27`) puts the radio back to that
+ *      stock: a to-stock image. Its build name is its own `base`; its loader is exactly that base's layout loader
+ *      (never a list-carrying one); and I4 tightens to no difference from the stock flash at all, app windows
+ *      included. Keyed on the build name, so a patch can't opt out by saying nothing.
  *  I7. For a list-carrying loader only: the image's build name is not on its loader's list (a re-flash or a late cut
  *      of an image its loader already lists would leave the radio looping in the loader). A layout loader has no
  *      list, so I7 does not apply to it. Keyed on the pin, never on the patch's descriptive `loader.list`.
@@ -47,6 +51,17 @@ import {
 } from './ufw.ts';
 
 export { UV5RMINI_FW_RADIO_ID };
+
+/** The flash log's word for a to-stock image. */
+export const UV5RMINI_BACK_TO_STOCK = 'back to stock';
+
+/** True when the image's build name is a known base's own name: it puts the radio back to that stock. */
+export function isUv5rMiniToStockImage(
+  image: Pick<PreparedFirmwareImage, 'versionStamp'>,
+  bases: Readonly<Record<string, Uv5rMiniBase>> = UV5RMINI_BASES,
+): boolean {
+  return image.versionStamp !== undefined && Object.hasOwn(bases, image.versionStamp);
+}
 
 /** The refusal for an image whose loader is for the other layout than the radio's. */
 export const UV5RMINI_OTHER_LAYOUT_REFUSAL =
@@ -150,6 +165,26 @@ export function checkUv5rMiniImage(
     throw new RadioInterlockError("This image's loader is not one Studio knows: nothing was sent.");
   }
 
+  // To stock: the stock it names, with exactly that stock's layout loader.
+  const toStock = isUv5rMiniToStockImage(image, bases);
+  if (toStock) {
+    if (image.versionStamp !== base.name) {
+      throw new RadioInterlockError(
+        `This file puts back the stock ${image.versionStamp}, but it is built on ${base.name}. Nothing was sent.`,
+      );
+    }
+    if (pin.layout === undefined) {
+      throw new RadioInterlockError(
+        'This to-stock file carries an older loader that lists builds. Use the to-stock file from a current firmware release. Nothing was sent.',
+      );
+    }
+    if (pin.layout !== base.loaderLayout) {
+      throw new RadioInterlockError(
+        `This to-stock file for ${base.name} carries the ${pin.layout} loader, not that stock's ${base.loaderLayout} loader. Nothing was sent.`,
+      );
+    }
+  }
+
   // Layout: a layout loader's image goes only to a radio of that layout, and only when Studio knows the radio's.
   if (pin.layout !== undefined) {
     if (image.radioLayout === undefined) {
@@ -188,6 +223,14 @@ export function checkUv5rMiniImage(
     throw new RadioInterlockError(
       `This image is ${flash.length} bytes where the stock is ${stockFlash.length}. Nothing was sent.`,
     );
+  }
+  if (toStock) {
+    const at = flash.findIndex((b, i) => b !== stockFlash[i]);
+    if (at >= 0) {
+      throw new RadioInterlockError(
+        `This to-stock file changes the stock at ${hex(UV5RMINI_FLASH_BASE + at)}, so it would not put the stock back. Nothing was sent.`,
+      );
+    }
   }
   const diff = firstDifferenceOutsideWindows(stockFlash, flash, base);
   if (diff >= 0) {

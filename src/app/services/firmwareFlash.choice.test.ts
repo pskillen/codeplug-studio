@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
+import {
+  makeSyntheticUv5rMiniPatch,
+  synthUv5rMiniStock,
+} from '@core/firmware/patch/formats/baofeng-uv5rmini-firmware/__fixtures__/makeSyntheticPatch.ts';
 import { syntheticDm32Release } from '@core/firmware/releases/__fixtures__/syntheticReleases.ts';
 import type {
   LoadedFirmwarePatch,
@@ -15,6 +19,7 @@ import {
   formatFirmwareFlashSummary,
   listPublishedReleases,
   loadChosenPatch,
+  NOT_TO_STOCK_PATCH_MESSAGE,
   prepareFlash,
   type VerifiedStockFirmware,
 } from './firmwareFlash.ts';
@@ -81,6 +86,21 @@ describe('prepareFlash', () => {
     expect(vi.mocked(prepareModule.prepareFirmwareImage).mock.calls[0]![0].radioLayout).toBe('L2');
   });
 
+  it('refuses a back-to-stock choice whose image is not to-stock, before the interlocks', async () => {
+    const choice = {
+      kind: 'back-to-stock' as const,
+      file: { name: 'p.json', bytes: new Uint8Array(1) },
+    };
+    const err = await prepareFlash('baofeng-dm32uv', STOCK, choice, LOADED).catch((e) => e);
+    expect((err as FirmwareError).code).toBe('patch-not-to-stock');
+    expect(checkImage).not.toHaveBeenCalled();
+
+    const toStock = { ...IMAGE, backToStock: true } as PreparedFirmwareImage;
+    vi.mocked(prepareModule.prepareFirmwareImage).mockResolvedValue(toStock);
+    await expect(prepareFlash('baofeng-dm32uv', STOCK, choice, LOADED)).resolves.toBe(toStock);
+    expect(checkImage).toHaveBeenCalledWith(toStock);
+  });
+
   it('does not build an image when the interlocks refuse it', async () => {
     checkImage.mockImplementation(() => {
       throw new radioIo.RadioInterlockError('no');
@@ -121,6 +141,47 @@ describe('published releases and chosen patches', () => {
     }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(FirmwareError);
     expect((err as FirmwareError).code).toBe('patch-unknown-format');
+  });
+
+  describe('a back-to-stock pick (UV-5R Mini)', () => {
+    async function file(buildName: string, base: string) {
+      const stock = synthUv5rMiniStock();
+      const json = { ...(await makeSyntheticUv5rMiniPatch(stock, stock, { buildName })), base };
+      return { name: 'p.json', bytes: new TextEncoder().encode(JSON.stringify(json)) };
+    }
+
+    beforeEach(() => publishedRows.mockResolvedValue([]));
+
+    it('takes a patch whose build name is its stock base', async () => {
+      for (const base of ['nrfb-v0.04', 'nrf-v0.27']) {
+        const loaded = await loadChosenPatch('baofeng-uv5rmini', {
+          kind: 'back-to-stock',
+          file: await file(base, base),
+        });
+        expect(loaded.parsed.description).toMatchObject({ base, buildName: base });
+      }
+    });
+
+    it.each([
+      ['a modded build', 'mm9pdy-L1-1.0.0', 'nrfb-v0.04'],
+      ['another base', 'nrf-v0.27', 'nrfb-v0.04'],
+      ['a base Studio does not know', 'nrf-v0.99', 'nrf-v0.99'],
+    ])('refuses %s', async (_n, buildName, base) => {
+      const err = await loadChosenPatch('baofeng-uv5rmini', {
+        kind: 'back-to-stock',
+        file: await file(buildName, base),
+      }).catch((e: unknown) => e);
+      expect((err as FirmwareError).code).toBe('patch-not-to-stock');
+      expect((err as FirmwareError).message).toBe(NOT_TO_STOCK_PATCH_MESSAGE);
+    });
+
+    it('still takes a modded build as an ordinary patch file', async () => {
+      const loaded = await loadChosenPatch('baofeng-uv5rmini', {
+        kind: 'user-patch',
+        file: await file('mm9pdy-L1-1.0.0', 'nrfb-v0.04'),
+      });
+      expect(loaded.provenance).toBe('unreviewed');
+    });
   });
 });
 

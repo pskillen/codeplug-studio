@@ -20,7 +20,7 @@ import {
   getStockFirmwareDescriptor,
   listStockFirmwareDescriptors,
 } from '@core/firmware/stockCatalog.ts';
-import { stockVariantFor } from '@core/firmware/stockVariants.ts';
+import { stockVariantFor, toStockVariantFor } from '@core/firmware/stockVariants.ts';
 import type { FirmwareRadioId, NamedBytes } from '@core/firmware/types.ts';
 import {
   prepareFirmwareImage,
@@ -95,7 +95,13 @@ export async function verifyStockFiles(
 export type FirmwareChoice =
   | { kind: 'stock' }
   | { kind: 'release'; source: 'published'; summary: FirmwareReleaseSummary }
-  | { kind: 'user-patch'; file: NamedBytes };
+  | { kind: 'user-patch'; file: NamedBytes }
+  /** A to-stock release patch from disk, for a radio whose way back to stock is one (`stockReturn`). */
+  | { kind: 'back-to-stock'; file: NamedBytes };
+
+/** The refusal for a file picked under "Back to stock" that is not a to-stock patch. */
+export const NOT_TO_STOCK_PATCH_MESSAGE =
+  "This file isn't a to-stock patch: it doesn't put back a stock Studio knows. Pick the to-stock file from the firmware project's release artifact.";
 
 /** Throws FirmwareError when the release list cannot be fetched. */
 export async function listPublishedReleases(
@@ -115,7 +121,14 @@ export async function loadChosenPatch(
   }
   const source = createUserPatchSource(choice.file, { rows: await publishedRowsOrNone() });
   const [summary] = await source.listReleases(radioId, { includeRc: true });
-  return source.loadPatch(radioId, summary!.key);
+  const loaded = await source.loadPatch(radioId, summary!.key);
+  if (
+    choice.kind === 'back-to-stock' &&
+    !toStockVariantFor(getStockFirmwareDescriptor(radioId), loaded.parsed.description)
+  ) {
+    throw new FirmwareError('patch-not-to-stock', NOT_TO_STOCK_PATCH_MESSAGE);
+  }
+  return loaded;
 }
 
 /**
@@ -142,6 +155,9 @@ export async function prepareFlash(
     target,
     radioLayout,
   });
+  if (choice.kind === 'back-to-stock' && !image.backToStock) {
+    throw new FirmwareError('patch-not-to-stock', NOT_TO_STOCK_PATCH_MESSAGE);
+  }
   requireUpdater(radioId).createUpdater().checkImage(image);
   return image;
 }
@@ -409,13 +425,14 @@ const shortHex = (bytes: Uint8Array) =>
   Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(' ');
 
 function provenanceLine(image: PreparedFirmwareImage): string {
+  const what = image.backToStock ? `back to stock, ${image.title}` : image.title;
   switch (image.provenance) {
     case 'stock':
-      return `Firmware: ${image.title}`;
+      return `Firmware: ${what}`;
     case 'published':
-      return `Firmware: ${image.title} (published, patch sha256 ${image.patchSha256 ?? '?'})`;
+      return `Firmware: ${what} (published, patch sha256 ${image.patchSha256 ?? '?'})`;
     case 'unreviewed':
-      return `Firmware: ${image.title} (user-supplied patch, sha256 ${image.patchSha256 ?? '?'}, version ${image.patchVersion ?? '?'})`;
+      return `Firmware: ${what} (user-supplied patch, sha256 ${image.patchSha256 ?? '?'}, version ${image.patchVersion ?? '?'})`;
   }
 }
 

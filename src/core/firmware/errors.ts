@@ -14,7 +14,9 @@ export type FirmwareErrorCode =
   | 'patch-wrong-stock'
   | 'patch-malformed'
   | 'patch-original-mismatch'
-  | 'patch-result-mismatch';
+  | 'patch-result-mismatch'
+  /** Picked as a to-stock patch, but it doesn't put back a stock the radio knows. */
+  | 'patch-not-to-stock';
 
 /** A firmware refusal. `message` is written for the operator; `code` is for branching. */
 export class FirmwareError extends Error {

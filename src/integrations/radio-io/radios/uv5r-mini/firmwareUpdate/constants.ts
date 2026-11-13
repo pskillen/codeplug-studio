@@ -32,6 +32,9 @@ export const OTA_LOADER_NAME = 'uart_user.bin';
 
 /** `flash.bin[i]` is SoC flash address `UV5RMINI_FLASH_BASE + i`. */
 export const UV5RMINI_FLASH_BASE = 0x1000;
+/** The UV-5R Mini's two flash layouts in the field. Which one a radio has follows from its Radio Info screen. */
+export type Uv5rMiniLayout = 'L1' | 'L2';
+
 /**
  * A stock base, keyed by the name a release patch gives in `base`. Windows, area end and the hard write limit are the
  * base's own, because the flash layout differs between bases. A base built on another by a small layout patch (a
@@ -50,6 +53,11 @@ export interface Uv5rMiniBase {
     /** First SoC address of the first per-unit record sector. No image may reach it, whatever else the table says. */
     readonly recordSector: number;
   };
+  /**
+   * The flash layout of the radios this base's stock runs on. A to-stock image for this base (its build name is the
+   * base's own name) carries exactly that layout's loader.
+   */
+  readonly loaderLayout: Uv5rMiniLayout;
 }
 
 /** The hard write limit of a base: the start of its first per-unit record sector. */
@@ -67,6 +75,7 @@ export const UV5RMINI_BASES: Readonly<Record<string, Uv5rMiniBase>> = {
       [0x4100, 0x7be1c],
     ],
     layout: { recordSector: 0x94000 },
+    loaderLayout: 'L1',
   },
   'nrf-v0.27': {
     name: 'nrf-v0.27',
@@ -78,11 +87,9 @@ export const UV5RMINI_BASES: Readonly<Record<string, Uv5rMiniBase>> = {
       [0x4100, 0x7bbc8],
     ],
     layout: { recordSector: 0x93000 },
+    loaderLayout: 'L2',
   },
 };
-
-/** The UV-5R Mini's two flash layouts in the field. Which one a radio has follows from its Radio Info screen. */
-export type Uv5rMiniLayout = 'L1' | 'L2';
 
 /** An older loader that carries a list of installable builds; I7 applies to it. */
 export interface ListedPinnedLoader {

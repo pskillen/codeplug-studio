@@ -48,7 +48,18 @@ export type StockFirmwareSource =
 /** One more stock version a radio's patches may be built on. Same sources and hint as the descriptor that lists it. */
 export interface StockFirmwareVariant {
   readonly version: string;
+  /** See `StockFirmwareDescriptor.baseName`. */
+  readonly baseName?: string;
   readonly members: readonly StockFirmwareMember[];
+}
+
+/**
+ * A radio whose way back to stock is a to-stock release patch rather than the plain stock file. The wizard offers a
+ * "Back to stock" choice that asks for that patch file.
+ */
+export interface StockReturnPatch {
+  /** One line: where the to-stock patch comes from and why the plain stock file can't be flashed. */
+  readonly help: string;
 }
 
 export interface StockFirmwareDescriptor {
@@ -61,6 +72,13 @@ export interface StockFirmwareDescriptor {
   readonly zip?: { readonly fileName: string; readonly sha256: string };
   /** False hides plain stock flashing; defaults to true. */
   readonly stockFlashOffered?: boolean;
+  /**
+   * The name a release patch gives this stock in `base`, for formats that name one (UV-5R Mini `nrfb-v0.04`). A patch
+   * whose build name is this name, built on this stock, is a to-stock patch: it installs this stock.
+   */
+  readonly baseName?: string;
+  /** Set where the way back to stock is a to-stock release patch (see `StockReturnPatch`). */
+  readonly stockReturn?: StockReturnPatch;
   readonly members: readonly StockFirmwareMember[];
   /**
    * Further stock versions accepted for the same radio, each its own member set. The patch's own `stock` hashes pick

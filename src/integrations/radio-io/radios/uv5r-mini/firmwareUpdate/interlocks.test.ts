@@ -19,6 +19,7 @@ import {
 import {
   checkUv5rMiniImage,
   firstDifferenceOutsideWindows,
+  isUv5rMiniToStockImage,
   UV5RMINI_OTHER_LAYOUT_REFUSAL,
 } from './interlocks.ts';
 import { sha256HexSync } from './sha256Sync.ts';
@@ -289,7 +290,96 @@ describe('checkUv5rMiniImage — I4 stock bytes', () => {
 describe('checkUv5rMiniImage — I7 unlisted self', () => {
   it('refuses a build the loader lists', () => {
     refused(prepared({ stamp: 'listed-build' }), /already listed by its own loader/);
-    refused(prepared({ stamp: 'nrfb-v0.04' }), /already listed by its own loader/);
+  });
+});
+
+describe('checkUv5rMiniImage — to stock', () => {
+  /** A to-stock image: build name = base name, flash identical to the stock, the base's own layout loader. */
+  const toStock = (o: Parameters<typeof prepared>[0] & { layout?: Uv5rMiniLayout } = {}) => {
+    const base = o.base ?? 'nrfb-v0.04';
+    const layout = o.layout ?? bases[base]!.loaderLayout;
+    return () =>
+      checkUv5rMiniImage(
+        prepared({ stamp: base, radioLayout: layout, ...o, base }),
+        [layoutPin(layout)],
+        bases,
+      );
+  };
+
+  it('recognises a to-stock image by its build name alone', () => {
+    expect(isUv5rMiniToStockImage({ versionStamp: 'nrfb-v0.04' })).toBe(true);
+    expect(isUv5rMiniToStockImage({ versionStamp: 'nrf-v0.27' })).toBe(true);
+    expect(isUv5rMiniToStockImage({ versionStamp: 'mm9pdy-L1-1.0.0' })).toBe(false);
+    expect(isUv5rMiniToStockImage({ versionStamp: 'toString' })).toBe(false);
+    expect(isUv5rMiniToStockImage({ versionStamp: undefined })).toBe(false);
+  });
+
+  it('accepts the stock flash with the base layout loader, on each base', () => {
+    expect(toStock({ base: 'nrfb-v0.04' })).not.toThrow();
+    expect(toStock({ base: 'nrf-v0.27' })).not.toThrow();
+  });
+
+  it('maps v0.04 to the L1 loader and v0.27 to the L2 loader', () => {
+    expect(UV5RMINI_BASES['nrfb-v0.04']!.loaderLayout).toBe('L1');
+    expect(UV5RMINI_BASES['nrf-v0.27']!.loaderLayout).toBe('L2');
+  });
+
+  it('refuses a list-carrying loader, even one that does not list the stock', () => {
+    const img = prepared({ stamp: 'nrfb-v0.04', radioLayout: 'L1' });
+    const unlisted: PinnedLoader[] = [{ label: 'old', sha256: FAKE_PACKED_SHA, lists: ['x'] }];
+    for (const p of [pins, unlisted]) {
+      expect(() => checkUv5rMiniImage(img, p, bases)).toThrow(RadioInterlockError);
+      expect(() => checkUv5rMiniImage(img, p, bases)).toThrow(/carries an older loader/);
+    }
+  });
+
+  it("refuses the other layout's loader for the base", () => {
+    expect(toStock({ base: 'nrfb-v0.04', layout: 'L2' })).toThrow(
+      /for nrfb-v0.04 carries the L2 loader, not that stock's L1 loader/,
+    );
+    expect(toStock({ base: 'nrf-v0.27', layout: 'L1' })).toThrow(
+      /for nrf-v0.27 carries the L1 loader, not that stock's L2 loader/,
+    );
+  });
+
+  it('refuses a build name that is another base than the one it is built on', () => {
+    expect(toStock({ base: 'nrfb-v0.04', stamp: 'nrf-v0.27' })).toThrow(
+      /puts back the stock nrf-v0.27, but it is built on nrfb-v0.04/,
+    );
+  });
+
+  it.each<[string, number]>([
+    ['the first byte', 0x1000],
+    ['the version word window', 0x4000],
+    ['the second small window', 0x4020],
+    ['the app window', 0x4100],
+    ['the end of the app window', 0x7be1b],
+    ['the last byte', 0x7bfff],
+  ])('refuses any change to the stock flash, at %s', (_n, addr) => {
+    const f = flashWith([addr, stock.flash[addr - UV5RMINI_FLASH_BASE]! ^ 0xff]);
+    const run = toStock({ ufw: { flash: f } });
+    expect(run).toThrow(RadioInterlockError);
+    expect(run).toThrow(
+      new RegExp(`changes the stock at 0x${addr.toString(16).toUpperCase()}, so it would not`),
+    );
+  });
+
+  it("refuses when the radio's layout is another, or unknown", () => {
+    expect(toStock({ radioLayout: 'L2' })).toThrow(UV5RMINI_OTHER_LAYOUT_REFUSAL);
+    expect(toStock({ radioLayout: undefined })).toThrow(
+      /doesn't know this radio's hardware layout/,
+    );
+  });
+
+  it('a modded build is not held to the to-stock rule', () => {
+    const f = flashWith([0x4100, 1]);
+    expect(() =>
+      checkUv5rMiniImage(
+        prepared({ ufw: { flash: f }, stamp: 'mm9pdy-L1-1.0.0', radioLayout: 'L1' }),
+        [layoutPin('L1')],
+        bases,
+      ),
+    ).not.toThrow();
   });
 });
 
@@ -356,6 +446,10 @@ describe('firmwareUpdate constants', () => {
   it('has one base per pinned stock file, with the same hash', () => {
     const pinned = stockVariants(UV5RMINI_STOCK_FIRMWARE).map((v) => v.members[0]!.sha256);
     expect(Object.values(UV5RMINI_BASES).map((b) => b.stockSha256)).toEqual(pinned);
+  });
+  it("names each base as the stock descriptor does, so a to-stock patch's title finds its stock", () => {
+    const named = stockVariants(UV5RMINI_STOCK_FIRMWARE).map((v) => v.baseName);
+    expect(Object.keys(UV5RMINI_BASES)).toEqual(named);
   });
   it('keys each base by its own name', () => {
     for (const [key, b] of Object.entries(UV5RMINI_BASES)) expect(b.name).toBe(key);
