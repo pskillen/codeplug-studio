@@ -5,7 +5,7 @@
  */
 import { FirmwareError } from '@core/firmware/errors.ts';
 import { listKnownPatchedResults } from '@core/firmware/releases/index.ts';
-import { loadedLayouts, patchForLayout } from '@core/firmware/releases/layouts.ts';
+import { loadedBases, loadedLayouts, patchForLayout } from '@core/firmware/releases/layouts.ts';
 import { createPublishedFirmwareReleaseSource } from '@core/firmware/releases/publishedSource.ts';
 import type {
   FirmwareReleaseSummary,
@@ -140,36 +140,58 @@ export async function loadChosenPatch(
   return loaded;
 }
 
-/** The refusal at Prepare for a release with files by layout but none for the radio's. */
-export const NO_FILE_FOR_LAYOUT = (layout: string, have: readonly string[]): string =>
-  `Not available in this release: it has no file for this radio's flash layout (${layout}), only for ${have.join(' and ')}.`;
+/**
+ * The refusal at Prepare for a release with files by layout but none for this radio: none for its layout or, where the
+ * radio's stock base is known, none on that base. Never the nearest build instead.
+ */
+export const NO_FILE_FOR_LAYOUT = (
+  layout: string,
+  have: readonly string[],
+  base?: string,
+  haveBases: readonly string[] = [],
+): string =>
+  base !== undefined
+    ? `Not available in this release: there is no MM9PDY build for this radio (${base}) yet. This release has a file only for ${haveBases.length ? haveBases.join(' and ') : have.join(' and ')}.`
+    : `Not available in this release: it has no file for this radio's flash layout (${layout}), only for ${have.join(' and ')}.`;
 
 /**
- * False when the loaded release has files by layout but none for `radioLayout`: Prepare then stops before building
- * anything. True for a release with no files by layout, or a radio whose layout is unknown.
+ * False when the loaded release has files by layout but none for `radioLayout` (and, where known, the radio's stock
+ * `base`): Prepare then stops before building anything. True for a release with no files by layout, or a radio whose
+ * layout is unknown.
  */
 export function releaseHasFileForLayout(
   loaded: LoadedFirmwarePatch,
   radioLayout: string | undefined,
+  base?: string,
 ): boolean {
-  return radioLayout === undefined || patchForLayout(loaded, radioLayout) !== undefined;
+  return radioLayout === undefined || patchForLayout(loaded, radioLayout, base) !== undefined;
+}
+
+/** The refusal text for a release with no file for this radio, from what the release has. */
+export function noFileForRadioMessage(
+  loaded: LoadedFirmwarePatch,
+  radioLayout: string,
+  base?: string,
+): string {
+  return NO_FILE_FOR_LAYOUT(radioLayout, loadedLayouts(loaded), base, loadedBases(loaded));
 }
 
 /**
- * The file of the loaded release to prepare for the radio's layout. A patch with no files by layout, or a radio whose
- * layout Studio doesn't know, is returned as is: the radio's interlocks decide. Throws
- * FirmwareError('patch-wrong-layout') when the release has files by layout but none for this one.
+ * The file of the loaded release to prepare for the radio's layout, and where known its stock base. A patch with no
+ * files by layout, or a radio whose layout Studio doesn't know, is returned as is: the radio's interlocks decide. Throws
+ * FirmwareError('patch-wrong-layout') when the release has files by layout but none for this radio.
  */
 export function pickPatchForLayout(
   loaded: LoadedFirmwarePatch,
   radioLayout: string | undefined,
+  radioCodeBase?: string,
 ): LoadedFirmwarePatch {
   if (radioLayout === undefined) return loaded;
-  const picked = patchForLayout(loaded, radioLayout);
+  const picked = patchForLayout(loaded, radioLayout, radioCodeBase);
   if (!picked) {
     throw new FirmwareError(
       'patch-wrong-layout',
-      NO_FILE_FOR_LAYOUT(radioLayout, loadedLayouts(loaded)),
+      noFileForRadioMessage(loaded, radioLayout, radioCodeBase),
     );
   }
   return picked;
@@ -202,7 +224,7 @@ export async function prepareFlash(
     target = { kind: 'stock' };
   } else {
     if (!loaded) throw new Error('The chosen patch has not been loaded.');
-    target = { kind: 'patch', patch: pickPatchForLayout(loaded, radioLayout) };
+    target = { kind: 'patch', patch: pickPatchForLayout(loaded, radioLayout, radioCodeBase) };
   }
   const image = await prepareFirmwareImage({
     descriptor: getStockFirmwareDescriptor(radioId),

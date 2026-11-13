@@ -70,6 +70,8 @@ export async function syntheticUv5rMiniRelease(
     version?: string;
     buildName?: string;
     rowLayout?: string | null;
+    /** The base the patch names; default `synthetic`. */
+    patchBase?: string;
   } = {},
 ) {
   const layout = opts.layout ?? 'L1';
@@ -86,9 +88,15 @@ export async function syntheticUv5rMiniRelease(
     ...base,
     patchNames: ['baofeng-uv5rmini-firmware'],
     releaseLayouts: UV5RMINI_STOCK_FIRMWARE.releaseLayouts,
+    // The synthetic patches name the base `synthetic`.
+    baseName: 'synthetic',
   };
   const buildName = opts.buildName ?? `mm9pdy-${layout}-${version}`;
-  const patchJson = await makeSyntheticUv5rMiniPatch(stockBin, built, { version, buildName });
+  const patchJson = await makeSyntheticUv5rMiniPatch(stockBin, built, {
+    version,
+    buildName,
+    ...(opts.patchBase ? { base: opts.patchBase } : {}),
+  });
   const patchBytes = new TextEncoder().encode(JSON.stringify(patchJson) + '\n');
   const patchSha256 = await sha256Hex(patchBytes);
   const rowLayout = opts.rowLayout === undefined ? layout : opts.rowLayout;

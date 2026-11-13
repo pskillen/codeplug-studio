@@ -63,13 +63,15 @@ export function combineLayoutFiles(
         `Studio can't tell which flash layout one of ${what} is for.`,
       );
     }
-    if (seen.has(f.layout)) {
+    // One file per layout and stock base: NRF and NRFB radios of one layout would get separate files.
+    const key = `${f.layout} ${fileBase(f) ?? ''}`;
+    if (seen.has(key)) {
       throw new FirmwareError(
         'patch-wrong-layout',
         `${what} has two files for ${f.layout}. A release has one file per flash layout.`,
       );
     }
-    seen.add(f.layout);
+    seen.add(key);
   }
   const sorted = flat.slice().sort((a, b) => order.indexOf(a.layout!) - order.indexOf(b.layout!));
   const [first, ...rest] = sorted;
@@ -79,24 +81,57 @@ export function combineLayoutFiles(
 /**
  * The file of a loaded release for `layout`, carrying the release's other files as `otherLayouts`. A file with no
  * layout (a radio without layouts, a to-stock or older build) is returned as is: the radio's interlocks decide. Undefined
- * when the release has files by layout but none for this one.
+ * when the release has files by layout but none for this one. Where the radio's stock base is known (`base`), the file
+ * must also be built on it: a release row is identified by its whole base, and Studio never offers the nearest build.
  */
 export function patchForLayout(
   loaded: LoadedFirmwarePatch,
   layout: string,
+  base?: string,
 ): LoadedFirmwarePatch | undefined {
   const files = layoutFiles(loaded);
   if (files.every((f) => f.layout === undefined)) return loaded;
-  const hit = files.find((f) => f.layout === layout);
+  const hit = files.find(
+    (f) => f.layout === layout && (base === undefined || fileBase(f) === base),
+  );
   if (!hit) return undefined;
   const rest = files.filter((f) => f !== hit);
   return rest.length ? { ...hit, otherLayouts: rest } : hit;
 }
 
-/** The release's file for a layout other than `layout`, the retry partner; undefined when there is none. */
+/** The stock base a file names (its patch's `base`), where it names one. */
+export function fileBase(file: LoadedFirmwarePatch): string | undefined {
+  return file.parsed?.description.base;
+}
+
+/** The stock bases a loaded release has files for, in the order loaded. */
+export function loadedBases(loaded: LoadedFirmwarePatch): readonly string[] {
+  return layoutFiles(loaded).flatMap((f) => {
+    const b = fileBase(f);
+    return b === undefined ? [] : [b];
+  });
+}
+
+/**
+ * The release's file for a layout other than `layout`, the retry partner; undefined when there is none. With
+ * `variantOfBase` (radios whose variants get separate builds), the partner must be for the same variant as the file
+ * refused (`refusedBase`): a file for another variant is never a partner.
+ */
 export function partnerFor(
   loaded: LoadedFirmwarePatch,
   layout: string,
+  opts: {
+    readonly refusedBase?: string;
+    readonly variantOfBase?: (base: string) => string | undefined;
+  } = {},
 ): LoadedFirmwarePatch | undefined {
-  return layoutFiles(loaded).find((f) => f.layout !== undefined && f.layout !== layout);
+  const { refusedBase, variantOfBase } = opts;
+  const variant =
+    variantOfBase && refusedBase !== undefined ? variantOfBase(refusedBase) : undefined;
+  return layoutFiles(loaded).find((f) => {
+    if (f.layout === undefined || f.layout === layout) return false;
+    if (!variantOfBase) return true;
+    const b = fileBase(f);
+    return variant !== undefined && b !== undefined && variantOfBase(b) === variant;
+  });
 }

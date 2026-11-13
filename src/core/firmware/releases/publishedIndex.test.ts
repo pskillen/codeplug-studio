@@ -169,7 +169,25 @@ describe('parsePublishedReleaseIndex: one row per flash layout', () => {
   it('refuses two rows for one layout of one version', async () => {
     const { l1, parse } = await mini();
     expect(messageOf(() => parse(entryOf(l1.row), entryOf(l1.row)))).toMatch(
-      /baofeng-uv5rmini 9\.9\.9 L1 is listed twice/,
+      /baofeng-uv5rmini 9\.9\.9 L1 on stock v0\.0\.1-test is listed twice/,
+    );
+  });
+
+  it("reads a row's optional base, which must be a known base and its own stock's", async () => {
+    const { l1, parse } = await mini();
+    const [row] = parse({ ...entryOf(l1.row), base: 'synthetic' });
+    expect(row!.base).toBe('synthetic');
+    expect('base' in parse(entryOf(l1.row))[0]!).toBe(false);
+    expect(messageOf(() => parse({ ...entryOf(l1.row), base: 'nrf-v0.04' }))).toMatch(
+      /nrf-v0\.04 is not a stock base Studio knows/,
+    );
+    expect(messageOf(() => parse({ ...entryOf(l1.row), base: 7 }))).toMatch(/bad base/);
+  });
+
+  it('refuses a base on a radio without layouts', async () => {
+    const { dm32, parse } = await mini();
+    expect(messageOf(() => parse({ ...entryOf(dm32.row), base: 'x' }))).toMatch(
+      /this radio's releases have no bases/,
     );
   });
 

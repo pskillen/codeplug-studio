@@ -13,7 +13,7 @@ import { RadioIoError } from '@integrations/radio-io';
 import { Button, Panel, StatusBanner, TextInput } from '../../../components/v2/index.ts';
 import {
   grantFirmwareRadioReportPort,
-  NO_FILE_FOR_LAYOUT,
+  noFileForRadioMessage,
   prepareFlash,
   readFirmwareRadioReport,
   releaseHasFileForLayout,
@@ -56,12 +56,23 @@ function RadioLayoutQuestion({
       {question.warning ? <StatusBanner tone="warning">{question.warning}</StatusBanner> : null}
       <RadioInfoLine
         label={question.firmwareLabel}
+        help={question.firmwareHelp}
         options={question.firmwareOptions}
         value={answers.firmware}
         onChange={(firmware) => onChange({ firmware })}
       />
+      {question.suffixLabel ? (
+        <RadioInfoLine
+          label={question.suffixLabel}
+          help={question.suffixHelp}
+          options={question.suffixOptions}
+          value={answers.suffix ?? ''}
+          onChange={(suffix) => onChange({ suffix })}
+        />
+      ) : null}
       <RadioInfoLine
         label={question.hardwareLabel}
+        help={question.hardwareHelp}
         options={question.hardwareOptions}
         value={answers.hardware}
         onChange={(hardware) => onChange({ hardware })}
@@ -73,11 +84,13 @@ function RadioLayoutQuestion({
 /** One Radio Info line: a dropdown of the supported values where the descriptor lists them, else typed. */
 function RadioInfoLine({
   label,
+  help,
   options,
   value,
   onChange,
 }: {
   label: string;
+  help?: string;
   options: readonly string[] | undefined;
   value: string;
   onChange: (value: string) => void;
@@ -90,6 +103,7 @@ function RadioInfoLine({
   return (
     <NativeSelect
       label={label}
+      description={help}
       value={value}
       data={[{ value: '', label: 'Choose…', disabled: true }, ...options]}
       onChange={(e) => onChange(e.currentTarget.value)}
@@ -163,9 +177,9 @@ function ReadRadio({
   );
 }
 
-/** Shown with the image when the release has no file for the radio's other layout. */
+/** Shown with the image when the release has no other file for this radio to try after a refusal. */
 const NO_PARTNER_NOTE = (layout: string): string =>
-  `This release has only the ${layout} file. If the radio refuses it, Studio has no file for the other flash layout to try.`;
+  `If the radio refuses this ${layout} file, this release has no other file for this radio to try.`;
 
 /** The confirm for an updater's "already runs this build" warning. */
 const REINSTALL_CONFIRM_LABEL = 'Write it again anyway';
@@ -232,18 +246,23 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
       : null;
   const warning = warningFor && sameInputs(warningFor.for) ? warningFor.message : null;
   const awaitingConfirm = warning !== null && !reinstallConfirmed;
-  // A release with files by layout but none for the other layout: no retry if the radio refuses this one.
+  // A release with files by layout but no partner for this one (none for the other layout, or only for another
+  // variant): no retry if the radio refuses this one.
   const noPartner =
     !!image?.radioLayout &&
     !!loadedPatch &&
     loadedLayouts(loadedPatch).length > 0 &&
-    !partnerFor(loadedPatch, image.radioLayout);
-  // The release has files by layout but none for the radio's: say so and stop before anything is prepared.
+    !partnerFor(loadedPatch, image.radioLayout, {
+      refusedBase: image.baseName,
+      variantOfBase: updater.stock.releaseLayouts?.variantOfBase,
+    });
+  // The release has files by layout but none for this radio (its layout, and its base where known): say so and stop
+  // before anything is prepared. Never the nearest build instead.
   const unavailable =
     !!loadedPatch &&
     typeof radioLayout === 'string' &&
-    !releaseHasFileForLayout(loadedPatch, radioLayout)
-      ? NO_FILE_FOR_LAYOUT(radioLayout, loadedLayouts(loadedPatch))
+    !releaseHasFileForLayout(loadedPatch, radioLayout, radioCodeBase)
+      ? noFileForRadioMessage(loadedPatch, radioLayout, radioCodeBase)
       : null;
 
   useEffect(() => {

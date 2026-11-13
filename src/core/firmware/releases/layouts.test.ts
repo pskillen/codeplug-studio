@@ -5,9 +5,17 @@ import {
   syntheticDm32Release,
   syntheticUv5rMiniRelease,
 } from './__fixtures__/syntheticReleases.ts';
-import { layoutFiles, loadedLayouts, partnerFor, patchForLayout } from './layouts.ts';
+import { uv5rMiniVariantOfBase } from '../../radios/baofeng/uv-5r-mini/radioInfo.ts';
+import {
+  fileBase,
+  layoutFiles,
+  loadedBases,
+  loadedLayouts,
+  partnerFor,
+  patchForLayout,
+} from './layouts.ts';
 import { createPublishedFirmwareReleaseSource } from './publishedSource.ts';
-import type { PublishedFirmwareRelease } from './types.ts';
+import type { LoadedFirmwarePatch, PublishedFirmwareRelease } from './types.ts';
 import { createUserPatchSource, NOT_ONE_RELEASE } from './userPatchSource.ts';
 
 const MINI = 'baofeng-uv5rmini';
@@ -67,6 +75,61 @@ describe('published release with one row per flash layout', () => {
       l1.descriptor,
     ]).loadPatch(MINI, '9.9.9');
     expect(loadedLayouts(loaded)).toEqual(['L1', 'L2']);
+  });
+
+  it('picks by the radio stock base too, and never offers the nearest build', async () => {
+    const l1 = await syntheticUv5rMiniRelease({ layout: 'L1' });
+    const l2 = await syntheticUv5rMiniRelease({ layout: 'L2' });
+    const loaded = await createPublishedFirmwareReleaseSource(rowsOf(l1.row, l2.row), [
+      l1.descriptor,
+    ]).loadPatch(MINI, '9.9.9');
+    expect(patchForLayout(loaded, 'L2', 'synthetic')!.sha256).toBe(l2.patchSha256);
+    expect(patchForLayout(loaded, 'L2', 'nrf-v0.27')).toBeUndefined();
+    expect(loadedBases(loaded)).toEqual(['synthetic', 'synthetic']);
+  });
+
+  it("refuses a row whose base disagrees with its patch's base", async () => {
+    const crossed = await syntheticUv5rMiniRelease({ layout: 'L2', patchBase: 'other' });
+    const err = await refusal(
+      createPublishedFirmwareReleaseSource(rowsOf({ ...crossed.row, base: 'synthetic' }), [
+        crossed.descriptor,
+      ]).loadPatch(MINI, '9.9.9'),
+    );
+    expect(err.message).toMatch(/the release list says synthetic, but its patch is on other/);
+    // Without a row base, a patch on another base than its stock's is refused too.
+    const bare = await refusal(
+      createPublishedFirmwareReleaseSource(rowsOf(crossed.row), [crossed.descriptor]).loadPatch(
+        MINI,
+        '9.9.9',
+      ),
+    );
+    expect(bare.message).toMatch(/its patch names other, but it is built on synthetic/);
+  });
+
+  it('offers a retry partner only of the same variant (NRF or NRFB)', () => {
+    const file = (layout: string, base: string) =>
+      ({ layout, parsed: { description: { base } } }) as unknown as LoadedFirmwarePatch;
+    const variantOfBase = uv5rMiniVariantOfBase;
+    // Today's bases: L1 is NRFB v0.04 and L2 is NRF v0.27, so the partner always crosses the suffix: none.
+    const today: LoadedFirmwarePatch = {
+      ...file('L1', 'nrfb-v0.04'),
+      otherLayouts: [file('L2', 'nrf-v0.27')],
+    };
+    expect(partnerFor(today, 'L2', { refusedBase: 'nrf-v0.27', variantOfBase })).toBeUndefined();
+    expect(partnerFor(today, 'L1', { refusedBase: 'nrfb-v0.04', variantOfBase })).toBeUndefined();
+    // A same-suffix pair (a future NRF v0.04 base) is a partner, both ways.
+    const nrf: LoadedFirmwarePatch = {
+      ...file('L1', 'nrf-v0.04'),
+      otherLayouts: [file('L2', 'nrf-v0.27'), file('L2', 'nrfb-v0.27')],
+    };
+    expect(fileBase(partnerFor(nrf, 'L2', { refusedBase: 'nrf-v0.27', variantOfBase })!)).toBe(
+      'nrf-v0.04',
+    );
+    expect(fileBase(partnerFor(nrf, 'L1', { refusedBase: 'nrf-v0.04', variantOfBase })!)).toBe(
+      'nrf-v0.27',
+    );
+    // An unknown refused base gives no partner.
+    expect(partnerFor(nrf, 'L2', { variantOfBase })).toBeUndefined();
   });
 
   it('refuses a row whose layout disagrees with its build name', async () => {

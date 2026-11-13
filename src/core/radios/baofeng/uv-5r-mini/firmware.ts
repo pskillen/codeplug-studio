@@ -1,6 +1,6 @@
 /** Baofeng UV-5R Mini pinned stock and update-mode facts. */
 import type { StockFirmwareDescriptor } from '../../../firmware/types.ts';
-import { UV5RMINI_RADIO_LAYOUT_QUESTION } from './radioInfo.ts';
+import { UV5RMINI_RADIO_LAYOUT_QUESTION, uv5rMiniVariantOfBase } from './radioInfo.ts';
 
 export const UV5RMINI_FIRMWARE_ROLE_UFW = 'ufw';
 
@@ -77,5 +77,6 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   releaseLayouts: {
     layouts: UV5RMINI_RELEASE_LAYOUTS,
     fromBuildName: uv5rMiniLayoutFromBuildName,
+    variantOfBase: uv5rMiniVariantOfBase,
   },
 };

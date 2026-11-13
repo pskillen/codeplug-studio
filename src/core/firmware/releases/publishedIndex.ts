@@ -53,6 +53,28 @@ function rowLayout(
 }
 
 /**
+ * A row's optional `base` (UV-5R Mini `nrf-v0.27`): only for a radio with release layouts, naming one of its stock
+ * bases, and the base of the row's own `stockVersion`.
+ */
+function rowBase(
+  row: Record<string, unknown>,
+  descriptor: StockFirmwareDescriptor,
+  stockVersion: string,
+  where: string,
+): string | undefined {
+  const base = row.base;
+  if (base === undefined) return undefined;
+  if (typeof base !== 'string' || !base) throw indexError(`${where}: bad base`);
+  if (!descriptor.releaseLayouts) throw indexError(`${where}: this radio's releases have no bases`);
+  const variant = stockVariants(descriptor).find((v) => v.baseName === base);
+  if (!variant) throw indexError(`${where}: ${base} is not a stock base Studio knows`);
+  if (variant.version !== stockVersion) {
+    throw indexError(`${where}: base ${base} is not stock ${stockVersion}`);
+  }
+  return base;
+}
+
+/**
  * Parse the index into release rows. A malformed index or row throws. A row for a radio Studio does not know, or
  * built on a stock version other than the radio's pin, is left out: the index can run ahead of a Studio deploy.
  * For a radio with release layouts a release is one row per layout, each with an optional `layout`; a row without one
@@ -107,8 +129,14 @@ export function parsePublishedReleaseIndex(
       throw indexError(`${where}: bad result hashes`);
     }
     const layout = rowLayout(row, descriptor, where);
-    // A layout radio's row without a layout is checked against its partners once loaded.
-    const key = descriptor.releaseLayouts ? (layout ? `${where} ${layout}` : null) : where;
+    const base = rowBase(row, descriptor, stockVersion, where);
+    // A layout radio's row without a layout is checked against its partners once loaded. A release has one row per
+    // layout and stock base (its stock version names the base).
+    const key = descriptor.releaseLayouts
+      ? layout
+        ? `${where} ${layout} on stock ${stockVersion}`
+        : null
+      : where;
     if (key !== null) {
       if (seen.has(key)) throw indexError(`${key} is listed twice`);
       seen.add(key);
@@ -123,6 +151,7 @@ export function parsePublishedReleaseIndex(
       patchSha256,
       stockVersion,
       ...(layout ? { layout } : {}),
+      ...(base ? { base } : {}),
       publishedOn,
       summary: str(row, 'summary', where),
       verifyHint: str(row, 'verifyHint', where),
@@ -164,6 +193,19 @@ export function checkPublishedPatch(
     if (s?.sha256 !== m.sha256 || s.size !== m.size) {
       throw fail(`it is not built on stock ${variant.version}`);
     }
+  }
+  // The base the patch names is the row's, and its stock's.
+  if (release.base !== undefined && description.base !== release.base) {
+    throw fail(
+      `the release list says ${release.base}, but its patch is on ${description.base ?? 'no base'}`,
+    );
+  }
+  if (
+    variant.baseName !== undefined &&
+    description.base !== undefined &&
+    description.base !== variant.baseName
+  ) {
+    throw fail(`its patch names ${description.base}, but it is built on ${variant.baseName}`);
   }
   const results = Object.entries(description.result);
   if (

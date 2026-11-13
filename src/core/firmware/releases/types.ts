@@ -27,6 +27,12 @@ export interface PublishedFirmwareRelease {
    * `L2`). Optional in the index: a row without one takes it from the patch's build name once downloaded.
    */
   readonly layout?: string;
+  /**
+   * The stock base this row's file is built on (UV-5R Mini `nrf-v0.27`), for a radio with release layouts: with the
+   * layout it identifies the row. Optional in the index (the stock version names it too); a patch on another base is
+   * refused.
+   */
+  readonly base?: string;
   /** One or two sentences for the release list. */
   readonly summary: string;
   /** How the operator confirms this release is running. */

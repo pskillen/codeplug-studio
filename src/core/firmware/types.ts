@@ -124,12 +124,19 @@ export interface FirmwareReleaseLayouts {
    * build). A tag outside `layouts` (a test-only build) is returned as is, for the caller to refuse.
    */
   readonly fromBuildName: (buildName: string) => string | undefined;
+  /**
+   * The radio variant a stock base is for (UV-5R Mini: the `NRF`/`NRFB` suffix, `nrf` or `nrfb`), where variants get
+   * separate builds. The retry with a release's other file only goes to a file of the same variant.
+   */
+  readonly variantOfBase?: (base: string) => string | undefined;
 }
 
-/** What the operator typed from the radio's Radio Info screen. */
+/** What the operator gave from the radio's Radio Info screen. */
 export interface RadioInfoAnswers {
   readonly firmware: string;
   readonly hardware: string;
+  /** The suffix line, for a question that asks one (`FirmwareRadioLayoutQuestion.suffixLabel`). */
+  readonly suffix?: string;
 }
 
 export type RadioLayoutAnswer =
@@ -145,8 +152,9 @@ export type RadioLayoutAnswer =
        */
       readonly reported?: true;
       /**
-       * The stock base the radio's own code is built on, where the radio said so itself. The radio's interlocks refuse
-       * a file on another base.
+       * The stock base the radio's own code is built on (UV-5R Mini: from its report's flag, or its Radio Info suffix
+       * and Firmware lines). Prepare picks the release file on this base, and the radio's interlocks refuse a file on
+       * another one.
        */
       readonly codeBase?: string;
       /** Shown with the answer; it does not stop the wizard. */
@@ -168,6 +176,16 @@ export interface FirmwareRadioLayoutQuestion {
    */
   readonly firmwareOptions?: readonly string[];
   readonly hardwareOptions?: readonly string[];
+  /**
+   * A third line, beside the Firmware version, for a radio whose builds also differ by a suffix (UV-5R Mini: `NRF`,
+   * `NRFB`, `Other`). Asked only when set.
+   */
+  readonly suffixLabel?: string;
+  readonly suffixOptions?: readonly string[];
+  /** Where on the radio each line is shown, under its field. */
+  readonly firmwareHelp?: string;
+  readonly hardwareHelp?: string;
+  readonly suffixHelp?: string;
   /** Shown with the question, before anything is picked: what a wrong pick does. */
   readonly warning?: string;
   readonly resolve: (answers: RadioInfoAnswers) => RadioLayoutAnswer;

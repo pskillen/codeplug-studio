@@ -149,7 +149,7 @@ export const INITIAL_FIRMWARE_WIZARD_STATE: FirmwareWizardState = {
   riskAccepted: false,
   stock: null,
   image: null,
-  radioInfo: { firmware: '', hardware: '' },
+  radioInfo: { firmware: '', hardware: '', suffix: '' },
   radioRead: null,
   reinstallConfirmed: false,
   checks: NO_CHECKS,

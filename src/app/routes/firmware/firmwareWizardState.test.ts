@@ -198,7 +198,7 @@ describe('firmwareWizardReducer', () => {
     );
     expect(s.image).toBeNull();
     expect(s.checks.risk).toBe(false);
-    expect(s.radioInfo).toEqual({ firmware: 'V0.27', hardware: 'V1.7' });
+    expect(s.radioInfo).toEqual({ firmware: 'V0.27', hardware: 'V1.7', suffix: '' });
     expect(reduce(s, { type: 'restart' }).radioInfo.firmware).toBe('');
   });
 

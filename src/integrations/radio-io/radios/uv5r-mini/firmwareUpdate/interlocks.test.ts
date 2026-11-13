@@ -184,10 +184,14 @@ describe('checkUv5rMiniImage — already installed, always-write layout loader',
   });
 
   it('only says the radio may run the stock when it names no build', () => {
-    // A radio with no radio report answers Radio Info; Firmware V0.04 resolves to layout 1, so the nrfb-v0.04
+    // A radio with no radio report answers Radio Info; NRFB V0.04 resolves to layout 1, so the nrfb-v0.04
     // to-stock file fits it. An MM9PDY build from before the report names no build either, so it says only "may".
-    const answer = uv5rMiniLayoutFromRadioInfo({ firmware: 'V0.04', hardware: 'V1.7' });
-    expect(answer).toEqual({ kind: 'layout', layout: 'L1' });
+    const answer = uv5rMiniLayoutFromRadioInfo({
+      firmware: 'V0.04',
+      suffix: 'NRFB',
+      hardware: 'V1.7',
+    });
+    expect(answer).toEqual({ kind: 'layout', layout: 'L1', codeBase: 'nrfb-v0.04' });
     const run = checkL1({ stamp: 'nrfb-v0.04', radioLayout: 'L1', radioBuild: undefined });
     expect(run).toThrow(RadioConfirmRequiredError);
     expect(run).toThrow(/so it may already run the stock nrfb-v0\.04\./);
