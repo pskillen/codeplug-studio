@@ -257,12 +257,12 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
 
   async function openStepper() {
     fireEvent.click(screen.getByRole('button', { name: 'Write radio…' }));
-    await screen.findByRole('button', { name: 'Connect & read' });
+    await screen.findByRole('button', { name: 'Read & write' });
   }
 
   async function connect() {
     await openStepper();
-    fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Read & write' }));
   }
 
   it('shows This radio with the range, and lists exactly the receive-only channels (code 3)', async () => {
@@ -286,12 +286,14 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     await waitFor(() => expect(writeFrames).toBe(1));
   });
 
-  it('shows no receive-only warning when every channel can transmit', async () => {
+  it('every channel can transmit and nothing else needs the user: reads then writes in one go (#1638)', async () => {
     channels = [channel(1, 145.5)];
     renderPanel();
     await connect();
-    await screen.findByRole('button', { name: 'Write codeplug' });
+    await waitFor(() => expect(writeFrames).toBe(1));
+    expect(results).toEqual(['keep']);
     expect(screen.queryByTestId('d890-receive-only')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Write codeplug' })).toBeNull();
   });
 
   it('writes no settings when Radio settings is unticked, even with changes set', async () => {
@@ -300,7 +302,7 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     await openStepper();
     // Ticked by default because there are changes; untick it.
     fireEvent.click(screen.getByRole('checkbox', { name: 'Radio settings' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Read & write' }));
     await screen.findByRole('button', { name: 'Write codeplug' });
     expect(screen.queryByTestId('d890-settings-review')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Write codeplug' }));
@@ -415,18 +417,20 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     clearAllOverrides(build.id);
   });
 
-  it('settings alone goes through the settings-only Write, not the codeplug upload', async () => {
+  it('settings alone, on the radio they were read from, goes through the settings-only Write in one go', async () => {
+    vi.mocked(settingsWrite.writeAtD890SettingsOnly).mockClear();
     const build = renderPanel();
     setRead(build.id, readOf(SERIAL));
     setOverride(build.id, 'keyTone', keyToneOpposite());
     await openStepper();
     // Untick the codeplug: only Radio settings stays ticked.
     fireEvent.click(screen.getByRole('checkbox', { name: 'Codeplug' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
-    await screen.findByRole('button', { name: 'Write settings' });
-    expect(radioIoSession.uploadPreparedRadioWrite).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Write settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Read & write' }));
+    // Same radio, no warning, no choice: no Review stop (#1638).
     await waitFor(() => expect(settingsWrite.writeAtD890SettingsOnly).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(writeFrames).toBe(1));
+    expect(radioIoSession.uploadPreparedRadioWrite).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Write settings' })).toBeNull();
     expect(results[0]).toMatchObject({ decision: 'apply' });
     clearAllOverrides(build.id);
   });
@@ -441,8 +445,8 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     await openStepper();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Codeplug' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Satellite keps' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Write settings + keps' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Read & write' }));
+    // Same radio, nothing to decide: no Review stop (#1638).
     expect(await screen.findByTestId('write-stepper-restart-wait')).toBeInTheDocument();
     // The settings-only session closed (END) before any keps frame.
     expect(settingsWrite.writeAtD890SettingsOnly).toHaveBeenCalledTimes(1);
@@ -464,7 +468,7 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     setOverride(build.id, 'keyTone', keyToneOpposite());
     await openStepper();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Codeplug' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Read & write' }));
     // Nothing would be written with Keep, so the button names nothing and is disabled.
     const write = await screen.findByRole('button', { name: 'Write' });
     expect(write).toBeDisabled();
@@ -578,7 +582,7 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
       setOverride(build.id, 'language', 2);
       await openStepper();
       fireEvent.click(screen.getByRole('checkbox', { name: 'Codeplug' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Read & write' }));
       expect(await screen.findByRole('button', { name: 'Write settings' })).toBeDisabled();
       fireEvent.click(screen.getByRole('button', { name: 'Clear the language change' }));
       const write = await screen.findByRole('button', { name: 'Write' });

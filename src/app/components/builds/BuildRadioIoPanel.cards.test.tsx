@@ -206,7 +206,7 @@ describe('BuildRadioIoPanel layout, AT-D890UV (#1393)', () => {
   it('Write radio… opens the stepper', async () => {
     renderPanel('radio-io-at-d890uv');
     fireEvent.click(await screen.findByRole('button', { name: 'Write radio…' }));
-    expect(await screen.findByRole('button', { name: 'Connect & read' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Read & write' })).toBeInTheDocument();
   });
 
   it('shows the last backup this session', async () => {

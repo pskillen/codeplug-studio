@@ -3,6 +3,10 @@
  * sections every radio gets (identity, channels, contacts, keps, time) followed by whatever
  * per-radio providers registered for that descriptor. PR 4c registers the D890's (range,
  * receive-only channels, settings, backup).
+ *
+ * `reviewPauseReasons` says whether Review needs the user at all (#1638): the generic sections are
+ * facts only, so only a provider can ask for the pause, for each warning, refusal or choice its
+ * sections show. No reason: the stepper writes straight after the read.
  */
 
 import { Fragment, type ReactNode } from 'react';
@@ -43,7 +47,39 @@ export interface ReviewSectionProvider {
   channelNotes?(ctx: ReviewContext): ReactNode[];
   /** Extra sections, shown after the generic identity and channel sections and before time. */
   sections(ctx: ReviewContext, descriptor: RadioDescriptor): ReactNode[];
+  /**
+   * Why Review must stop for the user (#1638): one reason per warning, refusal or choice this
+   * provider's sections or notes would show. A provider without it that renders any section
+   * makes Review pause (fail closed), so it is never skipped unseen.
+   */
+  pauseReasons?(ctx: ReviewContext): ReviewPauseReason[];
 }
+
+/**
+ * Something on Review the user must act on (#1638). Facts (identity, counts, time, the settings
+ * the user chose, an offer such as Save backup) are not reasons.
+ */
+export type ReviewPauseReason =
+  /** Write would send nothing (settings alone with Keep, or no override left). */
+  | 'nothing-to-write'
+  /** AT-D890UV: channels the radio's range makes receive-only. */
+  | 'receive-only-channels'
+  /** AT-D890UV: Master Id is on, so per-channel IDs have no effect. */
+  | 'master-id-on'
+  /** AT-D890UV MM9PDY: P1/P2 are not the step keys and the user has not chosen for them. */
+  | 'step-keys-nudge'
+  /** AT-D890UV: the settings to apply include a language this radio's region forbids. */
+  | 'settings-blocked'
+  /** AT-D890UV: the radio will switch repeater mode off at start-up. */
+  | 'repeater-mode-caution'
+  /** AT-D890UV, RT95: not the radio the settings were read from: Apply or Keep. */
+  | 'settings-choice'
+  /** RT95: an advanced setting (password, remote stun/kill) changes and no backup is held. */
+  | 'advanced-settings-no-backup'
+  /** RT95 MM9PDY: zones are written but no key opens the zone selector. */
+  | 'zone-key-nudge'
+  /** A provider with no `pauseReasons` rendered sections: shown rather than skipped unseen. */
+  | 'unclassified-sections';
 
 const providers: ReviewSectionProvider[] = [];
 
@@ -100,6 +136,25 @@ export function genericReviewSections(
     );
   }
   return out;
+}
+
+/**
+ * Every reason Review must stop for the user, from the providers that match this radio. Empty: the
+ * Write goes straight from the read to the first frame, in the same session.
+ */
+export function reviewPauseReasons(
+  descriptor: RadioDescriptor,
+  ctx: ReviewContext,
+): ReviewPauseReason[] {
+  const reasons = providers
+    .filter((p) => p.matches(descriptor))
+    .flatMap((p) => {
+      if (p.pauseReasons) return p.pauseReasons(ctx);
+      // Fail closed: no declared reasons but something to show means the user must see it.
+      const shows = p.sections(ctx, descriptor).some((n) => n != null && n !== false);
+      return shows ? (['unclassified-sections'] as ReviewPauseReason[]) : [];
+    });
+  return [...new Set(reasons)];
 }
 
 /** Generic sections, then registered per-radio sections, then time. */

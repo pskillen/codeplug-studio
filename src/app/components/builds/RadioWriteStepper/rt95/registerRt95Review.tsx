@@ -6,9 +6,11 @@
 import { RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
 import { registerReviewSectionProvider } from '../reviewSections.tsx';
 import { Rt95ChannelSignallingNote, rt95ReviewSections } from './Rt95ReviewSections.tsx';
+import { rt95ReviewPauseReasons } from './rt95ReviewPause.ts';
 
 registerReviewSectionProvider({
   matches: (d) => d.modelIds.includes(RT95_MODEL_ID),
   channelNotes: () => [<Rt95ChannelSignallingNote key="rt95-signalling" />],
   sections: rt95ReviewSections,
+  pauseReasons: rt95ReviewPauseReasons,
 });

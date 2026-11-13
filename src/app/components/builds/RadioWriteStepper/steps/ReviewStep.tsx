@@ -1,6 +1,7 @@
 /**
- * Step 3: review (#1393). Always shown. Sections come from `reviewSectionsFor`; the primary
- * button's label comes from the ticked parts. Cancel writes nothing.
+ * Step 3: review (#1393). Shown only when a provider gives a reason to stop (#1638). Sections come
+ * from `reviewSectionsFor`; the primary button's label comes from the ticked parts. Cancel writes
+ * nothing.
  */
 
 import { Fragment } from 'react';

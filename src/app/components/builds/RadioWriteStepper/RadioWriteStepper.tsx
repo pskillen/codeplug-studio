@@ -169,7 +169,7 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
           {view.canReconnect ? (
             <div style={{ marginTop: 8 }}>
               <Button variant="secondary" size="sm" onClick={actions.onReconnect}>
-                Reconnect and read again
+                Reconnect, read & write
               </Button>
             </div>
           ) : null}

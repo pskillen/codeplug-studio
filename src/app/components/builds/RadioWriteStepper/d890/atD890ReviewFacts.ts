@@ -14,13 +14,36 @@ import {
   type AtD890SettingsTargetId,
 } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import {
+  atD890RepeaterBootBytes,
   decodeAtD890RadioSettings,
+  type AtD890DecodedSetting,
   type AtD890RadioSettingsSnapshot,
   type AtD890SettingsOverride,
   type AtD890SettingValue,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
-import { radioValueText } from '../../../../lib/atD890RadioSettingsText.ts';
+import {
+  radioValueText,
+  repeaterModeAdvice,
+  type AtD890RepeaterModeAdvice,
+} from '../../../../lib/atD890RadioSettingsText.ts';
+
+/**
+ * The repeater-mode advice for what the radio will hold after the Write: the override only counts
+ * when the settings are applied (Review's Radio settings section and its pause, #1638).
+ */
+export function atD890ReviewRepeaterAdvice(
+  snapshot: Pick<AtD890RadioSettingsSnapshot, 'main'>,
+  decoded: Readonly<Record<string, AtD890DecodedSetting>>,
+  overrides: readonly AtD890SettingsOverride[],
+  applied: boolean,
+): AtD890RepeaterModeAdvice | undefined {
+  const repeaterOverride = applied
+    ? overrides.find((o) => o.fieldId === 'repeaterMode')?.value
+    : undefined;
+  const repeaterOn = (repeaterOverride ?? decoded.repeaterMode?.value) === true;
+  return repeaterModeAdvice(repeaterOn, atD890RepeaterBootBytes(snapshot.main));
+}
 
 /**
  * The range the radio enforces, from the ident's band code. That code is the radio's own sanitised

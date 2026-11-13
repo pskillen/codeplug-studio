@@ -62,12 +62,10 @@ describe('serial picker lifecycle', () => {
       result.current.actions.onConnectAndRead();
     });
     expect(grantRadioSerialPortForEgress).toHaveBeenCalledTimes(1);
+    // Nothing needs Review (#1638): the read runs straight into the keps write.
     await act(async () => choosePort({ transport: 'web', port: {} as never }));
-    expect(result.current.view.step).toBe('review');
-    expect(result.current.view.error).toBeNull();
-    expect(result.current.view.canReconnect).toBe(false);
-    await act(async () => result.current.actions.onWrite());
     expect(result.current.view.step).toBe('done');
+    expect(result.current.view.canReconnect).toBe(false);
     expect(result.current.view.error).toBeNull();
   });
 
@@ -101,7 +99,7 @@ describe('serial picker lifecycle', () => {
     expect(result.current.view.error).toContain('The serial device disconnected.');
     expect(result.current.view.canReconnect).toBe(true);
     await act(async () => result.current.actions.onReconnect());
-    expect(result.current.view.step).toBe('review');
+    expect(result.current.view.step).toBe('done');
     expect(result.current.view.error).toBeNull();
     expect(result.current.view.canReconnect).toBe(false);
   });
