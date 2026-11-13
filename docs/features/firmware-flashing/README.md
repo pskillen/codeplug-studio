@@ -115,11 +115,12 @@ hidden there).
    (unreviewed user-supplied patch)" or "stock firmware v1.01.048"), the
    version stamp and the result hashes. A failure, such as a patch made for different stock, stops here; nothing is
    sent.
-   For a radio that comes in more than one hardware layout (the UV-5R Mini), the step first asks for the lines of the
-   radio's Radio Info screen and prepares the image for that layout
+   For a radio whose firmware comes in more than one flash layout (the UV-5R Mini; the factory firmware's packing,
+   not the board), the step first finds the radio's layout and prepares the image for it: from the radio report an
+   MM9PDY build answers, or, with no report, from the Firmware and Hardware lines of its Radio Info screen
    ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md)).
-   When the radio already runs the image's build (on the UV-5R Mini: the typed build name is the image's, or a
-   to-stock file for a radio that shows no build), the step shows a warning instead: writing it again rewrites the
+   When the radio already runs the image's build (on the UV-5R Mini: the build name the radio reports is the image's,
+   or a to-stock file for a radio that names no build), the step shows a warning instead: writing it again rewrites the
    same firmware, a repair, with the usual power-cut risk. Nothing is prepared, and the wizard can't move on, until
    **Write it again anyway** is ticked; changing the answers clears the tick
    ([Already installed](../../reference/radios/baofeng/uv-5r-mini/firmware.md#already-installed)).
