@@ -180,7 +180,7 @@ describe('uv5rMiniLayoutFromReport', () => {
     expect(v004L1 && v004L1.kind === 'layout' ? v004L1.details : []).toContain(
       'Code base: nrfb-v0.04',
     );
-    // No file moves a radio between code bases any more (D87), so the old one-way warning is gone.
+    // No file moves a radio between code bases any more, so the old one-way warning is gone.
     expect(v004L1).not.toHaveProperty('warning');
 
     const v027L1 = answer(edited(asL1));

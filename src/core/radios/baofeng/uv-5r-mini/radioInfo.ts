@@ -48,7 +48,7 @@ export const UV5RMINI_HARDWARE_OPTIONS: readonly string[] = [
 ];
 
 /**
- * Shown with the question (D87). Accurate: the loader refuses a file for the other layout before installing
+ * Shown with the question. Accurate: the loader refuses a file for the other layout before installing
  * anything, but the stock update mode may already have reset the FM presets and volume by then.
  */
 export const UV5RMINI_RADIO_INFO_WARNING =

@@ -251,7 +251,7 @@ describe('PrepareStep: reading the UV-5R Mini', () => {
     render(<Harness updater={MINI} />);
     await readRadio(reportBlock({ vm: L1, v004: true, name: 'mm9pdy-L1-0.2.0' }));
     expect(screen.getByText('Code base: nrfb-v0.04')).toBeInTheDocument();
-    // No file moves a radio between code bases (D87): there is no one-way warning any more.
+    // No file moves a radio between code bases: there is no one-way warning any more.
     expect(screen.queryByText(/for good|never to V0\.04/)).toBeNull();
     expect(await screen.findByText(/Ready to flash: L1 build/)).toBeInTheDocument();
     expect(lastPrepare()[4]).toBe('L1');

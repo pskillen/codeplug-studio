@@ -308,7 +308,7 @@ describe('checkUv5rMiniImage — layout loaders', () => {
   });
 });
 
-describe('checkUv5rMiniImage — a radio code base never changes (D87, D88)', () => {
+describe('checkUv5rMiniImage — a radio code base never changes', () => {
   const checkWith = (layout: Uv5rMiniLayout, img: PreparedFirmwareImage) => () =>
     checkUv5rMiniImage(img, [layoutPin(layout)], bases);
   const change = (file: string, radio: string) => UV5RMINI_CODE_BASE_CHANGE_REFUSAL(file, radio);

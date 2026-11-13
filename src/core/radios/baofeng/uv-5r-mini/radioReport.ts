@@ -154,7 +154,7 @@ export function uv5rMiniLayoutFromReport(report: Uv5rMiniRadioReport): RadioLayo
         kind: 'layout',
         layout: report.layout,
         reported: true,
-        // A radio's code base never changes (D87): the interlocks refuse a file on another base.
+        // A radio's code base never changes: the interlocks refuse a file on another base.
         codeBase: report.codeBase,
         details,
         ...(report.name ? { build: report.name } : {}),

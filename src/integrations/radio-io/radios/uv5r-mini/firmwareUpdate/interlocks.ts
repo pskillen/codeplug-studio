@@ -23,7 +23,7 @@
  *      stock: a to-stock image. Its build name is its own `base`; its loader is exactly that base's layout loader
  *      (never a list-carrying one); and I4 tightens to no difference from the stock flash at all, app windows
  *      included. Keyed on the build name, so a patch can't opt out by saying nothing.
- *  Code base. A radio's code base never changes (D87, D88): the image's base is the radio's own code base, which is
+ *  Code base. A radio's code base never changes: the image's base is the radio's own code base, which is
  *      the one its radio report names (`radioCodeBase`) or, without a report, the base whose stock runs on the radio's
  *      layout (L1 is v0.04, L2 is v0.27). Checked after the layout check, so a crossed pick still reads as one.
  *  I7. For a list-carrying loader only: the image's build name is not on its loader's list (a re-flash or a late cut
@@ -242,7 +242,7 @@ export function checkUv5rMiniImage(
     }
   }
 
-  // Code base: the radio's own, from its report or else from its layout. Never a change (D87, D88).
+  // Code base: the radio's own, from its report or else from its layout. Never a change.
   const radioBase =
     image.radioCodeBase ??
     (image.radioLayout === undefined
