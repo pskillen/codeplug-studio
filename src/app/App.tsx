@@ -55,14 +55,6 @@ import StyleguideMembershipPage from './routes/styleguide/StyleguideMembershipPa
 import StyleguideNavigationPage from './routes/styleguide/StyleguideNavigationPage.tsx';
 import StyleguidePatternsPage from './routes/styleguide/StyleguidePatternsPage.tsx';
 import StyleguideContainersPage from './routes/styleguide/StyleguideContainersPage.tsx';
-import DebugIndexPage from './routes/debug/DebugIndexPage.tsx';
-import DebugIndexedDbPage from './routes/debug/DebugIndexedDbPage.tsx';
-import DebugIndexedDbStorePage from './routes/debug/DebugIndexedDbStorePage.tsx';
-import DebugIndexedDbRowViewerPage from './routes/debug/DebugIndexedDbRowViewerPage.tsx';
-import DebugLocalStoragePage from './routes/debug/DebugLocalStoragePage.tsx';
-import DebugLocalStorageViewerPage from './routes/debug/DebugLocalStorageViewerPage.tsx';
-import DebugD890EraseProbePage from './routes/debug/DebugD890EraseProbePage.tsx';
-import DebugSerialReopenPage from './routes/debug/DebugSerialReopenPage.tsx';
 import BuildsListPage from './routes/builds/BuildsListPage.tsx';
 import BuildsV2Layout from './routes/builds/BuildsV2Layout.tsx';
 import NewBuildPage from './routes/builds/NewBuildPage.tsx';
@@ -90,6 +82,7 @@ import PrivacyPolicyPage from './routes/legal/PrivacyPolicyPage.tsx';
 import TermsOfUsePage from './routes/legal/TermsOfUsePage.tsx';
 import CookiesPage from './routes/legal/CookiesPage.tsx';
 import AttributionsPage from './routes/AttributionsPage.tsx';
+import { gatedDebugRoute } from './routes/debug/debugRoutes.tsx';
 
 function MapRedirect() {
   return <Navigate to="/library/channels" replace />;
@@ -131,20 +124,7 @@ export const appRouter = createBrowserRouter([
       },
       { path: '/styleguide/v2', element: <StyleguideLegacyRedirect /> },
       { path: '/styleguide/v2/*', element: <StyleguideLegacyRedirect /> },
-      { path: '/debug', element: <DebugIndexPage /> },
-      { path: '/debug/indexed-db', element: <DebugIndexedDbPage /> },
-      { path: '/debug/indexed-db/:storeName', element: <DebugIndexedDbStorePage /> },
-      {
-        path: '/debug/indexed-db/:storeName/:projectId/:id',
-        element: <DebugIndexedDbRowViewerPage />,
-      },
-      { path: '/debug/local-storage', element: <DebugLocalStoragePage /> },
-      {
-        path: '/debug/local-storage/:storageKey',
-        element: <DebugLocalStorageViewerPage />,
-      },
-      { path: '/debug/d890-erase-probe', element: <DebugD890EraseProbePage /> },
-      { path: '/debug/serial-reopen', element: <DebugSerialReopenPage /> },
+      gatedDebugRoute,
       {
         element: <RequireActiveProject />,
         children: [

@@ -10,12 +10,26 @@ import {
   saveActiveProjectId,
   setAnalyticsConsent,
 } from '@integrations/preferences/index.ts';
+import { DEVELOPER_MODE_KEY } from '@integrations/preferences/developerMode.ts';
+import type { RouteObject } from 'react-router-dom';
 import App, { appRouter } from './App.tsx';
+import DebugGate from './routes/debug/DebugGate.tsx';
 import ProjectProvider from './state/ProjectProvider.tsx';
 import DriveSessionProvider from './state/DriveSessionProvider.tsx';
 import { OperatorPositionProvider } from './state/operatorPosition.tsx';
 import { persistence } from './state/persistence.ts';
 import { theme } from './theme.ts';
+
+// The build env the prod gate sees; tests flip it to 'prod' (the real `__BUILD_ENV__` is 'local' under vitest).
+const gateEnv = vi.hoisted(() => ({ buildEnv: 'local' }));
+vi.mock('./services/prodFeatureGate.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./services/prodFeatureGate.ts')>();
+  return {
+    ...actual,
+    resolveDebugPagesGate: (options: { developerMode?: boolean } = {}) =>
+      actual.resolveDebugPagesGate({ ...options, buildEnv: gateEnv.buildEnv }),
+  };
+});
 
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }: { children: React.ReactNode }) => (
@@ -96,6 +110,7 @@ describe('App', () => {
   });
 
   afterEach(() => {
+    gateEnv.buildEnv = 'local';
     window.history.pushState({}, '', '/');
     void appRouter.navigate('/', { replace: true });
     vi.unstubAllGlobals();
@@ -194,5 +209,75 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'Cookies' })).toHaveAttribute('href', '/cookies');
     expect(screen.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
     expect(screen.getByRole('link', { name: 'Terms' })).toHaveAttribute('href', '/terms');
+  });
+
+  describe('developer mode (#1650)', () => {
+    function debugPathsOutsideGate(routes: RouteObject[], underGate: boolean): string[] {
+      return routes.flatMap((route) => {
+        const gated =
+          underGate ||
+          (typeof route.element === 'object' &&
+            route.element !== null &&
+            'type' in route.element &&
+            route.element.type === DebugGate);
+        const own = route.path?.startsWith('/debug') && !gated ? [route.path] : [];
+        return [...own, ...debugPathsOutsideGate(route.children ?? [], gated)];
+      });
+    }
+
+    async function overflowMenuLabels(): Promise<(string | null)[]> {
+      fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+      const items = await screen.findAllByRole('menuitem');
+      return items.map((el) => el.textContent);
+    }
+
+    it('mounts every /debug route under the debug gate', () => {
+      expect(debugPathsOutsideGate(appRouter.routes as RouteObject[], false)).toEqual([]);
+    });
+
+    it('hides Debug on prod with developer mode off', async () => {
+      gateEnv.buildEnv = 'prod';
+      setAnalyticsConsent('declined');
+      renderApp('/debug');
+      expect(screen.queryByRole('heading', { name: 'Debug' })).not.toBeInTheDocument();
+      expect(screen.queryByTestId('developer-mode-badge')).not.toBeInTheDocument();
+      expect(await overflowMenuLabels()).not.toContain('Debug');
+    });
+
+    it('shows Debug and the badge on prod with developer mode on, and the badge turns it off', async () => {
+      gateEnv.buildEnv = 'prod';
+      setAnalyticsConsent('declined');
+      localStorage.setItem(DEVELOPER_MODE_KEY, 'on');
+      renderApp('/debug');
+      expect(screen.getByRole('heading', { name: 'Debug' })).toBeInTheDocument();
+      expect(screen.getByTestId('developer-mode-badge')).toBeInTheDocument();
+      expect(await overflowMenuLabels()).toContain('Debug');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Turn off developer mode' }));
+      expect(localStorage.getItem(DEVELOPER_MODE_KEY)).toBeNull();
+      expect(screen.queryByTestId('developer-mode-badge')).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'Debug' })).not.toBeInTheDocument();
+    });
+
+    it('shows Debug on pre-prod builds with developer mode off', async () => {
+      for (const env of ['local', 'main', 'dev', 'staging']) {
+        gateEnv.buildEnv = env;
+        setAnalyticsConsent('declined');
+        const view = renderApp('/debug');
+        expect(screen.getByRole('heading', { name: 'Debug' })).toBeInTheDocument();
+        expect(await overflowMenuLabels()).toContain('Debug');
+        view.unmount();
+      }
+    });
+
+    it('turns on with five taps on the version in the footer', () => {
+      gateEnv.buildEnv = 'prod';
+      setAnalyticsConsent('declined');
+      renderApp('/');
+      const version = screen.getByTestId('build-version');
+      for (let i = 0; i < 5; i += 1) fireEvent.click(version);
+      expect(localStorage.getItem(DEVELOPER_MODE_KEY)).toBe('on');
+      expect(screen.getByTestId('developer-mode-badge')).toBeInTheDocument();
+    });
   });
 });

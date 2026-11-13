@@ -58,6 +58,8 @@ function Unavailable({ message }: { message: string }) {
 }
 
 export default function FirmwareFlasherPage() {
+  // Read once when the page opens, developer mode included (#1650): flipping developer mode never changes the
+  // offered radios under an open wizard, so a run is never cut off mid-flash. The new state applies on the next visit.
   const offered = useMemo(() => listOfferedFirmwareUpdaters(), []);
   const [state, dispatch] = useReducer(firmwareWizardReducer, INITIAL_FIRMWARE_WIZARD_STATE);
   const [running, setRunning] = useState(false);

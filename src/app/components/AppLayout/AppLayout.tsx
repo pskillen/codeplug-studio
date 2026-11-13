@@ -13,6 +13,7 @@ import {
 import { isFullBleedPath, isWideDesktopPath } from '../../nav/fullBleedRoutes.ts';
 import type { BottomTabItem } from '../v2/BottomTabBar.tsx';
 import BuildFooter from '../BuildFooter/BuildFooter.tsx';
+import DeveloperModeBadge from '../DeveloperModeBadge/DeveloperModeBadge.tsx';
 import BuildStripLeading from '../builds/BuildStripLeading.tsx';
 import BuildSubChrome from '../builds/BuildSubChrome.tsx';
 import CookieConsentBanner from '../CookieConsentBanner/CookieConsentBanner.tsx';
@@ -25,6 +26,7 @@ import DriveSaveFlowProvider, {
 import SidebarDriveControls from '../SidebarDriveControls/SidebarDriveControls.tsx';
 import ChromeDismissibleNotices from '../shell/ChromeDismissibleNotices.tsx';
 import QuickProjectSwitcher from '../shell/QuickProjectSwitcher.tsx';
+import { useDeveloperMode } from '../../hooks/useDeveloperMode.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useProjectChipStatus } from '../../hooks/useProjectChipStatus.ts';
 import { useProjectPortableDirty } from '../../hooks/useProjectPortableDirty.ts';
@@ -39,6 +41,7 @@ import { navActive } from '../../nav/navActive.ts';
 import { primaryNavItems } from '../../nav/primaryNavItems.ts';
 import { useBuildContextualStrip } from '../../nav/useBuildContextualStrip.ts';
 import { activeBuildSectionLabel, isBuildDetailPath } from '../../routes/builds/nav.ts';
+import { resolveDebugPagesGate } from '../../services/prodFeatureGate.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import shellClasses from '../v2/AppShell.module.css';
 import classes from './AppLayout.module.css';
@@ -75,6 +78,8 @@ function AppLayoutShell() {
   const { saving } = useDriveSaveFlowContext();
   const { dirty } = useProjectPortableDirty(activeProjectId, activeProject ?? undefined);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [developerMode] = useDeveloperMode();
+  const debugAllowed = resolveDebugPagesGate({ developerMode }) === 'allowed';
 
   const chipStatus = useProjectChipStatus({
     project: activeProject,
@@ -93,7 +98,7 @@ function AppLayoutShell() {
       [item.to, ...(item.alsoActiveFor ?? [])].some((to) => navActive(location.pathname, to)),
     ) ?? null;
 
-  const staticStrip = resolveContextualStripItems(location.pathname);
+  const staticStrip = resolveContextualStripItems(location.pathname, developerMode);
   const buildStrip = useBuildContextualStrip(location.pathname);
   const stripItems = buildStrip ?? staticStrip;
   const buildDetailId = isBuildDetailPath(location.pathname)
@@ -207,13 +212,15 @@ function AppLayoutShell() {
         >
           Settings
         </Menu.Item>
-        <Menu.Item
-          component={Link}
-          to="/debug"
-          leftSection={<IconBug size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-        >
-          Debug
-        </Menu.Item>
+        {debugAllowed ? (
+          <Menu.Item
+            component={Link}
+            to="/debug"
+            leftSection={<IconBug size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+          >
+            Debug
+          </Menu.Item>
+        ) : null}
       </Menu.Dropdown>
     </Menu>
   );
@@ -298,7 +305,12 @@ function AppLayoutBody({
           showTabs={isDesktopNav !== false}
           projectChip={projectChipControl}
           onBrandClick={() => navigate(hasActiveProject ? '/library/channels' : '/')}
-          rightExtra={hasActiveProject ? <SidebarDriveControls /> : undefined}
+          rightExtra={
+            <>
+              <DeveloperModeBadge />
+              {hasActiveProject ? <SidebarDriveControls /> : null}
+            </>
+          }
           avatar={overflowAvatar}
         />
         {stripItems && stripItems.length > 0 ? (
