@@ -191,6 +191,8 @@ export class Uv17ProProtocol implements CloneImageRadio {
   private priorImage: MemoryMap | null = null;
   /** True after ident + read magics this session. Upload then skips a second handshake. */
   private identComplete = false;
+  /** `Date.now()` when the radio last completed an exchange (handshake, block reply, write ACK). */
+  private lastExchangeAt: number | null = null;
 
   constructor(private readonly layout: Uv17ProLayout) {}
 
@@ -205,6 +207,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
     if (opts?.handshake !== 'none') {
       await handshake(this.layout, pipe, 'read', opts);
       this.identComplete = true;
+      this.markExchange();
     }
     return {
       raw: this.layout.ident.slice(),
@@ -215,6 +218,38 @@ export class Uv17ProProtocol implements CloneImageRadio {
   async disconnect(): Promise<void> {
     this.pipe = null;
     this.identComplete = false;
+    this.lastExchangeAt = null;
+  }
+
+  private markExchange(): void {
+    this.lastExchangeAt = Date.now();
+  }
+
+  /**
+   * True when the held session can carry `W` frames: the handshake ran and, on a layout with `sessionIdleMs`, the
+   * radio answered recently enough that it has not ended the session on its idle timeout.
+   */
+  private sessionLive(): boolean {
+    if (!this.identComplete) return false;
+    const idleMs = this.layout.sessionIdleMs;
+    if (idleMs === undefined) return true;
+    return this.lastExchangeAt !== null && Date.now() - this.lastExchangeAt <= idleMs;
+  }
+
+  /**
+   * Before the first `W` of a Write or Restore: reuse a live session, or run ident plus upload magics (with the
+   * model check). A session that has gone idle is first left to end, since a radio still in it ignores the ident.
+   */
+  private async ensureWriteSession(pipe: BytePipe, signal?: AbortSignal): Promise<void> {
+    if (this.sessionLive()) return;
+    if (this.identComplete && this.lastExchangeAt !== null) {
+      const endedAfter = this.layout.sessionEndedAfterMs ?? this.layout.sessionIdleMs ?? 0;
+      await delay(this.lastExchangeAt + endedAfter - Date.now(), signal);
+    }
+    this.identComplete = false;
+    await handshake(this.layout, pipe, 'upload', { signal });
+    this.identComplete = true;
+    this.markExchange();
   }
 
   private requirePipe(): BytePipe {
@@ -238,6 +273,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
         `${this.layout.protocolLabel} read reply echoed address 0x${echoed.toString(16)}, expected 0x${radioAddr.toString(16)}`,
       );
     }
+    this.markExchange();
     return uv17ProCrypt(encrypted, this.layout.defaultEncrsym);
   }
 
@@ -319,6 +355,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
     const frame = makeProgramRwWriteFrame(radioAddr, this.layout.blockSize, encrypted);
     await pipe.write(frame);
     await expectAck(pipe, this.layout.writeAckTimeoutMs);
+    this.markExchange();
   }
 
   async download(
@@ -373,10 +410,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
       { cur: 0, max: addrs.length, msg: 'Upload handshake', stage: 'Upload' },
       opts.signal,
     );
-    if (!this.identComplete) {
-      await handshake(this.layout, pipe, 'upload', { signal: opts.signal });
-      this.identComplete = true;
-    }
+    await this.ensureWriteSession(pipe, opts.signal);
     let done = 0;
     const max = addrs.length;
     const stagingChunks: { address: number; data: Uint8Array }[] = [];
@@ -462,10 +496,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
       { cur: 0, max, msg: 'Restore handshake', stage: 'Restore' },
       opts.signal,
     );
-    if (!this.identComplete) {
-      await handshake(this.layout, pipe, 'upload', { signal: opts.signal });
-      this.identComplete = true;
-    }
+    await this.ensureWriteSession(pipe, opts.signal);
     let done = 0;
     const stagingChunks: { address: number; data: Uint8Array }[] = [];
     const frames = [

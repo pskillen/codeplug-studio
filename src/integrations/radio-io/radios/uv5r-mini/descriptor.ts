@@ -45,6 +45,10 @@ export const UV5R_MINI_DESCRIPTOR: RadioDescriptor = {
   writeStrategy: 'full-image',
   baudRate: UV5R_MINI_BAUD_RATE,
   baudRateFallback: UV5R_MINI_BAUD_RATE_FALLBACK,
+  // The radio ends its clone session about 2 s after the last byte (decoded from the firmware, not yet seen on a
+  // radio) and returns to its idle screen. A longer Review reconnects and re-reads, so the Write encodes over what
+  // the radio holds now. The protocol's own idle check (`sessionIdleMs`) covers Restore and any other gap.
+  programHoldSafeMs: 1500,
   hydration: {
     extractHydration: extractUv5rMiniHydration,
     mergeChannelsIntoHydration: mergeChannelsIntoUv5rMiniHydration,

@@ -1,10 +1,15 @@
 /**
  * Fake UV-5R Mini over a 64 KiB external flash, for the MM9PDY Write, Backup and Restore tests. Acks every W and
  * answers R from flash. A W to a 4 KiB-aligned address erases that sector first, as the radio's clone handler does.
+ *
+ * With `sessionDropMs` set it also models the clone session on `Date.now()` (use fake timers): the ident opens a
+ * session, the radio ends it that long after the last byte it received, and outside a session it answers only an
+ * ident and drops everything else without a reply. Inside a session a second ident gets no reply.
  */
 
 import type { BytePipe } from '../../../types.ts';
 import { PROGRAM_RW_ACK } from '../../../kit/codecs/programRw.ts';
+import { RadioTimeoutError } from '../../../kit/errors.ts';
 import { uv17ProCrypt } from '../../uv17pro-family/crypt.ts';
 import { UV5R_MINI_LAYOUT as layout } from '../../uv17pro-family/layout.ts';
 import { fakeMagicReply } from '../../uv17pro-family/magicReplyTestKit.ts';
@@ -22,6 +27,10 @@ export class FakeMiniRadio implements BytePipe {
   ackLimit = Infinity;
   /** Corrupt the stored copy of the frame at this address (verify must catch it). */
   corruptAt: number | undefined;
+  /** Model the clone session: it ends this many ms after the last byte received. Unset: always in session. */
+  sessionDropMs: number | undefined;
+  private inSession = false;
+  private lastRxAt = 0;
 
   constructor(private readonly modelPrefix: Uint8Array | undefined = layout.modelReplyPrefix) {}
 
@@ -34,6 +43,17 @@ export class FakeMiniRadio implements BytePipe {
 
   async write(data: Uint8Array): Promise<void> {
     this.writes.push(data.slice());
+    if (this.sessionDropMs !== undefined) {
+      const now = Date.now();
+      if (this.inSession && now - this.lastRxAt > this.sessionDropMs) this.inSession = false;
+      this.lastRxAt = now;
+      if (bytesEqual(data, layout.ident)) {
+        if (this.inSession) return;
+        this.inSession = true;
+        return this.enqueue(new Uint8Array([PROGRAM_RW_ACK]));
+      }
+      if (!this.inSession) return;
+    }
     if (bytesEqual(data, layout.ident)) return this.enqueue(new Uint8Array([PROGRAM_RW_ACK]));
     for (const m of [...layout.magics.read, ...layout.magics.upload]) {
       if (bytesEqual(data, m.send))
@@ -59,7 +79,9 @@ export class FakeMiniRadio implements BytePipe {
   }
 
   async readExact(n: number): Promise<Uint8Array> {
-    if (this.buf.length < n) throw new Error(`FakeMiniRadio: needed ${n}, have ${this.buf.length}`);
+    if (this.buf.length < n) {
+      throw new RadioTimeoutError(`FakeMiniRadio: needed ${n}, have ${this.buf.length}`);
+    }
     const out = this.buf.slice(0, n);
     this.buf = this.buf.slice(n);
     return out;
@@ -71,6 +93,16 @@ export class FakeMiniRadio implements BytePipe {
 
   async close(): Promise<void> {
     /* no-op */
+  }
+
+  /** Every frame the radio was sent, as `ident`, `W`, `R` or `magic`, in order. */
+  frameLog(): string[] {
+    return this.writes.map((w) => {
+      if (bytesEqual(w, layout.ident)) return 'ident';
+      if (w[0] === 0x57) return 'W';
+      if (w[0] === 0x52) return 'R';
+      return 'magic';
+    });
   }
 
   wAddresses(): number[] {
