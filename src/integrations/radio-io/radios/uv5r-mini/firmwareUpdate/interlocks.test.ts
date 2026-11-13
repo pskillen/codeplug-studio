@@ -619,6 +619,14 @@ describe('checkUv5rMiniImage — to stock', () => {
     expect(toStock({ radioLayout: undefined })).toThrow(/doesn't know this radio's flash layout/);
   });
 
+  it('refuses a to-stock file on another code base than the one the radio reported', () => {
+    // An L1 radio whose MM9PDY build reports the v0.27 code: the v0.04 to-stock file would change its code base.
+    expect(toStock({ base: 'nrfb-v0.04', radioCodeBase: 'nrf-v0.27' })).toThrow(
+      UV5RMINI_CODE_BASE_CHANGE_REFUSAL('nrfb-v0.04', 'nrf-v0.27'),
+    );
+    expect(toStock({ base: 'nrfb-v0.04', radioCodeBase: 'nrfb-v0.04' })).not.toThrow();
+  });
+
   it('a modded build is not held to the to-stock rule', () => {
     const f = flashWith([0x4100, 1]);
     expect(() =>
