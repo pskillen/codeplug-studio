@@ -170,6 +170,8 @@ Nothing was sent." (`UV5RMINI_RETIRED_LOADERS`)
 | `L1-nolist-v1` | `b748e39af6caa7968a7eb74099e35dce0714876a0949a70d9279adc870ed7e09` |
 | `L2-nolist-v1` | `2f1b8999ea6dcc858ef076b20564e0339c1fb665add46efdafc4bd40222aadae` |
 
+**List-carrying loaders.** These keep their pin, and an image built with one still gets the "already installed" refusal.
+
 | Loader        | Packed SHA-256                                                     | Lists                                                      |
 | ------------- | ------------------------------------------------------------------ | ---------------------------------------------------------- |
 | `stock`       | `5382ce4d20dfc7a57cb2a86c836dbbe8c46f6f02625f6f91675df88066e9acb4` | `nrfb-v0.04`                                               |
