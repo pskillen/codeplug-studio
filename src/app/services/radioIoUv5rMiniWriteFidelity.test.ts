@@ -23,6 +23,11 @@ const REGIONS = layout.memStarts.map((start, i) => ({
   packed: layout.memStarts.slice(0, i).reduce((sum, _, j) => sum + layout.memSizes[j]!, 0),
 }));
 
+/** Every clone block address (`0x0000-0x803F`, `0x9000-0x903F`, `0xA000-0xA1BF`). */
+const CLONE_BLOCKS = REGIONS.flatMap((r) =>
+  Array.from({ length: r.size / layout.blockSize }, (_, i) => r.start + i * layout.blockSize),
+);
+
 function toneString(tone: RadioTone): string {
   if (tone.kind === 'ctcss') return String(tone.hz);
   if (tone.kind === 'dcs') return `D${String(tone.code).padStart(3, '0')}${tone.polarity ?? 'N'}`;
@@ -99,6 +104,11 @@ describe('UV-5R Mini Write through the library (#1578)', () => {
     const after = new Uint8Array(layout.memTotal);
     for (const r of REGIONS) after.set(radio.flash.subarray(r.start, r.start + r.size), r.packed);
     expect(after).toEqual(prior);
-    expect(radio.wAddresses().every((a) => a < 0xf000)).toBe(true);
+    // The fake's flash held the prior before the Write, so the equality above only counts if every clone block
+    // was sent.
+    const sent = radio.wAddresses();
+    expect(sent.length).toBeGreaterThan(0);
+    expect(new Set(sent)).toEqual(new Set(CLONE_BLOCKS));
+    expect(sent.every((a) => a < 0xf000)).toBe(true);
   });
 });

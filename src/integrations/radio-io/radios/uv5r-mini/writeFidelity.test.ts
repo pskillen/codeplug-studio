@@ -42,6 +42,11 @@ function radioHolding(packed: Uint8Array): FakeMiniRadio {
   return radio;
 }
 
+/** Every clone block address (`0x0000-0x803F`, `0x9000-0x903F`, `0xA000-0xA1BF`), in order. */
+const CLONE_BLOCKS = REGIONS.flatMap((r) =>
+  Array.from({ length: r.size / layout.blockSize }, (_, i) => r.start + i * layout.blockSize),
+);
+
 async function connected(radio: FakeMiniRadio) {
   const proto = new Uv5rMiniProtocol();
   await proto.connect(radio, { handshake: 'none' });
@@ -68,8 +73,11 @@ describe('UV-5R Mini Write round trip (#1578)', () => {
     const writeImage = proto.encodeChannels(read, library);
     expect(writeImage.bytes).toEqual(prior);
 
+    // Wipe the clone regions after the Read, so what the radio holds afterwards can only come from the Write.
+    for (const r of REGIONS) radio.flash.fill(0xff, r.start, r.start + r.size);
     radio.writes.length = 0;
     await proto.upload(writeImage, {});
+    expect(new Set(radio.wAddresses())).toEqual(new Set(CLONE_BLOCKS));
     const payload = new Uint8Array(layout.memTotal).fill(0x00);
     for (const r of REGIONS) {
       payload.set(radio.flash.subarray(r.start, r.start + r.size), r.packed);
