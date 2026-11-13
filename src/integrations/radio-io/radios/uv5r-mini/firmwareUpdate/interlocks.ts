@@ -88,9 +88,13 @@ export const UV5RMINI_ALREADY_INSTALLED_REFUSAL = (build: string): string =>
 export const UV5RMINI_REINSTALL_WARNING = (build: string): string =>
   `This radio already runs ${build}. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.`;
 
-/** The warning for a to-stock image when Radio Info shows no MM9PDY build: the radio looks to be on that stock. */
+/**
+ * The warning for a to-stock image when Radio Info shows no MM9PDY build: the radio may be on that stock. The text
+ * only says "may", because the typed Firmware line is not compared with the stock's version (a radio moved to v0.27
+ * shows V0.27 and is offered the nrfb-v0.04 file).
+ */
 export const UV5RMINI_REINSTALL_STOCK_WARNING = (stock: string): string =>
-  `Radio Info shows no MM9PDY build, so this radio already runs the stock ${stock}. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.`;
+  `Radio Info shows no MM9PDY build, so this radio may already run the stock ${stock}. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.`;
 
 /** The refusal for an image built with a retired loader. */
 export const UV5RMINI_RETIRED_LOADER_REFUSAL =

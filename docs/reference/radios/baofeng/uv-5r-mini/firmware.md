@@ -150,8 +150,8 @@ are equal plain bytes. Studio never descrambles anything. The stock bytes come f
   and volume (below). Each loader always builds to the same bytes, so its packed hash is its pin.
 - They **always write**: every install erases and rewrites the firmware area from `0x4000` to the end of the image, even
   when the radio already holds the same build, is on the same stock, or has a damaged app. So the image's length is
-  what bounds the erase, and the Area and Stock bytes checks keep every image ending at the area end, `0x7C000`: a
-  longer image is refused, and so is one of any other length than the stock's.
+  what bounds the erase, and the Area and Stock bytes checks keep every image the stock's length, ending at or below the layout's area end
+  (`0x7C000`): a longer image is refused, and so is one of any other length than the stock's.
 - **List-carrying loaders**: the older loaders, each with a list of the builds it may install. They stay pinned so that
   images already built on them still pass the checks.
 
@@ -242,7 +242,8 @@ loader:
 - **Layout loader (`L1`, `L2`): a warning with an explicit confirm.** The loader always writes, so writing the same
   build again is a repair, with the usual power-cut risk. Prepare shows the warning, "This radio already runs <build>.
   Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies." (for
-  stock onto stock: "Radio Info shows no MM9PDY build, so this radio already runs the stock <base>. …"), and a tick
+  stock onto stock: "Radio Info shows no MM9PDY build, so this radio may already run the stock <base>. …"; the Firmware line is not compared with the stock's
+  version, so it says only "may"), and a tick
   box, "Write it again anyway". Until it is ticked no image is prepared, the wizard can't move on, and nothing is sent.
   The interlock throws `RadioConfirmRequiredError` (error code `needsConfirm`), not an interlock error.
 - **List-carrying loader: refused.** That loader writes nothing for the build it is given again. "Radio Info says this

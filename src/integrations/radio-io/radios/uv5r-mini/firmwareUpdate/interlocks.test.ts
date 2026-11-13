@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { stockVariants } from '@core/firmware/stockVariants.ts';
 import { UV5RMINI_STOCK_FIRMWARE } from '@core/radios/baofeng/uv-5r-mini/firmware.ts';
+import { uv5rMiniLayoutFromRadioInfo } from '@core/radios/baofeng/uv-5r-mini/radioInfo.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 
 import { RadioConfirmRequiredError, RadioInterlockError } from '../../../kit/errors.ts';
@@ -169,11 +170,28 @@ describe('checkUv5rMiniImage — already installed, always-write layout loader',
     const run = checkL1({ stamp: 'nrfb-v0.04', radioBuild: undefined });
     expect(run).toThrow(RadioConfirmRequiredError);
     expect(run).toThrow(
-      'Radio Info shows no MM9PDY build, so this radio already runs the stock nrfb-v0.04. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.',
+      'Radio Info shows no MM9PDY build, so this radio may already run the stock nrfb-v0.04. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.',
     );
     expect(checkL1({ stamp: 'nrfb-v0.04', radioBuild: 'NRFB-v0.04 ' })).toThrow(
       RadioConfirmRequiredError,
     );
+    expect(checkL1({ stamp: 'nrfb-v0.04', reinstallConfirmed: true })).not.toThrow();
+  });
+
+  it('does not claim the radio runs the stock when Radio Info says it was moved to v0.27', () => {
+    // Firmware V0.27 with the "moved to v0.27" override resolves to layout 1, so the nrfb-v0.04 to-stock file fits it.
+    // The typed Firmware line is not compared with the stock's version, so the warning may only say "may".
+    const answer = uv5rMiniLayoutFromRadioInfo({
+      firmware: 'V0.27',
+      hardware: 'V1.7',
+      build: '',
+      override: true,
+    });
+    expect(answer).toEqual({ kind: 'layout', layout: 'L1' });
+    const run = checkL1({ stamp: 'nrfb-v0.04', radioLayout: 'L1', radioBuild: undefined });
+    expect(run).toThrow(RadioConfirmRequiredError);
+    expect(run).toThrow(/so this radio may already run the stock nrfb-v0\.04\./);
+    expect(run).not.toThrow(/already runs the stock/);
     expect(checkL1({ stamp: 'nrfb-v0.04', reinstallConfirmed: true })).not.toThrow();
   });
 
