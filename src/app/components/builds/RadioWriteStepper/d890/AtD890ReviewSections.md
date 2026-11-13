@@ -29,6 +29,7 @@ reviewSectionsFor(descriptor, { ...ctx, atD890: controller });
 - **NXDN ID:** `AtD890NxdnOwnIdNote`, a channel note: "NXDN ID → Base (1234), your default NXDN ID" when the Write sets the radio's NXDN ID (MM9PDY, NXDN enabled, a default NXDN Digital ID; [#1442](https://github.com/pskillen/codeplug-studio/issues/1442)). Hidden for a settings-only Write.
 - **Backup:** "Save backup now" from the read the Write holds, or "Read the rest of the radio and save a backup" after a settings-only read; "✓ Backup saved 14:02" afterwards.
 - **Nudge:** `Mm9pdyStepKeysNudge`, which hides itself on the stock target, when the keys already match, and once the session overrides either key. Its button also selects Apply, so the Write button's label (`review.effectiveParts`: settings only when they will be sent) and the write agree.
+- **When these sections are seen at all** ([#1638](https://github.com/pskillen/codeplug-studio/issues/1638)): `atD890ReviewPauseReasons` (`atD890ReviewPause.ts`) gives one reason per warning, refusal or choice above (receive-only channels, Master Id on, the nudge, a blocked language, the repeater-mode caution, the Apply / Keep choice unless **Don't ask again** is set, a Write that would send nothing). With none, the stepper writes without showing Review. The range row, the NXDN ID line, the settings list and the backup offer are facts. The nudge and its section share `mm9pdyStepKeysNudgeShown`, so they cannot disagree.
 
 ## Related
 

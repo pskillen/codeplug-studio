@@ -125,6 +125,9 @@ What Studio does:
 - The descriptor also sets `programHoldSafeMs` to **1500 ms**, so a Write whose Review stays open longer reconnects
   and re-reads before writing: the radio was back on its idle screen and may have been changed. The protocol check
   covers Restore and any gap outside Review.
+- The Mini's Review has nothing the user must act on, so the Write stepper never stops there
+  ([#1638](https://github.com/pskillen/codeplug-studio/issues/1638)): the first `W` follows the pre-write read in the
+  same session, inside the 2 s window, and a normal Write needs neither the re-handshake nor a reconnect.
 - The UV-21Pro V2 layout shares the code but sets neither value; nothing is known about its idle behaviour.
 - Tests: `uv5r-mini/sessionIdle.test.ts`, against `FakeMiniRadio` with its session model on a fake clock.
 

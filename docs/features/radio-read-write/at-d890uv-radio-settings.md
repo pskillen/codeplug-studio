@@ -65,7 +65,7 @@ The radio re-forces its language from LocalInfo `+0x04` at every load, so a lang
 
 ## Write: the Review step
 
-Plug in, **Write radio**, tick the parts, **Connect & read**, then **Review**: always shown, with sections that appear only when they apply. The D890's sections, in order:
+Plug in, **Write radio**, tick the parts, **Read & write**. Studio reads the radio, then stops on **Review** only when it shows something you must act on ([#1638](https://github.com/pskillen/codeplug-studio/issues/1638)): receive-only channels, Master Id on, the MM9PDY step-key nudge, a language the region forbids, the repeater-mode caution, the Apply / Keep choice for another radio (unless **Don't ask again** is set), or a Write that would send nothing. Otherwise it writes straight after the read, in the same session. When Review appears, its sections appear only when they apply. The D890's sections, in order:
 
 | Section                        | What it shows                                                                                                                                                                                                                                                                                                                      |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -98,7 +98,7 @@ Plug in, **Write radio**, tick the parts, **Connect & read**, then **Review**: a
 - **Whole-region replay stays Restore-only.** The settings-only upload reuses the Write RMW core and never Restore's region replay.
 - **Session-only** state; the default Write is unchanged.
 - The persisted step-key switch is **removed for the AT-D890UV** (nudge instead, 70- §8); the DM-32UV MM9PDY target keeps it. A stored `exportSettings.assignMm9pdyStepKeys: true` on a D890 build is ignored: it loads, saves and validates, and writes no patch.
-- **Review is always shown**; the backup is a nudge, never a gate.
+- **Review appears only when the user is needed** ([#1638](https://github.com/pskillen/codeplug-studio/issues/1638), replacing "Review is always shown" from #1393): a warning, a refusal or a choice. The backup is a nudge, never a gate, so it alone does not stop the Write. To back up first, use the Backup page before **Write radio**. The NXDN ID line and the frequency range are facts and do not stop it either.
 - **Write every channel the hardware can receive; warn on the transmit range at Review.** Nothing about the range is stored.
 - **Read a radio closes with `END`**, as every Studio read does, so the radio is never left in PC mode. So do Cancel on Review, Review its settings and a settings-only session that writes nothing: `END` restarts the radio (about 20 s) and changes nothing, where leaving PROGRAM without it would leave the radio in PC mode until power-cycled (Q-C). The stepper tells the user the radio restarts.
 
