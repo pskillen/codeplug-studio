@@ -18,8 +18,11 @@ export function atD890ReviewPauseReasons(ctx: ReviewContext): ReviewPauseReason[
   const store = getAtD890RadioSettingsSession(init.buildId);
   const reasons: ReviewPauseReason[] = [];
   if (!controller.canWrite()) reasons.push('nothing-to-write');
-  if (init.receiveOnly.length > 0) reasons.push('receive-only-channels');
-  if (init.masterIdSelected && !init.settingsOnly) reasons.push('master-id-on');
+  // Both sections show only for a codeplug Write: a contacts-only Write has nothing to warn about.
+  if (ctx.parts.codeplug && init.receiveOnly.length > 0) reasons.push('receive-only-channels');
+  if (ctx.parts.codeplug && init.masterIdSelected && !init.settingsOnly) {
+    reasons.push('master-id-on');
+  }
   const num = (v: unknown) => (typeof v === 'number' ? v : undefined);
   if (
     mm9pdyStepKeysNudgeShown({

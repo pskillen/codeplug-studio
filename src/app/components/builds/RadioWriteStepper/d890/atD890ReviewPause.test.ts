@@ -43,9 +43,10 @@ function clean(over: Partial<AtD890ReviewInit> = {}): AtD890ReviewInit {
   };
 }
 
-function reasons(init: AtD890ReviewInit) {
+function reasons(init: AtD890ReviewInit, codeplug = true) {
   const atD890 = createAtD890ReviewController(init);
-  return atD890ReviewPauseReasons({ atD890 } as unknown as ReviewContext);
+  const parts = { codeplug, contacts: !codeplug, settings: false, keps: false };
+  return atD890ReviewPauseReasons({ atD890, parts } as unknown as ReviewContext);
 }
 
 afterEach(() => clearAllOverrides(BUILD));
@@ -67,6 +68,15 @@ describe('AT-D890 Review pause reasons (#1638)', () => {
   it('receive-only channels', () => {
     const receiveOnly = [{ slotIndex: 2, name: 'Ch2', txMhz: 446 }];
     expect(reasons(clean({ receiveOnly }))).toEqual(['receive-only-channels']);
+  });
+
+  it('receive-only channels and Master Id do not pause a contacts-only Write', () => {
+    const receiveOnly = [{ slotIndex: 2, name: 'Ch2', txMhz: 446 }];
+    expect(reasons(clean({ receiveOnly, masterIdSelected: true }), false)).toEqual([]);
+    expect(reasons(clean({ receiveOnly, masterIdSelected: true }))).toEqual([
+      'receive-only-channels',
+      'master-id-on',
+    ]);
   });
 
   it('Master Id on, except for settings alone', () => {
