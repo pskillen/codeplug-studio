@@ -3,10 +3,7 @@ import { useEffect, useReducer } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
-import {
-  crc16Xmodem,
-  UV5RMINI_ONE_WAY_WARNING,
-} from '@core/radios/baofeng/uv-5r-mini/radioReport.ts';
+import { crc16Xmodem } from '@core/radios/baofeng/uv-5r-mini/radioReport.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 import {
   getFirmwareUpdater,
@@ -202,7 +199,8 @@ describe('PrepareStep: reading the UV-5R Mini', () => {
     expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
     expect(lastPrepare()[4]).toBe('L2');
     expect(lastPrepare()[5]).toBe('mm9pdy-L2-0.2.0-rc.1');
-    expect(screen.queryByText(UV5RMINI_ONE_WAY_WARNING)).toBeNull();
+    expect(screen.getByText('Code base: nrf-v0.27')).toBeInTheDocument();
+    expect(lastPrepare()[8]).toBe('nrf-v0.27');
     expect(canAdvance(latest)).toBe(true);
   });
 
@@ -215,22 +213,26 @@ describe('PrepareStep: reading the UV-5R Mini', () => {
     expect(lastPrepare()[7]).toBe(true);
   });
 
-  it('a report for L1 on the v0.04 code base shows the one-way warning and picks L1', async () => {
+  it('a report for L1 on the v0.04 code base shows the flag as information only, and passes the code base on', async () => {
     vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(<Harness updater={MINI} />);
     await readRadio(reportBlock({ vm: L1, v004: true, name: 'mm9pdy-L1-0.2.0' }));
-    expect(screen.getByText(UV5RMINI_ONE_WAY_WARNING)).toBeInTheDocument();
+    expect(screen.getByText('Code base: nrfb-v0.04')).toBeInTheDocument();
+    // No file moves a radio between code bases (D87): there is no one-way warning any more.
+    expect(screen.queryByText(/for good|never to V0\.04/)).toBeNull();
     expect(await screen.findByText(/Ready to flash: L1 build/)).toBeInTheDocument();
     expect(lastPrepare()[4]).toBe('L1');
+    expect(lastPrepare()[8]).toBe('nrfb-v0.04');
     expect(canAdvance(latest)).toBe(true);
   });
 
-  it('a report for L1 on the v0.27 code base shows no one-way warning', async () => {
+  it('a report for L1 on the v0.27 code base passes that code base on', async () => {
     vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(<Harness updater={MINI} />);
     await readRadio(reportBlock({ vm: L1, name: 'mm9pdy-L1-0.2.0' }));
     expect(await screen.findByText(/Ready to flash: L1 build/)).toBeInTheDocument();
-    expect(screen.queryByText(UV5RMINI_ONE_WAY_WARNING)).toBeNull();
+    expect(screen.getByText('Code base: nrf-v0.27')).toBeInTheDocument();
+    expect(lastPrepare()[8]).toBe('nrf-v0.27');
   });
 
   it('a crossed pick from the report is refused before Connect', async () => {
@@ -345,7 +347,7 @@ describe('PrepareStep: the UV-5R Mini Radio Info question, with no report', () =
     expect(canAdvance(latest)).toBe(true);
   });
 
-  it('stock V0.04 is L1, with no one-way warning; an L2 file is refused before Connect', async () => {
+  it('stock V0.04 is L1, with no code base from a report; an L2 file is refused before Connect', async () => {
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
     radioInfo('V0.04', 'V1.7');
@@ -353,7 +355,7 @@ describe('PrepareStep: the UV-5R Mini Radio Info question, with no report', () =
       await screen.findByText(new RegExp(OTHER_LAYOUT.replace(/[.;]/g, '.'))),
     ).toBeInTheDocument();
     expect(lastPrepare()[4]).toBe('L1');
-    expect(screen.queryByText(UV5RMINI_ONE_WAY_WARNING)).toBeNull();
+    expect(lastPrepare()[8]).toBeUndefined();
     expect(latest.image).toBeNull();
     expect(canAdvance(latest)).toBe(false);
     expect(screen.queryByRole('button', { name: 'Connect and flash' })).toBeNull();

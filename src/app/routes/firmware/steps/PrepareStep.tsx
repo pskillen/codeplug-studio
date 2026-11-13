@@ -167,8 +167,26 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
   const radioBuild = answer?.kind === 'layout' ? answer.build : undefined;
   // A radio that reported about itself runs a modded build, even when it named none.
   const radioReported = answer?.kind === 'layout' && answer.reported === true;
-  type Inputs = readonly [unknown, FirmwareChoice | null, unknown, unknown, unknown, unknown];
-  const inputs: Inputs = [stock, choice, loadedPatch, radioLayout, radioBuild, radioReported];
+  // The code base the radio said it runs; the interlocks refuse a file on another one.
+  const radioCodeBase = answer?.kind === 'layout' ? answer.codeBase : undefined;
+  type Inputs = readonly [
+    unknown,
+    FirmwareChoice | null,
+    unknown,
+    unknown,
+    unknown,
+    unknown,
+    unknown,
+  ];
+  const inputs: Inputs = [
+    stock,
+    choice,
+    loadedPatch,
+    radioLayout,
+    radioBuild,
+    radioReported,
+    radioCodeBase,
+  ];
   const sameInputs = (a: Inputs) => a.every((v, i) => v === inputs[i]);
   const [failure, setFailure] = useState<{
     for: Inputs;
@@ -193,7 +211,15 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
   useEffect(() => {
     if (!stock || !choice || image || radioLayout === null) return;
     let cancelled = false;
-    const key: Inputs = [stock, choice, loadedPatch, radioLayout, radioBuild, radioReported];
+    const key: Inputs = [
+      stock,
+      choice,
+      loadedPatch,
+      radioLayout,
+      radioBuild,
+      radioReported,
+      radioCodeBase,
+    ];
     prepareFlash(
       updater.radioId,
       stock,
@@ -203,6 +229,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
       radioBuild,
       reinstallConfirmed,
       radioReported,
+      radioCodeBase,
     )
       .then((prepared) => {
         if (!cancelled) dispatch({ type: 'imagePrepared', image: prepared });
@@ -232,6 +259,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
     radioBuild,
     reinstallConfirmed,
     radioReported,
+    radioCodeBase,
     updater.radioId,
     dispatch,
   ]);

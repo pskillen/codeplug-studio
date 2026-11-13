@@ -144,6 +144,11 @@ export type RadioLayoutAnswer =
        * MM9PDY build, even when the report names none.
        */
       readonly reported?: true;
+      /**
+       * The stock base the radio's own code is built on, where the radio said so itself. The radio's interlocks refuse
+       * a file on another base.
+       */
+      readonly codeBase?: string;
       /** Shown with the answer; it does not stop the wizard. */
       readonly warning?: string;
       /** What the radio said about itself, shown as information only. */

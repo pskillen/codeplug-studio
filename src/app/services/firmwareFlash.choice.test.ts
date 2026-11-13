@@ -110,6 +110,14 @@ describe('prepareFlash', () => {
     );
   });
 
+  it("passes the radio's reported code base to the image", async () => {
+    const args = [undefined, 'L1', undefined, false, true, 'nrfb-v0.04'] as const;
+    await prepareFlash('baofeng-dm32uv', STOCK, { kind: 'stock' }, ...args);
+    expect(vi.mocked(prepareModule.prepareFirmwareImage).mock.calls[0]![0].radioCodeBase).toBe(
+      'nrfb-v0.04',
+    );
+  });
+
   it('refuses a back-to-stock choice whose image is not to-stock, before the interlocks', async () => {
     const choice = {
       kind: 'back-to-stock' as const,

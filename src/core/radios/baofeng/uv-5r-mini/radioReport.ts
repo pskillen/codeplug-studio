@@ -116,13 +116,6 @@ export function decodeUv5rMiniRadioReport(bytes: Uint8Array): Uv5rMiniRadioRepor
 const hex = (n: number, digits: number) =>
   `0x${n.toString(16).toUpperCase().padStart(digits, '0')}`;
 
-/**
- * The one-way warning for an MM9PDY radio on layout 1 that still runs the v0.04 code base: the next layout-1 release
- * moves it to the v0.27 code base, and there is no way back to V0.04 after that.
- */
-export const UV5RMINI_ONE_WAY_WARNING =
-  "This radio's MM9PDY build is on Baofeng's v0.04 code. The next L1 release moves it to the v0.27 code for good: channels and settings are kept, and the radio can go back to stock V0.27, but never to V0.04.";
-
 export const UV5RMINI_UNKNOWN_LAYOUT_REFUSAL = (vmStart: number, vmSize: number): string =>
   `This radio reports a flash layout Studio doesn't support (VM entry at ${hex(vmStart, 5)}, ${hex(vmSize, 5)} bytes). Nothing was sent.`;
 
@@ -149,6 +142,7 @@ export function uv5rMiniLayoutFromReport(report: Uv5rMiniRadioReport): RadioLayo
       const details = [
         `MM9PDY build: ${report.name || '(no name)'}`,
         `Flash layout: ${report.layout}`,
+        `Code base: ${report.codeBase}`,
         `RF chip register 0: ${hex(report.rf0, 4)}`,
       ];
       if (report.vmBank0 !== report.vmStart) {
@@ -156,14 +150,14 @@ export function uv5rMiniLayoutFromReport(report: Uv5rMiniRadioReport): RadioLayo
           `The radio's settings store starts at ${hex(report.vmBank0, 5)}, not at its VM entry ${hex(report.vmStart, 5)}. Studio goes by the VM entry.`,
         );
       }
-      const oneWay = report.layout === 'L1' && report.codeBase === 'nrfb-v0.04';
       return {
         kind: 'layout',
         layout: report.layout,
         reported: true,
+        // A radio's code base never changes (D87): the interlocks refuse a file on another base.
+        codeBase: report.codeBase,
         details,
         ...(report.name ? { build: report.name } : {}),
-        ...(oneWay ? { warning: UV5RMINI_ONE_WAY_WARNING } : {}),
       };
     }
   }

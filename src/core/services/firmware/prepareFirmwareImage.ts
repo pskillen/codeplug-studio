@@ -68,6 +68,11 @@ export interface PreparedFirmwareImage {
    */
   readonly radioReported?: true;
   /**
+   * The stock base the radio's own code is built on, where the radio said so itself (UV-5R Mini: its radio report's
+   * code-base flag). An updater refuses an image on another base: a radio's code base never changes.
+   */
+  readonly radioCodeBase?: string;
+  /**
    * Set when the operator has explicitly confirmed writing the build the radio already runs (a repair). An updater that
    * allows a same-build write asks for this confirmation first and sends nothing without it.
    */
@@ -129,6 +134,8 @@ export async function prepareFirmwareImage(input: {
   radioBuild?: string;
   /** The radio reported about itself (see `PreparedFirmwareImage.radioReported`). */
   radioReported?: boolean;
+  /** The radio's own code base, where it said so (see `PreparedFirmwareImage.radioCodeBase`). */
+  radioCodeBase?: string;
   /** The operator confirmed writing the build the radio already runs (see `PreparedFirmwareImage.reinstallConfirmed`). */
   reinstallConfirmed?: boolean;
 }): Promise<PreparedFirmwareImage> {
@@ -138,6 +145,7 @@ export async function prepareFirmwareImage(input: {
     ...(input.radioLayout === undefined ? {} : { radioLayout: input.radioLayout }),
     ...(input.radioBuild ? { radioBuild: input.radioBuild } : {}),
     ...(input.radioReported ? { radioReported: true as const } : {}),
+    ...(input.radioCodeBase ? { radioCodeBase: input.radioCodeBase } : {}),
     ...(input.reinstallConfirmed ? { reinstallConfirmed: true as const } : {}),
   };
   if (
