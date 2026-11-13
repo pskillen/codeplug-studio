@@ -193,7 +193,9 @@ export class Uv5rMiniSession {
     if (!inImage) {
       reply.flagged = `read ${off.toString(16)}+${len.toString(16)} is outside the image`;
       // A loader that finds the installed app equal to the image plans no area, sends no cmd 4, and walks on past the
-      // end of the file: nothing has been or will be written.
+      // end of the file: nothing has been or will be written. The pinned L1/L2 loaders always plan the whole area, so
+      // with them this is unreachable; it is kept as a defensive classification (and for the list-carrying loaders,
+      // whose same-build image the interlocks refuse before anything is sent).
       if (this.phase === 'loader' && this.areaLength === undefined) reply.alreadyInstalled = true;
     } else if (len > UV5RMINI_FW_MAX_DATA)
       reply.flagged = `read of ${len.toString(16)} bytes is over the frame limit`;

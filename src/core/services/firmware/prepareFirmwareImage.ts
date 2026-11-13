@@ -55,9 +55,14 @@ export interface PreparedFirmwareImage {
   readonly radioLayout?: string;
   /**
    * The build name the operator typed from the radio's own Radio Info screen (trimmed; absent when none was given).
-   * An updater refuses an image whose build is the one the radio already shows.
+   * An updater warns about, or refuses, an image whose build is the one the radio already shows.
    */
   readonly radioBuild?: string;
+  /**
+   * Set when the operator has explicitly confirmed writing the build the radio already runs (a repair). An updater that
+   * allows a same-build write asks for this confirmation first and sends nothing without it.
+   */
+  readonly reinstallConfirmed?: true;
   /** The bytes that will be flashed. */
   readonly package: FirmwarePackage;
   /**
@@ -84,11 +89,14 @@ export async function prepareFirmwareImage(input: {
   radioLayout?: string;
   /** The build name the operator typed from Radio Info, where one was given (see `PreparedFirmwareImage.radioBuild`). */
   radioBuild?: string;
+  /** The operator confirmed writing the build the radio already runs (see `PreparedFirmwareImage.reinstallConfirmed`). */
+  reinstallConfirmed?: boolean;
 }): Promise<PreparedFirmwareImage> {
   const { descriptor: radioDescriptor, stock, target } = input;
   const layout = {
     ...(input.radioLayout === undefined ? {} : { radioLayout: input.radioLayout }),
     ...(input.radioBuild ? { radioBuild: input.radioBuild } : {}),
+    ...(input.reinstallConfirmed ? { reinstallConfirmed: true as const } : {}),
   };
   if (
     stock.descriptor.radioId !== radioDescriptor.radioId ||

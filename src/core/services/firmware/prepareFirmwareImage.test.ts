@@ -62,6 +62,18 @@ describe('prepareFirmwareImage — stock target', () => {
     expect((await prepareFirmwareImage({ ...base, radioBuild: '' })).radioBuild).toBeUndefined();
   });
 
+  it('carries the reinstall confirm only when it was given', async () => {
+    const { descriptor, stock } = await verifiedStock();
+    const base = { descriptor, stock, target: { kind: 'stock' } } as const;
+    expect(
+      (await prepareFirmwareImage({ ...base, reinstallConfirmed: true })).reinstallConfirmed,
+    ).toBe(true);
+    expect((await prepareFirmwareImage(base)).reinstallConfirmed).toBeUndefined();
+    expect(
+      (await prepareFirmwareImage({ ...base, reinstallConfirmed: false })).reinstallConfirmed,
+    ).toBeUndefined();
+  });
+
   it('refuses stock whose bytes no longer match the verified hashes', async () => {
     const { descriptor, stock } = await verifiedStock();
     const tampered = { ...stock, sha256: { img: '0'.repeat(64) } };

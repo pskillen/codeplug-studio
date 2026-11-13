@@ -100,6 +100,13 @@ describe('prepareFlash', () => {
     );
   });
 
+  it('passes the reinstall confirm to the image', async () => {
+    await prepareFlash('baofeng-dm32uv', STOCK, { kind: 'stock' }, undefined, 'L2', 'b', true);
+    expect(vi.mocked(prepareModule.prepareFirmwareImage).mock.calls[0]![0].reinstallConfirmed).toBe(
+      true,
+    );
+  });
+
   it('refuses a back-to-stock choice whose image is not to-stock, before the interlocks', async () => {
     const choice = {
       kind: 'back-to-stock' as const,

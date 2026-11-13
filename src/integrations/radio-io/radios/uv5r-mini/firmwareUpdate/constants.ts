@@ -125,10 +125,15 @@ export interface LayoutPinnedLoader {
 
 export type PinnedLoader = ListedPinnedLoader | LayoutPinnedLoader;
 
+/**
+ * The pinned loaders. `L1` and `L2` always write: every install rewrites the whole firmware area, so the same build
+ * again, stock over stock and a damaged app are all rewritten. Their images must therefore end at the area end (I3 and
+ * I4 hold every image to the stock's length), or the erase would reach past the firmware.
+ */
 export const UV5RMINI_PINNED_LOADERS: readonly PinnedLoader[] = [
   {
     label: 'L1',
-    sha256: 'b748e39af6caa7968a7eb74099e35dce0714876a0949a70d9279adc870ed7e09',
+    sha256: 'b314ace5106ed3b5ec67846b38d7bf8e65415824343b24650622efb8bdc604dd',
     layout: 'L1',
     rawSize: 17_904,
     packedSize: 15_648,
@@ -142,7 +147,7 @@ export const UV5RMINI_PINNED_LOADERS: readonly PinnedLoader[] = [
   },
   {
     label: 'L2',
-    sha256: '2f1b8999ea6dcc858ef076b20564e0339c1fb665add46efdafc4bd40222aadae',
+    sha256: '1e6c3e0d563a50f38caa2972c773ccdff99aa875c1e9098cc923be1cb5b6193e',
     layout: 'L2',
     rawSize: 17_904,
     packedSize: 15_648,
@@ -169,6 +174,24 @@ export const UV5RMINI_PINNED_LOADERS: readonly PinnedLoader[] = [
     label: 'stock+c4+w1',
     sha256: '3ec9a37db41f98bcf9e2b2a75200fd3450ac48807860470f5ca11b08a11724e8',
     lists: ['nrfb-v0.04', 'mm9pdy-0.1.0-rc.1', 'mm9pdy-pr125-g1c0a9df'],
+  },
+];
+
+/**
+ * The first layout loaders, retired. They write nothing when the radio already holds the image's build, and Studio's
+ * short images then end in a read past the file. Studio no longer sends them; it names them only to say why.
+ */
+export const UV5RMINI_RETIRED_LOADERS: readonly {
+  readonly label: string;
+  readonly sha256: string;
+}[] = [
+  {
+    label: 'L1-nolist-v1',
+    sha256: 'b748e39af6caa7968a7eb74099e35dce0714876a0949a70d9279adc870ed7e09',
+  },
+  {
+    label: 'L2-nolist-v1',
+    sha256: '2f1b8999ea6dcc858ef076b20564e0339c1fb665add46efdafc4bd40222aadae',
   },
 ];
 

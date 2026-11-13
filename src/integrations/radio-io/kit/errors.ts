@@ -12,7 +12,8 @@ export type RadioIoErrorCode =
   | 'aborted'
   | 'unsupported'
   | 'interlock'
-  | 'alreadyInstalled';
+  | 'alreadyInstalled'
+  | 'needsConfirm';
 
 export class RadioIoError extends Error {
   readonly code: RadioIoErrorCode;
@@ -90,6 +91,18 @@ export class RadioAlreadyInstalledError extends RadioIoError {
   constructor(message: string) {
     super('alreadyInstalled', message);
     this.name = 'RadioAlreadyInstalledError';
+  }
+}
+
+/**
+ * Not a refusal: the operation is allowed, but only after the operator has read this warning and confirmed it
+ * (firmware flashing: rewriting the build the radio already runs). Nothing has been sent. The caller shows the message
+ * with an explicit confirm and runs the check again with the confirmation set.
+ */
+export class RadioConfirmRequiredError extends RadioIoError {
+  constructor(message: string) {
+    super('needsConfirm', message);
+    this.name = 'RadioConfirmRequiredError';
   }
 }
 

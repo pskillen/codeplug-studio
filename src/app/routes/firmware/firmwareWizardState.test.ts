@@ -186,6 +186,28 @@ describe('firmwareWizardReducer', () => {
     expect(reduce(s, { type: 'restart' }).radioInfo.firmware).toBe('');
   });
 
+  it('the reinstall confirm rebuilds the image, and any new answer, stock or choice clears it', () => {
+    const s = through(
+      { type: 'selectRadio', radioId: 'baofeng-uv5rmini' },
+      { type: 'imagePrepared', image: IMAGE },
+      { type: 'setCheck', check: 'risk', value: true },
+      { type: 'setReinstallConfirmed', value: true },
+    );
+    expect(s.reinstallConfirmed).toBe(true);
+    expect(s.image).toBeNull();
+    expect(s.checks.risk).toBe(false);
+    expect(reduce(s, { type: 'setReinstallConfirmed', value: true })).toBe(s);
+    expect(reduce(s, { type: 'setRadioInfo', patch: { build: 'x' } }).reinstallConfirmed).toBe(
+      false,
+    );
+    expect(reduce(s, { type: 'stockVerified', stock: STOCK }).reinstallConfirmed).toBe(false);
+    expect(reduce(s, { type: 'stockCleared' }).reinstallConfirmed).toBe(false);
+    expect(
+      reduce(s, { type: 'chooseFirmware', choice: { kind: 'stock' } }).reinstallConfirmed,
+    ).toBe(false);
+    expect(reduce(s, { type: 'restart' }).reinstallConfirmed).toBe(false);
+  });
+
   it('restart returns to a fresh first step', () => {
     const s = through(
       { type: 'selectRadio', radioId: 'baofeng-dm32uv' },

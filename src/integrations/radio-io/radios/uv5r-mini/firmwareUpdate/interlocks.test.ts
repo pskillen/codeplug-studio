@@ -4,12 +4,13 @@ import { stockVariants } from '@core/firmware/stockVariants.ts';
 import { UV5RMINI_STOCK_FIRMWARE } from '@core/radios/baofeng/uv-5r-mini/firmware.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 
-import { RadioInterlockError } from '../../../kit/errors.ts';
+import { RadioConfirmRequiredError, RadioInterlockError } from '../../../kit/errors.ts';
 import { makeSyntheticUfw, type SyntheticUfwOptions } from './__fixtures__/makeSyntheticUfw.ts';
 import {
   UV5RMINI_BASES,
   UV5RMINI_FLASH_BASE,
   UV5RMINI_PINNED_LOADERS,
+  UV5RMINI_RETIRED_LOADERS,
   uv5rMiniHardLimit,
   type LayoutPinnedLoader,
   type PinnedLoader,
@@ -21,6 +22,8 @@ import {
   firstDifferenceOutsideWindows,
   isUv5rMiniToStockImage,
   UV5RMINI_OTHER_LAYOUT_REFUSAL,
+  UV5RMINI_REINSTALL_WARNING,
+  UV5RMINI_RETIRED_LOADER_REFUSAL,
 } from './interlocks.ts';
 import { sha256HexSync } from './sha256Sync.ts';
 
@@ -56,6 +59,7 @@ function prepared(
     base?: string | undefined;
     radioLayout?: string;
     radioBuild?: string;
+    reinstallConfirmed?: true;
   } = {},
 ): PreparedFirmwareImage {
   const built = makeSyntheticUfw({ flash: stock.flash, loader: stock.loader, ...o.ufw });
@@ -71,6 +75,7 @@ function prepared(
     versionStamp: 'stamp' in o ? o.stamp : 'mm9pdy-test',
     radioLayout: o.radioLayout,
     radioBuild: o.radioBuild,
+    reinstallConfirmed: o.reinstallConfirmed,
     package: { radioId, files },
     stockPackage: o.noStock ? undefined : { radioId, files: { ufw: stock.bytes } },
     sha256: {},
@@ -84,7 +89,17 @@ const refused = (img: PreparedFirmwareImage, re: RegExp) => {
   expect(() => check(img)).toThrow(re);
 };
 
-describe('checkUv5rMiniImage — already installed', () => {
+/** The fake loader pinned as a layout loader: no list, tied to `layout`. */
+const layoutPin = (layout: Uv5rMiniLayout): LayoutPinnedLoader => ({
+  label: `fake-${layout}`,
+  sha256: FAKE_PACKED_SHA,
+  layout,
+  rawSize: 0,
+  packedSize: stock.loader.length,
+  layoutRecord: { vmOff: 0, vmSize: 0, hcrcVm: 0, hcrcPrct: 0, hcrcBtif: 0 },
+});
+
+describe('checkUv5rMiniImage — already installed, list-carrying loader', () => {
   it('refuses an image whose build is the one typed from Radio Info, ignoring case and spaces', () => {
     for (const typed of ['mm9pdy-test', '  MM9PDY-Test ', 'Mm9Pdy-TEST']) {
       refused(prepared({ radioBuild: typed }), /already installed; nothing was sent/);
@@ -92,8 +107,18 @@ describe('checkUv5rMiniImage — already installed', () => {
     refused(prepared({ radioBuild: 'mm9pdy-test' }), /already runs mm9pdy-test/);
   });
 
-  it('refuses before the base, layout and area checks', () => {
-    refused(prepared({ radioBuild: 'mm9pdy-test', base: 'no-such-base' }), /already installed/);
+  it('refuses even with the confirm: that loader would write nothing', () => {
+    refused(
+      prepared({ radioBuild: 'mm9pdy-test', reinstallConfirmed: true }),
+      /already installed; nothing was sent/,
+    );
+  });
+
+  it('runs after the hard checks, so a hard refusal wins', () => {
+    refused(
+      prepared({ radioBuild: 'mm9pdy-test', base: 'no-such-base' }),
+      /base is not one Studio knows/,
+    );
   });
 
   it('accepts a different build, no typed build, or one that only contains the name', () => {
@@ -101,9 +126,59 @@ describe('checkUv5rMiniImage — already installed', () => {
     check(prepared({ radioBuild: undefined }));
     check(prepared({ radioBuild: 'mm9pdy-test-2' }));
   });
+});
 
-  it("refuses a to-stock image when the typed build is its stock's own name", () => {
-    refused(prepared({ stamp: 'nrfb-v0.04', radioBuild: 'NRFB-v0.04' }), /already installed/);
+describe('checkUv5rMiniImage — already installed, always-write layout loader', () => {
+  const checkL1 = (o: Parameters<typeof prepared>[0]) => () =>
+    checkUv5rMiniImage(prepared({ radioLayout: 'L1', ...o }), [layoutPin('L1')], bases);
+
+  it('asks for a confirm, not a refusal, when the typed build is the image, ignoring case and spaces', () => {
+    for (const typed of ['mm9pdy-test', '  MM9PDY-Test ', 'Mm9Pdy-TEST']) {
+      const run = checkL1({ radioBuild: typed });
+      expect(run).toThrow(RadioConfirmRequiredError);
+      expect(run).not.toThrow(RadioInterlockError);
+      expect(run).toThrow(UV5RMINI_REINSTALL_WARNING('mm9pdy-test'));
+    }
+    expect(UV5RMINI_REINSTALL_WARNING('mm9pdy-L1-1.0.0')).toBe(
+      'This radio already runs mm9pdy-L1-1.0.0. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.',
+    );
+  });
+
+  it('accepts the same build once the operator has confirmed', () => {
+    expect(checkL1({ radioBuild: 'mm9pdy-test', reinstallConfirmed: true })).not.toThrow();
+  });
+
+  it('asks for nothing when the build differs or none was typed', () => {
+    expect(checkL1({ radioBuild: 'mm9pdy-other' })).not.toThrow();
+    expect(checkL1({ radioBuild: undefined })).not.toThrow();
+  });
+
+  it('runs after the hard checks: the confirm never lets a refused image through', () => {
+    const f = flashWith([0x1000, stock.flash[0]! ^ 0xff]);
+    expect(
+      checkL1({ radioBuild: 'mm9pdy-test', reinstallConfirmed: true, ufw: { flash: f } }),
+    ).toThrow(/outside the firmware's own area/);
+    expect(checkL1({ radioBuild: 'mm9pdy-test', ufw: { flash: f } })).toThrow(RadioInterlockError);
+    expect(checkL1({ radioBuild: 'mm9pdy-test', radioLayout: 'L2' })).toThrow(
+      UV5RMINI_OTHER_LAYOUT_REFUSAL,
+    );
+  });
+
+  it('asks the same for a to-stock image onto a radio already on that stock', () => {
+    // Radio Info read (layout known) with no MM9PDY build line: the radio runs stock.
+    const run = checkL1({ stamp: 'nrfb-v0.04', radioBuild: undefined });
+    expect(run).toThrow(RadioConfirmRequiredError);
+    expect(run).toThrow(
+      'Radio Info shows no MM9PDY build, so this radio already runs the stock nrfb-v0.04. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.',
+    );
+    expect(checkL1({ stamp: 'nrfb-v0.04', radioBuild: 'NRFB-v0.04 ' })).toThrow(
+      RadioConfirmRequiredError,
+    );
+    expect(checkL1({ stamp: 'nrfb-v0.04', reinstallConfirmed: true })).not.toThrow();
+  });
+
+  it('asks nothing for a to-stock image onto a radio that shows a modded build', () => {
+    expect(checkL1({ stamp: 'nrfb-v0.04', radioBuild: 'mm9pdy-L1-1.0.0' })).not.toThrow();
   });
 });
 
@@ -158,16 +233,6 @@ describe('checkUv5rMiniImage — I2 loader', () => {
   });
 });
 
-/** The fake loader pinned as a layout loader: no list, tied to `layout`. */
-const layoutPin = (layout: Uv5rMiniLayout): LayoutPinnedLoader => ({
-  label: `fake-${layout}`,
-  sha256: FAKE_PACKED_SHA,
-  layout,
-  rawSize: 0,
-  packedSize: stock.loader.length,
-  layoutRecord: { vmOff: 0, vmSize: 0, hcrcVm: 0, hcrcPrct: 0, hcrcBtif: 0 },
-});
-
 describe('checkUv5rMiniImage — layout loaders', () => {
   const checkWith = (layout: Uv5rMiniLayout, img: PreparedFirmwareImage) => () =>
     checkUv5rMiniImage(img, [layoutPin(layout)], bases);
@@ -204,7 +269,9 @@ describe('checkUv5rMiniImage — layout loaders', () => {
   });
 
   it('does not apply I7: a layout loader has no list', () => {
-    expect(checkWith('L1', prepared({ stamp: 'nrfb-v0.04', radioLayout: 'L1' }))).not.toThrow();
+    expect(
+      checkWith('L1', prepared({ stamp: 'nrfb-v0.04', radioLayout: 'L1', radioBuild: 'mm9pdy-x' })),
+    ).not.toThrow();
   });
 
   it('a list-carrying loader ignores the radio layout', () => {
@@ -214,10 +281,10 @@ describe('checkUv5rMiniImage — layout loaders', () => {
 });
 
 describe('UV5RMINI_PINNED_LOADERS', () => {
-  it('pins the two layout loaders exactly, one per layout, with no list', () => {
+  it('pins the two always-write layout loaders exactly, one per layout, with no list', () => {
     const byLabel = (l: string) => UV5RMINI_PINNED_LOADERS.find((p) => p.label === l);
     expect(byLabel('L1')).toMatchObject({
-      sha256: 'b748e39af6caa7968a7eb74099e35dce0714876a0949a70d9279adc870ed7e09',
+      sha256: 'b314ace5106ed3b5ec67846b38d7bf8e65415824343b24650622efb8bdc604dd',
       layout: 'L1',
       rawSize: 17_904,
       packedSize: 15_648,
@@ -230,7 +297,7 @@ describe('UV5RMINI_PINNED_LOADERS', () => {
       },
     });
     expect(byLabel('L2')).toMatchObject({
-      sha256: '2f1b8999ea6dcc858ef076b20564e0339c1fb665add46efdafc4bd40222aadae',
+      sha256: '1e6c3e0d563a50f38caa2972c773ccdff99aa875c1e9098cc923be1cb5b6193e',
       layout: 'L2',
       rawSize: 17_904,
       packedSize: 15_648,
@@ -263,6 +330,30 @@ describe('UV5RMINI_PINNED_LOADERS', () => {
     expect(new Set(hashes).size).toBe(5);
     expect(hashes).not.toContain(FAKE_PACKED_SHA);
   });
+
+  it('drops the first layout loaders, which write nothing for the installed build', () => {
+    const retired = [
+      'b748e39af6caa7968a7eb74099e35dce0714876a0949a70d9279adc870ed7e09',
+      '2f1b8999ea6dcc858ef076b20564e0339c1fb665add46efdafc4bd40222aadae',
+    ];
+    expect(UV5RMINI_RETIRED_LOADERS.map((r) => r.sha256)).toEqual(retired);
+    const pinned = UV5RMINI_PINNED_LOADERS.map((p) => p.sha256);
+    for (const h of retired) expect(pinned).not.toContain(h);
+  });
+});
+
+describe('checkUv5rMiniImage — retired loaders', () => {
+  it('refuses an image built with a retired loader, saying to use a newer build', () => {
+    const retired = [{ label: 'L1-nolist-v1', sha256: FAKE_PACKED_SHA }];
+    // The production pins, with the fake loader standing in for a retired one.
+    expect(UV5RMINI_RETIRED_LOADER_REFUSAL).toBe(
+      'This image was built with an older loader that Studio no longer sends. Use a newer build of this firmware. Nothing was sent.',
+    );
+    const img = prepared({ radioLayout: 'L1' });
+    const run = () => checkUv5rMiniImage(img, UV5RMINI_PINNED_LOADERS, bases, retired);
+    expect(run).toThrow(RadioInterlockError);
+    expect(run).toThrow(UV5RMINI_RETIRED_LOADER_REFUSAL);
+  });
 });
 
 describe('checkUv5rMiniImage — I3 area', () => {
@@ -281,6 +372,38 @@ describe('checkUv5rMiniImage — I3 area', () => {
     const wide = { ...bases, 'nrfb-v0.04': { ...V04, areaEnd: 0x95000 } };
     const img = prepared({ ufw: { flash: big.flash } });
     expect(() => checkUv5rMiniImage(img, pins, wide)).toThrow(/past the limit 0x94000/);
+  });
+});
+
+describe('checkUv5rMiniImage — always short, for an always-write layout loader', () => {
+  // The loader erases from the start of the firmware area to the image's end, so the image must end at the area end:
+  // longer reaches past the firmware (I3), shorter or longer than the stock is refused (I4).
+  const run = (flash: Uint8Array) => () =>
+    checkUv5rMiniImage(
+      prepared({
+        ufw: { flash },
+        radioLayout: 'L1',
+        radioBuild: 'mm9pdy-test',
+        reinstallConfirmed: true,
+      }),
+      [layoutPin('L1')],
+      bases,
+    );
+
+  it('accepts an image that ends exactly at the area end', () => {
+    expect(UV5RMINI_FLASH_BASE + stock.flash.length).toBe(V04.areaEnd);
+    expect(run(stock.flash)).not.toThrow();
+  });
+
+  it('refuses one that runs past the area end', () => {
+    const long = makeSyntheticUfw({ flashSize: FLASH_SIZE + 0x1000, loader: stock.loader });
+    expect(run(long.flash)).toThrow(/past the end of the firmware area 0x7C000/);
+  });
+
+  it('refuses one that ends short of the area end', () => {
+    expect(run(stock.flash.subarray(0, stock.flash.length - 0x1000))).toThrow(
+      /bytes where the stock is/,
+    );
   });
 });
 
@@ -319,13 +442,18 @@ describe('checkUv5rMiniImage — I7 unlisted self', () => {
 });
 
 describe('checkUv5rMiniImage — to stock', () => {
-  /** A to-stock image: build name = base name, flash identical to the stock, the base's own layout loader. */
+  /** A radio running a modded build (so a to-stock image is not "already installed"). */
+  const MODDED = 'mm9pdy-L1-1.0.0';
+  /**
+   * A to-stock image: build name = base name, flash identical to the stock, the base's own layout loader, for a radio
+   * that shows a modded build.
+   */
   const toStock = (o: Parameters<typeof prepared>[0] & { layout?: Uv5rMiniLayout } = {}) => {
     const base = o.base ?? 'nrfb-v0.04';
     const layout = o.layout ?? bases[base]!.loaderLayout;
     return () =>
       checkUv5rMiniImage(
-        prepared({ stamp: base, radioLayout: layout, ...o, base }),
+        prepared({ stamp: base, radioLayout: layout, radioBuild: MODDED, ...o, base }),
         [layoutPin(layout)],
         bases,
       );

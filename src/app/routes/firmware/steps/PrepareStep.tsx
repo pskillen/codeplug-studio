@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import type { FirmwareRadioLayoutQuestion, RadioInfoAnswers } from '@core/firmware/types.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
+import { RadioIoError } from '@integrations/radio-io';
 
 import { Panel, StatusBanner, TextInput } from '../../../components/v2/index.ts';
 import { prepareFlash, type FirmwareChoice } from '../../../services/firmwareFlash.ts';
@@ -71,9 +72,15 @@ function RadioLayoutQuestion({
   );
 }
 
+/** The confirm for an updater's "already runs this build" warning. */
+export const REINSTALL_CONFIRM_LABEL = 'Write it again anyway';
+
+const needsConfirm = (err: unknown): err is RadioIoError =>
+  err instanceof RadioIoError && err.code === 'needsConfirm';
+
 /** Build the exact image to flash and run the radio's safety checks. Nothing is sent to the radio here. */
 export default function PrepareStep({ state, dispatch, updater }: WizardStepProps) {
-  const { stock, image, choice, loadedPatch, radioInfo } = state;
+  const { stock, image, choice, loadedPatch, radioInfo, reinstallConfirmed } = state;
   const question = updater.stock.radioLayout;
   const answer = question ? question.resolve(radioInfo) : null;
   // Undefined when the radio has one layout; null while the operator's answer gives none.
@@ -84,39 +91,66 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
       : null;
   // The typed build name only counts where the radio asks for one; it decides "already installed".
   const radioBuild = question?.build ? radioInfo.build.trim() || undefined : undefined;
+  type Inputs = readonly [unknown, FirmwareChoice | null, unknown, unknown, unknown];
+  const inputs: Inputs = [stock, choice, loadedPatch, radioLayout, radioBuild];
+  const sameInputs = (a: Inputs) => a.every((v, i) => v === inputs[i]);
   const [failure, setFailure] = useState<{
-    for: readonly [unknown, FirmwareChoice, unknown, unknown, unknown];
+    for: Inputs;
+    confirmed: boolean;
     message: string;
   } | null>(null);
+  // The updater's warning that asks for an explicit confirm. Kept while the confirm is ticked, so it can be unticked.
+  const [warningFor, setWarningFor] = useState<{ for: Inputs; message: string } | null>(null);
   const error =
-    failure &&
-    failure.for[0] === stock &&
-    failure.for[1] === choice &&
-    failure.for[2] === loadedPatch &&
-    failure.for[3] === radioLayout &&
-    failure.for[4] === radioBuild
+    failure && sameInputs(failure.for) && failure.confirmed === reinstallConfirmed
       ? failure.message
       : null;
+  const warning = warningFor && sameInputs(warningFor.for) ? warningFor.message : null;
+  const awaitingConfirm = warning !== null && !reinstallConfirmed;
 
   useEffect(() => {
     if (!stock || !choice || image || radioLayout === null) return;
     let cancelled = false;
-    prepareFlash(updater.radioId, stock, choice, loadedPatch ?? undefined, radioLayout, radioBuild)
+    const key: Inputs = [stock, choice, loadedPatch, radioLayout, radioBuild];
+    prepareFlash(
+      updater.radioId,
+      stock,
+      choice,
+      loadedPatch ?? undefined,
+      radioLayout,
+      radioBuild,
+      reinstallConfirmed,
+    )
       .then((prepared) => {
         if (!cancelled) dispatch({ type: 'imagePrepared', image: prepared });
       })
       .catch((err: unknown) => {
-        if (!cancelled) {
-          setFailure({
-            for: [stock, choice, loadedPatch, radioLayout, radioBuild],
-            message: err instanceof Error ? err.message : 'The firmware image could not be built.',
-          });
+        if (cancelled) return;
+        if (needsConfirm(err)) {
+          // Not a refusal: nothing was sent, and the image is built once the operator confirms.
+          setWarningFor({ for: key, message: err.message });
+          return;
         }
+        setFailure({
+          for: key,
+          confirmed: reinstallConfirmed,
+          message: err instanceof Error ? err.message : 'The firmware image could not be built.',
+        });
       });
     return () => {
       cancelled = true;
     };
-  }, [stock, image, choice, loadedPatch, radioLayout, radioBuild, updater.radioId, dispatch]);
+  }, [
+    stock,
+    image,
+    choice,
+    loadedPatch,
+    radioLayout,
+    radioBuild,
+    reinstallConfirmed,
+    updater.radioId,
+    dispatch,
+  ]);
 
   return (
     <Panel title="Prepare" sub="Build the exact image and run the safety checks.">
@@ -137,7 +171,20 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
         {error ? (
           <StatusBanner tone="warning">{error} Nothing was sent to the radio.</StatusBanner>
         ) : null}
-        {!image && !error && radioLayout !== null ? (
+        {warning ? (
+          <>
+            <StatusBanner tone="warning">{warning}</StatusBanner>
+            <LabeledCheck
+              label={REINSTALL_CONFIRM_LABEL}
+              checked={reinstallConfirmed}
+              onChange={(value) => dispatch({ type: 'setReinstallConfirmed', value })}
+            />
+            {awaitingConfirm ? (
+              <p className={classes.muted}>Nothing is sent to the radio unless you confirm.</p>
+            ) : null}
+          </>
+        ) : null}
+        {!image && !error && !awaitingConfirm && radioLayout !== null ? (
           <p className={classes.muted}>Preparing…</p>
         ) : null}
         {image ? (
