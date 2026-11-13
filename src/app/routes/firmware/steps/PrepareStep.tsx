@@ -202,11 +202,13 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
       : asksQuestion
         ? question.resolve(radioInfo)
         : { kind: 'incomplete' };
-  // Undefined when the radio has one layout; null while the answer gives none.
+  // Undefined when the radio has one layout; null while the answer gives none. After the radio refused one layout's
+  // file before installing anything, its layout is taken to be the other one (the retry).
+  const layoutRetry = state.layoutRetry;
   const radioLayout: string | null | undefined = !answer
     ? undefined
     : answer.kind === 'layout'
-      ? answer.layout
+      ? (layoutRetry?.to ?? answer.layout)
       : null;
   // The build the radio says it runs, where it says so; it decides "already installed".
   const radioBuild = answer?.kind === 'layout' ? answer.build : undefined;
@@ -342,6 +344,12 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
         ) : null}
         {answer?.kind === 'refused' ? (
           <StatusBanner tone="warning">{answer.message}</StatusBanner>
+        ) : null}
+        {layoutRetry && answer?.kind === 'layout' ? (
+          <StatusBanner tone="info">
+            The radio refused the {layoutRetry.from} file before installing anything, so Studio
+            prepares the {layoutRetry.to} file.
+          </StatusBanner>
         ) : null}
         {answer?.kind === 'layout' && answer.details ? (
           <ul className={classes.list}>

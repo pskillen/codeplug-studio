@@ -76,9 +76,11 @@ let latest: FirmwareWizardState;
 function Harness({
   updater,
   loaded = LOADED,
+  start = {},
 }: {
   updater: typeof MINI;
   loaded?: LoadedFirmwarePatch;
+  start?: Partial<FirmwareWizardState>;
 }) {
   const [state, dispatch] = useReducer(firmwareWizardReducer, {
     ...INITIAL_FIRMWARE_WIZARD_STATE,
@@ -87,6 +89,7 @@ function Harness({
     choice: { kind: 'user-patch', file: { name: 'p.json', bytes: new Uint8Array(0) } },
     loadedPatch: loaded,
     stock: STOCK,
+    ...start,
   } satisfies FirmwareWizardState);
   useEffect(() => {
     latest = state;
@@ -167,6 +170,31 @@ beforeEach(() => {
       sha256: {},
       radioLayout,
     } as unknown as PreparedFirmwareImage;
+  });
+});
+
+describe('PrepareStep: after the radio refused one layout before installing anything', () => {
+  it("prepares the other layout's file, says why, and runs the checks for it", async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(
+      <Harness
+        updater={MINI}
+        start={{
+          radioRead: {
+            kind: 'report',
+            answer: { kind: 'layout', layout: 'L1', reported: true },
+          },
+          layoutRetry: { from: 'L1', to: 'L2' },
+        }}
+      />,
+    );
+    expect(
+      screen.getByText(
+        'The radio refused the L1 file before installing anything, so Studio prepares the L2 file.',
+      ),
+    ).toBeInTheDocument();
+    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(lastPrepare()[4]).toBe('L2');
   });
 });
 

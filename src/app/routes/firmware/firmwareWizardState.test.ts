@@ -305,6 +305,65 @@ describe('firmwareWizardReducer', () => {
   });
 });
 
+describe('retry with the other layout', () => {
+  const layoutImage = (radioLayout: string) =>
+    ({ provenance: 'published', radioLayout }) as unknown as PreparedFirmwareImage;
+  const atFlash: FirmwareWizardState = {
+    ...INITIAL_FIRMWARE_WIZARD_STATE,
+    step: 'flash',
+    radioId: 'baofeng-uv5rmini',
+    choice: USER_CHOICE,
+    loadedPatch: BUNDLED,
+    stock: STOCK,
+    image: layoutImage('L1'),
+    reinstallConfirmed: true,
+    checks: { risk: true, battery: true, cable: true, otherApps: true },
+    radioChecks: { attest: true },
+    probe: { summary: 'ok' },
+    safetyBackupSerial: 'S1',
+    safetyBackup: { kind: 'saved', radioKey: 'S1', summary: 'saved' },
+  };
+  const L2 = layoutImage('L2');
+
+  it('swaps in the other image and goes back to update mode, keeping ticks, probe and backup', () => {
+    const s = reduce(atFlash, { type: 'retryOtherLayout', from: 'L1', image: L2 });
+    expect(s.step).toBe('updateMode');
+    expect(s.image).toBe(L2);
+    expect(s.layoutRetry).toEqual({ from: 'L1', to: 'L2' });
+    expect(s.reinstallConfirmed).toBe(false);
+    expect(s.checks).toBe(atFlash.checks);
+    expect(s.radioChecks).toBe(atFlash.radioChecks);
+    expect(s.probe).toBe(atFlash.probe);
+    expect(s.safetyBackup).toBe(atFlash.safetyBackup);
+    expect(canAdvance(s)).toBe(true);
+  });
+
+  it('is used once per flash, and never to the refused layout or a layout-less image', () => {
+    const once = reduce(atFlash, { type: 'retryOtherLayout', from: 'L1', image: L2 });
+    expect(reduce(once, { type: 'retryOtherLayout', from: 'L2', image: layoutImage('L1') })).toBe(
+      once,
+    );
+    expect(
+      reduce(atFlash, { type: 'retryOtherLayout', from: 'L1', image: layoutImage('L1') }),
+    ).toBe(atFlash);
+    expect(reduce(atFlash, { type: 'retryOtherLayout', from: 'L1', image: IMAGE })).toBe(atFlash);
+  });
+
+  it('a new choice, stock or radio answer starts a new flash with the retry unused', () => {
+    const once = reduce(atFlash, { type: 'retryOtherLayout', from: 'L1', image: L2 });
+    expect(reduce(once, { type: 'chooseFirmware', choice: USER_CHOICE }).layoutRetry).toBeNull();
+    expect(reduce(once, { type: 'stockVerified', stock: STOCK }).layoutRetry).toBeNull();
+    expect(reduce(once, { type: 'stockCleared' }).layoutRetry).toBeNull();
+    expect(
+      reduce(once, { type: 'setRadioInfo', patch: { firmware: 'V0.27' } }).layoutRetry,
+    ).toBeNull();
+    expect(reduce(once, { type: 'radioRead', status: null }).layoutRetry).toBeNull();
+    expect(reduce(once, { type: 'restart' }).layoutRetry).toBeNull();
+    // Going back and forth keeps it.
+    expect(reduce(once, { type: 'back' }).layoutRetry).toEqual({ from: 'L1', to: 'L2' });
+  });
+});
+
 describe('safety backup requirement', () => {
   const REQ = { attestationIds: [], probe: true, safetyBackup: true };
   const TAKEN = {
