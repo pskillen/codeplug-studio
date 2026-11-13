@@ -110,22 +110,23 @@ from the result.
 ## What Studio checks before flashing
 
 Hard interlocks on the image, in code, with no setting, flag or patch field that turns one off. They run when the
-image is prepared and again as the flash starts; each refusal says nothing was sent. Code:
+image is prepared and again as the flash starts; each refusal says nothing was sent. The one exception is the
+"already installed" warning for a layout loader, which the operator passes with an explicit confirm (below). Code:
 `src/integrations/radio-io/radios/uv5r-mini/firmwareUpdate/` (`interlocks.ts`, `ufw.ts`, `constants.ts`).
 
-| Check             | Refused unless                                                                                                                                                                                                                 |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Target            | The image is for the UV-5R Mini and the package is exactly one `ufw` file                                                                                                                                                      |
-| Known build       | The image has a build name (the patch's `build.name`) and is not the plain stock image, which its own loader lists                                                                                                             |
-| Container         | The `.ufw` header CRC, file-table CRC and each file's data CRC are good; it holds exactly `flash.bin` (type 0) and `ota.bin` (type 100), both inside the file                                                                  |
-| Loader            | `ota.bin` holds exactly one entry, `uart_user.bin`, attribute `0x41`, with good CRCs, and the SHA-256 of the packed loader is on the pinned list below                                                                         |
-| Base              | The patch's `base` names a base in the table below, and the verified stock hashes to that base's stock file                                                                                                                    |
-| Area              | `flash.bin` starts at SoC address `0x1000` and ends at or below the base's area end (`0x7C000` for both bases), never past the base's own hard limit (the start of its first per-unit record sector)                           |
-| Stock bytes       | `flash.bin` has the stock's length and every byte equals the stock's at the same address, except inside the base's app windows (SoC, half-open), from the table below                                                          |
-| Already installed | The build name typed on Prepare ("Radio Info: MM9PDY build (if shown)"), trimmed and compared ignoring case, is not the image's own build name. Checked on the image, in the same two places as every row here, before Connect |
-| Layout            | For a layout loader (`L1`, `L2`): Studio knows the radio's hardware layout and it is the loader's. Checked before anything is sent                                                                                             |
-| Not listed itself | For a list-carrying loader only: the image's build name is not on its loader's list. Flashing it again, or after a cut update, would leave the radio stuck in its loader                                                       |
-| To stock          | For a to-stock image (build name is a base's own name): see [Back to stock](#back-to-stock). Its loader and stock-byte rules replace the general ones above, never loosen them                                                 |
+| Check             | Refused unless                                                                                                                                                                                                                                                                                            |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Target            | The image is for the UV-5R Mini and the package is exactly one `ufw` file                                                                                                                                                                                                                                 |
+| Known build       | The image has a build name (the patch's `build.name`) and is not the plain stock image, which its own loader lists                                                                                                                                                                                        |
+| Container         | The `.ufw` header CRC, file-table CRC and each file's data CRC are good; it holds exactly `flash.bin` (type 0) and `ota.bin` (type 100), both inside the file                                                                                                                                             |
+| Loader            | `ota.bin` holds exactly one entry, `uart_user.bin`, attribute `0x41`, with good CRCs, and the SHA-256 of the packed loader is on the pinned list below                                                                                                                                                    |
+| Base              | The patch's `base` names a base in the table below, and the verified stock hashes to that base's stock file                                                                                                                                                                                               |
+| Area              | `flash.bin` starts at SoC address `0x1000` and ends at or below the base's area end (`0x7C000` for both bases), never past the base's own hard limit (the start of its first per-unit record sector)                                                                                                      |
+| Stock bytes       | `flash.bin` has the stock's length and every byte equals the stock's at the same address, except inside the base's app windows (SoC, half-open), from the table below                                                                                                                                     |
+| Layout            | For a layout loader (`L1`, `L2`): Studio knows the radio's hardware layout and it is the loader's. Checked before anything is sent                                                                                                                                                                        |
+| Not listed itself | For a list-carrying loader only: the image's build name is not on its loader's list. Flashing it again, or after a cut update, would leave the radio stuck in its loader                                                                                                                                  |
+| To stock          | For a to-stock image (build name is a base's own name): see [Back to stock](#back-to-stock). Its loader and stock-byte rules replace the general ones above, never loosen them                                                                                                                            |
+| Already installed | Checked last. For a list-carrying loader: the build name typed on Prepare ("Radio Info: MM9PDY build (if shown)"), trimmed and compared ignoring case, is not the image's own. For a layout loader this is a warning with an explicit confirm, not a refusal: see [Already installed](#already-installed) |
 
 **Bases** (keyed by the patch's `base`; the windows are SoC half-open ranges, both also hold `[0x4000, 0x4004)` and `[0x4020, 0x4024)`):
 
@@ -147,13 +148,27 @@ are equal plain bytes. Studio never descrambles anything. The stock bytes come f
   checks the radio's installed VM, PRCT and BTIF directory entries against its own 16-byte layout record, and refuses a
   radio of the other layout with result `0x8F`. By then the stock app's update stage has already reset the FM presets
   and volume (below). Each loader always builds to the same bytes, so its packed hash is its pin.
+- They **always write**: every install erases and rewrites the firmware area from `0x4000` to the end of the image, even
+  when the radio already holds the same build, is on the same stock, or has a damaged app. So the image's length is
+  what bounds the erase, and the Area and Stock bytes checks keep every image ending at the area end, `0x7C000`: a
+  longer image is refused, and so is one of any other length than the stock's.
 - **List-carrying loaders**: the older loaders, each with a list of the builds it may install. They stay pinned so that
   images already built on them still pass the checks.
 
 | Loader | Packed SHA-256                                                     | Raw / packed size   | Layout record: VM offset, VM size, VM / PRCT / BTIF header CRCs |
 | ------ | ------------------------------------------------------------------ | ------------------- | --------------------------------------------------------------- |
-| `L1`   | `b748e39af6caa7968a7eb74099e35dce0714876a0949a70d9279adc870ed7e09` | 17,904 B / 15,648 B | `0x95000`, `0x68000`, `0x06D9` / `0xD9BB` / `0xF13A`            |
-| `L2`   | `2f1b8999ea6dcc858ef076b20564e0339c1fb665add46efdafc4bd40222aadae` | 17,904 B / 15,648 B | `0x94000`, `0x6A000`, `0x2074` / `0x48F9` / `0xF13A`            |
+| `L1`   | `b314ace5106ed3b5ec67846b38d7bf8e65415824343b24650622efb8bdc604dd` | 17,904 B / 15,648 B | `0x95000`, `0x68000`, `0x06D9` / `0xD9BB` / `0xF13A`            |
+| `L2`   | `1e6c3e0d563a50f38caa2972c773ccdff99aa875c1e9098cc923be1cb5b6193e` | 17,904 B / 15,648 B | `0x94000`, `0x6A000`, `0x2074` / `0x48F9` / `0xF13A`            |
+
+**Retired loaders.** The first layout loaders wrote nothing when the radio already held the image's build, and with
+Studio's short images that ended in a read past the file. Studio no longer sends them. An image built with one is
+refused: "This image was built with an older loader that Studio no longer sends. Use a newer build of this firmware.
+Nothing was sent." (`UV5RMINI_RETIRED_LOADERS`)
+
+| Loader         | Packed SHA-256                                                     |
+| -------------- | ------------------------------------------------------------------ |
+| `L1-nolist-v1` | `b748e39af6caa7968a7eb74099e35dce0714876a0949a70d9279adc870ed7e09` |
+| `L2-nolist-v1` | `2f1b8999ea6dcc858ef076b20564e0339c1fb665add46efdafc4bd40222aadae` |
 
 | Loader        | Packed SHA-256                                                     | Lists                                                      |
 | ------------- | ------------------------------------------------------------------ | ---------------------------------------------------------- |
@@ -207,23 +222,41 @@ rendered by the Prepare step from `StockFirmwareDescriptor.radioLayout`.
 **Not listed itself** applies only to list-carrying loaders. A layout loader has no list, and the patch's own
 `loader.list` (now written as `[]`) is descriptive: the check follows the pinned loader, never the patch.
 
-**Already installed.** Studio can't read which app the radio holds, so the only evidence is what the operator typed from
-the radio's own Radio Info. When the typed build name equals the image's build name (the patch's `build.name`, trimmed,
-ignoring case), Prepare refuses: "Radio Info says this radio already runs <build>. This firmware is already installed;
-nothing was sent. Flash a different build." The typed name travels on the prepared image
-(`PreparedFirmwareImage.radioBuild`), so the check also runs again as the flash starts. An empty field is never
-refused: it can't tell a stock radio from one whose build line wasn't read, so a flash of a build the radio already runs
-is not caught when the name is left out. A to-stock image is refused the same way if its own stock name is typed.
-
-If it gets past Prepare anyway, the layout loader catches it: an image whose app directory equals the installed one
-plans no area and sends no length, and it reads past the end of the image. Studio still refuses that read and sends
-nothing more, but names it: error code `alreadyInstalled` (`RadioAlreadyInstalledError`), "This firmware is already
-installed… Nothing was written to the firmware". It is told apart from a real interlock stop by the read coming from the
-loader before any length. The loader then times out with nothing erased or written, and the radio boots its installed
-app.
-
 The loader hash is computed synchronously (a small in-module SHA-256, checked against Web Crypto in its test) because
 the updater's `checkImage` is synchronous.
+
+### Already installed
+
+Studio can't read which app the radio holds, so the only evidence is what the operator typed from the radio's own Radio
+Info. The radio is taken to run the image's build when:
+
+- the typed build name equals the image's build name (the patch's `build.name`, trimmed, ignoring case); or
+- the image is a to-stock image, Radio Info was given (the layout is known), and the build line was left empty: the
+  wizard asks for it to be left empty on stock firmware, so the radio looks to be on that stock.
+
+The check runs last, after every refusal above, so a refused image never reaches it. What happens depends on the
+loader:
+
+- **Layout loader (`L1`, `L2`): a warning with an explicit confirm.** The loader always writes, so writing the same
+  build again is a repair, with the usual power-cut risk. Prepare shows the warning, "This radio already runs <build>.
+  Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies." (for
+  stock onto stock: "Radio Info shows no MM9PDY build, so this radio already runs the stock <base>. …"), and a tick
+  box, "Write it again anyway". Until it is ticked no image is prepared, the wizard can't move on, and nothing is sent.
+  The interlock throws `RadioConfirmRequiredError` (error code `needsConfirm`), not an interlock error.
+- **List-carrying loader: refused.** That loader writes nothing for the build it is given again. "Radio Info says this
+  radio already runs <build>. This firmware is already installed; nothing was sent. Flash a different build."
+
+The typed name and the confirm travel on the prepared image (`PreparedFirmwareImage.radioBuild` and
+`reinstallConfirmed`), so the check runs again as the flash starts, and an image without the confirm is stopped there
+before the first frame. Changing any Radio Info answer, the stock or the firmware choice clears the confirm. Studio
+can't catch a same-build flash when the build line is left out on a modded radio; with the layout loaders that just
+rewrites the same firmware.
+
+A loader that writes nothing would read past the end of the image before announcing any length. Studio refuses that
+read and sends nothing more, but names it: error code `alreadyInstalled` (`RadioAlreadyInstalledError`), "This
+firmware is already installed… Nothing was written to the firmware". The layout loaders always plan the whole area, so
+this can't happen with them; it is kept as a defensive classification. The loader then times out with nothing erased
+or written, and the radio boots its installed app.
 
 ## Back to stock
 
@@ -253,10 +286,9 @@ can say otherwise. For one, the interlocks also require:
 Studio knows only these two bases, so a layout-1 radio moved to v0.27 goes back with the `nrfb-v0.04` file; an
 `nrf-v0.27` to-stock file carries `L2` and the layout match refuses it for that radio.
 
-Studio can't tell that a radio is already on stock: it can't read the installed app's size and CRC, and Radio Info's
-empty build line doesn't prove the radio runs stock, since the field is optional and a wrong or missing entry reads the
-same. So a to-stock flash to a radio already on stock is not refused up front (only the typed-name case above is);
-the loader ends it with nothing written, as in "Already installed" above.
+Studio can't read the installed app, so "already on stock" comes from Radio Info: a to-stock image for a radio whose
+build line was left empty gets the same warning and confirm as any same-build write (see
+[Already installed](#already-installed)). The layout loader then rewrites the stock.
 
 **In the wizard.** The Firmware step offers **Back to stock** (`StockFirmwareDescriptor.stockReturn`), with one line on
 where the file comes from. It asks for the to-stock file through the same file picker as a patch from disk, and refuses

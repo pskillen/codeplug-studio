@@ -241,7 +241,10 @@ project, library or build. The flasher needs no open project and stores nothing.
 4. **Hard interlocks can't be bypassed.** Each radio's updater refuses unsafe images and frames in code, before the
    first byte is sent and again on every write. Examples: address windows that keep away from the bootloader and the
    activation page; a model-ID match with the bootloader's own ident; a stock-length image where the radio requires
-   it. No setting, flag, environment value or patch field can switch one off.
+   it. No setting, flag, environment value or patch field can switch one off. A warning is not an interlock: where an
+   action is safe but worth a second thought (rewriting the build the radio already runs, as a repair), the updater
+   asks for an explicit confirm on Prepare and sends nothing without it. Only a check that a loader makes safe may be a
+   warning.
 5. **One pipeline.** Published release, user-supplied patch, and stock all take the same path:
    verify stock → (apply patch → verify result) → interlocks → bootloader ident → flash.
    "Flash stock" is the zero-patch case where offered. A radio may omit it when its stock image cannot be installed on its own; recovery uses a release patch. Such a radio's way back to stock is a **to-stock release patch** from the firmware project (its build name is the stock's own base name; its result is the stock with a loader that can install it), offered as a "Back to stock" choice that asks for that file. It takes the same path; the radio's interlocks recognise it by its build name and hold it to the stock bytes exactly, and it reads as the stock in the wizard and the flash log. The vendor CPS stays the fallback where applicable.

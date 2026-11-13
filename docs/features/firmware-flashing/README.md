@@ -118,6 +118,11 @@ hidden there).
    For a radio that comes in more than one hardware layout (the UV-5R Mini), the step first asks for the lines of the
    radio's Radio Info screen and prepares the image for that layout
    ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md)).
+   When the radio already runs the image's build (on the UV-5R Mini: the typed build name is the image's, or a
+   to-stock file for a radio that shows no build), the step shows a warning instead: writing it again rewrites the
+   same firmware, a repair, with the usual power-cut risk. Nothing is prepared, and the wizard can't move on, until
+   **Write it again anyway** is ticked; changing the answers clears the tick
+   ([Already installed](../../reference/radios/baofeng/uv-5r-mini/firmware.md#already-installed)).
 5. **Before you flash** — names what is being flashed ("You are flashing the MM9PDY modded firmware 1.0.0 to the
    Baofeng DM-32UV"), then a risk acknowledgement, required for every flash, plus battery, cable and "other programs
    closed" checks. A **Back up first** panel links to the Backup tab of any build for this radio in the open project.
@@ -144,8 +149,9 @@ hidden there).
    The UV-5R Mini shows Handshake → Loader running → Erase → Transfer → Finish: Handshake while its stock app reads the
    image (about 21 s; the radio is not yet touched), Loader running from the first hello of its loader (the radio is
    touched from there; nothing is erased yet), Erase only once the loader announces its erase, Transfer as the loader
-   reads the firmware area, Finish at the result. A loader that announces no erase because the image is already
-   installed stops at Loader running with the "already installed" message. It has a tick too, "The radio shows UPDATE..., or its
+   reads the firmware area, Finish at the result. The current loaders always erase and rewrite; an older loader that
+   announces no erase because the image is already installed stops at Loader running with the "already installed"
+   message. It has a tick too, "The radio shows UPDATE..., or its
    screen stays dark after an interrupted update".
    The RT95 has one more tick on this step, "The screen is blank. It does not say UPDATE THE RF CPU." (front panel)
    or "The screen says UPDATE THE RF CPU." (main board), before **Connect and flash** is enabled. While the first block waits for the radio, the
@@ -238,7 +244,8 @@ Studio never writes the bootloader or the activation area.
 
 Choose **Stock firmware** on the Firmware step and flash as usual. The radio then runs the vendor's pinned version.
 On the UV-5R Mini, choose **Back to stock** and pick the to-stock file (`uv5rmini-fw-to-stock-<base>.patch.json`)
-from the firmware project's release artifact; the plain stock file can't be flashed.
+from the firmware project's release artifact; the plain stock file can't be flashed. A radio that already runs that
+stock gets the same-build warning on Prepare, and can be rewritten with it ticked.
 
 ### Fallback: the vendor's programming software
 
