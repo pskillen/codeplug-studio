@@ -78,7 +78,7 @@ Write starts from the in-session Read and rewrites every slot of the channel spa
 
 A channel is unchanged when every field Studio models decodes the same as the record in the slot: RX, TX or RX only, both tones, power, `wide`, `scan` and name. Any edit, or a different channel landing in the slot (a channel inserted or deleted earlier in a build without fixed slots shifts every later one), counts as changed, so the record is encoded fresh and never inherits the slot's PTT ID, RX DTMF, BCL, FHSS, scramble, `scode` or reserved bytes. Comparing decoded values means raw forms Studio reads as one value survive an unchanged Write: tone `0x0000` and `0xFFFF` (both none), a DCS index past the table, TX `00×4` (simplex), power values `1`–`3` (all Low), name padding. Nothing in the channel span is kept as a firmware string: `0x1EF0` is inside slots 248 and 249 ([memory-layout.md](memory-layout.md)).
 
-With a library that matches the radio, Read → Write → Read gives the same image. One exception: a library channel always has a name, so a nameless slot gets one on Write. Upload remains **full-image** so VFO/settings/ANI at `0x8040+` stay Read-retained.
+Read does not fill the library: the channels a Write sends come from the user's build. When that build matches the radio, with the same channels in the same slots (for example the build that last programmed it), Read → Write → Read gives the same image. One exception: a library channel always has a name, so a nameless slot gets one on Write. Upload remains **full-image** so VFO/settings/ANI at `0x8040+` stay Read-retained.
 
 Decided in [#1578](https://github.com/pskillen/codeplug-studio/issues/1578).
 
