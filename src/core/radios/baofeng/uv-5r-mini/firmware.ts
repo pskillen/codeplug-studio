@@ -8,9 +8,9 @@ export const UV5RMINI_FIRMWARE_ROLE_UFW = 'ufw';
 export const UV5RMINI_RELEASE_LAYOUTS = ['L1', 'L2'] as const;
 
 /**
- * The layout tag in an MM9PDY build name, `mm9pdy-<tag>-…`: `L1`, `L2`, or a test-only tag such as `V4` (v0.04
- * builds, never a release file). Undefined for a name with no tag: a to-stock patch (`nrfb-v0.04`) or an older build
- * (`mm9pdy-0.1.0-rc.1`).
+ * The layout tag in an MM9PDY build name, `mm9pdy-<tag>-…`: `L1` (built on v0.04), `L2` (built on v0.27), or another
+ * tag such as the retired `V4`, which is still parsed so that it can be refused: never a release file. Undefined for a
+ * name with no tag: a to-stock patch (`nrfb-v0.04`) or an older build (`mm9pdy-0.1.0-rc.1`).
  */
 export function uv5rMiniLayoutFromBuildName(buildName: string): string | undefined {
   return /^mm9pdy-([A-Z][0-9])-/.exec(buildName.trim())?.[1];
