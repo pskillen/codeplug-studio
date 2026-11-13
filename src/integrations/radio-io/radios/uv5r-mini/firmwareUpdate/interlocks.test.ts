@@ -60,6 +60,7 @@ function prepared(
     base?: string | undefined;
     radioLayout?: string;
     radioBuild?: string;
+    radioReported?: true;
     reinstallConfirmed?: true;
   } = {},
 ): PreparedFirmwareImage {
@@ -76,6 +77,7 @@ function prepared(
     versionStamp: 'stamp' in o ? o.stamp : 'mm9pdy-test',
     radioLayout: o.radioLayout,
     radioBuild: o.radioBuild,
+    radioReported: o.radioReported,
     reinstallConfirmed: o.reinstallConfirmed,
     package: { radioId, files },
     stockPackage: o.noStock ? undefined : { radioId, files: { ufw: stock.bytes } },
@@ -192,6 +194,13 @@ describe('checkUv5rMiniImage — already installed, always-write layout loader',
 
   it('asks nothing for a to-stock image onto a radio that shows a modded build', () => {
     expect(checkL1({ stamp: 'nrfb-v0.04', radioBuild: 'mm9pdy-L1-1.0.0' })).not.toThrow();
+  });
+
+  it('asks nothing for a to-stock image onto a radio whose report names no build', () => {
+    // A report means an MM9PDY build, so the radio can't already run the stock.
+    expect(
+      checkL1({ stamp: 'nrfb-v0.04', radioBuild: undefined, radioReported: true }),
+    ).not.toThrow();
   });
 });
 

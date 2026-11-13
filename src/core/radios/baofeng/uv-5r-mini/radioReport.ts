@@ -160,6 +160,7 @@ export function uv5rMiniLayoutFromReport(report: Uv5rMiniRadioReport): RadioLayo
       return {
         kind: 'layout',
         layout: report.layout,
+        reported: true,
         details,
         ...(report.name ? { build: report.name } : {}),
         ...(oneWay ? { warning: UV5RMINI_ONE_WAY_WARNING } : {}),

@@ -28,8 +28,9 @@
  *      list, so I7 does not apply to it. Keyed on the pin, never on the patch's descriptive `loader.list`.
  *  Already installed. Checked last, once every check above has passed. The radio already runs this image's build when
  *      the build name the radio gave in its radio report (`radioBuild`) is the image's own (ignoring case and
- *      surrounding spaces), or, for a to-stock image, when the radio's layout is known (`radioLayout` set) and it
- *      named no MM9PDY build. Studio can't read the installed app, so this is the only evidence there is.
+ *      surrounding spaces), or, for a to-stock image, when the radio's layout is known (`radioLayout` set), it named
+ *      no MM9PDY build and it gave no radio report (`radioReported` unset). Studio can't read the installed app, so
+ *      this is the only evidence there is.
  *      - A layout loader (`L1`, `L2`) always writes, so the image is allowed, but only once the operator has confirmed
  *        the warning (`reinstallConfirmed`): without it, `RadioConfirmRequiredError` and nothing is sent. This is the
  *        one check an operator can pass, and only with that explicit confirm.
@@ -287,7 +288,12 @@ export function checkUv5rMiniImage(
   const reportedIsImage =
     image.radioBuild !== undefined &&
     image.radioBuild.trim().toLowerCase() === image.versionStamp.toLowerCase();
-  const stockOnStock = toStock && image.radioLayout !== undefined && image.radioBuild === undefined;
+  // A radio that reported about itself runs an MM9PDY build, even when its report names none.
+  const stockOnStock =
+    toStock &&
+    image.radioLayout !== undefined &&
+    image.radioBuild === undefined &&
+    !image.radioReported;
   if (!reportedIsImage && !stockOnStock) return;
   if (pin.layout === undefined) {
     // A list-carrying loader plans nothing for the installed build: it would end with nothing written.

@@ -60,6 +60,11 @@ export interface PreparedFirmwareImage {
    */
   readonly radioBuild?: string;
   /**
+   * Set when the radio reported about itself (UV-5R Mini: its radio report), so it runs an MM9PDY build even where
+   * `radioBuild` is absent because the report named none.
+   */
+  readonly radioReported?: true;
+  /**
    * Set when the operator has explicitly confirmed writing the build the radio already runs (a repair). An updater that
    * allows a same-build write asks for this confirmation first and sends nothing without it.
    */
@@ -90,6 +95,8 @@ export async function prepareFirmwareImage(input: {
   radioLayout?: string;
   /** The build name the radio gave, where it gave one (see `PreparedFirmwareImage.radioBuild`). */
   radioBuild?: string;
+  /** The radio reported about itself (see `PreparedFirmwareImage.radioReported`). */
+  radioReported?: boolean;
   /** The operator confirmed writing the build the radio already runs (see `PreparedFirmwareImage.reinstallConfirmed`). */
   reinstallConfirmed?: boolean;
 }): Promise<PreparedFirmwareImage> {
@@ -97,6 +104,7 @@ export async function prepareFirmwareImage(input: {
   const layout = {
     ...(input.radioLayout === undefined ? {} : { radioLayout: input.radioLayout }),
     ...(input.radioBuild ? { radioBuild: input.radioBuild } : {}),
+    ...(input.radioReported ? { radioReported: true as const } : {}),
     ...(input.reinstallConfirmed ? { reinstallConfirmed: true as const } : {}),
   };
   if (

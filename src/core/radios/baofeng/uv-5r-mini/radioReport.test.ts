@@ -153,12 +153,19 @@ describe('uv5rMiniLayoutFromReport', () => {
       kind: 'layout',
       layout: 'L2',
       build: 'mm9pdy-L2-0.2.0-rc.1',
+      reported: true,
       details: [
         'MM9PDY build: mm9pdy-L2-0.2.0-rc.1',
         'Flash layout: L2',
         'RF chip register 0: 0x1234',
       ],
     });
+  });
+
+  it('marks an empty-named report as reported, with no build', () => {
+    const r = answer(edited((b) => b.fill(0, 0x18, 0x3e)));
+    expect(r).toMatchObject({ kind: 'layout', layout: 'L2', reported: true });
+    expect(r).not.toHaveProperty('build');
   });
 
   it('shows the one-way warning for an L1 radio on the v0.04 code base only', () => {

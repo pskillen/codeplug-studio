@@ -137,6 +137,7 @@ export async function loadChosenPatch(
  * `radioBuild` is the build name the radio gave about itself, which an updater compares with the image's own;
  * `reinstallConfirmed` is the operator's explicit confirm to write the build the radio already runs. Without it, an
  * updater that allows that throws `RadioConfirmRequiredError` (code `needsConfirm`) with the warning to show.
+ * `radioReported` says the radio reported about itself, so it runs a modded build even where it named none.
  */
 export async function prepareFlash(
   radioId: FirmwareRadioId,
@@ -146,6 +147,7 @@ export async function prepareFlash(
   radioLayout?: string,
   radioBuild?: string,
   reinstallConfirmed?: boolean,
+  radioReported?: boolean,
 ): Promise<PreparedFirmwareImage> {
   let target: FirmwareTarget;
   if (choice.kind === 'stock') {
@@ -161,6 +163,7 @@ export async function prepareFlash(
     radioLayout,
     radioBuild,
     reinstallConfirmed,
+    radioReported,
   });
   if (choice.kind === 'back-to-stock' && !image.backToStock) {
     throw new FirmwareError('patch-not-to-stock', NOT_TO_STOCK_PATCH_MESSAGE);

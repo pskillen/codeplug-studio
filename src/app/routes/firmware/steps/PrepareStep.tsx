@@ -74,8 +74,10 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
       : null;
   // The build the radio says it runs, where it says so; it decides "already installed".
   const radioBuild = answer?.kind === 'layout' ? answer.build : undefined;
-  type Inputs = readonly [unknown, FirmwareChoice | null, unknown, unknown, unknown];
-  const inputs: Inputs = [stock, choice, loadedPatch, radioLayout, radioBuild];
+  // A radio that reported about itself runs a modded build, even when it named none.
+  const radioReported = answer?.kind === 'layout' && answer.reported === true;
+  type Inputs = readonly [unknown, FirmwareChoice | null, unknown, unknown, unknown, unknown];
+  const inputs: Inputs = [stock, choice, loadedPatch, radioLayout, radioBuild, radioReported];
   const sameInputs = (a: Inputs) => a.every((v, i) => v === inputs[i]);
   const [failure, setFailure] = useState<{
     for: Inputs;
@@ -94,7 +96,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
   useEffect(() => {
     if (!stock || !choice || image || radioLayout === null) return;
     let cancelled = false;
-    const key: Inputs = [stock, choice, loadedPatch, radioLayout, radioBuild];
+    const key: Inputs = [stock, choice, loadedPatch, radioLayout, radioBuild, radioReported];
     prepareFlash(
       updater.radioId,
       stock,
@@ -103,6 +105,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
       radioLayout,
       radioBuild,
       reinstallConfirmed,
+      radioReported,
     )
       .then((prepared) => {
         if (!cancelled) dispatch({ type: 'imagePrepared', image: prepared });
@@ -131,6 +134,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
     radioLayout,
     radioBuild,
     reinstallConfirmed,
+    radioReported,
     updater.radioId,
     dispatch,
   ]);

@@ -116,6 +116,11 @@ export type RadioLayoutAnswer =
       readonly layout: string;
       /** The build the radio runs, where the radio said so itself; decides "already installed". */
       readonly build?: string;
+      /**
+       * Set when the answer is the radio's own report rather than its Radio Info lines. A radio that reports runs an
+       * MM9PDY build, even when the report names none.
+       */
+      readonly reported?: true;
       /** Shown with the answer; it does not stop the wizard. */
       readonly warning?: string;
       /** What the radio said about itself, shown as information only. */
