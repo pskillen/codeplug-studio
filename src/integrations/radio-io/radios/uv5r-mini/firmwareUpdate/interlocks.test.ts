@@ -23,6 +23,7 @@ import {
   firstDifferenceOutsideWindows,
   isUv5rMiniToStockImage,
   UV5RMINI_CODE_BASE_CHANGE_REFUSAL,
+  UV5RMINI_CODE_BASE_UNKNOWN_REFUSAL,
   UV5RMINI_OTHER_LAYOUT_REFUSAL,
   UV5RMINI_REINSTALL_WARNING,
   UV5RMINI_RETIRED_LOADER_REFUSAL,
@@ -70,17 +71,22 @@ function prepared(
   const files: Record<string, Uint8Array> = { ufw: built.bytes };
   if (o.extraRole) files.extra = new Uint8Array(4);
   const radioId = o.radioId ?? 'baofeng-uv5rmini';
+  const baseName = 'base' in o ? o.base : 'nrfb-v0.04';
+  // A radio whose layout isn't given runs the file's own code base unless the test says otherwise (the code-base
+  // check fails closed when Studio knows neither); pass `radioCodeBase: undefined` for a radio Studio knows nothing of.
+  const radioCodeBase =
+    'radioCodeBase' in o ? o.radioCodeBase : 'radioLayout' in o ? undefined : baseName;
   return {
     radioId,
     provenance: o.provenance ?? 'published',
     stockVersion: 'v0.04 (NRFB)',
-    baseName: 'base' in o ? o.base : 'nrfb-v0.04',
+    baseName,
     title: 'synthetic',
     versionStamp: 'stamp' in o ? o.stamp : 'mm9pdy-test',
     radioLayout: o.radioLayout,
     radioBuild: o.radioBuild,
     radioReported: o.radioReported,
-    radioCodeBase: o.radioCodeBase,
+    radioCodeBase,
     reinstallConfirmed: o.reinstallConfirmed,
     package: { radioId, files },
     stockPackage: o.noStock ? undefined : { radioId, files: { ufw: stock.bytes } },
@@ -305,9 +311,22 @@ describe('checkUv5rMiniImage — layout loaders', () => {
 
   it('a list-carrying loader ignores the radio layout, but not the code base it implies', () => {
     check(prepared({ radioLayout: 'L1' }));
-    check(prepared());
+    check(prepared({ radioCodeBase: 'nrfb-v0.04' }));
     expect(() => check(prepared({ radioLayout: 'L2' }))).toThrow(
       UV5RMINI_CODE_BASE_CHANGE_REFUSAL('nrfb-v0.04', 'nrf-v0.27'),
+    );
+  });
+
+  it("fails closed when Studio knows neither the radio's code base nor its layout", () => {
+    expect(() => check(prepared({ radioCodeBase: undefined }))).toThrow(
+      UV5RMINI_CODE_BASE_UNKNOWN_REFUSAL,
+    );
+    // A layout that names no base Studio knows is no better.
+    expect(() => check(prepared({ radioLayout: 'L3' }))).toThrow(
+      UV5RMINI_CODE_BASE_UNKNOWN_REFUSAL,
+    );
+    expect(UV5RMINI_CODE_BASE_UNKNOWN_REFUSAL).toBe(
+      "Studio doesn't know which code this radio runs, so it can't check this file is built on it. Nothing was sent.",
     );
   });
 });

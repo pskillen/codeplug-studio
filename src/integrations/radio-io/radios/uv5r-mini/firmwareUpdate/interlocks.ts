@@ -85,6 +85,10 @@ export const UV5RMINI_OTHER_LAYOUT_REFUSAL =
 export const UV5RMINI_CODE_BASE_CHANGE_REFUSAL = (fileBase: string, radioBase: string): string =>
   `This file is built on ${fileBase}, but this radio runs the ${radioBase} code. Studio never changes a radio's code base. Nothing was sent.`;
 
+/** The refusal when Studio knows neither the radio's code base nor its flash layout: it can't check the file. */
+export const UV5RMINI_CODE_BASE_UNKNOWN_REFUSAL =
+  "Studio doesn't know which code this radio runs, so it can't check this file is built on it. Nothing was sent.";
+
 /**
  * The refusal for an image on a list-carrying loader whose build is the one the radio says it already runs: that
  * loader would write nothing.
@@ -242,13 +246,16 @@ export function checkUv5rMiniImage(
     }
   }
 
-  // Code base: the radio's own, from its report or else from its layout. Never a change.
+  // Code base: the radio's own, from its report or else from its layout. Never a change. Unknown fails closed.
   const radioBase =
     image.radioCodeBase ??
     (image.radioLayout === undefined
       ? undefined
       : Object.values(bases).find((b) => b.loaderLayout === image.radioLayout)?.name);
-  if (radioBase !== undefined && radioBase !== base.name) {
+  if (radioBase === undefined) {
+    throw new RadioInterlockError(UV5RMINI_CODE_BASE_UNKNOWN_REFUSAL);
+  }
+  if (radioBase !== base.name) {
     throw new RadioInterlockError(UV5RMINI_CODE_BASE_CHANGE_REFUSAL(base.name, radioBase));
   }
 
