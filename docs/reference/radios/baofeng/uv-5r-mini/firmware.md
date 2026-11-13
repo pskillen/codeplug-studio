@@ -170,7 +170,10 @@ Nothing was sent." (`UV5RMINI_RETIRED_LOADERS`)
 | `L1-nolist-v1` | `b748e39af6caa7968a7eb74099e35dce0714876a0949a70d9279adc870ed7e09` |
 | `L2-nolist-v1` | `2f1b8999ea6dcc858ef076b20564e0339c1fb665add46efdafc4bd40222aadae` |
 
-**List-carrying loaders.** These keep their pin, and an image built with one still gets the "already installed" refusal.
+**List-carrying loaders.** These keep their pin. An image built with one gets the "already installed" refusal only on a
+radio whose [radio report](#the-radio-report) names the image's build. A radio with no report (every build on these
+lists is from before the report) names no build, so that refusal can't fire; the runtime `alreadyInstalled` stop
+(`RadioAlreadyInstalledError`, below) is then what stops a same-build flash.
 
 | Loader        | Packed SHA-256                                                     | Lists                                                      |
 | ------------- | ------------------------------------------------------------------ | ---------------------------------------------------------- |
@@ -276,11 +279,16 @@ loader:
 - **List-carrying loader: refused.** That loader writes nothing for the build it is given again. "This radio already
   runs <build>. This firmware is already installed; nothing was sent. Flash a different build."
 
-The radio's build name and the confirm travel on the prepared image (`PreparedFirmwareImage.radioBuild` and
-`reinstallConfirmed`), so the check runs again as the flash starts, and an image without the confirm is stopped there
-before the first frame. A new answer, the stock or the firmware choice clears the confirm. Studio can't catch a
-same-build flash on an MM9PDY build from before the report; with the layout loaders that just rewrites the same
-firmware.
+The radio's build name, whether it reported at all, and the confirm travel on the prepared image
+(`PreparedFirmwareImage.radioBuild`, `radioReported` and `reinstallConfirmed`), so the check runs again as the flash
+starts, and an image without the confirm is stopped there before the first frame. A radio that reports runs an MM9PDY
+build even when the report names none, so it never gets the stock-onto-stock warning. A new answer, the stock or the
+firmware choice clears the confirm.
+
+On a radio with no report (an MM9PDY build from before the report), Studio has no build name, so neither the warning
+nor the list-carrying refusal can fire before the flash. With a layout loader that just rewrites the same firmware.
+With a list-carrying loader, the runtime `alreadyInstalled` stop below (`RadioAlreadyInstalledError`) is then what stops
+it.
 
 A loader that writes nothing would read past the end of the image before announcing any length. Studio refuses that
 read and sends nothing more, but names it: error code `alreadyInstalled` (`RadioAlreadyInstalledError`), "This
