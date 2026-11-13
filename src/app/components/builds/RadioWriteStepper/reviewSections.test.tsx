@@ -64,6 +64,26 @@ describe('reviewPauseReasons (#1638)', () => {
   });
 });
 
+describe('reviewPauseReasons fails closed (#1638)', () => {
+  it('pauses for a provider with no pauseReasons that renders a section', () => {
+    const off = registerReviewSectionProvider({
+      matches: (d) => d.modelIds.includes('X'),
+      sections: () => [<div key="w">A warning</div>],
+    });
+    expect(reviewPauseReasons(descriptor, ctx)).toEqual(['unclassified-sections']);
+    off();
+  });
+
+  it('does not pause for a provider with no pauseReasons and nothing to render', () => {
+    const off = registerReviewSectionProvider({
+      matches: (d) => d.modelIds.includes('X'),
+      sections: () => [null, false],
+    });
+    expect(reviewPauseReasons(descriptor, ctx)).toEqual([]);
+    off();
+  });
+});
+
 describe('reviewSectionsFor', () => {
   it('gives identity, channels and time for a radio with no extras', () => {
     render(<>{reviewSectionsFor(descriptor, ctx)}</>);

@@ -49,8 +49,8 @@ export interface ReviewSectionProvider {
   sections(ctx: ReviewContext, descriptor: RadioDescriptor): ReactNode[];
   /**
    * Why Review must stop for the user (#1638): one reason per warning, refusal or choice this
-   * provider's sections or notes would show. Required in spirit for any provider that shows one:
-   * a provider without it never makes Review pause.
+   * provider's sections or notes would show. A provider without it that renders any section
+   * makes Review pause (fail closed), so it is never skipped unseen.
    */
   pauseReasons?(ctx: ReviewContext): ReviewPauseReason[];
 }
@@ -77,7 +77,9 @@ export type ReviewPauseReason =
   /** RT95: an advanced setting (password, remote stun/kill) changes and no backup is held. */
   | 'advanced-settings-no-backup'
   /** RT95 MM9PDY: zones are written but no key opens the zone selector. */
-  | 'zone-key-nudge';
+  | 'zone-key-nudge'
+  /** A provider with no `pauseReasons` rendered sections: shown rather than skipped unseen. */
+  | 'unclassified-sections';
 
 const providers: ReviewSectionProvider[] = [];
 
@@ -146,7 +148,12 @@ export function reviewPauseReasons(
 ): ReviewPauseReason[] {
   const reasons = providers
     .filter((p) => p.matches(descriptor))
-    .flatMap((p) => p.pauseReasons?.(ctx) ?? []);
+    .flatMap((p) => {
+      if (p.pauseReasons) return p.pauseReasons(ctx);
+      // Fail closed: no declared reasons but something to show means the user must see it.
+      const shows = p.sections(ctx, descriptor).some((n) => n != null && n !== false);
+      return shows ? (['unclassified-sections'] as ReviewPauseReason[]) : [];
+    });
   return [...new Set(reasons)];
 }
 
