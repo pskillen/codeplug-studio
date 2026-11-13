@@ -1,11 +1,10 @@
 # Developer mode
 
-**Status:** shipped on every build, prod and the Android app included.
-**Tracking:** [#1650](https://github.com/pskillen/codeplug-studio/issues/1650)
+**Status:** Done · **Tracking:** [#1650](https://github.com/pskillen/codeplug-studio/issues/1650)
 
-A hidden, per-device switch, like Android's "tap the build number". On the production site it shows the features
-prod hides: the Debug pages, firmware flashing for radios whose updater is still prod-gated, and Write on radio
-profiles marked prod-only-hidden. On every other build (local, next, dev, staging) those features are always shown, so
+A hidden, per-device switch, like Android's "tap the build number", on every build, prod and the Android app
+included. On the production site it shows the features prod hides: the Debug pages, firmware flashing for radios whose
+updater is still prod-gated, and Write on radio profiles marked prod-only-hidden. On every other build (local, next, dev, staging) those features are always shown, so
 developer mode changes nothing there except the badge.
 
 **Source:** `src/app/services/prodFeatureGate.ts` (the gate), `src/integrations/preferences/developerMode.ts`
@@ -68,6 +67,15 @@ One `localStorage` key, `codeplug-studio:developerMode` (`"on"` or absent), per 
 never written to a project, YAML, backup, Google Drive file or share link, and never sent anywhere. Other tabs of the
 same profile follow a change through the `storage` event. The Debug localStorage page lists the key as "Developer mode
 (this device)". If storage is unavailable, developer mode reads as off.
+
+## Known gaps
+
+- The Write panel and the keps page re-read developer mode on each render. A running Write is never torn down, and
+  `prepareRadioWriteImage` checks the gate again before upload, so turning developer mode off mid-flow can abort
+  before any write, never during one. Unused while no profile carries `prodWriteDisabled`.
+- The landing page's support matrix shows developer mode as it was when the page mounted.
+- On the Android app the flasher offers no radio: no updater is `capacitorSupported` yet. Developer mode there
+  unlocks only the Debug pages.
 
 ## Not done / rejected
 
