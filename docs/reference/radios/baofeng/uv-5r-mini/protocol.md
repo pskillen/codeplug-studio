@@ -102,8 +102,31 @@ Do not paste CHIRP’s full table into Studio as GPL source — cite NeonPlug `b
 1. Open serial at **115200**; on ident failure retry once at **38400**.
 2. Settle, flush, ident → seek ACK → read magics (flush before each).
 3. Read all `MEM_*` regions in `0x40` blocks → assemble packed `0x8240` image ([memory-layout.md](memory-layout.md)). Sync each read reply to opcode `0x52`.
-4. For **Write** upload: **Write connect uses the read handshake** so ident runs before any `R` ([#1275](https://github.com/pskillen/codeplug-studio/issues/1275)). Then in-session pre-write read of all `MEM_*` blocks (progress **Pre-write read**), overlay modelled channels onto that live packed image, then **`W` with no second handshake**. A second ident or second `F` (`needed 16 bytes`) stays silent. Restore still idents + upload magics. See [settings.md](settings.md). No persisted stash. Hardware verify pending.
+4. For **Write** upload: **Write connect uses the read handshake** so ident runs before any `R` ([#1275](https://github.com/pskillen/codeplug-studio/issues/1275)). Then in-session pre-write read of all `MEM_*` blocks (progress **Pre-write read**), overlay modelled channels onto that live packed image, then **`W` with no second handshake** while the session is live. A second ident or second `F` (`needed 16 bytes`) stays silent inside a session. If the session has gone idle (Review), Write re-handshakes first: see [Clone session idle drop](#clone-session-idle-drop). Restore still idents + upload magics. See [settings.md](settings.md). No persisted stash. Hardware verify pending.
 5. For **Restore** (not Write): connect skips ident; `restoreFromBackup` sends ident + upload magics, then selected zip MEM bins — never assemble / stash merge. See [backup-restore.md](backup-restore.md). Hardware verify pending.
+
+## Clone session idle drop
+
+Decoded from the radio's firmware; not yet confirmed on a radio.
+
+- The radio ends a clone session about **2 s** after the last byte it receives. Every byte received restarts that
+  countdown. If the last frame was a `W` the radio restarts; otherwise it goes back to its idle screen.
+- Outside a session it answers only the ident. Any other frame, a `W` included, is dropped with no reply, which shows
+  as `Expected ACK 0x06, timed out` on the first block.
+- Inside a session a second ident gets no reply (matching the hardware note above).
+
+What Studio does:
+
+- `UV5R_MINI_LAYOUT.sessionIdleMs` is **1500 ms**. The protocol records when the radio last completed an exchange
+  (handshake, read reply or write ACK). Before the first `W` of a Write or Restore, if more than that has passed, it
+  runs the ident and the upload magics again, with the [model-reply check](#model-reply-check).
+- A re-handshake first waits until **2500 ms** (`sessionEndedAfterMs`) after the last exchange, so a radio still in
+  its old session does not swallow the ident. After a Review of a few seconds there is nothing left to wait.
+- The descriptor also sets `programHoldSafeMs` to **1500 ms**, so a Write whose Review stays open longer reconnects
+  and re-reads before writing: the radio was back on its idle screen and may have been changed. The protocol check
+  covers Restore and any gap outside Review.
+- The UV-21Pro V2 layout shares the code but sets neither value; nothing is known about its idle behaviour.
+- Tests: `uv5r-mini/sessionIdle.test.ts`, against `FakeMiniRadio` with its session model on a fake clock.
 
 ## Transport and TX budget
 

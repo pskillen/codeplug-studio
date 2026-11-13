@@ -36,6 +36,17 @@ export interface Uv17ProLayout {
   readonly identTimeoutMs: number;
   readonly ioTimeoutMs: number;
   readonly writeAckTimeoutMs: number;
+  /**
+   * How long after the last completed exchange the protocol trusts the radio's clone session to be live.
+   * Past this, Write and Restore redo the handshake before the first `W`, because a radio that has ended its
+   * session drops `W` frames without a reply. Unset: the session is trusted for as long as it is held.
+   */
+  readonly sessionIdleMs?: number;
+  /**
+   * With `sessionIdleMs`: how long after the last exchange the radio has surely ended its session. A re-handshake
+   * waits until then, because a radio still in its session ignores a second ident. Defaults to `sessionIdleMs`.
+   */
+  readonly sessionEndedAfterMs?: number;
   readonly magics: Uv17ProMagicSet;
   /**
    * When set, the 15-byte reply to the `M` magic must start with these bytes (ASCII model name),
@@ -122,6 +133,10 @@ export const UV5R_MINI_LAYOUT: Uv17ProLayout = {
   identTimeoutMs: 8000,
   ioTimeoutMs: 6000,
   writeAckTimeoutMs: 400,
+  // The Mini's firmware ends a clone session about 2 s after the last byte it receives (decoded, not yet seen on a
+  // radio). Trust it for 1.5 s; a re-handshake waits 2.5 s from the last exchange so the old session is surely over.
+  sessionIdleMs: 1500,
+  sessionEndedAfterMs: 2500,
   magics: buildUv17ProMagics(0x00, 0x01),
   modelReplyPrefix: new TextEncoder().encode('5RMINI'),
   ...SHARED_RETAIN,
