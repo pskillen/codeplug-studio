@@ -142,7 +142,18 @@ export async function loadChosenPatch(
 
 /** The refusal at Prepare for a release with files by layout but none for the radio's. */
 export const NO_FILE_FOR_LAYOUT = (layout: string, have: readonly string[]): string =>
-  `This release has no file for this radio's flash layout (${layout}), only for ${have.join(' and ')}.`;
+  `Not available in this release: it has no file for this radio's flash layout (${layout}), only for ${have.join(' and ')}.`;
+
+/**
+ * False when the loaded release has files by layout but none for `radioLayout`: Prepare then stops before building
+ * anything. True for a release with no files by layout, or a radio whose layout is unknown.
+ */
+export function releaseHasFileForLayout(
+  loaded: LoadedFirmwarePatch,
+  radioLayout: string | undefined,
+): boolean {
+  return radioLayout === undefined || patchForLayout(loaded, radioLayout) !== undefined;
+}
 
 /**
  * The file of the loaded release to prepare for the radio's layout. A patch with no files by layout, or a radio whose

@@ -22,11 +22,16 @@ import {
 } from '../firmwareWizardState.ts';
 import PrepareStep from './PrepareStep.tsx';
 
-vi.mock('../../../services/firmwareFlash.ts', () => ({
-  prepareFlash: vi.fn(),
-  grantFirmwareRadioReportPort: vi.fn(),
-  readFirmwareRadioReport: vi.fn(),
-}));
+vi.mock('../../../services/firmwareFlash.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof flash>();
+  return {
+    NO_FILE_FOR_LAYOUT: actual.NO_FILE_FOR_LAYOUT,
+    releaseHasFileForLayout: actual.releaseHasFileForLayout,
+    prepareFlash: vi.fn(),
+    grantFirmwareRadioReportPort: vi.fn(),
+    readFirmwareRadioReport: vi.fn(),
+  };
+});
 
 const MINI = getFirmwareUpdater('baofeng-uv5rmini')!;
 const DM32 = getFirmwareUpdater('baofeng-dm32uv')!;
@@ -166,6 +171,34 @@ describe('PrepareStep: a release with one file per flash layout', () => {
     await readRadio(reportBlock({}));
     expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
     expect(screen.getByText(NO_PARTNER)).toBeInTheDocument();
+  });
+
+  it('stock V0.04 on a release with only the L2 file (1.0.0) is not available, and nothing is prepared', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(<Harness updater={MINI} loaded={fileFor('L2')} />);
+    await readRadio(STOCK_FLASH);
+    radioInfo('V0.04', 'V1.7');
+    expect(
+      await screen.findByText(
+        "Not available in this release: it has no file for this radio's flash layout (L1), only for L2. Nothing was prepared or sent to the radio.",
+      ),
+    ).toBeInTheDocument();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Preparing/)).toBeNull();
+    expect(latest.image).toBeNull();
+    expect(canAdvance(latest)).toBe(false);
+    // V0.27 on the same release is offered.
+    type('Radio Info: Firmware', 'V0.27');
+    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(screen.queryByText(/Not available in this release/)).toBeNull();
+  });
+
+  it('a report for a layout the release has no file for is not available either', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(<Harness updater={MINI} loaded={fileFor('L2')} />);
+    await readRadio(reportBlock({ vm: L1, v004: true, name: 'mm9pdy-L1-0.2.0' }));
+    expect(await screen.findByText(/^Not available in this release/)).toBeInTheDocument();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
   });
 
   it('says nothing when the release has both files', async () => {
@@ -331,7 +364,7 @@ describe('PrepareStep: the UV-5R Mini Radio Info question, with no report', () =
     expect(screen.queryByLabelText(/MM9PDY build/)).toBeNull();
     expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.queryByText(/hardware layout/i)).toBeNull();
-    expect(screen.getByText(/Enter both Radio Info lines/)).toBeInTheDocument();
+    expect(screen.getByText(/Give both Radio Info lines/)).toBeInTheDocument();
     expect(flash.prepareFlash).not.toHaveBeenCalled();
   });
 
@@ -361,10 +394,37 @@ describe('PrepareStep: the UV-5R Mini Radio Info question, with no report', () =
     expect(screen.queryByRole('button', { name: 'Connect and flash' })).toBeNull();
   });
 
-  it('refuses a Hardware line not proven, without building anything', async () => {
+  it('asks with dropdowns of the supported values, under the warning about a wrong pick', async () => {
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('V0.27', 'V1.8');
+    const options = (label: string) =>
+      [...(screen.getByLabelText(label) as HTMLSelectElement).options]
+        .filter((o) => !o.disabled)
+        .map((o) => o.value);
+    expect(options('Radio Info: Firmware')).toEqual(['V0.04', 'V0.27', 'Other']);
+    expect(options('Radio Info: Hardware')).toEqual(['V1.7', 'Other']);
+    expect(
+      screen.getByText(
+        "Pick exactly what the radio's Radio Info screen shows. If the Firmware line you pick doesn't match the radio, the radio refuses the file and nothing is installed, but its FM presets and volume may be reset.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('refuses Firmware Other as not supported, without building anything', async () => {
+    render(<Harness updater={MINI} />);
+    await readRadio(STOCK_FLASH);
+    radioInfo('Other', 'V1.7');
+    expect(
+      screen.getByText("Studio doesn't support this radio's Firmware version; nothing was sent."),
+    ).toBeInTheDocument();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+    expect(canAdvance(latest)).toBe(false);
+  });
+
+  it('refuses Hardware Other, without building anything', async () => {
+    render(<Harness updater={MINI} />);
+    await readRadio(STOCK_FLASH);
+    radioInfo('V0.27', 'Other');
     expect(
       screen.getByText(
         "Studio hasn't been proven on this radio's Hardware version; nothing was sent.",

@@ -1,3 +1,4 @@
+import { NativeSelect } from '@mantine/core';
 import { useEffect, useState } from 'react';
 
 import type {
@@ -12,8 +13,10 @@ import { RadioIoError } from '@integrations/radio-io';
 import { Button, Panel, StatusBanner, TextInput } from '../../../components/v2/index.ts';
 import {
   grantFirmwareRadioReportPort,
+  NO_FILE_FOR_LAYOUT,
   prepareFlash,
   readFirmwareRadioReport,
+  releaseHasFileForLayout,
   type FirmwareChoice,
 } from '../../../services/firmwareFlash.ts';
 import classes from '../FirmwareFlasherPage.module.css';
@@ -50,19 +53,47 @@ function RadioLayoutQuestion({
           <li key={s}>{s}</li>
         ))}
       </ol>
-      <TextInput
+      {question.warning ? <StatusBanner tone="warning">{question.warning}</StatusBanner> : null}
+      <RadioInfoLine
         label={question.firmwareLabel}
+        options={question.firmwareOptions}
         value={answers.firmware}
-        onChange={(e) => onChange({ firmware: e.target.value })}
-        mono
+        onChange={(firmware) => onChange({ firmware })}
       />
-      <TextInput
+      <RadioInfoLine
         label={question.hardwareLabel}
+        options={question.hardwareOptions}
         value={answers.hardware}
-        onChange={(e) => onChange({ hardware: e.target.value })}
-        mono
+        onChange={(hardware) => onChange({ hardware })}
       />
     </>
+  );
+}
+
+/** One Radio Info line: a dropdown of the supported values where the descriptor lists them, else typed. */
+function RadioInfoLine({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: readonly string[] | undefined;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  if (!options) {
+    return (
+      <TextInput label={label} value={value} onChange={(e) => onChange(e.target.value)} mono />
+    );
+  }
+  return (
+    <NativeSelect
+      label={label}
+      value={value}
+      data={[{ value: '', label: 'Choose…', disabled: true }, ...options]}
+      onChange={(e) => onChange(e.currentTarget.value)}
+    />
   );
 }
 
@@ -207,9 +238,16 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
     !!loadedPatch &&
     loadedLayouts(loadedPatch).length > 0 &&
     !partnerFor(loadedPatch, image.radioLayout);
+  // The release has files by layout but none for the radio's: say so and stop before anything is prepared.
+  const unavailable =
+    !!loadedPatch &&
+    typeof radioLayout === 'string' &&
+    !releaseHasFileForLayout(loadedPatch, radioLayout)
+      ? NO_FILE_FOR_LAYOUT(radioLayout, loadedLayouts(loadedPatch))
+      : null;
 
   useEffect(() => {
-    if (!stock || !choice || image || radioLayout === null) return;
+    if (!stock || !choice || image || radioLayout === null || unavailable) return;
     let cancelled = false;
     const key: Inputs = [
       stock,
@@ -260,6 +298,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
     reinstallConfirmed,
     radioReported,
     radioCodeBase,
+    unavailable,
     updater.radioId,
     dispatch,
   ]);
@@ -296,7 +335,12 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
           <StatusBanner tone="warning">{answer.warning}</StatusBanner>
         ) : null}
         {answer?.kind === 'incomplete' && asksQuestion ? (
-          <p className={classes.muted}>Enter both Radio Info lines to prepare the image.</p>
+          <p className={classes.muted}>Give both Radio Info lines to prepare the image.</p>
+        ) : null}
+        {unavailable && !image ? (
+          <StatusBanner tone="warning">
+            {unavailable} Nothing was prepared or sent to the radio.
+          </StatusBanner>
         ) : null}
         {error ? (
           <StatusBanner tone="warning">{error} Nothing was sent to the radio.</StatusBanner>
@@ -314,7 +358,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
             ) : null}
           </>
         ) : null}
-        {!image && !error && !awaitingConfirm && radioLayout !== null ? (
+        {!image && !error && !awaitingConfirm && !unavailable && radioLayout !== null ? (
           <p className={classes.muted}>Preparing…</p>
         ) : null}
         {image ? (

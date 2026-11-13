@@ -162,6 +162,14 @@ export interface FirmwareRadioLayoutQuestion {
   readonly steps: readonly string[];
   readonly firmwareLabel: string;
   readonly hardwareLabel: string;
+  /**
+   * The values the operator picks from, in order, where the lines are dropdowns of supported values rather than typed
+   * (UV-5R Mini: Firmware `V0.04`, `V0.27`, `Other`; Hardware `V1.7`, `Other`).
+   */
+  readonly firmwareOptions?: readonly string[];
+  readonly hardwareOptions?: readonly string[];
+  /** Shown with the question, before anything is picked: what a wrong pick does. */
+  readonly warning?: string;
   readonly resolve: (answers: RadioInfoAnswers) => RadioLayoutAnswer;
   /**
    * For a radio whose firmware may report about itself: Prepare reads the radio first (the updater's `radioReport`)
