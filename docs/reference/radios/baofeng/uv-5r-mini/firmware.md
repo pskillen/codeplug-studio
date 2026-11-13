@@ -193,6 +193,14 @@ to `prepareFirmwareImage` as `radioLayout`; from the radio report or Radio Info,
 
 A list-carrying loader's image ignores the layout.
 
+**One file per layout.** A release ships an `L1` file and an `L2` file, built from one patch set, with build names
+`mm9pdy-L1-<version>` and `mm9pdy-L2-<version>`. The release index lists them as two rows of one version, each with
+its `layout` ([releases](../../../../features/firmware-flashing/releases.md#uv-5r-mini-rows-one-per-flash-layout)),
+and the patch-file dropzone takes both files at once. Prepare picks the file for the radio's layout
+(`pickPatchForLayout`) and keeps the other; a release with no file for the radio's layout is refused before anything
+is built. `V4` (`mm9pdy-V4-…`, v0.04 builds) is a test-only tag: never a release row, and refused from disk. The
+build-name rule is `uv5rMiniLayoutFromBuildName` in `src/core/radios/baofeng/uv-5r-mini/firmware.ts`.
+
 ### The radio report
 
 An MM9PDY build that carries the radio report answers one clone read with its own facts. It is the firmware

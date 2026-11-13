@@ -106,7 +106,11 @@ hidden there).
      release ("This is the MM9PDY modded firmware 1.0.0 (published)"). Any other patch shows its project name and
      version, a short sha256 and a risk
      statement, and needs **I understand** ticked before the wizard continues. That is in addition to the risk
-     acknowledgement every flash needs. A patch for another radio is refused with its own message.
+     acknowledgement every flash needs. A patch for another radio is refused with its own message. For a radio whose
+     releases ship one file per flash layout (the UV-5R Mini), the drop zone takes the release's two files at once and
+     lists their layouts ("Flash layouts: L1, L2."); one file works too. Two files of one layout, files of different
+     releases, and a test-only `V4` file are refused
+     ([releases](releases.md#uv-5r-mini-rows-one-per-flash-layout)).
 3. **Stock firmware** — the stock sources (the vendor's download link, or how to ask the vendor, and any unofficial
    mirror, labelled; all plain links: Studio never fetches them), the expected zip and
    file names, and a drop zone for the zip or the extracted files. Studio checks every file against the pinned hashes.
@@ -116,7 +120,9 @@ hidden there).
    version stamp and the result hashes. A failure, such as a patch made for different stock, stops here; nothing is
    sent.
    For a radio whose firmware comes in more than one flash layout (the UV-5R Mini; the factory firmware's packing,
-   not the board), the step first finds the radio's layout and prepares the image for it. **Read the radio** reads, in
+   not the board), the step first finds the radio's layout and prepares the release's file for that layout. A release
+   with no file for it is refused; one with no file for the other layout says "This release has only the L2 file. If
+   the radio refuses it, Studio has no file for the other flash layout to try." **Read the radio** reads, in
    normal mode and read-only, the radio report an MM9PDY build answers; with no report, or when the read fails, the
    step asks the Firmware and Hardware lines of its Radio Info screen
    ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md#the-radio-report)).
