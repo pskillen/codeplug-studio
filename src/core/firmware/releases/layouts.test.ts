@@ -226,6 +226,23 @@ describe('user patch files, one per flash layout', () => {
     expect(loaded.otherLayouts?.[0]?.release).toBe(l2.row);
   });
 
+  it("runs the matched row's layout and base checks on a file from disk, as on a download", async () => {
+    const pick = (r: Awaited<ReturnType<typeof syntheticUv5rMiniRelease>>, row = r.row) =>
+      refusal(
+        createUserPatchSource(file('a.json', r.patchBytes), {
+          rows: [row],
+          descriptors: [r.descriptor],
+        }).listReleases(MINI, { includeRc: true }),
+      );
+    const crossedLayout = await syntheticUv5rMiniRelease({ layout: 'L2', rowLayout: 'L1' });
+    const layoutErr = await pick(crossedLayout);
+    expect(layoutErr.code).toBe('patch-wrong-layout');
+    expect(layoutErr.message).toMatch(/the release list says L1, but its build is for L2/);
+    const crossedBase = await syntheticUv5rMiniRelease({ layout: 'L2', patchBase: 'other' });
+    const baseErr = await pick(crossedBase, { ...crossedBase.row, base: 'synthetic' });
+    expect(baseErr.message).toMatch(/the release list says synthetic, but its patch is on other/);
+  });
+
   it('takes one file, with no partner', async () => {
     const l2 = await syntheticUv5rMiniRelease({ layout: 'L2' });
     const source = createUserPatchSource(file('b.json', l2.patchBytes), {

@@ -4,6 +4,7 @@ import { parseFirmwarePatch } from '../patch/index.ts';
 import { listStockFirmwareDescriptors } from '../stockCatalog.ts';
 import type { FirmwareRadioId, NamedBytes, StockFirmwareDescriptor } from '../types.ts';
 import { combineLayoutFiles, layoutFiles, layoutFromBuildName } from './layouts.ts';
+import { checkPublishedPatch, resolvePublishedLayout } from './publishedIndex.ts';
 import { publishedReleaseSummary } from './publishedSource.ts';
 import { loadedFirmwarePatchTitle } from './projects.ts';
 import type {
@@ -56,8 +57,10 @@ export function createUserPatchSource(
     const parsed = parseFirmwarePatch(file.bytes);
     const layoutOf = () =>
       descriptor ? layoutFromBuildName(descriptor, parsed.description.buildName) : undefined;
-    if (published) {
-      const layout = published.layout ?? layoutOf();
+    if (published && descriptor) {
+      // The same checks as a download of that row: its base and layout must agree with the patch.
+      checkPublishedPatch(published, parsed, descriptor);
+      const layout = resolvePublishedLayout(published, parsed, descriptor);
       return {
         bytes: file.bytes,
         sha256,

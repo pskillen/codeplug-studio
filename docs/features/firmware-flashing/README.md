@@ -211,6 +211,9 @@ max … ms`. A failed flash records the timing up to the failure.
 | `published`  | A published release, or a dropped file identical to one | `Firmware: <project> <tag> (published, patch sha256 <hash>)`                        |
 | `unreviewed` | Any other patch file from disk                          | `Firmware: <project> <version> (user-supplied patch, sha256 <hash>, version <ver>)` |
 
+A dropped file identical to a published release gets the same checks as a download of that release: the row's
+version, stock, result hashes, `base` and `layout` must agree with the patch.
+
 `<project>` is the firmware project's display name, looked up by the patch `name` in
 `src/core/firmware/releases/projects.ts` (`FIRMWARE_PROJECTS`). The DM-32UV and AT-D890UV patch projects are both
 "MM9PDY modded firmware". A patch name with no row there shows as "Firmware patch". Stock is never given a project
