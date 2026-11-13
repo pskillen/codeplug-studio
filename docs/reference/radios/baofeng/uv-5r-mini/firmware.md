@@ -30,10 +30,10 @@ base whose file hashes to it. The descriptor carries `nrfb-v0.04` as its primary
 **One stock per base.** A radio's code base never changes, so a release's `L1` file is built on `nrfb-v0.04` and its
 `L2` file on `nrf-v0.27`. The descriptor sets `severalStocks`: the Stock firmware step takes either file or both at
 once, each verified against its own pin (`VerifiedStockFirmware.others` holds the second). Prepare builds each patch
-on the stock its own `base` names (`verifiedStockForBase`), so the retry's other file is built on its own stock, not
-the first file's. A file whose base wasn't supplied is refused before anything is built: "This file is built on stock
-v0.27 (NRF), which wasn't supplied. Add stock-nrf-v0.27.ufw at the Stock firmware step." Supplying both lets Studio
-prepare the other layout's file if the radio refuses the first.
+on the stock its own `base` names (`verifiedStockForBase`), so a retry's same-suffix file (see Retry partner below)
+is built on its own stock, not the first file's. A file whose base wasn't supplied is refused before anything is
+built: "This file is built on stock v0.27 (NRF), which wasn't supplied. Add stock-nrf-v0.27.ufw at the Stock firmware
+step."
 
 The `nrf-v0.27` file carries **no loader** (`ota.bin` is `0x200` bytes of `0xFF`), by design. A file is accepted as a
 stock base with no loader only when `ota.bin` is blank; anything else in `ota.bin` must still be a well-formed loader

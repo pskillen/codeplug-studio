@@ -110,7 +110,7 @@ export interface StockFirmwareDescriptor {
   /**
    * For a radio whose releases ship one file per flash layout: the layouts a release file may be for, and how a
    * patch's build name names its layout. A release is one published row per layout; Studio picks the file for the
-   * radio's layout at Prepare and keeps the other for a retry.
+   * radio's layout at Prepare; the other is kept for a retry only when it has the same suffix (`variantOfBase`).
    */
   readonly releaseLayouts?: FirmwareReleaseLayouts;
 }

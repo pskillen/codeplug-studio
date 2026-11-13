@@ -15,7 +15,7 @@ function extensionOf(fileName: string): string | null {
 
 /** The copy for a radio that takes one stock file per stock version (`severalStocks`). */
 export const STOCK_PER_VERSION_COPY =
-  "Each release file is built on one of the stock versions below. Supply the one your radio runs, or both: with both, Studio can also prepare the release's file for the other version if the radio refuses the first.";
+  'Each release file is built on one of the stock versions below. Supply the one your radio runs; with both, Studio can prepare whichever file the release has for your radio.';
 
 /** The operator supplies the vendor's stock firmware; Studio checks it against the pinned hashes, in memory only. */
 export default function StockStep({ state, dispatch, updater }: WizardStepProps) {

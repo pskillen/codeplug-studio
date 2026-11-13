@@ -304,7 +304,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
               }
               hint={
                 releaseLayouts
-                  ? `A release has one file per flash layout (${releaseLayouts.layouts.join(', ')}). Pick both: Studio uses the one for your radio and keeps the other in case the radio refuses it. One file works too.`
+                  ? `A release has one file per flash layout (${releaseLayouts.layouts.join(', ')}). Pick both: Studio uses the one for your radio. One file works too.`
                   : undefined
               }
               multiple={releaseLayouts ? true : undefined}
