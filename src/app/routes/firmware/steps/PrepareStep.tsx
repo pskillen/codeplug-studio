@@ -214,8 +214,15 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
   const radioBuild = answer?.kind === 'layout' ? answer.build : undefined;
   // A radio that reported about itself runs a modded build, even when it named none.
   const radioReported = answer?.kind === 'layout' && answer.reported === true;
-  // The code base the radio said it runs; the interlocks refuse a file on another one.
-  const radioCodeBase = answer?.kind === 'layout' ? answer.codeBase : undefined;
+  // The code base the radio runs: what its report says, or what the answers name. After a retry, a radio that didn't
+  // report is taken to run the base of the file prepared for the other layout (its answers were wrong); a reported
+  // base stands, so the interlocks refuse a retry that would change it.
+  const radioCodeBase =
+    answer?.kind !== 'layout'
+      ? undefined
+      : layoutRetry && !answer.reported
+        ? layoutRetry.toBase
+        : answer.codeBase;
   type Inputs = readonly [
     unknown,
     FirmwareChoice | null,

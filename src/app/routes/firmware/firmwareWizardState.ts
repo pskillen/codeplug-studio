@@ -50,7 +50,12 @@ export interface FirmwareWizardState {
    * release's file for the other layout (`from` → `to`). Offered once per flash: while set, no further retry is offered.
    * Prepare uses `to` as the radio's layout. Cleared whenever the choice, stock or radio answers change.
    */
-  readonly layoutRetry: { readonly from: string; readonly to: string } | null;
+  readonly layoutRetry: {
+    readonly from: string;
+    readonly to: string;
+    /** The stock base of the file prepared for `to`: the radio's base, if the retry is right. */
+    readonly toBase?: string;
+  } | null;
   readonly checks: Readonly<Record<PreflightCheck, boolean>>;
   /** What the selected radio's descriptor asks for on top of the generic checks. */
   readonly radioPreflight: {
@@ -355,7 +360,11 @@ export function firmwareWizardReducer(
         step: 'updateMode',
         image: action.image,
         reinstallConfirmed: false,
-        layoutRetry: { from: action.from, to },
+        layoutRetry: {
+          from: action.from,
+          to,
+          ...(action.image.baseName ? { toBase: action.image.baseName } : {}),
+        },
       };
     }
     case 'setCheck':

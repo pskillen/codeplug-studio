@@ -30,18 +30,29 @@ vi.mock('../../../services/firmwareFlash.ts', () => ({
 
 const MINI = getFirmwareUpdater('baofeng-uv5rmini')!;
 const STOCK = { via: 'files' } as unknown as VerifiedStockFirmware;
-const fileFor = (layout: string) =>
-  ({ provenance: 'published', layout }) as unknown as LoadedFirmwarePatch;
+/**
+ * A release file on an NRF base: a same-suffix pair (a v0.04 NRF base is made up for the test), so each file is the
+ * other's retry partner. Today's real pair crosses the suffix and has no partner (see below).
+ */
+const NRF_BASE: Record<string, string> = { L1: 'nrf-v0.04', L2: 'nrf-v0.27' };
+const fileFor = (layout: string, base = NRF_BASE[layout]!) =>
+  ({
+    provenance: 'published',
+    layout,
+    parsed: { description: { base } },
+  }) as unknown as LoadedFirmwarePatch;
 const PAIR: LoadedFirmwarePatch = { ...fileFor('L1'), otherLayouts: [fileFor('L2')] };
-const imageFor = (layout: string) =>
+const imageFor = (layout: string, o: { reported?: boolean; base?: string } = {}) =>
   ({
     radioId: 'baofeng-uv5rmini',
     provenance: 'published',
     title: `${layout} build`,
     versionStamp: `mm9pdy-${layout}-1.0.0`,
+    baseName: o.base ?? NRF_BASE[layout],
     radioLayout: layout,
-    radioBuild: 'mm9pdy-L1-0.9.0',
-    radioReported: true,
+    ...(o.reported === false
+      ? { radioCodeBase: o.base ?? NRF_BASE[layout] }
+      : { radioBuild: 'mm9pdy-L1-0.9.0', radioReported: true, radioCodeBase: 'nrf-v0.04' }),
     sha256: {},
     verifyHint: 'x',
   }) as unknown as PreparedFirmwareImage;
@@ -169,7 +180,7 @@ describe('FlashStep: a refusal before anything was installed', () => {
     fireEvent.click(screen.getByRole('button', { name: RETRY }));
     await waitFor(() => expect(latest.step).toBe('updateMode'));
     // prepareFlash runs the updater's interlocks (checkImage); the partner's layout is the radio's for this prepare.
-    const [radioId, stock, choice, loaded, radioLayout, radioBuild, confirmed, reported] =
+    const [radioId, stock, choice, loaded, radioLayout, radioBuild, confirmed, reported, base] =
       vi.mocked(flash.prepareFlash).mock.calls[0]!;
     expect([radioId, stock, choice, loaded]).toEqual([
       'baofeng-uv5rmini',
@@ -181,8 +192,10 @@ describe('FlashStep: a refusal before anything was installed', () => {
     expect(radioBuild).toBe('mm9pdy-L1-0.9.0');
     expect(confirmed).toBe(false);
     expect(reported).toBe(true);
+    // A reported code base stands: the interlocks refuse the retry if it would change it.
+    expect(base).toBe('nrf-v0.04');
     expect(latest.image).toBe(L2_IMAGE);
-    expect(latest.layoutRetry).toEqual({ from: 'L1', to: 'L2' });
+    expect(latest.layoutRetry).toEqual({ from: 'L1', to: 'L2', toBase: 'nrf-v0.27' });
     expect(latest.reinstallConfirmed).toBe(false);
     expect(latest.checks).toEqual({ risk: true, battery: true, cable: true, otherApps: true });
     expect(latest.probe).toEqual({ summary: 'probe ok' });
@@ -206,13 +219,49 @@ describe('FlashStep: a refusal before anything was installed', () => {
     expect(latest.layoutRetry).toBeNull();
   });
 
+  it('a stock radio retries L2 to L1 and L1 to L2, each prepared on the partner file own base', async () => {
+    for (const [from, to] of [
+      ['L2', 'L1'],
+      ['L1', 'L2'],
+    ] as const) {
+      const refused = imageFor(from, { reported: false });
+      const next = imageFor(to, { reported: false });
+      vi.mocked(flash.prepareFlash).mockReset().mockResolvedValue(next);
+      vi.mocked(flash.runFirmwareFlash).mockReset();
+      const view = show(<Harness image={refused} />);
+      await flashWith({ ...OTHER_LAYOUT_0X8F, image: refused });
+      fireEvent.click(
+        screen.getByRole('button', { name: `Enter update mode again with the ${to} file` }),
+      );
+      await waitFor(() => expect(latest.step).toBe('updateMode'));
+      const call = vi.mocked(flash.prepareFlash).mock.calls[0]!;
+      expect(call[4]).toBe(to);
+      // The radio's answers were wrong; the partner is picked and prepared on its own base.
+      expect(call[8]).toBe(NRF_BASE[to]);
+      expect(latest.layoutRetry).toEqual({ from, to, toBase: NRF_BASE[to] });
+      view.unmount();
+    }
+  });
+
+  it("today's pair (L1 NRFB v0.04, L2 NRF v0.27) crosses the suffix: no retry is offered", async () => {
+    const today: LoadedFirmwarePatch = {
+      ...fileFor('L1', 'nrfb-v0.04'),
+      otherLayouts: [fileFor('L2', 'nrf-v0.27')],
+    };
+    const refused = imageFor('L2', { reported: false, base: 'nrf-v0.27' });
+    show(<Harness loaded={today} image={refused} />);
+    await flashWith({ ...OTHER_LAYOUT_0X8F, image: refused });
+    expect(screen.getByText('Nothing was installed')).toBeInTheDocument();
+    expect(screen.getByText(/This release has no other file for this radio/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Enter update mode again with/ })).toBeNull();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+  });
+
   it('a release with no file for the other layout says so and offers nothing', async () => {
     show(<Harness loaded={fileFor('L1')} />);
     await flashWith(OTHER_LAYOUT_0X8F);
     expect(screen.getByText('Nothing was installed')).toBeInTheDocument();
-    expect(
-      screen.getByText(/This release has no file for the radio's other flash layout/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/This release has no other file for this radio/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Enter update mode again with/ })).toBeNull();
   });
 

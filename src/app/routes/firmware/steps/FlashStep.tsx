@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { partnerFor } from '@core/firmware/releases/layouts.ts';
+import { fileBase, partnerFor } from '@core/firmware/releases/layouts.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 import {
   isoTimestampForFilename,
@@ -101,10 +101,16 @@ export default function FlashStep({
     error: null,
   });
 
-  // The release's file for the radio's other layout, offered once after a refusal before anything was installed.
+  // The release's file for the radio's other layout, offered once after a refusal before anything was installed. Only a
+  // file of the same variant (UV-5R Mini: NRF or NRFB) is a partner; with today's two bases there is none.
   const refusedLayout = image.radioLayout;
   const partner =
-    refusedLayout && state.loadedPatch ? partnerFor(state.loadedPatch, refusedLayout) : undefined;
+    refusedLayout && state.loadedPatch
+      ? partnerFor(state.loadedPatch, refusedLayout, {
+          refusedBase: image.baseName,
+          variantOfBase: updater.stock.releaseLayouts?.variantOfBase,
+        })
+      : undefined;
   const retry: LayoutRetryOffer =
     state.layoutRetry !== null
       ? { kind: 'used', from: state.layoutRetry.from, to: state.layoutRetry.to }
@@ -127,6 +133,9 @@ export default function FlashStep({
         image.radioBuild,
         false,
         image.radioReported === true,
+        // A reported base stands (the interlocks then refuse a change); otherwise the partner's own base, so it is
+        // picked and prepared on its own stock.
+        image.radioReported ? image.radioCodeBase : fileBase(partner),
       );
       dispatch({ type: 'retryOtherLayout', from: refusedLayout, image: next });
     } catch (err) {
@@ -470,8 +479,9 @@ function FlashResult({
           ) : (
             <>
               <p className={classes.copy}>
-                This release has no file for the radio&apos;s other flash layout, so Studio has
-                nothing else to send. Switch the radio off and on; it boots its installed firmware.
+                This release has no other file for this radio (the other flash layout, same suffix),
+                so Studio has nothing else to send. Check the answers on Prepare match the radio.
+                Switch the radio off and on; it boots its installed firmware.
               </p>
               <div>
                 <Button variant="secondary" size="sm" onClick={onChooseFirmware}>

@@ -196,6 +196,23 @@ describe('PrepareStep: after the radio refused one layout before installing anyt
     expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
     expect(lastPrepare()[4]).toBe('L2');
   });
+
+  it("a stock radio's retry is prepared on the partner file's base, not the answered one", async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(
+      <Harness
+        updater={MINI}
+        start={{
+          radioRead: { kind: 'none' },
+          radioInfo: { firmware: 'V0.27', suffix: 'NRF', hardware: 'V1.7' },
+          layoutRetry: { from: 'L2', to: 'L1', toBase: 'nrf-v0.04' },
+        }}
+      />,
+    );
+    expect(await screen.findByText(/Ready to flash: L1 build/)).toBeInTheDocument();
+    expect(lastPrepare()[4]).toBe('L1');
+    expect(lastPrepare()[8]).toBe('nrf-v0.04');
+  });
 });
 
 describe('PrepareStep: a release with one file per flash layout and stock base', () => {
