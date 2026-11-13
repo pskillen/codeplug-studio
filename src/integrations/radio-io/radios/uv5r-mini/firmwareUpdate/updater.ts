@@ -41,7 +41,11 @@ import {
   UV5RMINI_FW_CMD,
   UV5RMINI_FW_APP_BAUD,
 } from './frames.ts';
-import { checkUv5rMiniImage } from './interlocks.ts';
+import {
+  checkUv5rMiniImage,
+  isUv5rMiniToStockImage,
+  UV5RMINI_BACK_TO_STOCK,
+} from './interlocks.ts';
 import { checkUv5rMiniOutgoing } from './outgoing.ts';
 import { createUv5rMiniSession, type Uv5rMiniReply, type Uv5rMiniSession } from './session.ts';
 
@@ -428,7 +432,9 @@ function describeResult(
   const name = image.versionStamp ?? image.title;
   if (s.resultPhase === 'loader') {
     if (code === 0) {
-      const restart = `The radio restarts by itself. Check the power-on screen shows ${name}.`;
+      const restart = isUv5rMiniToStockImage(image)
+        ? `The radio restarts by itself, ${UV5RMINI_BACK_TO_STOCK}. ${image.verifyHint}`
+        : `The radio restarts by itself. Check the power-on screen shows ${name}.`;
       return {
         note: s.areaLength === 0 ? `${UV5RMINI_MSG.alreadyHad} ${restart}` : restart,
       };

@@ -12,6 +12,11 @@ export interface FirmwarePatchDescription {
   readonly version: string;
   /** The stock base's name, for formats that name one (UV-5R Mini). The patch's claim: radios check it against hashes. */
   readonly base?: string;
+  /**
+   * The build the result installs, for formats that declare one (UV-5R Mini `build.name`). A build name equal to the
+   * base name marks a to-stock patch. The patch's claim: radios check it in their interlocks.
+   */
+  readonly buildName?: string;
   readonly stock: Readonly<Record<string, FirmwarePatchHashes>>;
   readonly result: Readonly<Record<string, FirmwarePatchHashes>>;
 }

@@ -409,13 +409,14 @@ const shortHex = (bytes: Uint8Array) =>
   Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(' ');
 
 function provenanceLine(image: PreparedFirmwareImage): string {
+  const what = image.backToStock ? `back to stock, ${image.title}` : image.title;
   switch (image.provenance) {
     case 'stock':
-      return `Firmware: ${image.title}`;
+      return `Firmware: ${what}`;
     case 'published':
-      return `Firmware: ${image.title} (published, patch sha256 ${image.patchSha256 ?? '?'})`;
+      return `Firmware: ${what} (published, patch sha256 ${image.patchSha256 ?? '?'})`;
     case 'unreviewed':
-      return `Firmware: ${image.title} (user-supplied patch, sha256 ${image.patchSha256 ?? '?'}, version ${image.patchVersion ?? '?'})`;
+      return `Firmware: ${what} (user-supplied patch, sha256 ${image.patchSha256 ?? '?'}, version ${image.patchVersion ?? '?'})`;
   }
 }
 

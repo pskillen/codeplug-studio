@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { seededBytes, syntheticDescriptor } from '../../firmware/__fixtures__/synthetic.ts';
 import { FirmwareError } from '../../firmware/errors.ts';
+import {
+  makeSyntheticUv5rMiniPatch,
+  synthUv5rMiniStock,
+} from '../../firmware/patch/formats/baofeng-uv5rmini-firmware/__fixtures__/makeSyntheticPatch.ts';
 import { resolveStockFirmware } from '../../firmware/stock/resolveStockFirmware.ts';
 import { parseFirmwarePatch } from '../../firmware/patch/index.ts';
 import { syntheticDm32Release } from '../../firmware/releases/__fixtures__/syntheticReleases.ts';
@@ -164,5 +168,59 @@ describe('prepareFirmwareImage — patch target', () => {
       target: { kind: 'patch', patch },
     }).catch((e: unknown) => e);
     expect((err as FirmwareError).code).toBe('patch-wrong-radio');
+  });
+});
+
+describe('prepareFirmwareImage — a to-stock patch (UV-5R Mini)', () => {
+  /** A synthetic Mini-shaped stock whose base name is the fixture's `synthetic`, and a patch built on it. */
+  async function setup(buildName: string, { baseName = 'synthetic' as string | null } = {}) {
+    const stockBytes = synthUv5rMiniStock();
+    const built = stockBytes.slice();
+    built[100] = built[100]! ^ 0xff;
+    const base = await syntheticDescriptor(
+      'baofeng-uv5rmini',
+      [{ role: 'ufw', fileName: 'stock.ufw', bytes: stockBytes }],
+      { fileName: 'z.zip', bytes: seededBytes(41, 16) },
+    );
+    const descriptor = {
+      ...base,
+      zip: undefined,
+      ...(baseName === null ? {} : { baseName }),
+      patchNames: ['baofeng-uv5rmini-firmware'],
+    };
+    const stock = await resolveStockFirmware(
+      descriptor,
+      [{ name: 'stock.ufw', bytes: stockBytes }],
+      { otherDescriptors: [] },
+    );
+    const json = await makeSyntheticUv5rMiniPatch(stockBytes, built, { buildName, version: '0.1' });
+    const bytes = new TextEncoder().encode(JSON.stringify(json));
+    const patch: LoadedFirmwarePatch = {
+      bytes,
+      sha256: 'ab'.repeat(32),
+      parsed: parseFirmwarePatch(bytes),
+      provenance: 'unreviewed',
+    };
+    return prepareFirmwareImage({ descriptor, stock, target: { kind: 'patch', patch } });
+  }
+
+  it("reads as the stock it puts back: the stock's title and verify hint, marked back to stock", async () => {
+    const prepared = await setup('synthetic');
+    expect(prepared.backToStock).toBe(true);
+    expect(prepared.title).toBe('stock firmware v0.0.1-test');
+    expect(prepared.verifyHint).toBe('The radio boots normally.');
+    expect(prepared.versionStamp).toBe('synthetic');
+    expect(prepared.provenance).toBe('unreviewed');
+  });
+
+  it('is a modded build when the build name is not the base name', async () => {
+    const prepared = await setup('mm9pdy-L1-1.0.0');
+    expect(prepared.backToStock).toBeUndefined();
+    expect(prepared.title).toBe('MM9PDY modded firmware 0.1');
+  });
+
+  it('is not to-stock when the stock has no base name', async () => {
+    const prepared = await setup('synthetic', { baseName: null });
+    expect(prepared.backToStock).toBeUndefined();
   });
 });

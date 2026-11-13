@@ -8,7 +8,7 @@ import { applyFirmwarePatch, readFirmwarePatchVersionStamp } from '../../firmwar
 import { loadedFirmwarePatchTitle, stockFirmwareTitle } from '../../firmware/releases/projects.ts';
 import type { LoadedFirmwarePatch } from '../../firmware/releases/types.ts';
 import type { VerifiedStockFirmware } from '../../firmware/stock/resolveStockFirmware.ts';
-import { stockVariantFor } from '../../firmware/stockVariants.ts';
+import { stockVariantFor, toStockVariantFor } from '../../firmware/stockVariants.ts';
 import type {
   FirmwarePackage,
   FirmwareProvenance,
@@ -41,6 +41,12 @@ export interface PreparedFirmwareImage {
   readonly patchVersion?: string;
   readonly patchSha256?: string;
   readonly versionStamp?: string;
+  /**
+   * Set for a to-stock patch (its build name is the stock's own base name): the result is that stock, with a loader
+   * that can install it. The title and verify hint are the stock's; the flash log says "back to stock". Descriptive:
+   * the radio's interlocks recognise a to-stock image themselves and hold it to their own rules.
+   */
+  readonly backToStock?: true;
   /**
    * The hardware layout of the radio this image is prepared for, as the operator gave it, where the radio comes in more
    * than one layout (UV-5R Mini: `L1` or `L2`, from its Radio Info screen). Unset when Studio has not been told. An
@@ -156,11 +162,17 @@ export async function prepareFirmwareImage(input: {
           'The patched firmware does not match the hash recorded in the patch. Nothing was flashed.',
         );
       }
+      // A to-stock patch installs the stock it was built on: it reads as that stock, not as a modded build.
+      const backToStock =
+        toStockVariantFor(radioDescriptor, description)?.version === descriptor.version;
       return {
         radioId: descriptor.radioId,
         provenance: patch.provenance,
         stockVersion: descriptor.version,
-        title: loadedFirmwarePatchTitle(patch),
+        title: backToStock
+          ? stockFirmwareTitle(descriptor.version)
+          : loadedFirmwarePatchTitle(patch),
+        ...(backToStock ? { backToStock: true } : {}),
         releaseTag: patch.release?.tag,
         patchVersion: description.version,
         baseName: description.base,
@@ -170,7 +182,9 @@ export async function prepareFirmwareImage(input: {
         stockPackage: stock.package,
         ...layout,
         sha256,
-        verifyHint: patch.release?.verifyHint ?? DEFAULT_PATCH_VERIFY_HINT,
+        verifyHint: backToStock
+          ? descriptor.stockVerifyHint
+          : (patch.release?.verifyHint ?? DEFAULT_PATCH_VERIFY_HINT),
       } as PreparedFirmwareImage;
     }
   }

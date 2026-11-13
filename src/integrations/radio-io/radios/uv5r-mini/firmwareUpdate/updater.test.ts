@@ -153,6 +153,21 @@ describe('UV-5R Mini updater: a clean update', () => {
     await settle(updater.flash(image, {}), 20_000);
     expect(interlocks.checkUv5rMiniImage).toHaveBeenCalledTimes(2);
   });
+
+  it('says "back to stock" and gives the stock verify hint for a to-stock image', async () => {
+    const m = make();
+    const updater = createUv5rMiniFirmwareUpdater();
+    const image = {
+      ...imageFor(m),
+      versionStamp: 'nrfb-v0.04',
+      verifyHint: 'The radio boots to its normal screen.',
+    } as PreparedFirmwareImage;
+    expect((await connect(m, updater)).error).toBeUndefined();
+    const run = await settle(updater.flash(image, {}), 20_000);
+    expect((run.value as FirmwareFlashResult).note).toBe(
+      'The radio restarts by itself, back to stock. The radio boots to its normal screen.',
+    );
+  });
 });
 
 describe('UV-5R Mini updater: a cut update and its continuation', () => {

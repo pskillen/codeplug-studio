@@ -203,6 +203,26 @@ describe('formatFirmwareFlashSummary', () => {
     expect(text).toMatch(/^Studio .+ \(.+\)$/m);
   });
 
+  it('says "back to stock" for a to-stock patch', () => {
+    const text = formatFirmwareFlashSummary({
+      ok: true,
+      radioId: 'baofeng-dm32uv',
+      image: {
+        ...IMAGE,
+        provenance: 'unreviewed',
+        backToStock: true,
+        patchSha256: 'cd'.repeat(32),
+        patchVersion: '0.1',
+      } as PreparedFirmwareImage,
+      ident: IDENT,
+      result: { framesSent: 10, dataFrames: 4, elapsedMs: 1200, end: 'eot-sent' },
+      startedAt: '2026-01-01T00:00:00.000Z',
+    });
+    expect(text).toContain(
+      `Firmware: back to stock, stock firmware v9.9.9-test (user-supplied patch, sha256 ${'cd'.repeat(32)}, version 0.1)`,
+    );
+  });
+
   it('adds the elapsed time and frame round-trip timing when measured', () => {
     const text = formatFirmwareFlashSummary({
       ok: true,
