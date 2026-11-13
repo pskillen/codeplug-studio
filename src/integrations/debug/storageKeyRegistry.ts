@@ -5,6 +5,7 @@ import {
   MAPBOX_TOKEN_KEY,
   PREFERENCES_STORAGE_PREFIX,
 } from '@integrations/preferences/index.ts';
+import { DEVELOPER_MODE_KEY } from '@integrations/preferences/developerMode.ts';
 import {
   DRIVE_ACCESS_TOKEN_KEY,
   DRIVE_LAST_ACCOUNT_KEY,
@@ -41,6 +42,7 @@ const KNOWN_STORAGE_KEYS: StorageKeyDescriptor[] = [
   { key: ACTIVE_PROJECT_KEY, label: 'Active project id', redact: false },
   { key: MAPBOX_TOKEN_KEY, label: 'Mapbox token', redact: true },
   { key: ANALYTICS_CONSENT_KEY, label: 'Analytics cookie consent', redact: false },
+  { key: DEVELOPER_MODE_KEY, label: 'Developer mode (this device)', redact: false },
   { key: DRIVE_ACCESS_TOKEN_KEY, label: 'Google Drive access token', redact: true },
   { key: DRIVE_TOKEN_EXPIRES_AT_KEY, label: 'Google Drive token expiry', redact: false },
   { key: DRIVE_REFRESH_TOKEN_KEY, label: 'Google Drive refresh token', redact: true },
