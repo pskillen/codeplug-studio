@@ -55,6 +55,7 @@ function prepared(
     noStock?: boolean;
     base?: string | undefined;
     radioLayout?: string;
+    radioBuild?: string;
   } = {},
 ): PreparedFirmwareImage {
   const built = makeSyntheticUfw({ flash: stock.flash, loader: stock.loader, ...o.ufw });
@@ -69,6 +70,7 @@ function prepared(
     title: 'synthetic',
     versionStamp: 'stamp' in o ? o.stamp : 'mm9pdy-test',
     radioLayout: o.radioLayout,
+    radioBuild: o.radioBuild,
     package: { radioId, files },
     stockPackage: o.noStock ? undefined : { radioId, files: { ufw: stock.bytes } },
     sha256: {},
@@ -81,6 +83,29 @@ const refused = (img: PreparedFirmwareImage, re: RegExp) => {
   expect(() => check(img)).toThrow(RadioInterlockError);
   expect(() => check(img)).toThrow(re);
 };
+
+describe('checkUv5rMiniImage — already installed', () => {
+  it('refuses an image whose build is the one typed from Radio Info, ignoring case and spaces', () => {
+    for (const typed of ['mm9pdy-test', '  MM9PDY-Test ', 'Mm9Pdy-TEST']) {
+      refused(prepared({ radioBuild: typed }), /already installed; nothing was sent/);
+    }
+    refused(prepared({ radioBuild: 'mm9pdy-test' }), /already runs mm9pdy-test/);
+  });
+
+  it('refuses before the base, layout and area checks', () => {
+    refused(prepared({ radioBuild: 'mm9pdy-test', base: 'no-such-base' }), /already installed/);
+  });
+
+  it('accepts a different build, no typed build, or one that only contains the name', () => {
+    check(prepared({ radioBuild: 'mm9pdy-other' }));
+    check(prepared({ radioBuild: undefined }));
+    check(prepared({ radioBuild: 'mm9pdy-test-2' }));
+  });
+
+  it("refuses a to-stock image when the typed build is its stock's own name", () => {
+    refused(prepared({ stamp: 'nrfb-v0.04', radioBuild: 'NRFB-v0.04' }), /already installed/);
+  });
+});
 
 describe('checkUv5rMiniImage — passes', () => {
   it('accepts an image that differs only inside the app windows', () => {

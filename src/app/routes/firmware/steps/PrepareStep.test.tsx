@@ -134,6 +134,29 @@ describe('PrepareStep: the UV-5R Mini Radio Info question', () => {
     expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![4]).toBe('L2');
   });
 
+  it('passes the typed build name (trimmed) to the image, so "already installed" can refuse it', async () => {
+    render(<Harness updater={MINI} />);
+    type('Radio Info: Firmware', 'V0.27');
+    type('Radio Info: Hardware', 'V1.7');
+    type('Radio Info: MM9PDY build (if shown)', ' mm9pdy-L2-pr140-g1c0a ');
+    await screen.findByText(/Ready to flash: L2 build/);
+    expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![5]).toBe('mm9pdy-L2-pr140-g1c0a');
+  });
+
+  it('shows the already-installed refusal from the interlock and builds no Connect step', async () => {
+    vi.mocked(flash.prepareFlash).mockRejectedValue(
+      new Error(
+        'Radio Info says this radio already runs mm9pdy-L2-pr140-g1c0a. This firmware is already installed; nothing was sent. Flash a different build.',
+      ),
+    );
+    render(<Harness updater={MINI} />);
+    type('Radio Info: Firmware', 'V0.27');
+    type('Radio Info: Hardware', 'V1.7');
+    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L2-pr140-g1c0a');
+    expect(await screen.findByText(/already installed; nothing was sent/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Connect and flash' })).toBeNull();
+  });
+
   it('refuses a build name outside the grammar without building anything', () => {
     render(<Harness updater={MINI} />);
     type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L3-1.0.0');

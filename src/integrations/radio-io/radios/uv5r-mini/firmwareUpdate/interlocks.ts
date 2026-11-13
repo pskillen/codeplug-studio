@@ -15,6 +15,8 @@
  *  I4. Every `flash.bin` byte equals the stock image's byte at the same SoC address, except inside the base's app
  *      windows, and both have the same length. (The per-radio scramble is a keystream XOR by address, so equal stored
  *      bytes at an address are equal plain bytes; Studio never descrambles.)
+ *  Already installed. The build name the operator typed from Radio Info (`radioBuild`) is not the image's own, compared
+ *      ignoring case and surrounding spaces. Studio can't read the installed app, so this is the only evidence there is.
  *  Layout. When the pinned loader is a layout loader (`L1`, `L2`), the radio's layout is known
  *      (`PreparedFirmwareImage.radioLayout`) and is the loader's. The radio's stock "UPDATE..." stage loses settings on
  *      a crossed pick before the loader can refuse, so this is checked before anything is sent.
@@ -66,6 +68,10 @@ export function isUv5rMiniToStockImage(
 /** The refusal for an image whose loader is for the other layout than the radio's. */
 export const UV5RMINI_OTHER_LAYOUT_REFUSAL =
   'This file is for the other hardware layout; nothing was sent.';
+
+/** The refusal for an image whose build is the one Radio Info says the radio already runs. */
+export const UV5RMINI_ALREADY_INSTALLED_REFUSAL = (build: string): string =>
+  `Radio Info says this radio already runs ${build}. This firmware is already installed; nothing was sent. Flash a different build.`;
 
 const hex = (n: number) => `0x${n.toString(16).toUpperCase()}`;
 
@@ -137,6 +143,14 @@ export function checkUv5rMiniImage(
     throw new RadioInterlockError(
       "Studio can't tell which build this image installs, and the plain stock image is listed by its own loader. Use a release patch. Nothing was sent.",
     );
+  }
+  // Already installed: the build name the operator read off the radio's own Radio Info is this image's build. Flashing
+  // it again can only end with the loader writing nothing, after the app stage has already run.
+  if (
+    image.radioBuild !== undefined &&
+    image.radioBuild.trim().toLowerCase() === image.versionStamp.toLowerCase()
+  ) {
+    throw new RadioInterlockError(UV5RMINI_ALREADY_INSTALLED_REFUSAL(image.versionStamp));
   }
   if (!image.stockPackage?.files[UV5RMINI_FW_ROLE]) {
     throw new RadioInterlockError(
