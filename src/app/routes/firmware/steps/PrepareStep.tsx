@@ -82,8 +82,10 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
     : answer.kind === 'layout'
       ? answer.layout
       : null;
+  // The typed build name only counts where the radio asks for one; it decides "already installed".
+  const radioBuild = question?.build ? radioInfo.build.trim() || undefined : undefined;
   const [failure, setFailure] = useState<{
-    for: readonly [unknown, FirmwareChoice, unknown, unknown];
+    for: readonly [unknown, FirmwareChoice, unknown, unknown, unknown];
     message: string;
   } | null>(null);
   const error =
@@ -91,21 +93,22 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
     failure.for[0] === stock &&
     failure.for[1] === choice &&
     failure.for[2] === loadedPatch &&
-    failure.for[3] === radioLayout
+    failure.for[3] === radioLayout &&
+    failure.for[4] === radioBuild
       ? failure.message
       : null;
 
   useEffect(() => {
     if (!stock || !choice || image || radioLayout === null) return;
     let cancelled = false;
-    prepareFlash(updater.radioId, stock, choice, loadedPatch ?? undefined, radioLayout)
+    prepareFlash(updater.radioId, stock, choice, loadedPatch ?? undefined, radioLayout, radioBuild)
       .then((prepared) => {
         if (!cancelled) dispatch({ type: 'imagePrepared', image: prepared });
       })
       .catch((err: unknown) => {
         if (!cancelled) {
           setFailure({
-            for: [stock, choice, loadedPatch, radioLayout],
+            for: [stock, choice, loadedPatch, radioLayout, radioBuild],
             message: err instanceof Error ? err.message : 'The firmware image could not be built.',
           });
         }
@@ -113,7 +116,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
     return () => {
       cancelled = true;
     };
-  }, [stock, image, choice, loadedPatch, radioLayout, updater.radioId, dispatch]);
+  }, [stock, image, choice, loadedPatch, radioLayout, radioBuild, updater.radioId, dispatch]);
 
   return (
     <Panel title="Prepare" sub="Build the exact image and run the safety checks.">

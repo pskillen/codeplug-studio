@@ -86,6 +86,20 @@ describe('prepareFlash', () => {
     expect(vi.mocked(prepareModule.prepareFirmwareImage).mock.calls[0]![0].radioLayout).toBe('L2');
   });
 
+  it('passes the typed Radio Info build name to the image', async () => {
+    await prepareFlash(
+      'baofeng-dm32uv',
+      STOCK,
+      { kind: 'stock' },
+      undefined,
+      'L2',
+      'mm9pdy-L2-1.0.0',
+    );
+    expect(vi.mocked(prepareModule.prepareFirmwareImage).mock.calls[0]![0].radioBuild).toBe(
+      'mm9pdy-L2-1.0.0',
+    );
+  });
+
   it('refuses a back-to-stock choice whose image is not to-stock, before the interlocks', async () => {
     const choice = {
       kind: 'back-to-stock' as const,

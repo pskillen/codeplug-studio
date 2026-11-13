@@ -84,6 +84,23 @@ describe('visibleFlashPhases', () => {
     ]);
   });
 
+  it('shows Loader running only once the updater reports it, and Erase after it', () => {
+    expect(labels(['handshake', 'loader'], 'loader')).toEqual([
+      'Handshake',
+      'Loader running',
+      'Erase',
+      'Transfer',
+      'Finish',
+    ]);
+    expect(labels(['handshake', 'loader', 'erase'], 'transfer')).toEqual([
+      'Handshake',
+      'Loader running',
+      'Erase',
+      'Transfer',
+      'Finish',
+    ]);
+  });
+
   it('keeps a phase the updater reported', () => {
     expect(labels(['handshake', 'erase', 'transfer'], 'finish')).toEqual([
       'Handshake',

@@ -65,6 +65,11 @@ export interface Uv5rMiniMockOptions {
   readonly restartFromRecord?: boolean;
   /** The loader sends cmd 3 with this code instead of cmd 4 (a refusal before erasing). */
   readonly loaderRefuses?: number;
+  /**
+   * The loader plans no area (installed app equals the image): after its first reads it asks for bytes past the end of
+   * the image, with no cmd 4. What a reflash of the installed build does on a real radio.
+   */
+  readonly loaderReadsPastImage?: boolean;
   /** The app sends cmd 3 with this code after its first read instead of going on (nothing written). */
   readonly appResult?: number;
   /** The app never answers the ping. */
@@ -245,6 +250,10 @@ export function createMockUv5rMini(options: Uv5rMiniMockOptions = {}): MockUv5rM
       readStep('loader-read', MOCK_DIR_OFFSET, 0x200),
       readStep('loader-read', MOCK_DIR_OFFSET, 0x20),
     ];
+    if (options.loaderReadsPastImage) {
+      s.push(readStep('loader-read', image.length, 0x20));
+      return s;
+    }
     if (options.loaderRefuses !== undefined) {
       s.push(echoStep('result', RESULT, Uint8Array.from([options.loaderRefuses])));
       return s;

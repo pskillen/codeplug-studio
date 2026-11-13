@@ -53,6 +53,11 @@ export interface PreparedFirmwareImage {
    * updater whose image is tied to one layout refuses an image prepared for the other layout, or for none.
    */
   readonly radioLayout?: string;
+  /**
+   * The build name the operator typed from the radio's own Radio Info screen (trimmed; absent when none was given).
+   * An updater refuses an image whose build is the one the radio already shows.
+   */
+  readonly radioBuild?: string;
   /** The bytes that will be flashed. */
   readonly package: FirmwarePackage;
   /**
@@ -77,9 +82,14 @@ export async function prepareFirmwareImage(input: {
   target: FirmwareTarget;
   /** The radio's hardware layout, where the operator has said (see `PreparedFirmwareImage.radioLayout`). */
   radioLayout?: string;
+  /** The build name the operator typed from Radio Info, where one was given (see `PreparedFirmwareImage.radioBuild`). */
+  radioBuild?: string;
 }): Promise<PreparedFirmwareImage> {
   const { descriptor: radioDescriptor, stock, target } = input;
-  const layout = input.radioLayout === undefined ? {} : { radioLayout: input.radioLayout };
+  const layout = {
+    ...(input.radioLayout === undefined ? {} : { radioLayout: input.radioLayout }),
+    ...(input.radioBuild ? { radioBuild: input.radioBuild } : {}),
+  };
   if (
     stock.descriptor.radioId !== radioDescriptor.radioId ||
     stock.package.radioId !== radioDescriptor.radioId

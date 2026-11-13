@@ -52,6 +52,16 @@ describe('prepareFirmwareImage — stock target', () => {
     expect(prepared.radioLayout).toBe('L2');
   });
 
+  it('carries the typed Radio Info build name, and nothing when none was given', async () => {
+    const { descriptor, stock } = await verifiedStock();
+    const base = { descriptor, stock, target: { kind: 'stock' } } as const;
+    expect(
+      (await prepareFirmwareImage({ ...base, radioBuild: 'mm9pdy-L2-1.0.0' })).radioBuild,
+    ).toBe('mm9pdy-L2-1.0.0');
+    expect((await prepareFirmwareImage(base)).radioBuild).toBeUndefined();
+    expect((await prepareFirmwareImage({ ...base, radioBuild: '' })).radioBuild).toBeUndefined();
+  });
+
   it('refuses stock whose bytes no longer match the verified hashes', async () => {
     const { descriptor, stock } = await verifiedStock();
     const tampered = { ...stock, sha256: { img: '0'.repeat(64) } };

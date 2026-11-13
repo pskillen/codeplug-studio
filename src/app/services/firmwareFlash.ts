@@ -133,7 +133,8 @@ export async function loadChosenPatch(
 
 /**
  * Build the image for the choice, then run the updater's interlocks before any radio contact.
- * A patch choice needs its `loaded` patch. `radioLayout` is the radio's hardware layout, where the operator gave one.
+ * A patch choice needs its `loaded` patch. `radioLayout` is the radio's hardware layout, where the operator gave one;
+ * `radioBuild` is the build name they typed from Radio Info, which an updater compares with the image's own.
  */
 export async function prepareFlash(
   radioId: FirmwareRadioId,
@@ -141,6 +142,7 @@ export async function prepareFlash(
   choice: FirmwareChoice,
   loaded?: LoadedFirmwarePatch,
   radioLayout?: string,
+  radioBuild?: string,
 ): Promise<PreparedFirmwareImage> {
   let target: FirmwareTarget;
   if (choice.kind === 'stock') {
@@ -154,6 +156,7 @@ export async function prepareFlash(
     stock,
     target,
     radioLayout,
+    radioBuild,
   });
   if (choice.kind === 'back-to-stock' && !image.backToStock) {
     throw new FirmwareError('patch-not-to-stock', NOT_TO_STOCK_PATCH_MESSAGE);

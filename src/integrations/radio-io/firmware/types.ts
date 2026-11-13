@@ -24,7 +24,11 @@ export interface FirmwareBootloaderIdent {
   readonly notice?: string;
 }
 
-export type FirmwareFlashPhase = 'handshake' | 'erase' | 'transfer' | 'finish';
+/**
+ * `loader` is for a radio whose own loader takes over before it says what it will do (UV-5R Mini): it is shown only
+ * once reported, and `erase` only once the radio has announced an erase.
+ */
+export type FirmwareFlashPhase = 'handshake' | 'loader' | 'erase' | 'transfer' | 'finish';
 
 export interface FirmwareFlashProgress extends ProgressUpdate {
   readonly phase: FirmwareFlashPhase;
