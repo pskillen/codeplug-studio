@@ -6,7 +6,7 @@
 export const DEVELOPER_MODE_TAPS = 5;
 /** Taps further apart than this start the count again. */
 export const DEVELOPER_MODE_TAP_GAP_MS = 2000;
-/** The countdown toast starts after this many taps, so a single stray tap shows nothing. */
+/** The countdown toast starts at this tap, so a single stray tap shows nothing. */
 const FIRST_TOAST_AT = 2;
 
 export interface VersionTapState {

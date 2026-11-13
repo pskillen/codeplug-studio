@@ -22,8 +22,8 @@ function FooterLink({ to, children }: { to: string; children: ReactNode }) {
 }
 
 /**
- * The version text, and the five-tap developer-mode gesture on it (#1650). Each tap after the second shows a short
- * countdown toast; the fifth turns developer mode on (or off when it is on).
+ * The version text, and the five-tap developer-mode gesture on it (#1650). From the second tap a short countdown toast
+ * shows; the fifth turns developer mode on (or off when it is on).
  */
 function VersionTapTarget() {
   const [developerMode, setDeveloperMode] = useDeveloperMode();
