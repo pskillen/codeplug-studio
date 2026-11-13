@@ -141,9 +141,11 @@ hidden there).
    **Connect and flash**, which opens a port picker narrowed to the radio's USB device. Progress shows the phases
    the radio's updater reports: Handshake → Erase → Transfer → Finish for the DM-32UV; Handshake → Transfer →
    Finish for the AT-D890UV, which erases as part of the transfer; Handshake → Transfer → Finish for the RT95 front panel.
-   The UV-5R Mini shows Handshake → Erase → Transfer → Finish: Handshake while its stock app reads the image (about 21
-   s; the radio is not yet touched), Erase from the first hello of its loader (the radio is touched from there), Transfer
-   as the loader reads the firmware area, Finish at the result. It has a tick too, "The radio shows UPDATE..., or its
+   The UV-5R Mini shows Handshake → Loader running → Erase → Transfer → Finish: Handshake while its stock app reads the
+   image (about 21 s; the radio is not yet touched), Loader running from the first hello of its loader (the radio is
+   touched from there; nothing is erased yet), Erase only once the loader announces its erase, Transfer as the loader
+   reads the firmware area, Finish at the result. A loader that announces no erase because the image is already
+   installed stops at Loader running with the "already installed" message. It has a tick too, "The radio shows UPDATE..., or its
    screen stays dark after an interrupted update".
    The RT95 has one more tick on this step, "The screen is blank. It does not say UPDATE THE RF CPU." (front panel)
    or "The screen says UPDATE THE RF CPU." (main board), before **Connect and flash** is enabled. While the first block waits for the radio, the

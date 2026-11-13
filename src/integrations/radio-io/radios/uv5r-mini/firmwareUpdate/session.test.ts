@@ -206,6 +206,21 @@ describe('UV-5R Mini session: the run', () => {
     expect(big.flagged).toMatch(/frame limit/);
   });
 
+  it('marks a loader read past the image, before any cmd 4, as already installed; nothing else', () => {
+    const loader = inPhase('loader');
+    const past = loader.onFrame(DATA, req(IMAGE.length, 0x20));
+    expect(past.flagged).toMatch(/outside the image/);
+    expect(past.alreadyInstalled).toBe(true);
+    // Over the frame limit is not "already installed".
+    expect(loader.onFrame(DATA, req(0, 0x1800)).alreadyInstalled).toBeUndefined();
+    // The app stage reading past the image is not the loader's plan.
+    expect(inPhase('app').onFrame(DATA, req(IMAGE.length, 0x20)).alreadyInstalled).toBeUndefined();
+    // Once an erase was announced this is a real update gone wrong, not "already installed".
+    const erasing = inPhase('loader');
+    erasing.onFrame(UV5RMINI_FW_CMD.LENGTH, Uint8Array.from([0, 0x10, 0, 0]));
+    expect(erasing.onFrame(DATA, req(IMAGE.length, 0x20)).alreadyInstalled).toBeUndefined();
+  });
+
   it('first result wins; the loader echoes it, the app does not', () => {
     const app = inPhase('app');
     expect(decoded(app.onFrame(RESULT, Uint8Array.from([0x8a])))).toEqual([]);

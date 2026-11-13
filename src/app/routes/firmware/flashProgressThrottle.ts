@@ -63,6 +63,7 @@ export function createFlashProgressThrottle(
 /** The wizard's flash phases, in order. */
 export const FLASH_PHASES: readonly { phase: FirmwareFlashPhase; label: string }[] = [
   { phase: 'handshake', label: 'Handshake' },
+  { phase: 'loader', label: 'Loader running' },
   { phase: 'erase', label: 'Erase' },
   { phase: 'transfer', label: 'Transfer' },
   { phase: 'finish', label: 'Finish' },
@@ -71,7 +72,7 @@ export const FLASH_PHASES: readonly { phase: FirmwareFlashPhase; label: string }
 /**
  * The phases to show: every phase from the current one on, plus earlier phases the updater actually reported.
  * An updater that never reports a phase (one that erases as part of the transfer) doesn't show it as a step.
- * Handshake always shows: identifying the bootloader is the handshake.
+ * Handshake always shows: identifying the bootloader is the handshake. Loader running shows only once reported.
  */
 export function visibleFlashPhases(
   seen: ReadonlySet<FirmwareFlashPhase>,
@@ -79,7 +80,11 @@ export function visibleFlashPhases(
 ): readonly { phase: FirmwareFlashPhase; label: string }[] {
   const currentIndex = FLASH_PHASES.findIndex((p) => p.phase === current);
   return FLASH_PHASES.filter(
-    (p, i) => i >= currentIndex || p.phase === 'handshake' || seen.has(p.phase),
+    (p, i) =>
+      p.phase === 'handshake' ||
+      seen.has(p.phase) ||
+      p.phase === current ||
+      (i >= currentIndex && p.phase !== 'loader'),
   );
 }
 

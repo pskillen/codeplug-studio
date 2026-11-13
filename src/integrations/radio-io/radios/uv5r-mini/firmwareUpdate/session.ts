@@ -48,6 +48,8 @@ export interface Uv5rMiniReply {
   /** Set when the radio asked for bytes the image does not have, or more than one frame may carry. The reply holds
    *  what exists (as the original tool does); the outgoing guard refuses it. */
   flagged?: string;
+  /** With `flagged`: the loader read past the image before any cmd 4, so it planned no area (already installed). */
+  alreadyInstalled?: true;
 }
 
 const NO_REPLY = (rate: number): Uv5rMiniReply => ({ frames: [], rate });
@@ -188,9 +190,12 @@ export class Uv5rMiniSession {
       frames: [encodeUv5rMiniFrame(UV5RMINI_FW_CMD.DATA, body)],
       rate,
     };
-    if (!inImage)
+    if (!inImage) {
       reply.flagged = `read ${off.toString(16)}+${len.toString(16)} is outside the image`;
-    else if (len > UV5RMINI_FW_MAX_DATA)
+      // A loader that finds the installed app equal to the image plans no area, sends no cmd 4, and walks on past the
+      // end of the file: nothing has been or will be written.
+      if (this.phase === 'loader' && this.areaLength === undefined) reply.alreadyInstalled = true;
+    } else if (len > UV5RMINI_FW_MAX_DATA)
       reply.flagged = `read of ${len.toString(16)} bytes is over the frame limit`;
     return reply;
   }

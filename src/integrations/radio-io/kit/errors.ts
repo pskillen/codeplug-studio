@@ -11,7 +11,8 @@ export type RadioIoErrorCode =
   | 'protocol'
   | 'aborted'
   | 'unsupported'
-  | 'interlock';
+  | 'interlock'
+  | 'alreadyInstalled';
 
 export class RadioIoError extends Error {
   readonly code: RadioIoErrorCode;
@@ -81,6 +82,17 @@ export class RadioUnsupportedError extends RadioIoError {
  * A hard safety interlock refused the operation (firmware flashing). Never retried, never swallowed.
  * See DESIGN.md — Firmware flashing.
  */
+/**
+ * The radio's loader asked for bytes past the image before it announced any erase: its installed app already matches
+ * this image, so it plans nothing to write. Nothing was erased or written; the radio boots the installed app.
+ */
+export class RadioAlreadyInstalledError extends RadioIoError {
+  constructor(message: string) {
+    super('alreadyInstalled', message);
+    this.name = 'RadioAlreadyInstalledError';
+  }
+}
+
 export class RadioInterlockError extends RadioIoError {
   constructor(message: string) {
     super('interlock', message);

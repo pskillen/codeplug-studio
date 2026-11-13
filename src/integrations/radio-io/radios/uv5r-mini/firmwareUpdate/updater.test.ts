@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 
 import { FirmwareFlashError } from '../../../firmware/errors.ts';
+import { RadioAlreadyInstalledError } from '../../../kit/errors.ts';
 import type {
   FirmwareFlashProgress,
   FirmwareFlashResult,
@@ -128,11 +129,15 @@ describe('UV-5R Mini updater: a clean update', () => {
     // Phases in order; radioTouched flips with the loader's first hello, never before.
     const phases = progress.map((p) => p.phase);
     expect(phases[0]).toBe('handshake');
-    const order = ['handshake', 'erase', 'transfer', 'finish'];
+    const order = ['handshake', 'loader', 'erase', 'transfer', 'finish'];
     const collapsed = phases.filter((p, i) => p !== phases[i - 1]);
     expect(collapsed).toEqual(order);
     const firstTouched = progress.findIndex((p) => p.radioTouched);
-    expect(progress[firstTouched]!.phase).toBe('erase');
+    // The loader's hello is "Loader running", not an erase: Erase waits for its cmd 4.
+    expect(progress[firstTouched]!.phase).toBe('loader');
+    expect(progress[firstTouched]!.msg).toBe("The radio's loader is running");
+    const firstErase = progress.findIndex((p) => p.phase === 'erase');
+    expect(progress[firstErase]!.msg).toBe('The radio is erasing its firmware area');
     expect(progress.slice(0, firstTouched).every((p) => p.phase === 'handshake')).toBe(true);
     expect(progress.slice(firstTouched).every((p) => p.radioTouched)).toBe(true);
     const last = progress.at(-1)!;
@@ -215,6 +220,32 @@ describe('UV-5R Mini updater: refusals and silence', () => {
     expect(err.radioTouched).toBe(true);
     expect(err.position).toBe('result');
     expect(m.areaReads).toBe(0);
+  });
+
+  it('a loader that reads past the image before any cmd 4 is "already installed, nothing written", not an interlock', async () => {
+    const m = make({ loaderReadsPastImage: true });
+    const updater = createUv5rMiniFirmwareUpdater();
+    expect((await connect(m, updater)).error).toBeUndefined();
+    const progress: FirmwareFlashProgress[] = [];
+    const run = await settle(
+      updater.flash(imageFor(m), { onProgress: (p) => progress.push(p) }),
+      20_000,
+    );
+    const err = run.error as FirmwareFlashError;
+    expect(err).toBeInstanceOf(FirmwareFlashError);
+    expect(err.code).toBe('alreadyInstalled');
+    expect(err.cause).toBeInstanceOf(RadioAlreadyInstalledError);
+    expect(err.message).toBe(UV5RMINI_MSG.alreadyInstalledRun);
+    expect(err.message).toMatch(/already installed/);
+    // Still refused: no area was announced, nothing was erased, and the progress never said Erase.
+    expect(m.areaReads).toBe(0);
+    expect(progress.some((p) => p.phase === 'erase')).toBe(false);
+    expect(progress.some((p) => p.phase === 'loader')).toBe(true);
+    // The out-of-image read got no reply: the radio's last frame is that read, and the host sent nothing after it.
+    const asked = m.radioFrames.filter((f) => f.cmd === UV5RMINI_FW_CMD.DATA).length;
+    const answered = m.hostFrames.filter((f) => f.cmd === UV5RMINI_FW_CMD.DATA).length;
+    expect(m.radioFrames.at(-1)!.cmd).toBe(UV5RMINI_FW_CMD.DATA);
+    expect(answered).toBe(asked - 1);
   });
 
   it('the same refusal in a continued session says the interrupted update had finished', async () => {

@@ -21,6 +21,7 @@ import type {
   FirmwareUpdater,
 } from '../../../firmware/types.ts';
 import {
+  RadioAlreadyInstalledError,
   RadioClosedError,
   RadioInterlockError,
   RadioNoResponseError,
@@ -73,6 +74,8 @@ export const UV5RMINI_MSG = {
   recover:
     'Recover the radio: leave the cable in, switch the radio off and on with no keys held, then press Connect and flash again with the same files.',
   alreadyHad: 'The radio already had this firmware.',
+  alreadyInstalledRun:
+    "This firmware is already installed: the radio's loader found nothing to replace. Nothing was written to the firmware; Studio sent nothing more. Switch the radio off and on, and it boots the installed app. Flash a different build, not this one again.",
 } as const;
 
 const hex2 = (n: number) => `0x${n.toString(16).toUpperCase().padStart(2, '0')}`;
@@ -303,8 +306,9 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
               case 'handover':
                 // The loader is running: from here a stop can leave the radio needing a re-flash.
                 radioTouched = true;
-                progressPhase = 'erase';
-                emit(0, 0, 'erase', "The radio's loader is running");
+                // Not an erase: the loader has said hello and nothing more. Erase is shown at its cmd 4.
+                progressPhase = 'loader';
+                emit(0, 0, 'loader', "The radio's loader is running");
                 break;
               case 'length':
                 progressPhase = e.len === 0 ? 'finish' : 'erase';
@@ -346,6 +350,10 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
 
         const answer = async (reply: Uv5rMiniReply) => {
           if (reply.flagged) {
+            // Still refused, and nothing more is sent; only the words differ.
+            if (reply.alreadyInstalled) {
+              throw new RadioAlreadyInstalledError(UV5RMINI_MSG.alreadyInstalledRun);
+            }
             throw new RadioInterlockError(
               `UV-5R Mini updater: ${reply.flagged}. Nothing more was sent.`,
             );

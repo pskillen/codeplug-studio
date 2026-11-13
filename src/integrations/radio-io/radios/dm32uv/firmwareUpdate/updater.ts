@@ -222,6 +222,8 @@ function phaseMessage(phase: FirmwareFlashPhase, blocksDone: number, dataFrames:
   switch (phase) {
     case 'handshake':
       return 'Handshake';
+    case 'loader':
+      return 'Loader running';
     case 'erase':
       return 'Erasing';
     case 'transfer':
