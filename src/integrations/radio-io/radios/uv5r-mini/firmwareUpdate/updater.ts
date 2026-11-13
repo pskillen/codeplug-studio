@@ -350,8 +350,9 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
 
         const answer = async (reply: Uv5rMiniReply) => {
           if (reply.flagged) {
-            // Still refused, and nothing more is sent; only the words differ. `alreadyInstalled` can't happen with the
-            // always-write L1/L2 loaders (they plan the whole area every time); kept as a defensive classification.
+            // Still refused, and nothing more is sent; only the words differ. `alreadyInstalled` is reachable only with
+            // a list-carrying loader: the always-write L1/L2 loaders plan the whole area every time, so they never
+            // report it.
             if (reply.alreadyInstalled) {
               throw new RadioAlreadyInstalledError(UV5RMINI_MSG.alreadyInstalledRun);
             }
