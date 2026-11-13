@@ -4,7 +4,7 @@ Top-bar chip that says "Developer mode" while developer mode is on for this devi
 
 ## Purpose
 
-Developer mode shows features the prod site hides ([#1650](https://github.com/pskillen/codeplug-studio/issues/1650)).
+[Developer mode](../../../../docs/features/developer-mode/README.md) shows features the prod site hides.
 The chip makes that visible on every screen, so a screenshot or a support question shows it.
 
 ## Props
