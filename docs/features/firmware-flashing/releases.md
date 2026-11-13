@@ -68,8 +68,9 @@ each has an optional `layout` field, `"L1"` or `"L2"`:
 
 - **Without `layout`**, a Mini row takes its layout from the patch's build name (`mm9pdy-L1-…`, `mm9pdy-L2-…`) once
   the patch is downloaded. A row whose `layout` disagrees with its build name, or that has neither, is refused.
-- **Only `L1` and `L2`** are release layouts. `V4` (v0.04 builds, `mm9pdy-V4-…`) is a test-only tag: a `V4` row makes
-  the index invalid, and a `V4` file from disk is refused.
+- **Only `L1` and `L2`** are release layouts: the `L1` file is built on v0.04 and the `L2` file on v0.27, since a
+  radio's code base never changes. A release may ship only one of them. `V4` (`mm9pdy-V4-…`) is retired: a `V4` row
+  makes the index invalid, and a `V4` file from disk is refused.
 - **Other radios' rows carry no `layout`**; a `layout` on one is a malformed row.
 - Studio lists a Mini release once per version and loads every row of that version. Prepare picks the file for the
   radio's layout (from its radio report or Radio Info screen) and keeps the other. A release with one row has no file
