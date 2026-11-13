@@ -304,11 +304,15 @@ Prepare picks the file on the radio's base and layout and never offers the neare
 has no file for shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." and stops
 before anything is prepared. In 1.0.0 only `NRF` + `V0.27` + `V1.7` gets a file.
 
-Above the dropdowns, a warning: "Pick exactly what the radio shows. If what you pick doesn't match
-the radio, the radio refuses the file and nothing is installed, but its FM presets and volume may be reset." For the
-two bases Studio knows that is what a wrong pick does: a combination with no base is refused by Studio, and one that
-names the other base names the other flash layout, which the loader refuses with `0x8F` and erases no firmware, though
-the stock update stage has already reset the FM presets and volume. The answers live in the wizard's memory only.
+Above the dropdowns, a warning: "Pick exactly what the radio shows. If the Firmware or suffix you pick is wrong,
+Studio or the radio refuses the file and nothing is installed, though the radio's FM presets and volume may be reset.
+If the Hardware line is wrong, nothing stops the update, and a radio Studio doesn't know yet may not be caught
+either." For the two bases Studio knows, a wrong Firmware or suffix pick is caught: a combination with no base is
+refused by Studio, and one that names the other base names the other flash layout, which the loader refuses with
+`0x8F` and erases no firmware, though the stock update stage has already reset the FM presets and volume. A wrong
+Hardware pick is not caught: the file's layout and code base match, so the loader installs it on a board it was never
+proven on. Nor is a suffix mis-pick on a radio of an unknown variant whose version matches a known base. The answers
+live in the wizard's memory only.
 
 **Retry partner.** After a refusal before anything was installed, the retry goes only to a file of the same suffix
 (`releaseLayouts.variantOfBase`). Today's `L1` file is NRFB and the `L2` file NRF, so the retry always crosses the

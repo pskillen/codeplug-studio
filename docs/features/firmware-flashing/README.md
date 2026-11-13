@@ -130,8 +130,9 @@ hidden there).
    radio to try." **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers;
    with no report, or when the read fails, the step asks three dropdowns of the supported values: Firmware (`V0.04`,
    `V0.27`, `Other`) and Hardware (`V1.7`, `Other`) from Radio Info, and the suffix (`NRF`, `NRFB`, `Other`) from the
-   start-up screen shown while holding `8`. `Other` is refused, and so is a combination with no build. A warning says a
-   pick that doesn't match the radio is refused with nothing installed but may reset its FM presets and volume
+   start-up screen shown while holding `8`. `Other` is refused, and so is a combination with no build. A warning says to
+   pick exactly what the radio shows: a wrong Firmware or suffix pick is refused with nothing installed but may reset
+   its FM presets and volume, while a wrong Hardware pick, or a radio Studio doesn't know yet, may not be caught
    ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md#radio-info)). Studio never
    changes a radio's code base: the radio's interlocks refuse a file built on another one.
    When the radio already runs the image's build (on the UV-5R Mini: the build name the radio reports is the image's,

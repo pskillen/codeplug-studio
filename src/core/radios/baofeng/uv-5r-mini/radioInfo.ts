@@ -69,12 +69,13 @@ export function uv5rMiniVariantOfBase(base: string): string | undefined {
 }
 
 /**
- * Shown with the question. Accurate for the bases Studio knows: a pick that doesn't match the radio either has no
- * build (refused here) or names the other flash layout, which the loader refuses before installing anything, but the
- * stock update mode may already have reset the FM presets and volume by then.
+ * Shown with the question. Claims only what is caught on the bases Studio knows: a wrong Firmware or suffix pick
+ * either has no build (refused here) or names the other flash layout, which the loader refuses before installing
+ * anything, though the stock update mode may already have reset the FM presets and volume by then. A wrong Hardware
+ * pick is not caught, and neither may be a pick for a radio Studio doesn't know yet.
  */
 export const UV5RMINI_RADIO_INFO_WARNING =
-  "Pick exactly what the radio shows. If what you pick doesn't match the radio, the radio refuses the file and nothing is installed, but its FM presets and volume may be reset.";
+  "Pick exactly what the radio shows. If the Firmware or suffix you pick is wrong, Studio or the radio refuses the file and nothing is installed, though the radio's FM presets and volume may be reset. If the Hardware line is wrong, nothing stops the update, and a radio Studio doesn't know yet may not be caught either.";
 
 export function uv5rMiniLayoutFromRadioInfo(answers: RadioInfoAnswers): RadioLayoutAnswer {
   const firmware = normaliseRadioInfoLine(answers.firmware);

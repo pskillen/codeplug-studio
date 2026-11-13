@@ -75,11 +75,17 @@ describe('uv5rMiniLayoutFromRadioInfo', () => {
     expect(ask('Other', 'Other', 'Other')).toEqual(REFUSED);
   });
 
-  it('warns accurately: a wrong pick is refused with nothing installed, but FM presets and volume may reset', () => {
+  it('warns accurately: a wrong Firmware or suffix pick is refused, a wrong Hardware pick is not caught', () => {
     expect(UV5RMINI_RADIO_LAYOUT_QUESTION.warning).toBe(UV5RMINI_RADIO_INFO_WARNING);
     expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(/exactly what the radio shows/);
-    expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(/refuses the file and nothing is installed/);
+    expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(
+      /Firmware or suffix you pick is wrong, Studio or the radio refuses the file and nothing is installed/,
+    );
     expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(/FM presets and volume may be reset/);
+    expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(/Hardware line is wrong, nothing stops the update/);
+    expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(/doesn't know yet may not be caught/);
+    // The claim is scoped: never that any wrong pick is refused.
+    expect(UV5RMINI_RADIO_INFO_WARNING).not.toMatch(/If what you pick doesn't match/);
     expect(UV5RMINI_RADIO_INFO_WARNING).not.toMatch(/brick/i);
   });
 

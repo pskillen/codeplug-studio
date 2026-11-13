@@ -450,7 +450,7 @@ describe('PrepareStep: the UV-5R Mini Radio Info question, with no report', () =
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Pick exactly what the radio shows. If what you pick doesn't match the radio, the radio refuses the file and nothing is installed, but its FM presets and volume may be reset.",
+        "Pick exactly what the radio shows. If the Firmware or suffix you pick is wrong, Studio or the radio refuses the file and nothing is installed, though the radio's FM presets and volume may be reset. If the Hardware line is wrong, nothing stops the update, and a radio Studio doesn't know yet may not be caught either.",
       ),
     ).toBeInTheDocument();
   });
