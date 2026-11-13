@@ -146,13 +146,13 @@ describe('RadioWriteStepper — steps 2 and 3', () => {
     expect(actions.onWrite).not.toHaveBeenCalled();
   });
 
-  it('shows an error with Reconnect and read again when the flow offers it', () => {
+  it('shows an error with Reconnect, read & write when the flow offers it', () => {
     const actions = renderStepper({
       step: 'review',
       error: 'No reply from the radio',
       canReconnect: true,
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Reconnect and read again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect, read & write' }));
     expect(actions.onReconnect).toHaveBeenCalled();
   });
 

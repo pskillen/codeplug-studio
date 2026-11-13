@@ -786,12 +786,12 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     expect(radioIoSession.uploadPreparedRadioWrite).toHaveBeenCalledTimes(1);
   });
 
-  it('offers Reconnect and read again when the read fails before any frame', async () => {
+  it('offers Reconnect, read & write when the read fails before any frame', async () => {
     upload.mockRejectedValueOnce(new Error('No reply from the radio'));
     openStepper('radio-io-at-d890uv');
     await connect();
     expect(await screen.findByText('No reply from the radio')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Reconnect and read again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect, read & write' }));
     await screen.findByRole('button', { name: 'Write codeplug' });
   });
 

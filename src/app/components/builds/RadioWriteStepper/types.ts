@@ -154,7 +154,7 @@ export interface WriteFlowView {
   error: string | null;
   /** Copyable protocol trace behind the error (for example the last radio frames), or null. */
   errorDebug: string | null;
-  /** Offer "Reconnect and read again" with the error. */
+  /** Offer "Reconnect, read & write" with the error. */
   canReconnect: boolean;
   /** AT-D890: a pending-units record sits behind the error; offers "I have rewritten this radio". */
   pendingWarning: { recordedAt: string; interrupted: boolean } | null;
