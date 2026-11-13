@@ -155,7 +155,7 @@ describe('Uv21ProV2Protocol', () => {
     const image = await radio.download({});
     expect(image.size).toBe(L.memTotal);
     expect(radio.decodeChannels(image)[0]?.wireName).toBe('TEST');
-    expect(radio.readFirmware(image)).toBe('UV21PROV2-TEST');
+    expect(radio.readFirmware(image)).toBeUndefined();
     expect(pipe.writes[0]).toEqual(L.ident);
     const firstR = pipe.writes.findIndex((w) => w[0] === 0x52);
     expect(firstR).toBeGreaterThan(0);

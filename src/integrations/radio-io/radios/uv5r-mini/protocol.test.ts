@@ -163,7 +163,7 @@ describe('Uv5rMiniProtocol', () => {
     const image = await radio.download({});
     expect(image.size).toBe(UV5R_MINI_MEM_TOTAL);
     expect(radio.decodeChannels(image)[0]?.wireName).toBe('TEST');
-    expect(radio.readFirmware(image)).toBe('UV5RMINI-TEST');
+    expect(radio.readFirmware(image)).toBeUndefined();
     expect(pipe.writes[0]).toEqual(UV5R_MINI_IDENT);
     const firstR = pipe.writes.findIndex((w) => w[0] === 0x52);
     expect(firstR).toBeGreaterThan(0);

@@ -199,12 +199,12 @@ export function encodeChannelsIntoImage(
   const bytes = 'bytes' in image ? image.bytes : image;
   const span = Math.min(bytes.length, layout.channelSpan);
   const fwSlice =
-    bytes.length > layout.fwVerOffset
+    layout.fwVerOffset != null && layout.fwVerLen != null && bytes.length > layout.fwVerOffset
       ? bytes.subarray(layout.fwVerOffset, layout.fwVerOffset + layout.fwVerLen).slice()
       : null;
   bytes.fill(0xff, 0, span);
   if (fwSlice) {
-    bytes.set(fwSlice, layout.fwVerOffset);
+    bytes.set(fwSlice, layout.fwVerOffset!);
   }
   for (const dto of channels) {
     const index = dto.slotIndex - 1;
@@ -224,6 +224,7 @@ export function readFirmwareFromImage(
   image: Uint8Array | MemoryMap,
 ): string | undefined {
   const bytes = 'bytes' in image ? image.bytes : image;
+  if (layout.fwVerOffset == null || layout.fwVerLen == null) return undefined;
   if (bytes.length <= layout.fwVerOffset) return undefined;
   const slice = bytes.subarray(layout.fwVerOffset);
   let end = 0;

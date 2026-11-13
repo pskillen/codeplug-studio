@@ -87,7 +87,6 @@ describe('channelCodec record', () => {
     const channels = decodeChannelsFromImage(image);
     expect(channels[0]?.wireName).toBe('A1');
     expect(channels[0]?.empty).toBe(false);
-    expect(readFirmwareFromImage(image)).toBe('UV5RMINI-TEST');
   });
 
   it('clears unlisted slots on sparse encode', () => {
@@ -103,15 +102,20 @@ describe('channelCodec record', () => {
     expect(image[UV5R_MINI_CHANNEL_SPAN - 1]).toBe(0xff);
   });
 
-  it('preserves firmware string inside channel span when clearing', () => {
+  it('an empty build clears live slots 248 and 249 across 0x1EE0-0x1F1F (#1577)', () => {
     const image = createSyntheticImageBase();
     encodeChannelsIntoImage(image, [
-      sampleDto({ slotIndex: 10, wireName: 'TEN' }),
-      sampleDto({ slotIndex: 20, wireName: 'TWENTY' }),
+      sampleDto({ slotIndex: 248, wireName: 'TWO48', rxHz: 446_006_250, txHz: 446_006_250 }),
+      sampleDto({ slotIndex: 249, wireName: 'TWO49', rxHz: 145_500_000, txHz: 145_500_000 }),
     ]);
-    expect(readFirmwareFromImage(image)).toBe('UV5RMINI-TEST');
-    const fwOffset = 0x1ef0;
-    expect(String.fromCharCode(...image.subarray(fwOffset, fwOffset + 12))).toBe('UV5RMINI-TES');
+    const start = (248 - 1) * UV5R_MINI_CHANNEL_SIZE;
+    const end = 249 * UV5R_MINI_CHANNEL_SIZE;
+    expect(start).toBe(0x1ee0);
+    expect(image.subarray(start, end).some((b) => b !== 0xff)).toBe(true);
+    encodeChannelsIntoImage(image, []);
+    expect(image.subarray(start, end).every((b) => b === 0xff)).toBe(true);
+    expect(decodeChannelsFromImage(image).every((c) => c.empty)).toBe(true);
+    expect(readFirmwareFromImage(image)).toBeUndefined();
   });
 
   it('reads empty slots from blank image', () => {

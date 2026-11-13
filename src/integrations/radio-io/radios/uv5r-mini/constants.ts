@@ -45,9 +45,6 @@ export const UV5R_MINI_INIT_DELAY_MS = L.initDelayMs;
 /** Buffer clear settle before ident (NeonPlug serialConnection). */
 export const UV5R_MINI_CLEAR_BUFFER_DELAY_MS = L.clearBufferDelayMs;
 
-/** Firmware version string offset in packed clone image. */
-export const UV5R_MINI_FW_VER_OFFSET = L.fwVerOffset;
-
 /** Packed-image retain region offsets — cite tier-3 settings.md / memory-layout.md. */
 export const UV5R_MINI_VFO_A_OFFSET = L.vfoAOffset;
 export const UV5R_MINI_VFO_B_OFFSET = L.vfoBOffset;

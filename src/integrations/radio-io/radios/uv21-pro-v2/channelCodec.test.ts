@@ -31,16 +31,30 @@ function sampleDto(overrides: Partial<RadioChannelDto> = {}): RadioChannelDto {
 }
 
 describe('UV-21Pro V2 channelCodec', () => {
-  it('clears full 1000-slot span and preserves firmware overlay', () => {
+  it('clears live slots across the full 1000-slot span', () => {
     const image = createSyntheticImageBase();
     image[0] = 0xaa;
-    image[L.channelSpan - 1] = 0xbb;
+    image[L.channelSpan - L.channelSize] = 0xbb;
     encodeChannelsIntoImage(L, image, [sampleDto({ slotIndex: 5, wireName: 'FIVE' })]);
-    expect(image[0]).toBe(0xff);
-    expect(image[L.channelSpan - 1]).toBe(0xff);
-    expect(readFirmwareFromImage(L, image)).toBe('UV21PROV2-TEST');
+    expect(image.subarray(0, L.channelSize).every((b) => b === 0xff)).toBe(true);
+    expect(
+      image.subarray(L.channelSpan - L.channelSize, L.channelSpan).every((b) => b === 0xff),
+    ).toBe(true);
     const rec = image.subarray(4 * L.channelSize, 5 * L.channelSize);
     expect(decodeChannelRecord(L, rec, 5).wireName).toBe('FIVE');
+  });
+
+  it('has no firmware string inside the channel span (slots 248 and 249 are channels)', () => {
+    expect(L.fwVerOffset).toBeUndefined();
+    const image = createSyntheticImageBase();
+    const live = [
+      sampleDto({ slotIndex: 248, wireName: 'TWO48' }),
+      sampleDto({ slotIndex: 249, wireName: 'TWO49' }),
+    ];
+    encodeChannelsIntoImage(L, image, live);
+    expect(readFirmwareFromImage(L, image)).toBeUndefined();
+    encodeChannelsIntoImage(L, image, []);
+    expect(image.subarray(247 * 32, 249 * 32).every((b) => b === 0xff)).toBe(true);
   });
 
   it('encodes rxOnly and scanAdd bits', () => {
