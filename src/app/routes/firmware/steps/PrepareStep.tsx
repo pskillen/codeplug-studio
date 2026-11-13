@@ -73,7 +73,7 @@ function RadioLayoutQuestion({
 }
 
 /** The confirm for an updater's "already runs this build" warning. */
-export const REINSTALL_CONFIRM_LABEL = 'Write it again anyway';
+const REINSTALL_CONFIRM_LABEL = 'Write it again anyway';
 
 const needsConfirm = (err: unknown): err is RadioIoError =>
   err instanceof RadioIoError && err.code === 'needsConfirm';
