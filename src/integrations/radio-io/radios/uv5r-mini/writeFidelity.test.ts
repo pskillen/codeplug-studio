@@ -15,6 +15,7 @@ import { uv17ProBackupMemSpans } from '../uv17pro-family/backupRestoreRoles.ts';
 import {
   decodeChannelExtras,
   decodeChannelRecord,
+  encodeChannelRecord,
   encodeChannelRecordOverPrior,
 } from '../uv17pro-family/channelCodec.ts';
 import { UV5R_MINI_LAYOUT as layout } from '../uv17pro-family/layout.ts';
@@ -160,30 +161,60 @@ describe('UV-17Pro record merge over the prior (#1578)', () => {
     }
   });
 
-  it('a changed channel re-encodes only the changed field and keeps the unmodelled bytes', () => {
+  /** The unmodelled bytes and bits today's encoding gives: scode 1, everything else 0. */
+  function expectDefaultExtras(out: Uint8Array) {
+    expect(out[12]).toBe(1);
+    expect(out[13]).toBe(0);
+    expect(out[14]! & 0xfc).toBe(0);
+    expect(out[15]! & ~(0x40 | 0x04)).toBe(0);
+    expect([...out.subarray(16, 20)]).toEqual([0, 0, 0, 0]);
+  }
+
+  it('an edited channel is encoded fresh, with the unmodelled fields at their defaults', () => {
     const renamed: RadioChannelDto = { ...decoded, wireName: 'RPT BRAVO' };
     const out = encodeChannelRecordOverPrior(layout, renamed, priorRecord);
-    expect(out.subarray(0, 20)).toEqual(priorRecord.subarray(0, 20));
+    expect(out).toEqual(encodeChannelRecord(layout, renamed));
+    expectDefaultExtras(out);
     expect(decodeChannelRecord(layout, out, 2).wireName).toBe('RPT BRAVO');
 
-    const retuned: RadioChannelDto = {
-      ...decoded,
-      rxHz: 145_700_000,
-      txHz: 145_100_000,
-      powerPercent: 100,
-      bandwidth: 'FM',
-    };
+    const retuned: RadioChannelDto = { ...decoded, rxHz: 145_700_000, txHz: 145_100_000 };
     const out2 = encodeChannelRecordOverPrior(layout, retuned, priorRecord);
-    expect(decodeChannelRecord(layout, out2, 2)).toMatchObject({
-      rxHz: 145_700_000,
-      txHz: 145_100_000,
-      powerPercent: 100,
-      bandwidth: 'FM',
+    expect(out2).toEqual(encodeChannelRecord(layout, retuned));
+    expectDefaultExtras(out2);
+  });
+
+  it('a different channel shifted into a live slot does not inherit PTT ID, RX DTMF or the other extras', () => {
+    // The slot's prior occupant has PTT ID, RX DTMF (sqmode), BCL, FHSS, scramble, a signal code and reserved
+    // bytes set; a channel inserted earlier in the build pushes another channel into this slot.
+    const occupant = encodeSyntheticRecord({
+      ...SYNTHETIC_RECORDS[0]!,
+      signalCode: 0x09,
+      pttId: 0x03,
+      power: 0x30,
+      flags: 0x39,
+      reserved: [0x12, 0x34, 0x56, 0x78],
     });
-    expect(out2.subarray(8, 14)).toEqual(priorRecord.subarray(8, 14));
-    expect(out2[14]! & 0xfc).toBe(priorRecord[14]! & 0xfc);
-    expect(out2[15]! & ~0x40).toBe(priorRecord[15]! & ~0x40);
-    expect(out2.subarray(16, 32)).toEqual(priorRecord.subarray(16, 32));
+    const before = decodeChannelExtras(occupant);
+    expect(before).toMatchObject({
+      pttId: 3,
+      squelchMode: 3,
+      busyLockout: true,
+      fhss: true,
+      powerHighBits: 0x30,
+    });
+
+    const shifted = decodeChannelRecord(layout, encodeSyntheticRecord(SYNTHETIC_RECORDS[5]!), 1);
+    const out = encodeChannelRecordOverPrior(layout, shifted, occupant);
+    expect(out).toEqual(encodeChannelRecord(layout, shifted));
+    expectDefaultExtras(out);
+    expect(decodeChannelExtras(out)).toMatchObject({
+      signalCode: 1,
+      pttId: 0,
+      squelchMode: 0,
+      busyLockout: false,
+      fhss: false,
+      powerHighBits: 0,
+    });
   });
 
   it('TX 00×4 (read as simplex) is rewritten when RX moves and TX stays', () => {

@@ -65,17 +65,17 @@ NeonPlug and CHIRP encode duplex-off as TX frequency bytes **`FF × 4`**. Studio
 
 ## What Write keeps
 
-Write starts from the in-session Read and rewrites every slot of the channel span (`0x0000`…`0x7CE0`):
+Write starts from the in-session Read and rewrites every slot of the channel span (`0x0000`…`0x7CE0`), a whole record at a time:
 
-| Slot before → after Write | Bytes written                                                                                                                                    |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Live → same channel       | The record as read, byte for byte                                                                                                                |
-| Live → changed channel    | The record as read, with each changed field (RX, TX, either tone, power bits, `wide`, `scan`, name) re-encoded; every other byte and bit is kept |
-| Empty → channel           | A fresh record: `scode` `1`, `pttid` `0`, other unmodelled bytes and bits `0`, name padded with `0x00`                                           |
-| Live → not in the build   | `0xFF × 32`                                                                                                                                      |
-| Empty → not in the build  | The record as read (first byte stays `0xFF`)                                                                                                     |
+| Slot before → after Write | Bytes written                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Live → unchanged channel  | The record as read, byte for byte                                                                      |
+| Live → any other channel  | A fresh record: `scode` `1`, `pttid` `0`, other unmodelled bytes and bits `0`, name padded with `0x00` |
+| Empty → channel           | A fresh record, as above                                                                               |
+| Live → not in the build   | `0xFF × 32`                                                                                            |
+| Empty → not in the build  | The record as read (first byte stays `0xFF`)                                                           |
 
-A field counts as changed when it decodes differently, so raw forms Studio reads as one value survive an unchanged Write: tone `0x0000` and `0xFFFF` (both none), a DCS index past the table, TX `00×4` (simplex), power values `1`–`3` (all Low), name padding. Nothing in the channel span is kept as a firmware string: `0x1EF0` is inside slots 248 and 249 ([memory-layout.md](memory-layout.md)).
+A channel is unchanged when every field Studio models decodes the same as the record in the slot: RX, TX or RX only, both tones, power, `wide`, `scan` and name. Any edit, or a different channel landing in the slot (a channel inserted or deleted earlier in a build without fixed slots shifts every later one), counts as changed, so the record is encoded fresh and never inherits the slot's PTT ID, RX DTMF, BCL, FHSS, scramble, `scode` or reserved bytes. Comparing decoded values means raw forms Studio reads as one value survive an unchanged Write: tone `0x0000` and `0xFFFF` (both none), a DCS index past the table, TX `00×4` (simplex), power values `1`–`3` (all Low), name padding. Nothing in the channel span is kept as a firmware string: `0x1EF0` is inside slots 248 and 249 ([memory-layout.md](memory-layout.md)).
 
 With a library that matches the radio, Read → Write → Read gives the same image. One exception: a library channel always has a name, so a nameless slot gets one on Write. Upload remains **full-image** so VFO/settings/ANI at `0x8040+` stay Read-retained.
 

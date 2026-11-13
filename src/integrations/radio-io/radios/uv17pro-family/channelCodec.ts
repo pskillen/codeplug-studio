@@ -173,8 +173,8 @@ export function encodeChannelRecord(layout: Uv17ProLayout, dto: RadioChannelDto)
 
 /**
  * Record bytes Studio does not model, decoded for reference (`+0x0C..+0x13` and the spare bits of `+0x0E`
- * and `+0x0F`). Field names follow CHIRP `baofeng_uv17Pro.py`. Write carries them over from the prior Read;
- * nothing in the library sets them.
+ * and `+0x0F`). Field names follow CHIRP `baofeng_uv17Pro.py`. Write keeps them only for a channel that is
+ * unchanged since the Read (see {@link encodeChannelRecordOverPrior}); nothing in the library sets them.
  */
 export interface Uv17ProChannelExtras {
   /** `+0x0C`: DTMF signal code (CHIRP `scode`). */
@@ -219,51 +219,30 @@ function sameTone(a: RadioTone, b: RadioTone): boolean {
   return true;
 }
 
-/**
- * One modelled field of the record: whether two decoded records agree on it, and how to copy it from a
- * fresh encoding into the output. Bytes and bits outside every group are never touched by a merge.
- */
-interface ModelledField {
-  same(a: RadioChannelDto, b: RadioChannelDto): boolean;
-  copy(out: Uint8Array, fresh: Uint8Array): void;
+/** Whether two decoded records agree on every field Studio models. */
+function sameModelledFields(a: RadioChannelDto, b: RadioChannelDto): boolean {
+  return (
+    a.rxHz === b.rxHz &&
+    a.txHz === b.txHz &&
+    Boolean(a.rxOnly) === Boolean(b.rxOnly) &&
+    sameTone(a.rxTone, b.rxTone) &&
+    sameTone(a.txTone, b.txTone) &&
+    a.powerPercent === b.powerPercent &&
+    a.bandwidth === b.bandwidth &&
+    Boolean(a.scanAdd) === Boolean(b.scanAdd) &&
+    a.wireName === b.wireName
+  );
 }
-
-function copyBytes(from: number, to: number): ModelledField['copy'] {
-  return (out, fresh) => out.set(fresh.subarray(from, to), from);
-}
-
-function copyBits(byte: number, mask: number): ModelledField['copy'] {
-  return (out, fresh) => {
-    out[byte] = (out[byte]! & ~mask) | (fresh[byte]! & mask);
-  };
-}
-
-const MODELLED_FIELDS: readonly ModelledField[] = [
-  { same: (a, b) => a.rxHz === b.rxHz, copy: copyBytes(0, 4) },
-  {
-    same: (a, b) => a.txHz === b.txHz && Boolean(a.rxOnly) === Boolean(b.rxOnly),
-    copy: copyBytes(4, 8),
-  },
-  { same: (a, b) => sameTone(a.rxTone, b.rxTone), copy: copyBytes(8, 10) },
-  { same: (a, b) => sameTone(a.txTone, b.txTone), copy: copyBytes(10, 12) },
-  { same: (a, b) => a.powerPercent === b.powerPercent, copy: copyBits(14, 0x03) },
-  { same: (a, b) => a.bandwidth === b.bandwidth, copy: copyBits(15, UV17PRO_WIDE_BIT) },
-  {
-    same: (a, b) => Boolean(a.scanAdd) === Boolean(b.scanAdd),
-    copy: copyBits(15, UV17PRO_SCAN_BIT),
-  },
-  { same: (a, b) => a.wireName === b.wireName, copy: copyBytes(20, 32) },
-];
 
 /**
- * Encode `dto` over the slot's prior record.
+ * Encode `dto` over the slot's prior record, whole record at a time.
  *
  * - `dto` empty: `0xFF × 32`, unless the prior slot was already empty, when its bytes are kept as read.
- * - Prior slot empty (or none): today's encoding ({@link encodeChannelRecord}).
- * - Prior slot live: the prior record, with each modelled field that differs (compared as decoded) taken
- *   from today's encoding. An unchanged channel comes out byte for byte as read; a changed one keeps the
- *   prior's unmodelled bytes and bits (`+0x0C..+0x13`, spare bits of `+0x0E`/`+0x0F`, and the raw bytes of
- *   every unchanged field, such as tone `0xFFFF` or name padding).
+ * - Prior slot live and every modelled field of `dto` (RX, TX / RX only, both tones, power, bandwidth, scan,
+ *   name) decodes the same as the prior: the prior 32 bytes, exactly as read.
+ * - Otherwise (prior empty, a different channel in the slot, or any edit): today's encoding
+ *   ({@link encodeChannelRecord}), with the unmodelled fields at its defaults. A moved or edited channel never
+ *   inherits the prior's PTT ID, RX DTMF, BCL, FHSS, scramble, signal code or reserved bytes.
  */
 export function encodeChannelRecordOverPrior(
   layout: Uv17ProLayout,
@@ -278,16 +257,8 @@ export function encodeChannelRecordOverPrior(
   if (priorEmpty) return fresh;
 
   const want = decodeChannelRecord(layout, fresh, dto.slotIndex);
-  const out = prior.slice(0, layout.channelSize);
-  // Two passes: a field can decode differently once another is copied (TX `00×4` reads as "same as RX").
-  for (let pass = 0; pass < 2; pass++) {
-    const have = decodeChannelRecord(layout, out, dto.slotIndex);
-    for (const field of MODELLED_FIELDS) {
-      if (!field.same(have, want)) field.copy(out, fresh);
-    }
-  }
-  const check = decodeChannelRecord(layout, out, dto.slotIndex);
-  return MODELLED_FIELDS.every((f) => f.same(check, want)) ? out : fresh;
+  const have = decodeChannelRecord(layout, prior, dto.slotIndex);
+  return sameModelledFields(have, want) ? prior.slice(0, layout.channelSize) : fresh;
 }
 
 export function decodeChannelsFromImage(

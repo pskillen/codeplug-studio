@@ -63,7 +63,7 @@ CHIRP encodes duplex-off as TX frequency bytes **`FF × 4`**. Studio Web Serial 
 
 ## What Write keeps
 
-Same codec and rules as the UV-5R Mini ([UV-5R Mini channel record — What Write keeps](../uv-5r-mini/channel-record.md#what-write-keeps)), over the span `0x0000`…`0x7D00`: an unchanged channel is written as read, a changed one keeps every byte and bit Studio does not model, a slot not in the build becomes `0xFF × 32` (or stays as read when it was already empty). Nothing in the span is kept as a firmware string: `0x1EF0` is inside slots 248 and 249. Upload remains **full-image** so VFO/settings/ANI and the fourth `MEM_*` region stay Read-retained.
+Same codec and rules as the UV-5R Mini ([UV-5R Mini channel record — What Write keeps](../uv-5r-mini/channel-record.md#what-write-keeps)), over the span `0x0000`…`0x7D00`: an unchanged channel is written as read, an edited channel or a different channel in the slot is encoded fresh with the unmodelled fields at their defaults, a slot not in the build becomes `0xFF × 32` (or stays as read when it was already empty). Nothing in the span is kept as a firmware string: `0x1EF0` is inside slots 248 and 249. Upload remains **full-image** so VFO/settings/ANI and the fourth `MEM_*` region stay Read-retained.
 
 ## Related
 

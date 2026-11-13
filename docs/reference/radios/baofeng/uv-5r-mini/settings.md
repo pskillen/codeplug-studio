@@ -28,16 +28,16 @@ NeonPlug parses squelch, save mode, VOX, backlight, dual watch, TOT, beep, voice
 
 ## Upload behaviours (document all three)
 
-| Behaviour             | NeonPlug                                                                  | CHIRP                                     | Studio Web Serial                                                                                                                          |
-| --------------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Full clone **read**   | All three `MEM_*` regions → packed `0x8240`                               | Same                                      | Same (`radio-clone` hydration)                                                                                                             |
-| Full clone **upload** | Not the default path                                                      | Writes **all** `MEM_STARTS` / `MEM_SIZES` | **Yes** — `writeStrategy: 'full-image'`                                                                                                    |
-| Channel write         | After upload handshake, writes radio addrs `0 … 0x7CE0` only (`999 × 32`) | Full multi-region                         | Encodes the build's channels over the Read (unmodelled bytes kept; slots not in the build emptied); **all three** `MEM_*` regions uploaded |
-| Settings write        | Read-modify-write one 64-byte block                                       | Part of full upload                       | Retained from Read via full-image upload (no separate settings RMW)                                                                        |
+| Behaviour             | NeonPlug                                                                  | CHIRP                                     | Studio Web Serial                                                                                                                                                               |
+| --------------------- | ------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full clone **read**   | All three `MEM_*` regions → packed `0x8240`                               | Same                                      | Same (`radio-clone` hydration)                                                                                                                                                  |
+| Full clone **upload** | Not the default path                                                      | Writes **all** `MEM_STARTS` / `MEM_SIZES` | **Yes** — `writeStrategy: 'full-image'`                                                                                                                                         |
+| Channel write         | After upload handshake, writes radio addrs `0 … 0x7CE0` only (`999 × 32`) | Full multi-region                         | Encodes the build's channels over the Read (an unchanged channel kept as read, any other encoded fresh; slots not in the build emptied); **all three** `MEM_*` regions uploaded |
+| Settings write        | Read-modify-write one 64-byte block                                       | Part of full upload                       | Retained from Read via full-image upload (no separate settings RMW)                                                                                                             |
 
 **Studio intentional path:** Prefer NeonPlug’s **outcome** (VFO / settings / ANI survive a channel Write) via **full-image upload of the hydrated retain**, not NeonPlug’s channel-span-only traffic. That also avoids NeonPlug’s settings-address debt (below). Channel-span-only upload is **out of scope** for the shipped adapter.
 
-**Channel encode contract:** Write encodes the build's slots over the Read, keeping the bytes Studio does not model, and empties the rest of the span. Orphan memories from a prior Read are not kept. See [channel-record.md — What Write keeps](channel-record.md#what-write-keeps).
+**Channel encode contract:** Write encodes the build's slots over the Read (an unchanged channel's record kept as read, any other encoded fresh) and empties the rest of the span. Orphan memories from a prior Read are not kept. See [channel-record.md — What Write keeps](channel-record.md#what-write-keeps).
 
 ## Packed `0x8040` vs radio address caveat
 
