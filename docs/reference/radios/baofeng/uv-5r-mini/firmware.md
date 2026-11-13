@@ -443,18 +443,30 @@ the radio asked for (at most 0x1000, inside the image), and an echo of the radio
 
 ## Results
 
-| Result                                                 | Wording                                                                                                                                                                 |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Loader `0`                                             | "The radio restarts by itself. Check the power-on screen shows `<build name>`." With a length of 0: "The radio already had this firmware." first                        |
-| App `0x01`, `0x86`, `0x8A`, `0x83`                     | "Nothing was written to the firmware. Switch the radio off and on." `0x01` adds that the image is not for this radio's key; `0x8A` that it is for another stock version |
-| Loader `0x86` before the length, fresh session         | "This firmware is already on the radio, or the radio holds firmware this image can't replace. Nothing was erased."                                                      |
-| Loader `0x86` before the length, continued session     | "The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair."          |
-| Loader `0x8F` before the length                        | "The file is for the other flash layout; the radio refused it. Its FM presets and volume may have been reset; nothing else changed."                                    |
-| Loader `0x87` before the length, fresh session         | "Nothing was written; the radio boots the installed app."                                                                                                               |
-| Loader `0x87` before the length, continued session     | The same, plus: don't send this file again (it can only end the same way); if the radio doesn't reach its normal screen, it needs a case-open repair                    |
-| Loader non-zero after the length, or no frame for 60 s | The recover text below                                                                                                                                                  |
+| Result                                                            | Wording                                                                                                                                                                                                                                                 |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Loader `0`                                                        | "The radio restarts by itself. Check the power-on screen shows `<build name>`." With a length of 0: "The radio already had this firmware." first                                                                                                        |
+| App `0x83`, no cmd 4 heard in the session (ignored ones included) | "Nothing was written to the firmware: the radio refused this file before installing anything, most likely because it is for the other flash layout. Its FM presets and volume may have been reset; nothing else changed." **Nothing installed** (below) |
+| App `0x01`, `0x86`, `0x8A`, `0x83` after a cmd 4                  | "Nothing was written to the firmware. Switch the radio off and on." `0x01` adds that the image is not for this radio's key; `0x8A` that it is for another stock version                                                                                 |
+| Loader `0x86` before the length, fresh session                    | "This firmware is already on the radio, or the radio holds firmware this image can't replace. Nothing was erased."                                                                                                                                      |
+| Loader `0x86` before the length, continued session                | "The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair."                                                                                          |
+| Loader `0x8F` before the length                                   | "The file is for the other flash layout; the radio refused it. Its FM presets and volume may have been reset; nothing else changed." **Nothing installed** (below)                                                                                      |
+| Loader `0x87` before the length, fresh session                    | "Nothing was written; the radio boots the installed app."                                                                                                                                                                                               |
+| Loader `0x87` before the length, continued session                | The same, plus: don't send this file again (it can only end the same way); if the radio doesn't reach its normal screen, it needs a case-open repair                                                                                                    |
+| Loader non-zero after the length, or no frame for 60 s            | The recover text below                                                                                                                                                                                                                                  |
 
 The summary always says to check the power-on name: a torn last page also ends in `0`.
+
+**Nothing installed, and the retry.** The two rows marked above say the file is for the other flash layout and that
+nothing was installed. The updater throws `RadioNothingInstalledError` (code `nothingInstalled`) for them, so the
+wizard shows **Nothing was installed** rather than **Recover the radio**, although after a `0x8F` the loader has run.
+A loader `0x83` after cmd 4 stays the recover text; every other result keeps its words. When the release has the other
+layout's file, the wizard offers it once: it prepares that file with the radio's layout set to the file's (the refusal
+is the evidence Studio's layout was wrong, so the layout check passes by construction; every other interlock runs
+again, at Prepare and at the start of `flash()`), keeps the preflight ticks, probe and safety backup, drops the
+reinstall confirm, and returns to update mode. The operator re-enters UPDATE... and presses Connect; Studio never
+resends by itself. With no file for the other layout, or after one retry, nothing more is offered. A crossed pick
+costs the FM presets and volume each time, until the firmware keeps them across a refused update.
 
 ## Recovery
 
