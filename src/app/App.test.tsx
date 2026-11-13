@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { MantineProvider } from '@mantine/core';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { newProjectMeta } from '@core/domain/factories.ts';
 import {
@@ -212,7 +212,18 @@ describe('App', () => {
   });
 
   describe('developer mode (#1650)', () => {
-    function debugPathsOutsideGate(routes: RouteObject[], underGate: boolean): string[] {
+    /** Joins a child route's path onto its parent's, as the router resolves it. */
+    function joinRoutePath(parent: string, path: string | undefined): string {
+      if (path === undefined) return parent;
+      if (path.startsWith('/')) return path;
+      return `${parent.replace(/\/+$/, '')}/${path}`;
+    }
+
+    function debugPathsOutsideGate(
+      routes: RouteObject[],
+      underGate: boolean,
+      parentPath = '',
+    ): string[] {
       return routes.flatMap((route) => {
         const gated =
           underGate ||
@@ -220,8 +231,10 @@ describe('App', () => {
             route.element !== null &&
             'type' in route.element &&
             route.element.type === DebugGate);
-        const own = route.path?.startsWith('/debug') && !gated ? [route.path] : [];
-        return [...own, ...debugPathsOutsideGate(route.children ?? [], gated)];
+        const fullPath = joinRoutePath(parentPath, route.path);
+        const isDebug = fullPath === '/debug' || fullPath.startsWith('/debug/');
+        const own = route.path !== undefined && isDebug && !gated ? [fullPath] : [];
+        return [...own, ...debugPathsOutsideGate(route.children ?? [], gated, fullPath)];
       });
     }
 
@@ -235,10 +248,19 @@ describe('App', () => {
       expect(debugPathsOutsideGate(appRouter.routes as RouteObject[], false)).toEqual([]);
     });
 
+    it('catches a relative debug child mounted outside the gate', () => {
+      const routes: RouteObject[] = [
+        { path: '/', children: [{ path: 'debug/x' }] },
+        { children: [{ path: 'debug' }] },
+      ];
+      expect(debugPathsOutsideGate(routes, false)).toEqual(['/debug/x', '/debug']);
+    });
+
     it('hides Debug on prod with developer mode off', async () => {
       gateEnv.buildEnv = 'prod';
       setAnalyticsConsent('declined');
       renderApp('/debug');
+      await waitFor(() => expect(appRouter.state.location.pathname).toBe('/'));
       expect(screen.queryByRole('heading', { name: 'Debug' })).not.toBeInTheDocument();
       expect(screen.queryByTestId('developer-mode-badge')).not.toBeInTheDocument();
       expect(await overflowMenuLabels()).not.toContain('Debug');
