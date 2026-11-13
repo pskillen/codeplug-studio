@@ -39,6 +39,11 @@ export default function DebugIndexPage() {
           <Link to="/debug/serial-reopen">Serial reopen timing</Link> — times a Web Serial close and
           reopen at a new baud rate with a USB serial cable alone (no radio) (#1584).
         </Text>
+        <Text size="sm">
+          <Link to="/debug/uv5r-mini">UV-5R Mini full read</Link> — read-only clone read of
+          0x0000–0xFFFF with a SHA-256 per span, the reads of this tab as a zip, and a compare of
+          two reads (#1651). It never writes to the radio.
+        </Text>
       </Stack>
     </Page>
   );
