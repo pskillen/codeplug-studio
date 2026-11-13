@@ -397,6 +397,38 @@ describe('resolveStockFirmware — a radio that accepts a second stock version',
     const d = await twoVersions();
     expect(await codeOf(resolveStockFirmware(d, [], ctxOne()))).toBe('stock-missing-member');
   });
+
+  it('takes files for both versions on a radio that takes one stock per base, each verified', async () => {
+    const d = { ...(await twoVersions()), severalStocks: true };
+    const both = await resolveStockFirmware(
+      d,
+      [
+        { name: 'SECOND.img', bytes: second },
+        { name: 'ONE_STOCK.img', bytes: oneBin },
+      ],
+      ctxOne(),
+    );
+    expect(both.descriptor.version).toBe('v0.0.1-test');
+    expect(both.package.files.img).toEqual(oneBin);
+    expect(both.others?.map((o) => o.descriptor.version)).toEqual(['v0.0.2-test']);
+    expect(both.others?.[0]!.package.files.img).toEqual(second);
+    // Each is still checked against its own pin.
+    expect(
+      await codeOf(
+        resolveStockFirmware(
+          d,
+          [
+            { name: 'ONE_STOCK.img', bytes: oneBin },
+            { name: 'SECOND.img', bytes: oneBin },
+          ],
+          ctxOne(),
+        ),
+      ),
+    ).toBe('stock-wrong-version');
+    // One file alone has no others.
+    const alone = await resolveStockFirmware(d, [{ name: 'SECOND.img', bytes: second }], ctxOne());
+    expect(alone.others).toBeUndefined();
+  });
 });
 
 describe('resolveStockFirmware — two radios sharing one vendor zip', () => {

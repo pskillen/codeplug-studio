@@ -85,6 +85,12 @@ export interface StockFirmwareDescriptor {
    * the one in use; a user never chooses. Read through `stockVariants`, never directly.
    */
   readonly alsoAccepts?: readonly StockFirmwareVariant[];
+  /**
+   * Set where one release's files are built on different stock versions (UV-5R Mini: the L1 file on v0.04, the L2 file
+   * on v0.27). The operator may then supply one file per stock version at once, and each patch is built on the stock
+   * its own `base` names. Without it, files for more than one version are refused.
+   */
+  readonly severalStocks?: boolean;
   /** Patch `name` values whose releases apply to this radio. */
   readonly patchNames: readonly string[];
   /** Human-facing update-mode entry, rendered generically by the wizard. */

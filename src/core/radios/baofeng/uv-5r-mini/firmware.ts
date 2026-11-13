@@ -56,6 +56,9 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
       ],
     },
   ],
+  // A release's L1 file is built on v0.04 and its L2 file on v0.27 (a radio's code base never changes), so both stocks
+  // may be supplied at once and each file is prepared on its own.
+  severalStocks: true,
   patchNames: ['baofeng-uv5rmini-firmware'],
   bootloaderEntry: {
     steps: [

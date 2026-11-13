@@ -10,7 +10,11 @@ import { resolveStockFirmware } from '../../firmware/stock/resolveStockFirmware.
 import { parseFirmwarePatch } from '../../firmware/patch/index.ts';
 import { syntheticDm32Release } from '../../firmware/releases/__fixtures__/syntheticReleases.ts';
 import type { LoadedFirmwarePatch } from '../../firmware/releases/types.ts';
-import { DEFAULT_PATCH_VERIFY_HINT, prepareFirmwareImage } from './prepareFirmwareImage.ts';
+import {
+  DEFAULT_PATCH_VERIFY_HINT,
+  prepareFirmwareImage,
+  STOCK_FOR_BASE_MISSING,
+} from './prepareFirmwareImage.ts';
 
 async function verifiedStock() {
   const bin = seededBytes(21, 2048);
@@ -190,6 +194,96 @@ describe('prepareFirmwareImage — patch target', () => {
       target: { kind: 'patch', patch },
     }).catch((e: unknown) => e);
     expect((err as FirmwareError).code).toBe('patch-wrong-radio');
+  });
+});
+
+describe('prepareFirmwareImage — one stock per base (UV-5R Mini: L1 on v0.04, L2 on v0.27)', () => {
+  const stockA = synthUv5rMiniStock();
+  const stockB = seededBytes(61, 4096);
+
+  async function setup(supplied: readonly ('a' | 'b')[]) {
+    const a = await syntheticDescriptor(
+      'baofeng-uv5rmini',
+      [{ role: 'ufw', fileName: 'stock-a.ufw', bytes: stockA }],
+      { fileName: 'z.zip', bytes: seededBytes(62, 16) },
+    );
+    const b = await syntheticDescriptor(
+      'baofeng-uv5rmini',
+      [{ role: 'ufw', fileName: 'stock-b.ufw', bytes: stockB }],
+      { fileName: 'z.zip', bytes: seededBytes(62, 16) },
+    );
+    const descriptor = {
+      ...a,
+      zip: undefined,
+      baseName: 'base-a',
+      severalStocks: true,
+      alsoAccepts: [{ version: 'v0.0.2-test', baseName: 'base-b', members: b.members }],
+      patchNames: ['baofeng-uv5rmini-firmware'],
+    };
+    const files = supplied.map((k) =>
+      k === 'a' ? { name: 'stock-a.ufw', bytes: stockA } : { name: 'stock-b.ufw', bytes: stockB },
+    );
+    const stock = await resolveStockFirmware(descriptor, files, { otherDescriptors: [] });
+    const patchOn = async (stockBytes: Uint8Array, base: string, buildName: string) => {
+      const built = stockBytes.slice();
+      built[100] = built[100]! ^ 0xff;
+      const json = await makeSyntheticUv5rMiniPatch(stockBytes, built, {
+        buildName,
+        version: '0.1',
+        base,
+      });
+      const bytes = new TextEncoder().encode(JSON.stringify(json));
+      return {
+        bytes,
+        sha256: 'ab'.repeat(32),
+        parsed: parseFirmwarePatch(bytes),
+        provenance: 'unreviewed',
+      } as LoadedFirmwarePatch;
+    };
+    return {
+      descriptor,
+      stock,
+      l1: await patchOn(stockA, 'base-a', 'mm9pdy-L1-0.1'),
+      l2: await patchOn(stockB, 'base-b', 'mm9pdy-L2-0.1'),
+    };
+  }
+
+  it('builds each file on the stock its own base names, whichever was supplied first', async () => {
+    for (const order of [
+      ['a', 'b'],
+      ['b', 'a'],
+    ] as const) {
+      const { descriptor, stock, l1, l2 } = await setup(order);
+      const one = await prepareFirmwareImage({
+        descriptor,
+        stock,
+        target: { kind: 'patch', patch: l1 },
+      });
+      expect(one.stockVersion).toBe('v0.0.1-test');
+      expect(one.stockPackage?.files.ufw).toEqual(stockA);
+      expect(one.baseName).toBe('base-a');
+      const two = await prepareFirmwareImage({
+        descriptor,
+        stock,
+        target: { kind: 'patch', patch: l2 },
+      });
+      expect(two.stockVersion).toBe('v0.0.2-test');
+      expect(two.stockPackage?.files.ufw).toEqual(stockB);
+      expect(two.baseName).toBe('base-b');
+    }
+  });
+
+  it('refuses a file whose base was not supplied, naming the stock file to add', async () => {
+    const { descriptor, stock, l2 } = await setup(['a']);
+    const err = await prepareFirmwareImage({
+      descriptor,
+      stock,
+      target: { kind: 'patch', patch: l2 },
+    }).catch((e: unknown) => e);
+    expect((err as FirmwareError).code).toBe('patch-wrong-stock');
+    expect((err as FirmwareError).message).toBe(
+      STOCK_FOR_BASE_MISSING('v0.0.2-test', ['stock-b.ufw']),
+    );
   });
 });
 

@@ -24,6 +24,23 @@ export interface VerifiedStockFirmware {
   readonly via: 'zip' | 'files';
   /** Zip hash differed from the pinned one, but every member matched (re-zipped download). */
   readonly zipMismatchNoted: boolean;
+  /**
+   * The further stock versions supplied at the same time, for a radio that takes one per stock base
+   * (`StockFirmwareDescriptor.severalStocks`). Each is verified on its own; a patch is built on the one its `base`
+   * names ({@link verifiedStockForBase}).
+   */
+  readonly others?: readonly VerifiedStockFirmware[];
+}
+
+/**
+ * The verified stock a patch on `base` is built from: the supplied stock, or one of its `others`, whose descriptor
+ * names that base. Undefined when none was supplied.
+ */
+export function verifiedStockForBase(
+  stock: VerifiedStockFirmware,
+  base: string,
+): VerifiedStockFirmware | undefined {
+  return [stock, ...(stock.others ?? [])].find((s) => s.descriptor.baseName === base);
 }
 
 export interface ResolveStockContext {
@@ -147,14 +164,30 @@ export async function resolveStockFirmware(
 
   // The files supplied pick the stock version; a radio's variants never share a file name.
   const present = variants.filter((v) => v.members.some((m) => candidates.has(m.fileName)));
-  if (present.length > 1) {
+  if (present.length > 1 && !radioDescriptor.severalStocks) {
     throw new FirmwareError(
       'stock-duplicate-member',
       `Files for more than one ${radioDescriptor.label} stock version were supplied. Supply exactly one.`,
     );
   }
-  const descriptor = present[0] ?? variants[0]!;
+  // A radio that takes several stocks gets each supplied version verified on its own; the first is the primary.
+  const [first, ...rest] = present.length > 0 ? present : [variants[0]!];
+  const primary = await verifyStockVariant(first!, candidates, zipHashes, others, context);
+  if (rest.length === 0) return primary;
+  const more: VerifiedStockFirmware[] = [];
+  for (const v of rest)
+    more.push(await verifyStockVariant(v, candidates, zipHashes, others, context));
+  return { ...primary, others: more };
+}
 
+/** Verify one stock version's members from the candidates supplied. */
+async function verifyStockVariant(
+  descriptor: StockFirmwareDescriptor,
+  candidates: ReadonlyMap<string, readonly Candidate[]>,
+  zipHashes: readonly string[],
+  others: readonly StockFirmwareDescriptor[],
+  context: ResolveStockContext,
+): Promise<VerifiedStockFirmware> {
   const files: Record<string, Uint8Array> = {};
   const sha256: Record<string, string> = {};
   let usedZip = false;

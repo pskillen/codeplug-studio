@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
+import { stockVariants } from '@core/firmware/stockVariants.ts';
 
 import { FileDropzone, Panel, StatusBanner } from '../../../components/v2/index.ts';
 import { filesToNamedBytes, verifyStockFiles } from '../../../services/firmwareFlash.ts';
@@ -11,6 +12,10 @@ function extensionOf(fileName: string): string | null {
   const dot = fileName.lastIndexOf('.');
   return dot > 0 ? fileName.slice(dot).toLowerCase() : null;
 }
+
+/** The copy for a radio that takes one stock file per stock version (`severalStocks`). */
+export const STOCK_PER_VERSION_COPY =
+  "Each release file is built on one of the stock versions below. Supply the one your radio runs, or both: with both, Studio can also prepare the release's file for the other version if the radio refuses the first.";
 
 /** The operator supplies the vendor's stock firmware; Studio checks it against the pinned hashes, in memory only. */
 export default function StockStep({ state, dispatch, updater }: WizardStepProps) {
@@ -50,14 +55,25 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
   }
 
   const verified = state.stock;
+  // A radio whose release files are built on different stocks takes one file per stock version.
+  const variants = stock.severalStocks ? stockVariants(stock) : [stock];
+  const members = variants.flatMap((v) =>
+    v.members.map((m) => ({ ...m, version: stock.severalStocks ? v.version : undefined })),
+  );
+  const verifiedAll = verified ? [verified, ...(verified.others ?? [])] : [];
 
   return (
-    <Panel title="Stock firmware" sub={`${stock.label} ${stock.version}`}>
+    <Panel
+      title="Stock firmware"
+      sub={stock.severalStocks ? stock.label : `${stock.label} ${stock.version}`}
+    >
       <div className={classes.stack}>
         <p className={classes.copy}>
           {stock.zip
             ? 'Studio does not ship vendor firmware. Download it from the vendor, then drop the zip (or the files inside it) here.'
-            : 'Supply the stock firmware file listed below.'}{' '}
+            : stock.severalStocks
+              ? STOCK_PER_VERSION_COPY
+              : 'Supply the stock firmware file listed below.'}{' '}
           The files stay in this browser tab and are dropped when you leave the page.
         </p>
         <div>
@@ -109,9 +125,10 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
             {stock.zip ? 'Files Studio needs from the zip:' : 'Files Studio needs:'}
           </span>
           <ul className={classes.list}>
-            {stock.members.map((m) => (
-              <li key={m.role}>
+            {members.map((m) => (
+              <li key={m.fileName}>
                 <span className={classes.mono}>{m.fileName}</span> ({m.size.toLocaleString()} bytes)
+                {m.version ? `: stock ${m.version}` : ''}
               </li>
             ))}
           </ul>
@@ -121,7 +138,7 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
           hint={
             stock.zip
               ? `Drop ${stock.zip.fileName}, or the files listed above`
-              : `Drop ${stock.members.map((m) => m.fileName).join(', ')}`
+              : `Drop ${members.map((m) => m.fileName).join(stock.severalStocks ? ' or ' : ', ')}`
           }
           accept={accept}
           multiple
@@ -138,9 +155,11 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
         {error ? <StatusBanner tone="warning">{error}</StatusBanner> : null}
         {verified && !error ? (
           <StatusBanner tone="success">
-            Stock {stock.version} verified.{' '}
-            {Object.entries(verified.sha256)
-              .map(([role, sha]) => `${role} ${shortHash(sha)}`)
+            Stock {verifiedAll.map((v) => v.descriptor.version).join(' and ')} verified.{' '}
+            {verifiedAll
+              .flatMap((v) =>
+                Object.entries(v.sha256).map(([role, sha]) => `${role} ${shortHash(sha)}`),
+              )
               .join(', ')}
             {verified.zipMismatchNoted
               ? '. The zip itself differs from the vendor download, but every file inside it matches.'
