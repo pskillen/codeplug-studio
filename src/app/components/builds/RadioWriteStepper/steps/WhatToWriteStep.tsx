@@ -1,6 +1,6 @@
 /**
  * Step 1: what to write (#1393). One tick per part; options only under ticked parts; rows a radio
- * does not support are not shown. Primary button: Connect & read.
+ * does not support are not shown. Primary button: Read & write, the user's consent to write (#1638).
  */
 
 import { Link } from 'react-router-dom';
@@ -162,6 +162,10 @@ export function WhatToWriteBody({ config, view, actions }: StepProps) {
       <Text size="sm" c="dimmed">
         Anything not ticked stays as it is on the radio.
       </Text>
+      <Text size="sm" c="dimmed" data-testid="write-radio-one-go-note">
+        Read &amp; write reads the radio, then writes it. Studio stops to ask you first only when
+        something needs your attention.
+      </Text>
     </div>
   );
 }
@@ -179,7 +183,7 @@ export function WhatToWriteFooter({ config, view, actions }: StepProps) {
         Cancel
       </Button>
       <Button variant="primary" size="sm" disabled={disabled} onClick={actions.onConnectAndRead}>
-        Connect &amp; read
+        Read &amp; write
       </Button>
     </>
   );

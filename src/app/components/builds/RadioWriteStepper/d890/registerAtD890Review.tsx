@@ -11,6 +11,7 @@ import {
   AtD890ReceiveOnlyNote,
   atD890ReviewSections,
 } from './AtD890ReviewSections.tsx';
+import { atD890ReviewPauseReasons } from './atD890ReviewPause.ts';
 
 registerReviewSectionProvider({
   matches: (d) => AT_D890UV_MODEL_IDS.some((id) => d.modelIds.includes(id)),
@@ -24,4 +25,5 @@ registerReviewSectionProvider({
         ]
       : [],
   sections: atD890ReviewSections,
+  pauseReasons: atD890ReviewPauseReasons,
 });

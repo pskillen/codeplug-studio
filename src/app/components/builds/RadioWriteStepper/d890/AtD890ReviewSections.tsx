@@ -8,13 +8,12 @@ import { useSyncExternalStore, type ReactNode } from 'react';
 import { Text } from '@mantine/core';
 import { Button, SegmentedControl, StatusBanner } from '../../../v2/index.ts';
 import { useAtD890RadioSettingsSession } from '../../../../state/atD890RadioSettingsSession.ts';
-import { changesLabel, repeaterModeAdvice } from '../../../../lib/atD890RadioSettingsText.ts';
-import { atD890RepeaterBootBytes } from '@integrations/radio-io/radios/at-d890uv/index.ts';
+import { changesLabel } from '../../../../lib/atD890RadioSettingsText.ts';
 import Mm9pdyStepKeysNudge from '../../Mm9pdyStepKeysNudge.tsx';
 import { Section } from '../reviewSectionParts.tsx';
 import type { ReviewContext } from '../reviewSections.tsx';
 import { type AtD890ReviewController, type AtD890ReviewState } from './atD890ReviewController.ts';
-import { atD890SettingChanges } from './atD890ReviewFacts.ts';
+import { atD890ReviewRepeaterAdvice, atD890SettingChanges } from './atD890ReviewFacts.ts';
 import dClasses from './AtD890ReviewSections.module.css';
 
 function useReviewState(controller: AtD890ReviewController): AtD890ReviewState {
@@ -81,15 +80,11 @@ function SettingsSection({ controller }: { controller: AtD890ReviewController })
   const overrides = [...store.overrides].map(([fieldId, value]) => ({ fieldId, value }));
   const changes = atD890SettingChanges(init.snapshot, init.target, overrides);
   const blocked = controller.blockReason();
-  // What the radio will hold after the Write: the override only counts when it is applied.
-  const repeaterOverride =
-    state.choice === 'apply'
-      ? overrides.find((o) => o.fieldId === 'repeaterMode')?.value
-      : undefined;
-  const repeaterOn = (repeaterOverride ?? init.decoded.repeaterMode?.value) === true;
-  const repeaterAdvice = repeaterModeAdvice(
-    repeaterOn,
-    atD890RepeaterBootBytes(init.snapshot.main),
+  const repeaterAdvice = atD890ReviewRepeaterAdvice(
+    init.snapshot,
+    init.decoded,
+    overrides,
+    state.choice === 'apply',
   );
   return (
     <Section title="Radio settings">

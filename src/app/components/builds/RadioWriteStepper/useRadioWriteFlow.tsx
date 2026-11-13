@@ -126,7 +126,7 @@ import {
   atD890SettingChanges,
 } from './d890/atD890ReviewFacts.ts';
 import { rt95SettingChanges } from './rt95/rt95ReviewFacts.ts';
-import { reviewSectionsFor } from './reviewSections.tsx';
+import { reviewPauseReasons, reviewSectionsFor } from './reviewSections.tsx';
 import {
   newTrack,
   readPlanFor,
@@ -495,7 +495,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setStep('done');
   }
 
-  /** The pause: show Review and wait for Write / Cancel. Auto-proceeds on a reconnect pass. */
+  /**
+   * The pause: show Review and wait for Write / Cancel. Auto-proceeds on a reconnect pass, and
+   * whenever no per-radio provider gives a reason to stop (`reviewPauseReasons`, #1638).
+   */
   function awaitReview(
     ctx: {
       identity: RadioIdentityView;
@@ -566,6 +569,15 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       ...(mergedRt95 ? { rt95: mergedRt95 } : {}),
       ...(d890ControllerRef.current ? { atD890: d890ControllerRef.current } : {}),
     };
+    // Read and write in one go unless Review shows something the user must act on (#1638). The
+    // user already chose to write on step 1 (Read & write); nothing has been sent yet.
+    const pauseReasons = descriptor ? reviewPauseReasons(descriptor, sectionsCtx) : [];
+    if (pauseReasons.length === 0) {
+      reviewUnsubscribeRef.current?.();
+      reviewUnsubscribeRef.current = null;
+      reviewOpenedAtRef.current = now();
+      return Promise.resolve();
+    }
     const reviewDisabled = () => {
       if (d890ControllerRef.current && !d890ControllerRef.current.canWrite()) return true;
       if (rt95ControllerRef.current && !rt95ControllerRef.current.canWrite()) return true;
