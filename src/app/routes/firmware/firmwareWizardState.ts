@@ -143,12 +143,16 @@ export const INITIAL_FIRMWARE_WIZARD_STATE: FirmwareWizardState = {
 
 const indexOf = (step: FirmwareWizardStep) => FIRMWARE_WIZARD_STEPS.indexOf(step);
 
-/** A chosen patch is ready: loaded, and accepted when it is unreviewed. */
+/**
+ * A chosen patch is ready: loaded, and accepted when it is unreviewed. A to-stock patch needs no risk tick: its
+ * radio's interlocks hold it to the stock bytes and a pinned loader, so what it installs is known.
+ */
 export function isChoiceReady(state: FirmwareWizardState): boolean {
   if (!state.choice) return false;
   if (state.choice.kind === 'stock') return true;
   const loaded = state.loadedPatch;
   if (!loaded) return false;
+  if (state.choice.kind === 'back-to-stock') return true;
   return loaded.provenance === 'published' || state.riskAccepted;
 }
 

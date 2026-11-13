@@ -207,6 +207,72 @@ describe('FirmwareFlasherPage', () => {
     expect(screen.queryByText(/Files Studio needs from the zip/)).not.toBeInTheDocument();
   });
 
+  describe('a radio whose way back to stock is a to-stock patch', () => {
+    const stock = {
+      ...DM32.stock,
+      stockFlashOffered: false,
+      baseName: 'syn-v1',
+      stockReturn: { help: 'Use the to-stock file from the release artifact.' },
+    };
+    const toStockLoaded = (buildName: string): LoadedFirmwarePatch => ({
+      bytes: new Uint8Array(0),
+      sha256: '34'.repeat(32),
+      parsed: {
+        description: { name: 'baofeng-dm32-firmware', version: '0.1', base: 'syn-v1', buildName },
+      } as unknown as LoadedFirmwarePatch['parsed'],
+      provenance: 'unreviewed',
+    });
+    const dropToStock = (name: string) => {
+      const card = screen.getByText('Back to stock').closest('div')!;
+      const input = card.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [new File(['{}'], name)] } });
+    };
+
+    beforeEach(() => {
+      vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([{ ...DM32, stock }]);
+    });
+
+    it('offers "Back to stock" with its help line, and never the plain stock', async () => {
+      renderPage();
+      fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+      cont();
+      expect(screen.getByText('Back to stock')).toBeInTheDocument();
+      expect(
+        screen.getByText('Use the to-stock file from the release artifact.'),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('radio', { name: /Stock firmware/ })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    });
+
+    it('takes a to-stock patch with no risk tick and names the stock it puts back', async () => {
+      vi.mocked(flash.loadChosenPatch).mockResolvedValue(toStockLoaded('syn-v1'));
+      renderPage();
+      fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+      cont();
+      dropToStock('uv5rmini-fw-to-stock-syn-v1.patch.json');
+      expect(
+        await screen.findByText(`This file puts back the stock firmware ${stock.version}.`),
+      ).toBeInTheDocument();
+      expect(vi.mocked(flash.loadChosenPatch).mock.calls[0]![1]).toMatchObject({
+        kind: 'back-to-stock',
+      });
+      expect(screen.queryByText('I understand')).not.toBeInTheDocument();
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled());
+    });
+
+    it('refuses a file that is not a to-stock patch', async () => {
+      vi.mocked(flash.loadChosenPatch).mockRejectedValue(
+        new FirmwareError('patch-not-to-stock', "This file isn't a to-stock patch."),
+      );
+      renderPage();
+      fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+      cont();
+      dropToStock('mm9pdy.patch.json');
+      expect(await screen.findByText("This file isn't a to-stock patch.")).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    });
+  });
+
   it('shows the unavailable message when nothing is offered', () => {
     vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([]);
     renderPage();

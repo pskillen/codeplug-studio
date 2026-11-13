@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
 import { publishedReleaseSummary } from '@core/firmware/releases/publishedSource.ts';
-import { loadedFirmwarePatchTitle } from '@core/firmware/releases/projects.ts';
+import { loadedFirmwarePatchTitle, stockFirmwareTitle } from '@core/firmware/releases/projects.ts';
 import type { FirmwareReleaseSummary, LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
+import { toStockVariantFor } from '@core/firmware/stockVariants.ts';
 
 import {
   Button,
@@ -54,6 +55,11 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [userFile, setUserFile] = useState<{
+    name: string;
+    loaded: LoadedFirmwarePatch | null;
+    error: string | null;
+  } | null>(null);
+  const [stockReturnFile, setStockReturnFile] = useState<{
     name: string;
     loaded: LoadedFirmwarePatch | null;
     error: string | null;
@@ -140,6 +146,34 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
     }
   }
 
+  async function onToStockFile(files: File[]) {
+    const file = files[0];
+    if (!file) return;
+    setStockReturnFile({ name: file.name, loaded: null, error: null });
+    try {
+      const [named] = await filesToNamedBytes([file]);
+      const loaded = await loadChosenPatch(radioId, { kind: 'back-to-stock', file: named! });
+      setStockReturnFile({ name: file.name, loaded, error: null });
+      dispatch({
+        type: 'chooseFirmware',
+        choice: { kind: 'back-to-stock', file: named! },
+        loadedPatch: loaded,
+      });
+    } catch (err) {
+      setStockReturnFile({
+        name: file.name,
+        loaded: null,
+        error: messageOf(err, 'This file is not a readable firmware patch.'),
+      });
+      if (choice?.kind === 'back-to-stock') dispatch({ type: 'chooseFirmware', choice: null });
+    }
+  }
+
+  const stockReturn = updater.stock.stockReturn;
+  const toStockVersion = stockReturnFile?.loaded
+    ? toStockVariantFor(updater.stock, stockReturnFile.loaded.parsed.description)?.version
+    : undefined;
+
   const unreviewed =
     choice?.kind === 'user-patch' && state.loadedPatch?.provenance === 'unreviewed'
       ? state.loadedPatch
@@ -222,6 +256,34 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
                 </span>
               </div>
             )}
+            {stockReturn ? (
+              <div
+                className={`${classes.card} ${choice?.kind === 'back-to-stock' ? classes.cardSelected : ''}`}
+              >
+                <span className={classes.cardTitle}>Back to stock</span>
+                <span className={classes.cardMeta}>{stockReturn.help}</span>
+                <FileDropzone
+                  label="To-stock patch (.patch.json)"
+                  accept=".json"
+                  fileName={stockReturnFile?.name}
+                  onFilesSelected={(files) => void onToStockFile(files)}
+                  onClear={() => {
+                    setStockReturnFile(null);
+                    if (choice?.kind === 'back-to-stock') {
+                      dispatch({ type: 'chooseFirmware', choice: null });
+                    }
+                  }}
+                />
+                {stockReturnFile?.error ? (
+                  <StatusBanner tone="warning">{stockReturnFile.error}</StatusBanner>
+                ) : null}
+                {toStockVersion && choice?.kind === 'back-to-stock' ? (
+                  <StatusBanner tone="success">
+                    This file puts back the {stockFirmwareTitle(toStockVersion)}.
+                  </StatusBanner>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           {error ? <StatusBanner tone="warning">{error}</StatusBanner> : null}
         </div>
