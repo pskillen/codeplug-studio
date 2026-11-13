@@ -28,7 +28,7 @@ const DM32 = getFirmwareUpdater('baofeng-dm32uv')!;
 const STOCK = { via: 'files' } as unknown as VerifiedStockFirmware;
 const LOADED = { provenance: 'published' } as unknown as LoadedFirmwarePatch;
 /** The interlock's own words for a crossed pick. */
-const OTHER_LAYOUT = 'This file is for the other hardware layout; nothing was sent.';
+const OTHER_LAYOUT = 'This file is for the other flash layout; nothing was sent.';
 
 let latest: FirmwareWizardState;
 
@@ -54,6 +54,11 @@ function Harness({ updater }: { updater: typeof MINI }) {
 const type = (label: string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
+const radioInfo = (firmware: string, hardware: string) => {
+  type('Radio Info: Firmware', firmware);
+  type('Radio Info: Hardware', hardware);
+};
+
 describe('PrepareStep: the UV-5R Mini Radio Info question', () => {
   beforeEach(() => {
     vi.mocked(flash.prepareFlash).mockReset();
@@ -71,85 +76,62 @@ describe('PrepareStep: the UV-5R Mini Radio Info question', () => {
     );
   });
 
+  it('asks only the Firmware and Hardware lines', () => {
+    render(<Harness updater={MINI} />);
+    expect(screen.getByLabelText('Radio Info: Firmware')).toBeInTheDocument();
+    expect(screen.getByLabelText('Radio Info: Hardware')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/MM9PDY build/)).toBeNull();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    expect(screen.queryByText(/hardware layout/i)).toBeNull();
+  });
+
   it('prepares nothing until both lines are entered', () => {
     render(<Harness updater={MINI} />);
     expect(screen.getByText(/Enter both Radio Info lines/)).toBeInTheDocument();
+    type('Radio Info: Firmware', 'V0.27');
     expect(flash.prepareFlash).not.toHaveBeenCalled();
   });
 
-  it('refuses an unknown pair without building anything', () => {
+  it('refuses a Hardware line not proven, without building anything', () => {
     render(<Harness updater={MINI} />);
-    type('Radio Info: Firmware', 'V0.30');
-    type('Radio Info: Hardware', 'V1.7');
+    radioInfo('V0.27', 'V1.8');
     expect(
-      screen.getByText("Studio doesn't recognise this radio's Radio Info; nothing was sent."),
+      screen.getByText(
+        "Studio hasn't been proven on this radio's Hardware version; nothing was sent.",
+      ),
     ).toBeInTheDocument();
     expect(flash.prepareFlash).not.toHaveBeenCalled();
     expect(canAdvance(latest)).toBe(false);
   });
 
-  it('maps V0.27 / V1.7 to L2 and prepares the image with it', async () => {
+  it('maps stock V0.27 to L2 and prepares the image with it', async () => {
     render(<Harness updater={MINI} />);
-    type('Radio Info: Firmware', 'V0.27');
-    type('Radio Info: Hardware', 'V1.7');
+    radioInfo('V0.27', 'V1.7');
     expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
     expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![4]).toBe('L2');
-    expect(screen.getByText('Hardware layout: L2')).toBeInTheDocument();
+    // No build name from the radio: "already installed" has nothing to compare.
+    expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![5]).toBeUndefined();
+    expect(screen.getByText('Flash layout: L2')).toBeInTheDocument();
     expect(canAdvance(latest)).toBe(true);
   });
 
-  it('refuses a crossed pick before Connect: the override makes the radio L1, the file is L2', async () => {
+  it('maps stock V0.04 to L1, with no one-way warning, and refuses an L2 file before Connect', async () => {
     render(<Harness updater={MINI} />);
-    type('Radio Info: Firmware', 'V0.27');
-    type('Radio Info: Hardware', 'V1.7');
-    await screen.findByText(/Ready to flash/);
-    fireEvent.click(screen.getByRole('checkbox', { name: /My radio is layout 1/ }));
+    radioInfo('V0.04', 'V1.7');
     expect(
       await screen.findByText(new RegExp(OTHER_LAYOUT.replace(/[.;]/g, '.'))),
     ).toBeInTheDocument();
     expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![4]).toBe('L1');
+    expect(screen.queryByText(/for good/)).toBeNull();
     await waitFor(() => expect(latest.image).toBeNull());
     // No image: the wizard cannot move on to the update-mode and flash steps, so nothing is ever sent.
     expect(canAdvance(latest)).toBe(false);
     expect(screen.queryByRole('button', { name: 'Connect and flash' })).toBeNull();
   });
 
-  it('refuses a crossed pick before Connect: the build name says L1, the file is L2', async () => {
-    render(<Harness updater={MINI} />);
-    type('Radio Info: Firmware', 'V0.27');
-    type('Radio Info: Hardware', 'V1.7');
-    await screen.findByText(/Ready to flash/);
-    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L1-1.0.0');
-    expect(
-      await screen.findByText(new RegExp(OTHER_LAYOUT.replace(/[.;]/g, '.'))),
-    ).toBeInTheDocument();
-    expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![4]).toBe('L1');
-    await waitFor(() => expect(latest.image).toBeNull());
-    expect(canAdvance(latest)).toBe(false);
-    expect(screen.queryByRole('button', { name: 'Connect and flash' })).toBeNull();
-  });
-
-  it('prepares an L2 file for a radio whose build name says L2', async () => {
-    render(<Harness updater={MINI} />);
-    type('Radio Info: Firmware', 'V0.27');
-    type('Radio Info: Hardware', 'V1.7');
-    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L2-pr140-g1c0a');
-    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
-    expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![4]).toBe('L2');
-  });
-
-  it('passes the typed build name (trimmed) to the image, so "already installed" can refuse it', async () => {
-    render(<Harness updater={MINI} />);
-    type('Radio Info: Firmware', 'V0.27');
-    type('Radio Info: Hardware', 'V1.7');
-    type('Radio Info: MM9PDY build (if shown)', ' mm9pdy-L2-pr140-g1c0a ');
-    await screen.findByText(/Ready to flash: L2 build/);
-    expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![5]).toBe('mm9pdy-L2-pr140-g1c0a');
-  });
-
   it('shows a same-build warning with an explicit confirm, and builds nothing until it is ticked', async () => {
     const WARNING =
-      'This radio already runs mm9pdy-L2-pr140-g1c0a. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.';
+      'Studio sees no MM9PDY build on this radio, so it may already run the stock nrf-v0.27. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.';
     vi.mocked(flash.prepareFlash).mockImplementation(
       async (_r, _s, _c, _l, radioLayout, _b, reinstallConfirmed) => {
         if (!reinstallConfirmed) throw new RadioConfirmRequiredError(WARNING);
@@ -163,9 +145,7 @@ describe('PrepareStep: the UV-5R Mini Radio Info question', () => {
       },
     );
     render(<Harness updater={MINI} />);
-    type('Radio Info: Firmware', 'V0.27');
-    type('Radio Info: Hardware', 'V1.7');
-    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L2-pr140-g1c0a');
+    radioInfo('V0.27', 'V1.7');
     expect(await screen.findByText(WARNING)).toBeInTheDocument();
     expect(
       screen.getByText('Nothing is sent to the radio unless you confirm.'),
@@ -195,10 +175,8 @@ describe('PrepareStep: the UV-5R Mini Radio Info question', () => {
 
   it('drops the confirm when the Radio Info answers change', async () => {
     vi.mocked(flash.prepareFlash).mockImplementation(
-      async (_r, _s, _c, _l, radioLayout, radioBuild, reinstallConfirmed) => {
-        if (radioBuild === 'mm9pdy-L2-pr140-g1c0a' && !reinstallConfirmed) {
-          throw new RadioConfirmRequiredError('This radio already runs it.');
-        }
+      async (_r, _s, _c, _l, radioLayout, _b, reinstallConfirmed) => {
+        if (!reinstallConfirmed) throw new RadioConfirmRequiredError('This radio may run it.');
         return {
           provenance: 'published',
           title: 'L2 build',
@@ -208,45 +186,12 @@ describe('PrepareStep: the UV-5R Mini Radio Info question', () => {
       },
     );
     render(<Harness updater={MINI} />);
-    type('Radio Info: Firmware', 'V0.27');
-    type('Radio Info: Hardware', 'V1.7');
-    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L2-pr140-g1c0a');
-    await screen.findByText('This radio already runs it.');
+    radioInfo('V0.27', 'V1.7');
+    await screen.findByText('This radio may run it.');
     fireEvent.click(screen.getByRole('checkbox', { name: 'Write it again anyway' }));
     await screen.findByText(/Ready to flash/);
-    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L2-pr141-g2d0b');
+    type('Radio Info: Firmware', 'V0.04');
     await waitFor(() => expect(latest.reinstallConfirmed).toBe(false));
-    expect(screen.queryByText('This radio already runs it.')).toBeNull();
-  });
-
-  it('shows the already-installed refusal from the interlock and builds no Connect step', async () => {
-    vi.mocked(flash.prepareFlash).mockRejectedValue(
-      new Error(
-        'Radio Info says this radio already runs mm9pdy-L2-pr140-g1c0a. This firmware is already installed; nothing was sent. Flash a different build.',
-      ),
-    );
-    render(<Harness updater={MINI} />);
-    type('Radio Info: Firmware', 'V0.27');
-    type('Radio Info: Hardware', 'V1.7');
-    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L2-pr140-g1c0a');
-    expect(await screen.findByText(/already installed; nothing was sent/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Connect and flash' })).toBeNull();
-  });
-
-  it('refuses a build name outside the grammar without building anything', () => {
-    render(<Harness updater={MINI} />);
-    type('Radio Info: MM9PDY build (if shown)', 'mm9pdy-L3-1.0.0');
-    type('Radio Info: Firmware', 'V0.27');
-    type('Radio Info: Hardware', 'V1.7');
-    expect(
-      screen.getByText("Studio doesn't recognise this radio's Radio Info; nothing was sent."),
-    ).toBeInTheDocument();
-    expect(flash.prepareFlash).not.toHaveBeenCalled();
-  });
-
-  it('warns that a wrong override resets the FM presets and volume', () => {
-    render(<Harness updater={MINI} />);
-    expect(screen.getByText(/FM presets and volume are reset/)).toBeInTheDocument();
   });
 
   it('asks nothing for a radio with one layout', async () => {

@@ -137,7 +137,7 @@ export const INITIAL_FIRMWARE_WIZARD_STATE: FirmwareWizardState = {
   riskAccepted: false,
   stock: null,
   image: null,
-  radioInfo: { firmware: '', hardware: '', build: '', override: false },
+  radioInfo: { firmware: '', hardware: '' },
   reinstallConfirmed: false,
   checks: NO_CHECKS,
   radioPreflight: { attestationIds: [], probe: false },

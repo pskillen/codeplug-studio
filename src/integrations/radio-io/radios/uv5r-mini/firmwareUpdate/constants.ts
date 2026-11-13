@@ -32,7 +32,7 @@ export const OTA_LOADER_NAME = 'uart_user.bin';
 
 /** `flash.bin[i]` is SoC flash address `UV5RMINI_FLASH_BASE + i`. */
 export const UV5RMINI_FLASH_BASE = 0x1000;
-/** The UV-5R Mini's two flash layouts in the field. Which one a radio has follows from its Radio Info screen. */
+/** The UV-5R Mini's two flash layouts (the factory firmware's packing, not the board). */
 export type Uv5rMiniLayout = 'L1' | 'L2';
 
 /**

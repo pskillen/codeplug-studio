@@ -328,14 +328,14 @@ describe('UV-5R Mini updater: refusals and silence', () => {
     expect(msg).toContain("Don't send this file again");
   });
 
-  it('0x8F before cmd 4 says the file is for the other hardware layout and the FM presets and volume may be reset', async () => {
+  it('0x8F before cmd 4 says the file is for the other flash layout and the FM presets and volume may be reset', async () => {
     const m = make({ loaderRefuses: 0x8f });
     const updater = createUv5rMiniFirmwareUpdater();
     expect((await connect(m, updater)).error).toBeUndefined();
     const run = await settle(updater.flash(imageFor(m), {}), 20_000);
     const err = run.error as FirmwareFlashError;
     expect(err.message).toBe(
-      'The file is for the other hardware layout; the radio refused it. Its FM presets and volume may have been reset; nothing else changed.',
+      'The file is for the other flash layout; the radio refused it. Its FM presets and volume may have been reset; nothing else changed.',
     );
     expect(err.radioTouched).toBe(true);
     expect(m.areaReads).toBe(0);

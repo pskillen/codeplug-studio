@@ -21,7 +21,7 @@ function provenanceLabel(image: PreparedFirmwareImage): string {
   }
 }
 
-/** The radio's Radio Info lines, for a radio that comes in more than one hardware layout. Rendered from its descriptor. */
+/** The radio's Radio Info lines, for a radio whose firmware comes in more than one flash layout. From its descriptor. */
 function RadioLayoutQuestion({
   question,
   answers,
@@ -51,23 +51,6 @@ function RadioLayoutQuestion({
         onChange={(e) => onChange({ hardware: e.target.value })}
         mono
       />
-      {question.build ? (
-        <>
-          <TextInput
-            label={question.build.label}
-            value={answers.build}
-            onChange={(e) => onChange({ build: e.target.value })}
-            mono
-          />
-          <p className={classes.muted}>{question.build.help}</p>
-        </>
-      ) : null}
-      <LabeledCheck
-        label={question.override.label}
-        checked={answers.override}
-        onChange={(override) => onChange({ override })}
-      />
-      <p className={classes.muted}>{question.override.help}</p>
     </>
   );
 }
@@ -89,10 +72,12 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
     : answer.kind === 'layout'
       ? answer.layout
       : null;
-  // The typed build name only counts where the radio asks for one; it decides "already installed".
-  const radioBuild = question?.build ? radioInfo.build.trim() || undefined : undefined;
-  type Inputs = readonly [unknown, FirmwareChoice | null, unknown, unknown, unknown];
-  const inputs: Inputs = [stock, choice, loadedPatch, radioLayout, radioBuild];
+  // The build the radio says it runs, where it says so; it decides "already installed".
+  const radioBuild = answer?.kind === 'layout' ? answer.build : undefined;
+  // A radio that reported about itself runs a modded build, even when it named none.
+  const radioReported = answer?.kind === 'layout' && answer.reported === true;
+  type Inputs = readonly [unknown, FirmwareChoice | null, unknown, unknown, unknown, unknown];
+  const inputs: Inputs = [stock, choice, loadedPatch, radioLayout, radioBuild, radioReported];
   const sameInputs = (a: Inputs) => a.every((v, i) => v === inputs[i]);
   const [failure, setFailure] = useState<{
     for: Inputs;
@@ -111,7 +96,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
   useEffect(() => {
     if (!stock || !choice || image || radioLayout === null) return;
     let cancelled = false;
-    const key: Inputs = [stock, choice, loadedPatch, radioLayout, radioBuild];
+    const key: Inputs = [stock, choice, loadedPatch, radioLayout, radioBuild, radioReported];
     prepareFlash(
       updater.radioId,
       stock,
@@ -120,6 +105,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
       radioLayout,
       radioBuild,
       reinstallConfirmed,
+      radioReported,
     )
       .then((prepared) => {
         if (!cancelled) dispatch({ type: 'imagePrepared', image: prepared });
@@ -148,6 +134,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
     radioLayout,
     radioBuild,
     reinstallConfirmed,
+    radioReported,
     updater.radioId,
     dispatch,
   ]);
@@ -164,6 +151,16 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
         ) : null}
         {answer?.kind === 'refused' ? (
           <StatusBanner tone="warning">{answer.message}</StatusBanner>
+        ) : null}
+        {answer?.kind === 'layout' && answer.details ? (
+          <ul className={classes.list}>
+            {answer.details.map((d) => (
+              <li key={d}>{d}</li>
+            ))}
+          </ul>
+        ) : null}
+        {answer?.kind === 'layout' && answer.warning ? (
+          <StatusBanner tone="warning">{answer.warning}</StatusBanner>
         ) : null}
         {answer?.kind === 'incomplete' ? (
           <p className={classes.muted}>Enter both Radio Info lines to prepare the image.</p>
@@ -193,7 +190,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
             <ul className={classes.list}>
               <li>Stock firmware: {image.stockVersion}</li>
               {image.versionStamp ? <li>Version stamp: {image.versionStamp}</li> : null}
-              {image.radioLayout ? <li>Hardware layout: {image.radioLayout}</li> : null}
+              {image.radioLayout ? <li>Flash layout: {image.radioLayout}</li> : null}
               {Object.entries(image.sha256).map(([role, sha]) => (
                 <li key={role}>
                   {role}: <span className={classes.mono}>{shortHash(sha)}</span>

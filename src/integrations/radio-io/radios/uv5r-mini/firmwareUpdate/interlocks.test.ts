@@ -60,6 +60,7 @@ function prepared(
     base?: string | undefined;
     radioLayout?: string;
     radioBuild?: string;
+    radioReported?: true;
     reinstallConfirmed?: true;
   } = {},
 ): PreparedFirmwareImage {
@@ -76,6 +77,7 @@ function prepared(
     versionStamp: 'stamp' in o ? o.stamp : 'mm9pdy-test',
     radioLayout: o.radioLayout,
     radioBuild: o.radioBuild,
+    radioReported: o.radioReported,
     reinstallConfirmed: o.reinstallConfirmed,
     package: { radioId, files },
     stockPackage: o.noStock ? undefined : { radioId, files: { ufw: stock.bytes } },
@@ -101,9 +103,9 @@ const layoutPin = (layout: Uv5rMiniLayout): LayoutPinnedLoader => ({
 });
 
 describe('checkUv5rMiniImage — already installed, list-carrying loader', () => {
-  it('refuses an image whose build is the one typed from Radio Info, ignoring case and spaces', () => {
-    for (const typed of ['mm9pdy-test', '  MM9PDY-Test ', 'Mm9Pdy-TEST']) {
-      refused(prepared({ radioBuild: typed }), /already installed; nothing was sent/);
+  it('refuses an image whose build is the one the radio names, ignoring case and spaces', () => {
+    for (const reported of ['mm9pdy-test', '  MM9PDY-Test ', 'Mm9Pdy-TEST']) {
+      refused(prepared({ radioBuild: reported }), /already installed; nothing was sent/);
     }
     refused(prepared({ radioBuild: 'mm9pdy-test' }), /already runs mm9pdy-test/);
   });
@@ -122,7 +124,7 @@ describe('checkUv5rMiniImage — already installed, list-carrying loader', () =>
     );
   });
 
-  it('accepts a different build, no typed build, or one that only contains the name', () => {
+  it('accepts a different build, no build from the radio, or one that only contains the name', () => {
     check(prepared({ radioBuild: 'mm9pdy-other' }));
     check(prepared({ radioBuild: undefined }));
     check(prepared({ radioBuild: 'mm9pdy-test-2' }));
@@ -133,9 +135,9 @@ describe('checkUv5rMiniImage — already installed, always-write layout loader',
   const checkL1 = (o: Parameters<typeof prepared>[0]) => () =>
     checkUv5rMiniImage(prepared({ radioLayout: 'L1', ...o }), [layoutPin('L1')], bases);
 
-  it('asks for a confirm, not a refusal, when the typed build is the image, ignoring case and spaces', () => {
-    for (const typed of ['mm9pdy-test', '  MM9PDY-Test ', 'Mm9Pdy-TEST']) {
-      const run = checkL1({ radioBuild: typed });
+  it("asks for a confirm, not a refusal, when the radio's build is the image, ignoring case and spaces", () => {
+    for (const reported of ['mm9pdy-test', '  MM9PDY-Test ', 'Mm9Pdy-TEST']) {
+      const run = checkL1({ radioBuild: reported });
       expect(run).toThrow(RadioConfirmRequiredError);
       expect(run).not.toThrow(RadioInterlockError);
       expect(run).toThrow(UV5RMINI_REINSTALL_WARNING('mm9pdy-test'));
@@ -149,7 +151,7 @@ describe('checkUv5rMiniImage — already installed, always-write layout loader',
     expect(checkL1({ radioBuild: 'mm9pdy-test', reinstallConfirmed: true })).not.toThrow();
   });
 
-  it('asks for nothing when the build differs or none was typed', () => {
+  it("asks for nothing when the radio's build differs or it gave none", () => {
     expect(checkL1({ radioBuild: 'mm9pdy-other' })).not.toThrow();
     expect(checkL1({ radioBuild: undefined })).not.toThrow();
   });
@@ -166,11 +168,11 @@ describe('checkUv5rMiniImage — already installed, always-write layout loader',
   });
 
   it('asks the same for a to-stock image onto a radio already on that stock', () => {
-    // Radio Info read (layout known) with no MM9PDY build line: the radio runs stock.
+    // The layout is known and the radio names no MM9PDY build: it may run stock.
     const run = checkL1({ stamp: 'nrfb-v0.04', radioBuild: undefined });
     expect(run).toThrow(RadioConfirmRequiredError);
     expect(run).toThrow(
-      'Radio Info shows no MM9PDY build, so this radio may already run the stock nrfb-v0.04. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.',
+      'Studio sees no MM9PDY build on this radio, so it may already run the stock nrfb-v0.04. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.',
     );
     expect(checkL1({ stamp: 'nrfb-v0.04', radioBuild: 'NRFB-v0.04 ' })).toThrow(
       RadioConfirmRequiredError,
@@ -178,25 +180,27 @@ describe('checkUv5rMiniImage — already installed, always-write layout loader',
     expect(checkL1({ stamp: 'nrfb-v0.04', reinstallConfirmed: true })).not.toThrow();
   });
 
-  it('does not claim the radio runs the stock when Radio Info says it was moved to v0.27', () => {
-    // Firmware V0.27 with the "moved to v0.27" override resolves to layout 1, so the nrfb-v0.04 to-stock file fits it.
-    // The typed Firmware line is not compared with the stock's version, so the warning may only say "may".
-    const answer = uv5rMiniLayoutFromRadioInfo({
-      firmware: 'V0.27',
-      hardware: 'V1.7',
-      build: '',
-      override: true,
-    });
+  it('only says the radio may run the stock when it names no build', () => {
+    // A radio with no radio report answers Radio Info; Firmware V0.04 resolves to layout 1, so the nrfb-v0.04
+    // to-stock file fits it. An MM9PDY build from before the report names no build either, so it says only "may".
+    const answer = uv5rMiniLayoutFromRadioInfo({ firmware: 'V0.04', hardware: 'V1.7' });
     expect(answer).toEqual({ kind: 'layout', layout: 'L1' });
     const run = checkL1({ stamp: 'nrfb-v0.04', radioLayout: 'L1', radioBuild: undefined });
     expect(run).toThrow(RadioConfirmRequiredError);
-    expect(run).toThrow(/so this radio may already run the stock nrfb-v0\.04\./);
+    expect(run).toThrow(/so it may already run the stock nrfb-v0\.04\./);
     expect(run).not.toThrow(/already runs the stock/);
     expect(checkL1({ stamp: 'nrfb-v0.04', reinstallConfirmed: true })).not.toThrow();
   });
 
   it('asks nothing for a to-stock image onto a radio that shows a modded build', () => {
     expect(checkL1({ stamp: 'nrfb-v0.04', radioBuild: 'mm9pdy-L1-1.0.0' })).not.toThrow();
+  });
+
+  it('asks nothing for a to-stock image onto a radio whose report names no build', () => {
+    // A report means an MM9PDY build, so the radio can't already run the stock.
+    expect(
+      checkL1({ stamp: 'nrfb-v0.04', radioBuild: undefined, radioReported: true }),
+    ).not.toThrow();
   });
 });
 
@@ -270,12 +274,12 @@ describe('checkUv5rMiniImage — layout loaders', () => {
       expect(run).toThrow(UV5RMINI_OTHER_LAYOUT_REFUSAL);
     }
     expect(UV5RMINI_OTHER_LAYOUT_REFUSAL).toBe(
-      'This file is for the other hardware layout; nothing was sent.',
+      'This file is for the other flash layout; nothing was sent.',
     );
   });
 
   it("refuses a layout loader's image when Studio does not know the radio's layout", () => {
-    expect(checkWith('L2', prepared())).toThrow(/doesn't know this radio's hardware layout/);
+    expect(checkWith('L2', prepared())).toThrow(/doesn't know this radio's flash layout/);
     expect(checkWith('L2', prepared({ radioLayout: 'L3' }))).toThrow(UV5RMINI_OTHER_LAYOUT_REFUSAL);
   });
 
@@ -537,9 +541,7 @@ describe('checkUv5rMiniImage — to stock', () => {
 
   it("refuses when the radio's layout is another, or unknown", () => {
     expect(toStock({ radioLayout: 'L2' })).toThrow(UV5RMINI_OTHER_LAYOUT_REFUSAL);
-    expect(toStock({ radioLayout: undefined })).toThrow(
-      /doesn't know this radio's hardware layout/,
-    );
+    expect(toStock({ radioLayout: undefined })).toThrow(/doesn't know this radio's flash layout/);
   });
 
   it('a modded build is not held to the to-stock rule', () => {

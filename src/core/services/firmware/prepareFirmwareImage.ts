@@ -48,16 +48,22 @@ export interface PreparedFirmwareImage {
    */
   readonly backToStock?: true;
   /**
-   * The hardware layout of the radio this image is prepared for, as the operator gave it, where the radio comes in more
-   * than one layout (UV-5R Mini: `L1` or `L2`, from its Radio Info screen). Unset when Studio has not been told. An
-   * updater whose image is tied to one layout refuses an image prepared for the other layout, or for none.
+   * The flash layout of the radio this image is prepared for, where the radio's firmware comes in more than one
+   * (UV-5R Mini: `L1` or `L2`, the factory firmware's packing, from its radio report or its Radio Info screen). Unset
+   * when Studio has not been told. An updater whose image is tied to one layout refuses an image prepared for the
+   * other layout, or for none.
    */
   readonly radioLayout?: string;
   /**
-   * The build name the operator typed from the radio's own Radio Info screen (trimmed; absent when none was given).
-   * An updater warns about, or refuses, an image whose build is the one the radio already shows.
+   * The build name the radio gave about itself (UV-5R Mini: its radio report); absent when it named none.
+   * An updater warns about, or refuses, an image whose build is the one the radio already runs.
    */
   readonly radioBuild?: string;
+  /**
+   * Set when the radio reported about itself (UV-5R Mini: its radio report), so it runs an MM9PDY build even where
+   * `radioBuild` is absent because the report named none.
+   */
+  readonly radioReported?: true;
   /**
    * Set when the operator has explicitly confirmed writing the build the radio already runs (a repair). An updater that
    * allows a same-build write asks for this confirmation first and sends nothing without it.
@@ -85,10 +91,12 @@ export async function prepareFirmwareImage(input: {
   descriptor: StockFirmwareDescriptor;
   stock: VerifiedStockFirmware;
   target: FirmwareTarget;
-  /** The radio's hardware layout, where the operator has said (see `PreparedFirmwareImage.radioLayout`). */
+  /** The radio's flash layout, where Studio knows it (see `PreparedFirmwareImage.radioLayout`). */
   radioLayout?: string;
-  /** The build name the operator typed from Radio Info, where one was given (see `PreparedFirmwareImage.radioBuild`). */
+  /** The build name the radio gave, where it gave one (see `PreparedFirmwareImage.radioBuild`). */
   radioBuild?: string;
+  /** The radio reported about itself (see `PreparedFirmwareImage.radioReported`). */
+  radioReported?: boolean;
   /** The operator confirmed writing the build the radio already runs (see `PreparedFirmwareImage.reinstallConfirmed`). */
   reinstallConfirmed?: boolean;
 }): Promise<PreparedFirmwareImage> {
@@ -96,6 +104,7 @@ export async function prepareFirmwareImage(input: {
   const layout = {
     ...(input.radioLayout === undefined ? {} : { radioLayout: input.radioLayout }),
     ...(input.radioBuild ? { radioBuild: input.radioBuild } : {}),
+    ...(input.radioReported ? { radioReported: true as const } : {}),
     ...(input.reinstallConfirmed ? { reinstallConfirmed: true as const } : {}),
   };
   if (

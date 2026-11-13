@@ -178,11 +178,11 @@ describe('firmwareWizardReducer', () => {
       { type: 'imagePrepared', image: IMAGE },
       { type: 'setCheck', check: 'risk', value: true },
       { type: 'setRadioInfo', patch: { firmware: 'V0.27' } },
-      { type: 'setRadioInfo', patch: { override: true } },
+      { type: 'setRadioInfo', patch: { hardware: 'V1.7' } },
     );
     expect(s.image).toBeNull();
     expect(s.checks.risk).toBe(false);
-    expect(s.radioInfo).toEqual({ firmware: 'V0.27', hardware: '', build: '', override: true });
+    expect(s.radioInfo).toEqual({ firmware: 'V0.27', hardware: 'V1.7' });
     expect(reduce(s, { type: 'restart' }).radioInfo.firmware).toBe('');
   });
 
@@ -197,7 +197,7 @@ describe('firmwareWizardReducer', () => {
     expect(s.image).toBeNull();
     expect(s.checks.risk).toBe(false);
     expect(reduce(s, { type: 'setReinstallConfirmed', value: true })).toBe(s);
-    expect(reduce(s, { type: 'setRadioInfo', patch: { build: 'x' } }).reinstallConfirmed).toBe(
+    expect(reduce(s, { type: 'setRadioInfo', patch: { firmware: 'x' } }).reinstallConfirmed).toBe(
       false,
     );
     expect(reduce(s, { type: 'stockVerified', stock: STOCK }).reinstallConfirmed).toBe(false);
