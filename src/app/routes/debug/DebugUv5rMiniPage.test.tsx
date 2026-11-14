@@ -45,6 +45,11 @@ describe('DebugUv5rMiniPage', () => {
     expect(screen.queryByText('0x8800')).toBeNull();
     // No write or restore control anywhere on the page.
     expect(screen.queryByRole('button', { name: /write|restore/i })).toBeNull();
+    // The calibration viewer is on the page and adds no download, export or copy: the zip stays the only one.
+    expect(screen.getByTestId('uv5r-mini-calibration')).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: /download|export|save|copy/i })).toHaveLength(1);
+    expect(screen.queryAllByRole('link')).toHaveLength(0);
+    expect(document.querySelector('[download]')).toBeNull();
   });
 });
 

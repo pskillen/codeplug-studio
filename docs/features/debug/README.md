@@ -26,15 +26,15 @@ Mapbox tokens are **masked** in the LocalStorage viewer (`••••` + last f
 
 ## Routes
 
-| Path                                          | Purpose                                                                                                                      |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `/debug`                                      | Overview and privacy warning                                                                                                 |
-| `/debug/indexed-db`                           | Object store row counts per project                                                                                          |
-| `/debug/indexed-db/:storeName`                | Rows in a store — channels show callsign; name, project id, and entity id are sortable and filterable                        |
-| `/debug/indexed-db/:storeName/:projectId/:id` | Single row JSON tree                                                                                                         |
-| `/debug/local-storage`                        | Known + discovered localStorage keys                                                                                         |
-| `/debug/local-storage/:storageKey`            | Parsed JSON for one key                                                                                                      |
-| `/debug/uv5r-mini`                            | UV-5R Mini read-only full clone read, span hashes, tab history and compare: [uv5r-mini-full-read.md](uv5r-mini-full-read.md) |
+| Path                                          | Purpose                                                                                                                                          |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/debug`                                      | Overview and privacy warning                                                                                                                     |
+| `/debug/indexed-db`                           | Object store row counts per project                                                                                                              |
+| `/debug/indexed-db/:storeName`                | Rows in a store — channels show callsign; name, project id, and entity id are sortable and filterable                                            |
+| `/debug/indexed-db/:storeName/:projectId/:id` | Single row JSON tree                                                                                                                             |
+| `/debug/local-storage`                        | Known + discovered localStorage keys                                                                                                             |
+| `/debug/local-storage/:storageKey`            | Parsed JSON for one key                                                                                                                          |
+| `/debug/uv5r-mini`                            | UV-5R Mini read-only full clone read, span hashes, tab history, compare and calibration viewer: [uv5r-mini-full-read.md](uv5r-mini-full-read.md) |
 
 Routes do **not** require an active project (same class as Settings and Reference).
 

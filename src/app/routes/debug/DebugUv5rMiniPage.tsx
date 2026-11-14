@@ -25,6 +25,7 @@ import {
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 
+import Uv5rMiniCalibrationSection from './Uv5rMiniCalibrationSection.tsx';
 import {
   buildUv5rMiniReadsZip,
   uv5rMiniDebugReadStore,
@@ -198,7 +199,7 @@ export default function DebugUv5rMiniPage() {
     <Page>
       <PageHeader
         title="UV-5R Mini full read"
-        description="Read-only clone read of 0x0000–0xFFFF, SHA-256 per span, and a compare of two reads."
+        description="Read-only clone read of 0x0000–0xFFFF, SHA-256 per span, a compare of two reads and a calibration viewer."
       />
       <Stack gap="md">
         <Alert color="blue" title="Read only">
@@ -336,6 +337,8 @@ export default function DebugUv5rMiniPage() {
             </Stack>
           )}
         </PageSection>
+
+        <Uv5rMiniCalibrationSection reads={reads} />
       </Stack>
     </Page>
   );
