@@ -16,14 +16,30 @@ links the index and each page; the Android app has no URL bar. Both use the Debu
 
 ## In the Android app
 
-| Page                                                                   | In the app                                                        |
-| ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Index, IndexedDB, localStorage (and their sub-pages)                   | Works: the app's web view has the same storage                    |
-| AT-D890UV erase-unit probe, Serial reopen timing, UV-5R Mini full read | Shows a "Not available in the Android app" notice and no controls |
+| Page                                                 | In the app                                                                                                                                                                                |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Index, IndexedDB, localStorage (and their sub-pages) | Works: the app's web view has the same storage                                                                                                                                            |
+| UV-5R Mini full read                                 | Works: the read, the compare and the calibration view. The zip download is replaced by a notice (the app can't save files from a page)                                                    |
+| AT-D890UV erase-unit probe                           | Only **Profile link speed (read-only)** runs. The passes that write, the diagnosis, the config-region alias check and the region exports show a "Not available in the Android app" notice |
+| Serial reopen timing                                 | Shows a "Not available in the Android app" notice and no controls                                                                                                                         |
 
-The three radio pages open their port through `navigator.serial` (Web Serial), which the app's web view does not
-have, and do not use the app's USB serial transport. `WebSerialOnlyDebugPage` wraps each one: in the app it shows the
-page title and the notice; in a browser it renders the page unchanged.
+The app's web view has no `navigator.serial` (Web Serial). The two radio pages that run there open the app's USB
+serial transport through the firmware flasher's seam (`grantFirmwareLinkPort` and `openFirmwareLinkPipe` in
+`src/app/services/firmwarePort.ts`): the one attached device that matches the radio's USB IDs, never a picker; none,
+or more than one, is refused with a message and nothing is sent. Android asks to allow USB access once per plug-in.
+
+- **UV-5R Mini full read:** the radio report read's link, the same as the browser's: the CH340 (`1a86:7523`), 115200
+  baud 8N1, DTR and RTS raised after the open, once more at 38400 when the handshake gets no answer. The read-only
+  allowlist is the same code on both platforms.
+- **AT-D890UV link speed:** the radio's own ST CDC port (`0483:5740`, the same ID in normal and update mode), 921600
+  (nominal on USB CDC), DTR and RTS raised, as the browser opens it. `openAtD890ProbePipe`
+  (`src/app/services/atD890ProbePort.ts`) refuses every other pass in the app before a port is requested. The link
+  profile shows the sweep's per-frame round trip as median, p99 and max, summarised as the flasher summarises its
+  frames, so a phone can be compared with a desktop before flashing from it.
+- **Serial reopen timing** keeps `WebSerialOnlyDebugPage`, which shows the page title and the notice in the app and
+  renders the page unchanged in a browser.
+
+Neither page has been tried on a phone with a radio.
 
 ## Privacy
 
@@ -43,15 +59,15 @@ Mapbox tokens are **masked** in the LocalStorage viewer (`••••` + last f
 
 ## Routes
 
-| Path                                          | Purpose                                                                                                                                                               |
-| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/debug`                                      | Overview and privacy warning                                                                                                                                          |
-| `/debug/indexed-db`                           | Object store row counts per project                                                                                                                                   |
-| `/debug/indexed-db/:storeName`                | Rows in a store — channels show callsign; name, project id, and entity id are sortable and filterable                                                                 |
-| `/debug/indexed-db/:storeName/:projectId/:id` | Single row JSON tree                                                                                                                                                  |
-| `/debug/local-storage`                        | Known + discovered localStorage keys                                                                                                                                  |
-| `/debug/local-storage/:storageKey`            | Parsed JSON for one key                                                                                                                                               |
-| `/debug/uv5r-mini`                            | UV-5R Mini read-only full clone read, span hashes, tab history, compare with a channel diff, and calibration viewer: [uv5r-mini-full-read.md](uv5r-mini-full-read.md) |
+| Path                                          | Purpose                                                                                                                                                                                                 |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/debug`                                      | Overview and privacy warning                                                                                                                                                                            |
+| `/debug/indexed-db`                           | Object store row counts per project                                                                                                                                                                     |
+| `/debug/indexed-db/:storeName`                | Rows in a store — channels show callsign; name, project id, and entity id are sortable and filterable                                                                                                   |
+| `/debug/indexed-db/:storeName/:projectId/:id` | Single row JSON tree                                                                                                                                                                                    |
+| `/debug/local-storage`                        | Known + discovered localStorage keys                                                                                                                                                                    |
+| `/debug/local-storage/:storageKey`            | Parsed JSON for one key                                                                                                                                                                                 |
+| `/debug/uv5r-mini`                            | UV-5R Mini read-only full clone read, span hashes, tab history, compare with a channel diff, and calibration viewer, in a browser and the Android app: [uv5r-mini-full-read.md](uv5r-mini-full-read.md) |
 
 Routes do **not** require an active project (same class as Settings and Reference).
 
@@ -105,7 +121,9 @@ List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with o
 4. Set a Mapbox token in Settings → `/debug/local-storage` shows masked token in viewer.
 5. Filter a library list → `/debug/local-storage` shows labelled list-prefs keys for the active project.
 6. Open Tools (`/reference`) → the **Debug** section shows on pre-prod, and on prod with developer mode on; on prod with developer mode off it is absent.
-7. In the Android app, open the AT-D890UV erase probe, Serial reopen timing and UV-5R Mini full read → each shows the "Not available in the Android app" notice and no controls.
+7. In the Android app, open Serial reopen timing → the "Not available in the Android app" notice and no controls.
+8. In the Android app, open the AT-D890UV erase probe → the notice and only **Profile link speed (read-only)**; with the D890 on the phone's USB, the link profile shows median, p99 and max per frame.
+9. In the Android app, open the UV-5R Mini full read with only the Mini's cable plugged in → **Full read** works; the reads compare and the calibration view shows; no download button.
 
 ## Related
 
