@@ -13,7 +13,8 @@ export const UV5R_MINI_DEBUG_END_FRAME = Uint8Array.of(0x45);
 
 const READ_OPCODE = 0x52;
 
-const FIXED_FRAMES: readonly Uint8Array[] = [
+/** The allowlist's fixed frames: ident, `F`, `M`, the read cipher-select frame and `E`. */
+export const UV5R_MINI_DEBUG_FIXED_FRAMES: readonly Uint8Array[] = [
   UV5R_MINI_LAYOUT.ident,
   ...UV5R_MINI_LAYOUT.magics.read.map((m) => m.send),
   UV5R_MINI_DEBUG_END_FRAME,
@@ -25,7 +26,7 @@ function same(a: Uint8Array, b: Uint8Array): boolean {
 
 /** True for a frame the debug read may send. */
 export function isUv5rMiniDebugFrameAllowed(frame: Uint8Array): boolean {
-  if (FIXED_FRAMES.some((f) => same(f, frame))) return true;
+  if (UV5R_MINI_DEBUG_FIXED_FRAMES.some((f) => same(f, frame))) return true;
   return frame.length === 4 && frame[0] === READ_OPCODE && frame[3] === UV5R_MINI_LAYOUT.blockSize;
 }
 

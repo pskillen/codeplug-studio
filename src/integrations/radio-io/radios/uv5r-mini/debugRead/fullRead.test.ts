@@ -11,6 +11,7 @@ import {
   Uv5rMiniDebugFrameRefusedError,
   Uv5rMiniReadOnlyPipe,
   UV5R_MINI_DEBUG_END_FRAME,
+  UV5R_MINI_DEBUG_FIXED_FRAMES,
 } from './frameAllowlist.ts';
 import {
   decodeUv5rMiniFullRead,
@@ -39,7 +40,39 @@ function radioWith(flash: Uint8Array): FakeMiniRadio {
   return radio;
 }
 
-const READ_SEND = UV5R_MINI_LAYOUT.magics.read[2]!.send;
+// The read-only frames, pinned as literals so a change to the shared layout can't widen the allowlist unnoticed.
+const IDENT = new TextEncoder().encode('PROGRAMCOLORPROU');
+const F = Uint8Array.of(0x46);
+const M = Uint8Array.of(0x4d);
+/** `SEND!` cipher-select frame for a read: 25 bytes, trailer 0x00. */
+const READ_SEND = Uint8Array.of(
+  0x53,
+  0x45,
+  0x4e,
+  0x44,
+  0x21,
+  0x05,
+  0x0d,
+  0x01,
+  0x01,
+  0x01,
+  0x04,
+  0x11,
+  0x08,
+  0x05,
+  0x0d,
+  0x0d,
+  0x01,
+  0x11,
+  0x0f,
+  0x09,
+  0x12,
+  0x09,
+  0x10,
+  0x04,
+  0x00,
+);
+const E = Uint8Array.of(0x45);
 const UPLOAD_SEND = UV5R_MINI_LAYOUT.magics.upload[2]!.send;
 
 describe('UV-5R Mini debug full read', () => {
@@ -88,16 +121,11 @@ describe('UV-5R Mini debug full read', () => {
     await session.readAll();
     await session.end();
 
-    const expected: Uint8Array[] = [
-      UV5R_MINI_LAYOUT.ident,
-      Uint8Array.of(0x46),
-      Uint8Array.of(0x4d),
-      READ_SEND,
-    ];
+    const expected: Uint8Array[] = [IDENT, F, M, READ_SEND];
     for (let addr = 0; addr < 0x10000; addr += 0x40) {
       expected.push(Uint8Array.of(0x52, addr >> 8, addr & 0xff, 0x40));
     }
-    expected.push(UV5R_MINI_DEBUG_END_FRAME);
+    expected.push(E);
 
     expect(radio.writes.length).toBe(expected.length);
     radio.writes.forEach((w, i) => expect(bytesEqual(w, expected[i]!)).toBe(true));
@@ -150,16 +178,19 @@ describe('UV-5R Mini debug frame allowlist', () => {
   });
 
   it('allows only the handshake, R, and E', () => {
-    for (const f of [
-      UV5R_MINI_LAYOUT.ident,
-      Uint8Array.of(0x46),
-      Uint8Array.of(0x4d),
-      READ_SEND,
-      Uint8Array.of(0x52, 0xff, 0xc0, 0x40),
-      UV5R_MINI_DEBUG_END_FRAME,
-    ]) {
+    for (const f of [IDENT, F, M, READ_SEND, Uint8Array.of(0x52, 0xff, 0xc0, 0x40), E]) {
       expect(isUv5rMiniDebugFrameAllowed(f)).toBe(true);
     }
+  });
+
+  it('takes from the layout exactly the pinned frames', () => {
+    const hex = (frames: readonly Uint8Array[]) =>
+      frames.map((f) => Array.from(f, (b) => b.toString(16).padStart(2, '0')).join(''));
+    expect(READ_SEND.length).toBe(25);
+    expect(hex([UV5R_MINI_LAYOUT.ident])).toEqual(hex([IDENT]));
+    expect(hex(UV5R_MINI_LAYOUT.magics.read.map((m) => m.send))).toEqual(hex([F, M, READ_SEND]));
+    expect(hex([UV5R_MINI_DEBUG_END_FRAME])).toEqual(hex([E]));
+    expect(hex(UV5R_MINI_DEBUG_FIXED_FRAMES)).toEqual(hex([IDENT, F, M, READ_SEND, E]));
   });
 
   it('sends the bytes it checked, not the caller buffer', async () => {
