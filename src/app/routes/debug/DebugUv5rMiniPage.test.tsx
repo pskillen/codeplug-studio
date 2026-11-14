@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,7 +12,7 @@ vi.mock('@integrations/platform/isNativeApp.ts', () => ({ isNativeApp: vi.fn(() 
 
 vi.mock('@integrations/download/browserDownload.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@integrations/download/browserDownload.ts')>()),
-  downloadZip: vi.fn(),
+  downloadZip: vi.fn().mockResolvedValue({ status: 'saved' }),
 }));
 
 function addRead(decoded: Uint8Array, store = uv5rMiniDebugReadStore) {
@@ -100,7 +100,7 @@ describe('DebugUv5rMiniPage in the Android app (#1680)', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Download all/ }));
     expect(vi.mocked(downloadZip)).toHaveBeenCalledTimes(1);
     expect(vi.mocked(downloadZip).mock.calls[0][1]).toMatch(/^uv5r-mini-reads-.+\.zip$/);
-    expect(screen.getByText('All downloaded')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('All downloaded')).toBeTruthy());
     vi.mocked(downloadZip).mockClear();
   });
 });
@@ -146,6 +146,22 @@ describe('DebugUv5rMiniPage leave warning', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Download all (1)' }));
     const { downloadZip } = await import('@integrations/download/browserDownload.ts');
     expect(downloadZip).toHaveBeenCalledTimes(1);
-    expect(leaveIsBlocked()).toBe(false);
+    await waitFor(() => expect(leaveIsBlocked()).toBe(false));
+  });
+
+  it.each([
+    { status: 'failed', fileName: 'reads.zip', message: 'write failed' },
+    { status: 'failed', fileName: 'reads.zip', phase: 'share', message: 'sharing was cancelled' },
+  ])('keeps the warning and retry button after a failed save', async (result) => {
+    const store = await renderFresh();
+    const { act } = await import('@testing-library/react');
+    const { downloadZip } = await import('@integrations/download/browserDownload.ts');
+    vi.mocked(downloadZip).mockResolvedValueOnce(result as Awaited<ReturnType<typeof downloadZip>>);
+    act(() => addRead(new Uint8Array(0x10000), store));
+    fireEvent.click(screen.getByRole('button', { name: 'Download all (1)' }));
+    await waitFor(() => expect(downloadZip).toHaveBeenCalled());
+    expect(screen.getByText('1 read not downloaded')).toBeTruthy();
+    expect(leaveIsBlocked()).toBe(true);
+    expect(screen.getByRole('button', { name: 'Download all (1)' })).toBeTruthy();
   });
 });

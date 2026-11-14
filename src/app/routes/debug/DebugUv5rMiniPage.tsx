@@ -223,9 +223,12 @@ function Uv5rMiniFullRead() {
     }
   }
 
-  function downloadAll() {
-    downloadZip(buildUv5rMiniReadsZip(reads), `uv5r-mini-reads-${isoTimestampForFilename()}.zip`);
-    uv5rMiniDebugReadStore.markAllDownloaded();
+  async function downloadAll() {
+    const result = await downloadZip(
+      buildUv5rMiniReadsZip(reads),
+      `uv5r-mini-reads-${isoTimestampForFilename()}.zip`,
+    );
+    if (result.status !== 'failed') uv5rMiniDebugReadStore.markAllDownloaded(reads.length);
   }
 
   // Until the user picks, compare the two newest reads.
@@ -302,7 +305,7 @@ function Uv5rMiniFullRead() {
             <Stack gap="lg">
               <Stack gap="xs">
                 <Group>
-                  <Button variant="default" onClick={downloadAll}>
+                  <Button variant="default" onClick={() => void downloadAll()}>
                     Download all ({reads.length})
                   </Button>
                   {undownloaded > 0 ? (
