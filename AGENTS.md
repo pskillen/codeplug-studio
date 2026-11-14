@@ -74,6 +74,29 @@ Follow the `git-workflow` and `codeplug-conventions` skills from [`pskillen/agen
 - **Publish:** merge to `main` → continuous **next** deploy; push to `dev` → **dev** deploy; pre-release → **staging**; full GitHub release → **prod** on Cloudflare Pages (`https://codeplug.mm9pdy.net`).
 - Do not commit `.env`, secrets, or personal `sample-exports/`.
 
+### Batches of PRs: stack them, merge the stack once
+
+CI takes 10–15 minutes a run, and `main` only merges a PR that is up to date with `main`, unless it merges as part of a GitHub stack. Side-by-side PRs from `main` cost a full extra CI run for every PR after the first.
+
+- **Stack the PRs, not the work.** Builders still work in parallel, each in its own worktree from `main`.
+- **Stack at open time, even when the PRs are unrelated.** Just before `gh pr create`, rebase onto the branch of the PR opened before it in the same batch (the top of the stack) and open with that branch as the base. The first PR of a batch opens on `main`. Whoever coordinates the batch tells each builder the current top branch. A later rebase inside the stack is fine.
+- **Create the GitHub stack once every PR in the batch is open**, bottom to top. The API cannot add a PR to an existing stack; the owner can, in the GitHub UI, so ask them or wait until the batch is complete.
+- **Merge the stack once**, from the top: that merges every open PR below it. Do not retarget children to `main` and merge them one by one.
+- **Do not restack PRs already open from `main`** with CI done or running: it restarts their CI and gains nothing. Merge the green one, update the other.
+- **Do not server-rebase the bottom of a stack on its own** (`gh pr update-branch --rebase`): the PR above stays on the old SHAs and goes DIRTY. Rebase the chain locally, `git rebase --onto <new lower head> <old lower head>` for each PR above, push each with `--force-with-lease`, then merge the stack.
+
+```bash
+# open a PR on top of the batch
+git fetch origin && git rebase --onto origin/<top branch> $(git merge-base HEAD origin/main)
+gh pr create --base <top branch> …
+
+# once the batch is open, bottom to top
+echo '{"pull_requests":[<bottom>,…,<top>]}' | gh api -X POST repos/pskillen/codeplug-studio/stacks --input -
+
+# merge the whole stack
+gh api -X PUT repos/pskillen/codeplug-studio/pulls/<top>/merge-async -f merge_method=merge -f sha=<top head sha>
+```
+
 ## Plans and feature docs
 
 All from [`pskillen/agent-skills`](https://github.com/pskillen/agent-skills):
