@@ -47,6 +47,16 @@ describe('estimateRemainingMs', () => {
     expect(at(100)).toBe(0);
   });
 
+  it('keeps falling between reports instead of rising while the count stands still', () => {
+    // 5 blocks/s up to the last report at 30 s (73.6 s left then); the ticker moves on without a new report.
+    const last = { atMs: 30_000, done: 110 };
+    expect(estimateRemainingMs(base, last, 478, 30_000)).toBe(73_600);
+    expect(estimateRemainingMs(base, last, 478, 31_000)).toBe(72_600);
+    expect(estimateRemainingMs(base, last, 478, 40_000)).toBe(63_600);
+    // A long silence bottoms out at 0, never negative.
+    expect(estimateRemainingMs(base, last, 478, 200_000)).toBe(0);
+  });
+
   it('is exactly 0 once everything is done, even with no baseline', () => {
     expect(estimateRemainingMs(base, { atMs: 200_000, done: 478 }, 478)).toBe(0);
     expect(estimateRemainingMs(null, { atMs: 0, done: 478 }, 478)).toBe(0);

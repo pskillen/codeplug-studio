@@ -138,6 +138,8 @@ export default function FlashStep({
   const [startedMs, setStartedMs] = useState(0);
   const [etaBaseline, setEtaBaseline] = useState<FlashEtaSample | null>(null);
   const [nowMs, setNowMs] = useState(0);
+  // When the latest progress report arrived: the estimate's rate runs up to here, not to the ticker's time.
+  const [progressAtMs, setProgressAtMs] = useState(0);
   const [retryPrep, setRetryPrep] = useState<{ busy: boolean; error: string | null }>({
     busy: false,
     error: null,
@@ -235,6 +237,7 @@ export default function FlashStep({
       const w = p.phase === 'transfer' ? p.written : undefined;
       if (w) setEtaBaseline((prev) => nextEtaBaseline(prev, { atMs: at, done: w.done }));
       setNowMs(at);
+      setProgressAtMs(at);
       setProgress(p);
       setSeenPhases((prev) => (prev.has(p.phase) ? prev : new Set(prev).add(p.phase)));
     });
@@ -265,7 +268,12 @@ export default function FlashStep({
         elapsedMs: nowMs - startedMs,
         written,
         remainingMs: written
-          ? estimateRemainingMs(etaBaseline, { atMs: nowMs, done: written.done }, written.total)
+          ? estimateRemainingMs(
+              etaBaseline,
+              { atMs: progressAtMs, done: written.done },
+              written.total,
+              nowMs,
+            )
           : null,
       })
     : null;

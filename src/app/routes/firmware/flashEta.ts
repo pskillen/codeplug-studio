@@ -5,7 +5,7 @@ export const FLASH_ETA_WARMUP_MS = 5_000;
 /** …and moved this share of the total since then, so the first figure doesn't jump about. */
 export const FLASH_ETA_WARMUP_FRACTION = 0.03;
 
-/** One point of the transfer: when (ms, any monotonic clock) and how much was done. */
+/** One point of the transfer: when (ms since the epoch, as `Date.now()` gives it) and how much was done. */
 export interface FlashEtaSample {
   readonly atMs: number;
   readonly done: number;
@@ -24,23 +24,28 @@ export function nextEtaBaseline(
 }
 
 /**
- * Time left in ms, from the rate since the baseline; `null` during the warm-up or with nothing to go on. Exactly 0
- * once everything is done.
+ * Time left in ms; `null` during the warm-up or with nothing to go on. Exactly 0 once everything is done.
+ *
+ * The rate runs from the baseline to `last`, the latest progress report, and the time since that report (up to `nowMs`)
+ * is taken off what is left. So the figure keeps falling between reports instead of rising while the count stands
+ * still. `nowMs` defaults to `last.atMs`.
  */
 export function estimateRemainingMs(
   baseline: FlashEtaSample | null,
-  now: FlashEtaSample,
+  last: FlashEtaSample,
   total: number,
+  nowMs: number = last.atMs,
 ): number | null {
   if (total <= 0) return null;
-  if (now.done >= total) return 0;
+  if (last.done >= total) return 0;
   if (!baseline) return null;
-  const dt = now.atMs - baseline.atMs;
-  const moved = now.done - baseline.done;
+  const dt = last.atMs - baseline.atMs;
+  const moved = last.done - baseline.done;
   if (dt < FLASH_ETA_WARMUP_MS || moved < total * FLASH_ETA_WARMUP_FRACTION || moved <= 0) {
     return null;
   }
-  return Math.max(0, Math.round(((total - now.done) * dt) / moved));
+  const sinceLast = Math.max(0, nowMs - last.atMs);
+  return Math.max(0, Math.round(((total - last.done) * dt) / moved - sinceLast));
 }
 
 /** `m:ss`, or `h:mm:ss` past an hour. */
