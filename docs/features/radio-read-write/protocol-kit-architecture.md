@@ -292,7 +292,7 @@ src/integrations/radio-io/
   types.ts                # shared contracts (BytePipe, BlockCodec, …)
   transport/
     webSerialPipe.ts      # requestPort, baud, BytePipe  — shipped #615
-    capacitorSerialPipe.ts # Android (Capacitor USB-serial plugin): same BytePipe, rate via setParameters — #888, #1657
+    capacitorSerialPipe.ts # Android (Capacitor USB-serial plugin): same BytePipe, rate via setParameters
     featureDetect.ts
     blePipe.ts            # optional; same BytePipe — deferred
   kit/

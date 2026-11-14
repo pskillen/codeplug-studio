@@ -9,7 +9,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 | Scaffold              | Shipped   | Capacitor core + Android platform (#886)                                                                                                                                                                                        |
 | API / CORS / Browser  | Shipped   | Absolute `/api` on native, Capacitor CORS allowlist, system browser (#887); staging vs prod API origin (#899)                                                                                                                   |
 | Google Drive (native) | Shipped   | PKCE OAuth in Custom Tabs + deep link (#895)                                                                                                                                                                                    |
-| USB Serial            | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888); line rate set at open ([#1657](https://github.com/pskillen/codeplug-studio/issues/1657)). \*Unit/mock coverage; **hardware OTG R/W still outstanding**                    |
+| USB Serial            | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888); line rate set at open. \*Unit/mock coverage; **hardware OTG R/W still outstanding**                                                                                       |
 | APK CI                | Shipped   | Signed APK + Release attach (#889); real `BUILD_ENV` + GA ID inject (#896)                                                                                                                                                      |
 | Analytics (gtag)      | Shipped   | Same SPA consent gate; `app_surface=android` + `build_env` on page views (#896)                                                                                                                                                 |
 | In-app icon / splash  | Shipped   | Brand-derived adaptive icon + splash via `@capacitor/assets` (#898)                                                                                                                                                             |
@@ -47,7 +47,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
   - **Changing rate mid-session (`reopen`):** after the queued bytes have had time to leave the adapter (their wire time
     plus 50 ms), the pipe calls `setParameters` on the open port: no close and open, and the read stream keeps running.
     Bytes read before the switch are dropped. The firmware flasher's rate switch (the UV-5R Mini's loader at 38400) uses
-    it; the flasher itself is not offered in the Android app yet ([#1657](https://github.com/pskillen/codeplug-studio/issues/1657)).
+    it; the flasher itself is not offered in the Android app yet.
   - **Which device:** codeplug Read/Write uses the first USB serial device the plugin lists, as before. The firmware
     flasher's links pass the cable's USB filters instead: exactly one attached device must match, with no fall-back to the
     first device; none or two is refused. The flasher's pre-flight probe and safety backup stay desktop-only and refuse
