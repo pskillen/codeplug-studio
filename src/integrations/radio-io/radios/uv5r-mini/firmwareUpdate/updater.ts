@@ -500,7 +500,11 @@ export function describeUv5rMiniResult(
   return { error: text };
 }
 
-/** The loader's area read size: its first read this size after cmd 4 is the first area block. */
+/**
+ * The loader's area read size: its first read this size after cmd 4 is the first area block. This holds for the
+ * pinned loaders, whose area write loop reads the image 0x200 B at a time; a loader that read the area in smaller
+ * blocks would leave the count at 0 for the whole flash (display only, nothing sent changes).
+ */
 const UV5RMINI_AREA_BLOCK = 0x200;
 
 /** The union of byte ranges read so far, for the progress count. Reads arrive in order, so the list stays short. */
