@@ -296,14 +296,15 @@ export async function grantFirmwarePort(radioId: FirmwareRadioId): Promise<Firmw
   return grantFirmwareLinkPort(requireUpdater(radioId).link);
 }
 
-const PREFLIGHT_STEP = 'The pre-flight check';
 const SAFETY_BACKUP_STEP = 'The safety backup';
 
-/** Fresh pick for the radio's normal-mode pre-flight probe (Web Serial only). Call from a user gesture. */
+/**
+ * Fresh pick for the radio's normal-mode pre-flight probe, narrowed to the probe's cable: Web Serial's picker, or in
+ * the Android app the one attached device matching it. Call from a user gesture.
+ */
 export async function grantFirmwarePreflightPort(radioId: FirmwareRadioId): Promise<FirmwarePort> {
   const probe = requireUpdater(radioId).preflight?.probe;
   if (!probe) throw new Error(`${radioId} has no pre-flight probe.`);
-  refuseOnCapacitor(PREFLIGHT_STEP);
   return grantFirmwareLinkPort(probe.link);
 }
 
@@ -321,13 +322,7 @@ export async function runFirmwarePreflightProbe(input: {
   try {
     const probe = requireUpdater(radioId).preflight?.probe;
     if (!probe) throw new Error(`${radioId} has no pre-flight probe.`);
-    pipe = await openWebSerialPipe(
-      requireWebSerialPort(port, PREFLIGHT_STEP),
-      probe.link.baudRate,
-      {
-        raiseDtrRts: probe.link.raiseDtrRts,
-      },
-    );
+    pipe = await openFirmwareLinkPipe(port, probe.link.baudRate, probe.link);
     const { summary } = await probe.run(pipe, { signal });
     return { ok: true, summary };
   } catch (err) {

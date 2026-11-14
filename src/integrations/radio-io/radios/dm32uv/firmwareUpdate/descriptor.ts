@@ -13,7 +13,8 @@ export const DM32UV_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   stock: DM32UV_STOCK_FIRMWARE,
   link: DM32_FW_LINK,
   createUpdater: () => createDm32FirmwareUpdater(),
-  capacitorSupported: false,
+  // Android app: behind developer mode until a phone has flashed one (#1674).
+  capacitorSupported: 'developerMode',
   // Enabled in prod 2026-10-22: release 1.0.0 flashed from Studio on hardware (#1363).
   prodFlashDisabled: false,
   expectedDuration: 'about 2 minutes (including a 13 s erase)',
