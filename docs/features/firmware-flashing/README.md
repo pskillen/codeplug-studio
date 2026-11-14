@@ -263,8 +263,8 @@ the radio and use the verify hint. If the check fails, follow [Recovery](#recove
 **Flash summary.** It records the end state (`End: …`), the elapsed time as `mm:ss`, the final count as
 `Written: 478 / 478 blocks` (the UV-5R Mini: `Written: … / … bytes`, distinct bytes of the firmware area), and, for
 updaters that measure it (the AT-D890UV), each data frame's round trip from write to acknowledgement:
-`Frame round trip: median …, p99 …, max … ms`. A failed flash records the elapsed time to the stop, how far the count
-got and the timing up to the failure.
+`Frame round trip: median …, p99 …, max … ms`. A failed flash records the elapsed time to the stop, the last count reported
+(updaters report every few frames, so it can trail the frames sent) and the timing up to the failure.
 
 ## Provenance
 
