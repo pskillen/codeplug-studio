@@ -5,7 +5,7 @@ import { isDeveloperModeOn } from '@integrations/preferences/developerMode.ts';
 import { useDeveloperMode } from '../../hooks/useDeveloperMode.ts';
 import { GITHUB_ISSUES_URL, GITHUB_REPO_URL } from '../../lib/githubLinks.ts';
 import {
-  developerModeToggleMessage,
+  developerModeTurnOnMessage,
   INITIAL_VERSION_TAP_STATE,
   registerVersionTap,
   versionTapMessage,
@@ -25,7 +25,8 @@ function FooterLink({ to, children }: { to: string; children: ReactNode }) {
 
 /**
  * The version text, and the five-tap developer-mode gesture on it (#1650). From the second tap a short countdown toast
- * shows; the fifth turns developer mode on (or off when it is on).
+ * shows; the fifth turns developer mode on. Taps never turn it off (#1686): while it is on they only say so and point
+ * at the top bar's chip.
  */
 function VersionTapTarget() {
   const [developerMode, setDeveloperMode] = useDeveloperMode();
@@ -39,12 +40,12 @@ function VersionTapTarget() {
   }, [toast]);
 
   const onTap = () => {
-    const { state, result } = registerVersionTap(tapState.current, Date.now());
+    const { state, result } = registerVersionTap(tapState.current, Date.now(), developerMode);
     tapState.current = state;
-    let text = versionTapMessage(result, developerMode);
-    if (result.kind === 'toggle') {
-      setDeveloperMode(!developerMode);
-      text = developerModeToggleMessage(developerMode, isDeveloperModeOn());
+    let text = versionTapMessage(result);
+    if (result.kind === 'turnOn') {
+      setDeveloperMode(true);
+      text = developerModeTurnOnMessage(isDeveloperModeOn());
     }
     if (text) setToast({ text, id: Date.now() });
   };

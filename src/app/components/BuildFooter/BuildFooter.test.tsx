@@ -42,7 +42,19 @@ describe('BuildFooter developer-mode gesture', () => {
     tapVersion(5);
     expect(localStorage.getItem(DEVELOPER_MODE_KEY)).toBeNull();
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Developer mode could not be changed: this browser blocks storage',
+      'Developer mode could not be turned on: this browser blocks storage',
     );
+  });
+
+  it('leaves developer mode on after five taps while it is on, pointing at the top bar', () => {
+    localStorage.setItem(DEVELOPER_MODE_KEY, 'on');
+    renderFooter();
+    tapVersion(5);
+    expect(localStorage.getItem(DEVELOPER_MODE_KEY)).toBe('on');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Developer mode is on. Turn it off from the top bar',
+    );
+    tapVersion(5);
+    expect(localStorage.getItem(DEVELOPER_MODE_KEY)).toBe('on');
   });
 });
