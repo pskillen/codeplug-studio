@@ -1,6 +1,7 @@
 /**
  * UV-5R Mini firmware updater descriptor, registered in `firmware/registry.ts`. Offered on prod since Studio flashed
- * patched releases to a Mini on hardware (DESIGN.md — Firmware flashing, rule 7).
+ * patched builds to a Mini on hardware and the MM9PDY firmware's 1.0.0 (v0.27 base) was published (DESIGN.md — Firmware
+ * flashing, rule 7).
  */
 import { UV5RMINI_STOCK_FIRMWARE } from '@core/radios/baofeng/uv-5r-mini/firmware.ts';
 
