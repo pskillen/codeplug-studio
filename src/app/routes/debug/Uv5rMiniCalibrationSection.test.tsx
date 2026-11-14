@@ -59,11 +59,32 @@ describe('Uv5rMiniCalibrationSection', () => {
     expect(s.getByRole('img', { name: /Segment 4: 400–550 MHz \(0xF090–0xF0BF\)/ })).toBeTruthy();
     expect(s.getByRole('img', { name: 'Squelch row 0xF100–0xF10F' })).toBeTruthy();
     expect(s.getAllByText('partly traced').length).toBeGreaterThan(0);
-    expect(s.getByText('built-in defaults')).toBeTruthy();
-    expect(s.getByText(/B: 0x05 \(5\), \+1 ppm/)).toBeTruthy();
+    expect(s.getAllByText('All six read 0xFF (blank).').length).toBeGreaterThan(0);
+    expect(s.queryByText('built-in defaults')).toBeNull();
+    expect(s.getByText(/B: 0x05 \(5\), -1.5 ppm/)).toBeTruthy();
     expect(s.getByText('CTCSS TX level')).toBeTruthy();
     expect(s.getByText('Region byte')).toBeTruthy();
     expect(s.getByText(/0xF280–0xFFFF all FF \(3456 bytes\)/)).toBeTruthy();
+  });
+
+  it('says built-in defaults only when 0xF000 reads as erased', () => {
+    const erased = syntheticRead(1);
+    erased.fill(0xff, 0xf000, 0xf100);
+    renderSection(storeWith(erased));
+    const s = within(screen.getByTestId('uv5r-mini-calibration'));
+    expect(s.getByText('Calibration reads as erased')).toBeTruthy();
+    expect(s.getByText('built-in defaults')).toBeTruthy();
+    expect(
+      s.getByText(/0xF000 reads as erased, so the firmware uses its built-in thresholds/),
+    ).toBeTruthy();
+  });
+
+  it('says a trim byte above 16 acts as index 8', () => {
+    const read = syntheticRead(1);
+    read[0xf216] = 0x20;
+    renderSection(storeWith(read));
+    const s = within(screen.getByTestId('uv5r-mini-calibration'));
+    expect(s.getByText(/0x20 \(32\), above 16: the firmware uses index 8 \(0 ppm\)/)).toBeTruthy();
   });
 
   it('overlays a second read', () => {

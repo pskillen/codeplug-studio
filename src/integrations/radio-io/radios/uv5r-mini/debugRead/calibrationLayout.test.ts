@@ -122,7 +122,7 @@ describe('decodeUv5rMiniCalibration', () => {
     expect(hexBytes).toBe(0x1000 - traced);
   });
 
-  it('reads blank battery thresholds as built-in defaults', () => {
+  it('reads six 0xFF battery bytes as blank', () => {
     const read = syntheticRead();
     read.fill(0xff, 0xf200, 0xf206);
     expect(decodeUv5rMiniCalibration(read).battery.blank).toBe(true);
@@ -130,14 +130,25 @@ describe('decodeUv5rMiniCalibration', () => {
     expect(decodeUv5rMiniCalibration(read).battery.blank).toBe(false);
   });
 
-  it('flags an erased calibration area and centres the trim index on 4', () => {
+  it('flags an erased calibration area', () => {
     const read = new Uint8Array(UV5R_MINI_FULL_READ_SIZE).fill(0xff);
-    read[0xf216] = 4;
-    const cal = decodeUv5rMiniCalibration(read);
-    expect(cal.blank).toBe(true);
-    expect(cal.trim.offset).toBe(0);
-    read[0xf216] = 0;
-    expect(decodeUv5rMiniCalibration(read).trim.offset).toBe(-4);
+    expect(decodeUv5rMiniCalibration(read).blank).toBe(true);
+    read[0xf000] = 0x40;
+    expect(decodeUv5rMiniCalibration(read).blank).toBe(false);
+  });
+
+  it.each([
+    [0, -4, false],
+    [5, -1.5, false],
+    [8, 0, false],
+    [12, 2, false],
+    [16, 4, false],
+    [17, 0, true],
+    [0xff, 0, true],
+  ])('reads trim byte %i as %f ppm (above 16: %s)', (byte, ppm, aboveRange) => {
+    const read = syntheticRead();
+    read[0xf216] = byte;
+    expect(decodeUv5rMiniCalibration(read).trim).toMatchObject({ value: byte, ppm, aboveRange });
   });
 
   it('shows text as printable ASCII', () => {

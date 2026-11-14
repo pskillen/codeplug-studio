@@ -100,12 +100,28 @@ export const UV5R_MINI_CALIBRATION_LAYOUT: readonly Uv5rMiniCalibrationRange[] =
 /** The region byte: the model suffix's last byte. */
 export const UV5R_MINI_CALIBRATION_REGION = { id: 'region', label: 'Region byte', address: 0xf255 };
 
-/** The battery thresholds read as blank (built-in defaults apply) when all six are `0xFF`. */
+/** Six battery threshold bytes; `battery.blank` says all six read `0xFF`. */
 export const UV5R_MINI_BATTERY_STEPS = 6;
 
-/** The trim gauge: an index assumed to run 0–8 with 4 as the centre (0 ppm), ±4 ppm at the ends. */
-export const UV5R_MINI_TRIM_CENTRE = 4;
-export const UV5R_MINI_TRIM_SPAN = 4;
+/**
+ * The frequency trim: an index 0–16 into a 17-entry table, 8 the centre (0 ppm), 0.5 ppm a step,
+ * so ±4 ppm at the ends. The firmware uses index 8 for any value above 16.
+ */
+export const UV5R_MINI_TRIM_CENTRE = 8;
+export const UV5R_MINI_TRIM_MAX = 16;
+export const UV5R_MINI_TRIM_PPM_PER_STEP = 0.5;
+/** The gauge's half-width in ppm. */
+export const UV5R_MINI_TRIM_SPAN_PPM = 4;
+
+/** The index the firmware applies for a trim byte: the byte itself, or the centre above 16. */
+export function uv5rMiniTrimIndex(value: number): number {
+  return value > UV5R_MINI_TRIM_MAX ? UV5R_MINI_TRIM_CENTRE : value;
+}
+
+/** The trim in ppm the firmware applies for a trim byte. */
+export function uv5rMiniTrimPpm(value: number): number {
+  return (uv5rMiniTrimIndex(value) - UV5R_MINI_TRIM_CENTRE) * UV5R_MINI_TRIM_PPM_PER_STEP;
+}
 
 export interface Uv5rMiniPaLine {
   level: number;
@@ -142,9 +158,11 @@ export interface Uv5rMiniCalibration {
   blank: boolean;
   paBias: Uv5rMiniPaSegmentValues[];
   squelch: Uv5rMiniCalibrationBytes[];
+  /** `blank`: all six bytes read `0xFF`. Says nothing about which thresholds the firmware uses. */
   battery: { start: number; values: number[]; blank: boolean };
   values: Uv5rMiniCalibrationValue[];
-  trim: Uv5rMiniCalibrationValue & { offset: number };
+  /** `ppm`: the trim the firmware applies; `aboveRange`: the byte is above 16, so index 8 is used. */
+  trim: Uv5rMiniCalibrationValue & { ppm: number; aboveRange: boolean };
   region: Uv5rMiniCalibrationValue;
   texts: Uv5rMiniCalibrationText[];
   /** `partlyTraced` and `untraced` ranges, as bytes. */
@@ -210,7 +228,8 @@ export function decodeUv5rMiniCalibration(decoded: Uint8Array): Uv5rMiniCalibrat
       label: trimRange.label,
       address: trimRange.start,
       value: trimValue,
-      offset: trimValue - UV5R_MINI_TRIM_CENTRE,
+      ppm: uv5rMiniTrimPpm(trimValue),
+      aboveRange: trimValue > UV5R_MINI_TRIM_MAX,
     },
     region: {
       ...UV5R_MINI_CALIBRATION_REGION,

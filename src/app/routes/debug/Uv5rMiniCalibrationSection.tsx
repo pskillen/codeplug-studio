@@ -23,8 +23,9 @@ import {
   UV5R_MINI_PA_LEVELS,
   UV5R_MINI_PA_ORDER,
   UV5R_MINI_PA_POINTS,
-  UV5R_MINI_TRIM_CENTRE,
-  UV5R_MINI_TRIM_SPAN,
+  UV5R_MINI_TRIM_MAX,
+  UV5R_MINI_TRIM_SPAN_PPM,
+  uv5rMiniTrimPpm,
   type Uv5rMiniCalibration,
   type Uv5rMiniCalibrationBytes,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
@@ -150,16 +151,16 @@ function ByteBars({
   );
 }
 
-/** A centre-zero gauge of the trim index (assumed 0–8, 4 = 0 ppm). */
+/** A centre-zero gauge of the trim in ppm (index 0–16, 8 = 0 ppm, 0.5 ppm a step). */
 function TrimGauge({ a, b, labels }: { a: number; b?: number; labels: [string, string?] }) {
   const scheme = useComputedColorScheme('light');
   const W = 320;
-  const x = (offset: number) =>
-    20 + ((offset + UV5R_MINI_TRIM_SPAN) / (2 * UV5R_MINI_TRIM_SPAN)) * (W - 40);
-  const marker = (offset: number, color: string, hollow: boolean, label: string) =>
-    Math.abs(offset) <= UV5R_MINI_TRIM_SPAN ? (
+  const x = (ppm: number) =>
+    20 + ((ppm + UV5R_MINI_TRIM_SPAN_PPM) / (2 * UV5R_MINI_TRIM_SPAN_PPM)) * (W - 40);
+  const marker = (ppm: number, color: string, hollow: boolean, label: string) =>
+    Math.abs(ppm) <= UV5R_MINI_TRIM_SPAN_PPM ? (
       <circle
-        cx={x(offset)}
+        cx={x(ppm)}
         cy={20}
         r={6}
         fill={hollow ? 'var(--mantine-color-body)' : color}
@@ -170,8 +171,8 @@ function TrimGauge({ a, b, labels }: { a: number; b?: number; labels: [string, s
       </circle>
     ) : null;
   const ticks = Array.from(
-    { length: 2 * UV5R_MINI_TRIM_SPAN + 1 },
-    (_, i) => i - UV5R_MINI_TRIM_SPAN,
+    { length: 2 * UV5R_MINI_TRIM_SPAN_PPM + 1 },
+    (_, i) => i - UV5R_MINI_TRIM_SPAN_PPM,
   );
   return (
     <svg
@@ -182,8 +183,8 @@ function TrimGauge({ a, b, labels }: { a: number; b?: number; labels: [string, s
       style={{ display: 'block', maxWidth: W }}
     >
       <line
-        x1={x(-UV5R_MINI_TRIM_SPAN)}
-        x2={x(UV5R_MINI_TRIM_SPAN)}
+        x1={x(-UV5R_MINI_TRIM_SPAN_PPM)}
+        x2={x(UV5R_MINI_TRIM_SPAN_PPM)}
         y1={20}
         y2={20}
         stroke="var(--mantine-color-default-border)"
@@ -209,18 +210,18 @@ function TrimGauge({ a, b, labels }: { a: number; b?: number; labels: [string, s
           </text>
         </g>
       ))}
-      {marker(a - UV5R_MINI_TRIM_CENTRE, lineChartSlotColor(0, scheme), false, labels[0])}
+      {marker(uv5rMiniTrimPpm(a), lineChartSlotColor(0, scheme), false, labels[0])}
       {b === undefined
         ? null
-        : marker(b - UV5R_MINI_TRIM_CENTRE, lineChartSlotColor(1, scheme), true, labels[1] ?? '')}
+        : marker(uv5rMiniTrimPpm(b), lineChartSlotColor(1, scheme), true, labels[1] ?? '')}
     </svg>
   );
 }
 
 function trimText(v: number): string {
-  const offset = v - UV5R_MINI_TRIM_CENTRE;
-  if (Math.abs(offset) > UV5R_MINI_TRIM_SPAN) return `${byteText(v)}, outside 0–8`;
-  return `${byteText(v)}, ${offset > 0 ? '+' : ''}${offset} ppm`;
+  if (v > UV5R_MINI_TRIM_MAX) return `${byteText(v)}, above 16: the firmware uses index 8 (0 ppm)`;
+  const ppm = uv5rMiniTrimPpm(v);
+  return `${byteText(v)}, ${ppm > 0 ? '+' : ''}${ppm} ppm`;
 }
 
 function HexBlock({
@@ -443,7 +444,8 @@ export default function Uv5rMiniCalibrationSection({
               />
             </Box>
             <Text size="xs" c="dimmed">
-              ±4 ppm. Assumed: the byte is an index 0–8 with 4 as 0 ppm.
+              ±4 ppm. The byte is an index 0–16: 8 is 0 ppm, each step 0.5 ppm. Above 16 the
+              firmware uses index 8.
             </Text>
           </Stack>
 
@@ -502,7 +504,7 @@ function BatteryLadder({
         <Text size="sm" fw={600}>
           {label}
         </Text>
-        {c.battery.blank ? (
+        {c.blank ? (
           <Badge variant="light" color="gray">
             built-in defaults
           </Badge>
@@ -510,7 +512,8 @@ function BatteryLadder({
       </Group>
       {c.battery.blank ? (
         <Text size="sm" c="dimmed">
-          All six read 0xFF, so the firmware uses its built-in thresholds.
+          All six read 0xFF (blank).
+          {c.blank ? ' 0xF000 reads as erased, so the firmware uses its built-in thresholds.' : ''}
         </Text>
       ) : (
         [...c.battery.values].reverse().map((v, ri) => {
