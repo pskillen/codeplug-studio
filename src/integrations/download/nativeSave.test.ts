@@ -78,8 +78,8 @@ describe('saveBlobOnDevice', () => {
 
     const event = await saveBlobOnDevice(new Blob([bytesOf(10)]), 'backup.zip', fake);
 
-    expect(event.status).toBe('saved');
-    if (event.status !== 'saved') return;
+    expect(event.status).toBe('shared');
+    if (event.status !== 'shared') return;
     expect(event.result.place).toBe('cache');
     expect(fake.files.get('CACHE:backup.zip')).toEqual(bytesOf(10));
     expect(fake.shares[0]).toMatchObject({
@@ -95,6 +95,21 @@ describe('saveBlobOnDevice', () => {
 
     expect(event.status).toBe('saved');
     expect(fake.files.has('DOCUMENTS:Codeplug Studio/a.txt')).toBe(true);
+  });
+
+  it('reports a failed cache share so the user can save again', async () => {
+    const fake = createFakeNativeSave({ refuse: ['DOCUMENTS'], shareRejects: true });
+    const events: NativeSaveEvent[] = [];
+    const unsubscribe = subscribeNativeSaves((event) => events.push(event));
+    const event = await saveBlobOnDevice(new Blob(['x']), 'a.txt', fake);
+    unsubscribe();
+    expect(event).toEqual({
+      status: 'failed',
+      fileName: 'a.txt',
+      phase: 'share',
+      message: 'sharing was cancelled or failed. Try saving again.',
+    });
+    expect(events).toEqual([event]);
   });
 
   it('reports a failure, and opens no share sheet, when nothing could be written', async () => {
@@ -118,6 +133,7 @@ describe('saveBlobOnDevice', () => {
 describe('nativeSafeFileName', () => {
   it('keeps the name one path segment', () => {
     expect(nativeSafeFileName('a/b\\c.txt')).toBe('a-b-c.txt');
+    expect(nativeSafeFileName('a:*?"<>|\x01\x7f.txt')).toBe('a---------.txt');
     expect(nativeSafeFileName('  ')).toBe('download');
     expect(nativeSafeFileName('uv5r-mini-reads-2026-11-14T10-00-00-000Z.zip')).toBe(
       'uv5r-mini-reads-2026-11-14T10-00-00-000Z.zip',

@@ -57,7 +57,8 @@ export interface NativeSaveResult {
 
 export type NativeSaveEvent =
   | { status: 'saved'; result: NativeSaveResult }
-  | { status: 'failed'; fileName: string; message: string };
+  | { status: 'shared'; result: NativeSaveResult }
+  | { status: 'failed'; fileName: string; message: string; phase?: 'share' };
 
 type Listener = (event: NativeSaveEvent) => void;
 const listeners = new Set<Listener>();
@@ -81,7 +82,11 @@ const defaultDeps: NativeSaveDeps = {
 
 /** A file name that stays one path segment. */
 export function nativeSafeFileName(fileName: string): string {
-  const cleaned = fileName.replace(/[\\/]/g, '-').trim();
+  const cleaned = Array.from(fileName, (char) =>
+    char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127 || /[\\/:*?"<>|]/.test(char) ? '-' : char,
+  )
+    .join('')
+    .trim();
   return cleaned === '' ? 'download' : cleaned;
 }
 
@@ -147,45 +152,62 @@ export async function writeBlobOnDevice(
   }
 }
 
-/** Open the share sheet on a saved file. A cancelled or failed share leaves the file where it is. */
+/** Open the share sheet; callers decide whether failure affects the saved copy. */
 export async function shareSavedFile(
   result: NativeSaveResult,
   deps: NativeSaveDeps = defaultDeps,
 ): Promise<void> {
-  try {
-    await deps.share.share({
-      title: result.fileName,
-      files: [result.uri],
-      dialogTitle:
-        result.place === 'documents'
-          ? `Saved to ${result.displayPath}`
-          : `Keep or send ${result.fileName}`,
-    });
-  } catch {
-    // Cancelled, or nothing to share to: the file is already written.
-  }
+  await deps.share.share({
+    title: result.fileName,
+    files: [result.uri],
+    dialogTitle:
+      result.place === 'documents'
+        ? `Saved to ${result.displayPath}`
+        : `Keep or send ${result.fileName}`,
+  });
 }
 
-/**
- * Save on the device, tell the listeners where it went, then open the share sheet on it. Never throws: a failure is
- * published as a `failed` event.
- */
+/** Save a durable copy, publishing the outcome. Never throws. */
 export async function saveBlobOnDevice(
   blob: Blob,
   fileName: string,
   deps: NativeSaveDeps = defaultDeps,
 ): Promise<NativeSaveEvent> {
-  let event: NativeSaveEvent;
+  let result: NativeSaveResult;
   try {
-    event = { status: 'saved', result: await writeBlobOnDevice(blob, fileName, deps) };
+    result = await writeBlobOnDevice(blob, fileName, deps);
   } catch (err) {
-    event = {
+    const event: NativeSaveEvent = {
       status: 'failed',
       fileName: nativeSafeFileName(fileName),
       message: err instanceof Error ? err.message : String(err),
     };
+    publish(event);
+    return event;
   }
-  publish(event);
-  if (event.status === 'saved') await shareSavedFile(event.result, deps);
-  return event;
+  if (result.place === 'documents') {
+    const event: NativeSaveEvent = { status: 'saved', result };
+    publish(event);
+    try {
+      await shareSavedFile(result, deps);
+    } catch {
+      // The Documents copy is already safe.
+    }
+    return event;
+  }
+  try {
+    await shareSavedFile(result, deps);
+    const event: NativeSaveEvent = { status: 'shared', result };
+    publish(event);
+    return event;
+  } catch {
+    const event: NativeSaveEvent = {
+      status: 'failed',
+      fileName: result.fileName,
+      phase: 'share',
+      message: 'sharing was cancelled or failed. Try saving again.',
+    };
+    publish(event);
+    return event;
+  }
 }
