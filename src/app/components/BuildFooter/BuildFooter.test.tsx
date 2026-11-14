@@ -4,11 +4,13 @@ import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
 import { DEVELOPER_MODE_KEY } from '@integrations/preferences/developerMode.ts';
 import BuildFooter from './BuildFooter.tsx';
+import DeveloperModeBadge from '../DeveloperModeBadge/DeveloperModeBadge.tsx';
 
 function renderFooter() {
   return render(
     <MantineProvider>
       <MemoryRouter>
+        <DeveloperModeBadge />
         <BuildFooter />
       </MemoryRouter>
     </MantineProvider>,
@@ -32,6 +34,17 @@ describe('BuildFooter developer-mode gesture', () => {
     tapVersion(5);
     expect(localStorage.getItem(DEVELOPER_MODE_KEY)).toBe('on');
     expect(screen.getByRole('status')).toHaveTextContent('Developer mode is on');
+  });
+
+  it('starts a fresh gesture after the chip turns developer mode off', () => {
+    renderFooter();
+    tapVersion(5);
+    tapVersion(5);
+    fireEvent.click(screen.getByRole('button', { name: 'Turn off developer mode' }));
+    tapVersion(1);
+    expect(localStorage.getItem(DEVELOPER_MODE_KEY)).toBeNull();
+    tapVersion(4);
+    expect(localStorage.getItem(DEVELOPER_MODE_KEY)).toBe('on');
   });
 
   it('does not claim developer mode is on when storage refuses the write', () => {
