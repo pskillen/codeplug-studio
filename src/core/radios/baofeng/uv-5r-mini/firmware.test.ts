@@ -7,30 +7,50 @@ import { UV5RMINI_UNOFFICIAL_STOCK_COPIES } from './firmware.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const srcRoot = join(here, '../../../..');
-const OWN_FILE = ['core', 'radios', 'baofeng', 'uv-5r-mini', 'firmware.ts'].join('/');
+const repoRoot = join(srcRoot, '..');
+const OWN_FILE = ['src', 'core', 'radios', 'baofeng', 'uv-5r-mini', 'firmware.ts'].join('/');
+const STOCK_STEP = join(srcRoot, 'app', 'routes', 'firmware', 'steps', 'StockStep.tsx');
 
-function listSources(dir: string): string[] {
+/** Generated, vendored or gitignored trees: not ours to scan. */
+const SKIP_DIRS = new Set([
+  '.git',
+  'node_modules',
+  'dist',
+  'android',
+  'tmp',
+  'coverage',
+  'test-results',
+  'local',
+  'fixtures',
+]);
+
+function listFiles(dir: string, accept: (name: string) => boolean): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isSymbolicLink()) continue;
     const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...listSources(full));
-    else if (/\.tsx?$/.test(entry.name)) out.push(full);
+    if (entry.isDirectory()) {
+      if (!SKIP_DIRS.has(entry.name)) out.push(...listFiles(full, accept));
+    } else if (accept(entry.name)) out.push(full);
   }
   return out;
 }
 
-describe('UV5RMINI_UNOFFICIAL_STOCK_COPIES', () => {
-  const sources = listSources(srcRoot).map((full) => ({
-    rel: relative(srcRoot, full).split(sep).join('/'),
-    text: readFileSync(full, 'utf8'),
-  }));
+function read(full: string) {
+  return { rel: relative(repoRoot, full).split(sep).join('/'), text: readFileSync(full, 'utf8') };
+}
 
-  it('is the only place in the source tree that holds the links', () => {
+describe('UV5RMINI_UNOFFICIAL_STOCK_COPIES', () => {
+  const sources = listFiles(srcRoot, (name) => /\.tsx?$/.test(name)).map(read);
+  // Every file in the repo, docs, public assets and JSON included.
+  const everything = listFiles(repoRoot, () => true).map(read);
+
+  it('is the only place in the repo that holds the links', () => {
     expect(UV5RMINI_UNOFFICIAL_STOCK_COPIES.copies.length).toBeGreaterThan(0);
     for (const { url } of UV5RMINI_UNOFFICIAL_STOCK_COPIES.copies) {
       // The key part of each link, so that a copy with a different prefix is caught too.
       const key = url.slice(url.lastIndexOf('/') + 1);
-      const holders = sources.filter((s) => s.text.includes(key)).map((s) => s.rel);
+      const holders = everything.filter((s) => s.text.includes(key)).map((s) => s.rel);
       expect(holders).toEqual([OWN_FILE]);
     }
   });
@@ -47,6 +67,11 @@ describe('UV5RMINI_UNOFFICIAL_STOCK_COPIES', () => {
       )
       .map((s) => s.rel);
     expect(both).toEqual([]);
+  });
+
+  it('is never fetched by the Stock firmware step, which reads each link generically', () => {
+    const text = readFileSync(STOCK_STEP, 'utf8');
+    expect(text).not.toMatch(/\bfetch\(|XMLHttpRequest/);
   });
 
   it('links over https, each to one stock file', () => {
