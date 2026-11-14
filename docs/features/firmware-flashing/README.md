@@ -165,7 +165,7 @@ radio is offered: the stock pins, interlocks and frame guards are the same code 
    shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." and prepares nothing; one
    with no other file for this radio says "If the radio refuses this file, this release has no other file for this
    radio to try." **The flash layout is an internal detail:** the step's words say "your radio's firmware", and it
-   shows the layout ("Flash layout: L2", for the report and for the prepared image) only with
+   shows the layout ("Flash layout: L2", with the prepared image or beside a refusal) only with
    [developer mode](../developer-mode/README.md) on. That is display only: no check reads developer mode. **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers:
    its flash layout and the suffix, Firmware and Hardware strings of its stock firmware, matched against the same
    table and with the same refusals as the dropdowns below. With no report, or when the read fails, the step asks three dropdowns of the supported values: Firmware (`V0.04`,
