@@ -232,7 +232,9 @@ rows of one version, each with its `layout`
 ([releases](../../../../features/firmware-flashing/releases.md#uv-5r-mini-rows-one-per-flash-layout)), and the
 patch-file dropzone takes both files at once. Prepare picks the file for the radio's layout and base (`pickPatchForLayout`).
 A release with no file for the radio's base stops Prepare before anything is built: "Not available in this release:
-there is no MM9PDY build for this radio (nrfb-v0.04) yet. This release has a file only for nrf-v0.27." `V4` (`mm9pdy-V4-…`) is
+there is no MM9PDY build for this radio (nrfb-v0.04) yet. This release has a file only for nrf-v0.27." A release with
+the radio's base but not its layout names both: "… (nrf-v0.27, flash layout L1) yet. On nrf-v0.27, this release has a
+file only for L2." `V4` (`mm9pdy-V4-…`) is
 retired: never a release row, and refused from disk. The build-name rule is `uv5rMiniLayoutFromBuildName` in
 `src/core/radios/baofeng/uv-5r-mini/firmware.ts`.
 

@@ -5,7 +5,13 @@
  */
 import { FirmwareError } from '@core/firmware/errors.ts';
 import { listKnownPatchedResults } from '@core/firmware/releases/index.ts';
-import { loadedBases, loadedLayouts, patchForLayout } from '@core/firmware/releases/layouts.ts';
+import {
+  fileBase,
+  layoutFiles,
+  loadedBases,
+  loadedLayouts,
+  patchForLayout,
+} from '@core/firmware/releases/layouts.ts';
 import { createPublishedFirmwareReleaseSource } from '@core/firmware/releases/publishedSource.ts';
 import type {
   FirmwareReleaseSummary,
@@ -142,17 +148,24 @@ export async function loadChosenPatch(
 
 /**
  * The refusal at Prepare for a release with files by layout but none for this radio: none for its layout or, where the
- * radio's stock base is known, none on that base. Never the nearest build instead.
+ * radio's stock base is known, none on that base. Where the release has the radio's base but not its layout
+ * (`layoutsOnBase`, the layouts it has on that base), the refusal names both. Never the nearest build instead.
  */
 export const NO_FILE_FOR_LAYOUT = (
   layout: string,
   have: readonly string[],
   base?: string,
   haveBases: readonly string[] = [],
-): string =>
-  base !== undefined
-    ? `Not available in this release: there is no MM9PDY build for this radio (${base}) yet. This release has a file only for ${haveBases.length ? haveBases.join(' and ') : have.join(' and ')}.`
-    : `Not available in this release: it has no file for this radio's flash layout (${layout}), only for ${have.join(' and ')}.`;
+  layoutsOnBase: readonly string[] = [],
+): string => {
+  if (base === undefined) {
+    return `Not available in this release: it has no file for this radio's flash layout (${layout}), only for ${have.join(' and ')}.`;
+  }
+  if (layoutsOnBase.length) {
+    return `Not available in this release: there is no MM9PDY build for this radio (${base}, flash layout ${layout}) yet. On ${base}, this release has a file only for ${layoutsOnBase.join(' and ')}.`;
+  }
+  return `Not available in this release: there is no MM9PDY build for this radio (${base}) yet. This release has a file only for ${haveBases.length ? haveBases.join(' and ') : have.join(' and ')}.`;
+};
 
 /**
  * False when the loaded release has files by layout but none for `radioLayout` (and, where known, the radio's stock
@@ -173,7 +186,19 @@ export function noFileForRadioMessage(
   radioLayout: string,
   base?: string,
 ): string {
-  return NO_FILE_FOR_LAYOUT(radioLayout, loadedLayouts(loaded), base, loadedBases(loaded));
+  const layoutsOnBase =
+    base === undefined
+      ? []
+      : layoutFiles(loaded).flatMap((f) =>
+          fileBase(f) === base && f.layout !== undefined ? [f.layout] : [],
+        );
+  return NO_FILE_FOR_LAYOUT(
+    radioLayout,
+    loadedLayouts(loaded),
+    base,
+    loadedBases(loaded),
+    layoutsOnBase,
+  );
 }
 
 /**

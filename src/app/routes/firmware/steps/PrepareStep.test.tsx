@@ -264,6 +264,19 @@ describe('PrepareStep: a release with one file per flash layout and stock base',
     expect(flash.prepareFlash).not.toHaveBeenCalled();
   });
 
+  it('a report for a layout the release lacks on its base names both the base and the layout', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(<Harness updater={MINI} loaded={fileFor('L2')} />);
+    await readRadio(reportBlock({ vm: L1, name: 'mm9pdy-L1-0.2.0' }));
+    expect(
+      await screen.findByText(
+        'Not available in this release: there is no MM9PDY build for this radio (nrf-v0.27, flash layout L1) yet. On nrf-v0.27, this release has a file only for L2. Nothing was prepared or sent to the radio.',
+      ),
+    ).toBeInTheDocument();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+    expect(canAdvance(latest)).toBe(false);
+  });
+
   it("today's two bases are different variants, so neither file is the other's partner", async () => {
     vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(<Harness updater={MINI} loaded={{ ...fileFor('L1'), otherLayouts: [fileFor('L2')] }} />);
