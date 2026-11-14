@@ -172,6 +172,15 @@ export interface FirmwareRadioPreflight {
   readonly updateModeConfirm?: string;
 }
 
+/**
+ * Whether the Android app (Capacitor) offers a radio's flasher (#1367):
+ * - `false`: hidden on the Android app.
+ * - `'developerMode'`: offered on the Android app only while developer mode is on for the device, in any build (#1657).
+ *   Visibility only, like every developer-mode gate: no interlock reads it.
+ * - `true`: offered on the Android app, after a full flash there has been proven on hardware.
+ */
+export type FirmwareCapacitorSupport = boolean | 'developerMode';
+
 export interface FirmwareUpdaterDescriptor {
   readonly radioId: FirmwareRadioId;
   readonly label: string;
@@ -179,8 +188,8 @@ export interface FirmwareUpdaterDescriptor {
   readonly link: FirmwareLinkSpec;
   /** One instance per session. */
   readonly createUpdater: () => FirmwareUpdater;
-  /** Hidden on Capacitor until supported end to end (follow-up #1367). */
-  readonly capacitorSupported: boolean;
+  /** Whether the Android app offers this radio: see {@link FirmwareCapacitorSupport}. */
+  readonly capacitorSupported: FirmwareCapacitorSupport;
   /**
    * Hidden on the PROD build while true; next/dev/staging unaffected. Cleared once Studio has flashed at least
    * one patched release to this radio on hardware (the owner's hardware gate).
