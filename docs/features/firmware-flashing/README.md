@@ -139,8 +139,9 @@ radio is offered: the stock pins, interlocks and frame guards are the same code 
      version, a short sha256 and a risk
      statement, and needs **I understand** ticked before the wizard continues. That is in addition to the risk
      acknowledgement every flash needs. A patch for another radio is refused with its own message. For a radio whose
-     releases ship one file per flash layout (the UV-5R Mini), the drop zone takes the release's two files at once and
-     lists their layouts ("Flash layouts: L1, L2."); one file works too. Two files of one layout, files of different
+     releases ship one file per flash layout (the UV-5R Mini), the drop zone takes the release's files at once ("A
+     release has a file for each radio firmware it supports"); one file works too. With
+     [developer mode](../developer-mode/README.md) on it lists their layouts ("Flash layouts: L1, L2."). Two files of one layout, files of different
      releases, and a retired `V4` file are refused
      ([releases](releases.md#uv-5r-mini-rows-one-per-flash-layout)).
 3. **Stock firmware** — the stock sources (the vendor's download link, or how to ask the vendor, and any unofficial
@@ -150,8 +151,9 @@ radio is offered: the stock pins, interlocks and frame guards are the same code 
    shared by a third party" link per stock version, each naming its file
    ([UV-5R Mini: where the file comes from](../../reference/radios/baofeng/uv-5r-mini/firmware.md#stock-firmware-pin)).
    A radio whose release files are built on different stocks (the UV-5R Mini: the L1 file on v0.04, the L2 file on
-   v0.27) takes either stock file or both; each file is then prepared on its own stock
-   ([UV-5R Mini: one stock per base](../../reference/radios/baofeng/uv-5r-mini/firmware.md#stock-firmware-pin)).
+   v0.27) takes either stock file or both; each file is then prepared on its own stock. The step says so: "Studio
+   needs one of these, the one for your radio's firmware:" over the files, each "for stock firmware v0.27 (NRF)" and
+   so on ([UV-5R Mini: one stock per base](../../reference/radios/baofeng/uv-5r-mini/firmware.md#stock-firmware-pin)).
 4. **Prepare** — builds the exact image (applying the patch and checking its result hash) and runs the updater's
    interlocks. Shows what will be flashed ("MM9PDY modded firmware 1.0.0 (published)", "MM9PDY modded firmware 1.1.0
    (unreviewed user-supplied patch)" or "stock firmware v1.01.048"), the
@@ -161,8 +163,10 @@ radio is offered: the stock pins, interlocks and frame guards are the same code 
    not the board), the step first finds the radio's stock base (UV-5R Mini: suffix and Firmware version) and layout,
    and prepares the release's file for exactly that; it never offers the nearest build. A release with no file for it
    shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." and prepares nothing; one
-   with no other file for this radio says "If the radio refuses this L2 file, this release has no other file for this
-   radio to try." **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers:
+   with no other file for this radio says "If the radio refuses this file, this release has no other file for this
+   radio to try." **The flash layout is an internal detail:** the step's words say "your radio's firmware", and it
+   shows the layout ("Flash layout: L2", for the report and for the prepared image) only with
+   [developer mode](../developer-mode/README.md) on. That is display only: no check reads developer mode. **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers:
    its flash layout and the suffix, Firmware and Hardware strings of its stock firmware, matched against the same
    table and with the same refusals as the dropdowns below. With no report, or when the read fails, the step asks three dropdowns of the supported values: Firmware (`V0.04`,
    `V0.27`, `Other`) and Hardware (`V1.7`, `Other`) from Radio Info, and the suffix (`NRF`, `NRFB`, `Other`) from the
@@ -217,10 +221,10 @@ radio is offered: the stock pins, interlocks and frame guards are the same code 
    ended (see [What to expect](#what-to-expect)). A failure before the radio was touched says nothing was written.
    A failure after it shows the recovery steps.
    A refusal before anything was installed (on the UV-5R Mini: the loader's `0x8F`, or the app's `0x83` before any
-   erase; the file is for the other flash layout) shows **Nothing was installed** instead, even though the loader ran,
+   erase; the file isn't for the radio's firmware) shows **Nothing was installed** instead, even though the loader ran,
    with the updater's words (the FM presets and volume may have been reset). When the release has a file for the
    other layout of the same variant (UV-5R Mini: the same NRF/NRFB suffix), the panel offers **Enter update mode
-   again with the L2 file** (or L1): Studio prepares that file, on its own stock, for that layout and runs every check
+   again with the other file**: Studio prepares that file, on its own stock, for that layout and runs every check
    again, keeps the before-you-flash ticks, probe and safety backup, and goes back to **Enter update mode**. Nothing is
    sent until you put the radio into update mode and press **Connect and flash**. It is offered once per flash; a
    second refusal, or a release with no such file (today's Mini releases: their two files differ in suffix), offers
