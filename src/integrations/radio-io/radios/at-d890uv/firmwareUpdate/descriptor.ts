@@ -18,6 +18,6 @@ export const AT_D890UV_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   capacitorSupported: 'developerMode',
   // Enabled in prod 2026-10-22: release 1.0.0 flashed from Studio on hardware (#1364).
   prodFlashDisabled: false,
-  // Measured hardware flash of 1.0.0: about 25 s of transfer.
+  // Measured hardware flash of 1.0.0: about 26 s of transfer.
   expectedDuration: 'under a minute',
 };
