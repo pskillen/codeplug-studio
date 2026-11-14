@@ -39,23 +39,11 @@ or more than one, is refused with a message and nothing is sent. Android asks to
 - **Serial reopen timing** keeps `WebSerialOnlyDebugPage`, which shows the page title and the notice in the app and
   renders the page unchanged in a browser.
 
-Neither page has been tried on a phone with a radio.
-
 ## Privacy
 
 Data shown in Debug stays in the operator's browser and may include codeplug content or API tokens. Nothing is sent to a server. **Do not commit** screenshots or pasted exports from Debug pages.
 
 Mapbox tokens are **masked** in the LocalStorage viewer (`••••` + last four characters).
-
-## Implementation status
-
-| Area                | Status   | Notes                                                  |
-| ------------------- | -------- | ------------------------------------------------------ |
-| Debug landing       | Shipped  | `/debug` — intro + tool links                          |
-| IndexedDB inspector | Shipped  | Store summaries, row drill-down, JSON tree + Copy YAML |
-| LocalStorage index  | Shipped  | Known keys + prefix catch-all                          |
-| Edit/clear storage  | Deferred | Read-only in v1                                        |
-| Native YAML view    | Deferred | Blocked on native YAML export ticket                   |
 
 ## Routes
 
@@ -124,6 +112,13 @@ List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with o
 7. In the Android app, open Serial reopen timing → the "Not available in the Android app" notice and no controls.
 8. In the Android app, open the AT-D890UV erase probe → the notice and only **Profile link speed (read-only)**; with the D890 on the phone's USB, the link profile shows median, p99 and max per frame.
 9. In the Android app, open the UV-5R Mini full read with only the Mini's cable plugged in → **Full read** works; the reads compare and the calibration view shows; no download button.
+
+## Known gaps
+
+- Neither radio page has been tried in the Android app on a phone with a radio.
+- The UV-5R Mini full read can't save the reads as a file in the Android app.
+- The storage pages are read-only: nothing edits or clears storage.
+- There is no native YAML view: row YAML is the interim storage-row dump, waiting on native YAML export.
 
 ## Related
 
