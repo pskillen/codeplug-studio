@@ -176,7 +176,8 @@ export interface FirmwareRadioPreflight {
  * Whether the Android app (Capacitor) offers a radio's flasher (#1367):
  * - `false`: hidden on the Android app.
  * - `'developerMode'`: offered on the Android app only while developer mode is on for the device, in any build (#1657).
- *   Visibility only, like every developer-mode gate: no interlock reads it.
+ *   Visibility only, like every developer-mode gate: no interlock reads it. No radio uses it today (the UV-5R Mini
+ *   moved to `true` in #1671); kept for a radio whose phone flash is not yet proven.
  * - `true`: offered on the Android app, after a full flash there has been proven on hardware.
  */
 export type FirmwareCapacitorSupport = boolean | 'developerMode';

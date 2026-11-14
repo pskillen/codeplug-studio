@@ -52,11 +52,12 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
     flasher's links pass the cable's USB filters instead: exactly one attached device must match, with no fall-back to the
     first device; none or two is refused. The flasher's pre-flight probe and safety backup stay desktop-only and refuse
     in the app.
-- **Firmware flasher:** `/firmware` in the app offers the UV-5R Mini only while
-  [developer mode](../developer-mode/README.md) is on (in any build), and no other radio; with developer mode off it
-  says flashing is available in a desktop browser. The wizard is the desktop one: the cable is found by its USB filters
-  instead of a picker, and the stock file picker takes any file (the pinned hashes decide). Not yet tried on a phone
-  with a radio. Before the first flash from a phone: charge it, set a long screen timeout, keep the app in front, and
+- **Firmware flasher:** `/firmware` in the app offers the UV-5R Mini, and no other radio, without
+  [developer mode](../developer-mode/README.md); on the prod build its prod gate still hides it unless developer mode
+  is on, as on the web. With no radio offered it says flashing is available in a desktop browser. The wizard is the
+  desktop one: the cable is found by its USB filters instead of a picker, and the stock file picker takes any file (the
+  pinned hashes decide). A Mini has been flashed from a phone on hardware
+  ([#1671](https://github.com/pskillen/codeplug-studio/issues/1671)). Before the first flash from a phone: charge it, set a long screen timeout, keep the app in front, and
   plug in only the cable; on a stall, power-cycle the radio and flash again from the phone or a desktop. See
   [firmware flashing, Android app](../firmware-flashing/README.md#android-app).
 - **API Proxies:** On Capacitor native, relative `/api/*` (RadioID, RepeaterBook, IRTS) resolve to an absolute origin from `BUILD_ENV` via `resolveApiUrl` (`src/integrations/platform/resolveApiUrl.ts`):

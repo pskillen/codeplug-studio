@@ -1,6 +1,6 @@
 # Firmware flashing
 
-Studio can flash firmware to a supported radio over Web Serial (or, for the UV-5R Mini with developer mode on, over
+Studio can flash firmware to a supported radio over Web Serial (or, for the UV-5R Mini, over
 USB serial in the [Android app](#android-app)), from the **Firmware flasher** under Tools (`/firmware`). It is for operators who want to put a community firmware release on their radio, or put the vendor's
 stock firmware back, without the vendor's programming software.
 
@@ -21,7 +21,7 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 | UV-5R Mini                  | Shipped: pre-prod only (next, dev, staging)          | The radio drives the update: its app, then its loader, ask for slices of the image and Studio serves them; a power-cut update is continued by flashing again. Patch file from disk only until a release is published; no plain stock flash, Back to stock takes the to-stock patch. Hidden on prod until Studio has flashed a patched release to a Mini on hardware ([#1587](https://github.com/pskillen/codeplug-studio/issues/1587))                    |
 | Recovery docs               | Shipped                                              | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                                                                                                                                                         |
 | Browsers without Web Serial | Shipped                                              | Phones, tablets, Firefox and Safari get a read-only list of the published releases for each offered radio (RC toggle, notes, retry) with a banner saying flashing needs Chrome or Edge on a desktop computer. No wizard, no port (`ReleaseBrowser.tsx`)                                                                                                                                                                                                   |
-| Android                     | UV-5R Mini only, with developer mode on              | The Capacitor app offers the UV-5R Mini while [developer mode](../developer-mode/README.md) is on, in any build; every other radio is hidden there ([Android app](#android-app)). Not yet tried on a phone with a radio.                                                                                                                                                                                                                                  |
+| Android                     | Shipped: UV-5R Mini only                             | The Capacitor app offers the UV-5R Mini, with no developer mode needed; every other radio is hidden there ([Android app](#android-app)). Its prod gate applies in the app as on the web. A full flash from a phone has been done on hardware ([#1671](https://github.com/pskillen/codeplug-studio/issues/1671)).                                                                                                                                          |
 
 ## Documentation map
 
@@ -55,7 +55,8 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 - **Platform check.** Separate from the prod gate: each descriptor's `capacitorSupported` is `false` (hidden in the
   Android app), `'developerMode'` (offered in the app only while developer mode is on, in any build) or `true`.
   `isFirmwareUpdaterOfferedOnPlatform` in `firmwareFlashEnvGate.ts` applies it; in a browser every radio passes. Only
-  the UV-5R Mini is `'developerMode'`; every other radio is `false`. See [Android app](#android-app).
+  the UV-5R Mini is `true`; every other radio is `false`. No radio is `'developerMode'` today: the state is kept for a
+  radio whose flash from a phone is not yet proven on hardware. See [Android app](#android-app).
 
 ```mermaid
 flowchart LR
@@ -91,10 +92,10 @@ shows the flasher entry, so the releases can be read from a phone. The Android a
 ## Android app
 
 The Capacitor app has no Web Serial; it reaches the cable through the USB-serial plugin over USB-OTG. The flasher
-offers a radio there only through its platform check: today the UV-5R Mini, and only while
-[developer mode](../developer-mode/README.md) is on for the phone, in any build. With developer mode off, or for any
-other radio, `/firmware` in the app says flashing is available in a desktop browser. Developer mode changes only which
-radio is offered: the stock pins, interlocks and frame guards are the same code as on the desktop.
+offers a radio there only through its platform check: today the UV-5R Mini, with or without
+[developer mode](../developer-mode/README.md). Its prod gate applies as on the web: the prod build of the app hides it
+unless developer mode is on for the phone. With no radio offered, `/firmware` in the app says flashing is available in
+a desktop browser. The stock pins, interlocks and frame guards are the same code as on the desktop.
 
 - **The wizard** is the desktop one. Each port step (the radio report on Prepare, Connect and flash) finds the one
   attached device matching the radio's cable instead of showing a picker; none, or more than one, is refused with a
@@ -106,8 +107,9 @@ radio is offered: the stock pins, interlocks and frame guards are the same code 
   web.
 - **Steps the app refuses:** a radio's pre-flight probe and safety backup stay desktop-only and refuse cleanly in the
   app. The UV-5R Mini has neither.
-- **Not yet tried on a phone with a radio.** The rate change, DTR/RTS at the pins, the screen wake lock in the app's
-  WebView and what Android does to a backgrounded flash are known only from the code.
+- **Tried on hardware.** A UV-5R Mini has been flashed from the Android app (a pre-release build) and works, so the
+  flash link, the cable's USB filters and the loader's rate change on the open port have run on a phone. The screen
+  wake lock in the app's WebView and what Android does to a backgrounded flash are known only from the code.
 
 ### Before the first flash from a phone
 
