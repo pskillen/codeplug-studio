@@ -52,12 +52,15 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
     flasher's links pass the cable's USB filters instead: exactly one attached device must match, with no fall-back to the
     first device; none or two is refused. The flasher's pre-flight probe runs in the app the same way; its safety
     backup stays desktop-only and refuses in the app.
-- **Firmware flasher:** `/firmware` in the app offers the DM-32UV, the RT95 front panel and the UV-5R Mini only while
-  [developer mode](../developer-mode/README.md) is on (in any build); the AT-D890UV and the RT95 main board are hidden.
+- **Firmware flasher:** `/firmware` in the app offers the DM-32UV, the AT-D890UV, the RT95 front panel and the UV-5R
+  Mini only while [developer mode](../developer-mode/README.md) is on (in any build); the RT95 main board is hidden.
   With developer mode off it says flashing is available in a desktop browser. The wizard is the desktop one: the cable
   is found by its USB filters instead of a picker, and the stock file picker takes any file (the pinned hashes
-  decide). The DM-32UV and RT95 front panel are proven offline only (their updaters run through the app's pipe against
-  bootloader mocks); neither has been flashed from a phone yet. Before the first flash from a
+  decide). The DM-32UV, AT-D890UV and RT95 front panel are proven offline only (their updaters run through the app's
+  pipe against bootloader mocks); none of them has been flashed from a phone yet. An AT-D890UV flash is estimated at
+  2.5 to 7 minutes from a phone (one USB round trip per 40-byte frame, not measured) against about 26 s on a desktop,
+  and Android may ask for USB access each time the radio attaches (entering update mode, and its reboot at the end).
+  Before the first flash from a
   phone: flash stock, charge the phone, set a long screen timeout, keep the app in front, plug in only the cable, and
   keep a desktop ready; on a stall, power-cycle the radio into update mode and flash again from the phone or a desktop.
   See [firmware flashing, Android app](../firmware-flashing/README.md#android-app).

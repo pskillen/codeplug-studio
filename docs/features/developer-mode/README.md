@@ -71,9 +71,9 @@ Developer mode is visibility only. The safety interlocks inside each feature are
 it: the firmware updaters' pins, stock checks, "already installed" checks and frame guards; the Write allow-lists and
 read-only paths; the danger-zone wizards. Platform checks stay the feature's own concern too, with **one exception**:
 in the Android app the flasher offers a radio whose updater is marked `capacitorSupported: 'developerMode'` only while
-developer mode is on, in any build (not only prod). Today those are the DM-32UV, the RT95 front panel and the UV-5R
-Mini, each until a full flash from a phone has been proven on hardware for that radio
-([#1674](https://github.com/pskillen/codeplug-studio/issues/1674)). The AT-D890UV and the RT95 main board stay hidden
+developer mode is on, in any build (not only prod). Today those are the DM-32UV, the AT-D890UV, the RT95 front panel and
+the UV-5R Mini, each until a full flash from a phone has been proven on hardware for that radio
+([#1674](https://github.com/pskillen/codeplug-studio/issues/1674)). The RT95 main board stays hidden
 in the app with developer mode on or off, and the exception is visibility only: each radio's pins, stock checks and
 frame guards are the same code everywhere and never
 read developer mode (a test holds that no updater, stock check or radio module imports the switch or a gate). Web
