@@ -42,6 +42,10 @@ describe('diffUv5rMiniChannels', () => {
     ]);
   });
 
+  it('has no comma in a field label, since the labels are joined with commas', () => {
+    expect(UV5R_MINI_CHANNEL_FIELDS.filter((f) => f.label.includes(','))).toEqual([]);
+  });
+
   it.each(UV5R_MINI_CHANNEL_FIELDS.map((f) => [f.label, f] as const))(
     'names a change to %s and only that field',
     (_label, field) => {

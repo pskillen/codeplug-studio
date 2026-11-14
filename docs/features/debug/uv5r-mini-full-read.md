@@ -78,7 +78,7 @@ same two reads, slot by slot (`debugRead/channelDiff.ts`, `diffUv5rMiniChannels`
 - **Changed slot**, live in both reads: the fields that differ, from the
   [channel record](../../reference/radios/baofeng/uv-5r-mini/channel-record.md) (RX and TX frequency, both tones,
   `scode`, PTT ID, power, scramble, wide, RX DTMF, BCL, scan, FHSS, name), with byte or bit ranges for unnamed ones
-  (`+0x0E` bits 7–6 and 3–2, `+0x0F` bits 7 and 1, bytes `+0x10..+0x13`). When none of the unmodelled bytes and bits of
+  (`+0x0E bits 7–6/3–2`, `+0x0F bits 7/1`, `bytes +0x10..+0x13`; no label holds a comma, so the list reads cleanly). When none of the unmodelled bytes and bits of
   `+0x0C..+0x13` changed, the line says so, since that is what an unchanged Write keeps. Power, wide and scan also sit
   in that range and are named when they change. For example: `Slot 2 "TEST Z" (was "TEST B"): TX tone, name changed;
 unmodelled bytes and bits of +0x0C..+0x13 unchanged`.
