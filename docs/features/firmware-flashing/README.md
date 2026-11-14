@@ -165,9 +165,7 @@ Per radio:
    - **Stock firmware** ("Stock firmware (v1.01.048)"), always listed: it is also the recovery path.
      A radio with no stock flash (the UV-5R Mini) lists no Stock card; when it has no published release either, the
      step says "No firmware release is published for the Baofeng UV-5R Mini yet" and points to the Advanced patch file.
-   - **Back to stock**, for a radio whose way back is a to-stock patch (the UV-5R Mini): one line saying the
-     to-stock file comes from the firmware project's release artifact and that the plain stock file can't be
-     flashed, and a file picker for it. Any other patch is refused there. A recognised file shows "This file puts back
+   - **Back to stock**, for a radio whose way back is a to-stock patch (the UV-5R Mini): choose a published to-stock patch for the stock base, or pick a file from disk as a fallback. The downloaded patch is checked against the index hash; the plain stock file can't be flashed. Any other patch is refused there. A recognised file shows "This file puts back
      the stock firmware v0.04 (NRFB)" and needs no **I understand** tick: the radio's checks pin everything it
      installs ([UV-5R Mini: Back to stock](../../reference/radios/baofeng/uv-5r-mini/firmware.md#back-to-stock)).
    - **Advanced: use a patch file from disk.** A `.patch.json` identical to a published release is treated as that
@@ -378,8 +376,7 @@ Studio never writes the bootloader or the activation area.
 ### Going back to stock on purpose
 
 Choose **Stock firmware** on the Firmware step and flash as usual. The radio then runs the vendor's pinned version.
-On the UV-5R Mini, choose **Back to stock** and pick the to-stock file (`uv5rmini-fw-to-stock-<base>.patch.json`)
-from the firmware project's release artifact; the plain stock file can't be flashed. A radio that already runs that
+On the UV-5R Mini, choose **Back to stock** and select the published patch for your stock version, or pick a to-stock file from disk; the plain stock file can't be flashed. A radio that already runs that
 stock gets the same-build warning on Prepare, and can be rewritten with it ticked.
 
 ### Fallback: the vendor's programming software
