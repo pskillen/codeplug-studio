@@ -210,9 +210,7 @@ describe('the UV-5R Mini on the Android app (#1657)', () => {
     expect(listOfferedFirmwareUpdaters('dev')).toEqual([]);
     setDeveloperMode(true);
     expect(listOfferedFirmwareUpdaters('dev').map((d) => d.radioId)).toEqual(['baofeng-uv5rmini']);
-    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toEqual([
-      'baofeng-uv5rmini',
-    ]);
+    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toEqual(['baofeng-uv5rmini']);
   });
 
   it('leaves the browser unchanged: developer mode adds no radio on pre-prod', () => {
