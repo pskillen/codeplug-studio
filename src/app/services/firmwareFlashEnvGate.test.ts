@@ -42,11 +42,12 @@ describe('listOfferedFirmwareUpdaters', () => {
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
   });
 
-  it('offers all three radios on prod', () => {
+  it('offers four radios on prod', () => {
     expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toEqual([
       'baofeng-dm32uv',
       'anytone-at-d890uv',
       'retevis-rt95-head',
+      'baofeng-uv5rmini',
     ]);
   });
 
@@ -69,13 +70,20 @@ describe('listOfferedFirmwareUpdaters', () => {
     expect(listOfferedFirmwareUpdaters('dev').map((d) => d.radioId)).toContain('baofeng-dm32uv');
   });
 
-  it('hides the UV-5R Mini on prod and offers it on next, dev and staging', () => {
-    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).not.toContain(
+  it('offers the UV-5R Mini on prod with developer mode off, and on next, dev and staging', () => {
+    expect(listOfferedFirmwareUpdaters('prod', false).map((d) => d.radioId)).toContain(
       'baofeng-uv5rmini',
     );
     for (const env of ENVS_PRE_PROD) {
       expect(listOfferedFirmwareUpdaters(env).map((d) => d.radioId)).toContain('baofeng-uv5rmini');
     }
+  });
+
+  it('still hides the UV-5R Mini in the Android app on prod (not capacitorSupported)', () => {
+    vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
+    expect(listOfferedFirmwareUpdaters('prod', false).map((d) => d.radioId)).not.toContain(
+      'baofeng-uv5rmini',
+    );
   });
 
   it('hides the RT95 front panel on Capacitor', () => {
@@ -97,7 +105,7 @@ describe('developer mode (#1650)', () => {
   });
   afterEach(() => localStorage.removeItem(DEVELOPER_MODE_KEY));
 
-  const PROD_HIDDEN = ['baofeng-uv5rmini', 'retevis-rt95-main'];
+  const PROD_HIDDEN = ['retevis-rt95-main'];
 
   it('hides the prod-disabled radios on prod with developer mode off', () => {
     const ids = listOfferedFirmwareUpdaters('prod', false).map((d) => d.radioId);
@@ -121,7 +129,9 @@ describe('developer mode (#1650)', () => {
     expect(resolveFirmwareFlashGate({ prodFlashDisabled: true }, 'prod')).toBe('hidden');
     setDeveloperMode(true);
     expect(resolveFirmwareFlashGate({ prodFlashDisabled: true }, 'prod')).toBe('allowed');
-    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toContain('baofeng-uv5rmini');
+    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toContain(
+      'retevis-rt95-main',
+    );
   });
 
   it('never relaxes the platform check: Capacitor still offers only capacitorSupported radios', () => {
