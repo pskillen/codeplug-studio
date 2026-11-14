@@ -39,8 +39,8 @@ Nothing else changes for anyone who never taps.
 
 On every build, developer mode also shows internal detail an ordinary user never needs:
 
-- **The UV-5R Mini's flash layout** (`L1`, `L2`) in the firmware flasher: on Prepare ("Flash layout: L2" with the
-  prepared image, or beside a refusal), on a refused file's retry banner, and as the layouts of patch files from disk;
+- **The UV-5R Mini's flash layout** (`L1`, `L2`) in the firmware flasher: on Your radio and Prepare ("Flash layout:
+  L2" with the prepared image, or beside a refusal), on a refused file's retry banner, and as the layouts of patch files from disk;
   for a radio report Studio refuses because its layout is unknown, what the radio reported (its `VM` entry).
   Without it the flasher says "your radio's firmware"
   ([firmware flashing](../firmware-flashing/README.md#wizard-steps)). Display only: which file is prepared, and every

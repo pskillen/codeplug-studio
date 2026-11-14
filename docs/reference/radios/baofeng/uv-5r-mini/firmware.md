@@ -299,7 +299,8 @@ file on both, and offers nothing for a combination with no file, never the neare
 `vm_start` is shown too, and the layout is still decided on the pair. The build name decides
 [Already installed](#already-installed).
 
-**In the wizard.** Prepare starts with **Read the radio**: the radio switched on normally (not in update mode), the
+**In the wizard.** The **Your radio** step, after Firmware and before Stock firmware, starts with **Read the radio**,
+so an unsupported or unknown Mini stops before any file is fetched: the radio switched on normally (not in update mode), the
 programming cable in, and a fresh pick of its port. Studio opens the clone link exactly as the codeplug session does:
 115200 baud, DTR and RTS raised after the open, and the handshake's own settle. That is the normal-mode line handling
 proven on the Mini's cable without keying the radio. It then runs the ordinary clone handshake (ident, then the read
@@ -307,10 +308,12 @@ magics with the model check), sends the one `R` at `0xEFC0` and closes the port.
 gets no answer at 115200 is tried once more at 38400 (`openWithBaudFallback` in `src/app/services/serialBaudFallback.ts`,
 which both use). Nothing else is sent, and no `W` frame can be: the read calls only the clone protocol's handshake
 and block read (`readUv5rMiniRadioReport` in `src/integrations/radio-io/radios/uv5r-mini/radioReportRead.ts`, reached
-through the updater descriptor's `radioReport`). Until the radio is read, nothing is asked and nothing is prepared.
+through the updater descriptor's `radioReport`). Until the radio is read, nothing is asked and the wizard can't move
+on. Prepare then works out the same answer again and runs every interlock on it, showing the answer read-only with
+**Check your radio again** to go back.
 
 - A report: no question. The build name, the three strings, layout, code base and `rf0` are listed. A report Studio
-  refuses (above) stops Prepare there; Radio Info is not asked instead.
+  refuses (above) stops the wizard there; Radio Info is not asked instead.
 - No report: "Studio found no MM9PDY radio report: the radio runs stock firmware, or an MM9PDY build from before the
   report." Then the [Radio Info](#radio-info) question.
 - A read that fails (no answer, wrong port, a radio in update mode): the reason, and the Radio Info question as a
@@ -348,8 +351,9 @@ been proven on:
 
 A release row is identified by its whole base (its stock version, and the optional row `base`), not by `layout` alone.
 Prepare picks the file on the radio's base and layout and never offers the nearest build: a base the chosen release
-has no file for shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." and stops
-before anything is prepared. In 1.0.0 only `NRF` + `V0.27` + `V1.7` gets a file.
+has no file for shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." on the
+**Your radio** step, which then holds the wizard before the stock file is asked for, and again at Prepare, which
+prepares nothing. In 1.0.0 only `NRF` + `V0.27` + `V1.7` gets a file.
 
 Above the dropdowns, a warning: "Pick exactly what the radio shows. If the Firmware or suffix you pick is wrong,
 Studio or the radio refuses the file and nothing is installed, though the radio's FM presets and volume may be reset.
@@ -364,7 +368,7 @@ live in the wizard's memory only.
 **Retry partner.** After a refusal before anything was installed, the retry goes only to a file of the same suffix
 (`releaseLayouts.variantOfBase`). Today's `L1` file is NRFB and the `L2` file NRF, so the retry always crosses the
 suffix and no partner is offered.
-Code: `src/core/radios/baofeng/uv-5r-mini/radioInfo.ts`, rendered by the Prepare step from
+Code: `src/core/radios/baofeng/uv-5r-mini/radioInfo.ts`, rendered by the wizard's **Your radio** step from
 `StockFirmwareDescriptor.radioLayout`.
 
 **Not listed itself** applies only to list-carrying loaders. A layout loader has no list, and the patch's own
