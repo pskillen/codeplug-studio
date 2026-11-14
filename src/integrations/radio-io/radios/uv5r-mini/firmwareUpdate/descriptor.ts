@@ -36,7 +36,8 @@ export const UV5RMINI_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   stock: UV5RMINI_STOCK_FIRMWARE,
   link: UV5RMINI_FW_LINK,
   createUpdater: () => createUv5rMiniFirmwareUpdater(),
-  capacitorSupported: false,
+  // Offered on the Android app only while developer mode is on, until a full flash there is proven on hardware.
+  capacitorSupported: 'developerMode',
   // Cleared in its own commit once Studio has flashed a patched release to a Mini on hardware.
   prodFlashDisabled: true,
   preflight: UV5RMINI_PREFLIGHT,

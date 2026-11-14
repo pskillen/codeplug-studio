@@ -171,14 +171,57 @@ describe('developer mode (#1650)', () => {
     expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toContain('baofeng-uv5rmini');
   });
 
-  it('never relaxes the platform check: Capacitor still offers only capacitorSupported radios', () => {
+  it('relaxes the platform check only for developerMode radios: none marked false is ever offered on Capacitor', () => {
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
-    for (const d of listOfferedFirmwareUpdaters('prod', true)) {
-      expect(d.capacitorSupported).toBe(true);
+    for (const env of ['prod', ...ENVS_PRE_PROD]) {
+      for (const developerMode of [false, true]) {
+        for (const d of listOfferedFirmwareUpdaters(env, developerMode)) {
+          expect(d.capacitorSupported).not.toBe(false);
+          if (d.capacitorSupported === 'developerMode') expect(developerMode).toBe(true);
+        }
+      }
     }
-    expect(listOfferedFirmwareUpdaters('prod', true)).toEqual(
-      listOfferedFirmwareUpdaters('dev', false),
-    );
+  });
+});
+
+describe('the UV-5R Mini on the Android app (#1657)', () => {
+  beforeEach(() => {
+    vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
+  });
+  afterEach(() => localStorage.removeItem(DEVELOPER_MODE_KEY));
+
+  const ALL_ENVS = ['prod', ...ENVS_PRE_PROD];
+
+  it('is hidden with developer mode off, on every build', () => {
+    for (const env of ALL_ENVS) {
+      expect(listOfferedFirmwareUpdaters(env, false)).toEqual([]);
+    }
+  });
+
+  it('is the only radio offered with developer mode on, on every build', () => {
+    for (const env of ALL_ENVS) {
+      expect(listOfferedFirmwareUpdaters(env, true).map((d) => d.radioId)).toEqual([
+        'baofeng-uv5rmini',
+      ]);
+    }
+  });
+
+  it('follows this device switch when the caller does not pass it', () => {
+    expect(listOfferedFirmwareUpdaters('dev')).toEqual([]);
+    setDeveloperMode(true);
+    expect(listOfferedFirmwareUpdaters('dev').map((d) => d.radioId)).toEqual(['baofeng-uv5rmini']);
+    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toEqual([
+      'baofeng-uv5rmini',
+    ]);
+  });
+
+  it('leaves the browser unchanged: developer mode adds no radio on pre-prod', () => {
+    vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
+    for (const env of ENVS_PRE_PROD) {
+      expect(listOfferedFirmwareUpdaters(env, true)).toEqual(
+        listOfferedFirmwareUpdaters(env, false),
+      );
+    }
   });
 });
 
