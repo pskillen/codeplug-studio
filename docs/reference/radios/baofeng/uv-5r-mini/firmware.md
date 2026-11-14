@@ -281,7 +281,7 @@ What Studio concludes (`decodeUv5rMiniRadioReport`, then `uv5rMiniLayoutFromRepo
 | A reserved flags bit set                                                          | Refused: "…doesn't read right: a reserved flags bit is set…"                                                      |
 | A string empty or not printable                                                   | Refused, naming it: "…doesn't read right: its Hardware string is unreadable…"                                     |
 | Bit 0 set and the strings aren't `NRFB` / `V0.04` / `V1.7`, or clear and they are | Refused: "…doesn't read right: its NRFB V0.04 flag disagrees with its suffix, Firmware and Hardware strings…"     |
-| `(vm_start, vm_size)` neither `(0x95000, 0x68000)` nor `(0x94000, 0x6A000)`       | Refused as unsupported: "This radio reports a flash layout Studio doesn't support…"; nothing sent                 |
+| `(vm_start, vm_size)` neither `(0x95000, 0x68000)` nor `(0x94000, 0x6A000)`       | Refused: "This radio reports firmware Studio doesn't support."; the `VM` entry shows with developer mode on only  |
 | `(0x95000, 0x68000)` / `(0x94000, 0x6A000)`                                       | `L1` / `L2`, then the strings pick the stock base (below)                                                         |
 
 **The stock base.** The strings are looked up in the same table the [Radio Info](#radio-info) answers use
