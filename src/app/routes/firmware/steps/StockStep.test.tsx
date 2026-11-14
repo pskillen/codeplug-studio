@@ -60,3 +60,29 @@ describe('StockStep, UV-5R Mini', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
+
+describe('StockStep, RT95 head', () => {
+  it('marks the unofficial mirror with the generic unofficial line', () => {
+    render(
+      <DesignSystemV2Provider>
+        <StockStep
+          state={INITIAL_FIRMWARE_WIZARD_STATE}
+          dispatch={vi.fn()}
+          updater={getFirmwareUpdater('retevis-rt95-head')!}
+        />
+      </DesignSystemV2Provider>,
+    );
+    const list = screen.getByRole('list', { name: 'Where to get the stock firmware' });
+    const mirror = within(list)
+      .getAllByRole('listitem')
+      .find((item) => item.textContent?.includes('47.253.5.16'));
+    expect(mirror).toBeDefined();
+    expect(mirror).toHaveTextContent(
+      'Unofficial, not run by the vendor. Studio checks every file against the pinned hashes before using it.',
+    );
+    expect(within(mirror!).getByRole('link')).toHaveAttribute(
+      'href',
+      expect.stringContaining('47.253.5.16'),
+    );
+  });
+});
