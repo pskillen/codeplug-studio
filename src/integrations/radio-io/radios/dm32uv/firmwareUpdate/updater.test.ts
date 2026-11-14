@@ -69,6 +69,13 @@ describe('createDm32FirmwareUpdater', () => {
     expect(progress.find((p) => p.phase === 'handshake')!.radioTouched).toBe(false);
     expect(progress.find((p) => p.phase === 'transfer')!.radioTouched).toBe(true);
     expect(progress.some((p) => p.msg === 'Transfer 120/840')).toBe(true);
+    // The count is data blocks, not plan steps (`cur` also counts the erase and metadata frames).
+    expect(progress.find((p) => p.msg === 'Transfer 120/840')!.written).toEqual({
+      done: 120,
+      total: 840,
+      unit: 'blocks',
+    });
+    expect(progress.at(-1)!.written).toEqual({ done: 840, total: 840, unit: 'blocks' });
   }, 15_000);
 
   it('returns the bootloader ident', async () => {

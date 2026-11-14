@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useEffect, useReducer, type ReactElement } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
@@ -283,5 +283,190 @@ describe('FlashStep: a refusal before anything was installed', () => {
     expect(screen.getByText('Recover the radio')).toBeInTheDocument();
     expect(screen.queryByText('Nothing was installed')).toBeNull();
     expect(screen.queryByRole('button', { name: /Enter update mode again with/ })).toBeNull();
+  });
+});
+
+describe('FlashStep: written / total, elapsed and time left', () => {
+  type FlashInput = Parameters<typeof flash.runFirmwareFlash>[0];
+
+  /** Starts a flash that stays running until `finish` is called; `report` feeds progress as the updater would. */
+  async function startHeldFlash() {
+    let input: FlashInput | null = null;
+    let finish: (o: FirmwareFlashOutcome) => void = () => undefined;
+    vi.mocked(flash.runFirmwareFlash).mockImplementationOnce((i) => {
+      input = i;
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    });
+    if (MINI.preflight?.updateModeConfirm) {
+      fireEvent.click(screen.getByLabelText(MINI.preflight.updateModeConfirm));
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Connect and flash' }));
+    await waitFor(() => expect(input).not.toBeNull());
+    return {
+      report: (p: Parameters<FlashInput['onProgress']>[0]) => act(() => input!.onProgress(p)),
+      finish: (o: FirmwareFlashOutcome) => act(() => finish(o)),
+    };
+  }
+
+  it('shows elapsed only while no total is known', async () => {
+    show(<Harness />);
+    const run = await startHeldFlash();
+    run.report({ phase: 'handshake', cur: 0, max: 0, msg: 'Handshake', radioTouched: false });
+    expect((await screen.findByTestId('firmware-flash-stats')).textContent).toMatch(
+      /^0:0\d elapsed$/,
+    );
+  });
+
+  it('shows the count during the write, then the final count and time', async () => {
+    show(<Harness />);
+    const run = await startHeldFlash();
+    run.report({
+      phase: 'transfer',
+      cur: 212,
+      max: 478,
+      msg: 'Sending the firmware',
+      radioTouched: true,
+      written: { done: 212, total: 478, unit: 'blocks' },
+    });
+    expect((await screen.findByTestId('firmware-flash-stats')).textContent).toMatch(
+      /^212 \/ 478 blocks · 0:0\d elapsed · estimating time left…$/,
+    );
+    expect(screen.getByText('Sending the firmware')).toBeInTheDocument();
+
+    run.finish({
+      ok: true,
+      radioId: 'baofeng-uv5rmini',
+      image: L1_IMAGE,
+      ident: { radioId: 'baofeng-uv5rmini', model: 'UV-5R Mini', raw: new Uint8Array(0) },
+      result: { framesSent: 500, dataFrames: 478, elapsedMs: 182_000, end: 'acknowledged' },
+      startedAt: 'now',
+      written: { done: 478, total: 478, unit: 'blocks' },
+    });
+    await screen.findByTestId('firmware-flash-summary');
+    expect(screen.queryByTestId('firmware-flash-stats')).toBeNull();
+    expect(screen.getByText(/478 \/ 478 blocks in 3:02\./)).toBeInTheDocument();
+  });
+
+  describe('with a fake clock', () => {
+    // Only intervals and the clock are faked; the progress throttle's timeout and testing-library's waits stay real.
+    // jsdom runs requestAnimationFrame on an interval while frames are queued (the dialog's open transition), so
+    // `settle` lets those frames run: after it, `vi.getTimerCount()` counts the elapsed-time ticker alone.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+      vi.setSystemTime(new Date('2026-01-01T12:00:00Z'));
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const settle = () =>
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+
+    /**
+     * A held flash with its first report on screen, so the ticker's effect has run, and the dialog settled.
+     *
+     * The dialog's content mounts on an animation frame, and jsdom runs frames on the faked interval, so the wait
+     * moves the fake clock one frame (16 ms) per poll: a real-time wait alone can time out with the dialog empty. At
+     * most about 21 polls before the wait's 1 s timeout keeps the clock under 0.5 s, so the elapsed time the tests
+     * read still rounds to the whole seconds they advance.
+     */
+    async function startTicking() {
+      const run = await startHeldFlash();
+      run.report({ phase: 'handshake', cur: 0, max: 0, msg: 'Handshake', radioTouched: false });
+      await vi.waitFor(() => {
+        act(() => {
+          vi.advanceTimersByTime(16);
+        });
+        expect(screen.getByTestId('firmware-flash-stats')).toBeInTheDocument();
+      });
+      settle();
+      return run;
+    }
+
+    const SUCCESS = {
+      ok: true,
+      radioId: 'baofeng-uv5rmini',
+      image: L1_IMAGE,
+      ident: { radioId: 'baofeng-uv5rmini', model: 'UV-5R Mini', raw: new Uint8Array(0) },
+      result: { framesSent: 500, dataFrames: 478, elapsedMs: 182_000, end: 'acknowledged' },
+      startedAt: 'now',
+      written: { done: 478, total: 478, unit: 'blocks' },
+    } as const satisfies FirmwareFlashOutcome;
+
+    const transfer = (done: number) =>
+      ({
+        phase: 'transfer',
+        cur: done,
+        max: 478,
+        msg: 'Sending the firmware',
+        radioTouched: true,
+        written: { done, total: 478, unit: 'blocks' },
+      }) as const;
+
+    it('shows a numeric time left once the warm-up has passed, falling through a silence', async () => {
+      show(<Harness />);
+      const run = await startTicking();
+      run.report({ phase: 'erase', cur: 0, max: 478, msg: 'Erasing', radioTouched: true });
+      // The first transfer report is the baseline.
+      run.report(transfer(10));
+      expect((await screen.findByTestId('firmware-flash-stats')).textContent).toMatch(
+        /estimating time left…$/,
+      );
+      act(() => {
+        vi.advanceTimersByTime(6_000);
+      });
+      // 90 blocks in 6 s is 15 blocks/s, and 378 blocks are left: about 25 s.
+      run.report(transfer(100));
+      await waitFor(() =>
+        expect(screen.getByTestId('firmware-flash-stats').textContent).toBe(
+          '100 / 478 blocks · 0:06 elapsed · about 0:25 left',
+        ),
+      );
+      // A silence: the ticker moves on, the count stands still, and the time left keeps falling.
+      act(() => {
+        vi.advanceTimersByTime(3_000);
+      });
+      expect(screen.getByTestId('firmware-flash-stats').textContent).toBe(
+        '100 / 478 blocks · 0:09 elapsed · about 0:22 left',
+      );
+      await run.finish(SUCCESS);
+      await screen.findByTestId('firmware-flash-summary');
+    });
+
+    it('clears the ticker when the flash finishes', async () => {
+      show(<Harness />);
+      const run = await startTicking();
+      expect(vi.getTimerCount()).toBe(1);
+      await run.finish(SUCCESS);
+      await screen.findByTestId('firmware-flash-summary');
+      settle();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('clears the ticker when the flash fails', async () => {
+      show(<Harness />);
+      const run = await startTicking();
+      expect(vi.getTimerCount()).toBe(1);
+      await run.finish({
+        ...OTHER_LAYOUT_0X8F,
+        code: 'protocol',
+        message: 'Recover the radio: leave the cable in. (Result 0x83.)',
+      });
+      await screen.findByTestId('firmware-flash-summary');
+      settle();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('clears the ticker when the step unmounts mid-flash', async () => {
+      const view = show(<Harness />);
+      await startTicking();
+      expect(vi.getTimerCount()).toBe(1);
+      view.unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    });
   });
 });

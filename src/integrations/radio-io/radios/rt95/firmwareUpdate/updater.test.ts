@@ -73,14 +73,26 @@ describe('RT95 head updater: golden session', () => {
     expect(seen[1]).toMatchObject({ phase: 'transfer', cur: 0, radioTouched: true });
     expect(seen.filter((p) => p.phase === 'transfer')).toHaveLength(RT95_GOLDEN_FRAMES + 1);
     expect(seen.at(-1)).toMatchObject({ phase: 'finish', msg: 'Finished' });
+    expect(seen.at(-1)!.written).toEqual({
+      done: RT95_GOLDEN_FRAMES,
+      total: RT95_GOLDEN_FRAMES,
+      unit: 'blocks',
+    });
   });
 });
 
 describe('RT95 head updater: faults', () => {
   it('resends after one NAK and one silence, then succeeds', async () => {
     const mock = new Rt95BootloaderMock({ nakAt: [3], silentAt: [10] });
-    const result = await run(mock);
+    const seen: FirmwareFlashProgress[] = [];
+    const result = await run(mock, { onProgress: (p) => seen.push(p) });
     expect(result.end).toBe('acknowledged');
+    // Each resent frame counts once.
+    expect(seen.at(-1)!.written).toEqual({
+      done: RT95_GOLDEN_FRAMES,
+      total: RT95_GOLDEN_FRAMES,
+      unit: 'blocks',
+    });
     expect(mock.image(0x08002000, FILES.cdd.length)).toEqual(FILES.cdd);
     expect(result.framesSent).toBe(RT95_GOLDEN_FRAMES + 2 + 2);
   });

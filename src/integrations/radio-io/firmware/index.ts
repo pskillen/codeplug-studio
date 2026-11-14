@@ -3,6 +3,7 @@
  */
 export type {
   FirmwareBootloaderIdent,
+  FirmwareFlashCount,
   FirmwareFlashEnd,
   FirmwareFlashPhase,
   FirmwareFlashProgress,

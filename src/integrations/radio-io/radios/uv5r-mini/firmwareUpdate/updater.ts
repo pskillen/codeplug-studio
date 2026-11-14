@@ -284,7 +284,12 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
         let frames = session0.writes;
         let dataFrames = 0;
         let seen = 0;
-        let servedInArea = 0;
+        // Distinct bytes the loader has read, not the sum of its reads: on a slow host it can ask for a block twice.
+        const covered = createCoveredBytes();
+        // The count and the time estimate start at the first area block. After cmd 4 the loader reads the image's
+        // 16-byte header (`(0x4, 0x10)`, twice) before its first area block; those bytes are not area, and the time
+        // before the first block may include the erase.
+        let areaStarted = false;
 
         const emit = (cur: number, max: number, phase: FirmwareFlashPhase, msg: string) => {
           const update: FirmwareFlashProgress = {
@@ -294,6 +299,7 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
             stage: phase,
             phase,
             radioTouched,
+            ...(max > 0 ? { written: { done: cur, total: max, unit: 'bytes' as const } } : {}),
           };
           flashOpts.onProgress?.(update);
         };
@@ -326,10 +332,12 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
                 break;
               case 'read':
                 if (s.areaLength !== undefined && s.areaLength > 0 && e.inImage) {
-                  servedInArea += e.len;
+                  if (!areaStarted && e.len < Math.min(UV5RMINI_AREA_BLOCK, s.areaLength)) break;
+                  areaStarted = true;
+                  covered.add(e.off, e.len);
                   progressPhase = 'transfer';
                   emit(
-                    Math.min(servedInArea, s.areaLength),
+                    Math.min(covered.total(), s.areaLength),
                     s.areaLength,
                     'transfer',
                     'Sending the firmware',
@@ -339,7 +347,7 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
               case 'result':
                 progressPhase = 'finish';
                 emit(
-                  Math.min(servedInArea, s.areaLength ?? 0),
+                  Math.min(covered.total(), s.areaLength ?? 0),
                   s.areaLength ?? 0,
                   'finish',
                   'Finishing',
@@ -416,7 +424,7 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
           end: 'acknowledged',
           note: outcome.note,
         };
-        emit(Math.min(servedInArea, s.areaLength ?? 0), s.areaLength ?? 0, 'finish', 'Finished');
+        emit(Math.min(covered.total(), s.areaLength ?? 0), s.areaLength ?? 0, 'finish', 'Finished');
         return result;
       } catch (err) {
         const cause = err;
@@ -490,4 +498,38 @@ export function describeUv5rMiniResult(
   else if (code === 0x8a) text += UV5RMINI_MSG.appOtherStock;
   else if (code !== 0x86 && code !== 0x83) text += ` (Result ${hex2(code ?? 0)}.)`;
   return { error: text };
+}
+
+/**
+ * The loader's area read size: its first read this size after cmd 4 is the first area block. This holds for the
+ * pinned loaders, whose area write loop reads the image 0x200 B at a time; a loader that read the area in smaller
+ * blocks would leave the count at 0 for the whole flash (display only, nothing sent changes).
+ */
+const UV5RMINI_AREA_BLOCK = 0x200;
+
+/** The union of byte ranges read so far, for the progress count. Reads arrive in order, so the list stays short. */
+export function createCoveredBytes(): { add(off: number, len: number): void; total(): number } {
+  const ranges: [number, number][] = [];
+  let sum = 0;
+  return {
+    add(off, len) {
+      if (len <= 0) return;
+      let start = off;
+      let end = off + len;
+      const kept: [number, number][] = [];
+      for (const [a, b] of ranges) {
+        if (b < start || a > end) kept.push([a, b]);
+        else {
+          start = Math.min(start, a);
+          end = Math.max(end, b);
+        }
+      }
+      kept.push([start, end]);
+      kept.sort((x, y) => x[0] - y[0]);
+      ranges.length = 0;
+      ranges.push(...kept);
+      sum = ranges.reduce((n, [a, b]) => n + (b - a), 0);
+    },
+    total: () => sum,
+  };
 }

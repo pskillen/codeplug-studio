@@ -41,6 +41,7 @@ import {
   RadioIoError,
   type BytePipe,
   type FirmwareBootloaderIdent,
+  type FirmwareFlashCount,
   type FirmwareFlashProgress,
   type FirmwareFlashResult,
   type FirmwareFlashTiming,
@@ -522,6 +523,8 @@ export type FirmwareFlashOutcome =
       ident: FirmwareBootloaderIdent;
       result: FirmwareFlashResult;
       startedAt: string;
+      /** The last written / total the updater reported, when it knows a total. */
+      written?: FirmwareFlashCount;
     }
   | {
       ok: false;
@@ -535,6 +538,10 @@ export type FirmwareFlashOutcome =
       startedAt: string;
       /** Frame round-trip timing up to the failure, when the updater measures it. */
       timing?: FirmwareFlashTiming;
+      /** From connecting to the stop. */
+      elapsedMs?: number;
+      /** The last written / total the updater reported, when it knows a total. */
+      written?: FirmwareFlashCount;
     };
 
 function errorCode(err: unknown): string {
@@ -560,6 +567,12 @@ export async function runFirmwareFlash(input: {
 }): Promise<FirmwareFlashOutcome> {
   const { radioId, image, port, signal } = input;
   const startedAt = new Date().toISOString();
+  const startedMs = Date.now();
+  let written: FirmwareFlashCount | undefined;
+  const onProgress = (p: FirmwareFlashProgress) => {
+    if (p.written) written = p.written;
+    input.onProgress(p);
+  };
   let pipe: BytePipe | null = null;
   let ident: FirmwareBootloaderIdent | undefined;
   let stage = 'connect';
@@ -571,8 +584,8 @@ export async function runFirmwareFlash(input: {
     ident = await updater.identify(pipe, { signal });
     input.onIdent?.(ident);
     stage = 'flash';
-    const result = await updater.flash(image, { onProgress: input.onProgress, signal });
-    return { ok: true, radioId, image, ident, result, startedAt };
+    const result = await updater.flash(image, { onProgress, signal });
+    return { ok: true, radioId, image, ident, result, startedAt, ...(written ? { written } : {}) };
   } catch (err) {
     const flashErr = err instanceof FirmwareFlashError ? err : null;
     return {
@@ -586,6 +599,8 @@ export async function runFirmwareFlash(input: {
       radioTouched: flashErr?.radioTouched ?? false,
       startedAt,
       timing: flashErr?.timing,
+      elapsedMs: Date.now() - startedMs,
+      ...(written ? { written } : {}),
     };
   } finally {
     if (pipe) {
@@ -627,6 +642,11 @@ export function formatElapsed(ms: number): string {
   return `${mm}:${ss} (${(ms / 1000).toFixed(1)} s)`;
 }
 
+/** `Written: 478 / 478 blocks`: distinct blocks or bytes the radio took, not requests. */
+function writtenLine(w: FirmwareFlashCount): string {
+  return `Written: ${w.done} / ${w.total} ${w.unit}`;
+}
+
 function timingLine(t: FirmwareFlashTiming): string {
   const ms = (x: number) => (x < 10 ? x.toFixed(2) : x.toFixed(1));
   return `Frame round trip: median ${ms(t.medianFrameMs)} ms, p99 ${ms(t.p99FrameMs)} ms, max ${ms(t.maxFrameMs)} ms`;
@@ -660,6 +680,7 @@ export function formatFirmwareFlashSummary(outcome: FirmwareFlashOutcome): strin
       `Elapsed: ${formatElapsed(result.elapsedMs)}`,
       `End: ${result.end}`,
     );
+    if (outcome.written) lines.push(writtenLine(outcome.written));
     if (result.timing) lines.push(timingLine(result.timing));
     if (result.note) lines.push(`Note: ${result.note}`);
   } else {
@@ -669,6 +690,8 @@ export function formatFirmwareFlashSummary(outcome: FirmwareFlashOutcome): strin
       `Stopped at: ${outcome.position}`,
       `Radio touched: ${outcome.radioTouched ? 'yes' : 'no'}`,
     );
+    if (outcome.elapsedMs !== undefined) lines.push(`Elapsed: ${formatElapsed(outcome.elapsedMs)}`);
+    if (outcome.written) lines.push(writtenLine(outcome.written));
     if (outcome.timing) lines.push(timingLine(outcome.timing));
   }
   lines.push(`Studio ${__BUILD_VERSION__} (${__BUILD_ENV__})`, `Started: ${outcome.startedAt}`);

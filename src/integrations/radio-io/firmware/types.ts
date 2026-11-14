@@ -30,10 +30,22 @@ export interface FirmwareBootloaderIdent {
  */
 export type FirmwareFlashPhase = 'handshake' | 'loader' | 'erase' | 'transfer' | 'finish';
 
+/**
+ * How much of the image the radio has taken, for the written / total count and the time estimate. Distinct blocks or
+ * bytes, never requests: a block the radio asks for twice counts once. Display only.
+ */
+export interface FirmwareFlashCount {
+  readonly done: number;
+  readonly total: number;
+  readonly unit: 'blocks' | 'bytes';
+}
+
 export interface FirmwareFlashProgress extends ProgressUpdate {
   readonly phase: FirmwareFlashPhase;
   /** True from the first erase-capable frame onward: an abort now leaves the radio needing a re-flash. */
   readonly radioTouched: boolean;
+  /** Set by updaters that know the image's total; without it the wizard shows elapsed time only. */
+  readonly written?: FirmwareFlashCount;
 }
 
 export type FirmwareFlashEnd = 'eot-sent' | 'acknowledged' | 'port-closed-by-radio' | 'no-reply';

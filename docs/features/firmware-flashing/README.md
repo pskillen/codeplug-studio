@@ -79,6 +79,7 @@ flowchart LR
 | RT95 (MAIN)  | Same folder: `RT95_MAIN_FIRMWARE_UPDATER` in `descriptor.ts`, profile in `targets.ts`      |
 | UV-5R Mini   | `src/integrations/radio-io/radios/uv5r-mini/firmwareUpdate/`                               |
 | App          | `src/app/routes/firmware/`, `src/app/services/firmwareFlash.ts`, `firmwareFlashEnvGate.ts` |
+| Time left    | `src/app/routes/firmware/flashEta.ts` (count, elapsed and estimate formatting)             |
 
 ## Browsers without Web Serial
 
@@ -216,6 +217,20 @@ radio is offered: the stock pins, interlocks and frame guards are the same code 
    phase change, or the radio becoming touched, shows at once), so a 52,000-frame transfer stays responsive. While
    it runs, the screen is kept awake and leaving the page asks first. Cancelling after the radio has been touched
    asks for confirmation.
+   Under the active step a line counts the write: written of total, the time since **Connect and flash**, and the
+   time left, for example `212 / 478 blocks · 1:12 elapsed · about 1:40 left`. The count is distinct blocks the radio
+   has taken (the DM-32UV, AT-D890UV and RT95 count data frames), or for the UV-5R Mini the KiB of the firmware area
+   its loader has read: a block the loader asks for twice counts once. The time left is the rate since the first
+   counted block (the erase wait before it is left out) applied to what remains; it reads "estimating time left…"
+   until at least 5 s and 3% of the total have gone, so the first figure doesn't jump about, and it is 0 when the
+   count reaches the total. The UV-5R Mini shows the elapsed time only until its loader announces the firmware area
+   (its cmd 4); from then it shows `0 / 480 KiB` through the erase wait, and its count starts at the first area block.
+   The other radios show `0 / N blocks` from the start. The figures are display only: nothing about what is sent, its order
+   or any check depends on them. At the end the dialog gives the final count and time ("478 / 478 blocks in 3:02"). The
+   figures cover different spans: the live elapsed time counts from **Connect and flash**, identifying the radio
+   included; the final time on success is the updater's own, from the start of its flash (after the radio is
+   identified), so it can be a few seconds less than the last elapsed figure; on a failure it runs from connecting to
+   the stop. The summary's `Elapsed:` line covers the same span as the final time.
 8. **Done or failed** — on success, what is now on the radio ("The MM9PDY modded firmware 1.0.0 is on the radio"),
    its verify hint and a plain-text summary (copy or download as `.txt`). The message depends on how the session
    ended (see [What to expect](#what-to-expect)). A failure before the radio was touched says nothing was written.
@@ -249,9 +264,11 @@ the end byte, and the port stayed open. This is **not** a failure: the wizard sh
 warning, "Every block was accepted, but the radio didn't confirm the end. Power-cycle it, then check: …". Power-cycle
 the radio and use the verify hint. If the check fails, follow [Recovery](#recovery).
 
-**Flash summary.** It records the end state (`End: …`), the elapsed time as `mm:ss`, and, for updaters that measure
-it (the AT-D890UV), each data frame's round trip from write to acknowledgement: `Frame round trip: median …, p99 …,
-max … ms`. A failed flash records the timing up to the failure.
+**Flash summary.** It records the end state (`End: …`), the elapsed time as `mm:ss`, the final count as
+`Written: 478 / 478 blocks` (the UV-5R Mini: `Written: … / … bytes`, distinct bytes of the firmware area), and, for
+updaters that measure it (the AT-D890UV), each data frame's round trip from write to acknowledgement:
+`Frame round trip: median …, p99 …, max … ms`. A failed flash records the elapsed time to the stop, the last count reported
+(updaters report every few frames, so it can trail the frames sent) and the timing up to the failure.
 
 ## Provenance
 

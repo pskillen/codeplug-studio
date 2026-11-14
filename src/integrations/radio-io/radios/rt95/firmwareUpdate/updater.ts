@@ -201,6 +201,7 @@ export function createRt95FirmwareUpdater(target: Rt95FirmwareTarget): FirmwareU
             stage: phase,
             phase,
             radioTouched,
+            written: { done: cur, total: max, unit: 'blocks' },
           };
           flashOpts.onProgress?.(update);
         };

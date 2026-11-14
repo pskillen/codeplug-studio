@@ -192,6 +192,54 @@ describe('runFirmwareFlash', () => {
     expect(pipeClose).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the last written / total and the elapsed time for the log, success or failure', async () => {
+    fakeUpdater.identify.mockResolvedValue(IDENT);
+    const report = (done: number) => ({
+      phase: 'transfer',
+      cur: done,
+      max: 32,
+      msg: '',
+      radioTouched: true,
+      written: { done, total: 32, unit: 'blocks' },
+    });
+    fakeUpdater.flash.mockImplementation(
+      async (_image: unknown, o: { onProgress: (p: unknown) => void }) => {
+        o.onProgress(report(31));
+        o.onProgress(report(32));
+        o.onProgress({ phase: 'finish', cur: 0, max: 0, msg: '', radioTouched: true });
+        return { framesSent: 34, dataFrames: 32, elapsedMs: 5, end: 'eot-sent' };
+      },
+    );
+    const seen: unknown[] = [];
+    const ok = await runFirmwareFlash({
+      radioId: 'baofeng-dm32uv',
+      image: IMAGE,
+      port,
+      onProgress: (p) => seen.push(p),
+      signal: new AbortController().signal,
+    });
+    expect(seen).toHaveLength(3);
+    expect(ok).toMatchObject({ ok: true, written: { done: 32, total: 32, unit: 'blocks' } });
+
+    fakeUpdater.identify.mockResolvedValue(IDENT);
+    fakeUpdater.flash.mockImplementation(
+      async (_image: unknown, o: { onProgress: (p: unknown) => void }) => {
+        o.onProgress(report(3));
+        throw new FirmwareFlashError({
+          cause: new RadioTimeoutError('silent'),
+          radioTouched: true,
+          position: 'block#4',
+        });
+      },
+    );
+    const failed = await run();
+    expect(failed).toMatchObject({
+      ok: false,
+      written: { done: 3, total: 32, unit: 'blocks' },
+      elapsedMs: expect.any(Number),
+    });
+  });
+
   it('swallows close errors', async () => {
     fakeUpdater.identify.mockResolvedValue(IDENT);
     fakeUpdater.flash.mockResolvedValue({
@@ -224,6 +272,38 @@ describe('formatFirmwareFlashSummary', () => {
     expect(text).toContain('Frames sent: 10 (4 data)');
     expect(text).toContain('End: eot-sent');
     expect(text).toMatch(/^Studio .+ \(.+\)$/m);
+    expect(text).not.toContain('Written:');
+  });
+
+  it('adds the final written / total when the updater knows a total', () => {
+    const text = formatFirmwareFlashSummary({
+      ok: true,
+      radioId: 'baofeng-dm32uv',
+      image: IMAGE,
+      ident: IDENT,
+      result: { framesSent: 10, dataFrames: 4, elapsedMs: 1200, end: 'eot-sent' },
+      startedAt: '2026-01-01T00:00:00.000Z',
+      written: { done: 4, total: 4, unit: 'blocks' },
+    });
+    expect(text).toContain('Written: 4 / 4 blocks');
+    expect(text).toContain('Elapsed: 00:01 (1.2 s)');
+  });
+
+  it('adds how far a failure got and when it stopped', () => {
+    const text = formatFirmwareFlashSummary({
+      ok: false,
+      radioId: 'baofeng-dm32uv',
+      image: IMAGE,
+      code: 'timeout',
+      message: 'silent',
+      position: 'block#57',
+      radioTouched: true,
+      startedAt: '2026-01-01T00:00:00.000Z',
+      elapsedMs: 72_000,
+      written: { done: 56, total: 478, unit: 'blocks' },
+    });
+    expect(text).toContain('Elapsed: 01:12 (72.0 s)');
+    expect(text).toContain('Written: 56 / 478 blocks');
   });
 
   it('says "back to stock" for a to-stock patch', () => {

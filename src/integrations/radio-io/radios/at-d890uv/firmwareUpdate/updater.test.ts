@@ -64,6 +64,7 @@ describe('createD890FirmwareUpdater', () => {
     expect(progress[0]).toMatchObject({ phase: 'handshake', radioTouched: false });
     expect(progress[1]).toMatchObject({ phase: 'transfer', cur: 0, radioTouched: true });
     expect(progress.at(-1)).toMatchObject({ phase: 'finish', cur: 32, max: 32 });
+    expect(progress.at(-1)!.written).toEqual({ done: 32, total: 32, unit: 'blocks' });
     expect(progress.some((p) => p.msg === 'Transfer 32/32')).toBe(true);
   });
 
@@ -105,8 +106,11 @@ describe('createD890FirmwareUpdater', () => {
     ['no reply', { silentAt: [3] }],
   ])('resends once after a %s, then succeeds', async (_name, fault) => {
     const mock = new D890BootloaderMock(fault);
-    const result = await run(mock);
+    const progress: FirmwareFlashProgress[] = [];
+    const result = await run(mock, { onProgress: (p) => progress.push(p) });
     expect(mock.frames).toBe(33);
+    // The resent frame counts once.
+    expect(progress.at(-1)!.written).toEqual({ done: 32, total: 32, unit: 'blocks' });
     expect(mock.image(0x0800c000, 1000)).toEqual(FILES.cdd);
     expect(result.framesSent).toBe(33 + 3);
     expect(mock.log.at(-1)).toBe('end');
