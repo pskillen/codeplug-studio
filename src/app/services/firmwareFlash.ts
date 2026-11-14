@@ -157,7 +157,8 @@ export async function loadChosenPatch(
 /**
  * The refusal at Prepare for a release with files by layout but none for this radio: none for its layout or, where the
  * radio's stock base is known, none on that base. Where the release has the radio's base but not its layout
- * (`layoutsOnBase`, the layouts it has on that base), the refusal says that file doesn't fit. Never the nearest build
+ * (`layoutsOnBase`, the layouts it has on that base), the refusal says in plain words that the radio's flash is laid out
+ * differently from the one that file was built for. Never the nearest build
  * instead. The flash layout is an internal detail (#1670): the refusal names the radio's firmware, never a layout; with
  * developer mode on, Prepare shows the layout beside it.
  */
@@ -172,7 +173,7 @@ export const NO_FILE_FOR_LAYOUT = (
     return "Not available in this release: it has no file for this radio's firmware.";
   }
   if (layoutsOnBase.length) {
-    return `Not available in this release: there is no MM9PDY build for this radio (${base}) yet. This release's ${base} file doesn't fit this radio.`;
+    return `Not available in this release: this radio runs ${base}, but its flash is laid out differently from the radios this release's ${base} file was built for, so that file can't be installed on it. Use a release that has a file for this radio.`;
   }
   return `Not available in this release: there is no MM9PDY build for this radio (${base}) yet.${haveBases.length ? ` This release has a file only for ${haveBases.join(' and ')}.` : ''}`;
 };

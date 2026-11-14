@@ -266,17 +266,34 @@ describe('PrepareStep: a release with one file per flash layout and stock base',
     expect(flash.prepareFlash).not.toHaveBeenCalled();
   });
 
+  /** The refusal for an nrf-v0.27 radio whose layout the release's nrf-v0.27 file isn't for. */
+  const OTHER_LAYOUT_ON_BASE =
+    "Not available in this release: this radio runs nrf-v0.27, but its flash is laid out differently from the radios this release's nrf-v0.27 file was built for, so that file can't be installed on it. Use a release that has a file for this radio. Nothing was prepared or sent to the radio.";
+
   it('a report for a layout the release lacks on its base names the base, never the layout', async () => {
     vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(<Harness updater={MINI} loaded={fileFor('L2')} />);
     await readRadio(reportBlock({ vm: L1, name: 'mm9pdy-L1-0.2.0' }));
-    expect(
-      await screen.findByText(
-        "Not available in this release: there is no MM9PDY build for this radio (nrf-v0.27) yet. This release's nrf-v0.27 file doesn't fit this radio. Nothing was prepared or sent to the radio.",
-      ),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(OTHER_LAYOUT_ON_BASE)).toBeInTheDocument();
+    expect(screen.queryByText(/Flash layout/)).toBeNull();
     expect(flash.prepareFlash).not.toHaveBeenCalled();
     expect(canAdvance(latest)).toBe(false);
+  });
+
+  it("with developer mode on, that refusal shows the radio's flash layout beside it", async () => {
+    setDeveloperMode(true);
+    try {
+      vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+      render(<Harness updater={MINI} loaded={fileFor('L2')} />);
+      await readRadio(reportBlock({ vm: L1, name: 'mm9pdy-L1-0.2.0' }));
+      expect(
+        await screen.findByText(`${OTHER_LAYOUT_ON_BASE} Flash layout: L1.`),
+      ).toBeInTheDocument();
+      expect(flash.prepareFlash).not.toHaveBeenCalled();
+      expect(canAdvance(latest)).toBe(false);
+    } finally {
+      localStorage.removeItem(DEVELOPER_MODE_KEY);
+    }
   });
 
   it("today's two bases are different variants, so neither file is the other's partner", async () => {

@@ -383,6 +383,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
         {unavailable && !image ? (
           <StatusBanner tone="warning">
             {unavailable} Nothing was prepared or sent to the radio.
+            {radioLayout ? <DeveloperOnly>{` Flash layout: ${radioLayout}.`}</DeveloperOnly> : null}
           </StatusBanner>
         ) : null}
         {error ? (
