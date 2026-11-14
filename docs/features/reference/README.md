@@ -20,7 +20,7 @@ Reference routes are **not** behind `RequireActiveProject`. They sit under the *
 ## Debug section
 
 Below the tool cards, the Tools page lists the Debug index and each Debug page (`DEBUG_TOOL_LINKS` in
-`contextualStripItems.ts`) under a **Debug** heading with the Debug icon ([#1673](https://github.com/pskillen/codeplug-studio/issues/1673)).
+`contextualStripItems.ts`) under a **Debug** heading with the Debug icon.
 It is shown under exactly the rule that shows the avatar menu's Debug item, `resolveDebugPagesGate`: on prod only
 while [developer mode](../developer-mode/README.md) is on, on every other build always. It is there because the
 Android app has no URL bar. Pages that need Web Serial carry a "Desktop Chrome / Edge" badge.

@@ -11,9 +11,8 @@ Read-only contributor tooling to inspect **browser-local app state** without Dev
 ## Reaching the pages
 
 The avatar (gear) menu's **Debug** item, and the **Debug** section at the foot of the Tools page (`/reference`), which
-links the index and each page ([#1673](https://github.com/pskillen/codeplug-studio/issues/1673)); the Android app has no
-URL bar. Both use the Debug icon, a terminal prompt (`DEBUG_SECTION_ICON`, Tabler `IconTerminal2`, in
-`contextualStripItems.ts`), as does the Debug strip's Overview tab.
+links the index and each page; the Android app has no URL bar. Both use the Debug icon, a terminal prompt
+(`DEBUG_SECTION_ICON`, Tabler `IconTerminal2`, in `contextualStripItems.ts`), as does the Debug strip's Overview tab.
 
 ## In the Android app
 
@@ -105,6 +104,8 @@ List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with o
 3. Drill into a channel row → JSON tree expands; Copy YAML works.
 4. Set a Mapbox token in Settings → `/debug/local-storage` shows masked token in viewer.
 5. Filter a library list → `/debug/local-storage` shows labelled list-prefs keys for the active project.
+6. Open Tools (`/reference`) → the **Debug** section shows on pre-prod, and on prod with developer mode on; on prod with developer mode off it is absent.
+7. In the Android app, open the AT-D890UV erase probe, Serial reopen timing and UV-5R Mini full read → each shows the "Not available in the Android app" notice and no controls.
 
 ## Related
 
