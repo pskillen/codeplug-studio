@@ -16,8 +16,8 @@ app on any build, the firmware flashers marked for it (the one exception under
 ## Turning it on and off
 
 - **Turn it on: five taps on the version** in the page footer ("Codeplug Studio · prod · 1.2.3"), each within 2
-  seconds of the last. From the second tap a short toast at the top of the screen counts down ("3 more taps to turn on
-  developer mode"), clear of the version so the next tap still lands on it; the fifth turns it on and says so.
+  seconds of the last. From the second tap a short toast just below the top bar counts down ("3 more taps to turn on
+  developer mode"), clear of the top bar and version so the controls remain accessible; the fifth turns it on and says so.
 - **The taps only turn it on.** While it is on, tapping the version changes nothing: from the second tap in a row the
   toast says "Developer mode is on. Turn it off from the top bar".
 - **Turn it off: the badge.** While it is on, a "Developer mode" chip sits in the top bar on every screen, so a
