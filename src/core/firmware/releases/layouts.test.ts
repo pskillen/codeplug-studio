@@ -174,7 +174,7 @@ describe('published release with one row per flash layout', () => {
       ),
     );
     expect(err.code).toBe('patch-wrong-layout');
-    expect(err.message).toMatch(/the release list and its build name different radio firmware/);
+    expect(err.message).toMatch(/the release list and its build are for different radio firmware/);
     expect(err.message).not.toMatch(/\bL[12]\b/);
   });
 
@@ -272,7 +272,7 @@ describe('user patch files, one per flash layout', () => {
     const layoutErr = await pick(crossedLayout);
     expect(layoutErr.code).toBe('patch-wrong-layout');
     expect(layoutErr.message).toMatch(
-      /the release list and its build name different radio firmware/,
+      /the release list and its build are for different radio firmware/,
     );
     expect(layoutErr.message).not.toMatch(/\bL[12]\b/);
     const crossedBase = await syntheticUv5rMiniRelease({ layout: 'L2', patchBase: 'other' });
