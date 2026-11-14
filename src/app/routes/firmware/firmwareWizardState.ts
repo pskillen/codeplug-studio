@@ -3,14 +3,24 @@
  * nothing here is persisted. The flash run itself (progress, outcome) lives in the page.
  */
 import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
-import type { FirmwareRadioId, RadioInfoAnswers, RadioLayoutAnswer } from '@core/firmware/types.ts';
+import type { FirmwareRadioId, RadioInfoAnswers } from '@core/firmware/types.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 
 import type { FirmwareChoice, VerifiedStockFirmware } from '../../services/firmwareFlash.ts';
+import {
+  isRadioCheckDone,
+  radioCheckAnswer,
+  type RadioCheckSetup,
+  type RadioReadStatus,
+} from './radioCheck.ts';
 
+export type { RadioReadStatus } from './radioCheck.ts';
+
+/** Every step, in order. `check` is shown only for a radio that has a radio check ({@link firmwareWizardSteps}). */
 export const FIRMWARE_WIZARD_STEPS = [
   'radio',
   'firmware',
+  'check',
   'stock',
   'prepare',
   'preflight',
@@ -26,6 +36,11 @@ export type PreflightCheck = (typeof PREFLIGHT_CHECKS)[number];
 export interface FirmwareWizardState {
   readonly step: FirmwareWizardStep;
   readonly radioId: FirmwareRadioId | null;
+  /**
+   * The radio check the selected radio's descriptor asks for, set at `selectRadio`; null for a radio with one flash
+   * layout. When set, the wizard has a "Your radio" step between Firmware and Stock firmware.
+   */
+  readonly radioCheck: RadioCheckSetup | null;
   /** What to flash; null until a choice is made when stock flashing is unavailable. */
   readonly choice: FirmwareChoice | null;
   /** The checked patch for a release or user-patch choice. */
@@ -81,15 +96,6 @@ export interface FirmwareWizardState {
   readonly safetyBackup: SafetyBackupStatus | null;
 }
 
-/**
- * The radio report read: a report and what it decides; no report (the Radio Info question is asked); or the read
- * failed (the question is asked, with the reason shown).
- */
-export type RadioReadStatus =
-  | { readonly kind: 'report'; readonly answer: RadioLayoutAnswer }
-  | { readonly kind: 'none' }
-  | { readonly kind: 'failed'; readonly message: string };
-
 export type SafetyBackupStatus =
   | { readonly kind: 'saved'; readonly radioKey: string; readonly summary: string }
   | {
@@ -108,6 +114,8 @@ export type FirmwareWizardAction =
       type: 'selectRadio';
       radioId: FirmwareRadioId;
       stockFlashOffered?: boolean;
+      /** The descriptor's radio check (`radioCheckSetup`), or none. */
+      radioCheck?: RadioCheckSetup | null;
       preflight?: {
         attestationIds: readonly string[];
         probe: boolean;
@@ -160,6 +168,7 @@ const STOCK_CHOICE: FirmwareChoice = { kind: 'stock' };
 export const INITIAL_FIRMWARE_WIZARD_STATE: FirmwareWizardState = {
   step: 'radio',
   radioId: null,
+  radioCheck: null,
   choice: STOCK_CHOICE,
   loadedPatch: null,
   includeRc: false,
@@ -179,7 +188,12 @@ export const INITIAL_FIRMWARE_WIZARD_STATE: FirmwareWizardState = {
   safetyBackup: null,
 };
 
-const indexOf = (step: FirmwareWizardStep) => FIRMWARE_WIZARD_STEPS.indexOf(step);
+/** The steps this run shows: every step, less `check` for a radio with nothing to check. */
+export function firmwareWizardSteps(state: FirmwareWizardState): readonly FirmwareWizardStep[] {
+  return state.radioCheck
+    ? FIRMWARE_WIZARD_STEPS
+    : FIRMWARE_WIZARD_STEPS.filter((s) => s !== 'check');
+}
 
 /**
  * A chosen patch is ready: loaded, and accepted when it is unreviewed. A to-stock patch needs no risk tick: its
@@ -217,6 +231,9 @@ export function canAdvance(state: FirmwareWizardState): boolean {
       return state.radioId !== null;
     case 'firmware':
       return state.radioId !== null && isChoiceReady(state);
+    case 'check':
+      // The answer names the radio's firmware, and the chosen release has a file for it (or none is chosen yet).
+      return isRadioCheckDone(radioCheckAnswer(state, state.radioCheck));
     case 'stock':
       return state.stock !== null;
     case 'prepare':
@@ -232,8 +249,11 @@ export function canAdvance(state: FirmwareWizardState): boolean {
 
 /** Steps before `step` must all be satisfiable for a jump to `step` to be allowed. */
 function reachable(state: FirmwareWizardState, step: FirmwareWizardStep): boolean {
-  for (let i = 0; i < indexOf(step); i++) {
-    if (!canAdvance({ ...state, step: FIRMWARE_WIZARD_STEPS[i]! })) return false;
+  const steps = firmwareWizardSteps(state);
+  const to = steps.indexOf(step);
+  if (to < 0) return false;
+  for (let i = 0; i < to; i++) {
+    if (!canAdvance({ ...state, step: steps[i]! })) return false;
   }
   return true;
 }
@@ -248,6 +268,7 @@ export function firmwareWizardReducer(
       return {
         ...INITIAL_FIRMWARE_WIZARD_STATE,
         radioId: action.radioId,
+        radioCheck: action.radioCheck ?? null,
         choice: action.stockFlashOffered === false ? null : STOCK_CHOICE,
         includeRc: state.includeRc,
         radioPreflight: action.preflight ?? INITIAL_FIRMWARE_WIZARD_STATE.radioPreflight,
@@ -258,11 +279,13 @@ export function firmwareWizardReducer(
       return reachable(state, action.step) ? { ...state, step: action.step } : state;
     case 'next': {
       if (!canAdvance(state)) return state;
-      const next = FIRMWARE_WIZARD_STEPS[indexOf(state.step) + 1];
+      const steps = firmwareWizardSteps(state);
+      const next = steps[steps.indexOf(state.step) + 1];
       return next ? { ...state, step: next } : state;
     }
     case 'back': {
-      const prev = FIRMWARE_WIZARD_STEPS[indexOf(state.step) - 1];
+      const steps = firmwareWizardSteps(state);
+      const prev = steps[steps.indexOf(state.step) - 1];
       return prev ? { ...state, step: prev } : state;
     }
     case 'chooseFirmware':

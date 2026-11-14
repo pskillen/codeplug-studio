@@ -25,11 +25,11 @@ export interface UserPatchSourceOptions {
 export const TOO_MANY_PATCH_FILES = (label: string, count: number): string =>
   count === 1
     ? `Pick one patch file: a ${label} release is one file.`
-    : `Pick at most ${count} patch files: a ${label} release is one file per flash layout.`;
+    : `Pick at most ${count} patch files: a ${label} release is one file for each radio firmware it supports.`;
 
 /** The refusal for two files that are not the files of one release. */
 export const NOT_ONE_RELEASE =
-  "These files aren't one release's files for its flash layouts. Pick the files of the same release.";
+  "These files aren't the files of one release. Pick the files of the same release.";
 
 /**
  * Patch files the operator picked from disk: one, or for a radio with release layouts one per layout (each file's

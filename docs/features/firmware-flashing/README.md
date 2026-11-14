@@ -87,7 +87,8 @@ flowchart LR
 
 Flashing needs Web Serial, which phones, tablets, Firefox and Safari don't have. On those browsers `/firmware` shows no
 wizard: a banner says flashing needs Chrome or Edge on a desktop computer, then each offered radio's published releases
-are listed read-only, newest first, with **Show release candidates**, the **Release notes** disclosure and the same
+are listed read-only, newest first, with the radio's "Supported: …" line and each release's "For the … on stock …"
+line where the radio has them, **Show release candidates**, the **Release notes** disclosure and the same
 **Try again** when the list can't be downloaded. Nothing there opens a port or loads a patch. The Tools strip still
 shows the flasher entry, so the releases can be read from a phone. The Android app is covered below.
 
@@ -99,7 +100,7 @@ Mini, and only while [developer mode](../developer-mode/README.md) is on for the
 mode off, or for any other radio, `/firmware` in the app says flashing is available in a desktop browser. Developer mode
 changes only which radios are offered: the stock pins, interlocks and frame guards are the same code as on the desktop.
 
-- **The wizard** is the desktop one. Each port step (the pre-flight probe, the radio report on Prepare, Connect and
+- **The wizard** is the desktop one. Each port step (the pre-flight probe, the radio report on Your radio, Connect and
   flash) finds the one attached device matching the radio's cable instead of showing a picker; none, or more than one,
   is refused with a message and nothing is sent. Android asks to allow USB access once per plug-in. Each link opens at
   its own rate with its own DTR/RTS choice. The UV-5R Mini's switch to its loader's rate changes the rate on the open
@@ -145,12 +146,19 @@ Per radio:
 
 ## Wizard steps
 
-1. **Radio** — the radios this site offers, with the pinned stock version and how long a flash takes.
+1. **Radio** — the radios this site offers, with the pinned stock version and how long a flash takes. A radio whose
+   descriptor says which of its radios Studio supports (`supportedRadios`; the UV-5R Mini: "UV-5R Minis whose Radio
+   Info (MENU → Radio Info) shows Firmware V0.27 and Hardware V1.7, and whose start-up screen (hold 8 while switching
+   on) shows 5RMINI NRF. Other Minis are not supported yet.") shows it as "Supported: …" on its card, and under the
+   page's intro on every later step, so an owner can check before fetching any file. Other radios show no such line.
+   The same text is on the **Firmware flasher** card of the Tools page ("Supported: UV-5R Minis whose …"), for an
+   owner who hasn't opened the flasher yet. A test ties the Mini's text to its stock-base table and proven Hardware lines.
 2. **Firmware** — what to flash:
    - **Published releases** for the radio, from the firmware project's public release index
      ([releases.md](releases.md)), newest first, each named by its firmware project and version ("MM9PDY
      modded firmware 1.0.0"), with its date, a summary and a **Release notes**
-     disclosure that shows the published notes unchanged. If the list can't be downloaded, a warning says so with
+     disclosure that shows the published notes unchanged. A radio that accepts more than one stock version (the UV-5R
+     Mini) also says which radios each release is for: "For the Baofeng UV-5R Mini on stock v0.27 (NRF)". If the list can't be downloaded, a warning says so with
      **Try again**; stock and a patch file from disk still work. Finals only by default; **Show release
      candidates** adds RCs, labelled **Pre-release**.
    - **Stock firmware** ("Stock firmware (v1.01.048)"), always listed: it is also the recovery path.
@@ -171,7 +179,25 @@ Per radio:
      [developer mode](../developer-mode/README.md) on it lists their layouts ("Flash layouts: L1, L2."). Two files of one layout, files of different
      releases, and a retired `V4` file are refused
      ([releases](releases.md#uv-5r-mini-rows-one-per-flash-layout)).
-3. **Stock firmware** — the stock sources (the vendor's download link, or how to ask the vendor, and any unofficial
+3. **Your radio** — only for a radio whose firmware comes in more than one flash layout (the UV-5R Mini; the factory
+   firmware's packing, not the board), and before Studio asks for any stock file. The step finds the radio's stock
+   base (UV-5R Mini: suffix and Firmware version) and layout. **Read the radio** reads, in normal mode and read-only,
+   the radio report an MM9PDY build answers: its flash layout and the suffix, Firmware and Hardware strings of its
+   stock firmware, matched against the same table and with the same refusals as the dropdowns below. A report naming
+   a layout Studio doesn't know is refused as "This radio reports firmware Studio doesn't support"; what it reported
+   shows only with developer mode on. With no report, or when the read fails, the step asks three dropdowns of the
+   supported values: Firmware (`V0.04`, `V0.27`, `Other`) and Hardware (`V1.7`, `Other`) from Radio Info, and the
+   suffix (`NRF`, `NRFB`, `Other`) from the start-up screen shown while holding `8`. `Other` is refused, and so is a
+   combination with no build. A warning says to pick exactly what the radio shows: a wrong Firmware or suffix pick is
+   refused with nothing installed but may reset its FM presets and volume, while a wrong Hardware pick, or a radio
+   Studio doesn't know yet, may not be caught
+   ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md#radio-info)). When a release is
+   chosen and has no file for the radio, the step says "Not available in this release: there is no MM9PDY build for
+   this radio (…) yet." Continue stays disabled until the answer names a supported radio and the chosen release (if
+   any) has a file for it; the step then says "Studio can update this radio". So an unsupported or unknown Mini stops
+   here, before any file is fetched. Changing the answer later, from here, drops the prepared image and the
+   before-you-flash ticks. Other radios skip this step.
+4. **Stock firmware** — the stock sources (the vendor's download link, or how to ask the vendor, and any unofficial
    mirror, labelled; all plain links: Studio never fetches them), the expected zip and
    file names, and a drop zone for the zip or the extracted files. Studio checks every file against the pinned hashes.
    The UV-5R Mini, whose vendor publishes no stock firmware, lists the user's own copy and then one "Unofficial copy
@@ -181,33 +207,28 @@ Per radio:
    v0.27) takes either stock file or both; each file is then prepared on its own stock. The step says so: "Studio
    needs one of these, the one for your radio's firmware:" over the files, each "for stock firmware v0.27 (NRF)" and
    so on ([UV-5R Mini: one stock per base](../../reference/radios/baofeng/uv-5r-mini/firmware.md#stock-firmware-pin)).
-4. **Prepare** — builds the exact image (applying the patch and checking its result hash) and runs the updater's
+5. **Prepare** — builds the exact image (applying the patch and checking its result hash) and runs the updater's
    interlocks. Shows what will be flashed ("MM9PDY modded firmware 1.0.0 (published)", "MM9PDY modded firmware 1.1.0
    (unreviewed user-supplied patch)" or "stock firmware v1.01.048"), the
    version stamp and the result hashes. A failure, such as a patch made for different stock, stops here; nothing is
    sent.
-   For a radio whose firmware comes in more than one flash layout (the UV-5R Mini; the factory firmware's packing,
-   not the board), the step first finds the radio's stock base (UV-5R Mini: suffix and Firmware version) and layout,
-   and prepares the release's file for exactly that; it never offers the nearest build. A release with no file for it
-   shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." and prepares nothing; one
-   with no other file for this radio says "If the radio refuses this file, this release has no other file for this
-   radio to try." **The flash layout is an internal detail:** the step's words say "your radio's firmware", and it
-   shows the layout ("Flash layout: L2", with the prepared image or beside a refusal) only with
-   [developer mode](../developer-mode/README.md) on. That is display only: no check reads developer mode. **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers:
-   its flash layout and the suffix, Firmware and Hardware strings of its stock firmware, matched against the same
-   table and with the same refusals as the dropdowns below. With no report, or when the read fails, the step asks three dropdowns of the supported values: Firmware (`V0.04`,
-   `V0.27`, `Other`) and Hardware (`V1.7`, `Other`) from Radio Info, and the suffix (`NRF`, `NRFB`, `Other`) from the
-   start-up screen shown while holding `8`. `Other` is refused, and so is a combination with no build. A warning says to
-   pick exactly what the radio shows: a wrong Firmware or suffix pick is refused with nothing installed but may reset
-   its FM presets and volume, while a wrong Hardware pick, or a radio Studio doesn't know yet, may not be caught
-   ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md#radio-info)). Studio never
-   changes a radio's code base: the radio's interlocks refuse a file built on another one.
+   For a radio with a **Your radio** step, Prepare computes the same answer again and runs every check on it (the
+   stock pins, the report's match, "already installed", the release's file for the radio, the per-layout refusal and
+   retry); nothing that step let through is trusted. It shows the answer read-only ("Your radio, as it reported
+   itself:" or the Radio Info lines as answered) with **Check your radio again** to go back and change it. It
+   prepares the release's file for exactly that radio; it never offers the nearest build. A release with no file for
+   it shows "Not available in this release: …" and prepares nothing; one with no other file for this radio says "If
+   the radio refuses this file, this release has no other file for this radio to try." **The flash layout is an
+   internal detail:** the words say "your radio's firmware", and the layout ("Flash layout: L2", with the prepared
+   image or beside a refusal) shows only with [developer mode](../developer-mode/README.md) on. That is display only:
+   no check reads developer mode. Studio never changes a radio's code base: the radio's interlocks refuse a file
+   built on another one.
    When the radio already runs the image's build (on the UV-5R Mini: the build name the radio reports is the image's,
    or a to-stock file for a radio that names no build), the step shows a warning instead: writing it again rewrites the
    same firmware, a repair, with the usual power-cut risk. Nothing is prepared, and the wizard can't move on, until
    **Write it again anyway** is ticked; changing the answers clears the tick
    ([Already installed](../../reference/radios/baofeng/uv-5r-mini/firmware.md#already-installed)).
-5. **Before you flash** — names what is being flashed ("You are flashing the MM9PDY modded firmware 1.0.0 to the
+6. **Before you flash** — names what is being flashed ("You are flashing the MM9PDY modded firmware 1.0.0 to the
    Baofeng DM-32UV"), then a risk acknowledgement, required for every flash, plus battery, cable and "other programs
    closed" checks. A **Back up first** panel links to the Backup tab of any build for this radio in the open project.
    Some radios add their own checks: the RT95 asks two questions (serial number 21xx or later; the FUNC + P4 test
@@ -220,13 +241,13 @@ Per radio:
    have** records an existing backup file for the serial. Studio keeps only a small record in this browser (serial,
    file name, fingerprint, date; never the bytes), so the same radio skips the step next time. It is required: the
    "already tested this radio" opt-out for the read-only check does not skip it.
-6. **Enter update mode** — the radio's own steps, indicator and warnings, from its descriptor. The RT95's is P1 +
+7. **Enter update mode** — the radio's own steps, indicator and warnings, from its descriptor. The RT95's is P1 +
    knob with a blank screen; the P3 mode (screen "UPDATE THE RF CPU") flashes the main board and is the wrong one.
    The RT95 main board's is the other way round: remove power (a Power-key off and on is not enough), hold P3 and the
    knob, restore power; the screen says "UPDATE THE RF CPU".
    The UV-5R Mini's is PTT-A and = held while switching on (the screen shows UPDATE...); after a cut update, switch on
    with no keys instead: the screen stays dark and Studio continues the write.
-7. **Flash** — names the firmware and radio again, and repeats the radio's update-mode warnings right above
+8. **Flash** — names the firmware and radio again, and repeats the radio's update-mode warnings right above
    **Connect and flash**, which opens a port picker narrowed to the radio's USB device. Progress shows the phases
    the radio's updater reports: Handshake → Erase → Transfer → Finish for the DM-32UV; Handshake → Transfer →
    Finish for the AT-D890UV, which erases as part of the transfer; Handshake → Transfer → Finish for the RT95 front panel.
@@ -257,7 +278,7 @@ Per radio:
    included; the final time on success is the updater's own, from the start of its flash (after the radio is
    identified), so it can be a few seconds less than the last elapsed figure; on a failure it runs from connecting to
    the stop. The summary's `Elapsed:` line covers the same span as the final time.
-8. **Done or failed** — on success, what is now on the radio ("The MM9PDY modded firmware 1.0.0 is on the radio"),
+9. **Done or failed** — on success, what is now on the radio ("The MM9PDY modded firmware 1.0.0 is on the radio"),
    its verify hint and a plain-text summary (copy or download as `.txt`). The message depends on how the session
    ended (see [What to expect](#what-to-expect)). A failure before the radio was touched says nothing was written.
    A failure after it shows the recovery steps.

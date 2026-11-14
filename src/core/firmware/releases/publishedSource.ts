@@ -2,6 +2,7 @@ import { FirmwareError } from '../errors.ts';
 import { sha256Hex } from '../hash.ts';
 import { parseFirmwarePatch } from '../patch/index.ts';
 import { listStockFirmwareDescriptors } from '../stockCatalog.ts';
+import { stockVariants } from '../stockVariants.ts';
 import type { StockFirmwareDescriptor } from '../types.ts';
 import { combineLayoutFiles } from './layouts.ts';
 import { checkPublishedPatch, resolvePublishedLayout } from './publishedIndex.ts';
@@ -13,7 +14,10 @@ import type {
   PublishedFirmwareRelease,
 } from './types.ts';
 
-export function publishedReleaseSummary(release: PublishedFirmwareRelease): FirmwareReleaseSummary {
+export function publishedReleaseSummary(
+  release: PublishedFirmwareRelease,
+  supports?: readonly string[],
+): FirmwareReleaseSummary {
   return {
     radioId: release.radioId,
     key: release.tag,
@@ -22,7 +26,22 @@ export function publishedReleaseSummary(release: PublishedFirmwareRelease): Firm
     channel: release.channel,
     provenance: 'published',
     release,
+    ...(supports ? { supports } : {}),
   };
+}
+
+/**
+ * The stock versions a release's rows are built on, in the radio's stock order, for a radio that accepts more than one
+ * (`FirmwareReleaseSummary.supports`). Undefined for a radio with one stock version.
+ */
+export function releaseSupports(
+  rows: readonly PublishedFirmwareRelease[],
+  descriptor: StockFirmwareDescriptor | undefined,
+): readonly string[] | undefined {
+  if (!descriptor) return undefined;
+  const versions = stockVariants(descriptor).map((v) => v.version);
+  if (versions.length < 2) return undefined;
+  return versions.filter((v) => rows.some((r) => r.stockVersion === v));
 }
 
 /** Newest first by publication date, then tag. */
@@ -74,11 +93,21 @@ export function createPublishedFirmwareReleaseSource(
         .filter((r) => r.radioId === radioId && (includeRc || r.channel === 'final'))
         .slice()
         .sort(compareReleases);
-      // One entry per version: a layout radio's release is one row per layout.
+      // One entry per version: a layout radio's release is one row per layout. Its stock versions say which radios
+      // it is for.
+      const descriptor = descriptors.find((d) => d.radioId === radioId);
       const tags = new Set<string>();
       return sorted
         .filter((r) => !tags.has(r.tag) && Boolean(tags.add(r.tag)))
-        .map(publishedReleaseSummary);
+        .map((r) =>
+          publishedReleaseSummary(
+            r,
+            releaseSupports(
+              sorted.filter((s) => s.tag === r.tag),
+              descriptor,
+            ),
+          ),
+        );
     },
     async loadPatch(radioId, key) {
       const releases = (await loadRows()).filter((r) => r.radioId === radioId && r.tag === key);

@@ -3,7 +3,45 @@ import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { UV5RMINI_UNOFFICIAL_STOCK_COPIES } from './firmware.ts';
+import { UV5RMINI_STOCK_FIRMWARE, UV5RMINI_UNOFFICIAL_STOCK_COPIES } from './firmware.ts';
+import {
+  isUv5rMiniHardwareProven,
+  UV5RMINI_PROVEN_HARDWARE,
+  UV5RMINI_STOCK_BASE_KEYS,
+  uv5rMiniStockBase,
+} from './stockBases.ts';
+
+describe('UV5RMINI_STOCK_FIRMWARE.supportedRadios (#1670)', () => {
+  const text = UV5RMINI_STOCK_FIRMWARE.supportedRadios!;
+  const isSupported = ([suffix, firmware]: readonly [string, string]) =>
+    uv5rMiniStockBase(suffix, firmware)?.base === UV5RMINI_STOCK_FIRMWARE.baseName;
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  it("names the descriptor's stock base, as the stock-base table spells it", () => {
+    const supported = UV5RMINI_STOCK_BASE_KEYS.filter(isSupported);
+    expect(supported).toHaveLength(1);
+    const [suffix, firmware] = supported[0]!;
+    expect(text).toContain(`Firmware ${firmware}`);
+    expect(text).toMatch(new RegExp(`5RMINI ${escape(suffix)}\\b`));
+  });
+
+  it('names no other base, and only Firmware lines the table has', () => {
+    for (const [suffix, firmware] of UV5RMINI_STOCK_BASE_KEYS.filter((k) => !isSupported(k))) {
+      expect(text).not.toContain(`Firmware ${firmware}`);
+      expect(text).not.toMatch(new RegExp(`5RMINI ${escape(suffix)}\\b`));
+    }
+    const named = [...text.matchAll(/Firmware (V\d+\.\d+)/g)].map((m) => m[1]!);
+    expect(named.length).toBeGreaterThan(0);
+    for (const f of named) expect(UV5RMINI_STOCK_BASE_KEYS.some(([, kf]) => kf === f)).toBe(true);
+  });
+
+  it('names every proven Hardware line, and no other', () => {
+    for (const hw of UV5RMINI_PROVEN_HARDWARE) expect(text).toContain(`Hardware ${hw}`);
+    const named = [...text.matchAll(/Hardware (V\d+\.\d+)/g)].map((m) => m[1]!);
+    expect(named.length).toBeGreaterThan(0);
+    for (const hw of named) expect(isUv5rMiniHardwareProven(hw)).toBe(true);
+  });
+});
 
 const here = dirname(fileURLToPath(import.meta.url));
 const srcRoot = join(here, '../../../..');

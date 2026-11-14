@@ -7,13 +7,15 @@ import { FirmwareError } from '../errors.ts';
 import type { StockFirmwareDescriptor } from '../types.ts';
 import type { LoadedFirmwarePatch } from './types.ts';
 
-/** The refusal for a file whose build carries a layout tag that is not a release layout (a test-only build). */
+/**
+ * The refusal for a file whose build carries a layout tag that is not a release layout (a test-only build). The layout
+ * is an internal detail (#1670): the words name the radio's firmware.
+ */
 export const NOT_A_RELEASE_LAYOUT = (
   descriptor: StockFirmwareDescriptor,
   buildName: string,
-  tag: string,
 ): string =>
-  `${buildName} is a ${tag} build, not a release file for one of the ${descriptor.label}'s flash layouts (${descriptor.releaseLayouts?.layouts.join(', ') ?? ''}).`;
+  `${buildName} is not a release file for any ${descriptor.label} firmware Studio supports.`;
 
 /**
  * The layout a patch's build name names, for a radio with release layouts. Undefined when the radio has none, or the
@@ -27,7 +29,7 @@ export function layoutFromBuildName(
   if (!rl || buildName === undefined) return undefined;
   const tag = rl.fromBuildName(buildName);
   if (tag !== undefined && !rl.layouts.includes(tag)) {
-    throw new FirmwareError('patch-wrong-layout', NOT_A_RELEASE_LAYOUT(descriptor, buildName, tag));
+    throw new FirmwareError('patch-wrong-layout', NOT_A_RELEASE_LAYOUT(descriptor, buildName));
   }
   return tag;
 }
@@ -60,7 +62,7 @@ export function combineLayoutFiles(
     if (f.layout === undefined) {
       throw new FirmwareError(
         'patch-wrong-layout',
-        `Studio can't tell which flash layout one of ${what} is for.`,
+        `Studio can't tell which radio firmware one of ${what} is for.`,
       );
     }
     // One file per layout and stock base: NRF and NRFB radios of one layout would get separate files.
@@ -68,7 +70,7 @@ export function combineLayoutFiles(
     if (seen.has(key)) {
       throw new FirmwareError(
         'patch-wrong-layout',
-        `${what} has two files for ${f.layout}. A release has one file per flash layout.`,
+        `${what} has two files for the same radio firmware. A release has one file for each radio firmware it supports.`,
       );
     }
     seen.add(key);

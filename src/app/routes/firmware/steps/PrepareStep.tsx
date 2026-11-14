@@ -1,28 +1,17 @@
-import { NativeSelect } from '@mantine/core';
 import { useEffect, useState } from 'react';
 
-import type {
-  FirmwareRadioLayoutQuestion,
-  RadioInfoAnswers,
-  RadioLayoutAnswer,
-} from '@core/firmware/types.ts';
+import type { FirmwareRadioLayoutQuestion, RadioInfoAnswers } from '@core/firmware/types.ts';
 import { loadedLayouts, partnerFor } from '@core/firmware/releases/layouts.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 import { RadioIoError } from '@integrations/radio-io';
 
-import { Button, Panel, StatusBanner, TextInput } from '../../../components/v2/index.ts';
-import {
-  grantFirmwareRadioReportPort,
-  noFileForRadioMessage,
-  prepareFlash,
-  readFirmwareRadioReport,
-  releaseHasFileForLayout,
-  type FirmwareChoice,
-} from '../../../services/firmwareFlash.ts';
+import { Button, Panel, StatusBanner } from '../../../components/v2/index.ts';
+import { prepareFlash, type FirmwareChoice } from '../../../services/firmwareFlash.ts';
 import classes from '../FirmwareFlasherPage.module.css';
-import type { RadioReadStatus } from '../firmwareWizardState.ts';
+import { radioCheckAnswer, radioCheckSetup } from '../radioCheck.ts';
 import DeveloperOnly from './DeveloperOnly.tsx';
 import LabeledCheck from './LabeledCheck.tsx';
+import { RadioAnswerDetails } from './RadioCheckStep.tsx';
 import { shortHash, type WizardStepProps } from './stepTypes.ts';
 
 function provenanceLabel(image: PreparedFirmwareImage): string {
@@ -36,143 +25,55 @@ function provenanceLabel(image: PreparedFirmwareImage): string {
   }
 }
 
-/** The radio's Radio Info lines, for a radio whose firmware comes in more than one flash layout. From its descriptor. */
-function RadioLayoutQuestion({
+/** Prepare's link back to the "Your radio" step. */
+export const CHANGE_RADIO_ANSWER = 'Check your radio again';
+
+/**
+ * The radio's answer from the "Your radio" step, read-only (#1670): Prepare computes it again and runs every interlock
+ * on it, but changing it happens back on that step.
+ */
+function RadioAnswerReadOnly({
   question,
   answers,
+  fromReport,
+  complete,
   onChange,
 }: {
   question: FirmwareRadioLayoutQuestion;
   answers: RadioInfoAnswers;
-  onChange: (patch: Partial<RadioInfoAnswers>) => void;
+  fromReport: boolean;
+  complete: boolean;
+  onChange: (() => void) | undefined;
 }) {
+  const lines: [string, string][] = [[question.firmwareLabel, answers.firmware]];
+  if (question.suffixLabel) lines.push([question.suffixLabel, answers.suffix ?? '']);
+  lines.push([question.hardwareLabel, answers.hardware]);
   return (
     <>
-      <p className={classes.copy}>{question.intro}</p>
-      <ol className={classes.list}>
-        {question.steps.map((s) => (
-          <li key={s}>{s}</li>
-        ))}
-      </ol>
-      {question.warning ? <StatusBanner tone="warning">{question.warning}</StatusBanner> : null}
-      <RadioInfoLine
-        label={question.firmwareLabel}
-        help={question.firmwareHelp}
-        options={question.firmwareOptions}
-        value={answers.firmware}
-        onChange={(firmware) => onChange({ firmware })}
-      />
-      {question.suffixLabel ? (
-        <RadioInfoLine
-          label={question.suffixLabel}
-          help={question.suffixHelp}
-          options={question.suffixOptions}
-          value={answers.suffix ?? ''}
-          onChange={(suffix) => onChange({ suffix })}
-        />
-      ) : null}
-      <RadioInfoLine
-        label={question.hardwareLabel}
-        help={question.hardwareHelp}
-        options={question.hardwareOptions}
-        value={answers.hardware}
-        onChange={(hardware) => onChange({ hardware })}
-      />
-    </>
-  );
-}
-
-/** One Radio Info line: a dropdown of the supported values where the descriptor lists them, else typed. */
-function RadioInfoLine({
-  label,
-  help,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  help?: string;
-  options: readonly string[] | undefined;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  if (!options) {
-    return (
-      <TextInput label={label} value={value} onChange={(e) => onChange(e.target.value)} mono />
-    );
-  }
-  return (
-    <NativeSelect
-      label={label}
-      description={help}
-      value={value}
-      data={[{ value: '', label: 'Choose…', disabled: true }, ...options]}
-      onChange={(e) => onChange(e.currentTarget.value)}
-    />
-  );
-}
-
-/** Shown when the read found no report: the question below is then asked. */
-const NO_REPORT_NOTE =
-  'Studio found no MM9PDY radio report: the radio runs stock firmware, or an MM9PDY build from before the report.';
-
-/**
- * Read the radio before update mode, for a radio whose firmware may report about itself. Read-only: one handshake and
- * one read. A report decides the layout; no report, or a failed read, falls back to the Radio Info question.
- */
-function ReadRadio({
-  report,
-  status,
-  radioId,
-  onRead,
-}: {
-  report: NonNullable<FirmwareRadioLayoutQuestion['report']>;
-  status: RadioReadStatus | null;
-  radioId: WizardStepProps['updater']['radioId'];
-  onRead: (status: RadioReadStatus | null) => void;
-}) {
-  const [reading, setReading] = useState(false);
-  const read = async () => {
-    setReading(true);
-    onRead(null);
-    try {
-      const port = await grantFirmwareRadioReportPort(radioId);
-      const out = await readFirmwareRadioReport({ radioId, port });
-      if (!out.ok) {
-        onRead({ kind: 'failed', message: out.message });
-        return;
-      }
-      const answer = report.resolve(out.bytes);
-      onRead(answer ? { kind: 'report', answer } : { kind: 'none' });
-    } catch (err) {
-      onRead({
-        kind: 'failed',
-        message: err instanceof Error ? err.message : 'The radio was not read.',
-      });
-    } finally {
-      setReading(false);
-    }
-  };
-  return (
-    <>
-      <p className={classes.copy}>{report.intro}</p>
-      <ol className={classes.list}>
-        {report.steps.map((s) => (
-          <li key={s}>{s}</li>
-        ))}
-      </ol>
-      <div>
-        <Button onClick={read} disabled={reading}>
-          {reading ? 'Reading…' : status ? 'Read the radio again' : 'Read the radio'}
-        </Button>
-      </div>
-      {status?.kind === 'none' ? <p className={classes.muted}>{NO_REPORT_NOTE}</p> : null}
-      {status?.kind === 'failed' ? (
-        <StatusBanner tone="warning">
-          Studio couldn't read the radio: {status.message} Nothing was written. Check the radio is
-          switched on normally and the cable is in, then read it again, or answer from its Radio
-          Info screen below.
-        </StatusBanner>
+      {!complete ? (
+        <p className={classes.muted}>
+          Studio needs to know about your radio before it prepares the image.
+        </p>
+      ) : fromReport ? (
+        <p className={classes.copy}>Your radio, as it reported itself:</p>
+      ) : (
+        <>
+          <p className={classes.copy}>Your radio, as you answered:</p>
+          <ul className={classes.list}>
+            {lines.map(([label, value]) => (
+              <li key={label}>
+                {label}: {value}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {onChange ? (
+        <div>
+          <Button variant="secondary" size="sm" onClick={onChange}>
+            {CHANGE_RADIO_ANSWER}
+          </Button>
+        </div>
       ) : null}
     </>
   );
@@ -191,40 +92,18 @@ const needsConfirm = (err: unknown): err is RadioIoError =>
 /** Build the exact image to flash and run the radio's safety checks. Nothing is sent to the radio here. */
 export default function PrepareStep({ state, dispatch, updater }: WizardStepProps) {
   // The flash layout is an internal detail (#1670): shown only through DeveloperOnly, which no check reads.
-  const { stock, image, choice, loadedPatch, radioInfo, radioRead, reinstallConfirmed } = state;
-  const question = updater.stock.radioLayout;
-  // The radio is read first when it may report about itself; the question is asked only without a report.
-  const report = question?.report && updater.radioReport ? question.report : undefined;
-  const asksQuestion =
-    !!question && (!report || (radioRead !== null && radioRead.kind !== 'report'));
-  const answer: RadioLayoutAnswer | null = !question
-    ? null
-    : radioRead?.kind === 'report' && report
-      ? radioRead.answer
-      : asksQuestion
-        ? question.resolve(radioInfo)
-        : { kind: 'incomplete' };
-  // Undefined when the radio has one layout; null while the answer gives none. After the radio refused one layout's
-  // file before installing anything, its layout is taken to be the other one (the retry).
+  const { stock, image, choice, loadedPatch, radioInfo, reinstallConfirmed } = state;
+  const setup = radioCheckSetup(updater);
   const layoutRetry = state.layoutRetry;
-  const radioLayout: string | null | undefined = !answer
-    ? undefined
-    : answer.kind === 'layout'
-      ? (layoutRetry?.to ?? answer.layout)
-      : null;
-  // The build the radio says it runs, where it says so; it decides "already installed".
-  const radioBuild = answer?.kind === 'layout' ? answer.build : undefined;
-  // A radio that reported about itself runs a modded build, even when it named none.
-  const radioReported = answer?.kind === 'layout' && answer.reported === true;
-  // The code base the radio runs: what its report says, or what the answers name. After a retry, a radio that didn't
-  // report is taken to run the base of the file prepared for the other layout (its answers were wrong); a reported
-  // base stands, so the interlocks refuse a retry that would change it.
-  const radioCodeBase =
-    answer?.kind !== 'layout'
-      ? undefined
-      : layoutRetry && !answer.reported
-        ? layoutRetry.toBase
-        : answer.codeBase;
+  const {
+    answer,
+    asksQuestion,
+    radioLayout,
+    radioBuild,
+    radioReported,
+    radioCodeBase,
+    unavailable,
+  } = radioCheckAnswer(state, setup);
   type Inputs = readonly [
     unknown,
     FirmwareChoice | null,
@@ -267,15 +146,6 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
       refusedBase: image.baseName,
       variantOfBase: updater.stock.releaseLayouts?.variantOfBase,
     });
-  // The release has files by layout but none for this radio (its layout, and its base where known): say so and stop
-  // before anything is prepared. Never the nearest build instead.
-  const unavailable =
-    !!loadedPatch &&
-    typeof radioLayout === 'string' &&
-    !releaseHasFileForLayout(loadedPatch, radioLayout, radioCodeBase)
-      ? noFileForRadioMessage(loadedPatch, radioLayout, radioCodeBase)
-      : null;
-
   useEffect(() => {
     if (!stock || !choice || image || radioLayout === null || unavailable) return;
     let cancelled = false;
@@ -336,23 +206,24 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
   return (
     <Panel title="Prepare" sub="Build the exact image and run the safety checks.">
       <div className={classes.stack}>
-        {report ? (
-          <ReadRadio
-            report={report}
-            status={radioRead}
-            radioId={updater.radioId}
-            onRead={(status) => dispatch({ type: 'radioRead', status })}
-          />
-        ) : null}
-        {question && asksQuestion ? (
-          <RadioLayoutQuestion
-            question={question}
+        {setup ? (
+          <RadioAnswerReadOnly
+            question={setup.question}
             answers={radioInfo}
-            onChange={(patch) => dispatch({ type: 'setRadioInfo', patch })}
+            fromReport={!asksQuestion}
+            complete={answer?.kind === 'layout'}
+            onChange={
+              state.radioCheck ? () => dispatch({ type: 'goTo', step: 'check' }) : undefined
+            }
           />
         ) : null}
         {answer?.kind === 'refused' ? (
           <StatusBanner tone="warning">{answer.message}</StatusBanner>
+        ) : null}
+        {answer?.kind === 'refused' && answer.detail ? (
+          <DeveloperOnly>
+            <p className={classes.muted}>{answer.detail}</p>
+          </DeveloperOnly>
         ) : null}
         {layoutRetry && answer?.kind === 'layout' ? (
           <StatusBanner tone="info">
@@ -362,19 +233,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
             .
           </StatusBanner>
         ) : null}
-        {answer?.kind === 'layout' && answer.details ? (
-          <ul className={classes.list}>
-            {answer.details.map((d) => (
-              <li key={d}>{d}</li>
-            ))}
-          </ul>
-        ) : null}
-        {answer?.kind === 'layout' && answer.warning ? (
-          <StatusBanner tone="warning">{answer.warning}</StatusBanner>
-        ) : null}
-        {answer?.kind === 'incomplete' && asksQuestion ? (
-          <p className={classes.muted}>Answer each line to prepare the image.</p>
-        ) : null}
+        <RadioAnswerDetails answer={answer} />
         {unavailable && !image ? (
           <StatusBanner tone="warning">
             {unavailable} Nothing was prepared or sent to the radio.

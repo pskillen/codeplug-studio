@@ -157,6 +157,30 @@ async function walkToFlashStep({ tickChecks = true } = {}) {
   cont();
 }
 
+/** The "Your radio" step's sub-heading. */
+const RADIO_CHECK_SUB = 'Check Studio can update this radio before you find any files.';
+
+/** Pick the UV-5R Mini, drop a patch file, accept it, and continue to the "Your radio" step. */
+async function walkMiniToCheck() {
+  fireEvent.click(screen.getByRole('radio', { name: /UV-5R Mini/ }));
+  cont();
+  const patch = document.querySelector('input[type="file"][accept=".json"]') as HTMLInputElement;
+  fireEvent.change(patch, { target: { files: [new File(['{}'], 'mine.patch.json')] } });
+  await waitFor(() => expect(flash.loadChosenPatch).toHaveBeenCalled());
+  const understand = screen.queryByRole('checkbox', { name: 'I understand' });
+  if (understand) fireEvent.click(understand);
+  cont();
+  expect(screen.getByText(RADIO_CHECK_SUB)).toBeInTheDocument();
+}
+
+/** On the Stock firmware step: supply a file, wait for it to verify, and continue. */
+async function supplyStock() {
+  const stock = document.querySelector('input[type="file"]') as HTMLInputElement;
+  fireEvent.change(stock, { target: { files: [new File(['x'], 'stock.ufw')] } });
+  await screen.findByText(/verified/);
+  cont();
+}
+
 describe('FirmwareFlasherPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -187,6 +211,30 @@ describe('FirmwareFlasherPage', () => {
     expect(screen.getByRole('radio', { name: /Baofeng DM-32UV/ })).toHaveTextContent(
       DM32.stock.version,
     );
+  });
+
+  it('says which radios are supported on the card and above every later step, for a radio that says so', async () => {
+    const supported = 'radios whose Radio Info shows Firmware V9.99.';
+    vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([
+      { ...DM32, stock: { ...DM32.stock, supportedRadios: supported } },
+    ]);
+    renderPage();
+    expect(screen.getByRole('radio', { name: /Baofeng DM-32UV/ })).toHaveTextContent(
+      `Supported: ${supported}`,
+    );
+    fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+    cont();
+    await screen.findByText('Summary of 1.0.0.');
+    expect(screen.getByText(`Supported: ${supported}`)).toBeInTheDocument();
+  });
+
+  it('shows no supported-radios line for a radio without one', async () => {
+    renderPage();
+    expect(screen.queryByText(/Supported:/)).toBeNull();
+    fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+    cont();
+    await screen.findByText('Summary of 1.0.0.');
+    expect(screen.queryByText(/Supported:/)).toBeNull();
   });
 
   it('requires a patch and shows own-image instructions for a radio without stock flash', async () => {
@@ -752,20 +800,9 @@ describe('FirmwareFlasherPage', () => {
         expect(screen.getByRole('radio', { name: /UV-5R Mini/ })).toBeInTheDocument();
       });
 
-      it('reads the radio on Prepare through the Capacitor port', async () => {
+      it('reads the radio on "Your radio" through the Capacitor port', async () => {
         renderPage();
-        fireEvent.click(screen.getByRole('radio', { name: /UV-5R Mini/ }));
-        cont();
-        const patch = document.querySelector(
-          'input[type="file"][accept=".json"]',
-        ) as HTMLInputElement;
-        fireEvent.change(patch, { target: { files: [new File(['{}'], 'mine.patch.json')] } });
-        await waitFor(() => expect(flash.loadChosenPatch).toHaveBeenCalled());
-        cont();
-        const stock = document.querySelector('input[type="file"]') as HTMLInputElement;
-        fireEvent.change(stock, { target: { files: [new File(['x'], 'stock.ufw')] } });
-        await screen.findByText(/verified/);
-        cont();
+        await walkMiniToCheck();
 
         expect(flash.readFirmwareRadioReport).not.toHaveBeenCalled();
         fireEvent.click(screen.getByRole('button', { name: 'Read the radio' }));
@@ -775,9 +812,103 @@ describe('FirmwareFlasherPage', () => {
         expect(flash.readFirmwareRadioReport).toHaveBeenCalledWith(
           expect.objectContaining({ radioId: 'baofeng-uv5rmini', port: CAPACITOR_PORT }),
         );
+        cont();
+        await supplyStock();
         await waitFor(() => expect(flash.prepareFlash).toHaveBeenCalled());
         expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![4]).toBe('L2');
+        expect(flash.readFirmwareRadioReport).toHaveBeenCalledTimes(1);
       });
+    });
+  });
+
+  describe.each([
+    { platform: 'a desktop browser', web: true },
+    { platform: 'the Android app', web: false },
+  ])('the UV-5R Mini\'s "Your radio" step, in $platform (#1670)', ({ web }) => {
+    beforeEach(async () => {
+      const actual = await vi.importActual<typeof envGate>(
+        '../../services/firmwareFlashEnvGate.ts',
+      );
+      vi.mocked(envGate.listOfferedFirmwareUpdaters).mockImplementation(
+        actual.listOfferedFirmwareUpdaters,
+      );
+      // The Android app offers the Mini only with developer mode on; the step is the same either way.
+      setDeveloperMode(true);
+      vi.mocked(radioIo.isWebSerialSupported).mockReturnValue(web);
+      vi.mocked(radioIo.isCapacitorSerialSupported).mockReturnValue(!web);
+      vi.mocked(flash.grantFirmwareRadioReportPort).mockResolvedValue(
+        {} as Awaited<ReturnType<typeof flash.grantFirmwareRadioReportPort>>,
+      );
+      vi.mocked(flash.loadChosenPatch).mockResolvedValue(UNREVIEWED);
+    });
+    afterEach(() => localStorage.removeItem(DEVELOPER_MODE_KEY));
+
+    const readAs = async (bytes: Uint8Array) => {
+      vi.mocked(flash.readFirmwareRadioReport).mockResolvedValueOnce({ ok: true, bytes });
+      fireEvent.click(screen.getByRole('button', { name: /^Read the radio/ }));
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: /^Read the radio/ })).toBeEnabled(),
+      );
+    };
+    /** The Stock firmware step is the first after "Your radio" to take a file. */
+    const stockStepShown = () => document.querySelector('input[type="file"]') !== null;
+
+    it('comes between Firmware and Stock firmware in the steps', async () => {
+      renderPage();
+      await walkMiniToCheck();
+      const steps = screen.getByLabelText('Firmware flasher steps').textContent ?? '';
+      expect(steps.indexOf('Firmware')).toBeLessThan(steps.indexOf('Your radio'));
+      expect(steps.indexOf('Your radio')).toBeLessThan(steps.indexOf('Stock firmware'));
+    });
+
+    it('stops an unsupported Mini before the stock-file step', async () => {
+      renderPage();
+      await walkMiniToCheck();
+      await readAs(new Uint8Array(64).fill(0xff));
+      fireEvent.change(screen.getByLabelText('Radio Info: Firmware'), {
+        target: { value: 'V0.04' },
+      });
+      fireEvent.change(screen.getByLabelText('Suffix'), { target: { value: 'NRF' } });
+      fireEvent.change(screen.getByLabelText('Radio Info: Hardware'), {
+        target: { value: 'V1.7' },
+      });
+      expect(
+        screen.getByText(
+          'There is no MM9PDY build for this radio (NRF V0.04) yet; nothing was sent.',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+      cont();
+      expect(screen.getByText(RADIO_CHECK_SUB)).toBeInTheDocument();
+      expect(stockStepShown()).toBe(false);
+      expect(flash.verifyStockFiles).not.toHaveBeenCalled();
+    });
+
+    it('stops a Mini reporting firmware Studio does not know before the stock-file step', async () => {
+      renderPage();
+      await walkMiniToCheck();
+      await readAs(radioReportFrame({ vm: [0x96000, 0x66000] }));
+      expect(
+        screen.getByText("This radio reports firmware Studio doesn't support. Nothing was sent."),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+      expect(stockStepShown()).toBe(false);
+    });
+
+    it('lets a supported Mini on, and Prepare shows its answer with a way back', async () => {
+      renderPage();
+      await walkMiniToCheck();
+      await readAs(radioReportFrame({}));
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled();
+      cont();
+      expect(stockStepShown()).toBe(true);
+      await supplyStock();
+      await waitFor(() => expect(flash.prepareFlash).toHaveBeenCalled());
+      expect(screen.getByText('Your radio, as it reported itself:')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^Read the radio/ })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Check your radio again' }));
+      expect(screen.getByText(RADIO_CHECK_SUB)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Read the radio again' })).toBeInTheDocument();
     });
   });
 });
@@ -833,6 +964,19 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
         await screen.findByText(/Notes for 1\.1\.0-rc\.1|Notes for 1\.0\.0/),
       ).toBeInTheDocument();
       expect(flash.loadChosenPatch).not.toHaveBeenCalled();
+    });
+
+    it('says which radios are supported, for a radio that says so', async () => {
+      vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([
+        { ...DM32, stock: { ...DM32.stock, supportedRadios: 'radios on V9.99.' } },
+      ]);
+      vi.mocked(flash.listPublishedReleases).mockResolvedValue([
+        { ...FINAL, supports: ['v9.9 (A)'] },
+      ]);
+      renderPage();
+      expect(screen.getByText('Supported: radios on V9.99.')).toBeInTheDocument();
+      expect(await screen.findByText('Summary of 1.0.0.')).toBeInTheDocument();
+      expect(screen.getByText('For the Baofeng DM-32UV on stock v9.9 (A)')).toBeInTheDocument();
     });
 
     it('says when the list cannot be downloaded, and retries', async () => {
@@ -908,6 +1052,21 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
     await waitFor(() => expect(flash.loadChosenPatch).toHaveBeenCalled());
     const choice = vi.mocked(flash.loadChosenPatch).mock.calls[0]![1];
     expect(choice.kind === 'user-patch' && choice.otherFiles).toBeUndefined();
+  });
+
+  it('says which radios a release is for, where the summary names its stock versions', async () => {
+    vi.mocked(flash.listPublishedReleases).mockResolvedValue([
+      { ...FINAL, supports: ['v9.9 (A)', 'v8.8 (B)'] },
+    ]);
+    await toFirmwareStep();
+    expect(
+      screen.getByText('For the Baofeng DM-32UV on stock v9.9 (A) or v8.8 (B)'),
+    ).toBeInTheDocument();
+  });
+
+  it('adds no such line to a release without stock versions', async () => {
+    await toFirmwareStep();
+    expect(screen.queryByText(/^For the /)).toBeNull();
   });
 
   it('lists finals, and adds release candidates on request', async () => {

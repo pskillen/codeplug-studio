@@ -87,6 +87,18 @@ function badgesFor(item: ContextualStripItem, developerMode: boolean): string[] 
   return item.external ? ['Opens in a new tab ↗'] : [];
 }
 
+/**
+ * The flasher card's "which radios exactly" lines (#1670): each offered radio's own `supportedRadios` text, so an owner
+ * can check before opening the flasher. The text starts with the radio's name, so the line doesn't repeat it. Radios
+ * without the field show nothing.
+ */
+function supportLinesFor(item: ContextualStripItem, developerMode: boolean): string[] {
+  if (item.to !== '/firmware') return [];
+  return listOfferedFirmwareUpdaters(undefined, developerMode).flatMap((d) =>
+    d.stock.supportedRadios ? [`Supported: ${d.stock.supportedRadios}`] : [],
+  );
+}
+
 const isFeatured = (item: ContextualStripItem) => TOOL_CARDS[item.to]?.featured === true;
 
 /**
@@ -165,6 +177,11 @@ export default function ReferenceIndexPage() {
                     {featured ? <span className={classes.new}>NEW</span> : null}
                   </span>
                   <span className={classes.cardDescription}>{description}</span>
+                  {supportLinesFor(item, developerMode).map((line) => (
+                    <span key={line} className={classes.cardDescription}>
+                      {line}
+                    </span>
+                  ))}
                   {badges.length > 0 ? (
                     <span className={classes.badges}>
                       {badges.map((badge) => (

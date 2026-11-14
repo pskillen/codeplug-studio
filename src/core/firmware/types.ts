@@ -72,6 +72,12 @@ export interface StockFirmwareDescriptor {
   readonly radioId: FirmwareRadioId;
   readonly label: string;
   readonly version: string;
+  /**
+   * Which radios of this model Studio supports, in words an owner can check on the radio itself without a cable (UV-5R
+   * Mini: what Radio Info and the start-up screen show), as a phrase the wizard shows after "Supported: ". Shown on the
+   * radio's card, under the flasher's intro and in the release list, before any file is asked for. Absent: no line.
+   */
+  readonly supportedRadios?: string;
   /** Where an operator gets the stock files, in display order (at least one). Shown as text and links only. */
   readonly stockSources: readonly StockFirmwareSource[];
   /** The vendor zip as published; absent when no zip is published. Member hashes are authoritative. */
@@ -168,7 +174,12 @@ export type RadioLayoutAnswer =
       /** What the radio said about itself, shown as information only. */
       readonly details?: readonly string[];
     }
-  | { readonly kind: 'refused'; readonly message: string };
+  | {
+      readonly kind: 'refused';
+      readonly message: string;
+      /** Internal detail behind the refusal (what the radio reported), shown only with developer mode on. */
+      readonly detail?: string;
+    };
 
 /** Rendered generically by the wizard's Prepare step. */
 export interface FirmwareRadioLayoutQuestion {

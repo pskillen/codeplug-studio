@@ -184,8 +184,13 @@ export function decodeUv5rMiniRadioReport(bytes: Uint8Array): Uv5rMiniRadioRepor
 const hex = (n: number, digits: number) =>
   `0x${n.toString(16).toUpperCase().padStart(digits, '0')}`;
 
-export const UV5RMINI_UNKNOWN_LAYOUT_REFUSAL = (vmStart: number, vmSize: number): string =>
-  `This radio reports a flash layout Studio doesn't support (VM entry at ${hex(vmStart, 5)}, ${hex(vmSize, 5)} bytes). Nothing was sent.`;
+/** The refusal for a report whose `VM` entry is no flash layout Studio knows. The layout is an internal detail (#1670). */
+export const UV5RMINI_UNKNOWN_LAYOUT_REFUSAL =
+  "This radio reports firmware Studio doesn't support. Nothing was sent.";
+
+/** What the radio reported behind that refusal, shown only with developer mode on. */
+export const UV5RMINI_UNKNOWN_LAYOUT_DETAIL = (vmStart: number, vmSize: number): string =>
+  `VM entry at ${hex(vmStart, 5)}, ${hex(vmSize, 5)} bytes: no flash layout Studio knows.`;
 
 /**
  * The refusal for a report format Studio doesn't read. Below Studio's format the radio's build is the older one, so
@@ -217,7 +222,8 @@ export function uv5rMiniLayoutFromReport(report: Uv5rMiniRadioReport): RadioLayo
     case 'unknownLayout':
       return {
         kind: 'refused',
-        message: UV5RMINI_UNKNOWN_LAYOUT_REFUSAL(report.vmStart, report.vmSize),
+        message: UV5RMINI_UNKNOWN_LAYOUT_REFUSAL,
+        detail: UV5RMINI_UNKNOWN_LAYOUT_DETAIL(report.vmStart, report.vmSize),
       };
     case 'report': {
       // The same table and the same refusals as the Radio Info answers: the strings name the base, and bit 0 was only

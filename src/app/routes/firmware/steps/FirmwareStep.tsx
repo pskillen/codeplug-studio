@@ -3,7 +3,11 @@ import { useEffect, useState } from 'react';
 import { FirmwareError } from '@core/firmware/errors.ts';
 import { loadedLayouts } from '@core/firmware/releases/layouts.ts';
 import { publishedReleaseSummary } from '@core/firmware/releases/publishedSource.ts';
-import { loadedFirmwarePatchTitle, stockFirmwareTitle } from '@core/firmware/releases/projects.ts';
+import {
+  loadedFirmwarePatchTitle,
+  releaseSupportsLine,
+  stockFirmwareTitle,
+} from '@core/firmware/releases/projects.ts';
 import type { FirmwareReleaseSummary, LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
 import { toStockVariantFor } from '@core/firmware/stockVariants.ts';
 
@@ -220,6 +224,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
             {list?.map((summary) => {
               const release = summary.release!;
               const selected = choice?.kind === 'release' && choice.summary.key === summary.key;
+              const supportsLine = releaseSupportsLine(updater.stock.label, summary.supports);
               return (
                 <div
                   key={summary.key}
@@ -236,6 +241,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
                     {summary.title}
                     {summary.channel === 'rc' ? <Pill tone="warning">Pre-release</Pill> : null}
                   </label>
+                  {supportsLine ? <span className={classes.cardMeta}>{supportsLine}</span> : null}
                   <span className={classes.cardMeta}>Published {release.publishedOn}</span>
                   <span className={classes.copy}>{release.summary}</span>
                   <ReleaseNotesDisclosure summary={summary} />
