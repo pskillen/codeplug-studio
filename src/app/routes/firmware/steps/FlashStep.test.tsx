@@ -366,6 +366,16 @@ describe('FlashStep: written / total, elapsed and time left', () => {
         vi.advanceTimersByTime(100);
       });
 
+    /** A held flash with its first report on screen, so the ticker's effect has run, and the dialog settled. */
+    async function startTicking() {
+      const run = await startHeldFlash();
+      settle();
+      run.report({ phase: 'handshake', cur: 0, max: 0, msg: 'Handshake', radioTouched: false });
+      await screen.findByTestId('firmware-flash-stats');
+      settle();
+      return run;
+    }
+
     const SUCCESS = {
       ok: true,
       radioId: 'baofeng-uv5rmini',
@@ -388,8 +398,7 @@ describe('FlashStep: written / total, elapsed and time left', () => {
 
     it('shows a numeric time left once the warm-up has passed, falling through a silence', async () => {
       show(<Harness />);
-      const run = await startHeldFlash();
-      settle();
+      const run = await startTicking();
       run.report({ phase: 'erase', cur: 0, max: 478, msg: 'Erasing', radioTouched: true });
       // The first transfer report is the baseline.
       run.report(transfer(10));
@@ -419,8 +428,7 @@ describe('FlashStep: written / total, elapsed and time left', () => {
 
     it('clears the ticker when the flash finishes', async () => {
       show(<Harness />);
-      const run = await startHeldFlash();
-      settle();
+      const run = await startTicking();
       expect(vi.getTimerCount()).toBe(1);
       await run.finish(SUCCESS);
       await screen.findByTestId('firmware-flash-summary');
@@ -430,8 +438,7 @@ describe('FlashStep: written / total, elapsed and time left', () => {
 
     it('clears the ticker when the flash fails', async () => {
       show(<Harness />);
-      const run = await startHeldFlash();
-      settle();
+      const run = await startTicking();
       expect(vi.getTimerCount()).toBe(1);
       await run.finish({
         ...OTHER_LAYOUT_0X8F,
@@ -445,8 +452,7 @@ describe('FlashStep: written / total, elapsed and time left', () => {
 
     it('clears the ticker when the step unmounts mid-flash', async () => {
       const view = show(<Harness />);
-      await startHeldFlash();
-      settle();
+      await startTicking();
       expect(vi.getTimerCount()).toBe(1);
       view.unmount();
       expect(vi.getTimerCount()).toBe(0);
