@@ -138,7 +138,10 @@ async function applyCapacitorSignals(
     await plugin.setDTR({ portId, value: raise });
     await plugin.setRTS({ portId, value: raise });
   } catch {
-    /* DTR/RTS unsupported by the driver: best effort, as on Web Serial. */
+    // DTR/RTS unsupported by the driver: best effort, as on Web Serial. This swallows a failed *low* request too
+    // (`raiseDtrRts: false`), so the lines are left as the driver opened them. That is safe on the adapters we know
+    // (a CH340 opens with both low) and is the same as Web Serial; refusing here would block a driver that has no
+    // modem-line control at all, where the lines cannot be raised either.
   }
 }
 
