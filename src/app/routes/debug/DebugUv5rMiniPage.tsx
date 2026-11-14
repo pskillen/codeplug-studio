@@ -187,12 +187,11 @@ function Uv5rMiniFullRead() {
   const [rightLabel, setRightLabel] = useState<string | null>(null);
 
   useEffect(() => {
-    // The app can't download the reads, so there is nothing to warn about on leaving.
-    if (native || undownloaded === 0) return;
+    if (undownloaded === 0) return;
     const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
-  }, [native, undownloaded]);
+  }, [undownloaded]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -301,35 +300,30 @@ function Uv5rMiniFullRead() {
             </Text>
           ) : (
             <Stack gap="lg">
-              {native ? (
-                <Alert color="yellow" title="Saving the reads isn't available in the Android app">
-                  The app can&apos;t save files from this page yet. Compare reads and view the
-                  calibration here; to keep a read as a file, take it in Chrome or Edge on a desktop
-                  computer.
-                </Alert>
-              ) : (
-                <Stack gap="xs">
-                  <Group>
-                    <Button variant="default" onClick={downloadAll}>
-                      Download all ({reads.length})
-                    </Button>
-                    {undownloaded > 0 ? (
-                      <Text size="sm" c="orange">
-                        {undownloaded} read{undownloaded === 1 ? '' : 's'} not downloaded
-                      </Text>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        All downloaded
-                      </Text>
-                    )}
-                  </Group>
-                  <Text size="xs" c="dimmed">
-                    The zip holds each read in full (raw, decoded and a summary), including the
-                    radio&apos;s calibration at 0xF000–0xFFFF. It is specific to this radio: keep it
-                    with the radio and don&apos;t share it as a codeplug.
-                  </Text>
-                </Stack>
-              )}
+              <Stack gap="xs">
+                <Group>
+                  <Button variant="default" onClick={downloadAll}>
+                    Download all ({reads.length})
+                  </Button>
+                  {undownloaded > 0 ? (
+                    <Text size="sm" c="orange">
+                      {undownloaded} read{undownloaded === 1 ? '' : 's'} not downloaded
+                    </Text>
+                  ) : (
+                    <Text size="sm" c="dimmed">
+                      All downloaded
+                    </Text>
+                  )}
+                </Group>
+                <Text size="xs" c="dimmed">
+                  The zip holds each read in full (raw, decoded and a summary), including the
+                  radio&apos;s calibration at 0xF000–0xFFFF. It is specific to this radio: keep it
+                  with the radio and don&apos;t share it as a codeplug.
+                  {native
+                    ? ' In the app it is saved to Documents/Codeplug Studio on the phone, and the share sheet opens so you can send it on.'
+                    : null}
+                </Text>
+              </Stack>
               {[...reads].reverse().map((r) => (
                 <ReadCard key={r.label} read={r} />
               ))}

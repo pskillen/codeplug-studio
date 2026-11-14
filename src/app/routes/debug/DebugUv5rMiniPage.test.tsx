@@ -71,7 +71,7 @@ describe('DebugUv5rMiniPage in the Android app (#1680)', () => {
     vi.mocked(isNativeApp).mockReturnValue(false);
   });
 
-  it('offers the read, the compare and the calibration view, with no download and no write', async () => {
+  it('offers the read, the compare, the calibration view and Download all, with no write', async () => {
     const { isNativeApp } = await import('@integrations/platform/isNativeApp.ts');
     vi.mocked(isNativeApp).mockReturnValue(true);
     const a = new Uint8Array(0x10000);
@@ -89,15 +89,19 @@ describe('DebugUv5rMiniPage in the Android app (#1680)', () => {
     expect(screen.queryByText('Not available in the Android app')).toBeNull();
     expect(screen.getByRole('button', { name: 'Full read' })).toBeTruthy();
     expect(screen.getByText(/one attached cable that matches the Mini/)).toBeTruthy();
-    expect(screen.getByText("Saving the reads isn't available in the Android app")).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /download/i })).toBeNull();
+    expect(screen.queryByText(/Saving the reads isn.t available/)).toBeNull();
+    expect(screen.getByText(/saved to Documents\/Codeplug Studio on the phone/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /write|restore/i })).toBeNull();
     expect(screen.getByText('The reads differ outside the skipped windows')).toBeTruthy();
     expect(screen.getByTestId('uv5r-mini-calibration')).toBeTruthy();
-    // Nothing to download, so leaving is not blocked.
-    const event = new Event('beforeunload', { cancelable: true });
-    window.dispatchEvent(event);
-    expect(event.defaultPrevented).toBe(false);
+    // Download all goes through the same download helper as in a browser, which saves on the device in the app.
+    const { downloadZip } = await import('@integrations/download/browserDownload.ts');
+    vi.mocked(downloadZip).mockClear();
+    fireEvent.click(screen.getByRole('button', { name: /^Download all/ }));
+    expect(vi.mocked(downloadZip)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(downloadZip).mock.calls[0][1]).toMatch(/^uv5r-mini-reads-.+\.zip$/);
+    expect(screen.getByText('All downloaded')).toBeTruthy();
+    vi.mocked(downloadZip).mockClear();
   });
 });
 
