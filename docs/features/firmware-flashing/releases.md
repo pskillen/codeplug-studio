@@ -83,7 +83,8 @@ each has an optional `layout` field, `"L1"` or `"L2"`:
 - The patch-file dropzone takes one file, or the release's two files at once (layouts from their build names). Two
   files must be one release: the same version, both published or both not, one per layout.
 
-The public repository's index format doc and `tools/release_index.py` don't have the `layout` and `base` fields yet.
+The public repository's `tools/release_index.py` writes the `layout` and `base` fields; its index format doc doesn't
+describe them yet, so this page is their reference.
 
 ### RT95 main board rows
 

@@ -116,6 +116,9 @@ hidden there).
 3. **Stock firmware** — the stock sources (the vendor's download link, or how to ask the vendor, and any unofficial
    mirror, labelled; all plain links: Studio never fetches them), the expected zip and
    file names, and a drop zone for the zip or the extracted files. Studio checks every file against the pinned hashes.
+   The UV-5R Mini, whose vendor publishes no stock firmware, lists the user's own copy and then one "Unofficial copy
+   shared by a third party" link per stock version, each naming its file
+   ([UV-5R Mini: where the file comes from](../../reference/radios/baofeng/uv-5r-mini/firmware.md#stock-firmware-pin)).
    A radio whose release files are built on different stocks (the UV-5R Mini: the L1 file on v0.04, the L2 file on
    v0.27) takes either stock file or both; each file is then prepared on its own stock
    ([UV-5R Mini: one stock per base](../../reference/radios/baofeng/uv-5r-mini/firmware.md#stock-firmware-pin)).

@@ -11,21 +11,38 @@ Keep them in step.
 
 ## Stock firmware pin
 
-A stock base is one `.ufw` file, member role `ufw`; Studio accepts two bases. Studio never fetches, hosts or commits it, and no vendor download
-is offered: the stock image is the radio's own, which the firmware project builds from a read of that radio. The
-image is scrambled per radio, so Studio treats it as opaque bytes and cannot read anything out of it.
+A stock base is one `.ufw` file, member role `ufw`; Studio accepts two bases. A stock file is the same for every radio
+on that base: it is not tied to one radio, and the pinned hash, not the user, decides whether a file is accepted.
 
 | Base         | Version        | File name              | Size          | sha256                                                             |
 | ------------ | -------------- | ---------------------- | ------------- | ------------------------------------------------------------------ |
-| `nrfb-v0.04` | `v0.04 (NRFB)` | `stock-nrfb-v0.04.ufw` | 520,192 bytes | `02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e` |
 | `nrf-v0.27`  | `v0.27 (NRF)`  | `stock-nrf-v0.27.ufw`  | 504,832 bytes | `811b4b37253e0685c7efbd3ff0a24aac2bcad223e5453d95b5bfc3f42c089128` |
+| `nrfb-v0.04` | `v0.04 (NRFB)` | `stock-nrfb-v0.04.ufw` | 520,192 bytes | `02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e` |
+
+**Where the file comes from.** Baofeng publishes no stock firmware for the Mini. The Stock firmware step lists, in
+order:
+
+1. **Your own copy:** "If you already have the stock file for your radio's firmware, drop it below. Studio checks it
+   against the pinned hash and refuses any other file."
+2. **Unofficial copy shared by a third party, stock v0.27 (NRF):** a link to `stock-nrf-v0.27.ufw` on mega.nz.
+3. **Unofficial copy shared by a third party, stock v0.04 (NRFB):** a link to `stock-nrfb-v0.04.ufw` on mega.nz.
+
+Each unofficial link is marked "Unofficial, not run by the vendor. Studio checks every file against the pinned hashes
+before using it." and says that Studio only links to it and never downloads it. The host decrypts the file in the
+browser, so there is no direct URL Studio could fetch; Studio never fetches, hosts, mirrors or commits a stock file.
+The links live in one constant, `UV5RMINI_UNOFFICIAL_STOCK_COPIES` in `firmware.ts`: a dead link is a one-line change
+there, and a test checks that no other source file holds them. A download source names the file its link gives
+(`fileName`), so each link reads as its own stock file.
+
+The pre-flight asks for a full battery and a dummy load only; there is no "built from this radio" check, since the
+pin decides the file.
 
 Studio does not flash the plain stock file (`stockFlashOffered: false`); the pins are the bases a release patch is
 checked against. The way back to stock is a to-stock patch (below). Each base's name is on the descriptor
 (`baseName`), matching the base table's keys.
 The patch's `stock` hashes decide which file is the stock, never a user choice, and a patch's `base` must name the
-base whose file hashes to it. The descriptor carries `nrfb-v0.04` as its primary version and `nrf-v0.27` as
-`alsoAccepts`.
+base whose file hashes to it. The descriptor carries `nrf-v0.27` (the stock of the MM9PDY firmware's 1.0.0 release)
+as its primary version, so the wizard names it first, and `nrfb-v0.04` as `alsoAccepts`.
 
 **One stock per base.** A radio's code base never changes, so a release's `L1` file is built on `nrfb-v0.04` and its
 `L2` file on `nrf-v0.27`. The descriptor sets `severalStocks`: the Stock firmware step takes either file or both at
