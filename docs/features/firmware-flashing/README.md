@@ -223,8 +223,9 @@ radio is offered: the stock pins, interlocks and frame guards are the same code 
    its loader has read: a block the loader asks for twice counts once. The time left is the rate since the first
    counted block (the erase wait before it is left out) applied to what remains; it reads "estimating time left…"
    until at least 5 s and 3% of the total have gone, so the first figure doesn't jump about, and it is 0 when the
-   count reaches the total. Before an updater reports a total (the handshake, the Mini's loader start and erase
-   wait) the line shows the elapsed time only. The figures are display only: nothing about what is sent, its order
+   count reaches the total. The UV-5R Mini shows the elapsed time only until its loader announces the firmware area
+   (its cmd 4); from then it shows `0 / 480 KiB` through the erase wait, and its count starts at the first area block.
+   The other radios show `0 / N blocks` from the start. The figures are display only: nothing about what is sent, its order
    or any check depends on them. At the end the dialog gives the final count and time ("478 / 478 blocks in 3:02").
 8. **Done or failed** — on success, what is now on the radio ("The MM9PDY modded firmware 1.0.0 is on the radio"),
    its verify hint and a plain-text summary (copy or download as `.txt`). The message depends on how the session
