@@ -64,7 +64,7 @@ interface BytePipe {
   /** Block until `n` bytes or throw typed timeout / closed errors. */
   readExact(n: number, timeoutMs: number): Promise<Uint8Array>;
   flush?(): Promise<void>;
-  /** Web Serial only: close and reopen at a new rate (firmware updaters that switch rate). */
+  /** Change the line rate (firmware updaters that switch rate): Web Serial closes and reopens; Capacitor retunes the open port. */
   reopen?(baudRate: number): Promise<void>;
   close(): Promise<void>;
 }
@@ -292,6 +292,7 @@ src/integrations/radio-io/
   types.ts                # shared contracts (BytePipe, BlockCodec, …)
   transport/
     webSerialPipe.ts      # requestPort, baud, BytePipe  — shipped #615
+    capacitorSerialPipe.ts # Android (Capacitor USB-serial plugin): same BytePipe, rate via setParameters — #888, #1657
     featureDetect.ts
     blePipe.ts            # optional; same BytePipe — deferred
   kit/
