@@ -114,6 +114,32 @@ describe('AT-D890UV updater through the Capacitor pipe', () => {
     expect(mock.image(0x0800c000, LENGTH)).toEqual(FILES.cdd);
   });
 
+  it('resends a frame once after it stays silent past the 2 s frame timeout, then succeeds', async () => {
+    const mock = new D890BootloaderMock({ silentAt: [7] });
+    const { run } = await session(mock);
+    const result = await underFakeTime(run());
+    expect(result.end).toBe('acknowledged');
+    expect(result.framesSent).toBe(FRAMES + 3 + 1);
+    expect(mock.image(0x0800c000, LENGTH)).toEqual(FILES.cdd);
+    expect(result.timing!.maxFrameMs).toBeGreaterThanOrEqual(2000);
+  });
+
+  it('stops after a frame stays silent twice: radio touched, frame 7, nothing more sent', async () => {
+    // The mock counts every frame it receives, so frame 7's resend is its eighth.
+    const mock = new D890BootloaderMock({ silentAt: [7, 8] });
+    const { run, record } = await session(mock);
+    const err = await flashError(underFakeTime(run()));
+    // Two failed attempts surface as the updater's "did not accept" protocol error, not the read timeout.
+    expect(err.code).toBe('protocol');
+    expect(err.message).toMatch(/after 2 attempts \(last reply nothing\)/);
+    expect(err.radioTouched).toBe(true);
+    expect(err.position).toMatch(/^frame 7\//);
+    // UPDATE, ident, data frames 1 to 6, and frame 7 twice: no further write, no end byte.
+    expect(record.writes).toBe(2 + 6 + 2);
+    expect(dataLog(mock)).toHaveLength(6);
+    expect(mock.log).not.toContain('end');
+  });
+
   it('stops when the cable is pulled mid-transfer: closed, radio touched, no end byte', async () => {
     // Writes 1 and 2 are UPDATE and the ident request; write 52 is data frame 50.
     const mock = new D890BootloaderMock();
