@@ -17,6 +17,7 @@ import DeveloperModeBadge from '../DeveloperModeBadge/DeveloperModeBadge.tsx';
 import BuildStripLeading from '../builds/BuildStripLeading.tsx';
 import BuildSubChrome from '../builds/BuildSubChrome.tsx';
 import CookieConsentBanner from '../CookieConsentBanner/CookieConsentBanner.tsx';
+import SavedFileNotice from '../SavedFileNotice/SavedFileNotice.tsx';
 import DriveRefreshProvider, {
   useDriveRefresh,
 } from '../ProjectInterchangeBar/DriveRefreshProvider.tsx';
@@ -352,6 +353,7 @@ function AppLayoutBody({
           .join(' ')}
       >
         <CookieConsentBanner />
+        <SavedFileNotice />
         <div
           className={
             fullBleed
