@@ -1,0 +1,17 @@
+.ribbon {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+  z-index: 210;
+  padding: 0 var(--dsv2-page-padding-x);
+  pointer-events: none;
+}
+
+.inner {
+  pointer-events: auto;
+  max-width: 48rem;
+  margin-inline: auto;
+  background: var(--dsv2-surface);
+  border: 1px solid var(--dsv2-border);
+}

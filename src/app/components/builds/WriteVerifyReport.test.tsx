@@ -13,6 +13,8 @@ import type {
   WriteVerifyDebugContext,
   WriteVerifyMismatch,
 } from '@integrations/radio-io/writeVerify.ts';
+import * as nativeSave from '@integrations/download/nativeSave.ts';
+import * as platform from '@integrations/platform/isNativeApp.ts';
 import { DesignSystemV2Provider } from '../v2/index.ts';
 import WriteVerifyReport from './WriteVerifyReport.tsx';
 
@@ -95,6 +97,22 @@ describe('WriteVerifyReport digests', () => {
       actual: 'crc32:22222222',
     });
     expect(json.staging.mismatches[1]).toMatchObject({ expected: 'crc32:33333333', actual: null });
+  });
+
+  it('in the Android app saves the JSON and markdown on the device through the download seam', () => {
+    vi.spyOn(platform, 'isNativeApp').mockReturnValue(true);
+    const save = vi
+      .spyOn(nativeSave, 'saveBlobOnDevice')
+      .mockResolvedValue({ status: 'failed', fileName: 'x', message: 'test' });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click');
+    renderReport();
+    fireEvent.click(screen.getByText('Download JSON'));
+    fireEvent.click(screen.getByText('Download markdown'));
+    expect(save.mock.calls.map(([, name]) => name)).toEqual([
+      expect.stringMatching(/^write-verify-[0-9T-]+Z\.json$/),
+      expect.stringMatching(/^write-verify-[0-9T-]+Z\.md$/),
+    ]);
+    expect(click).not.toHaveBeenCalled();
   });
 });
 

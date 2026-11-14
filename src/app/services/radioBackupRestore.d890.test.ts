@@ -33,7 +33,7 @@ describe('packAtD890BackupFromSession (Review: Save backup now)', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-10-26T14:02:00.000Z'));
-    vi.spyOn(browserDownload, 'downloadZip').mockImplementation(() => undefined);
+    vi.spyOn(browserDownload, 'downloadZip').mockResolvedValue({ status: 'saved' });
   });
 
   afterEach(() => {

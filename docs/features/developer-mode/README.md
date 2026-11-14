@@ -15,12 +15,17 @@ app on any build, the firmware flashers marked for it (the one exception under
 
 ## Turning it on and off
 
-- **Five taps on the version** in the page footer ("Codeplug Studio · prod · 1.2.3"), each within 2 seconds of the
-  last. From the second tap a short toast counts down ("3 more taps to turn on developer mode"); the fifth turns it on
-  and says so. The same gesture turns it off.
-- **The badge.** While it is on, a "Developer mode" chip sits in the top bar on every screen, so a screenshot or a
-  support question shows it. Its ✕ turns developer mode off in one tap.
-- **The Debug index** (`/debug`) has a "Developer mode on this device" switch.
+- **Turn it on: five taps on the version** in the page footer ("Codeplug Studio · prod · 1.2.3"), each within 2
+  seconds of the last. From the second tap a short toast just below the top bar counts down ("3 more taps to turn on
+  developer mode"), clear of the top bar and version so the controls remain accessible; the fifth turns it on and says so.
+- **The taps only turn it on.** While it is on, tapping the version changes nothing: from the second tap in a row the
+  toast says "Developer mode is on. Turn it off from the top bar".
+- **Turn it off: the badge.** While it is on, a "Developer mode" chip sits in the top bar on every screen, so a
+  screenshot or a support question shows it. Its ✕ turns developer mode off in one tap.
+- **The Debug index** (`/debug`) has a "Developer mode on this device" switch, on and off.
+
+It stays on, on that device, until it is turned off there: across reloads, browser restarts, Android app restarts and
+app updates (see [Storage and privacy](#storage-and-privacy)).
 
 Turning it off hides the gated features at once, except an open firmware flasher, which keeps the radios it offered
 when the page opened so a running flash is never cut off. On prod, turning it off while on a Debug page goes home.
@@ -86,6 +91,12 @@ One `localStorage` key, `codeplug-studio:developerMode` (`"on"` or absent), per 
 never written to a project, YAML, backup, Google Drive file or share link, and never sent anywhere. Other tabs of the
 same profile follow a change through the `storage` event. The Debug localStorage page lists the key as "Developer mode
 (this device)". If storage is unavailable, developer mode reads as off.
+
+`localStorage` keeps the key across reloads and restarts, and in the Android app across app restarts and updates (the
+app's WebView origin does not change between versions). It is lost with the rest of the app's local data when the
+browser's site data is cleared, or when the Android app is uninstalled and installed again or its storage is cleared
+in Android's settings. Deleting the key on the Debug localStorage page also turns it off. Nothing else in Studio
+removes it.
 
 ## Known gaps
 

@@ -107,7 +107,8 @@ changes only which radios are offered: the stock pins, interlocks and frame guar
   port; no other radio changes rate mid-session.
 - **Files:** in the app the stock step's picker takes any file (Android's chooser greys out extensions it has no type
   for, such as `.ufw`); the pinned hashes decide what is accepted. The release list and patches are fetched as on the
-  web.
+  web. The flash summary's **Download .txt** saves it to `Documents/Codeplug Studio/` on the phone and opens the share
+  sheet ([saving files](../android-app/README.md#saving-files)); **Copy** works as on the desktop.
 - **Steps the app refuses:** a radio's safety backup stays desktop-only and refuses cleanly in the app. The pre-flight
   probe runs in the app.
 - **Offline proof only.** The DM-32UV, AT-D890UV and RT95 front panel updaters are run end to end through the app's

@@ -1,9 +1,2 @@
-/** Trigger a browser download for a Blob (app layer only — not core). */
-export function downloadBlob(blob: Blob, fileName: string): void {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = fileName;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
+/** Save a Blob as a file (a browser download, or a save on the device in the Android app). */
+export { downloadBlob } from '@integrations/download/browserDownload.ts';

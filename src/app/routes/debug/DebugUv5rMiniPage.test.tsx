@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,7 +12,7 @@ vi.mock('@integrations/platform/isNativeApp.ts', () => ({ isNativeApp: vi.fn(() 
 
 vi.mock('@integrations/download/browserDownload.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@integrations/download/browserDownload.ts')>()),
-  downloadZip: vi.fn(),
+  downloadZip: vi.fn().mockResolvedValue({ status: 'saved' }),
 }));
 
 function addRead(decoded: Uint8Array, store = uv5rMiniDebugReadStore) {
@@ -71,7 +71,7 @@ describe('DebugUv5rMiniPage in the Android app (#1680)', () => {
     vi.mocked(isNativeApp).mockReturnValue(false);
   });
 
-  it('offers the read, the compare and the calibration view, with no download and no write', async () => {
+  it('offers the read, the compare, the calibration view and Download all, with no write', async () => {
     const { isNativeApp } = await import('@integrations/platform/isNativeApp.ts');
     vi.mocked(isNativeApp).mockReturnValue(true);
     const a = new Uint8Array(0x10000);
@@ -89,15 +89,19 @@ describe('DebugUv5rMiniPage in the Android app (#1680)', () => {
     expect(screen.queryByText('Not available in the Android app')).toBeNull();
     expect(screen.getByRole('button', { name: 'Full read' })).toBeTruthy();
     expect(screen.getByText(/one attached cable that matches the Mini/)).toBeTruthy();
-    expect(screen.getByText("Saving the reads isn't available in the Android app")).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /download/i })).toBeNull();
+    expect(screen.queryByText(/Saving the reads isn.t available/)).toBeNull();
+    expect(screen.getByText(/saved to Documents\/Codeplug Studio on the phone/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /write|restore/i })).toBeNull();
     expect(screen.getByText('The reads differ outside the skipped windows')).toBeTruthy();
     expect(screen.getByTestId('uv5r-mini-calibration')).toBeTruthy();
-    // Nothing to download, so leaving is not blocked.
-    const event = new Event('beforeunload', { cancelable: true });
-    window.dispatchEvent(event);
-    expect(event.defaultPrevented).toBe(false);
+    // Download all goes through the same download helper as in a browser, which saves on the device in the app.
+    const { downloadZip } = await import('@integrations/download/browserDownload.ts');
+    vi.mocked(downloadZip).mockClear();
+    fireEvent.click(screen.getByRole('button', { name: /^Download all/ }));
+    expect(vi.mocked(downloadZip)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(downloadZip).mock.calls[0][1]).toMatch(/^uv5r-mini-reads-.+\.zip$/);
+    await waitFor(() => expect(screen.getByText('All downloaded')).toBeTruthy());
+    vi.mocked(downloadZip).mockClear();
   });
 });
 
@@ -142,6 +146,22 @@ describe('DebugUv5rMiniPage leave warning', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Download all (1)' }));
     const { downloadZip } = await import('@integrations/download/browserDownload.ts');
     expect(downloadZip).toHaveBeenCalledTimes(1);
-    expect(leaveIsBlocked()).toBe(false);
+    await waitFor(() => expect(leaveIsBlocked()).toBe(false));
+  });
+
+  it.each([
+    { status: 'failed', fileName: 'reads.zip', message: 'write failed' },
+    { status: 'failed', fileName: 'reads.zip', phase: 'share', message: 'sharing was cancelled' },
+  ])('keeps the warning and retry button after a failed save', async (result) => {
+    const store = await renderFresh();
+    const { act } = await import('@testing-library/react');
+    const { downloadZip } = await import('@integrations/download/browserDownload.ts');
+    vi.mocked(downloadZip).mockResolvedValueOnce(result as Awaited<ReturnType<typeof downloadZip>>);
+    act(() => addRead(new Uint8Array(0x10000), store));
+    fireEvent.click(screen.getByRole('button', { name: 'Download all (1)' }));
+    await waitFor(() => expect(downloadZip).toHaveBeenCalled());
+    expect(screen.getByText('1 read not downloaded')).toBeTruthy();
+    expect(leaveIsBlocked()).toBe(true);
+    expect(screen.getByRole('button', { name: 'Download all (1)' })).toBeTruthy();
   });
 });

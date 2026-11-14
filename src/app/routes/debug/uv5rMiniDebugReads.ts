@@ -78,8 +78,8 @@ export class Uv5rMiniDebugReadStore {
   }
 
   /** Every read so far is in a downloaded zip. */
-  markAllDownloaded(): void {
-    this.downloadedCount = this.reads.length;
+  markAllDownloaded(count = this.reads.length): void {
+    this.downloadedCount = Math.max(this.downloadedCount, Math.min(count, this.reads.length));
     this.emit();
   }
 

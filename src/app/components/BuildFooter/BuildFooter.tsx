@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Anchor, Group, Notification, Portal, Text, UnstyledButton } from '@mantine/core';
 import { Link } from 'react-router-dom';
-import { isDeveloperModeOn } from '@integrations/preferences/developerMode.ts';
+import {
+  isDeveloperModeOn,
+  subscribeDeveloperMode,
+} from '@integrations/preferences/developerMode.ts';
 import { useDeveloperMode } from '../../hooks/useDeveloperMode.ts';
 import { GITHUB_ISSUES_URL, GITHUB_REPO_URL } from '../../lib/githubLinks.ts';
 import {
-  developerModeToggleMessage,
+  developerModeTurnOnMessage,
   INITIAL_VERSION_TAP_STATE,
   registerVersionTap,
   versionTapMessage,
@@ -25,12 +28,21 @@ function FooterLink({ to, children }: { to: string; children: ReactNode }) {
 
 /**
  * The version text, and the five-tap developer-mode gesture on it (#1650). From the second tap a short countdown toast
- * shows; the fifth turns developer mode on (or off when it is on).
+ * shows; the fifth turns developer mode on. Taps never turn it off (#1686): while it is on they only say so and point
+ * at the top bar's chip.
  */
 function VersionTapTarget() {
   const [developerMode, setDeveloperMode] = useDeveloperMode();
   const tapState = useRef(INITIAL_VERSION_TAP_STATE);
   const [toast, setToast] = useState<{ text: string; id: number } | null>(null);
+
+  useEffect(
+    () =>
+      subscribeDeveloperMode(() => {
+        tapState.current = INITIAL_VERSION_TAP_STATE;
+      }),
+    [],
+  );
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -39,12 +51,12 @@ function VersionTapTarget() {
   }, [toast]);
 
   const onTap = () => {
-    const { state, result } = registerVersionTap(tapState.current, Date.now());
+    const { state, result } = registerVersionTap(tapState.current, Date.now(), developerMode);
     tapState.current = state;
-    let text = versionTapMessage(result, developerMode);
-    if (result.kind === 'toggle') {
-      setDeveloperMode(!developerMode);
-      text = developerModeToggleMessage(developerMode, isDeveloperModeOn());
+    let text = versionTapMessage(result);
+    if (result.kind === 'turnOn') {
+      setDeveloperMode(true);
+      text = developerModeTurnOnMessage(isDeveloperModeOn());
     }
     if (text) setToast({ text, id: Date.now() });
   };
@@ -72,7 +84,8 @@ function VersionTapTarget() {
             style={{
               position: 'fixed',
               left: '50%',
-              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)',
+              // The shell header is 56px tall; leave a gap below it and the device's top safe area.
+              top: 'calc(env(safe-area-inset-top, 0px) + 56px + 12px)',
               transform: 'translateX(-50%)',
               zIndex: 1000,
               maxWidth: 'calc(100vw - 32px)',

@@ -48,7 +48,7 @@ describe('ReferenceIndexPage', () => {
       ['localStorage', '/debug/local-storage'],
       ['AT-D890UV erase-unit probeDesktop Chrome / Edge', '/debug/d890-erase-probe'],
       ['Serial reopen timingDesktop Chrome / Edge', '/debug/serial-reopen'],
-      ['UV-5R Mini full readDesktop Chrome / Edge', '/debug/uv5r-mini'],
+      ['UV-5R Mini full read', '/debug/uv5r-mini'],
     ]);
   });
 

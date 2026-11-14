@@ -175,5 +175,6 @@ export const DEBUG_TOOL_LINKS: readonly DebugToolLink[] = [
   { label: 'localStorage', to: '/debug/local-storage' },
   { label: 'AT-D890UV erase-unit probe', to: '/debug/d890-erase-probe', webSerialOnly: true },
   { label: 'Serial reopen timing', to: '/debug/serial-reopen', webSerialOnly: true },
-  { label: 'UV-5R Mini full read', to: '/debug/uv5r-mini', webSerialOnly: true },
+  // Runs in the Android app too (the USB-serial plugin), so no desktop-only badge.
+  { label: 'UV-5R Mini full read', to: '/debug/uv5r-mini' },
 ];
