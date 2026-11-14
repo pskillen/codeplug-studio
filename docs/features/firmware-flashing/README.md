@@ -226,7 +226,11 @@ radio is offered: the stock pins, interlocks and frame guards are the same code 
    count reaches the total. The UV-5R Mini shows the elapsed time only until its loader announces the firmware area
    (its cmd 4); from then it shows `0 / 480 KiB` through the erase wait, and its count starts at the first area block.
    The other radios show `0 / N blocks` from the start. The figures are display only: nothing about what is sent, its order
-   or any check depends on them. At the end the dialog gives the final count and time ("478 / 478 blocks in 3:02").
+   or any check depends on them. At the end the dialog gives the final count and time ("478 / 478 blocks in 3:02"). The
+   figures cover different spans: the live elapsed time counts from **Connect and flash**, identifying the radio
+   included; the final time on success is the updater's own, from the start of its flash (after the radio is
+   identified), so it can be a few seconds less than the last elapsed figure; on a failure it runs from connecting to
+   the stop. The summary's `Elapsed:` line covers the same span as the final time.
 8. **Done or failed** — on success, what is now on the radio ("The MM9PDY modded firmware 1.0.0 is on the radio"),
    its verify hint and a plain-text summary (copy or download as `.txt`). The message depends on how the session
    ended (see [What to expect](#what-to-expect)). A failure before the radio was touched says nothing was written.
