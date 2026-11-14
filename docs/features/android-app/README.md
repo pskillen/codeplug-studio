@@ -9,7 +9,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 | Scaffold              | Shipped   | Capacitor core + Android platform (#886)                                                                                                                                                                                        |
 | API / CORS / Browser  | Shipped   | Absolute `/api` on native, Capacitor CORS allowlist, system browser (#887); staging vs prod API origin (#899)                                                                                                                   |
 | Google Drive (native) | Shipped   | PKCE OAuth in Custom Tabs + deep link (#895)                                                                                                                                                                                    |
-| USB Serial            | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888). \*Unit/mock coverage; **hardware OTG R/W still outstanding**                                                                                                              |
+| USB Serial            | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888); line rate set at open. \*Unit/mock coverage; **hardware OTG R/W still outstanding**                                                                                       |
 | APK CI                | Shipped   | Signed APK + Release attach (#889); real `BUILD_ENV` + GA ID inject (#896)                                                                                                                                                      |
 | Analytics (gtag)      | Shipped   | Same SPA consent gate; `app_surface=android` + `build_env` on page views (#896)                                                                                                                                                 |
 | In-app icon / splash  | Shipped   | Brand-derived adaptive icon + splash via `@capacitor/assets` (#898)                                                                                                                                                             |
@@ -32,6 +32,33 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 ## Native behaviour (#887, #888)
 
 - **USB-Serial Plugin:** `@leeskies/capacitor-usb-serial` (MIT) backed by `mik3y/usb-serial-for-android`. Common chips (CH340, CP2102, FTDI, PL2303, CDC/ACM) listed in `android/app/src/main/res/xml/device_filter.xml`. Root `android/build.gradle` must include JitPack (`maven { url 'https://jitpack.io' }` in `allprojects.repositories`) so Gradle can resolve that transitive dependency.
+- **Serial line rate and DTR/RTS:** the plugin's `open` takes no rate, so a port comes up at its driver's default
+  (a CH340 runs 9600). `openCapacitorSerialPipe` (`src/integrations/radio-io/transport/capacitorSerialPipe.ts`) sets the
+  requested rate with the plugin's `setParameters` (8 data bits, 1 stop bit, no parity) before it starts reading, then
+  sets DTR and RTS: high by default, as every Web Serial codeplug open does, or low when the caller asks (a cable may wire
+  them to PTT). A rate the driver refuses fails the open with a clear error instead of running at the default.
+  - **What this changes for codeplug Read/Write:** before, every Android Read and Write ran at the driver's default
+    (9600 on a CH340) whatever the radio needed, and never set DTR/RTS. Now each radio runs at its own rate, with its own
+    rate fallback, and DTR/RTS raised: the same as in a desktop browser. A radio whose rate is 9600 sees no difference;
+    one at another rate could not have worked before. Not yet tried on a phone with a radio.
+  - **Writes:** the plugin's `write` resolves once its stream has queued the bytes, and its calls run on a thread pool,
+    so the pipe queues every write in call order, keeps its own time-based account of when the line is idle, and opens
+    the stream with a 16 KiB write buffer (one frame up to 8 KiB).
+  - **Changing rate mid-session (`reopen`):** after the queued bytes have had time to leave the adapter (their wire time
+    plus 50 ms), the pipe calls `setParameters` on the open port: no close and open, and the read stream keeps running.
+    Bytes read before the switch are dropped. The firmware flasher's rate switch (the UV-5R Mini's loader at 38400) uses
+    it; see the firmware flasher below.
+  - **Which device:** codeplug Read/Write uses the first USB serial device the plugin lists, as before. The firmware
+    flasher's links pass the cable's USB filters instead: exactly one attached device must match, with no fall-back to the
+    first device; none or two is refused. The flasher's pre-flight probe and safety backup stay desktop-only and refuse
+    in the app.
+- **Firmware flasher:** `/firmware` in the app offers the UV-5R Mini only while
+  [developer mode](../developer-mode/README.md) is on (in any build), and no other radio; with developer mode off it
+  says flashing is available in a desktop browser. The wizard is the desktop one: the cable is found by its USB filters
+  instead of a picker, and the stock file picker takes any file (the pinned hashes decide). Not yet tried on a phone
+  with a radio. Before the first flash from a phone: charge it, set a long screen timeout, keep the app in front, and
+  plug in only the cable; on a stall, power-cycle the radio and flash again from the phone or a desktop. See
+  [firmware flashing, Android app](../firmware-flashing/README.md#android-app).
 - **API Proxies:** On Capacitor native, relative `/api/*` (RadioID, RepeaterBook, IRTS) resolve to an absolute origin from `BUILD_ENV` via `resolveApiUrl` (`src/integrations/platform/resolveApiUrl.ts`):
 
 | `BUILD_ENV`                              | Native API origin                     |

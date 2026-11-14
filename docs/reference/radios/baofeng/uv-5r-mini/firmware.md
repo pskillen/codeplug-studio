@@ -532,19 +532,24 @@ then the updater's `identify` and `flash`, including the reopen at 38400. The ra
 reached through its local TCP serial bridge, so no serial device is opened. Two cases: a clean update that ends with
 result 0, and a power cut part-way through the loader's write followed by a continued session that ends with result 0.
 Both check that the emulated flash changed only inside the update area (`0x4000` to `0x7C000`) and matches the firmware
-project's predicted result.
+project's predicted result. A third case runs the clean update through the Android app's pipe instead
+(`openCapacitorSerialPipe` over `__fixtures__/bridgeCapacitorPlugin.ts`, a stand-in for the USB-serial plugin): the port
+opens at the driver's default rate, the pipe sets 9600, and the switch to 38400 changes the rate on the open port with
+no close, as the plugin's `setParameters` does.
 
 It is local-only and skipped in CI: it needs the firmware project's bridge, the operator's own stock image and a release
 patch for it. Start one bridge per case (a bridge serves one client, then exits), then set:
 
-| Variable                  | Meaning                                                                   |
-| ------------------------- | ------------------------------------------------------------------------- |
-| `UV5RMINI_STOCK_UFW`      | The stock `.ufw` (`nrfb-v0.04`), outside the repository                   |
-| `UV5RMINI_PATCH`          | A release patch for that stock                                            |
-| `UV5RMINI_EMU_BRIDGE`     | `127.0.0.1:<port>` of a fresh bridge, for the clean case                  |
-| `UV5RMINI_EMU_BRIDGE_CUT` | `127.0.0.1:<port>` of another fresh bridge, for the cut-and-continue case |
-| `UV5RMINI_EMU_CUT_AFTER`  | Loader erase and program count the power is cut after (default 100)       |
-| `UV5RMINI_RADIO_LAYOUT`   | The emulated radio's layout, `L1` or `L2`, when the patch's loader is one |
+| Variable                          | Meaning                                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------------------- |
+| `UV5RMINI_STOCK_UFW`              | The stock `.ufw` (`nrfb-v0.04`), outside the repository                                 |
+| `UV5RMINI_PATCH`                  | A release patch for that stock                                                          |
+| `UV5RMINI_EMU_BRIDGE`             | `127.0.0.1:<port>` of a fresh bridge, for the clean case                                |
+| `UV5RMINI_EMU_BRIDGE_CUT`         | `127.0.0.1:<port>` of another fresh bridge, for the cut-and-continue case               |
+| `UV5RMINI_EMU_CUT_AFTER`          | Loader erase and program count the power is cut after (default 100)                     |
+| `UV5RMINI_RADIO_LAYOUT`           | The emulated radio's layout, `L1` or `L2`, when the patch's loader is one               |
+| `UV5RMINI_EMU_BRIDGE_CAPACITOR`   | `127.0.0.1:<port>` of another fresh bridge, for the clean case through the Android pipe |
+| `UV5RMINI_EMU_SETPARAMS_DELAY_MS` | Extra delay on each of the stand-in plugin's rate changes (default 0): a slow phone     |
 
 Then `npx vitest run src/integrations/radio-io/radios/uv5r-mini/firmwareUpdate/uv5rMiniEmuBridge.test.ts`. A whole
 session takes minutes (the emulated radio is kept in step with real time). The test port keeps the emulated clock

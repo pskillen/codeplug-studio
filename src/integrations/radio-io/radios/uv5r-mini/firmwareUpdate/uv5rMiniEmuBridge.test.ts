@@ -11,6 +11,10 @@
  * - `UV5RMINI_EMU_BRIDGE_CUT=127.0.0.1:<port>`: another fresh bridge for the cut-and-continue case (a bridge serves one
  *   client, then exits).
  * - `UV5RMINI_EMU_CUT_AFTER`: the loader erase/program count the power is cut after (default 100, inside the area).
+ * - `UV5RMINI_EMU_BRIDGE_CAPACITOR=127.0.0.1:<port>`: another fresh bridge for the clean case through the Android
+ *   app's pipe (`openCapacitorSerialPipe` over a stand-in for the USB-serial plugin): the rate changes on the open port.
+ * - `UV5RMINI_EMU_SETPARAMS_DELAY_MS`: extra delay on each of the stand-in plugin's rate changes (default 0), to show
+ *   the loader's window holds a slow phone.
  *
  * Bytes are read in memory only. The test prints a summary (result, phases, durations) and the bridge's STATUS.
  */
@@ -32,7 +36,12 @@ import {
   type PreparedFirmwareImage,
 } from '../../../../../core/services/firmware/prepareFirmwareImage.ts';
 import type { BytePipe } from '../../../types.ts';
+import { openCapacitorSerialPipe } from '../../../transport/capacitorSerialPipe.ts';
 import { openWebSerialPipe } from '../../../transport/webSerialPipe.ts';
+import {
+  BRIDGE_CH340_DEVICE,
+  createBridgeCapacitorPlugin,
+} from './__fixtures__/bridgeCapacitorPlugin.ts';
 import {
   connectBridgeSerialPort,
   type BridgeSerialPort,
@@ -47,6 +56,8 @@ const patchPath = process.env.UV5RMINI_PATCH;
 const cleanBridge = process.env.UV5RMINI_EMU_BRIDGE;
 const cutBridge = process.env.UV5RMINI_EMU_BRIDGE_CUT;
 const cutAfter = Number(process.env.UV5RMINI_EMU_CUT_AFTER ?? '100');
+const capacitorBridge = process.env.UV5RMINI_EMU_BRIDGE_CAPACITOR;
+const setParamsDelayMs = Number(process.env.UV5RMINI_EMU_SETPARAMS_DELAY_MS ?? '0');
 /** The emulated radio's layout (`L1`, `L2`), needed when the patch's loader is a layout loader. */
 const radioLayout = process.env.UV5RMINI_RADIO_LAYOUT;
 
@@ -95,6 +106,20 @@ function reopenMs(bridge: BridgeSerialPort, from = 0, to?: number): number[] {
   for (const c of bridge.calls.slice(from, to)) {
     if (c.type === 'write') wroteAt = c.at;
     else if (c.type === 'open' && c.baudRate === UV5RMINI_FW_LOADER_BAUD && wroteAt !== undefined) {
+      out.push(c.at - wroteAt);
+      wroteAt = undefined;
+    }
+  }
+  return out;
+}
+
+/** From the last byte written to the rate change to the loader rate on the open port (the Capacitor pipe's reopen). */
+function rateChangeMs(bridge: BridgeSerialPort): number[] {
+  const out: number[] = [];
+  let wroteAt: number | undefined;
+  for (const c of bridge.calls) {
+    if (c.type === 'write') wroteAt = c.at;
+    else if (c.type === 'baud' && c.baudRate === UV5RMINI_FW_LOADER_BAUD && wroteAt !== undefined) {
       out.push(c.at - wroteAt);
       wroteAt = undefined;
     }
@@ -159,7 +184,7 @@ describe.skipIf(!stockPath || !patchPath)('UV-5R Mini updater against the emulat
 
         expect(result.end).toBe('acknowledged');
         expect(status.result).toBe(0);
-        expect(phases).toEqual(['handshake', 'erase', 'transfer', 'finish']);
+        expect(phases).toEqual(['handshake', 'loader', 'erase', 'transfer', 'finish']);
         expect(bridge.calls.filter((c) => c.type === 'open').map((c) => c.baudRate)).toEqual([
           9600,
           UV5RMINI_FW_LOADER_BAUD,
@@ -258,6 +283,81 @@ describe.skipIf(!stockPath || !patchPath)('UV-5R Mini updater against the emulat
         expect(status.matches_prediction).toBe(true);
       } finally {
         await closeAll(pipe, bridge);
+        await bridge.dispose();
+      }
+    },
+    15 * 60_000,
+  );
+  it.skipIf(!capacitorBridge)(
+    'clean update through the Android pipe ends with result 0, the rate changed on the open port',
+    async () => {
+      const image = await prepare();
+      const bridge = await connectBridgeSerialPort(capacitorBridge!);
+      const plugin = createBridgeCapacitorPlugin(bridge, {
+        setParametersDelayMs: setParamsDelayMs,
+      });
+      let pipe: BytePipe | undefined;
+      try {
+        const started = Date.now();
+        pipe = await openCapacitorSerialPipe(BRIDGE_CH340_DEVICE, 9600, {
+          plugin,
+          raiseDtrRts: false,
+        });
+        const updater = createUv5rMiniFirmwareUpdater();
+        const ident = await updater.identify(pipe, {});
+        const { phases, onProgress } = phaseRecorder();
+        let result;
+        try {
+          result = await updater.flash(image, { onProgress });
+        } catch (err) {
+          console.log(
+            `[uv5rmini-emu-bridge] capacitor failed at ${(err as FirmwareFlashError).position}, phases ${phases.join(',')}\n` +
+              bridge.trace.slice(-30).join('\n'),
+          );
+          throw err;
+        }
+        const wall = Date.now() - started;
+        const status = await bridge.status();
+
+        report(
+          'capacitor',
+          {
+            ident: ident.version,
+            end: result.end,
+            phases,
+            framesSent: result.framesSent,
+            dataFrames: result.dataFrames,
+            flashMs: result.elapsedMs,
+            wallS: secs(wall),
+            setParamsDelayMs,
+            rateChangeMs: rateChangeMs(bridge),
+          },
+          status,
+        );
+
+        expect(result.end).toBe('acknowledged');
+        expect(status.result).toBe(0);
+        expect(phases).toEqual(['handshake', 'loader', 'erase', 'transfer', 'finish']);
+        // One open at the driver's default; the rate set to 9600 at open, then 38400 on the open port.
+        expect(bridge.calls.filter((c) => c.type === 'open').map((c) => c.baudRate)).toEqual([
+          9600,
+        ]);
+        expect(bridge.calls.filter((c) => c.type === 'baud').map((c) => c.baudRate)).toEqual([
+          9600,
+          UV5RMINI_FW_LOADER_BAUD,
+        ]);
+        expect(status.outside).toEqual([]);
+        expect(status.area).toEqual([0x4000, 0x7c000]);
+        expect(status.matches_prediction).toBe(true);
+        // DTR and RTS were never raised.
+        for (const c of bridge.calls) {
+          if (c.type === 'setSignals') {
+            expect(c.signals.dataTerminalReady ?? false).toBe(false);
+            expect(c.signals.requestToSend ?? false).toBe(false);
+          }
+        }
+      } finally {
+        await pipe?.close().catch(() => undefined);
         await bridge.dispose();
       }
     },

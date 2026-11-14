@@ -6,10 +6,11 @@ import {
   isoTimestampForFilename,
   downloadTextFile,
 } from '@integrations/download/browserDownload.ts';
-import type {
-  FirmwareBootloaderIdent,
-  FirmwareFlashPhase,
-  FirmwareFlashProgress,
+import {
+  isCapacitorSerialSupported,
+  type FirmwareBootloaderIdent,
+  type FirmwareFlashPhase,
+  type FirmwareFlashProgress,
 } from '@integrations/radio-io';
 
 import {
@@ -65,6 +66,22 @@ function modalSteps(
   });
 }
 
+/** How to connect, and how to keep the session alive: a browser picks a port; the Android app finds the one cable. */
+function connectCopy(native: boolean): { intro: string; keepAlive: string } {
+  return native
+    ? {
+        intro:
+          'With the radio in update mode and the cable plugged in through a USB-OTG adapter, tap the button. Studio uses the one programming cable it finds; allow USB access if Android asks.',
+        keepAlive:
+          'Keep the app in front and the screen on; charge the phone first and plug in nothing but the cable.',
+      }
+    : {
+        intro:
+          "With the radio in update mode and the cable plugged in, click the button and pick the cable's port.",
+        keepAlive: "Keep this tab in front and don't let the computer sleep.",
+      };
+}
+
 export interface FlashStepProps extends WizardStepProps {
   readonly image: PreparedFirmwareImage;
   /** Back to "Enter update mode". Never resends automatically. */
@@ -83,6 +100,8 @@ export default function FlashStep({
   onChooseFirmware,
   onRunningChange,
 }: FlashStepProps) {
+  const native = isCapacitorSerialSupported();
+  const copy = connectCopy(native);
   const [running, setRunning] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [progress, setProgress] = useState<FirmwareFlashProgress | null>(null);
@@ -164,8 +183,13 @@ export default function FlashStep({
     let port;
     try {
       port = await grantFirmwarePort(updater.radioId);
-    } catch {
-      setPortError('No port was chosen. Click "Connect and flash" again and pick the cable.');
+    } catch (err) {
+      // In the Android app there is no picker: the grant says why it found no single cable.
+      setPortError(
+        native && err instanceof Error
+          ? err.message
+          : 'No port was chosen. Click "Connect and flash" again and pick the cable.',
+      );
       return;
     }
     const controller = new AbortController();
@@ -224,8 +248,7 @@ export default function FlashStep({
       >
         <div className={classes.stack}>
           <p className={classes.copy}>
-            With the radio in update mode and the cable plugged in, click the button and pick the
-            cable&apos;s port. Keep this tab in front and don&apos;t let the computer sleep.
+            {copy.intro} {copy.keepAlive}
           </p>
           {updater.stock.bootloaderEntry.warnings.map((w) => (
             <StatusBanner key={w} tone="warning">
@@ -282,7 +305,7 @@ export default function FlashStep({
         phase={running ? 'running' : 'finished'}
         steps={modalSteps(progress, seenPhases, outcome)}
         progress={outcome?.ok ? 100 : percent}
-        note={`Keep this tab in front; don't let the computer sleep. This takes ${updater.expectedDuration}.`}
+        note={`${copy.keepAlive} This takes ${updater.expectedDuration}.`}
         summary={
           outcome
             ? outcome.ok

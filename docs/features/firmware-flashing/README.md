@@ -1,7 +1,7 @@
 # Firmware flashing
 
-Studio can flash firmware to a supported radio over Web Serial, from the **Firmware flasher** under Tools
-(`/firmware`). It is for operators who want to put a community firmware release on their radio, or put the vendor's
+Studio can flash firmware to a supported radio over Web Serial (or, for the UV-5R Mini with developer mode on, over
+USB serial in the [Android app](#android-app)), from the **Firmware flasher** under Tools (`/firmware`). It is for operators who want to put a community firmware release on their radio, or put the vendor's
 stock firmware back, without the vendor's programming software.
 
 Firmware belongs to the physical radio, not to a project, library or build. The flasher needs no open project, never
@@ -21,7 +21,7 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 | UV-5R Mini                  | Shipped: pre-prod only (next, dev, staging)          | The radio drives the update: its app, then its loader, ask for slices of the image and Studio serves them; a power-cut update is continued by flashing again. Patch file from disk only until a release is published; no plain stock flash, Back to stock takes the to-stock patch. Hidden on prod until Studio has flashed a patched release to a Mini on hardware ([#1587](https://github.com/pskillen/codeplug-studio/issues/1587))                    |
 | Recovery docs               | Shipped                                              | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                                                                                                                                                         |
 | Browsers without Web Serial | Shipped                                              | Phones, tablets, Firefox and Safari get a read-only list of the published releases for each offered radio (RC toggle, notes, retry) with a banner saying flashing needs Chrome or Edge on a desktop computer. No wizard, no port (`ReleaseBrowser.tsx`)                                                                                                                                                                                                   |
-| Android                     | Deferred                                             | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                                                                                                                                                                                                                            |
+| Android                     | UV-5R Mini only, with developer mode on              | The Capacitor app offers the UV-5R Mini while [developer mode](../developer-mode/README.md) is on, in any build; every other radio is hidden there ([Android app](#android-app)). Not yet tried on a phone with a radio ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                                |
 
 ## Documentation map
 
@@ -49,10 +49,13 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
   guard that only allows the next precomputed frame). No setting can switch one off.
 - **Per-radio prod gate.** Each `FirmwareUpdaterDescriptor` has `prodFlashDisabled`. A gated radio is hidden on the
   prod site and available on next, dev and staging. When no radio is offered, the Tools strip has no flasher entry
-  and `/firmware` says the flasher is not available on this site yet. The gate has no Capacitor exemption: the
-  flasher is hidden in the Android app for now. **On prod, [developer mode](../developer-mode/README.md)** (five taps
+  and `/firmware` says the flasher is not available on this site yet. The gate has no Capacitor exemption. **On prod, [developer mode](../developer-mode/README.md)** (five taps
   on the footer version) offers the gated radios on that device; the gate is `resolveFirmwareFlashGate` over the one
   prod gate, and no interlock reads developer mode. The flasher page reads it when it opens.
+- **Platform check.** Separate from the prod gate: each descriptor's `capacitorSupported` is `false` (hidden in the
+  Android app), `'developerMode'` (offered in the app only while developer mode is on, in any build) or `true`.
+  `isFirmwareUpdaterOfferedOnPlatform` in `firmwareFlashEnvGate.ts` applies it; in a browser every radio passes. Only
+  the UV-5R Mini is `'developerMode'`; every other radio is `false`. See [Android app](#android-app).
 
 ```mermaid
 flowchart LR
@@ -83,8 +86,35 @@ Flashing needs Web Serial, which phones, tablets, Firefox and Safari don't have.
 wizard: a banner says flashing needs Chrome or Edge on a desktop computer, then each offered radio's published releases
 are listed read-only, newest first, with **Show release candidates**, the **Release notes** disclosure and the same
 **Try again** when the list can't be downloaded. Nothing there opens a port or loads a patch. The Tools strip still
-shows the flasher entry, so the releases can be read from a phone. The Android app is unchanged (the flasher is
-hidden there).
+shows the flasher entry, so the releases can be read from a phone. The Android app is covered below.
+
+## Android app
+
+The Capacitor app has no Web Serial; it reaches the cable through the USB-serial plugin over USB-OTG. The flasher
+offers a radio there only through its platform check: today the UV-5R Mini, and only while
+[developer mode](../developer-mode/README.md) is on for the phone, in any build. With developer mode off, or for any
+other radio, `/firmware` in the app says flashing is available in a desktop browser. Developer mode changes only which
+radio is offered: the stock pins, interlocks and frame guards are the same code as on the desktop.
+
+- **The wizard** is the desktop one. Each port step (the radio report on Prepare, Connect and flash) finds the one
+  attached device matching the radio's cable instead of showing a picker; none, or more than one, is refused with a
+  message and nothing is sent. Android asks to allow USB access once per plug-in. The radio report read raises
+  DTR/RTS like a codeplug read; the flash link holds them low. The UV-5R Mini's switch to its loader's rate changes
+  the rate on the open port.
+- **Files:** in the app the stock step's picker takes any file (Android's chooser greys out extensions it has no type
+  for, such as `.ufw`); the pinned hashes decide what is accepted. The release list and patches are fetched as on the
+  web.
+- **Steps the app refuses:** a radio's pre-flight probe and safety backup stay desktop-only and refuse cleanly in the
+  app. The UV-5R Mini has neither.
+- **Not yet tried on a phone with a radio.** The rate change, DTR/RTS at the pins, the screen wake lock in the app's
+  WebView and what Android does to a backgrounded flash are known only from the code.
+
+### Before the first flash from a phone
+
+- Charge the phone, set a long screen timeout, and keep the app in front with the screen on until it finishes.
+- Plug in nothing but the programming cable (through the USB-OTG adapter).
+- If the flash stalls or the link drops: power-cycle the radio back into update mode and flash again, from the phone or
+  from a desktop browser. The UV-5R Mini continues an interrupted update on the next run.
 
 ## Wizard steps
 

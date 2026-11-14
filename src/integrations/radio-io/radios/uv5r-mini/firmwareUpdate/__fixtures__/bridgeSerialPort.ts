@@ -8,7 +8,7 @@
  * | Dir | Type | Payload | Meaning                                                                       |
  * | --- | ---- | ------- | ----------------------------------------------------------------------------- |
  * | C>B | 0x01 | bytes   | TX: the host sends these at its current rate                                  |
- * | C>B | 0x02 | u32 LE  | BAUD: the host port is now at this rate (after close and reopen)              |
+ * | C>B | 0x02 | u32 LE  | BAUD: the host port is now at this rate (after a reopen or a rate change)     |
  * | C>B | 0x03 | u32 LE  | RX: run the radio up to this many emulated ms; answered by 0x81               |
  * | C>B | 0x04 | u32 LE  | CUT: power cut after the loader's nth erase or program in this session; 0 off |
  * | C>B | 0x05 | none    | POWER_ON: switch on with no keys after a cut                                  |
@@ -21,7 +21,8 @@
  * asks for the real milliseconds since the last one (at least `BRIDGE_RX_MIN_STEP_MS` apart, at most `BRIDGE_RX_MAX_MS`),
  * so the host's real-time timeouts and the loader's emulated hello window mean the same thing. A `reopen` is a `close()`
  * plus an `open()` on the same connection; the radio keeps running while the port is closed (open catches the emulated
- * clock up and drops what the radio said meanwhile), as a real radio does.
+ * clock up and drops what the radio said meanwhile), as a real radio does. `setBaud` is the other way to change rate,
+ * as the Android plugin's `setParameters` does: the port stays open and the reads keep running.
  */
 import { connect, type Socket } from 'node:net';
 
@@ -56,6 +57,7 @@ export interface BridgeStatus {
 export type BridgeCall =
   | { type: 'open'; baudRate: number; at: number }
   | { type: 'close'; at: number }
+  | { type: 'baud'; baudRate: number; at: number }
   | { type: 'write'; bytes: number; at: number }
   | {
       type: 'setSignals';
@@ -69,6 +71,8 @@ export interface BridgeSerialPort {
   readonly calls: BridgeCall[];
   /** One line per chunk written or read (rate, length, first bytes), for a failure report. */
   readonly trace: string[];
+  /** Change the rate on the open port (no close, the reads keep running), as the Android plugin's `setParameters`. */
+  setBaud(baudRate: number): Promise<void>;
   /** Power cut after the loader's nth erase or program (0 disarms). */
   cut(n: number): Promise<void>;
   /** Switch the radio on after a cut: the loader restarts from its record. */
@@ -249,6 +253,12 @@ export async function connectBridgeSerialPort(hostPort: string): Promise<BridgeS
     port,
     calls,
     trace,
+    setBaud: async (baudRate) => {
+      if (!isOpen) throw new Error('bridge port is not open');
+      rate = baudRate;
+      calls.push({ type: 'baud', baudRate, at: Date.now() });
+      await send(T.BAUD, u32(baudRate));
+    },
     cut: (n) => send(T.CUT, u32(n)),
     powerOn: () => send(T.POWER_ON),
     status: () => request(statusWaiters, T.STATUS),

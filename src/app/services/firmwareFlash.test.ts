@@ -14,6 +14,10 @@ import {
 
 import {
   formatFirmwareFlashSummary,
+  grantFirmwarePort,
+  grantFirmwarePreflightPort,
+  grantFirmwareRadioReportPort,
+  grantFirmwareSafetyBackupPort,
   readFirmwareRadioReport,
   runFirmwareFlash,
   recordFirmwareSafetyBackupSaved,
@@ -25,6 +29,16 @@ import {
 } from './firmwareFlash.ts';
 
 const pipeClose = vi.fn(async () => {});
+const CAPACITOR_DEVICE = vi.hoisted(() => ({
+  deviceId: 'dev_1_ab12',
+  vendorId: 0x1a86,
+  productId: 0x7523,
+  deviceName: '/dev/bus/usb/001/002',
+  serialNumber: null,
+  driverType: 'Ch34xSerialDriver' as const,
+  portCount: 1,
+  hasPermission: true,
+}));
 const fakeProbe = {
   title: 'Check the radio',
   steps: ['Switch on.'],
@@ -54,6 +68,14 @@ vi.mock('@integrations/radio-io', async (importOriginal) => {
   return {
     ...actual,
     openWebSerialPipe: vi.fn(async () => ({
+      write: async () => {},
+      readExact: async () => new Uint8Array(0),
+      close: pipeClose,
+    })),
+    isCapacitorSerialSupported: vi.fn(() => false),
+    requestWebSerialPort: vi.fn(async () => ({ close: vi.fn(async () => {}) })),
+    requestCapacitorSerialPort: vi.fn(async () => CAPACITOR_DEVICE),
+    openCapacitorSerialPipe: vi.fn(async () => ({
       write: async () => {},
       readExact: async () => new Uint8Array(0),
       close: pipeClose,
@@ -462,5 +484,110 @@ describe('firmware safety backup', () => {
     const bad = await recordFirmwareSafetyBackupFile('baofeng-dm32uv', Uint8Array.of(1), '');
     expect(bad).toEqual({ ok: false, message: 'Not a backup.' });
     expect(records()).toEqual([]);
+  });
+});
+
+describe('the transport seam (Web Serial or the Android app)', () => {
+  const capPort = { transport: 'capacitor' as const, device: CAPACITOR_DEVICE };
+  const miniLink = () => radioIo.getFirmwareUpdater('baofeng-uv5rmini')!.link;
+  const miniReport = () => radioIo.getFirmwareUpdater('baofeng-uv5rmini')!.radioReport!;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(radioIo.isCapacitorSerialSupported).mockReturnValue(false);
+  });
+
+  it('in a browser, grants through the Web Serial picker narrowed to the cable', async () => {
+    await grantFirmwarePort('baofeng-uv5rmini');
+    expect(radioIo.requestWebSerialPort).toHaveBeenCalledWith(true, miniLink().usbFilters);
+    expect(radioIo.requestCapacitorSerialPort).not.toHaveBeenCalled();
+  });
+
+  it("in the Android app, grants the flash and report links by the cable's filters (no first-device fall-back)", async () => {
+    vi.mocked(radioIo.isCapacitorSerialSupported).mockReturnValue(true);
+    expect(await grantFirmwarePort('baofeng-uv5rmini')).toEqual(capPort);
+    expect(await grantFirmwareRadioReportPort('baofeng-uv5rmini')).toEqual(capPort);
+    expect(radioIo.requestCapacitorSerialPort).toHaveBeenNthCalledWith(1, {
+      usbFilters: miniLink().usbFilters,
+    });
+    expect(radioIo.requestCapacitorSerialPort).toHaveBeenNthCalledWith(2, {
+      usbFilters: miniReport().link.usbFilters,
+    });
+    expect(radioIo.requestWebSerialPort).not.toHaveBeenCalled();
+  });
+
+  it("flashes through the Capacitor pipe at the link's rate with its DTR/RTS choice, and closes it", async () => {
+    fakeUpdater.identify.mockResolvedValue(IDENT);
+    fakeUpdater.flash.mockResolvedValue({ framesSent: 1, dataFrames: 0, elapsedMs: 1, end: 'x' });
+    const outcome = await runFirmwareFlash({
+      radioId: 'baofeng-uv5rmini',
+      image: IMAGE,
+      port: capPort,
+      onProgress: () => {},
+      signal: new AbortController().signal,
+    });
+    expect(outcome.ok).toBe(true);
+    expect(radioIo.openCapacitorSerialPipe).toHaveBeenCalledWith(
+      CAPACITOR_DEVICE,
+      miniLink().baudRate,
+      { raiseDtrRts: miniLink().raiseDtrRts },
+    );
+    expect(miniLink().raiseDtrRts).toBe(false);
+    expect(radioIo.openWebSerialPipe).not.toHaveBeenCalled();
+    expect(pipeClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads the report through the Capacitor pipe, with the same rate fall-back', async () => {
+    const bytes = new Uint8Array(64).fill(0xff);
+    vi.spyOn(miniReport(), 'read')
+      .mockRejectedValueOnce(new RadioTimeoutError('No answer.'))
+      .mockResolvedValueOnce(bytes);
+    const out = await readFirmwareRadioReport({ radioId: 'baofeng-uv5rmini', port: capPort });
+    expect(out).toEqual({ ok: true, bytes });
+    expect(vi.mocked(radioIo.openCapacitorSerialPipe).mock.calls).toEqual([
+      [CAPACITOR_DEVICE, 115200, { raiseDtrRts: true }],
+      [CAPACITOR_DEVICE, 38400, { raiseDtrRts: true }],
+    ]);
+    expect(pipeClose).toHaveBeenCalledTimes(2);
+  });
+
+  it('a Capacitor port that never opened needs no close', async () => {
+    vi.mocked(radioIo.openCapacitorSerialPipe).mockRejectedValueOnce(new Error('IO_ERROR'));
+    const outcome = await runFirmwareFlash({
+      radioId: 'baofeng-uv5rmini',
+      image: IMAGE,
+      port: capPort,
+      onProgress: () => {},
+      signal: new AbortController().signal,
+    });
+    expect(outcome).toMatchObject({ ok: false, message: 'IO_ERROR', radioTouched: false });
+    expect(pipeClose).not.toHaveBeenCalled();
+  });
+
+  it('in the Android app, the pre-flight probe and the safety backup refuse before any port is asked for', async () => {
+    vi.mocked(radioIo.isCapacitorSerialSupported).mockReturnValue(true);
+    await expect(grantFirmwarePreflightPort('baofeng-dm32uv')).rejects.toThrow(
+      /not available in the Android app/,
+    );
+    await expect(grantFirmwareSafetyBackupPort('baofeng-dm32uv')).rejects.toThrow(
+      /not available in the Android app/,
+    );
+    expect(radioIo.requestCapacitorSerialPort).not.toHaveBeenCalled();
+    expect(radioIo.requestWebSerialPort).not.toHaveBeenCalled();
+  });
+
+  it('the probe and the safety backup refuse a Capacitor port cleanly, opening nothing', async () => {
+    const probe = await runFirmwarePreflightProbe({ radioId: 'baofeng-dm32uv', port: capPort });
+    expect(probe).toMatchObject({ ok: false, code: 'unsupported' });
+    const backup = await runFirmwareSafetyBackup({
+      radioId: 'baofeng-dm32uv',
+      port: capPort,
+      serial: 'AB 123',
+    });
+    expect(backup).toMatchObject({ ok: false, code: 'unsupported' });
+    expect(radioIo.openWebSerialPipe).not.toHaveBeenCalled();
+    expect(radioIo.openCapacitorSerialPipe).not.toHaveBeenCalled();
+    expect(fakeProbe.run).not.toHaveBeenCalled();
+    expect(fakeSafety.run).not.toHaveBeenCalled();
   });
 });

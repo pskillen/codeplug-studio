@@ -39,7 +39,6 @@ import {
   getFirmwareUpdater,
   openWebSerialPipe,
   RadioIoError,
-  requestWebSerialPort,
   type BytePipe,
   type FirmwareBootloaderIdent,
   type FirmwareFlashProgress,
@@ -49,7 +48,6 @@ import {
   type FirmwareSafetyBackupOutcome,
   type ProgressFn,
   type FirmwareUpdaterDescriptor,
-  type SerialPortLike,
 } from '@integrations/radio-io';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
 import {
@@ -58,7 +56,17 @@ import {
 } from '@integrations/persistence/radioSafetyBackupRecords.ts';
 import { createPublicReleaseIndexLoader } from '@integrations/firmware-releases/publicReleaseIndex.ts';
 
+import {
+  closeUnopenedFirmwarePort,
+  grantFirmwareLinkPort,
+  openFirmwareLinkPipe,
+  refuseOnCapacitor,
+  requireWebSerialPort,
+  type FirmwarePort,
+} from './firmwarePort.ts';
 import { openWithBaudFallback } from './serialBaudFallback.ts';
+
+export type { FirmwarePort };
 
 export type { VerifiedStockFirmware };
 
@@ -276,18 +284,23 @@ export async function prepareStockFlash(
   return prepareFlash(radioId, stock, { kind: 'stock' });
 }
 
-/** Always a fresh pick, narrowed to the radio's cable. Call from a user gesture. */
-export async function grantFirmwarePort(radioId: FirmwareRadioId): Promise<SerialPortLike> {
-  return requestWebSerialPort(true, requireUpdater(radioId).link.usbFilters);
+/**
+ * Always a fresh pick, narrowed to the radio's cable: Web Serial's picker, or in the Android app the one attached
+ * device matching the cable. Call from a user gesture.
+ */
+export async function grantFirmwarePort(radioId: FirmwareRadioId): Promise<FirmwarePort> {
+  return grantFirmwareLinkPort(requireUpdater(radioId).link);
 }
 
-/** Fresh pick for the radio's normal-mode pre-flight probe. Call from a user gesture. */
-export async function grantFirmwarePreflightPort(
-  radioId: FirmwareRadioId,
-): Promise<SerialPortLike> {
+const PREFLIGHT_STEP = 'The pre-flight check';
+const SAFETY_BACKUP_STEP = 'The safety backup';
+
+/** Fresh pick for the radio's normal-mode pre-flight probe (Web Serial only). Call from a user gesture. */
+export async function grantFirmwarePreflightPort(radioId: FirmwareRadioId): Promise<FirmwarePort> {
   const probe = requireUpdater(radioId).preflight?.probe;
   if (!probe) throw new Error(`${radioId} has no pre-flight probe.`);
-  return requestWebSerialPort(true, probe.link.usbFilters);
+  refuseOnCapacitor(PREFLIGHT_STEP);
+  return grantFirmwareLinkPort(probe.link);
 }
 
 export type FirmwarePreflightProbeOutcome =
@@ -296,7 +309,7 @@ export type FirmwarePreflightProbeOutcome =
 /** Run the radio's read-only normal-mode probe. Always closes; never throws for a refusal. */
 export async function runFirmwarePreflightProbe(input: {
   radioId: FirmwareRadioId;
-  port: SerialPortLike;
+  port: FirmwarePort;
   signal?: AbortSignal;
 }): Promise<FirmwarePreflightProbeOutcome> {
   const { radioId, port, signal } = input;
@@ -304,9 +317,13 @@ export async function runFirmwarePreflightProbe(input: {
   try {
     const probe = requireUpdater(radioId).preflight?.probe;
     if (!probe) throw new Error(`${radioId} has no pre-flight probe.`);
-    pipe = await openWebSerialPipe(port, probe.link.baudRate, {
-      raiseDtrRts: probe.link.raiseDtrRts,
-    });
+    pipe = await openWebSerialPipe(
+      requireWebSerialPort(port, PREFLIGHT_STEP),
+      probe.link.baudRate,
+      {
+        raiseDtrRts: probe.link.raiseDtrRts,
+      },
+    );
     const { summary } = await probe.run(pipe, { signal });
     return { ok: true, summary };
   } catch (err) {
@@ -320,7 +337,7 @@ export async function runFirmwarePreflightProbe(input: {
       }
     } else {
       try {
-        await port.close();
+        await closeUnopenedFirmwarePort(port);
       } catch {
         /* the port may never have opened */
       }
@@ -328,13 +345,16 @@ export async function runFirmwarePreflightProbe(input: {
   }
 }
 
-/** Fresh pick for the radio report read on Prepare. Call from a user gesture. */
+/**
+ * Fresh pick for the radio report read on Prepare: Web Serial's picker, or in the Android app the one attached device
+ * matching the cable. Call from a user gesture.
+ */
 export async function grantFirmwareRadioReportPort(
   radioId: FirmwareRadioId,
-): Promise<SerialPortLike> {
+): Promise<FirmwarePort> {
   const report = requireUpdater(radioId).radioReport;
   if (!report) throw new Error(`${radioId} has no radio report.`);
-  return requestWebSerialPort(true, report.link.usbFilters);
+  return grantFirmwareLinkPort(report.link);
 }
 
 export type FirmwareRadioReportOutcome =
@@ -347,7 +367,7 @@ export type FirmwareRadioReportOutcome =
  */
 export async function readFirmwareRadioReport(input: {
   radioId: FirmwareRadioId;
-  port: SerialPortLike;
+  port: FirmwarePort;
   signal?: AbortSignal;
 }): Promise<FirmwareRadioReportOutcome> {
   const { radioId, port, signal } = input;
@@ -360,7 +380,7 @@ export async function readFirmwareRadioReport(input: {
       : [report.link.baudRate];
     const opened = await openWithBaudFallback({
       bauds,
-      open: (baud) => openWebSerialPipe(port, baud, { raiseDtrRts: report.link.raiseDtrRts }),
+      open: (baud) => openFirmwareLinkPipe(port, baud, report.link),
       handshake: (p) => report.read(p, { signal }),
     });
     pipe = opened.pipe;
@@ -369,7 +389,7 @@ export async function readFirmwareRadioReport(input: {
     return { ok: false, code: errorCode(err), message: errorMessage(err) };
   } finally {
     try {
-      await (pipe ?? port).close();
+      await (pipe ? pipe.close() : closeUnopenedFirmwarePort(port));
     } catch {
       /* closing is best effort; the port may never have opened */
     }
@@ -387,11 +407,13 @@ export function safetyBackupRadioKey(radioId: FirmwareRadioId, serial: string): 
   return requireSafetyBackup(radioId).normaliseSerial(serial);
 }
 
-/** Fresh pick for the safety backup's normal-mode link. Call from a user gesture. */
+/** Fresh pick for the safety backup's normal-mode link (Web Serial only). Call from a user gesture. */
 export async function grantFirmwareSafetyBackupPort(
   radioId: FirmwareRadioId,
-): Promise<SerialPortLike> {
-  return requestWebSerialPort(true, requireSafetyBackup(radioId).link.usbFilters);
+): Promise<FirmwarePort> {
+  const sb = requireSafetyBackup(radioId);
+  refuseOnCapacitor(SAFETY_BACKUP_STEP);
+  return grantFirmwareLinkPort(sb.link);
 }
 
 export type FirmwareSafetyBackupRunOutcome =
@@ -404,7 +426,7 @@ export type FirmwareSafetyBackupRunOutcome =
  */
 export async function runFirmwareSafetyBackup(input: {
   radioId: FirmwareRadioId;
-  port: SerialPortLike;
+  port: FirmwarePort;
   serial: string;
   signal?: AbortSignal;
   onProgress?: ProgressFn;
@@ -415,7 +437,13 @@ export async function runFirmwareSafetyBackup(input: {
     const sb = requireSafetyBackup(radioId);
     const radioKey = sb.normaliseSerial(serial);
     if (!radioKey) throw new Error("Type the radio's serial number first (it is on the label).");
-    pipe = await openWebSerialPipe(port, sb.link.baudRate, { raiseDtrRts: sb.link.raiseDtrRts });
+    pipe = await openWebSerialPipe(
+      requireWebSerialPort(port, SAFETY_BACKUP_STEP),
+      sb.link.baudRate,
+      {
+        raiseDtrRts: sb.link.raiseDtrRts,
+      },
+    );
     const outcome = await sb.run(pipe, {
       serial: serial.trim(),
       radioKey,
@@ -436,7 +464,7 @@ export async function runFirmwareSafetyBackup(input: {
       }
     } else {
       try {
-        await port.close();
+        await closeUnopenedFirmwarePort(port);
       } catch {
         /* the port may never have opened */
       }
@@ -522,7 +550,7 @@ function errorMessage(err: unknown): string {
 export async function runFirmwareFlash(input: {
   radioId: FirmwareRadioId;
   image: PreparedFirmwareImage;
-  port: SerialPortLike;
+  port: FirmwarePort;
   onIdent?: (ident: FirmwareBootloaderIdent) => void;
   onProgress: (p: FirmwareFlashProgress) => void;
   signal: AbortSignal;
@@ -534,9 +562,7 @@ export async function runFirmwareFlash(input: {
   let stage = 'connect';
   try {
     const descriptor = requireUpdater(radioId);
-    pipe = await openWebSerialPipe(port, descriptor.link.baudRate, {
-      raiseDtrRts: descriptor.link.raiseDtrRts,
-    });
+    pipe = await openFirmwareLinkPipe(port, descriptor.link.baudRate, descriptor.link);
     const updater = descriptor.createUpdater();
     stage = 'identify';
     ident = await updater.identify(pipe, { signal });
@@ -567,7 +593,7 @@ export async function runFirmwareFlash(input: {
       }
     } else {
       try {
-        await port.close();
+        await closeUnopenedFirmwarePort(port);
       } catch {
         /* the port may never have opened */
       }

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
 import { stockVariants } from '@core/firmware/stockVariants.ts';
+import { isCapacitorSerialSupported } from '@integrations/radio-io';
 
 import { FileDropzone, Panel, StatusBanner } from '../../../components/v2/index.ts';
 import { filesToNamedBytes, verifyStockFiles } from '../../../services/firmwareFlash.ts';
@@ -24,7 +25,10 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
   const [error, setError] = useState<string | null>(null);
   const [fileNames, setFileNames] = useState<string[]>([]);
 
+  // The Android app's file chooser turns `accept` into MIME types and drops extensions it has no type for (`.ufw`,
+  // `.bin`), which would grey out the stock file. There, any file can be picked; the pinned hashes decide (#1657).
   const accept = useMemo(() => {
+    if (isCapacitorSerialSupported()) return undefined;
     const exts = new Set(['.zip']);
     for (const m of stock.members) {
       const ext = extensionOf(m.fileName);
