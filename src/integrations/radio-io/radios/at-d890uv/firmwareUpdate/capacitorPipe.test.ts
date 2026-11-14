@@ -152,6 +152,22 @@ describe('AT-D890UV updater through the Capacitor pipe', () => {
     expect(mock.log).not.toContain('end');
   });
 
+  it('a write the plugin rejects on a cable pull surfaces as a protocol error, radio touched, nothing more sent', async () => {
+    // Write 52 (data frame 50) is refused by the plugin and never reaches the radio. The pipe passes the plugin's
+    // raw IO_ERROR through, so the code is 'protocol', not 'closed'; recovery is the same (radio touched).
+    const mock = new D890BootloaderMock();
+    const { run, record } = await session(mock, { cutAfterWrites: 52, rejectWriteOnCut: true });
+    const err = await flashError(underFakeTime(run()));
+    expect(err.code).toBe('protocol');
+    expect(err.message).toBe('IO_ERROR');
+    expect(err.radioTouched).toBe(true);
+    expect(err.position).toMatch(/^frame 50\//);
+    expect(record.cut).toBe(true);
+    expect(record.writes).toBe(51);
+    expect(dataLog(mock)).toHaveLength(49);
+    expect(mock.log).not.toContain('end');
+  });
+
   it('holds its 2 s frame timeout with a phone-like delay on every reply, and the time adds up per frame', async () => {
     const mock = new D890BootloaderMock();
     const { run } = await session(mock, { eventDelayMs: 5 });

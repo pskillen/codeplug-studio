@@ -10,6 +10,8 @@
  *   in write order, each after `eventDelayMs` (0: on the next microtask, after `write` has resolved).
  * - `cutAfterWrites: n`: the cable is pulled after the n-th write. That write's reply is never delivered, an `error`
  *   event fires (as the plugin does on a lost device) and every later call is refused.
+ * - `rejectWriteOnCut`: with `cutAfterWrites: n`, the n-th write itself is refused (`IO_ERROR`, as the plugin does when
+ *   the device goes during a write) and never reaches the radio; the `error` event still fires.
  * - `setDTR` / `setRTS` are recorded.
  */
 import type { DataEvent, ErrorEvent, SerialDeviceInfo } from '@leeskies/capacitor-usb-serial';
@@ -68,6 +70,8 @@ export interface MockRadioCapacitorPluginOptions {
   readonly chunkBytes?: number;
   /** Pull the cable after this many writes. */
   readonly cutAfterWrites?: number;
+  /** The write at `cutAfterWrites` rejects instead of being accepted. */
+  readonly rejectWriteOnCut?: boolean;
 }
 
 /** What the fake plugin saw, for assertions. */
@@ -192,6 +196,18 @@ export function createMockRadioCapacitorPlugin(
     write: async ({ portId, data }) => {
       requirePort(portId);
       const bytes = base64ToUint8Array(data);
+      if (
+        options.rejectWriteOnCut &&
+        options.cutAfterWrites !== undefined &&
+        record.writes + 1 >= options.cutAfterWrites
+      ) {
+        record.cut = true;
+        queueMicrotask(() => {
+          const event = { portId: PORT_ID, message: 'USB device detached' };
+          for (const l of [...errorListeners]) l(event);
+        });
+        throw new Error('IO_ERROR');
+      }
       await radio.write(bytes);
       record.writes += 1;
       if (options.cutAfterWrites !== undefined && record.writes >= options.cutAfterWrites) {
