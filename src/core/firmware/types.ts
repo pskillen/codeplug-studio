@@ -35,6 +35,11 @@ export type StockFirmwareSource =
       readonly host: string;
       /** false: not run by the vendor; the wizard says so next to the link. */
       readonly official: boolean;
+      /**
+       * The file this link gives, where it isn't the descriptor's zip or its own files (a radio with several stock
+       * versions links each one). Shown as the link text.
+       */
+      readonly fileName?: string;
       readonly note?: string;
     }
   | {

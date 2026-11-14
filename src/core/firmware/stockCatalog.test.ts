@@ -4,8 +4,10 @@ import {
   DM32UV_FIRMWARE_IMAGE_SIZE,
   DM32UV_FIRMWARE_ROLE_BIN,
 } from '../radios/baofeng/dm-32uv/firmware.ts';
+import { UV5RMINI_UNOFFICIAL_STOCK_COPIES } from '../radios/baofeng/uv-5r-mini/firmware.ts';
 import { firmwareRadioIdForModel } from './radioTargets.ts';
 import { getStockFirmwareDescriptor, listStockFirmwareDescriptors } from './stockCatalog.ts';
+import { stockVariantFor, stockVariants } from './stockVariants.ts';
 
 const SHA_RE = /^[0-9a-f]{64}$/;
 
@@ -78,16 +80,57 @@ describe('stock firmware catalog', () => {
     expect(firmwareRadioIdForModel('retevis-rt95')).toBe('retevis-rt95-head');
   });
 
-  it('pins the Mini own-radio image without offering stock flash', () => {
+  it('pins the Mini stock files, v0.27 (NRF) first, without offering stock flash', () => {
     const d = getStockFirmwareDescriptor('baofeng-uv5rmini');
     expect(d.zip).toBeUndefined();
     expect(d.stockFlashOffered).toBe(false);
-    expect(d.stockSources[0]?.kind).toBe('own-image');
-    expect(d.members[0]).toMatchObject({
-      fileName: 'stock-nrfb-v0.04.ufw',
-      size: 520192,
-      sha256: '02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e',
-    });
+    expect(d.severalStocks).toBe(true);
+    expect(stockVariants(d).map((v) => [v.version, v.baseName, v.members])).toEqual([
+      [
+        'v0.27 (NRF)',
+        'nrf-v0.27',
+        [
+          {
+            role: 'ufw',
+            fileName: 'stock-nrf-v0.27.ufw',
+            size: 504832,
+            sha256: '811b4b37253e0685c7efbd3ff0a24aac2bcad223e5453d95b5bfc3f42c089128',
+          },
+        ],
+      ],
+      [
+        'v0.04 (NRFB)',
+        'nrfb-v0.04',
+        [
+          {
+            role: 'ufw',
+            fileName: 'stock-nrfb-v0.04.ufw',
+            size: 520192,
+            sha256: '02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e',
+          },
+        ],
+      ],
+    ]);
+  });
+
+  it("lists the Mini user's own copy, then one unofficial third-party copy per stock version", () => {
+    const d = getStockFirmwareDescriptor('baofeng-uv5rmini');
+    expect(d.stockSources.map((s) => s.kind)).toEqual(['own-image', 'download', 'download']);
+    const downloads = d.stockSources.filter((s) => s.kind === 'download');
+    for (const s of downloads) {
+      expect(s.official).toBe(false);
+      expect(s.label).toMatch(/^Unofficial copy shared by a third party, stock /);
+      expect(s.host).toBe(UV5RMINI_UNOFFICIAL_STOCK_COPIES.host);
+    }
+    // Each link is for one pinned stock file, and comes from the one constant that holds the links.
+    expect(downloads.map((s) => [s.url, s.fileName])).toEqual(
+      UV5RMINI_UNOFFICIAL_STOCK_COPIES.copies.map((c) => [c.url, c.fileName]),
+    );
+    for (const c of UV5RMINI_UNOFFICIAL_STOCK_COPIES.copies) {
+      const variant = stockVariantFor(d, c.version);
+      expect(variant?.members.map((m) => m.fileName)).toEqual([c.fileName]);
+    }
+    expect(JSON.stringify(d.stockSources)).not.toMatch(/read of your radio/);
   });
 
   it('looks up by radio id', () => {

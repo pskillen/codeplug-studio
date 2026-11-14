@@ -1,5 +1,5 @@
 /** Baofeng UV-5R Mini pinned stock and update-mode facts. */
-import type { StockFirmwareDescriptor } from '../../../firmware/types.ts';
+import type { StockFirmwareDescriptor, StockFirmwareSource } from '../../../firmware/types.ts';
 import { UV5RMINI_RADIO_LAYOUT_QUESTION, uv5rMiniVariantOfBase } from './radioInfo.ts';
 
 export const UV5RMINI_FIRMWARE_ROLE_UFW = 'ufw';
@@ -16,42 +16,77 @@ export function uv5rMiniLayoutFromBuildName(buildName: string): string | undefin
   return /^mm9pdy-([A-Z][0-9])-/.exec(buildName.trim())?.[1];
 }
 
+/**
+ * Unofficial copies of the Mini's stock files, shared by a third party: Baofeng publishes no stock firmware for the
+ * Mini. Studio only links to them (the host decrypts each file in the browser, so there is no direct URL to fetch) and
+ * never downloads, hosts or mirrors them; the pinned hashes decide what is accepted. The only place these links live:
+ * a dead link is a one-line change here.
+ */
+export const UV5RMINI_UNOFFICIAL_STOCK_COPIES = {
+  host: 'mega.nz',
+  copies: [
+    {
+      version: 'v0.27 (NRF)',
+      fileName: 'stock-nrf-v0.27.ufw',
+      url: 'https://mega.nz/file/U5NSDIhZ#DqRVur6RPVay1ylKZFQsz2zrXnR3ZrAMBToPHgPnPvQ',
+    },
+    {
+      version: 'v0.04 (NRFB)',
+      fileName: 'stock-nrfb-v0.04.ufw',
+      url: 'https://mega.nz/file/NgFkWZTS#l4b9-Z6dSISLWBNc8OWMHYUfmzyFV_WT9f268APxnt0',
+    },
+  ],
+} as const;
+
+const UV5RMINI_STOCK_SOURCES: readonly StockFirmwareSource[] = [
+  {
+    kind: 'own-image',
+    label: 'Your own copy',
+    instructions:
+      "If you already have the stock file for your radio's firmware, drop it below. Studio checks it against the pinned hash and refuses any other file.",
+  },
+  ...UV5RMINI_UNOFFICIAL_STOCK_COPIES.copies.map((c): StockFirmwareSource => ({
+    kind: 'download',
+    label: `Unofficial copy shared by a third party, stock ${c.version}`,
+    url: c.url,
+    host: UV5RMINI_UNOFFICIAL_STOCK_COPIES.host,
+    official: false,
+    fileName: c.fileName,
+    note: 'Studio only links to it and never downloads it for you: save the file, then drop it below.',
+  })),
+];
+
 export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   radioId: 'baofeng-uv5rmini',
   label: 'Baofeng UV-5R Mini',
-  version: 'v0.04 (NRFB)',
-  baseName: 'nrfb-v0.04',
-  stockSources: [
-    {
-      kind: 'own-image',
-      label: "Your radio's own stock image",
-      instructions:
-        "Studio can't get this file for you. The firmware project builds it from a read of your radio.",
-    },
-  ],
+  // The 1.0.0 release's stock (radios showing NRF, Firmware V0.27) is the primary; v0.04 (NRFB) is the second base.
+  version: 'v0.27 (NRF)',
+  baseName: 'nrf-v0.27',
+  stockSources: UV5RMINI_STOCK_SOURCES,
   stockFlashOffered: false,
   stockReturn: {
     help: "Use the to-stock file (uv5rmini-fw-to-stock-….patch.json) from the firmware project's release artifact; Studio can't flash the plain stock file.",
   },
+  // The vendor's v0.27 app. Its file carries no loader, by design; it is only ever a stock.
   members: [
     {
       role: UV5RMINI_FIRMWARE_ROLE_UFW,
-      fileName: 'stock-nrfb-v0.04.ufw',
-      size: 520192,
-      sha256: '02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e',
+      fileName: 'stock-nrf-v0.27.ufw',
+      size: 504832,
+      sha256: '811b4b37253e0685c7efbd3ff0a24aac2bcad223e5453d95b5bfc3f42c089128',
     },
   ],
-  // The second stock base: the vendor's v0.27 app. Its file carries no loader, by design; it is only ever a stock.
+  // The second stock base: the vendor's v0.04 app.
   alsoAccepts: [
     {
-      version: 'v0.27 (NRF)',
-      baseName: 'nrf-v0.27',
+      version: 'v0.04 (NRFB)',
+      baseName: 'nrfb-v0.04',
       members: [
         {
           role: UV5RMINI_FIRMWARE_ROLE_UFW,
-          fileName: 'stock-nrf-v0.27.ufw',
-          size: 504832,
-          sha256: '811b4b37253e0685c7efbd3ff0a24aac2bcad223e5453d95b5bfc3f42c089128',
+          fileName: 'stock-nrfb-v0.04.ufw',
+          size: 520192,
+          sha256: '02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e',
         },
       ],
     },
