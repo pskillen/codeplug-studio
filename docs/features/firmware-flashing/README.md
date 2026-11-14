@@ -87,7 +87,8 @@ flowchart LR
 
 Flashing needs Web Serial, which phones, tablets, Firefox and Safari don't have. On those browsers `/firmware` shows no
 wizard: a banner says flashing needs Chrome or Edge on a desktop computer, then each offered radio's published releases
-are listed read-only, newest first, with **Show release candidates**, the **Release notes** disclosure and the same
+are listed read-only, newest first, with the radio's "Supported: …" line and each release's "For the … on stock …"
+line where the radio has them, **Show release candidates**, the **Release notes** disclosure and the same
 **Try again** when the list can't be downloaded. Nothing there opens a port or loads a patch. The Tools strip still
 shows the flasher entry, so the releases can be read from a phone. The Android app is covered below.
 
@@ -145,12 +146,17 @@ Per radio:
 
 ## Wizard steps
 
-1. **Radio** — the radios this site offers, with the pinned stock version and how long a flash takes.
+1. **Radio** — the radios this site offers, with the pinned stock version and how long a flash takes. A radio whose
+   descriptor says which of its radios Studio supports (`supportedRadios`; the UV-5R Mini: "UV-5R Minis whose Radio
+   Info (MENU → Radio Info) shows Firmware V0.27 and Hardware V1.7, and whose start-up screen (hold 8 while switching
+   on) shows 5RMINI NRF. Other Minis are not supported yet.") shows it as "Supported: …" on its card, and under the
+   page's intro on every later step, so an owner can check before fetching any file. Other radios show no such line.
 2. **Firmware** — what to flash:
    - **Published releases** for the radio, from the firmware project's public release index
      ([releases.md](releases.md)), newest first, each named by its firmware project and version ("MM9PDY
      modded firmware 1.0.0"), with its date, a summary and a **Release notes**
-     disclosure that shows the published notes unchanged. If the list can't be downloaded, a warning says so with
+     disclosure that shows the published notes unchanged. A radio that accepts more than one stock version (the UV-5R
+     Mini) also says which radios each release is for: "For the Baofeng UV-5R Mini on stock v0.27 (NRF)". If the list can't be downloaded, a warning says so with
      **Try again**; stock and a patch file from disk still work. Finals only by default; **Show release
      candidates** adds RCs, labelled **Pre-release**.
    - **Stock firmware** ("Stock firmware (v1.01.048)"), always listed: it is also the recovery path.
@@ -195,7 +201,8 @@ Per radio:
    shows the layout ("Flash layout: L2", with the prepared image or beside a refusal) only with
    [developer mode](../developer-mode/README.md) on. That is display only: no check reads developer mode. **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers:
    its flash layout and the suffix, Firmware and Hardware strings of its stock firmware, matched against the same
-   table and with the same refusals as the dropdowns below. With no report, or when the read fails, the step asks three dropdowns of the supported values: Firmware (`V0.04`,
+   table and with the same refusals as the dropdowns below. A report naming a layout Studio doesn't know is refused as
+   "This radio reports firmware Studio doesn't support"; what it reported shows only with developer mode on. With no report, or when the read fails, the step asks three dropdowns of the supported values: Firmware (`V0.04`,
    `V0.27`, `Other`) and Hardware (`V1.7`, `Other`) from Radio Info, and the suffix (`NRF`, `NRFB`, `Other`) from the
    start-up screen shown while holding `8`. `Other` is refused, and so is a combination with no build. A warning says to
    pick exactly what the radio shows: a wrong Firmware or suffix pick is refused with nothing installed but may reset

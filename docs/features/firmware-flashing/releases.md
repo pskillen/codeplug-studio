@@ -76,7 +76,9 @@ each has an optional `layout` field, `"L1"` or `"L2"`:
   and the base of the row's `stockVersion`; a downloaded patch whose `base` disagrees with it, or with its stock's base,
   is refused. One row per layout and stock version.
 - **Other radios' rows carry no `layout` or `base`**; either on one is a malformed row.
-- Studio lists a Mini release once per version and loads every row of that version. Prepare picks the file on the
+- Studio lists a Mini release once per version and loads every row of that version. Its row says which radios it is
+  for, from the stock versions across its rows, in the radio's stock order ("For the Baofeng UV-5R Mini on stock v0.27
+  (NRF)"): `FirmwareReleaseSummary.supports`, set only for a radio that accepts more than one stock version. Prepare picks the file on the
   radio's base and layout (from its radio report's layout and its suffix, Firmware and Hardware strings, or from its Firmware, suffix and
   Hardware answers) and never the nearest
   build; a radio with no file in the release is told there is no MM9PDY build for it yet. The retry after a refusal
