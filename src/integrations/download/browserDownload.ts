@@ -1,6 +1,17 @@
-/** Browser file download helpers — integrations layer (DOM side effects). */
+/**
+ * File download helpers — integrations layer (DOM side effects). Every save in the app goes through `downloadBlob`:
+ * a browser gets an `<a download>` click; the Android app, whose WebView ignores that, saves on the device instead
+ * (nativeSave.ts) and the app shell's notice says where the file went.
+ */
+import { isNativeApp } from '@integrations/platform/isNativeApp.ts';
+
+import { saveBlobOnDevice } from './nativeSave.ts';
 
 export function downloadBlob(blob: Blob, fileName: string): void {
+  if (isNativeApp()) {
+    void saveBlobOnDevice(blob, fileName);
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
