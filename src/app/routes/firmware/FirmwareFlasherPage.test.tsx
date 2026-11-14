@@ -745,8 +745,9 @@ describe('FirmwareFlasherPage', () => {
       it('offers the developer-mode radios only (#1674)', () => {
         renderPage();
         const offered = screen.getAllByRole('radio');
-        expect(offered).toHaveLength(3);
+        expect(offered).toHaveLength(4);
         expect(screen.getByRole('radio', { name: /Baofeng DM-32UV/ })).toBeInTheDocument();
+        expect(screen.getByRole('radio', { name: /AnyTone AT-D890UV/ })).toBeInTheDocument();
         expect(screen.getByRole('radio', { name: /RT95 front panel/ })).toBeInTheDocument();
         expect(screen.getByRole('radio', { name: /UV-5R Mini/ })).toBeInTheDocument();
       });

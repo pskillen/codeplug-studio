@@ -13,7 +13,9 @@ export const AT_D890UV_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   stock: AT_D890UV_STOCK_FIRMWARE,
   link: AT_D890_FW_LINK,
   createUpdater: () => createD890FirmwareUpdater(),
-  capacitorSupported: false,
+  // Android app: behind developer mode until a phone has flashed one (#1674). One round trip per 40-byte frame makes
+  // a phone flash an estimated 2.5 to 7 minutes (not measured); the docs say so.
+  capacitorSupported: 'developerMode',
   // Enabled in prod 2026-10-22: release 1.0.0 flashed from Studio on hardware (#1364).
   prodFlashDisabled: false,
   // Measured hardware flash of 1.0.0: about 25 s of transfer.

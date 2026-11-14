@@ -264,7 +264,7 @@ describe('firmware registry', () => {
     expect(d890).toMatchObject({
       label: 'AnyTone AT-D890UV',
       prodFlashDisabled: false,
-      capacitorSupported: false,
+      capacitorSupported: 'developerMode',
     });
     expect(d890!.createUpdater().radioId).toBe('anytone-at-d890uv');
     expect(getFirmwareUpdater('baofeng-dm32uv')).toMatchObject({

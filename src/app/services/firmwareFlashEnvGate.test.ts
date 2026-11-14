@@ -185,7 +185,12 @@ describe('developer mode (#1650)', () => {
 });
 
 /** The radios the Android app offers, all behind developer mode, in registry order (#1657, #1674). */
-const ANDROID_DEVELOPER_MODE_RADIOS = ['baofeng-dm32uv', 'retevis-rt95-head', 'baofeng-uv5rmini'];
+const ANDROID_DEVELOPER_MODE_RADIOS = [
+  'baofeng-dm32uv',
+  'anytone-at-d890uv',
+  'retevis-rt95-head',
+  'baofeng-uv5rmini',
+];
 
 describe('the Android app offers its radios behind developer mode only (#1657, #1674)', () => {
   beforeEach(() => {
