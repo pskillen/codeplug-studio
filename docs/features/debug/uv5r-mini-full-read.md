@@ -32,8 +32,12 @@ Write through the pipe to show no `W` reaches the radio (`debugRead/fullRead.tes
 
 ## Full read
 
-- **Link:** the codeplug session's: the Mini's cable (CH340 filter in the port picker), DTR and RTS raised after the
-  open, 115200 baud and, when the handshake gets no answer, once more at 38400.
+- **Link:** the codeplug session's, and the flasher's radio report read's (`UV5RMINI_RADIO_REPORT_LINK`): the Mini's
+  cable (CH340, `1a86:7523`), 115200 baud 8N1, DTR and RTS raised after the open and, when the handshake gets no
+  answer, once more at 38400. In a browser the port picker is narrowed to the cable; in the Android app the one
+  attached device matching it is used, through the flasher's seam (`grantFirmwareLinkPort`, `openFirmwareLinkPipe`).
+  Raising DTR and RTS is the normal-mode line handling the codeplug Read uses on the Mini's cable without keying the
+  radio; nothing in the read can key it, since the sender allows no frame but the clone handshake, `R` and `E`.
 - **Session:** the codeplug Read's handshake (`Uv5rMiniProtocol.connect`: settle, ident, `F`, `M` with the model
   check, the read cipher-select frame), then a 64-byte `R` at every address `0x0000–0xFFC0` (1024 reads), then `E`.
 - **Ident:** the `F` (16 bytes) and `M` (15 bytes) answers, shown as hex.
@@ -57,6 +61,11 @@ written to browser storage.
 
 **Download all** saves one zip with, per read, `<label>/raw.bin`, `<label>/decoded.bin` and `<label>/summary.txt`
 (time, ident, span hashes). The page says where the zip is offered that it contains the radio's calibration.
+
+**In the Android app** there is no download. The app's activity is Capacitor's `BridgeActivity` with no download
+listener, so a `blob:` link with `download` does nothing in its web view (known from the code, not tried on a phone;
+the flasher's summary `.txt` download goes the same way). The page shows a notice in place of **Download all**, and does
+not warn on leaving. The reads, the compare and the calibration view work as in a browser.
 
 ## Compare two reads
 
@@ -134,7 +143,7 @@ The layout is shape only (`debugRead/calibrationLayout.ts`, decoded by `decodeUv
 | Layer        | Module                                                                                                                           |
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
 | Integrations | `src/integrations/radio-io/radios/uv5r-mini/debugRead/` (allowlist, full read, spans, compare, channel diff, calibration layout) |
-| Service      | `src/app/services/uv5rMiniDebugRead.ts` (port, baud fallback, close)                                                             |
+| Service      | `src/app/services/uv5rMiniDebugRead.ts` (port through `firmwarePort.ts`, baud fallback, close)                                   |
 | Route        | `src/app/routes/debug/DebugUv5rMiniPage.tsx`, `uv5rMiniDebugReads.ts` (tab history, zip), `Uv5rMiniCalibrationSection.tsx`       |
 | Component    | `src/app/components/LineChart/` ([sidecar](../../../src/app/components/LineChart/LineChart.md))                                  |
 
@@ -152,11 +161,15 @@ on):
    values, the trim gauge, the text and the hex. Pick the other read as the overlay: the dashed lines and the second
    column appear. The section has no button or link.
 
+In the Android app, with only the Mini's cable on the phone: take two reads, check the compare and the calibration
+view, and that the page offers no download.
+
 On a prod build with developer mode off, `/debug/uv5r-mini` goes to the home page.
 
 ## Known gaps
 
 - The PA bias row order is assumed (see [Calibration viewer](#calibration-viewer)).
+- The Android app can't save the reads as a file. The read in the app has not been tried on a phone with a radio.
 
 ## Related
 

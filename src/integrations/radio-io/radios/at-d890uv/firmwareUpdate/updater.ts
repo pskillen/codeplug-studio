@@ -13,7 +13,6 @@ import type {
   FirmwareFlashPhase,
   FirmwareFlashProgress,
   FirmwareFlashResult,
-  FirmwareFlashTiming,
   FirmwareUpdater,
 } from '../../../firmware/types.ts';
 import {
@@ -38,6 +37,9 @@ import {
 import { makeD890UpdateFrame } from './frames.ts';
 import { AT_D890_FW_RADIO_ID, checkD890FirmwareImage, checkD890Outgoing } from './interlocks.ts';
 import { d890BlockCount, d890Blocks } from './package.ts';
+import { summariseD890FrameTiming } from './timing.ts';
+
+export { summariseD890FrameTiming };
 
 /** Progress is emitted on each phase change and every this many data frames. */
 const PROGRESS_EVERY_FRAMES = 256;
@@ -54,22 +56,6 @@ function ascii(b: Uint8Array): string {
 }
 
 const now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
-
-/** Median, p99 and max of the first `count` samples. */
-export function summariseD890FrameTiming(
-  samples: Float64Array,
-  count: number,
-): FirmwareFlashTiming | undefined {
-  if (count <= 0) return undefined;
-  const sorted = samples.slice(0, count).sort();
-  const at = (q: number) => sorted[Math.min(count - 1, Math.ceil(q * count) - 1)]!;
-  const round = (ms: number) => Math.round(ms * 100) / 100;
-  return {
-    medianFrameMs: round(at(0.5)),
-    p99FrameMs: round(at(0.99)),
-    maxFrameMs: round(sorted[count - 1]!),
-  };
-}
 
 interface BoundSession {
   readonly pipe: BytePipe;

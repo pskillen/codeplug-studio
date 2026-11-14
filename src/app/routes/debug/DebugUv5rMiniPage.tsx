@@ -28,6 +28,7 @@ import {
   type Uv5rMiniChannelDiff,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
+import { isNativeApp } from '@integrations/platform/isNativeApp.ts';
 
 import Uv5rMiniCalibrationSection from './Uv5rMiniCalibrationSection.tsx';
 import {
@@ -36,7 +37,6 @@ import {
   useUv5rMiniDebugReads,
   type Uv5rMiniDebugRead,
 } from './uv5rMiniDebugReads.ts';
-import WebSerialOnlyDebugPage from './WebSerialOnlyDebugPage.tsx';
 
 const hex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, '0')).join(' ');
 const addr = (n: number) => `0x${n.toString(16).toUpperCase().padStart(4, '0')}`;
@@ -177,6 +177,7 @@ function ReadCard({ read }: { read: Uv5rMiniDebugRead }) {
  * reads with the runbook windows. It never writes to the radio and never offers a restore from a read.
  */
 function Uv5rMiniFullRead() {
+  const native = isNativeApp();
   const { reads, undownloaded } = useUv5rMiniDebugReads();
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
@@ -186,11 +187,12 @@ function Uv5rMiniFullRead() {
   const [rightLabel, setRightLabel] = useState<string | null>(null);
 
   useEffect(() => {
-    if (undownloaded === 0) return;
+    // The app can't download the reads, so there is nothing to warn about on leaving.
+    if (native || undownloaded === 0) return;
     const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
-  }, [undownloaded]);
+  }, [native, undownloaded]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -252,8 +254,10 @@ function Uv5rMiniFullRead() {
         <Alert color="blue" title="Read only">
           This page only reads. Its sender allows the clone handshake, 64-byte reads and the end
           frame, and refuses anything else, so it can't write to the radio. It never restores from a
-          read: a read carries the radio&apos;s calibration, which must never be written back. Web
-          Serial needs desktop Chrome or Edge. Close other tabs that use the cable first.
+          read: a read carries the radio&apos;s calibration, which must never be written back.{' '}
+          {native
+            ? 'In the Android app it uses the one attached cable that matches the Mini’s (CH340); plug in only that cable.'
+            : 'Web Serial needs desktop Chrome or Edge. Close other tabs that use the cable first.'}
         </Alert>
 
         <PageSection
@@ -297,27 +301,35 @@ function Uv5rMiniFullRead() {
             </Text>
           ) : (
             <Stack gap="lg">
-              <Stack gap="xs">
-                <Group>
-                  <Button variant="default" onClick={downloadAll}>
-                    Download all ({reads.length})
-                  </Button>
-                  {undownloaded > 0 ? (
-                    <Text size="sm" c="orange">
-                      {undownloaded} read{undownloaded === 1 ? '' : 's'} not downloaded
-                    </Text>
-                  ) : (
-                    <Text size="sm" c="dimmed">
-                      All downloaded
-                    </Text>
-                  )}
-                </Group>
-                <Text size="xs" c="dimmed">
-                  The zip holds each read in full (raw, decoded and a summary), including the
-                  radio&apos;s calibration at 0xF000–0xFFFF. It is specific to this radio: keep it
-                  with the radio and don&apos;t share it as a codeplug.
-                </Text>
-              </Stack>
+              {native ? (
+                <Alert color="yellow" title="Saving the reads isn't available in the Android app">
+                  The app can&apos;t save files from this page yet. Compare reads and view the
+                  calibration here; to keep a read as a file, take it in Chrome or Edge on a desktop
+                  computer.
+                </Alert>
+              ) : (
+                <Stack gap="xs">
+                  <Group>
+                    <Button variant="default" onClick={downloadAll}>
+                      Download all ({reads.length})
+                    </Button>
+                    {undownloaded > 0 ? (
+                      <Text size="sm" c="orange">
+                        {undownloaded} read{undownloaded === 1 ? '' : 's'} not downloaded
+                      </Text>
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        All downloaded
+                      </Text>
+                    )}
+                  </Group>
+                  <Text size="xs" c="dimmed">
+                    The zip holds each read in full (raw, decoded and a summary), including the
+                    radio&apos;s calibration at 0xF000–0xFFFF. It is specific to this radio: keep it
+                    with the radio and don&apos;t share it as a codeplug.
+                  </Text>
+                </Stack>
+              )}
               {[...reads].reverse().map((r) => (
                 <ReadCard key={r.label} read={r} />
               ))}
@@ -392,11 +404,7 @@ function Uv5rMiniFullRead() {
   );
 }
 
-/** Web Serial only: the Android app shows a notice instead (#1673). */
+/** Web Serial in a browser, the app's USB serial in the Android app (#1680). */
 export default function DebugUv5rMiniPage() {
-  return (
-    <WebSerialOnlyDebugPage title="UV-5R Mini full read">
-      <Uv5rMiniFullRead />
-    </WebSerialOnlyDebugPage>
-  );
+  return <Uv5rMiniFullRead />;
 }

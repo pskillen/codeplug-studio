@@ -128,6 +128,12 @@ describe('benchmarkAtD890Sweep', () => {
     expect(r.bytes).toBe(frames * blockSize);
     expect(r.blockSize).toBe(blockSize);
     expect(r.bytesPerSecond).toBeGreaterThan(0);
+    // Per-frame round trip, summarised as the flasher does.
+    expect(r.frameTiming).toBeDefined();
+    const t = r.frameTiming!;
+    expect(t.medianFrameMs).toBeGreaterThanOrEqual(0);
+    expect(t.p99FrameMs).toBeGreaterThanOrEqual(t.medianFrameMs);
+    expect(t.maxFrameMs).toBeGreaterThanOrEqual(t.p99FrameMs);
     // Addresses must advance by blockSize, never repeat.
     const requested = pipe.writes
       .filter((w) => w[0] === 0x52)

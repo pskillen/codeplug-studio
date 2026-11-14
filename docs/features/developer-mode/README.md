@@ -92,7 +92,8 @@ same profile follow a change through the `storage` event. The Debug localStorage
   `prepareRadioWriteImage` checks the gate again before upload, so turning developer mode off mid-flow can abort
   before any write, never during one. Unused while no profile carries `prodWriteDisabled`.
 - The landing page's support matrix shows developer mode as it was when the page mounted.
-- In the Android app developer mode unlocks the Debug pages and the UV-5R Mini's flasher only; no other radio's
+- In the Android app developer mode unlocks the Debug pages (which of them run there:
+  [Debug, In the Android app](../debug/README.md#in-the-android-app)) and the UV-5R Mini's flasher only; no other radio's
   flasher is offered there yet. The Mini's flash from a phone has not been tried on hardware
   ([firmware flashing, Android app](../firmware-flashing/README.md#android-app)).
 
