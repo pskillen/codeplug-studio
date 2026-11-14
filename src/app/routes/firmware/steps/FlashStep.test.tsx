@@ -366,12 +366,23 @@ describe('FlashStep: written / total, elapsed and time left', () => {
         vi.advanceTimersByTime(100);
       });
 
-    /** A held flash with its first report on screen, so the ticker's effect has run, and the dialog settled. */
+    /**
+     * A held flash with its first report on screen, so the ticker's effect has run, and the dialog settled.
+     *
+     * The dialog's content mounts on an animation frame, and jsdom runs frames on the faked interval, so the wait
+     * moves the fake clock one frame (16 ms) per poll: a real-time wait alone can time out with the dialog empty. At
+     * most about 21 polls before the wait's 1 s timeout keeps the clock under 0.5 s, so the elapsed time the tests
+     * read still rounds to the whole seconds they advance.
+     */
     async function startTicking() {
       const run = await startHeldFlash();
-      settle();
       run.report({ phase: 'handshake', cur: 0, max: 0, msg: 'Handshake', radioTouched: false });
-      await screen.findByTestId('firmware-flash-stats');
+      await vi.waitFor(() => {
+        act(() => {
+          vi.advanceTimersByTime(16);
+        });
+        expect(screen.getByTestId('firmware-flash-stats')).toBeInTheDocument();
+      });
       settle();
       return run;
     }
