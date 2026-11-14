@@ -57,9 +57,11 @@ export class Uv5rMiniReadOnlyPipe implements BytePipe {
   }
 
   async write(data: Uint8Array): Promise<void> {
-    if (!isUv5rMiniDebugFrameAllowed(data)) throw new Uv5rMiniDebugFrameRefusedError(data);
-    this.exchanges.push({ tx: data.slice(), rx: [] });
-    await this.inner.write(data);
+    // Check, record and send one private copy, so a caller changing its buffer later can't change what is sent.
+    const frame = data.slice();
+    if (!isUv5rMiniDebugFrameAllowed(frame)) throw new Uv5rMiniDebugFrameRefusedError(frame);
+    this.exchanges.push({ tx: frame, rx: [] });
+    await this.inner.write(frame);
   }
 
   async readExact(n: number, timeoutMs: number): Promise<Uint8Array> {

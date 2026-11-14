@@ -162,6 +162,22 @@ describe('UV-5R Mini debug frame allowlist', () => {
     }
   });
 
+  it('sends the bytes it checked, not the caller buffer', async () => {
+    const held: Uint8Array[] = [];
+    const inner: BytePipe = {
+      write: async (data) => {
+        held.push(data); // keeps the reference, as a writer holding the chunk would
+      },
+      readExact: async (n) => new Uint8Array(n),
+      close: async () => {},
+    };
+    const frame = Uint8Array.of(0x52, 0x00, 0x00, 0x40);
+    await new Uv5rMiniReadOnlyPipe(inner).write(frame);
+    frame.set([0x57, 0xf0, 0x00, 0x40]); // the caller reuses its buffer for a W at calibration
+    expect(held[0]).not.toBe(frame);
+    expect(Array.from(held[0]!)).toEqual([0x52, 0x00, 0x00, 0x40]);
+  });
+
   it('refuses a Write driven through it: no W reaches the radio', async () => {
     const radio = radioWith(syntheticFlash());
     const before = radio.flash.slice();
