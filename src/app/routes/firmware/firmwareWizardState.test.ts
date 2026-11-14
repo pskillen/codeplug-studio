@@ -510,6 +510,25 @@ describe('the "Your radio" check step (#1670)', () => {
     expect(canAdvance({ ...answered(answer('V0.04', 'NRFB')), loadedPatch: null })).toBe(true);
   });
 
+  it('checks the radio again when the release changes after the check passed', () => {
+    /** A release with a file only for the NRFB V0.04 radio (L1 on nrfb-v0.04). */
+    const RELEASE_L1 = {
+      provenance: 'published',
+      layout: 'L1',
+      parsed: { description: { base: 'nrfb-v0.04' } },
+    } as unknown as LoadedFirmwarePatch;
+    let s = answered(answer('V0.27', 'NRF'));
+    expect(canAdvance(s)).toBe(true);
+    s = reduce(s, { type: 'goTo', step: 'firmware' });
+    expect(s.step).toBe('firmware');
+    s = reduce(s, { type: 'chooseFirmware', choice: USER_CHOICE, loadedPatch: RELEASE_L1 });
+    s = reduce(s, { type: 'next' });
+    expect(s.step).toBe('check');
+    expect(canAdvance(s)).toBe(false);
+    expect(reduce(s, { type: 'next' }).step).toBe('check');
+    expect(reduce(s, { type: 'goTo', step: 'prepare' }).step).toBe('check');
+  });
+
   it('lets a supported radio on to the stock-file step, and back to the check', () => {
     const s = reduce(answered(answer('V0.27', 'NRF')), { type: 'next' });
     expect(s.step).toBe('stock');
