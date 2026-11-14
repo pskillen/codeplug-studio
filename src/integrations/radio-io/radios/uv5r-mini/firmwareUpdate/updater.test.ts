@@ -210,6 +210,15 @@ describe('UV-5R Mini updater: a clean update', () => {
     // The written / total count is in bytes of the area, for the wizard's count and time estimate.
     expect(last.written).toEqual({ done: m.areaLength, total: m.areaLength, unit: 'bytes' });
     expect(progress.filter((p) => p.phase === 'handshake').every((p) => !p.written)).toBe(true);
+    // The mock reads in the loader's real order: cmd 4, the header `(0x4, 0x10)` twice, then the area top-down. The
+    // header bytes are not counted, and the transfer (where the estimate's baseline is taken) starts at the first area
+    // block, never at the header reads.
+    const firstTransfer = progress.find((p) => p.phase === 'transfer')!;
+    expect(firstTransfer.written).toEqual({ done: 0x200, total: m.areaLength, unit: 'bytes' });
+    expect(firstTransfer.cur).toBe(0x200);
+    expect(progress.filter((p) => p.phase === 'erase').every((p) => p.written?.done === 0)).toBe(
+      true,
+    );
     // The erase message arrives with cmd 4.
     expect(progress.some((p) => p.msg === 'The radio is erasing its firmware area')).toBe(true);
   });

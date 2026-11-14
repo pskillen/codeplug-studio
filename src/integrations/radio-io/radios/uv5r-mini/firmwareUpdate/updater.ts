@@ -286,6 +286,10 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
         let seen = 0;
         // Distinct bytes the loader has read, not the sum of its reads: on a slow host it can ask for a block twice.
         const covered = createCoveredBytes();
+        // The count and the time estimate start at the first area block. After cmd 4 the loader reads the image's
+        // 16-byte header (`(0x4, 0x10)`, twice) before its first area block; those bytes are not area, and the time
+        // before the first block may include the erase.
+        let areaStarted = false;
 
         const emit = (cur: number, max: number, phase: FirmwareFlashPhase, msg: string) => {
           const update: FirmwareFlashProgress = {
@@ -328,6 +332,8 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
                 break;
               case 'read':
                 if (s.areaLength !== undefined && s.areaLength > 0 && e.inImage) {
+                  if (!areaStarted && e.len < Math.min(UV5RMINI_AREA_BLOCK, s.areaLength)) break;
+                  areaStarted = true;
                   covered.add(e.off, e.len);
                   progressPhase = 'transfer';
                   emit(
@@ -494,7 +500,11 @@ export function describeUv5rMiniResult(
   return { error: text };
 }
 
+/** The loader's area read size: its first read this size after cmd 4 is the first area block. */
+const UV5RMINI_AREA_BLOCK = 0x200;
+
 /** The union of byte ranges read so far, for the progress count. Reads arrive in order, so the list stays short. */
+
 export function createCoveredBytes(): { add(off: number, len: number): void; total(): number } {
   const ranges: [number, number][] = [];
   let sum = 0;
