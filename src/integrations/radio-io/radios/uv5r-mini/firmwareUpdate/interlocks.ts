@@ -229,7 +229,7 @@ export function checkUv5rMiniImage(
     }
     if (pin.layout !== base.loaderLayout) {
       throw new RadioInterlockError(
-        `This to-stock file for ${base.name} carries the ${pin.layout} loader, not that stock's ${base.loaderLayout} loader. Nothing was sent.`,
+        `This to-stock file for ${base.name} carries a loader for different radio firmware from that stock's. Nothing was sent.`,
       );
     }
   }

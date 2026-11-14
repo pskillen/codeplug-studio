@@ -174,7 +174,8 @@ describe('published release with one row per flash layout', () => {
       ),
     );
     expect(err.code).toBe('patch-wrong-layout');
-    expect(err.message).toMatch(/the release list says L1, but its build is for L2/);
+    expect(err.message).toMatch(/the release list and its build name different radio firmware/);
+    expect(err.message).not.toMatch(/\bL[12]\b/);
   });
 
   it('refuses a row with no layout whose build name names none, and a V4 build', async () => {
@@ -270,7 +271,10 @@ describe('user patch files, one per flash layout', () => {
     const crossedLayout = await syntheticUv5rMiniRelease({ layout: 'L2', rowLayout: 'L1' });
     const layoutErr = await pick(crossedLayout);
     expect(layoutErr.code).toBe('patch-wrong-layout');
-    expect(layoutErr.message).toMatch(/the release list says L1, but its build is for L2/);
+    expect(layoutErr.message).toMatch(
+      /the release list and its build name different radio firmware/,
+    );
+    expect(layoutErr.message).not.toMatch(/\bL[12]\b/);
     const crossedBase = await syntheticUv5rMiniRelease({ layout: 'L2', patchBase: 'other' });
     const baseErr = await pick(crossedBase, { ...crossedBase.row, base: 'synthetic' });
     expect(baseErr.message).toMatch(/the release list says synthetic, but its patch is on other/);

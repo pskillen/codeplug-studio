@@ -584,11 +584,12 @@ describe('checkUv5rMiniImage — to stock', () => {
   });
 
   it("refuses the other layout's loader for the base", () => {
+    // In the radio's words: the loader's layout is an internal detail (#1670).
     expect(toStock({ base: 'nrfb-v0.04', layout: 'L2' })).toThrow(
-      /for nrfb-v0.04 carries the L2 loader, not that stock's L1 loader/,
+      "This to-stock file for nrfb-v0.04 carries a loader for different radio firmware from that stock's. Nothing was sent.",
     );
     expect(toStock({ base: 'nrf-v0.27', layout: 'L1' })).toThrow(
-      /for nrf-v0.27 carries the L1 loader, not that stock's L2 loader/,
+      "This to-stock file for nrf-v0.27 carries a loader for different radio firmware from that stock's. Nothing was sent.",
     );
   });
 
