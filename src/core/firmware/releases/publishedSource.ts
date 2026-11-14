@@ -45,7 +45,7 @@ export function releaseSupports(
 }
 
 /** Newest first by publication date, then tag. */
-function compareReleases(a: PublishedFirmwareRelease, b: PublishedFirmwareRelease): number {
+export function compareReleases(a: PublishedFirmwareRelease, b: PublishedFirmwareRelease): number {
   if (a.publishedOn !== b.publishedOn) return a.publishedOn < b.publishedOn ? 1 : -1;
   return b.tag.localeCompare(a.tag, undefined, { numeric: true });
 }
@@ -123,4 +123,33 @@ export function createPublishedFirmwareReleaseSource(
       return combineLayoutFiles(files, descriptor, `Release ${key}`);
     },
   };
+}
+
+/** One patch per stock base, preferring final releases to candidates. */
+export function publishedToStockChoices(
+  rows: readonly PublishedFirmwareRelease[],
+  radioId: PublishedFirmwareRelease['radioId'],
+): PublishedFirmwareRelease[] {
+  const sorted = rows
+    .filter((r) => r.radioId === radioId && r.base && r.toStock)
+    .slice()
+    .sort((a, b) =>
+      a.channel === b.channel ? compareReleases(a, b) : a.channel === 'final' ? -1 : 1,
+    );
+  const bases = new Set<string>();
+  return sorted
+    .filter((r) => !bases.has(r.base!) && Boolean(bases.add(r.base!)))
+    .sort(compareReleases);
+}
+
+export async function downloadToStockPatch(row: PublishedFirmwareRelease): Promise<Uint8Array> {
+  if (!row.toStock)
+    throw new FirmwareError('patch-unreadable', 'This to-stock patch is not published.');
+  const bytes = await row.toStock.loadBytes();
+  if ((await sha256Hex(bytes)) !== row.toStock.sha256)
+    throw new FirmwareError(
+      'patch-unreadable',
+      'The downloaded to-stock patch does not match the published hash. Try again later.',
+    );
+  return bytes;
 }

@@ -8,8 +8,12 @@ import {
   releaseSupportsLine,
   stockFirmwareTitle,
 } from '@core/firmware/releases/projects.ts';
-import type { FirmwareReleaseSummary, LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
-import { toStockVariantFor } from '@core/firmware/stockVariants.ts';
+import type {
+  FirmwareReleaseSummary,
+  LoadedFirmwarePatch,
+  PublishedFirmwareRelease,
+} from '@core/firmware/releases/types.ts';
+import { stockVariants, toStockVariantFor } from '@core/firmware/stockVariants.ts';
 
 import {
   Button,
@@ -22,6 +26,8 @@ import {
 import {
   filesToNamedBytes,
   listPublishedReleases,
+  listPublishedToStock,
+  loadPublishedToStock,
   loadChosenPatch,
 } from '../../../services/firmwareFlash.ts';
 import classes from '../FirmwareFlasherPage.module.css';
@@ -56,6 +62,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
     key: string;
     list: readonly FirmwareReleaseSummary[];
     error?: string;
+    toStock: readonly PublishedFirmwareRelease[];
   } | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -73,15 +80,16 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
 
   useEffect(() => {
     let cancelled = false;
-    listPublishedReleases(radioId, state.includeRc)
-      .then((list) => {
-        if (!cancelled) setReleases({ key: listKey, list });
+    Promise.all([listPublishedReleases(radioId, state.includeRc), listPublishedToStock(radioId)])
+      .then(([list, toStock]) => {
+        if (!cancelled) setReleases({ key: listKey, list, toStock });
       })
       .catch((err: unknown) => {
         if (!cancelled) {
           setReleases({
             key: listKey,
             list: [],
+            toStock: [],
             error: messageOf(err, 'The firmware release list could not be downloaded.'),
           });
         }
@@ -150,6 +158,20 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
           type: 'chooseFirmware',
           choice: updater.stock.stockFlashOffered === false ? null : { kind: 'stock' },
         });
+    }
+  }
+
+  async function chooseToStock(row: PublishedFirmwareRelease) {
+    setBusyKey(`stock:${row.base}`);
+    setError(null);
+    try {
+      const { choice: picked, loaded } = await loadPublishedToStock(radioId, row);
+      setStockReturnFile(null);
+      dispatch({ type: 'chooseFirmware', choice: picked, loadedPatch: loaded });
+    } catch (err) {
+      setError(messageOf(err, 'This to-stock patch could not be loaded.'));
+    } finally {
+      setBusyKey(null);
     }
   }
 
@@ -272,14 +294,35 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
               >
                 <span className={classes.cardTitle}>Back to stock</span>
                 <span className={classes.cardMeta}>{stockReturn.help}</span>
+                {current?.toStock.map((row) => {
+                  const variant = stockVariants(updater.stock).find((v) => v.baseName === row.base);
+                  if (!variant) return null;
+                  const selected =
+                    choice?.kind === 'back-to-stock' &&
+                    state.loadedPatch?.provenance === 'published' &&
+                    toStockVariantFor(updater.stock, state.loadedPatch.parsed.description)
+                      ?.baseName === row.base;
+                  return (
+                    <label key={row.base} className={classes.cardTitle}>
+                      <input
+                        type="radio"
+                        name="firmware-choice"
+                        checked={selected}
+                        disabled={busyKey !== null}
+                        onChange={() => void chooseToStock(row)}
+                      />
+                      Puts back {stockFirmwareTitle(variant.version)}
+                    </label>
+                  );
+                })}
                 <FileDropzone
-                  label="To-stock patch (.patch.json)"
+                  label="Or pick a to-stock patch from disk (.patch.json)"
                   accept=".json"
                   fileName={stockReturnFile?.name}
                   onFilesSelected={(files) => void onToStockFile(files)}
                   onClear={() => {
                     setStockReturnFile(null);
-                    if (choice?.kind === 'back-to-stock') {
+                    if (choice?.kind === 'back-to-stock' && stockReturnFile?.loaded) {
                       dispatch({ type: 'chooseFirmware', choice: null });
                     }
                   }}

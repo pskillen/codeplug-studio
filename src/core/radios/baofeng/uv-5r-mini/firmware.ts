@@ -69,7 +69,7 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   stockSources: UV5RMINI_STOCK_SOURCES,
   stockFlashOffered: false,
   stockReturn: {
-    help: "Use the to-stock file (uv5rmini-fw-to-stock-….patch.json) from the firmware project's release artifact; Studio can't flash the plain stock file.",
+    help: "Choose a published to-stock patch or pick one from disk. Studio can't flash the plain stock file.",
   },
   // The vendor's v0.27 app. Its file carries no loader, by design; it is only ever a stock.
   members: [

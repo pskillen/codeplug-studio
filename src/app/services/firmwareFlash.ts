@@ -12,7 +12,11 @@ import {
   loadedLayouts,
   patchForLayout,
 } from '@core/firmware/releases/layouts.ts';
-import { createPublishedFirmwareReleaseSource } from '@core/firmware/releases/publishedSource.ts';
+import {
+  createPublishedFirmwareReleaseSource,
+  publishedToStockChoices,
+  downloadToStockPatch,
+} from '@core/firmware/releases/publishedSource.ts';
 import type {
   FirmwareReleaseSummary,
   LoadedFirmwarePatch,
@@ -123,7 +127,7 @@ export type FirmwareChoice =
 
 /** The refusal for a file picked under "Back to stock" that is not a to-stock patch. */
 export const NOT_TO_STOCK_PATCH_MESSAGE =
-  "This file isn't a to-stock patch: it doesn't put back a stock Studio knows. Pick the to-stock file from the firmware project's release artifact.";
+  "This file isn't a to-stock patch: it doesn't put back a stock Studio knows. Choose a published to-stock patch or pick a to-stock file from disk.";
 
 /** Throws FirmwareError when the release list cannot be fetched. */
 export async function listPublishedReleases(
@@ -131,6 +135,39 @@ export async function listPublishedReleases(
   includeRc: boolean,
 ): Promise<readonly FirmwareReleaseSummary[]> {
   return publishedReleaseSource.listReleases(radioId, { includeRc });
+}
+
+export async function listPublishedToStock(
+  radioId: FirmwareRadioId,
+): Promise<PublishedFirmwareRelease[]> {
+  return publishedToStockChoices(await loadPublishedReleases(), radioId);
+}
+
+export async function loadPublishedToStock(
+  radioId: FirmwareRadioId,
+  row: PublishedFirmwareRelease,
+): Promise<{
+  choice: Extract<FirmwareChoice, { kind: 'back-to-stock' }>;
+  loaded: LoadedFirmwarePatch;
+}> {
+  if (row.radioId !== radioId)
+    throw new FirmwareError('patch-wrong-radio', 'This patch is for a different radio.');
+  const bytes = await downloadToStockPatch(row);
+  const choice = {
+    kind: 'back-to-stock' as const,
+    file: { name: 'published-to-stock.patch.json', bytes },
+  };
+  const loaded = await loadChosenPatch(radioId, choice);
+  if (
+    toStockVariantFor(getStockFirmwareDescriptor(radioId), loaded.parsed.description)?.baseName !==
+    row.base
+  ) {
+    throw new FirmwareError(
+      'patch-not-to-stock',
+      'The downloaded to-stock patch does not match the published stock base.',
+    );
+  }
+  return { choice, loaded: { ...loaded, provenance: 'published' } };
 }
 
 /** Load and check the chosen patch. FirmwareError codes pass through for the wizard to show. */
