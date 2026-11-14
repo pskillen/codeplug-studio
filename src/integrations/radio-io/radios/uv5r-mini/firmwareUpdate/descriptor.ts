@@ -1,6 +1,6 @@
 /**
- * UV-5R Mini firmware updater descriptor, registered in `firmware/registry.ts`. Hidden on the prod build until Studio
- * has flashed a patched release to a Mini on hardware (DESIGN.md — Firmware flashing, rule 7).
+ * UV-5R Mini firmware updater descriptor, registered in `firmware/registry.ts`. Offered on prod since Studio flashed
+ * patched releases to a Mini on hardware (DESIGN.md — Firmware flashing, rule 7).
  */
 import { UV5RMINI_STOCK_FIRMWARE } from '@core/radios/baofeng/uv-5r-mini/firmware.ts';
 
@@ -38,8 +38,9 @@ export const UV5RMINI_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   createUpdater: () => createUv5rMiniFirmwareUpdater(),
   // Offered on the Android app only while developer mode is on, until a full flash there is proven on hardware.
   capacitorSupported: 'developerMode',
-  // Cleared in its own commit once Studio has flashed a patched release to a Mini on hardware.
-  prodFlashDisabled: true,
+  // Cleared once Studio had flashed patched builds to a Mini on hardware and the MM9PDY firmware's 1.0.0 was published
+  // (DESIGN.md — Firmware flashing, rule 7).
+  prodFlashDisabled: false,
   preflight: UV5RMINI_PREFLIGHT,
   radioReport: {
     link: UV5RMINI_RADIO_REPORT_LINK,
