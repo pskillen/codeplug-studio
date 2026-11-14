@@ -11,8 +11,8 @@ Keep them in step.
 
 ## Stock firmware pin
 
-A stock base is one `.ufw` file, member role `ufw`; Studio accepts two bases. A stock file is the same for every radio
-on that base: it is not tied to one radio, and the pinned hash, not the user, decides whether a file is accepted.
+A stock base is one `.ufw` file, member role `ufw`; Studio accepts two bases. The pinned hash, not the user, decides
+whether a file is accepted, and a radio whose key doesn't match the file refuses it before anything is written.
 
 | Base         | Version        | File name              | Size          | sha256                                                             |
 | ------------ | -------------- | ---------------------- | ------------- | ------------------------------------------------------------------ |
