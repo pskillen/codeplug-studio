@@ -38,7 +38,10 @@ export const UV5R_MINI_CHANNEL_FIELDS: readonly Uv5rMiniChannelField[] = [
   { label: 'name', offset: 20, length: 12, modelled: true },
 ];
 
-/** The unmodelled range an unchanged-fields line vouches for. */
+/**
+ * The range whose unmodelled bytes and bits an unchanged-fields line vouches for. Power, wide and scan also lie in
+ * it, so the line never claims the whole range is unchanged.
+ */
 export const UV5R_MINI_UNMODELLED_RANGE = '+0x0C..+0x13';
 
 /** 1-based slots that hold special data, reported on their own lines (memory-layout.md: `0x1EF0`). */
@@ -55,7 +58,10 @@ export interface Uv5rMiniChannelChange {
   nameAfter: string;
   /** Labels of the fields that differ, in offset order. Empty for `filled` and `emptied`. */
   fields: string[];
-  /** True when every unmodelled byte and bit (`+0x0C..+0x13`) is the same in both reads. */
+  /**
+   * True when every unmodelled byte and bit in `+0x0C..+0x13` is the same in both reads. The modelled power, wide
+   * and scan bits in that range may still have changed.
+   */
   unmodelledUnchanged: boolean;
 }
 
@@ -131,7 +137,10 @@ export function diffUv5rMiniChannels(a: Uint8Array, b: Uint8Array): Uv5rMiniChan
 const rel = (n: number) => `+0x${n.toString(16).toUpperCase().padStart(2, '0')}`;
 const quoted = (name: string) => (name ? ` "${name}"` : '');
 
-/** One line per changed slot, e.g. `Slot 37 "NAME": name changed; bytes +0x0C..+0x13 unchanged`. */
+/**
+ * One line per changed slot, e.g. `Slot 37 "NAME": name changed; unmodelled bytes and bits of +0x0C..+0x13
+ * unchanged`.
+ */
 export function formatUv5rMiniChannelChange(c: Uv5rMiniChannelChange): string {
   switch (c.kind) {
     case 'filled':
@@ -142,7 +151,9 @@ export function formatUv5rMiniChannelChange(c: Uv5rMiniChannelChange): string {
       return `Slot ${c.slot}: empty in both reads; differs in ${c.fields.join(', ')}`;
     case 'changed': {
       const renamed = c.nameBefore !== c.nameAfter ? ` (was${quoted(c.nameBefore)})` : '';
-      const kept = c.unmodelledUnchanged ? `; bytes ${UV5R_MINI_UNMODELLED_RANGE} unchanged` : '';
+      const kept = c.unmodelledUnchanged
+        ? `; unmodelled bytes and bits of ${UV5R_MINI_UNMODELLED_RANGE} unchanged`
+        : '';
       return `Slot ${c.slot}${quoted(c.nameAfter)}${renamed}: ${c.fields.join(', ')} changed${kept}`;
     }
   }

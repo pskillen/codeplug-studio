@@ -65,7 +65,17 @@ describe('diffUv5rMiniChannels', () => {
     b[at(2) + 10] = 0x5e; // TX tone
     const [c] = diffUv5rMiniChannels(base(), b).changes;
     expect(formatUv5rMiniChannelChange(c!)).toBe(
-      'Slot 2 "TEST Z" (was "TEST B"): TX tone, name changed; bytes +0x0C..+0x13 unchanged',
+      'Slot 2 "TEST Z" (was "TEST B"): TX tone, name changed; unmodelled bytes and bits of +0x0C..+0x13 unchanged',
+    );
+  });
+
+  it('says only the unmodelled bytes and bits were kept when power changed', () => {
+    const b = base();
+    b[at(2) + 14] ^= 0x01; // +0x0E bit 0: power, inside +0x0C..+0x13
+    const [c] = diffUv5rMiniChannels(base(), b).changes;
+    expect(c!.fields).toEqual(['power']);
+    expect(formatUv5rMiniChannelChange(c!)).toBe(
+      'Slot 2 "TEST B": power changed; unmodelled bytes and bits of +0x0C..+0x13 unchanged',
     );
   });
 

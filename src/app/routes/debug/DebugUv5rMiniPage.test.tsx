@@ -46,7 +46,9 @@ describe('DebugUv5rMiniPage', () => {
     // The channel view under the compare: 0x0100 is slot 9's first RX frequency byte.
     expect(screen.getByTestId('uv5r-mini-channel-diff')).toBeTruthy();
     expect(
-      screen.getByText('Slot 9: RX frequency changed; bytes +0x0C..+0x13 unchanged'),
+      screen.getByText(
+        'Slot 9: RX frequency changed; unmodelled bytes and bits of +0x0C..+0x13 unchanged',
+      ),
     ).toBeTruthy();
     expect(screen.getByText('Slot 248 (0x1EE0–0x1EFF, special data): identical')).toBeTruthy();
     // No write or restore control anywhere on the page.
