@@ -1,7 +1,7 @@
 # Firmware flashing
 
-Studio can flash firmware to a supported radio over Web Serial (or, for the UV-5R Mini with developer mode on, over
-USB serial in the [Android app](#android-app)), from the **Firmware flasher** under Tools (`/firmware`). It is for operators who want to put a community firmware release on their radio, or put the vendor's
+Studio can flash firmware to a supported radio over Web Serial (or, with developer mode on, for the DM-32UV, the RT95
+front panel and the UV-5R Mini, over USB serial in the [Android app](#android-app)), from the **Firmware flasher** under Tools (`/firmware`). It is for operators who want to put a community firmware release on their radio, or put the vendor's
 stock firmware back, without the vendor's programming software.
 
 Firmware belongs to the physical radio, not to a project, library or build. The flasher needs no open project, never
@@ -11,17 +11,17 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 
 ## Implementation status
 
-| Area                        | Status                                               | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| --------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DM-32UV flash               | Shipped: prod                                        | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                                                                                                                                                                                                                   |
-| Published releases          | Shipped (DM-32UV, AT-D890UV, RT95 front panel)       | Listed and fetched at run time from the firmware project's public release index ([releases.md](releases.md)), checked before use; release list, RC toggle, notes and a retry when the list can't be fetched in the wizard. Replaced the bundled catalog ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362))                                                                                                                                |
-| User-supplied patch         | Shipped: prod (DM-32UV, AT-D890UV, RT95 front panel) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                                                                                                                                                                                  |
-| AT-D890UV                   | Shipped: prod                                        | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                                                                                                                                                                                   |
-| RT95 front panel (LCD)      | Shipped: prod                                        | Stock and published releases for the head; the main board is a separate card, stock MAIN or a MAIN patch file (published `retevis-rt95-main` releases or a file from disk), on next/dev/staging (hidden on prod); normal-mode ident and attestations before flashing. Enabled on the prod site after the owner flashed stock V1.41, test builds and the MM9PDY zones build from Studio ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460)) |
-| UV-5R Mini                  | Shipped: pre-prod only (next, dev, staging)          | The radio drives the update: its app, then its loader, ask for slices of the image and Studio serves them; a power-cut update is continued by flashing again. Patch file from disk only until a release is published; no plain stock flash, Back to stock takes the to-stock patch. Hidden on prod until Studio has flashed a patched release to a Mini on hardware ([#1587](https://github.com/pskillen/codeplug-studio/issues/1587))                    |
-| Recovery docs               | Shipped                                              | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                                                                                                                                                         |
-| Browsers without Web Serial | Shipped                                              | Phones, tablets, Firefox and Safari get a read-only list of the published releases for each offered radio (RC toggle, notes, retry) with a banner saying flashing needs Chrome or Edge on a desktop computer. No wizard, no port (`ReleaseBrowser.tsx`)                                                                                                                                                                                                   |
-| Android                     | UV-5R Mini only, with developer mode on              | The Capacitor app offers the UV-5R Mini while [developer mode](../developer-mode/README.md) is on, in any build; every other radio is hidden there ([Android app](#android-app)). Not yet tried on a phone with a radio.                                                                                                                                                                                                                                  |
+| Area                        | Status                                                           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DM-32UV flash               | Shipped: prod                                                    | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                                                                                                                                                                                                                   |
+| Published releases          | Shipped (DM-32UV, AT-D890UV, RT95 front panel)                   | Listed and fetched at run time from the firmware project's public release index ([releases.md](releases.md)), checked before use; release list, RC toggle, notes and a retry when the list can't be fetched in the wizard. Replaced the bundled catalog ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362))                                                                                                                                |
+| User-supplied patch         | Shipped: prod (DM-32UV, AT-D890UV, RT95 front panel)             | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                                                                                                                                                                                  |
+| AT-D890UV                   | Shipped: prod                                                    | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                                                                                                                                                                                   |
+| RT95 front panel (LCD)      | Shipped: prod                                                    | Stock and published releases for the head; the main board is a separate card, stock MAIN or a MAIN patch file (published `retevis-rt95-main` releases or a file from disk), on next/dev/staging (hidden on prod); normal-mode ident and attestations before flashing. Enabled on the prod site after the owner flashed stock V1.41, test builds and the MM9PDY zones build from Studio ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460)) |
+| UV-5R Mini                  | Shipped: pre-prod only (next, dev, staging)                      | The radio drives the update: its app, then its loader, ask for slices of the image and Studio serves them; a power-cut update is continued by flashing again. Patch file from disk only until a release is published; no plain stock flash, Back to stock takes the to-stock patch. Hidden on prod until Studio has flashed a patched release to a Mini on hardware ([#1587](https://github.com/pskillen/codeplug-studio/issues/1587))                    |
+| Recovery docs               | Shipped                                                          | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                                                                                                                                                         |
+| Browsers without Web Serial | Shipped                                                          | Phones, tablets, Firefox and Safari get a read-only list of the published releases for each offered radio (RC toggle, notes, retry) with a banner saying flashing needs Chrome or Edge on a desktop computer. No wizard, no port (`ReleaseBrowser.tsx`)                                                                                                                                                                                                   |
+| Android                     | DM-32UV, RT95 front panel and UV-5R Mini, with developer mode on | The Capacitor app offers these three while [developer mode](../developer-mode/README.md) is on, in any build; the AT-D890UV and the RT95 main board are hidden there ([Android app](#android-app), [#1674](https://github.com/pskillen/codeplug-studio/issues/1674)). The DM-32UV and the RT95 front panel are run through the app's pipe offline against their bootloader mocks; neither has been flashed from a phone.                                  |
 
 ## Documentation map
 
@@ -54,8 +54,9 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
   prod gate, and no interlock reads developer mode. The flasher page reads it when it opens.
 - **Platform check.** Separate from the prod gate: each descriptor's `capacitorSupported` is `false` (hidden in the
   Android app), `'developerMode'` (offered in the app only while developer mode is on, in any build) or `true`.
-  `isFirmwareUpdaterOfferedOnPlatform` in `firmwareFlashEnvGate.ts` applies it; in a browser every radio passes. Only
-  the UV-5R Mini is `'developerMode'`; every other radio is `false`. See [Android app](#android-app).
+  `isFirmwareUpdaterOfferedOnPlatform` in `firmwareFlashEnvGate.ts` applies it; in a browser every radio passes. The
+  DM-32UV, the RT95 front panel and the UV-5R Mini are `'developerMode'`; the AT-D890UV and the RT95 main board are
+  `false`. No radio is `true` yet. See [Android app](#android-app).
 
 ```mermaid
 flowchart LR
@@ -92,30 +93,48 @@ shows the flasher entry, so the releases can be read from a phone. The Android a
 ## Android app
 
 The Capacitor app has no Web Serial; it reaches the cable through the USB-serial plugin over USB-OTG. The flasher
-offers a radio there only through its platform check: today the UV-5R Mini, and only while
-[developer mode](../developer-mode/README.md) is on for the phone, in any build. With developer mode off, or for any
-other radio, `/firmware` in the app says flashing is available in a desktop browser. Developer mode changes only which
-radio is offered: the stock pins, interlocks and frame guards are the same code as on the desktop.
+offers a radio there only through its platform check: today the DM-32UV, the RT95 front panel and the UV-5R Mini, and
+only while [developer mode](../developer-mode/README.md) is on for the phone, in any build. With developer mode off,
+or for any other radio, `/firmware` in the app says flashing is available in a desktop browser. Developer mode changes
+only which radios are offered: the stock pins, interlocks and frame guards are the same code as on the desktop.
 
-- **The wizard** is the desktop one. Each port step (the radio report on Prepare, Connect and flash) finds the one
-  attached device matching the radio's cable instead of showing a picker; none, or more than one, is refused with a
-  message and nothing is sent. Android asks to allow USB access once per plug-in. The radio report read raises
-  DTR/RTS like a codeplug read; the flash link holds them low. The UV-5R Mini's switch to its loader's rate changes
-  the rate on the open port.
+- **The wizard** is the desktop one. Each port step (the pre-flight probe, the radio report on Prepare, Connect and
+  flash) finds the one attached device matching the radio's cable instead of showing a picker; none, or more than one,
+  is refused with a message and nothing is sent. Android asks to allow USB access once per plug-in. Each link opens at
+  its own rate with its own DTR/RTS choice. The UV-5R Mini's switch to its loader's rate changes the rate on the open
+  port; no other radio changes rate mid-session.
 - **Files:** in the app the stock step's picker takes any file (Android's chooser greys out extensions it has no type
   for, such as `.ufw`); the pinned hashes decide what is accepted. The release list and patches are fetched as on the
   web.
-- **Steps the app refuses:** a radio's pre-flight probe and safety backup stay desktop-only and refuse cleanly in the
-  app. The UV-5R Mini has neither.
-- **Not yet tried on a phone with a radio.** The rate change, DTR/RTS at the pins, the screen wake lock in the app's
-  WebView and what Android does to a backgrounded flash are known only from the code.
+- **Steps the app refuses:** a radio's safety backup stays desktop-only and refuses cleanly in the app. The pre-flight
+  probe runs in the app.
+- **Offline proof only.** The DM-32UV and RT95 front panel updaters are run end to end through the app's real pipe
+  over a fake USB-serial plugin backed by their bootloader mocks: a clean run, a silent frame, a cable pulled
+  mid-transfer, and a delay on every reply that stays inside their timeouts. For these two, DTR/RTS at the pins, the
+  screen wake lock in the app's WebView and what Android does to a backgrounded flash are known only from the code.
+
+Per radio:
+
+- **DM-32UV:** the CH340 cable at 115200, no rate change. The bootloader takes no resend: any late or wrong reply
+  aborts. A flash that stops after **Erasing** needs a re-flash from update mode (stock is the safe choice).
+- **RT95 front panel:** PL2303, CH340 or FTDI cable at 115200, no rate change; each frame comes back as an echo and is
+  checked, with up to three resends. **Check the radio** (the normal-mode probe) runs from the phone. A flash cut after
+  the first frame needs a re-flash from update mode.
+- **RT95 main board:** hidden in the app. Its safety backup is required and is desktop-only, and Studio has not
+  flashed a main board on hardware.
+- **AT-D890UV:** hidden in the app until the link's round trip has been measured from a phone: its 52,000 small frames
+  take about 26 s on a desktop and are expected to take minutes over a phone's USB-serial bridge.
 
 ### Before the first flash from a phone
 
+- Make the first phone flash of each radio its **stock** firmware: it is also the recovery image.
 - Charge the phone, set a long screen timeout, and keep the app in front with the screen on until it finishes.
 - Plug in nothing but the programming cable (through the USB-OTG adapter).
+- Have a desktop browser with Studio (and the vendor's tool) ready as the fallback.
 - If the flash stalls or the link drops: power-cycle the radio back into update mode and flash again, from the phone or
-  from a desktop browser. The UV-5R Mini continues an interrupted update on the next run.
+  from a desktop browser. For the DM-32UV and the RT95 front panel, a cut flash after the first data frame needs that
+  re-flash; that the bootloader comes back after a half-written flash is expected but not yet proven on hardware. The
+  UV-5R Mini continues an interrupted update on the next run.
 
 ## Wizard steps
 

@@ -50,15 +50,17 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
     it; see the firmware flasher below.
   - **Which device:** codeplug Read/Write uses the first USB serial device the plugin lists, as before. The firmware
     flasher's links pass the cable's USB filters instead: exactly one attached device must match, with no fall-back to the
-    first device; none or two is refused. The flasher's pre-flight probe and safety backup stay desktop-only and refuse
-    in the app.
-- **Firmware flasher:** `/firmware` in the app offers the UV-5R Mini only while
-  [developer mode](../developer-mode/README.md) is on (in any build), and no other radio; with developer mode off it
-  says flashing is available in a desktop browser. The wizard is the desktop one: the cable is found by its USB filters
-  instead of a picker, and the stock file picker takes any file (the pinned hashes decide). Not yet tried on a phone
-  with a radio. Before the first flash from a phone: charge it, set a long screen timeout, keep the app in front, and
-  plug in only the cable; on a stall, power-cycle the radio and flash again from the phone or a desktop. See
-  [firmware flashing, Android app](../firmware-flashing/README.md#android-app).
+    first device; none or two is refused. The flasher's pre-flight probe runs in the app the same way; its safety
+    backup stays desktop-only and refuses in the app.
+- **Firmware flasher:** `/firmware` in the app offers the DM-32UV, the RT95 front panel and the UV-5R Mini only while
+  [developer mode](../developer-mode/README.md) is on (in any build); the AT-D890UV and the RT95 main board are hidden.
+  With developer mode off it says flashing is available in a desktop browser. The wizard is the desktop one: the cable
+  is found by its USB filters instead of a picker, and the stock file picker takes any file (the pinned hashes
+  decide). The DM-32UV and RT95 front panel are proven offline only (their updaters run through the app's pipe against
+  bootloader mocks); neither has been flashed from a phone yet. Before the first flash from a
+  phone: flash stock, charge the phone, set a long screen timeout, keep the app in front, plug in only the cable, and
+  keep a desktop ready; on a stall, power-cycle the radio into update mode and flash again from the phone or a desktop.
+  See [firmware flashing, Android app](../firmware-flashing/README.md#android-app).
 - **API Proxies:** On Capacitor native, relative `/api/*` (RadioID, RepeaterBook, IRTS) resolve to an absolute origin from `BUILD_ENV` via `resolveApiUrl` (`src/integrations/platform/resolveApiUrl.ts`):
 
 | `BUILD_ENV`                              | Native API origin                     |
