@@ -102,7 +102,8 @@ function ChannelDiffView({ diff }: { diff: Uv5rMiniChannelDiff }) {
       <Text size="sm" c="dimmed">
         {n === 0 ? 'No channel slot changed. ' : ''}
         {diff.unchangedCount} slot{diff.unchangedCount === 1 ? '' : 's'} unchanged; slots 248 and
-        249 hold special data and are listed on their own.
+        249 are listed on their own (CHIRP's firmware-version offset 0x1EF0 falls in slot 248,
+        though it is channel data).
       </Text>
       {n > 0 ? (
         <Stack gap={2}>

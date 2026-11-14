@@ -37,8 +37,8 @@ describe('diffUv5rMiniChannels', () => {
     expect(d.changes).toEqual([]);
     expect(d.unchangedCount).toBe(997);
     expect(d.special.map(formatUv5rMiniSpecialSlot)).toEqual([
-      'Slot 248 (0x1EE0–0x1EFF, special data): identical',
-      'Slot 249 (0x1F00–0x1F1F, special data): identical',
+      'Slot 248 (0x1EE0–0x1EFF, channel data kept apart): identical',
+      'Slot 249 (0x1F00–0x1F1F, channel data kept apart): identical',
     ]);
   });
 
@@ -123,8 +123,8 @@ describe('diffUv5rMiniChannels', () => {
     expect(d.changes).toEqual([]);
     expect(d.unchangedCount).toBe(997);
     expect(d.special.map(formatUv5rMiniSpecialSlot)).toEqual([
-      'Slot 248 (0x1EE0–0x1EFF, special data): 2 bytes differ at +0x10 +0x1F',
-      'Slot 249 (0x1F00–0x1F1F, special data): 1 byte differs at +0x00',
+      'Slot 248 (0x1EE0–0x1EFF, channel data kept apart): 2 bytes differ at +0x10 +0x1F',
+      'Slot 249 (0x1F00–0x1F1F, channel data kept apart): 1 byte differs at +0x00',
     ]);
   });
 });

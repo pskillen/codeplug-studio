@@ -1,7 +1,8 @@
 /**
  * Channel-level diff of two decoded UV-5R Mini full reads: per changed slot, which fields of the 32-byte record
  * changed (the codec's fields, byte ranges for unnamed bytes) and whether the slot became empty or filled. Unchanged
- * slots are only counted. Slots 248 and 249 hold special data in this family, so they get lines of their own.
+ * slots are only counted. Slots 248 and 249 are channel data, but CHIRP's firmware-version offset (`0x1EF0`) falls in
+ * slot 248, so both are kept apart on lines of their own.
  */
 
 import { decodeChannelRecord } from '../channelCodec.ts';
@@ -44,7 +45,10 @@ export const UV5R_MINI_CHANNEL_FIELDS: readonly Uv5rMiniChannelField[] = [
  */
 export const UV5R_MINI_UNMODELLED_RANGE = '+0x0C..+0x13';
 
-/** 1-based slots that hold special data, reported on their own lines (memory-layout.md: `0x1EF0`). */
+/**
+ * 1-based slots kept apart on their own lines: channel data, with CHIRP's firmware-version offset `0x1EF0` in slot 248
+ * (memory-layout.md).
+ */
 export const UV5R_MINI_SPECIAL_SLOTS: readonly number[] = [248, 249];
 
 export type Uv5rMiniChannelChangeKind = 'filled' | 'emptied' | 'changed' | 'emptyChanged';
@@ -159,10 +163,10 @@ export function formatUv5rMiniChannelChange(c: Uv5rMiniChannelChange): string {
   }
 }
 
-/** `Slot 248 (0x1EE0–0x1EFF, special data): identical`, or the offsets inside the slot that differ. */
+/** `Slot 248 (0x1EE0–0x1EFF, channel data kept apart): identical`, or the offsets inside the slot that differ. */
 export function formatUv5rMiniSpecialSlot(s: Uv5rMiniSpecialSlotDiff): string {
   const h = (n: number) => `0x${n.toString(16).toUpperCase().padStart(4, '0')}`;
-  const head = `Slot ${s.slot} (${h(s.start)}–${h(s.start + UV5R_MINI_LAYOUT.channelSize - 1)}, special data)`;
+  const head = `Slot ${s.slot} (${h(s.start)}–${h(s.start + UV5R_MINI_LAYOUT.channelSize - 1)}, channel data kept apart)`;
   const n = s.diffOffsets.length;
   if (n === 0) return `${head}: identical`;
   return `${head}: ${n} ${n === 1 ? 'byte differs' : 'bytes differ'} at ${s.diffOffsets.map(rel).join(' ')}`;

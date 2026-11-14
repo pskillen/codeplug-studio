@@ -85,8 +85,10 @@ unmodelled bytes and bits of +0x0C..+0x13 unchanged`.
 - **Filled** or **emptied**: the slot's first byte went from or to `0xFF`, with the name it gained or lost.
 - **Empty in both reads** but with different bytes: the fields those bytes fall in.
 - **Unchanged** slots are only counted. The first 200 changed slots are listed.
-- **Slots 248 and 249** (`0x1EE0–0x1F1F`) hold special data in this radio family ([memory layout](../../reference/radios/baofeng/uv-5r-mini/memory-layout.md)),
-  so they are never listed as channels: each has its own line, "identical" or the offsets inside the slot that differ.
+- **Slots 248 and 249** (`0x1EE0–0x1F1F`) are listed on their own: they are channel data, but CHIRP's
+  firmware-version offset `0x1EF0` falls in slot 248 ([memory layout](../../reference/radios/baofeng/uv-5r-mini/memory-layout.md)).
+  They are never listed as channels: each has its own line, labelled "channel data kept apart", that says
+  "identical" or lists the offsets inside the slot that differ.
 
 ## Calibration viewer
 
