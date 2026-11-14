@@ -11,8 +11,8 @@ describe('UV-5R Mini updater descriptor', () => {
     expect(JSON.stringify(UV5RMINI_PREFLIGHT)).not.toMatch(/built from this radio/);
   });
 
-  it('stays hidden on prod, and on Android unless developer mode is on', () => {
-    expect(UV5RMINI_FIRMWARE_UPDATER.prodFlashDisabled).toBe(true);
+  it('is offered on prod and on Android only with developer mode', () => {
+    expect(UV5RMINI_FIRMWARE_UPDATER.prodFlashDisabled).toBe(false);
     expect(UV5RMINI_FIRMWARE_UPDATER.capacitorSupported).toBe('developerMode');
   });
 

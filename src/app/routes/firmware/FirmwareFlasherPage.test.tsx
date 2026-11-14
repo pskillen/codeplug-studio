@@ -44,6 +44,8 @@ vi.mock('../../services/firmwareFlash.ts', async (importOriginal) => ({
   verifyStockFiles: vi.fn(),
   prepareFlash: vi.fn(),
   listPublishedReleases: vi.fn(),
+  listPublishedToStock: vi.fn(async () => []),
+  loadPublishedToStock: vi.fn(),
   loadChosenPatch: vi.fn(),
   grantFirmwarePort: vi.fn(),
   grantFirmwarePreflightPort: vi.fn(),
@@ -316,6 +318,24 @@ describe('FirmwareFlasherPage', () => {
       });
       expect(screen.queryByText('I understand')).not.toBeInTheDocument();
       await waitFor(() => expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled());
+    });
+
+    it('selects a published to-stock patch and enables Continue', async () => {
+      const row = { ...FINAL.release!, base: 'syn-v1' };
+      vi.mocked(flash.listPublishedToStock).mockResolvedValue([row]);
+      const loaded = { ...toStockLoaded('syn-v1'), provenance: 'published' as const };
+      vi.mocked(flash.loadPublishedToStock).mockResolvedValue({
+        choice: { kind: 'back-to-stock', file: { name: 'patch.json', bytes: new Uint8Array() } },
+        loaded,
+      });
+      renderPage();
+      fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+      cont();
+      fireEvent.click(
+        await screen.findByRole('radio', { name: `Puts back stock firmware ${stock.version}` }),
+      );
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled());
+      expect(flash.loadPublishedToStock).toHaveBeenCalledWith(DM32.radioId, row);
     });
 
     it('refuses a file that is not a to-stock patch', async () => {

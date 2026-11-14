@@ -33,6 +33,7 @@ export interface PublishedFirmwareRelease {
    * refused.
    */
   readonly base?: string;
+  readonly toStock?: { readonly sha256: string; readonly loadBytes: () => Promise<Uint8Array> };
   /** One or two sentences for the release list. */
   readonly summary: string;
   /** How the operator confirms this release is running. */

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
+import { sha256Hex } from '@core/firmware/hash.ts';
 import {
   makeSyntheticUv5rMiniPatch,
   synthUv5rMiniStock,
@@ -20,6 +21,7 @@ import {
   formatFirmwareFlashSummary,
   listPublishedReleases,
   loadChosenPatch,
+  loadPublishedToStock,
   NO_FILE_FOR_LAYOUT,
   NOT_TO_STOCK_PATCH_MESSAGE,
   pickPatchForLayout,
@@ -238,6 +240,27 @@ describe('published releases and chosen patches', () => {
         });
         expect(loaded.parsed.description).toMatchObject({ base, buildName: base });
       }
+    });
+
+    it('validates a published patch through the same path as a disk file', async () => {
+      const disk = await file('nrf-v0.27', 'nrf-v0.27');
+      const { row } = await syntheticDm32Release();
+      const published = {
+        ...row,
+        radioId: 'baofeng-uv5rmini' as const,
+        base: 'nrf-v0.27',
+        toStock: { sha256: await sha256Hex(disk.bytes), loadBytes: async () => disk.bytes },
+      };
+      const result = await loadPublishedToStock('baofeng-uv5rmini', published);
+      const fromDisk = await loadChosenPatch('baofeng-uv5rmini', {
+        kind: 'back-to-stock',
+        file: disk,
+      });
+      expect(result.loaded.parsed).toEqual(fromDisk.parsed);
+      expect(result.loaded.provenance).toBe('published');
+      await expect(
+        loadPublishedToStock('baofeng-uv5rmini', { ...published, base: 'nrfb-v0.04' }),
+      ).rejects.toThrow(/does not match the published stock base/);
     });
 
     it.each([

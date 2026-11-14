@@ -123,3 +123,5 @@ The main board stays hidden on prod.
 A new radio's firmware project needs a row in `FIRMWARE_PROJECTS` (`src/core/firmware/releases/projects.ts`), its
 patch format under `src/core/firmware/patch/formats/`, and the radio's stock descriptor. Its releases then appear as
 soon as the public repository lists them.
+
+Published index rows may include `toStock` with a `path` under the radio’s `releases/` directory and a SHA-256 `sha256` of the patch bytes. Back to stock offers one per base, preferring the newest final that has one, or the newest release candidate; the downloaded hash is checked. A file from disk remains available. Malformed fields invalidate the index.

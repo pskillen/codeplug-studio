@@ -128,6 +128,23 @@ export function parsePublishedReleaseIndex(
     ) {
       throw indexError(`${where}: bad result hashes`);
     }
+    let toStock: PublishedFirmwareRelease['toStock'];
+    if (row.toStock !== undefined) {
+      if (typeof row.toStock !== 'object' || row.toStock === null)
+        throw indexError(`${where}: bad to-stock patch`);
+      const patch = row.toStock as Record<string, unknown>;
+      if (
+        typeof patch.path !== 'string' ||
+        !patch.path.startsWith(`releases/${radioId}/`) ||
+        patch.path.includes('..') ||
+        typeof patch.sha256 !== 'string' ||
+        !/^[0-9a-f]{64}$/i.test(patch.sha256)
+      ) {
+        throw indexError(`${where}: bad to-stock patch`);
+      }
+      const path = patch.path;
+      toStock = { sha256: patch.sha256.toLowerCase(), loadBytes: () => opts.loadPatchBytes(path) };
+    }
     const layout = rowLayout(row, descriptor, where);
     const base = rowBase(row, descriptor, stockVersion, where);
     // A layout radio's row without a layout is checked against its partners once loaded. A release has one row per
@@ -152,6 +169,7 @@ export function parsePublishedReleaseIndex(
       stockVersion,
       ...(layout ? { layout } : {}),
       ...(base ? { base } : {}),
+      ...(toStock ? { toStock } : {}),
       publishedOn,
       summary: str(row, 'summary', where),
       verifyHint: str(row, 'verifyHint', where),
