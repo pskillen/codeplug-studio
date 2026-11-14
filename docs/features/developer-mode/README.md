@@ -26,11 +26,11 @@ when the page opened so a running flash is never cut off. On prod, turning it of
 
 ## What it unlocks on prod
 
-| Feature                     | Prod-hidden by                                                     | Gate resolver              |
-| --------------------------- | ------------------------------------------------------------------ | -------------------------- |
-| Debug pages (`/debug/*`)    | always (routes, the avatar menu's Debug item)                      | `resolveDebugPagesGate`    |
-| Firmware flashing per radio | `prodFlashDisabled` on the radio's `FirmwareUpdaterDescriptor`     | `resolveFirmwareFlashGate` |
-| Codeplug Write and Restore  | `prodWriteDisabled` on a radio-io descriptor or compatible profile | `resolveRadioWriteGate`    |
+| Feature                     | Prod-hidden by                                                      | Gate resolver              |
+| --------------------------- | ------------------------------------------------------------------- | -------------------------- |
+| Debug pages (`/debug/*`)    | always (routes, the avatar menu's Debug item, Tools' Debug section) | `resolveDebugPagesGate`    |
+| Firmware flashing per radio | `prodFlashDisabled` on the radio's `FirmwareUpdaterDescriptor`      | `resolveFirmwareFlashGate` |
+| Codeplug Write and Restore  | `prodWriteDisabled` on a radio-io descriptor or compatible profile  | `resolveRadioWriteGate`    |
 
 Nothing else changes for anyone who never taps.
 

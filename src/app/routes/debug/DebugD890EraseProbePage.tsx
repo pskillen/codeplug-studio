@@ -42,6 +42,7 @@ import {
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 import { downloadZip, isoTimestampForFilename } from '@integrations/download/browserDownload.ts';
+import WebSerialOnlyDebugPage from './WebSerialOnlyDebugPage.tsx';
 
 type Pass = 'inspect' | 'paint' | 'mark' | 'measure' | 'diagnose' | 'link' | 'configAlias';
 
@@ -154,7 +155,7 @@ function saveDonePasses(passes: Pass[]): void {
   }
 }
 
-export default function DebugD890EraseProbePage() {
+function D890EraseProbe() {
   const [done, setDone] = useState<Pass[]>(loadDonePasses);
   const [busy, setBusy] = useState<Pass | null>(null);
   const [regionBusy, setRegionBusy] = useState<string | null>(null);
@@ -952,5 +953,14 @@ export default function DebugD890EraseProbePage() {
         )}
       </Stack>
     </Page>
+  );
+}
+
+/** Web Serial only: the Android app shows a notice instead (#1673). */
+export default function DebugD890EraseProbePage() {
+  return (
+    <WebSerialOnlyDebugPage title="AT-D890UV erase-unit probe">
+      <D890EraseProbe />
+    </WebSerialOnlyDebugPage>
   );
 }

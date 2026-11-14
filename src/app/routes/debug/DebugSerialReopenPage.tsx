@@ -6,6 +6,7 @@ import {
   requestWebSerialPort,
   webSerialDrainMs,
 } from '@integrations/radio-io/transport/index.ts';
+import WebSerialOnlyDebugPage from './WebSerialOnlyDebugPage.tsx';
 
 interface Sample {
   round: number;
@@ -25,7 +26,7 @@ function median(values: readonly number[]): number {
  * Times `BytePipe.reopen` on this machine's OS and USB-serial driver. Needs only a USB serial cable (for example a
  * CH340 programming cable) with nothing on the other end: no radio. See the web serial transport doc comment.
  */
-export default function DebugSerialReopenPage() {
+function SerialReopen() {
   const [baudA, setBaudA] = useState<number | string>(9600);
   const [baudB, setBaudB] = useState<number | string>(115200);
   const [writeBytes, setWriteBytes] = useState<number | string>(11);
@@ -145,5 +146,14 @@ export default function DebugSerialReopenPage() {
         ) : null}
       </Stack>
     </Page>
+  );
+}
+
+/** Web Serial only: the Android app shows a notice instead (#1673). */
+export default function DebugSerialReopenPage() {
+  return (
+    <WebSerialOnlyDebugPage title="Serial reopen timing">
+      <SerialReopen />
+    </WebSerialOnlyDebugPage>
   );
 }

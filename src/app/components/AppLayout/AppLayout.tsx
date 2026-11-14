@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Menu } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
-import { IconBug, IconSettings } from '@tabler/icons-react';
+import { IconSettings } from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppShell,
@@ -35,6 +35,7 @@ import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { handleExternalLinkClick, openExternalUrl } from '../../lib/openExternalUrl.ts';
 import {
   activeContextualStripLabel,
+  DEBUG_SECTION_ICON,
   resolveContextualStripItems,
 } from '../../nav/contextualStripItems.ts';
 import { navActive } from '../../nav/navActive.ts';
@@ -216,7 +217,7 @@ function AppLayoutShell() {
           <Menu.Item
             component={Link}
             to="/debug"
-            leftSection={<IconBug size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+            leftSection={<DEBUG_SECTION_ICON size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
           >
             Debug
           </Menu.Item>
