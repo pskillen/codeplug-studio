@@ -82,6 +82,28 @@ describe('parsePublishedReleaseIndex', () => {
     expect(requested).toEqual([entry.patchPath]);
   });
 
+  it('accepts optional to-stock metadata and rejects malformed metadata', async () => {
+    const { entry, opts, requested } = await indexFor();
+    const parse = (toStock?: unknown) =>
+      parsePublishedReleaseIndex(
+        { format: 1, releases: [{ ...entry, ...(toStock === undefined ? {} : { toStock }) }] },
+        opts,
+      );
+    expect(parse()[0]?.toStock).toBeUndefined();
+    const path = `releases/${entry.radioId}/to-stock.patch.json`;
+    const [row] = parse({ path, sha256: 'A'.repeat(64) });
+    expect(row?.toStock?.sha256).toBe('a'.repeat(64));
+    await row?.toStock?.loadBytes();
+    expect(requested).toContain(path);
+    for (const bad of [
+      null,
+      {},
+      { path: '../bad', sha256: 'a'.repeat(64) },
+      { path, sha256: 'bad' },
+    ])
+      expect(() => parse(bad)).toThrow(/bad to-stock patch/);
+  });
+
   it('skips radios Studio does not know and other stock versions', async () => {
     const { entry, opts } = await indexFor();
     const rows = parsePublishedReleaseIndex(

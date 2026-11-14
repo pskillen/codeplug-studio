@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { FirmwareError } from '../errors.ts';
+import { sha256Hex } from '../hash.ts';
 import { syntheticDm32Release } from './__fixtures__/syntheticReleases.ts';
-import { createPublishedFirmwareReleaseSource } from './publishedSource.ts';
+import {
+  createPublishedFirmwareReleaseSource,
+  publishedToStockChoices,
+  downloadToStockPatch,
+} from './publishedSource.ts';
 import { listKnownPatchedResults } from './index.ts';
 import type { PublishedFirmwareRelease } from './types.ts';
 import { createUserPatchSource } from './userPatchSource.ts';
@@ -159,5 +164,59 @@ describe('user patch source', () => {
     expect(await codeOf(source.listReleases('baofeng-dm32uv', { includeRc: false }))).toBe(
       'patch-unreadable',
     );
+  });
+});
+
+describe('published to-stock patches', () => {
+  it('prefers the newest final per base, falling back to the newest candidate', async () => {
+    const { row } = await syntheticDm32Release();
+    const patch = { sha256: 'a'.repeat(64), loadBytes: async () => new Uint8Array() };
+    const rows = [
+      {
+        ...row,
+        base: 'one',
+        tag: '2.0.0-rc.1',
+        channel: 'rc' as const,
+        publishedOn: '2026-03-01',
+        toStock: patch,
+      },
+      {
+        ...row,
+        base: 'one',
+        tag: '1.0.0',
+        channel: 'final' as const,
+        publishedOn: '2026-01-01',
+        toStock: patch,
+      },
+      {
+        ...row,
+        base: 'two',
+        tag: '2.0.0-rc.2',
+        channel: 'rc' as const,
+        publishedOn: '2026-04-01',
+        toStock: patch,
+      },
+      {
+        ...row,
+        base: 'two',
+        tag: '2.0.0-rc.1',
+        channel: 'rc' as const,
+        publishedOn: '2026-02-01',
+        toStock: patch,
+      },
+    ];
+    expect(publishedToStockChoices(rows, row.radioId).map((r) => r.tag)).toEqual([
+      '2.0.0-rc.2',
+      '1.0.0',
+    ]);
+  });
+
+  it('checks downloaded bytes against the published hash', async () => {
+    const { row, patchBytes } = await syntheticDm32Release();
+    const toStock = { sha256: await sha256Hex(patchBytes), loadBytes: async () => patchBytes };
+    expect(await downloadToStockPatch({ ...row, toStock })).toEqual(patchBytes);
+    await expect(
+      downloadToStockPatch({ ...row, toStock: { ...toStock, sha256: '0'.repeat(64) } }),
+    ).rejects.toThrow(/does not match the published hash/);
   });
 });
