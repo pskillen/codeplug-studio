@@ -25,7 +25,7 @@ import { AT_D890_BLOCK_SIZE } from './constants.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import type { BytePipe, ProgressFn } from '../../types.ts';
 import type { FirmwareFlashTiming } from '../../firmware/types.ts';
-import { summariseD890FrameTiming } from './firmwareUpdate/updater.ts';
+import { summariseD890FrameTiming } from './firmwareUpdate/timing.ts';
 
 /** Powers of two up to the `u8` ceiling, plus the largest 16-aligned value that fits. */
 export const AT_D890_BLOCK_CANDIDATES = [0x10, 0x20, 0x40, 0x80, 0xf0] as const;
