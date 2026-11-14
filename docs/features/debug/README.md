@@ -2,11 +2,29 @@
 
 Read-only contributor tooling to inspect **browser-local app state** without DevTools. Radio pages under `/debug` (the AT-D890UV erase probe, serial reopen timing, the [UV-5R Mini full read](uv5r-mini-full-read.md)) are contributor tools too. Useful for debugging CRUD persistence, multi-tab revision conflicts, list-prefs hydration, and storage quota.
 
-**On prod:** the Debug pages and the avatar menu's Debug item are hidden unless [developer mode](../developer-mode/README.md) is on for the device (tap the footer version five times). Every `/debug` route is mounted under `DebugGate` from `debugRoutes` in `src/app/routes/debug/debugRoutes.tsx`; add new pages there. The index page has a "Developer mode on this device" switch.
+**On prod:** the Debug pages, the avatar menu's Debug item and the Tools page's Debug section are hidden unless [developer mode](../developer-mode/README.md) is on for the device (tap the footer version five times). Every `/debug` route is mounted under `DebugGate` from `debugRoutes` in `src/app/routes/debug/debugRoutes.tsx`; add new pages there. The index page has a "Developer mode on this device" switch.
 
 **Status:** Done · **Tracking:** [#54](https://github.com/pskillen/codeplug-studio/issues/54) (Phase 3 / Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1))
 
 **Source:** `src/integrations/debug/`, `src/app/routes/debug/`, `src/app/components/JsonTreeViewer/`
+
+## Reaching the pages
+
+The avatar (gear) menu's **Debug** item, and the **Debug** section at the foot of the Tools page (`/reference`), which
+links the index and each page ([#1673](https://github.com/pskillen/codeplug-studio/issues/1673)); the Android app has no
+URL bar. Both use the Debug icon, a terminal prompt (`DEBUG_SECTION_ICON`, Tabler `IconTerminal2`, in
+`contextualStripItems.ts`), as does the Debug strip's Overview tab.
+
+## In the Android app
+
+| Page                                                                   | In the app                                                        |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Index, IndexedDB, localStorage (and their sub-pages)                   | Works: the app's web view has the same storage                    |
+| AT-D890UV erase-unit probe, Serial reopen timing, UV-5R Mini full read | Shows a "Not available in the Android app" notice and no controls |
+
+The three radio pages open their port through `navigator.serial` (Web Serial), which the app's web view does not
+have, and do not use the app's USB serial transport. `WebSerialOnlyDebugPage` wraps each one: in the app it shows the
+page title and the notice; in a browser it renders the page unchanged.
 
 ## Privacy
 
@@ -70,15 +88,15 @@ List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with o
 
 ## Code anchors
 
-| Layer            | Module                                                                                               |
-| ---------------- | ---------------------------------------------------------------------------------------------------- |
-| Integrations     | `src/integrations/debug/storageKeyRegistry.ts`, `indexedDbInspect.ts`, `parseStorageValue.ts`        |
-| List prefs keys  | `src/integrations/listPrefs/` (`LIST_PREFS_STORAGE_PREFIX`, `LIST_ENTITY_LABELS`)                    |
-| Preferences keys | `src/integrations/preferences/index.ts` (`ACTIVE_PROJECT_KEY`, `MAPBOX_TOKEN_KEY`)                   |
-| Routes           | `src/app/routes/debug/`                                                                              |
-| Tree viewer      | `src/app/components/JsonTreeViewer/JsonTreeViewer.tsx`                                               |
-| Navigation       | Avatar overflow → Debug (gated on prod); `debugStripItems` in `contextualStripItems.ts`              |
-| Prod gate        | `DebugGate.tsx`, `debugRoutes.tsx`; `resolveDebugPagesGate` in `src/app/services/prodFeatureGate.ts` |
+| Layer            | Module                                                                                                                                              |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Integrations     | `src/integrations/debug/storageKeyRegistry.ts`, `indexedDbInspect.ts`, `parseStorageValue.ts`                                                       |
+| List prefs keys  | `src/integrations/listPrefs/` (`LIST_PREFS_STORAGE_PREFIX`, `LIST_ENTITY_LABELS`)                                                                   |
+| Preferences keys | `src/integrations/preferences/index.ts` (`ACTIVE_PROJECT_KEY`, `MAPBOX_TOKEN_KEY`)                                                                  |
+| Routes           | `src/app/routes/debug/`                                                                                                                             |
+| Tree viewer      | `src/app/components/JsonTreeViewer/JsonTreeViewer.tsx`                                                                                              |
+| Navigation       | Avatar overflow → Debug and Tools → Debug (gated on prod); `debugStripItems`, `DEBUG_TOOL_LINKS`, `DEBUG_SECTION_ICON` in `contextualStripItems.ts` |
+| Prod gate        | `DebugGate.tsx`, `debugRoutes.tsx`; `resolveDebugPagesGate` in `src/app/services/prodFeatureGate.ts`                                                |
 
 ## Manual verify
 
