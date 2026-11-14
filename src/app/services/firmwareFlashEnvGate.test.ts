@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import { DEVELOPER_MODE_KEY, setDeveloperMode } from '@integrations/preferences/developerMode.ts';
 
 import { radioTargetIdsForFirmwareRadio } from '@core/firmware/radioTargets.ts';
+import { listFirmwareUpdaters } from '@integrations/radio-io';
 import * as featureDetect from '@integrations/radio-io/transport/featureDetect.ts';
 
 import {
@@ -132,9 +133,11 @@ describe('listOfferedFirmwareUpdaters', () => {
     );
   });
 
-  it('offers nothing on Capacitor', () => {
+  it('offers only the UV-5R Mini on Capacitor', () => {
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
-    expect(listOfferedFirmwareUpdaters('dev')).toEqual([]);
+    expect(listOfferedFirmwareUpdaters('dev', false).map((d) => d.radioId)).toEqual([
+      'baofeng-uv5rmini',
+    ]);
   });
 });
 
@@ -184,33 +187,44 @@ describe('developer mode (#1650)', () => {
   });
 });
 
-describe('the UV-5R Mini on the Android app (#1657)', () => {
+describe('the UV-5R Mini on the Android app (#1657, #1671)', () => {
   beforeEach(() => {
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
   });
   afterEach(() => localStorage.removeItem(DEVELOPER_MODE_KEY));
 
-  const ALL_ENVS = ['prod', ...ENVS_PRE_PROD];
-
-  it('is hidden with developer mode off, on every build', () => {
-    for (const env of ALL_ENVS) {
-      expect(listOfferedFirmwareUpdaters(env, false)).toEqual([]);
+  it('is offered with developer mode off on pre-prod, and is the only radio', () => {
+    for (const env of ENVS_PRE_PROD) {
+      for (const developerMode of [false, true]) {
+        expect(listOfferedFirmwareUpdaters(env, developerMode).map((d) => d.radioId)).toEqual([
+          'baofeng-uv5rmini',
+        ]);
+      }
     }
   });
 
-  it('is the only radio offered with developer mode on, on every build', () => {
-    for (const env of ALL_ENVS) {
-      expect(listOfferedFirmwareUpdaters(env, true).map((d) => d.radioId)).toEqual([
-        'baofeng-uv5rmini',
-      ]);
-    }
+  it('on prod, only its prod gate hides it: developer mode shows it, as in a browser', () => {
+    expect(listOfferedFirmwareUpdaters('prod', false)).toEqual([]);
+    expect(listOfferedFirmwareUpdaters('prod', true).map((d) => d.radioId)).toEqual([
+      'baofeng-uv5rmini',
+    ]);
   });
 
-  it('follows this device switch when the caller does not pass it', () => {
-    expect(listOfferedFirmwareUpdaters('dev')).toEqual([]);
-    setDeveloperMode(true);
+  it('needs no developer mode on pre-prod when the caller does not pass it', () => {
     expect(listOfferedFirmwareUpdaters('dev').map((d) => d.radioId)).toEqual(['baofeng-uv5rmini']);
+    expect(listOfferedFirmwareUpdaters('prod')).toEqual([]);
+    setDeveloperMode(true);
     expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toEqual(['baofeng-uv5rmini']);
+  });
+
+  it('keeps every other radio hidden on the Android app, developer mode or not', () => {
+    for (const d of listFirmwareUpdaters()) {
+      if (d.radioId === 'baofeng-uv5rmini') continue;
+      expect(d.capacitorSupported).toBe(false);
+      for (const developerMode of [false, true]) {
+        expect(isFirmwareUpdaterOfferedOnPlatform(d, true, developerMode)).toBe(false);
+      }
+    }
   });
 
   it('leaves the browser unchanged: developer mode adds no radio on pre-prod', () => {

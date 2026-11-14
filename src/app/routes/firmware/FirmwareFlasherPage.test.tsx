@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
 import { radioReportFrame } from '@core/radios/baofeng/uv-5r-mini/__fixtures__/radioReportFrame.ts';
-import { DEVELOPER_MODE_KEY, setDeveloperMode } from '@integrations/preferences/developerMode.ts';
+import { DEVELOPER_MODE_KEY } from '@integrations/preferences/developerMode.ts';
 import type {
   PublishedFirmwareRelease,
   FirmwareReleaseSummary,
@@ -724,7 +724,7 @@ describe('FirmwareFlasherPage', () => {
       expect(flash.runFirmwareFlash).not.toHaveBeenCalled();
     });
 
-    describe('the UV-5R Mini, with developer mode on', () => {
+    describe('the UV-5R Mini, with developer mode off (#1671)', () => {
       beforeEach(async () => {
         const actual = await vi.importActual<typeof envGate>(
           '../../services/firmwareFlashEnvGate.ts',
@@ -732,7 +732,7 @@ describe('FirmwareFlasherPage', () => {
         vi.mocked(envGate.listOfferedFirmwareUpdaters).mockImplementation(
           actual.listOfferedFirmwareUpdaters,
         );
-        setDeveloperMode(true);
+        localStorage.removeItem(DEVELOPER_MODE_KEY);
         vi.mocked(flash.grantFirmwareRadioReportPort).mockResolvedValue(CAPACITOR_PORT);
         vi.mocked(flash.readFirmwareRadioReport).mockResolvedValue({
           ok: true,
