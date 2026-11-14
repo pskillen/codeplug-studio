@@ -48,6 +48,7 @@ export type StockFirmwareSource =
       readonly instructions: string;
       readonly contact?: { readonly text: string; readonly href: string }; // mailto: or https:
     }
+  /** The user's own copy of the pinned stock file; the pin decides whether it is accepted. */
   | { readonly kind: 'own-image'; readonly label: string; readonly instructions: string };
 
 /** One more stock version a radio's patches may be built on. Same sources and hint as the descriptor that lists it. */
