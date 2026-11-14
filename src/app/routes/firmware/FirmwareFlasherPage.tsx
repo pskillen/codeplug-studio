@@ -1,6 +1,6 @@
 /**
- * `/firmware` — flash firmware to a radio over Web Serial. Firmware belongs to the radio, not to a project: no
- * active project is needed and nothing is stored. See docs/features/firmware-flashing/.
+ * `/firmware` — flash firmware to a radio over Web Serial, or over USB serial in the Android app. Firmware belongs to
+ * the radio, not to a project: no active project is needed and nothing is stored. See docs/features/firmware-flashing/.
  */
 import { useCallback, useMemo, useReducer, useState } from 'react';
 
@@ -74,7 +74,9 @@ export default function FirmwareFlasherPage() {
       />
     );
   }
-  if (!isWebSerialSupported()) {
+  // The wizard needs a serial path: Web Serial in a browser, or the USB-serial plugin in the Android app (where only
+  // radios the platform check lets through are offered, #1657). Without one, the release browser.
+  if (!isWebSerialSupported() && !isCapacitorSerialSupported()) {
     return (
       <DesignSystemV2Provider>
         <div className={classes.page}>

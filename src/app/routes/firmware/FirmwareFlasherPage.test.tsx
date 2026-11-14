@@ -14,7 +14,10 @@ import { getFirmwareUpdater } from '@integrations/radio-io';
 
 import * as envGate from '../../services/firmwareFlashEnvGate.ts';
 import * as flash from '../../services/firmwareFlash.ts';
-import FirmwareFlasherPage, { FIRMWARE_UNAVAILABLE_ON_SITE } from './FirmwareFlasherPage.tsx';
+import FirmwareFlasherPage, {
+  FIRMWARE_DESKTOP_ONLY,
+  FIRMWARE_UNAVAILABLE_ON_SITE,
+} from './FirmwareFlasherPage.tsx';
 
 vi.mock('@integrations/radio-io', async (importOriginal) => {
   const actual = await importOriginal<typeof radioIo>();
@@ -643,6 +646,76 @@ describe('FirmwareFlasherPage', () => {
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(await screen.findByText(/Don't keep power-cycling the radio/)).toBeInTheDocument();
+  });
+
+  describe('in the Android app (#1657)', () => {
+    /** A granted device as the Capacitor plugin lists it: no Web Serial port anywhere. */
+    const CAPACITOR_PORT: flash.FirmwarePort = {
+      transport: 'capacitor',
+      device: {
+        deviceId: 7,
+        vendorId: 0x1a86,
+        productId: 0x7523,
+      } as unknown as radioIo.UsbDeviceLike,
+    };
+
+    beforeEach(() => {
+      vi.mocked(radioIo.isWebSerialSupported).mockReturnValue(false);
+      vi.mocked(radioIo.isCapacitorSerialSupported).mockReturnValue(true);
+      vi.mocked(flash.grantFirmwarePort).mockResolvedValue(CAPACITOR_PORT);
+    });
+
+    it('says desktop only when no radio is offered', () => {
+      vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([]);
+      renderPage();
+      expect(screen.getByText(FIRMWARE_DESKTOP_ONLY)).toBeInTheDocument();
+    });
+
+    it('shows the wizard, not the release browser, when a radio is offered', () => {
+      renderPage();
+      expect(screen.getByRole('radio', { name: /Baofeng DM-32UV/ })).toBeInTheDocument();
+      expect(screen.queryByText(/This browser can't flash firmware/)).not.toBeInTheDocument();
+    });
+
+    it('lets the stock picker take any file: the pinned hashes decide', () => {
+      renderPage();
+      fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+      cont();
+      cont();
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      expect(input).not.toHaveAttribute('accept');
+    });
+
+    it('flashes through the Capacitor port, with the phone copy', async () => {
+      vi.mocked(flash.runFirmwareFlash).mockResolvedValue({
+        ok: true,
+        radioId: 'baofeng-dm32uv',
+        image: IMAGE,
+        ident: { radioId: 'baofeng-dm32uv', model: 'M', raw: new Uint8Array(0) },
+        result: { framesSent: 1, dataFrames: 1, elapsedMs: 1, end: 'eot-sent' },
+        startedAt: 'now',
+      });
+      await walkToFlashStep();
+      expect(screen.getByText(/through a USB-OTG adapter, tap the button/)).toBeInTheDocument();
+      expect(screen.getByText(/Keep the app in front and the screen on/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Connect and flash' }));
+      expect(await screen.findByText(/then check: The radio boots/)).toBeInTheDocument();
+      expect(flash.runFirmwareFlash).toHaveBeenCalledWith(
+        expect.objectContaining({ radioId: 'baofeng-dm32uv', port: CAPACITOR_PORT }),
+      );
+    });
+
+    it('shows why no cable was found, and sends nothing', async () => {
+      vi.mocked(flash.grantFirmwarePort).mockRejectedValueOnce(
+        new Error('More than one programming cable is connected. Unplug the others and try again.'),
+      );
+      await walkToFlashStep();
+      fireEvent.click(screen.getByRole('button', { name: 'Connect and flash' }));
+      expect(
+        await screen.findByText(/More than one programming cable is connected/),
+      ).toBeInTheDocument();
+      expect(flash.runFirmwareFlash).not.toHaveBeenCalled();
+    });
   });
 });
 
