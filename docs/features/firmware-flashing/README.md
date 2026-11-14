@@ -132,8 +132,9 @@ hidden there).
    and prepares the release's file for exactly that; it never offers the nearest build. A release with no file for it
    shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." and prepares nothing; one
    with no other file for this radio says "If the radio refuses this L2 file, this release has no other file for this
-   radio to try." **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers;
-   with no report, or when the read fails, the step asks three dropdowns of the supported values: Firmware (`V0.04`,
+   radio to try." **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers:
+   its flash layout and the suffix, Firmware and Hardware strings of its stock firmware, matched against the same
+   table and with the same refusals as the dropdowns below. With no report, or when the read fails, the step asks three dropdowns of the supported values: Firmware (`V0.04`,
    `V0.27`, `Other`) and Hardware (`V1.7`, `Other`) from Radio Info, and the suffix (`NRF`, `NRFB`, `Other`) from the
    start-up screen shown while holding `8`. `Other` is refused, and so is a combination with no build. A warning says to
    pick exactly what the radio shows: a wrong Firmware or suffix pick is refused with nothing installed but may reset

@@ -77,7 +77,8 @@ each has an optional `layout` field, `"L1"` or `"L2"`:
   is refused. One row per layout and stock version.
 - **Other radios' rows carry no `layout` or `base`**; either on one is a malformed row.
 - Studio lists a Mini release once per version and loads every row of that version. Prepare picks the file on the
-  radio's base and layout (from its radio report, or its Firmware, suffix and Hardware answers) and never the nearest
+  radio's base and layout (from its radio report's layout and its suffix, Firmware and Hardware strings, or from its Firmware, suffix and
+  Hardware answers) and never the nearest
   build; a radio with no file in the release is told there is no MM9PDY build for it yet. The retry after a refusal
   goes only to a file of the same suffix.
 - The patch-file dropzone takes one file, or the release's two files at once (layouts from their build names). Two

@@ -382,6 +382,25 @@ describe('PrepareStep: reading the UV-5R Mini', () => {
     expect(flash.prepareFlash).not.toHaveBeenCalled();
   });
 
+  it('a report whose strings name no stock base, or an unproven Hardware, is refused before anything is prepared', async () => {
+    render(<Harness updater={MINI} />);
+    await readRadio(reportBlock({ suffix: 'NRFB' }));
+    expect(
+      screen.getByText(
+        'There is no MM9PDY build for this radio (NRFB V0.27) yet; nothing was sent.',
+      ),
+    ).toBeInTheDocument();
+    await readRadio(reportBlock({ hardware: 'V1.8 ' }));
+    expect(
+      screen.getByText(
+        "Studio hasn't been proven on this radio's Hardware version; nothing was sent.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText('Radio Info: Firmware')).toBeNull();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+    expect(canAdvance(latest)).toBe(false);
+  });
+
   it('a same-build report asks for the explicit confirm', async () => {
     const WARNING =
       'This radio already runs mm9pdy-L2-0.2.0-rc.1. Writing it again rewrites the same firmware; use this to repair a radio. The usual power-cut risk applies.';

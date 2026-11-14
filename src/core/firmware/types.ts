@@ -158,8 +158,8 @@ export type RadioLayoutAnswer =
        */
       readonly reported?: true;
       /**
-       * The stock base the radio's own code is built on (UV-5R Mini: from its report's flag, or its Radio Info suffix
-       * and Firmware lines). Prepare picks the release file on this base, and the radio's interlocks refuse a file on
+       * The stock base the radio's own code is built on (UV-5R Mini: its suffix and Firmware line, from its report's
+       * strings or its Radio Info answers). Prepare picks the release file on this base, and the radio's interlocks refuse a file on
        * another one.
        */
       readonly codeBase?: string;

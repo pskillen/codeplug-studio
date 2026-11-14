@@ -4,7 +4,8 @@
  * stock base, the code base every file for it is built on (a radio's code base never changes, and NRF and NRFB radios
  * get separate builds): `NRFB V0.04` is `nrfb-v0.04` (flash layout `L1`), `NRF V0.27` is `nrf-v0.27` (`L2`). Any other
  * combination has no build. The Hardware line is the board version, asked only so that a board Studio hasn't seen
- * proven is refused. All three lines are dropdowns of the supported values; `Other` is refused.
+ * proven is refused. All three lines are dropdowns of the supported values; `Other` is refused. The bases and the proven
+ * Hardware lines are `stockBases.ts`'s, the table the radio report uses too.
  */
 import type {
   FirmwareRadioLayoutQuestion,
@@ -12,9 +13,15 @@ import type {
   RadioLayoutAnswer,
 } from '../../../firmware/types.ts';
 import { decodeUv5rMiniRadioReport, uv5rMiniLayoutFromReport } from './radioReport.ts';
+import {
+  isUv5rMiniHardwareProven,
+  UV5RMINI_NO_BUILD_FOR_RADIO,
+  UV5RMINI_PROVEN_HARDWARE,
+  UV5RMINI_RADIO_INFO_REFUSAL,
+  uv5rMiniStockBase,
+} from './stockBases.ts';
 
-export const UV5RMINI_RADIO_INFO_REFUSAL =
-  "Studio hasn't been proven on this radio's Hardware version; nothing was sent.";
+export { UV5RMINI_NO_BUILD_FOR_RADIO, UV5RMINI_RADIO_INFO_REFUSAL };
 
 export const UV5RMINI_FIRMWARE_NOT_SUPPORTED =
   "Studio doesn't support this radio's Firmware version; nothing was sent.";
@@ -32,26 +39,10 @@ export function normaliseRadioInfoLine(line: string): string {
 export const UV5RMINI_SUFFIX_NOT_SUPPORTED =
   "Studio doesn't support this radio's suffix; nothing was sent.";
 
-/** A combination of suffix and Firmware line with no stock base: no build exists for it, and none is offered instead. */
-export const UV5RMINI_NO_BUILD_FOR_RADIO = (suffix: string, firmware: string): string =>
-  `There is no MM9PDY build for this radio (${suffix} ${firmware}) yet; nothing was sent.`;
-
 /** The Firmware lines Studio lists. */
 const FIRMWARE_LINES: readonly string[] = ['V0.04', 'V0.27'];
 /** The suffixes Studio lists. */
 const SUFFIXES: readonly string[] = ['NRF', 'NRFB'];
-
-/**
- * The stock bases, by suffix and Firmware line, with the flash layout each one's radios have. A combination not here
- * has no build. The base names are the stock descriptor's `baseName`s.
- */
-const BASES: Readonly<Record<string, { readonly base: string; readonly layout: 'L1' | 'L2' }>> = {
-  'NRFB V0.04': { base: 'nrfb-v0.04', layout: 'L1' },
-  'NRF V0.27': { base: 'nrf-v0.27', layout: 'L2' },
-};
-
-/** The Hardware lines an update has been proven on. */
-const PROVEN_HARDWARE: readonly string[] = ['V1.7'];
 
 export const UV5RMINI_FIRMWARE_OPTIONS: readonly string[] = [
   ...FIRMWARE_LINES,
@@ -59,7 +50,7 @@ export const UV5RMINI_FIRMWARE_OPTIONS: readonly string[] = [
 ];
 export const UV5RMINI_SUFFIX_OPTIONS: readonly string[] = [...SUFFIXES, UV5RMINI_RADIO_INFO_OTHER];
 export const UV5RMINI_HARDWARE_OPTIONS: readonly string[] = [
-  ...PROVEN_HARDWARE,
+  ...UV5RMINI_PROVEN_HARDWARE,
   UV5RMINI_RADIO_INFO_OTHER,
 ];
 
@@ -82,7 +73,7 @@ export function uv5rMiniLayoutFromRadioInfo(answers: RadioInfoAnswers): RadioLay
   const hardware = normaliseRadioInfoLine(answers.hardware);
   const suffix = (answers.suffix ?? '').replace(/\s+/g, '').toUpperCase();
   if (firmware === '' || hardware === '' || suffix === '') return { kind: 'incomplete' };
-  if (!PROVEN_HARDWARE.includes(hardware)) {
+  if (!isUv5rMiniHardwareProven(hardware)) {
     return { kind: 'refused', message: UV5RMINI_RADIO_INFO_REFUSAL };
   }
   if (!FIRMWARE_LINES.includes(firmware)) {
@@ -90,7 +81,7 @@ export function uv5rMiniLayoutFromRadioInfo(answers: RadioInfoAnswers): RadioLay
   }
   if (!SUFFIXES.includes(suffix))
     return { kind: 'refused', message: UV5RMINI_SUFFIX_NOT_SUPPORTED };
-  const hit = BASES[`${suffix} ${firmware}`];
+  const hit = uv5rMiniStockBase(suffix, firmware);
   if (!hit) return { kind: 'refused', message: UV5RMINI_NO_BUILD_FOR_RADIO(suffix, firmware) };
   return { kind: 'layout', layout: hit.layout, codeBase: hit.base };
 }

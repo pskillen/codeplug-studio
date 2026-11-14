@@ -9,6 +9,12 @@
  * Pure: the bytes come in decoded (the clone XOR already undone). Reading them is the integrations layer's job.
  */
 import type { RadioLayoutAnswer } from '../../../firmware/types.ts';
+import {
+  isUv5rMiniHardwareProven,
+  UV5RMINI_NO_BUILD_FOR_RADIO,
+  UV5RMINI_RADIO_INFO_REFUSAL,
+  uv5rMiniStockBase,
+} from './stockBases.ts';
 
 /** Where the frame is: the clone address of one 64-byte `R`. */
 export const UV5RMINI_RADIO_REPORT_ADDRESS = 0xefc0;
@@ -189,8 +195,10 @@ export const UV5RMINI_BAD_REPORT_REFUSAL = (reason: string): string =>
 
 /**
  * What the wizard concludes from a report. Null for a radio with no report (stock): the wizard asks its Radio Info
- * instead. A report asks no question: the layout is the report's, its build name decides "already installed", and the
- * build name and RF chip are shown as information only.
+ * instead. A report asks no question: the layout is the report's, the stock base is the shared table's entry for its
+ * suffix and Firmware strings (refused, like the Radio Info answers, when there is none or the Hardware string isn't
+ * proven), its build name decides "already installed", and the strings, build name and RF chip are shown as
+ * information.
  */
 export function uv5rMiniLayoutFromReport(report: Uv5rMiniRadioReport): RadioLayoutAnswer | null {
   switch (report.kind) {
@@ -206,12 +214,25 @@ export function uv5rMiniLayoutFromReport(report: Uv5rMiniRadioReport): RadioLayo
         message: UV5RMINI_UNKNOWN_LAYOUT_REFUSAL(report.vmStart, report.vmSize),
       };
     case 'report': {
-      // Rule 7 makes bit 0 and the strings agree, so bit 0 still names today's two bases here.
-      const codeBase = report.flags & FLAG_NRFB_V004 ? 'nrfb-v0.04' : 'nrf-v0.27';
+      // The same table and the same refusals as the Radio Info answers: the strings name the base, and bit 0 was only
+      // the decoder's cross-check.
+      if (!isUv5rMiniHardwareProven(report.hardware)) {
+        return { kind: 'refused', message: UV5RMINI_RADIO_INFO_REFUSAL };
+      }
+      const stock = uv5rMiniStockBase(report.suffix, report.version);
+      if (!stock) {
+        return {
+          kind: 'refused',
+          message: UV5RMINI_NO_BUILD_FOR_RADIO(report.suffix, report.version),
+        };
+      }
       const details = [
         `MM9PDY build: ${report.name || '(no name)'}`,
+        `Suffix: ${report.suffix}`,
+        `Firmware: ${report.version}`,
+        `Hardware: ${report.hardware}`,
         `Flash layout: ${report.layout}`,
-        `Code base: ${codeBase}`,
+        `Code base: ${stock.base}`,
         `RF chip register 0: ${hex(report.rf0, 4)}`,
       ];
       if (report.vmBank0 !== report.vmStart) {
@@ -223,8 +244,9 @@ export function uv5rMiniLayoutFromReport(report: Uv5rMiniRadioReport): RadioLayo
         kind: 'layout',
         layout: report.layout,
         reported: true,
-        // A radio's code base never changes: the interlocks refuse a file on another base.
-        codeBase,
+        // A radio's code base never changes: the interlocks refuse a file on another base. The layout stays the
+        // report's: Prepare matches a release file on both, and offers nothing when none has them.
+        codeBase: stock.base,
         details,
         ...(report.name ? { build: report.name } : {}),
       };

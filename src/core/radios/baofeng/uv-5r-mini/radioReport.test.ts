@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   fromHex,
   L1_VM,
+  L2_VM,
   RADIO_REPORT_EXAMPLE_HEX,
   radioReportFrame,
   withCrc,
@@ -17,6 +18,13 @@ import {
   UV5RMINI_UNKNOWN_LAYOUT_REFUSAL,
   uv5rMiniLayoutFromReport,
 } from './radioReport.ts';
+import { uv5rMiniLayoutFromRadioInfo } from './radioInfo.ts';
+import {
+  UV5RMINI_NO_BUILD_FOR_RADIO,
+  UV5RMINI_PROVEN_HARDWARE,
+  UV5RMINI_RADIO_INFO_REFUSAL,
+  UV5RMINI_STOCK_BASE_KEYS,
+} from './stockBases.ts';
 
 const example = () => fromHex(RADIO_REPORT_EXAMPLE_HEX);
 const decode = decodeUv5rMiniRadioReport;
@@ -231,5 +239,100 @@ describe('uv5rMiniLayoutFromReport', () => {
     expect(r && r.kind === 'layout' ? r.details?.at(-1) : '').toBe(
       "The radio's settings store starts at 0x95000, not at its VM entry 0x94000. Studio goes by the VM entry.",
     );
+  });
+});
+
+describe('uv5rMiniLayoutFromReport: the stock base from the shared table', () => {
+  const answer = (b: Uint8Array) => uv5rMiniLayoutFromReport(decodeUv5rMiniRadioReport(b));
+  const VM = { L1: L1_VM, L2: L2_VM } as const;
+
+  it('NRF / V0.27 / V1.7 on L2 is nrf-v0.27, with the strings, layout, build and RF chip shown', () => {
+    expect(answer(radioReportFrame())).toEqual({
+      kind: 'layout',
+      layout: 'L2',
+      build: 'mm9pdy-L2-0.2.0-rc.1',
+      reported: true,
+      codeBase: 'nrf-v0.27',
+      details: [
+        'MM9PDY build: mm9pdy-L2-0.2.0-rc.1',
+        'Suffix: NRF',
+        'Firmware: V0.27',
+        'Hardware: V1.7',
+        'Flash layout: L2',
+        'Code base: nrf-v0.27',
+        'RF chip register 0: 0x1234',
+      ],
+    });
+  });
+
+  it('NRFB / V0.04 / V1.7 on L1 is nrfb-v0.04', () => {
+    expect(answer(radioReportFrame({ vm: L1_VM, suffix: 'NRFB', version: 'V0.04' }))).toMatchObject(
+      { kind: 'layout', layout: 'L1', codeBase: 'nrfb-v0.04' },
+    );
+  });
+
+  it('keeps the reported layout: NRF / V0.27 on L1 is nrf-v0.27 on L1, for Prepare to match a file on both', () => {
+    expect(answer(radioReportFrame({ vm: L1_VM, name: 'mm9pdy-L1-0.2.0' }))).toMatchObject({
+      kind: 'layout',
+      layout: 'L1',
+      codeBase: 'nrf-v0.27',
+    });
+  });
+
+  it('refuses a combination with no base as having no build, never the nearest one', () => {
+    expect(answer(radioReportFrame({ suffix: 'NRFB' }))).toEqual({
+      kind: 'refused',
+      message: UV5RMINI_NO_BUILD_FOR_RADIO('NRFB', 'V0.27'),
+    });
+    expect(answer(radioReportFrame({ version: 'V0.04' }))).toEqual({
+      kind: 'refused',
+      message: UV5RMINI_NO_BUILD_FOR_RADIO('NRF', 'V0.04'),
+    });
+    // Compared exactly: the radio's own strings are never loosened.
+    expect(answer(radioReportFrame({ suffix: 'nrf' }))).toEqual({
+      kind: 'refused',
+      message: UV5RMINI_NO_BUILD_FOR_RADIO('nrf', 'V0.27'),
+    });
+  });
+
+  it('refuses a Hardware string not proven, with the Radio Info refusal', () => {
+    for (const hardware of ['V1.8 ', 'V1.6', 'v1.7']) {
+      expect(answer(radioReportFrame({ hardware }))).toEqual({
+        kind: 'refused',
+        message: UV5RMINI_RADIO_INFO_REFUSAL,
+      });
+    }
+  });
+
+  it('gives the Radio Info answer for every combination in the table: one table, not two', () => {
+    expect(UV5RMINI_STOCK_BASE_KEYS.length).toBeGreaterThan(0);
+    const combos: (readonly [string, string, string])[] = [];
+    for (const [suffix, firmware] of UV5RMINI_STOCK_BASE_KEYS) {
+      for (const hardware of [...UV5RMINI_PROVEN_HARDWARE, 'V1.8']) {
+        combos.push([suffix, firmware, hardware]);
+      }
+    }
+    // Pairs crossed from the table's suffixes and Firmware lines, which have no base.
+    for (const [suffix] of UV5RMINI_STOCK_BASE_KEYS) {
+      for (const [, firmware] of UV5RMINI_STOCK_BASE_KEYS) {
+        combos.push([suffix, firmware, 'V1.7']);
+      }
+    }
+    for (const [suffix, firmware, hardware] of combos) {
+      const info = uv5rMiniLayoutFromRadioInfo({ firmware, suffix, hardware });
+      const layout = info.kind === 'layout' ? (info.layout as 'L1' | 'L2') : 'L2';
+      const reported = answer(
+        radioReportFrame({ vm: VM[layout], suffix, version: firmware, hardware: `${hardware} ` }),
+      );
+      if (info.kind === 'layout') {
+        expect(reported, `${suffix} ${firmware} ${hardware}`).toMatchObject({
+          kind: 'layout',
+          layout: info.layout,
+          codeBase: info.codeBase,
+        });
+      } else {
+        expect(reported, `${suffix} ${firmware} ${hardware}`).toEqual(info);
+      }
+    }
   });
 });
