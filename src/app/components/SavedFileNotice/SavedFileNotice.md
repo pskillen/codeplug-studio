@@ -8,7 +8,7 @@ The app's WebView has no download bar. Every download goes through `downloadBlob
 (`src/integrations/download/browserDownload.ts`), which on native saves the file on the phone
 (`nativeSave.ts`) and publishes the outcome. This notice shows it: **Saved to Documents/Codeplug
 Studio/&lt;file&gt;**, or, when only the app's cache could be written (Android 10 and earlier), that
-the share sheet is the way to keep the file, or why the save failed.
+whether the file was shared or was not kept, or why the save failed.
 
 ## Props
 

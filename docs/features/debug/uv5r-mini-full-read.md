@@ -163,7 +163,8 @@ on):
 
 In the Android app, with only the Mini's cable on the phone: take two reads, check the compare and the calibration
 view, then **Download all**: the notice says the zip is in `Documents/Codeplug Studio/`, the share sheet opens, and
-the zip in the Files app holds both reads.
+the zip in the Files app holds both reads. If the app falls back to cache, complete the share to keep the zip;
+a failed or cancelled share leaves the reads marked as not downloaded so **Download all** can be tried again.
 
 On a prod build with developer mode off, `/debug/uv5r-mini` goes to the home page.
 

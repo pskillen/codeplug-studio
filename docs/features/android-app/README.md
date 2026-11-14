@@ -94,8 +94,9 @@ browser keeps its normal download with the same file name.
   Android's share sheet titled the same, opened on the file by `@capacitor/share` so it can go to Drive, mail, Quick
   Share and so on. Cancelling the sheet keeps the file.
 - **Android 10 and earlier:** writing `Documents` there needs a storage permission the app does not ask for, so the
-  file goes to the app's cache instead; the notice reads **&lt;file name&gt; is ready: pick an app in the share sheet to
-  keep or send it**, and the share sheet (titled **Keep or send &lt;file name&gt;**) is the only way to keep it.
+  file goes to the app's cache instead; the share sheet (titled **Keep or send &lt;file name&gt;**) is the only way to
+  keep it. A completed share shows **&lt;file name&gt; was shared**. If sharing fails or is cancelled, the notice says
+  **&lt;file name&gt; was not kept: sharing was cancelled or failed. Try saving again.** Use the download button to retry.
 - **Permissions:** none added. Android 11 and later let an app write its own files to `Documents` without one.
 - **A failed save** shows **Couldn't save &lt;file name&gt;: &lt;reason&gt;**.
 - **What saves this way:** every download in Studio: codeplug, CPS and project exports, radio backups (DM-32UV

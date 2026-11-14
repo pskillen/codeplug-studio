@@ -8,12 +8,14 @@ export const SAVED_FILE_NOTICE_MS = 10_000;
 
 function message(event: NativeSaveEvent): string {
   if (event.status === 'failed') {
-    return `Couldn't save ${event.fileName}: ${event.message}`;
+    return event.phase === 'share'
+      ? `${event.fileName} was not kept: ${event.message}`
+      : `Couldn't save ${event.fileName}: ${event.message}`;
   }
   const { result } = event;
   return result.place === 'documents'
     ? `Saved to ${result.displayPath}`
-    : `${result.fileName} is ready: pick an app in the share sheet to keep or send it`;
+    : `${result.fileName} was shared`;
 }
 
 /**

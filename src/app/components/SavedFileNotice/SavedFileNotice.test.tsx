@@ -33,7 +33,23 @@ describe('SavedFileNotice', () => {
       ),
     );
 
-    expect(screen.getByText(/reads\.zip is ready: pick an app in the share sheet/)).toBeTruthy();
+    expect(screen.getByText('reads.zip was shared')).toBeTruthy();
+  });
+
+  it('says when a cache share was not kept', async () => {
+    render(<SavedFileNotice />);
+    await act(() =>
+      saveBlobOnDevice(
+        new Blob(['x']),
+        'reads.zip',
+        createFakeNativeSave({ refuse: ['DOCUMENTS'], shareRejects: true }),
+      ),
+    );
+    expect(
+      screen.getByText(
+        'reads.zip was not kept: sharing was cancelled or failed. Try saving again.',
+      ),
+    ).toBeTruthy();
   });
 
   it('says when a save failed', async () => {
