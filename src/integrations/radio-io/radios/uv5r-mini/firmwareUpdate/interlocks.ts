@@ -23,6 +23,9 @@
  *      stock: a to-stock image. Its build name is its own `base`; its loader is exactly that base's layout loader
  *      (never a list-carrying one); and I4 tightens to no difference from the stock flash at all, app windows
  *      included. Keyed on the build name, so a patch can't opt out by saying nothing.
+ *  Code base. A radio's code base never changes: the image's base is the radio's own code base, which is
+ *      the one its radio report names (`radioCodeBase`) or, without a report, the base whose stock runs on the radio's
+ *      layout (L1 is v0.04, L2 is v0.27). Checked after the layout check, so a crossed pick still reads as one.
  *  I7. For a list-carrying loader only: the image's build name is not on its loader's list (a re-flash or a late cut
  *      of an image its loader already lists would leave the radio looping in the loader). A layout loader has no
  *      list, so I7 does not apply to it. Keyed on the pin, never on the patch's descriptive `loader.list`.
@@ -77,6 +80,14 @@ export function isUv5rMiniToStockImage(
 /** The refusal for an image whose loader is for the other layout than the radio's. */
 export const UV5RMINI_OTHER_LAYOUT_REFUSAL =
   'This file is for the other flash layout; nothing was sent.';
+
+/** The refusal for an image whose code base is not the radio's: Studio never changes a radio's code base. */
+export const UV5RMINI_CODE_BASE_CHANGE_REFUSAL = (fileBase: string, radioBase: string): string =>
+  `This file is built on ${fileBase}, but this radio runs the ${radioBase} code. Studio never changes a radio's code base. Nothing was sent.`;
+
+/** The refusal when Studio knows neither the radio's code base nor its flash layout: it can't check the file. */
+export const UV5RMINI_CODE_BASE_UNKNOWN_REFUSAL =
+  "Studio doesn't know which code this radio runs, so it can't check this file is built on it. Nothing was sent.";
 
 /**
  * The refusal for an image on a list-carrying loader whose build is the one the radio says it already runs: that
@@ -233,6 +244,19 @@ export function checkUv5rMiniImage(
     if (image.radioLayout !== pin.layout) {
       throw new RadioInterlockError(UV5RMINI_OTHER_LAYOUT_REFUSAL);
     }
+  }
+
+  // Code base: the radio's own, from its report or else from its layout. Never a change. Unknown fails closed.
+  const radioBase =
+    image.radioCodeBase ??
+    (image.radioLayout === undefined
+      ? undefined
+      : Object.values(bases).find((b) => b.loaderLayout === image.radioLayout)?.name);
+  if (radioBase === undefined) {
+    throw new RadioInterlockError(UV5RMINI_CODE_BASE_UNKNOWN_REFUSAL);
+  }
+  if (radioBase !== base.name) {
+    throw new RadioInterlockError(UV5RMINI_CODE_BASE_CHANGE_REFUSAL(base.name, radioBase));
   }
 
   // I3: the area.

@@ -1,8 +1,20 @@
 /** Baofeng UV-5R Mini pinned stock and update-mode facts. */
 import type { StockFirmwareDescriptor } from '../../../firmware/types.ts';
-import { UV5RMINI_RADIO_LAYOUT_QUESTION } from './radioInfo.ts';
+import { UV5RMINI_RADIO_LAYOUT_QUESTION, uv5rMiniVariantOfBase } from './radioInfo.ts';
 
 export const UV5RMINI_FIRMWARE_ROLE_UFW = 'ufw';
+
+/** A release's two files, one per flash layout (the factory firmware's packing, not the board). */
+export const UV5RMINI_RELEASE_LAYOUTS = ['L1', 'L2'] as const;
+
+/**
+ * The layout tag in an MM9PDY build name, `mm9pdy-<tag>-…`: `L1` (built on v0.04), `L2` (built on v0.27), or another
+ * tag such as the retired `V4`, which is still parsed so that it can be refused: never a release file. Undefined for a
+ * name with no tag: a to-stock patch (`nrfb-v0.04`) or an older build (`mm9pdy-0.1.0-rc.1`).
+ */
+export function uv5rMiniLayoutFromBuildName(buildName: string): string | undefined {
+  return /^mm9pdy-([A-Z][0-9])-/.exec(buildName.trim())?.[1];
+}
 
 export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   radioId: 'baofeng-uv5rmini',
@@ -44,6 +56,9 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
       ],
     },
   ],
+  // A release's L1 file is built on v0.04 and its L2 file on v0.27 (a radio's code base never changes), so both stocks
+  // may be supplied at once and each file is prepared on its own.
+  severalStocks: true,
   patchNames: ['baofeng-uv5rmini-firmware'],
   bootloaderEntry: {
     steps: [
@@ -59,4 +74,9 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   },
   stockVerifyHint: 'The radio boots to its normal screen.',
   radioLayout: UV5RMINI_RADIO_LAYOUT_QUESTION,
+  releaseLayouts: {
+    layouts: UV5RMINI_RELEASE_LAYOUTS,
+    fromBuildName: uv5rMiniLayoutFromBuildName,
+    variantOfBase: uv5rMiniVariantOfBase,
+  },
 };

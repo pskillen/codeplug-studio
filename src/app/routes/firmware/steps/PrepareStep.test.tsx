@@ -3,10 +3,7 @@ import { useEffect, useReducer } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
-import {
-  crc16Xmodem,
-  UV5RMINI_ONE_WAY_WARNING,
-} from '@core/radios/baofeng/uv-5r-mini/radioReport.ts';
+import { crc16Xmodem } from '@core/radios/baofeng/uv-5r-mini/radioReport.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 import {
   getFirmwareUpdater,
@@ -25,11 +22,16 @@ import {
 } from '../firmwareWizardState.ts';
 import PrepareStep from './PrepareStep.tsx';
 
-vi.mock('../../../services/firmwareFlash.ts', () => ({
-  prepareFlash: vi.fn(),
-  grantFirmwareRadioReportPort: vi.fn(),
-  readFirmwareRadioReport: vi.fn(),
-}));
+vi.mock('../../../services/firmwareFlash.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof flash>();
+  return {
+    noFileForRadioMessage: actual.noFileForRadioMessage,
+    releaseHasFileForLayout: actual.releaseHasFileForLayout,
+    prepareFlash: vi.fn(),
+    grantFirmwareRadioReportPort: vi.fn(),
+    readFirmwareRadioReport: vi.fn(),
+  };
+});
 
 const MINI = getFirmwareUpdater('baofeng-uv5rmini')!;
 const DM32 = getFirmwareUpdater('baofeng-dm32uv')!;
@@ -71,14 +73,23 @@ const STOCK_FLASH = new Uint8Array(64).fill(0xff);
 
 let latest: FirmwareWizardState;
 
-function Harness({ updater }: { updater: typeof MINI }) {
+function Harness({
+  updater,
+  loaded = LOADED,
+  start = {},
+}: {
+  updater: typeof MINI;
+  loaded?: LoadedFirmwarePatch;
+  start?: Partial<FirmwareWizardState>;
+}) {
   const [state, dispatch] = useReducer(firmwareWizardReducer, {
     ...INITIAL_FIRMWARE_WIZARD_STATE,
     step: 'prepare',
     radioId: updater.radioId,
     choice: { kind: 'user-patch', file: { name: 'p.json', bytes: new Uint8Array(0) } },
-    loadedPatch: LOADED,
+    loadedPatch: loaded,
     stock: STOCK,
+    ...start,
   } satisfies FirmwareWizardState);
   useEffect(() => {
     latest = state;
@@ -93,8 +104,14 @@ function Harness({ updater }: { updater: typeof MINI }) {
 const type = (label: string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
-const radioInfo = (firmware: string, hardware: string) => {
+/** The Radio Info lines; the suffix defaults to the one today's base for that version has. */
+const radioInfo = (
+  firmware: string,
+  hardware: string,
+  suffix = firmware === 'V0.04' ? 'NRFB' : 'NRF',
+) => {
   type('Radio Info: Firmware', firmware);
+  type('Suffix', suffix);
   type('Radio Info: Hardware', hardware);
 };
 
@@ -117,19 +134,24 @@ async function readRadio(answer: Uint8Array | { failure: string }) {
 
 const lastPrepare = () => vi.mocked(flash.prepareFlash).mock.calls.at(-1)!;
 
-/** An image of whatever layout it is asked for. */
+/** An image of whatever layout it is asked for, on the radio's base where it has one. */
 const anyLayout = async (
   _r: unknown,
   _s: unknown,
   _c: unknown,
   _l: unknown,
   radioLayout?: string,
+  _b?: unknown,
+  _rc?: unknown,
+  _rr?: unknown,
+  radioCodeBase?: string,
 ) =>
   ({
     provenance: 'published',
     title: `${radioLayout} build`,
     sha256: {},
     radioLayout,
+    ...(radioCodeBase ? { baseName: radioCodeBase } : {}),
   }) as unknown as PreparedFirmwareImage;
 
 beforeEach(() => {
@@ -148,6 +170,128 @@ beforeEach(() => {
       sha256: {},
       radioLayout,
     } as unknown as PreparedFirmwareImage;
+  });
+});
+
+describe('PrepareStep: after the radio refused one layout before installing anything', () => {
+  it("prepares the other layout's file, says why, and runs the checks for it", async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(
+      <Harness
+        updater={MINI}
+        start={{
+          radioRead: {
+            kind: 'report',
+            answer: { kind: 'layout', layout: 'L1', reported: true },
+          },
+          layoutRetry: { from: 'L1', to: 'L2' },
+        }}
+      />,
+    );
+    expect(
+      screen.getByText(
+        'The radio refused the L1 file before installing anything, so Studio prepares the L2 file.',
+      ),
+    ).toBeInTheDocument();
+    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(lastPrepare()[4]).toBe('L2');
+  });
+
+  it("a stock radio's retry is prepared on the partner file's base, not the answered one", async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(
+      <Harness
+        updater={MINI}
+        start={{
+          radioRead: { kind: 'none' },
+          radioInfo: { firmware: 'V0.27', suffix: 'NRF', hardware: 'V1.7' },
+          layoutRetry: { from: 'L2', to: 'L1', toBase: 'nrf-v0.04' },
+        }}
+      />,
+    );
+    expect(await screen.findByText(/Ready to flash: L1 build/)).toBeInTheDocument();
+    expect(lastPrepare()[4]).toBe('L1');
+    expect(lastPrepare()[8]).toBe('nrf-v0.04');
+  });
+});
+
+describe('PrepareStep: a release with one file per flash layout and stock base', () => {
+  /** A release file on today's base for its layout: L1 on nrfb-v0.04, L2 on nrf-v0.27. */
+  const fileFor = (layout: string, base = layout === 'L1' ? 'nrfb-v0.04' : 'nrf-v0.27') =>
+    ({
+      provenance: 'published',
+      layout,
+      parsed: { description: { base } },
+    }) as unknown as LoadedFirmwarePatch;
+  const NO_PARTNER =
+    'If the radio refuses this L2 file, this release has no other file for this radio to try.';
+  const NO_BUILD_NRFB =
+    'Not available in this release: there is no MM9PDY build for this radio (nrfb-v0.04) yet. This release has a file only for nrf-v0.27. Nothing was prepared or sent to the radio.';
+
+  it('says so when the release has no other file for this radio', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(<Harness updater={MINI} loaded={fileFor('L2')} />);
+    await readRadio(reportBlock({}));
+    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(screen.getByText(NO_PARTNER)).toBeInTheDocument();
+  });
+
+  it('1.0.0: only NRF V0.27 V1.7 gets a file; NRFB V0.04 has no build in it, and nothing is prepared', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(<Harness updater={MINI} loaded={fileFor('L2')} />);
+    await readRadio(STOCK_FLASH);
+    radioInfo('V0.04', 'V1.7', 'NRFB');
+    expect(await screen.findByText(NO_BUILD_NRFB)).toBeInTheDocument();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Preparing/)).toBeNull();
+    expect(latest.image).toBeNull();
+    expect(canAdvance(latest)).toBe(false);
+    // NRF V0.27 on the same release is offered, on its base.
+    type('Radio Info: Firmware', 'V0.27');
+    type('Suffix', 'NRF');
+    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(screen.queryByText(/Not available in this release/)).toBeNull();
+    expect(lastPrepare()[8]).toBe('nrf-v0.27');
+  });
+
+  it('never offers the nearest build: an L2 file on another base is not this radio', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(<Harness updater={MINI} loaded={fileFor('L2', 'nrfb-v0.27')} />);
+    await readRadio(STOCK_FLASH);
+    radioInfo('V0.27', 'V1.7', 'NRF');
+    expect(
+      await screen.findByText(/no MM9PDY build for this radio \(nrf-v0\.27\) yet/),
+    ).toBeInTheDocument();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+  });
+
+  it('a report for a base the release has no file for is not available either', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(<Harness updater={MINI} loaded={fileFor('L2')} />);
+    await readRadio(reportBlock({ vm: L1, v004: true, name: 'mm9pdy-L1-0.2.0' }));
+    expect(await screen.findByText(/^Not available in this release/)).toBeInTheDocument();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+  });
+
+  it("today's two bases are different variants, so neither file is the other's partner", async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(<Harness updater={MINI} loaded={{ ...fileFor('L1'), otherLayouts: [fileFor('L2')] }} />);
+    await readRadio(reportBlock({}));
+    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(screen.getByText(NO_PARTNER)).toBeInTheDocument();
+  });
+
+  it('says nothing when the release has a same-variant file for the other layout', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    render(
+      <Harness
+        updater={MINI}
+        loaded={{ ...fileFor('L1', 'nrf-v0.04'), otherLayouts: [fileFor('L2')] }}
+      />,
+    );
+    await readRadio(reportBlock({}));
+    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(screen.queryByText(NO_PARTNER)).toBeNull();
   });
 });
 
@@ -173,7 +317,8 @@ describe('PrepareStep: reading the UV-5R Mini', () => {
     expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
     expect(lastPrepare()[4]).toBe('L2');
     expect(lastPrepare()[5]).toBe('mm9pdy-L2-0.2.0-rc.1');
-    expect(screen.queryByText(UV5RMINI_ONE_WAY_WARNING)).toBeNull();
+    expect(screen.getByText('Code base: nrf-v0.27')).toBeInTheDocument();
+    expect(lastPrepare()[8]).toBe('nrf-v0.27');
     expect(canAdvance(latest)).toBe(true);
   });
 
@@ -186,22 +331,26 @@ describe('PrepareStep: reading the UV-5R Mini', () => {
     expect(lastPrepare()[7]).toBe(true);
   });
 
-  it('a report for L1 on the v0.04 code base shows the one-way warning and picks L1', async () => {
+  it('a report for L1 on the v0.04 code base shows the flag as information only, and passes the code base on', async () => {
     vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(<Harness updater={MINI} />);
     await readRadio(reportBlock({ vm: L1, v004: true, name: 'mm9pdy-L1-0.2.0' }));
-    expect(screen.getByText(UV5RMINI_ONE_WAY_WARNING)).toBeInTheDocument();
+    expect(screen.getByText('Code base: nrfb-v0.04')).toBeInTheDocument();
+    // No file moves a radio between code bases: there is no one-way warning any more.
+    expect(screen.queryByText(/for good|never to V0\.04/)).toBeNull();
     expect(await screen.findByText(/Ready to flash: L1 build/)).toBeInTheDocument();
     expect(lastPrepare()[4]).toBe('L1');
+    expect(lastPrepare()[8]).toBe('nrfb-v0.04');
     expect(canAdvance(latest)).toBe(true);
   });
 
-  it('a report for L1 on the v0.27 code base shows no one-way warning', async () => {
+  it('a report for L1 on the v0.27 code base passes that code base on', async () => {
     vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(<Harness updater={MINI} />);
     await readRadio(reportBlock({ vm: L1, name: 'mm9pdy-L1-0.2.0' }));
     expect(await screen.findByText(/Ready to flash: L1 build/)).toBeInTheDocument();
-    expect(screen.queryByText(UV5RMINI_ONE_WAY_WARNING)).toBeNull();
+    expect(screen.getByText('Code base: nrf-v0.27')).toBeInTheDocument();
+    expect(lastPrepare()[8]).toBe('nrf-v0.27');
   });
 
   it('a crossed pick from the report is refused before Connect', async () => {
@@ -300,7 +449,7 @@ describe('PrepareStep: the UV-5R Mini Radio Info question, with no report', () =
     expect(screen.queryByLabelText(/MM9PDY build/)).toBeNull();
     expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.queryByText(/hardware layout/i)).toBeNull();
-    expect(screen.getByText(/Enter both Radio Info lines/)).toBeInTheDocument();
+    expect(screen.getByText('Answer each line to prepare the image.')).toBeInTheDocument();
     expect(flash.prepareFlash).not.toHaveBeenCalled();
   });
 
@@ -316,7 +465,7 @@ describe('PrepareStep: the UV-5R Mini Radio Info question, with no report', () =
     expect(canAdvance(latest)).toBe(true);
   });
 
-  it('stock V0.04 is L1, with no one-way warning; an L2 file is refused before Connect', async () => {
+  it('stock NRFB V0.04 is L1 on nrfb-v0.04; an L2 file is refused before Connect', async () => {
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
     radioInfo('V0.04', 'V1.7');
@@ -324,16 +473,71 @@ describe('PrepareStep: the UV-5R Mini Radio Info question, with no report', () =
       await screen.findByText(new RegExp(OTHER_LAYOUT.replace(/[.;]/g, '.'))),
     ).toBeInTheDocument();
     expect(lastPrepare()[4]).toBe('L1');
-    expect(screen.queryByText(UV5RMINI_ONE_WAY_WARNING)).toBeNull();
+    expect(lastPrepare()[8]).toBe('nrfb-v0.04');
     expect(latest.image).toBeNull();
     expect(canAdvance(latest)).toBe(false);
     expect(screen.queryByRole('button', { name: 'Connect and flash' })).toBeNull();
   });
 
-  it('refuses a Hardware line not proven, without building anything', async () => {
+  it('asks with dropdowns of the supported values, under the warning about a wrong pick', async () => {
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('V0.27', 'V1.8');
+    const options = (label: string) =>
+      [...(screen.getByLabelText(label) as HTMLSelectElement).options]
+        .filter((o) => !o.disabled)
+        .map((o) => o.value);
+    expect(options('Radio Info: Firmware')).toEqual(['V0.04', 'V0.27', 'Other']);
+    expect(options('Suffix')).toEqual(['NRF', 'NRFB', 'Other']);
+    expect(options('Radio Info: Hardware')).toEqual(['V1.7', 'Other']);
+    expect(screen.getAllByText('From Radio Info (MENU → Radio Info).')).toHaveLength(2);
+    expect(
+      screen.getByText(/hold 8 while switching it on.*film the screen with your phone/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Pick exactly what the radio shows. If the Firmware or suffix you pick is wrong, Studio or the radio refuses the file and nothing is installed, though the radio's FM presets and volume may be reset. If the Hardware line is wrong, nothing stops the update, and a radio Studio doesn't know yet may not be caught either.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('refuses a suffix and version with no build (NRF V0.04), without building anything', async () => {
+    render(<Harness updater={MINI} />);
+    await readRadio(STOCK_FLASH);
+    radioInfo('V0.04', 'V1.7', 'NRF');
+    expect(
+      screen.getByText(
+        'There is no MM9PDY build for this radio (NRF V0.04) yet; nothing was sent.',
+      ),
+    ).toBeInTheDocument();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+    expect(canAdvance(latest)).toBe(false);
+  });
+
+  it('refuses suffix Other as not supported', async () => {
+    render(<Harness updater={MINI} />);
+    await readRadio(STOCK_FLASH);
+    radioInfo('V0.27', 'V1.7', 'Other');
+    expect(
+      screen.getByText("Studio doesn't support this radio's suffix; nothing was sent."),
+    ).toBeInTheDocument();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+  });
+
+  it('refuses Firmware Other as not supported, without building anything', async () => {
+    render(<Harness updater={MINI} />);
+    await readRadio(STOCK_FLASH);
+    radioInfo('Other', 'V1.7');
+    expect(
+      screen.getByText("Studio doesn't support this radio's Firmware version; nothing was sent."),
+    ).toBeInTheDocument();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+    expect(canAdvance(latest)).toBe(false);
+  });
+
+  it('refuses Hardware Other, without building anything', async () => {
+    render(<Harness updater={MINI} />);
+    await readRadio(STOCK_FLASH);
+    radioInfo('V0.27', 'Other');
     expect(
       screen.getByText(
         "Studio hasn't been proven on this radio's Hardware version; nothing was sent.",

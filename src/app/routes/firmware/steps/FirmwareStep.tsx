@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
+import { loadedLayouts } from '@core/firmware/releases/layouts.ts';
 import { publishedReleaseSummary } from '@core/firmware/releases/publishedSource.ts';
 import { loadedFirmwarePatchTitle, stockFirmwareTitle } from '@core/firmware/releases/projects.ts';
 import type { FirmwareReleaseSummary, LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
@@ -111,13 +112,18 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
   }
 
   async function onPatchFile(files: File[]) {
-    const file = files[0];
-    if (!file) return;
-    setUserFile({ name: file.name, loaded: null, error: null });
+    if (files.length === 0) return;
+    const name = files.map((f) => f.name).join(', ');
+    setUserFile({ name, loaded: null, error: null });
     try {
-      const [named] = await filesToNamedBytes([file]);
-      const loaded = await loadChosenPatch(radioId, { kind: 'user-patch', file: named! });
-      setUserFile({ name: file.name, loaded, error: null });
+      const [named, ...otherFiles] = await filesToNamedBytes(files);
+      const picked = {
+        kind: 'user-patch' as const,
+        file: named!,
+        ...(otherFiles.length ? { otherFiles } : {}),
+      };
+      const loaded = await loadChosenPatch(radioId, picked);
+      setUserFile({ name, loaded, error: null });
       const published = summaryForLoaded(loaded);
       if (published) {
         dispatch({
@@ -126,15 +132,11 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
           loadedPatch: loaded,
         });
       } else {
-        dispatch({
-          type: 'chooseFirmware',
-          choice: { kind: 'user-patch', file: named! },
-          loadedPatch: loaded,
-        });
+        dispatch({ type: 'chooseFirmware', choice: picked, loadedPatch: loaded });
       }
     } catch (err) {
       setUserFile({
-        name: file.name,
+        name,
         loaded: null,
         error: messageOf(err, 'This file is not a readable firmware patch.'),
       });
@@ -170,6 +172,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
   }
 
   const stockReturn = updater.stock.stockReturn;
+  const releaseLayouts = updater.stock.releaseLayouts;
   const toStockVersion = stockReturnFile?.loaded
     ? toStockVariantFor(updater.stock, stockReturnFile.loaded.parsed.description)?.version
     : undefined;
@@ -294,7 +297,17 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
         <Panel title="Patch file">
           <div className={classes.stack}>
             <FileDropzone
-              label="Firmware patch (.patch.json)"
+              label={
+                releaseLayouts
+                  ? 'Firmware patch files (.patch.json)'
+                  : 'Firmware patch (.patch.json)'
+              }
+              hint={
+                releaseLayouts
+                  ? `A release has one file per flash layout (${releaseLayouts.layouts.join(', ')}). Pick both: Studio uses the one for your radio. One file works too.`
+                  : undefined
+              }
+              multiple={releaseLayouts ? true : undefined}
               accept=".json"
               fileName={userFile?.name}
               onFilesSelected={(files) => void onPatchFile(files)}
@@ -313,6 +326,11 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
               <StatusBanner tone="success">
                 This is the {loadedFirmwarePatchTitle(userFile.loaded)} (published).
               </StatusBanner>
+            ) : null}
+            {userFile?.loaded && loadedLayouts(userFile.loaded).length ? (
+              <p className={classes.muted}>
+                Flash layouts: {loadedLayouts(userFile.loaded).join(', ')}.
+              </p>
             ) : null}
             {unreviewed ? (
               <>

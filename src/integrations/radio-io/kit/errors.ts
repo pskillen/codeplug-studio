@@ -13,6 +13,7 @@ export type RadioIoErrorCode =
   | 'unsupported'
   | 'interlock'
   | 'alreadyInstalled'
+  | 'nothingInstalled'
   | 'needsConfirm';
 
 export class RadioIoError extends Error {
@@ -91,6 +92,20 @@ export class RadioAlreadyInstalledError extends RadioIoError {
   constructor(message: string) {
     super('alreadyInstalled', message);
     this.name = 'RadioAlreadyInstalledError';
+  }
+}
+
+/**
+ * The radio refused the image before installing anything, in a way that says the file is for the other flash layout
+ * (UV-5R Mini: the loader's `0x8F`, or the app's `0x83` with no erase announced). Nothing was erased or written; the
+ * radio boots its installed app. The radio's update stage may already have reset some settings. Not a "recover the
+ * radio" failure, even though the loader ran; the caller may offer the release's other layout's file, once, with the
+ * operator re-entering update mode.
+ */
+export class RadioNothingInstalledError extends RadioIoError {
+  constructor(message: string) {
+    super('nothingInstalled', message);
+    this.name = 'RadioNothingInstalledError';
   }
 }
 

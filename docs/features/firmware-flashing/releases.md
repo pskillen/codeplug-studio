@@ -50,6 +50,41 @@ A new firmware release reaches Studio users as soon as it is published there. No
 The public repository generates it from each release's patch and sidecar notes (`tools/release_index.py` there).
 `resultSha256` is keyed by the radio's stock member roles.
 
+### UV-5R Mini rows: one per flash layout
+
+A UV-5R Mini release ships two files, one per flash layout (`L1`, `L2`: the factory firmware's packing, not the
+board). In the index that is **one row per layout**: both rows share `radioId` (`baofeng-uv5rmini`) and `version`, and
+each has an optional `layout` field, `"L1"` or `"L2"`:
+
+```json
+{
+  "radioId": "baofeng-uv5rmini",
+  "version": "1.0.0",
+  "layout": "L2",
+  "patchPath": "releases/baofeng-uv5rmini/…-L2-1.0.0.patch.json",
+  "…": "…"
+}
+```
+
+- **Without `layout`**, a Mini row takes its layout from the patch's build name (`mm9pdy-L1-…`, `mm9pdy-L2-…`) once
+  the patch is downloaded. A row whose `layout` disagrees with its build name, or that has neither, is refused.
+- **Only `L1` and `L2`** are release layouts. NRF and NRFB radios get separate builds and a radio's code base never
+  changes, so a row is identified by its whole stock base, not by `layout` alone: today `nrfb-v0.04` (`L1`) and
+  `nrf-v0.27` (`L2`). A release may ship only some bases (1.0.0: `nrf-v0.27` only). `V4` (`mm9pdy-V4-…`) is retired: a
+  `V4` row makes the index invalid, and a `V4` file from disk is refused.
+- **`base`** (optional, Mini only), e.g. `"base": "nrf-v0.27"`: the row's stock base. It must be a base Studio knows
+  and the base of the row's `stockVersion`; a downloaded patch whose `base` disagrees with it, or with its stock's base,
+  is refused. One row per layout and stock version.
+- **Other radios' rows carry no `layout` or `base`**; either on one is a malformed row.
+- Studio lists a Mini release once per version and loads every row of that version. Prepare picks the file on the
+  radio's base and layout (from its radio report, or its Firmware, suffix and Hardware answers) and never the nearest
+  build; a radio with no file in the release is told there is no MM9PDY build for it yet. The retry after a refusal
+  goes only to a file of the same suffix.
+- The patch-file dropzone takes one file, or the release's two files at once (layouts from their build names). Two
+  files must be one release: the same version, both published or both not, one per layout.
+
+The public repository's index format doc and `tools/release_index.py` don't have the `layout` and `base` fields yet.
+
 ### RT95 main board rows
 
 The RT95 main board is its own firmware radio, so its releases live under their own path and project: `radioId`
@@ -60,16 +95,16 @@ The main board stays hidden on prod.
 
 ## What Studio checks
 
-| When              | Check                                                                                                                                                                                                                                                                                          | Code                                                                          |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Parsing the index | Known format; every field present and well formed; channel matches the version; patch path inside `releases/<radioId>/`; project is the radio's; no duplicates. A row for a radio Studio doesn't know, or for another stock version, is skipped, so the index can run ahead of a Studio deploy | `parsePublishedReleaseIndex` (`src/core/firmware/releases/publishedIndex.ts`) |
-| Loading a release | Downloaded bytes match `patchSha256`; the patch parses; its project and version match the row; it is built on the radio's pinned stock (every member's hash and size); its result hashes equal the row's                                                                                       | `createPublishedFirmwareReleaseSource`, `checkPublishedPatch`                 |
-| Preparing         | The patch applies to the user's verified stock and the result matches; the updater's hard interlocks                                                                                                                                                                                           | `prepareFirmwareImage`, the radio's `FirmwareUpdater`                         |
+| When              | Check                                                                                                                                                                                                                                                                                                                                                                                         | Code                                                                                    |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Parsing the index | Known format; every field present and well formed; channel matches the version; patch path inside `releases/<radioId>/`; project is the radio's; `layout` only on a radio with release layouts, and one of them; no duplicates (per layout and stock version). A row for a radio Studio doesn't know, or for another stock version, is skipped, so the index can run ahead of a Studio deploy | `parsePublishedReleaseIndex` (`src/core/firmware/releases/publishedIndex.ts`)           |
+| Loading a release | Downloaded bytes match `patchSha256`; the patch parses; its project and version match the row; it is built on the radio's pinned stock (every member's hash and size); its result hashes equal the row's. With layouts: the row's layout agrees with the build name's, one file per layout                                                                                                    | `createPublishedFirmwareReleaseSource`, `checkPublishedPatch`, `resolvePublishedLayout` |
+| Preparing         | With layouts: the release has a file for the radio's layout (`pickPatchForLayout`). The patch applies to the user's verified stock and the result matches; the updater's hard interlocks                                                                                                                                                                                                      | `prepareFirmwareImage`, the radio's `FirmwareUpdater`                                   |
 
 ## Tests
 
-- `publishedIndex.test.ts`, `sources.test.ts` and `publicReleaseIndex.test.ts` cover parsing, the checks and the
-  fetcher with synthetic releases.
+- `publishedIndex.test.ts`, `sources.test.ts`, `layouts.test.ts` and `publicReleaseIndex.test.ts` cover parsing, the
+  checks, releases by layout and the fetcher with synthetic releases.
 - **Local only:** `publicRepoCheck.test.ts` checks every release in a clone of the public repository, and
   `localStockCheck.test.ts` also applies each one to your stock firmware and compares the result hashes.
 

@@ -710,6 +710,45 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
     });
   });
 
+  it('takes both files of a release with one file per flash layout, and names their layouts', async () => {
+    const layouts = { layouts: ['L1', 'L2'], fromBuildName: () => undefined };
+    vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([
+      { ...DM32, stock: { ...DM32.stock, releaseLayouts: layouts } },
+    ]);
+    vi.mocked(flash.loadChosenPatch).mockResolvedValue({
+      ...UNREVIEWED,
+      layout: 'L1',
+      otherLayouts: [{ ...UNREVIEWED, layout: 'L2' }],
+    });
+    await toFirmwareStep();
+    expect(
+      screen.getByText(/A release has one file per flash layout \(L1, L2\)/),
+    ).toBeInTheDocument();
+    const input = document.querySelector('input[type="file"][accept=".json"]') as HTMLInputElement;
+    expect(input.multiple).toBe(true);
+    fireEvent.change(input, {
+      target: {
+        files: [new File(['{}'], 'fw-L1.patch.json'), new File(['{}'], 'fw-L2.patch.json')],
+      },
+    });
+    expect(await screen.findByText('Flash layouts: L1, L2.')).toBeInTheDocument();
+    const choice = vi.mocked(flash.loadChosenPatch).mock.calls[0]![1];
+    expect(choice.kind === 'user-patch' && choice.file.name).toBe('fw-L1.patch.json');
+    expect(choice.kind === 'user-patch' && choice.otherFiles?.map((f) => f.name)).toEqual([
+      'fw-L2.patch.json',
+    ]);
+  });
+
+  it('takes one patch file for a radio without layouts', async () => {
+    await toFirmwareStep();
+    const input = document.querySelector('input[type="file"][accept=".json"]') as HTMLInputElement;
+    expect(input.multiple).toBe(false);
+    dropPatch();
+    await waitFor(() => expect(flash.loadChosenPatch).toHaveBeenCalled());
+    const choice = vi.mocked(flash.loadChosenPatch).mock.calls[0]![1];
+    expect(choice.kind === 'user-patch' && choice.otherFiles).toBeUndefined();
+  });
+
   it('lists finals, and adds release candidates on request', async () => {
     await toFirmwareStep();
     expect(

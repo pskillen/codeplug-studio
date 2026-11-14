@@ -87,6 +87,17 @@ export class Uv5rMiniSession {
     return this.lastData.get(cmd);
   }
 
+  /**
+   * True once any cmd 4 frame was heard in this session, ignored ones included (a cmd 4 outside the loader is ignored
+   * and sets no `areaLength`). Decides whether an app's `0x83` came "before cmd 4".
+   */
+  get lengthHeard(): boolean {
+    return (
+      this.areaLength !== undefined ||
+      this.events.some((e) => e.kind === 'ignored' && e.cmd === UV5RMINI_FW_CMD.LENGTH)
+    );
+  }
+
   /** The ping: cmd 6, empty. Moves `listen` to `ping`; harmless again later. */
   ping(): Uv5rMiniReply {
     if (this.phase === 'listen') this.phase = 'ping';

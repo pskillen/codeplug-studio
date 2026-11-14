@@ -25,6 +25,7 @@ import {
   RadioClosedError,
   RadioInterlockError,
   RadioNoResponseError,
+  RadioNothingInstalledError,
   RadioProtocolError,
   RadioTimeoutError,
 } from '../../../kit/errors.ts';
@@ -60,6 +61,8 @@ export const UV5RMINI_MSG = {
   appStopped:
     'The radio stopped answering before its firmware was touched. Nothing was written to the firmware. Switch the radio off and on, then press Connect and flash again.',
   appRefused: 'Nothing was written to the firmware. Switch the radio off and on.',
+  appOtherLayout:
+    'Nothing was written to the firmware: the radio refused this file before installing anything, most likely because it is for the other flash layout. Its FM presets and volume may have been reset; nothing else changed.',
   appKey: " This image is not for this radio's key.",
   appOtherStock: ' This image is for another stock version.',
   loaderAlready:
@@ -398,9 +401,13 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
           for (const hex of reader.badCrc.splice(0)) s.noteBadCrc(hex);
         }
 
-        const outcome = describeResult(s, image);
+        const outcome = describeUv5rMiniResult(s, image);
         if (outcome.error) {
-          throw new RadioProtocolError(outcome.error);
+          // A refusal before anything was installed is typed, so the wizard shows "nothing was installed" (and may
+          // offer the other layout's file) rather than "recover the radio", even though the loader ran.
+          throw outcome.nothingInstalled
+            ? new RadioNothingInstalledError(outcome.error)
+            : new RadioProtocolError(outcome.error);
         }
         const result: FirmwareFlashResult = {
           framesSent: frames,
@@ -433,11 +440,15 @@ function stallMessage(err: unknown, s: Uv5rMiniSession): string | undefined {
   return undefined;
 }
 
-/** A finished session as the operator's words: a note for a clean end, an error text for anything else. */
-function describeResult(
-  s: Uv5rMiniSession,
+/**
+ * A finished session as the operator's words: a note for a clean end, an error text for anything else.
+ * `nothingInstalled` marks the two refusals that say the file is for the other flash layout and that nothing was
+ * installed: the loader's `0x8F` (always before cmd 4) and the app's `0x83` with no cmd 4 heard in the session.
+ */
+export function describeUv5rMiniResult(
+  s: Pick<Uv5rMiniSession, 'result' | 'resultPhase' | 'areaLength' | 'continued' | 'lengthHeard'>,
   image: PreparedFirmwareImage,
-): { note?: string; error?: string } {
+): { note?: string; error?: string; nothingInstalled?: true } {
   const code = s.result;
   const name = image.versionStamp ?? image.title;
   if (s.resultPhase === 'loader') {
@@ -456,7 +467,7 @@ function describeResult(
     }
     // 0x8F: the layout loader's check found the radio's installed layout is not its own. It refuses before cmd 4, but
     // the stock app's update stage has already cleared the settings sector holding the FM presets and volume.
-    if (code === 0x8f) return { error: UV5RMINI_MSG.loaderOtherLayout };
+    if (code === 0x8f) return { error: UV5RMINI_MSG.loaderOtherLayout, nothingInstalled: true };
     // 0x87 before cmd 4: the loader erased and programmed nothing, and the radio boots its installed app.
     if (code === 0x87) {
       return {
@@ -469,7 +480,11 @@ function describeResult(
       error: `The radio's loader refused the image (result ${hex2(code ?? 0)}). Nothing was erased.`,
     };
   }
-  // The app stage ended with a result: nothing reached the firmware.
+  // The app stage ended with a result: nothing reached the firmware. Its 0x83 before any cmd 4 is the other layout's
+  // refusal; after a cmd 4 (which the app stage ignores) it keeps today's words.
+  if (code === 0x83 && !s.lengthHeard) {
+    return { error: UV5RMINI_MSG.appOtherLayout, nothingInstalled: true };
+  }
   let text = UV5RMINI_MSG.appRefused;
   if (code === 0x01) text += UV5RMINI_MSG.appKey;
   else if (code === 0x8a) text += UV5RMINI_MSG.appOtherStock;

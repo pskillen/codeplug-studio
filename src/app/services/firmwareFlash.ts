@@ -5,6 +5,7 @@
  */
 import { FirmwareError } from '@core/firmware/errors.ts';
 import { listKnownPatchedResults } from '@core/firmware/releases/index.ts';
+import { loadedBases, loadedLayouts, patchForLayout } from '@core/firmware/releases/layouts.ts';
 import { createPublishedFirmwareReleaseSource } from '@core/firmware/releases/publishedSource.ts';
 import type {
   FirmwareReleaseSummary,
@@ -97,7 +98,11 @@ export async function verifyStockFiles(
 export type FirmwareChoice =
   | { kind: 'stock' }
   | { kind: 'release'; source: 'published'; summary: FirmwareReleaseSummary }
-  | { kind: 'user-patch'; file: NamedBytes }
+  /**
+   * Patch files from disk: one, or for a radio with release layouts one per layout (`file` plus `otherFiles`). Prepare
+   * picks the file for the radio's layout.
+   */
+  | { kind: 'user-patch'; file: NamedBytes; otherFiles?: readonly NamedBytes[] }
   /** A to-stock release patch from disk, for a radio whose way back to stock is one (`stockReturn`). */
   | { kind: 'back-to-stock'; file: NamedBytes };
 
@@ -121,7 +126,9 @@ export async function loadChosenPatch(
   if (choice.kind === 'release') {
     return publishedReleaseSource.loadPatch(radioId, choice.summary.key);
   }
-  const source = createUserPatchSource(choice.file, { rows: await publishedRowsOrNone() });
+  const files =
+    choice.kind === 'user-patch' ? [choice.file, ...(choice.otherFiles ?? [])] : [choice.file];
+  const source = createUserPatchSource(files, { rows: await publishedRowsOrNone() });
   const [summary] = await source.listReleases(radioId, { includeRc: true });
   const loaded = await source.loadPatch(radioId, summary!.key);
   if (
@@ -134,12 +141,72 @@ export async function loadChosenPatch(
 }
 
 /**
+ * The refusal at Prepare for a release with files by layout but none for this radio: none for its layout or, where the
+ * radio's stock base is known, none on that base. Never the nearest build instead.
+ */
+export const NO_FILE_FOR_LAYOUT = (
+  layout: string,
+  have: readonly string[],
+  base?: string,
+  haveBases: readonly string[] = [],
+): string =>
+  base !== undefined
+    ? `Not available in this release: there is no MM9PDY build for this radio (${base}) yet. This release has a file only for ${haveBases.length ? haveBases.join(' and ') : have.join(' and ')}.`
+    : `Not available in this release: it has no file for this radio's flash layout (${layout}), only for ${have.join(' and ')}.`;
+
+/**
+ * False when the loaded release has files by layout but none for `radioLayout` (and, where known, the radio's stock
+ * `base`): Prepare then stops before building anything. True for a release with no files by layout, or a radio whose
+ * layout is unknown.
+ */
+export function releaseHasFileForLayout(
+  loaded: LoadedFirmwarePatch,
+  radioLayout: string | undefined,
+  base?: string,
+): boolean {
+  return radioLayout === undefined || patchForLayout(loaded, radioLayout, base) !== undefined;
+}
+
+/** The refusal text for a release with no file for this radio, from what the release has. */
+export function noFileForRadioMessage(
+  loaded: LoadedFirmwarePatch,
+  radioLayout: string,
+  base?: string,
+): string {
+  return NO_FILE_FOR_LAYOUT(radioLayout, loadedLayouts(loaded), base, loadedBases(loaded));
+}
+
+/**
+ * The file of the loaded release to prepare for the radio's layout, and where known its stock base. A patch with no
+ * files by layout, or a radio whose layout Studio doesn't know, is returned as is: the radio's interlocks decide. Throws
+ * FirmwareError('patch-wrong-layout') when the release has files by layout but none for this radio.
+ */
+export function pickPatchForLayout(
+  loaded: LoadedFirmwarePatch,
+  radioLayout: string | undefined,
+  radioCodeBase?: string,
+): LoadedFirmwarePatch {
+  if (radioLayout === undefined) return loaded;
+  const picked = patchForLayout(loaded, radioLayout, radioCodeBase);
+  if (!picked) {
+    throw new FirmwareError(
+      'patch-wrong-layout',
+      noFileForRadioMessage(loaded, radioLayout, radioCodeBase),
+    );
+  }
+  return picked;
+}
+
+/**
  * Build the image for the choice, then run the updater's interlocks before any radio contact.
- * A patch choice needs its `loaded` patch. `radioLayout` is the radio's flash layout, where Studio knows it;
+ * A patch choice needs its `loaded` patch; for a release with one file per flash layout, the radio's file is picked
+ * ({@link pickPatchForLayout}). `radioLayout` is the radio's flash layout, where Studio knows it;
  * `radioBuild` is the build name the radio gave about itself, which an updater compares with the image's own;
  * `reinstallConfirmed` is the operator's explicit confirm to write the build the radio already runs. Without it, an
  * updater that allows that throws `RadioConfirmRequiredError` (code `needsConfirm`) with the warning to show.
  * `radioReported` says the radio reported about itself, so it runs a modded build even where it named none.
+ * `radioCodeBase` is the stock base the radio's own code is built on, where it said so; an updater refuses a file on
+ * another base.
  */
 export async function prepareFlash(
   radioId: FirmwareRadioId,
@@ -150,13 +217,14 @@ export async function prepareFlash(
   radioBuild?: string,
   reinstallConfirmed?: boolean,
   radioReported?: boolean,
+  radioCodeBase?: string,
 ): Promise<PreparedFirmwareImage> {
   let target: FirmwareTarget;
   if (choice.kind === 'stock') {
     target = { kind: 'stock' };
   } else {
     if (!loaded) throw new Error('The chosen patch has not been loaded.');
-    target = { kind: 'patch', patch: loaded };
+    target = { kind: 'patch', patch: pickPatchForLayout(loaded, radioLayout, radioCodeBase) };
   }
   const image = await prepareFirmwareImage({
     descriptor: getStockFirmwareDescriptor(radioId),
@@ -166,6 +234,7 @@ export async function prepareFlash(
     radioBuild,
     reinstallConfirmed,
     radioReported,
+    radioCodeBase,
   });
   if (choice.kind === 'back-to-stock' && !image.backToStock) {
     throw new FirmwareError('patch-not-to-stock', NOT_TO_STOCK_PATCH_MESSAGE);

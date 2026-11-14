@@ -7,8 +7,11 @@ import { sha256Hex } from '../../firmware/hash.ts';
 import { applyFirmwarePatch, readFirmwarePatchVersionStamp } from '../../firmware/patch/index.ts';
 import { loadedFirmwarePatchTitle, stockFirmwareTitle } from '../../firmware/releases/projects.ts';
 import type { LoadedFirmwarePatch } from '../../firmware/releases/types.ts';
-import type { VerifiedStockFirmware } from '../../firmware/stock/resolveStockFirmware.ts';
-import { stockVariantFor, toStockVariantFor } from '../../firmware/stockVariants.ts';
+import {
+  verifiedStockForBase,
+  type VerifiedStockFirmware,
+} from '../../firmware/stock/resolveStockFirmware.ts';
+import { stockVariantFor, stockVariants, toStockVariantFor } from '../../firmware/stockVariants.ts';
 import type {
   FirmwarePackage,
   FirmwareProvenance,
@@ -65,6 +68,12 @@ export interface PreparedFirmwareImage {
    */
   readonly radioReported?: true;
   /**
+   * The stock base the radio's own code is built on (UV-5R Mini: from its radio report's code-base flag, from the
+   * operator's suffix and Firmware answers, or after a retry the partner file's base). An updater refuses an image on
+   * another base: a radio's code base never changes.
+   */
+  readonly radioCodeBase?: string;
+  /**
    * Set when the operator has explicitly confirmed writing the build the radio already runs (a repair). An updater that
    * allows a same-build write asks for this confirmation first and sends nothing without it.
    */
@@ -87,6 +96,35 @@ async function hashPackage(pkg: FirmwarePackage): Promise<Record<string, string>
   return out;
 }
 
+/** The refusal for a patch on a stock base the operator supplied no stock for. */
+export const STOCK_FOR_BASE_MISSING = (version: string, fileNames: readonly string[]): string =>
+  `This file is built on stock ${version}, which wasn't supplied. Add ${fileNames.join(', ')} at the Stock firmware step.`;
+
+/**
+ * The verified stock a target is built on. A patch that names its `base` is built on the stock of that base, where the
+ * radio takes one stock per base (`severalStocks`); the first supplied stock otherwise. A patch on a base of this
+ * radio that was not supplied is refused here, naming the file to add.
+ */
+function stockForTarget(
+  radioDescriptor: StockFirmwareDescriptor,
+  stock: VerifiedStockFirmware,
+  target: FirmwareTarget,
+): VerifiedStockFirmware {
+  const base = target.kind === 'patch' ? target.patch.parsed.description.base : undefined;
+  if (base === undefined || !radioDescriptor.severalStocks) return stock;
+  const own = verifiedStockForBase(stock, base);
+  if (own) return own;
+  const variant = stockVariants(radioDescriptor).find((v) => v.baseName === base);
+  if (!variant) return stock;
+  throw new FirmwareError(
+    'patch-wrong-stock',
+    STOCK_FOR_BASE_MISSING(
+      variant.version,
+      variant.members.map((m) => m.fileName),
+    ),
+  );
+}
+
 export async function prepareFirmwareImage(input: {
   descriptor: StockFirmwareDescriptor;
   stock: VerifiedStockFirmware;
@@ -97,14 +135,18 @@ export async function prepareFirmwareImage(input: {
   radioBuild?: string;
   /** The radio reported about itself (see `PreparedFirmwareImage.radioReported`). */
   radioReported?: boolean;
+  /** The radio's own code base, where it said so (see `PreparedFirmwareImage.radioCodeBase`). */
+  radioCodeBase?: string;
   /** The operator confirmed writing the build the radio already runs (see `PreparedFirmwareImage.reinstallConfirmed`). */
   reinstallConfirmed?: boolean;
 }): Promise<PreparedFirmwareImage> {
-  const { descriptor: radioDescriptor, stock, target } = input;
+  const { descriptor: radioDescriptor, target } = input;
+  const stock = stockForTarget(radioDescriptor, input.stock, target);
   const layout = {
     ...(input.radioLayout === undefined ? {} : { radioLayout: input.radioLayout }),
     ...(input.radioBuild ? { radioBuild: input.radioBuild } : {}),
     ...(input.radioReported ? { radioReported: true as const } : {}),
+    ...(input.radioCodeBase ? { radioCodeBase: input.radioCodeBase } : {}),
     ...(input.reinstallConfirmed ? { reinstallConfirmed: true as const } : {}),
   };
   if (

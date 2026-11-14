@@ -22,6 +22,8 @@ import {
   checkUv5rMiniImage,
   firstDifferenceOutsideWindows,
   isUv5rMiniToStockImage,
+  UV5RMINI_CODE_BASE_CHANGE_REFUSAL,
+  UV5RMINI_CODE_BASE_UNKNOWN_REFUSAL,
   UV5RMINI_OTHER_LAYOUT_REFUSAL,
   UV5RMINI_REINSTALL_WARNING,
   UV5RMINI_RETIRED_LOADER_REFUSAL,
@@ -61,6 +63,7 @@ function prepared(
     radioLayout?: string;
     radioBuild?: string;
     radioReported?: true;
+    radioCodeBase?: string;
     reinstallConfirmed?: true;
   } = {},
 ): PreparedFirmwareImage {
@@ -68,16 +71,22 @@ function prepared(
   const files: Record<string, Uint8Array> = { ufw: built.bytes };
   if (o.extraRole) files.extra = new Uint8Array(4);
   const radioId = o.radioId ?? 'baofeng-uv5rmini';
+  const baseName = 'base' in o ? o.base : 'nrfb-v0.04';
+  // A radio whose layout isn't given runs the file's own code base unless the test says otherwise (the code-base
+  // check fails closed when Studio knows neither); pass `radioCodeBase: undefined` for a radio Studio knows nothing of.
+  const radioCodeBase =
+    'radioCodeBase' in o ? o.radioCodeBase : 'radioLayout' in o ? undefined : baseName;
   return {
     radioId,
     provenance: o.provenance ?? 'published',
     stockVersion: 'v0.04 (NRFB)',
-    baseName: 'base' in o ? o.base : 'nrfb-v0.04',
+    baseName,
     title: 'synthetic',
     versionStamp: 'stamp' in o ? o.stamp : 'mm9pdy-test',
     radioLayout: o.radioLayout,
     radioBuild: o.radioBuild,
     radioReported: o.radioReported,
+    radioCodeBase,
     reinstallConfirmed: o.reinstallConfirmed,
     package: { radioId, files },
     stockPackage: o.noStock ? undefined : { radioId, files: { ufw: stock.bytes } },
@@ -181,10 +190,14 @@ describe('checkUv5rMiniImage — already installed, always-write layout loader',
   });
 
   it('only says the radio may run the stock when it names no build', () => {
-    // A radio with no radio report answers Radio Info; Firmware V0.04 resolves to layout 1, so the nrfb-v0.04
+    // A radio with no radio report answers Radio Info; NRFB V0.04 resolves to layout 1, so the nrfb-v0.04
     // to-stock file fits it. An MM9PDY build from before the report names no build either, so it says only "may".
-    const answer = uv5rMiniLayoutFromRadioInfo({ firmware: 'V0.04', hardware: 'V1.7' });
-    expect(answer).toEqual({ kind: 'layout', layout: 'L1' });
+    const answer = uv5rMiniLayoutFromRadioInfo({
+      firmware: 'V0.04',
+      suffix: 'NRFB',
+      hardware: 'V1.7',
+    });
+    expect(answer).toEqual({ kind: 'layout', layout: 'L1', codeBase: 'nrfb-v0.04' });
     const run = checkL1({ stamp: 'nrfb-v0.04', radioLayout: 'L1', radioBuild: undefined });
     expect(run).toThrow(RadioConfirmRequiredError);
     expect(run).toThrow(/so it may already run the stock nrfb-v0\.04\./);
@@ -261,7 +274,7 @@ describe('checkUv5rMiniImage — layout loaders', () => {
 
   it("accepts an image whose loader is for the radio's layout", () => {
     expect(checkWith('L1', prepared({ radioLayout: 'L1' }))).not.toThrow();
-    expect(checkWith('L2', prepared({ radioLayout: 'L2' }))).not.toThrow();
+    expect(checkWith('L2', prepared({ radioLayout: 'L2', base: 'nrf-v0.27' }))).not.toThrow();
   });
 
   it('refuses an L1 file for a layout-2 radio and an L2 file for a layout-1 radio', () => {
@@ -296,9 +309,71 @@ describe('checkUv5rMiniImage — layout loaders', () => {
     ).not.toThrow();
   });
 
-  it('a list-carrying loader ignores the radio layout', () => {
-    check(prepared({ radioLayout: 'L2' }));
-    check(prepared());
+  it('a list-carrying loader ignores the radio layout, but not the code base it implies', () => {
+    check(prepared({ radioLayout: 'L1' }));
+    check(prepared({ radioCodeBase: 'nrfb-v0.04' }));
+    expect(() => check(prepared({ radioLayout: 'L2' }))).toThrow(
+      UV5RMINI_CODE_BASE_CHANGE_REFUSAL('nrfb-v0.04', 'nrf-v0.27'),
+    );
+  });
+
+  it("fails closed when Studio knows neither the radio's code base nor its layout", () => {
+    expect(() => check(prepared({ radioCodeBase: undefined }))).toThrow(
+      UV5RMINI_CODE_BASE_UNKNOWN_REFUSAL,
+    );
+    // A layout that names no base Studio knows is no better.
+    expect(() => check(prepared({ radioLayout: 'L3' }))).toThrow(
+      UV5RMINI_CODE_BASE_UNKNOWN_REFUSAL,
+    );
+    expect(UV5RMINI_CODE_BASE_UNKNOWN_REFUSAL).toBe(
+      "Studio doesn't know which code this radio runs, so it can't check this file is built on it. Nothing was sent.",
+    );
+  });
+});
+
+describe('checkUv5rMiniImage — a radio code base never changes', () => {
+  const checkWith = (layout: Uv5rMiniLayout, img: PreparedFirmwareImage) => () =>
+    checkUv5rMiniImage(img, [layoutPin(layout)], bases);
+  const change = (file: string, radio: string) => UV5RMINI_CODE_BASE_CHANGE_REFUSAL(file, radio);
+
+  it('accepts a file on the code base of the radio, from its layout or from its report', () => {
+    expect(checkWith('L1', prepared({ radioLayout: 'L1', base: 'nrfb-v0.04' }))).not.toThrow();
+    expect(checkWith('L2', prepared({ radioLayout: 'L2', base: 'nrf-v0.27' }))).not.toThrow();
+    expect(
+      checkWith(
+        'L1',
+        prepared({ radioLayout: 'L1', base: 'nrfb-v0.04', radioCodeBase: 'nrfb-v0.04' }),
+      ),
+    ).not.toThrow();
+  });
+
+  it("refuses a file on the other code base than the radio's layout runs", () => {
+    // An L2 (v0.27) radio and a v0.04 app with the L2 loader; an L1 (v0.04) radio and a v0.27 app with the L1 loader.
+    expect(checkWith('L2', prepared({ radioLayout: 'L2', base: 'nrfb-v0.04' }))).toThrow(
+      change('nrfb-v0.04', 'nrf-v0.27'),
+    );
+    expect(checkWith('L1', prepared({ radioLayout: 'L1', base: 'nrf-v0.27' }))).toThrow(
+      change('nrf-v0.27', 'nrfb-v0.04'),
+    );
+  });
+
+  it('goes by the code base the radio reported, over its layout', () => {
+    // An L1 radio whose MM9PDY build is on the v0.27 code: an L1 file on v0.04 would move it back.
+    const run = checkWith(
+      'L1',
+      prepared({ radioLayout: 'L1', base: 'nrfb-v0.04', radioCodeBase: 'nrf-v0.27' }),
+    );
+    expect(run).toThrow(RadioInterlockError);
+    expect(run).toThrow(change('nrfb-v0.04', 'nrf-v0.27'));
+    expect(change('nrfb-v0.04', 'nrf-v0.27')).toBe(
+      "This file is built on nrfb-v0.04, but this radio runs the nrf-v0.27 code. Studio never changes a radio's code base. Nothing was sent.",
+    );
+  });
+
+  it('checks the layout first, so a crossed pick still reads as one', () => {
+    expect(checkWith('L1', prepared({ radioLayout: 'L2', base: 'nrfb-v0.04' }))).toThrow(
+      UV5RMINI_OTHER_LAYOUT_REFUSAL,
+    );
   });
 });
 
@@ -542,6 +617,14 @@ describe('checkUv5rMiniImage — to stock', () => {
   it("refuses when the radio's layout is another, or unknown", () => {
     expect(toStock({ radioLayout: 'L2' })).toThrow(UV5RMINI_OTHER_LAYOUT_REFUSAL);
     expect(toStock({ radioLayout: undefined })).toThrow(/doesn't know this radio's flash layout/);
+  });
+
+  it('refuses a to-stock file on another code base than the one the radio reported', () => {
+    // An L1 radio whose MM9PDY build reports the v0.27 code: the v0.04 to-stock file would change its code base.
+    expect(toStock({ base: 'nrfb-v0.04', radioCodeBase: 'nrf-v0.27' })).toThrow(
+      UV5RMINI_CODE_BASE_CHANGE_REFUSAL('nrfb-v0.04', 'nrf-v0.27'),
+    );
+    expect(toStock({ base: 'nrfb-v0.04', radioCodeBase: 'nrfb-v0.04' })).not.toThrow();
   });
 
   it('a modded build is not held to the to-stock rule', () => {

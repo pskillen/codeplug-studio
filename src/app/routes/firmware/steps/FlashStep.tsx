@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { fileBase, partnerFor } from '@core/firmware/releases/layouts.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 import {
   isoTimestampForFilename,
@@ -26,6 +27,7 @@ import { useUnsavedNavigationGuard } from '../../../hooks/useUnsavedNavigationGu
 import {
   formatFirmwareFlashSummary,
   grantFirmwarePort,
+  prepareFlash,
   runFirmwareFlash,
   type FirmwareFlashOutcome,
 } from '../../../services/firmwareFlash.ts';
@@ -74,6 +76,7 @@ export interface FlashStepProps extends WizardStepProps {
 
 export default function FlashStep({
   state,
+  dispatch,
   updater,
   image,
   onReenterUpdateMode,
@@ -93,6 +96,56 @@ export default function FlashStep({
   const [updateModeConfirmed, setUpdateModeConfirmed] = useState(false);
   const updateModeConfirm = updater.preflight?.updateModeConfirm;
   const abortRef = useRef<AbortController | null>(null);
+  const [retryPrep, setRetryPrep] = useState<{ busy: boolean; error: string | null }>({
+    busy: false,
+    error: null,
+  });
+
+  // The release's file for the radio's other layout, offered once after a refusal before anything was installed. Only a
+  // file of the same variant (UV-5R Mini: NRF or NRFB) is a partner; with today's two bases there is none.
+  const refusedLayout = image.radioLayout;
+  const partner =
+    refusedLayout && state.loadedPatch
+      ? partnerFor(state.loadedPatch, refusedLayout, {
+          refusedBase: image.baseName,
+          variantOfBase: updater.stock.releaseLayouts?.variantOfBase,
+        })
+      : undefined;
+  const retry: LayoutRetryOffer =
+    state.layoutRetry !== null
+      ? { kind: 'used', from: state.layoutRetry.from, to: state.layoutRetry.to }
+      : partner?.layout && refusedLayout
+        ? { kind: 'offer', to: partner.layout, ...retryPrep }
+        : { kind: 'none' };
+
+  /** Prepare the partner file for its layout (the interlocks run again), then go back to update mode. Sends nothing. */
+  async function retryOtherLayout() {
+    if (!partner?.layout || !refusedLayout || !state.stock || !state.choice || !state.loadedPatch)
+      return;
+    setRetryPrep({ busy: true, error: null });
+    try {
+      const next = await prepareFlash(
+        updater.radioId,
+        state.stock,
+        state.choice,
+        state.loadedPatch,
+        partner.layout,
+        image.radioBuild,
+        false,
+        image.radioReported === true,
+        // A reported base stands (the interlocks then refuse a change); otherwise the partner's own base, so it is
+        // picked and prepared on its own stock.
+        image.radioReported ? image.radioCodeBase : fileBase(partner),
+      );
+      dispatch({ type: 'retryOtherLayout', from: refusedLayout, image: next });
+    } catch (err) {
+      setRetryPrep({
+        busy: false,
+        error:
+          err instanceof Error ? err.message : `The ${partner.layout} file could not be prepared.`,
+      });
+    }
+  }
 
   useScreenWakeLock(running);
   const guard = useUnsavedNavigationGuard(running);
@@ -218,6 +271,8 @@ export default function FlashStep({
           onDownload={downloadSummary}
           onReenterUpdateMode={onReenterUpdateMode}
           onChooseFirmware={onChooseFirmware}
+          retry={retry}
+          onRetryOtherLayout={() => void retryOtherLayout()}
         />
       ) : null}
 
@@ -243,7 +298,7 @@ export default function FlashStep({
             </Button>
           ) : (
             <>
-              {outcome && !outcome.ok ? (
+              {outcome && !outcome.ok && outcome.code !== NOTHING_INSTALLED ? (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -292,6 +347,15 @@ export default function FlashStep({
   );
 }
 
+/** The error code of a refusal before anything was installed (`RadioNothingInstalledError`). */
+const NOTHING_INSTALLED = 'nothingInstalled';
+
+/** After a refusal before anything was installed: the other layout's file on offer, already tried, or none. */
+type LayoutRetryOffer =
+  | { kind: 'offer'; to: string; busy: boolean; error: string | null }
+  | { kind: 'used'; from: string; to: string }
+  | { kind: 'none' };
+
 function FlashResult({
   outcome,
   summary,
@@ -300,6 +364,8 @@ function FlashResult({
   onDownload,
   onReenterUpdateMode,
   onChooseFirmware,
+  retry,
+  onRetryOtherLayout,
 }: {
   outcome: FirmwareFlashOutcome;
   summary: string;
@@ -308,6 +374,8 @@ function FlashResult({
   onDownload: () => void;
   onReenterUpdateMode: () => void;
   onChooseFirmware: () => void;
+  retry: LayoutRetryOffer;
+  onRetryOtherLayout: () => void;
 }) {
   const summaryBlock = (
     <>
@@ -364,6 +432,64 @@ function FlashResult({
       <Panel title="Done">
         <div className={classes.stack}>
           {banner}
+          {summaryBlock}
+        </div>
+      </Panel>
+    );
+  }
+
+  if (outcome.code === NOTHING_INSTALLED) {
+    // Before "Recover the radio": the loader may have run, but it installed nothing.
+    return (
+      <Panel title="Nothing was installed">
+        <div className={classes.stack}>
+          <StatusBanner tone="warning">
+            The radio refused this file before installing anything. Its installed firmware is
+            unchanged.
+          </StatusBanner>
+          <p className={classes.copy}>{outcome.message}</p>
+          {retry.kind === 'offer' ? (
+            <>
+              <p className={classes.copy}>
+                The refusal means this radio has the other flash layout. This release has a{' '}
+                {retry.to} file: Studio prepares and checks it, then you put the radio into update
+                mode again and press Connect. Nothing is sent until you do.
+              </p>
+              {retry.error ? (
+                <StatusBanner tone="warning">
+                  {retry.error} Nothing was sent to the radio.
+                </StatusBanner>
+              ) : null}
+              <div className={classes.actionsRight}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={onRetryOtherLayout}
+                  disabled={retry.busy}
+                >
+                  {retry.busy ? 'Preparing…' : `Enter update mode again with the ${retry.to} file`}
+                </Button>
+              </div>
+            </>
+          ) : retry.kind === 'used' ? (
+            <p className={classes.copy}>
+              The radio refused the {retry.from} file and then the {retry.to} file. Studio offers no
+              further file. Switch the radio off and on, and keep the summary below for a report.
+            </p>
+          ) : (
+            <>
+              <p className={classes.copy}>
+                This release has no other file for this radio (the other flash layout, same suffix),
+                so Studio has nothing else to send. Check the answers on Prepare match the radio.
+                Switch the radio off and on; it boots its installed firmware.
+              </p>
+              <div>
+                <Button variant="secondary" size="sm" onClick={onChooseFirmware}>
+                  Choose other firmware
+                </Button>
+              </div>
+            </>
+          )}
           {summaryBlock}
         </div>
       </Panel>

@@ -36,6 +36,8 @@ function editSegments(stock: Uint8Array, built: Uint8Array, end: number): [numbe
 export interface SyntheticUv5rMiniPatchOptions {
   readonly version?: string;
   readonly buildName?: string;
+  /** The stock base the patch names; default `synthetic`. */
+  readonly base?: string;
   /** Cut point; default: the shorter of the two images. */
   readonly truncate?: number;
 }
@@ -52,7 +54,7 @@ export async function makeSyntheticUv5rMiniPatch(
     name: 'baofeng-uv5rmini-firmware',
     format: 1,
     version: opts.version ?? name,
-    base: 'synthetic',
+    base: opts.base ?? 'synthetic',
     stock: { '.ufw': { sha256: await sha256Hex(stock), size: stock.length } },
     result: { '.ufw': { sha256: await sha256Hex(built), size: built.length } },
     build: { name, appSize: '0x1000', appCrc: '0xabcd' },

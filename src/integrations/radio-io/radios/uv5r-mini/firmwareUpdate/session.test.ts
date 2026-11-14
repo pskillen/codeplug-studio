@@ -45,6 +45,27 @@ function inPhase(phase: Uv5rMiniPhase): Uv5rMiniSession {
   return s;
 }
 
+describe('UV-5R Mini session: lengthHeard', () => {
+  it('is false until a cmd 4 arrives, and true for one the app stage ignores', () => {
+    const app = inPhase('app');
+    expect(app.lengthHeard).toBe(false);
+    app.onFrame(RESULT, Uint8Array.from([0x83]));
+    expect(app.lengthHeard).toBe(false);
+
+    const ignored = inPhase('app');
+    ignored.onFrame(LENGTH, uv5rMiniU32(0x1000));
+    expect(ignored.areaLength).toBeUndefined();
+    expect(ignored.lengthHeard).toBe(true);
+  });
+
+  it("is true once the loader's cmd 4 sets the area", () => {
+    const s = inPhase('loader');
+    expect(s.lengthHeard).toBe(false);
+    s.onFrame(LENGTH, uv5rMiniU32(0x1000));
+    expect(s.lengthHeard).toBe(true);
+  });
+});
+
 describe('UV-5R Mini session: every command in every phase', () => {
   const none = 'no reply';
   // [phase, cmd, data, expected reply cmds] (the reply's content is checked in the tests below)

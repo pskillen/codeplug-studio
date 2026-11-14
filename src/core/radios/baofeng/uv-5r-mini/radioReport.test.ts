@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   crc16Xmodem,
   decodeUv5rMiniRadioReport,
-  UV5RMINI_ONE_WAY_WARNING,
   UV5RMINI_RADIO_REPORT_ADDRESS,
   UV5RMINI_UNKNOWN_FORMAT_REFUSAL,
   UV5RMINI_UNKNOWN_LAYOUT_REFUSAL,
@@ -154,9 +153,11 @@ describe('uv5rMiniLayoutFromReport', () => {
       layout: 'L2',
       build: 'mm9pdy-L2-0.2.0-rc.1',
       reported: true,
+      codeBase: 'nrf-v0.27',
       details: [
         'MM9PDY build: mm9pdy-L2-0.2.0-rc.1',
         'Flash layout: L2',
+        'Code base: nrf-v0.27',
         'RF chip register 0: 0x1234',
       ],
     });
@@ -168,28 +169,26 @@ describe('uv5rMiniLayoutFromReport', () => {
     expect(r).not.toHaveProperty('build');
   });
 
-  it('shows the one-way warning for an L1 radio on the v0.04 code base only', () => {
+  it('carries the code-base flag as the radio code base and as information, never as a warning', () => {
     const v004L1 = answer(
       edited((b) => {
         asL1(b);
         b[5] = 0x01;
       }),
     );
-    expect(v004L1).toMatchObject({
-      kind: 'layout',
-      layout: 'L1',
-      warning: UV5RMINI_ONE_WAY_WARNING,
-    });
-    expect(UV5RMINI_ONE_WAY_WARNING).toMatch(
-      /next L1 release moves it to the v0\.27 code for good/,
+    expect(v004L1).toMatchObject({ kind: 'layout', layout: 'L1', codeBase: 'nrfb-v0.04' });
+    expect(v004L1 && v004L1.kind === 'layout' ? v004L1.details : []).toContain(
+      'Code base: nrfb-v0.04',
     );
+    // No file moves a radio between code bases any more, so the old one-way warning is gone.
+    expect(v004L1).not.toHaveProperty('warning');
 
     const v027L1 = answer(edited(asL1));
-    expect(v027L1).toMatchObject({ kind: 'layout', layout: 'L1' });
+    expect(v027L1).toMatchObject({ kind: 'layout', layout: 'L1', codeBase: 'nrf-v0.27' });
     expect(v027L1).not.toHaveProperty('warning');
 
-    // The flag on an L2 radio is no one-way move: L2 is already the v0.27 packing.
     const v004L2 = answer(edited((b) => (b[5] = 0x01)));
+    expect(v004L2).toMatchObject({ layout: 'L2', codeBase: 'nrfb-v0.04' });
     expect(v004L2).not.toHaveProperty('warning');
   });
 

@@ -106,20 +106,35 @@ hidden there).
      release ("This is the MM9PDY modded firmware 1.0.0 (published)"). Any other patch shows its project name and
      version, a short sha256 and a risk
      statement, and needs **I understand** ticked before the wizard continues. That is in addition to the risk
-     acknowledgement every flash needs. A patch for another radio is refused with its own message.
+     acknowledgement every flash needs. A patch for another radio is refused with its own message. For a radio whose
+     releases ship one file per flash layout (the UV-5R Mini), the drop zone takes the release's two files at once and
+     lists their layouts ("Flash layouts: L1, L2."); one file works too. Two files of one layout, files of different
+     releases, and a retired `V4` file are refused
+     ([releases](releases.md#uv-5r-mini-rows-one-per-flash-layout)).
 3. **Stock firmware** — the stock sources (the vendor's download link, or how to ask the vendor, and any unofficial
    mirror, labelled; all plain links: Studio never fetches them), the expected zip and
    file names, and a drop zone for the zip or the extracted files. Studio checks every file against the pinned hashes.
+   A radio whose release files are built on different stocks (the UV-5R Mini: the L1 file on v0.04, the L2 file on
+   v0.27) takes either stock file or both; each file is then prepared on its own stock
+   ([UV-5R Mini: one stock per base](../../reference/radios/baofeng/uv-5r-mini/firmware.md#stock-firmware-pin)).
 4. **Prepare** — builds the exact image (applying the patch and checking its result hash) and runs the updater's
    interlocks. Shows what will be flashed ("MM9PDY modded firmware 1.0.0 (published)", "MM9PDY modded firmware 1.1.0
    (unreviewed user-supplied patch)" or "stock firmware v1.01.048"), the
    version stamp and the result hashes. A failure, such as a patch made for different stock, stops here; nothing is
    sent.
    For a radio whose firmware comes in more than one flash layout (the UV-5R Mini; the factory firmware's packing,
-   not the board), the step first finds the radio's layout and prepares the image for it. **Read the radio** reads, in
-   normal mode and read-only, the radio report an MM9PDY build answers; with no report, or when the read fails, the
-   step asks the Firmware and Hardware lines of its Radio Info screen
-   ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md#the-radio-report)).
+   not the board), the step first finds the radio's stock base (UV-5R Mini: suffix and Firmware version) and layout,
+   and prepares the release's file for exactly that; it never offers the nearest build. A release with no file for it
+   shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." and prepares nothing; one
+   with no other file for this radio says "If the radio refuses this L2 file, this release has no other file for this
+   radio to try." **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers;
+   with no report, or when the read fails, the step asks three dropdowns of the supported values: Firmware (`V0.04`,
+   `V0.27`, `Other`) and Hardware (`V1.7`, `Other`) from Radio Info, and the suffix (`NRF`, `NRFB`, `Other`) from the
+   start-up screen shown while holding `8`. `Other` is refused, and so is a combination with no build. A warning says to
+   pick exactly what the radio shows: a wrong Firmware or suffix pick is refused with nothing installed but may reset
+   its FM presets and volume, while a wrong Hardware pick, or a radio Studio doesn't know yet, may not be caught
+   ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md#radio-info)). Studio never
+   changes a radio's code base: the radio's interlocks refuse a file built on another one.
    When the radio already runs the image's build (on the UV-5R Mini: the build name the radio reports is the image's,
    or a to-stock file for a radio that names no build), the step shows a warning instead: writing it again rewrites the
    same firmware, a repair, with the usual power-cut risk. Nothing is prepared, and the wizard can't move on, until
@@ -165,6 +180,16 @@ hidden there).
    its verify hint and a plain-text summary (copy or download as `.txt`). The message depends on how the session
    ended (see [What to expect](#what-to-expect)). A failure before the radio was touched says nothing was written.
    A failure after it shows the recovery steps.
+   A refusal before anything was installed (on the UV-5R Mini: the loader's `0x8F`, or the app's `0x83` before any
+   erase; the file is for the other flash layout) shows **Nothing was installed** instead, even though the loader ran,
+   with the updater's words (the FM presets and volume may have been reset). When the release has a file for the
+   other layout of the same variant (UV-5R Mini: the same NRF/NRFB suffix), the panel offers **Enter update mode
+   again with the L2 file** (or L1): Studio prepares that file, on its own stock, for that layout and runs every check
+   again, keeps the before-you-flash ticks, probe and safety backup, and goes back to **Enter update mode**. Nothing is
+   sent until you put the radio into update mode and press **Connect and flash**. It is offered once per flash; a
+   second refusal, or a release with no such file (today's Mini releases: their two files differ in suffix), offers
+   nothing more
+   ([UV-5R Mini results](../../reference/radios/baofeng/uv-5r-mini/firmware.md#results)).
 
 ## What to expect
 
@@ -195,6 +220,9 @@ max … ms`. A failed flash records the timing up to the failure.
 | `stock`      | The user's verified stock, unchanged                    | `Firmware: stock firmware <version>`                                                |
 | `published`  | A published release, or a dropped file identical to one | `Firmware: <project> <tag> (published, patch sha256 <hash>)`                        |
 | `unreviewed` | Any other patch file from disk                          | `Firmware: <project> <version> (user-supplied patch, sha256 <hash>, version <ver>)` |
+
+A dropped file identical to a published release gets the same checks as a download of that release: the row's
+version, stock, result hashes, `base` and `layout` must agree with the patch.
 
 `<project>` is the firmware project's display name, looked up by the patch `name` in
 `src/core/firmware/releases/projects.ts` (`FIRMWARE_PROJECTS`). The DM-32UV and AT-D890UV patch projects are both

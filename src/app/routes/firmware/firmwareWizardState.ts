@@ -45,6 +45,17 @@ export interface FirmwareWizardState {
    * warning at Prepare. Cleared whenever the image would change.
    */
   readonly reinstallConfirmed: boolean;
+  /**
+   * Set once the radio refused the file for one flash layout before installing anything and the operator chose the
+   * release's file for the other layout (`from` → `to`). Offered once per flash: while set, no further retry is offered.
+   * Prepare uses `to` as the radio's layout. Cleared whenever the choice, stock or radio answers change.
+   */
+  readonly layoutRetry: {
+    readonly from: string;
+    readonly to: string;
+    /** The stock base of the file prepared for `to`: the radio's base, if the retry is right. */
+    readonly toBase?: string;
+  } | null;
   readonly checks: Readonly<Record<PreflightCheck, boolean>>;
   /** What the selected radio's descriptor asks for on top of the generic checks. */
   readonly radioPreflight: {
@@ -121,6 +132,12 @@ export type FirmwareWizardAction =
   | { type: 'setRadioInfo'; patch: Partial<RadioInfoAnswers> }
   | { type: 'radioRead'; status: RadioReadStatus | null }
   | { type: 'setReinstallConfirmed'; value: boolean }
+  /**
+   * The radio refused the image for `from` before installing anything: swap in `image`, the release's other layout's
+   * file, already prepared and checked by the interlocks, and go back to update mode. Keeps the preflight ticks, probe
+   * and safety backup; drops the reinstall confirm. Ignored once a retry has been used.
+   */
+  | { type: 'retryOtherLayout'; from: string; image: PreparedFirmwareImage }
   | { type: 'setCheck'; check: PreflightCheck; value: boolean }
   | { type: 'setRadioCheck'; id: string; value: boolean }
   | { type: 'probePassed'; summary: string }
@@ -149,9 +166,10 @@ export const INITIAL_FIRMWARE_WIZARD_STATE: FirmwareWizardState = {
   riskAccepted: false,
   stock: null,
   image: null,
-  radioInfo: { firmware: '', hardware: '' },
+  radioInfo: { firmware: '', hardware: '', suffix: '' },
   radioRead: null,
   reinstallConfirmed: false,
+  layoutRetry: null,
   checks: NO_CHECKS,
   radioPreflight: { attestationIds: [], probe: false },
   radioChecks: {},
@@ -257,6 +275,7 @@ export function firmwareWizardReducer(
         riskAccepted: false,
         image: null,
         reinstallConfirmed: false,
+        layoutRetry: null,
         checks: NO_CHECKS,
         radioChecks: {},
         probe: null,
@@ -272,6 +291,7 @@ export function firmwareWizardReducer(
         stock: action.stock,
         image: null,
         reinstallConfirmed: false,
+        layoutRetry: null,
         checks: NO_CHECKS,
         radioChecks: {},
         probe: null,
@@ -283,6 +303,7 @@ export function firmwareWizardReducer(
         stock: null,
         image: null,
         reinstallConfirmed: false,
+        layoutRetry: null,
         checks: NO_CHECKS,
         radioChecks: {},
         probe: null,
@@ -299,6 +320,7 @@ export function firmwareWizardReducer(
         radioInfo: { ...state.radioInfo, ...action.patch },
         image: null,
         reinstallConfirmed: false,
+        layoutRetry: null,
         checks: NO_CHECKS,
         radioChecks: {},
         probe: null,
@@ -311,6 +333,7 @@ export function firmwareWizardReducer(
         radioRead: action.status,
         image: null,
         reinstallConfirmed: false,
+        layoutRetry: null,
         checks: NO_CHECKS,
         radioChecks: {},
         probe: null,
@@ -328,6 +351,22 @@ export function firmwareWizardReducer(
         probe: null,
         probeSkipped: false,
       };
+    case 'retryOtherLayout': {
+      // Once per flash, and only to an image prepared for a layout other than the refused one.
+      const to = action.image.radioLayout;
+      if (state.layoutRetry || !to || to === action.from) return state;
+      return {
+        ...state,
+        step: 'updateMode',
+        image: action.image,
+        reinstallConfirmed: false,
+        layoutRetry: {
+          from: action.from,
+          to,
+          ...(action.image.baseName ? { toBase: action.image.baseName } : {}),
+        },
+      };
+    }
     case 'setCheck':
       return { ...state, checks: { ...state.checks, [action.check]: action.value } };
     case 'setRadioCheck':
