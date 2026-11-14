@@ -42,6 +42,18 @@ export function stockFirmwareTitle(version: string): string {
   return `stock firmware ${version}`;
 }
 
+/**
+ * 'For the Baofeng UV-5R Mini on stock v0.27 (NRF)': the radios a release row is for, from its `supports`. Undefined
+ * when the summary has none (a radio with one stock version: every release is for it).
+ */
+export function releaseSupportsLine(
+  radioLabel: string,
+  supports: readonly string[] | undefined,
+): string | undefined {
+  if (!supports?.length) return undefined;
+  return `For the ${radioLabel} on stock ${supports.join(' or ')}`;
+}
+
 /** 'MM9PDY modded firmware 1.0.0' for a loaded patch: its published release when matched, else its own name and version. */
 export function loadedFirmwarePatchTitle(loaded: LoadedFirmwarePatch): string {
   if (loaded.release) return firmwareReleaseTitle(loaded.release.patchName, loaded.release.tag);

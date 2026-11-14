@@ -863,9 +863,13 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
       vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([
         { ...DM32, stock: { ...DM32.stock, supportedRadios: 'radios on V9.99.' } },
       ]);
+      vi.mocked(flash.listPublishedReleases).mockResolvedValue([
+        { ...FINAL, supports: ['v9.9 (A)'] },
+      ]);
       renderPage();
       expect(screen.getByText('Supported: radios on V9.99.')).toBeInTheDocument();
       expect(await screen.findByText('Summary of 1.0.0.')).toBeInTheDocument();
+      expect(screen.getByText('For the Baofeng DM-32UV on stock v9.9 (A)')).toBeInTheDocument();
     });
 
     it('says when the list cannot be downloaded, and retries', async () => {
@@ -941,6 +945,21 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
     await waitFor(() => expect(flash.loadChosenPatch).toHaveBeenCalled());
     const choice = vi.mocked(flash.loadChosenPatch).mock.calls[0]![1];
     expect(choice.kind === 'user-patch' && choice.otherFiles).toBeUndefined();
+  });
+
+  it('says which radios a release is for, where the summary names its stock versions', async () => {
+    vi.mocked(flash.listPublishedReleases).mockResolvedValue([
+      { ...FINAL, supports: ['v9.9 (A)', 'v8.8 (B)'] },
+    ]);
+    await toFirmwareStep();
+    expect(
+      screen.getByText('For the Baofeng DM-32UV on stock v9.9 (A) or v8.8 (B)'),
+    ).toBeInTheDocument();
+  });
+
+  it('adds no such line to a release without stock versions', async () => {
+    await toFirmwareStep();
+    expect(screen.queryByText(/^For the /)).toBeNull();
   });
 
   it('lists finals, and adds release candidates on request', async () => {

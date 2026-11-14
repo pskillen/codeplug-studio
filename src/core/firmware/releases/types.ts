@@ -56,6 +56,11 @@ export interface FirmwareReleaseSummary {
   readonly channel: FirmwareReleaseChannel | 'unknown';
   readonly provenance: 'published' | 'unreviewed';
   readonly release?: PublishedFirmwareRelease;
+  /**
+   * The stock versions the release's files are built on, in the radio's stock order (UV-5R Mini `v0.27 (NRF)`), so its
+   * row can say which radios it is for. Set only for a radio that accepts more than one stock version.
+   */
+  readonly supports?: readonly string[];
 }
 
 export interface LoadedFirmwarePatch {

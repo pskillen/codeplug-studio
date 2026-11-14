@@ -5,6 +5,7 @@ import {
   syntheticDm32Release,
   syntheticUv5rMiniRelease,
 } from './__fixtures__/syntheticReleases.ts';
+import { UV5RMINI_STOCK_FIRMWARE } from '../../radios/baofeng/uv-5r-mini/firmware.ts';
 import { uv5rMiniVariantOfBase } from '../../radios/baofeng/uv-5r-mini/radioInfo.ts';
 import {
   fileBase,
@@ -55,6 +56,38 @@ describe('published release with one row per flash layout', () => {
     expect(patchForLayout(loaded, 'L1')!.sha256).toBe(l1.patchSha256);
     expect(partnerFor(loaded, 'L2')!.sha256).toBe(l1.patchSha256);
     expect(partnerFor(loaded, 'L1')!.sha256).toBe(l2.patchSha256);
+  });
+
+  it("says which stock versions a release's rows are on, in the radio's stock order", async () => {
+    const { row } = await syntheticUv5rMiniRelease({ layout: 'L2' });
+    const v027 = { ...row, stockVersion: 'v0.27 (NRF)' };
+    const v004 = { ...row, layout: 'L1', stockVersion: 'v0.04 (NRFB)' };
+    const only = createPublishedFirmwareReleaseSource(rowsOf(v027), [UV5RMINI_STOCK_FIRMWARE]);
+    expect((await only.listReleases(MINI, { includeRc: false }))[0]!.supports).toEqual([
+      'v0.27 (NRF)',
+    ]);
+    const both = createPublishedFirmwareReleaseSource(rowsOf(v004, v027), [
+      UV5RMINI_STOCK_FIRMWARE,
+    ]);
+    const list = await both.listReleases(MINI, { includeRc: false });
+    expect(list).toHaveLength(1);
+    expect(list[0]!.supports).toEqual(['v0.27 (NRF)', 'v0.04 (NRFB)']);
+    // Another version's rows are not counted.
+    const other = createPublishedFirmwareReleaseSource(
+      rowsOf(v027, { ...v004, tag: '9.9.8', publishedOn: '2025-01-01' }),
+      [UV5RMINI_STOCK_FIRMWARE],
+    );
+    expect((await other.listReleases(MINI, { includeRc: false })).map((s) => s.supports)).toEqual([
+      ['v0.27 (NRF)'],
+      ['v0.04 (NRFB)'],
+    ]);
+  });
+
+  it('gives no stock versions for a radio with one', async () => {
+    const { row } = await syntheticDm32Release();
+    const source = createPublishedFirmwareReleaseSource(rowsOf(row));
+    const [summary] = await source.listReleases('baofeng-dm32uv', { includeRc: false });
+    expect(summary).not.toHaveProperty('supports');
   });
 
   it('has no partner for a release with one row only', async () => {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
+import { releaseSupportsLine } from '@core/firmware/releases/projects.ts';
 import type { FirmwareReleaseSummary } from '@core/firmware/releases/types.ts';
 import type { FirmwareUpdaterDescriptor } from '@integrations/radio-io';
 
@@ -54,6 +55,8 @@ function RadioReleases({
   }, [updater.radioId, includeRc, key]);
 
   const value: Listing = listing?.key === key ? listing.value : { kind: 'loading' };
+  const supportsLine = (summary: FirmwareReleaseSummary) =>
+    releaseSupportsLine(updater.stock.label, summary.supports);
 
   return (
     <Panel title={updater.stock.label} sub={`Built on stock firmware ${updater.stock.version}`}>
@@ -82,6 +85,9 @@ function RadioReleases({
                   {summary.title}
                   {summary.channel === 'rc' ? <Pill tone="warning">Pre-release</Pill> : null}
                 </span>
+                {supportsLine(summary) ? (
+                  <span className={classes.cardMeta}>{supportsLine(summary)}</span>
+                ) : null}
                 <span className={classes.cardMeta}>Published {summary.release!.publishedOn}</span>
                 <span className={classes.copy}>{summary.release!.summary}</span>
                 <ReleaseNotesDisclosure summary={summary} />
