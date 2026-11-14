@@ -16,7 +16,10 @@ function extensionOf(fileName: string): string | null {
 
 /** The copy for a radio that takes one stock file per stock version (`severalStocks`). */
 export const STOCK_PER_VERSION_COPY =
-  'Each release file is built on one of the stock versions below. Supply the one your radio runs; with both, Studio can prepare whichever file the release has for your radio.';
+  "Studio needs the stock file for your radio's firmware: one of the files below, not both. If you aren't sure which your radio runs, supply both and Studio uses the right one.";
+
+/** The heading over the stock files for a radio that takes one per stock version: one of them, not all. */
+export const STOCK_ONE_OF_HEADING = "Studio needs one of these, the one for your radio's firmware:";
 
 /** The operator supplies the vendor's stock firmware; Studio checks it against the pinned hashes, in memory only. */
 export default function StockStep({ state, dispatch, updater }: WizardStepProps) {
@@ -128,13 +131,17 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
         </div>
         <div>
           <span className={classes.muted}>
-            {stock.zip ? 'Files Studio needs from the zip:' : 'Files Studio needs:'}
+            {stock.zip
+              ? 'Files Studio needs from the zip:'
+              : stock.severalStocks
+                ? STOCK_ONE_OF_HEADING
+                : 'Files Studio needs:'}
           </span>
           <ul className={classes.list}>
             {members.map((m) => (
               <li key={m.fileName}>
                 <span className={classes.mono}>{m.fileName}</span> ({m.size.toLocaleString()} bytes)
-                {m.version ? `: stock ${m.version}` : ''}
+                {m.version ? `: for stock firmware ${m.version}` : ''}
               </li>
             ))}
           </ul>

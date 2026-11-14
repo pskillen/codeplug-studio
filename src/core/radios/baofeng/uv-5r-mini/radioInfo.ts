@@ -95,7 +95,7 @@ export const UV5RMINI_SUFFIX_HELP =
 
 export const UV5RMINI_RADIO_LAYOUT_QUESTION: FirmwareRadioLayoutQuestion = {
   intro:
-    "The UV-5R Mini's factory firmware is packed in one of two flash layouts, and each release has one file per layout, built for one firmware version and suffix. Three things the radio shows tell Studio which file is this radio's; Studio can't read them over the cable.",
+    "Each release has a file for each UV-5R Mini firmware it supports. Three things the radio shows tell Studio which file is for your radio's firmware; Studio can't read them over the cable.",
   steps: [
     'Pick the Firmware and Hardware lines from the Radio Info screen (MENU → Radio Info).',
     'Pick the suffix from the start-up screen, as described under it.',
@@ -113,7 +113,7 @@ export const UV5RMINI_RADIO_LAYOUT_QUESTION: FirmwareRadioLayoutQuestion = {
   resolve: uv5rMiniLayoutFromRadioInfo,
   report: {
     intro:
-      "The UV-5R Mini's factory firmware is packed in one of two flash layouts, and each release has one file per layout. Studio reads the radio to find out which one it has. The read writes nothing.",
+      "Each release has a file for each UV-5R Mini firmware it supports. Studio reads the radio to find out which file is for your radio's firmware. The read writes nothing.",
     steps: [
       'Switch the radio on normally (not in update mode) and connect the programming cable.',
       "Choose Read the radio and pick the cable's port.",

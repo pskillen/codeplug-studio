@@ -19,7 +19,7 @@ import {
   INITIAL_FIRMWARE_WIZARD_STATE,
   type FirmwareWizardState,
 } from '../firmwareWizardState.ts';
-import FlashStep from './FlashStep.tsx';
+import FlashStep, { RETRY_OTHER_FILE_LABEL } from './FlashStep.tsx';
 
 vi.mock('../../../services/firmwareFlash.ts', () => ({
   grantFirmwarePort: vi.fn(),
@@ -66,7 +66,7 @@ const OTHER_LAYOUT_0X8F = {
   image: L1_IMAGE,
   code: 'nothingInstalled',
   message:
-    'The file is for the other flash layout; the radio refused it. Its FM presets and volume may have been reset; nothing else changed.',
+    "The file isn't for this radio's firmware; the radio refused it. Its FM presets and volume may have been reset; nothing else changed.",
   position: 'result',
   radioTouched: true,
   startedAt: 'now',
@@ -138,7 +138,7 @@ async function flashWith(outcome: FirmwareFlashOutcome) {
   await screen.findByTestId('firmware-flash-summary');
 }
 
-const RETRY = 'Enter update mode again with the L2 file';
+const RETRY = RETRY_OTHER_FILE_LABEL;
 
 beforeEach(() => {
   vi.mocked(flash.runFirmwareFlash).mockReset();
@@ -155,6 +155,9 @@ describe('FlashStep: a refusal before anything was installed', () => {
     expect(screen.queryByText('Recover the radio')).toBeNull();
     expect(screen.queryByText(/Don't keep power-cycling the radio/)).toBeNull();
     expect(screen.getByRole('button', { name: RETRY })).toBeInTheDocument();
+    // The flash layout is an internal detail (#1670): the user is told about their radio's firmware.
+    expect(screen.getByText(/this file isn't for your radio's firmware/)).toBeInTheDocument();
+    expect(screen.queryByText(/flash layout|the L2 file/)).toBeNull();
     // The progress dialog's plain Retry would resend the refused file: not offered here.
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
     // Nothing is prepared or sent until the operator asks.
@@ -230,9 +233,7 @@ describe('FlashStep: a refusal before anything was installed', () => {
       vi.mocked(flash.runFirmwareFlash).mockReset();
       const view = show(<Harness image={refused} />);
       await flashWith({ ...OTHER_LAYOUT_0X8F, image: refused });
-      fireEvent.click(
-        screen.getByRole('button', { name: `Enter update mode again with the ${to} file` }),
-      );
+      fireEvent.click(screen.getByRole('button', { name: RETRY }));
       await waitFor(() => expect(latest.step).toBe('updateMode'));
       const call = vi.mocked(flash.prepareFlash).mock.calls[0]!;
       expect(call[4]).toBe(to);
@@ -268,7 +269,7 @@ describe('FlashStep: a refusal before anything was installed', () => {
   it('is offered once per flash: after the retry, a second refusal offers nothing', async () => {
     show(<Harness image={L2_IMAGE} layoutRetry={{ from: 'L1', to: 'L2' }} />);
     await flashWith({ ...OTHER_LAYOUT_0X8F, image: L2_IMAGE });
-    expect(screen.getByText(/refused the L1 file and then the L2 file/)).toBeInTheDocument();
+    expect(screen.getByText(/refused both of this release's files for it/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Enter update mode again with/ })).toBeNull();
   });
 

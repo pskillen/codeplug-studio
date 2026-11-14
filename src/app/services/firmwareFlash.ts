@@ -157,22 +157,25 @@ export async function loadChosenPatch(
 /**
  * The refusal at Prepare for a release with files by layout but none for this radio: none for its layout or, where the
  * radio's stock base is known, none on that base. Where the release has the radio's base but not its layout
- * (`layoutsOnBase`, the layouts it has on that base), the refusal names both. Never the nearest build instead.
+ * (`layoutsOnBase`, the layouts it has on that base), the refusal says in plain words that the radio's flash is laid out
+ * differently from the one that file was built for. Never the nearest build
+ * instead. The flash layout is an internal detail (#1670): the refusal names the radio's firmware, never a layout; with
+ * developer mode on, Prepare shows the layout beside it.
  */
 export const NO_FILE_FOR_LAYOUT = (
-  layout: string,
-  have: readonly string[],
+  _layout: string,
+  _have: readonly string[],
   base?: string,
   haveBases: readonly string[] = [],
   layoutsOnBase: readonly string[] = [],
 ): string => {
   if (base === undefined) {
-    return `Not available in this release: it has no file for this radio's flash layout (${layout}), only for ${have.join(' and ')}.`;
+    return "Not available in this release: it has no file for this radio's firmware.";
   }
   if (layoutsOnBase.length) {
-    return `Not available in this release: there is no MM9PDY build for this radio (${base}, flash layout ${layout}) yet. On ${base}, this release has a file only for ${layoutsOnBase.join(' and ')}.`;
+    return `Not available in this release: this radio runs ${base}, but its flash is laid out differently from the radios this release's ${base} file was built for, so that file can't be installed on it. Use a release that has a file for this radio.`;
   }
-  return `Not available in this release: there is no MM9PDY build for this radio (${base}) yet. This release has a file only for ${haveBases.length ? haveBases.join(' and ') : have.join(' and ')}.`;
+  return `Not available in this release: there is no MM9PDY build for this radio (${base}) yet.${haveBases.length ? ` This release has a file only for ${haveBases.join(' and ')}.` : ''}`;
 };
 
 /**

@@ -237,8 +237,12 @@ describe('no interlock reads developer mode (#1650, #1657)', () => {
     'src/app/routes/firmware',
   ];
   // The page decides which radios are offered, so it alone may read the gate. Nothing it
-  // passes down may carry developer mode into a step.
-  const MAY_READ_THE_GATE = ['src/app/routes/firmware/FirmwareFlasherPage.tsx'];
+  // passes down may carry developer mode into a step. DeveloperOnly only shows internal detail
+  // (the flash layout, #1670) and hands nothing back to a step.
+  const MAY_READ_THE_GATE = [
+    'src/app/routes/firmware/FirmwareFlasherPage.tsx',
+    'src/app/routes/firmware/steps/DeveloperOnly.tsx',
+  ];
   const READS_DEVELOPER_MODE =
     /isDeveloperModeOn|useDeveloperMode|DEVELOPER_MODE_KEY|codeplug-studio:developerMode|preferences\/developerMode|prodFeatureGate|firmwareFlashEnvGate/;
 
@@ -259,6 +263,15 @@ describe('no interlock reads developer mode (#1650, #1657)', () => {
       .filter((f) => !MAY_READ_THE_GATE.includes(f))
       .filter((f) => READS_DEVELOPER_MODE.test(readFileSync(join(repoRoot, f), 'utf8')));
     expect(readers).toEqual([]);
+  });
+
+  it('DeveloperOnly hands nothing back: it renders its children or nothing, and exports only that', () => {
+    const src = readFileSync(
+      join(repoRoot, 'src/app/routes/firmware/steps/DeveloperOnly.tsx'),
+      'utf8',
+    );
+    expect(src.match(/^export /gm)).toEqual(['export ']);
+    expect(src).toMatch(/return on \? <>\{children\}<\/> : null;/);
   });
 
   it('scans the flasher app layer, and the allow-list names files that exist and read the gate', () => {

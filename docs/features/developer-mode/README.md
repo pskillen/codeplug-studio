@@ -5,8 +5,9 @@
 A hidden, per-device switch, like Android's "tap the build number", on every build, prod and the Android app
 included. On the production site it shows the features prod hides: the Debug pages, firmware flashing for radios whose
 updater is still prod-gated, and Write on radio profiles marked prod-only-hidden. On every other build (local, next, dev, staging) those features are always shown, so
-developer mode changes nothing there except the badge, and, in the Android app on any build, the UV-5R Mini's
-firmware flasher (the one exception under [What it never changes](#what-it-never-changes)).
+developer mode changes nothing there except the badge, the [detail it shows](#detail-it-shows), and, in the Android
+app on any build, the UV-5R Mini's firmware flasher (the one exception under
+[What it never changes](#what-it-never-changes)).
 
 **Source:** `src/app/services/prodFeatureGate.ts` (the gate), `src/integrations/preferences/developerMode.ts`
 (storage), `src/app/services/developerModeTaps.ts` (the gesture), `src/app/hooks/useDeveloperMode.ts`,
@@ -33,6 +34,16 @@ when the page opened so a running flash is never cut off. On prod, turning it of
 | Codeplug Write and Restore  | `prodWriteDisabled` on a radio-io descriptor or compatible profile  | `resolveRadioWriteGate`    |
 
 Nothing else changes for anyone who never taps.
+
+## Detail it shows
+
+On every build, developer mode also shows internal detail an ordinary user never needs:
+
+- **The UV-5R Mini's flash layout** (`L1`, `L2`) in the firmware flasher: on Prepare ("Flash layout: L2" with the
+  prepared image, or beside a refusal), on a refused file's retry banner, and as the layouts of patch files from disk.
+  Without it the flasher says "your radio's firmware"
+  ([firmware flashing](../firmware-flashing/README.md#wizard-steps)). Display only: which file is prepared, and every
+  check on it, is the same either way.
 
 ## The gate
 

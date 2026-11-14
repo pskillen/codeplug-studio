@@ -287,7 +287,7 @@ describe('checkUv5rMiniImage — layout loaders', () => {
       expect(run).toThrow(UV5RMINI_OTHER_LAYOUT_REFUSAL);
     }
     expect(UV5RMINI_OTHER_LAYOUT_REFUSAL).toBe(
-      'This file is for the other flash layout; nothing was sent.',
+      "This file isn't for this radio's firmware; nothing was sent.",
     );
   });
 

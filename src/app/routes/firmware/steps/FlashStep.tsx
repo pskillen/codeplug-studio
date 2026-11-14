@@ -160,8 +160,7 @@ export default function FlashStep({
     } catch (err) {
       setRetryPrep({
         busy: false,
-        error:
-          err instanceof Error ? err.message : `The ${partner.layout} file could not be prepared.`,
+        error: err instanceof Error ? err.message : 'The other file could not be prepared.',
       });
     }
   }
@@ -373,6 +372,9 @@ export default function FlashStep({
 /** The error code of a refusal before anything was installed (`RadioNothingInstalledError`). */
 const NOTHING_INSTALLED = 'nothingInstalled';
 
+/** The button that prepares the release's other file for this radio after a refusal. */
+export const RETRY_OTHER_FILE_LABEL = 'Enter update mode again with the other file';
+
 /** After a refusal before anything was installed: the other layout's file on offer, already tried, or none. */
 type LayoutRetryOffer =
   | { kind: 'offer'; to: string; busy: boolean; error: string | null }
@@ -474,9 +476,9 @@ function FlashResult({
           {retry.kind === 'offer' ? (
             <>
               <p className={classes.copy}>
-                The refusal means this radio has the other flash layout. This release has a{' '}
-                {retry.to} file: Studio prepares and checks it, then you put the radio into update
-                mode again and press Connect. Nothing is sent until you do.
+                The refusal means this file isn't for your radio's firmware. This release has one
+                other file for this radio: Studio prepares and checks it, then you put the radio
+                into update mode again and press Connect. Nothing is sent until you do.
               </p>
               {retry.error ? (
                 <StatusBanner tone="warning">
@@ -490,21 +492,21 @@ function FlashResult({
                   onClick={onRetryOtherLayout}
                   disabled={retry.busy}
                 >
-                  {retry.busy ? 'Preparing…' : `Enter update mode again with the ${retry.to} file`}
+                  {retry.busy ? 'Preparing…' : RETRY_OTHER_FILE_LABEL}
                 </Button>
               </div>
             </>
           ) : retry.kind === 'used' ? (
             <p className={classes.copy}>
-              The radio refused the {retry.from} file and then the {retry.to} file. Studio offers no
-              further file. Switch the radio off and on, and keep the summary below for a report.
+              The radio refused both of this release's files for it. Studio offers no further file.
+              Switch the radio off and on, and keep the summary below for a report.
             </p>
           ) : (
             <>
               <p className={classes.copy}>
-                This release has no other file for this radio (the other flash layout, same suffix),
-                so Studio has nothing else to send. Check the answers on Prepare match the radio.
-                Switch the radio off and on; it boots its installed firmware.
+                This release has no other file for this radio, so Studio has nothing else to send.
+                Check the answers on Prepare match the radio. Switch the radio off and on; it boots
+                its installed firmware.
               </p>
               <div>
                 <Button variant="secondary" size="sm" onClick={onChooseFirmware}>

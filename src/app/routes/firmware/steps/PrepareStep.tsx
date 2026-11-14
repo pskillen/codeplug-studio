@@ -21,6 +21,7 @@ import {
 } from '../../../services/firmwareFlash.ts';
 import classes from '../FirmwareFlasherPage.module.css';
 import type { RadioReadStatus } from '../firmwareWizardState.ts';
+import DeveloperOnly from './DeveloperOnly.tsx';
 import LabeledCheck from './LabeledCheck.tsx';
 import { shortHash, type WizardStepProps } from './stepTypes.ts';
 
@@ -178,8 +179,8 @@ function ReadRadio({
 }
 
 /** Shown with the image when the release has no other file for this radio to try after a refusal. */
-const NO_PARTNER_NOTE = (layout: string): string =>
-  `If the radio refuses this ${layout} file, this release has no other file for this radio to try.`;
+export const NO_PARTNER_NOTE =
+  'If the radio refuses this file, this release has no other file for this radio to try.';
 
 /** The confirm for an updater's "already runs this build" warning. */
 const REINSTALL_CONFIRM_LABEL = 'Write it again anyway';
@@ -189,6 +190,7 @@ const needsConfirm = (err: unknown): err is RadioIoError =>
 
 /** Build the exact image to flash and run the radio's safety checks. Nothing is sent to the radio here. */
 export default function PrepareStep({ state, dispatch, updater }: WizardStepProps) {
+  // The flash layout is an internal detail (#1670): shown only through DeveloperOnly, which no check reads.
   const { stock, image, choice, loadedPatch, radioInfo, radioRead, reinstallConfirmed } = state;
   const question = updater.stock.radioLayout;
   // The radio is read first when it may report about itself; the question is asked only without a report.
@@ -354,8 +356,10 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
         ) : null}
         {layoutRetry && answer?.kind === 'layout' ? (
           <StatusBanner tone="info">
-            The radio refused the {layoutRetry.from} file before installing anything, so Studio
-            prepares the {layoutRetry.to} file.
+            The radio refused the first file before installing anything, so Studio prepares this
+            release's other file for it
+            <DeveloperOnly>{` (${layoutRetry.from} refused, ${layoutRetry.to} next)`}</DeveloperOnly>
+            .
           </StatusBanner>
         ) : null}
         {answer?.kind === 'layout' && answer.details ? (
@@ -374,6 +378,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
         {unavailable && !image ? (
           <StatusBanner tone="warning">
             {unavailable} Nothing was prepared or sent to the radio.
+            {radioLayout ? <DeveloperOnly>{` Flash layout: ${radioLayout}.`}</DeveloperOnly> : null}
           </StatusBanner>
         ) : null}
         {error ? (
@@ -401,8 +406,12 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
             <ul className={classes.list}>
               <li>Stock firmware: {image.stockVersion}</li>
               {image.versionStamp ? <li>Version stamp: {image.versionStamp}</li> : null}
-              {image.radioLayout ? <li>Flash layout: {image.radioLayout}</li> : null}
-              {noPartner ? <li>{NO_PARTNER_NOTE(image.radioLayout!)}</li> : null}
+              {image.radioLayout ? (
+                <DeveloperOnly>
+                  <li>Flash layout: {image.radioLayout}</li>
+                </DeveloperOnly>
+              ) : null}
+              {noPartner ? <li>{NO_PARTNER_NOTE}</li> : null}
               {Object.entries(image.sha256).map(([role, sha]) => (
                 <li key={role}>
                   {role}: <span className={classes.mono}>{shortHash(sha)}</span>

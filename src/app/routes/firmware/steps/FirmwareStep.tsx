@@ -22,6 +22,7 @@ import {
 } from '../../../services/firmwareFlash.ts';
 import classes from '../FirmwareFlasherPage.module.css';
 import ReleaseNotesDisclosure from '../ReleaseNotesDisclosure.tsx';
+import DeveloperOnly from './DeveloperOnly.tsx';
 import LabeledCheck from './LabeledCheck.tsx';
 import { shortHash, type WizardStepProps } from './stepTypes.ts';
 
@@ -304,7 +305,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
               }
               hint={
                 releaseLayouts
-                  ? `A release has one file per flash layout (${releaseLayouts.layouts.join(', ')}). Pick both: Studio uses the one for your radio. One file works too.`
+                  ? "A release has a file for each radio firmware it supports. Pick them all: Studio uses the one for your radio's firmware. One file works too."
                   : undefined
               }
               multiple={releaseLayouts ? true : undefined}
@@ -328,9 +329,11 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
               </StatusBanner>
             ) : null}
             {userFile?.loaded && loadedLayouts(userFile.loaded).length ? (
-              <p className={classes.muted}>
-                Flash layouts: {loadedLayouts(userFile.loaded).join(', ')}.
-              </p>
+              <DeveloperOnly>
+                <p className={classes.muted}>
+                  Flash layouts: {loadedLayouts(userFile.loaded).join(', ')}.
+                </p>
+              </DeveloperOnly>
             ) : null}
             {unreviewed ? (
               <>
