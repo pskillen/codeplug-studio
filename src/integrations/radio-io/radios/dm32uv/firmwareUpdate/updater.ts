@@ -158,6 +158,7 @@ export function createDm32FirmwareUpdater(opts: Dm32FirmwareUpdaterOptions = {})
             stage: phase,
             phase,
             radioTouched,
+            written: { done: blocksDone, total: dataFrames, unit: 'blocks' },
           };
           flashOpts.onProgress?.(update);
         };

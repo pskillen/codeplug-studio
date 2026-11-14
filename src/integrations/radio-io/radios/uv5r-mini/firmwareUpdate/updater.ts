@@ -284,7 +284,8 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
         let frames = session0.writes;
         let dataFrames = 0;
         let seen = 0;
-        let servedInArea = 0;
+        // Distinct bytes the loader has read, not the sum of its reads: on a slow host it can ask for a block twice.
+        const covered = createCoveredBytes();
 
         const emit = (cur: number, max: number, phase: FirmwareFlashPhase, msg: string) => {
           const update: FirmwareFlashProgress = {
@@ -294,6 +295,7 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
             stage: phase,
             phase,
             radioTouched,
+            ...(max > 0 ? { written: { done: cur, total: max, unit: 'bytes' as const } } : {}),
           };
           flashOpts.onProgress?.(update);
         };
@@ -326,10 +328,10 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
                 break;
               case 'read':
                 if (s.areaLength !== undefined && s.areaLength > 0 && e.inImage) {
-                  servedInArea += e.len;
+                  covered.add(e.off, e.len);
                   progressPhase = 'transfer';
                   emit(
-                    Math.min(servedInArea, s.areaLength),
+                    Math.min(covered.total(), s.areaLength),
                     s.areaLength,
                     'transfer',
                     'Sending the firmware',
@@ -339,7 +341,7 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
               case 'result':
                 progressPhase = 'finish';
                 emit(
-                  Math.min(servedInArea, s.areaLength ?? 0),
+                  Math.min(covered.total(), s.areaLength ?? 0),
                   s.areaLength ?? 0,
                   'finish',
                   'Finishing',
@@ -416,7 +418,7 @@ export function createUv5rMiniFirmwareUpdater(): FirmwareUpdater {
           end: 'acknowledged',
           note: outcome.note,
         };
-        emit(Math.min(servedInArea, s.areaLength ?? 0), s.areaLength ?? 0, 'finish', 'Finished');
+        emit(Math.min(covered.total(), s.areaLength ?? 0), s.areaLength ?? 0, 'finish', 'Finished');
         return result;
       } catch (err) {
         const cause = err;
@@ -490,4 +492,31 @@ export function describeUv5rMiniResult(
   else if (code === 0x8a) text += UV5RMINI_MSG.appOtherStock;
   else if (code !== 0x86 && code !== 0x83) text += ` (Result ${hex2(code ?? 0)}.)`;
   return { error: text };
+}
+
+/** The union of byte ranges read so far, for the progress count. Reads arrive in order, so the list stays short. */
+export function createCoveredBytes(): { add(off: number, len: number): void; total(): number } {
+  const ranges: [number, number][] = [];
+  let sum = 0;
+  return {
+    add(off, len) {
+      if (len <= 0) return;
+      let start = off;
+      let end = off + len;
+      const kept: [number, number][] = [];
+      for (const [a, b] of ranges) {
+        if (b < start || a > end) kept.push([a, b]);
+        else {
+          start = Math.min(start, a);
+          end = Math.max(end, b);
+        }
+      }
+      kept.push([start, end]);
+      kept.sort((x, y) => x[0] - y[0]);
+      ranges.length = 0;
+      ranges.push(...kept);
+      sum = ranges.reduce((n, [a, b]) => n + (b - a), 0);
+    },
+    total: () => sum,
+  };
 }

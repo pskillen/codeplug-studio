@@ -173,6 +173,7 @@ export function createD890FirmwareUpdater(): FirmwareUpdater {
             stage: phase,
             phase,
             radioTouched,
+            written: { done: cur, total: max, unit: 'blocks' },
           };
           flashOpts.onProgress?.(update);
         };

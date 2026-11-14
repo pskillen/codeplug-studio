@@ -22,7 +22,12 @@ import {
 } from './__fixtures__/mockUv5rMini.ts';
 import { UV5RMINI_FW_CMD, UV5RMINI_FW_LOADER_BAUD } from './frames.ts';
 import * as interlocks from './interlocks.ts';
-import { createUv5rMiniFirmwareUpdater, describeUv5rMiniResult, UV5RMINI_MSG } from './updater.ts';
+import {
+  createCoveredBytes,
+  createUv5rMiniFirmwareUpdater,
+  describeUv5rMiniResult,
+  UV5RMINI_MSG,
+} from './updater.ts';
 
 // The mock radio serves a synthetic image, not a real `.ufw`: the image interlocks have their own tests
 // (interlocks.test.ts) and a spy here records that the updater runs them.
@@ -202,6 +207,9 @@ describe('UV-5R Mini updater: a clean update', () => {
     expect(progress.slice(firstTouched).every((p) => p.radioTouched)).toBe(true);
     const last = progress.at(-1)!;
     expect(last).toMatchObject({ phase: 'finish', cur: m.areaLength, max: m.areaLength });
+    // The written / total count is in bytes of the area, for the wizard's count and time estimate.
+    expect(last.written).toEqual({ done: m.areaLength, total: m.areaLength, unit: 'bytes' });
+    expect(progress.filter((p) => p.phase === 'handshake').every((p) => !p.written)).toBe(true);
     // The erase message arrives with cmd 4.
     expect(progress.some((p) => p.msg === 'The radio is erasing its firmware area')).toBe(true);
   });
@@ -495,5 +503,21 @@ describe('UV-5R Mini updater: refusals and silence', () => {
     expect(err).toBeInstanceOf(FirmwareFlashError);
     expect(err.code).toBe('aborted');
     expect(err.radioTouched).toBe(true);
+  });
+});
+
+describe('UV-5R Mini updater: the progress count', () => {
+  it('counts distinct bytes read, so a block asked for twice counts once', () => {
+    const c = createCoveredBytes();
+    c.add(0, 0x1000);
+    c.add(0x1000, 0x1000);
+    c.add(0x1000, 0x1000); // asked again on a slow host
+    expect(c.total()).toBe(0x2000);
+    c.add(0x4000, 0x1000); // out of order
+    expect(c.total()).toBe(0x3000);
+    c.add(0x1800, 0x3000); // bridges the gap
+    expect(c.total()).toBe(0x5000);
+    c.add(0x9000, 0);
+    expect(c.total()).toBe(0x5000);
   });
 });
