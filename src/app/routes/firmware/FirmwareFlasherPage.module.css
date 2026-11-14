@@ -187,3 +187,9 @@
 .disclosure[open] summary {
   margin-bottom: 8px;
 }
+
+/* Written / total, elapsed and time left under the flash modal's active step. */
+.flashStats {
+  display: block;
+  font-variant-numeric: tabular-nums;
+}

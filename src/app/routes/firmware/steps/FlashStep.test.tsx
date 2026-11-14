@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useEffect, useReducer, type ReactElement } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -283,5 +283,69 @@ describe('FlashStep: a refusal before anything was installed', () => {
     expect(screen.getByText('Recover the radio')).toBeInTheDocument();
     expect(screen.queryByText('Nothing was installed')).toBeNull();
     expect(screen.queryByRole('button', { name: /Enter update mode again with/ })).toBeNull();
+  });
+});
+
+describe('FlashStep: written / total, elapsed and time left', () => {
+  type FlashInput = Parameters<typeof flash.runFirmwareFlash>[0];
+
+  /** Starts a flash that stays running until `finish` is called; `report` feeds progress as the updater would. */
+  async function startHeldFlash() {
+    let input: FlashInput | null = null;
+    let finish: (o: FirmwareFlashOutcome) => void = () => undefined;
+    vi.mocked(flash.runFirmwareFlash).mockImplementationOnce((i) => {
+      input = i;
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    });
+    if (MINI.preflight?.updateModeConfirm) {
+      fireEvent.click(screen.getByLabelText(MINI.preflight.updateModeConfirm));
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Connect and flash' }));
+    await waitFor(() => expect(input).not.toBeNull());
+    return {
+      report: (p: Parameters<FlashInput['onProgress']>[0]) => act(() => input!.onProgress(p)),
+      finish: (o: FirmwareFlashOutcome) => act(() => finish(o)),
+    };
+  }
+
+  it('shows elapsed only while no total is known', async () => {
+    show(<Harness />);
+    const run = await startHeldFlash();
+    run.report({ phase: 'handshake', cur: 0, max: 0, msg: 'Handshake', radioTouched: false });
+    expect((await screen.findByTestId('firmware-flash-stats')).textContent).toMatch(
+      /^0:0\d elapsed$/,
+    );
+  });
+
+  it('shows the count during the write, then the final count and time', async () => {
+    show(<Harness />);
+    const run = await startHeldFlash();
+    run.report({
+      phase: 'transfer',
+      cur: 212,
+      max: 478,
+      msg: 'Sending the firmware',
+      radioTouched: true,
+      written: { done: 212, total: 478, unit: 'blocks' },
+    });
+    expect((await screen.findByTestId('firmware-flash-stats')).textContent).toMatch(
+      /^212 \/ 478 blocks · 0:0\d elapsed · estimating time left…$/,
+    );
+    expect(screen.getByText('Sending the firmware')).toBeInTheDocument();
+
+    run.finish({
+      ok: true,
+      radioId: 'baofeng-uv5rmini',
+      image: L1_IMAGE,
+      ident: { radioId: 'baofeng-uv5rmini', model: 'UV-5R Mini', raw: new Uint8Array(0) },
+      result: { framesSent: 500, dataFrames: 478, elapsedMs: 182_000, end: 'acknowledged' },
+      startedAt: 'now',
+      written: { done: 478, total: 478, unit: 'blocks' },
+    });
+    await screen.findByTestId('firmware-flash-summary');
+    expect(screen.queryByTestId('firmware-flash-stats')).toBeNull();
+    expect(screen.getByText(/478 \/ 478 blocks in 3:02\./)).toBeInTheDocument();
   });
 });

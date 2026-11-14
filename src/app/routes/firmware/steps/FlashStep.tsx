@@ -35,6 +35,13 @@ import {
 import classes from '../FirmwareFlasherPage.module.css';
 import { isPreflightComplete } from '../firmwareWizardState.ts';
 import {
+  estimateRemainingMs,
+  formatFlashFinal,
+  formatFlashStats,
+  nextEtaBaseline,
+  type FlashEtaSample,
+} from '../flashEta.ts';
+import {
   createFlashProgressThrottle,
   transferDetail,
   visibleFlashPhases,
@@ -51,6 +58,7 @@ function modalSteps(
   progress: FirmwareFlashProgress | null,
   seen: ReadonlySet<FirmwareFlashPhase>,
   outcome: FirmwareFlashOutcome | null,
+  stats: string | null,
 ): ProgressModalStep[] {
   const phases = visibleFlashPhases(seen, progress?.phase ?? 'handshake');
   const current = phases.findIndex((p) => p.phase === (progress?.phase ?? 'handshake'));
@@ -60,8 +68,19 @@ function modalSteps(
     else if (i < current) status = 'success';
     else if (i > current) status = 'pending';
     else status = outcome ? 'error' : 'active';
-    const detail =
+    const text =
       phase === 'transfer' && progress?.phase === 'transfer' ? transferDetail(progress) : undefined;
+    const detail =
+      stats && status === 'active' ? (
+        <>
+          {text ? <span>{text}</span> : null}
+          <span className={classes.flashStats} data-testid="firmware-flash-stats">
+            {stats}
+          </span>
+        </>
+      ) : (
+        text
+      );
     return { id: phase, label, detail, status };
   });
 }
@@ -115,6 +134,10 @@ export default function FlashStep({
   const [updateModeConfirmed, setUpdateModeConfirmed] = useState(false);
   const updateModeConfirm = updater.preflight?.updateModeConfirm;
   const abortRef = useRef<AbortController | null>(null);
+  // Elapsed and time left: display only, from the clock and the updater's written / total.
+  const [startedMs, setStartedMs] = useState(0);
+  const [etaBaseline, setEtaBaseline] = useState<FlashEtaSample | null>(null);
+  const [nowMs, setNowMs] = useState(0);
   const [retryPrep, setRetryPrep] = useState<{ busy: boolean; error: string | null }>({
     busy: false,
     error: null,
@@ -172,6 +195,13 @@ export default function FlashStep({
     onRunningChange(running);
   }, [running, onRunningChange]);
 
+  // Ticks the elapsed time while the radio is silent (the erase), not only on progress.
+  useEffect(() => {
+    if (!running) return undefined;
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [running]);
+
   async function connectAndFlash() {
     setPortError(null);
     setOutcome(null);
@@ -193,10 +223,18 @@ export default function FlashStep({
     }
     const controller = new AbortController();
     abortRef.current = controller;
+    const started = Date.now();
+    setStartedMs(started);
+    setEtaBaseline(null);
+    setNowMs(started);
     setRunning(true);
     setModalOpen(true);
     // A long transfer reports tens of thousands of frames: render at most every ~100 ms.
     const throttle = createFlashProgressThrottle((p) => {
+      const at = Date.now();
+      const w = p.phase === 'transfer' ? p.written : undefined;
+      if (w) setEtaBaseline((prev) => nextEtaBaseline(prev, { atMs: at, done: w.done }));
+      setNowMs(at);
       setProgress(p);
       setSeenPhases((prev) => (prev.has(p.phase) ? prev : new Set(prev).add(p.phase)));
     });
@@ -221,6 +259,17 @@ export default function FlashStep({
 
   const summary = outcome ? formatFirmwareFlashSummary(outcome) : '';
   const percent = progress && progress.max > 0 ? (progress.cur / progress.max) * 100 : 0;
+  const written = progress?.written;
+  const stats = running
+    ? formatFlashStats({
+        elapsedMs: nowMs - startedMs,
+        written,
+        remainingMs: written
+          ? estimateRemainingMs(etaBaseline, { atMs: nowMs, done: written.done }, written.total)
+          : null,
+      })
+    : null;
+  const finalLine = outcome ? flashFinalLine(outcome) : null;
 
   async function copySummary() {
     try {
@@ -302,14 +351,14 @@ export default function FlashStep({
         open={modalOpen}
         title={`Flashing the ${image.title}`}
         phase={running ? 'running' : 'finished'}
-        steps={modalSteps(progress, seenPhases, outcome)}
+        steps={modalSteps(progress, seenPhases, outcome, stats)}
         progress={outcome?.ok ? 100 : percent}
         note={`${copy.keepAlive} This takes ${updater.expectedDuration}.`}
         summary={
           outcome
             ? outcome.ok
-              ? `The ${image.title} is on the ${updater.label}.`
-              : `Flash failed: ${outcome.message}`
+              ? `The ${image.title} is on the ${updater.label}. ${finalLine}.`
+              : `Flash failed: ${outcome.message}${finalLine ? ` Stopped after ${finalLine}.` : ''}`
             : null
         }
         onClose={() => setModalOpen(false)}
@@ -367,6 +416,12 @@ export default function FlashStep({
       />
     </div>
   );
+}
+
+/** `478 / 478 blocks in 3:02` (or the time alone without a total); `null` for a failure with no time recorded. */
+function flashFinalLine(outcome: FirmwareFlashOutcome): string | null {
+  const elapsedMs = outcome.ok ? outcome.result.elapsedMs : outcome.elapsedMs;
+  return elapsedMs === undefined ? null : formatFlashFinal(elapsedMs, outcome.written);
 }
 
 /** The error code of a refusal before anything was installed (`RadioNothingInstalledError`). */
