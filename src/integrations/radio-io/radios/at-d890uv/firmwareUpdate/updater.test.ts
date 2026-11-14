@@ -269,7 +269,7 @@ describe('firmware registry', () => {
     expect(d890!.createUpdater().radioId).toBe('anytone-at-d890uv');
     expect(getFirmwareUpdater('baofeng-dm32uv')).toMatchObject({
       prodFlashDisabled: false,
-      capacitorSupported: false,
+      capacitorSupported: 'developerMode',
     });
   });
 });

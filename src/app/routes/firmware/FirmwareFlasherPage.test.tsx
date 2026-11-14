@@ -724,7 +724,7 @@ describe('FirmwareFlasherPage', () => {
       expect(flash.runFirmwareFlash).not.toHaveBeenCalled();
     });
 
-    describe('the UV-5R Mini, with developer mode on', () => {
+    describe('with developer mode on', () => {
       beforeEach(async () => {
         const actual = await vi.importActual<typeof envGate>(
           '../../services/firmwareFlashEnvGate.ts',
@@ -742,9 +742,16 @@ describe('FirmwareFlasherPage', () => {
       });
       afterEach(() => localStorage.removeItem(DEVELOPER_MODE_KEY));
 
-      it('is the one radio offered, and reads the radio on Prepare through the Capacitor port', async () => {
+      it('offers the developer-mode radios only (#1674)', () => {
         renderPage();
-        expect(screen.getAllByRole('radio')).toHaveLength(1);
+        const offered = screen.getAllByRole('radio');
+        expect(offered).toHaveLength(2);
+        expect(screen.getByRole('radio', { name: /Baofeng DM-32UV/ })).toBeInTheDocument();
+        expect(screen.getByRole('radio', { name: /UV-5R Mini/ })).toBeInTheDocument();
+      });
+
+      it('reads the radio on Prepare through the Capacitor port', async () => {
+        renderPage();
         fireEvent.click(screen.getByRole('radio', { name: /UV-5R Mini/ }));
         cont();
         const patch = document.querySelector(

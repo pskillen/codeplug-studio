@@ -184,7 +184,10 @@ describe('developer mode (#1650)', () => {
   });
 });
 
-describe('the UV-5R Mini on the Android app (#1657)', () => {
+/** The radios the Android app offers, all behind developer mode, in registry order (#1657, #1674). */
+const ANDROID_DEVELOPER_MODE_RADIOS = ['baofeng-dm32uv', 'baofeng-uv5rmini'];
+
+describe('the Android app offers its radios behind developer mode only (#1657, #1674)', () => {
   beforeEach(() => {
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
   });
@@ -192,25 +195,29 @@ describe('the UV-5R Mini on the Android app (#1657)', () => {
 
   const ALL_ENVS = ['prod', ...ENVS_PRE_PROD];
 
-  it('is hidden with developer mode off, on every build', () => {
+  it('offers none with developer mode off, on every build', () => {
     for (const env of ALL_ENVS) {
       expect(listOfferedFirmwareUpdaters(env, false)).toEqual([]);
     }
   });
 
-  it('is the only radio offered with developer mode on, on every build', () => {
+  it('offers exactly these radios with developer mode on, on every build', () => {
     for (const env of ALL_ENVS) {
-      expect(listOfferedFirmwareUpdaters(env, true).map((d) => d.radioId)).toEqual([
-        'baofeng-uv5rmini',
-      ]);
+      expect(listOfferedFirmwareUpdaters(env, true).map((d) => d.radioId)).toEqual(
+        ANDROID_DEVELOPER_MODE_RADIOS,
+      );
     }
   });
 
   it('follows this device switch when the caller does not pass it', () => {
     expect(listOfferedFirmwareUpdaters('dev')).toEqual([]);
     setDeveloperMode(true);
-    expect(listOfferedFirmwareUpdaters('dev').map((d) => d.radioId)).toEqual(['baofeng-uv5rmini']);
-    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toEqual(['baofeng-uv5rmini']);
+    expect(listOfferedFirmwareUpdaters('dev').map((d) => d.radioId)).toEqual(
+      ANDROID_DEVELOPER_MODE_RADIOS,
+    );
+    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toEqual(
+      ANDROID_DEVELOPER_MODE_RADIOS,
+    );
   });
 
   it('leaves the browser unchanged: developer mode adds no radio on pre-prod', () => {
