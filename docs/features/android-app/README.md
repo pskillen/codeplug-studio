@@ -56,9 +56,9 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
   [developer mode](../developer-mode/README.md); on the prod build its prod gate still hides it unless developer mode
   is on, as on the web. With no radio offered it says flashing is available in a desktop browser. The wizard is the
   desktop one: the cable is found by its USB filters instead of a picker, and the stock file picker takes any file (the
-  pinned hashes decide). A Mini has been flashed from a phone on hardware
-  ([#1671](https://github.com/pskillen/codeplug-studio/issues/1671)). Before the first flash from a phone: charge it, set a long screen timeout, keep the app in front, and
-  plug in only the cable; on a stall, power-cycle the radio and flash again from the phone or a desktop. See
+  pinned hashes decide). A Mini has been flashed from a phone on hardware. Before the first flash from a phone: charge
+  it, set a long screen timeout, keep the app in front, and plug in only the cable; on a stall, power-cycle the radio
+  and flash again from the phone or a desktop. See
   [firmware flashing, Android app](../firmware-flashing/README.md#android-app).
 - **API Proxies:** On Capacitor native, relative `/api/*` (RadioID, RepeaterBook, IRTS) resolve to an absolute origin from `BUILD_ENV` via `resolveApiUrl` (`src/integrations/platform/resolveApiUrl.ts`):
 

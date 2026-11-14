@@ -60,12 +60,11 @@ it: the firmware updaters' pins, stock checks, "already installed" checks and fr
 read-only paths; the danger-zone wizards. Platform checks stay the feature's own concern too. The flasher keeps one
 mechanism that would relax its Android check: an updater marked `capacitorSupported: 'developerMode'` is offered in
 the app only while developer mode is on, in any build (not only prod), for a radio whose flash from a phone is not yet
-proven on hardware. **No radio uses it today**: the UV-5R Mini did until a full flash from a phone was proven
-([#1671](https://github.com/pskillen/codeplug-studio/issues/1671)), and is now offered in the app without developer
-mode. Were a radio to use it, it would be visibility only: pins, stock checks and frame guards are the same code
-everywhere and never read developer mode (a test holds that no updater, stock check or radio module imports the switch
-or a gate). Web Serial or USB availability is unchanged. The Write gate's existing native-app exemption for descriptor-level
-`prodWriteDisabled` is unchanged.
+proven on hardware. **No radio uses it today**: the UV-5R Mini did until a full flash from a phone was proven, and is
+now offered in the app without developer mode. Were a radio to use it, it would be visibility only: pins, stock checks
+and frame guards are the same code everywhere and never read developer mode (a test holds that no updater, stock check
+or radio module imports the switch or a gate). Web Serial or USB availability is unchanged. The Write gate's existing
+native-app exemption for descriptor-level `prodWriteDisabled` is unchanged.
 
 ## Storage and privacy
 
@@ -87,7 +86,8 @@ same profile follow a change through the `storage` event. The Debug localStorage
 ## Not done / rejected
 
 - A server-side or account-level switch: there is no backend, and the ask is per device.
-- Hiding the gesture behind a build flag: the owner runs the prod build of the Android app and needs it there.
+- Hiding the gesture behind a build flag: the owner needs it in the Android app, whose Play Open testing build is a
+  pre-release (staging) build, not prod.
 
 ## Related
 
