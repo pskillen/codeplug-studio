@@ -125,6 +125,9 @@ describe('RT95 head updater through the Capacitor pipe', () => {
     const mock = new Rt95BootloaderMock({ silentAt: [5, 6, 7, 8] });
     const { run } = await session(mock);
     const err = await flashError(underFakeTime(run()));
+    // The last silence surfaces as the updater's "did not accept" protocol error, not the read timeout.
+    expect(err.code).toBe('protocol');
+    expect(err.message).toMatch(/after 4 attempts \(last reply nothing\)/);
     expect(err.radioTouched).toBe(true);
     expect(err.position).toMatch(/^frame 5\//);
     expect(mock.log).not.toContain('end');
