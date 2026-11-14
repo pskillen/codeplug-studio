@@ -644,11 +644,28 @@ describe('the transport seam (Web Serial or the Android app)', () => {
     expect(pipeClose).not.toHaveBeenCalled();
   });
 
-  it('in the Android app, the pre-flight probe and the safety backup refuse before any port is asked for', async () => {
+  it("in the Android app, grants the pre-flight probe by the probe cable's filters (#1674)", async () => {
     vi.mocked(radioIo.isCapacitorSerialSupported).mockReturnValue(true);
-    await expect(grantFirmwarePreflightPort('baofeng-dm32uv')).rejects.toThrow(
-      /not available in the Android app/,
-    );
+    expect(await grantFirmwarePreflightPort('baofeng-dm32uv')).toEqual(capPort);
+    expect(radioIo.requestCapacitorSerialPort).toHaveBeenCalledWith({
+      usbFilters: fakeProbe.link.usbFilters,
+    });
+    expect(radioIo.requestWebSerialPort).not.toHaveBeenCalled();
+  });
+
+  it("runs the pre-flight probe through the Capacitor pipe at the probe's rate, and closes it (#1674)", async () => {
+    fakeProbe.run.mockResolvedValue({ summary: 'RT95-P, version V100' });
+    const out = await runFirmwarePreflightProbe({ radioId: 'baofeng-dm32uv', port: capPort });
+    expect(out).toEqual({ ok: true, summary: 'RT95-P, version V100' });
+    expect(radioIo.openCapacitorSerialPipe).toHaveBeenCalledWith(CAPACITOR_DEVICE, 9600, {
+      raiseDtrRts: true,
+    });
+    expect(radioIo.openWebSerialPipe).not.toHaveBeenCalled();
+    expect(pipeClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('in the Android app, the safety backup refuses before any port is asked for', async () => {
+    vi.mocked(radioIo.isCapacitorSerialSupported).mockReturnValue(true);
     await expect(grantFirmwareSafetyBackupPort('baofeng-dm32uv')).rejects.toThrow(
       /not available in the Android app/,
     );
@@ -656,9 +673,7 @@ describe('the transport seam (Web Serial or the Android app)', () => {
     expect(radioIo.requestWebSerialPort).not.toHaveBeenCalled();
   });
 
-  it('the probe and the safety backup refuse a Capacitor port cleanly, opening nothing', async () => {
-    const probe = await runFirmwarePreflightProbe({ radioId: 'baofeng-dm32uv', port: capPort });
-    expect(probe).toMatchObject({ ok: false, code: 'unsupported' });
+  it('the safety backup refuses a Capacitor port cleanly, opening nothing', async () => {
     const backup = await runFirmwareSafetyBackup({
       radioId: 'baofeng-dm32uv',
       port: capPort,
@@ -667,7 +682,6 @@ describe('the transport seam (Web Serial or the Android app)', () => {
     expect(backup).toMatchObject({ ok: false, code: 'unsupported' });
     expect(radioIo.openWebSerialPipe).not.toHaveBeenCalled();
     expect(radioIo.openCapacitorSerialPipe).not.toHaveBeenCalled();
-    expect(fakeProbe.run).not.toHaveBeenCalled();
     expect(fakeSafety.run).not.toHaveBeenCalled();
   });
 });
