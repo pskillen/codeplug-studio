@@ -17,6 +17,7 @@ import {
   Text,
   Title,
 } from '@mantine/core';
+import { downloadBlob, isoTimestampForFilename } from '@integrations/download/browserDownload.ts';
 import type {
   WriteVerifyDebugContext,
   WriteVerifyMismatch,
@@ -141,12 +142,7 @@ export default function WriteVerifyReport({
 
   function handleDownloadMarkdown(): void {
     const blob = new Blob([debugMarkdown], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `write-verify-${new Date().toISOString().replace(/[:.]/g, '-')}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `write-verify-${isoTimestampForFilename()}.md`);
     appendLog('Downloaded markdown report');
   }
 
@@ -166,12 +162,7 @@ export default function WriteVerifyReport({
       },
     };
     const blob = new Blob([JSON.stringify(serializable, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `write-verify-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `write-verify-${isoTimestampForFilename()}.json`);
     appendLog('Downloaded mismatch JSON');
   }
 
