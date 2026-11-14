@@ -116,6 +116,9 @@ hidden there).
 3. **Stock firmware** — the stock sources (the vendor's download link, or how to ask the vendor, and any unofficial
    mirror, labelled; all plain links: Studio never fetches them), the expected zip and
    file names, and a drop zone for the zip or the extracted files. Studio checks every file against the pinned hashes.
+   The UV-5R Mini, whose vendor publishes no stock firmware, lists the user's own copy and then one "Unofficial copy
+   shared by a third party" link per stock version, each naming its file
+   ([UV-5R Mini: where the file comes from](../../reference/radios/baofeng/uv-5r-mini/firmware.md#stock-firmware-pin)).
    A radio whose release files are built on different stocks (the UV-5R Mini: the L1 file on v0.04, the L2 file on
    v0.27) takes either stock file or both; each file is then prepared on its own stock
    ([UV-5R Mini: one stock per base](../../reference/radios/baofeng/uv-5r-mini/firmware.md#stock-firmware-pin)).
@@ -129,8 +132,9 @@ hidden there).
    and prepares the release's file for exactly that; it never offers the nearest build. A release with no file for it
    shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." and prepares nothing; one
    with no other file for this radio says "If the radio refuses this L2 file, this release has no other file for this
-   radio to try." **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers;
-   with no report, or when the read fails, the step asks three dropdowns of the supported values: Firmware (`V0.04`,
+   radio to try." **Read the radio** reads, in normal mode and read-only, the radio report an MM9PDY build answers:
+   its flash layout and the suffix, Firmware and Hardware strings of its stock firmware, matched against the same
+   table and with the same refusals as the dropdowns below. With no report, or when the read fails, the step asks three dropdowns of the supported values: Firmware (`V0.04`,
    `V0.27`, `Other`) and Hardware (`V1.7`, `Other`) from Radio Info, and the suffix (`NRF`, `NRFB`, `Other`) from the
    start-up screen shown while holding `8`. `Other` is refused, and so is a combination with no build. A warning says to
    pick exactly what the radio shows: a wrong Firmware or suffix pick is refused with nothing installed but may reset

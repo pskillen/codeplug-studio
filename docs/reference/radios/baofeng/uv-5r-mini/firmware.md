@@ -11,21 +11,38 @@ Keep them in step.
 
 ## Stock firmware pin
 
-A stock base is one `.ufw` file, member role `ufw`; Studio accepts two bases. Studio never fetches, hosts or commits it, and no vendor download
-is offered: the stock image is the radio's own, which the firmware project builds from a read of that radio. The
-image is scrambled per radio, so Studio treats it as opaque bytes and cannot read anything out of it.
+A stock base is one `.ufw` file, member role `ufw`; Studio accepts two bases. The pinned hash, not the user, decides
+whether a file is accepted, and a radio whose key doesn't match the file refuses it before anything is written.
 
 | Base         | Version        | File name              | Size          | sha256                                                             |
 | ------------ | -------------- | ---------------------- | ------------- | ------------------------------------------------------------------ |
-| `nrfb-v0.04` | `v0.04 (NRFB)` | `stock-nrfb-v0.04.ufw` | 520,192 bytes | `02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e` |
 | `nrf-v0.27`  | `v0.27 (NRF)`  | `stock-nrf-v0.27.ufw`  | 504,832 bytes | `811b4b37253e0685c7efbd3ff0a24aac2bcad223e5453d95b5bfc3f42c089128` |
+| `nrfb-v0.04` | `v0.04 (NRFB)` | `stock-nrfb-v0.04.ufw` | 520,192 bytes | `02419efb44081227faeccf1525bca0e6b0340c9d988ab80b2141c2ee48a7f74e` |
+
+**Where the file comes from.** Baofeng publishes no stock firmware for the Mini. The Stock firmware step lists, in
+order:
+
+1. **Your own copy:** "If you already have the stock file for your radio's firmware, drop it below. Studio checks it
+   against the pinned hash and refuses any other file."
+2. **Unofficial copy shared by a third party, stock v0.27 (NRF):** a link to `stock-nrf-v0.27.ufw` on mega.nz.
+3. **Unofficial copy shared by a third party, stock v0.04 (NRFB):** a link to `stock-nrfb-v0.04.ufw` on mega.nz.
+
+Each unofficial link is marked "Unofficial, not run by the vendor. Studio checks every file against the pinned hashes
+before using it." and says that Studio only links to it and never downloads it. The host decrypts the file in the
+browser, so there is no direct URL Studio could fetch; Studio never fetches, hosts, mirrors or commits a stock file.
+The links live in one constant, `UV5RMINI_UNOFFICIAL_STOCK_COPIES` in `firmware.ts`: a dead link is a one-line change
+there, and a test checks that no other source file holds them. A download source names the file its link gives
+(`fileName`), so each link reads as its own stock file.
+
+The pre-flight asks for a full battery and a dummy load only; there is no "built from this radio" check, since the
+pin decides the file.
 
 Studio does not flash the plain stock file (`stockFlashOffered: false`); the pins are the bases a release patch is
 checked against. The way back to stock is a to-stock patch (below). Each base's name is on the descriptor
 (`baseName`), matching the base table's keys.
 The patch's `stock` hashes decide which file is the stock, never a user choice, and a patch's `base` must name the
-base whose file hashes to it. The descriptor carries `nrfb-v0.04` as its primary version and `nrf-v0.27` as
-`alsoAccepts`.
+base whose file hashes to it. The descriptor carries `nrf-v0.27` (the stock of the MM9PDY firmware's 1.0.0 release)
+as its primary version, so the wizard names it first, and `nrfb-v0.04` as `alsoAccepts`.
 
 **One stock per base.** A radio's code base never changes, so a release's `L1` file is built on `nrfb-v0.04` and its
 `L2` file on `nrf-v0.27`. The descriptor sets `severalStocks`: the Stock firmware step takes either file or both at
@@ -132,7 +149,7 @@ image is prepared and again as the flash starts; each refusal says nothing was s
 | Area              | `flash.bin` starts at SoC address `0x1000` and ends at or below the base's area end (`0x7C000` for both bases), never past the base's own hard limit (the start of its first per-unit record sector)                                                                                                                                                     |
 | Stock bytes       | `flash.bin` has the stock's length and every byte equals the stock's at the same address, except inside the base's app windows (SoC, half-open), from the table below                                                                                                                                                                                    |
 | Layout            | For a layout loader (`L1`, `L2`): Studio knows the radio's flash layout and it is the loader's. Checked before anything is sent                                                                                                                                                                                                                          |
-| Code base         | The image's `base` is the radio's own code base: the one its [radio report](#the-radio-report) flags (`radioCodeBase`), or without a report the base whose stock runs on the radio's layout (`L1` is `nrfb-v0.04`, `L2` is `nrf-v0.27`). Studio never changes a radio's code base. When Studio knows neither, the image is refused. Checked after Layout |
+| Code base         | The image's `base` is the radio's own code base: the one its [radio report](#the-radio-report) names (`radioCodeBase`), or without a report the base whose stock runs on the radio's layout (`L1` is `nrfb-v0.04`, `L2` is `nrf-v0.27`). Studio never changes a radio's code base. When Studio knows neither, the image is refused. Checked after Layout |
 | Not listed itself | For a list-carrying loader only: the image's build name is not on its loader's list. Flashing it again, or after a cut update, would leave the radio stuck in its loader                                                                                                                                                                                 |
 | To stock          | For a to-stock image (build name is a base's own name): see [Back to stock](#back-to-stock). Its loader and stock-byte rules replace the general ones above, never loosen them                                                                                                                                                                           |
 | Already installed | Checked last. For a list-carrying loader: the build name the radio gives in its [radio report](#the-radio-report), trimmed and compared ignoring case, is not the image's own. For a layout loader this is a warning with an explicit confirm, not a refusal: see [Already installed](#already-installed)                                                |
@@ -205,7 +222,8 @@ A list-carrying loader's image ignores the layout, but not the code base the lay
 **Code base.** A radio's code base never changes: every build goes on the code base its radio shipped with, so an
 `L1` radio gets a v0.04 file and an `L2` radio a v0.27 file. Studio refuses any image that would move a radio between
 them: "This file is built on nrfb-v0.04, but this radio runs the nrf-v0.27 code. Studio never changes a radio's code
-base. Nothing was sent." With a report, its flag decides the radio's code base; without one, its layout does. There is
+base. Nothing was sent." With a report, its suffix and Firmware strings decide the radio's code base; without one, its
+layout does. There is
 no override in Studio.
 
 **One file per layout.** A release ships an `L1` file built on v0.04 and an `L2` file built on v0.27, with build names
@@ -214,7 +232,9 @@ rows of one version, each with its `layout`
 ([releases](../../../../features/firmware-flashing/releases.md#uv-5r-mini-rows-one-per-flash-layout)), and the
 patch-file dropzone takes both files at once. Prepare picks the file for the radio's layout and base (`pickPatchForLayout`).
 A release with no file for the radio's base stops Prepare before anything is built: "Not available in this release:
-there is no MM9PDY build for this radio (nrfb-v0.04) yet. This release has a file only for nrf-v0.27." `V4` (`mm9pdy-V4-…`) is
+there is no MM9PDY build for this radio (nrfb-v0.04) yet. This release has a file only for nrf-v0.27." A release with
+the radio's base but not its layout names both: "… (nrf-v0.27, flash layout L1) yet. On nrf-v0.27, this release has a
+file only for L2." `V4` (`mm9pdy-V4-…`) is
 retired: never a release row, and refused from disk. The build-name rule is `uv5rMiniLayoutFromBuildName` in
 `src/core/radios/baofeng/uv-5r-mini/firmware.ts`.
 
@@ -223,35 +243,56 @@ retired: never a release row, and refused from disk. The build-name rule is `uv5
 An MM9PDY build that carries the radio report answers one clone read with its own facts. It is the firmware
 project's interface, read-only: one 64-byte `R` at clone address `0xEFC0`, decoded with the clone XOR rule Studio uses
 for every read below `0xF000`. Studio never writes there (the clone write interlock refuses everything from `0xE000`
-up). Integers are little-endian:
+up). Studio reads format 2 only; no radio carries format 1. Integers are little-endian:
 
-| Offset | Size | Field      | Value                                                                                  |
-| ------ | ---- | ---------- | -------------------------------------------------------------------------------------- |
-| `0x00` | 4    | magic      | `MM9R`                                                                                 |
-| `0x04` | 1    | format     | `1`. The magic, format and CRC keep their places in every later format                 |
-| `0x05` | 1    | flags      | Bit 0: the app is on the `nrfb-v0.04` code base (clear: `nrf-v0.27`)                   |
-| `0x08` | 4    | `vm_start` | Start of the radio's `VM` entry                                                        |
-| `0x0C` | 4    | `vm_size`  | Size of the `VM` entry                                                                 |
-| `0x10` | 4    | `vm_bank0` | Where the app's settings store put its first bank; equal to `vm_start` on a sane store |
-| `0x14` | 2    | `rf0`      | The RF chip's register 0                                                               |
-| `0x18` | 24   | `name`     | The build name, ASCII, NUL-padded                                                      |
-| `0x3E` | 2    | `crc`      | CRC-16/XMODEM (poly `0x1021`, init `0`) of bytes `0x00–0x3D`                           |
+| Offset | Size | Field      | Value                                                                                                           |
+| ------ | ---- | ---------- | --------------------------------------------------------------------------------------------------------------- |
+| `0x00` | 4    | magic      | `MM9R`                                                                                                          |
+| `0x04` | 1    | format     | `2`. The magic, format and CRC keep their places in every later format                                          |
+| `0x05` | 1    | flags      | Bit 0: set exactly when the strings below read `NRFB` / `V0.04` / `V1.7`, a cross-check. Bits 1–7 reserved, `0` |
+| `0x06` | 2    | reserved   | `0`                                                                                                             |
+| `0x08` | 4    | `vm_start` | Start of the radio's `VM` entry: `0x95000` on `L1`, `0x94000` on `L2`                                           |
+| `0x0C` | 4    | `vm_size`  | Size of the `VM` entry: `0x68000` on `L1`, `0x6A000` on `L2`                                                    |
+| `0x10` | 4    | `vm_bank0` | Where the app's settings store put its first bank; equal to `vm_start` on a sane store                          |
+| `0x14` | 2    | `rf0`      | The RF chip's register 0                                                                                        |
+| `0x16` | 2    | reserved   | `0`                                                                                                             |
+| `0x18` | 24   | `name`     | The build name, ASCII, at most 21 characters, NUL-padded                                                        |
+| `0x30` | 4    | suffix     | The suffix the hold-8 start-up screen shows after `5RMINI` (`NRF`, `NRFB`), NUL-padded                          |
+| `0x34` | 5    | version    | Radio Info's Firmware line (`V0.27`, `V0.04`), NUL-padded                                                       |
+| `0x39` | 5    | hardware   | Radio Info's Hardware line as the stock firmware stores it (`V1.7 `, with its trailing space), NUL-padded       |
+| `0x3E` | 2    | `crc`      | CRC-16/XMODEM (poly `0x1021`, init `0`) of bytes `0x00–0x3D`                                                    |
+
+The build reads the three strings from the stock firmware's own text, so they are what that radio's stock screens
+show. Each is read as its bytes with trailing NULs and spaces removed; what is left must be at least one character,
+all printable ASCII, and is compared exactly, case included.
 
 What Studio concludes (`decodeUv5rMiniRadioReport`, then `uv5rMiniLayoutFromReport`, in
-`src/core/radios/baofeng/uv-5r-mini/radioReport.ts`):
+`src/core/radios/baofeng/uv-5r-mini/radioReport.ts`), rule by rule in this order:
 
-| The 64 bytes                                 | Studio                                                                                            |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| No `MM9R`, a bad CRC or a short read         | No report: a stock radio, or an MM9PDY build from before the report. Radio Info is asked          |
-| Good CRC, a format other than `1`            | Refused by name: "…answers in report format N, which this version of Studio doesn't know…"        |
-| `(vm_start, vm_size)` = `(0x95000, 0x68000)` | `L1`                                                                                              |
-| `(vm_start, vm_size)` = `(0x94000, 0x6A000)` | `L2`                                                                                              |
-| Any other pair                               | Refused as unsupported: "This radio reports a flash layout Studio doesn't support…"; nothing sent |
+| The 64 bytes                                                                      | Studio                                                                                                            |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Not 64 bytes                                                                      | Refused: "This radio's MM9PDY report doesn't read right: …. Nothing was sent."                                    |
+| No `MM9R`, or a bad CRC                                                           | No report: a stock radio, or an MM9PDY build from before the report. Radio Info is asked                          |
+| A format below `2` (`1` included)                                                 | Refused by name: "This radio's MM9PDY build is older than this version of Studio: it answers in report format N…" |
+| A format above `2`                                                                | Refused by name: "…answers in report format N, which this version of Studio doesn't know…; update Studio…"        |
+| A reserved flags bit set                                                          | Refused: "…doesn't read right: a reserved flags bit is set…"                                                      |
+| A string empty or not printable                                                   | Refused, naming it: "…doesn't read right: its Hardware string is unreadable…"                                     |
+| Bit 0 set and the strings aren't `NRFB` / `V0.04` / `V1.7`, or clear and they are | Refused: "…doesn't read right: its NRFB V0.04 flag disagrees with its suffix, Firmware and Hardware strings…"     |
+| `(vm_start, vm_size)` neither `(0x95000, 0x68000)` nor `(0x94000, 0x6A000)`       | Refused as unsupported: "This radio reports a flash layout Studio doesn't support…"; nothing sent                 |
+| `(0x95000, 0x68000)` / `(0x94000, 0x6A000)`                                       | `L1` / `L2`, then the strings pick the stock base (below)                                                         |
 
-With a report, Studio asks no question. The build name, the layout, the code base (flags bit 0, as `Code base:
-nrfb-v0.04` or `nrf-v0.27`) and `rf0` (hex) are shown as information; nothing gates on `rf0`. The code base also goes
-to the prepared image as `radioCodeBase` for the code-base check. A `vm_bank0` different from `vm_start` is shown too, and the layout is still decided on the
-pair. The build name decides [Already installed](#already-installed).
+**The stock base.** The strings are looked up in the same table the [Radio Info](#radio-info) answers use
+(`src/core/radios/baofeng/uv-5r-mini/stockBases.ts`), with the same refusals: a Hardware string not proven (today only
+`V1.7`) gets "Studio hasn't been proven on this radio's Hardware version; nothing was sent.", and a suffix and Firmware
+pair with no base gets "There is no MM9PDY build for this radio (NRFB V0.27) yet; nothing was sent." `NRF` / `V0.27`
+is `nrf-v0.27` and `NRFB` / `V0.04` is `nrfb-v0.04`. Bit 0 never picks the base: it is only the cross-check above.
+
+With a report, Studio asks no question. The build name, the three strings (`Suffix:`, `Firmware:`, `Hardware:`), the
+layout, the code base (`Code base: nrf-v0.27`) and `rf0` (hex) are shown as information; nothing gates on `rf0`. The
+layout stays the report's and the code base goes to the prepared image as `radioCodeBase`: Prepare matches a release
+file on both, and offers nothing for a combination with no file, never the nearest one. A `vm_bank0` different from
+`vm_start` is shown too, and the layout is still decided on the pair. The build name decides
+[Already installed](#already-installed).
 
 **In the wizard.** Prepare starts with **Read the radio**: the radio switched on normally (not in update mode), the
 programming cable in, and a fresh pick of its port. Studio opens the clone link exactly as the codeplug session does:
@@ -263,7 +304,8 @@ which both use). Nothing else is sent, and no `W` frame can be: the read calls o
 and block read (`readUv5rMiniRadioReport` in `src/integrations/radio-io/radios/uv5r-mini/radioReportRead.ts`, reached
 through the updater descriptor's `radioReport`). Until the radio is read, nothing is asked and nothing is prepared.
 
-- A report: no question. The build name, layout, code base and `rf0` are listed.
+- A report: no question. The build name, the three strings, layout, code base and `rf0` are listed. A report Studio
+  refuses (above) stops Prepare there; Radio Info is not asked instead.
 - No report: "Studio found no MM9PDY radio report: the radio runs stock firmware, or an MM9PDY build from before the
   report." Then the [Radio Info](#radio-info) question.
 - A read that fails (no answer, wrong port, a radio in update mode): the reason, and the Radio Info question as a
@@ -272,7 +314,7 @@ through the updater descriptor's `radioReport`). Until the radio is read, nothin
 Reading again drops the prepared image and the "Write it again anyway" confirm. The read's result lives in the wizard's
 memory only.
 
-No file moves a radio between code bases, so there is no "one-way" warning: the flag is information, and the
+No file moves a radio between code bases, so there is no "one-way" warning: the code base is information, and the
 code-base check refuses a file on the other base.
 
 ### Radio Info

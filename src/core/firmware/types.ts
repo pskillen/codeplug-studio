@@ -35,6 +35,11 @@ export type StockFirmwareSource =
       readonly host: string;
       /** false: not run by the vendor; the wizard says so next to the link. */
       readonly official: boolean;
+      /**
+       * The file this link gives, where it isn't the descriptor's zip or its own files (a radio with several stock
+       * versions links each one). Shown as the link text.
+       */
+      readonly fileName?: string;
       readonly note?: string;
     }
   | {
@@ -43,6 +48,7 @@ export type StockFirmwareSource =
       readonly instructions: string;
       readonly contact?: { readonly text: string; readonly href: string }; // mailto: or https:
     }
+  /** The user's own copy of the pinned stock file; the pin decides whether it is accepted. */
   | { readonly kind: 'own-image'; readonly label: string; readonly instructions: string };
 
 /** One more stock version a radio's patches may be built on. Same sources and hint as the descriptor that lists it. */
@@ -152,8 +158,8 @@ export type RadioLayoutAnswer =
        */
       readonly reported?: true;
       /**
-       * The stock base the radio's own code is built on (UV-5R Mini: from its report's flag, or its Radio Info suffix
-       * and Firmware lines). Prepare picks the release file on this base, and the radio's interlocks refuse a file on
+       * The stock base the radio's own code is built on (UV-5R Mini: its suffix and Firmware line, from its report's
+       * strings or its Radio Info answers). Prepare picks the release file on this base, and the radio's interlocks refuse a file on
        * another one.
        */
       readonly codeBase?: string;

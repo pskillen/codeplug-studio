@@ -85,7 +85,9 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
                   <>
                     <strong>{src.label}:</strong>{' '}
                     <a href={src.url} target="_blank" rel="noopener noreferrer">
-                      {stock.zip?.fileName ?? stock.members.map((m) => m.fileName).join(', ')}
+                      {src.fileName ??
+                        stock.zip?.fileName ??
+                        stock.members.map((m) => m.fileName).join(', ')}
                     </a>{' '}
                     <span className={classes.muted}>
                       from {src.host}
@@ -93,8 +95,8 @@ export default function StockStep({ state, dispatch, updater }: WizardStepProps)
                     </span>
                     {!src.official ? (
                       <div className={classes.muted}>
-                        Unofficial mirror, not run by the vendor. Studio checks every file against
-                        the pinned hashes before using it.
+                        Unofficial, not run by the vendor. Studio checks every file against the
+                        pinned hashes before using it.
                       </div>
                     ) : null}
                   </>

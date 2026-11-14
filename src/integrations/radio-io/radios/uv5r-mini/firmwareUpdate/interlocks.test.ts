@@ -700,12 +700,17 @@ describe('firmwareUpdate constants', () => {
     },
   );
   it('has one base per pinned stock file, with the same hash', () => {
-    const pinned = stockVariants(UV5RMINI_STOCK_FIRMWARE).map((v) => v.members[0]!.sha256);
-    expect(Object.values(UV5RMINI_BASES).map((b) => b.stockSha256)).toEqual(pinned);
+    // Keyed by base name: the descriptor's order (which stock it names first) is not the bases' order.
+    const pinned = Object.fromEntries(
+      stockVariants(UV5RMINI_STOCK_FIRMWARE).map((v) => [v.baseName, v.members[0]!.sha256]),
+    );
+    expect(
+      Object.fromEntries(Object.entries(UV5RMINI_BASES).map(([n, b]) => [n, b.stockSha256])),
+    ).toEqual(pinned);
   });
   it("names each base as the stock descriptor does, so a to-stock patch's title finds its stock", () => {
     const named = stockVariants(UV5RMINI_STOCK_FIRMWARE).map((v) => v.baseName);
-    expect(Object.keys(UV5RMINI_BASES)).toEqual(named);
+    expect(Object.keys(UV5RMINI_BASES).sort()).toEqual([...named].sort());
   });
   it('keys each base by its own name', () => {
     for (const [key, b] of Object.entries(UV5RMINI_BASES)) expect(b.name).toBe(key);

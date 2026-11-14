@@ -25,11 +25,6 @@ export const UV5RMINI_PREFLIGHT: FirmwareRadioPreflight = {
       label: 'A dummy load is fitted, or the radio is on low power',
       help: 'Nothing transmits during an update, but the radio must never be keyed with no antenna.',
     },
-    {
-      id: 'stock-from-this-radio',
-      label: 'This stock image was built from this radio',
-      help: "The image is tied to the radio's own key. An image built from a different radio is refused by the radio before anything is written.",
-    },
   ],
   updateModeConfirm:
     'The radio shows UPDATE..., or its screen stays dark after an interrupted update',
