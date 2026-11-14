@@ -2,7 +2,11 @@ import type { ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { FirmwareRadioId } from '@core/firmware/types.ts';
 import { DesignSystemV2Provider } from '../../components/v2/index.ts';
-import { toolsStripItems, type ContextualStripItem } from '../../nav/contextualStripItems.ts';
+import {
+  resolveToolsStripItems,
+  type ContextualStripItem,
+} from '../../nav/contextualStripItems.ts';
+import { useDeveloperMode } from '../../hooks/useDeveloperMode.ts';
 import { openExternalUrl } from '../../lib/openExternalUrl.ts';
 import { listOfferedFirmwareUpdaters } from '../../services/firmwareFlashEnvGate.ts';
 import {
@@ -64,10 +68,12 @@ const FIRMWARE_RADIO_SHORT_NAMES: Record<FirmwareRadioId, string> = {
   'baofeng-uv5rmini': 'UV-5R Mini',
 };
 
-function badgesFor(item: ContextualStripItem): string[] {
+function badgesFor(item: ContextualStripItem, developerMode: boolean): string[] {
   if (item.to === '/firmware') {
     return [
-      ...listOfferedFirmwareUpdaters().map((d) => FIRMWARE_RADIO_SHORT_NAMES[d.radioId]),
+      ...listOfferedFirmwareUpdaters(undefined, developerMode).map(
+        (d) => FIRMWARE_RADIO_SHORT_NAMES[d.radioId],
+      ),
       'Desktop Chrome / Edge',
     ];
   }
@@ -79,7 +85,8 @@ const isFeatured = (item: ContextualStripItem) => TOOL_CARDS[item.to]?.featured 
 /** Tools landing page: one card per Tools strip destination, featured tools first. */
 export default function ReferenceIndexPage() {
   const navigate = useNavigate();
-  const known = toolsStripItems.filter((item) => TOOL_CARDS[item.to]);
+  const [developerMode] = useDeveloperMode();
+  const known = resolveToolsStripItems(developerMode).filter((item) => TOOL_CARDS[item.to]);
   const cards = [...known.filter(isFeatured), ...known.filter((item) => !isFeatured(item))];
 
   function open(item: ContextualStripItem) {
@@ -100,7 +107,7 @@ export default function ReferenceIndexPage() {
         <div className={classes.grid}>
           {cards.map((item) => {
             const { description, Art, featured } = TOOL_CARDS[item.to];
-            const badges = badgesFor(item);
+            const badges = badgesFor(item, developerMode);
             return (
               <button
                 key={item.to}

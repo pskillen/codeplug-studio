@@ -1,0 +1,43 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  border-radius: var(--dsv2-radius-pill);
+  background: var(--dsv2-warning-tint);
+  color: var(--dsv2-warning);
+  font-family: var(--dsv2-font-family);
+  font-size: var(--dsv2-font-eyebrow);
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.off {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  border-radius: var(--dsv2-radius-pill);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.off:hover,
+.off:focus-visible {
+  background: var(--dsv2-warning-tint);
+}
+
+/* Narrow phones: the chip stays, with the shorter label "Dev mode". */
+@media (max-width: 30em) {
+  .label {
+    font-size: 0;
+  }
+
+  .label::after {
+    content: 'Dev mode';
+    font-size: var(--dsv2-font-eyebrow);
+  }
+}

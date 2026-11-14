@@ -1,4 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
+import { DEVELOPER_MODE_KEY, setDeveloperMode } from '@integrations/preferences/developerMode.ts';
 
 import { radioTargetIdsForFirmwareRadio } from '@core/firmware/radioTargets.ts';
 import * as featureDetect from '@integrations/radio-io/transport/featureDetect.ts';
@@ -87,6 +88,50 @@ describe('listOfferedFirmwareUpdaters', () => {
   it('offers nothing on Capacitor', () => {
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
     expect(listOfferedFirmwareUpdaters('dev')).toEqual([]);
+  });
+});
+
+describe('developer mode (#1650)', () => {
+  beforeEach(() => {
+    vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
+  });
+  afterEach(() => localStorage.removeItem(DEVELOPER_MODE_KEY));
+
+  const PROD_HIDDEN = ['baofeng-uv5rmini', 'retevis-rt95-main'];
+
+  it('hides the prod-disabled radios on prod with developer mode off', () => {
+    const ids = listOfferedFirmwareUpdaters('prod', false).map((d) => d.radioId);
+    for (const id of PROD_HIDDEN) expect(ids).not.toContain(id);
+  });
+
+  it('offers every radio on prod with developer mode on', () => {
+    const ids = listOfferedFirmwareUpdaters('prod', true).map((d) => d.radioId);
+    for (const id of PROD_HIDDEN) expect(ids).toContain(id);
+    expect(ids).toEqual(listOfferedFirmwareUpdaters('dev', false).map((d) => d.radioId));
+  });
+
+  it('offers every radio on pre-prod with developer mode off', () => {
+    for (const env of ENVS_PRE_PROD) {
+      const ids = listOfferedFirmwareUpdaters(env, false).map((d) => d.radioId);
+      for (const id of PROD_HIDDEN) expect(ids).toContain(id);
+    }
+  });
+
+  it('reads developer mode from this device when the caller does not pass it', () => {
+    expect(resolveFirmwareFlashGate({ prodFlashDisabled: true }, 'prod')).toBe('hidden');
+    setDeveloperMode(true);
+    expect(resolveFirmwareFlashGate({ prodFlashDisabled: true }, 'prod')).toBe('allowed');
+    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toContain('baofeng-uv5rmini');
+  });
+
+  it('never relaxes the platform check: Capacitor still offers only capacitorSupported radios', () => {
+    vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
+    for (const d of listOfferedFirmwareUpdaters('prod', true)) {
+      expect(d.capacitorSupported).toBe(true);
+    }
+    expect(listOfferedFirmwareUpdaters('prod', true)).toEqual(
+      listOfferedFirmwareUpdaters('dev', false),
+    );
   });
 });
 

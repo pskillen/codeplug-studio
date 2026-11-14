@@ -249,7 +249,7 @@ Build `inspectBag` with `descriptor.hydration.extractHydration(image, { protocol
 4. Write **only** `restoreRole: 'restorable'` regions. Never LocalInfo. Never calibration. Still honour each radio’s existing unsafe skip-write addresses (see that radio’s protocol docs).
 5. If `restoreFragileAfterFactoryReset` and live discovery bases ≠ manifest: **refuse**. Remap is out of scope.
 6. If the protocol has no `restoreFromBackup`: inspect only; Restore stays disabled.
-7. Restore follows the build profile's Write gate (`resolveRadioWriteGate`): a profile whose Write is hidden on prod (`prodWriteDisabled` on the compatible profile; no profile carries it today) has Restore disabled on prod too, in the page and in `restoreRadioBackup` (`prod-disabled`). Other profiles are unchanged.
+7. Restore follows the build profile's Write gate (`resolveRadioWriteGate`): a profile whose Write is hidden on prod (`prodWriteDisabled` on the compatible profile; no profile carries it today; [developer mode](../developer-mode/README.md) shows it on that device) has Restore disabled on prod too, in the page and in `restoreRadioBackup` (`prod-disabled`). Other profiles are unchanged.
 8. **RT95:** the backup's band code (image `0x326D`) must equal the connected radio's ident band, or Restore is **refused** before any block is written with a message naming both codes. A radio of another band would otherwise get this backup's frequency limits.
 
 **Must not** call: `assemble()`, `buildRadioWriteProjection`, `prepareRadioWriteImage`, `mergeChannelsIntoHydration`, or D890 encode/assemble-from-build helpers.

@@ -6,6 +6,8 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 
 **Constitution:** [DESIGN.md](../../../DESIGN.md) — intentional browser radio I/O with attribution to CHIRP / NeonPlug lineages.
 
+**Prod gate:** a descriptor or compatible profile with `prodWriteDisabled` hides Write (and Restore) on the prod site; [developer mode](../developer-mode/README.md) (five taps on the footer version) shows it on that device. `resolveRadioWriteGate` asks the one prod gate; no Write interlock reads developer mode. No profile carries the flag today.
+
 **Layer rule:** library and domain stay vendor-neutral. Binary protocols, baud/handshake, and memory maps live in `src/integrations/radio-io/` and tier-3 `docs/reference/<family>/` — never in core models or library CRUD.
 
 **MM9PDY modded firmware** uses the same AT-D890UV (and, when shipped, DM-32UV) Web Serial codecs as the stock targets. The radio target changes what is assembled — one channel per repeater, zone as the scan — not a second encoder. An AT-D890UV MM9PDY Write with no zone-derived lists still writes one scan list containing the first channel so the occupancy bitmap is not empty. See [modded firmware](../modded-firmware/README.md).

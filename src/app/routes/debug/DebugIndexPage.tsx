@@ -1,8 +1,10 @@
-import { Alert, Stack, Text } from '@mantine/core';
+import { Alert, Stack, Switch, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
+import { useDeveloperMode } from '../../hooks/useDeveloperMode.ts';
 
 export default function DebugIndexPage() {
+  const [developerMode, setDeveloperMode] = useDeveloperMode();
   return (
     <Page>
       <PageHeader
@@ -14,6 +16,12 @@ export default function DebugIndexPage() {
           Data shown here stays in your browser and may include operator codeplug content. Nothing
           is sent to a server. Do not commit exports or screenshots that contain personal data.
         </Alert>
+        <Switch
+          label="Developer mode on this device"
+          description="Shows the Debug pages and prod-hidden firmware flashing on the production site. Stored in this browser only. Tapping the version in the footer five times does the same."
+          checked={developerMode}
+          onChange={(e) => setDeveloperMode(e.currentTarget.checked)}
+        />
         <Text size="sm">
           <Link to="/debug/indexed-db">IndexedDB</Link> — project and library entity rows in the{' '}
           <code>codeplug-studio</code> database.

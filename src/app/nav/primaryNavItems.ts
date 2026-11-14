@@ -34,7 +34,7 @@ export interface PrimaryNavItem {
  * and RequireActiveProject guards do not change.
  *
  * Tracking Dashboard (`/tracking`) is reachable from the Tools contextual
- * strip (`toolsStripItems` in `contextualStripItems.ts`), not as a top-level
+ * strip (`resolveToolsStripItems` in `contextualStripItems.ts`), not as a top-level
  * tab — the route itself still requires an active project.
  */
 export const primaryNavItems: PrimaryNavItem[] = [

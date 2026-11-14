@@ -251,7 +251,8 @@ project, library or build. The flasher needs no open project and stores nothing.
 6. **Flash is not Write.** Codeplug Write rules, its env gate and the build/egress model don't apply to firmware, and
    firmware rules don't apply to Write.
 7. **Per-radio prod gate.** Each radio's firmware updater has its own prod-disabled flag. A gated radio is hidden on
-   the prod site and fully available on pre-prod (next, dev, staging). A radio's flag is cleared in its own commit once
+   the prod site, unless developer mode is on for the device (visibility only, never an interlock;
+   [developer mode](docs/features/developer-mode/README.md)), and fully available on pre-prod (next, dev, staging). A radio's flag is cleared in its own commit once
    Studio has flashed at least one patched release to that radio on hardware.
 
 ### Patch sources

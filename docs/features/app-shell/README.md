@@ -105,7 +105,7 @@ Routes that need a project gate on an active project and link back to Projects w
 
 ## Section navigation
 
-Primary tabs (order): **Summary**, **Library**, **Export for radio**, **Tools** (`/reference`), **Help**. Project-scoped tabs hide when no project is active; Tools and Help stay reachable. Settings and Debug live in the avatar overflow menu.
+Primary tabs (order): **Summary**, **Library**, **Export for radio**, **Tools** (`/reference`), **Help**. Project-scoped tabs hide when no project is active; Tools and Help stay reachable. Settings and Debug live in the avatar overflow menu; on prod, Debug (menu item and routes) shows only with [developer mode](../developer-mode/README.md) on, and a "Developer mode" badge sits in the top bar while it is on.
 
 `ContextualStrip` shows flat pill destinations for Library entity types (design-system labels), Tools sub-pages, Help, Settings, Debug, and build-detail trait nav. Build detail also mounts a compact `BuildSwitcher` as the strip leading control. Library list pages host their own **New…** / **Add from…** / defaults actions in the page header (relocated from the old sidebar in #917).
 

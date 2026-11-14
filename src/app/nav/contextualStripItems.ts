@@ -84,10 +84,13 @@ export function buildToolsStripItems(
   ];
 }
 
-/** Computed once: build env and platform don't change at runtime. */
-export const toolsStripItems: readonly ContextualStripItem[] = buildToolsStripItems(
-  listOfferedFirmwareUpdaters().length > 0,
-);
+/**
+ * Tools strip for this build, platform and device. Build env and platform are fixed at runtime; developer mode
+ * (#1650) is not, so pass it from `useDeveloperMode` in components (default: read at call time).
+ */
+export function resolveToolsStripItems(developerMode?: boolean): readonly ContextualStripItem[] {
+  return buildToolsStripItems(listOfferedFirmwareUpdaters(undefined, developerMode).length > 0);
+}
 
 export const helpStripItems: readonly ContextualStripItem[] = [
   { label: 'Overview', to: '/help' },
@@ -111,6 +114,7 @@ export const debugStripItems: readonly ContextualStripItem[] = [
  */
 export function resolveContextualStripItems(
   pathname: string,
+  developerMode?: boolean,
 ): readonly ContextualStripItem[] | null {
   if (pathname.startsWith('/library')) return libraryStripItems;
   if (
@@ -119,7 +123,7 @@ export function resolveContextualStripItems(
     pathname.startsWith('/tracking') ||
     pathname.startsWith('/firmware')
   ) {
-    return toolsStripItems;
+    return resolveToolsStripItems(developerMode);
   }
   if (pathname.startsWith('/help') || pathname.startsWith('/attributions')) {
     return helpStripItems;

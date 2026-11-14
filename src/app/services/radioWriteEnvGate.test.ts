@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { DEVELOPER_MODE_KEY, setDeveloperMode } from '@integrations/preferences/developerMode.ts';
 import { OPENGD77_MD9600_DESCRIPTOR } from '@integrations/radio-io/radios/opengd77/md9600/descriptor.ts';
 import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
 import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.ts';
@@ -90,6 +91,30 @@ describe('radioWriteEnvGate', () => {
     const gated = { prodWriteDisabled: true as const };
     expect(resolveRadioWriteGate(gated, 'prod')).toBe('allowed');
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
+  });
+
+  describe('developer mode (#1650)', () => {
+    afterEach(() => localStorage.removeItem(DEVELOPER_MODE_KEY));
+
+    it('shows a prod-disabled descriptor and profile on prod with developer mode on', () => {
+      const gated = { prodWriteDisabled: true as const };
+      expect(resolveRadioWriteGate(gated, 'prod', undefined, false)).toBe('hidden');
+      expect(resolveRadioWriteGate(gated, 'prod', undefined, true)).toBe('allowed');
+      expect(resolveRadioWriteGate(profileGated, 'prod', 'p-mod', false)).toBe('hidden');
+      expect(resolveRadioWriteGate(profileGated, 'prod', 'p-mod', true)).toBe('allowed');
+    });
+
+    it('stays allowed on pre-prod with developer mode off', () => {
+      for (const env of ['main', 'dev', 'staging', 'local']) {
+        expect(resolveRadioWriteGate(profileGated, env, 'p-mod', false)).toBe('allowed');
+      }
+    });
+
+    it('reads developer mode from this device when the caller does not pass it', () => {
+      expect(resolveRadioWriteGate(profileGated, 'prod', 'p-mod')).toBe('hidden');
+      setDeveloperMode(true);
+      expect(resolveRadioWriteGate(profileGated, 'prod', 'p-mod')).toBe('allowed');
+    });
   });
 
   it('resolves profile-specific prod-disabled messages', () => {

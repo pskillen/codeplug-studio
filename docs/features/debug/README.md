@@ -2,6 +2,8 @@
 
 Read-only contributor tooling to inspect **browser-local app state** without DevTools. Useful for debugging CRUD persistence, multi-tab revision conflicts, list-prefs hydration, and storage quota.
 
+**On prod:** the Debug pages and the avatar menu's Debug item are hidden unless [developer mode](../developer-mode/README.md) is on for the device (tap the footer version five times). Every `/debug` route is mounted under `DebugGate` from `debugRoutes` in `src/app/routes/debug/debugRoutes.tsx`; add new pages there. The index page has a "Developer mode on this device" switch.
+
 **Tracking:** [#54](https://github.com/pskillen/codeplug-studio/issues/54) (Phase 3 / Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1))
 
 **Source:** `src/integrations/debug/`, `src/app/routes/debug/`, `src/app/components/JsonTreeViewer/`
@@ -67,14 +69,15 @@ List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with o
 
 ## Code anchors
 
-| Layer            | Module                                                                                        |
-| ---------------- | --------------------------------------------------------------------------------------------- |
-| Integrations     | `src/integrations/debug/storageKeyRegistry.ts`, `indexedDbInspect.ts`, `parseStorageValue.ts` |
-| List prefs keys  | `src/integrations/listPrefs/` (`LIST_PREFS_STORAGE_PREFIX`, `LIST_ENTITY_LABELS`)             |
-| Preferences keys | `src/integrations/preferences/index.ts` (`ACTIVE_PROJECT_KEY`, `MAPBOX_TOKEN_KEY`)            |
-| Routes           | `src/app/routes/debug/`                                                                       |
-| Tree viewer      | `src/app/components/JsonTreeViewer/JsonTreeViewer.tsx`                                        |
-| Navigation       | Avatar overflow → Debug; `debugStripItems` in `contextualStripItems.ts`                       |
+| Layer            | Module                                                                                               |
+| ---------------- | ---------------------------------------------------------------------------------------------------- |
+| Integrations     | `src/integrations/debug/storageKeyRegistry.ts`, `indexedDbInspect.ts`, `parseStorageValue.ts`        |
+| List prefs keys  | `src/integrations/listPrefs/` (`LIST_PREFS_STORAGE_PREFIX`, `LIST_ENTITY_LABELS`)                    |
+| Preferences keys | `src/integrations/preferences/index.ts` (`ACTIVE_PROJECT_KEY`, `MAPBOX_TOKEN_KEY`)                   |
+| Routes           | `src/app/routes/debug/`                                                                              |
+| Tree viewer      | `src/app/components/JsonTreeViewer/JsonTreeViewer.tsx`                                               |
+| Navigation       | Avatar overflow → Debug (gated on prod); `debugStripItems` in `contextualStripItems.ts`              |
+| Prod gate        | `DebugGate.tsx`, `debugRoutes.tsx`; `resolveDebugPagesGate` in `src/app/services/prodFeatureGate.ts` |
 
 ## Manual verify
 

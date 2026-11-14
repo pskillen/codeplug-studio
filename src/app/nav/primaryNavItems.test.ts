@@ -5,7 +5,7 @@ import {
   helpStripItems,
   libraryStripItems,
   resolveContextualStripItems,
-  toolsStripItems,
+  resolveToolsStripItems,
   SHOW_PROPAGATION_VISUALISER,
 } from './contextualStripItems.ts';
 import { primaryNavItems, projectNavItems } from './primaryNavItems.ts';
@@ -46,7 +46,7 @@ describe('contextualStripItems', () => {
   });
 
   it('resolves Tools and Help strips', () => {
-    expect(resolveContextualStripItems('/reference/bands')).toEqual(toolsStripItems);
+    expect(resolveContextualStripItems('/reference/bands')).toEqual(resolveToolsStripItems());
     expect(resolveContextualStripItems('/attributions')).toEqual(helpStripItems);
   });
 
@@ -59,20 +59,24 @@ describe('contextualStripItems', () => {
       'Tracking Dashboard',
     ]);
     expect(SHOW_PROPAGATION_VISUALISER).toBe(false);
-    expect(toolsStripItems.find((i) => i.label === 'Tracking Dashboard')?.to).toBe('/tracking');
-    expect(toolsStripItems.some((i) => i.label === 'Propagation Visualiser')).toBe(false);
+    expect(resolveToolsStripItems().find((i) => i.label === 'Tracking Dashboard')?.to).toBe(
+      '/tracking',
+    );
+    expect(resolveToolsStripItems().some((i) => i.label === 'Propagation Visualiser')).toBe(false);
 
     const withPropagation = buildToolsStripItems(false, true);
     const propagation = withPropagation.find((i) => i.label === 'Propagation Visualiser');
     expect(propagation?.to).toBe('https://propagation.mm9pdy.net/');
     expect(propagation?.external).toBe(true);
 
-    expect(resolveContextualStripItems('/tracking')).toEqual(toolsStripItems);
-    expect(resolveContextualStripItems('/reference/rf-propagation')).toEqual(toolsStripItems);
+    expect(resolveContextualStripItems('/tracking')).toEqual(resolveToolsStripItems());
+    expect(resolveContextualStripItems('/reference/rf-propagation')).toEqual(
+      resolveToolsStripItems(),
+    );
   });
 
   it('resolves the Field tools to the Tools strip', () => {
-    expect(resolveContextualStripItems('/tools/locator')).toEqual(toolsStripItems);
+    expect(resolveContextualStripItems('/tools/locator')).toEqual(resolveToolsStripItems());
     const tools = primaryNavItems.find((i) => i.label === 'Tools');
     expect(tools?.alsoActiveFor).toContain('/tools');
   });
@@ -93,19 +97,23 @@ describe('contextualStripItems', () => {
     ]);
     expect(buildToolsStripItems(false).some((i) => i.to === '/firmware')).toBe(false);
     // Tests run as the `local` build: the flasher is offered.
-    expect(toolsStripItems.some((i) => i.to === '/firmware')).toBe(true);
-    expect(resolveContextualStripItems('/firmware')).toEqual(toolsStripItems);
-    expect(activeContextualStripLabel('/firmware', toolsStripItems)).toBe('Firmware flasher');
+    expect(resolveToolsStripItems().some((i) => i.to === '/firmware')).toBe(true);
+    expect(resolveContextualStripItems('/firmware')).toEqual(resolveToolsStripItems());
+    expect(activeContextualStripLabel('/firmware', resolveToolsStripItems())).toBe(
+      'Firmware flasher',
+    );
   });
 
   it('excludes external items from the active strip label', () => {
     expect(activeContextualStripLabel('/library/channels/defaults', libraryStripItems)).toBe(
       'Channels',
     );
-    expect(activeContextualStripLabel('/tools/bearing', toolsStripItems)).toBe(
+    expect(activeContextualStripLabel('/tools/bearing', resolveToolsStripItems())).toBe(
       'Distance & bearing',
     );
-    expect(activeContextualStripLabel('/tools/nearby', toolsStripItems)).toBe('Nearby repeaters');
+    expect(activeContextualStripLabel('/tools/nearby', resolveToolsStripItems())).toBe(
+      'Nearby repeaters',
+    );
     expect(
       activeContextualStripLabel('/reference/rf-propagation', buildToolsStripItems(false, true)),
     ).toBeNull();
