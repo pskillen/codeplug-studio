@@ -1,6 +1,6 @@
 /**
  * Test-only stand-in for the Android USB-serial plugin, backed by any radio mock that implements `BytePipe` (the
- * DM-32UV and RT95 bootloader mocks), so an updater runs end to end through the real `CapacitorSerialBytePipe`
+ * DM-32UV, RT95 and AT-D890UV bootloader mocks), so an updater runs end to end through the real `CapacitorSerialBytePipe`
  * offline. Modelled on the UV-5R Mini's emulator-bridge plugin; this one needs no emulator.
  *
  * - `listDevices` lists one cable (`device`, a CH340 by default); permission is granted.
@@ -41,6 +41,18 @@ export const MOCK_PL2303GC_DEVICE: SerialDeviceInfo = {
   deviceName: '/dev/bus/usb/001/004',
   serialNumber: null,
   driverType: 'ProlificSerialDriver',
+  portCount: 1,
+  hasPermission: true,
+};
+
+/** The AT-D890UV itself (ST's CDC/ACM virtual COM port) as the plugin lists it. */
+export const MOCK_ST_CDC_DEVICE: SerialDeviceInfo = {
+  deviceId: 'dev_mock_st_cdc',
+  vendorId: 0x0483,
+  productId: 0x5740,
+  deviceName: '/dev/bus/usb/001/005',
+  serialNumber: null,
+  driverType: 'CdcAcmSerialDriver',
   portCount: 1,
   hasPermission: true,
 };
