@@ -1,42 +1,32 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  fromHex,
+  L1_VM,
+  RADIO_REPORT_EXAMPLE_HEX,
+  radioReportFrame,
+  withCrc,
+} from './__fixtures__/radioReportFrame.ts';
+import {
   crc16Xmodem,
   decodeUv5rMiniRadioReport,
+  UV5RMINI_BAD_REPORT_REFUSAL,
   UV5RMINI_RADIO_REPORT_ADDRESS,
+  UV5RMINI_RADIO_REPORT_FORMAT,
   UV5RMINI_UNKNOWN_FORMAT_REFUSAL,
   UV5RMINI_UNKNOWN_LAYOUT_REFUSAL,
   uv5rMiniLayoutFromReport,
 } from './radioReport.ts';
 
-/**
- * The firmware project's example block, as it looks decoded: made up (an L2 build, register 0 0x1234), so it is
- * public-safe.
- */
-const EXAMPLE_HEX =
-  '4d4d3952010000000040090000a0060000400900341200006d6d397064792d4c322d302e322e302d72632e31000000000000000000000000000000000000cf95';
+const example = () => fromHex(RADIO_REPORT_EXAMPLE_HEX);
+const decode = decodeUv5rMiniRadioReport;
+const invalid = (reason: string) => ({ kind: 'invalid', reason });
 
-const fromHex = (h: string) => Uint8Array.from(h.match(/../g)!.map((x) => parseInt(x, 16)));
-const example = () => fromHex(EXAMPLE_HEX);
-
-const putU32 = (b: Uint8Array, at: number, v: number) => {
-  for (let i = 0; i < 4; i++) b[at + i] = (v >>> (8 * i)) & 0xff;
-};
-
-/** Edit a block, then set its CRC right, so only the edited field differs. */
-function edited(edit: (b: Uint8Array) => void): Uint8Array {
+/** Edit the example, then set its CRC right, so only the edited field differs. */
+const edited = (edit: (b: Uint8Array) => void) => {
   const b = example();
   edit(b);
-  const crc = crc16Xmodem(b.subarray(0, 0x3e));
-  b[0x3e] = crc & 0xff;
-  b[0x3f] = crc >> 8;
-  return b;
-}
-
-const asL1 = (b: Uint8Array) => {
-  putU32(b, 0x08, 0x95000);
-  putU32(b, 0x0c, 0x68000);
-  putU32(b, 0x10, 0x95000);
+  return withCrc(b);
 };
 
 describe('crc16Xmodem', () => {
@@ -46,15 +36,18 @@ describe('crc16Xmodem', () => {
 });
 
 describe('decodeUv5rMiniRadioReport', () => {
-  it('reads the frame at 0xEFC0', () => {
+  it('reads format 2 at 0xEFC0', () => {
     expect(UV5RMINI_RADIO_REPORT_ADDRESS).toBe(0xefc0);
+    expect(UV5RMINI_RADIO_REPORT_FORMAT).toBe(2);
   });
 
-  it('decodes the example block: an L2 build on the v0.27 code base', () => {
-    expect(decodeUv5rMiniRadioReport(example())).toEqual({
+  it('decodes the test vector: L2, NRF / V0.27 / V1.7, register 0 0x1234, the build name', () => {
+    expect(decode(example())).toEqual({
       kind: 'report',
       layout: 'L2',
-      codeBase: 'nrf-v0.27',
+      suffix: 'NRF',
+      version: 'V0.27',
+      hardware: 'V1.7',
       flags: 0,
       vmStart: 0x94000,
       vmSize: 0x6a000,
@@ -64,79 +57,134 @@ describe('decodeUv5rMiniRadioReport', () => {
     });
   });
 
-  it('decodes an L1 block, and flags bit 0 as the v0.04 code base', () => {
-    const r = decodeUv5rMiniRadioReport(
-      edited((b) => {
-        asL1(b);
-        b[5] = 0x01;
-      }),
+  it('the fixture builder makes the test vector by default', () => {
+    expect(radioReportFrame()).toEqual(example());
+  });
+
+  it('decodes an L1 frame on NRFB / V0.04 / V1.7 with bit 0 set', () => {
+    expect(decode(radioReportFrame({ vm: L1_VM, suffix: 'NRFB', version: 'V0.04' }))).toMatchObject(
+      {
+        kind: 'report',
+        layout: 'L1',
+        suffix: 'NRFB',
+        version: 'V0.04',
+        hardware: 'V1.7',
+        flags: 1,
+      },
     );
-    expect(r).toMatchObject({ kind: 'report', layout: 'L1', codeBase: 'nrfb-v0.04', flags: 1 });
   });
 
-  it('treats a bad CRC as stock', () => {
-    const b = example();
-    b[0x3e] ^= 0x01;
-    expect(decodeUv5rMiniRadioReport(b)).toEqual({ kind: 'stock', reason: 'crc' });
-    // A changed field with the old CRC is a bad CRC too.
-    const c = example();
-    c[0x14] = 0x35;
-    expect(decodeUv5rMiniRadioReport(c)).toEqual({ kind: 'stock', reason: 'crc' });
+  it('reads a string without its trailing NULs and spaces, and compares it exactly', () => {
+    expect(decode(radioReportFrame({ hardware: 'V1.7\0' }))).toMatchObject({ hardware: 'V1.7' });
+    expect(decode(radioReportFrame({ suffix: 'nrf' }))).toMatchObject({ suffix: 'nrf' });
+    // Spaces inside a string are kept.
+    expect(decode(radioReportFrame({ version: 'V 0.2' }))).toMatchObject({ version: 'V 0.2' });
   });
 
-  it('treats erased flash (all FF) and all zeros as stock', () => {
-    expect(decodeUv5rMiniRadioReport(new Uint8Array(64).fill(0xff))).toEqual({
-      kind: 'stock',
-      reason: 'magic',
+  describe('the rules, in order', () => {
+    it('1: refuses a read that is not 64 bytes', () => {
+      expect(decode(example().subarray(0, 63))).toEqual(invalid('the read was 63 bytes, not 64'));
+      expect(decode(new Uint8Array(65))).toEqual(invalid('the read was 65 bytes, not 64'));
     });
-    expect(decodeUv5rMiniRadioReport(new Uint8Array(64))).toEqual({
-      kind: 'stock',
-      reason: 'magic',
+
+    it('2: treats no magic as stock (erased flash, zeros)', () => {
+      expect(decode(new Uint8Array(64).fill(0xff))).toEqual({ kind: 'stock', reason: 'magic' });
+      expect(decode(new Uint8Array(64))).toEqual({ kind: 'stock', reason: 'magic' });
+      expect(decode(edited((b) => (b[3] = 0x53)))).toEqual({ kind: 'stock', reason: 'magic' });
     });
-  });
 
-  it('treats a short read as stock', () => {
-    expect(decodeUv5rMiniRadioReport(example().subarray(0, 63))).toEqual({
-      kind: 'stock',
-      reason: 'length',
+    it('3: treats a bad CRC as stock', () => {
+      const b = example();
+      b[0x3e] ^= 0x01;
+      expect(decode(b)).toEqual({ kind: 'stock', reason: 'crc' });
+      // A changed field with the old CRC is a bad CRC too.
+      const c = example();
+      c[0x30] = 0x58;
+      expect(decode(c)).toEqual({ kind: 'stock', reason: 'crc' });
     });
-  });
 
-  it('names an unknown format and reads nothing past the first six bytes', () => {
-    const r = decodeUv5rMiniRadioReport(
-      edited((b) => {
-        b[4] = 2;
-        putU32(b, 0x08, 0x12345); // would be an unknown layout in format 1
-      }),
-    );
-    expect(r).toEqual({ kind: 'unknownFormat', format: 2 });
-  });
-
-  it('refuses any other VM pair as an unknown layout', () => {
-    for (const [start, size] of [
-      [0x95000, 0x6a000], // L1 start with L2 size
-      [0x94000, 0x68000], // L2 start with L1 size
-      [0x96000, 0x66000],
-      [0, 0],
-    ] as const) {
-      const r = decodeUv5rMiniRadioReport(
-        edited((b) => {
-          putU32(b, 0x08, start);
-          putU32(b, 0x0c, size);
-        }),
-      );
-      expect(r).toEqual({
-        kind: 'unknownLayout',
-        vmStart: start,
-        vmSize: size,
-        name: 'mm9pdy-L2-0.2.0-rc.1',
+    it('4: names any format but 2, format 1 included, and reads nothing past it', () => {
+      expect(decode(radioReportFrame({ format: 1 }))).toEqual({ kind: 'unknownFormat', format: 1 });
+      expect(decode(radioReportFrame({ format: 3, flags: 0xff, vm: [0, 0] }))).toEqual({
+        kind: 'unknownFormat',
+        format: 3,
       });
-    }
+    });
+
+    it('5: refuses a reserved flags bit', () => {
+      for (const flags of [0x02, 0x80, 0x03]) {
+        expect(decode(radioReportFrame({ flags }))).toEqual(invalid('a reserved flags bit is set'));
+      }
+    });
+
+    it('6: refuses an empty, all-space or unprintable string, naming which', () => {
+      expect(decode(radioReportFrame({ suffix: new Uint8Array(4) }))).toEqual(
+        invalid('its suffix string is unreadable'),
+      );
+      expect(decode(radioReportFrame({ version: '     ' }))).toEqual(
+        invalid('its Firmware string is unreadable'),
+      );
+      expect(decode(radioReportFrame({ hardware: Uint8Array.of(0x56, 0x31, 0x7f, 0x37) }))).toEqual(
+        invalid('its Hardware string is unreadable'),
+      );
+      // A NUL inside the string, not trailing, is unprintable.
+      expect(decode(radioReportFrame({ suffix: Uint8Array.of(0x4e, 0, 0x52, 0x46) }))).toEqual(
+        invalid('its suffix string is unreadable'),
+      );
+      expect(
+        decode(radioReportFrame({ version: Uint8Array.of(0x56, 0xb0, 0x2e, 0x32, 0x37) })),
+      ).toEqual(invalid('its Firmware string is unreadable'));
+    });
+
+    it('7: refuses bit 0 disagreeing with the strings, either way', () => {
+      const DISAGREES = invalid(
+        'its NRFB V0.04 flag disagrees with its suffix, Firmware and Hardware strings',
+      );
+      // Set, but the strings are not NRFB / V0.04 / V1.7.
+      expect(decode(radioReportFrame({ flags: 1 }))).toEqual(DISAGREES);
+      expect(
+        decode(radioReportFrame({ flags: 1, suffix: 'NRFB', version: 'V0.04', hardware: 'V1.8 ' })),
+      ).toEqual(DISAGREES);
+      // Clear, but they are.
+      expect(
+        decode(radioReportFrame({ flags: 0, vm: L1_VM, suffix: 'NRFB', version: 'V0.04' })),
+      ).toEqual(DISAGREES);
+    });
+
+    it('8: names any other VM pair as an unknown layout', () => {
+      for (const vm of [
+        [0x95000, 0x6a000], // L1 start with L2 size
+        [0x94000, 0x68000], // L2 start with L1 size
+        [0x96000, 0x66000],
+        [0, 0],
+      ] as const) {
+        expect(decode(radioReportFrame({ vm }))).toEqual({
+          kind: 'unknownLayout',
+          vmStart: vm[0],
+          vmSize: vm[1],
+          name: 'mm9pdy-L2-0.2.0-rc.1',
+        });
+      }
+    });
   });
 
   it('returns vm_bank0 as read when it differs, and still decides on the pair', () => {
-    const r = decodeUv5rMiniRadioReport(edited((b) => putU32(b, 0x10, 0x95000)));
-    expect(r).toMatchObject({ kind: 'report', layout: 'L2', vmStart: 0x94000, vmBank0: 0x95000 });
+    expect(decode(radioReportFrame({ bank0: 0x95000 }))).toMatchObject({
+      kind: 'report',
+      layout: 'L2',
+      vmStart: 0x94000,
+      vmBank0: 0x95000,
+    });
+  });
+
+  it('decides nothing on the reserved bytes', () => {
+    const r = decode(
+      edited((b) => {
+        b.set([0xaa, 0x55], 0x06);
+        b.set([0x12, 0x34], 0x16);
+      }),
+    );
+    expect(r).toEqual(decode(example()));
   });
 });
 
@@ -147,74 +195,41 @@ describe('uv5rMiniLayoutFromReport', () => {
     expect(answer(new Uint8Array(64).fill(0xff))).toBeNull();
   });
 
-  it('takes the layout and build from the report, with the facts as information only', () => {
-    expect(answer(example())).toEqual({
-      kind: 'layout',
-      layout: 'L2',
-      build: 'mm9pdy-L2-0.2.0-rc.1',
-      reported: true,
-      codeBase: 'nrf-v0.27',
-      details: [
-        'MM9PDY build: mm9pdy-L2-0.2.0-rc.1',
-        'Flash layout: L2',
-        'Code base: nrf-v0.27',
-        'RF chip register 0: 0x1234',
-      ],
+  it('refuses a broken report with its reason, and names an unknown format', () => {
+    expect(answer(radioReportFrame({ flags: 0x02 }))).toEqual({
+      kind: 'refused',
+      message: UV5RMINI_BAD_REPORT_REFUSAL('a reserved flags bit is set'),
+    });
+    expect(UV5RMINI_BAD_REPORT_REFUSAL('a reserved flags bit is set')).toBe(
+      "This radio's MM9PDY report doesn't read right: a reserved flags bit is set. Nothing was sent.",
+    );
+    expect(answer(radioReportFrame({ format: 1 }))).toEqual({
+      kind: 'refused',
+      message: UV5RMINI_UNKNOWN_FORMAT_REFUSAL(1),
     });
   });
 
+  it('refuses an unknown pair', () => {
+    expect(answer(radioReportFrame({ vm: [0x96000, 0x66000] }))).toEqual({
+      kind: 'refused',
+      message: UV5RMINI_UNKNOWN_LAYOUT_REFUSAL(0x96000, 0x66000),
+    });
+    expect(UV5RMINI_UNKNOWN_LAYOUT_REFUSAL(0x96000, 0x66000)).toBe(
+      "This radio reports a flash layout Studio doesn't support (VM entry at 0x96000, 0x66000 bytes). Nothing was sent.",
+    );
+  });
+
   it('marks an empty-named report as reported, with no build', () => {
-    const r = answer(edited((b) => b.fill(0, 0x18, 0x3e)));
+    const r = answer(radioReportFrame({ name: '' }));
     expect(r).toMatchObject({ kind: 'layout', layout: 'L2', reported: true });
     expect(r).not.toHaveProperty('build');
   });
 
-  it('carries the code-base flag as the radio code base and as information, never as a warning', () => {
-    const v004L1 = answer(
-      edited((b) => {
-        asL1(b);
-        b[5] = 0x01;
-      }),
-    );
-    expect(v004L1).toMatchObject({ kind: 'layout', layout: 'L1', codeBase: 'nrfb-v0.04' });
-    expect(v004L1 && v004L1.kind === 'layout' ? v004L1.details : []).toContain(
-      'Code base: nrfb-v0.04',
-    );
-    // No file moves a radio between code bases any more, so the old one-way warning is gone.
-    expect(v004L1).not.toHaveProperty('warning');
-
-    const v027L1 = answer(edited(asL1));
-    expect(v027L1).toMatchObject({ kind: 'layout', layout: 'L1', codeBase: 'nrf-v0.27' });
-    expect(v027L1).not.toHaveProperty('warning');
-
-    const v004L2 = answer(edited((b) => (b[5] = 0x01)));
-    expect(v004L2).toMatchObject({ layout: 'L2', codeBase: 'nrfb-v0.04' });
-    expect(v004L2).not.toHaveProperty('warning');
-  });
-
   it('reports a vm_bank0 mismatch and keeps the pair', () => {
-    const r = answer(edited((b) => putU32(b, 0x10, 0x95000)));
+    const r = answer(radioReportFrame({ bank0: 0x95000 }));
     expect(r).toMatchObject({ kind: 'layout', layout: 'L2' });
     expect(r && r.kind === 'layout' ? r.details?.at(-1) : '').toBe(
       "The radio's settings store starts at 0x95000, not at its VM entry 0x94000. Studio goes by the VM entry.",
     );
-  });
-
-  it('refuses an unknown pair and an unknown format', () => {
-    expect(
-      answer(
-        edited((b) => {
-          putU32(b, 0x08, 0x96000);
-          putU32(b, 0x0c, 0x66000);
-        }),
-      ),
-    ).toEqual({ kind: 'refused', message: UV5RMINI_UNKNOWN_LAYOUT_REFUSAL(0x96000, 0x66000) });
-    expect(UV5RMINI_UNKNOWN_LAYOUT_REFUSAL(0x96000, 0x66000)).toBe(
-      "This radio reports a flash layout Studio doesn't support (VM entry at 0x96000, 0x66000 bytes). Nothing was sent.",
-    );
-    expect(answer(edited((b) => (b[4] = 7)))).toEqual({
-      kind: 'refused',
-      message: UV5RMINI_UNKNOWN_FORMAT_REFUSAL(7),
-    });
   });
 });

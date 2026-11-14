@@ -3,7 +3,7 @@ import { useEffect, useReducer } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
-import { crc16Xmodem } from '@core/radios/baofeng/uv-5r-mini/radioReport.ts';
+import { radioReportFrame } from '@core/radios/baofeng/uv-5r-mini/__fixtures__/radioReportFrame.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 import {
   getFirmwareUpdater,
@@ -43,8 +43,8 @@ const NO_REPORT =
   'Studio found no MM9PDY radio report: the radio runs stock firmware, or an MM9PDY build from before the report.';
 
 /**
- * A decoded radio report, built like the firmware project's made-up example. `rf0` is made up too: never a real
- * radio's value.
+ * A decoded radio report (format 2), built like the firmware project's made-up example: `NRF` / `V0.27` / `V1.7`, or
+ * `NRFB` / `V0.04` / `V1.7` with `v004`. `rf0` is made up too: never a real radio's value.
  */
 function reportBlock(o: {
   vm?: readonly [number, number];
@@ -52,21 +52,12 @@ function reportBlock(o: {
   v004?: boolean;
   format?: number;
   name?: string;
+  suffix?: string;
+  version?: string;
+  hardware?: string;
 }): Uint8Array {
-  const [vmStart, vmSize] = o.vm ?? [0x94000, 0x6a000];
-  const b = new Uint8Array(64);
-  b.set([0x4d, 0x4d, 0x39, 0x52, o.format ?? 1, o.v004 ? 1 : 0]);
-  const u32 = (at: number, v: number) => {
-    for (let i = 0; i < 4; i++) b[at + i] = (v >>> (8 * i)) & 0xff;
-  };
-  u32(0x08, vmStart);
-  u32(0x0c, vmSize);
-  u32(0x10, o.bank0 ?? vmStart);
-  b.set([0x34, 0x12], 0x14);
-  b.set(new TextEncoder().encode(o.name ?? 'mm9pdy-L2-0.2.0-rc.1'), 0x18);
-  const crc = crc16Xmodem(b.subarray(0, 0x3e));
-  b.set([crc & 0xff, crc >> 8], 0x3e);
-  return b;
+  const { v004, ...rest } = o;
+  return radioReportFrame({ ...(v004 ? { suffix: 'NRFB', version: 'V0.04' } : {}), ...rest });
 }
 const L1: readonly [number, number] = [0x95000, 0x68000];
 const STOCK_FLASH = new Uint8Array(64).fill(0xff);
@@ -384,10 +375,10 @@ describe('PrepareStep: reading the UV-5R Mini', () => {
     expect(canAdvance(latest)).toBe(false);
   });
 
-  it('refuses an unknown report format by name and builds nothing', async () => {
+  it('refuses an unknown report format by name, format 1 included, and builds nothing', async () => {
     render(<Harness updater={MINI} />);
-    await readRadio(reportBlock({ format: 2 }));
-    expect(screen.getByText(/answers in report format 2/)).toBeInTheDocument();
+    await readRadio(reportBlock({ format: 1 }));
+    expect(screen.getByText(/answers in report format 1,/)).toBeInTheDocument();
     expect(flash.prepareFlash).not.toHaveBeenCalled();
   });
 

@@ -16,9 +16,9 @@ import { UV5R_MINI_MAGICS_READ } from './magics.ts';
 import { readUv5rMiniRadioReport, UV5RMINI_RADIO_REPORT_LINK } from './radioReportRead.ts';
 import { assertUv5rMiniWriteAllowed, Uv5rMiniWriteRefusedError } from './writeInterlock.ts';
 
-/** The firmware project's made-up example block (an L2 build), decoded. */
+/** The firmware project's made-up example block, format 2 (an L2 build on NRF / V0.27 / V1.7), decoded. */
 const EXAMPLE = Uint8Array.from(
-  '4d4d3952010000000040090000a0060000400900341200006d6d397064792d4c322d302e322e302d72632e31000000000000000000000000000000000000cf95'
+  '4d4d3952020000000040090000a0060000400900341200006d6d397064792d4c322d302e322e302d72632e31000000004e52460056302e323756312e3720dd1a'
     .match(/../g)!
     .map((x) => parseInt(x, 16)),
 );

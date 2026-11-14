@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { fromHex, RADIO_REPORT_EXAMPLE_HEX } from './__fixtures__/radioReportFrame.ts';
 import {
   normaliseRadioInfoLine,
   UV5RMINI_FIRMWARE_NOT_SUPPORTED,
@@ -153,11 +154,7 @@ describe('uv5rMiniLayoutFromRadioInfo', () => {
   it('reads the radio report first: a report decides, no report means the question', () => {
     const resolve = UV5RMINI_RADIO_LAYOUT_QUESTION.report!.resolve;
     expect(resolve(new Uint8Array(64).fill(0xff))).toBeNull();
-    const example = Uint8Array.from(
-      '4d4d3952010000000040090000a0060000400900341200006d6d397064792d4c322d302e322e302d72632e31000000000000000000000000000000000000cf95'
-        .match(/../g)!
-        .map((x) => parseInt(x, 16)),
-    );
+    const example = fromHex(RADIO_REPORT_EXAMPLE_HEX);
     expect(resolve(example)).toMatchObject({
       kind: 'layout',
       layout: 'L2',
