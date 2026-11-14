@@ -189,6 +189,30 @@ describe('FirmwareFlasherPage', () => {
     );
   });
 
+  it('says which radios are supported on the card and above every later step, for a radio that says so', async () => {
+    const supported = 'radios whose Radio Info shows Firmware V9.99.';
+    vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([
+      { ...DM32, stock: { ...DM32.stock, supportedRadios: supported } },
+    ]);
+    renderPage();
+    expect(screen.getByRole('radio', { name: /Baofeng DM-32UV/ })).toHaveTextContent(
+      `Supported: ${supported}`,
+    );
+    fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+    cont();
+    await screen.findByText('Summary of 1.0.0.');
+    expect(screen.getByText(`Supported: ${supported}`)).toBeInTheDocument();
+  });
+
+  it('shows no supported-radios line for a radio without one', async () => {
+    renderPage();
+    expect(screen.queryByText(/Supported:/)).toBeNull();
+    fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+    cont();
+    await screen.findByText('Summary of 1.0.0.');
+    expect(screen.queryByText(/Supported:/)).toBeNull();
+  });
+
   it('requires a patch and shows own-image instructions for a radio without stock flash', async () => {
     const stock = {
       ...DM32.stock,
@@ -833,6 +857,15 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
         await screen.findByText(/Notes for 1\.1\.0-rc\.1|Notes for 1\.0\.0/),
       ).toBeInTheDocument();
       expect(flash.loadChosenPatch).not.toHaveBeenCalled();
+    });
+
+    it('says which radios are supported, for a radio that says so', async () => {
+      vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([
+        { ...DM32, stock: { ...DM32.stock, supportedRadios: 'radios on V9.99.' } },
+      ]);
+      renderPage();
+      expect(screen.getByText('Supported: radios on V9.99.')).toBeInTheDocument();
+      expect(await screen.findByText('Summary of 1.0.0.')).toBeInTheDocument();
     });
 
     it('says when the list cannot be downloaded, and retries', async () => {

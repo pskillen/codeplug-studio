@@ -61,6 +61,10 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   label: 'Baofeng UV-5R Mini',
   // The 1.0.0 release's stock (radios showing NRF, Firmware V0.27) is the primary; v0.04 (NRFB) is the second base.
   version: 'v0.27 (NRF)',
+  // The radios the published releases are built for (1.0.0: v0.27 NRF only). Change it with the first release for
+  // another stock base.
+  supportedRadios:
+    'UV-5R Minis whose Radio Info (MENU → Radio Info) shows Firmware V0.27 and Hardware V1.7, and whose start-up screen (hold 8 while switching on) shows 5RMINI NRF. Other Minis are not supported yet.',
   baseName: 'nrf-v0.27',
   stockSources: UV5RMINI_STOCK_SOURCES,
   stockFlashOffered: false,

@@ -43,6 +43,9 @@ export default function RadioStep({
               <span className={classes.cardTitle}>{d.label}</span>
               <span className={classes.cardMeta}>Stock firmware {d.stock.version}</span>
               <span className={classes.cardMeta}>Takes {d.expectedDuration}</span>
+              {d.stock.supportedRadios ? (
+                <span className={classes.cardMeta}>Supported: {d.stock.supportedRadios}</span>
+              ) : null}
             </button>
           );
         })}

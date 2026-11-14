@@ -139,6 +139,10 @@ export default function FirmwareFlasherPage() {
           Flash firmware to your radio over USB. Firmware belongs to the radio, not to a project:
           nothing here changes your codeplug, and nothing is stored.
         </p>
+        {/* The radio step's cards say it too; from there on the chosen radio's line stays in view (#1670). */}
+        {updater?.stock.supportedRadios && state.step !== 'radio' ? (
+          <p className={classes.description}>Supported: {updater.stock.supportedRadios}</p>
+        ) : null}
         <div className={classes.stepperRow}>
           <Stepper className={classes.stepper} ariaLabel="Firmware flasher steps" steps={steps} />
           {currentIndex > 0 && !running ? (

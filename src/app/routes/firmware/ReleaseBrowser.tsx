@@ -58,6 +58,9 @@ function RadioReleases({
   return (
     <Panel title={updater.stock.label} sub={`Built on stock firmware ${updater.stock.version}`}>
       <div className={classes.stack}>
+        {updater.stock.supportedRadios ? (
+          <p className={classes.copy}>Supported: {updater.stock.supportedRadios}</p>
+        ) : null}
         {value.kind === 'loading' ? <p className={classes.muted}>Loading releases…</p> : null}
         {value.kind === 'failed' ? (
           <>
