@@ -216,12 +216,12 @@ describe('one write call site', () => {
 });
 
 describe('firmware registry', () => {
-  it('registers the RT95 front panel, offered on prod, with its pre-flight', () => {
+  it('registers the RT95 front panel, offered on prod and behind developer mode on Capacitor, with its pre-flight', () => {
     const d = getFirmwareUpdater('retevis-rt95-head');
     expect(d).toMatchObject({
       label: 'Retevis RT95 front panel (LCD)',
       prodFlashDisabled: false,
-      capacitorSupported: false,
+      capacitorSupported: 'developerMode',
     });
     expect(d!.preflight?.attestations.map((a) => a.id)).toEqual([
       'serial-2101',
@@ -229,5 +229,9 @@ describe('firmware registry', () => {
     ]);
     expect(d!.preflight?.probe).toBeDefined();
     expect(d!.createUpdater().radioId).toBe('retevis-rt95-head');
+  });
+
+  it('keeps the RT95 main board hidden on Capacitor', () => {
+    expect(getFirmwareUpdater('retevis-rt95-main')).toMatchObject({ capacitorSupported: false });
   });
 });

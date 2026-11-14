@@ -20,8 +20,9 @@ export const RT95_HEAD_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   stock: RT95_HEAD_STOCK_FIRMWARE,
   link: RT95_HEAD_FW_LINK,
   createUpdater: () => createRt95HeadFirmwareUpdater(),
-  capacitorSupported: false,
-  // Hidden on prod until Studio has flashed a release to an RT95 on hardware (#1460).
+  // Android app: behind developer mode until a phone has flashed one (#1674).
+  capacitorSupported: 'developerMode',
+  // Offered on prod: Studio has flashed the front panel on hardware (#1460).
   prodFlashDisabled: false,
   preflight: RT95_HEAD_PREFLIGHT,
   // Estimate from the vendor protocol (about 15 to 25 s for 104 frames); not yet measured.
@@ -35,6 +36,8 @@ export const RT95_MAIN_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   stock: RT95_MAIN_STOCK_FIRMWARE,
   link: RT95_HEAD_FW_LINK,
   createUpdater: () => createRt95FirmwareUpdater(RT95_MAIN_TARGET),
+  // Hidden in the Android app: its required safety backup is desktop-only, and Studio has not flashed a MAIN on
+  // hardware (#1674).
   capacitorSupported: false,
   // Hidden on prod until Studio has flashed a patched MAIN on hardware and the owner has decided on a calibration
   // restore path.
