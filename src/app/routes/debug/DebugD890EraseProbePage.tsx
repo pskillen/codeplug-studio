@@ -13,6 +13,8 @@ import {
 import { Fragment, useCallback, useState } from 'react';
 import { zipSync } from 'fflate';
 import { Page, PageHeader, PageSection } from '@app/components/ui/index.ts';
+import { openAtD890ProbePipe } from '@app/services/atD890ProbePort.ts';
+import { isNativeApp } from '@integrations/platform/isNativeApp.ts';
 import { openWebSerialPipe, requestWebSerialPort } from '@integrations/radio-io/transport/index.ts';
 import {
   AT_D890_CONNECTION,
@@ -40,9 +42,8 @@ import {
   type AtD890SweepResult,
   type AtD890ThroughputResult,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
-import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
+import type { BytePipe, ProgressUpdate } from '@integrations/radio-io/types.ts';
 import { downloadZip, isoTimestampForFilename } from '@integrations/download/browserDownload.ts';
-import WebSerialOnlyDebugPage from './WebSerialOnlyDebugPage.tsx';
 
 type Pass = 'inspect' | 'paint' | 'mark' | 'measure' | 'diagnose' | 'link' | 'configAlias';
 
@@ -156,6 +157,8 @@ function saveDonePasses(passes: Pass[]): void {
 }
 
 function D890EraseProbe() {
+  // In the Android app only the read-only link-speed pass runs (#1680); everything else is web-only.
+  const native = isNativeApp();
   const [done, setDone] = useState<Pass[]>(loadDonePasses);
   const [busy, setBusy] = useState<Pass | null>(null);
   const [regionBusy, setRegionBusy] = useState<string | null>(null);
@@ -180,10 +183,9 @@ function D890EraseProbe() {
       setBusy(pass);
       setError(null);
       setProgress(null);
-      let pipe: Awaited<ReturnType<typeof openWebSerialPipe>> | null = null;
+      let pipe: BytePipe | null = null;
       try {
-        const port = await requestWebSerialPort(false);
-        pipe = await openWebSerialPipe(port, AT_D890_CONNECTION.BAUD_RATE);
+        pipe = await openAtD890ProbePipe(pass, PASS_LABEL[pass]);
         const opts = { onProgress: setProgress };
 
         if (pass === 'inspect') {
@@ -375,267 +377,317 @@ function D890EraseProbe() {
         description="Measures the flash erase unit that Write must read-modify-write (#768 phase 1). Includes a read-only config-region alias check (#792) — no power-cycle required."
       />
       <Stack gap="md">
-        <Alert color="red" title="This writes to the radio">
-          <Stack gap="xs">
-            <Text size="sm">
-              Use a spare radio if you have one, and be ready to restore with official Anytone CPS
-              (band <Code>0x000</Code> → PTT+1 test mode → band <Code>0x003</Code>).
-            </Text>
-            <Text size="sm">
-              Writes land only in <Code>ChannelData</Code> for channel slots{' '}
-              {AT_D890_PROBE.FIRST_CHANNEL_SLOT}–{AT_D890_PROBE.LAST_CHANNEL_SLOT} (
-              {hex(AT_D890_PROBE.SPAN_START)}–{hex(AT_D890_PROBE.SPAN_END)}). Pass 1 refuses to
-              write anything if any of those slots is occupied.
-            </Text>
-          </Stack>
-        </Alert>
-
-        <PageSection title="How it works">
-          <Text size="sm">
-            The radio stages writes in RAM and applies them on commit, so reading back in the same
-            session returns the shadow rather than flash. Each pass is therefore its own session
-            with a <strong>power-cycle after any pass that wrote</strong>. Pass 1 paints a 16-byte
-            sentinel every {hex(AT_D890_PROBE.SENTINEL_STRIDE)}; pass 2 confirms they survived and
-            writes one marker at {hex(AT_D890_PROBE.MARKER_ADDRESS)}; pass 3 reads the grid back.
-            The run of erased sentinels around the marker is exactly one erase unit.
-          </Text>
-          <Text size="sm" mt="sm">
-            The span deliberately sits in <Code>ChannelData</Code> blocks 16-18 rather than near the
-            start of the bank. The erase unit is the unknown being measured, so the span is placed
-            where even a far larger unit than expected (up to 8 MB) still lands entirely on unused
-            address space, well above the blocks a real codeplug occupies.
-          </Text>
-          <Text size="sm" mt="sm">
-            <strong>Config-region alias check (#792):</strong> a separate read-only pass compares
-            LocalInfo, optional settings, and ChannelSet against their <Code>+0x40000</Code> alias
-            candidates. Identical non-trivial bytes mean one physical cell; dual all-
-            <Code>0xff</Code> spans are inconclusive. Use a CPS-restored radio so LocalInfo is
-            densely populated. No writes and no power-cycle.
-          </Text>
-        </PageSection>
-
-        <PageSection title="Passes">
-          <Stack gap="sm">
-            <List spacing="xs">
-              <List.Item>
-                <Group gap="sm">
-                  <Badge color="gray" variant="light">
-                    0 · read-only
-                  </Badge>
-                  <Text size="sm">Inspect the span — confirm it holds nothing before writing.</Text>
-                  {done.includes('inspect') && <Badge color="green">done</Badge>}
-                </Group>
-              </List.Item>
-              <List.Item>
-                <Group gap="sm">
-                  <Badge color="red" variant="light">
-                    1 · writes
-                  </Badge>
-                  <Text size="sm">Paint the sentinel grid, then commit.</Text>
-                  {done.includes('paint') && <Badge color="green">done</Badge>}
-                </Group>
-              </List.Item>
-              <List.Item>
-                <Group gap="sm">
-                  <Badge color="red" variant="light">
-                    2 · writes
-                  </Badge>
-                  <Text size="sm">Power-cycle, verify the grid, write one marker, commit.</Text>
-                  {done.includes('mark') && <Badge color="green">done</Badge>}
-                </Group>
-              </List.Item>
-              <List.Item>
-                <Group gap="sm">
-                  <Badge color="gray" variant="light">
-                    3 · read-only
-                  </Badge>
-                  <Text size="sm">Power-cycle, read the grid back, measure.</Text>
-                  {done.includes('measure') && <Badge color="green">done</Badge>}
-                </Group>
-              </List.Item>
-            </List>
-
-            {nextPass && done.some((p) => PASS_COMMITS_WRITES[p]) && (
-              <Alert color="yellow" title="Power-cycle the radio now">
-                Turn the radio off and on again before running the next pass, or it will report the
-                RAM shadow instead of flash.
-              </Alert>
-            )}
-
-            {nextPass === 'paint' && inspect && inspect.occupiedSlots.length === 0 && (
-              <Alert color="orange" title="Next pass writes to the radio">
-                The span is confirmed empty. Pass 1 writes{' '}
-                {AT_D890_PROBE.SENTINEL_STRIDE > 0 ? '' : ''}
-                {Math.floor(
-                  (AT_D890_PROBE.SPAN_END - AT_D890_PROBE.SPAN_START) /
-                    AT_D890_PROBE.SENTINEL_STRIDE,
-                )}{' '}
-                sentinel blocks into it and commits.
-              </Alert>
-            )}
-
-            <Group>
-              <Button
-                onClick={() => nextPass && void runPass(nextPass)}
-                loading={anyBusy}
-                disabled={!nextPass}
-                color={nextPass && PASS_COMMITS_WRITES[nextPass] ? 'red' : undefined}
-              >
-                {nextPass
-                  ? `Run pass ${PASS_ORDER.indexOf(nextPass)} — ${PASS_LABEL[nextPass]}`
-                  : 'Complete'}
-              </Button>
-              {/* Always available: read-only, idempotent, and its whole purpose is to
-                  inspect a grid painted in an earlier session or before a page reload. */}
-              <Button variant="default" disabled={anyBusy} onClick={() => void runPass('diagnose')}>
-                {PASS_LABEL.diagnose}
-              </Button>
-              <Button variant="default" disabled={anyBusy} onClick={() => void runPass('link')}>
-                {PASS_LABEL.link}
-              </Button>
-              <Button
-                variant="default"
-                disabled={anyBusy}
-                onClick={() => void runPass('configAlias')}
-              >
-                {PASS_LABEL.configAlias}
-              </Button>
-              <Button
-                variant="subtle"
-                disabled={anyBusy}
-                onClick={() => {
-                  setDone([]);
-                  saveDonePasses([]);
-                  setResult(null);
-                  setInspect(null);
-                  setAlias(null);
-                  setConfigAlias(null);
-                  setLink(null);
-                  setSweep(null);
-                  setAccess(null);
-                  setRates([]);
-                  setError(null);
-                  setLog([]);
-                }}
-              >
-                Reset
-              </Button>
-            </Group>
-
-            {progress && (
-              <Stack gap={4}>
-                <Text size="xs" c="dimmed">
-                  {progress.stage}: {progress.msg}
+        {native ? (
+          <>
+            <Alert color="yellow" title="Not available in the Android app">
+              Only the read-only link-speed profile runs in the app. The erase-unit passes, the
+              address-space diagnosis, the config-region alias check and the raw region export talk
+              to the radio over Web Serial: open this page in Chrome or Edge on a desktop computer
+              for them.
+            </Alert>
+            <PageSection
+              title={PASS_LABEL.link}
+              description="Times read frames on this phone's USB link, for comparing with a desktop before flashing from the phone. Writes nothing."
+            >
+              <Stack gap="sm">
+                <Text size="sm">
+                  Radio on in normal mode, connected to the phone by its USB cable through a USB-OTG
+                  adapter; plug in only the radio. Android asks to allow USB access once per
+                  plug-in.
                 </Text>
-                <Progress value={(progress.cur / Math.max(1, progress.max)) * 100} />
+                <Group>
+                  <Button
+                    loading={busy === 'link'}
+                    disabled={anyBusy}
+                    onClick={() => void runPass('link')}
+                  >
+                    {PASS_LABEL.link}
+                  </Button>
+                </Group>
+                {progress && (
+                  <Stack gap={4}>
+                    <Text size="xs" c="dimmed">
+                      {progress.stage}: {progress.msg}
+                    </Text>
+                    <Progress value={(progress.cur / Math.max(1, progress.max)) * 100} />
+                  </Stack>
+                )}
               </Stack>
-            )}
-          </Stack>
-        </PageSection>
+            </PageSection>
+          </>
+        ) : (
+          <>
+            <Alert color="red" title="This writes to the radio">
+              <Stack gap="xs">
+                <Text size="sm">
+                  Use a spare radio if you have one, and be ready to restore with official Anytone
+                  CPS (band <Code>0x000</Code> → PTT+1 test mode → band <Code>0x003</Code>).
+                </Text>
+                <Text size="sm">
+                  Writes land only in <Code>ChannelData</Code> for channel slots{' '}
+                  {AT_D890_PROBE.FIRST_CHANNEL_SLOT}–{AT_D890_PROBE.LAST_CHANNEL_SLOT} (
+                  {hex(AT_D890_PROBE.SPAN_START)}–{hex(AT_D890_PROBE.SPAN_END)}). Pass 1 refuses to
+                  write anything if any of those slots is occupied.
+                </Text>
+              </Stack>
+            </Alert>
 
-        <PageSection title="Raw memory-region export (read-only)">
-          <Stack gap="sm">
-            <Text size="sm">
-              Dumps documented regions to raw <Code>.bin</Code> files for offline diffing against
-              codeplugs written by the official Anytone CPS — write the config there first, then
-              dump here. Never issues a write frame. See{' '}
-              <Code>docs/reference/radios/anytone/at-d890uv/memory-layout.md</Code> for what each
-              region means.
-            </Text>
-            <Group>
-              <Button
-                variant="light"
-                disabled={anyBusy}
-                loading={regionBusy === '__all__'}
-                onClick={() => void exportAllRegions()}
-              >
-                Export all (excl. Digital Contacts) → ZIP
-              </Button>
-              <Button
-                variant="light"
-                color="orange"
-                disabled={anyBusy}
-                loading={regionBusy === '__contacts__'}
-                onClick={() => void exportDigitalContacts()}
-              >
-                Export Digital Contacts → ZIP
-              </Button>
-            </Group>
-            <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Area / region</Table.Th>
-                  <Table.Th>Base</Table.Th>
-                  <Table.Th>Size</Table.Th>
-                  <Table.Th />
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {AT_D890_MEMORY_REGION_GROUPS.map((group) => {
-                  const members = AT_D890_DUMP_REGIONS.filter((r) => r.group === group.id);
-                  const groupSize = members.reduce(
-                    (sum, r) => sum + r.chunks.reduce((s, c) => s + c.length, 0),
-                    0,
-                  );
-                  return (
-                    <Fragment key={group.id}>
-                      <Table.Tr>
-                        <Table.Td>
-                          <Text fw={600} size="sm">
-                            {group.label}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="xs" c="dimmed">
-                            {members.length} region{members.length === 1 ? '' : 's'}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text fw={600} size="sm">
-                            {formatBytes(groupSize)}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Button
-                            size="xs"
-                            variant="light"
-                            disabled={anyBusy}
-                            loading={regionBusy === group.id}
-                            onClick={() => void exportGroup(group.id, group.label)}
-                          >
-                            Export
-                          </Button>
-                        </Table.Td>
-                      </Table.Tr>
-                      {members.map((r) => {
-                        const size = r.chunks.reduce((sum, c) => sum + c.length, 0);
-                        return (
-                          <Table.Tr key={r.id}>
-                            <Table.Td pl="lg">
-                              <Text size="sm" c="dimmed">
-                                {r.label}
+            <PageSection title="How it works">
+              <Text size="sm">
+                The radio stages writes in RAM and applies them on commit, so reading back in the
+                same session returns the shadow rather than flash. Each pass is therefore its own
+                session with a <strong>power-cycle after any pass that wrote</strong>. Pass 1 paints
+                a 16-byte sentinel every {hex(AT_D890_PROBE.SENTINEL_STRIDE)}; pass 2 confirms they
+                survived and writes one marker at {hex(AT_D890_PROBE.MARKER_ADDRESS)}; pass 3 reads
+                the grid back. The run of erased sentinels around the marker is exactly one erase
+                unit.
+              </Text>
+              <Text size="sm" mt="sm">
+                The span deliberately sits in <Code>ChannelData</Code> blocks 16-18 rather than near
+                the start of the bank. The erase unit is the unknown being measured, so the span is
+                placed where even a far larger unit than expected (up to 8 MB) still lands entirely
+                on unused address space, well above the blocks a real codeplug occupies.
+              </Text>
+              <Text size="sm" mt="sm">
+                <strong>Config-region alias check (#792):</strong> a separate read-only pass
+                compares LocalInfo, optional settings, and ChannelSet against their{' '}
+                <Code>+0x40000</Code> alias candidates. Identical non-trivial bytes mean one
+                physical cell; dual all-
+                <Code>0xff</Code> spans are inconclusive. Use a CPS-restored radio so LocalInfo is
+                densely populated. No writes and no power-cycle.
+              </Text>
+            </PageSection>
+
+            <PageSection title="Passes">
+              <Stack gap="sm">
+                <List spacing="xs">
+                  <List.Item>
+                    <Group gap="sm">
+                      <Badge color="gray" variant="light">
+                        0 · read-only
+                      </Badge>
+                      <Text size="sm">
+                        Inspect the span — confirm it holds nothing before writing.
+                      </Text>
+                      {done.includes('inspect') && <Badge color="green">done</Badge>}
+                    </Group>
+                  </List.Item>
+                  <List.Item>
+                    <Group gap="sm">
+                      <Badge color="red" variant="light">
+                        1 · writes
+                      </Badge>
+                      <Text size="sm">Paint the sentinel grid, then commit.</Text>
+                      {done.includes('paint') && <Badge color="green">done</Badge>}
+                    </Group>
+                  </List.Item>
+                  <List.Item>
+                    <Group gap="sm">
+                      <Badge color="red" variant="light">
+                        2 · writes
+                      </Badge>
+                      <Text size="sm">Power-cycle, verify the grid, write one marker, commit.</Text>
+                      {done.includes('mark') && <Badge color="green">done</Badge>}
+                    </Group>
+                  </List.Item>
+                  <List.Item>
+                    <Group gap="sm">
+                      <Badge color="gray" variant="light">
+                        3 · read-only
+                      </Badge>
+                      <Text size="sm">Power-cycle, read the grid back, measure.</Text>
+                      {done.includes('measure') && <Badge color="green">done</Badge>}
+                    </Group>
+                  </List.Item>
+                </List>
+
+                {nextPass && done.some((p) => PASS_COMMITS_WRITES[p]) && (
+                  <Alert color="yellow" title="Power-cycle the radio now">
+                    Turn the radio off and on again before running the next pass, or it will report
+                    the RAM shadow instead of flash.
+                  </Alert>
+                )}
+
+                {nextPass === 'paint' && inspect && inspect.occupiedSlots.length === 0 && (
+                  <Alert color="orange" title="Next pass writes to the radio">
+                    The span is confirmed empty. Pass 1 writes{' '}
+                    {AT_D890_PROBE.SENTINEL_STRIDE > 0 ? '' : ''}
+                    {Math.floor(
+                      (AT_D890_PROBE.SPAN_END - AT_D890_PROBE.SPAN_START) /
+                        AT_D890_PROBE.SENTINEL_STRIDE,
+                    )}{' '}
+                    sentinel blocks into it and commits.
+                  </Alert>
+                )}
+
+                <Group>
+                  <Button
+                    onClick={() => nextPass && void runPass(nextPass)}
+                    loading={anyBusy}
+                    disabled={!nextPass}
+                    color={nextPass && PASS_COMMITS_WRITES[nextPass] ? 'red' : undefined}
+                  >
+                    {nextPass
+                      ? `Run pass ${PASS_ORDER.indexOf(nextPass)} — ${PASS_LABEL[nextPass]}`
+                      : 'Complete'}
+                  </Button>
+                  {/* Always available: read-only, idempotent, and its whole purpose is to
+                  inspect a grid painted in an earlier session or before a page reload. */}
+                  <Button
+                    variant="default"
+                    disabled={anyBusy}
+                    onClick={() => void runPass('diagnose')}
+                  >
+                    {PASS_LABEL.diagnose}
+                  </Button>
+                  <Button variant="default" disabled={anyBusy} onClick={() => void runPass('link')}>
+                    {PASS_LABEL.link}
+                  </Button>
+                  <Button
+                    variant="default"
+                    disabled={anyBusy}
+                    onClick={() => void runPass('configAlias')}
+                  >
+                    {PASS_LABEL.configAlias}
+                  </Button>
+                  <Button
+                    variant="subtle"
+                    disabled={anyBusy}
+                    onClick={() => {
+                      setDone([]);
+                      saveDonePasses([]);
+                      setResult(null);
+                      setInspect(null);
+                      setAlias(null);
+                      setConfigAlias(null);
+                      setLink(null);
+                      setSweep(null);
+                      setAccess(null);
+                      setRates([]);
+                      setError(null);
+                      setLog([]);
+                    }}
+                  >
+                    Reset
+                  </Button>
+                </Group>
+
+                {progress && (
+                  <Stack gap={4}>
+                    <Text size="xs" c="dimmed">
+                      {progress.stage}: {progress.msg}
+                    </Text>
+                    <Progress value={(progress.cur / Math.max(1, progress.max)) * 100} />
+                  </Stack>
+                )}
+              </Stack>
+            </PageSection>
+
+            <PageSection title="Raw memory-region export (read-only)">
+              <Stack gap="sm">
+                <Text size="sm">
+                  Dumps documented regions to raw <Code>.bin</Code> files for offline diffing
+                  against codeplugs written by the official Anytone CPS — write the config there
+                  first, then dump here. Never issues a write frame. See{' '}
+                  <Code>docs/reference/radios/anytone/at-d890uv/memory-layout.md</Code> for what
+                  each region means.
+                </Text>
+                <Group>
+                  <Button
+                    variant="light"
+                    disabled={anyBusy}
+                    loading={regionBusy === '__all__'}
+                    onClick={() => void exportAllRegions()}
+                  >
+                    Export all (excl. Digital Contacts) → ZIP
+                  </Button>
+                  <Button
+                    variant="light"
+                    color="orange"
+                    disabled={anyBusy}
+                    loading={regionBusy === '__contacts__'}
+                    onClick={() => void exportDigitalContacts()}
+                  >
+                    Export Digital Contacts → ZIP
+                  </Button>
+                </Group>
+                <Table>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Area / region</Table.Th>
+                      <Table.Th>Base</Table.Th>
+                      <Table.Th>Size</Table.Th>
+                      <Table.Th />
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {AT_D890_MEMORY_REGION_GROUPS.map((group) => {
+                      const members = AT_D890_DUMP_REGIONS.filter((r) => r.group === group.id);
+                      const groupSize = members.reduce(
+                        (sum, r) => sum + r.chunks.reduce((s, c) => s + c.length, 0),
+                        0,
+                      );
+                      return (
+                        <Fragment key={group.id}>
+                          <Table.Tr>
+                            <Table.Td>
+                              <Text fw={600} size="sm">
+                                {group.label}
                               </Text>
                             </Table.Td>
                             <Table.Td>
-                              <Code>{hex(r.chunks[0]?.address ?? 0)}</Code>
-                              {r.chunks.length > 1 && (
-                                <Text size="xs" c="dimmed">
-                                  {r.chunks.length} chunks
-                                </Text>
-                              )}
+                              <Text size="xs" c="dimmed">
+                                {members.length} region{members.length === 1 ? '' : 's'}
+                              </Text>
                             </Table.Td>
-                            <Table.Td>{formatBytes(size)}</Table.Td>
-                            <Table.Td />
+                            <Table.Td>
+                              <Text fw={600} size="sm">
+                                {formatBytes(groupSize)}
+                              </Text>
+                            </Table.Td>
+                            <Table.Td>
+                              <Button
+                                size="xs"
+                                variant="light"
+                                disabled={anyBusy}
+                                loading={regionBusy === group.id}
+                                onClick={() => void exportGroup(group.id, group.label)}
+                              >
+                                Export
+                              </Button>
+                            </Table.Td>
                           </Table.Tr>
-                        );
-                      })}
-                    </Fragment>
-                  );
-                })}
-              </Table.Tbody>
-            </Table>
-          </Stack>
-        </PageSection>
+                          {members.map((r) => {
+                            const size = r.chunks.reduce((sum, c) => sum + c.length, 0);
+                            return (
+                              <Table.Tr key={r.id}>
+                                <Table.Td pl="lg">
+                                  <Text size="sm" c="dimmed">
+                                    {r.label}
+                                  </Text>
+                                </Table.Td>
+                                <Table.Td>
+                                  <Code>{hex(r.chunks[0]?.address ?? 0)}</Code>
+                                  {r.chunks.length > 1 && (
+                                    <Text size="xs" c="dimmed">
+                                      {r.chunks.length} chunks
+                                    </Text>
+                                  )}
+                                </Table.Td>
+                                <Table.Td>{formatBytes(size)}</Table.Td>
+                                <Table.Td />
+                              </Table.Tr>
+                            );
+                          })}
+                        </Fragment>
+                      );
+                    })}
+                  </Table.Tbody>
+                </Table>
+              </Stack>
+            </PageSection>
+          </>
+        )}
 
         {error && (
           <Alert color="red" title="Pass failed">
@@ -700,6 +752,15 @@ function D890EraseProbe() {
                   -byte blocks: <strong>{formatBytes(Math.round(sweep.bytesPerSecond))}/s</strong>.
                   This is the access pattern an erase-unit RMW actually uses, so it — not the
                   same-address figures above — is what prices the read half.
+                </Text>
+              )}
+              {sweep?.frameTiming && (
+                <Text size="sm" data-testid="d890-link-frame-timing">
+                  Per frame on this link, request to reply, over the sweep&apos;s{' '}
+                  {Math.ceil(sweep.bytes / sweep.blockSize)} frames: median{' '}
+                  <strong>{sweep.frameTiming.medianFrameMs.toFixed(2)} ms</strong>, p99{' '}
+                  <strong>{sweep.frameTiming.p99FrameMs.toFixed(2)} ms</strong>, max{' '}
+                  <strong>{sweep.frameTiming.maxFrameMs.toFixed(2)} ms</strong>.
                 </Text>
               )}
               {access && (
@@ -956,11 +1017,10 @@ function D890EraseProbe() {
   );
 }
 
-/** Web Serial only: the Android app shows a notice instead (#1673). */
+/**
+ * Web Serial in a browser. In the Android app only the read-only link-speed pass runs, through the app's USB serial;
+ * the writing passes and the exports show a notice instead (#1673, #1680).
+ */
 export default function DebugD890EraseProbePage() {
-  return (
-    <WebSerialOnlyDebugPage title="AT-D890UV erase-unit probe">
-      <D890EraseProbe />
-    </WebSerialOnlyDebugPage>
-  );
+  return <D890EraseProbe />;
 }

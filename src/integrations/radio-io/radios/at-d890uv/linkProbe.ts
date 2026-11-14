@@ -24,6 +24,8 @@ import { atD890ReadBlockRaw, atD890ReadMemory } from './connection.ts';
 import { AT_D890_BLOCK_SIZE } from './constants.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import type { BytePipe, ProgressFn } from '../../types.ts';
+import type { FirmwareFlashTiming } from '../../firmware/types.ts';
+import { summariseD890FrameTiming } from './firmwareUpdate/updater.ts';
 
 /** Powers of two up to the `u8` ceiling, plus the largest 16-aligned value that fits. */
 export const AT_D890_BLOCK_CANDIDATES = [0x10, 0x20, 0x40, 0x80, 0xf0] as const;
@@ -293,6 +295,12 @@ export interface AtD890SweepResult {
   blockSize: number;
   seconds: number;
   bytesPerSecond: number;
+  /**
+   * Per frame, request to the end of the reply, in milliseconds: median, p99 and max, summarised as the firmware
+   * flasher summarises its frames. The host's round trip is in every frame, so this is the figure to compare between a
+   * desktop and a phone.
+   */
+  frameTiming?: FirmwareFlashTiming;
 }
 
 /**
@@ -307,6 +315,7 @@ export async function benchmarkAtD890Sweep(
   opts: { onProgress?: ProgressFn; signal?: AbortSignal } = {},
 ): Promise<AtD890SweepResult> {
   const frames = Math.ceil(bytes / blockSize);
+  const frameMs = new Float64Array(frames);
   const started = performance.now();
   for (let i = 0; i < frames; i++) {
     throwIfAborted(opts.signal);
@@ -317,7 +326,9 @@ export async function benchmarkAtD890Sweep(
         opts.signal,
       );
     }
+    const frameStarted = performance.now();
     await atD890ReadBlockRaw(pipe, baseAddress + i * blockSize, blockSize, opts.signal);
+    frameMs[i] = performance.now() - frameStarted;
   }
   const seconds = (performance.now() - started) / 1000;
   return {
@@ -325,6 +336,7 @@ export async function benchmarkAtD890Sweep(
     blockSize,
     seconds,
     bytesPerSecond: (frames * blockSize) / seconds,
+    frameTiming: summariseD890FrameTiming(frameMs, frames),
   };
 }
 
