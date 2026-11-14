@@ -64,6 +64,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
   phone: flash stock, charge the phone, set a long screen timeout, keep the app in front, plug in only the cable, and
   keep a desktop ready; on a stall, power-cycle the radio into update mode and flash again from the phone or a desktop.
   See [firmware flashing, Android app](../firmware-flashing/README.md#android-app).
+- **Saving files:** see [Saving files](#saving-files) below.
 - **API Proxies:** On Capacitor native, relative `/api/*` (RadioID, RepeaterBook, IRTS) resolve to an absolute origin from `BUILD_ENV` via `resolveApiUrl` (`src/integrations/platform/resolveApiUrl.ts`):
 
 | `BUILD_ENV`                              | Native API origin                     |
@@ -77,6 +78,31 @@ Web builds keep same-origin relative `/api/*` (hostname selects the Functions de
 - **External Links:** Anchors with `target="_blank"` and http(s) hrefs open via `@capacitor/browser` (Chrome Custom Tabs).
 - **Combobox dropdowns:** Mantine `Select` / `Autocomplete` / `MultiSelect` use theme `hideDetached: false` so opening a control near the bottom of a scrollable page (e.g. Settings → Grid overlay) does not scroll the trigger off-screen ([#902](https://github.com/pskillen/codeplug-studio/issues/902)).
 - **Google Drive:** PKCE OAuth in Chrome Custom Tabs with redirect `net.mm9pdy.codeplugstudio:/oauth2redirect`. Requires Android OAuth client + `VITE_GOOGLE_ANDROID_CLIENT_ID` in APK builds. See [google-drive](../import-export/google-drive.md).
+
+## Saving files
+
+The app's WebView ignores a `blob:` link with `download`, so every download in Studio goes through one helper,
+`downloadBlob` (`src/integrations/download/browserDownload.ts`), which on native hands the file to `nativeSave.ts`
+instead ([#1685](https://github.com/pskillen/codeplug-studio/issues/1685)). Callers don't branch on platform; a
+browser keeps its normal download with the same file name.
+
+- **Where it lands:** the phone's public `Documents/Codeplug Studio/<file name>` (Files app → Documents → Codeplug
+  Studio), written with `@capacitor/filesystem` in chunks of 3 MiB, so large zips and exports go through. A file with
+  the same name is replaced.
+- **What you see:** a notice at the top of the screen, **Saved to Documents/Codeplug Studio/&lt;file name&gt;**
+  ([`SavedFileNotice`](../../../src/app/components/SavedFileNotice/SavedFileNotice.md), 10 s or until dismissed), and
+  Android's share sheet titled the same, opened on the file by `@capacitor/share` so it can go to Drive, mail, Quick
+  Share and so on. Cancelling the sheet keeps the file.
+- **Android 10 and earlier:** writing `Documents` there needs a storage permission the app does not ask for, so the
+  file goes to the app's cache instead; the notice reads **&lt;file name&gt; is ready: pick an app in the share sheet to
+  keep or send it**, and the share sheet (titled **Keep or send &lt;file name&gt;**) is the only way to keep it.
+- **Permissions:** none added. Android 11 and later let an app write its own files to `Documents` without one.
+- **A failed save** shows **Couldn't save &lt;file name&gt;: &lt;reason&gt;**.
+- **What saves this way:** every download in Studio: codeplug, CPS and project exports, radio backups (DM-32UV
+  calibration, AT-D890UV vital backup, codeplug backups), the flash summary's **Download .txt**, the write-verify
+  report, and the debug pages' zips (the UV-5R Mini **Download all**). Steps the app refuses (a flasher safety backup,
+  the AT-D890UV probe's writing passes) still refuse.
+- Not yet tried on a phone.
 
 ## Sideload APK (#889)
 

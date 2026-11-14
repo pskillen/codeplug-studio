@@ -62,10 +62,10 @@ written to browser storage.
 **Download all** saves one zip with, per read, `<label>/raw.bin`, `<label>/decoded.bin` and `<label>/summary.txt`
 (time, ident, span hashes). The page says where the zip is offered that it contains the radio's calibration.
 
-**In the Android app** there is no download. The app's activity is Capacitor's `BridgeActivity` with no download
-listener, so a `blob:` link with `download` does nothing in its web view (known from the code, not tried on a phone;
-the flasher's summary `.txt` download goes the same way). The page shows a notice in place of **Download all**, and does
-not warn on leaving. The reads, the compare and the calibration view work as in a browser.
+**In the Android app** **Download all** saves the zip to `Documents/Codeplug Studio/` on the phone and opens the share
+sheet on it, like every download in the app ([saving files](../android-app/README.md#saving-files)); the page says so
+under the button, and warns on leaving as in a browser. The reads, the compare and the calibration view work as in a
+browser.
 
 ## Compare two reads
 
@@ -162,14 +162,15 @@ on):
    column appear. The section has no button or link.
 
 In the Android app, with only the Mini's cable on the phone: take two reads, check the compare and the calibration
-view, and that the page offers no download.
+view, then **Download all**: the notice says the zip is in `Documents/Codeplug Studio/`, the share sheet opens, and
+the zip in the Files app holds both reads.
 
 On a prod build with developer mode off, `/debug/uv5r-mini` goes to the home page.
 
 ## Known gaps
 
 - The PA bias row order is assumed (see [Calibration viewer](#calibration-viewer)).
-- The Android app can't save the reads as a file. The read in the app has not been tried on a phone with a radio.
+- The read and the zip save in the app have not been tried on a phone with a radio.
 
 ## Related
 

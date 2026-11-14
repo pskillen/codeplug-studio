@@ -19,7 +19,7 @@ links the index and each page; the Android app has no URL bar. Both use the Debu
 | Page                                                 | In the app                                                                                                                                                                                |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Index, IndexedDB, localStorage (and their sub-pages) | Works: the app's web view has the same storage                                                                                                                                            |
-| UV-5R Mini full read                                 | Works: the read, the compare and the calibration view. The zip download is replaced by a notice (the app can't save files from a page)                                                    |
+| UV-5R Mini full read                                 | Works: the read, the compare, the calibration view and **Download all**, which saves the zip to `Documents/Codeplug Studio/` and opens the share sheet                                    |
 | AT-D890UV erase-unit probe                           | Only **Profile link speed (read-only)** runs. The passes that write, the diagnosis, the config-region alias check and the region exports show a "Not available in the Android app" notice |
 | Serial reopen timing                                 | Shows a "Not available in the Android app" notice and no controls                                                                                                                         |
 
@@ -111,12 +111,11 @@ List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with o
 6. Open Tools (`/reference`) → the **Debug** section shows on pre-prod, and on prod with developer mode on; on prod with developer mode off it is absent.
 7. In the Android app, open Serial reopen timing → the "Not available in the Android app" notice and no controls.
 8. In the Android app, open the AT-D890UV erase probe → the notice and only **Profile link speed (read-only)**; with the D890 on the phone's USB, the link profile shows median, p99 and max per frame.
-9. In the Android app, open the UV-5R Mini full read with only the Mini's cable plugged in → **Full read** works; the reads compare and the calibration view shows; no download button.
+9. In the Android app, open the UV-5R Mini full read with only the Mini's cable plugged in → **Full read** works; the reads compare and the calibration view shows; **Download all** saves the zip to `Documents/Codeplug Studio/` (the notice at the top says so) and opens the share sheet.
 
 ## Known gaps
 
 - Neither radio page has been tried in the Android app on a phone with a radio.
-- The UV-5R Mini full read can't save the reads as a file in the Android app.
 - The storage pages are read-only: nothing edits or clears storage.
 - There is no native YAML view: row YAML is the interim storage-row dump, waiting on native YAML export.
 
