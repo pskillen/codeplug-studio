@@ -43,8 +43,23 @@ describe('DebugUv5rMiniPage', () => {
     expect(screen.getByText('The reads differ outside the skipped windows')).toBeTruthy();
     expect(screen.getByText('0x0100')).toBeTruthy();
     expect(screen.queryByText('0x8800')).toBeNull();
+    // The channel view under the compare: 0x0100 is slot 9's first RX frequency byte.
+    expect(screen.getByTestId('uv5r-mini-channel-diff')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Slot 9: RX frequency changed; unmodelled bytes and bits of +0x0C..+0x13 unchanged',
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText('Slot 248 (0x1EE0–0x1EFF, channel data kept apart): identical'),
+    ).toBeTruthy();
     // No write or restore control anywhere on the page.
     expect(screen.queryByRole('button', { name: /write|restore/i })).toBeNull();
+    // The calibration viewer is on the page and adds no download, export or copy: the zip stays the only one.
+    expect(screen.getByTestId('uv5r-mini-calibration')).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: /download|export|save|copy/i })).toHaveLength(1);
+    expect(screen.queryAllByRole('link')).toHaveLength(0);
+    expect(document.querySelector('[download]')).toBeNull();
   });
 });
 

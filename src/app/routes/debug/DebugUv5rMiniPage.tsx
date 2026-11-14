@@ -20,11 +20,16 @@ import {
 import { downloadZip, isoTimestampForFilename } from '@integrations/download/browserDownload.ts';
 import {
   compareUv5rMiniReads,
+  diffUv5rMiniChannels,
+  formatUv5rMiniChannelChange,
   formatUv5rMiniSpanRange,
+  formatUv5rMiniSpecialSlot,
   type Uv5rMiniCompareLine,
+  type Uv5rMiniChannelDiff,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 
+import Uv5rMiniCalibrationSection from './Uv5rMiniCalibrationSection.tsx';
 import {
   buildUv5rMiniReadsZip,
   uv5rMiniDebugReadStore,
@@ -84,6 +89,44 @@ function CompareLineRow({ line }: { line: Uv5rMiniCompareLine }) {
       </Table.Td>
       <Table.Td>{verdict}</Table.Td>
     </Table.Tr>
+  );
+}
+
+const SHOWN_CHANNELS = 200;
+
+function ChannelDiffView({ diff }: { diff: Uv5rMiniChannelDiff }) {
+  const n = diff.changes.length;
+  return (
+    <Stack gap="xs" data-testid="uv5r-mini-channel-diff">
+      <Text fw={600}>Channels</Text>
+      <Text size="sm" c="dimmed">
+        {n === 0 ? 'No channel slot changed. ' : ''}
+        {diff.unchangedCount} slot{diff.unchangedCount === 1 ? '' : 's'} unchanged; slots 248 and
+        249 are listed on their own (CHIRP's firmware-version offset 0x1EF0 falls in slot 248,
+        though it is channel data).
+      </Text>
+      {n > 0 ? (
+        <Stack gap={2}>
+          {diff.changes.slice(0, SHOWN_CHANNELS).map((c) => (
+            <Code key={c.slot} style={{ whiteSpace: 'normal' }}>
+              {formatUv5rMiniChannelChange(c)}
+            </Code>
+          ))}
+          {n > SHOWN_CHANNELS ? (
+            <Text size="sm" c="dimmed">
+              … (+{n - SHOWN_CHANNELS} more)
+            </Text>
+          ) : null}
+        </Stack>
+      ) : null}
+      <Stack gap={2}>
+        {diff.special.map((s) => (
+          <Code key={s.slot} style={{ whiteSpace: 'normal' }}>
+            {formatUv5rMiniSpecialSlot(s)}
+          </Code>
+        ))}
+      </Stack>
+    </Stack>
   );
 }
 
@@ -192,13 +235,17 @@ export default function DebugUv5rMiniPage() {
     () => (left && right ? compareUv5rMiniReads(left.decoded, right.decoded) : null),
     [left, right],
   );
+  const channelDiff = useMemo(
+    () => (left && right ? diffUv5rMiniChannels(left.decoded, right.decoded) : null),
+    [left, right],
+  );
   const options = reads.map((r) => ({ value: r.label, label: readName(r) }));
 
   return (
     <Page>
       <PageHeader
         title="UV-5R Mini full read"
-        description="Read-only clone read of 0x0000–0xFFFF, SHA-256 per span, and a compare of two reads."
+        description="Read-only clone read of 0x0000–0xFFFF, SHA-256 per span, a compare of two reads and a calibration viewer."
       />
       <Stack gap="md">
         <Alert color="blue" title="Read only">
@@ -331,11 +378,14 @@ export default function DebugUv5rMiniPage() {
                       </Table.Tbody>
                     </Table>
                   </Table.ScrollContainer>
+                  {channelDiff ? <ChannelDiffView diff={channelDiff} /> : null}
                 </>
               ) : null}
             </Stack>
           )}
         </PageSection>
+
+        <Uv5rMiniCalibrationSection reads={reads} />
       </Stack>
     </Page>
   );
