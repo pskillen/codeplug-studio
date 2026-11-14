@@ -2,6 +2,9 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
+import { getFirmwareUpdater } from '@integrations/radio-io';
+
+import { listOfferedFirmwareUpdaters } from '../../services/firmwareFlashEnvGate.ts';
 import ReferenceIndexPage from './ReferenceIndexPage.tsx';
 
 function renderPage() {
@@ -47,6 +50,18 @@ describe('ReferenceIndexPage', () => {
       ['Serial reopen timingDesktop Chrome / Edge', '/debug/serial-reopen'],
       ['UV-5R Mini full readDesktop Chrome / Edge', '/debug/uv5r-mini'],
     ]);
+  });
+
+  it("says on the flasher card which radios exactly, from each offered radio's own text (#1670)", () => {
+    renderPage();
+    const card = screen.getByRole('button', { name: /Firmware flasher/ });
+    const withText = listOfferedFirmwareUpdaters().filter((d) => d.stock.supportedRadios);
+    // Tests run as the `local` build, where the UV-5R Mini is offered and has the line.
+    expect(withText.map((d) => d.radioId)).toContain('baofeng-uv5rmini');
+    const mini = getFirmwareUpdater('baofeng-uv5rmini')!;
+    expect(card).toHaveTextContent(`UV-5R Mini supported: ${mini.stock.supportedRadios}`);
+    // Radios without the field show no line.
+    expect(card.textContent?.match(/ supported: /g)).toHaveLength(withText.length);
   });
 
   it('opens the tool when its card is clicked', () => {
