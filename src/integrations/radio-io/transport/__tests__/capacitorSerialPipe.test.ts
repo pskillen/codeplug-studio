@@ -472,4 +472,25 @@ describe('CapacitorSerialBytePipe.reopen', () => {
     await pipe.close();
     await expect(pipe.reopen(38400)).rejects.toThrow(RadioClosedError);
   });
+
+  it('keeps a port error that arrives during the drain: no rate change, and the pipe stays unusable', async () => {
+    vi.useFakeTimers();
+    const { plugin, emitError } = createFakePlugin();
+    const pipe = await requestCapacitorSerialPipe({ baudRate: 9600, plugin });
+    await pipe.write(new Uint8Array(11));
+
+    const done = pipe.reopen(38400);
+    const settled = expect(done).rejects.toThrow(/closed before it could change to 38400 baud/);
+    emitError('port-1', 'USB cable disconnected');
+    await vi.advanceTimersByTimeAsync(
+      Math.ceil((11 * 10 * 1000) / 9600) + CAPACITOR_DRAIN_MARGIN_MS,
+    );
+    await settled;
+
+    expect(plugin.setParameters).toHaveBeenCalledTimes(1); // the open's only
+    expect(pipe.baudRate).toBe(9600);
+    await expect(pipe.write(Uint8Array.of(1))).rejects.toThrow(RadioClosedError);
+    await expect(pipe.readExact(1, 10)).rejects.toThrow(RadioClosedError);
+    await pipe.close();
+  });
 });

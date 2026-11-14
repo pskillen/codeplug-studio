@@ -264,9 +264,15 @@ export class CapacitorSerialBytePipe implements BytePipe {
     if (!portId || this.closed) {
       throw new RadioClosedError('Not connected.');
     }
+    if (this.eof) {
+      // The plugin reported a port error (a pulled cable) before or during the drain. Keep it: never retune a dead
+      // port, and leave the pipe unusable, as a failed rate change does.
+      this.broken = true;
+      this.notifyWaiters();
+      throw new RadioClosedError(`Serial port closed before it could change to ${baudRate} baud.`);
+    }
 
     this.buf = new Uint8Array(0);
-    this.eof = false;
     try {
       await this.plugin.setParameters({
         portId,
