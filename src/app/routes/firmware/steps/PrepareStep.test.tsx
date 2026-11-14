@@ -190,6 +190,34 @@ describe('PrepareStep: after the radio refused one layout before installing anyt
     expect(lastPrepare()[4]).toBe('L2');
   });
 
+  it('with developer mode on, the retry banner names the refused and the next flash layout', async () => {
+    setDeveloperMode(true);
+    try {
+      vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+      render(
+        <Harness
+          updater={MINI}
+          start={{
+            radioRead: {
+              kind: 'report',
+              answer: { kind: 'layout', layout: 'L1', reported: true },
+            },
+            layoutRetry: { from: 'L1', to: 'L2' },
+          }}
+        />,
+      );
+      expect(
+        screen.getByText(
+          "The radio refused the first file before installing anything, so Studio prepares this release's other file for it (L1 refused, L2 next).",
+        ),
+      ).toBeInTheDocument();
+      expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+      expect(lastPrepare()[4]).toBe('L2');
+    } finally {
+      localStorage.removeItem(DEVELOPER_MODE_KEY);
+    }
+  });
+
   it("a stock radio's retry is prepared on the partner file's base, not the answered one", async () => {
     vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(
@@ -517,6 +545,21 @@ describe('PrepareStep: the UV-5R Mini Radio Info question, with no report', () =
       radioInfo('V0.27', 'V1.7');
       expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
       expect(screen.getByText('Flash layout: L2')).toBeInTheDocument();
+      expect(lastPrepare()[4]).toBe('L2');
+      expect(canAdvance(latest)).toBe(true);
+    } finally {
+      localStorage.removeItem(DEVELOPER_MODE_KEY);
+    }
+  });
+
+  it('with developer mode on and a radio report, shows the flash layout once', async () => {
+    setDeveloperMode(true);
+    try {
+      vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+      render(<Harness updater={MINI} />);
+      await readRadio(reportBlock({}));
+      expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+      expect(screen.getAllByText('Flash layout: L2')).toHaveLength(1);
       expect(lastPrepare()[4]).toBe('L2');
       expect(canAdvance(latest)).toBe(true);
     } finally {

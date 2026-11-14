@@ -367,11 +367,6 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
             {answer.details.map((d) => (
               <li key={d}>{d}</li>
             ))}
-            {answer.reported ? (
-              <DeveloperOnly>
-                <li>Flash layout: {answer.layout}</li>
-              </DeveloperOnly>
-            ) : null}
           </ul>
         ) : null}
         {answer?.kind === 'layout' && answer.warning ? (
