@@ -217,6 +217,20 @@ describe('uv5rMiniLayoutFromReport', () => {
     });
   });
 
+  it('blames the older side for an unknown format: the radio below format 2, Studio above it', () => {
+    for (const format of [0, 1]) {
+      expect(UV5RMINI_UNKNOWN_FORMAT_REFUSAL(format)).toBe(
+        `This radio's MM9PDY build is older than this version of Studio: it answers in report format ${format}, and Studio reads format 2. Nothing was sent.`,
+      );
+      expect(UV5RMINI_UNKNOWN_FORMAT_REFUSAL(format)).not.toMatch(/update Studio/);
+    }
+    for (const format of [3, 255]) {
+      expect(UV5RMINI_UNKNOWN_FORMAT_REFUSAL(format)).toBe(
+        `This radio's MM9PDY build answers in report format ${format}, which this version of Studio doesn't know. Nothing was sent; update Studio and try again.`,
+      );
+    }
+  });
+
   it('refuses an unknown pair', () => {
     expect(answer(radioReportFrame({ vm: [0x96000, 0x66000] }))).toEqual({
       kind: 'refused',

@@ -187,8 +187,14 @@ const hex = (n: number, digits: number) =>
 export const UV5RMINI_UNKNOWN_LAYOUT_REFUSAL = (vmStart: number, vmSize: number): string =>
   `This radio reports a flash layout Studio doesn't support (VM entry at ${hex(vmStart, 5)}, ${hex(vmSize, 5)} bytes). Nothing was sent.`;
 
+/**
+ * The refusal for a report format Studio doesn't read. Below Studio's format the radio's build is the older one, so
+ * updating Studio can't help; above it, Studio is.
+ */
 export const UV5RMINI_UNKNOWN_FORMAT_REFUSAL = (format: number): string =>
-  `This radio's MM9PDY build answers in report format ${format}, which this version of Studio doesn't know. Nothing was sent; update Studio and try again.`;
+  format < UV5RMINI_RADIO_REPORT_FORMAT
+    ? `This radio's MM9PDY build is older than this version of Studio: it answers in report format ${format}, and Studio reads format ${UV5RMINI_RADIO_REPORT_FORMAT}. Nothing was sent.`
+    : `This radio's MM9PDY build answers in report format ${format}, which this version of Studio doesn't know. Nothing was sent; update Studio and try again.`;
 
 export const UV5RMINI_BAD_REPORT_REFUSAL = (reason: string): string =>
   `This radio's MM9PDY report doesn't read right: ${reason}. Nothing was sent.`;

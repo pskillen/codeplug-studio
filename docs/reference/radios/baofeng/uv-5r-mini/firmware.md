@@ -269,16 +269,17 @@ all printable ASCII, and is compared exactly, case included.
 What Studio concludes (`decodeUv5rMiniRadioReport`, then `uv5rMiniLayoutFromReport`, in
 `src/core/radios/baofeng/uv-5r-mini/radioReport.ts`), rule by rule in this order:
 
-| The 64 bytes                                                                      | Studio                                                                                                        |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Not 64 bytes                                                                      | Refused: "This radio's MM9PDY report doesn't read right: …. Nothing was sent."                                |
-| No `MM9R`, or a bad CRC                                                           | No report: a stock radio, or an MM9PDY build from before the report. Radio Info is asked                      |
-| A format other than `2` (`1` included)                                            | Refused by name: "…answers in report format N, which this version of Studio doesn't know…"                    |
-| A reserved flags bit set                                                          | Refused: "…doesn't read right: a reserved flags bit is set…"                                                  |
-| A string empty or not printable                                                   | Refused, naming it: "…doesn't read right: its Hardware string is unreadable…"                                 |
-| Bit 0 set and the strings aren't `NRFB` / `V0.04` / `V1.7`, or clear and they are | Refused: "…doesn't read right: its NRFB V0.04 flag disagrees with its suffix, Firmware and Hardware strings…" |
-| `(vm_start, vm_size)` neither `(0x95000, 0x68000)` nor `(0x94000, 0x6A000)`       | Refused as unsupported: "This radio reports a flash layout Studio doesn't support…"; nothing sent             |
-| `(0x95000, 0x68000)` / `(0x94000, 0x6A000)`                                       | `L1` / `L2`, then the strings pick the stock base (below)                                                     |
+| The 64 bytes                                                                      | Studio                                                                                                            |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Not 64 bytes                                                                      | Refused: "This radio's MM9PDY report doesn't read right: …. Nothing was sent."                                    |
+| No `MM9R`, or a bad CRC                                                           | No report: a stock radio, or an MM9PDY build from before the report. Radio Info is asked                          |
+| A format below `2` (`1` included)                                                 | Refused by name: "This radio's MM9PDY build is older than this version of Studio: it answers in report format N…" |
+| A format above `2`                                                                | Refused by name: "…answers in report format N, which this version of Studio doesn't know…; update Studio…"        |
+| A reserved flags bit set                                                          | Refused: "…doesn't read right: a reserved flags bit is set…"                                                      |
+| A string empty or not printable                                                   | Refused, naming it: "…doesn't read right: its Hardware string is unreadable…"                                     |
+| Bit 0 set and the strings aren't `NRFB` / `V0.04` / `V1.7`, or clear and they are | Refused: "…doesn't read right: its NRFB V0.04 flag disagrees with its suffix, Firmware and Hardware strings…"     |
+| `(vm_start, vm_size)` neither `(0x95000, 0x68000)` nor `(0x94000, 0x6A000)`       | Refused as unsupported: "This radio reports a flash layout Studio doesn't support…"; nothing sent                 |
+| `(0x95000, 0x68000)` / `(0x94000, 0x6A000)`                                       | `L1` / `L2`, then the strings pick the stock base (below)                                                         |
 
 **The stock base.** The strings are looked up in the same table the [Radio Info](#radio-info) answers use
 (`src/core/radios/baofeng/uv-5r-mini/stockBases.ts`), with the same refusals: a Hardware string not proven (today only
