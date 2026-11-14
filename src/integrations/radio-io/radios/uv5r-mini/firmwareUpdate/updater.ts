@@ -508,7 +508,6 @@ export function describeUv5rMiniResult(
 const UV5RMINI_AREA_BLOCK = 0x200;
 
 /** The union of byte ranges read so far, for the progress count. Reads arrive in order, so the list stays short. */
-
 export function createCoveredBytes(): { add(off: number, len: number): void; total(): number } {
   const ranges: [number, number][] = [];
   let sum = 0;
