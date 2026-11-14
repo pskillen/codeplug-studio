@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join, relative, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -18,7 +21,12 @@ import {
   UV5RMINI_UNKNOWN_LAYOUT_REFUSAL,
   uv5rMiniLayoutFromReport,
 } from './radioReport.ts';
-import { uv5rMiniLayoutFromRadioInfo } from './radioInfo.ts';
+import {
+  UV5RMINI_FIRMWARE_OPTIONS,
+  UV5RMINI_RADIO_INFO_OTHER,
+  UV5RMINI_SUFFIX_OPTIONS,
+  uv5rMiniLayoutFromRadioInfo,
+} from './radioInfo.ts';
 import {
   UV5RMINI_NO_BUILD_FOR_RADIO,
   UV5RMINI_PROVEN_HARDWARE,
@@ -332,6 +340,16 @@ describe('uv5rMiniLayoutFromReport: the stock base from the shared table', () =>
         combos.push([suffix, firmware, 'V1.7']);
       }
     }
+    // Every pair the Radio Info dropdowns offer, so a base added to one path only is caught.
+    for (const suffix of UV5RMINI_SUFFIX_OPTIONS) {
+      for (const firmware of UV5RMINI_FIRMWARE_OPTIONS) {
+        if (suffix === UV5RMINI_RADIO_INFO_OTHER || firmware === UV5RMINI_RADIO_INFO_OTHER)
+          continue;
+        for (const hardware of [...UV5RMINI_PROVEN_HARDWARE, 'V1.8']) {
+          combos.push([suffix, firmware, hardware]);
+        }
+      }
+    }
     for (const [suffix, firmware, hardware] of combos) {
       const info = uv5rMiniLayoutFromRadioInfo({ firmware, suffix, hardware });
       const layout = info.kind === 'layout' ? (info.layout as 'L1' | 'L2') : 'L2';
@@ -347,6 +365,32 @@ describe('uv5rMiniLayoutFromReport: the stock base from the shared table', () =>
       } else {
         expect(reported, `${suffix} ${firmware} ${hardware}`).toEqual(info);
       }
+    }
+  });
+
+  it('names each stock base key in the shared table only', () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const srcRoot = join(here, '../../../..');
+    const sources: { rel: string; text: string }[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) {
+          sources.push({
+            rel: relative(srcRoot, full).split(sep).join('/'),
+            text: readFileSync(full, 'utf8'),
+          });
+        }
+      }
+    };
+    walk(srcRoot);
+    for (const [suffix, firmware] of UV5RMINI_STOCK_BASE_KEYS) {
+      const key = `${suffix} ${firmware}`;
+      const holders = sources
+        .filter((s) => s.text.includes(`'${key}'`) || s.text.includes(`"${key}"`))
+        .map((s) => s.rel);
+      expect(holders, key).toEqual(['core/radios/baofeng/uv-5r-mini/stockBases.ts']);
     }
   });
 });
