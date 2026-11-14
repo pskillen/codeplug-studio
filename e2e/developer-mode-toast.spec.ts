@@ -34,6 +34,7 @@ for (const viewport of VIEWPORTS) {
       await page.goto(path);
       await dismissCookieBanner(page);
 
+      const header = page.locator('header').first();
       const version = page.getByTestId('build-version');
       for (let tap = 1; tap <= 5; tap += 1) {
         await version.click();
@@ -47,6 +48,16 @@ for (const viewport of VIEWPORTS) {
         expect(label, 'version label is on screen').not.toBeNull();
         expect(box, `toast after tap ${tap}`).not.toBeNull();
         expect(overlaps(label!, box!), `toast covers the label after tap ${tap}`).toBe(false);
+        const headerBox = await header.boundingBox();
+        expect(headerBox, 'header is on screen').not.toBeNull();
+        expect(overlaps(headerBox!, box!), `toast covers the header after tap ${tap}`).toBe(false);
+        const badge = page.getByTestId('developer-mode-badge');
+        if (tap === 5) await expect(badge).toBeVisible();
+        if (await badge.isVisible()) {
+          const badgeBox = await badge.boundingBox();
+          expect(badgeBox, 'developer mode chip is on screen').not.toBeNull();
+          expect(overlaps(badgeBox!, box!), `toast covers the chip after tap ${tap}`).toBe(false);
+        }
       }
       await expect(page.getByTestId('developer-mode-badge')).toBeVisible();
     });
