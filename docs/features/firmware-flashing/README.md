@@ -1,8 +1,9 @@
 # Firmware flashing
 
-Studio can flash firmware to a supported radio over Web Serial (or, with developer mode on, for the DM-32UV, the AT-D890UV,
-the RT95 front panel and the UV-5R Mini, over USB serial in the [Android app](#android-app)), from the **Firmware flasher** under Tools (`/firmware`). It is for operators who want to put a community firmware release on their radio, or put the vendor's
-stock firmware back, without the vendor's programming software.
+Studio can flash firmware to a supported radio over Web Serial (or, with developer mode on, for the DM-32UV, the
+AT-D890UV, the RT95 front panel and the UV-5R Mini, over USB serial in the [Android app](#android-app)), from the
+**Firmware flasher** under Tools (`/firmware`). It is for operators who want to put a community firmware release on
+their radio, or put the vendor's stock firmware back, without the vendor's programming software.
 
 Firmware belongs to the physical radio, not to a project, library or build. The flasher needs no open project, never
 touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing).
@@ -92,12 +93,11 @@ shows the flasher entry, so the releases can be read from a phone. The Android a
 
 ## Android app
 
-The Capacitor app has no Web Serial; it reaches the cable through the USB-serial plugin over USB-OTG. The flasher
-offers a radio there only through its platform check: today the DM-32UV, the AT-D890UV, the RT95 front panel and the UV-5R
-Mini, and
-only while [developer mode](../developer-mode/README.md) is on for the phone, in any build. With developer mode off,
-or for any other radio, `/firmware` in the app says flashing is available in a desktop browser. Developer mode changes
-only which radios are offered: the stock pins, interlocks and frame guards are the same code as on the desktop.
+The Capacitor app has no Web Serial; it reaches the cable through the USB-serial plugin over USB-OTG. The flasher offers
+a radio there only through its platform check: today the DM-32UV, the AT-D890UV, the RT95 front panel and the UV-5R
+Mini, and only while [developer mode](../developer-mode/README.md) is on for the phone, in any build. With developer
+mode off, or for any other radio, `/firmware` in the app says flashing is available in a desktop browser. Developer mode
+changes only which radios are offered: the stock pins, interlocks and frame guards are the same code as on the desktop.
 
 - **The wizard** is the desktop one. Each port step (the pre-flight probe, the radio report on Prepare, Connect and
   flash) finds the one attached device matching the radio's cable instead of showing a picker; none, or more than one,
@@ -133,14 +133,15 @@ Per radio:
 
 ### Before the first flash from a phone
 
-- Make the first phone flash of each radio its **stock** firmware: it is also the recovery image.
+- Make the first phone flash of the DM-32UV, the AT-D890UV and the RT95 front panel their **stock** firmware: it is
+  also the recovery image. The UV-5R Mini has no plain stock flash; its way back is the to-stock patch.
 - Charge the phone, set a long screen timeout, and keep the app in front with the screen on until it finishes.
 - Plug in nothing but the programming cable (through the USB-OTG adapter).
 - Have a desktop browser with Studio (and the vendor's tool) ready as the fallback.
 - If the flash stalls or the link drops: power-cycle the radio back into update mode and flash again, from the phone or
-  from a desktop browser. For the DM-32UV, the AT-D890UV and the RT95 front panel, a cut flash after the first data frame needs that
-  re-flash; that the bootloader comes back after a half-written flash is expected but not yet proven on hardware. The
-  UV-5R Mini continues an interrupted update on the next run.
+  from a desktop browser. For the DM-32UV, the AT-D890UV and the RT95 front panel, a cut flash after the first data
+  frame needs that re-flash; that the bootloader comes back after a half-written flash is expected but not yet proven
+  on hardware. The UV-5R Mini continues an interrupted update on the next run.
 
 ## Wizard steps
 
