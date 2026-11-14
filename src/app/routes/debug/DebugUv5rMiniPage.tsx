@@ -36,6 +36,7 @@ import {
   useUv5rMiniDebugReads,
   type Uv5rMiniDebugRead,
 } from './uv5rMiniDebugReads.ts';
+import WebSerialOnlyDebugPage from './WebSerialOnlyDebugPage.tsx';
 
 const hex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, '0')).join(' ');
 const addr = (n: number) => `0x${n.toString(16).toUpperCase().padStart(4, '0')}`;
@@ -175,7 +176,7 @@ function ReadCard({ read }: { read: Uv5rMiniDebugRead }) {
  * UV-5R Mini debug page: a read-only full clone read with span hashes, the reads of this tab, and a compare of two
  * reads with the runbook windows. It never writes to the radio and never offers a restore from a read.
  */
-export default function DebugUv5rMiniPage() {
+function Uv5rMiniFullRead() {
   const { reads, undownloaded } = useUv5rMiniDebugReads();
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
@@ -388,5 +389,14 @@ export default function DebugUv5rMiniPage() {
         <Uv5rMiniCalibrationSection reads={reads} />
       </Stack>
     </Page>
+  );
+}
+
+/** Web Serial only: the Android app shows a notice instead (#1673). */
+export default function DebugUv5rMiniPage() {
+  return (
+    <WebSerialOnlyDebugPage title="UV-5R Mini full read">
+      <Uv5rMiniFullRead />
+    </WebSerialOnlyDebugPage>
   );
 }
