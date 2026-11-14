@@ -6,6 +6,9 @@ make (Backup reads only the clone ranges up to `0xA1BF`): calibration unchanged,
 
 **Tracking:** [#1651](https://github.com/pskillen/codeplug-studio/issues/1651)
 
+**On prod:** the page is hidden unless [developer mode](../developer-mode/README.md) is on for the device. Its route
+is in `debugRoutes`, under `DebugGate`, like every other Debug page.
+
 ## Read only
 
 The page never writes to the radio and never offers a restore or write from a read. A read carries the radio's
@@ -75,7 +78,19 @@ Each line says "identical" or how many bytes differ and at which offsets (the fi
 | Service      | `src/app/services/uv5rMiniDebugRead.ts` (port, baud fallback, close)                           |
 | Route        | `src/app/routes/debug/DebugUv5rMiniPage.tsx`, `uv5rMiniDebugReads.ts` (tab history, zip)       |
 
-## Not done yet
+## Manual verify
+
+On desktop Chrome with the Mini on its cable, open `/debug/uv5r-mini` (a pre-prod build, or prod with developer mode
+on):
+
+1. Take two full reads back to back.
+2. The compare says identical on every compared span and on calibration.
+3. **Download all**, and check the zip holds `raw.bin`, `decoded.bin` and `summary.txt` for each read.
+4. The calibration span hash matches the hash from the radio's earlier reads.
+
+On a prod build with developer mode off, `/debug/uv5r-mini` goes to the home page.
+
+## Known gaps
 
 - A calibration viewer and a channel-level diff of two reads ([#1651](https://github.com/pskillen/codeplug-studio/issues/1651)).
 

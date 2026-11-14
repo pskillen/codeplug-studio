@@ -4,7 +4,7 @@ Read-only contributor tooling to inspect **browser-local app state** without Dev
 
 **On prod:** the Debug pages and the avatar menu's Debug item are hidden unless [developer mode](../developer-mode/README.md) is on for the device (tap the footer version five times). Every `/debug` route is mounted under `DebugGate` from `debugRoutes` in `src/app/routes/debug/debugRoutes.tsx`; add new pages there. The index page has a "Developer mode on this device" switch.
 
-**Tracking:** [#54](https://github.com/pskillen/codeplug-studio/issues/54) (Phase 3 / Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1))
+**Status:** Done · **Tracking:** [#54](https://github.com/pskillen/codeplug-studio/issues/54) (Phase 3 / Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1))
 
 **Source:** `src/integrations/debug/`, `src/app/routes/debug/`, `src/app/components/JsonTreeViewer/`
 
