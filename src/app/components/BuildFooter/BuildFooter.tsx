@@ -73,7 +73,9 @@ function VersionTapTarget() {
             style={{
               position: 'fixed',
               left: '50%',
-              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)',
+              // Top centre, over the top bar: the version label is in the page footer, at the bottom of the content
+              // and (on a phone) just above the bottom tab bar, so a toast here never covers it (#1686).
+              top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
               transform: 'translateX(-50%)',
               zIndex: 1000,
               maxWidth: 'calc(100vw - 32px)',
