@@ -1,7 +1,7 @@
 # UV-5R Mini full read (`/debug/uv5r-mini`)
 
 A read-only debug page for the Baofeng UV-5R Mini: one full clone read of `0x0000–0xFFFF` with a SHA-256 per span,
-the reads of this tab with a "download all" zip, a compare of two reads and a read-only calibration viewer. It exists for checks that Backup can't
+the reads of this tab with a "download all" zip, a compare of two reads with a channel-level diff, and a read-only calibration viewer. It exists for checks that Backup can't
 make (Backup reads only the clone ranges up to `0xA1BF`): calibration unchanged, a round trip identical, back to stock.
 
 **Tracking:** [#1651](https://github.com/pskillen/codeplug-studio/issues/1651)
@@ -70,6 +70,23 @@ Two reads (the two newest until you pick) compared on the decoded bytes with the
 
 Each line says "identical" or how many bytes differ and at which offsets (the first 32).
 
+### Channels
+
+Under the compare lines, a **Channels** view diffs the channel span (`0x0000–0x7CDF`, 999 slots of 32 bytes) of the
+same two reads, slot by slot (`debugRead/channelDiff.ts`, `diffUv5rMiniChannels`):
+
+- **Changed slot**, live in both reads: the fields that differ, from the
+  [channel record](../../reference/radios/baofeng/uv-5r-mini/channel-record.md) (RX and TX frequency, both tones,
+  `scode`, PTT ID, power, scramble, wide, RX DTMF, BCL, scan, FHSS, name), with byte or bit ranges for unnamed ones
+  (`+0x0E` bits 7–6 and 3–2, `+0x0F` bits 7 and 1, bytes `+0x10..+0x13`). When nothing in `+0x0C..+0x13` changed, the
+  line says so, since that is what an unchanged Write keeps. For example: `Slot 2 "TEST Z" (was "TEST B"): TX tone,
+name changed; bytes +0x0C..+0x13 unchanged`.
+- **Filled** or **emptied**: the slot's first byte went from or to `0xFF`, with the name it gained or lost.
+- **Empty in both reads** but with different bytes: the fields those bytes fall in.
+- **Unchanged** slots are only counted. The first 200 changed slots are listed.
+- **Slots 248 and 249** (`0x1EE0–0x1F1F`) hold special data in this radio family ([memory layout](../../reference/radios/baofeng/uv-5r-mini/memory-layout.md)),
+  so they are never listed as channels: each has its own line, "identical" or the offsets inside the slot that differ.
+
 ## Calibration viewer
 
 A **Calibration** section shows `0xF000–0xFFFF` of one read from the tab's history (the newest until you pick), with
@@ -111,12 +128,12 @@ The layout is shape only (`debugRead/calibrationLayout.ts`, decoded by `decodeUv
 
 ## Code anchors
 
-| Layer        | Module                                                                                                                     |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| Integrations | `src/integrations/radio-io/radios/uv5r-mini/debugRead/` (allowlist, full read, spans, compare, calibration layout)         |
-| Service      | `src/app/services/uv5rMiniDebugRead.ts` (port, baud fallback, close)                                                       |
-| Route        | `src/app/routes/debug/DebugUv5rMiniPage.tsx`, `uv5rMiniDebugReads.ts` (tab history, zip), `Uv5rMiniCalibrationSection.tsx` |
-| Component    | `src/app/components/LineChart/` ([sidecar](../../../src/app/components/LineChart/LineChart.md))                            |
+| Layer        | Module                                                                                                                           |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| Integrations | `src/integrations/radio-io/radios/uv5r-mini/debugRead/` (allowlist, full read, spans, compare, channel diff, calibration layout) |
+| Service      | `src/app/services/uv5rMiniDebugRead.ts` (port, baud fallback, close)                                                             |
+| Route        | `src/app/routes/debug/DebugUv5rMiniPage.tsx`, `uv5rMiniDebugReads.ts` (tab history, zip), `Uv5rMiniCalibrationSection.tsx`       |
+| Component    | `src/app/components/LineChart/` ([sidecar](../../../src/app/components/LineChart/LineChart.md))                                  |
 
 ## Manual verify
 
@@ -124,7 +141,8 @@ On desktop Chrome with the Mini on its cable, open `/debug/uv5r-mini` (a pre-pro
 on):
 
 1. Take two full reads back to back.
-2. The compare says identical on every compared span and on calibration.
+2. The compare says identical on every compared span and on calibration, and the Channels view says no channel slot
+   changed, with slots 248 and 249 identical.
 3. **Download all**, and check the zip holds `raw.bin`, `decoded.bin` and `summary.txt` for each read.
 4. The calibration span hash matches the hash from the radio's earlier reads.
 5. The **Calibration** section shows the newest read: four PA bias charts, two squelch rows, the battery ladder, the
@@ -135,7 +153,6 @@ On a prod build with developer mode off, `/debug/uv5r-mini` goes to the home pag
 
 ## Known gaps
 
-- A channel-level diff of two reads ([#1651](https://github.com/pskillen/codeplug-studio/issues/1651)).
 - The PA bias row order is assumed (see [Calibration viewer](#calibration-viewer)).
 
 ## Related

@@ -20,8 +20,12 @@ import {
 import { downloadZip, isoTimestampForFilename } from '@integrations/download/browserDownload.ts';
 import {
   compareUv5rMiniReads,
+  diffUv5rMiniChannels,
+  formatUv5rMiniChannelChange,
   formatUv5rMiniSpanRange,
+  formatUv5rMiniSpecialSlot,
   type Uv5rMiniCompareLine,
+  type Uv5rMiniChannelDiff,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 
@@ -85,6 +89,43 @@ function CompareLineRow({ line }: { line: Uv5rMiniCompareLine }) {
       </Table.Td>
       <Table.Td>{verdict}</Table.Td>
     </Table.Tr>
+  );
+}
+
+const SHOWN_CHANNELS = 200;
+
+function ChannelDiffView({ diff }: { diff: Uv5rMiniChannelDiff }) {
+  const n = diff.changes.length;
+  return (
+    <Stack gap="xs" data-testid="uv5r-mini-channel-diff">
+      <Text fw={600}>Channels</Text>
+      <Text size="sm" c="dimmed">
+        {n === 0 ? 'No channel slot changed. ' : ''}
+        {diff.unchangedCount} slot{diff.unchangedCount === 1 ? '' : 's'} unchanged; slots 248 and
+        249 hold special data and are listed on their own.
+      </Text>
+      {n > 0 ? (
+        <Stack gap={2}>
+          {diff.changes.slice(0, SHOWN_CHANNELS).map((c) => (
+            <Code key={c.slot} style={{ whiteSpace: 'normal' }}>
+              {formatUv5rMiniChannelChange(c)}
+            </Code>
+          ))}
+          {n > SHOWN_CHANNELS ? (
+            <Text size="sm" c="dimmed">
+              … (+{n - SHOWN_CHANNELS} more)
+            </Text>
+          ) : null}
+        </Stack>
+      ) : null}
+      <Stack gap={2}>
+        {diff.special.map((s) => (
+          <Code key={s.slot} style={{ whiteSpace: 'normal' }}>
+            {formatUv5rMiniSpecialSlot(s)}
+          </Code>
+        ))}
+      </Stack>
+    </Stack>
   );
 }
 
@@ -191,6 +232,10 @@ export default function DebugUv5rMiniPage() {
   const right = reads.find((r) => r.label === rightPick);
   const comparison = useMemo(
     () => (left && right ? compareUv5rMiniReads(left.decoded, right.decoded) : null),
+    [left, right],
+  );
+  const channelDiff = useMemo(
+    () => (left && right ? diffUv5rMiniChannels(left.decoded, right.decoded) : null),
     [left, right],
   );
   const options = reads.map((r) => ({ value: r.label, label: readName(r) }));
@@ -332,6 +377,7 @@ export default function DebugUv5rMiniPage() {
                       </Table.Tbody>
                     </Table>
                   </Table.ScrollContainer>
+                  {channelDiff ? <ChannelDiffView diff={channelDiff} /> : null}
                 </>
               ) : null}
             </Stack>

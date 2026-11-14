@@ -33,6 +33,19 @@ export {
   type Uv5rMiniCompareResult,
 } from './compare.ts';
 export {
+  diffUv5rMiniChannels,
+  formatUv5rMiniChannelChange,
+  formatUv5rMiniSpecialSlot,
+  UV5R_MINI_CHANNEL_FIELDS,
+  UV5R_MINI_SPECIAL_SLOTS,
+  UV5R_MINI_UNMODELLED_RANGE,
+  type Uv5rMiniChannelChange,
+  type Uv5rMiniChannelChangeKind,
+  type Uv5rMiniChannelDiff,
+  type Uv5rMiniChannelField,
+  type Uv5rMiniSpecialSlotDiff,
+} from './channelDiff.ts';
+export {
   decodeUv5rMiniCalibration,
   uv5rMiniPaAddress,
   uv5rMiniPaPointMhz,
