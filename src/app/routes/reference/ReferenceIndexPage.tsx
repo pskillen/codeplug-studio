@@ -1,14 +1,18 @@
 import type { ComponentType } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { FirmwareRadioId } from '@core/firmware/types.ts';
 import { DesignSystemV2Provider } from '../../components/v2/index.ts';
 import {
+  DEBUG_SECTION_ICON,
+  DEBUG_TOOL_LINKS,
   resolveToolsStripItems,
   type ContextualStripItem,
 } from '../../nav/contextualStripItems.ts';
 import { useDeveloperMode } from '../../hooks/useDeveloperMode.ts';
+import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { openExternalUrl } from '../../lib/openExternalUrl.ts';
 import { listOfferedFirmwareUpdaters } from '../../services/firmwareFlashEnvGate.ts';
+import { resolveDebugPagesGate } from '../../services/prodFeatureGate.ts';
 import {
   BandPlanArt,
   BearingArt,
@@ -68,13 +72,16 @@ const FIRMWARE_RADIO_SHORT_NAMES: Record<FirmwareRadioId, string> = {
   'baofeng-uv5rmini': 'UV-5R Mini',
 };
 
+/** Badge for tools that need Web Serial, which only desktop Chrome and Edge have. */
+const WEB_SERIAL_BADGE = 'Desktop Chrome / Edge';
+
 function badgesFor(item: ContextualStripItem, developerMode: boolean): string[] {
   if (item.to === '/firmware') {
     return [
       ...listOfferedFirmwareUpdaters(undefined, developerMode).map(
         (d) => FIRMWARE_RADIO_SHORT_NAMES[d.radioId],
       ),
-      'Desktop Chrome / Edge',
+      WEB_SERIAL_BADGE,
     ];
   }
   return item.external ? ['Opens in a new tab ↗'] : [];
@@ -82,10 +89,42 @@ function badgesFor(item: ContextualStripItem, developerMode: boolean): string[] 
 
 const isFeatured = (item: ContextualStripItem) => TOOL_CARDS[item.to]?.featured === true;
 
+/**
+ * The Debug section (#1673): the Debug index and each Debug page, so they can be reached without a URL bar (the
+ * Android app has none). The caller shows it only where the Debug pages gate allows them.
+ */
+function DebugToolsSection() {
+  return (
+    <section className={classes.debug} aria-labelledby="tools-debug-heading">
+      <h2 id="tools-debug-heading" className={classes.sectionTitle}>
+        <DEBUG_SECTION_ICON size={ICON_SIZE_NAV} stroke={ICON_STROKE} aria-hidden />
+        Debug
+      </h2>
+      <p className={classes.description}>
+        Contributor tools for browser storage and radio diagnostics. The production site hides them
+        unless developer mode is on.
+      </p>
+      <ul className={classes.debugLinks}>
+        {DEBUG_TOOL_LINKS.map((link) => (
+          <li key={link.to}>
+            <Link to={link.to} className={classes.debugLink}>
+              <span className={classes.debugLinkLabel}>{link.label}</span>
+              {link.webSerialOnly ? (
+                <span className={classes.badge}>{WEB_SERIAL_BADGE}</span>
+              ) : null}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /** Tools landing page: one card per Tools strip destination, featured tools first. */
 export default function ReferenceIndexPage() {
   const navigate = useNavigate();
   const [developerMode] = useDeveloperMode();
+  const debugAllowed = resolveDebugPagesGate({ developerMode }) === 'allowed';
   const known = resolveToolsStripItems(developerMode).filter((item) => TOOL_CARDS[item.to]);
   const cards = [...known.filter(isFeatured), ...known.filter((item) => !isFeatured(item))];
 
@@ -140,6 +179,7 @@ export default function ReferenceIndexPage() {
             );
           })}
         </div>
+        {debugAllowed ? <DebugToolsSection /> : null}
       </div>
     </DesignSystemV2Provider>
   );

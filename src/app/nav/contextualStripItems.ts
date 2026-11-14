@@ -10,6 +10,7 @@ import {
   IconListDetails,
   IconRoute,
   IconRadar,
+  IconTerminal2,
   IconWaveSine,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
@@ -101,8 +102,15 @@ export const settingsStripItems: readonly ContextualStripItem[] = [
   { label: 'Settings', to: '/settings' },
 ];
 
+/**
+ * The Debug section's icon (#1673): a terminal prompt, which reads as developer tooling. A bug reads as "report a
+ * bug", and the developer-mode badge already uses the code-brackets icon. Used on the Tools page's Debug entry, the
+ * avatar menu's Debug item and the Debug strip.
+ */
+export const DEBUG_SECTION_ICON: TablerIcon = IconTerminal2;
+
 export const debugStripItems: readonly ContextualStripItem[] = [
-  { label: 'Overview', to: '/debug' },
+  { label: 'Overview', to: '/debug', icon: DEBUG_SECTION_ICON },
   { label: 'IndexedDB', to: '/debug/indexed-db' },
   { label: 'localStorage', to: '/debug/local-storage' },
 ];
@@ -148,3 +156,24 @@ export function activeContextualStripLabel(
   }
   return best?.label ?? null;
 }
+
+/** A Debug page as the Tools page lists it (#1673). */
+export interface DebugToolLink {
+  label: string;
+  to: string;
+  /** Talks to a radio or cable over Web Serial: desktop Chrome or Edge only, never the Android app. */
+  webSerialOnly?: boolean;
+}
+
+/**
+ * The Debug pages the Tools page links to, shown only where the Debug pages gate allows them. Pages with route
+ * parameters (an IndexedDB store or row, a localStorage key) are reached from their parent page.
+ */
+export const DEBUG_TOOL_LINKS: readonly DebugToolLink[] = [
+  { label: 'Debug overview', to: '/debug' },
+  { label: 'IndexedDB', to: '/debug/indexed-db' },
+  { label: 'localStorage', to: '/debug/local-storage' },
+  { label: 'AT-D890UV erase-unit probe', to: '/debug/d890-erase-probe', webSerialOnly: true },
+  { label: 'Serial reopen timing', to: '/debug/serial-reopen', webSerialOnly: true },
+  { label: 'UV-5R Mini full read', to: '/debug/uv5r-mini', webSerialOnly: true },
+];

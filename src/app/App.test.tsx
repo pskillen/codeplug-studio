@@ -302,6 +302,35 @@ describe('App', () => {
       expect(screen.queryByRole('heading', { name: 'Debug' })).not.toBeInTheDocument();
     });
 
+    it('shows no Debug entry on Tools on prod with developer mode off (#1673)', async () => {
+      gateEnv.buildEnv = 'prod';
+      setAnalyticsConsent('declined');
+      renderApp('/reference');
+      expect(await screen.findByRole('heading', { name: 'Tools' })).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'Debug' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Debug overview' })).not.toBeInTheDocument();
+    });
+
+    it('shows the Debug entry on Tools on prod with developer mode on (#1673)', async () => {
+      gateEnv.buildEnv = 'prod';
+      setAnalyticsConsent('declined');
+      localStorage.setItem(DEVELOPER_MODE_KEY, 'on');
+      renderApp('/reference');
+      expect(await screen.findByRole('heading', { name: 'Debug' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('link', { name: 'Debug overview' }));
+      await waitFor(() => expect(appRouter.state.location.pathname).toBe('/debug'));
+    });
+
+    it('shows the Debug entry on Tools on pre-prod builds with developer mode off (#1673)', async () => {
+      for (const env of ['local', 'main', 'dev', 'staging']) {
+        gateEnv.buildEnv = env;
+        setAnalyticsConsent('declined');
+        const view = renderApp('/reference');
+        expect(await screen.findByRole('heading', { name: 'Debug' })).toBeInTheDocument();
+        view.unmount();
+      }
+    });
+
     it('shows Debug on pre-prod builds with developer mode off', async () => {
       for (const env of ['local', 'main', 'dev', 'staging']) {
         gateEnv.buildEnv = env;
