@@ -79,7 +79,7 @@ export function isUv5rMiniToStockImage(
 
 /** The refusal for an image whose loader is for the other layout than the radio's. */
 export const UV5RMINI_OTHER_LAYOUT_REFUSAL =
-  'This file is for the other flash layout; nothing was sent.';
+  "This file isn't for this radio's firmware; nothing was sent.";
 
 /** The refusal for an image whose code base is not the radio's: Studio never changes a radio's code base. */
 export const UV5RMINI_CODE_BASE_CHANGE_REFUSAL = (fileBase: string, radioBase: string): string =>

@@ -280,7 +280,6 @@ describe('uv5rMiniLayoutFromReport: the stock base from the shared table', () =>
         'Suffix: NRF',
         'Firmware: V0.27',
         'Hardware: V1.7',
-        'Flash layout: L2',
         'Code base: nrf-v0.27',
         'RF chip register 0: 0x1234',
       ],

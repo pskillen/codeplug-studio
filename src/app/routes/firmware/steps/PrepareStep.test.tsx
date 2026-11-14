@@ -11,6 +11,8 @@ import {
   RadioInterlockError,
 } from '@integrations/radio-io';
 
+import { DEVELOPER_MODE_KEY, setDeveloperMode } from '@integrations/preferences/developerMode.ts';
+
 import { DesignSystemV2Provider } from '../../../components/v2/index.ts';
 import * as flash from '../../../services/firmwareFlash.ts';
 import type { VerifiedStockFirmware } from '../../../services/firmwareFlash.ts';
@@ -38,7 +40,7 @@ const DM32 = getFirmwareUpdater('baofeng-dm32uv')!;
 const STOCK = { via: 'files' } as unknown as VerifiedStockFirmware;
 const LOADED = { provenance: 'published' } as unknown as LoadedFirmwarePatch;
 /** The interlock's own words for a crossed pick. */
-const OTHER_LAYOUT = 'This file is for the other flash layout; nothing was sent.';
+const OTHER_LAYOUT = "This file isn't for this radio's firmware; nothing was sent.";
 const NO_REPORT =
   'Studio found no MM9PDY radio report: the radio runs stock firmware, or an MM9PDY build from before the report.';
 
@@ -181,7 +183,7 @@ describe('PrepareStep: after the radio refused one layout before installing anyt
     );
     expect(
       screen.getByText(
-        'The radio refused the L1 file before installing anything, so Studio prepares the L2 file.',
+        "The radio refused the first file before installing anything, so Studio prepares this release's other file for it.",
       ),
     ).toBeInTheDocument();
     expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
@@ -215,7 +217,7 @@ describe('PrepareStep: a release with one file per flash layout and stock base',
       parsed: { description: { base } },
     }) as unknown as LoadedFirmwarePatch;
   const NO_PARTNER =
-    'If the radio refuses this L2 file, this release has no other file for this radio to try.';
+    'If the radio refuses this file, this release has no other file for this radio to try.';
   const NO_BUILD_NRFB =
     'Not available in this release: there is no MM9PDY build for this radio (nrfb-v0.04) yet. This release has a file only for nrf-v0.27. Nothing was prepared or sent to the radio.';
 
@@ -264,13 +266,13 @@ describe('PrepareStep: a release with one file per flash layout and stock base',
     expect(flash.prepareFlash).not.toHaveBeenCalled();
   });
 
-  it('a report for a layout the release lacks on its base names both the base and the layout', async () => {
+  it('a report for a layout the release lacks on its base names the base, never the layout', async () => {
     vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(<Harness updater={MINI} loaded={fileFor('L2')} />);
     await readRadio(reportBlock({ vm: L1, name: 'mm9pdy-L1-0.2.0' }));
     expect(
       await screen.findByText(
-        'Not available in this release: there is no MM9PDY build for this radio (nrf-v0.27, flash layout L1) yet. On nrf-v0.27, this release has a file only for L2. Nothing was prepared or sent to the radio.',
+        "Not available in this release: there is no MM9PDY build for this radio (nrf-v0.27) yet. This release's nrf-v0.27 file doesn't fit this radio. Nothing was prepared or sent to the radio.",
       ),
     ).toBeInTheDocument();
     expect(flash.prepareFlash).not.toHaveBeenCalled();
@@ -322,6 +324,7 @@ describe('PrepareStep: reading the UV-5R Mini', () => {
     expect(lastPrepare()[4]).toBe('L2');
     expect(lastPrepare()[5]).toBe('mm9pdy-L2-0.2.0-rc.1');
     expect(screen.getByText('Code base: nrf-v0.27')).toBeInTheDocument();
+    expect(screen.queryByText(/Flash layout/)).toBeNull();
     expect(lastPrepare()[8]).toBe('nrf-v0.27');
     expect(canAdvance(latest)).toBe(true);
   });
@@ -484,8 +487,24 @@ describe('PrepareStep: the UV-5R Mini Radio Info question, with no report', () =
     expect(lastPrepare()[4]).toBe('L2');
     expect(lastPrepare()[5]).toBeUndefined();
     expect(lastPrepare()[7]).toBe(false);
-    expect(screen.getByText('Flash layout: L2')).toBeInTheDocument();
+    // The flash layout is an internal detail (#1670): shown only with developer mode on.
+    expect(screen.queryByText(/Flash layout/)).toBeNull();
     expect(canAdvance(latest)).toBe(true);
+  });
+
+  it('with developer mode on, shows the flash layout and nothing else changes', async () => {
+    setDeveloperMode(true);
+    try {
+      render(<Harness updater={MINI} />);
+      await readRadio(STOCK_FLASH);
+      radioInfo('V0.27', 'V1.7');
+      expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+      expect(screen.getByText('Flash layout: L2')).toBeInTheDocument();
+      expect(lastPrepare()[4]).toBe('L2');
+      expect(canAdvance(latest)).toBe(true);
+    } finally {
+      localStorage.removeItem(DEVELOPER_MODE_KEY);
+    }
   });
 
   it('stock NRFB V0.04 is L1 on nrfb-v0.04; an L2 file is refused before Connect', async () => {

@@ -837,7 +837,7 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
     });
   });
 
-  it('takes both files of a release with one file per flash layout, and names their layouts', async () => {
+  it('takes both files of a release with one file per flash layout, without naming the layouts', async () => {
     const layouts = { layouts: ['L1', 'L2'], fromBuildName: () => undefined };
     vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([
       { ...DM32, stock: { ...DM32.stock, releaseLayouts: layouts } },
@@ -849,7 +849,7 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
     });
     await toFirmwareStep();
     expect(
-      screen.getByText(/A release has one file per flash layout \(L1, L2\)/),
+      screen.getByText(/A release has a file for each radio firmware it supports\. Pick them all/),
     ).toBeInTheDocument();
     const input = document.querySelector('input[type="file"][accept=".json"]') as HTMLInputElement;
     expect(input.multiple).toBe(true);
@@ -858,12 +858,37 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
         files: [new File(['{}'], 'fw-L1.patch.json'), new File(['{}'], 'fw-L2.patch.json')],
       },
     });
-    expect(await screen.findByText('Flash layouts: L1, L2.')).toBeInTheDocument();
+    await waitFor(() => expect(flash.loadChosenPatch).toHaveBeenCalled());
+    // The flash layout is an internal detail (#1670): named only with developer mode on.
+    expect(screen.queryByText(/Flash layouts/)).toBeNull();
     const choice = vi.mocked(flash.loadChosenPatch).mock.calls[0]![1];
     expect(choice.kind === 'user-patch' && choice.file.name).toBe('fw-L1.patch.json');
     expect(choice.kind === 'user-patch' && choice.otherFiles?.map((f) => f.name)).toEqual([
       'fw-L2.patch.json',
     ]);
+  });
+
+  it('names the layouts of the patch files with developer mode on', async () => {
+    setDeveloperMode(true);
+    try {
+      const layouts = { layouts: ['L1', 'L2'], fromBuildName: () => undefined };
+      vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([
+        { ...DM32, stock: { ...DM32.stock, releaseLayouts: layouts } },
+      ]);
+      vi.mocked(flash.loadChosenPatch).mockResolvedValue({
+        ...UNREVIEWED,
+        layout: 'L1',
+        otherLayouts: [{ ...UNREVIEWED, layout: 'L2' }],
+      });
+      await toFirmwareStep();
+      const input = document.querySelector(
+        'input[type="file"][accept=".json"]',
+      ) as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [new File(['{}'], 'fw-L1.patch.json')] } });
+      expect(await screen.findByText('Flash layouts: L1, L2.')).toBeInTheDocument();
+    } finally {
+      localStorage.removeItem(DEVELOPER_MODE_KEY);
+    }
   });
 
   it('takes one patch file for a radio without layouts', async () => {

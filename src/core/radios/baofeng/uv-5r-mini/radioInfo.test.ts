@@ -148,7 +148,9 @@ describe('uv5rMiniLayoutFromRadioInfo', () => {
     );
     const text = [q.intro, ...q.steps, q.report!.intro, ...q.report!.steps].join(' ');
     expect(text).not.toMatch(/hardware layout/i);
-    expect(text).toMatch(/flash layouts/);
+    // The flash layout is an internal detail: the user is told about their radio's firmware.
+    expect(text).not.toMatch(/layout/i);
+    expect(text).toMatch(/your radio's firmware/);
   });
 
   it('reads the radio report first: a report decides, no report means the question', () => {

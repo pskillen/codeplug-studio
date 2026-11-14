@@ -237,7 +237,6 @@ export function uv5rMiniLayoutFromReport(report: Uv5rMiniRadioReport): RadioLayo
         `Suffix: ${report.suffix}`,
         `Firmware: ${report.version}`,
         `Hardware: ${report.hardware}`,
-        `Flash layout: ${report.layout}`,
         `Code base: ${stock.base}`,
         `RF chip register 0: ${hex(report.rf0, 4)}`,
       ];
