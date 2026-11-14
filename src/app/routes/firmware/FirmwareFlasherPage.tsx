@@ -17,8 +17,8 @@ import { listOfferedFirmwareUpdaters } from '../../services/firmwareFlashEnvGate
 import classes from './FirmwareFlasherPage.module.css';
 import {
   canAdvance,
-  FIRMWARE_WIZARD_STEPS,
   firmwareWizardReducer,
+  firmwareWizardSteps,
   INITIAL_FIRMWARE_WIZARD_STATE,
   type FirmwareWizardStep,
 } from './firmwareWizardState.ts';
@@ -27,6 +27,7 @@ import FirmwareStep from './steps/FirmwareStep.tsx';
 import FlashStep from './steps/FlashStep.tsx';
 import PreflightStep from './steps/PreflightStep.tsx';
 import PrepareStep from './steps/PrepareStep.tsx';
+import RadioCheckStep from './steps/RadioCheckStep.tsx';
 import RadioStep from './steps/RadioStep.tsx';
 import StockStep from './steps/StockStep.tsx';
 import UpdateModeStep from './steps/UpdateModeStep.tsx';
@@ -34,6 +35,7 @@ import UpdateModeStep from './steps/UpdateModeStep.tsx';
 const STEP_LABELS: Record<FirmwareWizardStep, string> = {
   radio: 'Radio',
   firmware: 'Firmware',
+  check: 'Your radio',
   stock: 'Stock firmware',
   prepare: 'Prepare',
   preflight: 'Before you flash',
@@ -88,8 +90,10 @@ export default function FirmwareFlasherPage() {
   }
 
   const updater = offered.find((d) => d.radioId === state.radioId) ?? null;
-  const currentIndex = FIRMWARE_WIZARD_STEPS.indexOf(state.step);
-  const steps: StepperStep[] = FIRMWARE_WIZARD_STEPS.map((id, i) => ({
+  // A radio with a radio check gets the "Your radio" step before any stock file is asked for (#1670).
+  const wizardSteps = firmwareWizardSteps(state);
+  const currentIndex = wizardSteps.indexOf(state.step);
+  const steps: StepperStep[] = wizardSteps.map((id, i) => ({
     id,
     label: STEP_LABELS[id],
     status: i < currentIndex ? 'done' : i === currentIndex ? 'current' : 'pending',
@@ -104,6 +108,9 @@ export default function FirmwareFlasherPage() {
     switch (state.step) {
       case 'firmware':
         body = <FirmwareStep {...stepProps} />;
+        break;
+      case 'check':
+        body = <RadioCheckStep {...stepProps} />;
         break;
       case 'stock':
         body = <StockStep {...stepProps} />;

@@ -4,9 +4,12 @@ import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmw
 
 import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
 
+import { getFirmwareUpdater } from '@integrations/radio-io';
+
 import type { FirmwareChoice, VerifiedStockFirmware } from '../../services/firmwareFlash.ts';
 import {
   canAdvance,
+  firmwareWizardSteps,
   isPreflightComplete,
   isSafetyBackupDone,
   firmwareWizardReducer as reduce,
@@ -14,6 +17,7 @@ import {
   PREFLIGHT_CHECKS,
   type FirmwareWizardState,
 } from './firmwareWizardState.ts';
+import { radioCheckSetup } from './radioCheck.ts';
 
 const STOCK = { via: 'files' } as unknown as VerifiedStockFirmware;
 const IMAGE = { provenance: 'stock' } as unknown as PreparedFirmwareImage;
@@ -434,4 +438,109 @@ it('requires a firmware choice when plain stock is unavailable', () => {
   expect(canAdvance(selected)).toBe(false);
   const cleared = reduce(selected, { type: 'chooseFirmware', choice: null });
   expect(canAdvance(cleared)).toBe(false);
+});
+
+describe('the "Your radio" check step (#1670)', () => {
+  const MINI = getFirmwareUpdater('baofeng-uv5rmini')!;
+  const selectMini = {
+    type: 'selectRadio',
+    radioId: MINI.radioId,
+    radioCheck: radioCheckSetup(MINI),
+  } as const;
+  /** A release with a file only for the stock NRF V0.27 radio (L2 on nrf-v0.27). */
+  const RELEASE_L2 = {
+    provenance: 'published',
+    layout: 'L2',
+    parsed: { description: { base: 'nrf-v0.27' } },
+  } as unknown as LoadedFirmwarePatch;
+  const atCheck = (loadedPatch: LoadedFirmwarePatch | null = RELEASE_L2) =>
+    through(
+      selectMini,
+      { type: 'next' },
+      { type: 'chooseFirmware', choice: USER_CHOICE, loadedPatch },
+      { type: 'next' },
+    );
+  const answer = (firmware: string, suffix: string, hardware = 'V1.7') =>
+    ({ type: 'setRadioInfo', patch: { firmware, suffix, hardware } }) as const;
+  const noReport = { type: 'radioRead', status: { kind: 'none' } } as const;
+  const answered = (a: ReturnType<typeof answer>) => reduce(reduce(atCheck(), noReport), a);
+
+  it('comes between Firmware and Stock firmware, only for a radio with a radio check', () => {
+    expect(firmwareWizardSteps(through(selectMini))).toEqual([
+      'radio',
+      'firmware',
+      'check',
+      'stock',
+      'prepare',
+      'preflight',
+      'updateMode',
+      'flash',
+    ]);
+    const dm32 = through({ type: 'selectRadio', radioId: 'baofeng-dm32uv' });
+    expect(firmwareWizardSteps(dm32)).not.toContain('check');
+    expect(reduce(reduce(dm32, { type: 'next' }), { type: 'next' }).step).toBe('stock');
+    expect(reduce(dm32, { type: 'goTo', step: 'check' }).step).toBe('radio');
+  });
+
+  it('stops an unread or unanswered radio before the stock-file step', () => {
+    for (const s of [atCheck(), reduce(atCheck(), noReport)]) {
+      expect(s.step).toBe('check');
+      expect(canAdvance(s)).toBe(false);
+      expect(reduce(s, { type: 'next' }).step).toBe('check');
+      expect(reduce(s, { type: 'goTo', step: 'stock' }).step).toBe('check');
+    }
+  });
+
+  it('stops an unsupported radio at the check step', () => {
+    for (const a of [
+      answer('V0.04', 'NRF'),
+      answer('Other', 'NRF'),
+      answer('V0.27', 'Other'),
+      answer('V0.27', 'NRF', 'Other'),
+    ]) {
+      const s = answered(a);
+      expect(canAdvance(s)).toBe(false);
+      expect(reduce(s, { type: 'next' }).step).toBe('check');
+    }
+  });
+
+  it('stops a radio the chosen release has no file for, and lets it on with no release chosen', () => {
+    expect(canAdvance(answered(answer('V0.04', 'NRFB')))).toBe(false);
+    // No release yet (plain stock, say): the release is checked again once one is chosen.
+    expect(canAdvance({ ...answered(answer('V0.04', 'NRFB')), loadedPatch: null })).toBe(true);
+  });
+
+  it('lets a supported radio on to the stock-file step, and back to the check', () => {
+    const s = reduce(answered(answer('V0.27', 'NRF')), { type: 'next' });
+    expect(s.step).toBe('stock');
+    expect(reduce(s, { type: 'back' }).step).toBe('check');
+  });
+
+  it('a changed answer drops the prepared image and the before-you-flash ticks', () => {
+    let s = answered(answer('V0.27', 'NRF'));
+    for (const a of [
+      { type: 'next' },
+      { type: 'stockVerified', stock: STOCK },
+      { type: 'next' },
+      { type: 'imagePrepared', image: IMAGE },
+      { type: 'next' },
+      { type: 'setCheck', check: 'battery', value: true },
+    ] as const) {
+      s = reduce(s, a);
+    }
+    expect(s.step).toBe('preflight');
+    s = reduce(s, { type: 'goTo', step: 'check' });
+    expect(s.step).toBe('check');
+    s = reduce(s, answer('V0.04', 'NRFB'));
+    expect(s.image).toBeNull();
+    expect(s.checks.battery).toBe(false);
+    expect(s.stock).toBe(STOCK);
+    expect(reduce(s, { type: 'goTo', step: 'prepare' }).step).toBe('check');
+  });
+
+  it('a radio change or restart forgets the check', () => {
+    const s = atCheck();
+    expect(reduce(s, { type: 'restart' }).radioCheck).toBeNull();
+    expect(reduce(s, { type: 'selectRadio', radioId: 'baofeng-dm32uv' }).radioCheck).toBeNull();
+  });
 });

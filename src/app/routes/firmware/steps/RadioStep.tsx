@@ -5,6 +5,7 @@ import type { FirmwareUpdaterDescriptor } from '@integrations/radio-io';
 import { Panel } from '../../../components/v2/index.ts';
 import classes from '../FirmwareFlasherPage.module.css';
 import type { FirmwareWizardAction, FirmwareWizardState } from '../firmwareWizardState.ts';
+import { radioCheckSetup } from '../radioCheck.ts';
 
 export default function RadioStep({
   offered,
@@ -32,6 +33,7 @@ export default function RadioStep({
                   type: 'selectRadio',
                   radioId: d.radioId,
                   stockFlashOffered: d.stock.stockFlashOffered,
+                  radioCheck: radioCheckSetup(d),
                   preflight: {
                     attestationIds: d.preflight?.attestations.map((a) => a.id) ?? [],
                     probe: !!d.preflight?.probe,
