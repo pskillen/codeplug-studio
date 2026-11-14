@@ -11,6 +11,7 @@ import {
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { FakeMiniRadio } from '@integrations/radio-io/radios/uv5r-mini/__fixtures__/fakeMiniRadio.ts';
 import { UV5RMINI_RADIO_REPORT_LINK } from '@integrations/radio-io/radios/uv5r-mini/radioReportRead.ts';
+import type { BytePipe } from '@integrations/radio-io/types.ts';
 
 import {
   createFakeUsbSerialPlugin,
@@ -37,6 +38,21 @@ function radio(): FakeMiniRadio {
   for (let i = 0; i < r.flash.length; i++) r.flash[i] = (i * 5) & 0xff;
   r.plainFrom = 0xf000;
   return r;
+}
+
+/** The Mini, answering only when the port's last `setParameters` set this rate (silent at any other). */
+function answeringOnlyAt(baudRate: number, inner: FakeMiniRadio): BytePipe {
+  const atRate = () => fake.record.parameters.at(-1)?.baudRate === baudRate;
+  return {
+    write: async (data) => {
+      if (atRate()) await inner.write(data);
+    },
+    readExact: async (n) => {
+      if (!atRate()) throw new Error('silent');
+      return inner.readExact(n);
+    },
+    close: async () => undefined,
+  };
 }
 
 let fake: ReturnType<typeof createFakeUsbSerialPlugin>;
@@ -75,6 +91,40 @@ describe('UV-5R Mini debug read in the Android app', () => {
     expect(fake.record.writes.every(isUv5rMiniDebugFrameAllowed)).toBe(true);
     expect(mini.wAddresses()).toEqual([]);
     expect(fake.record.closed).toBe(1);
+  });
+
+  it('closes and reopens the port at 38400, still 8N1 with DTR and RTS raised, when 115200 gets no answer', async () => {
+    fake.setRadio(answeringOnlyAt(38400, mini));
+    const port = await grantUv5rMiniDebugPort();
+    // The ident waits its full timeout at 115200: run it on fake time.
+    vi.useFakeTimers();
+    let read: Awaited<ReturnType<typeof runUv5rMiniDebugFullRead>> | undefined;
+    let failed: unknown;
+    const running = runUv5rMiniDebugFullRead({ port, settleScale: 0 }).then(
+      (r) => (read = r),
+      (err: unknown) => (failed = err),
+    );
+    try {
+      for (let i = 0; i < 1000 && read === undefined && failed === undefined; i++) {
+        await vi.advanceTimersByTimeAsync(100);
+      }
+      await running;
+    } finally {
+      vi.useRealTimers();
+    }
+
+    expect(failed).toBeUndefined();
+    expect(read?.decoded).toEqual(mini.flash);
+    expect(fake.record.opened).toEqual([FAKE_CH340_DEVICE.deviceId, FAKE_CH340_DEVICE.deviceId]);
+    expect(fake.record.parameters).toEqual([
+      { portId: 'port-1', baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' },
+      { portId: 'port-2', baudRate: 38400, dataBits: 8, stopBits: 1, parity: 'none' },
+    ]);
+    expect(fake.record.dtr).toEqual([true, true]);
+    expect(fake.record.rts).toEqual([true, true]);
+    expect(fake.record.closed).toBe(2);
+    expect(fake.record.writes.every(isUv5rMiniDebugFrameAllowed)).toBe(true);
+    expect(mini.wAddresses()).toEqual([]);
   });
 
   it('refuses a write frame before it reaches the USB port', async () => {
