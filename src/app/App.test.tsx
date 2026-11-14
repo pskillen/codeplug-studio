@@ -266,6 +266,27 @@ describe('App', () => {
       expect(await overflowMenuLabels()).not.toContain('Debug');
     });
 
+    it('hides the UV-5R Mini debug page on prod with developer mode off', async () => {
+      gateEnv.buildEnv = 'prod';
+      setAnalyticsConsent('declined');
+      renderApp('/debug/uv5r-mini');
+      await waitFor(() => expect(appRouter.state.location.pathname).toBe('/'));
+      expect(
+        screen.queryByRole('heading', { name: 'UV-5R Mini full read' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('shows the UV-5R Mini debug page on prod with developer mode on', async () => {
+      gateEnv.buildEnv = 'prod';
+      setAnalyticsConsent('declined');
+      localStorage.setItem(DEVELOPER_MODE_KEY, 'on');
+      renderApp('/debug/uv5r-mini');
+      expect(
+        await screen.findByRole('heading', { name: 'UV-5R Mini full read' }),
+      ).toBeInTheDocument();
+      expect(appRouter.state.location.pathname).toBe('/debug/uv5r-mini');
+    });
+
     it('shows Debug and the badge on prod with developer mode on, and the badge turns it off', async () => {
       gateEnv.buildEnv = 'prod';
       setAnalyticsConsent('declined');

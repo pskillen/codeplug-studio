@@ -29,6 +29,8 @@ export class FakeMiniRadio implements BytePipe {
   corruptAt: number | undefined;
   /** Model the clone session: it ends this many ms after the last byte received. Unset: always in session. */
   sessionDropMs: number | undefined;
+  /** Send `R` replies at this address and above plain, as the radio does from `0xF000`. Unset: XOR every reply. */
+  plainFrom: number | undefined;
   private inSession = false;
   private lastRxAt = 0;
 
@@ -73,7 +75,8 @@ export class FakeMiniRadio implements BytePipe {
       const plain = this.flash.slice(addr, addr + layout.blockSize);
       const frame = new Uint8Array(4 + layout.blockSize);
       frame.set([0x52, (addr >> 8) & 0xff, addr & 0xff, layout.blockSize]);
-      frame.set(uv17ProCrypt(plain, layout.defaultEncrsym), 4);
+      const plainReply = this.plainFrom !== undefined && addr >= this.plainFrom;
+      frame.set(plainReply ? plain : uv17ProCrypt(plain, layout.defaultEncrsym), 4);
       this.enqueue(frame);
     }
   }

@@ -8,6 +8,7 @@ import DebugIndexedDbStorePage from './DebugIndexedDbStorePage.tsx';
 import DebugLocalStoragePage from './DebugLocalStoragePage.tsx';
 import DebugLocalStorageViewerPage from './DebugLocalStorageViewerPage.tsx';
 import DebugSerialReopenPage from './DebugSerialReopenPage.tsx';
+import DebugUv5rMiniPage from './DebugUv5rMiniPage.tsx';
 
 /**
  * Every Debug page. Add a new debug page here: the app router mounts this list under {@link DebugGate}, so the page
@@ -25,6 +26,7 @@ export const debugRoutes: RouteObject[] = [
   { path: '/debug/local-storage/:storageKey', element: <DebugLocalStorageViewerPage /> },
   { path: '/debug/d890-erase-probe', element: <DebugD890EraseProbePage /> },
   { path: '/debug/serial-reopen', element: <DebugSerialReopenPage /> },
+  { path: '/debug/uv5r-mini', element: <DebugUv5rMiniPage /> },
 ];
 
 /** The layout route the app router mounts: {@link DebugGate} over {@link debugRoutes}. */

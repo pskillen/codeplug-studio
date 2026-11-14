@@ -1,0 +1,94 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
+import { hashUv5rMiniDebugSpans } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
+
+import DebugUv5rMiniPage from './DebugUv5rMiniPage.tsx';
+import { uv5rMiniDebugReadStore } from './uv5rMiniDebugReads.ts';
+
+vi.mock('@integrations/download/browserDownload.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@integrations/download/browserDownload.ts')>()),
+  downloadZip: vi.fn(),
+}));
+
+function addRead(decoded: Uint8Array, store = uv5rMiniDebugReadStore) {
+  store.add({
+    ident: { f: new Uint8Array(16), m: new Uint8Array(15) },
+    raw: decoded,
+    decoded,
+    spans: hashUv5rMiniDebugSpans(decoded),
+  });
+}
+
+describe('DebugUv5rMiniPage', () => {
+  it('lists the reads, offers the zip with its calibration note, and compares the two newest', () => {
+    const a = new Uint8Array(0x10000);
+    const b = a.slice();
+    b[0x0100] = 0x01; // compared span
+    b[0x8800] = 0x01; // log sector: skipped
+    addRead(a);
+    addRead(b);
+    render(
+      <MemoryRouter>
+        <DesignSystemV2Provider>
+          <DebugUv5rMiniPage />
+        </DesignSystemV2Provider>
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('button', { name: 'Download all (2)' })).toBeTruthy();
+    expect(screen.getByText('2 reads not downloaded')).toBeTruthy();
+    expect(screen.getByText(/including the radio.s calibration/)).toBeTruthy();
+    expect(screen.getByText('The reads differ outside the skipped windows')).toBeTruthy();
+    expect(screen.getByText('0x0100')).toBeTruthy();
+    expect(screen.queryByText('0x8800')).toBeNull();
+    // No write or restore control anywhere on the page.
+    expect(screen.queryByRole('button', { name: /write|restore/i })).toBeNull();
+  });
+});
+
+describe('DebugUv5rMiniPage leave warning', () => {
+  // The store lives as long as the module, so each case loads a fresh page and store.
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  async function renderFresh() {
+    const page = await import('./DebugUv5rMiniPage.tsx');
+    const reads = await import('./uv5rMiniDebugReads.ts');
+    const { DesignSystemV2Provider: Provider } = await import('@app/components/v2/index.ts');
+    const Page = page.default;
+    render(
+      <MemoryRouter>
+        <Provider>
+          <Page />
+        </Provider>
+      </MemoryRouter>,
+    );
+    return reads.uv5rMiniDebugReadStore;
+  }
+
+  function leaveIsBlocked(): boolean {
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  }
+
+  it('does not warn with no reads', async () => {
+    await renderFresh();
+    expect(leaveIsBlocked()).toBe(false);
+  });
+
+  it('warns while reads are not downloaded, and stops after Download all', async () => {
+    const store = await renderFresh();
+    const { act } = await import('@testing-library/react');
+    act(() => addRead(new Uint8Array(0x10000), store));
+    expect(leaveIsBlocked()).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Download all (1)' }));
+    const { downloadZip } = await import('@integrations/download/browserDownload.ts');
+    expect(downloadZip).toHaveBeenCalledTimes(1);
+    expect(leaveIsBlocked()).toBe(false);
+  });
+});

@@ -67,6 +67,12 @@ CHIRP `_do_ident` uses the same ident + fingerprint, then magics with **last byt
 - Request: `0x52` + address (u16 BE) + length (`0x40`)
 - Response: 4-byte header (starts `0x52`) + 64-byte payload → decrypt with `encrsym`
 
+### Full read (debug page)
+
+The clone `R` addresses all 64 KiB, `0x0000–0xFFFF`. The radio XORs replies below `0xF000` and sends `0xF000` and up
+(calibration) plain, so a full read is decoded below `0xF000` only. Studio reads beyond the clone ranges only on the
+read-only debug page, [`/debug/uv5r-mini`](../../../../features/debug/uv5r-mini-full-read.md), which ends with `E`.
+
 ### Write
 
 - Request: `0x57` + address (u16 BE) + `0x40` + **encrypted** 64-byte block
