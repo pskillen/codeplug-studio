@@ -105,6 +105,21 @@ describe('AT-D890UV updater through the Capacitor pipe', () => {
     expect(record.closed).toBe(true);
   });
 
+  it('finishes when the radio restarts after the end byte and its USB port goes: port-closed-by-radio', async () => {
+    // UPDATE, ident, every data frame, then the end byte: the device detaches right after that last write.
+    const mock = new D890BootloaderMock();
+    const { run, record } = await session(mock, { cutAfterWrites: FRAMES + 3 });
+    const result = await underFakeTime(run());
+    expect(result).toMatchObject({
+      dataFrames: FRAMES,
+      framesSent: FRAMES + 3,
+      end: 'port-closed-by-radio',
+    });
+    expect(mock.image(0x0800c000, LENGTH)).toEqual(FILES.cdd);
+    expect(mock.log).toContain('end');
+    expect(record.cut).toBe(true);
+  });
+
   it('resends a frame once after a NAK, then succeeds', async () => {
     const mock = new D890BootloaderMock({ nakAt: [7] });
     const { run } = await session(mock);
