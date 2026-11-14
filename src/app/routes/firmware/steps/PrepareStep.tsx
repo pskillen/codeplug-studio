@@ -1,11 +1,7 @@
 import { NativeSelect } from '@mantine/core';
 import { useEffect, useState } from 'react';
 
-import type {
-  FirmwareRadioLayoutQuestion,
-  RadioInfoAnswers,
-  RadioLayoutAnswer,
-} from '@core/firmware/types.ts';
+import type { FirmwareRadioLayoutQuestion, RadioInfoAnswers } from '@core/firmware/types.ts';
 import { loadedLayouts, partnerFor } from '@core/firmware/releases/layouts.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 import { RadioIoError } from '@integrations/radio-io';
@@ -13,14 +9,12 @@ import { RadioIoError } from '@integrations/radio-io';
 import { Button, Panel, StatusBanner, TextInput } from '../../../components/v2/index.ts';
 import {
   grantFirmwareRadioReportPort,
-  noFileForRadioMessage,
   prepareFlash,
   readFirmwareRadioReport,
-  releaseHasFileForLayout,
   type FirmwareChoice,
 } from '../../../services/firmwareFlash.ts';
 import classes from '../FirmwareFlasherPage.module.css';
-import type { RadioReadStatus } from '../firmwareWizardState.ts';
+import { radioCheckAnswer, radioCheckSetup, type RadioReadStatus } from '../radioCheck.ts';
 import DeveloperOnly from './DeveloperOnly.tsx';
 import LabeledCheck from './LabeledCheck.tsx';
 import { shortHash, type WizardStepProps } from './stepTypes.ts';
@@ -192,39 +186,19 @@ const needsConfirm = (err: unknown): err is RadioIoError =>
 export default function PrepareStep({ state, dispatch, updater }: WizardStepProps) {
   // The flash layout is an internal detail (#1670): shown only through DeveloperOnly, which no check reads.
   const { stock, image, choice, loadedPatch, radioInfo, radioRead, reinstallConfirmed } = state;
-  const question = updater.stock.radioLayout;
-  // The radio is read first when it may report about itself; the question is asked only without a report.
-  const report = question?.report && updater.radioReport ? question.report : undefined;
-  const asksQuestion =
-    !!question && (!report || (radioRead !== null && radioRead.kind !== 'report'));
-  const answer: RadioLayoutAnswer | null = !question
-    ? null
-    : radioRead?.kind === 'report' && report
-      ? radioRead.answer
-      : asksQuestion
-        ? question.resolve(radioInfo)
-        : { kind: 'incomplete' };
-  // Undefined when the radio has one layout; null while the answer gives none. After the radio refused one layout's
-  // file before installing anything, its layout is taken to be the other one (the retry).
+  const setup = radioCheckSetup(updater);
+  const question = setup?.question;
+  const report = setup?.report;
   const layoutRetry = state.layoutRetry;
-  const radioLayout: string | null | undefined = !answer
-    ? undefined
-    : answer.kind === 'layout'
-      ? (layoutRetry?.to ?? answer.layout)
-      : null;
-  // The build the radio says it runs, where it says so; it decides "already installed".
-  const radioBuild = answer?.kind === 'layout' ? answer.build : undefined;
-  // A radio that reported about itself runs a modded build, even when it named none.
-  const radioReported = answer?.kind === 'layout' && answer.reported === true;
-  // The code base the radio runs: what its report says, or what the answers name. After a retry, a radio that didn't
-  // report is taken to run the base of the file prepared for the other layout (its answers were wrong); a reported
-  // base stands, so the interlocks refuse a retry that would change it.
-  const radioCodeBase =
-    answer?.kind !== 'layout'
-      ? undefined
-      : layoutRetry && !answer.reported
-        ? layoutRetry.toBase
-        : answer.codeBase;
+  const {
+    answer,
+    asksQuestion,
+    radioLayout,
+    radioBuild,
+    radioReported,
+    radioCodeBase,
+    unavailable,
+  } = radioCheckAnswer(state, setup);
   type Inputs = readonly [
     unknown,
     FirmwareChoice | null,
@@ -267,15 +241,6 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
       refusedBase: image.baseName,
       variantOfBase: updater.stock.releaseLayouts?.variantOfBase,
     });
-  // The release has files by layout but none for this radio (its layout, and its base where known): say so and stop
-  // before anything is prepared. Never the nearest build instead.
-  const unavailable =
-    !!loadedPatch &&
-    typeof radioLayout === 'string' &&
-    !releaseHasFileForLayout(loadedPatch, radioLayout, radioCodeBase)
-      ? noFileForRadioMessage(loadedPatch, radioLayout, radioCodeBase)
-      : null;
-
   useEffect(() => {
     if (!stock || !choice || image || radioLayout === null || unavailable) return;
     let cancelled = false;

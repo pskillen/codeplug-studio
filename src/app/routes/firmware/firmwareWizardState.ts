@@ -3,10 +3,13 @@
  * nothing here is persisted. The flash run itself (progress, outcome) lives in the page.
  */
 import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
-import type { FirmwareRadioId, RadioInfoAnswers, RadioLayoutAnswer } from '@core/firmware/types.ts';
+import type { FirmwareRadioId, RadioInfoAnswers } from '@core/firmware/types.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 
 import type { FirmwareChoice, VerifiedStockFirmware } from '../../services/firmwareFlash.ts';
+import type { RadioReadStatus } from './radioCheck.ts';
+
+export type { RadioReadStatus } from './radioCheck.ts';
 
 export const FIRMWARE_WIZARD_STEPS = [
   'radio',
@@ -80,15 +83,6 @@ export interface FirmwareWizardState {
    */
   readonly safetyBackup: SafetyBackupStatus | null;
 }
-
-/**
- * The radio report read: a report and what it decides; no report (the Radio Info question is asked); or the read
- * failed (the question is asked, with the reason shown).
- */
-export type RadioReadStatus =
-  | { readonly kind: 'report'; readonly answer: RadioLayoutAnswer }
-  | { readonly kind: 'none' }
-  | { readonly kind: 'failed'; readonly message: string };
 
 export type SafetyBackupStatus =
   | { readonly kind: 'saved'; readonly radioKey: string; readonly summary: string }
