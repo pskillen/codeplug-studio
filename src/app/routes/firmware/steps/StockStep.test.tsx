@@ -6,7 +6,7 @@ import { getFirmwareUpdater } from '@integrations/radio-io';
 
 import { DesignSystemV2Provider } from '../../../components/v2/index.ts';
 import { INITIAL_FIRMWARE_WIZARD_STATE } from '../firmwareWizardState.ts';
-import StockStep from './StockStep.tsx';
+import StockStep, { STOCK_ONE_OF_HEADING, STOCK_PER_VERSION_COPY } from './StockStep.tsx';
 
 const MINI = getFirmwareUpdater('baofeng-uv5rmini')!;
 
@@ -52,6 +52,20 @@ describe('StockStep, UV-5R Mini', () => {
     expect(
       screen.getByText('Drop stock-nrf-v0.27.ufw or stock-nrfb-v0.04.ufw'),
     ).toBeInTheDocument();
+  });
+
+  it('says it needs one stock file, the one for the radio, not both', () => {
+    renderMini();
+    expect(screen.getByText(STOCK_ONE_OF_HEADING)).toBeInTheDocument();
+    expect(screen.queryByText('Files Studio needs:')).toBeNull();
+    expect(screen.getByText(STOCK_PER_VERSION_COPY, { exact: false })).toBeInTheDocument();
+    const files = screen.getByText(STOCK_ONE_OF_HEADING).parentElement!;
+    expect(files).toHaveTextContent(
+      'stock-nrf-v0.27.ufw (504,832 bytes): for stock firmware v0.27 (NRF)',
+    );
+    expect(files).toHaveTextContent(
+      'stock-nrfb-v0.04.ufw (520,192 bytes): for stock firmware v0.04 (NRFB)',
+    );
   });
 
   it('never fetches a link', () => {
