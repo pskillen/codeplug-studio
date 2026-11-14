@@ -28,6 +28,11 @@ function renderPage(Page: ComponentType) {
 const WEB_SERIAL_PAGES: [string, ComponentType][] = [
   ['AT-D890UV erase-unit probe', DebugD890EraseProbePage],
   ['Serial reopen timing', DebugSerialReopenPage],
+];
+
+/** Every radio page, including those that also run in the Android app (#1680). */
+const RADIO_PAGES: [string, ComponentType][] = [
+  ...WEB_SERIAL_PAGES,
   ['UV-5R Mini full read', DebugUv5rMiniPage],
 ];
 
@@ -55,7 +60,7 @@ describe('WebSerialOnlyDebugPage (#1673)', () => {
     },
   );
 
-  it.each(WEB_SERIAL_PAGES)('%s keeps its controls in a browser', (title, Page) => {
+  it.each(RADIO_PAGES)('%s keeps its controls in a browser', (title, Page) => {
     renderPage(Page);
     expect(screen.getByRole('heading', { name: title })).toBeTruthy();
     expect(screen.queryByText(NOTICE)).toBeNull();
