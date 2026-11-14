@@ -184,7 +184,7 @@ describe.skipIf(!stockPath || !patchPath)('UV-5R Mini updater against the emulat
 
         expect(result.end).toBe('acknowledged');
         expect(status.result).toBe(0);
-        expect(phases).toEqual(['handshake', 'erase', 'transfer', 'finish']);
+        expect(phases).toEqual(['handshake', 'loader', 'erase', 'transfer', 'finish']);
         expect(bridge.calls.filter((c) => c.type === 'open').map((c) => c.baudRate)).toEqual([
           9600,
           UV5RMINI_FW_LOADER_BAUD,
@@ -337,7 +337,7 @@ describe.skipIf(!stockPath || !patchPath)('UV-5R Mini updater against the emulat
 
         expect(result.end).toBe('acknowledged');
         expect(status.result).toBe(0);
-        expect(phases).toEqual(['handshake', 'erase', 'transfer', 'finish']);
+        expect(phases).toEqual(['handshake', 'loader', 'erase', 'transfer', 'finish']);
         // One open at the driver's default; the rate set to 9600 at open, then 38400 on the open port.
         expect(bridge.calls.filter((c) => c.type === 'open').map((c) => c.baudRate)).toEqual([
           9600,
