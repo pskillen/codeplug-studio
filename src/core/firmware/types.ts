@@ -174,7 +174,12 @@ export type RadioLayoutAnswer =
       /** What the radio said about itself, shown as information only. */
       readonly details?: readonly string[];
     }
-  | { readonly kind: 'refused'; readonly message: string };
+  | {
+      readonly kind: 'refused';
+      readonly message: string;
+      /** Internal detail behind the refusal (what the radio reported), shown only with developer mode on. */
+      readonly detail?: string;
+    };
 
 /** Rendered generically by the wizard's Prepare step. */
 export interface FirmwareRadioLayoutQuestion {

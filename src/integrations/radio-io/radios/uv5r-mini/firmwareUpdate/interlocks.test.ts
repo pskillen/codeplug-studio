@@ -292,7 +292,7 @@ describe('checkUv5rMiniImage — layout loaders', () => {
   });
 
   it("refuses a layout loader's image when Studio does not know the radio's layout", () => {
-    expect(checkWith('L2', prepared())).toThrow(/doesn't know this radio's flash layout/);
+    expect(checkWith('L2', prepared())).toThrow(/doesn't know which firmware this radio runs/);
     expect(checkWith('L2', prepared({ radioLayout: 'L3' }))).toThrow(UV5RMINI_OTHER_LAYOUT_REFUSAL);
   });
 
@@ -616,7 +616,9 @@ describe('checkUv5rMiniImage — to stock', () => {
 
   it("refuses when the radio's layout is another, or unknown", () => {
     expect(toStock({ radioLayout: 'L2' })).toThrow(UV5RMINI_OTHER_LAYOUT_REFUSAL);
-    expect(toStock({ radioLayout: undefined })).toThrow(/doesn't know this radio's flash layout/);
+    expect(toStock({ radioLayout: undefined })).toThrow(
+      /doesn't know which firmware this radio runs/,
+    );
   });
 
   it('refuses a to-stock file on another code base than the one the radio reported', () => {

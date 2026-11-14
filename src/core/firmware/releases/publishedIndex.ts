@@ -237,12 +237,12 @@ export function resolvePublishedLayout(
   try {
     fromName = layoutFromBuildName(descriptor, buildName);
   } catch {
-    throw fail(`its build ${buildName ?? ''} is not for one of the flash layouts`);
+    throw fail(`its build ${buildName ?? ''} is not for a radio firmware Studio supports`);
   }
   if (release.layout !== undefined && fromName !== undefined && release.layout !== fromName) {
     throw fail(`the release list says ${release.layout}, but its build is for ${fromName}`);
   }
   const layout = release.layout ?? fromName;
-  if (layout === undefined) throw fail("Studio can't tell which flash layout it is for");
+  if (layout === undefined) throw fail("Studio can't tell which radio firmware it is for");
   return layout;
 }

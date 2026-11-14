@@ -427,13 +427,29 @@ describe('PrepareStep: reading the UV-5R Mini', () => {
     render(<Harness updater={MINI} />);
     await readRadio(reportBlock({ vm: [0x96000, 0x66000] }));
     expect(
-      screen.getByText(
-        "This radio reports a flash layout Studio doesn't support (VM entry at 0x96000, 0x66000 bytes). Nothing was sent.",
-      ),
+      screen.getByText("This radio reports firmware Studio doesn't support. Nothing was sent."),
     ).toBeInTheDocument();
+    // What the radio reported is an internal detail (#1670): shown only with developer mode on.
+    expect(screen.queryByText(/VM entry/)).toBeNull();
+    expect(screen.queryByText(/flash layout/i)).toBeNull();
     expect(screen.queryByLabelText('Radio Info: Firmware')).toBeNull();
     expect(flash.prepareFlash).not.toHaveBeenCalled();
     expect(canAdvance(latest)).toBe(false);
+  });
+
+  it('with developer mode on, also shows what the radio reported for an unsupported VM pair', async () => {
+    setDeveloperMode(true);
+    try {
+      render(<Harness updater={MINI} />);
+      await readRadio(reportBlock({ vm: [0x96000, 0x66000] }));
+      expect(
+        screen.getByText('VM entry at 0x96000, 0x66000 bytes: no flash layout Studio knows.'),
+      ).toBeInTheDocument();
+      expect(flash.prepareFlash).not.toHaveBeenCalled();
+      expect(canAdvance(latest)).toBe(false);
+    } finally {
+      localStorage.removeItem(DEVELOPER_MODE_KEY);
+    }
   });
 
   it('refuses an unknown report format by name, format 1 included, and builds nothing', async () => {

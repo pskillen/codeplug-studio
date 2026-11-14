@@ -190,7 +190,7 @@ describe('published release with one row per flash layout', () => {
           ]).loadPatch(MINI, '9.9.9'),
         )
       ).message,
-    ).toMatch(/can't tell which flash layout/);
+    ).toMatch(/can't tell which radio firmware/);
     const v4 = await syntheticUv5rMiniRelease({ layout: 'V4', rowLayout: null });
     expect(
       (
@@ -213,7 +213,7 @@ describe('published release with one row per flash layout', () => {
         '9.9.9',
       ),
     );
-    expect(err.message).toMatch(/Release 9\.9\.9 has two files for L2/);
+    expect(err.message).toMatch(/Release 9\.9\.9 has two files for the same radio firmware/);
   });
 
   it('leaves a radio without layouts as one file with no layout', async () => {
@@ -298,7 +298,7 @@ describe('user patch files, one per flash layout', () => {
       }).listReleases(MINI, { includeRc: true }),
     );
     expect(err.code).toBe('patch-wrong-layout');
-    expect(err.message).toMatch(/two files for L1/);
+    expect(err.message).toMatch(/two files for the same radio firmware/);
   });
 
   it('refuses a V4 file', async () => {
@@ -310,7 +310,9 @@ describe('user patch files, one per flash layout', () => {
       }).listReleases(MINI, { includeRc: true }),
     );
     expect(err.code).toBe('patch-wrong-layout');
-    expect(err.message).toMatch(/mm9pdy-V4-9\.9\.9 is a V4 build, not a release file/);
+    expect(err.message).toMatch(
+      /mm9pdy-V4-9\.9\.9 is not a release file for any .* firmware Studio supports/,
+    );
   });
 
   it('refuses two files of different releases', async () => {

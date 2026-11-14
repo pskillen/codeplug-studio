@@ -238,7 +238,7 @@ export function checkUv5rMiniImage(
   if (pin.layout !== undefined) {
     if (image.radioLayout === undefined) {
       throw new RadioInterlockError(
-        "Studio doesn't know this radio's flash layout, so it can't check this file is for it. Nothing was sent.",
+        "Studio doesn't know which firmware this radio runs, so it can't check this file is for it. Nothing was sent.",
       );
     }
     if (image.radioLayout !== pin.layout) {

@@ -354,6 +354,11 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
         {answer?.kind === 'refused' ? (
           <StatusBanner tone="warning">{answer.message}</StatusBanner>
         ) : null}
+        {answer?.kind === 'refused' && answer.detail ? (
+          <DeveloperOnly>
+            <p className={classes.muted}>{answer.detail}</p>
+          </DeveloperOnly>
+        ) : null}
         {layoutRetry && answer?.kind === 'layout' ? (
           <StatusBanner tone="info">
             The radio refused the first file before installing anything, so Studio prepares this

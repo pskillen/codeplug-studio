@@ -242,10 +242,12 @@ describe('uv5rMiniLayoutFromReport', () => {
   it('refuses an unknown pair', () => {
     expect(answer(radioReportFrame({ vm: [0x96000, 0x66000] }))).toEqual({
       kind: 'refused',
-      message: UV5RMINI_UNKNOWN_LAYOUT_REFUSAL(0x96000, 0x66000),
+      message: UV5RMINI_UNKNOWN_LAYOUT_REFUSAL,
+      detail: 'VM entry at 0x96000, 0x66000 bytes: no flash layout Studio knows.',
     });
-    expect(UV5RMINI_UNKNOWN_LAYOUT_REFUSAL(0x96000, 0x66000)).toBe(
-      "This radio reports a flash layout Studio doesn't support (VM entry at 0x96000, 0x66000 bytes). Nothing was sent.",
+    // The words a user sees name no layout (#1670); the detail is shown only with developer mode on.
+    expect(UV5RMINI_UNKNOWN_LAYOUT_REFUSAL).toBe(
+      "This radio reports firmware Studio doesn't support. Nothing was sent.",
     );
   });
 
