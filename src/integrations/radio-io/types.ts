@@ -20,8 +20,8 @@ export interface MemoryMap {
 export interface BytePipe {
   readonly baudRate?: number;
   /**
-   * Cumulative bytes handed to the transport since the pipe opened (Web Serial pipe only). For radio frame traces:
-   * a frame's TX offset is this value just before `write`. Never reset by the Web Serial stream rotation.
+   * Cumulative bytes handed to the transport since the pipe opened (the Web Serial and Capacitor pipes). For radio
+   * frame traces: a frame's TX offset is this value just before `write`. Never reset by a stream rotation or `reopen`.
    */
   readonly txBytesWritten?: number;
   write(data: Uint8Array): Promise<void>;
@@ -34,11 +34,17 @@ export interface BytePipe {
    */
   drain?(): Promise<Uint8Array>;
   /**
-   * Change the line rate (Web Serial pipe only; firmware updaters that switch rate need it). Web Serial cannot
-   * retune an open port, so the pipe lets written bytes leave the adapter, closes the port, opens it at `baudRate`
-   * with the same buffer size and signal choice, and reattaches. Bytes read before the call are discarded: none is
-   * delivered after it. The port is briefly closed, so the radio's side of the link sees a gap; callers with a
-   * reply deadline must budget for it. Throws `RadioClosedError` if the port cannot be closed or reopened.
+   * Change the line rate (firmware updaters that switch rate need it). Both serial pipes have it; a pipe without it
+   * cannot change rate. Every implementation first lets the bytes already written leave the adapter (a time-based
+   * wait: wire time plus a margin), keeps the DTR/RTS choice and keeps `txBytesWritten` cumulative. Bytes read before
+   * the call are discarded: none is delivered after it.
+   *
+   * - Web Serial cannot retune an open port: it closes the port and opens it at `baudRate` with the same buffer size,
+   *   so the radio's side of the link sees a gap.
+   * - Capacitor (Android) changes the rate on the open port (`setParameters`); the read stream keeps running.
+   *
+   * Callers with a reply deadline must budget for the switch. Throws `RadioClosedError` if the rate cannot be changed;
+   * the pipe is then unusable.
    */
   reopen?(baudRate: number): Promise<void>;
   close(): Promise<void>;

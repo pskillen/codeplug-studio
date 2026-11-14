@@ -21,11 +21,16 @@ export {
   type WebSerialPortFilter,
 } from './webSerialPipe.ts';
 export {
+  CAPACITOR_DRAIN_MARGIN_MS,
+  CAPACITOR_MAX_FRAME_BYTES,
+  CAPACITOR_WRITE_BUFFER_SIZE,
   CapacitorSerialBytePipe,
   openCapacitorSerialPipe,
   requestCapacitorSerialPipe,
   requestCapacitorSerialPort,
   type CapacitorSerialPipeOptions,
+  type CapacitorUsbFilter,
+  type OpenCapacitorSerialPipeOptions,
   type UsbDeviceLike,
   type UsbSerialPluginLike,
 } from './capacitorSerialPipe.ts';
