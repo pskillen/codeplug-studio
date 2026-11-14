@@ -1,8 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
+import { radioReportFrame } from '@core/radios/baofeng/uv-5r-mini/__fixtures__/radioReportFrame.ts';
+import { DEVELOPER_MODE_KEY, setDeveloperMode } from '@integrations/preferences/developerMode.ts';
 import type {
   PublishedFirmwareRelease,
   FirmwareReleaseSummary,
@@ -32,7 +34,10 @@ vi.mock('../../services/firmwareFlashEnvGate.ts', () => ({
   listOfferedFirmwareUpdaters: vi.fn(),
 }));
 
-vi.mock('../../services/firmwareFlash.ts', () => ({
+vi.mock('../../services/firmwareFlash.ts', async (importOriginal) => ({
+  // Pure helpers the UV-5R Mini's Prepare step uses.
+  releaseHasFileForLayout: (await importOriginal<typeof flash>()).releaseHasFileForLayout,
+  noFileForRadioMessage: (await importOriginal<typeof flash>()).noFileForRadioMessage,
   filesToNamedBytes: vi.fn(async (files: File[]) =>
     files.map((f) => ({ name: f.name, bytes: new Uint8Array(1) })),
   ),
@@ -45,6 +50,8 @@ vi.mock('../../services/firmwareFlash.ts', () => ({
   runFirmwarePreflightProbe: vi.fn(),
   grantFirmwareSafetyBackupPort: vi.fn(),
   runFirmwareSafetyBackup: vi.fn(),
+  grantFirmwareRadioReportPort: vi.fn(),
+  readFirmwareRadioReport: vi.fn(),
   recordFirmwareSafetyBackupSaved: vi.fn(() => true),
   recordFirmwareSafetyBackupFile: vi.fn(),
   runFirmwareFlash: vi.fn(),
@@ -715,6 +722,53 @@ describe('FirmwareFlasherPage', () => {
         await screen.findByText(/More than one programming cable is connected/),
       ).toBeInTheDocument();
       expect(flash.runFirmwareFlash).not.toHaveBeenCalled();
+    });
+
+    describe('the UV-5R Mini, with developer mode on', () => {
+      beforeEach(async () => {
+        const actual = await vi.importActual<typeof envGate>(
+          '../../services/firmwareFlashEnvGate.ts',
+        );
+        vi.mocked(envGate.listOfferedFirmwareUpdaters).mockImplementation(
+          actual.listOfferedFirmwareUpdaters,
+        );
+        setDeveloperMode(true);
+        vi.mocked(flash.grantFirmwareRadioReportPort).mockResolvedValue(CAPACITOR_PORT);
+        vi.mocked(flash.readFirmwareRadioReport).mockResolvedValue({
+          ok: true,
+          bytes: radioReportFrame({}),
+        });
+        vi.mocked(flash.loadChosenPatch).mockResolvedValue(UNREVIEWED);
+      });
+      afterEach(() => localStorage.removeItem(DEVELOPER_MODE_KEY));
+
+      it('is the one radio offered, and reads the radio on Prepare through the Capacitor port', async () => {
+        renderPage();
+        expect(screen.getAllByRole('radio')).toHaveLength(1);
+        fireEvent.click(screen.getByRole('radio', { name: /UV-5R Mini/ }));
+        cont();
+        const patch = document.querySelector(
+          'input[type="file"][accept=".json"]',
+        ) as HTMLInputElement;
+        fireEvent.change(patch, { target: { files: [new File(['{}'], 'mine.patch.json')] } });
+        await waitFor(() => expect(flash.loadChosenPatch).toHaveBeenCalled());
+        cont();
+        const stock = document.querySelector('input[type="file"]') as HTMLInputElement;
+        fireEvent.change(stock, { target: { files: [new File(['x'], 'stock.ufw')] } });
+        await screen.findByText(/verified/);
+        cont();
+
+        expect(flash.readFirmwareRadioReport).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('button', { name: 'Read the radio' }));
+        expect(await screen.findByText('MM9PDY build: mm9pdy-L2-0.2.0-rc.1')).toBeInTheDocument();
+        expect(flash.grantFirmwareRadioReportPort).toHaveBeenCalledWith('baofeng-uv5rmini');
+        expect(flash.readFirmwareRadioReport).toHaveBeenCalledTimes(1);
+        expect(flash.readFirmwareRadioReport).toHaveBeenCalledWith(
+          expect.objectContaining({ radioId: 'baofeng-uv5rmini', port: CAPACITOR_PORT }),
+        );
+        await waitFor(() => expect(flash.prepareFlash).toHaveBeenCalled());
+        expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![4]).toBe('L2');
+      });
     });
   });
 });

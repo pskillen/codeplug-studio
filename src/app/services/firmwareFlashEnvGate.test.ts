@@ -230,11 +230,20 @@ describe('no interlock reads developer mode (#1650, #1657)', () => {
     'src/core/firmware',
     'src/core/services/firmware',
     'src/core/radios',
+    // The app layer's half of the interlocks: stock checks, image preparation, the report read,
+    // the flash run, the port grant, and the wizard's steps and state.
+    'src/app/services/firmwareFlash.ts',
+    'src/app/services/firmwarePort.ts',
+    'src/app/routes/firmware',
   ];
+  // The page decides which radios are offered, so it alone may read the gate. Nothing it
+  // passes down may carry developer mode into a step.
+  const MAY_READ_THE_GATE = ['src/app/routes/firmware/FirmwareFlasherPage.tsx'];
   const READS_DEVELOPER_MODE =
-    /isDeveloperModeOn|useDeveloperMode|preferences\/developerMode|prodFeatureGate|firmwareFlashEnvGate/;
+    /isDeveloperModeOn|useDeveloperMode|DEVELOPER_MODE_KEY|codeplug-studio:developerMode|preferences\/developerMode|prodFeatureGate|firmwareFlashEnvGate/;
 
   function sources(dir: string): string[] {
+    if (statSync(dir).isFile()) return [dir];
     return readdirSync(dir).flatMap((name) => {
       const path = join(dir, name);
       if (statSync(path).isDirectory()) return sources(path);
@@ -242,11 +251,27 @@ describe('no interlock reads developer mode (#1650, #1657)', () => {
     });
   }
 
-  it('the updaters, stock checks and radio code never import the switch or a gate', () => {
+  it('the updaters, stock checks, radio code and flasher steps never read the switch or a gate', () => {
     const files = INTERLOCK_ROOTS.flatMap((root) => sources(join(repoRoot, root)));
     expect(files.length).toBeGreaterThan(50);
-    const readers = files.filter((f) => READS_DEVELOPER_MODE.test(readFileSync(f, 'utf8')));
-    expect(readers.map((f) => relative(repoRoot, f))).toEqual([]);
+    const readers = files
+      .map((f) => relative(repoRoot, f))
+      .filter((f) => !MAY_READ_THE_GATE.includes(f))
+      .filter((f) => READS_DEVELOPER_MODE.test(readFileSync(join(repoRoot, f), 'utf8')));
+    expect(readers).toEqual([]);
+  });
+
+  it('scans the flasher app layer, and the allow-list names files that exist and read the gate', () => {
+    const files = INTERLOCK_ROOTS.flatMap((root) => sources(join(repoRoot, root))).map((f) =>
+      relative(repoRoot, f),
+    );
+    expect(files).toContain('src/app/services/firmwareFlash.ts');
+    expect(files).toContain('src/app/services/firmwarePort.ts');
+    expect(files).toContain('src/app/routes/firmware/steps/PrepareStep.tsx');
+    for (const f of MAY_READ_THE_GATE) {
+      expect(files).toContain(f);
+      expect(READS_DEVELOPER_MODE.test(readFileSync(join(repoRoot, f), 'utf8'))).toBe(true);
+    }
   });
 });
 
