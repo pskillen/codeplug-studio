@@ -5,7 +5,8 @@
 A hidden, per-device switch, like Android's "tap the build number", on every build, prod and the Android app
 included. On the production site it shows the features prod hides: the Debug pages, firmware flashing for radios whose
 updater is still prod-gated, and Write on radio profiles marked prod-only-hidden. On every other build (local, next, dev, staging) those features are always shown, so
-developer mode changes nothing there except the badge.
+developer mode changes nothing there except the badge, and, in the Android app on any build, the UV-5R Mini's
+firmware flasher (the one exception under [What it never changes](#what-it-never-changes)).
 
 **Source:** `src/app/services/prodFeatureGate.ts` (the gate), `src/integrations/preferences/developerMode.ts`
 (storage), `src/app/services/developerModeTaps.ts` (the gesture), `src/app/hooks/useDeveloperMode.ts`,
@@ -57,9 +58,14 @@ in `src/app/routes/debug/debugRoutes.tsx`; the router mounts that list under `De
 
 Developer mode is visibility only. The safety interlocks inside each feature are the feature's own code and never read
 it: the firmware updaters' pins, stock checks, "already installed" checks and frame guards; the Write allow-lists and
-read-only paths; the danger-zone wizards. Platform checks stay the feature's own concern too: on the Android app the
-flasher still offers only radios marked `capacitorSupported`, and Web Serial or USB availability is unchanged. The
-Write gate's existing native-app exemption for descriptor-level `prodWriteDisabled` is unchanged.
+read-only paths; the danger-zone wizards. Platform checks stay the feature's own concern too, with **one exception**:
+in the Android app the flasher offers a radio whose updater is marked `capacitorSupported: 'developerMode'` only while
+developer mode is on, in any build (not only prod). Today that is the UV-5R Mini alone, until a full flash from a phone
+has been proven on hardware. Every other radio stays hidden in the app with developer mode on or off, and the
+exception is visibility only: the Mini's pins, stock checks and frame guards are the same code everywhere and never
+read developer mode (a test holds that no updater, stock check or radio module imports the switch or a gate). Web
+Serial or USB availability is unchanged. The Write gate's existing native-app exemption for descriptor-level
+`prodWriteDisabled` is unchanged.
 
 ## Storage and privacy
 
@@ -74,8 +80,9 @@ same profile follow a change through the `storage` event. The Debug localStorage
   `prepareRadioWriteImage` checks the gate again before upload, so turning developer mode off mid-flow can abort
   before any write, never during one. Unused while no profile carries `prodWriteDisabled`.
 - The landing page's support matrix shows developer mode as it was when the page mounted.
-- On the Android app the flasher offers no radio: no updater is `capacitorSupported` yet. Developer mode there
-  unlocks only the Debug pages.
+- In the Android app developer mode unlocks the Debug pages and the UV-5R Mini's flasher only; no other radio's
+  flasher is offered there yet. The Mini's flash from a phone has not been tried on hardware
+  ([firmware flashing, Android app](../firmware-flashing/README.md#android-app)).
 
 ## Not done / rejected
 

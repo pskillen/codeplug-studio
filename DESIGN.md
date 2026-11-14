@@ -222,7 +222,8 @@ OpenGD77 is one format among many. DM32 and CHIRP are unrelated siblings, not va
 ## Firmware flashing
 
 Studio can flash community **modified firmware** releases, and the vendor's own **stock firmware**, to supported radios
-over Web Serial. This is a separate capability from codeplug Write. Firmware belongs to the physical radio, not to a
+over Web Serial and, per radio, over USB serial in the Android app (rule 8). This is a separate capability from
+codeplug Write. Firmware belongs to the physical radio, not to a
 project, library or build. The flasher needs no open project and stores nothing.
 
 ### Rules
@@ -254,6 +255,10 @@ project, library or build. The flasher needs no open project and stores nothing.
    the prod site, unless developer mode is on for the device (visibility only, never an interlock;
    [developer mode](docs/features/developer-mode/README.md)), and fully available on pre-prod (next, dev, staging). A radio's flag is cleared in its own commit once
    Studio has flashed at least one patched release to that radio on hardware.
+8. **Per-radio Android setting.** The Android app offers a radio's flasher only by its own setting: hidden (the
+   default), offered **only while developer mode is on** (in any build: the one place developer mode touches a
+   platform check, visibility only), or offered. A radio moves to offered in its own commit once a full flash from a
+   phone has been proven on hardware. Interlocks are the same code on every platform and never read developer mode.
 
 ### Patch sources
 
@@ -447,14 +452,15 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 
 ## Revision log
 
-| Date       | Change                                                                                                                                                                                         |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-14 | Firmware flashing rule 2: the user's own copy of the pinned stock file replaces the own-radio built image ([#1654](https://github.com/pskillen/codeplug-studio/issues/1654))                   |
-| 2026-11-11 | Firmware flashing: own-radio stock images without a zip and radios without plain stock flash ([#1582](https://github.com/pskillen/codeplug-studio/issues/1582))                                |
-| 2026-10-28 | Firmware flashing rule 2: stock sources are a list (vendor link, ask the vendor, labelled unofficial mirror), never fetched ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460)) |
-| 2026-10-26 | Danger zone: rules for jobs that change the radio itself, first the AT-D890UV frequency range change ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369))                        |
-| 2026-10-24 | Firmware releases are listed and fetched at run time from the firmware project's public release index (pskillen/mm9pdy-firmware) instead of being bundled                                      |
-| 2026-10-21 | Firmware flashing: user-supplied stock, bundled and user-supplied patches, hard interlocks, per-radio prod gate ([#1359](https://github.com/pskillen/codeplug-studio/issues/1359))             |
-| 2026-07-22 | Browser WebSerial radio I/O as intentional goal; CPS/firmware versions ([#595](https://github.com/pskillen/codeplug-studio/issues/595))                                                        |
-| 2026-06-29 | Initial draft on branch `2/pskil/design-md`                                                                                                                                                    |
-| 2026-06-29 | Build capability traits; bidirectional mapping test strategy                                                                                                                                   |
+| Date       | Change                                                                                                                                                                                            |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-14 | Firmware flashing rule 8: a per-radio Android setting; the UV-5R Mini is offered in the Android app while developer mode is on ([#1657](https://github.com/pskillen/codeplug-studio/issues/1657)) |
+| 2026-11-14 | Firmware flashing rule 2: the user's own copy of the pinned stock file replaces the own-radio built image ([#1654](https://github.com/pskillen/codeplug-studio/issues/1654))                      |
+| 2026-11-11 | Firmware flashing: own-radio stock images without a zip and radios without plain stock flash ([#1582](https://github.com/pskillen/codeplug-studio/issues/1582))                                   |
+| 2026-10-28 | Firmware flashing rule 2: stock sources are a list (vendor link, ask the vendor, labelled unofficial mirror), never fetched ([#1460](https://github.com/pskillen/codeplug-studio/issues/1460))    |
+| 2026-10-26 | Danger zone: rules for jobs that change the radio itself, first the AT-D890UV frequency range change ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369))                           |
+| 2026-10-24 | Firmware releases are listed and fetched at run time from the firmware project's public release index (pskillen/mm9pdy-firmware) instead of being bundled                                         |
+| 2026-10-21 | Firmware flashing: user-supplied stock, bundled and user-supplied patches, hard interlocks, per-radio prod gate ([#1359](https://github.com/pskillen/codeplug-studio/issues/1359))                |
+| 2026-07-22 | Browser WebSerial radio I/O as intentional goal; CPS/firmware versions ([#595](https://github.com/pskillen/codeplug-studio/issues/595))                                                           |
+| 2026-06-29 | Initial draft on branch `2/pskil/design-md`                                                                                                                                                       |
+| 2026-06-29 | Build capability traits; bidirectional mapping test strategy                                                                                                                                      |
