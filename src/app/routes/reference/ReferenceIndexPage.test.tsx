@@ -59,9 +59,9 @@ describe('ReferenceIndexPage', () => {
     // Tests run as the `local` build, where the UV-5R Mini is offered and has the line.
     expect(withText.map((d) => d.radioId)).toContain('baofeng-uv5rmini');
     const mini = getFirmwareUpdater('baofeng-uv5rmini')!;
-    expect(card).toHaveTextContent(`UV-5R Mini supported: ${mini.stock.supportedRadios}`);
+    expect(card).toHaveTextContent(`Supported: ${mini.stock.supportedRadios}`);
     // Radios without the field show no line.
-    expect(card.textContent?.match(/ supported: /g)).toHaveLength(withText.length);
+    expect(card.textContent?.match(/Supported: /g)).toHaveLength(withText.length);
   });
 
   it('opens the tool when its card is clicked', () => {

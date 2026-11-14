@@ -89,14 +89,13 @@ function badgesFor(item: ContextualStripItem, developerMode: boolean): string[] 
 
 /**
  * The flasher card's "which radios exactly" lines (#1670): each offered radio's own `supportedRadios` text, so an owner
- * can check before opening the flasher. Radios without the field show nothing.
+ * can check before opening the flasher. The text starts with the radio's name, so the line doesn't repeat it. Radios
+ * without the field show nothing.
  */
 function supportLinesFor(item: ContextualStripItem, developerMode: boolean): string[] {
   if (item.to !== '/firmware') return [];
   return listOfferedFirmwareUpdaters(undefined, developerMode).flatMap((d) =>
-    d.stock.supportedRadios
-      ? [`${FIRMWARE_RADIO_SHORT_NAMES[d.radioId]} supported: ${d.stock.supportedRadios}`]
-      : [],
+    d.stock.supportedRadios ? [`Supported: ${d.stock.supportedRadios}`] : [],
   );
 }
 

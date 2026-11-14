@@ -151,8 +151,8 @@ Per radio:
    Info (MENU → Radio Info) shows Firmware V0.27 and Hardware V1.7, and whose start-up screen (hold 8 while switching
    on) shows 5RMINI NRF. Other Minis are not supported yet.") shows it as "Supported: …" on its card, and under the
    page's intro on every later step, so an owner can check before fetching any file. Other radios show no such line.
-   The same text is on the **Firmware flasher** card of the Tools page ("UV-5R Mini supported: …"), for an owner who
-   hasn't opened the flasher yet. A test ties the Mini's text to its stock-base table and proven Hardware lines.
+   The same text is on the **Firmware flasher** card of the Tools page ("Supported: UV-5R Minis whose …"), for an
+   owner who hasn't opened the flasher yet. A test ties the Mini's text to its stock-base table and proven Hardware lines.
 2. **Firmware** — what to flash:
    - **Published releases** for the radio, from the firmware project's public release index
      ([releases.md](releases.md)), newest first, each named by its firmware project and version ("MM9PDY
