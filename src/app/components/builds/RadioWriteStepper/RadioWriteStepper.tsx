@@ -8,6 +8,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { Alert, Text } from '@mantine/core';
+import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '../../../hooks/useScreenWakeLock.ts';
 import { ModalShell } from '../../v2/index.ts';
 import classes from './RadioWriteStepper.module.css';
 import {
@@ -117,6 +118,7 @@ function PendingWarningClear({
 
 export default function RadioWriteStepper({ config, view, actions }: RadioWriteStepperProps) {
   const props = { config, view, actions };
+  const { held: screenHeld } = useScreenWakeLock(view.open && view.busy);
   let body: ReactNode = null;
   let footer: ReactNode = null;
   switch (view.step) {
@@ -174,6 +176,11 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
             </div>
           ) : null}
         </Alert>
+      ) : null}
+      {view.busy && !screenHeld ? (
+        <Text size="sm" mb="sm" data-testid="keep-screen-on-hint">
+          {KEEP_SCREEN_ON_HINT}
+        </Text>
       ) : null}
       {body}
     </ModalShell>

@@ -12,6 +12,7 @@ import {
   type CursorRow,
   type StageCursor,
 } from './radioIoStageCursor.ts';
+import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '../../hooks/useScreenWakeLock.ts';
 import { Button, ProgressModal, type ProgressModalStep } from '../v2/index.ts';
 
 /**
@@ -310,6 +311,8 @@ export default function RadioIoProgressModal({
     setCursorState({ seen: progress, cursor });
   }
 
+  const { held: screenHeld } = useScreenWakeLock(opened && phase !== 'done');
+
   const stepDefs = buildSteps(operation, transferStages, phase, writeVerifyStatus, planned);
   const activeId = activeStepId(
     phase,
@@ -449,6 +452,11 @@ export default function RadioIoProgressModal({
     !complete && !showPostUploadAlert ? (
       <>
         <Text size="sm">Keep this tab open until the transfer finishes or you cancel.</Text>
+        {!screenHeld ? (
+          <Text size="sm" mt="xs" data-testid="keep-screen-on-hint">
+            {KEEP_SCREEN_ON_HINT}
+          </Text>
+        ) : null}
         {navigationBlocked && !verifying ? (
           <Alert color="red" title="Stay on this page" mt="sm">
             Navigation is blocked until this transfer finishes or you cancel.
