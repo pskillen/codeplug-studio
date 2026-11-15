@@ -466,7 +466,8 @@ describe('RadioCheckStep: reading the UV-5R Mini', () => {
     expect(canAdvance(latest)).toBe(false);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Write it again anyway' }));
     expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
-    expect(canAdvance(latest)).toBe(true);
+    // The step reports its state in an effect after the render that shows the text.
+    await waitFor(() => expect(canAdvance(latest)).toBe(true));
   });
 
   it('reading again drops the prepared image and the confirm', async () => {
