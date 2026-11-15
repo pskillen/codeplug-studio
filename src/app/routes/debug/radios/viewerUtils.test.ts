@@ -4,7 +4,7 @@ import {
   type RadioBackupManifestV1,
 } from '@integrations/radio-io/backup/index.ts';
 import { openDebugArchive } from './captureArchive.ts';
-import { compareRegions, hexRows, regionIdentity } from './viewerUtils.ts';
+import { archiveKey, compareRegions, hexRows, regionIdentity } from './viewerUtils.ts';
 
 const manifest: RadioBackupManifestV1 = {
   format: 'codeplug-studio-radio-backup',
@@ -194,5 +194,14 @@ describe('DM-32 sparse and factory comparison', () => {
     const short = make([entry('p0', 0, 4096)], { p0: new Uint8Array(10) });
     expect(regionIdentity(short, 'p0')).toBeUndefined();
     expect(regionIdentity(missing, 'nope')).toBeUndefined();
+  });
+});
+
+describe('archiveKey', () => {
+  it('is stable per archive object and differs between archives', () => {
+    const a = capture([1, 2]);
+    const b = { ...a };
+    expect(archiveKey(a)).toBe(archiveKey(a));
+    expect(archiveKey(b)).not.toBe(archiveKey(a));
   });
 });
