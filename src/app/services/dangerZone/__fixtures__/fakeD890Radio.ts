@@ -60,6 +60,7 @@ export class FakeD890Radio {
     this.setBytes(D890_MAP.LocalInfo, syntheticLocalInfo(code));
     this.setBytes(TUNE, syntheticTune(code));
     this.seedCodeplug();
+    this.ready = true;
   }
 
   private unit(base: number): Uint8Array {
@@ -71,7 +72,12 @@ export class FakeD890Radio {
     return u;
   }
 
+  /** Bytes changed after construction (a test editing the radio, a wipe, a commit): 0 means still as seeded. */
+  mutations = 0;
+  private ready = false;
+
   setBytes(address: number, data: Uint8Array): void {
+    if (this.ready) this.mutations += 1;
     let off = 0;
     while (off < data.length) {
       const a = address + off;
