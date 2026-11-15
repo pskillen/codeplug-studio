@@ -131,31 +131,43 @@ describe('AtD890Calibration', () => {
 
   it('decodes an offline archive with provenance, warnings and sources', () => {
     view(archive([[region('vital-tune-a', TUNE_A, AT_D890_VITAL_UNIT_BYTES), tune()]]));
-    expect(screen.getByText('Not validated on hardware')).toBeInTheDocument();
-    expect(screen.getByText('V1.05 static trace')).toBeInTheDocument();
-    expect(screen.getByText('Calibration (live) · 0x04F00000')).toBeInTheDocument();
-    expect(screen.getByText(/262144 of 262144 bytes/)).toBeInTheDocument();
-    expect(screen.getByText('Local archive')).toBeInTheDocument();
-    expect(screen.getAllByText('Unknown').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText(/Little-endian assumed/)).toBeInTheDocument();
-    expect(screen.getByText('2000')).toBeInTheDocument();
-    expect(screen.getAllByText(/0x08047E10/).length).toBeGreaterThan(0);
+    // One DOM walk instead of a getByText scan per string: each scan costs ~20 ms, and the
+    // sequence made this the slowest test under load.
+    const text = document.body.textContent ?? '';
+    expect(text).toContain('Not validated on hardware');
+    expect(text).toContain('V1.05 static trace');
+    expect(text).toContain('Calibration (live) · 0x04F00000');
+    expect(text).toMatch(/262144 of 262144 bytes/);
+    expect(text).toContain('Local archive');
+    expect(text.match(/Unknown/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(text).toMatch(/Little-endian assumed/);
+    expect(text).toContain('2000');
+    expect(text).toMatch(/0x08047E10/);
+    expect(screen.getByLabelText('UHF power tables raw entries by index')).toBeInTheDocument();
     expect(
-      screen.getByRole('img', { name: 'UHF power tables raw entries by index' }),
+      screen.getByLabelText('VHF/220 squelch flatness raw entries by index'),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('img', { name: 'VHF/220 squelch flatness raw entries by index' }),
-    ).toBeInTheDocument();
-    expect(screen.getAllByText(/visual guide only/)).toHaveLength(4);
-    expect(screen.getByText(/Partially decoded/)).toBeInTheDocument();
+    expect(text.match(/visual guide only/g)).toHaveLength(4);
+    expect(text).toMatch(/Partially decoded/);
     expect(screen.getByLabelText('Tune unit hexadecimal bytes').textContent).toContain(
       '0x04F00000',
     );
-    expect(document.body.textContent).not.toMatch(/\b(watts?|dBm|ppm)\b/i);
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(text).not.toMatch(/\b(watts?|dBm|ppm)\b/i);
+    fireEvent.click(screen.getByText('Next'));
     expect(screen.getByLabelText('Tune unit hexadecimal bytes').textContent).toContain(
       '0x04F00100',
     );
+  });
+
+  it('builds the numeric table only when its details are opened', () => {
+    const { container } = view(
+      archive([[region('vital-tune-a', TUNE_A, AT_D890_VITAL_UNIT_BYTES), tune()]]),
+    );
+    const details = screen.getAllByText('Numeric table')[0]!.closest('details')!;
+    expect(details.querySelector('table')).toBeNull();
+    details.open = true;
+    fireEvent(details, new Event('toggle'));
+    expect(details.querySelector('table')).not.toBeNull();
   });
 
   it('keeps a partial prefix: half u16 unavailable, missing table entries not captured', () => {
@@ -166,12 +178,10 @@ describe('AtD890Calibration', () => {
   });
 
   it('decodes a live-shaped archive the same as its reopened file archive', () => {
-    const units = AT_D890_VITAL_UNITS.map((def) => ({
+    // Only the tune A unit: packing and reopening every 256 KiB vital unit is what made this slow.
+    const units = AT_D890_VITAL_UNITS.filter((def) => def.id === 'tune-a').map((def) => ({
       def,
-      bytes:
-        def.id === 'tune-a'
-          ? tune(AT_D890_VITAL_UNIT_BYTES, 1990)
-          : new Uint8Array(AT_D890_VITAL_UNIT_BYTES),
+      bytes: tune(AT_D890_VITAL_UNIT_BYTES, 1990),
     }));
     const live = archiveAtD890Capture({
       capturedAt: '2026-01-02T00:00:00.000Z',

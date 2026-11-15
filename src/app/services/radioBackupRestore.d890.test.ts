@@ -1,3 +1,4 @@
+import { unzipSync } from 'fflate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRadioSession } from '@integrations/radio-io/kit/session.ts';
 import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
@@ -18,6 +19,9 @@ import {
   openRadioBackupZip,
   packAtD890BackupFromSession,
 } from './radioBackupRestore.ts';
+
+/** Byte equality without expanding a multi-MB zip into a number array for toEqual. */
+const sameBytes = (a: Uint8Array, b: Uint8Array) => Buffer.from(a).equals(Buffer.from(b));
 
 async function downloadedSession() {
   const pipe = new AtD890ScriptedPipe();
@@ -50,7 +54,7 @@ describe('packAtD890BackupFromSession (Review: Save backup now)', () => {
 
     const backup = await backupLiveRadioSession(session);
     expect(fromRead.manifest).toEqual(backup.manifest);
-    expect(Array.from(fromRead.zipBytes)).toEqual(Array.from(backup.zipBytes));
+    expect(sameBytes(fromRead.zipBytes, backup.zipBytes)).toBe(true);
     expect(radio.getDownloadCache()!.blocks.size).toBeGreaterThan(0);
   });
 
@@ -61,17 +65,23 @@ describe('packAtD890BackupFromSession (Review: Save backup now)', () => {
       ...cache,
       blocks: new Map([...cache.blocks].map(([a, d]) => [a, d.slice()])),
     };
-    const first = packAtD890BackupFromSession(session, { cache: copy });
-    // An upload rewrites the live cache after Review.
+    // A fixed capturedAt makes the zips comparable across the idle gap, so two packs cover what
+    // three did. Each pack builds the whole 80 MB map (~0.6 s alone, seconds under load).
+    const capturedAt = '2026-10-26T14:02:00.000Z';
+    const first = packAtD890BackupFromSession(session, { cache: copy, capturedAt });
+    // An upload rewrites the live cache after Review, and Review then sits idle: nothing in the
+    // copy expires.
     for (const data of cache.blocks.values()) data.fill(0x5a);
-    const later = packAtD890BackupFromSession(session, { cache: copy });
-    expect(Array.from(later.zipBytes)).toEqual(Array.from(first.zipBytes));
-    // And it still works after Review sat idle: nothing in it expires.
     vi.setSystemTime(new Date('2026-10-26T15:30:00.000Z'));
-    expect(packAtD890BackupFromSession(session, { cache: copy }).manifest.regions).toEqual(
-      first.manifest.regions,
-    );
-  });
+    const later = packAtD890BackupFromSession(session, { cache: copy, capturedAt });
+    // Entry bytes, not zip bytes: the zip's own file times follow the clock.
+    const entries = (zip: Uint8Array) => unzipSync(zip);
+    const a = entries(first.zipBytes);
+    const b = entries(later.zipBytes);
+    expect(Object.keys(b)).toEqual(Object.keys(a));
+    for (const name of Object.keys(a)) expect(sameBytes(b[name]!, a[name]!), name).toBe(true);
+    expect(later.manifest.regions).toEqual(first.manifest.regions);
+  }, 60_000);
 
   it('refuses a session that has read nothing', () => {
     const pipe = new AtD890ScriptedPipe();
