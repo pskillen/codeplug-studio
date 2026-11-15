@@ -103,7 +103,28 @@ export interface ZoneScanExpandPanelProps {
     includeInScanList: boolean,
   ) => void;
   expansionByChannelId?: Map<string, ExpandedMxNChannelRow[]>;
+  /**
+   * `scanList` (default): members of a zone-derived scan list (DM32, Anytone).
+   * `scanSet`: the zone's own scan set, "Scan in this zone" (zone scan set builds).
+   */
+  variant?: ZoneScanMemberVariant;
 }
+
+export type ZoneScanMemberVariant = 'scanList' | 'scanSet';
+
+const MEMBER_COPY: Record<ZoneScanMemberVariant, { heading: string; hint: string; aria: string }> =
+  {
+    scanList: {
+      heading: 'Include in scan list',
+      hint: 'Changes apply to this radio build only (exported zone projection). Expanded channels can skip individual projections.',
+      aria: 'in scan list',
+    },
+    scanSet: {
+      heading: 'Scan in this zone',
+      hint: 'Which channels Scan visits while this zone is selected. Applies to this radio build only; Scan in All channels is set per channel on its own page.',
+      aria: 'in this zone’s scan',
+    },
+  };
 
 export function ZoneScanExpandPanel({
   zone,
@@ -116,7 +137,9 @@ export function ZoneScanExpandPanel({
   onUpdateZoneEntry,
   onUpdateMemberScanInclusion,
   expansionByChannelId,
+  variant = 'scanList',
 }: ZoneScanExpandPanelProps) {
+  const copy = MEMBER_COPY[variant];
   const [collapsedParents, setCollapsedParents] = useState<Set<string>>(() => new Set());
   const carrierMhz =
     entry?.scanCarrierFrequencyHz != null
@@ -156,11 +179,10 @@ export function ZoneScanExpandPanel({
       ) : null}
       <Stack gap={4}>
         <Text size="sm" fw={500}>
-          Include in scan list
+          {copy.heading}
         </Text>
         <Text size="xs" c="dimmed">
-          Changes apply to this radio build only (exported zone projection). Expanded channels can
-          skip individual projections.
+          {copy.hint}
         </Text>
         {memberRefs.map((member) => {
           if (member.nestRole === 'child' && collapsedParents.has(member.channelId)) {
@@ -223,7 +245,7 @@ export function ZoneScanExpandPanel({
                 </Text>
               </Group>
               <Switch
-                aria-label={`Include ${baseLabel} in scan list`}
+                aria-label={`Include ${baseLabel} ${copy.aria}`}
                 checked={member.includeInScanList}
                 disabled={saving}
                 onChange={(event) =>

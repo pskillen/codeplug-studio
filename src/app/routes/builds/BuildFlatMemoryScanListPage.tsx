@@ -15,7 +15,7 @@ import {
   resolveChannelScanInclusionForExport,
 } from '@core/import-export/scanInclusion/index.ts';
 import type { Channel, ScanInclusion } from '@core/models/library.ts';
-import { radioTargetHasTrait } from '@core/radio-targets/index.ts';
+import { hasZoneScanSet, radioTargetHasTrait } from '@core/radio-targets/index.ts';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
@@ -32,6 +32,7 @@ import {
   resolvedBuildExportSettings,
 } from '../../lib/buildExportSettingsUi.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
+import { perChannelScanPageTitle } from './nav.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 import { BuildService } from '../../state/buildService.ts';
@@ -50,6 +51,9 @@ interface ScanListRow {
 /**
  * Flat-memory builds: configure the radio’s single scan list via per-channel flags.
  * No memory order, wire names, or skip-from-export here — those stay on Channels.
+ *
+ * Zone scan set builds (MM9PDY RT95 / UV-5R Mini) show the same flags as **Scan in All channels**:
+ * the flag applies only in All channels; each zone's own scan set is on the Zones page.
  */
 export default function BuildFlatMemoryScanListPage() {
   const { build: contextBuild } = useBuildLayout();
@@ -102,6 +106,8 @@ export default function BuildFlatMemoryScanListPage() {
   );
 
   const eligibilityOptions = useMemo(() => resolveChannelEligibilityOptions(build), [build]);
+  const zoneScanSets = hasZoneScanSet(build.radioTargetId);
+  const pageTitle = perChannelScanPageTitle(build.radioTargetId);
 
   const rows = useMemo((): ScanListRow[] => {
     const slots = resolveChirpChannelMemorySlots(build, librarySlice);
@@ -140,13 +146,18 @@ export default function BuildFlatMemoryScanListPage() {
           </Group>
         ),
       }),
-      {
-        key: 'slot',
-        header: 'Memory',
-        sortable: true,
-        sortValue: (row) => row.slot,
-        render: (row) => row.slot,
-      },
+      // Zone scan set radios number channels in zone order at Write, so no memory column here.
+      ...(zoneScanSets
+        ? []
+        : [
+            {
+              key: 'slot',
+              header: 'Memory',
+              sortable: true,
+              sortValue: (row: ScanListRow) => row.slot,
+              render: (row: ScanListRow) => row.slot,
+            },
+          ]),
       {
         key: 'scan',
         header: 'Scan',
@@ -182,7 +193,7 @@ export default function BuildFlatMemoryScanListPage() {
         },
       },
     ];
-  }, [build.channelOverrides, scanContext, saving, channelById]);
+  }, [build.channelOverrides, scanContext, saving, channelById, zoneScanSets]);
 
   if (!radioTargetHasTrait(build.radioTargetId, BuildCapabilityTrait.PerChannelScanFlag)) {
     return <Navigate to={`/builds/${build.id}/channels`} replace />;
@@ -246,11 +257,19 @@ export default function BuildFlatMemoryScanListPage() {
   return (
     <div className={classes.page}>
       <div className={classes.header}>
-        <h1 className={classes.title}>Scan list</h1>
-        <p className={classes.subtitle}>
-          Choose which memories are included when this radio scans. Memory order and names are set
-          on <Link to={`/builds/${build.id}/channels`}>Channels</Link>.
-        </p>
+        <h1 className={classes.title}>{pageTitle}</h1>
+        {zoneScanSets ? (
+          <p className={classes.subtitle}>
+            Choose which channels Scan visits when the radio is in All channels. In a zone, Scan
+            visits that zone&apos;s own scan set instead: set Scan in this zone per member on{' '}
+            <Link to={`/builds/${build.id}/zones`}>Zones</Link>.
+          </p>
+        ) : (
+          <p className={classes.subtitle}>
+            Choose which memories are included when this radio scans. Memory order and names are set
+            on <Link to={`/builds/${build.id}/channels`}>Channels</Link>.
+          </p>
+        )}
       </div>
       <Stack gap="lg">
         <section className={classes.panel}>
@@ -276,7 +295,9 @@ export default function BuildFlatMemoryScanListPage() {
           <p className={classes.panelHint}>
             {memoryCount === 0
               ? 'Add analogue channels on the Channels page first.'
-              : 'Skip scan keeps a memory out of scanning. Always scan forces it in. Default follows the setting above. Changes apply to this build only — not the library channel.'}
+              : zoneScanSets
+                ? 'Skip scan keeps a channel out of scanning in All channels only; zones use their own scan sets. Always scan forces it in. Default follows the setting above. Changes apply to this build only — not the library channel.'
+                : 'Skip scan keeps a memory out of scanning. Always scan forces it in. Default follows the setting above. Changes apply to this build only — not the library channel.'}
           </p>
           {error ? (
             <Text size="sm" c="red">
@@ -293,7 +314,9 @@ export default function BuildFlatMemoryScanListPage() {
             }}
             emptyMessage={
               <Text size="sm" c="dimmed">
-                No analogue memories on this build yet.
+                {zoneScanSets
+                  ? 'No analogue channels on this build yet.'
+                  : 'No analogue memories on this build yet.'}
               </Text>
             }
             columns={columns}

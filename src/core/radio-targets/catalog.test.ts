@@ -12,6 +12,7 @@ import {
   radioTargetIdForProfile,
   resolveBuildDefaultEgress,
   showsDefaultScanInclusion,
+  hasZoneScanSet,
   showsPerChannelScanListNav,
   traitsForRadioTarget,
 } from './catalog.ts';
@@ -27,6 +28,7 @@ describe('radio target catalog', () => {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.PerChannelScanFlag,
+      BuildCapabilityTrait.ZoneScanSet,
     ]);
     expect(traitsForRadioTarget('retevis-rt95')).toContain(BuildCapabilityTrait.FlatMemoryList);
     expect(radioTargetIdForProfile('radio-io-rt95-mm9pdy')).toBe('retevis-rt95-mm9pdy');
@@ -43,6 +45,7 @@ describe('radio target catalog', () => {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.PerChannelScanFlag,
+      BuildCapabilityTrait.ZoneScanSet,
     ]);
     expect(traitsForRadioTarget('baofeng-uv5r-mini')).toContain(
       BuildCapabilityTrait.FlatMemoryList,
@@ -85,6 +88,25 @@ describe('radio target catalog', () => {
     expect(radioTargetIdForProfile('chirp-uv21')).toBe('baofeng-uv21');
     expect(radioTargetIdForProfile('radio-io-rt95')).toBe('retevis-rt95');
     expect(radioTargetIdForProfile('chirp-rt95')).toBe('retevis-rt95');
+  });
+
+  it('gives zone scan sets to the MM9PDY flat-list targets only', () => {
+    expect(hasZoneScanSet('baofeng-uv5r-mini-mm9pdy')).toBe(true);
+    expect(hasZoneScanSet('retevis-rt95-mm9pdy')).toBe(true);
+    for (const id of [
+      'baofeng-uv5r-mini',
+      'retevis-rt95',
+      'baofeng-dm32uv',
+      'baofeng-dm32uv-mm9pdy',
+      'anytone-at-d890uv',
+      'anytone-at-d890uv-mm9pdy',
+    ]) {
+      expect(hasZoneScanSet(id)).toBe(false);
+    }
+    // Their per-channel flag page stays, as "Scan in All channels".
+    expect(showsPerChannelScanListNav('baofeng-uv5r-mini-mm9pdy')).toBe(true);
+    expect(showsPerChannelScanListNav('retevis-rt95-mm9pdy')).toBe(true);
+    expect(showsPerChannelScanListNav('anytone-at-d890uv-mm9pdy')).toBe(false);
   });
 
   it('exposes flat-memory traits for Mini', () => {

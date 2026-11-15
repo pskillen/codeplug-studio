@@ -8,7 +8,7 @@ import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { pushGeneralInfoWarning, pushGeneralWarning } from '@core/import-export/exportWarning.ts';
 import { rt95Mm9pdyChannelDescription, toRt95Ascii } from '@core/import-export/formatProfiles.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
+import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import type { RadioZoneDto } from '@integrations/radio-io/radioWriteProjection.ts';
 
@@ -35,13 +35,46 @@ export function rt95Mm9pdyZoneOrderedAssembled(assembled: AssembledBuild): Assem
   return { ...assembled, channels: ordered };
 }
 
+/**
+ * The zone's scan set (when it has one) restricted to the members the radio keeps, in their
+ * ascending order. Spread into the finished zone DTO; empty object when the zone has no scan set.
+ */
+export function scanSetWithin(
+  zone: RadioZoneDto,
+  members: readonly number[],
+): Pick<RadioZoneDto, 'scanChannelNumbers'> {
+  if (!zone.scanChannelNumbers) return {};
+  const inSet = new Set(zone.scanChannelNumbers);
+  return { scanChannelNumbers: members.filter((n) => inSet.has(n)) };
+}
+
+/** Shown while the MM9PDY writers don't encode zone scan sets yet. */
+export const ZONE_SCAN_SET_NOT_WRITTEN =
+  "Scan in this zone isn't written to the radio yet; zones scan as before.";
+
+/**
+ * One info warning when any written zone's scan set (resolved, build-level skips included)
+ * differs from its written members: the radio writers don't encode scan sets yet.
+ */
+export function pushZoneScanSetNotWrittenWarning(
+  zones: readonly RadioZoneDto[],
+  warnings: ExportWarning[],
+): void {
+  const differs = zones.some(
+    (zone) =>
+      zone.scanChannelNumbers !== undefined &&
+      (zone.scanChannelNumbers.length !== zone.channelNumbers.length ||
+        zone.scanChannelNumbers.some((n, i) => n !== zone.channelNumbers[i])),
+  );
+  if (differs) pushGeneralInfoWarning(warnings, ZONE_SCAN_SET_NOT_WRITTEN);
+}
+
 export interface Rt95Mm9pdyProjectionInput {
   channels: readonly RadioChannelDto[];
   /** Zones from the shared zone builder, uncapped, wire names already resolved. */
   zones: readonly RadioZoneDto[];
   assembled: AssembledBuild;
   build: RadioBuild;
-  library: Pick<LibrarySlice, 'zones'>;
   numbersBySourceChannelId: ReadonlyMap<string, number[]>;
   maxZones: number;
   warnings: ExportWarning[];
@@ -134,7 +167,11 @@ export function projectRt95Mm9pdy(input: Rt95Mm9pdyProjectionInput): {
         `Zone "${name.text}": the radio steps through its channels in channel-number order.`,
       );
     }
-    zones.push({ wireName: name.text, channelNumbers: ascending });
+    zones.push({
+      wireName: name.text,
+      channelNumbers: ascending,
+      ...scanSetWithin(zone, ascending),
+    });
   }
   if (zones.length > input.maxZones) {
     const dropped = zones.length - input.maxZones;
@@ -156,24 +193,7 @@ export function projectRt95Mm9pdy(input: Rt95Mm9pdyProjectionInput): {
     );
   }
 
-  // Per-zone scan choices.
-  const exported = new Set(assembled.zones.map((z) => z.zoneId));
-  const hasScanChoice = input.library.zones.some(
-    (zone) =>
-      exported.has(zone.id) &&
-      zone.members.some(
-        (m) =>
-          m.kind === 'channel' &&
-          m.includeInScanList !== undefined &&
-          m.includeInScanList !== 'default',
-      ),
-  );
-  if (hasScanChoice) {
-    pushGeneralWarning(
-      warnings,
-      'The RT95 has one scan flag per channel; per-zone scan choices are ignored.',
-    );
-  }
+  pushZoneScanSetNotWrittenWarning(zones, warnings);
 
   return { channels, zones };
 }

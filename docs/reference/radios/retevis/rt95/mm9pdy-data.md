@@ -50,7 +50,7 @@ zone names, 12-character descriptions) are in [limits.md](limits.md).
 | Text             | Accents are folded (`Café` becomes `Cafe`), any other character outside `0x20`-`0x7E` becomes `-`, and in descriptions `_` becomes `-`. Zone and radio names go through the same ASCII rules    |
 | Numbering        | Channels are numbered in zone order (zones in build order, members in zone order, first appearance wins), then the rest; pinned slots keep their pin. A channel in two zones has one number     |
 | Zones            | Up to 32, 12-character names. Empty zones are dropped with a warning; more than 32 keeps the first 32 with a warning. The radio visits a zone's channels in channel-number order (an info note) |
-| Scan             | One scan flag per channel; per-zone scan choices are ignored with one warning                                                                                                                   |
+| Scan             | One scan flag per channel. Zone scan sets are not written yet: one info note when any zone's scan set differs from its members                                                                  |
 
 Owner backup, 2026-10-28: on the owner's chip the range from `0x4000` to `0x7FFF` is erased (all `0xFF`) with no all-zero blocks, so refusing a zero read cannot wrongly block that radio.
 

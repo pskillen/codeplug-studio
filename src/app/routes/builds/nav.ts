@@ -13,6 +13,7 @@ import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import {
   hasDedicatedScanLists,
+  hasZoneScanSet,
   showsPerChannelScanListNav,
   traitsForRadioTarget,
 } from '@core/radio-targets/index.ts';
@@ -189,6 +190,14 @@ export function buildSectionNavItems(
   return items;
 }
 
+/**
+ * Title of the per-channel scan page (`/builds/:id/scan-list`). On zone scan set builds the
+ * per-channel flag only applies in All channels, so the page says so.
+ */
+export function perChannelScanPageTitle(radioTargetId: string): string {
+  return hasZoneScanSet(radioTargetId) ? 'Scan in All channels' : 'Scan list';
+}
+
 /** Trait-shaped wire entity chips — shown under Wire preview, not in the strip. */
 export function buildWireEntityNavItems(
   build: RadioBuild,
@@ -209,7 +218,7 @@ export function buildWireEntityNavItems(
 
   if (showsPerChannelScanListNav(build.radioTargetId)) {
     items.push({
-      label: 'Scan list',
+      label: perChannelScanPageTitle(build.radioTargetId),
       path: `${base}/scan-list`,
       icon: entityNavIcons.scanLists,
       segment: 'scan-list',
