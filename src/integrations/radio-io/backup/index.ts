@@ -8,6 +8,11 @@ export {
   RadioBackupError,
   isRadioBackupRegionPath,
   validateRadioBackupManifest,
+  normaliseBackupLabels,
+  RADIO_BACKUP_LABEL_FIELDS,
+  RADIO_BACKUP_LABEL_MAX,
+  type RadioBackupLabelField,
+  type RadioBackupLabels,
   type RadioBackupCapturedVia,
   type RadioBackupCoverage,
   type RadioBackupManifestV1,
@@ -15,6 +20,7 @@ export {
   type RadioBackupRegionV1,
 } from './types.ts';
 export { packRadioBackupZip } from './pack.ts';
+export { manifestWithBackupLabels, relabelRadioBackupZip } from './labels.ts';
 export { parseRadioBackupZip, type ParsedRadioBackupZip } from './parse.ts';
 export {
   memoryMapFromBackupRegions,
