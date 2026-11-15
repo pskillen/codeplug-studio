@@ -59,7 +59,7 @@ Projection settings (scan inclusion, m×n, naming fill-ins, …) stay visible ac
 | `/builds/:id/overview`          | Overview — identity, target profile, organisation badges                                                                                 |
 | `/builds/:id/characteristics`   | Audit — read-only radio characteristics (organisation, export limits, RF bands & modes, ladders)                                         |
 | `/builds/:id/channels`          | Wire preview — channels (list + modal)                                                                                                   |
-| `/builds/:id/scan-list`         | Flat-memory only — per-channel scan include/skip as **build** overrides (CHIRP / NeonPlug UV5R); does not mutate library `scanInclusion` |
+| `/builds/:id/scan-list`         | Per-channel scan include/skip as **build** overrides; **Scan in All channels** on [zone scan set](zone-scan-sets.md) builds              |
 | `/builds/:id/channels/bulk`     | Wire preview — channel bulk edit                                                                                                         |
 | `/builds/:id/zones`             | Wire preview — zones                                                                                                                     |
 | `/builds/:id/scan-lists`        | Wire preview — dedicated scan lists (e.g. Anytone)                                                                                       |
@@ -75,7 +75,7 @@ Sidebar label is **Export for radio**; routes and code use `builds`. Secondary s
 
 **CPS export:** Per-build CPS export is on `/builds/:id/export` (`ExportBuildCpsPanel`) — the build front door. Project YAML backup lives on [Summary](../report/README.md), not on a separate Import/export page.
 
-**MM9PDY modded firmware** targets (`anytone-at-d890uv-mm9pdy`, `baofeng-dm32uv-mm9pdy`, and `retevis-rt95-mm9pdy`, which adds zones and per-channel descriptions to the RT95, and `baofeng-uv5r-mini-mm9pdy`, which adds zones to the UV-5R Mini) are separate catalog rows. They keep one channel per repeater and use the zone as the scan. Stock targets are unchanged. See [modded firmware](../modded-firmware/README.md).
+**MM9PDY modded firmware** targets (`anytone-at-d890uv-mm9pdy`, `baofeng-dm32uv-mm9pdy`, and `retevis-rt95-mm9pdy`, which adds zones and per-channel descriptions to the RT95, and `baofeng-uv5r-mini-mm9pdy`, which adds zones to the UV-5R Mini) are separate catalog rows. They keep one channel per repeater and use the zone as the scan. On the RT95 and UV-5R Mini MM9PDY targets each zone also has its own scan set (**Scan in this zone**), apart from the per-channel **Scan in All channels** flag ([zone-scan-sets.md](zone-scan-sets.md)). Stock targets are unchanged. See [modded firmware](../modded-firmware/README.md).
 
 The **RadioFoundry** DM-32UV target (`baofeng-dm32uv-radiofoundry`) uses zone grouping, zone-as-scan, multiple talk groups per channel, and a separate digital ID list. On Export for radio, downloading `codeplug.bin` shows the exporter's warnings, and a file picker on that screen imports a `codeplug.bin` into the current project ([RadioFoundry codeplug](../../reference/export-formats/radiofoundry/README.md), [#1485](https://github.com/pskillen/codeplug-studio/issues/1485)).
 
@@ -93,6 +93,7 @@ The **RadioFoundry** DM-32UV target (`baofeng-dm32uv-radiofoundry`) uses zone gr
 | [wire-name-composition.md](wire-name-composition.md)                                    | Traits → fields for auto-generated wire names      |
 | [channel-eligibility.md](channel-eligibility.md)                                        | RF mode/band filtering on build lists + export     |
 | [zone-grouping.md](zone-grouping.md)                                                    | Build zone layout editor                           |
+| [zone-scan-sets.md](zone-scan-sets.md)                                                  | Zone scan sets (RT95, UV-5R Mini MM9PDY)           |
 | [`BuildSwitcher.md`](../../../src/app/components/builds/BuildSwitcher/BuildSwitcher.md) | Secondary-nav build identity + switcher            |
 
 ## Persistence

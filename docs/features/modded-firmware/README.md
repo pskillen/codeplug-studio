@@ -61,9 +61,9 @@ Assigning TG previous / TG next on the MM9PDY targets is an optional export sett
 | `anytone-at-d890uv` (stock) | Web Serial and Anytone CSV             | Unchanged: dedicated scan lists and m×n                                      |
 | `baofeng-dm32uv-mm9pdy`     | Web Serial `radio-io-dm32uv-mm9pdy`    | Zone grouping, zone as scan list, multi talk group, separate digital ID list |
 | `baofeng-dm32uv` (stock)    | Web Serial, NeonPlug, and DM32 CSV     | Unchanged: m×n and zone-derived scan lists                                   |
-| `retevis-rt95-mm9pdy`       | Web Serial `radio-io-rt95-mm9pdy`      | Zone grouping, zone as scan list, per-channel scan flag                      |
+| `retevis-rt95-mm9pdy`       | Web Serial `radio-io-rt95-mm9pdy`      | Zone grouping, zone as scan list, per-channel scan flag, zone scan sets      |
 | `retevis-rt95` (stock)      | Web Serial and CHIRP CSV               | Unchanged: flat 200-channel list, per-channel scan flag                      |
-| `baofeng-uv5r-mini-mm9pdy`  | Web Serial `radio-io-uv5r-mini-mm9pdy` | Zone grouping, zone as scan list, per-channel scan flag                      |
+| `baofeng-uv5r-mini-mm9pdy`  | Web Serial `radio-io-uv5r-mini-mm9pdy` | Zone grouping, zone as scan list, per-channel scan flag, zone scan sets      |
 | `baofeng-uv5r-mini` (stock) | Web Serial, NeonPlug and CHIRP CSV     | Unchanged: flat 999-channel list, per-channel scan flag                      |
 
 ## Known gaps
