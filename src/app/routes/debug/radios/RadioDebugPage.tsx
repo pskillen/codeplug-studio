@@ -213,6 +213,11 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                         ['Running firmware', 'Unknown'],
                         ['Firmware mod', 'Unknown'],
                         [
+                          'Evidence',
+                          d890Identity?.ident || d890Identity?.serial
+                            ? 'Captured radio bytes'
+                            : 'No radio identity observed',
+                        ],
                           'Connection',
                           reading
                             ? 'Reading radio…'
