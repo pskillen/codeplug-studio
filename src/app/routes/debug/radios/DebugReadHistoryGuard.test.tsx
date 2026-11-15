@@ -7,7 +7,13 @@ import { getDebugReadHistory } from './debugReadHistory.ts';
 import { exampleArchive } from './debugReadHistory.fixture.ts';
 
 const store = getDebugReadHistory({ slug: 'rt95', archiveModelId: 'retevis-rt95' });
-afterEach(() => act(() => store.clear()));
+const mini = getDebugReadHistory({ slug: 'uv-5r-mini', archiveModelId: 'UV-5R Mini' });
+afterEach(() =>
+  act(() => {
+    store.clear();
+    mini.clear();
+  }),
+);
 
 it('blocks back navigation, allows Stay and Leave, and warns after leaving', async () => {
   const archive = exampleArchive();
@@ -53,4 +59,39 @@ it('blocks back navigation, allows Stay and Leave, and warns after leaving', asy
   window.dispatchEvent(event);
   expect(event.defaultPrevented).toBe(true);
   expect(store.getSnapshot().undownloaded).toBe(1);
+});
+
+it.each([
+  ['/debug/radios/rt95/', store, 'retevis-rt95'],
+  ['/debug/radios/uv-5r-mini/', mini, 'UV-5R Mini'],
+  ['/debug/uv5r-mini/', mini, 'UV-5R Mini'],
+] as const)('protects the trailing-slash route %s', async (path, history, model) => {
+  const archive = exampleArchive();
+  history.add({ ...archive, manifest: { ...archive.manifest, radioModelId: model } });
+  const router = createMemoryRouter(
+    [
+      {
+        element: (
+          <>
+            <DebugReadHistoryGuard />
+            <Outlet />
+          </>
+        ),
+        children: [
+          { path, element: <Link to="/other">Other</Link> },
+          { path: '/other', element: <span>Other page</span> },
+        ],
+      },
+    ],
+    { initialEntries: [path] },
+  );
+  render(
+    <MantineProvider>
+      <RouterProvider router={router} />
+    </MantineProvider>,
+  );
+  fireEvent.click(screen.getByRole('link', { name: 'Other' }));
+  expect(await screen.findByText('Leave with undownloaded reads?')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
+  expect(await screen.findByText('Other page')).toBeInTheDocument();
 });

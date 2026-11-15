@@ -517,6 +517,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 key={history.entries[0]?.id ?? 'empty'}
                 reads={allReads}
                 preferredLive={preferredLive}
+                onOpenArchive={openFile}
               />
             ) : historyEnabled ? (
               <CompareViewer

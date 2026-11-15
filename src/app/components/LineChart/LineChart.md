@@ -11,16 +11,17 @@ curves) draw it with this component.
 
 ## Props
 
-| Prop      | Type                        | Default             | Notes                                                                                                           |
-| --------- | --------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `title`   | `string`                    | required            | Accessible name of the SVG (`role="img"`) and the table view's caption                                          |
-| `series`  | `LineChartSeries[]`         | required            | `{ id, label, slot, dashed?, points: { x, y }[] }`. `slot` is a categorical colour slot (0-based), not a colour |
-| `xLabel`  | `string`                    | required            | Axis title and the table's first column                                                                         |
-| `yLabel`  | `string`                    | required            | Axis title                                                                                                      |
-| `formatX` | `(x: number) => string`     | `String`            | Tick, tooltip and table text                                                                                    |
-| `formatY` | `(y: number) => string`     | `String`            | Tick, tooltip and table text                                                                                    |
-| `yDomain` | `readonly [number, number]` | data range, rounded | Fix the y range (for example to compare charts)                                                                 |
-| `height`  | `number`                    | `240`               | viewBox height; the width is 560 and the SVG scales down to its container                                       |
+| Prop         | Type                        | Default             | Notes                                                                                                           |
+| ------------ | --------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `title`      | `string`                    | required            | Accessible name of the SVG (`role="img"`) and the table view's caption                                          |
+| `series`     | `LineChartSeries[]`         | required            | `{ id, label, slot, dashed?, points: { x, y }[] }`. `slot` is a categorical colour slot (0-based), not a colour |
+| `xLabel`     | `string`                    | required            | Axis title and the table's first column                                                                         |
+| `yLabel`     | `string`                    | required            | Axis title                                                                                                      |
+| `formatX`    | `(x: number) => string`     | `String`            | Tick, tooltip and table text                                                                                    |
+| `formatY`    | `(y: number) => string`     | `String`            | Tick, tooltip and table text                                                                                    |
+| `yDomain`    | `readonly [number, number]` | data range, rounded | Fix the y range (for example to compare charts)                                                                 |
+| `showLegend` | `boolean`                   | `false`             | Show the legend for a single series; multiple series always show it                                             |
+| `height`     | `number`                    | `240`               | viewBox height; the width is 560 and the SVG scales down to its container                                       |
 
 `lineChartScale.ts` exports `lineChartSlotColor(slot, scheme)`, which returns a slot's light or dark step; `niceTicks(lo, hi, count)` the rounded ticks.
 

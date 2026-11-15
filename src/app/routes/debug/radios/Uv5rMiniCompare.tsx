@@ -6,19 +6,17 @@ import {
   formatUv5rMiniChannelChange,
   formatUv5rMiniSpanRange,
   formatUv5rMiniSpecialSlot,
-  UV5R_MINI_FULL_READ_SIZE,
-  hashUv5rMiniDebugSpans,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import type { Uv5rMiniDebugRead } from '../uv5rMiniDebugReads.ts';
-import { openDebugArchive } from './captureArchive.ts';
-import { openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
 
 export function Uv5rMiniCompare({
   reads,
   preferredLive,
+  onOpenArchive,
 }: {
   reads: readonly Uv5rMiniDebugRead[];
   preferredLive?: string | null;
+  onOpenArchive: (file: File | null) => void;
 }) {
   const [first, setFirst] = useState<string | null>(null);
   const [selection, setSelection] = useState<{
@@ -26,44 +24,9 @@ export function Uv5rMiniCompare({
     preferredLive?: string | null;
   }>();
   const second = selection?.preferredLive === preferredLive ? selection?.label : preferredLive;
-  const [files, setFiles] = useState<readonly Uv5rMiniDebugRead[]>([]);
-  const [error, setError] = useState<string>();
-  const all = [...reads, ...files];
-  async function open(file: File | null) {
-    if (!file) return;
-    try {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      let loaded: Uv5rMiniDebugRead[];
-      try {
-        const archive = openDebugArchive(bytes, 'UV-5R Mini');
-        const decoded = archive.regions.clone;
-        if (!decoded || decoded.length !== UV5R_MINI_FULL_READ_SIZE)
-          throw new Error('A complete clone capture is required for comparison.');
-        loaded = [
-          {
-            label: 'File',
-            readAt: new Date(archive.manifest.capturedAt),
-            decoded,
-            raw: archive.sidecars['debug/wire.bin']!,
-            ident: { f: archive.sidecars['debug/f.bin']!, m: archive.sidecars['debug/m.bin']! },
-            spans: hashUv5rMiniDebugSpans(decoded),
-          },
-        ];
-      } catch (err) {
-        try {
-          loaded = openUv5rMiniReadsZip(bytes);
-        } catch {
-          throw err;
-        }
-      }
-      setFiles(loaded.map((read, i) => ({ ...read, label: `Comparison file ${i + 1}` })));
-      setError(undefined);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not open comparison archive.');
-    }
-  }
+  const all = reads;
   const picker = (
-    <FileButton onChange={open} accept=".zip,application/zip">
+    <FileButton onChange={onOpenArchive} accept=".zip,application/zip">
       {(props) => (
         <Button variant="default" {...props}>
           Open comparison archive
@@ -75,7 +38,6 @@ export function Uv5rMiniCompare({
     return (
       <Stack>
         {picker}
-        {error && <Alert color="red">{error}</Alert>}
         <Alert title="Two complete captures required">
           Read or open another complete clone capture to compare.
         </Alert>
@@ -93,7 +55,6 @@ export function Uv5rMiniCompare({
     <Stack>
       <Title order={3}>Compare Mini reads</Title>
       {picker}
-      {error && <Alert color="red">{error}</Alert>}
       <Select label="First read" value={a.label} onChange={setFirst} data={options} />
       <Select
         label="Second read"
