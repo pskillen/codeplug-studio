@@ -14,7 +14,7 @@ Mounted beneath the debug gate at `/debug/radios/:radio`.
 
 ## Behaviour
 
-Shows a disconnected state and archive identity evidence when available; the selected family is not evidence of firmware. The Backup tab lists actual archive regions and unclassified numeric gaps, retains sidecars and downloads the original ZIP. Invalid or incompatible files leave the current archive intact. RT95 supports a live read through a frame allow-list and shows a channel summary when its programming image is complete. Other live captures and viewer tabs are unavailable. Unknown slugs show a not-found message.
+Shows archive identity evidence without treating the selected family as proof of firmware. Backup lists captured ranges, SHA-256 hashes and known RT95 missing ranges; unknown spaces and maps are identified as such. Hex pages through bounded region bytes. A complete RT95 programming image supplies channel slots and settings to Memory. Compare refuses regions whose address space or representation cannot be established and shows RT95 byte and decoded changes. Other session hydration, memory relationships and trace are unavailable. Invalid files leave the current capture intact. RT95 live read uses a frame allow-list. Unknown slugs show a not-found message.
 
 ## Related
 
