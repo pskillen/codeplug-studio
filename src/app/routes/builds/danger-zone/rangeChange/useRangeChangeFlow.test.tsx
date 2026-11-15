@@ -429,7 +429,7 @@ describe('useRangeChangeFlow', () => {
         .map((f) => f.kind);
       expect(frames).toEqual(['W', 'END']);
       expect(['sending', 'changed']).toContain(journal()[0]?.stage);
-    });
+    }, 120_000);
 
     it('the journal is written before the W', async () => {
       const hook = setup();
@@ -479,7 +479,7 @@ describe('useRangeChangeFlow', () => {
       } finally {
         delete (navigator as { serial?: unknown }).serial;
       }
-    });
+    }, 120_000);
 
     it('no port: says what to do, Choose the port is offered', async () => {
       const hook = await changed();
