@@ -4,9 +4,7 @@
 
 On radios whose zones come from the MM9PDY firmware over a flat channel list (the **Retevis RT95** and the **Baofeng UV-5R Mini**), each zone has its own **scan set**: which of its channels Scan visits while that zone is selected. It is separate from the stock per-channel scan flag, which the radio uses in All channels. The user-facing spec is pskillen/firmware-mods#13 (`features/zone-scan.md`, _Radios without stock zones_).
 
-**Status:** Studio keeps and resolves the scan sets; the radio writers don't write them yet (see [Known gaps](#known-gaps)).
-
-**Tracking:** [#1755](https://github.com/pskillen/codeplug-studio/issues/1755) (this part), [#1756](https://github.com/pskillen/codeplug-studio/issues/1756) (RT95 writer), [#1757](https://github.com/pskillen/codeplug-studio/issues/1757) (UV-5R Mini writer)
+**Status:** In progress · **Tracking:** [#1755](https://github.com/pskillen/codeplug-studio/issues/1755)
 
 **Code:** `BuildCapabilityTrait.ZoneScanSet`, `src/core/import-export/zoneScanSets/`, `ZoneScanOverrideSection` (`variant="scanSet"`), `BuildFlatMemoryScanListPage`
 
