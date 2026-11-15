@@ -128,7 +128,7 @@ describe('runAtD890MemoryRegionDump', () => {
     scriptAtD890ConnectWithNegotiation(pipe, 0x10);
     const content = new Uint8Array(D890_MAP.MasterIdLength).map((_, i) => i & 0xff);
     pipe.readResponder = (addr, len) => {
-      if (addr === D890_MAP.LocalInfo) return new Uint8Array(len).fill(0xff);
+      if (addr === D890_MAP.LocalInfo) return new Uint8Array(len);
       if (addr >= D890_MAP.MasterIdData && addr + len <= D890_MAP.MasterIdData + content.length) {
         return content.subarray(addr - D890_MAP.MasterIdData, addr - D890_MAP.MasterIdData + len);
       }
@@ -153,8 +153,7 @@ describe('runAtD890MemoryDumpAll', () => {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890ConnectWithNegotiation(pipe, 0x10);
     pipe.readResponder = (addr, len) => {
-      void addr;
-      return new Uint8Array(len).fill(0xab);
+      return new Uint8Array(len).fill(addr === D890_MAP.LocalInfo ? 0 : 0xab);
     };
 
     const result = await runAtD890MemoryDumpAll(pipe);
@@ -174,8 +173,7 @@ describe('runAtD890MemoryGroupDump', () => {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890ConnectWithNegotiation(pipe, 0x10);
     pipe.readResponder = (addr, len) => {
-      void addr;
-      return new Uint8Array(len).fill(0xcd);
+      return new Uint8Array(len).fill(addr === D890_MAP.LocalInfo ? 0 : 0xcd);
     };
 
     const result = await runAtD890MemoryGroupDump(pipe, 'airband');
@@ -212,7 +210,7 @@ describe('runAtD890DigitalContactsDump', () => {
 
     scriptAtD890Connect(pipe);
     pipe.readResponder = (addr, len) => {
-      if (addr === D890_MAP.LocalInfo) return new Uint8Array(len).fill(0xff);
+      if (addr === D890_MAP.LocalInfo) return new Uint8Array(len);
       if (addr === D890_MAP.DigitalContactMeta && len === meta.length) return meta;
       if (
         addr >= D890_MAP.DigitalContactOrder &&
