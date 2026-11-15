@@ -1,3 +1,7 @@
+import {
+  formatUv5rMiniSpanRange,
+  hashUv5rMiniDebugSpans,
+} from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { Card, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import {
@@ -48,6 +52,10 @@ function RegionHash({ bytes }: { bytes: Uint8Array }) {
 export function Coverage({ archive }: { archive: DebugArchive }) {
   const rt95 = rt95ArchiveDetails(archive);
   const mini = uv5rMiniArchiveDetails(archive);
+  const clone =
+    mini && archive.regions.clone?.length === 0x10000 ? archive.regions.clone : undefined;
+  const hex = (bytes: Uint8Array) =>
+    Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(' ');
   return (
     <Card withBorder>
       <Stack gap="xs">
@@ -76,6 +84,18 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
         ))}
         {mini ? (
           <>
+            {clone && (
+              <>
+                <Text fw={600}>SHA-256 of decoded clone spans</Text>
+                {hashUv5rMiniDebugSpans(clone).map(({ span, sha256 }) => (
+                  <Text size="xs" key={span.id} style={{ overflowWrap: 'anywhere' }}>
+                    {span.label} {formatUv5rMiniSpanRange(span)} · SHA-256 (decoded): {sha256}
+                  </Text>
+                ))}
+                <Text size="sm">F reply (wire): {hex(archive.sidecars['debug/f.bin']!)}</Text>
+                <Text size="sm">M reply (wire): {hex(archive.sidecars['debug/m.bin']!)}</Text>
+              </>
+            )}
             {mini.coverage.map((range) => (
               <Text key={`${range.label}-${range.start}`}>
                 {range.label} {formatAddress(range.start)}–{formatAddress(range.end)} ·{' '}

@@ -64,3 +64,28 @@ describe('runUv5rMiniDebugFullRead', () => {
     expect(read.spans).toHaveLength(5);
   });
 });
+
+it('closes the pipe when a read is cancelled or fails', async () => {
+  for (const mode of ['cancel', 'error'] as const) {
+    const fake = radio();
+    let closed = false;
+    const abort = new AbortController();
+    const close = fake.close.bind(fake);
+    fake.close = async () => {
+      closed = true;
+      await close();
+    };
+    const result = runUv5rMiniDebugFullRead({
+      port,
+      settleScale: 0,
+      open: async () => fake,
+      signal: abort.signal,
+      onProgress: () => {
+        if (mode === 'cancel') abort.abort();
+        else throw new Error('synthetic failure');
+      },
+    });
+    await expect(result).rejects.toThrow();
+    expect(closed).toBe(true);
+  }
+});
