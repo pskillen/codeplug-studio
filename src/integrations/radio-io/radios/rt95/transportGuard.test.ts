@@ -10,7 +10,7 @@ import type { BytePipe } from '../../types.ts';
 
 const mm: Rt95WriteContext = { profile: 'mm9pdy', chipGuardPassed: true, operation: 'write' };
 function fixture(ctx?: Rt95WriteContext) {
-  const write = vi.fn(async (_frame: Uint8Array) => {});
+  const write = vi.fn<BytePipe['write']>(async () => {});
   const pipe: BytePipe = { write, readExact: async () => new Uint8Array(), close: async () => {} };
   return { write, guarded: guardRt95ClonePipe(pipe, () => ctx) };
 }
