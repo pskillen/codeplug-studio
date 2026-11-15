@@ -1,0 +1,5 @@
+# RT95 calibration debug capture
+
+The debug capture reads 16-byte blocks at `0x3B00` through `0x3FB0` using the existing PROGRAM/END session. The resulting `0x4C0` bytes cover main-body EEPROM `0x3B00–0x3FBF`, relayed via the head, and are inspect-only. The clone programming image covers offsets `0x0000–0x329F`; `0x32A0–0x3AFF` is not captured. These representations do not establish a physical memory map. The signature at `0x3FF8–0x3FFF` is outside this capture. Old archives may have no calibration region.
+
+The decoder follows a static MAIN V1.61 / head V1.41 trace; applicability to any individual radio is unknown and the decoding has not been validated on hardware. Stored production text is evidence of stored bytes, not running firmware or a modification. Captured zeros and FF are values; missing bytes are not. The 16-bit display assumes little-endian, supported by the traced ARM consumer; signedness and physical units remain unresolved. Power codes are numeric and the four-byte slices have no established scalar meaning. Unknown bytes are available in raw hex. Stable reads and plausible values do not establish calibration health.
