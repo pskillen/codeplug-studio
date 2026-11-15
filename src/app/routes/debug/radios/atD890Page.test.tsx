@@ -96,7 +96,8 @@ it('offers keyboard-focusable capture and cancel controls at narrow width and re
   expect(cancel).toHaveFocus();
   fireEvent.click(cancel);
   expect(await screen.findByText('Cancelled; power-cycle')).toBeInTheDocument();
-  expect(screen.getByText(/profile · Not connected/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
+  expect(screen.getByText('Not connected')).toBeInTheDocument();
 });
 
 function d890Zip(capturedAt: string, trim: number | undefined) {
