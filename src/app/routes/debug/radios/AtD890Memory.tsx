@@ -14,6 +14,18 @@ import {
   type AtD890ZoneEntry,
   type AtD890ZoneMember,
 } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
+import {
+  indexBank,
+  resolveAtD890BankSlot,
+  type AtD890BankEntry,
+  type AtD890BankInventory,
+} from '@integrations/radio-io/radios/at-d890uv/debugMemoryContacts.ts';
+import {
+  ContactsPanel,
+  RxGroupsPanel,
+  TalkGroupsPanel,
+  describeBankReference,
+} from './AtD890MemoryContacts.tsx';
 import type { DebugArchive } from './captureArchive.ts';
 
 const MODEL_ID = 'AT-D890UV';
@@ -21,9 +33,6 @@ const NOT_CAPTURED = 'Not captured';
 const DASH = '—';
 
 const DEFERRED = [
-  ['contacts', 'Contacts'],
-  ['talk-groups', 'Talk groups'],
-  ['rx-groups', 'RX groups'],
   ['scan-lists', 'Scan lists'],
   ['settings', 'Settings'],
 ] as const;
@@ -94,104 +103,113 @@ function cell(row: ChannelRow, value: (c: RadioChannelDto) => string | number | 
   return value(row.channel) ?? DASH;
 }
 
-const CHANNEL_COLUMNS: DataTableColumn<ChannelRow>[] = [
-  {
-    key: 'slot',
-    header: 'Slot',
-    width: '4.5rem',
-    sortable: true,
-    sortValue: (r) => r.slot,
-    render: (r) => r.slot,
-    hideOnMobile: true,
-  },
-  {
-    key: 'identity',
-    header: 'Identity',
-    width: 'minmax(14rem, 2fr)',
-    sortable: true,
-    sortValue: (r) => r.label,
-    render: (r) => (
-      <>
-        <strong>{r.label}</strong>
-        {r.note && <Text size="xs">{r.note}</Text>}
-      </>
-    ),
-    hideOnMobile: true,
-  },
-  {
-    key: 'rx',
-    header: 'RX MHz',
-    width: '6.5rem',
-    sortable: true,
-    sortValue: (r) => r.channel?.rxHz ?? null,
-    render: (r) => cell(r, (c) => mhz(c.rxHz)),
-  },
-  {
-    key: 'tx',
-    header: 'TX MHz',
-    width: '6.5rem',
-    sortable: true,
-    sortValue: (r) => r.channel?.txHz ?? null,
-    render: (r) => cell(r, (c) => mhz(c.txHz)),
-  },
-  {
-    key: 'bw',
-    header: 'Bandwidth',
-    width: '6rem',
-    render: (r) => cell(r, (c) => c.bandwidth),
-  },
-  {
-    key: 'power',
-    header: 'Power',
-    width: '5rem',
-    render: (r) => cell(r, (c) => (c.powerPercent == null ? 'Default' : `${c.powerPercent}%`)),
-  },
-  {
-    key: 'mode',
-    header: 'Mode',
-    width: '7rem',
-    sortable: true,
-    sortValue: (r) => r.channel?.mode ?? null,
-    render: (r) => cell(r, (c) => (c.mode ? MODE_LABEL[c.mode] : undefined)),
-  },
-  {
-    key: 'cc',
-    header: 'CC',
-    width: '3.5rem',
-    render: (r) => cell(r, (c) => (c.mode?.includes('digital') ? c.colorCode : undefined)),
-  },
-  {
-    key: 'ts',
-    header: 'TS',
-    width: '3.5rem',
-    render: (r) => cell(r, (c) => (c.mode?.includes('digital') ? c.timeslot : undefined)),
-  },
-  {
-    key: 'contact',
-    header: 'Contact ref',
-    width: '7rem',
-    render: (r) =>
-      cell(r, (c) => (c.txContactId != null ? `#${c.txContactId} (unresolved)` : undefined)),
-  },
-  {
-    key: 'rxTone',
-    header: 'RX tone',
-    width: '6rem',
-    render: (r) => cell(r, (c) => formatAtD890Tone(c.rxTone)),
-  },
-  {
-    key: 'txTone',
-    header: 'TX tone',
-    width: '6rem',
-    render: (r) => cell(r, (c) => formatAtD890Tone(c.txTone)),
-  },
-  {
-    key: 'flags',
-    header: 'Flags',
-    width: 'minmax(10rem, 1.5fr)',
-    render: (r) => cell(r, (c) => flagsOf(c).join(', ') || undefined),
-  },
-];
+function channelColumns(
+  bank: AtD890BankInventory,
+  bankBySlot: ReadonlyMap<number, AtD890BankEntry>,
+): DataTableColumn<ChannelRow>[] {
+  return [
+    {
+      key: 'slot',
+      header: 'Slot',
+      width: '4.5rem',
+      sortable: true,
+      sortValue: (r) => r.slot,
+      render: (r) => r.slot,
+      hideOnMobile: true,
+    },
+    {
+      key: 'identity',
+      header: 'Identity',
+      width: 'minmax(14rem, 2fr)',
+      sortable: true,
+      sortValue: (r) => r.label,
+      render: (r) => (
+        <>
+          <strong>{r.label}</strong>
+          {r.note && <Text size="xs">{r.note}</Text>}
+        </>
+      ),
+      hideOnMobile: true,
+    },
+    {
+      key: 'rx',
+      header: 'RX MHz',
+      width: '6.5rem',
+      sortable: true,
+      sortValue: (r) => r.channel?.rxHz ?? null,
+      render: (r) => cell(r, (c) => mhz(c.rxHz)),
+    },
+    {
+      key: 'tx',
+      header: 'TX MHz',
+      width: '6.5rem',
+      sortable: true,
+      sortValue: (r) => r.channel?.txHz ?? null,
+      render: (r) => cell(r, (c) => mhz(c.txHz)),
+    },
+    {
+      key: 'bw',
+      header: 'Bandwidth',
+      width: '6rem',
+      render: (r) => cell(r, (c) => c.bandwidth),
+    },
+    {
+      key: 'power',
+      header: 'Power',
+      width: '5rem',
+      render: (r) => cell(r, (c) => (c.powerPercent == null ? 'Default' : `${c.powerPercent}%`)),
+    },
+    {
+      key: 'mode',
+      header: 'Mode',
+      width: '7rem',
+      sortable: true,
+      sortValue: (r) => r.channel?.mode ?? null,
+      render: (r) => cell(r, (c) => (c.mode ? MODE_LABEL[c.mode] : undefined)),
+    },
+    {
+      key: 'cc',
+      header: 'CC',
+      width: '3.5rem',
+      render: (r) => cell(r, (c) => (c.mode?.includes('digital') ? c.colorCode : undefined)),
+    },
+    {
+      key: 'ts',
+      header: 'TS',
+      width: '3.5rem',
+      render: (r) => cell(r, (c) => (c.mode?.includes('digital') ? c.timeslot : undefined)),
+    },
+    {
+      key: 'contact',
+      header: 'Contact ref',
+      width: 'minmax(10rem, 1.5fr)',
+      render: (r) =>
+        cell(r, (c) =>
+          c.txContactId != null
+            ? describeBankReference(resolveAtD890BankSlot(bank, c.txContactId, bankBySlot))
+            : undefined,
+        ),
+    },
+    {
+      key: 'rxTone',
+      header: 'RX tone',
+      width: '6rem',
+      render: (r) => cell(r, (c) => formatAtD890Tone(c.rxTone)),
+    },
+    {
+      key: 'txTone',
+      header: 'TX tone',
+      width: '6rem',
+      render: (r) => cell(r, (c) => formatAtD890Tone(c.txTone)),
+    },
+    {
+      key: 'flags',
+      header: 'Flags',
+      width: 'minmax(10rem, 1.5fr)',
+      render: (r) => cell(r, (c) => flagsOf(c).join(', ') || undefined),
+    },
+  ];
+}
 
 const matches = (query: string, ...haystack: string[]) => {
   const q = query.trim().toLocaleLowerCase();
@@ -200,9 +218,12 @@ const matches = (query: string, ...haystack: string[]) => {
 
 function ChannelsPanel({
   channels,
+  bank,
 }: {
   channels: ReturnType<typeof projectAtD890Memory>['channels'];
+  bank: AtD890BankInventory;
 }) {
+  const columns = useMemo(() => channelColumns(bank, indexBank(bank)), [bank]);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
   const rows = useMemo(() => channels.entries.map(channelRow), [channels]);
@@ -242,7 +263,7 @@ function ChannelsPanel({
       )}
       <DataTable
         caption="AT-D890UV memory channels"
-        columns={CHANNEL_COLUMNS}
+        columns={columns}
         rows={shown}
         getRowId={(r) => r.id}
         totalRowCount={rows.length}
@@ -503,6 +524,9 @@ function AtD890MemoryLoaded({ archive }: { archive: DebugArchive }) {
         <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
           <Tabs.Tab value="channels">Channels</Tabs.Tab>
           <Tabs.Tab value="zones">Zones</Tabs.Tab>
+          <Tabs.Tab value="contacts">Contacts</Tabs.Tab>
+          <Tabs.Tab value="talk-groups">Talk groups</Tabs.Tab>
+          <Tabs.Tab value="rx-groups">RX groups</Tabs.Tab>
           {DEFERRED.map(([value, label]) => (
             <Tabs.Tab key={value} value={value}>
               {label}
@@ -510,10 +534,19 @@ function AtD890MemoryLoaded({ archive }: { archive: DebugArchive }) {
           ))}
         </Tabs.List>
         <Tabs.Panel value="channels" pt="md">
-          <ChannelsPanel channels={projection.channels} />
+          <ChannelsPanel channels={projection.channels} bank={projection.bank} />
         </Tabs.Panel>
         <Tabs.Panel value="zones" pt="md">
           <ZonesPanel zones={projection.zones} />
+        </Tabs.Panel>
+        <Tabs.Panel value="contacts" pt="md">
+          <ContactsPanel projection={projection} />
+        </Tabs.Panel>
+        <Tabs.Panel value="talk-groups" pt="md">
+          <TalkGroupsPanel projection={projection} />
+        </Tabs.Panel>
+        <Tabs.Panel value="rx-groups" pt="md">
+          <RxGroupsPanel projection={projection} />
         </Tabs.Panel>
         {DEFERRED.map(([value, label]) => (
           <Tabs.Panel key={value} value={value} pt="md">
