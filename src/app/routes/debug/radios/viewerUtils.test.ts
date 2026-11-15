@@ -64,6 +64,36 @@ describe('archive viewers', () => {
       reason: expect.stringMatching(/unknown/),
     });
   });
+  it('marks a calibration region missing from either archive incomparable', () => {
+    const old = capture([1, 2]);
+    const region = {
+      id: 'rt95-calibration',
+      label: 'Calibration',
+      address: 0x3b00,
+      byteLength: 3,
+      path: 'regions/rt95-calibration.bin',
+      restoreRole: 'inspect-only' as const,
+    };
+    const newer = openDebugArchive(
+      packRadioBackupZip(
+        { ...old.manifest, regions: [...old.manifest.regions, region] },
+        {
+          'programming-image': new Uint8Array([1, 2]),
+          'rt95-calibration': new Uint8Array([0, 2, 3]),
+        },
+      ),
+      'retevis-rt95',
+    );
+    for (const [a, b] of [
+      [old, newer],
+      [newer, old],
+    ] as const) {
+      expect(compareRegions(a, b).regions.find((r) => r.id === region.id)).toMatchObject({
+        comparable: false,
+        missing: 3,
+      });
+    }
+  });
   it('rejects different models', () => {
     const a = capture([1]);
     const b = { ...a, manifest: { ...a.manifest, radioModelId: 'different' } };

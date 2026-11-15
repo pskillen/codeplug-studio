@@ -1,6 +1,7 @@
 import { UV5R_MINI_LAYOUT } from '@integrations/radio-io/radios/uv17pro-family/layout.ts';
 import { uv17ProBackupMemSpans } from '@integrations/radio-io/radios/uv17pro-family/backupRestoreRoles.ts';
 import { describe, expect, it } from 'vitest';
+import { unzipSync, zipSync } from 'fflate';
 import {
   packRadioBackupZip,
   type RadioBackupManifestV1,
@@ -128,4 +129,33 @@ it('validates RT95 calibration representation and allows bounded partial prefixe
     { ...region, path: 'regions/other.bin' },
   ])
     expect(() => openDebugArchive(pack(bad), 'retevis-rt95')).toThrow(/Invalid RT95/);
+});
+
+it('refuses calibration regions belonging to another model or using a foreign ID', () => {
+  const region = {
+    id: 'rt95-calibration',
+    label: 'Calibration',
+    address: 0x3b00,
+    byteLength: 1,
+    path: 'regions/rt95-calibration.bin',
+    restoreRole: 'inspect-only' as const,
+  };
+  const foreignModel = packRadioBackupZip(
+    { ...manifest, regions: [region] },
+    { [region.id]: new Uint8Array(1) },
+  );
+  expect(() => openDebugArchive(foreignModel, 'AT-D890UV')).toThrow(/Invalid RT95/);
+  const wrongId = { ...region, id: 'foreign' };
+  const foreignId = packRadioBackupZip(
+    { ...manifest, radioModelId: 'retevis-rt95', regions: [wrongId] },
+    { foreign: new Uint8Array(1) },
+  );
+  expect(() => openDebugArchive(foreignId, 'retevis-rt95')).toThrow(/Invalid RT95/);
+  const valid = packRadioBackupZip(
+    { ...manifest, radioModelId: 'retevis-rt95', regions: [region] },
+    { [region.id]: new Uint8Array(1) },
+  );
+  const entries = unzipSync(valid);
+  entries[region.path] = new Uint8Array(2);
+  expect(() => openDebugArchive(zipSync(entries), 'retevis-rt95')).toThrow();
 });

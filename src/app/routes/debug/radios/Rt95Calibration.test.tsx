@@ -1,6 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
+import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
+import { openDebugArchive } from './captureArchive.ts';
 import { Rt95Calibration } from './Rt95Calibration.tsx';
 
 describe('RT95 calibration', () => {
@@ -15,4 +17,77 @@ describe('RT95 calibration', () => {
     expect(screen.getAllByText(/Not captured/).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: /write|restore/i })).not.toBeInTheDocument();
   });
+});
+
+it('opens legacy and partial archives with honest availability and body provenance', () => {
+  const image = {
+    id: 'programming-image',
+    label: 'Clone',
+    address: 0,
+    byteLength: 2,
+    path: 'regions/image.bin',
+    restoreRole: 'inspect-only' as const,
+  };
+  const calibration = {
+    id: 'rt95-calibration',
+    label: 'Calibration',
+    address: 0x3b00,
+    byteLength: 8,
+    path: 'regions/rt95-calibration.bin',
+    restoreRole: 'inspect-only' as const,
+  };
+  const manifest = {
+    format: 'codeplug-studio-radio-backup' as const,
+    version: 1 as const,
+    capturedAt: '2026-01-01',
+    capturedVia: 'file' as const,
+    app: { buildEnv: 'test', buildVersion: 'test' },
+    radioModelId: 'retevis-rt95',
+    descriptorLabel: 'RT95',
+    coverage: 'partial' as const,
+    imageByteLength: 2,
+    regions: [image],
+  };
+  const old = openDebugArchive(
+    packRadioBackupZip(manifest, { 'programming-image': new Uint8Array(2) }),
+    'retevis-rt95',
+  );
+  const view = render(
+    <DesignSystemV2Provider>
+      <Rt95Calibration archive={old} />
+    </DesignSystemV2Provider>,
+  );
+  expect(
+    within(screen.getByText(/Model check text \[body\]/).parentElement!).getByText(/Not captured/),
+  ).toBeInTheDocument();
+  const partial = openDebugArchive(
+    packRadioBackupZip(
+      { ...manifest, regions: [image, calibration] },
+      {
+        'programming-image': new Uint8Array(2),
+        'rt95-calibration': Uint8Array.of(1, 2, 3, 4, 5, 6, 7, 8),
+      },
+    ),
+    'retevis-rt95',
+  );
+  view.rerender(
+    <DesignSystemV2Provider>
+      <Rt95Calibration archive={partial} />
+    </DesignSystemV2Provider>,
+  );
+  expect(
+    within(screen.getByText(/Model check text \[body\]/).parentElement!).getByText(
+      /Raw: 01 02 03 04 05 06 07/,
+    ),
+  ).toBeInTheDocument();
+  expect(
+    within(screen.getByText(/Stored version text \[body\]/).parentElement!).getByText(
+      /Raw: 08 · partial/,
+    ),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/EEPROM bytes are relayed through the head/)).toBeInTheDocument();
+  for (const heading of screen.getAllByText(/\[body\].*0x[0-9A-F]{8}.*bytes/)) {
+    expect(heading.parentElement).toHaveTextContent('[body]');
+  }
+  expect(screen.getByText(/\[body\] 0x00003B00/)).toBeInTheDocument();
 });
