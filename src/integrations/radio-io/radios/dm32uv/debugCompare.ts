@@ -52,7 +52,7 @@ export function dm32ComparisonEvidence(archive: Dm32CompareArchive): Record<stri
     const page = archive.regions[region.id]!.subarray(offset, offset + DM32_BLOCK_SIZE);
     const decoded = decodeDm32CalibrationPage(page, live.address);
     for (const [key, value] of Object.entries(decoded)) {
-      if (key !== 'unknownRows' && key !== 'bootScalars')
+      if (key !== 'unknownRows' && key !== 'bootScalars' && key !== 'address')
         flatten(fields, `Calibration / ${key}`, value);
     }
   } else fields['Calibration'] = undefined;
@@ -62,7 +62,8 @@ export function dm32ComparisonEvidence(archive: Dm32CompareArchive): Record<stri
   ) {
     const decoded = decodeDm32FactorySector(archive.regions[coverage.factory.id]!);
     for (const [key, value] of Object.entries(decoded)) {
-      if (key !== 'antiCloneKeyHex') flatten(fields, `Factory / ${key}`, value);
+      if (key !== 'antiCloneKeyHex' && key !== 'address')
+        flatten(fields, `Factory / ${key}`, value);
     }
   } else fields['Factory'] = undefined;
   return fields;
