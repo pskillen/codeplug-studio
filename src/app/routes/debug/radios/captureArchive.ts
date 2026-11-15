@@ -25,11 +25,15 @@ export function openDebugArchive(bytes: Uint8Array, modelId: string): DebugArchi
     throw new Error(`Archive model ${parsed.manifest.radioModelId} does not match this profile.`);
   }
   if (parsed.manifest.radioModelId === 'UV-5R Mini' && parsed.regions.clone) {
+    const region = parsed.manifest.regions.find((item) => item.id === 'clone');
     const wire = parsed.sidecars['debug/wire.bin'];
     const decoded = parsed.regions.clone;
     const f = parsed.sidecars['debug/f.bin'];
     const m = parsed.sidecars['debug/m.bin'];
     if (
+      region?.address !== 0 ||
+      region.byteLength !== 0x10000 ||
+      region.restoreRole !== 'inspect-only' ||
       wire?.length !== 0x10000 ||
       decoded.length !== 0x10000 ||
       f?.length !== 16 ||

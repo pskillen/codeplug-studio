@@ -9,6 +9,7 @@ import {
 } from '@integrations/radio-io/backup/index.ts';
 import type { Uv5rMiniFullRead } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
+import { uv5rMiniDebugReadStore } from '../uv5rMiniDebugReads.ts';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 
 /** Package the decoded clone address space and preserve the wire data and handshake replies. */
@@ -50,5 +51,9 @@ export async function captureUv5rMini(opts?: {
   onProgress?: ProgressFn;
 }): Promise<DebugArchive> {
   const port = await grantUv5rMiniDebugPort();
-  return archiveUv5rMiniRead(await runUv5rMiniDebugFullRead({ port, ...opts }));
+  const read = await runUv5rMiniDebugFullRead({ port, ...opts });
+  const at = new Date();
+  const archive = archiveUv5rMiniRead(read, at.toISOString());
+  uv5rMiniDebugReadStore.add(read, at);
+  return archive;
 }

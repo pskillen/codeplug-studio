@@ -1,3 +1,4 @@
+import { unzipSync, zipSync } from 'fflate';
 import {
   radioReportFrame,
   withCrc,
@@ -64,7 +65,32 @@ it('recognises only a validated live report and keeps all other evidence unknown
   const unsupported = valid.slice();
   unsupported[4] = 3;
   withCrc(unsupported);
-  for (const frame of [new Uint8Array(64), badCrc, unsupported]) {
+  const invalid = valid.slice();
+  invalid[5] = 0x80;
+  withCrc(invalid);
+  const unknownLayout = valid.slice();
+  unknownLayout[8] = 0;
+  unknownLayout[9] = 0;
+  unknownLayout[10] = 0;
+  unknownLayout[11] = 0;
+  withCrc(unknownLayout);
+  for (const frame of [new Uint8Array(64), badCrc, unsupported, invalid, unknownLayout]) {
     expect(uv5rMiniArchiveDetails(create(frame))?.report).toBeUndefined();
   }
+});
+
+it('rejects damaged clone bytes, sidecars and mismatched metadata', () => {
+  const raw = new Uint8Array(0x10000).fill(4);
+  const archive = archiveUv5rMiniRead({
+    raw,
+    decoded: decodeUv5rMiniFullRead(raw),
+    ident: { f: new Uint8Array(16), m: new Uint8Array(15) },
+    spans: [],
+  });
+  const damaged = unzipSync(archive.zipBytes);
+  damaged['regions/clone.bin']![0] ^= 1;
+  expect(() => openDebugArchive(zipSync(damaged), 'UV-5R Mini')).toThrow(/Invalid Mini/);
+  const absent = unzipSync(archive.zipBytes);
+  delete absent['debug/f.bin'];
+  expect(() => openDebugArchive(zipSync(absent), 'UV-5R Mini')).toThrow(/Invalid Mini/);
 });
