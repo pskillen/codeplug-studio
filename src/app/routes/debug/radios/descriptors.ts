@@ -1,3 +1,4 @@
+import { captureAtD890 } from './atD890Capture.ts';
 import { captureUv5rMini } from './uv5rMiniCapture.ts';
 import { captureRt95 } from './rt95Capture.ts';
 import type { DebugArchive } from './captureArchive.ts';
@@ -39,6 +40,7 @@ export const capabilityColor = (status: RadioDebugCapabilityStatus) =>
 export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
     slug: 'at-d890uv',
+    capture: captureAtD890,
     model: 'AT-D890UV',
     archiveModelId: 'AT-D890UV',
     family: 'AnyTone · stock / MM9PDY',
