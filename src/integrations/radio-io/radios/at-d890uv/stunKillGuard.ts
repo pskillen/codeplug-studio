@@ -10,6 +10,9 @@
  */
 
 import { RadioProtocolError } from '../../kit/errors.ts';
+import type { BytePipe } from '../../types.ts';
+import { atD890ExitProgram, atD890ReadMemory } from './connection.ts';
+import { AT_D890_BLOCK_SIZE, D890_MAP } from './constants.ts';
 
 export const AT_D890_STUN_FLAG_OFFSET = 0x00;
 export const AT_D890_KILL_FLAG_OFFSET = 0x01;
@@ -50,4 +53,52 @@ export class AtD890StunKillError extends RadioProtocolError {
 export function assertAtD890NoStunKill(localInfo: Uint8Array): void {
   const state = atD890StunKillState(localInfo);
   if (state.flagged) throw new AtD890StunKillError(state);
+}
+
+/** End a session only when its successfully read LocalInfo flags are both zero. */
+export async function endAtD890WithLocalInfo(
+  pipe: BytePipe,
+  head: Uint8Array | null,
+): Promise<void> {
+  if (!head || head.length < 2) {
+    throw new RadioProtocolError(
+      'Studio could not read the radio’s LocalInfo flags. END was not sent. Power-cycle the radio before continuing.',
+    );
+  }
+  assertAtD890NoStunKill(head);
+  await atD890ExitProgram(pipe);
+}
+
+/** End a read-only session only after a fresh, successful LocalInfo check. */
+export async function endAtD890ReadSession(pipe: BytePipe): Promise<void> {
+  // A 16-byte read is the radio minimum. Never read after W: it loses staged data.
+  let head: Uint8Array;
+  try {
+    head = await atD890ReadMemory(pipe, D890_MAP.LocalInfo, AT_D890_BLOCK_SIZE);
+  } catch {
+    throw new RadioProtocolError(
+      'Studio could not read the radio’s LocalInfo flags. END was not sent. Power-cycle the radio before continuing.',
+    );
+  }
+  await endAtD890WithLocalInfo(pipe, head);
+}
+
+/** Preserve the original failure while explaining how to leave an abandoned read session. */
+export function withAtD890ReadRecovery<Args extends unknown[], Result>(
+  read: (...args: Args) => Promise<Result>,
+): (...args: Args) => Promise<Result> {
+  return async (...args) => {
+    try {
+      return await read(...args);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/power-cycle/i.test(message)) throw error;
+      const recovery = `${message} The radio may still be in programming mode. Power-cycle the radio before continuing.`;
+      if (error instanceof Error) {
+        error.message = recovery;
+        throw error;
+      }
+      throw new RadioProtocolError(recovery);
+    }
+  };
 }
