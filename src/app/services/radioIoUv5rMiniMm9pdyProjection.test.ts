@@ -275,6 +275,8 @@ describe('UV-5R Mini MM9PDY Write projection wiring', () => {
       { wireName: 'Local', channelNumbers: [1, 2, 3], scanChannelNumbers: [1] },
     ]);
     // The Mini writer (MMZ1) ignores scan sets until its own ticket: same intent, same bytes.
+    expect(plain.intent).not.toBeNull();
+    expect(skipping.intent).not.toBeNull();
     expect(skipping.intent).toEqual(plain.intent);
     expect(skipping.encoded?.frames).toEqual(plain.encoded?.frames);
     expect(skipping.encoded?.sector).toEqual(plain.encoded?.sector);
