@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AtD890ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
 import {
   AT_D890_BLOCK_CANDIDATES,
@@ -171,9 +171,16 @@ describe('profileAtD890AccessPattern', () => {
   });
 
   it('declines to infer a page size from a flat latency curve', async () => {
-    // A scripted pipe answers instantly at every stride, so there is no cache signal.
-    const r = await profileAtD890AccessPattern(scriptStrides(), ADDRESS, { iterations: 2 });
-    expect(r.inferredPageBytes).toBeNull();
+    // A scripted pipe answers instantly at every stride, so there is no cache signal. A fixed
+    // fake clock keeps a busy CI runner's pauses from looking like a cache miss.
+    let now = 0;
+    const clock = vi.spyOn(performance, 'now').mockImplementation(() => (now += 0.01));
+    try {
+      const r = await profileAtD890AccessPattern(scriptStrides(), ADDRESS, { iterations: 2 });
+      expect(r.inferredPageBytes).toBeNull();
+    } finally {
+      clock.mockRestore();
+    }
   }, 15_000);
 });
 
