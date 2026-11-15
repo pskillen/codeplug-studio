@@ -188,7 +188,7 @@ it('routes the D890 Memory tab to the memory viewer with a no-capture state', ()
 });
 
 it('keeps the calibration panel unavailable for profiles without a decoder', () => {
-  renderAt('rt95');
+  renderAt('dm-32uv');
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
   expect(screen.getByText('Calibration unavailable')).toBeInTheDocument();
 });
