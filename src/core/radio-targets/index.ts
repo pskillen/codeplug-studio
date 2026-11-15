@@ -5,6 +5,7 @@ export {
   hasDedicatedScanLists,
   hasMxNChannelExpansion,
   hasTalkGroupTimeslotClones,
+  hasZoneScanSet,
   listRadioTargets,
   orderEgressPathsByCatalog,
   radioTargetFor,

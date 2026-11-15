@@ -7,6 +7,12 @@ export const BuildCapabilityTrait = {
   /** First-class library scan lists + per-channel scan list FK (e.g. Anytone ScanList.CSV). */
   DedicatedScanLists: 'dedicatedScanLists',
   ZoneAsScanList: 'zoneAsScanList',
+  /**
+   * Each zone carries its own scan set (which members scan in that zone), separate from the
+   * per-channel scan flag that applies in All channels. Zones over a flat channel list on
+   * MM9PDY firmware (RT95, UV-5R Mini). Gates the Zones page's "Scan in this zone" control.
+   */
+  ZoneScanSet: 'zoneScanSet',
   MultiTalkGroupPerChannel: 'multiTalkGroupPerChannel',
   /**
    * Contact bank carries per-slot talk-group clones (Force TS1/TS2) because RX-group
@@ -133,6 +139,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.PerChannelScanFlag,
+      BuildCapabilityTrait.ZoneScanSet,
     ],
   },
   /** Web Serial direct-write — Retevis RT95 VOX PROGRAM→QX. */
@@ -151,6 +158,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.PerChannelScanFlag,
+      BuildCapabilityTrait.ZoneScanSet,
     ],
   },
   /** Web Serial direct-write — UV-17Pro family (UV-21Pro V2). */

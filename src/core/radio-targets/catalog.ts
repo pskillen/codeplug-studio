@@ -98,6 +98,7 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.PerChannelScanFlag,
+      BuildCapabilityTrait.ZoneScanSet,
     ],
     compatibleEgress: [egress('radio-io', 'radio-io-uv5r-mini-mm9pdy', 'Web Serial')],
   },
@@ -132,6 +133,7 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.PerChannelScanFlag,
+      BuildCapabilityTrait.ZoneScanSet,
     ],
     compatibleEgress: [egress('radio-io', 'radio-io-rt95-mm9pdy', 'Web Serial')],
   },
@@ -237,6 +239,11 @@ export function hasDedicatedScanLists(radioTargetId: string): boolean {
   return radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.DedicatedScanLists);
 }
 
+/** Zones carry their own scan set ("Scan in this zone"), apart from the per-channel flag. */
+export function hasZoneScanSet(radioTargetId: string): boolean {
+  return radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.ZoneScanSet);
+}
+
 export function hasMxNChannelExpansion(radioTargetId: string): boolean {
   return radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.MxNChannelExpansion);
 }
@@ -255,9 +262,11 @@ export function showsDefaultScanInclusion(radioTargetId: string): boolean {
  * (CHIRP UV-5R, NeonPlug UV5R-Mini, …).
  */
 export function showsPerChannelScanListNav(radioTargetId: string): boolean {
+  if (!radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.PerChannelScanFlag)) return false;
+  // Zone scan set builds keep the per-channel flag for All channels: the page is "Scan in All channels".
   return (
-    radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.FlatMemoryList) &&
-    radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.PerChannelScanFlag)
+    radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.FlatMemoryList) ||
+    hasZoneScanSet(radioTargetId)
   );
 }
 

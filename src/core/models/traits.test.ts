@@ -138,6 +138,7 @@ describe('trait profiles', () => {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.PerChannelScanFlag,
+      BuildCapabilityTrait.ZoneScanSet,
     ]);
     expect(profile?.traits).not.toContain(BuildCapabilityTrait.FlatMemoryList);
   });
@@ -148,6 +149,7 @@ describe('trait profiles', () => {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.PerChannelScanFlag,
+      BuildCapabilityTrait.ZoneScanSet,
     ]);
     expect(profile?.traits).not.toContain(BuildCapabilityTrait.FlatMemoryList);
   });
