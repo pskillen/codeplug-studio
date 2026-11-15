@@ -130,3 +130,50 @@ describe('archive viewer controls', () => {
     expect(screen.getByText(/outside this region/)).toBeInTheDocument();
   });
 });
+
+it('shows D890 missing configuration, out-of-map and separate vital provenance', () => {
+  const regions = [
+    {
+      id: 'sparse-0',
+      label: 'Configuration',
+      address: 0,
+      byteLength: 16,
+      path: 'regions/config.bin',
+      restoreRole: 'inspect-only' as const,
+    },
+    {
+      id: 'sparse-6000000',
+      label: 'NXDN',
+      address: 0x6000000,
+      byteLength: 16,
+      path: 'regions/nxdn.bin',
+      restoreRole: 'inspect-only' as const,
+    },
+    {
+      id: 'unknown',
+      label: 'Unknown',
+      address: 16,
+      byteLength: 16,
+      path: 'regions/unknown.bin',
+      restoreRole: 'inspect-only' as const,
+    },
+  ];
+  const zip = packRadioBackupZip(
+    { ...manifest, radioModelId: 'AT-D890UV', imageByteLength: 0x5000000, regions },
+    {
+      'sparse-0': new Uint8Array(16),
+      'sparse-6000000': new Uint8Array(16),
+      unknown: new Uint8Array(16),
+    },
+  );
+  render(
+    <MantineProvider>
+      <Coverage archive={openDebugArchive(zip, 'AT-D890UV')} />
+    </MantineProvider>,
+  );
+  expect(screen.getByText('Out-of-map sparse read')).toBeInTheDocument();
+  expect(screen.getByText('Unclassified address space')).toBeInTheDocument();
+  expect(screen.getByText(/as returned; not an independent physical copy/)).toBeInTheDocument();
+  expect(screen.getByText(/0x00000010–.*Not captured/)).toBeInTheDocument();
+  expect(screen.queryByText(/Not listed \(address space/)).not.toBeInTheDocument();
+});

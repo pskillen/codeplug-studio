@@ -1,3 +1,8 @@
+import { AT_D890_VITAL_UNIT_BYTES } from '@integrations/radio-io/radios/at-d890uv/vitalBackup.ts';
+import {
+  atD890VitalComparison,
+  classifyAtD890DebugCoverage,
+} from '@integrations/radio-io/radios/at-d890uv/debugCoverage.ts';
 import {
   formatUv5rMiniSpanRange,
   hashUv5rMiniDebugSpans,
@@ -51,6 +56,10 @@ function RegionHash({ bytes }: { bytes: Uint8Array }) {
 }
 
 export function Coverage({ archive }: { archive: DebugArchive }) {
+  const d890 =
+    archive.manifest.radioModelId === 'AT-D890UV'
+      ? classifyAtD890DebugCoverage(archive.manifest.regions)
+      : undefined;
   const rt95 = rt95ArchiveDetails(archive);
   const mini = uv5rMiniArchiveDetails(archive);
   const clone =
@@ -76,7 +85,15 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
         {archive.manifest.regions.map((region) => (
           <div key={region.id}>
             <Text fw={600}>
-              {regionIdentity(archive, region.id)?.space ?? 'Unclassified address space'}
+              {d890
+                ? d890.vital.some((v) => v.region?.id === region.id)
+                  ? 'Vital read · separate provenance'
+                  : d890.outside.some((r) => r.id === region.id)
+                    ? 'Out-of-map sparse read'
+                    : d890.unclassified.some((r) => r.id === region.id)
+                      ? 'Unclassified address space'
+                      : 'D890 virtual map'
+                : (regionIdentity(archive, region.id)?.space ?? 'Unclassified address space')}
             </Text>
             <Text>
               {region.label} · {mini && region.id.startsWith('mem-') ? 'Packed offset' : 'Start'}{' '}
@@ -85,7 +102,47 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
             <RegionHash bytes={archive.regions[region.id]!} />
           </div>
         ))}
-        {mini ? (
+        {d890 ? (
+          <>
+            <Text fw={600}>Virtual map · sparse configuration</Text>
+            {d890.map.map((range) => (
+              <Text key={range.start}>
+                {formatAddress(range.start)}–{formatAddress(range.end - 1)} ·{' '}
+                {range.captured ? 'Captured' : 'Not captured'}
+              </Text>
+            ))}
+            <Text fw={600}>Expected configuration spans</Text>
+            {d890.spans.map((range, i) => (
+              <Text key={`${range.label}-${range.start}-${i}`}>
+                {range.label} {formatAddress(range.start)}–{formatAddress(range.end - 1)} ·{' '}
+                {range.captured ? 'Captured' : 'Not captured'}
+              </Text>
+            ))}
+            <Text fw={600}>Vital reads · requested separately</Text>
+            <Text size="sm">
+              {atD890VitalComparison(archive.sidecars['debug/vital.json'])
+                ? 'Archive metadata reports two matching reads.'
+                : 'Two-read comparison is not established by archive metadata.'}
+            </Text>
+            {d890.vital.map(({ def, region }) => (
+              <Text key={def.id}>
+                {def.label} {formatAddress(def.address)}–
+                {formatAddress(def.address + AT_D890_VITAL_UNIT_BYTES - 1)} ·{' '}
+                {region ? 'Captured' : 'Not captured'}
+                {def.asReturned ? ' · as returned; not an independent physical copy' : ''}
+              </Text>
+            ))}
+            <Text size="sm">
+              Vital reads may overlap configuration ranges and are reported separately. A successful
+              live capture compares two reads; archive metadata records that claim. Firmware can
+              divert vital reads; these are the bytes returned, not proof of physical storage.
+            </Text>
+            <Text size="sm">
+              Sparse configuration omits occupancy-skipped records. Out-of-map and unclassified
+              entries remain separate above.
+            </Text>
+          </>
+        ) : mini ? (
           <>
             {clone && (
               <>
@@ -130,6 +187,7 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
           </Text>
         )}
         {!mini &&
+          !d890 &&
           archiveGaps(archive.manifest.regions).map((gap) => (
             <Text key={gap.start} c="dimmed">
               {formatAddress(gap.start)}–{formatAddress(gap.end)} · Not listed (address space and

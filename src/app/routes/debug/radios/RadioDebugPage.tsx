@@ -1,3 +1,4 @@
+import { atD890DebugIdentity } from '@integrations/radio-io/radios/at-d890uv/debugCoverage.ts';
 import {
   Alert,
   Anchor,
@@ -83,6 +84,14 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const allReads =
     archive?.source === 'live-read' ? [...fileReads, ...liveReads] : [...liveReads, ...fileReads];
   const miniReport = archive && uv5rMiniArchiveDetails(archive)?.report;
+  const d890Identity =
+    archive?.manifest.radioModelId === 'AT-D890UV'
+      ? atD890DebugIdentity(
+          archive.sidecars['debug/ident.bin'],
+          archive.manifest.regions,
+          archive.regions,
+        )
+      : undefined;
   const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
   if (!descriptor)
     return (
@@ -189,29 +198,53 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               <Card withBorder>
                 <Title order={3}>Identity and firmware</Title>
                 <SimpleGrid cols={{ base: 2, sm: 3 }} mt="md">
-                  {[
-                    ['Model · selected', descriptor.model],
-                    ['Expected family', descriptor.family],
-                    ['Serial · archive', archive?.manifest.serial || 'Unknown'],
-                    ['Firmware · archive', archive?.manifest.firmware || 'Unknown'],
-                    ['Firmware mod', miniReport ? 'MM9PDY compatible report' : 'Unknown'],
-                    [
-                      'Evidence',
-                      miniReport
-                        ? 'Validated live format-2 MM9R report'
-                        : archive
-                          ? 'Archive manifest'
-                          : 'No radio identity observed',
-                    ],
-                    [
-                      'Connection',
-                      reading
-                        ? 'Reading radio…'
-                        : archive?.source === 'live-read'
-                          ? 'Read complete · disconnected'
-                          : 'Not connected',
-                    ],
-                  ].map(([label, value]) => (
+                  {(descriptor.slug === 'at-d890uv'
+                    ? [
+                        ['Model · selected', descriptor.model],
+                        ['Model · captured ident', d890Identity?.ident?.model ?? 'Unknown'],
+                        [
+                          'Band code · captured ident',
+                          d890Identity?.ident
+                            ? `0x${d890Identity.ident.bandCode.toString(16).toUpperCase().padStart(2, '0')}`
+                            : 'Unknown',
+                        ],
+                        ['Ident version · protocol', d890Identity?.ident?.version ?? 'Unknown'],
+                        ['Serial · captured LocalInfo', d890Identity?.serial ?? 'Unknown'],
+                        ['Running firmware', 'Unknown'],
+                        ['Firmware mod', 'Unknown'],
+                        [
+                          'Connection',
+                          reading
+                            ? 'Reading radio…'
+                            : archive?.source === 'live-read'
+                              ? 'Read complete · disconnected'
+                              : 'Not connected',
+                        ],
+                      ]
+                    : [
+                        ['Model · selected', descriptor.model],
+                        ['Expected family', descriptor.family],
+                        ['Serial · archive', archive?.manifest.serial || 'Unknown'],
+                        ['Firmware · archive', archive?.manifest.firmware || 'Unknown'],
+                        ['Firmware mod', miniReport ? 'MM9PDY compatible report' : 'Unknown'],
+                        [
+                          'Evidence',
+                          miniReport
+                            ? 'Validated live format-2 MM9R report'
+                            : archive
+                              ? 'Archive manifest'
+                              : 'No radio identity observed',
+                        ],
+                        [
+                          'Connection',
+                          reading
+                            ? 'Reading radio…'
+                            : archive?.source === 'live-read'
+                              ? 'Read complete · disconnected'
+                              : 'Not connected',
+                        ],
+                      ]
+                  ).map(([label, value]) => (
                     <div key={label}>
                       <Text size="xs" c="dimmed">
                         {label}
@@ -221,7 +254,9 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                   ))}
                 </SimpleGrid>
                 <Text size="sm" c="dimmed" mt="md">
-                  The selected family is an expectation, not proof of installed firmware.
+                  The selected family is an expectation, not proof of installed firmware.{' '}
+                  {descriptor.slug === 'at-d890uv' &&
+                    'Ident and LocalInfo values come from captured bytes; V100 is protocol evidence, not a running firmware version. Missing markers do not prove stock firmware.'}
                 </Text>
               </Card>
               <Card withBorder>
@@ -273,6 +308,14 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                     </>
                   )}
                 </Group>
+              )}
+              {descriptor.slug === 'at-d890uv' && (
+                <Alert title="Read-only capture and recovery">
+                  The radio is read at fixed 16-byte blocks; vital units are read twice and can take
+                  time. If a read fails or is cancelled, power-cycle the radio before continuing. A
+                  fresh LocalInfo check precedes END, but the check and END are not atomic. Firmware
+                  may divert vital reads.
+                </Alert>
               )}
               <Alert title="Coverage is limited">
                 The listed ranges are archive entries, not a complete physical storage or firmware
