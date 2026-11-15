@@ -10,7 +10,10 @@ import { describe, expect, it } from 'vitest';
 const here = dirname(fileURLToPath(import.meta.url));
 const srcRoot = join(here, '..', '..', '..', '..');
 
-const FILES = ['integrations/radio-io/radios/opengd77/debugGuard.ts'];
+const FILES = [
+  'integrations/radio-io/radios/opengd77/debugGuard.ts',
+  'integrations/radio-io/radios/opengd77/debugCapture.ts',
+];
 
 const FORBIDDEN: [string, RegExp][] = [
   ['makeSetFlashSectorFrame', /makeSetFlashSectorFrame/],
