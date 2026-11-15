@@ -1,0 +1,298 @@
+import {
+  Alert,
+  Button,
+  Card,
+  FileButton,
+  Group,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core';
+import { useState } from 'react';
+import DataTable from '@app/components/v2/DataTable.tsx';
+import { openDebugArchive, rt95ArchiveDetails, type DebugArchive } from './captureArchive.ts';
+import {
+  compareRegions,
+  formatAddress,
+  HEX_PAGE_BYTES,
+  hexRows,
+  regionIdentity,
+} from './viewerUtils.ts';
+
+export function HexViewer({ archive }: { archive?: DebugArchive }) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  if (!archive)
+    return <Alert title="No capture">Open or read a capture to inspect its bytes.</Alert>;
+  const region =
+    archive.manifest.regions.find((r) => r.id === selected) ?? archive.manifest.regions[0];
+  if (!region) return <Alert>No captured regions.</Alert>;
+  const bytes = archive.regions[region.id]!;
+  const pages = Math.max(1, Math.ceil(bytes.length / HEX_PAGE_BYTES));
+  const current = Math.min(page, pages - 1);
+  return (
+    <Stack>
+      <Title order={3}>Hex &amp; region map</Title>
+      <Text size="sm">
+        {regionIdentity(archive, region.id)?.representation ??
+          'Archive bytes; wire or decoded representation is not recorded'}
+        . Gaps are never displayed as bytes.
+      </Text>
+      <Select
+        label="Region"
+        value={region.id}
+        data={archive.manifest.regions.map((r) => ({ value: r.id, label: r.label }))}
+        onChange={(id) => {
+          setSelected(id);
+          setPage(0);
+        }}
+        allowDeselect={false}
+      />
+      <Card withBorder>
+        <Text fw={600}>
+          {region.label} · {bytes.length} bytes
+        </Text>
+        <div style={{ overflowX: 'auto' }}>
+          <pre aria-label="Hexadecimal bytes">
+            {hexRows(bytes, region.address, current)
+              .map((row) => `${formatAddress(row.address)}  ${row.hex.padEnd(47)}  ${row.ascii}`)
+              .join('\n') || 'Empty region'}
+          </pre>
+        </div>
+        <Group>
+          <Button variant="default" disabled={current === 0} onClick={() => setPage(current - 1)}>
+            Previous
+          </Button>
+          <Text>
+            Page {current + 1} of {pages}
+          </Text>
+          <Button
+            variant="default"
+            disabled={current + 1 >= pages}
+            onClick={() => setPage(current + 1)}
+          >
+            Next
+          </Button>
+        </Group>
+      </Card>
+    </Stack>
+  );
+}
+
+export function MemoryViewer({ archive }: { archive?: DebugArchive }) {
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<string | null>('slot');
+  const summary = archive ? rt95ArchiveDetails(archive)?.summary : undefined;
+  const channels = (summary?.inspectChannels ?? [])
+    .filter((item) => item.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()))
+    .slice()
+    .sort((a, b) =>
+      sort === 'name'
+        ? a.name.localeCompare(b.name) || a.slotIndex - b.slotIndex
+        : a.slotIndex - b.slotIndex,
+    );
+  return (
+    <Stack>
+      <Title order={3}>Memory</Title>
+      {!summary ? (
+        <Alert title={archive ? 'Decoded inventory unavailable' : 'No capture'}>
+          {archive
+            ? 'A complete supported programming image is required; memory is not decoded for this capture yet.'
+            : 'Open or read a capture to inspect its memory.'}
+        </Alert>
+      ) : (
+        <>
+          <Title order={4}>Channels</Title>
+          <TextInput
+            label="Search channels"
+            value={query}
+            onChange={(event) => setQuery(event.currentTarget.value)}
+          />
+          <Select
+            label="Sort channels"
+            value={sort}
+            onChange={setSort}
+            data={[
+              { value: 'slot', label: 'Slot' },
+              { value: 'name', label: 'Name' },
+            ]}
+            allowDeselect={false}
+          />
+          <DataTable
+            variant="embedded"
+            rows={channels}
+            getRowId={(row) => String(row.slotIndex)}
+            columns={[
+              { key: 'slot', header: 'Slot', render: (row) => row.slotIndex },
+              { key: 'name', header: 'Name', render: (row) => row.name || '(unnamed)' },
+            ]}
+            emptyMessage="No matching channels."
+          />
+          <Title order={4}>Settings</Title>
+          {summary.settingsRetain.map((item) => (
+            <Text key={item.label}>
+              {item.label} · {item.value}
+            </Text>
+          ))}
+        </>
+      )}
+      {['Zones', 'Scan lists', 'Contacts', 'Talk groups'].map((section) => (
+        <Text key={section}>{section}: not decoded for this radio yet.</Text>
+      ))}
+    </Stack>
+  );
+}
+
+export function CompareViewer({ archive, modelId }: { archive?: DebugArchive; modelId: string }) {
+  const [other, setOther] = useState<DebugArchive>();
+  const [error, setError] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const open = async (file: File | null) => {
+    if (!file) return;
+    try {
+      setOther(openDebugArchive(new Uint8Array(await file.arrayBuffer()), modelId));
+      setError(undefined);
+      setSelected(null);
+      setPage(0);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not open archive.');
+    }
+  };
+  const comparison = archive && other ? compareRegions(archive, other) : undefined;
+  const region =
+    comparison?.regions.find((r) => r.id === selected && r.comparable) ??
+    comparison?.regions.find((r) => r.comparable);
+  const left = region && archive?.manifest.regions.find((r) => r.id === region.id);
+  const a = region && archive?.regions[region.id];
+  const b = region && other?.regions[region.id];
+  const length = a && b ? Math.min(a.length, b.length) : 0;
+  const pages = Math.max(1, Math.ceil(length / HEX_PAGE_BYTES));
+  const current = Math.min(page, pages - 1);
+  return (
+    <Stack>
+      <Title order={3}>Compare captures</Title>
+      <Text>Capture A: {archive ? archive.manifest.capturedAt : 'Open a capture first'}</Text>
+      <Text>Capture B: {other ? other.manifest.capturedAt : 'Not selected'}</Text>
+      <FileButton onChange={open} accept=".zip,application/zip">
+        {(props) => (
+          <Button variant="default" {...props}>
+            Open capture B
+          </Button>
+        )}
+      </FileButton>
+      {error && (
+        <Alert color="red" title="Could not open capture B">
+          {error}
+        </Alert>
+      )}
+      {comparison?.error && <Alert color="red">{comparison.error}</Alert>}
+      {comparison && !comparison.error && (
+        <>
+          <Alert title="Comparison limits">
+            Only matching region IDs and starting offsets are compared. Archive format does not
+            identify address spaces or wire versus decoded representation for most radios. Such
+            regions are refused. Missing bytes are incomparable. Captures may contain sensitive data
+            and stay in this browser.
+          </Alert>
+          <Title order={4}>Summary by region</Title>
+          {comparison.regions.map((r) => (
+            <Text key={r.id}>
+              {r.label}:{' '}
+              {r.comparable
+                ? `${r.changed} changed bytes · ${r.missing} missing bytes (incomparable)`
+                : `Incomparable: ${'reason' in r ? r.reason : 'region or starting offset differs'}`}
+            </Text>
+          ))}
+          <Title order={4}>Decoded changes</Title>
+          {(() => {
+            const first = archive && rt95ArchiveDetails(archive)?.summary;
+            const second = other && rt95ArchiveDetails(other)?.summary;
+            if (!first || !second)
+              return <Text>Decoded changes are unavailable for these captures.</Text>;
+            const settings = first.settingsRetain.flatMap((row) => {
+              const next = second.settingsRetain.find((item) => item.label === row.label);
+              return next && next.value !== row.value
+                ? [`${row.label}: ${row.value} → ${next.value}`]
+                : [];
+            });
+            const slots = new Set([
+              ...first.inspectChannels.map((item) => item.slotIndex),
+              ...second.inspectChannels.map((item) => item.slotIndex),
+            ]);
+            const changes = [
+              ...settings,
+              ...Array.from(slots).flatMap((slot) => {
+                const before = first.inspectChannels.find((item) => item.slotIndex === slot)?.name;
+                const after = second.inspectChannels.find((item) => item.slotIndex === slot)?.name;
+                return before !== after
+                  ? [`Channel slot ${slot}: ${before ?? '(empty)'} → ${after ?? '(empty)'}`]
+                  : [];
+              }),
+            ];
+            return changes.length ? (
+              changes.map((change) => <Text key={change}>{change}</Text>)
+            ) : (
+              <Text>No decoded channel name or setting changes.</Text>
+            );
+          })()}
+          {region && left && a && b && (
+            <>
+              <Select
+                label="Comparison region"
+                value={region.id}
+                data={comparison.regions
+                  .filter((r) => r.comparable)
+                  .map((r) => ({ value: r.id, label: r.label }))}
+                onChange={(id) => {
+                  setSelected(id);
+                  setPage(0);
+                }}
+                allowDeselect={false}
+              />
+              <Card withBorder>
+                <Text fw={600}>Byte comparison · {region.label}</Text>
+                <div style={{ overflowX: 'auto' }}>
+                  <pre aria-label="Byte comparison">
+                    {hexRows(a.subarray(0, length), left.address, current)
+                      .map((row, i) => {
+                        const offset = current * HEX_PAGE_BYTES + i * 16;
+                        const otherRow = hexRows(
+                          b.subarray(offset, Math.min(offset + 16, length)),
+                          left.address + offset,
+                          0,
+                        )[0];
+                        return `${formatAddress(row.address)}  A ${row.hex}\n            B ${otherRow?.hex ?? ''}`;
+                      })
+                      .join('\n') || 'No overlapping bytes'}
+                  </pre>
+                </div>
+                <Group>
+                  <Button
+                    variant="default"
+                    disabled={current === 0}
+                    onClick={() => setPage(current - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <Text>
+                    Page {current + 1} of {pages}
+                  </Text>
+                  <Button
+                    variant="default"
+                    disabled={current + 1 >= pages}
+                    onClick={() => setPage(current + 1)}
+                  >
+                    Next
+                  </Button>
+                </Group>
+              </Card>
+            </>
+          )}
+        </>
+      )}
+    </Stack>
+  );
+}

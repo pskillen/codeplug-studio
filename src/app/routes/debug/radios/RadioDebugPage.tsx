@@ -14,15 +14,12 @@ import {
 } from '@mantine/core';
 import { useState } from 'react';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
-import {
-  archiveGaps,
-  openDebugArchive,
-  rt95ArchiveDetails,
-  type DebugArchive,
-} from './captureArchive.ts';
+import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 import { Link, useParams } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { radioDebugDescriptors } from './descriptors.ts';
+import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
+import { Coverage } from './Coverage.tsx';
 
 export default function RadioDebugPage() {
   const { radio } = useParams();
@@ -70,8 +67,6 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
       setProgress('');
     }
   };
-  const rt95 = archive ? rt95ArchiveDetails(archive) : undefined;
-  const address = (n: number) => `0x${n.toString(16).toUpperCase()}`;
   return (
     <Page>
       <Stack>
@@ -193,54 +188,33 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 unknown.
               </Alert>
               {archive && (
-                <Card withBorder>
-                  <Title order={4}>Coverage manifest</Title>
-                  {rt95?.summary && (
-                    <Text mt="sm">
-                      Clone summary · {rt95.summary.occupiedChannelCount} occupied channels ·{' '}
-                      {rt95.summary.emptyChannelCount} empty channels
-                    </Text>
-                  )}
-                  {rt95?.missing.map((gap) => (
-                    <Text key={gap.start} mt="xs">
-                      RT95 programming image {address(gap.start)}–{address(gap.end)} · Missing
-                    </Text>
-                  ))}
-                  {archive.manifest.regions.map((region) => (
-                    <Text key={region.id} mt="xs">
-                      {region.label} ·{' '}
-                      {region.byteLength
-                        ? `${address(region.address)}–${address(region.address + region.byteLength - 1)}`
-                        : 'empty'}{' '}
-                      · {region.byteLength} bytes · Captured
-                    </Text>
-                  ))}
-                  {archiveGaps(archive.manifest.regions).map((gap) => (
-                    <Text key={gap.start} c="dimmed" mt="xs">
-                      {address(gap.start)}–{address(gap.end)} · Not listed (address space and status
-                      unknown)
-                    </Text>
-                  ))}
-                  <Text mt="sm" size="sm">
-                    Sidecars:{' '}
-                    {Object.keys(archive.sidecars).length
-                      ? Object.keys(archive.sidecars).join(', ')
-                      : 'none'}
-                  </Text>
-                  <Button
-                    mt="md"
-                    onClick={() => downloadZip(archive.zipBytes, 'radio-debug-archive.zip')}
-                  >
+                <Stack>
+                  <Coverage
+                    key={archive.manifest.capturedAt + archive.zipBytes.length}
+                    archive={archive}
+                  />
+                  <Button onClick={() => downloadZip(archive.zipBytes, 'radio-debug-archive.zip')}>
                     Download archive
                   </Button>
-                </Card>
+                </Stack>
               )}
             </Stack>
           </Tabs.Panel>
-          {['Calibration', 'Memory', 'Hex', 'Compare', 'Trace'].map((tab) => (
+          <Tabs.Panel value="memory" pt="md">
+            <MemoryViewer archive={archive} />
+          </Tabs.Panel>
+          <Tabs.Panel value="hex" pt="md">
+            <HexViewer key={archive?.manifest.capturedAt} archive={archive} />
+          </Tabs.Panel>
+          <Tabs.Panel value="compare" pt="md">
+            <CompareViewer archive={archive} modelId={descriptor.archiveModelId} />
+          </Tabs.Panel>
+          {['Calibration', 'Trace'].map((tab) => (
             <Tabs.Panel key={tab} value={tab.toLowerCase()} pt="md">
               <Alert title={`${tab} unavailable`}>
-                This capability is not yet available for this profile.
+                {tab === 'Trace'
+                  ? 'Protocol trace export is unavailable: this capture does not include trace instrumentation.'
+                  : 'This capability is not yet available for this profile.'}
               </Alert>
             </Tabs.Panel>
           ))}
