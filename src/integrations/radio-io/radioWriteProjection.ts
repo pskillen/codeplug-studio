@@ -20,6 +20,12 @@ export interface RadioZoneDto {
   wireName: string;
   /** Ordered 1-based channel numbers (max 64 on DM-32UV). */
   channelNumbers: readonly number[];
+  /**
+   * Zone scan set targets only (`BuildCapabilityTrait.ZoneScanSet`): the zone's channel numbers
+   * that are set to Scan in this zone, a subset of {@link channelNumbers} in the same order.
+   * Absent on every other target. Resolved in core (`resolveZoneScanSets`); writers encode it as is.
+   */
+  scanChannelNumbers?: readonly number[];
 }
 
 /** AT-D890UV AM airband channel (parallel bank — freq + name only). */

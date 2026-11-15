@@ -10,6 +10,8 @@ import { assemble } from '@core/services/assemble.ts';
 import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
 import { projectRt95Mm9pdy } from './radioIoRt95Mm9pdyProjection.ts';
 import { foldRt95StockNames } from './radioIoRt95Channels.ts';
+import { rt95ModDataIntentFromOrganisation } from '@integrations/radio-io/radios/rt95/modDataIntent.ts';
+import { encodeRt95ModData } from '@integrations/radio-io/radios/rt95/modData/index.ts';
 
 const MM = 'radio-io-rt95-mm9pdy';
 
@@ -73,9 +75,10 @@ describe('RT95 MM9PDY projection', () => {
     expect(projection.numbersBySourceChannelId.get('a')).toEqual([2]);
     expect(projection.numbersBySourceChannelId.get('b')).toEqual([3]);
     expect(projection.organisation.writeRt95ModData).toBe(true);
+    // Every member is in its zone's scan set by default.
     expect(projection.organisation.zones).toEqual([
-      { wireName: 'First', channelNumbers: [1, 2] },
-      { wireName: 'Second', channelNumbers: [2, 3] },
+      { wireName: 'First', channelNumbers: [1, 2], scanChannelNumbers: [1, 2] },
+      { wireName: 'Second', channelNumbers: [2, 3], scanChannelNumbers: [2, 3] },
     ]);
   });
 
@@ -169,6 +172,39 @@ describe('RT95 MM9PDY projection', () => {
     ];
     const { texts } = project(MM, lib([a, b], [z]));
     expect(texts.filter((t) => t.includes('per-zone scan choices')).length).toBe(1);
+  });
+
+  it('carries each zone scan set and leaves the MMD1 intent and blocks unchanged', () => {
+    const a = ch('a', 'Alpha', 145.5);
+    const b = ch('b', 'Bravo', 145.6);
+    const c = ch('c', 'Charlie', 145.7);
+    const plain = lib([a, b, c], [zone('z1', 'Local', ['a', 'b', 'c'])]);
+    const skipping = lib(
+      [a, b, c],
+      [
+        {
+          ...zone('z1', 'Local', []),
+          members: [
+            { kind: 'channel', channelId: 'a' },
+            { kind: 'channel', channelId: 'b', includeInScanList: 'skip' },
+            { kind: 'channel', channelId: 'c' },
+          ],
+        },
+      ],
+    );
+    const before = project(MM, plain).projection;
+    const after = project(MM, skipping).projection;
+    expect(after.organisation.zones).toEqual([
+      { wireName: 'Local', channelNumbers: [1, 2, 3], scanChannelNumbers: [1, 3] },
+    ]);
+    // The RT95 writer (MMD1) ignores scan sets until its own ticket: same intent, same bytes.
+    const intentBefore = rt95ModDataIntentFromOrganisation(before.organisation, before.channels);
+    const intentAfter = rt95ModDataIntentFromOrganisation(after.organisation, after.channels);
+    expect(intentAfter).toEqual(intentBefore);
+    const image = new Uint8Array(0x4000);
+    expect(encodeRt95ModData(intentAfter!, image).blocks).toEqual(
+      encodeRt95ModData(intentBefore!, image).blocks,
+    );
   });
 
   it('warns about a space in a radio name', () => {

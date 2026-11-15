@@ -35,6 +35,19 @@ export function rt95Mm9pdyZoneOrderedAssembled(assembled: AssembledBuild): Assem
   return { ...assembled, channels: ordered };
 }
 
+/**
+ * The zone's scan set (when it has one) restricted to the members the radio keeps, in their
+ * ascending order. Spread into the finished zone DTO; empty object when the zone has no scan set.
+ */
+export function scanSetWithin(
+  zone: RadioZoneDto,
+  members: readonly number[],
+): Pick<RadioZoneDto, 'scanChannelNumbers'> {
+  if (!zone.scanChannelNumbers) return {};
+  const inSet = new Set(zone.scanChannelNumbers);
+  return { scanChannelNumbers: members.filter((n) => inSet.has(n)) };
+}
+
 export interface Rt95Mm9pdyProjectionInput {
   channels: readonly RadioChannelDto[];
   /** Zones from the shared zone builder, uncapped, wire names already resolved. */
@@ -134,7 +147,11 @@ export function projectRt95Mm9pdy(input: Rt95Mm9pdyProjectionInput): {
         `Zone "${name.text}": the radio steps through its channels in channel-number order.`,
       );
     }
-    zones.push({ wireName: name.text, channelNumbers: ascending });
+    zones.push({
+      wireName: name.text,
+      channelNumbers: ascending,
+      ...scanSetWithin(zone, ascending),
+    });
   }
   if (zones.length > input.maxZones) {
     const dropped = zones.length - input.maxZones;

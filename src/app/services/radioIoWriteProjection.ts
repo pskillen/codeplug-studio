@@ -52,7 +52,12 @@ import {
   rt95Mm9pdyZoneOrderedAssembled,
 } from './radioIoRt95Mm9pdyProjection.ts';
 import { foldRt95StockNames, pushRt95ChannelRoundTripWarnings } from './radioIoRt95Channels.ts';
-import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
+import { hasMxNChannelExpansion, hasZoneScanSet } from '@core/radio-targets/index.ts';
+import { buildZoneBehaviourContext } from '@core/import-export/zoneBehaviourDefaults/index.ts';
+import {
+  resolveZoneScanSets,
+  zoneScanSetChannelNumbers,
+} from '@core/import-export/zoneScanSets/index.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import {
   buildTalkGroupTimeslotCloneIndex,
@@ -1544,6 +1549,34 @@ function buildOpenGd77Zones(
   return zones;
 }
 
+/**
+ * Zone scan set targets: attach each zone's scan set (resolved once in core) as channel numbers.
+ * `zones` must be the uncapped output of {@link buildOpenGd77Zones}, one per assembled zone in order.
+ * Other targets pass through unchanged.
+ */
+function withZoneScanSets(
+  zones: RadioZoneDto[],
+  assembled: AssembledBuild,
+  build: RadioBuild,
+  library: LibrarySlice,
+  numbersBySourceChannelId: Map<string, number[]>,
+): RadioZoneDto[] {
+  if (!hasZoneScanSet(build.radioTargetId)) return zones;
+  const sets = resolveZoneScanSets(
+    assembled,
+    library,
+    buildZoneBehaviourContext(library.zoneDefaults, build.exportSettings),
+  );
+  return zones.map((zone, index) => ({
+    ...zone,
+    scanChannelNumbers: zoneScanSetChannelNumbers(
+      sets[index]?.scanChannelIds ?? [],
+      numbersBySourceChannelId,
+      zone.channelNumbers,
+    ),
+  }));
+}
+
 function stampUv17ProFlatMemoryChannelBehaviour(
   channels: RadioChannelDto[],
   assembled: AssembledBuild,
@@ -2184,14 +2217,20 @@ export function buildRadioWriteProjection(
     );
     const projected = projectRt95Mm9pdy({
       channels: scanStamped,
-      zones: buildOpenGd77Zones(
+      zones: withZoneScanSets(
+        buildOpenGd77Zones(
+          projectionAssembled,
+          build,
+          library,
+          egress,
+          numbersBySourceChannelId,
+          warnings,
+          false,
+        ),
         projectionAssembled,
         build,
         library,
-        egress,
         numbersBySourceChannelId,
-        warnings,
-        false,
       ),
       assembled: projectionAssembled,
       build,
@@ -2218,14 +2257,20 @@ export function buildRadioWriteProjection(
       numbersBySourceChannelId,
     );
     const projected = projectUv5rMiniMm9pdy({
-      zones: buildOpenGd77Zones(
+      zones: withZoneScanSets(
+        buildOpenGd77Zones(
+          projectionAssembled,
+          build,
+          library,
+          egress,
+          numbersBySourceChannelId,
+          warnings,
+          false,
+        ),
         projectionAssembled,
         build,
         library,
-        egress,
         numbersBySourceChannelId,
-        warnings,
-        false,
       ),
       warnings,
     });
