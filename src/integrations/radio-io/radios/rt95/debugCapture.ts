@@ -1,3 +1,4 @@
+import { throwIfAborted } from '../../kit/progress.ts';
 import { evaluateRt95ChipGuard } from './modData/chipGuard.ts';
 import {
   MMD1_BASE,
@@ -24,6 +25,7 @@ export async function readRt95Calibration(
     (_, i) => RT95_CALIBRATION_START + i * 16,
   );
   const blocks = await radio.readBlocks(addresses, { signal });
+  throwIfAborted(signal);
   const bytes = new Uint8Array(RT95_CALIBRATION_LENGTH);
   for (const address of addresses) {
     const block = blocks.get(address);
@@ -42,6 +44,7 @@ export const RT95_GUARD_OUTCOME_SIDECAR = 'debug/rt95-guard.json';
 /** Read both guard blocks before any MMD1 address; transport errors propagate. */
 export async function readRt95Mmd1(radio: Pick<Rt95Protocol, 'readBlocks'>, signal?: AbortSignal) {
   const probes = await radio.readBlocks([RT95_GUARD_IDENT_ADDR, RT95_GUARD_ALIAS_ADDR], { signal });
+  throwIfAborted(signal);
   const ident = probes.get(RT95_GUARD_IDENT_ADDR);
   const alias = probes.get(RT95_GUARD_ALIAS_ADDR);
   if (ident?.length !== 16 || alias?.length !== 16) throw new Error('Invalid RT95 guard block.');
@@ -52,6 +55,7 @@ export async function readRt95Mmd1(radio: Pick<Rt95Protocol, 'readBlocks'>, sign
     (_, i) => MMD1_BASE + i * 16,
   );
   const blocks = await radio.readBlocks(addresses, { signal });
+  throwIfAborted(signal);
   const bytes = new Uint8Array(MMD1_END - MMD1_BASE);
   for (const address of addresses) {
     const block = blocks.get(address);

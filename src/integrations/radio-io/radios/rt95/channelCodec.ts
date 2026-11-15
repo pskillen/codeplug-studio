@@ -108,6 +108,36 @@ function isRecordBlank(raw: Uint8Array): boolean {
   return raw.every((b) => b === 0xff);
 }
 
+/** Whether the modeled numeric fields have valid wire encodings. Width 1 is the radio's 20 kHz setting. */
+export function isRt95ChannelRecordReadable(raw: Uint8Array): boolean {
+  if (raw.length < RT95_CHANNEL_RECORD_SIZE || isRecordBlank(raw)) return false;
+  for (const byte of raw.subarray(0, 8)) {
+    if ((byte & 0x0f) > 9 || byte >> 4 > 9) return false;
+  }
+  if (
+    getBits(raw[9]!, BIT_TXPOWER, 2) > TXPOWER_HIGH ||
+    getBits(raw[10]!, BIT_CHANNEL_WIDTH, 2) > WIDTH_FM
+  )
+    return false;
+  for (const [ctcssBit, dtcsBit, ctcssOffset, dtcsOffset] of [
+    [BIT_CTCSS_ENCODE_EN, BIT_DTCS_ENCODE_EN, 13, 16],
+    [BIT_CTCSS_DECODE_EN, BIT_DTCS_DECODE_EN, 12, 14],
+  ] as const) {
+    if (
+      getBit(raw[11]!, ctcssBit) &&
+      raw[ctcssOffset] !== 0x33 &&
+      ctcssIndexToHz(raw[ctcssOffset]!) == null
+    )
+      return false;
+    if (
+      getBit(raw[11]!, dtcsBit) &&
+      dtcsBitsToCode(raw[dtcsOffset]!, raw[dtcsOffset + 1]! & 1) == null
+    )
+      return false;
+  }
+  return true;
+}
+
 export function decodeChannelRecord(
   raw: Uint8Array,
   slotIndex: number,

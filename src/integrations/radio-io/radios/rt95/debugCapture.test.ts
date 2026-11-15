@@ -58,4 +58,26 @@ describe('RT95 MMD1 guarded read', () => {
     expect(result.bytes).toBeUndefined();
     expect(readBlocks).toHaveBeenCalledOnce();
   });
+  it.each(['guard refusal', 'final table read'])(
+    'rejects cancellation during %s',
+    async (stage) => {
+      const controller = new AbortController();
+      const readBlocks = vi.fn(async (addresses: readonly number[]) => {
+        const guard = addresses[0] === 0x3b00;
+        if ((stage === 'guard refusal' && guard) || (stage === 'final table read' && !guard)) {
+          controller.abort();
+        }
+        return new Map(
+          addresses.map((address) => [
+            address,
+            address === 0x3b00 || (address === 0x7b00 && stage === 'guard refusal')
+              ? ident
+              : new Uint8Array(16).fill(0xff),
+          ]),
+        );
+      });
+      await expect(readRt95Mmd1({ readBlocks }, controller.signal)).rejects.toThrow();
+      expect(readBlocks).toHaveBeenCalledTimes(stage === 'guard refusal' ? 1 : 2);
+    },
+  );
 });

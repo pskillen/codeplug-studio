@@ -1,3 +1,4 @@
+import { MMD1_BASE, MMD1_END } from '@integrations/radio-io/radios/rt95/modData/layout.ts';
 import { RT95_MMD1_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import { RT95_IMAGE_SIZE } from '@integrations/radio-io/radios/rt95/constants.ts';
 import {
@@ -261,14 +262,16 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
               </Text>
             )}
             <Text>
-              MMD1 EEPROM [body]: {archive.regions[RT95_MMD1_REGION_ID]?.length ?? 0} of 8192 bytes
-              captured (0x4000–0x5FFF). The head can return checksum-valid zeros without a body
-              reply; coverage remains partial.
+              MMD1 EEPROM [body]: {archive.regions[RT95_MMD1_REGION_ID]?.length ?? 0} of{' '}
+              {MMD1_END - MMD1_BASE} bytes captured ({formatAddress(MMD1_BASE)}–
+              {formatAddress(MMD1_END - 1)}). The head can return checksum-valid zeros without a
+              body reply; coverage remains partial.
             </Text>
-            {(archive.regions[RT95_MMD1_REGION_ID]?.length ?? 0) < 8192 && (
+            {(archive.regions[RT95_MMD1_REGION_ID]?.length ?? 0) < MMD1_END - MMD1_BASE && (
               <Text>
-                MMD1 {formatAddress(0x4000 + (archive.regions[RT95_MMD1_REGION_ID]?.length ?? 0))}–
-                {formatAddress(0x5fff)} not captured.
+                MMD1{' '}
+                {formatAddress(MMD1_BASE + (archive.regions[RT95_MMD1_REGION_ID]?.length ?? 0))}–
+                {formatAddress(MMD1_END - 1)} not captured.
               </Text>
             )}
             <Text>

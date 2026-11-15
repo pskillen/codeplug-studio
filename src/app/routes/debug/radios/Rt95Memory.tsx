@@ -1,4 +1,7 @@
-import { decodeChannelRecord } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
+import {
+  decodeChannelRecord,
+  isRt95ChannelRecordReadable,
+} from '@integrations/radio-io/radios/rt95/channelCodec.ts';
 import { Alert, Stack, Text, Title } from '@mantine/core';
 import { RT95_MMD1_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import {
@@ -49,6 +52,7 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
     if (!(bit[0]! & (1 << (index % 8)))) return `Slot ${slot}: empty [unknown]`;
     const record = at(index * RT95_CHANNEL_RECORD_SIZE, RT95_CHANNEL_RECORD_SIZE);
     if (!record) return `Slot ${slot}: clone record unavailable [unknown]`;
+    if (!isRt95ChannelRecordReadable(record)) return `Slot ${slot}: unreadable record [unknown]`;
     try {
       const channel = decodeChannelRecord(record, slot);
       return `Slot ${slot}: ${channel.empty ? 'unreadable record' : channel.wireName || '(unnamed)'} [unknown]`;

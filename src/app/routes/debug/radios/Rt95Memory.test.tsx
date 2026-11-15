@@ -5,6 +5,8 @@ import {
   packRadioBackupZip,
   type RadioBackupManifestV1,
 } from '@integrations/radio-io/backup/index.ts';
+import { encodeChannelRecord } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
+import { RT95_OCCUPIED_BITFIELD_OFFSET } from '@integrations/radio-io/radios/rt95/constants.ts';
 import { encodeRt95ModData } from '@integrations/radio-io/radios/rt95/modData/encode.ts';
 import { openDebugArchive } from './captureArchive.ts';
 import { Rt95Memory } from './Rt95Memory.tsx';
@@ -69,6 +71,54 @@ describe('RT95 MMD1 viewer', () => {
     );
     expect(screen.queryByText(/MM9PDY-compatible data present/)).not.toBeInTheDocument();
     expect(screen.getByText(/Guard evidence unverified/)).toBeInTheDocument();
+  });
+  it.each([
+    ['receive BCD', 0, 0xfa],
+    ['offset BCD', 4, 0xaf],
+    ['power enum', 9, 0x0c],
+    ['width enum', 10, 0x0c],
+    ['tone enum', 13, 0xff],
+  ])('marks an occupied record with corrupt %s unreadable', (_, offset, value) => {
+    const bytes = new Uint8Array(8192).fill(255);
+    for (const block of encodeRt95ModData(
+      { zones: [{ name: 'TEST', channelIndexes: [0] }], descriptions: [] },
+      new Uint8Array(),
+    ).blocks)
+      bytes.set(block.bytes, block.address - 0x4000);
+    const clone = new Uint8Array(RT95_OCCUPIED_BITFIELD_OFFSET + 1);
+    clone.set(
+      encodeChannelRecord({
+        slotIndex: 1,
+        empty: false,
+        wireName: 'VALID',
+        rxHz: 145500000,
+        txHz: 145500000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'FM',
+      }),
+    );
+    if (offset === 13) clone[11] = 1;
+    clone[offset] = value;
+    clone[RT95_OCCUPIED_BITFIELD_OFFSET] = 1;
+    const a = archive(bytes);
+    a.regions['programming-image'] = clone;
+    a.manifest.regions.push({
+      id: 'programming-image',
+      label: 'Clone',
+      address: 0,
+      byteLength: clone.length,
+      path: 'regions/image.bin',
+      restoreRole: 'inspect-only',
+    });
+    render(
+      <MantineProvider>
+        <Rt95Memory archive={a} />
+      </MantineProvider>,
+    );
+    expect(screen.getByText(/Slot 1: unreadable record/)).toBeInTheDocument();
+    expect(screen.queryByText(/Slot 1: VALID/)).not.toBeInTheDocument();
   });
   it.each([
     [255, 'blank or absent'],
