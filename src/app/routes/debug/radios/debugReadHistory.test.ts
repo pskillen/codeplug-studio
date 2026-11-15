@@ -1,6 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import { getDebugReadHistory } from './debugReadHistory.ts';
 import { exampleArchive } from './debugReadHistory.fixture.ts';
+import { buildDebugReadHistoryZip, openDebugReadHistoryZip } from './debugReadHistoryArchive.ts';
+
+describe('debug read history labels', () => {
+  it('relabels one read, keeps the others, and survives a history zip round trip', () => {
+    const descriptor = { slug: 'history-labels', archiveModelId: 'AT-D890UV' };
+    const store = getDebugReadHistory(descriptor);
+    store.clear();
+    const a = store.add(exampleArchive());
+    const b = store.add(exampleArchive('2026-01-02T00:00:00Z'));
+    store.markDownloaded([a.id, b.id]);
+    store.setLabels(a.id, { radioName: 'Radio 1', label: 'Before', description: ' note ' });
+    const [first, second] = store.getSnapshot().entries;
+    expect(first?.archive.manifest).toMatchObject({
+      radioName: 'Radio 1',
+      label: 'Before',
+      description: 'note',
+    });
+    expect(second?.archive.manifest.radioName).toBeUndefined();
+    // The saved zip changed, so that live read is not downloaded any more.
+    expect(store.getSnapshot().undownloaded).toBe(1);
+    expect(Array.from(first!.archive.regions.a!)).toEqual([1, 2]);
+    const zip = buildDebugReadHistoryZip(descriptor, store.getSnapshot().entries);
+    const reopened = openDebugReadHistoryZip(zip, descriptor);
+    expect(reopened[0]?.manifest.radioName).toBe('Radio 1');
+    expect(reopened[1]?.manifest.radioName).toBeUndefined();
+    store.setLabels(a.id, {});
+    expect(store.getSnapshot().entries[0]?.archive.manifest.radioName).toBeUndefined();
+  });
+});
 
 describe('debug read history', () => {
   it('retains all reads, stable snapshots and safe download IDs across clear', () => {

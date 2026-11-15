@@ -19,6 +19,9 @@ export interface RadioBackupThisSession {
   readonly at: number;
   /** Optional label shown under the radio, for example "Backup, before range change". */
   readonly note?: string;
+  /** Operator's own radio name and backup label from the backup's descriptive fields. */
+  readonly userRadioName?: string;
+  readonly userLabel?: string;
 }
 
 /** How an entry reads everywhere: the name with the model beneath, or the model alone. */

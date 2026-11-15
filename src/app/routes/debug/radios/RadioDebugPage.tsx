@@ -41,6 +41,12 @@ import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { Uv5rMiniCompare } from './Uv5rMiniCompare.tsx';
 import { isUv5rMiniReadsZip, openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
 import { archiveUv5rMiniRead } from './uv5rMiniCapture.ts';
+import BackupLabelFields from '@app/components/builds/BackupLabelFields.tsx';
+import {
+  normaliseBackupLabels,
+  type RadioBackupLabels,
+} from '@integrations/radio-io/backup/index.ts';
+import { relabelDebugArchive } from './captureArchive.ts';
 import { getDebugReadHistory, useDebugReadHistory } from './debugReadHistory.ts';
 import { DebugReadHistoryControls } from './DebugReadHistoryControls.tsx';
 import { isDebugReadHistoryZip, openDebugReadHistoryZip } from './debugReadHistoryArchive.ts';
@@ -83,6 +89,8 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [unsaved]);
+  /** Descriptive fields typed before a read; stored in the new capture's manifest. */
+  const [captureLabels, setCaptureLabels] = useState<RadioBackupLabels>({});
   const [preferredLive, setPreferredLive] = useState<string | null>(null);
   const [error, setError] = useState<string>();
   const [reading, setReading] = useState(false);
@@ -167,10 +175,14 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
         signal: controller.current.signal,
         onProgress: (p) => setProgress(p.msg),
       });
+      // A capture with no notes is stored exactly as the capture path produced it.
+      const labelled = Object.keys(normaliseBackupLabels(captureLabels)).length
+        ? relabelDebugArchive(result, captureLabels)
+        : result;
       if (historyEnabled) {
-        const added = store.add(result);
+        const added = store.add(labelled);
         if (descriptor.slug === 'uv-5r-mini') setPreferredLive(`Live ${added.label}`);
-      } else setArchive(result);
+      } else setArchive(labelled);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Radio read failed.');
     } finally {
@@ -399,6 +411,14 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                   : 'Live radio capture is not available yet.'}
               </Text>
               {descriptor.capture && (
+                <BackupLabelFields
+                  idPrefix="debug-capture"
+                  value={captureLabels}
+                  onCommit={setCaptureLabels}
+                  disabled={reading}
+                />
+              )}
+              {descriptor.capture && (
                 <Group>
                   <Button onClick={readRadio} loading={reading}>
                     Read radio
@@ -468,6 +488,25 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                         : archive.manifest.capturedAt + archive.zipBytes.length
                     }
                     archive={archive}
+                  />
+                  <Text fw={600}>Your notes on this capture</Text>
+                  <BackupLabelFields
+                    idPrefix="debug-selected"
+                    value={{
+                      radioName: archive.manifest.radioName,
+                      label: archive.manifest.label,
+                      description: archive.manifest.description,
+                    }}
+                    onCommit={(next) => {
+                      try {
+                        if (historyEnabled) {
+                          if (history.selectedId) store.setLabels(history.selectedId, next);
+                        } else setArchive(relabelDebugArchive(archive, next));
+                        setError(undefined);
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : 'Could not save notes.');
+                      }
+                    }}
                   />
                   <Button
                     onClick={async () => {
