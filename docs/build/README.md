@@ -75,6 +75,8 @@ Pull requests and pushes to `main` run [`../../.github/workflows/pull-request.ya
 
 `format:check` → `lint` → `test` → `build` → `e2e` (Playwright)
 
+**Docs-only fast path.** A PR whose changed files are all markdown (`*.md`) or under `docs/` still runs both required jobs (`check` and `e2e`), so the `main` ruleset gets its status checks, but each decides this in a first "Decide scope" step and skips everything heavy: `check` keeps `npm ci` and `format:check` (Prettier covers markdown); `e2e` skips every step after the decision. Anything else, including `.github/**`, configs and `public/**`, runs the full jobs. The decision reads the PR merge commit (`HEAD^1..HEAD`), so it works for fork and same-repo PRs; if it cannot be made it falls back to the full run. Do not add workflow-level `paths` / `paths-ignore`: a skipped workflow never reports and blocks the merge.
+
 ## Android APK
 
 Signed release APKs use the reusable [`.github/workflows/android-release.yaml`](../../.github/workflows/android-release.yaml), called from the same thin wrappers as Pages ([`dev.yaml`](../../.github/workflows/dev.yaml), [`main.yaml`](../../.github/workflows/main.yaml), [`staging.yaml`](../../.github/workflows/staging.yaml), [`prod.yaml`](../../.github/workflows/prod.yaml)):

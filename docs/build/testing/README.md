@@ -73,7 +73,18 @@ Every pull request and push to `main` runs [`.github/workflows/pull-request.yaml
 | Coverage           | —                         | **Planned**        |                                                                                                            |
 | E2e                | `npm run test:e2e`        | Yes (separate job) | Playwright on `vite preview`; consent smoke                                                                |
 
-Docs-only PRs: `format:check` + link audit is sufficient.
+Docs-only PRs (every changed file is `*.md` or under `docs/`) run `format:check` only: the workflow's "Decide scope" step skips lint, tests, CPS verify, build and e2e, while both required jobs still report. See [CI in the build docs](../README.md#ci).
+
+## Vitest projects
+
+`vite.config.ts` splits Vitest into two projects that together cover exactly the files the single config used to (same `exclude`, aliases, `define`, `globals`, `pool`):
+
+| Project | Environment | Files                                                                                                        | Setup                                                  |
+| ------- | ----------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| `dom`   | jsdom       | `src/app/**`, plus the `src/core` / `src/integrations` files listed in `DOM_TESTS_OUTSIDE_APP` in the config | `src/test/setup.ts` (shared) + `src/test/setup.dom.ts` |
+| `node`  | node        | everything else under `src/`                                                                                 | `src/test/setup.ts` (shared)                           |
+
+`setup.ts` holds the AT-D890 leaked-marker guard (it tolerates a missing `localStorage`); `setup.dom.ts` holds `matchMedia`, `ResizeObserver` and jest-dom. A `core` / `integrations` test that needs the DOM goes in `DOM_TESTS_OUTSIDE_APP` with a one-line reason; a new test that fails under node because it touches `window`, `document` or `localStorage` is added there, not rewritten. `npm run test` and `npm run test:watch` run both projects with no flags; `test-results/junit.xml` is still written in CI.
 
 ## Where to add tests
 
