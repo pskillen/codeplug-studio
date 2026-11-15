@@ -63,7 +63,8 @@ describe('runAtD890ConfigAliasCheck', () => {
     const memory = new Map<number, Uint8Array>();
     for (const pair of AT_D890_CONFIG_ALIAS_PAIRS) {
       const base = new Uint8Array(pair.length).fill(0xff);
-      base[0] = 0x01;
+      base[0] = pair.base === D890_MAP.LocalInfo ? 0 : 0x01;
+      if (pair.base === D890_MAP.LocalInfo) base[1] = 0;
       const alias = new Uint8Array(pair.length).fill(0xff);
       alias[0] = 0x02;
       memory.set(pair.base, base);
@@ -85,6 +86,8 @@ describe('runAtD890ConfigAliasCheck', () => {
 
   it('reports replan when LocalInfo aliases', async () => {
     const local = new Uint8Array(D890_MAP.LocalInfoLength).fill(0xff);
+    local[0] = 0;
+    local[1] = 0;
     local.set(new TextEncoder().encode('SN1234567890ABCD'), 0x30);
     const memory = new Map<number, Uint8Array>([
       [D890_MAP.LocalInfo, local],
@@ -110,6 +113,8 @@ describe('runAtD890ProbeInspect', () => {
   function scriptInspect(channelSet: Uint8Array, cell: (a: number) => Uint8Array) {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890Connect(pipe);
+    pipe.readResponder = (address, length) =>
+      address === D890_MAP.LocalInfo ? new Uint8Array(length) : null;
     enqueueAtD890ReadReply(pipe, D890_MAP.ChannelSet, channelSet);
     for (const { address } of sentinels) enqueueAtD890ReadReply(pipe, address, cell(address));
     return pipe;
@@ -149,6 +154,7 @@ describe('runAtD890ProbePaint', () => {
   function scriptPaint(channelSet: Uint8Array): AtD890ScriptedPipe {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890Connect(pipe);
+    enqueueAtD890ReadReply(pipe, D890_MAP.LocalInfo, new Uint8Array(16));
     enqueueAtD890ReadReply(pipe, D890_MAP.ChannelSet, channelSet);
     scriptAtD890WriteAck(pipe, sentinels.length);
     return pipe;
@@ -189,8 +195,11 @@ describe('runAtD890ProbeVerifyAndMark', () => {
   function scriptVerify(states: (a: number) => Uint8Array): AtD890ScriptedPipe {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890Connect(pipe);
+    enqueueAtD890ReadReply(pipe, D890_MAP.LocalInfo, new Uint8Array(16));
     for (const { address } of sentinels) enqueueAtD890ReadReply(pipe, address, states(address));
-    scriptAtD890WriteAck(pipe, 1);
+    pipe.autoAckWrites = true;
+    pipe.readResponder = (address, length) =>
+      address === D890_MAP.LocalInfo ? new Uint8Array(length) : null;
     return pipe;
   }
 
@@ -239,6 +248,8 @@ describe('runAtD890ProbeDiagnose', () => {
   function scriptDiagnose(cell: (a: number) => Uint8Array): AtD890ScriptedPipe {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890Connect(pipe);
+    pipe.readResponder = (address, length) =>
+      address === D890_MAP.LocalInfo ? new Uint8Array(length) : null;
     for (const { address } of sentinels) enqueueAtD890ReadReply(pipe, address, cell(address));
     return pipe;
   }
@@ -273,6 +284,8 @@ describe('runAtD890ProbeMeasure', () => {
     const unitStart = Math.floor(AT_D890_PROBE.MARKER_ADDRESS / unitBytes) * unitBytes;
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890Connect(pipe);
+    pipe.readResponder = (address, length) =>
+      address === D890_MAP.LocalInfo ? new Uint8Array(length) : null;
     for (const { address } of sentinels) {
       const erased = address >= unitStart && address < unitStart + unitBytes;
       enqueueAtD890ReadReply(pipe, address, erased ? ERASED : makeAtD890ProbeSentinel(address));
