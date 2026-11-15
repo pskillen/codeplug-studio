@@ -160,8 +160,8 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
             {dm32.window ? (
               <>
                 <Text size="sm">
-                  {formatAddress(dm32.window.start)}–{formatAddress(dm32.window.end + 0xfff)} from
-                  the archive&apos;s stated window ·{' '}
+                  {formatAddress(dm32.window.start)}–{formatAddress(dm32.windowLast!)} from the
+                  archive&apos;s stated window ·{' '}
                   {dm32.blocks.filter((b) => b.status === 'captured').length} of{' '}
                   {dm32.blocks.length} blocks captured
                   {dm32.discoveryRecorded
