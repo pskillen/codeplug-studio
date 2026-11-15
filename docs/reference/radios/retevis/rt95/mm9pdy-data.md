@@ -31,6 +31,8 @@ image is `0x0000`-`0x329F`; nothing of ours lives between `0x32A0` and `0x3AFF`.
 | Stock targets        | Never write, read-modify or clear `0x4000`-`0x5FFF`                                                                                                                                                                                                                                   |
 | Empty table          | Zero zones and no descriptions is a valid header and is written; it retires an older table                                                                                                                                                                                            |
 
+Studio also refuses any range touching the protected EEPROM region `0x3B00–0x3FFF` or its 16 KiB and 32 KiB aliases, and rejects wrapping or overflowing ranges.
+
 The guard and the allowed-address rules are interlocks in code, each with a refusal test; no flag turns one off. Limits (32 zones, 12-character
 zone names, 12-character descriptions) are in [limits.md](limits.md).
 
