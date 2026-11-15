@@ -12,7 +12,15 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Uv5rMiniCalibrationSection from '../Uv5rMiniCalibrationSection.tsx';
+import {
+  buildUv5rMiniReadsZip,
+  useUv5rMiniDebugReads,
+  uv5rMiniDebugReadStore,
+  type Uv5rMiniDebugRead,
+} from '../uv5rMiniDebugReads.ts';
+import { hashUv5rMiniDebugSpans } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
 import { openDebugArchive, uv5rMiniArchiveDetails, type DebugArchive } from './captureArchive.ts';
 import { Link, useParams } from 'react-router-dom';
@@ -20,6 +28,10 @@ import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { radioDebugDescriptors } from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
 import { Coverage } from './Coverage.tsx';
+import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
+import { Uv5rMiniCompare } from './Uv5rMiniCompare.tsx';
+import { openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
+import { archiveUv5rMiniRead } from './uv5rMiniCapture.ts';
 
 export default function RadioDebugPage() {
   const { radio } = useParams();
@@ -27,11 +39,38 @@ export default function RadioDebugPage() {
 }
 
 function RadioDebugProfile({ radio }: { radio: string | undefined }) {
+  const { reads, undownloaded } = useUv5rMiniDebugReads();
+  useEffect(() => {
+    if (!undownloaded) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [undownloaded]);
+  const [legacyReads, setLegacyReads] = useState<readonly Uv5rMiniDebugRead[]>([]);
   const [archive, setArchive] = useState<DebugArchive>();
   const [error, setError] = useState<string>();
   const [reading, setReading] = useState(false);
   const [progress, setProgress] = useState('');
   const controller = useRef<AbortController | null>(null);
+  useEffect(() => () => controller.current?.abort(), []);
+  const offlineRead: Uv5rMiniDebugRead | undefined =
+    archive?.manifest.radioModelId === 'UV-5R Mini' &&
+    archive.source === 'file' &&
+    archive.regions.clone?.length === 0x10000
+      ? {
+          label: 'Archive',
+          readAt: new Date(archive.manifest.capturedAt),
+          raw: archive.sidecars['debug/wire.bin']!,
+          decoded: archive.regions.clone,
+          ident: { f: archive.sidecars['debug/f.bin']!, m: archive.sidecars['debug/m.bin']! },
+          spans: hashUv5rMiniDebugSpans(archive.regions.clone),
+        }
+      : undefined;
+  const allReads = [
+    ...reads,
+    ...legacyReads,
+    ...(offlineRead && !legacyReads.length ? [offlineRead] : []),
+  ];
   const miniReport = archive && uv5rMiniArchiveDetails(archive)?.report;
   const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
   if (!descriptor)
@@ -46,10 +85,25 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const openFile = async (file: File | null) => {
     if (!file) return;
     try {
-      const next = openDebugArchive(
-        new Uint8Array(await file.arrayBuffer()),
-        descriptor.archiveModelId,
-      );
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      let next: DebugArchive;
+      let imported: readonly Uv5rMiniDebugRead[] = [];
+      try {
+        next = openDebugArchive(bytes, descriptor.archiveModelId);
+      } catch (error) {
+        if (descriptor.slug !== 'uv-5r-mini') throw error;
+        imported = openUv5rMiniReadsZip(bytes).map((read) => ({
+          ...read,
+          label: `File ${read.label}`,
+        }));
+        const last = imported.at(-1)!;
+        next = {
+          ...archiveUv5rMiniRead(last, last.readAt.toISOString()),
+          source: 'file',
+          zipBytes: bytes,
+        };
+      }
+      setLegacyReads(imported);
       setArchive(next);
       setError(undefined);
     } catch (err) {
@@ -210,6 +264,31 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 image. Unlisted bytes are not captured; coverage outside the listed ranges is
                 unknown.
               </Alert>
+              {descriptor.slug === 'uv-5r-mini' && reads.length > 0 && (
+                <Stack>
+                  <Text>
+                    Reads in this tab:{' '}
+                    {reads
+                      .map((read) => `${read.label} (${read.readAt.toLocaleString()})`)
+                      .join(', ')}
+                  </Text>
+                  <Text>
+                    {undownloaded ? `${undownloaded} reads not downloaded` : 'All reads downloaded'}
+                  </Text>
+                  <Button
+                    onClick={async () => {
+                      const result = await downloadZip(
+                        buildUv5rMiniReadsZip(reads),
+                        'uv5r-mini-reads.zip',
+                      );
+                      if (result.status !== 'failed')
+                        uv5rMiniDebugReadStore.markAllDownloaded(reads.length);
+                    }}
+                  >
+                    Download all reads
+                  </Button>
+                </Stack>
+              )}
               {archive && (
                 <Stack>
                   <Coverage
@@ -224,15 +303,28 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
             </Stack>
           </Tabs.Panel>
           <Tabs.Panel value="memory" pt="md">
-            <MemoryViewer archive={archive} />
+            {archive?.manifest.radioModelId === 'UV-5R Mini' ? (
+              <Uv5rMiniMemory archive={archive} />
+            ) : (
+              <MemoryViewer archive={archive} />
+            )}
           </Tabs.Panel>
           <Tabs.Panel value="hex" pt="md">
             <HexViewer key={archive?.manifest.capturedAt} archive={archive} />
           </Tabs.Panel>
           <Tabs.Panel value="compare" pt="md">
-            <CompareViewer archive={archive} modelId={descriptor.archiveModelId} />
+            {descriptor.slug === 'uv-5r-mini' ? (
+              <Uv5rMiniCompare reads={allReads} />
+            ) : (
+              <CompareViewer archive={archive} modelId={descriptor.archiveModelId} />
+            )}
           </Tabs.Panel>
-          {['Calibration', 'Trace'].map((tab) => (
+          {descriptor.slug === 'uv-5r-mini' && (
+            <Tabs.Panel value="calibration" pt="md">
+              <Uv5rMiniCalibrationSection reads={allReads} />
+            </Tabs.Panel>
+          )}
+          {(descriptor.slug === 'uv-5r-mini' ? ['Trace'] : ['Calibration', 'Trace']).map((tab) => (
             <Tabs.Panel key={tab} value={tab.toLowerCase()} pt="md">
               <Alert title={`${tab} unavailable`}>
                 {tab === 'Trace'

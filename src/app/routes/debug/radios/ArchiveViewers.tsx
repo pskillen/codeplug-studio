@@ -26,24 +26,38 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
   const [page, setPage] = useState(0);
   if (!archive)
     return <Alert title="No capture">Open or read a capture to inspect its bytes.</Alert>;
+  const wire = selected === '__mini_wire' ? archive.sidecars['debug/wire.bin'] : undefined;
   const region =
     archive.manifest.regions.find((r) => r.id === selected) ?? archive.manifest.regions[0];
   if (!region) return <Alert>No captured regions.</Alert>;
-  const bytes = archive.regions[region.id]!;
+  const bytes = wire ?? archive.regions[region.id]!;
   const pages = Math.max(1, Math.ceil(bytes.length / HEX_PAGE_BYTES));
   const current = Math.min(page, pages - 1);
   return (
     <Stack>
       <Title order={3}>Hex &amp; region map</Title>
       <Text size="sm">
-        {regionIdentity(archive, region.id)?.representation ??
-          'Archive bytes; wire or decoded representation is not recorded'}
-        . Gaps are never displayed as bytes.
+        {wire
+          ? 'Wire bytes as received'
+          : archive.manifest.radioModelId === 'UV-5R Mini' && region.id === 'clone'
+            ? 'Decoded clone bytes'
+            : (regionIdentity(archive, region.id)?.representation ??
+              'Archive bytes; wire or decoded representation is not recorded')}
+        .{' '}
+        {archive.manifest.radioModelId === 'UV-5R Mini' && region.id.startsWith('mem-') && !wire
+          ? 'Addresses shown are packed offsets, not radio addresses. '
+          : ''}
+        Gaps are never displayed as bytes.
       </Text>
       <Select
         label="Region"
-        value={region.id}
-        data={archive.manifest.regions.map((r) => ({ value: r.id, label: r.label }))}
+        value={wire ? '__mini_wire' : region.id}
+        data={[
+          ...archive.manifest.regions.map((r) => ({ value: r.id, label: r.label })),
+          ...(archive.sidecars['debug/wire.bin']
+            ? [{ value: '__mini_wire', label: 'Wire bytes as received' }]
+            : []),
+        ]}
         onChange={(id) => {
           setSelected(id);
           setPage(0);
@@ -52,11 +66,11 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
       />
       <Card withBorder>
         <Text fw={600}>
-          {region.label} · {bytes.length} bytes
+          {wire ? 'Wire bytes as received' : region.label} · {bytes.length} bytes
         </Text>
         <div style={{ overflowX: 'auto' }}>
           <pre aria-label="Hexadecimal bytes">
-            {hexRows(bytes, region.address, current)
+            {hexRows(bytes, wire ? 0 : region.address, current)
               .map((row) => `${formatAddress(row.address)}  ${row.hex.padEnd(47)}  ${row.ascii}`)
               .join('\n') || 'Empty region'}
           </pre>
