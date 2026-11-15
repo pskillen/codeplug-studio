@@ -12,6 +12,11 @@ import {
   type Dm32ChannelEntry,
   type Dm32ChannelInventory,
 } from '@integrations/radio-io/radios/dm32uv/debugMemory.ts';
+import {
+  projectDm32MemoryLists,
+  type Dm32ScanListInventory,
+} from '@integrations/radio-io/radios/dm32uv/debugMemoryZones.ts';
+import { ScanListsPanel, ZonesPanel } from './Dm32MemoryZones.tsx';
 import { archiveKey } from './viewerUtils.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
@@ -93,7 +98,16 @@ function cell(row: ChannelRow, value: (c: RadioChannelDto) => string | number | 
 
 const digital = (c: RadioChannelDto) => c.mode !== undefined && c.mode !== 'analog';
 
-function channelColumns(): DataTableColumn<ChannelRow>[] {
+/** A channel's raw scan list id resolved against the scan lists of the same capture. */
+function scanListText(id: number | undefined, scanLists: Dm32ScanListInventory): string {
+  if (id == null || id === 0) return 'None';
+  if (scanLists.status !== 'captured') return `${id} (raw; scan lists not captured)`;
+  const state = scanLists.entries[id - 1]?.state;
+  if (state?.kind !== 'decoded') return `${id} (absent)`;
+  return `${id}: ${state.name || '(unnamed)'}`;
+}
+
+function channelColumns(scanLists: Dm32ScanListInventory): DataTableColumn<ChannelRow>[] {
   return [
     {
       key: 'slot',
@@ -183,7 +197,7 @@ function channelColumns(): DataTableColumn<ChannelRow>[] {
       key: 'scan',
       header: 'Scan list',
       width: '6rem',
-      render: (r) => cell(r, (c) => (c.scanListId == null ? 'None' : `${c.scanListId} (raw)`)),
+      render: (r) => cell(r, (c) => scanListText(c.scanListId, scanLists)),
     },
     {
       key: 'rxGroup',
@@ -221,8 +235,14 @@ const matches = (query: string, ...haystack: string[]) => {
   return !q || haystack.some((h) => h.toLocaleLowerCase().includes(q));
 };
 
-function ChannelsPanel({ channels }: { channels: Dm32ChannelInventory }) {
-  const columns = useMemo(() => channelColumns(), []);
+function ChannelsPanel({
+  channels,
+  scanLists,
+}: {
+  channels: Dm32ChannelInventory;
+  scanLists: Dm32ScanListInventory;
+}) {
+  const columns = useMemo(() => channelColumns(scanLists), [scanLists]);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
   const rows = useMemo(() => channels.entries.map(channelRow), [channels]);
@@ -256,8 +276,9 @@ function ChannelsPanel({ channels }: { channels: Dm32ChannelInventory }) {
       <Text size="sm" c="dimmed">
         Slots without a captured record are listed as not captured; a missing capture does not mean
         a slot is unused. Each identity is the radio&apos;s single name field, shown complete
-        including any callsign; separate callsign and name data is unavailable. Scan list, RX group
-        and TX contact are raw numbers: they are not resolved against other inventories yet.
+        including any callsign; separate callsign and name data is unavailable. The scan list
+        resolves against the scan lists of this capture; RX group and TX contact are raw numbers,
+        not resolved yet.
         {!channels.txContactBlocks.low || !channels.txContactBlocks.high
           ? ' Some TX contact pages were not captured.'
           : ''}
@@ -292,8 +313,6 @@ function ChannelsPanel({ channels }: { channels: Dm32ChannelInventory }) {
 }
 
 const PLACEHOLDERS: { value: string; label: string; piece: string }[] = [
-  { value: 'zones', label: 'Zones', piece: 'the next piece' },
-  { value: 'scan-lists', label: 'Scan lists', piece: 'the next piece' },
   { value: 'talk-groups', label: 'Talk groups', piece: 'a later piece' },
   { value: 'rx-groups', label: 'RX groups', piece: 'a later piece' },
   { value: 'contacts', label: 'Contacts', piece: 'a later piece' },
@@ -316,7 +335,7 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
   const projection = useMemo(
     () =>
       archive.manifest.radioModelId === MODEL_ID
-        ? projectDm32Memory(buildDm32SparseCapture(archive))
+        ? projectDm32MemoryLists(projectDm32Memory(buildDm32SparseCapture(archive)))
         : undefined,
     [archive],
   );
@@ -355,6 +374,8 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
       <Tabs defaultValue="channels" keepMounted={false}>
         <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
           <Tabs.Tab value="channels">Channels</Tabs.Tab>
+          <Tabs.Tab value="zones">Zones</Tabs.Tab>
+          <Tabs.Tab value="scan-lists">Scan lists</Tabs.Tab>
           {PLACEHOLDERS.map((p) => (
             <Tabs.Tab key={p.value} value={p.value}>
               {p.label}
@@ -362,7 +383,13 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
           ))}
         </Tabs.List>
         <Tabs.Panel value="channels" pt="md">
-          <ChannelsPanel channels={projection.channels} />
+          <ChannelsPanel channels={projection.channels} scanLists={projection.scanLists} />
+        </Tabs.Panel>
+        <Tabs.Panel value="zones" pt="md">
+          <ZonesPanel zones={projection.zones} />
+        </Tabs.Panel>
+        <Tabs.Panel value="scan-lists" pt="md">
+          <ScanListsPanel scanLists={projection.scanLists} />
         </Tabs.Panel>
         {PLACEHOLDERS.map((p) => (
           <Tabs.Panel key={p.value} value={p.value} pt="md">

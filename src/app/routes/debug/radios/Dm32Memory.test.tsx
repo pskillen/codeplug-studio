@@ -106,9 +106,98 @@ describe('Dm32Memory', () => {
 
   it('shows placeholders for sections not yet decoded', async () => {
     show(await archiveDm32Capture(channelCapture(['A'])));
-    fireEvent.click(screen.getByRole('tab', { name: 'Zones' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Talk groups' }));
     expect(screen.getByText('Not yet available')).toBeInTheDocument();
-    for (const name of ['Scan lists', 'Talk groups', 'RX groups', 'Contacts', 'Settings'])
+    for (const name of ['Zones', 'Scan lists', 'RX groups', 'Contacts', 'Settings'])
       expect(screen.getByRole('tab', { name })).toBeInTheDocument();
+  });
+
+  /** Channels ONE, TWO; zones Alpha [2, 1, 1, 9] and Beta []; scan list "Scan" [2]. */
+  function listsCapture(): Dm32DebugCapture {
+    const channels = dm32Page(0x12);
+    channels[0] = 2;
+    channels.set(record('ONE', '14500000'), 0x10);
+    channels.set(record('TWO', '14600000'), 0x10 + 48);
+    channels[0x10 + 0x19] = 0x01; // scan list 1
+    const zones = dm32Page(0x5c);
+    zones.fill(0xff, 16, 4095);
+    zones[0] = 2;
+    const put = (i: number, name: string, members: number[]) => {
+      const off = 16 + i * 145;
+      zones.fill(0xff, off, off + 145);
+      zones.set(new TextEncoder().encode(name), off);
+      zones[off + name.length] = 0;
+      zones[off + 16] = members.length;
+      members.forEach((m, k) => {
+        zones[off + 17 + k * 2] = m;
+        zones[off + 18 + k * 2] = 0;
+      });
+    };
+    put(0, 'Alpha', [2, 1, 1, 9]);
+    put(1, 'Beta', []);
+    const scan = dm32Page(0x11);
+    scan[0] = 1;
+    scan.set(new TextEncoder().encode('Scan'), 1);
+    scan[1 + 0x0b] = 2;
+    scan[1 + 0x1a] = 2;
+    return dm32Capture({
+      discovered: [
+        { address: 0x1000, metadata: 0x12, type: 'channel' },
+        { address: 0x2000, metadata: 0x5c, type: 'unknown' },
+        { address: 0x3000, metadata: 0x11, type: 'unknown' },
+      ],
+      window: { start: 0x1000, end: 0x3000 },
+      rawRange: { start: 0x1000, end: 0x3fff },
+      blocks: new Map([
+        [0x1000, channels],
+        [0x2000, zones],
+        [0x3000, scan],
+      ]),
+    });
+  }
+
+  it('lists zones, resolves members of the selected zone, searches and sorts', async () => {
+    show(await archiveDm32Capture(listsCapture()));
+    fireEvent.click(screen.getByRole('tab', { name: 'Zones' }));
+    expect(screen.getByText('Alpha')).toBeInTheDocument();
+    expect(screen.getByText('Beta')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Alpha'));
+    const region = screen.getByRole('region', { name: 'Zone 1 members' });
+    expect(region).toHaveTextContent('TWO');
+    expect(region).toHaveTextContent('Not captured: that channel record was not read');
+    fireEvent.change(screen.getByPlaceholderText('Search zones'), { target: { value: 'beta' } });
+    expect(screen.queryByText('Alpha')).toBeNull();
+    fireEvent.change(screen.getByPlaceholderText('Search zones'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: /Name/ }));
+    expect(screen.getByText('Alpha')).toBeInTheDocument();
+  });
+
+  it('lists scan lists and resolves the channel scan list id', async () => {
+    show(await archiveDm32Capture(listsCapture()));
+    expect(screen.getByText('1: Scan')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Scan lists' }));
+    fireEvent.click(screen.getByText('Scan'));
+    const region = screen.getByRole('region', { name: 'Scan list 1 members' });
+    expect(region).toHaveTextContent('TWO');
+    expect(region).toHaveTextContent('+0x0D (hang)');
+  });
+
+  it('says zones are not captured rather than empty, and resets selection on replace', async () => {
+    const view = show(await archiveDm32Capture(listsCapture()));
+    fireEvent.click(screen.getByRole('tab', { name: 'Zones' }));
+    fireEvent.click(screen.getByText('Alpha'));
+    view.replace(
+      await archiveDm32Capture(
+        dm32Capture({
+          discovered: [
+            { address: 0x1000, metadata: 0x12, type: 'channel' },
+            { address: 0x2000, metadata: 0x5c, type: 'unknown' },
+          ],
+        }),
+      ),
+    );
+    fireEvent.click(screen.getByRole('tab', { name: 'Zones' }));
+    expect(screen.getByText(/does not mean the radio has no zones/i)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Zone 1 members' })).toBeNull();
   });
 });
