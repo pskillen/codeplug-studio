@@ -198,6 +198,8 @@ function TableGroup({
     ...seriesFor(overlayTables, overlayLabel, true),
   ];
   const length = first.length;
+  // The numeric table is hundreds of cells per group and starts collapsed, so build it on open.
+  const [tableOpen, setTableOpen] = useState(false);
   return (
     <Card withBorder>
       <Stack gap="xs">
@@ -236,54 +238,56 @@ function TableGroup({
         ) : (
           <Alert title="Not captured">No entries of these tables were captured.</Alert>
         )}
-        <details>
+        <details onToggle={(event) => setTableOpen(event.currentTarget.open)}>
           <summary>
             <Text span size="sm">
               Numeric table
             </Text>
           </summary>
-          <Table.ScrollContainer minWidth={480}>
-            <Table striped fz="xs">
-              <Table.Caption>
-                {title}: raw entries and difference from the reference entry
-              </Table.Caption>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Index</Table.Th>
-                  {tables.map((t) => (
-                    <Table.Th key={t.id}>
-                      {t.group === 'power' ? `Sel ${t.selection}` : t.path} {offsetText(t.offset)} ·
-                      raw / Δref {overlayTables.length ? '/ overlay / Δread' : ''}
-                    </Table.Th>
-                  ))}
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {Array.from({ length }, (_, i) => (
-                  <Table.Tr key={i}>
-                    <Table.Td>
-                      {i}
-                      {i === first.referenceIndex ? ' (ref)' : ''}
-                    </Table.Td>
-                    {tables.map((t) => {
-                      const v = t.values[i];
-                      const d = atD890CalibrationCorrection(t.values, i, t.referenceIndex);
-                      const other = overlayTables.find((item) => item.id === t.id)?.values[i];
-                      return (
-                        <Table.Td key={t.id}>
-                          {v === undefined
-                            ? 'Not captured'
-                            : `0x${hex(v)} (${v}) / ${d === undefined ? 'unavailable' : d > 0 ? `+${d}` : d}`}
-                          {overlayTables.length > 0 &&
-                            ` / ${other === undefined ? 'Not captured' : other} / ${v === undefined || other === undefined ? 'unavailable' : other - v}`}
-                        </Table.Td>
-                      );
-                    })}
+          {tableOpen && (
+            <Table.ScrollContainer minWidth={480}>
+              <Table striped fz="xs">
+                <Table.Caption>
+                  {title}: raw entries and difference from the reference entry
+                </Table.Caption>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Index</Table.Th>
+                    {tables.map((t) => (
+                      <Table.Th key={t.id}>
+                        {t.group === 'power' ? `Sel ${t.selection}` : t.path} {offsetText(t.offset)}{' '}
+                        · raw / Δref {overlayTables.length ? '/ overlay / Δread' : ''}
+                      </Table.Th>
+                    ))}
                   </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
+                </Table.Thead>
+                <Table.Tbody>
+                  {Array.from({ length }, (_, i) => (
+                    <Table.Tr key={i}>
+                      <Table.Td>
+                        {i}
+                        {i === first.referenceIndex ? ' (ref)' : ''}
+                      </Table.Td>
+                      {tables.map((t) => {
+                        const v = t.values[i];
+                        const d = atD890CalibrationCorrection(t.values, i, t.referenceIndex);
+                        const other = overlayTables.find((item) => item.id === t.id)?.values[i];
+                        return (
+                          <Table.Td key={t.id}>
+                            {v === undefined
+                              ? 'Not captured'
+                              : `0x${hex(v)} (${v}) / ${d === undefined ? 'unavailable' : d > 0 ? `+${d}` : d}`}
+                            {overlayTables.length > 0 &&
+                              ` / ${other === undefined ? 'Not captured' : other} / ${v === undefined || other === undefined ? 'unavailable' : other - v}`}
+                          </Table.Td>
+                        );
+                      })}
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          )}
         </details>
       </Stack>
     </Card>
