@@ -199,7 +199,9 @@ export function createDm32DebugGuard(pipe: BytePipe, signal?: AbortSignal): Dm32
           bytes[3] === ((chunk.address >>> 16) & 0xff);
         const length = bytes[4]! | (bytes[5]! << 8);
         if (!echo) refuse(`read reply header at ${hex(chunk.address)}`);
-        if (length === 0 || length > chunk.length) refuse(`read reply length ${length}`);
+        // Exactly the requested length: a short reply would leave a partial block in the archive.
+        if (length !== chunk.length)
+          refuse(`read reply length ${length}, requested ${chunk.length}`);
         reply.push({ kind: 'read-data', length });
         return;
       }
@@ -352,6 +354,10 @@ export async function captureDm32DebugPipe(
       blocks,
     };
   } finally {
-    await pipe.close();
+    try {
+      await pipe.close();
+    } catch {
+      /* Keep the original refusal, abort or error. */
+    }
   }
 }
