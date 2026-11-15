@@ -158,7 +158,39 @@ describe('DM-32 decoded comparison, factory and sparse cases', () => {
   it('does not call a different page address a decoded change', () => {
     const a = capture(calPage());
     const b = capture(calPage());
+    b.manifest.addressBase = 0x1000;
+    b.manifest.regions[0]!.address = 0x1000;
     const rows = compareDm32Evidence(a, b);
+    expect(status(rows, 'Calibration / uhfPower / low / 0')).toBe('Unchanged');
     expect(rows.some((r) => r.field.endsWith('/ address'))).toBe(false);
+  });
+  it('compares identity fields from captured V-frames and reports failed frames as unavailable', () => {
+    const frames = (items: unknown) => ({
+      'debug/v-frames.json': new TextEncoder().encode(JSON.stringify(items)),
+      'debug/capture.json': new TextEncoder().encode(JSON.stringify({ modelString: 'DP570UV' })),
+    });
+    const hex = (text: string) =>
+      Array.from(new TextEncoder().encode(text), (b) => b.toString(16).padStart(2, '0')).join('');
+    const a = capture();
+    a.sidecars = frames([
+      { id: 0x01, status: 'ok', payloadHex: hex('DM32.001') },
+      { id: 0x03, status: 'ok', payloadHex: hex('20260101') },
+      { id: 0x04, status: 'failed', reason: 'timeout' },
+      { id: 0x02, status: 'ok', payloadHex: 'a0a1a2a3a4a5a6a7a8a9aaab' },
+    ]);
+    const b = capture();
+    b.sidecars = frames([
+      { id: 0x01, status: 'ok', payloadHex: hex('DM32.001') },
+      { id: 0x03, status: 'ok', payloadHex: hex('20260202') },
+      { id: 0x04, status: 'ok', payloadHex: hex('1.2') },
+      { id: 0x02, status: 'ok', payloadHex: 'a0a1a2a3a4a5a6a7a8a9aaac' },
+    ]);
+    const rows = compareDm32Evidence(a, b);
+    expect(status(rows, 'Identity / Model')).toBe('Unchanged');
+    expect(status(rows, 'Identity / Base firmware')).toBe('Unchanged');
+    expect(status(rows, 'Identity / Build date')).toBe('Changed');
+    expect(status(rows, 'Identity / DSP version')).toBe('Unavailable');
+    expect(status(rows, 'Identity / Chip UID (not a serial)')).toBe('Changed');
+    expect(status(rows, 'Identity / Radio version')).toBe('Unavailable');
   });
 });

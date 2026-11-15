@@ -28,7 +28,7 @@ import {
   uv5rMiniArchiveDetails,
   type DebugArchive,
 } from './captureArchive.ts';
-import { formatAddress, regionIdentity } from './viewerUtils.ts';
+import { formatAddress, isDm32ModelId, regionIdentity } from './viewerUtils.ts';
 
 function RegionHash({ bytes }: { bytes: Uint8Array }) {
   const [result, setResult] = useState<{ bytes: Uint8Array; hash: string }>();
@@ -73,7 +73,7 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
       ? classifyAtD890DebugCoverage(archive.manifest.regions)
       : undefined;
   const dm32 =
-    archive.manifest.radioModelId === 'DM-32UV'
+    isDm32ModelId(archive.manifest.radioModelId)
       ? classifyDm32DebugCoverage(archive.manifest, archive.regions, archive.sidecars)
       : undefined;
   const rt95 = rt95ArchiveDetails(archive);

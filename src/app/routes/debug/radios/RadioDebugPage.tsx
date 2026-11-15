@@ -1,3 +1,4 @@
+import { isDm32ModelId } from './viewerUtils.ts';
 import { atD890DebugIdentity } from '@integrations/radio-io/radios/at-d890uv/debugCoverage.ts';
 import {
   dm32DebugIdentity,
@@ -103,7 +104,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
         )
       : undefined;
   const dm32Identity =
-    archive?.manifest.radioModelId === 'DM-32UV'
+    archive && isDm32ModelId(archive.manifest.radioModelId)
       ? dm32DebugIdentity(archive.sidecars, archive.manifest.regions, archive.regions)
       : undefined;
   if (!descriptor)

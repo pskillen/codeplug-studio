@@ -430,6 +430,39 @@ describe('DM-32UV debug page', () => {
     expect(history.getSnapshot().entries).toHaveLength(2);
   });
 
+  it('compares two DM-32 reads through the Compare tab and resets on clear', async () => {
+    const a = await archiveDm32Capture(dm32Capture());
+    const withBuild = dm32Capture();
+    withBuild.capturedAt = '2026-02-01T00:00:00.000Z';
+    withBuild.vframes = [
+      ...withBuild.vframes,
+      { id: 0x03, status: 'ok', payload: new TextEncoder().encode('20260202') },
+    ];
+    const b = await archiveDm32Capture(withBuild);
+    const [first, second] = [history.add(a), history.add(b)];
+    history.select(first.id);
+    open('dm-32uv');
+    fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
+    const select = screen.getByRole('combobox', { name: 'Compare with' });
+    fireEvent.click(select);
+    fireEvent.click(await screen.findByRole('option', { name: /^B ·/ }));
+    expect(await screen.findByText(/Identity \/ Model: Unchanged/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Identity \/ Build date: Unavailable · Not captured/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Identity \/ Base firmware: Unchanged/)).toBeInTheDocument();
+    // Selecting the other read updates Overview and Coverage.
+    act(() => history.select(second.id));
+    fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
+    expect(screen.getByText('20260202')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Backup' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear history' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Clear$/ }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
+    expect(screen.getByRole('combobox', { name: 'Compare with' })).toHaveValue('');
+    expect(screen.queryByText(/Identity \/ Model/)).not.toBeInTheDocument();
+  });
+
   it('keeps DM-32 history isolated from other profiles', async () => {
     const rt95 = getDebugReadHistory({ slug: 'rt95', archiveModelId: 'retevis-rt95' });
     rt95.clear();
