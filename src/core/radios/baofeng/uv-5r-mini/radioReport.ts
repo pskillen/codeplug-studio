@@ -13,6 +13,7 @@ import {
   isUv5rMiniHardwareProven,
   UV5RMINI_NO_BUILD_FOR_RADIO,
   UV5RMINI_RADIO_INFO_REFUSAL,
+  uv5rMiniBaseFromBuildName,
   uv5rMiniStockBase,
 } from './stockBases.ts';
 
@@ -201,6 +202,10 @@ export const UV5RMINI_UNKNOWN_FORMAT_REFUSAL = (format: number): string =>
     ? `This radio's MM9PDY build is older than this version of Studio: it answers in report format ${format}, and Studio reads format ${UV5RMINI_RADIO_REPORT_FORMAT}. Nothing was sent.`
     : `This radio's MM9PDY build answers in report format ${format}, which this version of Studio doesn't know. Nothing was sent; update Studio and try again.`;
 
+/** Why a report whose variant build name (D133) names another stock base than its own strings is refused. */
+export const UV5RMINI_REPORT_NAME_BASE_MISMATCH =
+  'its build name names other radio firmware than its suffix and Firmware strings';
+
 export const UV5RMINI_BAD_REPORT_REFUSAL = (reason: string): string =>
   `This radio's MM9PDY report doesn't read right: ${reason}. Nothing was sent.`;
 
@@ -236,6 +241,15 @@ export function uv5rMiniLayoutFromReport(report: Uv5rMiniRadioReport): RadioLayo
         return {
           kind: 'refused',
           message: UV5RMINI_NO_BUILD_FOR_RADIO(report.suffix, report.version),
+        };
+      }
+      // A variant build name (`v0.27-NRF-1.0.1`) names its base by its prefix: it must be the strings' base. A legacy
+      // name (`mm9pdy-L2-…`), or none, says nothing about the base.
+      const named = uv5rMiniBaseFromBuildName(report.name);
+      if (named === null || (named !== undefined && named.base !== stock.base)) {
+        return {
+          kind: 'refused',
+          message: UV5RMINI_BAD_REPORT_REFUSAL(UV5RMINI_REPORT_NAME_BASE_MISMATCH),
         };
       }
       const details = [

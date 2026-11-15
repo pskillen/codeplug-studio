@@ -17,6 +17,7 @@ import {
   UV5RMINI_BAD_REPORT_REFUSAL,
   UV5RMINI_RADIO_REPORT_ADDRESS,
   UV5RMINI_RADIO_REPORT_FORMAT,
+  UV5RMINI_REPORT_NAME_BASE_MISMATCH,
   UV5RMINI_UNKNOWN_FORMAT_REFUSAL,
   UV5RMINI_UNKNOWN_LAYOUT_REFUSAL,
   uv5rMiniLayoutFromReport,
@@ -32,6 +33,8 @@ import {
   UV5RMINI_PROVEN_HARDWARE,
   UV5RMINI_RADIO_INFO_REFUSAL,
   UV5RMINI_STOCK_BASE_KEYS,
+  uv5rMiniBaseFromBuildName,
+  uv5rMiniLayoutOfBase,
 } from './stockBases.ts';
 
 const example = () => fromHex(RADIO_REPORT_EXAMPLE_HEX);
@@ -302,6 +305,30 @@ describe('uv5rMiniLayoutFromReport: the stock base from the shared table', () =>
     });
   });
 
+  it("takes a variant build name (D133) that names the strings' base, release or PR build", () => {
+    for (const name of ['v0.27-NRF-1.0.1', 'v0.27-NRF-1.0.1-rc.9', 'v0.27-NRF-pr12-gabc12']) {
+      expect(answer(radioReportFrame({ name }))).toMatchObject({
+        kind: 'layout',
+        codeBase: 'nrf-v0.27',
+        build: name,
+      });
+    }
+    expect(
+      answer(
+        radioReportFrame({ vm: L1_VM, suffix: 'NRFB', version: 'V0.04', name: 'v0.04-NRFB-1.0.0' }),
+      ),
+    ).toMatchObject({ kind: 'layout', codeBase: 'nrfb-v0.04', build: 'v0.04-NRFB-1.0.0' });
+  });
+
+  it('refuses a report whose variant build name names another base, or an unknown one', () => {
+    for (const name of ['v0.04-NRFB-1.0.0', 'v0.05-NRF-1.0.0']) {
+      expect(answer(radioReportFrame({ name }))).toEqual({
+        kind: 'refused',
+        message: UV5RMINI_BAD_REPORT_REFUSAL(UV5RMINI_REPORT_NAME_BASE_MISMATCH),
+      });
+    }
+  });
+
   it('refuses a combination with no base as having no build, never the nearest one', () => {
     expect(answer(radioReportFrame({ suffix: 'NRFB' }))).toEqual({
       kind: 'refused',
@@ -393,5 +420,40 @@ describe('uv5rMiniLayoutFromReport: the stock base from the shared table', () =>
         .map((s) => s.rel);
       expect(holders, key).toEqual(['core/radios/baofeng/uv-5r-mini/stockBases.ts']);
     }
+  });
+});
+
+describe('the variant prefixes of the stock bases (D133)', () => {
+  it('reads a base from its exact registered prefix, never a split of the name', () => {
+    expect(uv5rMiniBaseFromBuildName('v0.04-NRFB-1.0.0')).toEqual({
+      base: 'nrfb-v0.04',
+      rest: '1.0.0',
+    });
+    expect(uv5rMiniBaseFromBuildName('v0.27-NRF-1.0.1-rc.2')).toEqual({
+      base: 'nrf-v0.27',
+      rest: '1.0.1-rc.2',
+    });
+    // NRF is not a prefix of NRFB: `v0.04-NRFB` is matched whole.
+    expect(uv5rMiniBaseFromBuildName('v0.27-NRFB-1.0.0')).toBeNull();
+    expect(uv5rMiniBaseFromBuildName('v0.04-NRF-1.0.0')).toBeNull();
+    expect(uv5rMiniBaseFromBuildName('v0.99-NRF-1.0.0')).toBeNull();
+  });
+
+  it('leaves legacy and to-stock names to their own rules', () => {
+    for (const name of [
+      'mm9pdy-L2-1.0.0',
+      'mm9pdy-L1-pr3-gabc1234',
+      'mm9pdy-0.1.0-rc.1',
+      'nrf-v0.27',
+      '',
+    ]) {
+      expect(uv5rMiniBaseFromBuildName(name)).toBeUndefined();
+    }
+  });
+
+  it('gives each base its layout from the one table', () => {
+    expect(uv5rMiniLayoutOfBase('nrf-v0.27')).toBe('L2');
+    expect(uv5rMiniLayoutOfBase('nrfb-v0.04')).toBe('L1');
+    expect(uv5rMiniLayoutOfBase('nrf-v0.04')).toBeUndefined();
   });
 });
