@@ -3,7 +3,7 @@ import { useState } from 'react';
 import ConfirmModal from '@app/components/v2/ConfirmModal.tsx';
 import DesignSystemV2Provider from '@app/components/v2/DesignSystemV2Provider.tsx';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
-import { backupLabelSummary } from '@app/components/builds/BackupLabelFields.tsx';
+import { backupLabelSummary } from '@app/lib/backupLabelSummary.ts';
 import type { RadioDebugDescriptor } from './descriptors.ts';
 import { useDebugReadHistory, type DebugReadHistoryStore } from './debugReadHistory.ts';
 import { buildDebugReadHistoryZip } from './debugReadHistoryArchive.ts';

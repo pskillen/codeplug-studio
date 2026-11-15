@@ -11,9 +11,8 @@ import { DM32_POWER_CYCLE_AFTER_SESSION_NOTE } from '@integrations/radio-io/radi
 import type { PlannedStage, ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
-import BackupLabelFields, {
-  backupLabelSummary,
-} from '../../components/builds/BackupLabelFields.tsx';
+import BackupLabelFields from '../../components/builds/BackupLabelFields.tsx';
+import { backupLabelSummary } from '../../lib/backupLabelSummary.ts';
 import type { RadioBackupLabels } from '@integrations/radio-io/backup/index.ts';
 import RadioCloneSummaryView from '../../components/builds/RadioCloneSummaryView.tsx';
 import RadioIoProgressModal, {
