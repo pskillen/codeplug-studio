@@ -295,7 +295,9 @@ export default function BuildFlatMemoryScanListPage() {
           <p className={classes.panelHint}>
             {memoryCount === 0
               ? 'Add analogue channels on the Channels page first.'
-              : 'Skip scan keeps a memory out of scanning. Always scan forces it in. Default follows the setting above. Changes apply to this build only — not the library channel.'}
+              : zoneScanSets
+                ? 'Skip scan keeps a channel out of scanning in All channels only; zones use their own scan sets. Always scan forces it in. Default follows the setting above. Changes apply to this build only — not the library channel.'
+                : 'Skip scan keeps a memory out of scanning. Always scan forces it in. Default follows the setting above. Changes apply to this build only — not the library channel.'}
           </p>
           {error ? (
             <Text size="sm" c="red">
@@ -312,7 +314,9 @@ export default function BuildFlatMemoryScanListPage() {
             }}
             emptyMessage={
               <Text size="sm" c="dimmed">
-                No analogue memories on this build yet.
+                {zoneScanSets
+                  ? 'No analogue channels on this build yet.'
+                  : 'No analogue memories on this build yet.'}
               </Text>
             }
             columns={columns}
