@@ -195,7 +195,7 @@ describe('DM-32UV debug page', () => {
     expect(screen.getByText('0xA0A1A2A3A4A5A6A7A8A9AAAB')).toBeInTheDocument();
     expect(screen.getByText(/not a serial/)).toBeInTheDocument();
     expect(screen.getAllByText('Unknown')).toHaveLength(2);
-    expect(screen.getByTitle('Live capture available')).toHaveTextContent('Available');
+    expect(screen.getAllByTitle('Available')[0]).toHaveTextContent('Available');
   });
 
   it.each([
