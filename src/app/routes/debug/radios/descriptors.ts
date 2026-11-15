@@ -45,7 +45,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     model: 'AT-D890UV',
     archiveModelId: 'AT-D890UV',
     family: 'AnyTone · stock / MM9PDY',
-    capabilities: unavailable,
+    capabilities: capabilities('Available', 'Partial', 'Partial'),
   },
   {
     slug: 'dm-32uv',
@@ -53,7 +53,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     model: 'DM-32UV',
     archiveModelId: 'DM-32UV',
     family: 'Baofeng · stock / MM9PDY',
-    capabilities: unavailable,
+    capabilities: capabilities('Available', 'Not yet available', 'Not yet available'),
   },
   {
     slug: 'dm-32uv-radiofoundry',
