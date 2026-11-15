@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import { Dm32Calibration } from './Dm32Calibration.tsx';
 import { Dm32DecodedDiff } from './Dm32DecodedDiff.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
@@ -61,12 +62,13 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-32uv',
+    Calibration: Dm32Calibration,
     DecodedDiff: Dm32DecodedDiff,
     capture: captureDm32,
     model: 'DM-32UV',
     archiveModelId: 'DM-32UV',
     family: 'Baofeng · stock / MM9PDY',
-    capabilities: capabilities('Available', 'Not yet available', 'Not yet available'),
+    capabilities: capabilities('Available', 'Partial', 'Not yet available'),
   },
   {
     slug: 'dm-32uv-radiofoundry',

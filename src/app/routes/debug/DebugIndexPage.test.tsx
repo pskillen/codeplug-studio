@@ -27,8 +27,9 @@ describe('debug index capability badges', () => {
     expect(rt95).toHaveTextContent('Memory · Partial');
     expect(card('AT-D890UV')).toHaveTextContent('Backup · Available');
     expect(card('AT-D890UV')).toHaveTextContent('Memory · Partial');
-    expect(
-      screen.getAllByRole('link', { name: 'DM-32UV' })[0].closest('.mantine-Card-root'),
-    ).toHaveTextContent('Backup · Available');
+    const dm32 = screen.getAllByRole('link', { name: 'DM-32UV' })[0].closest('.mantine-Card-root');
+    expect(dm32).toHaveTextContent('Backup · Available');
+    expect(dm32).toHaveTextContent('Calibration · Partial');
+    expect(dm32).toHaveTextContent('Memory · Not yet available');
   });
 });
