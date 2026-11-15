@@ -140,11 +140,28 @@ function snapshotOf(pair: SharedPair) {
   };
 }
 
+/** Byte-for-byte equality with a plain loop: `toEqual` on megabyte arrays outruns the hook timeout on CI. */
+function sameBytes(a: Uint8Array | undefined, b: Uint8Array | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
 afterAll(async () => {
   if (!hoisted.sharedPair) return;
   const pair = (await hoisted.sharedPair) as SharedPair;
-  expect(snapshotOf(pair)).toEqual(hoisted.sharedSnapshot);
-});
+  const now = snapshotOf(pair);
+  const then = hoisted.sharedSnapshot as ReturnType<typeof snapshotOf>;
+  expect(sameBytes(now.backupZip, then.backupZip), 'backup zip').toBe(true);
+  expect(sameBytes(now.vitalZip, then.vitalZip), 'vital zip').toBe(true);
+  expect(sameBytes(now.localInfo, then.localInfo), 'LocalInfo').toBe(true);
+  expect(sameBytes(now.tune, then.tune), 'tune').toBe(true);
+  expect(now.manifest).toBe(then.manifest);
+  expect(now.regions.length).toBe(then.regions.length);
+  now.regions.forEach((r, i) => expect(sameBytes(r, then.regions[i]), `region ${i}`).toBe(true));
+  expect(now.names).toEqual(then.names);
+}, 60_000);
 
 const EGRESS = { id: 'e', formatId: 'radio-io', profileId: 'radio-io-at-d890uv' } as EgressPath;
 const LOCAL_INFO = D890_MAP.LocalInfo;
