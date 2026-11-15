@@ -470,14 +470,21 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                   />
                   <Button
                     onClick={async () => {
-                      const result = await downloadZip(
-                        archive.zipBytes,
-                        radioBackupFileName(archive.manifest),
-                      );
-                      if (result.status !== 'failed') {
-                        if (historyEnabled && history.selectedId)
-                          store.markDownloaded([history.selectedId]);
-                        else setDownloadedArchive(archive);
+                      // The id and archive are fixed when the download starts, so a selection
+                      // change or a clear while saving cannot mark a different read.
+                      const startedId = historyEnabled ? history.selectedId : null;
+                      try {
+                        const result = await downloadZip(
+                          archive.zipBytes,
+                          radioBackupFileName(archive.manifest),
+                        );
+                        if (result.status === 'failed') throw new Error('Download failed.');
+                        if (historyEnabled) {
+                          if (startedId) store.markDownloaded([startedId]);
+                        } else setDownloadedArchive(archive);
+                        setError(undefined);
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : 'Download failed.');
                       }
                     }}
                   >
