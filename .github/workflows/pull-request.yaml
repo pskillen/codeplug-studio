@@ -17,6 +17,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # The PR merge commit and its two parents: enough for the docs-only decision below.
+          fetch-depth: 2
+
+      - name: Decide scope
+        id: scope
+        run: |
+          # Docs-only: every changed file is markdown or under docs/. Both jobs are required status
+          # checks on main, so they always run and report; a docs-only PR just skips the heavy steps.
+          # On a pull_request event HEAD is the merge of the PR into its base (first parent), for
+          # fork and same-repo PRs alike. Any failure falls through to the full run.
+          docs_only=false
+          if files=$(git diff --name-only --no-renames HEAD^1 HEAD) && [ -n "$files" ]; then
+            docs_only=true
+            while IFS= read -r f; do
+              case "$f" in
+                *.md | docs/*) ;;
+                *) docs_only=false ;;
+              esac
+            done <<< "$files"
+          fi
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+          echo "Docs-only PR: $docs_only"
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -31,14 +54,16 @@ jobs:
         run: npm run format:check
 
       - name: Lint
+        if: steps.scope.outputs.docs_only != 'true'
         run: npm run lint
 
       - name: Test
+        if: steps.scope.outputs.docs_only != 'true'
         run: npm run test
 
       - name: Test report
         uses: dorny/test-reporter@v3
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.scope.outputs.docs_only != 'true' }}
         with:
           name: Vitest
           path: test-results/junit.xml
@@ -48,11 +73,12 @@ jobs:
           report-title: Test results
 
       - name: CPS wire verify
+        if: steps.scope.outputs.docs_only != 'true'
         run: npm run test:cps-verify
 
       - name: CPS wire verify report
         uses: dorny/test-reporter@v3
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.scope.outputs.docs_only != 'true' }}
         with:
           name: CPS wire verify
           path: test-results/cps-verify-junit.xml
@@ -63,13 +89,14 @@ jobs:
 
       - name: Upload test results
         uses: actions/upload-artifact@v7
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.scope.outputs.docs_only != 'true' }}
         with:
           name: test-results
           path: test-results/
           retention-days: 14
 
       - name: Build
+        if: steps.scope.outputs.docs_only != 'true'
         run: npm run build
 
   e2e:
@@ -77,21 +104,49 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # The PR merge commit and its two parents: enough for the docs-only decision below.
+          fetch-depth: 2
+
+      - name: Decide scope
+        id: scope
+        run: |
+          # Docs-only: every changed file is markdown or under docs/. Both jobs are required status
+          # checks on main, so they always run and report; a docs-only PR just skips the heavy steps.
+          # On a pull_request event HEAD is the merge of the PR into its base (first parent), for
+          # fork and same-repo PRs alike. Any failure falls through to the full run.
+          docs_only=false
+          if files=$(git diff --name-only --no-renames HEAD^1 HEAD) && [ -n "$files" ]; then
+            docs_only=true
+            while IFS= read -r f; do
+              case "$f" in
+                *.md | docs/*) ;;
+                *) docs_only=false ;;
+              esac
+            done <<< "$files"
+          fi
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+          echo "Docs-only PR: $docs_only"
 
       - name: Setup Node
+        if: steps.scope.outputs.docs_only != 'true'
         uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
+        if: steps.scope.outputs.docs_only != 'true'
         run: npm ci
 
       - name: Build SPA
+        if: steps.scope.outputs.docs_only != 'true'
         run: npm run build
 
       - name: Install Playwright browsers
+        if: steps.scope.outputs.docs_only != 'true'
         run: npx playwright install --with-deps chromium
 
       - name: E2E tests
+        if: steps.scope.outputs.docs_only != 'true'
         run: npm run test:e2e
