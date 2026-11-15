@@ -20,6 +20,14 @@ import {
   zoneNameAddress,
   type AtD890DownloadCache,
 } from './memory.ts';
+import {
+  collectAtD890BankReferences,
+  projectAtD890Bank,
+  projectAtD890RxGroups,
+  type AtD890BankInventory,
+  type AtD890BankReferences,
+  type AtD890RxGroupInventory,
+} from './debugMemoryContacts.ts';
 import { decodeWideCharName } from './wideChar.ts';
 import { listZoneMemberIndicesFromCache } from './zoneCodec.ts';
 
@@ -220,6 +228,11 @@ export interface AtD890MemoryProjection {
   capture: AtD890SparseCapture;
   channels: AtD890ChannelInventory;
   zones: AtD890ZoneInventory;
+  /** Shared contact / talk-group bank (private, group and all-call records). */
+  bank: AtD890BankInventory;
+  rxGroups: AtD890RxGroupInventory;
+  /** Captured channel and RX-group evidence per bank slot, with coverage flags. */
+  references: AtD890BankReferences;
 }
 
 const FIRST_UNIT_ERASED = 0xffff;
@@ -364,5 +377,26 @@ export function projectAtD890Memory(
 ): AtD890MemoryProjection {
   const capture = buildAtD890SparseCapture(regions, bytes);
   const channels = projectChannels(capture);
-  return { capture, channels, zones: projectZones(capture, channels) };
+  const bank = projectAtD890Bank(capture);
+  const rxGroups = projectAtD890RxGroups(capture, bank);
+  const references = collectAtD890BankReferences(
+    {
+      bitmap: channels.bitmap,
+      occupied: channels.occupied,
+      decoded: channels.decoded,
+      refs: channels.entries.flatMap((e) =>
+        e.state.kind === 'decoded'
+          ? [
+              {
+                slot: e.slot,
+                label: e.state.channel.wireName || '(unnamed)',
+                txContactId: e.state.channel.txContactId,
+              },
+            ]
+          : [],
+      ),
+    },
+    rxGroups,
+  );
+  return { capture, channels, zones: projectZones(capture, channels), bank, rxGroups, references };
 }
