@@ -12,6 +12,8 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 
 **MM9PDY modded firmware** uses the same AT-D890UV (and, when shipped, DM-32UV) Web Serial codecs as the stock targets. The radio target changes what is assembled — one channel per repeater, zone as the scan — not a second encoder. An AT-D890UV MM9PDY Write with no zone-derived lists still writes one scan list containing the first channel so the occupancy bitmap is not empty. See [modded firmware](../modded-firmware/README.md).
 
+AT-D890UV debug memory dumps and read-only probes check the LocalInfo stun and kill flags immediately before sending END. If either flag is set or the check fails, Studio skips END and asks the operator to power-cycle the radio. A failed or cancelled debug read may also leave the radio in programming mode; power-cycle it before continuing.
+
 RT95 clone writes protect the production identity and factory calibration region and its chip-size aliases. MM9PDY data writes require a passing chip-size check; unknown clone commands are refused. See [RT95 limits](../../reference/radios/retevis/rt95/limits.md).
 
 ## Implementation status
@@ -187,5 +189,3 @@ What this doesn't do yet. Delete a line when its gap is fixed.
 - [NeonPlug interchange](../import-export/neonplug/README.md) — `.neonplug` ZIP preferred path before direct write
 - NeonPlug ground truth: workspace `NeonPlug/src/radios/`
 - CHIRP drivers: workspace `chirp/chirp/drivers/`
-
-AT-D890UV debug memory dumps and read-only probes check the LocalInfo stun and kill flags immediately before sending END. If either flag is set or the check fails, Studio skips END and asks the operator to power-cycle the radio. A failed or cancelled debug read may also leave the radio in programming mode; power-cycle it before continuing.

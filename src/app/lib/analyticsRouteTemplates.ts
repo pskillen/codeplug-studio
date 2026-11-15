@@ -3,9 +3,9 @@
  * Kept in sync with `src/app/App.tsx` — update when adding dynamic routes.
  */
 export const ANALYTICS_ROUTE_TEMPLATES = [
-  '/debug/indexed-db/:storeName/:projectId/:id',
-  '/debug/indexed-db/:storeName',
-  '/debug/local-storage/:storageKey',
+  '/debug/storage/indexed-db/:storeName/:projectId/:id',
+  '/debug/storage/indexed-db/:storeName',
+  '/debug/storage/local-storage/:storageKey',
   '/library/channels/add-from-ukrepeater',
   '/library/channels/add-from-openaip',
   '/library/channels/add-from-brandmeister',
@@ -31,8 +31,8 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/builds/:id/backup',
   '/builds/:id/radio-info',
   '/builds/:id/radio-image',
-  '/debug/indexed-db',
-  '/debug/local-storage',
+  '/debug/storage/indexed-db',
+  '/debug/storage/local-storage',
   '/library/channels/new',
   '/library/channels/:id',
   '/library/:kind/:id',
