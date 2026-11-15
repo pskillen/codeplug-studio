@@ -9,6 +9,8 @@ make (Backup reads only the clone ranges up to `0xA1BF`): calibration unchanged,
 **On prod:** the page is hidden unless [developer mode](../developer-mode/README.md) is on for the device. Its route
 is in `debugRoutes`, under `DebugGate`, like every other Debug page.
 
+The shared profile at `/debug/radios/uv-5r-mini` also offers guarded captures and can open standard backups and legacy multi-read ZIPs. The original route remains available while shared-page parity is verified. The shared profile uses actual captured bytes for coverage, channels, zone tables and calibration. A valid live MM9R format-2 report is positive compatible report evidence; absent, invalid, unsupported or offline evidence remains unknown. The 64 KiB clone address space is not a physical flash or firmware dump.
+
 ## Read only
 
 The page never writes to the radio and never offers a restore or write from a read. A read carries the radio's

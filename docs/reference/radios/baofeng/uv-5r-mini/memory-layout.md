@@ -85,3 +85,5 @@ A live radio dump is optional for this doc ticket; see [fixtures.md](fixtures.md
 
 - [channel-record.md](channel-record.md) · [settings.md](settings.md) · [protocol.md](protocol.md)
 - [limits.md](limits.md) · [power.md](power.md)
+
+The debug profile can inspect a clone read over `0x0000–0xFFFF`; this is the clone address space, not a complete physical flash or firmware dump. `0xEFC0` is a virtual report opportunity. Ordinary backup MEM entries use packed offsets; their radio ranges are mapped separately and the `zones` region remains distinct. See the [full-read debug guide](../../../../features/debug/uv5r-mini-full-read.md).
