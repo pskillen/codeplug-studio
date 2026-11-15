@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { strFromU8, strToU8, unzipSync, zipSync, Zip, ZipPassThrough } from 'fflate';
 import { exampleArchive } from './debugReadHistory.fixture.ts';
 import { getDebugReadHistory } from './debugReadHistory.ts';
 import { buildDebugReadHistoryZip, openDebugReadHistoryZip } from './debugReadHistoryArchive.ts';
@@ -39,5 +39,25 @@ describe('history archive', () => {
     index.reads[0].path = '../bad.zip';
     changed['history.json'] = strToU8(JSON.stringify(index));
     expect(() => openDebugReadHistoryZip(zipSync(changed), descriptor)).toThrow(/path/);
+  });
+  it('rejects duplicate ZIP entry names before reading the index', () => {
+    const chunks: Uint8Array[] = [];
+    const zip = new Zip((error, data) => {
+      if (error) throw error;
+      chunks.push(data);
+    });
+    for (let i = 0; i < 2; i++) {
+      const file = new ZipPassThrough('history.json');
+      zip.add(file);
+      file.push(strToU8('{}'), true);
+    }
+    zip.end();
+    const bytes = new Uint8Array(chunks.reduce((size, chunk) => size + chunk.length, 0));
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.length;
+    }
+    expect(() => openDebugReadHistoryZip(bytes, descriptor)).toThrow(/Duplicate/);
   });
 });

@@ -4,11 +4,12 @@ import {
   hashUv5rMiniDebugSpans,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { buildUv5rMiniReadsZip, Uv5rMiniDebugReadStore } from '../uv5rMiniDebugReads.ts';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, MemoryRouter, Route, RouterProvider, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import RadioDebugPage from './RadioDebugPage.tsx';
+import { getDebugReadHistory } from './debugReadHistory.ts';
 import { gatedDebugRoute } from '../debugRoutes.tsx';
 import { DEVELOPER_MODE_KEY } from '@integrations/preferences/developerMode.ts';
 import { archiveDm32Capture } from './dm32Capture.ts';
@@ -77,6 +78,36 @@ function syntheticRead(value: number) {
     spans: hashUv5rMiniDebugSpans(decoded),
   };
 }
+
+it('retains a late successful capture after unmount and shows it on return', async () => {
+  const store = getDebugReadHistory({ slug: 'uv-5r-mini', archiveModelId: 'UV-5R Mini' });
+  store.clear();
+  let finish!: (value: ReturnType<typeof syntheticRead>) => void;
+  fake.run.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const page = render(
+    <MemoryRouter initialEntries={['/debug/radios/uv-5r-mini']}>
+      <DesignSystemV2Provider>
+        <Routes>
+          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+        </Routes>
+      </DesignSystemV2Provider>
+    </MemoryRouter>,
+  );
+  fireEvent.click(screen.getByRole('tab', { name: 'Backup' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
+  await waitFor(() => expect(finish).toBeDefined());
+  page.unmount();
+  await act(async () => finish(syntheticRead(7)));
+  await waitFor(() => expect(store.getSnapshot().entries).toHaveLength(1));
+  open();
+  expect(screen.getByText(/Reads in this tab:.*Live A/)).toBeInTheDocument();
+  store.clear();
+});
 
 it('selects the live read after opening a legacy ZIP, even after selecting a file read', async () => {
   const store = new Uv5rMiniDebugReadStore();

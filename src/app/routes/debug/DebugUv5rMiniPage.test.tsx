@@ -1,3 +1,4 @@
+import { decodeUv5rMiniFullRead } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,7 +19,7 @@ vi.mock('@integrations/download/browserDownload.ts', async (importOriginal) => (
 function addRead(decoded: Uint8Array, store = uv5rMiniDebugReadStore) {
   store.add({
     ident: { f: new Uint8Array(16), m: new Uint8Array(15) },
-    raw: decoded,
+    raw: decodeUv5rMiniFullRead(decoded),
     decoded,
     spans: hashUv5rMiniDebugSpans(decoded),
   });

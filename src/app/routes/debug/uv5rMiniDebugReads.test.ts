@@ -1,3 +1,4 @@
+import { decodeUv5rMiniFullRead } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { strFromU8, unzipSync } from 'fflate';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -15,8 +16,8 @@ import {
 function syntheticRead(fill: number): Uv5rMiniFullRead {
   const decoded = new Uint8Array(0x10000).fill(fill);
   return {
-    ident: { f: new Uint8Array(16).fill(0x01), m: new TextEncoder().encode('5RMINI-SYNTHETIC') },
-    raw: decoded.map((b) => b ^ 0x10),
+    ident: { f: new Uint8Array(16).fill(0x01), m: new TextEncoder().encode('5RMINI-SYNTHETI') },
+    raw: decodeUv5rMiniFullRead(decoded),
     decoded,
     spans: hashUv5rMiniDebugSpans(decoded),
   };
@@ -46,7 +47,7 @@ describe('Uv5rMiniDebugReadStore', () => {
     store.add(syntheticRead(2), t);
     let snap = store.getSnapshot();
     expect(snap.reads.map((r) => r.label)).toEqual(['A', 'B']);
-    expect(snap.reads[0]!.readAt).toBe(t);
+    expect(snap.reads[0]!.readAt).toEqual(t);
     expect(snap.undownloaded).toBe(2);
 
     store.markAllDownloaded();
@@ -85,7 +86,7 @@ describe('buildUv5rMiniReadsZip', () => {
     expect(summary).toContain('Read A');
     expect(summary).toContain('Time 2026-01-02T03:04:05.000Z');
     expect(summary).toContain(
-      `M ${'5RMINI-SYNTHETIC'
+      `M ${'5RMINI-SYNTHETI'
         .split('')
         .map((c) => c.charCodeAt(0).toString(16))
         .join('')}`,

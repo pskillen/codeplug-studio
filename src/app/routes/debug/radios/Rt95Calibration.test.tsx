@@ -4,7 +4,7 @@ import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
 import { openDebugArchive } from './captureArchive.ts';
 import { Coverage } from './Coverage.tsx';
-import { Rt95Calibration } from './Rt95Calibration.tsx';
+import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
 
 describe('RT95 calibration', () => {
   it('shows the evidence limits and absent values without write controls', () => {
@@ -134,4 +134,50 @@ it('reports the actual partial calibration span and uncaptured tail', () => {
   expect(screen.getByText(/0x00003FC0–0x00003FF7 is outside this capture/)).toHaveTextContent(
     'Signature 0x00003FF8–0x00003FFF',
   );
+});
+
+it('draws a dashed calibration overlay and reports captured field differences', () => {
+  const bytes = new Uint8Array(0x4c0);
+  const a = {
+    ...openDebugArchive(
+      packRadioBackupZip(
+        {
+          format: 'codeplug-studio-radio-backup',
+          version: 1,
+          capturedAt: '2026-01-01',
+          capturedVia: 'file',
+          app: { buildEnv: 'test', buildVersion: 'test' },
+          radioModelId: 'retevis-rt95',
+          descriptorLabel: 'RT95',
+          coverage: 'partial',
+          imageByteLength: 0,
+          regions: [
+            {
+              id: 'rt95-calibration',
+              label: 'Calibration',
+              address: 0x3b00,
+              byteLength: bytes.length,
+              path: 'regions/rt95-calibration.bin',
+              restoreRole: 'inspect-only',
+            },
+          ],
+        },
+        { 'rt95-calibration': bytes },
+      ),
+      'retevis-rt95',
+    ),
+  };
+  const changed = bytes.slice();
+  changed[0] = 65;
+  changed[0x1c1] = 4;
+  const b = { ...a, regions: { ...a.regions, 'rt95-calibration': changed } };
+  const view = render(
+    <DesignSystemV2Provider>
+      <Rt95Calibration archive={a} overlayArchive={b} />
+      <Rt95CalibrationDiff first={a} second={b} />
+    </DesignSystemV2Provider>,
+  );
+  expect(screen.getAllByText('Overlay read').length).toBeGreaterThan(0);
+  expect(view.container.querySelector('[stroke-dasharray]')).not.toBeNull();
+  expect(screen.getByText(/Model check text.*00 00 00 00 00 00 00 → 41/)).toBeInTheDocument();
 });

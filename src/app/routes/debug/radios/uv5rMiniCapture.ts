@@ -13,7 +13,6 @@ import {
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { isCapacitorSerialSupported } from '@integrations/radio-io/transport/index.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
-import { uv5rMiniDebugReadStore } from '../uv5rMiniDebugReads.ts';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 
 /** Package the decoded clone address space and preserve the wire data and handshake replies. */
@@ -66,6 +65,5 @@ export async function captureUv5rMini(opts?: {
     at.toISOString(),
     isCapacitorSerialSupported() ? 'android-usb-serial' : 'web-serial',
   );
-  uv5rMiniDebugReadStore.add(read, at);
   return archive;
 }

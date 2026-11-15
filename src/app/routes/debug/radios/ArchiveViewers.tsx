@@ -220,6 +220,7 @@ export function CompareViewer(props: {
   archive?: DebugArchive;
   modelId: string;
   other?: DebugArchive;
+  DecodedDiff?: import('react').ComponentType<{ first: DebugArchive; second: DebugArchive }>;
 }) {
   const { archive, modelId } = props;
   const [uploadedOther, setOther] = useState<DebugArchive>();
@@ -286,6 +287,9 @@ export function CompareViewer(props: {
                 : `Incomparable: ${'reason' in r ? r.reason : 'region or starting offset differs'}`}
             </Text>
           ))}
+          {archive && other && props.DecodedDiff && (
+            <props.DecodedDiff first={archive} second={other} />
+          )}
           <Title order={4}>Decoded changes</Title>
           {(() => {
             const first = archive && rt95ArchiveDetails(archive)?.summary;
