@@ -105,3 +105,27 @@ it('maps partial Mini MEM bytes by radio address, keeping zones separate and cal
     captured: false,
   });
 });
+
+it('validates RT95 calibration representation and allows bounded partial prefixes', () => {
+  const region = {
+    id: 'rt95-calibration',
+    label: 'Calibration',
+    address: 0x3b00,
+    byteLength: 2,
+    path: 'regions/rt95-calibration.bin',
+    restoreRole: 'inspect-only' as const,
+  };
+  const rt95 = { ...manifest, radioModelId: 'retevis-rt95', regions: [region] };
+  const pack = (r: typeof region) =>
+    packRadioBackupZip({ ...rt95, regions: [r] }, { [r.id]: new Uint8Array(r.byteLength) });
+  expect(openDebugArchive(pack(region), 'retevis-rt95').regions['rt95-calibration']).toHaveLength(
+    2,
+  );
+  for (const bad of [
+    { ...region, address: 0 },
+    { ...region, restoreRole: 'restorable' as const },
+    { ...region, byteLength: 0x4c1 },
+    { ...region, path: 'regions/other.bin' },
+  ])
+    expect(() => openDebugArchive(pack(bad), 'retevis-rt95')).toThrow(/Invalid RT95/);
+});
