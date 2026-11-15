@@ -28,7 +28,13 @@ import {
   type AtD890BankReferences,
   type AtD890RxGroupInventory,
 } from './debugMemoryContacts.ts';
-import { decodeWideCharName } from './wideChar.ts';
+import {
+  projectAtD890ScanLists,
+  projectAtD890Settings,
+  type AtD890ScanListInventory,
+  type AtD890SettingsInventory,
+} from './debugMemorySettings.ts';
+import { decodeTerminatedWideCharName } from './wideChar.ts';
 import { listZoneMemberIndicesFromCache } from './zoneCodec.ts';
 
 export interface AtD890RefusedEntry {
@@ -233,26 +239,13 @@ export interface AtD890MemoryProjection {
   rxGroups: AtD890RxGroupInventory;
   /** Captured channel and RX-group evidence per bank slot, with coverage flags. */
   references: AtD890BankReferences;
+  scanLists: AtD890ScanListInventory;
+  /** Read-only optional settings, gated per field on exact captured coverage. */
+  settings: AtD890SettingsInventory;
 }
 
-const FIRST_UNIT_ERASED = 0xffff;
-
-/**
- * A zone name ends at its first NUL code unit, or at erased `0xFFFF` fill: a vacant name field must
- * not decode to replacement characters. Whatever precedes the terminator goes through the shared
- * wide-character decoder.
- */
-export function decodeAtD890ZoneName(field: Uint8Array): string {
-  let end = field.length - (field.length % 2);
-  for (let i = 0; i + 1 < field.length; i += 2) {
-    const unit = field[i]! | (field[i + 1]! << 8);
-    if (unit === 0 || unit === FIRST_UNIT_ERASED) {
-      end = i;
-      break;
-    }
-  }
-  return decodeWideCharName(field.subarray(0, end));
-}
+/** A zone name ends at its first NUL or erased `0xFFFF` code unit; see `decodeTerminatedWideCharName`. */
+export const decodeAtD890ZoneName = decodeTerminatedWideCharName;
 
 function readBitmap(
   capture: AtD890SparseCapture,
@@ -311,7 +304,15 @@ function projectChannels(capture: AtD890SparseCapture): AtD890ChannelInventory {
   };
 }
 
-function resolveMember(
+/** Occupied channel entries by one-based slot. */
+export function indexAtD890ChannelsBySlot(
+  channels: AtD890ChannelInventory,
+): ReadonlyMap<number, AtD890ChannelEntry> {
+  return new Map(channels.entries.map((e) => [e.slot, e]));
+}
+
+/** Resolve a stored zero-based channel index against the projected channel inventory. */
+export function resolveAtD890ChannelMember(
   rawIndex: number,
   position: number,
   channels: AtD890ChannelInventory,
@@ -337,7 +338,7 @@ function projectZones(
 ): AtD890ZoneInventory {
   const capacity = AT_D890UV_LIMITS.ZONE_MAX;
   const bitmap = readBitmap(capture, D890_MAP.ZoneSet, AT_D890_LIMITS.ZONE_SET_BYTES, capacity);
-  const bySlot = new Map(channels.entries.map((e) => [e.slot, e]));
+  const bySlot = indexAtD890ChannelsBySlot(channels);
   const entries = bitmap.inRange.map((index): AtD890ZoneEntry => {
     const nameBytes = capture.read(zoneNameAddress(index), D890_MAP.ZoneDataLength);
     const memberBytes = capture.read(zoneChannelsAddress(index), D890_MAP.ZoneChannelsStride);
@@ -349,7 +350,9 @@ function projectZones(
       const raw = listZoneMemberIndicesFromCache(cache, index);
       members = {
         status: 'captured',
-        list: raw.map((rawIndex, i) => resolveMember(rawIndex, i + 1, channels, bySlot)),
+        list: raw.map((rawIndex, i) =>
+          resolveAtD890ChannelMember(rawIndex, i + 1, channels, bySlot),
+        ),
         overCapacity: raw.length > AT_D890UV_LIMITS.ZONE_MEMBERS_MAX,
       };
     }
@@ -379,6 +382,7 @@ export function projectAtD890Memory(
   const channels = projectChannels(capture);
   const bank = projectAtD890Bank(capture);
   const rxGroups = projectAtD890RxGroups(capture, bank);
+  const bySlot = indexAtD890ChannelsBySlot(channels);
   const references = collectAtD890BankReferences(
     {
       bitmap: channels.bitmap,
@@ -398,5 +402,16 @@ export function projectAtD890Memory(
     },
     rxGroups,
   );
-  return { capture, channels, zones: projectZones(capture, channels), bank, rxGroups, references };
+  return {
+    capture,
+    channels,
+    zones: projectZones(capture, channels),
+    bank,
+    rxGroups,
+    references,
+    scanLists: projectAtD890ScanLists(capture, (rawIndex, position) =>
+      resolveAtD890ChannelMember(rawIndex, position, channels, bySlot),
+    ),
+    settings: projectAtD890Settings(capture),
+  };
 }
