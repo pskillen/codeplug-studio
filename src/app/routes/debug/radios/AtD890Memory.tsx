@@ -10,7 +10,6 @@ import type { RadioChannelDto, RadioTone } from '@integrations/radio-io/radioCha
 import {
   projectAtD890Memory,
   type AtD890ChannelEntry,
-  type AtD890MemberStatus,
   type AtD890ZoneEntry,
   type AtD890ZoneMember,
 } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
@@ -26,16 +25,12 @@ import {
   TalkGroupsPanel,
   describeBankReference,
 } from './AtD890MemoryContacts.tsx';
+import { MEMBER_EXPLANATION, ScanListsPanel, SettingsPanel } from './AtD890MemorySettings.tsx';
 import type { DebugArchive } from './captureArchive.ts';
 
 const MODEL_ID = 'AT-D890UV';
 const NOT_CAPTURED = 'Not captured';
 const DASH = '—';
-
-const DEFERRED = [
-  ['scan-lists', 'Scan lists'],
-  ['settings', 'Settings'],
-] as const;
 
 const count = (n: number) => n.toLocaleString('en-GB');
 const mhz = (hz: number) => (hz / 1e6).toFixed(5);
@@ -284,15 +279,6 @@ function ChannelsPanel({
   );
 }
 
-const MEMBER_EXPLANATION: Record<AtD890MemberStatus, string> = {
-  resolved: 'Resolved',
-  'out-of-range': 'Out of range: beyond the hardware channel slots',
-  absent: 'Absent: the channel bitmap does not mark this slot occupied',
-  'not-captured': 'Not captured: the slot is occupied but its record is incomplete',
-  'inventory-not-captured': 'Cannot resolve: the channel bitmap was not captured',
-  unreadable: 'Unreadable: the captured record is empty or invalid',
-};
-
 interface MemberRow {
   id: string;
   member: AtD890ZoneMember;
@@ -527,11 +513,8 @@ function AtD890MemoryLoaded({ archive }: { archive: DebugArchive }) {
           <Tabs.Tab value="contacts">Contacts</Tabs.Tab>
           <Tabs.Tab value="talk-groups">Talk groups</Tabs.Tab>
           <Tabs.Tab value="rx-groups">RX groups</Tabs.Tab>
-          {DEFERRED.map(([value, label]) => (
-            <Tabs.Tab key={value} value={value}>
-              {label}
-            </Tabs.Tab>
-          ))}
+          <Tabs.Tab value="scan-lists">Scan lists</Tabs.Tab>
+          <Tabs.Tab value="settings">Settings</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="channels" pt="md">
           <ChannelsPanel channels={projection.channels} bank={projection.bank} />
@@ -548,11 +531,12 @@ function AtD890MemoryLoaded({ archive }: { archive: DebugArchive }) {
         <Tabs.Panel value="rx-groups" pt="md">
           <RxGroupsPanel projection={projection} />
         </Tabs.Panel>
-        {DEFERRED.map(([value, label]) => (
-          <Tabs.Panel key={value} value={value} pt="md">
-            <Alert title={label}>Coming in a later piece</Alert>
-          </Tabs.Panel>
-        ))}
+        <Tabs.Panel value="scan-lists" pt="md">
+          <ScanListsPanel projection={projection} />
+        </Tabs.Panel>
+        <Tabs.Panel value="settings" pt="md">
+          <SettingsPanel projection={projection} />
+        </Tabs.Panel>
       </Tabs>
     </Stack>
   );
