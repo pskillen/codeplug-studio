@@ -36,6 +36,15 @@ export interface AtD890FieldChange {
   after: string;
 }
 
+/** A field not captured on at least one side, keeping whatever the other side did capture. */
+export interface AtD890UnavailableField {
+  field: string;
+  /** Captured value of the first / second capture; `undefined` when that side lacks it. */
+  before?: string;
+  after?: string;
+  missing: 'first' | 'second' | 'both';
+}
+
 export interface AtD890DiffRow {
   domain: AtD890DiffDomain;
   /** Slot number or stable field id. */
@@ -44,7 +53,9 @@ export interface AtD890DiffRow {
   kind: 'changed' | 'added' | 'removed' | 'incomparable';
   changes: readonly AtD890FieldChange[];
   /** Fields (or the whole record) not captured on at least one side. */
-  unavailable: readonly string[];
+  unavailable: readonly AtD890UnavailableField[];
+  /** Firmware-dependent meaning caveats of the compared values; they never become verdicts. */
+  caveats: readonly string[];
   note?: string;
 }
 
@@ -68,6 +79,7 @@ type Fields = Record<string, string | undefined>;
 interface Described {
   label: string;
   fields: Fields;
+  caveats?: readonly string[];
 }
 interface Side {
   /** True when the occupancy bitmap was captured, so absent slots are genuinely absent. */
@@ -116,11 +128,22 @@ function diffDomain(
         continue;
       }
       const changes: AtD890FieldChange[] = [];
-      const unavailable: string[] = [];
+      const unavailable: AtD890UnavailableField[] = [];
       for (const field of new Set([...Object.keys(x.fields), ...Object.keys(y.fields)])) {
         const before = x.fields[field];
         const after = y.fields[field];
-        if (before === undefined || after === undefined) unavailable.push(field);
+        if (before === undefined || after === undefined)
+          unavailable.push({
+            field,
+            before,
+            after,
+            missing:
+              before === undefined && after === undefined
+                ? 'both'
+                : before === undefined
+                  ? 'first'
+                  : 'second',
+          });
         else if (before !== after) changes.push({ field, before, after });
       }
       if (changes.length || unavailable.length)
@@ -131,6 +154,7 @@ function diffDomain(
           kind: changes.length ? 'changed' : 'incomparable',
           changes,
           unavailable,
+          caveats: [...new Set([...(x.caveats ?? []), ...(y.caveats ?? [])])],
         });
     } else {
       const only = (x ?? y)!;
@@ -143,6 +167,7 @@ function diffDomain(
           kind: x ? 'removed' : 'added',
           changes: [],
           unavailable: [],
+          caveats: only.caveats ?? [],
           note: `Occupied only in the ${present} capture; both occupancy bitmaps were captured.`,
         });
       else
@@ -153,6 +178,7 @@ function diffDomain(
           kind: 'incomparable',
           changes: [],
           unavailable: [],
+          caveats: only.caveats ?? [],
           note: `Present only in the ${present} capture. The other capture did not capture occupancy, so this is not a deletion.`,
         });
     }
@@ -296,6 +322,7 @@ function settingSide(p: AtD890MemoryProjection): Side {
           f.id,
           {
             label: f.label,
+            caveats: f.conditional ? [f.conditional] : [],
             fields:
               f.status === 'captured'
                 ? {

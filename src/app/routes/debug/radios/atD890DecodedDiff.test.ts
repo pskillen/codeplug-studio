@@ -222,7 +222,12 @@ describe('D890 decoded differences', () => {
     const row = inDomain(d, 'channel')[0]!;
     expect(row.kind).toBe('incomparable');
     expect(row.changes).toEqual([]);
-    expect(row.unavailable).toContain('state');
+    expect(row.unavailable.find((u) => u.field === 'state')).toEqual({
+      field: 'state',
+      before: 'decoded',
+      after: undefined,
+      missing: 'second',
+    });
   });
 
   it('does not call uncaptured settings or calibration a change', () => {
@@ -241,5 +246,28 @@ describe('D890 decoded differences', () => {
     );
     const row = inDomain(d, 'setting').find((r) => r.key === 'language')!;
     expect(row.changes).toContainEqual({ field: 'raw', before: '07', after: '08' });
+  });
+
+  it('keeps the captured value and names the missing side of an unavailable field', () => {
+    const d = rowsOf(
+      [sparse(MAIN + 0x26, Uint8Array.of(1))],
+      [sparse(MAIN + 0x27, Uint8Array.of(1))],
+    );
+    const row = inDomain(d, 'setting').find((r) => r.key === 'backlightLevel')!;
+    expect(row.unavailable).toEqual([
+      { field: 'value', before: expect.any(String), after: undefined, missing: 'second' },
+      { field: 'raw', before: '01', after: undefined, missing: 'second' },
+    ]);
+  });
+
+  it('keeps firmware-dependent meaning caveats on diffed settings', () => {
+    const d = rowsOf(
+      [sparse(MAIN + 0x10, Uint8Array.of(13))],
+      [sparse(MAIN + 0x10, Uint8Array.of(1))],
+    );
+    const row = inDomain(d, 'setting').find((r) => r.key === 'keyShortPF1')!;
+    expect(row.kind).toBe('changed');
+    expect(row.caveats.join(' ')).toContain('TG Previous');
+    expect(row.caveats.join(' ')).toContain('do not show which firmware');
   });
 });
