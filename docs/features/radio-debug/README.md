@@ -8,11 +8,14 @@ The Debug hierarchy groups radio profiles, browser storage and serial transport 
 
 - [Radio shell](../../../src/app/routes/debug/radios/RadioDebugPage.md)
 - [Archive viewers](../../../src/app/routes/debug/radios/ArchiveViewers.md)
+- [RT95 calibration fields](../../reference/radios/retevis/rt95/calibration.md)
 - [AT-D890UV calibration fields](../../reference/radios/anytone/at-d890uv/calibration.md)
 - [DM-32UV debug capture allow-list](../../reference/radios/baofeng/dm-32uv/protocol.md#debug-capture-allow-list)
 - [Debug index and routes](../../../src/app/routes/debug/debugRoutes.tsx)
 
 ## Behaviour
+
+RT95 debug captures include the clone programming image and a separate inspect-only main-body EEPROM prefix relayed via the head. PC ident is head evidence; clone channel and settings storage is unknown. See the [RT95 calibration reference](../../reference/radios/retevis/rt95/calibration.md) for coverage and limits. The Calibration tab shows captured fields and raw bytes; old archives show Not captured and malformed regions are refused. Values carry [head], [body] or [unknown] provenance tags.
 
 The radio profile shells can open compatible radio-backup ZIPs without a library or build. The Backup tab lists the archive’s named ranges and sidecars and can download the original archive. Gaps between listed numeric ranges are unclassified because entries may use different address spaces; the archive does not establish completeness outside its entries. An invalid or incompatible file leaves the current archive in place. Archive identity fields are reported as archive evidence, not live radio identity. The RT95 profile can make a live read using the existing Backup reader behind a read-only frame allow-list; the resulting archive stays in the tab until downloaded. The RT95 programming-image range is classified against its known clone map and a complete image has a channel summary. Coverage shows SHA-256 hashes for captured regions and classifies the RT95 programming image against its known map. The RT95 EEPROM prefix is classified separately from clone offsets. Other address spaces remain unclassified. The Hex tab pages through captured regions. Memory shows RT95 channel slots and settings when a complete programming image is available. Compare opens a second archive and compares matching RT95 programming-image and EEPROM bytes and decoded channel names and settings; regions with unknown address space or representation are incomparable, as are missing bytes. Trace export and other live capture adapters remain unavailable. The existing UV-5R Mini read and AT-D890UV erase-unit probe remain separate tools; the latter can write during erase passes. IndexedDB inspection is read-only; local storage permits deleting individual keys. Serial reopen sends test bytes and requires a cable without a radio attached. Legacy storage and transport links redirect to the new hierarchy, retaining path parameters, query and hash.
 
@@ -34,8 +37,8 @@ The AT-D890UV Memory tab is a read-only viewer for MR channels, zones, contacts,
 
 ## Known gaps
 
+- RT95 calibration is not validated on hardware; the head may return stale or zero relay filler without a main-board reply.
+
 - DM-32UV: calibration and memory viewers, the digital address book (V-frame `0x0F`), MM9PDY location pages and other blocks outside the product read set, and the firmware build stamp are not captured or decoded yet. The capture is verified against synthetic sessions only, not hardware. Tracking: https://github.com/pskillen/codeplug-studio/issues/1698
 - Other profiles await read-only adapter verification. Coverage classifications and decoded inventories for other radios await their capture and hydration adapters. The current clone summary does not provide callsigns or zone membership relationships.
 - Mini parity tests, then redirecting `/debug/uv5r-mini` to the shared page — [#1747](https://github.com/pskillen/codeplug-studio/issues/1747).
-
-RT95 debug captures include the clone programming image and a separate inspect-only main-body EEPROM prefix relayed via the head. PC ident is head evidence; clone channel and settings storage is unknown. See the [RT95 calibration reference](../../reference/radios/retevis/rt95/calibration.md) for coverage and limits.

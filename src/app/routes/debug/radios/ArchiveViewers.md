@@ -23,3 +23,5 @@ Hex displays at most 256 bytes of one captured region per page. Memory uses the 
 ## Related
 
 [Radio debug](../../../../../docs/features/radio-debug/README.md)
+
+RT95 calibration is shown in the Calibration tab as main-body [body] evidence relayed through the head; PC ident is [head] and clone data [unknown]. Coverage lists captured prefix and missing tail separately. Hex and Compare retain these separate region identities; missing bytes are incomparable. Overview also retains archive identity, evidence and connection rows.
