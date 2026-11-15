@@ -231,7 +231,13 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
               </Text>
             ))}
             <Text>
-              Other address spaces and coverage outside the expected programming image are unknown.
+              Clone programming-image offsets [unknown]: 0x0000–0x329F. Main-body EEPROM via head
+              [body]: 0x3B00–0x3FBF{' '}
+              {archive.regions['rt95-calibration']
+                ? `· ${archive.regions['rt95-calibration'].length} bytes captured`
+                : '· Not captured'}
+              . The interval 0x32A0–0x3AFF is not captured. These are distinct representations, not
+              a proven physical memory map. Signature 0x3FF8–0x3FFF is outside this capture.
             </Text>
           </>
         ) : (
@@ -243,6 +249,7 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
         {!mini &&
           !d890 &&
           !dm32 &&
+          !rt95 &&
           archiveGaps(archive.manifest.regions).map((gap) => (
             <Text key={gap.start} c="dimmed">
               {formatAddress(gap.start)}–{formatAddress(gap.end)} · Not listed (address space and

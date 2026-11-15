@@ -82,7 +82,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     model: 'RT95',
     archiveModelId: 'retevis-rt95',
     family: 'Stock / MM9PDY',
-    capabilities: capabilities('Available', 'Not yet available', 'Partial'),
+    capabilities: capabilities('Available', 'Partial', 'Partial'),
   },
   {
     slug: 'uv-21-pro-v2',
