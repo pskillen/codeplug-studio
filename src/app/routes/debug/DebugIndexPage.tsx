@@ -52,8 +52,13 @@ export default function DebugIndexPage() {
               </Text>
               <Group gap="xs" mt="md">
                 {radio.capabilities.map((capability) => (
-                  <Badge key={capability.name} color="gray">
-                    {capability.name} · {capability.status}
+                  <Badge
+                    key={capability.name}
+                    color={radio.capture && capability.name === 'Backup' ? 'green' : 'gray'}
+                    title={`${capability.name}: ${radio.capture && capability.name === 'Backup' ? 'Live capture available' : capability.status}`}
+                  >
+                    {capability.name} ·{' '}
+                    {radio.capture && capability.name === 'Backup' ? 'Available' : 'Unavailable'}
                   </Badge>
                 ))}
               </Group>

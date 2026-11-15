@@ -1,10 +1,39 @@
-import { Alert, Anchor, Badge, Card, SimpleGrid, Stack, Tabs, Text, Title } from '@mantine/core';
+import {
+  Alert,
+  Anchor,
+  Badge,
+  Button,
+  Card,
+  FileButton,
+  Group,
+  SimpleGrid,
+  Stack,
+  Tabs,
+  Text,
+  Title,
+} from '@mantine/core';
+import { useState } from 'react';
+import { downloadZip } from '@integrations/download/browserDownload.ts';
+import {
+  archiveGaps,
+  openDebugArchive,
+  rt95ArchiveDetails,
+  type DebugArchive,
+} from './captureArchive.ts';
 import { Link, useParams } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { radioDebugDescriptors } from './descriptors.ts';
 
 export default function RadioDebugPage() {
   const { radio } = useParams();
+  return <RadioDebugProfile key={radio} radio={radio} />;
+}
+
+function RadioDebugProfile({ radio }: { radio: string | undefined }) {
+  const [archive, setArchive] = useState<DebugArchive>();
+  const [error, setError] = useState<string>();
+  const [reading, setReading] = useState(false);
+  const [progress, setProgress] = useState('');
   const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
   if (!descriptor)
     return (
@@ -15,6 +44,34 @@ export default function RadioDebugPage() {
         </Anchor>
       </Page>
     );
+  const openFile = async (file: File | null) => {
+    if (!file) return;
+    try {
+      const next = openDebugArchive(
+        new Uint8Array(await file.arrayBuffer()),
+        descriptor.archiveModelId,
+      );
+      setArchive(next);
+      setError(undefined);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not open archive.');
+    }
+  };
+  const readRadio = async () => {
+    if (!descriptor.capture) return;
+    setReading(true);
+    setError(undefined);
+    try {
+      setArchive(await descriptor.capture({ onProgress: (p) => setProgress(p.msg) }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Radio read failed.');
+    } finally {
+      setReading(false);
+      setProgress('');
+    }
+  };
+  const rt95 = archive ? rt95ArchiveDetails(archive) : undefined;
+  const address = (n: number) => `0x${n.toString(16).toUpperCase()}`;
   return (
     <Page>
       <Stack>
@@ -25,6 +82,26 @@ export default function RadioDebugPage() {
           title={descriptor.model}
           description={`${descriptor.family} profile · Not connected`}
         />
+        <Group>
+          <FileButton onChange={openFile} accept=".zip,application/zip">
+            {(props) => (
+              <Button variant="default" {...props}>
+                Open archive
+              </Button>
+            )}
+          </FileButton>
+        </Group>
+        {error && (
+          <Alert color="red" title="Operation failed">
+            {error}
+          </Alert>
+        )}
+        {archive && (
+          <Text size="sm">
+            {archive.source === 'file' ? 'Local archive' : 'Live read'} · captured{' '}
+            {archive.manifest.capturedAt} · {archive.manifest.regions.length} regions
+          </Text>
+        )}
         <Tabs defaultValue="overview">
           <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
             {['Overview', 'Backup', 'Calibration', 'Memory', 'Hex', 'Compare', 'Trace'].map(
@@ -43,10 +120,10 @@ export default function RadioDebugPage() {
                   {[
                     ['Model · selected', descriptor.model],
                     ['Expected family', descriptor.family],
-                    ['Serial · radio report', 'Unknown'],
-                    ['Firmware · radio report', 'Unknown'],
+                    ['Serial · archive', archive?.manifest.serial || 'Unknown'],
+                    ['Firmware · archive', archive?.manifest.firmware || 'Unknown'],
                     ['Firmware mod', 'Unknown'],
-                    ['Evidence', 'No radio identity observed'],
+                    ['Evidence', archive ? 'Archive manifest' : 'No radio identity observed'],
                     ['Connection', 'Not connected'],
                   ].map(([label, value]) => (
                     <div key={label}>
@@ -66,18 +143,101 @@ export default function RadioDebugPage() {
                 <Stack gap="xs" mt="md">
                   {descriptor.capabilities.map((capability) => (
                     <Text component="div" key={capability.name}>
-                      {capability.name} · <Badge color="gray">{capability.status}</Badge>
+                      {capability.name} ·{' '}
+                      <Badge
+                        color={
+                          descriptor.capture && capability.name === 'Backup' ? 'green' : 'gray'
+                        }
+                        title={
+                          descriptor.capture && capability.name === 'Backup'
+                            ? 'Live capture available'
+                            : capability.status
+                        }
+                      >
+                        {descriptor.capture && capability.name === 'Backup'
+                          ? 'Available'
+                          : 'Unavailable'}
+                      </Badge>
                     </Text>
                   ))}
                 </Stack>
               </Card>
-              <Alert title="Radio diagnostics unavailable">
-                This profile has no debug adapter yet. No connection or radio read is available on
-                this page.
-              </Alert>
+              {!descriptor.capture && (
+                <Alert title="Radio diagnostics unavailable">
+                  This profile has no debug adapter yet. No connection or radio read is available on
+                  this page.
+                </Alert>
+              )}
             </Stack>
           </Tabs.Panel>
-          {['Backup', 'Calibration', 'Memory', 'Hex', 'Compare', 'Trace'].map((tab) => (
+          <Tabs.Panel value="backup" pt="md">
+            <Stack>
+              <Title order={3}>Backup</Title>
+              <Text>
+                Open a compatible local archive to inspect its captured ranges.{' '}
+                {descriptor.capture
+                  ? 'Read the radio to make a new capture.'
+                  : 'Live radio capture is not available yet.'}
+              </Text>
+              {descriptor.capture && (
+                <Group>
+                  <Button onClick={readRadio} loading={reading}>
+                    Read radio
+                  </Button>
+                  {reading && <Text>{progress || 'Connecting…'}</Text>}
+                </Group>
+              )}
+              <Alert title="Coverage is limited">
+                The listed ranges are archive entries, not a complete physical storage or firmware
+                image. Unlisted bytes are not captured; coverage outside the listed ranges is
+                unknown.
+              </Alert>
+              {archive && (
+                <Card withBorder>
+                  <Title order={4}>Coverage manifest</Title>
+                  {rt95?.summary && (
+                    <Text mt="sm">
+                      Clone summary · {rt95.summary.occupiedChannelCount} occupied channels ·{' '}
+                      {rt95.summary.emptyChannelCount} empty channels
+                    </Text>
+                  )}
+                  {rt95?.missing.map((gap) => (
+                    <Text key={gap.start} mt="xs">
+                      RT95 programming image {address(gap.start)}–{address(gap.end)} · Missing
+                    </Text>
+                  ))}
+                  {archive.manifest.regions.map((region) => (
+                    <Text key={region.id} mt="xs">
+                      {region.label} ·{' '}
+                      {region.byteLength
+                        ? `${address(region.address)}–${address(region.address + region.byteLength - 1)}`
+                        : 'empty'}{' '}
+                      · {region.byteLength} bytes · Captured
+                    </Text>
+                  ))}
+                  {archiveGaps(archive.manifest.regions).map((gap) => (
+                    <Text key={gap.start} c="dimmed" mt="xs">
+                      {address(gap.start)}–{address(gap.end)} · Not listed (address space and status
+                      unknown)
+                    </Text>
+                  ))}
+                  <Text mt="sm" size="sm">
+                    Sidecars:{' '}
+                    {Object.keys(archive.sidecars).length
+                      ? Object.keys(archive.sidecars).join(', ')
+                      : 'none'}
+                  </Text>
+                  <Button
+                    mt="md"
+                    onClick={() => downloadZip(archive.zipBytes, 'radio-debug-archive.zip')}
+                  >
+                    Download archive
+                  </Button>
+                </Card>
+              )}
+            </Stack>
+          </Tabs.Panel>
+          {['Calibration', 'Memory', 'Hex', 'Compare', 'Trace'].map((tab) => (
             <Tabs.Panel key={tab} value={tab.toLowerCase()} pt="md">
               <Alert title={`${tab} unavailable`}>
                 This capability is not yet available for this profile.
