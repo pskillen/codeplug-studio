@@ -31,7 +31,7 @@ const DEFERRED = [
 const count = (n: number) => n.toLocaleString('en-GB');
 const mhz = (hz: number) => (hz / 1e6).toFixed(5);
 
-export function formatAtD890Tone(tone: RadioTone): string {
+function formatAtD890Tone(tone: RadioTone): string {
   if (tone.kind === 'ctcss') return `${tone.hz} Hz`;
   if (tone.kind === 'dcs') return `D${String(tone.code).padStart(3, '0')}${tone.polarity ?? 'N'}`;
   return 'None';
@@ -94,106 +94,104 @@ function cell(row: ChannelRow, value: (c: RadioChannelDto) => string | number | 
   return value(row.channel) ?? DASH;
 }
 
-function channelColumns(): DataTableColumn<ChannelRow>[] {
-  return [
-    {
-      key: 'slot',
-      header: 'Slot',
-      width: '4.5rem',
-      sortable: true,
-      sortValue: (r) => r.slot,
-      render: (r) => r.slot,
-      hideOnMobile: true,
-    },
-    {
-      key: 'identity',
-      header: 'Identity',
-      width: 'minmax(14rem, 2fr)',
-      sortable: true,
-      sortValue: (r) => r.label,
-      render: (r) => (
-        <>
-          <strong>{r.label}</strong>
-          {r.note && <Text size="xs">{r.note}</Text>}
-        </>
-      ),
-      hideOnMobile: true,
-    },
-    {
-      key: 'rx',
-      header: 'RX MHz',
-      width: '6.5rem',
-      sortable: true,
-      sortValue: (r) => r.channel?.rxHz ?? null,
-      render: (r) => cell(r, (c) => mhz(c.rxHz)),
-    },
-    {
-      key: 'tx',
-      header: 'TX MHz',
-      width: '6.5rem',
-      sortable: true,
-      sortValue: (r) => r.channel?.txHz ?? null,
-      render: (r) => cell(r, (c) => mhz(c.txHz)),
-    },
-    {
-      key: 'bw',
-      header: 'Bandwidth',
-      width: '6rem',
-      render: (r) => cell(r, (c) => c.bandwidth),
-    },
-    {
-      key: 'power',
-      header: 'Power',
-      width: '5rem',
-      render: (r) => cell(r, (c) => (c.powerPercent == null ? 'Default' : `${c.powerPercent}%`)),
-    },
-    {
-      key: 'mode',
-      header: 'Mode',
-      width: '7rem',
-      sortable: true,
-      sortValue: (r) => r.channel?.mode ?? null,
-      render: (r) => cell(r, (c) => (c.mode ? MODE_LABEL[c.mode] : undefined)),
-    },
-    {
-      key: 'cc',
-      header: 'CC',
-      width: '3.5rem',
-      render: (r) => cell(r, (c) => (c.mode?.includes('digital') ? c.colorCode : undefined)),
-    },
-    {
-      key: 'ts',
-      header: 'TS',
-      width: '3.5rem',
-      render: (r) => cell(r, (c) => (c.mode?.includes('digital') ? c.timeslot : undefined)),
-    },
-    {
-      key: 'contact',
-      header: 'Contact ref',
-      width: '7rem',
-      render: (r) =>
-        cell(r, (c) => (c.txContactId != null ? `#${c.txContactId} (unresolved)` : undefined)),
-    },
-    {
-      key: 'rxTone',
-      header: 'RX tone',
-      width: '6rem',
-      render: (r) => cell(r, (c) => formatAtD890Tone(c.rxTone)),
-    },
-    {
-      key: 'txTone',
-      header: 'TX tone',
-      width: '6rem',
-      render: (r) => cell(r, (c) => formatAtD890Tone(c.txTone)),
-    },
-    {
-      key: 'flags',
-      header: 'Flags',
-      width: 'minmax(10rem, 1.5fr)',
-      render: (r) => cell(r, (c) => flagsOf(c).join(', ') || undefined),
-    },
-  ];
-}
+const CHANNEL_COLUMNS: DataTableColumn<ChannelRow>[] = [
+  {
+    key: 'slot',
+    header: 'Slot',
+    width: '4.5rem',
+    sortable: true,
+    sortValue: (r) => r.slot,
+    render: (r) => r.slot,
+    hideOnMobile: true,
+  },
+  {
+    key: 'identity',
+    header: 'Identity',
+    width: 'minmax(14rem, 2fr)',
+    sortable: true,
+    sortValue: (r) => r.label,
+    render: (r) => (
+      <>
+        <strong>{r.label}</strong>
+        {r.note && <Text size="xs">{r.note}</Text>}
+      </>
+    ),
+    hideOnMobile: true,
+  },
+  {
+    key: 'rx',
+    header: 'RX MHz',
+    width: '6.5rem',
+    sortable: true,
+    sortValue: (r) => r.channel?.rxHz ?? null,
+    render: (r) => cell(r, (c) => mhz(c.rxHz)),
+  },
+  {
+    key: 'tx',
+    header: 'TX MHz',
+    width: '6.5rem',
+    sortable: true,
+    sortValue: (r) => r.channel?.txHz ?? null,
+    render: (r) => cell(r, (c) => mhz(c.txHz)),
+  },
+  {
+    key: 'bw',
+    header: 'Bandwidth',
+    width: '6rem',
+    render: (r) => cell(r, (c) => c.bandwidth),
+  },
+  {
+    key: 'power',
+    header: 'Power',
+    width: '5rem',
+    render: (r) => cell(r, (c) => (c.powerPercent == null ? 'Default' : `${c.powerPercent}%`)),
+  },
+  {
+    key: 'mode',
+    header: 'Mode',
+    width: '7rem',
+    sortable: true,
+    sortValue: (r) => r.channel?.mode ?? null,
+    render: (r) => cell(r, (c) => (c.mode ? MODE_LABEL[c.mode] : undefined)),
+  },
+  {
+    key: 'cc',
+    header: 'CC',
+    width: '3.5rem',
+    render: (r) => cell(r, (c) => (c.mode?.includes('digital') ? c.colorCode : undefined)),
+  },
+  {
+    key: 'ts',
+    header: 'TS',
+    width: '3.5rem',
+    render: (r) => cell(r, (c) => (c.mode?.includes('digital') ? c.timeslot : undefined)),
+  },
+  {
+    key: 'contact',
+    header: 'Contact ref',
+    width: '7rem',
+    render: (r) =>
+      cell(r, (c) => (c.txContactId != null ? `#${c.txContactId} (unresolved)` : undefined)),
+  },
+  {
+    key: 'rxTone',
+    header: 'RX tone',
+    width: '6rem',
+    render: (r) => cell(r, (c) => formatAtD890Tone(c.rxTone)),
+  },
+  {
+    key: 'txTone',
+    header: 'TX tone',
+    width: '6rem',
+    render: (r) => cell(r, (c) => formatAtD890Tone(c.txTone)),
+  },
+  {
+    key: 'flags',
+    header: 'Flags',
+    width: 'minmax(10rem, 1.5fr)',
+    render: (r) => cell(r, (c) => flagsOf(c).join(', ') || undefined),
+  },
+];
 
 const matches = (query: string, ...haystack: string[]) => {
   const q = query.trim().toLocaleLowerCase();
@@ -208,7 +206,6 @@ function ChannelsPanel({
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
   const rows = useMemo(() => channels.entries.map(channelRow), [channels]);
-  const columns = useMemo(channelColumns, []);
   if (channels.bitmap !== 'captured')
     return (
       <Alert title={NOT_CAPTURED} color="yellow">
@@ -245,7 +242,7 @@ function ChannelsPanel({
       )}
       <DataTable
         caption="AT-D890UV memory channels"
-        columns={columns}
+        columns={CHANNEL_COLUMNS}
         rows={shown}
         getRowId={(r) => r.id}
         totalRowCount={rows.length}
@@ -280,36 +277,34 @@ interface MemberRow {
   member: AtD890ZoneMember;
 }
 
-function memberColumns(): DataTableColumn<MemberRow>[] {
-  return [
-    { key: 'position', header: 'Order', width: '4.5rem', render: (r) => r.member.position },
-    {
-      key: 'slot',
-      header: 'Channel slot',
-      width: '6.5rem',
-      render: (r) => r.member.slot ?? `Index ${r.member.rawIndex}`,
-    },
-    {
-      key: 'identity',
-      header: 'Identity',
-      width: 'minmax(14rem, 2fr)',
-      render: (r) =>
-        r.member.channel ? <strong>{r.member.channel.wireName || '(unnamed)'}</strong> : DASH,
-    },
-    {
-      key: 'rx',
-      header: 'RX MHz',
-      width: '6.5rem',
-      render: (r) => (r.member.channel ? mhz(r.member.channel.rxHz) : DASH),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      width: 'minmax(16rem, 2fr)',
-      render: (r) => MEMBER_EXPLANATION[r.member.status],
-    },
-  ];
-}
+const MEMBER_COLUMNS: DataTableColumn<MemberRow>[] = [
+  { key: 'position', header: 'Order', width: '4.5rem', render: (r) => r.member.position },
+  {
+    key: 'slot',
+    header: 'Channel slot',
+    width: '6.5rem',
+    render: (r) => r.member.slot ?? `Index ${r.member.rawIndex}`,
+  },
+  {
+    key: 'identity',
+    header: 'Identity',
+    width: 'minmax(14rem, 2fr)',
+    render: (r) =>
+      r.member.channel ? <strong>{r.member.channel.wireName || '(unnamed)'}</strong> : DASH,
+  },
+  {
+    key: 'rx',
+    header: 'RX MHz',
+    width: '6.5rem',
+    render: (r) => (r.member.channel ? mhz(r.member.channel.rxHz) : DASH),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: 'minmax(16rem, 2fr)',
+    render: (r) => MEMBER_EXPLANATION[r.member.status],
+  },
+];
 
 interface ZoneRow {
   id: string;
@@ -363,7 +358,6 @@ function ZonesPanel({ zones }: { zones: ReturnType<typeof projectAtD890Memory>['
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
   const [selectedSlot, setSelectedSlot] = useState<number>();
   const rows = useMemo(() => zones.entries.map(zoneRow), [zones]);
-  const memberCols = useMemo(memberColumns, []);
   if (zones.bitmap !== 'captured')
     return (
       <Alert title={NOT_CAPTURED} color="yellow">
@@ -427,7 +421,7 @@ function ZonesPanel({ zones }: { zones: ReturnType<typeof projectAtD890Memory>['
               <DataTable
                 caption={`Zone ${selected.slot} members`}
                 variant="embedded"
-                columns={memberCols}
+                columns={MEMBER_COLUMNS}
                 rows={selected.members.list.map((member) => ({
                   id: `member-${member.position}`,
                   member,
