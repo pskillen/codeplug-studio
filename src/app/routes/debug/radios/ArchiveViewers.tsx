@@ -24,6 +24,8 @@ import {
 export function HexViewer({ archive }: { archive?: DebugArchive }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const [jump, setJump] = useState('');
+  const [jumpError, setJumpError] = useState<string>();
   if (!archive)
     return <Alert title="No capture">Open or read a capture to inspect its bytes.</Alert>;
   const wire = selected === '__mini_wire' ? archive.sidecars['debug/wire.bin'] : undefined;
@@ -33,6 +35,20 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
   const bytes = wire ?? archive.regions[region.id]!;
   const pages = Math.max(1, Math.ceil(bytes.length / HEX_PAGE_BYTES));
   const current = Math.min(page, pages - 1);
+  const base = wire ? 0 : region.address;
+  const goToAddress = () => {
+    const text = jump.trim().replace(/^0x/i, '');
+    const target = /^[0-9a-f]+$/i.test(text) ? parseInt(text, 16) : NaN;
+    const offset = target - base;
+    if (!Number.isFinite(offset) || offset < 0 || offset >= bytes.length) {
+      setJumpError(
+        `Address is outside this region (${formatAddress(base)}–${formatAddress(base + Math.max(0, bytes.length - 1))}).`,
+      );
+      return;
+    }
+    setJumpError(undefined);
+    setPage(Math.floor(offset / HEX_PAGE_BYTES));
+  };
   return (
     <Stack>
       <Title order={3}>Hex &amp; region map</Title>
@@ -61,6 +77,7 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
         onChange={(id) => {
           setSelected(id);
           setPage(0);
+          setJumpError(undefined);
         }}
         allowDeselect={false}
       />
@@ -82,6 +99,19 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
           <Text>
             Page {current + 1} of {pages}
           </Text>
+          <TextInput
+            aria-label="Go to address"
+            placeholder="Address, e.g. 0xF000"
+            value={jump}
+            error={jumpError}
+            onChange={(event) => setJump(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') goToAddress();
+            }}
+          />
+          <Button variant="default" onClick={goToAddress}>
+            Go
+          </Button>
           <Button
             variant="default"
             disabled={current + 1 >= pages}
