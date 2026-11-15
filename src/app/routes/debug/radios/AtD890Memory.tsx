@@ -25,7 +25,8 @@ import {
   TalkGroupsPanel,
   describeBankReference,
 } from './AtD890MemoryContacts.tsx';
-import { MEMBER_EXPLANATION, ScanListsPanel, SettingsPanel } from './AtD890MemorySettings.tsx';
+import { ScanListsPanel, SettingsPanel } from './AtD890MemorySettings.tsx';
+import { MEMBER_EXPLANATION } from './viewerUtils.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
 const MODEL_ID = 'AT-D890UV';

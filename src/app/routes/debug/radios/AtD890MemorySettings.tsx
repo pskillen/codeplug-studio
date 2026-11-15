@@ -6,10 +6,7 @@ import {
   type DataTableSortState,
 } from '@app/components/v2/index.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
-import type {
-  AtD890MemberStatus,
-  AtD890MemoryProjection,
-} from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
+import type { AtD890MemoryProjection } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
 import {
   AT_D890_SETTINGS_GROUPS,
   type AtD890ScanListEntry,
@@ -17,6 +14,8 @@ import {
   type AtD890ScanPriority,
   type AtD890SettingFieldView,
 } from '@integrations/radio-io/radios/at-d890uv/debugMemorySettings.ts';
+
+import { MEMBER_EXPLANATION } from './viewerUtils.ts';
 
 const NOT_CAPTURED = 'Not captured';
 const DASH = '—';
@@ -27,15 +26,6 @@ const hexAddress = (a: number) => `0x${a.toString(16).toUpperCase().padStart(7, 
 const matches = (query: string, ...haystack: string[]) => {
   const q = query.trim().toLocaleLowerCase();
   return !q || haystack.some((h) => h.toLocaleLowerCase().includes(q));
-};
-
-export const MEMBER_EXPLANATION: Record<AtD890MemberStatus, string> = {
-  resolved: 'Resolved',
-  'out-of-range': 'Out of range: beyond the hardware channel slots',
-  absent: 'Absent: the channel bitmap does not mark this slot occupied',
-  'not-captured': 'Not captured: the slot is occupied but its record is incomplete',
-  'inventory-not-captured': 'Cannot resolve: the channel bitmap was not captured',
-  unreadable: 'Unreadable: the captured record is empty or invalid',
 };
 
 // ---------------------------------------------------------------------------
