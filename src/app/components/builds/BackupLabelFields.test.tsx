@@ -1,7 +1,8 @@
 import { MantineProvider } from '@mantine/core';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import BackupLabelFields, { backupLabelSummary } from './BackupLabelFields.tsx';
+import BackupLabelFields from './BackupLabelFields.tsx';
+import { backupLabelSummary } from '../../lib/backupLabelSummary.ts';
 
 describe('BackupLabelFields', () => {
   it('commits on blur only when a value changed', () => {

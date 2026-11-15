@@ -15,7 +15,7 @@ Three optional text inputs, **Radio name**, **Label** and **Description**, for a
 
 ## Behaviour
 
-Text is held locally and committed on blur, so a keystroke never rewrites the archive. Length caps come from `RADIO_BACKUP_LABEL_MAX` in `src/integrations/radio-io/backup/`; blanks are dropped when stored. `backupLabelSummary` gives the one-line "Radio name · Label" form used in lists.
+Text is held locally and committed on blur, so a keystroke never rewrites the archive. Length caps come from `RADIO_BACKUP_LABEL_MAX` in `src/integrations/radio-io/backup/`; blanks are dropped when stored. `backupLabelSummary` (`src/app/lib/backupLabelSummary.ts`) gives the one-line "Radio name · Label" form used in lists.
 
 ## Related
 
