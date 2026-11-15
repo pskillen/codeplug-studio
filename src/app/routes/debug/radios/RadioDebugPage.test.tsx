@@ -6,7 +6,7 @@ import {
 import { buildUv5rMiniReadsZip, Uv5rMiniDebugReadStore } from '../uv5rMiniDebugReads.ts';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, MemoryRouter, Route, RouterProvider, Routes } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import RadioDebugPage from './RadioDebugPage.tsx';
 import { getDebugReadHistory } from './debugReadHistory.ts';
@@ -39,7 +39,7 @@ vi.mock('@app/services/uv5rMiniDebugRead.ts', () => ({
   runUv5rMiniDebugFullRead: fake.run,
 }));
 function open(slug = 'uv-5r-mini') {
-  render(
+  const view = render(
     <MemoryRouter initialEntries={[`/debug/radios/${slug}`]}>
       <DesignSystemV2Provider>
         <Routes>
@@ -49,6 +49,7 @@ function open(slug = 'uv-5r-mini') {
     </MemoryRouter>,
   );
   fireEvent.click(screen.getByRole('tab', { name: 'Backup' }));
+  return view;
 }
 describe('Mini shared page read', () => {
   it('cancels an in-flight read and reports its failure', async () => {
@@ -227,6 +228,50 @@ function dm32Capture(): Dm32DebugCapture {
 }
 
 describe('DM-32UV debug page', () => {
+  const history = getDebugReadHistory({ slug: 'dm-32uv', archiveModelId: 'DM-32UV' });
+  afterEach(() => act(() => history.clear()));
+
+  it('retains a successful result that arrives after unmount', async () => {
+    const archive = await archiveDm32Capture(dm32Capture());
+    let finish!: (value: typeof archive) => void;
+    fake.dm32.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const view = open('dm-32uv');
+    fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
+    view.unmount();
+    await act(async () => finish(archive));
+    expect(history.getSnapshot().entries).toHaveLength(1);
+    open('dm-32uv');
+    expect(screen.getByText(/Live read · captured 2026-01-01/)).toBeInTheDocument();
+  });
+
+  it('retains three successful reads with labels', async () => {
+    history.clear();
+    const archive = await archiveDm32Capture(dm32Capture());
+    fake.dm32.mockResolvedValueOnce(archive).mockResolvedValueOnce(archive);
+    let finish!: (value: typeof archive) => void;
+    fake.dm32.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    open('dm-32uv');
+    fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
+    await waitFor(() => expect(history.getSnapshot().entries).toHaveLength(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
+    await waitFor(() => expect(history.getSnapshot().entries).toHaveLength(2));
+    fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
+    await screen.findByRole('button', { name: 'Cancel' });
+    await act(async () => finish(archive));
+    expect(history.getSnapshot().entries.map((e) => e.label)).toEqual(['A', 'B', 'C']);
+    expect(history.getSnapshot().undownloaded).toBe(3);
+  });
+
   it('reads the radio and shows captured identity evidence and coverage', async () => {
     fake.dm32.mockResolvedValueOnce(await archiveDm32Capture(dm32Capture()));
     open('dm-32uv');

@@ -100,3 +100,36 @@ describe('archive viewers', () => {
     expect(compareRegions(a, b).error).toMatch(/incompatible/);
   });
 });
+
+it('classifies DM-32 configuration separately and refuses overlapping or unknown regions', () => {
+  const base = capture([1]);
+  const region = {
+    id: 'config',
+    label: 'Config',
+    address: 0,
+    byteLength: 4096,
+    path: 'regions/config.bin',
+    restoreRole: 'inspect-only' as const,
+  };
+  const a = {
+    ...base,
+    manifest: {
+      ...base.manifest,
+      radioModelId: 'DM-32UV',
+      addressBase: 0,
+      imageByteLength: 4096,
+      regions: [region],
+    },
+    regions: { config: new Uint8Array(4096) },
+  };
+  const b = { ...a, regions: { config: new Uint8Array(4096).fill(1) } };
+  expect(compareRegions(a, b).regions[0]).toMatchObject({ comparable: true, changed: 4096 });
+  const overlap = {
+    ...a,
+    manifest: { ...a.manifest, regions: [region, { ...region, id: 'other' }] },
+    regions: { ...a.regions, other: new Uint8Array(4096) },
+  };
+  expect(compareRegions(overlap, overlap).regions.every((r) => !r.comparable)).toBe(true);
+  const outside = { ...a, manifest: { ...a.manifest, regions: [{ ...region, address: 4096 }] } };
+  expect(compareRegions(outside, outside).regions[0].comparable).toBe(false);
+});
