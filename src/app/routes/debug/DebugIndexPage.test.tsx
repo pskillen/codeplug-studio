@@ -30,6 +30,6 @@ describe('debug index capability badges', () => {
     const dm32 = screen.getAllByRole('link', { name: 'DM-32UV' })[0].closest('.mantine-Card-root');
     expect(dm32).toHaveTextContent('Backup · Available');
     expect(dm32).toHaveTextContent('Calibration · Partial');
-    expect(dm32).toHaveTextContent('Memory · Not yet available');
+    expect(dm32).toHaveTextContent('Memory · Partial');
   });
 });

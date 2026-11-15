@@ -36,6 +36,7 @@ import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWake
 import { capabilityColor, radioDebugDescriptors } from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
 import { AtD890Memory } from './AtD890Memory.tsx';
+import { Dm32Memory } from './Dm32Memory.tsx';
 import { Coverage } from './Coverage.tsx';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { Uv5rMiniCompare } from './Uv5rMiniCompare.tsx';
@@ -557,9 +558,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
             ) : descriptor.slug === 'at-d890uv' ? (
               <AtD890Memory archive={archive} />
             ) : descriptor.slug === 'dm-32uv' ? (
-              <Alert title="Memory unavailable">
-                This capability is not yet available for this profile.
-              </Alert>
+              <Dm32Memory archive={archive} />
             ) : (
               <MemoryViewer archive={archive} />
             )}
