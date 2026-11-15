@@ -20,6 +20,10 @@ import {
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { classifyDm32DebugCoverage } from '@integrations/radio-io/radios/dm32uv/debugCoverage.ts';
 import { classifyDm32Metadata } from '@integrations/radio-io/radios/dm32uv/memory.ts';
+import {
+  classifyOpenGd77DebugCoverage,
+  isOpenGd77ModelId,
+} from '@integrations/radio-io/radios/opengd77/debugCoverage.ts';
 import { Card, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import {
@@ -75,6 +79,9 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
   const dm32 = isDm32ModelId(archive.manifest.radioModelId)
     ? classifyDm32DebugCoverage(archive.manifest, archive.regions, archive.sidecars)
     : undefined;
+  const og77 = isOpenGd77ModelId(archive.manifest.radioModelId)
+    ? classifyOpenGd77DebugCoverage(archive.manifest, archive.regions, archive.sidecars)
+    : undefined;
   const rt95 = rt95ArchiveDetails(archive);
   const mini = uv5rMiniArchiveDetails(archive);
   const clone =
@@ -100,25 +107,31 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
         {archive.manifest.regions.map((region) => (
           <div key={region.id}>
             <Text fw={600}>
-              {d890
-                ? d890.vital.some((v) => v.region?.id === region.id)
-                  ? 'Vital read · separate provenance'
-                  : d890.outside.some((r) => r.id === region.id)
-                    ? 'Out-of-map sparse read'
-                    : d890.unclassified.some((r) => r.id === region.id)
-                      ? 'Unclassified address space'
-                      : 'D890 virtual map'
-                : dm32
-                  ? dm32.factory?.id === region.id
-                    ? 'Factory sector · separate address space'
-                    : dm32.windowRegions.some((r) => r.id === region.id)
-                      ? 'Configuration window'
-                      : `Unclassified address space · ${dm32.unclassified.find((u) => u.region.id === region.id)?.reason ?? 'unknown'}`
-                  : (regionIdentity(archive, region.id)?.space ?? 'Unclassified address space')}
+              {og77
+                ? og77.spans.some((span) => span.id === region.id && span.state !== 'missing')
+                  ? 'FLASH span · registered programming range'
+                  : og77.userDatabase.state === 'captured' && region.id === 'user-database'
+                    ? 'User Database · packed, not contiguous flash'
+                    : `Unclassified address space · ${og77.unclassified.find((u) => u.id === region.id)?.reason ?? 'unknown'}`
+                : d890
+                  ? d890.vital.some((v) => v.region?.id === region.id)
+                    ? 'Vital read · separate provenance'
+                    : d890.outside.some((r) => r.id === region.id)
+                      ? 'Out-of-map sparse read'
+                      : d890.unclassified.some((r) => r.id === region.id)
+                        ? 'Unclassified address space'
+                        : 'D890 virtual map'
+                  : dm32
+                    ? dm32.factory?.id === region.id
+                      ? 'Factory sector · separate address space'
+                      : dm32.windowRegions.some((r) => r.id === region.id)
+                        ? 'Configuration window'
+                        : `Unclassified address space · ${dm32.unclassified.find((u) => u.region.id === region.id)?.reason ?? 'unknown'}`
+                    : (regionIdentity(archive, region.id)?.space ?? 'Unclassified address space')}
             </Text>
             <Text>
               {region.label} · {mini && region.id.startsWith('mem-') ? 'Packed offset' : 'Start'}{' '}
-              {formatAddress(region.address)} · {region.byteLength} bytes · Captured
+              {formatAddress(region.address)} · {region.byteLength} bytes{og77 ? '' : ' · Captured'}
             </Text>
             <RegionHash bytes={archive.regions[region.id]!} />
           </div>
@@ -161,6 +174,49 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
             <Text size="sm">
               Sparse configuration omits occupancy-skipped records. Out-of-map and unclassified
               entries remain separate above.
+            </Text>
+          </>
+        ) : og77 ? (
+          <>
+            <Text fw={600}>Registered FLASH spans</Text>
+            {og77.spans.map((span) => (
+              <Text key={span.id} size="sm">
+                {span.label} {formatAddress(span.start)}–
+                {formatAddress(span.start + span.length - 1)} ·{' '}
+                {span.state === 'captured' && 'Captured'}
+                {span.state === 'partial' &&
+                  `Partial · ${span.capturedBytes} of ${span.length} bytes`}
+                {span.state === 'missing' && 'Missing from this archive'}
+              </Text>
+            ))}
+            <Text fw={600}>Not read</Text>
+            {og77.gaps.map((gap) => (
+              <Text key={gap.start} size="sm">
+                {formatAddress(gap.start)}–{formatAddress(gap.end - 1)} · Not read, unknown
+              </Text>
+            ))}
+            <Text size="sm">
+              Everything outside the spans above is not read and unknown, including calibration,
+              EEPROM-class data and firmware.
+            </Text>
+            <Text fw={600}>User Database</Text>
+            <Text size="sm">
+              {og77.userDatabase.state === 'captured'
+                ? `${og77.userDatabase.byteLength} bytes · ${og77.userDatabase.headerOnly ? 'Header only' : 'Header and entries'} · `
+                : 'Not captured · '}
+              packed header + entries, not contiguous flash (segment 1 lives elsewhere in flash)
+            </Text>
+            {og77.unclassified.length > 0 && <Text fw={600}>Unclassified entries</Text>}
+            {og77.unclassified.map((entry) => (
+              <Text key={entry.id} size="sm">
+                {entry.id} · {formatAddress(entry.address)} · {entry.byteLength} bytes ·{' '}
+                {entry.reason}
+              </Text>
+            ))}
+            {og77.flashPart && <Text size="sm">{og77.flashPart}</Text>}
+            <Text size="sm">
+              This is a read of the registered programming spans and the occupied User Database, not
+              a full flash image or a firmware dump.
             </Text>
           </>
         ) : dm32 ? (
@@ -289,6 +345,7 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
           </Text>
         )}
         {!mini &&
+          !og77 &&
           !d890 &&
           !dm32 &&
           !rt95 &&

@@ -13,6 +13,7 @@ const srcRoot = join(here, '..', '..', '..', '..');
 const FILES = [
   'integrations/radio-io/radios/opengd77/debugGuard.ts',
   'integrations/radio-io/radios/opengd77/debugCapture.ts',
+  'app/routes/debug/radios/opengd77Capture.ts',
 ];
 
 const FORBIDDEN: [string, RegExp][] = [

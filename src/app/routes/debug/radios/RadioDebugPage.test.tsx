@@ -18,13 +18,32 @@ import { buildDebugReadHistoryZip, openDebugReadHistoryZip } from './debugReadHi
 import { unzipSync, zipSync } from 'fflate';
 import { exampleArchive } from './debugReadHistory.fixture.ts';
 import { dm32CalibrationCapture, dm32Capture } from './dm32Archive.fixture.ts';
+import { OpenGd77ScriptedPipe } from '@integrations/radio-io/radios/opengd77/__fixtures__/scriptedPipe.ts';
+import { classifyOpenGd77DebugFrame } from '@integrations/radio-io/radios/opengd77/debugGuard.ts';
+import { OPENGD77_DEBUG_FIRMWARE_INFO_SIDECAR } from '@integrations/radio-io/radios/opengd77/debugCapture.ts';
+import {
+  OPENGD77_DM1701_MODEL_ID,
+  OPENGD77_MD9600_MODEL_ID,
+} from '@integrations/radio-io/radios/opengd77/hydration.ts';
+import { syntheticOpenGd77Archive } from './opengd77.fixture.ts';
 
 vi.mock('@integrations/download/browserDownload.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@integrations/download/browserDownload.ts')>()),
   downloadZip: vi.fn(async () => ({ status: 'saved' })),
 }));
 
-const fake = vi.hoisted(() => ({ run: vi.fn(), dm32: vi.fn(), prod: false }));
+const fake = vi.hoisted(() => ({
+  run: vi.fn(),
+  dm32: vi.fn(),
+  prod: false,
+  pipe: undefined as undefined | import('@integrations/radio-io/types.ts').BytePipe,
+}));
+vi.mock('@integrations/radio-io/transport/index.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@integrations/radio-io/transport/index.ts')>()),
+  isCapacitorSerialSupported: () => false,
+  requestWebSerialPort: vi.fn(async () => ({})),
+  openWebSerialPipe: vi.fn(async () => fake.pipe),
+}));
 vi.mock('@app/services/prodFeatureGate.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@app/services/prodFeatureGate.ts')>();
   return {
@@ -633,3 +652,182 @@ it('retains comparison uploads in shared history for other viewers and download 
   expect(screen.getByText(/Reads in this tab:/)).toHaveTextContent('File B');
   act(() => history.clear());
 }, 15000);
+
+const OG77_PAGES: [string, string, number[]][] = [
+  ['dm-1701-opengd77', OPENGD77_DM1701_MODEL_ID, [0x08, 0x0a]],
+  ['md-9600-opengd77', OPENGD77_MD9600_MODEL_ID, [0x05]],
+];
+
+function zipFile(bytes: Uint8Array) {
+  const file = new File([Uint8Array.from(bytes)], 'capture.zip');
+  Object.defineProperty(file, 'arrayBuffer', { value: async () => Uint8Array.from(bytes).buffer });
+  return file;
+}
+
+describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) => {
+  it.each(radioTypes)(
+    'reads through the guard and shows identity (radio type %i)',
+    async (radioType) => {
+      const pipe = new OpenGd77ScriptedPipe(radioType);
+      fake.pipe = pipe;
+      open(slug);
+      expect(screen.getByText('Read-only capture and recovery')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
+      expect(
+        await screen.findByText(/Live read · captured/, {}, { timeout: 20000 }),
+      ).toBeInTheDocument();
+      expect(pipe.writes.length).toBeGreaterThan(100);
+      for (const frame of pipe.writes) {
+        expect(classifyOpenGd77DebugFrame(frame).allowed).toBe(true);
+        expect([0x58, 0x57, 0x44]).not.toContain(frame[0]);
+      }
+      expect(pipe.controls).toEqual([]);
+      expect(pipe.commands).toEqual([[0xfe], [0x00], [0x05]]);
+      fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
+      const hex = radioType.toString(16).padStart(2, '0');
+      expect(screen.getByText(new RegExp(`^0x${hex} · `))).toBeInTheDocument();
+      expect(screen.getByText('Revision · FirmwareInfo (as reported)')).toBeInTheDocument();
+      expect(screen.getByText('R20240101000000')).toBeInTheDocument();
+      expect(screen.getByText('None reported by FirmwareInfo')).toBeInTheDocument();
+      expect(screen.getAllByText('Unknown').length).toBeGreaterThanOrEqual(2);
+      expect(screen.getByText('Captured FirmwareInfo reply')).toBeInTheDocument();
+      expect(screen.getByText('Read complete · disconnected')).toBeInTheDocument();
+      expect(
+        screen.getByText(/Radio type does not distinguish DM-1701 from RT-84/),
+      ).toBeInTheDocument();
+      for (const badge of screen.getAllByTitle('Available')) expect(badge).toBeInTheDocument();
+      expect(screen.getAllByTitle('Not yet available')).toHaveLength(2);
+      expect(screen.queryByRole('button', { name: /write|restore/i })).not.toBeInTheDocument();
+    },
+    30000,
+  );
+
+  it('refuses a radio of the other model before the CPS screen and keeps the page', async () => {
+    const wrong = modelId === OPENGD77_DM1701_MODEL_ID ? 0x05 : 0x08;
+    const pipe = new OpenGd77ScriptedPipe(wrong);
+    fake.pipe = pipe;
+    open(slug);
+    fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
+    expect(
+      await screen.findByText(new RegExp(`radioType 0x${wrong.toString(16)} is not supported`)),
+    ).toBeInTheDocument();
+    expect(pipe.commands).toEqual([[0xfe]]);
+    expect(screen.queryByText(/Live read · captured/)).not.toBeInTheDocument();
+  });
+
+  it('keeps the current archive when a later read fails', async () => {
+    const archive = await syntheticOpenGd77Archive(modelId, {
+      capturedAt: '2026-02-02T00:00:00.000Z',
+    });
+    open(slug);
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
+      target: { files: [zipFile(archive.zipBytes)] },
+    });
+    await screen.findByText(/Local archive · captured 2026-02-02/);
+    const pipe = new OpenGd77ScriptedPipe(radioTypes[0]);
+    pipe.failReadsAt.add(0x80 + 32 * 3);
+    fake.pipe = pipe;
+    fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
+    expect(await screen.findByText('Operation failed')).toBeInTheDocument();
+    expect(screen.getByText(/Local archive · captured 2026-02-02/)).toBeInTheDocument();
+    expect(pipe.commands).toEqual([[0xfe], [0x00], [0x05]]);
+  });
+
+  it('cancel sends only the CPS close and shows no archive', async () => {
+    const pipe = new OpenGd77ScriptedPipe(radioTypes[0]);
+    const original = pipe.write.bind(pipe);
+    let reads = 0;
+    pipe.write = async (data: Uint8Array) => {
+      if (data[0] === 0x52 && data[1] === 0x01 && ++reads === 3) {
+        fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      }
+      return original(data);
+    };
+    fake.pipe = pipe;
+    open(slug);
+    fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
+    expect(await screen.findByText('Operation failed')).toBeInTheDocument();
+    expect(pipe.commands).toEqual([[0xfe], [0x00], [0x05]]);
+    expect(screen.queryByText(/Live read · captured/)).not.toBeInTheDocument();
+  });
+
+  it('opens its own archive offline with the same identity and coverage', async () => {
+    const archive = await syntheticOpenGd77Archive(modelId, { userDatabaseEntries: 3 });
+    open(slug);
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
+      target: { files: [zipFile(archive.zipBytes)] },
+    });
+    await screen.findByText(/Local archive · captured/);
+    expect(screen.getByText('Registered FLASH spans')).toBeInTheDocument();
+    expect(screen.getAllByText(/Captured$/)).toHaveLength(4);
+    expect(screen.getByText(/packed header \+ entries, not contiguous flash/)).toBeInTheDocument();
+    expect(screen.getByText(/not a full flash image or a firmware dump/)).toBeInTheDocument();
+    expect(screen.getByText(/Flash ID 0x4018 \(as reported\)/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
+    expect(screen.getByText('Captured FirmwareInfo reply')).toBeInTheDocument();
+    expect(screen.getByText('Not connected')).toBeInTheDocument();
+  });
+
+  it('refuses the other model archive', async () => {
+    const other =
+      modelId === OPENGD77_DM1701_MODEL_ID ? OPENGD77_MD9600_MODEL_ID : OPENGD77_DM1701_MODEL_ID;
+    const archive = await syntheticOpenGd77Archive(other);
+    open(slug);
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
+      target: { files: [zipFile(archive.zipBytes)] },
+    });
+    expect(await screen.findByText(/does not match this profile/)).toBeInTheDocument();
+  });
+
+  it('says a missing or invalid FirmwareInfo sidecar is not identity', async () => {
+    const archive = await syntheticOpenGd77Archive(modelId);
+    const bare = packRadioBackupZip(archive.manifest, archive.regions);
+    open(slug);
+    const input = () => document.querySelector('input[type="file"]')!;
+    fireEvent.change(input(), { target: { files: [zipFile(bare)] } });
+    await screen.findByText(/Local archive · captured/);
+    fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
+    expect(screen.getByText('Archive manifest only')).toBeInTheDocument();
+    expect(screen.queryByText(/^0x0[0-9a-f] · /)).not.toBeInTheDocument();
+    const invalid = packRadioBackupZip(archive.manifest, archive.regions, {
+      [OPENGD77_DEBUG_FIRMWARE_INFO_SIDECAR]: new Uint8Array(10),
+    });
+    fireEvent.change(input(), { target: { files: [zipFile(invalid)] } });
+    expect(await screen.findByText(/Invalid FirmwareInfo: .*10 bytes/)).toBeInTheDocument();
+  });
+
+  it('reports a partial archive in coverage', async () => {
+    const archive = await syntheticOpenGd77Archive(modelId);
+    const manifest = {
+      ...archive.manifest,
+      regions: archive.manifest.regions.filter((r) => r.id !== 'flash-span-1'),
+    };
+    const regions = { ...archive.regions };
+    delete regions['flash-span-1'];
+    open(slug);
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
+      target: { files: [zipFile(packRadioBackupZip(manifest, regions, archive.sidecars))] },
+    });
+    expect(await screen.findByText(/Missing from this archive/)).toBeInTheDocument();
+  });
+});
+
+it('keeps the OpenGD77 pages behind the production debug gate', async () => {
+  fake.prod = true;
+  localStorage.removeItem(DEVELOPER_MODE_KEY);
+  for (const [slug] of OG77_PAGES) {
+    const router = createMemoryRouter([gatedDebugRoute, { path: '/', element: <div>Home</div> }], {
+      initialEntries: [`/debug/radios/${slug}`],
+    });
+    const view = render(
+      <DesignSystemV2Provider>
+        <RouterProvider router={router} />
+      </DesignSystemV2Provider>,
+    );
+    expect(await screen.findByText('Home')).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/');
+    expect(screen.queryByRole('button', { name: 'Read radio' })).not.toBeInTheDocument();
+    view.unmount();
+  }
+  fake.prod = false;
+});
