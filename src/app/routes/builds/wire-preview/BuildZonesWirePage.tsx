@@ -79,6 +79,13 @@ export default function BuildZonesWirePage() {
                 persist on this build&apos;s zone projection (not library zones).
               </Text>
             ) : null}
+            {zoneScan.scanSetEnabled ? (
+              <Text size="sm" c="dimmed">
+                Each zone has its own scan set: open a zone&apos;s Scan tab to choose which of its
+                channels are set to Scan in this zone (all of them unless you skip some). Scan in
+                All channels is a separate, per-channel setting.
+              </Text>
+            ) : null}
             {zoneScan.error ? (
               <Text size="sm" c="red">
                 {zoneScan.error}
@@ -106,6 +113,26 @@ export default function BuildZonesWirePage() {
         );
       }}
       modalScanSection={(row) => {
+        if (zoneScan.scanSetEnabled) {
+          const ctx = zoneModalContext(row);
+          if (!ctx || !zoneScan.library) return null;
+          return (
+            <ZoneScanOverrideSection
+              variant="scanSet"
+              zone={ctx.zone}
+              zones={zoneScan.library.zones}
+              entry={ctx.entry}
+              channelById={zoneScan.channelById}
+              zoneBehaviourContext={zoneScan.zoneBehaviourContext}
+              showScanCarrierControls={false}
+              scanListMemberCap={zoneScan.scanListMemberCap}
+              saving={zoneScan.saving}
+              onUpdateZoneEntry={(patch) => zoneScan.updateZoneEntry(row.libraryEntityId, patch)}
+              onUpdateMemberScanInclusion={zoneScan.updateMemberScanInclusion}
+              expansionByChannelId={zoneScan.expansionByChannelId}
+            />
+          );
+        }
         if (!zoneScan.enabled) return null;
         if (!zoneShowsDmrDerivedScan(row.libraryEntityId)) return null;
         const ctx = zoneModalContext(row);

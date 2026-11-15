@@ -176,6 +176,22 @@ describe('buildNavItems', () => {
     ).not.toContain('Zones');
   });
 
+  it('names the per-channel scan page Scan in All channels on zone scan set targets', () => {
+    for (const profile of ['radio-io-rt95-mm9pdy', 'radio-io-uv5r-mini-mm9pdy']) {
+      const { build, egressPaths } = newRadioBuildForProfile('proj', profile);
+      const labels = buildNavItems(build, { egressPaths }).map((item) => item.label);
+      expect(labels).toContain('Scan in All channels');
+      expect(labels).not.toContain('Scan list');
+      expect(labels).toContain('Zones');
+    }
+    const stock = newRadioBuildForProfile('proj', 'radio-io-uv5r-mini');
+    const stockLabels = buildNavItems(stock.build, { egressPaths: stock.egressPaths }).map(
+      (item) => item.label,
+    );
+    expect(stockLabels).toContain('Scan list');
+    expect(stockLabels).not.toContain('Scan in All channels');
+  });
+
   it('hides dedicated scan lists on the MM9PDY DM-32UV target', () => {
     const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-dm32uv-mm9pdy');
     const labels = buildNavItems(build, { egressPaths }).map((item) => item.label);
