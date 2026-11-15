@@ -129,7 +129,11 @@ function ScalarTable({ title, rows }: { title: string; rows: readonly AtD890CalS
 }
 
 /** Contiguous captured runs only: a missing index ends a line, it is never bridged. */
-function seriesFor(tables: readonly AtD890CalTable[]): LineChartSeries[] {
+function seriesFor(
+  tables: readonly AtD890CalTable[],
+  label: string,
+  dashed = false,
+): LineChartSeries[] {
   return tables.flatMap((t, slot) => {
     const runs: { x: number; y: number }[][] = [];
     let run: { x: number; y: number }[] = [];
@@ -143,8 +147,9 @@ function seriesFor(tables: readonly AtD890CalTable[]): LineChartSeries[] {
     const name =
       t.group === 'power' ? `Selection ${t.selection}` : `${t.path === 'main' ? 'Main' : 'Sub'}`;
     return runs.map((points, i) => ({
-      id: `${t.id}-${i}`,
-      label: runs.length > 1 ? `${name} (indexes ${points[0]!.x}–${points.at(-1)!.x})` : name,
+      id: `${label}-${t.id}-${i}`,
+      label: `${label} · ${runs.length > 1 ? `${name} (indexes ${points[0]!.x}–${points.at(-1)!.x})` : name}`,
+      dashed,
       slot,
       points,
     }));
@@ -155,13 +160,22 @@ function TableGroup({
   title,
   tables,
   frequencyNote,
+  overlayTables,
+  primaryLabel,
+  overlayLabel,
 }: {
   title: string;
   tables: readonly AtD890CalTable[];
   frequencyNote: string;
+  overlayTables: readonly AtD890CalTable[];
+  primaryLabel: string;
+  overlayLabel: string;
 }) {
   const first = tables[0]!;
-  const series = seriesFor(tables);
+  const series = [
+    ...seriesFor(tables, primaryLabel),
+    ...seriesFor(overlayTables, overlayLabel, true),
+  ];
   const length = first.length;
   return (
     <Card withBorder>
@@ -290,7 +304,13 @@ function RawTune({ bytes, address }: { bytes: Uint8Array; address: number }) {
 }
 
 /** Read-only AT-D890UV calibration viewer over the live tune unit of an opened or captured archive. */
-export function AtD890Calibration({ archive }: { archive?: DebugArchive }) {
+export function AtD890Calibration({
+  archive,
+  overlayArchive,
+}: {
+  archive?: DebugArchive;
+  overlayArchive?: DebugArchive;
+}) {
   const selection = selectAtD890TuneRegion(archive);
   if (selection.status === 'refused')
     return (
@@ -309,6 +329,11 @@ export function AtD890Calibration({ archive }: { archive?: DebugArchive }) {
       </Alert>
     );
   const cal = decodeAtD890Calibration(selection.bytes);
+  const overlaySelection = selectAtD890TuneRegion(overlayArchive);
+  const overlayCal =
+    overlaySelection.status === 'ok' ? decodeAtD890Calibration(overlaySelection.bytes) : undefined;
+  const primaryLabel = `Selected · ${archive!.manifest.capturedAt}`;
+  const overlayLabel = `Overlay · ${overlayArchive?.manifest.capturedAt ?? 'unknown time'}`;
   const byGroup = (g: AtD890CalScalar['group']) => cal.scalars.filter((s) => s.group === g);
   const tables = (group: AtD890CalTable['group'], band: AtD890CalTable['band']) =>
     cal.tables.filter((t) => t.group === group && t.band === band);
@@ -350,6 +375,13 @@ export function AtD890Calibration({ archive }: { archive?: DebugArchive }) {
           physical units, limits or health verdicts are given.
         </Text>
       </Card>
+      {overlayArchive && overlaySelection.status !== 'ok' && (
+        <Alert title="Overlay unavailable">
+          {overlaySelection.status === 'refused'
+            ? overlaySelection.reason
+            : 'The overlay has no live tune unit; tune B is never substituted.'}
+        </Alert>
+      )}
       <ScalarTable title="Oscillator trim" rows={byGroup('trim')} />
       <Text size="sm" c="dimmed">
         Trim is neutral at 2000; the factory editor allows 0–4000. Those editor bounds are evidence,
@@ -361,21 +393,41 @@ export function AtD890Calibration({ archive }: { archive?: DebugArchive }) {
       <TableGroup
         title="UHF power tables"
         tables={tables('power', 'uhf')}
+        overlayTables={
+          overlayCal?.tables.filter((t) => t.group === 'power' && t.band === 'uhf') ?? []
+        }
+        primaryLabel={primaryLabel}
+        overlayLabel={overlayLabel}
         frequencyNote="Index 0 corresponds to 400 MHz in 1 MHz steps; index 40 is 440 MHz."
       />
       <TableGroup
         title="VHF/220 power tables"
         tables={tables('power', 'vhf-220')}
+        overlayTables={
+          overlayCal?.tables.filter((t) => t.group === 'power' && t.band === 'vhf-220') ?? []
+        }
+        primaryLabel={primaryLabel}
+        overlayLabel={overlayLabel}
         frequencyNote="Indexes 0–38 correspond to 136–174 MHz in 1 MHz steps; 220 MHz uses index 39 onward and forces selection 0; index 9 is 145 MHz."
       />
       <TableGroup
         title="UHF squelch flatness"
         tables={tables('flatness', 'uhf')}
+        overlayTables={
+          overlayCal?.tables.filter((t) => t.group === 'flatness' && t.band === 'uhf') ?? []
+        }
+        primaryLabel={primaryLabel}
+        overlayLabel={overlayLabel}
         frequencyNote="Index 0 corresponds to 400 MHz in 5 MHz steps."
       />
       <TableGroup
         title="VHF/220 squelch flatness"
         tables={tables('flatness', 'vhf-220')}
+        overlayTables={
+          overlayCal?.tables.filter((t) => t.group === 'flatness' && t.band === 'vhf-220') ?? []
+        }
+        primaryLabel={primaryLabel}
+        overlayLabel={overlayLabel}
         frequencyNote="Index 0 corresponds to 136 MHz in 2 MHz steps; 220 MHz uses index 20."
       />
       <Card withBorder>

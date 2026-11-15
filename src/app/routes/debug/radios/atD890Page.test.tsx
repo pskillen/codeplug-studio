@@ -1,9 +1,14 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
+import { getDebugReadHistory } from './debugReadHistory.ts';
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
 import RadioDebugPage from './RadioDebugPage.tsx';
+
+afterEach(() =>
+  act(() => getDebugReadHistory({ slug: 'at-d890uv', archiveModelId: 'AT-D890UV' }).clear()),
+);
 
 const fake = vi.hoisted(() => ({ capture: vi.fn() }));
 vi.mock('./atD890Capture.ts', () => ({ captureAtD890: fake.capture }));
