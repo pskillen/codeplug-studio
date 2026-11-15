@@ -118,3 +118,103 @@ export async function syntheticUv5rMiniRelease(
   };
   return { stockBin, built, descriptor, patchBytes, patchSha256, row, buildName };
 }
+
+/** The UV-5R Mini's two stock bases, as the synthetic variant descriptor names them. */
+export const SYNTH_MINI_VARIANTS = {
+  'nrf-v0.27': { version: 'v0.27 (NRF)', prefix: 'v0.27-NRF', layout: 'L2', seed: 5 },
+  'nrfb-v0.04': { version: 'v0.04 (NRFB)', prefix: 'v0.04-NRFB', layout: 'L1', seed: 6 },
+} as const;
+export type SynthMiniBase = keyof typeof SYNTH_MINI_VARIANTS;
+
+/**
+ * Test-only UV-5R Mini descriptor with the radio's real two stock bases (`nrf-v0.27` primary, `nrfb-v0.04`), each
+ * pinned to its own seeded synthetic stock, and the Mini's real release layouts. Never real stock bytes.
+ */
+export async function syntheticUv5rMiniVariantsDescriptor(): Promise<StockFirmwareDescriptor> {
+  const stock = (base: SynthMiniBase) => synthUv5rMiniStockFor(base);
+  const base = await syntheticDescriptor(
+    'baofeng-uv5rmini',
+    [{ role: 'ufw', fileName: 'stock-nrf.ufw', bytes: stock('nrf-v0.27') }],
+    { fileName: 'synth.zip', bytes: seededBytes(103, 16) },
+  );
+  const nrfb = stock('nrfb-v0.04');
+  return {
+    ...base,
+    version: SYNTH_MINI_VARIANTS['nrf-v0.27'].version,
+    baseName: 'nrf-v0.27',
+    alsoAccepts: [
+      {
+        version: SYNTH_MINI_VARIANTS['nrfb-v0.04'].version,
+        baseName: 'nrfb-v0.04',
+        members: [
+          {
+            role: 'ufw',
+            fileName: 'stock-nrfb.ufw',
+            size: nrfb.length,
+            sha256: await sha256Hex(nrfb),
+          },
+        ],
+      },
+    ],
+    severalStocks: true,
+    patchNames: ['baofeng-uv5rmini-firmware'],
+    releaseLayouts: UV5RMINI_STOCK_FIRMWARE.releaseLayouts,
+  };
+}
+
+/** The seeded synthetic stock of one Mini base. */
+export function synthUv5rMiniStockFor(base: SynthMiniBase): Uint8Array {
+  return seededBytes(SYNTH_MINI_VARIANTS[base].seed, 4096);
+}
+
+/**
+ * Test-only UV-5R Mini release on one stock base (D133): a patch on that base's synthetic stock named
+ * `<prefix>-<version>` (or `buildName`), and an index-style row with its `base`, stock version and the base's `layout`
+ * (or `rowLayout`, or none when null). `stockOf` builds on another base's stock (a crossed patch). Never real stock.
+ */
+export async function syntheticUv5rMiniVariantRelease(opts: {
+  base: SynthMiniBase;
+  version?: string;
+  buildName?: string;
+  rowLayout?: string | null;
+  /** The base the patch names; default `base`. */
+  patchBase?: string;
+  /** The stock the patch is built on; default `base`'s. */
+  stockOf?: SynthMiniBase;
+  publishedOn?: string;
+  feature?: string;
+}) {
+  const v = SYNTH_MINI_VARIANTS[opts.base];
+  const version = opts.version ?? '9.9.9';
+  const descriptor = await syntheticUv5rMiniVariantsDescriptor();
+  const stockBin = synthUv5rMiniStockFor(opts.stockOf ?? opts.base);
+  const built = stockBin.slice();
+  built.set(new TextEncoder().encode(`${opts.base}-${version}-${opts.feature ?? ''}`), 200);
+  const buildName = opts.buildName ?? `${v.prefix}-${version}`;
+  const patchJson = await makeSyntheticUv5rMiniPatch(stockBin, built, {
+    version,
+    buildName,
+    base: opts.patchBase ?? opts.base,
+  });
+  const patchBytes = new TextEncoder().encode(JSON.stringify(patchJson) + '\n');
+  const patchSha256 = await sha256Hex(patchBytes);
+  const rowLayout = opts.rowLayout === undefined ? v.layout : opts.rowLayout;
+  const row: PublishedFirmwareRelease = {
+    radioId: 'baofeng-uv5rmini',
+    tag: version,
+    patchName: 'baofeng-uv5rmini-firmware',
+    channel: version.includes('-rc.') ? 'rc' : 'final',
+    patchFile: `uv5rmini-fw-${version}-${opts.base}-hw1.7.patch.json`,
+    patchSha256,
+    stockVersion: v.version,
+    ...(rowLayout === null ? {} : { layout: rowLayout }),
+    base: opts.base,
+    publishedOn: opts.publishedOn ?? '2026-01-01',
+    summary: `Synthetic ${opts.base} ${version}.`,
+    verifyHint: 'Synthetic verify hint.',
+    resultSha256: { ufw: await sha256Hex(built) },
+    loadBytes: async () => patchBytes.slice(),
+    loadNotes: async () => 'Synthetic notes.',
+  };
+  return { stockBin, built, descriptor, patchJson, patchBytes, patchSha256, row, buildName };
+}

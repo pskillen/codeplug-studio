@@ -8,7 +8,7 @@ import type { ParsedFirmwarePatch } from '../patch/types.ts';
 import { listStockFirmwareDescriptors } from '../stockCatalog.ts';
 import { stockVariants } from '../stockVariants.ts';
 import type { StockFirmwareDescriptor } from '../types.ts';
-import { layoutFromBuildName } from './layouts.ts';
+import { buildNameLayout } from './layouts.ts';
 import type { PublishedFirmwareRelease } from './types.ts';
 
 export const PUBLISHED_RELEASE_INDEX_FORMAT = 1;
@@ -53,8 +53,10 @@ function rowLayout(
 }
 
 /**
- * A row's optional `base` (UV-5R Mini `nrf-v0.27`): only for a radio with release layouts, naming one of its stock
- * bases, and the base of the row's own `stockVersion`.
+ * A row's stock base, for a radio with release layouts (UV-5R Mini `nrf-v0.27`): its `base`, which must be one of the
+ * radio's stock bases and the base of the row's own `stockVersion`; or, without one, the base of its `stockVersion`.
+ * A release is keyed by base and version (D133), so a row whose base can't be told is malformed. Undefined for a radio
+ * without layouts, whose rows must carry no base.
  */
 function rowBase(
   row: Record<string, unknown>,
@@ -63,9 +65,17 @@ function rowBase(
   where: string,
 ): string | undefined {
   const base = row.base;
-  if (base === undefined) return undefined;
+  if (!descriptor.releaseLayouts) {
+    if (base !== undefined) throw indexError(`${where}: this radio's releases have no bases`);
+    return undefined;
+  }
+  const onVersion = stockVariants(descriptor).filter((v) => v.version === stockVersion);
+  if (base === undefined) {
+    const only = onVersion.length === 1 ? onVersion[0]!.baseName : undefined;
+    if (only === undefined) throw indexError(`${where}: no stock base for stock ${stockVersion}`);
+    return only;
+  }
   if (typeof base !== 'string' || !base) throw indexError(`${where}: bad base`);
-  if (!descriptor.releaseLayouts) throw indexError(`${where}: this radio's releases have no bases`);
   const variant = stockVariants(descriptor).find((v) => v.baseName === base);
   if (!variant) throw indexError(`${where}: ${base} is not a stock base Studio knows`);
   if (variant.version !== stockVersion) {
@@ -77,8 +87,9 @@ function rowBase(
 /**
  * Parse the index into release rows. A malformed index or row throws. A row for a radio Studio does not know, or
  * built on a stock version other than the radio's pin, is left out: the index can run ahead of a Studio deploy.
- * For a radio with release layouts a release is one row per layout, each with an optional `layout`; a row without one
- * takes it from the patch's build name when it is loaded ({@link resolvePublishedLayout}).
+ * For a radio with release layouts a release is one row per stock base and version (D133), each with its `base` (or
+ * the base its `stockVersion` names) and an optional `layout`; the file's layout is settled when it is loaded
+ * ({@link resolvePublishedLayout}).
  */
 export function parsePublishedReleaseIndex(
   json: unknown,
@@ -147,17 +158,10 @@ export function parsePublishedReleaseIndex(
     }
     const layout = rowLayout(row, descriptor, where);
     const base = rowBase(row, descriptor, stockVersion, where);
-    // A layout radio's row without a layout is checked against its partners once loaded. A release has one row per
-    // layout and stock base (its stock version names the base).
-    const key = descriptor.releaseLayouts
-      ? layout
-        ? `${where} ${layout} on stock ${stockVersion}`
-        : null
-      : where;
-    if (key !== null) {
-      if (seen.has(key)) throw indexError(`${key} is listed twice`);
-      seen.add(key);
-    }
+    // A release is one row per stock base and version (D133): the same version on two bases is two releases.
+    const key = base === undefined ? where : `${where} on ${base}`;
+    if (seen.has(key)) throw indexError(`${key} is listed twice`);
+    seen.add(key);
 
     out.push({
       radioId: descriptor.radioId,
@@ -235,32 +239,37 @@ export function checkPublishedPatch(
 }
 
 /**
- * The flash layout of a loaded published patch, for a radio with release layouts: the row's `layout`, or else the one
- * its build name names. Both present must agree; neither is a refusal, and so is a build name with a test-only tag.
- * Undefined for a radio without layouts. Throws FirmwareError('patch-wrong-layout').
+ * The flash layout of a loaded published patch, for a radio with release layouts. It comes from verified metadata:
+ * the row's `layout` and the layout of the row's stock base (the radio's own table, `layoutOfBase`), the base already
+ * checked against the patch and its pinned stock ({@link checkPublishedPatch}). The build name only cross-checks it
+ * ({@link buildNameLayout}). Every one present must agree, and with neither the row's layout nor its base's, Studio
+ * can't tell: refused. Undefined for a radio without layouts. Throws FirmwareError('patch-wrong-layout').
  */
 export function resolvePublishedLayout(
   release: PublishedFirmwareRelease,
   parsed: ParsedFirmwarePatch,
   descriptor: StockFirmwareDescriptor,
 ): string | undefined {
-  if (!descriptor.releaseLayouts) return undefined;
+  const rl = descriptor.releaseLayouts;
+  if (!rl) return undefined;
   const fail = (why: string) =>
     new FirmwareError(
       'patch-wrong-layout',
       `Release ${release.tag} failed Studio's checks: ${why}.`,
     );
-  const buildName = parsed.description.buildName;
+  const { buildName } = parsed.description;
   let fromName: string | undefined;
   try {
-    fromName = layoutFromBuildName(descriptor, buildName);
+    fromName = buildNameLayout(descriptor, parsed.description);
   } catch {
     throw fail(`its build ${buildName ?? ''} is not for a radio firmware Studio supports`);
   }
-  if (release.layout !== undefined && fromName !== undefined && release.layout !== fromName) {
+  const fromBase = release.base === undefined ? undefined : rl.layoutOfBase?.(release.base);
+  const named = [release.layout, fromBase, fromName].filter((l) => l !== undefined);
+  if (named.some((l) => l !== named[0])) {
     throw fail('the release list and its build are for different radio firmware');
   }
-  const layout = release.layout ?? fromName;
+  const layout = release.layout ?? fromBase;
   if (layout === undefined) throw fail("Studio can't tell which radio firmware it is for");
   return layout;
 }

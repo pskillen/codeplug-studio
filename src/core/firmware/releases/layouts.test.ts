@@ -4,6 +4,7 @@ import { FirmwareError } from '../errors.ts';
 import {
   syntheticDm32Release,
   syntheticUv5rMiniRelease,
+  syntheticUv5rMiniVariantRelease,
 } from './__fixtures__/syntheticReleases.ts';
 import { UV5RMINI_STOCK_FIRMWARE } from '../../radios/baofeng/uv-5r-mini/firmware.ts';
 import { uv5rMiniVariantOfBase } from '../../radios/baofeng/uv-5r-mini/radioInfo.ts';
@@ -101,13 +102,21 @@ describe('published release with one row per flash layout', () => {
     expect(patchForLayout(loaded, 'L1')).toBeUndefined();
   });
 
-  it("takes a row's missing layout from its build name", async () => {
-    const l1 = await syntheticUv5rMiniRelease({ layout: 'L1', rowLayout: null });
-    const l2 = await syntheticUv5rMiniRelease({ layout: 'L2', rowLayout: null });
-    const loaded = await createPublishedFirmwareReleaseSource(rowsOf(l1.row, l2.row), [
-      l1.descriptor,
-    ]).loadPatch(MINI, '9.9.9');
-    expect(loadedLayouts(loaded)).toEqual(['L1', 'L2']);
+  it("takes a row's missing layout from its stock base, never from its build name alone", async () => {
+    const nrf = await syntheticUv5rMiniVariantRelease({ base: 'nrf-v0.27', rowLayout: null });
+    const loaded = await createPublishedFirmwareReleaseSource(rowsOf(nrf.row), [
+      nrf.descriptor,
+    ]).loadPatch(MINI, 'nrf-v0.27:9.9.9');
+    expect(loaded.layout).toBe('L2');
+    // A row with neither a layout nor a base Studio knows the layout of: the legacy name alone is not enough.
+    const bare = await syntheticUv5rMiniRelease({ layout: 'L1', rowLayout: null });
+    const err = await refusal(
+      createPublishedFirmwareReleaseSource(rowsOf(bare.row), [bare.descriptor]).loadPatch(
+        MINI,
+        '9.9.9',
+      ),
+    );
+    expect(err.message).toMatch(/can't tell which radio firmware/);
   });
 
   it('picks by the radio stock base too, and never offers the nearest build', async () => {
@@ -126,7 +135,7 @@ describe('published release with one row per flash layout', () => {
     const err = await refusal(
       createPublishedFirmwareReleaseSource(rowsOf({ ...crossed.row, base: 'synthetic' }), [
         crossed.descriptor,
-      ]).loadPatch(MINI, '9.9.9'),
+      ]).loadPatch(MINI, 'synthetic:9.9.9'),
     );
     expect(err.message).toMatch(/the release list says synthetic, but its patch is on other/);
     // Without a row base, a patch on another base than its stock's is refused too.
@@ -206,7 +215,7 @@ describe('published release with one row per flash layout', () => {
   });
 
   it('refuses two rows that resolve to one layout', async () => {
-    const a = await syntheticUv5rMiniRelease({ layout: 'L2', rowLayout: null });
+    const a = await syntheticUv5rMiniRelease({ layout: 'L2', buildName: 'mm9pdy-L2-9.9.9-a' });
     const b = await syntheticUv5rMiniRelease({ layout: 'L2' });
     const err = await refusal(
       createPublishedFirmwareReleaseSource(rowsOf(a.row, b.row), [a.descriptor]).loadPatch(

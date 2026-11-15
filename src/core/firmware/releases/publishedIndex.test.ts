@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { FirmwareError } from '../errors.ts';
 import {
   syntheticDm32Release,
+  syntheticUv5rMiniVariantRelease,
   syntheticUv5rMiniRelease,
 } from './__fixtures__/syntheticReleases.ts';
 import { parsePublishedReleaseIndex } from './publishedIndex.ts';
@@ -20,6 +21,7 @@ function entryOf(row: PublishedFirmwareRelease) {
     patchSha256: row.patchSha256,
     stockVersion: row.stockVersion,
     ...(row.layout ? { layout: row.layout } : {}),
+    ...(row.base ? { base: row.base } : {}),
     publishedOn: row.publishedOn,
     summary: row.summary,
     verifyHint: row.verifyHint,
@@ -155,13 +157,43 @@ describe('parsePublishedReleaseIndex: one row per flash layout', () => {
     return { l1, l2, dm32, parse };
   }
 
-  it('reads a two-row Mini release, one row per layout, sharing radio and version', async () => {
-    const { l1, l2, parse } = await mini();
-    const rows = parse(entryOf(l1.row), entryOf(l2.row));
-    expect(rows.map((r) => [r.radioId, r.tag, r.layout])).toEqual([
-      ['baofeng-uv5rmini', '9.9.9', 'L1'],
-      ['baofeng-uv5rmini', '9.9.9', 'L2'],
+  it('reads the same version on two stock bases as two releases, each with its base and layout (D133)', async () => {
+    const nrf = await syntheticUv5rMiniVariantRelease({ base: 'nrf-v0.27' });
+    const nrfb = await syntheticUv5rMiniVariantRelease({ base: 'nrfb-v0.04' });
+    const rows = parsePublishedReleaseIndex(
+      { format: 1, releases: [entryOf(nrf.row), entryOf(nrfb.row)] },
+      { descriptors: [nrf.descriptor], loadPatchBytes: async () => new Uint8Array(0) },
+    );
+    expect(rows.map((r) => [r.tag, r.base, r.layout])).toEqual([
+      ['9.9.9', 'nrf-v0.27', 'L2'],
+      ['9.9.9', 'nrfb-v0.04', 'L1'],
     ]);
+  });
+
+  it("takes a row's missing base from its stock version, and refuses a row whose base can't be told", async () => {
+    const nrfb = await syntheticUv5rMiniVariantRelease({ base: 'nrfb-v0.04' });
+    const bare: Record<string, unknown> = { ...entryOf(nrfb.row) };
+    delete bare.base;
+    const opts = { descriptors: [nrfb.descriptor], loadPatchBytes: async () => new Uint8Array(0) };
+    expect(parsePublishedReleaseIndex({ format: 1, releases: [bare] }, opts)[0]!.base).toBe(
+      'nrfb-v0.04',
+    );
+    // Two bases on one stock version: the version alone doesn't say which.
+    const ambiguous = {
+      ...nrfb.descriptor,
+      alsoAccepts: [
+        ...nrfb.descriptor.alsoAccepts!,
+        { ...nrfb.descriptor.alsoAccepts![0]!, baseName: 'nrfb-v0.04-b' },
+      ],
+    };
+    expect(
+      messageOf(() =>
+        parsePublishedReleaseIndex(
+          { format: 1, releases: [bare] },
+          { ...opts, descriptors: [ambiguous] },
+        ),
+      ),
+    ).toMatch(/no stock base for stock v0\.04 \(NRFB\)/);
   });
 
   it('reads a Mini release with one row only', async () => {
@@ -169,7 +201,7 @@ describe('parsePublishedReleaseIndex: one row per flash layout', () => {
     expect(parse(entryOf(l2.row)).map((r) => r.layout)).toEqual(['L2']);
   });
 
-  it('reads a Mini row without a layout, to be resolved from its build name when loaded', async () => {
+  it('reads a Mini row without a layout, to be resolved from its stock base when loaded', async () => {
     const { parse } = await mini();
     const bare = await syntheticUv5rMiniRelease({ layout: 'L2', rowLayout: null });
     const [row] = parse(entryOf(bare.row));
@@ -188,10 +220,13 @@ describe('parsePublishedReleaseIndex: one row per flash layout', () => {
     expect(messageOf(() => parse({ ...entryOf(l1.row), layout: 7 }))).toMatch(/bad layout/);
   });
 
-  it('refuses two rows for one layout of one version', async () => {
-    const { l1, parse } = await mini();
+  it('refuses two rows for one version on one stock base, whatever their layouts', async () => {
+    const { l1, l2, parse } = await mini();
     expect(messageOf(() => parse(entryOf(l1.row), entryOf(l1.row)))).toMatch(
-      /baofeng-uv5rmini 9\.9\.9 L1 on stock v0\.0\.1-test is listed twice/,
+      /baofeng-uv5rmini 9\.9\.9 on synthetic is listed twice/,
+    );
+    expect(messageOf(() => parse(entryOf(l1.row), entryOf(l2.row)))).toMatch(
+      /baofeng-uv5rmini 9\.9\.9 on synthetic is listed twice/,
     );
   });
 
@@ -199,7 +234,8 @@ describe('parsePublishedReleaseIndex: one row per flash layout', () => {
     const { l1, parse } = await mini();
     const [row] = parse({ ...entryOf(l1.row), base: 'synthetic' });
     expect(row!.base).toBe('synthetic');
-    expect('base' in parse(entryOf(l1.row))[0]!).toBe(false);
+    // Without one, the base its stock version names.
+    expect(parse(entryOf(l1.row))[0]!.base).toBe('synthetic');
     expect(messageOf(() => parse({ ...entryOf(l1.row), base: 'nrf-v0.04' }))).toMatch(
       /nrf-v0\.04 is not a stock base Studio knows/,
     );
