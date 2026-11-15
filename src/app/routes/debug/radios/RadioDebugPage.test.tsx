@@ -14,10 +14,13 @@ import { gatedDebugRoute } from '../debugRoutes.tsx';
 import { DEVELOPER_MODE_KEY } from '@integrations/preferences/developerMode.ts';
 import { archiveDm32Capture } from './dm32Capture.ts';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
-import { openDebugReadHistoryZip } from './debugReadHistoryArchive.ts';
+import { buildDebugReadHistoryZip, openDebugReadHistoryZip } from './debugReadHistoryArchive.ts';
+import { unzipSync, zipSync } from 'fflate';
+import { exampleArchive } from './debugReadHistory.fixture.ts';
 import type { Dm32DebugCapture } from '@integrations/radio-io/radios/dm32uv/debugCapture.ts';
 
-vi.mock('@integrations/download/browserDownload.ts', () => ({
+vi.mock('@integrations/download/browserDownload.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@integrations/download/browserDownload.ts')>()),
   downloadZip: vi.fn(async () => ({ status: 'saved' })),
 }));
 
@@ -321,6 +324,118 @@ describe('DM-32UV debug page', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Live read · captured 2026-01-01/)).toBeInTheDocument();
     expect(screen.getByText('0x00001000 · captured · tag 0x12 (channel)')).toBeInTheDocument();
+  });
+
+  const zipFile = (bytes: Uint8Array) => {
+    const file = new File([Uint8Array.from(bytes)], 'x.zip');
+    Object.defineProperty(file, 'arrayBuffer', {
+      value: async () => Uint8Array.from(bytes).buffer,
+    });
+    return file;
+  };
+  const dm32Descriptor = { slug: 'dm-32uv', archiveModelId: 'DM-32UV' };
+  const addTwo = async () => {
+    const archive = await archiveDm32Capture(dm32Capture());
+    const later = await archiveDm32Capture({
+      ...dm32Capture(),
+      capturedAt: '2026-02-01T00:00:00.000Z',
+    });
+    return [history.add(archive), history.add(later)] as const;
+  };
+
+  it('marks only the selected read that a single download started with', async () => {
+    const [first, second] = await addTwo();
+    let finish!: (value: { status: 'saved' }) => void;
+    vi.mocked(downloadZip).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    history.select(first.id);
+    open('dm-32uv');
+    fireEvent.click(screen.getByRole('button', { name: 'Download archive' }));
+    act(() => history.select(second.id));
+    await act(async () => finish({ status: 'saved' }));
+    expect(history.getSnapshot().undownloaded).toBe(1);
+    expect(history.getSnapshot().selectedId).toBe(second.id);
+  });
+
+  it('keeps a read undownloaded when a single download fails', async () => {
+    await addTwo();
+    vi.mocked(downloadZip).mockResolvedValueOnce({ status: 'failed' } as never);
+    open('dm-32uv');
+    fireEvent.click(screen.getByRole('button', { name: 'Download archive' }));
+    expect(await screen.findByText('Download failed.')).toBeInTheDocument();
+    expect(history.getSnapshot().undownloaded).toBe(2);
+  });
+
+  it('cannot mark a read added after clear when an earlier download completes', async () => {
+    await addTwo();
+    const extra = await archiveDm32Capture(dm32Capture());
+    let finish!: (value: { status: 'saved' }) => void;
+    vi.mocked(downloadZip).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    open('dm-32uv');
+    fireEvent.click(screen.getByRole('button', { name: 'Download all reads' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear history' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Clear$/ }));
+    expect(history.getSnapshot().entries).toHaveLength(0);
+    act(() => {
+      history.add(extra);
+    });
+    await act(async () => finish({ status: 'saved' }));
+    expect(history.getSnapshot().undownloaded).toBe(1);
+    expect(history.getSnapshot().entries[0]?.label).toBe('A');
+  });
+
+  it('reopens a downloaded history ZIP with file provenance, original bytes and times', async () => {
+    const [first, second] = await addTwo();
+    const zip = buildDebugReadHistoryZip(dm32Descriptor, [first, second]);
+    const original = [first, second].map((e) => e.archive.zipBytes);
+    act(() => history.clear());
+    open('dm-32uv');
+    const input = document.querySelector('input[type="file"]');
+    fireEvent.change(input!, { target: { files: [zipFile(zip)] } });
+    await waitFor(() => expect(history.getSnapshot().entries).toHaveLength(2));
+    const snap = history.getSnapshot();
+    expect(snap.entries.map((e) => e.archive.zipBytes)).toEqual(original);
+    expect(snap.entries.map((e) => e.readAt)).toEqual([
+      '2026-01-01T00:00:00.000Z',
+      '2026-02-01T00:00:00.000Z',
+    ]);
+    expect(snap.entries.every((e) => e.archive.source === 'file')).toBe(true);
+    expect(snap.undownloaded).toBe(0);
+    expect(snap.selectedId).toBe(snap.entries[1]!.id);
+  });
+
+  it('refuses a corrupt or wrong-profile history ZIP and keeps existing reads', async () => {
+    const [first] = await addTwo();
+    const zip = buildDebugReadHistoryZip(dm32Descriptor, [first]);
+    const files = unzipSync(zip);
+    files['reads/000001.zip'] = new Uint8Array([1, 2, 3]);
+    open('dm-32uv');
+    const input = document.querySelector('input[type="file"]')!;
+    fireEvent.change(input, { target: { files: [zipFile(zipSync(files))] } });
+    expect(await screen.findByText('Operation failed')).toBeInTheDocument();
+    expect(history.getSnapshot().entries).toHaveLength(2);
+    const d890 = exampleArchive();
+    const wrong = buildDebugReadHistoryZip({ slug: 'at-d890uv', archiveModelId: 'AT-D890UV' }, [
+      { id: 'x', label: 'A', readAt: d890.manifest.capturedAt, archive: d890 },
+    ]);
+    fireEvent.change(input, { target: { files: [zipFile(wrong)] } });
+    expect(await screen.findByText(/does not match this profile/)).toBeInTheDocument();
+    expect(history.getSnapshot().entries).toHaveLength(2);
+  });
+
+  it('keeps DM-32 history isolated from other profiles', async () => {
+    const rt95 = getDebugReadHistory({ slug: 'rt95', archiveModelId: 'retevis-rt95' });
+    rt95.clear();
+    await addTwo();
+    expect(rt95.getSnapshot().entries).toHaveLength(0);
+    expect(rt95.getSnapshot().undownloaded).toBe(0);
   });
 
   it('leaves the RadioFoundry profile without a live read', () => {

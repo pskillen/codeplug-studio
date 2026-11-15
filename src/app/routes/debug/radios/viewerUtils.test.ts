@@ -4,7 +4,7 @@ import {
   type RadioBackupManifestV1,
 } from '@integrations/radio-io/backup/index.ts';
 import { openDebugArchive } from './captureArchive.ts';
-import { compareRegions, hexRows } from './viewerUtils.ts';
+import { compareRegions, hexRows, regionIdentity } from './viewerUtils.ts';
 
 const manifest: RadioBackupManifestV1 = {
   format: 'codeplug-studio-radio-backup',
@@ -132,4 +132,67 @@ it('classifies DM-32 configuration separately and refuses overlapping or unknown
   expect(compareRegions(overlap, overlap).regions.every((r) => !r.comparable)).toBe(true);
   const outside = { ...a, manifest: { ...a.manifest, regions: [{ ...region, address: 4096 }] } };
   expect(compareRegions(outside, outside).regions[0].comparable).toBe(false);
+});
+
+describe('DM-32 sparse and factory comparison', () => {
+  const entry = (id: string, address: number, byteLength: number) => ({
+    id,
+    label: id,
+    address,
+    byteLength,
+    path: `regions/${id}.bin`,
+    restoreRole: 'inspect-only' as const,
+  });
+  const make = (
+    regions: ReturnType<typeof entry>[],
+    bytes: Record<string, Uint8Array>,
+    imageByteLength = 3 * 4096,
+  ) => {
+    const base = capture([1]);
+    return {
+      ...base,
+      manifest: {
+        ...base.manifest,
+        radioModelId: 'DM-32UV',
+        addressBase: 0,
+        imageByteLength,
+        regions,
+      },
+      regions: bytes,
+    };
+  };
+  const factory = (fill: number) => ({
+    entry: entry('factory-sector', 0x0300_b000, 4096),
+    bytes: new Uint8Array(4096).fill(fill),
+  });
+
+  it('compares the factory sector as its own address space, not against configuration', () => {
+    const a = make([factory(1).entry], { 'factory-sector': factory(1).bytes });
+    const b = make([factory(2).entry], { 'factory-sector': factory(2).bytes });
+    expect(regionIdentity(a, 'factory-sector')?.space).toBe('DM-32 factory sector');
+    expect(compareRegions(a, b).regions[0]).toMatchObject({ comparable: true, changed: 4096 });
+    // Same id but configuration address: never comparable with the real factory sector.
+    const wrongSpace = make([entry('factory-sector', 0, 4096)], {
+      'factory-sector': new Uint8Array(4096),
+    });
+    expect(regionIdentity(wrongSpace, 'factory-sector')).toBeUndefined();
+    expect(compareRegions(a, wrongSpace).regions[0]?.comparable).toBe(false);
+  });
+  it('keeps differently partitioned sparse runs incomparable and flags partial coverage', () => {
+    const page = new Uint8Array(4096);
+    const a = make([entry('p0', 0, 4096), entry('p1', 4096, 4096)], { p0: page, p1: page });
+    const b = make([entry('p0', 0, 8192)], { p0: new Uint8Array(8192) });
+    const rows = compareRegions(a, b).regions;
+    expect(rows.find((r) => r.id === 'p1')).toMatchObject({ comparable: false });
+    expect(rows.find((r) => r.id === 'p0')).toMatchObject({ comparable: true, missing: 4096 });
+    const moved = make([entry('p0', 4096, 4096)], { p0: page });
+    expect(compareRegions(a, moved).regions.find((r) => r.id === 'p0')?.comparable).toBe(false);
+  });
+  it('does not classify a region whose bytes are missing or the wrong length', () => {
+    const missing = make([entry('p0', 0, 4096)], {});
+    expect(regionIdentity(missing, 'p0')).toBeUndefined();
+    const short = make([entry('p0', 0, 4096)], { p0: new Uint8Array(10) });
+    expect(regionIdentity(short, 'p0')).toBeUndefined();
+    expect(regionIdentity(missing, 'nope')).toBeUndefined();
+  });
 });
