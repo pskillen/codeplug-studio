@@ -15,7 +15,6 @@
 
 import {
   atD890EnterProgram,
-  atD890ExitProgram,
   atD890ProbeIdent,
   atD890ReadMemory,
   atD890WriteMemory,
@@ -52,6 +51,11 @@ import {
   type AtD890LinkProfile,
   type AtD890SweepResult,
 } from './linkProbe.ts';
+import {
+  endAtD890ReadSession,
+  endAtD890WithLocalInfo,
+  withAtD890ReadRecovery,
+} from './stunKillGuard.ts';
 import { AT_D890_BLOCK_SIZE, AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import type { BytePipe, ProgressFn } from '../../types.ts';
@@ -68,9 +72,16 @@ async function enterProgramAndIdent(pipe: BytePipe, signal?: AbortSignal): Promi
   return ident.model;
 }
 
-/** Commit staged writes. The operator must power-cycle before the next pass. */
-async function commit(pipe: BytePipe): Promise<void> {
-  await atD890ExitProgram(pipe);
+/** Capture the flags before any write; an R after W would prevent the staged commit. */
+async function readFlagsBeforeWrite(
+  pipe: BytePipe,
+  signal?: AbortSignal,
+): Promise<Uint8Array | null> {
+  try {
+    return await atD890ReadMemory(pipe, D890_MAP.LocalInfo, AT_D890_BLOCK_SIZE, signal);
+  } catch {
+    return null;
+  }
 }
 
 async function readSentinels(
@@ -122,7 +133,7 @@ export interface AtD890ProbeInspectResult {
  * Confirms the probe span holds no channel records and no live data before pass 1 puts
  * anything on the flash, so the operator can see the blast radius is empty first.
  */
-export async function runAtD890ProbeInspect(
+async function runAtD890ProbeInspectImpl(
   pipe: BytePipe,
   opts: AtD890ProbeOpts = {},
 ): Promise<AtD890ProbeInspectResult> {
@@ -168,7 +179,7 @@ export async function runAtD890ProbeInspect(
     elapsedMs: Date.now() - started,
   });
 
-  await commit(pipe);
+  await endAtD890ReadSession(pipe);
   return {
     model,
     occupiedSlots,
@@ -190,11 +201,12 @@ export interface AtD890ProbePaintResult {
  * Refuses unless every channel slot inside the probe span is vacant, so the probe can
  * never overwrite a real channel record.
  */
-export async function runAtD890ProbePaint(
+async function runAtD890ProbePaintImpl(
   pipe: BytePipe,
   opts: AtD890ProbeOpts = {},
 ): Promise<AtD890ProbePaintResult> {
   const model = await enterProgramAndIdent(pipe, opts.signal);
+  const localInfo = await readFlagsBeforeWrite(pipe, opts.signal);
 
   reportProgress(
     opts.onProgress,
@@ -231,7 +243,7 @@ export async function runAtD890ProbePaint(
     elapsedMs: Date.now() - started,
   });
 
-  await commit(pipe);
+  await endAtD890WithLocalInfo(pipe, localInfo);
   return { model, sentinelsWritten: sentinels.length, throughput };
 }
 
@@ -249,13 +261,13 @@ export interface AtD890ProbeDiagnoseResult {
  * the address it was written to, reading the grid back shows whether cells were erased
  * (contents gone) or aliased (contents present, but written via a different address).
  */
-export async function runAtD890ProbeDiagnose(
+async function runAtD890ProbeDiagnoseImpl(
   pipe: BytePipe,
   opts: AtD890ProbeOpts = {},
 ): Promise<AtD890ProbeDiagnoseResult> {
   await enterProgramAndIdent(pipe, opts.signal);
   const { readings, throughput } = await readSentinels(pipe, opts, 'Diagnose');
-  await commit(pipe);
+  await endAtD890ReadSession(pipe);
   return {
     paint: verifyAtD890Paint(readings),
     alias: inferAtD890Aliasing(readings),
@@ -282,17 +294,18 @@ export interface AtD890ProbeMarkResult {
  * than throwing: the per-cell readings are the diagnosis and must not be discarded. The
  * marker is only ever written on a clean grid.
  */
-export async function runAtD890ProbeVerifyAndMark(
+async function runAtD890ProbeVerifyAndMarkImpl(
   pipe: BytePipe,
   opts: AtD890ProbeOpts = {},
 ): Promise<AtD890ProbeMarkResult> {
   await enterProgramAndIdent(pipe, opts.signal);
+  const localInfo = await readFlagsBeforeWrite(pipe, opts.signal);
 
   const { readings, throughput } = await readSentinels(pipe, opts, 'Verify paint');
   const paint = verifyAtD890Paint(readings);
   const alias = inferAtD890Aliasing(readings);
   if (!paint.ok) {
-    await commit(pipe);
+    await endAtD890ReadSession(pipe);
     return {
       ok: false,
       paint,
@@ -321,7 +334,7 @@ export async function runAtD890ProbeVerifyAndMark(
     opts.signal,
   );
 
-  await commit(pipe);
+  await endAtD890WithLocalInfo(pipe, localInfo);
   return {
     ok: true,
     paint,
@@ -352,7 +365,7 @@ export interface AtD890LinkProbeResult {
  *
  * Probes at the first probe-span address, whose contents are stable and unimportant.
  */
-export async function runAtD890LinkProbe(
+async function runAtD890LinkProbeImpl(
   pipe: BytePipe,
   opts: AtD890ProbeOpts = {},
 ): Promise<AtD890LinkProbeResult> {
@@ -367,18 +380,18 @@ export async function runAtD890LinkProbe(
     profile.bestBlockSize,
     opts,
   );
-  await commit(pipe);
+  await endAtD890ReadSession(pipe);
   return { model, profile, access, sweep };
 }
 
 /** Pass 3 — read the grid back and derive the erase unit from the erased run. */
-export async function runAtD890ProbeMeasure(
+async function runAtD890ProbeMeasureImpl(
   pipe: BytePipe,
   opts: AtD890ProbeOpts = {},
 ): Promise<AtD890ProbeMeasureResult> {
   await enterProgramAndIdent(pipe, opts.signal);
   const { readings, throughput } = await readSentinels(pipe, opts, 'Measure');
-  await commit(pipe);
+  await endAtD890ReadSession(pipe);
   return { result: analyseAtD890EraseUnit(readings), readings, readThroughput: throughput };
 }
 
@@ -395,7 +408,7 @@ export interface AtD890ConfigAliasCheckResult {
  *
  * Compares each erase-relevant region against its +0x40000 alias candidate. Writes nothing.
  */
-export async function runAtD890ConfigAliasCheck(
+async function runAtD890ConfigAliasCheckImpl(
   pipe: BytePipe,
   opts: AtD890ProbeOpts = {},
 ): Promise<AtD890ConfigAliasCheckResult> {
@@ -471,7 +484,7 @@ export async function runAtD890ConfigAliasCheck(
     readBlockSize,
   });
 
-  await commit(pipe);
+  await endAtD890ReadSession(pipe);
 
   return {
     model,
@@ -484,3 +497,13 @@ export async function runAtD890ConfigAliasCheck(
     }),
   };
 }
+
+export const runAtD890ProbeInspect = withAtD890ReadRecovery(runAtD890ProbeInspectImpl);
+export const runAtD890ProbeDiagnose = withAtD890ReadRecovery(runAtD890ProbeDiagnoseImpl);
+export const runAtD890LinkProbe = withAtD890ReadRecovery(runAtD890LinkProbeImpl);
+export const runAtD890ProbeMeasure = withAtD890ReadRecovery(runAtD890ProbeMeasureImpl);
+export const runAtD890ConfigAliasCheck = withAtD890ReadRecovery(runAtD890ConfigAliasCheckImpl);
+
+export const runAtD890ProbePaint = withAtD890ReadRecovery(runAtD890ProbePaintImpl);
+
+export const runAtD890ProbeVerifyAndMark = withAtD890ReadRecovery(runAtD890ProbeVerifyAndMarkImpl);

@@ -8,12 +8,8 @@
  * interpret anything, and never emits a `W` frame.
  */
 
-import {
-  atD890EnterProgram,
-  atD890ExitProgram,
-  atD890ProbeIdent,
-  atD890ReadMemory,
-} from './connection.ts';
+import { atD890EnterProgram, atD890ProbeIdent, atD890ReadMemory } from './connection.ts';
+import { endAtD890ReadSession, withAtD890ReadRecovery } from './stunKillGuard.ts';
 import { negotiateAtD890ReadBlockSize } from './linkProbe.ts';
 import {
   AT_D890_BLOCK_SIZE,
@@ -391,7 +387,7 @@ export interface AtD890MemoryRegionDumpResult {
 }
 
 /** Dump a single named region — its own PROGRAM session. */
-export async function runAtD890MemoryRegionDump(
+async function runAtD890MemoryRegionDumpImpl(
   pipe: BytePipe,
   regionId: string,
   opts: AtD890MemoryDumpOpts = {},
@@ -408,7 +404,7 @@ export async function runAtD890MemoryRegionDump(
   const started = Date.now();
   const bytes = await readRegionRaw(pipe, regionDef, readBlockSize, opts.signal);
   const elapsedMs = Date.now() - started;
-  await atD890ExitProgram(pipe);
+  await endAtD890ReadSession(pipe);
 
   return { model, region: regionDef, bytes, elapsedMs };
 }
@@ -443,7 +439,7 @@ async function dumpRegionsInSession(
   }
 
   const elapsedMs = Date.now() - started;
-  await atD890ExitProgram(pipe);
+  await endAtD890ReadSession(pipe);
 
   let totalBytes = 0;
   for (const bytes of files.values()) totalBytes += bytes.length;
@@ -452,7 +448,7 @@ async function dumpRegionsInSession(
 }
 
 /** Dump every region in {@link AT_D890_MEMORY_REGIONS} in one PROGRAM session. */
-export async function runAtD890MemoryDumpAll(
+async function runAtD890MemoryDumpAllImpl(
   pipe: BytePipe,
   opts: AtD890MemoryDumpOpts = {},
 ): Promise<AtD890MemoryDumpAllResult> {
@@ -469,7 +465,7 @@ export interface AtD890WriteVerifyMemoryReadResult extends AtD890MemoryDumpAllRe
  * (non-0xff bytes staged from touched erase units but outside every modelled bank).
  * One PROGRAM session — used by cross-session write verify.
  */
-export async function runAtD890WriteVerifyMemoryRead(
+async function runAtD890WriteVerifyMemoryReadImpl(
   pipe: BytePipe,
   spillAddresses: readonly number[],
   opts: AtD890MemoryDumpOpts = {},
@@ -512,7 +508,7 @@ export async function runAtD890WriteVerifyMemoryRead(
   }
 
   const elapsedMs = Date.now() - started;
-  await atD890ExitProgram(pipe);
+  await endAtD890ReadSession(pipe);
 
   let totalBytes = 0;
   for (const bytes of files.values()) totalBytes += bytes.length;
@@ -525,7 +521,7 @@ export async function runAtD890WriteVerifyMemoryRead(
  * Dump every region belonging to one {@link AT_D890_MEMORY_REGION_GROUPS} entry — the unit
  * the debug page's per-group Export button uses.
  */
-export async function runAtD890MemoryGroupDump(
+async function runAtD890MemoryGroupDumpImpl(
   pipe: BytePipe,
   groupId: string,
   opts: AtD890MemoryDumpOpts = {},
@@ -590,7 +586,7 @@ export interface AtD890DigitalContactsDumpResult {
  * — see {@link AT_D890_MEMORY_REGIONS} for everything else. Read-only; Studio never Reads
  * or Writes this bank in any modelled path (#759).
  */
-export async function runAtD890DigitalContactsDump(
+async function runAtD890DigitalContactsDumpImpl(
   pipe: BytePipe,
   opts: AtD890MemoryDumpOpts = {},
 ): Promise<AtD890DigitalContactsDumpResult> {
@@ -650,7 +646,17 @@ export async function runAtD890DigitalContactsDump(
   );
 
   const elapsedMs = Date.now() - started;
-  await atD890ExitProgram(pipe);
+  await endAtD890ReadSession(pipe);
 
   return { model, contactCount, meta, order, contacts, elapsedMs };
 }
+
+export const runAtD890MemoryRegionDump = withAtD890ReadRecovery(runAtD890MemoryRegionDumpImpl);
+export const runAtD890MemoryDumpAll = withAtD890ReadRecovery(runAtD890MemoryDumpAllImpl);
+export const runAtD890WriteVerifyMemoryRead = withAtD890ReadRecovery(
+  runAtD890WriteVerifyMemoryReadImpl,
+);
+export const runAtD890MemoryGroupDump = withAtD890ReadRecovery(runAtD890MemoryGroupDumpImpl);
+export const runAtD890DigitalContactsDump = withAtD890ReadRecovery(
+  runAtD890DigitalContactsDumpImpl,
+);
