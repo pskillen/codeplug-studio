@@ -8,6 +8,7 @@ The Debug hierarchy groups radio profiles, browser storage and serial transport 
 
 - [Radio shell](../../../src/app/routes/debug/radios/RadioDebugPage.md)
 - [Archive viewers](../../../src/app/routes/debug/radios/ArchiveViewers.md)
+- [AT-D890UV calibration fields](../../reference/radios/anytone/at-d890uv/calibration.md)
 - [Debug index and routes](../../../src/app/routes/debug/debugRoutes.tsx)
 
 ## Behaviour
@@ -18,7 +19,9 @@ The UV-5R Mini profile can capture the clone address space through the guarded r
 
 The AT-D890UV profile captures sparse configuration and four separately requested vital units in a partial standard radio-backup archive. Occupancy-skipped records remain uncaptured; NXDN reads beyond the virtual map and unknown archive entries stay separate. Each vital unit is read twice and compared before a successful capture; the second tune request is shown as returned and is not an independent physical copy. Firmware can divert vital reads. Hashes identify the archived bytes, not physical storage. The same bytes, ranges, metadata and identity evidence are shown when the archive is reopened.
 
-The debug session uses fixed 16-byte reads and sends no write commands. It checks LocalInfo flags before the bulk read and freshly again before END. A set or unreadable flag, failure or cancellation leaves END unsent; power-cycle the radio before continuing. The final check and END are not radio-side atomic. Captures can take time and are incomplete, not firmware images. The ident model, band code and protocol version and full LocalInfo serial are captured evidence; V100 does not identify running firmware. Missing markers do not prove stock. Firmware and mod remain unknown. Calibration decoding and memory inventories remain unavailable. Hardware validation is separate.
+The debug session uses fixed 16-byte reads and sends no write commands. It checks LocalInfo flags before the bulk read and freshly again before END. A set or unreadable flag, failure or cancellation leaves END unsent; power-cycle the radio before continuing. The final check and END are not radio-side atomic. Captures can take time and are incomplete, not firmware images. The ident model, band code and protocol version and full LocalInfo serial are captured evidence; V100 does not identify running firmware. Missing markers do not prove stock. Firmware and mod remain unknown. Memory inventories remain unavailable. Hardware validation is separate.
+
+The AT-D890UV Calibration tab decodes only the live tune unit: the `vital-tune-a` entry requested at `0x04F00000`, inspect-only, with a manifest length matching its bytes. A wrong address, role, model or length is refused with a reason, and the as-returned tune B entry is never used in its place; an archive without the live unit shows "Not captured". The tab shows the requested address, captured length, the V1.05 static-trace basis and "Not validated on hardware". Trim, squelch and meter references (16-bit, little-endian assumed), power references, power tables and squelch-flatness tables are listed with offsets, raw and decoded values, sources and separate layout and meaning confidence. Tables are charted against their index, with lines as visual guides only, and listed numerically with each entry's difference from the reference entry. A captured prefix decodes what it covers: partial fields are unavailable, missing table entries stay missing and charts never bridge them. Every other byte stays unknown and is shown in paged raw hex. No physical units, limits or health verdicts are given. Field layout and sources: [calibration.md](../../reference/radios/anytone/at-d890uv/calibration.md).
 
 ## Known gaps
 
