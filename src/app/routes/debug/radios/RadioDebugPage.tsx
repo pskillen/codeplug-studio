@@ -34,6 +34,7 @@ import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWake
 import { capabilityColor, radioDebugDescriptors } from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
+import { AtD890Memory } from './AtD890Memory.tsx';
 import { Coverage } from './Coverage.tsx';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { Uv5rMiniCompare } from './Uv5rMiniCompare.tsx';
@@ -384,6 +385,8 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
           <Tabs.Panel value="memory" pt="md">
             {archive?.manifest.radioModelId === 'UV-5R Mini' ? (
               <Uv5rMiniMemory archive={archive} />
+            ) : descriptor.slug === 'at-d890uv' ? (
+              <AtD890Memory archive={archive} />
             ) : (
               <MemoryViewer archive={archive} />
             )}

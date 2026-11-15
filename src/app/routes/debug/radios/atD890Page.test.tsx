@@ -179,6 +179,14 @@ it('shows one calibration panel that follows archive replacement without connect
   expect(fake.capture).not.toHaveBeenCalled();
 });
 
+it('routes the D890 Memory tab to the memory viewer with a no-capture state', () => {
+  renderAt('at-d890uv');
+  fireEvent.click(screen.getByRole('tab', { name: 'Memory' }));
+  expect(
+    screen.getAllByText('Open or read a capture to inspect its memory.').length,
+  ).toBeGreaterThan(0);
+});
+
 it('keeps the calibration panel unavailable for profiles without a decoder', () => {
   renderAt('rt95');
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
