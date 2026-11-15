@@ -6,11 +6,11 @@ Inspect captured archive regions in bounded pages and compare two local archives
 
 ## Props
 
-| Component       | Props                                                                                        |
-| --------------- | -------------------------------------------------------------------------------------------- |
-| `HexViewer`     | Optional `archive` capture.                                                                  |
-| `MemoryViewer`  | Optional `archive` capture.                                                                  |
-| `CompareViewer` | Optional capture A as `archive`, and the selected profile's `modelId` for opening capture B. |
+| Component       | Props                                                                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HexViewer`     | Optional `archive` capture.                                                                                                                              |
+| `MemoryViewer`  | Optional `archive` capture.                                                                                                                              |
+| `CompareViewer` | Optional capture A as `archive`, optional controlled capture B as `other`, and the selected profile's `modelId` for opening capture B when uncontrolled. |
 
 ## Usage
 
