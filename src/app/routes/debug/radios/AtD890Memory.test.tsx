@@ -101,6 +101,7 @@ function memoryArchive(capturedAt = '2026-01-01') {
   );
 }
 
+const NOT_CAPTURED_TEXT = 'Not captured';
 const view = (a?: DebugArchive) =>
   render(
     <MantineProvider>
@@ -220,7 +221,7 @@ describe('AtD890Memory', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows a refused entry and defers the later sections', () => {
+  it('shows a refused entry', () => {
     const entries = [
       channelSet([]),
       sparse(0x2000000, new Uint8Array(32)),
@@ -228,10 +229,7 @@ describe('AtD890Memory', () => {
     ];
     view(archive(entries));
     expect(screen.getByText('2 sparse entries refused')).toBeInTheDocument();
-    for (const name of ['Scan lists', 'Settings']) {
-      open(name);
-      expect(screen.getByText('Coming in a later piece')).toBeInTheDocument();
-    }
+    expect(screen.queryByText('Coming in a later piece')).not.toBeInTheDocument();
   });
 
   describe('contacts, talk groups and RX groups', () => {
@@ -376,6 +374,138 @@ describe('AtD890Memory', () => {
       open('RX groups');
       expect(screen.queryByRole('region')).not.toBeInTheDocument();
       expect(screen.getByText('Other')).toBeInTheDocument();
+    });
+  });
+
+  describe('scan lists and settings', () => {
+    const SCAN_SET = 0x3482c60;
+    const MAIN = 0x3500000;
+    const scanRec = (name: string, p1: number, members: number[]) => {
+      const r = new Uint8Array(0x200).fill(0xff);
+      r[0x01] = 1;
+      r.set([p1 & 0xff, p1 >> 8], 0x02);
+      r.set([0xff, 0xff], 0x04);
+      r.fill(0, 0x0e, 0x2e);
+      r.set(wide(name, 0x20), 0x0e);
+      members.forEach((m, i) => r.set([m & 0xff, m >> 8], 0x30 + i * 2));
+      return r;
+    };
+    const scanArchive = (capturedAt = '2026-01-01') =>
+      archive(
+        [
+          channelSet([0, 1]),
+          ...channel(0, 'GB3ED Edinburgh', '14550000'),
+          ...channel(1, 'MM9PDY Local', '43350000'),
+          sparse(SCAN_SET, bitmap(0x20, [0, 32])),
+          sparse(0x2100000, scanRec('Local scan', 2, [0, 0, 7])),
+          sparse(0x2180000, scanRec('Bank one', 0xffff, [1])),
+        ],
+        capturedAt,
+      );
+
+    it('shows scan lists, their priority and member roles, and keeps other panels', () => {
+      view(scanArchive());
+      open('Scan lists');
+      expect(screen.getByText(/Occupied 2 of 250 scan list slots/)).toBeInTheDocument();
+      expect(rowTexts().some((t) => t.includes('Bank one') && t.includes('33'))).toBe(true);
+      fireEvent.click(screen.getAllByRole('row')[1]!);
+      const details = screen.getByRole('region', { name: 'Scan list 1 details' });
+      expect(
+        within(details).getByText(/Priority 1: Channel slot 2 · MM9PDY Local/),
+      ).toBeInTheDocument();
+      expect(within(details).getByText('Priority 2: Off')).toBeInTheDocument();
+      expect(within(details).getByText(/Absent: the channel bitmap/)).toBeInTheDocument();
+      // Duplicate member and the unresolved one are kept in order.
+      expect(within(details).getAllByText('GB3ED Edinburgh')).toHaveLength(2);
+      // Earlier panels still render.
+      open('Channels');
+      expect(screen.getByText(/Occupied 2 of 4,000 channel slots/)).toBeInTheDocument();
+      open('Zones');
+      expect(screen.getByText(/Zone bitmap|not completely captured/i)).toBeInTheDocument();
+    });
+
+    it('searches scan lists by member identity', () => {
+      view(scanArchive());
+      open('Scan lists');
+      fireEvent.change(screen.getByPlaceholderText('Search scan lists'), {
+        target: { value: 'MM9PDY' },
+      });
+      expect(rowTexts().some((t) => t.includes('Bank one'))).toBe(true);
+      expect(rowTexts().some((t) => t.includes('Local scan'))).toBe(false);
+    });
+
+    it('says Not captured for a missing scan list bitmap', () => {
+      view(archive([channelSet([])]));
+      open('Scan lists');
+      expect(
+        screen.getByText(/scan list occupancy bitmap was not completely captured/),
+      ).toBeInTheDocument();
+    });
+
+    it('shows a captured empty scan list bitmap as empty', () => {
+      view(archive([sparse(SCAN_SET, bitmap(0x20, []))]));
+      open('Scan lists');
+      expect(screen.getByText(/no scan list slot is occupied/)).toBeInTheDocument();
+    });
+
+    it('groups settings, separates missing from decoded, and toggles raw bytes', () => {
+      view(
+        archive([
+          sparse(MAIN + 0x26, Uint8Array.of(2)),
+          sparse(MAIN + 0x05, Uint8Array.of(7)),
+          sparse(MAIN + 0x60, Uint8Array.of(0xaa, 0xbb)),
+        ]),
+      );
+      open('Settings');
+      for (const name of [
+        'Display',
+        'Audio & tones',
+        'Power & battery',
+        'Keys & buttons',
+        'DMR',
+        'GPS / APRS',
+        'Scan',
+        'Privacy / lock',
+        'Mod features',
+      ])
+        expect(screen.getByRole('region', { name })).toBeInTheDocument();
+      expect(screen.getByText(/2 of \d+ known setting fields captured/)).toBeInTheDocument();
+      const display = screen.getByRole('region', { name: 'Display' });
+      expect(within(display).getAllByText(NOT_CAPTURED_TEXT).length).toBeGreaterThan(0);
+      // Unsupported value keeps its raw bytes visible without the toggle.
+      expect(within(display).getByText(/Unsupported value/)).toBeInTheDocument();
+      expect(within(display).getByText(/Raw 0x3500005: 07/)).toBeInTheDocument();
+      expect(screen.queryByText('Raw bytes')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
+      expect(screen.getAllByText('Raw bytes').length).toBeGreaterThan(0);
+      expect(screen.getByText('0x3500026')).toBeInTheDocument();
+      expect(screen.getByText(/0x3500060: AA BB/)).toBeInTheDocument();
+      expect(screen.getByText(/No scan setting is established/)).toBeInTheDocument();
+    });
+
+    it('filters settings by search', () => {
+      view(archive([sparse(MAIN + 0x26, Uint8Array.of(2))]));
+      open('Settings');
+      fireEvent.change(screen.getByPlaceholderText('Search settings'), {
+        target: { value: 'backlight' },
+      });
+      expect(screen.getByRole('region', { name: 'Display' })).toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'Audio & tones' })).not.toBeInTheDocument();
+    });
+
+    it('replaces scan list selection and settings when the archive is replaced', () => {
+      const { rerender } = view(scanArchive('2026-01-01'));
+      open('Scan lists');
+      fireEvent.click(screen.getAllByRole('row')[1]!);
+      expect(screen.getByRole('region', { name: 'Scan list 1 details' })).toBeInTheDocument();
+      rerender(
+        <MantineProvider>
+          <AtD890Memory archive={archive([sparse(SCAN_SET, bitmap(0x20, [3]))], '2026-02-02')} />
+        </MantineProvider>,
+      );
+      open('Scan lists');
+      expect(screen.queryByRole('region', { name: 'Scan list 1 details' })).not.toBeInTheDocument();
+      expect(screen.getByText(/Occupied 1 of 250 scan list slots/)).toBeInTheDocument();
     });
   });
 });
