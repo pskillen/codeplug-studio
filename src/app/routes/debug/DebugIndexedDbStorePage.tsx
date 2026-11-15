@@ -66,10 +66,9 @@ export default function DebugIndexedDbStorePage() {
     [tableRows, search],
   );
 
-  const rowViewerPath = (row: IndexedDbRowSummary) =>
-    indexedDbRowViewerPath(storeName, row.projectId, row.id);
-
   const columns = useMemo(() => {
+    const rowViewerPath = (row: IndexedDbRowSummary) =>
+      indexedDbRowViewerPath(storeName, row.projectId, row.id);
     const cols = [
       createNameColumn<IndexedDbRowSummary>({
         header: 'Name',
