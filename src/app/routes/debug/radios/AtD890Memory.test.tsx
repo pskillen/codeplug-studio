@@ -10,6 +10,8 @@ import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import {
   channelPrimaryAddress,
   channelSecondaryAddress,
+  receiveGroupAddress,
+  talkgroupAddress,
   zoneChannelsAddress,
   zoneNameAddress,
 } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
@@ -226,9 +228,154 @@ describe('AtD890Memory', () => {
     ];
     view(archive(entries));
     expect(screen.getByText('2 sparse entries refused')).toBeInTheDocument();
-    for (const name of ['Contacts', 'Talk groups', 'RX groups', 'Scan lists', 'Settings']) {
+    for (const name of ['Scan lists', 'Settings']) {
       open(name);
       expect(screen.getByText('Coming in a later piece')).toBeInTheDocument();
     }
+  });
+
+  describe('contacts, talk groups and RX groups', () => {
+    const tgSet = (occupied: number[]) => {
+      const out = new Uint8Array(0x4f0).fill(0xff);
+      for (const b of occupied) out[b >> 3]! &= ~(1 << (b & 7));
+      return sparse(D890_MAP.TalkgroupSet, out);
+    };
+    const rec = (type: number, id: string, name: string, callsign = '', city = '') => {
+      const r = new Uint8Array(0xc8);
+      r[0] = type;
+      r.set(bcd(id), 2);
+      r.set(wide(name, 0x20), 6);
+      r.set(wide(city, 0x20), 0x2a);
+      r.set(wide(callsign, 0x18), 0x4a);
+      return r;
+    };
+    const rxRec = (m: number[], name: string) => {
+      const r = new Uint8Array(0x120).fill(0xff);
+      m.forEach((v, i) => new DataView(r.buffer).setUint32(i * 4, v, true));
+      r.set(wide(name, 0x20), 0x100);
+      return r;
+    };
+    const digital = () => {
+      const r = new Uint8Array(0x80);
+      r.set(bcd('43350000'), 0);
+      r[0x08] = 0x0d;
+      new DataView(r.buffer).setUint32(0x14, 1, true); // slot 2
+      r.set(wide('DMR One', 0x20), 0x44);
+      return [
+        sparse(channelPrimaryAddress(0), r.slice(0, 0x40)),
+        sparse(channelSecondaryAddress(0), r.slice(0x40)),
+      ];
+    };
+    const rxBits = new Uint8Array(0x20);
+    rxBits[0] = 1;
+    const bankArchive = (stamp = '2026-01-01') =>
+      archive(
+        [
+          channelSet([0]),
+          ...digital(),
+          tgSet([0, 1, 2, 3]),
+          sparse(talkgroupAddress(0), rec(0, '00000091', 'Alice', 'MM9PDY', 'Leith')),
+          sparse(talkgroupAddress(1), rec(1, '00000091', 'Scotland')),
+          sparse(talkgroupAddress(2), rec(2, '00000093', 'All')),
+          // slot 4 is occupied but not captured
+          sparse(D890_MAP.ReceiveGroupSet, rxBits),
+          sparse(receiveGroupAddress(0), rxRec([1, 1, 10000], 'Scots')),
+        ],
+        stamp,
+      );
+
+    it('splits the shared bank by call type, keeps slots and flags unclassified entries', () => {
+      view(bankArchive());
+      open('Contacts');
+      expect(screen.getByText(/Bank occupied 4 of 10,000 slots/)).toBeInTheDocument();
+      expect(screen.getByText(/1 unclassified/)).toBeInTheDocument();
+      let rows = rowTexts();
+      expect(rows[1]).toMatch(/^1MM9PDY Alice/);
+      expect(rows[2]).toMatch(/^4Not captured/);
+      open('Talk groups');
+      rows = rowTexts();
+      expect(rows[1]).toMatch(/^2Scotland.*Group/);
+      expect(rows[2]).toMatch(/^3All.*All call/);
+      expect(rows[1]).toMatch(/RX groups: 1 Scots/);
+    });
+
+    it('searches callsign and DMR ID and sorts without renumbering slots', () => {
+      view(bankArchive());
+      open('Contacts');
+      fireEvent.change(screen.getByLabelText('Search table'), { target: { value: 'mm9pdy' } });
+      expect(rowTexts()).toHaveLength(2);
+      fireEvent.change(screen.getByLabelText('Search table'), { target: { value: '' } });
+      fireEvent.click(screen.getByRole('button', { name: /Identity/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Identity/ }));
+      // Descending identity puts the unclassified slot first; slot numbers do not change.
+      expect(rowTexts()[1]).toMatch(/^4Not captured/);
+      expect(rowTexts()[2]).toMatch(/^1MM9PDY Alice/);
+      fireEvent.change(screen.getByLabelText('Search table'), { target: { value: '91' } });
+      expect(rowTexts()).toHaveLength(2);
+    });
+
+    it('labels Referenced by as partial when RX coverage is missing', () => {
+      view(archive([tgSet([0]), sparse(talkgroupAddress(0), rec(1, '00000091', 'Scotland'))]));
+      open('Talk groups');
+      expect(screen.getByText('Referenced by is partial')).toBeInTheDocument();
+      expect(
+        screen.getByText(/None found; channel or RX group coverage incomplete/),
+      ).toBeInTheDocument();
+    });
+
+    it('shows a missing bitmap as Not captured, not as empty', () => {
+      view(archive([channelSet([])]));
+      open('Talk groups');
+      expect(screen.getByText('Not captured')).toBeInTheDocument();
+      expect(screen.queryByText(/no talk groups are present/)).not.toBeInTheDocument();
+      open('RX groups');
+      expect(screen.getByText('Not captured')).toBeInTheDocument();
+    });
+
+    it('shows a captured empty bank as genuinely empty', () => {
+      view(archive([tgSet([])]));
+      open('Contacts');
+      expect(screen.getByText(/no contacts are present/)).toBeInTheDocument();
+    });
+
+    it('resolves the channel contact reference against its bank slot', () => {
+      view(bankArchive());
+      expect(screen.getByText('#2 Scotland (Group)')).toBeInTheDocument();
+    });
+
+    it('selects an RX group and explains each member reference', () => {
+      view(bankArchive());
+      open('RX groups');
+      expect(screen.getByText('Select an RX group to see its members.')).toBeInTheDocument();
+      fireEvent.click(screen.getByText('Scots'));
+      const region = screen.getByRole('region', { name: 'RX group 1 members' });
+      const rows = within(region)
+        .getAllByRole('row')
+        .map((r) => r.textContent ?? '');
+      expect(rows[1]).toMatch(/^12Scotland/);
+      expect(rows[2]).toMatch(/^22Scotland/);
+      expect(rows[3]).toMatch(/^3Index 10000.*Out of range/);
+    });
+
+    it('clears selection when the archive is replaced', () => {
+      const { rerender } = view(bankArchive('2026-01-01'));
+      open('RX groups');
+      fireEvent.click(screen.getByText('Scots'));
+      expect(screen.getByRole('region', { name: 'RX group 1 members' })).toBeInTheDocument();
+      rerender(
+        <MantineProvider>
+          <AtD890Memory
+            archive={archive([
+              tgSet([]),
+              sparse(D890_MAP.ReceiveGroupSet, rxBits),
+              sparse(receiveGroupAddress(0), rxRec([], 'Other')),
+            ])}
+          />
+        </MantineProvider>,
+      );
+      open('RX groups');
+      expect(screen.queryByRole('region')).not.toBeInTheDocument();
+      expect(screen.getByText('Other')).toBeInTheDocument();
+    });
   });
 });
