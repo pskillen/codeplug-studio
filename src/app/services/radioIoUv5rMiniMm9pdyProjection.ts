@@ -10,7 +10,11 @@ import { pushGeneralInfoWarning, pushGeneralWarning } from '@core/import-export/
 import { toRt95Ascii } from '@core/import-export/formatProfiles.ts';
 import { UV5R_MINI_LIMITS } from '@core/radios/baofeng/uv-5r-mini/limits.ts';
 import type { RadioZoneDto } from '@integrations/radio-io/radioWriteProjection.ts';
-import { rt95Mm9pdyZoneOrderedAssembled, scanSetWithin } from './radioIoRt95Mm9pdyProjection.ts';
+import {
+  pushZoneScanSetNotWrittenWarning,
+  rt95Mm9pdyZoneOrderedAssembled,
+  scanSetWithin,
+} from './radioIoRt95Mm9pdyProjection.ts';
 
 /** Same rule as the RT95: zones in build order, members in zone order, first appearance wins. */
 export const uv5rMiniMm9pdyZoneOrderedAssembled = rt95Mm9pdyZoneOrderedAssembled;
@@ -81,6 +85,8 @@ export function projectUv5rMiniMm9pdy(input: Uv5rMiniMm9pdyProjectionInput): {
     );
     zones.length = ZONE_MAX;
   }
+
+  pushZoneScanSetNotWrittenWarning(zones, warnings);
 
   return { zones };
 }

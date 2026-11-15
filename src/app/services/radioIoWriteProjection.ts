@@ -2234,7 +2234,6 @@ export function buildRadioWriteProjection(
       ),
       assembled: projectionAssembled,
       build,
-      library,
       numbersBySourceChannelId,
       maxZones,
       warnings,

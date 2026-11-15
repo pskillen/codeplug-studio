@@ -137,7 +137,6 @@ describe('RT95 MM9PDY projection', () => {
       ],
       assembled,
       build,
-      library,
       numbersBySourceChannelId: new Map(),
       maxZones: 32,
       warnings,
@@ -162,7 +161,7 @@ describe('RT95 MM9PDY projection', () => {
     expect(texts.some((t) => t.includes('1 channels are only in All channels'))).toBe(true);
   });
 
-  it('warns once that per-zone scan choices are ignored', () => {
+  it('notes once that a zone scan set is not written yet, for a library skip', () => {
     const a = ch('a', 'Alpha', 145.5);
     const b = ch('b', 'Bravo', 145.6);
     const z = zone('z1', 'Local', ['a', 'b']);
@@ -170,8 +169,25 @@ describe('RT95 MM9PDY projection', () => {
       { kind: 'channel', channelId: 'a', includeInScanList: 'skip' },
       { kind: 'channel', channelId: 'b', includeInScanList: 'include' },
     ];
-    const { texts } = project(MM, lib([a, b], [z]));
-    expect(texts.filter((t) => t.includes('per-zone scan choices')).length).toBe(1);
+    const { projection, texts } = project(MM, lib([a, b], [z]));
+    const notes = projection.warnings.filter(
+      (w) => w.kind === 'general' && w.message.includes("isn't written"),
+    );
+    expect(notes).toHaveLength(1);
+    expect(notes[0]?.severity).toBe('info');
+    expect(texts.some((t) => t.includes('per-zone scan choices'))).toBe(false);
+  });
+
+  it('notes that a zone scan set is not written yet, for a build-level skip', () => {
+    const a = ch('a', 'Alpha', 145.5);
+    const b = ch('b', 'Bravo', 145.6);
+    const library = lib([a, b], [zone('z1', 'Local', ['a', 'b'])]);
+    expect(project(MM, library).texts.some((t) => t.includes("isn't written"))).toBe(false);
+    const { texts } = project(MM, library, (build) => {
+      const section = build.layout.sections[0];
+      if (section?.kind === 'zoneGrouping') section.zones[0]!.scanMemberInclusion = { b: 'skip' };
+    });
+    expect(texts.filter((t) => t.includes("isn't written to the radio yet"))).toHaveLength(1);
   });
 
   it('carries each zone scan set and leaves the MMD1 intent and blocks unchanged', () => {

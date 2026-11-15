@@ -278,6 +278,10 @@ describe('UV-5R Mini MM9PDY Write projection wiring', () => {
     expect(skipping.intent).toEqual(plain.intent);
     expect(skipping.encoded?.frames).toEqual(plain.encoded?.frames);
     expect(skipping.encoded?.sector).toEqual(plain.encoded?.sector);
+    // Write says once that the scan set isn't on the radio yet; a zone scanning all its members says nothing.
+    const note = "isn't written to the radio yet";
+    expect(skipping.texts.filter((t) => t.includes(note))).toHaveLength(1);
+    expect(plain.texts.some((t) => t.includes(note))).toBe(false);
   });
 
   it('stock Mini projection carries no zones and no flag', () => {

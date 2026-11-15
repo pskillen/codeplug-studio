@@ -48,8 +48,8 @@ Three warning types, all of which warn and none of which refuses (`ExportWarning
 
 ## Known gaps
 
-- The RT95 and UV-5R Mini writers don't write scan sets yet, so the radio still scans a zone by the per-channel flag and Scan in this zone has no effect on the radio ([#1756](https://github.com/pskillen/codeplug-studio/issues/1756), [#1757](https://github.com/pskillen/codeplug-studio/issues/1757)). Until #1756, the RT95 Write still warns that per-zone scan choices are ignored.
-- No warning is raised yet: `checkZoneScanSets` is wired in by each radio's writer ticket, because a too-few warning would be wrong while the radio ignores scan sets.
+- The RT95 and UV-5R Mini writers don't write scan sets yet, so the radio still scans a zone by the per-channel flag and Scan in this zone has no effect on the radio ([#1756](https://github.com/pskillen/codeplug-studio/issues/1756), [#1757](https://github.com/pskillen/codeplug-studio/issues/1757)). Until then, both Writes add one info note when any written zone's scan set differs from its members: "Scan in this zone isn't written to the radio yet; zones scan as before." Each writer ticket removes it.
+- None of the `zone_scan_set` warnings is raised yet: `checkZoneScanSets` is wired in by each radio's writer ticket, because a too-few warning would be wrong while the radio ignores scan sets.
 
 ## Not done
 
