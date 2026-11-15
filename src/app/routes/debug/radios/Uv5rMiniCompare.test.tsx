@@ -21,7 +21,7 @@ it('compares clone windows and reports special channel slots', () => {
     });
   render(
     <MantineProvider>
-      <Uv5rMiniCompare reads={store.getSnapshot().reads} />
+      <Uv5rMiniCompare reads={store.getSnapshot().reads} onOpenArchive={() => {}} />
     </MantineProvider>,
   );
   expect(screen.getByText('Identical compared spans')).toBeInTheDocument();

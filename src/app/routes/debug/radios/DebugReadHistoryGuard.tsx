@@ -6,8 +6,10 @@ import { getDebugReadHistory, useDebugReadHistory } from './debugReadHistory.ts'
 
 const mini = getDebugReadHistory({ slug: 'uv-5r-mini', archiveModelId: 'UV-5R Mini' });
 const rt95 = getDebugReadHistory({ slug: 'rt95', archiveModelId: 'retevis-rt95' });
-const isMini = (path: string) => path === '/debug/uv5r-mini' || path === '/debug/radios/uv-5r-mini';
-const isRt95 = (path: string) => path === '/debug/radios/rt95';
+const normalize = (path: string) => path.replace(/\/+$/, '');
+const isMini = (path: string) =>
+  ['/debug/uv5r-mini', '/debug/radios/uv-5r-mini'].includes(normalize(path));
+const isRt95 = (path: string) => normalize(path) === '/debug/radios/rt95';
 
 export function DebugReadHistoryGuard() {
   const miniPending = useDebugReadHistory(mini).undownloaded;

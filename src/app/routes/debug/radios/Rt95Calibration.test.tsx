@@ -180,4 +180,11 @@ it('draws a dashed calibration overlay and reports captured field differences', 
   expect(screen.getAllByText('Overlay read').length).toBeGreaterThan(0);
   expect(view.container.querySelector('[stroke-dasharray]')).not.toBeNull();
   expect(screen.getByText(/Model check text.*00 00 00 00 00 00 00 → 41/)).toBeInTheDocument();
+  view.rerender(
+    <DesignSystemV2Provider>
+      <Rt95Calibration overlayArchive={b} />
+    </DesignSystemV2Provider>,
+  );
+  expect(screen.getAllByText('Overlay read').length).toBeGreaterThan(0);
+  expect(view.container.querySelector('[stroke-dasharray]')).not.toBeNull();
 });

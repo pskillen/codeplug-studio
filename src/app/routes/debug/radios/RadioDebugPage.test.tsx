@@ -13,7 +13,13 @@ import { getDebugReadHistory } from './debugReadHistory.ts';
 import { gatedDebugRoute } from '../debugRoutes.tsx';
 import { DEVELOPER_MODE_KEY } from '@integrations/preferences/developerMode.ts';
 import { archiveDm32Capture } from './dm32Capture.ts';
+import { downloadZip } from '@integrations/download/browserDownload.ts';
+import { openDebugReadHistoryZip } from './debugReadHistoryArchive.ts';
 import type { Dm32DebugCapture } from '@integrations/radio-io/radios/dm32uv/debugCapture.ts';
+
+vi.mock('@integrations/download/browserDownload.ts', () => ({
+  downloadZip: vi.fn(async () => ({ status: 'saved' })),
+}));
 
 const fake = vi.hoisted(() => ({ run: vi.fn(), dm32: vi.fn(), prod: false }));
 vi.mock('@app/services/prodFeatureGate.ts', async (importOriginal) => {
@@ -385,3 +391,41 @@ it.each([
     expected,
   );
 });
+
+it('retains comparison uploads in shared history for other viewers and download all', async () => {
+  const descriptor = { slug: 'uv-5r-mini', archiveModelId: 'UV-5R Mini' };
+  const history = getDebugReadHistory(descriptor);
+  history.clear();
+  vi.mocked(downloadZip).mockClear();
+  const legacy = new Uv5rMiniDebugReadStore();
+  legacy.add(syntheticRead(1), new Date('2024-01-01T12:00:00Z'));
+  legacy.add(syntheticRead(2), new Date('2024-01-02T12:00:00Z'));
+  const bytes = buildUv5rMiniReadsZip(legacy.getSnapshot().reads);
+  const file = new File([Uint8Array.from(bytes)], 'reads.zip');
+  Object.defineProperty(file, 'arrayBuffer', { value: async () => Uint8Array.from(bytes).buffer });
+  const page = render(
+    <MemoryRouter initialEntries={['/debug/radios/uv-5r-mini']}>
+      <DesignSystemV2Provider>
+        <Routes>
+          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+        </Routes>
+      </DesignSystemV2Provider>
+    </MemoryRouter>,
+  );
+  fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
+  const inputs = document.querySelectorAll('input[type="file"]');
+  fireEvent.change(inputs[inputs.length - 1]!, { target: { files: [file] } });
+  await waitFor(() => expect(history.getSnapshot().entries).toHaveLength(2));
+  expect(screen.getByRole('combobox', { name: 'Second read' })).toHaveDisplayValue(/File B/);
+  fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/File B/);
+  fireEvent.click(screen.getByRole('tab', { name: 'Backup' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Download all reads' }));
+  await waitFor(() => expect(downloadZip).toHaveBeenCalled());
+  const zip = vi.mocked(downloadZip).mock.calls[0]![0];
+  expect(openDebugReadHistoryZip(zip, descriptor)).toHaveLength(2);
+  page.unmount();
+  open();
+  expect(screen.getByText(/Reads in this tab:/)).toHaveTextContent('File B');
+  act(() => history.clear());
+}, 15000);

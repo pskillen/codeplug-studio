@@ -23,6 +23,8 @@ export interface LineChartProps {
   /** Fixed y range; by default the data's range, padded and rounded to nice ticks. */
   yDomain?: readonly [number, number];
   height?: number;
+  /** Show the legend even for a single series. */
+  showLegend?: boolean;
 }
 
 const WIDTH = 560;
@@ -41,6 +43,7 @@ export default function LineChart({
   formatY = String,
   yDomain,
   height = 240,
+  showLegend = false,
 }: LineChartProps) {
   const scheme = useComputedColorScheme('light');
   const clipId = useId();
@@ -88,7 +91,7 @@ export default function LineChart({
 
   return (
     <Box>
-      {series.length > 1 ? (
+      {series.length > 1 || (showLegend && series.length > 0) ? (
         <Group gap="md" mb={4} aria-hidden>
           {series.map((s) => (
             <Group key={s.id} gap={6} wrap="nowrap">

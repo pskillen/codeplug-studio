@@ -47,6 +47,7 @@ export function Rt95Calibration({
             <LineChart
               key={field.address}
               title={field.label}
+              showLegend={!primary.length}
               xLabel="Index"
               yLabel="Correction"
               series={[
