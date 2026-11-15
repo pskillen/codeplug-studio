@@ -109,7 +109,6 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
     archive?.manifest.radioModelId === 'DM-32UV'
       ? dm32DebugIdentity(archive.sidecars, archive.manifest.regions, archive.regions)
       : undefined;
-  const dm32Frame = (id: number) => dm32Identity?.vframes.find((v) => v.id === id);
   const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
   if (!descriptor)
     return (
@@ -251,12 +250,12 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                           ['Model · captured PSEARCH', dm32Identity?.modelString ?? 'Unknown'],
                           [
                             'Base firmware · V01 (stock base version, unchanged by MM9PDY, so not a mod discriminator)',
-                            asReturned(dm32Identity?.baseFirmware ?? dm32Frame(0x01)),
+                            asReturned(dm32Identity?.baseFirmware),
                           ],
-                          ['Build date · V03', asReturned(dm32Frame(0x03))],
-                          ['DSP version · V04', asReturned(dm32Frame(0x04))],
-                          ['Radio version · V05', asReturned(dm32Frame(0x05))],
-                          ['Codeplug version · V0B', asReturned(dm32Frame(0x0b))],
+                          ['Build date · V03', asReturned(dm32Identity?.buildDate)],
+                          ['DSP version · V04', asReturned(dm32Identity?.dspVersion)],
+                          ['Radio version · V05', asReturned(dm32Identity?.radioVersion)],
+                          ['Codeplug version · V0B', asReturned(dm32Identity?.codeplugVersion)],
                           ['Serial', 'None observed'],
                           [
                             'Chip UID (8 bytes) + 4 derived, not a serial · V02',
