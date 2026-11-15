@@ -95,6 +95,14 @@ Docs-only PRs (every changed file is `*.md` or under `docs/`) run `format:check`
 5. **Pure domain helper** (geo, validation, maidenhead) → colocated `*.test.ts` in `src/core/` or `src/integrations/`.
 6. **CI Play helpers** (`versionCode`, preflight decision) → colocated `scripts/play/*.test.ts` (picked up by `npm test`).
 
+## Keeping radio-session tests fast
+
+A scripted radio (for example `FakeD890Radio`) answers thousands of 16-byte frames per full read, so a test that reads or restores a whole image is CPU-bound, not time-bound. Three habits keep these tests in seconds:
+
+- Per-byte work in a fake (`setBytes` / `getBytes`) copies whole spans, not one byte per map lookup.
+- A read-only result that every test of a file needs (a backup of a fresh fake) is built once and shared; only the test that is about the read does it itself.
+- Profile before guessing: `npx vitest run <file> --pool=forks --execArgv=--cpu-prof`. Idle time points at a real timer; busy time points at code. Hot spots in shared production helpers (for example `bytesToBase64`) are fixed there, behaviour-neutrally.
+
 ## Documentation map
 
 | Doc                                          | Contents                                                                                                       |
