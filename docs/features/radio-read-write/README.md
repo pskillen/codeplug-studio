@@ -184,3 +184,5 @@ What this doesn't do yet. Delete a line when its gap is fixed.
 - [NeonPlug interchange](../import-export/neonplug/README.md) — `.neonplug` ZIP preferred path before direct write
 - NeonPlug ground truth: workspace `NeonPlug/src/radios/`
 - CHIRP drivers: workspace `chirp/chirp/drivers/`
+
+AT-D890UV debug memory dumps and read-only probes check the LocalInfo stun and kill flags immediately before sending END. If either flag is set or the check fails, Studio skips END and asks the operator to power-cycle the radio. A failed or cancelled debug read may also leave the radio in programming mode; power-cycle it before continuing.
