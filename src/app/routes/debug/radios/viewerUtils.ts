@@ -1,3 +1,4 @@
+import type { AtD890MemberStatus } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
 import { RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
@@ -76,3 +77,12 @@ export function compareRegions(a: DebugArchive, b: DebugArchive) {
   });
   return { regions };
 }
+
+export const MEMBER_EXPLANATION: Record<AtD890MemberStatus, string> = {
+  resolved: 'Resolved',
+  'out-of-range': 'Out of range: beyond the hardware channel slots',
+  absent: 'Absent: the channel bitmap does not mark this slot occupied',
+  'not-captured': 'Not captured: the slot is occupied but its record is incomplete',
+  'inventory-not-captured': 'Cannot resolve: the channel bitmap was not captured',
+  unreadable: 'Unreadable: the captured record is empty or invalid',
+};
