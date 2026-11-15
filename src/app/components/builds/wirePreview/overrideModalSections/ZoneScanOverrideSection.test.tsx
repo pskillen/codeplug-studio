@@ -21,11 +21,16 @@ function channel(id: string, name: string): Channel {
   return { id, name, callsign: '' } as unknown as Channel;
 }
 
-function renderSection(variant: 'scanList' | 'scanSet', onUpdate = vi.fn()) {
+function renderSection(
+  variant: 'scanList' | 'scanSet',
+  onUpdate = vi.fn(),
+  scanSetCount?: { included: number; total: number },
+) {
   render(
     <MantineProvider>
       <ZoneScanOverrideSection
         variant={variant}
+        scanSetCount={scanSetCount}
         zone={zone}
         zones={[zone]}
         entry={{ id: 'z1', name: 'Local', channelIds: [] }}
@@ -55,6 +60,13 @@ describe('ZoneScanOverrideSection, scan set variant', () => {
     expect(screen.getByText(/this zone won't scan on the radio/)).toBeInTheDocument();
     expect(screen.getByLabelText('Include Alpha in this zone’s scan')).toBeChecked();
     expect(screen.getByLabelText('Include Bravo in this zone’s scan')).not.toBeChecked();
+  });
+
+  it('counts what Write sends when given, and says so', () => {
+    renderSection('scanSet', vi.fn(), { included: 2, total: 3 });
+    expect(screen.getByText('2 / 3 scan in this zone')).toBeInTheDocument();
+    expect(screen.queryByText(/this zone won't scan on the radio/)).toBeNull();
+    expect(screen.getByText(/Counts the channels Write sends in this zone/)).toBeInTheDocument();
   });
 
   it("saves a member's choice on this build's zone", () => {

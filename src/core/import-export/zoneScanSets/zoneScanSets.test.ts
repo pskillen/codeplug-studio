@@ -8,6 +8,7 @@ import {
   checkZoneScanSets,
   resolveZoneScanSets,
   zoneScanSetChannelNumbers,
+  zoneScanSetCounts,
 } from './index.ts';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
@@ -106,6 +107,22 @@ describe('zoneScanSetChannelNumbers', () => {
     expect(zoneScanSetChannelNumbers([C, A], numbers, [1, 3, 7])).toEqual([3, 7]);
     // A number dropped from the zone (beyond the radio) is not in the set either.
     expect(zoneScanSetChannelNumbers([C, A], numbers, [1, 3])).toEqual([3]);
+  });
+});
+
+describe('zoneScanSetCounts', () => {
+  const assembled = {
+    // OUT is not in the build, so it is not an assembled member and is never counted.
+    zones: [{ zoneId: Z1, wireName: 'Local', memberChannelIds: [A, B, C] }],
+  };
+  const sets = [{ zoneId: Z1, wireName: 'Local', scanChannelIds: [A, C] }];
+
+  it('counts the written members and those in the scan set', () => {
+    expect(zoneScanSetCounts(assembled, sets).get(Z1)).toEqual({ included: 2, total: 3 });
+  });
+
+  it('leaves out members over the zone member cap', () => {
+    expect(zoneScanSetCounts(assembled, sets, 2).get(Z1)).toEqual({ included: 1, total: 2 });
   });
 });
 

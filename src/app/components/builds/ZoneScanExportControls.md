@@ -30,7 +30,7 @@ Layout state is provided by [`useZoneScanExportLayout`](../../../hooks/useZoneSc
 - **Include in scan list** → `ZoneGroupingZoneEntry.scanMemberInclusion` on the **exported** zone (build-scoped). Nested members listed with `(child zone)` suffix; toggles do not rewrite the child library zone.
 - On MxN radios, members **nest under shaded parents** with per-projection toggles (`memberKey` = expansion `key`). Parent skip omits all projections; child skip omits one wire. Cap badge counts use **expanded** membership (#570).
 - Carrier MHz when **Export as scan list** is on (DM32 and Anytone).
-- **Scan set variant** (`ZoneScanSet` builds): the same per-member toggles write the same `scanMemberInclusion` projection, read as the zone's scan set. The section badge counts members set to Scan in this zone and turns orange below two, when the zone won't scan on the radio. See [zone-scan-sets.md](../../../../docs/features/builds/zone-scan-sets.md).
+- **Scan set variant** (`ZoneScanSet` builds): the same per-member toggles write the same `scanMemberInclusion` projection, read as the zone's scan set. The section badge counts members set to Scan in this zone among those Write sends (`scanSetCount`, from `zoneScanSetCounts`) and turns orange below two, when the zone won't scan on the radio. See [zone-scan-sets.md](../../../../docs/features/builds/zone-scan-sets.md).
 - Scratch channels use the build **Export → Scratch channels** toggle (`exportSettings.exportScratchChannels`), not this panel.
 
 ## Related

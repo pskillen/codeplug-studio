@@ -9,6 +9,12 @@ import {
   updateZoneGroupingEntry,
 } from '@core/domain/zoneGroupingLayout.ts';
 import { scanListMemberCapForProfile } from '@core/import-export/formatProfiles.ts';
+import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
+import {
+  resolveZoneScanSets,
+  zoneScanSetCounts,
+  type ZoneScanSetCount,
+} from '@core/import-export/zoneScanSets/index.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { buildZoneBehaviourContext } from '@core/import-export/zoneBehaviourDefaults/index.ts';
 import { buildChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/index.ts';
@@ -143,6 +149,24 @@ export function useZoneScanExportLayout() {
     return mxnExpansionByChannelId(rows);
   }, [library, layoutSupported, build, egress.formatId, egress.profileId]);
 
+  /**
+   * Zone scan set builds: per-zone counts of what Write sends (build-excluded, ineligible and
+   * over-the-cap members left out), keyed by library zone id, for the Scan tab.
+   */
+  const scanSetCountsByZoneId = useMemo((): Map<string, ZoneScanSetCount> | undefined => {
+    if (!library || !scanSetEnabled) return undefined;
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const cap = getProfileExportLimits(egress.formatId as FormatId, egress.profileId)?.zoneMembers;
+    return zoneScanSetCounts(
+      assembled,
+      resolveZoneScanSets(assembled, library, zoneBehaviourContext),
+      typeof cap === 'number' ? cap : undefined,
+    );
+  }, [library, scanSetEnabled, build, egress.formatId, egress.profileId, zoneBehaviourContext]);
+
   const persistLayout = useCallback(
     async (nextLayout: ZoneGroupingLayout) => {
       setSaving(true);
@@ -208,6 +232,7 @@ export function useZoneScanExportLayout() {
     zoneById,
     channelById,
     expansionByChannelId,
+    scanSetCountsByZoneId,
     zoneBehaviourContext,
     channelBehaviourContext,
     saving,

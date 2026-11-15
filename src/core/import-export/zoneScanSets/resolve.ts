@@ -67,3 +67,38 @@ export function zoneScanSetChannelNumbers(
   }
   return zoneChannelNumbers.filter((n) => wanted.has(n));
 }
+
+/** How many of a zone's written channels are in its scan set, for the Zones page Scan tab. */
+export interface ZoneScanSetCount {
+  /** Written members in the scan set. */
+  included: number;
+  /** Members the Write sends for this zone. */
+  total: number;
+}
+
+/**
+ * Per-zone counts of what Write sends: the assembled zone's members (build-excluded and
+ * ineligible channels already left out), cut to the zone member cap, and how many of those are
+ * in the zone's scan set. One channel is one zone member on the zone scan set targets.
+ * Keyed by library zone id.
+ */
+export function zoneScanSetCounts(
+  assembled: Pick<AssembledBuild, 'zones'>,
+  sets: readonly ZoneScanSet[],
+  zoneMembersCap?: number,
+): Map<string, ZoneScanSetCount> {
+  const setByZoneId = new Map(sets.map((set) => [set.zoneId, set]));
+  const counts = new Map<string, ZoneScanSetCount>();
+  for (const zone of assembled.zones) {
+    const written =
+      zoneMembersCap === undefined
+        ? zone.memberChannelIds
+        : zone.memberChannelIds.slice(0, zoneMembersCap);
+    const inSet = new Set(setByZoneId.get(zone.zoneId)?.scanChannelIds ?? []);
+    counts.set(zone.zoneId, {
+      included: written.filter((id) => inSet.has(id)).length,
+      total: written.length,
+    });
+  }
+  return counts;
+}

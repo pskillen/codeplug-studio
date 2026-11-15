@@ -2,7 +2,10 @@ import { Badge, Group, Stack, Switch, Text } from '@mantine/core';
 import type { Zone } from '@core/models/library.ts';
 import type { ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
 import { zoneScanMemberCounts } from '@core/import-export/zoneDerivedScanLists/members.ts';
-import { ZONE_SCAN_SET_MIN_CHANNELS } from '@core/import-export/zoneScanSets/index.ts';
+import {
+  ZONE_SCAN_SET_MIN_CHANNELS,
+  type ZoneScanSetCount,
+} from '@core/import-export/zoneScanSets/index.ts';
 import {
   ZoneScanExpandPanel,
   type ZoneScanExpandPanelProps,
@@ -26,6 +29,12 @@ export interface ZoneScanOverrideSectionProps {
    * `scanSet`: the zone's own scan set (**Scan in this zone**), always on; no carrier, no cap.
    */
   variant?: ZoneScanMemberVariant;
+  /**
+   * `scanSet` only: what Write sends for this zone (build-excluded, ineligible and over-the-cap
+   * members left out). The badge and the too-few note use it; without it they count the library
+   * zone's members.
+   */
+  scanSetCount?: ZoneScanSetCount;
 }
 
 export default function ZoneScanOverrideSection({
@@ -41,6 +50,7 @@ export default function ZoneScanOverrideSection({
   onUpdateMemberScanInclusion,
   expansionByChannelId,
   variant = 'scanList',
+  scanSetCount,
 }: ZoneScanOverrideSectionProps) {
   const { included, total } = zoneScanMemberCounts(
     zone,
@@ -54,7 +64,8 @@ export default function ZoneScanOverrideSection({
   const capExceeded = included > scanListMemberCap;
 
   if (variant === 'scanSet') {
-    const tooFew = included < ZONE_SCAN_SET_MIN_CHANNELS;
+    const written = scanSetCount ?? { included, total };
+    const tooFew = written.included < ZONE_SCAN_SET_MIN_CHANNELS;
     return (
       <Stack gap="md">
         <Group gap="sm" wrap="wrap" align="center">
@@ -62,9 +73,15 @@ export default function ZoneScanOverrideSection({
             Scan in this zone
           </Text>
           <Badge size="sm" variant="light" color={tooFew ? 'orange' : 'gray'}>
-            {included} / {total} scan in this zone
+            {written.included} / {written.total} scan in this zone
           </Badge>
         </Group>
+        {scanSetCount ? (
+          <Text size="xs" c="dimmed">
+            Counts the channels Write sends in this zone: channels left out of this build or over
+            the radio&apos;s zone size are not counted.
+          </Text>
+        ) : null}
         {tooFew ? (
           <Text size="xs" c="orange">
             Fewer than {ZONE_SCAN_SET_MIN_CHANNELS} channels: this zone won&apos;t scan on the

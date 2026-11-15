@@ -22,7 +22,7 @@ On radios whose zones come from the MM9PDY firmware over a flat channel list (th
 ## Operator workflow
 
 1. Build zones as for any zone build ([zone-grouping.md](zone-grouping.md)).
-2. On **Export for radio → Zones**, open a zone and go to its **Scan** tab. Each member has a **Scan in this zone** switch; the badge counts how many are on. Choices are saved on this build's zone projection, not on the library zone.
+2. On **Export for radio → Zones**, open a zone and go to its **Scan** tab. Each member has a **Scan in this zone** switch. The badge counts what Write sends: the zone's channels in this build (excluded, ineligible and over-the-cap members left out) and how many of them are on. Choices are saved on this build's zone projection, not on the library zone.
 3. A zone with fewer than two channels set to Scan in this zone shows an orange note: the radio gives its stock "cannot scan" response for such a zone.
 4. Set the All channels flag on **Scan in All channels** (the same page stock flat-memory builds call **Scan list**). That page has no memory column on these builds, because Write numbers channels in zone order.
 

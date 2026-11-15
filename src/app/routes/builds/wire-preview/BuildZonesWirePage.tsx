@@ -119,6 +119,7 @@ export default function BuildZonesWirePage() {
           return (
             <ZoneScanOverrideSection
               variant="scanSet"
+              scanSetCount={zoneScan.scanSetCountsByZoneId?.get(row.libraryEntityId)}
               zone={ctx.zone}
               zones={zoneScan.library.zones}
               entry={ctx.entry}
