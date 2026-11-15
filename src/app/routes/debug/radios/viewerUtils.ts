@@ -24,6 +24,17 @@ export function hexRows(bytes: Uint8Array, address: number, page: number) {
 export function regionIdentity(archive: DebugArchive, id: string) {
   if (archive.manifest.radioModelId === RT95_MODEL_ID && id === 'programming-image')
     return { space: 'RT95 programming image', representation: 'programming image bytes' };
+  if (archive.manifest.radioModelId === RT95_MODEL_ID && id === 'rt95-calibration') {
+    const region = archive.manifest.regions.find((r) => r.id === id);
+    if (
+      region?.address === 0x3b00 &&
+      region.byteLength <= 0x4c0 &&
+      region.restoreRole === 'inspect-only' &&
+      region.path === 'regions/rt95-calibration.bin' &&
+      archive.regions[id]?.length === region.byteLength
+    )
+      return { space: 'RT95 main-body EEPROM via head', representation: 'EEPROM bytes' };
+  }
   return undefined;
 }
 

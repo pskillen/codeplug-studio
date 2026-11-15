@@ -37,6 +37,7 @@ import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWakeLock.ts';
 import { capabilityColor, radioDebugDescriptors } from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
+import { Rt95Calibration } from './Rt95Calibration.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Memory } from './AtD890Memory.tsx';
 import { Coverage } from './Coverage.tsx';
@@ -244,71 +245,89 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                               : 'Not connected',
                         ],
                       ]
-                    : descriptor.slug === 'dm-32uv'
+                    : descriptor.slug === 'rt95'
                       ? [
                           ['Model · selected', descriptor.model],
-                          ['Model · captured PSEARCH', dm32Identity?.modelString ?? 'Unknown'],
                           [
-                            'Base firmware · V01 (stock base version, unchanged by MM9PDY, so not a mod discriminator)',
-                            asReturned(dm32Identity?.baseFirmware),
-                          ],
-                          ['Build date · V03', asReturned(dm32Identity?.buildDate)],
-                          ['DSP version · V04', asReturned(dm32Identity?.dspVersion)],
-                          ['Radio version · V05', asReturned(dm32Identity?.radioVersion)],
-                          ['Codeplug version · V0B', asReturned(dm32Identity?.codeplugVersion)],
-                          ['Serial', 'None observed'],
-                          [
-                            'Chip UID (8 bytes) + 4 derived, not a serial · V02',
-                            dm32Identity?.chipUidHex
-                              ? `0x${dm32Identity.chipUidHex.toUpperCase()}`
-                              : 'Not observed',
+                            'PC ident [head]',
+                            archive?.sidecars['debug/ident.bin']
+                              ? Array.from(archive.sidecars['debug/ident.bin'], (b) =>
+                                  b.toString(16).padStart(2, '0'),
+                                ).join(' ')
+                              : 'Not captured',
                           ],
                           [
-                            'Persistent data',
-                            dm32Identity?.mm9pdyDataPresent
-                              ? 'MM9PDY-compatible data present'
-                              : 'No MM9PDY location page captured',
+                            'Clone channels/settings [unknown]',
+                            archive ? 'Captured in programming image' : 'Not captured',
                           ],
                           ['Running firmware', 'Unknown'],
                           ['Firmware mod', 'Unknown'],
-                          [
-                            'Evidence',
-                            dm32Identity?.modelString || dm32Identity?.vframes.length
-                              ? 'Captured radio replies'
-                              : 'No radio identity observed',
-                          ],
-                          [
-                            'Connection',
-                            reading
-                              ? 'Reading radio…'
-                              : archive?.source === 'live-read'
-                                ? 'Read complete · disconnected'
-                                : 'Not connected',
-                          ],
                         ]
-                      : [
-                          ['Model · selected', descriptor.model],
-                          ['Expected family', descriptor.family],
-                          ['Serial · archive', archive?.manifest.serial || 'Unknown'],
-                          ['Firmware · archive', archive?.manifest.firmware || 'Unknown'],
-                          ['Firmware mod', miniReport ? 'MM9PDY compatible report' : 'Unknown'],
-                          [
-                            'Evidence',
-                            miniReport
-                              ? 'Validated live format-2 MM9R report'
-                              : archive
-                                ? 'Archive manifest'
+                      : descriptor.slug === 'dm-32uv'
+                        ? [
+                            ['Model · selected', descriptor.model],
+                            ['Model · captured PSEARCH', dm32Identity?.modelString ?? 'Unknown'],
+                            [
+                              'Base firmware · V01 (stock base version, unchanged by MM9PDY, so not a mod discriminator)',
+                              asReturned(dm32Identity?.baseFirmware),
+                            ],
+                            ['Build date · V03', asReturned(dm32Identity?.buildDate)],
+                            ['DSP version · V04', asReturned(dm32Identity?.dspVersion)],
+                            ['Radio version · V05', asReturned(dm32Identity?.radioVersion)],
+                            ['Codeplug version · V0B', asReturned(dm32Identity?.codeplugVersion)],
+                            ['Serial', 'None observed'],
+                            [
+                              'Chip UID (8 bytes) + 4 derived, not a serial · V02',
+                              dm32Identity?.chipUidHex
+                                ? `0x${dm32Identity.chipUidHex.toUpperCase()}`
+                                : 'Not observed',
+                            ],
+                            [
+                              'Persistent data',
+                              dm32Identity?.mm9pdyDataPresent
+                                ? 'MM9PDY-compatible data present'
+                                : 'No MM9PDY location page captured',
+                            ],
+                            ['Running firmware', 'Unknown'],
+                            ['Firmware mod', 'Unknown'],
+                            [
+                              'Evidence',
+                              dm32Identity?.modelString || dm32Identity?.vframes.length
+                                ? 'Captured radio replies'
                                 : 'No radio identity observed',
-                          ],
-                          [
-                            'Connection',
-                            reading
-                              ? 'Reading radio…'
-                              : archive?.source === 'live-read'
-                                ? 'Read complete · disconnected'
-                                : 'Not connected',
-                          ],
-                        ]
+                            ],
+                            [
+                              'Connection',
+                              reading
+                                ? 'Reading radio…'
+                                : archive?.source === 'live-read'
+                                  ? 'Read complete · disconnected'
+                                  : 'Not connected',
+                            ],
+                          ]
+                        : [
+                            ['Model · selected', descriptor.model],
+                            ['Expected family', descriptor.family],
+                            ['Serial · archive', archive?.manifest.serial || 'Unknown'],
+                            ['Firmware · archive', archive?.manifest.firmware || 'Unknown'],
+                            ['Firmware mod', miniReport ? 'MM9PDY compatible report' : 'Unknown'],
+                            [
+                              'Evidence',
+                              miniReport
+                                ? 'Validated live format-2 MM9R report'
+                                : archive
+                                  ? 'Archive manifest'
+                                  : 'No radio identity observed',
+                            ],
+                            [
+                              'Connection',
+                              reading
+                                ? 'Reading radio…'
+                                : archive?.source === 'live-read'
+                                  ? 'Read complete · disconnected'
+                                  : 'Not connected',
+                            ],
+                          ]
                   ).map(([label, value]) => (
                     <div key={label}>
                       <Text size="xs" c="dimmed">
@@ -490,7 +509,14 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               />
             </Tabs.Panel>
           )}
-          {(descriptor.slug === 'uv-5r-mini' || descriptor.slug === 'at-d890uv'
+          {descriptor.slug === 'rt95' && (
+            <Tabs.Panel value="calibration" pt="md">
+              <Rt95Calibration archive={archive} />
+            </Tabs.Panel>
+          )}
+          {(descriptor.slug === 'uv-5r-mini' ||
+          descriptor.slug === 'at-d890uv' ||
+          descriptor.slug === 'rt95'
             ? ['Trace']
             : ['Calibration', 'Trace']
           ).map((tab) => (

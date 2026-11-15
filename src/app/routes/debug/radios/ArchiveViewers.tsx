@@ -83,7 +83,13 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
       />
       <Card withBorder>
         <Text fw={600}>
-          {wire ? 'Wire bytes as received' : region.label} · {bytes.length} bytes
+          {wire ? 'Wire bytes as received' : region.label}{' '}
+          {archive?.manifest.radioModelId === 'retevis-rt95'
+            ? region.id === 'rt95-calibration'
+              ? '[body]'
+              : '[unknown]'
+            : ''}{' '}
+          · {bytes.length} bytes
         </Text>
         <div style={{ overflowX: 'auto' }}>
           <pre aria-label="Hexadecimal bytes">
@@ -148,7 +154,7 @@ export function MemoryViewer({ archive }: { archive?: DebugArchive }) {
         </Alert>
       ) : (
         <>
-          <Title order={4}>Channels</Title>
+          <Title order={4}>Channels [unknown]</Title>
           <TextInput
             label="Search channels"
             value={query}
@@ -169,15 +175,15 @@ export function MemoryViewer({ archive }: { archive?: DebugArchive }) {
             rows={channels}
             getRowId={(row) => String(row.slotIndex)}
             columns={[
-              { key: 'slot', header: 'Slot', render: (row) => row.slotIndex },
-              { key: 'name', header: 'Name', render: (row) => row.name || '(unnamed)' },
+              { key: 'slot', header: 'Slot [unknown]', render: (row) => row.slotIndex },
+              { key: 'name', header: 'Name [unknown]', render: (row) => row.name || '(unnamed)' },
             ]}
             emptyMessage="No matching channels."
           />
-          <Title order={4}>Settings</Title>
+          <Title order={4}>Settings [unknown]</Title>
           {summary.settingsRetain.map((item) => (
             <Text key={item.label}>
-              {item.label} · {item.value}
+              {item.label} [unknown] · {item.value}
             </Text>
           ))}
         </>
