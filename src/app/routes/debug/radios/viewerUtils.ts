@@ -18,6 +18,15 @@ import type { AtD890MemberStatus } from '@integrations/radio-io/radios/at-d890uv
 import { RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
+const archiveIds = new WeakMap<DebugArchive, number>();
+let nextArchiveId = 1;
+/** Stable per-object key: a different archive object (new read, import, other retained read) differs. */
+export function archiveKey(archive: DebugArchive): number {
+  let id = archiveIds.get(archive);
+  if (id === undefined) archiveIds.set(archive, (id = nextArchiveId++));
+  return id;
+}
+
 export const HEX_PAGE_BYTES = 256;
 export const formatAddress = (n: number) => `0x${n.toString(16).toUpperCase().padStart(8, '0')}`;
 

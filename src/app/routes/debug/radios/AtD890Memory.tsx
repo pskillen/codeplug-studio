@@ -26,7 +26,7 @@ import {
   describeBankReference,
 } from './AtD890MemoryContacts.tsx';
 import { ScanListsPanel, SettingsPanel } from './AtD890MemorySettings.tsx';
-import { MEMBER_EXPLANATION } from './viewerUtils.ts';
+import { archiveKey, MEMBER_EXPLANATION } from './viewerUtils.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
 const MODEL_ID = 'AT-D890UV';
@@ -448,14 +448,6 @@ function ZonesPanel({ zones }: { zones: ReturnType<typeof projectAtD890Memory>['
     </Stack>
   );
 }
-
-const archiveIds = new WeakMap<DebugArchive, number>();
-let nextArchiveId = 1;
-const archiveKey = (archive: DebugArchive) => {
-  let id = archiveIds.get(archive);
-  if (id === undefined) archiveIds.set(archive, (id = nextArchiveId++));
-  return id;
-};
 
 /** Read-only AT-D890UV Memory viewer. Replacing the archive resets rows, references and selection. */
 export function AtD890Memory({ archive }: { archive?: DebugArchive }) {
