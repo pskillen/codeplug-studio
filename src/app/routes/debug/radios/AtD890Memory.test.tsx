@@ -13,7 +13,7 @@ import {
   zoneChannelsAddress,
   zoneNameAddress,
 } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
-import { AtD890Memory, formatAtD890Tone } from './AtD890Memory.tsx';
+import { AtD890Memory } from './AtD890Memory.tsx';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 
 type Entry = [RadioBackupRegionV1, Uint8Array];
@@ -230,13 +230,5 @@ describe('AtD890Memory', () => {
       open(name);
       expect(screen.getByText('Coming in a later piece')).toBeInTheDocument();
     }
-  });
-});
-
-describe('formatAtD890Tone', () => {
-  it('formats tones', () => {
-    expect(formatAtD890Tone({ kind: 'none' })).toBe('None');
-    expect(formatAtD890Tone({ kind: 'ctcss', hz: 110.9 })).toBe('110.9 Hz');
-    expect(formatAtD890Tone({ kind: 'dcs', code: 23, polarity: 'I' })).toBe('D023I');
   });
 });
