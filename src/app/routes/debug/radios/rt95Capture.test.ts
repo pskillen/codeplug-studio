@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { createFakeRt95Pipe } from '@integrations/radio-io/radios/rt95/__fixtures__/fakeRt95Pipe.ts';
 import { setRt95EndAtForTests } from '@integrations/radio-io/radios/rt95/protocol.ts';
 import { openDebugArchive, rt95ArchiveDetails } from './captureArchive.ts';
-import { captureRt95Pipe, guardRt95DebugPipe } from './rt95Capture.ts';
+import { guardRt95ClonePipe } from '@integrations/radio-io/radios/rt95/transportGuard.ts';
+import { captureRt95Pipe } from './rt95Capture.ts';
 
 describe('RT95 debug capture', () => {
   it('captures via read-only frames and reopens identical region bytes', async () => {
@@ -20,7 +21,7 @@ describe('RT95 debug capture', () => {
   }, 30000);
   it('refuses write and unknown frames before reaching the pipe', async () => {
     const pipe = createFakeRt95Pipe();
-    const guarded = guardRt95DebugPipe(pipe);
+    const guarded = guardRt95ClonePipe(pipe);
     await expect(guarded.write(new Uint8Array([0x57, 0, 0, 16]))).rejects.toThrow(/refused/);
     await expect(guarded.write(new Uint8Array([0x44]))).rejects.toThrow(/refused/);
     expect(pipe.writes).toHaveLength(0);
