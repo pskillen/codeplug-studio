@@ -118,7 +118,9 @@ it('adds a successful live read to history with its timestamp', async () => {
   expect(await screen.findByText(/Reads in this tab:.*Live [A-Z]+ \(.+\)/)).toBeInTheDocument();
 });
 
-function rt95ArchiveFile() {
+function rt95ArchiveFile(kind: 'missing' | 'partial' | 'captured' = 'missing') {
+  const size = kind === 'captured' ? 0x32a0 : 4;
+  const id = kind === 'missing' ? 'rt95-calibration' : 'programming-image';
   const zip = packRadioBackupZip(
     {
       format: 'codeplug-studio-radio-backup',
@@ -134,16 +136,16 @@ function rt95ArchiveFile() {
       imageByteLength: 4,
       regions: [
         {
-          id: 'a',
+          id,
           label: 'A',
-          address: 0,
-          byteLength: 4,
-          path: 'regions/a.bin',
+          address: kind === 'missing' ? 0x3b00 : 0,
+          byteLength: size,
+          path: kind === 'missing' ? 'regions/rt95-calibration.bin' : 'regions/a.bin',
           restoreRole: 'inspect-only',
         },
       ],
     },
-    { a: new Uint8Array(4) },
+    { [id]: new Uint8Array(size) },
     { 'debug/ident.bin': Uint8Array.of(0x12, 0x34, 0xab, 0xcd) },
   );
   const file = new File([Uint8Array.from(zip)], 'rt95.zip', { type: 'application/zip' });
@@ -335,4 +337,20 @@ it('shows the entire serial supplied by an archive for a profile that exposes it
   await screen.findByText(/Local archive · captured/);
   fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
   expect(screen.getByText('Serial · archive').parentElement).toHaveTextContent(serial);
+});
+
+it.each([
+  ['missing', 'Not captured'],
+  ['partial', 'Partially captured in programming image'],
+  ['captured', 'Captured in programming image'],
+] as const)('reports %s RT95 programming image coverage on Overview', async (kind, expected) => {
+  open('rt95');
+  fireEvent.change(document.querySelector('input[type="file"]')!, {
+    target: { files: [rt95ArchiveFile(kind)] },
+  });
+  await screen.findByText(/Local archive · captured/);
+  fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
+  expect(screen.getByText('Clone channels/settings [unknown]').parentElement).toHaveTextContent(
+    expected,
+  );
 });

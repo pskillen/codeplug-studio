@@ -70,7 +70,7 @@ it('opens legacy and partial archives with honest availability and body provenan
       { ...manifest, regions: [image, calibration] },
       {
         'programming-image': new Uint8Array(2),
-        'rt95-calibration': Uint8Array.of(1, 2, 3, 4, 5, 6, 7, 8),
+        'rt95-calibration': Uint8Array.of(65, 66, 0, 67, 68, 69, 70, 56),
       },
     ),
     'retevis-rt95',
@@ -82,12 +82,12 @@ it('opens legacy and partial archives with honest availability and body provenan
   );
   expect(
     within(screen.getByText(/Model check text \[body\]/).parentElement!).getByText(
-      /Raw: 01 02 03 04 05 06 07/,
+      /Raw: 41 42 00 43 44 45 46.*Text: AB.CDEF/,
     ),
   ).toBeInTheDocument();
   expect(
     within(screen.getByText(/Stored version text \[body\]/).parentElement!).getByText(
-      /Raw: 08 · partial/,
+      /Raw: 38 · partial.*Text: 8/,
     ),
   ).toBeInTheDocument();
   expect(screen.getByText(/head relays each block/)).toBeInTheDocument();
@@ -131,5 +131,7 @@ it('reports the actual partial calibration span and uncaptured tail', () => {
   );
   expect(screen.getByText(/captured 0x00003B00–0x00003B07/)).toBeInTheDocument();
   expect(screen.getByText(/0x00003B08–0x00003FBF not captured/)).toBeInTheDocument();
-  expect(screen.getByText(/0x00003FC0–0x00003FF7 is outside this capture/)).toBeInTheDocument();
+  expect(screen.getByText(/0x00003FC0–0x00003FF7 is outside this capture/)).toHaveTextContent(
+    'Signature 0x00003FF8–0x00003FFF',
+  );
 });

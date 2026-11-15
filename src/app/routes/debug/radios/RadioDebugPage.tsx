@@ -31,7 +31,12 @@ import {
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { radioBackupFileName } from '@app/services/radioBackupRead.ts';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
-import { openDebugArchive, uv5rMiniArchiveDetails, type DebugArchive } from './captureArchive.ts';
+import {
+  openDebugArchive,
+  rt95ArchiveDetails,
+  uv5rMiniArchiveDetails,
+  type DebugArchive,
+} from './captureArchive.ts';
 import { Link, useParams } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWakeLock.ts';
@@ -261,7 +266,11 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                           ],
                           [
                             'Clone channels/settings [unknown]',
-                            archive ? 'Captured in programming image' : 'Not captured',
+                            archive && rt95ArchiveDetails(archive)?.coverage === 'captured'
+                              ? 'Captured in programming image'
+                              : archive && rt95ArchiveDetails(archive)?.coverage === 'partial'
+                                ? 'Partially captured in programming image'
+                                : 'Not captured',
                           ],
                           ['Running firmware', 'Unknown'],
                           ['Firmware mod', 'Unknown'],

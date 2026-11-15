@@ -111,7 +111,8 @@ export function rt95ArchiveDetails(archive: DebugArchive) {
     ...(start > 0 ? [{ start: 0, end: start - 1 }] : []),
     ...(end < RT95_IMAGE_SIZE ? [{ start: end, end: RT95_IMAGE_SIZE - 1 }] : []),
   ];
-  if (start !== 0 || end !== RT95_IMAGE_SIZE) return { missing };
+  const coverage = end <= start ? 'missing' : missing.length ? 'partial' : 'captured';
+  if (coverage !== 'captured') return { missing, coverage };
   try {
     const bytes = archive.regions[region!.id]!;
     const image = createMemoryMap(RT95_IMAGE_SIZE);
@@ -120,9 +121,9 @@ export function rt95ArchiveDetails(archive: DebugArchive) {
       sourceFileName: 'radio-backup:retevis-rt95',
       capturedAt: archive.manifest.capturedAt,
     });
-    return { missing, summary: summariseRt95Clone(bag) };
+    return { missing, coverage, summary: summariseRt95Clone(bag) };
   } catch {
-    return { missing, summary: null };
+    return { missing, coverage, summary: null };
   }
 }
 

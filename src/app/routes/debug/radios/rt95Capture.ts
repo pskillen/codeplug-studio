@@ -7,6 +7,7 @@ import {
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
 import { backupLiveRadioSession } from '@app/services/radioBackupRead.ts';
 import { openWithBaudFallback } from '@app/services/serialBaudFallback.ts';
+import { Rt95Protocol } from '@integrations/radio-io/radios/rt95/protocol.ts';
 import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.ts';
 import { guardRt95ClonePipe } from '@integrations/radio-io/radios/rt95/transportGuard.ts';
 import { createRadioSession } from '@integrations/radio-io/kit/session.ts';
@@ -28,6 +29,8 @@ export async function captureRt95Pipe(
   const safePipe = guardRt95ClonePipe(pipe);
   const radio = RT95_DESCRIPTOR.protocolFactory();
   try {
+    if (!(radio instanceof Rt95Protocol))
+      throw new Error('RT95 descriptor returned an unexpected protocol.');
     const ident = await radio.connect(safePipe, { handshake: 'read', signal: opts?.signal });
     const backup = await backupLiveRadioSession(
       createRadioSession({ descriptor: RT95_DESCRIPTOR, pipe: safePipe, radio }),
