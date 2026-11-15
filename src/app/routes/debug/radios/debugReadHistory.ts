@@ -13,6 +13,8 @@ export interface DebugHistoryEntry {
 export interface DebugHistorySnapshot {
   readonly entries: readonly DebugHistoryEntry[];
   readonly selectedId: string | null;
+  /** Second retained read for comparison and calibration overlay; always a retained id or null. */
+  readonly compareId: string | null;
   readonly undownloaded: number;
 }
 export interface DebugReadHistoryStore {
@@ -21,6 +23,8 @@ export interface DebugReadHistoryStore {
   add(archive: DebugArchive): DebugHistoryEntry;
   importArchives(archives: readonly DebugArchive[]): readonly DebugHistoryEntry[];
   select(id: string): void;
+  /** Choose the comparison / overlay read by retained id; unknown ids clear it. */
+  setCompare(id: string | null): void;
   markDownloaded(ids: readonly string[]): void;
   clear(): void;
 }
@@ -40,11 +44,20 @@ function label(index: number): string {
 }
 
 function createStore(descriptor: Descriptor): DebugReadHistoryStore {
-  let snapshot: DebugHistorySnapshot = { entries: [], selectedId: null, undownloaded: 0 };
+  let snapshot: DebugHistorySnapshot = {
+    entries: [],
+    selectedId: null,
+    compareId: null,
+    undownloaded: 0,
+  };
   const pending = new Set<string>();
   const listeners = new Set<() => void>();
-  const emit = (entries = snapshot.entries, selectedId = snapshot.selectedId) => {
-    snapshot = { entries, selectedId, undownloaded: pending.size };
+  const emit = (
+    entries = snapshot.entries,
+    selectedId = snapshot.selectedId,
+    compareId = snapshot.compareId,
+  ) => {
+    snapshot = { entries, selectedId, compareId, undownloaded: pending.size };
     listeners.forEach((listener) => listener());
   };
   const validate = (archive: DebugArchive) => {
@@ -88,6 +101,10 @@ function createStore(descriptor: Descriptor): DebugReadHistoryStore {
       if (snapshot.selectedId !== id && snapshot.entries.some((entry) => entry.id === id))
         emit(snapshot.entries, id);
     },
+    setCompare(id) {
+      const next = id !== null && snapshot.entries.some((entry) => entry.id === id) ? id : null;
+      if (next !== snapshot.compareId) emit(snapshot.entries, snapshot.selectedId, next);
+    },
     markDownloaded(ids) {
       let changed = false;
       ids.forEach((id) => {
@@ -97,7 +114,7 @@ function createStore(descriptor: Descriptor): DebugReadHistoryStore {
     },
     clear() {
       pending.clear();
-      emit([], null);
+      emit([], null, null);
     },
   };
 }
