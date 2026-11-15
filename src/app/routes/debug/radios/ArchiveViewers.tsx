@@ -175,8 +175,16 @@ export function MemoryViewer({ archive }: { archive?: DebugArchive }) {
             rows={channels}
             getRowId={(row) => String(row.slotIndex)}
             columns={[
-              { key: 'slot', header: 'Slot [unknown]', render: (row) => row.slotIndex },
-              { key: 'name', header: 'Name [unknown]', render: (row) => row.name || '(unnamed)' },
+              {
+                key: 'slot',
+                header: 'Slot [unknown]',
+                render: (row) => `${row.slotIndex} [unknown]`,
+              },
+              {
+                key: 'name',
+                header: 'Name [unknown]',
+                render: (row) => `${row.name || '(unnamed)'} [unknown]`,
+              },
             ]}
             emptyMessage="No matching channels."
           />
