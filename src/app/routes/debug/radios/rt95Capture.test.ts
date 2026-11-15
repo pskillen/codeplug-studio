@@ -81,4 +81,17 @@ describe('RT95 debug capture', () => {
     expect(pipe.count('W')).toBe(0);
     expect(close).toHaveBeenCalledOnce();
   }, 10000);
+  it('does not publish a capture cancelled during cleanup', async () => {
+    setRt95EndAtForTests(0);
+    const pipe = createFakeRt95Pipe();
+    const controller = new AbortController();
+    const close = pipe.close.bind(pipe);
+    vi.spyOn(pipe, 'close').mockImplementation(async () => {
+      controller.abort();
+      await close();
+    });
+    await expect(captureRt95Pipe(pipe, { signal: controller.signal })).rejects.toThrow();
+    expect(pipe.count('END')).toBe(1);
+    expect(pipe.close).toHaveBeenCalledOnce();
+  }, 30000);
 });

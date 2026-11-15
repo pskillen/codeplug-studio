@@ -17,6 +17,7 @@ import { openWithBaudFallback } from '@app/services/serialBaudFallback.ts';
 import { Rt95Protocol } from '@integrations/radio-io/radios/rt95/protocol.ts';
 import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.ts';
 import { guardRt95ClonePipe } from '@integrations/radio-io/radios/rt95/transportGuard.ts';
+import { throwIfAborted } from '@integrations/radio-io/kit/progress.ts';
 import { createRadioSession } from '@integrations/radio-io/kit/session.ts';
 import {
   isCapacitorSerialSupported,
@@ -35,6 +36,7 @@ export async function captureRt95Pipe(
 ): Promise<DebugArchive> {
   const safePipe = guardRt95ClonePipe(pipe);
   const radio = RT95_DESCRIPTOR.protocolFactory();
+  let capture: DebugArchive;
   try {
     if (!(radio instanceof Rt95Protocol))
       throw new Error('RT95 descriptor returned an unexpected protocol.');
@@ -88,7 +90,7 @@ export async function captureRt95Pipe(
         [RT95_GUARD_OUTCOME_SIDECAR]: new TextEncoder().encode(JSON.stringify(mmd1.outcome)),
       },
     );
-    return {
+    capture = {
       ...openDebugArchive(zip, RT95_DESCRIPTOR.modelIds[0]!),
       source: 'live-read',
     };
@@ -99,6 +101,8 @@ export async function captureRt95Pipe(
       await safePipe.close();
     }
   }
+  throwIfAborted(opts?.signal);
+  return capture;
 }
 
 export async function captureRt95(opts?: {

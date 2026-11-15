@@ -129,11 +129,15 @@ it('reports the actual partial calibration span and uncaptured tail', () => {
       <Coverage archive={archive} />
     </DesignSystemV2Provider>,
   );
+  expect(screen.getByText(/MMD1 EEPROM.*0 of 8192 bytes captured/)).toHaveTextContent(
+    '0x00004000–0x00005FFF',
+  );
+  expect(screen.getByText(/MMD1 0x00004000–0x00005FFF not captured/)).toBeInTheDocument();
   expect(screen.getByText(/captured 0x00003B00–0x00003B07/)).toBeInTheDocument();
   expect(screen.getByText(/0x00003B08–0x00003FBF not captured/)).toBeInTheDocument();
-  expect(screen.getByText(/0x00003FC0–0x00003FF7 is outside this capture/)).toHaveTextContent(
-    'Signature 0x00003FF8–0x00003FFF',
-  );
+  expect(
+    screen.getByText(/0x00003FC0–0x00003FF7 is outside the calibration capture/),
+  ).toHaveTextContent('Signature 0x00003FF8–0x00003FFF');
 });
 
 it('draws a dashed calibration overlay and reports captured field differences', () => {
