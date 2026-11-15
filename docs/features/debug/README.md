@@ -47,15 +47,15 @@ Mapbox tokens are **masked** in the LocalStorage viewer (`••••` + last f
 
 ## Routes
 
-| Path                                          | Purpose                                                                                                                                                                                                 |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/debug`                                      | Overview and privacy warning                                                                                                                                                                            |
-| `/debug/indexed-db`                           | Object store row counts per project                                                                                                                                                                     |
-| `/debug/indexed-db/:storeName`                | Rows in a store — channels show callsign; name, project id, and entity id are sortable and filterable                                                                                                   |
-| `/debug/indexed-db/:storeName/:projectId/:id` | Single row JSON tree                                                                                                                                                                                    |
-| `/debug/local-storage`                        | Known + discovered localStorage keys                                                                                                                                                                    |
-| `/debug/local-storage/:storageKey`            | Parsed JSON for one key                                                                                                                                                                                 |
-| `/debug/uv5r-mini`                            | UV-5R Mini read-only full clone read, span hashes, tab history, compare with a channel diff, and calibration viewer, in a browser and the Android app: [uv5r-mini-full-read.md](uv5r-mini-full-read.md) |
+| Path                                                  | Purpose                                                                                                                                                                                                 |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/debug`                                              | Overview and privacy warning                                                                                                                                                                            |
+| `/debug/storage/indexed-db`                           | Object store row counts per project                                                                                                                                                                     |
+| `/debug/storage/indexed-db/:storeName`                | Rows in a store — channels show callsign; name, project id, and entity id are sortable and filterable                                                                                                   |
+| `/debug/storage/indexed-db/:storeName/:projectId/:id` | Single row JSON tree                                                                                                                                                                                    |
+| `/debug/storage/local-storage`                        | Known + discovered localStorage keys                                                                                                                                                                    |
+| `/debug/storage/local-storage/:storageKey`            | Parsed JSON for one key                                                                                                                                                                                 |
+| `/debug/uv5r-mini`                                    | UV-5R Mini read-only full clone read, span hashes, tab history, compare with a channel diff, and calibration viewer, in a browser and the Android app: [uv5r-mini-full-read.md](uv5r-mini-full-read.md) |
 
 Routes do **not** require an active project (same class as Settings and Reference).
 
@@ -104,10 +104,10 @@ List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with o
 ## Manual verify
 
 1. Open `/debug` — confirm privacy alert and tool links.
-2. Create a project with channels → `/debug/indexed-db` shows non-zero `channels` count.
+2. Create a project with channels → `/debug/storage/indexed-db` shows non-zero `channels` count.
 3. Drill into a channel row → JSON tree expands; Copy YAML works.
-4. Set a Mapbox token in Settings → `/debug/local-storage` shows masked token in viewer.
-5. Filter a library list → `/debug/local-storage` shows labelled list-prefs keys for the active project.
+4. Set a Mapbox token in Settings → `/debug/storage/local-storage` shows masked token in viewer.
+5. Filter a library list → `/debug/storage/local-storage` shows labelled list-prefs keys for the active project.
 6. Open Tools (`/reference`) → the **Debug** section shows on pre-prod, and on prod with developer mode on; on prod with developer mode off it is absent.
 7. In the Android app, open Serial reopen timing → the "Not available in the Android app" notice and no controls.
 8. In the Android app, open the AT-D890UV erase probe → the notice and only **Profile link speed (read-only)**; with the D890 on the phone's USB, the link profile shows median, p99 and max per frame.
