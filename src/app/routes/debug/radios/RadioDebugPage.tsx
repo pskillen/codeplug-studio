@@ -25,6 +25,7 @@ import { downloadZip } from '@integrations/download/browserDownload.ts';
 import { openDebugArchive, uv5rMiniArchiveDetails, type DebugArchive } from './captureArchive.ts';
 import { Link, useParams } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
+import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWakeLock.ts';
 import { radioDebugDescriptors } from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
 import { Coverage } from './Coverage.tsx';
@@ -51,6 +52,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const [preferredLive, setPreferredLive] = useState<string | null>(null);
   const [error, setError] = useState<string>();
   const [reading, setReading] = useState(false);
+  const { held: screenHeld } = useScreenWakeLock(reading);
   const [progress, setProgress] = useState('');
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
@@ -259,6 +261,11 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                         Cancel
                       </Button>
                       <Text>{progress || 'Connecting…'}</Text>
+                      {!screenHeld && (
+                        <Text size="sm" c="dimmed" data-testid="keep-screen-on-hint">
+                          {KEEP_SCREEN_ON_HINT}
+                        </Text>
+                      )}
                     </>
                   )}
                 </Group>
