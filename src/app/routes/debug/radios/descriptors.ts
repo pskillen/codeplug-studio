@@ -10,13 +10,31 @@ export interface RadioDebugDescriptor {
   archiveModelId: string;
   capture?: (opts?: { signal?: AbortSignal; onProgress?: ProgressFn }) => Promise<DebugArchive>;
   family: string;
-  capabilities: readonly { name: string; status: 'Not yet available' }[];
+  capabilities: readonly RadioDebugCapability[];
 }
 
-const unavailable = ['Backup', 'Calibration', 'Memory'].map((name) => ({
-  name,
-  status: 'Not yet available' as const,
-}));
+export type RadioDebugCapabilityStatus = 'Available' | 'Partial' | 'Not yet available';
+
+export interface RadioDebugCapability {
+  name: 'Backup' | 'Calibration' | 'Memory';
+  status: RadioDebugCapabilityStatus;
+}
+
+const capabilities = (
+  backup: RadioDebugCapabilityStatus,
+  calibration: RadioDebugCapabilityStatus,
+  memory: RadioDebugCapabilityStatus,
+): readonly RadioDebugCapability[] => [
+  { name: 'Backup', status: backup },
+  { name: 'Calibration', status: calibration },
+  { name: 'Memory', status: memory },
+];
+
+const unavailable = capabilities('Not yet available', 'Not yet available', 'Not yet available');
+
+/** Badge colour for a capability status. */
+export const capabilityColor = (status: RadioDebugCapabilityStatus) =>
+  status === 'Available' ? 'green' : status === 'Partial' ? 'yellow' : 'gray';
 
 export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
@@ -60,7 +78,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     model: 'RT95',
     archiveModelId: 'retevis-rt95',
     family: 'Stock / MM9PDY',
-    capabilities: unavailable,
+    capabilities: capabilities('Available', 'Not yet available', 'Partial'),
   },
   {
     slug: 'uv-21-pro-v2',
@@ -75,6 +93,6 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     model: 'UV-5R Mini',
     archiveModelId: 'UV-5R Mini',
     family: 'Stock / MM9PDY',
-    capabilities: unavailable,
+    capabilities: capabilities('Available', 'Partial', 'Partial'),
   },
 ];

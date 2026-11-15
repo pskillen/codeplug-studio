@@ -24,17 +24,18 @@ import {
   hashUv5rMiniDebugSpans,
   UV5R_MINI_FULL_READ_SIZE,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
+import { radioBackupFileName } from '@app/services/radioBackupRead.ts';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
 import { openDebugArchive, uv5rMiniArchiveDetails, type DebugArchive } from './captureArchive.ts';
 import { Link, useParams } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWakeLock.ts';
-import { radioDebugDescriptors } from './descriptors.ts';
+import { capabilityColor, radioDebugDescriptors } from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
 import { Coverage } from './Coverage.tsx';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { Uv5rMiniCompare } from './Uv5rMiniCompare.tsx';
-import { openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
+import { isUv5rMiniReadsZip, openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
 import { archiveUv5rMiniRead } from './uv5rMiniCapture.ts';
 
 export default function RadioDebugPage() {
@@ -44,14 +45,19 @@ export default function RadioDebugPage() {
 
 function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const { reads, undownloaded } = useUv5rMiniDebugReads();
+  const [legacyReads, setLegacyReads] = useState<readonly Uv5rMiniDebugRead[]>([]);
+  const [archive, setArchive] = useState<DebugArchive>();
+  const [downloadedArchive, setDownloadedArchive] = useState<DebugArchive>();
+  // Mini reads live in the shared store; any profile's undownloaded live capture lives only in this tab.
+  const unsaved =
+    (radio === 'uv-5r-mini' && undownloaded > 0) ||
+    (archive?.source === 'live-read' && archive !== downloadedArchive);
   useEffect(() => {
-    if (!undownloaded) return;
+    if (!unsaved) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
-  }, [undownloaded]);
-  const [legacyReads, setLegacyReads] = useState<readonly Uv5rMiniDebugRead[]>([]);
-  const [archive, setArchive] = useState<DebugArchive>();
+  }, [unsaved]);
   const [preferredLive, setPreferredLive] = useState<string | null>(null);
   const [error, setError] = useState<string>();
   const [reading, setReading] = useState(false);
@@ -96,7 +102,9 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
       try {
         next = openDebugArchive(bytes, descriptor.archiveModelId);
       } catch (error) {
-        if (descriptor.slug !== 'uv-5r-mini') throw error;
+        // Only a ZIP that is not a backup archive at all may be the old Mini reads ZIP; every other
+        // failure (model mismatch, damaged capture) keeps its own message.
+        if (descriptor.slug !== 'uv-5r-mini' || !isUv5rMiniReadsZip(bytes)) throw error;
         imported = openUv5rMiniReadsZip(bytes).map((read) => ({
           ...read,
           label: `File ${read.label}`,
@@ -145,10 +153,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
         <Anchor component={Link} to="/debug">
           ← All debug tools
         </Anchor>
-        <PageHeader
-          title={descriptor.model}
-          description={`${descriptor.family} profile · Not connected`}
-        />
+        <PageHeader title={descriptor.model} description={`${descriptor.family} profile`} />
         <Group>
           <FileButton onChange={openFile} accept=".zip,application/zip">
             {(props) => (
@@ -198,7 +203,14 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                           ? 'Archive manifest'
                           : 'No radio identity observed',
                     ],
-                    ['Connection', 'Not connected'],
+                    [
+                      'Connection',
+                      reading
+                        ? 'Reading radio…'
+                        : archive?.source === 'live-read'
+                          ? 'Read complete · disconnected'
+                          : 'Not connected',
+                    ],
                   ].map(([label, value]) => (
                     <div key={label}>
                       <Text size="xs" c="dimmed">
@@ -218,19 +230,8 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                   {descriptor.capabilities.map((capability) => (
                     <Text component="div" key={capability.name}>
                       {capability.name} ·{' '}
-                      <Badge
-                        color={
-                          descriptor.capture && capability.name === 'Backup' ? 'green' : 'gray'
-                        }
-                        title={
-                          descriptor.capture && capability.name === 'Backup'
-                            ? 'Live capture available'
-                            : capability.status
-                        }
-                      >
-                        {descriptor.capture && capability.name === 'Backup'
-                          ? 'Available'
-                          : 'Unavailable'}
+                      <Badge color={capabilityColor(capability.status)} title={capability.status}>
+                        {capability.status}
                       </Badge>
                     </Text>
                   ))}
@@ -315,7 +316,15 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                     key={archive.manifest.capturedAt + archive.zipBytes.length}
                     archive={archive}
                   />
-                  <Button onClick={() => downloadZip(archive.zipBytes, 'radio-debug-archive.zip')}>
+                  <Button
+                    onClick={async () => {
+                      const result = await downloadZip(
+                        archive.zipBytes,
+                        radioBackupFileName(archive.manifest),
+                      );
+                      if (result.status !== 'failed') setDownloadedArchive(archive);
+                    }}
+                  >
                     Download archive
                   </Button>
                 </Stack>

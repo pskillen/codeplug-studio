@@ -6,6 +6,15 @@ import {
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import type { Uv5rMiniDebugRead } from '../uv5rMiniDebugReads.ts';
 
+/** True for a readable ZIP with no `manifest.json`: the only shape the legacy reader may claim. */
+export function isUv5rMiniReadsZip(bytes: Uint8Array): boolean {
+  try {
+    return !('manifest.json' in unzipSync(bytes));
+  } catch {
+    return false;
+  }
+}
+
 /** Open the legacy multi-read ZIP without inferring live report provenance. */
 export function openUv5rMiniReadsZip(bytes: Uint8Array): Uv5rMiniDebugRead[] {
   const files = unzipSync(bytes);

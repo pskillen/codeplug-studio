@@ -1,3 +1,4 @@
+import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
 import {
   decodeUv5rMiniFullRead,
   hashUv5rMiniDebugSpans,
@@ -99,4 +100,44 @@ it('adds a successful live read to history with its timestamp', async () => {
   open();
   fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
   expect(await screen.findByText(/Reads in this tab:.*Live [A-Z]+ \(.+\)/)).toBeInTheDocument();
+});
+
+function rt95ArchiveFile() {
+  const zip = packRadioBackupZip(
+    {
+      format: 'codeplug-studio-radio-backup',
+      version: 1,
+      capturedAt: '2026-01-01T00:00:00Z',
+      capturedVia: 'web-serial',
+      app: { buildEnv: 'test', buildVersion: 'test' },
+      radioModelId: 'retevis-rt95',
+      descriptorLabel: 'test',
+      coverage: 'partial',
+      imageByteLength: 4,
+      regions: [
+        {
+          id: 'a',
+          label: 'A',
+          address: 0,
+          byteLength: 4,
+          path: 'regions/a.bin',
+          restoreRole: 'inspect-only',
+        },
+      ],
+    },
+    { a: new Uint8Array(4) },
+  );
+  const file = new File([Uint8Array.from(zip)], 'rt95.zip', { type: 'application/zip' });
+  Object.defineProperty(file, 'arrayBuffer', { value: async () => Uint8Array.from(zip).buffer });
+  return file;
+}
+
+it('tells a model mismatch apart from a Mini reads archive on the Mini page', async () => {
+  open();
+  const input = document.querySelector('input[type="file"]');
+  fireEvent.change(input!, { target: { files: [rt95ArchiveFile()] } });
+  expect(
+    await screen.findByText('Archive model retevis-rt95 does not match this profile.'),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/Invalid Mini reads archive/)).not.toBeInTheDocument();
 });

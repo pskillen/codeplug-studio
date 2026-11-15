@@ -13,7 +13,7 @@ import {
 import { Link } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { useDeveloperMode } from '../../hooks/useDeveloperMode.ts';
-import { radioDebugDescriptors } from './radios/descriptors.ts';
+import { capabilityColor, radioDebugDescriptors } from './radios/descriptors.ts';
 
 export default function DebugIndexPage() {
   const [developerMode, setDeveloperMode] = useDeveloperMode();
@@ -54,11 +54,10 @@ export default function DebugIndexPage() {
                 {radio.capabilities.map((capability) => (
                   <Badge
                     key={capability.name}
-                    color={radio.capture && capability.name === 'Backup' ? 'green' : 'gray'}
-                    title={`${capability.name}: ${radio.capture && capability.name === 'Backup' ? 'Live capture available' : capability.status}`}
+                    color={capabilityColor(capability.status)}
+                    title={`${capability.name}: ${capability.status}`}
                   >
-                    {capability.name} ·{' '}
-                    {radio.capture && capability.name === 'Backup' ? 'Available' : 'Unavailable'}
+                    {capability.name} · {capability.status}
                   </Badge>
                 ))}
               </Group>
