@@ -60,6 +60,7 @@ export class FakeD890Radio {
     this.setBytes(D890_MAP.LocalInfo, syntheticLocalInfo(code));
     this.setBytes(TUNE, syntheticTune(code));
     this.seedCodeplug();
+    this.ready = true;
   }
 
   private unit(base: number): Uint8Array {
@@ -71,18 +72,31 @@ export class FakeD890Radio {
     return u;
   }
 
+  /** Bytes changed after construction (a test editing the radio, a wipe, a commit): 0 means still as seeded. */
+  mutations = 0;
+  private ready = false;
+
   setBytes(address: number, data: Uint8Array): void {
-    for (let i = 0; i < data.length; i++) {
-      const a = address + i;
-      this.unit(a - (a % UNIT))[a % UNIT] = data[i]!;
+    if (this.ready) this.mutations += 1;
+    let off = 0;
+    while (off < data.length) {
+      const a = address + off;
+      const inUnit = a % UNIT;
+      const n = Math.min(data.length - off, UNIT - inUnit);
+      this.unit(a - inUnit).set(data.subarray(off, off + n), inUnit);
+      off += n;
     }
   }
 
   getBytes(address: number, length: number): Uint8Array {
     const out = new Uint8Array(length);
-    for (let i = 0; i < length; i++) {
-      const a = address + i;
-      out[i] = this.unit(a - (a % UNIT))[a % UNIT]!;
+    let off = 0;
+    while (off < length) {
+      const a = address + off;
+      const inUnit = a % UNIT;
+      const n = Math.min(length - off, UNIT - inUnit);
+      out.set(this.unit(a - inUnit).subarray(inUnit, inUnit + n), off);
+      off += n;
     }
     return out;
   }

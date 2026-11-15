@@ -26,10 +26,25 @@ async function open(fake: FakeD890Radio): Promise<RadioSession & { n: number }> 
   return Object.assign(createRadioSession({ descriptor, pipe, radio }), { n: pipe.session });
 }
 
-async function sessionA(fake: FakeD890Radio) {
+/**
+ * The backup of a fresh `FakeD890Radio(3)` is deterministic and read-only, and reading it is ~20k frames
+ * (seconds of CPU). Only the first test reads it for real in its own session A; the others reuse this
+ * pair, so they still start from a radio whose LocalInfo, tune bank and codeplug match the backup.
+ */
+let sharedPair: Promise<RangeChangeBackupPair> | undefined;
+async function freshBackup(): Promise<RangeChangeBackupPair> {
+  sharedPair ??= (async () => {
+    const a = await open(new FakeD890Radio(3));
+    await identifyRangeChangeRadio(a);
+    return backupForRangeChange(a, {});
+  })();
+  return sharedPair;
+}
+
+async function sessionA(fake: FakeD890Radio, opts: { readBackup?: boolean } = {}) {
   const a = await open(fake);
   const radio = await identifyRangeChangeRadio(a);
-  const pair = await backupForRangeChange(a, {});
+  const pair = opts.readBackup ? await backupForRangeChange(a, {}) : await freshBackup();
   return { a, radio, pair };
 }
 
@@ -39,7 +54,7 @@ const kinds = (fake: FakeD890Radio, session: number) =>
 describe('range change service', () => {
   it('the whole flow: exactly one W to 0x04F80000/0x10 in A, writes only inside restorable units in B, none in C', async () => {
     const fake = new FakeD890Radio(3);
-    const { a, radio, pair } = await sessionA(fake);
+    const { a, radio, pair } = await sessionA(fake, { readBackup: true });
     expect(radio.serial).toBe('TESTSERIAL01');
     expect(radio.identCode).toBe(3);
     // Session A so far: only reads.

@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import {
   listRangeChangeJournal,
@@ -20,6 +20,11 @@ import { useRangeChangeFlow, type UseRangeChangeFlowOptions } from './useRangeCh
 
 const hoisted = vi.hoisted(() => ({
   fake: undefined as unknown,
+  /** The one deterministic backup of a pristine `FakeD890Radio(3)`, shared (read-only) by tests that are not about the read. */
+  sharedPair: undefined as Promise<unknown> | undefined,
+  /** A test that is about the real backup read sets this. */
+  realBackup: false,
+  sharedSnapshot: undefined as unknown,
   openError: undefined as Error | undefined,
   downloads: [] as string[],
   opens: 0,
@@ -31,6 +36,54 @@ vi.mock('@integrations/download/browserDownload.ts', async (orig) => {
     ...actual,
     downloadZip: (_bytes: Uint8Array, name: string) => {
       hoisted.downloads.push(name);
+    },
+  };
+});
+
+vi.mock('../../../../services/dangerZone/atD890RangeChangeService.ts', async (orig) => {
+  const actual =
+    await orig<typeof import('../../../../services/dangerZone/atD890RangeChangeService.ts')>();
+  type Fake = import('../../../../services/dangerZone/__fixtures__/fakeD890Radio.ts').FakeD890Radio;
+  return {
+    ...actual,
+    /**
+     * Reading a whole image through the fake is ~20k frames, and every flow test that only needs "a backup
+     * exists" repeated it. For a radio that is still exactly as seeded (nothing edited, written or faulted) the
+     * backup is deterministic, so it is built once and handed out; any other radio, and any test that sets
+     * `realBackup`, takes the real read. The shared pair is never mutated (checked in `afterAll`).
+     */
+    backupForRangeChange: async (
+      session: Parameters<typeof actual.backupForRangeChange>[0],
+      opts: Parameters<typeof actual.backupForRangeChange>[1],
+    ) => {
+      const f = hoisted.fake as Fake;
+      const pristine =
+        !hoisted.realBackup &&
+        f.mutations === 0 &&
+        f.band === 3 &&
+        f.unreadableAddress === undefined &&
+        f.nakAddress === undefined &&
+        f.allWrites().length === 0;
+      if (!pristine) return actual.backupForRangeChange(session, opts);
+      opts.onPhase?.('codeplug');
+      opts.onPhase?.('vital');
+      hoisted.sharedPair ??= (async () => {
+        const { FakeD890Radio } =
+          await import('../../../../services/dangerZone/__fixtures__/fakeD890Radio.ts');
+        const other = new FakeD890Radio(3);
+        const pipe = other.open();
+        const radio = new AtD890uvProtocol();
+        await radio.connect(pipe);
+        const own = createRadioSession({
+          descriptor: getRadioDescriptor('AT-D890UV')!,
+          pipe,
+          radio,
+        });
+        const built = await actual.backupForRangeChange(own, {});
+        hoisted.sharedSnapshot = snapshotOf(built);
+        return built;
+      })();
+      return (await hoisted.sharedPair) as Awaited<ReturnType<typeof actual.backupForRangeChange>>;
     },
   };
 });
@@ -59,6 +112,56 @@ vi.mock('../../../../services/radioIoSession.ts', async (orig) => {
     }),
   };
 });
+
+type SharedPair = Awaited<
+  ReturnType<
+    typeof import('../../../../services/dangerZone/atD890RangeChangeService.ts').backupForRangeChange
+  >
+>;
+
+/** A deep copy of everything in the shared pair that a flow could touch, to prove nothing did. */
+function snapshotOf(pair: SharedPair) {
+  return {
+    backupZip: pair.backup.zipBytes.slice(),
+    vitalZip: pair.vital.zipBytes.slice(),
+    localInfo: pair.localInfo.slice(),
+    tune: pair.tune?.slice(),
+    manifest: JSON.stringify(pair.backup.manifest),
+    regions: pair.backup.manifest.regions
+      .filter((r) => r.restoreRole === 'restorable')
+      .map((r) => pair.backup.image.get(r.address, r.byteLength).slice()),
+    names: [
+      pair.backupFileName,
+      pair.vitalFileName,
+      pair.backupSha256,
+      pair.vitalSha256,
+      pair.serial,
+    ],
+  };
+}
+
+/** Byte-for-byte equality with a plain loop: `toEqual` on megabyte arrays outruns the hook timeout on CI. */
+function sameBytes(a: Uint8Array | undefined, b: Uint8Array | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+afterAll(async () => {
+  if (!hoisted.sharedPair) return;
+  const pair = (await hoisted.sharedPair) as SharedPair;
+  const now = snapshotOf(pair);
+  const then = hoisted.sharedSnapshot as ReturnType<typeof snapshotOf>;
+  expect(sameBytes(now.backupZip, then.backupZip), 'backup zip').toBe(true);
+  expect(sameBytes(now.vitalZip, then.vitalZip), 'vital zip').toBe(true);
+  expect(sameBytes(now.localInfo, then.localInfo), 'LocalInfo').toBe(true);
+  expect(sameBytes(now.tune, then.tune), 'tune').toBe(true);
+  expect(now.manifest).toBe(then.manifest);
+  expect(now.regions.length).toBe(then.regions.length);
+  now.regions.forEach((r, i) => expect(sameBytes(r, then.regions[i]), `region ${i}`).toBe(true));
+  expect(now.names).toEqual(then.names);
+}, 60_000);
 
 const EGRESS = { id: 'e', formatId: 'radio-io', profileId: 'radio-io-at-d890uv' } as EgressPath;
 const LOCAL_INFO = D890_MAP.LocalInfo;
@@ -134,6 +237,7 @@ const journal = () => listRangeChangeJournal();
 beforeEach(() => {
   hoisted.fake = new FakeD890Radio(3);
   hoisted.openError = undefined;
+  hoisted.realBackup = false;
   hoisted.downloads = [];
   hoisted.opens = 0;
   window.localStorage.clear();
@@ -145,6 +249,8 @@ const fake = () => hoisted.fake as FakeD890Radio;
 
 describe('useRangeChangeFlow', () => {
   it('runs the whole flow: one W to the range address in total, journal stages in order, Done', async () => {
+    // This test is about the whole cycle: the backup is a real read.
+    hoisted.realBackup = true;
     const stages: string[] = [];
     const hook = setup();
     const watch = () => {
@@ -429,7 +535,7 @@ describe('useRangeChangeFlow', () => {
         .map((f) => f.kind);
       expect(frames).toEqual(['W', 'END']);
       expect(['sending', 'changed']).toContain(journal()[0]?.stage);
-    });
+    }, 120_000);
 
     it('the journal is written before the W', async () => {
       const hook = setup();
@@ -479,7 +585,7 @@ describe('useRangeChangeFlow', () => {
       } finally {
         delete (navigator as { serial?: unknown }).serial;
       }
-    });
+    }, 120_000);
 
     it('no port: says what to do, Choose the port is offered', async () => {
       const hook = await changed();
@@ -845,6 +951,8 @@ describe('useRangeChangeFlow resume', () => {
 
     it('with a journal on file, a different backup of the same radio is refused, the saved one is taken', async () => {
       // A second backup of the same radio (one codeplug byte differs): same serial, other hash.
+      // It reads a radio other than `hoisted.fake`, so it must be a real read, not the shared pair.
+      hoisted.realBackup = true;
       const other = new FakeD890Radio(3);
       const spanStart = 0x01000000;
       const b = other.getBytes(spanStart, 1);

@@ -73,7 +73,18 @@ Every pull request and push to `main` runs [`.github/workflows/pull-request.yaml
 | Coverage           | —                         | **Planned**        |                                                                                                            |
 | E2e                | `npm run test:e2e`        | Yes (separate job) | Playwright on `vite preview`; consent smoke                                                                |
 
-Docs-only PRs: `format:check` + link audit is sufficient.
+Docs-only PRs (every changed file is `*.md` or under `docs/`) run `format:check` only: the workflow's "Decide scope" step skips lint, tests, CPS verify, build and e2e, while both required jobs still report. See [CI in the build docs](../README.md#ci).
+
+## Vitest projects
+
+`vite.config.ts` splits Vitest into two projects that together cover exactly the files the single config used to (same `exclude`, aliases, `define`, `globals`, `pool`):
+
+| Project | Environment | Files                                                                                                        | Setup                                                  |
+| ------- | ----------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| `dom`   | jsdom       | `src/app/**`, plus the `src/core` / `src/integrations` files listed in `DOM_TESTS_OUTSIDE_APP` in the config | `src/test/setup.ts` (shared) + `src/test/setup.dom.ts` |
+| `node`  | node        | everything else under `src/`                                                                                 | `src/test/setup.ts` (shared)                           |
+
+`setup.ts` holds the AT-D890 leaked-marker guard (it tolerates a missing `localStorage`); `setup.dom.ts` holds `matchMedia`, `ResizeObserver` and jest-dom. A `core` / `integrations` test that needs the DOM goes in `DOM_TESTS_OUTSIDE_APP` with a one-line reason; a new test that fails under node because it touches `window`, `document` or `localStorage` is added there, not rewritten. `npm run test` and `npm run test:watch` run both projects with no flags; `test-results/junit.xml` is still written in CI.
 
 ## Where to add tests
 
@@ -83,6 +94,14 @@ Docs-only PRs: `format:check` + link audit is sufficient.
 4. **New format adapter** → follow [adding-a-new-format.md](../features/import-export/adding-a-new-format.md); register under `src/core/import-export/formats/<format>/`; reference docs under `docs/reference/export-formats/<format>/`; fixture bundle; fill adapter matrix in [mapping-tests.md](mapping-tests.md).
 5. **Pure domain helper** (geo, validation, maidenhead) → colocated `*.test.ts` in `src/core/` or `src/integrations/`.
 6. **CI Play helpers** (`versionCode`, preflight decision) → colocated `scripts/play/*.test.ts` (picked up by `npm test`).
+
+## Keeping radio-session tests fast
+
+A scripted radio (for example `FakeD890Radio`) answers thousands of 16-byte frames per full read, so a test that reads or restores a whole image is CPU-bound, not time-bound. Three habits keep these tests in seconds:
+
+- Per-byte work in a fake (`setBytes` / `getBytes`) copies whole spans, not one byte per map lookup.
+- A read-only result that every test of a file needs (a backup of a fresh fake) is built once and shared; only the test that is about the read does it itself.
+- Profile before guessing: `npx vitest run <file> --pool=forks --execArgv=--cpu-prof`. Idle time points at a real timer; busy time points at code. Hot spots in shared production helpers (for example `bytesToBase64`) are fixed there, behaviour-neutrally.
 
 ## Documentation map
 
