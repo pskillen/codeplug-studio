@@ -68,7 +68,8 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const archive = historyEnabled
     ? history.entries.find((e) => e.id === history.selectedId)?.archive
     : localArchive;
-  const [otherId, setOtherId] = useState<string | null>(null);
+  const otherId = history.compareId;
+  const setOtherId = (id: string | null) => store.setCompare(id);
   const other = history.entries.find((e) => e.id === otherId)?.archive;
   const [downloadedArchive, setDownloadedArchive] = useState<DebugArchive>();
   // Mini reads live in the shared store; any profile's undownloaded live capture lives only in this tab.
@@ -452,7 +453,6 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                   descriptor={descriptor}
                   store={store}
                   onClear={() => {
-                    setOtherId(null);
                     setPreferredLive(null);
                   }}
                 />
