@@ -1,7 +1,8 @@
 import { Alert, Badge, Button, Group, Select, Stack, Text, Title } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import type { DebugDecodedDiffProps } from './descriptors.ts';
-import { compareAtD890, type AtD890UnitVerdict } from './atD890Compare.ts';
+import { compareAtD890, type AtD890ChangedRun, type AtD890UnitVerdict } from './atD890Compare.ts';
+import type { AtD890ReadRange } from './atD890Provenance.ts';
 import {
   AT_D890_DIFF_DOMAIN_LABELS,
   diffAtD890Decoded,
@@ -64,6 +65,63 @@ function usePaged<T>(items: readonly T[]) {
     pages,
     setPage,
   };
+}
+
+const RUN_PAGE_BYTES = 64;
+
+/** Claims one capture makes about a range, never evidence of the physical responding unit. */
+function claim(range?: AtD890ReadRange): string {
+  if (!range) return 'not captured';
+  const requested = range.requestedUnit
+    ? `requested ${range.requestedUnit}`
+    : 'sparse configuration';
+  const responding = range.respondingUnit ?? 'Unknown';
+  const repeat =
+    range.bothReadsMatched === true
+      ? 'repeat read matched (claim)'
+      : range.bothReadsMatched === false
+        ? 'repeat read did not match (claim)'
+        : 'repeat read n/a';
+  return `${requested} · responding unit: ${responding} · ${repeat}`;
+}
+
+/** Every changed byte of one run, paged, before above after. */
+function RunBytes({ run }: { run: AtD890ChangedRun }) {
+  const [open, setOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const pages = Math.max(1, Math.ceil(run.length / RUN_PAGE_BYTES));
+  const current = Math.min(page, pages - 1);
+  const slice = (bytes: Uint8Array) =>
+    hex(Array.from(bytes.subarray(current * RUN_PAGE_BYTES, (current + 1) * RUN_PAGE_BYTES)));
+  return (
+    <Stack gap={4}>
+      <Button
+        variant="subtle"
+        size="compact-xs"
+        aria-expanded={open}
+        aria-label={`${open ? 'Hide' : 'Show'} bytes of run at ${formatAddress(run.start)}`}
+        onClick={() => setOpen(!open)}
+      >
+        {open ? 'Hide bytes' : 'Show all bytes'}
+      </Button>
+      {open && (
+        <div>
+          <Text size="xs" ff="monospace">
+            First: {slice(run.before)}
+          </Text>
+          <Text size="xs" ff="monospace">
+            Second: {slice(run.after)}
+          </Text>
+          <Pager
+            page={current}
+            pages={pages}
+            onPage={setPage}
+            label={`Bytes at ${formatAddress(run.start)}`}
+          />
+        </div>
+      )}
+    </Stack>
+  );
 }
 
 function Captures({ first, second }: DebugDecodedDiffProps) {
@@ -135,12 +193,27 @@ function DecodedChanges({ first, second }: DebugDecodedDiffProps) {
               {c.field}: {c.before} → {c.after}
             </Text>
           ))}
-          {row.unavailable.length > 0 && (
-            <Text size="sm" c="dimmed">
-              Not captured on one or both sides ({row.unavailable.length}):{' '}
-              {row.unavailable.slice(0, 6).join(', ')}
-              {row.unavailable.length > 6 ? ', …' : ''}
+          {row.caveats.map((c) => (
+            <Text size="sm" c="dimmed" key={c}>
+              Caveat: {c}
             </Text>
+          ))}
+          {row.unavailable.length > 0 && (
+            <details>
+              <summary>
+                Not captured on at least one side ({row.unavailable.length}):{' '}
+                {row.unavailable
+                  .slice(0, 3)
+                  .map((u) => u.field)
+                  .join(', ')}
+                {row.unavailable.length > 3 ? ', …' : ''}
+              </summary>
+              {row.unavailable.map((u) => (
+                <Text size="sm" c="dimmed" key={u.field}>
+                  {u.field}: first {u.before ?? 'not captured'} · second {u.after ?? 'not captured'}
+                </Text>
+              ))}
+            </details>
           )}
         </div>
       ))}
@@ -181,16 +254,23 @@ export function AtD890Compare({ first, second }: DebugDecodedDiffProps) {
       <Captures first={first} second={second} />
       <Title order={4}>Acquisition ranges (byte divergence)</Title>
       {spanPages.slice.map((span) => (
-        <Text key={`${span.space}:${span.start}`}>
-          {span.space} · {formatAddress(span.start)}–{formatAddress(span.end - 1)} ·{' '}
-          {span.changed === undefined
-            ? 'Missing or ambiguous bytes; incomparable'
-            : `${span.changed} changed bytes`}{' '}
-          · responding unit: {VERDICT[span.unitVerdict]} · repeat read:{' '}
-          {span.first?.bothReadsMatched === true && span.second?.bothReadsMatched === true
-            ? 'both claims matched'
-            : 'Unknown or not applicable'}
-        </Text>
+        <div key={`${span.space}:${span.start}:${span.first?.regionId ?? ''}`}>
+          <Text>
+            {span.space} · {formatAddress(span.start)}–{formatAddress(span.end - 1)} ·{' '}
+            {span.space === 'unclassified'
+              ? 'Outside the AT-D890UV memory map; unclassified, not compared'
+              : span.changed === undefined
+                ? 'Missing or ambiguous bytes; incomparable'
+                : `${span.changed} changed bytes`}{' '}
+            · responding unit: {VERDICT[span.unitVerdict]}
+          </Text>
+          <Text size="sm" c="dimmed">
+            First: {claim(span.first)}
+          </Text>
+          <Text size="sm" c="dimmed">
+            Second: {claim(span.second)}
+          </Text>
+        </div>
       ))}
       {!spans.length && <Text>No captured ranges to compare.</Text>}
       <Pager
@@ -202,13 +282,16 @@ export function AtD890Compare({ first, second }: DebugDecodedDiffProps) {
       <Title order={4}>Changed byte runs</Title>
       {!runs.length && <Text>No differing bytes in the comparable ranges.</Text>}
       {runPages.slice.map(({ space, run }) => (
-        <Text key={`${space}:${run.start}`} size="sm">
-          {space} · {formatAddress(run.start)}
-          {run.length > 1 ? `–${formatAddress(run.start + run.length - 1)}` : ''} · {run.length}{' '}
-          byte{run.length === 1 ? '' : 's'} · {hex(run.before)}
-          {run.length > run.before.length ? ' …' : ''} → {hex(run.after)}
-          {run.length > run.after.length ? ' …' : ''}
-        </Text>
+        <div key={`${space}:${run.start}`}>
+          <Text size="sm">
+            {space} · {formatAddress(run.start)}
+            {run.length > 1 ? `–${formatAddress(run.start + run.length - 1)}` : ''} · {run.length}{' '}
+            byte{run.length === 1 ? '' : 's'} · {hex(Array.from(run.before.subarray(0, 8)))}
+            {run.length > 8 ? ' …' : ''} → {hex(Array.from(run.after.subarray(0, 8)))}
+            {run.length > 8 ? ' …' : ''}
+          </Text>
+          {run.length > 8 && <RunBytes run={run} />}
+        </div>
       ))}
       <Pager page={runPages.page} pages={runPages.pages} onPage={runPages.setPage} label="Run" />
       <Title order={4}>Provenance divergence</Title>

@@ -138,4 +138,36 @@ describe('AtD890Compare', () => {
     expect(screen.getByText('Run page 2 of 4')).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Show domain' })).toBeInTheDocument();
   });
+
+  it('shows each capture requested unit, responding unit and own repeat claim per range', () => {
+    view(tuneArchive([1], 'tune-a'), tuneArchive([1], 'local-info'));
+    expect(
+      screen.getByText(
+        'First: requested tune-a · responding unit: tune-a · repeat read matched (claim)',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Second: requested tune-a · responding unit: local-info · repeat read matched (claim)',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('pages every byte of a long changed run', () => {
+    view(
+      tuneArchive(
+        Array.from({ length: 130 }, () => 1),
+        null,
+      ),
+      tuneArchive(
+        Array.from({ length: 130 }, (_, i) => (i === 129 ? 9 : 2)),
+        null,
+      ),
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Show bytes of run at 0x04F00000/ }));
+    expect(screen.getByText('Bytes at 0x04F00000 page 1 of 3')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Next Bytes at 0x04F00000 page' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next Bytes at 0x04F00000 page' }));
+    expect(screen.getByText('Second: 02 09')).toBeInTheDocument();
+  });
 });
