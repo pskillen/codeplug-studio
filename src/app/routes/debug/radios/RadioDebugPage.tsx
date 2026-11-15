@@ -218,6 +218,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                             ? 'Captured radio bytes'
                             : 'No radio identity observed',
                         ],
+                        [
                           'Connection',
                           reading
                             ? 'Reading radio…'

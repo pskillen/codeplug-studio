@@ -83,10 +83,13 @@ describe('range-change send boundary', () => {
     expect(offenders(/anytoneDmrRwCodec/, (rel) => allowed.has(rel))).toEqual([]);
   });
 
-  it('within radios/at-d890uv/, only connection.ts and rangeChangeSend.ts call pipe.write', () => {
+  it('within radios/at-d890uv/, only connection.ts, rangeChangeSend.ts and debugCapture.ts call pipe.write', () => {
     const allowed = new Set([
       join(D890_DIR, 'connection.ts'),
       join(D890_DIR, 'rangeChange', 'rangeChangeSend.ts'),
+      // Radio Debug read-only frame guard (owner decision, #1697): forwards only PROGRAM, the ident byte,
+      // 16–240-byte reads and, inside the armed finish, the LocalInfo re-read and END.
+      join(D890_DIR, 'debugCapture.ts'),
     ]);
     const bad = files
       .filter(
