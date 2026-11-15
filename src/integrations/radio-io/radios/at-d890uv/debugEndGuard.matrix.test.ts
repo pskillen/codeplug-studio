@@ -121,7 +121,8 @@ async function run(entry: Entry, pipe: MatrixPipe): Promise<unknown> {
     return await entry.run(pipe);
   } finally {
     // Refusal after a synthetic write deliberately leaves a pending-session marker.
-    localStorage.removeItem(AT_D890_PENDING_UNITS_KEY);
+    // The node test environment has no localStorage on every Node version (CI), so guard it.
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(AT_D890_PENDING_UNITS_KEY);
   }
 }
 
