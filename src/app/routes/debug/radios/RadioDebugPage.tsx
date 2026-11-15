@@ -12,6 +12,7 @@ import {
   FileButton,
   Group,
   SimpleGrid,
+  Select,
   Stack,
   Tabs,
   Text,
@@ -19,16 +20,7 @@ import {
 } from '@mantine/core';
 import { useEffect, useRef, useState } from 'react';
 import Uv5rMiniCalibrationSection from '../Uv5rMiniCalibrationSection.tsx';
-import {
-  buildUv5rMiniReadsZip,
-  useUv5rMiniDebugReads,
-  uv5rMiniDebugReadStore,
-  type Uv5rMiniDebugRead,
-} from '../uv5rMiniDebugReads.ts';
-import {
-  hashUv5rMiniDebugSpans,
-  UV5R_MINI_FULL_READ_SIZE,
-} from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
+import { useUv5rMiniDebugReads, type Uv5rMiniDebugRead } from '../uv5rMiniDebugReads.ts';
 import { radioBackupFileName } from '@app/services/radioBackupRead.ts';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
 import {
@@ -42,7 +34,6 @@ import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWakeLock.ts';
 import { capabilityColor, radioDebugDescriptors } from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
-import { Rt95Calibration } from './Rt95Calibration.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Memory } from './AtD890Memory.tsx';
 import { Coverage } from './Coverage.tsx';
@@ -50,6 +41,9 @@ import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { Uv5rMiniCompare } from './Uv5rMiniCompare.tsx';
 import { isUv5rMiniReadsZip, openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
 import { archiveUv5rMiniRead } from './uv5rMiniCapture.ts';
+import { getDebugReadHistory, useDebugReadHistory } from './debugReadHistory.ts';
+import { DebugReadHistoryControls } from './DebugReadHistoryControls.tsx';
+import { isDebugReadHistoryZip, openDebugReadHistoryZip } from './debugReadHistoryArchive.ts';
 
 const asReturned = (frame: Dm32VFrameEvidence | undefined) =>
   !frame
@@ -64,14 +58,23 @@ export default function RadioDebugPage() {
 }
 
 function RadioDebugProfile({ radio }: { radio: string | undefined }) {
-  const { reads, undownloaded } = useUv5rMiniDebugReads();
-  const [legacyReads, setLegacyReads] = useState<readonly Uv5rMiniDebugRead[]>([]);
-  const [archive, setArchive] = useState<DebugArchive>();
+  const { reads } = useUv5rMiniDebugReads();
+  const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
+  const historyEnabled = radio === 'uv-5r-mini' || radio === 'rt95';
+  const store = getDebugReadHistory(
+    descriptor ?? { slug: 'unknown', archiveModelId: 'UV-5R Mini' },
+  );
+  const history = useDebugReadHistory(store);
+  const [localArchive, setArchive] = useState<DebugArchive>();
+  const archive = historyEnabled
+    ? history.entries.find((e) => e.id === history.selectedId)?.archive
+    : localArchive;
+  const [otherId, setOtherId] = useState<string | null>(null);
+  const other = history.entries.find((e) => e.id === otherId)?.archive;
   const [downloadedArchive, setDownloadedArchive] = useState<DebugArchive>();
   // Mini reads live in the shared store; any profile's undownloaded live capture lives only in this tab.
   const unsaved =
-    (radio === 'uv-5r-mini' && undownloaded > 0) ||
-    (archive?.source === 'live-read' && archive !== downloadedArchive);
+    !historyEnabled && archive?.source === 'live-read' && archive !== downloadedArchive;
   useEffect(() => {
     if (!unsaved) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();
@@ -85,23 +88,10 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const [progress, setProgress] = useState('');
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
-  const offlineRead: Uv5rMiniDebugRead | undefined =
-    archive?.manifest.radioModelId === 'UV-5R Mini' &&
-    archive.source === 'file' &&
-    archive.regions.clone?.length === UV5R_MINI_FULL_READ_SIZE
-      ? {
-          label: 'File archive',
-          readAt: new Date(archive.manifest.capturedAt),
-          raw: archive.sidecars['debug/wire.bin']!,
-          decoded: archive.regions.clone,
-          ident: { f: archive.sidecars['debug/f.bin']!, m: archive.sidecars['debug/m.bin']! },
-          spans: hashUv5rMiniDebugSpans(archive.regions.clone),
-        }
-      : undefined;
-  const liveReads = reads.map((read) => ({ ...read, label: `Live ${read.label}` }));
-  const fileReads = [...legacyReads, ...(offlineRead && !legacyReads.length ? [offlineRead] : [])];
-  const allReads =
-    archive?.source === 'live-read' ? [...fileReads, ...liveReads] : [...liveReads, ...fileReads];
+  const allReads = reads.map((read) => ({
+    ...read,
+    label: `${history.entries.find((e) => e.label === read.label)?.archive.source === 'file' ? 'File' : 'Live'} ${read.label}`,
+  }));
   const miniReport = archive && uv5rMiniArchiveDetails(archive)?.report;
   const d890Identity =
     archive?.manifest.radioModelId === 'AT-D890UV'
@@ -115,7 +105,6 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
     archive?.manifest.radioModelId === 'DM-32UV'
       ? dm32DebugIdentity(archive.sidecars, archive.manifest.regions, archive.regions)
       : undefined;
-  const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
   if (!descriptor)
     return (
       <Page>
@@ -129,6 +118,11 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
     if (!file) return;
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
+      if (historyEnabled && isDebugReadHistoryZip(bytes)) {
+        store.importArchives(openDebugReadHistoryZip(bytes, descriptor));
+        setError(undefined);
+        return;
+      }
       let next: DebugArchive;
       let imported: readonly Uv5rMiniDebugRead[] = [];
       try {
@@ -148,9 +142,14 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
           zipBytes: bytes,
         };
       }
-      setLegacyReads(imported);
       setPreferredLive(null);
-      setArchive(next);
+      if (historyEnabled) {
+        store.importArchives(
+          imported.length
+            ? imported.map((read) => archiveUv5rMiniRead(read, read.readAt.toISOString()))
+            : [next],
+        );
+      } else setArchive(next);
       setError(undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not open archive.');
@@ -166,11 +165,10 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
         signal: controller.current.signal,
         onProgress: (p) => setProgress(p.msg),
       });
-      if (descriptor.slug === 'uv-5r-mini') {
-        const latest = uv5rMiniDebugReadStore.getSnapshot().reads.at(-1);
-        if (latest) setPreferredLive(`Live ${latest.label}`);
-      }
-      setArchive(result);
+      if (historyEnabled) {
+        const added = store.add(result);
+        if (descriptor.slug === 'uv-5r-mini') setPreferredLive(`Live ${added.label}`);
+      } else setArchive(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Radio read failed.');
     } finally {
@@ -443,35 +441,22 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 unknown.
               </Alert>
               {descriptor.slug === 'uv-5r-mini' && allReads.length > 0 && (
-                <Stack>
-                  <Text>
-                    Reads in this tab:{' '}
-                    {allReads
-                      .map((read) => `${read.label} (${read.readAt.toLocaleString()})`)
-                      .join(', ')}
-                  </Text>
-                  {reads.length > 0 && (
-                    <>
-                      <Text>
-                        {undownloaded
-                          ? `${undownloaded} reads not downloaded`
-                          : 'All reads downloaded'}
-                      </Text>
-                      <Button
-                        onClick={async () => {
-                          const result = await downloadZip(
-                            buildUv5rMiniReadsZip(reads),
-                            'uv5r-mini-reads.zip',
-                          );
-                          if (result.status !== 'failed')
-                            uv5rMiniDebugReadStore.markAllDownloaded(reads.length);
-                        }}
-                      >
-                        Download all reads
-                      </Button>
-                    </>
-                  )}
-                </Stack>
+                <Text>
+                  Reads in this tab:{' '}
+                  {allReads
+                    .map((read) => `${read.label} (${read.readAt.toLocaleString()})`)
+                    .join(', ')}
+                </Text>
+              )}
+              {historyEnabled && (
+                <DebugReadHistoryControls
+                  descriptor={descriptor}
+                  store={store}
+                  onClear={() => {
+                    setOtherId(null);
+                    setPreferredLive(null);
+                  }}
+                />
               )}
               {archive && (
                 <Stack>
@@ -485,7 +470,11 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                         archive.zipBytes,
                         radioBackupFileName(archive.manifest),
                       );
-                      if (result.status !== 'failed') setDownloadedArchive(archive);
+                      if (result.status !== 'failed') {
+                        if (historyEnabled && history.selectedId)
+                          store.markDownloaded([history.selectedId]);
+                        else setDownloadedArchive(archive);
+                      }
                     }}
                   >
                     Download archive
@@ -511,15 +500,46 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
             <HexViewer key={archive?.manifest.capturedAt} archive={archive} />
           </Tabs.Panel>
           <Tabs.Panel value="compare" pt="md">
+            {descriptor.slug === 'rt95' && (
+              <Select
+                label="Compare with"
+                clearable
+                value={otherId}
+                onChange={setOtherId}
+                data={history.entries.map((e) => ({
+                  value: e.id,
+                  label: `${e.label} · ${new Date(e.readAt).toLocaleString()}`,
+                }))}
+              />
+            )}
             {descriptor.slug === 'uv-5r-mini' ? (
-              <Uv5rMiniCompare reads={allReads} preferredLive={preferredLive} />
+              <Uv5rMiniCompare
+                key={history.entries[0]?.id ?? 'empty'}
+                reads={allReads}
+                preferredLive={preferredLive}
+              />
+            ) : historyEnabled ? (
+              <CompareViewer
+                archive={archive}
+                other={other}
+                modelId={descriptor.archiveModelId}
+                DecodedDiff={descriptor.DecodedDiff}
+              />
             ) : (
               <CompareViewer archive={archive} modelId={descriptor.archiveModelId} />
             )}
           </Tabs.Panel>
           {descriptor.slug === 'uv-5r-mini' && (
             <Tabs.Panel value="calibration" pt="md">
-              <Uv5rMiniCalibrationSection reads={allReads} preferredLive={preferredLive} />
+              <Uv5rMiniCalibrationSection
+                key={history.entries[0]?.id ?? 'empty'}
+                reads={allReads}
+                preferredLive={
+                  history.entries.find((e) => e.id === history.selectedId)
+                    ? `${history.entries.find((e) => e.id === history.selectedId)!.archive.source === 'file' ? 'File' : 'Live'} ${history.entries.find((e) => e.id === history.selectedId)!.label}`
+                    : preferredLive
+                }
+              />
             </Tabs.Panel>
           )}
           {descriptor.slug === 'at-d890uv' && (
@@ -532,7 +552,21 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
           )}
           {descriptor.slug === 'rt95' && (
             <Tabs.Panel value="calibration" pt="md">
-              <Rt95Calibration archive={archive} />
+              <Stack>
+                <Select
+                  label="Calibration overlay"
+                  clearable
+                  value={otherId}
+                  onChange={setOtherId}
+                  data={history.entries.map((e) => ({
+                    value: e.id,
+                    label: `${e.label} · ${new Date(e.readAt).toLocaleString()}`,
+                  }))}
+                />
+                {descriptor.Calibration && (
+                  <descriptor.Calibration archive={archive} overlayArchive={other} />
+                )}
+              </Stack>
             </Tabs.Panel>
           )}
           {(descriptor.slug === 'uv-5r-mini' ||

@@ -1,3 +1,5 @@
+import type { ComponentType } from 'react';
+import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
 import { captureAtD890 } from './atD890Capture.ts';
 import { captureDm32 } from './dm32Capture.ts';
 import { captureUv5rMini } from './uv5rMiniCapture.ts';
@@ -5,12 +7,17 @@ import { captureRt95 } from './rt95Capture.ts';
 import type { DebugArchive } from './captureArchive.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
 
+export type DebugCalibrationProps = { archive?: DebugArchive; overlayArchive?: DebugArchive };
+export type DebugDecodedDiffProps = { first: DebugArchive; second: DebugArchive };
+
 /** Selected profiles describe expectations, never observed radio identity. */
 export interface RadioDebugDescriptor {
   slug: string;
   model: string;
   archiveModelId: string;
   capture?: (opts?: { signal?: AbortSignal; onProgress?: ProgressFn }) => Promise<DebugArchive>;
+  Calibration?: ComponentType<DebugCalibrationProps>;
+  DecodedDiff?: ComponentType<DebugDecodedDiffProps>;
   family: string;
   capabilities: readonly RadioDebugCapability[];
 }
@@ -78,6 +85,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'rt95',
+    Calibration: Rt95Calibration,
+    DecodedDiff: Rt95CalibrationDiff,
     capture: captureRt95,
     model: 'RT95',
     archiveModelId: 'retevis-rt95',

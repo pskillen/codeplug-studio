@@ -5,6 +5,9 @@
 
 import { strToU8, zipSync } from 'fflate';
 import { useSyncExternalStore } from 'react';
+import { getDebugReadHistory, type DebugReadHistoryStore } from './radios/debugReadHistory.ts';
+import { archiveUv5rMiniRead } from './radios/uv5rMiniCapture.ts';
+import { hashUv5rMiniDebugSpans } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 
 import {
   formatUv5rMiniSpanRange,
@@ -56,51 +59,79 @@ export function buildUv5rMiniReadsZip(reads: readonly Uv5rMiniDebugRead[]): Uint
   return zipSync(files);
 }
 
-/** In-memory store for one tab. */
+/** Compatibility facade backed by the same archive history as the shared page. */
+let instance = 0;
 export class Uv5rMiniDebugReadStore {
-  private reads: Uv5rMiniDebugRead[] = [];
-  private downloadedCount = 0;
+  private readonly history: DebugReadHistoryStore;
+  private previous?: ReturnType<DebugReadHistoryStore['getSnapshot']>;
   private snapshot: { reads: readonly Uv5rMiniDebugRead[]; undownloaded: number } = {
     reads: [],
     undownloaded: 0,
   };
-  private readonly listeners = new Set<() => void>();
-
+  constructor(shared = false) {
+    this.history = getDebugReadHistory({
+      slug: shared ? 'uv-5r-mini' : `mini-test-${++instance}`,
+      archiveModelId: 'UV-5R Mini',
+    });
+    this.history.subscribe(() => {
+      this.previous = undefined;
+      this.snapshot = { reads: [], undownloaded: 0 };
+    });
+  }
   add(read: Uv5rMiniFullRead, readAt = new Date()): Uv5rMiniDebugRead {
-    const entry: Uv5rMiniDebugRead = {
-      ...read,
-      label: uv5rMiniReadLabel(this.reads.length),
-      readAt,
+    const entry = this.history.add(archiveUv5rMiniRead(read, readAt.toISOString()));
+    return this.toRead(entry);
+  }
+  private toRead(entry: ReturnType<DebugReadHistoryStore['add']>): Uv5rMiniDebugRead {
+    const { archive } = entry;
+    const decoded = archive.regions.clone!;
+    return {
+      label: entry.label,
+      readAt: new Date(entry.readAt),
+      decoded,
+      raw: archive.sidecars['debug/wire.bin']!,
+      ident: { f: archive.sidecars['debug/f.bin']!, m: archive.sidecars['debug/m.bin']! },
+      spans: hashUv5rMiniDebugSpans(decoded),
     };
-    this.reads = [...this.reads, entry];
-    this.emit();
-    return entry;
   }
-
-  /** Every read so far is in a downloaded zip. */
-  markAllDownloaded(count = this.reads.length): void {
-    this.downloadedCount = Math.max(this.downloadedCount, Math.min(count, this.reads.length));
-    this.emit();
+  downloadIds(): readonly string[] {
+    return this.history.getSnapshot().entries.map((entry) => entry.id);
   }
-
-  getSnapshot = (): { reads: readonly Uv5rMiniDebugRead[]; undownloaded: number } => this.snapshot;
-
-  subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+  markDownloaded(ids: readonly string[]): void {
+    this.history.markDownloaded(ids);
+  }
+  markAllDownloaded(count = this.history.getSnapshot().entries.length): void {
+    this.history.markDownloaded(
+      this.history
+        .getSnapshot()
+        .entries.slice(0, count)
+        .map((e) => e.id),
+    );
+  }
+  getSnapshot = () => {
+    const current = this.history.getSnapshot();
+    if (current !== this.previous) {
+      this.previous = current;
+      this.snapshot = {
+        reads: current.entries
+          .filter(
+            (e) =>
+              e.archive.regions.clone &&
+              e.archive.sidecars['debug/wire.bin'] &&
+              e.archive.sidecars['debug/f.bin'] &&
+              e.archive.sidecars['debug/m.bin'],
+          )
+          .map((e) => this.toRead(e)),
+        undownloaded: current.undownloaded,
+      };
+    }
+    return this.snapshot;
   };
-
-  private emit(): void {
-    this.snapshot = {
-      reads: this.reads,
-      undownloaded: this.reads.length - this.downloadedCount,
-    };
-    for (const l of this.listeners) l();
-  }
+  subscribe = (listener: () => void) => this.history.subscribe(listener);
 }
 
 /** The page's store: lives as long as the tab, so in-app navigation keeps the reads. */
-export const uv5rMiniDebugReadStore = new Uv5rMiniDebugReadStore();
+export const uv5rMiniDebugReadStore = new Uv5rMiniDebugReadStore(true);
 
 export function useUv5rMiniDebugReads(store: Uv5rMiniDebugReadStore = uv5rMiniDebugReadStore) {
   return useSyncExternalStore(store.subscribe, store.getSnapshot);

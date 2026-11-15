@@ -1,3 +1,4 @@
+import { decodeUv5rMiniFullRead } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { MantineProvider } from '@mantine/core';
 import { render, screen } from '@testing-library/react';
 import { it, expect } from 'vitest';
@@ -14,7 +15,7 @@ it('compares clone windows and reports special channel slots', () => {
   for (const decoded of [a, b])
     store.add({
       decoded,
-      raw: decoded,
+      raw: decodeUv5rMiniFullRead(decoded),
       ident: { f: new Uint8Array(16), m: new Uint8Array(15) },
       spans: hashUv5rMiniDebugSpans(decoded),
     });

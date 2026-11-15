@@ -45,7 +45,7 @@ describe('history controls', () => {
     expect(store.getSnapshot().undownloaded).toBe(1);
     fireEvent.click(screen.getByRole('button', { name: 'Clear history' }));
     expect(store.getSnapshot().entries).toHaveLength(1);
-    fireEvent.click(await screen.findByRole('button', { name: 'Clear', exact: true }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Clear$/ }));
     expect(store.getSnapshot().entries).toHaveLength(0);
   });
 });

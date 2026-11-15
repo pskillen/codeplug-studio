@@ -1,3 +1,4 @@
+import { DebugReadHistoryGuard } from '@app/routes/debug/radios/DebugReadHistoryGuard.tsx';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Menu } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
@@ -63,6 +64,7 @@ export default function AppLayout() {
   return (
     <DriveSaveFlowProvider>
       <DriveRefreshProvider>
+        <DebugReadHistoryGuard />
         <AppLayoutShell />
       </DriveRefreshProvider>
     </DriveSaveFlowProvider>

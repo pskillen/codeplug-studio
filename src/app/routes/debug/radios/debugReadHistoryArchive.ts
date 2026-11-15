@@ -36,7 +36,14 @@ export function openDebugReadHistoryZip(
   bytes: Uint8Array,
   descriptor: Descriptor,
 ): readonly DebugArchive[] {
-  const files = unzipSync(bytes);
+  const seen = new Set<string>();
+  const files = unzipSync(bytes, {
+    filter: (file) => {
+      if (seen.has(file.name)) throw new Error('Duplicate history file.');
+      seen.add(file.name);
+      return true;
+    },
+  });
   let index: unknown;
   try {
     index = JSON.parse(strFromU8(files['history.json']!));
