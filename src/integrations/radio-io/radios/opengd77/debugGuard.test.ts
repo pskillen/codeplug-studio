@@ -25,7 +25,7 @@ const read = (addr: number, len: number) =>
   );
 
 function spyPipe() {
-  const write = vi.fn(async (_data: Uint8Array) => undefined);
+  const write = vi.fn(async (data: Uint8Array) => void data.length);
   const readExact = vi.fn(async (n: number) => new Uint8Array(n));
   const flush = vi.fn(async () => undefined);
   const drain = vi.fn(async () => new Uint8Array(0));

@@ -24,7 +24,7 @@ A partial radio-backup zip (`coverage: known-map-regions`, every region `inspect
 
 ## Identity provenance
 
-Identity comes only from the FirmwareInfo sidecar: structure version, radio type, revision and build date (ASCII, as reported), SPI flash id, feature bits (bit 1 DMR ID database in `'n'` mode, bit 2 voice prompts loaded; other bits are shown as a hex value only). FirmwareInfo has **no serial**, and it cannot tell stock builds from forks or mods. A manifest `firmware` string without the sidecar is not identity.
+Identity comes only from the FirmwareInfo sidecar: structure version, radio type, revision and build date (ASCII, as reported), SPI flash id, feature bits (bit 0 inverted display, bit 1 DMR ID database in `'n'` mode, bit 2 voice prompts loaded; other bits are shown as a hex value only). FirmwareInfo has **no serial**, and it cannot tell stock builds from forks or mods. A manifest `firmware` string without the sidecar is not identity.
 
 Radio type is shared between look-alike models: `0x05` is both MD-9600 and RT-90, `0x08` both DM-1701 and RT-84, `0x0A` the RGB-display DM-1701 / RT-84. The page never claims which of the pair it is. The model on the page is the selected profile, not evidence.
 
