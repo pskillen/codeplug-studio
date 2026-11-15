@@ -16,11 +16,14 @@ import {
 
 export type { RadioReadStatus } from './radioCheck.ts';
 
-/** Every step, in order. `check` is shown only for a radio that has a radio check ({@link firmwareWizardSteps}). */
+/**
+ * Every step, in order. `check` is shown only for a radio that has a radio check ({@link firmwareWizardSteps}); it
+ * comes before Firmware, so the releases offered are the ones for the radio's own firmware (D133).
+ */
 export const FIRMWARE_WIZARD_STEPS = [
   'radio',
-  'firmware',
   'check',
+  'firmware',
   'stock',
   'prepare',
   'preflight',
@@ -38,7 +41,7 @@ export interface FirmwareWizardState {
   readonly radioId: FirmwareRadioId | null;
   /**
    * The radio check the selected radio's descriptor asks for, set at `selectRadio`; null for a radio with one flash
-   * layout. When set, the wizard has a "Your radio" step between Firmware and Stock firmware.
+   * layout. When set, the wizard has a "Your radio" step between Radio and Firmware.
    */
   readonly radioCheck: RadioCheckSetup | null;
   /** What to flash; null until a choice is made when stock flashing is unavailable. */
@@ -229,11 +232,17 @@ export function canAdvance(state: FirmwareWizardState): boolean {
   switch (state.step) {
     case 'radio':
       return state.radioId !== null;
-    case 'firmware':
-      return state.radioId !== null && isChoiceReady(state);
     case 'check':
-      // The answer names the radio's firmware, and the chosen release has a file for it (or none is chosen yet).
-      return isRadioCheckDone(radioCheckAnswer(state, state.radioCheck));
+      // The answer names the radio's firmware. A release chosen earlier and no longer right for it is dropped when the
+      // answer changes, and Firmware checks the choice, so the way back to Firmware stays open.
+      return isRadioIdentified(state);
+    case 'firmware':
+      // The choice is ready and, for a radio with a check, has a file for this radio.
+      return (
+        state.radioId !== null &&
+        isChoiceReady(state) &&
+        isRadioCheckDone(radioCheckAnswer(state, state.radioCheck))
+      );
     case 'stock':
       return state.stock !== null;
     case 'prepare':
@@ -245,6 +254,22 @@ export function canAdvance(state: FirmwareWizardState): boolean {
     case 'flash':
       return false;
   }
+}
+
+/** The radio check names the radio's firmware (or the radio has no check). Says nothing of the chosen release. */
+export function isRadioIdentified(state: FirmwareWizardState): boolean {
+  const { answer } = radioCheckAnswer(state, state.radioCheck);
+  return answer === null || answer.kind === 'layout';
+}
+
+/**
+ * After the radio's answers change: a release or patch file chosen earlier that has no file for the radio as it now
+ * answers is dropped, so Firmware offers the radio's own releases again. Never the nearest build instead.
+ */
+function dropChoiceNotForRadio(state: FirmwareWizardState): FirmwareWizardState {
+  if (state.choice?.kind !== 'release' && state.choice?.kind !== 'user-patch') return state;
+  if (radioCheckAnswer(state, state.radioCheck).unavailable === null) return state;
+  return { ...state, choice: null, loadedPatch: null, riskAccepted: false };
 }
 
 /** Steps before `step` must all be satisfiable for a jump to `step` to be allowed. */
@@ -338,7 +363,7 @@ export function firmwareWizardReducer(
       return { ...state, image: null };
     case 'setRadioInfo':
       // A new layout means a new image and fresh checks.
-      return {
+      return dropChoiceNotForRadio({
         ...state,
         radioInfo: { ...state.radioInfo, ...action.patch },
         image: null,
@@ -348,10 +373,10 @@ export function firmwareWizardReducer(
         radioChecks: {},
         probe: null,
         probeSkipped: false,
-      };
+      });
     case 'radioRead':
       // A new read (or a cleared one) may mean a new layout or build: a new image and fresh checks.
-      return {
+      return dropChoiceNotForRadio({
         ...state,
         radioRead: action.status,
         image: null,
@@ -361,7 +386,7 @@ export function firmwareWizardReducer(
         radioChecks: {},
         probe: null,
         probeSkipped: false,
-      };
+      });
     case 'setReinstallConfirmed':
       // The confirm is part of the image: a change rebuilds it, and the checks start again.
       if (action.value === state.reinstallConfirmed) return state;

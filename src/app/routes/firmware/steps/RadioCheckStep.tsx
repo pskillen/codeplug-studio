@@ -156,14 +156,16 @@ function ReadRadio({
 }
 
 /** Shown once the check passes. */
-export const RADIO_CHECK_PASSED = 'Studio can update this radio. Continue to the stock firmware.';
-/** Shown once the check passes and a release is chosen. */
+export const RADIO_CHECK_PASSED =
+  'Studio can update this radio. Continue to choose a release for its firmware.';
+/** Shown once the check passes and a release chosen earlier has a file for it. */
 export const RADIO_CHECK_PASSED_RELEASE =
-  'Studio can update this radio, and the chosen release has a file for it. Continue to the stock firmware.';
+  'Studio can update this radio, and the chosen release has a file for it. Continue to the firmware.';
 
 /**
- * "Your radio": read the radio, or ask its Radio Info lines, before Studio asks for any stock file (#1670). Only for a
- * radio whose firmware comes in more than one flash layout. Nothing here is sent to the radio but the read-only
+ * "Your radio": read the radio, or ask its Radio Info lines, before any release is offered or stock file asked for
+ * (#1670, D133): Firmware then offers only the releases built on the radio's own firmware. Only for a radio whose
+ * firmware comes in more than one flash layout. Nothing here is sent to the radio but the read-only
  * report read; Prepare computes the same answer again and runs every interlock on it.
  */
 export default function RadioCheckStep({ state, dispatch, updater }: WizardStepProps) {
