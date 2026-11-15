@@ -160,9 +160,7 @@ describe('AtD890Calibration', () => {
   });
 
   it('builds the numeric table only when its details are opened', () => {
-    const { container } = view(
-      archive([[region('vital-tune-a', TUNE_A, AT_D890_VITAL_UNIT_BYTES), tune()]]),
-    );
+    view(archive([[region('vital-tune-a', TUNE_A, AT_D890_VITAL_UNIT_BYTES), tune()]]));
     const details = screen.getAllByText('Numeric table')[0]!.closest('details')!;
     expect(details.querySelector('table')).toBeNull();
     details.open = true;
