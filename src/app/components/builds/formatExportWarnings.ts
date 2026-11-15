@@ -1,4 +1,5 @@
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import type { MemberCapWarningKind } from '@core/import-export/exportWarning.ts';
 
 export type { MemberCapWarningKind } from '@core/import-export/exportWarning.ts';
@@ -251,6 +252,11 @@ export function formatExportWarnings(warnings: ExportWarning[]): FormattedExport
       case 'general': {
         if (warning.severity === 'info') generalInfo.push(warning.message);
         else general.push(warning.message);
+        break;
+      }
+
+      case 'zone_scan_set': {
+        general.push(formatExportWarning(warning));
         break;
       }
     }

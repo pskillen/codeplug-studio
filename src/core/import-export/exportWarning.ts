@@ -51,9 +51,44 @@ export interface GeneralExportWarning {
   message: string;
 }
 
+/**
+ * Zone scan sets ("Scan in this zone") on radios with the zone scan set trait. Each warns and
+ * never refuses. The radio supplies `reason` (how it knows its firmware is too old) and the room
+ * figures; see `@core/import-export/zoneScanSets`.
+ */
+export type ZoneScanSetWarningDetail =
+  | {
+      /** A zone's scan set has fewer than two channels on the radio: the zone won't scan. */
+      issue: 'too-few';
+      zoneName: string;
+      count: number;
+    }
+  | {
+      /** The radio's firmware can't store scan sets: they aren't written; zones scan as before. */
+      issue: 'firmware-too-old';
+      reason: string;
+    }
+  | {
+      /** The radio's room for scan sets is exceeded. */
+      issue: 'room-exceeded';
+      limit: number;
+      needed: number;
+      unit: string;
+      consequence: string;
+    };
+
+export type ZoneScanSetExportWarning = {
+  kind: 'zone_scan_set';
+  severity: 'problem';
+} & ZoneScanSetWarningDetail;
+
 /** Structured export/write warning — replaces the old free-text `warnings: string[]` channel. */
 export type ExportWarning =
-  WireNameExportWarning | MemberCapExportWarning | UnlinkedExportWarning | GeneralExportWarning;
+  | WireNameExportWarning
+  | MemberCapExportWarning
+  | UnlinkedExportWarning
+  | GeneralExportWarning
+  | ZoneScanSetExportWarning;
 
 /** Push a plain informational/problem note with no further structure. */
 export function pushGeneralWarning(warnings: ExportWarning[], message: string): void {
@@ -78,6 +113,14 @@ export function pushMemberCapWarning(
   },
 ): void {
   warnings.push({ kind: 'member_cap', severity: 'problem', ...params });
+}
+
+/** Push a zone scan set warning (too few channels, firmware too old, room exceeded). */
+export function pushZoneScanSetWarning(
+  warnings: ExportWarning[],
+  detail: ZoneScanSetWarningDetail,
+): void {
+  warnings.push({ kind: 'zone_scan_set', severity: 'problem', ...detail });
 }
 
 /** Push an "orphan entities included at export" note (assemble-time). */
@@ -112,6 +155,21 @@ export function formatExportWarning(warning: ExportWarning): string {
     case 'unlinked':
     case 'general':
       return warning.message;
+    case 'zone_scan_set':
+      return formatZoneScanSetWarning(warning);
+  }
+}
+
+function formatZoneScanSetWarning(warning: ZoneScanSetExportWarning): string {
+  switch (warning.issue) {
+    case 'too-few': {
+      const channels = warning.count === 1 ? 'channel' : 'channels';
+      return `Zone "${warning.zoneName}" has ${warning.count} ${channels} set to Scan in this zone, so this zone won't scan on the radio. Set at least two of its channels to Scan in this zone.`;
+    }
+    case 'firmware-too-old':
+      return `The radio's firmware is too old for zone scan sets (${warning.reason}). They were not written, and its zones scan as before.`;
+    case 'room-exceeded':
+      return `The zone scan sets need ${warning.needed} ${warning.unit}, but the radio holds ${warning.limit}. ${warning.consequence}`;
   }
 }
 
@@ -142,5 +200,7 @@ export function exportWarningIdentity(warning: ExportWarning): string {
       return `unlinked\0${warning.message}`;
     case 'general':
       return `general\0${warning.message}`;
+    case 'zone_scan_set':
+      return `zone_scan_set\0${formatZoneScanSetWarning(warning)}`;
   }
 }
