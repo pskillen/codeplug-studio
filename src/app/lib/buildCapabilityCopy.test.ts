@@ -21,6 +21,16 @@ describe('conceptsForCapabilities: zones over a per-channel scan flag (RT95 and 
     );
   });
 
+  it('keys the scan-set copy on the zone scan set trait', () => {
+    const concepts = conceptsForCapabilities(
+      traits.filter((t) => t !== BuildCapabilityTrait.ZoneScanSet),
+      'radio-io',
+    );
+    expect(concepts.find((c) => c.id === 'zone-scan')?.body).toBe(
+      "Scan visits the zone's channels that have scan on, in channel-number order.",
+    );
+  });
+
   it('keeps the plain zone-scan copy for other zone-as-scan-list profiles', () => {
     const concepts = conceptsForCapabilities(
       [BuildCapabilityTrait.ZoneGrouping, BuildCapabilityTrait.ZoneAsScanList],

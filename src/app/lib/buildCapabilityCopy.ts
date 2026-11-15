@@ -195,7 +195,9 @@ export function conceptsForCapabilities(
     concepts.push({
       id: 'zone-scan',
       title: 'Scanning follows the zone',
-      body: "In a zone, Scan visits the zone's scan set (its members set to Scan in this zone), in channel-number order. In All channels, Scan visits the channels whose Scan in All channels flag is on.",
+      body: set.has(BuildCapabilityTrait.ZoneScanSet)
+        ? "In a zone, Scan visits the zone's scan set (its members set to Scan in this zone), in channel-number order. In All channels, Scan visits the channels whose Scan in All channels flag is on."
+        : "Scan visits the zone's channels that have scan on, in channel-number order.",
     });
     concepts.push({
       id: 'zone-channel-order',
