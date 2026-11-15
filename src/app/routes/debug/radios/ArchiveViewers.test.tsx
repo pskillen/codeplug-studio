@@ -122,5 +122,11 @@ describe('archive viewer controls', () => {
     expect(screen.getByRole('combobox', { name: 'Region' })).toBeInTheDocument();
     expect(screen.getByLabelText('Hexadecimal bytes').textContent?.split('\n')).toHaveLength(16);
     expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
+    fireEvent.change(screen.getByLabelText('Go to address'), { target: { value: '0x1F00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
+    expect(screen.getByText(/Page 32 of /)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Go to address'), { target: { value: '0xFFFFFFF' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
+    expect(screen.getByText(/outside this region/)).toBeInTheDocument();
   });
 });
