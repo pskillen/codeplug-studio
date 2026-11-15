@@ -2,6 +2,7 @@ import {
   AT_D890_VITAL_UNITS,
   AT_D890_VITAL_UNIT_BYTES,
 } from '@integrations/radio-io/radios/at-d890uv/vitalBackup.ts';
+import { AT_D890_MAP_SIZE } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { atD890VitalComparison } from '@integrations/radio-io/radios/at-d890uv/debugCoverage.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
@@ -99,4 +100,12 @@ export function readAtD890Provenance(archive: DebugArchive): AtD890ReadProvenanc
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Only sparse ranges inside the real AT-D890UV memory map are classified. A sparse range beyond it
+ * (for example NXDN reads past the virtual map) stays unclassified and is never compared.
+ */
+export function isAtD890ClassifiedRange(range: AtD890ReadRange): boolean {
+  return range.kind === 'vital' || range.address + range.byteLength <= AT_D890_MAP_SIZE;
 }

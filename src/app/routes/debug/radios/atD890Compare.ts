@@ -1,15 +1,19 @@
 import type { DebugArchive } from './captureArchive.ts';
-import { readAtD890Provenance, type AtD890ReadRange } from './atD890Provenance.ts';
+import {
+  isAtD890ClassifiedRange,
+  readAtD890Provenance,
+  type AtD890ReadRange,
+} from './atD890Provenance.ts';
 
 /** Same or different responding unit, only ever from explicit evidence on both sides. */
 export type AtD890UnitVerdict = 'same' | 'different' | 'unknown';
 
-/** A contiguous run of differing bytes; the first bytes of each side are kept for display. */
+/** A contiguous run of differing bytes; the full bytes of each side stay available. */
 export interface AtD890ChangedRun {
   start: number;
   length: number;
-  before: readonly number[];
-  after: readonly number[];
+  before: Uint8Array;
+  after: Uint8Array;
 }
 
 export interface AtD890ComparisonSpan {
@@ -30,8 +34,6 @@ export interface AtD890ComparisonSpan {
   /** Acquisition claims that differ between the sides, independent of the bytes. */
   provenanceDiffers: readonly string[];
 }
-
-const RUN_PREVIEW_BYTES = 8;
 
 export function unitVerdict(first?: AtD890ReadRange, second?: AtD890ReadRange): AtD890UnitVerdict {
   const a = first?.respondingUnit;
@@ -60,11 +62,26 @@ export function compareAtD890(
   if (!a || !b) return undefined;
   const space = (r: AtD890ReadRange) =>
     r.kind === 'sparse' ? 'sparse' : `vital:${r.requestedUnit}`;
-  const spaces = [...new Set([...a.ranges, ...b.ranges].map(space))].sort();
   const result: AtD890ComparisonSpan[] = [];
+  // Ranges outside the real map are unclassified: listed, never byte-compared.
+  const unclassified = (ranges: readonly AtD890ReadRange[], side: 'first' | 'second') => {
+    for (const r of ranges.filter((x) => !isAtD890ClassifiedRange(x)))
+      result.push({
+        space: 'unclassified',
+        start: r.address,
+        end: r.address + r.byteLength,
+        [side]: r,
+        unitVerdict: 'unknown',
+        provenanceDiffers: [],
+      });
+  };
+  unclassified(a.ranges, 'first');
+  unclassified(b.ranges, 'second');
+  const classified = (ranges: readonly AtD890ReadRange[]) => ranges.filter(isAtD890ClassifiedRange);
+  const spaces = [...new Set([...classified(a.ranges), ...classified(b.ranges)].map(space))].sort();
   for (const name of spaces) {
-    const left = a.ranges.filter((r) => space(r) === name);
-    const right = b.ranges.filter((r) => space(r) === name);
+    const left = classified(a.ranges).filter((r) => space(r) === name);
+    const right = classified(b.ranges).filter((r) => space(r) === name);
     const bounds = [
       ...new Set([...left, ...right].flatMap((r) => [r.address, r.address + r.byteLength])),
     ].sort((x, y) => x - y);
@@ -88,12 +105,7 @@ export function compareAtD890(
         const close = () => {
           if (!open) return;
           const pick = (bytes: Uint8Array, base: number) =>
-            Array.from(
-              bytes.subarray(
-                open!.start - base,
-                open!.start - base + Math.min(open!.length, RUN_PREVIEW_BYTES),
-              ),
-            );
+            bytes.slice(open!.start - base, open!.start - base + open!.length);
           runs!.push({
             ...open,
             before: pick(firstBytes, x.address),
