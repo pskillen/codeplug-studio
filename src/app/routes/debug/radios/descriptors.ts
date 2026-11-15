@@ -8,6 +8,12 @@ import { captureAtD890 } from './atD890Capture.ts';
 import { captureDm32 } from './dm32Capture.ts';
 import { captureUv5rMini } from './uv5rMiniCapture.ts';
 import { captureRt95 } from './rt95Capture.ts';
+import { captureOpenGd77 } from './opengd77Capture.ts';
+import { openGd77IdentityRows } from './opengd77Identity.ts';
+import {
+  OPENGD77_DM1701_MODEL_ID,
+  OPENGD77_MD9600_MODEL_ID,
+} from '@integrations/radio-io/radios/opengd77/hydration.ts';
 import type { DebugArchive } from './captureArchive.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
 
@@ -24,6 +30,15 @@ export interface RadioDebugDescriptor {
   DecodedDiff?: ComponentType<DebugDecodedDiffProps>;
   family: string;
   capabilities: readonly RadioDebugCapability[];
+  /** Overview rows after `Model · selected`, for a profile with its own identity evidence. */
+  identityRows?: (input: {
+    archive?: DebugArchive;
+    connection: string;
+  }) => readonly (readonly [string, string])[];
+  /** Caption under the identity grid, after the generic sentence. */
+  identityNote?: string;
+  /** Backup-tab notice about what the read sends and how to recover. */
+  readNotice?: { title: string; text: string };
 }
 
 export type RadioDebugCapabilityStatus = 'Available' | 'Partial' | 'Not yet available';
@@ -48,6 +63,14 @@ const unavailable = capabilities('Not yet available', 'Not yet available', 'Not 
 /** Badge colour for a capability status. */
 export const capabilityColor = (status: RadioDebugCapabilityStatus) =>
   status === 'Available' ? 'green' : status === 'Partial' ? 'yellow' : 'gray';
+
+const OPENGD77_IDENTITY_NOTE =
+  'Values are the captured FirmwareInfo reply, as reported. A revision string is not proof of provenance. The reply has no serial and cannot tell stock builds from forks or mods. Radio type does not distinguish DM-1701 from RT-84 or MD-9600 from RT-90.';
+
+const OPENGD77_READ_NOTICE = {
+  title: 'Read-only capture and recovery',
+  text: 'The capture only reads: it sends a ping, the FirmwareInfo request, the CPS screen command, reads of the registered flash spans and the occupied User Database, and the CPS close. It takes minutes, and a large User Database makes it much longer. Cancel stops at the next frame and sends only the CPS close. If the radio stays on the CPS screen after a failure, power-cycle it.',
+};
 
 export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
@@ -79,17 +102,25 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-1701-opengd77',
+    capture: captureOpenGd77(OPENGD77_DM1701_MODEL_ID),
     model: 'DM-1701',
     archiveModelId: 'DM-1701',
     family: 'OpenGD77',
-    capabilities: unavailable,
+    capabilities: capabilities('Available', 'Not yet available', 'Not yet available'),
+    identityRows: openGd77IdentityRows,
+    identityNote: OPENGD77_IDENTITY_NOTE,
+    readNotice: OPENGD77_READ_NOTICE,
   },
   {
     slug: 'md-9600-opengd77',
+    capture: captureOpenGd77(OPENGD77_MD9600_MODEL_ID),
     model: 'MD-9600',
     archiveModelId: 'MD-9600',
     family: 'OpenGD77',
-    capabilities: unavailable,
+    capabilities: capabilities('Available', 'Not yet available', 'Not yet available'),
+    identityRows: openGd77IdentityRows,
+    identityNote: OPENGD77_IDENTITY_NOTE,
+    readNotice: OPENGD77_READ_NOTICE,
   },
   {
     slug: 'rt95',
