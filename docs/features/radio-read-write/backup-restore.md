@@ -198,7 +198,7 @@ interface RadioBackupManifestV1 {
   format: 'codeplug-studio-radio-backup';
   version: 1;
   capturedAt: string; // ISO
-  capturedVia: 'web-serial' | 'file';
+  capturedVia: 'web-serial' | 'android-usb-serial' | 'file';
   app: { buildEnv: string; buildVersion: string }; // __BUILD_ENV__ / __BUILD_VERSION__
   radioModelId: string; // descriptor.modelIds[0]
   descriptorLabel: string;
