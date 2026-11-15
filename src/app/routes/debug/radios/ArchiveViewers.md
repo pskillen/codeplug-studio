@@ -25,3 +25,5 @@ Hex displays at most 256 bytes of one captured region per page. Memory uses the 
 [Radio debug](../../../../../docs/features/radio-debug/README.md)
 
 RT95 calibration is shown in the Calibration tab as main-body [body] evidence relayed through the head; PC ident is [head] and clone data [unknown]. Coverage lists captured prefix and missing tail separately. Hex rows and Compare summaries and byte rows label each RT95 region with its provenance; decoded changes are [unknown]. Missing bytes are incomparable. Overview reports programming-image coverage as missing, partial or captured, and retains archive identity, evidence and connection rows. Established calibration text fields show printable ASCII beside their raw bytes, with non-printable bytes represented by dots.
+
+The shared RT95 history supplies the selected capture and a second entry to Compare; unknown representations and missing bytes remain incomparable. Optional calibration and decoded-difference components use captured fields only; RT95 correction charts draw the selected read solid and the overlay dashed.
