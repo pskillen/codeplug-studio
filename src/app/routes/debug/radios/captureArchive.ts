@@ -37,7 +37,9 @@ import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.t
 import { summariseRt95Clone } from '@integrations/radio-io/radios/rt95/cloneSummary.ts';
 import {
   parseRadioBackupZip,
+  relabelRadioBackupZip,
   type ParsedRadioBackupZip,
+  type RadioBackupLabels,
 } from '@integrations/radio-io/backup/index.ts';
 import { getRadioDescriptor } from '@integrations/radio-io/registry.ts';
 
@@ -45,6 +47,15 @@ import { getRadioDescriptor } from '@integrations/radio-io/registry.ts';
 export interface DebugArchive extends ParsedRadioBackupZip {
   source: 'file' | 'live-read';
   zipBytes: Uint8Array;
+}
+
+/** The archive with new radio name, label and description; only `manifest.json` changes. */
+export function relabelDebugArchive(
+  archive: DebugArchive,
+  labels: RadioBackupLabels,
+): DebugArchive {
+  const { zipBytes, manifest } = relabelRadioBackupZip(archive.zipBytes, labels);
+  return { ...archive, zipBytes, manifest };
 }
 
 export function openDebugArchive(bytes: Uint8Array, modelId: string): DebugArchive {

@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { getRadioDescriptor } from '@integrations/radio-io/registry.ts';
-import type { DebugArchive } from './captureArchive.ts';
+import type { RadioBackupLabels } from '@integrations/radio-io/backup/index.ts';
+import { relabelDebugArchive, type DebugArchive } from './captureArchive.ts';
 import type { RadioDebugDescriptor } from './descriptors.ts';
 
 export type HistoryKey = string;
@@ -25,6 +26,11 @@ export interface DebugReadHistoryStore {
   select(id: string): void;
   /** Choose the comparison / overlay read by retained id; unknown ids clear it. */
   setCompare(id: string | null): void;
+  /**
+   * Replace a retained read's radio name, label and description. Descriptive only. A live read
+   * counts as not downloaded again, because the saved zip would differ.
+   */
+  setLabels(id: string, labels: RadioBackupLabels): void;
   markDownloaded(ids: readonly string[]): void;
   clear(): void;
 }
@@ -104,6 +110,13 @@ function createStore(descriptor: Descriptor): DebugReadHistoryStore {
     setCompare(id) {
       const next = id !== null && snapshot.entries.some((entry) => entry.id === id) ? id : null;
       if (next !== snapshot.compareId) emit(snapshot.entries, snapshot.selectedId, next);
+    },
+    setLabels(id, labels) {
+      const entry = snapshot.entries.find((item) => item.id === id);
+      if (!entry) return;
+      const archive = relabelDebugArchive(entry.archive, labels);
+      if (archive.source === 'live-read') pending.add(id);
+      emit(snapshot.entries.map((item) => (item.id === id ? { ...item, archive } : item)));
     },
     markDownloaded(ids) {
       let changed = false;

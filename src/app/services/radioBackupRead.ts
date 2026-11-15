@@ -14,10 +14,13 @@ import {
   RADIO_BACKUP_FORMAT,
   RADIO_BACKUP_VERSION,
   memoryMapFromBackupRegions,
+  normaliseBackupLabels,
   packRadioBackupZip,
+  relabelRadioBackupZip,
   parseRadioBackupZip,
   regionsFromDownload,
   type ParsedRadioBackupZip,
+  type RadioBackupLabels,
   type RadioBackupManifestV1,
 } from '@integrations/radio-io/backup/index.ts';
 import { getRadioDescriptor } from '@integrations/radio-io/index.ts';
@@ -120,6 +123,8 @@ export function packLiveRadioBackup(input: {
   dm32ConfigWindow?: Dm32ConfigWindow;
   extraRegions?: readonly { region: RadioBackupManifestV1['regions'][number]; bytes: Uint8Array }[];
   sidecars?: Record<string, Uint8Array>;
+  /** Operator's radio name, label and description; descriptive only. */
+  labels?: RadioBackupLabels;
 }): { manifest: RadioBackupManifestV1; zipBytes: Uint8Array } {
   const capturedAt = input.capturedAt ?? new Date().toISOString();
   const modelId = input.descriptor.modelIds[0] ?? 'radio';
@@ -147,6 +152,7 @@ export function packLiveRadioBackup(input: {
     coverage: extract.coverage,
     imageByteLength: extract.imageByteLength,
     regions: extract.regions,
+    ...normaliseBackupLabels(input.labels ?? {}),
   };
   if (input.firmware) manifest.firmware = input.firmware;
   if (serial) manifest.serial = serial;
@@ -198,6 +204,7 @@ function packAtD890BackupFromImage(
   image: MemoryMap,
   capturedAt?: string,
   hydrationProtocol: CloneImageRadio = session.radio,
+  labels?: RadioBackupLabels,
 ): RadioBackupSession {
   const firmware = session.radio.readFirmware(image) ?? undefined;
   const modelId = session.descriptor.modelIds[0] ?? 'radio';
@@ -212,6 +219,7 @@ function packAtD890BackupFromImage(
     inspectBag,
     firmware: firmware ?? inspectBag.retain.firmware,
     capturedAt: inspectBag.capturedAt,
+    labels,
   });
   return { source: 'live-read', manifest, image, inspectBag, zipBytes };
 }
@@ -224,6 +232,8 @@ export async function backupLiveRadioSession(
     /** The build's Web Serial profile. The UV-5R Mini MM9PDY profile also backs up the zone table. */
     profileId?: string;
     download?: boolean;
+    /** Operator's radio name, label and description, stored in the manifest. */
+    labels?: RadioBackupLabels;
   },
 ): Promise<RadioBackupSession> {
   if (session.radio instanceof Uv5rMiniProtocol) {
@@ -234,7 +244,13 @@ export async function backupLiveRadioSession(
     signal: opts?.signal,
   });
   if (session.radio instanceof AtD890uvProtocol) {
-    const packed = packAtD890BackupFromImage(session, image);
+    const packed = packAtD890BackupFromImage(
+      session,
+      image,
+      undefined,
+      session.radio,
+      opts?.labels,
+    );
     if (opts?.download !== false) downloadRadioBackupZip(packed.zipBytes, packed.manifest);
     return packed;
   }
@@ -310,6 +326,7 @@ export async function backupLiveRadioSession(
     dm32ConfigWindow,
     extraRegions,
     sidecars,
+    labels: opts?.labels,
   });
   if (opts?.download !== false) downloadRadioBackupZip(zipBytes, manifest);
   return {
@@ -366,4 +383,16 @@ export function openRadioBackupZip(bytes: Uint8Array): RadioBackupSession {
     dm32CalibrationJson: sidecarText(parsed.sidecars, DM32_CALIBRATION_JSON_PATH),
     dm32FactoryJson: sidecarText(parsed.sidecars, DM32_FACTORY_JSON_PATH),
   };
+}
+
+/**
+ * Edit the radio name, label and description of a backup already held in the page. Only
+ * `manifest.json` changes; regions, sidecars and the in-memory image are untouched.
+ */
+export function relabelRadioBackupSession(
+  session: RadioBackupSession,
+  labels: RadioBackupLabels,
+): RadioBackupSession {
+  const { zipBytes, manifest } = relabelRadioBackupZip(session.zipBytes, labels);
+  return { ...session, zipBytes, manifest };
 }

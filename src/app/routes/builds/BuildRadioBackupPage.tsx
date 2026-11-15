@@ -11,6 +11,10 @@ import { DM32_POWER_CYCLE_AFTER_SESSION_NOTE } from '@integrations/radio-io/radi
 import type { PlannedStage, ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
+import BackupLabelFields, {
+  backupLabelSummary,
+} from '../../components/builds/BackupLabelFields.tsx';
+import type { RadioBackupLabels } from '@integrations/radio-io/backup/index.ts';
 import RadioCloneSummaryView from '../../components/builds/RadioCloneSummaryView.tsx';
 import RadioIoProgressModal, {
   type RadioIoOperation,
@@ -37,6 +41,7 @@ import {
   downloadRadioBackupZip,
   isRestoreHiddenForProfile,
   openRadioBackupZip,
+  relabelRadioBackupSession,
   RADIO_RESTORE_PROD_DISABLED_MESSAGE,
   RESTORE_RANGE_MISMATCH_NOTE,
   restoreRadioBackup,
@@ -85,6 +90,11 @@ function BackupRadioLabel({ backup }: { backup: RadioBackupThisSession }) {
           {secondary}
         </Text>
       ) : null}
+      {backup.userRadioName || backup.userLabel ? (
+        <Text size="xs">
+          {backupLabelSummary({ radioName: backup.userRadioName, label: backup.userLabel })}
+        </Text>
+      ) : null}
       {backup.note ? (
         <Text size="xs" c="dimmed">
           {backup.note}
@@ -114,6 +124,8 @@ export default function BuildRadioBackupPage() {
   const [plan, setPlan] = useState<PlannedStage[] | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [backup, setBackup] = useState<RadioBackupSession | null>(null);
+  /** Optional descriptive fields typed before a backup; stored in the manifest. */
+  const [labels, setLabels] = useState<RadioBackupLabels>({});
   const [selectedRegionIds, setSelectedRegionIds] = useState<ReadonlySet<string>>(new Set());
   const [vital, setVital] = useState<AtD890VitalSession | null>(null);
   const [safety, setSafety] = useState<Rt95SafetyBackupResult | null>(null);
@@ -219,12 +231,15 @@ export default function BuildRadioBackupPage() {
         onProgress,
         signal: abortRef.current!.signal,
         profileId,
+        labels,
       });
       await releaseSession();
       addBackupThisSession(build.id, {
         serial: result.manifest.serial ?? '',
         model: result.manifest.descriptorLabel,
         name: '',
+        userRadioName: result.manifest.radioName,
+        userLabel: result.manifest.label,
         at: Date.now(),
       });
       applyBackupSession(result);
@@ -319,6 +334,16 @@ export default function BuildRadioBackupPage() {
     setBusy(false);
     clearProgress();
     abortRef.current = null;
+  }
+
+  function handleRelabel(next: RadioBackupLabels): void {
+    if (!backup) return;
+    try {
+      setBackup(relabelRadioBackupSession(backup, next));
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   }
 
   function handleClearSession(): void {
@@ -474,7 +499,13 @@ export default function BuildRadioBackupPage() {
 
         {!backup ? (
           <FormSection title="Backup">
-            <Group gap="sm">
+            <BackupLabelFields
+              idPrefix="backup-new"
+              value={labels}
+              onCommit={setLabels}
+              disabled={busy}
+            />
+            <Group gap="sm" mt="sm">
               <Button
                 size="sm"
                 disabled={busy || !serialOk || descriptors.length === 0}
@@ -538,9 +569,32 @@ export default function BuildRadioBackupPage() {
                 {` · ${backup.manifest.imageByteLength} bytes`}
                 {` · ${new Date(backup.manifest.capturedAt).toLocaleString()}`}
               </Text>
+              {backupLabelSummary(backup.manifest) ? (
+                <Text size="sm" fw={600} data-testid="backup-label-summary">
+                  {backupLabelSummary(backup.manifest)}
+                </Text>
+              ) : null}
               <Text size="sm" c="dimmed" mt="xs">
                 {coverageCopy(backup.manifest.coverage)}
               </Text>
+              <Stack gap="xs" mt="sm">
+                <Text size="sm" fw={600}>
+                  Your notes on this backup
+                </Text>
+                <BackupLabelFields
+                  idPrefix="backup-open"
+                  value={{
+                    radioName: backup.manifest.radioName,
+                    label: backup.manifest.label,
+                    description: backup.manifest.description,
+                  }}
+                  onCommit={handleRelabel}
+                  disabled={busy}
+                />
+                <Text size="xs" c="dimmed">
+                  Edits change the saved zip only after you choose Save zip again.
+                </Text>
+              </Stack>
               <Group gap="sm" mt="sm">
                 <Button
                   size="sm"
