@@ -39,6 +39,20 @@ describe('RT95 clone debug evidence', () => {
     });
     expect(decodeRt95DebugSlots(undefined)[0]!.occupancy).toBe('unavailable');
   });
+  it('marks settings unavailable for absurd archive addresses and decodes partial spans', () => {
+    const bytes = new Uint8Array([1]);
+    expect(
+      decodeRt95DebugSettings(bytes, 0xffffffff).every((row) => row.value === 'Unavailable'),
+    ).toBe(true);
+    expect(
+      decodeRt95DebugSettings(bytes, Number.MAX_SAFE_INTEGER + 1).every(
+        (row) => row.value === 'Unavailable',
+      ),
+    ).toBe(true);
+    const partial = decodeRt95DebugSettings(bytes, 0x321c);
+    expect(partial.find((row) => row.label === 'VOX enable')?.value).toBe('true (raw 0x01)');
+    expect(partial.find((row) => row.label === 'VOX level')?.value).toBe('Unavailable');
+  });
   it('uses the registry VOX bit 0 rather than retain preview bit 7', () => {
     const image = buildSyntheticRt95Image();
     image[0x321c] = 0x80;

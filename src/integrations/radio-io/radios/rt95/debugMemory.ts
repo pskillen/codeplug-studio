@@ -129,13 +129,18 @@ export function decodeRt95DebugSettings(
     ['voxLevel', 'VOX level'],
     ['voxDelay', 'VOX delay'],
   ] as const;
-  // The registry addresses are absolute; place only captured bytes at their original addresses.
-  const full = new Uint8Array(base + (image?.length ?? 0));
-  if (image) full.set(image, base);
+  // The registry uses absolute addresses. Only copy the overlap with the fields shown here.
+  const settingsEnd = 0x321f;
+  const validBase = Number.isSafeInteger(base) && base >= 0;
+  const full = new Uint8Array(settingsEnd);
+  if (image && validBase && base < settingsEnd) {
+    full.set(image.subarray(0, settingsEnd - base), base);
+  }
   const decoded = decodeRt95RadioSettings(readRt95SettingsSnapshotFromImage(full), 'stock');
   const addresses = [0x3204, 0x3205, 0x3206, 0x321c, 0x321d, 0x321e];
-  const rows = ids.map(([id, label], i) => {
-    const available = !!image && addresses[i]! >= base && addresses[i]! < base + image.length;
+  const rows: { label: string; value: string }[] = ids.map(([id, label], i) => {
+    const available =
+      validBase && !!image && addresses[i]! >= base && addresses[i]! - base < image.length;
     const item = decoded[id];
     return {
       label,
@@ -149,7 +154,10 @@ export function decodeRt95DebugSettings(
   rows.push({
     label: 'Bandlimit index',
     value:
-      image && RT95_BANDLIMIT_OFFSET >= base && RT95_BANDLIMIT_OFFSET < base + image.length
+      validBase &&
+      image &&
+      RT95_BANDLIMIT_OFFSET >= base &&
+      RT95_BANDLIMIT_OFFSET - base < image.length
         ? hex(image[RT95_BANDLIMIT_OFFSET - base]!)
         : 'Unavailable',
   });
