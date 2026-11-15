@@ -65,8 +65,17 @@ export function readAtD890Provenance(archive: DebugArchive): AtD890ReadProvenanc
         archive.regions[item.regionId]?.length !== item.byteLength
       )
         return undefined;
-      // No current capture API supplies physical responding-unit evidence.
-      if (item.respondingUnit !== null) return undefined;
+      // No current capture API supplies physical responding-unit evidence, so the app never writes
+      // one. A sidecar may carry an explicit claim for a vital unit only; it must name a known unit.
+      // Sparse configuration has no unit identity to claim.
+      if (item.respondingUnit !== null) {
+        if (
+          item.kind !== 'vital' ||
+          typeof item.respondingUnit !== 'string' ||
+          !AT_D890_VITAL_UNITS.some((u) => u.id === item.respondingUnit)
+        )
+          return undefined;
+      }
       if (item.kind === 'sparse') {
         if (
           item.regionId !== `sparse-${item.address.toString(16)}` ||
