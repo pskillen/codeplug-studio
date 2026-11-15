@@ -1,3 +1,5 @@
+import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
+import { readRt95Calibration } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import { backupLiveRadioSession } from '@app/services/radioBackupRead.ts';
 import { openWithBaudFallback } from '@app/services/serialBaudFallback.ts';
 import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.ts';
@@ -21,13 +23,35 @@ export async function captureRt95Pipe(
   const safePipe = guardRt95ClonePipe(pipe);
   const radio = RT95_DESCRIPTOR.protocolFactory();
   try {
-    await radio.connect(safePipe, { handshake: 'read', signal: opts?.signal });
+    const ident = await radio.connect(safePipe, { handshake: 'read', signal: opts?.signal });
     const backup = await backupLiveRadioSession(
       createRadioSession({ descriptor: RT95_DESCRIPTOR, pipe: safePipe, radio }),
       { ...opts, download: false },
     );
+    const original = openDebugArchive(backup.zipBytes, RT95_DESCRIPTOR.modelIds[0]!);
+    const calibration = await readRt95Calibration(radio, opts?.signal);
+    const manifest = {
+      ...original.manifest,
+      coverage: 'partial' as const,
+      regions: [
+        ...original.manifest.regions,
+        {
+          id: 'rt95-calibration',
+          label: 'RT95 calibration and production record',
+          address: 0x3b00,
+          byteLength: calibration.length,
+          path: 'regions/rt95-calibration.bin',
+          restoreRole: 'inspect-only' as const,
+        },
+      ],
+    };
+    const zip = packRadioBackupZip(
+      manifest,
+      { ...original.regions, 'rt95-calibration': calibration },
+      { ...original.sidecars, 'debug/ident.bin': ident.raw },
+    );
     return {
-      ...openDebugArchive(backup.zipBytes, RT95_DESCRIPTOR.modelIds[0]!),
+      ...openDebugArchive(zip, RT95_DESCRIPTOR.modelIds[0]!),
       source: 'live-read',
     };
   } finally {

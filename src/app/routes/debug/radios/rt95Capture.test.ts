@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createFakeRt95Pipe } from '@integrations/radio-io/radios/rt95/__fixtures__/fakeRt95Pipe.ts';
 import { setRt95EndAtForTests } from '@integrations/radio-io/radios/rt95/protocol.ts';
 import { openDebugArchive, rt95ArchiveDetails } from './captureArchive.ts';
@@ -16,6 +16,12 @@ describe('RT95 debug capture', () => {
     expect(file.regions).toEqual(live.regions);
     expect(rt95ArchiveDetails(file)?.missing).toEqual([]);
     expect(rt95ArchiveDetails(file)?.summary).toBeTruthy();
+    expect(file.regions['rt95-calibration']).toEqual(pipe.eeprom.slice(0x3b00, 0x3fc0));
+    expect(file.sidecars['debug/ident.bin']).toHaveLength(16);
+    expect(pipe.log.filter((e) => e.op === 'R' && e.addr! >= 0x3b00).map((e) => e.addr)).toEqual(
+      Array.from({ length: 76 }, (_, i) => 0x3b00 + i * 16),
+    );
+    expect(pipe.count('END')).toBe(1);
     expect(pipe.count('W')).toBe(0);
     expect(pipe.log.every(({ op }) => ['PROGRAM', 'IDENT', 'R', 'END'].includes(op))).toBe(true);
   }, 30000);
@@ -26,4 +32,28 @@ describe('RT95 debug capture', () => {
     await expect(guarded.write(new Uint8Array([0x44]))).rejects.toThrow(/refused/);
     expect(pipe.writes).toHaveLength(0);
   });
+  it('ends and closes after a calibration read failure', async () => {
+    setRt95EndAtForTests(0);
+    const pipe = createFakeRt95Pipe({ silentReadAddrs: [0x3b00] });
+    const close = vi.spyOn(pipe, 'close');
+    await expect(captureRt95Pipe(pipe)).rejects.toThrow();
+    expect(pipe.count('END')).toBe(1);
+    expect(pipe.count('W')).toBe(0);
+    expect(close).toHaveBeenCalledOnce();
+  }, 10000);
+  it('ends and closes when cancelled during calibration', async () => {
+    setRt95EndAtForTests(0);
+    const pipe = createFakeRt95Pipe();
+    const controller = new AbortController();
+    const write = pipe.write.bind(pipe);
+    vi.spyOn(pipe, 'write').mockImplementation(async (frame) => {
+      await write(frame);
+      if (frame[0] === 0x52 && frame[1] === 0x3b && frame[2] === 0) controller.abort();
+    });
+    const close = vi.spyOn(pipe, 'close');
+    await expect(captureRt95Pipe(pipe, { signal: controller.signal })).rejects.toThrow();
+    expect(pipe.count('END')).toBe(1);
+    expect(pipe.count('W')).toBe(0);
+    expect(close).toHaveBeenCalledOnce();
+  }, 10000);
 });

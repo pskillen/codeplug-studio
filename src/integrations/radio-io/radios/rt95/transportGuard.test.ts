@@ -83,3 +83,30 @@ describe('RT95 EEPROM boundary', () => {
     expect(write).not.toHaveBeenCalled();
   });
 });
+
+describe('RT95 debug read boundary', () => {
+  it('accepts each aligned read but rejects every protected write including mirrors', async () => {
+    const { write, guarded } = fixture(mm);
+    for (const mirror of [0, 0x4000, 0x8000, 0xc000]) {
+      for (let addr = 0x3b00; addr <= 0x3fb0; addr += 16) {
+        const address = addr + mirror;
+        await guarded.write(Uint8Array.of(0x52, address >> 8, address & 255, 16));
+        const before = write.mock.calls.length;
+        await expect(
+          guarded.write(makeProgramQxWriteFrame(address, 16, new Uint8Array(16))),
+        ).rejects.toThrow();
+        expect(write).toHaveBeenCalledTimes(before);
+      }
+    }
+  });
+  it('rejects malformed reads without sending', async () => {
+    const { write, guarded } = fixture();
+    for (const frame of [
+      Uint8Array.of(0x52),
+      Uint8Array.of(0x52, 0, 0, 15),
+      Uint8Array.of(0x52, 0, 0, 16, 0),
+    ])
+      await expect(guarded.write(frame)).rejects.toThrow();
+    expect(write).not.toHaveBeenCalled();
+  });
+});

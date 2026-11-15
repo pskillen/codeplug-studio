@@ -36,6 +36,24 @@ export function openDebugArchive(bytes: Uint8Array, modelId: string): DebugArchi
   if (!expected?.modelIds.includes(parsed.manifest.radioModelId)) {
     throw new Error(`Archive model ${parsed.manifest.radioModelId} does not match this profile.`);
   }
+  const calibration = parsed.manifest.regions.find((region) => region.id === 'rt95-calibration');
+  if (
+    parsed.manifest.regions.some(
+      (region) =>
+        region.path === 'regions/rt95-calibration.bin' && region.id !== 'rt95-calibration',
+    )
+  )
+    throw new Error('Invalid RT95 calibration region.');
+  if (
+    calibration &&
+    (parsed.manifest.radioModelId !== RT95_MODEL_ID ||
+      calibration.address !== 0x3b00 ||
+      calibration.byteLength > 0x4c0 ||
+      calibration.restoreRole !== 'inspect-only' ||
+      calibration.path !== 'regions/rt95-calibration.bin')
+  ) {
+    throw new Error('Invalid RT95 calibration region.');
+  }
   if (parsed.manifest.radioModelId === 'UV-5R Mini' && parsed.regions.clone) {
     const region = parsed.manifest.regions.find((item) => item.id === 'clone');
     const wire = parsed.sidecars['debug/wire.bin'];
