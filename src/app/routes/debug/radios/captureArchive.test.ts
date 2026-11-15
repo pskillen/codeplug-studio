@@ -87,7 +87,7 @@ it('maps partial Mini MEM bytes by radio address, keeping zones separate and cal
   );
   const ranges = uv5rMiniArchiveDetails(archive)!.coverage;
   expect(ranges).toContainEqual({
-    label: 'Extras',
+    label: 'DTMF and extras',
     start: mem.radioAddr,
     end: mem.radioAddr + 0x3f,
     captured: true,

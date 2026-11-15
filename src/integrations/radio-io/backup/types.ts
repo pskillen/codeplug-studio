@@ -5,7 +5,7 @@
 
 export type RadioBackupRegionRole = 'restorable' | 'inspect-only';
 
-export type RadioBackupCapturedVia = 'web-serial' | 'file';
+export type RadioBackupCapturedVia = 'web-serial' | 'android-usb-serial' | 'file';
 
 export type RadioBackupCoverage = 'full-clone' | 'known-map-regions' | 'partial';
 
@@ -49,7 +49,7 @@ export class RadioBackupError extends Error {
 }
 
 const REGION_ROLES = new Set<RadioBackupRegionRole>(['restorable', 'inspect-only']);
-const CAPTURED_VIA = new Set<RadioBackupCapturedVia>(['web-serial', 'file']);
+const CAPTURED_VIA = new Set<RadioBackupCapturedVia>(['web-serial', 'android-usb-serial', 'file']);
 const COVERAGES = new Set<RadioBackupCoverage>(['full-clone', 'known-map-regions', 'partial']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -160,7 +160,9 @@ export function validateRadioBackupManifest(value: unknown): RadioBackupManifest
     typeof value.capturedVia !== 'string' ||
     !CAPTURED_VIA.has(value.capturedVia as RadioBackupCapturedVia)
   ) {
-    throw new RadioBackupError('Radio backup manifest capturedVia must be web-serial or file.');
+    throw new RadioBackupError(
+      'Radio backup manifest capturedVia must be web-serial, android-usb-serial or file.',
+    );
   }
   if (!isRecord(value.app)) {
     throw new RadioBackupError('Radio backup manifest app must be an object.');

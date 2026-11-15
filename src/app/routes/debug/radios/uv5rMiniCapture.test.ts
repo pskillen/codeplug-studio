@@ -30,6 +30,19 @@ describe('Mini debug capture', () => {
     expect(uv5rMiniArchiveDetails(reopened)?.report).toBeUndefined();
     expect(() => openDebugArchive(archive.zipBytes, 'retevis-rt95')).toThrow();
   });
+  it('records the transport the read used', () => {
+    const raw = new Uint8Array(0x10000);
+    const read = {
+      raw,
+      decoded: decodeUv5rMiniFullRead(raw),
+      ident: { f: new Uint8Array(16), m: new Uint8Array(15) },
+      spans: [],
+    };
+    expect(archiveUv5rMiniRead(read).manifest.capturedVia).toBe('web-serial');
+    expect(archiveUv5rMiniRead(read, undefined, 'android-usb-serial').manifest.capturedVia).toBe(
+      'android-usb-serial',
+    );
+  });
   it('refuses an incomplete read', () => {
     expect(() =>
       archiveUv5rMiniRead({

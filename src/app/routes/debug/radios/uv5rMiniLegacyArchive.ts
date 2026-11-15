@@ -1,6 +1,7 @@
 import { strFromU8, unzipSync } from 'fflate';
 import {
   decodeUv5rMiniFullRead,
+  UV5R_MINI_FULL_READ_SIZE,
   hashUv5rMiniDebugSpans,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import type { Uv5rMiniDebugRead } from '../uv5rMiniDebugReads.ts';
@@ -24,8 +25,8 @@ export function openUv5rMiniReadsZip(bytes: Uint8Array): Uv5rMiniDebugRead[] {
       !raw ||
       !decoded ||
       !summary ||
-      raw.length !== 0x10000 ||
-      decoded.length !== 0x10000 ||
+      raw.length !== UV5R_MINI_FULL_READ_SIZE ||
+      decoded.length !== UV5R_MINI_FULL_READ_SIZE ||
       !decodeUv5rMiniFullRead(raw).every((b, i) => b === decoded[i])
     )
       throw new Error('Invalid Mini read bytes.');
