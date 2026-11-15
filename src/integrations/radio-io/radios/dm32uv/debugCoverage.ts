@@ -132,6 +132,8 @@ export interface Dm32CoverageBlock {
 
 export interface Dm32DebugCoverage {
   window?: Dm32ConfigWindow;
+  /** Last byte address of the window (`window.end` plus the block's metadata offset). */
+  windowLast?: number;
   blocks: Dm32CoverageBlock[];
   /** Captured window entries, by region id. */
   windowRegions: RadioBackupRegionV1[];
@@ -223,6 +225,7 @@ export function classifyDm32DebugCoverage(
   }
   return {
     window,
+    windowLast: window ? window.end + DM32_METADATA_OFFSET : undefined,
     blocks,
     windowRegions,
     factory,
@@ -250,6 +253,10 @@ export interface Dm32DebugIdentity {
   vframes: Dm32VFrameEvidence[];
   /** V01: stock base version, unchanged by MM9PDY. Not a mod discriminator. */
   baseFirmware?: Dm32VFrameEvidence;
+  buildDate?: Dm32VFrameEvidence;
+  dspVersion?: Dm32VFrameEvidence;
+  radioVersion?: Dm32VFrameEvidence;
+  codeplugVersion?: Dm32VFrameEvidence;
   /** V02: chip UID (8 bytes) plus 4 derived bytes. Not a serial. */
   chipUidHex?: string;
   /** A captured MM9PDY channel location page decodes (persistent data, not running firmware). */
@@ -295,7 +302,11 @@ export function dm32DebugIdentity(
   return {
     modelString,
     vframes,
-    baseFirmware: vframes.find((v) => v.id === DM32_VFRAME.FIRMWARE && !v.failed),
+    baseFirmware: vframes.find((v) => v.id === DM32_VFRAME.FIRMWARE),
+    buildDate: vframes.find((v) => v.id === DM32_VFRAME.BUILD_DATE),
+    dspVersion: vframes.find((v) => v.id === DM32_VFRAME.DSP_VERSION),
+    radioVersion: vframes.find((v) => v.id === DM32_VFRAME.RADIO_VERSION),
+    codeplugVersion: vframes.find((v) => v.id === DM32_VFRAME.CODEPLUG_VERSION),
     chipUidHex: uid?.hex || undefined,
     mm9pdyDataPresent,
   };
