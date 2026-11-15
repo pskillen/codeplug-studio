@@ -1,6 +1,7 @@
 import {
   formatUv5rMiniSpanRange,
   hashUv5rMiniDebugSpans,
+  UV5R_MINI_FULL_READ_SIZE,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { Card, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
@@ -53,7 +54,9 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
   const rt95 = rt95ArchiveDetails(archive);
   const mini = uv5rMiniArchiveDetails(archive);
   const clone =
-    mini && archive.regions.clone?.length === 0x10000 ? archive.regions.clone : undefined;
+    mini && archive.regions.clone?.length === UV5R_MINI_FULL_READ_SIZE
+      ? archive.regions.clone
+      : undefined;
   const hex = (bytes: Uint8Array) =>
     Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(' ');
   return (

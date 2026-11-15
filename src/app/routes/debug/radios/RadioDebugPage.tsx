@@ -20,7 +20,10 @@ import {
   uv5rMiniDebugReadStore,
   type Uv5rMiniDebugRead,
 } from '../uv5rMiniDebugReads.ts';
-import { hashUv5rMiniDebugSpans } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
+import {
+  hashUv5rMiniDebugSpans,
+  UV5R_MINI_FULL_READ_SIZE,
+} from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
 import { openDebugArchive, uv5rMiniArchiveDetails, type DebugArchive } from './captureArchive.ts';
 import { Link, useParams } from 'react-router-dom';
@@ -59,7 +62,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const offlineRead: Uv5rMiniDebugRead | undefined =
     archive?.manifest.radioModelId === 'UV-5R Mini' &&
     archive.source === 'file' &&
-    archive.regions.clone?.length === 0x10000
+    archive.regions.clone?.length === UV5R_MINI_FULL_READ_SIZE
       ? {
           label: 'File archive',
           readAt: new Date(archive.manifest.capturedAt),

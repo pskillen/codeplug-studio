@@ -6,6 +6,7 @@ import {
   formatUv5rMiniChannelChange,
   formatUv5rMiniSpanRange,
   formatUv5rMiniSpecialSlot,
+  UV5R_MINI_FULL_READ_SIZE,
   hashUv5rMiniDebugSpans,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import type { Uv5rMiniDebugRead } from '../uv5rMiniDebugReads.ts';
@@ -36,7 +37,7 @@ export function Uv5rMiniCompare({
       try {
         const archive = openDebugArchive(bytes, 'UV-5R Mini');
         const decoded = archive.regions.clone;
-        if (!decoded || decoded.length !== 0x10000)
+        if (!decoded || decoded.length !== UV5R_MINI_FULL_READ_SIZE)
           throw new Error('A complete clone capture is required for comparison.');
         loaded = [
           {
