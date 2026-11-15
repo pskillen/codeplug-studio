@@ -159,11 +159,11 @@ export async function getStoreRow(
 }
 
 export function indexedDbRowViewerPath(storeName: string, projectId: string, id: string): string {
-  return `/debug/indexed-db/${encodeURIComponent(storeName)}/${encodeURIComponent(projectId)}/${encodeURIComponent(id)}`;
+  return `/debug/storage/indexed-db/${encodeURIComponent(storeName)}/${encodeURIComponent(projectId)}/${encodeURIComponent(id)}`;
 }
 
 export function indexedDbStorePath(storeName: string): string {
-  return `/debug/indexed-db/${encodeURIComponent(storeName)}`;
+  return `/debug/storage/indexed-db/${encodeURIComponent(storeName)}`;
 }
 
 export function decodeIndexedDbParam(param: string): string {
