@@ -1,4 +1,5 @@
-import { Navigate, useLocation, type RouteObject } from 'react-router-dom';
+import type { RouteObject } from 'react-router-dom';
+import LegacyDebugRedirect from './LegacyDebugRedirect.tsx';
 import RadioDebugPage from './radios/RadioDebugPage.tsx';
 import DebugGate from './DebugGate.tsx';
 import DebugD890EraseProbePage from './DebugD890EraseProbePage.tsx';
@@ -10,15 +11,6 @@ import DebugLocalStoragePage from './DebugLocalStoragePage.tsx';
 import DebugLocalStorageViewerPage from './DebugLocalStorageViewerPage.tsx';
 import DebugSerialReopenPage from './DebugSerialReopenPage.tsx';
 import DebugUv5rMiniPage from './DebugUv5rMiniPage.tsx';
-
-/** Preserve encoded path segments, query and hash during legacy redirects. */
-function LegacyDebugRedirect() {
-  const { pathname, search, hash } = useLocation();
-  const next = pathname
-    .replace(/^\/debug\/(indexed-db|local-storage)/, '/debug/storage/$1')
-    .replace(/^\/debug\/serial-reopen/, '/debug/transport/serial-reopen');
-  return <Navigate to={`${next}${search}${hash}`} replace />;
-}
 
 /**
  * Every Debug page. Add a new debug page here: the app router mounts this list under {@link DebugGate}, so the page
