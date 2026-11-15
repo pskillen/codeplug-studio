@@ -220,7 +220,13 @@ export function CompareViewer(props: {
         </Alert>
       )}
       {comparison?.error && <Alert color="red">{comparison.error}</Alert>}
-      {comparison && !comparison.error && (
+      {comparison &&
+        !comparison.error &&
+        modelId === 'AT-D890UV' &&
+        archive &&
+        other &&
+        props.DecodedDiff && <props.DecodedDiff first={archive} second={other} />}
+      {comparison && !comparison.error && modelId !== 'AT-D890UV' && (
         <>
           <Alert title="Comparison limits">
             Only matching region IDs and starting offsets are compared. Archive format does not

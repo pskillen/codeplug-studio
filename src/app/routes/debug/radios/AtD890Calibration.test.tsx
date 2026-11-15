@@ -227,6 +227,8 @@ it('overlays independently selected tune A captures and refuses tune B as a subs
   expect(screen.getAllByText(/Selected · 2026-01-01/).length).toBeGreaterThan(0);
   expect(screen.getAllByText(/Overlay · 2026-01-02/).length).toBeGreaterThan(0);
   expect(document.querySelector('line[stroke-dasharray="4 3"]')).toBeTruthy();
+  expect(screen.getAllByText('Overlay − primary').length).toBeGreaterThan(0);
+  expect(screen.getByText('-100')).toBeInTheDocument();
   const tuneB = archive([[region('vital-tune-b', 0x04f40000, 32), tune(32)]]);
   rerender(
     <MantineProvider>

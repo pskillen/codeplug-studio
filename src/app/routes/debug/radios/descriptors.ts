@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
+import { AtD890Compare } from './AtD890Compare.tsx';
 import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
 import { captureAtD890 } from './atD890Capture.ts';
 import { captureDm32 } from './dm32Capture.ts';
@@ -50,6 +51,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
     slug: 'at-d890uv',
     Calibration: AtD890Calibration,
+    DecodedDiff: AtD890Compare,
     capture: captureAtD890,
     model: 'AT-D890UV',
     archiveModelId: 'AT-D890UV',

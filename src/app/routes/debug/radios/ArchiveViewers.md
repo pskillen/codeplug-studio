@@ -29,3 +29,5 @@ RT95 calibration is shown in the Calibration tab as main-body [body] evidence re
 The shared RT95 history supplies the selected capture and a second entry to Compare; unknown representations and missing bytes remain incomparable. Optional calibration and decoded-difference components use captured fields only; RT95 correction charts draw the selected read solid and the overlay dashed.
 
 RT95 Memory also mounts [Rt95Memory](Rt95Memory.md) for guarded MMD1 zones, state and P-key inspection. MMD1 is a separate inspect-only body region; guard probes and outcome are checked on reopening. Hex and comparison recognise its validated region metadata.
+
+The [D890 comparison](AtD890Compare.md) checks its acquisition sidecar and keeps sparse and requested vital address spaces separate.

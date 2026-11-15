@@ -113,3 +113,5 @@ Read from radio-backup archives (`regions/<id>.bin` inside the ZIP) or the in-ta
 - [Radio debug feature hub](../../../../features/radio-debug/README.md)
 
 The debug calibration viewer can overlay a second retained capture: the selected capture is solid and the overlay dashed, with matching colours and missing samples left as gaps. Each side must independently contain a valid tune-A region; tune-B is never substituted. Capture timestamps label the chart series. Retaining captures and chart data consumes tab memory.
+
+For two retained captures, calibration tables show the overlay value and overlay-minus-primary delta only when both values are captured. Missing values remain unavailable. Tune B is never substituted for tune A.

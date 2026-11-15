@@ -21,10 +21,12 @@ import {
 } from '@integrations/radio-io/transport/index.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
+import { AT_D890_PROVENANCE_PATH, type AtD890ReadRange } from './atD890Provenance.ts';
 
 export function archiveAtD890Capture(capture: AtD890DebugCapture): DebugArchive {
   const regions: RadioBackupRegionV1[] = [];
   const bytes: Record<string, Uint8Array> = {};
+  const ranges: AtD890ReadRange[] = [];
   const add = (id: string, label: string, address: number, data: Uint8Array) => {
     regions.push({
       id,
@@ -35,6 +37,16 @@ export function archiveAtD890Capture(capture: AtD890DebugCapture): DebugArchive 
       restoreRole: 'inspect-only',
     });
     bytes[id] = data;
+    const unit = capture.vital.units.find((u) => `vital-${u.def.id}` === id);
+    ranges.push({
+      regionId: id,
+      address,
+      byteLength: data.length,
+      kind: unit ? 'vital' : 'sparse',
+      requestedUnit: unit?.def.id ?? null,
+      respondingUnit: null,
+      bothReadsMatched: unit ? capture.vital.bothReadsMatched : null,
+    });
   };
   const blocks = [...capture.cache.blocks].sort(([a], [b]) => a - b);
   for (let i = 0; i < blocks.length;) {
@@ -72,6 +84,7 @@ export function archiveAtD890Capture(capture: AtD890DebugCapture): DebugArchive 
     bytes,
     {
       'debug/ident.bin': capture.ident.raw,
+      [AT_D890_PROVENANCE_PATH]: new TextEncoder().encode(JSON.stringify({ version: 1, ranges })),
       'debug/vital.json': new TextEncoder().encode(
         JSON.stringify({
           bothReadsMatched: capture.vital.bothReadsMatched,
