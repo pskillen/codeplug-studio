@@ -2,6 +2,8 @@ import { RT95_IMAGE_SIZE } from '@integrations/radio-io/radios/rt95/constants.ts
 import {
   RT95_CALIBRATION_START,
   RT95_CALIBRATION_LENGTH,
+  RT95_SIGNATURE_START,
+  RT95_SIGNATURE_END,
 } from '@core/radios/retevis/rt95/calibration.ts';
 import { RT95_CALIBRATION_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import { AT_D890_VITAL_UNIT_BYTES } from '@integrations/radio-io/radios/at-d890uv/vitalBackup.ts';
@@ -260,7 +262,8 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
             <Text>
               {formatAddress(RT95_IMAGE_SIZE)}–{formatAddress(RT95_CALIBRATION_START - 1)} not
               captured. {formatAddress(RT95_CALIBRATION_START + RT95_CALIBRATION_LENGTH)}–
-              {formatAddress(0x3ff7)} is outside this capture. Signature 0x3FF8–0x3FFF is outside
+              {formatAddress(RT95_SIGNATURE_START - 1)} is outside this capture. Signature{' '}
+              {formatAddress(RT95_SIGNATURE_START)}–{formatAddress(RT95_SIGNATURE_END)} is outside
               this capture. These are distinct representations, not a proven physical memory map.
             </Text>
           </>

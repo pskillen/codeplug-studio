@@ -206,6 +206,84 @@ it('reports a calibration region present in only one capture as incomparable', a
     </MantineProvider>,
   );
   fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [file] } });
-  expect(await screen.findByText(/Calibration: Incomparable:/)).toBeInTheDocument();
+  expect(await screen.findByText(/Calibration \[body\]: Incomparable:/)).toBeInTheDocument();
   expect(screen.queryByText(/Calibration: 0 changed/)).not.toBeInTheDocument();
+});
+
+it('labels RT95 hex and comparison rows with their provenance', async () => {
+  const calibration = {
+    id: 'rt95-calibration',
+    label: 'Calibration',
+    address: 0x3b00,
+    byteLength: 2,
+    path: 'regions/rt95-calibration.bin',
+    restoreRole: 'inspect-only' as const,
+  };
+  const zip = packRadioBackupZip(
+    { ...manifest, regions: [...manifest.regions, calibration] },
+    { 'programming-image': Uint8Array.of(97, 98, 100), 'rt95-calibration': Uint8Array.of(1, 3) },
+  );
+  const left = openDebugArchive(zip, 'retevis-rt95');
+  const file = new File([Uint8Array.from(zip)], 'capture.zip');
+  Object.defineProperty(file, 'arrayBuffer', { value: async () => Uint8Array.from(zip).buffer });
+  const view = render(
+    <MantineProvider>
+      <HexViewer archive={left} />
+    </MantineProvider>,
+  );
+  expect(screen.getByLabelText('Hexadecimal bytes')).toHaveTextContent('0x00000000 [unknown]');
+  fireEvent.click(screen.getByRole('combobox', { name: 'Region' }));
+  fireEvent.click(screen.getByRole('option', { name: 'Calibration' }));
+  expect(screen.getByLabelText('Hexadecimal bytes')).toHaveTextContent('0x00003B00 [body]');
+  view.unmount();
+  render(
+    <MantineProvider>
+      <CompareViewer archive={left} modelId="retevis-rt95" />
+    </MantineProvider>,
+  );
+  fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [file] } });
+  expect(await screen.findByText(/Calibration \[body\]: 0 changed/)).toBeInTheDocument();
+  expect(screen.getByText(/Programming image \[unknown\]: 0 changed/)).toBeInTheDocument();
+  expect(screen.getByLabelText('Byte comparison')).toHaveTextContent('0x00000000 [unknown] A');
+  fireEvent.click(screen.getByRole('combobox', { name: 'Comparison region' }));
+  fireEvent.click(document.querySelector('[role="option"][value="rt95-calibration"]')!);
+  expect(screen.getByLabelText('Byte comparison')).toHaveTextContent('0x00003B00 [body] A');
+});
+
+it('labels each decoded RT95 change with unknown provenance', async () => {
+  const before = buildSyntheticRt95Image();
+  const image = memoryMapFromBytes(before);
+  encodeChannelsIntoImage(image, [
+    {
+      slotIndex: 7,
+      empty: false,
+      wireName: 'LOCAL',
+      rxHz: 145500000,
+      txHz: 145500000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'FM',
+    },
+  ]);
+  const after = memoryMapToBytes(image);
+  const fullManifest = {
+    ...manifest,
+    imageByteLength: before.length,
+    regions: [{ ...manifest.regions[0], byteLength: before.length }],
+  };
+  const first = openDebugArchive(
+    packRadioBackupZip(fullManifest, { 'programming-image': before }),
+    'retevis-rt95',
+  );
+  const zip = packRadioBackupZip(fullManifest, { 'programming-image': after });
+  const file = new File([Uint8Array.from(zip)], 'capture.zip');
+  Object.defineProperty(file, 'arrayBuffer', { value: async () => Uint8Array.from(zip).buffer });
+  render(
+    <MantineProvider>
+      <CompareViewer archive={first} modelId="retevis-rt95" />
+    </MantineProvider>,
+  );
+  fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [file] } });
+  expect(await screen.findByText(/Channel slot 7: .*LOCAL \[unknown\]/)).toBeInTheDocument();
 });

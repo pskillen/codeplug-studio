@@ -1,6 +1,8 @@
 /** Static MAIN V1.61 / head V1.41 trace; input is a captured prefix starting at 0x3B00. */
 export const RT95_CALIBRATION_START = 0x3b00;
 export const RT95_CALIBRATION_LENGTH = 0x4c0;
+export const RT95_SIGNATURE_START = 0x3ff8;
+export const RT95_SIGNATURE_END = 0x3fff;
 export type Rt95Availability = 'captured' | 'partial' | 'not-captured';
 export interface Rt95Field {
   label: string;
@@ -13,6 +15,8 @@ export interface Rt95Field {
   source: string;
   order: 'bytes' | 'assumed-little-endian';
   value?: number;
+  text?: string;
+  textField?: boolean;
   referenceIndex?: number;
   powerCode?: number;
   corrections?: readonly (number | undefined)[];
@@ -47,24 +51,37 @@ export function decodeRt95Calibration(input?: Uint8Array): {
       source,
       order: 'bytes',
       ...extra,
+      ...(extra.textField && bytes.length
+        ? {
+            text: Array.from(bytes, (byte) =>
+              byte >= 0x20 && byte <= 0x7e ? String.fromCharCode(byte) : '.',
+            ).join(''),
+          }
+        : {}),
       ...(availability === 'captured' && width === 1 ? { value: bytes[0] } : {}),
       ...(availability === 'captured' && extra.order === 'assumed-little-endian'
         ? { value: bytes[0]! | (bytes[1]! << 8) }
         : {}),
     });
   };
-  add('Model check text', 0x3b00, 7, 'traced', 'MAIN 0x0800A872');
-  add('Stored version text', 0x3b07, 4, 'traced', 'MAIN 0x0800A832; CPS trace');
+  add('Model check text', 0x3b00, 7, 'traced', 'MAIN 0x0800A872', { textField: true });
+  add('Stored version text', 0x3b07, 4, 'traced', 'MAIN 0x0800A832; CPS trace', {
+    textField: true,
+  });
   add('RF firmware field', 0x3b0b, 2, 'partially-traced', 'MAIN 0x080073BE; CPS trace');
   add('LCD firmware field', 0x3b0d, 2, 'partially-traced', 'MAIN 0x080073BE; CPS trace');
   add('Band code', 0x3b0f, 1, 'partially-traced', 'MAIN 0x08007400');
   add('Flags', 0x3b10, 1, 'partially-traced', 'MAIN 0x08007400');
   for (const address of [0x3b14, 0x3b1c])
-    add('Unknown caption text', address, 4, 'unknown', 'CPS trace');
+    add('Unknown caption text', address, 4, 'unknown', 'CPS trace', { textField: true });
   add('Password comparison bytes', 0x3b18, 4, 'partially-traced', 'CPS trace');
   for (let i = 0; i < 8; i++)
-    add(`Production text row ${i + 1}`, 0x3b20 + i * 16, 16, 'unknown', 'CPS trace');
-  add('Description/dealer text area', 0x3ba0, 96, 'partially-traced', 'CPS trace');
+    add(`Production text row ${i + 1}`, 0x3b20 + i * 16, 16, 'unknown', 'CPS trace', {
+      textField: true,
+    });
+  add('Description/dealer text area', 0x3ba0, 96, 'partially-traced', 'CPS trace', {
+    textField: true,
+  });
   for (const [base, length, referenceIndex] of [
     [0x3cc0, 39, 19],
     [0x3d80, 91, 45],

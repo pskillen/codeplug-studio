@@ -117,7 +117,7 @@ it('validates RT95 calibration representation and allows bounded partial prefixe
     restoreRole: 'inspect-only' as const,
   };
   const rt95 = { ...manifest, radioModelId: 'retevis-rt95', regions: [region] };
-  const pack = (r: typeof region) =>
+  const pack = (r: RadioBackupManifestV1['regions'][number]) =>
     packRadioBackupZip({ ...rt95, regions: [r] }, { [r.id]: new Uint8Array(r.byteLength) });
   expect(openDebugArchive(pack(region), 'retevis-rt95').regions['rt95-calibration']).toHaveLength(
     2,

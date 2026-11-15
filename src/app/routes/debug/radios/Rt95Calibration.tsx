@@ -34,11 +34,13 @@ export function Rt95Calibration({ archive }: { archive?: DebugArchive }) {
               ? 'Not captured'
               : `Raw: ${hex(field.raw)}${field.availability === 'partial' ? ' · partial' : ''}`}{' '}
             · Decoded:{' '}
-            {field.value === undefined
-              ? field.availability === 'captured'
-                ? 'Not decoded'
-                : 'Not captured'
-              : `0x${field.value.toString(16).toUpperCase()}`}{' '}
+            {field.text !== undefined
+              ? `Text: ${field.text}`
+              : field.value === undefined
+                ? field.availability === 'captured'
+                  ? 'Not decoded'
+                  : 'Not captured'
+                : `0x${field.value.toString(16).toUpperCase()}`}{' '}
             {field.referenceIndex === undefined ? '' : `· reference index ${field.referenceIndex}`}{' '}
             · layout {field.layout}, meaning {field.meaning} · {field.source}
           </Text>

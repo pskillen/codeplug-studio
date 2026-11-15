@@ -23,6 +23,14 @@ import {
   regionIdentity,
 } from './viewerUtils.ts';
 
+function provenance(archive: DebugArchive | undefined, id: string) {
+  return archive?.manifest.radioModelId === RT95_MODEL_ID
+    ? id === RT95_CALIBRATION_REGION_ID
+      ? ' [body]'
+      : ' [unknown]'
+    : '';
+}
+
 export function HexViewer({ archive }: { archive?: DebugArchive }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -96,7 +104,10 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
         <div style={{ overflowX: 'auto' }}>
           <pre aria-label="Hexadecimal bytes">
             {hexRows(bytes, wire ? 0 : region.address, current)
-              .map((row) => `${formatAddress(row.address)}  ${row.hex.padEnd(47)}  ${row.ascii}`)
+              .map(
+                (row) =>
+                  `${formatAddress(row.address)}${provenance(archive, region.id)}  ${row.hex.padEnd(47)}  ${row.ascii}`,
+              )
               .join('\n') || 'Empty region'}
           </pre>
         </div>
@@ -260,7 +271,8 @@ export function CompareViewer({ archive, modelId }: { archive?: DebugArchive; mo
           <Title order={4}>Summary by region</Title>
           {comparison.regions.map((r) => (
             <Text key={r.id}>
-              {r.label}:{' '}
+              {r.label}
+              {provenance(archive, r.id)}:{' '}
               {r.comparable
                 ? `${r.changed} changed bytes · ${r.missing} missing bytes (incomparable)`
                 : `Incomparable: ${'reason' in r ? r.reason : 'region or starting offset differs'}`}
@@ -293,9 +305,9 @@ export function CompareViewer({ archive, modelId }: { archive?: DebugArchive; mo
               }),
             ];
             return changes.length ? (
-              changes.map((change) => <Text key={change}>{change}</Text>)
+              changes.map((change) => <Text key={change}>{change} [unknown]</Text>)
             ) : (
-              <Text>No decoded channel name or setting changes.</Text>
+              <Text>No decoded channel name or setting changes. [unknown]</Text>
             );
           })()}
           {region && left && a && b && (
@@ -324,7 +336,7 @@ export function CompareViewer({ archive, modelId }: { archive?: DebugArchive; mo
                           left.address + offset,
                           0,
                         )[0];
-                        return `${formatAddress(row.address)}  A ${row.hex}\n            B ${otherRow?.hex ?? ''}`;
+                        return `${formatAddress(row.address)}${provenance(archive, region.id)}  A ${row.hex}\n${formatAddress(row.address)}${provenance(archive, region.id)}  B ${otherRow?.hex ?? ''}`;
                       })
                       .join('\n') || 'No overlapping bytes'}
                   </pre>
