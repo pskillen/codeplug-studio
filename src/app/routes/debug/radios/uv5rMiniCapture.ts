@@ -1,0 +1,54 @@
+import {
+  grantUv5rMiniDebugPort,
+  runUv5rMiniDebugFullRead,
+} from '@app/services/uv5rMiniDebugRead.ts';
+import {
+  packRadioBackupZip,
+  RADIO_BACKUP_FORMAT,
+  RADIO_BACKUP_VERSION,
+} from '@integrations/radio-io/backup/index.ts';
+import type { Uv5rMiniFullRead } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
+import type { ProgressFn } from '@integrations/radio-io/types.ts';
+import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
+
+/** Package the decoded clone address space and preserve the wire data and handshake replies. */
+export function archiveUv5rMiniRead(
+  read: Uv5rMiniFullRead,
+  capturedAt = new Date().toISOString(),
+): DebugArchive {
+  if (read.raw.length !== 0x10000 || read.decoded.length !== 0x10000)
+    throw new Error('Incomplete Mini clone read.');
+  const region = {
+    id: 'clone',
+    label: 'Decoded clone address space',
+    address: 0,
+    byteLength: 0x10000,
+    path: 'regions/clone.bin',
+    restoreRole: 'inspect-only' as const,
+  };
+  const zip = packRadioBackupZip(
+    {
+      format: RADIO_BACKUP_FORMAT,
+      version: RADIO_BACKUP_VERSION,
+      capturedAt,
+      capturedVia: 'web-serial',
+      app: { buildEnv: __BUILD_ENV__, buildVersion: __BUILD_VERSION__ },
+      radioModelId: 'UV-5R Mini',
+      descriptorLabel: 'UV-5R Mini debug capture',
+      coverage: 'full-clone',
+      imageByteLength: 0x10000,
+      regions: [region],
+    },
+    { clone: read.decoded },
+    { 'debug/wire.bin': read.raw, 'debug/f.bin': read.ident.f, 'debug/m.bin': read.ident.m },
+  );
+  return { ...openDebugArchive(zip, 'UV-5R Mini'), source: 'live-read' };
+}
+
+export async function captureUv5rMini(opts?: {
+  signal?: AbortSignal;
+  onProgress?: ProgressFn;
+}): Promise<DebugArchive> {
+  const port = await grantUv5rMiniDebugPort();
+  return archiveUv5rMiniRead(await runUv5rMiniDebugFullRead({ port, ...opts }));
+}

@@ -1,3 +1,4 @@
+import { captureUv5rMini } from './uv5rMiniCapture.ts';
 import { captureRt95 } from './rt95Capture.ts';
 import type { DebugArchive } from './captureArchive.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
@@ -70,6 +71,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'uv-5r-mini',
+    capture: captureUv5rMini,
     model: 'UV-5R Mini',
     archiveModelId: 'UV-5R Mini',
     family: 'Stock / MM9PDY',
