@@ -91,7 +91,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     model: 'DM-32UV',
     archiveModelId: 'DM-32UV',
     family: 'Baofeng · stock / MM9PDY',
-    capabilities: capabilities('Available', 'Partial', 'Not yet available'),
+    capabilities: capabilities('Available', 'Partial', 'Partial'),
   },
   {
     slug: 'dm-32uv-radiofoundry',

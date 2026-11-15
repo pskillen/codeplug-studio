@@ -263,6 +263,12 @@ describe('DM-32UV debug page', () => {
     ).toBeInTheDocument();
   });
 
+  it('mounts the DM-32 Memory viewer, asking for a capture before any read', () => {
+    open('dm-32uv');
+    fireEvent.click(screen.getByRole('tab', { name: 'Memory' }));
+    expect(screen.getByText('Open or read a capture to inspect its memory.')).toBeInTheDocument();
+  });
+
   it('retains a successful result that arrives after unmount', async () => {
     const archive = await archiveDm32Capture(dm32Capture());
     let finish!: (value: typeof archive) => void;
