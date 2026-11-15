@@ -33,6 +33,7 @@ import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWakeLock.ts';
 import { capabilityColor, radioDebugDescriptors } from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
+import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { Coverage } from './Coverage.tsx';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { Uv5rMiniCompare } from './Uv5rMiniCompare.tsx';
@@ -402,7 +403,18 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               <Uv5rMiniCalibrationSection reads={allReads} preferredLive={preferredLive} />
             </Tabs.Panel>
           )}
-          {(descriptor.slug === 'uv-5r-mini' ? ['Trace'] : ['Calibration', 'Trace']).map((tab) => (
+          {descriptor.slug === 'at-d890uv' && (
+            <Tabs.Panel value="calibration" pt="md">
+              <AtD890Calibration
+                key={archive ? archive.manifest.capturedAt + archive.zipBytes.length : 'none'}
+                archive={archive}
+              />
+            </Tabs.Panel>
+          )}
+          {(descriptor.slug === 'uv-5r-mini' || descriptor.slug === 'at-d890uv'
+            ? ['Trace']
+            : ['Calibration', 'Trace']
+          ).map((tab) => (
             <Tabs.Panel key={tab} value={tab.toLowerCase()} pt="md">
               <Alert title={`${tab} unavailable`}>
                 {tab === 'Trace'

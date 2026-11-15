@@ -99,3 +99,88 @@ it('offers keyboard-focusable capture and cancel controls at narrow width and re
   fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
   expect(screen.getByText('Not connected')).toBeInTheDocument();
 });
+
+function d890Zip(capturedAt: string, trim: number | undefined) {
+  const regions = [];
+  const bytes: Record<string, Uint8Array> = {};
+  if (trim !== undefined) {
+    const tune = new Uint8Array(0x40);
+    tune[0] = trim & 0xff;
+    tune[1] = trim >> 8;
+    regions.push({
+      id: 'vital-tune-a',
+      label: 'Calibration (live)',
+      address: 0x4f00000,
+      byteLength: tune.length,
+      path: 'regions/tune-a.bin',
+      restoreRole: 'inspect-only' as const,
+    });
+    bytes['vital-tune-a'] = tune;
+  } else {
+    regions.push({
+      id: 'vital-tune-b',
+      label: 'Calibration B (as returned)',
+      address: 0x4f40000,
+      byteLength: 16,
+      path: 'regions/tune-b.bin',
+      restoreRole: 'inspect-only' as const,
+    });
+    bytes['vital-tune-b'] = new Uint8Array(16).fill(0x07);
+  }
+  const zip = packRadioBackupZip(
+    {
+      format: 'codeplug-studio-radio-backup',
+      version: 1,
+      capturedAt,
+      capturedVia: 'file',
+      app: { buildEnv: 'test', buildVersion: 'test' },
+      radioModelId: 'AT-D890UV',
+      descriptorLabel: 'test',
+      coverage: 'partial',
+      imageByteLength: 0x5000000,
+      regions,
+    },
+    bytes,
+  );
+  const file = new File([Uint8Array.from(zip)], `${capturedAt}.zip`);
+  Object.defineProperty(file, 'arrayBuffer', { value: async () => Uint8Array.from(zip).buffer });
+  return file;
+}
+
+const renderAt = (slug: string) =>
+  render(
+    <MemoryRouter initialEntries={[`/debug/radios/${slug}`]}>
+      <DesignSystemV2Provider>
+        <Routes>
+          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+        </Routes>
+      </DesignSystemV2Provider>
+    </MemoryRouter>,
+  );
+
+it('shows one calibration panel that follows archive replacement without connecting', async () => {
+  fake.capture.mockClear();
+  renderAt('at-d890uv');
+  fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+  expect(screen.getByText('Open or read a capture to view calibration.')).toBeInTheDocument();
+  expect(screen.queryByText('Calibration unavailable')).not.toBeInTheDocument();
+  const input = () => document.querySelector('input[type="file"]')!;
+  fireEvent.change(input(), { target: { files: [d890Zip('2026-02-01', 1800)] } });
+  expect(await screen.findByText('1800')).toBeInTheDocument();
+  expect(screen.getByText('Not validated on hardware')).toBeInTheDocument();
+  fireEvent.change(input(), { target: { files: [d890Zip('2026-02-02', 2200)] } });
+  expect(await screen.findByText('2200')).toBeInTheDocument();
+  expect(screen.queryByText('1800')).not.toBeInTheDocument();
+  fireEvent.change(input(), { target: { files: [d890Zip('2026-02-03', undefined)] } });
+  expect(await screen.findByText(/This archive has no live tune unit/)).toBeInTheDocument();
+  expect(
+    screen.getByText(/Calibration B \(as returned\) is present but is not used/),
+  ).toBeInTheDocument();
+  expect(fake.capture).not.toHaveBeenCalled();
+});
+
+it('keeps the calibration panel unavailable for profiles without a decoder', () => {
+  renderAt('rt95');
+  fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+  expect(screen.getByText('Calibration unavailable')).toBeInTheDocument();
+});
