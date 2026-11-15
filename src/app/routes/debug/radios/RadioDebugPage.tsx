@@ -12,9 +12,9 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
-import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
+import { openDebugArchive, uv5rMiniArchiveDetails, type DebugArchive } from './captureArchive.ts';
 import { Link, useParams } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { radioDebugDescriptors } from './descriptors.ts';
@@ -31,6 +31,8 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const [error, setError] = useState<string>();
   const [reading, setReading] = useState(false);
   const [progress, setProgress] = useState('');
+  const controller = useRef<AbortController | null>(null);
+  const miniReport = archive && uv5rMiniArchiveDetails(archive)?.report;
   const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
   if (!descriptor)
     return (
@@ -57,12 +59,19 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const readRadio = async () => {
     if (!descriptor.capture) return;
     setReading(true);
+    controller.current = new AbortController();
     setError(undefined);
     try {
-      setArchive(await descriptor.capture({ onProgress: (p) => setProgress(p.msg) }));
+      setArchive(
+        await descriptor.capture({
+          signal: controller.current.signal,
+          onProgress: (p) => setProgress(p.msg),
+        }),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Radio read failed.');
     } finally {
+      controller.current = null;
       setReading(false);
       setProgress('');
     }
@@ -117,8 +126,15 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                     ['Expected family', descriptor.family],
                     ['Serial · archive', archive?.manifest.serial || 'Unknown'],
                     ['Firmware · archive', archive?.manifest.firmware || 'Unknown'],
-                    ['Firmware mod', 'Unknown'],
-                    ['Evidence', archive ? 'Archive manifest' : 'No radio identity observed'],
+                    ['Firmware mod', miniReport ? 'MM9PDY compatible report' : 'Unknown'],
+                    [
+                      'Evidence',
+                      miniReport
+                        ? 'Validated live format-2 MM9R report'
+                        : archive
+                          ? 'Archive manifest'
+                          : 'No radio identity observed',
+                    ],
                     ['Connection', 'Not connected'],
                   ].map(([label, value]) => (
                     <div key={label}>
@@ -179,7 +195,14 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                   <Button onClick={readRadio} loading={reading}>
                     Read radio
                   </Button>
-                  {reading && <Text>{progress || 'Connecting…'}</Text>}
+                  {reading && (
+                    <>
+                      <Button variant="default" onClick={() => controller.current?.abort()}>
+                        Cancel
+                      </Button>
+                      <Text>{progress || 'Connecting…'}</Text>
+                    </>
+                  )}
                 </Group>
               )}
               <Alert title="Coverage is limited">

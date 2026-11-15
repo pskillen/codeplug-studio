@@ -17,3 +17,5 @@ The radio profile shells can open compatible radio-backup ZIPs without a library
 ## Known gaps
 
 - Live capture for AT-D890UV awaits guarded session termination; other profiles await read-only adapter verification. Coverage classifications and decoded inventories for other radios await their capture and hydration adapters. The current clone summary does not provide callsigns or zone membership relationships.
+
+The UV-5R Mini profile can also capture the clone address space through the guarded read-only session. Its archive stores decoded clone bytes and preserves wire bytes and F/M replies as sidecars. The clone address space is not a physical flash or firmware dump. Ordinary Mini backup MEM entries use packed offsets; coverage maps these to their radio addresses and preserves a separate zones entry. Calibration is only captured when its actual range is present. A validated live format-2 MM9R report is compatible report evidence; an absent, invalid or unsupported report, and an archive without live provenance, leave firmware identity unknown. The legacy Mini debug page remains available for its existing viewers.
