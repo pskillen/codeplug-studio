@@ -21,6 +21,7 @@ import {
   formatAddress,
   HEX_PAGE_BYTES,
   hexRows,
+  isDm32ModelId,
   regionIdentity,
 } from './viewerUtils.ts';
 
@@ -247,8 +248,8 @@ export function CompareViewer(props: {
           {archive && other && props.DecodedDiff && (
             <props.DecodedDiff first={archive} second={other} />
           )}
-          {modelId !== 'DM-32UV' && <Title order={4}>Decoded changes</Title>}
-          {modelId !== 'DM-32UV' &&
+          {!isDm32ModelId(modelId) && <Title order={4}>Decoded changes</Title>}
+          {!isDm32ModelId(modelId) &&
             (() => {
               const first = archive && rt95ArchiveDetails(archive)?.summary;
               const second = other && rt95ArchiveDetails(other)?.summary;

@@ -1,3 +1,4 @@
+import { DM32_MODEL_IDS } from '@integrations/radio-io/radios/dm32uv/constants.ts';
 import { DM32_FACTORY_SECTOR_REGION_ID } from '@integrations/radio-io/radios/dm32uv/calibrationDecode.ts';
 import { classifyDm32DebugCoverage } from '@integrations/radio-io/radios/dm32uv/debugCoverage.ts';
 import { MMD1_BASE, MMD1_END } from '@integrations/radio-io/radios/rt95/modData/layout.ts';
@@ -35,9 +36,11 @@ export function hexRows(bytes: Uint8Array, address: number, page: number) {
   return rows;
 }
 
+export const isDm32ModelId = (id: string) => (DM32_MODEL_IDS as readonly string[]).includes(id);
+
 /** Only the RT95 programming image has a defined map and representation in this session. */
 export function regionIdentity(archive: DebugArchive, id: string) {
-  if (archive.manifest.radioModelId === 'DM-32UV') {
+  if (isDm32ModelId(archive.manifest.radioModelId)) {
     const coverage = classifyDm32DebugCoverage(archive.manifest, archive.regions, archive.sidecars);
     if (
       coverage.factory?.id === id &&

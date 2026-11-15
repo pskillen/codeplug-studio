@@ -41,7 +41,7 @@ The AT-D890UV Memory tab is a read-only viewer for MR channels, zones, contacts,
 
 - RT95 calibration is not validated on hardware; the head may return stale or zero relay filler without a main-board reply.
 
-- DM-32UV: calibration and memory viewers, the digital address book (V-frame `0x0F`), MM9PDY location pages and other blocks outside the product read set, and the firmware build stamp are not captured or decoded yet. The capture is verified against synthetic sessions only, not hardware. Tracking: https://github.com/pskillen/codeplug-studio/issues/1698
+- DM-32UV: calibration overlay, calibration and memory viewers, the digital address book (V-frame `0x0F`), MM9PDY location pages and other blocks outside the product read set, and the firmware build stamp are not captured or decoded yet. The capture is verified against synthetic sessions only, not hardware. Tracking: https://github.com/pskillen/codeplug-studio/issues/1698 (capture) and https://github.com/pskillen/codeplug-studio/issues/1751 (history and comparison).
 - Other profiles await read-only adapter verification. Coverage classifications and decoded inventories for other radios await their capture and hydration adapters. The current clone summary does not provide callsigns or zone membership relationships.
 - Mini parity tests, then redirecting `/debug/uv5r-mini` to the shared page — [#1747](https://github.com/pskillen/codeplug-studio/issues/1747).
 
