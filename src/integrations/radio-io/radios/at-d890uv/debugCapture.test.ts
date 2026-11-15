@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { BytePipe } from '../../types.ts';
+import { D890_MAP } from './constants.ts';
 import { createAtD890DebugGuard, captureAtD890DebugPipe } from './debugCapture.ts';
 
 function fake(): BytePipe & { writes: Uint8Array[] } {
@@ -15,6 +16,25 @@ function fake(): BytePipe & { writes: Uint8Array[] } {
 }
 
 describe('D890 debug send guard', () => {
+  it('refuses write frames before transport, including a valid checksum', async () => {
+    const header = (address: number) => [
+      0x57,
+      (address >>> 24) & 0xff,
+      (address >>> 16) & 0xff,
+      (address >>> 8) & 0xff,
+      address & 0xff,
+      16,
+    ];
+    const validBody = [...header(D890_MAP.LocalInfo), ...new Array<number>(16).fill(0)];
+    const checksum = validBody.slice(1).reduce((sum, byte) => (sum + byte) & 0xff, 0);
+    for (const frame of [header(D890_MAP.LocalInfo), header(0), [...validBody, checksum, 0x06]]) {
+      const pipe = fake();
+      await expect(createAtD890DebugGuard(pipe).pipe.write(Uint8Array.from(frame))).rejects.toThrow(
+        /refused/,
+      );
+      expect(pipe.writes).toEqual([]);
+    }
+  });
   it.each([
     [],
     [0x57],
