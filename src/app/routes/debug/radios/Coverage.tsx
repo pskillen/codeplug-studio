@@ -72,10 +72,9 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
     archive.manifest.radioModelId === 'AT-D890UV'
       ? classifyAtD890DebugCoverage(archive.manifest.regions)
       : undefined;
-  const dm32 =
-    isDm32ModelId(archive.manifest.radioModelId)
-      ? classifyDm32DebugCoverage(archive.manifest, archive.regions, archive.sidecars)
-      : undefined;
+  const dm32 = isDm32ModelId(archive.manifest.radioModelId)
+    ? classifyDm32DebugCoverage(archive.manifest, archive.regions, archive.sidecars)
+    : undefined;
   const rt95 = rt95ArchiveDetails(archive);
   const mini = uv5rMiniArchiveDetails(archive);
   const clone =
