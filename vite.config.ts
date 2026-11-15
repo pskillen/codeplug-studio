@@ -6,6 +6,25 @@ import { REPEATERBOOK_USER_AGENT } from './src/integrations/repeaters/repeaterbo
 import { NOMINATIM_USER_AGENT } from './src/integrations/geocoding/nominatimConstants';
 import { RADIOID_USER_AGENT } from './src/integrations/radioid/constants';
 
+const TEST_FILE = '*.{test,spec}.?(c|m)[jt]s?(x)';
+
+// Tests outside src/app that need jsdom (window, document, localStorage, ...). Each entry says
+// why. Everything else outside src/app runs under node. Do not edit a test to avoid listing it.
+const DOM_TESTS_OUTSIDE_APP: string[] = [
+  'src/integrations/analytics/gtag.test.ts', // window, document and localStorage
+  'src/integrations/download/browserDownload.test.ts', // HTMLAnchorElement, URL.createObjectURL
+  'src/integrations/persistence/radioSafetyBackupRecords.test.ts', // localStorage
+  'src/integrations/persistence/rangeChangeJournal.test.ts', // localStorage
+  'src/integrations/preferences/developerMode.test.ts', // localStorage, window events
+  'src/integrations/radioid/radioid.test.ts', // localStorage
+  'src/integrations/radio-io/radios/at-d890uv/digitalContactWrite.frames.test.ts', // localStorage (pending units)
+  'src/integrations/radio-io/radios/at-d890uv/pendingUnits.test.ts', // localStorage
+  'src/integrations/radio-io/radios/at-d890uv/programSession.test.ts', // localStorage (pending units)
+  'src/integrations/radio-io/radios/at-d890uv/restoreFromBackup.test.ts', // localStorage (backups, pending units)
+  'src/integrations/radio-io/radios/at-d890uv/rangeChange/rangeChangeSend.test.ts', // localStorage (journal)
+  'src/integrations/radio-io/radios/at-d890uv/rangeChange/rangeChangeSession.test.ts', // localStorage (journal)
+];
+
 const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
 
 function rewriteRepeaterBookExportProxyPath(proxyPath: string): string {
@@ -147,8 +166,6 @@ export default defineConfig(({ mode }) => {
       __BUILD_VERSION__: JSON.stringify(buildVersion),
     },
     test: {
-      environment: 'jsdom',
-      setupFiles: './src/test/setup.ts',
       globals: true,
       passWithNoTests: true,
       pool: 'threads',
@@ -156,6 +173,38 @@ export default defineConfig(({ mode }) => {
       reporters: isGitHubActions
         ? ['default', ['junit', { outputFile: 'test-results/junit.xml', addFileAttribute: true }]]
         : ['default'],
+      // Two projects that together cover every test file: React/UI tests need jsdom, the rest run
+      // under node (no DOM setup, a cheaper environment per file).
+      projects: [
+        {
+          extends: true,
+          test: {
+            name: 'dom',
+            environment: 'jsdom',
+            include: [`src/app/**/${TEST_FILE}`, ...DOM_TESTS_OUTSIDE_APP],
+            setupFiles: ['./src/test/setup.ts', './src/test/setup.dom.ts'],
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: 'node',
+            environment: 'node',
+            include: [`**/${TEST_FILE}`],
+            exclude: [
+              '**/node_modules/**',
+              'e2e/**',
+              'cps-verify/**',
+              '.claude/**',
+              'tmp/**',
+              'dist/**',
+              'src/app/**',
+              ...DOM_TESTS_OUTSIDE_APP,
+            ],
+            setupFiles: ['./src/test/setup.ts'],
+          },
+        },
+      ],
     },
   };
 });
