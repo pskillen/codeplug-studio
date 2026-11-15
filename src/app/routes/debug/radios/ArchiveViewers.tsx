@@ -216,8 +216,14 @@ export function MemoryViewer({ archive }: { archive?: DebugArchive }) {
   );
 }
 
-export function CompareViewer({ archive, modelId }: { archive?: DebugArchive; modelId: string }) {
-  const [other, setOther] = useState<DebugArchive>();
+export function CompareViewer(props: {
+  archive?: DebugArchive;
+  modelId: string;
+  other?: DebugArchive;
+}) {
+  const { archive, modelId } = props;
+  const [uploadedOther, setOther] = useState<DebugArchive>();
+  const other = 'other' in props ? props.other : uploadedOther;
   const [error, setError] = useState<string>();
   const [selected, setSelected] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -247,13 +253,15 @@ export function CompareViewer({ archive, modelId }: { archive?: DebugArchive; mo
       <Title order={3}>Compare captures</Title>
       <Text>Capture A: {archive ? archive.manifest.capturedAt : 'Open a capture first'}</Text>
       <Text>Capture B: {other ? other.manifest.capturedAt : 'Not selected'}</Text>
-      <FileButton onChange={open} accept=".zip,application/zip">
-        {(props) => (
-          <Button variant="default" {...props}>
-            Open capture B
-          </Button>
-        )}
-      </FileButton>
+      {!('other' in props) && (
+        <FileButton onChange={open} accept=".zip,application/zip">
+          {(buttonProps) => (
+            <Button variant="default" {...buttonProps}>
+              Open capture B
+            </Button>
+          )}
+        </FileButton>
+      )}
       {error && (
         <Alert color="red" title="Could not open capture B">
           {error}

@@ -287,3 +287,13 @@ it('labels each decoded RT95 change with unknown provenance', async () => {
   fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [file] } });
   expect(await screen.findByText(/Channel slot 7: .*LOCAL \[unknown\]/)).toBeInTheDocument();
 });
+
+it('accepts a controlled comparison archive without an upload control', () => {
+  render(
+    <MantineProvider>
+      <CompareViewer archive={capture} other={capture} modelId="retevis-rt95" />
+    </MantineProvider>,
+  );
+  expect(screen.getByText(/Capture B: 2026-01-01/)).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Open capture B' })).not.toBeInTheDocument();
+});
