@@ -31,12 +31,24 @@ describe('RT95 debug capture', () => {
     });
     expect(file.regions[RT95_CALIBRATION_REGION_ID]).toEqual(pipe.eeprom.slice(0x3b00, 0x3fc0));
     expect(file.sidecars['debug/ident.bin']).toHaveLength(16);
-    expect(pipe.log.filter((e) => e.op === 'R' && e.addr! >= 0x3b00).map((e) => e.addr)).toEqual(
-      Array.from({ length: 76 }, (_, i) => 0x3b00 + i * 16),
-    );
+    expect(pipe.log.filter((e) => e.op === 'R' && e.addr! >= 0x3b00).map((e) => e.addr)).toEqual([
+      ...Array.from({ length: 76 }, (_, i) => 0x3b00 + i * 16),
+      0x3b00,
+      0x7b00,
+      ...Array.from({ length: 512 }, (_, i) => 0x4000 + i * 16),
+    ]);
     expect(pipe.count('END')).toBe(1);
     expect(pipe.count('W')).toBe(0);
     expect(pipe.log.every(({ op }) => ['PROGRAM', 'IDENT', 'R', 'END'].includes(op))).toBe(true);
+  }, 30000);
+  it('skips MMD1 on an aliased chip and preserves the capture', async () => {
+    setRt95EndAtForTests(0);
+    const pipe = createFakeRt95Pipe({ aliasing16k: true });
+    const capture = await captureRt95Pipe(pipe);
+    expect(capture.regions['rt95-mmd1']).toBeUndefined();
+    expect(capture.regions[RT95_CALIBRATION_REGION_ID]).toBeDefined();
+    expect(pipe.log.some((e) => e.op === 'R' && e.addr === 0x4000)).toBe(false);
+    expect(pipe.count('W')).toBe(0);
   }, 30000);
   it('refuses write and unknown frames before reaching the pipe', async () => {
     const pipe = createFakeRt95Pipe();

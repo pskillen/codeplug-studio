@@ -1,3 +1,12 @@
+import { MMD1_BASE, MMD1_END } from '@integrations/radio-io/radios/rt95/modData/layout.ts';
+import { evaluateRt95ChipGuard } from '@integrations/radio-io/radios/rt95/modData/chipGuard.ts';
+import {
+  RT95_MMD1_REGION_ID,
+  RT95_MMD1_REGION_PATH,
+  RT95_GUARD_IDENT_SIDECAR,
+  RT95_GUARD_ALIAS_SIDECAR,
+  RT95_GUARD_OUTCOME_SIDECAR,
+} from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import {
   RT95_CALIBRATION_START,
   RT95_CALIBRATION_LENGTH,
@@ -64,6 +73,19 @@ export function openDebugArchive(bytes: Uint8Array, modelId: string): DebugArchi
   ) {
     throw new Error('Invalid RT95 calibration region.');
   }
+  const mmd1 = parsed.manifest.regions.find((region) => region.id === RT95_MMD1_REGION_ID);
+  if (
+    parsed.manifest.regions.some(
+      (region) => region.path === RT95_MMD1_REGION_PATH && region.id !== RT95_MMD1_REGION_ID,
+    ) ||
+    (mmd1 &&
+      (parsed.manifest.radioModelId !== RT95_MODEL_ID ||
+        mmd1.address !== MMD1_BASE ||
+        mmd1.byteLength > MMD1_END - MMD1_BASE ||
+        mmd1.path !== RT95_MMD1_REGION_PATH ||
+        mmd1.restoreRole !== 'inspect-only'))
+  )
+    throw new Error('Invalid RT95 MMD1 region.');
   if (parsed.manifest.radioModelId === 'UV-5R Mini' && parsed.regions.clone) {
     const region = parsed.manifest.regions.find((item) => item.id === 'clone');
     const wire = parsed.sidecars['debug/wire.bin'];
@@ -186,4 +208,28 @@ export function uv5rMiniArchiveDetails(archive: DebugArchive) {
         )
       : undefined;
   return { coverage, report: report?.kind === 'report' ? report : undefined };
+}
+
+/** Trust guard evidence only when both raw blocks and the recorded outcome agree. */
+export function rt95GuardEvidence(archive: DebugArchive) {
+  const { sidecars } = archive;
+  const ident = sidecars[RT95_GUARD_IDENT_SIDECAR];
+  const alias = sidecars[RT95_GUARD_ALIAS_SIDECAR];
+  const recorded = sidecars[RT95_GUARD_OUTCOME_SIDECAR];
+  if (ident?.length !== 16 || alias?.length !== 16 || !recorded) return undefined;
+  try {
+    const outcome = evaluateRt95ChipGuard(ident, alias);
+    const json: unknown = JSON.parse(new TextDecoder().decode(recorded));
+    if (!json || typeof json !== 'object') return undefined;
+    const value = json as { ok?: unknown; reason?: unknown };
+    if (
+      value.ok !== outcome.ok ||
+      (!outcome.ok && value.reason !== outcome.reason) ||
+      (outcome.ok && value.reason !== undefined)
+    )
+      return undefined;
+    return outcome;
+  } catch {
+    return undefined;
+  }
 }

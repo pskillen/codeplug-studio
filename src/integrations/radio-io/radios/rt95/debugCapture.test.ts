@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { readRt95Calibration } from './debugCapture.ts';
+import { readRt95Calibration, readRt95Mmd1 } from './debugCapture.ts';
 
 describe('RT95 calibration read', () => {
   it('requests exactly the 76 aligned blocks and preserves their bytes', async () => {
@@ -24,5 +24,38 @@ describe('RT95 calibration read', () => {
     await expect(readRt95Calibration({ readBlocks: async () => new Map() })).rejects.toThrow(
       'Invalid',
     );
+  });
+});
+
+describe('RT95 MMD1 guarded read', () => {
+  const ident = Uint8Array.from([82, 84, 57, 53, 45, 80, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  it('reads exactly the table after successful probes', async () => {
+    const readBlocks = vi.fn(
+      async (addresses: readonly number[]) =>
+        new Map(addresses.map((a) => [a, a === 0x3b00 ? ident : new Uint8Array(16).fill(0xff)])),
+    );
+    const result = await readRt95Mmd1({ readBlocks });
+    expect(result.outcome).toEqual({ ok: true });
+    expect(readBlocks.mock.calls[0]![0]).toEqual([0x3b00, 0x7b00]);
+    expect(readBlocks.mock.calls[1]![0]).toEqual(
+      Array.from({ length: 512 }, (_, i) => 0x4000 + i * 16),
+    );
+    expect(result.bytes).toHaveLength(8192);
+  });
+  it.each([
+    ['alias', ident],
+    ['zero', new Uint8Array(16)],
+  ])('refuses %s without table reads', async (_, alias) => {
+    const readBlocks = vi.fn(
+      async () =>
+        new Map([
+          [0x3b00, ident],
+          [0x7b00, alias],
+        ]),
+    );
+    const result = await readRt95Mmd1({ readBlocks });
+    expect(result.outcome.ok).toBe(false);
+    expect(result.bytes).toBeUndefined();
+    expect(readBlocks).toHaveBeenCalledOnce();
   });
 });

@@ -159,3 +159,30 @@ it('refuses calibration regions belonging to another model or using a foreign ID
   entries[region.path] = new Uint8Array(2);
   expect(() => openDebugArchive(zipSync(entries), 'retevis-rt95')).toThrow();
 });
+
+it('validates the reserved RT95 MMD1 region metadata', () => {
+  const region = {
+    id: 'rt95-mmd1',
+    label: 'MMD1',
+    address: 0x4000,
+    byteLength: 16,
+    path: 'regions/rt95-mmd1.bin',
+    restoreRole: 'inspect-only' as const,
+  };
+  const pack = (r: RadioBackupManifestV1['regions'][number], model = 'retevis-rt95') =>
+    packRadioBackupZip(
+      { ...manifest, radioModelId: model, regions: [r] },
+      { [r.id]: new Uint8Array(r.byteLength) },
+    );
+  expect(() => openDebugArchive(pack(region), 'retevis-rt95')).not.toThrow();
+  for (const bad of [
+    { ...region, address: 0x4010 },
+    { ...region, byteLength: 8193 },
+    { ...region, path: 'regions/other.bin' },
+    { ...region, restoreRole: 'restorable' as const },
+    { ...region, id: 'other' },
+  ]) {
+    expect(() => openDebugArchive(pack(bad), 'retevis-rt95')).toThrow(/MMD1/);
+  }
+  expect(() => openDebugArchive(pack(region, 'AT-D890UV'), 'AT-D890UV')).toThrow(/MMD1/);
+});

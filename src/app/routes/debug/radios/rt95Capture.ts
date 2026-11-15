@@ -1,8 +1,15 @@
+import { MMD1_BASE } from '@integrations/radio-io/radios/rt95/modData/layout.ts';
 import { RT95_CALIBRATION_START } from '@core/radios/retevis/rt95/calibration.ts';
 import {
   RT95_CALIBRATION_REGION_ID,
   RT95_CALIBRATION_REGION_PATH,
   readRt95Calibration,
+  readRt95Mmd1,
+  RT95_MMD1_REGION_ID,
+  RT95_MMD1_REGION_PATH,
+  RT95_GUARD_IDENT_SIDECAR,
+  RT95_GUARD_ALIAS_SIDECAR,
+  RT95_GUARD_OUTCOME_SIDECAR,
 } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
 import { backupLiveRadioSession } from '@app/services/radioBackupRead.ts';
@@ -38,6 +45,7 @@ export async function captureRt95Pipe(
     );
     const original = openDebugArchive(backup.zipBytes, RT95_DESCRIPTOR.modelIds[0]!);
     const calibration = await readRt95Calibration(radio, opts?.signal);
+    const mmd1 = await readRt95Mmd1(radio, opts?.signal);
     const manifest = {
       ...original.manifest,
       coverage: 'partial' as const,
@@ -51,12 +59,34 @@ export async function captureRt95Pipe(
           path: RT95_CALIBRATION_REGION_PATH,
           restoreRole: 'inspect-only' as const,
         },
+        ...(mmd1.bytes
+          ? [
+              {
+                id: RT95_MMD1_REGION_ID,
+                label: 'RT95 MMD1 data',
+                address: MMD1_BASE,
+                byteLength: mmd1.bytes.length,
+                path: RT95_MMD1_REGION_PATH,
+                restoreRole: 'inspect-only' as const,
+              },
+            ]
+          : []),
       ],
     };
     const zip = packRadioBackupZip(
       manifest,
-      { ...original.regions, [RT95_CALIBRATION_REGION_ID]: calibration },
-      { ...original.sidecars, 'debug/ident.bin': ident.raw },
+      {
+        ...original.regions,
+        [RT95_CALIBRATION_REGION_ID]: calibration,
+        ...(mmd1.bytes ? { [RT95_MMD1_REGION_ID]: mmd1.bytes } : {}),
+      },
+      {
+        ...original.sidecars,
+        'debug/ident.bin': ident.raw,
+        [RT95_GUARD_IDENT_SIDECAR]: mmd1.ident,
+        [RT95_GUARD_ALIAS_SIDECAR]: mmd1.alias,
+        [RT95_GUARD_OUTCOME_SIDECAR]: new TextEncoder().encode(JSON.stringify(mmd1.outcome)),
+      },
     );
     return {
       ...openDebugArchive(zip, RT95_DESCRIPTOR.modelIds[0]!),

@@ -1,3 +1,8 @@
+import { MMD1_BASE, MMD1_END } from '@integrations/radio-io/radios/rt95/modData/layout.ts';
+import {
+  RT95_MMD1_REGION_ID,
+  RT95_MMD1_REGION_PATH,
+} from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import {
   RT95_CALIBRATION_START,
   RT95_CALIBRATION_LENGTH,
@@ -32,6 +37,17 @@ export function hexRows(bytes: Uint8Array, address: number, page: number) {
 export function regionIdentity(archive: DebugArchive, id: string) {
   if (archive.manifest.radioModelId === RT95_MODEL_ID && id === 'programming-image')
     return { space: 'RT95 programming image', representation: 'programming image bytes' };
+  if (archive.manifest.radioModelId === RT95_MODEL_ID && id === RT95_MMD1_REGION_ID) {
+    const region = archive.manifest.regions.find((r) => r.id === id);
+    if (
+      region?.address === MMD1_BASE &&
+      region.byteLength <= MMD1_END - MMD1_BASE &&
+      region.restoreRole === 'inspect-only' &&
+      region.path === RT95_MMD1_REGION_PATH &&
+      archive.regions[id]?.length === region.byteLength
+    )
+      return { space: 'RT95 main-body EEPROM via head', representation: 'EEPROM bytes' };
+  }
   if (archive.manifest.radioModelId === RT95_MODEL_ID && id === RT95_CALIBRATION_REGION_ID) {
     const region = archive.manifest.regions.find((r) => r.id === id);
     if (
