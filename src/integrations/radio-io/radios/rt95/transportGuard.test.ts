@@ -99,6 +99,22 @@ describe('RT95 debug read boundary', () => {
       }
     }
   });
+  it('sends every calibration read and refuses every mirrored write through the debug guard', async () => {
+    const reads = fixture();
+    const writes = fixture();
+    for (let address = 0x3b00; address <= 0x3fb0; address += 16) {
+      const frame = Uint8Array.of(0x52, address >> 8, address & 0xff, 16);
+      await reads.guarded.write(frame);
+      expect(reads.write).toHaveBeenLastCalledWith(frame);
+      for (const mirror of [0, 0x4000, 0x8000, 0xc000]) {
+        await expect(
+          writes.guarded.write(makeProgramQxWriteFrame(address + mirror, 16, new Uint8Array(16))),
+        ).rejects.toBeInstanceOf(Rt95WriteRefusedError);
+      }
+    }
+    expect(reads.write).toHaveBeenCalledTimes(76);
+    expect(writes.write).not.toHaveBeenCalled();
+  });
   it('rejects malformed reads without sending', async () => {
     const { write, guarded } = fixture();
     for (const frame of [

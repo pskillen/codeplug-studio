@@ -5,14 +5,24 @@ import {
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { buildUv5rMiniReadsZip, Uv5rMiniDebugReadStore } from '../uv5rMiniDebugReads.ts';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { createMemoryRouter, MemoryRouter, Route, RouterProvider, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import RadioDebugPage from './RadioDebugPage.tsx';
+import { gatedDebugRoute } from '../debugRoutes.tsx';
+import { DEVELOPER_MODE_KEY } from '@integrations/preferences/developerMode.ts';
 import { archiveDm32Capture } from './dm32Capture.ts';
 import type { Dm32DebugCapture } from '@integrations/radio-io/radios/dm32uv/debugCapture.ts';
 
-const fake = vi.hoisted(() => ({ run: vi.fn(), dm32: vi.fn() }));
+const fake = vi.hoisted(() => ({ run: vi.fn(), dm32: vi.fn(), prod: false }));
+vi.mock('@app/services/prodFeatureGate.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@app/services/prodFeatureGate.ts')>();
+  return {
+    ...actual,
+    resolveDebugPagesGate: (options: { developerMode?: boolean }) =>
+      actual.resolveDebugPagesGate({ ...options, buildEnv: fake.prod ? 'prod' : 'local' }),
+  };
+});
 vi.mock('./dm32Capture.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./dm32Capture.ts')>()),
   captureDm32: fake.dm32,
@@ -132,6 +142,7 @@ function rt95ArchiveFile() {
       ],
     },
     { a: new Uint8Array(4) },
+    { 'debug/ident.bin': Uint8Array.of(0x12, 0x34, 0xab, 0xcd) },
   );
   const file = new File([Uint8Array.from(zip)], 'rt95.zip', { type: 'application/zip' });
   Object.defineProperty(file, 'arrayBuffer', { value: async () => Uint8Array.from(zip).buffer });
@@ -230,4 +241,87 @@ describe('DM-32UV debug page', () => {
     open('dm-32uv-radiofoundry');
     expect(screen.queryByRole('button', { name: 'Read radio' })).not.toBeInTheDocument();
   });
+});
+
+it('keeps the direct RT95 calibration route behind the production debug gate', async () => {
+  fake.prod = true;
+  localStorage.removeItem(DEVELOPER_MODE_KEY);
+  const router = createMemoryRouter([gatedDebugRoute, { path: '/', element: <div>Home</div> }], {
+    initialEntries: ['/debug/radios/rt95'],
+  });
+  const view = render(
+    <DesignSystemV2Provider>
+      <RouterProvider router={router} />
+    </DesignSystemV2Provider>,
+  );
+  expect(await screen.findByText('Home')).toBeInTheDocument();
+  expect(router.state.location.pathname).toBe('/');
+  view.unmount();
+  localStorage.setItem(DEVELOPER_MODE_KEY, 'on');
+  const allowed = createMemoryRouter([gatedDebugRoute, { path: '/', element: <div>Home</div> }], {
+    initialEntries: ['/debug/radios/rt95'],
+  });
+  render(
+    <DesignSystemV2Provider>
+      <RouterProvider router={allowed} />
+    </DesignSystemV2Provider>,
+  );
+  fireEvent.click(await screen.findByRole('tab', { name: 'Calibration' }));
+  expect(screen.getByText('Calibration and production record [body]')).toBeInTheDocument();
+  fake.prod = false;
+  localStorage.removeItem(DEVELOPER_MODE_KEY);
+});
+
+it('shows RT95 head and unknown provenance and has no write or restore buttons on any tab', async () => {
+  open('rt95');
+  fireEvent.change(document.querySelector('input[type="file"]')!, {
+    target: { files: [rt95ArchiveFile()] },
+  });
+  await screen.findByText(/Local archive · captured/);
+  for (const name of ['Overview', 'Backup', 'Calibration', 'Memory', 'Hex', 'Compare']) {
+    const tab = screen.queryByRole('tab', { name });
+    if (!tab) throw new Error(`Missing ${name} tab`);
+    fireEvent.click(tab);
+    expect(screen.queryByRole('button', { name: /write|restore/i })).not.toBeInTheDocument();
+    if (name === 'Overview') {
+      expect(screen.getByText('PC ident [head]').parentElement).toHaveTextContent('12 34 ab cd');
+      expect(screen.getByText('Clone channels/settings [unknown]')).toBeInTheDocument();
+    }
+  }
+});
+
+it('shows the entire serial supplied by an archive for a profile that exposes it', async () => {
+  const serial = 'SYNTHETIC-SERIAL-123456789';
+  const zip = packRadioBackupZip(
+    {
+      format: 'codeplug-studio-radio-backup',
+      version: 1,
+      capturedAt: '2026-01-01',
+      capturedVia: 'file',
+      app: { buildEnv: 'test', buildVersion: 'test' },
+      radioModelId: 'UV-5R Mini',
+      descriptorLabel: 'test',
+      coverage: 'partial',
+      imageByteLength: 1,
+      serial,
+      regions: [
+        {
+          id: 'other',
+          label: 'Other',
+          address: 0,
+          byteLength: 1,
+          path: 'regions/other.bin',
+          restoreRole: 'inspect-only',
+        },
+      ],
+    },
+    { other: new Uint8Array(1) },
+  );
+  const file = new File([Uint8Array.from(zip)], 'serial.zip');
+  Object.defineProperty(file, 'arrayBuffer', { value: async () => Uint8Array.from(zip).buffer });
+  open();
+  fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [file] } });
+  await screen.findByText(/Local archive · captured/);
+  fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
+  expect(screen.getByText('Serial · archive').parentElement).toHaveTextContent(serial);
 });
