@@ -16,6 +16,7 @@ import {
   DM32_VFRAME_QUERY_IDS,
 } from './constants.ts';
 import { captureDm32DebugPipe, createDm32DebugGuard } from './debugCapture.ts';
+import { RadioAbortedError } from '../../kit/errors.ts';
 
 const te = new TextEncoder();
 const ascii = (s: string) => te.encode(s);
@@ -122,11 +123,21 @@ describe('DM-32 debug capture session', () => {
 });
 
 /** Drive a bare guard to a phase by sending each scripted frame and reading its reply. */
-async function guardAt(phase: 'start' | 'before-program' | 'reads' | 'factory-done') {
+async function guardAt(
+  phase: 'start' | 'sysinfo-done' | 'before-program' | 'reads' | 'factory-done',
+  opts: ScriptOpts = {},
+  signal?: AbortSignal,
+) {
   const pipe = radio();
-  const frames = script(pipe);
-  const guard = createDm32DebugGuard(pipe);
-  const count = { start: 0, 'factory-done': 5, 'before-program': 20, reads: 23 }[phase];
+  const frames = script(pipe, opts);
+  const guard = createDm32DebugGuard(pipe, signal);
+  const count = {
+    start: 0,
+    'sysinfo-done': 3,
+    'factory-done': 5,
+    'before-program': 20,
+    reads: 23,
+  }[phase];
   // Reply chunk sizes are fixed by the queue: read each queued chunk for the frames sent.
   const queue = (pipe as unknown as { queue: Uint8Array[] }).queue;
   const replyChunks = [1, 1, 1, 2, 2, ...DM32_VFRAME_QUERY_IDS.map(() => 0), 1, 1, 1];
@@ -175,6 +186,14 @@ const NEVER_SEND: [string, Uint8Array][] = [
   ['concatenated PSEARCH PASSSTA', ascii('PSEARCHPASSSTA')],
   ['short PSEARC', ascii('PSEARC')],
   ['short PROGRAM', PROGRAM.subarray(0, 11)],
+  ['52 as 5 bytes', read(0x1000, 1).subarray(0, 5)],
+  ['52 as 7 bytes', new Uint8Array([...read(0x1000, 1), 0])],
+  ['47 with a trailing byte', new Uint8Array([...DM32_FACTORY_SECTOR_READ_FRAME, 0])],
+  ['02 00', new Uint8Array([0x02, 0x00])],
+  ['06 06', new Uint8Array([0x06, 0x06])],
+  ['PROGRAM with a trailing byte', new Uint8Array([...PROGRAM, 0])],
+  ['6-byte V-frame', new Uint8Array([0x56, 0, 0, 0, 0x01, 0])],
+  ['PSEARCH with NUL', ascii('PSEARCH\0')],
 ];
 
 describe('DM-32 debug guard refusals', () => {
@@ -389,9 +408,93 @@ describe('DM-32 debug capture abort', () => {
   });
 });
 
+describe('DM-32 debug guard fences, direct', () => {
+  const queueOf = (pipe: Dm32ScriptedPipe) => (pipe as unknown as { queue: Uint8Array[] }).queue;
+
+  it('refuses PROGRAM itself when the 0x0A reply was empty', async () => {
+    const { pipe, guard } = await guardAt('before-program', {
+      layout: new Uint8Array(0),
+      stopAfterVFrames: true,
+    });
+    const sent = pipe.writes.length;
+    await expect(guard.pipe.write(PROGRAM)).rejects.toThrow(/0x0A window/);
+    expect(pipe.writes).toHaveLength(sent);
+  });
+
+  it('latches an abort before the next write', async () => {
+    const controller = new AbortController();
+    const { pipe, guard, next } = await guardAt('factory-done', {}, controller.signal);
+    const sent = pipe.writes.length;
+    controller.abort();
+    await expect(guard.pipe.write(next)).rejects.toBeInstanceOf(RadioAbortedError);
+    expect(pipe.writes).toHaveLength(sent);
+    expect(guard.failure()).toBeInstanceOf(RadioAbortedError);
+  });
+
+  it('refuses the reply when the abort lands during the read', async () => {
+    const controller = new AbortController();
+    const { pipe, guard, next } = await guardAt('factory-done', {}, controller.signal);
+    const original = pipe.readExact.bind(pipe);
+    pipe.readExact = async (n, t) => {
+      const bytes = await original(n, t);
+      controller.abort();
+      return bytes;
+    };
+    await guard.pipe.write(next);
+    await expect(guard.pipe.readExact(3, 1000)).rejects.toBeInstanceOf(RadioAbortedError);
+  });
+
+  it('refuses a factory reply with a wrong echo and never sends the second 47', async () => {
+    const { pipe, guard } = await guardAt('sysinfo-done');
+    const queue = queueOf(pipe);
+    queue[0] = queue[0]!.slice();
+    queue[0]![5] = 0x11;
+    await guard.pipe.write(DM32_FACTORY_SECTOR_READ_FRAME);
+    await expect(guard.pipe.readExact(6, 1000)).rejects.toThrow(/factory-sector reply header/);
+    const sent = pipe.writes.length;
+    await expect(guard.pipe.write(DM32_FACTORY_SECTOR_READ_FRAME)).rejects.toThrow(
+      /no longer usable/,
+    );
+    expect(pipe.writes).toHaveLength(sent);
+  });
+
+  it.each([
+    ['zero', 1, 0],
+    ['longer than requested', 1, 2],
+    ['shorter than requested', 2, 1],
+    ['a short block', DM32_BLOCK_SIZE, 100],
+  ])('refuses a 57 reply length %s and latches', async (_name, requested, replied) => {
+    const { pipe, guard } = await guardAt('reads');
+    queueOf(pipe).length = 0;
+    pipe.enqueue(new Uint8Array([0x57, 0, 0x10, 0, replied & 0xff, replied >>> 8]));
+    await guard.pipe.write(read(0x1000, requested));
+    await expect(guard.pipe.readExact(6, 1000)).rejects.toThrow(/read reply length/);
+    const sent = pipe.writes.length;
+    await expect(guard.pipe.write(read(0x1fff, 1))).rejects.toThrow(/no longer usable/);
+    expect(pipe.writes).toHaveLength(sent);
+  });
+
+  it('fails the capture closed on a short 57 block reply', async () => {
+    const pipe = radio();
+    script(pipe);
+    const queue = queueOf(pipe);
+    // The last block: header then 4096 data bytes. Claim 100 bytes and send 100.
+    queue[queue.length - 2] = new Uint8Array([0x57, 0, 0x30, 0, 100, 0]);
+    queue[queue.length - 1] = new Uint8Array(100);
+    await expect(capture(pipe)).rejects.toThrow(/read reply length 100/);
+    expect(pipe.close).toHaveBeenCalledOnce();
+  });
+});
+
 describe('DM-32 debug capture source', () => {
   it('does not reach write, restore or hydration code', () => {
-    const source = readFileSync(new URL('./debugCapture.ts', import.meta.url), 'utf8');
+    const source = [
+      './debugCapture.ts',
+      './debugCoverage.ts',
+      '../../../../app/routes/debug/radios/dm32Capture.ts',
+    ]
+      .map((path) => readFileSync(new URL(path, import.meta.url), 'utf8'))
+      .join('\n');
     for (const name of [
       'makeDm32WriteFrame',
       'dm32WriteMemory',
