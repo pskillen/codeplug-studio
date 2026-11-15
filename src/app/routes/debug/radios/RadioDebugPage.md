@@ -20,4 +20,4 @@ Shows archive identity evidence without treating the selected family as proof of
 
 [Radio debug](../../../../../docs/features/radio-debug/README.md)
 
-The Mini profile also shows decoded span hashes, F/M replies, labelled wire and decoded hex, tab-local read history, calibration for complete reads, channel and zone inspection, and comparisons. It accepts the legacy multi-read ZIP; the old route remains available while parity is verified.
+The Mini profile also shows decoded span hashes, F/M replies, labelled wire and decoded hex, tab-local read history, calibration for complete reads, channel and zone inspection, and comparisons. History labels distinguish live and file reads. A successful live read becomes the calibration selection and the second comparison read. It accepts the legacy multi-read ZIP; the old route remains available while parity is verified.

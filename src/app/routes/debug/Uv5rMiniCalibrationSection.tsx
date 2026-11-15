@@ -257,12 +257,20 @@ function readName(r: Uv5rMiniDebugRead): string {
  */
 export default function Uv5rMiniCalibrationSection({
   reads,
+  preferredLive,
 }: {
   reads: readonly Uv5rMiniDebugRead[];
+  preferredLive?: string | null;
 }) {
-  const [pickLabel, setPickLabel] = useState<string | null>(null);
+  const [selection, setSelection] = useState<{
+    label: string | null;
+    preferredLive?: string | null;
+  }>();
   const [overlayLabel, setOverlayLabel] = useState<string | null>(null);
-  const pick = pickLabel ?? reads.at(-1)?.label ?? null;
+  const pick =
+    (selection?.preferredLive === preferredLive ? selection?.label : preferredLive) ??
+    reads.at(-1)?.label ??
+    null;
   const read = reads.find((r) => r.label === pick);
   const overlay = reads.find((r) => r.label === overlayLabel && r.label !== pick);
 
@@ -285,7 +293,12 @@ export default function Uv5rMiniCalibrationSection({
       ) : (
         <Stack gap="lg" data-testid="uv5r-mini-calibration">
           <Group grow>
-            <Select label="Read" data={options} value={pick} onChange={setPickLabel} />
+            <Select
+              label="Read"
+              data={options}
+              value={pick}
+              onChange={(label) => setSelection({ label, preferredLive })}
+            />
             <Select
               label="Overlay (optional)"
               placeholder="None"

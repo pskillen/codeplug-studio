@@ -48,6 +48,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   }, [undownloaded]);
   const [legacyReads, setLegacyReads] = useState<readonly Uv5rMiniDebugRead[]>([]);
   const [archive, setArchive] = useState<DebugArchive>();
+  const [preferredLive, setPreferredLive] = useState<string | null>(null);
   const [error, setError] = useState<string>();
   const [reading, setReading] = useState(false);
   const [progress, setProgress] = useState('');
@@ -58,7 +59,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
     archive.source === 'file' &&
     archive.regions.clone?.length === 0x10000
       ? {
-          label: 'Archive',
+          label: 'File archive',
           readAt: new Date(archive.manifest.capturedAt),
           raw: archive.sidecars['debug/wire.bin']!,
           decoded: archive.regions.clone,
@@ -66,11 +67,10 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
           spans: hashUv5rMiniDebugSpans(archive.regions.clone),
         }
       : undefined;
-  const allReads = [
-    ...reads,
-    ...legacyReads,
-    ...(offlineRead && !legacyReads.length ? [offlineRead] : []),
-  ];
+  const liveReads = reads.map((read) => ({ ...read, label: `Live ${read.label}` }));
+  const fileReads = [...legacyReads, ...(offlineRead && !legacyReads.length ? [offlineRead] : [])];
+  const allReads =
+    archive?.source === 'live-read' ? [...fileReads, ...liveReads] : [...liveReads, ...fileReads];
   const miniReport = archive && uv5rMiniArchiveDetails(archive)?.report;
   const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
   if (!descriptor)
@@ -104,6 +104,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
         };
       }
       setLegacyReads(imported);
+      setPreferredLive(null);
       setArchive(next);
       setError(undefined);
     } catch (err) {
@@ -116,12 +117,15 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
     controller.current = new AbortController();
     setError(undefined);
     try {
-      setArchive(
-        await descriptor.capture({
-          signal: controller.current.signal,
-          onProgress: (p) => setProgress(p.msg),
-        }),
-      );
+      const result = await descriptor.capture({
+        signal: controller.current.signal,
+        onProgress: (p) => setProgress(p.msg),
+      });
+      if (descriptor.slug === 'uv-5r-mini') {
+        const latest = uv5rMiniDebugReadStore.getSnapshot().reads.at(-1);
+        if (latest) setPreferredLive(`Live ${latest.label}`);
+      }
+      setArchive(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Radio read failed.');
     } finally {
@@ -264,29 +268,35 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 image. Unlisted bytes are not captured; coverage outside the listed ranges is
                 unknown.
               </Alert>
-              {descriptor.slug === 'uv-5r-mini' && reads.length > 0 && (
+              {descriptor.slug === 'uv-5r-mini' && allReads.length > 0 && (
                 <Stack>
                   <Text>
                     Reads in this tab:{' '}
-                    {reads
+                    {allReads
                       .map((read) => `${read.label} (${read.readAt.toLocaleString()})`)
                       .join(', ')}
                   </Text>
-                  <Text>
-                    {undownloaded ? `${undownloaded} reads not downloaded` : 'All reads downloaded'}
-                  </Text>
-                  <Button
-                    onClick={async () => {
-                      const result = await downloadZip(
-                        buildUv5rMiniReadsZip(reads),
-                        'uv5r-mini-reads.zip',
-                      );
-                      if (result.status !== 'failed')
-                        uv5rMiniDebugReadStore.markAllDownloaded(reads.length);
-                    }}
-                  >
-                    Download all reads
-                  </Button>
+                  {reads.length > 0 && (
+                    <>
+                      <Text>
+                        {undownloaded
+                          ? `${undownloaded} reads not downloaded`
+                          : 'All reads downloaded'}
+                      </Text>
+                      <Button
+                        onClick={async () => {
+                          const result = await downloadZip(
+                            buildUv5rMiniReadsZip(reads),
+                            'uv5r-mini-reads.zip',
+                          );
+                          if (result.status !== 'failed')
+                            uv5rMiniDebugReadStore.markAllDownloaded(reads.length);
+                        }}
+                      >
+                        Download all reads
+                      </Button>
+                    </>
+                  )}
                 </Stack>
               )}
               {archive && (
@@ -314,14 +324,14 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
           </Tabs.Panel>
           <Tabs.Panel value="compare" pt="md">
             {descriptor.slug === 'uv-5r-mini' ? (
-              <Uv5rMiniCompare reads={allReads} />
+              <Uv5rMiniCompare reads={allReads} preferredLive={preferredLive} />
             ) : (
               <CompareViewer archive={archive} modelId={descriptor.archiveModelId} />
             )}
           </Tabs.Panel>
           {descriptor.slug === 'uv-5r-mini' && (
             <Tabs.Panel value="calibration" pt="md">
-              <Uv5rMiniCalibrationSection reads={allReads} />
+              <Uv5rMiniCalibrationSection reads={allReads} preferredLive={preferredLive} />
             </Tabs.Panel>
           )}
           {(descriptor.slug === 'uv-5r-mini' ? ['Trace'] : ['Calibration', 'Trace']).map((tab) => (

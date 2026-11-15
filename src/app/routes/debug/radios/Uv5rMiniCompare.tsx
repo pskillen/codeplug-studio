@@ -12,9 +12,19 @@ import type { Uv5rMiniDebugRead } from '../uv5rMiniDebugReads.ts';
 import { openDebugArchive } from './captureArchive.ts';
 import { openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
 
-export function Uv5rMiniCompare({ reads }: { reads: readonly Uv5rMiniDebugRead[] }) {
+export function Uv5rMiniCompare({
+  reads,
+  preferredLive,
+}: {
+  reads: readonly Uv5rMiniDebugRead[];
+  preferredLive?: string | null;
+}) {
   const [first, setFirst] = useState<string | null>(null);
-  const [second, setSecond] = useState<string | null>(null);
+  const [selection, setSelection] = useState<{
+    label: string | null;
+    preferredLive?: string | null;
+  }>();
+  const second = selection?.preferredLive === preferredLive ? selection?.label : preferredLive;
   const [files, setFiles] = useState<readonly Uv5rMiniDebugRead[]>([]);
   const [error, setError] = useState<string>();
   const all = [...reads, ...files];
@@ -84,7 +94,12 @@ export function Uv5rMiniCompare({ reads }: { reads: readonly Uv5rMiniDebugRead[]
       {picker}
       {error && <Alert color="red">{error}</Alert>}
       <Select label="First read" value={a.label} onChange={setFirst} data={options} />
-      <Select label="Second read" value={b.label} onChange={setSecond} data={options} />
+      <Select
+        label="Second read"
+        value={b.label}
+        onChange={(label) => setSelection({ label, preferredLive })}
+        data={options}
+      />
       <Alert
         color={compare.identical ? 'green' : 'red'}
         title={compare.identical ? 'Identical compared spans' : 'Compared spans differ'}
