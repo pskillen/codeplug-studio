@@ -90,15 +90,27 @@ describe('archive viewer controls', () => {
     expect(screen.getByRole('columnheader', { name: 'Slot [unknown]' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Wire name [unknown]' })).toBeInTheDocument();
     expect(screen.getByText('Retained settings [unknown]')).toBeInTheDocument();
-    fireEvent.change(screen.getByRole('textbox', { name: 'Search channels' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search table' }), {
       target: { value: 'other' },
     });
-    expect(screen.queryByText('LOCAL')).not.toBeInTheDocument();
-    fireEvent.change(screen.getByRole('textbox', { name: 'Search channels' }), {
+    expect(screen.queryByRole('cell', { name: 'LOCAL [unknown]' })).not.toBeInTheDocument();
+    expect(screen.getByText('No channels match “other”.')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search table' }), {
       target: { value: 'local' },
     });
     expect(screen.getByRole('cell', { name: 'LOCAL [unknown]' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '7 [unknown]' })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search table' }), {
+      target: { value: '' },
+    });
+    expect(screen.queryAllByRole('cell', { name: 'empty [unknown]' })).toHaveLength(0);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Show empty slots' }));
+    expect(screen.getAllByRole('cell', { name: 'empty [unknown]' }).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Wire name [unknown]' }));
+    expect(screen.getByRole('columnheader', { name: 'Wire name [unknown]' })).toHaveAttribute(
+      'aria-sort',
+      'ascending',
+    );
   });
   it('renders labelled keyboard-reachable region and tabs at 375px with bounded bytes', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 });

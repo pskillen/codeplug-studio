@@ -2,11 +2,17 @@ import {
   decodeChannelRecord,
   isRt95ChannelRecordReadable,
 } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
-import { Alert, Checkbox, Select, Stack, Table, Text, TextInput, Title } from '@mantine/core';
+import { Alert, Checkbox, Stack, Text, Title } from '@mantine/core';
+import {
+  DataTable,
+  type DataTableColumn,
+  type DataTableSortState,
+} from '@app/components/v2/index.ts';
 import { useState } from 'react';
 import {
   decodeRt95DebugSlots,
   decodeRt95DebugSettings,
+  type Rt95DebugSlot,
 } from '@integrations/radio-io/radios/rt95/debugMemory.ts';
 import { RT95_MMD1_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import {
@@ -30,9 +36,73 @@ import {
 } from '@integrations/radio-io/radios/rt95/zoneKey.ts';
 import { rt95GuardEvidence, type DebugArchive } from './captureArchive.ts';
 
+type SlotRow = Rt95DebugSlot & { description: string };
+
+const columns: DataTableColumn<SlotRow>[] = [
+  {
+    key: 'slot',
+    header: 'Slot [unknown]',
+    sortable: true,
+    sortValue: (row) => row.slot,
+    render: (row) => `${row.slot} [unknown]`,
+  },
+  {
+    key: 'occupancy',
+    header: 'Occupancy [unknown]',
+    render: (row) => `${row.occupancy} [unknown]`,
+  },
+  {
+    key: 'name',
+    header: 'Wire name [unknown]',
+    sortable: true,
+    sortValue: (row) => row.name,
+    render: (row) => (
+      <>
+        {row.name || (row.occupancy === 'occupied' ? '(unnamed)' : '—')} [unknown]
+        {row.description && <Text>{row.description} [body]</Text>}
+      </>
+    ),
+  },
+  ...(
+    [
+      ['rx', 'RX'],
+      ['duplex', 'Duplex / offset'],
+      ['tx', 'TX'],
+      ['power', 'Power'],
+      ['width', 'Width'],
+      ['rxTone', 'RX tone'],
+      ['txTone', 'TX tone'],
+      ['scan', 'Scan'],
+      ['toneSquelch', 'Tone squelch'],
+      ['signalling', 'Optional signalling'],
+      ['dtmf', 'DTMF index'],
+      ['fiveTone', '5-Tone index'],
+    ] as const
+  ).map(([key, label]): DataTableColumn<SlotRow> => ({
+    key,
+    header: `${label} [unknown]`,
+    render: (row) => `${row.occupancy === 'occupied' ? row[key] : '—'} [unknown]`,
+  })),
+  {
+    key: 'record',
+    header: 'Record [unknown]',
+    render: (row) => (
+      <details>
+        <summary>Slot {row.slot} raw record [unknown]</summary>
+        <Text>
+          Unresolved flags and bytes; raw evidence [unknown]:{' '}
+          {row.raw
+            ? Array.from(row.raw, (b) => b.toString(16).padStart(2, '0')).join(' ')
+            : 'Unavailable'}
+        </Text>
+      </details>
+    ),
+  },
+];
+
 export function Rt95Memory({ archive }: { archive: DebugArchive }) {
   const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<string | null>('slot');
+  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
   const [showEmpty, setShowEmpty] = useState(false);
   const bytes = archive.regions[RT95_MMD1_REGION_ID];
   const guard = rt95GuardEvidence(archive);
@@ -76,17 +146,12 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
         : undefined;
     return { ...slot, description: description && 'text' in description ? description.text : '' };
   });
-  const shown = slots
-    .filter(
-      (slot) =>
-        (showEmpty || slot.occupancy !== 'empty') &&
-        `${slot.slot} ${slot.name} ${slot.description}`
-          .toLocaleLowerCase()
-          .includes(query.toLocaleLowerCase()),
-    )
-    .sort((a, b) =>
-      sort === 'name' ? a.name.localeCompare(b.name) || a.slot - b.slot : a.slot - b.slot,
-    );
+  const visibleSlots = slots.filter((slot) => showEmpty || slot.occupancy !== 'empty');
+  const shown = visibleSlots.filter((slot) =>
+    `${slot.slot} ${slot.name} ${slot.description}`
+      .toLocaleLowerCase()
+      .includes(query.toLocaleLowerCase()),
+  );
   const settings = decodeRt95DebugSettings(clone, cloneRegion?.address ?? 0);
   const keys = at(RT95_KEY_TABLE_ADDR, RT95_KEY_TABLE_LENGTH);
   const state =
@@ -96,95 +161,23 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
   return (
     <Stack>
       <Title order={4}>Clone channels [unknown]</Title>
-      <TextInput
-        label="Search channels"
-        value={query}
-        onChange={(event) => setQuery(event.currentTarget.value)}
-      />
-      <Select
-        label="Sort channels"
-        value={sort}
-        onChange={setSort}
-        allowDeselect={false}
-        data={[
-          { value: 'slot', label: 'Slot' },
-          { value: 'name', label: 'Name' },
-        ]}
-      />
       <Checkbox
         label="Show empty slots"
         checked={showEmpty}
         onChange={(event) => setShowEmpty(event.currentTarget.checked)}
       />
-      <Table.ScrollContainer minWidth={1600}>
-        <Table>
-          <Table.Thead>
-            <Table.Tr>
-              {[
-                'Slot',
-                'Occupancy',
-                'Wire name',
-                'RX',
-                'Duplex / offset',
-                'TX',
-                'Power',
-                'Width',
-                'RX tone',
-                'TX tone',
-                'Scan',
-                'Tone squelch',
-                'Optional signalling',
-                'DTMF index',
-                '5-Tone index',
-                'Record',
-              ].map((label) => (
-                <Table.Th key={label}>{label} [unknown]</Table.Th>
-              ))}
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {shown.map((slot) => (
-              <Table.Tr key={slot.slot}>
-                <Table.Td>{slot.slot} [unknown]</Table.Td>
-                <Table.Td>{slot.occupancy} [unknown]</Table.Td>
-                <Table.Td>
-                  {slot.name || (slot.occupancy === 'occupied' ? '(unnamed)' : '—')} [unknown]
-                  {slot.description && <Text> {slot.description} [body]</Text>}
-                </Table.Td>
-                {[
-                  slot.rx,
-                  slot.duplex,
-                  slot.tx,
-                  slot.power,
-                  slot.width,
-                  slot.rxTone,
-                  slot.txTone,
-                  slot.scan,
-                  slot.toneSquelch,
-                  slot.signalling,
-                  slot.dtmf,
-                  slot.fiveTone,
-                ].map((value, i) => (
-                  <Table.Td key={i}>
-                    {slot.occupancy === 'occupied' ? value : '—'} [unknown]
-                  </Table.Td>
-                ))}
-                <Table.Td>
-                  <details>
-                    <summary>Slot {slot.slot} raw record [unknown]</summary>
-                    <Text>
-                      Unresolved flags and bytes; raw evidence [unknown]:{' '}
-                      {slot.raw
-                        ? Array.from(slot.raw, (b) => b.toString(16).padStart(2, '0')).join(' ')
-                        : 'Unavailable'}
-                    </Text>
-                  </details>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+      <DataTable
+        caption="RT95 clone channels"
+        columns={columns}
+        rows={shown}
+        getRowId={(slot) => String(slot.slot)}
+        search={{ value: query, onChange: setQuery, placeholder: 'Search channels' }}
+        sort={sort}
+        onSortChange={setSort}
+        totalRowCount={visibleSlots.length}
+        emptyMessage="No channel slots to show."
+        filteredEmptyMessage={`No channels match “${query.trim()}”.`}
+      />
       <Title order={4}>Retained settings [unknown]</Title>
       {settings.map((setting) => (
         <Text key={setting.label}>
