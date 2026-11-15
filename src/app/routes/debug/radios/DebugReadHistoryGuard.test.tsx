@@ -101,3 +101,51 @@ it.each([
   fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
   expect(await screen.findByText('Other page')).toBeInTheDocument();
 });
+
+it('protects DM-32 reads on Back, Stay, Leave and reload, but not other profiles', async () => {
+  const archive = exampleArchive();
+  dm32.add({ ...archive, manifest: { ...archive.manifest, radioModelId: 'DM-32UV' } });
+  const router = createMemoryRouter(
+    [
+      {
+        element: (
+          <>
+            <DebugReadHistoryGuard />
+            <Outlet />
+          </>
+        ),
+        children: [
+          {
+            path: '/debug/radios/dm-32uv',
+            element: <Link to="/debug/radios/rt95">Rt95</Link>,
+          },
+          { path: '/debug/radios/rt95', element: <Link to="/other">Other</Link> },
+          { path: '/other', element: <span>Other page</span> },
+        ],
+      },
+    ],
+    { initialEntries: ['/other', '/debug/radios/dm-32uv'], initialIndex: 1 },
+  );
+  render(
+    <MantineProvider>
+      <RouterProvider router={router} />
+    </MantineProvider>,
+  );
+  await act(() => router.navigate(-1));
+  expect(await screen.findByText('Leave with undownloaded reads?')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Stay' }));
+  expect(router.state.location.pathname).toBe('/debug/radios/dm-32uv');
+  fireEvent.click(screen.getByRole('link', { name: 'Rt95' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Leave' }));
+  // The RT95 page has no undownloaded reads of its own: its links are not blocked.
+  fireEvent.click(await screen.findByRole('link', { name: 'Other' }));
+  expect(await screen.findByText('Other page')).toBeInTheDocument();
+  const event = new Event('beforeunload', { cancelable: true });
+  window.dispatchEvent(event);
+  expect(event.defaultPrevented).toBe(true);
+  expect(dm32.getSnapshot().undownloaded).toBe(1);
+  act(() => dm32.markDownloaded(dm32.getSnapshot().entries.map((e) => e.id)));
+  const quiet = new Event('beforeunload', { cancelable: true });
+  window.dispatchEvent(quiet);
+  expect(quiet.defaultPrevented).toBe(false);
+});
