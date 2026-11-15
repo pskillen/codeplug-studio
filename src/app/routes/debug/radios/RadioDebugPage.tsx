@@ -34,7 +34,6 @@ import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWakeLock.ts';
 import { capabilityColor, radioDebugDescriptors } from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
-import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Memory } from './AtD890Memory.tsx';
 import { Coverage } from './Coverage.tsx';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
@@ -60,7 +59,7 @@ export default function RadioDebugPage() {
 function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const { reads } = useUv5rMiniDebugReads();
   const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
-  const historyEnabled = radio === 'uv-5r-mini' || radio === 'rt95';
+  const historyEnabled = radio === 'uv-5r-mini' || radio === 'rt95' || radio === 'at-d890uv';
   const store = getDebugReadHistory(
     descriptor ?? { slug: 'unknown', archiveModelId: 'UV-5R Mini' },
   );
@@ -500,7 +499,13 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
             <HexViewer key={archive?.manifest.capturedAt} archive={archive} />
           </Tabs.Panel>
           <Tabs.Panel value="compare" pt="md">
-            {descriptor.slug === 'rt95' && (
+            {descriptor.slug === 'at-d890uv' && (
+              <Alert title="Responding unit unknown">
+                These byte comparisons do not establish which physical unit responded. Firmware may
+                divert reads; equal bytes and repeated-read agreement do not prove unit identity.
+              </Alert>
+            )}
+            {(descriptor.slug === 'rt95' || descriptor.slug === 'at-d890uv') && (
               <Select
                 label="Compare with"
                 clearable
@@ -543,15 +548,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               />
             </Tabs.Panel>
           )}
-          {descriptor.slug === 'at-d890uv' && (
-            <Tabs.Panel value="calibration" pt="md">
-              <AtD890Calibration
-                key={archive ? archive.manifest.capturedAt + archive.zipBytes.length : 'none'}
-                archive={archive}
-              />
-            </Tabs.Panel>
-          )}
-          {descriptor.slug === 'rt95' && (
+          {(descriptor.slug === 'rt95' || descriptor.slug === 'at-d890uv') && (
             <Tabs.Panel value="calibration" pt="md">
               <Stack>
                 <Select

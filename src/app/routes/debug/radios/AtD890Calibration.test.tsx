@@ -207,3 +207,31 @@ describe('AtD890Calibration', () => {
     expect(screen.getByText('2500')).toBeInTheDocument();
   });
 });
+
+it('overlays independently selected tune A captures and refuses tune B as a substitute', () => {
+  const primary = archive(
+    [[region('vital-tune-a', TUNE_A, 0x1000), tune(0x1000)]],
+    'AT-D890UV',
+    '2026-01-01',
+  );
+  const overlay = archive(
+    [[region('vital-tune-a', TUNE_A, 0x1000), tune(0x1000, 1900)]],
+    'AT-D890UV',
+    '2026-01-02',
+  );
+  const { rerender } = render(
+    <MantineProvider>
+      <AtD890Calibration archive={primary} overlayArchive={overlay} />
+    </MantineProvider>,
+  );
+  expect(screen.getAllByText(/Selected · 2026-01-01/).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/Overlay · 2026-01-02/).length).toBeGreaterThan(0);
+  expect(document.querySelector('line[stroke-dasharray="4 3"]')).toBeTruthy();
+  const tuneB = archive([[region('vital-tune-b', 0x04f40000, 32), tune(32)]]);
+  rerender(
+    <MantineProvider>
+      <AtD890Calibration archive={primary} overlayArchive={tuneB} />
+    </MantineProvider>,
+  );
+  expect(screen.getByText(/tune B is never substituted/)).toBeInTheDocument();
+});

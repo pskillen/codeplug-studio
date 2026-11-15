@@ -111,3 +111,5 @@ Read from radio-backup archives (`regions/<id>.bin` inside the ZIP) or the in-ta
 - [backup-restore.md](backup-restore.md): vital units and the tune-B diversion
 - [band-code.md](band-code.md): LocalInfo band code
 - [Radio debug feature hub](../../../../features/radio-debug/README.md)
+
+The debug calibration viewer can overlay a second retained capture: the selected capture is solid and the overlay dashed, with matching colours and missing samples left as gaps. Each side must independently contain a valid tune-A region; tune-B is never substituted. Capture timestamps label the chart series. Retaining captures and chart data consumes tab memory.
