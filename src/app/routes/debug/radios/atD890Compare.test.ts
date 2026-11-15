@@ -198,9 +198,29 @@ describe('D890 responding-unit verdicts', () => {
       vitalArchive({ tuneA: [1, 2, 3, 4, 5, 6] }),
       vitalArchive({ tuneA: [1, 9, 9, 4, 5, 7] }),
     )!;
-    expect(spans[0]!.runs).toEqual([
-      { start: 0x04f00001, length: 2, before: [2, 3], after: [9, 9] },
-      { start: 0x04f00005, length: 1, before: [6], after: [7] },
+    expect(
+      spans[0]!.runs!.map((r) => [r.start, r.length, Array.from(r.before), Array.from(r.after)]),
+    ).toEqual([
+      [0x04f00001, 2, [2, 3], [9, 9]],
+      [0x04f00005, 1, [6], [7]],
+    ]);
+  });
+  it('keeps every byte of a long changed run, not a preview', () => {
+    const spans = compareAtD890(
+      vitalArchive({ tuneA: Array(100).fill(1) }),
+      vitalArchive({ tuneA: Array(100).fill(2) }),
+    )!;
+    const run = spans[0]!.runs![0]!;
+    expect(run.length).toBe(100);
+    expect(run.before).toHaveLength(100);
+    expect(Array.from(run.after).every((b) => b === 2)).toBe(true);
+  });
+  it('leaves sparse ranges outside the real memory map unclassified and uncompared', () => {
+    const outside = 0x5000000 + 0x100;
+    const spans = compareAtD890(archive([[outside, [1, 2]]]), archive([[outside, [1, 2]]]))!;
+    expect(spans.map((s) => [s.space, s.changed, s.runs])).toEqual([
+      ['unclassified', undefined, undefined],
+      ['unclassified', undefined, undefined],
     ]);
   });
   it('refuses hostile claims: unknown unit names and sparse unit claims', () => {
