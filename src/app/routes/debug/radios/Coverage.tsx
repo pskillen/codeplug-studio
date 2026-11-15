@@ -8,6 +8,8 @@ import {
   hashUv5rMiniDebugSpans,
   UV5R_MINI_FULL_READ_SIZE,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
+import { classifyDm32DebugCoverage } from '@integrations/radio-io/radios/dm32uv/debugCoverage.ts';
+import { classifyDm32Metadata } from '@integrations/radio-io/radios/dm32uv/memory.ts';
 import { Card, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import {
@@ -60,6 +62,10 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
     archive.manifest.radioModelId === 'AT-D890UV'
       ? classifyAtD890DebugCoverage(archive.manifest.regions)
       : undefined;
+  const dm32 =
+    archive.manifest.radioModelId === 'DM-32UV'
+      ? classifyDm32DebugCoverage(archive.manifest, archive.regions, archive.sidecars)
+      : undefined;
   const rt95 = rt95ArchiveDetails(archive);
   const mini = uv5rMiniArchiveDetails(archive);
   const clone =
@@ -93,7 +99,13 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
                     : d890.unclassified.some((r) => r.id === region.id)
                       ? 'Unclassified address space'
                       : 'D890 virtual map'
-                : (regionIdentity(archive, region.id)?.space ?? 'Unclassified address space')}
+                : dm32
+                  ? dm32.factory?.id === region.id
+                    ? 'Factory sector · separate address space'
+                    : dm32.windowRegions.some((r) => r.id === region.id)
+                      ? 'Configuration window'
+                      : `Unclassified address space · ${dm32.unclassified.find((u) => u.region.id === region.id)?.reason ?? 'unknown'}`
+                  : (regionIdentity(archive, region.id)?.space ?? 'Unclassified address space')}
             </Text>
             <Text>
               {region.label} · {mini && region.id.startsWith('mem-') ? 'Packed offset' : 'Start'}{' '}
@@ -142,6 +154,48 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
               entries remain separate above.
             </Text>
           </>
+        ) : dm32 ? (
+          <>
+            <Text fw={600}>Configuration window · 4 KiB blocks</Text>
+            {dm32.window ? (
+              <>
+                <Text size="sm">
+                  {formatAddress(dm32.window.start)}–{formatAddress(dm32.window.end + 0xfff)} from
+                  the archive&apos;s stated window ·{' '}
+                  {dm32.blocks.filter((b) => b.status === 'captured').length} of{' '}
+                  {dm32.blocks.length} blocks captured
+                  {dm32.discoveryRecorded
+                    ? ''
+                    : ' · this archive does not record which blocks the radio reported'}
+                </Text>
+                {dm32.blocks.map((block) => (
+                  <Text key={block.address} size="sm">
+                    {formatAddress(block.address)} · {block.status}
+                    {block.tag !== undefined &&
+                      ` · tag 0x${block.tag.toString(16).toUpperCase().padStart(2, '0')} (${classifyDm32Metadata(block.tag)})`}
+                    {block.calibration === 'live' && ' · live calibration page'}
+                    {block.calibration === 'duplicate' && ' · duplicate calibration page, not live'}
+                  </Text>
+                ))}
+              </>
+            ) : (
+              <Text size="sm">
+                The archive does not state a valid configuration window; its entries stay
+                unclassified.
+              </Text>
+            )}
+            <Text fw={600}>Factory sector · program flash, separate address space</Text>
+            <Text size="sm">
+              {dm32.factory
+                ? `${formatAddress(dm32.factory.address)}–${formatAddress(dm32.factory.address + dm32.factory.byteLength - 1)} · Captured (both reads matched)`
+                : 'Not captured'}
+            </Text>
+            <Text size="sm">
+              The capture reads only the blocks the product Read reads. Blocks the radio reported
+              but that were not read, and blocks it did not report, are not captured. This is not a
+              flash or firmware image; other address spaces are unknown.
+            </Text>
+          </>
         ) : mini ? (
           <>
             {clone && (
@@ -188,6 +242,7 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
         )}
         {!mini &&
           !d890 &&
+          !dm32 &&
           archiveGaps(archive.manifest.regions).map((gap) => (
             <Text key={gap.start} c="dimmed">
               {formatAddress(gap.start)}–{formatAddress(gap.end)} · Not listed (address space and

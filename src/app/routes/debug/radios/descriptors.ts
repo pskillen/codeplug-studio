@@ -1,4 +1,5 @@
 import { captureAtD890 } from './atD890Capture.ts';
+import { captureDm32 } from './dm32Capture.ts';
 import { captureUv5rMini } from './uv5rMiniCapture.ts';
 import { captureRt95 } from './rt95Capture.ts';
 import type { DebugArchive } from './captureArchive.ts';
@@ -48,6 +49,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-32uv',
+    capture: captureDm32,
     model: 'DM-32UV',
     archiveModelId: 'DM-32UV',
     family: 'Baofeng · stock / MM9PDY',
