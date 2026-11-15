@@ -1,4 +1,12 @@
 import {
+  RT95_CALIBRATION_START,
+  RT95_CALIBRATION_LENGTH,
+} from '@core/radios/retevis/rt95/calibration.ts';
+import {
+  RT95_CALIBRATION_REGION_ID,
+  RT95_CALIBRATION_REGION_PATH,
+} from '@integrations/radio-io/radios/rt95/debugCapture.ts';
+import {
   decodeUv5rMiniFullRead,
   UV5R_MINI_DEBUG_FRAMES,
   UV5R_MINI_DEBUG_LOG_SECTORS,
@@ -36,21 +44,23 @@ export function openDebugArchive(bytes: Uint8Array, modelId: string): DebugArchi
   if (!expected?.modelIds.includes(parsed.manifest.radioModelId)) {
     throw new Error(`Archive model ${parsed.manifest.radioModelId} does not match this profile.`);
   }
-  const calibration = parsed.manifest.regions.find((region) => region.id === 'rt95-calibration');
+  const calibration = parsed.manifest.regions.find(
+    (region) => region.id === RT95_CALIBRATION_REGION_ID,
+  );
   if (
     parsed.manifest.regions.some(
       (region) =>
-        region.path === 'regions/rt95-calibration.bin' && region.id !== 'rt95-calibration',
+        region.path === RT95_CALIBRATION_REGION_PATH && region.id !== RT95_CALIBRATION_REGION_ID,
     )
   )
     throw new Error('Invalid RT95 calibration region.');
   if (
     calibration &&
     (parsed.manifest.radioModelId !== RT95_MODEL_ID ||
-      calibration.address !== 0x3b00 ||
-      calibration.byteLength > 0x4c0 ||
+      calibration.address !== RT95_CALIBRATION_START ||
+      calibration.byteLength > RT95_CALIBRATION_LENGTH ||
       calibration.restoreRole !== 'inspect-only' ||
-      calibration.path !== 'regions/rt95-calibration.bin')
+      calibration.path !== RT95_CALIBRATION_REGION_PATH)
   ) {
     throw new Error('Invalid RT95 calibration region.');
   }

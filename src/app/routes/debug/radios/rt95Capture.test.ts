@@ -1,3 +1,11 @@
+import {
+  RT95_CALIBRATION_START,
+  RT95_CALIBRATION_LENGTH,
+} from '@core/radios/retevis/rt95/calibration.ts';
+import {
+  RT95_CALIBRATION_REGION_ID,
+  RT95_CALIBRATION_REGION_PATH,
+} from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import { describe, expect, it, vi } from 'vitest';
 import { createFakeRt95Pipe } from '@integrations/radio-io/radios/rt95/__fixtures__/fakeRt95Pipe.ts';
 import { setRt95EndAtForTests } from '@integrations/radio-io/radios/rt95/protocol.ts';
@@ -16,7 +24,12 @@ describe('RT95 debug capture', () => {
     expect(file.regions).toEqual(live.regions);
     expect(rt95ArchiveDetails(file)?.missing).toEqual([]);
     expect(rt95ArchiveDetails(file)?.summary).toBeTruthy();
-    expect(file.regions['rt95-calibration']).toEqual(pipe.eeprom.slice(0x3b00, 0x3fc0));
+    expect(file.manifest.regions.find((r) => r.id === RT95_CALIBRATION_REGION_ID)).toMatchObject({
+      address: RT95_CALIBRATION_START,
+      byteLength: RT95_CALIBRATION_LENGTH,
+      path: RT95_CALIBRATION_REGION_PATH,
+    });
+    expect(file.regions[RT95_CALIBRATION_REGION_ID]).toEqual(pipe.eeprom.slice(0x3b00, 0x3fc0));
     expect(file.sidecars['debug/ident.bin']).toHaveLength(16);
     expect(pipe.log.filter((e) => e.op === 'R' && e.addr! >= 0x3b00).map((e) => e.addr)).toEqual(
       Array.from({ length: 76 }, (_, i) => 0x3b00 + i * 16),

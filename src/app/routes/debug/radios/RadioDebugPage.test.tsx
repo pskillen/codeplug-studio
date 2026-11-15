@@ -128,6 +128,8 @@ function rt95ArchiveFile() {
       app: { buildEnv: 'test', buildVersion: 'test' },
       radioModelId: 'retevis-rt95',
       descriptorLabel: 'test',
+      serial: 'SYNTHETIC-SERIAL-123456789',
+      firmware: 'archive-version',
       coverage: 'partial',
       imageByteLength: 4,
       regions: [
@@ -286,6 +288,15 @@ it('shows RT95 head and unknown provenance and has no write or restore buttons o
     if (name === 'Overview') {
       expect(screen.getByText('PC ident [head]').parentElement).toHaveTextContent('12 34 ab cd');
       expect(screen.getByText('Clone channels/settings [unknown]')).toBeInTheDocument();
+      expect(screen.getByText('Expected family')).toBeInTheDocument();
+      expect(screen.getByText('Serial · archive').parentElement).toHaveTextContent(
+        'SYNTHETIC-SERIAL-123456789',
+      );
+      expect(screen.getByText('Firmware · archive').parentElement).toHaveTextContent(
+        'archive-version',
+      );
+      expect(screen.getByText('Evidence').parentElement).toHaveTextContent('Archive manifest');
+      expect(screen.getByText('Connection').parentElement).toHaveTextContent('Not connected');
     }
   }
 });

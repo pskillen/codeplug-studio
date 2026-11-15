@@ -1,3 +1,11 @@
+import {
+  RT95_CALIBRATION_START,
+  RT95_CALIBRATION_LENGTH,
+} from '@core/radios/retevis/rt95/calibration.ts';
+import {
+  RT95_CALIBRATION_REGION_ID,
+  RT95_CALIBRATION_REGION_PATH,
+} from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import type { AtD890MemberStatus } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
 import { RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
 import type { DebugArchive } from './captureArchive.ts';
@@ -24,13 +32,13 @@ export function hexRows(bytes: Uint8Array, address: number, page: number) {
 export function regionIdentity(archive: DebugArchive, id: string) {
   if (archive.manifest.radioModelId === RT95_MODEL_ID && id === 'programming-image')
     return { space: 'RT95 programming image', representation: 'programming image bytes' };
-  if (archive.manifest.radioModelId === RT95_MODEL_ID && id === 'rt95-calibration') {
+  if (archive.manifest.radioModelId === RT95_MODEL_ID && id === RT95_CALIBRATION_REGION_ID) {
     const region = archive.manifest.regions.find((r) => r.id === id);
     if (
-      region?.address === 0x3b00 &&
-      region.byteLength <= 0x4c0 &&
+      region?.address === RT95_CALIBRATION_START &&
+      region.byteLength <= RT95_CALIBRATION_LENGTH &&
       region.restoreRole === 'inspect-only' &&
-      region.path === 'regions/rt95-calibration.bin' &&
+      region.path === RT95_CALIBRATION_REGION_PATH &&
       archive.regions[id]?.length === region.byteLength
     )
       return { space: 'RT95 main-body EEPROM via head', representation: 'EEPROM bytes' };
