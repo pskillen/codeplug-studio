@@ -181,6 +181,22 @@ describe('Rt95Protocol', () => {
     expect(rec.stages).toEqual(['Pre-write read', 'Upload']);
   });
 
+  it('connect installs the transport guard on the session pipe', async () => {
+    const pipe = createFakeRt95Pipe();
+    const radio = new Rt95Protocol();
+    await radio.connect(pipe);
+    const session = (radio as unknown as { pipe: BytePipe }).pipe;
+    const before = pipe.writes.length;
+    // An unknown factory command, and a write outside the guarded write path.
+    await expect(session.write(Uint8Array.of(0xa8, 0, 0, 16))).rejects.toThrow(
+      /refused|unsupported/i,
+    );
+    const frame = new Uint8Array(22);
+    frame.set([0x57, 0x50, 0x00, 16]);
+    await expect(session.write(frame)).rejects.toThrow(/refused|outside/i);
+    expect(pipe.writes).toHaveLength(before);
+  });
+
   it('upload without settings patches matches the pre-pause image bytes written', async () => {
     const eeprom = buildFakeRt95Eeprom();
     eeprom[0x3200] = 0x55;
