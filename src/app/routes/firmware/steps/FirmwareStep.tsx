@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
 import { loadedLayouts } from '@core/firmware/releases/layouts.ts';
-import { publishedReleaseSummary } from '@core/firmware/releases/publishedSource.ts';
+import {
+  publishedReleaseSummary,
+  releasesForBase,
+} from '@core/firmware/releases/publishedSource.ts';
 import {
   loadedFirmwarePatchTitle,
   releaseSupportsLine,
@@ -31,7 +34,9 @@ import {
   loadChosenPatch,
 } from '../../../services/firmwareFlash.ts';
 import classes from '../FirmwareFlasherPage.module.css';
+import { radioCheckAnswer } from '../radioCheck.ts';
 import ReleaseNotesDisclosure from '../ReleaseNotesDisclosure.tsx';
+import { NO_RELEASE_FOR_RADIO_FIRMWARE, VARIANT_BEHIND } from '../variantCopy.ts';
 import DeveloperOnly from './DeveloperOnly.tsx';
 import LabeledCheck from './LabeledCheck.tsx';
 import { shortHash, type WizardStepProps } from './stepTypes.ts';
@@ -100,7 +105,20 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
   }, [radioId, state.includeRc, listKey, attempt]);
 
   const current = releases?.key === listKey ? releases : null;
-  const list = current ? current.list : null;
+  // A radio with a check was identified on "Your radio": only the releases built on its own stock base are offered,
+  // by base and version, never the same version on another base (D133).
+  const radioBase = state.radioCheck
+    ? radioCheckAnswer(state, state.radioCheck).radioCodeBase
+    : undefined;
+  const forRadio = current ? releasesForBase(current.list, radioBase) : null;
+  const list = forRadio ? forRadio.forBase : null;
+  const radioStock =
+    radioBase === undefined
+      ? undefined
+      : stockVariants(updater.stock).find((v) => v.baseName === radioBase)?.version;
+  const toStockRows = (current?.toStock ?? []).filter(
+    (row) => radioBase === undefined || row.base === radioBase,
+  );
   const { choice } = state;
 
   async function chooseRelease(summary: FirmwareReleaseSummary) {
@@ -237,7 +255,9 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
             ) : null}
             {list && list.length === 0 && !current?.error ? (
               <p className={classes.muted}>
-                No firmware release is published for the {updater.label} yet.{' '}
+                {radioStock
+                  ? NO_RELEASE_FOR_RADIO_FIRMWARE(updater.label, radioStock)
+                  : `No firmware release is published for the ${updater.label} yet.`}{' '}
                 {updater.stock.stockFlashOffered === false
                   ? 'Use a patch file from disk, under Advanced below.'
                   : 'You can flash stock firmware, or use a patch file from disk under Advanced below.'}
@@ -270,6 +290,15 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
                 </div>
               );
             })}
+            {forRadio?.newerElsewhere && radioStock ? (
+              <p className={classes.muted}>
+                {VARIANT_BEHIND(
+                  forRadio.newerElsewhere.title,
+                  forRadio.newerElsewhere.supports,
+                  radioStock,
+                )}
+              </p>
+            ) : null}
             {updater.stock.stockFlashOffered !== false && (
               <div
                 className={`${classes.card} ${choice?.kind === 'stock' ? classes.cardSelected : ''}`}
@@ -294,7 +323,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
               >
                 <span className={classes.cardTitle}>Back to stock</span>
                 <span className={classes.cardMeta}>{stockReturn.help}</span>
-                {current?.toStock.map((row) => {
+                {toStockRows.map((row) => {
                   const variant = stockVariants(updater.stock).find((v) => v.baseName === row.base);
                   if (!variant) return null;
                   const selected =
@@ -354,7 +383,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
               }
               hint={
                 releaseLayouts
-                  ? "A release has a file for each radio firmware it supports. Pick them all: Studio uses the one for your radio's firmware. One file works too."
+                  ? "Pick the file for your radio's firmware. Each radio firmware has its own release file; an older release's files for both may be picked together, and Studio uses the one for your radio."
                   : undefined
               }
               multiple={releaseLayouts ? true : undefined}

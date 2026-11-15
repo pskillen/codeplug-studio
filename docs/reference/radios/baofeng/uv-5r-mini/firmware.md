@@ -44,8 +44,8 @@ The patch's `stock` hashes decide which file is the stock, never a user choice, 
 base whose file hashes to it. The descriptor carries `nrf-v0.27` (the stock of the MM9PDY firmware's 1.0.0 release)
 as its primary version, so the wizard names it first, and `nrfb-v0.04` as `alsoAccepts`.
 
-**One stock per base.** A radio's code base never changes, so a release's `L1` file is built on `nrfb-v0.04` and its
-`L2` file on `nrf-v0.27`. The descriptor sets `severalStocks`: the Stock firmware step takes either file or both at
+**One stock per base.** A radio's code base never changes, so a file for `L1` radios is built on `nrfb-v0.04` and one
+for `L2` radios on `nrf-v0.27`. The descriptor sets `severalStocks`: the Stock firmware step takes either file or both at
 once, each verified against its own pin (`VerifiedStockFirmware.others` holds the second). Prepare builds each patch
 on the stock its own `base` names (`verifiedStockForBase`), so a retry's same-suffix file (see Retry partner below)
 is built on its own stock, not the first file's. A file whose base wasn't supplied is refused before anything is
@@ -226,11 +226,16 @@ base. Nothing was sent." With a report, its suffix and Firmware strings decide t
 layout does. There is
 no override in Studio.
 
-**One file per layout.** A release ships an `L1` file built on v0.04 and an `L2` file built on v0.27, with build names
-`mm9pdy-L1-<version>` and `mm9pdy-L2-<version>`; a release may ship only one of them. The release index lists them as
-rows of one version, each with its `layout`
-([releases](../../../../features/firmware-flashing/releases.md#uv-5r-mini-rows-one-per-flash-layout)), and the
-patch-file dropzone takes both files at once. Prepare picks the file for the radio's layout and base (`pickPatchForLayout`).
+**One release per base (D133).** Each stock base is its own variant with its own SemVer line: a release file on
+`nrfb-v0.04` is built for `L1` radios and one on `nrf-v0.27` for `L2` radios. New builds are named
+`<stock version>-<suffix>-<semver>` (`v0.04-NRFB-1.0.0`, `v0.27-NRF-1.0.1-rc.2`; RCs up to `rc.9`, 21 characters on
+the radio). The release index lists one row per base and version, each with its `base` and `layout`
+([releases](../../../../features/firmware-flashing/releases.md#uv-5r-mini-rows-one-per-stock-base-and-version)), and
+Studio picks by base and version, never version alone: the **Your radio** step finds the radio's base first, and
+Firmware lists only that base's releases. A file's layout comes from its verified base (the base table below, and the
+row's `layout`); the name is only a cross-check (`buildNameLayout`, with the prefixes in `stockBases.ts`). Legacy
+names, `mm9pdy-L1-<version>` and `mm9pdy-L2-<version>`, still read, and the shipped `mm9pdy-L2-1.0.0` is
+v0.27-NRF 1.0.0. Prepare picks the file for the radio's layout and base (`pickPatchForLayout`).
 A release with no file for the radio's base stops Prepare before anything is built: "Not available in this release:
 there is no MM9PDY build for this radio (nrfb-v0.04) yet. This release has a file only for nrf-v0.27." A release with
 the radio's base but not its layout says so without naming a layout: "Not available in this release: this radio runs
@@ -238,8 +243,9 @@ nrf-v0.27, but its flash is laid out differently from the radios this release's 
 file can't be installed on it. Use a release that has a file for this radio." With
 [developer mode](../../../../features/developer-mode/README.md) on, Prepare adds the radio's layout ("Flash layout:
 L1."). `V4` (`mm9pdy-V4-…`) is
-retired: never a release row, and refused from disk. The build-name rule is `uv5rMiniLayoutFromBuildName` in
-`src/core/radios/baofeng/uv-5r-mini/firmware.ts`.
+retired: never a release row, and refused from disk. The legacy build-name rule is `uv5rMiniLayoutFromBuildName` in
+`src/core/radios/baofeng/uv-5r-mini/firmware.ts`; the variant prefixes and their layouts are
+`uv5rMiniBaseFromBuildName` and `uv5rMiniLayoutOfBase` in `stockBases.ts`.
 
 ### The radio report
 
@@ -289,6 +295,9 @@ What Studio concludes (`decodeUv5rMiniRadioReport`, then `uv5rMiniLayoutFromRepo
 `V1.7`) gets "Studio hasn't been proven on this radio's Hardware version; nothing was sent.", and a suffix and Firmware
 pair with no base gets "There is no MM9PDY build for this radio (NRFB V0.27) yet; nothing was sent." `NRF` / `V0.27`
 is `nrf-v0.27` and `NRFB` / `V0.04` is `nrfb-v0.04`. Bit 0 never picks the base: it is only the cross-check above.
+A build name in the variant form (`v0.27-NRF-…`, D133) names a base by its prefix: it must be the strings' base, and a
+prefix that is no known base, or another base's, is refused: "…doesn't read right: its build name names other radio
+firmware than its suffix and Firmware strings…". A legacy name (`mm9pdy-L2-…`) or none says nothing about the base.
 
 With a report, Studio asks no question. The build name, the three strings (`Suffix:`, `Firmware:`, `Hardware:`), the
 code base (`Code base: nrf-v0.27`) and `rf0` (hex) are shown as information; nothing gates on `rf0`. The layout is
@@ -299,8 +308,8 @@ file on both, and offers nothing for a combination with no file, never the neare
 `vm_start` is shown too, and the layout is still decided on the pair. The build name decides
 [Already installed](#already-installed).
 
-**In the wizard.** The **Your radio** step, after Firmware and before Stock firmware, starts with **Read the radio**,
-so an unsupported or unknown Mini stops before any file is fetched: the radio switched on normally (not in update mode), the
+**In the wizard.** The **Your radio** step, after Radio and before Firmware, starts with **Read the radio**,
+so an unsupported or unknown Mini stops before any release or file is fetched: the radio switched on normally (not in update mode), the
 programming cable in, and a fresh pick of its port. Studio opens the clone link exactly as the codeplug session does:
 115200 baud, DTR and RTS raised after the open, and the handshake's own settle. That is the normal-mode line handling
 proven on the Mini's cable without keying the radio. It then runs the ordinary clone handshake (ident, then the read

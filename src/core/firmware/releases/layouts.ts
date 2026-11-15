@@ -4,6 +4,8 @@
  * (`releaseLayouts`). See docs/features/firmware-flashing/releases.md.
  */
 import { FirmwareError } from '../errors.ts';
+import type { FirmwarePatchDescription } from '../patch/types.ts';
+import { stockVariants } from '../stockVariants.ts';
 import type { StockFirmwareDescriptor } from '../types.ts';
 import type { LoadedFirmwarePatch } from './types.ts';
 
@@ -32,6 +34,61 @@ export function layoutFromBuildName(
     throw new FirmwareError('patch-wrong-layout', NOT_A_RELEASE_LAYOUT(descriptor, buildName));
   }
   return tag;
+}
+
+/** The refusal for a file whose variant-form build name, base and pinned stock don't name one stock base. */
+export const NOT_ONE_VARIANT = (descriptor: StockFirmwareDescriptor, buildName: string): string =>
+  `${buildName} doesn't match the ${descriptor.label} firmware it is built on, so Studio can't tell which radios it is for.`;
+
+/** A release version in a build name: X.Y.Z or X.Y.Z-rc.N, N from 1 to 9 (the radio's 21-character name, D133). */
+const RELEASE_VERSION = /^\d+\.\d+\.\d+(-rc\.[1-9])?$/;
+const LOOKS_LIKE_VERSION = /^\d+\.\d+\.\d+(-rc\.\d+)?$/;
+
+/**
+ * The layout a patch's build name leads to, for a radio with release layouts; undefined when it has none.
+ *
+ * - A name in a stock base's variant form (UV-5R Mini `v0.27-NRF-1.0.1`) is only a claim: the patch's own `base` must
+ *   be that base, the base must be one of the radio's pinned stocks, and the patch must be built on exactly that
+ *   stock's bytes. Then the layout is the base's (`layoutOfBase`), never read from the name. Where the rest of the name
+ *   is a release version it must be the patch's version, and an RC above 9 is refused (no such release can exist).
+ * - A legacy name (`mm9pdy-L2-…`) gives its layout tag, as before; a test-only tag (`V4`) is refused.
+ *
+ * Throws FirmwareError('patch-wrong-layout') on any disagreement, or for a variant-form name whose prefix is no base.
+ */
+export function buildNameLayout(
+  descriptor: StockFirmwareDescriptor,
+  description: Pick<FirmwarePatchDescription, 'buildName' | 'base' | 'version' | 'stock'>,
+): string | undefined {
+  const rl = descriptor.releaseLayouts;
+  const { buildName } = description;
+  if (!rl || buildName === undefined) return undefined;
+  const named = rl.baseFromBuildName?.(buildName);
+  if (named === undefined) return layoutFromBuildName(descriptor, buildName);
+  if (named === null) {
+    throw new FirmwareError('patch-wrong-layout', NOT_A_RELEASE_LAYOUT(descriptor, buildName));
+  }
+  const fail = () =>
+    new FirmwareError('patch-wrong-layout', NOT_ONE_VARIANT(descriptor, buildName));
+  if (description.base !== named.base) throw fail();
+  const variant = stockVariants(descriptor).find((v) => v.baseName === named.base);
+  if (!variant) throw fail();
+  const roles = variant.members.map((m) => m.role).sort();
+  if (Object.keys(description.stock).sort().join() !== roles.join()) throw fail();
+  if (
+    variant.members.some(
+      (m) =>
+        description.stock[m.role]?.sha256 !== m.sha256 ||
+        description.stock[m.role]?.size !== m.size,
+    )
+  ) {
+    throw fail();
+  }
+  if (LOOKS_LIKE_VERSION.test(named.rest)) {
+    if (!RELEASE_VERSION.test(named.rest) || named.rest !== description.version) throw fail();
+  }
+  const layout = rl.layoutOfBase?.(named.base);
+  if (layout === undefined || !rl.layouts.includes(layout)) throw fail();
+  return layout;
 }
 
 /** Every file of a loaded release, the loaded one first, each without `otherLayouts`. */

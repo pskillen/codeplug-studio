@@ -24,13 +24,13 @@ export interface PublishedFirmwareRelease {
   readonly publishedOn: string;
   /**
    * The flash layout this row's file is for, for a radio whose releases ship one file per layout (UV-5R Mini `L1`,
-   * `L2`). Optional in the index: a row without one takes it from the patch's build name once downloaded.
+   * `L2`). Optional in the index: a row without one takes its base's layout once downloaded.
    */
   readonly layout?: string;
   /**
-   * The stock base this row's file is built on (UV-5R Mini `nrf-v0.27`), for a radio with release layouts: with the
-   * layout it identifies the row. Optional in the index (the stock version names it too); a patch on another base is
-   * refused.
+   * The stock base this row's file is built on (UV-5R Mini `nrf-v0.27`), for a radio with release layouts: always set
+   * for one (the index's `base`, or the base its stock version names). A release is keyed by base and version (D133):
+   * each base is a variant with its own SemVer line. A patch on another base is refused.
    */
   readonly base?: string;
   readonly toStock?: { readonly sha256: string; readonly loadBytes: () => Promise<Uint8Array> };
@@ -48,7 +48,10 @@ export interface PublishedFirmwareRelease {
 
 export interface FirmwareReleaseSummary {
   readonly radioId: FirmwareRadioId;
-  /** Tag for a published release; 'user:<sha256>' for a user file. */
+  /**
+   * Tag for a published release, with its stock base for a radio keyed by base (`nrf-v0.27:1.0.0`); 'user:<sha256>'
+   * for a user file.
+   */
   readonly key: string;
   /** e.g. '1.0.0' */
   readonly label: string;
@@ -84,7 +87,8 @@ export interface FirmwareReleaseSource {
   readonly kind: 'published' | 'user-file';
   listReleases(
     radioId: FirmwareRadioId,
-    opts: { includeRc: boolean },
+    /** `base`: only the releases for that stock base, for a radio whose releases are keyed by base (D133). */
+    opts: { includeRc: boolean; base?: string },
   ): Promise<readonly FirmwareReleaseSummary[]>;
   loadPatch(radioId: FirmwareRadioId, key: string): Promise<LoadedFirmwarePatch>;
 }

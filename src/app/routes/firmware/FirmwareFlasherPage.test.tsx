@@ -162,17 +162,28 @@ async function walkToFlashStep({ tickChecks = true } = {}) {
 /** The "Your radio" step's sub-heading. */
 const RADIO_CHECK_SUB = 'Check Studio can update this radio before you find any files.';
 
-/** Pick the UV-5R Mini, drop a patch file, accept it, and continue to the "Your radio" step. */
+/** Pick the UV-5R Mini and continue to the "Your radio" step, which comes before Firmware (D133). */
 async function walkMiniToCheck() {
   fireEvent.click(screen.getByRole('radio', { name: /UV-5R Mini/ }));
   cont();
-  const patch = document.querySelector('input[type="file"][accept=".json"]') as HTMLInputElement;
+  expect(screen.getByText(RADIO_CHECK_SUB)).toBeInTheDocument();
+}
+
+/** The Firmware step's sub-heading. */
+const FIRMWARE_SUB = 'Choose what to put on the radio.';
+
+/** On the Firmware step: drop a patch file, accept it, and continue to the Stock firmware step. */
+async function chooseMiniPatch() {
+  expect(screen.getByText(FIRMWARE_SUB)).toBeInTheDocument();
+  // The last .json dropzone is Advanced's patch file; the Mini's Back to stock has one above it.
+  const patch = Array.from(
+    document.querySelectorAll<HTMLInputElement>('input[type="file"][accept=".json"]'),
+  ).at(-1)!;
   fireEvent.change(patch, { target: { files: [new File(['{}'], 'mine.patch.json')] } });
   await waitFor(() => expect(flash.loadChosenPatch).toHaveBeenCalled());
-  const understand = screen.queryByRole('checkbox', { name: 'I understand' });
-  if (understand) fireEvent.click(understand);
+  const understand = await screen.findByRole('checkbox', { name: 'I understand' });
+  fireEvent.click(understand);
   cont();
-  expect(screen.getByText(RADIO_CHECK_SUB)).toBeInTheDocument();
 }
 
 /** On the Stock firmware step: supply a file, wait for it to verify, and continue. */
@@ -833,6 +844,7 @@ describe('FirmwareFlasherPage', () => {
           expect.objectContaining({ radioId: 'baofeng-uv5rmini', port: CAPACITOR_PORT }),
         );
         cont();
+        await chooseMiniPatch();
         await supplyStock();
         await waitFor(() => expect(flash.prepareFlash).toHaveBeenCalled());
         expect(vi.mocked(flash.prepareFlash).mock.calls.at(-1)![4]).toBe('L2');
@@ -870,18 +882,71 @@ describe('FirmwareFlasherPage', () => {
         expect(screen.getByRole('button', { name: /^Read the radio/ })).toBeEnabled(),
       );
     };
-    /** The Stock firmware step is the first after "Your radio" to take a file. */
-    const stockStepShown = () => document.querySelector('input[type="file"]') !== null;
+    /** Firmware comes after "Your radio": nothing is offered until the radio is identified. */
+    const firmwareStepShown = () => screen.queryByText(FIRMWARE_SUB) !== null;
 
-    it('comes between Firmware and Stock firmware in the steps', async () => {
+    it('comes between Radio and Firmware in the steps (D133)', async () => {
       renderPage();
       await walkMiniToCheck();
       const steps = screen.getByLabelText('Firmware flasher steps').textContent ?? '';
-      expect(steps.indexOf('Firmware')).toBeLessThan(steps.indexOf('Your radio'));
-      expect(steps.indexOf('Your radio')).toBeLessThan(steps.indexOf('Stock firmware'));
+      expect(steps.indexOf('Radio')).toBeLessThan(steps.indexOf('Your radio'));
+      expect(steps.indexOf('Your radio')).toBeLessThan(steps.indexOf('Firmware'));
+      expect(steps.indexOf('Firmware')).toBeLessThan(steps.indexOf('Stock firmware'));
+      expect(flash.listPublishedReleases).not.toHaveBeenCalled();
     });
 
-    it('stops an unsupported Mini before the stock-file step', async () => {
+    it("offers only the releases built on the radio's base, and says when its variant is behind", async () => {
+      const mini = (tag: string, base: string, stockVersion: string): FirmwareReleaseSummary => ({
+        ...summaryOf({
+          ...release(tag, 'final'),
+          radioId: 'baofeng-uv5rmini',
+          patchName: 'baofeng-uv5rmini-firmware',
+          stockVersion,
+          base,
+        }),
+        key: `${base}:${tag}`,
+        supports: [stockVersion],
+      });
+      vi.mocked(flash.listPublishedReleases).mockResolvedValue([
+        mini('1.1.0', 'nrf-v0.27', 'v0.27 (NRF)'),
+        mini('1.0.0', 'nrfb-v0.04', 'v0.04 (NRFB)'),
+        mini('1.0.0', 'nrf-v0.27', 'v0.27 (NRF)'),
+      ]);
+      renderPage();
+      await walkMiniToCheck();
+      await readAs(radioReportFrame({ vm: [0x95000, 0x68000], suffix: 'NRFB', version: 'V0.04' }));
+      cont();
+      expect(firmwareStepShown()).toBe(true);
+      expect(await screen.findAllByRole('radio', { name: /MM9PDY modded firmware/ })).toHaveLength(
+        1,
+      );
+      expect(
+        screen.getByRole('radio', { name: /MM9PDY modded firmware 1\.0\.0/ }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('For the Baofeng UV-5R Mini on stock v0.04 (NRFB)'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'MM9PDY modded firmware 1.1.0 is out for radios on stock v0.27 (NRF), but not yet for stock v0.04 (NRFB). Your radio gets it once its own release is published.',
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("says no release is published for the radio's firmware when its base has none", async () => {
+      vi.mocked(flash.listPublishedReleases).mockResolvedValue([]);
+      renderPage();
+      await walkMiniToCheck();
+      await readAs(radioReportFrame({ vm: [0x95000, 0x68000], suffix: 'NRFB', version: 'V0.04' }));
+      cont();
+      expect(
+        await screen.findByText(
+          /No firmware release is published for the Baofeng UV-5R Mini on stock v0\.04 \(NRFB\) yet\./,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it('stops an unsupported Mini before any release is offered', async () => {
       renderPage();
       await walkMiniToCheck();
       await readAs(new Uint8Array(64).fill(0xff));
@@ -900,11 +965,11 @@ describe('FirmwareFlasherPage', () => {
       expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
       cont();
       expect(screen.getByText(RADIO_CHECK_SUB)).toBeInTheDocument();
-      expect(stockStepShown()).toBe(false);
+      expect(firmwareStepShown()).toBe(false);
       expect(flash.verifyStockFiles).not.toHaveBeenCalled();
     });
 
-    it('stops a Mini reporting firmware Studio does not know before the stock-file step', async () => {
+    it('stops a Mini reporting firmware Studio does not know before any release is offered', async () => {
       renderPage();
       await walkMiniToCheck();
       await readAs(radioReportFrame({ vm: [0x96000, 0x66000] }));
@@ -912,7 +977,7 @@ describe('FirmwareFlasherPage', () => {
         screen.getByText("This radio reports firmware Studio doesn't support. Nothing was sent."),
       ).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
-      expect(stockStepShown()).toBe(false);
+      expect(firmwareStepShown()).toBe(false);
     });
 
     it('lets a supported Mini on, and Prepare shows its answer with a way back', async () => {
@@ -921,7 +986,8 @@ describe('FirmwareFlasherPage', () => {
       await readAs(radioReportFrame({}));
       expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled();
       cont();
-      expect(stockStepShown()).toBe(true);
+      expect(firmwareStepShown()).toBe(true);
+      await chooseMiniPatch();
       await supplyStock();
       await waitFor(() => expect(flash.prepareFlash).toHaveBeenCalled());
       expect(screen.getByText('Your radio, as it reported itself:')).toBeInTheDocument();
@@ -1022,7 +1088,9 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
     });
     await toFirmwareStep();
     expect(
-      screen.getByText(/A release has a file for each radio firmware it supports\. Pick them all/),
+      screen.getByText(
+        /Pick the file for your radio's firmware\. Each radio firmware has its own release file/,
+      ),
     ).toBeInTheDocument();
     const input = document.querySelector('input[type="file"][accept=".json"]') as HTMLInputElement;
     expect(input.multiple).toBe(true);

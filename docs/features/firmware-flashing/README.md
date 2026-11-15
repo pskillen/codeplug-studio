@@ -154,32 +154,9 @@ Per radio:
    page's intro on every later step, so an owner can check before fetching any file. Other radios show no such line.
    The same text is on the **Firmware flasher** card of the Tools page ("Supported: UV-5R Minis whose …"), for an
    owner who hasn't opened the flasher yet. A test ties the Mini's text to its stock-base table and proven Hardware lines.
-2. **Firmware** — what to flash:
-   - **Published releases** for the radio, from the firmware project's public release index
-     ([releases.md](releases.md)), newest first, each named by its firmware project and version ("MM9PDY
-     modded firmware 1.0.0"), with its date, a summary and a **Release notes**
-     disclosure that shows the published notes unchanged. A radio that accepts more than one stock version (the UV-5R
-     Mini) also says which radios each release is for: "For the Baofeng UV-5R Mini on stock v0.27 (NRF)". If the list can't be downloaded, a warning says so with
-     **Try again**; stock and a patch file from disk still work. Finals only by default; **Show release
-     candidates** adds RCs, labelled **Pre-release**.
-   - **Stock firmware** ("Stock firmware (v1.01.048)"), always listed: it is also the recovery path.
-     A radio with no stock flash (the UV-5R Mini) lists no Stock card; when it has no published release either, the
-     step says "No firmware release is published for the Baofeng UV-5R Mini yet" and points to the Advanced patch file.
-   - **Back to stock**, for a radio whose way back is a to-stock patch (the UV-5R Mini): choose a published to-stock patch for the stock base, or pick a file from disk as a fallback. The downloaded patch is checked against the index hash; the plain stock file can't be flashed. Any other patch is refused there. A recognised file shows "This file puts back
-     the stock firmware v0.04 (NRFB)" and needs no **I understand** tick: the radio's checks pin everything it
-     installs ([UV-5R Mini: Back to stock](../../reference/radios/baofeng/uv-5r-mini/firmware.md#back-to-stock)).
-   - **Advanced: use a patch file from disk.** A `.patch.json` identical to a published release is treated as that
-     release ("This is the MM9PDY modded firmware 1.0.0 (published)"). Any other patch shows its project name and
-     version, a short sha256 and a risk
-     statement, and needs **I understand** ticked before the wizard continues. That is in addition to the risk
-     acknowledgement every flash needs. A patch for another radio is refused with its own message. For a radio whose
-     releases ship one file per flash layout (the UV-5R Mini), the drop zone takes the release's files at once ("A
-     release has a file for each radio firmware it supports"); one file works too. With
-     [developer mode](../developer-mode/README.md) on it lists their layouts ("Flash layouts: L1, L2."). Two files of one layout, files of different
-     releases, and a retired `V4` file are refused
-     ([releases](releases.md#uv-5r-mini-rows-one-per-flash-layout)).
-3. **Your radio** — only for a radio whose firmware comes in more than one flash layout (the UV-5R Mini; the factory
-   firmware's packing, not the board), and before Studio asks for any stock file. The step finds the radio's stock
+2. **Your radio** — only for a radio whose firmware comes in more than one flash layout (the UV-5R Mini; the factory
+   firmware's packing, not the board), and before any release is offered or stock file asked for: Firmware then offers
+   only the releases built on the radio's own stock base. The step finds the radio's stock
    base (UV-5R Mini: suffix and Firmware version) and layout. **Read the radio** reads, in normal mode and read-only,
    the radio report an MM9PDY build answers: its flash layout and the suffix, Firmware and Hardware strings of its
    stock firmware, matched against the same table and with the same refusals as the dropdowns below. A report naming
@@ -190,20 +167,52 @@ Per radio:
    combination with no build. A warning says to pick exactly what the radio shows: a wrong Firmware or suffix pick is
    refused with nothing installed but may reset its FM presets and volume, while a wrong Hardware pick, or a radio
    Studio doesn't know yet, may not be caught
-   ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md#radio-info)). When a release is
-   chosen and has no file for the radio, the step says "Not available in this release: there is no MM9PDY build for
-   this radio (…) yet." Continue stays disabled until the answer names a supported radio and the chosen release (if
-   any) has a file for it; the step then says "Studio can update this radio". So an unsupported or unknown Mini stops
-   here, before any file is fetched. Changing the answer later, from here, drops the prepared image and the
-   before-you-flash ticks. Other radios skip this step.
+   ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md#radio-info)). Continue stays disabled until the answer names a
+   supported radio; the step then says "Studio can update this radio". So an unsupported or unknown Mini stops here,
+   before any release or file is fetched. Coming back here later and changing the answer drops the prepared image and
+   the before-you-flash ticks, and drops a release chosen meanwhile that has no file for the radio as it now answers
+   (Firmware then offers its own releases again). Other radios skip this step.
+3. **Firmware** — what to flash:
+   - **Published releases** for the radio, from the firmware project's public release index
+     ([releases.md](releases.md)), newest first, each named by its firmware project and version ("MM9PDY
+     modded firmware 1.0.0"), with its date, a summary and a **Release notes**
+     disclosure that shows the published notes unchanged. A radio that accepts more than one stock version (the UV-5R
+     Mini) also says which radios each release is for: "For the Baofeng UV-5R Mini on stock v0.27 (NRF)". On the UV-5R
+     Mini each stock base is its own variant with its own releases, keyed by base and version, never by version alone
+     ([releases](releases.md#uv-5r-mini-rows-one-per-stock-base-and-version)): the list holds only the releases for
+     the base found on **Your radio**, so a lower version for this radio is offered over a higher one for another
+     base. With none yet, the step says "No firmware release is published for the Baofeng UV-5R Mini on stock v0.04
+     (NRFB) yet". When another variant has a newer final release, a line says this radio's is behind: "MM9PDY modded
+     firmware 1.1.0 is out for radios on stock v0.27 (NRF), but not yet for stock v0.04 (NRFB). Your radio gets it once
+     its own release is published." (one version is the same behaviour on every variant). If the list can't be downloaded, a warning says so with
+     **Try again**; stock and a patch file from disk still work. Finals only by default; **Show release
+     candidates** adds RCs, labelled **Pre-release**.
+   - **Stock firmware** ("Stock firmware (v1.01.048)"), always listed: it is also the recovery path.
+     A radio with no stock flash (the UV-5R Mini) lists no Stock card; when it has no published release either, the
+     step says "No firmware release is published for the Baofeng UV-5R Mini yet" and points to the Advanced patch file.
+   - **Back to stock**, for a radio whose way back is a to-stock patch (the UV-5R Mini): choose the published to-stock patch for the radio's stock base (only that base's is offered), or pick a file from disk as a fallback. The downloaded patch is checked against the index hash; the plain stock file can't be flashed. Any other patch is refused there. A recognised file shows "This file puts back
+     the stock firmware v0.04 (NRFB)" and needs no **I understand** tick: the radio's checks pin everything it
+     installs ([UV-5R Mini: Back to stock](../../reference/radios/baofeng/uv-5r-mini/firmware.md#back-to-stock)).
+   - **Advanced: use a patch file from disk.** A `.patch.json` identical to a published release is treated as that
+     release ("This is the MM9PDY modded firmware 1.0.0 (published)"). Any other patch shows its project name and
+     version, a short sha256 and a risk
+     statement, and needs **I understand** ticked before the wizard continues. That is in addition to the risk
+     acknowledgement every flash needs. A patch for another radio is refused with its own message. For the UV-5R Mini the
+     drop zone asks for the file for the radio's firmware ("Pick the file for your radio's firmware"). A file named
+     for a variant (`v0.27-NRF-1.0.1`, or a PR build with that prefix) gets its layout from its stock base, once its
+     `base` and pinned stock match the name; it is picked on its own. An older release's two legacy files
+     (`mm9pdy-L1-…`, `mm9pdy-L2-…`) may still be picked together. With
+     [developer mode](../developer-mode/README.md) on it lists their layouts ("Flash layouts: L1, L2."). Two files of one layout, files of different
+     releases, and a retired `V4` file are refused
+     ([releases](releases.md#uv-5r-mini-rows-one-per-stock-base-and-version)).
 4. **Stock firmware** — the stock sources (the vendor's download link, or how to ask the vendor, and any unofficial
    mirror, labelled; all plain links: Studio never fetches them), the expected zip and
    file names, and a drop zone for the zip or the extracted files. Studio checks every file against the pinned hashes.
    The UV-5R Mini, whose vendor publishes no stock firmware, lists the user's own copy and then one "Unofficial copy
    shared by a third party" link per stock version, each naming its file
    ([UV-5R Mini: where the file comes from](../../reference/radios/baofeng/uv-5r-mini/firmware.md#stock-firmware-pin)).
-   A radio whose release files are built on different stocks (the UV-5R Mini: the L1 file on v0.04, the L2 file on
-   v0.27) takes either stock file or both; each file is then prepared on its own stock. The step says so: "Studio
+   A radio whose release files are built on different stocks (the UV-5R Mini: a v0.04 variant's file on v0.04, a
+   v0.27 variant's on v0.27) takes either stock file or both; each file is then prepared on its own stock. The step says so: "Studio
    needs one of these, the one for your radio's firmware:" over the files, each "for stock firmware v0.27 (NRF)" and
    so on ([UV-5R Mini: one stock per base](../../reference/radios/baofeng/uv-5r-mini/firmware.md#stock-firmware-pin)).
 5. **Prepare** — builds the exact image (applying the patch and checking its result hash) and runs the updater's

@@ -141,6 +141,20 @@ export interface FirmwareReleaseLayouts {
    * separate builds. The retry with a release's other file only goes to a file of the same variant.
    */
   readonly variantOfBase?: (base: string) => string | undefined;
+  /**
+   * The flash layout a release file built on a stock base is for (UV-5R Mini `nrf-v0.27` → `L2`), from the radio's
+   * own table of bases. For a radio whose releases are keyed by stock base, this (with the index row's `layout`) is
+   * where a file's layout comes from: verified metadata, never the build name alone.
+   */
+  readonly layoutOfBase?: (base: string) => string | undefined;
+  /**
+   * The stock base a build name names by its variant prefix (UV-5R Mini `v0.27-NRF-1.0.1` → `nrf-v0.27`, D133), with
+   * the rest of the name. Null for a name in the variant form whose prefix is no known base (refused); undefined for a
+   * name in another form (a legacy layout-tagged name, a to-stock patch).
+   */
+  readonly baseFromBuildName?: (
+    buildName: string,
+  ) => { readonly base: string; readonly rest: string } | null | undefined;
 }
 
 /** What the operator gave from the radio's Radio Info screen. */

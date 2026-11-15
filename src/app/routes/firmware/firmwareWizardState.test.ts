@@ -453,40 +453,45 @@ describe('the "Your radio" check step (#1670)', () => {
     layout: 'L2',
     parsed: { description: { base: 'nrf-v0.27' } },
   } as unknown as LoadedFirmwarePatch;
-  const atCheck = (loadedPatch: LoadedFirmwarePatch | null = RELEASE_L2) =>
-    through(
-      selectMini,
-      { type: 'next' },
-      { type: 'chooseFirmware', choice: USER_CHOICE, loadedPatch },
-      { type: 'next' },
-    );
+  /** A release with a file only for the NRFB V0.04 radio (L1 on nrfb-v0.04). */
+  const RELEASE_L1 = {
+    provenance: 'published',
+    layout: 'L1',
+    parsed: { description: { base: 'nrfb-v0.04' } },
+  } as unknown as LoadedFirmwarePatch;
+  const atCheck = () => through(selectMini, { type: 'next' });
   const answer = (firmware: string, suffix: string, hardware = 'V1.7') =>
     ({ type: 'setRadioInfo', patch: { firmware, suffix, hardware } }) as const;
   const noReport = { type: 'radioRead', status: { kind: 'none' } } as const;
   const answered = (a: ReturnType<typeof answer>) => reduce(reduce(atCheck(), noReport), a);
+  const choose = (loadedPatch: LoadedFirmwarePatch) =>
+    ({ type: 'chooseFirmware', choice: USER_CHOICE, loadedPatch }) as const;
 
-  it('comes between Firmware and Stock firmware, only for a radio with a radio check', () => {
+  it('comes between Radio and Firmware, only for a radio with a radio check (D133)', () => {
     expect(firmwareWizardSteps(through(selectMini))).toEqual([
       'radio',
-      'firmware',
       'check',
+      'firmware',
       'stock',
       'prepare',
       'preflight',
       'updateMode',
       'flash',
     ]);
+    expect(atCheck().step).toBe('check');
     const dm32 = through({ type: 'selectRadio', radioId: 'baofeng-dm32uv' });
     expect(firmwareWizardSteps(dm32)).not.toContain('check');
+    expect(reduce(dm32, { type: 'next' }).step).toBe('firmware');
     expect(reduce(reduce(dm32, { type: 'next' }), { type: 'next' }).step).toBe('stock');
     expect(reduce(dm32, { type: 'goTo', step: 'check' }).step).toBe('radio');
   });
 
-  it('stops an unread or unanswered radio before the stock-file step', () => {
+  it('stops an unread or unanswered radio before any release is offered', () => {
     for (const s of [atCheck(), reduce(atCheck(), noReport)]) {
       expect(s.step).toBe('check');
       expect(canAdvance(s)).toBe(false);
       expect(reduce(s, { type: 'next' }).step).toBe('check');
+      expect(reduce(s, { type: 'goTo', step: 'firmware' }).step).toBe('check');
       expect(reduce(s, { type: 'goTo', step: 'stock' }).step).toBe('check');
     }
   });
@@ -504,40 +509,64 @@ describe('the "Your radio" check step (#1670)', () => {
     }
   });
 
-  it('stops a radio the chosen release has no file for, and lets it on with no release chosen', () => {
-    expect(canAdvance(answered(answer('V0.04', 'NRFB')))).toBe(false);
-    // No release yet (plain stock, say): the release is checked again once one is chosen.
-    expect(canAdvance({ ...answered(answer('V0.04', 'NRFB')), loadedPatch: null })).toBe(true);
-  });
-
-  it('checks the radio again when the release changes after the check passed', () => {
-    /** A release with a file only for the NRFB V0.04 radio (L1 on nrfb-v0.04). */
-    const RELEASE_L1 = {
-      provenance: 'published',
-      layout: 'L1',
-      parsed: { description: { base: 'nrfb-v0.04' } },
-    } as unknown as LoadedFirmwarePatch;
-    let s = answered(answer('V0.27', 'NRF'));
-    expect(canAdvance(s)).toBe(true);
-    s = reduce(s, { type: 'goTo', step: 'firmware' });
+  it("lets Firmware on only with a release that has a file for the radio's base", () => {
+    let s = reduce(answered(answer('V0.04', 'NRFB')), { type: 'next' });
     expect(s.step).toBe('firmware');
-    s = reduce(s, { type: 'chooseFirmware', choice: USER_CHOICE, loadedPatch: RELEASE_L1 });
-    s = reduce(s, { type: 'next' });
-    expect(s.step).toBe('check');
+    s = reduce(s, choose(RELEASE_L2));
     expect(canAdvance(s)).toBe(false);
-    expect(reduce(s, { type: 'next' }).step).toBe('check');
-    expect(reduce(s, { type: 'goTo', step: 'prepare' }).step).toBe('check');
+    expect(reduce(s, { type: 'next' }).step).toBe('firmware');
+    expect(reduce(s, { type: 'goTo', step: 'prepare' }).step).toBe('firmware');
+    s = reduce(s, choose(RELEASE_L1));
+    expect(canAdvance(s)).toBe(true);
+    expect(reduce(s, { type: 'next' }).step).toBe('stock');
   });
 
-  it('lets a supported radio on to the stock-file step, and back to the check', () => {
-    const s = reduce(answered(answer('V0.27', 'NRF')), { type: 'next' });
+  it("drops a chosen release when the radio's answers change to one it has no file for, and keeps it otherwise", () => {
+    let s = reduce(answered(answer('V0.27', 'NRF')), { type: 'next' });
+    s = reduce(reduce(s, choose(RELEASE_L2)), { type: 'next' });
     expect(s.step).toBe('stock');
+    s = reduce(s, { type: 'goTo', step: 'check' });
+    expect(s.step).toBe('check');
+    // The same answers again: the release still has a file for the radio.
+    s = reduce(s, answer('V0.27', 'NRF'));
+    expect(s.loadedPatch).toBe(RELEASE_L2);
+    // Another base: the release is dropped, and the way on to Firmware stays open to choose again.
+    s = reduce(s, answer('V0.04', 'NRFB'));
+    expect(s.choice).toBeNull();
+    expect(s.loadedPatch).toBeNull();
+    expect(canAdvance(s)).toBe(true);
+    s = reduce(s, { type: 'next' });
+    expect(s.step).toBe('firmware');
+    expect(canAdvance(s)).toBe(false);
+    expect(reduce(s, { type: 'goTo', step: 'stock' }).step).toBe('firmware');
+  });
+
+  it('drops a chosen release when a new read of the radio names another base', () => {
+    const report = (codeBase: string, layout: string) =>
+      ({
+        type: 'radioRead',
+        status: { kind: 'report', answer: { kind: 'layout', layout, codeBase, reported: true } },
+      }) as const;
+    let s = reduce(atCheck(), report('nrf-v0.27', 'L2'));
+    s = reduce(reduce(s, { type: 'next' }), choose(RELEASE_L2));
+    expect(canAdvance(s)).toBe(true);
+    s = reduce(reduce(s, { type: 'back' }), { type: 'radioRead', status: null });
+    expect(s.loadedPatch).toBe(RELEASE_L2);
+    s = reduce(s, report('nrfb-v0.04', 'L1'));
+    expect(s.loadedPatch).toBeNull();
+  });
+
+  it('lets a supported radio on to Firmware, and back to the check', () => {
+    const s = reduce(answered(answer('V0.27', 'NRF')), { type: 'next' });
+    expect(s.step).toBe('firmware');
     expect(reduce(s, { type: 'back' }).step).toBe('check');
   });
 
   it('a changed answer drops the prepared image and the before-you-flash ticks', () => {
     let s = answered(answer('V0.27', 'NRF'));
     for (const a of [
+      { type: 'next' },
+      choose(RELEASE_L2),
       { type: 'next' },
       { type: 'stockVerified', stock: STOCK },
       { type: 'next' },

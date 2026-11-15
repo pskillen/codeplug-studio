@@ -205,8 +205,6 @@ describe('RadioCheckStep: a release with one file per flash layout and stock bas
     }) as unknown as LoadedFirmwarePatch;
   const NO_PARTNER =
     'If the radio refuses this file, this release has no other file for this radio to try.';
-  const NO_BUILD_NRFB =
-    'Not available in this release: there is no MM9PDY build for this radio (nrfb-v0.04) yet. This release has a file only for nrf-v0.27. Nothing was prepared or sent to the radio.';
 
   it('says so when the release has no other file for this radio', async () => {
     vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
@@ -217,71 +215,69 @@ describe('RadioCheckStep: a release with one file per flash layout and stock bas
     expect(screen.getByText(NO_PARTNER)).toBeInTheDocument();
   });
 
-  it('1.0.0: only NRF V0.27 V1.7 gets a file; NRFB V0.04 has no build in it, and nothing is prepared', async () => {
-    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+  /**
+   * The radio is identified before Firmware (D133): a release chosen earlier (the wizard was gone back through) that has
+   * no file for the radio as it now answers is dropped, never prepared, and Firmware offers the radio's own releases.
+   */
+  const expectDropped = () => {
+    expect(latest.loadedPatch).toBeNull();
+    expect(latest.choice).toBeNull();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
+    expect(latest.image).toBeNull();
+    expect(screen.queryByText(/Not available in this release/)).toBeNull();
+    expect(screen.getByText(RADIO_CHECK_PASSED)).toBeInTheDocument();
+    expect(canAdvance(latest)).toBe(true);
+  };
+
+  it('1.0.0 on NRFB V0.04: the NRF-only release chosen earlier is dropped, and nothing is prepared', async () => {
     render(<Harness updater={MINI} loaded={fileFor('L2')} />);
     await readRadio(STOCK_FLASH);
     radioInfo('V0.04', 'V1.7', 'NRFB');
-    expect(await screen.findByText(NO_BUILD_NRFB)).toBeInTheDocument();
-    expect(flash.prepareFlash).not.toHaveBeenCalled();
-    expect(screen.queryByText(/Preparing/)).toBeNull();
-    expect(latest.image).toBeNull();
-    expect(canAdvance(latest)).toBe(false);
-    // NRF V0.27 on the same release is offered, on its base.
-    type('Radio Info: Firmware', 'V0.27');
-    type('Suffix', 'NRF');
+    await waitFor(() => expect(latest.loadedPatch).toBeNull());
+    expectDropped();
+  });
+
+  it('keeps a release chosen earlier that has a file for the radio', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+    const release = fileFor('L2');
+    render(<Harness updater={MINI} loaded={release} />);
+    await readRadio(STOCK_FLASH);
+    radioInfo('V0.27', 'V1.7', 'NRF');
+    expect(latest.loadedPatch).toBe(release);
+    expect(screen.getByText(RADIO_CHECK_PASSED_RELEASE)).toBeInTheDocument();
     toPrepare();
     expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
-    expect(screen.queryByText(/Not available in this release/)).toBeNull();
     expect(lastPrepare()[8]).toBe('nrf-v0.27');
   });
 
-  it('never offers the nearest build: an L2 file on another base is not this radio', async () => {
-    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+  it('never keeps the nearest build: an L2 file on another base is not this radio', async () => {
     render(<Harness updater={MINI} loaded={fileFor('L2', 'nrfb-v0.27')} />);
     await readRadio(STOCK_FLASH);
     radioInfo('V0.27', 'V1.7', 'NRF');
-    expect(
-      await screen.findByText(/no MM9PDY build for this radio \(nrf-v0\.27\) yet/),
-    ).toBeInTheDocument();
-    expect(flash.prepareFlash).not.toHaveBeenCalled();
+    await waitFor(() => expect(latest.loadedPatch).toBeNull());
+    expectDropped();
   });
 
-  it('a report for a base the release has no file for is not available either', async () => {
-    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
+  it('a report for a base the release has no file for drops it too', async () => {
     render(<Harness updater={MINI} loaded={fileFor('L2')} />);
     await readRadio(reportBlock({ vm: L1, v004: true, name: 'mm9pdy-L1-0.2.0' }));
-    expect(await screen.findByText(/^Not available in this release/)).toBeInTheDocument();
-    expect(flash.prepareFlash).not.toHaveBeenCalled();
+    await waitFor(() => expect(latest.loadedPatch).toBeNull());
+    expectDropped();
   });
 
-  /** The refusal for an nrf-v0.27 radio whose layout the release's nrf-v0.27 file isn't for. */
-  const OTHER_LAYOUT_ON_BASE =
-    "Not available in this release: this radio runs nrf-v0.27, but its flash is laid out differently from the radios this release's nrf-v0.27 file was built for, so that file can't be installed on it. Use a release that has a file for this radio. Nothing was prepared or sent to the radio.";
-
-  it('a report for a layout the release lacks on its base names the base, never the layout', async () => {
-    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
-    render(<Harness updater={MINI} loaded={fileFor('L2')} />);
-    await readRadio(reportBlock({ vm: L1, name: 'mm9pdy-L1-0.2.0' }));
-    expect(await screen.findByText(OTHER_LAYOUT_ON_BASE)).toBeInTheDocument();
-    expect(screen.queryByText(/Flash layout/)).toBeNull();
-    expect(flash.prepareFlash).not.toHaveBeenCalled();
-    expect(canAdvance(latest)).toBe(false);
-  });
-
-  it("with developer mode on, that refusal shows the radio's flash layout beside it", async () => {
-    setDeveloperMode(true);
-    try {
-      vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
-      render(<Harness updater={MINI} loaded={fileFor('L2')} />);
-      await readRadio(reportBlock({ vm: L1, name: 'mm9pdy-L1-0.2.0' }));
-      expect(
-        await screen.findByText(`${OTHER_LAYOUT_ON_BASE} Flash layout: L1.`),
-      ).toBeInTheDocument();
-      expect(flash.prepareFlash).not.toHaveBeenCalled();
-      expect(canAdvance(latest)).toBe(false);
-    } finally {
-      localStorage.removeItem(DEVELOPER_MODE_KEY);
+  it('a report for a layout the release lacks on its base drops it, and names no layout, developer mode or not', async () => {
+    for (const dev of [false, true]) {
+      setDeveloperMode(dev);
+      try {
+        const { unmount } = render(<Harness updater={MINI} loaded={fileFor('L2')} />);
+        await readRadio(reportBlock({ vm: L1, name: 'mm9pdy-L1-0.2.0' }));
+        await waitFor(() => expect(latest.loadedPatch).toBeNull());
+        expectDropped();
+        expect(screen.queryByText(/Flash layout/)).toBeNull();
+        unmount();
+      } finally {
+        localStorage.removeItem(DEVELOPER_MODE_KEY);
+      }
     }
   });
 

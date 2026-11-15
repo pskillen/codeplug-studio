@@ -1,6 +1,7 @@
 /** Baofeng UV-5R Mini pinned stock and update-mode facts. */
 import type { StockFirmwareDescriptor, StockFirmwareSource } from '../../../firmware/types.ts';
 import { UV5RMINI_RADIO_LAYOUT_QUESTION, uv5rMiniVariantOfBase } from './radioInfo.ts';
+import { uv5rMiniBaseFromBuildName, uv5rMiniLayoutOfBase } from './stockBases.ts';
 
 export const UV5RMINI_FIRMWARE_ROLE_UFW = 'ufw';
 
@@ -8,7 +9,7 @@ export const UV5RMINI_FIRMWARE_ROLE_UFW = 'ufw';
 export const UV5RMINI_RELEASE_LAYOUTS = ['L1', 'L2'] as const;
 
 /**
- * The layout tag in an MM9PDY build name, `mm9pdy-<tag>-…`: `L1` (built on v0.04), `L2` (built on v0.27), or another
+ * The layout tag in a legacy MM9PDY build name, `mm9pdy-<tag>-…`: `L1` (built on v0.04), `L2` (built on v0.27), or another
  * tag such as the retired `V4`, which is still parsed so that it can be refused: never a release file. Undefined for a
  * name with no tag: a to-stock patch (`nrfb-v0.04`) or an older build (`mm9pdy-0.1.0-rc.1`).
  */
@@ -62,7 +63,7 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
   // The 1.0.0 release's stock (radios showing NRF, Firmware V0.27) is the primary; v0.04 (NRFB) is the second base.
   version: 'v0.27 (NRF)',
   // The radios the published releases are built for (1.0.0: v0.27 NRF only). Change it with the first release for
-  // another stock base.
+  // another stock base (D133: v0.04 NRFB is a variant of its own, not yet released).
   supportedRadios:
     'UV-5R Minis whose Radio Info (MENU → Radio Info) shows Firmware V0.27 and Hardware V1.7, and whose start-up screen (hold 8 while switching on) shows 5RMINI NRF. Other Minis are not supported yet.',
   baseName: 'nrf-v0.27',
@@ -95,8 +96,8 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
       ],
     },
   ],
-  // A release's L1 file is built on v0.04 and its L2 file on v0.27 (a radio's code base never changes), so both stocks
-  // may be supplied at once and each file is prepared on its own.
+  // Each stock base is its own variant with its own releases (D133): a v0.04 file is built on v0.04 and a v0.27 file
+  // on v0.27 (a radio's code base never changes). Both stocks may be supplied at once; each file is prepared on its own.
   severalStocks: true,
   patchNames: ['baofeng-uv5rmini-firmware'],
   bootloaderEntry: {
@@ -117,5 +118,7 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
     layouts: UV5RMINI_RELEASE_LAYOUTS,
     fromBuildName: uv5rMiniLayoutFromBuildName,
     variantOfBase: uv5rMiniVariantOfBase,
+    layoutOfBase: uv5rMiniLayoutOfBase,
+    baseFromBuildName: uv5rMiniBaseFromBuildName,
   },
 };

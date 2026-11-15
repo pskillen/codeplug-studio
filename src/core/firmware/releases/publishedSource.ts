@@ -14,13 +14,23 @@ import type {
   PublishedFirmwareRelease,
 } from './types.ts';
 
+/**
+ * A published release's key: its tag, and for a radio whose releases are keyed by stock base its base too
+ * (`nrf-v0.27:1.0.0`, D133). The same version on two bases is two releases, never one.
+ */
+export function publishedReleaseKey(
+  release: Pick<PublishedFirmwareRelease, 'tag' | 'base'>,
+): string {
+  return release.base === undefined ? release.tag : `${release.base}:${release.tag}`;
+}
+
 export function publishedReleaseSummary(
   release: PublishedFirmwareRelease,
   supports?: readonly string[],
 ): FirmwareReleaseSummary {
   return {
     radioId: release.radioId,
-    key: release.tag,
+    key: publishedReleaseKey(release),
     label: release.tag,
     title: firmwareReleaseTitle(release.patchName, release.tag),
     channel: release.channel,
@@ -44,8 +54,36 @@ export function releaseSupports(
   return versions.filter((v) => rows.some((r) => r.stockVersion === v));
 }
 
-/** Newest first by publication date, then tag. */
+const SEMVER = /^(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$/;
+
+/**
+ * SemVer precedence of two release tags, newest first: X.Y.Z numerically, a final above its own RCs, RCs by number
+ * (`rc.10` above `rc.2`). 0 when either is not a release tag.
+ */
+export function compareReleaseTags(a: string, b: string): number {
+  const x = SEMVER.exec(a);
+  const y = SEMVER.exec(b);
+  if (!x || !y) return 0;
+  for (let i = 1; i <= 3; i++) {
+    const d = Number(y[i]) - Number(x[i]);
+    if (d) return d;
+  }
+  const rc = (m: RegExpExecArray) => (m[4] === undefined ? Infinity : Number(m[4]));
+  const d = rc(y) - rc(x);
+  return Number.isNaN(d) ? 0 : d;
+}
+
+/**
+ * Newest first. Releases keyed by stock base (both rows have a `base`) go by SemVer precedence, then base, since a
+ * base's line has its own dates; everything else by publication date, then tag.
+ */
 export function compareReleases(a: PublishedFirmwareRelease, b: PublishedFirmwareRelease): number {
+  if (a.base !== undefined && b.base !== undefined) {
+    const byTag = compareReleaseTags(a.tag, b.tag);
+    if (byTag) return byTag;
+    if (a.publishedOn !== b.publishedOn) return a.publishedOn < b.publishedOn ? 1 : -1;
+    return a.base.localeCompare(b.base);
+  }
   if (a.publishedOn !== b.publishedOn) return a.publishedOn < b.publishedOn ? 1 : -1;
   return b.tag.localeCompare(a.tag, undefined, { numeric: true });
 }
@@ -79,8 +117,8 @@ async function loadRow(
 /**
  * Release source over the published index. `loadRows` fetches it (integrations); pass fixed rows in tests.
  * Loading a release checks the downloaded bytes against the index hash, then the patch against the radio's pins.
- * For a radio with release layouts a release is one row per layout: it is listed once, and loading it loads every
- * row of that version into one patch whose `otherLayouts` hold the rest.
+ * A release is one entry per key ({@link publishedReleaseKey}): for a radio keyed by stock base, one row per base and
+ * version, and `base` lists only that base's releases. Rows of one key are loaded together (`otherLayouts`).
  */
 export function createPublishedFirmwareReleaseSource(
   loadRows: () => Promise<readonly PublishedFirmwareRelease[]>,
@@ -88,29 +126,36 @@ export function createPublishedFirmwareReleaseSource(
 ): FirmwareReleaseSource {
   return {
     kind: 'published',
-    async listReleases(radioId, { includeRc }) {
+    async listReleases(radioId, { includeRc, base }) {
       const sorted = (await loadRows())
-        .filter((r) => r.radioId === radioId && (includeRc || r.channel === 'final'))
+        .filter(
+          (r) =>
+            r.radioId === radioId &&
+            (includeRc || r.channel === 'final') &&
+            (base === undefined || r.base === base),
+        )
         .slice()
         .sort(compareReleases);
-      // One entry per version: a layout radio's release is one row per layout. Its stock versions say which radios
-      // it is for.
       const descriptor = descriptors.find((d) => d.radioId === radioId);
-      const tags = new Set<string>();
+      const keys = new Set<string>();
       return sorted
-        .filter((r) => !tags.has(r.tag) && Boolean(tags.add(r.tag)))
+        .filter(
+          (r) => !keys.has(publishedReleaseKey(r)) && Boolean(keys.add(publishedReleaseKey(r))),
+        )
         .map((r) =>
           publishedReleaseSummary(
             r,
             releaseSupports(
-              sorted.filter((s) => s.tag === r.tag),
+              sorted.filter((s) => publishedReleaseKey(s) === publishedReleaseKey(r)),
               descriptor,
             ),
           ),
         );
     },
     async loadPatch(radioId, key) {
-      const releases = (await loadRows()).filter((r) => r.radioId === radioId && r.tag === key);
+      const releases = (await loadRows()).filter(
+        (r) => r.radioId === radioId && publishedReleaseKey(r) === key,
+      );
       const descriptor = descriptors.find((d) => d.radioId === radioId);
       if (releases.length === 0 || !descriptor) {
         throw new FirmwareError(
@@ -120,7 +165,7 @@ export function createPublishedFirmwareReleaseSource(
       }
       if (!descriptor.releaseLayouts) return loadRow(releases[0]!, descriptor);
       const files = await Promise.all(releases.map((r) => loadRow(r, descriptor)));
-      return combineLayoutFiles(files, descriptor, `Release ${key}`);
+      return combineLayoutFiles(files, descriptor, `Release ${releases[0]!.tag}`);
     },
   };
 }
@@ -152,4 +197,37 @@ export async function downloadToStockPatch(row: PublishedFirmwareRelease): Promi
       'The downloaded to-stock patch does not match the published hash. Try again later.',
     );
   return bytes;
+}
+
+/** What a radio on one stock base is offered from a listing of every base's releases ({@link releasesForBase}). */
+export interface ReleasesForBase {
+  /** The releases built on the radio's base, in listing order. */
+  readonly forBase: readonly FirmwareReleaseSummary[];
+  /**
+   * The newest final release on another base, where it is newer than every final on the radio's base: this radio's
+   * variant is behind (D134: one version is the same behaviour on every variant). Undefined otherwise.
+   */
+  readonly newerElsewhere?: FirmwareReleaseSummary;
+}
+
+/**
+ * Narrow a listing to the radio's stock base (D133: a radio only ever gets a release built on its own base, picked by
+ * base and version, never by version alone). With no base, or a listing without bases, the listing is returned whole.
+ */
+export function releasesForBase(
+  list: readonly FirmwareReleaseSummary[],
+  base: string | undefined,
+): ReleasesForBase {
+  if (base === undefined || list.every((s) => s.release?.base === undefined))
+    return { forBase: list };
+  const forBase = list.filter((s) => s.release?.base === base);
+  const newestFinal = (rows: readonly FirmwareReleaseSummary[]) =>
+    rows
+      .filter((s) => s.channel === 'final')
+      .slice()
+      .sort((a, b) => compareReleaseTags(a.label, b.label))[0];
+  const mine = newestFinal(forBase);
+  const elsewhere = newestFinal(list.filter((s) => s.release?.base !== base));
+  const ahead = elsewhere && (!mine || compareReleaseTags(mine.label, elsewhere.label) > 0);
+  return ahead ? { forBase, newerElsewhere: elsewhere } : { forBase };
 }

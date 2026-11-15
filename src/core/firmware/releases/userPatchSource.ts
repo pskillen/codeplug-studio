@@ -3,7 +3,7 @@ import { sha256Hex } from '../hash.ts';
 import { parseFirmwarePatch } from '../patch/index.ts';
 import { listStockFirmwareDescriptors } from '../stockCatalog.ts';
 import type { FirmwareRadioId, NamedBytes, StockFirmwareDescriptor } from '../types.ts';
-import { combineLayoutFiles, layoutFiles, layoutFromBuildName } from './layouts.ts';
+import { buildNameLayout, combineLayoutFiles, layoutFiles } from './layouts.ts';
 import { checkPublishedPatch, resolvePublishedLayout } from './publishedIndex.ts';
 import { publishedReleaseSummary } from './publishedSource.ts';
 import { loadedFirmwarePatchTitle } from './projects.ts';
@@ -32,8 +32,16 @@ export const NOT_ONE_RELEASE =
   "These files aren't the files of one release. Pick the files of the same release.";
 
 /**
+ * The refusal for more than one file where one is a variant release (UV-5R Mini `v0.27-NRF-1.0.1`): each stock base is
+ * its own release (D133), so files of one version on two bases are not one release.
+ */
+export const ONE_VARIANT_FILE =
+  'Pick one patch file: each radio firmware has its own release file. Pick the one for your radio.';
+
+/**
  * Patch files the operator picked from disk: one, or for a radio with release layouts one per layout (each file's
- * layout from its build name; a test-only layout tag is refused). Byte-identical to a published release for the same
+ * layout from its build name, a variant name checked against its base and pinned stock; a test-only layout tag is
+ * refused). Several files are only ever a legacy release's files (`mm9pdy-L1-…`, `mm9pdy-L2-…`). Byte-identical to a published release for the same
  * radio → treated as that release. Otherwise `unreviewed`; its `name` must belong to the radio. More than one file
  * must be one release: same project and version, all published or none, and one file per layout.
  */
@@ -56,7 +64,7 @@ export function createUserPatchSource(
     const published = rows.find((r) => r.radioId === radioId && r.patchSha256 === sha256);
     const parsed = parseFirmwarePatch(file.bytes);
     const layoutOf = () =>
-      descriptor ? layoutFromBuildName(descriptor, parsed.description.buildName) : undefined;
+      descriptor ? buildNameLayout(descriptor, parsed.description) : undefined;
     if (published && descriptor) {
       // The same checks as a download of that row: its base and layout must agree with the patch.
       checkPublishedPatch(published, parsed, descriptor);
@@ -101,6 +109,15 @@ export function createUserPatchSource(
     const shas = await hashes();
     const loaded = await Promise.all(list.map((f, i) => loadOne(radioId, f, shas[i]!)));
     if (loaded.length === 1) return loaded[0]!;
+    const rl = descriptor?.releaseLayouts;
+    if (
+      loaded.some((f) => {
+        const name = f.parsed.description.buildName;
+        return name !== undefined && rl?.baseFromBuildName?.(name) !== undefined;
+      })
+    ) {
+      throw new FirmwareError('patch-wrong-layout', ONE_VARIANT_FILE);
+    }
     const [first, ...rest] = loaded;
     const { name, version } = first!.parsed.description;
     if (
