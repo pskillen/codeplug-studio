@@ -15,7 +15,6 @@ import {
   Title,
 } from '@mantine/core';
 import { useState } from 'react';
-import DataTable from '@app/components/v2/DataTable.tsx';
 import { openDebugArchive, rt95ArchiveDetails, type DebugArchive } from './captureArchive.ts';
 import {
   compareRegions,
@@ -147,70 +146,16 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
 }
 
 export function MemoryViewer({ archive }: { archive?: DebugArchive }) {
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<string | null>('slot');
-  const summary = archive ? rt95ArchiveDetails(archive)?.summary : undefined;
-  const channels = (summary?.inspectChannels ?? [])
-    .filter((item) => item.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()))
-    .slice()
-    .sort((a, b) =>
-      sort === 'name'
-        ? a.name.localeCompare(b.name) || a.slotIndex - b.slotIndex
-        : a.slotIndex - b.slotIndex,
-    );
   return (
     <Stack>
       <Title order={3}>Memory</Title>
-      {!summary ? (
-        <Alert title={archive ? 'Decoded inventory unavailable' : 'No capture'}>
-          {archive
-            ? 'A complete supported programming image is required; memory is not decoded for this capture yet.'
-            : 'Open or read a capture to inspect its memory.'}
+      {!archive ? (
+        <Alert title="No capture">Open or read a capture to inspect its memory.</Alert>
+      ) : archive.manifest.radioModelId !== RT95_MODEL_ID ? (
+        <Alert title="Decoded inventory unavailable">
+          Memory is not decoded for this capture yet.
         </Alert>
-      ) : (
-        <>
-          <Title order={4}>Channels [unknown]</Title>
-          <TextInput
-            label="Search channels"
-            value={query}
-            onChange={(event) => setQuery(event.currentTarget.value)}
-          />
-          <Select
-            label="Sort channels"
-            value={sort}
-            onChange={setSort}
-            data={[
-              { value: 'slot', label: 'Slot' },
-              { value: 'name', label: 'Name' },
-            ]}
-            allowDeselect={false}
-          />
-          <DataTable
-            variant="embedded"
-            rows={channels}
-            getRowId={(row) => String(row.slotIndex)}
-            columns={[
-              {
-                key: 'slot',
-                header: 'Slot [unknown]',
-                render: (row) => `${row.slotIndex} [unknown]`,
-              },
-              {
-                key: 'name',
-                header: 'Name [unknown]',
-                render: (row) => `${row.name || '(unnamed)'} [unknown]`,
-              },
-            ]}
-            emptyMessage="No matching channels."
-          />
-          <Title order={4}>Settings [unknown]</Title>
-          {summary.settingsRetain.map((item) => (
-            <Text key={item.label}>
-              {item.label} [unknown] · {item.value}
-            </Text>
-          ))}
-        </>
-      )}
+      ) : null}
       {archive?.manifest.radioModelId === RT95_MODEL_ID && <Rt95Memory archive={archive} />}
       {(archive?.manifest.radioModelId === RT95_MODEL_ID
         ? ['Scan lists', 'Contacts', 'Talk groups']

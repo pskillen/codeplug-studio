@@ -72,6 +72,52 @@ describe('RT95 MMD1 viewer', () => {
     expect(screen.queryByText(/MM9PDY-compatible data present/)).not.toBeInTheDocument();
     expect(screen.getByText(/Guard evidence unverified/)).toBeInTheDocument();
   });
+  it('shows a fingerprint-checked description after the wire name and hides stale descriptions', () => {
+    const clone = new Uint8Array(0x32a0);
+    clone.set(
+      encodeChannelRecord({
+        slotIndex: 1,
+        empty: false,
+        wireName: 'WIRE',
+        rxHz: 145500000,
+        txHz: 145500000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'FM',
+      }),
+    );
+    clone[RT95_OCCUPIED_BITFIELD_OFFSET] = 1;
+    const bytes = new Uint8Array(8192).fill(255);
+    for (const block of encodeRt95ModData(
+      { zones: [], descriptions: [{ channelIndex: 0, text: 'DESCRIPTION' }] },
+      clone,
+    ).blocks)
+      bytes.set(block.bytes, block.address - 0x4000);
+    const a = archive(bytes);
+    a.regions['programming-image'] = clone;
+    a.manifest.regions.push({
+      id: 'programming-image',
+      label: 'Clone',
+      address: 0,
+      byteLength: clone.length,
+      path: 'regions/image.bin',
+      restoreRole: 'inspect-only',
+    });
+    const view = render(
+      <MantineProvider>
+        <Rt95Memory archive={a} />
+      </MantineProvider>,
+    );
+    expect(screen.getByText('DESCRIPTION [body]')).toBeInTheDocument();
+    clone[0] = clone[0]! ^ 1;
+    view.rerender(
+      <MantineProvider>
+        <Rt95Memory archive={a} />
+      </MantineProvider>,
+    );
+    expect(screen.queryByText('DESCRIPTION [body]')).not.toBeInTheDocument();
+  });
   it.each([
     ['receive BCD', 0, 0xfa],
     ['offset BCD', 4, 0xaf],

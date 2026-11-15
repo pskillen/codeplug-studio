@@ -2,7 +2,12 @@ import {
   decodeChannelRecord,
   isRt95ChannelRecordReadable,
 } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
-import { Alert, Stack, Text, Title } from '@mantine/core';
+import { Alert, Checkbox, Select, Stack, Table, Text, TextInput, Title } from '@mantine/core';
+import { useState } from 'react';
+import {
+  decodeRt95DebugSlots,
+  decodeRt95DebugSettings,
+} from '@integrations/radio-io/radios/rt95/debugMemory.ts';
 import { RT95_MMD1_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import {
   MMD1_BASE,
@@ -10,6 +15,7 @@ import {
   MMD1_STATE_ADDR,
 } from '@integrations/radio-io/radios/rt95/modData/layout.ts';
 import {
+  decodeRt95Description,
   decodeRt95ModData,
   decodeRt95ZoneState,
 } from '@integrations/radio-io/radios/rt95/modData/decode.ts';
@@ -25,6 +31,9 @@ import {
 import { rt95GuardEvidence, type DebugArchive } from './captureArchive.ts';
 
 export function Rt95Memory({ archive }: { archive: DebugArchive }) {
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<string | null>('slot');
+  const [showEmpty, setShowEmpty] = useState(false);
   const bytes = archive.regions[RT95_MMD1_REGION_ID];
   const guard = rt95GuardEvidence(archive);
   const cloneRegion = archive.manifest.regions.find((r) => r.id === 'programming-image');
@@ -60,6 +69,25 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
       return `Slot ${slot}: unreadable record [unknown]`;
     }
   };
+  const slots = decodeRt95DebugSlots(clone, cloneRegion?.address ?? 0).map((slot) => {
+    const description =
+      guard?.ok && decoded?.status === 'valid' && slot.occupancy === 'occupied'
+        ? decodeRt95Description(readBlock, decoded, slot.slot - 1, slot.raw)
+        : undefined;
+    return { ...slot, description: description && 'text' in description ? description.text : '' };
+  });
+  const shown = slots
+    .filter(
+      (slot) =>
+        (showEmpty || slot.occupancy !== 'empty') &&
+        `${slot.slot} ${slot.name} ${slot.description}`
+          .toLocaleLowerCase()
+          .includes(query.toLocaleLowerCase()),
+    )
+    .sort((a, b) =>
+      sort === 'name' ? a.name.localeCompare(b.name) || a.slot - b.slot : a.slot - b.slot,
+    );
+  const settings = decodeRt95DebugSettings(clone, cloneRegion?.address ?? 0);
   const keys = at(RT95_KEY_TABLE_ADDR, RT95_KEY_TABLE_LENGTH);
   const state =
     decoded?.status === 'valid'
@@ -67,6 +95,102 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
       : undefined;
   return (
     <Stack>
+      <Title order={4}>Clone channels [unknown]</Title>
+      <TextInput
+        label="Search channels"
+        value={query}
+        onChange={(event) => setQuery(event.currentTarget.value)}
+      />
+      <Select
+        label="Sort channels"
+        value={sort}
+        onChange={setSort}
+        allowDeselect={false}
+        data={[
+          { value: 'slot', label: 'Slot' },
+          { value: 'name', label: 'Name' },
+        ]}
+      />
+      <Checkbox
+        label="Show empty slots"
+        checked={showEmpty}
+        onChange={(event) => setShowEmpty(event.currentTarget.checked)}
+      />
+      <Table.ScrollContainer minWidth={1600}>
+        <Table>
+          <Table.Thead>
+            <Table.Tr>
+              {[
+                'Slot',
+                'Occupancy',
+                'Wire name',
+                'RX',
+                'Duplex / offset',
+                'TX',
+                'Power',
+                'Width',
+                'RX tone',
+                'TX tone',
+                'Scan',
+                'Tone squelch',
+                'Optional signalling',
+                'DTMF index',
+                '5-Tone index',
+                'Record',
+              ].map((label) => (
+                <Table.Th key={label}>{label} [unknown]</Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {shown.map((slot) => (
+              <Table.Tr key={slot.slot}>
+                <Table.Td>{slot.slot} [unknown]</Table.Td>
+                <Table.Td>{slot.occupancy} [unknown]</Table.Td>
+                <Table.Td>
+                  {slot.name || (slot.occupancy === 'occupied' ? '(unnamed)' : '—')} [unknown]
+                  {slot.description && <Text> {slot.description} [body]</Text>}
+                </Table.Td>
+                {[
+                  slot.rx,
+                  slot.duplex,
+                  slot.tx,
+                  slot.power,
+                  slot.width,
+                  slot.rxTone,
+                  slot.txTone,
+                  slot.scan,
+                  slot.toneSquelch,
+                  slot.signalling,
+                  slot.dtmf,
+                  slot.fiveTone,
+                ].map((value, i) => (
+                  <Table.Td key={i}>
+                    {slot.occupancy === 'occupied' ? value : '—'} [unknown]
+                  </Table.Td>
+                ))}
+                <Table.Td>
+                  <details>
+                    <summary>Slot {slot.slot} raw record [unknown]</summary>
+                    <Text>
+                      Unresolved flags and bytes; raw evidence [unknown]:{' '}
+                      {slot.raw
+                        ? Array.from(slot.raw, (b) => b.toString(16).padStart(2, '0')).join(' ')
+                        : 'Unavailable'}
+                    </Text>
+                  </details>
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+      <Title order={4}>Retained settings [unknown]</Title>
+      {settings.map((setting) => (
+        <Text key={setting.label}>
+          {setting.label} [unknown]: {setting.value}
+        </Text>
+      ))}
       <Title order={4}>MMD1 zones [body]</Title>
       <Text>
         Body EEPROM is reached through the head; it can return checksum-valid zeros without a body
