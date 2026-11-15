@@ -29,7 +29,7 @@ export default function DebugLocalStorageViewerPage() {
       />
       <Stack gap="md">
         <Text size="sm">
-          <Anchor component={Link} to="/debug/local-storage">
+          <Anchor component={Link} to="/debug/storage/local-storage">
             ← LocalStorage
           </Anchor>
         </Text>

@@ -113,7 +113,7 @@ export default function DebugIndexedDbStorePage() {
         description="Rows in this object store (read-only)."
       />
       <Text size="sm" mb="md">
-        <Anchor component={Link} to="/debug/indexed-db">
+        <Anchor component={Link} to="/debug/storage/indexed-db">
           ← IndexedDB
         </Anchor>
       </Text>

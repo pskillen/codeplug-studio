@@ -141,7 +141,7 @@ describe('App', () => {
   });
 
   it('lists localStorage keys on the debug localStorage page', () => {
-    renderApp('/debug/local-storage');
+    renderApp('/debug/storage/local-storage');
 
     expect(screen.getByRole('heading', { name: 'LocalStorage' })).toBeInTheDocument();
     expect(screen.getByText(ACTIVE_PROJECT_KEY)).toBeInTheDocument();
@@ -149,10 +149,41 @@ describe('App', () => {
   });
 
   it('renders the indexed-db overview page', async () => {
-    renderApp('/debug/indexed-db');
+    renderApp('/debug/storage/indexed-db');
 
     expect(screen.getByRole('heading', { name: 'IndexedDB' })).toBeInTheDocument();
     expect(await screen.findByText('channels')).toBeInTheDocument();
+  });
+
+  it('shows the selected radio profile without claiming an observed identity', () => {
+    renderApp('/debug/radios/at-d890uv');
+    expect(screen.getByRole('heading', { name: 'AT-D890UV' })).toBeInTheDocument();
+    expect(screen.getByText('No radio identity observed')).toBeInTheDocument();
+    expect(screen.getByText(/expectation, not proof/)).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Backup' })).toBeInTheDocument();
+  });
+
+  it('redirects legacy storage paths preserving encoded parameters, query and hash', async () => {
+    renderApp('/debug/local-storage/codeplug-studio%3AmapboxToken?view=raw#details');
+    await waitFor(() =>
+      expect(appRouter.state.location.pathname).toBe(
+        '/debug/storage/local-storage/codeplug-studio%3AmapboxToken',
+      ),
+    );
+    expect(appRouter.state.location.search).toBe('?view=raw');
+    expect(appRouter.state.location.hash).toBe('#details');
+  });
+
+  it.each([
+    '/debug/radios/rt95',
+    '/debug/storage/indexed-db',
+    '/debug/indexed-db/channels',
+    '/debug/transport/serial-reopen',
+    '/debug/serial-reopen',
+  ])('gates direct debug path %s in production', async (path) => {
+    gateEnv.buildEnv = 'prod';
+    renderApp(path);
+    await waitFor(() => expect(appRouter.state.location.pathname).toBe('/'));
   });
 
   it('redirects /import-export to Summary with project interchange', async () => {

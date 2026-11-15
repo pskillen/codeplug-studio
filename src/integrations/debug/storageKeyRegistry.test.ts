@@ -46,7 +46,7 @@ describe('storageKeyRegistry', () => {
 
   it('storageKeyViewerPath encodes keys for routes', () => {
     expect(storageKeyViewerPath(ACTIVE_PROJECT_KEY)).toBe(
-      `/debug/local-storage/${encodeURIComponent(ACTIVE_PROJECT_KEY)}`,
+      `/debug/storage/local-storage/${encodeURIComponent(ACTIVE_PROJECT_KEY)}`,
     );
     expect(decodeStorageKeyParam(encodeURIComponent(ACTIVE_PROJECT_KEY))).toBe(ACTIVE_PROJECT_KEY);
   });

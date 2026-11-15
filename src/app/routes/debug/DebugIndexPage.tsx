@@ -1,7 +1,19 @@
-import { Alert, Stack, Switch, Text } from '@mantine/core';
+import {
+  Alert,
+  Anchor,
+  Badge,
+  Card,
+  Group,
+  SimpleGrid,
+  Stack,
+  Switch,
+  Text,
+  Title,
+} from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { useDeveloperMode } from '../../hooks/useDeveloperMode.ts';
+import { radioDebugDescriptors } from './radios/descriptors.ts';
 
 export default function DebugIndexPage() {
   const [developerMode, setDeveloperMode] = useDeveloperMode();
@@ -9,40 +21,82 @@ export default function DebugIndexPage() {
     <Page>
       <PageHeader
         title="Debug"
-        description="Read-only inspection tools for browser-local app state."
+        description="Inspect a radio, browser storage or serial transport."
       />
       <Stack gap="md">
-        <Alert color="yellow" title="Browser-local data">
-          Data shown here stays in your browser and may include operator codeplug content. Nothing
-          is sent to a server. Do not commit exports or screenshots that contain personal data.
-        </Alert>
         <Switch
           label="Developer mode on this device"
-          description="Shows the Debug pages and prod-hidden firmware flashing on the production site. Stored in this browser only. Tapping the version in the footer five times does the same."
+          description="Shows Debug pages and prod-hidden firmware flashing on this device. Tap the footer version five times to toggle it."
           checked={developerMode}
           onChange={(e) => setDeveloperMode(e.currentTarget.checked)}
         />
+        <Alert color="yellow" title="Browser-local data">
+          Data may include operator content, serial numbers and calibration. It stays in your
+          browser unless you export it. Do not commit personal data.
+        </Alert>
+        <div>
+          <Title order={2}>Radios</Title>
+          <Text c="dimmed">
+            Choose a model and expected firmware family. A selected profile is not evidence of
+            installed firmware.
+          </Text>
+        </div>
+        <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+          {radioDebugDescriptors.map((radio) => (
+            <Card withBorder key={radio.slug}>
+              <Anchor component={Link} to={`/debug/radios/${radio.slug}`} fw={700}>
+                {radio.model}
+              </Anchor>
+              <Text size="sm" c="dimmed">
+                {radio.family}
+              </Text>
+              <Group gap="xs" mt="md">
+                {radio.capabilities.map((capability) => (
+                  <Badge key={capability.name} color="gray">
+                    {capability.name} · {capability.status}
+                  </Badge>
+                ))}
+              </Group>
+            </Card>
+          ))}
+        </SimpleGrid>
+        <div>
+          <Title order={2}>Storage</Title>
+          <Text c="dimmed">Inspect data held by this browser.</Text>
+        </div>
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <Card withBorder>
+            <Anchor component={Link} to="/debug/storage/indexed-db" fw={700}>
+              IndexedDB
+            </Anchor>
+            <Text size="sm">Browse project and library records.</Text>
+          </Card>
+          <Card withBorder>
+            <Anchor component={Link} to="/debug/storage/local-storage" fw={700}>
+              LocalStorage
+            </Anchor>
+            <Text size="sm">Inspect and delete individual application keys.</Text>
+          </Card>
+        </SimpleGrid>
+        <Title order={2}>Transport</Title>
+        <Card withBorder>
+          <Anchor component={Link} to="/debug/transport/serial-reopen" fw={700}>
+            Serial reopen timing
+          </Anchor>
+          <Text size="sm">
+            Measures reopen timing and sends test bytes. Connect a cable only, not a radio.
+          </Text>
+        </Card>
+        <Title order={2}>Existing radio tools</Title>
         <Text size="sm">
-          <Link to="/debug/indexed-db">IndexedDB</Link> — project and library entity rows in the{' '}
-          <code>codeplug-studio</code> database.
-        </Text>
-        <Text size="sm">
-          <Link to="/debug/local-storage">LocalStorage</Link> — UI preferences, list filters, and
-          tokens persisted as key/value pairs.
-        </Text>
-        <Text size="sm">
-          <Link to="/debug/d890-erase-probe">AT-D890UV erase-unit probe</Link> — measures the flash
-          erase unit that Write must read-modify-write, plus a read-only config-region alias check
-          (#792). <strong>Erase passes write to the radio;</strong> the alias check does not.
-        </Text>
-        <Text size="sm">
-          <Link to="/debug/serial-reopen">Serial reopen timing</Link> — times a Web Serial close and
-          reopen at a new baud rate with a USB serial cable alone (no radio) (#1584).
-        </Text>
-        <Text size="sm">
-          <Link to="/debug/uv5r-mini">UV-5R Mini full read</Link> — read-only clone read of
-          0x0000–0xFFFF with a SHA-256 per span, the reads of this tab as a zip, and a compare of
-          two reads (#1651). It never writes to the radio.
+          <Anchor component={Link} to="/debug/uv5r-mini">
+            UV-5R Mini full read
+          </Anchor>{' '}
+          ·{' '}
+          <Anchor component={Link} to="/debug/d890-erase-probe">
+            AT-D890UV erase-unit probe
+          </Anchor>{' '}
+          (erase passes write to the radio).
         </Text>
       </Stack>
     </Page>

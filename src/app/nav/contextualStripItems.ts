@@ -111,8 +111,8 @@ export const DEBUG_SECTION_ICON: TablerIcon = IconTerminal2;
 
 export const debugStripItems: readonly ContextualStripItem[] = [
   { label: 'Overview', to: '/debug', icon: DEBUG_SECTION_ICON },
-  { label: 'IndexedDB', to: '/debug/indexed-db' },
-  { label: 'localStorage', to: '/debug/local-storage' },
+  { label: 'IndexedDB', to: '/debug/storage/indexed-db' },
+  { label: 'localStorage', to: '/debug/storage/local-storage' },
 ];
 
 /**
@@ -171,10 +171,10 @@ export interface DebugToolLink {
  */
 export const DEBUG_TOOL_LINKS: readonly DebugToolLink[] = [
   { label: 'Debug overview', to: '/debug' },
-  { label: 'IndexedDB', to: '/debug/indexed-db' },
-  { label: 'localStorage', to: '/debug/local-storage' },
+  { label: 'IndexedDB', to: '/debug/storage/indexed-db' },
+  { label: 'localStorage', to: '/debug/storage/local-storage' },
   { label: 'AT-D890UV erase-unit probe', to: '/debug/d890-erase-probe', webSerialOnly: true },
-  { label: 'Serial reopen timing', to: '/debug/serial-reopen', webSerialOnly: true },
+  { label: 'Serial reopen timing', to: '/debug/transport/serial-reopen', webSerialOnly: true },
   // Runs in the Android app too (the USB-serial plugin), so no desktop-only badge.
   { label: 'UV-5R Mini full read', to: '/debug/uv5r-mini' },
 ];

@@ -44,10 +44,10 @@ describe('ReferenceIndexPage', () => {
     const links = screen.getAllByRole('link').map((a) => [a.textContent, a.getAttribute('href')]);
     expect(links).toEqual([
       ['Debug overview', '/debug'],
-      ['IndexedDB', '/debug/indexed-db'],
-      ['localStorage', '/debug/local-storage'],
+      ['IndexedDB', '/debug/storage/indexed-db'],
+      ['localStorage', '/debug/storage/local-storage'],
       ['AT-D890UV erase-unit probeDesktop Chrome / Edge', '/debug/d890-erase-probe'],
-      ['Serial reopen timingDesktop Chrome / Edge', '/debug/serial-reopen'],
+      ['Serial reopen timingDesktop Chrome / Edge', '/debug/transport/serial-reopen'],
       ['UV-5R Mini full read', '/debug/uv5r-mini'],
     ]);
   });
