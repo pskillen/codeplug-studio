@@ -7,6 +7,8 @@ The Debug hierarchy groups radio profiles, browser storage and serial transport 
 ## Documentation map
 
 - [Radio shell](../../../src/app/routes/debug/radios/RadioDebugPage.md)
+- [History controls](../../../src/app/routes/debug/radios/DebugReadHistoryControls.md)
+- [History navigation guard](../../../src/app/routes/debug/radios/DebugReadHistoryGuard.md)
 - [Archive viewers](../../../src/app/routes/debug/radios/ArchiveViewers.md)
 - [RT95 calibration fields](../../reference/radios/retevis/rt95/calibration.md)
 - [AT-D890UV calibration fields](../../reference/radios/anytone/at-d890uv/calibration.md)
@@ -42,3 +44,5 @@ The AT-D890UV Memory tab is a read-only viewer for MR channels, zones, contacts,
 - DM-32UV: calibration and memory viewers, the digital address book (V-frame `0x0F`), MM9PDY location pages and other blocks outside the product read set, and the firmware build stamp are not captured or decoded yet. The capture is verified against synthetic sessions only, not hardware. Tracking: https://github.com/pskillen/codeplug-studio/issues/1698
 - Other profiles await read-only adapter verification. Coverage classifications and decoded inventories for other radios await their capture and hydration adapters. The current clone summary does not provide callsigns or zone membership relationships.
 - Mini parity tests, then redirecting `/debug/uv5r-mini` to the shared page — [#1747](https://github.com/pskillen/codeplug-studio/issues/1747).
+
+RT95 and Mini keep each successful read and opened archive in separate per-profile histories in the current tab. Select a labelled capture to update the viewers; download one archive or download all as a versioned history ZIP, which can be reopened alongside single archives and legacy Mini ZIPs. Imports are validated before anything is added. Clear history explicitly removes the tab's references and selections. Leaving with undownloaded reads offers Stay or Leave; reload or close warns while any shared history has undownloaded reads. Navigation alone does not clear them. History is never persisted or uploaded, and tab closure, reload or process termination loses it. Retaining reads and generating ZIPs consumes tab memory.
