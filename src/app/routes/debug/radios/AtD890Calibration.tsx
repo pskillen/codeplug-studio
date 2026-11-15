@@ -78,7 +78,15 @@ const CONFIDENCE: Record<AtD890CalConfidence, string> = {
   unknown: 'unknown',
 };
 
-function ScalarTable({ title, rows }: { title: string; rows: readonly AtD890CalScalar[] }) {
+function ScalarTable({
+  title,
+  rows,
+  overlayRows,
+}: {
+  title: string;
+  rows: readonly AtD890CalScalar[];
+  overlayRows?: readonly AtD890CalScalar[];
+}) {
   return (
     <Card withBorder>
       <Title order={4}>{title}</Title>
@@ -93,6 +101,7 @@ function ScalarTable({ title, rows }: { title: string; rows: readonly AtD890CalS
                 'Width · order',
                 'Raw',
                 'Decoded',
+                ...(overlayRows ? ['Overlay', 'Overlay − primary'] : []),
                 'Availability',
                 'Confidence',
                 'Source',
@@ -109,6 +118,18 @@ function ScalarTable({ title, rows }: { title: string; rows: readonly AtD890CalS
                 <Table.Td>{row.width === 1 ? 'u8' : 'u16 · little-endian assumed'}</Table.Td>
                 <Table.Td ff="monospace">{rawText(row.raw)}</Table.Td>
                 <Table.Td>{row.value ?? 'Unavailable'}</Table.Td>
+                {overlayRows &&
+                  (() => {
+                    const other = overlayRows.find((item) => item.id === row.id)?.value;
+                    return (
+                      <>
+                        <Table.Td>{other ?? 'Unavailable'}</Table.Td>
+                        <Table.Td>
+                          {row.value != null && other != null ? other - row.value : 'Unavailable'}
+                        </Table.Td>
+                      </>
+                    );
+                  })()}
                 <Table.Td>{AVAILABILITY[row.availability]}</Table.Td>
                 <Table.Td>
                   Layout {CONFIDENCE[row.layout]} · meaning {CONFIDENCE[row.meaning]}
@@ -232,7 +253,7 @@ function TableGroup({
                   {tables.map((t) => (
                     <Table.Th key={t.id}>
                       {t.group === 'power' ? `Sel ${t.selection}` : t.path} {offsetText(t.offset)} ·
-                      raw / Δref
+                      raw / Δref {overlayTables.length ? '/ overlay / Δread' : ''}
                     </Table.Th>
                   ))}
                 </Table.Tr>
@@ -247,11 +268,14 @@ function TableGroup({
                     {tables.map((t) => {
                       const v = t.values[i];
                       const d = atD890CalibrationCorrection(t.values, i, t.referenceIndex);
+                      const other = overlayTables.find((item) => item.id === t.id)?.values[i];
                       return (
                         <Table.Td key={t.id}>
                           {v === undefined
                             ? 'Not captured'
                             : `0x${hex(v)} (${v}) / ${d === undefined ? 'unavailable' : d > 0 ? `+${d}` : d}`}
+                          {overlayTables.length > 0 &&
+                            ` / ${other === undefined ? 'Not captured' : other} / ${v === undefined || other === undefined ? 'unavailable' : other - v}`}
                         </Table.Td>
                       );
                     })}
@@ -382,14 +406,30 @@ export function AtD890Calibration({
             : 'The overlay has no live tune unit; tune B is never substituted.'}
         </Alert>
       )}
-      <ScalarTable title="Oscillator trim" rows={byGroup('trim')} />
+      <ScalarTable
+        title="Oscillator trim"
+        rows={byGroup('trim')}
+        overlayRows={overlayCal?.scalars.filter((row) => row.group === 'trim')}
+      />
       <Text size="sm" c="dimmed">
         Trim is neutral at 2000; the factory editor allows 0–4000. Those editor bounds are evidence,
         not validated RF limits.
       </Text>
-      <ScalarTable title="Power references" rows={byGroup('power-reference')} />
-      <ScalarTable title="Squelch references" rows={byGroup('squelch')} />
-      <ScalarTable title="Meter references" rows={byGroup('meter')} />
+      <ScalarTable
+        title="Power references"
+        rows={byGroup('power-reference')}
+        overlayRows={overlayCal?.scalars.filter((row) => row.group === 'power-reference')}
+      />
+      <ScalarTable
+        title="Squelch references"
+        rows={byGroup('squelch')}
+        overlayRows={overlayCal?.scalars.filter((row) => row.group === 'squelch')}
+      />
+      <ScalarTable
+        title="Meter references"
+        rows={byGroup('meter')}
+        overlayRows={overlayCal?.scalars.filter((row) => row.group === 'meter')}
+      />
       <TableGroup
         title="UHF power tables"
         tables={tables('power', 'uhf')}

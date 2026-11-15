@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { archiveAtD890Capture } from './atD890Capture.ts';
 import { openDebugArchive } from './captureArchive.ts';
+import { AT_D890_PROVENANCE_PATH, readAtD890Provenance } from './atD890Provenance.ts';
 import { classifyAtD890DebugCoverage } from '@integrations/radio-io/radios/at-d890uv/debugCoverage.ts';
 import {
   AT_D890_VITAL_UNITS,
@@ -42,6 +43,70 @@ describe('D890 debug archive', () => {
       classifyAtD890DebugCoverage(file.manifest.regions).vital.filter((v) => v.region),
     ).toHaveLength(4);
     expect(file.sidecars).toEqual(live.sidecars);
+    const { getDebugReadHistory } = await import('./debugReadHistory.ts');
+    const { buildDebugReadHistoryZip, openDebugReadHistoryZip } =
+      await import('./debugReadHistoryArchive.ts');
+    const descriptor = { slug: 'd890-provenance-test', archiveModelId: 'AT-D890UV' };
+    const history = getDebugReadHistory(descriptor);
+    history.clear();
+    const entry = history.add(live);
+    const reopened = openDebugReadHistoryZip(
+      buildDebugReadHistoryZip(descriptor, [entry]),
+      descriptor,
+    )[0]!;
+    expect(reopened.zipBytes).toEqual(live.zipBytes);
+    expect(reopened.sidecars[AT_D890_PROVENANCE_PATH]).toEqual(
+      live.sidecars[AT_D890_PROVENANCE_PATH],
+    );
+    history.clear();
+    const provenance = readAtD890Provenance(file);
+    expect(provenance?.ranges).toHaveLength(7);
+    expect(provenance?.ranges.find((range) => range.requestedUnit === 'tune-b')).toMatchObject({
+      kind: 'vital',
+      respondingUnit: null,
+      bothReadsMatched: true,
+    });
+    const withClaim = (claim: unknown) => ({
+      ...file,
+      sidecars: {
+        ...file.sidecars,
+        [AT_D890_PROVENANCE_PATH]: new TextEncoder().encode(JSON.stringify(claim)),
+      },
+    });
+    expect(readAtD890Provenance(withClaim({ ...provenance, version: 2 }))).toBeUndefined();
+    expect(
+      readAtD890Provenance(
+        withClaim({ ...provenance, ranges: [...provenance!.ranges, provenance!.ranges[0]] }),
+      ),
+    ).toBeUndefined();
+    expect(
+      readAtD890Provenance(
+        withClaim({
+          ...provenance,
+          ranges: provenance!.ranges.map((r, i) => (i ? r : { ...r, address: r.address + 1 })),
+        }),
+      ),
+    ).toBeUndefined();
+    expect(
+      readAtD890Provenance(
+        withClaim({
+          ...provenance,
+          ranges: provenance!.ranges.map((r, i) => (i ? r : { ...r, respondingUnit: 'tune-a' })),
+        }),
+      ),
+    ).toBeUndefined();
+    expect(
+      readAtD890Provenance({
+        ...file,
+        sidecars: { [AT_D890_PROVENANCE_PATH]: new Uint8Array([255]) },
+      }),
+    ).toBeUndefined();
+    expect(
+      readAtD890Provenance({
+        ...file,
+        sidecars: { ...file.sidecars, 'debug/vital.json': new TextEncoder().encode('{}') },
+      }),
+    ).toBeUndefined();
     expect(file.manifest).toEqual(live.manifest);
     expect(classifyAtD890DebugCoverage(file.manifest.regions)).toEqual(
       classifyAtD890DebugCoverage(live.manifest.regions),
