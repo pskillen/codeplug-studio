@@ -27,6 +27,8 @@ TYT MD-UV380 / Retevis RT-3S / Baofeng DM-1701 / Retevis RT-84 share OpenGD77 CP
 | `src/integrations/radio-io/radios/opengd77/`                     | Shared OpenUV380 codecs, protocol, hydration, Radio image summary  |
 | `src/integrations/radio-io/radios/opengd77/dm1701/descriptor.ts` | Registry descriptor (`radioType` `08h`/`0ah`, write variant `'X'`) |
 
+Read-only debug capture archive (FirmwareInfo, FLASH spans, User Database): [OpenGD77 debug-capture.md](../../opengd77/debug-capture.md).
+
 ## Documentation map
 
 | Doc                                                        | Contents                                                                                                                         |
