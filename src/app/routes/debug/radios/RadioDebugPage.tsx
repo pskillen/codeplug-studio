@@ -59,7 +59,8 @@ export default function RadioDebugPage() {
 function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const { reads } = useUv5rMiniDebugReads();
   const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
-  const historyEnabled = radio === 'uv-5r-mini' || radio === 'rt95' || radio === 'at-d890uv';
+  const historyEnabled =
+    radio === 'uv-5r-mini' || radio === 'rt95' || radio === 'at-d890uv' || radio === 'dm-32uv';
   const store = getDebugReadHistory(
     descriptor ?? { slug: 'unknown', archiveModelId: 'UV-5R Mini' },
   );
@@ -156,7 +157,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
     }
   };
   const readRadio = async () => {
-    if (!descriptor.capture) return;
+    if (!descriptor.capture || controller.current) return;
     setReading(true);
     controller.current = new AbortController();
     setError(undefined);
@@ -460,7 +461,11 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               {archive && (
                 <Stack>
                   <Coverage
-                    key={archive.manifest.capturedAt + archive.zipBytes.length}
+                    key={
+                      historyEnabled
+                        ? history.selectedId
+                        : archive.manifest.capturedAt + archive.zipBytes.length
+                    }
                     archive={archive}
                   />
                   <Button
@@ -496,7 +501,10 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
             )}
           </Tabs.Panel>
           <Tabs.Panel value="hex" pt="md">
-            <HexViewer key={archive?.manifest.capturedAt} archive={archive} />
+            <HexViewer
+              key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
+              archive={archive}
+            />
           </Tabs.Panel>
           <Tabs.Panel value="compare" pt="md">
             {descriptor.slug === 'at-d890uv' && (
@@ -505,7 +513,9 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 divert reads; equal bytes and repeated-read agreement do not prove unit identity.
               </Alert>
             )}
-            {(descriptor.slug === 'rt95' || descriptor.slug === 'at-d890uv') && (
+            {(descriptor.slug === 'rt95' ||
+              descriptor.slug === 'at-d890uv' ||
+              descriptor.slug === 'dm-32uv') && (
               <Select
                 label="Compare with"
                 clearable
@@ -526,6 +536,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               />
             ) : historyEnabled ? (
               <CompareViewer
+                key={history.selectedId ?? 'empty'}
                 archive={archive}
                 other={other}
                 modelId={descriptor.archiveModelId}

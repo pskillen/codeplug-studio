@@ -247,38 +247,43 @@ export function CompareViewer(props: {
           {archive && other && props.DecodedDiff && (
             <props.DecodedDiff first={archive} second={other} />
           )}
-          <Title order={4}>Decoded changes</Title>
-          {(() => {
-            const first = archive && rt95ArchiveDetails(archive)?.summary;
-            const second = other && rt95ArchiveDetails(other)?.summary;
-            if (!first || !second)
-              return <Text>Decoded changes are unavailable for these captures.</Text>;
-            const settings = first.settingsRetain.flatMap((row) => {
-              const next = second.settingsRetain.find((item) => item.label === row.label);
-              return next && next.value !== row.value
-                ? [`${row.label}: ${row.value} → ${next.value}`]
-                : [];
-            });
-            const slots = new Set([
-              ...first.inspectChannels.map((item) => item.slotIndex),
-              ...second.inspectChannels.map((item) => item.slotIndex),
-            ]);
-            const changes = [
-              ...settings,
-              ...Array.from(slots).flatMap((slot) => {
-                const before = first.inspectChannels.find((item) => item.slotIndex === slot)?.name;
-                const after = second.inspectChannels.find((item) => item.slotIndex === slot)?.name;
-                return before !== after
-                  ? [`Channel slot ${slot}: ${before ?? '(empty)'} → ${after ?? '(empty)'}`]
+          {modelId !== 'DM-32UV' && <Title order={4}>Decoded changes</Title>}
+          {modelId !== 'DM-32UV' &&
+            (() => {
+              const first = archive && rt95ArchiveDetails(archive)?.summary;
+              const second = other && rt95ArchiveDetails(other)?.summary;
+              if (!first || !second)
+                return <Text>Decoded changes are unavailable for these captures.</Text>;
+              const settings = first.settingsRetain.flatMap((row) => {
+                const next = second.settingsRetain.find((item) => item.label === row.label);
+                return next && next.value !== row.value
+                  ? [`${row.label}: ${row.value} → ${next.value}`]
                   : [];
-              }),
-            ];
-            return changes.length ? (
-              changes.map((change) => <Text key={change}>{change} [unknown]</Text>)
-            ) : (
-              <Text>No decoded channel name or setting changes. [unknown]</Text>
-            );
-          })()}
+              });
+              const slots = new Set([
+                ...first.inspectChannels.map((item) => item.slotIndex),
+                ...second.inspectChannels.map((item) => item.slotIndex),
+              ]);
+              const changes = [
+                ...settings,
+                ...Array.from(slots).flatMap((slot) => {
+                  const before = first.inspectChannels.find(
+                    (item) => item.slotIndex === slot,
+                  )?.name;
+                  const after = second.inspectChannels.find(
+                    (item) => item.slotIndex === slot,
+                  )?.name;
+                  return before !== after
+                    ? [`Channel slot ${slot}: ${before ?? '(empty)'} → ${after ?? '(empty)'}`]
+                    : [];
+                }),
+              ];
+              return changes.length ? (
+                changes.map((change) => <Text key={change}>{change} [unknown]</Text>)
+              ) : (
+                <Text>No decoded channel name or setting changes. [unknown]</Text>
+              );
+            })()}
           {region && left && a && b && (
             <>
               <Select

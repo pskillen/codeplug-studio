@@ -31,3 +31,5 @@ The shared RT95 history supplies the selected capture and a second entry to Comp
 RT95 Memory also mounts [Rt95Memory](Rt95Memory.md) for guarded MMD1 zones, state and P-key inspection. MMD1 is a separate inspect-only body region; guard probes and outcome are checked on reopening. Hex and comparison recognise its validated region metadata.
 
 The [D890 comparison](AtD890Compare.md) checks its acquisition sidecar and keeps sparse and requested vital address spaces separate.
+
+DM-32 comparison classifies configuration and factory-sector address spaces independently. It compares matching region IDs and offsets only; missing bytes and differently partitioned sparse runs remain incomparable. Decoded evidence comes from captured bytes, with unavailable values kept distinct from unchanged values.

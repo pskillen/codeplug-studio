@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import { Dm32DecodedDiff } from './Dm32DecodedDiff.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
 import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
@@ -60,6 +61,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-32uv',
+    DecodedDiff: Dm32DecodedDiff,
     capture: captureDm32,
     model: 'DM-32UV',
     archiveModelId: 'DM-32UV',

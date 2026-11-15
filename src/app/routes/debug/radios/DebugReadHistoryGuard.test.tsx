@@ -8,12 +8,14 @@ import { exampleArchive } from './debugReadHistory.fixture.ts';
 
 const store = getDebugReadHistory({ slug: 'rt95', archiveModelId: 'retevis-rt95' });
 const d890 = getDebugReadHistory({ slug: 'at-d890uv', archiveModelId: 'AT-D890UV' });
+const dm32 = getDebugReadHistory({ slug: 'dm-32uv', archiveModelId: 'DM-32UV' });
 const mini = getDebugReadHistory({ slug: 'uv-5r-mini', archiveModelId: 'UV-5R Mini' });
 afterEach(() =>
   act(() => {
     store.clear();
     mini.clear();
     d890.clear();
+    dm32.clear();
   }),
 );
 
@@ -64,6 +66,7 @@ it('blocks back navigation, allows Stay and Leave, and warns after leaving', asy
 });
 
 it.each([
+  ['/debug/radios/dm-32uv/', dm32, 'DM-32UV'],
   ['/debug/radios/at-d890uv/', d890, 'AT-D890UV'],
   ['/debug/radios/rt95/', store, 'retevis-rt95'],
   ['/debug/radios/uv-5r-mini/', mini, 'UV-5R Mini'],
