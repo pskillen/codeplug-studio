@@ -4,6 +4,9 @@ import {
 } from '@core/radios/retevis/rt95/calibration.ts';
 import type { Rt95Protocol } from './protocol.ts';
 
+export const RT95_CALIBRATION_REGION_ID = 'rt95-calibration';
+export const RT95_CALIBRATION_REGION_PATH = 'regions/rt95-calibration.bin';
+
 /** Read only the fixed debug prefix through the existing protocol and guard. */
 export async function readRt95Calibration(
   radio: Pick<Rt95Protocol, 'readBlocks'>,

@@ -1,3 +1,9 @@
+import { RT95_IMAGE_SIZE } from '@integrations/radio-io/radios/rt95/constants.ts';
+import {
+  RT95_CALIBRATION_START,
+  RT95_CALIBRATION_LENGTH,
+} from '@core/radios/retevis/rt95/calibration.ts';
+import { RT95_CALIBRATION_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import { AT_D890_VITAL_UNIT_BYTES } from '@integrations/radio-io/radios/at-d890uv/vitalBackup.ts';
 import {
   atD890VitalComparison,
@@ -231,13 +237,31 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
               </Text>
             ))}
             <Text>
-              Clone programming-image offsets [unknown]: 0x0000–0x329F. Main-body EEPROM via head
-              [body]: 0x3B00–0x3FBF{' '}
-              {archive.regions['rt95-calibration']
-                ? `· ${archive.regions['rt95-calibration'].length} bytes captured`
-                : '· Not captured'}
-              . The interval 0x32A0–0x3AFF is not captured. These are distinct representations, not
-              a proven physical memory map. Signature 0x3FF8–0x3FFF is outside this capture.
+              Clone programming-image offsets [unknown]: {formatAddress(0)}–
+              {formatAddress(RT95_IMAGE_SIZE - 1)}.
+            </Text>
+            <Text>
+              Main-body EEPROM via head [body]:{' '}
+              {archive.regions[RT95_CALIBRATION_REGION_ID]?.length
+                ? `captured ${formatAddress(RT95_CALIBRATION_START)}–${formatAddress(RT95_CALIBRATION_START + archive.regions[RT95_CALIBRATION_REGION_ID]!.length - 1)}`
+                : 'Not captured'}
+              .
+            </Text>
+            {(archive.regions[RT95_CALIBRATION_REGION_ID]?.length ?? 0) <
+              RT95_CALIBRATION_LENGTH && (
+              <Text>
+                {formatAddress(
+                  RT95_CALIBRATION_START +
+                    (archive.regions[RT95_CALIBRATION_REGION_ID]?.length ?? 0),
+                )}
+                –{formatAddress(RT95_CALIBRATION_START + RT95_CALIBRATION_LENGTH - 1)} not captured.
+              </Text>
+            )}
+            <Text>
+              {formatAddress(RT95_IMAGE_SIZE)}–{formatAddress(RT95_CALIBRATION_START - 1)} not
+              captured. {formatAddress(RT95_CALIBRATION_START + RT95_CALIBRATION_LENGTH)}–
+              {formatAddress(0x3ff7)} is outside this capture. Signature 0x3FF8–0x3FFF is outside
+              this capture. These are distinct representations, not a proven physical memory map.
             </Text>
           </>
         ) : (

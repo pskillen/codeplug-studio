@@ -248,6 +248,9 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                     : descriptor.slug === 'rt95'
                       ? [
                           ['Model · selected', descriptor.model],
+                          ['Expected family', descriptor.family],
+                          ['Serial · archive', archive?.manifest.serial || 'Unknown'],
+                          ['Firmware · archive', archive?.manifest.firmware || 'Unknown'],
                           [
                             'PC ident [head]',
                             archive?.sidecars['debug/ident.bin']
@@ -262,6 +265,15 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                           ],
                           ['Running firmware', 'Unknown'],
                           ['Firmware mod', 'Unknown'],
+                          ['Evidence', archive ? 'Archive manifest' : 'No radio identity observed'],
+                          [
+                            'Connection',
+                            reading
+                              ? 'Reading radio…'
+                              : archive?.source === 'live-read'
+                                ? 'Read complete · disconnected'
+                                : 'Not connected',
+                          ],
                         ]
                       : descriptor.slug === 'dm-32uv'
                         ? [

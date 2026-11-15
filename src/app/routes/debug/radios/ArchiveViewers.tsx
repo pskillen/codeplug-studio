@@ -1,3 +1,5 @@
+import { RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
+import { RT95_CALIBRATION_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import {
   Alert,
   Button,
@@ -84,8 +86,8 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
       <Card withBorder>
         <Text fw={600}>
           {wire ? 'Wire bytes as received' : region.label}{' '}
-          {archive?.manifest.radioModelId === 'retevis-rt95'
-            ? region.id === 'rt95-calibration'
+          {archive?.manifest.radioModelId === RT95_MODEL_ID
+            ? region.id === RT95_CALIBRATION_REGION_ID
               ? '[body]'
               : '[unknown]'
             : ''}{' '}

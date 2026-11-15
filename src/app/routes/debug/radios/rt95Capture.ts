@@ -1,5 +1,10 @@
+import { RT95_CALIBRATION_START } from '@core/radios/retevis/rt95/calibration.ts';
+import {
+  RT95_CALIBRATION_REGION_ID,
+  RT95_CALIBRATION_REGION_PATH,
+  readRt95Calibration,
+} from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
-import { readRt95Calibration } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import { backupLiveRadioSession } from '@app/services/radioBackupRead.ts';
 import { openWithBaudFallback } from '@app/services/serialBaudFallback.ts';
 import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.ts';
@@ -36,18 +41,18 @@ export async function captureRt95Pipe(
       regions: [
         ...original.manifest.regions,
         {
-          id: 'rt95-calibration',
+          id: RT95_CALIBRATION_REGION_ID,
           label: 'RT95 calibration and production record',
-          address: 0x3b00,
+          address: RT95_CALIBRATION_START,
           byteLength: calibration.length,
-          path: 'regions/rt95-calibration.bin',
+          path: RT95_CALIBRATION_REGION_PATH,
           restoreRole: 'inspect-only' as const,
         },
       ],
     };
     const zip = packRadioBackupZip(
       manifest,
-      { ...original.regions, 'rt95-calibration': calibration },
+      { ...original.regions, [RT95_CALIBRATION_REGION_ID]: calibration },
       { ...original.sidecars, 'debug/ident.bin': ident.raw },
     );
     return {
