@@ -138,7 +138,12 @@ function Rt95ZoneBlock({ zone, slots }: { zone: ZoneView; slots: SlotRow[] }) {
                     <Table.Td>{index + 1}</Table.Td>
                     <Table.Td>
                       {slot!.name || '(unnamed)'}
-                      {slot!.description ? <Text span c="dimmed"> · {slot!.description}</Text> : null}
+                      {slot!.description ? (
+                        <Text span c="dimmed">
+                          {' '}
+                          · {slot!.description}
+                        </Text>
+                      ) : null}
                     </Table.Td>
                   </Table.Tr>
                 ))}
@@ -286,7 +291,8 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
               </Text>
               <Text size="sm" c="dimmed">
                 The RT95 record has no callsign field. The MM9PDY target writes the channel's
-                callsign into the radio name when it has one. The viewer shows the radio name and the description as stored and does not claim which is which.
+                callsign into the radio name when it has one. The viewer shows the radio name and
+                the description as stored and does not claim which is which.
               </Text>
               {decoded.zones.map((zone) => (
                 <Rt95ZoneBlock key={zone.index} zone={zone} slots={slots} />
