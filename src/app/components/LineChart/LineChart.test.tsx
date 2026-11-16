@@ -60,4 +60,23 @@ describe('LineChart', () => {
     expect(screen.getAllByText('0')).toHaveLength(1);
     expect(screen.getAllByText('1')).toHaveLength(1);
   });
+
+  it('draws an isolated point on a dashed series as a hollow circle', () => {
+    const lone = (dashed: boolean) => [
+      { id: 'a', label: 'A', slot: 0, dashed, points: [{ x: 100, y: 3 }] },
+    ];
+    const { container, rerender } = render(
+      <MantineProvider>
+        <LineChart title="t" xLabel="x" yLabel="y" series={lone(false)} table={false} />
+      </MantineProvider>,
+    );
+    const dot = () => container.querySelector('g[clip-path] circle')!;
+    expect(dot().getAttribute('fill')).not.toContain('--mantine-color-body');
+    rerender(
+      <MantineProvider>
+        <LineChart title="t" xLabel="x" yLabel="y" series={lone(true)} table={false} />
+      </MantineProvider>,
+    );
+    expect(dot().getAttribute('fill')).toContain('--mantine-color-body');
+  });
 });
