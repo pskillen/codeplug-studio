@@ -58,6 +58,7 @@ describe.each(CASES)('captureOpenGd77DebugPipe on %s (type 0x%s)', (_name, model
     const pipe = new OpenGd77ScriptedPipe(radioType);
     const capture = await captureOpenGd77DebugPipe(pipe, descriptor, {
       capturedVia: 'android-usb-serial',
+      includeUserDatabase: true,
     });
     const { manifest, regions, sidecars } = buildOpenGd77DebugArchiveParts(capture);
     expect(manifest.coverage).toBe('known-map-regions');
@@ -84,6 +85,32 @@ describe.each(CASES)('captureOpenGd77DebugPipe on %s (type 0x%s)', (_name, model
     const reopened = parseRadioBackupZip(zip);
     expect(reopened.manifest.radioModelId).toBe(descriptor.modelIds[0]);
     expect(reopened.sidecars[OPENGD77_DEBUG_FIRMWARE_INFO_SIDECAR]).toHaveLength(46);
+  });
+
+  it('skips only the User Database unless asked for it', async () => {
+    const readsUserDb = (frames: readonly Uint8Array[]) =>
+      frames.some((frame) => {
+        if (frame[0] !== 0x52 || frame.length < 8) return false;
+        const address =
+          ((frame[2]! << 24) | (frame[3]! << 16) | (frame[4]! << 8) | frame[5]!) >>> 0;
+        return (
+          address >= OPENUV380_USER_DB_HEADER_ABS && address < OPENUV380_USER_DB_HEADER_ABS + 12
+        );
+      });
+    const skipped = new OpenGd77ScriptedPipe(radioType);
+    const capture = await captureOpenGd77DebugPipe(skipped, descriptor);
+    expect(capture.userDatabase).toBeUndefined();
+    expect(readsUserDb(skipped.writes)).toBe(false);
+    const { manifest } = buildOpenGd77DebugArchiveParts(capture);
+    expect(manifest.regions.map((r) => r.id)).toEqual([
+      ...OPENGD77_BACKUP_FLASH_SPANS.map((s) => s.id),
+      OPENGD77_CALIBRATION_REGION_ID,
+    ]);
+    expect(skipped.cpsDepth).toBe(0);
+
+    const included = new OpenGd77ScriptedPipe(radioType);
+    await captureOpenGd77DebugPipe(included, descriptor, { includeUserDatabase: true });
+    expect(readsUserDb(included.writes)).toBe(true);
   });
 
   it('captures the planted flash byte in the first span', async () => {
