@@ -73,8 +73,8 @@ export function RadioCompare({
           />
           <Text size="sm">
             {section.label}
-            {section.note ? ` [${section.note}]` : ''} · {section.changed.toLocaleString()} changed
-            bytes
+            {section.note ? ` [${section.note}]` : ''} · {section.changed.toLocaleString()} changed{' '}
+            {section.changed === 1 ? 'byte' : 'bytes'}
           </Text>
           {(rangesA.length > 0 || rangesB.length > 0) && (
             <Stack gap={4} align="flex-start">
