@@ -1,11 +1,12 @@
 import { MantineProvider } from '@mantine/core';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { Dm32DebugCapture } from '@integrations/radio-io/radios/dm32uv/debugCapture.ts';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 import { dm32Capture, dm32Page } from './dm32Archive.fixture.ts';
 import { archiveDm32Capture } from './dm32Capture.ts';
 import { Dm32Memory } from './Dm32Memory.tsx';
+import { Dm32Settings } from './Dm32Settings.tsx';
 
 const bcd = (digits: string) =>
   digits
@@ -40,7 +41,22 @@ function show(archive?: DebugArchive) {
   return { ...view, replace: (a?: DebugArchive) => view.rerender(ui(a)) };
 }
 
+function showSettings(archive?: DebugArchive) {
+  const ui = (a?: DebugArchive) => (
+    <MantineProvider>
+      <Dm32Settings archive={a} />
+    </MantineProvider>
+  );
+  const view = render(ui(archive));
+  return { ...view, replace: (a?: DebugArchive) => view.rerender(ui(a)) };
+}
+
 describe('Dm32Memory', () => {
+  it('has no Settings tab: settings live on the page-level Settings tab', async () => {
+    show(await archiveDm32Capture(channelCapture(['A'])));
+    expect(screen.queryByRole('tab', { name: 'Settings' })).toBeNull();
+  });
+
   it('asks for a capture when there is none', () => {
     show();
     expect(screen.getByText('No capture')).toBeInTheDocument();
@@ -132,26 +148,25 @@ describe('Dm32Memory', () => {
     });
   }
 
-  const openSettings = () => fireEvent.click(screen.getByRole('tab', { name: 'Settings' }));
-
   it('says Not captured when there is no 0x04 page, and keeps the other tabs', async () => {
-    show(await archiveDm32Capture(channelCapture(['A'])));
-    openSettings();
+    const archive = await archiveDm32Capture(channelCapture(['A']));
+    showSettings(archive);
     expect(screen.getByText('Not captured')).toBeInTheDocument();
+    cleanup();
+    show(archive);
     for (const name of ['Zones', 'Scan lists', 'Talk groups', 'RX groups', 'Radio IDs', 'Contacts'])
       expect(screen.getByRole('tab', { name })).toBeInTheDocument();
   });
 
   it('refuses to decode several 0x04 pages and lists them', async () => {
-    show(await archiveDm32Capture(settingsCapture(() => {}, 1)));
-    openSettings();
+    showSettings(await archiveDm32Capture(settingsCapture(() => {}, 1)));
     expect(screen.getByText('Several pages, not decoded')).toBeInTheDocument();
     expect(screen.getByText(/Several pages tagged 0x04, not decoded/)).toBeInTheDocument();
     expect(screen.queryByText('Auto power off')).toBeNull();
   });
 
   it('shows grouped settings, raw bytes with addresses on demand, and the exclusion', async () => {
-    show(
+    showSettings(
       await archiveDm32Capture(
         settingsCapture((p) => {
           p[0x1e] = 3;
@@ -161,7 +176,6 @@ describe('Dm32Memory', () => {
         }),
       ),
     );
-    openSettings();
     for (const g of [
       'Display',
       'Tones & alerts',
@@ -200,8 +214,7 @@ describe('Dm32Memory', () => {
         p.set(new TextEncoder().encode('87654321'), 0x43b);
         p.set(new TextEncoder().encode('11223344'), 0x443);
       });
-    const view = show(await archiveDm32Capture(withPasswords()));
-    openSettings();
+    const view = showSettings(await archiveDm32Capture(withPasswords()));
     fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
     expect(screen.getAllByText('Hidden (password)')).toHaveLength(3);
     for (const secret of ['12345678', '87654321', '11223344', '31 32 33'])
@@ -218,14 +231,12 @@ describe('Dm32Memory', () => {
     expect(screen.getByText('87654321')).toBeInTheDocument();
     expect(screen.getByText('11223344')).toBeInTheDocument();
     view.replace(await archiveDm32Capture(withPasswords()));
-    openSettings();
     expect(screen.getAllByText('Hidden (password)')).toHaveLength(3);
     expect(screen.getByRole('button', { name: 'Show password' })).toBeInTheDocument();
   });
 
   it('searches label, group and raw hex', async () => {
-    show(await archiveDm32Capture(settingsCapture((p) => (p[0x1e] = 3))));
-    openSettings();
+    showSettings(await archiveDm32Capture(settingsCapture((p) => (p[0x1e] = 3))));
     const search = screen.getByPlaceholderText('Search settings');
     fireEvent.change(search, { target: { value: 'power & battery' } });
     expect(screen.getByText('Auto power off')).toBeInTheDocument();
@@ -239,20 +250,17 @@ describe('Dm32Memory', () => {
   });
 
   it('resets the settings search and raw toggle when the archive is replaced', async () => {
-    const view = show(await archiveDm32Capture(settingsCapture()));
-    openSettings();
+    const view = showSettings(await archiveDm32Capture(settingsCapture()));
     fireEvent.change(screen.getByPlaceholderText('Search settings'), { target: { value: 'gps' } });
     fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
     view.replace(await archiveDm32Capture(settingsCapture()));
-    openSettings();
     expect(screen.getByPlaceholderText('Search settings')).toHaveValue('');
     expect(screen.getByLabelText('Show raw bytes + address')).not.toBeChecked();
   });
 
   it('is keyboard reachable at 375 px', async () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 });
-    show(await archiveDm32Capture(settingsCapture()));
-    openSettings();
+    showSettings(await archiveDm32Capture(settingsCapture()));
     const toggle = screen.getByLabelText('Show raw bytes + address');
     toggle.focus();
     expect(toggle).toHaveFocus();

@@ -11,7 +11,8 @@ import { buildSyntheticRt95Image } from '@integrations/radio-io/radios/rt95/__fi
 import { memoryMapFromBytes, memoryMapToBytes } from '@integrations/radio-io/kit/memoryMap.ts';
 import { encodeChannelsIntoImage } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
 import { Coverage } from './Coverage.tsx';
-import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
+import { CompareViewer, HexViewer } from './ArchiveViewers.tsx';
+import { Rt95MemoryView } from './Rt95Memory.tsx';
 
 const manifest: RadioBackupManifestV1 = {
   format: 'codeplug-studio-radio-backup',
@@ -82,14 +83,14 @@ describe('archive viewer controls', () => {
     );
     render(
       <MantineProvider>
-        <MemoryViewer archive={full} />
+        <Rt95MemoryView archive={full} />
       </MantineProvider>,
     );
     expect(screen.getByRole('cell', { name: 'LOCAL' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '7' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Slot' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Wire name' })).toBeInTheDocument();
-    expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.queryByText('Settings')).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole('textbox', { name: 'Search table' }), {
       target: { value: 'other' },
     });
