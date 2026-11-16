@@ -1,12 +1,16 @@
-import { Alert, Stack, Switch, Table, Text, TextInput, Title } from '@mantine/core';
+import { Alert, Badge, Group, Stack, Switch, Table, Text, TextInput, Title } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import {
   DM32_SETTINGS_GROUPS,
   DM32_SETTINGS_LAYOUT_BASIS,
   type Dm32DocumentedRangeView,
+  type Dm32SettingConfidence,
   type Dm32SettingFieldView,
   type Dm32SettingsInventory,
+  type Dm32UnusedRangeView,
 } from '@integrations/radio-io/radios/dm32uv/debugMemorySettings.ts';
+import { SensitiveRevealButton } from './SensitiveReveal.tsx';
+import { MASKED_HEX_BYTE } from './viewerUtils.ts';
 
 const NOT_CAPTURED = 'Not captured';
 const DASH = '—';
@@ -19,11 +23,17 @@ const matches = (query: string, ...haystack: string[]) => {
   return !q || haystack.some((h) => h.toLocaleLowerCase().includes(q));
 };
 
-function valueText(f: Dm32SettingFieldView): string {
-  if (f.status === 'not-captured') return NOT_CAPTURED;
-  if (f.value === undefined) return 'Not interpreted (see raw bytes)';
-  return f.value === '' ? '(empty)' : f.value;
-}
+const CONFIDENCE: Record<Dm32SettingConfidence, { label: string; color: string }> = {
+  traced: { label: 'Traced', color: 'green' },
+  'partially-traced': { label: 'Partly traced', color: 'yellow' },
+  unknown: { label: 'Unknown', color: 'gray' },
+};
+
+const UNUSED_KIND_LABEL = {
+  free: 'Free',
+  unread: 'Unused (no reader)',
+  'mm9pdy-reserved': 'MM9PDY reserved',
+} as const;
 
 function addressText(f: { address: number; length: number; mask?: number }): string {
   const span = f.length > 1 ? `${hexAddress(f.address)} +${f.length}` : hexAddress(f.address);
@@ -35,7 +45,16 @@ function rawText(f: { raw?: number[] }): string {
 }
 
 /** Read-only grouped view of the DM-32UV settings page (tag 0x04). */
-export function SettingsPanel({ settings }: { settings: Dm32SettingsInventory }) {
+export function SettingsPanel({
+  settings,
+  revealed = false,
+  onToggleReveal,
+}: {
+  settings: Dm32SettingsInventory;
+  /** Whether password fields are shown; hidden unless the viewer reveals them. */
+  revealed?: boolean;
+  onToggleReveal?: () => void;
+}) {
   const [query, setQuery] = useState('');
   const [raw, setRaw] = useState(false);
   const groups = useMemo(
@@ -63,6 +82,24 @@ export function SettingsPanel({ settings }: { settings: Dm32SettingsInventory })
     );
   const { counts } = settings;
   const searching = query.trim() !== '';
+  const hidden = (f: Dm32SettingFieldView) => f.sensitive && !revealed;
+  const valueText = (f: Dm32SettingFieldView): string => {
+    if (f.status === 'not-captured') return NOT_CAPTURED;
+    if (hidden(f)) return 'Hidden (password)';
+    if (f.value === undefined) return 'Not interpreted (see raw bytes)';
+    return f.value === '' ? '(empty)' : f.value;
+  };
+  const fieldRawText = (f: Dm32SettingFieldView) =>
+    !f.raw ? DASH : hidden(f) ? f.raw.map(() => MASKED_HEX_BYTE).join(' ') : hexBytes(f.raw);
+  const unusedMatches = (u: Dm32UnusedRangeView) =>
+    matches(
+      query,
+      'unused free reserved no reader',
+      UNUSED_KIND_LABEL[u.kind],
+      u.label,
+      addressText(u),
+    );
+  const unusedShown = settings.unused.filter((u) => !searching || unusedMatches(u));
   const fieldMatches = (f: Dm32SettingFieldView, groupLabel: string) =>
     matches(
       query,
@@ -71,7 +108,8 @@ export function SettingsPanel({ settings }: { settings: Dm32SettingsInventory })
       f.help ?? '',
       groupLabel,
       valueText(f),
-      rawText(f),
+      fieldRawText(f),
+      CONFIDENCE[f.confidence].label,
       addressText(f),
     );
   const rangeMatches = (r: Dm32DocumentedRangeView) =>
@@ -84,9 +122,11 @@ export function SettingsPanel({ settings }: { settings: Dm32SettingsInventory })
     <Stack gap="sm">
       <Text>
         {count(counts.captured)} of {count(counts.registered)} known setting fields captured ·{' '}
-        {count(counts.decoded)} decoded to a value · {count(counts.documentedRangesCaptured)} of{' '}
-        {count(counts.documentedRanges)} documented-not-decoded ranges captured ·{' '}
-        {count(counts.unknownBytes)} unknown bytes
+        {count(counts.decoded)} decoded to a value · {count(counts.traced)} traced,{' '}
+        {count(counts.partiallyTraced)} partly traced, {count(counts.unknownConfidence)} unknown ·{' '}
+        {count(counts.documentedRangesCaptured)} of {count(counts.documentedRanges)}{' '}
+        documented-not-decoded ranges captured · {count(counts.unusedBytes)} unused bytes in{' '}
+        {count(counts.unusedRanges)} ranges · {count(counts.unknownBytes)} unknown bytes
       </Text>
       <Text size="sm" c="dimmed">
         Read-only view of the settings page at {hexAddress(settings.address)} (tag 0x04). Layout
@@ -106,11 +146,16 @@ export function SettingsPanel({ settings }: { settings: Dm32SettingsInventory })
           value={query}
           onChange={(e) => setQuery(e.currentTarget.value)}
         />
-        <Switch
-          label="Show raw bytes + address"
-          checked={raw}
-          onChange={(e) => setRaw(e.currentTarget.checked)}
-        />
+        <Group gap="md" align="center">
+          <Switch
+            label="Show raw bytes + address"
+            checked={raw}
+            onChange={(e) => setRaw(e.currentTarget.checked)}
+          />
+          {onToggleReveal && (
+            <SensitiveRevealButton revealed={revealed} onToggle={onToggleReveal} />
+          )}
+        </Group>
       </Stack>
       {groups.map((g) => {
         const fields = g.fields.filter((f) => !searching || fieldMatches(f, g.label));
@@ -134,6 +179,7 @@ export function SettingsPanel({ settings }: { settings: Dm32SettingsInventory })
                   <Table.Tr>
                     <Table.Th>Setting</Table.Th>
                     <Table.Th>Value</Table.Th>
+                    <Table.Th>Confidence</Table.Th>
                     {raw && <Table.Th>Address</Table.Th>}
                     {raw && <Table.Th>Raw bytes</Table.Th>}
                   </Table.Tr>
@@ -153,12 +199,20 @@ export function SettingsPanel({ settings }: { settings: Dm32SettingsInventory })
                         {valueText(f)}
                         {!raw && f.status === 'captured' && f.value === undefined && (
                           <Text size="xs" c="dimmed">
-                            Raw {hexAddress(f.address)}: {rawText(f)}
+                            Raw {hexAddress(f.address)}: {fieldRawText(f)}
                           </Text>
                         )}
                       </Table.Td>
+                      <Table.Td>
+                        <Badge color={CONFIDENCE[f.confidence].color} variant="light">
+                          {CONFIDENCE[f.confidence].label}
+                        </Badge>
+                        <Text size="xs" c="dimmed">
+                          {f.source}
+                        </Text>
+                      </Table.Td>
                       {raw && <Table.Td>{addressText(f)}</Table.Td>}
-                      {raw && <Table.Td>{rawText(f)}</Table.Td>}
+                      {raw && <Table.Td>{fieldRawText(f)}</Table.Td>}
                     </Table.Tr>
                   ))}
                 </Table.Tbody>
@@ -171,12 +225,33 @@ export function SettingsPanel({ settings }: { settings: Dm32SettingsInventory })
         <Stack gap="xs" component="section" aria-label="Documented, not decoded">
           <Title order={4}>Documented, not decoded</Title>
           <Text size="sm" c="dimmed">
-            The reference names these areas, but no meaning is decoded here. They are shown as raw
-            bytes only.
+            The firmware reads these areas, but their record contents are not decoded here. They are
+            shown as raw bytes only.
           </Text>
           {rangesShown.map((r) => (
             <Text size="sm" key={r.id} ff="monospace">
-              {r.label} · {addressText(r)}: {r.status === 'captured' ? rawText(r) : NOT_CAPTURED}
+              {r.label} · {CONFIDENCE[r.confidence].label} · {addressText(r)}:{' '}
+              {r.status === 'captured' ? rawText(r) : NOT_CAPTURED}
+            </Text>
+          ))}
+        </Stack>
+      )}
+      {(unusedShown.length > 0 || !searching) && (
+        <Stack gap="xs" component="section" aria-label="Unused bytes">
+          <Title order={4}>Unused bytes</Title>
+          <Text size="sm" c="dimmed">
+            Bytes the stock firmware never reads: free, not read by 048 (the vendor CPS may still
+            write them), or reserved for MM9PDY. Their contents are listed only with the raw-bytes
+            switch on.
+          </Text>
+          {unusedShown.map((u) => (
+            <Text size="sm" key={u.id} ff="monospace">
+              {UNUSED_KIND_LABEL[u.kind]} · {addressText(u)}
+              {raw && `: ${u.status === 'captured' ? rawText(u) : NOT_CAPTURED}`}
+              <Text size="xs" c="dimmed" component="span" ff="sans-serif">
+                {' '}
+                {u.label}
+              </Text>
             </Text>
           ))}
         </Stack>
@@ -184,8 +259,8 @@ export function SettingsPanel({ settings }: { settings: Dm32SettingsInventory })
       <Stack gap="xs" component="section" aria-label="Unknown bytes">
         <Title order={4}>Unknown bytes</Title>
         <Text size="sm" c="dimmed">
-          Captured bytes in the first 0x508 bytes that no known field or documented area covers.
-          They are unexplained, not zero. {count(counts.unknownBytes)} bytes in{' '}
+          Captured bytes in the first 0x508 bytes that no known field, documented area or unused
+          range covers. They are unexplained, not zero. {count(counts.unknownBytes)} bytes in{' '}
           {count(settings.unknown.length)} runs.
         </Text>
         {unknownShown.length === 0 ? (

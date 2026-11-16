@@ -32,6 +32,7 @@ import {
 import { SettingsPanel } from './Dm32MemorySettings.tsx';
 import { ScanListsPanel, ZonesPanel } from './Dm32MemoryZones.tsx';
 import { archiveKey } from './viewerUtils.ts';
+import { useSensitiveReveal } from './useSensitiveReveal.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
 const MODEL_ID = 'DM-32UV';
@@ -368,6 +369,7 @@ export function Dm32Memory({ archive }: { archive?: DebugArchive }) {
 }
 
 function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
+  const reveal = useSensitiveReveal(archive);
   const decodedArchive = useMemo(() => {
     if (archive.manifest.radioModelId !== MODEL_ID) return undefined;
     const memory = projectDm32MemoryLists(projectDm32Memory(buildDm32SparseCapture(archive)));
@@ -450,7 +452,11 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
           <ContactsPanel contacts={lists.analogContacts} />
         </Tabs.Panel>
         <Tabs.Panel value="settings" pt="md">
-          <SettingsPanel settings={decodedArchive.settings} />
+          <SettingsPanel
+            settings={decodedArchive.settings}
+            revealed={reveal.revealed}
+            onToggleReveal={reveal.toggle}
+          />
         </Tabs.Panel>
       </Tabs>
     </Stack>
