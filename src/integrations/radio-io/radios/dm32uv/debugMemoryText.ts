@@ -1,5 +1,7 @@
 /** Memory-tab sentences for the DM-32UV debug view; the app shell only displays them. */
 
+import { dm32TagHex } from './debugMemoryLists.ts';
+
 const n = (v: number) => v.toLocaleString('en-GB');
 
 export const DM32_MEMORY_INTRO =
@@ -119,3 +121,84 @@ export const DM32_SCAN_LIST_CAVEAT: readonly string[] = [
 
 export const dm32ScanListExcessText = (excess: number, capacity: number) =>
   `The stored count claims ${n(excess)} lists above the ${n(capacity)} hardware lists; they are not listed.`;
+
+// Talk groups, RX groups, radio IDs and contacts.
+
+export const dm32ListUnavailableText = (reason: string | undefined, noun: string) =>
+  `${reason ?? ''} This does not mean the radio has no ${noun}.`;
+
+export function dm32TalkGroupSummary(
+  decoded: number,
+  pageCapacity: number,
+  capacity: number,
+  storedCount: number | undefined,
+  quickAccess: string,
+): string {
+  const stored =
+    storedCount === undefined
+      ? `stored count: not captured (quick-access page ${quickAccess === 'ambiguous' ? 'ambiguous' : 'missing'})`
+      : `stored count ${n(storedCount)}`;
+  return `Decoded ${n(decoded)} talk groups from the first talk-group page (one page holds at most ${n(pageCapacity)} of the ${n(capacity)} hardware entries) · ${stored}`;
+}
+export const DM32_TALK_GROUP_CAVEAT =
+  "This list is not complete: pages tagged 0x45 to 0x48 hold further talk-group data whose layout is not established, so they are not decoded. Position is the one-based place in the stored list that channel TX contacts refer to. Each name is the radio's single name field; callsign data is unavailable because the digital address book (V-frame 0x0F) is not captured. Not validated on hardware.";
+export const dm32TalkGroupReferencesCaveat = (partialReasons: readonly string[]): string =>
+  `Referenced by counts only captured channel TX contacts (by list position) and RX group members (matched by DMR ID).${
+    partialReasons.length > 0 ? ` Partial: ${partialReasons.join('; ')}.` : ''
+  }`;
+export const DM32_TALK_GROUP_SELECT_HINT = 'Select a talk group to see what refers to it.';
+export const DM32_TALK_GROUPS_EMPTY = 'The talk-group page was captured and holds no entries.';
+export const dm32TalkGroupPagesText = (
+  present: readonly { tag: number; count: number }[],
+  missingTags: readonly number[],
+): string =>
+  `Pages 0x45 to 0x48: present, layout not established: ${
+    present.length === 0
+      ? 'none captured'
+      : present.map((o) => `${dm32TagHex(o.tag)} (${o.count})`).join(', ')
+  }${missingTags.length > 0 ? ` · not captured: ${missingTags.map(dm32TagHex).join(', ')}` : ''}`;
+export const dm32TalkGroupMismatchText = (stored: number, decoded: number) =>
+  `The quick-access page states ${n(stored)} talk groups; the first page decodes ${n(decoded)}. The difference is not explained by this capture.`;
+export const dm32TalkGroupExcessText = (excess: number, capacity: number) =>
+  `The stored count claims ${n(excess)} talk groups above the ${n(capacity)} hardware entries; they are not listed.`;
+
+export const dm32RadioIdSummary = (
+  declared: number,
+  decoded: number,
+  vacant: number,
+  capacity: number,
+) =>
+  `The radio states ${n(declared)} radio IDs · ${n(decoded)} decoded · ${n(vacant)} vacant positions · ${n(capacity)} hardware entries`;
+export const DM32_RADIO_ID_CAVEAT =
+  "Radio IDs are the operator DMR IDs the radio transmits with. A channel refers to one by a zero-based index, so index n is slot n + 1 here. Each name is the radio's single name field. Not validated on hardware.";
+export const DM32_RADIO_IDS_EMPTY = 'The radio-ID page was captured and holds no IDs.';
+export const dm32RadioIdExcessText = (excess: number, capacity: number) =>
+  `The stored count claims ${n(excess)} radio IDs above the ${n(capacity)} hardware entries; they are not listed.`;
+
+export const DM32_DIGITAL_BOOK_TITLE = 'Digital address book (V-frame 0x0F bank): not captured';
+export const DM32_DIGITAL_BOOK_TEXT =
+  'The digital contact list is read through a separate bank this capture does not include, so no digital contacts or callsigns are shown. This does not mean the radio has none.';
+export const dm32AnalogContactSummary = (declared: number, captured: number) =>
+  `Analogue (DTMF) contacts: the radio states ${n(declared)} · ${n(captured)} raw records captured`;
+export const DM32_ANALOG_CONTACT_CAVEAT =
+  'The analogue contact record layout is not established, so records are shown as raw hex only. Not validated on hardware.';
+export const DM32_ANALOG_CONTACTS_EMPTY =
+  'The analogue contact page was captured and the radio states no contacts.';
+export const dm32AnalogBeyondPageText = (beyond: number) =>
+  `The stored count places ${n(beyond)} records beyond the captured page; they are not captured.`;
+
+export const dm32RxGroupSummary = (
+  decoded: number,
+  capacity: number,
+  occupiedSlots: readonly number[],
+) =>
+  `Decoded ${n(decoded)} RX groups of ${n(capacity)} hardware groups · occupied slots: ${
+    occupiedSlots.length === 0 ? 'none' : occupiedSlots.join(', ')
+  }`;
+export const dm32RxGroupCaveat: readonly string[] = [
+  "A group is present when its bit is set in the stored bitmask, so slots can have holes. Members are DMR IDs as stored, in stored order with duplicates kept; empty positions are shown as empty. A member is matched to a talk group by DMR ID only when exactly one decoded talk group has it. Each name is the radio's single name field; callsign data is unavailable. Not validated on hardware.",
+  'Select an RX group to see its members.',
+];
+export const DM32_RX_GROUPS_EMPTY = 'The RX-group page was captured and no group bit is set.';
+export const dm32RxGroupBitsText = (bits: number, capacity: number) =>
+  `The bitmask sets ${n(bits)} bits above the ${n(capacity)} hardware groups; they are not listed.`;
