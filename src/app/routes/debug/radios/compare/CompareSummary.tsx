@@ -1,7 +1,9 @@
 import {
   compareVerdict,
+  fieldCounts,
   hexHunks,
   type ByteComparison,
+  type DecodedDiff,
   type CompareSection,
 } from '@integrations/radio-io/debugCompare/index.ts';
 import { Alert, Badge, Button, CopyButton, Group, Stack, Table, Text } from '@mantine/core';
@@ -88,10 +90,18 @@ function ChangedRows({ section }: { section: CompareSection }) {
 export function CompareSummary({
   comparison,
   onJump,
+  decoded,
+  onJumpCategory,
 }: {
   comparison: ByteComparison;
   onJump: (sectionId: string) => void;
+  /** The decoded diff, when the radio has one: adds the fields-by-category table. */
+  decoded?: DecodedDiff;
+  onJumpCategory?: (domainId: string) => void;
 }) {
+  const counts = useMemo(() => (decoded ? fieldCounts(decoded) : []), [decoded]);
+  const totalFields = counts.reduce((n, c) => n + c.changedFields, 0);
+  const totalRecords = counts.reduce((n, c) => n + c.changedRecords, 0);
   const { verdict, changedBytes, changedSections, notCompared } = compareVerdict(comparison);
   const compared = comparison.sections.filter((s) => s.kind === 'compared');
   const comparedBytes = compared.reduce(
@@ -111,6 +121,9 @@ export function CompareSummary({
       {verdict === 'changed' && (
         <Alert color="yellow" title="A and B differ">
           {plural(changedBytes, 'changed byte')} in {plural(changedSections, 'region')}
+          {decoded
+            ? ` · ${plural(totalFields, 'changed field')} in ${plural(totalRecords, 'record')}`
+            : ''}
           {gaps > 0 ? `; ${plural(gaps, 'byte')} present on one side only` : ''}.
         </Alert>
       )}
@@ -186,6 +199,44 @@ export function CompareSummary({
           })}
         </Table.Tbody>
       </Table>
+      {decoded && decoded.domains.length > 0 && (
+        <Table withTableBorder aria-label="Fields by category">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Category</Table.Th>
+              <Table.Th>Changed fields</Table.Th>
+              <Table.Th>Records changed</Table.Th>
+              <Table.Th>Added</Table.Th>
+              <Table.Th>Removed</Table.Th>
+              <Table.Th>Not comparable</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {decoded.domains.map((d) => {
+              const c = counts.find((x) => x.domainId === d.id);
+              return (
+                <Table.Tr key={d.id}>
+                  <Table.Td>
+                    <Button
+                      variant="subtle"
+                      size="compact-sm"
+                      aria-label={`Show ${d.label} in the decoded diff`}
+                      onClick={() => onJumpCategory?.(d.id)}
+                    >
+                      {d.label}
+                    </Button>
+                  </Table.Td>
+                  <Table.Td>{c?.changedFields ?? 0}</Table.Td>
+                  <Table.Td>{d.changed}</Table.Td>
+                  <Table.Td>{d.added}</Table.Td>
+                  <Table.Td>{d.removed}</Table.Td>
+                  <Table.Td>{d.incomparable}</Table.Td>
+                </Table.Tr>
+              );
+            })}
+          </Table.Tbody>
+        </Table>
+      )}
     </Stack>
   );
 }

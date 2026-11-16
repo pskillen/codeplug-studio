@@ -191,3 +191,24 @@ export function diffDecoded(
   }
   return { domains, records };
 }
+
+export interface DomainFieldCounts {
+  domainId: string;
+  /** Fields that read changed, across every record of the domain. */
+  changedFields: number;
+  /** Records with at least one changed field. */
+  changedRecords: number;
+}
+
+/** Per-domain changed-field counts, for the compare summary. */
+export function fieldCounts(diff: DecodedDiff): DomainFieldCounts[] {
+  return diff.domains.map((d) => {
+    const records = diff.records.filter((r) => r.domainId === d.id);
+    const changedFields = records.reduce(
+      (n, r) => n + r.fields.filter((f) => f.kind === 'changed').length,
+      0,
+    );
+    const changedRecords = records.filter((r) => r.fields.some((f) => f.kind === 'changed')).length;
+    return { domainId: d.id, changedFields, changedRecords };
+  });
+}

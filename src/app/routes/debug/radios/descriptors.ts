@@ -1,7 +1,6 @@
 import type { ComponentType } from 'react';
 import { OPENGD77_SETTINGS_GAP_LENGTH } from '@integrations/radio-io/radios/opengd77/constants.ts';
 import { Dm32Calibration } from './Dm32Calibration.tsx';
-import { Dm32DecodedDiff } from './Dm32DecodedDiff.tsx';
 import { OpenGd77Calibration } from './OpenGd77Calibration.tsx';
 import { OpenGd77DecodedDiff } from './OpenGd77DecodedDiff.tsx';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
@@ -17,8 +16,6 @@ import { Uv5rMiniSettings } from './Uv5rMiniSettings.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
 import { Rt95Calibration } from './Rt95Calibration.tsx';
-import { Rt95CompareDecoded } from './Rt95CompareDecoded.tsx';
-import { Uv5rMiniCompareDecoded } from './Uv5rMiniCompareDecoded.tsx';
 import { atD890CompareAdapter } from './atD890Compare.ts';
 import { atD890DecodedSnapshot } from './atD890DecodedDiff.ts';
 import type { DebugCompareAdapter } from '@integrations/radio-io/debugCompare/index.ts';
@@ -167,7 +164,6 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Settings: Dm32Settings,
     calibrationOverlay: false,
     Calibration: Dm32Calibration,
-    DecodedDiff: Dm32DecodedDiff,
     readHistory: true,
     capture: captureDm32,
     sensitiveRanges: dm32ArchiveSensitiveRanges,
@@ -227,7 +223,6 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Memory: Rt95MemoryView,
     Settings: Rt95Settings,
     Calibration: Rt95Calibration,
-    DecodedDiff: Rt95CompareDecoded,
     readHistory: true,
     capture: captureRt95,
     sensitiveRanges: rt95ArchiveSensitiveRanges,
@@ -247,7 +242,6 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
     slug: 'uv-5r-mini',
     compare: uv5rMiniCompareAdapter,
-    DecodedDiff: Uv5rMiniCompareDecoded,
     Memory: Uv5rMiniMemory,
     Settings: Uv5rMiniSettings,
     readHistory: true,

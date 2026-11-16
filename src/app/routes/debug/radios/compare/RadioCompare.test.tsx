@@ -38,12 +38,12 @@ describe('RadioCompare password masking', () => {
     expect(hex()).toContain('••');
     expect(hex()).toContain('[masked bytes differ]');
     expect(hex()).not.toMatch(/31 32 33 34|35 36 37 38/);
-    fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show password' })[0]!);
     expect(hex()).toMatch(/31 32 33 34/);
-    expect(screen.getByRole('button', { name: 'Hide password' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Hide password' })).toHaveLength(2);
     // A different B: hidden again.
     view1.rerender(view(a, await withPassword('9999')));
-    expect(screen.getByRole('button', { name: 'Show password' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Show password' })).toHaveLength(2);
     expect(hex()).not.toMatch(/31 32 33 34/);
   });
 

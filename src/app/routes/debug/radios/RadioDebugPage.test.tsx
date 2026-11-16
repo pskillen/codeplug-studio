@@ -487,11 +487,12 @@ describe('DM-32UV debug page', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
     // Previous vs latest by default: A against B.
     expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
-    expect(await screen.findByText(/Identity \/ Model: Unchanged/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Identity \/ Build date: Unavailable · Not captured/),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Identity \/ Base firmware: Unchanged/)).toBeInTheDocument();
+    expect(await screen.findByText('Decoded changes')).toBeInTheDocument();
+    // Only changes is on: the unchanged model is not listed; the build date is not captured in A.
+    expect(screen.queryByText('Identity / Model')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('switch', { name: 'Only changes' }));
+    expect(screen.getByText('Identity / Build date')).toBeInTheDocument();
+    expect(screen.getAllByText('Not captured').length).toBeGreaterThan(0);
     // Selecting the other read updates Overview and Coverage.
     act(() => history.select(second.id));
     fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));

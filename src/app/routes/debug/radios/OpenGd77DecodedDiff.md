@@ -19,5 +19,5 @@
 ## Related
 
 - `src/integrations/radio-io/radios/opengd77/debugCompare.ts`
-- `Dm32DecodedDiff.md`
+- `compare/DecodedDiffView.md`
 - `docs/reference/radios/opengd77/debug-capture.md`
