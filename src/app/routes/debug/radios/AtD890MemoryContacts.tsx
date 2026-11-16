@@ -1,10 +1,23 @@
 import { Alert, Stack, Text, Title } from '@mantine/core';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { DataTable, type DataTableColumn } from '@app/components/v2/index.ts';
+import { MemoryCategoryPanel } from '@app/components/debug/index.ts';
 import {
-  DataTable,
-  type DataTableColumn,
-  type DataTableSortState,
-} from '@app/components/v2/index.ts';
+  AT_D890UV_BANK_IDENTITY_NOTE,
+  AT_D890UV_RX_EMPTY,
+  AT_D890UV_RX_MEMBERS_NOT_CAPTURED,
+  AT_D890UV_RX_UNAVAILABLE,
+  atD890BankBitsText,
+  atD890BankEmpty,
+  atD890BankExplanation,
+  atD890BankSummary,
+  atD890BankUnavailable,
+  atD890RxBitsText,
+  atD890RxCaveat,
+  atD890RxSummary,
+  atD890UnclassifiedText,
+  atD890UsagePartialText,
+} from '@integrations/radio-io/radios/at-d890uv/debugMemoryText.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import type { AtD890MemoryProjection } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
 import type {
@@ -18,11 +31,6 @@ import type {
 
 const NOT_CAPTURED = 'Not captured';
 const DASH = '—';
-const count = (n: number) => n.toLocaleString('en-GB');
-const matches = (query: string, ...haystack: string[]) => {
-  const q = query.trim().toLocaleLowerCase();
-  return !q || haystack.some((h) => h.toLocaleLowerCase().includes(q));
-};
 
 const CALL_TYPE_LABEL = ['Private', 'Group', 'All call'] as const;
 
@@ -175,15 +183,6 @@ function bankColumns(showUsage: boolean): DataTableColumn<BankRow>[] {
   return columns;
 }
 
-const BANK_EXPLANATION = (
-  <>
-    Contacts and talk groups share one bank of {count(AT_D890UV_LIMITS.TALK_GROUPS_MAX)} slots on
-    the radio: private-call records are contacts, group and all-call records are talk groups. Slots
-    keep their one-based radio numbers whichever tab filters them. The separate DMR ID database is
-    outside this capture and is not decoded.
-  </>
-);
-
 function BankPanel({
   projection,
   kind,
@@ -192,8 +191,6 @@ function BankPanel({
   kind: 'contacts' | 'talk-groups';
 }) {
   const { bank, references } = projection;
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
   const isContacts = kind === 'contacts';
   const noun = isContacts ? 'contacts' : 'talk groups';
   const columns = useMemo(() => bankColumns(!isContacts), [isContacts]);
@@ -213,68 +210,64 @@ function BankPanel({
   if (bank.bitmap !== 'captured')
     return (
       <Alert title={NOT_CAPTURED} color="yellow">
-        The contact bank occupancy bitmap was not completely captured, so no {noun} can be shown.
-        This does not mean the radio has none.
+        {atD890BankUnavailable(noun)}
       </Alert>
     );
   const unclassified = bank.entries.filter((e) => e.state.kind !== 'decoded').length;
   const mine = rows.length - unclassified;
-  const shown = rows.filter((r) =>
-    matches(
-      query,
-      String(r.slot),
-      String(r.slot).padStart(4, '0'),
-      r.label,
-      r.typeText,
-      r.record ? String(r.record.dmrId) : '',
-      r.record?.city ?? '',
-      r.record?.callsign ?? '',
-      r.record?.name ?? '',
-      r.usedBy,
-    ),
-  );
   return (
     <Stack gap="sm">
-      <Text>
-        Bank occupied {count(bank.occupied)} of {count(bank.capacity)} slots · decoded{' '}
-        {count(bank.decoded)} of {count(bank.occupied)} occupied · {count(mine)} {noun}
-        {unclassified > 0 && ` · ${count(unclassified)} unclassified`}
-      </Text>
-      <Text size="sm" c="dimmed">
-        {BANK_EXPLANATION} Each identity shows the callsign first, then the name.
-      </Text>
       {unclassified > 0 && (
         <Alert color="yellow" title="Unclassified slots">
-          {count(unclassified)} occupied slots cannot be classified (not completely captured,
-          malformed or of an unknown call type). They are listed in both Contacts and Talk groups
-          rather than counted as empty.
+          {atD890UnclassifiedText(unclassified)}
         </Alert>
       )}
       {!isContacts && (!references.channelsComplete || !references.rxGroupsComplete) && (
         <Alert color="yellow" title="Referenced by is partial">
-          {[!references.channelsComplete && 'channel', !references.rxGroupsComplete && 'RX group']
-            .filter(Boolean)
-            .join(' and ')}{' '}
-          coverage is incomplete, so only the references that were captured are listed. An empty
-          list is not proof that nothing refers to a talk group.
+          {atD890UsagePartialText(
+            [!references.channelsComplete && 'channel', !references.rxGroupsComplete && 'RX group']
+              .filter(Boolean)
+              .join(' and '),
+          )}
         </Alert>
       )}
       {bank.outOfRangeBits.length > 0 && (
         <Alert color="yellow" title="Bitmap bits beyond the slot range">
-          {count(bank.outOfRangeBits.length)} bits are marked occupied above the{' '}
-          {count(bank.capacity)} hardware slots (first: {bank.outOfRangeBits[0]}) and are not
-          listed.
+          {atD890BankBitsText(bank.outOfRangeBits.length, bank.capacity, bank.outOfRangeBits[0]!)}
         </Alert>
       )}
-      <DataTable
+      <MemoryCategoryPanel
+        summary={atD890BankSummary(
+          bank.occupied,
+          bank.capacity,
+          bank.decoded,
+          mine,
+          noun,
+          unclassified,
+        )}
+        caveat={[
+          atD890BankExplanation(AT_D890UV_LIMITS.TALK_GROUPS_MAX),
+          AT_D890UV_BANK_IDENTITY_NOTE,
+        ]}
+        searchPlaceholder={`Search ${noun}`}
         caption={`AT-D890UV ${noun}`}
         columns={columns}
-        rows={shown}
+        rows={rows}
         getRowId={(r) => r.id}
-        totalRowCount={rows.length}
-        search={{ value: query, onChange: setQuery, placeholder: `Search ${noun}` }}
-        sort={sort}
-        onSortChange={setSort}
+        searchText={(r) =>
+          [
+            r.slot,
+            String(r.slot).padStart(4, '0'),
+            r.label,
+            r.typeText,
+            r.record ? String(r.record.dmrId) : '',
+            r.record?.city ?? '',
+            r.record?.callsign ?? '',
+            r.record?.name ?? '',
+            r.usedBy,
+          ].join(' ')
+        }
+        defaultSort={{ key: 'slot', direction: 'asc' }}
         stickyFirstColumn
         mobileIdentity={(r) => (
           <span>
@@ -282,8 +275,7 @@ function BankPanel({
           </span>
         )}
         mobileIdentityLabel="Slot · identity"
-        emptyMessage={`The bank bitmap is captured and no ${noun} are present.`}
-        filteredEmptyMessage={`No ${noun} match “${query.trim()}”.`}
+        emptyMessage={atD890BankEmpty(noun)}
       />
     </Stack>
   );
@@ -395,92 +387,78 @@ const MEMBER_COLUMNS: DataTableColumn<MemberRow>[] = [
   },
 ];
 
+function RxGroupDetails({ group }: { group: AtD890RxGroupEntry }) {
+  return (
+    <Stack gap="xs" aria-label={`RX group ${group.slot} members`} role="region">
+      <Title order={4}>
+        RX group {group.slot} ·{' '}
+        {group.name.status === 'captured'
+          ? group.name.text || '(unnamed)'
+          : `Name ${NOT_CAPTURED.toLowerCase()}`}
+      </Title>
+      {group.members.status === 'not-captured' ? (
+        <Alert color="yellow" title={NOT_CAPTURED}>
+          {AT_D890UV_RX_MEMBERS_NOT_CAPTURED}
+        </Alert>
+      ) : (
+        <>
+          {group.members.list.length > AT_D890UV_LIMITS.RX_GROUP_MEMBERS_MAX && (
+            <Alert color="yellow" title="More members than the hardware allows" />
+          )}
+          <DataTable
+            caption={`RX group ${group.slot} members`}
+            variant="embedded"
+            columns={MEMBER_COLUMNS}
+            rows={group.members.list.map((member) => ({
+              id: `member-${member.position}`,
+              member,
+              overrides: group.overrides,
+            }))}
+            getRowId={(r) => r.id}
+            emptyMessage="This RX group has no members."
+          />
+        </>
+      )}
+    </Stack>
+  );
+}
+
 export function RxGroupsPanel({ projection }: { projection: AtD890MemoryProjection }) {
   const { rxGroups, bank } = projection;
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
-  const [selectedSlot, setSelectedSlot] = useState<number>();
   const rows = useMemo(() => rxGroups.entries.map(rxRow), [rxGroups]);
   if (rxGroups.bitmap !== 'captured')
     return (
       <Alert title={NOT_CAPTURED} color="yellow">
-        The RX group occupancy bitmap was not completely captured, so no RX group list can be shown.
-        This does not mean the radio has none.
+        {AT_D890UV_RX_UNAVAILABLE}
       </Alert>
     );
-  const selected = rxGroups.entries.find((g) => g.slot === selectedSlot);
-  const shown = rows.filter((r) => matches(query, String(r.slot), r.label));
   const namesDecoded = rxGroups.entries.filter((g) => g.name.status === 'captured').length;
   const membersDecoded = rxGroups.entries.filter((g) => g.members.status === 'captured').length;
   return (
     <Stack gap="sm">
-      <Text>
-        Occupied {count(rxGroups.occupied)} of {count(rxGroups.capacity)} RX group slots · names
-        decoded {count(namesDecoded)} · member lists decoded {count(membersDecoded)}
-      </Text>
-      <Text size="sm" c="dimmed">
-        Members are shown at their stored positions, duplicates included; empty positions are
-        skipped. Each member is a zero-based index into the shared contact bank and resolves to bank
-        slot index + 1, never by DMR ID.
-        {bank.bitmap !== 'captured' &&
-          ' The bank bitmap was not captured, so members cannot be resolved.'}
-      </Text>
       {rxGroups.outOfRangeBits.length > 0 && (
         <Alert color="yellow" title="Bitmap bits beyond the RX group range">
-          Bits {rxGroups.outOfRangeBits.join(', ')} are set above the {count(rxGroups.capacity)}{' '}
-          hardware lists and are not listed.
+          {atD890RxBitsText(rxGroups.outOfRangeBits, rxGroups.capacity)}
         </Alert>
       )}
-      <DataTable
+      <MemoryCategoryPanel
+        summary={atD890RxSummary(
+          rxGroups.occupied,
+          rxGroups.capacity,
+          namesDecoded,
+          membersDecoded,
+        )}
+        caveat={atD890RxCaveat(bank.bitmap === 'captured')}
+        searchPlaceholder="Search RX groups"
         caption="AT-D890UV RX groups"
         columns={RX_COLUMNS}
-        rows={shown}
+        rows={rows}
         getRowId={(r) => r.id}
-        totalRowCount={rows.length}
-        search={{ value: query, onChange: setQuery, placeholder: 'Search RX groups' }}
-        sort={sort}
-        onSortChange={setSort}
-        onRowActivate={(r) => setSelectedSlot(r.slot)}
-        emptyMessage="The RX group bitmap is captured and no RX group is occupied."
-        filteredEmptyMessage={`No RX groups match “${query.trim()}”.`}
+        searchText={(r) => `${r.slot} ${r.label}`}
+        defaultSort={{ key: 'slot', direction: 'asc' }}
+        details={(r) => <RxGroupDetails group={r.entry} />}
+        emptyMessage={AT_D890UV_RX_EMPTY}
       />
-      {selected ? (
-        <Stack gap="xs" aria-label={`RX group ${selected.slot} members`} role="region">
-          <Title order={4}>
-            RX group {selected.slot} ·{' '}
-            {selected.name.status === 'captured'
-              ? selected.name.text || '(unnamed)'
-              : `Name ${NOT_CAPTURED.toLowerCase()}`}
-          </Title>
-          {selected.members.status === 'not-captured' ? (
-            <Alert color="yellow" title={NOT_CAPTURED}>
-              This RX group&apos;s member list was not completely captured.
-            </Alert>
-          ) : (
-            <>
-              {selected.members.list.length > AT_D890UV_LIMITS.RX_GROUP_MEMBERS_MAX && (
-                <Alert color="yellow" title="More members than the hardware allows" />
-              )}
-              <DataTable
-                caption={`RX group ${selected.slot} members`}
-                variant="embedded"
-                columns={MEMBER_COLUMNS}
-                rows={selected.members.list.map((member) => ({
-                  id: `member-${member.position}`,
-                  member,
-                  overrides: selected.overrides,
-                }))}
-                getRowId={(r) => r.id}
-                emptyMessage="This RX group has no members."
-              />
-            </>
-          )}
-        </Stack>
-      ) : (
-        <Text size="sm" c="dimmed">
-          Select an RX group to see its members.
-        </Text>
-      )}
     </Stack>
   );
 }

@@ -1,10 +1,14 @@
 import { Alert, Stack, Text, Title } from '@mantine/core';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { DataTable, type DataTableColumn } from '@app/components/v2/index.ts';
+import { MemoryCategoryPanel } from '@app/components/debug/index.ts';
 import {
-  DataTable,
-  type DataTableColumn,
-  type DataTableSortState,
-} from '@app/components/v2/index.ts';
+  AT_D890UV_SCAN_EMPTY,
+  AT_D890UV_SCAN_UNAVAILABLE,
+  atD890ScanBitsText,
+  atD890ScanCaveat,
+  atD890ScanSummary,
+} from '@integrations/radio-io/radios/at-d890uv/debugMemoryText.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import type { AtD890MemoryProjection } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
 import {
@@ -17,12 +21,7 @@ import { MEMBER_EXPLANATION } from './viewerUtils.ts';
 
 const NOT_CAPTURED = 'Not captured';
 const DASH = '—';
-const count = (n: number) => n.toLocaleString('en-GB');
 const mhz = (hz: number) => (hz / 1e6).toFixed(5);
-const matches = (query: string, ...haystack: string[]) => {
-  const q = query.trim().toLocaleLowerCase();
-  return !q || haystack.some((h) => h.toLocaleLowerCase().includes(q));
-};
 
 // ---------------------------------------------------------------------------
 // Scan lists
@@ -188,60 +187,33 @@ function ScanListDetails({ entry }: { entry: AtD890ScanListEntry }) {
 
 export function ScanListsPanel({ projection }: { projection: AtD890MemoryProjection }) {
   const lists = projection.scanLists;
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
-  const [selectedSlot, setSelectedSlot] = useState<number>();
   const rows = useMemo(() => lists.entries.map(scanRow), [lists]);
   if (lists.bitmap !== 'captured')
     return (
       <Alert title={NOT_CAPTURED} color="yellow">
-        The scan list occupancy bitmap was not completely captured, so no scan list can be shown.
-        This does not mean the radio has no scan lists.
+        {AT_D890UV_SCAN_UNAVAILABLE}
       </Alert>
     );
-  const selected = lists.entries.find((e) => e.slot === selectedSlot);
-  const shown = rows.filter((r) =>
-    matches(query, String(r.slot), r.label, r.memberText, r.priorityText),
-  );
   return (
     <Stack gap="sm">
-      <Text>
-        Occupied {count(lists.occupied)} of {count(lists.capacity)} scan list slots · fully decoded{' '}
-        {count(lists.decoded)} of {count(lists.occupied)} occupied
-      </Text>
-      <Text size="sm" c="dimmed">
-        Name, member array and priority bytes decode independently, each only when its whole span
-        was captured. Members keep radio order, duplicates included; a member index is zero-based
-        and resolves to channel slot index + 1. Slots without a captured record are not proof of an
-        unused list.
-      </Text>
       {lists.outOfRangeBits.length > 0 && (
         <Alert color="yellow" title="Bitmap bits beyond the scan list range">
-          Bits {lists.outOfRangeBits.join(', ')} are set above the {count(lists.capacity)} hardware
-          scan lists and are not listed.
+          {atD890ScanBitsText(lists.outOfRangeBits, lists.capacity)}
         </Alert>
       )}
-      <DataTable
+      <MemoryCategoryPanel
+        summary={atD890ScanSummary(lists.occupied, lists.capacity, lists.decoded)}
+        caveat={atD890ScanCaveat(AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX)}
+        searchPlaceholder="Search scan lists"
         caption="AT-D890UV scan lists"
         columns={scanColumns}
-        rows={shown}
+        rows={rows}
         getRowId={(r) => r.id}
-        totalRowCount={rows.length}
-        search={{ value: query, onChange: setQuery, placeholder: 'Search scan lists' }}
-        sort={sort}
-        onSortChange={setSort}
-        onRowActivate={(r) => setSelectedSlot(r.slot)}
-        emptyMessage="The scan list bitmap is captured and no scan list slot is occupied."
-        filteredEmptyMessage={`No scan lists match “${query.trim()}”.`}
+        searchText={(r) => `${r.slot} ${r.label} ${r.memberText} ${r.priorityText}`}
+        defaultSort={{ key: 'slot', direction: 'asc' }}
+        details={(r) => <ScanListDetails entry={r.entry} />}
+        emptyMessage={AT_D890UV_SCAN_EMPTY}
       />
-      {selected ? (
-        <ScanListDetails entry={selected} />
-      ) : (
-        <Text size="sm" c="dimmed">
-          Select a scan list to see its priority channels and members (up to{' '}
-          {AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX}).
-        </Text>
-      )}
     </Stack>
   );
 }
