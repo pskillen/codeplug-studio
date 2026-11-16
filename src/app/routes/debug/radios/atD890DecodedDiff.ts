@@ -57,6 +57,8 @@ export interface AtD890DiffRow {
   /** Firmware-dependent meaning caveats of the compared values; they never become verdicts. */
   caveats: readonly string[];
   note?: string;
+  /** A password field: the page hides every value of this row until the viewer reveals it. */
+  sensitive?: boolean;
 }
 
 export interface AtD890DomainSummary {
@@ -78,6 +80,7 @@ export interface AtD890DecodedDiff {
 type Fields = Record<string, string | undefined>;
 interface Described {
   label: string;
+  sensitive?: boolean;
   fields: Fields;
   caveats?: readonly string[];
 }
@@ -155,6 +158,7 @@ function diffDomain(
           changes,
           unavailable,
           caveats: [...new Set([...(x.caveats ?? []), ...(y.caveats ?? [])])],
+          ...(x.sensitive || y.sensitive ? { sensitive: true } : {}),
         });
     } else {
       const only = (x ?? y)!;
@@ -322,6 +326,7 @@ function settingSide(p: AtD890MemoryProjection): Side {
           f.id,
           {
             label: f.label,
+            ...(f.sensitive ? { sensitive: true } : {}),
             caveats: f.conditional ? [f.conditional] : [],
             fields:
               f.status === 'captured'

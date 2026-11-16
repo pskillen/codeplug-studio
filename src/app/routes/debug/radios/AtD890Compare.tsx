@@ -8,7 +8,10 @@ import {
   diffAtD890Decoded,
   type AtD890DiffDomain,
 } from './atD890DecodedDiff.ts';
-import { formatAddress } from './viewerUtils.ts';
+import type { DebugSensitiveRange } from '@integrations/radio-io/debugSensitive.ts';
+import { SensitiveRevealButton } from './SensitiveReveal.tsx';
+import { useSensitiveReveal } from './useSensitiveReveal.ts';
+import { formatAddress, isMasked, MASKED_HEX_BYTE, sensitiveRanges } from './viewerUtils.ts';
 
 const PAGE_SIZE = 30;
 const VERDICT: Record<AtD890UnitVerdict, string> = {
@@ -16,8 +19,29 @@ const VERDICT: Record<AtD890UnitVerdict, string> = {
   different: 'Different (per archive claims)',
   unknown: 'Unknown',
 };
-const hex = (bytes: readonly number[]) =>
-  bytes.map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+/** Password bytes of one changed run, per side: ranges in absolute addresses, like the byte runs. */
+interface RunMask {
+  before: readonly DebugSensitiveRange[];
+  after: readonly DebugSensitiveRange[];
+  /** Some byte of this run lies in a password range on either side. */
+  touchesPassword: boolean;
+}
+
+/** Hex of `bytes` starting at `start`; bytes in `mask` show `••` unless `revealed`. */
+function hex(
+  bytes: readonly number[],
+  start = 0,
+  mask: readonly DebugSensitiveRange[] = [],
+  revealed = true,
+) {
+  return bytes
+    .map((b, i) =>
+      !revealed && isMasked(start + i, mask)
+        ? MASKED_HEX_BYTE
+        : b.toString(16).toUpperCase().padStart(2, '0'),
+    )
+    .join(' ');
+}
 
 function Pager({
   page,
@@ -86,13 +110,26 @@ function claim(range?: AtD890ReadRange): string {
 }
 
 /** Every changed byte of one run, paged, before above after. */
-function RunBytes({ run }: { run: AtD890ChangedRun }) {
+function RunBytes({
+  run,
+  mask,
+  revealed,
+}: {
+  run: AtD890ChangedRun;
+  mask: RunMask;
+  revealed: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(0);
   const pages = Math.max(1, Math.ceil(run.length / RUN_PAGE_BYTES));
   const current = Math.min(page, pages - 1);
-  const slice = (bytes: Uint8Array) =>
-    hex(Array.from(bytes.subarray(current * RUN_PAGE_BYTES, (current + 1) * RUN_PAGE_BYTES)));
+  const slice = (bytes: Uint8Array, side: readonly DebugSensitiveRange[]) =>
+    hex(
+      Array.from(bytes.subarray(current * RUN_PAGE_BYTES, (current + 1) * RUN_PAGE_BYTES)),
+      run.start + current * RUN_PAGE_BYTES,
+      side,
+      revealed,
+    );
   return (
     <Stack gap={4}>
       <Button
@@ -107,10 +144,10 @@ function RunBytes({ run }: { run: AtD890ChangedRun }) {
       {open && (
         <div>
           <Text size="xs" ff="monospace">
-            First: {slice(run.before)}
+            First: {slice(run.before, mask.before)}
           </Text>
           <Text size="xs" ff="monospace">
-            Second: {slice(run.after)}
+            Second: {slice(run.after, mask.after)}
           </Text>
           <Pager
             page={current}
@@ -132,7 +169,12 @@ function Captures({ first, second }: DebugDecodedDiffProps) {
   );
 }
 
-function DecodedChanges({ first, second }: DebugDecodedDiffProps) {
+function DecodedChanges({
+  first,
+  second,
+  revealed,
+  onToggleReveal,
+}: DebugDecodedDiffProps & { revealed: boolean; onToggleReveal: () => void }) {
   const diff = useMemo(() => diffAtD890Decoded(first, second), [first, second]);
   const [domain, setDomain] = useState<string | null>(null);
   const rows = useMemo(
@@ -179,6 +221,14 @@ function DecodedChanges({ first, second }: DebugDecodedDiffProps) {
           label: AT_D890_DIFF_DOMAIN_LABELS[d],
         }))}
       />
+      {rows.some((r) => r.sensitive) && (
+        <Group gap="xs">
+          <Text size="sm">
+            Password values are {revealed ? 'shown' : 'hidden'} in the decoded differences.
+          </Text>
+          <SensitiveRevealButton revealed={revealed} onToggle={onToggleReveal} />
+        </Group>
+      )}
       {!rows.length && <Text>No decoded differences found in the captured data.</Text>}
       {paged.slice.map((row) => (
         <div key={`${row.domain}:${row.key}`} role="group" aria-label={`${row.domain} ${row.key}`}>
@@ -188,17 +238,23 @@ function DecodedChanges({ first, second }: DebugDecodedDiffProps) {
             {row.kind === 'incomparable' ? 'not comparable' : row.kind}
           </Text>
           {row.note && <Text size="sm">{row.note}</Text>}
-          {row.changes.map((c) => (
-            <Text size="sm" key={c.field}>
-              {c.field}: {c.before} → {c.after}
+          {row.sensitive && !revealed && (
+            <Text size="sm">
+              {row.changes.length ? 'Password changed (values hidden)' : 'Password not comparable'}
             </Text>
-          ))}
+          )}
+          {(!row.sensitive || revealed) &&
+            row.changes.map((c) => (
+              <Text size="sm" key={c.field}>
+                {c.field}: {c.before} → {c.after}
+              </Text>
+            ))}
           {row.caveats.map((c) => (
             <Text size="sm" c="dimmed" key={c}>
               Caveat: {c}
             </Text>
           ))}
-          {row.unavailable.length > 0 && (
+          {row.unavailable.length > 0 && (!row.sensitive || revealed) && (
             <details>
               <summary>
                 Not captured on at least one side ({row.unavailable.length}):{' '}
@@ -226,10 +282,25 @@ function DecodedChanges({ first, second }: DebugDecodedDiffProps) {
 export function AtD890Compare({ first, second }: DebugDecodedDiffProps) {
   const spans = useMemo(() => compareAtD890(first, second), [first, second]);
   const spanPages = usePaged(spans ?? []);
+  const reveal = useSensitiveReveal(first);
   const runs = useMemo(
     () =>
-      (spans ?? []).flatMap((span) => (span.runs ?? []).map((run) => ({ space: span.space, run }))),
-    [spans],
+      (spans ?? []).flatMap((span) => {
+        // Each side's password ranges come from that side's own archive and region.
+        const before = span.first ? sensitiveRanges(first, span.first.regionId) : [];
+        const after = span.second ? sensitiveRanges(second, span.second.regionId) : [];
+        return (span.runs ?? []).map((run) => {
+          const covers = (range: DebugSensitiveRange) =>
+            range.start < run.start + run.length && range.end > run.start;
+          const mask: RunMask = {
+            before,
+            after,
+            touchesPassword: before.some(covers) || after.some(covers),
+          };
+          return { space: span.space, run, mask };
+        });
+      }),
+    [spans, first, second],
   );
   const runPages = usePaged(runs);
   if (!spans)
@@ -240,7 +311,12 @@ export function AtD890Compare({ first, second }: DebugDecodedDiffProps) {
           comparison is refused; decoded differences below do not make those bytes trusted.
         </Alert>
         <Captures first={first} second={second} />
-        <DecodedChanges first={first} second={second} />
+        <DecodedChanges
+          first={first}
+          second={second}
+          revealed={reveal.revealed}
+          onToggleReveal={reveal.toggle}
+        />
       </Stack>
     );
   const diverged = spans.filter((s) => s.provenanceDiffers.length > 0);
@@ -281,16 +357,31 @@ export function AtD890Compare({ first, second }: DebugDecodedDiffProps) {
       />
       <Title order={4}>Changed byte runs</Title>
       {!runs.length && <Text>No differing bytes in the comparable ranges.</Text>}
-      {runPages.slice.map(({ space, run }) => (
+      {runs.some((r) => r.mask.touchesPassword) && (
+        <Group gap="xs">
+          <Text size="sm">
+            Password bytes are {reveal.revealed ? 'shown' : 'hidden (••)'} in both captures.
+          </Text>
+          <SensitiveRevealButton revealed={reveal.revealed} onToggle={reveal.toggle} />
+        </Group>
+      )}
+      {runPages.slice.map(({ space, run, mask }) => (
         <div key={`${space}:${run.start}`}>
           <Text size="sm">
             {space} · {formatAddress(run.start)}
             {run.length > 1 ? `–${formatAddress(run.start + run.length - 1)}` : ''} · {run.length}{' '}
-            byte{run.length === 1 ? '' : 's'} · {hex(Array.from(run.before.subarray(0, 8)))}
-            {run.length > 8 ? ' …' : ''} → {hex(Array.from(run.after.subarray(0, 8)))}
+            byte{run.length === 1 ? '' : 's'} ·{' '}
+            {hex(Array.from(run.before.subarray(0, 8)), run.start, mask.before, reveal.revealed)}
+            {run.length > 8 ? ' …' : ''} →{' '}
+            {hex(Array.from(run.after.subarray(0, 8)), run.start, mask.after, reveal.revealed)}
             {run.length > 8 ? ' …' : ''}
           </Text>
-          {run.length > 8 && <RunBytes run={run} />}
+          {mask.touchesPassword && !reveal.revealed && (
+            <Text size="sm" c="dimmed">
+              password bytes changed
+            </Text>
+          )}
+          {run.length > 8 && <RunBytes run={run} mask={mask} revealed={reveal.revealed} />}
         </div>
       ))}
       <Pager page={runPages.page} pages={runPages.pages} onPage={runPages.setPage} label="Run" />
@@ -310,7 +401,12 @@ export function AtD890Compare({ first, second }: DebugDecodedDiffProps) {
       {diverged.length > PAGE_SIZE && (
         <Text size="sm">{diverged.length - PAGE_SIZE} more ranges with differing claims.</Text>
       )}
-      <DecodedChanges first={first} second={second} />
+      <DecodedChanges
+        first={first}
+        second={second}
+        revealed={reveal.revealed}
+        onToggleReveal={reveal.toggle}
+      />
     </Stack>
   );
 }

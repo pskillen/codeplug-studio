@@ -42,7 +42,7 @@ export function sensitiveRanges(
     });
 }
 
-const isMasked = (address: number, mask: readonly DebugSensitiveRange[]) =>
+export const isMasked = (address: number, mask: readonly DebugSensitiveRange[]) =>
   mask.some((range) => address >= range.start && address < range.end);
 
 /** A bounded slice of a single captured region, never a fabricated gap. Bytes in `mask` are hidden. */
