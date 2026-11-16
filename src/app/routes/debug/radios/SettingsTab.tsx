@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Alert, Stack, Title } from '@mantine/core';
 import { SettingsTable } from '@app/components/debug/index.ts';
+import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import type { RadioDebugDescriptor } from './descriptors.ts';
 import { useSensitiveReveal } from './useSensitiveReveal.ts';
 import type { DebugArchive } from './captureArchive.ts';
@@ -41,7 +42,9 @@ function SettingsTabLoaded({
   return (
     <Stack>
       <Title order={3}>Settings</Title>
-      <SettingsTable view={view} revealed={reveal.revealed} onToggleReveal={reveal.toggle} />
+      <DesignSystemV2Provider>
+        <SettingsTable view={view} revealed={reveal.revealed} onToggleReveal={reveal.toggle} />
+      </DesignSystemV2Provider>
     </Stack>
   );
 }

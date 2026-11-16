@@ -67,7 +67,7 @@
 }
 
 .table tbody tr:nth-child(even) {
-  background: var(--dsv2-surface-quiet);
+  background: var(--dsv2-surface);
 }
 
 .help,
