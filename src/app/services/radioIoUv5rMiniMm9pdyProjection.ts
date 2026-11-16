@@ -9,11 +9,12 @@ import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { pushGeneralInfoWarning, pushGeneralWarning } from '@core/import-export/exportWarning.ts';
 import { toRt95Ascii } from '@core/import-export/formatProfiles.ts';
 import { UV5R_MINI_LIMITS } from '@core/radios/baofeng/uv-5r-mini/limits.ts';
-import { checkZoneScanSets } from '@core/import-export/zoneScanSets/index.ts';
+import { checkZoneScanSets, checkZoneOrderRoom } from '@core/import-export/zoneScanSets/index.ts';
 import {
   fillMiniScanSets,
   MMZS_MEMBER_CAPACITY_BITS,
 } from '@integrations/radio-io/radios/uv5r-mini/modData/scanSets.ts';
+import { encodeMiniOrder } from '@integrations/radio-io/radios/uv5r-mini/modData/order.ts';
 import type { RadioZoneDto } from '@integrations/radio-io/radioWriteProjection.ts';
 import { rt95Mm9pdyZoneOrderedAssembled, scanSetWithin } from './radioIoRt95Mm9pdyProjection.ts';
 
@@ -65,17 +66,7 @@ export function projectUv5rMiniMm9pdy(input: Uv5rMiniMm9pdyProjectionInput): {
       );
       continue;
     }
-    const ascending = [...members].sort((a, b) => a - b);
-    const inOrder =
-      ascending.length === zone.channelNumbers.length &&
-      ascending.every((n, i) => n === zone.channelNumbers[i]);
-    if (!inOrder) {
-      pushGeneralInfoWarning(
-        warnings,
-        `Zone "${name}": the radio steps through its channels in channel-number order.`,
-      );
-    }
-    zones.push({ wireName: name, channelNumbers: ascending, ...scanSetWithin(zone, ascending) });
+    zones.push({ wireName: name, channelNumbers: members, ...scanSetWithin(zone, members) });
   }
 
   if (zones.length > ZONE_MAX) {
@@ -112,6 +103,17 @@ export function projectUv5rMiniMm9pdy(input: Uv5rMiniMm9pdyProjectionInput): {
             }
           : undefined,
     },
+    warnings,
+  );
+
+  checkZoneOrderRoom(
+    zones.map((zone) => ({ zoneName: zone.wireName, channelNumbers: zone.channelNumbers })),
+    () =>
+      encodeMiniOrder(
+        zones.map((zone) => zone.channelNumbers),
+        Math.ceil(encoded.bits.length / 8),
+        1,
+      ).fallback,
     warnings,
   );
 

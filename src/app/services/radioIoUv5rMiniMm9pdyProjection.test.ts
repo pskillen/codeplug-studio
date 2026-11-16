@@ -135,15 +135,56 @@ describe('UV-5R Mini MM9PDY projection', () => {
     expect(texts.some((t) => t.includes('1 zones were not written'))).toBe(true);
   });
 
-  it('gives an info warning for an order the radio cannot follow, and sorts', () => {
+  it('preserves a zone member order for the writer', () => {
     const warnings: ExportWarning[] = [];
     const { zones } = projectUv5rMiniMm9pdy({
       zones: [{ wireName: 'Back', channelNumbers: [3, 1] }],
       warnings,
     });
-    expect(zones[0]?.channelNumbers).toEqual([1, 3]);
-    const texts = warnings.map(formatExportWarning);
-    expect(texts.some((t) => t.includes('channel-number order'))).toBe(true);
+    expect(zones[0]?.channelNumbers).toEqual([3, 1]);
+    expect(warnings.some((w) => w.kind === 'zone_order')).toBe(false);
+  });
+
+  it('names each order that does not fit and still tries a later small zone', () => {
+    const warnings: ExportWarning[] = [];
+    const large = Array.from({ length: 500 }, (_, i) => 500 - i);
+    projectUv5rMiniMm9pdy({
+      zones: [
+        { wireName: 'Too large', channelNumbers: large },
+        { wireName: 'Later', channelNumbers: [2, 1] },
+      ],
+      warnings,
+    });
+    expect(warnings.filter((w) => w.kind === 'zone_order')).toEqual([
+      { kind: 'zone_order', severity: 'problem', zoneName: 'Too large' },
+    ]);
+  });
+
+  it('accounts for scan sets when warning about zone orders that do not fit', () => {
+    const members = Array.from({ length: 999 }, (_, i) => i + 1);
+    const crowded = Array.from({ length: 4 }, (_, i) => ({
+      wireName: `Set${i}`,
+      channelNumbers: members,
+      scanChannelNumbers: members.slice(1),
+    }));
+    const warnings: ExportWarning[] = [];
+    projectUv5rMiniMm9pdy({
+      zones: [
+        ...crowded,
+        { wireName: 'No room', channelNumbers: Array.from({ length: 50 }, (_, i) => 50 - i) },
+        { wireName: 'Fits', channelNumbers: [2, 1] },
+      ],
+      warnings,
+    });
+    expect(warnings.filter((w) => w.kind === 'zone_order')).toEqual([
+      { kind: 'zone_order', severity: 'problem', zoneName: 'No room' },
+    ]);
+    const noFallback: ExportWarning[] = [];
+    projectUv5rMiniMm9pdy({
+      zones: [...crowded, { wireName: 'Fits', channelNumbers: [2, 1] }],
+      warnings: noFallback,
+    });
+    expect(noFallback.filter((w) => w.kind === 'zone_order')).toEqual([]);
   });
 
   it('leaves out channels past slot 999 and warns', () => {
@@ -277,7 +318,7 @@ describe('UV-5R Mini MM9PDY Write projection wiring', () => {
     });
     expect(projection.numbersBySourceChannelId.get('b')).toEqual([7]);
     const a = projection.numbersBySourceChannelId.get('a')![0]!;
-    const numbers = [a, 7].sort((x, y) => x - y);
+    const numbers = [a, 7];
     expect(projection.organisation.zones).toEqual([
       { wireName: 'Pinned', channelNumbers: numbers, scanChannelNumbers: numbers },
     ]);
