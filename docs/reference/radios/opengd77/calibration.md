@@ -2,7 +2,7 @@
 
 Tier-3 reference for the 512-byte calibration table that OpenGD77 STM32 firmware serves at flash address `0x10000`, and how the debug pages read and decode it. Code: `src/core/radios/opengd77/calibration.ts` (layout), `src/integrations/radio-io/radios/opengd77/debugCalibration.ts` (read and selection).
 
-> **This is the OpenGD77 working copy, not stock factory calibration.** It is not validated on hardware ([#1716](https://github.com/pskillen/codeplug-studio/issues/1716) stays open for that). Nothing here gives a value a physical unit, a valid range or a health verdict.
+> **This is the OpenGD77 working copy, not stock factory calibration.** It is not validated on hardware. Nothing here gives a value a physical unit, a valid range or a health verdict.
 
 ## Provenance
 
@@ -63,7 +63,7 @@ Frequency entries are shown as the stored digits (each byte's high then low nibb
 - The stock firmware's location or format for calibration.
 - Physical units, valid ranges, or whether the radio is healthy or well calibrated.
 - That the working copy equals the stored flash copy, or the factory values.
-- Hardware validation: tracked in [#1716](https://github.com/pskillen/codeplug-studio/issues/1716).
+- Hardware validation: not done.
 - Any other OpenGD77 build or fork matching these two snapshots.
 
 ## Not read: security registers (mode 10)
