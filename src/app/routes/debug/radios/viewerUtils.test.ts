@@ -4,6 +4,7 @@ import {
   type RadioBackupManifestV1,
 } from '@integrations/radio-io/backup/index.ts';
 import { openDebugArchive } from './captureArchive.ts';
+import { syntheticOpenGd77Archive } from './opengd77.fixture.ts';
 import { archiveKey, compareRegions, hexRows, regionIdentity } from './viewerUtils.ts';
 
 const manifest: RadioBackupManifestV1 = {
@@ -203,5 +204,26 @@ describe('archiveKey', () => {
     const b = { ...a };
     expect(archiveKey(a)).toBe(archiveKey(a));
     expect(archiveKey(b)).not.toBe(archiveKey(a));
+  });
+});
+
+describe.each(['DM-1701', 'MD-9600'])('OpenGD77 %s regions', (modelId) => {
+  it('compares flash spans and a packed User Database; unknown regions and models are refused', async () => {
+    const a = await syntheticOpenGd77Archive(modelId);
+    const b = await syntheticOpenGd77Archive(modelId, { userDatabaseEntries: 3 });
+    expect(regionIdentity(a, 'flash-span-0')?.space).toBe('OpenGD77 FLASH, absolute address');
+    expect(regionIdentity(a, 'bogus')).toBeUndefined();
+    const result = compareRegions(a, b);
+    expect(result.regions.find((r) => r.id === 'flash-span-0')).toMatchObject({
+      comparable: true,
+      changed: 0,
+    });
+    expect(result.regions.find((r) => r.id === 'user-database')).toMatchObject({
+      comparable: true,
+      changed: 1,
+      missing: 27,
+    });
+    const other = await syntheticOpenGd77Archive(modelId === 'DM-1701' ? 'MD-9600' : 'DM-1701');
+    expect(compareRegions(a, other).error).toMatch(/Radio models differ/);
   });
 });
