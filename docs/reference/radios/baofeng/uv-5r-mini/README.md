@@ -31,7 +31,8 @@ Handheld analogue FM/AM radio (UV-17Pro lineage). Studio targets it via CHIRP CS
 | [power.md](power.md)                   | High / Low ladder (internal %)                                                                                          |
 | [memory-layout.md](memory-layout.md)   | Multi-region image map, packed offsets                                                                                  |
 | [channel-record.md](channel-record.md) | 32-byte channel layout + enums; what Write keeps + TX inhibit                                                           |
-| [settings.md](settings.md)             | VFO / settings / ANI / PTT; Studio full-image retain path                                                               |
+| [settings.md](settings.md)             | Settings and VFO frame decode (confidence per byte); upload behaviours; Studio full-image retain path                   |
+| [calibration.md](calibration.md)       | Calibration sector `0xF000-0xFFFF`: PA bias frames, squelch, residue, erased tail (read-only, shape only)               |
 | [protocol.md](protocol.md)             | Ident, magics, R/W frames, XOR crypt, baud disagreement                                                                 |
 | [backup-restore.md](backup-restore.md) | Zip MEM regions; Restore clone upload vs stash Write ([#1143](https://github.com/pskillen/codeplug-studio/issues/1143)) |
 | [fixtures.md](fixtures.md)             | How to capture dumps for tests without committing personal codeplugs                                                    |
