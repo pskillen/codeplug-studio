@@ -28,6 +28,7 @@ function parts(
     capturedVia: 'web-serial',
     firmwareInfoRaw: info,
     calibrationWorkingCopy: opts.calibration ?? new Uint8Array(512),
+    settingsGap: new Uint8Array(0x60),
     image: createOpenUv380Image(),
     userDatabase: db,
   });

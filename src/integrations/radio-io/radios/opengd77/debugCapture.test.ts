@@ -9,6 +9,8 @@ import {
 import {
   OPENGD77_CALIBRATION_ADDRESS,
   OPENGD77_CALIBRATION_REGION_ID,
+  OPENGD77_SETTINGS_GAP_ADDRESS,
+  OPENGD77_SETTINGS_GAP_REGION_ID,
   OPENUV380_USER_DB_HEADER_ABS,
 } from './constants.ts';
 import { classifyOpenGd77DebugFrame, OpenGd77DebugRefusedError } from './debugGuard.ts';
@@ -69,6 +71,7 @@ describe.each(CASES)('captureOpenGd77DebugPipe on %s (type 0x%s)', (_name, model
       ...OPENGD77_BACKUP_FLASH_SPANS.map((s) => s.id),
       OPENGD77_BACKUP_USER_DATABASE_ID,
       OPENGD77_CALIBRATION_REGION_ID,
+      OPENGD77_SETTINGS_GAP_REGION_ID,
     ]);
     expect(manifest.regions.every((r) => r.restoreRole === 'inspect-only')).toBe(true);
     for (const span of OPENGD77_BACKUP_FLASH_SPANS) {
@@ -105,6 +108,7 @@ describe.each(CASES)('captureOpenGd77DebugPipe on %s (type 0x%s)', (_name, model
     expect(manifest.regions.map((r) => r.id)).toEqual([
       ...OPENGD77_BACKUP_FLASH_SPANS.map((s) => s.id),
       OPENGD77_CALIBRATION_REGION_ID,
+      OPENGD77_SETTINGS_GAP_REGION_ID,
     ]);
     expect(skipped.cpsDepth).toBe(0);
 
@@ -176,6 +180,64 @@ describe.each(CASES)('calibration working copy on %s (type 0x%s)', (_name, model
     expect(
       pipe.writes.some((w) => w[0] === 0x52 && w[1] === 0x01 && w[2] === 0 && w[3] === 0),
     ).toBe(false);
+  });
+});
+
+describe.each(CASES)('settings struct tail on %s (type 0x%s)', (_name, modelId, radioType) => {
+  const descriptor = getRadioDescriptor(modelId)!;
+  const hex = (frame: Uint8Array) =>
+    Array.from(frame, (b) => b.toString(16).padStart(2, '0')).join(' ');
+
+  it('reads exactly the three mode-1 blocks 0x6060-0x60BF, after calibration and before the spans', async () => {
+    const pipe = new OpenGd77ScriptedPipe(radioType);
+    pipe.plantByte(0x6060, 0x11);
+    pipe.plantByte(0x60bf, 0x22);
+    const capture = await captureOpenGd77DebugPipe(pipe, descriptor);
+    const frames = pipe.writes.map(hex);
+    const first = frames.indexOf('52 01 00 00 60 60 00 20');
+    expect(first).toBeGreaterThan(frames.indexOf('52 01 00 01 01 e0 00 20'));
+    expect(frames.slice(first, first + 3)).toEqual([
+      '52 01 00 00 60 60 00 20',
+      '52 01 00 00 60 80 00 20',
+      '52 01 00 00 60 a0 00 20',
+    ]);
+    expect(first).toBeLessThan(frames.indexOf('52 01 00 00 00 80 00 20'));
+    expect(capture.settingsGap).toHaveLength(0x60);
+    expect(capture.settingsGap[0]).toBe(0x11);
+    expect(capture.settingsGap[0x5f]).toBe(0x22);
+  });
+
+  it('sends only allow-listed frames, so no write-class frame joins the new reads', async () => {
+    const pipe = new OpenGd77ScriptedPipe(radioType);
+    await captureOpenGd77DebugPipe(pipe, descriptor);
+    for (const frame of pipe.writes) {
+      expect(classifyOpenGd77DebugFrame(frame).allowed).toBe(true);
+      expect([0x58, 0x57, 0x44]).not.toContain(frame[0]);
+    }
+    expect(pipe.controls).toEqual([]);
+  });
+
+  it('stores an inspect-only 96-byte region at 0x6060 that is not a flash span', async () => {
+    const capture = await captureOpenGd77DebugPipe(new OpenGd77ScriptedPipe(radioType), descriptor);
+    const { manifest, regions } = buildOpenGd77DebugArchiveParts(capture);
+    const region = manifest.regions.find((r) => r.id === OPENGD77_SETTINGS_GAP_REGION_ID)!;
+    expect([region.address, region.byteLength, region.restoreRole, region.path]).toEqual([
+      OPENGD77_SETTINGS_GAP_ADDRESS,
+      0x60,
+      'inspect-only',
+      'regions/settings-gap.bin',
+    ]);
+    expect(regions[OPENGD77_SETTINGS_GAP_REGION_ID]).toHaveLength(0x60);
+    expect(OPENGD77_BACKUP_FLASH_SPANS.some((s) => s.id === OPENGD77_SETTINGS_GAP_REGION_ID)).toBe(
+      false,
+    );
+  });
+
+  it('a refused read in the gap fails the capture with no archive', async () => {
+    const pipe = new OpenGd77ScriptedPipe(radioType);
+    pipe.failReadsAt.add(0x6080);
+    await expect(captureOpenGd77DebugPipe(pipe, descriptor)).rejects.toThrow();
+    expect(pipe.cpsDepth).toBe(0);
   });
 });
 

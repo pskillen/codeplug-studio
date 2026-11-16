@@ -15,6 +15,10 @@ import {
   OPENGD77_CALIBRATION_ADDRESS,
   OPENGD77_CALIBRATION_REGION_ID,
   OPENGD77_CALIBRATION_REGION_PATH,
+  OPENGD77_SETTINGS_GAP_ADDRESS,
+  OPENGD77_SETTINGS_GAP_LENGTH,
+  OPENGD77_SETTINGS_GAP_REGION_ID,
+  OPENGD77_SETTINGS_GAP_REGION_PATH,
   DM1701_RADIO_TYPES,
   MD9600_RADIO_TYPES,
   OPENGD77_1701_POWER_STEPS,
@@ -167,6 +171,12 @@ export interface OpenGd77CalibrationCoverage {
   byteLength: number;
 }
 
+/** The debug-only settings struct tail `0x6060-0x60BF`: a gap between spans, read as its own region. */
+export interface OpenGd77SettingsGapCoverage {
+  state: 'captured' | 'not-captured';
+  byteLength: number;
+}
+
 export interface OpenGd77UnclassifiedRegion {
   id: string;
   address: number;
@@ -182,6 +192,7 @@ export interface OpenGd77DebugCoverage {
   gaps: { start: number; end: number }[];
   userDatabase: OpenGd77UserDatabaseCoverage;
   calibration: OpenGd77CalibrationCoverage;
+  settingsGap: OpenGd77SettingsGapCoverage;
   unclassified: OpenGd77UnclassifiedRegion[];
   /** The flash part id as the radio reported it; absent without a valid FirmwareInfo sidecar. */
   flashPart?: string;
@@ -252,12 +263,41 @@ export function classifyOpenGd77DebugCoverage(
     ? { state: 'captured', byteLength: OPENGD77_CALIBRATION_LENGTH }
     : { state: 'not-captured', byteLength: 0 };
 
+  const settingsGapRegion = manifest.regions.find(
+    (r) =>
+      r.id === OPENGD77_SETTINGS_GAP_REGION_ID &&
+      r.address === OPENGD77_SETTINGS_GAP_ADDRESS &&
+      r.byteLength === OPENGD77_SETTINGS_GAP_LENGTH &&
+      r.path === OPENGD77_SETTINGS_GAP_REGION_PATH &&
+      r.restoreRole === 'inspect-only' &&
+      regions[r.id]?.length === OPENGD77_SETTINGS_GAP_LENGTH,
+  );
+  if (settingsGapRegion) claimed.add(settingsGapRegion.id);
+  const settingsGap: OpenGd77SettingsGapCoverage = settingsGapRegion
+    ? { state: 'captured', byteLength: OPENGD77_SETTINGS_GAP_LENGTH }
+    : { state: 'not-captured', byteLength: 0 };
+  if (settingsGapRegion) {
+    // The gap is read: shrink the unread flash gap that holds it.
+    const lo = OPENGD77_SETTINGS_GAP_ADDRESS;
+    const hi = lo + OPENGD77_SETTINGS_GAP_LENGTH;
+    const at = gaps.findIndex((g) => g.start <= lo && hi <= g.end);
+    if (at >= 0) {
+      const g = gaps[at]!;
+      const rest = [
+        ...(g.start < lo ? [{ start: g.start, end: lo }] : []),
+        ...(hi < g.end ? [{ start: hi, end: g.end }] : []),
+      ];
+      gaps.splice(at, 1, ...rest);
+    }
+  }
+
   for (const region of manifest.regions) {
     if (claimed.has(region.id)) continue;
     const known =
       OPENGD77_BACKUP_FLASH_SPANS.some((s) => s.id === region.id) ||
       region.id === OPENGD77_BACKUP_USER_DATABASE_ID ||
-      region.id === OPENGD77_CALIBRATION_REGION_ID;
+      region.id === OPENGD77_CALIBRATION_REGION_ID ||
+      region.id === OPENGD77_SETTINGS_GAP_REGION_ID;
     unclassified.push({
       id: region.id,
       address: region.address,
@@ -276,6 +316,7 @@ export function classifyOpenGd77DebugCoverage(
     gaps,
     userDatabase,
     calibration,
+    settingsGap,
     unclassified,
     ...(identity?.status === 'ok'
       ? { flashPart: `Flash ID ${hex(identity.flashId, 4)} (as reported)` }
@@ -314,6 +355,14 @@ export function openGd77DebugRegionIdentity(
       space: 'OpenGD77 working copy (served from RAM)',
       representation: 'calibration bytes',
     };
+  }
+  if (
+    id === OPENGD77_SETTINGS_GAP_REGION_ID &&
+    region.address === OPENGD77_SETTINGS_GAP_ADDRESS &&
+    region.byteLength === OPENGD77_SETTINGS_GAP_LENGTH &&
+    region.path === OPENGD77_SETTINGS_GAP_REGION_PATH
+  ) {
+    return { space: 'OpenGD77 FLASH, absolute address', representation: 'FLASH bytes' };
   }
   if (
     id === OPENGD77_BACKUP_USER_DATABASE_ID &&

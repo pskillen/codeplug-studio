@@ -215,6 +215,12 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
                 ? `${og77.calibration.byteLength} bytes · OpenGD77 working copy as returned at 0x10000, its own address space, not stock factory calibration`
                 : 'Not captured'}
             </Text>
+            <Text fw={600}>Settings struct tail</Text>
+            <Text size="sm">
+              {og77.settingsGap.state === 'captured'
+                ? `${og77.settingsGap.byteLength} bytes · flash 0x6060–0x60BF, read so the settings struct is complete`
+                : 'Not captured (older archive)'}
+            </Text>
             {og77.unclassified.length > 0 && <Text fw={600}>Unclassified entries</Text>}
             {og77.unclassified.map((entry) => (
               <Text key={entry.id} size="sm">
