@@ -28,7 +28,7 @@ Draws a `ValueTableView`: Field (label, group, address, note dimmed) · Value ·
 - Missing cells read "Not captured", never zero or empty.
 - Changed overlay cells are amber (`data-changed`), matching compare.
 - Phone width (640 px and below): Confidence and Source fold under the field name; the table scrolls in its container.
-- The page owns the Show password control (`SensitiveRevealButton` / `useSensitiveReveal` stay in `routes/debug/radios/` for now) and passes `revealed`.
+- The page owns the Show password control (`SensitiveRevealButton` and `useSensitiveReveal`, in this folder) and passes `revealed`.
 
 ## Related
 

@@ -1,7 +1,7 @@
 import { Button } from '@mantine/core';
 
 /** Show/hide toggle for password bytes; pair with `useSensitiveReveal`. */
-export function SensitiveRevealButton({
+export default function SensitiveRevealButton({
   revealed,
   onToggle,
 }: {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { SettingRow, SettingsView } from '@integrations/radio-io/debugView';
-import { SensitiveRevealButton } from '@app/routes/debug/radios/SensitiveReveal.tsx';
+import SensitiveRevealButton from './SensitiveRevealButton.tsx';
 import SearchInput from '../v2/SearchInput.tsx';
 import ToggleSwitch from '../v2/ToggleSwitch.tsx';
 import ConfidenceBadge from './ConfidenceBadge.tsx';

@@ -17,6 +17,7 @@ import {
 import { useState } from 'react';
 import { openDebugArchive, rt95ArchiveDetails, type DebugArchive } from './captureArchive.ts';
 import {
+  archiveKey,
   compareRegions,
   formatAddress,
   HEX_PAGE_BYTES,
@@ -26,8 +27,7 @@ import {
   regionIdentity,
   sensitiveRanges,
 } from './viewerUtils.ts';
-import { SensitiveRevealButton } from './SensitiveReveal.tsx';
-import { useSensitiveReveal } from './useSensitiveReveal.ts';
+import { SensitiveRevealButton, useSensitiveReveal } from '@app/components/debug/index.ts';
 
 function provenance(archive: DebugArchive | undefined, id: string) {
   return archive?.manifest.radioModelId === RT95_MODEL_ID
@@ -42,7 +42,7 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
   const [page, setPage] = useState(0);
   const [jump, setJump] = useState('');
   const [jumpError, setJumpError] = useState<string>();
-  const reveal = useSensitiveReveal(archive);
+  const reveal = useSensitiveReveal(archive ? archiveKey(archive) : undefined);
   if (!archive)
     return <Alert title="No capture">Open or read a capture to inspect its bytes.</Alert>;
   const wire = selected === '__mini_wire' ? archive.sidecars['debug/wire.bin'] : undefined;
@@ -191,7 +191,7 @@ export function CompareViewer(props: {
   const [error, setError] = useState<string>();
   const [selected, setSelected] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const reveal = useSensitiveReveal(archive);
+  const reveal = useSensitiveReveal(archive ? archiveKey(archive) : undefined);
   const open = async (file: File | null) => {
     if (!file) return;
     try {

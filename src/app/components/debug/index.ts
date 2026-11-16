@@ -39,3 +39,5 @@ export type {
   CalibrationReadPickerEntry,
   CalibrationReadPickerProps,
 } from './CalibrationReadPicker.tsx';
+export { default as SensitiveRevealButton } from './SensitiveRevealButton.tsx';
+export { useSensitiveReveal } from './useSensitiveReveal.ts';
