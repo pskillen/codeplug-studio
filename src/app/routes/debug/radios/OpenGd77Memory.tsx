@@ -14,11 +14,11 @@ import {
   type OpenGd77ZoneEntry,
   type OpenGd77ZoneMember,
 } from '@integrations/radio-io/radios/opengd77/debugMemory.ts';
+import { ContactsPanel, RxGroupsPanel, UserDatabasePanel } from './OpenGd77Directories.tsx';
 import { archiveKey } from './viewerUtils.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
 const NOT_CAPTURED = 'Not captured';
-const LATER = 'Coming in a later piece';
 const DASH = '—';
 
 const count = (n: number) => n.toLocaleString('en-GB');
@@ -209,8 +209,8 @@ function ChannelsPanel({ channels }: { channels: OpenGd77MemoryInventory['channe
       <Text size="sm" c="dimmed">
         Each name is the radio&apos;s single name field, shown complete; OpenGD77 channel records
         carry no separate callsign. Power is the radio&apos;s ladder step as a percentage of its
-        range, not watts. TX contact and RX group are unresolved numbers: contacts are not decoded
-        here. Slots keep their one-based radio numbers.
+        range, not watts. TX contact and RX group are unresolved numbers: they are not resolved
+        against the Contacts and RX groups tabs. Slots keep their one-based radio numbers.
       </Text>
       {missing.map((b) => (
         <Alert key={b.bank} color="yellow" title={NOT_CAPTURED}>
@@ -425,13 +425,13 @@ function OpenGd77MemoryLoaded({ archive }: { archive: DebugArchive }) {
           <ZonesPanel zones={projection.zones} />
         </Tabs.Panel>
         <Tabs.Panel value="contacts" pt="md">
-          <Text>{LATER}</Text>
+          <ContactsPanel archive={archive} />
         </Tabs.Panel>
         <Tabs.Panel value="rx-groups" pt="md">
-          <Text>{LATER}</Text>
+          <RxGroupsPanel archive={archive} />
         </Tabs.Panel>
         <Tabs.Panel value="user-database" pt="md">
-          <Text>{LATER}</Text>
+          <UserDatabasePanel archive={archive} />
         </Tabs.Panel>
       </Tabs>
     </Stack>

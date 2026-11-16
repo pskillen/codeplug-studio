@@ -1018,7 +1018,7 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     ]);
   });
 
-  it('routes Memory to the OpenGD77 viewer, with the later-piece sections deferred', async () => {
+  it('routes Memory to the OpenGD77 viewer, with contacts, RX groups and the User Database', async () => {
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Memory' }));
     expect(screen.getAllByText('No capture').length).toBeGreaterThan(0);
@@ -1026,7 +1026,12 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     await screen.findByRole('tab', { name: 'Channels' });
     expect(screen.getByRole('tab', { name: 'Zones' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'User Database' }));
-    expect(screen.getByText('Coming in a later piece')).toBeInTheDocument();
+    expect(screen.getByText('Valid header')).toBeInTheDocument();
+    expect(screen.queryByText('Coming in a later piece')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Contacts' }));
+    expect(screen.getByText('Not captured')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'RX groups' }));
+    expect(screen.getByText('Not captured')).toBeInTheDocument();
   });
 
   it('reads a Backup-style archive without the region as not captured', async () => {

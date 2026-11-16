@@ -68,7 +68,7 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       expect(screen.getByText('No capture')).toBeInTheDocument();
     });
 
-    it('lists channels, searches and shows the deferred sections', async () => {
+    it('lists channels, searches and shows the directory sections', async () => {
       view(await syntheticOpenGd77Archive(model, { image: image() }));
       expect(screen.getByText('SIMPLEX')).toBeInTheDocument();
       expect(screen.getByText('BANK ONE')).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       expect(screen.getByText('BANK ONE')).toBeInTheDocument();
       for (const tab of ['Contacts', 'RX groups', 'User Database']) {
         fireEvent.click(screen.getByRole('tab', { name: tab }));
-        expect(screen.getByText('Coming in a later piece')).toBeInTheDocument();
+        expect(screen.queryByText('Coming in a later piece')).not.toBeInTheDocument();
       }
     });
 
