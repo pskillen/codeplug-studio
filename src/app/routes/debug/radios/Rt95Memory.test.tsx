@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core';
-import { render, screen, cleanup, within } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   packRadioBackupZip,
@@ -8,6 +8,10 @@ import {
 import { encodeChannelRecord } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
 import { RT95_OCCUPIED_BITFIELD_OFFSET } from '@integrations/radio-io/radios/rt95/constants.ts';
 import { encodeRt95ModData } from '@integrations/radio-io/radios/rt95/modData/encode.ts';
+import {
+  RT95_KEY_FUNCTION_DIR,
+  RT95_KEY_TABLE_ADDR,
+} from '@integrations/radio-io/radios/rt95/zoneKey.ts';
 import { chooseCategory } from '@app/components/debug/memoryCategoriesTestUtils.ts';
 import { openDebugArchive } from './captureArchive.ts';
 import { Rt95Memory, Rt95MemoryView } from './Rt95Memory.tsx';
@@ -48,6 +52,8 @@ function archive(bytes: Uint8Array, guard = true) {
   );
 }
 afterEach(cleanup);
+/** Zones draw as a table; a zone's member table opens when its row is clicked. */
+const openZone = (name: string) => fireEvent.click(screen.getByText(name));
 describe('RT95 MMD1 viewer', () => {
   it('shows zones and one-based members without clone data, and gates its claim on evidence', () => {
     const bytes = new Uint8Array(8192).fill(255);
@@ -64,6 +70,7 @@ describe('RT95 MMD1 viewer', () => {
     );
     chooseCategory('Zones');
     expect(screen.getByText(/MM9PDY-compatible data present/)).toBeInTheDocument();
+    openZone('TEST');
     expect(screen.getByText(/2 members point at empty or unreadable slots/)).toBeInTheDocument();
     expect(screen.getByText(/1 \(unavailable\), 200 \(unavailable\)/)).toBeInTheDocument();
     expect(screen.getByText(/ZST1 state.*invalid/)).toBeInTheDocument();
@@ -167,6 +174,7 @@ describe('RT95 MMD1 viewer', () => {
       </MantineProvider>,
     );
     chooseCategory('Zones');
+    openZone('TEST');
     expect(screen.getByText(/1 member points at empty or unreadable slots/)).toBeInTheDocument();
     expect(screen.getByText(/1 \(unreadable\)/)).toBeInTheDocument();
     expect(
@@ -215,6 +223,7 @@ describe('RT95 MMD1 viewer', () => {
       </MantineProvider>,
     );
     chooseCategory('Zones');
+    openZone('MIXED');
     const zone = within(screen.getByTestId('rt95-zone-1'));
     expect(zone.getByText('Zone 1: MIXED')).toBeInTheDocument();
     expect(zone.getByText('3 members')).toBeInTheDocument();
@@ -253,6 +262,7 @@ describe('RT95 MMD1 viewer', () => {
       </MantineProvider>,
     );
     chooseCategory('Zones');
+    openZone('BAD');
     expect(screen.getByText(/invalid member CRC/)).toBeInTheDocument();
     expect(screen.queryByText(/MM9PDY-compatible data present/)).not.toBeInTheDocument();
   });
@@ -271,6 +281,38 @@ describe('RT95 MMD1 viewer', () => {
     );
     chooseCategory('Zones');
     expect(screen.getByText(new RegExp(`Header invalid: ${reason}`))).toBeInTheDocument();
+  });
+  it('draws P-keys as a table and keeps the DIR meaning, or says the bytes are unavailable', () => {
+    const clone = new Uint8Array(0x32a0);
+    clone[RT95_KEY_TABLE_ADDR] = RT95_KEY_FUNCTION_DIR;
+    clone[RT95_KEY_TABLE_ADDR + 1] = 0x05;
+    const a = archive(new Uint8Array(8192).fill(255));
+    a.regions['programming-image'] = clone;
+    a.manifest.regions.push({
+      id: 'programming-image',
+      label: 'Clone',
+      address: 0,
+      byteLength: clone.length,
+      path: 'regions/image.bin',
+      restoreRole: 'inspect-only',
+    });
+    const view = render(
+      <MantineProvider>
+        <Rt95Memory archive={a} />
+      </MantineProvider>,
+    );
+    chooseCategory('P-keys');
+    expect(screen.getByText('12 key bytes in 2 groups of 6')).toBeInTheDocument();
+    expect(screen.getByText('DIR; used as ZON by compatible firmware.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Search table')).toBeInTheDocument();
+    view.unmount();
+    render(
+      <MantineProvider>
+        <Rt95Memory archive={archive(new Uint8Array(8192).fill(255))} />
+      </MantineProvider>,
+    );
+    chooseCategory('P-keys');
+    expect(screen.getByText('P-key bytes unavailable.')).toBeInTheDocument();
   });
   it('names what is not decoded once and has no Occupancy column', () => {
     const clone = new Uint8Array(0x32a0);

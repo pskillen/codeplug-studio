@@ -39,3 +39,27 @@ export function rt95SlotDetailsText(slot: number, hex: string): string {
 
 export const RT95_ZONES_BODY_CAVEAT =
   'Body EEPROM is reached through the head; it can return checksum-valid zeros without a body reply. Running firmware, release and modification status remain unknown.';
+
+export function rt95ZoneSummary(zones: number, validZones: number): string {
+  return `${zones} ${zones === 1 ? 'zone' : 'zones'} in the MMD1 data · ${validZones} with valid members`;
+}
+
+export const RT95_ZONE_CAVEAT: readonly string[] = [
+  "The RT95 record has no callsign field. The MM9PDY target writes the channel's callsign into the radio name when it has one. The viewer shows the radio name and the description as stored and does not claim which is which.",
+  'Select a zone to see its members.',
+];
+
+export const RT95_ZONES_EMPTY = 'The MMD1 header is valid and holds no zones.';
+
+export function rt95PKeySummary(bytes: number, groups: number): string {
+  return `${bytes} key bytes in ${groups} groups of 6`;
+}
+
+export const RT95_PKEY_CAVEAT: readonly string[] = [
+  'Each key byte is shown as stored in the clone image.',
+];
+
+export const RT95_PKEYS_UNAVAILABLE = 'P-key bytes unavailable.';
+
+/** The meaning of a P-key byte that is known; empty text for any other value. */
+export const RT95_PKEY_DIR_MEANING = 'DIR; used as ZON by compatible firmware.';
