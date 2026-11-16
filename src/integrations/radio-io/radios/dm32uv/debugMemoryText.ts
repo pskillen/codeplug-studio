@@ -58,3 +58,64 @@ export function dm32ExcessTitle(): string {
 export function dm32ExcessText(excess: number, capacity: number): string {
   return `The stored count claims ${n(excess)} slots above the ${n(capacity)} hardware slots; they are not listed.`;
 }
+
+export const DM32_ZONES_EMPTY = 'The zone count was captured and the radio states no zones.';
+export const DM32_ZONES_UNAVAILABLE_NOTE = 'This does not mean the radio has no zones.';
+
+export interface Dm32ZoneCounts {
+  declared: number;
+  listed: number;
+  capacity: number;
+  decoded: number;
+  vacant: number;
+  notCaptured: number;
+}
+
+export function dm32ZoneSummary(c: Dm32ZoneCounts): string {
+  return `The radio states ${n(c.declared)} zones · ${n(c.listed)} listed of ${n(c.capacity)} hardware zones · decoded ${n(c.decoded)} · vacant ${n(c.vacant)} · not captured ${n(c.notCaptured)}`;
+}
+
+export interface Dm32ZoneHeader {
+  count: number;
+  channelA: number;
+  channelB: number;
+  zoneA: number;
+  zoneB: number;
+}
+
+export function dm32ZoneCaveat(h: Dm32ZoneHeader): string[] {
+  return [
+    "Zones are in radio order and each name is the radio's single name field, shown complete; separate callsign and name data is unavailable.",
+    'Members are channel slot numbers shown in radio order, duplicates included, resolved against the channels of this capture. A record missing from the capture is not captured, never an unused zone.',
+    `The meaning of the stored zone count is unverified. Header bytes (raw): count ${h.count}, channel A ${h.channelA}, channel B ${h.channelB}, zone A ${h.zoneA}, zone B ${h.zoneB}.`,
+    'Click a zone to see its members.',
+  ];
+}
+
+export const dm32ZoneExcessText = (excess: number, capacity: number) =>
+  `The stored count claims ${n(excess)} zones above the ${n(capacity)} hardware zones; they are not listed.`;
+
+export const DM32_SCAN_LISTS_EMPTY =
+  'The scan-list page was captured and the radio states no scan lists.';
+export const DM32_SCAN_LISTS_UNAVAILABLE_NOTE = 'This does not mean the radio has no scan lists.';
+
+export interface Dm32ScanListCounts {
+  declared: number;
+  listed: number;
+  capacity: number;
+  decoded: number;
+  vacant: number;
+}
+
+export function dm32ScanListSummary(c: Dm32ScanListCounts): string {
+  return `The radio states ${n(c.declared)} scan lists · ${n(c.listed)} listed of ${n(c.capacity)} hardware lists · decoded ${n(c.decoded)} · vacant ${n(c.vacant)}`;
+}
+
+export const DM32_SCAN_LIST_CAVEAT: readonly string[] = [
+  "Each name is the radio's single name field, shown complete; separate callsign and name data is unavailable. A non-empty list stores its named members plus one for the implicit current channel, so the raw byte is shown beside the named count.",
+  'Members are channel slot numbers in radio order, resolved against the channels of this capture. Hang time, priority and designated TX are shown as raw hex only: their encodings are not established.',
+  'Click a scan list to see its members.',
+];
+
+export const dm32ScanListExcessText = (excess: number, capacity: number) =>
+  `The stored count claims ${n(excess)} lists above the ${n(capacity)} hardware lists; they are not listed.`;
