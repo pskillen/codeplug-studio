@@ -9,6 +9,7 @@ import { OPENGD77_BACKUP_USER_DATABASE_ID } from './backupRestoreRoles.ts';
 import { OPENUV380_USER_DB_HEADER_SIZE } from './constants.ts';
 import { selectOpenGd77Calibration } from './debugCalibration.ts';
 import { openGd77DebugIdentity, openGd77DebugRegionIdentity } from './debugCoverage.ts';
+import { openGd77DecodedSnapshot } from './debugCompareDecoded.ts';
 import { decodeUserDatabaseHeader } from './userDatabaseCodec.ts';
 
 export interface OpenGd77CompareArchive {
@@ -83,6 +84,7 @@ export const openGd77CompareAdapter: DebugCompareAdapter = {
     ),
   regionIdentity: (archive, id) =>
     openGd77DebugRegionIdentity(archive.manifest, archive.regions, id),
+  decoded: openGd77DecodedSnapshot,
 };
 
 const unavailable = (v: unknown) => v === undefined || v === null || isOpenGd77InvalidEvidence(v);
