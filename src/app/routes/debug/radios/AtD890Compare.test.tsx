@@ -170,4 +170,72 @@ describe('AtD890Compare', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next Bytes at 0x04F00000 page' }));
     expect(screen.getByText('Second: 02 09')).toBeInTheDocument();
   });
+
+  describe('password bytes', () => {
+    const START = D890_MAP.OptionalSettingsExt + 0x3c;
+    const sparseArchive = (fill: number) => {
+      const data = new Uint8Array(16).fill(fill);
+      const region = {
+        id: `sparse-${START.toString(16)}`,
+        label: 'Sparse',
+        address: START,
+        byteLength: 16,
+        path: 'regions/sparse-opt.bin',
+        restoreRole: 'inspect-only' as const,
+      };
+      return openDebugArchive(
+        packRadioBackupZip(
+          {
+            format: RADIO_BACKUP_FORMAT,
+            version: RADIO_BACKUP_VERSION,
+            capturedAt: '2026-01-01',
+            capturedVia: 'file',
+            app: { buildEnv: 'test', buildVersion: 'test' },
+            radioModelId: 'AT-D890UV',
+            descriptorLabel: 'synthetic',
+            coverage: 'partial',
+            imageByteLength: 0x5000000,
+            regions: [region],
+          },
+          { [`sparse-${START.toString(16)}`]: data },
+          {
+            [AT_D890_PROVENANCE_PATH]: new TextEncoder().encode(
+              JSON.stringify({
+                version: 1,
+                ranges: [
+                  {
+                    regionId: `sparse-${START.toString(16)}`,
+                    address: START,
+                    byteLength: 16,
+                    kind: 'sparse',
+                    requestedUnit: null,
+                    respondingUnit: null,
+                    bothReadsMatched: null,
+                  },
+                ],
+              }),
+            ),
+          },
+        ),
+        'AT-D890UV',
+      );
+    };
+
+    it('hides a changed power-on password in the run summary and in Show all bytes until revealed', () => {
+      view(sparseArchive(0x31), sparseArchive(0x32));
+      const text = () => document.body.textContent ?? '';
+      expect(text()).toContain('password bytes changed');
+      expect(text()).toContain('31 31 31 31 •• •• •• ••');
+      expect(text()).not.toMatch(/31 31 31 31 31/);
+      expect(text()).not.toContain('11111111');
+      expect(text()).toContain('Password changed (values hidden)');
+      fireEvent.click(screen.getByRole('button', { name: /Show bytes of run at/ }));
+      expect(text()).toContain('First: 31 31 31 31 •• •• •• •• •• •• •• •• 31 31 31 31');
+      expect(text()).toContain('Second: 32 32 32 32 •• •• •• •• •• •• •• •• 32 32 32 32');
+      fireEvent.click(screen.getAllByRole('button', { name: 'Show password' })[0]!);
+      expect(text()).toContain('First: 31 31 31 31 31 31 31 31 31 31 31 31 31 31 31 31');
+      expect(text()).toContain('11111111');
+      expect(text()).not.toContain('password bytes changed');
+    });
+  });
 });
