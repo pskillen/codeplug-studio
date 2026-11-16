@@ -11,7 +11,6 @@ import {
 import { useState } from 'react';
 import {
   decodeRt95DebugSlots,
-  decodeRt95DebugSettings,
   type Rt95DebugSlot,
 } from '@integrations/radio-io/radios/rt95/debugMemory.ts';
 import { RT95_MMD1_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
@@ -34,6 +33,9 @@ import {
   RT95_KEY_TABLE_LENGTH,
   RT95_KEY_FUNCTION_DIR,
 } from '@integrations/radio-io/radios/rt95/zoneKey.ts';
+import { projectRt95Settings } from '@integrations/radio-io/radios/rt95/debugMemorySettings.ts';
+import { Rt95SettingsPanel } from './Rt95MemorySettings.tsx';
+import { useSensitiveReveal } from './useSensitiveReveal.ts';
 import { rt95GuardEvidence, type DebugArchive } from './captureArchive.ts';
 
 type SlotRow = Rt95DebugSlot & { description: string };
@@ -104,6 +106,7 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
   const [showEmpty, setShowEmpty] = useState(false);
+  const reveal = useSensitiveReveal(archive);
   const bytes = archive.regions[RT95_MMD1_REGION_ID];
   const guard = rt95GuardEvidence(archive);
   const cloneRegion = archive.manifest.regions.find((r) => r.id === 'programming-image');
@@ -152,7 +155,7 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
       .toLocaleLowerCase()
       .includes(query.toLocaleLowerCase()),
   );
-  const settings = decodeRt95DebugSettings(clone, cloneRegion?.address ?? 0);
+  const settings = projectRt95Settings(clone, cloneRegion?.address ?? 0);
   const keys = at(RT95_KEY_TABLE_ADDR, RT95_KEY_TABLE_LENGTH);
   const state =
     decoded?.status === 'valid'
@@ -178,12 +181,12 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
         emptyMessage="No channel slots to show."
         filteredEmptyMessage={`No channels match “${query.trim()}”.`}
       />
-      <Title order={4}>Retained settings [unknown]</Title>
-      {settings.map((setting) => (
-        <Text key={setting.label}>
-          {setting.label} [unknown]: {setting.value}
-        </Text>
-      ))}
+      <Title order={4}>Settings</Title>
+      <Rt95SettingsPanel
+        settings={settings}
+        revealed={reveal.revealed}
+        onToggleReveal={reveal.toggle}
+      />
       <Title order={4}>MMD1 zones [body]</Title>
       <Text>
         Body EEPROM is reached through the head; it can return checksum-valid zeros without a body

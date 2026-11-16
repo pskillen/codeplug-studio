@@ -89,7 +89,7 @@ describe('archive viewer controls', () => {
     expect(screen.getByRole('cell', { name: '7 [unknown]' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Slot [unknown]' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Wire name [unknown]' })).toBeInTheDocument();
-    expect(screen.getByText('Retained settings [unknown]')).toBeInTheDocument();
+    expect(screen.getByText('Settings')).toBeInTheDocument();
     fireEvent.change(screen.getByRole('textbox', { name: 'Search table' }), {
       target: { value: 'other' },
     });
