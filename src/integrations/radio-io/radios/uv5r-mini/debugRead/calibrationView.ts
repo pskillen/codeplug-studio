@@ -55,9 +55,6 @@ const count = (n: number) => n.toLocaleString('en-GB');
 
 const confidence = (c: Uv5rMiniConfidence): Confidence => (c === 'partly' ? 'partially-traced' : c);
 
-const BYTE_UNIT = 'Byte (unit unknown)';
-const RSSI_UNIT = 'RSSI counts';
-
 const NOTICE = {
   title: 'Not validated on hardware',
   tone: 'caution' as const,
@@ -130,7 +127,7 @@ function paCharts(cal: Uv5rMiniCalibration): CalibrationChart[] {
       address: hexRange(first.address, first.address + used),
       confidence: { layout: 'traced', meaning: 'traced' },
       x: { label: 'Frequency', unit: 'MHz' },
-      y: { label: BYTE_UNIT, unit: 'byte' },
+      y: { label: 'Byte', unit: 'unit unknown' },
       series: lines,
       table,
     };
@@ -163,7 +160,7 @@ function squelchCharts(cal: Uv5rMiniCalibration): StepBars[] {
         meaning: Confidence;
       },
       x: { label: 'Squelch level' },
-      y: { label: RSSI_UNIT, unit: 'counts', domain: [0, 255] as const },
+      y: { label: 'Threshold', unit: 'RSSI counts', domain: [0, 255] as const },
       bars: levelBars(row),
       table: {
         key: { label: 'Level' },
@@ -191,7 +188,7 @@ function offsetCharts(cal: Uv5rMiniCalibration): StepBars[] {
         meaning: Confidence;
       },
       x: { label: 'MHz' },
-      y: { label: RSSI_UNIT, unit: 'counts', domain: 'auto' as const },
+      y: { label: 'Offset', unit: 'RSSI counts', domain: 'auto' as const },
       bars: used.map((value, k) => ({ id: `p${k}`, label: String(mhz[k]), value })),
       table: {
         key: { label: 'Point' },
