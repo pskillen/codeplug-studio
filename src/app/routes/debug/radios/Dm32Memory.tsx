@@ -16,8 +16,18 @@ import {
   projectDm32MemoryLists,
   type Dm32ScanListInventory,
 } from '@integrations/radio-io/radios/dm32uv/debugMemoryZones.ts';
-import { projectDm32Lists } from '@integrations/radio-io/radios/dm32uv/debugMemoryLists.ts';
-import { ContactsPanel, RadioIdsPanel, TalkGroupsPanel } from './Dm32MemoryLists.tsx';
+import {
+  projectDm32Lists,
+  resolveDm32ChannelReferences,
+  type Dm32Reference,
+  type Dm32ReferenceResolution,
+} from '@integrations/radio-io/radios/dm32uv/debugMemoryLists.ts';
+import {
+  ContactsPanel,
+  RadioIdsPanel,
+  RxGroupsPanel,
+  TalkGroupsPanel,
+} from './Dm32MemoryLists.tsx';
 import { ScanListsPanel, ZonesPanel } from './Dm32MemoryZones.tsx';
 import { archiveKey } from './viewerUtils.ts';
 import type { DebugArchive } from './captureArchive.ts';
@@ -109,7 +119,34 @@ function scanListText(id: number | undefined, scanLists: Dm32ScanListInventory):
   return `${id}: ${state.name || '(unnamed)'}`;
 }
 
-function channelColumns(scanLists: Dm32ScanListInventory): DataTableColumn<ChannelRow>[] {
+const NONE_TEXT = { tx: 'None (0)', rx: 'None (0, assumed)', radioId: 'None (0xFF)' } as const;
+
+/** A channel's TX contact, RX group or radio ID resolved against the lists of this capture. */
+function referenceText(ref: Dm32Reference | undefined, kind: keyof typeof NONE_TEXT): string {
+  if (!ref) return DASH;
+  const note = (n?: string) => (n ? `; ${n}` : '');
+  switch (ref.status) {
+    case 'none':
+      return NONE_TEXT[kind];
+    case 'resolved':
+      return `${ref.raw}: ${ref.label}${kind === 'rx' ? ` (${ref.note})` : ''}`;
+    case 'out-of-range':
+      return `${ref.raw} (out of range)`;
+    case 'absent':
+      return `${ref.raw} (absent${note(ref.note)})`;
+    case 'not-decoded':
+      return `${ref.raw} (not decoded${note(ref.note)})`;
+    case 'inventory-not-captured':
+      return `${ref.raw} (raw; list not captured)`;
+    default:
+      return NOT_CAPTURED;
+  }
+}
+
+function channelColumns(
+  scanLists: Dm32ScanListInventory,
+  references: Dm32ReferenceResolution,
+): DataTableColumn<ChannelRow>[] {
   return [
     {
       key: 'slot',
@@ -204,21 +241,20 @@ function channelColumns(scanLists: Dm32ScanListInventory): DataTableColumn<Chann
     {
       key: 'rxGroup',
       header: 'RX group',
-      width: '6rem',
-      render: (r) => cell(r, (c) => (digital(c) ? `${c.rxGroupIndex ?? 0} (raw)` : undefined)),
+      width: 'minmax(8rem, 1fr)',
+      render: (r) => referenceText(references.byChannel.get(r.slot)?.rxGroup, 'rx'),
+    },
+    {
+      key: 'radioId',
+      header: 'Radio ID',
+      width: 'minmax(8rem, 1fr)',
+      render: (r) => referenceText(references.byChannel.get(r.slot)?.radioId, 'radioId'),
     },
     {
       key: 'txContact',
       header: 'TX contact',
-      width: '7rem',
-      render: (r) =>
-        decoded(r)
-          ? r.entry.txContactIndex === undefined
-            ? NOT_CAPTURED
-            : r.entry.txContactIndex === 0
-              ? 'None (0)'
-              : `${r.entry.txContactIndex} (raw)`
-          : DASH,
+      width: 'minmax(8rem, 1fr)',
+      render: (r) => referenceText(references.byChannel.get(r.slot)?.txContact, 'tx'),
     },
     {
       key: 'flags',
@@ -240,11 +276,13 @@ const matches = (query: string, ...haystack: string[]) => {
 function ChannelsPanel({
   channels,
   scanLists,
+  references,
 }: {
   channels: Dm32ChannelInventory;
   scanLists: Dm32ScanListInventory;
+  references: Dm32ReferenceResolution;
 }) {
-  const columns = useMemo(() => channelColumns(scanLists), [scanLists]);
+  const columns = useMemo(() => channelColumns(scanLists, references), [scanLists, references]);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
   const rows = useMemo(() => channels.entries.map(channelRow), [channels]);
@@ -279,8 +317,9 @@ function ChannelsPanel({
         Slots without a captured record are listed as not captured; a missing capture does not mean
         a slot is unused. Each identity is the radio&apos;s single name field, shown complete
         including any callsign; separate callsign and name data is unavailable. The scan list
-        resolves against the scan lists of this capture; RX group and TX contact are raw numbers,
-        not resolved yet.
+        resolves against the scan lists of this capture. TX contact resolves by position in the
+        talk-group list, radio ID by zero-based index, and RX group as slot n = group n (assumed
+        1-based, not verified on hardware); references to lists that were not captured stay raw.
         {!channels.txContactBlocks.low || !channels.txContactBlocks.high
           ? ' Some TX contact pages were not captured.'
           : ''}
@@ -315,7 +354,6 @@ function ChannelsPanel({
 }
 
 const PLACEHOLDERS: { value: string; label: string; piece: string }[] = [
-  { value: 'rx-groups', label: 'RX groups', piece: 'a later piece' },
   { value: 'settings', label: 'Settings', piece: 'a later piece' },
 ];
 
@@ -332,14 +370,14 @@ export function Dm32Memory({ archive }: { archive?: DebugArchive }) {
 }
 
 function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
-  const projection = useMemo(
-    () =>
-      archive.manifest.radioModelId === MODEL_ID
-        ? projectDm32MemoryLists(projectDm32Memory(buildDm32SparseCapture(archive)))
-        : undefined,
-    [archive],
-  );
-  if (!projection)
+  const decodedArchive = useMemo(() => {
+    if (archive.manifest.radioModelId !== MODEL_ID) return undefined;
+    const memory = projectDm32MemoryLists(projectDm32Memory(buildDm32SparseCapture(archive)));
+    const lists = projectDm32Lists(memory.capture);
+    return { memory, lists, references: resolveDm32ChannelReferences(memory.channels, lists) };
+  }, [archive]);
+  const projection = decodedArchive?.memory;
+  if (!decodedArchive || !projection)
     return (
       <Stack>
         <Title order={3}>Memory</Title>
@@ -349,7 +387,7 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
       </Stack>
     );
   const { capture } = projection;
-  const lists = projectDm32Lists(capture);
+  const { lists, references } = decodedArchive;
   return (
     <Stack>
       <Title order={3}>Memory</Title>
@@ -378,6 +416,7 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
           <Tabs.Tab value="zones">Zones</Tabs.Tab>
           <Tabs.Tab value="scan-lists">Scan lists</Tabs.Tab>
           <Tabs.Tab value="talk-groups">Talk groups</Tabs.Tab>
+          <Tabs.Tab value="rx-groups">RX groups</Tabs.Tab>
           <Tabs.Tab value="radio-ids">Radio IDs</Tabs.Tab>
           <Tabs.Tab value="contacts">Contacts</Tabs.Tab>
           {PLACEHOLDERS.map((p) => (
@@ -387,7 +426,11 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
           ))}
         </Tabs.List>
         <Tabs.Panel value="channels" pt="md">
-          <ChannelsPanel channels={projection.channels} scanLists={projection.scanLists} />
+          <ChannelsPanel
+            channels={projection.channels}
+            scanLists={projection.scanLists}
+            references={references}
+          />
         </Tabs.Panel>
         <Tabs.Panel value="zones" pt="md">
           <ZonesPanel zones={projection.zones} />
@@ -396,7 +439,10 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
           <ScanListsPanel scanLists={projection.scanLists} />
         </Tabs.Panel>
         <Tabs.Panel value="talk-groups" pt="md">
-          <TalkGroupsPanel talkGroups={lists.talkGroups} />
+          <TalkGroupsPanel talkGroups={lists.talkGroups} references={references} />
+        </Tabs.Panel>
+        <Tabs.Panel value="rx-groups" pt="md">
+          <RxGroupsPanel rxGroups={lists.rxGroups} />
         </Tabs.Panel>
         <Tabs.Panel value="radio-ids" pt="md">
           <RadioIdsPanel radioIds={lists.radioIds} />

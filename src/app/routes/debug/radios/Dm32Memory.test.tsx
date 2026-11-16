@@ -106,9 +106,9 @@ describe('Dm32Memory', () => {
 
   it('shows placeholders for sections not yet decoded', async () => {
     show(await archiveDm32Capture(channelCapture(['A'])));
-    fireEvent.click(screen.getByRole('tab', { name: 'RX groups' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Settings' }));
     expect(screen.getByText('Not yet available')).toBeInTheDocument();
-    for (const name of ['Zones', 'Scan lists', 'Talk groups', 'Radio IDs', 'Contacts', 'Settings'])
+    for (const name of ['Zones', 'Scan lists', 'Talk groups', 'RX groups', 'Radio IDs', 'Contacts'])
       expect(screen.getByRole('tab', { name })).toBeInTheDocument();
   });
 
@@ -308,5 +308,84 @@ describe('Dm32Memory', () => {
         screen.getByText(new RegExp(`does not mean the radio has no ${noun}`)),
       ).toBeInTheDocument();
     }
+  });
+
+  /** Digital channel ONE (RX group 2, radio ID 0, TX contact 1); RX groups Zulu (slot 2) and Alpha (slot 5). */
+  function referencesCapture(): Dm32DebugCapture {
+    const base = contactsCapture();
+    const channels = dm32Page(0x12);
+    channels[0] = 1;
+    const rec = record('ONE', '14500000');
+    rec[0x18] = 0x10;
+    rec[0x1f] = 2;
+    rec[0x2b] = 0;
+    channels.set(rec, 0x10);
+    const tx = dm32Page(0x42);
+    tx[0] = 0x01;
+    tx[1] = 1;
+    const rx = dm32Page(0x0f);
+    const put = (slot: number, name: string, ids: number[]) => {
+      rx[0] |= 1 << (slot - 1);
+      const off = 0x11 + (slot - 1) * 109;
+      rx.set(new TextEncoder().encode(name), off);
+      ids.forEach((id, i) => (rx[off + 0x0b + i * 3] = id));
+    };
+    put(2, 'Zulu', [9, 9, 77]);
+    put(5, 'Alpha', [235]);
+    return {
+      ...base,
+      discovered: [
+        ...base.discovered,
+        { address: 0x6000, metadata: 0x42, type: 'unknown' },
+        { address: 0x7000, metadata: 0x0f, type: 'unknown' },
+      ],
+      window: { start: 0x1000, end: 0x7000 },
+      rawRange: { start: 0x1000, end: 0x7fff },
+      blocks: new Map([...base.blocks, [0x1000, channels], [0x6000, tx], [0x7000, rx]]),
+    };
+  }
+
+  it('lists RX groups with holes, members, matches, search, sort and reset', async () => {
+    const view = show(await archiveDm32Capture(referencesCapture()));
+    fireEvent.click(screen.getByRole('tab', { name: 'RX groups' }));
+    expect(screen.getByText(/occupied slots: 2, 5/)).toBeInTheDocument();
+    expect(rowNames(['Zulu', 'Alpha'])).toEqual(['Zulu', 'Alpha']);
+    fireEvent.click(screen.getByRole('button', { name: /Name/ }));
+    expect(rowNames(['Zulu', 'Alpha'])).toEqual(['Alpha', 'Zulu']);
+    fireEvent.click(screen.getByText('Zulu'));
+    const region = screen.getByRole('region', { name: 'RX group 2 members' });
+    expect(region).toHaveTextContent('Zeta (talk group 1, matched by DMR ID)');
+    expect(region).toHaveTextContent('No decoded talk group has this DMR ID');
+    expect(region).toHaveTextContent('Empty');
+    expect(region).toHaveTextContent('No time-slot store');
+    fireEvent.change(screen.getByPlaceholderText('Search RX groups'), { target: { value: '235' } });
+    expect(screen.queryByText('Zulu')).toBeNull();
+    view.replace(await archiveDm32Capture(referencesCapture()));
+    fireEvent.click(screen.getByRole('tab', { name: 'RX groups' }));
+    expect(screen.getByPlaceholderText('Search RX groups')).toHaveValue('');
+    expect(screen.queryByRole('region', { name: 'RX group 2 members' })).toBeNull();
+  });
+
+  it('resolves channel references and lists what refers to a talk group', async () => {
+    show(await archiveDm32Capture(referencesCapture()));
+    expect(screen.getByText('1: Zeta')).toBeInTheDocument();
+    expect(
+      screen.getByText(/2: Zulu \(assumed 1-based; not verified on hardware\)/),
+    ).toBeInTheDocument();
+    expect(screen.getByText('0: Zulu (1)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Talk groups' }));
+    fireEvent.click(screen.getByText('Zeta'));
+    const region = screen.getByRole('region', { name: 'Talk group 1 referenced by' });
+    expect(region).toHaveTextContent('Channel 1 · ONE (TX contact)');
+    expect(region).toHaveTextContent('RX group 2 · Zulu (member by DMR ID)');
+    expect(screen.getByText(/Referenced by counts only captured/)).toBeInTheDocument();
+  });
+
+  it('says RX groups are not captured, never none, and marks Referenced by partial', async () => {
+    show(await archiveDm32Capture(contactsCapture()));
+    fireEvent.click(screen.getByRole('tab', { name: 'RX groups' }));
+    expect(screen.getByText(/does not mean the radio has no RX groups/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Talk groups' }));
+    expect(screen.getByText(/Partial: .*RX groups were not captured/)).toBeInTheDocument();
   });
 });

@@ -10,8 +10,16 @@
  */
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET, DM32_OFFSET } from './constants.ts';
-import { dm32BlockTag, type Dm32SparseCapture } from './debugMemory.ts';
+import { dm32BlockTag, type Dm32ChannelInventory, type Dm32SparseCapture } from './debugMemory.ts';
 import { DM32_DMR_RADIO_ID_ENTRY_SIZE } from './radioIdCodec.ts';
+import {
+  decodeDm32RxGroupTimeSlotOverrides,
+  DM32_RX_GROUP_ENTRY_SIZE,
+  DM32_RX_SLOT_CHECK_BASE_OFFSET,
+  DM32_RX_SLOT_MARKER,
+  DM32_RX_SLOT_MARKER_OFFSET,
+  rxGroupSlotCheck,
+} from './rxGroupCodec.ts';
 import { CALL_TYPE_ALL, CALL_TYPE_GROUP, CALL_TYPE_PRIVATE } from './talkGroupCodec.ts';
 
 /** Talk-group entry: flag, 16-byte name, NUL, 3-byte LE ID, call type, two reserved bytes. */
@@ -299,15 +307,304 @@ export function projectDm32AnalogContacts(capture: Dm32SparseCapture): Dm32Analo
   };
 }
 
+// ---------------------------------------------------------------------------------------------
+// RX groups
+
+const RX_GROUP_FIRST_ENTRY = 0x11;
+const RX_GROUP_NAME_LENGTH = 11;
+const RX_MEMBERS_OFFSET = 0x0b;
+
+/** How an RX-group member's DMR ID relates to the decoded talk groups. */
+export type Dm32RxMemberMatch =
+  | { kind: 'matched'; talkGroupSlot: number; name: string }
+  /** No decoded talk group carries the ID (the decoded list is one page and not complete). */
+  | { kind: 'none' }
+  | { kind: 'several'; count: number }
+  | { kind: 'talk-groups-unavailable' };
+
+export interface Dm32RxGroupMember {
+  /** One-based position among the 32 stored member positions. */
+  position: number;
+  /** All-zero or all-`0xFF` position. */
+  empty: boolean;
+  /** The 3-byte LE DMR ID as stored; a DMR ID on the wire, not a foreign key. */
+  dmrId?: number;
+  /** Time-slot override, only from a valid store. */
+  timeSlot?: 1 | 2;
+  match?: Dm32RxMemberMatch;
+}
+
+/** The per-member time-slot store at the page tail: marker and per-group check. */
+export type Dm32RxTimeSlotStore = 'valid' | 'no-marker' | 'check-failed';
+
+export interface Dm32RxGroupEntry {
+  /** One-based group slot: bit `slot - 1` of the bitmask. */
+  slot: number;
+  name: string;
+  /** The 109-byte entry is all `0xFF` or all `0x00` although its bit is set. */
+  blank: boolean;
+  /** Stored order and duplicates kept; empty positions included. */
+  members: Dm32RxGroupMember[];
+  occupiedMembers: number;
+  timeSlotStore: Dm32RxTimeSlotStore;
+}
+
+export interface Dm32RxGroupInventory {
+  capacity: number;
+  status: Dm32ListStatus;
+  reason?: string;
+  /** The u32 LE bitmask at `+0x00` as stored. */
+  bitmask?: number;
+  /** Bits set at or above the capacity; reported, never listed. */
+  bitsAboveCapacity: number;
+  /** One-based slots whose bit is set, ascending. */
+  occupiedSlots: number[];
+  entries: Dm32RxGroupEntry[];
+  decoded: number;
+}
+
+function matchMember(dmrId: number, talkGroups: Dm32TalkGroupInventory): Dm32RxMemberMatch {
+  if (talkGroups.status !== 'captured') return { kind: 'talk-groups-unavailable' };
+  const hits = talkGroups.entries.filter((t) => t.dmrId === dmrId);
+  if (hits.length === 0) return { kind: 'none' };
+  if (hits.length > 1) return { kind: 'several', count: hits.length };
+  return { kind: 'matched', talkGroupSlot: hits[0]!.slot, name: hits[0]!.name };
+}
+
+function timeSlotStoreOf(page: Uint8Array, group: number): Dm32RxTimeSlotStore {
+  const marked = DM32_RX_SLOT_MARKER.every((b, i) => page[DM32_RX_SLOT_MARKER_OFFSET + i] === b);
+  if (!marked) return 'no-marker';
+  return page[DM32_RX_SLOT_CHECK_BASE_OFFSET + group - 1] === rxGroupSlotCheck(page, group - 1)
+    ? 'valid'
+    : 'check-failed';
+}
+
+export function projectDm32RxGroups(
+  capture: Dm32SparseCapture,
+  talkGroups: Dm32TalkGroupInventory,
+): Dm32RxGroupInventory {
+  const capacity = DM32UV_LIMITS.RX_GROUPS_MAX;
+  const lookup = dm32PageByStoredTag(capture, DM32_METADATA.RX_GROUPS);
+  if (lookup.kind !== 'page') {
+    const u = unavailableFor(lookup, DM32_METADATA.RX_GROUPS);
+    return { capacity, ...u, bitsAboveCapacity: 0, occupiedSlots: [], entries: [], decoded: 0 };
+  }
+  const { page } = lookup;
+  const bitmask = (page[0]! | (page[1]! << 8) | (page[2]! << 16) | (page[3]! << 24)) >>> 0;
+  const occupiedSlots: number[] = [];
+  let bitsAboveCapacity = 0;
+  for (let bit = 0; bit < 32; bit++) {
+    if (((bitmask >>> bit) & 1) === 0) continue;
+    if (bit < capacity) occupiedSlots.push(bit + 1);
+    else bitsAboveCapacity++;
+  }
+  const entries: Dm32RxGroupEntry[] = occupiedSlots.map((slot) => {
+    const start = RX_GROUP_FIRST_ENTRY + (slot - 1) * DM32_RX_GROUP_ENTRY_SIZE;
+    const raw = page.subarray(start, start + DM32_RX_GROUP_ENTRY_SIZE);
+    const blank = isVacant(raw);
+    const store = timeSlotStoreOf(page, slot);
+    const overrides =
+      store === 'valid' ? decodeDm32RxGroupTimeSlotOverrides(page, slot) : undefined;
+    const members: Dm32RxGroupMember[] = blank
+      ? []
+      : Array.from({ length: DM32UV_LIMITS.RX_GROUP_MEMBERS_MAX }, (_, i) => {
+          const bytes = raw.subarray(RX_MEMBERS_OFFSET + i * 3, RX_MEMBERS_OFFSET + i * 3 + 3);
+          const position = i + 1;
+          if (isVacant(bytes)) return { position, empty: true };
+          const dmrId = u24(bytes, 0);
+          const timeSlot = overrides?.[i];
+          return {
+            position,
+            empty: false,
+            dmrId,
+            ...(timeSlot ? { timeSlot } : {}),
+            match: matchMember(dmrId, talkGroups),
+          };
+        });
+    return {
+      slot,
+      name: blank ? '' : readName(raw, RX_GROUP_NAME_LENGTH),
+      blank,
+      members,
+      occupiedMembers: members.filter((m) => !m.empty).length,
+      timeSlotStore: store,
+    };
+  });
+  return {
+    capacity,
+    status: 'captured',
+    bitmask,
+    bitsAboveCapacity,
+    occupiedSlots,
+    entries,
+    decoded: entries.length,
+  };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Channel references
+
+export type Dm32ReferenceStatus =
+  /** The channel stores no reference (0 or `0xFF`). */
+  | 'none'
+  | 'resolved'
+  /** The stored value exceeds the hardware capacity of the target list. */
+  | 'out-of-range'
+  /** Within capacity but the target record is not present in the captured list. */
+  | 'absent'
+  /** Within capacity but beyond the decoded entries (talk-group overflow pages are not decoded). */
+  | 'not-decoded'
+  /** The target list was not captured (or is ambiguous). */
+  | 'inventory-not-captured'
+  /** The channel's own reference bytes were not captured. */
+  | 'not-captured';
+
+export interface Dm32Reference {
+  /** The stored value, when captured. */
+  raw?: number;
+  status: Dm32ReferenceStatus;
+  /** Target name when resolved. */
+  label?: string;
+  /** Target slot when resolved. */
+  targetSlot?: number;
+  note?: string;
+}
+
+export interface Dm32ChannelReferences {
+  /** One-based position in the talk-group list; resolved by position, never by DMR ID. */
+  txContact: Dm32Reference;
+  /** Zero-based index into the radio-ID bank (`0xFF` none). Digital channels only. */
+  radioId?: Dm32Reference;
+  /** Channel byte `+0x1F` bits 5-0; slot n assumed 1-based, not verified on hardware. */
+  rxGroup?: Dm32Reference;
+}
+
+export interface Dm32TalkGroupReferences {
+  channels: { slot: number; label: string }[];
+  rxGroups: { slot: number; name: string }[];
+}
+
+export interface Dm32ReferenceResolution {
+  byChannel: ReadonlyMap<number, Dm32ChannelReferences>;
+  /** Keyed by talk-group slot. */
+  referencedBy: ReadonlyMap<number, Dm32TalkGroupReferences>;
+  /** Why "Referenced by" cannot be complete; empty when every source was captured. */
+  partialReasons: string[];
+}
+
+function resolveTxContact(raw: number | undefined, tg: Dm32TalkGroupInventory): Dm32Reference {
+  if (raw === undefined) return { status: 'not-captured' };
+  if (raw === 0) return { raw, status: 'none' };
+  if (tg.status !== 'captured') return { raw, status: 'inventory-not-captured' };
+  if (raw > tg.capacity) return { raw, status: 'out-of-range' };
+  const entry = tg.entries[raw - 1];
+  if (entry) return { raw, status: 'resolved', label: entry.name || '(unnamed)', targetSlot: raw };
+  if (tg.storedCount !== undefined && raw > tg.storedCount)
+    return { raw, status: 'absent', note: 'beyond the stored talk-group count' };
+  return { raw, status: 'not-decoded', note: 'beyond the decoded first talk-group page' };
+}
+
+function resolveRadioId(raw: number, ids: Dm32RadioIdInventory): Dm32Reference {
+  if (raw === 0xff) return { raw, status: 'none' };
+  if (ids.status !== 'captured') return { raw, status: 'inventory-not-captured' };
+  if (raw >= ids.capacity) return { raw, status: 'out-of-range' };
+  const entry = ids.entries.find((e) => e.slot === raw + 1);
+  if (entry)
+    return {
+      raw,
+      status: 'resolved',
+      label: `${entry.name || '(unnamed)'} (${entry.dmrId})`,
+      targetSlot: entry.slot,
+    };
+  return {
+    raw,
+    status: 'absent',
+    note: raw + 1 > (ids.declaredCount ?? 0) ? 'beyond the stated count' : 'vacant position',
+  };
+}
+
+function resolveRxGroup(raw: number, groups: Dm32RxGroupInventory): Dm32Reference {
+  if (raw === 0) return { raw, status: 'none', note: 'assumed' };
+  if (groups.status !== 'captured') return { raw, status: 'inventory-not-captured' };
+  if (raw > groups.capacity) return { raw, status: 'out-of-range' };
+  const entry = groups.entries.find((g) => g.slot === raw);
+  if (entry)
+    return {
+      raw,
+      status: 'resolved',
+      label: entry.name || '(unnamed)',
+      targetSlot: raw,
+      note: 'assumed 1-based; not verified on hardware',
+    };
+  return { raw, status: 'absent', note: 'its bit is not set' };
+}
+
+/**
+ * Resolve each decoded channel's TX contact, radio ID and RX group against the lists of the same
+ * capture, and invert the TX-contact and RX-member references into "Referenced by" for talk
+ * groups. RX group members count only when exactly one decoded talk group carries the DMR ID.
+ */
+export function resolveDm32ChannelReferences(
+  channels: Dm32ChannelInventory,
+  lists: Dm32ListsProjection,
+): Dm32ReferenceResolution {
+  const byChannel = new Map<number, Dm32ChannelReferences>();
+  const referencedBy = new Map<number, Dm32TalkGroupReferences>();
+  const bucket = (slot: number) => {
+    let b = referencedBy.get(slot);
+    if (!b) referencedBy.set(slot, (b = { channels: [], rxGroups: [] }));
+    return b;
+  };
+  for (const entry of channels.entries) {
+    if (entry.state.kind !== 'decoded') continue;
+    const { channel, raw } = entry.state;
+    const txContact = resolveTxContact(entry.txContactIndex, lists.talkGroups);
+    const refs: Dm32ChannelReferences = { txContact };
+    if (channel.mode !== undefined && channel.mode !== 'analog') {
+      refs.radioId = resolveRadioId(raw[0x2b]!, lists.radioIds);
+      refs.rxGroup = resolveRxGroup(raw[0x1f]! & 0x3f, lists.rxGroups);
+    }
+    byChannel.set(entry.slot, refs);
+    if (txContact.status === 'resolved')
+      bucket(txContact.targetSlot!).channels.push({
+        slot: entry.slot,
+        label: channel.wireName || '(unnamed)',
+      });
+  }
+  for (const group of lists.rxGroups.entries)
+    for (const member of group.members)
+      if (member.match?.kind === 'matched') {
+        const rxGroups = bucket(member.match.talkGroupSlot).rxGroups;
+        if (!rxGroups.some((g) => g.slot === group.slot))
+          rxGroups.push({ slot: group.slot, name: group.name || '(unnamed)' });
+      }
+
+  const partialReasons: string[] = [];
+  if (channels.status !== 'captured') partialReasons.push('channels were not captured');
+  else {
+    if (channels.notCaptured > 0)
+      partialReasons.push(`${channels.notCaptured} channel records were not captured`);
+    if (channels.excess > 0)
+      partialReasons.push('channels above the hardware capacity are not listed');
+    if (!channels.txContactBlocks.low || !channels.txContactBlocks.high)
+      partialReasons.push('some TX contact pages were not captured');
+  }
+  if (lists.rxGroups.status !== 'captured') partialReasons.push('RX groups were not captured');
+  return { byChannel, referencedBy, partialReasons };
+}
+
 export interface Dm32ListsProjection {
   talkGroups: Dm32TalkGroupInventory;
+  rxGroups: Dm32RxGroupInventory;
   radioIds: Dm32RadioIdInventory;
   analogContacts: Dm32AnalogContactInventory;
 }
 
 export function projectDm32Lists(capture: Dm32SparseCapture): Dm32ListsProjection {
+  const talkGroups = projectDm32TalkGroups(capture);
   return {
-    talkGroups: projectDm32TalkGroups(capture),
+    talkGroups,
+    rxGroups: projectDm32RxGroups(capture, talkGroups),
     radioIds: projectDm32RadioIds(capture),
     analogContacts: projectDm32AnalogContacts(capture),
   };
