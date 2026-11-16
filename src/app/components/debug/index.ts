@@ -26,3 +26,7 @@ export type { FrequencyCurveChartProps } from './FrequencyCurveChart.tsx';
 export { default as StepBarChart, stepBarDomain } from './StepBarChart.tsx';
 export type { StepBarChartProps } from './StepBarChart.tsx';
 export { axisTitle, numericDiffCount } from './chartText.ts';
+export { MemoryCategories } from './MemoryCategories.tsx';
+export type { MemoryCategory } from './MemoryCategories.tsx';
+export { default as MemoryCategoryPanel, identityLabel } from './MemoryCategoryPanel.tsx';
+export type { MemoryCategoryPanelProps } from './MemoryCategoryPanel.tsx';

@@ -1,5 +1,5 @@
 import { Alert, Stack, Text, Title } from '@mantine/core';
-import { MemoryCategories } from './MemoryCategories.tsx';
+import { MemoryCategories } from '@app/components/debug/index.ts';
 import { useMemo, useState } from 'react';
 import {
   DataTable,

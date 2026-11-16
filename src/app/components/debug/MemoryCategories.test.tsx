@@ -8,10 +8,10 @@ const categories = [
   { value: 'one', label: 'One', count: 3, render: () => <p>panel one</p> },
   { value: 'two', label: 'Two', render: () => <p>panel two</p> },
 ];
-const show = (storageKey?: string) =>
+const show = (storageKey?: string, notDecoded?: string[]) =>
   render(
     <MantineProvider>
-      <MemoryCategories categories={categories} storageKey={storageKey} />
+      <MemoryCategories categories={categories} storageKey={storageKey} notDecoded={notDecoded} />
     </MantineProvider>,
   );
 
@@ -61,5 +61,15 @@ describe('MemoryCategories', () => {
     window.localStorage.setItem('mm9pdy-codeplug-studio.debug-memory-category:test', 'missing');
     show('debug-memory-category:test');
     expect(screen.getByText('panel one')).toBeInTheDocument();
+  });
+
+  it('names undecoded categories in one line, and nothing when the list is empty', () => {
+    show(undefined, ['scan lists', 'contacts']);
+    expect(
+      screen.getByText('Not decoded for this radio yet: scan lists, contacts.'),
+    ).toBeInTheDocument();
+    cleanup();
+    show(undefined, []);
+    expect(screen.queryByText(/Not decoded for this radio yet/)).not.toBeInTheDocument();
   });
 });

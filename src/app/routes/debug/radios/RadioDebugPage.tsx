@@ -586,6 +586,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               <descriptor.Memory
                 key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
                 archive={archive}
+                notDecoded={descriptor.memoryNotDecoded}
               />
             ) : (
               <MemoryViewer archive={archive} />

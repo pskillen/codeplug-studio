@@ -1,0 +1,41 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.summary {
+  margin: 0;
+  color: var(--dsv2-text-primary);
+}
+
+.caveat {
+  color: var(--dsv2-text-secondary);
+  font-size: var(--dsv2-font-body-sm);
+  min-width: 0;
+}
+
+.caveatLine {
+  margin: 0 0 4px;
+  line-height: 1.45;
+}
+
+.more {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--dsv2-accent);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.details {
+  padding: 10px 14px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-accent-tint-06);
+  font-size: var(--dsv2-font-body-sm);
+  min-width: 0;
+}

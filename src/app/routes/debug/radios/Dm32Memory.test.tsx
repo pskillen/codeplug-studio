@@ -6,7 +6,7 @@ import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 import { dm32Capture, dm32Page } from './dm32Archive.fixture.ts';
 import { archiveDm32Capture } from './dm32Capture.ts';
 import { Dm32Memory } from './Dm32Memory.tsx';
-import { chooseCategory } from './memoryCategoriesTestUtils.ts';
+import { chooseCategory } from '@app/components/debug/memoryCategoriesTestUtils.ts';
 
 const bcd = (digits: string) =>
   digits
