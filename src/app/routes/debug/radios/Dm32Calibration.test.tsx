@@ -57,7 +57,9 @@ describe('Dm32Calibration', () => {
     expect(within(band).getByTitle('Layout confidence')).toHaveTextContent('Traced');
     const power = within(table).getByText('UHF TX power low').closest('tr')!;
     expect(within(power).getByTitle('Layout confidence')).toHaveTextContent('Traced');
-    expect(within(power).getByTitle('Meaning confidence')).toHaveTextContent('Partly traced');
+    expect(within(power).getByTitle('Meaning confidence')).toHaveTextContent('Traced');
+    const adc = within(table).getByText('ADC channel 1 count (+0x07A)').closest('tr')!;
+    expect(within(adc).getByTitle('Meaning confidence')).toHaveTextContent('Partly traced');
     const unknown = within(table).getAllByText('Present, purpose unexplained')[0]!.closest('tr')!;
     expect(within(unknown).getByTitle('Layout confidence')).toHaveTextContent('Unknown');
     expect(within(unknown).getByText('Raw only')).toBeInTheDocument();
