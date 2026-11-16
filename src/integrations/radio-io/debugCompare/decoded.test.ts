@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diffDecoded, type DecodedDomain, type DecodedRecord } from './index.ts';
+import { diffDecoded, fieldCounts, type DecodedDomain, type DecodedRecord } from './index.ts';
 
 const rec = (
   key: string,
@@ -126,5 +126,15 @@ describe('diffDecoded', () => {
       b: '2222',
     });
     expect(diffDecoded([pw('1111')], [pw('1111')]).records[0]!.kind).toBe('unchanged');
+  });
+});
+
+describe('fieldCounts', () => {
+  it('counts changed fields and records per domain', () => {
+    const d = diffDecoded(
+      [domain([rec('a', { rx: '1', tx: '2' }), rec('b', { rx: '1' })])],
+      [domain([rec('a', { rx: '9', tx: '3' }), rec('b', { rx: '1' })])],
+    );
+    expect(fieldCounts(d)).toEqual([{ domainId: 'd', changedFields: 2, changedRecords: 1 }]);
   });
 });

@@ -1,7 +1,7 @@
 import LineChart from '@app/components/LineChart/LineChart.tsx';
 import { RT95_CALIBRATION_START } from '@core/radios/retevis/rt95/calibration.ts';
 import { RT95_CALIBRATION_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
-import { Alert, Group, Stack, Text, Title } from '@mantine/core';
+import { Alert, Stack, Text, Title } from '@mantine/core';
 import { decodeRt95Calibration } from '@core/radios/retevis/rt95/calibration.ts';
 import { hexRows, formatAddress, MASKED_HEX_BYTE, sensitiveRanges } from './viewerUtils.ts';
 import { SensitiveRevealButton } from './SensitiveReveal.tsx';
@@ -138,54 +138,6 @@ export function Rt95Calibration({
           ))
       ) : (
         <Text>Not captured</Text>
-      )}
-    </Stack>
-  );
-}
-
-export function Rt95CalibrationDiff({
-  first,
-  second,
-}: {
-  first: DebugArchive;
-  second: DebugArchive;
-}) {
-  const reveal = useSensitiveReveal(first);
-  const a = decodeRt95Calibration(first.regions[RT95_CALIBRATION_REGION_ID]).fields;
-  const b = decodeRt95Calibration(second.regions[RT95_CALIBRATION_REGION_ID]).fields;
-  const changes = a.flatMap((field) => {
-    const next = b.find((item) => item.address === field.address);
-    if (!next || field.availability !== 'captured' || next.availability !== 'captured') return [];
-    if (field.raw.length === next.raw.length && field.raw.every((byte, i) => byte === next.raw[i]))
-      return [];
-    const hex = (bytes: Uint8Array) =>
-      Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join(' ');
-    const where = `${field.label} (${formatAddress(field.address)})`;
-    return [
-      {
-        sensitive: field.sensitive === true,
-        text:
-          field.sensitive && !reveal.revealed
-            ? `${where}: changed`
-            : `${where}: ${hex(field.raw)} → ${hex(next.raw)}`,
-      },
-    ];
-  });
-  const changed = changes.map((change) => change.text);
-  const sensitiveChanged = changes.some((change) => change.sensitive);
-  return (
-    <Stack>
-      <Title order={4}>Calibration field changes</Title>
-      {sensitiveChanged && (
-        <Group gap="xs">
-          <Text size="sm">Password bytes are {reveal.revealed ? 'shown' : 'hidden'}.</Text>
-          <SensitiveRevealButton revealed={reveal.revealed} onToggle={reveal.toggle} />
-        </Group>
-      )}
-      {changed.length ? (
-        changed.map((text) => <Text key={text}>{text}</Text>)
-      ) : (
-        <Text>No captured field changes; missing or partial fields are incomparable.</Text>
       )}
     </Stack>
   );

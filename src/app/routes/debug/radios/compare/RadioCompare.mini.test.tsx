@@ -42,12 +42,12 @@ describe('UV-5R Mini on the shared compare', () => {
     expect(screen.getByText(/Reported only, differ/)).toBeInTheDocument();
   });
 
-  it('is amber when a compared span differs, and still lists channel differences', () => {
+  it('is amber when a compared span differs, and still lists the decoded changes', () => {
     const a = new Uint8Array(0x10000);
     const b = a.slice();
     b[0x0004] = 7;
     view(a, b);
     expect(screen.getByText('A and B differ')).toBeInTheDocument();
-    expect(screen.getByText('Channel differences')).toBeInTheDocument();
+    expect(screen.getByText('Decoded changes')).toBeInTheDocument();
   });
 });

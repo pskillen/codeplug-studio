@@ -4,7 +4,7 @@ import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
 import { openDebugArchive } from './captureArchive.ts';
 import { Coverage } from './Coverage.tsx';
-import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
+import { Rt95Calibration } from './Rt95Calibration.tsx';
 
 describe('RT95 calibration', () => {
   it('shows the evidence limits and absent values without write controls', () => {
@@ -178,12 +178,10 @@ it('draws a dashed calibration overlay and reports captured field differences', 
   const view = render(
     <DesignSystemV2Provider>
       <Rt95Calibration archive={a} overlayArchive={b} />
-      <Rt95CalibrationDiff first={a} second={b} />
     </DesignSystemV2Provider>,
   );
   expect(screen.getAllByText('Overlay read').length).toBeGreaterThan(0);
   expect(view.container.querySelector('[stroke-dasharray]')).not.toBeNull();
-  expect(screen.getByText(/Radio Type.*00 00 00 00 00 00 00 → 41/)).toBeInTheDocument();
   view.rerender(
     <DesignSystemV2Provider>
       <Rt95Calibration overlayArchive={b} />
