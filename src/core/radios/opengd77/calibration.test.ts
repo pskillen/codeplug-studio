@@ -142,6 +142,16 @@ describe('decodeOpenGd77Calibration', () => {
     expect(d.rows.reduce((n, r) => n + r.length, 0)).toBe(358);
   });
 
+  it('counts the bytes no OpenGD77 code reads, per model', () => {
+    const noReader = (low: 'mid-low' | 'very-low') => {
+      const d = decodeOpenGd77Calibration(golden(), low);
+      const rows = d.rows.filter((r) => !r.hasReader).reduce((n, r) => n + r.length, 0);
+      return { rows, total: rows + d.unknownRanges.reduce((n, u) => n + u.length, 0) };
+    };
+    expect(noReader('mid-low')).toEqual({ rows: 222, total: 376 });
+    expect(noReader('very-low')).toEqual({ rows: 236, total: 390 });
+  });
+
   it('covers each byte exactly once with rows and unknown ranges', () => {
     const d = decodeOpenGd77Calibration(golden(), 'very-low');
     const count = new Uint8Array(OPENGD77_CALIBRATION_LENGTH);
