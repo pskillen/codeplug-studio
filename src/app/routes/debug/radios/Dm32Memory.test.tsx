@@ -106,9 +106,9 @@ describe('Dm32Memory', () => {
 
   it('shows placeholders for sections not yet decoded', async () => {
     show(await archiveDm32Capture(channelCapture(['A'])));
-    fireEvent.click(screen.getByRole('tab', { name: 'Talk groups' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'RX groups' }));
     expect(screen.getByText('Not yet available')).toBeInTheDocument();
-    for (const name of ['Zones', 'Scan lists', 'RX groups', 'Contacts', 'Settings'])
+    for (const name of ['Zones', 'Scan lists', 'Talk groups', 'Radio IDs', 'Contacts', 'Settings'])
       expect(screen.getByRole('tab', { name })).toBeInTheDocument();
   });
 
@@ -199,5 +199,114 @@ describe('Dm32Memory', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Zones' }));
     expect(screen.getByText(/does not mean the radio has no zones/i)).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Zone 1 members' })).toBeNull();
+  });
+
+  const tg = (name: string, id: number, type: number) => {
+    const e = new Array<number>(24).fill(0);
+    new TextEncoder().encode(name).forEach((b, i) => (e[1 + i] = b));
+    e[18] = id & 0xff;
+    e[19] = (id >> 8) & 0xff;
+    e[20] = (id >> 16) & 0xff;
+    e[21] = type;
+    return e;
+  };
+
+  /** Talk groups Zeta/Alpha, quick-access count 5, radio IDs Zulu/Echo, two analogue records. */
+  function contactsCapture(): Dm32DebugCapture {
+    const talk = dm32Page(0x44);
+    talk.set(tg('Zeta', 9, 4), 1);
+    talk.set(tg('Alpha', 235, 3), 25);
+    const quick = dm32Page(0x0b);
+    quick[0] = 5;
+    const ids = dm32Page(0x67);
+    ids[0] = 2;
+    ids.set([1, 0, 0, ...new TextEncoder().encode('Zulu')], 0x10);
+    ids.set([2, 0, 0, ...new TextEncoder().encode('Echo')], 0x20);
+    const analog = dm32Page(0x06);
+    analog[0x1ff] = 2;
+    analog.fill(0xab, 0x200, 0x220);
+    return dm32Capture({
+      discovered: [
+        { address: 0x1000, metadata: 0x12, type: 'channel' },
+        { address: 0x2000, metadata: 0x44, type: 'unknown' },
+        { address: 0x3000, metadata: 0x0b, type: 'unknown' },
+        { address: 0x4000, metadata: 0x67, type: 'unknown' },
+        { address: 0x5000, metadata: 0x06, type: 'unknown' },
+      ],
+      window: { start: 0x1000, end: 0x5000 },
+      rawRange: { start: 0x1000, end: 0x5fff },
+      blocks: new Map([
+        [0x1000, dm32Page(0x12)],
+        [0x2000, talk],
+        [0x3000, quick],
+        [0x4000, ids],
+        [0x5000, analog],
+      ]),
+    });
+  }
+
+  const rowNames = (names: string[]) =>
+    screen
+      .getAllByRole('row')
+      .map((r) => names.find((n) => (r.textContent ?? '').includes(n)))
+      .filter(Boolean);
+
+  it('lists talk groups, flags the count mismatch, searches by name and ID, sorts, resets', async () => {
+    const view = show(await archiveDm32Capture(contactsCapture()));
+    fireEvent.click(screen.getByRole('tab', { name: 'Talk groups' }));
+    expect(screen.getByText('Zeta')).toBeInTheDocument();
+    expect(screen.getByText(/Stored count differs/)).toBeInTheDocument();
+    expect(screen.getByText(/layout not established/)).toBeInTheDocument();
+    expect(screen.getByText(/callsign data is unavailable/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('Search talk groups'), {
+      target: { value: '235' },
+    });
+    expect(screen.queryByText('Zeta')).toBeNull();
+    expect(screen.getByText('Alpha')).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('Search talk groups'), { target: { value: '' } });
+    expect(rowNames(['Zeta', 'Alpha'])).toEqual(['Zeta', 'Alpha']);
+    fireEvent.click(screen.getByRole('button', { name: /Name/ }));
+    expect(rowNames(['Zeta', 'Alpha'])).toEqual(['Alpha', 'Zeta']);
+    fireEvent.change(screen.getByPlaceholderText('Search talk groups'), {
+      target: { value: 'zz' },
+    });
+    view.replace(await archiveDm32Capture(contactsCapture()));
+    fireEvent.click(screen.getByRole('tab', { name: 'Talk groups' }));
+    expect(screen.getByPlaceholderText('Search talk groups')).toHaveValue('');
+    expect(rowNames(['Zeta', 'Alpha'])).toEqual(['Zeta', 'Alpha']);
+  });
+
+  it('lists radio IDs with search and sort', async () => {
+    show(await archiveDm32Capture(contactsCapture()));
+    fireEvent.click(screen.getByRole('tab', { name: 'Radio IDs' }));
+    expect(rowNames(['Zulu', 'Echo'])).toEqual(['Zulu', 'Echo']);
+    fireEvent.click(screen.getByRole('button', { name: /Name/ }));
+    expect(rowNames(['Zulu', 'Echo'])).toEqual(['Echo', 'Zulu']);
+    fireEvent.change(screen.getByPlaceholderText('Search radio IDs'), { target: { value: 'zul' } });
+    expect(screen.queryByText('Echo')).toBeNull();
+  });
+
+  it('says the address book is not captured and shows analogue records raw', async () => {
+    show(await archiveDm32Capture(contactsCapture()));
+    fireEvent.click(screen.getByRole('tab', { name: 'Contacts' }));
+    expect(
+      screen.getByText('Digital address book (V-frame 0x0F bank): not captured'),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/the radio states 2/)).toBeInTheDocument();
+    expect(screen.getAllByText(/AB AB AB/)).toHaveLength(1); // record 2 is all zeros
+  });
+
+  it('says Not captured for talk groups, radio IDs and contacts, never none', async () => {
+    show(await archiveDm32Capture(channelCapture(['A'])));
+    for (const [tab, noun] of [
+      ['Talk groups', 'talk groups'],
+      ['Radio IDs', 'radio IDs'],
+      ['Contacts', 'analogue contacts'],
+    ]) {
+      fireEvent.click(screen.getByRole('tab', { name: tab! }));
+      expect(
+        screen.getByText(new RegExp(`does not mean the radio has no ${noun}`)),
+      ).toBeInTheDocument();
+    }
   });
 });

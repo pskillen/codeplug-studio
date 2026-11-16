@@ -16,6 +16,8 @@ import {
   projectDm32MemoryLists,
   type Dm32ScanListInventory,
 } from '@integrations/radio-io/radios/dm32uv/debugMemoryZones.ts';
+import { projectDm32Lists } from '@integrations/radio-io/radios/dm32uv/debugMemoryLists.ts';
+import { ContactsPanel, RadioIdsPanel, TalkGroupsPanel } from './Dm32MemoryLists.tsx';
 import { ScanListsPanel, ZonesPanel } from './Dm32MemoryZones.tsx';
 import { archiveKey } from './viewerUtils.ts';
 import type { DebugArchive } from './captureArchive.ts';
@@ -313,9 +315,7 @@ function ChannelsPanel({
 }
 
 const PLACEHOLDERS: { value: string; label: string; piece: string }[] = [
-  { value: 'talk-groups', label: 'Talk groups', piece: 'a later piece' },
   { value: 'rx-groups', label: 'RX groups', piece: 'a later piece' },
-  { value: 'contacts', label: 'Contacts', piece: 'a later piece' },
   { value: 'settings', label: 'Settings', piece: 'a later piece' },
 ];
 
@@ -349,6 +349,7 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
       </Stack>
     );
   const { capture } = projection;
+  const lists = projectDm32Lists(capture);
   return (
     <Stack>
       <Title order={3}>Memory</Title>
@@ -376,6 +377,9 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
           <Tabs.Tab value="channels">Channels</Tabs.Tab>
           <Tabs.Tab value="zones">Zones</Tabs.Tab>
           <Tabs.Tab value="scan-lists">Scan lists</Tabs.Tab>
+          <Tabs.Tab value="talk-groups">Talk groups</Tabs.Tab>
+          <Tabs.Tab value="radio-ids">Radio IDs</Tabs.Tab>
+          <Tabs.Tab value="contacts">Contacts</Tabs.Tab>
           {PLACEHOLDERS.map((p) => (
             <Tabs.Tab key={p.value} value={p.value}>
               {p.label}
@@ -390,6 +394,15 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
         </Tabs.Panel>
         <Tabs.Panel value="scan-lists" pt="md">
           <ScanListsPanel scanLists={projection.scanLists} />
+        </Tabs.Panel>
+        <Tabs.Panel value="talk-groups" pt="md">
+          <TalkGroupsPanel talkGroups={lists.talkGroups} />
+        </Tabs.Panel>
+        <Tabs.Panel value="radio-ids" pt="md">
+          <RadioIdsPanel radioIds={lists.radioIds} />
+        </Tabs.Panel>
+        <Tabs.Panel value="contacts" pt="md">
+          <ContactsPanel contacts={lists.analogContacts} />
         </Tabs.Panel>
         {PLACEHOLDERS.map((p) => (
           <Tabs.Panel key={p.value} value={p.value} pt="md">
