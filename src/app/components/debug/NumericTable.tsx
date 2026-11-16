@@ -67,16 +67,18 @@ function NumericBody({ table, overlay, readLabel, overlayLabel }: NumericTablePr
                     {showRef && v !== undefined && ref !== undefined ? (
                       <span className={classes.dim}>Δref {formatDelta(v - ref)}</span>
                     ) : null}
-                    {overlay ? (
-                      <span
-                        className={ov !== v ? `${classes.dim} ${classes.changed}` : classes.dim}
-                      >
-                        {overlayLabel ? `${overlayLabel}: ` : ''}
-                        {o ? cellText(o, i) : NOT_CAPTURED_TEXT}
-                        {v !== undefined && ov !== undefined && ov !== v
-                          ? ` · Δread ${formatDelta(ov - v)}`
-                          : ''}
-                      </span>
+                    {overlay && ov !== v ? (
+                      <>
+                        <span className={`${classes.dim} ${classes.changed}`}>
+                          {overlayLabel ? `${overlayLabel}: ` : ''}
+                          {o ? cellText(o, i) : NOT_CAPTURED_TEXT}
+                        </span>
+                        {v !== undefined && ov !== undefined ? (
+                          <span className={`${classes.dim} ${classes.changed}`}>
+                            Δread {formatDelta(ov - v)}
+                          </span>
+                        ) : null}
+                      </>
                     ) : null}
                   </td>
                 );

@@ -27,7 +27,7 @@ Shows a `NumericTableView` (key column plus value columns). Each column prints i
 
 - Body is not rendered until the fold opens.
 - `Δref +3` under a value when the column has `deltaFromRow` (not on the reference row, which is marked "(ref)").
-- With an overlay: overlay value and `Δread` under each cell; differing cells amber.
+- With an overlay: a differing cell gets the overlay value and, on its own line, `Δread`, both amber; a cell equal in both reads prints no overlay line.
 - Missing values read "Not captured".
 - Renders inside `DesignSystemV2Provider`; the table scrolls inside its container.
 
