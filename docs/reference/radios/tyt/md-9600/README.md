@@ -28,7 +28,7 @@ Native USB CDC, `1fc9:0094`. The OpenGD77 receive path is the DM-1701's (confirm
 
 `src/integrations/radio-io/radios/opengd77/md9600/` — thin descriptor on shared `radios/opengd77/` family ([#625](https://github.com/pskillen/codeplug-studio/issues/625)). Attribution: qdmr OpenUV380 facts (GPL-3 cite only).
 
-Read-only debug capture archive (FirmwareInfo, FLASH spans, User Database): [OpenGD77 debug-capture.md](../../opengd77/debug-capture.md).
+Read-only debug capture archive (FirmwareInfo, FLASH spans, User Database): [OpenGD77 debug-capture.md](../../opengd77/debug-capture.md). Calibration working copy layout: [OpenGD77 calibration.md](../../opengd77/calibration.md).
 
 ## Documentation map
 

@@ -112,7 +112,10 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
                   ? 'FLASH span · registered programming range'
                   : og77.userDatabase.state === 'captured' && region.id === 'user-database'
                     ? 'User Database · packed, not contiguous flash'
-                    : `Unclassified address space · ${og77.unclassified.find((u) => u.id === region.id)?.reason ?? 'unknown'}`
+                    : og77.calibration.state === 'captured' &&
+                        region.id === 'calibration-working-copy'
+                      ? 'OpenGD77 working copy at 0x10000 · as returned, served from RAM, not a flash span'
+                      : `Unclassified address space · ${og77.unclassified.find((u) => u.id === region.id)?.reason ?? 'unknown'}`
                 : d890
                   ? d890.vital.some((v) => v.region?.id === region.id)
                     ? 'Vital read · separate provenance'
@@ -196,8 +199,8 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
               </Text>
             ))}
             <Text size="sm">
-              Everything outside the spans above is not read and unknown, including calibration,
-              EEPROM-class data and firmware.
+              Everything outside the spans above is not read and unknown, including stock factory
+              calibration, EEPROM-class data and firmware.
             </Text>
             <Text fw={600}>User Database</Text>
             <Text size="sm">
@@ -205,6 +208,12 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
                 ? `${og77.userDatabase.byteLength} bytes · ${og77.userDatabase.headerOnly ? 'Header only' : 'Header and entries'} · `
                 : 'Not captured · '}
               packed header + entries, not contiguous flash (segment 1 lives elsewhere in flash)
+            </Text>
+            <Text fw={600}>Calibration working copy</Text>
+            <Text size="sm">
+              {og77.calibration.state === 'captured'
+                ? `${og77.calibration.byteLength} bytes · OpenGD77 working copy as returned at 0x10000, its own address space, not stock factory calibration`
+                : 'Not captured'}
             </Text>
             {og77.unclassified.length > 0 && <Text fw={600}>Unclassified entries</Text>}
             {og77.unclassified.map((entry) => (

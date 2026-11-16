@@ -627,7 +627,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               />
             </Tabs.Panel>
           )}
-          {(descriptor.slug === 'rt95' || descriptor.slug === 'at-d890uv') && (
+          {descriptor.Calibration && descriptor.slug !== 'dm-32uv' && (
             <Tabs.Panel value="calibration" pt="md">
               <Stack>
                 <Select
@@ -651,10 +651,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               <descriptor.Calibration archive={archive} />
             </Tabs.Panel>
           )}
-          {(descriptor.slug === 'uv-5r-mini' ||
-          descriptor.slug === 'at-d890uv' ||
-          descriptor.slug === 'dm-32uv' ||
-          descriptor.slug === 'rt95'
+          {(descriptor.slug === 'uv-5r-mini' || descriptor.Calibration
             ? ['Trace']
             : ['Calibration', 'Trace']
           ).map((tab) => (
