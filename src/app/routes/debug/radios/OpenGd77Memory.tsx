@@ -15,6 +15,7 @@ import {
   type OpenGd77ZoneMember,
 } from '@integrations/radio-io/radios/opengd77/debugMemory.ts';
 import { ContactsPanel, RxGroupsPanel, UserDatabasePanel } from './OpenGd77Directories.tsx';
+import { OpenGd77Settings } from './OpenGd77Settings.tsx';
 import { archiveKey } from './viewerUtils.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
@@ -417,6 +418,7 @@ function OpenGd77MemoryLoaded({ archive }: { archive: DebugArchive }) {
           <Tabs.Tab value="contacts">Contacts</Tabs.Tab>
           <Tabs.Tab value="rx-groups">RX groups</Tabs.Tab>
           <Tabs.Tab value="user-database">User Database</Tabs.Tab>
+          <Tabs.Tab value="settings">Settings</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="channels" pt="md">
           <ChannelsPanel channels={projection.channels} />
@@ -432,6 +434,9 @@ function OpenGd77MemoryLoaded({ archive }: { archive: DebugArchive }) {
         </Tabs.Panel>
         <Tabs.Panel value="user-database" pt="md">
           <UserDatabasePanel archive={archive} />
+        </Tabs.Panel>
+        <Tabs.Panel value="settings" pt="md">
+          <OpenGd77Settings archive={archive} />
         </Tabs.Panel>
       </Tabs>
     </Stack>
