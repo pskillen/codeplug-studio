@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core';
-import { chooseCategory } from './memoryCategoriesTestUtils.ts';
+import { chooseCategory } from '@app/components/debug/memoryCategoriesTestUtils.ts';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';

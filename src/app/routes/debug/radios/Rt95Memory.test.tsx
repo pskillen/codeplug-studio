@@ -8,7 +8,7 @@ import {
 import { encodeChannelRecord } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
 import { RT95_OCCUPIED_BITFIELD_OFFSET } from '@integrations/radio-io/radios/rt95/constants.ts';
 import { encodeRt95ModData } from '@integrations/radio-io/radios/rt95/modData/encode.ts';
-import { chooseCategory } from './memoryCategoriesTestUtils.ts';
+import { chooseCategory } from '@app/components/debug/memoryCategoriesTestUtils.ts';
 import { openDebugArchive } from './captureArchive.ts';
 import { Rt95Memory } from './Rt95Memory.tsx';
 

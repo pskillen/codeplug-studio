@@ -31,7 +31,7 @@ afterEach(cleanup);
 
 describe('descriptor-driven tab list', () => {
   it('puts Settings straight after Memory only when the descriptor has one', () => {
-    expect(radioDebugTabs({ Settings: undefined })).toEqual([
+    expect(radioDebugTabs({ Settings: undefined, settings: undefined })).toEqual([
       'Overview',
       'Backup',
       'Calibration',
@@ -40,7 +40,11 @@ describe('descriptor-driven tab list', () => {
       'Compare',
       'Trace',
     ]);
-    expect(radioDebugTabs({ Settings: () => null })).toEqual([
+    expect(
+      radioDebugTabs({
+        settings: () => ({ status: { kind: 'ok' }, summary: '', intro: '', groups: [] }),
+      }),
+    ).toEqual([
       'Overview',
       'Backup',
       'Calibration',
@@ -53,10 +57,10 @@ describe('descriptor-driven tab list', () => {
   });
 
   it('gives Settings to the decoded radios and not to the rest', () => {
-    const slugs = radioDebugDescriptors.filter((d) => d.Settings).map((d) => d.slug);
+    const slugs = radioDebugDescriptors.filter((d) => d.settings || d.Settings).map((d) => d.slug);
     expect(slugs.sort()).toEqual([...WITH_SETTINGS].sort());
     for (const slug of WITHOUT_SETTINGS)
-      expect(radioDebugDescriptors.find((d) => d.slug === slug)?.Settings).toBeUndefined();
+      expect(radioDebugDescriptors.find((d) => d.slug === slug)?.settings).toBeUndefined();
   });
 
   it('gives every radio with a capture its own Memory viewer', () => {

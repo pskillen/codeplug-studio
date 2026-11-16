@@ -16,9 +16,10 @@ import {
   zoneNameAddress,
 } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
 import { AtD890Memory } from './AtD890Memory.tsx';
-import { AtD890Settings } from './AtD890Settings.tsx';
+import { atD890SettingsView } from '@integrations/radio-io/radios/at-d890uv/debugSettingsView.ts';
+import { SettingsTab } from './SettingsTab.tsx';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
-import { chooseCategory } from './memoryCategoriesTestUtils.ts';
+import { chooseCategory } from '@app/components/debug/memoryCategoriesTestUtils.ts';
 
 type Entry = [RadioBackupRegionV1, Uint8Array];
 const sparse = (address: number, data: Uint8Array): Entry => [
@@ -113,7 +114,7 @@ const view = (a?: DebugArchive) =>
 const viewSettings = (a?: DebugArchive) =>
   render(
     <MantineProvider>
-      <AtD890Settings archive={a} />
+      <SettingsTab archive={a} settings={atD890SettingsView} />
     </MantineProvider>,
   );
 const rowTexts = () => screen.getAllByRole('row').map((r) => r.textContent ?? '');
@@ -475,22 +476,23 @@ describe('AtD890Memory', () => {
         'Privacy / lock',
         'Mod features',
       ])
-        expect(screen.getByRole('region', { name })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name })).toBeInTheDocument();
       expect(screen.getByText(/2 of \d+ known setting fields captured/)).toBeInTheDocument();
-      const display = screen.getByRole('region', { name: 'Display' });
+      const display = screen.getByRole('table', { name: 'Display settings' });
       expect(within(display).getAllByText(NOT_CAPTURED_TEXT).length).toBeGreaterThan(0);
-      // Unsupported value keeps its raw bytes visible without the toggle.
-      expect(within(display).getByText(/Unsupported value/)).toBeInTheDocument();
-      expect(within(display).getByText(/Raw 0x3500005: 07/)).toBeInTheDocument();
-      expect(screen.queryByText('Raw bytes')).not.toBeInTheDocument();
+      // An unsupported value says so and names its raw byte in the value; no raw column yet.
+      expect(within(display).getByText('Not interpreted (raw 07)')).toBeInTheDocument();
+      expect(screen.queryByRole('columnheader', { name: 'Raw' })).not.toBeInTheDocument();
       fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
-      expect(screen.getAllByText('Raw bytes').length).toBeGreaterThan(0);
+      expect(screen.getAllByRole('columnheader', { name: 'Raw' }).length).toBeGreaterThan(0);
       expect(screen.getByText('0x3500026')).toBeInTheDocument();
-      // Unregistered bytes are named in the table (VFO scan limits here), not listed as unknown.
-      const other = screen.getByRole('region', { name: 'Other settings bytes' });
+      // Unregistered bytes are named in the folded table (VFO scan limits here), not listed as unknown.
+      fireEvent.click(screen.getByRole('button', { name: 'Other settings bytes' }));
+      const other = screen.getByRole('table', { name: 'Other settings bytes' });
       expect(within(other).getByText('0x3500060 +2')).toBeInTheDocument();
       expect(within(other).getByText('VfoScanFreq0..3')).toBeInTheDocument();
       expect(within(other).getByText('AA BB')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Unknown bytes' }));
       expect(screen.getByText('No unexplained captured bytes.')).toBeInTheDocument();
       expect(screen.getByText(/No scan setting is established/)).toBeInTheDocument();
     });
@@ -511,18 +513,18 @@ describe('AtD890Memory', () => {
           sparse(0x3501280, text),
         ]),
       );
-      const dmr = screen.getByRole('region', { name: 'DMR' });
+      const dmr = screen.getByRole('table', { name: 'DMR settings' });
       expect(within(dmr).getByText('No hang time (0)')).toBeInTheDocument();
       expect(within(dmr).getByText('0 (acts as 1 s)')).toBeInTheDocument();
       expect(within(dmr).getByText('2 (sent as 5, 300 ms)')).toBeInTheDocument();
       expect(within(dmr).queryByText(/Unsupported value/)).not.toBeInTheDocument();
       expect(screen.getByText('Level 0')).toBeInTheDocument();
-      const gps = screen.getByRole('region', { name: 'GPS / APRS' });
+      const gps = screen.getByRole('table', { name: 'GPS / APRS settings' });
       expect(within(gps).getByText('HELLO')).toBeInTheDocument();
       expect(within(gps).getByText(/0x30 of 0x42 bytes/)).toBeInTheDocument();
-      const mod = screen.getByRole('region', { name: 'Mod features' });
-      expect(within(mod).getByText('Scan list (1)')).toBeInTheDocument();
-      expect(within(mod).getByText(/traced from source/)).toBeInTheDocument();
+      const mod = screen.getByRole('table', { name: 'Mod features settings' });
+      expect(within(mod).getByText('Scan list')).toBeInTheDocument();
+      expect(within(mod).getAllByText(/Traced from the firmware source/).length).toBeGreaterThan(0);
     });
 
     it('filters settings by search', () => {
@@ -530,8 +532,8 @@ describe('AtD890Memory', () => {
       fireEvent.change(screen.getByPlaceholderText('Search settings'), {
         target: { value: 'backlight' },
       });
-      expect(screen.getByRole('region', { name: 'Display' })).toBeInTheDocument();
-      expect(screen.queryByRole('region', { name: 'Audio & tones' })).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Display' })).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'Audio & tones' })).not.toBeInTheDocument();
     });
 
     it('replaces scan list selection and settings when the archive is replaced', () => {

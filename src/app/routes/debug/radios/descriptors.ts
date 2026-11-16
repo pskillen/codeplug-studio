@@ -5,12 +5,14 @@ import { OpenGd77Calibration } from './OpenGd77Calibration.tsx';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
 import { OpenGd77Settings } from './OpenGd77Settings.tsx';
 import { AtD890Memory } from './AtD890Memory.tsx';
-import { AtD890Settings } from './AtD890Settings.tsx';
 import { Dm32Memory } from './Dm32Memory.tsx';
-import { Dm32Settings } from './Dm32Settings.tsx';
+import { dm32SettingsView } from '@integrations/radio-io/radios/dm32uv/debugSettingsView.ts';
+import { rt95SettingsView } from '@integrations/radio-io/radios/rt95/debugSettingsView.ts';
+import { atD890SettingsView } from '@integrations/radio-io/radios/at-d890uv/debugSettingsView.ts';
+import type { SettingsView } from '@integrations/radio-io/debugView/index.ts';
 import { Rt95MemoryView } from './Rt95Memory.tsx';
-import { Rt95Settings } from './Rt95Settings.tsx';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
+import { UV5R_MINI_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/uv5r-mini/debugRead/memoryText.ts';
 import { Uv5rMiniSettings } from './Uv5rMiniSettings.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
@@ -75,13 +77,20 @@ export interface RadioDebugDescriptor {
   /** Byte compare for this radio: sections, region identity and limits notes. Radio-home code. */
   compare?: DebugCompareAdapter;
   /** A profile's own Memory viewer; without one the generic Memory viewer is used. */
-  Memory?: ComponentType<{ archive?: DebugArchive }>;
+  Memory?: ComponentType<{ archive?: DebugArchive; notDecoded?: readonly string[] }>;
+  /** Memory categories this radio does not decode yet; named in one line under the Category dropdown. */
+  memoryNotDecoded?: readonly string[];
   /**
    * Password bytes in one archive region, masked in Hex and Compare until revealed. Radio-home
    * function; it returns nothing for another radio's archive. Absent: nothing to mask.
    */
   sensitiveRanges?: DebugSensitiveRangesFn;
-  /** A profile's own Settings viewer. Its tab, after Memory, shows only when this is set. */
+  /**
+   * The Settings tab's content as a radio-neutral view, drawn by the shared `SettingsTable`.
+   * Radio-home function. Preferred over `Settings`.
+   */
+  settings?: (archive: DebugArchive) => SettingsView;
+  /** A profile's own Settings viewer, for radios not yet on `settings`. The tab shows when either is set. */
   Settings?: ComponentType<{ archive?: DebugArchive }>;
   /** False when the Calibration tab has no overlay picker (the radio's calibration is shown alone). */
   calibrationOverlay?: boolean;
@@ -146,7 +155,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     // Hooked here, not in atD890Compare.ts: the snapshot's imports reach back into this module.
     compare: { ...atD890CompareAdapter, decoded: atD890DecodedSnapshot },
     Memory: AtD890Memory,
-    Settings: AtD890Settings,
+    settings: atD890SettingsView,
     Calibration: AtD890Calibration,
     CompareExtra: AtD890Compare,
     readHistory: true,
@@ -161,7 +170,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     slug: 'dm-32uv',
     compare: dm32CompareAdapter,
     Memory: Dm32Memory,
-    Settings: Dm32Settings,
+    settings: dm32SettingsView,
     calibrationOverlay: false,
     Calibration: Dm32Calibration,
     readHistory: true,
@@ -219,7 +228,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     slug: 'rt95',
     compare: rt95CompareAdapter,
     Memory: Rt95MemoryView,
-    Settings: Rt95Settings,
+    settings: rt95SettingsView,
     Calibration: Rt95Calibration,
     readHistory: true,
     capture: captureRt95,
@@ -241,6 +250,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     slug: 'uv-5r-mini',
     compare: uv5rMiniCompareAdapter,
     Memory: Uv5rMiniMemory,
+    memoryNotDecoded: UV5R_MINI_MEMORY_NOT_DECODED,
     Settings: Uv5rMiniSettings,
     readHistory: true,
     capture: captureUv5rMini,
@@ -252,12 +262,14 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
 ];
 
 /** The page's tab labels, in order: Settings follows Memory for a profile that has a Settings view. */
-export const radioDebugTabs = (descriptor: Pick<RadioDebugDescriptor, 'Settings'>): string[] => [
+export const radioDebugTabs = (
+  descriptor: Pick<RadioDebugDescriptor, 'Settings' | 'settings'>,
+): string[] => [
   'Overview',
   'Backup',
   'Calibration',
   'Memory',
-  ...(descriptor.Settings ? ['Settings'] : []),
+  ...(descriptor.settings || descriptor.Settings ? ['Settings'] : []),
   'Hex',
   'Compare',
   'Trace',

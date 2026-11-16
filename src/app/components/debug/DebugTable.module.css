@@ -1,0 +1,125 @@
+.scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  color: var(--dsv2-text-primary);
+}
+
+.table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--dsv2-text-secondary);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--dsv2-border);
+}
+
+.table thead th {
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 6px 10px;
+  vertical-align: top;
+}
+
+.table tbody tr:nth-child(even) {
+  background: var(--dsv2-surface-subtle);
+}
+
+.mono {
+  font-family: var(--dsv2-font-mono, var(--mantine-font-family-monospace, monospace));
+}
+
+.dim {
+  display: block;
+  color: var(--dsv2-text-tertiary);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.num {
+  white-space: nowrap;
+}
+
+.changed {
+  background: var(--dsv2-warning-tint);
+  color: var(--dsv2-warning);
+}
+
+.badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.bandHead {
+  text-align: center;
+}
+
+/* Confidence and Source: a column on wide screens, folded under the field name on a phone. */
+.wideOnly {
+  display: table-cell;
+}
+
+.phoneOnly {
+  display: none;
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .wideOnly {
+    display: none;
+  }
+
+  .phoneOnly {
+    display: block;
+  }
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 6px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
+.pre {
+  margin: 0;
+  font-family: var(--dsv2-font-mono, var(--mantine-font-family-monospace, monospace));
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--dsv2-text-primary);
+  white-space: pre;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--dsv2-text-secondary);
+}
+
+.select {
+  font: inherit;
+  color: var(--dsv2-text-primary);
+  background: var(--dsv2-surface);
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  padding: 3px 6px;
+}

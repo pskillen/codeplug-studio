@@ -254,7 +254,7 @@ export function HexDiff({
         </Button>
         <TextInput
           aria-label="Go to address"
-          placeholder="Address, e.g. 0x3B00"
+          placeholder="Address, e.g. 0x1000"
           size="xs"
           value={jump}
           error={jumpError}

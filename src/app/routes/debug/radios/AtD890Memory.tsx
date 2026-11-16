@@ -1,5 +1,5 @@
 import { Alert, Stack, Text, Title } from '@mantine/core';
-import { MemoryCategories } from './MemoryCategories.tsx';
+import { MemoryCategories } from '@app/components/debug/index.ts';
 import { useMemo, useState } from 'react';
 import {
   DataTable,
@@ -26,7 +26,7 @@ import {
   TalkGroupsPanel,
   describeBankReference,
 } from './AtD890MemoryContacts.tsx';
-import { ScanListsPanel } from './AtD890MemorySettings.tsx';
+import { ScanListsPanel } from './AtD890ScanLists.tsx';
 import { projectAtD890Archive } from './debugProjections.ts';
 import { archiveKey, MEMBER_EXPLANATION } from './viewerUtils.ts';
 import type { DebugArchive } from './captureArchive.ts';
