@@ -1,5 +1,28 @@
 import type { ComponentType } from 'react';
-import { OPENGD77_SETTINGS_GAP_LENGTH } from '@integrations/radio-io/radios/opengd77/constants.ts';
+import {
+  OPENGD77_CAPTURE_OPTIONS,
+  OPENGD77_IDENTITY_NOTE,
+  OPENGD77_READ_NOTICE,
+} from '@integrations/radio-io/radios/opengd77/debugText.ts';
+import {
+  AT_D890_IDENTITY_NOTE,
+  AT_D890_READ_NOTICE,
+  atD890IdentityRows,
+} from '@integrations/radio-io/radios/at-d890uv/debugIdentity.ts';
+import {
+  DM32_IDENTITY_NOTE,
+  DM32_READ_NOTICE,
+  dm32IdentityRows,
+} from '@integrations/radio-io/radios/dm32uv/debugIdentity.ts';
+import {
+  rt95IdentityRows,
+  rt95RegionNote,
+} from '@integrations/radio-io/radios/rt95/debugIdentity.ts';
+import {
+  uv5rMiniIdentityRows,
+  uv5rMiniRegionNote,
+} from '@integrations/radio-io/radios/uv5r-mini/debugRead/identity.ts';
+import { openUv5rMiniLegacyArchive } from './uv5rMiniLegacyArchive.ts';
 import { openGd77CalibrationView } from '@integrations/radio-io/radios/opengd77/debugCalibrationView.ts';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
 import { openGd77SettingsView } from '@integrations/radio-io/radios/opengd77/debugSettingsView.ts';
@@ -9,7 +32,11 @@ import { dm32CalibrationView } from '@integrations/radio-io/radios/dm32uv/debugC
 import { dm32SettingsView } from '@integrations/radio-io/radios/dm32uv/debugSettingsView.ts';
 import { rt95SettingsView } from '@integrations/radio-io/radios/rt95/debugSettingsView.ts';
 import { atD890SettingsView } from '@integrations/radio-io/radios/at-d890uv/debugSettingsView.ts';
-import type { CalibrationView, SettingsView } from '@integrations/radio-io/debugView/index.ts';
+import type {
+  CalibrationView,
+  DebugIdentityRows,
+  SettingsView,
+} from '@integrations/radio-io/debugView/index.ts';
 import { rt95CalibrationView } from '@integrations/radio-io/radios/rt95/debugCalibrationView.ts';
 import { Rt95MemoryView } from './Rt95Memory.tsx';
 import { RT95_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/rt95/debugMemoryText.ts';
@@ -30,7 +57,7 @@ import { captureAtD890 } from './atD890Capture.ts';
 import { captureDm32 } from './dm32Capture.ts';
 import { captureUv5rMini } from './uv5rMiniCapture.ts';
 import { captureRt95, RT95_CAPTURE_STAGES } from './rt95Capture.ts';
-import { captureOpenGd77, OPENGD77_DEBUG_USER_DATABASE_OPTION } from './opengd77Capture.ts';
+import { captureOpenGd77 } from './opengd77Capture.ts';
 import { openGd77IdentityRows } from './opengd77Identity.ts';
 import {
   OPENGD77_DM1701_MODEL_ID,
@@ -61,6 +88,16 @@ export interface RadioDebugCaptureOption {
   id: string;
   label: string;
   description: string;
+}
+
+/** What the Hex and Compare views say about one region, beyond what the radio's compare adapter gives. */
+export interface RadioDebugRegionNote {
+  /** Replaces the compare adapter's representation line. */
+  representation?: string;
+  /** Sentence about what the shown addresses mean. */
+  addressNote?: string;
+  /** Short tag after the region label, e.g. `[body]`. */
+  tag?: string;
 }
 
 /** Selected profiles describe expectations, never observed radio identity. */
@@ -108,7 +145,18 @@ export interface RadioDebugDescriptor {
   identityRows?: (input: {
     archive?: DebugArchive;
     connection: string;
-  }) => readonly (readonly [string, string])[];
+    family: string;
+  }) => DebugIdentityRows;
+  /**
+   * Open a ZIP this radio's older tooling wrote, which is not a backup archive. Returns the reads
+   * it holds, oldest first, or `undefined` when the bytes are not that format. Radio-home format.
+   */
+  openLegacyArchive?: (bytes: Uint8Array) => readonly DebugArchive[] | undefined;
+  /**
+   * Hex and Compare notes for one region of this radio's archive: a different representation line,
+   * an address caveat, or a tag after the region label. Absent: none.
+   */
+  regionNote?: (archive: DebugArchive, regionId: string) => RadioDebugRegionNote;
   /** Caption under the identity grid, after the generic sentence. */
   identityNote?: string;
   /** Backup-tab notice about what the read sends and how to recover. */
@@ -138,23 +186,6 @@ const unavailable = capabilities('Not yet available', 'Not yet available', 'Not 
 export const capabilityColor = (status: RadioDebugCapabilityStatus) =>
   status === 'Available' ? 'green' : status === 'Partial' ? 'yellow' : 'gray';
 
-const OPENGD77_IDENTITY_NOTE =
-  'Values are the captured FirmwareInfo reply, as reported. A revision string is not proof of provenance. The reply has no serial and cannot tell stock builds from forks or mods. Radio type does not distinguish DM-1701 from RT-84 or MD-9600 from RT-90.';
-
-const OPENGD77_READ_NOTICE = {
-  title: 'Read-only capture and recovery',
-  text: `The capture only reads: it sends a ping, the FirmwareInfo request, the CPS screen command, reads of the registered flash spans and the ${OPENGD77_SETTINGS_GAP_LENGTH}-byte settings struct tail, the occupied User Database when ticked, and the CPS close. It takes minutes, and a large User Database makes it much longer. Cancel stops at the next frame and sends only the CPS close. If the radio stays on the CPS screen after a failure, power-cycle it.`,
-};
-
-const OPENGD77_CAPTURE_OPTIONS: readonly RadioDebugCaptureOption[] = [
-  {
-    id: OPENGD77_DEBUG_USER_DATABASE_OPTION,
-    label: 'Also read the User Database',
-    description:
-      'The DMR ID lookup list. It can be up to about 14 MB and add many minutes to the read. Unticked, only that region is skipped.',
-  },
-];
-
 export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
     slug: 'at-d890uv',
@@ -167,6 +198,9 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     readHistory: true,
     capture: captureAtD890,
     sensitiveRanges: atD890ArchiveSensitiveRanges,
+    identityRows: atD890IdentityRows,
+    identityNote: AT_D890_IDENTITY_NOTE,
+    readNotice: AT_D890_READ_NOTICE,
     model: 'AT-D890UV',
     archiveModelId: 'AT-D890UV',
     family: 'AnyTone · stock / MM9PDY',
@@ -181,6 +215,9 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     readHistory: true,
     capture: captureDm32,
     sensitiveRanges: dm32ArchiveSensitiveRanges,
+    identityRows: dm32IdentityRows,
+    identityNote: DM32_IDENTITY_NOTE,
+    readNotice: DM32_READ_NOTICE,
     model: 'DM-32UV',
     archiveModelId: 'DM-32UV',
     family: 'Baofeng · stock / MM9PDY',
@@ -240,6 +277,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     capture: captureRt95,
     sensitiveRanges: rt95ArchiveSensitiveRanges,
     captureStages: RT95_CAPTURE_STAGES,
+    identityRows: rt95IdentityRows,
+    regionNote: (_archive, regionId) => rt95RegionNote(regionId),
     model: 'RT95',
     archiveModelId: 'retevis-rt95',
     family: 'Stock / MM9PDY',
@@ -261,6 +300,9 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     calibration: uv5rMiniCalibrationView,
     readHistory: true,
     capture: captureUv5rMini,
+    identityRows: uv5rMiniIdentityRows,
+    openLegacyArchive: openUv5rMiniLegacyArchive,
+    regionNote: (_archive, regionId) => uv5rMiniRegionNote(regionId),
     model: 'UV-5R Mini',
     archiveModelId: 'UV-5R Mini',
     family: 'Stock / MM9PDY',

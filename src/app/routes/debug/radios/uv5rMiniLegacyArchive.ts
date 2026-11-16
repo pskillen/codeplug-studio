@@ -5,6 +5,8 @@ import {
   hashUv5rMiniDebugSpans,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import type { Uv5rMiniDebugRead } from '../uv5rMiniDebugReads.ts';
+import { archiveUv5rMiniRead } from './uv5rMiniCapture.ts';
+import type { DebugArchive } from './captureArchive.ts';
 
 /** True for a readable ZIP with no `manifest.json`: the only shape the legacy reader may claim. */
 export function isUv5rMiniReadsZip(bytes: Uint8Array): boolean {
@@ -65,4 +67,15 @@ export function openUv5rMiniReadsZip(bytes: Uint8Array): Uv5rMiniDebugRead[] {
       spans,
     };
   });
+}
+
+/**
+ * The older Mini reads ZIP as debug archives, oldest first.
+ * `undefined` when the bytes are not that format (a ZIP with a manifest is a backup archive).
+ */
+export function openUv5rMiniLegacyArchive(bytes: Uint8Array): readonly DebugArchive[] | undefined {
+  if (!isUv5rMiniReadsZip(bytes)) return undefined;
+  return openUv5rMiniReadsZip(bytes).map((read) =>
+    archiveUv5rMiniRead(read, read.readAt.toISOString()),
+  );
 }

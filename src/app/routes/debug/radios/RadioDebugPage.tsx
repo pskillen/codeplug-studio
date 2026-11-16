@@ -1,10 +1,5 @@
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
-import { isDm32ModelId } from './viewerUtils.ts';
-import { atD890DebugIdentity } from '@integrations/radio-io/radios/at-d890uv/debugCoverage.ts';
-import {
-  dm32DebugIdentity,
-  type Dm32VFrameEvidence,
-} from '@integrations/radio-io/radios/dm32uv/debugCoverage.ts';
+import { genericIdentityRows } from '@integrations/radio-io/debugView/index.ts';
 import {
   Alert,
   Anchor,
@@ -22,15 +17,9 @@ import {
   Title,
 } from '@mantine/core';
 import { useEffect, useRef, useState } from 'react';
-import type { Uv5rMiniDebugRead } from '../uv5rMiniDebugReads.ts';
 import { radioBackupFileName } from '@app/services/radioBackupRead.ts';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
-import {
-  openDebugArchive,
-  rt95ArchiveDetails,
-  uv5rMiniArchiveDetails,
-  type DebugArchive,
-} from './captureArchive.ts';
+import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 import { Link, useParams } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWakeLock.ts';
@@ -44,8 +33,6 @@ import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 import { ComparePicker } from './ComparePicker.tsx';
 import { RadioCompare } from './compare/RadioCompare.tsx';
 import { ReadStrip } from './compare/ReadStrip.tsx';
-import { isUv5rMiniReadsZip, openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
-import { archiveUv5rMiniRead } from './uv5rMiniCapture.ts';
 import BackupLabelFields from '@app/components/builds/BackupLabelFields.tsx';
 import {
   normaliseBackupLabels,
@@ -56,13 +43,6 @@ import { getDebugReadHistory, useDebugReadHistory } from './debugReadHistory.ts'
 import { DebugReadHistoryControls } from './DebugReadHistoryControls.tsx';
 import { isDebugReadHistoryZip, openDebugReadHistoryZip } from './debugReadHistoryArchive.ts';
 
-const asReturned = (frame: Dm32VFrameEvidence | undefined) =>
-  !frame
-    ? 'Not observed'
-    : frame.failed
-      ? `Failed: ${frame.failed}`
-      : (frame.text ?? (frame.hex ? `0x${frame.hex.toUpperCase()}` : 'Empty reply'));
-
 export default function RadioDebugPage() {
   const { radio } = useParams();
   return <RadioDebugProfile key={radio} radio={radio} />;
@@ -71,9 +51,7 @@ export default function RadioDebugPage() {
 function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
   const historyEnabled = descriptor?.readHistory === true;
-  const store = getDebugReadHistory(
-    descriptor ?? { slug: 'unknown', archiveModelId: 'UV-5R Mini' },
-  );
+  const store = getDebugReadHistory(descriptor ?? { slug: 'unknown', archiveModelId: 'unknown' });
   const history = useDebugReadHistory(store);
   const [localArchive, setArchive] = useState<DebugArchive>();
   // The Compare tab's byte diffs are heavy; they render only while the tab is open.
@@ -106,24 +84,11 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
-  const miniReport = archive && uv5rMiniArchiveDetails(archive)?.report;
   const connection = reading
     ? 'Reading radio…'
     : archive?.source === 'live-read'
       ? 'Read complete · disconnected'
       : 'Not connected';
-  const d890Identity =
-    archive?.manifest.radioModelId === 'AT-D890UV'
-      ? atD890DebugIdentity(
-          archive.sidecars['debug/ident.bin'],
-          archive.manifest.regions,
-          archive.regions,
-        )
-      : undefined;
-  const dm32Identity =
-    archive && isDm32ModelId(archive.manifest.radioModelId)
-      ? dm32DebugIdentity(archive.sidecars, archive.manifest.regions, archive.regions)
-      : undefined;
   if (!descriptor)
     return (
       <DesignSystemV2Provider scheme="dark">
@@ -145,31 +110,22 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
         return;
       }
       let next: DebugArchive;
-      let imported: readonly Uv5rMiniDebugRead[] = [];
       try {
         next = openDebugArchive(bytes, descriptor.archiveModelId);
       } catch (error) {
-        // Only a ZIP that is not a backup archive at all may be the old Mini reads ZIP; every other
+        // Only a ZIP that is not a backup archive at all may be the radio's older format; every other
         // failure (model mismatch, damaged capture) keeps its own message.
-        if (descriptor.slug !== 'uv-5r-mini' || !isUv5rMiniReadsZip(bytes)) throw error;
-        imported = openUv5rMiniReadsZip(bytes).map((read) => ({
-          ...read,
-          label: `File ${read.label}`,
-        }));
-        const last = imported.at(-1)!;
-        next = {
-          ...archiveUv5rMiniRead(last, last.readAt.toISOString()),
-          source: 'file',
-          zipBytes: bytes,
-        };
+        const legacy = descriptor.openLegacyArchive?.(bytes);
+        if (!legacy?.length) throw error;
+        if (historyEnabled) {
+          store.importArchives(legacy);
+          setError(undefined);
+          return;
+        }
+        next = { ...legacy.at(-1)!, source: 'file', zipBytes: bytes };
       }
-      if (historyEnabled) {
-        store.importArchives(
-          imported.length
-            ? imported.map((read) => archiveUv5rMiniRead(read, read.readAt.toISOString()))
-            : [next],
-        );
-      } else setArchive(next);
+      if (historyEnabled) store.importArchives([next]);
+      else setArchive(next);
       setError(undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not open archive.');
@@ -247,152 +203,14 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 <Card withBorder>
                   <Title order={3}>Identity and firmware</Title>
                   <SimpleGrid cols={{ base: 2, sm: 3 }} mt="md">
-                    {(descriptor.identityRows
-                      ? [
-                          ['Model · selected', descriptor.model],
-                          ...descriptor.identityRows({ archive, connection }),
-                        ]
-                      : descriptor.slug === 'at-d890uv'
-                        ? [
-                            ['Model · selected', descriptor.model],
-                            ['Model · captured ident', d890Identity?.ident?.model ?? 'Unknown'],
-                            [
-                              'Band code · captured ident',
-                              d890Identity?.ident
-                                ? `0x${d890Identity.ident.bandCode.toString(16).toUpperCase().padStart(2, '0')}`
-                                : 'Unknown',
-                            ],
-                            ['Ident version · protocol', d890Identity?.ident?.version ?? 'Unknown'],
-                            ['Serial · captured LocalInfo', d890Identity?.serial ?? 'Unknown'],
-                            ['Running firmware', 'Unknown'],
-                            ['Firmware mod', 'Unknown'],
-                            [
-                              'Evidence',
-                              d890Identity?.ident || d890Identity?.serial
-                                ? 'Captured radio bytes'
-                                : 'No radio identity observed',
-                            ],
-                            [
-                              'Connection',
-                              reading
-                                ? 'Reading radio…'
-                                : archive?.source === 'live-read'
-                                  ? 'Read complete · disconnected'
-                                  : 'Not connected',
-                            ],
-                          ]
-                        : descriptor.slug === 'rt95'
-                          ? [
-                              ['Model · selected', descriptor.model],
-                              ['Expected family', descriptor.family],
-                              ['Serial · archive', archive?.manifest.serial || 'Unknown'],
-                              ['Firmware · archive', archive?.manifest.firmware || 'Unknown'],
-                              [
-                                'PC ident [head]',
-                                archive?.sidecars['debug/ident.bin']
-                                  ? Array.from(archive.sidecars['debug/ident.bin'], (b) =>
-                                      b.toString(16).padStart(2, '0'),
-                                    ).join(' ')
-                                  : 'Not captured',
-                              ],
-                              [
-                                'Clone channels/settings [unknown]',
-                                archive && rt95ArchiveDetails(archive)?.coverage === 'captured'
-                                  ? 'Captured in programming image'
-                                  : archive && rt95ArchiveDetails(archive)?.coverage === 'partial'
-                                    ? 'Partially captured in programming image'
-                                    : 'Not captured',
-                              ],
-                              ['Running firmware', 'Unknown'],
-                              ['Firmware mod', 'Unknown'],
-                              [
-                                'Evidence',
-                                archive ? 'Archive manifest' : 'No radio identity observed',
-                              ],
-                              [
-                                'Connection',
-                                reading
-                                  ? 'Reading radio…'
-                                  : archive?.source === 'live-read'
-                                    ? 'Read complete · disconnected'
-                                    : 'Not connected',
-                              ],
-                            ]
-                          : descriptor.slug === 'dm-32uv'
-                            ? [
-                                ['Model · selected', descriptor.model],
-                                [
-                                  'Model · captured PSEARCH',
-                                  dm32Identity?.modelString ?? 'Unknown',
-                                ],
-                                [
-                                  'Base firmware · V01 (stock base version, unchanged by MM9PDY, so not a mod discriminator)',
-                                  asReturned(dm32Identity?.baseFirmware),
-                                ],
-                                ['Build date · V03', asReturned(dm32Identity?.buildDate)],
-                                ['DSP version · V04', asReturned(dm32Identity?.dspVersion)],
-                                ['Radio version · V05', asReturned(dm32Identity?.radioVersion)],
-                                [
-                                  'Codeplug version · V0B',
-                                  asReturned(dm32Identity?.codeplugVersion),
-                                ],
-                                ['Serial', 'None observed'],
-                                [
-                                  'Chip UID (8 bytes) + 4 derived, not a serial · V02',
-                                  dm32Identity?.chipUidHex
-                                    ? `0x${dm32Identity.chipUidHex.toUpperCase()}`
-                                    : 'Not observed',
-                                ],
-                                [
-                                  'Persistent data',
-                                  dm32Identity?.mm9pdyDataPresent
-                                    ? 'MM9PDY-compatible data present'
-                                    : 'No MM9PDY location page captured',
-                                ],
-                                ['Running firmware', 'Unknown'],
-                                ['Firmware mod', 'Unknown'],
-                                [
-                                  'Evidence',
-                                  dm32Identity?.modelString || dm32Identity?.vframes.length
-                                    ? 'Captured radio replies'
-                                    : 'No radio identity observed',
-                                ],
-                                [
-                                  'Connection',
-                                  reading
-                                    ? 'Reading radio…'
-                                    : archive?.source === 'live-read'
-                                      ? 'Read complete · disconnected'
-                                      : 'Not connected',
-                                ],
-                              ]
-                            : [
-                                ['Model · selected', descriptor.model],
-                                ['Expected family', descriptor.family],
-                                ['Serial · archive', archive?.manifest.serial || 'Unknown'],
-                                ['Firmware · archive', archive?.manifest.firmware || 'Unknown'],
-                                [
-                                  'Firmware mod',
-                                  miniReport ? 'MM9PDY compatible report' : 'Unknown',
-                                ],
-                                [
-                                  'Evidence',
-                                  miniReport
-                                    ? 'Validated live format-2 MM9R report'
-                                    : archive
-                                      ? 'Archive manifest'
-                                      : 'No radio identity observed',
-                                ],
-                                [
-                                  'Connection',
-                                  reading
-                                    ? 'Reading radio…'
-                                    : archive?.source === 'live-read'
-                                      ? 'Read complete · disconnected'
-                                      : 'Not connected',
-                                ],
-                              ]
-                    ).map(([label, value]) => (
+                    {[
+                      ['Model · selected', descriptor.model],
+                      ...(descriptor.identityRows ?? genericIdentityRows)({
+                        archive,
+                        connection,
+                        family: descriptor.family,
+                      }),
+                    ].map(([label, value]) => (
                       <div key={label}>
                         <Text size="xs" c="dimmed">
                           {label}
@@ -406,10 +224,6 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                   <Text size="sm" c="dimmed" mt="md">
                     The selected family is an expectation, not proof of installed firmware.{' '}
                     {descriptor.identityNote}
-                    {descriptor.slug === 'at-d890uv' &&
-                      'Ident and LocalInfo values come from captured bytes; V100 is protocol evidence, not a running firmware version. Missing markers do not prove stock firmware.'}
-                    {descriptor.slug === 'dm-32uv' &&
-                      'Values come from the captured PSEARCH and V-frame replies, as returned. This radio has no readable serial. A location page is persistent data, not proof of running firmware; its absence does not prove stock.'}
                   </Text>
                 </Card>
                 <Card withBorder>
@@ -489,25 +303,6 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 )}
                 {descriptor.readNotice && (
                   <Alert title={descriptor.readNotice.title}>{descriptor.readNotice.text}</Alert>
-                )}
-                {descriptor.slug === 'at-d890uv' && (
-                  <Alert title="Read-only capture and recovery">
-                    The radio is read at fixed 16-byte blocks; vital units are read twice and can
-                    take time. If a read fails or is cancelled, power-cycle the radio before
-                    continuing. A fresh LocalInfo check precedes END, but the check and END are not
-                    atomic. Firmware may divert vital reads.
-                  </Alert>
-                )}
-                {descriptor.slug === 'dm-32uv' && (
-                  <Alert title="Read-only capture and recovery">
-                    The capture sends only the handshake, two factory-sector reads, the V-frame
-                    queries, PROGRAM entry and reads inside the radio&apos;s configuration window,
-                    one at a time. It reads only the blocks the product Read reads and can take a
-                    few minutes. There is no END command on this radio: it leaves PROGRAM mode after
-                    about 2 seconds of silence. If a read fails or is cancelled, the session stops
-                    at once with no retry; wait a few seconds, or power-cycle the radio if it does
-                    not return to normal, before continuing.
-                  </Alert>
                 )}
                 <Alert title="Coverage is limited">
                   The listed ranges are archive entries, not a complete physical storage or firmware
