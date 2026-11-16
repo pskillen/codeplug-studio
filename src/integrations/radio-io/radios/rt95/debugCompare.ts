@@ -9,6 +9,7 @@ import {
   type RegionIdentity,
 } from '../../debugCompare/index.ts';
 import { RT95_MODEL_ID } from './constants.ts';
+import { rt95DecodedSnapshot } from './debugCompareDecoded.ts';
 import {
   RT95_CALIBRATION_REGION_ID,
   RT95_CALIBRATION_REGION_PATH,
@@ -66,4 +67,5 @@ export const rt95CompareAdapter: DebugCompareAdapter = {
     };
   },
   regionIdentity: rt95DebugRegionIdentity,
+  decoded: rt95DecodedSnapshot,
 };
