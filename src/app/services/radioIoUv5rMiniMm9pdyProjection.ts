@@ -6,15 +6,20 @@
  */
 
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
-import { pushGeneralInfoWarning, pushGeneralWarning } from '@core/import-export/exportWarning.ts';
+import {
+  pushGeneralInfoWarning,
+  pushGeneralWarning,
+  pushZoneScanSetWarning,
+} from '@core/import-export/exportWarning.ts';
 import { toRt95Ascii } from '@core/import-export/formatProfiles.ts';
 import { UV5R_MINI_LIMITS } from '@core/radios/baofeng/uv-5r-mini/limits.ts';
-import type { RadioZoneDto } from '@integrations/radio-io/radioWriteProjection.ts';
+import { checkZoneScanSets } from '@core/import-export/zoneScanSets/index.ts';
 import {
-  pushZoneScanSetNotWrittenWarning,
-  rt95Mm9pdyZoneOrderedAssembled,
-  scanSetWithin,
-} from './radioIoRt95Mm9pdyProjection.ts';
+  encodeMiniScanSets,
+  MMZS_MEMBER_CAPACITY_BITS,
+} from '@integrations/radio-io/radios/uv5r-mini/modData/scanSets.ts';
+import type { RadioZoneDto } from '@integrations/radio-io/radioWriteProjection.ts';
+import { rt95Mm9pdyZoneOrderedAssembled, scanSetWithin } from './radioIoRt95Mm9pdyProjection.ts';
 
 /** Same rule as the RT95: zones in build order, members in zone order, first appearance wins. */
 export const uv5rMiniMm9pdyZoneOrderedAssembled = rt95Mm9pdyZoneOrderedAssembled;
@@ -86,7 +91,42 @@ export function projectUv5rMiniMm9pdy(input: Uv5rMiniMm9pdyProjectionInput): {
     zones.length = ZONE_MAX;
   }
 
-  pushZoneScanSetNotWrittenWarning(zones, warnings);
+  const sets = zones.map((zone) => ({
+    zoneName: zone.wireName,
+    scanChannelNumbers: zone.scanChannelNumbers ?? zone.channelNumbers,
+  }));
+  const encoded = encodeMiniScanSets(
+    zones.map((zone) => {
+      const included = new Set(zone.scanChannelNumbers ?? zone.channelNumbers);
+      return zone.channelNumbers.map((n) => included.has(n));
+    }),
+    1,
+  );
+  checkZoneScanSets(
+    sets.map((set, i) =>
+      encoded.fallback.includes(i) ? { ...set, scanChannelNumbers: zones[i]!.channelNumbers } : set,
+    ),
+    {
+      roomExceeded: () =>
+        encoded.fallback.length
+          ? {
+              limit: MMZS_MEMBER_CAPACITY_BITS,
+              needed: encoded.needed,
+              unit: 'member bits',
+              consequence: `These zones scan every member: ${encoded.fallback.map((i) => `"${zones[i]!.wireName}"`).join(', ')}.`,
+            }
+          : undefined,
+    },
+    warnings,
+  );
+
+  if (zones.length)
+    pushZoneScanSetWarning(warnings, {
+      issue: 'firmware-too-old',
+      reason: 'firmware version unknown',
+      message:
+        "Studio cannot identify this radio's firmware during Write. It may ignore zone scan sets until its firmware is updated; the sets will still be written.",
+    });
 
   return { zones };
 }

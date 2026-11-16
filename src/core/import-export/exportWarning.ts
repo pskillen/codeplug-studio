@@ -64,9 +64,11 @@ export type ZoneScanSetWarningDetail =
       count: number;
     }
   | {
-      /** The radio's firmware can't store scan sets: they aren't written; zones scan as before. */
+      /** Firmware compatibility warning, with radio-specific wording when sets are still written. */
       issue: 'firmware-too-old';
       reason: string;
+      /** Radio-specific wording when the sets are still written or the version is unknown. */
+      message?: string;
     }
   | {
       /** The radio's room for scan sets is exceeded. */
@@ -167,7 +169,10 @@ function formatZoneScanSetWarning(warning: ZoneScanSetExportWarning): string {
       return `Zone "${warning.zoneName}" has ${warning.count} ${channels} set to Scan in this zone, so this zone won't scan on the radio. Set at least two of its channels to Scan in this zone.`;
     }
     case 'firmware-too-old':
-      return `The radio's firmware is too old for zone scan sets (${warning.reason}). They were not written, and its zones scan as before.`;
+      return (
+        warning.message ??
+        `The radio's firmware is too old for zone scan sets (${warning.reason}). They were not written, and its zones scan as before.`
+      );
     case 'room-exceeded':
       return `The zone scan sets need ${warning.needed} ${warning.unit}, but the radio holds ${warning.limit}. ${warning.consequence}`;
   }

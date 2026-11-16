@@ -90,10 +90,11 @@ describe('UV-5R Mini MM9PDY projection', () => {
     expect(ordered.channels.find((r) => r.entity.id === 'b')?.orderOrSlot).toBe(5);
   });
 
-  it('passes a clean zone through with no warnings', () => {
+  it('warns when firmware is unknown even for a clean zone', () => {
     const { zones, texts } = run([{ wireName: 'Local', channelNumbers: [1, 2, 3] }]);
     expect(zones).toEqual([{ wireName: 'Local', channelNumbers: [1, 2, 3] }]);
-    expect(texts).toEqual([]);
+    expect(texts).toHaveLength(1);
+    expect(texts[0]).toContain('may ignore zone scan sets');
   });
 
   it('drops an empty zone and says empty zones are skipped', () => {
@@ -102,9 +103,10 @@ describe('UV-5R Mini MM9PDY projection', () => {
       { wireName: 'Empty', channelNumbers: [] },
     ]);
     expect(zones.map((z) => z.wireName)).toEqual(['Local']);
-    expect(texts).toHaveLength(1);
-    expect(texts[0]).toContain('Zone "Empty"');
-    expect(texts[0]).toContain('empty zones are skipped');
+    expect(
+      texts.some((t) => t.includes('Zone "Empty"') && t.includes('empty zones are skipped')),
+    ).toBe(true);
+    expect(texts.some((t) => t.includes("won't scan"))).toBe(true);
   });
 
   it('cuts a 13-character name to 12 and warns', () => {
@@ -147,9 +149,30 @@ describe('UV-5R Mini MM9PDY projection', () => {
     expect(texts.some((t) => t.includes('beyond 999'))).toBe(true);
   });
 
+  it('names only zones that do not fit and still tries later zones', () => {
+    const members = Array.from({ length: 999 }, (_, i) => i + 1);
+    const warnings: ExportWarning[] = [];
+    projectUv5rMiniMm9pdy({
+      zones: [
+        ...Array.from({ length: 5 }, (_, i) => ({
+          wireName: `Z${i}`,
+          channelNumbers: members,
+          scanChannelNumbers: members.slice(1),
+        })),
+        { wireName: 'Later', channelNumbers: [1, 2, 3], scanChannelNumbers: [1, 2] },
+      ],
+      warnings,
+    });
+    const room = warnings.filter((w) => w.kind === 'zone_scan_set' && w.issue === 'room-exceeded');
+    expect(room).toHaveLength(1);
+    const message = formatExportWarning(room[0]!);
+    expect(message).toContain('"Z4"');
+    expect(message).not.toContain('"Later"');
+  });
+
   it('produces the empty-table intent for no zones, and null without the flag', () => {
     const org: RadioWriteOrganisation = { writeUv5rMiniZones: true };
-    expect(uv5rMiniZoneIntentFromOrganisation(org)).toEqual({ zones: [] });
+    expect(uv5rMiniZoneIntentFromOrganisation(org)).toEqual({ writeScanSets: true, zones: [] });
     expect(uv5rMiniZoneIntentFromOrganisation({ zones: [] })).toBeNull();
     expect(uv5rMiniZoneIntentFromOrganisation(undefined)).toBeNull();
   });
@@ -157,7 +180,10 @@ describe('UV-5R Mini MM9PDY projection', () => {
   it('maps channel numbers to 0-based slots and feeds the encoder', () => {
     const { zones } = run([{ wireName: 'Local', channelNumbers: [1, 5] }]);
     const intent = uv5rMiniZoneIntentFromOrganisation({ writeUv5rMiniZones: true, zones });
-    expect(intent).toEqual({ zones: [{ name: 'Local', slotIndexes: [0, 4] }] });
+    expect(intent).toEqual({
+      writeScanSets: true,
+      zones: [{ name: 'Local', slotIndexes: [0, 4], scanSlotIndexes: [0, 4] }],
+    });
     const encoded = encodeUv5rMiniZoneTable(intent!);
     expect(encoded.sector).toHaveLength(4096);
     expect(encoded.generation).toBeGreaterThan(0);
@@ -203,13 +229,16 @@ describe('UV-5R Mini MM9PDY Write projection wiring', () => {
       { wireName: 'Second', channelNumbers: [2, 3], scanChannelNumbers: [2, 3] },
     ]);
     expect(intent).toEqual({
+      writeScanSets: true,
       zones: [
-        { name: 'First', slotIndexes: [0, 1] },
-        { name: 'Second', slotIndexes: [1, 2] },
+        { name: 'First', slotIndexes: [0, 1], scanSlotIndexes: [0, 1] },
+        { name: 'Second', slotIndexes: [1, 2], scanSlotIndexes: [1, 2] },
       ],
     });
     const decoded = decodeUv5rMiniZoneTable(encoded!.sector);
-    expect('zones' in decoded && decoded.zones).toEqual(intent!.zones);
+    expect('zones' in decoded && decoded.zones).toEqual(
+      intent!.zones.map(({ name, slotIndexes }) => ({ name, slotIndexes })),
+    );
   });
 
   it('keeps a pinned channel at its slot and points the zone at the pinned number', () => {
@@ -237,19 +266,19 @@ describe('UV-5R Mini MM9PDY Write projection wiring', () => {
     );
     const { projection, intent, encoded } = writeProjection(library);
     expect(projection.organisation.zones?.map((z) => z.wireName)).toEqual(['Local']);
-    expect(intent?.zones).toEqual([{ name: 'Local', slotIndexes: [0] }]);
+    expect(intent?.zones).toEqual([{ name: 'Local', slotIndexes: [0], scanSlotIndexes: [0] }]);
     // Header, one name frame, the zone's two bitmap frames.
-    expect(encoded?.frames.map((f) => f.address)).toEqual([0xc000, 0xc200, 0xc400, 0xc440]);
+    expect(encoded?.frames.map((f) => f.address)).toEqual([0xc000, 0xc200, 0xc400, 0xc440, 0xc040]);
   });
 
   it('writes an empty table (an intent with no zones) when the build has no zones', () => {
     const { projection, intent, encoded } = writeProjection(lib([ch('a', 'Alpha', 145.5)], []));
     expect(projection.organisation.writeUv5rMiniZones).toBe(true);
-    expect(intent).toEqual({ zones: [] });
-    expect(encoded?.frames.map((f) => f.address)).toEqual([0xc000]);
+    expect(intent).toEqual({ writeScanSets: true, zones: [] });
+    expect(encoded?.frames.map((f) => f.address)).toEqual([0xc000, 0xc040]);
   });
 
-  it('carries each zone scan set and leaves the MMZ1 intent and frames unchanged', () => {
+  it('writes each zone scan set independently of the MMZ1 table', () => {
     const channels = [ch('a', 'Alpha', 145.5), ch('b', 'Bravo', 145.6), ch('c', 'Charlie', 145.7)];
     const plain = writeProjection(lib(channels, [zone('z1', 'Local', ['a', 'b', 'c'])]));
     // A member skip in the library, and this build's per-zone skip of another member.
@@ -274,16 +303,11 @@ describe('UV-5R Mini MM9PDY Write projection wiring', () => {
     expect(skipping.projection.organisation.zones).toEqual([
       { wireName: 'Local', channelNumbers: [1, 2, 3], scanChannelNumbers: [1] },
     ]);
-    // The Mini writer (MMZ1) ignores scan sets until its own ticket: same intent, same bytes.
-    expect(plain.intent).not.toBeNull();
-    expect(skipping.intent).not.toBeNull();
-    expect(skipping.intent).toEqual(plain.intent);
-    expect(skipping.encoded?.frames).toEqual(plain.encoded?.frames);
-    expect(skipping.encoded?.sector).toEqual(plain.encoded?.sector);
-    // Write says once that the scan set isn't on the radio yet; a zone scanning all its members says nothing.
-    const note = "isn't written to the radio yet";
-    expect(skipping.texts.filter((t) => t.includes(note))).toHaveLength(1);
-    expect(plain.texts.some((t) => t.includes(note))).toBe(false);
+    expect(skipping.intent?.zones[0]?.scanSlotIndexes).toEqual([0]);
+    expect(skipping.encoded?.frames.slice(0, -1)).toEqual(plain.encoded?.frames.slice(0, -1));
+    expect(skipping.encoded?.frames.at(-1)).not.toEqual(plain.encoded?.frames.at(-1));
+    expect(skipping.texts.some((t) => t.includes("won't scan"))).toBe(true);
+    expect(skipping.texts.some((t) => t.includes('may ignore zone scan sets'))).toBe(true);
   });
 
   it('stock Mini projection carries no zones and no flag', () => {

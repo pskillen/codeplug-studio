@@ -1,3 +1,4 @@
+import { encodeMiniScanSets } from './scanSets.ts';
 import { UV5R_MINI_LIMITS } from '@core/radios/baofeng/uv-5r-mini/limits.ts';
 import { crc16Xmodem } from '../../dm32uv/firmwareUpdate/crc16Xmodem.ts';
 import {
@@ -15,7 +16,13 @@ import {
 
 export interface Uv5rMiniZoneTableInput {
   /** `slotIndexes` are 0-based channel slots (channel 1 = slot 0), any order; duplicates collapse (a zone is a set). */
-  zones: readonly { name: string; slotIndexes: readonly number[] }[];
+  zones: readonly {
+    name: string;
+    slotIndexes: readonly number[];
+    scanSlotIndexes?: readonly number[];
+  }[];
+  /** Write the independent MMZS block after the zone table. */
+  writeScanSets?: boolean;
 }
 
 export interface Uv5rMiniZoneFrame {
@@ -25,7 +32,7 @@ export interface Uv5rMiniZoneFrame {
 }
 
 export interface Uv5rMiniZoneTableEncoded {
-  /** In write order: header, name frames, then each zone's two bitmap frames (lower first). */
+  /** In write order: header, names, bitmaps, then optional scan-set frames. */
   frames: readonly Uv5rMiniZoneFrame[];
   /** CRC-16/XMODEM stored in the header. */
   crc: number;
@@ -138,5 +145,14 @@ export function encodeUv5rMiniZoneTable(input: Uv5rMiniZoneTableInput): Uv5rMini
     }
   });
 
-  return { frames, crc, generation: zoneTableGeneration(crc), sector };
+  const generation = zoneTableGeneration(crc);
+  if (input.writeScanSets) {
+    const sets = input.zones.map((zone) => {
+      const included = new Set(zone.scanSlotIndexes ?? zone.slotIndexes);
+      return [...new Set(zone.slotIndexes)].sort((a, b) => a - b).map((slot) => included.has(slot));
+    });
+    for (const frame of encodeMiniScanSets(sets, generation).frames)
+      put(frame.address, frame.bytes);
+  }
+  return { frames, crc, generation, sector };
 }

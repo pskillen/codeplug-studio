@@ -36,6 +36,7 @@ const MM9PDY = 'radio-io-uv5r-mini-mm9pdy';
 
 function zones(n: number): Uv5rMiniZoneTableInput {
   return {
+    writeScanSets: true,
     zones: Array.from({ length: n }, (_, i) => ({
       name: `Zone ${i + 1}`,
       slotIndexes: [i, i + 50],

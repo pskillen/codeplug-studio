@@ -126,7 +126,7 @@ export class Uv5rMiniProtocol extends Uv17ProProtocol {
 
   protected override extraUploadFrames(): Uv17ProExtraUploadFrames | null {
     if (!this.zoneIntent) return null;
-    const { frames } = encodeUv5rMiniZoneTable(this.zoneIntent);
+    const { frames } = encodeUv5rMiniZoneTable({ ...this.zoneIntent, writeScanSets: true });
     return { stage: UV5R_MINI_ZONE_TABLE_STAGE, frames };
   }
 }
