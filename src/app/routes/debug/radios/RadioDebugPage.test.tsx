@@ -882,8 +882,8 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
         screen.getByText(/Radio type does not distinguish DM-1701 from RT-84/),
       ).toBeInTheDocument();
       for (const badge of screen.getAllByTitle('Available')) expect(badge).toBeInTheDocument();
-      expect(screen.getAllByTitle('Not yet available')).toHaveLength(1);
-      expect(screen.getAllByTitle('Partial')).toHaveLength(1);
+      expect(screen.queryAllByTitle('Not yet available')).toHaveLength(0);
+      expect(screen.getAllByTitle('Partial')).toHaveLength(2);
       expect(screen.queryByRole('button', { name: /write|restore/i })).not.toBeInTheDocument();
     },
     30000,
@@ -1014,8 +1014,19 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     expect(entry.capabilities).toEqual([
       { name: 'Backup', status: 'Available' },
       { name: 'Calibration', status: 'Partial' },
-      { name: 'Memory', status: 'Not yet available' },
+      { name: 'Memory', status: 'Partial' },
     ]);
+  });
+
+  it('routes Memory to the OpenGD77 viewer, with the later-piece sections deferred', async () => {
+    open(slug);
+    fireEvent.click(screen.getByRole('tab', { name: 'Memory' }));
+    expect(screen.getAllByText('No capture').length).toBeGreaterThan(0);
+    history.add(await syntheticOpenGd77Archive(modelId));
+    await screen.findByRole('tab', { name: 'Channels' });
+    expect(screen.getByRole('tab', { name: 'Zones' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'User Database' }));
+    expect(screen.getByText('Coming in a later piece')).toBeInTheDocument();
   });
 
   it('reads a Backup-style archive without the region as not captured', async () => {
