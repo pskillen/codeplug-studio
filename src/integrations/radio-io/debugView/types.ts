@@ -37,7 +37,8 @@ interface ChartBase {
 }
 export interface FrequencyCurve extends ChartBase {
   kind: 'frequency-curve';
-  x: { label: string; unit: 'MHz' };
+  /** `unit` is absent when x is not a frequency (a point index): the label then says what it is. */
+  x: { label: string; unit?: 'MHz' };
   y: { label: string; unit: string; domain?: readonly [number, number] };
   series: readonly {
     id: string;
