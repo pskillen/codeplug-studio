@@ -2,9 +2,7 @@
 import { decodeBcdFreq } from './bcd.ts';
 import { ctcssIndexToHz } from './ctcssToneTable.ts';
 import { dtcsWireIndexToCode } from './allDtcsCodes.ts';
-import { decodeRt95RadioSettings, readRt95SettingsSnapshotFromImage } from './settingsCodec.ts';
 import {
-  RT95_BANDLIMIT_OFFSET,
   RT95_CHANNEL_COUNT,
   RT95_CHANNEL_RECORD_SIZE,
   RT95_OCCUPIED_BITFIELD_OFFSET,
@@ -116,50 +114,4 @@ export function decodeRt95DebugSlots(image: Uint8Array | undefined, base = 0): R
     result.fiveTone = String(raw[23]);
     return result;
   });
-}
-export function decodeRt95DebugSettings(
-  image: Uint8Array | undefined,
-  base = 0,
-): { label: string; value: string }[] {
-  const ids = [
-    ['squelchLevelA', 'Squelch A'],
-    ['squelchLevelB', 'Squelch B'],
-    ['speakerVolume', 'Speaker volume'],
-    ['voxOnOff', 'VOX enable'],
-    ['voxLevel', 'VOX level'],
-    ['voxDelay', 'VOX delay'],
-  ] as const;
-  // The registry uses absolute addresses. Only copy the overlap with the fields shown here.
-  const settingsEnd = 0x321f;
-  const validBase = Number.isSafeInteger(base) && base >= 0;
-  const full = new Uint8Array(settingsEnd);
-  if (image && validBase && base < settingsEnd) {
-    full.set(image.subarray(0, settingsEnd - base), base);
-  }
-  const decoded = decodeRt95RadioSettings(readRt95SettingsSnapshotFromImage(full), 'stock');
-  const addresses = [0x3204, 0x3205, 0x3206, 0x321c, 0x321d, 0x321e];
-  const rows: { label: string; value: string }[] = ids.map(([id, label], i) => {
-    const available =
-      validBase && !!image && addresses[i]! >= base && addresses[i]! - base < image.length;
-    const item = decoded[id];
-    return {
-      label,
-      value: !available
-        ? 'Unavailable'
-        : item?.value === undefined
-          ? `Invalid (${hex(item!.raw[0]!)})`
-          : `${item.label ?? String(item.value)} (raw ${hex(item.raw[0]!)})`,
-    };
-  });
-  rows.push({
-    label: 'Bandlimit index',
-    value:
-      validBase &&
-      image &&
-      RT95_BANDLIMIT_OFFSET >= base &&
-      RT95_BANDLIMIT_OFFSET - base < image.length
-        ? hex(image[RT95_BANDLIMIT_OFFSET - base]!)
-        : 'Unavailable',
-  });
-  return rows;
 }
