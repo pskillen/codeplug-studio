@@ -6,9 +6,10 @@ import type {
   FrequencyCurve,
   NumericTableView,
   StepBars,
+  TrimView,
 } from '@integrations/radio-io/debugView';
 import DesignSystemV2Provider from '../v2/DesignSystemV2Provider.tsx';
-import CalibrationChartCard from './CalibrationChartCard.tsx';
+import CalibrationChartCard, { CARD_CHART_KINDS } from './CalibrationChartCard.tsx';
 import CalibrationChartGrid from './CalibrationChartGrid.tsx';
 import FrequencyCurveChart from './FrequencyCurveChart.tsx';
 import StepBarChart, { stepBarDomain } from './StepBarChart.tsx';
@@ -195,17 +196,40 @@ describe('CalibrationChartCard', () => {
     expect(screen.queryByText(/same in both|differ/)).toBeNull();
   });
 
-  it('renders nothing for a kind it cannot draw yet', () => {
+  it('renders battery and trim charts, passing the overlay through', () => {
     const battery: BatteryLadder = {
       kind: 'battery',
       id: 'b',
       title: 'Battery',
       meaning: 'm',
       table: table([1], [1]),
-      steps: [],
+      steps: [{ id: 's1', label: 'Step 1', raw: 26 }],
     };
-    const { container } = wrap(<CalibrationChartCard chart={battery} />);
-    expect(container.querySelector('h2')).toBeNull();
+    const trim: TrimView = {
+      kind: 'trim',
+      id: 't',
+      title: 'Trim',
+      meaning: 'm',
+      table: table([1], [1]),
+      raw: 12,
+      scale: { min: 0, max: 16 },
+    };
+    const { unmount } = wrap(<CalibrationChartCard chart={battery} overlay={battery} />);
+    expect(screen.getByRole('heading', { name: 'Battery' })).toBeInTheDocument();
+    expect(screen.getAllByText('0x1A (26)')).toHaveLength(2);
+    unmount();
+    wrap(<CalibrationChartCard chart={trim} overlay={{ ...trim, raw: 4 }} />);
+    expect(screen.getByRole('img', { name: 'Trim' })).toBeInTheDocument();
+    expect(screen.getAllByText('Overlay: 0x04 (4)')[0]).toBeInTheDocument();
+  });
+
+  it('lists every drawn kind', () => {
+    expect([...CARD_CHART_KINDS].sort()).toEqual([
+      'battery',
+      'frequency-curve',
+      'step-bars',
+      'trim',
+    ]);
   });
 });
 

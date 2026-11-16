@@ -3,12 +3,14 @@ import { IconChevronDown } from '@tabler/icons-react';
 import type { CalibrationChart } from '@integrations/radio-io/debugView';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import Pill from '../v2/Pill.tsx';
+import BatteryChart from './BatteryChart.tsx';
 import { numericDiffCount } from './chartText.ts';
 import ConfidenceBadge from './ConfidenceBadge.tsx';
 import DebugSection from './DebugSection.tsx';
 import FrequencyCurveChart from './FrequencyCurveChart.tsx';
 import NumericTable from './NumericTable.tsx';
 import StepBarChart from './StepBarChart.tsx';
+import TrimDisplay from './TrimDisplay.tsx';
 import tableClasses from './DebugTable.module.css';
 import classes from './CalibrationChartCard.module.css';
 
@@ -20,10 +22,12 @@ export interface CalibrationChartCardProps {
   overlayLabel?: string;
 }
 
-/** Chart kinds the card draws. Others (battery, trim) render nothing until the card learns them. */
+/** Chart kinds the card draws; a kind not listed renders nothing. */
 export const CARD_CHART_KINDS: readonly CalibrationChart['kind'][] = [
   'frequency-curve',
   'step-bars',
+  'battery',
+  'trim',
 ];
 
 export const DISCRETE_NOTE = 'Lines join neighbouring entries as a guide only.';
@@ -109,6 +113,20 @@ export default function CalibrationChartCard({
           <StepBarChart
             chart={chart}
             overlay={sameKind?.kind === 'step-bars' ? sameKind : undefined}
+            readLabel={readLabel}
+            overlayLabel={overlayLabel}
+          />
+        ) : chart.kind === 'battery' ? (
+          <BatteryChart
+            chart={chart}
+            overlay={sameKind?.kind === 'battery' ? sameKind : undefined}
+            readLabel={readLabel}
+            overlayLabel={overlayLabel}
+          />
+        ) : chart.kind === 'trim' ? (
+          <TrimDisplay
+            chart={chart}
+            overlay={sameKind?.kind === 'trim' ? sameKind : undefined}
             readLabel={readLabel}
             overlayLabel={overlayLabel}
           />
