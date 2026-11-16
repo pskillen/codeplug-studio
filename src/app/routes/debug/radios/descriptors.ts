@@ -28,6 +28,7 @@ import {
 } from '@integrations/radio-io/radios/opengd77/hydration.ts';
 import type { DebugArchive } from './captureArchive.ts';
 import type { DebugSensitiveRangesFn } from '@integrations/radio-io/debugSensitive.ts';
+import { openGd77ArchiveSensitiveRanges } from '@integrations/radio-io/radios/opengd77/debugSensitive.ts';
 import { dm32ArchiveSensitiveRanges } from '@integrations/radio-io/radios/dm32uv/debugSensitive.ts';
 import { rt95ArchiveSensitiveRanges } from '@integrations/radio-io/radios/rt95/debugSensitive.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
@@ -170,6 +171,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Memory: OpenGd77Memory,
     Settings: OpenGd77Settings,
     readHistory: true,
+    sensitiveRanges: openGd77ArchiveSensitiveRanges,
     capture: captureOpenGd77(OPENGD77_DM1701_MODEL_ID),
     captureOptions: OPENGD77_CAPTURE_OPTIONS,
     model: 'DM-1701',
@@ -187,6 +189,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Memory: OpenGd77Memory,
     Settings: OpenGd77Settings,
     readHistory: true,
+    sensitiveRanges: openGd77ArchiveSensitiveRanges,
     capture: captureOpenGd77(OPENGD77_MD9600_MODEL_ID),
     captureOptions: OPENGD77_CAPTURE_OPTIONS,
     model: 'MD-9600',

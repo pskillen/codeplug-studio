@@ -1,7 +1,9 @@
-import { Alert, Card, Stack, Table, Text, Title } from '@mantine/core';
+import { Alert, Card, Group, Stack, Table, Text, Title } from '@mantine/core';
 import { OPENGD77_SETTINGS_ADDRESS } from '@core/radios/opengd77/settings.ts';
 import { selectOpenGd77Settings } from '@integrations/radio-io/radios/opengd77/debugSettings.ts';
 import type { DebugArchive } from './captureArchive.ts';
+import { SensitiveRevealButton } from './SensitiveReveal.tsx';
+import { useSensitiveReveal } from './useSensitiveReveal.ts';
 
 const hex = (n: number, width = 2) => n.toString(16).toUpperCase().padStart(width, '0');
 const rawText = (raw?: Uint8Array) => (raw ? Array.from(raw, (b) => hex(b)).join(' ') : '—');
@@ -24,6 +26,7 @@ const SETTINGS_HEADERS = [
  * hold shows as not captured.
  */
 export function OpenGd77Settings({ archive }: { archive?: DebugArchive }) {
+  const reveal = useSensitiveReveal(archive);
   if (!archive)
     return <Alert title="No capture">Open or read a capture to inspect its settings.</Alert>;
   const selection = selectOpenGd77Settings(archive);
@@ -112,9 +115,18 @@ export function OpenGd77Settings({ archive }: { archive?: DebugArchive }) {
           {settings.reason}
         </Alert>
       )}
+      {general.some((r) => r.sensitive) && (
+        <Group gap="sm" align="center">
+          <SensitiveRevealButton revealed={reveal.revealed} onToggle={reveal.toggle} />
+          <Text size="sm">
+            The programming password and the boot PIN stay hidden until shown. Hex masks the same
+            bytes.
+          </Text>
+        </Group>
+      )}
       {groups.map((group) => (
         <Card withBorder key={group}>
-          <Title order={4}>Codeplug {group}</Title>
+          <Title order={4}>{group.startsWith('Boot') ? group : `Codeplug ${group}`}</Title>
           <Table.ScrollContainer minWidth={720}>
             <Table striped fz="sm">
               <Table.Caption>{group}</Table.Caption>
@@ -133,10 +145,23 @@ export function OpenGd77Settings({ archive }: { archive?: DebugArchive }) {
                       <Table.Td>{r.name}</Table.Td>
                       <Table.Td>0x{hex(r.abs, 4)}</Table.Td>
                       <Table.Td>{r.length}</Table.Td>
-                      <Table.Td ff="monospace">{rawText(r.raw)}</Table.Td>
-                      <Table.Td>{r.captured ? (r.value ?? 'Raw only') : 'Not captured'}</Table.Td>
+                      <Table.Td ff="monospace">
+                        {r.sensitive && !reveal.revealed && r.raw
+                          ? Array.from(r.raw, () => '••').join(' ')
+                          : rawText(r.raw)}
+                      </Table.Td>
                       <Table.Td>
-                        <Text size="xs">{r.hasReader ? r.meaning : 'unused (no reader)'}</Text>
+                        {!r.captured
+                          ? 'Not captured'
+                          : r.sensitive && !reveal.revealed
+                            ? 'Hidden (password)'
+                            : (r.value ?? 'Raw only')}
+                      </Table.Td>
+                      <Table.Td>
+                        <Text size="xs">
+                          {r.hasReader ? r.meaning : 'unused (no reader)'}
+                          {r.hasReader && r.group.startsWith('Boot') ? ` (${r.evidence})` : ''}
+                        </Text>
                       </Table.Td>
                     </Table.Tr>
                   ))}
