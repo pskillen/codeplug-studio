@@ -124,3 +124,80 @@ export function compareVerdict(c: ByteComparison): {
     notCompared: c.sections.filter((s) => s.kind !== 'compared'),
   };
 }
+
+export const HEX_ROW_BYTES = 16;
+
+/** One 16-byte row on an absolute 16-byte boundary; the first and last rows of a section may be short. */
+export interface HexRow {
+  /** Absolute address of the row's first byte (a multiple of 16). */
+  address: number;
+  /** Index into the section's `a` and `b` of the first shown byte. */
+  offset: number;
+  /** Shown bytes in this row, 1 to 16. */
+  length: number;
+  /** Differing bytes in this row. */
+  changed: number;
+}
+
+export type HexHunk =
+  | { kind: 'rows'; rows: readonly HexRow[] }
+  /** A stretch of identical rows left out of the filtered view; `start`/`end` are inclusive addresses. */
+  | { kind: 'identical'; start: number; end: number; rows: number };
+
+/**
+ * The changed rows of a section with `context` identical rows either side, merged into hunks, and
+ * the identical stretches between them. Built from the section's runs, so it stays cheap for a
+ * large section; rows past a truncated run list are not marked. Compares over the shared length only.
+ */
+export function hexHunks(s: CompareSection, opts: { context: number }): readonly HexHunk[] {
+  const length = s.a && s.b ? Math.min(s.a.length, s.b.length) : 0;
+  if (length === 0) return [];
+  const first = Math.floor(s.base / HEX_ROW_BYTES);
+  const last = Math.floor((s.base + length - 1) / HEX_ROW_BYTES);
+  const changedByRow = new Map<number, number>();
+  for (const run of s.runs) {
+    const end = run.start + run.length;
+    for (let r = Math.floor(run.start / HEX_ROW_BYTES); r * HEX_ROW_BYTES < end; r++) {
+      const overlap =
+        Math.min(end, (r + 1) * HEX_ROW_BYTES) - Math.max(run.start, r * HEX_ROW_BYTES);
+      changedByRow.set(r, (changedByRow.get(r) ?? 0) + overlap);
+    }
+  }
+  const context = Math.max(0, Math.floor(opts.context));
+  const ranges: Array<[number, number]> = [];
+  for (const r of Array.from(changedByRow.keys()).sort((x, y) => x - y)) {
+    const lo = Math.max(first, r - context);
+    const hi = Math.min(last, r + context);
+    const tail = ranges[ranges.length - 1];
+    if (tail && lo <= tail[1] + 1) tail[1] = Math.max(tail[1], hi);
+    else ranges.push([lo, hi]);
+  }
+  const rowAt = (r: number): HexRow => {
+    const start = Math.max(r * HEX_ROW_BYTES, s.base);
+    const end = Math.min((r + 1) * HEX_ROW_BYTES, s.base + length);
+    return {
+      address: r * HEX_ROW_BYTES,
+      offset: start - s.base,
+      length: end - start,
+      changed: changedByRow.get(r) ?? 0,
+    };
+  };
+  const identical = (from: number, to: number): HexHunk => ({
+    kind: 'identical',
+    start: Math.max(from * HEX_ROW_BYTES, s.base),
+    end: Math.min((to + 1) * HEX_ROW_BYTES, s.base + length) - 1,
+    rows: to - from + 1,
+  });
+  const hunks: HexHunk[] = [];
+  let next = first;
+  for (const [lo, hi] of ranges) {
+    if (lo > next) hunks.push(identical(next, lo - 1));
+    hunks.push({
+      kind: 'rows',
+      rows: Array.from({ length: hi - lo + 1 }, (_, i) => rowAt(lo + i)),
+    });
+    next = hi + 1;
+  }
+  if (next <= last) hunks.push(identical(next, last));
+  return hunks;
+}
