@@ -15,7 +15,7 @@ import { toRt95Ascii } from '@core/import-export/formatProfiles.ts';
 import { UV5R_MINI_LIMITS } from '@core/radios/baofeng/uv-5r-mini/limits.ts';
 import { checkZoneScanSets } from '@core/import-export/zoneScanSets/index.ts';
 import {
-  encodeMiniScanSets,
+  fillMiniScanSets,
   MMZS_MEMBER_CAPACITY_BITS,
 } from '@integrations/radio-io/radios/uv5r-mini/modData/scanSets.ts';
 import type { RadioZoneDto } from '@integrations/radio-io/radioWriteProjection.ts';
@@ -95,12 +95,11 @@ export function projectUv5rMiniMm9pdy(input: Uv5rMiniMm9pdyProjectionInput): {
     zoneName: zone.wireName,
     scanChannelNumbers: zone.scanChannelNumbers ?? zone.channelNumbers,
   }));
-  const encoded = encodeMiniScanSets(
+  const encoded = fillMiniScanSets(
     zones.map((zone) => {
       const included = new Set(zone.scanChannelNumbers ?? zone.channelNumbers);
       return zone.channelNumbers.map((n) => included.has(n));
     }),
-    1,
   );
   checkZoneScanSets(
     sets.map((set, i) =>

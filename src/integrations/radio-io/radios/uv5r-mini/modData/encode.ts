@@ -156,3 +156,8 @@ export function encodeUv5rMiniZoneTable(input: Uv5rMiniZoneTableInput): Uv5rMini
   }
   return { frames, crc, generation, sector };
 }
+
+/** The protocol and progress plan both use this entry point: every table Write carries scan sets. */
+export function encodeUv5rMiniZoneWrite(input: Uv5rMiniZoneTableInput): Uv5rMiniZoneTableEncoded {
+  return encodeUv5rMiniZoneTable({ ...input, writeScanSets: true });
+}

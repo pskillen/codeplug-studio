@@ -22,6 +22,7 @@ import { UV5R_MINI_DESCRIPTOR } from './descriptor.ts';
 import {
   decodeUv5rMiniZoneTable,
   encodeUv5rMiniZoneTable,
+  encodeUv5rMiniZoneWrite,
   MMZ1_BASE,
   MMZ1_END,
   type Uv5rMiniZoneTableInput,
@@ -89,6 +90,9 @@ describe('UV-5R Mini MM9PDY Write frame plan', () => {
       zones: [{ name: 'Local', slotIndexes: [9, 1, 4], scanSlotIndexes: [9, 1] }],
     };
     const { pipe } = await writeZones(intent);
+    expect(pipe.sector()).toEqual(
+      encodeUv5rMiniZoneWrite({ ...intent, writeScanSets: false }).sector,
+    );
     expect(pipe.wAddresses().slice(-5)).toEqual([0xc000, 0xc200, 0xc400, 0xc440, 0xc040]);
     expect(readScanSets(pipe.sector())).toEqual({ kinds: [1], include: [[true, false, true]] });
     expect(pipe.wAddresses()).not.toContain(0xe000);

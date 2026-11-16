@@ -29,6 +29,14 @@ describe('MMZS golden vectors', () => {
       };
       const table = encodeUv5rMiniZoneTable(input);
       const encoded = encodeUv5rMiniZoneTable({ ...input, writeScanSets: true });
+      const reversed = encodeUv5rMiniZoneTable({
+        zones: input.zones.map((zone) => ({
+          ...zone,
+          slotIndexes: [...zone.slotIndexes].reverse(),
+        })),
+        writeScanSets: true,
+      });
+      expect(reversed.frames).toEqual(encoded.frames);
       expect(encoded.frames.slice(0, table.frames.length)).toEqual(table.frames);
       expect(encoded.frames.map((f) => ({ addr: f.address, hex: hex(f.bytes) }))).toEqual(
         vector.frames,
@@ -60,7 +68,7 @@ describe('MMZS golden vectors', () => {
     });
   }
   for (const [name, vector] of Object.entries(vectors.rejects)) {
-    it(`rejects ${name} without losing the table`, () => {
+    it(`table still decodes beside reject ${name}`, () => {
       const sector = encodeUv5rMiniZoneTable({
         zones: vector.zones.map((z) => ({ name: z.name, slotIndexes: z.slots })),
       }).sector;

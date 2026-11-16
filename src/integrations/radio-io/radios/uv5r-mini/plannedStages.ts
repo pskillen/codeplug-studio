@@ -6,7 +6,7 @@
 import type { PlannedStage, RadioOperation, RadioPlanContext } from '../../types.ts';
 import { UV5R_MINI_LAYOUT } from '../uv17pro-family/layout.ts';
 import { createUv17ProPlanStages } from '../uv17pro-family/plannedStages.ts';
-import { encodeUv5rMiniZoneTable } from './modData/index.ts';
+import { encodeUv5rMiniZoneWrite } from './modData/index.ts';
 import { uv5rMiniZoneIntentFromOrganisation } from './modDataIntent.ts';
 import { UV5R_MINI_ZONE_TABLE_STAGE } from './protocol.ts';
 
@@ -17,7 +17,7 @@ export function planUv5rMiniStages(op: RadioOperation, ctx: RadioPlanContext): P
   if (op !== 'write') return stages;
   const intent = uv5rMiniZoneIntentFromOrganisation(ctx.prepared?.organisation);
   if (!intent) return stages;
-  const frames = encodeUv5rMiniZoneTable(intent).frames.length;
+  const frames = encodeUv5rMiniZoneWrite(intent).frames.length;
   return [
     ...stages,
     { label: UV5R_MINI_ZONE_TABLE_STAGE, weight: frames * UV5R_MINI_LAYOUT.blockSize },

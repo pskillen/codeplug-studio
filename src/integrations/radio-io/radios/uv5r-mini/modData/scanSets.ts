@@ -3,12 +3,9 @@ import type { Uv5rMiniZoneFrame } from './encode.ts';
 
 export const MMZS_MEMBER_CAPACITY_BITS = 4432;
 
-/** Pack member flags in slot order, applying the firmware's first-fitting-zone rule. */
-export function encodeMiniScanSets(
-  sets: readonly (readonly boolean[])[],
-  generation: number,
-): {
-  frames: Uv5rMiniZoneFrame[];
+/** Apply the firmware's first-fitting-zone rule to member flags in slot order. */
+export function fillMiniScanSets(sets: readonly (readonly boolean[])[]): {
+  bits: boolean[];
   fallback: number[];
   kinds: number[];
   needed: number;
@@ -31,6 +28,15 @@ export function encodeMiniScanSets(
     kinds.push(1);
     bits.push(...set);
   });
+  return { bits, fallback, kinds, needed };
+}
+
+/** Pack the filled member flags into the firmware's MMZS block. */
+export function encodeMiniScanSets(
+  sets: readonly (readonly boolean[])[],
+  generation: number,
+): { frames: Uv5rMiniZoneFrame[]; fallback: number[]; kinds: number[]; needed: number } {
+  const { bits, fallback, kinds, needed } = fillMiniScanSets(sets);
   const length = Math.ceil(bits.length / 8);
   const block = new Uint8Array(22 + length);
   block.set([
