@@ -40,6 +40,7 @@ import { Coverage } from './Coverage.tsx';
 import { DebugReadProgress } from './DebugReadProgress.tsx';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 import { ComparePicker } from './ComparePicker.tsx';
+import { RadioCompare } from './compare/RadioCompare.tsx';
 import { Uv5rMiniCompare } from './Uv5rMiniCompare.tsx';
 import { isUv5rMiniReadsZip, openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
 import { archiveUv5rMiniRead } from './uv5rMiniCapture.ts';
@@ -615,6 +616,12 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 key={`${pairA?.id}:${pairB?.id}`}
                 a={miniRead(pairA)}
                 b={pairA === pairB ? undefined : miniRead(pairB)}
+              />
+            ) : descriptor.summaryCompare ? (
+              <RadioCompare
+                descriptor={descriptor}
+                a={pairA?.archive}
+                b={pairA === pairB ? undefined : pairB?.archive}
               />
             ) : historyEnabled ? (
               <CompareViewer

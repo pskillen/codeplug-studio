@@ -16,7 +16,8 @@ import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { Uv5rMiniSettings } from './Uv5rMiniSettings.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
-import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
+import { Rt95Calibration } from './Rt95Calibration.tsx';
+import { Rt95CompareDecoded } from './Rt95CompareDecoded.tsx';
 import { atD890CompareAdapter } from './atD890Compare.ts';
 import type { DebugCompareAdapter } from '@integrations/radio-io/debugCompare/index.ts';
 import { dm32CompareAdapter } from '@integrations/radio-io/radios/dm32uv/debugCompare.ts';
@@ -87,6 +88,8 @@ export interface RadioDebugDescriptor {
   calibrationOverlay?: boolean;
   /** Keep every read and opened archive in the shared tab-only history, with Compare. */
   readHistory?: boolean;
+  /** Compare tab uses the shared verdict summary and hex diff (`RadioCompare`) rather than the radio's own. */
+  summaryCompare?: boolean;
   family: string;
   capabilities: readonly RadioDebugCapability[];
   /** Overview rows after `Model · selected`, for a profile with its own identity evidence. */
@@ -165,6 +168,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Calibration: Dm32Calibration,
     DecodedDiff: Dm32DecodedDiff,
     readHistory: true,
+    summaryCompare: true,
     capture: captureDm32,
     sensitiveRanges: dm32ArchiveSensitiveRanges,
     model: 'DM-32UV',
@@ -187,6 +191,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Memory: OpenGd77Memory,
     Settings: OpenGd77Settings,
     readHistory: true,
+    summaryCompare: true,
     sensitiveRanges: openGd77ArchiveSensitiveRanges,
     capture: captureOpenGd77(OPENGD77_DM1701_MODEL_ID),
     captureOptions: OPENGD77_CAPTURE_OPTIONS,
@@ -206,6 +211,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Memory: OpenGd77Memory,
     Settings: OpenGd77Settings,
     readHistory: true,
+    summaryCompare: true,
     sensitiveRanges: openGd77ArchiveSensitiveRanges,
     capture: captureOpenGd77(OPENGD77_MD9600_MODEL_ID),
     captureOptions: OPENGD77_CAPTURE_OPTIONS,
@@ -223,8 +229,9 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Memory: Rt95MemoryView,
     Settings: Rt95Settings,
     Calibration: Rt95Calibration,
-    DecodedDiff: Rt95CalibrationDiff,
+    DecodedDiff: Rt95CompareDecoded,
     readHistory: true,
+    summaryCompare: true,
     capture: captureRt95,
     sensitiveRanges: rt95ArchiveSensitiveRanges,
     captureStages: RT95_CAPTURE_STAGES,
