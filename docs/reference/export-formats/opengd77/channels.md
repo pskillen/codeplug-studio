@@ -76,11 +76,11 @@ When a composed or expanded wire name exceeds the effective limit, export runs t
 
 ## Tone wire forms
 
-| OpenGD77 wire        | Internal `rxTone` / `txTone` |
-| -------------------- | ---------------------------- |
-| `None`, empty        | `none`                       |
-| CTCSS (e.g. `103.5`) | same frequency string        |
-| DCS (e.g. `D023N`)   | same code string             |
+| OpenGD77 wire                        | Internal `rxTone` / `txTone`                                         |
+| ------------------------------------ | -------------------------------------------------------------------- |
+| `None`, empty                        | `none`                                                               |
+| CTCSS (e.g. `103.5`)                 | same frequency string                                                |
+| DCS (e.g. `D023N`, inverted `D023I`) | canonical code string; a stored legacy `D###P` is emitted as `D###I` |
 
 ## Mode-dependent columns
 

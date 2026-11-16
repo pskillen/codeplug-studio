@@ -29,7 +29,7 @@ Parse by **header name**, not column index.
 | `Tone`                                             | derived                    | see tone table                     | from `rxTone`/`txTone`                                                        |                                                                                                                                                         |
 | `rToneFreq`                                        | `txTone` (`Tone` mode)     | see tone table                     | see tone table                                                                | Default `88.5` when unused                                                                                                                              |
 | `cToneFreq`                                        | `rxTone`/`txTone` (`TSQL`) | see tone table                     | see tone table                                                                | Default `88.5` when unused                                                                                                                              |
-| `DtcsCode`/`DtcsPolarity`/`RxDtcsCode`/`CrossMode` | `rxTone`/`txTone` (DCS)    | ignored (import out of scope)      | from `formatChirpToneColumns` — see [Tones](#tones)                           | Studio `D023N`/`D047P`; CHIRP polarity `N`/`R` (`P`→`R`)                                                                                                |
+| `DtcsCode`/`DtcsPolarity`/`RxDtcsCode`/`CrossMode` | `rxTone`/`txTone` (DCS)    | ignored (import out of scope)      | from `formatChirpToneColumns` — see [Tones](#tones)                           | Library `D023N`/`D023I`; legacy `D###P` still reads as inverted; CHIRP polarity `N`/`R`                                                                 |
 | `Mode`                                             | `mode`, `bandwidthKHz`     | `NFM`→fm+12.5; `FM`→fm+25; `AM`→am | inverse                                                                       | Not derived from `TStep`                                                                                                                                |
 | `TStep`                                            | —                          | ignored                            | constant `5.00`                                                               |                                                                                                                                                         |
 | `Skip`                                             | `scanInclusion`            | `S`→`skip`; blank→`default`        | Resolved effective → `skip`→`S`; else empty                                   | Export resolve: build `channelOverrides.scanInclusion` → library → build/format default ([scan-inclusion.md](../../scan-inclusion.md)); `P` unsupported |
@@ -69,7 +69,7 @@ See [channel-behavioural-defaults.md](../../channel-behavioural-defaults.md).
 
 ## Tones
 
-Export mirrors CHIRP `split_tone_decode`: classify each of `txTone` / `rxTone` as none, CTCSS (`Tone`), or DCS (`DTCS` from `D###[NP]`), then collapse to a CHIRP `Tone` mode.
+Export mirrors CHIRP `split_tone_decode`: classify each of `txTone` / `rxTone` as none, CTCSS (`Tone`), or DCS (`DTCS` from `D###N` / `D###I`; legacy `D###P` is still inverted), then collapse to a CHIRP `Tone` mode.
 
 ### CTCSS / empty
 
@@ -94,7 +94,7 @@ Export mirrors CHIRP `split_tone_decode`: classify each of `txTone` / `rxTone` a
 
 † Unused `CrossMode` / DTCS cells keep CHIRP Memory defaults (`023` / `NN` / `Tone->Tone`) when `Tone` is not `Cross`.
 
-**Polarity:** Studio/OpenGD77/NeonPlug use `N`/`P` on `D###[NP]`. CHIRP `DtcsPolarity` is two characters TX then RX (`NN`|`NR`|`RN`|`RR`); map Studio `P` → CHIRP `R`.
+**Polarity:** the library form is `D023N` / `D023I`. A legacy `D###P` still reads as inverted. CHIRP `DtcsPolarity` stays two characters, TX then RX (`NN`|`NR`|`RN`|`RR`); inverted (`I`, or legacy `P`) maps to CHIRP `R`.
 
 Unused CTCSS cells are `88.5`. DCS is never written into `rToneFreq` / `cToneFreq`.
 

@@ -57,7 +57,7 @@ Single-channel selection is handled by the list page (navigate to the channel ed
 - Idle + shared value: Mantine fill on the shared option, outline on **No change**. Mixed: fill on **No change**. Opted in: fill and outline on the chosen value.
 - Desktop: two-column `.fieldGroup` grid; mobile: one group per row. Controls use `layout="column"` (title, then control, then description).
 - **Power** and analog **Squelch** are **No change | Default | Custom**. Default writes `null`. Custom shows the percent thumb; idle/default hide the 50% thumb. Preview dots mark every selected channel’s numeric level.
-- Analog **CTCSS/DCS** wraps independent RX and TX tone selects.
+- Analog RX and TX tones are independent [`ChannelToneField`](../channels/ChannelToneField.md) pickers (**Off | CTCSS | DCS**; inverted DCS stores `D###I`). **No change** writes nothing; **Off** clears the tone.
 - Channel-level fields (`scanInclusion`, `forbidTransmit`, `txPermit`, `power`) apply to every selected channel when opted in.
 - Analog fields appear only when at least one selected channel has an analog mode. Digital-only channels are skipped for analog patches. Talker alias appears when at least one channel has DMR.
 - **APRS** (collapsed by default): receive, report type, and digital PTT are three-way gradients; report slot stays **No change | Set** plus a select. Analog AX.25 APRS is not supported yet.
