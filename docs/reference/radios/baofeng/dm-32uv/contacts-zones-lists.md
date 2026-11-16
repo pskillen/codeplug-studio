@@ -48,12 +48,14 @@ Studio Web Serial encodes the **serial** address book only.
 
 Talk-group cardinality is metadata **`0x44`** plus metadata **`0x0B`** (u16 LE at bytes 0–1). Max **800** ([limits.md](limits.md)).
 
-| Fact        | Value                                                           |
-| ----------- | --------------------------------------------------------------- |
-| Data block  | Metadata **`0x44`**                                             |
-| Cardinality | Metadata **`0x44`** payload, plus metadata **`0x0B`** bytes 0–1 |
-| Max         | **800** ([limits.md](limits.md))                                |
-| Related     | Metadata **`0x0B`** holds quick-access / sorted TG index tables |
+| Fact           | Value                                                                                                                                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Data block     | Metadata **`0x44`**                                                                                                                                                                                                                                    |
+| Cardinality    | Metadata **`0x44`** payload, plus metadata **`0x0B`** bytes 0–1                                                                                                                                                                                        |
+| Max            | **800** ([limits.md](limits.md))                                                                                                                                                                                                                       |
+| Related        | Metadata **`0x0B`** holds quick-access / sorted TG index tables                                                                                                                                                                                        |
+| Entry stride   | **24** bytes: flag, 16-byte name, NUL, 3-byte LE DMR ID, call type (3 private, 4 group, 5 all), two reserved bytes. The first entry is preceded by one `0x00` header byte, so it spans 25 bytes and entry _n_ (one-based) starts at `1 + (n - 1) * 24` |
+| One page holds | **170** entries (`floor(4095 / 24)` after the header). Tags `0x45`-`0x48` exist and are read raw; their payload layout is not established, so one page never shows the whole list. Not verified on hardware                                            |
 
 NeonPlug `parseQuickContacts`: variable packed entries (flag + 16-char name + 3-byte DMR ID + call type). First entry may skip a leading `0x00` header byte. Prefer NeonPlug encode/parse behaviour over inventing a new packing.
 
