@@ -59,6 +59,22 @@ describe('RT95 password masking', () => {
     expect(bodyText()).not.toMatch(/50 57 31 32/i);
   });
 
+  it('shows the program password hex and ASCII, labelled unconfirmed, only after reveal', () => {
+    render(wrap(<Rt95Calibration archive={calibrationArchive()} />));
+    expect(bodyText()).not.toContain('"PW12"');
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(bodyText()).toContain('50 57 31 32 · ASCII "PW12" · encoding unconfirmed');
+    fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+    expect(bodyText()).not.toContain('"PW12"');
+  });
+
+  it('gives hex only when the program password bytes are not printable', () => {
+    render(wrap(<Rt95Calibration archive={calibrationArchive([0x01, 0x02, 0x03, 0x04])} />));
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(bodyText()).toContain('01 02 03 04 · encoding unconfirmed');
+    expect(bodyText()).not.toContain('ASCII "');
+  });
+
   it('hides the password again when another archive is shown', () => {
     const view = render(wrap(<Rt95Calibration archive={calibrationArchive()} />));
     fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
