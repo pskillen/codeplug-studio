@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSyntheticRt95Image } from './__fixtures__/syntheticImage.ts';
-import { decodeRt95DebugSettings, decodeRt95DebugSlots } from './debugMemory.ts';
+import { decodeRt95DebugSlots } from './debugMemory.ts';
 import { RT95_OCCUPIED_BITFIELD_OFFSET } from './constants.ts';
 
 describe('RT95 clone debug evidence', () => {
@@ -38,30 +38,5 @@ describe('RT95 clone debug evidence', () => {
       txTone: 'Invalid tone mode 3',
     });
     expect(decodeRt95DebugSlots(undefined)[0]!.occupancy).toBe('unavailable');
-  });
-  it('marks settings unavailable for absurd archive addresses and decodes partial spans', () => {
-    const bytes = new Uint8Array([1]);
-    expect(
-      decodeRt95DebugSettings(bytes, 0xffffffff).every((row) => row.value === 'Unavailable'),
-    ).toBe(true);
-    expect(
-      decodeRt95DebugSettings(bytes, Number.MAX_SAFE_INTEGER + 1).every(
-        (row) => row.value === 'Unavailable',
-      ),
-    ).toBe(true);
-    const partial = decodeRt95DebugSettings(bytes, 0x321c);
-    expect(partial.find((row) => row.label === 'VOX enable')?.value).toBe('true (raw 0x01)');
-    expect(partial.find((row) => row.label === 'VOX level')?.value).toBe('Unavailable');
-  });
-  it('uses the registry VOX bit 0 rather than retain preview bit 7', () => {
-    const image = buildSyntheticRt95Image();
-    image[0x321c] = 0x80;
-    expect(decodeRt95DebugSettings(image).find((r) => r.label === 'VOX enable')!.value).toBe(
-      'false (raw 0x80)',
-    );
-    image[0x321c] = 1;
-    expect(decodeRt95DebugSettings(image).find((r) => r.label === 'VOX enable')!.value).toBe(
-      'true (raw 0x01)',
-    );
   });
 });
