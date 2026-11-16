@@ -94,7 +94,10 @@ describe('rt95CalibrationView', () => {
     const record = view.tables.find((t) => t.id === 'production-record')!;
     const serial = record.rows.find((r) => r.label === 'Serial Number')!;
     expect(serial.cells[0]!.decoded).toBe('SERIAL-123456789');
-    const bands = view.tables.find((t) => t.id === 'band-values')!;
+    const bands = {
+      layout: view.tables.find((t) => t.id === 'band-power')!.layout,
+      rows: view.tables.filter((t) => t.id.startsWith('band-')).flatMap((t) => t.rows),
+    };
     expect(bands.layout).toEqual({ bands: ['VHF', 'UHF'] });
     expect(bands.rows.every((r) => r.cells.length === 2)).toBe(true);
     const pa = bands.rows.find((r) => r.label.startsWith('PA power Low'))!;
@@ -121,7 +124,7 @@ describe('rt95CalibrationView', () => {
     expect(view.status.kind).toBe('ok');
     expect(view.charts.find((c) => c.id === 'power-vhf')).toBeUndefined();
     expect(view.charts.find((c) => c.id === 'squelch-vhf')).toBeUndefined();
-    const bands = view.tables.find((t) => t.id === 'band-values')!;
+    const bands = view.tables.find((t) => t.id === 'band-power')!;
     expect(bands.rows[0]!.cells[0]!.availability).toBe('not-captured');
   });
 });

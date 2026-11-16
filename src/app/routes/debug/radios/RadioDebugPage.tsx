@@ -36,6 +36,7 @@ import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWakeLock.ts';
 import { capabilityColor, radioDebugDescriptors, radioDebugTabs } from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
+import { CalibrationTab } from './CalibrationTab.tsx';
 import { SettingsTab } from './SettingsTab.tsx';
 import { Coverage } from './Coverage.tsx';
 import { DebugReadProgress } from './DebugReadProgress.tsx';
@@ -637,31 +638,50 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               />
             </Tabs.Panel>
           )}
-          {descriptor.Calibration && descriptor.calibrationOverlay !== false && (
+          {descriptor.calibration && (
             <Tabs.Panel value="calibration" pt="md">
-              <Stack>
-                <Select
-                  label="Calibration overlay"
-                  clearable
-                  value={otherId}
-                  onChange={setOtherId}
-                  data={history.entries.map((e) => ({
-                    value: e.id,
-                    label: `${e.label} · ${new Date(e.readAt).toLocaleString()}`,
-                  }))}
-                />
-                {descriptor.Calibration && (
-                  <descriptor.Calibration archive={archive} overlayArchive={other} />
-                )}
-              </Stack>
+              <CalibrationTab
+                key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
+                archive={archive}
+                overlayArchive={other}
+                calibration={descriptor.calibration}
+                entries={historyEnabled ? history.entries : []}
+                readId={history.selectedId}
+                overlayId={otherId}
+                onRead={(id) => store.select(id)}
+                onOverlay={setOtherId}
+              />
             </Tabs.Panel>
           )}
-          {descriptor.calibrationOverlay === false && descriptor.Calibration && (
-            <Tabs.Panel value="calibration" pt="md">
-              <descriptor.Calibration archive={archive} />
-            </Tabs.Panel>
-          )}
-          {(descriptor.slug === 'uv-5r-mini' || descriptor.Calibration
+          {!descriptor.calibration &&
+            descriptor.Calibration &&
+            descriptor.calibrationOverlay !== false && (
+              <Tabs.Panel value="calibration" pt="md">
+                <Stack>
+                  <Select
+                    label="Calibration overlay"
+                    clearable
+                    value={otherId}
+                    onChange={setOtherId}
+                    data={history.entries.map((e) => ({
+                      value: e.id,
+                      label: `${e.label} · ${new Date(e.readAt).toLocaleString()}`,
+                    }))}
+                  />
+                  {descriptor.Calibration && (
+                    <descriptor.Calibration archive={archive} overlayArchive={other} />
+                  )}
+                </Stack>
+              </Tabs.Panel>
+            )}
+          {!descriptor.calibration &&
+            descriptor.calibrationOverlay === false &&
+            descriptor.Calibration && (
+              <Tabs.Panel value="calibration" pt="md">
+                <descriptor.Calibration archive={archive} />
+              </Tabs.Panel>
+            )}
+          {(descriptor.slug === 'uv-5r-mini' || descriptor.Calibration || descriptor.calibration
             ? ['Trace']
             : ['Calibration', 'Trace']
           ).map((tab) => (

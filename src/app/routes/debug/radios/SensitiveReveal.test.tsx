@@ -6,7 +6,8 @@ import { HexViewer } from './ArchiveViewers.tsx';
 import { openDebugArchive } from './captureArchive.ts';
 import { radioDebugDescriptors } from './descriptors.ts';
 import { RadioCompare } from './compare/RadioCompare.tsx';
-import { Rt95Calibration } from './Rt95Calibration.tsx';
+import { CalibrationTab } from './CalibrationTab.tsx';
+import type { DebugArchive } from './captureArchive.ts';
 import { hexRows, sensitiveRanges } from './viewerUtils.ts';
 
 /** Synthetic calibration prefix: "PW12" at the stored program password (0x3B18). */
@@ -41,6 +42,21 @@ function calibrationArchive(password = [0x50, 0x57, 0x31, 0x32]) {
   );
 }
 
+function Rt95Calibration({ archive }: { archive: DebugArchive }) {
+  const calibration = radioDebugDescriptors.find((d) => d.slug === 'rt95')!.calibration!;
+  return (
+    <CalibrationTab
+      archive={archive}
+      calibration={calibration}
+      entries={[]}
+      readId={null}
+      overlayId={null}
+      onRead={() => {}}
+      onOverlay={() => {}}
+    />
+  );
+}
+
 const wrap = (node: React.ReactNode) => <DesignSystemV2Provider>{node}</DesignSystemV2Provider>;
 const bodyText = () => document.body.textContent ?? '';
 
@@ -48,7 +64,7 @@ describe('RT95 password masking', () => {
   it('hides the program password in the calibration viewer until shown, and hides it again', () => {
     render(wrap(<Rt95Calibration archive={calibrationArchive()} />));
     expect(bodyText()).not.toMatch(/50 57 31 32/i);
-    expect(bodyText()).toContain('•• •• •• ••');
+    expect(bodyText()).toContain('••');
     const button = screen.getByRole('button', { name: 'Show password' });
     expect(button).toHaveAttribute('aria-pressed', 'false');
 

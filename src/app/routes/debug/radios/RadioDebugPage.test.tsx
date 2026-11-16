@@ -543,7 +543,7 @@ it('keeps the direct RT95 calibration route behind the production debug gate', a
     </DesignSystemV2Provider>,
   );
   fireEvent.click(await screen.findByRole('tab', { name: 'Calibration' }));
-  expect(screen.getByText('Calibration and production record [body]')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Calibration' })).toBeInTheDocument();
   fake.prod = false;
   localStorage.removeItem(DEVELOPER_MODE_KEY);
 });

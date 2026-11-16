@@ -115,7 +115,7 @@ function powerChart(
       `Three rows of ${length} per-MHz entries (Low, Mid, High). Index i is ${b.startMhz} + i MHz; ` +
       `reference index ${reference} (${b.startMhz + reference} MHz). Drive = row base + entry − ` +
       'entry at the reference index, in PWM counts (unmasked; the firmware masks to 16 bits). ' +
-      'The row base is the PA power byte of the same band (see Per-band values). Source: MAIN 0x08008E06.',
+      'The row base is the PA power byte of the same band (see Power and squelch bases). Source: MAIN 0x08008E06.',
     address: `${hexAddress(low.address)}–${hexAddress(high.address + length - 1)}`,
     confidence: { layout: 'traced', meaning: 'traced' },
     x: { label: 'Frequency', unit: 'MHz' },
@@ -216,8 +216,43 @@ const bandless = (label: string) =>
     .replace(/\s+\(/, ' (')
     .trim();
 
-/** Per-band values, VHF and UHF side by side, rows paired by meaning. */
-function bandTable(fields: readonly Rt95Field[]): ValueTableView {
+const BAND_GROUPS = [
+  {
+    id: 'band-power',
+    title: 'Power and squelch bases',
+    description:
+      'PA power bytes are the row bases of the power charts. The squelch base is the open threshold at squelch level 1.',
+    match: (l: string) => l.startsWith('PA power') || l.startsWith('Squelch base'),
+  },
+  {
+    id: 'band-deviation',
+    title: 'TX deviation',
+    description: 'Deviation words are little-endian u16 (10-bit, 0-1023), one per channel width.',
+    match: (l: string) => l.startsWith('TX deviation'),
+  },
+  {
+    id: 'band-tones',
+    title: 'CTCSS and DCS deviation',
+    description: '6-bit values (0-63), one per channel width.',
+    match: (l: string) => l.startsWith('CTCSS deviation') || l.startsWith('DCS deviation'),
+  },
+  {
+    id: 'band-reference',
+    title: 'RSSI reference',
+    description: 'Raw RSSI captured at the factory signal.',
+    match: (l: string) => l.startsWith('RSSI reference'),
+  },
+  {
+    id: 'band-test-channel',
+    title: 'Factory test channels',
+    description:
+      'Big-endian BCD in 10 Hz units, shown in MHz. They belong to the factory test mode and are not a calibration step.',
+    match: (l: string) => l.includes('test channel'),
+  },
+] as const;
+
+/** Per-band values grouped by meaning, VHF and UHF side by side, rows paired by meaning. */
+function bandTables(fields: readonly Rt95Field[]): ValueTableView[] {
   const isBandValue = (f: Rt95Field, band: string) =>
     f.address >= 0x3f40 &&
     f.meaning !== 'unused' &&
@@ -226,26 +261,25 @@ function bandTable(fields: readonly Rt95Field[]): ValueTableView {
     !f.label.startsWith('Squelch level steps') &&
     !f.label.startsWith('S-meter steps');
   const uhf = fields.filter((f) => isBandValue(f, 'UHF'));
-  const rows = fields
-    .filter((f) => isBandValue(f, 'VHF'))
-    .map((v): ValueRow => {
-      const label = bandless(v.label);
-      const u = uhf.find((f) => bandless(f.label) === label);
-      return {
-        ...valueRow(v, label),
-        id: `band-${v.address.toString(16)}`,
-        address: `${hexAddress(v.address)} / ${u ? hexAddress(u.address) : '—'}`,
-        cells: [cellOf(v), u ? cellOf(u) : { availability: 'not-captured' }],
-      };
-    });
-  return {
-    id: 'band-values',
-    title: 'Per-band values',
-    description:
-      'PA power bytes are the row bases of the power charts. Deviation words are little-endian u16. Test-channel frequencies and offsets are big-endian BCD in 10 Hz units, shown in MHz; they belong to the factory test mode and are not a calibration step.',
+  const vhf = fields.filter((f) => isBandValue(f, 'VHF'));
+  return BAND_GROUPS.map((g) => ({
+    id: g.id,
+    title: g.title,
+    description: g.description,
     layout: { bands: ['VHF', 'UHF'] },
-    rows,
-  };
+    rows: vhf
+      .filter((f) => g.match(bandless(f.label)))
+      .map((v): ValueRow => {
+        const label = bandless(v.label);
+        const u = uhf.find((f) => bandless(f.label) === label);
+        return {
+          ...valueRow(v, label),
+          id: `band-${v.address.toString(16)}`,
+          address: `${hexAddress(v.address)} / ${u ? hexAddress(u.address) : '—'}`,
+          cells: [cellOf(v), u ? cellOf(u) : { availability: 'not-captured' }],
+        };
+      }),
+  })).filter((t) => t.rows.length > 0);
 }
 
 function unusedRanges(fields: readonly Rt95Field[]): UnusedRange[] {
@@ -317,7 +351,7 @@ export function rt95CalibrationView(archive: Rt95CalibrationArchive): Calibratio
       layout: 'single',
       rows: record.map((f) => valueRow(f)),
     },
-    bandTable(fields),
+    ...bandTables(fields),
     {
       id: 'program-password',
       title: 'Program password',
