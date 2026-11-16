@@ -12,6 +12,7 @@ import { createOpenUv380Image, writeAbs } from '@integrations/radio-io/radios/op
 import { encodeZonesIntoImage } from '@integrations/radio-io/radios/opengd77/zoneCodec.ts';
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
+import { OpenGd77Settings } from './OpenGd77Settings.tsx';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 import { syntheticOpenGd77Archive } from './opengd77.fixture.ts';
 
@@ -57,6 +58,13 @@ const view = (archive?: DebugArchive) =>
   render(
     <MantineProvider>
       <OpenGd77Memory archive={archive} />
+    </MantineProvider>,
+  );
+
+const viewSettings = (archive?: DebugArchive) =>
+  render(
+    <MantineProvider>
+      <OpenGd77Settings archive={archive} />
     </MantineProvider>,
   );
 
@@ -128,6 +136,11 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       expect(screen.getByText('Not captured')).toBeInTheDocument();
     });
 
+    it('has no Settings tab: settings live on the page-level Settings tab', async () => {
+      view(await syntheticOpenGd77Archive(model, { image: image() }));
+      expect(screen.queryByRole('tab', { name: 'Settings' })).toBeNull();
+    });
+
     it('lists zones, including unnamed, and explains each member', async () => {
       view(await syntheticOpenGd77Archive(model, { image: image() }));
       fireEvent.click(screen.getByRole('tab', { name: 'Zones' }));
@@ -145,8 +158,7 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       writeAbs(img, 0x6057, new Uint8Array([0xc0, 0x03]));
       writeAbs(img, 0xe0, new TextEncoder().encode('M0TEST'));
       // An older archive: no settings gap region, so the struct tail is not captured.
-      view(await syntheticOpenGd77Archive(model, { image: img, settingsGap: null }));
-      fireEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+      viewSettings(await syntheticOpenGd77Archive(model, { image: img, settingsGap: null }));
       expect(screen.getByText('Firmware settings, read-only')).toBeInTheDocument();
       expect(
         screen.getByText(
@@ -165,8 +177,7 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
     });
 
     it('decodes the struct tail from the settings gap region of a current archive', async () => {
-      view(await syntheticOpenGd77Archive(model));
-      fireEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+      viewSettings(await syntheticOpenGd77Archive(model));
       const row = (id: string) => document.querySelector(`[data-row-id="${id}"]`) as HTMLElement;
       expect(row('setting-magicNumber').textContent).toContain('0x4780');
       expect(row('setting-vfoScanHigh').textContent).not.toContain('Not captured');
@@ -176,8 +187,7 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
     it('does not name settings fields when the version is wrong', async () => {
       const img = image();
       writeAbs(img, 0x604b, new Uint8Array([0x76, 0x47, 0x00, 0x00]));
-      view(await syntheticOpenGd77Archive(model, { image: img }));
-      fireEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+      viewSettings(await syntheticOpenGd77Archive(model, { image: img }));
       expect(screen.getByText('Firmware settings not decoded')).toBeInTheDocument();
       expect(document.querySelector('[data-row-id="setting-timezone"]')).toBeNull();
     });

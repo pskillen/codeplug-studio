@@ -7,7 +7,18 @@ import { uv17ProBackupMemSpans } from '@integrations/radio-io/radios/uv17pro-fam
 import type { DebugArchive } from './captureArchive.ts';
 
 /** Decode only data actually captured in a recognised region. */
-export function Uv5rMiniMemory({ archive }: { archive: DebugArchive }) {
+export function Uv5rMiniMemory({ archive }: { archive?: DebugArchive }) {
+  if (!archive)
+    return (
+      <Stack>
+        <Title order={3}>Memory</Title>
+        <Alert title="No capture">Open or read a capture to inspect its memory.</Alert>
+      </Stack>
+    );
+  return <Uv5rMiniMemoryLoaded archive={archive} />;
+}
+
+function Uv5rMiniMemoryLoaded({ archive }: { archive: DebugArchive }) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<string | null>('slot');
   const mem = uv17ProBackupMemSpans(UV5R_MINI_LAYOUT)[0]!;

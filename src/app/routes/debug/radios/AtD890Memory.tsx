@@ -8,8 +8,8 @@ import {
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import type { RadioChannelDto, RadioTone } from '@integrations/radio-io/radioChannelDto.ts';
 import {
-  projectAtD890Memory,
   type AtD890ChannelEntry,
+  projectAtD890Memory,
   type AtD890ZoneEntry,
   type AtD890ZoneMember,
 } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
@@ -25,11 +25,11 @@ import {
   TalkGroupsPanel,
   describeBankReference,
 } from './AtD890MemoryContacts.tsx';
-import { ScanListsPanel, SettingsPanel } from './AtD890MemorySettings.tsx';
+import { ScanListsPanel } from './AtD890MemorySettings.tsx';
+import { projectAtD890Archive } from './debugProjections.ts';
 import { archiveKey, MEMBER_EXPLANATION } from './viewerUtils.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
-const MODEL_ID = 'AT-D890UV';
 const NOT_CAPTURED = 'Not captured';
 const DASH = '—';
 
@@ -462,13 +462,7 @@ export function AtD890Memory({ archive }: { archive?: DebugArchive }) {
 }
 
 function AtD890MemoryLoaded({ archive }: { archive: DebugArchive }) {
-  const projection = useMemo(
-    () =>
-      archive.manifest.radioModelId === MODEL_ID
-        ? projectAtD890Memory(archive.manifest.regions, archive.regions)
-        : undefined,
-    [archive],
-  );
+  const projection = projectAtD890Archive(archive);
   if (!projection)
     return (
       <Stack>
@@ -507,7 +501,6 @@ function AtD890MemoryLoaded({ archive }: { archive: DebugArchive }) {
           <Tabs.Tab value="talk-groups">Talk groups</Tabs.Tab>
           <Tabs.Tab value="rx-groups">RX groups</Tabs.Tab>
           <Tabs.Tab value="scan-lists">Scan lists</Tabs.Tab>
-          <Tabs.Tab value="settings">Settings</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="channels" pt="md">
           <ChannelsPanel channels={projection.channels} bank={projection.bank} />
@@ -526,9 +519,6 @@ function AtD890MemoryLoaded({ archive }: { archive: DebugArchive }) {
         </Tabs.Panel>
         <Tabs.Panel value="scan-lists" pt="md">
           <ScanListsPanel projection={projection} />
-        </Tabs.Panel>
-        <Tabs.Panel value="settings" pt="md">
-          <SettingsPanel projection={projection} />
         </Tabs.Panel>
       </Tabs>
     </Stack>

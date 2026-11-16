@@ -4,6 +4,14 @@ import { Dm32DecodedDiff } from './Dm32DecodedDiff.tsx';
 import { OpenGd77Calibration } from './OpenGd77Calibration.tsx';
 import { OpenGd77DecodedDiff } from './OpenGd77DecodedDiff.tsx';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
+import { OpenGd77Settings } from './OpenGd77Settings.tsx';
+import { AtD890Memory } from './AtD890Memory.tsx';
+import { AtD890Settings } from './AtD890Settings.tsx';
+import { Dm32Memory } from './Dm32Memory.tsx';
+import { Dm32Settings } from './Dm32Settings.tsx';
+import { Rt95MemoryView } from './Rt95Memory.tsx';
+import { Rt95Settings } from './Rt95Settings.tsx';
+import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
 import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
@@ -61,6 +69,10 @@ export interface RadioDebugDescriptor {
    * function; it returns nothing for another radio's archive. Absent: nothing to mask.
    */
   sensitiveRanges?: DebugSensitiveRangesFn;
+  /** A profile's own Settings viewer. Its tab, after Memory, shows only when this is set. */
+  Settings?: ComponentType<{ archive?: DebugArchive }>;
+  /** False when the Calibration tab has no overlay picker (the radio's calibration is shown alone). */
+  calibrationOverlay?: boolean;
   /** Keep every read and opened archive in the shared tab-only history, with Compare. */
   readHistory?: boolean;
   family: string;
@@ -119,6 +131,8 @@ const OPENGD77_CAPTURE_OPTIONS: readonly RadioDebugCaptureOption[] = [
 export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
     slug: 'at-d890uv',
+    Memory: AtD890Memory,
+    Settings: AtD890Settings,
     Calibration: AtD890Calibration,
     DecodedDiff: AtD890Compare,
     capture: captureAtD890,
@@ -129,6 +143,9 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-32uv',
+    Memory: Dm32Memory,
+    Settings: Dm32Settings,
+    calibrationOverlay: false,
     Calibration: Dm32Calibration,
     DecodedDiff: Dm32DecodedDiff,
     capture: captureDm32,
@@ -150,6 +167,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Calibration: OpenGd77Calibration,
     DecodedDiff: OpenGd77DecodedDiff,
     Memory: OpenGd77Memory,
+    Settings: OpenGd77Settings,
     readHistory: true,
     capture: captureOpenGd77(OPENGD77_DM1701_MODEL_ID),
     captureOptions: OPENGD77_CAPTURE_OPTIONS,
@@ -166,6 +184,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Calibration: OpenGd77Calibration,
     DecodedDiff: OpenGd77DecodedDiff,
     Memory: OpenGd77Memory,
+    Settings: OpenGd77Settings,
     readHistory: true,
     capture: captureOpenGd77(OPENGD77_MD9600_MODEL_ID),
     captureOptions: OPENGD77_CAPTURE_OPTIONS,
@@ -179,6 +198,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'rt95',
+    Memory: Rt95MemoryView,
+    Settings: Rt95Settings,
     Calibration: Rt95Calibration,
     DecodedDiff: Rt95CalibrationDiff,
     capture: captureRt95,
@@ -198,10 +219,23 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'uv-5r-mini',
+    Memory: Uv5rMiniMemory,
     capture: captureUv5rMini,
     model: 'UV-5R Mini',
     archiveModelId: 'UV-5R Mini',
     family: 'Stock / MM9PDY',
     capabilities: capabilities('Available', 'Partial', 'Partial'),
   },
+];
+
+/** The page's tab labels, in order: Settings follows Memory for a profile that has a Settings view. */
+export const radioDebugTabs = (descriptor: Pick<RadioDebugDescriptor, 'Settings'>): string[] => [
+  'Overview',
+  'Backup',
+  'Calibration',
+  'Memory',
+  ...(descriptor.Settings ? ['Settings'] : []),
+  'Hex',
+  'Compare',
+  'Trace',
 ];
