@@ -6,12 +6,13 @@ The Debug hierarchy groups radio profiles, browser storage and serial transport 
 
 ## Documentation map
 
+- [Debug pages styleguide](../../reference/styleguide/debug-pages.md) (kit rules, component map) and its demo at `/styleguide/debug`
 - [Radio shell](../../../src/app/routes/debug/radios/RadioDebugPage.md)
 - [History controls](../../../src/app/routes/debug/radios/DebugReadHistoryControls.md)
 - [History navigation guard](../../../src/app/routes/debug/radios/DebugReadHistoryGuard.md)
 - [Archive viewers](../../../src/app/routes/debug/radios/ArchiveViewers.md)
 - [Settings tab](../../../src/app/routes/debug/radios/SettingsTab.md) and [SettingsTable](../../../src/app/components/debug/SettingsTable.md)
-- Calibration chart cards: [CalibrationChartCard](../../../src/app/components/debug/CalibrationChartCard.md), [CalibrationChartGrid](../../../src/app/components/debug/CalibrationChartGrid.md), [FrequencyCurveChart](../../../src/app/components/debug/FrequencyCurveChart.md), [StepBarChart](../../../src/app/components/debug/StepBarChart.md), [BatteryChart](../../../src/app/components/debug/BatteryChart.md), [TrimDisplay](../../../src/app/components/debug/TrimDisplay.md), [CalibrationReadPicker](../../../src/app/components/debug/CalibrationReadPicker.md) (kit parts; no page uses them yet)
+- Calibration chart cards: [CalibrationChartCard](../../../src/app/components/debug/CalibrationChartCard.md), [CalibrationChartGrid](../../../src/app/components/debug/CalibrationChartGrid.md), [FrequencyCurveChart](../../../src/app/components/debug/FrequencyCurveChart.md), [StepBarChart](../../../src/app/components/debug/StepBarChart.md), [BatteryChart](../../../src/app/components/debug/BatteryChart.md), [TrimDisplay](../../../src/app/components/debug/TrimDisplay.md), [CalibrationReadPicker](../../../src/app/components/debug/CalibrationReadPicker.md) (kit parts; no page uses them yet), [SensitiveRevealButton](../../../src/app/components/debug/SensitiveRevealButton.md)
 - [RT95 calibration fields](../../reference/radios/retevis/rt95/calibration.md)
 - [AT-D890UV calibration fields](../../reference/radios/anytone/at-d890uv/calibration.md)
 - [DM-32UV calibration fields and confidence](../../reference/radios/baofeng/dm-32uv/calibration.md)
