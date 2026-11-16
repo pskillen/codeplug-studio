@@ -156,7 +156,7 @@ describe('Dm32Memory', () => {
         settingsCapture((p) => {
           p[0x1e] = 3;
           p[0x8d] = 43;
-          p[0x30] = 0x05;
+          p[0x200] = 0x05;
           p[0x94] = 0xee;
         }),
       ),
@@ -164,27 +164,63 @@ describe('Dm32Memory', () => {
     openSettings();
     for (const g of [
       'Display',
+      'Tones & alerts',
       'Power & battery',
       'Keys & buttons',
       'GPS / APRS',
+      'DMR & calls',
       'Privacy / lock',
     ])
       expect(screen.getByRole('region', { name: g })).toBeInTheDocument();
-    expect(screen.getByText('2 hours')).toBeInTheDocument();
+    expect(screen.getByText('120 minutes')).toBeInTheDocument();
     expect(screen.getByText('Function 43 (43)')).toBeInTheDocument();
     expect(screen.queryByText('Address')).toBeNull();
     fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
     expect(screen.getByText('0x0000201E')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Documented, not decoded' })).toHaveTextContent(
-      /Backlight, display flags, colours, menu exit.*05 00/,
+      /One-touch call.*05 00/,
+    );
+    expect(screen.getByRole('region', { name: 'Unused bytes' })).toHaveTextContent(
+      /Unused \(no reader\).*0x00002094 \+3: EE 00 00/,
     );
     expect(screen.getByRole('region', { name: 'Unknown bytes' })).toHaveTextContent(
-      '0x00002094: EE',
+      'No unexplained captured bytes.',
     );
     expect(screen.getByText(/stock DM32.01.L01.048 layout/)).toBeInTheDocument();
     expect(
       screen.getByText(/Emergency systems and encryption keys are outside/),
     ).toBeInTheDocument();
+  });
+
+  it('masks the three passwords by default, reveals them on request, and re-hides on a new archive', async () => {
+    const withPasswords = () =>
+      settingsCapture((p) => {
+        p[0x430] = 0xa5;
+        p.set(new TextEncoder().encode('12345678'), 0x431);
+        p.set(new TextEncoder().encode('87654321'), 0x43b);
+        p.set(new TextEncoder().encode('11223344'), 0x443);
+      });
+    const view = show(await archiveDm32Capture(withPasswords()));
+    openSettings();
+    fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
+    expect(screen.getAllByText('Hidden (password)')).toHaveLength(3);
+    for (const secret of ['12345678', '87654321', '11223344', '31 32 33'])
+      expect(screen.queryByText(new RegExp(secret))).toBeNull();
+    const table = screen.getByRole('table', { name: 'Privacy / lock settings' });
+    expect(table).toHaveTextContent('•• •• •• •• •• •• •• ••');
+    // searching the secret finds nothing while hidden
+    const search = screen.getByPlaceholderText('Search settings');
+    fireEvent.change(search, { target: { value: '12345678' } });
+    expect(screen.queryByText('Power-on password')).toBeNull();
+    fireEvent.change(search, { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(screen.getByText('12345678')).toBeInTheDocument();
+    expect(screen.getByText('87654321')).toBeInTheDocument();
+    expect(screen.getByText('11223344')).toBeInTheDocument();
+    view.replace(await archiveDm32Capture(withPasswords()));
+    openSettings();
+    expect(screen.getAllByText('Hidden (password)')).toHaveLength(3);
+    expect(screen.getByRole('button', { name: 'Show password' })).toBeInTheDocument();
   });
 
   it('searches label, group and raw hex', async () => {
