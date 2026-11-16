@@ -16,6 +16,7 @@ import {
   UV5R_MINI_DEBUG_SPANS,
   type Uv5rMiniDebugSpan,
 } from './spans.ts';
+import { uv5rMiniDecodedSnapshot } from './compareDecoded.ts';
 
 export type Uv5rMiniCompareLineKind = 'compared' | 'calibration' | 'frame' | 'skipped';
 
@@ -115,4 +116,5 @@ export const uv5rMiniCompareAdapter: DebugCompareAdapter = {
       return { error: 'Both captures need the decoded clone of the same length.', sections: [] };
     return uv5rMiniCompareSections(x, y);
   },
+  decoded: uv5rMiniDecodedSnapshot,
 };
