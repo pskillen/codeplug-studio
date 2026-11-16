@@ -14,8 +14,14 @@ import {
   projectAtD890Memory,
   type AtD890MemoryProjection,
 } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
+import type {
+  DecodedDomain,
+  DecodedRecord,
+  DecodedSnapshot,
+} from '@integrations/radio-io/debugCompare/index.ts';
 import type { DebugArchive } from './captureArchive.ts';
 import { selectAtD890TuneRegion } from './AtD890Calibration.tsx';
+import { isAtD890ClassifiedRange, readAtD890Provenance } from './atD890Provenance.ts';
 
 export type AtD890DiffDomain =
   'channel' | 'zone' | 'contact' | 'rx-group' | 'scan-list' | 'setting' | 'calibration';
@@ -410,4 +416,103 @@ export function diffAtD890Decoded(
       },
     });
   return { rows: parts.flatMap((p) => p.rows), domains: parts.map((p) => p.summary) };
+}
+
+/** A `Side` as a decoded domain: records keyed by `keyPrefix` + the item key, values unchanged. */
+function domainOf(id: string, domain: AtD890DiffDomain, s: Side, keyPrefix: string): DecodedDomain {
+  return {
+    id,
+    label: AT_D890_DIFF_DOMAIN_LABELS[domain],
+    occupancyCaptured: s.occupancy,
+    records: [...s.items].map(([key, item]): DecodedRecord => ({
+      key: `${keyPrefix}${key}`,
+      ...(keyPrefix === 'slot-' ? { slot: Number(key) } : {}),
+      identity: item.label ? { name: item.label } : {},
+      fields: Object.entries(item.fields).map(([field, value]) => ({
+        id: field,
+        label: field,
+        value,
+        ...(item.sensitive ? { sensitive: true } : {}),
+      })),
+      ...(item.caveats?.length ? { caveats: item.caveats } : {}),
+    })),
+  };
+}
+
+const unitClaim = (v: string | null) => (typeof v === 'string' ? v : undefined);
+
+/** Acquisition claims per classified read range: archive claims, never proof of the unit. */
+function evidenceDomain(archive: DebugArchive): DecodedDomain {
+  const provenance = readAtD890Provenance(archive);
+  if (!provenance)
+    return {
+      id: 'evidence',
+      label: 'Evidence and provenance',
+      occupancyCaptured: false,
+      records: [],
+      note: 'Provenance unavailable: the acquisition claim is missing, malformed or inconsistent with stored regions.',
+    };
+  return {
+    id: 'evidence',
+    label: 'Evidence and provenance',
+    // A range read in one capture only is not evidence of a change.
+    occupancyCaptured: false,
+    records: provenance.ranges.filter(isAtD890ClassifiedRange).map((r) => ({
+      key: `${r.kind === 'sparse' ? 'sparse' : `vital:${r.requestedUnit}`}:${r.address}`,
+      identity: { name: `0x${r.address.toString(16).toUpperCase()}, ${r.byteLength} bytes` },
+      fields: [
+        { id: 'kind', label: 'Acquisition kind', value: r.kind },
+        { id: 'requestedUnit', label: 'Requested unit', value: unitClaim(r.requestedUnit) },
+        {
+          id: 'respondingUnit',
+          label: 'Responding unit claim',
+          value: unitClaim(r.respondingUnit),
+        },
+        {
+          id: 'bothReadsMatched',
+          label: 'Repeat-read claim',
+          value: r.bothReadsMatched === null ? undefined : String(r.bothReadsMatched),
+        },
+      ],
+    })),
+    note: 'Acquisition claims from the archive. They do not establish which physical unit responded.',
+  };
+}
+
+/** The AT-D890UV capture as decoded domains; empty for another radio's archive. */
+export function atD890DecodedSnapshot(archive: DebugArchive): DecodedSnapshot {
+  if (archive.manifest.radioModelId !== 'AT-D890UV') return [];
+  const p = projectAtD890Memory(archive.manifest.regions, archive.regions);
+  const channels = p.channels.entries.flatMap((e) =>
+    e.state.kind === 'decoded' ? [e.state.channel] : [],
+  );
+  const contacts = p.bank.entries.flatMap((e) =>
+    e.state.kind === 'decoded' ? [e.state.record] : [],
+  );
+  const tune = selectAtD890TuneRegion(archive);
+  const calibration: DecodedDomain =
+    tune.status === 'ok'
+      ? domainOf(
+          'calibration',
+          'calibration',
+          calibrationSide(decodeAtD890Calibration(tune.bytes)),
+          '',
+        )
+      : {
+          id: 'calibration',
+          label: AT_D890_DIFF_DOMAIN_LABELS.calibration,
+          occupancyCaptured: false,
+          records: [],
+          note: 'Both captures need a live tune unit (tune A); tune B is never substituted.',
+        };
+  return [
+    evidenceDomain(archive),
+    domainOf('channels', 'channel', channelSide(p, keysOf(channels)), 'slot-'),
+    domainOf('zones', 'zone', zoneSide(p), 'slot-'),
+    domainOf('contacts', 'contact', contactSide(p, keysOf(contacts)), 'slot-'),
+    domainOf('rx-groups', 'rx-group', rxGroupSide(p), 'slot-'),
+    domainOf('scan-lists', 'scan-list', scanListSide(p), 'slot-'),
+    domainOf('settings', 'setting', settingSide(p), ''),
+    calibration,
+  ];
 }

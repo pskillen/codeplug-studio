@@ -5,6 +5,7 @@ import {
   type DebugCompareAdapter,
 } from '@integrations/radio-io/debugCompare/index.ts';
 import type { DebugArchive } from './captureArchive.ts';
+import { atD890DecodedSnapshot } from './atD890DecodedDiff.ts';
 import {
   isAtD890ClassifiedRange,
   readAtD890Provenance,
@@ -196,6 +197,7 @@ export function atD890CompareSections(first: DebugArchive, second: DebugArchive)
 
 export const atD890CompareAdapter: DebugCompareAdapter = {
   sections: atD890CompareSections,
+  decoded: atD890DecodedSnapshot,
   notes: [
     {
       title: 'Responding unit unknown',
