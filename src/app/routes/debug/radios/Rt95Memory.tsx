@@ -1,8 +1,5 @@
-import {
-  decodeChannelRecord,
-  isRt95ChannelRecordReadable,
-} from '@integrations/radio-io/radios/rt95/channelCodec.ts';
-import { Alert, Checkbox, Stack, Text, Title } from '@mantine/core';
+import { isRt95ChannelRecordReadable } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
+import { Alert, Badge, Checkbox, Group, Stack, Table, Text, Title } from '@mantine/core';
 import {
   DataTable,
   type DataTableColumn,
@@ -23,11 +20,8 @@ import {
   decodeRt95Description,
   decodeRt95ModData,
   decodeRt95ZoneState,
+  type Rt95ModDataValid,
 } from '@integrations/radio-io/radios/rt95/modData/decode.ts';
-import {
-  RT95_OCCUPIED_BITFIELD_OFFSET,
-  RT95_CHANNEL_RECORD_SIZE,
-} from '@integrations/radio-io/radios/rt95/constants.ts';
 import {
   RT95_KEY_TABLE_ADDR,
   RT95_KEY_TABLE_LENGTH,
@@ -43,24 +37,24 @@ type SlotRow = Rt95DebugSlot & { description: string };
 const columns: DataTableColumn<SlotRow>[] = [
   {
     key: 'slot',
-    header: 'Slot [unknown]',
+    header: 'Slot',
     sortable: true,
     sortValue: (row) => row.slot,
-    render: (row) => `${row.slot} [unknown]`,
+    render: (row) => row.slot,
   },
   {
     key: 'occupancy',
-    header: 'Occupancy [unknown]',
-    render: (row) => `${row.occupancy} [unknown]`,
+    header: 'Occupancy',
+    render: (row) => row.occupancy,
   },
   {
     key: 'name',
-    header: 'Wire name [unknown]',
+    header: 'Wire name',
     sortable: true,
     sortValue: (row) => row.name,
     render: (row) => (
       <>
-        {row.name || (row.occupancy === 'occupied' ? '(unnamed)' : '—')} [unknown]
+        {row.name || (row.occupancy === 'occupied' ? '(unnamed)' : '—')}
         {row.description && <Text>{row.description} [body]</Text>}
       </>
     ),
@@ -82,17 +76,17 @@ const columns: DataTableColumn<SlotRow>[] = [
     ] as const
   ).map(([key, label]): DataTableColumn<SlotRow> => ({
     key,
-    header: `${label} [unknown]`,
-    render: (row) => `${row.occupancy === 'occupied' ? row[key] : '—'} [unknown]`,
+    header: label,
+    render: (row) => (row.occupancy === 'occupied' ? row[key] : '—'),
   })),
   {
     key: 'record',
-    header: 'Record [unknown]',
+    header: 'Record',
     render: (row) => (
       <details>
-        <summary>Slot {row.slot} raw record [unknown]</summary>
+        <summary>Slot {row.slot} raw record</summary>
         <Text>
-          Unresolved flags and bytes; raw evidence [unknown]:{' '}
+          Unresolved flags and bytes; raw evidence:{' '}
           {row.raw
             ? Array.from(row.raw, (b) => b.toString(16).padStart(2, '0')).join(' ')
             : 'Unavailable'}
@@ -101,6 +95,77 @@ const columns: DataTableColumn<SlotRow>[] = [
     ),
   },
 ];
+
+type ZoneView = Rt95ModDataValid['zones'][number];
+
+function Rt95ZoneBlock({ zone, slots }: { zone: ZoneView; slots: SlotRow[] }) {
+  const title = `Zone ${zone.index + 1}: ${zone.name || '(unnamed)'}`;
+  const members = zone.memberIndexes.map((index) => ({ index, slot: slots[index] }));
+  const shown = members.filter(
+    ({ slot }) =>
+      slot !== undefined &&
+      slot.occupancy === 'occupied' &&
+      slot.raw !== undefined &&
+      isRt95ChannelRecordReadable(slot.raw),
+  );
+  const hidden = members.filter((m) => !shown.includes(m));
+  return (
+    <Stack gap={4} data-testid={`rt95-zone-${zone.index + 1}`}>
+      <Group gap="xs">
+        <Text fw={600}>{title}</Text>
+        <Badge variant="light">{zone.memberIndexes.length} members</Badge>
+        <Badge variant="light" color={zone.valid ? 'green' : 'red'}>
+          {zone.valid ? 'members valid' : 'invalid member CRC'}
+        </Badge>
+      </Group>
+      {!zone.valid ? null : zone.memberIndexes.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          Empty zone.
+        </Text>
+      ) : (
+        <>
+          {shown.length > 0 && (
+            <Table withTableBorder aria-label={`${title} members`}>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Slot</Table.Th>
+                  <Table.Th>Radio name / description</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {shown.map(({ index, slot }) => (
+                  <Table.Tr key={index}>
+                    <Table.Td>{index + 1}</Table.Td>
+                    <Table.Td>
+                      {[slot!.name || '(unnamed)', slot!.description].filter(Boolean).join(' ')}
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
+          {hidden.length > 0 && (
+            <details>
+              <summary>
+                {hidden.length} {hidden.length === 1 ? 'member points' : 'members point'} at empty
+                or unreadable slots
+              </summary>
+              <Text size="sm">
+                Slots:{' '}
+                {hidden
+                  .map(
+                    ({ index, slot }) =>
+                      `${index + 1} (${slot && slot.occupancy === 'occupied' ? 'unreadable' : (slot?.occupancy ?? 'unavailable')})`,
+                  )
+                  .join(', ')}
+              </Text>
+            </details>
+          )}
+        </>
+      )}
+    </Stack>
+  );
+}
 
 export function Rt95Memory({ archive }: { archive: DebugArchive }) {
   const [query, setQuery] = useState('');
@@ -127,21 +192,6 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
       : undefined;
   const decoded = bytes ? decodeRt95ModData(readBlock) : undefined;
   const header = readBlock(MMD1_BASE);
-  const member = (index: number) => {
-    const slot = index + 1;
-    const bit = at(RT95_OCCUPIED_BITFIELD_OFFSET + Math.floor(index / 8), 1);
-    if (!bit) return `Slot ${slot}: clone occupancy unavailable [unknown]`;
-    if (!(bit[0]! & (1 << (index % 8)))) return `Slot ${slot}: empty [unknown]`;
-    const record = at(index * RT95_CHANNEL_RECORD_SIZE, RT95_CHANNEL_RECORD_SIZE);
-    if (!record) return `Slot ${slot}: clone record unavailable [unknown]`;
-    if (!isRt95ChannelRecordReadable(record)) return `Slot ${slot}: unreadable record [unknown]`;
-    try {
-      const channel = decodeChannelRecord(record, slot);
-      return `Slot ${slot}: ${channel.empty ? 'unreadable record' : channel.wireName || '(unnamed)'} [unknown]`;
-    } catch {
-      return `Slot ${slot}: unreadable record [unknown]`;
-    }
-  };
   const slots = decodeRt95DebugSlots(clone, cloneRegion?.address ?? 0).map((slot) => {
     const description =
       guard?.ok && decoded?.status === 'valid' && slot.occupancy === 'occupied'
@@ -163,7 +213,11 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
       : undefined;
   return (
     <Stack>
-      <Title order={4}>Clone channels [unknown]</Title>
+      <Title order={4}>Clone channels</Title>
+      <Text size="sm" c="dimmed">
+        Clone image: the storage MCU is not documented. Descriptions come from MMD1 data (main
+        board).
+      </Text>
       <Checkbox
         label="Show empty slots"
         checked={showEmpty}
@@ -187,7 +241,10 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
         revealed={reveal.revealed}
         onToggleReveal={reveal.toggle}
       />
-      <Title order={4}>MMD1 zones [body]</Title>
+      <Title order={4}>MMD1 zones</Title>
+      <Text size="sm" c="dimmed">
+        MMD1 data: main board. Clone channel fields below it: the storage MCU is not documented.
+      </Text>
       <Text>
         Body EEPROM is reached through the head; it can return checksum-valid zeros without a body
         reply. Running firmware, release and modification status remain unknown.
@@ -230,21 +287,12 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
                   ? 'MM9PDY-compatible data present.'
                   : ''}
               </Text>
+              <Text size="sm" c="dimmed">
+                The RT95 record has no callsign field. The MM9PDY target writes the channel's
+                callsign into the radio name when it has one, so the first column may be a callsign.
+              </Text>
               {decoded.zones.map((zone) => (
-                <div key={zone.index}>
-                  <Text fw={600}>
-                    Zone {zone.index + 1}: {zone.name || '(unnamed)'} [body] ·{' '}
-                    {zone.valid ? 'members valid' : 'invalid member CRC'}
-                  </Text>
-                  {zone.valid &&
-                    (zone.memberIndexes.length ? (
-                      zone.memberIndexes.map((index) => (
-                        <Text key={index}>Member [body] · {member(index)}</Text>
-                      ))
-                    ) : (
-                      <Text>No members [body].</Text>
-                    ))}
-                </div>
+                <Rt95ZoneBlock key={zone.index} zone={zone} slots={slots} />
               ))}
               {state?.valid ? (
                 <>
@@ -258,17 +306,20 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
           )}
         </>
       )}
-      <Title order={4}>P-keys [unknown]</Title>
+      <Title order={4}>P-keys</Title>
+      <Text size="sm" c="dimmed">
+        Clone image: the storage MCU is not documented.
+      </Text>
       {keys ? (
         Array.from(keys, (value, i) => (
           <Text key={i}>
-            Group {Math.floor(i / 6) + 1} key {(i % 6) + 1} [unknown]: 0x
+            Group {Math.floor(i / 6) + 1} key {(i % 6) + 1}: 0x
             {value.toString(16).padStart(2, '0')}{' '}
             {value === RT95_KEY_FUNCTION_DIR ? '· DIR; used as ZON by compatible firmware.' : ''}
           </Text>
         ))
       ) : (
-        <Text>P-key bytes unavailable [unknown].</Text>
+        <Text>P-key bytes unavailable.</Text>
       )}
     </Stack>
   );
