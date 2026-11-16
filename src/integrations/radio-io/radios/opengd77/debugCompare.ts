@@ -4,6 +4,7 @@
  * invalid or missing source is unavailable, never a guess.
  */
 import type { RadioBackupManifestV1 } from '../../backup/types.ts';
+import { regionSections, type DebugCompareAdapter } from '../../debugCompare/index.ts';
 import { OPENGD77_BACKUP_USER_DATABASE_ID } from './backupRestoreRoles.ts';
 import { OPENUV380_USER_DB_HEADER_SIZE } from './constants.ts';
 import { selectOpenGd77Calibration } from './debugCalibration.ts';
@@ -73,6 +74,16 @@ export function openGd77ComparisonEvidence(
   }
   return fields;
 }
+
+/** OpenGD77 FLASH spans and the calibration working copy, by region id; anything else is refused. */
+export const openGd77CompareAdapter: DebugCompareAdapter = {
+  sections: (a, b) =>
+    regionSections(a, b, (archive, id) =>
+      openGd77DebugRegionIdentity(archive.manifest, archive.regions, id),
+    ),
+  regionIdentity: (archive, id) =>
+    openGd77DebugRegionIdentity(archive.manifest, archive.regions, id),
+};
 
 const unavailable = (v: unknown) => v === undefined || v === null || isOpenGd77InvalidEvidence(v);
 

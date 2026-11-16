@@ -1,6 +1,38 @@
 import { describe, expect, it } from 'vitest';
 
-import { compareUv5rMiniReads } from './compare.ts';
+import { compareVerdict } from '../../../debugCompare/index.ts';
+import { compareUv5rMiniReads, uv5rMiniCompareSections } from './compare.ts';
+
+describe('uv5rMiniCompareSections', () => {
+  const make = () => {
+    const a = new Uint8Array(0x10000);
+    for (let i = 0; i < a.length; i++) a[i] = (i * 13) & 0xff;
+    return a;
+  };
+  it('log-sector differences stay identical; a frame is reported, not deciding', () => {
+    const b = make();
+    b[0x8100] ^= 0xff;
+    b[0x8010] ^= 0xff;
+    const c = uv5rMiniCompareSections(make(), b);
+    expect(compareVerdict(c).verdict).toBe('identical');
+    const kinds = Object.fromEntries(c.sections.map((s) => [s.id, s.kind]));
+    expect(kinds).toMatchObject({
+      codeplug: 'compared',
+      calibration: 'compared',
+      vfo: 'reported',
+      log8000: 'skipped',
+    });
+    expect(c.sections.find((s) => s.id === 'vfo')).toMatchObject({ changed: 1 });
+    expect(c.sections.find((s) => s.id === 'log8000')).toMatchObject({ changed: 0 });
+  });
+  it('a codeplug byte change decides', () => {
+    const b = make();
+    b[0x1234] ^= 1;
+    const c = uv5rMiniCompareSections(make(), b);
+    expect(compareVerdict(c)).toMatchObject({ verdict: 'changed', changedBytes: 1 });
+    expect(c.sections[0]!.runs).toEqual([{ start: 0x1234, length: 1 }]);
+  });
+});
 
 function base(): Uint8Array {
   const a = new Uint8Array(0x10000);
