@@ -1029,9 +1029,9 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     expect(screen.getByText('Valid header')).toBeInTheDocument();
     expect(screen.queryByText('Coming in a later piece')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Contacts' }));
-    expect(screen.getByText('Not captured')).toBeInTheDocument();
+    expect(screen.getByText(/contact bank is captured and no slot is in use/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'RX groups' }));
-    expect(screen.getByText('Not captured')).toBeInTheDocument();
+    expect(screen.getByText(/RX group bank is captured and no list is in use/)).toBeInTheDocument();
   });
 
   it('reads a Backup-style archive without the region as not captured', async () => {
