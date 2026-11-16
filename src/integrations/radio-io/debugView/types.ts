@@ -90,6 +90,8 @@ export interface ValueTableView {
   description?: string;
   /** "single": one Value column. "bands": one Value column per band, rows paired by meaning. */
   layout: 'single' | { bands: readonly string[] };
+  /** Long tables start folded: the title is a disclosure toggle. */
+  folded?: boolean;
   rows: readonly ValueRow[];
 }
 export interface ValueRow {
