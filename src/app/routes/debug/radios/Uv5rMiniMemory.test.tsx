@@ -6,6 +6,7 @@ import { encodeUv5rMiniZoneTable } from '@integrations/radio-io/radios/uv5r-mini
 import { decodeUv5rMiniFullRead } from '@integrations/radio-io/radios/uv5r-mini/debugRead/index.ts';
 import { archiveUv5rMiniRead } from './uv5rMiniCapture.ts';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
+import { chooseCategory } from './memoryCategoriesTestUtils.ts';
 
 describe('Mini memory', () => {
   it('shows actual channels and zone membership, and searches names', () => {
@@ -40,11 +41,14 @@ describe('Mini memory', () => {
       </MantineProvider>,
     );
     expect(screen.getByText('MM9PDY')).toBeInTheDocument();
-    expect(screen.getByText(/7: MM9PDY, 9: \(missing channel\)/)).toBeInTheDocument();
+    // Channels is the default category; the zone table is behind the dropdown.
+    expect(screen.queryByText(/7: MM9PDY, 9: \(missing channel\)/)).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole('textbox', { name: 'Search channels' }), {
       target: { value: 'other' },
     });
     expect(screen.queryByText('MM9PDY')).not.toBeInTheDocument();
+    chooseCategory('Zones');
     expect(screen.getByText('LOCAL')).toBeInTheDocument();
+    expect(screen.getByText(/7: MM9PDY, 9: \(missing channel\)/)).toBeInTheDocument();
   });
 });

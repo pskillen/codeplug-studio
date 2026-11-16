@@ -1,4 +1,5 @@
-import { Alert, Stack, Tabs, Text, Title } from '@mantine/core';
+import { Alert, Stack, Text, Title } from '@mantine/core';
+import { MemoryCategories } from './MemoryCategories.tsx';
 import { useMemo, useState } from 'react';
 import {
   DataTable,
@@ -410,30 +411,37 @@ function OpenGd77MemoryLoaded({ archive }: { archive: DebugArchive }) {
           ))}
         </Alert>
       )}
-      <Tabs defaultValue="channels" keepMounted={false}>
-        <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
-          <Tabs.Tab value="channels">Channels</Tabs.Tab>
-          <Tabs.Tab value="zones">Zones</Tabs.Tab>
-          <Tabs.Tab value="contacts">Contacts</Tabs.Tab>
-          <Tabs.Tab value="rx-groups">RX groups</Tabs.Tab>
-          <Tabs.Tab value="user-database">User Database</Tabs.Tab>
-        </Tabs.List>
-        <Tabs.Panel value="channels" pt="md">
-          <ChannelsPanel channels={projection.channels} />
-        </Tabs.Panel>
-        <Tabs.Panel value="zones" pt="md">
-          <ZonesPanel zones={projection.zones} />
-        </Tabs.Panel>
-        <Tabs.Panel value="contacts" pt="md">
-          <ContactsPanel archive={archive} />
-        </Tabs.Panel>
-        <Tabs.Panel value="rx-groups" pt="md">
-          <RxGroupsPanel archive={archive} />
-        </Tabs.Panel>
-        <Tabs.Panel value="user-database" pt="md">
-          <UserDatabasePanel archive={archive} />
-        </Tabs.Panel>
-      </Tabs>
+      <MemoryCategories
+        storageKey="debug-memory-category:opengd77"
+        categories={[
+          {
+            value: 'channels',
+            label: 'Channels',
+            count: projection.channels.entries.length,
+            render: () => <ChannelsPanel channels={projection.channels} />,
+          },
+          {
+            value: 'zones',
+            label: 'Zones',
+            render: () => <ZonesPanel zones={projection.zones} />,
+          },
+          {
+            value: 'contacts',
+            label: 'Contacts',
+            render: () => <ContactsPanel archive={archive} />,
+          },
+          {
+            value: 'rx-groups',
+            label: 'RX groups',
+            render: () => <RxGroupsPanel archive={archive} />,
+          },
+          {
+            value: 'user-database',
+            label: 'User Database',
+            render: () => <UserDatabasePanel archive={archive} />,
+          },
+        ]}
+      />
     </Stack>
   );
 }

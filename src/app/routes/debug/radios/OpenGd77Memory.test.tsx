@@ -1,4 +1,5 @@
 import { MantineProvider } from '@mantine/core';
+import { chooseCategory } from './memoryCategoriesTestUtils.ts';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
@@ -89,7 +90,7 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       expect(screen.queryByText('SIMPLEX')).not.toBeInTheDocument();
       expect(screen.getByText('BANK ONE')).toBeInTheDocument();
       for (const tab of ['Contacts', 'RX groups', 'User Database']) {
-        fireEvent.click(screen.getByRole('tab', { name: tab }));
+        chooseCategory(tab);
         expect(screen.queryByText('Coming in a later piece')).not.toBeInTheDocument();
       }
     });
@@ -133,7 +134,7 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
         ),
       );
       expect(screen.getAllByText(/not captured/i).length).toBeGreaterThan(0);
-      fireEvent.click(screen.getByRole('tab', { name: 'Zones' }));
+      chooseCategory('Zones');
       expect(screen.getByText('Not captured')).toBeInTheDocument();
     });
 
@@ -144,7 +145,7 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
 
     it('lists zones, including unnamed, and explains each member', async () => {
       view(await syntheticOpenGd77Archive(model, { image: image() }));
-      fireEvent.click(screen.getByRole('tab', { name: 'Zones' }));
+      chooseCategory('Zones');
       expect(screen.getByText('LOCAL')).toBeInTheDocument();
       expect(screen.getByText('Unnamed zone')).toBeInTheDocument();
       fireEvent.click(screen.getByText('LOCAL'));

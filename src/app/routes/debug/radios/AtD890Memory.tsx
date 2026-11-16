@@ -1,4 +1,5 @@
-import { Alert, Stack, Tabs, Text, Title } from '@mantine/core';
+import { Alert, Stack, Text, Title } from '@mantine/core';
+import { MemoryCategories } from './MemoryCategories.tsx';
 import { useMemo, useState } from 'react';
 import {
   DataTable,
@@ -493,34 +494,42 @@ function AtD890MemoryLoaded({ archive }: { archive: DebugArchive }) {
           ))}
         </Alert>
       )}
-      <Tabs defaultValue="channels" keepMounted={false}>
-        <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
-          <Tabs.Tab value="channels">Channels</Tabs.Tab>
-          <Tabs.Tab value="zones">Zones</Tabs.Tab>
-          <Tabs.Tab value="contacts">Contacts</Tabs.Tab>
-          <Tabs.Tab value="talk-groups">Talk groups</Tabs.Tab>
-          <Tabs.Tab value="rx-groups">RX groups</Tabs.Tab>
-          <Tabs.Tab value="scan-lists">Scan lists</Tabs.Tab>
-        </Tabs.List>
-        <Tabs.Panel value="channels" pt="md">
-          <ChannelsPanel channels={projection.channels} bank={projection.bank} />
-        </Tabs.Panel>
-        <Tabs.Panel value="zones" pt="md">
-          <ZonesPanel zones={projection.zones} />
-        </Tabs.Panel>
-        <Tabs.Panel value="contacts" pt="md">
-          <ContactsPanel projection={projection} />
-        </Tabs.Panel>
-        <Tabs.Panel value="talk-groups" pt="md">
-          <TalkGroupsPanel projection={projection} />
-        </Tabs.Panel>
-        <Tabs.Panel value="rx-groups" pt="md">
-          <RxGroupsPanel projection={projection} />
-        </Tabs.Panel>
-        <Tabs.Panel value="scan-lists" pt="md">
-          <ScanListsPanel projection={projection} />
-        </Tabs.Panel>
-      </Tabs>
+      <MemoryCategories
+        storageKey="debug-memory-category:atd890"
+        categories={[
+          {
+            value: 'channels',
+            label: 'Channels',
+            count: projection.channels.entries.length,
+            render: () => <ChannelsPanel channels={projection.channels} bank={projection.bank} />,
+          },
+          {
+            value: 'zones',
+            label: 'Zones',
+            render: () => <ZonesPanel zones={projection.zones} />,
+          },
+          {
+            value: 'contacts',
+            label: 'Contacts',
+            render: () => <ContactsPanel projection={projection} />,
+          },
+          {
+            value: 'talk-groups',
+            label: 'Talk groups',
+            render: () => <TalkGroupsPanel projection={projection} />,
+          },
+          {
+            value: 'rx-groups',
+            label: 'RX groups',
+            render: () => <RxGroupsPanel projection={projection} />,
+          },
+          {
+            value: 'scan-lists',
+            label: 'Scan lists',
+            render: () => <ScanListsPanel projection={projection} />,
+          },
+        ]}
+      />
     </Stack>
   );
 }

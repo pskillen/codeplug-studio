@@ -27,6 +27,7 @@ import {
   RT95_KEY_TABLE_LENGTH,
   RT95_KEY_FUNCTION_DIR,
 } from '@integrations/radio-io/radios/rt95/zoneKey.ts';
+import { MemoryCategories } from './MemoryCategories.tsx';
 import { rt95GuardEvidence, type DebugArchive } from './captureArchive.ts';
 
 type SlotRow = Rt95DebugSlot & { description: string };
@@ -208,7 +209,7 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
     decoded?.status === 'valid'
       ? decodeRt95ZoneState(readBlock(MMD1_STATE_ADDR), decoded)
       : undefined;
-  return (
+  const channelsPanel = (
     <Stack>
       <Title order={4}>Clone channels</Title>
       <Text size="sm" c="dimmed">
@@ -232,6 +233,10 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
         emptyMessage="No channel slots to show."
         filteredEmptyMessage={`No channels match “${query.trim()}”.`}
       />
+    </Stack>
+  );
+  const zonesPanel = (
+    <Stack>
       <Title order={4}>MMD1 zones</Title>
       <Text size="sm" c="dimmed">
         MMD1 data: main board.
@@ -297,6 +302,10 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
           )}
         </>
       )}
+    </Stack>
+  );
+  const pKeysPanel = (
+    <Stack>
       <Title order={4}>P-keys</Title>
       <Text size="sm" c="dimmed">
         Clone image: the storage MCU is not documented.
@@ -313,6 +322,16 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
         <Text>P-key bytes unavailable.</Text>
       )}
     </Stack>
+  );
+  return (
+    <MemoryCategories
+      storageKey="debug-memory-category:rt95"
+      categories={[
+        { value: 'channels', label: 'Channels', count: shown.length, render: () => channelsPanel },
+        { value: 'zones', label: 'Zones', render: () => zonesPanel },
+        { value: 'p-keys', label: 'P-keys', render: () => pKeysPanel },
+      ]}
+    />
   );
 }
 

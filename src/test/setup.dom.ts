@@ -1,5 +1,6 @@
 // DOM-only test setup: runs in the `dom` (jsdom) Vitest project after ./setup.ts.
 import '@testing-library/jest-dom/vitest';
+import { afterEach } from 'vitest';
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -30,4 +31,14 @@ class ResizeObserverMock {
 Object.defineProperty(window, 'ResizeObserver', {
   writable: true,
   value: ResizeObserverMock,
+});
+
+// The debug Memory category choice is remembered in localStorage; keep it from leaking between tests.
+afterEach(() => {
+  try {
+    for (const key of Object.keys(window.localStorage))
+      if (key.startsWith('debug-memory-category:')) window.localStorage.removeItem(key);
+  } catch {
+    /* storage unavailable */
+  }
 });

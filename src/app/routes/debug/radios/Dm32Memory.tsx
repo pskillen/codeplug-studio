@@ -1,4 +1,5 @@
-import { Alert, Stack, Tabs, Text, Title } from '@mantine/core';
+import { Alert, Stack, Text, Title } from '@mantine/core';
+import { MemoryCategories } from './MemoryCategories.tsx';
 import { useMemo, useState } from 'react';
 import {
   DataTable,
@@ -394,42 +395,53 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
           ))}
         </Alert>
       )}
-      <Tabs defaultValue="channels" keepMounted={false}>
-        <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
-          <Tabs.Tab value="channels">Channels</Tabs.Tab>
-          <Tabs.Tab value="zones">Zones</Tabs.Tab>
-          <Tabs.Tab value="scan-lists">Scan lists</Tabs.Tab>
-          <Tabs.Tab value="talk-groups">Talk groups</Tabs.Tab>
-          <Tabs.Tab value="rx-groups">RX groups</Tabs.Tab>
-          <Tabs.Tab value="radio-ids">Radio IDs</Tabs.Tab>
-          <Tabs.Tab value="contacts">Contacts</Tabs.Tab>
-        </Tabs.List>
-        <Tabs.Panel value="channels" pt="md">
-          <ChannelsPanel
-            channels={projection.channels}
-            scanLists={projection.scanLists}
-            references={references}
-          />
-        </Tabs.Panel>
-        <Tabs.Panel value="zones" pt="md">
-          <ZonesPanel zones={projection.zones} />
-        </Tabs.Panel>
-        <Tabs.Panel value="scan-lists" pt="md">
-          <ScanListsPanel scanLists={projection.scanLists} />
-        </Tabs.Panel>
-        <Tabs.Panel value="talk-groups" pt="md">
-          <TalkGroupsPanel talkGroups={lists.talkGroups} references={references} />
-        </Tabs.Panel>
-        <Tabs.Panel value="rx-groups" pt="md">
-          <RxGroupsPanel rxGroups={lists.rxGroups} />
-        </Tabs.Panel>
-        <Tabs.Panel value="radio-ids" pt="md">
-          <RadioIdsPanel radioIds={lists.radioIds} />
-        </Tabs.Panel>
-        <Tabs.Panel value="contacts" pt="md">
-          <ContactsPanel contacts={lists.analogContacts} />
-        </Tabs.Panel>
-      </Tabs>
+      <MemoryCategories
+        storageKey="debug-memory-category:dm32"
+        categories={[
+          {
+            value: 'channels',
+            label: 'Channels',
+            count: projection.channels.entries.length,
+            render: () => (
+              <ChannelsPanel
+                channels={projection.channels}
+                scanLists={projection.scanLists}
+                references={references}
+              />
+            ),
+          },
+          {
+            value: 'zones',
+            label: 'Zones',
+            render: () => <ZonesPanel zones={projection.zones} />,
+          },
+          {
+            value: 'scan-lists',
+            label: 'Scan lists',
+            render: () => <ScanListsPanel scanLists={projection.scanLists} />,
+          },
+          {
+            value: 'talk-groups',
+            label: 'Talk groups',
+            render: () => <TalkGroupsPanel talkGroups={lists.talkGroups} references={references} />,
+          },
+          {
+            value: 'rx-groups',
+            label: 'RX groups',
+            render: () => <RxGroupsPanel rxGroups={lists.rxGroups} />,
+          },
+          {
+            value: 'radio-ids',
+            label: 'Radio IDs',
+            render: () => <RadioIdsPanel radioIds={lists.radioIds} />,
+          },
+          {
+            value: 'contacts',
+            label: 'Contacts',
+            render: () => <ContactsPanel contacts={lists.analogContacts} />,
+          },
+        ]}
+      />
     </Stack>
   );
 }

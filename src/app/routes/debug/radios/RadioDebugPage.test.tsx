@@ -1,4 +1,5 @@
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
+import { chooseCategory } from './memoryCategoriesTestUtils.ts';
 import {
   decodeUv5rMiniFullRead,
   hashUv5rMiniDebugSpans,
@@ -1023,14 +1024,14 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     fireEvent.click(screen.getByRole('tab', { name: 'Memory' }));
     expect(screen.getAllByText('No capture').length).toBeGreaterThan(0);
     history.add(await syntheticOpenGd77Archive(modelId));
-    await screen.findByRole('tab', { name: 'Channels' });
-    expect(screen.getByRole('tab', { name: 'Zones' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: 'User Database' }));
+    await screen.findByRole('combobox', { name: 'Category' });
+    chooseCategory('Zones');
+    chooseCategory('User Database');
     expect(screen.getByText('Valid header')).toBeInTheDocument();
     expect(screen.queryByText('Coming in a later piece')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: 'Contacts' }));
+    chooseCategory('Contacts');
     expect(screen.getByText(/contact bank is captured and no slot is in use/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: 'RX groups' }));
+    chooseCategory('RX groups');
     expect(screen.getByText(/RX group bank is captured and no list is in use/)).toBeInTheDocument();
   });
 
