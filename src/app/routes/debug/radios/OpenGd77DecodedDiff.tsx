@@ -1,10 +1,19 @@
 import { Stack, Text, Title } from '@mantine/core';
-import { compareOpenGd77Evidence } from '@integrations/radio-io/radios/opengd77/debugCompare.ts';
+import {
+  compareOpenGd77Evidence,
+  isOpenGd77InvalidEvidence,
+} from '@integrations/radio-io/radios/opengd77/debugCompare.ts';
 import type { DebugDecodedDiffProps } from './descriptors.ts';
 
 /** Missing or invalid is "Not captured" / "Unavailable", never the word null or a guess. */
 const show = (value: unknown) =>
-  value === undefined ? 'Not captured' : value === null ? 'Unavailable' : JSON.stringify(value);
+  isOpenGd77InvalidEvidence(value)
+    ? `Invalid FirmwareInfo: ${value.invalid}`
+    : value === undefined
+      ? 'Not captured'
+      : value === null
+        ? 'Unavailable'
+        : JSON.stringify(value);
 
 export function OpenGd77DecodedDiff({ first, second }: DebugDecodedDiffProps) {
   return (
