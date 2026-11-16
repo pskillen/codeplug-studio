@@ -12,7 +12,7 @@ Read-only view of the OpenGD77 firmware settings struct and the codeplug device 
 
 ## Usage
 
-`OpenGd77Memory` mounts it in its **Settings** tab.
+The radio page mounts it as the page-level **Settings** tab (the descriptor's `Settings`), after Memory. Without an archive it shows a No capture alert.
 
 ## Behaviour
 
