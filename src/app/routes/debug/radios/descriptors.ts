@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import { OPENGD77_SETTINGS_GAP_LENGTH } from '@integrations/radio-io/radios/opengd77/constants.ts';
-import { OpenGd77Calibration } from './OpenGd77Calibration.tsx';
+import { openGd77CalibrationView } from '@integrations/radio-io/radios/opengd77/debugCalibrationView.ts';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
 import { openGd77SettingsView } from '@integrations/radio-io/radios/opengd77/debugSettingsView.ts';
 import { AtD890Memory } from './AtD890Memory.tsx';
@@ -195,7 +195,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
     slug: 'dm-1701-opengd77',
     compare: openGd77CompareAdapter,
-    Calibration: OpenGd77Calibration,
+    calibration: openGd77CalibrationView,
     Memory: OpenGd77Memory,
     settings: openGd77SettingsView,
     readHistory: true,
@@ -213,7 +213,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
     slug: 'md-9600-opengd77',
     compare: openGd77CompareAdapter,
-    Calibration: OpenGd77Calibration,
+    calibration: openGd77CalibrationView,
     Memory: OpenGd77Memory,
     settings: openGd77SettingsView,
     readHistory: true,
