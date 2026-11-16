@@ -255,6 +255,7 @@ export function formatExportWarnings(warnings: ExportWarning[]): FormattedExport
         break;
       }
 
+      case 'zone_order':
       case 'zone_scan_set': {
         general.push(formatExportWarning(warning));
         break;

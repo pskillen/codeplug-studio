@@ -1569,10 +1569,11 @@ function withZoneScanSets(
   );
   return zones.map((zone, index) => ({
     ...zone,
+    channelNumbers: [...new Set(zone.channelNumbers)],
     scanChannelNumbers: zoneScanSetChannelNumbers(
       sets[index]?.scanChannelIds ?? [],
       numbersBySourceChannelId,
-      zone.channelNumbers,
+      [...new Set(zone.channelNumbers)],
     ),
   }));
 }

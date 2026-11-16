@@ -90,7 +90,8 @@ export type ExportWarning =
   | MemberCapExportWarning
   | UnlinkedExportWarning
   | GeneralExportWarning
-  | ZoneScanSetExportWarning;
+  | ZoneScanSetExportWarning
+  | { kind: 'zone_order'; severity: 'problem'; zoneName: string };
 
 /** Push a plain informational/problem note with no further structure. */
 export function pushGeneralWarning(warnings: ExportWarning[], message: string): void {
@@ -159,6 +160,8 @@ export function formatExportWarning(warning: ExportWarning): string {
       return warning.message;
     case 'zone_scan_set':
       return formatZoneScanSetWarning(warning);
+    case 'zone_order':
+      return `Zone "${warning.zoneName}": its order did not fit on the radio, so its channels appear in channel-number order.`;
   }
 }
 
@@ -207,5 +210,7 @@ export function exportWarningIdentity(warning: ExportWarning): string {
       return `general\0${warning.message}`;
     case 'zone_scan_set':
       return `zone_scan_set\0${formatZoneScanSetWarning(warning)}`;
+    case 'zone_order':
+      return `zone_order\0${warning.zoneName}`;
   }
 }

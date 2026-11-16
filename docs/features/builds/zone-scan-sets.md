@@ -30,7 +30,7 @@ On radios whose zones come from the MM9PDY firmware over a flat channel list (th
 
 `resolveZoneScanSets(assembled, library, context)` resolves one scan set per assembled zone, once, in core: the zone's exported members (in member export order) whose cascade resolves to include. Members outside the build are never in a set.
 
-The Web Serial Write projection attaches each set to its zone as `RadioZoneDto.scanChannelNumbers`: the zone's own channel numbers that belong to a channel in the set, kept to the members the radio keeps (after the radio drops channels it can't hold and sorts members into channel-number order). Only targets with the zone scan set trait carry the field. A radio writer encodes it as it stands and does not resolve it again.
+The Web Serial Write projection attaches each set to its zone as `RadioZoneDto.scanChannelNumbers`: the zone's own channel numbers that belong to a channel in the set, kept to the members the radio keeps (after the radio drops channels it can't hold; the RT95 also sorts members into channel-number order, while the UV-5R Mini MM9PDY keeps zone order). Only targets with the zone scan set trait carry the field. A radio writer encodes it as it stands and does not resolve it again.
 
 ## Warnings
 
