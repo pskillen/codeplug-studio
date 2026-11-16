@@ -119,9 +119,15 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       expect(screen.getByText('0x0005000C')).toBeInTheDocument();
       expect(bodyRows()).toBeLessThanOrEqual(101 + 1);
       expect(screen.getByText(/Entries are stored packed in this archive/)).toBeInTheDocument();
-      for (let i = 0; i < 97; i++) fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-      expect(screen.getByText(/Page 98 of 98/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      expect(screen.getByText(/Page 2 of 98/)).toBeInTheDocument();
+      // Entry 9,708 (ID 1009709) is the first one in segment 1; a search reaches it in one render.
+      fireEvent.change(screen.getByLabelText('Search the User Database'), {
+        target: { value: '1009709' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Search' }));
       expect(screen.getByText('0x000D8000')).toBeInTheDocument();
+      expect(screen.getByText(/Page 1 of 1/)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
     });
 
