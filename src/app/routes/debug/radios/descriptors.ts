@@ -11,7 +11,7 @@ import { captureAtD890 } from './atD890Capture.ts';
 import { captureDm32 } from './dm32Capture.ts';
 import { captureUv5rMini } from './uv5rMiniCapture.ts';
 import { captureRt95 } from './rt95Capture.ts';
-import { captureOpenGd77 } from './opengd77Capture.ts';
+import { captureOpenGd77, OPENGD77_DEBUG_USER_DATABASE_OPTION } from './opengd77Capture.ts';
 import { openGd77IdentityRows } from './opengd77Identity.ts';
 import {
   OPENGD77_DM1701_MODEL_ID,
@@ -23,12 +23,30 @@ import type { ProgressFn } from '@integrations/radio-io/types.ts';
 export type DebugCalibrationProps = { archive?: DebugArchive; overlayArchive?: DebugArchive };
 export type DebugDecodedDiffProps = { first: DebugArchive; second: DebugArchive };
 
+/** Options a capture takes, by option id; unticked options are `false` or absent. */
+export type RadioDebugCaptureOptions = Readonly<Record<string, boolean>>;
+
+export type RadioDebugCapture = (opts?: {
+  signal?: AbortSignal;
+  onProgress?: ProgressFn;
+  options?: RadioDebugCaptureOptions;
+}) => Promise<DebugArchive>;
+
+/** A tick box on the Backup tab that changes what Read radio reads. Unticked by default. */
+export interface RadioDebugCaptureOption {
+  id: string;
+  label: string;
+  description: string;
+}
+
 /** Selected profiles describe expectations, never observed radio identity. */
 export interface RadioDebugDescriptor {
   slug: string;
   model: string;
   archiveModelId: string;
-  capture?: (opts?: { signal?: AbortSignal; onProgress?: ProgressFn }) => Promise<DebugArchive>;
+  capture?: RadioDebugCapture;
+  /** Tick boxes shown above Read radio; each is passed to `capture` as `options[id]`. */
+  captureOptions?: readonly RadioDebugCaptureOption[];
   Calibration?: ComponentType<DebugCalibrationProps>;
   DecodedDiff?: ComponentType<DebugDecodedDiffProps>;
   /** A profile's own Memory viewer; without one the generic Memory viewer is used. */
@@ -76,8 +94,17 @@ const OPENGD77_IDENTITY_NOTE =
 
 const OPENGD77_READ_NOTICE = {
   title: 'Read-only capture and recovery',
-  text: 'The capture only reads: it sends a ping, the FirmwareInfo request, the CPS screen command, reads of the registered flash spans and the occupied User Database, and the CPS close. It takes minutes, and a large User Database makes it much longer. Cancel stops at the next frame and sends only the CPS close. If the radio stays on the CPS screen after a failure, power-cycle it.',
+  text: 'The capture only reads: it sends a ping, the FirmwareInfo request, the CPS screen command, reads of the registered flash spans, the occupied User Database when ticked, and the CPS close. It takes minutes, and a large User Database makes it much longer. Cancel stops at the next frame and sends only the CPS close. If the radio stays on the CPS screen after a failure, power-cycle it.',
 };
+
+const OPENGD77_CAPTURE_OPTIONS: readonly RadioDebugCaptureOption[] = [
+  {
+    id: OPENGD77_DEBUG_USER_DATABASE_OPTION,
+    label: 'Also read the User Database',
+    description:
+      'The DMR ID lookup list. It can be up to about 14 MB and add many minutes to the read. Unticked, only that region is skipped.',
+  },
+];
 
 export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
@@ -114,6 +141,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Memory: OpenGd77Memory,
     readHistory: true,
     capture: captureOpenGd77(OPENGD77_DM1701_MODEL_ID),
+    captureOptions: OPENGD77_CAPTURE_OPTIONS,
     model: 'DM-1701',
     archiveModelId: 'DM-1701',
     family: 'OpenGD77',
@@ -129,6 +157,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Memory: OpenGd77Memory,
     readHistory: true,
     capture: captureOpenGd77(OPENGD77_MD9600_MODEL_ID),
+    captureOptions: OPENGD77_CAPTURE_OPTIONS,
     model: 'MD-9600',
     archiveModelId: 'MD-9600',
     family: 'OpenGD77',

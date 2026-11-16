@@ -206,7 +206,7 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
             <Text size="sm">
               {og77.userDatabase.state === 'captured'
                 ? `${og77.userDatabase.byteLength} bytes · ${og77.userDatabase.headerOnly ? 'Header only' : 'Header and entries'} · `
-                : 'Not captured · '}
+                : 'Not captured (read only when ticked before Read radio) · '}
               packed header + entries, not contiguous flash (segment 1 lives elsewhere in flash)
             </Text>
             <Text fw={600}>Calibration working copy</Text>

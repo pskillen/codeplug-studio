@@ -10,6 +10,7 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
   FileButton,
   Group,
   SimpleGrid,
@@ -96,6 +97,8 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   }, [unsaved]);
   /** Descriptive fields typed before a read; stored in the new capture's manifest. */
   const [captureLabels, setCaptureLabels] = useState<RadioBackupLabels>({});
+  // Keyed `${slug}:${optionId}` so a tick on one radio never carries to another.
+  const [captureOptions, setCaptureOptions] = useState<Record<string, boolean>>({});
   const [preferredLive, setPreferredLive] = useState<string | null>(null);
   const [error, setError] = useState<string>();
   const [reading, setReading] = useState(false);
@@ -184,6 +187,12 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
       const result = await descriptor.capture({
         signal: controller.current.signal,
         onProgress: (p) => setProgress(p.msg),
+        options: Object.fromEntries(
+          (descriptor.captureOptions ?? []).map((option) => [
+            option.id,
+            captureOptions[`${descriptor.slug}:${option.id}`] === true,
+          ]),
+        ),
       });
       // A capture with no notes is stored exactly as the capture path produced it.
       const labelled = Object.keys(normaliseBackupLabels(captureLabels)).length
@@ -437,6 +446,23 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                   disabled={reading}
                 />
               )}
+              {descriptor.capture &&
+                descriptor.captureOptions?.map((option) => (
+                  <Checkbox
+                    key={option.id}
+                    label={option.label}
+                    description={option.description}
+                    checked={captureOptions[`${descriptor.slug}:${option.id}`] === true}
+                    disabled={reading}
+                    onChange={(event) => {
+                      const checked = event.currentTarget.checked;
+                      setCaptureOptions((current) => ({
+                        ...current,
+                        [`${descriptor.slug}:${option.id}`]: checked,
+                      }));
+                    }}
+                  />
+                ))}
               {descriptor.capture && (
                 <Group>
                   <Button onClick={readRadio} loading={reading}>

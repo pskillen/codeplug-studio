@@ -77,6 +77,19 @@ describe('captureOpenGd77', () => {
     expect(transport.baud).toEqual([115_200]);
   });
 
+  it('skips the User Database unless the option is ticked', async () => {
+    transport.pipe = new OpenGd77ScriptedPipe(0x08);
+    const skipped = await captureOpenGd77(OPENGD77_DM1701_MODEL_ID)({
+      options: { userDatabase: false },
+    });
+    expect(skipped.manifest.regions.map((r) => r.id)).not.toContain('user-database');
+    transport.pipe = new OpenGd77ScriptedPipe(0x08);
+    const included = await captureOpenGd77(OPENGD77_DM1701_MODEL_ID)({
+      options: { userDatabase: true },
+    });
+    expect(included.manifest.regions.map((r) => r.id)).toContain('user-database');
+  });
+
   it('records Android USB serial when the native transport is used', async () => {
     transport.native = true;
     transport.pipe = new OpenGd77ScriptedPipe(0x08);
