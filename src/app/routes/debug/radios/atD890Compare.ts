@@ -170,6 +170,7 @@ export function atD890CompareSections(first: DebugArchive, second: DebugArchive)
         label: `${span.space} · ${formatRange(span.start, span.end)}`,
         base: span.start,
         regionId: x?.regionId ?? y?.regionId,
+        regionIdB: y?.regionId,
       };
       if (span.space === 'unclassified')
         return {

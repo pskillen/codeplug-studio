@@ -26,8 +26,10 @@ export interface CompareSection {
   reason?: string;
   /** Provenance, once per section, e.g. "main-body EEPROM via head". */
   note?: string;
-  /** Archive region id, for sensitive-range lookup. */
+  /** Archive region id on side A, for sensitive-range lookup. */
   regionId?: string;
+  /** Archive region id on side B when it differs from A's (reads may chunk a span differently). */
+  regionIdB?: string;
   /** Absolute address of byte 0 of `a` and `b`. */
   base: number;
   a?: Uint8Array;
