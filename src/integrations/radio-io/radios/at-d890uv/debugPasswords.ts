@@ -40,6 +40,14 @@ export const AT_D890_LOCAL_INFO_PASSWORD_SPANS: readonly AtD890PasswordSpan[] = 
 const ALL_SPANS = [AT_D890_POWER_ON_PASSWORD_SPAN, ...AT_D890_LOCAL_INFO_PASSWORD_SPANS];
 
 /**
+ * Vital units the radio may answer with LocalInfo bytes: `vital-tune-b` (read "as returned", which
+ * `vitalBackup.ts` says the radio diverts to LocalInfo) and `vital-local-info-upper` ("LocalInfo B").
+ * Masked in case they mirror LocalInfo, at the same offsets inside the unit; unconfirmed, nobody has
+ * read a real radio to check. Over-masking costs nothing: the archive keeps every byte.
+ */
+const MIRROR_REGION_IDS: readonly string[] = ['vital-tune-b', 'vital-local-info-upper'];
+
+/**
  * Descriptor hook: the password ranges that fall inside the archive region asked about, at their
  * absolute addresses. Nothing for another radio's archive or a region that holds none of them.
  */
@@ -53,7 +61,16 @@ export function atD890ArchiveSensitiveRanges(
   const bytes = archive.regions[regionId];
   if (!region || !bytes) return [];
   const end = region.address + bytes.length;
-  return ALL_SPANS.flatMap((span) =>
+  const spans = ALL_SPANS.map((span) => ({ ...span }));
+  if (MIRROR_REGION_IDS.includes(regionId)) {
+    for (const span of AT_D890_LOCAL_INFO_PASSWORD_SPANS)
+      spans.push({
+        ...span,
+        address: region.address + (span.address - D890_MAP.LocalInfo),
+        label: `${span.label} (if mirrored)`,
+      });
+  }
+  return spans.flatMap((span) =>
     span.address >= region.address && span.address + span.length <= end
       ? [{ start: span.address, end: span.address + span.length, label: span.label }]
       : [],
