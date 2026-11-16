@@ -34,3 +34,4 @@ Calls the descriptor's `calibration(archive)` for the selected read and for the 
 - [CalibrationReadPicker](../../../components/debug/CalibrationReadPicker.md), [CalibrationChartCard](../../../components/debug/CalibrationChartCard.md)
 - AT-D890UV view: `src/integrations/radio-io/radios/at-d890uv/debugCalibrationView.ts`
 - RT95 view: `src/integrations/radio-io/radios/rt95/debugCalibrationView.ts`
+- DM-32UV view: `src/integrations/radio-io/radios/dm32uv/debugCalibrationView.ts`

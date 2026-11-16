@@ -111,7 +111,7 @@ function CalibrationBody({
     <Stack>
       {view.notice && <EvidenceNotice notice={view.notice} />}
       {view.facts && view.facts.length > 0 && (
-        <Text size="sm" c="dimmed">
+        <Text size="sm" c="dimmed" style={{ overflowWrap: 'anywhere' }}>
           {view.facts.map((f) => `${f.label}: ${f.value}`).join(' · ')}
         </Text>
       )}

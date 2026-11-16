@@ -1,11 +1,11 @@
 import type { ComponentType } from 'react';
 import { OPENGD77_SETTINGS_GAP_LENGTH } from '@integrations/radio-io/radios/opengd77/constants.ts';
-import { Dm32Calibration } from './Dm32Calibration.tsx';
 import { OpenGd77Calibration } from './OpenGd77Calibration.tsx';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
 import { openGd77SettingsView } from '@integrations/radio-io/radios/opengd77/debugSettingsView.ts';
 import { AtD890Memory } from './AtD890Memory.tsx';
 import { Dm32Memory } from './Dm32Memory.tsx';
+import { dm32CalibrationView } from '@integrations/radio-io/radios/dm32uv/debugCalibrationView.ts';
 import { dm32SettingsView } from '@integrations/radio-io/radios/dm32uv/debugSettingsView.ts';
 import { rt95SettingsView } from '@integrations/radio-io/radios/rt95/debugSettingsView.ts';
 import { atD890SettingsView } from '@integrations/radio-io/radios/at-d890uv/debugSettingsView.ts';
@@ -176,8 +176,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     compare: dm32CompareAdapter,
     Memory: Dm32Memory,
     settings: dm32SettingsView,
-    calibrationOverlay: false,
-    Calibration: Dm32Calibration,
+    calibration: dm32CalibrationView,
     readHistory: true,
     capture: captureDm32,
     sensitiveRanges: dm32ArchiveSensitiveRanges,
