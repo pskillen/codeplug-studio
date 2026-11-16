@@ -9,7 +9,7 @@ import {
   AT_D890_VITAL_UNIT_BYTES,
 } from '@integrations/radio-io/radios/at-d890uv/vitalBackup.ts';
 import { openDebugArchive } from './captureArchive.ts';
-import { compareAtD890 } from './atD890Compare.ts';
+import { atD890CompareSections, compareAtD890 } from './atD890Compare.ts';
 import { AT_D890_PROVENANCE_PATH } from './atD890Provenance.ts';
 
 function archive(parts: [number, number[]][]) {
@@ -91,6 +91,34 @@ describe('D890 range comparison', () => {
       [0, 1, 0],
       [1, 3, undefined],
     ]);
+  });
+});
+
+describe('D890 compare sections', () => {
+  it('maps each span to a section: compared with runs, or incomparable', () => {
+    const { sections, error } = atD890CompareSections(
+      archive([
+        [0, [1, 2, 3, 4]],
+        [8, [9]],
+      ]),
+      archive([
+        [0, [1, 7]],
+        [2, [3, 4, 5]],
+      ]),
+    );
+    expect(error).toBeUndefined();
+    expect(sections.map((s) => [s.base, s.kind, s.changed])).toEqual([
+      [0, 'compared', 1],
+      [2, 'compared', 0],
+      [4, 'incomparable', 0],
+      [8, 'incomparable', 0],
+    ]);
+    expect(sections[0]).toMatchObject({ runs: [{ start: 1, length: 1 }], label: /sparse/ });
+    expect(sections[2]!.reason).toMatch(/Missing or ambiguous/);
+  });
+  it('refuses the pair when provenance is missing', () => {
+    const first = archive([[0, [1]]]);
+    expect(atD890CompareSections(first, { ...first, sidecars: {} }).error).toMatch(/Provenance/);
   });
 });
 
