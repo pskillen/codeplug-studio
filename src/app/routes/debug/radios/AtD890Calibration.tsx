@@ -14,9 +14,11 @@ import { useState } from 'react';
 import LineChart, { type LineChartSeries } from '@app/components/LineChart/LineChart.tsx';
 import {
   atD890CalibrationCorrection,
+  atD890TrimPpm,
   decodeAtD890Calibration,
   type AtD890CalAvailability,
   type AtD890CalConfidence,
+  type AtD890CalNamedField,
   type AtD890CalScalar,
   type AtD890CalTable,
 } from '@core/radios/anytone/at-d890uv/calibration.ts';
@@ -72,6 +74,13 @@ const AVAILABILITY: Record<AtD890CalAvailability, string> = {
   partial: 'Partly captured',
   'not-captured': 'Not captured',
 };
+const ORDER_TEXT = {
+  'single-byte': 'u8',
+  'little-endian': 'u16 · little-endian',
+  'big-endian': 'u16 · big-endian',
+  bytes: 'bytes',
+} as const;
+const count = (n: number) => n.toLocaleString('en-GB');
 const CONFIDENCE: Record<AtD890CalConfidence, string> = {
   traced: 'traced',
   'partially-traced': 'partially traced',
@@ -101,6 +110,7 @@ function ScalarTable({
                 'Width · order',
                 'Raw',
                 'Decoded',
+                'Unit · sink',
                 ...(overlayRows ? ['Overlay', 'Overlay − primary'] : []),
                 'Availability',
                 'Confidence',
@@ -113,11 +123,26 @@ function ScalarTable({
           <Table.Tbody>
             {rows.map((row) => (
               <Table.Tr key={row.id}>
-                <Table.Td>{row.label}</Table.Td>
+                <Table.Td>
+                  {row.label}
+                  {row.factoryLabel && (
+                    <Text size="xs" c="dimmed">
+                      Factory label {row.factoryLabel}
+                    </Text>
+                  )}
+                </Table.Td>
                 <Table.Td>{offsetText(row.offset)}</Table.Td>
-                <Table.Td>{row.width === 1 ? 'u8' : 'u16 · little-endian assumed'}</Table.Td>
+                <Table.Td>{row.width === 1 ? 'u8' : 'u16 · little-endian'}</Table.Td>
                 <Table.Td ff="monospace">{rawText(row.raw)}</Table.Td>
                 <Table.Td>{row.value ?? 'Unavailable'}</Table.Td>
+                <Table.Td>
+                  <Text size="xs">{row.unit}</Text>
+                  {row.group === 'trim' && row.value !== undefined && (
+                    <Text size="xs" c="dimmed">
+                      Offset from neutral: {atD890TrimPpm(row.value).toFixed(2)} ppm
+                    </Text>
+                  )}
+                </Table.Td>
                 {overlayRows &&
                   (() => {
                     const other = overlayRows.find((item) => item.id === row.id)?.value;
@@ -216,7 +241,7 @@ function TableGroup({
                 `${t.label}: ${offsetText(t.offset)}, ${t.length} bytes, ${AVAILABILITY[t.availability].toLowerCase()}`,
             )
             .join('; ')}
-          . Unsigned bytes; reference index {first.referenceIndex}.
+          . Unsigned bytes; reference index {first.referenceIndex}. Unit: {first.unit}.
         </Text>
         <Text size="sm" c="dimmed">
           {frequencyNote} Index rule: {first.indexRule}. Sources:{' '}
@@ -294,6 +319,85 @@ function TableGroup({
   );
 }
 
+function FieldsTable({
+  title,
+  rows,
+  intro,
+}: {
+  title: string;
+  rows: readonly AtD890CalNamedField[];
+  intro: string;
+}) {
+  // Hundreds of cells, so it starts collapsed and is built on open.
+  const [open, setOpen] = useState(false);
+  return (
+    <Card withBorder>
+      <Title order={4}>{title}</Title>
+      <Text size="sm">{intro}</Text>
+      <details onToggle={(event) => setOpen(event.currentTarget.open)}>
+        <summary>
+          <Text span size="sm">
+            {rows.length} fields
+          </Text>
+        </summary>
+        {open && (
+          <Table.ScrollContainer minWidth={720}>
+            <Table striped fz="xs">
+              <Table.Caption>{title}</Table.Caption>
+              <Table.Thead>
+                <Table.Tr>
+                  {[
+                    'Field',
+                    'Offset · bytes',
+                    'Order',
+                    'Raw',
+                    'Decoded',
+                    'Unit',
+                    'Confidence',
+                    'Source',
+                  ].map((h) => (
+                    <Table.Th key={h}>{h}</Table.Th>
+                  ))}
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {rows.map((row) => (
+                  <Table.Tr key={row.id}>
+                    <Table.Td>
+                      {row.label}
+                      {row.factoryLabel && (
+                        <Text size="xs" c="dimmed">
+                          Factory label {row.factoryLabel}
+                        </Text>
+                      )}
+                    </Table.Td>
+                    <Table.Td>
+                      {offsetText(row.offset)} · {row.length}
+                    </Table.Td>
+                    <Table.Td>{row.kind === 'field' ? ORDER_TEXT[row.byteOrder] : '—'}</Table.Td>
+                    <Table.Td ff="monospace">{rawText(row.raw)}</Table.Td>
+                    <Table.Td>{row.value ?? '—'}</Table.Td>
+                    <Table.Td>{row.unit || '—'}</Table.Td>
+                    <Table.Td>
+                      Layout {CONFIDENCE[row.layout]} · meaning {CONFIDENCE[row.meaning]}
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="xs">{row.source.consumers.join(', ')}</Text>
+                      <Text size="xs" c="dimmed">
+                        {row.source.note}
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        )}
+      </details>
+    </Card>
+  );
+}
+
 function RawTune({ bytes, address }: { bytes: Uint8Array; address: number }) {
   const [page, setPage] = useState(0);
   const pages = Math.max(1, Math.ceil(bytes.length / HEX_PAGE_BYTES));
@@ -302,8 +406,8 @@ function RawTune({ bytes, address }: { bytes: Uint8Array; address: number }) {
     <Card withBorder>
       <Title order={4}>Raw tune bytes</Title>
       <Text size="sm">
-        Partially decoded: every captured byte is listed, including the unknown ranges. Archive
-        bytes as stored; addresses are the requested addresses.
+        Partially decoded: every captured byte is listed, including the unused ranges. Archive bytes
+        as stored; addresses are the requested addresses.
       </Text>
       <div style={{ overflowX: 'auto' }}>
         <pre aria-label="Tune unit hexadecimal bytes">
@@ -365,7 +469,11 @@ export function AtD890Calibration({
   const byGroup = (g: AtD890CalScalar['group']) => cal.scalars.filter((s) => s.group === g);
   const tables = (group: AtD890CalTable['group'], band: AtD890CalTable['band']) =>
     cal.tables.filter((t) => t.group === group && t.band === band);
-  const unknownCaptured = cal.unknown.filter((r) => r.availability !== 'not-captured');
+  const unusedBytes = cal.unused.reduce((n, r) => n + r.end - r.offset, 0);
+  const fieldBytes = (kind: AtD890CalNamedField['kind']) =>
+    cal.fields.filter((f) => f.kind === kind).reduce((n, f) => n + f.length, 0);
+  const named = cal.fields.filter((f) => f.kind === 'field');
+  const unread = cal.fields.filter((f) => f.kind !== 'field');
   return (
     <Stack>
       <Title order={3}>Calibration</Title>
@@ -386,7 +494,10 @@ export function AtD890Calibration({
             ['Source', archive!.source === 'file' ? 'Local archive' : 'Live read'],
             ['Running firmware', 'Unknown'],
             ['Firmware mod', 'Unknown'],
-            ['Byte order', 'Little-endian assumed for 16-bit fields; not established'],
+            [
+              'Byte order',
+              'Little-endian in +0x000–+0x2FF, +0x1810–+0x181B, +0x1C00; big-endian in +0x300–+0x6FF and +0x1800–+0x180F',
+            ],
           ].map(([label, value]) => (
             <div key={label}>
               <Text size="xs" c="dimmed">
@@ -399,8 +510,10 @@ export function AtD890Calibration({
         <Text size="sm" c="dimmed" mt="md">
           Field offsets and arithmetic come from a static trace of V1.05 firmware; the running
           firmware is not identified, so they may not apply. Firmware may divert the requested
-          address. Agreement between repeated reads shows a stable read, not valid calibration. No
-          physical units, limits or health verdicts are given.
+          address. Agreement between repeated reads shows a stable read, not valid calibration.
+          Units are the hardware codes the firmware uses; watts, dBm and Hz of deviation are unknown
+          (bench measurement only). No limits or health verdicts are given. Source: radio repo PR
+          #245 (F349–F356).
         </Text>
       </Card>
       {overlayArchive && overlaySelection.status !== 'ok' && (
@@ -474,36 +587,49 @@ export function AtD890Calibration({
         overlayLabel={overlayLabel}
         frequencyNote="Index 0 corresponds to 136 MHz in 2 MHz steps; 220 MHz uses index 20."
       />
+      <FieldsTable
+        title="Other loaded fields"
+        rows={named}
+        intro={`${count(fieldBytes('field'))} bytes with a firmware consumer: tuning, tracking filters, baseband words, test channels and the second board. Multi-word blocks show raw bytes only; big-endian regions are never decoded with the little-endian helper.`}
+      />
+      <FieldsTable
+        title="Loaded, no reader"
+        rows={unread}
+        intro={`${count(fieldBytes('no-reader') + fieldBytes('defaults-only'))} bytes the radio loads (or the defaults writer fills) but no code reads. Shown as unused (no reader), not unknown.`}
+      />
       <Card withBorder>
-        <Title order={4}>Unknown ranges</Title>
+        <Title order={4}>Never read (unused)</Title>
         <Text size="sm">
-          {unknownCaptured.length} captured ranges are not decoded and shown only as raw bytes.
+          {count(unusedBytes)} bytes in {cal.unused.length} ranges are never loaded by the firmware
+          and every tune rewrite erases them. They are unused, not unknown.
         </Text>
-        <Table.ScrollContainer minWidth={420}>
+        <details>
+          <summary>
+            <Text span size="sm">
+              Ranges
+            </Text>
+          </summary>
           <Table fz="xs">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Range</Table.Th>
+                <Table.Th>Bytes</Table.Th>
                 <Table.Th>Availability</Table.Th>
-                <Table.Th>Notes</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {cal.unknown.map((r) => (
+              {cal.unused.map((r) => (
                 <Table.Tr key={r.offset}>
                   <Table.Td>
                     {offsetText(r.offset)}–{offsetText(r.end - 1)}
                   </Table.Td>
+                  <Table.Td>{count(r.end - r.offset)}</Table.Td>
                   <Table.Td>{AVAILABILITY[r.availability]}</Table.Td>
-                  <Table.Td>
-                    {r.notes.map((n) => `${offsetText(n.offset)}: ${n.note}`).join('; ') ||
-                      'Unknown'}
-                  </Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
           </Table>
-        </Table.ScrollContainer>
+        </details>
       </Card>
       <RawTune bytes={selection.bytes} address={selection.address} />
     </Stack>
