@@ -12,6 +12,7 @@ import {
 } from './featureDetect.ts';
 import { createFakeSerialPort } from './fakeSerialPort.ts';
 import {
+  CH340_FIREFOX_CLOSE_MESSAGE,
   openWebSerialPipe,
   requestWebSerialPipe,
   requestWebSerialPort,
@@ -104,6 +105,49 @@ describe('openWebSerialPipe', () => {
     fake.endRead();
 
     await expect(readPromise).rejects.toBeInstanceOf(RadioClosedError);
+    await pipe.close();
+  });
+
+  it('names the Firefox + CH340 close when the readable ends before any byte and the port is still open', async () => {
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 115200);
+    fake.endRead();
+    const err = await pipe.readExact(1, 2000).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioClosedError);
+    expect((err as Error).message).toBe(CH340_FIREFOX_CLOSE_MESSAGE);
+    expect((err as Error).message).toMatch(/CH340/);
+    await pipe.close();
+  });
+
+  it('keeps the ordinary message when bytes arrived before the readable ended', async () => {
+    const fake = createFakeSerialPort();
+    const pipe = await openWebSerialPipe(fake.port, 115200);
+    fake.pushRead(new Uint8Array([1]));
+    await Promise.resolve();
+    fake.endRead();
+    const err = await pipe.readExact(4, 2000).catch((e: unknown) => e);
+    expect((err as Error).message).toBe('Serial port closed unexpectedly.');
+    await pipe.close();
+  });
+
+  it('keeps the ordinary message when the port has no readable any more (unplug)', async () => {
+    const fake = createFakeSerialPort();
+    let unplugged = false;
+    const port: SerialPortLike = {
+      get readable() {
+        return unplugged ? null : fake.port.readable;
+      },
+      get writable() {
+        return fake.port.writable;
+      },
+      open: (o) => fake.port.open(o),
+      close: () => fake.port.close(),
+    };
+    const pipe = await openWebSerialPipe(port, 115200);
+    unplugged = true;
+    fake.endRead();
+    const err = await pipe.readExact(1, 2000).catch((e: unknown) => e);
+    expect((err as Error).message).toBe('Serial port closed unexpectedly.');
     await pipe.close();
   });
 

@@ -66,6 +66,13 @@ export interface SerialPortLike {
  */
 export const WEB_SERIAL_HOST_BUFFER_SIZE = 1_048_576;
 
+/**
+ * What `readExact` says when the port's readable ended before any byte arrived while the port still offered a readable.
+ * Mozilla bug 2053974: Firefox on Windows with a CH340 cable on an older WCH driver does this; writes still work.
+ */
+export const CH340_FIREFOX_CLOSE_MESSAGE =
+  "The port's read side closed straight after opening. This usually means Firefox on Windows with a CH340 cable on an older driver (Mozilla bug 2053974): update the CH340 driver, or use Chrome or Edge.";
+
 /** Margin added to the wire time of the written bytes before a reopen (a CH340 FIFO stall fix). */
 export const WEB_SERIAL_DRAIN_MARGIN_MS = 20;
 
@@ -119,6 +126,10 @@ class WebSerialBytePipe implements WebSerialPipe {
   private port: SerialPortLike | null = null;
   private closed = false;
   private eof = false;
+  /** Bytes the pump has read since the streams were bound (open or reopen). */
+  private bytesReadSinceBind = 0;
+  /** The readable ended before a single byte arrived while the port still offered a readable: see {@link CH340_FIREFOX_CLOSE_MESSAGE}. */
+  private endedStraightAfterOpen = false;
   private pumpPromise: Promise<void> | null = null;
   private waiters: Array<() => void> = [];
 
@@ -133,6 +144,7 @@ class WebSerialBytePipe implements WebSerialPipe {
     this.buf = new Uint8Array(0);
     this.closed = false;
     this.eof = false;
+    this.endedStraightAfterOpen = false;
     if (!port.readable || !port.writable) {
       throw new RadioClosedError('Port streams unavailable.');
     }
@@ -156,6 +168,8 @@ class WebSerialBytePipe implements WebSerialPipe {
     this.writerRotations = 0;
     this.bytesSinceDrain = 0;
     this.wireFreeAt = 0;
+    this.bytesReadSinceBind = 0;
+    this.endedStraightAfterOpen = false;
     this.pumpPromise = this.pump();
   }
 
@@ -332,7 +346,11 @@ class WebSerialBytePipe implements WebSerialPipe {
     const deadline = Date.now() + timeoutMs;
     while (this.buf.length < n) {
       if (this.eof) {
-        throw new RadioClosedError('Serial port closed unexpectedly.');
+        throw new RadioClosedError(
+          this.endedStraightAfterOpen
+            ? CH340_FIREFOX_CLOSE_MESSAGE
+            : 'Serial port closed unexpectedly.',
+        );
       }
       if (Date.now() > deadline) {
         throw new RadioTimeoutError(`Timeout: needed ${n} bytes, have ${this.buf.length}.`);
@@ -403,11 +421,16 @@ class WebSerialBytePipe implements WebSerialPipe {
           return;
         }
         if (done) {
+          // A real unplug or close leaves no readable on the port (or follows traffic); a readable that ends before
+          // any byte while the port still offers one is the Firefox + CH340 signature.
+          this.endedStraightAfterOpen =
+            !this.closed && this.bytesReadSinceBind === 0 && Boolean(this.port?.readable);
           this.eof = true;
           this.notifyWaiters();
           return;
         }
         if (value && value.length > 0) {
+          this.bytesReadSinceBind += value.length;
           const next = new Uint8Array(this.buf.length + value.length);
           next.set(this.buf);
           next.set(value, this.buf.length);
