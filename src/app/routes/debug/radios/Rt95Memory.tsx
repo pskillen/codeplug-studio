@@ -36,13 +36,18 @@ import {
   RT95_ZONES_PROVENANCE,
   rt95ChannelSummary,
   rt95SlotIdentityFallback,
+  RT95_SLOT_RAW_UNAVAILABLE,
+  RT95_ZONES_BODY_CAVEAT,
+  rt95SlotDetailsText,
 } from '@integrations/radio-io/radios/rt95/debugMemoryText.ts';
 import { rt95GuardEvidence, type DebugArchive } from './captureArchive.ts';
 
 type SlotRow = Rt95DebugSlot & { description: string; label: string };
 
 const slotHex = (raw: Uint8Array | undefined) =>
-  raw ? Array.from(raw, (b) => b.toString(16).padStart(2, '0')).join(' ') : 'Unavailable';
+  raw
+    ? Array.from(raw, (b) => b.toString(16).padStart(2, '0')).join(' ')
+    : RT95_SLOT_RAW_UNAVAILABLE;
 
 const columns: DataTableColumn<SlotRow>[] = [
   {
@@ -242,10 +247,7 @@ export function Rt95Memory({
         )}
         mobileIdentityLabel="Slot · identity"
         details={(slot) => (
-          <Text size="sm">
-            Slot {slot.slot} raw record. Unresolved flags and bytes; raw evidence:{' '}
-            {slotHex(slot.raw)}
-          </Text>
+          <Text size="sm">{rt95SlotDetailsText(slot.slot, slotHex(slot.raw))}</Text>
         )}
         emptyMessage={RT95_CHANNELS_EMPTY}
       />
@@ -257,10 +259,7 @@ export function Rt95Memory({
       <Text size="sm" c="dimmed">
         {RT95_ZONES_PROVENANCE}
       </Text>
-      <Text>
-        Body EEPROM is reached through the head; it can return checksum-valid zeros without a body
-        reply. Running firmware, release and modification status remain unknown.
-      </Text>
+      <Text>{RT95_ZONES_BODY_CAVEAT}</Text>
       {!guard ? (
         <Alert>Guard evidence unverified [body].</Alert>
       ) : !guard.ok ? (

@@ -28,3 +28,14 @@ export function rt95SlotIdentityFallback(occupancy: 'occupied' | 'empty' | 'unav
 
 export const RT95_ZONES_PROVENANCE = 'MMD1 data: main board.';
 export const RT95_PKEYS_PROVENANCE = 'Clone image: the storage MCU is not documented.';
+
+/** Shown in a slot's details when its record bytes were not captured. */
+export const RT95_SLOT_RAW_UNAVAILABLE = 'Unavailable';
+
+/** The details line of a clicked channel slot; `hex` is the record as hex bytes. */
+export function rt95SlotDetailsText(slot: number, hex: string): string {
+  return `Slot ${slot} raw record. Unresolved flags and bytes; raw evidence: ${hex}`;
+}
+
+export const RT95_ZONES_BODY_CAVEAT =
+  'Body EEPROM is reached through the head; it can return checksum-valid zeros without a body reply. Running firmware, release and modification status remain unknown.';
