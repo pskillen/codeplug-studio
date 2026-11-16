@@ -18,6 +18,7 @@ import { OPENGD77_DM1701_MODEL_ID } from '@integrations/radio-io/radios/opengd77
 import { createOpenUv380Image, writeAbs } from '@integrations/radio-io/radios/opengd77/memory.ts';
 import { encodeUserDatabaseHeader } from '@integrations/radio-io/radios/opengd77/userDatabaseCodec.ts';
 import { archiveOpenGd77Capture } from './opengd77Capture.ts';
+import type { MemoryMap } from '@integrations/radio-io/types.ts';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 
 /** Synthetic calibration bytes: BCD-valid digits everywhere, a distinct pattern, the local marker. */
@@ -39,15 +40,19 @@ export function syntheticOpenGd77Capture(
     capturedAt?: string;
     userDatabaseEntries?: number;
     calibration?: Uint8Array;
+    /** Supply the whole FLASH image (memory tests); the default plants a few marker bytes. */
+    image?: MemoryMap;
   },
 ): OpenGd77DebugCapture {
   const radioType = opts?.radioType ?? (modelId === OPENGD77_DM1701_MODEL_ID ? 0x08 : 0x05);
   const entries = opts?.userDatabaseEntries ?? 2;
-  const image = createOpenUv380Image();
-  writeAbs(image, 0x80, new Uint8Array([0x53, 0x59, 0x4e]));
-  writeAbs(image, 0x7500, new Uint8Array([0xa1, 0xa2]));
-  writeAbs(image, 0x20000, new Uint8Array([0xb1]));
-  writeAbs(image, 0x9b000, new Uint8Array([0xc1]));
+  const image = opts?.image ?? createOpenUv380Image();
+  if (!opts?.image) {
+    writeAbs(image, 0x80, new Uint8Array([0x53, 0x59, 0x4e]));
+    writeAbs(image, 0x7500, new Uint8Array([0xa1, 0xa2]));
+    writeAbs(image, 0x20000, new Uint8Array([0xb1]));
+    writeAbs(image, 0x9b000, new Uint8Array([0xc1]));
+  }
   const header = encodeUserDatabaseHeader(entries);
   const userDatabase = new Uint8Array(header.length + entries * OPENUV380_USER_DB_ENTRY_SIZE);
   userDatabase.set(header);
@@ -77,6 +82,7 @@ export async function syntheticOpenGd77Archive(
     userDatabaseEntries?: number;
     /** `null` omits the region: the archive shape from before the calibration read. */
     calibration?: Uint8Array | null;
+    image?: MemoryMap;
   },
 ): Promise<DebugArchive> {
   const { calibration, ...rest } = opts ?? {};

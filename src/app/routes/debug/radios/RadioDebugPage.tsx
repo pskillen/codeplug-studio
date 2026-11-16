@@ -557,7 +557,12 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
             </Stack>
           </Tabs.Panel>
           <Tabs.Panel value="memory" pt="md">
-            {archive?.manifest.radioModelId === 'UV-5R Mini' ? (
+            {descriptor.Memory ? (
+              <descriptor.Memory
+                key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
+                archive={archive}
+              />
+            ) : archive?.manifest.radioModelId === 'UV-5R Mini' ? (
               <Uv5rMiniMemory archive={archive} />
             ) : descriptor.slug === 'at-d890uv' ? (
               <AtD890Memory archive={archive} />
