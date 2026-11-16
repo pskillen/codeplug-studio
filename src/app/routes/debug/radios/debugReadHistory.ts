@@ -11,11 +11,22 @@ export interface DebugHistoryEntry {
   readonly readAt: string;
   readonly archive: DebugArchive;
 }
+/** The two reads the Compare tab shows; each side is a retained id, or null while there are too few reads. */
+export interface DebugComparePair {
+  readonly a: string | null;
+  readonly b: string | null;
+}
 export interface DebugHistorySnapshot {
   readonly entries: readonly DebugHistoryEntry[];
   readonly selectedId: string | null;
   /** Second retained read for comparison and calibration overlay; always a retained id or null. */
   readonly compareId: string | null;
+  /**
+   * The Compare tab's pair, apart from the calibration overlay pick. A side with no explicit pick is
+   * the previous read (A) or the latest read (B); an explicit pick stays through new reads until its
+   * read leaves the history, then that side falls back to the default.
+   */
+  readonly comparePair: DebugComparePair;
   readonly undownloaded: number;
 }
 export interface DebugReadHistoryStore {
@@ -26,6 +37,12 @@ export interface DebugReadHistoryStore {
   select(id: string): void;
   /** Choose the comparison / overlay read by retained id; unknown ids clear it. */
   setCompare(id: string | null): void;
+  /** Pick the Compare tab's A and/or B by retained id; an omitted side is unchanged, null or an unknown id restores that side's default. */
+  setComparePair(pair: { a?: string | null; b?: string | null }): void;
+  /** Exchange A and B (both become explicit picks). */
+  swapComparePair(): void;
+  /** Drop both explicit picks: back to previous vs latest. */
+  clearComparePair(): void;
   /**
    * Replace a retained read's radio name, label and description. Descriptive only. A live read
    * counts as not downloaded again, because the saved zip would differ.
@@ -49,11 +66,24 @@ function label(index: number): string {
   return result;
 }
 
+function resolvePair(
+  entries: readonly DebugHistoryEntry[],
+  picks: { a: string | null; b: string | null },
+): DebugComparePair {
+  const has = (id: string | null) => id !== null && entries.some((entry) => entry.id === id);
+  return {
+    a: has(picks.a) ? picks.a : (entries[entries.length - 2]?.id ?? null),
+    b: has(picks.b) ? picks.b : (entries[entries.length - 1]?.id ?? null),
+  };
+}
+
 function createStore(descriptor: Descriptor): DebugReadHistoryStore {
+  let picks: { a: string | null; b: string | null } = { a: null, b: null };
   let snapshot: DebugHistorySnapshot = {
     entries: [],
     selectedId: null,
     compareId: null,
+    comparePair: { a: null, b: null },
     undownloaded: 0,
   };
   const pending = new Set<string>();
@@ -63,7 +93,12 @@ function createStore(descriptor: Descriptor): DebugReadHistoryStore {
     selectedId = snapshot.selectedId,
     compareId = snapshot.compareId,
   ) => {
-    snapshot = { entries, selectedId, compareId, undownloaded: pending.size };
+    const resolved = resolvePair(entries, picks);
+    const comparePair =
+      resolved.a === snapshot.comparePair.a && resolved.b === snapshot.comparePair.b
+        ? snapshot.comparePair
+        : resolved;
+    snapshot = { entries, selectedId, compareId, comparePair, undownloaded: pending.size };
     listeners.forEach((listener) => listener());
   };
   const validate = (archive: DebugArchive) => {
@@ -111,6 +146,28 @@ function createStore(descriptor: Descriptor): DebugReadHistoryStore {
       const next = id !== null && snapshot.entries.some((entry) => entry.id === id) ? id : null;
       if (next !== snapshot.compareId) emit(snapshot.entries, snapshot.selectedId, next);
     },
+    setComparePair(pair) {
+      const known = (id: string | null | undefined) =>
+        id != null && snapshot.entries.some((entry) => entry.id === id) ? id : null;
+      const next = {
+        a: pair.a === undefined ? picks.a : known(pair.a),
+        b: pair.b === undefined ? picks.b : known(pair.b),
+      };
+      if (next.a === picks.a && next.b === picks.b) return;
+      picks = next;
+      emit();
+    },
+    swapComparePair() {
+      const { a, b } = snapshot.comparePair;
+      if (a === null || b === null) return;
+      picks = { a: b, b: a };
+      emit();
+    },
+    clearComparePair() {
+      if (picks.a === null && picks.b === null) return;
+      picks = { a: null, b: null };
+      emit();
+    },
     setLabels(id, labels) {
       const entry = snapshot.entries.find((item) => item.id === id);
       if (!entry) return;
@@ -127,6 +184,7 @@ function createStore(descriptor: Descriptor): DebugReadHistoryStore {
     },
     clear() {
       pending.clear();
+      picks = { a: null, b: null };
       emit([], null, null);
     },
   };

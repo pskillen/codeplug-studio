@@ -19,12 +19,22 @@ it('compares clone windows and reports special channel slots', () => {
       ident: { f: new Uint8Array(16), m: new Uint8Array(15) },
       spans: hashUv5rMiniDebugSpans(decoded),
     });
+  const [first, second] = store.getSnapshot().reads;
   render(
     <MantineProvider>
-      <Uv5rMiniCompare reads={store.getSnapshot().reads} onOpenArchive={() => {}} />
+      <Uv5rMiniCompare a={first} b={second} />
     </MantineProvider>,
   );
   expect(screen.getByText('Identical compared spans')).toBeInTheDocument();
   expect(screen.getByText(/VFO frame.*1 bytes differ/)).toBeInTheDocument();
   expect(screen.getByText(/Slot 248/)).toBeInTheDocument();
+});
+
+it('asks for two different reads when a side is missing', () => {
+  render(
+    <MantineProvider>
+      <Uv5rMiniCompare />
+    </MantineProvider>,
+  );
+  expect(screen.getByText('Two complete captures required')).toBeInTheDocument();
 });
