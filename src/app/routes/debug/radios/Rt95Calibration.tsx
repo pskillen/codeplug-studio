@@ -1,9 +1,11 @@
 import LineChart from '@app/components/LineChart/LineChart.tsx';
 import { RT95_CALIBRATION_START } from '@core/radios/retevis/rt95/calibration.ts';
 import { RT95_CALIBRATION_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
-import { Alert, Stack, Text, Title } from '@mantine/core';
+import { Alert, Group, Stack, Text, Title } from '@mantine/core';
 import { decodeRt95Calibration } from '@core/radios/retevis/rt95/calibration.ts';
-import { hexRows, formatAddress } from './viewerUtils.ts';
+import { hexRows, formatAddress, MASKED_HEX_BYTE, sensitiveRanges } from './viewerUtils.ts';
+import { SensitiveRevealButton } from './SensitiveReveal.tsx';
+import { useSensitiveReveal } from './useSensitiveReveal.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
 export function Rt95Calibration({
@@ -17,8 +19,11 @@ export function Rt95Calibration({
   const overlayFields = decodeRt95Calibration(
     overlayArchive?.regions[RT95_CALIBRATION_REGION_ID],
   ).fields;
+  const reveal = useSensitiveReveal(archive);
+  const mask = reveal.revealed ? [] : sensitiveRanges(archive, RT95_CALIBRATION_REGION_ID);
   const hex = (bytes: Uint8Array) =>
     Array.from(bytes, (b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+  const hidden = (field: { sensitive?: boolean }) => field.sensitive && !reveal.revealed;
   return (
     <Stack>
       <Title order={3}>Calibration and production record [body]</Title>
@@ -75,18 +80,23 @@ export function Rt95Calibration({
             {field.label} [body] · {formatAddress(field.address)} · {field.width} bytes ·{' '}
             {field.order}
           </Text>
+          {field.sensitive && field.availability !== 'not-captured' && (
+            <SensitiveRevealButton revealed={reveal.revealed} onToggle={reveal.toggle} />
+          )}
           <Text size="sm">
             {field.availability === 'not-captured'
               ? 'Not captured'
-              : `Raw: ${hex(field.raw)}${field.availability === 'partial' ? ' · partial' : ''}`}{' '}
+              : `Raw: ${hidden(field) ? Array.from(field.raw, () => MASKED_HEX_BYTE).join(' ') : hex(field.raw)}${field.availability === 'partial' ? ' · partial' : ''}`}{' '}
             · Decoded:{' '}
-            {field.text !== undefined
-              ? `Text: ${field.text}`
-              : field.value === undefined
-                ? field.availability === 'captured'
-                  ? 'Not decoded'
-                  : 'Not captured'
-                : `0x${field.value.toString(16).toUpperCase()}`}{' '}
+            {hidden(field) && field.availability !== 'not-captured'
+              ? 'Hidden'
+              : field.text !== undefined
+                ? `Text: ${field.text}`
+                : field.value === undefined
+                  ? field.availability === 'captured'
+                    ? 'Not decoded'
+                    : 'Not captured'
+                  : `0x${field.value.toString(16).toUpperCase()}`}{' '}
             {field.referenceIndex === undefined ? '' : `· reference index ${field.referenceIndex}`}{' '}
             · layout {field.layout}, meaning {field.meaning} · {field.source}
           </Text>
@@ -103,7 +113,7 @@ export function Rt95Calibration({
       <Title order={4}>Raw captured EEPROM [body]</Title>
       {raw.length ? (
         Array.from({ length: Math.ceil(raw.length / 256) }, (_, page) =>
-          hexRows(raw, RT95_CALIBRATION_START, page),
+          hexRows(raw, RT95_CALIBRATION_START, page, mask),
         )
           .flat()
           .map((row) => (
@@ -125,22 +135,38 @@ export function Rt95CalibrationDiff({
   first: DebugArchive;
   second: DebugArchive;
 }) {
+  const reveal = useSensitiveReveal(first);
   const a = decodeRt95Calibration(first.regions[RT95_CALIBRATION_REGION_ID]).fields;
   const b = decodeRt95Calibration(second.regions[RT95_CALIBRATION_REGION_ID]).fields;
-  const changed = a.flatMap((field) => {
+  const changes = a.flatMap((field) => {
     const next = b.find((item) => item.address === field.address);
     if (!next || field.availability !== 'captured' || next.availability !== 'captured') return [];
     if (field.raw.length === next.raw.length && field.raw.every((byte, i) => byte === next.raw[i]))
       return [];
     const hex = (bytes: Uint8Array) =>
       Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join(' ');
+    const where = `${field.label} (${formatAddress(field.address)})`;
     return [
-      `${field.label} (${formatAddress(field.address)}): ${hex(field.raw)} → ${hex(next.raw)}`,
+      {
+        sensitive: field.sensitive === true,
+        text:
+          field.sensitive && !reveal.revealed
+            ? `${where}: changed`
+            : `${where}: ${hex(field.raw)} → ${hex(next.raw)}`,
+      },
     ];
   });
+  const changed = changes.map((change) => change.text);
+  const sensitiveChanged = changes.some((change) => change.sensitive);
   return (
     <Stack>
       <Title order={4}>Calibration field changes</Title>
+      {sensitiveChanged && (
+        <Group gap="xs">
+          <Text size="sm">Password bytes are {reveal.revealed ? 'shown' : 'hidden'}.</Text>
+          <SensitiveRevealButton revealed={reveal.revealed} onToggle={reveal.toggle} />
+        </Group>
+      )}
       {changed.length ? (
         changed.map((text) => <Text key={text}>{text}</Text>)
       ) : (
