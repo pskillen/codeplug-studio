@@ -4,7 +4,7 @@ The shared Settings tab shell for a radio debug page.
 
 ## Purpose
 
-Calls the descriptor's `settings(archive)` and draws the result with `SettingsTable`. It holds no radio text; the `SettingsView` carries every sentence. Radios not yet on `settings` keep their own `Settings` component, which the page uses when the descriptor has no `settings`.
+Calls the descriptor's `settings(archive)` and draws the result with `SettingsTable`. It holds no radio text; the `SettingsView` carries every sentence. Every radio with a Settings tab is on `settings`; the old per-radio `Settings` component field is gone.
 
 ## Props
 
@@ -24,4 +24,5 @@ Calls the descriptor's `settings(archive)` and draws the result with `SettingsTa
 
 - [SettingsTable.md](../../../components/debug/SettingsTable.md)
 - [RadioDebugPage.md](./RadioDebugPage.md)
+- Views: `opengd77/debugSettingsView.ts`, `uv5r-mini/debugRead/settingsView.ts`, `rt95/` and `at-d890uv/debugSettingsView.ts`
 - DM-32UV view: `src/integrations/radio-io/radios/dm32uv/debugSettingsView.ts`
