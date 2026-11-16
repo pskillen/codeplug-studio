@@ -1040,18 +1040,35 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     ]);
   });
 
-  it('routes Memory to the OpenGD77 viewer, with contacts, RX groups and the User Database', async () => {
+  // One category per test: each render of the Memory tab is the cost, so no single test carries four.
+  const openMemoryWithCapture = async () => {
+    history.add(await syntheticOpenGd77Archive(modelId));
+    open(slug);
+    fireEvent.click(screen.getByRole('tab', { name: 'Memory' }));
+    await screen.findByRole('combobox', { name: 'Category' });
+  };
+
+  it('routes Memory to the OpenGD77 viewer, with no capture yet', () => {
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Memory' }));
     expect(screen.getAllByText('No capture').length).toBeGreaterThan(0);
-    history.add(await syntheticOpenGd77Archive(modelId));
-    await screen.findByRole('combobox', { name: 'Category' });
-    chooseCategory('Zones');
+  });
+
+  it('shows the OpenGD77 User Database category', async () => {
+    await openMemoryWithCapture();
     chooseCategory('User Database');
     expect(screen.getByText('Valid header')).toBeInTheDocument();
     expect(screen.queryByText('Coming in a later piece')).not.toBeInTheDocument();
+  });
+
+  it('shows the OpenGD77 Contacts category', async () => {
+    await openMemoryWithCapture();
     chooseCategory('Contacts');
     expect(screen.getByText(/contact bank is captured and no slot is in use/)).toBeInTheDocument();
+  });
+
+  it('shows the OpenGD77 RX groups category', async () => {
+    await openMemoryWithCapture();
     chooseCategory('RX groups');
     expect(screen.getByText(/RX group bank is captured and no list is in use/)).toBeInTheDocument();
   });
