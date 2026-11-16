@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { formatDecimal, formatHex, formatHexDec, formatNumber, NOT_CAPTURED_TEXT } from './format.ts';
+import {
+  formatDecimal,
+  formatHex,
+  formatHexDec,
+  formatNumber,
+  NOT_CAPTURED_TEXT,
+} from './format.ts';
 
 describe('debugView format', () => {
   it('pads hex to the byte width', () => {

@@ -56,6 +56,7 @@ export interface StepBars extends ChartBase {
 }
 export interface BatteryLadder extends ChartBase {
   kind: 'battery';
+  /** Lowest step first: the chart reverses them to draw the highest on top. */
   steps: readonly { id: string; label: string; raw: number | undefined; volts?: number }[];
   blank?: string; // "All six read 0xFF: the firmware uses built-in thresholds"
 }

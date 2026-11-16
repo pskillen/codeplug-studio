@@ -105,7 +105,11 @@ function RowsTable({
                 {row.help && <span className={classes.help}>{row.help}</span>}
               </td>
               <td>{valueText(row, revealed)}</td>
-              {showRaw && <td className={classes.mono}>{row.address ?? (row.value === undefined ? NOT_CAPTURED : DASH)}</td>}
+              {showRaw && (
+                <td className={classes.mono}>
+                  {row.address ?? (row.value === undefined ? NOT_CAPTURED : DASH)}
+                </td>
+              )}
               {showRaw && <td className={classes.mono}>{rawText(row, revealed)}</td>}
               {showDefault && <td>{row.firmwareDefault ?? DASH}</td>}
               <td>
@@ -177,7 +181,12 @@ export default function SettingsTable({
       </div>
       <div className={classes.sections}>
         {shownGroups.map(({ g, rows }) => (
-          <DebugSection key={g.id} id={`settings-${g.id}`} title={g.label} description={g.description}>
+          <DebugSection
+            key={g.id}
+            id={`settings-${g.id}`}
+            title={g.label}
+            description={g.description}
+          >
             {rows.length === 0 ? (
               <p className={classes.empty}>{g.emptyText ?? 'No settings in this group.'}</p>
             ) : (

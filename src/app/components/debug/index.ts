@@ -32,7 +32,8 @@ export { default as MemoryCategoryPanel, identityLabel } from './MemoryCategoryP
 export type { MemoryCategoryPanelProps } from './MemoryCategoryPanel.tsx';
 export { default as BatteryChart } from './BatteryChart.tsx';
 export type { BatteryChartProps } from './BatteryChart.tsx';
-export { default as TrimDisplay, trimPpm, trimValueText } from './TrimDisplay.tsx';
+export { default as TrimDisplay } from './TrimDisplay.tsx';
+export { trimPpm, trimValueText } from './trimText.ts';
 export type { TrimDisplayProps } from './TrimDisplay.tsx';
 export { default as CalibrationReadPicker, NO_OVERLAY_LABEL } from './CalibrationReadPicker.tsx';
 export type {

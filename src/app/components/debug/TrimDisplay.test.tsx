@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { TrimView } from '@integrations/radio-io/debugView';
 import DesignSystemV2Provider from '../v2/DesignSystemV2Provider.tsx';
-import TrimDisplay, { trimPpm, trimValueText } from './TrimDisplay.tsx';
+import TrimDisplay from './TrimDisplay.tsx';
+import { trimPpm, trimValueText } from './trimText.ts';
 
 const wrap = (ui: ReactNode) => render(<DesignSystemV2Provider>{ui}</DesignSystemV2Provider>);
 
@@ -62,5 +63,17 @@ describe('TrimDisplay', () => {
     );
     expect(screen.getByText('Above 16 the firmware uses 8')).toBeInTheDocument();
     expect(container.querySelectorAll('circle')).toHaveLength(0);
+  });
+
+  it('says Off scale for a value beyond the scale when the model has no text', () => {
+    const { rerender } = wrap(<TrimDisplay chart={trim({ raw: 40 })} />);
+    expect(screen.getByText('Off scale')).toBeInTheDocument();
+    rerender(
+      <DesignSystemV2Provider>
+        <TrimDisplay chart={trim({ raw: 40, outOfRange: 'Above 16 uses index 8' })} />
+      </DesignSystemV2Provider>,
+    );
+    expect(screen.queryByText('Off scale')).toBeNull();
+    expect(screen.getByText('Above 16 uses index 8')).toBeInTheDocument();
   });
 });
