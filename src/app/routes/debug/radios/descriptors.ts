@@ -17,7 +17,6 @@ import { UV5R_MINI_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/uv5r
 import { uv5rMiniSettingsView } from '@integrations/radio-io/radios/uv5r-mini/debugRead/settingsView.ts';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
-import { Rt95Calibration } from './Rt95Calibration.tsx';
 import { atD890CompareAdapter } from './atD890Compare.ts';
 import { atD890DecodedSnapshot } from './atD890DecodedDiff.ts';
 import type { DebugCompareAdapter } from '@integrations/radio-io/debugCompare/index.ts';
@@ -93,8 +92,8 @@ export interface RadioDebugDescriptor {
   settings?: (archive: DebugArchive) => SettingsView;
   /**
    * The Calibration tab's content as a radio-neutral view, drawn by the shared `CalibrationTab`
-   * (K1b part 2). Radio-home function, called once for the read and once for the overlay. Until
-   * that tab lands the page still draws `Calibration`.
+   * Radio-home function, called once for the read and once for the overlay. Preferred over
+   * `Calibration`.
    */
   calibration?: (archive: DebugArchive) => CalibrationView;
   /** False when the Calibration tab has no overlay picker (the radio's calibration is shown alone). */
@@ -235,7 +234,6 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Memory: Rt95MemoryView,
     settings: rt95SettingsView,
     calibration: rt95CalibrationView,
-    Calibration: Rt95Calibration,
     readHistory: true,
     capture: captureRt95,
     sensitiveRanges: rt95ArchiveSensitiveRanges,
