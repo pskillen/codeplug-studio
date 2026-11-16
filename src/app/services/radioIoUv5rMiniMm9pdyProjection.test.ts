@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import * as miniScanSets from '@integrations/radio-io/radios/uv5r-mini/modData/scanSets.ts';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import { newChannel, newRadioBuildForProfile, newZone } from '@core/domain/factories.ts';
 import { upsertOverride } from '@core/domain/formatBuildOverrides.ts';
@@ -18,6 +19,9 @@ import {
   projectUv5rMiniMm9pdy,
   uv5rMiniMm9pdyZoneOrderedAssembled,
 } from './radioIoUv5rMiniMm9pdyProjection.ts';
+
+const firmwareNote =
+  "Some zones scan only part of their channels. Firmware older than 1.1.0 uses each channel's Scan in All channels setting instead, or scans all channels if none are included.";
 
 const MM = 'radio-io-uv5r-mini-mm9pdy';
 
@@ -90,11 +94,10 @@ describe('UV-5R Mini MM9PDY projection', () => {
     expect(ordered.channels.find((r) => r.entity.id === 'b')?.orderOrSlot).toBe(5);
   });
 
-  it('warns when firmware is unknown even for a clean zone', () => {
+  it('does not show a firmware note when every member scans', () => {
     const { zones, texts } = run([{ wireName: 'Local', channelNumbers: [1, 2, 3] }]);
     expect(zones).toEqual([{ wireName: 'Local', channelNumbers: [1, 2, 3] }]);
-    expect(texts).toHaveLength(1);
-    expect(texts[0]).toContain('may ignore zone scan sets');
+    expect(texts).toEqual([]);
   });
 
   it('drops an empty zone and says empty zones are skipped', () => {
@@ -168,6 +171,29 @@ describe('UV-5R Mini MM9PDY projection', () => {
     const message = formatExportWarning(room[0]!);
     expect(message).toContain('"Z4"');
     expect(message).not.toContain('"Later"');
+  });
+
+  it('does not count a capacity fallback as a skipped set', () => {
+    // An isolated fallback is synthetic: real capacity overflow also needs earlier kind-1 zones.
+    const fill = vi.spyOn(miniScanSets, 'fillMiniScanSets').mockReturnValue({
+      bits: [],
+      fallback: [0],
+      kinds: [0],
+      needed: 4433,
+    });
+    try {
+      const warnings: ExportWarning[] = [];
+      projectUv5rMiniMm9pdy({
+        zones: [{ wireName: 'Fallback', channelNumbers: [1, 2, 3], scanChannelNumbers: [1, 2] }],
+        warnings,
+      });
+      expect(warnings.some((w) => w.kind === 'zone_scan_set' && w.issue === 'room-exceeded')).toBe(
+        true,
+      );
+      expect(warnings.map(formatExportWarning)).not.toContain(firmwareNote);
+    } finally {
+      fill.mockRestore();
+    }
   });
 
   it('produces the empty-table intent for no zones, and null without the flag', () => {
@@ -307,7 +333,11 @@ describe('UV-5R Mini MM9PDY Write projection wiring', () => {
     expect(skipping.encoded?.frames.slice(0, -1)).toEqual(plain.encoded?.frames.slice(0, -1));
     expect(skipping.encoded?.frames.at(-1)).not.toEqual(plain.encoded?.frames.at(-1));
     expect(skipping.texts.some((t) => t.includes("won't scan"))).toBe(true);
-    expect(skipping.texts.some((t) => t.includes('may ignore zone scan sets'))).toBe(true);
+    expect(skipping.projection.warnings).toContainEqual({
+      kind: 'general',
+      severity: 'info',
+      message: firmwareNote,
+    });
   });
 
   it('stock Mini projection carries no zones and no flag', () => {

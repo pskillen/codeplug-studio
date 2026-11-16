@@ -6,11 +6,7 @@
  */
 
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
-import {
-  pushGeneralInfoWarning,
-  pushGeneralWarning,
-  pushZoneScanSetWarning,
-} from '@core/import-export/exportWarning.ts';
+import { pushGeneralInfoWarning, pushGeneralWarning } from '@core/import-export/exportWarning.ts';
 import { toRt95Ascii } from '@core/import-export/formatProfiles.ts';
 import { UV5R_MINI_LIMITS } from '@core/radios/baofeng/uv-5r-mini/limits.ts';
 import { checkZoneScanSets } from '@core/import-export/zoneScanSets/index.ts';
@@ -119,13 +115,12 @@ export function projectUv5rMiniMm9pdy(input: Uv5rMiniMm9pdyProjectionInput): {
     warnings,
   );
 
-  if (zones.length)
-    pushZoneScanSetWarning(warnings, {
-      issue: 'firmware-too-old',
-      reason: 'firmware version unknown',
-      message:
-        "Studio cannot identify this radio's firmware during Write. It may ignore zone scan sets until its firmware is updated; the sets will still be written.",
-    });
+  if (encoded.kinds.includes(1)) {
+    pushGeneralInfoWarning(
+      warnings,
+      "Some zones scan only part of their channels. Firmware older than 1.1.0 uses each channel's Scan in All channels setting instead, or scans all channels if none are included.",
+    );
+  }
 
   return { zones };
 }
