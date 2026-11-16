@@ -13,6 +13,7 @@ One look for Settings: the DM-32 layout, striped, with the same columns and widt
 | `view`           | `SettingsView` | Status, summary, intro, groups of `SettingRow`, optional folded `trailing` |
 | `revealed`       | `boolean`      | Sensitive rows show their value and raw bytes only when true               |
 | `onToggleReveal` | `() => void`   | The **Show password** button; shown only when some row has `sensitive`     |
+| `defaultShowRaw` | `boolean`      | Start with Address and Raw on; the switch still works (default off)        |
 
 ## Usage
 

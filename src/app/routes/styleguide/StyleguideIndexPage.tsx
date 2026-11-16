@@ -14,6 +14,11 @@ const SECTIONS = [
     description: 'CountTile, Panel, Pill, DataTable v2, MapPanel, WirePreviewTable.',
   },
   {
+    to: '/styleguide/debug',
+    title: 'Debug pages',
+    description: 'Chart cards, value tables, settings and memory panels.',
+  },
+  {
     to: '/styleguide/feedback',
     title: 'Feedback',
     description: 'StatusBanner, StatusDot, DismissibleNotice.',

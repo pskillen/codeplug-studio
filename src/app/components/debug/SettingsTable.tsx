@@ -14,6 +14,8 @@ export interface SettingsTableProps {
   /** Whether sensitive rows are shown; hidden unless the viewer reveals them. */
   revealed: boolean;
   onToggleReveal: () => void;
+  /** Start with the Address and Raw columns on (the viewer can still switch them). Default off. */
+  defaultShowRaw?: boolean;
 }
 
 const NOT_CAPTURED = 'Not captured';
@@ -122,9 +124,14 @@ function RowsTable({
  * per group with the same columns and widths everywhere, and the trailing sections folded.
  * Radio-neutral: every sentence arrives in the `SettingsView`.
  */
-export default function SettingsTable({ view, revealed, onToggleReveal }: SettingsTableProps) {
+export default function SettingsTable({
+  view,
+  revealed,
+  onToggleReveal,
+  defaultShowRaw = false,
+}: SettingsTableProps) {
   const [query, setQuery] = useState('');
-  const [showRaw, setShowRaw] = useState(false);
+  const [showRaw, setShowRaw] = useState(defaultShowRaw);
   const allRows = useMemo(
     () => [...view.groups.flatMap((g) => g.rows), ...(view.trailing ?? []).flatMap((t) => t.rows)],
     [view],
