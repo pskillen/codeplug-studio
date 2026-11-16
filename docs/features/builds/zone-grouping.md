@@ -21,6 +21,8 @@ How zones appear on the CPS wire for builds with the **zone grouping** trait. **
 
 **Tracking:** [#456](https://github.com/pskillen/codeplug-studio/issues/456) (ordering) · [#87](https://github.com/pskillen/codeplug-studio/issues/87)
 
+For flat-memory zone targets that support member order, Studio passes the effective member order to the radio writer. Older firmware shows channels in channel-number order. The writer warns when an order does not fit.
+
 ## Related
 
 - [wire-preview.md](wire-preview.md) — override semantics and shared table

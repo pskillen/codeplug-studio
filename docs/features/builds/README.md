@@ -139,6 +139,8 @@ Per-build toggles on `RadioBuild` (default **on**) control whether orphan librar
 
 Switches on `/builds/:id/export` **and** the matching Build → entity settings cards persist to the build row. Wire preview `includedPreviewWireRows` honours the same flags.
 
+On flat-memory zone targets that support member order, Write passes the effective order to the radio. Older firmware shows channel-number order; a capacity warning identifies zones whose order does not fit. See [zone grouping](zone-grouping.md).
+
 - [profiles.md](profiles.md) — radio profile picker workflows
 - [data-model](../data-model/README.md) — `RadioBuild`, `EgressPath`, trait layout, overrides
 - [import-export/opengd77](../import-export/opengd77/README.md) — OpenGD77 profiles

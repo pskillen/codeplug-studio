@@ -79,3 +79,17 @@ export function checkZoneScanSets(
 
   return { writeScanSets: true };
 }
+
+/** Each radio selects zones whose member order cannot fit; writing continues. */
+export function checkZoneOrderRoom(
+  zones: readonly { zoneName: string; channelNumbers: readonly number[] }[],
+  roomExceeded: (
+    zones: readonly { zoneName: string; channelNumbers: readonly number[] }[],
+  ) => readonly number[],
+  warnings: ExportWarning[],
+): void {
+  for (const index of roomExceeded(zones)) {
+    const zone = zones[index];
+    if (zone) warnings.push({ kind: 'zone_order', severity: 'problem', zoneName: zone.zoneName });
+  }
+}

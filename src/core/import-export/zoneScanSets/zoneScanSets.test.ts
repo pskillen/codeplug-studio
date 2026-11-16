@@ -6,6 +6,7 @@ import { formatExportWarning, type ExportWarning } from '@core/import-export/exp
 import {
   ZONE_SCAN_SET_MIN_CHANNELS,
   checkZoneScanSets,
+  checkZoneOrderRoom,
   resolveZoneScanSets,
   zoneScanSetChannelNumbers,
   zoneScanSetCounts,
@@ -192,5 +193,21 @@ describe('checkZoneScanSets', () => {
     expect(warnings.map(formatExportWarning)).toEqual([
       'The zone scan sets need 2 zone scan sets, but the radio holds 1. Zones after the first scan as before.',
     ]);
+  });
+});
+
+describe('zone order capacity', () => {
+  it('warns for the zones chosen by the radio without refusing the others', () => {
+    const warnings: ExportWarning[] = [];
+    checkZoneOrderRoom(
+      [
+        { zoneName: 'First', channelNumbers: [2, 1] },
+        { zoneName: 'Later', channelNumbers: [4, 3] },
+      ],
+      () => [0],
+      warnings,
+    );
+    expect(warnings).toEqual([{ kind: 'zone_order', severity: 'problem', zoneName: 'First' }]);
+    expect(formatExportWarning(warnings[0]!)).toContain('channel-number order');
   });
 });

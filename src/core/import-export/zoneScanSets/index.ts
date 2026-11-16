@@ -8,6 +8,7 @@ export {
 export {
   ZONE_SCAN_SET_MIN_CHANNELS,
   checkZoneScanSets,
+  checkZoneOrderRoom,
   type ZoneScanSetCheckResult,
   type ZoneScanSetFirmwareTooOld,
   type ZoneScanSetOnRadio,
