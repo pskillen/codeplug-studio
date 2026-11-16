@@ -7,7 +7,8 @@ import {
   type RadioBackupRegionV1,
 } from '@integrations/radio-io/backup/index.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
-import { AtD890Settings } from './AtD890Settings.tsx';
+import { atD890SettingsView } from '@integrations/radio-io/radios/at-d890uv/debugSettingsView.ts';
+import { SettingsTab } from './SettingsTab.tsx';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 import { hexRows, sensitiveRanges } from './viewerUtils.ts';
 
@@ -60,14 +61,14 @@ const entries = () => [
 const show = (a: DebugArchive) =>
   render(
     <MantineProvider>
-      <AtD890Settings archive={a} />
+      <SettingsTab archive={a} settings={atD890SettingsView} />
     </MantineProvider>,
   );
 
 describe('AT-D890UV passwords', () => {
   it('masks all three passwords by default', () => {
     show(archive(entries()));
-    const privacy = screen.getByRole('region', { name: 'Privacy / lock' });
+    const privacy = screen.getByRole('table', { name: 'Privacy / lock settings' });
     expect(within(privacy).getAllByText('Hidden (password)')).toHaveLength(3);
     expect(privacy.textContent).not.toContain('1234');
     fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
@@ -78,7 +79,7 @@ describe('AT-D890UV passwords', () => {
   it('decodes them on reveal and hides them again', () => {
     show(archive(entries()));
     fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
-    const privacy = screen.getByRole('region', { name: 'Privacy / lock' });
+    const privacy = screen.getByRole('table', { name: 'Privacy / lock settings' });
     expect(within(privacy).getAllByText('1234')).toHaveLength(3);
     expect(within(privacy).getByText('Decode program password')).toBeInTheDocument();
     expect(within(privacy).getByText('Band-settings password')).toBeInTheDocument();
@@ -88,7 +89,7 @@ describe('AT-D890UV passwords', () => {
 
   it('says Not captured when a LocalInfo password was not read', () => {
     show(archive([sparse(POWER_ON, ascii('1234', 8))]));
-    const privacy = screen.getByRole('region', { name: 'Privacy / lock' });
+    const privacy = screen.getByRole('table', { name: 'Privacy / lock settings' });
     expect(within(privacy).getAllByText('Not captured').length).toBeGreaterThanOrEqual(2);
   });
 
