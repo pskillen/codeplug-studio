@@ -20,6 +20,8 @@ Cite: qdmr `OpenUV380CallsignDB` **Offset** + `encode()` (facts only). The class
 
 Studio Write programs **occupied sectors only** (header + packed entries). Do not copy qdmr `size1 = 0xd28000` as an entry count.
 
+Debug viewer: the packed `user-database` region of a capture is browsed read-only in the debug Memory tab, with the true flash addresses of this table; see [debug-memory.md](debug-memory.md#user-database).
+
 ## Cardinality
 
 | Cap           | Value       | Notes                                                                                                                                                                    |

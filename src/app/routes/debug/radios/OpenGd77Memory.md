@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Read-only OpenGD77 (DM-1701, MD-9600) Memory viewer: channels and zones decoded from the open debug archive's captured FLASH spans, without a project, library or build.
+Read-only OpenGD77 (DM-1701, MD-9600) Memory viewer: channels, zones, contacts, RX groups and the User Database decoded from the open debug archive's captured FLASH spans, without a project, library or build.
 
 ## Props
 
@@ -16,7 +16,7 @@ Set as the `Memory` component on both OpenGD77 descriptors; `RadioDebugPage` mou
 
 ## Behaviour
 
-Projection is in `integrations/radio-io/radios/opengd77/debugMemory.ts`: only registered `flash-span-N` entries with the span's address, a length within the span and matching stored bytes count; wrong, duplicate or overlapping entries are refused with a reason; coverage is byte-exact and never gap-filled. A channel bank is decoded only when its whole `0x1C10` bytes were captured; a missing bank is one "Not captured" line (first to last slot) above the table, not 128 rows. Slots keep one-based numbers; an occupied bitmap bit with an empty record is labelled as such. Power is the model's own ladder step (from `openGd77DebugModel`), "Default" for none. Identity is the single name field (OpenGD77 records carry no separate callsign). TX contact and RX group show as unresolved numbers. Tables are v2 `DataTable`s with search and temporary sorting, default slot order. The zone bank must be wholly captured; unnamed zones are listed; selecting a zone shows members in radio order with duplicates and each resolution (resolved, absent, empty record, not captured, out of range). Contacts, RX groups and the User Database read "Coming in a later piece".
+Projection is in `integrations/radio-io/radios/opengd77/debugMemory.ts`: only registered `flash-span-N` entries with the span's address, a length within the span and matching stored bytes count; wrong, duplicate or overlapping entries are refused with a reason; coverage is byte-exact and never gap-filled. A channel bank is decoded only when its whole `0x1C10` bytes were captured; a missing bank is one "Not captured" line (first to last slot) above the table, not 128 rows. Slots keep one-based numbers; an occupied bitmap bit with an empty record is labelled as such. Power is the model's own ladder step (from `openGd77DebugModel`), "Default" for none. Identity is the single name field (OpenGD77 records carry no separate callsign). TX contact and RX group show as unresolved numbers (not resolved against the contact bank here). Tables are v2 `DataTable`s with search and temporary sorting, default slot order. The zone bank must be wholly captured; unnamed zones are listed; selecting a zone shows members in radio order with duplicates and each resolution (resolved, absent, empty record, not captured, out of range). The Contacts, RX groups and User Database tabs mount the panels from [OpenGd77Directories](OpenGd77Directories.md).
 
 ## Related
 
