@@ -8,13 +8,13 @@ Digital APRS global settings, receive filters, and per-channel bindings on AT-D8
 
 ## Region summary
 
-| Region                | Base             | Length           | Studio v1                                                |
-| --------------------- | ---------------- | ---------------- | -------------------------------------------------------- |
-| Global APRS config    | `0x3501000`      | `0x260`          | Read + Write modelled fields                             |
-| Receive filters (32×) | `0x3501300`      | `0x100`          | Read; Write RMW-preserve (unmodelled)                    |
-| GPS template text     | `0x3501280`      | `0x30` of `0x42` | Read; debug viewer decodes UTF-16, not written, not APRS |
-| Channel APRS bits     | MR `0x80` record | see below        | Read + Write modelled fields                             |
-| APRS names            | `0x3502400`      | 8 UTF-16 names   | Unmodelled                                               |
+| Region                | Base             | Length           | Studio v1                                                                                                           |
+| --------------------- | ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Global APRS config    | `0x3501000`      | `0x260`          | Read + Write modelled fields                                                                                        |
+| Receive filters (32×) | `0x3501300`      | `0x100`          | Read; Write RMW-preserve (unmodelled)                                                                               |
+| GPS template text     | `0x3501280`      | `0x30` of `0x42` | Read; debug viewer decodes all `0x42` bytes (3 blocks plus the `GpsInfoTail` head) as UTF-16, not written, not APRS |
+| Channel APRS bits     | MR `0x80` record | see below        | Read + Write modelled fields                                                                                        |
+| APRS names            | `0x3502400`      | 8 UTF-16 names   | Unmodelled                                                                                                          |
 
 Gap `0x3501260`–`0x35012FF` is unused padding between global block end (`0x3501260`) and filters (`0x3501300`). The official CPS encoder we read does not write `0x3501100`–`0x35011FF`.
 
