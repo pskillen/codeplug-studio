@@ -16,7 +16,7 @@ export interface ZoneScanSetOnRadio {
   scanChannelNumbers: readonly number[];
 }
 
-/** The radio's firmware can't store scan sets: they are not written and its zones scan as before. */
+/** This hook describes firmware that cannot store sets; its caller leaves them unwritten. */
 export interface ZoneScanSetFirmwareTooOld {
   /** How the radio knows, in the operator's words (e.g. "the radio reports firmware 1.0.0"). */
   reason: string;
@@ -51,7 +51,8 @@ export interface ZoneScanSetCheckResult {
 
 /**
  * Run the common checks and the radio's hooks, pushing warnings. Firmware first: when it is too old
- * the scan sets aren't written, so the per-zone checks are skipped.
+ * the scan sets aren't written, so the per-zone checks are skipped. Radios that write anyway use
+ * their own compatibility warning and still run the per-zone checks.
  */
 export function checkZoneScanSets(
   sets: readonly ZoneScanSetOnRadio[],

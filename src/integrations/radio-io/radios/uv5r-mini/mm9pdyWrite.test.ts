@@ -17,10 +17,12 @@ import { uv17ProBackupMemSpans } from '../uv17pro-family/backupRestoreRoles.ts';
 import { UV5R_MINI_LAYOUT as layout } from '../uv17pro-family/layout.ts';
 import type { Uv17ProExtraUploadFrames } from '../uv17pro-family/protocol.ts';
 import { FakeMiniRadio as FakeRadio } from './__fixtures__/fakeMiniRadio.ts';
+import { readScanSets } from './modData/scanSetsDecode.test-helper.ts';
 import { UV5R_MINI_DESCRIPTOR } from './descriptor.ts';
 import {
   decodeUv5rMiniZoneTable,
   encodeUv5rMiniZoneTable,
+  encodeUv5rMiniZoneWrite,
   MMZ1_BASE,
   MMZ1_END,
   type Uv5rMiniZoneTableInput,
@@ -49,6 +51,7 @@ const STOCK_PLAN = [...range(0x0000, 0x8040), ...range(0x9000, 0x40), ...range(0
 
 function zones(n: number): Uv5rMiniZoneTableInput {
   return {
+    writeScanSets: true,
     zones: Array.from({ length: n }, (_, i) => ({
       name: `Zone ${String(i + 1).padStart(2, '0')}`,
       slotIndexes: [i, i + 100, 998 - i],
@@ -78,9 +81,22 @@ describe('UV-5R Mini MM9PDY Write frame plan', () => {
       const { pipe } = await writeZones(intent);
       const table = encodeUv5rMiniZoneTable(intent).frames.map((f) => f.address);
       expect(pipe.wAddresses()).toEqual([...STOCK_PLAN, ...table]);
-      expect(table).toHaveLength(n === 0 ? 1 : 1 + Math.ceil(n / 4) + 2 * n);
+      expect(table).toHaveLength(n === 0 ? 2 : 2 + Math.ceil(n / 4) + 2 * n);
     },
   );
+
+  it('writes the scan block after the table, preserving per-slot choices', async () => {
+    const intent: Uv5rMiniZoneTableInput = {
+      zones: [{ name: 'Local', slotIndexes: [9, 1, 4], scanSlotIndexes: [9, 1] }],
+    };
+    const { pipe } = await writeZones(intent);
+    expect(pipe.sector()).toEqual(
+      encodeUv5rMiniZoneWrite({ ...intent, writeScanSets: false }).sector,
+    );
+    expect(pipe.wAddresses().slice(-5)).toEqual([0xc000, 0xc200, 0xc400, 0xc440, 0xc040]);
+    expect(readScanSets(pipe.sector())).toEqual({ kinds: [1], include: [[true, false, true]] });
+    expect(pipe.wAddresses()).not.toContain(0xe000);
+  });
 
   it('the header frame at 0xC000 is the first table frame, after every stock block', async () => {
     for (const n of [0, 1, 5, 24]) {
@@ -111,7 +127,7 @@ describe('UV-5R Mini MM9PDY Write frame plan', () => {
         const sector = new Uint8Array(MMZ1_END - MMZ1_BASE).fill(0xff);
         for (const f of encoded.frames.slice(0, k)) sector.set(f.bytes, f.address - MMZ1_BASE);
         const decoded = decodeUv5rMiniZoneTable(sector);
-        if (k < encoded.frames.length) {
+        if (k < encoded.frames.length - 1) {
           expect('reject' in decoded).toBe(true);
         } else {
           expect('zones' in decoded && decoded.generation).toBe(encoded.generation);
@@ -129,7 +145,9 @@ describe('UV-5R Mini MM9PDY Write frame plan', () => {
       radio.flash.set(pipe.flash);
       radio.ackLimit = STOCK_PLAN.length + cut;
       await expect(writeZones(zones(2), radio)).rejects.toThrow();
-      expect('reject' in decodeUv5rMiniZoneTable(radio.sector())).toBe(true);
+      if (cut < second.frames.length - 1)
+        expect('reject' in decodeUv5rMiniZoneTable(radio.sector())).toBe(true);
+      else expect(readScanSets(radio.sector())).toEqual({ reject: 'no block' });
     }
   });
 
@@ -138,7 +156,7 @@ describe('UV-5R Mini MM9PDY Write frame plan', () => {
     const labels = [...new Set(events.map((e) => e.stage))];
     expect(labels).toEqual(['Upload', UV5R_MINI_ZONE_TABLE_STAGE]);
     const table = events.filter((e) => e.stage === UV5R_MINI_ZONE_TABLE_STAGE);
-    expect(table.at(-1)).toMatchObject({ cur: 1 + 1 + 6, max: 1 + 1 + 6 });
+    expect(table.at(-1)).toMatchObject({ cur: 1 + 1 + 6 + 1, max: 1 + 1 + 6 + 1 });
     expect(events.filter((e) => e.stage === 'Upload').at(-1)).toMatchObject({
       cur: STOCK_PLAN.length,
       max: STOCK_PLAN.length,
@@ -176,10 +194,11 @@ describe('UV-5R Mini MM9PDY table generation across two Writes', () => {
     await writeZones({ zones: [] }, pipe);
     const decoded = decodeUv5rMiniZoneTable(pipe.sector());
     expect('zones' in decoded && decoded.zones).toEqual([]);
+    expect(readScanSets(pipe.sector())).toEqual({ kinds: [], include: [] });
     expect(
       pipe
         .sector()
-        .subarray(0x40)
+        .subarray(0x80)
         .every((b) => b === 0xff),
     ).toBe(true);
   });
@@ -413,7 +432,10 @@ describe('UV-5R Mini descriptor wiring for MM9PDY', () => {
       writeUv5rMiniZones: true,
       zones: [{ wireName: 'Local', channelNumbers: [1, 3] }],
     });
-    expect(proto.getZoneIntent()).toEqual({ zones: [{ name: 'Local', slotIndexes: [0, 2] }] });
+    expect(proto.getZoneIntent()).toEqual({
+      writeScanSets: true,
+      zones: [{ name: 'Local', slotIndexes: [0, 2], scanSlotIndexes: [0, 2] }],
+    });
     expect(proto.getWriteProfile()).toBe('mm9pdy');
   });
 
@@ -441,7 +463,7 @@ describe('UV-5R Mini descriptor wiring for MM9PDY', () => {
         },
       },
     });
-    expect(stages.at(-1)?.weight).toBe(4 * 0x40);
+    expect(stages.at(-1)?.weight).toBe(5 * 0x40);
   });
 });
 

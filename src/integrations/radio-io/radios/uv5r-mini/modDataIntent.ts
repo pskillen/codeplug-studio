@@ -15,9 +15,11 @@ export function uv5rMiniZoneIntentFromOrganisation(
 ): Uv5rMiniZoneTableInput | null {
   if (!organisation?.writeUv5rMiniZones) return null;
   return {
+    writeScanSets: true,
     zones: (organisation.zones ?? []).map((zone) => ({
       name: zone.wireName,
       slotIndexes: zone.channelNumbers.map((n) => n - 1),
+      scanSlotIndexes: (zone.scanChannelNumbers ?? zone.channelNumbers).map((n) => n - 1),
     })),
   };
 }

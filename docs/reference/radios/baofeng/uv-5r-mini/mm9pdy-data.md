@@ -1,4 +1,4 @@
-# UV-5R Mini MM9PDY zone table (MMZ1)
+# UV-5R Mini MM9PDY zones and scan sets
 
 The stock UV-5R Mini has no zones. The MM9PDY modded firmware shows up to 24 zones from a table in the radio's
 external SPI flash, which the stock firmware, the official CPS and CHIRP never touch. Studio's MM9PDY target writes it
@@ -11,18 +11,17 @@ of v1.
 ## Where
 
 External SPI `0xC000`-`0xCFFF`, one 4 KiB sector. One-line map: header `0xC000` (one 64-byte frame), zone name
-records `0xC200 + 16 i`, member bitmaps `0xC400 + 128 i` (channel 1 is slot 0, one bit per slot, 999 slots). The rest
-of the sector stays erased (`FF`). The stock clone image does not reach this range.
+records `0xC200 + 16 i`, member bitmaps `0xC400 + 128 i` (channel 1 is slot 0, one bit per slot, 999 slots). The scan-set stream occupies `0xC040–0xC1FF` and `0xC380–0xC3FF`; unused bytes remain erased (`FF`). The stock clone image does not reach this range.
 
 ## What Studio does
 
-| Rule        | Studio                                                                                                                                                                                       |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Write order | Header frame first (a write to a 4 KiB-aligned address erases the sector), then name frames, then each zone's two bitmap frames. An interrupted write never yields wrong zones               |
-| Integrity   | CRC-16/XMODEM over the header, the name records and the bitmaps; the radio shows no zones when any reader rule fails                                                                         |
-| Generation  | Derived from the CRC, so an identical rewrite keeps the radio's saved state                                                                                                                  |
-| Empty table | Zero zones is valid and retires an older table                                                                                                                                               |
-| Write rules | The `mm9pdy` profile of the Mini write interlock adds 64-byte frames at 64-aligned `0xC000`-`0xCFC0`. Stock is unchanged. `0xB000`-`0xBFFF` and `0xD000` upward are refused on every profile |
+| Rule        | Studio                                                                                                                                                                                                           |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Write order | Header frame first (a write to a 4 KiB-aligned address erases the sector), then name frames, then each zone's two bitmap frames, then the MMZS scan-set frames. An interrupted write never yields wrong zones    |
+| Integrity   | The table CRC-16/XMODEM covers the header, names and bitmaps; a bad table shows no zones. The scan-set block has its own CRC and carries the table generation; if the block fails, zones still load without sets |
+| Generation  | Derived from the CRC, so an identical rewrite keeps the radio's saved state                                                                                                                                      |
+| Empty table | Zero zones is valid and retires an older table                                                                                                                                                                   |
+| Write rules | The `mm9pdy` profile of the Mini write interlock adds 64-byte frames at 64-aligned `0xC000`-`0xCFC0`. Stock is unchanged. `0xB000`-`0xBFFF` and `0xD000` upward are refused on every profile                     |
 
 ## The MM9PDY target
 
@@ -33,7 +32,7 @@ zones to show: a stock radio ignores the zone table and behaves as stock.
 - **Write order.** Studio encodes the table before the first frame, so a bad input fails before the radio sees
   anything. Then the stock clone blocks exactly as the stock target writes them, then the table frames in the codec's
   order: the header at `0xC000` first (that write erases the sector), the name frames, then each zone's two bitmap
-  frames. The progress window shows the table as its own **Zone table** stage.
+  frames, then the scan-set frames. The progress window shows the table as its own **Zone table** stage.
 - **Checks before any write.** The model reply check refuses a radio that does not answer as a Mini, and the write
   interlock checks the whole plan (stock blocks and table frames) before the handshake. On this target the interlock
   adds `0xC000`-`0xCFC0` to the stock spans and nothing else; a Restore on it is held to the same spans.
@@ -41,6 +40,8 @@ zones to show: a stock radio ignores the zone table and behaves as stock.
   frame written. A difference shows as a **Zone table** mismatch.
 - **Stock targets never touch the range.** The stock Mini target writes no frame at or above `0xC000`, and its
   interlock refuses one.
+- **Scan sets.** Studio writes an MMZS v1 block with every table, including an empty table. Each zone's set is independent of the All channels scan flag. Firmware 1.1.0 and later reads it; 1.0.0 keeps the zones and ignores the sets: it scans a zone’s live SCAN ADD members, or all live members when none has SCAN ADD. The Write session reads the clone but not the separate radio report, so it cannot identify the installed build. When an effective scan set skips a member, Studio shows an informational note about older firmware. A capacity fallback scans all members and does not trigger the note. Studio always writes the sets.
+- **Capacity.** A zone with all members included uses no member bits. Other zones are tried in order against 4,432 bits; one that does not fit scans all members, and Studio names it in the room warning. Later zones are still tried. A written set with fewer than two members gets a scan warning.
 - **An empty table is still written.** A build with no zones writes the header with zero zones, which retires an older
   table on the radio.
 - **Backup and Restore.** On this target, Backup adds the table as a fourth region (`zones`) and Restore writes it
@@ -60,9 +61,9 @@ channel in no zone. A pinned channel keeps its number. Zones point at channel nu
 ## Where the code is
 
 `src/integrations/radio-io/radios/uv5r-mini/modData/`: `layout.ts` (constants), `encode.ts`
-(`encodeUv5rMiniZoneTable`), `decode.ts` (`decodeUv5rMiniZoneTable`, mirrors the radio's reader rules). The allow-list
+(`encodeUv5rMiniZoneTable`), `decode.ts` (`decodeUv5rMiniZoneTable`, mirrors the radio's table reader rules), and `scanSets.ts` (MMZS encoder and fill). The allow-list
 is `uv5r-mini/writeInterlock.ts`. The write path is `uv5r-mini/protocol.ts` (`Uv5rMiniProtocol.setZoneIntent`, seeded
 by the descriptor from the Write projection), the plan `uv5r-mini/plannedStages.ts`, verify the family's
 `writeVerifyHooks.ts` with the table as an extra span. The projection is
-`src/app/services/radioIoUv5rMiniMm9pdyProjection.ts`. Vectors are in `uv5r-mini/__fixtures__/mmz1Vectors.ts`. Limits are in
+`src/app/services/radioIoUv5rMiniMm9pdyProjection.ts`. Vectors are in `uv5r-mini/__fixtures__/mmz1Vectors.ts` and `mmzs-v1.json`. Limits are in
 [limits.md](limits.md).

@@ -13,7 +13,7 @@ import {
   type Uv17ProExtraUploadFrames,
 } from '../uv17pro-family/protocol.ts';
 import {
-  encodeUv5rMiniZoneTable,
+  encodeUv5rMiniZoneWrite,
   MMZ1_BASE,
   MMZ1_FRAME_BYTES,
   MMZ1_SECTOR_BYTES,
@@ -126,7 +126,7 @@ export class Uv5rMiniProtocol extends Uv17ProProtocol {
 
   protected override extraUploadFrames(): Uv17ProExtraUploadFrames | null {
     if (!this.zoneIntent) return null;
-    const { frames } = encodeUv5rMiniZoneTable(this.zoneIntent);
+    const { frames } = encodeUv5rMiniZoneWrite(this.zoneIntent);
     return { stage: UV5R_MINI_ZONE_TABLE_STAGE, frames };
   }
 }

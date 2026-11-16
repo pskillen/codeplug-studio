@@ -66,6 +66,8 @@ Radios without `writeVerify` skip the prompt entirely.
 | OpenGD77 1701 / MD9600 | `opengd77/writeVerifyHooks.ts`       | `collectDirtySectors`         | full `download()` + kept compare + User Database digest | hard      |
 | DM-32UV                | `dm32uv/writeVerifyHooks.ts`         | post-remap 4 KB upload blocks | bulk read staged addresses only                         | soft      |
 
+The Mini's Zone table span also covers its scan-set frames.
+
 Tier-3 protocol notes: each radio's `protocol.md` under `docs/reference/radios/`.
 
 ---

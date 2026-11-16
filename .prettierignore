@@ -6,3 +6,6 @@ node_modules/
 src/core/import-export/formats/native-yaml/__fixtures__/
 # Firmware patch fixtures: exact bytes, hashed. Never reformat.
 src/core/firmware/**/__fixtures__/**/*.json
+
+# MMZS golden vectors are copied byte for byte from the firmware repository.
+src/integrations/radio-io/radios/uv5r-mini/__fixtures__/mmzs-v1.json
