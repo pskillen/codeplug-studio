@@ -10,7 +10,7 @@ Read-only grouped view of every RT95 settings field the Write registry knows, de
 
 ## Behaviour
 
-One table per registry section (Display, Function setup, VOX, PF keys, DTMF, Advanced) with setting, value, trust and targets; a switch adds address and raw bytes. Search covers label, id, help, group, trust, value, raw bytes and address, and also filters the unclaimed runs. A field whose bytes were not all captured says so and is never filled with a default. The power-on password value and raw bytes show `••` until **Show password** is pressed. Bytes in `0x1980-0x1AFF` and `0x3200-0x327F` that no field claims are listed as unclaimed runs. Tables scroll horizontally at 375 px. Nothing writes or re-reads the radio.
+One table per registry section (Display, Function setup, VOX, PF keys, DTMF, Advanced) with setting, value, trust and targets; a switch adds address and raw bytes. Search covers label, id, help, group, trust, value, raw bytes and address, and also filters the unclaimed runs. A field whose bytes were not all captured says so and is never filled with a default. The power-on password value and raw bytes show `••` until **Show password** is pressed. Bytes in `0x1980-0x1AFF` and `0x3200-0x327F` that no field claims are listed as named runs with a confidence: 42 bytes with a meaning (some decoded read-only, such as side channel index and flags), 93 unused (no reader). Tables scroll horizontally at 375 px. Nothing writes or re-reads the radio.
 
 ## Related
 
