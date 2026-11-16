@@ -1,7 +1,7 @@
 import { Box, Group, Table, Text, useComputedColorScheme } from '@mantine/core';
 import { useId, useMemo, useState, type MouseEvent } from 'react';
 
-import { lineChartSlotColor, niceTicks } from './lineChartScale.ts';
+import { lineChartSlotColor, niceTicks, yAxisFor } from './lineChartScale.ts';
 
 /** One line. `slot` is a categorical slot index (0-based) so the chart picks the light or dark step itself. */
 export interface LineChartSeries {
@@ -25,6 +25,23 @@ export interface LineChartProps {
   height?: number;
   /** Show the legend even for a single series. */
   showLegend?: boolean;
+  /** Show the chart's own collapsed **Table** under it. Default `true`; a chart card turns it off. */
+  table?: boolean;
+}
+
+/** Runs of consecutive points with a finite y: a non-finite y is a missing entry and leaves a gap. */
+function finiteRuns(points: readonly { x: number; y: number }[]) {
+  const runs: { x: number; y: number }[][] = [];
+  let run: { x: number; y: number }[] = [];
+  for (const p of points) {
+    if (Number.isFinite(p.y)) run.push(p);
+    else if (run.length) {
+      runs.push(run);
+      run = [];
+    }
+  }
+  if (run.length) runs.push(run);
+  return runs;
 }
 
 const WIDTH = 560;
@@ -44,6 +61,7 @@ export default function LineChart({
   yDomain,
   height = 240,
   showLegend = false,
+  table = true,
 }: LineChartProps) {
   const scheme = useComputedColorScheme('light');
   const clipId = useId();
@@ -53,18 +71,10 @@ export default function LineChart({
     () => [...new Set(series.flatMap((s) => s.points.map((p) => p.x)))].sort((a, b) => a - b),
     [series],
   );
-  const ys = series.flatMap((s) => s.points.map((p) => p.y));
+  const ys = series.flatMap((s) => s.points.map((p) => p.y)).filter(Number.isFinite);
   const xMin = xs[0] ?? 0;
   const xMax = xs.at(-1) ?? 1;
-  let [yLo, yHi] = yDomain ?? [Math.min(...ys, 0), Math.max(...ys, 1)];
-  if (!yDomain) {
-    const ticks = niceTicks(yLo, yHi);
-    const step = ticks.length > 1 ? ticks[1] - ticks[0] : 1;
-    yLo = Math.floor(yLo / step) * step;
-    yHi = Math.ceil(yHi / step) * step;
-    if (yHi === yLo) yHi = yLo + step;
-  }
-  const yTicks = niceTicks(yLo, yHi);
+  const { lo: yLo, hi: yHi, ticks: yTicks } = yAxisFor(ys, yDomain);
   const xTicks = niceTicks(xMin, xMax, 6).filter((t) => t >= xMin && t <= xMax);
 
   const plotW = WIDTH - M.left - M.right;
@@ -87,7 +97,9 @@ export default function LineChart({
   const hoverRows =
     hoverX === null
       ? []
-      : series.map((s) => ({ s, p: s.points.find((p) => p.x === hoverX) })).filter((r) => r.p);
+      : series
+          .map((s) => ({ s, p: s.points.find((p) => p.x === hoverX) }))
+          .filter((r) => r.p && Number.isFinite(r.p.y));
 
   return (
     <Box>
@@ -169,18 +181,30 @@ export default function LineChart({
             {yLabel}
           </text>
           <g clipPath={`url(#${clipId})`}>
-            {series.map((s) => (
-              <polyline
-                key={s.id}
-                fill="none"
-                stroke={lineChartSlotColor(s.slot, scheme)}
-                strokeWidth={2}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                strokeDasharray={s.dashed ? '6 4' : undefined}
-                points={s.points.map((p) => `${sx(p.x)},${sy(p.y)}`).join(' ')}
-              />
-            ))}
+            {series.map((s) =>
+              finiteRuns(s.points).map((run, i) =>
+                run.length === 1 ? (
+                  <circle
+                    key={`${s.id}-${i}`}
+                    cx={sx(run[0].x)}
+                    cy={sy(run[0].y)}
+                    r={2.5}
+                    fill={lineChartSlotColor(s.slot, scheme)}
+                  />
+                ) : (
+                  <polyline
+                    key={`${s.id}-${i}`}
+                    fill="none"
+                    stroke={lineChartSlotColor(s.slot, scheme)}
+                    strokeWidth={2}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    strokeDasharray={s.dashed ? '6 4' : undefined}
+                    points={run.map((p) => `${sx(p.x)},${sy(p.y)}`).join(' ')}
+                  />
+                ),
+              ),
+            )}
           </g>
           {hoverX !== null ? (
             <g pointerEvents="none">
@@ -237,37 +261,43 @@ export default function LineChart({
           </Box>
         ) : null}
       </Box>
-      <details>
-        <summary>
-          <Text span size="xs" c="dimmed">
-            Table
-          </Text>
-        </summary>
-        <Table.ScrollContainer minWidth={320}>
-          <Table striped withTableBorder fz="xs">
-            <Table.Caption>{title}</Table.Caption>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{xLabel}</Table.Th>
-                {series.map((s) => (
-                  <Table.Th key={s.id}>{s.label}</Table.Th>
-                ))}
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {xs.map((x) => (
-                <Table.Tr key={x}>
-                  <Table.Td>{formatX(x)}</Table.Td>
-                  {series.map((s) => {
-                    const p = s.points.find((q) => q.x === x);
-                    return <Table.Td key={s.id}>{p ? formatY(p.y) : ''}</Table.Td>;
-                  })}
+      {table ? (
+        <details>
+          <summary>
+            <Text span size="xs" c="dimmed">
+              Table
+            </Text>
+          </summary>
+          <Table.ScrollContainer minWidth={320}>
+            <Table striped withTableBorder fz="xs">
+              <Table.Caption>{title}</Table.Caption>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{xLabel}</Table.Th>
+                  {series.map((s) => (
+                    <Table.Th key={s.id}>{s.label}</Table.Th>
+                  ))}
                 </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
-      </details>
+              </Table.Thead>
+              <Table.Tbody>
+                {xs.map((x) => (
+                  <Table.Tr key={x}>
+                    <Table.Td>{formatX(x)}</Table.Td>
+                    {series.map((s) => {
+                      const p = s.points.find((q) => q.x === x);
+                      return (
+                        <Table.Td key={s.id}>
+                          {p && Number.isFinite(p.y) ? formatY(p.y) : ''}
+                        </Table.Td>
+                      );
+                    })}
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        </details>
+      ) : null}
     </Box>
   );
 }
