@@ -479,8 +479,44 @@ describe('AtD890Memory', () => {
       fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
       expect(screen.getAllByText('Raw bytes').length).toBeGreaterThan(0);
       expect(screen.getByText('0x3500026')).toBeInTheDocument();
-      expect(screen.getByText(/0x3500060: AA BB/)).toBeInTheDocument();
+      // Unregistered bytes are named in the table (VFO scan limits here), not listed as unknown.
+      const other = screen.getByRole('region', { name: 'Other settings bytes' });
+      expect(within(other).getByText('0x3500060 +2')).toBeInTheDocument();
+      expect(within(other).getByText('VfoScanFreq0..3')).toBeInTheDocument();
+      expect(within(other).getByText('AA BB')).toBeInTheDocument();
+      expect(screen.getByText('No unexplained captured bytes.')).toBeInTheDocument();
       expect(screen.getByText(/No scan setting is established/)).toBeInTheDocument();
+    });
+
+    it('shows real zero states, the GPS template text and the MM9PDY store', () => {
+      const store = new Uint8Array(32);
+      store.set([0x4d, 0x36, 1, 1], 0);
+      store[31] = store.slice(0, 31).reduce((a, b) => (a + b) & 0xff, 0);
+      const text = new Uint8Array(0x30);
+      'HELLO'.split('').forEach((c, i) => (text[i * 2] = c.charCodeAt(0)));
+      view(
+        archive([
+          sparse(MAIN + 0x19, Uint8Array.of(0)),
+          sparse(MAIN + 0x107, Uint8Array.of(0)),
+          sparse(MAIN + 0x1c, Uint8Array.of(2)),
+          sparse(MAIN + 0x156, Uint8Array.of(0)),
+          sparse(MAIN + 0x200, store),
+          sparse(0x3501280, text),
+        ]),
+      );
+      open('Settings');
+      const dmr = screen.getByRole('region', { name: 'DMR' });
+      expect(within(dmr).getByText('No hang time (0)')).toBeInTheDocument();
+      expect(within(dmr).getByText('0 (acts as 1 s)')).toBeInTheDocument();
+      expect(within(dmr).getByText('2 (sent as 5, 300 ms)')).toBeInTheDocument();
+      expect(within(dmr).queryByText(/Unsupported value/)).not.toBeInTheDocument();
+      expect(screen.getByText('Level 0')).toBeInTheDocument();
+      const gps = screen.getByRole('region', { name: 'GPS / APRS' });
+      expect(within(gps).getByText('HELLO')).toBeInTheDocument();
+      expect(within(gps).getByText(/0x30 of 0x42 bytes/)).toBeInTheDocument();
+      const mod = screen.getByRole('region', { name: 'Mod features' });
+      expect(within(mod).getByText('Scan list (1)')).toBeInTheDocument();
+      expect(within(mod).getByText(/traced from source/)).toBeInTheDocument();
     });
 
     it('filters settings by search', () => {

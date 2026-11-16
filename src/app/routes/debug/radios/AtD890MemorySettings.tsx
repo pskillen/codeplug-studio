@@ -9,6 +9,7 @@ import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import type { AtD890MemoryProjection } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
 import {
   AT_D890_SETTINGS_GROUPS,
+  type AtD890NamedSettingBytes,
   type AtD890ScanListEntry,
   type AtD890ScanMember,
   type AtD890ScanPriority,
@@ -258,6 +259,7 @@ const hexBytes = (bytes: readonly number[]) => bytes.map(hexByte).join(' ');
 
 function valueText(f: AtD890SettingFieldView): string {
   if (f.status === 'not-captured') return NOT_CAPTURED;
+  if (f.value === undefined && f.stateText) return f.stateText;
   if (f.value === undefined)
     return f.valueLabel ? `${f.valueLabel} (read-only value)` : 'Unsupported value (see raw bytes)';
   if (typeof f.value === 'boolean') return f.value ? 'On' : 'Off';
@@ -268,6 +270,128 @@ function valueText(f: AtD890SettingFieldView): string {
 function addressText(f: AtD890SettingFieldView): string {
   const span = f.length > 1 ? `${hexAddress(f.address)} +${f.length}` : hexAddress(f.address);
   return f.mask === undefined ? span : `${span} mask 0x${hexByte(f.mask)}`;
+}
+
+const KIND_TEXT: Record<AtD890NamedSettingBytes['kind'], string> = {
+  meaning: 'Used by the radio',
+  'never-read': 'Unused (no reader)',
+  unreferenced: 'Unused (no reference)',
+  'no-reader': 'Bits unused (no reader)',
+};
+
+function NamedBytes({
+  named,
+  query,
+}: {
+  named: readonly AtD890NamedSettingBytes[];
+  query: string;
+}) {
+  const shown = named.filter((n) =>
+    matches(query, n.name, n.meaning, KIND_TEXT[n.kind], hexAddress(n.address), hexBytes(n.bytes)),
+  );
+  const unused = named.filter((n) => n.kind !== 'meaning').length;
+  return (
+    <Stack gap="xs" component="section" aria-label="Other settings bytes">
+      <Title order={4}>Other settings bytes</Title>
+      <Text size="sm" c="dimmed">
+        Captured bytes that no setting above edits but the firmware trace names: the radio&apos;s
+        own state, values it reads without a menu entry, and bytes it never reads (shown as unused,
+        not unknown). {unused} of {named.length} captured ranges are unused. Display only: Write
+        never touches them.
+      </Text>
+      {shown.length === 0 ? (
+        <Text size="sm">
+          {named.length === 0
+            ? 'None of these bytes were captured.'
+            : `Nothing matches “${query.trim()}”.`}
+        </Text>
+      ) : (
+        <Table.ScrollContainer minWidth={420}>
+          <Table fz="xs" aria-label="Other settings bytes">
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Address</Table.Th>
+                <Table.Th>Name</Table.Th>
+                <Table.Th>Meaning</Table.Th>
+                <Table.Th>Raw</Table.Th>
+                <Table.Th>Confidence</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {shown.map((n) => (
+                <Table.Tr key={n.address}>
+                  <Table.Td ff="monospace">
+                    {hexAddress(n.address)}
+                    {n.bytes.length > 1 ? ` +${n.bytes.length}` : ''}
+                  </Table.Td>
+                  <Table.Td>{n.name}</Table.Td>
+                  <Table.Td>
+                    <Text size="xs">{KIND_TEXT[n.kind]}</Text>
+                    <Text size="xs" c="dimmed">
+                      {n.meaning} ({n.evidence})
+                      {n.mask === undefined ? '' : ` — bits 0x${hexByte(n.mask)} only`}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td ff="monospace">{hexBytes(n.bytes)}</Table.Td>
+                  <Table.Td>{n.confidence === 'traced' ? 'traced' : 'partly traced'}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      )}
+    </Stack>
+  );
+}
+
+function Mm9pdyStore({
+  store,
+  query,
+}: {
+  store: AtD890MemoryProjection['settings']['mm9pdy'];
+  query: string;
+}) {
+  if (store.status === 'not-captured')
+    return <Text size="sm">MM9PDY settings store (0x03500200): {NOT_CAPTURED}</Text>;
+  if (store.status === 'invalid')
+    return (
+      <Alert color="gray" title="No valid MM9PDY settings record">
+        The 32 bytes at 0x03500200 have no valid magic, version or sum, so the firmware treats every
+        MM9PDY setting as 0 (default). This is expected on stock firmware or before a mod setting
+        was ever changed. Raw: {hexBytes(store.raw)}
+      </Alert>
+    );
+  const rows = store.settings.filter((x) =>
+    matches(query, x.label, x.valueLabel ?? '', String(x.raw), 'mm9pdy'),
+  );
+  return (
+    <Stack gap="xs">
+      <Text size="sm" c="dimmed">
+        MM9PDY settings store at 0x03500200: one byte per setting, 0 is the default. Read-only,
+        decoded from the firmware source (traced from source); Studio never writes it.
+      </Text>
+      <Table.ScrollContainer minWidth={320}>
+        <Table aria-label="MM9PDY mod settings">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Setting</Table.Th>
+              <Table.Th>Value</Table.Th>
+              <Table.Th>Byte</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {rows.map((x) => (
+              <Table.Tr key={x.byte}>
+                <Table.Td>{x.label}</Table.Td>
+                <Table.Td>{x.valueLabel ? `${x.valueLabel} (${x.raw})` : x.raw}</Table.Td>
+                <Table.Td ff="monospace">+0x{hexByte(x.byte)}</Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+    </Stack>
+  );
 }
 
 export function SettingsPanel({ projection }: { projection: AtD890MemoryProjection }) {
@@ -291,6 +415,7 @@ export function SettingsPanel({ projection }: { projection: AtD890MemoryProjecti
       f.help,
       groupLabel,
       valueText(f),
+      f.firmwareNote ?? '',
       f.raw ? hexBytes(f.raw) : '',
       addressText(f),
     );
@@ -298,7 +423,7 @@ export function SettingsPanel({ projection }: { projection: AtD890MemoryProjecti
     (u) => !searching || matches(query, 'unknown', hexAddress(u.address), hexBytes(u.bytes)),
   );
   const aprsShown = settings.aprsRuns.filter(
-    (r) => !searching || matches(query, 'aprs', hexAddress(r.address), hexBytes(r.bytes)),
+    (r) => !searching || matches(query, 'gps', 'text', hexAddress(r.address), hexBytes(r.bytes)),
   );
   return (
     <Stack gap="sm">
@@ -328,7 +453,7 @@ export function SettingsPanel({ projection }: { projection: AtD890MemoryProjecti
       </Stack>
       {groups.map((g) => {
         const fields = g.fields.filter((f) => !searching || fieldMatches(f, g.label));
-        if (searching && fields.length === 0 && g.id !== 'gps') return null;
+        if (searching && fields.length === 0 && g.id !== 'gps' && g.id !== 'mod') return null;
         return (
           <Stack key={g.id} gap="xs" component="section" aria-label={g.label}>
             <Title order={4}>{g.label}</Title>
@@ -336,9 +461,10 @@ export function SettingsPanel({ projection }: { projection: AtD890MemoryProjecti
               <Text size="sm" c="dimmed">
                 {g.id === 'scan'
                   ? 'No scan setting is established in the decoded settings fields; this is unavailable, not off. Scan lists are in their own tab.'
-                  : 'No mod-feature setting interpretation is established, so none is decoded here. Captured bytes remain inspectable under Unknown bytes.'}
+                  : ''}
               </Text>
             )}
+            {g.id === 'mod' && <Mm9pdyStore store={settings.mm9pdy} query={query} />}
             {fields.length > 0 && (
               <Table.ScrollContainer minWidth={320}>
                 <Table aria-label={`${g.label} settings`}>
@@ -363,6 +489,11 @@ export function SettingsPanel({ projection }: { projection: AtD890MemoryProjecti
                                 {f.conditional}
                               </Text>
                             )}
+                            {f.firmwareNote && (
+                              <Text size="xs" c="dimmed">
+                                {f.firmwareNote}
+                              </Text>
+                            )}
                             {!raw && showRaw && f.raw && (
                               <Text size="xs" c="dimmed">
                                 Raw {hexAddress(f.address)}: {hexBytes(f.raw)}
@@ -380,28 +511,44 @@ export function SettingsPanel({ projection }: { projection: AtD890MemoryProjecti
             )}
             {g.id === 'gps' && (
               <Stack gap={2}>
-                <Text size="sm" c="dimmed">
-                  APRS settings bytes are shown raw only; no APRS field is decoded.
-                </Text>
-                {settings.aprsRuns.length === 0 ? (
-                  <Text size="sm">APRS bytes: {NOT_CAPTURED}</Text>
-                ) : (
-                  aprsShown.map((r) => (
-                    <Text size="sm" key={r.address} ff="monospace">
-                      APRS {hexAddress(r.address)}: {hexBytes(r.bytes)}
+                {settings.gpsText ? (
+                  <>
+                    <Text size="sm">
+                      GPS template text:{' '}
+                      <strong>
+                        {settings.gpsText.text === '' ? '(empty)' : settings.gpsText.text}
+                      </strong>
                     </Text>
-                  ))
+                    <Text size="sm" c="dimmed">
+                      UTF-16, up to 32 characters, added to the position message when the GPS text
+                      option (+0x53) is on. The capture holds 0x
+                      {settings.gpsText.capturedBytes.toString(16).toUpperCase()} of 0x
+                      {settings.gpsText.blockBytes.toString(16).toUpperCase()} bytes
+                      {settings.gpsText.truncated
+                        ? ', so the text may be cut short (a full capture would hold all 32 characters).'
+                        : '.'}{' '}
+                      Traced: radio repo F356.
+                    </Text>
+                  </>
+                ) : (
+                  <Text size="sm">GPS template text: {NOT_CAPTURED}</Text>
                 )}
+                {aprsShown.map((r) => (
+                  <Text size="sm" key={r.address} ff="monospace">
+                    GPS text bytes {hexAddress(r.address)}: {hexBytes(r.bytes)}
+                  </Text>
+                ))}
               </Stack>
             )}
           </Stack>
         );
       })}
+      <NamedBytes named={settings.named} query={query} />
       <Stack gap="xs" component="section" aria-label="Unknown bytes">
         <Title order={4}>Unknown bytes</Title>
         <Text size="sm" c="dimmed">
           Captured bytes (or bits of a partly known byte) in the main and power-on settings blocks
-          that no known field covers. They are unexplained, not zero.
+          that nothing names. They are unexplained, not zero.
         </Text>
         {unknownShown.length === 0 ? (
           <Text size="sm">
