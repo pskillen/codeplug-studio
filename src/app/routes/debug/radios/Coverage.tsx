@@ -7,6 +7,10 @@ import {
   RT95_SIGNATURE_START,
   RT95_SIGNATURE_END,
 } from '@core/radios/retevis/rt95/calibration.ts';
+import {
+  OPENGD77_SETTINGS_GAP_ADDRESS,
+  OPENGD77_SETTINGS_GAP_LENGTH,
+} from '@integrations/radio-io/radios/opengd77/constants.ts';
 import { RT95_CALIBRATION_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import { AT_D890_VITAL_UNIT_BYTES } from '@integrations/radio-io/radios/at-d890uv/vitalBackup.ts';
 import {
@@ -218,7 +222,7 @@ export function Coverage({ archive }: { archive: DebugArchive }) {
             <Text fw={600}>Settings struct tail</Text>
             <Text size="sm">
               {og77.settingsGap.state === 'captured'
-                ? `${og77.settingsGap.byteLength} bytes · flash 0x6060–0x60BF, read so the settings struct is complete`
+                ? `${og77.settingsGap.byteLength} bytes · flash ${formatAddress(OPENGD77_SETTINGS_GAP_ADDRESS)}–${formatAddress(OPENGD77_SETTINGS_GAP_ADDRESS + OPENGD77_SETTINGS_GAP_LENGTH - 1)}, read so the settings struct is complete`
                 : 'Not captured (older archive)'}
             </Text>
             {og77.unclassified.length > 0 && <Text fw={600}>Unclassified entries</Text>}

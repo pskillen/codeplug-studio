@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import { OPENGD77_SETTINGS_GAP_LENGTH } from '@integrations/radio-io/radios/opengd77/constants.ts';
 import { Dm32Calibration } from './Dm32Calibration.tsx';
 import { Dm32DecodedDiff } from './Dm32DecodedDiff.tsx';
 import { OpenGd77Calibration } from './OpenGd77Calibration.tsx';
@@ -127,7 +128,7 @@ const OPENGD77_IDENTITY_NOTE =
 
 const OPENGD77_READ_NOTICE = {
   title: 'Read-only capture and recovery',
-  text: 'The capture only reads: it sends a ping, the FirmwareInfo request, the CPS screen command, reads of the registered flash spans and the 96-byte settings struct tail, the occupied User Database when ticked, and the CPS close. It takes minutes, and a large User Database makes it much longer. Cancel stops at the next frame and sends only the CPS close. If the radio stays on the CPS screen after a failure, power-cycle it.',
+  text: `The capture only reads: it sends a ping, the FirmwareInfo request, the CPS screen command, reads of the registered flash spans and the ${OPENGD77_SETTINGS_GAP_LENGTH}-byte settings struct tail, the occupied User Database when ticked, and the CPS close. It takes minutes, and a large User Database makes it much longer. Cancel stops at the next frame and sends only the CPS close. If the radio stays on the CPS screen after a failure, power-cycle it.`,
 };
 
 const OPENGD77_CAPTURE_OPTIONS: readonly RadioDebugCaptureOption[] = [

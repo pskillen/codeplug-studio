@@ -4,6 +4,17 @@ import { buildDm32SparseCapture } from './debugMemory.ts';
 import { dm32PageByStoredTag } from './debugMemoryLists.ts';
 import { DM32_SETTINGS_FIELDS } from './debugMemorySettings.ts';
 
+/** The settings page lookup per archive object: Hex and Compare ask on every render. */
+const pageLookups = new WeakMap<DebugSensitiveArchive, ReturnType<typeof dm32PageByStoredTag>>();
+function settingsPage(archive: DebugSensitiveArchive) {
+  let lookup = pageLookups.get(archive);
+  if (!lookup) {
+    lookup = dm32PageByStoredTag(buildDm32SparseCapture(archive), DM32_METADATA.VFO_SETTINGS);
+    pageLookups.set(archive, lookup);
+  }
+  return lookup;
+}
+
 /**
  * Password bytes in a DM-32 debug archive: the power-on, write and read passwords (settings
  * offsets 0x431-0x438, 0x43B-0x442, 0x443-0x44A) of the single `0x04` page, at the address the
@@ -18,7 +29,7 @@ export function dm32ArchiveSensitiveRanges(
   const region = archive.manifest.regions.find((r) => r.id === regionId);
   const bytes = archive.regions[regionId];
   if (!region || !bytes) return [];
-  const lookup = dm32PageByStoredTag(buildDm32SparseCapture(archive), DM32_METADATA.VFO_SETTINGS);
+  const lookup = settingsPage(archive);
   if (lookup.kind !== 'page') return [];
   const end = region.address + bytes.length;
   return DM32_SETTINGS_FIELDS.filter((field) => field.sensitive).flatMap((field) => {
