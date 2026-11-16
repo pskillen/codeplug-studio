@@ -28,7 +28,7 @@
 }
 
 .table tbody tr:nth-child(even) {
-  background: var(--dsv2-surface-subtle);
+  background: var(--dsv2-surface);
 }
 
 .mono {
