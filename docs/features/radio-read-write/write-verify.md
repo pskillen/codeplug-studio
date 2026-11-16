@@ -83,3 +83,7 @@ Tier-3 protocol notes: each radio's `protocol.md` under `docs/reference/radios/`
 ## Related
 
 - [WriteVerifyReport.md](../../../src/app/components/builds/WriteVerifyReport.md)
+
+## UV-5R Mini zone scan sets
+
+The MM9PDY Write includes each zone's scan set along with its zone table; verify compares the written frames. Studio warns when a set has fewer than two channels or when a set cannot fit and falls back to all members. The normal Write session does not read the radio report, so it cannot identify the firmware build and warns that the radio may ignore the sets. They are written regardless. See [the Mini reference](../../reference/radios/baofeng/uv-5r-mini/mm9pdy-data.md).
