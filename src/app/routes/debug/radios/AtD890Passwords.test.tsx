@@ -106,6 +106,31 @@ describe('AT-D890UV passwords', () => {
     expect(Array.from(a.regions[powerId]!.subarray(0, 4))).toEqual([0x31, 0x32, 0x33, 0x34]);
   });
 
+  it('masks the LocalInfo offsets inside the vital units that may mirror LocalInfo', () => {
+    const unit = (id: string, address: number): Entry => [
+      {
+        id,
+        label: id,
+        address,
+        byteLength: 0x100,
+        path: `regions/${id}.bin`,
+        restoreRole: 'inspect-only',
+      },
+      new Uint8Array(0x100),
+    ];
+    const a = archive([
+      unit('vital-tune-b', 0x04f4_0000),
+      unit('vital-local-info-upper', 0x04fc_0000),
+      unit('vital-tune-a', 0x04f0_0000),
+    ]);
+    expect(sensitiveRanges(a, 'vital-tune-b').map((r) => [r.start, r.end])).toEqual([
+      [0x04f4_0028, 0x04f4_002c],
+      [0x04f4_000b, 0x04f4_000f],
+    ]);
+    expect(sensitiveRanges(a, 'vital-local-info-upper')).toHaveLength(2);
+    expect(sensitiveRanges(a, 'vital-tune-a')).toEqual([]);
+  });
+
   it('reports no D890 ranges for another radio archive', () => {
     const a = archive(entries(), 'DM-32UV');
     const id = a.manifest.regions.find((r) => r.address === BAND)!.id;
