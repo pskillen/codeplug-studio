@@ -6,10 +6,11 @@ The category picker of every radio's debug Memory view: one **Category** dropdow
 
 ## Props
 
-| Prop         | Meaning                                                                                                                            |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `categories` | `{ value, label, count?, render }[]`. `render` is called only for the selected category. `count`, when given, shows as `Label (N)` |
-| `storageKey` | `localStorage` key suffix (the app prefix is added) under which the last choice is remembered; omit to remember nothing            |
+| Prop         | Meaning                                                                                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `categories` | `{ value, label, count?, render }[]`. `render` is called only for the selected category. `count`, when given, shows as `Label (N)`                                                   |
+| `notDecoded` | Category names the radio does not decode yet; one dimmed line under the dropdown: "Not decoded for this radio yet: scan lists, contacts." Nothing shown for an empty or missing list |
+| `storageKey` | `localStorage` key suffix (the app prefix is added) under which the last choice is remembered; omit to remember nothing                                                              |
 
 ## Behaviour
 
@@ -18,3 +19,5 @@ The category picker of every radio's debug Memory view: one **Category** dropdow
 - Switching category unmounts the previous panel, so search, sort and selection inside a panel reset, as the inner tabs did with `keepMounted={false}`.
 - No radio knowledge lives here; each radio's Memory component supplies its categories and key.
 - Tests choose a category with `chooseCategory` (`memoryCategoriesTestUtils.ts`); `src/test/setup.dom.ts` clears the remembered choice between tests.
+- The component lives in the debug kit (`src/app/components/debug/`); per-category content is built with [MemoryCategoryPanel](./MemoryCategoryPanel.md).
+- Radios name their undecoded categories on the descriptor (`memoryNotDecoded`); `RadioDebugPage` passes it to the radio's Memory component as `notDecoded`.

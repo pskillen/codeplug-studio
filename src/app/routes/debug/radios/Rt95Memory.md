@@ -10,7 +10,7 @@ Inspect captured clone channels, MMD1 zones and P-key bytes without a library or
 
 ## Behaviour
 
-Channels, Zones and P-keys are categories of the shared [MemoryCategories](MemoryCategories.md) dropdown (default Channels, last choice remembered); the zone and P-key content below is unchanged.
+Channels, Zones and P-keys are categories of the shared [MemoryCategories](../../../components/debug/MemoryCategories.md) dropdown (default Channels, last choice remembered); the zone and P-key content below is unchanged.
 
 The viewer re-evaluates the two preserved chip-guard probes and checks the recorded outcome before describing guard evidence as verified. It validates MMD1 through the shared decoder and shows zones independently of clone availability. Each zone is a block: name and number, a member count, a valid or invalid member CRC badge, then a table of members resolved from the same decoded slots the channel table uses (no second decode). The column is "Radio name / description", radio name first; the RT95 record has no callsign field, and the MM9PDY target writes the callsign into the radio name when the channel has one, so the viewer does not claim a callsign. Members whose slot is empty, unavailable or unreadable (invalid frequency BCD, or invalid power, width or enabled tone values) are not listed: one line counts them ("N members point at empty or unreadable slots") and expands to the slot numbers and reasons. ZST1 state is validated separately. P-key DIR is a stored value, not firmware detection. Body EEPROM is reached through the head, which can return checksum-valid zeros without a body reply. All output is read-only.
 
