@@ -38,6 +38,8 @@ export interface Rt95Field {
   textField?: boolean;
   /** A secret (password bytes): the UI masks it until the operator reveals it. */
   sensitive?: boolean;
+  /** Secret-field reading shown only after the operator reveals it (never in `decoded`). */
+  revealedText?: string;
   referenceIndex?: number;
   powerCode?: number;
   corrections?: readonly (number | undefined)[];
@@ -62,13 +64,23 @@ function firmwareVersion(bytes: Uint8Array): string | undefined {
     : undefined;
 }
 
+/** Hex plus ASCII (when every byte is printable) of a password whose encoding is unconfirmed. */
+function unconfirmedPasswordText(bytes: Uint8Array): string {
+  const hex = Array.from(bytes, (b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+  const printable = bytes.length > 0 && bytes.every((b) => b >= 0x20 && b <= 0x7e);
+  return `${hex}${printable ? ` · ASCII "${String.fromCharCode(...bytes)}"` : ''} · encoding unconfirmed`;
+}
+
 /** BCD in 10 Hz units (test-channel frequency or offset), shown in MHz. */
 function bcdMhz(bytes: Uint8Array): string | undefined {
   const n = bcd(bytes);
   return n === undefined ? 'not valid BCD' : `${(n / 100000).toFixed(5)} MHz`;
 }
 
-type AddExtra = Partial<Rt95Field> & { decode?: (bytes: Uint8Array) => string | undefined };
+type AddExtra = Partial<Rt95Field> & {
+  decode?: (bytes: Uint8Array) => string | undefined;
+  decodeSensitive?: (bytes: Uint8Array) => string | undefined;
+};
 
 export function decodeRt95Calibration(input?: Uint8Array): {
   fields: Rt95Field[];
@@ -84,12 +96,14 @@ export function decodeRt95Calibration(input?: Uint8Array): {
     source: string,
     extra: AddExtra = {},
   ) => {
-    const { decode, ...rest } = extra;
+    const { decode, decodeSensitive, ...rest } = extra;
     const offset = address - RT95_CALIBRATION_START;
     const bytes = raw.slice(offset, offset + width);
     const availability =
       bytes.length === width ? 'captured' : bytes.length ? 'partial' : 'not-captured';
     const decoded = availability === 'captured' && decode ? decode(bytes) : undefined;
+    const revealedText =
+      availability === 'captured' && decodeSensitive ? decodeSensitive(bytes) : undefined;
     fields.push({
       label,
       address,
@@ -102,6 +116,7 @@ export function decodeRt95Calibration(input?: Uint8Array): {
       order: 'bytes',
       ...rest,
       ...(decoded === undefined ? {} : { decoded }),
+      ...(revealedText === undefined ? {} : { revealedText }),
       ...(rest.textField && bytes.length
         ? {
             text: Array.from(bytes, (byte) =>
@@ -159,7 +174,11 @@ export function decodeRt95Calibration(input?: Uint8Array): {
     RT95_PROGRAM_PASSWORD_LENGTH,
     'partially-traced',
     'CPS trace; F119',
-    { sensitive: true, note: 'CPS compares on Read/Write; purpose inferred.' },
+    {
+      sensitive: true,
+      decodeSensitive: unconfirmedPasswordText,
+      note: 'CPS compares on Read/Write; purpose inferred; encoding unconfirmed.',
+    },
   );
   text('Area Code (销售区号)', 0x3b1c, 4, 'CPS Text1(0)', 'Sales area code.');
   text('Serial Number', 0x3b20, 16, 'CPS Text1(1)', 'Shown in full, never masked.');

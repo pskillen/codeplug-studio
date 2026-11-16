@@ -91,13 +91,15 @@ export function Rt95Calibration({
             · Decoded:{' '}
             {hidden(field) && field.availability !== 'not-captured'
               ? 'Hidden'
-              : field.text !== undefined
-                ? `Text: ${field.text}`
-                : field.value === undefined
-                  ? field.availability === 'captured'
-                    ? 'Not decoded'
-                    : 'Not captured'
-                  : `0x${field.value.toString(16).toUpperCase()}`}{' '}
+              : field.revealedText !== undefined
+                ? field.revealedText
+                : field.text !== undefined
+                  ? `Text: ${field.text}`
+                  : field.value === undefined
+                    ? field.availability === 'captured'
+                      ? 'Not decoded'
+                      : 'Not captured'
+                    : `0x${field.value.toString(16).toUpperCase()}`}{' '}
             {field.referenceIndex === undefined ? '' : `· reference index ${field.referenceIndex}`}{' '}
             · layout {field.layout}, meaning{' '}
             {field.meaning === 'unused' ? 'unused (no reader)' : field.meaning} · {field.source}
