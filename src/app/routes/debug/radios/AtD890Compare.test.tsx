@@ -145,13 +145,13 @@ describe('AtD890Compare', () => {
 
   describe('password bytes', () => {
     const START = D890_MAP.OptionalSettingsExt + 0x3c;
-    const sparseArchive = (fill: number) => {
-      const data = new Uint8Array(16).fill(fill);
+    const sparseArchive = (fill: number, at = START, length = 16) => {
+      const data = new Uint8Array(length).fill(fill);
       const region = {
-        id: `sparse-${START.toString(16)}`,
+        id: `sparse-${at.toString(16)}`,
         label: 'Sparse',
-        address: START,
-        byteLength: 16,
+        address: at,
+        byteLength: length,
         path: 'regions/sparse-opt.bin',
         restoreRole: 'inspect-only' as const,
       };
@@ -169,16 +169,16 @@ describe('AtD890Compare', () => {
             imageByteLength: 0x5000000,
             regions: [region],
           },
-          { [`sparse-${START.toString(16)}`]: data },
+          { [`sparse-${at.toString(16)}`]: data },
           {
             [AT_D890_PROVENANCE_PATH]: new TextEncoder().encode(
               JSON.stringify({
                 version: 1,
                 ranges: [
                   {
-                    regionId: `sparse-${START.toString(16)}`,
-                    address: START,
-                    byteLength: 16,
+                    regionId: `sparse-${at.toString(16)}`,
+                    address: at,
+                    byteLength: length,
                     kind: 'sparse',
                     requestedUnit: null,
                     respondingUnit: null,
@@ -199,6 +199,15 @@ describe('AtD890Compare', () => {
           <RadioCompare descriptor={descriptor} a={a} b={b} />
         </MantineProvider>,
       );
+
+    it('masks each side from its own region when the reads chunk the span differently', () => {
+      // A holds the span in a 16-byte region, B in a wider region with a different id.
+      shell(sparseArchive(0x31), sparseArchive(0x32, START - 0x10, 48));
+      const hex = () => screen.getByRole('group', { name: 'Hex diff' }).textContent ?? '';
+      expect(hex()).toContain('[masked bytes differ]');
+      expect(hex()).not.toMatch(/32 32 32 32 32/);
+      expect(hex()).not.toMatch(/31 31 31 31 31/);
+    });
 
     it('masks a changed power-on password in the shared hex diff until revealed', () => {
       shell(sparseArchive(0x31), sparseArchive(0x32));

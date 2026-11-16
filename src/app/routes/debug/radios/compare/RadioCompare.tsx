@@ -93,7 +93,9 @@ export function RadioCompare({
   const section =
     shown.find((s) => s.id === selected) ?? shown.find((s) => s.changed > 0) ?? shown[0];
   const rangesA = section ? sensitiveRanges(a, section.regionId ?? section.id) : [];
-  const rangesB = section ? sensitiveRanges(b, section.regionId ?? section.id) : [];
+  const rangesB = section
+    ? sensitiveRanges(b, section.regionIdB ?? section.regionId ?? section.id)
+    : [];
   const onlyChanged = section ? (filter[section.id] ?? section.changed > 0) : false;
 
   const jump = (id: string) => {
