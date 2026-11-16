@@ -113,7 +113,9 @@ function Rt95ZoneBlock({ zone, slots }: { zone: ZoneView; slots: SlotRow[] }) {
     <Stack gap={4} data-testid={`rt95-zone-${zone.index + 1}`}>
       <Group gap="xs">
         <Text fw={600}>{title}</Text>
-        <Badge variant="light">{zone.memberIndexes.length} members</Badge>
+        <Badge variant="light">
+          {zone.memberIndexes.length} {zone.memberIndexes.length === 1 ? 'member' : 'members'}
+        </Badge>
         <Badge variant="light" color={zone.valid ? 'green' : 'red'}>
           {zone.valid ? 'members valid' : 'invalid member CRC'}
         </Badge>
@@ -243,7 +245,7 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
       />
       <Title order={4}>MMD1 zones</Title>
       <Text size="sm" c="dimmed">
-        MMD1 data: main board. Clone channel fields below it: the storage MCU is not documented.
+        MMD1 data: main board.
       </Text>
       <Text>
         Body EEPROM is reached through the head; it can return checksum-valid zeros without a body
