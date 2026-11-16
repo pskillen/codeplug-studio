@@ -21,6 +21,14 @@ export function formatDecimal(value: number, unit?: string): string {
 /** Placeholder for a value that was not captured. */
 export const NOT_CAPTURED = '—';
 
+/** The words a table cell shows for a value that was not captured (never zero, never empty). */
+export const NOT_CAPTURED_TEXT = 'Not captured';
+
+/** Signed difference for a Δ column: `+3`, `-2`, `0`. */
+export function formatDelta(delta: number): string {
+  return delta > 0 ? `+${delta}` : String(delta);
+}
+
 /** Prints `value` in the chosen format; `undefined` prints the not-captured dash. */
 export function formatNumber(
   value: number | undefined,
