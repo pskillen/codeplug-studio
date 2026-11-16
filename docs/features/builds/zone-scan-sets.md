@@ -36,18 +36,18 @@ The Web Serial Write projection attaches each set to its zone as `RadioZoneDto.s
 
 Three warning types, all of which warn and none of which refuses (`ExportWarning` kind `zone_scan_set`):
 
-| Issue              | When                                          | Says                                                                             |
-| ------------------ | --------------------------------------------- | -------------------------------------------------------------------------------- |
-| `too-few`          | A zone's scan set has fewer than two channels | The zone won't scan on the radio                                                 |
-| `firmware-too-old` | The radio's firmware can't store scan sets    | They were not written, and the zones scan as before; the radio says how it knows |
-| `room-exceeded`    | The radio's room for scan sets is exceeded    | What it needs and holds, and what happens to the zones that don't fit            |
+| Issue              | When                                          | Says                                                                                        |
+| ------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `too-few`          | A zone's scan set has fewer than two channels | The zone won't scan on the radio                                                            |
+| `firmware-too-old` | Firmware support is too old or unknown        | Either the sets were not written, or they were written anyway but the radio may ignore them |
+| `room-exceeded`    | The radio's room for scan sets is exceeded    | What it needs and holds, and what happens to the zones that don't fit                       |
 
-`checkZoneScanSets(sets, checks, warnings)` runs them. The too-few check is common. A radio supplies the rest through `ZoneScanSetRadioChecks`: `firmwareTooOld()` (how it knows) and `roomExceeded(sets)` (its limit and the consequence). When the firmware is too old, the scan sets aren't written and the per-zone checks are skipped. Each radio's writer ticket wires the checks into its Write.
+`checkZoneScanSets(sets, checks, warnings)` runs them. The too-few check is common. A radio supplies the rest through `ZoneScanSetRadioChecks`: `firmwareTooOld()` (how it knows) and `roomExceeded(sets)` (its limit and the consequence). The hook's too-old result means the sets aren't written and the per-zone checks are skipped. The Mini writes them regardless and issues its own compatibility warning; it also checks the effective sets and capacity. Its Write session cannot identify the installed firmware and warns that the radio may ignore the sets. A zone that cannot fit falls back to scanning all members, and the room warning names it; later zones are still tried. See [the Mini reference](../../reference/radios/baofeng/uv-5r-mini/mm9pdy-data.md).
 
 ## Known gaps
 
-- The RT95 and UV-5R Mini writers don't write scan sets yet, so the radio still scans a zone by the per-channel flag and Scan in this zone has no effect on the radio ([#1756](https://github.com/pskillen/codeplug-studio/issues/1756), [#1757](https://github.com/pskillen/codeplug-studio/issues/1757)). Until then, both Writes add one info note when any written zone's scan set differs from its members: "Scan in this zone isn't written to the radio yet; zones scan as before." Each writer ticket removes it.
-- None of the `zone_scan_set` warnings is raised yet: `checkZoneScanSets` is wired in by each radio's writer ticket, because a too-few warning would be wrong while the radio ignores scan sets.
+- The RT95 writer does not yet write scan sets. Its Write adds an info note when a zone's scan set differs from its members; the radio continues to scan as before ([#1756](https://github.com/pskillen/codeplug-studio/issues/1756)).
+- The RT95 does not yet raise the `zone_scan_set` warnings; those checks are wired in with its writer.
 
 ## Not done
 
