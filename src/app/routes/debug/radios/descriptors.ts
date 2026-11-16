@@ -5,12 +5,12 @@ import { OpenGd77Calibration } from './OpenGd77Calibration.tsx';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
 import { OpenGd77Settings } from './OpenGd77Settings.tsx';
 import { AtD890Memory } from './AtD890Memory.tsx';
-import { AtD890Settings } from './AtD890Settings.tsx';
 import { Dm32Memory } from './Dm32Memory.tsx';
 import { dm32SettingsView } from '@integrations/radio-io/radios/dm32uv/debugSettingsView.ts';
+import { rt95SettingsView } from '@integrations/radio-io/radios/rt95/debugSettingsView.ts';
+import { atD890SettingsView } from '@integrations/radio-io/radios/at-d890uv/debugSettingsView.ts';
 import type { SettingsView } from '@integrations/radio-io/debugView/index.ts';
 import { Rt95MemoryView } from './Rt95Memory.tsx';
-import { Rt95Settings } from './Rt95Settings.tsx';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { UV5R_MINI_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/uv5r-mini/debugRead/memoryText.ts';
 import { Uv5rMiniSettings } from './Uv5rMiniSettings.tsx';
@@ -155,7 +155,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     // Hooked here, not in atD890Compare.ts: the snapshot's imports reach back into this module.
     compare: { ...atD890CompareAdapter, decoded: atD890DecodedSnapshot },
     Memory: AtD890Memory,
-    Settings: AtD890Settings,
+    settings: atD890SettingsView,
     Calibration: AtD890Calibration,
     CompareExtra: AtD890Compare,
     readHistory: true,
@@ -228,7 +228,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     slug: 'rt95',
     compare: rt95CompareAdapter,
     Memory: Rt95MemoryView,
-    Settings: Rt95Settings,
+    settings: rt95SettingsView,
     Calibration: Rt95Calibration,
     readHistory: true,
     capture: captureRt95,
