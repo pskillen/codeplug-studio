@@ -4,6 +4,7 @@ import {
   captureOpenGd77DebugPipe,
   type OpenGd77DebugCapture,
 } from '@integrations/radio-io/radios/opengd77/debugCapture.ts';
+import { OPENGD77_DEBUG_USER_DATABASE_OPTION } from '@integrations/radio-io/radios/opengd77/debugText.ts';
 import { getRadioDescriptor } from '@integrations/radio-io/registry.ts';
 import {
   isCapacitorSerialSupported,
@@ -16,8 +17,8 @@ import type { ProgressFn } from '@integrations/radio-io/types.ts';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 import type { RadioDebugCaptureOptions } from './descriptors.ts';
 
-/** Capture option id: also read the occupied User Database (off unless ticked). */
-export const OPENGD77_DEBUG_USER_DATABASE_OPTION = 'userDatabase';
+/** Capture option id: also read the occupied User Database (off unless ticked). The id lives in the radio home. */
+export { OPENGD77_DEBUG_USER_DATABASE_OPTION };
 
 /** Pack a guarded capture into a partial standard radio-backup archive, then reopen it. */
 export async function archiveOpenGd77Capture(capture: OpenGd77DebugCapture): Promise<DebugArchive> {

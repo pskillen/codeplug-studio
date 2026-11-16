@@ -1,7 +1,4 @@
 import { isOpenGd77ModelId } from '@integrations/radio-io/radios/opengd77/debugCoverage.ts';
-import { RT95_MMD1_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
-import { RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
-import { RT95_CALIBRATION_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import {
   Alert,
   Button,
@@ -25,16 +22,14 @@ import {
   isDm32ModelId,
   isMasked,
   regionIdentity,
+  regionNote,
   sensitiveRanges,
 } from './viewerUtils.ts';
 import { SensitiveRevealButton, useSensitiveReveal } from '@app/components/debug/index.ts';
 
 function provenance(archive: DebugArchive | undefined, id: string) {
-  return archive?.manifest.radioModelId === RT95_MODEL_ID
-    ? id === RT95_CALIBRATION_REGION_ID || id === RT95_MMD1_REGION_ID
-      ? ' [body]'
-      : ' [unknown]'
-    : '';
+  const tag = regionNote(archive, id).tag;
+  return tag ? ` ${tag}` : '';
 }
 
 export function HexViewer({ archive }: { archive?: DebugArchive }) {
@@ -52,6 +47,7 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
   const bytes = wire ?? archive.regions[region.id]!;
   const pages = Math.max(1, Math.ceil(bytes.length / HEX_PAGE_BYTES));
   const current = Math.min(page, pages - 1);
+  const note = wire ? {} : regionNote(archive, region.id);
   const base = wire ? 0 : region.address;
   const mask = wire ? [] : sensitiveRanges(archive, region.id);
   const goToAddress = () => {
@@ -73,14 +69,10 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
       <Text size="sm">
         {wire
           ? 'Wire bytes as received'
-          : archive.manifest.radioModelId === 'UV-5R Mini' && region.id === 'clone'
-            ? 'Decoded clone bytes'
-            : (regionIdentity(archive, region.id)?.representation ??
-              'Archive bytes; wire or decoded representation is not recorded')}
-        .{' '}
-        {archive.manifest.radioModelId === 'UV-5R Mini' && region.id.startsWith('mem-') && !wire
-          ? 'Addresses shown are packed offsets, not radio addresses. '
-          : ''}
+          : (note.representation ??
+            regionIdentity(archive, region.id)?.representation ??
+            'Archive bytes; wire or decoded representation is not recorded')}
+        . {note.addressNote ? `${note.addressNote} ` : ''}
         Gaps are never displayed as bytes.
       </Text>
       <Select
@@ -101,13 +93,7 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
       />
       <Card withBorder>
         <Text fw={600}>
-          {wire ? 'Wire bytes as received' : region.label}{' '}
-          {archive?.manifest.radioModelId === RT95_MODEL_ID
-            ? region.id === RT95_CALIBRATION_REGION_ID || region.id === RT95_MMD1_REGION_ID
-              ? '[body]'
-              : '[unknown]'
-            : ''}{' '}
-          · {bytes.length} bytes
+          {wire ? 'Wire bytes as received' : region.label} {note.tag ?? ''} · {bytes.length} bytes
         </Text>
         {mask.length > 0 && (
           <Group gap="xs">

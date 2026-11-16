@@ -22,6 +22,8 @@ Shows archive identity evidence without treating the selected family as proof of
 
 While a read runs the page keeps the whole `ProgressUpdate` and renders `DebugReadProgress`: the `stage` label (as "Stage i of n" when the descriptor lists `captureStages`), a `cur / max` bar when `max > 0`, and the message. Stage lists per radio live in the radio's capture file, not in the page; see [Read progress](../../../../../docs/features/radio-debug/README.md#read-progress).
 
+The page names no radio. Each descriptor carries what differs: `identityRows` (Overview rows after `Model · selected`; a descriptor without one gets `genericIdentityRows`), `identityNote` (caption), `readNotice` (Backup notice), `captureOptions`, `openLegacyArchive` (opens a ZIP in the radio's older format, as in the Mini reads ZIP, and returns `undefined` for any other bytes, so the real open error shows) and `regionNote` (the Hex and Compare representation line, address caveat and `[tag]` for a region). Each is built in the radio home (`integrations/radio-io/radios/<radio>/debugIdentity.ts`, `opengd77/debugText.ts`, `uv5r-mini/debugRead/identity.ts`). Still in the shared files and listed as follow-ups: the Backup `Coverage` panel's per-radio branches and the retiring `CompareViewer`.
+
 ## Related
 
 [Radio debug](../../../../../docs/features/radio-debug/README.md)

@@ -31,6 +31,7 @@ import {
   UV5RMINI_RADIO_REPORT_ADDRESS,
   UV5RMINI_RADIO_REPORT_LENGTH,
 } from '@core/radios/baofeng/uv-5r-mini/radioReport.ts';
+import { rt95CloneCoverage } from '@integrations/radio-io/radios/rt95/debugIdentity.ts';
 import { RT95_IMAGE_SIZE, RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
 import { createMemoryMap } from '@integrations/radio-io/kit/memoryMap.ts';
 import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.ts';
@@ -137,14 +138,7 @@ export function archiveGaps(regions: ParsedRadioBackupZip['manifest']['regions']
 /** Only the known programming-image entry can be mapped into RT95 clone address space. */
 export function rt95ArchiveDetails(archive: DebugArchive) {
   if (archive.manifest.radioModelId !== RT95_MODEL_ID) return undefined;
-  const region = archive.manifest.regions.find((item) => item.id === 'programming-image');
-  const start = Math.min(RT95_IMAGE_SIZE, region?.address ?? 0);
-  const end = Math.min(RT95_IMAGE_SIZE, (region?.address ?? 0) + (region?.byteLength ?? 0));
-  const missing = [
-    ...(start > 0 ? [{ start: 0, end: start - 1 }] : []),
-    ...(end < RT95_IMAGE_SIZE ? [{ start: end, end: RT95_IMAGE_SIZE - 1 }] : []),
-  ];
-  const coverage = end <= start ? 'missing' : missing.length ? 'partial' : 'captured';
+  const { region, missing, coverage } = rt95CloneCoverage(archive);
   if (coverage !== 'captured') return { missing, coverage };
   try {
     const bytes = archive.regions[region!.id]!;
