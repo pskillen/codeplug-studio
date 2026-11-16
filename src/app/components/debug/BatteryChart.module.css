@@ -37,9 +37,15 @@
   color: var(--dsv2-text-secondary);
 }
 
+.track {
+  flex: 1 1 60px;
+  min-width: 40px;
+  display: flex;
+}
+
+/* Width is a fraction of the track, so the ladder scales over the whole range. */
 .bar {
-  flex: 0 1 auto;
-  max-width: 50%;
+  display: block;
   height: 10px;
   border-radius: 2px;
 }

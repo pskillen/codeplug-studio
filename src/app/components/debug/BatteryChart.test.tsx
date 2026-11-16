@@ -43,4 +43,17 @@ describe('BatteryChart', () => {
     expect(screen.getByText('A')).toBeInTheDocument();
     expect(screen.getAllByText('0x1A (26)')).toHaveLength(2);
   });
+
+  it('scales a full-range ladder: bars differ and none is capped by a CSS maximum', () => {
+    const steps = [0x80, 0x9a, 0xb4, 0xd0, 0xe8, 0xff].map((raw, i) => ({
+      id: `s${i}`,
+      label: `Step ${i}`,
+      raw,
+    }));
+    wrap(<BatteryChart chart={ladder({ steps })} />);
+    const widths = screen.getAllByTestId('battery-bar').map((b) => parseFloat(b.style.width));
+    expect(new Set(widths).size).toBe(6);
+    expect(Math.max(...widths)).toBeCloseTo(100);
+    expect(Math.min(...widths)).toBeGreaterThan(50);
+  });
 });
