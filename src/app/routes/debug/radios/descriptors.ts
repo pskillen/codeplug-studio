@@ -9,7 +9,8 @@ import { Dm32Memory } from './Dm32Memory.tsx';
 import { dm32SettingsView } from '@integrations/radio-io/radios/dm32uv/debugSettingsView.ts';
 import { rt95SettingsView } from '@integrations/radio-io/radios/rt95/debugSettingsView.ts';
 import { atD890SettingsView } from '@integrations/radio-io/radios/at-d890uv/debugSettingsView.ts';
-import type { SettingsView } from '@integrations/radio-io/debugView/index.ts';
+import type { CalibrationView, SettingsView } from '@integrations/radio-io/debugView/index.ts';
+import { rt95CalibrationView } from '@integrations/radio-io/radios/rt95/debugCalibrationView.ts';
 import { Rt95MemoryView } from './Rt95Memory.tsx';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { UV5R_MINI_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/uv5r-mini/debugRead/memoryText.ts';
@@ -90,6 +91,12 @@ export interface RadioDebugDescriptor {
    * Radio-home function; absent: no Settings tab.
    */
   settings?: (archive: DebugArchive) => SettingsView;
+  /**
+   * The Calibration tab's content as a radio-neutral view, drawn by the shared `CalibrationTab`
+   * (K1b part 2). Radio-home function, called once for the read and once for the overlay. Until
+   * that tab lands the page still draws `Calibration`.
+   */
+  calibration?: (archive: DebugArchive) => CalibrationView;
   /** False when the Calibration tab has no overlay picker (the radio's calibration is shown alone). */
   calibrationOverlay?: boolean;
   /** Keep every read and opened archive in the shared tab-only history, with Compare. */
@@ -227,6 +234,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     compare: rt95CompareAdapter,
     Memory: Rt95MemoryView,
     settings: rt95SettingsView,
+    calibration: rt95CalibrationView,
     Calibration: Rt95Calibration,
     readHistory: true,
     capture: captureRt95,
