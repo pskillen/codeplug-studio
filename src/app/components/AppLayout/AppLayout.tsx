@@ -11,6 +11,8 @@ import {
   DesignSystemV2Provider,
   ProjectChip,
 } from '../v2/index.ts';
+import { DSV2_TOKENS } from '../../theme-v2.ts';
+import { isDarkPagePath } from '../../nav/darkPageRoutes.ts';
 import { isFullBleedPath, isWideDesktopPath } from '../../nav/fullBleedRoutes.ts';
 import type { BottomTabItem } from '../v2/BottomTabBar.tsx';
 import BuildFooter from '../BuildFooter/BuildFooter.tsx';
@@ -290,6 +292,13 @@ function AppLayoutBody({
   const navigate = useNavigate();
   const fullBleed = isFullBleedPath(pathname, isDesktopNav === false);
   const wide = !fullBleed && isWideDesktopPath(pathname);
+  const dark = isDarkPagePath(pathname);
+  const pageBody = (
+    <>
+      <Outlet />
+      {fullBleed ? null : <BuildFooter />}
+    </>
+  );
 
   return (
     <div
@@ -353,6 +362,7 @@ function AppLayoutBody({
         ]
           .filter(Boolean)
           .join(' ')}
+        style={dark ? { background: DSV2_TOKENS.colors.bg } : undefined}
       >
         <CookieConsentBanner />
         <SavedFileNotice />
@@ -363,8 +373,11 @@ function AppLayoutBody({
               : [classes.pageContent, wide ? classes.pageContentWide : ''].filter(Boolean).join(' ')
           }
         >
-          <Outlet />
-          {fullBleed ? null : <BuildFooter />}
+          {dark ? (
+            <DesignSystemV2Provider scheme="dark">{pageBody}</DesignSystemV2Provider>
+          ) : (
+            pageBody
+          )}
         </div>
       </main>
 

@@ -42,4 +42,23 @@ describe('DesignSystemV2Provider', () => {
     }
     expect(outsideAccent).toBe('');
   });
+
+  it('leaves the scope as it was unless scheme="dark" is passed', () => {
+    render(
+      <MantineProvider defaultColorScheme="light">
+        <DesignSystemV2Provider>
+          <span data-testid="plain">plain</span>
+        </DesignSystemV2Provider>
+        <DesignSystemV2Provider scheme="dark">
+          <span data-testid="dark">dark</span>
+        </DesignSystemV2Provider>
+      </MantineProvider>,
+    );
+    const plain = screen.getByTestId('plain').closest('.dsv2-scope') as HTMLElement;
+    const dark = screen.getByTestId('dark').closest('.dsv2-scope') as HTMLElement;
+    expect(plain).not.toHaveAttribute('data-mantine-color-scheme');
+    expect(plain.getAttribute('style')).toBeNull();
+    expect(dark).toHaveAttribute('data-mantine-color-scheme', 'dark');
+    expect(dark.style.background).toBe('var(--dsv2-bg)');
+  });
 });
