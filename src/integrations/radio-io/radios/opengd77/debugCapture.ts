@@ -69,10 +69,10 @@ export async function captureOpenGd77DebugPipe(
   const signal = opts?.signal;
   const guard = createOpenGd77DebugGuard(pipe, signal);
   const radio = descriptor.protocolFactory();
-  if (!(radio instanceof OpenGd77Protocol)) {
-    throw new Error('OpenGD77 descriptor returned an unexpected protocol.');
-  }
   try {
+    if (!(radio instanceof OpenGd77Protocol)) {
+      throw new Error('OpenGD77 descriptor returned an unexpected protocol.');
+    }
     throwIfAborted(signal);
     // A wrong radio type throws RadioWrongIdentError here, before show CPS.
     const ident = await radio.connect(guard.pipe, { handshake: 'read', signal });
