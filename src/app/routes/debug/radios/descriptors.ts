@@ -16,6 +16,12 @@ import { Uv5rMiniSettings } from './Uv5rMiniSettings.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
 import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
+import { atD890CompareAdapter } from './atD890Compare.ts';
+import type { DebugCompareAdapter } from '@integrations/radio-io/debugCompare/index.ts';
+import { dm32CompareAdapter } from '@integrations/radio-io/radios/dm32uv/debugCompare.ts';
+import { openGd77CompareAdapter } from '@integrations/radio-io/radios/opengd77/debugCompare.ts';
+import { rt95CompareAdapter } from '@integrations/radio-io/radios/rt95/debugCompare.ts';
+import { uv5rMiniCompareAdapter } from '@integrations/radio-io/radios/uv5r-mini/debugRead/compare.ts';
 import { captureAtD890 } from './atD890Capture.ts';
 import { captureDm32 } from './dm32Capture.ts';
 import { captureUv5rMini } from './uv5rMiniCapture.ts';
@@ -65,6 +71,8 @@ export interface RadioDebugDescriptor {
   captureStages?: readonly string[];
   Calibration?: ComponentType<DebugCalibrationProps>;
   DecodedDiff?: ComponentType<DebugDecodedDiffProps>;
+  /** Byte compare for this radio: sections, region identity and limits notes. Radio-home code. */
+  compare?: DebugCompareAdapter;
   /** A profile's own Memory viewer; without one the generic Memory viewer is used. */
   Memory?: ComponentType<{ archive?: DebugArchive }>;
   /**
@@ -134,6 +142,7 @@ const OPENGD77_CAPTURE_OPTIONS: readonly RadioDebugCaptureOption[] = [
 export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
     slug: 'at-d890uv',
+    compare: atD890CompareAdapter,
     Memory: AtD890Memory,
     Settings: AtD890Settings,
     Calibration: AtD890Calibration,
@@ -147,6 +156,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-32uv',
+    compare: dm32CompareAdapter,
     Memory: Dm32Memory,
     Settings: Dm32Settings,
     calibrationOverlay: false,
@@ -168,6 +178,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-1701-opengd77',
+    compare: openGd77CompareAdapter,
     Calibration: OpenGd77Calibration,
     DecodedDiff: OpenGd77DecodedDiff,
     Memory: OpenGd77Memory,
@@ -186,6 +197,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'md-9600-opengd77',
+    compare: openGd77CompareAdapter,
     Calibration: OpenGd77Calibration,
     DecodedDiff: OpenGd77DecodedDiff,
     Memory: OpenGd77Memory,
@@ -204,6 +216,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'rt95',
+    compare: rt95CompareAdapter,
     Memory: Rt95MemoryView,
     Settings: Rt95Settings,
     Calibration: Rt95Calibration,
@@ -225,6 +238,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'uv-5r-mini',
+    compare: uv5rMiniCompareAdapter,
     Memory: Uv5rMiniMemory,
     Settings: Uv5rMiniSettings,
     capture: captureUv5rMini,
