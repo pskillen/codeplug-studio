@@ -162,17 +162,20 @@ it('selects the live read after opening a legacy ZIP, even after selecting a fil
   fireEvent.click(screen.getByRole('option', { name: /File A/ }));
   expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/File A/);
   fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
-  fireEvent.click(screen.getByRole('combobox', { name: 'Second read' }));
-  fireEvent.click(screen.getByRole('option', { name: /File A/ }));
-  expect(screen.getByRole('combobox', { name: 'Second read' })).toHaveDisplayValue(/File A/);
+  expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
+  fireEvent.click(screen.getByRole('combobox', { name: 'Compare B' }));
+  fireEvent.click(screen.getByRole('option', { name: /^A ·/ }));
+  expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^A ·/);
   fireEvent.click(screen.getByRole('tab', { name: 'Backup' }));
   fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
   await screen.findByText(/Live read · captured/);
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
   expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/Live/);
   fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
-  expect(screen.getByRole('combobox', { name: 'Second read' })).toHaveDisplayValue(/Live/);
-}, 15000);
+  // B was picked explicitly, so the new live read does not move it.
+  expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^A ·/);
+  expect(screen.getByRole('combobox', { name: 'Compare A' })).toHaveDisplayValue(/^B ·/);
+}, 30000);
 
 it('adds a successful live read to history with its timestamp', async () => {
   fake.run.mockResolvedValueOnce(syntheticRead(4));
@@ -482,14 +485,14 @@ describe('DM-32UV debug page', () => {
     history.select(first.id);
     open('dm-32uv');
     fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
-    const select = screen.getByRole('combobox', { name: 'Compare with' });
-    fireEvent.click(select);
-    fireEvent.click(await screen.findByRole('option', { name: /^B ·/ }));
-    expect(await screen.findByText(/Identity \/ Model: Unchanged/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Identity \/ Build date: Unavailable · Not captured/),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Identity \/ Base firmware: Unchanged/)).toBeInTheDocument();
+    // Previous vs latest by default: A against B.
+    expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
+    expect(await screen.findByText('Decoded changes')).toBeInTheDocument();
+    // Only changes is on: the unchanged model is not listed; the build date is not captured in A.
+    expect(screen.queryByText('Identity / Model')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('switch', { name: 'Only changes' }));
+    expect(screen.getByText('Identity / Build date')).toBeInTheDocument();
+    expect(screen.getAllByText('Not captured').length).toBeGreaterThan(0);
     // Selecting the other read updates Overview and Coverage.
     act(() => history.select(second.id));
     fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
@@ -498,7 +501,7 @@ describe('DM-32UV debug page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear history' }));
     fireEvent.click(await screen.findByRole('button', { name: /^Clear$/ }));
     fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
-    expect(screen.getByRole('combobox', { name: 'Compare with' })).toHaveValue('');
+    expect(screen.getByText('Read or open a second capture to compare.')).toBeInTheDocument();
     expect(screen.queryByText(/Identity \/ Model/)).not.toBeInTheDocument();
   });
 
@@ -648,7 +651,7 @@ it('retains comparison uploads in shared history for other viewers and download 
   const inputs = document.querySelectorAll('input[type="file"]');
   fireEvent.change(inputs[inputs.length - 1]!, { target: { files: [file] } });
   await waitFor(() => expect(history.getSnapshot().entries).toHaveLength(2));
-  expect(screen.getByRole('combobox', { name: 'Second read' })).toHaveDisplayValue(/File B/);
+  expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
   expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/File B/);
   fireEvent.click(screen.getByRole('tab', { name: 'Backup' }));
@@ -817,16 +820,17 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     history.select(first.id);
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
-    fireEvent.click(screen.getByRole('combobox', { name: 'Compare with' }));
-    fireEvent.click(await screen.findByRole('option', { name: /^B ·/ }));
-    expect(await screen.findByText(/Identity \/ Revision: Changed/)).toBeInTheDocument();
-    expect(screen.getByText(/Identity \/ Build date: Unchanged/)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
+    const identity = await screen.findByRole('group', { name: 'Identity' });
+    expect(identity).toHaveTextContent('changed');
+    expect(identity).toHaveTextContent('Revision');
+    const userDb = screen.getByRole('group', { name: 'User Database' });
+    expect(userDb).toHaveTextContent('Entry count (header)');
+    expect(userDb).toHaveTextContent('23');
+    expect(screen.getByText('A and B differ')).toBeInTheDocument();
+    expect(screen.getByText('27 bytes on one side only')).toBeInTheDocument();
     expect(
-      screen.getByText(/User Database \/ Entry count \(header\): Changed · 2 → 3/),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/FLASH span 1: 0 changed bytes/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/User Database.*: 1 changed bytes · 27 missing bytes/),
+      screen.getByRole('button', { name: /Show User Database.* in the hex diff/ }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Decoded changes are unavailable/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Responding unit/)).not.toBeInTheDocument();
@@ -846,10 +850,11 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
       ),
     ]);
     history.select(first.id);
-    history.setCompare(bad.id);
+    history.setComparePair({ a: first.id, b: bad.id });
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
-    expect(await screen.findByText(/Identity \/ Revision: Unavailable/)).toBeInTheDocument();
+    expect(await screen.findByText(/Invalid FirmwareInfo/)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/null/);
   });
 
   it.each(radioTypes)(

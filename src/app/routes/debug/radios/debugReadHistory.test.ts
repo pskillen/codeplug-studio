@@ -58,6 +58,7 @@ describe('debug read history', () => {
       entries: [],
       selectedId: null,
       compareId: null,
+      comparePair: { a: null, b: null },
       undownloaded: 0,
     });
   });
@@ -94,5 +95,83 @@ describe('debug read history comparison selection', () => {
     expect(store.getSnapshot().compareId).toBeNull();
     store.add(exampleArchive());
     expect(store.getSnapshot().compareId).toBeNull();
+  });
+});
+
+describe('debug read history compare pair', () => {
+  const fresh = (slug: string) => {
+    const store = getDebugReadHistory({ slug, archiveModelId: 'AT-D890UV' });
+    store.clear();
+    return store;
+  };
+  const read = (store: ReturnType<typeof fresh>, n: number) =>
+    store.add(exampleArchive(`2026-01-0${n}T00:00:00Z`)).id;
+
+  it('defaults to the previous read against the latest, and is empty until there are reads', () => {
+    const store = fresh('pair-default');
+    expect(store.getSnapshot().comparePair).toEqual({ a: null, b: null });
+    const one = read(store, 1);
+    expect(store.getSnapshot().comparePair).toEqual({ a: null, b: one });
+    const two = read(store, 2);
+    expect(store.getSnapshot().comparePair).toEqual({ a: one, b: two });
+    const three = read(store, 3);
+    expect(store.getSnapshot().comparePair).toEqual({ a: two, b: three });
+  });
+
+  it('keeps explicit picks through new reads and apart from the calibration overlay', () => {
+    const store = fresh('pair-picks');
+    const [one, two, three] = [read(store, 1), read(store, 2), read(store, 3)];
+    store.setComparePair({ a: one, b: two });
+    store.setCompare(three);
+    expect(store.getSnapshot().comparePair).toEqual({ a: one, b: two });
+    expect(store.getSnapshot().compareId).toBe(three);
+    read(store, 4);
+    expect(store.getSnapshot().comparePair).toEqual({ a: one, b: two });
+    // Picking A alone leaves B following the latest read.
+    store.clearComparePair();
+    store.setComparePair({ a: one });
+    const five = read(store, 5);
+    expect(store.getSnapshot().comparePair).toEqual({ a: one, b: five });
+    expect(store.getSnapshot().compareId).toBe(three);
+  });
+
+  it('swaps both sides, and a swap survives new reads', () => {
+    const store = fresh('pair-swap');
+    const [one, two] = [read(store, 1), read(store, 2)];
+    store.swapComparePair();
+    expect(store.getSnapshot().comparePair).toEqual({ a: two, b: one });
+    read(store, 3);
+    expect(store.getSnapshot().comparePair).toEqual({ a: two, b: one });
+  });
+
+  it('does not swap with fewer than two reads', () => {
+    const store = fresh('pair-swap-few');
+    const one = read(store, 1);
+    store.swapComparePair();
+    expect(store.getSnapshot().comparePair).toEqual({ a: null, b: one });
+  });
+
+  it('ignores unknown ids, and picks from before a clear do not leak into the new history', () => {
+    const store = fresh('pair-removed');
+    const [one, two] = [read(store, 1), read(store, 2)];
+    store.setComparePair({ a: 'nope' });
+    expect(store.getSnapshot().comparePair).toEqual({ a: one, b: two });
+    store.setComparePair({ a: two, b: one });
+    store.clear();
+    expect(store.getSnapshot().comparePair).toEqual({ a: null, b: null });
+    const first = read(store, 1);
+    const second = read(store, 2);
+    expect(store.getSnapshot().comparePair).toEqual({ a: first, b: second });
+  });
+
+  it('clears explicit picks back to previous vs latest and keeps snapshots stable', () => {
+    const store = fresh('pair-clear');
+    const [one, two, three] = [read(store, 1), read(store, 2), read(store, 3)];
+    store.setComparePair({ a: one, b: two });
+    store.clearComparePair();
+    expect(store.getSnapshot().comparePair).toEqual({ a: two, b: three });
+    const snapshot = store.getSnapshot();
+    store.clearComparePair();
+    expect(store.getSnapshot()).toBe(snapshot);
   });
 });

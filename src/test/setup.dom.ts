@@ -37,7 +37,7 @@ Object.defineProperty(window, 'ResizeObserver', {
 afterEach(() => {
   try {
     for (const key of Object.keys(window.localStorage))
-      if (key.startsWith('debug-memory-category:')) window.localStorage.removeItem(key);
+      if (key.includes('debug-memory-category:')) window.localStorage.removeItem(key);
   } catch {
     /* storage unavailable */
   }

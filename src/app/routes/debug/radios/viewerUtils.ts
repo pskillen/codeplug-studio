@@ -1,25 +1,7 @@
 import { DM32_MODEL_IDS } from '@integrations/radio-io/radios/dm32uv/constants.ts';
-import { DM32_FACTORY_SECTOR_REGION_ID } from '@integrations/radio-io/radios/dm32uv/calibrationDecode.ts';
-import { classifyDm32DebugCoverage } from '@integrations/radio-io/radios/dm32uv/debugCoverage.ts';
-import {
-  isOpenGd77ModelId,
-  openGd77DebugRegionIdentity,
-} from '@integrations/radio-io/radios/opengd77/debugCoverage.ts';
-import { MMD1_BASE, MMD1_END } from '@integrations/radio-io/radios/rt95/modData/layout.ts';
-import {
-  RT95_MMD1_REGION_ID,
-  RT95_MMD1_REGION_PATH,
-} from '@integrations/radio-io/radios/rt95/debugCapture.ts';
-import {
-  RT95_CALIBRATION_START,
-  RT95_CALIBRATION_LENGTH,
-} from '@core/radios/retevis/rt95/calibration.ts';
-import {
-  RT95_CALIBRATION_REGION_ID,
-  RT95_CALIBRATION_REGION_PATH,
-} from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import type { AtD890MemberStatus } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
-import { RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
+import { getRadioDescriptor } from '@integrations/radio-io/registry.ts';
+import { regionSections } from '@integrations/radio-io/debugCompare/index.ts';
 import type { DebugSensitiveRange } from '@integrations/radio-io/debugSensitive.ts';
 import { radioDebugDescriptors } from './descriptors.ts';
 import type { DebugArchive } from './captureArchive.ts';
@@ -60,7 +42,7 @@ export function sensitiveRanges(
     });
 }
 
-const isMasked = (address: number, mask: readonly DebugSensitiveRange[]) =>
+export const isMasked = (address: number, mask: readonly DebugSensitiveRange[]) =>
   mask.some((range) => address >= range.start && address < range.end);
 
 /** A bounded slice of a single captured region, never a fabricated gap. Bytes in `mask` are hidden. */
@@ -92,101 +74,38 @@ export function hexRows(
 
 export const isDm32ModelId = (id: string) => (DM32_MODEL_IDS as readonly string[]).includes(id);
 
-/** Only the RT95 programming image has a defined map and representation in this session. */
+/** The descriptor whose radio owns this archive, by the registry's model ids. */
+function descriptorFor(archive: DebugArchive) {
+  return radioDebugDescriptors.find((d) =>
+    getRadioDescriptor(d.archiveModelId)?.modelIds.includes(archive.manifest.radioModelId),
+  );
+}
+
+/** Address space and byte representation of a region; the radio's own adapter decides. */
 export function regionIdentity(archive: DebugArchive, id: string) {
-  if (isDm32ModelId(archive.manifest.radioModelId)) {
-    const coverage = classifyDm32DebugCoverage(archive.manifest, archive.regions, archive.sidecars);
-    if (
-      coverage.factory?.id === id &&
-      !coverage.unclassified.some((entry) => entry.region.id === id)
-    )
-      return { space: 'DM-32 factory sector', representation: 'factory sector bytes' };
-    if (
-      id !== DM32_FACTORY_SECTOR_REGION_ID &&
-      coverage.windowRegions.some((region) => region.id === id) &&
-      !coverage.unclassified.some((entry) => entry.region.id === id)
-    )
-      return { space: 'DM-32 configuration', representation: 'configuration bytes' };
-    return undefined;
-  }
-  if (isOpenGd77ModelId(archive.manifest.radioModelId))
-    return openGd77DebugRegionIdentity(archive.manifest, archive.regions, id);
-  if (archive.manifest.radioModelId === RT95_MODEL_ID && id === 'programming-image')
-    return { space: 'RT95 programming image', representation: 'programming image bytes' };
-  if (archive.manifest.radioModelId === RT95_MODEL_ID && id === RT95_MMD1_REGION_ID) {
-    const region = archive.manifest.regions.find((r) => r.id === id);
-    if (
-      region?.address === MMD1_BASE &&
-      region.byteLength <= MMD1_END - MMD1_BASE &&
-      region.restoreRole === 'inspect-only' &&
-      region.path === RT95_MMD1_REGION_PATH &&
-      archive.regions[id]?.length === region.byteLength
-    )
-      return { space: 'RT95 main-body EEPROM via head', representation: 'EEPROM bytes' };
-  }
-  if (archive.manifest.radioModelId === RT95_MODEL_ID && id === RT95_CALIBRATION_REGION_ID) {
-    const region = archive.manifest.regions.find((r) => r.id === id);
-    if (
-      region?.address === RT95_CALIBRATION_START &&
-      region.byteLength <= RT95_CALIBRATION_LENGTH &&
-      region.restoreRole === 'inspect-only' &&
-      region.path === RT95_CALIBRATION_REGION_PATH &&
-      archive.regions[id]?.length === region.byteLength
-    )
-      return { space: 'RT95 main-body EEPROM via head', representation: 'EEPROM bytes' };
-  }
-  return undefined;
+  return descriptorFor(archive)?.compare?.regionIdentity?.(archive, id);
 }
 
 /** Refuse comparisons whose address space or representation cannot be established. */
 export function compareRegions(a: DebugArchive, b: DebugArchive) {
-  if (a.manifest.radioModelId !== b.manifest.radioModelId)
-    return { error: 'Radio models differ; captures are incompatible.', regions: [] };
-  const ids = new Set([
-    ...a.manifest.regions.map((r) => r.id),
-    ...b.manifest.regions.map((r) => r.id),
-  ]);
-  const regions = Array.from(ids, (id) => {
-    const left = a.manifest.regions.find((r) => r.id === id);
-    const right = b.manifest.regions.find((r) => r.id === id);
-    if (!left || !right || left.address !== right.address)
-      return {
-        id,
-        label: left?.label ?? right?.label ?? id,
-        comparable: false,
-        changed: 0,
-        missing: Math.max(left?.byteLength ?? 0, right?.byteLength ?? 0),
-      };
-    const leftIdentity = regionIdentity(a, id);
-    const rightIdentity = regionIdentity(b, id);
-    if (
-      !leftIdentity ||
-      !rightIdentity ||
-      leftIdentity.space !== rightIdentity.space ||
-      leftIdentity.representation !== rightIdentity.representation
-    )
-      return {
-        id,
-        label: left.label,
-        comparable: false,
-        changed: 0,
-        missing: 0,
-        reason: 'Address space or byte representation is unknown or differs',
-      };
-    const x = a.regions[id]!;
-    const y = b.regions[id]!;
-    const length = Math.min(x.length, y.length);
-    let changed = 0;
-    for (let i = 0; i < length; i++) if (x[i] !== y[i]) changed++;
-    return {
-      id,
-      label: left.label,
-      comparable: true,
-      changed,
-      missing: Math.abs(x.length - y.length),
-    };
-  });
-  return { regions };
+  const result = regionSections(a, b, (archive, id) =>
+    descriptorFor(a)?.compare?.regionIdentity?.(archive, id),
+  );
+  if (result.error) return { error: result.error, regions: [] };
+  return {
+    regions: result.sections.map((s) =>
+      s.kind === 'compared'
+        ? { id: s.id, label: s.label, comparable: true, changed: s.changed, missing: s.missing }
+        : {
+            id: s.id,
+            label: s.label,
+            comparable: false,
+            changed: 0,
+            missing: s.missing,
+            ...(s.reason?.startsWith('Address space') ? { reason: s.reason } : {}),
+          },
+    ),
+  };
 }
 
 export const MEMBER_EXPLANATION: Record<AtD890MemberStatus, string> = {

@@ -22,6 +22,7 @@ import {
   HEX_PAGE_BYTES,
   hexRows,
   isDm32ModelId,
+  isMasked,
   regionIdentity,
   sensitiveRanges,
 } from './viewerUtils.ts';
@@ -183,7 +184,6 @@ export function CompareViewer(props: {
   archive?: DebugArchive;
   modelId: string;
   other?: DebugArchive;
-  DecodedDiff?: import('react').ComponentType<{ first: DebugArchive; second: DebugArchive }>;
 }) {
   const { archive, modelId } = props;
   const [uploadedOther, setOther] = useState<DebugArchive>();
@@ -213,8 +213,12 @@ export function CompareViewer(props: {
   const length = a && b ? Math.min(a.length, b.length) : 0;
   const pages = Math.max(1, Math.ceil(length / HEX_PAGE_BYTES));
   const current = Math.min(page, pages - 1);
-  const mask = region && !reveal.revealed ? sensitiveRanges(archive, region.id) : [];
-  const hasSensitive = region ? sensitiveRanges(archive, region.id).length > 0 : false;
+  // Each side's password ranges come from that side's own archive: B's may sit elsewhere than A's.
+  const rangesA = region ? sensitiveRanges(archive, region.id) : [];
+  const rangesB = region ? sensitiveRanges(other, region.id) : [];
+  const maskA = reveal.revealed ? [] : rangesA;
+  const maskB = reveal.revealed ? [] : rangesB;
+  const hasSensitive = rangesA.length > 0 || rangesB.length > 0;
   return (
     <Stack>
       <Title order={3}>Compare captures</Title>
@@ -235,12 +239,6 @@ export function CompareViewer(props: {
         </Alert>
       )}
       {comparison?.error && <Alert color="red">{comparison.error}</Alert>}
-      {comparison &&
-        !comparison.error &&
-        modelId === 'AT-D890UV' &&
-        archive &&
-        other &&
-        props.DecodedDiff && <props.DecodedDiff first={archive} second={other} />}
       {comparison && !comparison.error && modelId !== 'AT-D890UV' && (
         <>
           <Alert title="Comparison limits">
@@ -259,9 +257,6 @@ export function CompareViewer(props: {
                 : `Incomparable: ${'reason' in r ? r.reason : 'region or starting offset differs'}`}
             </Text>
           ))}
-          {archive && other && props.DecodedDiff && (
-            <props.DecodedDiff first={archive} second={other} />
-          )}
           {!isDm32ModelId(modelId) && !isOpenGd77ModelId(modelId) && (
             <Title order={4}>Decoded changes</Title>
           )}
@@ -328,16 +323,26 @@ export function CompareViewer(props: {
                 )}
                 <div style={{ overflowX: 'auto' }}>
                   <pre aria-label="Byte comparison">
-                    {hexRows(a.subarray(0, length), left.address, current, mask)
+                    {hexRows(a.subarray(0, length), left.address, current, maskA)
                       .map((row, i) => {
                         const offset = current * HEX_PAGE_BYTES + i * 16;
                         const otherRow = hexRows(
                           b.subarray(offset, Math.min(offset + 16, length)),
                           left.address + offset,
                           0,
-                          mask,
+                          maskB,
                         )[0];
-                        return `${formatAddress(row.address)}${provenance(archive, region.id)}  A ${row.hex}\n${formatAddress(row.address)}${provenance(archive, region.id)}  B ${otherRow?.hex ?? ''}`;
+                        // Masked bytes show •• on both sides, so say when the hidden values differ.
+                        const maskedDiffer = Array.from(
+                          { length: Math.min(16, length - offset) },
+                          (_, k) => k,
+                        ).some(
+                          (k) =>
+                            (isMasked(left.address + offset + k, maskA) ||
+                              isMasked(left.address + offset + k, maskB)) &&
+                            a[offset + k] !== b[offset + k],
+                        );
+                        return `${formatAddress(row.address)}${provenance(archive, region.id)}  A ${row.hex}\n${formatAddress(row.address)}${provenance(archive, region.id)}  B ${otherRow?.hex ?? ''}${maskedDiffer ? '  [masked bytes differ]' : ''}`;
                       })
                       .join('\n') || 'No overlapping bytes'}
                   </pre>

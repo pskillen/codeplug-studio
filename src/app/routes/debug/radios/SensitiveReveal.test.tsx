@@ -4,7 +4,9 @@ import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
 import { HexViewer } from './ArchiveViewers.tsx';
 import { openDebugArchive } from './captureArchive.ts';
-import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
+import { radioDebugDescriptors } from './descriptors.ts';
+import { RadioCompare } from './compare/RadioCompare.tsx';
+import { Rt95Calibration } from './Rt95Calibration.tsx';
 import { hexRows, sensitiveRanges } from './viewerUtils.ts';
 
 /** Synthetic calibration prefix: "PW12" at the stored program password (0x3B18). */
@@ -97,20 +99,23 @@ describe('RT95 password masking', () => {
   });
 
   it('says a password changed between reads without showing either value', () => {
+    const descriptor = radioDebugDescriptors.find((d) => d.slug === 'rt95')!;
     render(
       wrap(
-        <Rt95CalibrationDiff
-          first={calibrationArchive()}
-          second={calibrationArchive([0x41, 0x42, 0x43, 0x44])}
+        <RadioCompare
+          descriptor={descriptor}
+          a={calibrationArchive()}
+          b={calibrationArchive([0x41, 0x42, 0x43, 0x44])}
         />,
       ),
     );
+    const decoded = screen.getByRole('group', { name: /Calibration and production record/ });
+    expect(decoded).toHaveTextContent(/Program password compare.*changed/);
+    expect(decoded.textContent).not.toMatch(/50 57 31 32|41 42 43 44/);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show password' })[0]!);
     expect(
-      screen.getByText(/Program password compare \(0x00003B18\): changed$/),
-    ).toBeInTheDocument();
-    expect(bodyText()).not.toMatch(/50 57 31 32|41 42 43 44/);
-    fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
-    expect(bodyText()).toMatch(/50 57 31 32 → 41 42 43 44/);
+      screen.getByRole('group', { name: /Calibration and production record/ }).textContent,
+    ).toMatch(/50 57 31 32.*41 42 43 44/);
   });
 
   it('masks the power-on password digits in the RT95 programming image', () => {

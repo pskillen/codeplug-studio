@@ -1,3 +1,9 @@
+import {
+  diffBytes,
+  type ByteComparison,
+  type CompareSection,
+  type DebugCompareAdapter,
+} from '@integrations/radio-io/debugCompare/index.ts';
 import type { DebugArchive } from './captureArchive.ts';
 import {
   isAtD890ClassifiedRange,
@@ -137,3 +143,63 @@ export function compareAtD890(
   }
   return result;
 }
+
+const formatRange = (start: number, end: number) =>
+  `0x${start.toString(16).toUpperCase()}–0x${(end - 1).toString(16).toUpperCase()}`;
+
+const NO_BYTES = { changed: 0, runs: [], runsTruncated: false } as const;
+
+/**
+ * One compare section per acquisition span, `space · range`. Spans outside the real map and spans
+ * with missing or ambiguous bytes are incomparable; the rest are compared.
+ */
+export function atD890CompareSections(first: DebugArchive, second: DebugArchive): ByteComparison {
+  const spans = compareAtD890(first, second);
+  if (!spans)
+    return {
+      sections: [],
+      error:
+        'Provenance unavailable: the acquisition claim is missing, malformed or inconsistent with stored regions.',
+    };
+  return {
+    sections: spans.map((span): CompareSection => {
+      const x = span.first;
+      const y = span.second;
+      const base = {
+        id: `${span.space}:${span.start}`,
+        label: `${span.space} · ${formatRange(span.start, span.end)}`,
+        base: span.start,
+        regionId: x?.regionId ?? y?.regionId,
+      };
+      if (span.space === 'unclassified')
+        return {
+          ...base,
+          ...NO_BYTES,
+          kind: 'incomparable',
+          reason: 'Outside the AT-D890UV memory map; unclassified, not compared',
+          missing: 0,
+        };
+      if (span.changed === undefined || !x || !y)
+        return {
+          ...base,
+          ...NO_BYTES,
+          kind: 'incomparable',
+          reason: 'Missing or ambiguous bytes',
+          missing: span.end - span.start,
+        };
+      const a = first.regions[x.regionId]!.subarray(span.start - x.address, span.end - x.address);
+      const b = second.regions[y.regionId]!.subarray(span.start - y.address, span.end - y.address);
+      return { ...base, ...diffBytes(a, b, span.start), kind: 'compared', a, b };
+    }),
+  };
+}
+
+export const atD890CompareAdapter: DebugCompareAdapter = {
+  sections: atD890CompareSections,
+  notes: [
+    {
+      title: 'Responding unit unknown',
+      text: 'These byte comparisons do not establish which physical unit responded. Firmware may divert reads; equal bytes and repeated-read agreement do not prove unit identity.',
+    },
+  ],
+};

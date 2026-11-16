@@ -9,10 +9,13 @@ export interface MemoryCategory {
   render: () => ReactNode;
 }
 
+/** Same app prefix as the list preferences, so the choice lives beside them. */
+const STORAGE_PREFIX = 'mm9pdy-codeplug-studio.';
+
 function readRemembered(storageKey: string | undefined): string | null {
   if (!storageKey) return null;
   try {
-    return window.localStorage.getItem(storageKey);
+    return window.localStorage.getItem(STORAGE_PREFIX + storageKey);
   } catch {
     return null;
   }
@@ -21,7 +24,7 @@ function readRemembered(storageKey: string | undefined): string | null {
 function remember(storageKey: string | undefined, value: string) {
   if (!storageKey) return;
   try {
-    window.localStorage.setItem(storageKey, value);
+    window.localStorage.setItem(STORAGE_PREFIX + storageKey, value);
   } catch {
     /* storage unavailable: the choice lasts for this view only */
   }

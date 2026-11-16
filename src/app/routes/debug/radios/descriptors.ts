@@ -1,8 +1,7 @@
 import type { ComponentType } from 'react';
+import { OPENGD77_SETTINGS_GAP_LENGTH } from '@integrations/radio-io/radios/opengd77/constants.ts';
 import { Dm32Calibration } from './Dm32Calibration.tsx';
-import { Dm32DecodedDiff } from './Dm32DecodedDiff.tsx';
 import { OpenGd77Calibration } from './OpenGd77Calibration.tsx';
-import { OpenGd77DecodedDiff } from './OpenGd77DecodedDiff.tsx';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
 import { OpenGd77Settings } from './OpenGd77Settings.tsx';
 import { AtD890Memory } from './AtD890Memory.tsx';
@@ -15,7 +14,14 @@ import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { Uv5rMiniSettings } from './Uv5rMiniSettings.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
-import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
+import { Rt95Calibration } from './Rt95Calibration.tsx';
+import { atD890CompareAdapter } from './atD890Compare.ts';
+import { atD890DecodedSnapshot } from './atD890DecodedDiff.ts';
+import type { DebugCompareAdapter } from '@integrations/radio-io/debugCompare/index.ts';
+import { dm32CompareAdapter } from '@integrations/radio-io/radios/dm32uv/debugCompare.ts';
+import { openGd77CompareAdapter } from '@integrations/radio-io/radios/opengd77/debugCompare.ts';
+import { rt95CompareAdapter } from '@integrations/radio-io/radios/rt95/debugCompare.ts';
+import { uv5rMiniCompareAdapter } from '@integrations/radio-io/radios/uv5r-mini/debugRead/compare.ts';
 import { captureAtD890 } from './atD890Capture.ts';
 import { captureDm32 } from './dm32Capture.ts';
 import { captureUv5rMini } from './uv5rMiniCapture.ts';
@@ -35,7 +41,7 @@ import { rt95ArchiveSensitiveRanges } from '@integrations/radio-io/radios/rt95/d
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
 
 export type DebugCalibrationProps = { archive?: DebugArchive; overlayArchive?: DebugArchive };
-export type DebugDecodedDiffProps = { first: DebugArchive; second: DebugArchive };
+export type DebugCompareExtraProps = { first: DebugArchive; second: DebugArchive };
 
 /** Options a capture takes, by option id; unticked options are `false` or absent. */
 export type RadioDebugCaptureOptions = Readonly<Record<string, boolean>>;
@@ -64,7 +70,10 @@ export interface RadioDebugDescriptor {
   /** The `stage` labels a Read goes through, in order; shown as "Stage i of n" beside the progress bar. */
   captureStages?: readonly string[];
   Calibration?: ComponentType<DebugCalibrationProps>;
-  DecodedDiff?: ComponentType<DebugDecodedDiffProps>;
+  /** Extra panel under the shared compare for what only this radio has (D890 acquisition claims). */
+  CompareExtra?: ComponentType<DebugCompareExtraProps>;
+  /** Byte compare for this radio: sections, region identity and limits notes. Radio-home code. */
+  compare?: DebugCompareAdapter;
   /** A profile's own Memory viewer; without one the generic Memory viewer is used. */
   Memory?: ComponentType<{ archive?: DebugArchive }>;
   /**
@@ -119,7 +128,7 @@ const OPENGD77_IDENTITY_NOTE =
 
 const OPENGD77_READ_NOTICE = {
   title: 'Read-only capture and recovery',
-  text: 'The capture only reads: it sends a ping, the FirmwareInfo request, the CPS screen command, reads of the registered flash spans and the 96-byte settings struct tail, the occupied User Database when ticked, and the CPS close. It takes minutes, and a large User Database makes it much longer. Cancel stops at the next frame and sends only the CPS close. If the radio stays on the CPS screen after a failure, power-cycle it.',
+  text: `The capture only reads: it sends a ping, the FirmwareInfo request, the CPS screen command, reads of the registered flash spans and the ${OPENGD77_SETTINGS_GAP_LENGTH}-byte settings struct tail, the occupied User Database when ticked, and the CPS close. It takes minutes, and a large User Database makes it much longer. Cancel stops at the next frame and sends only the CPS close. If the radio stays on the CPS screen after a failure, power-cycle it.`,
 };
 
 const OPENGD77_CAPTURE_OPTIONS: readonly RadioDebugCaptureOption[] = [
@@ -134,10 +143,13 @@ const OPENGD77_CAPTURE_OPTIONS: readonly RadioDebugCaptureOption[] = [
 export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
     slug: 'at-d890uv',
+    // Hooked here, not in atD890Compare.ts: the snapshot's imports reach back into this module.
+    compare: { ...atD890CompareAdapter, decoded: atD890DecodedSnapshot },
     Memory: AtD890Memory,
     Settings: AtD890Settings,
     Calibration: AtD890Calibration,
-    DecodedDiff: AtD890Compare,
+    CompareExtra: AtD890Compare,
+    readHistory: true,
     capture: captureAtD890,
     sensitiveRanges: atD890ArchiveSensitiveRanges,
     model: 'AT-D890UV',
@@ -147,11 +159,12 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-32uv',
+    compare: dm32CompareAdapter,
     Memory: Dm32Memory,
     Settings: Dm32Settings,
     calibrationOverlay: false,
     Calibration: Dm32Calibration,
-    DecodedDiff: Dm32DecodedDiff,
+    readHistory: true,
     capture: captureDm32,
     sensitiveRanges: dm32ArchiveSensitiveRanges,
     model: 'DM-32UV',
@@ -168,8 +181,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-1701-opengd77',
+    compare: openGd77CompareAdapter,
     Calibration: OpenGd77Calibration,
-    DecodedDiff: OpenGd77DecodedDiff,
     Memory: OpenGd77Memory,
     Settings: OpenGd77Settings,
     readHistory: true,
@@ -186,8 +199,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'md-9600-opengd77',
+    compare: openGd77CompareAdapter,
     Calibration: OpenGd77Calibration,
-    DecodedDiff: OpenGd77DecodedDiff,
     Memory: OpenGd77Memory,
     Settings: OpenGd77Settings,
     readHistory: true,
@@ -204,10 +217,11 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'rt95',
+    compare: rt95CompareAdapter,
     Memory: Rt95MemoryView,
     Settings: Rt95Settings,
     Calibration: Rt95Calibration,
-    DecodedDiff: Rt95CalibrationDiff,
+    readHistory: true,
     capture: captureRt95,
     sensitiveRanges: rt95ArchiveSensitiveRanges,
     captureStages: RT95_CAPTURE_STAGES,
@@ -225,8 +239,10 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'uv-5r-mini',
+    compare: uv5rMiniCompareAdapter,
     Memory: Uv5rMiniMemory,
     Settings: Uv5rMiniSettings,
+    readHistory: true,
     capture: captureUv5rMini,
     model: 'UV-5R Mini',
     archiveModelId: 'UV-5R Mini',

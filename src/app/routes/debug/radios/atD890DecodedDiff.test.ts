@@ -15,7 +15,12 @@ import {
   zoneNameAddress,
 } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
 import { openDebugArchive } from './captureArchive.ts';
-import { diffAtD890Decoded, type AtD890DiffDomain } from './atD890DecodedDiff.ts';
+import { diffDecoded } from '@integrations/radio-io/debugCompare/index.ts';
+import {
+  atD890DecodedSnapshot,
+  diffAtD890Decoded,
+  type AtD890DiffDomain,
+} from './atD890DecodedDiff.ts';
 
 type Entry = [RadioBackupRegionV1, Uint8Array];
 const entry = (id: string, address: number, data: Uint8Array): Entry => [
@@ -269,5 +274,178 @@ describe('D890 decoded differences', () => {
     expect(row.kind).toBe('changed');
     expect(row.caveats.join(' ')).toContain('TG Previous');
     expect(row.caveats.join(' ')).toContain('do not show which firmware');
+  });
+});
+
+describe('D890 decoded snapshot through diffDecoded', () => {
+  const snap = (a: readonly Entry[], b: readonly Entry[], revealSensitive = false) =>
+    diffDecoded(atD890DecodedSnapshot(archive(a)), atD890DecodedSnapshot(archive(b)), {
+      revealSensitive,
+    });
+  const rec = (d: ReturnType<typeof snap>, domain: string) =>
+    d.records.filter((r) => r.domainId === domain);
+  const changedFields = (d: ReturnType<typeof snap>, domain: string) =>
+    rec(d, domain)
+      .filter((r) => r.kind === 'changed')
+      .flatMap((r) => r.fields.filter((f) => f.kind === 'changed').map((f) => f.id));
+
+  it('is empty for another model', () => {
+    const a = archive([zoneSet([])]);
+    expect(
+      atD890DecodedSnapshot({ ...a, manifest: { ...a.manifest, radioModelId: 'RT95' } }),
+    ).toEqual([]);
+  });
+
+  it('reports the same field changes as the row diff in each domain', () => {
+    const before = [
+      channelSet([0]),
+      ...channel(0, 'GB3ED', '14550000'),
+      zoneSet([0]),
+      ...zone(0, 'Local', [0]),
+      tgSet([0]),
+      contact(0, 'Parrot', '00000091'),
+      rxSet([0]),
+      rxGroup(0, 'Net', [0]),
+      scanSet([0]),
+      scan(0, 'Scan', [0]),
+      sparse(MAIN + 0x26, Uint8Array.of(1)),
+      tune([0xd0, 0x07, 1]),
+    ];
+    const after = [
+      channelSet([0]),
+      ...channel(0, 'GB3ED', '14560000'),
+      zoneSet([0]),
+      ...zone(0, 'Local2', [0]),
+      tgSet([0]),
+      contact(0, 'Parrot', '00000092'),
+      rxSet([0]),
+      rxGroup(0, 'Net', [0, 0]),
+      scanSet([0]),
+      scan(0, 'Scan', [0, 3]),
+      sparse(MAIN + 0x26, Uint8Array.of(2)),
+      tune([0xd1, 0x07, 1]),
+    ];
+    const d = snap(before, after);
+    const rows = rowsOf(before, after);
+    const oldFields = (domain: AtD890DiffDomain) =>
+      inDomain(rows, domain)
+        .filter((r) => r.kind === 'changed')
+        .flatMap((r) => r.changes.map((c) => c.field));
+    expect(changedFields(d, 'channels')).toEqual(oldFields('channel'));
+    expect(changedFields(d, 'zones')).toEqual(['name']);
+    expect(changedFields(d, 'contacts')).toContain('dmrId');
+    expect(changedFields(d, 'rx-groups')).toEqual(['members']);
+    expect(changedFields(d, 'scan-lists')).toEqual(['members']);
+    expect(rec(d, 'settings').find((r) => r.key === 'backlightLevel')?.fields).toContainEqual(
+      expect.objectContaining({ id: 'raw', kind: 'changed', a: '01', b: '02' }),
+    );
+    expect(rec(d, 'calibration').find((r) => r.key === 'trim')?.fields).toEqual([
+      expect.objectContaining({ id: 'value', kind: 'changed', a: '2000', b: '2001' }),
+    ]);
+  });
+
+  it('keeps ordered membership including duplicates', () => {
+    const d = snap(
+      [zoneSet([0]), ...zone(0, 'Z', [1, 2, 1])],
+      [zoneSet([0]), ...zone(0, 'Z', [2, 1, 1])],
+    );
+    expect(rec(d, 'zones')[0]!.fields.find((f) => f.id === 'members')).toMatchObject({
+      a: '1:1, 2:2, 3:1',
+      b: '1:2, 2:1, 3:1',
+    });
+  });
+
+  it('reports additions and removals only with both occupancy bitmaps', () => {
+    const both = snap(
+      [channelSet([0, 1]), ...channel(0, 'A', '14550000'), ...channel(1, 'B', '14560000')],
+      [channelSet([1, 2]), ...channel(1, 'B', '14560000'), ...channel(2, 'C', '14570000')],
+    );
+    expect(
+      rec(both, 'channels')
+        .filter((r) => r.kind !== 'unchanged')
+        .map((r) => [r.slot, r.kind]),
+    ).toEqual([
+      [1, 'removed'],
+      [3, 'added'],
+    ]);
+    const missing = snap(
+      [channelSet([0]), ...channel(0, 'A', '14550000')],
+      [...channel(0, 'A', '14550000'), ...channel(5, 'F', '14580000')],
+    );
+    expect(
+      rec(missing, 'channels')
+        .filter((r) => r.kind !== 'unchanged')
+        .map((r) => [r.slot, r.kind]),
+    ).toEqual([[1, 'incomparable']]);
+    expect(missing.domains.find((x) => x.id === 'channels')?.occupancyCompared).toBe(false);
+  });
+
+  it('treats a half-captured record as unavailable, not as a change or zero', () => {
+    const d = snap(
+      [channelSet([0]), ...channel(0, 'A', '14550000')],
+      [channelSet([0]), ...channel(0, 'A', '14550000', 'primary')],
+    );
+    const r = rec(d, 'channels')[0]!;
+    expect(r.kind).toBe('incomparable');
+    expect(r.fields.find((f) => f.id === 'state')).toMatchObject({
+      kind: 'incomparable',
+      a: 'decoded',
+    });
+    expect(r.fields.some((f) => f.kind === 'changed')).toBe(false);
+  });
+
+  it('does not call uncaptured settings or calibration a change', () => {
+    const d = snap(
+      [sparse(MAIN + 0x26, Uint8Array.of(1))],
+      [sparse(MAIN + 0x27, Uint8Array.of(1))],
+    );
+    expect(rec(d, 'settings').every((r) => r.kind === 'incomparable')).toBe(true);
+    expect(d.domains.find((x) => x.id === 'calibration')?.note).toMatch(/tune A/);
+  });
+
+  it('keeps unsupported setting values raw', () => {
+    const d = snap(
+      [sparse(MAIN + 0x05, Uint8Array.of(7))],
+      [sparse(MAIN + 0x05, Uint8Array.of(8))],
+    );
+    expect(rec(d, 'settings').find((r) => r.key === 'language')!.fields).toContainEqual(
+      expect.objectContaining({ id: 'raw', kind: 'changed', a: '07', b: '08' }),
+    );
+  });
+
+  it('keeps firmware-dependent meaning caveats on diffed settings', () => {
+    const d = snap(
+      [sparse(MAIN + 0x10, Uint8Array.of(13))],
+      [sparse(MAIN + 0x10, Uint8Array.of(1))],
+    );
+    const r = rec(d, 'settings').find((x) => x.key === 'keyShortPF1')!;
+    expect(r.kind).toBe('changed');
+    expect(r.caveats.join(' ')).toContain('TG Previous');
+  });
+
+  it('marks the power-on password sensitive: a change reads changed, values stay hidden', () => {
+    const pw = (text: string) =>
+      sparse(
+        D890_MAP.OptionalSettingsExt + 0x40,
+        Uint8Array.from([...text], (c) => c.charCodeAt(0)),
+      );
+    const find = (d: ReturnType<typeof snap>) =>
+      rec(d, 'settings').find((r) => r.key === 'powerOnPasswordDigits')!;
+    const hidden = find(snap([pw('12345678')], [pw('12345679')]));
+    expect(hidden.kind).toBe('changed');
+    expect(hidden.fields.every((f) => f.sensitive && f.a === undefined && f.b === undefined)).toBe(
+      true,
+    );
+    const shown = find(snap([pw('12345678')], [pw('12345679')], true));
+    expect(shown.fields.some((f) => f.a !== undefined)).toBe(true);
+  });
+
+  it('reads provenance as unavailable, not empty, when the archive carries none', () => {
+    const evidence = atD890DecodedSnapshot(archive([zoneSet([])])).find(
+      (x) => x.id === 'evidence',
+    )!;
+    expect(evidence.records).toEqual([]);
+    expect(evidence.occupancyCaptured).toBe(false);
+    expect(evidence.note).toMatch(/Provenance unavailable/);
   });
 });

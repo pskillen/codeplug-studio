@@ -12,9 +12,12 @@ import {
 } from '@integrations/radio-io/radios/at-d890uv/vitalBackup.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { AtD890Compare } from './AtD890Compare.tsx';
+import { RadioCompare } from './compare/RadioCompare.tsx';
+import { radioDebugDescriptors } from './descriptors.ts';
 import { AT_D890_PROVENANCE_PATH } from './atD890Provenance.ts';
 import { openDebugArchive } from './captureArchive.ts';
 
+const descriptor = radioDebugDescriptors.find((d) => d.slug === 'at-d890uv')!;
 const TUNE = AT_D890_VITAL_UNITS.find((u) => u.id === 'tune-a')!;
 
 function tuneArchive(
@@ -104,7 +107,6 @@ describe('AtD890Compare', () => {
     expect(screen.getByText(/First capture: 2026-01-01/)).toBeInTheDocument();
     expect(screen.getByText(/second capture: 2026-02-02/)).toBeInTheDocument();
     expect(screen.getByText(/1 changed bytes · responding unit: Unknown/)).toBeInTheDocument();
-    expect(screen.getByText(/vital:tune-a · 0x04F00001 · 1 byte · 02 → 03/)).toBeInTheDocument();
     expect(
       screen.getByText('No differing acquisition claims in the compared ranges.'),
     ).toBeInTheDocument();
@@ -116,27 +118,15 @@ describe('AtD890Compare', () => {
       screen.getByText(/0 changed bytes · responding unit: Different \(per archive claims\)/),
     ).toBeInTheDocument();
     expect(screen.getByText(/responding unit claim differ/)).toBeInTheDocument();
-    expect(screen.getByText('No differing bytes in the comparable ranges.')).toBeInTheDocument();
   });
 
-  it('refuses bytes when the claim is missing but still shows decoded differences', () => {
+  it('adds nothing when the claim is missing: the shared view already refuses', () => {
     view(
       tuneArchive([0xd0, 0x07], null, { channels: true }, '2026-01-01', false),
       tuneArchive([0xd1, 0x07], null, { channels: true }, '2026-01-02', false),
     );
-    expect(screen.getByText('Provenance unavailable')).toBeInTheDocument();
-    expect(screen.getByText('Decoded differences')).toBeInTheDocument();
-    expect(screen.getByText(/value: 2000 → 2001/)).toBeInTheDocument();
-  });
-
-  it('pages changed runs and filters decoded domains with labelled controls', () => {
-    const first = Array.from({ length: 200 }, () => 0);
-    const second = first.map((_, i) => (i % 2 ? 0 : 1));
-    view(tuneArchive(first, null), tuneArchive(second, null));
-    expect(screen.getByText('Run page 1 of 4')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Next Run page' }));
-    expect(screen.getByText('Run page 2 of 4')).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Show domain' })).toBeInTheDocument();
+    expect(screen.queryByText(/Provenance/)).toBeNull();
+    expect(screen.queryByText(/Acquisition ranges/)).toBeNull();
   });
 
   it('shows each capture requested unit, responding unit and own repeat claim per range', () => {
@@ -153,21 +143,120 @@ describe('AtD890Compare', () => {
     ).toBeInTheDocument();
   });
 
-  it('pages every byte of a long changed run', () => {
-    view(
-      tuneArchive(
-        Array.from({ length: 130 }, () => 1),
-        null,
-      ),
-      tuneArchive(
-        Array.from({ length: 130 }, (_, i) => (i === 129 ? 9 : 2)),
-        null,
-      ),
+  describe('password bytes', () => {
+    const START = D890_MAP.OptionalSettingsExt + 0x3c;
+    const sparseArchive = (fill: number) => {
+      const data = new Uint8Array(16).fill(fill);
+      const region = {
+        id: `sparse-${START.toString(16)}`,
+        label: 'Sparse',
+        address: START,
+        byteLength: 16,
+        path: 'regions/sparse-opt.bin',
+        restoreRole: 'inspect-only' as const,
+      };
+      return openDebugArchive(
+        packRadioBackupZip(
+          {
+            format: RADIO_BACKUP_FORMAT,
+            version: RADIO_BACKUP_VERSION,
+            capturedAt: '2026-01-01',
+            capturedVia: 'file',
+            app: { buildEnv: 'test', buildVersion: 'test' },
+            radioModelId: 'AT-D890UV',
+            descriptorLabel: 'synthetic',
+            coverage: 'partial',
+            imageByteLength: 0x5000000,
+            regions: [region],
+          },
+          { [`sparse-${START.toString(16)}`]: data },
+          {
+            [AT_D890_PROVENANCE_PATH]: new TextEncoder().encode(
+              JSON.stringify({
+                version: 1,
+                ranges: [
+                  {
+                    regionId: `sparse-${START.toString(16)}`,
+                    address: START,
+                    byteLength: 16,
+                    kind: 'sparse',
+                    requestedUnit: null,
+                    respondingUnit: null,
+                    bothReadsMatched: null,
+                  },
+                ],
+              }),
+            ),
+          },
+        ),
+        'AT-D890UV',
+      );
+    };
+
+    const shell = (a: ReturnType<typeof tuneArchive>, b: ReturnType<typeof tuneArchive>) =>
+      render(
+        <MantineProvider>
+          <RadioCompare descriptor={descriptor} a={a} b={b} />
+        </MantineProvider>,
+      );
+
+    it('masks a changed power-on password in the shared hex diff until revealed', () => {
+      shell(sparseArchive(0x31), sparseArchive(0x32));
+      const hex = () => screen.getByRole('group', { name: 'Hex diff' }).textContent ?? '';
+      expect(hex()).toContain('••');
+      expect(hex()).toContain('[masked bytes differ]');
+      expect(hex()).toContain('31 31 31 31');
+      expect(hex()).not.toMatch(/31 31 31 31 31/);
+      // The decoded view marks the password as changed without its value.
+      expect(screen.getAllByRole('table', { name: /fields/ }).length).toBeGreaterThan(0);
+      fireEvent.click(screen.getAllByRole('button', { name: 'Show password' })[0]!);
+      expect(hex()).not.toContain('••');
+      expect(hex()).toContain('31 31 31 31 31 31 31 31 31 31 31 31');
+      expect(hex()).not.toContain('[masked bytes differ]');
+    });
+  });
+});
+
+describe('D890 on the shared compare', () => {
+  const shell = (a: ReturnType<typeof tuneArchive>, b: ReturnType<typeof tuneArchive>) =>
+    render(
+      <MantineProvider>
+        <RadioCompare descriptor={descriptor} a={a} b={b} />
+      </MantineProvider>,
     );
-    fireEvent.click(screen.getByRole('button', { name: /Show bytes of run at 0x04F00000/ }));
-    expect(screen.getByText('Bytes at 0x04F00000 page 1 of 3')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Next Bytes at 0x04F00000 page' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next Bytes at 0x04F00000 page' }));
-    expect(screen.getByText('Second: 02 09')).toBeInTheDocument();
+
+  it('shows the summary, the hex diff and the provenance panel', () => {
+    shell(tuneArchive([1, 2], null), tuneArchive([1, 3], null));
+    expect(screen.getByText('A and B differ')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Hex diff' })).toBeInTheDocument();
+    expect(screen.getByText('Provenance limits')).toBeInTheDocument();
+  });
+
+  it('is identical when the bytes match, whatever the claims say', () => {
+    shell(tuneArchive([1], 'tune-a'), tuneArchive([1], 'local-info'));
+    expect(screen.getByText('Identical')).toBeInTheDocument();
+    expect(screen.getByText(/responding unit claim differ/)).toBeInTheDocument();
+  });
+
+  it('refuses bytes without a claim with one alert and keeps the decoded differences', () => {
+    shell(
+      tuneArchive([0xd0, 0x07], null, { channels: true }, '2026-01-01', false),
+      tuneArchive([0xd1, 0x07], null, { channels: true }, '2026-01-02', false),
+    );
+    expect(screen.getByText('Cannot compare')).toBeInTheDocument();
+    // The shell's alert is the only one: no second "Provenance unavailable" panel.
+    expect(screen.queryByText('Provenance limits')).toBeNull();
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.getByText('Decoded changes')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
+    fireEvent.click(screen.getByRole('option', { name: /Calibration/ }));
+    const trim = screen.getByRole('group', { name: 'Oscillator trim' });
+    expect(trim).toHaveTextContent('changed');
+    expect(trim).toHaveTextContent(/20002001/);
+  });
+
+  it('shows the responding-unit limits once, collapsed, from the adapter notes', () => {
+    shell(tuneArchive([1, 2], null), tuneArchive([1, 3], null));
+    expect(screen.getAllByText('Responding unit unknown')).toHaveLength(1);
   });
 });

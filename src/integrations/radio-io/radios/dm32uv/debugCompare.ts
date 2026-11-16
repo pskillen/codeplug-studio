@@ -1,7 +1,41 @@
 import type { RadioBackupManifestV1 } from '../../backup/types.ts';
-import { dm32DebugIdentity } from './debugCoverage.ts';
+import {
+  regionSections,
+  type DebugCompareAdapter,
+  type RegionIdentity,
+} from '../../debugCompare/index.ts';
+import { dm32DecodedSnapshot } from './debugCompareDecoded.ts';
+import { classifyDm32DebugCoverage, dm32DebugIdentity } from './debugCoverage.ts';
 import { selectDm32LiveCalibration } from './calibrationFields.ts';
-import { decodeDm32CalibrationPage, decodeDm32FactorySector } from './calibrationDecode.ts';
+import {
+  DM32_FACTORY_SECTOR_REGION_ID,
+  decodeDm32CalibrationPage,
+  decodeDm32FactorySector,
+} from './calibrationDecode.ts';
+
+/** Address space and representation of a DM-32 region: the factory sector, or a window region. */
+export function dm32DebugRegionIdentity(
+  archive: Dm32CompareArchive,
+  id: string,
+): RegionIdentity | undefined {
+  const coverage = classifyDm32DebugCoverage(archive.manifest, archive.regions, archive.sidecars);
+  const unclassified = coverage.unclassified.some((entry) => entry.region.id === id);
+  if (coverage.factory?.id === id && !unclassified)
+    return { space: 'DM-32 factory sector', representation: 'factory sector bytes' };
+  if (
+    id !== DM32_FACTORY_SECTOR_REGION_ID &&
+    coverage.windowRegions.some((region) => region.id === id) &&
+    !unclassified
+  )
+    return { space: 'DM-32 configuration', representation: 'configuration bytes' };
+  return undefined;
+}
+
+export const dm32CompareAdapter: DebugCompareAdapter = {
+  sections: (a, b) => regionSections(a, b, dm32DebugRegionIdentity),
+  regionIdentity: dm32DebugRegionIdentity,
+  decoded: dm32DecodedSnapshot,
+};
 
 export interface Dm32CompareArchive {
   manifest: RadioBackupManifestV1;

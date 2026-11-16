@@ -20,7 +20,7 @@ Studio labels the data **"Backup copy; the live copy is in backup SRAM."**
 
 ## What a capture holds today
 
-Studio's first FLASH span ends at `0x6060`, so a capture holds only `0x604B-0x605F` (21 bytes: `magicNumber` through `overrideTG` and the first byte of `vfoScanLow[0]`). `0x6060-0x60BA` is in the unread gap between spans 0 and 1. Studio decodes whatever part of `0x6000-0x60FF` the capture holds and shows every other member as "not captured". It does **not** add that region to the capture; that is an owner decision pending.
+Studio's first FLASH span ends at `0x6060`. A current capture holds the whole struct: span 0 gives `0x604B-0x605F` (21 bytes, `magicNumber` through `overrideTG` and the first byte of `vfoScanLow[0]`) and the debug-only `settings-gap` region gives `0x6060-0x60BF` (96 bytes, read in three 32-byte reads; it is not a flash span, so Write, Restore and Backup never touch it). An older archive has no `settings-gap` region and holds only the 21 bytes. Studio decodes whatever part of `0x6000-0x60FF` the archive holds and shows every other member as "not captured".
 
 ## Member table
 
