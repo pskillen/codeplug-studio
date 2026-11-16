@@ -22,8 +22,7 @@ import {
   Title,
 } from '@mantine/core';
 import { useEffect, useRef, useState } from 'react';
-import Uv5rMiniCalibrationSection from '../Uv5rMiniCalibrationSection.tsx';
-import { useUv5rMiniDebugReads, type Uv5rMiniDebugRead } from '../uv5rMiniDebugReads.ts';
+import type { Uv5rMiniDebugRead } from '../uv5rMiniDebugReads.ts';
 import { radioBackupFileName } from '@app/services/radioBackupRead.ts';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
 import {
@@ -70,7 +69,6 @@ export default function RadioDebugPage() {
 }
 
 function RadioDebugProfile({ radio }: { radio: string | undefined }) {
-  const { reads } = useUv5rMiniDebugReads();
   const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
   const historyEnabled = descriptor?.readHistory === true;
   const store = getDebugReadHistory(
@@ -102,17 +100,12 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const [captureLabels, setCaptureLabels] = useState<RadioBackupLabels>({});
   // Keyed `${slug}:${optionId}` so a tick on one radio never carries to another.
   const [captureOptions, setCaptureOptions] = useState<Record<string, boolean>>({});
-  const [preferredLive, setPreferredLive] = useState<string | null>(null);
   const [error, setError] = useState<string>();
   const [reading, setReading] = useState(false);
   const { held: screenHeld } = useScreenWakeLock(reading);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
-  const allReads = reads.map((read) => ({
-    ...read,
-    label: `${history.entries.find((e) => e.label === read.label)?.archive.source === 'file' ? 'File' : 'Live'} ${read.label}`,
-  }));
   const miniReport = archive && uv5rMiniArchiveDetails(archive)?.report;
   const connection = reading
     ? 'Reading radio…'
@@ -170,7 +163,6 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
           zipBytes: bytes,
         };
       }
-      setPreferredLive(null);
       if (historyEnabled) {
         store.importArchives(
           imported.length
@@ -204,8 +196,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
         ? relabelDebugArchive(result, captureLabels)
         : result;
       if (historyEnabled) {
-        const added = store.add(labelled);
-        if (descriptor.slug === 'uv-5r-mini') setPreferredLive(`Live ${added.label}`);
+        store.add(labelled);
       } else setArchive(labelled);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Radio read failed.');
@@ -523,21 +514,11 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                   image. Unlisted bytes are not captured; coverage outside the listed ranges is
                   unknown.
                 </Alert>
-                {descriptor.slug === 'uv-5r-mini' && allReads.length > 0 && (
-                  <Text>
-                    Reads in this tab:{' '}
-                    {allReads
-                      .map((read) => `${read.label} (${read.readAt.toLocaleString()})`)
-                      .join(', ')}
-                  </Text>
-                )}
                 {historyEnabled && (
                   <DebugReadHistoryControls
                     descriptor={descriptor}
                     store={store}
-                    onClear={() => {
-                      setPreferredLive(null);
-                    }}
+                    onClear={() => {}}
                   />
                 )}
                 {archive && (
@@ -638,19 +619,6 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 <CompareViewer archive={archive} modelId={descriptor.archiveModelId} />
               )}
             </Tabs.Panel>
-            {descriptor.slug === 'uv-5r-mini' && (
-              <Tabs.Panel value="calibration" pt="md">
-                <Uv5rMiniCalibrationSection
-                  key={history.entries[0]?.id ?? 'empty'}
-                  reads={allReads}
-                  preferredLive={
-                    history.entries.find((e) => e.id === history.selectedId)
-                      ? `${history.entries.find((e) => e.id === history.selectedId)!.archive.source === 'file' ? 'File' : 'Live'} ${history.entries.find((e) => e.id === history.selectedId)!.label}`
-                      : preferredLive
-                  }
-                />
-              </Tabs.Panel>
-            )}
             {descriptor.calibration && (
               <Tabs.Panel value="calibration" pt="md">
                 <CalibrationTab
@@ -694,7 +662,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                   <descriptor.Calibration archive={archive} />
                 </Tabs.Panel>
               )}
-            {(descriptor.slug === 'uv-5r-mini' || descriptor.Calibration || descriptor.calibration
+            {(descriptor.Calibration || descriptor.calibration
               ? ['Trace']
               : ['Calibration', 'Trace']
             ).map((tab) => (

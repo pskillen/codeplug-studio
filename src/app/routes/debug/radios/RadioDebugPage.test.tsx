@@ -152,7 +152,8 @@ it('retains a late successful capture after unmount and shows it on return', asy
   await act(async () => finish(syntheticRead(7)));
   await waitFor(() => expect(store.getSnapshot().entries).toHaveLength(1));
   open();
-  expect(screen.getByText(/Reads in this tab:.*Live A/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^A \(/);
   store.clear();
 });
 
@@ -169,13 +170,11 @@ it('selects the live read after opening a legacy ZIP, even after selecting a fil
   expect(input).not.toBeNull();
   fireEvent.change(input!, { target: { files: [file] } });
   expect(await screen.findByText(/Local archive · captured/)).toBeInTheDocument();
-  expect(screen.getByText(/Reads in this tab:/)).toHaveTextContent('File A');
-  expect(screen.getByText(/Reads in this tab:/)).toHaveTextContent('File B');
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
-  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/File B/);
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^B \(/);
   fireEvent.click(screen.getByRole('combobox', { name: 'Read' }));
-  fireEvent.click(screen.getByRole('option', { name: /File A/ }));
-  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/File A/);
+  fireEvent.click(screen.getByRole('option', { name: /^A \(/ }));
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^A \(/);
   fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
   expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
   fireEvent.click(screen.getByRole('combobox', { name: 'Compare B' }));
@@ -185,7 +184,7 @@ it('selects the live read after opening a legacy ZIP, even after selecting a fil
   fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
   await screen.findByText(/Live read · captured/);
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
-  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/Live/);
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^C \(/);
   fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
   // B was picked explicitly, so the new live read does not move it.
   expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^A ·/);
@@ -196,7 +195,10 @@ it('adds a successful live read to history with its timestamp', async () => {
   fake.run.mockResolvedValueOnce(syntheticRead(4));
   open();
   fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
-  expect(await screen.findByText(/Reads in this tab:.*Live [A-Z]+ \(.+\)/)).toBeInTheDocument();
+  await screen.findByText(/Live read · captured/);
+  fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^[A-Z]+ \(.+\)/);
+  expect(screen.getByText(/UHF PA bias, 400–520 MHz/)).toBeInTheDocument();
 });
 
 function rt95ArchiveFile(kind: 'missing' | 'partial' | 'captured' = 'missing') {
@@ -669,7 +671,7 @@ it('retains comparison uploads in shared history for other viewers and download 
   await waitFor(() => expect(history.getSnapshot().entries).toHaveLength(2));
   expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
-  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/File B/);
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^B \(/);
   fireEvent.click(screen.getByRole('tab', { name: 'Backup' }));
   fireEvent.click(screen.getByRole('button', { name: 'Download all reads' }));
   await waitFor(() => expect(downloadZip).toHaveBeenCalled());
@@ -677,7 +679,8 @@ it('retains comparison uploads in shared history for other viewers and download 
   expect(openDebugReadHistoryZip(zip, descriptor)).toHaveLength(2);
   page.unmount();
   open();
-  expect(screen.getByText(/Reads in this tab:/)).toHaveTextContent('File B');
+  fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^B \(/);
   act(() => history.clear());
 }, 15000);
 
