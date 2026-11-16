@@ -83,4 +83,4 @@ DM-32 stock and MM9PDY reads share an in-tab history. Reads remain available acr
 
 ### Passwords: the sensitive-range hook
 
-Which bytes are secret is a radio-home fact: a descriptor's `sensitiveRanges(archive, regionId)` (`descriptors.ts`) calls a function in the radio's integration module (RT95 and DM-32 so far; others come in later slices), and Hex, Compare and the RT95 calibration view mask what it returns until **Show password**. No radio literal lives in the shared viewer files. Masking is display-only.
+Which bytes are secret is a radio-home fact: a descriptor's `sensitiveRanges(archive, regionId)` (`descriptors.ts`) calls a function in the radio's integration module (RT95, DM-32 and OpenGD77 so far; others come in later slices). OpenGD77 (DM-1701, MD-9600) masks the CPS programming password `prgPwd` (`0x100`) and the boot PIN (`0x751C`, packed BCD, evidence: firmware source, DM-1701 tree; MD-9600 layout unconfirmed); its Settings tab decodes both behind **Show password**, and Hex, Compare and the RT95 calibration view mask what it returns until **Show password**. No radio literal lives in the shared viewer files. Masking is display-only.
