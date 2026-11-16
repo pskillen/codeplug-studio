@@ -42,6 +42,30 @@ describe('projectRt95Settings', () => {
     expect(inv.unclaimed[0]!.raw).toHaveLength(9);
   });
 
+  it('explains every unclaimed byte: 42 with a meaning, 93 unused, none unknown', () => {
+    const inv = projectRt95Settings(image());
+    expect(inv.counts).toMatchObject({ meaningBytes: 42, unusedBytes: 93, unknownBytes: 0 });
+    expect(inv.unclaimed.every((r) => r.confidence !== 'unknown')).toBe(true);
+    const run = (a: number) => inv.unclaimed.find((r) => r.address === a)!;
+    expect(run(0x1987)).toMatchObject({ confidence: 'unused', label: 'Unused (no reader)' });
+    expect(run(0x1ae0)).toMatchObject({ length: 24, confidence: 'traced' });
+    expect(run(0x3260).label).toBe('Side A channel index');
+    expect(run(0x3267).label).toBe('Side B channel index');
+  });
+
+  it('decodes side flags and tone-group byte 0 read-only from synthetic bytes', () => {
+    const img = image();
+    img[0x3261] = 0b1001; // VFO + TRF channel
+    img[0x3260] = 7;
+    img[0x1ae0] = 3;
+    const inv = projectRt95Settings(img);
+    const run = (a: number) => inv.unclaimed.find((r) => r.address === a)!;
+    expect(run(0x3261).decoded).toBe('VFO on, no write-back off, TRF channel on');
+    expect(run(0x3260).decoded).toBe('index 7 (raw)');
+    expect(run(0x1ae0).decoded).toMatch(/decode function 3/);
+    expect(inv.fields.map((f) => f.address)).not.toContain(0x3261);
+  });
+
   it('does not fill missing bytes', () => {
     const inv = projectRt95Settings(undefined);
     expect(inv.counts.captured).toBe(0);

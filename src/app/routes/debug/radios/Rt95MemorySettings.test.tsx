@@ -63,7 +63,16 @@ describe('RT95 settings view', () => {
       .reduce((n, t) => n + within(t).getAllByRole('row').length - 1, 0);
     expect(total).toBe(73);
     expect(screen.getAllByText('CPS+CHIRP').length).toBeGreaterThan(0);
-    expect(screen.getByRole('region', { name: 'Unclaimed bytes' })).toBeInTheDocument();
+    const unclaimed = screen.getByRole('region', { name: 'Unclaimed bytes' });
+    expect(
+      within(unclaimed).getByText(
+        /42 bytes with a meaning, 93 unused \(no reader\), 0 still unknown/,
+      ),
+    ).toBeInTheDocument();
+    expect(within(unclaimed).getByText(/Side A channel index · traced/)).toBeInTheDocument();
+    expect(within(unclaimed).getAllByText(/Unused \(no reader\) · unused/).length).toBeGreaterThan(
+      0,
+    );
   });
 
   it('filters by search', () => {
