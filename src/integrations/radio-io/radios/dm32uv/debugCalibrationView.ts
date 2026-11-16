@@ -17,7 +17,7 @@ import type {
   ValueRow,
   ValueTableView,
 } from '../../debugView/index.ts';
-import { sha256HexSync } from '../uv5r-mini/firmwareUpdate/sha256Sync.ts';
+import { sha256HexSync } from '../../digest/sha256Sync.ts';
 import { decodeDm32CalibrationPage } from './calibrationDecode.ts';
 import {
   DM32_CALIBRATION_BASIS_FIRMWARE,

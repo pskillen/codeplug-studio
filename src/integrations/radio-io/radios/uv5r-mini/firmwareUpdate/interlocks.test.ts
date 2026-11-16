@@ -28,7 +28,7 @@ import {
   UV5RMINI_REINSTALL_WARNING,
   UV5RMINI_RETIRED_LOADER_REFUSAL,
 } from './interlocks.ts';
-import { sha256HexSync } from './sha256Sync.ts';
+import { sha256HexSync } from '../../../digest/sha256Sync.ts';
 
 const FLASH_SIZE = 0x7c000 - 0x1000; // fills the area exactly
 const stock = makeSyntheticUfw({ flashSize: FLASH_SIZE, flashSeed: 10, loaderSeed: 20 });

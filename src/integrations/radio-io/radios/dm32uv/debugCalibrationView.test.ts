@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RadioBackupManifestV1, RadioBackupRegionV1 } from '../../backup/types.ts';
 import type { FrequencyCurve, StepBars } from '../../debugView/index.ts';
-import { sha256HexSync } from '../uv5r-mini/firmwareUpdate/sha256Sync.ts';
+import { sha256HexSync } from '../../digest/sha256Sync.ts';
 import { DM32_FACTORY_SECTOR_REGION_ID } from './calibrationDecode.ts';
 import { DM32_FACTORY_SECTOR_ADDRESS } from './constants.ts';
 import { dm32CalibrationView } from './debugCalibrationView.ts';

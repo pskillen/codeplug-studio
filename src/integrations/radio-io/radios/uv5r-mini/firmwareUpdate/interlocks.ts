@@ -55,7 +55,7 @@ import {
   uv5rMiniHardLimit,
   type Uv5rMiniBase,
 } from './constants.ts';
-import { sha256HexSync } from './sha256Sync.ts';
+import { sha256HexSync } from '../../../digest/sha256Sync.ts';
 import {
   parseUv5rMiniStockUfw,
   parseUv5rMiniUfw,
