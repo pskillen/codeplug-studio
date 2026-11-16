@@ -12,6 +12,7 @@ import { atD890SettingsView } from '@integrations/radio-io/radios/at-d890uv/debu
 import type { CalibrationView, SettingsView } from '@integrations/radio-io/debugView/index.ts';
 import { rt95CalibrationView } from '@integrations/radio-io/radios/rt95/debugCalibrationView.ts';
 import { Rt95MemoryView } from './Rt95Memory.tsx';
+import { RT95_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/rt95/debugMemoryText.ts';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { UV5R_MINI_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/uv5r-mini/debugRead/memoryText.ts';
 import { uv5rMiniSettingsView } from '@integrations/radio-io/radios/uv5r-mini/debugRead/settingsView.ts';
@@ -233,6 +234,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     slug: 'rt95',
     compare: rt95CompareAdapter,
     Memory: Rt95MemoryView,
+    memoryNotDecoded: RT95_MEMORY_NOT_DECODED,
     settings: rt95SettingsView,
     calibration: rt95CalibrationView,
     Calibration: Rt95Calibration,

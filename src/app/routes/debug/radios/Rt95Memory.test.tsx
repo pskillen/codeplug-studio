@@ -10,7 +10,8 @@ import { RT95_OCCUPIED_BITFIELD_OFFSET } from '@integrations/radio-io/radios/rt9
 import { encodeRt95ModData } from '@integrations/radio-io/radios/rt95/modData/encode.ts';
 import { chooseCategory } from '@app/components/debug/memoryCategoriesTestUtils.ts';
 import { openDebugArchive } from './captureArchive.ts';
-import { Rt95Memory } from './Rt95Memory.tsx';
+import { Rt95Memory, Rt95MemoryView } from './Rt95Memory.tsx';
+import { RT95_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/rt95/debugMemoryText.ts';
 
 const ident = Uint8Array.from([82, 84, 57, 53, 45, 80, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 const region = {
@@ -270,5 +271,29 @@ describe('RT95 MMD1 viewer', () => {
     );
     chooseCategory('Zones');
     expect(screen.getByText(new RegExp(`Header invalid: ${reason}`))).toBeInTheDocument();
+  });
+  it('names what is not decoded once and has no Occupancy column', () => {
+    const clone = new Uint8Array(0x32a0);
+    clone[RT95_OCCUPIED_BITFIELD_OFFSET] = 0;
+    const a = archive(new Uint8Array(8192).fill(255));
+    a.regions['programming-image'] = clone;
+    a.manifest.regions.push({
+      id: 'programming-image',
+      label: 'Clone',
+      address: 0,
+      byteLength: clone.length,
+      path: 'regions/image.bin',
+      restoreRole: 'inspect-only',
+    });
+    render(
+      <MantineProvider>
+        <Rt95MemoryView archive={a} notDecoded={RT95_MEMORY_NOT_DECODED} />
+      </MantineProvider>,
+    );
+    expect(
+      screen.getByText('Not decoded for this radio yet: scan lists, contacts, talk groups.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Occupancy' })).not.toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Identity' })).toBeInTheDocument();
   });
 });

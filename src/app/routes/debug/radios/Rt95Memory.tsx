@@ -1,10 +1,6 @@
 import { isRt95ChannelRecordReadable } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
 import { Alert, Badge, Checkbox, Group, Stack, Table, Text, Title } from '@mantine/core';
-import {
-  DataTable,
-  type DataTableColumn,
-  type DataTableSortState,
-} from '@app/components/v2/index.ts';
+import type { DataTableColumn } from '@app/components/v2/index.ts';
 import { useState } from 'react';
 import {
   decodeRt95DebugSlots,
@@ -27,35 +23,51 @@ import {
   RT95_KEY_TABLE_LENGTH,
   RT95_KEY_FUNCTION_DIR,
 } from '@integrations/radio-io/radios/rt95/zoneKey.ts';
-import { MemoryCategories } from '@app/components/debug/index.ts';
+import {
+  identityLabel,
+  MemoryCategories,
+  MemoryCategoryPanel,
+} from '@app/components/debug/index.ts';
+import { RT95_CHANNEL_COUNT } from '@integrations/radio-io/radios/rt95/constants.ts';
+import {
+  RT95_CHANNEL_CAVEAT,
+  RT95_CHANNELS_EMPTY,
+  RT95_PKEYS_PROVENANCE,
+  RT95_ZONES_PROVENANCE,
+  rt95ChannelSummary,
+  rt95SlotIdentityFallback,
+} from '@integrations/radio-io/radios/rt95/debugMemoryText.ts';
 import { rt95GuardEvidence, type DebugArchive } from './captureArchive.ts';
 
-type SlotRow = Rt95DebugSlot & { description: string };
+type SlotRow = Rt95DebugSlot & { description: string; label: string };
+
+const slotHex = (raw: Uint8Array | undefined) =>
+  raw ? Array.from(raw, (b) => b.toString(16).padStart(2, '0')).join(' ') : 'Unavailable';
 
 const columns: DataTableColumn<SlotRow>[] = [
   {
     key: 'slot',
     header: 'Slot',
+    width: '4.5rem',
     sortable: true,
     sortValue: (row) => row.slot,
     render: (row) => row.slot,
+    hideOnMobile: true,
   },
   {
-    key: 'occupancy',
-    header: 'Occupancy',
-    render: (row) => row.occupancy,
-  },
-  {
-    key: 'name',
-    header: 'Wire name',
+    key: 'identity',
+    header: 'Identity',
+    width: 'minmax(12rem, 2fr)',
     sortable: true,
-    sortValue: (row) => row.name,
-    render: (row) => (
-      <>
-        {row.name || (row.occupancy === 'occupied' ? '(unnamed)' : '—')}
-        {row.description && <Text>{row.description} [body]</Text>}
-      </>
-    ),
+    sortValue: (row) => row.label,
+    render: (row) => <strong>{row.label}</strong>,
+    hideOnMobile: true,
+  },
+  {
+    key: 'description',
+    header: 'Description',
+    width: 'minmax(10rem, 1.5fr)',
+    render: (row) => (row.description ? <Text>{row.description} [body]</Text> : '—'),
   },
   ...(
     [
@@ -77,21 +89,6 @@ const columns: DataTableColumn<SlotRow>[] = [
     header: label,
     render: (row) => (row.occupancy === 'occupied' ? row[key] : '—'),
   })),
-  {
-    key: 'record',
-    header: 'Record',
-    render: (row) => (
-      <details>
-        <summary>Slot {row.slot} raw record</summary>
-        <Text>
-          Unresolved flags and bytes; raw evidence:{' '}
-          {row.raw
-            ? Array.from(row.raw, (b) => b.toString(16).padStart(2, '0')).join(' ')
-            : 'Unavailable'}
-        </Text>
-      </details>
-    ),
-  },
 ];
 
 type ZoneView = Rt95ModDataValid['zones'][number];
@@ -173,9 +170,13 @@ function Rt95ZoneBlock({ zone, slots }: { zone: ZoneView; slots: SlotRow[] }) {
   );
 }
 
-export function Rt95Memory({ archive }: { archive: DebugArchive }) {
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
+export function Rt95Memory({
+  archive,
+  notDecoded,
+}: {
+  archive: DebugArchive;
+  notDecoded?: readonly string[];
+}) {
   const [showEmpty, setShowEmpty] = useState(false);
   const bytes = archive.regions[RT95_MMD1_REGION_ID];
   const guard = rt95GuardEvidence(archive);
@@ -202,14 +203,13 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
       guard?.ok && decoded?.status === 'valid' && slot.occupancy === 'occupied'
         ? decodeRt95Description(readBlock, decoded, slot.slot - 1, slot.raw)
         : undefined;
-    return { ...slot, description: description && 'text' in description ? description.text : '' };
+    return {
+      ...slot,
+      description: description && 'text' in description ? description.text : '',
+      label: identityLabel(undefined, slot.name) || rt95SlotIdentityFallback(slot.occupancy),
+    };
   });
   const visibleSlots = slots.filter((slot) => showEmpty || slot.occupancy !== 'empty');
-  const shown = visibleSlots.filter((slot) =>
-    `${slot.slot} ${slot.name} ${slot.description}`
-      .toLocaleLowerCase()
-      .includes(query.toLocaleLowerCase()),
-  );
   const keys = at(RT95_KEY_TABLE_ADDR, RT95_KEY_TABLE_LENGTH);
   const state =
     decoded?.status === 'valid'
@@ -217,27 +217,37 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
       : undefined;
   const channelsPanel = (
     <Stack>
-      <Title order={4}>Clone channels</Title>
-      <Text size="sm" c="dimmed">
-        Clone image: the storage MCU is not documented. Descriptions come from MMD1 data (main
-        board).
-      </Text>
       <Checkbox
         label="Show empty slots"
         checked={showEmpty}
         onChange={(event) => setShowEmpty(event.currentTarget.checked)}
       />
-      <DataTable
+      <MemoryCategoryPanel
+        summary={rt95ChannelSummary(visibleSlots.length, RT95_CHANNEL_COUNT, showEmpty)}
+        caveat={RT95_CHANNEL_CAVEAT}
+        searchPlaceholder="Search channels"
         caption="RT95 clone channels"
         columns={columns}
-        rows={shown}
+        rows={visibleSlots}
         getRowId={(slot) => String(slot.slot)}
-        search={{ value: query, onChange: setQuery, placeholder: 'Search channels' }}
-        sort={sort}
-        onSortChange={setSort}
-        totalRowCount={visibleSlots.length}
-        emptyMessage="No channel slots to show."
-        filteredEmptyMessage={`No channels match “${query.trim()}”.`}
+        searchText={(slot) =>
+          `${slot.slot} ${slot.label} ${slot.description} ${slot.rx} ${slot.tx}`
+        }
+        defaultSort={{ key: 'slot', direction: 'asc' }}
+        stickyFirstColumn
+        mobileIdentity={(slot) => (
+          <span>
+            {slot.slot} · <strong>{slot.label}</strong>
+          </span>
+        )}
+        mobileIdentityLabel="Slot · identity"
+        details={(slot) => (
+          <Text size="sm">
+            Slot {slot.slot} raw record. Unresolved flags and bytes; raw evidence:{' '}
+            {slotHex(slot.raw)}
+          </Text>
+        )}
+        emptyMessage={RT95_CHANNELS_EMPTY}
       />
     </Stack>
   );
@@ -245,7 +255,7 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
     <Stack>
       <Title order={4}>MMD1 zones</Title>
       <Text size="sm" c="dimmed">
-        MMD1 data: main board.
+        {RT95_ZONES_PROVENANCE}
       </Text>
       <Text>
         Body EEPROM is reached through the head; it can return checksum-valid zeros without a body
@@ -315,7 +325,7 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
     <Stack>
       <Title order={4}>P-keys</Title>
       <Text size="sm" c="dimmed">
-        Clone image: the storage MCU is not documented.
+        {RT95_PKEYS_PROVENANCE}
       </Text>
       {keys ? (
         Array.from(keys, (value, i) => (
@@ -332,9 +342,15 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
   );
   return (
     <MemoryCategories
+      notDecoded={notDecoded}
       storageKey="debug-memory-category:rt95"
       categories={[
-        { value: 'channels', label: 'Channels', count: shown.length, render: () => channelsPanel },
+        {
+          value: 'channels',
+          label: 'Channels',
+          count: visibleSlots.length,
+          render: () => channelsPanel,
+        },
         { value: 'zones', label: 'Zones', render: () => zonesPanel },
         { value: 'p-keys', label: 'P-keys', render: () => pKeysPanel },
       ]}
@@ -342,16 +358,19 @@ export function Rt95Memory({ archive }: { archive: DebugArchive }) {
   );
 }
 
-/** The RT95 Memory tab: the clone channels, MMD1 zones and P-keys, plus what is not decoded yet. */
-export function Rt95MemoryView({ archive }: { archive?: DebugArchive }) {
+/** The RT95 Memory tab: the clone channels, MMD1 zones and P-keys. */
+export function Rt95MemoryView({
+  archive,
+  notDecoded,
+}: {
+  archive?: DebugArchive;
+  notDecoded?: readonly string[];
+}) {
   return (
     <Stack>
       <Title order={3}>Memory</Title>
       {!archive && <Alert title="No capture">Open or read a capture to inspect its memory.</Alert>}
-      {archive && <Rt95Memory archive={archive} />}
-      {['Scan lists', 'Contacts', 'Talk groups'].map((section) => (
-        <Text key={section}>{section}: not decoded for this radio yet.</Text>
-      ))}
+      {archive && <Rt95Memory archive={archive} notDecoded={notDecoded} />}
     </Stack>
   );
 }

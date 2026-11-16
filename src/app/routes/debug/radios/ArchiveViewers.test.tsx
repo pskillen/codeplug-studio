@@ -89,13 +89,13 @@ describe('archive viewer controls', () => {
     expect(screen.getByRole('cell', { name: 'LOCAL' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '7' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Slot' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Wire name' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Identity' })).toBeInTheDocument();
     expect(screen.queryByText('Settings')).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole('textbox', { name: 'Search table' }), {
       target: { value: 'other' },
     });
     expect(screen.queryByRole('cell', { name: 'LOCAL' })).not.toBeInTheDocument();
-    expect(screen.getByText('No channels match “other”.')).toBeInTheDocument();
+    expect(screen.getByText('No rows match “other”.')).toBeInTheDocument();
     fireEvent.change(screen.getByRole('textbox', { name: 'Search table' }), {
       target: { value: 'local' },
     });
@@ -104,11 +104,11 @@ describe('archive viewer controls', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Search table' }), {
       target: { value: '' },
     });
-    expect(screen.queryAllByRole('cell', { name: 'empty' })).toHaveLength(0);
+    expect(screen.queryAllByRole('cell', { name: 'Empty slot' })).toHaveLength(0);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show empty slots' }));
-    expect(screen.getAllByRole('cell', { name: 'empty' }).length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole('button', { name: 'Wire name' }));
-    expect(screen.getByRole('columnheader', { name: 'Wire name' })).toHaveAttribute(
+    expect(screen.getAllByRole('cell', { name: 'Empty slot' }).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Identity' }));
+    expect(screen.getByRole('columnheader', { name: 'Identity' })).toHaveAttribute(
       'aria-sort',
       'ascending',
     );
