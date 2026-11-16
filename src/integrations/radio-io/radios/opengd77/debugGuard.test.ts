@@ -175,6 +175,31 @@ describe('createOpenGd77DebugGuard', () => {
     });
   });
 
+  describe('settings struct tail', () => {
+    it('admits the 3 mode-1 reads at 0x6060 after show CPS and nothing else is newly allowed', async () => {
+      const { pipe, write } = spyPipe();
+      const guard = createOpenGd77DebugGuard(pipe);
+      await guard.pipe.write(INFO);
+      await guard.pipe.write(SHOW);
+      for (let i = 0; i < 3; i++) await guard.pipe.write(read(0x6060 + i * 32, 32));
+      expect(write).toHaveBeenCalledTimes(5);
+    });
+
+    it('still refuses every write-class frame at the same addresses', async () => {
+      for (const letter of [0x57, 0x58, 0x43, 0x44]) {
+        const { pipe, write } = spyPipe();
+        const guard = createOpenGd77DebugGuard(pipe);
+        await guard.pipe.write(INFO);
+        await guard.pipe.write(SHOW);
+        write.mockClear();
+        await expect(
+          guard.pipe.write(f(letter, 0x01, 0, 0, 0x60, 0x60, 0x00, 0x20)),
+        ).rejects.toBeInstanceOf(OpenGd77DebugRefusedError);
+        expect(write).not.toHaveBeenCalled();
+      }
+    });
+  });
+
   describe('order', () => {
     it('refuses show CPS before the FirmwareInfo read', async () => {
       const spy = spyPipe();

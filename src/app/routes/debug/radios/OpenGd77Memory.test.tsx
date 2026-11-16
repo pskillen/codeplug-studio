@@ -144,7 +144,8 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       writeAbs(img, 0x604b, new Uint8Array([0x80, 0x47, 0x00, 0x00]));
       writeAbs(img, 0x6057, new Uint8Array([0xc0, 0x03]));
       writeAbs(img, 0xe0, new TextEncoder().encode('M0TEST'));
-      view(await syntheticOpenGd77Archive(model, { image: img }));
+      // An older archive: no settings gap region, so the struct tail is not captured.
+      view(await syntheticOpenGd77Archive(model, { image: img, settingsGap: null }));
       fireEvent.click(screen.getByRole('tab', { name: 'Settings' }));
       expect(screen.getByText('Firmware settings, read-only')).toBeInTheDocument();
       expect(
@@ -161,6 +162,15 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       expect(row('setting-txPowerLevel').textContent).toContain('Not captured');
       expect(row('general-radioName').textContent).toContain('M0TEST');
       expect(row('general-sn').textContent).toContain('unused (no reader)');
+    });
+
+    it('decodes the struct tail from the settings gap region of a current archive', async () => {
+      view(await syntheticOpenGd77Archive(model));
+      fireEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+      const row = (id: string) => document.querySelector(`[data-row-id="${id}"]`) as HTMLElement;
+      expect(row('setting-magicNumber').textContent).toContain('0x4780');
+      expect(row('setting-vfoScanHigh').textContent).not.toContain('Not captured');
+      expect(row('setting-txPowerLevel').textContent).not.toContain('Not captured');
     });
 
     it('does not name settings fields when the version is wrong', async () => {

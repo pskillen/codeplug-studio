@@ -687,11 +687,7 @@ export function projectAtD890Settings(capture: AtD890ByteReader): AtD890Settings
     flush();
   }
 
-  const aprsRuns = readRuns(
-    capture,
-    D890_MAP.OptionalSettingsAprs,
-    D890_MAP.OptionalSettingsAprsLength,
-  );
+  const aprsRuns = readRuns(capture, D890_MAP.OptionalSettingsAprs, GPS_TEXT_BLOCK_BYTES);
   const gpsRun = aprsRuns[0];
   const gpsText: AtD890GpsText | undefined = gpsRun
     ? {

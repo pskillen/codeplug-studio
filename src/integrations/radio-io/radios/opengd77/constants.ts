@@ -218,6 +218,19 @@ export const OPENGD77_CALIBRATION_ADDRESS = 0x10000;
 export const OPENGD77_CALIBRATION_REGION_LABEL =
   'OpenGD77 working copy (as returned at 0x10000; not stock factory calibration)';
 
+/**
+ * Debug-capture region for the settings struct tail the flash spans skip: mode-1 flash
+ * `0x6060-0x60BF` (3 x 32 bytes). Span 0 ends at `0x605F`, so with this gap the firmware settings
+ * struct `0x604B-0x60BE` is complete. Debug-only: it is not in `OPENUV380_FLASH_SPANS`, which size
+ * Write, Restore and Backup.
+ */
+export const OPENGD77_SETTINGS_GAP_REGION_ID = 'settings-gap';
+export const OPENGD77_SETTINGS_GAP_REGION_PATH = 'regions/settings-gap.bin';
+export const OPENGD77_SETTINGS_GAP_ADDRESS = 0x6060;
+export const OPENGD77_SETTINGS_GAP_LENGTH = 0x60;
+export const OPENGD77_SETTINGS_GAP_REGION_LABEL =
+  'OpenGD77 settings struct tail (flash 0x6060-0x60BF, between flash span 0 and 1)';
+
 /** Map MemoryMap offset → absolute FLASH address. */
 export function openUv380OffsetToAbs(offset: number): number {
   return OPENUV380_IMAGE_BASE + offset;
