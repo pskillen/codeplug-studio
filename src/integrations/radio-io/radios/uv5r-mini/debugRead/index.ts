@@ -97,3 +97,8 @@ export {
   type Uv5rMiniSettings,
   type Uv5rMiniVfo,
 } from './settingsFrame.ts';
+export {
+  uv5rMiniCalibrationView,
+  UV5R_MINI_CLONE_REGION_ID,
+  type Uv5rMiniCalibrationArchive,
+} from './calibrationView.ts';

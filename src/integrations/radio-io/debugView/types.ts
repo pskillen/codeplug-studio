@@ -15,6 +15,8 @@ export interface CalibrationView {
   tables: readonly ValueTableView[];
   unused?: readonly UnusedRange[];
   hex: readonly HexSource[];
+  /** Runs of identical 16-byte rows in the raw bytes collapse to one line (large erased tails). */
+  collapseRuns?: boolean;
 }
 
 /**
