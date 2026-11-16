@@ -6,10 +6,10 @@ The A and B pickers of a radio debug page's Compare tab: two selects over the ta
 
 ## Props
 
-| Prop            | Purpose                                                                          |
-| --------------- | -------------------------------------------------------------------------------- |
+| Prop            | Purpose                                                                            |
+| --------------- | ---------------------------------------------------------------------------------- |
 | `store`         | The profile's shared read history; the pair lives in its snapshot (`comparePair`). |
-| `onOpenArchive` | Optional. Opens a file into the history (shows an **Open archive** button).      |
+| `onOpenArchive` | Optional. Opens a file into the history (shows an **Open archive** button).        |
 
 ## Behaviour
 
