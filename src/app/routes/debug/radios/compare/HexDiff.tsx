@@ -18,6 +18,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { formatAddress, HEX_PAGE_BYTES, isMasked, MASKED_HEX_BYTE } from '../viewerUtils.ts';
 
 const HUNKS_PER_PAGE = 20;
+const ROWS_PER_HUNK = 8;
 const CONTEXTS = ['0', '1', '2', '4'];
 const MONO = { fontFamily: 'var(--mantine-font-family-monospace)', fontSize: 13 } as const;
 
@@ -99,7 +100,18 @@ export function HexDiff({
     [section],
   );
   const hunks = useMemo(
-    () => (onlyChanged ? hexHunks(section, { context: Number(context) }) : []),
+    () =>
+      onlyChanged
+        ? hexHunks(section, { context: Number(context) }).flatMap((h) =>
+            // One long run of changed rows is split so a page never renders thousands of rows.
+            h.kind === 'rows' && h.rows.length > ROWS_PER_HUNK
+              ? Array.from({ length: Math.ceil(h.rows.length / ROWS_PER_HUNK) }, (_, i) => ({
+                  ...h,
+                  rows: h.rows.slice(i * ROWS_PER_HUNK, (i + 1) * ROWS_PER_HUNK),
+                }))
+              : [h],
+          )
+        : [],
     [section, onlyChanged, context],
   );
   const fullPages = Math.max(1, Math.ceil(shared / HEX_PAGE_BYTES));

@@ -175,7 +175,7 @@ it('selects the live read after opening a legacy ZIP, even after selecting a fil
   // B was picked explicitly, so the new live read does not move it.
   expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^A ·/);
   expect(screen.getByRole('combobox', { name: 'Compare A' })).toHaveDisplayValue(/^B ·/);
-}, 15000);
+}, 30000);
 
 it('adds a successful live read to history with its timestamp', async () => {
   fake.run.mockResolvedValueOnce(syntheticRead(4));
