@@ -60,20 +60,20 @@ describe('Compare picker on every radio with a capture', () => {
     });
   }
 
-  it('shows the chosen pair in the generic compare (RT95)', () => {
+  it('shows the chosen pair in the shared compare (RT95)', () => {
     const descriptor = withCapture.find((item) => item.slug === 'rt95')!;
     const store = getDebugReadHistory(descriptor);
     for (const at of ['2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z', '2026-01-03T00:00:00Z'])
       store.importArchives([read(descriptor.archiveModelId, at)]);
     open('rt95');
-    expect(screen.getByText(/Capture A: 2026-01-02T00:00:00Z/)).toBeInTheDocument();
-    expect(screen.getByText(/Capture B: 2026-01-03T00:00:00Z/)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Compare A' })).toHaveDisplayValue(/^B ·/);
+    expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^C ·/);
     fireEvent.click(screen.getByRole('combobox', { name: 'Compare A' }));
     fireEvent.click(screen.getByRole('option', { name: /^A ·/ }));
-    expect(screen.getByText(/Capture A: 2026-01-01T00:00:00Z/)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Compare A' })).toHaveDisplayValue(/^A ·/);
     fireEvent.click(screen.getByRole('button', { name: 'Swap A and B' }));
-    expect(screen.getByText(/Capture A: 2026-01-03T00:00:00Z/)).toBeInTheDocument();
-    expect(screen.getByText(/Capture B: 2026-01-01T00:00:00Z/)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Compare A' })).toHaveDisplayValue(/^C ·/);
+    expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^A ·/);
   });
 
   it('says so when A and B are the same read', () => {
@@ -84,6 +84,6 @@ describe('Compare picker on every radio with a capture', () => {
     store.setComparePair({ a: one!.id, b: one!.id });
     open('dm-32uv');
     expect(screen.getByText('Same read on both sides')).toBeInTheDocument();
-    expect(screen.getByText('Capture B: Not selected')).toBeInTheDocument();
+    expect(screen.getByText('Choose two different reads to compare.')).toBeInTheDocument();
   });
 });

@@ -825,9 +825,10 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     expect(
       screen.getByText(/User Database \/ Entry count \(header\): Changed · 2 → 3/),
     ).toBeInTheDocument();
-    expect(screen.getByText(/FLASH span 1: 0 changed bytes/)).toBeInTheDocument();
+    expect(screen.getByText('A and B differ')).toBeInTheDocument();
+    expect(screen.getByText('27 bytes on one side only')).toBeInTheDocument();
     expect(
-      screen.getByText(/User Database.*: 1 changed bytes · 27 missing bytes/),
+      screen.getByRole('button', { name: /Show User Database.* in the hex diff/ }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Decoded changes are unavailable/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Responding unit/)).not.toBeInTheDocument();
