@@ -4,6 +4,7 @@ export {
   CTCSS_TONE_OPTIONS,
   DCS_TONE_OPTIONS,
   NONE_TONE,
+  ctcssToneSelectOptions,
+  dcsCodeSelectOptions,
   normalizeToneValue,
-  toneSelectOptions,
 } from './tones.ts';
