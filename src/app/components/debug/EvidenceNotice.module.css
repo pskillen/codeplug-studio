@@ -1,0 +1,37 @@
+.root {
+  padding: 10px 14px;
+  border-radius: var(--dsv2-radius-control);
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+  min-width: 0;
+}
+
+.caution {
+  background: var(--dsv2-warning-tint);
+  border: 1px solid var(--dsv2-warning-border);
+}
+
+.info {
+  background: var(--dsv2-accent-tint-06);
+  border: 1px solid var(--dsv2-border);
+}
+
+.title {
+  margin: 0 0 4px;
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+}
+
+.line {
+  margin: 0 0 4px;
+  line-height: 1.45;
+}
+
+.more {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--dsv2-accent);
+  cursor: pointer;
+}
