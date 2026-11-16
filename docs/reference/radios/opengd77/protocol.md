@@ -237,7 +237,7 @@ The `/debug/radios/dm-1701-opengd77` and `/debug/radios/md-9600-opengd77` pages 
 | `52 01 <addr u32 BE> <len u16 BE>` | FLASH read          | Only after `43 00`; `1 <= len <= 32`, `addr + len <= 0x01000000`  |
 | `43 05`                            | Close CPS screen    | Only after `43 00`, at most once; every frame after it is refused |
 
-The calibration working copy needs no new frame kind: it is sixteen of the FLASH reads above at `0x10000 + 32 * i` (`52 01 00 01 <lo> 00 00 20`), which the firmware answers from RAM when a read lies wholly inside `0x10000..0x101FF` ([calibration.md](calibration.md)). Mode 10 stays refused at every address, for example `52 0A 00 00 00 00 01 00` and `52 0A 00 00 00 01 01 00`.
+The calibration working copy needs no new frame kind: it is sixteen of the FLASH reads above at `0x10000 + 32 * i` (`52 01 00 01 <hi> <lo> 00 20`, where `<hi> <lo>` is `32 * i` big-endian), which the firmware answers from RAM when a read lies wholly inside `0x10000..0x101FF` ([calibration.md](calibration.md)). Mode 10 stays refused at every address, for example `52 0A 00 00 00 00 01 00` and `52 0A 00 00 00 01 01 00`.
 
 **Never sent** (refused before the transport): `X` (`58 ..`, every sub-command), `W` (`57 ..`), `C 06 xx` (`43 06 00/01/02/04` and any other sub-command), `C P` (`43 50 ..`), `D W` and any `44 ..`, read mode 10 (`52 0A ..`), read modes 2, 5, 6, 7, 8, any other `43 xx` flag, `24`, unknown first bytes, empty, one-byte, concatenated or overlong frames, and FLASH reads of length 0, over 32 or past `0x01000000`.
 
