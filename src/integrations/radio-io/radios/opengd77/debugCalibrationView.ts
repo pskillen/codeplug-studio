@@ -46,9 +46,12 @@ const BANDS = [
 ] as const;
 type Band = (typeof BANDS)[number];
 
-const POINT_INDEX_NOTE =
-  'The x axis is the frequency point index (0 first), not MHz: the stock frequency-point table (UHF 0x1B0, VHF 0x100; encoding inferred) is the only record of which frequency each point is, ' +
-  'and on UHF the first point is overwritten by the OpenGD77 local marker.';
+/** Squelch keeps a point index on x: the stock rows have no consumer and no stated frequency grid. */
+const SQUELCH_INDEX_NOTE =
+  'The x axis is the frequency point index (0 first), not MHz: these stock rows have no reader and no stated frequency grid, and the stock frequency-point table (UHF 0x1B0, VHF 0x100; encoding inferred) is the only record of which frequency each point is. On UHF its first point is overwritten by the OpenGD77 local marker.';
+
+const gridNote = (what: string, grid: readonly number[], evidence: string) =>
+  `The x axis is ${what} from the firmware's own lookup (${grid.join(', ')} MHz; ${evidence}), not the inferred stock frequency-point table.`;
 
 function notCaptured(reason: string): CalibrationView {
   return { status: { kind: 'not-captured', reason }, charts: [], tables: [], hex: [] };
@@ -72,11 +75,14 @@ function bytes(row: OpenGd77CalibrationRow | undefined, points: number): (number
 
 function pointTable(
   points: number,
+  mhz: readonly number[] | undefined,
   columns: { id: string; label: string; row: OpenGd77CalibrationRow | undefined }[],
 ): NumericTableView {
   return {
-    key: { label: 'Point' },
-    rows: Array.from({ length: points }, (_, i) => ({ key: String(i) })),
+    key: { label: mhz ? 'Point · MHz' : 'Point' },
+    rows: Array.from({ length: points }, (_, i) => ({
+      key: mhz ? `${i} · ${mhz[i]} MHz` : String(i),
+    })),
     columns: columns.map((c) => ({
       id: c.id,
       label: c.label,
@@ -101,6 +107,8 @@ function curve(
     about: string;
     yLabel: string;
     series: { id: string; label: string; row: OpenGd77CalibrationRow | undefined }[];
+    /** MHz of each point, with how it was traced; absent: x is the point index (squelch). */
+    grid?: { mhz: readonly number[]; note: string };
   },
 ): FrequencyCurve | undefined {
   const present = spec.series.filter((s) => s.row);
@@ -112,19 +120,22 @@ function curve(
     kind: 'frequency-curve',
     title: `${b.band} ${spec.title}`,
     meaning: spec.meaning,
-    about: `${spec.about} ${POINT_INDEX_NOTE} ${sourceText(rows)}`.trim(),
+    about: `${spec.about} ${spec.grid?.note ?? SQUELCH_INDEX_NOTE} ${sourceText(rows)}`.trim(),
     address: `${hexAbs(Math.min(...rows.map((r) => r.offset)))}–${hexAbs(
       Math.max(...rows.map((r) => r.offset + r.length)) - 1,
     )}`,
     confidence: { layout: 'traced', meaning: meaningOf(first) },
-    x: { label: `Frequency point number, 0–${b.points - 1}` },
+    x: spec.grid
+      ? { label: 'Frequency', unit: 'MHz' }
+      : { label: `Frequency point number, 0–${b.points - 1}` },
     y: { label: spec.yLabel, unit: 'stored byte' },
     series: present.flatMap((s, slot) => {
-      const points = Array.from(s.row!.raw, (y, x) => ({ x, y }));
+      const points = Array.from(s.row!.raw, (y, i) => ({ x: spec.grid?.mhz[i] ?? i, y }));
       return points.length ? [{ id: s.id, label: s.label, slot, points }] : [];
     }),
     table: pointTable(
       b.points,
+      spec.grid?.mhz,
       present.map((s) => ({ id: s.id, label: s.label, row: s.row })),
     ),
   };
@@ -247,6 +258,9 @@ export function openGd77CalibrationView(archive: OpenGd77CalibrationArchive): Ca
   const charts: CalibrationChart[] = decode.markerPresent
     ? BANDS.flatMap((b) => {
         const get = (id: string) => byId.get(`${b.id}-${id}`);
+        const grids = model.calibrationGrids;
+        const powerMhz = b.id === 'uhf' ? grids.uhf : grids.vhfPower;
+        const tuningMhz = b.id === 'uhf' ? grids.uhf : grids.vhfTuning;
         return [
           curve(b, {
             id: 'power',
@@ -260,6 +274,10 @@ export function openGd77CalibrationView(archive: OpenGd77CalibrationArchive): Ca
               label: powerName(get(id)?.label ?? id),
               row: get(id),
             })),
+            grid: {
+              mhz: powerMhz,
+              note: gridNote('the power points', powerMhz, grids.evidence.power),
+            },
           }),
           curve(b, {
             id: 'rx-tuning',
@@ -270,6 +288,10 @@ export function openGd77CalibrationView(archive: OpenGd77CalibrationArchive): Ca
               : 'Varactor DAC code ÷ 16 by RX frequency.',
             yLabel: 'Tuning code ÷ 16',
             series: [{ id: 'rx-tuning', label: 'RX tuning', row: get('rx-tuning') }],
+            grid: {
+              mhz: tuningMhz,
+              note: gridNote('the RX tuning points', tuningMhz, grids.evidence.tuning),
+            },
           }),
           curve(b, {
             id: 'squelch',

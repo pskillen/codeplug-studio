@@ -39,7 +39,11 @@ interface ChartBase {
 }
 export interface FrequencyCurve extends ChartBase {
   kind: 'frequency-curve';
-  /** `unit` is absent when x is not a frequency (a point index): the label then says what it is. */
+  /**
+   * `unit` is 'MHz' for every frequency curve. It is absent only where the radio has no stated
+   * frequency grid for the table (OpenGD77 stock squelch rows: x is the point index, and the
+   * label says so). Do not omit it where a grid is known.
+   */
   x: { label: string; unit?: 'MHz' };
   y: { label: string; unit: string; domain?: readonly [number, number] };
   series: readonly {

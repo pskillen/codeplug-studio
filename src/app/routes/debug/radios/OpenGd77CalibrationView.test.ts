@@ -8,9 +8,9 @@ import {
 } from '@integrations/radio-io/radios/opengd77/hydration.ts';
 
 describe.each([
-  ['DM-1701', OPENGD77_DM1701_MODEL_ID, 'Very-low (250 mW)', true],
-  ['MD-9600', OPENGD77_MD9600_MODEL_ID, 'Mid-low (10 W)', false],
-])('openGd77CalibrationView on %s', (_name, modelId, slot, scaled) => {
+  ['DM-1701', OPENGD77_DM1701_MODEL_ID, 'Very-low (250 mW)', true, [135, 145, 155, 165, 175]],
+  ['MD-9600', OPENGD77_MD9600_MODEL_ID, 'Mid-low (10 W)', false, [136, 145.5, 155, 164.5, 174]],
+])('openGd77CalibrationView on %s', (_name, modelId, slot, scaled, vhfPowerMhz) => {
   it('charts power, RX tuning, squelch and oscillator trim per band with stable ids', async () => {
     const view = openGd77CalibrationView(await syntheticOpenGd77Archive(modelId));
     expect(view.status.kind).toBe('ok');
@@ -36,11 +36,24 @@ describe.each([
     expect(uhf.series[3]!.label).toBe(slot);
     expect(uhf.series[0]!.points).toHaveLength(9);
     expect(vhf.series[0]!.points).toHaveLength(5);
-    expect(uhf.x.unit).toBeUndefined();
-    expect(uhf.about).toMatch(/point index \(0 first\), not MHz/);
+    // Power and RX tuning draw in MHz on the firmware's own grids, not a point index.
+    expect(uhf.x).toEqual({ label: 'Frequency', unit: 'MHz' });
+    expect(uhf.series[0]!.points.map((p) => p.x)).toEqual([
+      400, 410, 420, 430, 440, 450, 460, 470, 480,
+    ]);
+    expect(vhf.series[0]!.points.map((p) => p.x)).toEqual(vhfPowerMhz);
+    expect(uhf.about).toMatch(/not the inferred stock frequency-point table/);
+    expect(uhf.table.key.label).toBe('Point · MHz');
     expect(uhf.table.rows).toHaveLength(9);
+    expect(uhf.table.rows[0]!.key).toBe('0 · 400 MHz');
+    const vhfTuning = view.charts[5]!;
+    if (vhfTuning.kind !== 'frequency-curve') throw new Error('kind');
+    expect(vhfTuning.series[0]!.points.map((p) => p.x)).toEqual([136, 145.5, 155, 164.5, 174]);
+    // Squelch keeps the point index: no consumer, no stated grid.
     const squelch = view.charts[2]!;
     if (squelch.kind !== 'frequency-curve') throw new Error('kind');
+    expect(squelch.x.unit).toBeUndefined();
+    expect(squelch.about).toMatch(/point index \(0 first\), not MHz/);
     expect(squelch.series.map((s) => s.label)).toEqual([
       'Open, level 9',
       'Close, level 9',
