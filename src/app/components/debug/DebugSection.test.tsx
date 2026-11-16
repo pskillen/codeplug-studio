@@ -37,4 +37,15 @@ describe('DebugSection', () => {
     wrap(<DebugSection title="Plain">x</DebugSection>);
     expect(screen.queryByRole('button')).toBeNull();
   });
+
+  it('is an h3 by default and takes a heading level', () => {
+    const { rerender } = wrap(<DebugSection title="Power" />);
+    expect(screen.getByRole('heading', { name: 'Power', level: 3 })).toBeInTheDocument();
+    rerender(
+      <DesignSystemV2Provider>
+        <DebugSection title="Power" headingLevel={2} />
+      </DesignSystemV2Provider>,
+    );
+    expect(screen.getByRole('heading', { name: 'Power', level: 2 })).toBeInTheDocument();
+  });
 });

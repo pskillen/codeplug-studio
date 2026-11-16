@@ -8,16 +8,17 @@ One look for debug blocks: title, optional dimmed description, a `meta` slot on 
 
 ## Props
 
-| Prop               | Type        | Notes                                                   |
-| ------------------ | ----------- | ------------------------------------------------------- |
-| `id`               | `string`    | Anchor id for jump links                                |
-| `title`            | `string`    | Heading (`<h2>`)                                        |
-| `description`      | `ReactNode` | One dimmed paragraph under the title                    |
-| `meta`             | `ReactNode` | Right of the title; wraps under it on a phone           |
-| `collapsible`      | `boolean`   | The title becomes a disclosure button (`aria-expanded`) |
-| `defaultCollapsed` | `boolean`   | Initial state when `collapsible`; state is uncontrolled |
-| `children`         | `ReactNode` | Body                                                    |
-| `className`        | `string`    | Optional root class                                     |
+| Prop               | Type          | Notes                                                     |
+| ------------------ | ------------- | --------------------------------------------------------- |
+| `id`               | `string`      | Anchor id for jump links                                  |
+| `title`            | `string`      | Heading (`<h3>` by default)                               |
+| `headingLevel`     | `2 \| 3 \| 4` | Heading level of the title; default 3, under a tab's `h2` |
+| `description`      | `ReactNode`   | One dimmed paragraph under the title                      |
+| `meta`             | `ReactNode`   | Right of the title; wraps under it on a phone             |
+| `collapsible`      | `boolean`     | The title becomes a disclosure button (`aria-expanded`)   |
+| `defaultCollapsed` | `boolean`     | Initial state when `collapsible`; state is uncontrolled   |
+| `children`         | `ReactNode`   | Body                                                      |
+| `className`        | `string`      | Optional root class                                       |
 
 ## Usage
 

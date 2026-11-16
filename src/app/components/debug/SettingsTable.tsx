@@ -177,7 +177,7 @@ export default function SettingsTable({
       </div>
       <div className={classes.sections}>
         {shownGroups.map(({ g, rows }) => (
-          <DebugSection key={g.id} id={g.id} title={g.label} description={g.description}>
+          <DebugSection key={g.id} id={`settings-${g.id}`} title={g.label} description={g.description}>
             {rows.length === 0 ? (
               <p className={classes.empty}>{g.emptyText ?? 'No settings in this group.'}</p>
             ) : (
@@ -195,7 +195,7 @@ export default function SettingsTable({
           <DebugSection
             // Remount when searching so a match is never hidden inside a folded section.
             key={`${t.id}-${searching}`}
-            id={t.id}
+            id={`settings-${t.id}`}
             title={t.title}
             description={t.description}
             meta={<span>{rows.length}</span>}

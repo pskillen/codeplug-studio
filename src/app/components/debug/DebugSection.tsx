@@ -7,6 +7,8 @@ export interface DebugSectionProps {
   /** Anchor id for jump links. */
   id?: string;
   title: string;
+  /** Heading level of the title; tabs sit under an `h2` tab title, so the default is 3. */
+  headingLevel?: 2 | 3 | 4;
   /** One dimmed paragraph under the title. */
   description?: ReactNode;
   /** Right of the title: address range, confidence badge, diff badge. */
@@ -23,6 +25,7 @@ export interface DebugSectionProps {
 export default function DebugSection({
   id,
   title,
+  headingLevel = 3,
   description,
   meta,
   collapsible = false,
@@ -31,11 +34,12 @@ export default function DebugSection({
   className,
 }: DebugSectionProps) {
   const [collapsed, setCollapsed] = useState(collapsible && defaultCollapsed);
+  const Heading = `h${headingLevel}` as const;
   const showBody = !collapsible || !collapsed;
   return (
     <section id={id} className={[classes.root, className].filter(Boolean).join(' ')}>
       <div className={classes.header}>
-        <h2 className={classes.title}>
+        <Heading className={classes.title}>
           {collapsible ? (
             <button
               type="button"
@@ -56,7 +60,7 @@ export default function DebugSection({
           ) : (
             title
           )}
-        </h2>
+        </Heading>
         {meta ? <div className={classes.meta}>{meta}</div> : null}
       </div>
       {description ? <p className={classes.description}>{description}</p> : null}
