@@ -39,6 +39,7 @@ import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
 import { Coverage } from './Coverage.tsx';
 import { DebugReadProgress } from './DebugReadProgress.tsx';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
+import { ComparePicker } from './ComparePicker.tsx';
 import { Uv5rMiniCompare } from './Uv5rMiniCompare.tsx';
 import { isUv5rMiniReadsZip, openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
 import { archiveUv5rMiniRead } from './uv5rMiniCapture.ts';
@@ -67,12 +68,7 @@ export default function RadioDebugPage() {
 function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const { reads } = useUv5rMiniDebugReads();
   const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
-  const historyEnabled =
-    descriptor?.readHistory === true ||
-    radio === 'uv-5r-mini' ||
-    radio === 'rt95' ||
-    radio === 'at-d890uv' ||
-    radio === 'dm-32uv';
+  const historyEnabled = descriptor?.readHistory === true;
   const store = getDebugReadHistory(
     descriptor ?? { slug: 'unknown', archiveModelId: 'UV-5R Mini' },
   );
@@ -84,6 +80,9 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const otherId = history.compareId;
   const setOtherId = (id: string | null) => store.setCompare(id);
   const other = history.entries.find((e) => e.id === otherId)?.archive;
+  const pairA = history.entries.find((e) => e.id === history.comparePair.a);
+  const pairB = history.entries.find((e) => e.id === history.comparePair.b);
+  const miniRead = (entry: typeof pairA) => reads.find((read) => read.label === entry?.label);
   const [downloadedArchive, setDownloadedArchive] = useState<DebugArchive>();
   // Mini reads live in the shared store; any profile's undownloaded live capture lives only in this tab.
   const unsaved =
@@ -610,33 +609,18 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 divert reads; equal bytes and repeated-read agreement do not prove unit identity.
               </Alert>
             )}
-            {(descriptor.readHistory ||
-              descriptor.slug === 'rt95' ||
-              descriptor.slug === 'at-d890uv' ||
-              descriptor.slug === 'dm-32uv') && (
-              <Select
-                label="Compare with"
-                clearable
-                value={otherId}
-                onChange={setOtherId}
-                data={history.entries.map((e) => ({
-                  value: e.id,
-                  label: `${e.label} · ${new Date(e.readAt).toLocaleString()}`,
-                }))}
-              />
-            )}
+            {historyEnabled && <ComparePicker store={store} onOpenArchive={openFile} />}
             {descriptor.slug === 'uv-5r-mini' ? (
               <Uv5rMiniCompare
-                key={history.entries[0]?.id ?? 'empty'}
-                reads={allReads}
-                preferredLive={preferredLive}
-                onOpenArchive={openFile}
+                key={`${pairA?.id}:${pairB?.id}`}
+                a={miniRead(pairA)}
+                b={pairA === pairB ? undefined : miniRead(pairB)}
               />
             ) : historyEnabled ? (
               <CompareViewer
-                key={history.selectedId ?? 'empty'}
-                archive={archive}
-                other={other}
+                key={`${pairA?.id}:${pairB?.id}`}
+                archive={pairA?.archive}
+                other={pairA === pairB ? undefined : pairB?.archive}
                 modelId={descriptor.archiveModelId}
                 DecodedDiff={descriptor.DecodedDiff}
               />

@@ -162,16 +162,19 @@ it('selects the live read after opening a legacy ZIP, even after selecting a fil
   fireEvent.click(screen.getByRole('option', { name: /File A/ }));
   expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/File A/);
   fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
-  fireEvent.click(screen.getByRole('combobox', { name: 'Second read' }));
-  fireEvent.click(screen.getByRole('option', { name: /File A/ }));
-  expect(screen.getByRole('combobox', { name: 'Second read' })).toHaveDisplayValue(/File A/);
+  expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
+  fireEvent.click(screen.getByRole('combobox', { name: 'Compare B' }));
+  fireEvent.click(screen.getByRole('option', { name: /^A ·/ }));
+  expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^A ·/);
   fireEvent.click(screen.getByRole('tab', { name: 'Backup' }));
   fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
   await screen.findByText(/Live read · captured/);
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
   expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/Live/);
   fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
-  expect(screen.getByRole('combobox', { name: 'Second read' })).toHaveDisplayValue(/Live/);
+  // B was picked explicitly, so the new live read does not move it.
+  expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^A ·/);
+  expect(screen.getByRole('combobox', { name: 'Compare A' })).toHaveDisplayValue(/^B ·/);
 }, 15000);
 
 it('adds a successful live read to history with its timestamp', async () => {
@@ -482,9 +485,8 @@ describe('DM-32UV debug page', () => {
     history.select(first.id);
     open('dm-32uv');
     fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
-    const select = screen.getByRole('combobox', { name: 'Compare with' });
-    fireEvent.click(select);
-    fireEvent.click(await screen.findByRole('option', { name: /^B ·/ }));
+    // Previous vs latest by default: A against B.
+    expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
     expect(await screen.findByText(/Identity \/ Model: Unchanged/)).toBeInTheDocument();
     expect(
       screen.getByText(/Identity \/ Build date: Unavailable · Not captured/),
@@ -498,7 +500,7 @@ describe('DM-32UV debug page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear history' }));
     fireEvent.click(await screen.findByRole('button', { name: /^Clear$/ }));
     fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
-    expect(screen.getByRole('combobox', { name: 'Compare with' })).toHaveValue('');
+    expect(screen.getByText('Read or open a second capture to compare.')).toBeInTheDocument();
     expect(screen.queryByText(/Identity \/ Model/)).not.toBeInTheDocument();
   });
 
@@ -648,7 +650,7 @@ it('retains comparison uploads in shared history for other viewers and download 
   const inputs = document.querySelectorAll('input[type="file"]');
   fireEvent.change(inputs[inputs.length - 1]!, { target: { files: [file] } });
   await waitFor(() => expect(history.getSnapshot().entries).toHaveLength(2));
-  expect(screen.getByRole('combobox', { name: 'Second read' })).toHaveDisplayValue(/File B/);
+  expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
   expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/File B/);
   fireEvent.click(screen.getByRole('tab', { name: 'Backup' }));
@@ -817,8 +819,7 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     history.select(first.id);
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
-    fireEvent.click(screen.getByRole('combobox', { name: 'Compare with' }));
-    fireEvent.click(await screen.findByRole('option', { name: /^B ·/ }));
+    expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
     expect(await screen.findByText(/Identity \/ Revision: Changed/)).toBeInTheDocument();
     expect(screen.getByText(/Identity \/ Build date: Unchanged/)).toBeInTheDocument();
     expect(
@@ -846,7 +847,7 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
       ),
     ]);
     history.select(first.id);
-    history.setCompare(bad.id);
+    history.setComparePair({ a: first.id, b: bad.id });
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
     expect(await screen.findByText(/Identity \/ Revision: Unavailable/)).toBeInTheDocument();
