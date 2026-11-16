@@ -1,4 +1,4 @@
-import { Alert, Stack, Switch, Table, Text, TextInput, Title } from '@mantine/core';
+import { Alert, Group, Stack, Switch, Table, Text, TextInput, Title } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import {
   DataTable,
@@ -9,6 +9,7 @@ import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import type { AtD890MemoryProjection } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
 import {
   AT_D890_SETTINGS_GROUPS,
+  type AtD890LockPasswordView,
   type AtD890NamedSettingBytes,
   type AtD890ScanListEntry,
   type AtD890ScanMember,
@@ -16,7 +17,8 @@ import {
   type AtD890SettingFieldView,
 } from '@integrations/radio-io/radios/at-d890uv/debugMemorySettings.ts';
 
-import { MEMBER_EXPLANATION } from './viewerUtils.ts';
+import { SensitiveRevealButton } from './SensitiveReveal.tsx';
+import { MASKED_HEX_BYTE, MEMBER_EXPLANATION } from './viewerUtils.ts';
 
 const NOT_CAPTURED = 'Not captured';
 const DASH = '—';
@@ -394,8 +396,33 @@ function Mm9pdyStore({
   );
 }
 
-export function SettingsPanel({ projection }: { projection: AtD890MemoryProjection }) {
+const HIDDEN_PASSWORD = 'Hidden (password)';
+
+export function SettingsPanel({
+  projection,
+  revealed = false,
+  onToggleReveal,
+}: {
+  projection: AtD890MemoryProjection;
+  revealed?: boolean;
+  onToggleReveal?: () => void;
+}) {
   const settings = projection.settings;
+  const hidden = (f: AtD890SettingFieldView) => f.sensitive === true && !revealed;
+  const lockValue = (p: AtD890LockPasswordView) =>
+    p.status === 'not-captured'
+      ? NOT_CAPTURED
+      : !revealed
+        ? HIDDEN_PASSWORD
+        : p.text === ''
+          ? '(empty)'
+          : p.text;
+  const lockRaw = (p: AtD890LockPasswordView) =>
+    !p.raw ? DASH : revealed ? hexBytes(p.raw) : p.raw.map(() => MASKED_HEX_BYTE).join(' ');
+  const shownValue = (f: AtD890SettingFieldView) =>
+    f.status === 'captured' && hidden(f) ? HIDDEN_PASSWORD : valueText(f);
+  const rawOf = (f: AtD890SettingFieldView) =>
+    !f.raw ? DASH : hidden(f) ? f.raw.map(() => MASKED_HEX_BYTE).join(' ') : hexBytes(f.raw);
   const [query, setQuery] = useState('');
   const [raw, setRaw] = useState(false);
   const groups = useMemo(
@@ -414,9 +441,9 @@ export function SettingsPanel({ projection }: { projection: AtD890MemoryProjecti
       f.id,
       f.help,
       groupLabel,
-      valueText(f),
+      hidden(f) ? '' : valueText(f),
       f.firmwareNote ?? '',
-      f.raw ? hexBytes(f.raw) : '',
+      f.raw && !hidden(f) ? hexBytes(f.raw) : '',
       addressText(f),
     );
   const unknownShown = settings.unknown.filter(
@@ -445,15 +472,35 @@ export function SettingsPanel({ projection }: { projection: AtD890MemoryProjecti
           value={query}
           onChange={(e) => setQuery(e.currentTarget.value)}
         />
-        <Switch
-          label="Show raw bytes + address"
-          checked={raw}
-          onChange={(e) => setRaw(e.currentTarget.checked)}
-        />
+        <Group gap="md" align="center">
+          <Switch
+            label="Show raw bytes + address"
+            checked={raw}
+            onChange={(e) => setRaw(e.currentTarget.checked)}
+          />
+          {onToggleReveal && (
+            <SensitiveRevealButton revealed={revealed} onToggle={onToggleReveal} />
+          )}
+        </Group>
       </Stack>
       {groups.map((g) => {
         const fields = g.fields.filter((f) => !searching || fieldMatches(f, g.label));
-        if (searching && fields.length === 0 && g.id !== 'gps' && g.id !== 'mod') return null;
+        const locks =
+          g.id === 'privacy'
+            ? settings.lockPasswords.filter(
+                (p) =>
+                  !searching ||
+                  matches(query, p.label, 'password', g.label, hexAddress(p.address), 'localinfo'),
+              )
+            : [];
+        if (
+          searching &&
+          fields.length === 0 &&
+          locks.length === 0 &&
+          g.id !== 'gps' &&
+          g.id !== 'mod'
+        )
+          return null;
         return (
           <Stack key={g.id} gap="xs" component="section" aria-label={g.label}>
             <Title order={4}>{g.label}</Title>
@@ -465,7 +512,7 @@ export function SettingsPanel({ projection }: { projection: AtD890MemoryProjecti
               </Text>
             )}
             {g.id === 'mod' && <Mm9pdyStore store={settings.mm9pdy} query={query} />}
-            {fields.length > 0 && (
+            {fields.length + locks.length > 0 && (
               <Table.ScrollContainer minWidth={320}>
                 <Table aria-label={`${g.label} settings`}>
                   <Table.Thead>
@@ -478,12 +525,13 @@ export function SettingsPanel({ projection }: { projection: AtD890MemoryProjecti
                   </Table.Thead>
                   <Table.Tbody>
                     {fields.map((f) => {
-                      const showRaw = raw || (f.status === 'captured' && f.value === undefined);
+                      const showRaw =
+                        raw || (f.status === 'captured' && f.value === undefined && !hidden(f));
                       return (
                         <Table.Tr key={f.id}>
                           <Table.Td>{f.label}</Table.Td>
                           <Table.Td>
-                            {valueText(f)}
+                            {shownValue(f)}
                             {f.conditional && (
                               <Text size="xs" c="dimmed">
                                 {f.conditional}
@@ -501,10 +549,23 @@ export function SettingsPanel({ projection }: { projection: AtD890MemoryProjecti
                             )}
                           </Table.Td>
                           {raw && <Table.Td>{addressText(f)}</Table.Td>}
-                          {raw && <Table.Td>{f.raw ? hexBytes(f.raw) : DASH}</Table.Td>}
+                          {raw && <Table.Td>{rawOf(f)}</Table.Td>}
                         </Table.Tr>
                       );
                     })}
+                    {locks.map((p) => (
+                      <Table.Tr key={p.id}>
+                        <Table.Td>
+                          {p.label}
+                          <Text size="xs" c="dimmed">
+                            LocalInfo {hexAddress(p.address)}, {p.length} ASCII characters
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>{lockValue(p)}</Table.Td>
+                        {raw && <Table.Td>{`${hexAddress(p.address)} +${p.length}`}</Table.Td>}
+                        {raw && <Table.Td>{lockRaw(p)}</Table.Td>}
+                      </Table.Tr>
+                    ))}
                   </Table.Tbody>
                 </Table>
               </Table.ScrollContainer>
