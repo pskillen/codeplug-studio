@@ -18,6 +18,7 @@ import {
 import { AtD890Memory } from './AtD890Memory.tsx';
 import { AtD890Settings } from './AtD890Settings.tsx';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
+import { chooseCategory } from './memoryCategoriesTestUtils.ts';
 
 type Entry = [RadioBackupRegionV1, Uint8Array];
 const sparse = (address: number, data: Uint8Array): Entry => [
@@ -116,13 +117,13 @@ const viewSettings = (a?: DebugArchive) =>
     </MantineProvider>,
   );
 const rowTexts = () => screen.getAllByRole('row').map((r) => r.textContent ?? '');
-const open = (name: string) => fireEvent.click(screen.getByRole('tab', { name }));
+const open = (name: string) => chooseCategory(name);
 
 describe('AtD890Memory', () => {
   it('shows a clear no-capture state', () => {
     view();
     expect(screen.getByText('No capture')).toBeInTheDocument();
-    expect(screen.queryByRole('tab', { name: 'Channels' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Category' })).not.toBeInTheDocument();
   });
 
   it('refuses an archive for another model', () => {

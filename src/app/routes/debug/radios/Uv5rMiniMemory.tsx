@@ -4,6 +4,7 @@ import { decodeChannelsFromImage } from '@integrations/radio-io/radios/uv5r-mini
 import { decodeUv5rMiniZoneTable } from '@integrations/radio-io/radios/uv5r-mini/modData/index.ts';
 import { UV5R_MINI_LAYOUT } from '@integrations/radio-io/radios/uv17pro-family/layout.ts';
 import { uv17ProBackupMemSpans } from '@integrations/radio-io/radios/uv17pro-family/backupRestoreRoles.ts';
+import { MemoryCategories } from './MemoryCategories.tsx';
 import type { DebugArchive } from './captureArchive.ts';
 
 /** Decode only data actually captured in a recognised region. */
@@ -45,9 +46,8 @@ function Uv5rMiniMemoryLoaded({ archive }: { archive: DebugArchive }) {
         ? a.wireName.localeCompare(b.wireName) || a.slotIndex - b.slotIndex
         : a.slotIndex - b.slotIndex,
     );
-  return (
+  const channelsPanel = (
     <Stack>
-      <Title order={3}>Channels</Title>
       {!channels ? (
         <Alert title="Channels unavailable">A complete channel range is required.</Alert>
       ) : (
@@ -93,7 +93,10 @@ function Uv5rMiniMemoryLoaded({ archive }: { archive: DebugArchive }) {
           </Table.ScrollContainer>
         </>
       )}
-      <Title order={3}>Zones</Title>
+    </Stack>
+  );
+  const zonesPanel = (
+    <Stack>
       {!zones ? (
         <Text>Zone table unavailable: the complete sector was not captured.</Text>
       ) : 'reject' in zones ? (
@@ -113,6 +116,23 @@ function Uv5rMiniMemoryLoaded({ archive }: { archive: DebugArchive }) {
           </div>
         ))
       )}
+    </Stack>
+  );
+  return (
+    <Stack>
+      <Title order={3}>Memory</Title>
+      <MemoryCategories
+        storageKey="debug-memory-category:uv5r-mini"
+        categories={[
+          {
+            value: 'channels',
+            label: 'Channels',
+            count: channels?.length,
+            render: () => channelsPanel,
+          },
+          { value: 'zones', label: 'Zones', render: () => zonesPanel },
+        ]}
+      />
     </Stack>
   );
 }

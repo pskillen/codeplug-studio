@@ -20,6 +20,7 @@ import { encodeRxGroupsIntoImage } from '@integrations/radio-io/radios/opengd77/
 import { encodeUserDatabaseHeader } from '@integrations/radio-io/radios/opengd77/userDatabaseCodec.ts';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
+import { chooseCategory } from './memoryCategoriesTestUtils.ts';
 
 const transport = vi.hoisted(() => ({ open: vi.fn(), request: vi.fn() }));
 vi.mock('@integrations/radio-io/transport/index.ts', async (importOriginal) => ({
@@ -62,7 +63,7 @@ const view = (archive?: DebugArchive) =>
     </MantineProvider>,
   );
 
-const tab = (name: string) => fireEvent.click(screen.getByRole('tab', { name }));
+const tab = (name: string) => chooseCategory(name);
 const bodyRows = () => screen.getAllByRole('row').length;
 
 describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(

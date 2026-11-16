@@ -7,6 +7,7 @@ import { dm32Capture, dm32Page } from './dm32Archive.fixture.ts';
 import { archiveDm32Capture } from './dm32Capture.ts';
 import { Dm32Memory } from './Dm32Memory.tsx';
 import { Dm32Settings } from './Dm32Settings.tsx';
+import { chooseCategory } from './memoryCategoriesTestUtils.ts';
 
 const bcd = (digits: string) =>
   digits
@@ -154,8 +155,17 @@ describe('Dm32Memory', () => {
     expect(screen.getByText('Not captured')).toBeInTheDocument();
     cleanup();
     show(archive);
-    for (const name of ['Zones', 'Scan lists', 'Talk groups', 'RX groups', 'Radio IDs', 'Contacts'])
-      expect(screen.getByRole('tab', { name })).toBeInTheDocument();
+    for (const name of [
+      'Zones',
+      'Scan lists',
+      'Talk groups',
+      'RX groups',
+      'Radio IDs',
+      'Contacts',
+    ]) {
+      chooseCategory(name);
+      expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue(name);
+    }
   });
 
   it('refuses to decode several 0x04 pages and lists them', async () => {
@@ -313,7 +323,7 @@ describe('Dm32Memory', () => {
 
   it('lists zones, resolves members of the selected zone, searches and sorts', async () => {
     show(await archiveDm32Capture(listsCapture()));
-    fireEvent.click(screen.getByRole('tab', { name: 'Zones' }));
+    chooseCategory('Zones');
     expect(screen.getByText('Alpha')).toBeInTheDocument();
     expect(screen.getByText('Beta')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Alpha'));
@@ -330,7 +340,7 @@ describe('Dm32Memory', () => {
   it('lists scan lists and resolves the channel scan list id', async () => {
     show(await archiveDm32Capture(listsCapture()));
     expect(screen.getByText('1: Scan')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: 'Scan lists' }));
+    chooseCategory('Scan lists');
     fireEvent.click(screen.getByText('Scan'));
     const region = screen.getByRole('region', { name: 'Scan list 1 members' });
     expect(region).toHaveTextContent('TWO');
@@ -339,7 +349,7 @@ describe('Dm32Memory', () => {
 
   it('says zones are not captured rather than empty, and resets selection on replace', async () => {
     const view = show(await archiveDm32Capture(listsCapture()));
-    fireEvent.click(screen.getByRole('tab', { name: 'Zones' }));
+    chooseCategory('Zones');
     fireEvent.click(screen.getByText('Alpha'));
     view.replace(
       await archiveDm32Capture(
@@ -351,7 +361,7 @@ describe('Dm32Memory', () => {
         }),
       ),
     );
-    fireEvent.click(screen.getByRole('tab', { name: 'Zones' }));
+    chooseCategory('Zones');
     expect(screen.getByText(/does not mean the radio has no zones/i)).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Zone 1 members' })).toBeNull();
   });
@@ -408,7 +418,7 @@ describe('Dm32Memory', () => {
 
   it('lists talk groups, flags the count mismatch, searches by name and ID, sorts, resets', async () => {
     const view = show(await archiveDm32Capture(contactsCapture()));
-    fireEvent.click(screen.getByRole('tab', { name: 'Talk groups' }));
+    chooseCategory('Talk groups');
     expect(screen.getByText('Zeta')).toBeInTheDocument();
     expect(screen.getByText(/Stored count differs/)).toBeInTheDocument();
     expect(screen.getByText(/layout not established/)).toBeInTheDocument();
@@ -426,14 +436,14 @@ describe('Dm32Memory', () => {
       target: { value: 'zz' },
     });
     view.replace(await archiveDm32Capture(contactsCapture()));
-    fireEvent.click(screen.getByRole('tab', { name: 'Talk groups' }));
+    chooseCategory('Talk groups');
     expect(screen.getByPlaceholderText('Search talk groups')).toHaveValue('');
     expect(rowNames(['Zeta', 'Alpha'])).toEqual(['Zeta', 'Alpha']);
   });
 
   it('lists radio IDs with search and sort', async () => {
     show(await archiveDm32Capture(contactsCapture()));
-    fireEvent.click(screen.getByRole('tab', { name: 'Radio IDs' }));
+    chooseCategory('Radio IDs');
     expect(rowNames(['Zulu', 'Echo'])).toEqual(['Zulu', 'Echo']);
     fireEvent.click(screen.getByRole('button', { name: /Name/ }));
     expect(rowNames(['Zulu', 'Echo'])).toEqual(['Echo', 'Zulu']);
@@ -443,7 +453,7 @@ describe('Dm32Memory', () => {
 
   it('says the address book is not captured and shows analogue records raw', async () => {
     show(await archiveDm32Capture(contactsCapture()));
-    fireEvent.click(screen.getByRole('tab', { name: 'Contacts' }));
+    chooseCategory('Contacts');
     expect(
       screen.getByText('Digital address book (V-frame 0x0F bank): not captured'),
     ).toBeInTheDocument();
@@ -458,7 +468,7 @@ describe('Dm32Memory', () => {
       ['Radio IDs', 'radio IDs'],
       ['Contacts', 'analogue contacts'],
     ]) {
-      fireEvent.click(screen.getByRole('tab', { name: tab! }));
+      chooseCategory(tab!);
       expect(
         screen.getByText(new RegExp(`does not mean the radio has no ${noun}`)),
       ).toBeInTheDocument();
@@ -502,7 +512,7 @@ describe('Dm32Memory', () => {
 
   it('lists RX groups with holes, members, matches, search, sort and reset', async () => {
     const view = show(await archiveDm32Capture(referencesCapture()));
-    fireEvent.click(screen.getByRole('tab', { name: 'RX groups' }));
+    chooseCategory('RX groups');
     expect(screen.getByText(/occupied slots: 2, 5/)).toBeInTheDocument();
     expect(rowNames(['Zulu', 'Alpha'])).toEqual(['Zulu', 'Alpha']);
     fireEvent.click(screen.getByRole('button', { name: /Name/ }));
@@ -516,7 +526,7 @@ describe('Dm32Memory', () => {
     fireEvent.change(screen.getByPlaceholderText('Search RX groups'), { target: { value: '235' } });
     expect(screen.queryByText('Zulu')).toBeNull();
     view.replace(await archiveDm32Capture(referencesCapture()));
-    fireEvent.click(screen.getByRole('tab', { name: 'RX groups' }));
+    chooseCategory('RX groups');
     expect(screen.getByPlaceholderText('Search RX groups')).toHaveValue('');
     expect(screen.queryByRole('region', { name: 'RX group 2 members' })).toBeNull();
   });
@@ -528,7 +538,7 @@ describe('Dm32Memory', () => {
       screen.getByText(/2: Zulu \(assumed 1-based; not verified on hardware\)/),
     ).toBeInTheDocument();
     expect(screen.getByText('0: Zulu (1)')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: 'Talk groups' }));
+    chooseCategory('Talk groups');
     fireEvent.click(screen.getByText('Zeta'));
     const region = screen.getByRole('region', { name: 'Talk group 1 referenced by' });
     expect(region).toHaveTextContent('Channel 1 · ONE (TX contact)');
@@ -538,9 +548,9 @@ describe('Dm32Memory', () => {
 
   it('says RX groups are not captured, never none, and marks Referenced by partial', async () => {
     show(await archiveDm32Capture(contactsCapture()));
-    fireEvent.click(screen.getByRole('tab', { name: 'RX groups' }));
+    chooseCategory('RX groups');
     expect(screen.getByText(/does not mean the radio has no RX groups/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: 'Talk groups' }));
+    chooseCategory('Talk groups');
     expect(screen.getByText(/Partial: .*RX groups were not captured/)).toBeInTheDocument();
   });
 });

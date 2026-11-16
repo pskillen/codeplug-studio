@@ -8,6 +8,7 @@ import {
 import { encodeChannelRecord } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
 import { RT95_OCCUPIED_BITFIELD_OFFSET } from '@integrations/radio-io/radios/rt95/constants.ts';
 import { encodeRt95ModData } from '@integrations/radio-io/radios/rt95/modData/encode.ts';
+import { chooseCategory } from './memoryCategoriesTestUtils.ts';
 import { openDebugArchive } from './captureArchive.ts';
 import { Rt95Memory } from './Rt95Memory.tsx';
 
@@ -60,6 +61,7 @@ describe('RT95 MMD1 viewer', () => {
         <Rt95Memory archive={a} />
       </MantineProvider>,
     );
+    chooseCategory('Zones');
     expect(screen.getByText(/MM9PDY-compatible data present/)).toBeInTheDocument();
     expect(screen.getByText(/2 members point at empty or unreadable slots/)).toBeInTheDocument();
     expect(screen.getByText(/1 \(unavailable\), 200 \(unavailable\)/)).toBeInTheDocument();
@@ -163,6 +165,7 @@ describe('RT95 MMD1 viewer', () => {
         <Rt95Memory archive={a} />
       </MantineProvider>,
     );
+    chooseCategory('Zones');
     expect(screen.getByText(/1 member points at empty or unreadable slots/)).toBeInTheDocument();
     expect(screen.getByText(/1 \(unreadable\)/)).toBeInTheDocument();
     expect(
@@ -210,6 +213,7 @@ describe('RT95 MMD1 viewer', () => {
         <Rt95Memory archive={a} />
       </MantineProvider>,
     );
+    chooseCategory('Zones');
     const zone = within(screen.getByTestId('rt95-zone-1'));
     expect(zone.getByText('Zone 1: MIXED')).toBeInTheDocument();
     expect(zone.getByText('3 members')).toBeInTheDocument();
@@ -231,6 +235,7 @@ describe('RT95 MMD1 viewer', () => {
         <Rt95Memory archive={archive(new Uint8Array(8192).fill(fill))} />
       </MantineProvider>,
     );
+    chooseCategory('Zones');
     expect(screen.getByText(new RegExp(`Header ${status}`))).toBeInTheDocument();
   });
   it('keeps a corrupt zone distinct from a valid header and suppresses the claim', () => {
@@ -246,6 +251,7 @@ describe('RT95 MMD1 viewer', () => {
         <Rt95Memory archive={archive(bytes)} />
       </MantineProvider>,
     );
+    chooseCategory('Zones');
     expect(screen.getByText(/invalid member CRC/)).toBeInTheDocument();
     expect(screen.queryByText(/MM9PDY-compatible data present/)).not.toBeInTheDocument();
   });
@@ -262,6 +268,7 @@ describe('RT95 MMD1 viewer', () => {
         <Rt95Memory archive={archive(bytes)} />
       </MantineProvider>,
     );
+    chooseCategory('Zones');
     expect(screen.getByText(new RegExp(`Header invalid: ${reason}`))).toBeInTheDocument();
   });
 });
