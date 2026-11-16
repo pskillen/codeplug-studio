@@ -53,19 +53,39 @@ describe('Uv5rMiniCalibrationSection', () => {
     renderSection(storeWith(syntheticRead(1), syntheticRead(2)));
     const section = screen.getByTestId('uv5r-mini-calibration');
     const s = within(section);
-    expect(s.getByText(/Row order assumed: segment-major/)).toBeTruthy();
+    expect(s.getByText(/Row order: power-major/)).toBeTruthy();
+    expect(s.queryByText(/assumed/i)).toBeNull();
     expect(
-      s.getByRole('img', { name: /PA bias, Segment 1: 130–175 MHz \(0xF000–0xF02F\)/ }),
+      s.getByRole('img', {
+        name: /PA bias, UHF: 400–520 MHz \(row \+0x00 of each frame, from 0xF000\)/,
+      }),
     ).toBeTruthy();
-    expect(s.getByRole('img', { name: /Segment 4: 400–550 MHz \(0xF090–0xF0BF\)/ })).toBeTruthy();
-    expect(s.getByRole('img', { name: 'Squelch row 0xF100–0xF10F' })).toBeTruthy();
-    expect(s.getAllByText('partly traced').length).toBeGreaterThan(0);
+    expect(s.getByRole('img', { name: /VHF: 130–175 MHz \(row \+0x10/ })).toBeTruthy();
+    expect(s.getByRole('img', { name: /350 MHz: 350–410 MHz \(row \+0x30/ })).toBeTruthy();
+    expect(s.getByText(/Not calibrated: all zero on the radios read/)).toBeTruthy();
+    expect(s.getByRole('img', { name: 'Squelch offset, 200 MHz 0xF100–0xF10F' })).toBeTruthy();
+    expect(s.getByRole('img', { name: 'Squelch open threshold 0xF0C0–0xF0C9' })).toBeTruthy();
+    expect(s.getAllByText('traced').length).toBeGreaterThan(0);
+    expect(s.queryByText(/untraced|partly traced/i)).toBeNull();
+    expect(s.getByText('Mic sensitivity')).toBeTruthy();
+    expect(s.getByText(/The firmware does not use these/)).toBeTruthy();
+    expect(s.getAllByText('frame residue (no reader)').length).toBeGreaterThan(0);
+    expect(s.getByText('erased, unused (never read or written by the firmware)')).toBeTruthy();
     expect(s.getAllByText('All six read 0xFF (blank).').length).toBeGreaterThan(0);
     expect(s.queryByText('built-in defaults')).toBeNull();
     expect(s.getByText(/B: 0x05 \(5\), -1.5 ppm/)).toBeTruthy();
     expect(s.getByText('CTCSS TX level')).toBeTruthy();
     expect(s.getByText('Region byte')).toBeTruthy();
     expect(s.getByText(/0xF280–0xFFFF all FF \(3456 bytes\)/)).toBeTruthy();
+  });
+
+  it('decodes band limits from BCD, not text', () => {
+    const read = syntheticRead(1);
+    read.set([0x01, 0x36, 0x01, 0x74], 0xf231);
+    renderSection(storeWith(read));
+    const s = within(screen.getByTestId('uv5r-mini-calibration'));
+    expect(s.getByText('136 MHz')).toBeTruthy();
+    expect(s.getByText('174 MHz')).toBeTruthy();
   });
 
   it('says built-in defaults only when 0xF000 reads as erased', () => {
@@ -94,7 +114,7 @@ describe('Uv5rMiniCalibrationSection', () => {
     fireEvent.click(screen.getByRole('option', { name: /^A / }));
     const s = within(screen.getByTestId('uv5r-mini-calibration'));
     expect(s.getByText(/Read B solid, read A dashed/)).toBeTruthy();
-    expect(s.getAllByText('Level 0 (A)').length).toBeGreaterThan(0);
+    expect(s.getAllByText('High (A)').length).toBeGreaterThan(0);
     expect(s.getAllByText(/bytes differ/).length).toBeGreaterThan(0);
   });
 

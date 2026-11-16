@@ -31,6 +31,7 @@ import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 import { isNativeApp } from '@integrations/platform/isNativeApp.ts';
 
 import Uv5rMiniCalibrationSection from './Uv5rMiniCalibrationSection.tsx';
+import Uv5rMiniSettingsSection from './Uv5rMiniSettingsSection.tsx';
 import {
   buildUv5rMiniReadsZip,
   uv5rMiniDebugReadStore,
@@ -397,6 +398,8 @@ function Uv5rMiniFullRead() {
         </PageSection>
 
         <Uv5rMiniCalibrationSection reads={reads} />
+
+        <Uv5rMiniSettingsSection reads={reads} />
       </Stack>
     </Page>
   );
