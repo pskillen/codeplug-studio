@@ -1,13 +1,15 @@
 # UV-5R Mini full read (`/debug/uv5r-mini`)
 
 A read-only debug page for the Baofeng UV-5R Mini: one full clone read of `0x0000–0xFFFF` with a SHA-256 per span,
-the reads of this tab with a "download all" zip, a compare of two reads with a channel-level diff, and a read-only calibration viewer. It exists for checks that Backup can't
+the reads of this tab with a "download all" zip, a compare of two reads with a channel-level diff, a read-only calibration viewer and read-only settings and VFO views. It exists for checks that Backup can't
 make (Backup reads only the clone ranges up to `0xA1BF`): calibration unchanged, a round trip identical, back to stock.
 
 **Tracking:** [#1651](https://github.com/pskillen/codeplug-studio/issues/1651)
 
 **On prod:** the page is hidden unless [developer mode](../developer-mode/README.md) is on for the device. Its route
 is in `debugRoutes`, under `DebugGate`, like every other Debug page.
+
+The shared profile at `/debug/radios/uv-5r-mini` also offers guarded captures and can open standard backups and legacy multi-read ZIPs. The original route remains available while shared-page parity is verified. The shared profile uses actual captured bytes for coverage, channels, zone tables and calibration. A valid live MM9R format-2 report is positive compatible report evidence; absent, invalid, unsupported or offline evidence remains unknown. The 64 KiB clone address space is not a physical flash or firmware dump.
 
 ## Read only
 
@@ -106,28 +108,27 @@ an optional **overlay** of a second read, to spot a bad point or compare two rad
 button or link, nothing that exports, copies or sends calibration, and it doesn't touch the sender. The zip above stays
 the page's only download.
 
-The layout is shape only (`debugRead/calibrationLayout.ts`, decoded by `decodeUv5rMiniCalibration`):
+The layout is shape only (`debugRead/calibrationLayout.ts`, decoded by `decodeUv5rMiniCalibration`), carried from the radio repo's static trace of v0.04 (PR #219, F302-F309). Every field and the evidence for it are in the [calibration reference](../../reference/radios/baofeng/uv-5r-mini/calibration.md). The viewer shows:
 
-| Range                            | What                                                            | Shown as                                                                                                        |
-| -------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `0xF000–0xF0BF`                  | PA bias: 4 frequency segments × 3 power levels × 16 points, 1 B | one line chart per segment, x = MHz, y = the byte, one line per power level                                     |
-| `0xF0C0–0xF0FF`                  | partly traced                                                   | hex                                                                                                             |
-| `0xF100–0xF10F`, `0xF110–0xF11F` | squelch rows, one byte per frequency segment                    | bars by index, labelled "partly traced"                                                                         |
-| `0xF200–0xF205`                  | battery thresholds (six)                                        | a ladder of six steps; "blank" when all six read `0xFF`; "built-in defaults" only when `0xF000` reads as erased |
-| `0xF211`, `0xF212`               | CTCSS and DCS TX level                                          | values                                                                                                          |
-| `0xF213`, `0xF214`               | AF gain                                                         | values                                                                                                          |
-| `0xF216`                         | frequency trim index 0–16 (±4 ppm)                              | ppm, and a centre-zero gauge in ppm                                                                             |
-| `0xF21B–0xF21E`                  | audio filter set picks (bits 2:0)                               | values, with the set                                                                                            |
-| `0xF230–0xF244`                  | band limits (21 B)                                              | text (printable ASCII) and hex                                                                                  |
-| `0xF250–0xF255`                  | model suffix (6 B)                                              | text and hex                                                                                                    |
-| `0xF255`                         | region byte (the suffix's last byte)                            | value                                                                                                           |
-| everything else to `0xFFFF`      | untraced                                                        | hex                                                                                                             |
+| Range                           | What                                                                                                        | Shown as                                                                                                        |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `0xF000-0xF0BF`                 | PA bias: three frames by power index (`F000` High, `F040` level 2, `F080` Low), rows UHF, VHF, 200, 350 MHz | one line chart per band row, x = MHz, one line per power frame, only the points the firmware reads              |
+| `0xF0C0-0xF0D9`                 | squelch open and close thresholds, levels 0-9                                                               | bars by level                                                                                                   |
+| `0xF0E0-0xF11C`                 | squelch offsets per frequency: UHF, VHF, 200, 350 MHz (200 and 350 are not squelch rows of their own)       | bars by index, only the used indexes                                                                            |
+| `0xF200-0xF205`                 | battery thresholds (six)                                                                                    | a ladder of six steps; "blank" when all six read `0xFF`; "built-in defaults" only when `0xF000` reads as erased |
+| `0xF210`                        | mic sensitivity                                                                                             | value, with the 6-bit (v0.04) and 5-bit (v0.27) reading                                                         |
+| `0xF211`, `0xF212`              | CTCSS and DCS TX level                                                                                      | values                                                                                                          |
+| `0xF213`, `0xF214`              | AF gain                                                                                                     | values                                                                                                          |
+| `0xF216`                        | frequency trim index 0-16 (±4 ppm)                                                                          | ppm, and a centre-zero gauge in ppm                                                                             |
+| `0xF21B-0xF21E`                 | audio filter set picks (bits 2:0)                                                                           | values, with the set                                                                                            |
+| `0xF230-0xF244`                 | band limits, BCD                                                                                            | four MHz pairs; the page says the firmware uses the region table, not these                                     |
+| `0xF250-0xF254`                 | model suffix (5 B)                                                                                          | text and hex                                                                                                    |
+| `0xF255`                        | region byte                                                                                                 | value and the band-edge table it picks                                                                          |
+| residue ranges, `0xF280-0xFFFF` | frame residue (no reader); erased, unused                                                                   | hex                                                                                                             |
 
-- **PA bias MHz** per point index `i`: segment 1 `130 + 3i`, segment 2 `200 + 5i`, segment 3 `350 + 5i`, segment 4
-  `400 + 10i`.
-- **Assumed:** the PA bias rows are **segment-major** (row = segment × 3 + power level); nothing in Studio's references
-  gives the order. The page says so.
-- **Trim:** the byte is an index 0–16 into a 17-entry table: 8 is 0 ppm and each step is 0.5 ppm, so ppm =
+- **PA bias MHz** per point index `i`: UHF `400 + 10i` (13 points), VHF `130 + 3i` (16), 200 MHz `200 + 5i` (13), 350 MHz `350 + 5i` (not calibrated: all zero on the radios read). Traced, not assumed.
+- **Residue, not free space:** bytes nothing reads are copies left by the PC tool writing whole 64-byte frames (cause inferred); the rest is the erased sector. The page never calls any of it free: a `W` at `0xF000` erases all of it.
+- **Trim:** the byte is an index 0-16 into a 17-entry table: 8 is 0 ppm and each step is 0.5 ppm, so ppm =
   (index − 8) × 0.5, ±4 ppm at the ends. The firmware uses index 8 (0 ppm) for any value above 16; the page says so.
 - **Battery:** the page describes the six bytes ("blank" when all read `0xFF`). It says the firmware uses built-in
   thresholds only when `0xF000` reads as erased, the condition under which the firmware's defaults run.
@@ -138,14 +139,23 @@ The layout is shape only (`debugRead/calibrationLayout.ts`, decoded by `decodeUv
 - The charts use [LineChart](../../../src/app/components/LineChart/LineChart.md): hover for a crosshair and values,
   or open its **Table**.
 
+## Settings and VFO views
+
+A **Settings and VFO** section decodes the settings frame (`0x9000-0x903F`) and both VFO records (`0x8000-0x803F`) of one read from the tab's history, as tables of address, value (with the raw bytes), encoding, default, confidence and evidence (`debugRead/settingsFrame.ts`, `Uv5rMiniSettingsSection.tsx`). It has no button or link and writes nothing; Write is unchanged. Field meanings and addresses are in the [settings reference](../../reference/radios/baofeng/uv-5r-mini/settings.md#settings-frame-decode-radio-0x90000x903f).
+
+- Settings: 45 bytes named (41 traced, 4 partly traced with an inferred name), 19 shown as **unused (no reader)**.
+- VFO, per record: 24 bytes named (22 traced, 2 inferred), 8 unused (no reader).
+- A blank frame (every byte `0x00` or `0xFF`) says the radio would load its defaults. The CRC at `0x905E` is not checked.
+- The second programmable key is settings byte `0x33`; CHIRP's `0x34` is never read by the firmware (inferred statically).
+
 ## Code anchors
 
-| Layer        | Module                                                                                                                           |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| Integrations | `src/integrations/radio-io/radios/uv5r-mini/debugRead/` (allowlist, full read, spans, compare, channel diff, calibration layout) |
-| Service      | `src/app/services/uv5rMiniDebugRead.ts` (port through `firmwarePort.ts`, baud fallback, close)                                   |
-| Route        | `src/app/routes/debug/DebugUv5rMiniPage.tsx`, `uv5rMiniDebugReads.ts` (tab history, zip), `Uv5rMiniCalibrationSection.tsx`       |
-| Component    | `src/app/components/LineChart/` ([sidecar](../../../src/app/components/LineChart/LineChart.md))                                  |
+| Layer        | Module                                                                                                                                                    |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Integrations | `src/integrations/radio-io/radios/uv5r-mini/debugRead/` (allowlist, full read, spans, compare, channel diff, calibration layout, settings and VFO frames) |
+| Service      | `src/app/services/uv5rMiniDebugRead.ts` (port through `firmwarePort.ts`, baud fallback, close)                                                            |
+| Route        | `src/app/routes/debug/DebugUv5rMiniPage.tsx`, `uv5rMiniDebugReads.ts` (tab history, zip), `Uv5rMiniCalibrationSection.tsx`, `Uv5rMiniSettingsSection.tsx` |
+| Component    | `src/app/components/LineChart/` ([sidecar](../../../src/app/components/LineChart/LineChart.md))                                                           |
 
 ## Manual verify
 
@@ -157,8 +167,8 @@ on):
    changed, with slots 248 and 249 identical.
 3. **Download all**, and check the zip holds `raw.bin`, `decoded.bin` and `summary.txt` for each read.
 4. The calibration span hash matches the hash from the radio's earlier reads.
-5. The **Calibration** section shows the newest read: four PA bias charts, two squelch rows, the battery ladder, the
-   values, the trim gauge, the text and the hex. Pick the other read as the overlay: the dashed lines and the second
+5. The **Calibration** section shows the newest read: four PA bias charts (UHF, VHF, 200, 350 MHz), the squelch thresholds and offsets, the battery ladder, the
+   values, the trim gauge, the band limits, the text and the hex. The **Settings and VFO** section shows the settings frame and both VFO records. Pick the other read as the overlay: the dashed lines and the second
    column appear. The section has no button or link.
 
 In the Android app, with only the Mini's cable on the phone: take two reads, check the compare and the calibration
@@ -170,7 +180,7 @@ On a prod build with developer mode off, `/debug/uv5r-mini` goes to the home pag
 
 ## Known gaps
 
-- The PA bias row order is assumed (see [Calibration viewer](#calibration-viewer)).
+- Settings and VFO bytes marked unused (no reader) rest on static analysis; an emulator read-watch would close it. The units of the squelch thresholds (dB) and what PA power index 2 is need a bench.
 - The read and the zip save in the app have not been tried on a phone with a radio.
 
 ## Related

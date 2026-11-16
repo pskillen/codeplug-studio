@@ -146,6 +146,24 @@ See [memory-layout.md](memory-layout.md) band table. Live radio band index comes
 
 **Safe upload:** Cache the full `0x32A0` download. Mutate channel records + occupancy/scan bitfields (and optional settings spans) offline, then write only changed `0x10` blocks — or write the full map after RMW so unknown gaps between DTMF and `0x3200` survive.
 
+## Bytes outside the registry (debug only)
+
+The registry covers 377 of the 512 bytes in `0x1980-0x1AFF` and `0x3200-0x327F`. The debug Settings view explains the other 135 from the radio-repo decode research (read-only; nothing here is writable, and none is in the Write registry):
+
+| Address                                                                                                                     | Bytes  | Meaning                                                                                                                | Confidence             |
+| --------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `1987-198F`, `1ADC-1ADF`, `1AF8-1AFF`, `3203`, `3220-323F`, `3246-324F`, `325C-325F`, `3262-3266`, `3269-326C`, `3270-327F` | 93     | unused (no reader): MAIN reads fewer bytes, nothing else uses them                                                     | unused                 |
+| `1ABE-1ABF`, `1ACE-1ACF`                                                                                                    | 4      | stun / kill digits 15–16 (MAIN reads 16, CPS fills `FF` past 14)                                                       | traced (F127)          |
+| `1AD5`                                                                                                                      | 1      | DTMF auto reset time (seconds per the CPS ini)                                                                         | partly (settings only) |
+| `1AE0-1AF7`                                                                                                                 | 24     | tone group 0; byte 0 is the decode function index 0–6 (3 and 4 set `3B10` bits 3 and 2, 5 clears them; names inferred) | traced                 |
+| `3212`                                                                                                                      | 1      | hand-mic key brightness, Off = 0, 1–31                                                                                 | partly (F124)          |
+| `3214-3217`                                                                                                                 | 4      | mic keys PA–PD (CPS and CHIRP encodings disagree)                                                                      | partly                 |
+| `321F`                                                                                                                      | 1      | Mic Level 0–2, RF register 0x44 TX gain                                                                                | partly (F124, F142)    |
+| `3260`, `3267`                                                                                                              | 1 each | side A / B channel index                                                                                               | traced                 |
+| `3261`, `3268`                                                                                                              | 1 each | flags: bit 0 VFO, bit 1 no write-back, bit 3 TRF channel (`3280`) when `321B` bit 1 is on                              | traced                 |
+| `326D`                                                                                                                      | 1      | band copy, compared with `3B0F`, never a setting                                                                       | traced (F25, F120)     |
+| `326E-326F`                                                                                                                 | 2      | DTMF memory in-use mask                                                                                                | partly (F127)          |
+
 ## Related
 
 - [memory-layout.md](memory-layout.md) · [protocol.md](protocol.md) · [channel-record.md](channel-record.md)

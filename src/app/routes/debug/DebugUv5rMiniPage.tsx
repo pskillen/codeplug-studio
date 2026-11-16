@@ -31,6 +31,7 @@ import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 import { isNativeApp } from '@integrations/platform/isNativeApp.ts';
 
 import Uv5rMiniCalibrationSection from './Uv5rMiniCalibrationSection.tsx';
+import Uv5rMiniSettingsSection from './Uv5rMiniSettingsSection.tsx';
 import {
   buildUv5rMiniReadsZip,
   uv5rMiniDebugReadStore,
@@ -187,10 +188,10 @@ function Uv5rMiniFullRead() {
   const [rightLabel, setRightLabel] = useState<string | null>(null);
 
   useEffect(() => {
-    if (undownloaded === 0) return;
-    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener('beforeunload', onBeforeUnload);
-    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+    if (!undownloaded) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
   }, [undownloaded]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
@@ -224,11 +225,12 @@ function Uv5rMiniFullRead() {
   }
 
   async function downloadAll() {
+    const ids = uv5rMiniDebugReadStore.downloadIds();
     const result = await downloadZip(
       buildUv5rMiniReadsZip(reads),
       `uv5r-mini-reads-${isoTimestampForFilename()}.zip`,
     );
-    if (result.status !== 'failed') uv5rMiniDebugReadStore.markAllDownloaded(reads.length);
+    if (result.status !== 'failed') uv5rMiniDebugReadStore.markDownloaded(ids);
   }
 
   // Until the user picks, compare the two newest reads.
@@ -396,6 +398,8 @@ function Uv5rMiniFullRead() {
         </PageSection>
 
         <Uv5rMiniCalibrationSection reads={reads} />
+
+        <Uv5rMiniSettingsSection reads={reads} />
       </Stack>
     </Page>
   );

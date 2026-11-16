@@ -225,6 +225,24 @@ Upload stages the **contiguous runs of 32-byte blocks actually sent** for each d
 
 For **Restore** (not Write): `restoreFromBackup` copies zip FLASH spans onto a **blank** prior, programs those dirty sectors, then **SAVE_REBOOT**. It does not pre-write-read live FLASH and does not arm a write projection. See [backup-restore.md](backup-restore.md). Hardware verify pending.
 
+## Debug capture allow-list
+
+The `/debug/radios/dm-1701-opengd77` and `/debug/radios/md-9600-opengd77` pages read the radio through a frame guard (`debugGuard.ts`) that refuses everything except the frames below. Each frame is byte-exact and sent as one write. Feature: [radio-debug](../../../features/radio-debug/README.md); archive layout: [debug-capture.md](debug-capture.md).
+
+| Frame                              | Meaning             | Order rule                                                        |
+| ---------------------------------- | ------------------- | ----------------------------------------------------------------- |
+| `43 FE`                            | Ping                | Until `43 05` has been sent                                       |
+| `52 09 00 00 00 00 00 2E`          | FirmwareInfo (46 B) | Any time before `43 05`                                           |
+| `43 00`                            | Show CPS screen     | Only after the FirmwareInfo read                                  |
+| `52 01 <addr u32 BE> <len u16 BE>` | FLASH read          | Only after `43 00`; `1 <= len <= 32`, `addr + len <= 0x01000000`  |
+| `43 05`                            | Close CPS screen    | Only after `43 00`, at most once; every frame after it is refused |
+
+The calibration working copy needs no new frame kind: it is sixteen of the FLASH reads above at `0x10000 + 32 * i` (`52 01 00 01 <hi> <lo> 00 20`, where `<hi> <lo>` is `32 * i` big-endian), which the firmware answers from RAM when a read lies wholly inside `0x10000..0x101FF` ([calibration.md](calibration.md)). The settings struct tail needs no new frame kind either: it is three of the same FLASH reads at `0x6060 + 32 * i` (`52 01 00 00 60 <60/80/A0> 00 20`), the read-only gap `0x6060-0x60BF` between flash span 0 (ends `0x605F`) and span 1 that completes the firmware settings struct `0x604B-0x60BE`. It is a debug-only region, not in `OPENUV380_FLASH_SPANS`, so Write, Restore and Backup are unchanged. Mode 10 stays refused at every address, for example `52 0A 00 00 00 00 01 00` and `52 0A 00 00 00 01 01 00`.
+
+**Never sent** (refused before the transport): `X` (`58 ..`, every sub-command), `W` (`57 ..`), `C 06 xx` (`43 06 00/01/02/04` and any other sub-command), `C P` (`43 50 ..`), `D W` and any `44 ..`, read mode 10 (`52 0A ..`), read modes 2, 5, 6, 7, 8, any other `43 xx` flag, `24`, unknown first bytes, empty, one-byte, concatenated or overlong frames, and FLASH reads of length 0, over 32 or past `0x01000000`.
+
+After an abort, every frame is refused except one `43 05` (when `43 00` has been sent). Any other refusal latches the guard: no later frame is sent, `43 05` included. Side effects the guard accepts, as the Backup read already has them: ping stops GPS NMEA output, `43 00` shows the CPS screen on the radio, `43 05` restores the UI. If the radio stays on the CPS screen after a failure, power-cycle it.
+
 Exact framing byte layouts are in qdmr’s `doc/code/opengd77_protocol_*.txt` verbincludes — cite those files when implementing a codec; do not copy GPL sources into Studio.
 
 ## Related

@@ -1,3 +1,7 @@
+import {
+  RT95_PROTECTED_EEPROM_START,
+  RT95_PROTECTED_EEPROM_END,
+} from '@core/radios/retevis/rt95/limits.ts';
 import { RadioProtocolError } from '../../../kit/errors.ts';
 import { RT95_BLOCK_ADDR_END, RT95_BLOCK_SIZE } from '../constants.ts';
 import { MMD1_BASE, MMD1_END, MMD1_STATE_ADDR, RT95_NEVER_WRITE_FROM } from './layout.ts';
@@ -23,6 +27,28 @@ function hex(n: number): string {
   return n < 0 ? `-0x${(-n).toString(16)}` : `0x${n.toString(16).toUpperCase().padStart(4, '0')}`;
 }
 
+/** Refuse the protected physical region on either supported chip size and all 16-bit mirrors. */
+export function assertRt95EepromRangeAllowed(address: number, length: number): void {
+  if (
+    !Number.isSafeInteger(address) ||
+    !Number.isSafeInteger(length) ||
+    address < 0 ||
+    length <= 0 ||
+    address + length > 0x10000
+  ) {
+    throw new Rt95WriteRefusedError(address, 'invalid or overflowing EEPROM range');
+  }
+  const end = address + length;
+  for (let base = 0; base < 0x10000; base += 0x4000) {
+    if (address < base + RT95_PROTECTED_EEPROM_END && end > base + RT95_PROTECTED_EEPROM_START) {
+      throw new Rt95WriteRefusedError(
+        address,
+        'range touches protected EEPROM or its chip-size alias',
+      );
+    }
+  }
+}
+
 /**
  * Throws `Rt95WriteRefusedError` unless this 16-byte block may be written. Pure. No flag disables it.
  *
@@ -34,6 +60,7 @@ export function assertRt95WriteAllowed(
   length: number,
   ctx: Rt95WriteContext,
 ): void {
+  assertRt95EepromRangeAllowed(address, length);
   if (length !== RT95_BLOCK_SIZE) {
     throw new Rt95WriteRefusedError(address, `length ${length} is not ${RT95_BLOCK_SIZE}`);
   }

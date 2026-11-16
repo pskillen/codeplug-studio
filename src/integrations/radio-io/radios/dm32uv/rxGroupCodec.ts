@@ -30,7 +30,7 @@ function slotCode(slot: 1 | 2 | undefined): number {
 }
 
 /** `0xA5` XOR the group's 96 member bytes, as written in the page. */
-function rxGroupSlotCheck(page: Uint8Array, groupIndex0: number): number {
+export function rxGroupSlotCheck(page: Uint8Array, groupIndex0: number): number {
   const start = 0x11 + groupIndex0 * DM32_RX_GROUP_ENTRY_SIZE + DM32_RX_MEMBER_BYTES_START;
   let check = DM32_RX_SLOT_CHECK_SEED;
   for (let i = 0; i < DM32_RX_MEMBER_BYTES_LENGTH; i++) check ^= page[start + i]!;

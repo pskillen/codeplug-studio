@@ -19,6 +19,7 @@ import {
   sendProgramQxCommand,
   type ProgramQxRetryOptions,
 } from '../../kit/codecs/programQx.ts';
+import { guardRt95ClonePipe } from './transportGuard.ts';
 import { createMemoryMap, memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
@@ -118,6 +119,7 @@ function retryOptions(
 
 export class Rt95Protocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
+  private outgoingWriteContext: Rt95WriteContext | undefined;
   private radioBandlimit: number | null = null;
   private connectIdent: Rt95IdentResult | null = null;
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
@@ -178,18 +180,29 @@ export class Rt95Protocol implements CloneImageRadio {
   /** Read 16-byte blocks at the given addresses (write verify of the MMD1 range). */
   async readBlocks(
     addresses: readonly number[],
-    opts: { signal?: AbortSignal } = {},
+    opts: { signal?: AbortSignal; onProgress?: ProgressFn; stage?: string } = {},
   ): Promise<Map<number, Uint8Array>> {
     const pipe = this.requirePipe();
     const out = new Map<number, Uint8Array>();
     for (const addr of addresses) {
       throwIfAborted(opts.signal);
       out.set(addr, await this.readBlock(pipe, addr));
+      reportProgress(
+        opts.onProgress,
+        {
+          cur: out.size,
+          max: addresses.length,
+          msg: `Reading 0x${addr.toString(16)}`,
+          ...(opts.stage ? { stage: opts.stage } : {}),
+        },
+        opts.signal,
+      );
     }
     return out;
   }
 
   async connect(pipe: BytePipe, opts?: Rt95ConnectOptions): Promise<IdentResult> {
+    pipe = guardRt95ClonePipe(pipe, () => this.outgoingWriteContext);
     this.pipe = pipe;
     if (opts?.handshake !== 'none') {
       await flushPipe(pipe);
@@ -277,7 +290,14 @@ export class Rt95Protocol implements CloneImageRadio {
   ): Promise<void> {
     assertRt95WriteAllowed(addr, payload.length, ctx);
     const frame = makeProgramQxWriteFrame(addr, PROGRAM_QX_BLOCK_SIZE, payload);
-    const ack = await sendProgramQxCommand(pipe, frame, 1, RT95_IO_TIMEOUT_MS);
+    if (this.outgoingWriteContext) throw new RadioProtocolError('RT95 write already in progress');
+    this.outgoingWriteContext = ctx;
+    let ack: Uint8Array;
+    try {
+      ack = await sendProgramQxCommand(pipe, frame, 1, RT95_IO_TIMEOUT_MS);
+    } finally {
+      this.outgoingWriteContext = undefined;
+    }
     if (ack.length !== 1) {
       throw new RadioProtocolError(`RT95 write expected 1-byte ACK, got ${ack.length}`);
     }

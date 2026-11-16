@@ -5,7 +5,7 @@
 
 export type RadioBackupRegionRole = 'restorable' | 'inspect-only';
 
-export type RadioBackupCapturedVia = 'web-serial' | 'file';
+export type RadioBackupCapturedVia = 'web-serial' | 'android-usb-serial' | 'file';
 
 export type RadioBackupCoverage = 'full-clone' | 'known-map-regions' | 'partial';
 
@@ -39,6 +39,39 @@ export interface RadioBackupManifestV1 {
   addressBase?: number;
   dm32ContactsBase?: number;
   dm32ContactsEnd?: number;
+  /** Operator's own name for the radio. Descriptive only: never matched, never an identity check. */
+  radioName?: string;
+  /** Operator's short label for this backup. Descriptive only. */
+  label?: string;
+  /** Operator's free-text note about this backup. Descriptive only. */
+  description?: string;
+}
+
+/** Operator-supplied descriptive fields shared by backups and debug captures. */
+export interface RadioBackupLabels {
+  radioName?: string;
+  label?: string;
+  description?: string;
+}
+
+export const RADIO_BACKUP_LABEL_FIELDS = ['radioName', 'label', 'description'] as const;
+export type RadioBackupLabelField = (typeof RADIO_BACKUP_LABEL_FIELDS)[number];
+
+/** Length caps, in characters, applied after trimming. */
+export const RADIO_BACKUP_LABEL_MAX: Record<RadioBackupLabelField, number> = {
+  radioName: 64,
+  label: 80,
+  description: 500,
+};
+
+/** Trim each field, cap its length, and drop blanks. Never throws. */
+export function normaliseBackupLabels(input: RadioBackupLabels): RadioBackupLabels {
+  const out: RadioBackupLabels = {};
+  for (const field of RADIO_BACKUP_LABEL_FIELDS) {
+    const text = input[field]?.trim().slice(0, RADIO_BACKUP_LABEL_MAX[field]).trim();
+    if (text) out[field] = text;
+  }
+  return out;
 }
 
 export class RadioBackupError extends Error {
@@ -49,7 +82,7 @@ export class RadioBackupError extends Error {
 }
 
 const REGION_ROLES = new Set<RadioBackupRegionRole>(['restorable', 'inspect-only']);
-const CAPTURED_VIA = new Set<RadioBackupCapturedVia>(['web-serial', 'file']);
+const CAPTURED_VIA = new Set<RadioBackupCapturedVia>(['web-serial', 'android-usb-serial', 'file']);
 const COVERAGES = new Set<RadioBackupCoverage>(['full-clone', 'known-map-regions', 'partial']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -160,7 +193,9 @@ export function validateRadioBackupManifest(value: unknown): RadioBackupManifest
     typeof value.capturedVia !== 'string' ||
     !CAPTURED_VIA.has(value.capturedVia as RadioBackupCapturedVia)
   ) {
-    throw new RadioBackupError('Radio backup manifest capturedVia must be web-serial or file.');
+    throw new RadioBackupError(
+      'Radio backup manifest capturedVia must be web-serial, android-usb-serial or file.',
+    );
   }
   if (!isRecord(value.app)) {
     throw new RadioBackupError('Radio backup manifest app must be an object.');
@@ -236,6 +271,13 @@ export function validateRadioBackupManifest(value: unknown): RadioBackupManifest
   const dm32ContactsEnd = optionalNonNegativeInt(value.dm32ContactsEnd, 'dm32ContactsEnd');
   if (dm32ContactsEnd !== undefined) {
     manifest.dm32ContactsEnd = dm32ContactsEnd;
+  }
+
+  // Older backups carry none of these; a present one must be a string. Over-long text is
+  // shortened rather than refused so a hand-edited file still opens.
+  for (const field of RADIO_BACKUP_LABEL_FIELDS) {
+    const text = optionalString(value[field], field);
+    if (text !== undefined) Object.assign(manifest, normaliseBackupLabels({ [field]: text }));
   }
 
   return manifest;

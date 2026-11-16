@@ -37,10 +37,24 @@ describe('decodeDm32CalibrationPage', () => {
     expect(decoded.tag).toBe(0x02);
     expect(decoded.uhfBand).toEqual({ lowHz: 400_000_000, highHz: 470_000_000 });
     expect(decoded.vhfBand).toEqual({ lowHz: 136_000_000, highHz: 174_000_000 });
-    const unknown = decoded.unknownRows.find((row) => row.offset === 0x017);
-    expect(unknown).toEqual({ offset: 0x017, length: 5, hex: '1122334455' });
-    expect(decoded.unknownRows.some((row) => row.offset === 0x030)).toBe(true);
-    expect(decoded.unknownRows.some((row) => row.offset === 0x150)).toBe(true);
+    const table = decoded.bootScalars.find((row) => row.offset === 0x017);
+    expect(table).toEqual({ offset: 0x017, length: 5, hex: '1122334455' });
+    expect(decoded.bootScalars.some((row) => row.offset === 0x030)).toBe(true);
+    expect(decoded.bootScalars.some((row) => row.offset === 0x150)).toBe(true);
+    // Only spans nothing in 048 reads stay unknown.
+    expect(decoded.unknownRows.map((row) => row.offset)).toEqual([0x0c0, 0x188, 0x210]);
+  });
+
+  it('keeps +0x00C raw and masks only the +0x00E scale', () => {
+    const data = page();
+    data.set([0x34, 0xf2, 0x70, 0xf2], 0x00c);
+    const { battery, words } = decodeDm32CalibrationPage(data, 0xb8000);
+    expect(battery.thresholdRaw).toBe(0xf234);
+    expect(battery.scale).toBe(0x270);
+    expect(battery.scaleValid).toBe(true);
+    data.set([0x01, 0x02], 0x027);
+    expect(decodeDm32CalibrationPage(data, 0xb8000).words.at0x027).toBe(0x0201);
+    expect(words.at0x07a).toBe(0);
   });
 });
 

@@ -1,4 +1,6 @@
 import type { RouteObject } from 'react-router-dom';
+import LegacyDebugRedirect from './LegacyDebugRedirect.tsx';
+import RadioDebugPage from './radios/RadioDebugPage.tsx';
 import DebugGate from './DebugGate.tsx';
 import DebugD890EraseProbePage from './DebugD890EraseProbePage.tsx';
 import DebugIndexPage from './DebugIndexPage.tsx';
@@ -16,16 +18,20 @@ import DebugUv5rMiniPage from './DebugUv5rMiniPage.tsx';
  */
 export const debugRoutes: RouteObject[] = [
   { path: '/debug', element: <DebugIndexPage /> },
-  { path: '/debug/indexed-db', element: <DebugIndexedDbPage /> },
-  { path: '/debug/indexed-db/:storeName', element: <DebugIndexedDbStorePage /> },
+  { path: '/debug/radios/:radio', element: <RadioDebugPage /> },
+  { path: '/debug/indexed-db/*', element: <LegacyDebugRedirect /> },
+  { path: '/debug/local-storage/*', element: <LegacyDebugRedirect /> },
+  { path: '/debug/serial-reopen', element: <LegacyDebugRedirect /> },
+  { path: '/debug/storage/indexed-db', element: <DebugIndexedDbPage /> },
+  { path: '/debug/storage/indexed-db/:storeName', element: <DebugIndexedDbStorePage /> },
   {
-    path: '/debug/indexed-db/:storeName/:projectId/:id',
+    path: '/debug/storage/indexed-db/:storeName/:projectId/:id',
     element: <DebugIndexedDbRowViewerPage />,
   },
-  { path: '/debug/local-storage', element: <DebugLocalStoragePage /> },
-  { path: '/debug/local-storage/:storageKey', element: <DebugLocalStorageViewerPage /> },
+  { path: '/debug/storage/local-storage', element: <DebugLocalStoragePage /> },
+  { path: '/debug/storage/local-storage/:storageKey', element: <DebugLocalStorageViewerPage /> },
   { path: '/debug/d890-erase-probe', element: <DebugD890EraseProbePage /> },
-  { path: '/debug/serial-reopen', element: <DebugSerialReopenPage /> },
+  { path: '/debug/transport/serial-reopen', element: <DebugSerialReopenPage /> },
   { path: '/debug/uv5r-mini', element: <DebugUv5rMiniPage /> },
 ];
 

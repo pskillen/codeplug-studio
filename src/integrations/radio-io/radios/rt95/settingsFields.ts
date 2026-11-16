@@ -12,7 +12,11 @@ import {
 import { isMm9pdyRt95RadioIoProfileId } from '@core/import-export/formats/radio-io/profiles.ts';
 import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
-import { RT95_BANDLIMIT_OFFSET, RT95_IMAGE_SIZE } from './constants.ts';
+import {
+  RT95_BANDLIMIT_OFFSET,
+  RT95_IMAGE_SIZE,
+  RT95_POWER_ON_PASSWORD_ADDRESS,
+} from './constants.ts';
 import { RT95_KEY_FUNCTION_DIR, rt95ZoneKeyAddress, type Rt95ZoneKey } from './zoneKey.ts';
 
 export type Rt95SettingsTarget = 'stock' | 'mm9pdy';
@@ -398,7 +402,7 @@ const LAYOUT: readonly Layout[] = [
     uiFromWire: (w) => (w >= 0 && w <= 8 ? w + 1 : undefined),
   },
   { id: 'voxDelay', address: 0x321e, trust: 'CHIRP' },
-  { id: 'powerOnPasswordDigits', address: 0x3240, trust: 'CPS+CHIRP' },
+  { id: 'powerOnPasswordDigits', address: RT95_POWER_ON_PASSWORD_ADDRESS, trust: 'CPS+CHIRP' },
   ...PF_LAYOUT(),
 ];
 
@@ -434,7 +438,7 @@ function buildRegistry(): ReadonlyMap<string, Rt95SettingsFieldSpec> {
 
 export const RT95_SETTINGS_FIELDS: ReadonlyMap<string, Rt95SettingsFieldSpec> = buildRegistry();
 
-/** Six valid ASCII digits already stored at `0x3240`, or `undefined`. */
+/** Six valid ASCII digits already stored at the power-on password address, or `undefined`. */
 export function rt95PasswordDigitsFromImage(image: Uint8Array): string | undefined {
   const spec = RT95_SETTINGS_FIELDS.get('powerOnPasswordDigits')!;
   const bytes = image.subarray(spec.address, spec.address + spec.length);

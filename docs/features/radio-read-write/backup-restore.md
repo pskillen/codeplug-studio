@@ -14,6 +14,7 @@ Per-radio restorable vs inspect-only region tables, coverage honesty, and protoc
 | Strip tab `/builds/:id/backup`                | Shipped                                         | After Satellite keps (when present), before About; shown when the build has a Web Serial egress.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Live backup → auto-download zip + RAM inspect | Shipped                                         | [#1138](https://github.com/pskillen/codeplug-studio/issues/1138) — zip first, then page fill; leaving the tab discards RAM.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Rich inspect lists                            | Shipped                                         | [#1139](https://github.com/pskillen/codeplug-studio/issues/1139) — expandable on-image channel / zone / list names; not write coverage. Inspect-only regions stay listed and are not restore targets.                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Radio name, label, description                | Shipped                                         | [#1744](https://github.com/pskillen/codeplug-studio/issues/1744) — three optional operator fields in the manifest, typed before a backup and editable on the populated page; see [Radio name, label and description](#radio-name-label-and-description).                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Open backup file                              | Shipped                                         | Offline parse of v1 archives. Radio Info `hydration.json` zips are not imported.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Restore to radio                              | Shipped (D890, OpenGD77, UV-17Pro, DM-32, RT95) | [#1141](https://github.com/pskillen/codeplug-studio/issues/1141) AT-D890UV; [#1142](https://github.com/pskillen/codeplug-studio/issues/1142) OpenGD77 DM-1701 / MD-9600; [#1143](https://github.com/pskillen/codeplug-studio/issues/1143) UV-5R Mini / UV-21 Pro V2; [#1144](https://github.com/pskillen/codeplug-studio/issues/1144) DM-32UV; [#1145](https://github.com/pskillen/codeplug-studio/issues/1145) RT95 VOX `restoreFromBackup` (**hardware verify pending**). Other radios stay inspect-only until their restore PR. Serial mismatch is a hard refuse.                                                                                              |
 | Per-radio restorable vs inspect-only maps     | Partial                                         | AT-D890UV: [at-d890uv/backup-restore.md](../../reference/radios/anytone/at-d890uv/backup-restore.md). OpenGD77: [opengd77/backup-restore.md](../../reference/radios/opengd77/backup-restore.md). UV-17Pro: [uv-5r-mini/backup-restore.md](../../reference/radios/baofeng/uv-5r-mini/backup-restore.md), [uv-21-pro-v2/backup-restore.md](../../reference/radios/baofeng/uv-21-pro-v2/backup-restore.md). DM-32UV: [dm-32uv/backup-restore.md](../../reference/radios/baofeng/dm-32uv/backup-restore.md). RT95: [rt95/backup-restore.md](../../reference/radios/retevis/rt95/backup-restore.md). Other families still follow this contract until their restore PR. |
@@ -126,7 +127,7 @@ For radios whose restore depends on a live address map (DM-32): **warn at backup
 5. Keep an in-memory session; progress uses the existing radio-io modal as a **read**.
 6. Close the session. Restore will connect again.
 
-Filename: `radio-backup-<modelId>-<stamp>.zip`.
+Filename: `radio-backup-<modelId>-<stamp>.zip`. The operator's radio name, label and description are never part of the filename.
 
 ### Open backup file
 
@@ -198,7 +199,7 @@ interface RadioBackupManifestV1 {
   format: 'codeplug-studio-radio-backup';
   version: 1;
   capturedAt: string; // ISO
-  capturedVia: 'web-serial' | 'file';
+  capturedVia: 'web-serial' | 'android-usb-serial' | 'file';
   app: { buildEnv: string; buildVersion: string }; // __BUILD_ENV__ / __BUILD_VERSION__
   radioModelId: string; // descriptor.modelIds[0]
   descriptorLabel: string;
@@ -211,10 +212,23 @@ interface RadioBackupManifestV1 {
   addressBase?: number;
   dm32ContactsBase?: number;
   dm32ContactsEnd?: number;
+  radioName?: string; // operator's own, descriptive only
+  label?: string; // operator's own, descriptive only
+  description?: string; // operator's own, descriptive only
 }
 ```
 
 Reject unknown `format` / `version`, missing manifest, missing or truncated region bins.
+
+### Radio name, label and description
+
+Three optional fields so several radios' backups can be told apart: **radio name** (for example "Radio 1"), **label** and **description**. They are descriptive only: never matched, never a foreign key, never part of the serial or restore identity check, never in a filename, never exported to a CPS.
+
+- **At backup time:** the Backup section shows the three inputs above **Backup radio**; what is typed goes into the manifest of the zip that is downloaded. Debug-page captures (Radio debug) have the same inputs above **Read radio**.
+- **Edit later:** an opened or just-taken backup shows **Your notes on this backup**; committing an input (on blur) rewrites `manifest.json` only, in place of the held zip. Region bins and sidecars are carried over byte for byte, and the archive carries no hash over the manifest, so integrity checks are unaffected. **Save zip again** saves the edited zip.
+- **Shown:** under the archive line when a backup is reopened, in Backups saved this session, and in the debug history's read picker.
+- **Limits:** trimmed, blank fields dropped, capped at 64 characters (radio name), 80 (label) and 500 (description). Longer text in a file is shortened on open, not refused. A backup without the fields opens unchanged, and no schema version changed.
+- Stored only in the zip; nothing is kept in browser storage or leaves the browser.
 
 **Backup ⊇ restore.** Capturing LocalInfo, calibration, or extra FLASH is useful after a brick even when Restore will not send those bytes. Huge contact banks (D890-scale, tens of mebibytes) stay **out** of backup unless we already download them for inspect — do not start dumping contact FLASH.
 

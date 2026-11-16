@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { useEffect, useReducer, type Dispatch } from 'react';
+import { useReducer, type Dispatch } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
@@ -95,10 +95,12 @@ function Harness({
     stock: STOCK,
     ...start,
   } satisfies FirmwareWizardState);
-  useEffect(() => {
-    latest = state;
-    dispatchLatest = dispatch;
-  }, [state, dispatch]);
+  // Mirror the state during render, not in an effect: an effect runs after the DOM shows the new state, so tests
+  // reading `latest` straight after a findBy… saw the previous state and failed under CI load.
+  /* eslint-disable react-hooks/globals -- test harness: exposes the reducer state to the test body */
+  latest = state;
+  dispatchLatest = dispatch;
+  /* eslint-enable react-hooks/globals */
   return (
     <DesignSystemV2Provider>
       {state.step === 'prepare' ? (
@@ -466,7 +468,8 @@ describe('RadioCheckStep: reading the UV-5R Mini', () => {
     expect(canAdvance(latest)).toBe(false);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Write it again anyway' }));
     expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
-    expect(canAdvance(latest)).toBe(true);
+    // The step reports its state in an effect after the render that shows the text.
+    await waitFor(() => expect(canAdvance(latest)).toBe(true));
   });
 
   it('reading again drops the prepared image and the confirm', async () => {
@@ -483,12 +486,17 @@ describe('RadioCheckStep: reading the UV-5R Mini', () => {
     toPrepare();
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Write it again anyway' }));
     await screen.findByText(/Ready to flash: L2 build/);
-    expect(latest.reinstallConfirmed).toBe(true);
-    expect(latest.image).not.toBeNull();
+    // The step reports its state in an effect after the render that shows the text.
+    await waitFor(() => {
+      expect(latest.reinstallConfirmed).toBe(true);
+      expect(latest.image).not.toBeNull();
+    });
     backToCheck();
     await readRadio(STOCK_FLASH);
-    expect(latest.image).toBeNull();
-    expect(latest.reinstallConfirmed).toBe(false);
+    await waitFor(() => {
+      expect(latest.image).toBeNull();
+      expect(latest.reinstallConfirmed).toBe(false);
+    });
     expect(screen.getByText(NO_REPORT)).toBeInTheDocument();
     expect(screen.getByLabelText('Radio Info: Firmware')).toBeInTheDocument();
   });

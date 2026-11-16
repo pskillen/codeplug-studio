@@ -16,6 +16,8 @@ Shared hardware / memory caps. Adapters warn or truncate at the **export / write
 
 Caps match CHIRP `RetevisRT95vox` — see [enum-verification.md](../../../export-formats/chirp/enum-verification.md).
 
+Studio protects EEPROM `0x3B00–0x3FFF` (production identity, factory calibration and signature), including its 16 KiB and 32 KiB chip-size aliases and wrapping or overflowing ranges. Clone writes are limited to stock blocks through `0x3290` and, on the MM9PDY target after a successful chip-size check, MMD1 blocks at `0x4000–0x5FF0`; the radio-owned state block is reserved for Restore. The clone transport refuses unknown factory, repair and reset commands. The separate firmware updater writes MCU flash through its own guarded bootloader protocol.
+
 ## MM9PDY target
 
 Code mirror: the `ZONE_*` and `DESCRIPTION_LENGTH` entries of `RT95_LIMITS`. These apply only to the MM9PDY modded firmware (MMD1 v1 data table, see [mm9pdy-data.md](mm9pdy-data.md)); the stock target has no zones or descriptions.

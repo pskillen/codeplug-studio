@@ -6,6 +6,7 @@
 import { RadioProtocolError } from '../../../kit/errors.ts';
 import { throwIfAborted } from '../../../kit/progress.ts';
 import type { ProgressFn } from '../../../types.ts';
+import { RT95_IDENT_PREFIX } from '../modData/layout.ts';
 
 export type Rt95SafetyRegion = 'cal' | 'full';
 
@@ -39,6 +40,10 @@ export interface Rt95SafetyReadResult {
 
 function same(a: Uint8Array, b: Uint8Array): boolean {
   return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+function isAllZero(b: Uint8Array): boolean {
+  return b.every((v) => v === 0);
 }
 
 function hex4(n: number): string {
@@ -101,17 +106,23 @@ export async function readRt95SafetyRegion(
     }
   }
 
-  // The data must be trustworthy before it is offered as a backup.
-  for (let a = RT95_SAFETY_CAL_START; a <= RT95_SAFETY_CAL_END; a += RT95_SAFETY_BLOCK) {
-    const o = a - start;
-    if (out.subarray(o, o + RT95_SAFETY_BLOCK).every((v) => v === 0)) {
+  // The data must be trustworthy before it is offered as a backup. A real calibration region legitimately holds
+  // all-zero blocks, so only the ident block, the alias and the whole region are checked for "main board never
+  // answered" (the head returns zero blocks with a valid checksum then).
+  const emptyText = 'The radio returned an empty block; nothing was saved, try again.';
+  const identOffset = RT95_SAFETY_CAL_START - start;
+  const identBlock = out.subarray(identOffset, identOffset + RT95_SAFETY_BLOCK);
+  if (isAllZero(identBlock)) throw new RadioProtocolError(emptyText);
+  if (isAllZero(out.subarray(RT95_SAFETY_CAL_START - start, RT95_SAFETY_CAL_END + 1 - start))) {
+    throw new RadioProtocolError(emptyText);
+  }
+  for (let i = 0; i < RT95_IDENT_PREFIX.length; i++) {
+    if (identBlock[i] !== RT95_IDENT_PREFIX[i]) {
       throw new RadioProtocolError(
-        'The radio returned an empty block; nothing was saved, try again.',
+        `The ident block at ${hex4(RT95_SAFETY_CAL_START)} is not an RT95 ident. Nothing was saved; try again.`,
       );
     }
   }
-  const identOffset = RT95_SAFETY_CAL_START - start;
-  const identBlock = out.subarray(identOffset, identOffset + RT95_SAFETY_BLOCK);
   let alias: Uint8Array;
   if (opts.region === 'full') {
     alias = out.subarray(RT95_SAFETY_ALIAS_ADDR, RT95_SAFETY_ALIAS_ADDR + RT95_SAFETY_BLOCK);
@@ -119,6 +130,7 @@ export async function readRt95SafetyRegion(
     throwIfAborted(opts.signal);
     alias = await readBlock(RT95_SAFETY_ALIAS_ADDR);
   }
+  if (isAllZero(alias)) throw new RadioProtocolError(emptyText);
   if (same(identBlock, alias)) {
     throw new RadioProtocolError(
       "This radio's memory looks like a 16 KiB part (0x7B00 repeats 0x3B00). Nothing was saved.",

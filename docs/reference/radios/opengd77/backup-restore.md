@@ -15,7 +15,7 @@ Code table: `src/integrations/radio-io/radios/opengd77/backupRestoreRoles.ts` (`
 | **Restorable**   | All four registered OpenUV380 FLASH spans (`flash-span-0` … `flash-span-3`), including Write-kept settings / DTMF / APRS / VFO / boot that live inside those spans                                                                |
 | **Inspect-only** | Addresses **outside** those spans, including occupied **User Database** (`user-database` zip region at FLASH `0x50000` + overflow `0xd8000`). FirmwareInfo is mem `09h` and is not packed in the zip. Do not invent a cal offset. |
 
-Write-codeplug still overlays modelled channels/zones/contacts/RX lists onto a **live pre-write read** and keeps settings/APRS from that prior. Restore **does** rewrite settings and APRS when those bytes are in the selected FLASH spans.
+Write-codeplug still overlays modelled channels/zones/contacts/RX lists onto a **live pre-write read** and keeps settings/APRS from that prior. Restore **does** rewrite settings and APRS when those bytes are in the selected FLASH spans. Span 0 ends at `0x6060`, so a Restore of it also rewrites the Last-Used-Channel-In-Zone block (`0x6000`) and the first 21 bytes of the firmware settings struct (`0x604B`, including its magic); see [settings.md](../baofeng/dm-1701/settings.md).
 
 ## Restore path
 

@@ -19,6 +19,12 @@ import { hashUv5rMiniDebugSpans, type Uv5rMiniSpanHash } from './spans.ts';
 /** Bytes in a full clone read: the whole 64 KiB the clone `R` addresses. */
 export const UV5R_MINI_FULL_READ_SIZE = 0x10000;
 
+/** Length of the radio's answer to `F`. */
+export const UV5R_MINI_F_REPLY_LENGTH = 16;
+
+/** Length of the radio's answer to `M`. */
+export const UV5R_MINI_M_REPLY_LENGTH = 15;
+
 /** The clone read sends this address and above plain; below it, XOR'd. */
 export const UV5R_MINI_CLONE_PLAIN_FROM = 0xf000;
 
@@ -88,7 +94,12 @@ export async function openUv5rMiniDebugSession(
         guarded.forget();
         reportProgress(
           readOpts.onProgress,
-          { cur: i + 1, max, msg: `Reading 0x${addr.toString(16).padStart(4, '0')}` },
+          {
+            cur: i + 1,
+            max,
+            msg: `Reading 0x${addr.toString(16).padStart(4, '0')}`,
+            stage: 'Clone read',
+          },
           readOpts.signal,
         );
       }

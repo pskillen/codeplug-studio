@@ -3,6 +3,10 @@
  * Code mirror of docs/reference/radios/retevis/rt95/limits.md.
  * Used by export profiles and the Web Serial codec, not by library CRUD.
  */
+/** Protected physical EEPROM: production identity, factory calibration and signature. */
+export const RT95_PROTECTED_EEPROM_START = 0x3b00;
+export const RT95_PROTECTED_EEPROM_END = 0x4000;
+
 export const RT95_LIMITS = {
   /** Memory channels (CHIRP memory_bounds 1..200). */
   CHANNEL_MAX: 200,

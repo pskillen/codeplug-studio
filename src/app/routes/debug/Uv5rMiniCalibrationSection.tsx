@@ -22,6 +22,7 @@ import {
   formatUv5rMiniSpanRange,
   UV5R_MINI_PA_LEVELS,
   UV5R_MINI_PA_ORDER,
+  uv5rMiniRegionTable,
   UV5R_MINI_PA_POINTS,
   UV5R_MINI_TRIM_MAX,
   UV5R_MINI_TRIM_SPAN_PPM,
@@ -257,12 +258,20 @@ function readName(r: Uv5rMiniDebugRead): string {
  */
 export default function Uv5rMiniCalibrationSection({
   reads,
+  preferredLive,
 }: {
   reads: readonly Uv5rMiniDebugRead[];
+  preferredLive?: string | null;
 }) {
-  const [pickLabel, setPickLabel] = useState<string | null>(null);
+  const [selection, setSelection] = useState<{
+    label: string | null;
+    preferredLive?: string | null;
+  }>();
   const [overlayLabel, setOverlayLabel] = useState<string | null>(null);
-  const pick = pickLabel ?? reads.at(-1)?.label ?? null;
+  const pick =
+    (selection?.preferredLive === preferredLive ? selection?.label : preferredLive) ??
+    reads.at(-1)?.label ??
+    null;
   const read = reads.find((r) => r.label === pick);
   const overlay = reads.find((r) => r.label === overlayLabel && r.label !== pick);
 
@@ -276,7 +285,7 @@ export default function Uv5rMiniCalibrationSection({
   return (
     <PageSection
       title="Calibration"
-      description="0xF000–0xFFFF of one read, as shape: PA bias charts, the traced fields, hex for the rest. View only."
+      description="0xF000–0xFFFF of one read, as shape: PA bias charts, squelch, the traced fields, hex for residue and the erased tail. View only."
     >
       {!read || !cal ? (
         <Text size="sm" c="dimmed">
@@ -285,7 +294,12 @@ export default function Uv5rMiniCalibrationSection({
       ) : (
         <Stack gap="lg" data-testid="uv5r-mini-calibration">
           <Group grow>
-            <Select label="Read" data={options} value={pick} onChange={setPickLabel} />
+            <Select
+              label="Read"
+              data={options}
+              value={pick}
+              onChange={(label) => setSelection({ label, preferredLive })}
+            />
             <Select
               label="Overlay (optional)"
               placeholder="None"
@@ -302,44 +316,63 @@ export default function Uv5rMiniCalibrationSection({
           ) : null}
 
           <Stack gap="xs">
-            <Title order={4}>PA bias</Title>
+            <Group gap="xs">
+              <Title order={4}>PA bias</Title>
+              <Badge variant="light" color="gray">
+                traced
+              </Badge>
+            </Group>
             <Text size="sm" c="dimmed">
-              0xF000–0xF0BF: 4 frequency segments × {UV5R_MINI_PA_LEVELS} power levels ×{' '}
-              {UV5R_MINI_PA_POINTS} points, one byte each. Row order assumed: {UV5R_MINI_PA_ORDER}{' '}
-              (row = segment × 3 + power level).
+              0xF000–0xF0BF: {UV5R_MINI_PA_LEVELS} frames by power index (0xF000 High, 0xF040 level
+              2, 0xF080 Low), each four rows of {UV5R_MINI_PA_POINTS} bytes in band order: UHF, VHF,
+              200, 350 MHz. Row order: {UV5R_MINI_PA_ORDER}. The power index is the VFO frame&apos;s
+              power byte; level 2 has no menu entry (its name is inferred). Only the points the
+              firmware reads are plotted; the rest of each row has no reader.
               {overlay ? ` Read ${read.label} solid, read ${overlay.label} dashed.` : ''}
             </Text>
             <SimpleGrid cols={{ base: 1, lg: 2 }}>
               {cal.paBias.map((seg, si) => {
+                const used = seg.segment.usedPoints;
                 const first = seg.levels[0].points[0];
-                const last = seg.levels.at(-1)!.points.at(-1)!;
                 const lo = seg.segment.baseMhz;
-                const hi = first.mhz + seg.segment.stepMhz * (UV5R_MINI_PA_POINTS - 1);
+                const hi = lo + seg.segment.stepMhz * (used - 1);
                 const series: LineChartSeries[] = [];
                 for (const line of seg.levels) {
                   series.push({
                     id: `a${line.level}`,
-                    label: `Level ${line.level}${overlay ? ` (${read.label})` : ''}`,
+                    label: `${line.name}${overlay ? ` (${read.label})` : ''}`,
                     slot: line.level,
-                    points: line.points.map((p) => ({ x: p.mhz, y: p.value })),
+                    points: line.points
+                      .filter((p) => p.used)
+                      .map((p) => ({ x: p.mhz, y: p.value })),
                   });
                 }
                 if (other) {
                   for (const line of other.paBias[si].levels) {
                     series.push({
                       id: `b${line.level}`,
-                      label: `Level ${line.level} (${overlay!.label})`,
+                      label: `${line.name} (${overlay!.label})`,
                       slot: line.level,
                       dashed: true,
-                      points: line.points.map((p) => ({ x: p.mhz, y: p.value })),
+                      points: line.points
+                        .filter((p) => p.used)
+                        .map((p) => ({ x: p.mhz, y: p.value })),
                     });
                   }
                 }
-                const title = `Segment ${si + 1}: ${lo}–${hi} MHz (${addr(first.address)}–${addr(last.address)})`;
+                const rowOffset = seg.segment.index * UV5R_MINI_PA_POINTS;
+                const title = `${seg.segment.label}: ${lo}–${hi} MHz (row +0x${rowOffset.toString(16).toUpperCase().padStart(2, '0')} of each frame, from ${addr(first.address)})`;
                 return (
                   <Stack key={si} gap={4}>
                     <Text size="sm" fw={600}>
                       {title}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      Point i = {lo} + {seg.segment.stepMhz} × i MHz; index {seg.segment.indexRule};{' '}
+                      {used} points used.
+                      {seg.segment.calibrated
+                        ? ''
+                        : ' Not calibrated: all zero on the radios read, so the firmware falls back to 0x007F.'}
                     </Text>
                     <LineChart
                       title={`PA bias, ${title}`}
@@ -356,29 +389,44 @@ export default function Uv5rMiniCalibrationSection({
 
           <Stack gap="xs">
             <Group gap="xs">
-              <Title order={4}>Squelch rows</Title>
+              <Title order={4}>Squelch</Title>
               <Badge variant="light" color="gray">
-                partly traced
+                traced
               </Badge>
             </Group>
             <Text size="sm" c="dimmed">
-              One byte per frequency segment, by index.
+              0xF0C0–0xF11C. Open and close thresholds by level 0–9 (RSSI counts); the per-frequency
+              offsets are subtracted from them.
               {overlay ? ` Read ${read.label} filled, read ${overlay.label} outlined.` : ''}
             </Text>
-            {cal.squelch.map((row, i) => (
-              <Stack key={row.id} gap={2}>
-                <Group gap="xs">
-                  <Code>{formatUv5rMiniSpanRange(row)}</Code>
-                  <DiffBadge a={row.bytes} b={other?.squelch[i].bytes} />
-                </Group>
-                <ByteBars
-                  title={`Squelch row ${formatUv5rMiniSpanRange(row)}`}
-                  a={row.bytes}
-                  b={other?.squelch[i].bytes}
-                  labels={[read.label, overlay?.label]}
-                />
-              </Stack>
-            ))}
+            {[...cal.squelch.thresholds, ...cal.squelch.offsets].map((row, i) => {
+              const o = other
+                ? [...other.squelch.thresholds, ...other.squelch.offsets][i]
+                : undefined;
+              return (
+                <Stack key={row.id} gap={2}>
+                  <Group gap="xs">
+                    <Text size="sm" fw={600}>
+                      {row.label}
+                    </Text>
+                    <Code>{formatUv5rMiniSpanRange(row)}</Code>
+                    <DiffBadge a={row.bytes} b={o?.bytes} />
+                  </Group>
+                  <Text size="xs" c="dimmed">
+                    {row.note}
+                    {row.used < row.bytes.length
+                      ? `. Only the first ${row.used} bytes are read.`
+                      : ''}
+                  </Text>
+                  <ByteBars
+                    title={`${row.label} ${formatUv5rMiniSpanRange(row)}`}
+                    a={row.bytes.subarray(0, row.used)}
+                    b={o?.bytes.subarray(0, row.used)}
+                    labels={[read.label, overlay?.label]}
+                  />
+                </Stack>
+              );
+            })}
           </Stack>
 
           <Stack gap="xs">
@@ -406,7 +454,13 @@ export default function Uv5rMiniCalibrationSection({
                     const o = other ? [...other.values, other.region][i] : undefined;
                     const filter = v.id.startsWith('filter');
                     const show = (n: number) =>
-                      filter ? `${byteText(n)}, set ${n & 7}` : byteText(n);
+                      filter
+                        ? `${byteText(n)}, set ${n & 7}`
+                        : v.id === 'mic'
+                          ? `${byteText(n)}, low 6 bits ${n & 0x3f} (v0.04), low 5 bits ${n & 0x1f} (v0.27)`
+                          : v.id === 'region'
+                            ? `${byteText(n)}, band-edge table ${uv5rMiniRegionTable(n)}`
+                            : byteText(n);
                     return (
                       <Table.Tr key={v.id}>
                         <Table.Td>
@@ -450,6 +504,42 @@ export default function Uv5rMiniCalibrationSection({
           </Stack>
 
           <Stack gap="xs">
+            <Group gap="xs">
+              <Title order={4}>Band limits</Title>
+              <Code>{formatUv5rMiniSpanRange(cal.bandLimits)}</Code>
+              <Badge variant="light" color="gray">
+                traced
+              </Badge>
+              <DiffBadge a={cal.bandLimits.bytes} b={other?.bandLimits.bytes} />
+            </Group>
+            <Text size="sm" c="dimmed">
+              Four (low, high) MHz pairs, each two BCD bytes. The firmware does not use these: it
+              takes its RX band edges from the region byte (0xF255). Only the clone F reply sends
+              them. Bytes 0, 5, 10, 15 and 16 are never sent or read (unused, no reader).
+            </Text>
+            <Table fz="sm" striped w="fit-content">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Address</Table.Th>
+                  <Table.Th>Low</Table.Th>
+                  <Table.Th>High</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {cal.bandLimits.bands.map((band) => (
+                  <Table.Tr key={band.index}>
+                    <Table.Td>
+                      <Code>{addr(band.address)}</Code>
+                    </Table.Td>
+                    <Table.Td>{band.lowMhz === null ? 'not BCD' : `${band.lowMhz} MHz`}</Table.Td>
+                    <Table.Td>{band.highMhz === null ? 'not BCD' : `${band.highMhz} MHz`}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Stack>
+
+          <Stack gap="xs">
             <Title order={4}>Text</Title>
             {cal.texts.map((t, i) => (
               <Stack key={t.id} gap={2}>
@@ -469,16 +559,23 @@ export default function Uv5rMiniCalibrationSection({
           </Stack>
 
           <Stack gap="xs">
-            <Title order={4}>Hex: partly traced and untraced</Title>
+            <Title order={4}>Hex: frame residue and erased</Title>
             <Text size="sm" c="dimmed">
-              Read {read.label}. Runs of one byte value collapse to a line.
+              Read {read.label}. Nothing here is free space: residue is copies left by the PC tool
+              writing whole 64-byte frames (no reader in the firmware; cause inferred), and the rest
+              is the erased calibration sector. A write at 0xF000 erases all of it. Runs of one byte
+              value collapse to a line.
             </Text>
             {cal.hex.map((range, i) => (
               <HexBlock
                 key={range.id}
                 range={range}
                 other={other?.hex[i].bytes}
-                note={range.kind === 'partlyTraced' ? 'partly traced' : 'untraced'}
+                note={
+                  range.kind === 'residue'
+                    ? 'frame residue (no reader)'
+                    : 'erased, unused (never read or written by the firmware)'
+                }
               />
             ))}
           </Stack>

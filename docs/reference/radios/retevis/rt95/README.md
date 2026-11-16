@@ -26,6 +26,8 @@ Mobile / base analogue FM radio (AnyTone 778UV family). Studio targets it via CH
 
 | Doc                                    | Contents                                                                   |
 | -------------------------------------- | -------------------------------------------------------------------------- |
+| [debug-memory.md](debug-memory.md)     | Guarded debug MMD1 capture and zone inspection                             |
+| [calibration.md](calibration.md)       | Inspect-only debug capture and static-trace calibration evidence           |
 | [limits.md](limits.md)                 | Memory slots, name length and characters, steps, tone lists                |
 | [capabilities.md](capabilities.md)     | Modes, organisation traits                                                 |
 | [power.md](power.md)                   | High / Medium / Low ladder (internal %)                                    |

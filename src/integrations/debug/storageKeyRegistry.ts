@@ -65,7 +65,7 @@ export function formatByteSize(bytes: number): string {
 }
 
 export function storageKeyViewerPath(key: string): string {
-  return `/debug/local-storage/${encodeURIComponent(key)}`;
+  return `/debug/storage/local-storage/${encodeURIComponent(key)}`;
 }
 
 export function decodeStorageKeyParam(param: string): string {

@@ -9,6 +9,7 @@ import {
   atD890MaintenanceUnlocked,
   describeAtD890FrequencyRange,
 } from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
+import { readAsciiField } from './asciiField.ts';
 import { decodeWideCharName } from './wideChar.ts';
 
 export interface AtD890RetainPreviewRow {
@@ -39,23 +40,6 @@ function hexAddress(n: number): string {
 
 function offsetLabel(off: number): string {
   return `+0x${off.toString(16).toLowerCase()}`;
-}
-
-function readAsciiField(data: Uint8Array, offset: number, length: number): string {
-  const slice = data.subarray(offset, Math.min(data.length, offset + length));
-  let end = slice.length;
-  for (let i = 0; i < slice.length; i++) {
-    if (slice[i] === 0 || slice[i] === 0xff) {
-      end = i;
-      break;
-    }
-  }
-  const chars: string[] = [];
-  for (let i = 0; i < end; i++) {
-    const c = slice[i]!;
-    chars.push(c >= 0x20 && c < 0x7f ? String.fromCharCode(c) : '.');
-  }
-  return chars.join('').trim();
 }
 
 function asciiPreview(data: Uint8Array): string {

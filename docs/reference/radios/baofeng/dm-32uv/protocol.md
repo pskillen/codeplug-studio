@@ -158,6 +158,18 @@ A `0x57` ACK does not rebuild the RAM tag table, and ending the PC-link session 
 
 Upload stages each **post-remap 4 KB block** actually written. **Verify write** reconnects without reboot wait, bulk-reads only staged absolute addresses, and compares payloads byte-for-byte. Per-block report labels come from `writeRole.ts` metadata classification. Digital contact bank is excluded unless those blocks were staged. Feature: [write-verify.md](../../../../features/radio-read-write/write-verify.md).
 
+## Debug capture allow-list
+
+The `/debug/radios/dm-32uv` live read (`radios/dm32uv/debugCapture.ts`) wraps the transport in a guard. Only these frames reach the radio, in this order, one frame per write:
+
+1. `PSEARCH`, `PASSSTA`, `SYSINFO` (ASCII, exact).
+2. `47 00 00 00 00 10`, exactly twice.
+3. `56 00 00 00 id` for each id in `DM32_VFRAME_QUERY_IDS`, in order.
+4. `FF FF FF FF 0C` + `PROGRAM`, then `02`, then `06`. Refused until the guard has parsed a valid V `0x0A` reply.
+5. `52` reads of length 1, 2 or 4096 whose bytes lie in `[start, alignedEnd + 0xFFF]` from V `0x0A`. The window is refused when start is after end, end is above `0x0FFFFF` or start is not 4 KiB aligned.
+
+Lock-step: no write while reply bytes are outstanding. The guard checks reply headers (`53` + echo, `56 id len`, `57` + address echo and a length equal to the request) and counts payload bytes. A refusal, error, short reply or cancellation latches the guard and no later frame is sent. Everything else is refused before the transport, including `57` writes, `43`/`53`, any other `47`, bootloader and updater frames, `PCTESTM`, `RTCITEM`, `PASWORD`, `IDCHECK`, `DEL-RCD`, other V-frame ids or non-zero V-frame parameter bytes, and concatenated or partial frames. A V-frame reply for a different id, fully framed, is recorded as failed and the session continues. The read set is exactly `selectBlocksToBulkRead`. There is no END; firmware leaves PROGRAM after about 2 s of silence.
+
 ## Boot-image side note
 
 The factory-sector read above is the only `0x47` frame Studio sends. NeonPlug also has a **boot-image** path (`enterBootImageReadMode`, `writeMemoryBlock`) with different `0x47` frames and writes of 2048/4096 without the codeplug metadata byte. That boot-image read and write is **out of scope** — do not add it, and do not treat the factory-sector read as permission to send any other `0x47` frame. Never send opcode `0x43` or `0x53`.

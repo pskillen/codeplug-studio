@@ -35,9 +35,9 @@ describe('indexedDbInspect', () => {
   });
 
   it('indexedDb paths encode route segments', () => {
-    expect(indexedDbStorePath('channels')).toBe('/debug/indexed-db/channels');
+    expect(indexedDbStorePath('channels')).toBe('/debug/storage/indexed-db/channels');
     expect(indexedDbRowViewerPath('channels', 'proj-1', 'ch-1')).toBe(
-      '/debug/indexed-db/channels/proj-1/ch-1',
+      '/debug/storage/indexed-db/channels/proj-1/ch-1',
     );
   });
 

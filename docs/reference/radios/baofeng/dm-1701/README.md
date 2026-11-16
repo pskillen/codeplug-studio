@@ -27,6 +27,8 @@ TYT MD-UV380 / Retevis RT-3S / Baofeng DM-1701 / Retevis RT-84 share OpenGD77 CP
 | `src/integrations/radio-io/radios/opengd77/`                     | Shared OpenUV380 codecs, protocol, hydration, Radio image summary  |
 | `src/integrations/radio-io/radios/opengd77/dm1701/descriptor.ts` | Registry descriptor (`radioType` `08h`/`0ah`, write variant `'X'`) |
 
+Read-only debug capture archive (FirmwareInfo, FLASH spans, User Database): [OpenGD77 debug-capture.md](../../opengd77/debug-capture.md). Calibration working copy layout: [OpenGD77 calibration.md](../../opengd77/calibration.md).
+
 ## Documentation map
 
 | Doc                                                        | Contents                                                                                                                         |
@@ -34,6 +36,8 @@ TYT MD-UV380 / Retevis RT-3S / Baofeng DM-1701 / Retevis RT-84 share OpenGD77 CP
 | [limits.md](limits.md)                                     | Channels, zone/TG members, names, TOT, colour code                                                                               |
 | [capabilities.md](capabilities.md)                         | Modes, APRS/DTMF modelling, layout conventions                                                                                   |
 | [power.md](power.md)                                       | P1–P9 percent mapping + link to generic wire spelling                                                                            |
+| [calibration.md](calibration.md)                           | OpenGD77 calibration working copy: units, consumers, power points, unused bytes (source research, not hardware validated)        |
+| [settings.md](settings.md)                                 | OpenGD77 firmware settings struct (59 members) and codeplug device info / general settings                                       |
 | [OpenGD77 binary memory](../../opengd77/README.md)         | Shared EEPROM/FLASH map + serial protocol (direct I/O)                                                                           |
 | [Satellite orbitals](../../opengd77/satellite-orbitals.md) | Shared OpenUV380 keps bank (additional-settings block 3)                                                                         |
 | [Backup / Restore](../../opengd77/backup-restore.md)       | FLASH span zip + Restore SAVE_REBOOT (hardware verify pending, [#1142](https://github.com/pskillen/codeplug-studio/issues/1142)) |

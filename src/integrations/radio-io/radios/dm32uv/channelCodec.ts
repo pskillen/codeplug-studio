@@ -314,7 +314,11 @@ function readTxContactId(
   return contactId === 0 ? undefined : contactId;
 }
 
-function channelOffsetInBank(slotIndex: number): { blockIndex: number; offsetInBlock: number } {
+/** Bank page index and byte offset of the 48-byte record for 1-based `slotIndex`. */
+export function channelOffsetInBank(slotIndex: number): {
+  blockIndex: number;
+  offsetInBlock: number;
+} {
   const first = DM32_LIMITS.CHANNELS_IN_FIRST_BLOCK;
   const later = DM32_LIMITS.CHANNELS_PER_LATER_BLOCK;
   if (slotIndex <= first) {

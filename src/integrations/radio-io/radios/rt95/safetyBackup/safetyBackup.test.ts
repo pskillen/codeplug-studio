@@ -98,11 +98,43 @@ describe('readRt95SafetyRegion', () => {
     );
   });
 
-  it('fails on an all-zero block inside the region', async () => {
+  it('saves a region with legitimate all-zero blocks (ident and signature intact)', async () => {
     const e = goodEeprom();
-    e.fill(0, 0x3d00, 0x3d10);
+    e.fill(0, 0x3b20, 0x3b30);
+    e.fill(0, 0x3b50, 0x3bf0);
+    const r = await readRt95SafetyRegion(readerOver(e), { region: 'cal' });
+    expect(r.bytes).toEqual(e.slice(0x3b00, 0x4000));
+  });
+
+  it('fails on an all-zero ident block', async () => {
+    const e = goodEeprom();
+    e.fill(0, 0x3b00, 0x3b10);
     await expect(readRt95SafetyRegion(readerOver(e), { region: 'cal' })).rejects.toThrow(
       /empty block/,
+    );
+  });
+
+  it('fails on an all-zero alias block', async () => {
+    const e = goodEeprom();
+    e.fill(0, 0x7b00, 0x7b10);
+    await expect(readRt95SafetyRegion(readerOver(e), { region: 'cal' })).rejects.toThrow(
+      /empty block/,
+    );
+  });
+
+  it('fails on an all-zero region', async () => {
+    const e = goodEeprom();
+    e.fill(0, 0x3b00, 0x4000);
+    await expect(readRt95SafetyRegion(readerOver(e), { region: 'cal' })).rejects.toThrow(
+      /empty block/,
+    );
+  });
+
+  it('fails on a non-RT95 ident block', async () => {
+    const e = goodEeprom();
+    e.fill(0x41, 0x3b00, 0x3b10);
+    await expect(readRt95SafetyRegion(readerOver(e), { region: 'cal' })).rejects.toThrow(
+      /not an RT95 ident/,
     );
   });
 });

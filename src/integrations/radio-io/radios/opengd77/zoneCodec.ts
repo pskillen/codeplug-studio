@@ -71,16 +71,21 @@ export function encodeZoneRecord(zone: RadioZoneDto): Uint8Array {
   return out;
 }
 
-export function decodeZoneRecord(raw: Uint8Array): RadioZoneDto | null {
-  const wireName = decodeName(raw.subarray(0, OPENGD77_ZONE_NAME_LEN));
-  if (!wireName) return null;
+/** One-based member channel numbers of a zone record, in radio order, up to the first zero. */
+export function decodeZoneChannelNumbers(raw: Uint8Array): number[] {
   const channelNumbers: number[] = [];
   for (let i = 0; i < OPENGD77_ZONE_MEMBERS; i++) {
     const wire = getU16Le(raw, 0x10 + i * 2);
     if (wire === 0) break;
     channelNumbers.push(wire);
   }
-  return { wireName, channelNumbers };
+  return channelNumbers;
+}
+
+export function decodeZoneRecord(raw: Uint8Array): RadioZoneDto | null {
+  const wireName = decodeName(raw.subarray(0, OPENGD77_ZONE_NAME_LEN));
+  if (!wireName) return null;
+  return { wireName, channelNumbers: decodeZoneChannelNumbers(raw) };
 }
 
 /** Replace zone bank from projection (clears unlisted slots). */

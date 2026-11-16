@@ -39,7 +39,7 @@ Clone download concatenates the three regions in order into one buffer:
 
 Sum: `0x8040 + 0x40 + 0x1C0 = 0x8240`.
 
-**Backup / Restore** ([backup-restore.md](backup-restore.md)): these three `MEM_*` spans are named zip regions and are **restorable**. Studio does not isolate a calibration table on this map.
+**Backup / Restore** ([backup-restore.md](backup-restore.md)): these three `MEM_*` spans are named zip regions and are **restorable**. Studio does not isolate a calibration table on this map; the calibration sector (`0xF000-0xFFFF`) is outside these regions and is described in [calibration.md](calibration.md). The settings frame (`0x9000`) and VFO frame (`0x8000`) are decoded in [settings.md](settings.md).
 
 ## Notable packed-image offsets
 
@@ -83,5 +83,7 @@ A live radio dump is optional for this doc ticket; see [fixtures.md](fixtures.md
 
 ## Related
 
-- [channel-record.md](channel-record.md) · [settings.md](settings.md) · [protocol.md](protocol.md)
+- [channel-record.md](channel-record.md) · [settings.md](settings.md) · [calibration.md](calibration.md) · [protocol.md](protocol.md)
 - [limits.md](limits.md) · [power.md](power.md)
+
+The debug profile can inspect a clone read over `0x0000–0xFFFF`; this is the clone address space, not a complete physical flash or firmware dump. `0xEFC0` is a virtual report opportunity. Ordinary backup MEM entries use packed offsets; their radio ranges are mapped separately and the `zones` region remains distinct. See the [full-read debug guide](../../../../features/debug/uv5r-mini-full-read.md).

@@ -11,6 +11,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 | Google Drive (native) | Shipped   | PKCE OAuth in Custom Tabs + deep link (#895)                                                                                                                                                                                    |
 | USB Serial            | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888); line rate set at open. \*Unit/mock coverage; **hardware OTG R/W still outstanding**                                                                                       |
 | APK CI                | Shipped   | Signed APK + Release attach (#889); real `BUILD_ENV` + GA ID inject (#896)                                                                                                                                                      |
+| Keep screen awake     | Shipped\* | Keeps the screen on during radio jobs (#1745); Android path not yet tried on hardware                                                                                                                                           |
 | Analytics (gtag)      | Shipped   | Same SPA consent gate; `app_surface=android` + `build_env` on page views (#896)                                                                                                                                                 |
 | In-app icon / splash  | Shipped   | Brand-derived adaptive icon + splash via `@capacitor/assets` (#898)                                                                                                                                                             |
 | Play Store listing    | Drafted   | Graphics + copy staged under [store-assets/](store-assets/README.md); submission itself still #890                                                                                                                              |
@@ -30,6 +31,13 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 - **Layers:** Capacitor / USB live in `integrations` + `android/`; never in `src/core/` ([layer-boundaries.mdc](../../../.cursor/rules/layer-boundaries.mdc)).
 
 ## Native behaviour (#887, #888)
+
+- **Screen stays on during radio jobs (#1745):** `navigator.wakeLock` is not reliable in the Android WebView, so the app
+  carries its own Capacitor plugin (`android/.../KeepAwakePlugin.java`, TS bridge
+  `src/integrations/platform/keepAwake.ts`) that sets and clears `FLAG_KEEP_SCREEN_ON` on the window. The shared
+  `useScreenWakeLock` hook uses it in the app and the Screen Wake Lock API in a browser; overlapping jobs share the flag
+  and it clears when the last one ends. If the screen cannot be held, the job still runs and shows "Keep this screen on
+  until it finishes." Not yet tried on a phone.
 
 - **USB-Serial Plugin:** `@leeskies/capacitor-usb-serial` (MIT) backed by `mik3y/usb-serial-for-android`. Common chips (CH340, CP2102, FTDI, PL2303, CDC/ACM) listed in `android/app/src/main/res/xml/device_filter.xml`. Root `android/build.gradle` must include JitPack (`maven { url 'https://jitpack.io' }` in `allprojects.repositories`) so Gradle can resolve that transitive dependency.
 - **Serial line rate and DTR/RTS:** the plugin's `open` takes no rate, so a port comes up at its driver's default

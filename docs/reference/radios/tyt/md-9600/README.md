@@ -28,6 +28,8 @@ Native USB CDC, `1fc9:0094`. The OpenGD77 receive path is the DM-1701's (confirm
 
 `src/integrations/radio-io/radios/opengd77/md9600/` — thin descriptor on shared `radios/opengd77/` family ([#625](https://github.com/pskillen/codeplug-studio/issues/625)). Attribution: qdmr OpenUV380 facts (GPL-3 cite only).
 
+Read-only debug capture archive (FirmwareInfo, FLASH spans, User Database): [OpenGD77 debug-capture.md](../../opengd77/debug-capture.md). Calibration working copy layout: [OpenGD77 calibration.md](../../opengd77/calibration.md).
+
 ## Documentation map
 
 | Doc                                                        | Contents                                                                                                                         |
@@ -35,6 +37,8 @@ Native USB CDC, `1fc9:0094`. The OpenGD77 receive path is the DM-1701's (confirm
 | [limits.md](limits.md)                                     | Channels, zone/TG members                                                                                                        |
 | [capabilities.md](capabilities.md)                         | Modes, `+W-` / User Power note                                                                                                   |
 | [power.md](power.md)                                       | P1–P9 percent mapping + `+W-` exclusion                                                                                          |
+| [calibration.md](calibration.md)                           | OpenGD77 calibration working copy: units, consumers, power points, unused bytes (source research, not hardware validated)        |
+| [settings.md](settings.md)                                 | OpenGD77 firmware settings struct (59 members) and codeplug device info / general settings                                       |
 | [OpenGD77 binary memory](../../opengd77/README.md)         | Shared EEPROM/FLASH map + serial protocol (direct I/O)                                                                           |
 | [Satellite orbitals](../../opengd77/satellite-orbitals.md) | Shared OpenUV380 keps bank (additional-settings block 3)                                                                         |
 | [Backup / Restore](../../opengd77/backup-restore.md)       | FLASH span zip + Restore SAVE_REBOOT (hardware verify pending, [#1142](https://github.com/pskillen/codeplug-studio/issues/1142)) |

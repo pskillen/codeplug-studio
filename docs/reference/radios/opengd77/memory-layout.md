@@ -69,6 +69,8 @@ Cite: qdmr `openuv380_codeplug.hh` `Offset` / `ImageIndex`.
 
 Cite: qdmr `openuv380_codeplug.cc` ctor.
 
+The first span ends at `0x6060`. Two firmware blocks start inside it and run into the unread gap before `0x7500`: Last-Used-Channel-In-Zone at `0x6000` (tag `LUCZ` plus 70 bytes, ending `0x6049`) and the firmware settings struct at `0x604B` (size `0x74` DM-1701 / `0x70` MD-9600, magic `0x4780`). A capture holds only the first 21 settings bytes (`0x604B-0x605F`); the Studio Settings view decodes what is held and shows the rest as not captured. Layout: [DM-1701 settings.md](../baofeng/dm-1701/settings.md), [MD-9600 settings.md](../tyt/md-9600/settings.md).
+
 Segment 0 of the User Database (`0x50000`, size `0x40000`) sits in the untransferred gap between additional-settings and channel bank 1. Segment 1 is past `IMAGE_END`. Sidecar transfer: [user-database.md](user-database.md).
 
 **Backup / Restore** ([backup-restore.md](backup-restore.md)): these spans are named zip regions and are **restorable**. Occupied **User Database** bytes are a separate inspect-only region — [user-database.md](user-database.md). Studio does not isolate a calibration table on this map.
