@@ -244,9 +244,9 @@ Per radio:
    radio**) before you put it into update mode. Continue stays disabled until both are ticked and the check passed.
    A radio may also require a **saved safety backup** of its irreplaceable data (calibration, identity). You type the
    serial number from the radio's label; if Studio already has a record of a backup for that serial, the step passes
-   and reads nothing. Otherwise **Check / take safety backup** reads the radio (read-only), downloads the backup zip
+   and the radio is not touched (no check, no port). Otherwise **Check / take safety backup** reads the radio (read-only), downloads the backup zip
    and asks you to tick "I've saved <file>" before it records that one was saved. **Use a backup file I already
-   have** records an existing backup file for the serial. Studio keeps only a small record in this browser (serial,
+   have** records an existing backup file; when its serial is the one typed, the step passes there and then. Studio keeps only a small record in this browser (serial,
    file name, fingerprint, date; never the bytes), so the same radio skips the step next time. It is required: the
    "already tested this radio" opt-out for the read-only check does not skip it.
 7. **Enter update mode** — the radio's own steps, indicator and warnings, from its descriptor. The RT95's is P1 +

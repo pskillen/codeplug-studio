@@ -443,6 +443,21 @@ export function safetyBackupRadioKey(radioId: FirmwareRadioId, serial: string): 
   return requireSafetyBackup(radioId).normaliseSerial(serial);
 }
 
+/**
+ * The saved-backup record for this typed serial, or null. Browser storage only: no radio I/O. A radio with a
+ * record needs no safety-backup read, so the wizard passes the step without touching the port.
+ */
+export function findFirmwareSafetyBackupRecord(
+  radioId: FirmwareRadioId,
+  serial: string,
+): { radioKey: string; fileName: string; fingerprint: string } | null {
+  const sb = requireSafetyBackup(radioId);
+  const radioKey = sb.normaliseSerial(serial);
+  if (!radioKey) return null;
+  const rec = findSafetyBackupRecord(sb.recordFamily, radioKey);
+  return rec ? { radioKey, fileName: rec.fileName, fingerprint: rec.fingerprint } : null;
+}
+
 /** Fresh pick for the safety backup's normal-mode link (Web Serial only). Call from a user gesture. */
 export async function grantFirmwareSafetyBackupPort(
   radioId: FirmwareRadioId,

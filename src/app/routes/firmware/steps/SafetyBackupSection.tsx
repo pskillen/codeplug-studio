@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { FirmwarePreflightSafetyBackup } from '@integrations/radio-io';
 
 import { Button, Panel, StatusBanner, TextInput } from '../../../components/v2/index.ts';
 import {
+  findFirmwareSafetyBackupRecord,
   grantFirmwareSafetyBackupPort,
   recordFirmwareSafetyBackupSaved,
   runFirmwareSafetyBackup,
@@ -32,6 +33,23 @@ export default function SafetyBackupSection({
 
   const serialKey = safety.normaliseSerial(state.safetyBackupSerial);
   const status = state.safetyBackup;
+
+  // A backup is saved once per radio: when Studio holds a record for the typed serial the step is done, with no radio
+  // round trip. The Check the radio probe (when the radio has one) is the only normal-mode check.
+  const radioId = updater.radioId;
+  useEffect(() => {
+    if (serialKey === '') return;
+    const rec = findFirmwareSafetyBackupRecord(radioId, serialKey);
+    if (!rec) return;
+    dispatch({
+      type: 'safetyBackupResult',
+      status: {
+        kind: 'saved',
+        radioKey: rec.radioKey,
+        summary: `${rec.fileName}, fingerprint ${rec.fingerprint}`,
+      },
+    });
+  }, [state.safetyBackupSerial, serialKey, radioId, dispatch]);
 
   const run = async () => {
     setBusy(true);
@@ -102,9 +120,20 @@ export default function SafetyBackupSection({
       return;
     }
     setRecordFailed(!out.recorded);
-    // The radio must still be identified to match: press the button again.
+    if (out.info.radioKey === serialKey) {
+      // The file is for the serial typed: nothing more to check on the radio.
+      dispatch({
+        type: 'safetyBackupResult',
+        status: {
+          kind: 'saved',
+          radioKey: out.info.radioKey,
+          summary: `${out.info.fileName}, fingerprint ${out.info.fingerprint}`,
+        },
+      });
+      return;
+    }
     setError(
-      `Recorded ${out.info.fileName} for serial ${out.info.radioKey}. Press the button to check this radio.`,
+      `Recorded ${out.info.fileName} for serial ${out.info.radioKey}, which is not the serial typed above. Type that serial from the label to use it.`,
     );
   };
 
