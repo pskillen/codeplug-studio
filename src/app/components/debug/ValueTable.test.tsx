@@ -41,6 +41,12 @@ describe('ValueTable', () => {
     expect(screen.getAllByText('inferred').length).toBeGreaterThan(0);
   });
 
+  it('leaves Raw empty for a captured value with no raw bytes; Not captured only where it was', () => {
+    wrap(<ValueTable table={single} />);
+    // Only the "Missing" row: its Value and its Raw cell.
+    expect(screen.getAllByText('Not captured')).toHaveLength(2);
+  });
+
   it('masks sensitive cells until revealed', () => {
     const { unmount } = wrap(<ValueTable table={single} />);
     expect(screen.getAllByText('••').length).toBe(2);

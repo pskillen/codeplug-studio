@@ -99,12 +99,16 @@ function debugDemoPowerCurve(
     series,
     table: {
       key: { label: 'MHz' },
-      rows: xs.map((x) => ({ key: String(x) })),
+      rows: xs.map((x, i) => ({
+        key: String(x),
+        ...(i === Math.floor(xs.length / 2) ? { mark: 'reference' as const } : {}),
+      })),
       columns: series.map((s) => ({
         id: s.id,
         label: s.label,
         values: s.points.map((p) => p.y),
         width: 1 as const,
+        deltaFromRow: Math.floor(xs.length / 2),
       })),
     },
   };

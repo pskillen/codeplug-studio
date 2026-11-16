@@ -2,7 +2,7 @@
 
 How the radio debug pages are built. They have their own kit, apart from the product list kit, because they show raw bytes, uncertain decodes and second reads side by side.
 
-**Interactive demo:** `/styleguide/debug` (synthetic data for a made-up radio; **Overlay** and **Raw bytes** toggles). **Feature hub:** [radio debug](../../features/radio-debug/README.md). **Tracking:** [#1692](https://github.com/pskillen/codeplug-studio/issues/1692), [#1822](https://github.com/pskillen/codeplug-studio/issues/1822).
+**Interactive demo:** `/styleguide/debug` (synthetic data for a made-up radio; **Overlay** and **Raw bytes** toggles). **Feature hub:** [radio debug](../../features/radio-debug/README.md).
 
 ## Scope
 

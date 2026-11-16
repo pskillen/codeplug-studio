@@ -60,9 +60,10 @@ function ValueCell({ cell, revealed }: { cell: Cell | undefined; revealed: boole
 }
 
 function RawCell({ cell, revealed }: { cell: Cell | undefined; revealed: boolean }): ReactNode {
-  if (!cell || cell.availability === 'not-captured' || !cell.raw) return NOT_CAPTURED_TEXT;
+  if (!cell || cell.availability === 'not-captured') return NOT_CAPTURED_TEXT;
   if (cell.sensitive && !revealed) return MASKED_TEXT;
-  return rawHex(cell.raw);
+  // A decoded value the radio home gave no raw bytes for: empty, not "Not captured" (it was).
+  return cell.raw ? rawHex(cell.raw) : '';
 }
 
 function Confidence({ row }: { row: ValueRow }) {
