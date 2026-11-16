@@ -14,7 +14,7 @@ The kit is **dark only**. It draws on design-system v2 tokens and must render in
 
 - **Sections.** Every block is a `DebugSection`. No bare `Card withBorder` with a `Title`, and no v1 `PageSection`, on a debug tab.
 - **Calibration order.** `CalibrationReadPicker`, then one `EvidenceNotice`, then the chart grid, then value tables, then unused ranges and raw bytes (folded).
-- **Charts.** Every chart sits in a `CalibrationChartCard`: a visible title, axis titles with units, a one-line meaning, **About this chart** for the rest, and **Numeric table** for the numbers. Frequency on x is always **MHz, never an index**; the index lives in the Numeric table.
+- **Charts.** Every chart sits in a `CalibrationChartCard`: a visible title, axis titles with units, a one-line meaning, **About this chart** for the rest, and **Numeric table** for the numbers. Frequency on x is always **MHz, never an index**; the index lives in the Numeric table. The one exception is OpenGD77 squelch, which has no traced frequency grid and plots against the point index, with the reason stated on the card.
 - **Colour slot by meaning.** A series takes its colour from what it is (Low slot 0, Mid 1, High 2, Turbo 3; main 0, sub 1), never from its rank among the series. The overlay is the same slot, dashed on lines and outlined on bars.
 - **A card only when the radio has the data.** No empty placeholder cards.
 - **Number format.** Write numbers the way the owner reads them:
@@ -27,7 +27,7 @@ The kit is **dark only**. It draws on design-system v2 tokens and must render in
 - **Passwords** are masked (`••`) until **Show password**, and masked again when the archive changes. The archive keeps every byte; masking is display only.
 - **Serial numbers** are shown in full: no masking, no trailing slice, no ellipsis before a serial.
 - **Channel identity** is callsign first, then name; the name alone when there is no callsign.
-- **Tables** are striped and keep one set of column widths per tab.
+- **Tables** are striped on the `--dsv2-surface` token (`--dsv2-surface-quiet` is invisible on the dark page) and keep one set of column widths per tab.
 - **No radio literals** in kit components or tab shells. Labels, addresses, units and caveats arrive in the view model a radio home builds (`integrations/radio-io/radios/<radio>/`).
 - **Phone.** One column of cards, pickers stacked, wide tables scroll inside their container, secondary columns fold under the label.
 - **Read only.** The kit draws; it never adds a write, reset or capture path.
