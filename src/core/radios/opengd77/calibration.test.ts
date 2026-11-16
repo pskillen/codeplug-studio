@@ -85,21 +85,61 @@ describe('decodeOpenGd77Calibration', () => {
     const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
     expect(byId['uhf-high-power']!.decoded).toBe(Array.from(bytes.subarray(0x10, 0x19)).join(', '));
     expect(byId['vhf-ctcss-151']!.offset).toBe(0xab);
-    expect(byId['rx-low-voltage']!.meaningConfidence).toBe('partial');
-    expect(byId['vox-level-1']!.meaningConfidence).toBe('named');
+    expect(byId['rx-low-voltage']!.meaningConfidence).toBe('partly');
+    expect(byId['vox-level-1']!.meaningConfidence).toBe('traced');
   });
 
-  it('labels 0x1A0 by model and changes nothing else', () => {
+  it('labels 0x1A0 and the power points by model', () => {
     const bytes = golden();
     const m = decodeOpenGd77Calibration(bytes, 'mid-low');
     const v = decodeOpenGd77Calibration(bytes, 'very-low');
-    const slot = (d: typeof m) => d.rows.filter((r) => r.id.endsWith('low-slot-power'));
-    expect(slot(m).map((r) => r.label)).toEqual(['Mid-low power', 'Mid-low power']);
-    expect(slot(v).map((r) => r.label)).toEqual(['Very-low power', 'Very-low power']);
-    expect(slot(m).map((r) => r.note)).not.toEqual(slot(v).map((r) => r.note));
-    const rest = (d: typeof m) => d.rows.filter((r) => !r.id.endsWith('low-slot-power'));
-    expect(rest(m)).toEqual(rest(v));
+    const label = (d: typeof m, id: string) => d.rows.find((r) => r.id === id)!.label;
+    expect(label(m, 'uhf-low-slot-power')).toBe('Mid-low power (10 W point)');
+    expect(label(v, 'uhf-low-slot-power')).toBe('Very-low power (250 mW point)');
+    expect(label(m, 'uhf-high-power')).toBe('High power (40 W point)');
+    expect(label(m, 'uhf-low-power')).toBe('Low power (5 W point)');
+    expect(label(m, 'uhf-mid-power')).toBe('Mid power (25 W point)');
+    expect(label(v, 'uhf-high-power')).toBe('High power (5 W point)');
+    expect(label(v, 'uhf-low-power')).toBe('Low power (1 W point)');
+    expect(label(v, 'uhf-mid-power')).toBe('Mid power (2 W point)');
+    expect(v.rows.find((r) => r.id === 'uhf-high-power')!.note).toMatch(/scaled from the factory/);
+    expect(m.rows.find((r) => r.id === 'uhf-high-power')!.note).toBeUndefined();
+    expect(v.rows.find((r) => r.id === 'vhf-low-slot-power')!.note).toMatch(/synthesises/);
     expect(m.unknownRanges).toEqual(v.unknownRanges);
+  });
+
+  it('flags the rows OpenGD77 never reads: 20 on the MD-9600, 22 on the DM-1701', () => {
+    const named = (d: ReturnType<typeof decodeOpenGd77Calibration>) =>
+      d.rows.filter(
+        (r) => !r.hasReader && r.group !== 'Frequency points' && !r.id.endsWith('-voltage'),
+      );
+    expect(named(decodeOpenGd77Calibration(golden(), 'mid-low'))).toHaveLength(20);
+    expect(named(decodeOpenGd77Calibration(golden(), 'very-low'))).toHaveLength(22);
+    const m = decodeOpenGd77Calibration(golden(), 'mid-low');
+    const v = decodeOpenGd77Calibration(golden(), 'very-low');
+    expect(m.rows.find((r) => r.id === 'uhf-rx-tuning')!.hasReader).toBe(true);
+    expect(v.rows.find((r) => r.id === 'uhf-rx-tuning')!.hasReader).toBe(false);
+    for (const r of m.rows.filter((x) => x.id.endsWith('-voltage'))) {
+      expect(r.meaningConfidence).toBe('partly');
+    }
+  });
+
+  it('classifies the 24 unknown ranges (154 bytes) as not used by OpenGD77', () => {
+    const d = decodeOpenGd77Calibration(golden(), 'mid-low');
+    expect(d.unknownRanges).toHaveLength(24);
+    expect(d.unknownRanges.reduce((n, u) => n + u.length, 0)).toBe(154);
+    for (const u of d.unknownRanges) {
+      expect(u.meaning).toBe('not used by OpenGD77; stock meaning unknown');
+    }
+  });
+
+  it('counts confidence and bytes', () => {
+    const d = decodeOpenGd77Calibration(golden(), 'mid-low');
+    const by = (c: string) => d.rows.filter((r) => r.meaningConfidence === c);
+    expect(d.rows).toHaveLength(70);
+    expect(by('partly')).toHaveLength(30);
+    expect(by('unknown')).toHaveLength(0);
+    expect(d.rows.reduce((n, r) => n + r.length, 0)).toBe(358);
   });
 
   it('covers each byte exactly once with rows and unknown ranges', () => {
@@ -112,23 +152,37 @@ describe('decodeOpenGd77Calibration', () => {
     expect(d.unknownRanges.map((u) => [u.offset, u.length])).toContainEqual([0x1f8, 8]);
   });
 
-  it('shows BCD digits and flags invalid BCD', () => {
+  it('decodes frequency points as little-endian BCD in 10 Hz units, in MHz', () => {
     const bytes = golden();
-    bytes.set([0x14, 0x52, 0x12, 0x50], 0x100);
+    bytes.set([0x00, 0x25, 0x00, 0x40], 0x100);
     bytes.set([0x1a, 0x00, 0x00, 0x00], 0x104);
     const rows = decodeOpenGd77Calibration(bytes, 'mid-low').rows;
     const get = (id: string) => rows.find((r) => r.id === id)!;
-    expect(get('vhf-frequency-0').decoded).toBe('14521250');
+    expect(get('vhf-frequency-0').decoded).toBe('400.02500 MHz');
     expect(get('vhf-frequency-1').decoded).toBe('invalid BCD');
     expect(Array.from(get('vhf-frequency-1').raw)).toEqual([0x1a, 0, 0, 0]);
   });
 
-  it('shows the marker entries as the local marker, not frequencies', () => {
+  it('shows oscillator tune as byte - 128 and keeps the raw byte', () => {
+    const bytes = golden();
+    bytes[0x09] = 125;
+    bytes[0x0c] = 200;
+    const rows = decodeOpenGd77Calibration(bytes, 'mid-low').rows;
+    const get = (id: string) => rows.find((r) => r.id === id)!;
+    expect(get('uhf-oscillator-tune').decoded).toBe('-3 (byte 125 - 128)');
+    expect(get('vhf-oscillator-tune').decoded).toBe('72 (byte 200 - 128)');
+    expect(Array.from(get('uhf-oscillator-tune').raw)).toEqual([125]);
+  });
+
+  it('shows the marker entries as the local marker with their MHz', () => {
     const rows = decodeOpenGd77Calibration(golden(), 'mid-low').rows;
-    for (const id of ['uhf-frequency-0', 'uhf-frequency-1']) {
-      expect(rows.find((r) => r.id === id)!.decoded).toBe('OpenGD77 local marker, not a frequency');
-    }
-    expect(rows.find((r) => r.id === 'uhf-frequency-2')!.decoded).toMatch(/^\d{8}$/);
+    expect(rows.find((r) => r.id === 'uhf-frequency-0')!.decoded).toBe(
+      'OpenGD77 local marker: 400.02500 MHz',
+    );
+    expect(rows.find((r) => r.id === 'uhf-frequency-1')!.decoded).toBe(
+      'OpenGD77 local marker: 400.14500 MHz',
+    );
+    expect(rows.find((r) => r.id === 'uhf-frequency-2')!.decoded).toMatch(/ MHz$/);
   });
 
   it('shows raw only when the marker is absent', () => {

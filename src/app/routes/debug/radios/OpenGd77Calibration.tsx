@@ -98,9 +98,17 @@ function Body({
         RAM, which on the DM-1701 tree is already scaled from the factory values at import.
       </Alert>
       <Alert color="yellow" title="Not validated on hardware">
-        Not validated on hardware. Values carry no physical unit here, and nothing on this page says
+        Not validated on hardware. Units and meanings come from reading the OpenGD77 source (the
+        Unit and Used by columns say what each row was traced to), and nothing on this page says
         whether a value is good, bad or healthy.
       </Alert>
+      {model.calibrationLowSlot === 'very-low' && (
+        <Alert title="DM-1701: working copy is scaled">
+          The DM-1701 working copy is scaled from the factory values at import (Low x1.00, Mid x0.85
+          or x0.86, High x1.30 or x1.70, VHF or UHF), and the very-low power slot is synthesised by
+          OpenGD77 from Low, so these power values are not the stock factory numbers.
+        </Alert>
+      )}
       <Text size="sm">
         Layout read from OpenGD77 firmware sources dated 2026-01-30 (DM-1701 family) and 2026-01-31
         (MD-9600). This radio reports revision {revision}, built {buildDate}, as reported; whether
@@ -130,6 +138,8 @@ function Body({
                       'Width',
                       'Raw',
                       'Decoded',
+                      'Unit',
+                      'Used by',
                       ...(overlayRows ? ['Overlay', 'Differs'] : []),
                       'Layout',
                       'Meaning',
@@ -152,6 +162,15 @@ function Body({
                         <Table.Td>{row.length}</Table.Td>
                         <Table.Td ff="monospace">{rawText(row.raw)}</Table.Td>
                         <Table.Td>{row.decoded ?? 'Raw only'}</Table.Td>
+                        <Table.Td>
+                          <Text size="xs">{row.unit}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="xs">
+                            {row.hasReader ? row.consumer : 'not used by OpenGD77'}
+                          </Text>
+                          {!row.hasReader && <Text size="xs">{row.consumer}</Text>}
+                        </Table.Td>
                         {overlayRows && (
                           <>
                             <Table.Td ff="monospace">{other ? rawText(other.raw) : '—'}</Table.Td>
@@ -163,7 +182,9 @@ function Body({
                         <Table.Td>{row.layoutConfidence}</Table.Td>
                         <Table.Td>{row.meaningConfidence}</Table.Td>
                         <Table.Td>
-                          <Text size="xs">{row.note ?? ''}</Text>
+                          <Text size="xs">
+                            {[row.note, `Evidence: ${row.evidence}`].filter(Boolean).join(' ')}
+                          </Text>
                         </Table.Td>
                       </Table.Tr>
                     );
@@ -176,9 +197,12 @@ function Body({
       })}
       <Card withBorder>
         <Title order={4}>Unknown bytes</Title>
+        <Text size="sm">
+          No OpenGD77 code reads these bytes. The stock firmware meaning is unknown.
+        </Text>
         {decode.unknownRanges.map((range) => (
           <Text key={range.offset} size="xs" ff="monospace" style={{ overflowWrap: 'anywhere' }}>
-            0x{hex(range.offset, 3)} · {range.length} bytes · {rawText(range.raw)}
+            0x{hex(range.offset, 3)} · {range.length} bytes · {range.meaning} · {rawText(range.raw)}
           </Text>
         ))}
       </Card>
