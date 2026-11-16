@@ -12,6 +12,19 @@ The category picker of every radio's debug Memory view: one **Category** dropdow
 | `notDecoded` | Category names the radio does not decode yet; one dimmed line under the dropdown: "Not decoded for this radio yet: scan lists, contacts." Nothing shown for an empty or missing list |
 | `storageKey` | `localStorage` key suffix (the app prefix is added) under which the last choice is remembered; omit to remember nothing                                                              |
 
+## Usage
+
+```tsx
+<MemoryCategories
+  storageKey="my-radio"
+  notDecoded={descriptor.memoryNotDecoded}
+  categories={[
+    { value: 'channels', label: 'Channels', count: rows.length, render: () => <ChannelsPanel /> },
+    { value: 'zones', label: 'Zones', render: () => <ZonesPanel /> },
+  ]}
+/>
+```
+
 ## Behaviour
 
 - The first category shows by default; a remembered value that is no longer in the list falls back to the first.
@@ -21,3 +34,8 @@ The category picker of every radio's debug Memory view: one **Category** dropdow
 - Tests choose a category with `chooseCategory` (`memoryCategoriesTestUtils.ts`); `src/test/setup.dom.ts` clears the remembered choice between tests.
 - The component lives in the debug kit (`src/app/components/debug/`); per-category content is built with [MemoryCategoryPanel](./MemoryCategoryPanel.md).
 - Radios name their undecoded categories on the descriptor (`memoryNotDecoded`); `RadioDebugPage` passes it to the radio's Memory component as `notDecoded`.
+
+## Related
+
+- [MemoryCategoryPanel](./MemoryCategoryPanel.md), [DebugSection](./DebugSection.md)
+- [docs/features/radio-debug/README.md](../../../../docs/features/radio-debug/README.md)

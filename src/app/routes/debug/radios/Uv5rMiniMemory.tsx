@@ -9,6 +9,8 @@ import {
 import type { RadioChannelDto, RadioTone } from '@integrations/radio-io/radioChannelDto.ts';
 import {
   UV5R_MINI_CHANNEL_CAVEAT,
+  UV5R_MINI_CHANNELS_CAPTION,
+  UV5R_MINI_CHANNELS_EMPTY,
   UV5R_MINI_CHANNELS_UNAVAILABLE,
   uv5rMiniChannelSummary,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/memoryText.ts';
@@ -131,7 +133,7 @@ function Uv5rMiniMemoryLoaded({
       summary={uv5rMiniChannelSummary(rows.length, UV5R_MINI_LAYOUT.channelCount)}
       caveat={UV5R_MINI_CHANNEL_CAVEAT}
       searchPlaceholder="Search channels"
-      caption="UV-5R Mini memory channels"
+      caption={UV5R_MINI_CHANNELS_CAPTION}
       columns={CHANNEL_COLUMNS}
       rows={rows}
       getRowId={(r) => r.id}
@@ -150,7 +152,7 @@ function Uv5rMiniMemoryLoaded({
           {r.channel.powerPercent == null ? 'Default' : `${r.channel.powerPercent}%`}
         </Text>
       )}
-      emptyMessage="No channels are stored."
+      emptyMessage={UV5R_MINI_CHANNELS_EMPTY}
     />
   );
   const zonesPanel = (
