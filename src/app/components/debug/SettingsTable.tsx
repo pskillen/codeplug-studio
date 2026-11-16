@@ -78,7 +78,7 @@ function RowsTable({
   const widths = columnWidths(showRaw, showDefault);
   return (
     <div className={classes.scroll}>
-      <table className={classes.table} aria-label={label} style={{ minWidth: showRaw ? 960 : 640 }}>
+      <table className={classes.table} aria-label={label} style={{ minWidth: showRaw ? 860 : 600 }}>
         <colgroup>
           {widths.map((w, i) => (
             <col key={i} style={{ width: `${w}%` }} />
