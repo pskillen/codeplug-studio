@@ -64,7 +64,7 @@
 .error {
   margin: 0;
   font-size: 13px;
-  color: var(--dsv2-danger);
+  color: var(--dsv2-destructive);
 }
 
 .loading {

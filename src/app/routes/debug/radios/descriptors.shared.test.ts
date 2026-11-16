@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RT95_CALIBRATION_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
+import type { DebugArchive } from './captureArchive.ts';
 import { radioDebugDescriptors } from './descriptors.ts';
 import { rt95Archive } from './rt95Archive.fixture.ts';
 import { syntheticZip } from './uv5rMiniLegacyArchive.fixture.ts';
@@ -25,6 +26,46 @@ describe('descriptor fields that carry radio text for the shared page', () => {
     expect(descriptor('at-d890uv').readNotice?.title).toBe('Read-only capture and recovery');
     expect(descriptor('dm-32uv').identityNote).toMatch(/no readable serial/);
     expect(descriptor('dm-32uv').readNotice?.text).toMatch(/no END command/);
+  });
+
+  it('Coverage and decoded-compare facts sit on each radio descriptor, not in shared checks', () => {
+    for (const slug of [
+      'at-d890uv',
+      'dm-32uv',
+      'dm-1701-opengd77',
+      'md-9600-opengd77',
+      'rt95',
+      'uv-5r-mini',
+    ])
+      expect(descriptor(slug).coverage, slug).toBeTypeOf('function');
+    expect(descriptor('uv-21-pro-v2').coverage).toBeUndefined();
+    for (const slug of ['dm-32uv', 'dm-1701-opengd77', 'md-9600-opengd77'])
+      expect(descriptor(slug).ownDecodedChanges, slug).toBe(true);
+    for (const slug of ['at-d890uv', 'rt95', 'uv-5r-mini'])
+      expect(descriptor(slug).ownDecodedChanges, slug).toBeFalsy();
+  });
+
+  it('RT95 coverage has its clone summary line and a start label; it declines another radio', () => {
+    const view = descriptor('rt95').coverage!(rt95Archive());
+    expect(view?.body).toBeTruthy();
+    expect(view?.omitCaptured).toBeFalsy();
+    expect(descriptor('uv-5r-mini').coverage!(rt95Archive())).toBeUndefined();
+  });
+
+  it('only the Mini offers its wire bytes as an extra Hex region', () => {
+    const archive = {
+      manifest: { regions: [] },
+      regions: {},
+      sidecars: { 'debug/wire.bin': new Uint8Array([1, 2]) },
+    } as unknown as DebugArchive;
+    expect(descriptor('uv-5r-mini').extraHexRegions!(archive)).toEqual([
+      { id: 'wire', label: 'Wire bytes as received', bytes: new Uint8Array([1, 2]) },
+    ]);
+    expect(
+      descriptor('uv-5r-mini').extraHexRegions!({ ...archive, sidecars: {} } as DebugArchive),
+    ).toEqual([]);
+    for (const d of radioDebugDescriptors)
+      if (d.slug !== 'uv-5r-mini') expect(d.extraHexRegions, d.slug).toBeUndefined();
   });
 
   it('RT95 reports clone coverage from the archive', () => {

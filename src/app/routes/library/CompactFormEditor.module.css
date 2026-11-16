@@ -62,7 +62,7 @@
 .error {
   margin: 0;
   padding: 0 var(--dsv2-page-padding-x);
-  color: var(--dsv2-danger);
+  color: var(--dsv2-destructive);
   font-size: 13px;
 }
 

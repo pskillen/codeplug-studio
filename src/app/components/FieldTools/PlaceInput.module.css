@@ -43,6 +43,6 @@
 
 .error {
   font-size: var(--dsv2-font-body-sm);
-  color: var(--dsv2-danger, #fa5252);
+  color: var(--dsv2-destructive, #fa5252);
   padding-left: 2px;
 }

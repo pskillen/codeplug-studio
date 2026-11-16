@@ -1,4 +1,3 @@
-import { DM32_MODEL_IDS } from '@integrations/radio-io/radios/dm32uv/constants.ts';
 import type { AtD890MemberStatus } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
 import { getRadioDescriptor } from '@integrations/radio-io/registry.ts';
 import { regionSections } from '@integrations/radio-io/debugCompare/index.ts';
@@ -72,13 +71,16 @@ export function hexRows(
   return rows;
 }
 
-export const isDm32ModelId = (id: string) => (DM32_MODEL_IDS as readonly string[]).includes(id);
-
-/** The descriptor whose radio owns this archive, by the registry's model ids. */
-function descriptorFor(archive: DebugArchive) {
+/** The descriptor whose radio owns this model id, by the registry's model ids. */
+export function descriptorForModelId(modelId: string) {
   return radioDebugDescriptors.find((d) =>
-    getRadioDescriptor(d.archiveModelId)?.modelIds.includes(archive.manifest.radioModelId),
+    getRadioDescriptor(d.archiveModelId)?.modelIds.includes(modelId),
   );
+}
+
+/** The descriptor whose radio owns this archive. */
+export function descriptorFor(archive: DebugArchive) {
+  return descriptorForModelId(archive.manifest.radioModelId);
 }
 
 /** Address space and byte representation of a region; the radio's own adapter decides. */

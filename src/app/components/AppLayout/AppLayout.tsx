@@ -373,11 +373,7 @@ function AppLayoutBody({
               : [classes.pageContent, wide ? classes.pageContentWide : ''].filter(Boolean).join(' ')
           }
         >
-          {dark ? (
-            <DesignSystemV2Provider scheme="dark">{pageBody}</DesignSystemV2Provider>
-          ) : (
-            pageBody
-          )}
+          {pageBody}
         </div>
       </main>
 

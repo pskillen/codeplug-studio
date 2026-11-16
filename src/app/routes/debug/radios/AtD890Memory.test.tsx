@@ -306,6 +306,18 @@ describe('AtD890Memory', () => {
       expect(rows[1]).toMatch(/RX groups: 1 Scots/);
     });
 
+    it('draws contacts, talk groups and RX groups in the shared panel shape', () => {
+      view(bankArchive());
+      for (const tab of ['Contacts', 'Talk groups', 'RX groups']) {
+        open(tab);
+        expect(screen.getByLabelText('Search table')).toBeInTheDocument();
+      }
+      open('Contacts');
+      expect(
+        screen.getByText('Each identity shows the callsign first, then the name.'),
+      ).toBeInTheDocument();
+    });
+
     it('searches callsign and DMR ID and sorts without renumbering slots', () => {
       view(bankArchive());
       open('Contacts');

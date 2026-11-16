@@ -46,7 +46,7 @@ export interface MemoryCategoryPanelProps<T> {
 }
 
 /**
- * One Memory category in the DM-32 shape: count sentence, dimmed caveat, search, sortable v2
+ * One Memory category in the shared shape: count sentence, dimmed caveat, search, sortable v2
  * `DataTable`, and an optional details region for the clicked row. Radio-neutral: every sentence
  * and column comes from the caller.
  */

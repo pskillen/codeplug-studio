@@ -16,7 +16,7 @@ Read-only AT-D890UV Memory viewer: MR channels, zones, contacts, talk groups, RX
 
 ## Behaviour
 
-Channels and Zones are drawn by the shared [MemoryCategoryPanel](../../../components/debug/MemoryCategoryPanel.md) (click a zone for its members below the table); sentences come from `at-d890uv/debugMemoryText.ts`. Contacts, talk groups, RX groups and scan lists keep their own panels.
+Channels and Zones are drawn by the shared [MemoryCategoryPanel](../../../components/debug/MemoryCategoryPanel.md) (click a zone for its members below the table); sentences come from `at-d890uv/debugMemoryText.ts`. Contacts, talk groups, RX groups and scan lists are drawn by it too (click an RX group or scan list for its members); their sentences come from the same file.
 
 Its categories (Channels, Zones, Contacts, Talk groups, RX groups, Scan lists) are chosen from the shared [MemoryCategories](../../../components/debug/MemoryCategories.md) dropdown, not inner tabs.
 

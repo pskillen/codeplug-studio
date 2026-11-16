@@ -77,7 +77,7 @@
 }
 
 .topTitle {
-  font-size: var(--dsv2-font-heading-md, 16px);
+  font-size: var(--dsv2-font-heading, 16px);
   font-weight: 700;
   color: var(--dsv2-text-primary);
   min-width: 0;

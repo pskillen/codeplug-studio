@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import {
   OPENGD77_CAPTURE_OPTIONS,
   OPENGD77_IDENTITY_NOTE,
@@ -63,6 +63,11 @@ import {
   OPENGD77_DM1701_MODEL_ID,
   OPENGD77_MD9600_MODEL_ID,
 } from '@integrations/radio-io/radios/opengd77/hydration.ts';
+import { atD890Coverage } from './coverageViews/AtD890Coverage.tsx';
+import { dm32Coverage } from './coverageViews/Dm32Coverage.tsx';
+import { openGd77Coverage } from './coverageViews/OpenGd77Coverage.tsx';
+import { rt95Coverage } from './coverageViews/Rt95Coverage.tsx';
+import { uv5rMiniCoverage, uv5rMiniExtraHexRegions } from './coverageViews/Uv5rMiniCoverage.tsx';
 import type { DebugArchive } from './captureArchive.ts';
 import type { DebugSensitiveRangesFn } from '@integrations/radio-io/debugSensitive.ts';
 import { openGd77ArchiveSensitiveRanges } from '@integrations/radio-io/radios/opengd77/debugSensitive.ts';
@@ -98,6 +103,27 @@ export interface RadioDebugRegionNote {
   addressNote?: string;
   /** Short tag after the region label, e.g. `[body]`. */
   tag?: string;
+}
+
+/** What the Backup tab's Coverage panel says about one radio's archive. Built in the radio's own code. */
+export interface RadioDebugCoverageView {
+  /** Heading above each region's line; absent or `undefined`: the compare adapter's address space. */
+  regionKind?: (regionId: string) => string | undefined;
+  /** The word before a region's address; default `Start`. */
+  startLabel?: (regionId: string) => string;
+  /** True when the region line does not end with `· Captured`. */
+  omitCaptured?: boolean;
+  /** Extra line above the region list. */
+  summary?: ReactNode;
+  /** The radio's own coverage panel, under the region list. */
+  body: ReactNode;
+}
+
+/** A selectable byte source in the Hex viewer that is not a manifest region (a sidecar). */
+export interface RadioDebugExtraHexRegion {
+  id: string;
+  label: string;
+  bytes: Uint8Array;
 }
 
 /** Selected profiles describe expectations, never observed radio identity. */
@@ -137,6 +163,18 @@ export interface RadioDebugDescriptor {
   calibration?: (archive: DebugArchive) => CalibrationView;
   /** False when the Calibration tab has no overlay picker (the radio's calibration is shown alone). */
   calibrationOverlay?: boolean;
+  /**
+   * The Backup tab's Coverage panel for this radio's archive: region headings and a body. Absent,
+   * or `undefined` for an archive it cannot describe: the generic "expected map not yet defined".
+   */
+  coverage?: (archive: DebugArchive) => RadioDebugCoverageView | undefined;
+  /** Extra Hex viewer entries after the manifest regions, shown from byte 0 and never masked. */
+  extraHexRegions?: (archive: DebugArchive) => readonly RadioDebugExtraHexRegion[];
+  /**
+   * True when this radio's compare adapter shows its own decoded changes, so Compare omits the
+   * shared "Decoded changes" block.
+   */
+  ownDecodedChanges?: boolean;
   /** Keep every read and opened archive in the shared tab-only history, with Compare. */
   readHistory?: boolean;
   family: string;
@@ -192,6 +230,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     // Hooked here, not in atD890Compare.ts: the snapshot's imports reach back into this module.
     compare: { ...atD890CompareAdapter, decoded: atD890DecodedSnapshot },
     Memory: AtD890Memory,
+    coverage: atD890Coverage,
     settings: atD890SettingsView,
     calibration: atD890CalibrationView,
     CompareExtra: AtD890Compare,
@@ -210,6 +249,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     slug: 'dm-32uv',
     compare: dm32CompareAdapter,
     Memory: Dm32Memory,
+    coverage: dm32Coverage,
+    ownDecodedChanges: true,
     settings: dm32SettingsView,
     calibration: dm32CalibrationView,
     readHistory: true,
@@ -235,6 +276,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     compare: openGd77CompareAdapter,
     calibration: openGd77CalibrationView,
     Memory: OpenGd77Memory,
+    coverage: openGd77Coverage,
+    ownDecodedChanges: true,
     settings: openGd77SettingsView,
     readHistory: true,
     sensitiveRanges: openGd77ArchiveSensitiveRanges,
@@ -253,6 +296,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     compare: openGd77CompareAdapter,
     calibration: openGd77CalibrationView,
     Memory: OpenGd77Memory,
+    coverage: openGd77Coverage,
+    ownDecodedChanges: true,
     settings: openGd77SettingsView,
     readHistory: true,
     sensitiveRanges: openGd77ArchiveSensitiveRanges,
@@ -270,6 +315,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     slug: 'rt95',
     compare: rt95CompareAdapter,
     Memory: Rt95MemoryView,
+    coverage: rt95Coverage,
     memoryNotDecoded: RT95_MEMORY_NOT_DECODED,
     settings: rt95SettingsView,
     calibration: rt95CalibrationView,
@@ -295,6 +341,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     slug: 'uv-5r-mini',
     compare: uv5rMiniCompareAdapter,
     Memory: Uv5rMiniMemory,
+    coverage: uv5rMiniCoverage,
+    extraHexRegions: uv5rMiniExtraHexRegions,
     memoryNotDecoded: UV5R_MINI_MEMORY_NOT_DECODED,
     settings: uv5rMiniSettingsView,
     calibration: uv5rMiniCalibrationView,

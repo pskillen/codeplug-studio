@@ -32,8 +32,15 @@ import { RT95_CHANNEL_COUNT } from '@integrations/radio-io/radios/rt95/constants
 import {
   RT95_CHANNEL_CAVEAT,
   RT95_CHANNELS_EMPTY,
+  RT95_PKEY_CAVEAT,
+  RT95_PKEY_DIR_MEANING,
   RT95_PKEYS_PROVENANCE,
+  RT95_PKEYS_UNAVAILABLE,
+  RT95_ZONE_CAVEAT,
+  RT95_ZONES_EMPTY,
   RT95_ZONES_PROVENANCE,
+  rt95PKeySummary,
+  rt95ZoneSummary,
   rt95ChannelSummary,
   rt95SlotIdentityFallback,
   RT95_SLOT_RAW_UNAVAILABLE,
@@ -97,6 +104,75 @@ const columns: DataTableColumn<SlotRow>[] = [
 ];
 
 type ZoneView = Rt95ModDataValid['zones'][number];
+
+interface ZoneRow {
+  id: string;
+  zone: ZoneView;
+  label: string;
+}
+
+const zoneColumns: DataTableColumn<ZoneRow>[] = [
+  {
+    key: 'zone',
+    header: 'Zone',
+    width: '5rem',
+    sortable: true,
+    sortValue: (r) => r.zone.index,
+    render: (r) => r.zone.index + 1,
+  },
+  {
+    key: 'name',
+    header: 'Name',
+    width: 'minmax(12rem, 2fr)',
+    sortable: true,
+    sortValue: (r) => r.label,
+    render: (r) => <strong>{r.label}</strong>,
+  },
+  {
+    key: 'members',
+    header: 'Members',
+    width: '7rem',
+    sortable: true,
+    sortValue: (r) => r.zone.memberIndexes.length,
+    render: (r) => r.zone.memberIndexes.length,
+  },
+  {
+    key: 'valid',
+    header: 'Member check',
+    width: '10rem',
+    render: (r) => (r.zone.valid ? 'Members valid' : 'Invalid member CRC'),
+  },
+];
+
+interface PKeyRow {
+  id: string;
+  index: number;
+  value: number;
+}
+
+const pKeyColumns: DataTableColumn<PKeyRow>[] = [
+  {
+    key: 'group',
+    header: 'Group',
+    width: '5rem',
+    sortable: true,
+    sortValue: (r) => r.index,
+    render: (r) => Math.floor(r.index / 6) + 1,
+  },
+  { key: 'key', header: 'Key', width: '5rem', render: (r) => (r.index % 6) + 1 },
+  {
+    key: 'value',
+    header: 'Byte',
+    width: '6rem',
+    render: (r) => `0x${r.value.toString(16).padStart(2, '0')}`,
+  },
+  {
+    key: 'meaning',
+    header: 'Meaning',
+    width: 'minmax(14rem, 2fr)',
+    render: (r) => (r.value === RT95_KEY_FUNCTION_DIR ? RT95_PKEY_DIR_MEANING : ''),
+  },
+];
 
 function Rt95ZoneBlock({ zone, slots }: { zone: ZoneView; slots: SlotRow[] }) {
   const title = `Zone ${zone.index + 1}: ${zone.name || '(unnamed)'}`;
@@ -298,14 +374,30 @@ export function Rt95Memory({
                   ? 'MM9PDY-compatible data present.'
                   : ''}
               </Text>
-              <Text size="sm" c="dimmed">
-                The RT95 record has no callsign field. The MM9PDY target writes the channel's
-                callsign into the radio name when it has one. The viewer shows the radio name and
-                the description as stored and does not claim which is which.
-              </Text>
-              {decoded.zones.map((zone) => (
-                <Rt95ZoneBlock key={zone.index} zone={zone} slots={slots} />
-              ))}
+              <MemoryCategoryPanel
+                summary={rt95ZoneSummary(
+                  decoded.zones.length,
+                  decoded.zones.filter((zone) => zone.valid).length,
+                )}
+                caveat={RT95_ZONE_CAVEAT}
+                searchPlaceholder="Search zones"
+                caption="RT95 MMD1 zones"
+                columns={zoneColumns}
+                rows={decoded.zones.map((zone) => ({
+                  id: `zone-${zone.index + 1}`,
+                  zone,
+                  label: zone.name || '(unnamed)',
+                }))}
+                getRowId={(r) => r.id}
+                searchText={(r) =>
+                  `${r.zone.index + 1} ${r.label} ${r.zone.memberIndexes
+                    .map((i) => `${slots[i]?.label ?? ''} ${slots[i]?.description ?? ''}`)
+                    .join(' ')}`
+                }
+                defaultSort={{ key: 'zone', direction: 'asc' }}
+                details={(r) => <Rt95ZoneBlock zone={r.zone} slots={slots} />}
+                emptyMessage={RT95_ZONES_EMPTY}
+              />
               {state?.valid ? (
                 <>
                   <Text>ZST1 selection A [body]: {state.sideA}</Text>
@@ -327,15 +419,23 @@ export function Rt95Memory({
         {RT95_PKEYS_PROVENANCE}
       </Text>
       {keys ? (
-        Array.from(keys, (value, i) => (
-          <Text key={i}>
-            Group {Math.floor(i / 6) + 1} key {(i % 6) + 1}: 0x
-            {value.toString(16).padStart(2, '0')}{' '}
-            {value === RT95_KEY_FUNCTION_DIR ? '· DIR; used as ZON by compatible firmware.' : ''}
-          </Text>
-        ))
+        <MemoryCategoryPanel
+          summary={rt95PKeySummary(keys.length, Math.ceil(keys.length / 6))}
+          caveat={RT95_PKEY_CAVEAT}
+          searchPlaceholder="Search P-keys"
+          caption="RT95 P-keys"
+          columns={pKeyColumns}
+          rows={Array.from(keys, (value, index) => ({ id: `pkey-${index}`, index, value }))}
+          getRowId={(r) => r.id}
+          searchText={(r) =>
+            `${Math.floor(r.index / 6) + 1} ${(r.index % 6) + 1} ${r.value.toString(16)} ${
+              r.value === RT95_KEY_FUNCTION_DIR ? RT95_PKEY_DIR_MEANING : ''
+            }`
+          }
+          defaultSort={{ key: 'group', direction: 'asc' }}
+        />
       ) : (
-        <Text>P-key bytes unavailable.</Text>
+        <Text>{RT95_PKEYS_UNAVAILABLE}</Text>
       )}
     </Stack>
   );

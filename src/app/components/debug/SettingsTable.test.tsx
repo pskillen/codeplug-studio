@@ -102,6 +102,16 @@ describe('SettingsTable', () => {
     expect(screen.getByText('1A')).toBeInTheDocument();
   });
 
+  it('says No raw bytes, No address and No default in words for a present value, never a dash', () => {
+    const { container } = show(view());
+    fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
+    const alpha = screen.getByText('Alpha').closest('tr')!;
+    expect(alpha).toHaveTextContent('No raw bytes');
+    expect(alpha).toHaveTextContent('No address');
+    expect(screen.getByText('Secret').closest('tr')).toHaveTextContent('No default');
+    expect(container.textContent).not.toContain('—');
+  });
+
   it('says Not captured in Address and Raw for an uncaptured row, even a sensitive one', () => {
     show(
       view({

@@ -394,6 +394,18 @@ describe('Dm32Memory', () => {
     expect(screen.getByText(/Referenced by counts only captured/)).toBeInTheDocument();
   });
 
+  it('draws talk groups, RX groups and radio IDs in the shared panel shape', async () => {
+    show(await archiveDm32Capture(referencesCapture()));
+    for (const [tab, placeholder] of [
+      ['Talk groups', 'Search talk groups'],
+      ['RX groups', 'Search RX groups'],
+      ['Radio IDs', 'Search radio IDs'],
+    ] as const) {
+      chooseCategory(tab);
+      expect(screen.getByPlaceholderText(placeholder)).toBeInTheDocument();
+    }
+  });
+
   it('says RX groups are not captured, never none, and marks Referenced by partial', async () => {
     show(await archiveDm32Capture(contactsCapture()));
     chooseCategory('RX groups');

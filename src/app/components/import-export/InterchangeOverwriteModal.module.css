@@ -22,9 +22,9 @@
   gap: 4px;
   min-width: 0;
   padding: 10px 12px;
-  border: 1px solid var(--dsv2-border-subtle);
-  border-radius: var(--dsv2-radius-md);
-  background: var(--dsv2-surface-subtle);
+  border: 1px solid var(--dsv2-border-quiet);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-surface-quiet);
   font-size: 13px;
   color: var(--dsv2-text-secondary);
 }

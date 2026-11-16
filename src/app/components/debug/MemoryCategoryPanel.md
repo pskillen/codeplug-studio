@@ -2,7 +2,7 @@
 
 ## Purpose
 
-One Memory category in the DM-32 shape, for any radio: a count sentence, a dimmed caveat, search, a sortable v2 `DataTable` and an optional details region for the clicked row. It knows no radio; every sentence and column comes from the caller, usually from the radio home.
+One Memory category in the shared shape, for any radio: a count sentence, a dimmed caveat, search, a sortable v2 `DataTable` and an optional details region for the clicked row. It knows no radio; every sentence and column comes from the caller, usually from the radio home.
 
 ## Props
 

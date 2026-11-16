@@ -16,7 +16,7 @@ Set as the `Memory` component on both OpenGD77 descriptors; `RadioDebugPage` mou
 
 ## Behaviour
 
-Channels and Zones are drawn by the shared [MemoryCategoryPanel](../../../components/debug/MemoryCategoryPanel.md) (click a zone for its members below the table); sentences come from `opengd77/debugMemoryText.ts`. Contacts, RX groups and the User Database keep their own panels.
+Channels and Zones are drawn by the shared [MemoryCategoryPanel](../../../components/debug/MemoryCategoryPanel.md) (click a zone for its members below the table); sentences come from `opengd77/debugMemoryText.ts`. Contacts, RX groups (click a list for its members) and the User Database (opt-in, paged, with its submitted whole-database search; the panel's search box filters the visible page) are drawn by it too, from `OpenGd77Directories.tsx`.
 
 Its categories (Channels, Zones, Contacts, RX groups, User Database) are chosen from the shared [MemoryCategories](../../../components/debug/MemoryCategories.md) dropdown, not inner tabs.
 

@@ -6,6 +6,7 @@
 import type { Confidence, SettingRow, SettingsView } from '../../debugView/index.ts';
 import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import { AT_D890UV_MODEL_IDS } from './constants.ts';
+import { AT_D890_FIELD_CONFIDENCE } from './debugSettingsConfidence.ts';
 import { buildAtD890SparseCapture } from './debugMemory.ts';
 import {
   AT_D890_SETTINGS_GROUPS,
@@ -61,8 +62,9 @@ function fieldRow(f: AtD890SettingFieldView): SettingRow {
     label: f.label,
     help: help || undefined,
     value: fieldValue(f),
-    // The decoder carries no confidence for registered fields.
-    confidence: 'unknown',
+    // Debug-only map; a field without an entry stays unknown on purpose.
+    confidence: AT_D890_FIELD_CONFIDENCE[f.id]?.confidence ?? 'unknown',
+    evidence: AT_D890_FIELD_CONFIDENCE[f.id]?.evidence,
     address: addressText(f),
     raw: f.raw,
     sensitive: f.sensitive,

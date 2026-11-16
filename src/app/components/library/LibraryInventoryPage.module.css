@@ -41,7 +41,7 @@
 }
 
 :global(.libraryListNameLink) {
-  color: var(--dsv2-text-link);
+  color: var(--dsv2-accent);
   text-decoration: none;
   font-weight: 500;
 }

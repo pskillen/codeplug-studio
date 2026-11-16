@@ -20,7 +20,9 @@ export interface SettingsTableProps {
 
 const NOT_CAPTURED = 'Not captured';
 const HIDDEN = 'Hidden (password)';
-const DASH = '—';
+const NO_RAW = 'No raw bytes';
+const NO_ADDRESS = 'No address';
+const NO_DEFAULT = 'No default';
 
 const hexByte = (b: number) => b.toString(16).toUpperCase().padStart(2, '0');
 const matches = (query: string, haystack: readonly string[]) => {
@@ -46,7 +48,7 @@ function valueText(row: SettingRow, revealed: boolean): string {
 }
 
 function rawText(row: SettingRow, revealed: boolean): string {
-  if (!row.raw) return row.value === undefined ? NOT_CAPTURED : DASH;
+  if (!row.raw) return row.value === undefined ? NOT_CAPTURED : NO_RAW;
   if (row.sensitive && !revealed) return row.raw.map(() => MASKED_TEXT).join(' ');
   return row.raw.map(hexByte).join(' ');
 }
@@ -107,11 +109,11 @@ function RowsTable({
               <td>{valueText(row, revealed)}</td>
               {showRaw && (
                 <td className={classes.mono}>
-                  {row.address ?? (row.value === undefined ? NOT_CAPTURED : DASH)}
+                  {row.address ?? (row.value === undefined ? NOT_CAPTURED : NO_ADDRESS)}
                 </td>
               )}
               {showRaw && <td className={classes.mono}>{rawText(row, revealed)}</td>}
-              {showDefault && <td>{row.firmwareDefault ?? DASH}</td>}
+              {showDefault && <td>{row.firmwareDefault ?? NO_DEFAULT}</td>}
               <td>
                 <ConfidenceBadge value={row.confidence} />
                 {row.evidence && <span className={classes.evidence}>{row.evidence}</span>}

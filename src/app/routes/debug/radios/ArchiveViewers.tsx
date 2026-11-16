@@ -1,4 +1,3 @@
-import { isOpenGd77ModelId } from '@integrations/radio-io/radios/opengd77/debugCoverage.ts';
 import {
   Alert,
   Button,
@@ -16,10 +15,11 @@ import { openDebugArchive, rt95ArchiveDetails, type DebugArchive } from './captu
 import {
   archiveKey,
   compareRegions,
+  descriptorForModelId,
+  descriptorFor,
   formatAddress,
   HEX_PAGE_BYTES,
   hexRows,
-  isDm32ModelId,
   isMasked,
   regionIdentity,
   regionNote,
@@ -40,16 +40,17 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
   const reveal = useSensitiveReveal(archive ? archiveKey(archive) : undefined);
   if (!archive)
     return <Alert title="No capture">Open or read a capture to inspect its bytes.</Alert>;
-  const wire = selected === '__mini_wire' ? archive.sidecars['debug/wire.bin'] : undefined;
+  const extras = descriptorFor(archive)?.extraHexRegions?.(archive) ?? [];
+  const extra = extras.find((e) => `extra:${e.id}` === selected);
   const region =
     archive.manifest.regions.find((r) => r.id === selected) ?? archive.manifest.regions[0];
   if (!region) return <Alert>No captured regions.</Alert>;
-  const bytes = wire ?? archive.regions[region.id]!;
+  const bytes = extra?.bytes ?? archive.regions[region.id]!;
   const pages = Math.max(1, Math.ceil(bytes.length / HEX_PAGE_BYTES));
   const current = Math.min(page, pages - 1);
-  const note = wire ? {} : regionNote(archive, region.id);
-  const base = wire ? 0 : region.address;
-  const mask = wire ? [] : sensitiveRanges(archive, region.id);
+  const note = extra ? {} : regionNote(archive, region.id);
+  const base = extra ? 0 : region.address;
+  const mask = extra ? [] : sensitiveRanges(archive, region.id);
   const goToAddress = () => {
     const text = jump.trim().replace(/^0x/i, '');
     const target = /^[0-9a-f]+$/i.test(text) ? parseInt(text, 16) : NaN;
@@ -67,8 +68,8 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
     <Stack>
       <Title order={3}>Hex &amp; region map</Title>
       <Text size="sm">
-        {wire
-          ? 'Wire bytes as received'
+        {extra
+          ? extra.label
           : (note.representation ??
             regionIdentity(archive, region.id)?.representation ??
             'Archive bytes; wire or decoded representation is not recorded')}
@@ -77,12 +78,10 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
       </Text>
       <Select
         label="Region"
-        value={wire ? '__mini_wire' : region.id}
+        value={extra ? `extra:${extra.id}` : region.id}
         data={[
           ...archive.manifest.regions.map((r) => ({ value: r.id, label: r.label })),
-          ...(archive.sidecars['debug/wire.bin']
-            ? [{ value: '__mini_wire', label: 'Wire bytes as received' }]
-            : []),
+          ...extras.map((e) => ({ value: `extra:${e.id}`, label: e.label })),
         ]}
         onChange={(id) => {
           setSelected(id);
@@ -93,7 +92,7 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
       />
       <Card withBorder>
         <Text fw={600}>
-          {wire ? 'Wire bytes as received' : region.label} {note.tag ?? ''} · {bytes.length} bytes
+          {extra ? extra.label : region.label} {note.tag ?? ''} · {bytes.length} bytes
         </Text>
         {mask.length > 0 && (
           <Group gap="xs">
@@ -106,7 +105,7 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
         )}
         <div style={{ overflowX: 'auto' }}>
           <pre aria-label="Hexadecimal bytes">
-            {hexRows(bytes, wire ? 0 : region.address, current, reveal.revealed ? [] : mask)
+            {hexRows(bytes, extra ? 0 : region.address, current, reveal.revealed ? [] : mask)
               .map(
                 (row) =>
                   `${formatAddress(row.address)}${provenance(archive, region.id)}  ${row.hex.padEnd(47)}  ${row.ascii}`,
@@ -243,11 +242,10 @@ export function CompareViewer(props: {
                 : `Incomparable: ${'reason' in r ? r.reason : 'region or starting offset differs'}`}
             </Text>
           ))}
-          {!isDm32ModelId(modelId) && !isOpenGd77ModelId(modelId) && (
+          {!descriptorForModelId(modelId)?.ownDecodedChanges && (
             <Title order={4}>Decoded changes</Title>
           )}
-          {!isDm32ModelId(modelId) &&
-            !isOpenGd77ModelId(modelId) &&
+          {!descriptorForModelId(modelId)?.ownDecodedChanges &&
             (() => {
               const first = archive && rt95ArchiveDetails(archive)?.summary;
               const second = other && rt95ArchiveDetails(other)?.summary;
