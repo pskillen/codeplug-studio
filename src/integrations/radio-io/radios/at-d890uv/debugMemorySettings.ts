@@ -23,6 +23,13 @@ import {
   AT_D890_SETTINGS_MAIN_SPAN,
   type AtD890SettingValue,
 } from './settingsFields.ts';
+import {
+  AT_D890_NAMED_SETTING_RANGES,
+  type AtD890NamedSettingConfidence,
+  type AtD890NamedSettingKind,
+  type AtD890NamedSettingRange,
+} from './debugMemorySettingsNamed.ts';
+import { MM9PDY_SETTINGS_STORE_LENGTH, isMm9pdySettingsStoreValid } from './mm9pdySettingsStore.ts';
 import { decodeTerminatedWideCharName } from './wideChar.ts';
 
 /** The part of a sparse capture this module needs; satisfied by `AtD890SparseCapture`. */
@@ -199,7 +206,7 @@ export function projectAtD890ScanLists(
 export type AtD890SettingsGroupId =
   'display' | 'audio' | 'power' | 'keys' | 'dmr' | 'gps' | 'scan' | 'privacy' | 'mod' | 'other';
 
-/** Display order and titles. Scan and Mod features have no registered field today. */
+/** Display order and titles. The Scan group has no registered field today; Mod features is the MM9PDY store. */
 export const AT_D890_SETTINGS_GROUPS: readonly { id: AtD890SettingsGroupId; label: string }[] = [
   { id: 'display', label: 'Display' },
   { id: 'audio', label: 'Audio & tones' },
@@ -326,7 +333,56 @@ export interface AtD890SettingFieldView {
   valueLabel?: string;
   /** Interpretation that holds only if the radio runs a specific write target. */
   conditional?: string;
+  /**
+   * Display-only reading of a captured value the Write allow-list does not offer (for example a hang time of 0).
+   * Never consulted by Write or by validation.
+   */
+  stateText?: string;
+  /** What the firmware does with the stored value when that differs from the stored number. */
+  firmwareNote?: string;
 }
+
+/** Captured bytes of a settings range that no registered field claims but the trace names. */
+export interface AtD890NamedSettingBytes {
+  /** Address of the first captured byte. */
+  address: number;
+  name: string;
+  meaning: string;
+  kind: AtD890NamedSettingKind;
+  confidence: AtD890NamedSettingConfidence;
+  evidence: string;
+  /** Captured bytes only (the range may be partly captured). */
+  bytes: readonly number[];
+  /** Whole range captured. */
+  complete: boolean;
+  /** Single partly claimed byte only: the bits this row names. */
+  mask?: number;
+}
+
+/** The GPS template text at `0x03501280`: UTF-16LE, up to 32 characters. */
+export interface AtD890GpsText {
+  text: string;
+  /** Bytes captured of the block. */
+  capturedBytes: number;
+  /** Bytes the radio keeps for the text (33 units of 2 bytes). */
+  blockBytes: number;
+  /** Whether the capture holds the first unit's worth only and may cut the text short. */
+  truncated: boolean;
+}
+
+export interface AtD890Mm9pdyStoreSetting {
+  byte: number;
+  label: string;
+  raw: number;
+  /** Named value when the source names it. */
+  valueLabel?: string;
+}
+
+export type AtD890Mm9pdyStore =
+  | { status: 'not-captured' }
+  /** Bad magic, version or sum, or a blank record: the firmware treats every setting as 0. */
+  | { status: 'invalid'; raw: readonly number[] }
+  | { status: 'valid'; raw: readonly number[]; settings: readonly AtD890Mm9pdyStoreSetting[] };
 
 /** A byte range inside the settings scope that no registered field claims. */
 export interface AtD890UnknownSettingBytes {
@@ -343,9 +399,15 @@ export interface AtD890RawRun {
 
 export interface AtD890SettingsInventory {
   fields: readonly AtD890SettingFieldView[];
-  /** Captured bytes of the optional APRS block, shown raw only. */
+  /** Captured bytes of the GPS template text block, raw. */
   aprsRuns: readonly AtD890RawRun[];
-  /** Captured, unclaimed bytes (or bits) inside the main and ext scope. */
+  /** The GPS template text decoded from those bytes; absent when nothing was captured. */
+  gpsText?: AtD890GpsText;
+  /** Captured bytes no registered field claims, named from the trace (including never-read bytes). */
+  named: readonly AtD890NamedSettingBytes[];
+  /** MM9PDY settings store at 0x03500200, read-only. */
+  mm9pdy: AtD890Mm9pdyStore;
+  /** Captured, unclaimed bytes (or bits) that nothing names. */
   unknown: readonly AtD890UnknownSettingBytes[];
   /** Bytes in the main and ext scope that were not captured. */
   missingBytes: number;
@@ -376,6 +438,128 @@ function conditionalKeyNote(value: number | undefined): string | undefined {
   const mod = atD890KeyFunctionOptions('mm9pdy').find((o) => o.value === value)?.label;
   if (stock === undefined || mod === undefined || stock === mod) return undefined;
   return `If the radio runs MM9PDY firmware this function is named "${mod}"; the bytes alone do not show which firmware is installed.`;
+}
+
+/**
+ * Display-only readings for values the settings model refuses (and one the radio changes). The Write allow-list
+ * and `settingsFields` validation are untouched: these only stop the page calling a real state "unrecognised".
+ * Evidence: radio repo F355 (0x081134F8, 0x0811A4F0, 0x08118AA8, 0x08118B68, 0x0810C9FC, decompile 104430).
+ */
+const HANG_ZERO = {
+  stateText: 'No hang time (0)',
+  firmwareNote: 'n < 31 is n seconds; 0 means no hang (0x081134F8).',
+};
+const MANUAL_HANG_ZERO = {
+  stateText: '0 (acts as 1 s)',
+  firmwareNote: 'The loader rewrites 0 to 1, so the radio uses 1 second (decompile 104430).',
+};
+const ZERO_STATE_DISPLAY: Record<
+  string,
+  (raw: number) => { stateText?: string; firmwareNote?: string } | undefined
+> = {
+  groupCallHangTime: (n) => (n === 0 ? HANG_ZERO : undefined),
+  privateCallHangTime: (n) => (n === 0 ? HANG_ZERO : undefined),
+  manualDialGroupHangTime: (n) => (n === 0 ? MANUAL_HANG_ZERO : undefined),
+  manualDialPrivateHangTime: (n) => (n === 0 ? MANUAL_HANG_ZERO : undefined),
+  analogueCallHold: (n) =>
+    n === 0
+      ? {
+          stateText: 'No hold (0)',
+          firmwareNote: 'The reader gates on a non-zero value (0x0811A4F0).',
+        }
+      : undefined,
+  txPreamble: (n) =>
+    n < 5
+      ? {
+          stateText: `${n} (sent as 5, 300 ms)`,
+          firmwareNote: 'DMR sends at least 5 (300 ms); 0–4 all give 300 ms (0x08118AA8).',
+        }
+      : undefined,
+  voiceHeaderRepeats: (n) =>
+    n < 2
+      ? {
+          stateText: `${n} (sent as is)`,
+          firmwareNote: 'The firmware sends min(n, 9): 0 and 1 go out as stored (0x08118B68).',
+        }
+      : n === 10
+        ? { firmwareNote: 'A stored 10 goes on air as 9 (0x08118B68).' }
+        : undefined,
+  powerOnVolumeLevel: (n) =>
+    n === 0
+      ? {
+          stateText: 'Level 0',
+          firmwareNote: '0–14 are used as stored; above 14 becomes 15 (0x0810C9FC).',
+        }
+      : undefined,
+};
+
+/** The first named range covering `offset` from the main record start. */
+function namedRangeAt(offset: number): AtD890NamedSettingRange | undefined {
+  return AT_D890_NAMED_SETTING_RANGES.find(
+    (r) => offset >= r.offset && offset < r.offset + r.length,
+  );
+}
+
+const GPS_TEXT_BLOCK_BYTES = 0x42;
+
+/** UTF-16LE up to the first zero unit; the radio turns a 0x00FF unit into 0 at load, so that ends the text too. */
+function decodeGpsText(bytes: readonly number[]): string {
+  let text = '';
+  for (let i = 0; i + 1 < bytes.length; i += 2) {
+    const unit = bytes[i]! | (bytes[i + 1]! << 8);
+    if (unit === 0 || unit === 0x00ff) break;
+    text += String.fromCharCode(unit);
+  }
+  return text;
+}
+
+const MM9PDY_SETTINGS: readonly { byte: number; label: string; values?: readonly string[] }[] = [
+  { byte: 3, label: 'Zone-scan source', values: ['Zone', 'Scan list'] },
+  { byte: 4, label: 'TS match (1: TS filter Off while RX match is TG or RGL)' },
+  { byte: 5, label: 'CC match (1: any colour code passes the repeater CC limit)' },
+  {
+    byte: 6,
+    label: 'Talk-group time slot',
+    values: ['Auto (TS1 / TS2 name suffix wins)', "The channel's slot"],
+  },
+  { byte: 7, label: 'RX match TG (1: only RX-table slot 0x41 while monitor is off)' },
+  { byte: 8, label: 'Tone Any (1: tone match always met)' },
+  { byte: 9, label: 'Heard-call popup in zone scan (1: off)' },
+  { byte: 10, label: 'S-meter mode (0–4)' },
+  { byte: 11, label: 'S-meter average (0–2)' },
+  { byte: 12, label: 'S-meter peak (0–2)' },
+  { byte: 13, label: 'Spectrum span (0–5)' },
+  { byte: 14, label: 'S-meter step (0–2)' },
+  { byte: 15, label: 'S-meter top (0–2)' },
+  { byte: 16, label: 'S-meter bottom (0–2)' },
+  { byte: 17, label: 'Volume range', values: ['Stock', 'Indoor', 'Outdoor', 'Full'] },
+  { byte: 18, label: 'Zone-scan resume time', values: ['5 s', '10 s', '0.5 s', '1 s', '2 s'] },
+  { byte: 19, label: 'Bluetooth knob volume', values: ['On (default)', 'Off (stock)'] },
+  { byte: 20, label: 'Bluetooth internal mic', values: ['Off (default)', 'On'] },
+  { byte: 21, label: 'NXDN unlock', values: ['Locked (default)', 'Unlocked with the PIN'] },
+  { byte: 22, label: 'Up/Down keys', values: ['Zone', 'Channel', 'Talk group'] },
+];
+
+/** The MM9PDY settings store (source: radio repo fw/src/m6.h, cfg.c). Read-only. */
+function projectMm9pdyStore(capture: AtD890ByteReader): AtD890Mm9pdyStore {
+  const record = capture.read(D890_MAP.SettingsStore, MM9PDY_SETTINGS_STORE_LENGTH);
+  if (!record) return { status: 'not-captured' };
+  const raw = [...record];
+  if (!isMm9pdySettingsStoreValid(record)) return { status: 'invalid', raw };
+  return {
+    status: 'valid',
+    raw,
+    settings: MM9PDY_SETTINGS.map((def) => {
+      const value = raw[def.byte]!;
+      const valueLabel = def.values?.[value];
+      return {
+        byte: def.byte,
+        label: def.label,
+        raw: value,
+        ...(valueLabel === undefined ? {} : { valueLabel }),
+      };
+    }),
+  };
 }
 
 /**
@@ -432,6 +616,7 @@ export function projectAtD890Settings(capture: AtD890ByteReader): AtD890Settings
         ? atD890KeyFunctionOptions('stock').find((o) => o.value === d.raw[0])?.label
         : undefined;
     const valueLabel = d.label ?? keyLabel;
+    const zero = d.raw.length === 1 ? ZERO_STATE_DISPLAY[spec.id]?.(d.raw[0]!) : undefined;
     fields.push({
       ...base,
       status: 'captured',
@@ -439,10 +624,34 @@ export function projectAtD890Settings(capture: AtD890ByteReader): AtD890Settings
       ...(d.value === undefined ? {} : { value: d.value }),
       ...(valueLabel === undefined ? {} : { valueLabel }),
       ...(conditional === undefined ? {} : { conditional }),
+      ...(zero?.stateText === undefined || d.value !== undefined
+        ? {}
+        : { stateText: zero.stateText }),
+      ...(zero?.firmwareNote === undefined ? {} : { firmwareNote: zero.firmwareNote }),
     });
   }
 
   const unknown: AtD890UnknownSettingBytes[] = [];
+  const namedByRange = new Map<AtD890NamedSettingRange, AtD890NamedSettingBytes>();
+  const addNamed = (range: AtD890NamedSettingRange, address: number, byte: number) => {
+    let entry = namedByRange.get(range);
+    if (!entry) {
+      entry = {
+        address,
+        name: range.name,
+        meaning: range.meaning,
+        kind: range.kind,
+        confidence: range.confidence,
+        evidence: range.evidence,
+        bytes: [],
+        complete: false,
+        ...(range.mask === undefined ? {} : { mask: range.mask }),
+      };
+      namedByRange.set(range, entry);
+    }
+    (entry.bytes as number[]).push(byte);
+    entry.complete = entry.bytes.length === range.length;
+  };
   let missingBytes = 0;
   for (const span of [AT_D890_SETTINGS_MAIN_SPAN, AT_D890_SETTINGS_EXT_SPAN]) {
     let run: { address: number; bytes: number[] } | undefined;
@@ -458,8 +667,15 @@ export function projectAtD890Settings(capture: AtD890ByteReader): AtD890Settings
         continue;
       }
       const owned = claimed.get(address) ?? 0;
+      const range =
+        span === AT_D890_SETTINGS_MAIN_SPAN && owned !== 0xff
+          ? namedRangeAt(address - span.start)
+          : undefined;
       if (owned === 0xff) {
         flush();
+      } else if (range && (owned === 0) === (range.mask === undefined)) {
+        flush();
+        addNamed(range, address, b[0]!);
       } else if (owned === 0) {
         if (!run) run = { address, bytes: [] };
         run.bytes.push(b[0]!);
@@ -471,9 +687,27 @@ export function projectAtD890Settings(capture: AtD890ByteReader): AtD890Settings
     flush();
   }
 
+  const aprsRuns = readRuns(
+    capture,
+    D890_MAP.OptionalSettingsAprs,
+    D890_MAP.OptionalSettingsAprsLength,
+  );
+  const gpsRun = aprsRuns[0];
+  const gpsText: AtD890GpsText | undefined = gpsRun
+    ? {
+        text: decodeGpsText(gpsRun.bytes),
+        capturedBytes: gpsRun.bytes.length,
+        blockBytes: GPS_TEXT_BLOCK_BYTES,
+        truncated: gpsRun.bytes.length < GPS_TEXT_BLOCK_BYTES,
+      }
+    : undefined;
+
   return {
     fields,
-    aprsRuns: readRuns(capture, D890_MAP.OptionalSettingsAprs, D890_MAP.OptionalSettingsAprsLength),
+    aprsRuns,
+    ...(gpsText === undefined ? {} : { gpsText }),
+    named: [...namedByRange.values()].sort((x, y) => x.address - y.address),
+    mm9pdy: projectMm9pdyStore(capture),
     unknown,
     missingBytes,
     counts: {

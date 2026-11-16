@@ -248,23 +248,114 @@ describe('settings', () => {
     expect(s.counts).toMatchObject({ captured: 1, decoded: 0 });
   });
 
-  it('shows the whole byte for masked fields and lists the unclaimed bits as unknown', () => {
+  it('shows the whole byte for masked fields and names the unclaimed bits as having no reader', () => {
     // +0x110 carries three flags (bits 0..2); bit 7 and bit 3 are set and belong to no field.
     const s = settings([sparse(MAIN + 0x110, Uint8Array.of(0x85))]);
     expect(field(s, 'showChannelType')).toMatchObject({ raw: [0x85], value: true });
     expect(field(s, 'showTimeSlot').value).toBe(false);
     expect(field(s, 'showColourCode').value).toBe(true);
-    expect(s.unknown).toEqual([{ address: MAIN + 0x110, bytes: [0x85], unclaimedMask: 0xf8 }]);
+    expect(s.unknown).toEqual([]);
+    expect(s.named).toEqual([
+      expect.objectContaining({
+        address: MAIN + 0x110,
+        name: 'ChanDisCtr (bits 3–7)',
+        kind: 'no-reader',
+        confidence: 'traced',
+        mask: 0xf8,
+        bytes: [0x85],
+      }),
+    ]);
   });
 
-  it('lists captured unregistered bytes as runs and counts missing ones', () => {
-    // Offsets 0x60..0x62 are claimed by no field; also capture one claimed byte.
+  it('names captured unregistered bytes and counts missing ones', () => {
+    // Offsets 0x60..0x62 are claimed by no field (VFO scan limits); also capture one claimed byte.
     const s = settings([
       sparse(MAIN + 0x60, Uint8Array.of(1, 2, 3)),
       sparse(MAIN + 0x03, Uint8Array.of(0)),
     ]);
-    expect(s.unknown).toEqual([{ address: MAIN + 0x60, bytes: [1, 2, 3] }]);
+    expect(s.unknown).toEqual([]);
+    expect(s.named).toEqual([
+      expect.objectContaining({
+        address: MAIN + 0x60,
+        name: 'VfoScanFreq0..3',
+        kind: 'meaning',
+        bytes: [1, 2, 3],
+        complete: false,
+      }),
+    ]);
     expect(s.missingBytes).toBe(0x160 + 0x48 - 4);
+  });
+
+  it('names all 276 unclaimed bytes from a full capture: nothing is left unknown', () => {
+    const s = settings([sparse(MAIN, new Uint8Array(0x160)), sparse(EXT, new Uint8Array(0x48))]);
+    expect(s.unknown).toEqual([]);
+    const bytes = (kind: string) =>
+      s.named.filter((n) => n.kind === kind).reduce((n, r) => n + r.bytes.length, 0);
+    expect(s.named.reduce((n, r) => n + r.bytes.length, 0)).toBe(276);
+    expect(s.named.every((n) => n.complete)).toBe(true);
+    expect(bytes('unreferenced')).toBe(3);
+    expect(bytes('no-reader')).toBe(1);
+    expect(bytes('never-read')).toBe(23);
+    expect(bytes('meaning')).toBe(249);
+    const lock = s.named.find((n) => n.address === MAIN + 0xbe)!;
+    expect(lock.meaning).toContain('bit 4 forced lock');
+    expect(s.named.find((n) => n.address === MAIN + 0xc2)).toMatchObject({ confidence: 'partly' });
+  });
+
+  it('shows the real zero states as readings and keeps the Write model unchanged', () => {
+    const read = (id: string, offset: number, v: number) =>
+      field(settings([sparse(MAIN + offset, Uint8Array.of(v))]), id);
+    expect(read('groupCallHangTime', 0x19, 0)).toMatchObject({ stateText: 'No hang time (0)' });
+    expect(read('privateCallHangTime', 0x1a, 0)).toMatchObject({ stateText: 'No hang time (0)' });
+    expect(read('manualDialGroupHangTime', 0x107, 0)).toMatchObject({
+      stateText: '0 (acts as 1 s)',
+    });
+    expect(read('analogueCallHold', 0x50, 0)).toMatchObject({ stateText: 'No hold (0)' });
+    expect(read('txPreamble', 0x1c, 3)).toMatchObject({ stateText: '3 (sent as 5, 300 ms)' });
+    expect(read('voiceHeaderRepeats', 0x1b, 1)).toMatchObject({ stateText: '1 (sent as is)' });
+    expect(read('voiceHeaderRepeats', 0x1b, 10).firmwareNote).toContain('goes on air as 9');
+    expect(read('powerOnVolumeLevel', 0x156, 0)).toMatchObject({ stateText: 'Level 0' });
+    // The decoded value stays undefined: the settings model (and so Write) still refuses zero.
+    expect(read('groupCallHangTime', 0x19, 0).value).toBeUndefined();
+    // A value the model already offers gets no override text.
+    expect(read('txPreamble', 0x1c, 7).stateText).toBeUndefined();
+  });
+
+  it('decodes the GPS template text as UTF-16 and says when the capture is shorter than the block', () => {
+    const text = wide('MM9PDY', 0x30);
+    const s = settings([sparse(APRS, text)]);
+    expect(s.gpsText).toEqual({
+      text: 'MM9PDY',
+      capturedBytes: 0x30,
+      blockBytes: 0x42,
+      truncated: true,
+    });
+    expect(settings([]).gpsText).toBeUndefined();
+  });
+
+  it('reads the MM9PDY store read-only: valid, invalid and not captured', () => {
+    const rec = new Uint8Array(32);
+    rec[0] = 0x4d;
+    rec[1] = 0x36;
+    rec[2] = 1;
+    rec[3] = 1;
+    rec[18] = 2;
+    rec[21] = 1;
+    rec[31] = rec.slice(0, 31).reduce((a, b) => (a + b) & 0xff, 0);
+    const ok = settings([sparse(MAIN + 0x200, rec)]).mm9pdy;
+    if (ok.status !== 'valid') throw new Error('expected valid');
+    expect(ok.settings.find((x) => x.byte === 3)).toMatchObject({ valueLabel: 'Scan list' });
+    expect(ok.settings.find((x) => x.byte === 18)).toMatchObject({ valueLabel: '0.5 s' });
+    expect(ok.settings.find((x) => x.byte === 21)).toMatchObject({
+      valueLabel: 'Unlocked with the PIN',
+    });
+    const bad = rec.slice();
+    bad[31] ^= 1;
+    expect(settings([sparse(MAIN + 0x200, bad)]).mm9pdy.status).toBe('invalid');
+    expect(settings([sparse(MAIN + 0x200, new Uint8Array(32).fill(0xff))]).mm9pdy.status).toBe(
+      'invalid',
+    );
+    expect(settings([]).mm9pdy).toEqual({ status: 'not-captured' });
   });
 
   it('keeps APRS bytes raw and per captured run', () => {
