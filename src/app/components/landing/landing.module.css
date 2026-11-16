@@ -188,7 +188,7 @@
 }
 
 .cardLink {
-  color: var(--dsv2-text-link);
+  color: var(--dsv2-accent);
   font-size: var(--dsv2-font-body-sm);
   font-weight: 600;
 }

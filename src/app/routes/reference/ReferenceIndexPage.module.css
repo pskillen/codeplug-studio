@@ -156,7 +156,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--dsv2-font-heading-md);
+  font-size: var(--dsv2-font-heading);
   font-weight: 600;
   color: var(--dsv2-text-primary);
   margin: 0 0 3px;

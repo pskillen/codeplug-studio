@@ -19,7 +19,7 @@
   flex: 1 1 0;
   height: 4px;
   border-radius: 2px;
-  background: var(--dsv2-border-subtle, rgba(128, 128, 128, 0.3));
+  background: var(--dsv2-border-quiet, rgba(128, 128, 128, 0.3));
 }
 
 .stepDotDone,
@@ -42,7 +42,7 @@
   align-items: flex-start;
   gap: 10px;
   padding: var(--dsv2-space-6, 8px) 0;
-  border-bottom: 1px solid var(--dsv2-border-subtle, rgba(128, 128, 128, 0.2));
+  border-bottom: 1px solid var(--dsv2-border-quiet, rgba(128, 128, 128, 0.2));
 }
 
 .partRow:last-of-type {
@@ -95,7 +95,7 @@
   flex-direction: column;
   gap: 4px;
   padding-bottom: var(--dsv2-space-6, 8px);
-  border-bottom: 1px solid var(--dsv2-border-subtle, rgba(128, 128, 128, 0.2));
+  border-bottom: 1px solid var(--dsv2-border-quiet, rgba(128, 128, 128, 0.2));
 }
 
 .sectionTitle {

@@ -5,9 +5,9 @@
   gap: 6px;
   width: 100%;
   padding: 14px;
-  border: 1px solid var(--dsv2-border-subtle);
-  border-radius: var(--dsv2-radius-md);
-  background: var(--dsv2-surface-raised);
+  border: 1px solid var(--dsv2-border-quiet);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-surface);
   text-align: left;
   cursor: pointer;
   transition:
@@ -16,8 +16,8 @@
 }
 
 .sourceCard:hover {
-  border-color: var(--dsv2-border-strong);
-  background: var(--dsv2-surface-subtle);
+  border-color: var(--dsv2-border);
+  background: var(--dsv2-surface-quiet);
 }
 
 .sourceIcon {
@@ -26,8 +26,8 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: var(--dsv2-radius-md);
-  background: var(--dsv2-accent-subtle);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-accent-tint-10);
   color: var(--dsv2-accent);
 }
 
@@ -59,6 +59,6 @@
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: var(--dsv2-surface-subtle);
+  background: var(--dsv2-surface-quiet);
   color: var(--dsv2-text-secondary);
 }

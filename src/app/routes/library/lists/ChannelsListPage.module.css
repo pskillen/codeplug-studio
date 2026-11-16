@@ -203,7 +203,7 @@
   border: 1px solid var(--dsv2-border);
   border-radius: var(--dsv2-radius-control);
   background: var(--dsv2-surface);
-  box-shadow: var(--dsv2-shadow-panel);
+  box-shadow: var(--dsv2-shadow-popover);
 }
 
 .cardDetailsPickerRow {

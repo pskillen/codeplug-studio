@@ -33,7 +33,7 @@
 
 .transmitter {
   padding-top: 4px;
-  border-top: 1px solid var(--dsv2-border-subtle);
+  border-top: 1px solid var(--dsv2-border-quiet);
 }
 
 .transmitter:first-child {

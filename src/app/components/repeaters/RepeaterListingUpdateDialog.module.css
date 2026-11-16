@@ -12,8 +12,8 @@
 
 .tableWrap {
   overflow-x: auto;
-  border: 1px solid var(--dsv2-border-subtle);
-  border-radius: var(--dsv2-radius-md);
+  border: 1px solid var(--dsv2-border-quiet);
+  border-radius: var(--dsv2-radius-control);
 }
 
 .table {
@@ -26,14 +26,14 @@
 .table td {
   padding: 8px 10px;
   text-align: left;
-  border-bottom: 1px solid var(--dsv2-border-subtle);
+  border-bottom: 1px solid var(--dsv2-border-quiet);
   vertical-align: top;
 }
 
 .table th {
   font-weight: 600;
   color: var(--dsv2-text-secondary);
-  background: var(--dsv2-surface-subtle);
+  background: var(--dsv2-surface-quiet);
 }
 
 .dimRow {
@@ -77,7 +77,7 @@
 
 .timingLeader {
   flex: 1;
-  border-bottom: 1px dotted var(--dsv2-border-subtle);
+  border-bottom: 1px dotted var(--dsv2-border-quiet);
   min-width: 24px;
   height: 0;
 }
