@@ -15,6 +15,7 @@ import {
   isOpenGd77ModelId,
   OPENGD77_DEBUG_MODELS,
   openGd77DebugIdentity,
+  openGd77DebugRegionIdentity,
   openGd77DebugModel,
 } from './debugCoverage.ts';
 import { OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID } from './hydration.ts';
@@ -169,5 +170,44 @@ describe('classifyOpenGd77DebugCoverage', () => {
     expect(c.unclassified.map((u) => u.id)).toEqual(['flash-span-0', 'mystery']);
     expect(c.unclassified[0]!.reason).toMatch(/does not match/);
     expect(c.unclassified[1]!.reason).toMatch(/not a registered/);
+  });
+});
+
+describe('openGd77DebugRegionIdentity', () => {
+  it('identifies registered spans and the packed User Database', () => {
+    const p = parts();
+    expect(openGd77DebugRegionIdentity(p.manifest, p.regions, 'flash-span-0')).toEqual({
+      space: 'OpenGD77 FLASH, absolute address',
+      representation: 'FLASH bytes',
+    });
+    expect(
+      openGd77DebugRegionIdentity(p.manifest, p.regions, OPENGD77_BACKUP_USER_DATABASE_ID)?.space,
+    ).toMatch(/packed/);
+  });
+
+  it('accepts a restorable span (Backup ZIP read)', () => {
+    const p = parts();
+    const manifest = {
+      ...p.manifest,
+      regions: p.manifest.regions.map((r) => ({ ...r, restoreRole: 'restorable' as const })),
+    };
+    expect(openGd77DebugRegionIdentity(manifest, p.regions, 'flash-span-1')).toBeDefined();
+  });
+
+  it('refuses unknown ids, moved addresses, wrong paths and short bytes', () => {
+    const p = parts();
+    expect(openGd77DebugRegionIdentity(p.manifest, p.regions, 'nope')).toBeUndefined();
+    const edit = (patch: object) => ({
+      ...p.manifest,
+      regions: p.manifest.regions.map((r) => (r.id === 'flash-span-0' ? { ...r, ...patch } : r)),
+    });
+    expect(openGd77DebugRegionIdentity(edit({ address: 1 }), p.regions, 'flash-span-0')).toBe(
+      undefined,
+    );
+    expect(openGd77DebugRegionIdentity(edit({ path: 'x.bin' }), p.regions, 'flash-span-0')).toBe(
+      undefined,
+    );
+    const short = { ...p.regions, 'flash-span-0': new Uint8Array(3) };
+    expect(openGd77DebugRegionIdentity(p.manifest, short, 'flash-span-0')).toBeUndefined();
   });
 });

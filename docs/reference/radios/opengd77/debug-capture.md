@@ -37,6 +37,12 @@ Radio type is shared between look-alike models: `0x05` is both MD-9600 and RT-90
 
 The FLASH part id is shown as reported (`0x4018` is the 16 MiB part both models boot on). Limits: [dm-1701](../baofeng/dm-1701/README.md), [md-9600](../tyt/md-9600/README.md).
 
+## Comparison
+
+The Compare tab (a second retained read of the same page) compares bytes only where the address space is known: a `flash-span-N` region whose address, length and path match the registered span (absolute FLASH address), and the `user-database` region at the packed header address (header, segment 0 and segment 1 packed together, not contiguous flash). Restorable (Backup ZIP) and inspect-only (debug read) spans both qualify. A User Database of different length counts the tail as missing bytes, never changed. Any other region is incomparable, and captures of different models are refused.
+
+The decoded evidence diff reads only classified bytes and the raw FirmwareInfo sidecar: `Identity / Radio type`, `Revision`, `Build date`, `Flash ID`, `Features`, and `User Database / Header valid`, `Entry count (header)`, `Captured bytes`. An invalid or missing source gives Unavailable, never a guess. Decoded sidecar summaries are not evidence. FirmwareInfo has no serial, so there is no responding-unit verdict.
+
 ## Coverage
 
 Coverage lists the registered spans as captured, partial (a shorter region than registered) or missing, and the User Database as captured or not captured. Everything between and outside the spans is _not read, unknown_. A capture is never a full flash image or a firmware dump. Regions with an unknown id, a non-`inspect-only` role or an unexpected path are listed as unclassified with the reason.

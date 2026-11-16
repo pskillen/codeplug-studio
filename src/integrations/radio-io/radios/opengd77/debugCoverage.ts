@@ -250,3 +250,38 @@ export function classifyOpenGd77DebugCoverage(
       : {}),
   };
 }
+
+/**
+ * Address space and byte representation of a region, for byte comparison. Only a registered
+ * `flash-span-N` (absolute FLASH address) or the packed User Database qualifies; the bytes must
+ * be stored at the registered path and match the manifest length. A Backup ZIP read (restorable
+ * spans) and a debug read (inspect-only) are both accepted. Anything else is incomparable.
+ */
+export function openGd77DebugRegionIdentity(
+  manifest: RadioBackupManifestV1,
+  regions: Record<string, Uint8Array>,
+  id: string,
+): { space: string; representation: string } | undefined {
+  const region = manifest.regions.find((r) => r.id === id);
+  if (!region || regions[id]?.length !== region.byteLength) return undefined;
+  const span = OPENGD77_BACKUP_FLASH_SPANS.find((s) => s.id === id);
+  if (span) {
+    return region.address === span.start &&
+      region.byteLength === span.length &&
+      region.path === `regions/${id}.bin`
+      ? { space: 'OpenGD77 FLASH, absolute address', representation: 'FLASH bytes' }
+      : undefined;
+  }
+  if (
+    id === OPENGD77_BACKUP_USER_DATABASE_ID &&
+    region.address === OPENUV380_USER_DB_HEADER_ABS &&
+    region.byteLength >= OPENUV380_USER_DB_HEADER_SIZE &&
+    region.path === `regions/${OPENGD77_BACKUP_USER_DATABASE_ID}.bin`
+  ) {
+    return {
+      space: 'OpenGD77 User Database, packed (header + segment 0 + segment 1)',
+      representation: 'packed User Database bytes',
+    };
+  }
+  return undefined;
+}

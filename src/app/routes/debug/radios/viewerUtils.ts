@@ -1,6 +1,10 @@
 import { DM32_MODEL_IDS } from '@integrations/radio-io/radios/dm32uv/constants.ts';
 import { DM32_FACTORY_SECTOR_REGION_ID } from '@integrations/radio-io/radios/dm32uv/calibrationDecode.ts';
 import { classifyDm32DebugCoverage } from '@integrations/radio-io/radios/dm32uv/debugCoverage.ts';
+import {
+  isOpenGd77ModelId,
+  openGd77DebugRegionIdentity,
+} from '@integrations/radio-io/radios/opengd77/debugCoverage.ts';
 import { MMD1_BASE, MMD1_END } from '@integrations/radio-io/radios/rt95/modData/layout.ts';
 import {
   RT95_MMD1_REGION_ID,
@@ -64,6 +68,8 @@ export function regionIdentity(archive: DebugArchive, id: string) {
       return { space: 'DM-32 configuration', representation: 'configuration bytes' };
     return undefined;
   }
+  if (isOpenGd77ModelId(archive.manifest.radioModelId))
+    return openGd77DebugRegionIdentity(archive.manifest, archive.regions, id);
   if (archive.manifest.radioModelId === RT95_MODEL_ID && id === 'programming-image')
     return { space: 'RT95 programming image', representation: 'programming image bytes' };
   if (archive.manifest.radioModelId === RT95_MODEL_ID && id === RT95_MMD1_REGION_ID) {
