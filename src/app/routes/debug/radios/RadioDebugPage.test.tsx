@@ -77,7 +77,7 @@ function open(slug = 'uv-5r-mini') {
   return view;
 }
 describe('dark scope', () => {
-  it('renders the whole page, header and tab bodies, inside one .dsv2-scope', () => {
+  it('renders the whole page, header and tab bodies, inside a dark .dsv2-scope', () => {
     render(
       <MemoryRouter initialEntries={['/debug/radios/uv-5r-mini']}>
         <Routes>
@@ -85,11 +85,10 @@ describe('dark scope', () => {
         </Routes>
       </MemoryRouter>,
     );
-    const scope = document.querySelector('.dsv2-scope');
+    const scope = document.querySelector('.dsv2-scope[data-mantine-color-scheme="dark"]');
     expect(scope).not.toBeNull();
     expect(scope).toContainElement(screen.getByRole('link', { name: /All debug tools/ }));
     expect(scope).toContainElement(screen.getByRole('tab', { name: 'Backup' }));
-    expect(document.querySelectorAll('.dsv2-scope')).toHaveLength(1);
   });
 });
 describe('Mini shared page read', () => {

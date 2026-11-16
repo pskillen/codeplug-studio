@@ -64,6 +64,23 @@ const asReturned = (frame: Dm32VFrameEvidence | undefined) =>
       ? `Failed: ${frame.failed}`
       : (frame.text ?? (frame.hex ? `0x${frame.hex.toUpperCase()}` : 'Empty reply'));
 
+/**
+ * The provider scopes the `--mantine-*` dark variables to an element that carries
+ * `data-mantine-color-scheme="dark"`, so the page sets it here; plain Mantine components (Backup,
+ * Hex, Compare, Overview) then read the dark palette instead of the app's light one.
+ */
+const DARK_PAGE_STYLE = {
+  background: 'var(--dsv2-bg)',
+  color: 'var(--dsv2-text-primary)',
+  // Cancels the shell's 16px main padding so no light strip shows above or below the page.
+  margin: '-16px 0',
+  padding: '16px 0',
+  minHeight: 'calc(100dvh - 108px)',
+  // Paints the dark background across the full width, past the shell's max-width column.
+  boxShadow: '0 0 0 100vmax var(--dsv2-bg)',
+  clipPath: 'inset(0 -100vmax)',
+} as const;
+
 export default function RadioDebugPage() {
   const { radio } = useParams();
   return <RadioDebugProfile key={radio} radio={radio} />;
@@ -215,106 +232,73 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   };
   return (
     <DesignSystemV2Provider>
-      <Page>
-        <Stack>
-          <Anchor component={Link} to="/debug">
-            ← All debug tools
-          </Anchor>
-          <PageHeader title={descriptor.model} description={`${descriptor.family} profile`} />
-          <Group>
-            <FileButton onChange={openFile} accept=".zip,application/zip">
-              {(props) => (
-                <Button variant="default" {...props}>
-                  Open archive
-                </Button>
-              )}
-            </FileButton>
-          </Group>
-          {error && (
-            <Alert color="red" title="Operation failed">
-              {error}
-            </Alert>
-          )}
-          {archive && (
-            <Text size="sm">
-              {archive.source === 'file' ? 'Local archive' : 'Live read'} · captured{' '}
-              {archive.manifest.capturedAt} · {archive.manifest.regions.length} regions
-            </Text>
-          )}
-          <Tabs value={activeTab} onChange={setActiveTab}>
-            <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
-              {radioDebugTabs(descriptor).map((tab) => (
-                <Tabs.Tab key={tab} value={tab.toLowerCase()}>
-                  {tab}
-                </Tabs.Tab>
-              ))}
-            </Tabs.List>
-            <Tabs.Panel value="overview" pt="md">
-              <Stack>
-                <Card withBorder>
-                  <Title order={3}>Identity and firmware</Title>
-                  <SimpleGrid cols={{ base: 2, sm: 3 }} mt="md">
-                    {(descriptor.identityRows
-                      ? [
-                          ['Model · selected', descriptor.model],
-                          ...descriptor.identityRows({ archive, connection }),
-                        ]
-                      : descriptor.slug === 'at-d890uv'
+      <div className="dsv2-scope" data-mantine-color-scheme="dark" style={DARK_PAGE_STYLE}>
+        <Page>
+          <Stack>
+            <Anchor component={Link} to="/debug">
+              ← All debug tools
+            </Anchor>
+            <PageHeader title={descriptor.model} description={`${descriptor.family} profile`} />
+            <Group>
+              <FileButton onChange={openFile} accept=".zip,application/zip">
+                {(props) => (
+                  <Button variant="default" {...props}>
+                    Open archive
+                  </Button>
+                )}
+              </FileButton>
+            </Group>
+            {error && (
+              <Alert color="red" title="Operation failed">
+                {error}
+              </Alert>
+            )}
+            {archive && (
+              <Text size="sm">
+                {archive.source === 'file' ? 'Local archive' : 'Live read'} · captured{' '}
+                {archive.manifest.capturedAt} · {archive.manifest.regions.length} regions
+              </Text>
+            )}
+            <Tabs value={activeTab} onChange={setActiveTab}>
+              <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
+                {radioDebugTabs(descriptor).map((tab) => (
+                  <Tabs.Tab key={tab} value={tab.toLowerCase()}>
+                    {tab}
+                  </Tabs.Tab>
+                ))}
+              </Tabs.List>
+              <Tabs.Panel value="overview" pt="md">
+                <Stack>
+                  <Card withBorder>
+                    <Title order={3}>Identity and firmware</Title>
+                    <SimpleGrid cols={{ base: 2, sm: 3 }} mt="md">
+                      {(descriptor.identityRows
                         ? [
                             ['Model · selected', descriptor.model],
-                            ['Model · captured ident', d890Identity?.ident?.model ?? 'Unknown'],
-                            [
-                              'Band code · captured ident',
-                              d890Identity?.ident
-                                ? `0x${d890Identity.ident.bandCode.toString(16).toUpperCase().padStart(2, '0')}`
-                                : 'Unknown',
-                            ],
-                            ['Ident version · protocol', d890Identity?.ident?.version ?? 'Unknown'],
-                            ['Serial · captured LocalInfo', d890Identity?.serial ?? 'Unknown'],
-                            ['Running firmware', 'Unknown'],
-                            ['Firmware mod', 'Unknown'],
-                            [
-                              'Evidence',
-                              d890Identity?.ident || d890Identity?.serial
-                                ? 'Captured radio bytes'
-                                : 'No radio identity observed',
-                            ],
-                            [
-                              'Connection',
-                              reading
-                                ? 'Reading radio…'
-                                : archive?.source === 'live-read'
-                                  ? 'Read complete · disconnected'
-                                  : 'Not connected',
-                            ],
+                            ...descriptor.identityRows({ archive, connection }),
                           ]
-                        : descriptor.slug === 'rt95'
+                        : descriptor.slug === 'at-d890uv'
                           ? [
                               ['Model · selected', descriptor.model],
-                              ['Expected family', descriptor.family],
-                              ['Serial · archive', archive?.manifest.serial || 'Unknown'],
-                              ['Firmware · archive', archive?.manifest.firmware || 'Unknown'],
+                              ['Model · captured ident', d890Identity?.ident?.model ?? 'Unknown'],
                               [
-                                'PC ident [head]',
-                                archive?.sidecars['debug/ident.bin']
-                                  ? Array.from(archive.sidecars['debug/ident.bin'], (b) =>
-                                      b.toString(16).padStart(2, '0'),
-                                    ).join(' ')
-                                  : 'Not captured',
+                                'Band code · captured ident',
+                                d890Identity?.ident
+                                  ? `0x${d890Identity.ident.bandCode.toString(16).toUpperCase().padStart(2, '0')}`
+                                  : 'Unknown',
                               ],
                               [
-                                'Clone channels/settings [unknown]',
-                                archive && rt95ArchiveDetails(archive)?.coverage === 'captured'
-                                  ? 'Captured in programming image'
-                                  : archive && rt95ArchiveDetails(archive)?.coverage === 'partial'
-                                    ? 'Partially captured in programming image'
-                                    : 'Not captured',
+                                'Ident version · protocol',
+                                d890Identity?.ident?.version ?? 'Unknown',
                               ],
+                              ['Serial · captured LocalInfo', d890Identity?.serial ?? 'Unknown'],
                               ['Running firmware', 'Unknown'],
                               ['Firmware mod', 'Unknown'],
                               [
                                 'Evidence',
-                                archive ? 'Archive manifest' : 'No radio identity observed',
+                                d890Identity?.ident || d890Identity?.serial
+                                  ? 'Captured radio bytes'
+                                  : 'No radio identity observed',
                               ],
                               [
                                 'Connection',
@@ -325,70 +309,33 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                                     : 'Not connected',
                               ],
                             ]
-                          : descriptor.slug === 'dm-32uv'
+                          : descriptor.slug === 'rt95'
                             ? [
-                                ['Model · selected', descriptor.model],
-                                [
-                                  'Model · captured PSEARCH',
-                                  dm32Identity?.modelString ?? 'Unknown',
-                                ],
-                                [
-                                  'Base firmware · V01 (stock base version, unchanged by MM9PDY, so not a mod discriminator)',
-                                  asReturned(dm32Identity?.baseFirmware),
-                                ],
-                                ['Build date · V03', asReturned(dm32Identity?.buildDate)],
-                                ['DSP version · V04', asReturned(dm32Identity?.dspVersion)],
-                                ['Radio version · V05', asReturned(dm32Identity?.radioVersion)],
-                                [
-                                  'Codeplug version · V0B',
-                                  asReturned(dm32Identity?.codeplugVersion),
-                                ],
-                                ['Serial', 'None observed'],
-                                [
-                                  'Chip UID (8 bytes) + 4 derived, not a serial · V02',
-                                  dm32Identity?.chipUidHex
-                                    ? `0x${dm32Identity.chipUidHex.toUpperCase()}`
-                                    : 'Not observed',
-                                ],
-                                [
-                                  'Persistent data',
-                                  dm32Identity?.mm9pdyDataPresent
-                                    ? 'MM9PDY-compatible data present'
-                                    : 'No MM9PDY location page captured',
-                                ],
-                                ['Running firmware', 'Unknown'],
-                                ['Firmware mod', 'Unknown'],
-                                [
-                                  'Evidence',
-                                  dm32Identity?.modelString || dm32Identity?.vframes.length
-                                    ? 'Captured radio replies'
-                                    : 'No radio identity observed',
-                                ],
-                                [
-                                  'Connection',
-                                  reading
-                                    ? 'Reading radio…'
-                                    : archive?.source === 'live-read'
-                                      ? 'Read complete · disconnected'
-                                      : 'Not connected',
-                                ],
-                              ]
-                            : [
                                 ['Model · selected', descriptor.model],
                                 ['Expected family', descriptor.family],
                                 ['Serial · archive', archive?.manifest.serial || 'Unknown'],
                                 ['Firmware · archive', archive?.manifest.firmware || 'Unknown'],
                                 [
-                                  'Firmware mod',
-                                  miniReport ? 'MM9PDY compatible report' : 'Unknown',
+                                  'PC ident [head]',
+                                  archive?.sidecars['debug/ident.bin']
+                                    ? Array.from(archive.sidecars['debug/ident.bin'], (b) =>
+                                        b.toString(16).padStart(2, '0'),
+                                      ).join(' ')
+                                    : 'Not captured',
                                 ],
                                 [
+                                  'Clone channels/settings [unknown]',
+                                  archive && rt95ArchiveDetails(archive)?.coverage === 'captured'
+                                    ? 'Captured in programming image'
+                                    : archive && rt95ArchiveDetails(archive)?.coverage === 'partial'
+                                      ? 'Partially captured in programming image'
+                                      : 'Not captured',
+                                ],
+                                ['Running firmware', 'Unknown'],
+                                ['Firmware mod', 'Unknown'],
+                                [
                                   'Evidence',
-                                  miniReport
-                                    ? 'Validated live format-2 MM9R report'
-                                    : archive
-                                      ? 'Archive manifest'
-                                      : 'No radio identity observed',
+                                  archive ? 'Archive manifest' : 'No radio identity observed',
                                 ],
                                 [
                                   'Connection',
@@ -399,314 +346,392 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                                       : 'Not connected',
                                 ],
                               ]
-                    ).map(([label, value]) => (
-                      <div key={label}>
-                        <Text size="xs" c="dimmed">
-                          {label}
-                        </Text>
-                        <Text fw={600} style={{ overflowWrap: 'anywhere' }}>
-                          {value}
-                        </Text>
-                      </div>
-                    ))}
-                  </SimpleGrid>
-                  <Text size="sm" c="dimmed" mt="md">
-                    The selected family is an expectation, not proof of installed firmware.{' '}
-                    {descriptor.identityNote}
-                    {descriptor.slug === 'at-d890uv' &&
-                      'Ident and LocalInfo values come from captured bytes; V100 is protocol evidence, not a running firmware version. Missing markers do not prove stock firmware.'}
-                    {descriptor.slug === 'dm-32uv' &&
-                      'Values come from the captured PSEARCH and V-frame replies, as returned. This radio has no readable serial. A location page is persistent data, not proof of running firmware; its absence does not prove stock.'}
-                  </Text>
-                </Card>
-                <Card withBorder>
-                  <Title order={3}>Capabilities</Title>
-                  <Stack gap="xs" mt="md">
-                    {descriptor.capabilities.map((capability) => (
-                      <Text component="div" key={capability.name}>
-                        {capability.name} ·{' '}
-                        <Badge color={capabilityColor(capability.status)} title={capability.status}>
-                          {capability.status}
-                        </Badge>
-                      </Text>
-                    ))}
-                  </Stack>
-                </Card>
-                {!descriptor.capture && (
-                  <Alert title="Radio diagnostics unavailable">
-                    This profile has no debug adapter yet. No connection or radio read is available
-                    on this page.
-                  </Alert>
-                )}
-              </Stack>
-            </Tabs.Panel>
-            <Tabs.Panel value="backup" pt="md">
-              <Stack>
-                <Title order={3}>Backup</Title>
-                <Text>
-                  Open a compatible local archive to inspect its captured ranges.{' '}
-                  {descriptor.capture
-                    ? 'Read the radio to make a new capture.'
-                    : 'Live radio capture is not available yet.'}
-                </Text>
-                {descriptor.capture && (
-                  <BackupLabelFields
-                    idPrefix="debug-capture"
-                    value={captureLabels}
-                    onCommit={setCaptureLabels}
-                    disabled={reading}
-                  />
-                )}
-                {descriptor.capture &&
-                  descriptor.captureOptions?.map((option) => (
-                    <Checkbox
-                      key={option.id}
-                      label={option.label}
-                      description={option.description}
-                      checked={captureOptions[`${descriptor.slug}:${option.id}`] === true}
-                      disabled={reading}
-                      onChange={(event) => {
-                        const checked = event.currentTarget.checked;
-                        setCaptureOptions((current) => ({
-                          ...current,
-                          [`${descriptor.slug}:${option.id}`]: checked,
-                        }));
-                      }}
-                    />
-                  ))}
-                {descriptor.capture && (
-                  <Group>
-                    <Button onClick={readRadio} loading={reading}>
-                      Read radio
-                    </Button>
-                    {reading && (
-                      <>
-                        <Button variant="default" onClick={() => controller.current?.abort()}>
-                          Cancel
-                        </Button>
-                        <DebugReadProgress update={progress} stages={descriptor.captureStages} />
-                        {!screenHeld && (
-                          <Text size="sm" c="dimmed" data-testid="keep-screen-on-hint">
-                            {KEEP_SCREEN_ON_HINT}
+                            : descriptor.slug === 'dm-32uv'
+                              ? [
+                                  ['Model · selected', descriptor.model],
+                                  [
+                                    'Model · captured PSEARCH',
+                                    dm32Identity?.modelString ?? 'Unknown',
+                                  ],
+                                  [
+                                    'Base firmware · V01 (stock base version, unchanged by MM9PDY, so not a mod discriminator)',
+                                    asReturned(dm32Identity?.baseFirmware),
+                                  ],
+                                  ['Build date · V03', asReturned(dm32Identity?.buildDate)],
+                                  ['DSP version · V04', asReturned(dm32Identity?.dspVersion)],
+                                  ['Radio version · V05', asReturned(dm32Identity?.radioVersion)],
+                                  [
+                                    'Codeplug version · V0B',
+                                    asReturned(dm32Identity?.codeplugVersion),
+                                  ],
+                                  ['Serial', 'None observed'],
+                                  [
+                                    'Chip UID (8 bytes) + 4 derived, not a serial · V02',
+                                    dm32Identity?.chipUidHex
+                                      ? `0x${dm32Identity.chipUidHex.toUpperCase()}`
+                                      : 'Not observed',
+                                  ],
+                                  [
+                                    'Persistent data',
+                                    dm32Identity?.mm9pdyDataPresent
+                                      ? 'MM9PDY-compatible data present'
+                                      : 'No MM9PDY location page captured',
+                                  ],
+                                  ['Running firmware', 'Unknown'],
+                                  ['Firmware mod', 'Unknown'],
+                                  [
+                                    'Evidence',
+                                    dm32Identity?.modelString || dm32Identity?.vframes.length
+                                      ? 'Captured radio replies'
+                                      : 'No radio identity observed',
+                                  ],
+                                  [
+                                    'Connection',
+                                    reading
+                                      ? 'Reading radio…'
+                                      : archive?.source === 'live-read'
+                                        ? 'Read complete · disconnected'
+                                        : 'Not connected',
+                                  ],
+                                ]
+                              : [
+                                  ['Model · selected', descriptor.model],
+                                  ['Expected family', descriptor.family],
+                                  ['Serial · archive', archive?.manifest.serial || 'Unknown'],
+                                  ['Firmware · archive', archive?.manifest.firmware || 'Unknown'],
+                                  [
+                                    'Firmware mod',
+                                    miniReport ? 'MM9PDY compatible report' : 'Unknown',
+                                  ],
+                                  [
+                                    'Evidence',
+                                    miniReport
+                                      ? 'Validated live format-2 MM9R report'
+                                      : archive
+                                        ? 'Archive manifest'
+                                        : 'No radio identity observed',
+                                  ],
+                                  [
+                                    'Connection',
+                                    reading
+                                      ? 'Reading radio…'
+                                      : archive?.source === 'live-read'
+                                        ? 'Read complete · disconnected'
+                                        : 'Not connected',
+                                  ],
+                                ]
+                      ).map(([label, value]) => (
+                        <div key={label}>
+                          <Text size="xs" c="dimmed">
+                            {label}
                           </Text>
-                        )}
-                      </>
-                    )}
-                  </Group>
-                )}
-                {descriptor.readNotice && (
-                  <Alert title={descriptor.readNotice.title}>{descriptor.readNotice.text}</Alert>
-                )}
-                {descriptor.slug === 'at-d890uv' && (
-                  <Alert title="Read-only capture and recovery">
-                    The radio is read at fixed 16-byte blocks; vital units are read twice and can
-                    take time. If a read fails or is cancelled, power-cycle the radio before
-                    continuing. A fresh LocalInfo check precedes END, but the check and END are not
-                    atomic. Firmware may divert vital reads.
-                  </Alert>
-                )}
-                {descriptor.slug === 'dm-32uv' && (
-                  <Alert title="Read-only capture and recovery">
-                    The capture sends only the handshake, two factory-sector reads, the V-frame
-                    queries, PROGRAM entry and reads inside the radio&apos;s configuration window,
-                    one at a time. It reads only the blocks the product Read reads and can take a
-                    few minutes. There is no END command on this radio: it leaves PROGRAM mode after
-                    about 2 seconds of silence. If a read fails or is cancelled, the session stops
-                    at once with no retry; wait a few seconds, or power-cycle the radio if it does
-                    not return to normal, before continuing.
-                  </Alert>
-                )}
-                <Alert title="Coverage is limited">
-                  The listed ranges are archive entries, not a complete physical storage or firmware
-                  image. Unlisted bytes are not captured; coverage outside the listed ranges is
-                  unknown.
-                </Alert>
-                {descriptor.slug === 'uv-5r-mini' && allReads.length > 0 && (
+                          <Text fw={600} style={{ overflowWrap: 'anywhere' }}>
+                            {value}
+                          </Text>
+                        </div>
+                      ))}
+                    </SimpleGrid>
+                    <Text size="sm" c="dimmed" mt="md">
+                      The selected family is an expectation, not proof of installed firmware.{' '}
+                      {descriptor.identityNote}
+                      {descriptor.slug === 'at-d890uv' &&
+                        'Ident and LocalInfo values come from captured bytes; V100 is protocol evidence, not a running firmware version. Missing markers do not prove stock firmware.'}
+                      {descriptor.slug === 'dm-32uv' &&
+                        'Values come from the captured PSEARCH and V-frame replies, as returned. This radio has no readable serial. A location page is persistent data, not proof of running firmware; its absence does not prove stock.'}
+                    </Text>
+                  </Card>
+                  <Card withBorder>
+                    <Title order={3}>Capabilities</Title>
+                    <Stack gap="xs" mt="md">
+                      {descriptor.capabilities.map((capability) => (
+                        <Text component="div" key={capability.name}>
+                          {capability.name} ·{' '}
+                          <Badge
+                            color={capabilityColor(capability.status)}
+                            title={capability.status}
+                          >
+                            {capability.status}
+                          </Badge>
+                        </Text>
+                      ))}
+                    </Stack>
+                  </Card>
+                  {!descriptor.capture && (
+                    <Alert title="Radio diagnostics unavailable">
+                      This profile has no debug adapter yet. No connection or radio read is
+                      available on this page.
+                    </Alert>
+                  )}
+                </Stack>
+              </Tabs.Panel>
+              <Tabs.Panel value="backup" pt="md">
+                <Stack>
+                  <Title order={3}>Backup</Title>
                   <Text>
-                    Reads in this tab:{' '}
-                    {allReads
-                      .map((read) => `${read.label} (${read.readAt.toLocaleString()})`)
-                      .join(', ')}
+                    Open a compatible local archive to inspect its captured ranges.{' '}
+                    {descriptor.capture
+                      ? 'Read the radio to make a new capture.'
+                      : 'Live radio capture is not available yet.'}
                   </Text>
-                )}
-                {historyEnabled && (
-                  <DebugReadHistoryControls
-                    descriptor={descriptor}
-                    store={store}
-                    onClear={() => {
-                      setPreferredLive(null);
-                    }}
-                  />
-                )}
-                {archive && (
-                  <Stack>
-                    <Coverage
-                      key={
-                        historyEnabled
-                          ? history.selectedId
-                          : archive.manifest.capturedAt + archive.zipBytes.length
-                      }
-                      archive={archive}
-                    />
-                    <Text fw={600}>Your notes on this capture</Text>
+                  {descriptor.capture && (
                     <BackupLabelFields
-                      idPrefix="debug-selected"
-                      value={{
-                        radioName: archive.manifest.radioName,
-                        label: archive.manifest.label,
-                        description: archive.manifest.description,
-                      }}
-                      onCommit={(next) => {
-                        try {
-                          if (historyEnabled) {
-                            if (history.selectedId) store.setLabels(history.selectedId, next);
-                          } else setArchive(relabelDebugArchive(archive, next));
-                          setError(undefined);
-                        } catch (err) {
-                          setError(err instanceof Error ? err.message : 'Could not save notes.');
-                        }
+                      idPrefix="debug-capture"
+                      value={captureLabels}
+                      onCommit={setCaptureLabels}
+                      disabled={reading}
+                    />
+                  )}
+                  {descriptor.capture &&
+                    descriptor.captureOptions?.map((option) => (
+                      <Checkbox
+                        key={option.id}
+                        label={option.label}
+                        description={option.description}
+                        checked={captureOptions[`${descriptor.slug}:${option.id}`] === true}
+                        disabled={reading}
+                        onChange={(event) => {
+                          const checked = event.currentTarget.checked;
+                          setCaptureOptions((current) => ({
+                            ...current,
+                            [`${descriptor.slug}:${option.id}`]: checked,
+                          }));
+                        }}
+                      />
+                    ))}
+                  {descriptor.capture && (
+                    <Group>
+                      <Button onClick={readRadio} loading={reading}>
+                        Read radio
+                      </Button>
+                      {reading && (
+                        <>
+                          <Button variant="default" onClick={() => controller.current?.abort()}>
+                            Cancel
+                          </Button>
+                          <DebugReadProgress update={progress} stages={descriptor.captureStages} />
+                          {!screenHeld && (
+                            <Text size="sm" c="dimmed" data-testid="keep-screen-on-hint">
+                              {KEEP_SCREEN_ON_HINT}
+                            </Text>
+                          )}
+                        </>
+                      )}
+                    </Group>
+                  )}
+                  {descriptor.readNotice && (
+                    <Alert title={descriptor.readNotice.title}>{descriptor.readNotice.text}</Alert>
+                  )}
+                  {descriptor.slug === 'at-d890uv' && (
+                    <Alert title="Read-only capture and recovery">
+                      The radio is read at fixed 16-byte blocks; vital units are read twice and can
+                      take time. If a read fails or is cancelled, power-cycle the radio before
+                      continuing. A fresh LocalInfo check precedes END, but the check and END are
+                      not atomic. Firmware may divert vital reads.
+                    </Alert>
+                  )}
+                  {descriptor.slug === 'dm-32uv' && (
+                    <Alert title="Read-only capture and recovery">
+                      The capture sends only the handshake, two factory-sector reads, the V-frame
+                      queries, PROGRAM entry and reads inside the radio&apos;s configuration window,
+                      one at a time. It reads only the blocks the product Read reads and can take a
+                      few minutes. There is no END command on this radio: it leaves PROGRAM mode
+                      after about 2 seconds of silence. If a read fails or is cancelled, the session
+                      stops at once with no retry; wait a few seconds, or power-cycle the radio if
+                      it does not return to normal, before continuing.
+                    </Alert>
+                  )}
+                  <Alert title="Coverage is limited">
+                    The listed ranges are archive entries, not a complete physical storage or
+                    firmware image. Unlisted bytes are not captured; coverage outside the listed
+                    ranges is unknown.
+                  </Alert>
+                  {descriptor.slug === 'uv-5r-mini' && allReads.length > 0 && (
+                    <Text>
+                      Reads in this tab:{' '}
+                      {allReads
+                        .map((read) => `${read.label} (${read.readAt.toLocaleString()})`)
+                        .join(', ')}
+                    </Text>
+                  )}
+                  {historyEnabled && (
+                    <DebugReadHistoryControls
+                      descriptor={descriptor}
+                      store={store}
+                      onClear={() => {
+                        setPreferredLive(null);
                       }}
                     />
-                    <Button
-                      onClick={async () => {
-                        // The id and archive are fixed when the download starts, so a selection
-                        // change or a clear while saving cannot mark a different read.
-                        const startedId = historyEnabled ? history.selectedId : null;
-                        try {
-                          const result = await downloadZip(
-                            archive.zipBytes,
-                            radioBackupFileName(archive.manifest),
-                          );
-                          if (result.status === 'failed') throw new Error('Download failed.');
-                          if (historyEnabled) {
-                            if (startedId) store.markDownloaded([startedId]);
-                          } else setDownloadedArchive(archive);
-                          setError(undefined);
-                        } catch (err) {
-                          setError(err instanceof Error ? err.message : 'Download failed.');
+                  )}
+                  {archive && (
+                    <Stack>
+                      <Coverage
+                        key={
+                          historyEnabled
+                            ? history.selectedId
+                            : archive.manifest.capturedAt + archive.zipBytes.length
                         }
-                      }}
-                    >
-                      Download archive
-                    </Button>
-                  </Stack>
-                )}
-              </Stack>
-            </Tabs.Panel>
-            <Tabs.Panel value="memory" pt="md">
-              {descriptor.Memory ? (
-                <descriptor.Memory
-                  key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
-                  archive={archive}
-                  notDecoded={descriptor.memoryNotDecoded}
-                />
-              ) : (
-                <MemoryViewer archive={archive} />
-              )}
-            </Tabs.Panel>
-            {descriptor.settings && (
-              <Tabs.Panel value="settings" pt="md">
-                <SettingsTab
-                  key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
-                  archive={archive}
-                  settings={descriptor.settings}
-                />
+                        archive={archive}
+                      />
+                      <Text fw={600}>Your notes on this capture</Text>
+                      <BackupLabelFields
+                        idPrefix="debug-selected"
+                        value={{
+                          radioName: archive.manifest.radioName,
+                          label: archive.manifest.label,
+                          description: archive.manifest.description,
+                        }}
+                        onCommit={(next) => {
+                          try {
+                            if (historyEnabled) {
+                              if (history.selectedId) store.setLabels(history.selectedId, next);
+                            } else setArchive(relabelDebugArchive(archive, next));
+                            setError(undefined);
+                          } catch (err) {
+                            setError(err instanceof Error ? err.message : 'Could not save notes.');
+                          }
+                        }}
+                      />
+                      <Button
+                        onClick={async () => {
+                          // The id and archive are fixed when the download starts, so a selection
+                          // change or a clear while saving cannot mark a different read.
+                          const startedId = historyEnabled ? history.selectedId : null;
+                          try {
+                            const result = await downloadZip(
+                              archive.zipBytes,
+                              radioBackupFileName(archive.manifest),
+                            );
+                            if (result.status === 'failed') throw new Error('Download failed.');
+                            if (historyEnabled) {
+                              if (startedId) store.markDownloaded([startedId]);
+                            } else setDownloadedArchive(archive);
+                            setError(undefined);
+                          } catch (err) {
+                            setError(err instanceof Error ? err.message : 'Download failed.');
+                          }
+                        }}
+                      >
+                        Download archive
+                      </Button>
+                    </Stack>
+                  )}
+                </Stack>
               </Tabs.Panel>
-            )}
-            <Tabs.Panel value="hex" pt="md">
-              <HexViewer
-                key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
-                archive={archive}
-              />
-            </Tabs.Panel>
-            <Tabs.Panel value="compare" pt="md">
-              {historyEnabled && activeTab === 'compare' && (
-                <ReadStrip descriptor={descriptor} store={store} />
-              )}
-              {historyEnabled && <ComparePicker store={store} onOpenArchive={openFile} />}
-              {historyEnabled ? (
-                activeTab === 'compare' && (
-                  <RadioCompare
-                    descriptor={descriptor}
-                    a={pairA?.archive}
-                    b={pairA === pairB ? undefined : pairB?.archive}
+              <Tabs.Panel value="memory" pt="md">
+                {descriptor.Memory ? (
+                  <descriptor.Memory
+                    key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
+                    archive={archive}
+                    notDecoded={descriptor.memoryNotDecoded}
                   />
-                )
-              ) : (
-                <CompareViewer archive={archive} modelId={descriptor.archiveModelId} />
-              )}
-            </Tabs.Panel>
-            {descriptor.slug === 'uv-5r-mini' && (
-              <Tabs.Panel value="calibration" pt="md">
-                <Uv5rMiniCalibrationSection
-                  key={history.entries[0]?.id ?? 'empty'}
-                  reads={allReads}
-                  preferredLive={
-                    history.entries.find((e) => e.id === history.selectedId)
-                      ? `${history.entries.find((e) => e.id === history.selectedId)!.archive.source === 'file' ? 'File' : 'Live'} ${history.entries.find((e) => e.id === history.selectedId)!.label}`
-                      : preferredLive
-                  }
-                />
+                ) : (
+                  <MemoryViewer archive={archive} />
+                )}
               </Tabs.Panel>
-            )}
-            {descriptor.calibration && (
-              <Tabs.Panel value="calibration" pt="md">
-                <CalibrationTab
+              {descriptor.settings && (
+                <Tabs.Panel value="settings" pt="md">
+                  <SettingsTab
+                    key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
+                    archive={archive}
+                    settings={descriptor.settings}
+                  />
+                </Tabs.Panel>
+              )}
+              <Tabs.Panel value="hex" pt="md">
+                <HexViewer
                   key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
                   archive={archive}
-                  overlayArchive={other}
-                  calibration={descriptor.calibration}
-                  entries={historyEnabled ? history.entries : []}
-                  readId={history.selectedId}
-                  overlayId={otherId}
-                  onRead={(id) => store.select(id)}
-                  onOverlay={setOtherId}
                 />
               </Tabs.Panel>
-            )}
-            {!descriptor.calibration &&
-              descriptor.Calibration &&
-              descriptor.calibrationOverlay !== false && (
-                <Tabs.Panel value="calibration" pt="md">
-                  <Stack>
-                    <Select
-                      label="Calibration overlay"
-                      clearable
-                      value={otherId}
-                      onChange={setOtherId}
-                      data={history.entries.map((e) => ({
-                        value: e.id,
-                        label: `${e.label} · ${new Date(e.readAt).toLocaleString()}`,
-                      }))}
+              <Tabs.Panel value="compare" pt="md">
+                {historyEnabled && activeTab === 'compare' && (
+                  <ReadStrip descriptor={descriptor} store={store} />
+                )}
+                {historyEnabled && <ComparePicker store={store} onOpenArchive={openFile} />}
+                {historyEnabled ? (
+                  activeTab === 'compare' && (
+                    <RadioCompare
+                      descriptor={descriptor}
+                      a={pairA?.archive}
+                      b={pairA === pairB ? undefined : pairB?.archive}
                     />
-                    {descriptor.Calibration && (
-                      <descriptor.Calibration archive={archive} overlayArchive={other} />
-                    )}
-                  </Stack>
-                </Tabs.Panel>
-              )}
-            {!descriptor.calibration &&
-              descriptor.calibrationOverlay === false &&
-              descriptor.Calibration && (
-                <Tabs.Panel value="calibration" pt="md">
-                  <descriptor.Calibration archive={archive} />
-                </Tabs.Panel>
-              )}
-            {(descriptor.slug === 'uv-5r-mini' || descriptor.Calibration || descriptor.calibration
-              ? ['Trace']
-              : ['Calibration', 'Trace']
-            ).map((tab) => (
-              <Tabs.Panel key={tab} value={tab.toLowerCase()} pt="md">
-                <Alert title={`${tab} unavailable`}>
-                  {tab === 'Trace'
-                    ? 'Protocol trace export is unavailable: this capture does not include trace instrumentation.'
-                    : 'This capability is not yet available for this profile.'}
-                </Alert>
+                  )
+                ) : (
+                  <CompareViewer archive={archive} modelId={descriptor.archiveModelId} />
+                )}
               </Tabs.Panel>
-            ))}
-          </Tabs>
-        </Stack>
-      </Page>
+              {descriptor.slug === 'uv-5r-mini' && (
+                <Tabs.Panel value="calibration" pt="md">
+                  <Uv5rMiniCalibrationSection
+                    key={history.entries[0]?.id ?? 'empty'}
+                    reads={allReads}
+                    preferredLive={
+                      history.entries.find((e) => e.id === history.selectedId)
+                        ? `${history.entries.find((e) => e.id === history.selectedId)!.archive.source === 'file' ? 'File' : 'Live'} ${history.entries.find((e) => e.id === history.selectedId)!.label}`
+                        : preferredLive
+                    }
+                  />
+                </Tabs.Panel>
+              )}
+              {descriptor.calibration && (
+                <Tabs.Panel value="calibration" pt="md">
+                  <CalibrationTab
+                    key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
+                    archive={archive}
+                    overlayArchive={other}
+                    calibration={descriptor.calibration}
+                    entries={historyEnabled ? history.entries : []}
+                    readId={history.selectedId}
+                    overlayId={otherId}
+                    onRead={(id) => store.select(id)}
+                    onOverlay={setOtherId}
+                  />
+                </Tabs.Panel>
+              )}
+              {!descriptor.calibration &&
+                descriptor.Calibration &&
+                descriptor.calibrationOverlay !== false && (
+                  <Tabs.Panel value="calibration" pt="md">
+                    <Stack>
+                      <Select
+                        label="Calibration overlay"
+                        clearable
+                        value={otherId}
+                        onChange={setOtherId}
+                        data={history.entries.map((e) => ({
+                          value: e.id,
+                          label: `${e.label} · ${new Date(e.readAt).toLocaleString()}`,
+                        }))}
+                      />
+                      {descriptor.Calibration && (
+                        <descriptor.Calibration archive={archive} overlayArchive={other} />
+                      )}
+                    </Stack>
+                  </Tabs.Panel>
+                )}
+              {!descriptor.calibration &&
+                descriptor.calibrationOverlay === false &&
+                descriptor.Calibration && (
+                  <Tabs.Panel value="calibration" pt="md">
+                    <descriptor.Calibration archive={archive} />
+                  </Tabs.Panel>
+                )}
+              {(descriptor.slug === 'uv-5r-mini' || descriptor.Calibration || descriptor.calibration
+                ? ['Trace']
+                : ['Calibration', 'Trace']
+              ).map((tab) => (
+                <Tabs.Panel key={tab} value={tab.toLowerCase()} pt="md">
+                  <Alert title={`${tab} unavailable`}>
+                    {tab === 'Trace'
+                      ? 'Protocol trace export is unavailable: this capture does not include trace instrumentation.'
+                      : 'This capability is not yet available for this profile.'}
+                  </Alert>
+                </Tabs.Panel>
+              ))}
+            </Tabs>
+          </Stack>
+        </Page>
+      </div>
     </DesignSystemV2Provider>
   );
 }
