@@ -47,6 +47,7 @@ UV380-class for Studio adapters: `05h`, `08h`, `0ah` (plus other UV380 types not
 | [user-database.md](user-database.md)               | OpenUV380 call-sign / DMR ID lookup FLASH (qdmr Offset; hardware verify pending [#1211](https://github.com/pskillen/codeplug-studio/issues/1211)) |
 | [protocol.md](protocol.md)                         | USB VID/PID, `C`/`R`/`W`/`X`, flash sector write, FirmwareInfo                                                                                    |
 | [debug-capture.md](debug-capture.md)               | Read-only debug capture archive (DM-1701, MD-9600): regions, sidecar, identity provenance                                                         |
+| [calibration.md](calibration.md)                   | Calibration working copy at flash `0x10000` (512 bytes): provenance, offset table, read procedure, what is not claimed                            |
 | [backup-restore.md](backup-restore.md)             | Zip FLASH spans; Restore vs blank prior + SAVE_REBOOT ([#1142](https://github.com/pskillen/codeplug-studio/issues/1142))                          |
 | [fixtures.md](fixtures.md)                         | How to capture dumps for tests without committing personal codeplugs                                                                              |
 
