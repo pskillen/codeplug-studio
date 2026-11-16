@@ -271,10 +271,10 @@ describe('DM-32UV debug page', () => {
     expect(screen.getByRole('combobox', { name: 'Read' })).toBeInTheDocument();
     expect(screen.getByText('Not validated on hardware')).toBeInTheDocument();
     // The newest retained read is selected: its relocated page address shows.
-    expect(screen.getByText(/Live page: 0x00004000/)).toBeInTheDocument();
+    expect(screen.getByText(/^0x00004000 · tag 0x02/)).toBeInTheDocument();
     act(() => history.select(firstId));
-    expect(screen.getByText(/Live page: 0x00002000/)).toBeInTheDocument();
-    expect(screen.queryByText(/Live page: 0x00004000/)).not.toBeInTheDocument();
+    expect(screen.getByText(/^0x00002000 · tag 0x02/)).toBeInTheDocument();
+    expect(screen.queryByText(/^0x00004000 · tag 0x02/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Trace' }));
     expect(screen.getByText('Trace unavailable')).toBeInTheDocument();
   });

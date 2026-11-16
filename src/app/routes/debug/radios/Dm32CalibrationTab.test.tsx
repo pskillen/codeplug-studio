@@ -52,7 +52,7 @@ describe('DM-32UV on the shared Calibration tab', () => {
     expect(screen.getByText('VHF squelch thresholds, pair 1')).toBeInTheDocument();
     expect(screen.getByText('108–136 MHz squelch thresholds')).toBeInTheDocument();
     expect(screen.getByText('Battery')).toBeInTheDocument();
-    expect(screen.getByText(/Live page: 0x00002000/)).toBeInTheDocument();
+    expect(screen.getByText(/^0x00002000 · tag 0x02/)).toBeInTheDocument();
     const table = screen.getByRole('table', { name: 'Band limits' });
     const band = within(table).getByText('UHF band low / high').closest('tr')!;
     expect(within(band).getByText('400 – 470 MHz')).toBeInTheDocument();
@@ -92,14 +92,14 @@ describe('DM-32UV on the shared Calibration tab', () => {
     });
     const view = show({ archive: first });
     view.replace({ archive: second });
-    expect(screen.getByText(/Live page: 0x00004000/)).toBeInTheDocument();
+    expect(screen.getByText(/^0x00004000 · tag 0x02/)).toBeInTheDocument();
     view.unmount();
     const reopened: DebugArchive = {
       ...openDebugArchive(first.zipBytes, 'DM-32UV'),
       source: 'file',
     };
     show({ archive: reopened });
-    expect(screen.getByText(/Live page: 0x00002000/)).toBeInTheDocument();
+    expect(screen.getByText(/^0x00002000 · tag 0x02/)).toBeInTheDocument();
   });
 
   it('decodes the kept factory sector and puts the anti-clone key only in the raw bytes', async () => {
@@ -109,9 +109,9 @@ describe('DM-32UV on the shared Calibration tab', () => {
     expect(within(table).getByText(/0xA5: 136–174/)).toBeInTheDocument();
     expect(table).not.toHaveTextContent(/d1 d2 d3 d4/i);
     expect(screen.getByText(/Agrees with factory-sector\.json/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Chip UID, not a serial: 0xA0A1A2A3A4A5A6A7A8A9AAAB/),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Chip UID, not a serial').nextElementSibling).toHaveTextContent(
+      '0xA0A1A2A3A4A5A6A7A8A9AAAB',
+    );
   });
 
   it('pairs an overlay read by chart id and reports the differences', async () => {

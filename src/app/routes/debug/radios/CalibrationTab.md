@@ -21,7 +21,7 @@ Calls the descriptor's `calibration(archive)` for the selected read and for the 
 
 ## Behaviour
 
-- Order: `CalibrationReadPicker`, `EvidenceNotice`, facts line, `CalibrationChartGrid` of `CalibrationChartCard`s, **Show password** (only when a table cell is sensitive), one `DebugSection` with a `ValueTable` per table (a table with `folded` starts collapsed), `UnusedRanges`, `HexDump` (folded; runs of identical rows collapse when the view sets `collapseRuns`).
+- Order: `CalibrationReadPicker`, `EvidenceNotice`, facts (a key/value list, one row per fact), `CalibrationChartGrid` of `CalibrationChartCard`s, **Show password** (only when a table cell is sensitive), one `DebugSection` with a `ValueTable` per table (a table with `folded` starts collapsed), `UnusedRanges`, `HexDump` (folded; runs of identical rows collapse when the view sets `collapseRuns`).
 - No archive: "Open or read a capture". A view that is not `ok`: its reason in an alert. An overlay that is not `ok`: "Overlay not shown" with its reason, and the read is drawn alone.
 - Charts and tables pair with the overlay by `id`.
 - **Show password** resets when another read or archive is shown (`archiveKey`).

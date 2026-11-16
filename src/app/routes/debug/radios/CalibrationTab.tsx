@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Alert, Stack, Text, Title } from '@mantine/core';
+import { Fragment, useMemo } from 'react';
+import { Alert, Stack, Title } from '@mantine/core';
 import {
   CalibrationChartCard,
   CalibrationChartGrid,
@@ -16,6 +16,7 @@ import type { CalibrationView } from '@integrations/radio-io/debugView/index.ts'
 import type { DebugArchive } from './captureArchive.ts';
 import type { RadioDebugDescriptor } from './descriptors.ts';
 import { archiveKey } from './viewerUtils.ts';
+import classes from './CalibrationTab.module.css';
 
 type CalibrationBuilder = NonNullable<RadioDebugDescriptor['calibration']>;
 
@@ -108,9 +109,14 @@ function CalibrationBody({
     <Stack>
       {view.notice && <EvidenceNotice notice={view.notice} />}
       {view.facts && view.facts.length > 0 && (
-        <Text size="sm" c="dimmed" style={{ overflowWrap: 'anywhere' }}>
-          {view.facts.map((f) => `${f.label}: ${f.value}`).join(' · ')}
-        </Text>
+        <dl className={classes.facts} aria-label="Calibration facts">
+          {view.facts.map((f, i) => (
+            <Fragment key={`${f.label}-${i}`}>
+              <dt>{f.label}</dt>
+              <dd>{f.value}</dd>
+            </Fragment>
+          ))}
+        </dl>
       )}
       {view.charts.length > 0 && (
         <CalibrationChartGrid>
