@@ -11,6 +11,7 @@ The Debug hierarchy groups radio profiles, browser storage and serial transport 
 - [History navigation guard](../../../src/app/routes/debug/radios/DebugReadHistoryGuard.md)
 - [Archive viewers](../../../src/app/routes/debug/radios/ArchiveViewers.md)
 - [Settings tab](../../../src/app/routes/debug/radios/SettingsTab.md) and [SettingsTable](../../../src/app/components/debug/SettingsTable.md)
+- Calibration chart cards: [CalibrationChartCard](../../../src/app/components/debug/CalibrationChartCard.md), [CalibrationChartGrid](../../../src/app/components/debug/CalibrationChartGrid.md), [FrequencyCurveChart](../../../src/app/components/debug/FrequencyCurveChart.md), [StepBarChart](../../../src/app/components/debug/StepBarChart.md) (kit parts; no page uses them yet)
 - [RT95 calibration fields](../../reference/radios/retevis/rt95/calibration.md)
 - [AT-D890UV calibration fields](../../reference/radios/anytone/at-d890uv/calibration.md)
 - [DM-32UV calibration fields and confidence](../../reference/radios/baofeng/dm-32uv/calibration.md)

@@ -21,6 +21,7 @@ curves) draw it with this component.
 | `formatY`    | `(y: number) => string`     | `String`            | Tick, tooltip and table text                                                                                    |
 | `yDomain`    | `readonly [number, number]` | data range, rounded | Fix the y range (for example to compare charts)                                                                 |
 | `showLegend` | `boolean`                   | `false`             | Show the legend for a single series; multiple series always show it                                             |
+| `table`      | `boolean`                   | `true`              | Show the chart's own collapsed **Table**; `false` hides it (a debug chart card has its own Numeric table)       |
 | `height`     | `number`                    | `240`               | viewBox height; the width is 560 and the SVG scales down to its container                                       |
 
 `lineChartScale.ts` exports `lineChartSlotColor(slot, scheme)`, which returns a slot's light or dark step; `niceTicks(lo, hi, count)` the rounded ticks.
@@ -66,7 +67,9 @@ import LineChart from '@app/components/LineChart/LineChart.tsx';
 - The legend shows when there are two or more series. Text, ticks and grid use Mantine's text, dimmed and border
   tokens, never the series colour.
 - Hovering the plot snaps a crosshair to the nearest x and lists every series' value there.
-- A collapsed **Table** under the chart lists every x with each series' value, for screen readers and for the slots
+- A point whose `y` is not finite is a missing entry: the line breaks there (an isolated point is drawn as a dot) and tooltips and the table skip it.
+- A flat or all-integer range gets integer ticks with a step of at least 1 (an all-zero series is drawn on 0–1, with ticks 0 and 1), never repeated labels.
+- Unless `table={false}`, a collapsed **Table** under the chart lists every x with each series' value, for screen readers and for the slots
   whose contrast against the light surface is under 3:1.
 
 ## Related
