@@ -80,7 +80,9 @@ it('closes the pipe when a read is cancelled or fails', async () => {
       settleScale: 0,
       open: async () => fake,
       signal: abort.signal,
-      onProgress: () => {
+      // The 'Connect' stage is announced before any pipe is opened; fail from the first read progress, once one is.
+      onProgress: (p) => {
+        if (p.stage === 'Connect') return;
         if (mode === 'cancel') abort.abort();
         else throw new Error('synthetic failure');
       },
