@@ -43,6 +43,7 @@ All under `src/app/components/debug/`, exported from `index.ts`.
 | [ConfidenceBadge](../../../src/app/components/debug/ConfidenceBadge.md)             | Layout or meaning confidence as a pill                              |
 | [HexDecValue](../../../src/app/components/debug/HexDecValue.md)                     | One number in the owner's number format                             |
 | [SensitiveRevealButton](../../../src/app/components/debug/SensitiveRevealButton.md) | **Show password** control and its `useSensitiveReveal` hook         |
+| [CalibrationTab](../../../src/app/routes/debug/radios/CalibrationTab.md)            | The whole Calibration tab body: pickers, notice, charts, tables     |
 | [CalibrationReadPicker](../../../src/app/components/debug/CalibrationReadPicker.md) | Read and optional Overlay selects                                   |
 | [CalibrationChartGrid](../../../src/app/components/debug/CalibrationChartGrid.md)   | The grid the chart cards sit in                                     |
 | [CalibrationChartCard](../../../src/app/components/debug/CalibrationChartCard.md)   | One chart in its container, by `kind`                               |
@@ -61,7 +62,7 @@ All under `src/app/components/debug/`, exported from `index.ts`.
 ## Gold references
 
 - **DM-32 Settings and Memory**: the shape every Settings and Memory view follows.
-- **RT95 Calibration** (once its page lands on the kit): the shape every Calibration view follows.
+- **RT95 Calibration**: the shape every Calibration view follows.
 
 ## Related
 
