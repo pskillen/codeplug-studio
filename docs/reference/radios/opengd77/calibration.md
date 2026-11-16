@@ -2,7 +2,7 @@
 
 Tier-3 reference for the 512-byte calibration table that OpenGD77 STM32 firmware serves at flash address `0x10000`, and how the debug pages read and decode it. Code: `src/core/radios/opengd77/calibration.ts` (layout), `src/integrations/radio-io/radios/opengd77/debugCalibration.ts` (read and selection).
 
-> **This is the OpenGD77 working copy, not stock factory calibration.** It is not validated on hardware. Nothing here gives a value a physical unit, a valid range or a health verdict.
+> **This is the OpenGD77 working copy, not stock factory calibration.** It is not validated on hardware. Nothing here gives a value a valid range or a health verdict. Units, consumers and power points were traced from the OpenGD77 source and live in the per-model references: [DM-1701 calibration.md](../baofeng/dm-1701/calibration.md) and [MD-9600 calibration.md](../tyt/md-9600/calibration.md).
 
 ## Provenance
 
@@ -47,21 +47,21 @@ Bands: UHF arrays hold 9 bytes (nine frequency points), VHF arrays 5 bytes. Ever
 | `1A0` / `1A9`                         | MD-9600 tree: mid-low power. DM-1701 tree: very-low power (the firmware says official firmware does not use it). The meaning follows the model |
 | `1B0`                                 | UHF frequency points: 18 entries of 4 BCD bytes (9 RX/TX pairs); entries 0 and 1 (`1B0`..`1B7`) are the local marker                           |
 
-Every other byte is shown as an unknown range (for example `79`..`8F`, `C0`..`CF`, `F4`..`FF`, `128`..`12F`, `150`..`16F`, `1F8`..`1FF`).
+Every other byte is classified, not undecoded: the 24 unnamed ranges (154 bytes, for example `79`..`8F`, `C0`..`CF`, `F4`..`FF`, `128`..`12F`, `150`..`16F`, `1F8`..`1FF`) are read by no OpenGD77 code, and Studio shows each as "not used by OpenGD77; stock meaning unknown". The per-model references list every range.
 
-Frequency entries are shown as the stored digits (each byte's high then low nibble, as stored) with no unit claim; a nibble above 9 shows "invalid BCD" with its raw bytes. When the marker is absent, no value is decoded: only raw bytes are shown, because the layout the loader writes is not what is there.
+Frequency entries are **little-endian BCD in 10 Hz units** (inferred from the marker comment): the four bytes reversed, read as BCD digits, divided by 100000 gives MHz, so the marker is 400.02500 and 400.14500 MHz. Studio shows the MHz with the raw bytes kept; a nibble above 9 shows "invalid BCD". The oscillator tune bytes are offset binary: signed trim = byte - 128, shown beside the raw byte. Power slots show their watt point per model. When the marker is absent, no value is decoded: only raw bytes are shown, because the layout the loader writes is not what is there.
 
 ## Confidence vocabulary
 
-| Axis    | Values                                                                                                                                                                    |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Layout  | `source-declared`: the offset and width come from the declaration order in the two snapshots; not checked on hardware                                                     |
-| Meaning | `named`: the source names the field. `partial`: the source says the use is unknown, or the digits have no stated unit. `unknown`: unnamed bytes (shown as unknown ranges) |
+| Axis    | Values                                                                                                                                                                                                                                                                            |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layout  | `source-declared`: the offset and width come from the declaration order in the two snapshots; not checked on hardware                                                                                                                                                             |
+| Meaning | `traced`: the source names the field and its reader, or the absence of one, was traced. `partly`: inferred (frequency-point encoding) or the reader is known but the meaning is not (RX voltages). `unknown`: nothing established. Evidence (source file and line) is in each row |
 
 ## What is not claimed
 
 - The stock firmware's location or format for calibration.
-- Physical units, valid ranges, or whether the radio is healthy or well calibrated.
+- Physical units beyond the traced raw units (DAC code / 16, register values, offset binary), valid ranges, or whether the radio is healthy or well calibrated.
 - That the working copy equals the stored flash copy, or the factory values.
 - Hardware validation: not done.
 - Any other OpenGD77 build or fork matching these two snapshots.

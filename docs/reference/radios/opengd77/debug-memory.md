@@ -40,6 +40,10 @@ The wire step is shown as the model's own ladder percent, labelled as the radio'
 
 ## Not decoded
 
-Settings, APRS, DTMF, boot, VFO and additional-settings blocks, the satellite bank, scan lists (OpenGD77 uses the zone as scan list), DTMF contacts, and resolution of channel TX contact references against the contact bank.
+APRS, DTMF, boot, VFO and additional-settings blocks (the firmware settings struct and the codeplug device info and general settings are decoded in the Settings tab below), the satellite bank, scan lists (OpenGD77 uses the zone as scan list), DTMF contacts, and resolution of channel TX contact references against the contact bank.
 
 See [radio debug](../../../features/radio-debug/README.md) and [debug capture](debug-capture.md).
+
+## Settings tab
+
+Read-only. The firmware settings struct at flash `0x604B` (59 members) is decoded from whatever the captured spans hold: the magic `0x4780` must be present and the model must be identified, otherwise the tab says why and names no field. Members not wholly in the capture read "Not captured" (a plain capture holds only `0x604B-0x605F`, 21 bytes); a member with some bytes shows "Partly captured". The data is labelled "Flash copy as of the last power-off or CPS save" (DM-1701) or "Backup copy; the live copy is in backup SRAM" (MD-9600). The codeplug device info (`0x80`) and general settings (`0xE0`) are decoded below it; fields no OpenGD77 code reads show "unused (no reader)". Layout, confidence and evidence: [DM-1701 settings.md](../baofeng/dm-1701/settings.md), [MD-9600 settings.md](../tyt/md-9600/settings.md). The capture region and read guard are unchanged.

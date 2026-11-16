@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Read-only OpenGD77 (DM-1701, MD-9600) Memory viewer: channels, zones, contacts, RX groups and the User Database decoded from the open debug archive's captured FLASH spans, without a project, library or build.
+Read-only OpenGD77 (DM-1701, MD-9600) Memory viewer: channels, zones, contacts, RX groups, the User Database and a Settings tab ([OpenGd77Settings](OpenGd77Settings.md)) decoded from the open debug archive's captured FLASH spans, without a project, library or build.
 
 ## Props
 
