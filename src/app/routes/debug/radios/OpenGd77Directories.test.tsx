@@ -112,6 +112,16 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       expect(within(region).getByText('Unresolved: contact slot is empty')).toBeInTheDocument();
     });
 
+    it('draws the User Database in the shared panel, with the page filter beside the opt-in search', () => {
+      view(archiveOf(model, directoryImage(), syntheticUserDatabaseRegion(150)));
+      tab('User Database');
+      expect(screen.getByPlaceholderText('Filter this page')).toBeInTheDocument();
+      expect(screen.getByText('150 entries')).toBeInTheDocument();
+      expect(screen.getByLabelText('Search the User Database')).toBeInTheDocument();
+      tab('RX groups');
+      expect(screen.getByText('Select a list to see its members.')).toBeInTheDocument();
+    });
+
     it('pages the User Database at 100 rows with true flash addresses', () => {
       view(archiveOf(model, directoryImage(), syntheticUserDatabaseRegion(9_710)));
       tab('User Database');

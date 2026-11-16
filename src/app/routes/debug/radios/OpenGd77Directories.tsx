@@ -1,11 +1,26 @@
 import { Alert, Button, Group, NativeSelect, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useMemo, useState } from 'react';
-import {
-  DataTable,
-  type DataTableColumn,
-  type DataTableSortState,
-} from '@app/components/v2/index.ts';
+import { DataTable, type DataTableColumn } from '@app/components/v2/index.ts';
+import { MemoryCategoryPanel } from '@app/components/debug/index.ts';
 import type { OpenGd77MemoryArchive } from '@integrations/radio-io/radios/opengd77/debugMemory.ts';
+import {
+  OPENGD77_CONTACT_CAVEAT,
+  OPENGD77_CONTACTS_EMPTY,
+  OPENGD77_CONTACTS_UNAVAILABLE,
+  OPENGD77_RX_GROUP_CAVEAT,
+  OPENGD77_RX_GROUPS_EMPTY,
+  OPENGD77_RX_GROUPS_UNAVAILABLE,
+  OPENGD77_USER_DATABASE_CAVEAT,
+  OPENGD77_USER_DATABASE_EMPTY,
+  OPENGD77_USER_DATABASE_NOT_CAPTURED,
+  opengd77ContactSummary,
+  opengd77RxGroupSummary,
+  opengd77UserDatabaseHeaderCounts,
+  opengd77UserDatabaseNoMatch,
+  opengd77UserDatabaseRefusedText,
+  opengd77UserDatabaseSummary,
+  opengd77UserDatabaseTruncatedText,
+} from '@integrations/radio-io/radios/opengd77/debugMemoryText.ts';
 import {
   findOpenGd77UserDatabaseEntries,
   projectOpenGd77Contacts,
@@ -24,11 +39,6 @@ const USER_DATABASE_SEARCH_CAP = 200;
 const count = (n: number) => n.toLocaleString('en-GB');
 const hex8 = (n: number) => `0x${n.toString(16).toUpperCase().padStart(8, '0')}`;
 const hex2 = (n: number) => `0x${n.toString(16).toUpperCase().padStart(2, '0')}`;
-
-const matches = (query: string, ...haystack: string[]) => {
-  const q = query.trim().toLocaleLowerCase();
-  return !q || haystack.some((h) => h.toLocaleLowerCase().includes(q));
-};
 
 interface ContactRow {
   id: string;
@@ -81,8 +91,6 @@ const contactColumns: DataTableColumn<ContactRow>[] = [
 
 /** Read-only viewer over the open archive. */
 export function ContactsPanel({ archive }: { archive: OpenGd77MemoryArchive }) {
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
   const projection = useMemo(() => projectOpenGd77Contacts(archive), [archive]);
   const rows = useMemo(
     () => projection.entries.map((entry) => ({ id: `contact-${entry.slot}`, entry })),
@@ -91,42 +99,24 @@ export function ContactsPanel({ archive }: { archive: OpenGd77MemoryArchive }) {
   if (projection.status !== 'captured')
     return (
       <Alert title={NOT_CAPTURED} color="yellow">
-        The contact bank was not completely captured, so no contact list can be shown. This does not
-        mean the radio has no contacts.
+        {OPENGD77_CONTACTS_UNAVAILABLE}
       </Alert>
     );
-  const shown = rows.filter((r) =>
-    matches(
-      query,
-      String(r.entry.slot),
-      r.entry.name,
-      String(r.entry.digitalId),
-      callTypeText(r.entry),
-    ),
-  );
   return (
-    <Stack gap="sm">
-      <Text>
-        {count(projection.entries.length)} captured of {count(projection.capacity)} contact slots
-      </Text>
-      <Text size="sm" c="dimmed">
-        Slots keep their one-based radio numbers. Call type is the radio&apos;s raw value (0 Group,
-        1 Private, 2 All call); anything else reads Unknown with that value. The time-slot override
-        byte is shown raw: it is not decoded here.
-      </Text>
-      <DataTable
-        caption="OpenGD77 contacts"
-        columns={contactColumns}
-        rows={shown}
-        getRowId={(r) => r.id}
-        totalRowCount={rows.length}
-        search={{ value: query, onChange: setQuery, placeholder: 'Search contacts' }}
-        sort={sort}
-        onSortChange={setSort}
-        emptyMessage="The contact bank is captured and no slot is in use."
-        filteredEmptyMessage={`No contacts match “${query.trim()}”.`}
-      />
-    </Stack>
+    <MemoryCategoryPanel
+      summary={opengd77ContactSummary(projection.entries.length, projection.capacity)}
+      caveat={OPENGD77_CONTACT_CAVEAT}
+      searchPlaceholder="Search contacts"
+      caption="OpenGD77 contacts"
+      columns={contactColumns}
+      rows={rows}
+      getRowId={(r) => r.id}
+      searchText={(r) =>
+        [r.entry.slot, r.entry.name, r.entry.digitalId, callTypeText(r.entry)].join(' ')
+      }
+      defaultSort={{ key: 'slot', direction: 'asc' }}
+      emptyMessage={OPENGD77_CONTACTS_EMPTY}
+    />
   );
 }
 
@@ -194,11 +184,29 @@ const memberColumns: DataTableColumn<GroupMemberRow>[] = [
   { key: 'note', header: 'Status', width: 'minmax(14rem, 2fr)', render: (r) => r.note },
 ];
 
+function RxGroupMembers({ group }: { group: OpenGd77RxGroupEntry }) {
+  return (
+    <Stack gap="xs" role="region" aria-label={`RX group ${group.slot} members`}>
+      <Title order={4}>
+        RX group {group.slot} · {group.name}
+      </Title>
+      <Text size="sm">
+        {group.resolvedMembers.length} of {group.declaredMembers} members resolved
+      </Text>
+      <DataTable
+        caption={`RX group ${group.slot} members`}
+        variant="embedded"
+        columns={memberColumns}
+        rows={memberRows(group)}
+        getRowId={(r) => r.id}
+        emptyMessage="This list declares no members."
+      />
+    </Stack>
+  );
+}
+
 /** Read-only viewer over the open archive. */
 export function RxGroupsPanel({ archive }: { archive: OpenGd77MemoryArchive }) {
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
-  const [selectedSlot, setSelectedSlot] = useState<number>();
   const projection = useMemo(() => projectOpenGd77RxGroups(archive), [archive]);
   const rows = useMemo(
     () => projection.entries.map((entry) => ({ id: `group-${entry.slot}`, entry })),
@@ -207,57 +215,23 @@ export function RxGroupsPanel({ archive }: { archive: OpenGd77MemoryArchive }) {
   if (projection.status !== 'captured')
     return (
       <Alert title={NOT_CAPTURED} color="yellow">
-        The RX group list bank was not completely captured, so no list can be shown. This does not
-        mean the radio has no RX groups.
+        {OPENGD77_RX_GROUPS_UNAVAILABLE}
       </Alert>
     );
-  const selected = projection.entries.find((g) => g.slot === selectedSlot);
-  const shown = rows.filter((r) => matches(query, String(r.entry.slot), r.entry.name));
   return (
-    <Stack gap="sm">
-      <Text>
-        {count(projection.entries.length)} of {count(projection.capacity)} RX group lists in use
-      </Text>
-      <Text size="sm" c="dimmed">
-        Members are contacts. A member the product decoder cannot resolve is counted and listed as
-        unresolved, never dropped; resolved members are listed first.
-      </Text>
-      <DataTable
-        caption="OpenGD77 RX groups"
-        columns={groupColumns}
-        rows={shown}
-        getRowId={(r) => r.id}
-        totalRowCount={rows.length}
-        search={{ value: query, onChange: setQuery, placeholder: 'Search RX groups' }}
-        sort={sort}
-        onSortChange={setSort}
-        onRowActivate={(r) => setSelectedSlot(r.entry.slot)}
-        emptyMessage="The RX group bank is captured and no list is in use."
-        filteredEmptyMessage={`No RX groups match “${query.trim()}”.`}
-      />
-      {selected ? (
-        <Stack gap="xs" role="region" aria-label={`RX group ${selected.slot} members`}>
-          <Title order={4}>
-            RX group {selected.slot} · {selected.name}
-          </Title>
-          <Text size="sm">
-            {selected.resolvedMembers.length} of {selected.declaredMembers} members resolved
-          </Text>
-          <DataTable
-            caption={`RX group ${selected.slot} members`}
-            variant="embedded"
-            columns={memberColumns}
-            rows={memberRows(selected)}
-            getRowId={(r) => r.id}
-            emptyMessage="This list declares no members."
-          />
-        </Stack>
-      ) : (
-        <Text size="sm" c="dimmed">
-          Select a list to see its members.
-        </Text>
-      )}
-    </Stack>
+    <MemoryCategoryPanel
+      summary={opengd77RxGroupSummary(projection.entries.length, projection.capacity)}
+      caveat={OPENGD77_RX_GROUP_CAVEAT}
+      searchPlaceholder="Search RX groups"
+      caption="OpenGD77 RX groups"
+      columns={groupColumns}
+      rows={rows}
+      getRowId={(r) => r.id}
+      searchText={(r) => `${r.entry.slot} ${r.entry.name}`}
+      defaultSort={{ key: 'slot', direction: 'asc' }}
+      details={(r) => <RxGroupMembers group={r.entry} />}
+      emptyMessage={OPENGD77_RX_GROUPS_EMPTY}
+    />
   );
 }
 
@@ -286,6 +260,10 @@ function modeMeaning(mode: number, segment1Abs: number): string {
   return `Unrecognised mode byte ${JSON.stringify(ch)}; addresses assume segment 1 at ${hex8(segment1Abs)}`;
 }
 
+/**
+ * The opt-in, paged User Database: the form searches the whole database through the decoder's
+ * index; the panel's own search box only filters the page on screen.
+ */
 function UserDatabaseTable({ db }: { db: OpenGd77UserDatabaseOk }) {
   const [page, setPage] = useState(0);
   const [kind, setKind] = useState<'id-prefix' | 'text'>('id-prefix');
@@ -356,15 +334,19 @@ function UserDatabaseTable({ db }: { db: OpenGd77UserDatabaseOk }) {
           Showing the first {USER_DATABASE_SEARCH_CAP} matches. Refine the search to see others.
         </Alert>
       )}
-      <DataTable
+      <MemoryCategoryPanel
+        summary={opengd77UserDatabaseSummary(search?.indices.length, db.capturedEntries)}
+        caveat={OPENGD77_USER_DATABASE_CAVEAT}
+        searchPlaceholder="Filter this page"
         caption="OpenGD77 User Database entries"
         columns={udColumns}
         rows={rows}
         getRowId={(r) => r.id}
+        searchText={(r) => `${r.index} ${r.entry.digitalId} ${r.entry.text}`}
         emptyMessage={
           search
-            ? `No entries match “${applied?.value.trim()}”.`
-            : 'This User Database has no captured entries.'
+            ? opengd77UserDatabaseNoMatch(applied?.value.trim() ?? '')
+            : OPENGD77_USER_DATABASE_EMPTY
         }
       />
       <Group gap="sm">
@@ -381,11 +363,6 @@ function UserDatabaseTable({ db }: { db: OpenGd77UserDatabaseOk }) {
         >
           Next
         </Button>
-        <Text size="sm" c="dimmed">
-          {search
-            ? `${count(search.indices.length)} matching entries`
-            : `${count(db.capturedEntries)} entries`}
-        </Text>
       </Group>
     </Stack>
   );
@@ -397,13 +374,13 @@ export function UserDatabasePanel({ archive }: { archive: OpenGd77MemoryArchive 
   if (projection.status === 'not-captured')
     return (
       <Alert title={NOT_CAPTURED} color="yellow">
-        This archive holds no User Database region. This does not mean the radio has none.
+        {OPENGD77_USER_DATABASE_NOT_CAPTURED}
       </Alert>
     );
   if (projection.status === 'refused')
     return (
       <Alert title="Refused" color="red">
-        The User Database region was not accepted: {projection.reason}.
+        {opengd77UserDatabaseRefusedText(projection.reason)}
       </Alert>
     );
   if (projection.status === 'invalid-header')
@@ -430,22 +407,22 @@ export function UserDatabasePanel({ archive }: { archive: OpenGd77MemoryArchive 
           Raw header: <code>{db.headerHex}</code>
         </Text>
         <Text size="sm">
-          Header entry count {count(db.headerEntryCount)} · captured entries{' '}
-          {count(db.capturedEntries)} · segment 0 {count(db.segment0Entries)} · segment 1{' '}
-          {count(db.segment1Entries)} · packed length {count(db.packedByteLength)} bytes
-        </Text>
-        <Text size="sm" c="dimmed">
-          Entries are stored packed in this archive; flash addresses below are the real addresses.
-          Text is 6-bit packed and trimmed; characters outside the alphabet decode as spaces.
+          {opengd77UserDatabaseHeaderCounts(
+            db.headerEntryCount,
+            db.capturedEntries,
+            db.segment0Entries,
+            db.segment1Entries,
+            db.packedByteLength,
+          )}
         </Text>
       </Stack>
       {db.truncated && (
         <Alert color="yellow" title="Truncated">
-          The header declares {count(db.headerEntryCount)} entries but only{' '}
-          {count(db.capturedEntries)} are shown
-          {db.beyondProductMax
-            ? ': the product read caps the User Database below the header count.'
-            : ': the stored bytes end early.'}
+          {opengd77UserDatabaseTruncatedText(
+            db.headerEntryCount,
+            db.capturedEntries,
+            db.beyondProductMax,
+          )}
         </Alert>
       )}
       <UserDatabaseTable db={db} />
