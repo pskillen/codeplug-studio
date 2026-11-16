@@ -136,8 +136,22 @@ export interface SettingsView {
   status: { kind: 'ok' } | { kind: 'not-captured' | 'ambiguous'; reason: string };
   summary: string; // "118 of 118 known setting fields captured · 113 decoded · …"
   intro: string;
-  groups: readonly { id: string; label: string; rows: readonly SettingRow[] }[];
-  trailing?: readonly { id: string; title: string; rows: readonly SettingRow[] }[]; // documented-not-decoded, unused, unknown
+  groups: readonly {
+    id: string;
+    label: string;
+    description?: string;
+    /** Shown when the group has no rows (and the viewer is not searching). */
+    emptyText?: string;
+    rows: readonly SettingRow[];
+  }[];
+  /** Documented-not-decoded, unused, unknown: folded, drawn with the same columns. */
+  trailing?: readonly {
+    id: string;
+    title: string;
+    description?: string;
+    emptyText?: string;
+    rows: readonly SettingRow[];
+  }[];
 }
 export interface SettingRow {
   id: string;

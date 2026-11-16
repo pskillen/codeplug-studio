@@ -7,7 +7,8 @@ import { OpenGd77Settings } from './OpenGd77Settings.tsx';
 import { AtD890Memory } from './AtD890Memory.tsx';
 import { AtD890Settings } from './AtD890Settings.tsx';
 import { Dm32Memory } from './Dm32Memory.tsx';
-import { Dm32Settings } from './Dm32Settings.tsx';
+import { dm32SettingsView } from '@integrations/radio-io/radios/dm32uv/debugSettingsView.ts';
+import type { SettingsView } from '@integrations/radio-io/debugView/index.ts';
 import { Rt95MemoryView } from './Rt95Memory.tsx';
 import { Rt95Settings } from './Rt95Settings.tsx';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
@@ -81,7 +82,12 @@ export interface RadioDebugDescriptor {
    * function; it returns nothing for another radio's archive. Absent: nothing to mask.
    */
   sensitiveRanges?: DebugSensitiveRangesFn;
-  /** A profile's own Settings viewer. Its tab, after Memory, shows only when this is set. */
+  /**
+   * The Settings tab's content as a radio-neutral view, drawn by the shared `SettingsTable`.
+   * Radio-home function. Preferred over `Settings`.
+   */
+  settings?: (archive: DebugArchive) => SettingsView;
+  /** A profile's own Settings viewer, for radios not yet on `settings`. The tab shows when either is set. */
   Settings?: ComponentType<{ archive?: DebugArchive }>;
   /** False when the Calibration tab has no overlay picker (the radio's calibration is shown alone). */
   calibrationOverlay?: boolean;
@@ -161,7 +167,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     slug: 'dm-32uv',
     compare: dm32CompareAdapter,
     Memory: Dm32Memory,
-    Settings: Dm32Settings,
+    settings: dm32SettingsView,
     calibrationOverlay: false,
     Calibration: Dm32Calibration,
     readHistory: true,
@@ -252,12 +258,14 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
 ];
 
 /** The page's tab labels, in order: Settings follows Memory for a profile that has a Settings view. */
-export const radioDebugTabs = (descriptor: Pick<RadioDebugDescriptor, 'Settings'>): string[] => [
+export const radioDebugTabs = (
+  descriptor: Pick<RadioDebugDescriptor, 'Settings' | 'settings'>,
+): string[] => [
   'Overview',
   'Backup',
   'Calibration',
   'Memory',
-  ...(descriptor.Settings ? ['Settings'] : []),
+  ...(descriptor.settings || descriptor.Settings ? ['Settings'] : []),
   'Hex',
   'Compare',
   'Trace',
