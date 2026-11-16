@@ -36,8 +36,9 @@ function columnWidths(showRaw: boolean, showDefault: boolean): readonly number[]
 }
 
 function valueText(row: SettingRow, revealed: boolean): string {
-  if (row.sensitive && !revealed) return HIDDEN;
+  // Not captured first: a lock password that was never read must not read as hidden.
   if (row.value === undefined) return NOT_CAPTURED;
+  if (row.sensitive && !revealed) return HIDDEN;
   if (row.value === '') return '(empty)';
   if (row.rawValue !== undefined && !/^-?\d+(\.\d+)?$/.test(row.value))
     return `${row.value} (${row.rawValue})`;
@@ -45,7 +46,7 @@ function valueText(row: SettingRow, revealed: boolean): string {
 }
 
 function rawText(row: SettingRow, revealed: boolean): string {
-  if (!row.raw) return DASH;
+  if (!row.raw) return row.value === undefined ? NOT_CAPTURED : DASH;
   if (row.sensitive && !revealed) return row.raw.map(() => MASKED_TEXT).join(' ');
   return row.raw.map(hexByte).join(' ');
 }
@@ -104,7 +105,7 @@ function RowsTable({
                 {row.help && <span className={classes.help}>{row.help}</span>}
               </td>
               <td>{valueText(row, revealed)}</td>
-              {showRaw && <td className={classes.mono}>{row.address ?? DASH}</td>}
+              {showRaw && <td className={classes.mono}>{row.address ?? (row.value === undefined ? NOT_CAPTURED : DASH)}</td>}
               {showRaw && <td className={classes.mono}>{rawText(row, revealed)}</td>}
               {showDefault && <td>{row.firmwareDefault ?? DASH}</td>}
               <td>
