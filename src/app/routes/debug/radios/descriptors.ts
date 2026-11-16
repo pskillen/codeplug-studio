@@ -16,7 +16,7 @@ import { RT95_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/rt95/debu
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { UV5R_MINI_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/uv5r-mini/debugRead/memoryText.ts';
 import { uv5rMiniSettingsView } from '@integrations/radio-io/radios/uv5r-mini/debugRead/settingsView.ts';
-import { AtD890Calibration } from './AtD890Calibration.tsx';
+import { atD890CalibrationView } from '@integrations/radio-io/radios/at-d890uv/debugCalibrationView.ts';
 import { AtD890Compare } from './AtD890Compare.tsx';
 import { atD890CompareAdapter } from './atD890Compare.ts';
 import { atD890DecodedSnapshot } from './atD890DecodedDiff.ts';
@@ -161,7 +161,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     compare: { ...atD890CompareAdapter, decoded: atD890DecodedSnapshot },
     Memory: AtD890Memory,
     settings: atD890SettingsView,
-    Calibration: AtD890Calibration,
+    calibration: atD890CalibrationView,
     CompareExtra: AtD890Compare,
     readHistory: true,
     capture: captureAtD890,

@@ -20,7 +20,7 @@ import type {
   DecodedSnapshot,
 } from '@integrations/radio-io/debugCompare/index.ts';
 import type { DebugArchive } from './captureArchive.ts';
-import { selectAtD890TuneRegion } from './AtD890Calibration.tsx';
+import { selectAtD890TuneRegion } from '@integrations/radio-io/radios/at-d890uv/debugCalibrationView.ts';
 import { isAtD890ClassifiedRange, readAtD890Provenance } from './atD890Provenance.ts';
 
 export type AtD890DiffDomain =

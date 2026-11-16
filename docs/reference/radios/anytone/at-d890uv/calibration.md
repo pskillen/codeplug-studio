@@ -8,12 +8,12 @@ Field layout of the AT-D890UV tune unit as the read-only calibration viewer deco
 
 ## Code anchors
 
-| Module                                                      | Role                                                                                                                                                          |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/core/radios/anytone/at-d890uv/calibration.ts`          | `decodeAtD890Calibration(bytes)`, `atD890CalibrationTableValue(table, index)`, `atD890CalibrationCorrection(table, index, reference)`, `atD890TrimPpm(value)` |
-| `src/core/radios/anytone/at-d890uv/calibrationFields.ts`    | The other named loaded bytes (baseband words, tracking filters, test channels, second board) as data                                                          |
-| `src/app/routes/debug/radios/AtD890Calibration.tsx`         | `selectAtD890TuneRegion(archive)` and the Calibration tab view                                                                                                |
-| `src/integrations/radio-io/radios/at-d890uv/vitalBackup.ts` | `AT_D890_VITAL_UNITS`: the four vital requests and their addresses                                                                                            |
+| Module                                                               | Role                                                                                                                                                          |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/core/radios/anytone/at-d890uv/calibration.ts`                   | `decodeAtD890Calibration(bytes)`, `atD890CalibrationTableValue(table, index)`, `atD890CalibrationCorrection(table, index, reference)`, `atD890TrimPpm(value)` |
+| `src/core/radios/anytone/at-d890uv/calibrationFields.ts`             | The other named loaded bytes (baseband words, tracking filters, test channels, second board) as data                                                          |
+| `src/integrations/radio-io/radios/at-d890uv/debugCalibrationView.ts` | `selectAtD890TuneRegion(archive)` and `atD890CalibrationView(archive)`, the Calibration tab view                                                              |
+| `src/integrations/radio-io/radios/at-d890uv/vitalBackup.ts`          | `AT_D890_VITAL_UNITS`: the four vital requests and their addresses                                                                                            |
 
 ## Inputs: which bytes are decoded
 

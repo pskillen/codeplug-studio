@@ -4,7 +4,7 @@ The shared Calibration tab shell for a radio debug page.
 
 ## Purpose
 
-Calls the descriptor's `calibration(archive)` for the selected read and for the overlay read, and draws the results with the debug kit. It holds no radio text: the `CalibrationView` carries every sentence, address and caveat. The RT95 is on it; the other radios keep their own `Calibration` component until K2 to K5.
+Calls the descriptor's `calibration(archive)` for the selected read and for the overlay read, and draws the results with the debug kit. It holds no radio text: the `CalibrationView` carries every sentence, address and caveat. The RT95 and the AT-D890UV are on it; the other radios keep their own `Calibration` component until K2 to K5.
 
 ## Props
 
@@ -21,7 +21,7 @@ Calls the descriptor's `calibration(archive)` for the selected read and for the 
 
 ## Behaviour
 
-- Order: `CalibrationReadPicker`, `EvidenceNotice`, facts line, `CalibrationChartGrid` of `CalibrationChartCard`s, **Show password** (only when a table cell is sensitive), one `DebugSection` with a `ValueTable` per table, `UnusedRanges`, `HexDump` (folded).
+- Order: `CalibrationReadPicker`, `EvidenceNotice`, facts line, `CalibrationChartGrid` of `CalibrationChartCard`s, **Show password** (only when a table cell is sensitive), one `DebugSection` with a `ValueTable` per table (a table with `folded` starts collapsed), `UnusedRanges`, `HexDump` (folded).
 - No archive: "Open or read a capture". A view that is not `ok`: its reason in an alert. An overlay that is not `ok`: "Overlay not shown" with its reason, and the read is drawn alone.
 - Charts and tables pair with the overlay by `id`.
 - **Show password** resets when another read or archive is shown (`archiveKey`).
@@ -32,4 +32,5 @@ Calls the descriptor's `calibration(archive)` for the selected read and for the 
 
 - [SettingsTab.md](./SettingsTab.md), [RadioDebugPage.md](./RadioDebugPage.md)
 - [CalibrationReadPicker](../../../components/debug/CalibrationReadPicker.md), [CalibrationChartCard](../../../components/debug/CalibrationChartCard.md)
+- AT-D890UV view: `src/integrations/radio-io/radios/at-d890uv/debugCalibrationView.ts`
 - RT95 view: `src/integrations/radio-io/radios/rt95/debugCalibrationView.ts`

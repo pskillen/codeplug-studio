@@ -130,7 +130,13 @@ function CalibrationBody({
       )}
       {onToggleReveal && <SensitiveRevealButton revealed={revealed} onToggle={onToggleReveal} />}
       {view.tables.map((table) => (
-        <DebugSection key={table.id} title={table.title} description={table.description}>
+        <DebugSection
+          key={table.id}
+          title={table.title}
+          description={table.description}
+          collapsible={table.folded}
+          defaultCollapsed={table.folded}
+        >
           <ValueTable table={table} overlay={overlayTables.get(table.id)} revealed={revealed} />
         </DebugSection>
       ))}
