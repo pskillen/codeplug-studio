@@ -18,7 +18,7 @@ import {
   Title,
 } from '@mantine/core';
 import { useState } from 'react';
-import { SensitiveRevealButton } from '../SensitiveReveal.tsx';
+import { SensitiveRevealButton } from '@app/components/debug/index.ts';
 
 export const ALL_CATEGORIES = 'all';
 const PAGE_SIZE = 30;

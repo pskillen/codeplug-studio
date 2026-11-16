@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { Alert, Stack, Title } from '@mantine/core';
-import { SettingsTable } from '@app/components/debug/index.ts';
+import { SettingsTable, useSensitiveReveal } from '@app/components/debug/index.ts';
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import type { RadioDebugDescriptor } from './descriptors.ts';
-import { useSensitiveReveal } from './useSensitiveReveal.ts';
 import type { DebugArchive } from './captureArchive.ts';
 import { archiveKey } from './viewerUtils.ts';
 
@@ -37,7 +36,7 @@ function SettingsTabLoaded({
   archive: DebugArchive;
   settings: SettingsBuilder;
 }) {
-  const reveal = useSensitiveReveal(archive);
+  const reveal = useSensitiveReveal(archive ? archiveKey(archive) : undefined);
   const view = useMemo(() => settings(archive), [archive, settings]);
   return (
     <Stack>

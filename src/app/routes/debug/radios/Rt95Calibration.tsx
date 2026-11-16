@@ -3,9 +3,14 @@ import { RT95_CALIBRATION_START } from '@core/radios/retevis/rt95/calibration.ts
 import { RT95_CALIBRATION_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import { Alert, Stack, Text, Title } from '@mantine/core';
 import { decodeRt95Calibration } from '@core/radios/retevis/rt95/calibration.ts';
-import { hexRows, formatAddress, MASKED_HEX_BYTE, sensitiveRanges } from './viewerUtils.ts';
-import { SensitiveRevealButton } from './SensitiveReveal.tsx';
-import { useSensitiveReveal } from './useSensitiveReveal.ts';
+import {
+  archiveKey,
+  hexRows,
+  formatAddress,
+  MASKED_HEX_BYTE,
+  sensitiveRanges,
+} from './viewerUtils.ts';
+import { SensitiveRevealButton, useSensitiveReveal } from '@app/components/debug/index.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
 export function Rt95Calibration({
@@ -19,7 +24,7 @@ export function Rt95Calibration({
   const overlayFields = decodeRt95Calibration(
     overlayArchive?.regions[RT95_CALIBRATION_REGION_ID],
   ).fields;
-  const reveal = useSensitiveReveal(archive);
+  const reveal = useSensitiveReveal(archive ? archiveKey(archive) : undefined);
   const mask = reveal.revealed ? [] : sensitiveRanges(archive, RT95_CALIBRATION_REGION_ID);
   const hex = (bytes: Uint8Array) =>
     Array.from(bytes, (b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
