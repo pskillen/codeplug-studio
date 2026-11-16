@@ -1,3 +1,4 @@
+import { isOpenGd77ModelId } from '@integrations/radio-io/radios/opengd77/debugCoverage.ts';
 import { Rt95Memory } from './Rt95Memory.tsx';
 import { RT95_MMD1_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import { RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
@@ -248,8 +249,11 @@ export function CompareViewer(props: {
           {archive && other && props.DecodedDiff && (
             <props.DecodedDiff first={archive} second={other} />
           )}
-          {!isDm32ModelId(modelId) && <Title order={4}>Decoded changes</Title>}
+          {!isDm32ModelId(modelId) && !isOpenGd77ModelId(modelId) && (
+            <Title order={4}>Decoded changes</Title>
+          )}
           {!isDm32ModelId(modelId) &&
+            !isOpenGd77ModelId(modelId) &&
             (() => {
               const first = archive && rt95ArchiveDetails(archive)?.summary;
               const second = other && rt95ArchiveDetails(other)?.summary;

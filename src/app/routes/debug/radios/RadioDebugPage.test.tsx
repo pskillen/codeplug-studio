@@ -25,6 +25,8 @@ import {
   OPENGD77_DM1701_MODEL_ID,
   OPENGD77_MD9600_MODEL_ID,
 } from '@integrations/radio-io/radios/opengd77/hydration.ts';
+import { radioDebugDescriptors } from './descriptors.ts';
+import { openDebugArchive } from './captureArchive.ts';
 import { syntheticOpenGd77Archive } from './opengd77.fixture.ts';
 
 vi.mock('@integrations/download/browserDownload.ts', async (importOriginal) => ({
@@ -671,6 +673,184 @@ function zipFile(bytes: Uint8Array) {
 }
 
 describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) => {
+  const history = getDebugReadHistory({
+    slug,
+    archiveModelId: slug.startsWith('dm') ? 'DM-1701' : 'MD-9600',
+  });
+  const otherSlug = slug === 'dm-1701-opengd77' ? 'md-9600-opengd77' : 'dm-1701-opengd77';
+  const otherHistory = getDebugReadHistory({
+    slug: otherSlug,
+    archiveModelId: otherSlug.startsWith('dm') ? 'DM-1701' : 'MD-9600',
+  });
+  afterEach(() =>
+    act(() => {
+      history.clear();
+      otherHistory.clear();
+    }),
+  );
+  const addTwo = async () => {
+    const a = await syntheticOpenGd77Archive(modelId, { revision: 'R20240101000000' });
+    const b = await syntheticOpenGd77Archive(modelId, {
+      revision: 'R20250505000000',
+      capturedAt: '2026-02-01T00:00:00.000Z',
+      userDatabaseEntries: 3,
+    });
+    return [history.add(a), history.add(b)] as const;
+  };
+  const descriptor = { slug, archiveModelId: slug.startsWith('dm') ? 'DM-1701' : 'MD-9600' };
+
+  it('keeps a live read in history, labelled, selected and undownloaded, isolated per page', async () => {
+    fake.pipe = new OpenGd77ScriptedPipe(radioTypes[0]);
+    open(slug);
+    fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
+    await screen.findByText(/Live read · captured/, {}, { timeout: 20000 });
+    const snap = history.getSnapshot();
+    expect(snap.entries.map((e) => e.label)).toEqual(['A']);
+    expect(snap.selectedId).toBe(snap.entries[0]!.id);
+    expect(snap.undownloaded).toBe(1);
+    expect(otherHistory.getSnapshot().entries).toHaveLength(0);
+    expect(
+      getDebugReadHistory({ slug: 'dm-32uv', archiveModelId: 'DM-32UV' }).getSnapshot().entries,
+    ).toHaveLength(0);
+  }, 30000);
+
+  it('retains a successful read that arrives after unmount and shows it on return', async () => {
+    const archive = await syntheticOpenGd77Archive(modelId);
+    const entry = radioDebugDescriptors.find((d) => d.slug === slug)!;
+    const original = entry.capture;
+    let finish!: (value: typeof archive) => void;
+    entry.capture = () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      });
+    try {
+      const view = open(slug);
+      fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
+      view.unmount();
+      await act(async () => finish(archive));
+      expect(history.getSnapshot().entries).toHaveLength(1);
+      open(slug);
+      expect(screen.getByText(/Live read · captured/)).toBeInTheDocument();
+    } finally {
+      entry.capture = original;
+    }
+  });
+
+  it('marks only the read a download started with, and keeps it undownloaded on failure', async () => {
+    const [first, second] = await addTwo();
+    let finish!: (value: { status: 'saved' }) => void;
+    vi.mocked(downloadZip).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    history.select(first.id);
+    open(slug);
+    fireEvent.click(screen.getByRole('button', { name: 'Download archive' }));
+    act(() => history.select(second.id));
+    await act(async () => finish({ status: 'saved' }));
+    expect(history.getSnapshot().undownloaded).toBe(1);
+    vi.mocked(downloadZip).mockResolvedValueOnce({ status: 'failed' } as never);
+    fireEvent.click(screen.getByRole('button', { name: 'Download archive' }));
+    expect(await screen.findByText('Download failed.')).toBeInTheDocument();
+    expect(history.getSnapshot().undownloaded).toBe(1);
+  });
+
+  it('Download all marks every read; Clear needs confirmation', async () => {
+    await addTwo();
+    open(slug);
+    fireEvent.click(screen.getByRole('button', { name: 'Download all reads' }));
+    await waitFor(() => expect(history.getSnapshot().undownloaded).toBe(0));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear history' }));
+    expect(history.getSnapshot().entries).toHaveLength(2);
+    fireEvent.click(await screen.findByRole('button', { name: /^Clear$/ }));
+    expect(history.getSnapshot().entries).toHaveLength(0);
+    expect(history.getSnapshot().selectedId).toBeNull();
+    expect(history.getSnapshot().compareId).toBeNull();
+  });
+
+  it('reopens a history ZIP and refuses a corrupt, wrong-profile or wrong-model one', async () => {
+    const [first, second] = await addTwo();
+    const zip = buildDebugReadHistoryZip(descriptor, [first, second]);
+    const original = [first, second].map((e) => e.archive.zipBytes);
+    act(() => history.clear());
+    open(slug);
+    const input = () => document.querySelector('input[type="file"]')!;
+    fireEvent.change(input(), { target: { files: [zipFile(zip)] } });
+    await waitFor(() => expect(history.getSnapshot().entries).toHaveLength(2));
+    const snap = history.getSnapshot();
+    expect(snap.entries.map((e) => e.archive.zipBytes)).toEqual(original);
+    expect(snap.entries.map((e) => e.readAt)).toEqual([
+      '2026-01-01T00:00:00.000Z',
+      '2026-02-01T00:00:00.000Z',
+    ]);
+    expect(snap.entries.every((e) => e.archive.source === 'file')).toBe(true);
+    expect(snap.undownloaded).toBe(0);
+    const files = unzipSync(zip);
+    files['reads/000001.zip'] = new Uint8Array([1, 2, 3]);
+    fireEvent.change(input(), { target: { files: [zipFile(zipSync(files))] } });
+    expect(await screen.findByText('Operation failed')).toBeInTheDocument();
+    const otherDescriptor = {
+      slug: otherSlug,
+      archiveModelId: otherSlug.startsWith('dm') ? 'DM-1701' : 'MD-9600',
+    };
+    const wrong = buildDebugReadHistoryZip(otherDescriptor, [first, second]);
+    fireEvent.change(input(), { target: { files: [zipFile(wrong)] } });
+    expect(await screen.findByText(/does not match this profile/)).toBeInTheDocument();
+    const wrongModel = await syntheticOpenGd77Archive(
+      modelId === OPENGD77_DM1701_MODEL_ID ? OPENGD77_MD9600_MODEL_ID : OPENGD77_DM1701_MODEL_ID,
+    );
+    fireEvent.change(input(), { target: { files: [zipFile(wrongModel.zipBytes)] } });
+    expect(await screen.findByText(/does not match this profile/)).toBeInTheDocument();
+    expect(history.getSnapshot().entries).toHaveLength(2);
+    // A plain single archive opens on the same control.
+    const plain = await syntheticOpenGd77Archive(modelId, {
+      capturedAt: '2026-03-01T00:00:00.000Z',
+    });
+    fireEvent.change(input(), { target: { files: [zipFile(plain.zipBytes)] } });
+    await waitFor(() => expect(history.getSnapshot().entries).toHaveLength(3));
+  });
+
+  it('compares two reads: byte summary, decoded evidence', async () => {
+    const [first] = await addTwo();
+    history.select(first.id);
+    open(slug);
+    fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
+    fireEvent.click(screen.getByRole('combobox', { name: 'Compare with' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^B ·/ }));
+    expect(await screen.findByText(/Identity \/ Revision: Changed/)).toBeInTheDocument();
+    expect(screen.getByText(/Identity \/ Build date: Unchanged/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/User Database \/ Entry count \(header\): Changed · 2 → 3/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/FLASH span 1: 0 changed bytes/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/User Database.*: 1 changed bytes · 27 missing bytes/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Decoded changes are unavailable/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Responding unit/)).not.toBeInTheDocument();
+  });
+
+  it('shows Unavailable for an invalid FirmwareInfo sidecar', async () => {
+    const [first] = await addTwo();
+    const base = await syntheticOpenGd77Archive(modelId, {
+      capturedAt: '2026-04-01T00:00:00.000Z',
+    });
+    const [bad] = history.importArchives([
+      openDebugArchive(
+        packRadioBackupZip(base.manifest, base.regions, {
+          [OPENGD77_DEBUG_FIRMWARE_INFO_SIDECAR]: new Uint8Array(10),
+        }),
+        modelId,
+      ),
+    ]);
+    history.select(first.id);
+    history.setCompare(bad.id);
+    open(slug);
+    fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
+    expect(await screen.findByText(/Identity \/ Revision: Unavailable/)).toBeInTheDocument();
+  });
+
   it.each(radioTypes)(
     'reads through the guard and shows identity (radio type %i)',
     async (radioType) => {

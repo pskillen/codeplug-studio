@@ -149,3 +149,58 @@ it('protects DM-32 reads on Back, Stay, Leave and reload, but not other profiles
   window.dispatchEvent(quiet);
   expect(quiet.defaultPrevented).toBe(false);
 });
+
+const OG77 = [
+  ['dm-1701-opengd77', 'DM-1701'],
+  ['md-9600-opengd77', 'MD-9600'],
+] as const;
+const og77Stores = OG77.map(([slug, model]) =>
+  getDebugReadHistory({ slug, archiveModelId: model }),
+);
+afterEach(() => act(() => og77Stores.forEach((s) => s.clear())));
+
+it.each(OG77)(
+  'protects OpenGD77 reads on %s (Stay, Leave, reload), and only when undownloaded',
+  async (slug, model) => {
+    const history = getDebugReadHistory({ slug, archiveModelId: model });
+    const archive = exampleArchive();
+    history.add({ ...archive, manifest: { ...archive.manifest, radioModelId: model } });
+    const router = createMemoryRouter(
+      [
+        {
+          element: (
+            <>
+              <DebugReadHistoryGuard />
+              <Outlet />
+            </>
+          ),
+          children: [
+            { path: `/debug/radios/${slug}`, element: <Link to="/other">Other</Link> },
+            { path: '/other', element: <span>Other page</span> },
+          ],
+        },
+      ],
+      { initialEntries: [`/debug/radios/${slug}`] },
+    );
+    render(
+      <MantineProvider>
+        <RouterProvider router={router} />
+      </MantineProvider>,
+    );
+    fireEvent.click(screen.getByRole('link', { name: 'Other' }));
+    expect(await screen.findByText('Leave with undownloaded reads?')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Stay' }));
+    expect(router.state.location.pathname).toBe(`/debug/radios/${slug}`);
+    fireEvent.click(screen.getByRole('link', { name: 'Other' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Leave' }));
+    expect(await screen.findByText('Other page')).toBeInTheDocument();
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    expect(history.getSnapshot().undownloaded).toBe(1);
+    act(() => history.markDownloaded(history.getSnapshot().entries.map((e) => e.id)));
+    const quiet = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(quiet);
+    expect(quiet.defaultPrevented).toBe(false);
+  },
+);

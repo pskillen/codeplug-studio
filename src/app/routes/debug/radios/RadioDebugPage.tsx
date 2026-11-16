@@ -68,7 +68,11 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const { reads } = useUv5rMiniDebugReads();
   const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
   const historyEnabled =
-    radio === 'uv-5r-mini' || radio === 'rt95' || radio === 'at-d890uv' || radio === 'dm-32uv';
+    descriptor?.readHistory === true ||
+    radio === 'uv-5r-mini' ||
+    radio === 'rt95' ||
+    radio === 'at-d890uv' ||
+    radio === 'dm-32uv';
   const store = getDebugReadHistory(
     descriptor ?? { slug: 'unknown', archiveModelId: 'UV-5R Mini' },
   );
@@ -576,7 +580,8 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 divert reads; equal bytes and repeated-read agreement do not prove unit identity.
               </Alert>
             )}
-            {(descriptor.slug === 'rt95' ||
+            {(descriptor.readHistory ||
+              descriptor.slug === 'rt95' ||
               descriptor.slug === 'at-d890uv' ||
               descriptor.slug === 'dm-32uv') && (
               <Select
