@@ -20,10 +20,8 @@ import {
 } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import type { AtD890MemberStatus } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
 import { RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
-import {
-  rt95DebugSensitiveRanges,
-  type DebugSensitiveRange,
-} from '@integrations/radio-io/radios/rt95/debugSensitive.ts';
+import type { DebugSensitiveRange } from '@integrations/radio-io/debugSensitive.ts';
+import { radioDebugDescriptors } from './descriptors.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
 const archiveIds = new WeakMap<DebugArchive, number>();
@@ -41,12 +39,16 @@ export const formatAddress = (n: number) => `0x${n.toString(16).toUpperCase().pa
 /** Shown in place of each masked byte: same width as a hex pair. */
 export const MASKED_HEX_BYTE = '••';
 
-/** Password bytes in one region of this archive, masked until the operator reveals them. */
+/**
+ * Password bytes in one region of this archive, masked until the operator reveals them. Asks each
+ * descriptor's radio-home `sensitiveRanges`; the ones for other radios return nothing.
+ */
 export function sensitiveRanges(
   archive: DebugArchive | undefined,
   regionId: string,
 ): readonly DebugSensitiveRange[] {
-  return archive?.manifest.radioModelId === RT95_MODEL_ID ? rt95DebugSensitiveRanges(regionId) : [];
+  if (!archive) return [];
+  return radioDebugDescriptors.flatMap((d) => d.sensitiveRanges?.(archive, regionId) ?? []);
 }
 
 const isMasked = (address: number, mask: readonly DebugSensitiveRange[]) =>
