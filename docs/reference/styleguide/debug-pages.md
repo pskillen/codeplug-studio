@@ -8,7 +8,7 @@ How the radio debug pages are built. They have their own kit, apart from the pro
 
 `/debug/radios/*` tabs (Calibration, Settings, Memory, Hex, Compare) and any future debug viewer. Product UI (library, builds) keeps the list kit; debug pages use the kit in `src/app/components/debug/`.
 
-The kit is **dark only**. It draws on design-system v2 tokens and must render inside `DesignSystemV2Provider`; there is no light theme and no light claim anywhere in it.
+The kit is **dark only**. It draws on design-system v2 tokens and must render inside `DesignSystemV2Provider`; there is no light theme and no light claim anywhere in it. The whole `/debug/radios/:radio` page (header, tab bar, every tab body, including the plain Mantine Backup, Hex, Compare and Overview tabs) sits inside one `DesignSystemV2Provider`, so it is dark throughout even when the app theme is light; tabs and kit components do not wrap themselves.
 
 ## Rules
 

@@ -25,7 +25,7 @@ Calls the descriptor's `calibration(archive)` for the selected read and for the 
 - No archive: "Open or read a capture". A view that is not `ok`: its reason in an alert. An overlay that is not `ok`: "Overlay not shown" with its reason, and the read is drawn alone.
 - Charts and tables pair with the overlay by `id`.
 - **Show password** resets when another read or archive is shown (`archiveKey`).
-- Wrapped in `DesignSystemV2Provider` as `SettingsTab` is; the page itself stays on the existing theme.
+- Does not wrap itself: `RadioDebugPage` puts the whole page inside one `DesignSystemV2Provider`.
 - Display only: no write, reset or capture control.
 
 ## Related

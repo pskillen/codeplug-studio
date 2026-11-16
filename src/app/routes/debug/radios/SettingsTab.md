@@ -18,7 +18,7 @@ Calls the descriptor's `settings(archive)` and draws the result with `SettingsTa
 - No archive: "Open or read a capture to inspect its settings."
 - Remounts per archive (`archiveKey`), so search, the raw toggle and **Show password** reset when another read or file is shown.
 - The view is built once per archive (`useMemo`).
-- Wraps `SettingsTable` in `DesignSystemV2Provider` (the page itself is not inside it), so the table block renders in the v2 dark scheme.
+- Does not wrap itself: `RadioDebugPage` puts the whole page inside one `DesignSystemV2Provider`, so the table renders in the v2 dark scheme.
 
 ## Related
 
