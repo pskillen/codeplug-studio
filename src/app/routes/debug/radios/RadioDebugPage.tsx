@@ -65,7 +65,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const pairA = history.entries.find((e) => e.id === history.comparePair.a);
   const pairB = history.entries.find((e) => e.id === history.comparePair.b);
   const [downloadedArchive, setDownloadedArchive] = useState<DebugArchive>();
-  // Mini reads live in the shared store; any profile's undownloaded live capture lives only in this tab.
+  // A profile with a shared history store keeps its reads there; any other profile's undownloaded live capture lives only in this tab.
   const unsaved =
     !historyEnabled && archive?.source === 'live-read' && archive !== downloadedArchive;
   useEffect(() => {
@@ -310,11 +310,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                   unknown.
                 </Alert>
                 {historyEnabled && (
-                  <DebugReadHistoryControls
-                    descriptor={descriptor}
-                    store={store}
-                    onClear={() => {}}
-                  />
+                  <DebugReadHistoryControls descriptor={descriptor} store={store} />
                 )}
                 {archive && (
                   <Stack>
