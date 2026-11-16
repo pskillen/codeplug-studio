@@ -4,7 +4,7 @@ The Memory tab of both OpenGD77 debug pages shows a read-only inventory of chann
 
 ## Gating rule
 
-Only `flash-span-N` entries count: the id is a registered span, the address equals the span start, the length is within the span length, the path is `regions/<id>.bin` and the stored bytes match the declared length. Both `restorable` (a Backup ZIP) and `inspect-only` (a debug read) entries are accepted. A wrong id, address, length or stored size, a duplicate id or an overlap refuses the entry whole, with a listed reason. The User Database and calibration working copy are ignored here.
+Only `flash-span-N` entries count: the id is a registered span, the address equals the span start, the length is within the span length, the path is `regions/<id>.bin` and the stored bytes match the declared length. Both `restorable` (a Backup ZIP) and `inspect-only` (a debug read) entries are accepted. A wrong id, address, length or stored size, a duplicate id or an overlap refuses the entry whole, with a listed reason. The User Database and calibration working copy are ignored here. The debug-only `settings-gap` region (`0x6060-0x60BF`, 96 bytes, `regions/settings-gap.bin`) is accepted when its address, length, path and stored size match and it overlaps nothing accepted; it merges into the image so the settings struct `0x604B-0x60BE` is covered with span 0, and is refused whole with a reason otherwise.
 
 Coverage is byte-exact. The decode image starts at `0xFF` fill, which is never evidence: a gap or truncated tail is never filled with default bytes and never reads as an empty channel. A selected profile is not evidence of firmware.
 
