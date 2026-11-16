@@ -43,14 +43,14 @@ describe('openGd77ComparisonEvidence', () => {
     expect(e['User Database / Captured bytes']).toBe(12 + 54);
   });
 
-  it('gives undefined fields for an invalid FirmwareInfo and never guesses', () => {
+  it('names an invalid FirmwareInfo, never guesses, and leaves a missing one undefined', () => {
     const p = parts();
     const e = openGd77ComparisonEvidence({
       ...p,
       sidecars: { [OPENGD77_DEBUG_FIRMWARE_INFO_SIDECAR]: new Uint8Array(10) },
     });
-    expect(e['Identity / Revision']).toBeUndefined();
-    expect(e['Identity / Flash ID']).toBeUndefined();
+    expect(e['Identity / Revision']).toEqual({ invalid: expect.stringMatching(/10 bytes/) });
+    expect(e['Identity / Flash ID']).toEqual({ invalid: expect.stringMatching(/10 bytes/) });
     expect(openGd77ComparisonEvidence({ ...p, sidecars: {} })['Identity / Radio type']).toBe(
       undefined,
     );

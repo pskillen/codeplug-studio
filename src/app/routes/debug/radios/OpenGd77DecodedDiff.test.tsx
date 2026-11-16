@@ -35,6 +35,10 @@ describe.each(['DM-1701', 'MD-9600'])('OpenGd77DecodedDiff %s', (modelId) => {
     );
     show(a, bad);
     expect(screen.getByText(/Identity \/ Revision: Unavailable · "/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Identity \/ Revision: .*→ Invalid FirmwareInfo: .*10 bytes/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Identity \/ Revision: .*Not captured/)).toBeNull();
     expect(document.body.textContent).not.toMatch(/null/);
   });
 });

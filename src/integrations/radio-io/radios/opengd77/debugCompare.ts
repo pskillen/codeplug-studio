@@ -23,17 +23,27 @@ export interface OpenGd77EvidenceRow {
   status: 'Changed' | 'Unchanged' | 'Unavailable';
 }
 
+/** A source that was captured but does not decode: the value names why, never a guess. */
+export interface OpenGd77InvalidEvidence {
+  invalid: string;
+}
+
+export const isOpenGd77InvalidEvidence = (v: unknown): v is OpenGd77InvalidEvidence =>
+  typeof v === 'object' && v !== null && typeof (v as { invalid?: unknown }).invalid === 'string';
+
 export function openGd77ComparisonEvidence(
   archive: OpenGd77CompareArchive,
 ): Record<string, unknown> {
   const identity = openGd77DebugIdentity(archive.sidecars);
   const ok = identity?.status === 'ok' ? identity : undefined;
+  const bad: OpenGd77InvalidEvidence | undefined =
+    identity?.status === 'invalid' ? { invalid: identity.reason } : undefined;
   const fields: Record<string, unknown> = {
-    'Identity / Radio type': ok?.radioTypeLabel,
-    'Identity / Revision': ok?.revision,
-    'Identity / Build date': ok?.buildDate,
-    'Identity / Flash ID': ok?.flashId,
-    'Identity / Features': ok?.features,
+    'Identity / Radio type': bad ?? ok?.radioTypeLabel,
+    'Identity / Revision': bad ?? ok?.revision,
+    'Identity / Build date': bad ?? ok?.buildDate,
+    'Identity / Flash ID': bad ?? ok?.flashId,
+    'Identity / Features': bad ?? ok?.features,
   };
   const dbId = OPENGD77_BACKUP_USER_DATABASE_ID;
   const db = openGd77DebugRegionIdentity(archive.manifest, archive.regions, dbId)
@@ -64,7 +74,7 @@ export function openGd77ComparisonEvidence(
   return fields;
 }
 
-const unavailable = (v: unknown) => v === undefined || v === null;
+const unavailable = (v: unknown) => v === undefined || v === null || isOpenGd77InvalidEvidence(v);
 
 export function compareOpenGd77Evidence(
   first: OpenGd77CompareArchive,
