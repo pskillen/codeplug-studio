@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Read-only DM-32UV Memory viewer: channels, zones, scan lists, talk groups, RX groups, radio IDs and contacts decoded from the open debug archive (live read or file), without a project, library or build, and without opening a transport. Settings shows "Not yet available".
+Read-only DM-32UV Memory viewer: channels, zones, scan lists, talk groups, RX groups, radio IDs, contacts and settings decoded from the open debug archive (live read or file), without a project, library or build, and without opening a transport.
 
 ## Props
 
@@ -23,6 +23,8 @@ Talk groups, radio IDs and analogue contacts (`debugMemoryLists.ts`, panels in `
 RX groups (`projectDm32RxGroups`, tag `0x0F`) read the u32 LE bitmask at `+0` (bit i = group i + 1; bits at or above the 32 capacity are reported, not listed), then 109-byte entries from `+0x11`: an 11-byte name and 32 positions of 3-byte LE DMR IDs from `+0x0B`. Stored order and duplicates are kept; all-zero and all-`0xFF` positions are empty. Members are DMR IDs, not foreign keys: a member shows a talk group only when exactly one decoded talk group has that ID ("matched by DMR ID"); zero, several or unavailable talk groups say so. Time-slot overrides come from `decodeDm32RxGroupTimeSlotOverrides` only when the page marker and the group's check match (otherwise "no marker" or "check failed"). Selecting a group shows its members.
 
 `resolveDm32ChannelReferences` resolves each decoded channel: TX contact by one-based position in the talk-group list (0 none; beyond the decoded first page it reads "not decoded", beyond the stored count "absent", above 800 "out of range"), radio ID by the zero-based byte at record `+0x2B` (`0xFF` none, cap 250), RX group from byte `+0x1F` bits 5-0 as slot n = group n, labelled "assumed 1-based; not verified on hardware" (0 is "none (assumed)"). Radio ID and RX group apply to digital channels only. A list that was not captured leaves the raw number with "list not captured". The same pass gives each talk group a Referenced by list (captured channel TX contacts and uniquely matched RX group members), labelled partial when channels, TX contact pages or RX groups were not fully captured; selecting a talk group shows it.
+
+Settings (`projectDm32Settings` in `debugMemorySettings.ts`, panel in `Dm32MemorySettings.tsx`) reads the single accepted `0x04` page through a field registry written from `settings.md` (stock DM32.01.L01.048 layout, synthetic fixtures only, not hardware). A field decodes only when `capture.covers` its whole span; values outside a documented enum stay raw. The panel shows groups, a search over label, group, value and raw hex, a "Show raw bytes + address" switch, documented-not-decoded rows and counted unknown bytes. Emergency systems and keys (tag `0x10`) are not shown. No frames are sent.
 
 ## Related
 

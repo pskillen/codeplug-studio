@@ -104,12 +104,123 @@ describe('Dm32Memory', () => {
     expect(openDebugArchive).toBeDefined();
   });
 
-  it('shows placeholders for sections not yet decoded', async () => {
+  /** A channel page plus a settings page tagged 0x04 (and optionally a second one). */
+  function settingsCapture(
+    edit: (p: Uint8Array) => void = () => {},
+    extraSettingsPages = 0,
+  ): Dm32DebugCapture {
+    const channels = dm32Page(0x12);
+    const settings = dm32Page(0x04);
+    edit(settings);
+    const blocks = new Map<number, Uint8Array>([
+      [0x1000, channels],
+      [0x2000, settings],
+    ]);
+    const discovered: Dm32DebugCapture['discovered'] = [
+      { address: 0x1000, metadata: 0x12, type: 'channel' },
+      { address: 0x2000, metadata: 0x04, type: 'unknown' },
+    ];
+    for (let n = 0; n < extraSettingsPages; n++) {
+      blocks.set(0x3000 + n * 0x1000, dm32Page(0x04));
+      discovered.push({ address: 0x3000 + n * 0x1000, metadata: 0x04, type: 'unknown' });
+    }
+    return dm32Capture({
+      discovered,
+      window: { start: 0x1000, end: 0x3000 + extraSettingsPages * 0x1000 },
+      rawRange: { start: 0x1000, end: 0x3fff + extraSettingsPages * 0x1000 },
+      blocks,
+    });
+  }
+
+  const openSettings = () => fireEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+
+  it('says Not captured when there is no 0x04 page, and keeps the other tabs', async () => {
     show(await archiveDm32Capture(channelCapture(['A'])));
-    fireEvent.click(screen.getByRole('tab', { name: 'Settings' }));
-    expect(screen.getByText('Not yet available')).toBeInTheDocument();
+    openSettings();
+    expect(screen.getByText('Not captured')).toBeInTheDocument();
     for (const name of ['Zones', 'Scan lists', 'Talk groups', 'RX groups', 'Radio IDs', 'Contacts'])
       expect(screen.getByRole('tab', { name })).toBeInTheDocument();
+  });
+
+  it('refuses to decode several 0x04 pages and lists them', async () => {
+    show(await archiveDm32Capture(settingsCapture(() => {}, 1)));
+    openSettings();
+    expect(screen.getByText('Several pages, not decoded')).toBeInTheDocument();
+    expect(screen.getByText(/Several pages tagged 0x04, not decoded/)).toBeInTheDocument();
+    expect(screen.queryByText('Auto power off')).toBeNull();
+  });
+
+  it('shows grouped settings, raw bytes with addresses on demand, and the exclusion', async () => {
+    show(
+      await archiveDm32Capture(
+        settingsCapture((p) => {
+          p[0x1e] = 3;
+          p[0x8d] = 43;
+          p[0x30] = 0x05;
+          p[0x94] = 0xee;
+        }),
+      ),
+    );
+    openSettings();
+    for (const g of [
+      'Display',
+      'Power & battery',
+      'Keys & buttons',
+      'GPS / APRS',
+      'Privacy / lock',
+    ])
+      expect(screen.getByRole('region', { name: g })).toBeInTheDocument();
+    expect(screen.getByText('2 hours')).toBeInTheDocument();
+    expect(screen.getByText('Function 43 (43)')).toBeInTheDocument();
+    expect(screen.queryByText('Address')).toBeNull();
+    fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
+    expect(screen.getByText('0x0000201E')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Documented, not decoded' })).toHaveTextContent(
+      /Backlight, display flags, colours, menu exit.*05 00/,
+    );
+    expect(screen.getByRole('region', { name: 'Unknown bytes' })).toHaveTextContent(
+      '0x00002094: EE',
+    );
+    expect(screen.getByText(/stock DM32.01.L01.048 layout/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Emergency systems and encryption keys are outside/),
+    ).toBeInTheDocument();
+  });
+
+  it('searches label, group and raw hex', async () => {
+    show(await archiveDm32Capture(settingsCapture((p) => (p[0x1e] = 3))));
+    openSettings();
+    const search = screen.getByPlaceholderText('Search settings');
+    fireEvent.change(search, { target: { value: 'power & battery' } });
+    expect(screen.getByText('Auto power off')).toBeInTheDocument();
+    expect(screen.queryByText('Key lock')).toBeNull();
+    fireEvent.change(search, { target: { value: 'zzzz' } });
+    expect(screen.queryByText('Auto power off')).toBeNull();
+    fireEvent.change(search, { target: { value: '' } });
+    fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
+    fireEvent.change(search, { target: { value: '03' } });
+    expect(screen.getByText('Auto power off')).toBeInTheDocument();
+  });
+
+  it('resets the settings search and raw toggle when the archive is replaced', async () => {
+    const view = show(await archiveDm32Capture(settingsCapture()));
+    openSettings();
+    fireEvent.change(screen.getByPlaceholderText('Search settings'), { target: { value: 'gps' } });
+    fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
+    view.replace(await archiveDm32Capture(settingsCapture()));
+    openSettings();
+    expect(screen.getByPlaceholderText('Search settings')).toHaveValue('');
+    expect(screen.getByLabelText('Show raw bytes + address')).not.toBeChecked();
+  });
+
+  it('is keyboard reachable at 375 px', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 });
+    show(await archiveDm32Capture(settingsCapture()));
+    openSettings();
+    const toggle = screen.getByLabelText('Show raw bytes + address');
+    toggle.focus();
+    expect(toggle).toHaveFocus();
+    expect(screen.getByRole('table', { name: 'Power & battery settings' })).toBeInTheDocument();
   });
 
   /** Channels ONE, TWO; zones Alpha [2, 1, 1, 9] and Beta []; scan list "Scan" [2]. */

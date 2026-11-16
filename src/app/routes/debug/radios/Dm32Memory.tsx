@@ -12,6 +12,7 @@ import {
   type Dm32ChannelEntry,
   type Dm32ChannelInventory,
 } from '@integrations/radio-io/radios/dm32uv/debugMemory.ts';
+import { projectDm32Settings } from '@integrations/radio-io/radios/dm32uv/debugMemorySettings.ts';
 import {
   projectDm32MemoryLists,
   type Dm32ScanListInventory,
@@ -28,6 +29,7 @@ import {
   RxGroupsPanel,
   TalkGroupsPanel,
 } from './Dm32MemoryLists.tsx';
+import { SettingsPanel } from './Dm32MemorySettings.tsx';
 import { ScanListsPanel, ZonesPanel } from './Dm32MemoryZones.tsx';
 import { archiveKey } from './viewerUtils.ts';
 import type { DebugArchive } from './captureArchive.ts';
@@ -353,10 +355,6 @@ function ChannelsPanel({
   );
 }
 
-const PLACEHOLDERS: { value: string; label: string; piece: string }[] = [
-  { value: 'settings', label: 'Settings', piece: 'a later piece' },
-];
-
 /** Read-only DM-32UV Memory viewer. Replacing the archive resets rows, search and sort. */
 export function Dm32Memory({ archive }: { archive?: DebugArchive }) {
   if (!archive)
@@ -374,7 +372,12 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
     if (archive.manifest.radioModelId !== MODEL_ID) return undefined;
     const memory = projectDm32MemoryLists(projectDm32Memory(buildDm32SparseCapture(archive)));
     const lists = projectDm32Lists(memory.capture);
-    return { memory, lists, references: resolveDm32ChannelReferences(memory.channels, lists) };
+    return {
+      memory,
+      lists,
+      references: resolveDm32ChannelReferences(memory.channels, lists),
+      settings: projectDm32Settings(memory.capture),
+    };
   }, [archive]);
   const projection = decodedArchive?.memory;
   if (!decodedArchive || !projection)
@@ -419,11 +422,7 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
           <Tabs.Tab value="rx-groups">RX groups</Tabs.Tab>
           <Tabs.Tab value="radio-ids">Radio IDs</Tabs.Tab>
           <Tabs.Tab value="contacts">Contacts</Tabs.Tab>
-          {PLACEHOLDERS.map((p) => (
-            <Tabs.Tab key={p.value} value={p.value}>
-              {p.label}
-            </Tabs.Tab>
-          ))}
+          <Tabs.Tab value="settings">Settings</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="channels" pt="md">
           <ChannelsPanel
@@ -450,13 +449,9 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
         <Tabs.Panel value="contacts" pt="md">
           <ContactsPanel contacts={lists.analogContacts} />
         </Tabs.Panel>
-        {PLACEHOLDERS.map((p) => (
-          <Tabs.Panel key={p.value} value={p.value} pt="md">
-            <Alert title="Not yet available">
-              {p.label} are not decoded yet; they arrive in {p.piece}.
-            </Alert>
-          </Tabs.Panel>
-        ))}
+        <Tabs.Panel value="settings" pt="md">
+          <SettingsPanel settings={decodedArchive.settings} />
+        </Tabs.Panel>
       </Tabs>
     </Stack>
   );
