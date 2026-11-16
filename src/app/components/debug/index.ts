@@ -6,3 +6,11 @@ export { default as EvidenceNotice, EVIDENCE_NOTICE_VISIBLE_LINES } from './Evid
 export type { EvidenceNoticeProps } from './EvidenceNotice.tsx';
 export { default as HexDecValue, MASKED_TEXT } from './HexDecValue.tsx';
 export type { HexDecValueProps } from './HexDecValue.tsx';
+export { default as HexDump, HEX_DUMP_PAGE_BYTES, hexDumpLines } from './HexDump.tsx';
+export type { HexDumpProps } from './HexDump.tsx';
+export { default as NumericTable } from './NumericTable.tsx';
+export type { NumericTableProps } from './NumericTable.tsx';
+export { default as UnusedRanges, unusedCountLine } from './UnusedRanges.tsx';
+export type { UnusedRangesProps } from './UnusedRanges.tsx';
+export { default as ValueTable } from './ValueTable.tsx';
+export type { ValueTableProps } from './ValueTable.tsx';
