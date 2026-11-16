@@ -17,6 +17,8 @@ export const RT95_OCCUPIED_BITFIELD_OFFSET = 0x1940;
 export const RT95_SCAN_BITFIELD_OFFSET = 0x1960;
 export const RT95_BITFIELD_BYTES = 32;
 export const RT95_BANDLIMIT_OFFSET = 0x326d;
+/** Power-on password digits (ASCII) in the programming image. */
+export const RT95_POWER_ON_PASSWORD_ADDRESS = 0x3240;
 export const RT95_UPLOAD_PRIME_ADDR = 0x3b10;
 
 export const RT95_ALLOWED_MODEL = 'RT95-P';

@@ -3,6 +3,9 @@ export const RT95_CALIBRATION_START = 0x3b00;
 export const RT95_CALIBRATION_LENGTH = 0x4c0;
 export const RT95_SIGNATURE_START = 0x3ff8;
 export const RT95_SIGNATURE_END = 0x3fff;
+/** Stored program password (CPS trace): masked on screen until the operator reveals it. */
+export const RT95_PROGRAM_PASSWORD_ADDRESS = 0x3b18;
+export const RT95_PROGRAM_PASSWORD_LENGTH = 4;
 export type Rt95Availability = 'captured' | 'partial' | 'not-captured';
 export interface Rt95Field {
   label: string;
@@ -17,6 +20,8 @@ export interface Rt95Field {
   value?: number;
   text?: string;
   textField?: boolean;
+  /** A secret (password bytes): the UI masks it until the operator reveals it. */
+  sensitive?: boolean;
   referenceIndex?: number;
   powerCode?: number;
   corrections?: readonly (number | undefined)[];
@@ -74,7 +79,14 @@ export function decodeRt95Calibration(input?: Uint8Array): {
   add('Flags', 0x3b10, 1, 'partially-traced', 'MAIN 0x08007400');
   for (const address of [0x3b14, 0x3b1c])
     add('Unknown caption text', address, 4, 'unknown', 'CPS trace', { textField: true });
-  add('Password comparison bytes', 0x3b18, 4, 'partially-traced', 'CPS trace');
+  add(
+    'Password comparison bytes',
+    RT95_PROGRAM_PASSWORD_ADDRESS,
+    RT95_PROGRAM_PASSWORD_LENGTH,
+    'partially-traced',
+    'CPS trace',
+    { sensitive: true },
+  );
   for (let i = 0; i < 8; i++)
     add(`Production text row ${i + 1}`, 0x3b20 + i * 16, 16, 'unknown', 'CPS trace', {
       textField: true,
