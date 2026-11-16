@@ -18,6 +18,9 @@ import {
   OPENGD77_MD9600_MODEL_ID,
 } from '@integrations/radio-io/radios/opengd77/hydration.ts';
 import type { DebugArchive } from './captureArchive.ts';
+import type { DebugSensitiveRangesFn } from '@integrations/radio-io/debugSensitive.ts';
+import { dm32ArchiveSensitiveRanges } from '@integrations/radio-io/radios/dm32uv/debugSensitive.ts';
+import { rt95ArchiveSensitiveRanges } from '@integrations/radio-io/radios/rt95/debugSensitive.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
 
 export type DebugCalibrationProps = { archive?: DebugArchive; overlayArchive?: DebugArchive };
@@ -53,6 +56,11 @@ export interface RadioDebugDescriptor {
   DecodedDiff?: ComponentType<DebugDecodedDiffProps>;
   /** A profile's own Memory viewer; without one the generic Memory viewer is used. */
   Memory?: ComponentType<{ archive?: DebugArchive }>;
+  /**
+   * Password bytes in one archive region, masked in Hex and Compare until revealed. Radio-home
+   * function; it returns nothing for another radio's archive. Absent: nothing to mask.
+   */
+  sensitiveRanges?: DebugSensitiveRangesFn;
   /** Keep every read and opened archive in the shared tab-only history, with Compare. */
   readHistory?: boolean;
   family: string;
@@ -124,6 +132,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Calibration: Dm32Calibration,
     DecodedDiff: Dm32DecodedDiff,
     capture: captureDm32,
+    sensitiveRanges: dm32ArchiveSensitiveRanges,
     model: 'DM-32UV',
     archiveModelId: 'DM-32UV',
     family: 'Baofeng · stock / MM9PDY',
@@ -173,6 +182,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Calibration: Rt95Calibration,
     DecodedDiff: Rt95CalibrationDiff,
     capture: captureRt95,
+    sensitiveRanges: rt95ArchiveSensitiveRanges,
     captureStages: RT95_CAPTURE_STAGES,
     model: 'RT95',
     archiveModelId: 'retevis-rt95',

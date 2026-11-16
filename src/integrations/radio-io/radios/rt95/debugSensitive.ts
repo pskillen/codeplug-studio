@@ -7,12 +7,10 @@ import { RT95_POWER_ON_PASSWORD_ADDRESS } from './constants.ts';
 import { RT95_CALIBRATION_REGION_ID } from './debugCapture.ts';
 import { RT95_PROGRAMMING_IMAGE_REGION_ID } from './restoreFromBackup.ts';
 
-/** Absolute byte range `[start, end)` holding a secret that debug views mask until revealed. */
-export interface DebugSensitiveRange {
-  start: number;
-  end: number;
-  label: string;
-}
+import type { DebugSensitiveArchive, DebugSensitiveRange } from '../../debugSensitive.ts';
+import { RT95_MODEL_ID } from './constants.ts';
+
+export type { DebugSensitiveRange };
 
 /** Password bytes inside an RT95 debug-archive region, by region id. */
 export function rt95DebugSensitiveRanges(regionId: string): readonly DebugSensitiveRange[] {
@@ -33,4 +31,12 @@ export function rt95DebugSensitiveRanges(regionId: string): readonly DebugSensit
       },
     ];
   return [];
+}
+
+/** Descriptor hook: RT95 password ranges, empty for any other radio's archive. */
+export function rt95ArchiveSensitiveRanges(
+  archive: DebugSensitiveArchive,
+  regionId: string,
+): readonly DebugSensitiveRange[] {
+  return archive.manifest.radioModelId === RT95_MODEL_ID ? rt95DebugSensitiveRanges(regionId) : [];
 }
