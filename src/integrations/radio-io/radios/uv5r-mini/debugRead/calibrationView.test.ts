@@ -67,7 +67,7 @@ describe('uv5rMiniCalibrationView', () => {
     expect(uhf.series[0]!.points[0]).toEqual({ x: 400, y: 100 });
     expect(uhf.series[0]!.points[12]).toEqual({ x: 520, y: 112 });
     expect(uhf.x).toEqual({ label: 'Frequency', unit: 'MHz' });
-    expect(uhf.y.label).toBe('Byte (unit unknown)');
+    expect(uhf.y).toMatchObject({ label: 'Byte', unit: 'unit unknown' });
     expect(uhf.about).toContain('0xF000');
     const vhf = view.charts.find((c) => c.id === 'pa-vhf') as FrequencyCurve;
     expect(vhf.series[1]!.points[1]!.x).toBe(133);
