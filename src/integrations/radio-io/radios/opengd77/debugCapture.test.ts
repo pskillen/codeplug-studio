@@ -11,7 +11,8 @@ import {
   OPENGD77_CALIBRATION_REGION_ID,
   OPENUV380_USER_DB_HEADER_ABS,
 } from './constants.ts';
-import { classifyOpenGd77DebugFrame } from './debugGuard.ts';
+import { classifyOpenGd77DebugFrame, OpenGd77DebugRefusedError } from './debugGuard.ts';
+import type { OpenGd77Protocol } from './protocol.ts';
 import {
   buildOpenGd77DebugArchiveParts,
   captureOpenGd77DebugPipe,
@@ -225,5 +226,40 @@ describe('failures return no archive and only close CPS follows', () => {
       captureOpenGd77DebugPipe(pipe, descriptor, { signal: controller.signal }),
     ).rejects.toBeInstanceOf(RadioAbortedError);
     expect(pipe.writes).toEqual([]);
+  });
+});
+
+describe('captureOpenGd77DebugPipe guard wiring', () => {
+  const descriptor = getRadioDescriptor(OPENGD77_DM1701_MODEL_ID)!;
+
+  it('hands the protocol the guard pipe: a forbidden frame never reaches the transport', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    const forbidden = new Uint8Array([0x58, 0x00]);
+    const fake = {
+      ...descriptor,
+      protocolFactory: () => {
+        const radio = descriptor.protocolFactory() as InstanceType<typeof OpenGd77Protocol>;
+        radio.connect = async (p) => {
+          await p.write(forbidden);
+          throw new Error('guard let a forbidden frame through');
+        };
+        return radio;
+      },
+    };
+    await expect(captureOpenGd77DebugPipe(pipe, fake)).rejects.toBeInstanceOf(
+      OpenGd77DebugRefusedError,
+    );
+    expect(pipe.writes).toEqual([]);
+  });
+
+  it('closes the transport when the descriptor returns an unexpected protocol', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    let closed = 0;
+    pipe.close = async () => {
+      closed++;
+    };
+    const fake = { ...descriptor, protocolFactory: () => ({}) as never };
+    await expect(captureOpenGd77DebugPipe(pipe, fake)).rejects.toThrow(/unexpected protocol/);
+    expect(closed).toBe(1);
   });
 });
