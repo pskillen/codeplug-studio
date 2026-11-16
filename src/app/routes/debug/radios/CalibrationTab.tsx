@@ -12,7 +12,6 @@ import {
   ValueTable,
   useSensitiveReveal,
 } from '@app/components/debug/index.ts';
-import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import type { CalibrationView } from '@integrations/radio-io/debugView/index.ts';
 import type { DebugArchive } from './captureArchive.ts';
 import type { RadioDebugDescriptor } from './descriptors.ts';
@@ -58,38 +57,36 @@ export function CalibrationTab(props: CalibrationTabProps) {
   return (
     <Stack>
       <Title order={3}>Calibration</Title>
-      <DesignSystemV2Provider>
-        <Stack>
-          {props.entries.length > 0 && (
-            <CalibrationReadPicker
-              entries={props.entries.map((e) => ({
-                id: e.id,
-                label: e.label,
-                time: new Date(e.readAt),
-              }))}
-              readId={props.readId}
-              overlayId={props.overlayId}
-              onRead={props.onRead}
-              onOverlay={props.onOverlay}
-            />
-          )}
-          {overlay && overlay.status.kind !== 'ok' && (
-            <Alert title="Overlay not shown">{overlay.status.reason}</Alert>
-          )}
-          {!view ? (
-            <Alert title="No capture">Open or read a capture to inspect its calibration.</Alert>
-          ) : view.status.kind !== 'ok' ? (
-            <Alert title="Not captured">{view.status.reason}</Alert>
-          ) : (
-            <CalibrationBody
-              view={view}
-              overlay={overlayView}
-              revealed={reveal.revealed}
-              onToggleReveal={hasSensitive ? reveal.toggle : undefined}
-            />
-          )}
-        </Stack>
-      </DesignSystemV2Provider>
+      <Stack>
+        {props.entries.length > 0 && (
+          <CalibrationReadPicker
+            entries={props.entries.map((e) => ({
+              id: e.id,
+              label: e.label,
+              time: new Date(e.readAt),
+            }))}
+            readId={props.readId}
+            overlayId={props.overlayId}
+            onRead={props.onRead}
+            onOverlay={props.onOverlay}
+          />
+        )}
+        {overlay && overlay.status.kind !== 'ok' && (
+          <Alert title="Overlay not shown">{overlay.status.reason}</Alert>
+        )}
+        {!view ? (
+          <Alert title="No capture">Open or read a capture to inspect its calibration.</Alert>
+        ) : view.status.kind !== 'ok' ? (
+          <Alert title="Not captured">{view.status.reason}</Alert>
+        ) : (
+          <CalibrationBody
+            view={view}
+            overlay={overlayView}
+            revealed={reveal.revealed}
+            onToggleReveal={hasSensitive ? reveal.toggle : undefined}
+          />
+        )}
+      </Stack>
     </Stack>
   );
 }
