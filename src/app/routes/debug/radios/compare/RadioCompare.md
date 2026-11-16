@@ -6,10 +6,10 @@ The Compare tab body for two chosen reads on every radio with a capture (RT95, D
 
 ## Props
 
-| Prop         | Meaning                                                                            |
-| ------------ | ---------------------------------------------------------------------------------- |
-| `descriptor` | The radio's descriptor: its `compare` adapter and optional `DecodedDiff` fallback. |
-| `a` / `b`    | The picked archives (the A/B picker is rendered by the page, above this).          |
+| Prop         | Meaning                                                                                                                                                                                                                |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `descriptor` | The radio's descriptor: its `compare` adapter and optional `CompareExtra` panel (D890 provenance). Adapter `notes` render once, collapsed, above the summary; with no A or B it renders nothing (the picker explains). |
+| `a` / `b`    | The picked archives (the A/B picker is rendered by the page, above this).                                                                                                                                              |
 
 ## Behaviour
 

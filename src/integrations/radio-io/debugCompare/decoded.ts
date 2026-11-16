@@ -176,6 +176,7 @@ export function diffDecoded(
     }
     const count = (k: RecordDiffKind) => out.filter((r) => r.kind === k).length;
     const note = db?.note ?? da?.note;
+    const occupancyCompared = Boolean(da?.occupancyCaptured && db?.occupancyCaptured);
     domains.push({
       id,
       label: domain.label,
@@ -184,7 +185,8 @@ export function diffDecoded(
       removed: count('removed'),
       unchanged: count('unchanged'),
       incomparable: count('incomparable'),
-      occupancyCompared: Boolean(da?.occupancyCaptured && db?.occupancyCaptured),
+      occupancyCompared,
+      unavailable: !da || !db || (out.length === 0 && !occupancyCompared),
       ...(note ? { note } : {}),
     });
     records.push(...out);

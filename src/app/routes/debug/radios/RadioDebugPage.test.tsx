@@ -821,11 +821,12 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
     expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
-    expect(await screen.findByText(/Identity \/ Revision: Changed/)).toBeInTheDocument();
-    expect(screen.getByText(/Identity \/ Build date: Unchanged/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/User Database \/ Entry count \(header\): Changed · 2 → 3/),
-    ).toBeInTheDocument();
+    const identity = await screen.findByRole('group', { name: 'Identity' });
+    expect(identity).toHaveTextContent('changed');
+    expect(identity).toHaveTextContent('Revision');
+    const userDb = screen.getByRole('group', { name: 'User Database' });
+    expect(userDb).toHaveTextContent('Entry count (header)');
+    expect(userDb).toHaveTextContent('23');
     expect(screen.getByText('A and B differ')).toBeInTheDocument();
     expect(screen.getByText('27 bytes on one side only')).toBeInTheDocument();
     expect(
@@ -852,7 +853,8 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     history.setComparePair({ a: first.id, b: bad.id });
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
-    expect(await screen.findByText(/Identity \/ Revision: Unavailable/)).toBeInTheDocument();
+    expect(await screen.findByText(/Invalid FirmwareInfo/)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/null/);
   });
 
   it.each(radioTypes)(

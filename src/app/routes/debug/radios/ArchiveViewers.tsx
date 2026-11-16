@@ -184,7 +184,6 @@ export function CompareViewer(props: {
   archive?: DebugArchive;
   modelId: string;
   other?: DebugArchive;
-  DecodedDiff?: import('react').ComponentType<{ first: DebugArchive; second: DebugArchive }>;
 }) {
   const { archive, modelId } = props;
   const [uploadedOther, setOther] = useState<DebugArchive>();
@@ -240,12 +239,6 @@ export function CompareViewer(props: {
         </Alert>
       )}
       {comparison?.error && <Alert color="red">{comparison.error}</Alert>}
-      {comparison &&
-        !comparison.error &&
-        modelId === 'AT-D890UV' &&
-        archive &&
-        other &&
-        props.DecodedDiff && <props.DecodedDiff first={archive} second={other} />}
       {comparison && !comparison.error && modelId !== 'AT-D890UV' && (
         <>
           <Alert title="Comparison limits">
@@ -264,9 +257,6 @@ export function CompareViewer(props: {
                 : `Incomparable: ${'reason' in r ? r.reason : 'region or starting offset differs'}`}
             </Text>
           ))}
-          {archive && other && props.DecodedDiff && (
-            <props.DecodedDiff first={archive} second={other} />
-          )}
           {!isDm32ModelId(modelId) && !isOpenGd77ModelId(modelId) && (
             <Title order={4}>Decoded changes</Title>
           )}

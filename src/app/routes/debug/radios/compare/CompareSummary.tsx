@@ -214,6 +214,10 @@ export function CompareSummary({
           <Table.Tbody>
             {decoded.domains.map((d) => {
               const c = counts.find((x) => x.domainId === d.id);
+              // Unknown, never zero: nothing of this category was captured on one side.
+              const cells = d.unavailable
+                ? Array<string>(5).fill('not captured')
+                : [c?.changedFields ?? 0, d.changed, d.added, d.removed, d.incomparable];
               return (
                 <Table.Tr key={d.id}>
                   <Table.Td>
@@ -225,12 +229,17 @@ export function CompareSummary({
                     >
                       {d.label}
                     </Button>
+                    {d.unavailable && d.note && (
+                      <Text size="xs" c="dimmed">
+                        {d.note}
+                      </Text>
+                    )}
                   </Table.Td>
-                  <Table.Td>{c?.changedFields ?? 0}</Table.Td>
-                  <Table.Td>{d.changed}</Table.Td>
-                  <Table.Td>{d.added}</Table.Td>
-                  <Table.Td>{d.removed}</Table.Td>
-                  <Table.Td>{d.incomparable}</Table.Td>
+                  {cells.map((cell, i) => (
+                    <Table.Td key={i} c={d.unavailable ? 'dimmed' : undefined}>
+                      {cell}
+                    </Table.Td>
+                  ))}
                 </Table.Tr>
               );
             })}

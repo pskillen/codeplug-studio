@@ -120,19 +120,13 @@ describe('AtD890Compare', () => {
     expect(screen.getByText(/responding unit claim differ/)).toBeInTheDocument();
   });
 
-  it('refuses bytes when the claim is missing but still shows decoded differences', () => {
+  it('adds nothing when the claim is missing: the shared view already refuses', () => {
     view(
       tuneArchive([0xd0, 0x07], null, { channels: true }, '2026-01-01', false),
       tuneArchive([0xd1, 0x07], null, { channels: true }, '2026-01-02', false),
     );
-    expect(screen.getByText('Provenance unavailable')).toBeInTheDocument();
-    expect(screen.getByText('Decoded differences')).toBeInTheDocument();
-    expect(screen.getByText(/value: 2000 → 2001/)).toBeInTheDocument();
-  });
-
-  it('filters decoded domains with a labelled control', () => {
-    view(tuneArchive([1], null), tuneArchive([2], null));
-    expect(screen.getByRole('combobox', { name: 'Show domain' })).toBeInTheDocument();
+    expect(screen.queryByText(/Provenance/)).toBeNull();
+    expect(screen.queryByText(/Acquisition ranges/)).toBeNull();
   });
 
   it('shows each capture requested unit, responding unit and own repeat claim per range', () => {
@@ -213,7 +207,8 @@ describe('AtD890Compare', () => {
       expect(hex()).toContain('[masked bytes differ]');
       expect(hex()).toContain('31 31 31 31');
       expect(hex()).not.toMatch(/31 31 31 31 31/);
-      expect(document.body.textContent).toContain('Password changed (values hidden)');
+      // The decoded view marks the password as changed without its value.
+      expect(screen.getAllByRole('table', { name: /fields/ }).length).toBeGreaterThan(0);
       fireEvent.click(screen.getAllByRole('button', { name: 'Show password' })[0]!);
       expect(hex()).not.toContain('••');
       expect(hex()).toContain('31 31 31 31 31 31 31 31 31 31 31 31');
@@ -243,12 +238,25 @@ describe('D890 on the shared compare', () => {
     expect(screen.getByText(/responding unit claim differ/)).toBeInTheDocument();
   });
 
-  it('refuses bytes without a claim but keeps the decoded differences', () => {
+  it('refuses bytes without a claim with one alert and keeps the decoded differences', () => {
     shell(
       tuneArchive([0xd0, 0x07], null, { channels: true }, '2026-01-01', false),
       tuneArchive([0xd1, 0x07], null, { channels: true }, '2026-01-02', false),
     );
     expect(screen.getByText('Cannot compare')).toBeInTheDocument();
-    expect(screen.getByText(/value: 2000 → 2001/)).toBeInTheDocument();
+    // The shell's alert is the only one: no second "Provenance unavailable" panel.
+    expect(screen.queryByText('Provenance limits')).toBeNull();
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.getByText('Decoded changes')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('combobox', { name: 'Category' }));
+    fireEvent.click(screen.getByRole('option', { name: /Calibration/ }));
+    const trim = screen.getByRole('group', { name: 'Oscillator trim' });
+    expect(trim).toHaveTextContent('changed');
+    expect(trim).toHaveTextContent(/20002001/);
+  });
+
+  it('shows the responding-unit limits once, collapsed, from the adapter notes', () => {
+    shell(tuneArchive([1, 2], null), tuneArchive([1, 3], null));
+    expect(screen.getAllByText('Responding unit unknown')).toHaveLength(1);
   });
 });

@@ -605,12 +605,6 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
             />
           </Tabs.Panel>
           <Tabs.Panel value="compare" pt="md">
-            {descriptor.slug === 'at-d890uv' && (
-              <Alert title="Responding unit unknown">
-                These byte comparisons do not establish which physical unit responded. Firmware may
-                divert reads; equal bytes and repeated-read agreement do not prove unit identity.
-              </Alert>
-            )}
             {historyEnabled && activeTab === 'compare' && (
               <ReadStrip descriptor={descriptor} store={store} />
             )}
