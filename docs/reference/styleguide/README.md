@@ -14,6 +14,7 @@ This is **not** user-facing help copy. For wording aimed at operators, use [help
 - Placing **Sort…**, reorder arrows, or drag handles
 - Naming page titles, back links, or remove vs delete actions
 - Formatting **frequencies**, **band/mode pills**, or **icons** — [display.md](display.md)
+- Building or changing a **radio debug page** (charts, value and settings tables, memory panels) — [debug-pages.md](debug-pages.md)
 
 ## Doc map
 
@@ -22,6 +23,7 @@ This is **not** user-facing help copy. For wording aimed at operators, use [help
 | This README                                                                 | UI categories, decision tree, chrome conventions, specialised outliers         |
 | [lists-and-ordering.md](lists-and-ordering.md)                              | Roles A/B/C/D, `reorderMode` / `storedOrder`, permanent Sort…, gold references |
 | [display.md](display.md)                                                    | Frequencies, bands, modes, icons, two-section nav                              |
+| [debug-pages.md](debug-pages.md)                                            | Debug kit rules (dark only, number format, masking), component map, gold refs  |
 | [list-kit-roles.md](../../features/app-shell/list-kit-roles.md)             | Surface → role inventory (tier 1 feature deep dive)                            |
 | [data-table.md](../../features/app-shell/data-table.md)                     | v2 `DataTable` props, list prefs, virtualisation                               |
 | [design-system-v2](../../features/design-system-v2/README.md)               | Theme, component map, implementation status                                    |
