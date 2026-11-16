@@ -102,7 +102,6 @@ Each capture archive can carry the three optional descriptive fields of a radio 
 - Other profiles await read-only adapter verification. Coverage classifications and decoded inventories for other radios await their capture and hydration adapters. The current clone summary does not provide callsigns or zone membership relationships.
 - Mini parity tests, then redirecting `/debug/uv5r-mini` to the shared page — [#1747](https://github.com/pskillen/codeplug-studio/issues/1747).
 - Memory categories still on their own panels rather than `MemoryCategoryPanel`: UV-5R Mini Zones; RT95 Zones and P-keys; AT-D890UV contacts, talk groups, RX groups and scan lists; OpenGD77 contacts, RX groups and User Database; DM-32UV talk groups, RX groups, radio IDs and contacts — [#1858](https://github.com/pskillen/codeplug-studio/issues/1858).
-- Last radio-specific pieces in shared viewers: the Coverage panels, the DM-32 model-id check and the Mini Hex pseudo-region — [#1859](https://github.com/pskillen/codeplug-studio/issues/1859).
 - AT-D890UV Settings reads "unknown" confidence on most rows: the decoder carries no per-field confidence — [#1692](https://github.com/pskillen/codeplug-studio/issues/1692).
 - Open label questions: the RT95 FQC ppm scale and neutral, whether the DM-32 has a trim, whether the D890 has battery thresholds, and the Mini PA bias units — [#1692](https://github.com/pskillen/codeplug-studio/issues/1692).
 
