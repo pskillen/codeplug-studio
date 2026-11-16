@@ -146,6 +146,10 @@ After a successful DM-32 Write, stock and MM9PDY tell the operator to power the 
 
 What this doesn't do yet. Delete a line when its gap is fixed.
 
+### Firefox on Windows with CH340 cables
+
+- A CH340 cable (UV-5R Mini, DM-32UV) on an older WCH driver makes Firefox on Windows end the port's read side straight after opening. Writes still work, so the radio shows its programming screen while the read fails. The error says so; update the CH340 driver or use Chrome or Edge. [Mozilla bug 2053974](https://bugzilla.mozilla.org/show_bug.cgi?id=2053974)
+
 ### OpenGD77 write failure handling
 
 - Hardware verify on a DM-1701: a flash-write failure now names the command, sector and block, the stepper error has copyable **Debug details** (last 24 frames), CPS is entered once per session, a failure after a sector began restarts the radio (reboot-only), and only in-span 32-byte blocks are sent. None of it is confirmed on hardware yet. Behaviour: [OpenGD77 protocol](../../reference/radios/opengd77/protocol.md#ack-and-nack-framing). Tracking: [#1537](https://github.com/pskillen/codeplug-studio/issues/1537)
