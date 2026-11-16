@@ -10,7 +10,9 @@ import { OPENGD77_DM1701_MODEL_ID } from './hydration.ts';
 import { createOpenUv380Image } from './memory.ts';
 import { encodeUserDatabaseHeader } from './userDatabaseCodec.ts';
 
-function parts(opts: { revision?: string; entries?: number; radioType?: number } = {}) {
+function parts(
+  opts: { revision?: string; entries?: number; radioType?: number; calibration?: Uint8Array } = {},
+) {
   const entries = opts.entries ?? 2;
   const header = encodeUserDatabaseHeader(entries);
   const db = new Uint8Array(header.length + entries * 27);
@@ -25,6 +27,7 @@ function parts(opts: { revision?: string; entries?: number; radioType?: number }
     capturedAt: '2026-01-01T00:00:00.000Z',
     capturedVia: 'web-serial',
     firmwareInfoRaw: info,
+    calibrationWorkingCopy: opts.calibration ?? new Uint8Array(512),
     image: createOpenUv380Image(),
     userDatabase: db,
   });
@@ -88,5 +91,36 @@ describe('compareOpenGd77Evidence', () => {
     const rows = compareOpenGd77Evidence(p, { ...p, sidecars: {} });
     expect(status(rows, 'Identity / Revision')).toBe('Unavailable');
     expect(status(rows, 'User Database / Header valid')).toBe('Unchanged');
+  });
+});
+
+describe('calibration evidence', () => {
+  const cal = (seed: number) => {
+    const bytes = new Uint8Array(512).map((_, i) => (i + seed) % 10);
+    bytes.set([0x00, 0x25, 0x00, 0x40, 0x00, 0x45, 0x01, 0x40], 0x1b0);
+    return bytes;
+  };
+  const status = (rows: ReturnType<typeof compareOpenGd77Evidence>, field: string) =>
+    rows.find((r) => r.field === field)?.status;
+
+  it('lists decoded rows as Changed or Unchanged', () => {
+    const rows = compareOpenGd77Evidence(
+      parts({ calibration: cal(0) }),
+      parts({ calibration: cal(1) }),
+    );
+    expect(status(rows, 'Calibration / vox-level-1')).toBe('Changed');
+    expect(status(rows, 'Calibration / uhf-frequency-0')).toBe('Unchanged');
+    expect(status(rows, 'Calibration')).toBeUndefined();
+  });
+
+  it('is a single Unavailable field without a marker or without the region', () => {
+    const rows = compareOpenGd77Evidence(parts(), parts({ calibration: cal(0) }));
+    expect(status(rows, 'Calibration')).toBe('Unavailable');
+    const p = parts({ calibration: cal(0) });
+    const manifest = {
+      ...p.manifest,
+      regions: p.manifest.regions.filter((r) => r.id !== 'calibration-working-copy'),
+    };
+    expect(openGd77ComparisonEvidence({ ...p, manifest })['Calibration']).toBeUndefined();
   });
 });

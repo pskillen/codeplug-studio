@@ -211,6 +211,13 @@ export function openUv380AbsToOffset(abs: number): number {
   return abs - OPENUV380_IMAGE_BASE;
 }
 
+/** Debug-capture region for the OpenGD77 calibration working copy (flash `0x10000`, 512 bytes). */
+export const OPENGD77_CALIBRATION_REGION_ID = 'calibration-working-copy';
+export const OPENGD77_CALIBRATION_REGION_PATH = 'regions/calibration-working-copy.bin';
+export const OPENGD77_CALIBRATION_ADDRESS = 0x10000;
+export const OPENGD77_CALIBRATION_REGION_LABEL =
+  'OpenGD77 working copy (as returned at 0x10000; not stock factory calibration)';
+
 /** Map MemoryMap offset → absolute FLASH address. */
 export function openUv380OffsetToAbs(offset: number): number {
   return OPENUV380_IMAGE_BASE + offset;
