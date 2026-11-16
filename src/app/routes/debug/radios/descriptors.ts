@@ -29,6 +29,7 @@ import {
 import type { DebugArchive } from './captureArchive.ts';
 import type { DebugSensitiveRangesFn } from '@integrations/radio-io/debugSensitive.ts';
 import { openGd77ArchiveSensitiveRanges } from '@integrations/radio-io/radios/opengd77/debugSensitive.ts';
+import { atD890ArchiveSensitiveRanges } from '@integrations/radio-io/radios/at-d890uv/debugPasswords.ts';
 import { dm32ArchiveSensitiveRanges } from '@integrations/radio-io/radios/dm32uv/debugSensitive.ts';
 import { rt95ArchiveSensitiveRanges } from '@integrations/radio-io/radios/rt95/debugSensitive.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
@@ -138,6 +139,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Calibration: AtD890Calibration,
     DecodedDiff: AtD890Compare,
     capture: captureAtD890,
+    sensitiveRanges: atD890ArchiveSensitiveRanges,
     model: 'AT-D890UV',
     archiveModelId: 'AT-D890UV',
     family: 'AnyTone · stock / MM9PDY',

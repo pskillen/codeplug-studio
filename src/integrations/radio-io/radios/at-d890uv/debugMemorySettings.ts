@@ -31,6 +31,11 @@ import {
 } from './debugMemorySettingsNamed.ts';
 import { MM9PDY_SETTINGS_STORE_LENGTH, isMm9pdySettingsStoreValid } from './mm9pdySettingsStore.ts';
 import { decodeTerminatedWideCharName } from './wideChar.ts';
+import { readAsciiField } from './asciiField.ts';
+import {
+  AT_D890_LOCAL_INFO_PASSWORD_SPANS,
+  AT_D890_POWER_ON_PASSWORD_SPAN,
+} from './debugPasswords.ts';
 
 /** The part of a sparse capture this module needs; satisfied by `AtD890SparseCapture`. */
 export interface AtD890ByteReader {
@@ -324,6 +329,8 @@ export interface AtD890SettingFieldView {
   length: number;
   mask?: number;
   advanced: boolean;
+  /** A password: the page hides `value` and `raw` until the viewer reveals them. */
+  sensitive?: boolean;
   status: 'captured' | 'not-captured';
   /** The bytes read (the whole byte for a masked field); only when captured. */
   raw?: readonly number[];
@@ -397,8 +404,23 @@ export interface AtD890RawRun {
   bytes: readonly number[];
 }
 
+/** A LocalInfo password (not a registered settings field): ASCII text, hidden until revealed. */
+export interface AtD890LockPasswordView {
+  id: string;
+  label: string;
+  address: number;
+  length: number;
+  status: 'captured' | 'not-captured';
+  /** Raw bytes, only when captured. */
+  raw?: readonly number[];
+  /** Printable ASCII up to the first `00`/`FF`; empty string when none is set. */
+  text?: string;
+}
+
 export interface AtD890SettingsInventory {
   fields: readonly AtD890SettingFieldView[];
+  /** Decode program and band-settings passwords from LocalInfo, read-only. */
+  lockPasswords: readonly AtD890LockPasswordView[];
   /** Captured bytes of the GPS template text block, raw. */
   aprsRuns: readonly AtD890RawRun[];
   /** The GPS template text decoded from those bytes; absent when nothing was captured. */
@@ -604,6 +626,7 @@ export function projectAtD890Settings(capture: AtD890ByteReader): AtD890Settings
       length: spec.length,
       ...(spec.mask === undefined ? {} : { mask: spec.mask }),
       advanced: spec.advanced,
+      ...(spec.id === AT_D890_POWER_ON_PASSWORD_SPAN.id ? { sensitive: true } : {}),
     };
     const d = capturedIds.has(spec.id) ? decoded[spec.id] : undefined;
     if (!d) {
@@ -698,8 +721,22 @@ export function projectAtD890Settings(capture: AtD890ByteReader): AtD890Settings
       }
     : undefined;
 
+  const lockPasswords: AtD890LockPasswordView[] = AT_D890_LOCAL_INFO_PASSWORD_SPANS.map((span) => {
+    const bytes = capture.read(span.address, span.length);
+    const base = { id: span.id, label: span.label, address: span.address, length: span.length };
+    return bytes
+      ? {
+          ...base,
+          status: 'captured',
+          raw: [...bytes],
+          text: readAsciiField(bytes, 0, bytes.length),
+        }
+      : { ...base, status: 'not-captured' };
+  });
+
   return {
     fields,
+    lockPasswords,
     aprsRuns,
     ...(gpsText === undefined ? {} : { gpsText }),
     named: [...namedByRange.values()].sort((x, y) => x.address - y.address),
