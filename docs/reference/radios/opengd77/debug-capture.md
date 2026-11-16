@@ -5,7 +5,7 @@ Tier-3 reference for the read-only capture made by the `/debug/radios/dm-1701-op
 ## What is read
 
 1. Ping, then FirmwareInfo (`R` mem `09h`, 46 bytes). A radio type the selected profile does not accept stops the session here: nothing after FirmwareInfo is sent.
-2. Show CPS screen, then the calibration working copy: 16 reads of 32 bytes at `0x10000` (first after the identity and show CPS, so a refusal costs seconds, not the minutes of the spans; [calibration.md](calibration.md)).
+2. Show CPS screen, then the calibration working copy: 16 reads of 32 bytes at `0x10000` (first after the identity and show CPS, so a refusal costs seconds, not the minutes of the spans; [calibration.md](calibration.md)), then the settings struct tail: 3 reads of 32 bytes at `0x6060` (`settings-gap`, flash `0x6060-0x60BF`, inspect-only, debug-only; it completes the settings struct `0x604B-0x60BE` with span 0). An older archive without it reads "not captured" for the struct tail.
 3. The four registered FLASH spans in 32-byte reads ([memory-layout.md](memory-layout.md)).
 4. Only when the operator ticks **Also read the User Database** (`includeUserDatabase`): the occupied User Database, the 12-byte header, then the packed entries ([user-database.md](user-database.md)). Unticked, no User Database frame is sent and the archive has no `user-database` region.
 5. Close CPS screen.
@@ -47,4 +47,4 @@ The decoded evidence diff reads only classified bytes and the raw FirmwareInfo s
 
 ## Coverage
 
-Coverage lists the registered spans as captured, partial (a shorter region than registered) or missing, the User Database as captured or not captured, and the calibration working copy as captured or not captured in its own address space (not a flash span, never filling a gap). Everything between and outside the spans is _not read, unknown_. A capture is never a full flash image or a firmware dump. Regions with an unknown id, a non-`inspect-only` role or an unexpected path are listed as unclassified with the reason.
+Coverage lists the registered spans as captured, partial (a shorter region than registered) or missing, the User Database as captured or not captured, the calibration working copy as captured or not captured in its own address space (not a flash span, never filling a gap), and the settings struct tail as captured or not captured (when captured it shrinks the unread gap that holds it). Everything between and outside the spans is _not read, unknown_. A capture is never a full flash image or a firmware dump. Regions with an unknown id, a non-`inspect-only` role or an unexpected path are listed as unclassified with the reason.
