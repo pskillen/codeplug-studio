@@ -27,6 +27,7 @@ function parts(modelId = OPENGD77_DM1701_MODEL_ID, radioType = 0x08, cal = calib
     capturedVia: 'web-serial',
     firmwareInfoRaw: makeOpenGd77FirmwareInfoPayload(radioType),
     calibrationWorkingCopy: cal,
+    settingsGap: new Uint8Array(0x60),
     image: createOpenUv380Image(),
     userDatabase: new Uint8Array(12),
   });

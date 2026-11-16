@@ -18,6 +18,10 @@ import {
 import { decodeChannelsFromImage } from './channelCodec.ts';
 import {
   OPENGD77_CALIBRATION_REGION_ID,
+  OPENGD77_SETTINGS_GAP_ADDRESS,
+  OPENGD77_SETTINGS_GAP_LENGTH,
+  OPENGD77_SETTINGS_GAP_REGION_ID,
+  OPENGD77_SETTINGS_GAP_REGION_PATH,
   OPENGD77_CHANNEL_BANKS,
   OPENGD77_CHANNEL_BANK_BITMAP,
   OPENGD77_CHANNEL_BANK_RECORDS,
@@ -76,6 +80,32 @@ export function openGd77CapturedImage(archive: OpenGd77MemoryArchive): OpenGd77C
         region.id === OPENGD77_CALIBRATION_REGION_ID
       )
         continue;
+      if (region.id === OPENGD77_SETTINGS_GAP_REGION_ID) {
+        const bytes = archive.regions[region.id];
+        const reason =
+          (idCounts.get(region.id) ?? 0) > 1
+            ? 'duplicate entry for this region'
+            : region.address !== OPENGD77_SETTINGS_GAP_ADDRESS ||
+                region.byteLength !== OPENGD77_SETTINGS_GAP_LENGTH
+              ? 'address or length does not match the settings gap'
+              : region.path !== OPENGD77_SETTINGS_GAP_REGION_PATH
+                ? 'unexpected path'
+                : !bytes || bytes.length !== region.byteLength
+                  ? 'stored bytes do not match the declared length'
+                  : accepted.some(
+                        (a) =>
+                          region.address < a.end && a.start < region.address + region.byteLength,
+                      )
+                    ? 'overlaps another accepted region'
+                    : undefined;
+        if (reason) {
+          refused.push({ id: region.id, reason });
+        } else {
+          writeAbs(image, region.address, bytes!);
+          accepted.push({ start: region.address, end: region.address + region.byteLength });
+        }
+        continue;
+      }
       refused.push({ id: region.id, reason: 'not a registered FLASH span' });
       continue;
     }

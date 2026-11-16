@@ -29,6 +29,11 @@ import {
   OPENGD77_CALIBRATION_REGION_ID,
   OPENGD77_CALIBRATION_REGION_LABEL,
   OPENGD77_CALIBRATION_REGION_PATH,
+  OPENGD77_SETTINGS_GAP_ADDRESS,
+  OPENGD77_SETTINGS_GAP_LENGTH,
+  OPENGD77_SETTINGS_GAP_REGION_ID,
+  OPENGD77_SETTINGS_GAP_REGION_LABEL,
+  OPENGD77_SETTINGS_GAP_REGION_PATH,
   OPENUV380_USER_DB_HEADER_ABS,
 } from './constants.ts';
 import { createOpenGd77DebugGuard } from './debugGuard.ts';
@@ -56,6 +61,27 @@ export async function readOpenGd77CalibrationWorkingCopy(
   return out;
 }
 
+/**
+ * Read the settings struct tail the flash spans skip, `0x6060-0x60BF`: three mode-1 reads of 32
+ * bytes. The pipe must be the debug guard's pipe.
+ */
+export async function readOpenGd77SettingsGap(
+  pipe: BytePipe,
+  onProgress?: ProgressFn,
+): Promise<Uint8Array> {
+  const out = new Uint8Array(OPENGD77_SETTINGS_GAP_LENGTH);
+  for (let off = 0; off < out.length; off += OPENGD77_BLOCK) {
+    out.set(await readFlashRange(pipe, OPENGD77_SETTINGS_GAP_ADDRESS + off, OPENGD77_BLOCK), off);
+    onProgress?.({
+      cur: off + OPENGD77_BLOCK,
+      max: out.length,
+      msg: `Reading settings 0x${(OPENGD77_SETTINGS_GAP_ADDRESS + off).toString(16)}`,
+      stage: 'Settings',
+    });
+  }
+  return out;
+}
+
 /** The raw 46-byte FirmwareInfo reply, kept beside the regions. */
 export const OPENGD77_DEBUG_FIRMWARE_INFO_SIDECAR = 'debug/firmware-info.bin';
 
@@ -66,6 +92,8 @@ export interface OpenGd77DebugCapture {
   firmwareInfoRaw: Uint8Array;
   /** The OpenGD77 calibration working copy as returned at `0x10000` (512 bytes). */
   calibrationWorkingCopy: Uint8Array;
+  /** Flash `0x6060-0x60BF`, the settings struct tail between flash span 0 and 1 (96 bytes). */
+  settingsGap: Uint8Array;
   image: MemoryMap;
   /**
    * Header + packed entries; the 12 header bytes alone when the header is not valid. Absent when
@@ -102,6 +130,7 @@ export async function captureOpenGd77DebugPipe(
       guard.pipe,
       opts?.onProgress,
     );
+    const settingsGap = await readOpenGd77SettingsGap(guard.pipe, opts?.onProgress);
     const image = await radio.download({ onProgress: opts?.onProgress, signal });
     const userDatabase = opts?.includeUserDatabase
       ? await radio.downloadUserDatabaseOccupied({
@@ -117,6 +146,7 @@ export async function captureOpenGd77DebugPipe(
       capturedVia: opts?.capturedVia ?? 'web-serial',
       firmwareInfoRaw: ident.raw.slice(),
       calibrationWorkingCopy,
+      settingsGap,
       image,
       ...(userDatabase ? { userDatabase } : {}),
     };
@@ -173,6 +203,15 @@ export function buildOpenGd77DebugArchiveParts(capture: OpenGd77DebugCapture): {
     restoreRole: 'inspect-only',
   });
   regions[OPENGD77_CALIBRATION_REGION_ID] = capture.calibrationWorkingCopy;
+  list.push({
+    id: OPENGD77_SETTINGS_GAP_REGION_ID,
+    label: OPENGD77_SETTINGS_GAP_REGION_LABEL,
+    address: OPENGD77_SETTINGS_GAP_ADDRESS,
+    byteLength: capture.settingsGap.length,
+    path: OPENGD77_SETTINGS_GAP_REGION_PATH,
+    restoreRole: 'inspect-only',
+  });
+  regions[OPENGD77_SETTINGS_GAP_REGION_ID] = capture.settingsGap;
 
   let firmware: string | undefined;
   try {

@@ -76,6 +76,7 @@ export function syntheticDirectoryArchive(
     capturedVia: 'web-serial',
     firmwareInfoRaw: makeOpenGd77FirmwareInfoPayload(0x08, { features: 0 }),
     calibrationWorkingCopy: new Uint8Array(512),
+    settingsGap: new Uint8Array(0x60),
     image,
     userDatabase,
   });

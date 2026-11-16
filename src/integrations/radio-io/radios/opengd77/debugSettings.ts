@@ -1,7 +1,7 @@
 /**
  * OpenGD77 firmware settings and codeplug general settings from a debug archive: selection (is
  * the archive's model identified and does it match), then a read-only decode of whatever the
- * captured FLASH spans hold. It never reads a radio and never adds a capture region. Wire facts:
+ * captured FLASH spans hold. It never reads a radio. The capture's debug-only settings gap (`0x6060-0x60BF`) completes the struct. Wire facts:
  * docs/reference/radios/baofeng/dm-1701/settings.md and docs/reference/radios/tyt/md-9600/settings.md.
  */
 import {

@@ -41,6 +41,7 @@ function archiveOf(image = createOpenUv380Image()) {
     capturedVia: 'web-serial',
     firmwareInfoRaw: makeOpenGd77FirmwareInfoPayload(0x08, { features: 0 }),
     calibrationWorkingCopy: new Uint8Array(512),
+    settingsGap: new Uint8Array(0x60),
     image,
     userDatabase: new Uint8Array(12),
   });
@@ -87,7 +88,7 @@ describe('openGd77CapturedImage', () => {
     const c = openGd77CapturedImage(seeded());
     expect(c.refused).toEqual([]);
     expect(c.covers(openUv380ChannelBankAbs(0), OPENGD77_CHANNEL_BANK_SIZE)).toBe(true);
-    expect(c.covers(0x6070, 4)).toBe(false);
+    expect(c.covers(0x60c0, 4)).toBe(false);
   });
 
   it('refuses wrong address, length, path, bytes, duplicates and unknown ids', () => {
@@ -270,5 +271,50 @@ describe('projectOpenGd77Memory', () => {
 
   it('is unavailable for an unknown model', () => {
     expect(projectOpenGd77Memory(seeded(), 'AT-D890UV').status).toBe('unavailable');
+  });
+});
+
+describe('openGd77CapturedImage settings gap', () => {
+  it('merges the 0x6060-0x60BF region so the settings struct is covered across span 0', () => {
+    const a = archiveOf();
+    a.regions['settings-gap']![0x5f] = 0x7e;
+    const captured = openGd77CapturedImage(a);
+    expect(captured.refused).toEqual([]);
+    expect(captured.covers(0x604b, 0x74)).toBe(true);
+    expect(captured.covers(0x60bf, 1)).toBe(true);
+    expect(readAbs(captured.image, 0x60bf, 1)[0]).toBe(0x7e);
+  });
+
+  it('without the region (older archive) the struct is not covered', () => {
+    const captured = openGd77CapturedImage(without(archiveOf(), 'settings-gap'));
+    expect(captured.refused).toEqual([]);
+    expect(captured.covers(0x604b, 0x74)).toBe(false);
+  });
+
+  it('refuses a wrong address, length, path, stored length or duplicate', () => {
+    const a = archiveOf();
+    const bad = (change: object) =>
+      openGd77CapturedImage({
+        manifest: {
+          ...a.manifest,
+          regions: a.manifest.regions.map((r) =>
+            r.id === 'settings-gap' ? { ...r, ...change } : r,
+          ),
+        },
+        regions: a.regions,
+      });
+    for (const change of [{ address: 0x6000 }, { byteLength: 0x40 }, { path: 'regions/x.bin' }]) {
+      const c = bad(change);
+      expect(c.refused.map((r) => r.id)).toEqual(['settings-gap']);
+      expect(c.covers(0x6060, 1)).toBe(false);
+    }
+    const dup = openGd77CapturedImage({
+      manifest: {
+        ...a.manifest,
+        regions: [...a.manifest.regions, a.manifest.regions.find((r) => r.id === 'settings-gap')!],
+      },
+      regions: a.regions,
+    });
+    expect(dup.refused.map((r) => r.id)).toEqual(['settings-gap', 'settings-gap']);
   });
 });

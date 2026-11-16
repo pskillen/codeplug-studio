@@ -29,6 +29,7 @@ function parts(radioType = 0x08, db = new Uint8Array(12 + 27 * 2)) {
     capturedVia: 'web-serial',
     firmwareInfoRaw: makeOpenGd77FirmwareInfoPayload(radioType, { features: 0x05 }),
     calibrationWorkingCopy: new Uint8Array(512),
+    settingsGap: new Uint8Array(0x60),
     image: createOpenUv380Image(),
     userDatabase: db,
   });
@@ -107,7 +108,8 @@ describe('classifyOpenGd77DebugCoverage', () => {
       OPENGD77_BACKUP_FLASH_SPANS.map((s) => [s.start, s.length]),
     );
     expect(c.gaps).toHaveLength(3);
-    expect(c.gaps[0]).toEqual({ start: 0x80 + 0x5fe0, end: 0x7500 });
+    // The debug-only settings gap 0x6060-0x60BF is read, so the unread gap starts after it.
+    expect(c.gaps[0]).toEqual({ start: 0x60c0, end: 0x7500 });
     expect(c.userDatabase).toEqual({
       state: 'captured',
       byteLength: 12 + 54,
@@ -252,5 +254,47 @@ describe('calibration working copy coverage', () => {
     expect(
       openGd77DebugRegionIdentity(moved, p.regions, 'calibration-working-copy'),
     ).toBeUndefined();
+  });
+});
+
+describe('settings struct tail coverage', () => {
+  const gapOf = (p: ReturnType<typeof parts>, change: object) => ({
+    ...p.manifest,
+    regions: p.manifest.regions.map((r) => (r.id === 'settings-gap' ? { ...r, ...change } : r)),
+  });
+
+  it('classifies the region as captured and removes it from the unread gaps', () => {
+    const p = parts();
+    const c = classifyOpenGd77DebugCoverage(p.manifest, p.regions, p.sidecars);
+    expect(c.settingsGap).toEqual({ state: 'captured', byteLength: 0x60 });
+    expect(c.unclassified).toEqual([]);
+    expect(c.spans.every((s) => s.id !== 'settings-gap')).toBe(true);
+    expect(c.gaps[0]).toEqual({ start: 0x60c0, end: 0x7500 });
+    expect(c.gaps.some((g) => g.start <= 0x6060 && g.end > 0x6060)).toBe(false);
+    expect(openGd77DebugRegionIdentity(p.manifest, p.regions, 'settings-gap')).toEqual({
+      space: 'OpenGD77 FLASH, absolute address',
+      representation: 'FLASH bytes',
+    });
+  });
+
+  it('is not-captured for an older archive and the gap stays unread', () => {
+    const p = parts();
+    const old = {
+      ...p.manifest,
+      regions: p.manifest.regions.filter((r) => r.id !== 'settings-gap'),
+    };
+    const c = classifyOpenGd77DebugCoverage(old, p.regions, p.sidecars);
+    expect(c.settingsGap).toEqual({ state: 'not-captured', byteLength: 0 });
+    expect(c.unclassified).toEqual([]);
+    expect(c.gaps[0]).toEqual({ start: 0x6060, end: 0x7500 });
+  });
+
+  it('is unclassified, not captured and incomparable when the address is wrong', () => {
+    const p = parts();
+    const moved = gapOf(p, { address: 0x6080 });
+    const c = classifyOpenGd77DebugCoverage(moved, p.regions, p.sidecars);
+    expect(c.settingsGap.state).toBe('not-captured');
+    expect(c.unclassified.map((u) => u.id)).toEqual(['settings-gap']);
+    expect(openGd77DebugRegionIdentity(moved, p.regions, 'settings-gap')).toBeUndefined();
   });
 });

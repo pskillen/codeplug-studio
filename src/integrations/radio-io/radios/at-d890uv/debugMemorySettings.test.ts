@@ -321,9 +321,19 @@ describe('settings', () => {
     expect(read('txPreamble', 0x1c, 7).stateText).toBeUndefined();
   });
 
-  it('decodes the GPS template text as UTF-16 and says when the capture is shorter than the block', () => {
-    const text = wide('MM9PDY', 0x30);
-    const s = settings([sparse(APRS, text)]);
+  it('decodes the whole 0x42-byte GPS template text from the APRS blocks plus the GpsInfoTail head', () => {
+    const text = wide('MM9PDY-GPS-TEMPLATE-TEXT-ABCDEFGH', 0x42);
+    const s = settings([sparse(APRS, text.slice(0, 0x30)), sparse(APRS + 0x30, text.slice(0x30))]);
+    expect(s.gpsText).toEqual({
+      text: 'MM9PDY-GPS-TEMPLATE-TEXT-ABCDEFGH',
+      capturedBytes: 0x42,
+      blockBytes: 0x42,
+      truncated: false,
+    });
+  });
+
+  it('says when the capture is shorter than the 0x42-byte GPS text block', () => {
+    const s = settings([sparse(APRS, wide('MM9PDY', 0x30))]);
     expect(s.gpsText).toEqual({
       text: 'MM9PDY',
       capturedBytes: 0x30,
