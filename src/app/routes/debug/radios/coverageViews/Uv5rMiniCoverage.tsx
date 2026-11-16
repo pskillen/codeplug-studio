@@ -21,32 +21,32 @@ export function uv5rMiniCoverage(archive: DebugArchive): RadioDebugCoverageView 
   return {
     startLabel: (id) => (id.startsWith('mem-') ? 'Packed offset' : 'Start'),
     body: (
+      <>
+        {clone && (
           <>
-            {clone && (
-              <>
-                <Text fw={600}>SHA-256 of decoded clone spans</Text>
-                {hashUv5rMiniDebugSpans(clone).map(({ span, sha256 }) => (
-                  <Text size="xs" key={span.id} style={{ overflowWrap: 'anywhere' }}>
-                    {span.label} {formatUv5rMiniSpanRange(span)} · SHA-256 (decoded): {sha256}
-                  </Text>
-                ))}
-                <Text size="sm">F reply (wire): {hex(archive.sidecars['debug/f.bin']!)}</Text>
-                <Text size="sm">M reply (wire): {hex(archive.sidecars['debug/m.bin']!)}</Text>
-              </>
-            )}
-            {mini.coverage.map((range) => (
-              <Text key={`${range.label}-${range.start}`}>
-                {range.label} {formatAddress(range.start)}–{formatAddress(range.end)} ·{' '}
-                {range.captured ? 'Captured' : 'Missing from mapped regions'}
+            <Text fw={600}>SHA-256 of decoded clone spans</Text>
+            {hashUv5rMiniDebugSpans(clone).map(({ span, sha256 }) => (
+              <Text size="xs" key={span.id} style={{ overflowWrap: 'anywhere' }}>
+                {span.label} {formatUv5rMiniSpanRange(span)} · SHA-256 (decoded): {sha256}
               </Text>
             ))}
-            <Text>
-              The 0xEFC0 frame is a virtual report opportunity, not proof of physical flash
-              contents. Other address spaces and unclassified archive regions are unknown. Hashes
-              above are of the named archive region bytes; Mini clone captures contain decoded
-              bytes. Wire bytes and handshake replies are preserved as sidecars.
-            </Text>
+            <Text size="sm">F reply (wire): {hex(archive.sidecars['debug/f.bin']!)}</Text>
+            <Text size="sm">M reply (wire): {hex(archive.sidecars['debug/m.bin']!)}</Text>
           </>
+        )}
+        {mini.coverage.map((range) => (
+          <Text key={`${range.label}-${range.start}`}>
+            {range.label} {formatAddress(range.start)}–{formatAddress(range.end)} ·{' '}
+            {range.captured ? 'Captured' : 'Missing from mapped regions'}
+          </Text>
+        ))}
+        <Text>
+          The 0xEFC0 frame is a virtual report opportunity, not proof of physical flash contents.
+          Other address spaces and unclassified archive regions are unknown. Hashes above are of the
+          named archive region bytes; Mini clone captures contain decoded bytes. Wire bytes and
+          handshake replies are preserved as sidecars.
+        </Text>
+      </>
     ),
   };
 }
