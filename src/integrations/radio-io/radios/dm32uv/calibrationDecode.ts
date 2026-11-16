@@ -52,14 +52,24 @@ export interface Dm32CalibrationPageDecode {
     vhf: { level1: number[]; level9: number[] }[];
     airband: { level1: number[]; level9: number[] };
   };
-  /** u16 LE masked with 0xFFF. Valid when the raw value is 1–1000. */
-  maskedAdjust: {
-    at0x00c: number;
-    at0x00e: number;
-    at0x00cValid: boolean;
-    at0x00eValid: boolean;
+  /**
+   * Battery calibration. `thresholdRaw` (+0x00C) is the raw u16, stored unmasked and unchecked.
+   * `scale` (+0x00E) is the u16 masked 0xFFF; valid 1–1000, otherwise the firmware uses 0x284.
+   */
+  battery: {
+    thresholdRaw: number;
+    scale: number;
+    scaleValid: boolean;
   };
+  /** u16 LE words the firmware reads or writes whole: modem high halfword, ADC channel 1. */
+  words: {
+    at0x027: number;
+    at0x07a: number;
+    at0x07c: number;
+  };
+  /** Raw spans whose role is traced (boot scalars, tables, audio levels): hex only. */
   bootScalars: Dm32HexRow[];
+  /** Spans no 048 code reads: hex only. */
   unknownRows: Dm32HexRow[];
 }
 
@@ -94,22 +104,29 @@ export interface Dm32FactoryBackupJson {
   decoded?: Dm32FactorySectorDecode;
 }
 
+/** Spans no firmware 048 code reads (constant and computed reads both checked). */
 const UNKNOWN_ROWS: readonly { offset: number; length: number }[] = [
-  { offset: 0x017, length: 5 },
-  { offset: 0x01c, length: 3 },
-  { offset: 0x030, length: 12 },
-  { offset: 0x0a6, length: 5 },
-  { offset: 0x0ab, length: 3 },
   { offset: 0x0c0, length: 12 },
-  { offset: 0x150, length: 12 },
   { offset: 0x188, length: 12 },
   { offset: 0x210, length: 6 },
 ];
 
+/** Spans whose role is traced in 048 (or observed), shown as raw hex. */
 const BOOT_SCALARS: readonly { offset: number; length: number }[] = [
   { offset: 0x016, length: 1 },
-  { offset: 0x027, length: 1 },
-  { offset: 0x201, length: 9 },
+  { offset: 0x017, length: 5 },
+  { offset: 0x01c, length: 3 },
+  { offset: 0x027, length: 2 },
+  { offset: 0x030, length: 12 },
+  { offset: 0x07a, length: 2 },
+  { offset: 0x07c, length: 2 },
+  { offset: 0x0a6, length: 5 },
+  { offset: 0x0ab, length: 3 },
+  { offset: 0x150, length: 12 },
+  { offset: 0x201, length: 2 },
+  { offset: 0x203, length: 7 },
+  { offset: 0x20a, length: 1 },
+  { offset: 0x20b, length: 1 },
 ];
 
 const FACTORY_OPTION_OFFSETS = [0x80, 0x81, 0x82, 0xa0, 0xa2] as const;
@@ -165,10 +182,10 @@ function fiveBytes(data: Uint8Array, offset: number): number[] {
   return [...data.subarray(offset, offset + 5)];
 }
 
-function maskedU16(data: Uint8Array, offset: number): number {
+function u16(data: Uint8Array, offset: number): number {
   const lo = data[offset] ?? 0;
   const hi = data[offset + 1] ?? 0;
-  return (lo | (hi << 8)) & 0xfff;
+  return lo | (hi << 8);
 }
 
 export function decodeDm32CalibrationPage(
@@ -180,8 +197,7 @@ export function decodeDm32CalibrationPage(
       `DM-32 calibration page is ${data.byteLength} bytes, expected ${DM32_BLOCK_SIZE}`,
     );
   }
-  const at0x00c = maskedU16(data, 0x00c);
-  const at0x00e = maskedU16(data, 0x00e);
+  const scale = u16(data, 0x00e) & 0xfff;
   return {
     address,
     tag: data[DM32_METADATA_OFFSET] ?? 0,
@@ -214,12 +230,8 @@ export function decodeDm32CalibrationPage(
       ],
       airband: { level1: fiveBytes(data, 0x080), level9: fiveBytes(data, 0x085) },
     },
-    maskedAdjust: {
-      at0x00c,
-      at0x00e,
-      at0x00cValid: at0x00c >= 1 && at0x00c <= 1000,
-      at0x00eValid: at0x00e >= 1 && at0x00e <= 1000,
-    },
+    battery: { thresholdRaw: u16(data, 0x00c), scale, scaleValid: scale >= 1 && scale <= 1000 },
+    words: { at0x027: u16(data, 0x027), at0x07a: u16(data, 0x07a), at0x07c: u16(data, 0x07c) },
     bootScalars: BOOT_SCALARS.map((span) => row(data, span.offset, span.length)),
     unknownRows: UNKNOWN_ROWS.map((span) => row(data, span.offset, span.length)),
   };

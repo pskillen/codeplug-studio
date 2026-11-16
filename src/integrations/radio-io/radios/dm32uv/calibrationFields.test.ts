@@ -82,6 +82,9 @@ describe('describeDm32CalibrationPage', () => {
     expect(byId('scalar-00c').decoded).toBe('600');
     expect(byId('scalar-00e').decoded).toBe('636');
     expect(byId('scalar-00c').reason).toBeUndefined();
+    expect(byId('boot-027').decoded).toBe(String(page[0x027]! | (page[0x028]! << 8)));
+    expect(byId('adc-channel-1').decoded).toBe(String(page[0x07a]! | (page[0x07b]! << 8)));
+    expect(byId('adc-channel-1-b').decoded).toBe(String(page[0x07c]! | (page[0x07d]! << 8)));
   });
 
   it('equals decodeDm32CalibrationPage so the two cannot drift', () => {
@@ -104,14 +107,12 @@ describe('describeDm32CalibrationPage', () => {
     expect(byId('level-vhf-1-level9').value).toEqual(d.levels.vhf[1]!.level9);
     expect(byId('level-air-level1').value).toEqual(d.levels.airband.level1);
     expect(byId('level-air-level9').value).toEqual(d.levels.airband.level9);
-    expect(byId('scalar-00c').value).toEqual({
-      value: d.maskedAdjust.at0x00c,
-      valid: d.maskedAdjust.at0x00cValid,
-    });
+    expect(byId('scalar-00c').value).toEqual(d.battery.thresholdRaw);
     expect(byId('scalar-00e').value).toEqual({
-      value: d.maskedAdjust.at0x00e,
-      valid: d.maskedAdjust.at0x00eValid,
+      scale: d.battery.scale,
+      scaleValid: d.battery.scaleValid,
     });
+    expect(byId('boot-027').value).toEqual(d.words.at0x027);
     // Rows the decoder reports only as raw spans must match it byte for byte.
     for (const span of [...d.bootScalars, ...d.unknownRows]) {
       const row = rows.find((r) => r.offset === span.offset && r.length === span.length);
@@ -125,11 +126,18 @@ describe('describeDm32CalibrationPage', () => {
       'traced',
       'traced',
     ]);
-    expect(byId('power-uhf-low').meaningConfidence).toBe('partially-traced');
-    expect(byId('level-air-level1').meaningConfidence).toBe('partially-traced');
-    expect(byId('boot-201').meaningConfidence).toBe('unknown');
-    expect(byId('table5-vhf').meaningConfidence).toBe('unknown');
-    expect(byId('adjust-uhf').meaningConfidence).toBe('partially-traced');
+    expect(byId('power-uhf-low').meaningConfidence).toBe('traced');
+    expect(byId('level-air-level1').meaningConfidence).toBe('traced');
+    expect(byId('boot-201').meaningConfidence).toBe('traced');
+    expect(byId('boot-203').meaningConfidence).toBe('unknown');
+    expect(byId('table5-vhf').meaningConfidence).toBe('traced');
+    expect(byId('table3-uhf').meaningConfidence).toBe('traced');
+    expect(byId('adc-channel-1').meaningConfidence).toBe('partially-traced');
+    expect(byId('adjust-uhf').meaningConfidence).toBe('unknown');
+    expect(byId('adjust-uhf').source).toMatch(/No reader in 048/);
+    expect(byId('adjust-uhf').source).not.toMatch(/0x03029A3C \(PCTESTM/);
+    expect(byId('audio-level-analog').offset).toBe(0x20a);
+    expect(byId('audio-level-digital').offset).toBe(0x20b);
     expect(byId('adjust-uhf').decoded).toBeUndefined();
     expect(byId('unknown-0c0').layoutConfidence).toBe('unknown');
     expect(rows.every((r) => r.source.length > 0)).toBe(true);
@@ -149,15 +157,23 @@ describe('describeDm32CalibrationPage', () => {
     expect(points.reason).toMatch(/Point 1/);
   });
 
-  it('flags masked scalars outside 1-1000 and treats 00 and FF as real values', () => {
+  it('flags the +0x00E scale outside 1-1000, keeps +0x00C raw, and treats 00 and FF as real values', () => {
     const zero = goldenPage();
-    zero.set([0x00, 0x00, 0x00, 0xf0], 0x00c); // masked 0 and 0
+    zero.set([0x00, 0x00, 0x00, 0xf0], 0x00c); // +0x00C raw 0; +0x00E masked 0
     const zeroRows = describeDm32CalibrationPage(zero, 0x2000);
-    expect(zeroRows.find((r) => r.id === 'scalar-00c')!.reason).toMatch(/outside 1–1000/);
+    expect(zeroRows.find((r) => r.id === 'scalar-00e')!.reason).toMatch(/outside 1–1000/);
+    expect(zeroRows.find((r) => r.id === 'scalar-00c')!.reason).toBeUndefined();
+    const high = goldenPage();
+    high.set([0x34, 0xf2], 0x00c); // bits 12-15 set: raw, not masked
+    expect(
+      describeDm32CalibrationPage(high, 0x2000).find((r) => r.id === 'scalar-00c')!.decoded,
+    ).toBe(String(0xf234));
     const ff = new Uint8Array(4096).fill(0xff);
     const ffRows = describeDm32CalibrationPage(ff, 0x2000);
-    expect(ffRows.find((r) => r.id === 'scalar-00c')!.decoded).toBe('4095');
-    expect(ffRows.find((r) => r.id === 'scalar-00c')!.reason).toBeDefined();
+    expect(ffRows.find((r) => r.id === 'scalar-00c')!.decoded).toBe('65535');
+    expect(ffRows.find((r) => r.id === 'scalar-00c')!.reason).toBeUndefined();
+    expect(ffRows.find((r) => r.id === 'scalar-00e')!.decoded).toBe('4095');
+    expect(ffRows.find((r) => r.id === 'scalar-00e')!.reason).toBeDefined();
     expect(ffRows.find((r) => r.id === 'power-uhf-low')!.decoded).toBe('255 255 255 255 255');
     const zeros = describeDm32CalibrationPage(new Uint8Array(4096), 0x2000);
     expect(zeros.find((r) => r.id === 'power-uhf-low')!.decoded).toBe('0 0 0 0 0');
@@ -170,6 +186,7 @@ describe('describeDm32FactorySector', () => {
     const sector = Uint8Array.from({ length: 4096 }, (_, i) => (i * 5 + 1) & 0xff);
     sector[0x80] = 0x9e;
     sector[0xa1] = 0xa5;
+    sector[0xa0] = 0xa3;
     sector.set([0xd1, 0xd2, 0xd3, 0xd4], 0x10c);
     const rows = describeDm32FactorySector(sector);
     const decode = decodeDm32FactorySector(sector);
@@ -179,6 +196,8 @@ describe('describeDm32FactorySector', () => {
     expect(rows.find((r) => r.id === 'factory-gps')!.decoded).toBe('Set');
     expect(rows.find((r) => r.id === 'factory-tx-region')!.decoded).toContain('0xA5');
     expect(rows.some((r) => r.offset === 0x10c)).toBe(false);
+    expect(rows.find((r) => r.id === 'factory-option-a0')!.decoded).toBe('0xA3: forces English UI');
+    expect(rows.find((r) => r.id === 'factory-option-a0')!.meaningConfidence).toBe('traced');
   });
 });
 

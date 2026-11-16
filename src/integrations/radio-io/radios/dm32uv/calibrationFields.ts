@@ -85,14 +85,15 @@ const fmtPoints = (v: (number | null)[]): Formatted => {
 
 const fmtBytes = (v: number[]): Formatted => ({ text: v.join(' ') });
 
-const fmtMasked =
-  () =>
-  (v: { value: number; valid: boolean }): Formatted => ({
-    text: `${v.value}`,
-    reason: v.valid
-      ? undefined
-      : `Masked value ${v.value} is outside 1–1000; the firmware uses its default 0x284 instead.`,
-  });
+/** The battery ADC scale at +0x00E: masked 0xFFF, 1–1000 else the firmware default 0x284. */
+const fmtBatteryScale = (v: { scale: number; scaleValid: boolean }): Formatted => ({
+  text: `${v.scale}`,
+  reason: v.scaleValid
+    ? undefined
+    : `Masked value ${v.scale} is outside 1–1000; the firmware uses its default 0x284 (644) instead.`,
+});
+
+const fmtNumber = (v: number): Formatted => ({ text: `${v}` });
 
 const BOOT = '0x0300D518';
 
@@ -156,9 +157,9 @@ const PAGE_SPECS: readonly PageSpec[] = [
       offset: offsets[i]!,
       length: 5,
       layout: 'traced',
-      meaning: 'partially-traced',
-      source: '0x0301A7C4',
-      note: 'Bytes as stored; units unknown.',
+      meaning: 'traced',
+      source: '0x0301A7C4, adjust group 0 (0x03053834)',
+      note: 'TX power drive per frequency point (adjust mode sends v x 16 to DAC 0x140F000C). Bytes as stored; watts unknown.',
       value: (d) => (band === 'uhf' ? d.uhfPower : d.vhfPower)[level],
       format: fmtBytes,
     })),
@@ -209,9 +210,9 @@ const PAGE_SPECS: readonly PageSpec[] = [
       offset: i === 0 ? first : second,
       length: 5,
       layout: 'traced',
-      meaning: 'partially-traced',
-      source: '0x0301A5B4',
-      note: 'Interpolated between level 1 and level 9; squelch role is inferred.',
+      meaning: 'traced',
+      source: '0x0301A5B4, 0x0300DE28 (adjust groups 9-12)',
+      note: 'Squelch thresholds at squelch levels 1 and 9, interpolated by the channel squelch; written to RF register 0x78. Bytes as stored; units are raw RF threshold units.',
       value: (d) => pick(d)![which],
       format: fmtBytes,
     })),
@@ -219,58 +220,122 @@ const PAGE_SPECS: readonly PageSpec[] = [
   {
     id: 'scalar-00c',
     group: 'Scalars',
-    label: 'Scalar (masked 0xFFF)',
+    label: 'Battery threshold',
     offset: 0x00c,
     length: 2,
     layout: 'traced',
     meaning: 'traced',
-    source: BOOT,
-    note: 'u16 little-endian masked 0xFFF; valid 1–1000, otherwise the firmware default 0x284.',
-    value: (d) => ({ value: d.maskedAdjust.at0x00c, valid: d.maskedAdjust.at0x00cValid }),
-    format: fmtMasked(),
+    source: '0x0300D518, 0x0301AEDC',
+    note: 'u16 little-endian, stored raw: no mask and no range check (that rule is +0x00E only). Compared against the scaled battery voltage (10 mV units, inferred).',
+    value: (d) => d.battery.thresholdRaw,
+    format: fmtNumber as (value: never) => Formatted,
   },
   {
     id: 'scalar-00e',
     group: 'Scalars',
-    label: 'Scalar (masked 0xFFF)',
+    label: 'Battery ADC scale (masked 0xFFF)',
     offset: 0x00e,
     length: 2,
     layout: 'traced',
     meaning: 'traced',
-    source: BOOT,
-    note: 'Same rule as +0x00C. The battery-scale role of this one is inferred, not verified.',
-    value: (d) => ({ value: d.maskedAdjust.at0x00e, valid: d.maskedAdjust.at0x00eValid }),
-    format: fmtMasked(),
+    source: '0x0300D518, 0x0301AEDC, adjust Save 0x03053840',
+    note: 'u16 little-endian masked 0xFFF; valid 1–1000, otherwise the firmware default 0x284 (644). Voltage = raw x 750 / scale, so it is the battery ADC count at the 7.50 V reference (inferred from the formula).',
+    value: (d) => ({ scale: d.battery.scale, scaleValid: d.battery.scaleValid }),
+    format: fmtBatteryScale,
   },
   {
     id: 'boot-016',
     group: 'Boot scalars',
-    label: 'Boot scalar',
+    label: 'Modem scalar (register 0x11000108 bytes 3, 2)',
     offset: 0x016,
     length: 1,
     layout: 'traced',
-    meaning: 'unknown',
-    source: `${BOOT}, 0x0301A9FC`,
+    meaning: 'traced',
+    source: '0x030208D4 (adjust group 1)',
+    note: 'Written to modem register 0x11000108; the register has no name.',
   },
   {
     id: 'boot-027',
     group: 'Boot scalars',
-    label: 'Boot scalar',
+    label: 'Modem scalar (register 0x11000114 high halfword)',
     offset: 0x027,
-    length: 1,
+    length: 2,
     layout: 'traced',
-    meaning: 'unknown',
-    source: `${BOOT}, 0x0301A9FC`,
+    meaning: 'traced',
+    source: '0x030208B8, 0x03037138 (adjust group 4)',
+    note: 'u16 little-endian, 10 bits used (adjust clamps to 0x400). The register has no name.',
+    value: (d) => d.words.at0x027,
+    format: fmtNumber as (value: never) => Formatted,
   },
   {
     id: 'boot-201',
     group: 'Boot scalars',
-    label: 'Boot scalars (9 bytes)',
+    label: 'CTCSS / DCS TX level',
     offset: 0x201,
-    length: 9,
+    length: 2,
+    layout: 'traced',
+    meaning: 'traced',
+    source: '0x0301A9FC, adjust groups 6, 7',
+    note: '+0x201 CTCSS TX level, +0x202 DCS TX level; both go to RF register 0x51 (OR 0x9000 / 0x8000).',
+  },
+  {
+    id: 'boot-203',
+    group: 'Boot scalars',
+    label: 'Boot values loaded to RAM (7 bytes)',
+    offset: 0x203,
+    length: 7,
     layout: 'traced',
     meaning: 'unknown',
-    source: `${BOOT}, 0x0301A9FC`,
+    source: '0x0301A9FC, 0x0300D518',
+    note: 'Loaded to 0x38470[0x35..0x40]; no consumer found. +0x203 and +0x204 are at most 31, +0x205 is a nibble, +0x206 to +0x209 use 5, 7, 4 and 4 bits.',
+  },
+  {
+    id: 'audio-level-analog',
+    group: 'Audio levels',
+    label: 'Audio level, analogue / FM',
+    offset: 0x20a,
+    length: 1,
+    layout: 'traced',
+    meaning: 'traced',
+    source: '0x030541AC',
+    note: 'Range 1..15, default 13. Raw level, no unit.',
+  },
+  {
+    id: 'audio-level-digital',
+    group: 'Audio levels',
+    label: 'Audio level, digital',
+    offset: 0x20b,
+    length: 1,
+    layout: 'traced',
+    meaning: 'traced',
+    source: '0x030541AC',
+    note: 'Range 1..63, default 39. Raw level, no unit.',
+  },
+  {
+    id: 'adc-channel-1',
+    group: 'ADC calibration',
+    label: 'ADC channel 1 count (+0x07A)',
+    offset: 0x07a,
+    length: 2,
+    layout: 'traced',
+    meaning: 'partially-traced',
+    source: '0x03053880, 0x03036EB4',
+    note: 'u16 little-endian; written by the adjust Save (item O stores to +0x07A, any other item to +0x07C) with a 4-sample ADC channel 1 average. No runtime reader found. Raw ADC count.',
+    value: (d) => d.words.at0x07a,
+    format: fmtNumber as (value: never) => Formatted,
+  },
+  {
+    id: 'adc-channel-1-b',
+    group: 'ADC calibration',
+    label: 'ADC channel 1 count (+0x07C)',
+    offset: 0x07c,
+    length: 2,
+    layout: 'traced',
+    meaning: 'partially-traced',
+    source: '0x03053880, 0x03036EB4',
+    note: 'Companion of +0x07A, written by the same adjust Save; no runtime reader found. Raw ADC count.',
+    value: (d) => d.words.at0x07c,
+    format: fmtNumber as (value: never) => Formatted,
   },
   {
     id: 'table5-uhf',
@@ -279,8 +344,9 @@ const PAGE_SPECS: readonly PageSpec[] = [
     offset: 0x017,
     length: 5,
     layout: 'traced',
-    meaning: 'unknown',
-    source: '0x0301A4D0',
+    meaning: 'traced',
+    source: '0x0301A4D0, adjust group 2 (0x0305381C)',
+    note: 'Per-TX-frequency value written to modem register 0x11000114 low halfword in analogue mode (modulation level, name inferred). Raw.',
   },
   {
     id: 'table5-vhf',
@@ -289,8 +355,9 @@ const PAGE_SPECS: readonly PageSpec[] = [
     offset: 0x0a6,
     length: 5,
     layout: 'traced',
-    meaning: 'unknown',
-    source: '0x0301A4D0',
+    meaning: 'traced',
+    source: '0x0301A4D0, adjust group 2 (0x0305381C)',
+    note: 'Per-TX-frequency value written to modem register 0x11000114 low halfword in analogue mode (modulation level, name inferred). Raw.',
   },
   {
     id: 'table3-uhf',
@@ -299,8 +366,9 @@ const PAGE_SPECS: readonly PageSpec[] = [
     offset: 0x01c,
     length: 3,
     layout: 'traced',
-    meaning: 'unknown',
-    source: '0x0301A418',
+    meaning: 'traced',
+    source: '0x0301A418, 0x0300DE10, adjust group 5',
+    note: 'Per-TX-frequency value written to RF register 0x40 (OR 0x3400). Adjust group 5 also addresses the three bytes before it. Raw.',
   },
   {
     id: 'table3-vhf',
@@ -309,30 +377,31 @@ const PAGE_SPECS: readonly PageSpec[] = [
     offset: 0x0ab,
     length: 3,
     layout: 'traced',
-    meaning: 'unknown',
-    source: '0x0301A418',
+    meaning: 'traced',
+    source: '0x0301A418, 0x0300DE10, adjust group 5',
+    note: 'Per-TX-frequency value written to RF register 0x40 (OR 0x3400). Adjust group 5 also addresses the three bytes before it. Raw.',
   },
   {
     id: 'adjust-uhf',
-    group: 'Adjust-mode test frequencies (inferred)',
+    group: 'Adjust-mode test frequencies (observed)',
     label: 'Three frequencies, UHF side',
     offset: 0x030,
     length: 12,
     layout: 'traced',
-    meaning: 'partially-traced',
-    source: '0x03029A3C (PCTESTM server)',
-    note: 'Three BCD frequencies near 400, 435 and 470 MHz; the meaning is inferred. Raw only.',
+    meaning: 'unknown',
+    source: 'No reader in 048 (0x03029A3C reads +0x300–+0x34F, not these)',
+    note: 'Three BCD frequencies near 400, 435 and 470 MHz (observed); no firmware reader. Raw only.',
   },
   {
     id: 'adjust-vhf',
-    group: 'Adjust-mode test frequencies (inferred)',
+    group: 'Adjust-mode test frequencies (observed)',
     label: 'Three frequencies, second set',
     offset: 0x150,
     length: 12,
     layout: 'traced',
-    meaning: 'partially-traced',
-    source: '0x03029A3C (PCTESTM server)',
-    note: 'Three BCD frequencies near 400, 435 and 470 MHz; the meaning is inferred. Raw only.',
+    meaning: 'unknown',
+    source: 'No reader in 048 (0x03029A3C reads +0x300–+0x34F, not these)',
+    note: 'Three BCD frequencies near 400, 435 and 470 MHz (observed); no firmware reader. Raw only.',
   },
   ...(
     [
@@ -348,7 +417,7 @@ const PAGE_SPECS: readonly PageSpec[] = [
     length,
     layout: 'unknown',
     meaning: 'unknown',
-    source: 'No firmware consumer traced',
+    source: 'No reader in 048 (constant and computed reads both checked)',
   })),
 ];
 
@@ -388,6 +457,27 @@ export function describeDm32CalibrationPage(
 
 const OPTION_SOURCE = '0x0305D908 (boot copy)';
 
+/** Bit-by-bit map of the option bytes, as the firmware copies them to RAM at boot. */
+const OPTION_NOTES: Record<number, { meaning: Dm32CalibrationConfidence; note: string }> = {
+  0x80: {
+    meaning: 'partially-traced',
+    note: 'To 0x3FDBC b0, b1, b3 (no known use); b2 = GPS fitted (own row); b5 to 0x3FDBF b0 hides menu rows 1 and 3 (0x03047E8C) and is read by channel load 0x03055DAC and 0x03018270; b6 to 0x3FDBC b4, read by 0x03018270.',
+  },
+  0x81: {
+    meaning: 'partially-traced',
+    note: 'b0 to 0x3FDBC b5; b1 to b3 to 0x3FDBF b1 to b3. No known use.',
+  },
+  0x82: {
+    meaning: 'partially-traced',
+    note: 'b4 to 0x3FDBC b6, read by the idle screen 0x0303A160. The other bits have no known use.',
+  },
+  0xa0: {
+    meaning: 'traced',
+    note: 'Copied to 0x3FDBD. The value 0xA3 forces the English UI (settings loader); any other value leaves the Language setting in charge.',
+  },
+  0xa2: { meaning: 'unknown', note: 'Copied to 0x3FDC1. No known use.' },
+};
+
 /**
  * Factory-sector rows. The anti-clone key at +0x10C is deliberately not a row: it is only in the
  * raw hex view.
@@ -397,16 +487,16 @@ export function describeDm32FactorySector(sector: Uint8Array): Dm32CalibrationRo
   const rows: Dm32CalibrationRow[] = decode.optionBytes.map(({ offset, value }) => ({
     id: `factory-option-${offset.toString(16)}`,
     group: 'Factory options',
-    label: 'Option byte',
+    label: offset === 0xa0 ? 'Option byte (UI language override)' : 'Option byte',
     offset,
     length: 1,
     raw: sector.slice(offset, offset + 1),
-    decoded: hex2(value),
+    decoded: offset === 0xa0 && value === 0xa3 ? `${hex2(value)}: forces English UI` : hex2(value),
     value,
     layoutConfidence: 'traced',
-    meaningConfidence: 'partially-traced',
+    meaningConfidence: OPTION_NOTES[offset]!.meaning,
     source: OPTION_SOURCE,
-    note: 'Copied to RAM at boot; the meaning of most bits is inferred.',
+    note: OPTION_NOTES[offset]!.note,
   }));
   rows.push({
     id: 'factory-gps',
