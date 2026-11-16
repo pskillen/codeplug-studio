@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { RadioBackupRegionV1 } from '../../backup/types.ts';
 import { D890_MAP } from './constants.ts';
+import { AT_D890_FIELD_CONFIDENCE } from './debugSettingsConfidence.ts';
+import { AT_D890_SETTINGS_FIELDS } from './settingsFields.ts';
 import { atD890SettingsView, type AtD890SettingsArchive } from './debugSettingsView.ts';
 
 function archive(
@@ -49,5 +51,21 @@ describe('atD890SettingsView', () => {
     const rows = rowsOf(archive([]));
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((r) => r.value === undefined)).toBe(true);
+  });
+});
+
+describe('AT-D890 field confidence map', () => {
+  it('covers every registered field and only registered fields', () => {
+    expect(Object.keys(AT_D890_FIELD_CONFIDENCE).sort()).toEqual(
+      [...AT_D890_SETTINGS_FIELDS.keys()].sort(),
+    );
+  });
+
+  it('shows traced, partial and evidence on rows, even when not captured', () => {
+    const rows = rowsOf(archive([]));
+    const key = rows.find((r) => r.id === 'keyTone');
+    expect(key?.confidence).toBe('traced');
+    expect(key?.evidence).toContain('clamp');
+    expect(rows.find((r) => r.id === 'displayMode')?.confidence).toBe('partially-traced');
   });
 });
