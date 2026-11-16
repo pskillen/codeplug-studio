@@ -118,6 +118,7 @@ List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with o
 
 ## Known gaps
 
+- Firefox on Windows with a CH340 cable (UV-5R Mini, DM-32UV) on an older WCH driver ends the port's read side straight after opening, so a read fails at once. The pipe now says so and the Mini read no longer retries at 38400. Fix: update the CH340 driver, or use Chrome or Edge. [Mozilla bug 2053974](https://bugzilla.mozilla.org/show_bug.cgi?id=2053974); not confirmed on the owner's hardware.
 - Neither radio page has been tried in the Android app on a phone with a radio.
 - The storage pages are read-only: nothing edits or clears storage.
 - There is no native YAML view: row YAML is the interim storage-row dump, waiting on native YAML export.
