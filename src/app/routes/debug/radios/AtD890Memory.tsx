@@ -1,11 +1,27 @@
 import { Alert, Stack, Text, Title } from '@mantine/core';
-import { MemoryCategories } from '@app/components/debug/index.ts';
-import { useMemo, useState } from 'react';
+import { MemoryCategories, MemoryCategoryPanel } from '@app/components/debug/index.ts';
+import { useMemo } from 'react';
+import { DataTable, type DataTableColumn } from '@app/components/v2/index.ts';
 import {
-  DataTable,
-  type DataTableColumn,
-  type DataTableSortState,
-} from '@app/components/v2/index.ts';
+  AT_D890UV_BITMAP_BITS_TITLE,
+  AT_D890UV_CHANNELS_EMPTY,
+  AT_D890UV_CHANNELS_UNAVAILABLE,
+  AT_D890UV_MEMORY_INTRO,
+  AT_D890UV_ZONE_BITS_TITLE,
+  AT_D890UV_ZONE_CAVEAT,
+  AT_D890UV_ZONE_MEMBERS_NOT_CAPTURED,
+  AT_D890UV_ZONE_OVER_CAPACITY_TITLE,
+  AT_D890UV_ZONES_EMPTY,
+  AT_D890UV_ZONES_UNAVAILABLE,
+  atD890CaptureSummary,
+  atD890ChannelBitsText,
+  atD890ChannelCaveat,
+  atD890ChannelSummary,
+  atD890RefusedTitle,
+  atD890ZoneBitsText,
+  atD890ZoneOverCapacityText,
+  atD890ZoneSummary,
+} from '@integrations/radio-io/radios/at-d890uv/debugMemoryText.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import type { RadioChannelDto, RadioTone } from '@integrations/radio-io/radioChannelDto.ts';
 import {
@@ -34,7 +50,6 @@ import type { DebugArchive } from './captureArchive.ts';
 const NOT_CAPTURED = 'Not captured';
 const DASH = '—';
 
-const count = (n: number) => n.toLocaleString('en-GB');
 const mhz = (hz: number) => (hz / 1e6).toFixed(5);
 
 function formatAtD890Tone(tone: RadioTone): string {
@@ -208,11 +223,6 @@ function channelColumns(
   ];
 }
 
-const matches = (query: string, ...haystack: string[]) => {
-  const q = query.trim().toLocaleLowerCase();
-  return !q || haystack.some((h) => h.toLocaleLowerCase().includes(q));
-};
-
 function ChannelsPanel({
   channels,
   bank,
@@ -221,52 +231,37 @@ function ChannelsPanel({
   bank: AtD890BankInventory;
 }) {
   const columns = useMemo(() => channelColumns(bank, indexBank(bank)), [bank]);
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
   const rows = useMemo(() => channels.entries.map(channelRow), [channels]);
   if (channels.bitmap !== 'captured')
     return (
       <Alert title={NOT_CAPTURED} color="yellow">
-        The channel occupancy bitmap was not completely captured, so no channel list can be shown.
-        This does not mean the radio has no channels.
+        {AT_D890UV_CHANNELS_UNAVAILABLE}
       </Alert>
     );
-  const shown = rows.filter((r) =>
-    matches(
-      query,
-      String(r.slot),
-      String(r.slot).padStart(3, '0'),
-      r.label,
-      r.channel ? `${mhz(r.channel.rxHz)} ${mhz(r.channel.txHz)}` : '',
-    ),
-  );
   return (
     <Stack gap="sm">
-      <Text>
-        Occupied {count(channels.occupied)} of {count(channels.capacity)} channel slots · decoded{' '}
-        {count(channels.decoded)} of {count(channels.occupied)} occupied
-      </Text>
-      <Text size="sm" c="dimmed">
-        Hardware capacity is {count(channels.capacity)} slots. Slots without a record in this
-        capture are not listed, and a missing capture does not mean a slot is unused. Each identity
-        is the radio&apos;s single name field, shown complete including any callsign; separate
-        callsign and name data is unavailable in this capture.
-      </Text>
       {channels.outOfRangeBits.length > 0 && (
-        <Alert color="yellow" title="Bitmap bits beyond the slot range">
-          Bits {channels.outOfRangeBits.join(', ')} are set above the {count(channels.capacity)}{' '}
-          hardware slots and are not listed.
+        <Alert color="yellow" title={AT_D890UV_BITMAP_BITS_TITLE}>
+          {atD890ChannelBitsText(channels.outOfRangeBits, channels.capacity)}
         </Alert>
       )}
-      <DataTable
+      <MemoryCategoryPanel
+        summary={atD890ChannelSummary(channels.occupied, channels.capacity, channels.decoded)}
+        caveat={atD890ChannelCaveat(channels.capacity)}
+        searchPlaceholder="Search channels"
         caption="AT-D890UV memory channels"
         columns={columns}
-        rows={shown}
+        rows={rows}
         getRowId={(r) => r.id}
-        totalRowCount={rows.length}
-        search={{ value: query, onChange: setQuery, placeholder: 'Search channels' }}
-        sort={sort}
-        onSortChange={setSort}
+        searchText={(r) =>
+          [
+            r.slot,
+            String(r.slot).padStart(3, '0'),
+            r.label,
+            r.channel ? `${mhz(r.channel.rxHz)} ${mhz(r.channel.txHz)}` : '',
+          ].join(' ')
+        }
+        defaultSort={{ key: 'slot', direction: 'asc' }}
         stickyFirstColumn
         mobileIdentity={(r) => (
           <span>
@@ -274,8 +269,7 @@ function ChannelsPanel({
           </span>
         )}
         mobileIdentityLabel="Slot · identity"
-        emptyMessage="The channel bitmap is captured and no channel slot is occupied."
-        filteredEmptyMessage={`No channels match “${query.trim()}”.`}
+        emptyMessage={AT_D890UV_CHANNELS_EMPTY}
       />
     </Stack>
   );
@@ -362,90 +356,73 @@ const zoneColumns: DataTableColumn<ZoneRow>[] = [
   },
 ];
 
+function ZoneMembers({ zone }: { zone: AtD890ZoneEntry }) {
+  return (
+    <Stack gap="xs" aria-label={`Zone ${zone.slot} members`} role="region">
+      <Title order={4}>
+        Zone {zone.slot} ·{' '}
+        {zone.name.status === 'captured'
+          ? zone.name.text || '(unnamed)'
+          : `Name ${NOT_CAPTURED.toLowerCase()}`}
+      </Title>
+      {zone.members.status === 'not-captured' ? (
+        <Alert color="yellow" title={NOT_CAPTURED}>
+          {AT_D890UV_ZONE_MEMBERS_NOT_CAPTURED}
+        </Alert>
+      ) : (
+        <>
+          {zone.members.overCapacity && (
+            <Alert color="yellow" title={AT_D890UV_ZONE_OVER_CAPACITY_TITLE}>
+              {atD890ZoneOverCapacityText(AT_D890UV_LIMITS.ZONE_MEMBERS_MAX)}
+            </Alert>
+          )}
+          <DataTable
+            caption={`Zone ${zone.slot} members`}
+            variant="embedded"
+            columns={MEMBER_COLUMNS}
+            rows={zone.members.list.map((member) => ({
+              id: `member-${member.position}`,
+              member,
+            }))}
+            getRowId={(r) => r.id}
+            emptyMessage="This zone has no members."
+          />
+        </>
+      )}
+    </Stack>
+  );
+}
+
 function ZonesPanel({ zones }: { zones: ReturnType<typeof projectAtD890Memory>['zones'] }) {
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
-  const [selectedSlot, setSelectedSlot] = useState<number>();
   const rows = useMemo(() => zones.entries.map(zoneRow), [zones]);
   if (zones.bitmap !== 'captured')
     return (
       <Alert title={NOT_CAPTURED} color="yellow">
-        The zone occupancy bitmap was not completely captured, so no zone list can be shown. This
-        does not mean the radio has no zones.
+        {AT_D890UV_ZONES_UNAVAILABLE}
       </Alert>
     );
-  const selected = zones.entries.find((z) => z.slot === selectedSlot);
-  const shown = rows.filter((r) => matches(query, String(r.slot), r.label));
   const namesDecoded = zones.entries.filter((z) => z.name.status === 'captured').length;
   const membersDecoded = zones.entries.filter((z) => z.members.status === 'captured').length;
   return (
     <Stack gap="sm">
-      <Text>
-        Occupied {count(zones.occupied)} of {count(zones.capacity)} zone slots · names decoded{' '}
-        {count(namesDecoded)} · member lists decoded {count(membersDecoded)}
-      </Text>
-      <Text size="sm" c="dimmed">
-        Members are shown in radio order, duplicates included. A member index is zero-based and
-        resolves to channel slot index + 1. The zone A and B channel tables select a channel within
-        a zone and are not shown as member lists.
-      </Text>
       {zones.outOfRangeBits.length > 0 && (
-        <Alert color="yellow" title="Bitmap bits beyond the zone range">
-          Bits {zones.outOfRangeBits.join(', ')} are set above the {count(zones.capacity)} hardware
-          zones and are not listed.
+        <Alert color="yellow" title={AT_D890UV_ZONE_BITS_TITLE}>
+          {atD890ZoneBitsText(zones.outOfRangeBits, zones.capacity)}
         </Alert>
       )}
-      <DataTable
+      <MemoryCategoryPanel
+        summary={atD890ZoneSummary(zones.occupied, zones.capacity, namesDecoded, membersDecoded)}
+        caveat={AT_D890UV_ZONE_CAVEAT}
+        searchPlaceholder="Search zones"
         caption="AT-D890UV zones"
         columns={zoneColumns}
-        rows={shown}
+        rows={rows}
         getRowId={(r) => r.id}
-        totalRowCount={rows.length}
-        search={{ value: query, onChange: setQuery, placeholder: 'Search zones' }}
-        sort={sort}
-        onSortChange={setSort}
-        onRowActivate={(r) => setSelectedSlot(r.slot)}
-        emptyMessage="The zone bitmap is captured and no zone slot is occupied."
-        filteredEmptyMessage={`No zones match “${query.trim()}”.`}
+        searchText={(r) => `${r.slot} ${r.label}`}
+        defaultSort={{ key: 'slot', direction: 'asc' }}
+        details={(r) => <ZoneMembers zone={r.entry} />}
+        emptyMessage={AT_D890UV_ZONES_EMPTY}
       />
-      {selected ? (
-        <Stack gap="xs" aria-label={`Zone ${selected.slot} members`} role="region">
-          <Title order={4}>
-            Zone {selected.slot} ·{' '}
-            {selected.name.status === 'captured'
-              ? selected.name.text || '(unnamed)'
-              : `Name ${NOT_CAPTURED.toLowerCase()}`}
-          </Title>
-          {selected.members.status === 'not-captured' ? (
-            <Alert color="yellow" title={NOT_CAPTURED}>
-              This zone&apos;s member list was not completely captured.
-            </Alert>
-          ) : (
-            <>
-              {selected.members.overCapacity && (
-                <Alert color="yellow" title="More members than the hardware allows">
-                  The list holds more than {AT_D890UV_LIMITS.ZONE_MEMBERS_MAX} members.
-                </Alert>
-              )}
-              <DataTable
-                caption={`Zone ${selected.slot} members`}
-                variant="embedded"
-                columns={MEMBER_COLUMNS}
-                rows={selected.members.list.map((member) => ({
-                  id: `member-${member.position}`,
-                  member,
-                }))}
-                getRowId={(r) => r.id}
-                emptyMessage="This zone has no members."
-              />
-            </>
-          )}
-        </Stack>
-      ) : (
-        <Text size="sm" c="dimmed">
-          Select a zone to see its members.
-        </Text>
-      )}
     </Stack>
   );
 }
@@ -478,15 +455,17 @@ function AtD890MemoryLoaded({ archive }: { archive: DebugArchive }) {
     <Stack>
       <Title order={3}>Memory</Title>
       <Text size="sm" c="dimmed">
-        Read-only inventory decoded from captured bytes · radio slot order preserved. Nothing is
-        imported into a library or build.
+        {AT_D890UV_MEMORY_INTRO}
       </Text>
       <Text size="sm">
-        {capture.accepted.length} sparse configuration entries accepted · {capture.excluded.vital}{' '}
-        vital and {capture.excluded.unclassified} unclassified entries excluded
+        {atD890CaptureSummary(
+          capture.accepted.length,
+          capture.excluded.vital,
+          capture.excluded.unclassified,
+        )}
       </Text>
       {capture.refused.length > 0 && (
-        <Alert color="yellow" title={`${capture.refused.length} sparse entries refused`}>
+        <Alert color="yellow" title={atD890RefusedTitle(capture.refused.length)}>
           {capture.refused.map((r) => (
             <Text size="sm" key={r.id}>
               {r.id}: {r.reason}

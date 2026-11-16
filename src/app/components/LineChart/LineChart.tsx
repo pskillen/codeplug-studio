@@ -189,7 +189,11 @@ export default function LineChart({
                     cx={sx(run[0].x)}
                     cy={sy(run[0].y)}
                     r={2.5}
-                    fill={lineChartSlotColor(s.slot, scheme)}
+                    fill={
+                      s.dashed ? 'var(--mantine-color-body)' : lineChartSlotColor(s.slot, scheme)
+                    }
+                    stroke={lineChartSlotColor(s.slot, scheme)}
+                    strokeWidth={s.dashed ? 1.5 : 0}
                   />
                 ) : (
                   <polyline

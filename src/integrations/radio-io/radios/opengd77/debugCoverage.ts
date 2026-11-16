@@ -5,6 +5,11 @@
  * full flash image. Wire facts: docs/reference/radios/opengd77/debug-capture.md.
  */
 import type { OpenGd77CalibrationLowSlot } from '@core/radios/opengd77/calibration.ts';
+import {
+  OPENGD77_DM1701_CALIBRATION_GRIDS,
+  OPENGD77_MD9600_CALIBRATION_GRIDS,
+  type OpenGd77CalibrationGrids,
+} from '@core/radios/opengd77/calibrationGrids.ts';
 import { OPENGD77_CALIBRATION_LENGTH } from '@core/radios/opengd77/calibration.ts';
 import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import {
@@ -40,6 +45,8 @@ export interface OpenGd77DebugModel {
   powerSteps: readonly OpenGd77PowerStep[];
   /** What the calibration slot at 0x1A0 means in this model's firmware tree. */
   calibrationLowSlot: OpenGd77CalibrationLowSlot;
+  /** Where the firmware's calibration tables sit in MHz (core/radios/opengd77/calibrationGrids.ts). */
+  calibrationGrids: OpenGd77CalibrationGrids;
 }
 
 /** Debug-page models, keyed by canonical model id. */
@@ -50,6 +57,7 @@ export const OPENGD77_DEBUG_MODELS: Readonly<Record<string, OpenGd77DebugModel>>
     radioTypes: DM1701_RADIO_TYPES,
     powerSteps: OPENGD77_1701_POWER_STEPS,
     calibrationLowSlot: 'very-low',
+    calibrationGrids: OPENGD77_DM1701_CALIBRATION_GRIDS,
   },
   [OPENGD77_MD9600_MODEL_ID]: {
     modelId: OPENGD77_MD9600_MODEL_ID,
@@ -57,6 +65,7 @@ export const OPENGD77_DEBUG_MODELS: Readonly<Record<string, OpenGd77DebugModel>>
     radioTypes: MD9600_RADIO_TYPES,
     powerSteps: OPENGD77_MD9600_POWER_STEPS,
     calibrationLowSlot: 'mid-low',
+    calibrationGrids: OPENGD77_MD9600_CALIBRATION_GRIDS,
   },
 };
 

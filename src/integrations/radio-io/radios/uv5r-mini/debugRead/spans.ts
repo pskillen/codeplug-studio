@@ -4,7 +4,7 @@
  * Ends are exclusive.
  */
 
-import { sha256HexSync } from '../firmwareUpdate/sha256Sync.ts';
+import { sha256HexSync } from '../../../digest/sha256Sync.ts';
 
 export interface Uv5rMiniDebugSpan {
   id: string;

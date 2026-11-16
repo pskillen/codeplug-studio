@@ -8,9 +8,10 @@ Isolate v2 theme tokens and `--dsv2-*` CSS variables from the live v1 app shell.
 
 ## Props
 
-| Prop       | Type        | Notes                            |
-| ---------- | ----------- | -------------------------------- |
-| `children` | `ReactNode` | Content rendered inside v2 scope |
+| Prop       | Type        | Notes                                                                                                                                                                                                         |
+| ---------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `children` | `ReactNode` | Content rendered inside v2 scope                                                                                                                                                                              |
+| `scheme`   | `'dark'`    | Optional. Dark page on a light app: sets `data-mantine-color-scheme="dark"` and the page colours on the scope, and keeps dropdowns (`Combobox`) inside it instead of portalling to `body`. Omitted: no change |
 
 ## Usage
 
@@ -27,6 +28,7 @@ import { DesignSystemV2Provider, Button } from '@app/components/v2';
 - Passes `themeV2`, `dsv2CssVariablesResolver`, and `cssVariablesSelector=".dsv2-scope"` to a nested `MantineProvider`.
 - Forces dark color scheme (v2 is dark-first).
 - Wraps children in `<div className="dsv2-scope">` so injected CSS variables attach to that element, never `:root`.
+- With `scheme="dark"` the scope div also carries the dark scheme attribute and `--dsv2-bg` / `--dsv2-text-primary`; `AppLayout` uses it for `isDarkPagePath` routes (`src/app/nav/darkPageRoutes.ts`).
 - Preserves v1 combobox / modal z-index defaults via the merged theme (see `theme-v2.ts`).
 
 ## Related

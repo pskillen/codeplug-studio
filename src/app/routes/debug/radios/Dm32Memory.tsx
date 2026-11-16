@@ -1,11 +1,20 @@
 import { Alert, Stack, Text, Title } from '@mantine/core';
-import { MemoryCategories } from '@app/components/debug/index.ts';
-import { useMemo, useState } from 'react';
+import { MemoryCategories, MemoryCategoryPanel } from '@app/components/debug/index.ts';
+import { useMemo } from 'react';
+import type { DataTableColumn } from '@app/components/v2/index.ts';
 import {
-  DataTable,
-  type DataTableColumn,
-  type DataTableSortState,
-} from '@app/components/v2/index.ts';
+  DM32_CHANNELS_EMPTY,
+  DM32_CHANNELS_UNAVAILABLE_NOTE,
+  DM32_MEMORY_INTRO,
+  DM32_NOT_CAPTURED_TITLE,
+  DM32_PAGE_ORDER_TITLE,
+  dm32CaptureSummary,
+  dm32ChannelCaveat,
+  dm32ChannelSummary,
+  dm32ExcessText,
+  dm32ExcessTitle,
+  dm32RefusedTitle,
+} from '@integrations/radio-io/radios/dm32uv/debugMemoryText.ts';
 import type { RadioChannelDto, RadioTone } from '@integrations/radio-io/radioChannelDto.ts';
 import {
   type Dm32ChannelEntry,
@@ -27,10 +36,9 @@ import { archiveKey } from './viewerUtils.ts';
 import { decodeDm32Archive } from './debugProjections.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
-const NOT_CAPTURED = 'Not captured';
+const NOT_CAPTURED = DM32_NOT_CAPTURED_TITLE;
 const DASH = '—';
 
-const count = (n: number) => n.toLocaleString('en-GB');
 const mhz = (hz: number) => (hz / 1e6).toFixed(5);
 const hex = (bytes: Uint8Array) =>
   Array.from(bytes, (b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
@@ -262,11 +270,6 @@ function channelColumns(
   ];
 }
 
-const matches = (query: string, ...haystack: string[]) => {
-  const q = query.trim().toLocaleLowerCase();
-  return !q || haystack.some((h) => h.toLocaleLowerCase().includes(q));
-};
-
 function ChannelsPanel({
   channels,
   scanLists,
@@ -277,62 +280,49 @@ function ChannelsPanel({
   references: Dm32ReferenceResolution;
 }) {
   const columns = useMemo(() => channelColumns(scanLists, references), [scanLists, references]);
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
   const rows = useMemo(() => channels.entries.map(channelRow), [channels]);
   if (channels.status !== 'captured')
     return (
       <Alert
-        title={channels.status === 'not-captured' ? NOT_CAPTURED : 'Page order not established'}
+        title={channels.status === 'not-captured' ? NOT_CAPTURED : DM32_PAGE_ORDER_TITLE}
         color="yellow"
       >
-        {channels.reason} This does not mean the radio has no channels.
+        {channels.reason} {DM32_CHANNELS_UNAVAILABLE_NOTE}
       </Alert>
     );
-  const shown = rows.filter((r) => {
-    const s = decoded(r);
-    return matches(
-      query,
-      String(r.slot),
-      String(r.slot).padStart(3, '0'),
-      r.label,
-      s && !s.flags.rxInvalidBcd ? `${mhz(s.channel.rxHz)} ${mhz(s.channel.txHz)}` : '',
-    );
-  });
   return (
     <Stack gap="sm">
-      <Text>
-        The radio states {count(channels.declaredCount ?? 0)} channels ·{' '}
-        {count(channels.entries.length)} listed of {count(channels.capacity)} hardware slots ·
-        decoded {count(channels.decoded)} · empty {count(channels.empty)} · blank{' '}
-        {count(channels.blank)} · not captured {count(channels.notCaptured)}
-      </Text>
-      <Text size="sm" c="dimmed">
-        Slots without a captured record are listed as not captured; a missing capture does not mean
-        a slot is unused. Each identity is the radio&apos;s single name field, shown complete
-        including any callsign; separate callsign and name data is unavailable. The scan list
-        resolves against the scan lists of this capture. TX contact resolves by position in the
-        talk-group list, radio ID by zero-based index, and RX group as slot n = group n (assumed
-        1-based, not verified on hardware); references to lists that were not captured stay raw.
-        {!channels.txContactBlocks.low || !channels.txContactBlocks.high
-          ? ' Some TX contact pages were not captured.'
-          : ''}
-      </Text>
       {channels.excess > 0 && (
-        <Alert color="yellow" title="Count above hardware capacity">
-          The stored count claims {count(channels.excess)} slots above the{' '}
-          {count(channels.capacity)} hardware slots; they are not listed.
+        <Alert color="yellow" title={dm32ExcessTitle()}>
+          {dm32ExcessText(channels.excess, channels.capacity)}
         </Alert>
       )}
-      <DataTable
+      <MemoryCategoryPanel
+        summary={dm32ChannelSummary({
+          declared: channels.declaredCount ?? 0,
+          listed: channels.entries.length,
+          capacity: channels.capacity,
+          decoded: channels.decoded,
+          empty: channels.empty,
+          blank: channels.blank,
+          notCaptured: channels.notCaptured,
+        })}
+        caveat={dm32ChannelCaveat(!channels.txContactBlocks.low || !channels.txContactBlocks.high)}
+        searchPlaceholder="Search channels"
         caption="DM-32UV memory channels"
         columns={columns}
-        rows={shown}
+        rows={rows}
         getRowId={(r) => r.id}
-        totalRowCount={rows.length}
-        search={{ value: query, onChange: setQuery, placeholder: 'Search channels' }}
-        sort={sort}
-        onSortChange={setSort}
+        searchText={(r) => {
+          const s = decoded(r);
+          return [
+            r.slot,
+            String(r.slot).padStart(3, '0'),
+            r.label,
+            s && !s.flags.rxInvalidBcd ? `${mhz(s.channel.rxHz)} ${mhz(s.channel.txHz)}` : '',
+          ].join(' ');
+        }}
+        defaultSort={{ key: 'slot', direction: 'asc' }}
         stickyFirstColumn
         mobileIdentity={(r) => (
           <span>
@@ -340,8 +330,7 @@ function ChannelsPanel({
           </span>
         )}
         mobileIdentityLabel="Slot · identity"
-        emptyMessage="The channel count was captured and the radio states no channels."
-        filteredEmptyMessage={`No channels match “${query.trim()}”.`}
+        emptyMessage={DM32_CHANNELS_EMPTY}
       />
     </Stack>
   );
@@ -377,17 +366,11 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
     <Stack>
       <Title order={3}>Memory</Title>
       <Text size="sm" c="dimmed">
-        Read-only inventory decoded from captured bytes · radio slot order preserved. Nothing is
-        imported into a library or build. Not validated on hardware.
+        {DM32_MEMORY_INTRO}
       </Text>
-      <Text size="sm">
-        {capture.blocks.size} whole 4 KiB blocks accepted ·{' '}
-        {capture.discovery
-          ? 'page order from the discovery map'
-          : 'no discovery map recorded, so page order is not established'}
-      </Text>
+      <Text size="sm">{dm32CaptureSummary(capture.blocks.size, Boolean(capture.discovery))}</Text>
       {capture.refused.length > 0 && (
-        <Alert color="yellow" title={`${capture.refused.length} archive entries refused`}>
+        <Alert color="yellow" title={dm32RefusedTitle(capture.refused.length)}>
           {capture.refused.map((r) => (
             <Text size="sm" key={r.id}>
               {r.id}: {r.reason}

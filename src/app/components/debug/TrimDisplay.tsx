@@ -1,6 +1,7 @@
 import { useComputedColorScheme } from '@mantine/core';
-import { formatHexDec, NOT_CAPTURED_TEXT, type TrimView } from '@integrations/radio-io/debugView';
+import type { TrimView } from '@integrations/radio-io/debugView';
 import { lineChartSlotColor } from '../LineChart/lineChartScale.ts';
+import { neutralOf, trimValueText } from './trimText.ts';
 import classes from './TrimDisplay.module.css';
 
 export interface TrimDisplayProps {
@@ -13,24 +14,6 @@ export interface TrimDisplayProps {
 
 const W = 320;
 const PAD = 20;
-
-function neutralOf(chart: TrimView): number {
-  return chart.scale.neutral ?? (chart.scale.min + chart.scale.max) / 2;
-}
-
-/** The ppm offset of a raw trim value, or undefined when the model has no ppm scale. */
-export function trimPpm(chart: TrimView, raw: number): number | undefined {
-  if (!chart.ppm) return undefined;
-  return Math.round((raw - neutralOf(chart)) * chart.ppm.perStep * 1000) / 1000;
-}
-
-/** The value line: `0x0C (12), +2 ppm`; raw only when there is no ppm scale; "Not captured" when missing. */
-export function trimValueText(chart: TrimView, raw: number | undefined): string {
-  if (raw === undefined) return NOT_CAPTURED_TEXT;
-  const ppm = trimPpm(chart, raw);
-  if (ppm === undefined) return formatHexDec(raw);
-  return `${formatHexDec(raw)}, ${ppm > 0 ? '+' : ''}${ppm} ppm`;
-}
 
 /**
  * A trim value on its scale, "not really a slider". With `ppm` it is a centre-zero ppm scale (span from `ppm.span`,
@@ -74,6 +57,9 @@ export default function TrimDisplay({ chart, overlay, readLabel, overlayLabel }:
     const nf = scale.neutral === undefined ? undefined : frac(scale.neutral);
     if (nf !== undefined) ticks.push({ f: nf, text: String(scale.neutral), major: true });
   }
+
+  // A captured value with no marker is off the scale; say so even when the model has no text for it.
+  const offScale = [chart, overlay].some((v) => v?.raw !== undefined && frac(v.raw) === undefined);
 
   const readName = readLabel ?? 'Read';
   const overlayName = overlayLabel ?? 'Overlay';
@@ -153,6 +139,7 @@ export default function TrimDisplay({ chart, overlay, readLabel, overlayLabel }:
       </svg>
       {ppm ? null : <div className={classes.note}>ppm scale unknown</div>}
       {chart.outOfRange ? <div className={classes.note}>{chart.outOfRange}</div> : null}
+      {offScale && !chart.outOfRange ? <div className={classes.note}>Off scale</div> : null}
     </div>
   );
 }

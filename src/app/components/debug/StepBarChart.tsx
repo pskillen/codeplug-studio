@@ -15,7 +15,7 @@ const W = 560;
 const H = 170;
 const M = { top: 10, right: 8, bottom: 44, left: 40 };
 
-/** The y range of a step chart: `auto` (or unset) scales 0 to the data's top tick; a pair is used as given. */
+/** The y range of a step chart: `auto` (or unset) scales from 0 (or the lowest negative value) to the data's top tick; a pair is used as given. */
 export function stepBarDomain(
   chart: StepBars,
   overlay?: StepBars,
@@ -29,9 +29,22 @@ export function stepBarDomain(
     .map((b) => b.value)
     .filter((v): v is number => v !== undefined && Number.isFinite(v));
   const max = Math.max(1, ...values);
-  const ticks = niceTicks(0, max, 4, Number.isInteger(max));
+  const min = Math.min(0, ...values);
+  const integer = values.every(Number.isInteger);
+  const ticks = niceTicks(min, max, 4, integer);
   const hi = ticks.at(-1)! >= max ? ticks.at(-1)! : max;
-  return { lo: 0, hi, auto: true, ticks: ticks.length > 1 ? ticks : [0, hi] };
+  // A negative value pulls the floor down to a tick below it; bars then grow from the zero line.
+  let lo = 0;
+  if (min < 0) {
+    const step = ticks.length > 1 ? ticks[1]! - ticks[0]! : 1;
+    lo = Math.floor(min / step) * step;
+  }
+  return {
+    lo,
+    hi,
+    auto: true,
+    ticks: niceTicks(lo, hi, 4, integer).length > 1 ? niceTicks(lo, hi, 4, integer) : [lo, hi],
+  };
 }
 
 /**
@@ -56,6 +69,8 @@ export default function StepBarChart({
   const sy = (v: number) =>
     M.top + plotH - ((Math.min(Math.max(v, lo), hi) - lo) / (hi - lo)) * plotH;
   const baseline = M.top + plotH;
+  // Bars grow from the zero line (the floor when the domain does not span zero).
+  const zeroY = sy(0);
   const stride = Math.max(1, Math.ceil(26 / slot));
   const unit = chart.y.unit;
   const who = (name?: string) => (name ? `${name}: ` : '');
@@ -83,9 +98,9 @@ export default function StepBarChart({
       <rect
         key={key}
         x={x}
-        y={sy(value)}
+        y={Math.min(sy(value), zeroY)}
         width={barW}
-        height={Math.max(1, baseline - sy(value))}
+        height={Math.max(1, Math.abs(zeroY - sy(value)))}
         rx={2}
         fill={hollow ? 'none' : color}
         stroke={color}

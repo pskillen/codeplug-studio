@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { SettingRow, SettingsView } from '@integrations/radio-io/debugView';
-import { SensitiveRevealButton } from '@app/routes/debug/radios/SensitiveReveal.tsx';
+import SensitiveRevealButton from './SensitiveRevealButton.tsx';
 import SearchInput from '../v2/SearchInput.tsx';
 import ToggleSwitch from '../v2/ToggleSwitch.tsx';
 import ConfidenceBadge from './ConfidenceBadge.tsx';
@@ -14,6 +14,8 @@ export interface SettingsTableProps {
   /** Whether sensitive rows are shown; hidden unless the viewer reveals them. */
   revealed: boolean;
   onToggleReveal: () => void;
+  /** Start with the Address and Raw columns on (the viewer can still switch them). Default off. */
+  defaultShowRaw?: boolean;
 }
 
 const NOT_CAPTURED = 'Not captured';
@@ -34,8 +36,9 @@ function columnWidths(showRaw: boolean, showDefault: boolean): readonly number[]
 }
 
 function valueText(row: SettingRow, revealed: boolean): string {
-  if (row.sensitive && !revealed) return HIDDEN;
+  // Not captured first: a lock password that was never read must not read as hidden.
   if (row.value === undefined) return NOT_CAPTURED;
+  if (row.sensitive && !revealed) return HIDDEN;
   if (row.value === '') return '(empty)';
   if (row.rawValue !== undefined && !/^-?\d+(\.\d+)?$/.test(row.value))
     return `${row.value} (${row.rawValue})`;
@@ -43,7 +46,7 @@ function valueText(row: SettingRow, revealed: boolean): string {
 }
 
 function rawText(row: SettingRow, revealed: boolean): string {
-  if (!row.raw) return DASH;
+  if (!row.raw) return row.value === undefined ? NOT_CAPTURED : DASH;
   if (row.sensitive && !revealed) return row.raw.map(() => MASKED_TEXT).join(' ');
   return row.raw.map(hexByte).join(' ');
 }
@@ -102,7 +105,11 @@ function RowsTable({
                 {row.help && <span className={classes.help}>{row.help}</span>}
               </td>
               <td>{valueText(row, revealed)}</td>
-              {showRaw && <td className={classes.mono}>{row.address ?? DASH}</td>}
+              {showRaw && (
+                <td className={classes.mono}>
+                  {row.address ?? (row.value === undefined ? NOT_CAPTURED : DASH)}
+                </td>
+              )}
               {showRaw && <td className={classes.mono}>{rawText(row, revealed)}</td>}
               {showDefault && <td>{row.firmwareDefault ?? DASH}</td>}
               <td>
@@ -122,9 +129,14 @@ function RowsTable({
  * per group with the same columns and widths everywhere, and the trailing sections folded.
  * Radio-neutral: every sentence arrives in the `SettingsView`.
  */
-export default function SettingsTable({ view, revealed, onToggleReveal }: SettingsTableProps) {
+export default function SettingsTable({
+  view,
+  revealed,
+  onToggleReveal,
+  defaultShowRaw = false,
+}: SettingsTableProps) {
   const [query, setQuery] = useState('');
-  const [showRaw, setShowRaw] = useState(false);
+  const [showRaw, setShowRaw] = useState(defaultShowRaw);
   const allRows = useMemo(
     () => [...view.groups.flatMap((g) => g.rows), ...(view.trailing ?? []).flatMap((t) => t.rows)],
     [view],
@@ -169,7 +181,12 @@ export default function SettingsTable({ view, revealed, onToggleReveal }: Settin
       </div>
       <div className={classes.sections}>
         {shownGroups.map(({ g, rows }) => (
-          <DebugSection key={g.id} id={g.id} title={g.label} description={g.description}>
+          <DebugSection
+            key={g.id}
+            id={`settings-${g.id}`}
+            title={g.label}
+            description={g.description}
+          >
             {rows.length === 0 ? (
               <p className={classes.empty}>{g.emptyText ?? 'No settings in this group.'}</p>
             ) : (
@@ -187,7 +204,7 @@ export default function SettingsTable({ view, revealed, onToggleReveal }: Settin
           <DebugSection
             // Remount when searching so a match is never hidden inside a folded section.
             key={`${t.id}-${searching}`}
-            id={t.id}
+            id={`settings-${t.id}`}
             title={t.title}
             description={t.description}
             meta={<span>{rows.length}</span>}

@@ -31,7 +31,7 @@ afterEach(cleanup);
 
 describe('descriptor-driven tab list', () => {
   it('puts Settings straight after Memory only when the descriptor has one', () => {
-    expect(radioDebugTabs({ Settings: undefined, settings: undefined })).toEqual([
+    expect(radioDebugTabs({ settings: undefined })).toEqual([
       'Overview',
       'Backup',
       'Calibration',
@@ -57,7 +57,7 @@ describe('descriptor-driven tab list', () => {
   });
 
   it('gives Settings to the decoded radios and not to the rest', () => {
-    const slugs = radioDebugDescriptors.filter((d) => d.settings || d.Settings).map((d) => d.slug);
+    const slugs = radioDebugDescriptors.filter((d) => d.settings).map((d) => d.slug);
     expect(slugs.sort()).toEqual([...WITH_SETTINGS].sort());
     for (const slug of WITHOUT_SETTINGS)
       expect(radioDebugDescriptors.find((d) => d.slug === slug)?.settings).toBeUndefined();

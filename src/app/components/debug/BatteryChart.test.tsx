@@ -1,6 +1,8 @@
+import { MantineProvider } from '@mantine/core';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
+import { lineChartSlotColor } from '../LineChart/lineChartScale.ts';
 import type { BatteryLadder } from '@integrations/radio-io/debugView';
 import DesignSystemV2Provider from '../v2/DesignSystemV2Provider.tsx';
 import BatteryChart from './BatteryChart.tsx';
@@ -42,5 +44,32 @@ describe('BatteryChart', () => {
     expect(screen.getByText('B')).toBeInTheDocument();
     expect(screen.getByText('A')).toBeInTheDocument();
     expect(screen.getAllByText('0x1A (26)')).toHaveLength(2);
+  });
+
+  it('scales a full-range ladder: bars differ and none is capped by a CSS maximum', () => {
+    const steps = [0x80, 0x9a, 0xb4, 0xd0, 0xe8, 0xff].map((raw, i) => ({
+      id: `s${i}`,
+      label: `Step ${i}`,
+      raw,
+    }));
+    wrap(<BatteryChart chart={ladder({ steps })} />);
+    const widths = screen.getAllByTestId('battery-bar').map((b) => parseFloat(b.style.width));
+    expect(new Set(widths).size).toBe(6);
+    expect(Math.max(...widths)).toBeCloseTo(100);
+    expect(Math.min(...widths)).toBeGreaterThan(50);
+  });
+
+  it('takes dark colours inside the dark island even when the app scheme is light', () => {
+    render(
+      <MantineProvider forceColorScheme="light">
+        <DesignSystemV2Provider>
+          <BatteryChart chart={ladder()} />
+        </DesignSystemV2Provider>
+      </MantineProvider>,
+    );
+    const bar = screen.getAllByTestId('battery-bar')[0]!;
+    const probe = document.createElement('i');
+    probe.style.background = lineChartSlotColor(0, 'dark');
+    expect(bar.style.background).toBe(probe.style.background);
   });
 });

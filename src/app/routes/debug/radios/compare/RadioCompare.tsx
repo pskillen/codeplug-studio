@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { scrollToPageSection } from '@app/lib/scrollToPageSection.ts';
 import type { DebugArchive } from '../captureArchive.ts';
 import type { RadioDebugDescriptor } from '../descriptors.ts';
-import { SensitiveRevealButton } from '../SensitiveReveal.tsx';
+import { SensitiveRevealButton } from '@app/components/debug/index.ts';
 import { archiveKey, sensitiveRanges } from '../viewerUtils.ts';
 import { CompareSummary } from './CompareSummary.tsx';
 import { ALL_CATEGORIES, DecodedDiffView } from './DecodedDiffView.tsx';

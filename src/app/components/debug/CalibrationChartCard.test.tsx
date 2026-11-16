@@ -147,6 +147,21 @@ describe('StepBarChart', () => {
     expect(container.textContent).toContain('Not captured');
   });
 
+  it('auto domain reaches below zero for a negative value and bars grow from the zero line', () => {
+    const c = bars([-4, 6]);
+    const d = stepBarDomain(c);
+    expect(d.lo).toBeLessThan(0);
+    expect(d.hi).toBeGreaterThanOrEqual(6);
+    expect(d.ticks).toContain(0);
+    const { container } = wrap(<StepBarChart chart={c} />);
+    const rects = [...container.querySelectorAll('rect')];
+    const y = (i: number) => Number(rects[i]!.getAttribute('y'));
+    const h = (i: number) => Number(rects[i]!.getAttribute('height'));
+    // The negative bar hangs below the line the positive bar stands on.
+    expect(y(0)).toBeCloseTo(y(1) + h(1));
+    expect(h(0)).toBeGreaterThan(1);
+  });
+
   it('domain helper: unset behaves like auto', () => {
     const c = bars([5]);
     const noDomain = { ...c, y: { label: 'x', unit: 'u' } } as StepBars;

@@ -30,6 +30,14 @@ function valueKey(cell: Cell | undefined, revealed: boolean): string {
   return [cell.decoded, cell.unit, cell.value, cell.raw ? rawHex(cell.raw) : undefined].join('|');
 }
 
+/** True when the Value column prints the same bytes as hex (`0x1A (26)`), so Raw would repeat it. */
+function valueShowsHex(cell: Cell): boolean {
+  if (cell.decoded !== undefined || cell.value === undefined || !cell.raw) return false;
+  if (cell.format === 'decimal') return false;
+  const asNumber = cell.raw.reduce((n, b) => n * 256 + b, 0);
+  return asNumber === cell.value;
+}
+
 function ValueCell({ cell, revealed }: { cell: Cell | undefined; revealed: boolean }): ReactNode {
   if (!cell || cell.availability === 'not-captured') return NOT_CAPTURED_TEXT;
   if (cell.sensitive && !revealed) return <span className={classes.mono}>{MASKED_TEXT}</span>;
@@ -60,17 +68,26 @@ function ValueCell({ cell, revealed }: { cell: Cell | undefined; revealed: boole
 }
 
 function RawCell({ cell, revealed }: { cell: Cell | undefined; revealed: boolean }): ReactNode {
-  if (!cell || cell.availability === 'not-captured' || !cell.raw) return NOT_CAPTURED_TEXT;
+  if (!cell || cell.availability === 'not-captured') return NOT_CAPTURED_TEXT;
   if (cell.sensitive && !revealed) return MASKED_TEXT;
-  return rawHex(cell.raw);
+  // A decoded value the radio home gave no raw bytes for: empty, not "Not captured" (it was).
+  if (!cell.raw) return '';
+  // Value already prints these bytes in hex: do not say it twice.
+  return valueShowsHex(cell) ? '' : rawHex(cell.raw);
 }
 
 function Confidence({ row }: { row: ValueRow }) {
   if (!row.confidence) return null;
   return (
     <span className={classes.badges}>
-      <ConfidenceBadge value={row.confidence.layout} kind="layout" />
-      <ConfidenceBadge value={row.confidence.meaning} kind="meaning" />
+      <span className={classes.badgeGroup}>
+        <span className={classes.dimInline}>Layout</span>
+        <ConfidenceBadge value={row.confidence.layout} kind="layout" />
+      </span>
+      <span className={classes.badgeGroup}>
+        <span className={classes.dimInline}>Meaning</span>
+        <ConfidenceBadge value={row.confidence.meaning} kind="meaning" />
+      </span>
     </span>
   );
 }

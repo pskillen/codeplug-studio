@@ -9,7 +9,7 @@ import { RT95_MAIN_STOCK_FIRMWARE } from '@core/radios/retevis/rt95/firmware.ts'
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 
 import { RadioInterlockError } from '../../../kit/errors.ts';
-import { sha256HexSync } from '../../uv5r-mini/firmwareUpdate/sha256Sync.ts';
+import { sha256HexSync } from '../../../digest/sha256Sync.ts';
 import {
   RT95_HEAD_FW_LIMIT,
   RT95_HEAD_FW_MODEL_OFFSET,

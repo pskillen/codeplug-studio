@@ -39,7 +39,7 @@ One Memory category in the DM-32 shape, for any radio: a count sentence, a dimme
 
 ## Behaviour
 
-- Wraps itself in `DesignSystemV2Provider` (dark, v2 tokens).
+- Does not wrap itself: the page (or the styleguide layout) supplies `DesignSystemV2Provider` (dark, v2 tokens).
 - Search, sort, the caveat fold and the selected row are local state; the Memory tab remounts per archive and per category.
 - A row that a search hides closes its details.
 - Display only; no write or capture path.

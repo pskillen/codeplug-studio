@@ -76,6 +76,21 @@ function open(slug = 'uv-5r-mini') {
   fireEvent.click(screen.getByRole('tab', { name: 'Backup' }));
   return view;
 }
+describe('dark scope', () => {
+  it('renders the whole page, header and tab bodies, inside a dark .dsv2-scope', () => {
+    render(
+      <MemoryRouter initialEntries={['/debug/radios/uv-5r-mini']}>
+        <Routes>
+          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const scope = document.querySelector('.dsv2-scope[data-mantine-color-scheme="dark"]');
+    expect(scope).not.toBeNull();
+    expect(scope).toContainElement(screen.getByRole('link', { name: /All debug tools/ }));
+    expect(scope).toContainElement(screen.getByRole('tab', { name: 'Backup' }));
+  });
+});
 describe('Mini shared page read', () => {
   it('cancels an in-flight read and reports its failure', async () => {
     fake.run.mockImplementation(
@@ -137,7 +152,8 @@ it('retains a late successful capture after unmount and shows it on return', asy
   await act(async () => finish(syntheticRead(7)));
   await waitFor(() => expect(store.getSnapshot().entries).toHaveLength(1));
   open();
-  expect(screen.getByText(/Reads in this tab:.*Live A/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^A \(/);
   store.clear();
 });
 
@@ -154,13 +170,11 @@ it('selects the live read after opening a legacy ZIP, even after selecting a fil
   expect(input).not.toBeNull();
   fireEvent.change(input!, { target: { files: [file] } });
   expect(await screen.findByText(/Local archive · captured/)).toBeInTheDocument();
-  expect(screen.getByText(/Reads in this tab:/)).toHaveTextContent('File A');
-  expect(screen.getByText(/Reads in this tab:/)).toHaveTextContent('File B');
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
-  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/File B/);
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^B \(/);
   fireEvent.click(screen.getByRole('combobox', { name: 'Read' }));
-  fireEvent.click(screen.getByRole('option', { name: /File A/ }));
-  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/File A/);
+  fireEvent.click(screen.getByRole('option', { name: /^A \(/ }));
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^A \(/);
   fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
   expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
   fireEvent.click(screen.getByRole('combobox', { name: 'Compare B' }));
@@ -170,7 +184,7 @@ it('selects the live read after opening a legacy ZIP, even after selecting a fil
   fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
   await screen.findByText(/Live read · captured/);
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
-  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/Live/);
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^C \(/);
   fireEvent.click(screen.getByRole('tab', { name: 'Compare' }));
   // B was picked explicitly, so the new live read does not move it.
   expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^A ·/);
@@ -181,7 +195,10 @@ it('adds a successful live read to history with its timestamp', async () => {
   fake.run.mockResolvedValueOnce(syntheticRead(4));
   open();
   fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
-  expect(await screen.findByText(/Reads in this tab:.*Live [A-Z]+ \(.+\)/)).toBeInTheDocument();
+  await screen.findByText(/Live read · captured/);
+  fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^[A-Z]+ \(.+\)/);
+  expect(screen.getByText(/UHF PA bias, 400–520 MHz/)).toBeInTheDocument();
 });
 
 function rt95ArchiveFile(kind: 'missing' | 'partial' | 'captured' = 'missing') {
@@ -233,7 +250,7 @@ describe('DM-32UV debug page', () => {
   const history = getDebugReadHistory({ slug: 'dm-32uv', archiveModelId: 'DM-32UV' });
   afterEach(() => act(() => history.clear()));
 
-  it('mounts one Calibration panel from the selected read, with no overlay select', async () => {
+  it('mounts one Calibration panel from the selected read, with the Read and Overlay pickers', async () => {
     const first = await archiveDm32Capture(dm32CalibrationCapture());
     const second = await archiveDm32Capture(
       dm32CalibrationCapture({
@@ -251,12 +268,13 @@ describe('DM-32UV debug page', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
     expect(screen.queryByText('Calibration unavailable')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Calibration overlay')).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Read' })).toBeInTheDocument();
     expect(screen.getByText('Not validated on hardware')).toBeInTheDocument();
     // The newest retained read is selected: its relocated page address shows.
-    expect(screen.getByText('0x00004000')).toBeInTheDocument();
+    expect(screen.getByText(/^0x00004000 · tag 0x02/)).toBeInTheDocument();
     act(() => history.select(firstId));
-    expect(screen.getByText('0x00002000')).toBeInTheDocument();
-    expect(screen.queryByText('0x00004000')).not.toBeInTheDocument();
+    expect(screen.getByText(/^0x00002000 · tag 0x02/)).toBeInTheDocument();
+    expect(screen.queryByText(/^0x00004000 · tag 0x02/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Trace' }));
     expect(screen.getByText('Trace unavailable')).toBeInTheDocument();
   });
@@ -543,7 +561,7 @@ it('keeps the direct RT95 calibration route behind the production debug gate', a
     </DesignSystemV2Provider>,
   );
   fireEvent.click(await screen.findByRole('tab', { name: 'Calibration' }));
-  expect(screen.getByText('Calibration and production record [body]')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Calibration' })).toBeInTheDocument();
   fake.prod = false;
   localStorage.removeItem(DEVELOPER_MODE_KEY);
 });
@@ -653,7 +671,7 @@ it('retains comparison uploads in shared history for other viewers and download 
   await waitFor(() => expect(history.getSnapshot().entries).toHaveLength(2));
   expect(screen.getByRole('combobox', { name: 'Compare B' })).toHaveDisplayValue(/^B ·/);
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
-  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/File B/);
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^B \(/);
   fireEvent.click(screen.getByRole('tab', { name: 'Backup' }));
   fireEvent.click(screen.getByRole('button', { name: 'Download all reads' }));
   await waitFor(() => expect(downloadZip).toHaveBeenCalled());
@@ -661,7 +679,8 @@ it('retains comparison uploads in shared history for other viewers and download 
   expect(openDebugReadHistoryZip(zip, descriptor)).toHaveLength(2);
   page.unmount();
   open();
-  expect(screen.getByText(/Reads in this tab:/)).toHaveTextContent('File B');
+  fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+  expect(screen.getByRole('combobox', { name: 'Read' })).toHaveDisplayValue(/^B \(/);
   act(() => history.clear());
 }, 15000);
 
@@ -1011,9 +1030,9 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
     expect(screen.queryByText('Calibration unavailable')).not.toBeInTheDocument();
-    expect(screen.getAllByText('Calibration overlay').length).toBeGreaterThan(0);
+    expect(screen.getByText('Overlay (optional)')).toBeInTheDocument();
     expect(screen.getAllByText(/not stock factory calibration/i).length).toBeGreaterThan(0);
-    expect(screen.getByText('Unknown bytes')).toBeInTheDocument();
+    expect(screen.getByText(/Never read \(unused\)/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Trace' }));
     expect(screen.getByText('Trace unavailable')).toBeInTheDocument();
     const entry = radioDebugDescriptors.find((d) => d.slug === slug)!;
@@ -1024,18 +1043,35 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     ]);
   });
 
-  it('routes Memory to the OpenGD77 viewer, with contacts, RX groups and the User Database', async () => {
+  // One category per test: each render of the Memory tab is the cost, so no single test carries four.
+  const openMemoryWithCapture = async () => {
+    history.add(await syntheticOpenGd77Archive(modelId));
+    open(slug);
+    fireEvent.click(screen.getByRole('tab', { name: 'Memory' }));
+    await screen.findByRole('combobox', { name: 'Category' });
+  };
+
+  it('routes Memory to the OpenGD77 viewer, with no capture yet', () => {
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Memory' }));
     expect(screen.getAllByText('No capture').length).toBeGreaterThan(0);
-    history.add(await syntheticOpenGd77Archive(modelId));
-    await screen.findByRole('combobox', { name: 'Category' });
-    chooseCategory('Zones');
+  });
+
+  it('shows the OpenGD77 User Database category', async () => {
+    await openMemoryWithCapture();
     chooseCategory('User Database');
     expect(screen.getByText('Valid header')).toBeInTheDocument();
     expect(screen.queryByText('Coming in a later piece')).not.toBeInTheDocument();
+  });
+
+  it('shows the OpenGD77 Contacts category', async () => {
+    await openMemoryWithCapture();
     chooseCategory('Contacts');
     expect(screen.getByText(/contact bank is captured and no slot is in use/)).toBeInTheDocument();
+  });
+
+  it('shows the OpenGD77 RX groups category', async () => {
+    await openMemoryWithCapture();
     chooseCategory('RX groups');
     expect(screen.getByText(/RX group bank is captured and no list is in use/)).toBeInTheDocument();
   });
@@ -1044,7 +1080,7 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     history.add(await syntheticOpenGd77Archive(modelId, { calibration: null }));
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
-    expect(screen.getByText('Calibration not captured')).toBeInTheDocument();
+    expect(screen.getByText(/no calibration working copy/)).toBeInTheDocument();
   });
 
   it('a live read carries the calibration region and shows it', async () => {
@@ -1054,8 +1090,8 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     await screen.findByText(/Live read · captured/, {}, { timeout: 20000 });
     fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
     // Unplanted scripted flash reads 0xFF, so the marker is absent: raw only, no verdicts.
-    expect(screen.getByText(/Marker absent/)).toBeInTheDocument();
-    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+    expect(screen.getByText(/Absent: this is not the layout/)).toBeInTheDocument();
+    expect(screen.getByText('Raw captured bytes')).toBeInTheDocument();
   }, 30000);
 });
 

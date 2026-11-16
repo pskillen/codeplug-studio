@@ -102,6 +102,27 @@ describe('SettingsTable', () => {
     expect(screen.getByText('1A')).toBeInTheDocument();
   });
 
+  it('says Not captured in Address and Raw for an uncaptured row, even a sensitive one', () => {
+    show(
+      view({
+        groups: [
+          {
+            id: 'a',
+            label: 'Group A',
+            rows: [
+              { id: 'a1', label: 'Alpha', value: undefined, confidence: 'unknown' },
+              { id: 'a2', label: 'Lock', value: undefined, confidence: 'unknown', sensitive: true },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(screen.queryByText('Hidden (password)')).toBeNull();
+    fireEvent.click(screen.getByLabelText('Show raw bytes + address'));
+    // Value, Address and Raw of both rows.
+    expect(screen.getAllByText('Not captured')).toHaveLength(6);
+  });
+
   it('hides sensitive rows until revealed and only offers the button when one is sensitive', () => {
     const onToggle = vi.fn();
     const { unmount } = show(view(), false, onToggle);

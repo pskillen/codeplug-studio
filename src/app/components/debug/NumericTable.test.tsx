@@ -39,6 +39,17 @@ describe('NumericTable', () => {
       columns: [{ ...table.columns[0], values: [26, 31] }, table.columns[1]],
     };
     wrap(<NumericTable table={table} overlay={overlay} overlayLabel="B" defaultOpen />);
-    expect(screen.getByText(/B: 0x1F \(31\) · Δread \+2/)).toBeInTheDocument();
+    expect(screen.getByText('B: 0x1F (31)')).toBeInTheDocument();
+    expect(screen.getByText('Δread +2')).toBeInTheDocument();
+  });
+
+  it('prints the overlay line only where it differs, with Δ on its own line', () => {
+    const overlay: NumericTableView = {
+      ...table,
+      columns: [{ ...table.columns[0], values: [26, 31] }, table.columns[1]],
+    };
+    wrap(<NumericTable table={table} overlay={overlay} overlayLabel="B" defaultOpen />);
+    expect(screen.getAllByText(/^B: /)).toHaveLength(1);
+    expect(screen.getByText('Δread +2')).toBeInTheDocument();
   });
 });

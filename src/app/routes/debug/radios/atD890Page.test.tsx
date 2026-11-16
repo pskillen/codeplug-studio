@@ -167,15 +167,17 @@ it('shows one calibration panel that follows archive replacement without connect
   fake.capture.mockClear();
   renderAt('at-d890uv');
   fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
-  expect(screen.getByText('Open or read a capture to view calibration.')).toBeInTheDocument();
+  expect(
+    screen.getByText('Open or read a capture to inspect its calibration.'),
+  ).toBeInTheDocument();
   expect(screen.queryByText('Calibration unavailable')).not.toBeInTheDocument();
   const input = () => document.querySelector('input[type="file"]')!;
   fireEvent.change(input(), { target: { files: [d890Zip('2026-02-01', 1800)] } });
-  expect(await screen.findByText('1800')).toBeInTheDocument();
+  expect((await screen.findAllByText(/\(1800\)/)).length).toBeGreaterThan(0);
   expect(screen.getByText('Not validated on hardware')).toBeInTheDocument();
   fireEvent.change(input(), { target: { files: [d890Zip('2026-02-02', 2200)] } });
-  expect(await screen.findByText('2200')).toBeInTheDocument();
-  expect(screen.queryByText('1800')).not.toBeInTheDocument();
+  expect((await screen.findAllByText(/\(2200\)/)).length).toBeGreaterThan(0);
+  expect(screen.queryByText(/\(1800\)/)).not.toBeInTheDocument();
   fireEvent.change(input(), { target: { files: [d890Zip('2026-02-03', undefined)] } });
   expect(await screen.findByText(/This archive has no live tune unit/)).toBeInTheDocument();
   expect(

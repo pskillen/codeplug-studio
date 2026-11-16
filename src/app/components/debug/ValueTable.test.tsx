@@ -41,6 +41,12 @@ describe('ValueTable', () => {
     expect(screen.getAllByText('inferred').length).toBeGreaterThan(0);
   });
 
+  it('leaves Raw empty for a captured value with no raw bytes; Not captured only where it was', () => {
+    wrap(<ValueTable table={single} />);
+    // Only the "Missing" row: its Value and its Raw cell.
+    expect(screen.getAllByText('Not captured')).toHaveLength(2);
+  });
+
   it('masks sensitive cells until revealed', () => {
     const { unmount } = wrap(<ValueTable table={single} />);
     expect(screen.getAllByText('••').length).toBe(2);
@@ -83,5 +89,33 @@ describe('ValueTable', () => {
     expect(screen.getByText('UHF')).toBeInTheDocument();
     expect(screen.getAllByText('Value')).toHaveLength(2);
     expect(screen.getAllByText('Raw')).toHaveLength(2);
+  });
+
+  it('labels the two confidence pills and does not repeat hex in Raw', () => {
+    const view: ValueTableView = {
+      id: 'h',
+      title: 'Hex',
+      layout: 'single',
+      rows: [
+        {
+          id: 'x',
+          label: 'Byte',
+          cells: [{ value: 26, raw: new Uint8Array([0x1a]), availability: 'captured' }],
+          confidence: { layout: 'traced', meaning: 'traced' },
+        },
+        {
+          id: 'y',
+          label: 'Freq',
+          cells: [
+            { value: 26, raw: new Uint8Array([0x1a]), format: 'decimal', availability: 'captured' },
+          ],
+        },
+      ],
+    };
+    wrap(<ValueTable table={view} />);
+    expect(screen.getAllByText('Layout').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Meaning').length).toBeGreaterThan(0);
+    // 0x1A (26) already shows the byte; the decimal row keeps its raw hex.
+    expect(screen.queryAllByText('1A')).toHaveLength(1);
   });
 });

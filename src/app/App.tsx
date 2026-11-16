@@ -49,6 +49,7 @@ import StyleguideLegacyRedirect from './routes/styleguide/StyleguideLegacyRedire
 import StyleguideIndexPage from './routes/styleguide/StyleguideIndexPage.tsx';
 import StyleguideFormsPage from './routes/styleguide/StyleguideFormsPage.tsx';
 import StyleguideDataDisplayPage from './routes/styleguide/StyleguideDataDisplayPage.tsx';
+import StyleguideDebugPage from './routes/styleguide/StyleguideDebugPage.tsx';
 import StyleguideFeedbackPage from './routes/styleguide/StyleguideFeedbackPage.tsx';
 import StyleguideOverlaysPage from './routes/styleguide/StyleguideOverlaysPage.tsx';
 import StyleguideMembershipPage from './routes/styleguide/StyleguideMembershipPage.tsx';
@@ -114,6 +115,7 @@ export const appRouter = createBrowserRouter([
           { index: true, element: <StyleguideIndexPage /> },
           { path: 'forms', element: <StyleguideFormsPage /> },
           { path: 'data-display', element: <StyleguideDataDisplayPage /> },
+          { path: 'debug', element: <StyleguideDebugPage /> },
           { path: 'feedback', element: <StyleguideFeedbackPage /> },
           { path: 'overlays', element: <StyleguideOverlaysPage /> },
           { path: 'membership', element: <StyleguideMembershipPage /> },

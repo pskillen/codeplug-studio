@@ -3,7 +3,7 @@ import type { AtD890MemberStatus } from '@integrations/radio-io/radios/at-d890uv
 import { getRadioDescriptor } from '@integrations/radio-io/registry.ts';
 import { regionSections } from '@integrations/radio-io/debugCompare/index.ts';
 import type { DebugSensitiveRange } from '@integrations/radio-io/debugSensitive.ts';
-import { radioDebugDescriptors } from './descriptors.ts';
+import { radioDebugDescriptors, type RadioDebugRegionNote } from './descriptors.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
 const archiveIds = new WeakMap<DebugArchive, number>();
@@ -84,6 +84,11 @@ function descriptorFor(archive: DebugArchive) {
 /** Address space and byte representation of a region; the radio's own adapter decides. */
 export function regionIdentity(archive: DebugArchive, id: string) {
   return descriptorFor(archive)?.compare?.regionIdentity?.(archive, id);
+}
+
+/** The radio's own Hex and Compare note for a region (representation, address caveat, tag). */
+export function regionNote(archive: DebugArchive | undefined, id: string): RadioDebugRegionNote {
+  return (archive && descriptorFor(archive)?.regionNote?.(archive, id)) || {};
 }
 
 /** Refuse comparisons whose address space or representation cannot be established. */

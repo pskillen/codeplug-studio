@@ -27,7 +27,7 @@ Exports: `trimPpm(chart, raw)`, `trimValueText(chart, raw)`.
 
 - With `ppm`: a centre-zero ppm scale with a tick per whole ppm over `ppm.span` (else the scale's own reach). ppm = (raw - neutral) x `perStep`; neutral is `scale.neutral`, else the scale's midpoint. Value line `0x0C (12), +2 ppm`.
 - Without `ppm`: a raw-scale bar from `scale.min` to `scale.max`, labelled "ppm scale unknown", with a neutral tick when `scale.neutral` is set. Value line is raw only.
-- A value off the scale draws no marker; `outOfRange` text shows under the display.
+- A value off the scale draws no marker; `outOfRange` text shows under the display, or "Off scale" when the model has none.
 - A missing raw reads "Not captured" and draws no marker.
 - Must render inside `DesignSystemV2Provider` on a debug page.
 

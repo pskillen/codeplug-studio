@@ -15,6 +15,8 @@ export interface CalibrationView {
   tables: readonly ValueTableView[];
   unused?: readonly UnusedRange[];
   hex: readonly HexSource[];
+  /** Runs of identical 16-byte rows in the raw bytes collapse to one line (large erased tails). */
+  collapseRuns?: boolean;
 }
 
 /**
@@ -37,7 +39,12 @@ interface ChartBase {
 }
 export interface FrequencyCurve extends ChartBase {
   kind: 'frequency-curve';
-  x: { label: string; unit: 'MHz' };
+  /**
+   * `unit` is 'MHz' for every frequency curve. It is absent only where the radio has no stated
+   * frequency grid for the table (OpenGD77 stock squelch rows: x is the point index, and the
+   * label says so). Do not omit it where a grid is known.
+   */
+  x: { label: string; unit?: 'MHz' };
   y: { label: string; unit: string; domain?: readonly [number, number] };
   series: readonly {
     id: string;
@@ -56,6 +63,7 @@ export interface StepBars extends ChartBase {
 }
 export interface BatteryLadder extends ChartBase {
   kind: 'battery';
+  /** Lowest step first: the chart reverses them to draw the highest on top. */
   steps: readonly { id: string; label: string; raw: number | undefined; volts?: number }[];
   blank?: string; // "All six read 0xFF: the firmware uses built-in thresholds"
 }
@@ -90,6 +98,8 @@ export interface ValueTableView {
   description?: string;
   /** "single": one Value column. "bands": one Value column per band, rows paired by meaning. */
   layout: 'single' | { bands: readonly string[] };
+  /** Long tables start folded: the title is a disclosure toggle. */
+  folded?: boolean;
   rows: readonly ValueRow[];
 }
 export interface ValueRow {

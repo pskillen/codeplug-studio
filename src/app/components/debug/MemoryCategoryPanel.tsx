@@ -1,7 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import {
   DataTable,
-  DesignSystemV2Provider,
   type DataTableColumn,
   type DataTableSortState,
 } from '@app/components/v2/index.ts';
@@ -84,57 +83,55 @@ export default function MemoryCategoryPanel<T>({
       : caveat
     : [];
   return (
-    <DesignSystemV2Provider>
-      <div className={classes.root}>
-        <p className={classes.summary}>{summary}</p>
-        {caveat && caveat.length > 0 ? (
-          <div className={classes.caveat}>
-            {lines.map((line, i) => (
-              <p key={i} className={classes.caveatLine}>
-                {line}
-              </p>
-            ))}
-            {folds ? (
-              <button
-                type="button"
-                className={classes.more}
-                aria-expanded={open}
-                onClick={() => setOpen((o) => !o)}
-              >
-                {open ? 'Less' : 'More'}
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-        <DataTable
-          caption={caption}
-          columns={columns}
-          rows={shown}
-          getRowId={getRowId}
-          totalRowCount={rows.length}
-          search={{ value: query, onChange: setQuery, placeholder: searchPlaceholder }}
-          sort={sort}
-          onSortChange={setSort}
-          stickyFirstColumn={stickyFirstColumn}
-          mobileIdentity={mobileIdentity}
-          mobileIdentityLabel={mobileIdentityLabel}
-          emptyMessage={emptyMessage}
-          filteredEmptyMessage={`No rows match “${query.trim()}”.`}
-          onRowActivate={
-            details
-              ? (row) => {
-                  const id = getRowId(row);
-                  setSelectedId((cur) => (cur === id ? null : id));
-                }
-              : undefined
-          }
-        />
-        {details && selected !== undefined ? (
-          <div className={classes.details} data-testid="memory-row-details">
-            {details(selected)}
-          </div>
-        ) : null}
-      </div>
-    </DesignSystemV2Provider>
+    <div className={classes.root}>
+      <p className={classes.summary}>{summary}</p>
+      {caveat && caveat.length > 0 ? (
+        <div className={classes.caveat}>
+          {lines.map((line, i) => (
+            <p key={i} className={classes.caveatLine}>
+              {line}
+            </p>
+          ))}
+          {folds ? (
+            <button
+              type="button"
+              className={classes.more}
+              aria-expanded={open}
+              onClick={() => setOpen((o) => !o)}
+            >
+              {open ? 'Less' : 'More'}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      <DataTable
+        caption={caption}
+        columns={columns}
+        rows={shown}
+        getRowId={getRowId}
+        totalRowCount={rows.length}
+        search={{ value: query, onChange: setQuery, placeholder: searchPlaceholder }}
+        sort={sort}
+        onSortChange={setSort}
+        stickyFirstColumn={stickyFirstColumn}
+        mobileIdentity={mobileIdentity}
+        mobileIdentityLabel={mobileIdentityLabel}
+        emptyMessage={emptyMessage}
+        filteredEmptyMessage={`No rows match “${query.trim()}”.`}
+        onRowActivate={
+          details
+            ? (row) => {
+                const id = getRowId(row);
+                setSelectedId((cur) => (cur === id ? null : id));
+              }
+            : undefined
+        }
+      />
+      {details && selected !== undefined ? (
+        <div className={classes.details} data-testid="memory-row-details">
+          {details(selected)}
+        </div>
+      ) : null}
+    </div>
   );
 }

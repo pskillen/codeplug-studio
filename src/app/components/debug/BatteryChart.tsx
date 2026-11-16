@@ -47,13 +47,16 @@ function Column({
                 <span className={classes.missing}>{NOT_CAPTURED_TEXT}</span>
               ) : (
                 <>
-                  <span
-                    className={classes.bar}
-                    style={{
-                      width: `${Math.max(1, (s.raw / fullScale) * 100)}%`,
-                      background: color,
-                    }}
-                  />
+                  <span className={classes.track}>
+                    <span
+                      className={classes.bar}
+                      data-testid="battery-bar"
+                      style={{
+                        width: `${Math.max(1, (s.raw / fullScale) * 100)}%`,
+                        background: color,
+                      }}
+                    />
+                  </span>
                   <span className={classes.value}>
                     {formatHexDec(s.raw)}
                     {s.volts === undefined ? '' : `, ${formatDecimal(s.volts, 'V')}`}

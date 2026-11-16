@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Read-only OpenGD77 (DM-1701, MD-9600) Memory viewer: channels, zones, contacts, RX groups, the User Database decoded from the open debug archive's captured FLASH spans, without a project, library or build. Settings are the page-level Settings tab ([OpenGd77Settings](OpenGd77Settings.md)), not an inner tab.
+Read-only OpenGD77 (DM-1701, MD-9600) Memory viewer: channels, zones, contacts, RX groups, the User Database decoded from the open debug archive's captured FLASH spans, without a project, library or build. Settings are the page-level Settings tab ([SettingsTab](SettingsTab.md), view built by `opengd77/debugSettingsView.ts` from `debugSettings.ts`: the firmware struct at `0x604B` is decoded only after its magic `0x4780` checks, a wrong or missing magic shows as a reason under the Firmware settings group with no field named, a member not wholly captured reads Not captured or Partly captured, and the codeplug `prgPwd` and boot PIN rows are sensitive and hidden until **Show password**; Hex masks the same bytes), not an inner tab.
 
 ## Props
 
@@ -15,6 +15,8 @@ Read-only OpenGD77 (DM-1701, MD-9600) Memory viewer: channels, zones, contacts, 
 Set as the `Memory` component on both OpenGD77 descriptors; `RadioDebugPage` mounts it in the Memory tab, keyed by the selected read so replacing the archive remounts it. It sits under the design-system v2 provider.
 
 ## Behaviour
+
+Channels and Zones are drawn by the shared [MemoryCategoryPanel](../../../components/debug/MemoryCategoryPanel.md) (click a zone for its members below the table); sentences come from `opengd77/debugMemoryText.ts`. Contacts, RX groups and the User Database keep their own panels.
 
 Its categories (Channels, Zones, Contacts, RX groups, User Database) are chosen from the shared [MemoryCategories](../../../components/debug/MemoryCategories.md) dropdown, not inner tabs.
 

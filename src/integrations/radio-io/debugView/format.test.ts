@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { formatDecimal, formatHex, formatHexDec, formatNumber, NOT_CAPTURED } from './format.ts';
+import {
+  formatDecimal,
+  formatHex,
+  formatHexDec,
+  formatNumber,
+  NOT_CAPTURED_TEXT,
+} from './format.ts';
 
 describe('debugView format', () => {
   it('pads hex to the byte width', () => {
@@ -23,6 +29,6 @@ describe('debugView format', () => {
     expect(formatNumber(26, 'hex-dec')).toBe('0x1A (26)');
     expect(formatNumber(26, 'hex')).toBe('0x1A');
     expect(formatNumber(26, 'decimal', 1, 'V')).toBe('26 V');
-    expect(formatNumber(undefined, 'hex-dec')).toBe(NOT_CAPTURED);
+    expect(formatNumber(undefined, 'hex-dec')).toBe(NOT_CAPTURED_TEXT);
   });
 });

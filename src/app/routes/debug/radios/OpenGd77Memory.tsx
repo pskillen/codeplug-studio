@@ -1,11 +1,19 @@
 import { Alert, Stack, Text, Title } from '@mantine/core';
-import { MemoryCategories } from '@app/components/debug/index.ts';
-import { useMemo, useState } from 'react';
+import { MemoryCategories, MemoryCategoryPanel } from '@app/components/debug/index.ts';
+import { useMemo } from 'react';
+import { DataTable, type DataTableColumn } from '@app/components/v2/index.ts';
 import {
-  DataTable,
-  type DataTableColumn,
-  type DataTableSortState,
-} from '@app/components/v2/index.ts';
+  OPENGD77_CHANNEL_CAVEAT,
+  OPENGD77_CHANNELS_EMPTY,
+  OPENGD77_MEMORY_INTRO,
+  OPENGD77_ZONE_CAVEAT,
+  OPENGD77_ZONES_EMPTY,
+  OPENGD77_ZONES_UNAVAILABLE,
+  opengd77BankMissingText,
+  opengd77ChannelSummary,
+  opengd77RefusedTitle,
+  opengd77ZoneSummary,
+} from '@integrations/radio-io/radios/opengd77/debugMemoryText.ts';
 import type { RadioChannelDto, RadioTone } from '@integrations/radio-io/radioChannelDto.ts';
 import {
   projectOpenGd77Memory,
@@ -22,7 +30,6 @@ import type { DebugArchive } from './captureArchive.ts';
 const NOT_CAPTURED = 'Not captured';
 const DASH = '—';
 
-const count = (n: number) => n.toLocaleString('en-GB');
 const mhz = (hz: number) => (hz / 1e6).toFixed(5);
 
 function formatTone(tone: RadioTone): string {
@@ -44,11 +51,6 @@ const MEMBER_EXPLANATION: Record<OpenGd77MemberStatus, string> = {
   'empty-record': 'Unreadable: the slot is marked occupied but its record is empty',
   'not-captured': 'Not captured: the bank holding this channel was not captured',
   'out-of-range': 'Out of range: beyond the 1024 channel slots',
-};
-
-const matches = (query: string, ...haystack: string[]) => {
-  const q = query.trim().toLocaleLowerCase();
-  return !q || haystack.some((h) => h.toLocaleLowerCase().includes(q));
 };
 
 interface ChannelRow {
@@ -187,47 +189,38 @@ const channelColumns: DataTableColumn<ChannelRow>[] = [
 ];
 
 function ChannelsPanel({ channels }: { channels: OpenGd77MemoryInventory['channels'] }) {
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
   const rows = useMemo(() => channels.entries.map(channelRow), [channels]);
-  const shown = rows.filter((r) =>
-    matches(
-      query,
-      String(r.slot),
-      r.label,
-      r.channel ? `${mhz(r.channel.rxHz)} ${mhz(r.channel.txHz)}` : '',
-      r.channel?.mode ? MODE_LABEL[r.channel.mode] : '',
-    ),
-  );
   const missing = channels.banks.filter((b) => b.status === 'not-captured');
   return (
     <Stack gap="sm">
-      <Text>
-        Occupied {count(channels.occupied)} · empty {count(channels.emptySlots)} · not captured{' '}
-        {count(channels.notCapturedSlots)} · decoded {count(channels.decoded)} · capacity{' '}
-        {count(channels.capacity)} binary slots
-      </Text>
-      <Text size="sm" c="dimmed">
-        Each name is the radio&apos;s single name field, shown complete; OpenGD77 channel records
-        carry no separate callsign. Power is the radio&apos;s ladder step as a percentage of its
-        range, not watts. TX contact and RX group are unresolved numbers: they are not resolved
-        against the Contacts and RX groups tabs. Slots keep their one-based radio numbers.
-      </Text>
       {missing.map((b) => (
         <Alert key={b.bank} color="yellow" title={NOT_CAPTURED}>
-          Bank {b.bank}, slots {b.firstSlot} to {b.lastSlot}: not captured. This does not mean the
-          slots are empty.
+          {opengd77BankMissingText(b.bank, b.firstSlot, b.lastSlot)}
         </Alert>
       ))}
-      <DataTable
+      <MemoryCategoryPanel
+        summary={opengd77ChannelSummary({
+          occupied: channels.occupied,
+          empty: channels.emptySlots,
+          notCaptured: channels.notCapturedSlots,
+          decoded: channels.decoded,
+          capacity: channels.capacity,
+        })}
+        caveat={OPENGD77_CHANNEL_CAVEAT}
+        searchPlaceholder="Search channels"
         caption="OpenGD77 memory channels"
         columns={channelColumns}
-        rows={shown}
+        rows={rows}
         getRowId={(r) => r.id}
-        totalRowCount={rows.length}
-        search={{ value: query, onChange: setQuery, placeholder: 'Search channels' }}
-        sort={sort}
-        onSortChange={setSort}
+        searchText={(r) =>
+          [
+            r.slot,
+            r.label,
+            r.channel ? `${mhz(r.channel.rxHz)} ${mhz(r.channel.txHz)}` : '',
+            r.channel?.mode ? MODE_LABEL[r.channel.mode] : '',
+          ].join(' ')
+        }
+        defaultSort={{ key: 'slot', direction: 'asc' }}
         stickyFirstColumn
         mobileIdentity={(r) => (
           <span>
@@ -235,8 +228,7 @@ function ChannelsPanel({ channels }: { channels: OpenGd77MemoryInventory['channe
           </span>
         )}
         mobileIdentityLabel="Slot · name"
-        emptyMessage="No occupied channel slot in the captured banks."
-        filteredEmptyMessage={`No channels match “${query.trim()}”.`}
+        emptyMessage={OPENGD77_CHANNELS_EMPTY}
       />
     </Stack>
   );
@@ -310,62 +302,47 @@ const zoneColumns: DataTableColumn<ZoneRow>[] = [
   },
 ];
 
+function ZoneMembers({ zone }: { zone: OpenGd77ZoneEntry }) {
+  return (
+    <Stack gap="xs" aria-label={`Zone ${zone.slot} members`} role="region">
+      <Title order={4}>
+        Zone {zone.slot} · {zone.name ?? 'Unnamed zone'}
+      </Title>
+      <DataTable
+        caption={`Zone ${zone.slot} members`}
+        variant="embedded"
+        columns={MEMBER_COLUMNS}
+        rows={zone.members.map((member) => ({ id: `member-${member.position}`, member }))}
+        getRowId={(r) => r.id}
+        emptyMessage="This zone has no members."
+      />
+    </Stack>
+  );
+}
+
 function ZonesPanel({ zones }: { zones: OpenGd77MemoryInventory['zones'] }) {
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'slot', direction: 'asc' });
-  const [selectedSlot, setSelectedSlot] = useState<number>();
   const rows = useMemo(() => zones.entries.map(zoneRow), [zones]);
   if (zones.status !== 'captured')
     return (
       <Alert title={NOT_CAPTURED} color="yellow">
-        The zone bank was not completely captured, so no zone list can be shown. This does not mean
-        the radio has no zones.
+        {OPENGD77_ZONES_UNAVAILABLE}
       </Alert>
     );
-  const selected = zones.entries.find((z) => z.slot === selectedSlot);
-  const shown = rows.filter((r) => matches(query, String(r.slot), r.label));
+  const byId = new Map(zones.entries.map((z) => [`zone-${z.slot}`, z]));
   return (
-    <Stack gap="sm">
-      <Text>
-        {count(zones.entries.length)} of {count(zones.capacity)} zone slots in use
-      </Text>
-      <Text size="sm" c="dimmed">
-        Members are shown in radio order, duplicates included. Each member is a one-based channel
-        number. OpenGD77 uses a zone as its scan list.
-      </Text>
-      <DataTable
-        caption="OpenGD77 zones"
-        columns={zoneColumns}
-        rows={shown}
-        getRowId={(r) => r.id}
-        totalRowCount={rows.length}
-        search={{ value: query, onChange: setQuery, placeholder: 'Search zones' }}
-        sort={sort}
-        onSortChange={setSort}
-        onRowActivate={(r) => setSelectedSlot(r.slot)}
-        emptyMessage="The zone bank is captured and no zone is in use."
-        filteredEmptyMessage={`No zones match “${query.trim()}”.`}
-      />
-      {selected ? (
-        <Stack gap="xs" aria-label={`Zone ${selected.slot} members`} role="region">
-          <Title order={4}>
-            Zone {selected.slot} · {selected.name ?? 'Unnamed zone'}
-          </Title>
-          <DataTable
-            caption={`Zone ${selected.slot} members`}
-            variant="embedded"
-            columns={MEMBER_COLUMNS}
-            rows={selected.members.map((member) => ({ id: `member-${member.position}`, member }))}
-            getRowId={(r) => r.id}
-            emptyMessage="This zone has no members."
-          />
-        </Stack>
-      ) : (
-        <Text size="sm" c="dimmed">
-          Select a zone to see its members.
-        </Text>
-      )}
-    </Stack>
+    <MemoryCategoryPanel
+      summary={opengd77ZoneSummary(zones.entries.length, zones.capacity)}
+      caveat={OPENGD77_ZONE_CAVEAT}
+      searchPlaceholder="Search zones"
+      caption="OpenGD77 zones"
+      columns={zoneColumns}
+      rows={rows}
+      getRowId={(r) => r.id}
+      searchText={(r) => `${r.slot} ${r.label}`}
+      defaultSort={{ key: 'slot', direction: 'asc' }}
+      details={(r) => <ZoneMembers zone={byId.get(r.id)!} />}
+      emptyMessage={OPENGD77_ZONES_EMPTY}
+    />
   );
 }
 
@@ -399,11 +376,10 @@ function OpenGd77MemoryLoaded({ archive }: { archive: DebugArchive }) {
     <Stack>
       <Title order={3}>Memory</Title>
       <Text size="sm" c="dimmed">
-        Read-only inventory decoded from the captured FLASH spans · radio slot order preserved.
-        Nothing is imported into a library or build.
+        {OPENGD77_MEMORY_INTRO}
       </Text>
       {projection.refused.length > 0 && (
-        <Alert color="yellow" title={`${projection.refused.length} entries refused`}>
+        <Alert color="yellow" title={opengd77RefusedTitle(projection.refused.length)}>
           {projection.refused.map((r) => (
             <Text size="sm" key={r.id}>
               {r.id}: {r.reason}
