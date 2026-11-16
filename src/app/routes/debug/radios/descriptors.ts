@@ -20,6 +20,7 @@ import { Rt95Calibration } from './Rt95Calibration.tsx';
 import { Rt95CompareDecoded } from './Rt95CompareDecoded.tsx';
 import { Uv5rMiniCompareDecoded } from './Uv5rMiniCompareDecoded.tsx';
 import { atD890CompareAdapter } from './atD890Compare.ts';
+import { atD890DecodedSnapshot } from './atD890DecodedDiff.ts';
 import type { DebugCompareAdapter } from '@integrations/radio-io/debugCompare/index.ts';
 import { dm32CompareAdapter } from '@integrations/radio-io/radios/dm32uv/debugCompare.ts';
 import { openGd77CompareAdapter } from '@integrations/radio-io/radios/opengd77/debugCompare.ts';
@@ -145,7 +146,8 @@ const OPENGD77_CAPTURE_OPTIONS: readonly RadioDebugCaptureOption[] = [
 export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
     slug: 'at-d890uv',
-    compare: atD890CompareAdapter,
+    // Hooked here, not in atD890Compare.ts: the snapshot's imports reach back into this module.
+    compare: { ...atD890CompareAdapter, decoded: atD890DecodedSnapshot },
     Memory: AtD890Memory,
     Settings: AtD890Settings,
     Calibration: AtD890Calibration,
