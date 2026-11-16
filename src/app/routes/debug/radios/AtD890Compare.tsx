@@ -1,15 +1,8 @@
-import { Alert, Badge, Button, Group, Select, Stack, Text, Title } from '@mantine/core';
+import { Alert, Badge, Button, Group, Stack, Text, Title } from '@mantine/core';
 import { useMemo, useState } from 'react';
-import type { DebugDecodedDiffProps } from './descriptors.ts';
+import type { DebugCompareExtraProps } from './descriptors.ts';
 import { compareAtD890, type AtD890UnitVerdict } from './atD890Compare.ts';
 import type { AtD890ReadRange } from './atD890Provenance.ts';
-import {
-  AT_D890_DIFF_DOMAIN_LABELS,
-  diffAtD890Decoded,
-  type AtD890DiffDomain,
-} from './atD890DecodedDiff.ts';
-import { SensitiveRevealButton } from './SensitiveReveal.tsx';
-import { useSensitiveReveal } from './useSensitiveReveal.ts';
 import { formatAddress } from './viewerUtils.ts';
 
 const PAGE_SIZE = 30;
@@ -82,7 +75,7 @@ function claim(range?: AtD890ReadRange): string {
   return `${requested} · responding unit: ${responding} · ${repeat}`;
 }
 
-function Captures({ first, second }: DebugDecodedDiffProps) {
+function Captures({ first, second }: DebugCompareExtraProps) {
   return (
     <Text size="sm">
       First capture: {first.manifest.capturedAt} · second capture: {second.manifest.capturedAt}
@@ -90,140 +83,16 @@ function Captures({ first, second }: DebugDecodedDiffProps) {
   );
 }
 
-function DecodedChanges({
-  first,
-  second,
-  revealed,
-  onToggleReveal,
-}: DebugDecodedDiffProps & { revealed: boolean; onToggleReveal: () => void }) {
-  const diff = useMemo(() => diffAtD890Decoded(first, second), [first, second]);
-  const [domain, setDomain] = useState<string | null>(null);
-  const rows = useMemo(
-    () => (diff?.rows ?? []).filter((r) => !domain || r.domain === domain),
-    [diff, domain],
-  );
-  const paged = usePaged(rows);
-  if (!diff) return null;
-  return (
-    <Stack>
-      <Title order={4}>Decoded differences</Title>
-      <Text size="sm">
-        Records are matched by radio slot; settings and calibration by field. A value or record that
-        was not captured is unavailable, not zero and not deleted. Additions and removals are shown
-        only when both captures have their occupancy bitmap.
-      </Text>
-      {diff.domains
-        .filter((d) => d.uncapturedBoth > 0)
-        .map((d) => (
-          <Text size="sm" key={`unc-${d.domain}`}>
-            {AT_D890_DIFF_DOMAIN_LABELS[d.domain]}: {d.uncapturedBoth} matched entries were not
-            captured in either capture and are not listed.
-          </Text>
-        ))}
-      {diff.domains
-        .filter((d) => d.note || !d.occupancyComparable)
-        .map((d) => (
-          <Text size="sm" key={d.domain}>
-            {AT_D890_DIFF_DOMAIN_LABELS[d.domain]}:{' '}
-            {d.note ??
-              'occupancy not captured on both sides; additions and removals are not reported.'}
-          </Text>
-        ))}
-      <Select
-        label="Show domain"
-        clearable
-        value={domain}
-        onChange={(v) => {
-          setDomain(v);
-          paged.setPage(0);
-        }}
-        data={(Object.keys(AT_D890_DIFF_DOMAIN_LABELS) as AtD890DiffDomain[]).map((d) => ({
-          value: d,
-          label: AT_D890_DIFF_DOMAIN_LABELS[d],
-        }))}
-      />
-      {rows.some((r) => r.sensitive) && (
-        <Group gap="xs">
-          <Text size="sm">
-            Password values are {revealed ? 'shown' : 'hidden'} in the decoded differences.
-          </Text>
-          <SensitiveRevealButton revealed={revealed} onToggle={onToggleReveal} />
-        </Group>
-      )}
-      {!rows.length && <Text>No decoded differences found in the captured data.</Text>}
-      {paged.slice.map((row) => (
-        <div key={`${row.domain}:${row.key}`} role="group" aria-label={`${row.domain} ${row.key}`}>
-          <Text fw={600}>
-            {AT_D890_DIFF_DOMAIN_LABELS[row.domain]} · {row.key}
-            {row.label ? ` · ${row.label}` : ''} ·{' '}
-            {row.kind === 'incomparable' ? 'not comparable' : row.kind}
-          </Text>
-          {row.note && <Text size="sm">{row.note}</Text>}
-          {row.sensitive && !revealed && (
-            <Text size="sm">
-              {row.changes.length ? 'Password changed (values hidden)' : 'Password not comparable'}
-            </Text>
-          )}
-          {(!row.sensitive || revealed) &&
-            row.changes.map((c) => (
-              <Text size="sm" key={c.field}>
-                {c.field}: {c.before} → {c.after}
-              </Text>
-            ))}
-          {row.caveats.map((c) => (
-            <Text size="sm" c="dimmed" key={c}>
-              Caveat: {c}
-            </Text>
-          ))}
-          {row.unavailable.length > 0 && (!row.sensitive || revealed) && (
-            <details>
-              <summary>
-                Not captured on at least one side ({row.unavailable.length}):{' '}
-                {row.unavailable
-                  .slice(0, 3)
-                  .map((u) => u.field)
-                  .join(', ')}
-                {row.unavailable.length > 3 ? ', …' : ''}
-              </summary>
-              {row.unavailable.map((u) => (
-                <Text size="sm" c="dimmed" key={u.field}>
-                  {u.field}: first {u.before ?? 'not captured'} · second {u.after ?? 'not captured'}
-                </Text>
-              ))}
-            </details>
-          )}
-        </div>
-      ))}
-      <Pager page={paged.page} pages={paged.pages} onPage={paged.setPage} label="Decoded" />
-    </Stack>
-  );
-}
-
 /**
  * What the D890 adds to the shared compare: the acquisition claims per range, the responding-unit
- * verdict, the provenance divergence and the decoded changes. The byte summary and hex diff
- * (password bytes masked there) come from the shared `RadioCompare`.
+ * verdict and the provenance divergence. The byte summary, hex diff (password bytes masked there)
+ * and decoded changes come from the shared `RadioCompare`.
  */
-export function AtD890Compare({ first, second }: DebugDecodedDiffProps) {
+export function AtD890Compare({ first, second }: DebugCompareExtraProps) {
   const spans = useMemo(() => compareAtD890(first, second), [first, second]);
   const spanPages = usePaged(spans ?? []);
-  const reveal = useSensitiveReveal(first);
-  if (!spans)
-    return (
-      <Stack>
-        <Alert title="Provenance unavailable">
-          The acquisition claim is missing, malformed or inconsistent with stored regions. Byte
-          comparison is refused; decoded differences below do not make those bytes trusted.
-        </Alert>
-        <Captures first={first} second={second} />
-        <DecodedChanges
-          first={first}
-          second={second}
-          revealed={reveal.revealed}
-          onToggleReveal={reveal.toggle}
-        />
-      </Stack>
-    );
+  // The shared view already says the claim is missing or invalid; nothing more to add.
+  if (!spans) return null;
   const diverged = spans.filter((s) => s.provenanceDiffers.length > 0);
   return (
     <Stack>
@@ -276,12 +145,6 @@ export function AtD890Compare({ first, second }: DebugDecodedDiffProps) {
       {diverged.length > PAGE_SIZE && (
         <Text size="sm">{diverged.length - PAGE_SIZE} more ranges with differing claims.</Text>
       )}
-      <DecodedChanges
-        first={first}
-        second={second}
-        revealed={reveal.revealed}
-        onToggleReveal={reveal.toggle}
-      />
     </Stack>
   );
 }

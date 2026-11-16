@@ -35,6 +35,7 @@ export function RadioCompare({
   const pairKey = a && b ? `${archiveKey(a)}:${archiveKey(b)}` : '';
   const revealed = revealedFor === pairKey;
 
+  const Extra = descriptor.CompareExtra;
   const comparison = useMemo(
     () => (a && b && descriptor.compare ? descriptor.compare.sections(a, b) : undefined),
     [a, b, descriptor],
@@ -42,16 +43,25 @@ export function RadioCompare({
   // Re-run with the values when Show password is on; counts and kinds do not depend on it.
   const decoded = useMemo(() => {
     const adapter = descriptor.compare;
-    // A descriptor with its own DecodedDiff (D890, OpenGD77) keeps it until it is removed there.
-    if (!a || !b || !adapter?.decoded || descriptor.DecodedDiff) return undefined;
+    if (!a || !b || !adapter?.decoded) return undefined;
     return diffDecoded(adapter.decoded(a), adapter.decoded(b), { revealSensitive: revealed });
   }, [a, b, descriptor, revealed]);
-  if (!a || !b) return <Text>Choose two different reads to compare.</Text>;
+  // The picker above already says why (fewer than two reads, or the same read on both sides).
+  if (!a || !b) return null;
   const jumpCategory = (id: string) => {
     setCategory(id);
     setOnlyChanges(true);
     setTimeout(() => scrollToPageSection(DECODED_SECTION_ID), 0);
   };
+  // Limits copy from the adapter, once, collapsed.
+  const notes = descriptor.compare?.notes?.map((note) => (
+    <Alert key={note.title} variant="light" title={note.title}>
+      <details>
+        <summary>Show details</summary>
+        {note.text}
+      </details>
+    </Alert>
+  ));
   const decodedView = decoded && (
     <div id={DECODED_SECTION_ID}>
       <DecodedDiffView
@@ -75,7 +85,7 @@ export function RadioCompare({
         </Alert>
         {/* Decoded changes do not depend on the byte compare (the D890 shows them without its sidecar). */}
         {decodedView}
-        {!decoded && descriptor.DecodedDiff && <descriptor.DecodedDiff first={a} second={b} />}
+        {Extra && <Extra first={a} second={b} />}
       </Stack>
     );
 
@@ -85,7 +95,6 @@ export function RadioCompare({
   const rangesA = section ? sensitiveRanges(a, section.regionId ?? section.id) : [];
   const rangesB = section ? sensitiveRanges(b, section.regionId ?? section.id) : [];
   const onlyChanged = section ? (filter[section.id] ?? section.changed > 0) : false;
-  const Decoded = decoded ? undefined : descriptor.DecodedDiff;
 
   const jump = (id: string) => {
     setSelected(id);
@@ -95,6 +104,7 @@ export function RadioCompare({
 
   return (
     <Stack>
+      {notes}
       <CompareSummary
         comparison={comparison}
         onJump={jump}
@@ -140,7 +150,7 @@ export function RadioCompare({
         </Stack>
       )}
       {decodedView}
-      {Decoded && <Decoded first={a} second={b} />}
+      {Extra && <Extra first={a} second={b} />}
     </Stack>
   );
 }

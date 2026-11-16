@@ -6,12 +6,12 @@ The verdict banner and per-region table at the top of a radio debug page's Compa
 
 ## Props
 
-| Prop             | Meaning                                                                   |
-| ---------------- | ------------------------------------------------------------------------- |
-| `comparison`     | The adapter's `ByteComparison` (sections and any whole-pair error).       |
-| `onJump`         | Called with a section id when its row (or its name button) is chosen.     |
-| `decoded`        | Optional `DecodedDiff`: adds **Fields by category** and the field counts. |
-| `onJumpCategory` | Called with a domain id when its category row is chosen.                  |
+| Prop             | Meaning                                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `comparison`     | The adapter's `ByteComparison` (sections and any whole-pair error).                                                                        |
+| `onJump`         | Called with a section id when its row (or its name button) is chosen.                                                                      |
+| `decoded`        | Optional `DecodedDiff`: adds **Fields by category** and the field counts; a category not captured on a side reads _not captured_, never 0. |
+| `onJumpCategory` | Called with a domain id when its category row is chosen.                                                                                   |
 
 ## Behaviour
 

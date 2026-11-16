@@ -131,6 +131,11 @@ export interface DomainDiffSummary {
   incomparable: number;
   /** True when both captures say which records exist, so added and removed are meaningful. */
   occupancyCompared: boolean;
+  /**
+   * Nothing of this category was captured on at least one side (the domain is missing there, or
+   * lists no records and no occupancy). Its counts are not zero; they are unknown.
+   */
+  unavailable: boolean;
   note?: string;
 }
 

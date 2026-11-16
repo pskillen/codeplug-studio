@@ -41,6 +41,10 @@ describe('Compare picker on every radio with a capture', () => {
     it(`${descriptor.slug}: asks for a second read when there is only one`, () => {
       open(descriptor.slug);
       expect(screen.getByText('Read or open a second capture to compare.')).toBeInTheDocument();
+      // One message, not a second one from the compare body.
+      expect(screen.queryByText(/Choose two different reads/)).toBeNull();
+      expect(screen.queryByText('Compare unavailable')).toBeNull();
+      expect(screen.getAllByRole('alert')).toHaveLength(1);
     });
 
     it(`${descriptor.slug}: defaults to previous vs latest, swaps, and a pick survives a new read`, () => {
@@ -84,6 +88,7 @@ describe('Compare picker on every radio with a capture', () => {
     store.setComparePair({ a: one!.id, b: one!.id });
     open('dm-32uv');
     expect(screen.getByText('Same read on both sides')).toBeInTheDocument();
-    expect(screen.getByText('Choose two different reads to compare.')).toBeInTheDocument();
+    expect(screen.queryByText('Choose two different reads to compare.')).toBeNull();
+    expect(screen.queryByText('A and B differ')).toBeNull();
   });
 });

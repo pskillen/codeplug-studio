@@ -2,7 +2,6 @@ import type { ComponentType } from 'react';
 import { OPENGD77_SETTINGS_GAP_LENGTH } from '@integrations/radio-io/radios/opengd77/constants.ts';
 import { Dm32Calibration } from './Dm32Calibration.tsx';
 import { OpenGd77Calibration } from './OpenGd77Calibration.tsx';
-import { OpenGd77DecodedDiff } from './OpenGd77DecodedDiff.tsx';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
 import { OpenGd77Settings } from './OpenGd77Settings.tsx';
 import { AtD890Memory } from './AtD890Memory.tsx';
@@ -42,7 +41,7 @@ import { rt95ArchiveSensitiveRanges } from '@integrations/radio-io/radios/rt95/d
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
 
 export type DebugCalibrationProps = { archive?: DebugArchive; overlayArchive?: DebugArchive };
-export type DebugDecodedDiffProps = { first: DebugArchive; second: DebugArchive };
+export type DebugCompareExtraProps = { first: DebugArchive; second: DebugArchive };
 
 /** Options a capture takes, by option id; unticked options are `false` or absent. */
 export type RadioDebugCaptureOptions = Readonly<Record<string, boolean>>;
@@ -71,7 +70,8 @@ export interface RadioDebugDescriptor {
   /** The `stage` labels a Read goes through, in order; shown as "Stage i of n" beside the progress bar. */
   captureStages?: readonly string[];
   Calibration?: ComponentType<DebugCalibrationProps>;
-  DecodedDiff?: ComponentType<DebugDecodedDiffProps>;
+  /** Extra panel under the shared compare for what only this radio has (D890 acquisition claims). */
+  CompareExtra?: ComponentType<DebugCompareExtraProps>;
   /** Byte compare for this radio: sections, region identity and limits notes. Radio-home code. */
   compare?: DebugCompareAdapter;
   /** A profile's own Memory viewer; without one the generic Memory viewer is used. */
@@ -148,7 +148,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Memory: AtD890Memory,
     Settings: AtD890Settings,
     Calibration: AtD890Calibration,
-    DecodedDiff: AtD890Compare,
+    CompareExtra: AtD890Compare,
     readHistory: true,
     capture: captureAtD890,
     sensitiveRanges: atD890ArchiveSensitiveRanges,
@@ -183,7 +183,6 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     slug: 'dm-1701-opengd77',
     compare: openGd77CompareAdapter,
     Calibration: OpenGd77Calibration,
-    DecodedDiff: OpenGd77DecodedDiff,
     Memory: OpenGd77Memory,
     Settings: OpenGd77Settings,
     readHistory: true,
@@ -202,7 +201,6 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     slug: 'md-9600-opengd77',
     compare: openGd77CompareAdapter,
     Calibration: OpenGd77Calibration,
-    DecodedDiff: OpenGd77DecodedDiff,
     Memory: OpenGd77Memory,
     Settings: OpenGd77Settings,
     readHistory: true,
