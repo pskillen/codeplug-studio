@@ -52,6 +52,7 @@ vi.mock('../../services/firmwareFlash.ts', async (importOriginal) => ({
   runFirmwarePreflightProbe: vi.fn(),
   grantFirmwareSafetyBackupPort: vi.fn(),
   runFirmwareSafetyBackup: vi.fn(),
+  findFirmwareSafetyBackupRecord: vi.fn(() => null),
   grantFirmwareRadioReportPort: vi.fn(),
   readFirmwareRadioReport: vi.fn(),
   recordFirmwareSafetyBackupSaved: vi.fn(() => true),
@@ -495,6 +496,9 @@ describe('FirmwareFlasherPage', () => {
       preflight: { attestations: [], probe: undefined, safetyBackup: SAFETY },
     } as unknown as typeof DM32;
     const BUTTON = 'Check / take safety backup';
+    beforeEach(() => {
+      vi.mocked(flash.findFirmwareSafetyBackupRecord).mockReset().mockReturnValue(null);
+    });
 
     async function walk(descriptor: typeof DM32 = WITH) {
       vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([descriptor]);
@@ -521,19 +525,64 @@ describe('FirmwareFlasherPage', () => {
       expect(continueButton()).toBeDisabled();
     });
 
-    it('already saved enables Continue', async () => {
-      vi.mocked(flash.runFirmwareSafetyBackup).mockResolvedValue({
+    it('a recorded serial passes the step with no radio I/O', async () => {
+      vi.mocked(flash.findFirmwareSafetyBackupRecord).mockImplementation((_r, serial) =>
+        serial.trim().toUpperCase() === 'AB 1'
+          ? { radioKey: 'AB 1', fileName: 'cal-AB1.zip', fingerprint: '1a2b3c4d' }
+          : null,
+      );
+      await walk();
+      expect(continueButton()).toBeDisabled();
+      typeSerial('ab 1');
+      expect(await screen.findByText(/already saved/)).toBeInTheDocument();
+      expect(continueButton()).not.toBeDisabled();
+      expect(flash.grantFirmwareSafetyBackupPort).not.toHaveBeenCalled();
+      expect(flash.runFirmwareSafetyBackup).not.toHaveBeenCalled();
+    });
+
+    it('a picked backup file for the typed serial completes the step with no radio I/O', async () => {
+      vi.mocked(flash.recordFirmwareSafetyBackupFile).mockResolvedValue({
         ok: true,
-        outcome: { kind: 'already-saved', radioKey: 'AB 1', summary: 'RT V100' },
+        recorded: true,
+        info: {
+          radioKey: 'AB 1',
+          region: 'cal',
+          fileName: 'cal-AB1.zip',
+          sha256: 'aa',
+          fingerprint: '1a2b3c4d',
+          summary: 's',
+        },
       });
       await walk();
-      typeSerial('ab 1');
-      fireEvent.click(screen.getByRole('button', { name: BUTTON }));
+      typeSerial('AB 1');
+      fireEvent.change(screen.getByTestId('safety-backup-file'), {
+        target: { files: [new File(['x'], 'cal-AB1.zip')] },
+      });
       expect(await screen.findByText(/already saved/)).toBeInTheDocument();
-      expect(flash.runFirmwareSafetyBackup).toHaveBeenCalledWith(
-        expect.objectContaining({ serial: 'ab 1' }),
-      );
       expect(continueButton()).not.toBeDisabled();
+      expect(flash.runFirmwareSafetyBackup).not.toHaveBeenCalled();
+    });
+
+    it('a picked backup file for another serial does not complete the step', async () => {
+      vi.mocked(flash.recordFirmwareSafetyBackupFile).mockResolvedValue({
+        ok: true,
+        recorded: true,
+        info: {
+          radioKey: 'ZZ 9',
+          region: 'cal',
+          fileName: 'cal-ZZ9.zip',
+          sha256: 'aa',
+          fingerprint: '1a2b3c4d',
+          summary: 's',
+        },
+      });
+      await walk();
+      typeSerial('AB 1');
+      fireEvent.change(screen.getByTestId('safety-backup-file'), {
+        target: { files: [new File(['x'], 'cal-ZZ9.zip')] },
+      });
+      expect(await screen.findByText(/not the serial typed/)).toBeInTheDocument();
+      expect(continueButton()).toBeDisabled();
     });
 
     it('a taken backup needs the tick, which records it', async () => {

@@ -90,8 +90,10 @@ The wire cannot tell P1 from P3, so the gate is the same hard gate as the head's
   main board ("Studio flashes only the RT95-P main board …").
 - **Safety backup (required):** "Your radio's calibration and identity (EEPROM 0x3B00–0x3FFF) cannot be rebuilt if a
   main-board flash goes wrong." Once per radio, keyed by the serial the operator types from the label. If Studio holds a
-  record for that serial, the step sends only `PROGRAM`, `02` and `END`; otherwise it reads 0x3B00–0x3FFF (and the
-  0x7B00 alias) and offers the zip to save.- **Confirmation on the Flash step (the inverse of the head's):** "The screen says UPDATE THE RF CPU." must be ticked.
+  record for that serial (or the operator picks a valid backup file for it), the step is done with no radio I/O: the
+  probe above is the pre-flight's only normal-mode check. Otherwise the step reads 0x3B00–0x3FFF (and the 0x7B00
+  alias) and offers the zip to save.
+- **Confirmation on the Flash step (the inverse of the head's):** "The screen says UPDATE THE RF CPU." must be ticked.
 
 ## Main board interlocks
 
