@@ -7,7 +7,7 @@ Tier-3 reference for the read-only capture made by the `/debug/radios/dm-1701-op
 1. Ping, then FirmwareInfo (`R` mem `09h`, 46 bytes). A radio type the selected profile does not accept stops the session here: nothing after FirmwareInfo is sent.
 2. Show CPS screen, then the calibration working copy: 16 reads of 32 bytes at `0x10000` (first after the identity and show CPS, so a refusal costs seconds, not the minutes of the spans; [calibration.md](calibration.md)).
 3. The four registered FLASH spans in 32-byte reads ([memory-layout.md](memory-layout.md)).
-4. The occupied User Database: the 12-byte header, then the packed entries ([user-database.md](user-database.md)).
+4. Only when the operator ticks **Also read the User Database** (`includeUserDatabase`): the occupied User Database, the 12-byte header, then the packed entries ([user-database.md](user-database.md)). Unticked, no User Database frame is sent and the archive has no `user-database` region.
 5. Close CPS screen.
 
 No EEPROM, security-register (mode 10), write, restore or control command is sent. A failure or cancel produces no archive.

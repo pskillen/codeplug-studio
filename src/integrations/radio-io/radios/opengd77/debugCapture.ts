@@ -3,7 +3,9 @@
  *
  * Every frame goes through `createOpenGd77DebugGuard` (byte-exact allow-list; see
  * docs/reference/radios/opengd77/protocol.md). The capture is FirmwareInfo, the registered FLASH
- * spans and the occupied User Database, packed as an inspect-only partial radio-backup archive.
+ * spans and, only when asked (`includeUserDatabase`), the occupied User Database, packed as an
+ * inspect-only partial radio-backup archive. The User Database can run to megabytes, so it is
+ * skipped by default and its region is then absent from the archive.
  * A failure or cancel returns no archive; the protocol closes the CPS screen once, and the
  * transport is closed whatever happens.
  */
@@ -56,15 +58,24 @@ export interface OpenGd77DebugCapture {
   /** The OpenGD77 calibration working copy as returned at `0x10000` (512 bytes). */
   calibrationWorkingCopy: Uint8Array;
   image: MemoryMap;
-  /** Header + packed entries; the 12 header bytes alone when the header is not valid. */
-  userDatabase: Uint8Array;
+  /**
+   * Header + packed entries; the 12 header bytes alone when the header is not valid. Absent when
+   * the operator did not ask for the User Database.
+   */
+  userDatabase?: Uint8Array;
 }
 
 /** Run the guarded read-only session. Closes the transport whatever happens. */
 export async function captureOpenGd77DebugPipe(
   pipe: BytePipe,
   descriptor: RadioDescriptor,
-  opts?: { signal?: AbortSignal; onProgress?: ProgressFn; capturedVia?: RadioBackupCapturedVia },
+  opts?: {
+    signal?: AbortSignal;
+    onProgress?: ProgressFn;
+    capturedVia?: RadioBackupCapturedVia;
+    /** Also read the occupied User Database (slow; can be megabytes). Off by default. */
+    includeUserDatabase?: boolean;
+  },
 ): Promise<OpenGd77DebugCapture> {
   const signal = opts?.signal;
   const guard = createOpenGd77DebugGuard(pipe, signal);
@@ -79,11 +90,13 @@ export async function captureOpenGd77DebugPipe(
     // First, so a refusal or a silent radio costs seconds rather than the minutes of the flash spans.
     const calibrationWorkingCopy = await readOpenGd77CalibrationWorkingCopy(guard.pipe);
     const image = await radio.download({ onProgress: opts?.onProgress, signal });
-    const userDatabase = await radio.downloadUserDatabaseOccupied({
-      onProgress: opts?.onProgress,
-      signal,
-      keepInvalidHeader: true,
-    });
+    const userDatabase = opts?.includeUserDatabase
+      ? await radio.downloadUserDatabaseOccupied({
+          onProgress: opts?.onProgress,
+          signal,
+          keepInvalidHeader: true,
+        })
+      : undefined;
     throwIfAborted(signal);
     return {
       modelId: descriptor.modelIds[0]!,
@@ -92,7 +105,7 @@ export async function captureOpenGd77DebugPipe(
       firmwareInfoRaw: ident.raw.slice(),
       calibrationWorkingCopy,
       image,
-      userDatabase,
+      ...(userDatabase ? { userDatabase } : {}),
     };
   } finally {
     try {
@@ -127,15 +140,17 @@ export function buildOpenGd77DebugArchiveParts(capture: OpenGd77DebugCapture): {
     });
     regions[span.id] = readAbs(capture.image, span.start, span.length);
   }
-  list.push({
-    id: OPENGD77_BACKUP_USER_DATABASE_ID,
-    label: OPENGD77_BACKUP_USER_DATABASE_LABEL,
-    address: OPENUV380_USER_DB_HEADER_ABS,
-    byteLength: capture.userDatabase.length,
-    path: `regions/${OPENGD77_BACKUP_USER_DATABASE_ID}.bin`,
-    restoreRole: 'inspect-only',
-  });
-  regions[OPENGD77_BACKUP_USER_DATABASE_ID] = capture.userDatabase;
+  if (capture.userDatabase) {
+    list.push({
+      id: OPENGD77_BACKUP_USER_DATABASE_ID,
+      label: OPENGD77_BACKUP_USER_DATABASE_LABEL,
+      address: OPENUV380_USER_DB_HEADER_ABS,
+      byteLength: capture.userDatabase.length,
+      path: `regions/${OPENGD77_BACKUP_USER_DATABASE_ID}.bin`,
+      restoreRole: 'inspect-only',
+    });
+    regions[OPENGD77_BACKUP_USER_DATABASE_ID] = capture.userDatabase;
+  }
   list.push({
     id: OPENGD77_CALIBRATION_REGION_ID,
     label: OPENGD77_CALIBRATION_REGION_LABEL,
