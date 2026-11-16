@@ -218,7 +218,7 @@ describe('RT95 MMD1 viewer', () => {
     expect(zone.getByText('Zone 1: MIXED')).toBeInTheDocument();
     expect(zone.getByText('3 members')).toBeInTheDocument();
     expect(zone.getByText('members valid')).toBeInTheDocument();
-    expect(zone.getByRole('cell', { name: 'GB3WE · Westerton' })).toBeInTheDocument();
+    expect(zone.getByRole('cell', { name: /^GB3WE\s*·\s*Westerton$/ })).toBeInTheDocument();
     expect(zone.getByRole('cell', { name: 'LOCAL' })).toBeInTheDocument();
     expect(zone.getAllByRole('row')).toHaveLength(3);
     expect(zone.getByText(/1 member points at empty or unreadable slots/)).toBeInTheDocument();
