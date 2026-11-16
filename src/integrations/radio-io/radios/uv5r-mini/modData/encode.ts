@@ -1,3 +1,4 @@
+import { encodeMiniOrder } from './order.ts';
 import { encodeMiniScanSets } from './scanSets.ts';
 import { UV5R_MINI_LIMITS } from '@core/radios/baofeng/uv-5r-mini/limits.ts';
 import { crc16Xmodem } from '../../dm32uv/firmwareUpdate/crc16Xmodem.ts';
@@ -23,6 +24,8 @@ export interface Uv5rMiniZoneTableInput {
   }[];
   /** Write the independent MMZS block after the zone table. */
   writeScanSets?: boolean;
+  /** Include MMZO with MMZS; never write it independently. */
+  writeOrder?: boolean;
 }
 
 export interface Uv5rMiniZoneFrame {
@@ -146,18 +149,36 @@ export function encodeUv5rMiniZoneTable(input: Uv5rMiniZoneTableInput): Uv5rMini
   });
 
   const generation = zoneTableGeneration(crc);
-  if (input.writeScanSets) {
+  if (input.writeScanSets || input.writeOrder) {
     const sets = input.zones.map((zone) => {
       const included = new Set(zone.scanSlotIndexes ?? zone.slotIndexes);
       return [...new Set(zone.slotIndexes)].sort((a, b) => a - b).map((slot) => included.has(slot));
     });
-    for (const frame of encodeMiniScanSets(sets, generation).frames)
-      put(frame.address, frame.bytes);
+    const scan = encodeMiniScanSets(sets, generation);
+    const order = input.writeOrder
+      ? encodeMiniOrder(
+          input.zones.map((z) => [...new Set(z.slotIndexes)]),
+          scan.block.length - 22,
+          generation,
+        )
+      : undefined;
+    if (!order?.block) {
+      for (const frame of scan.frames) put(frame.address, frame.bytes);
+    } else {
+      const stream = new Uint8Array(order.offset! + order.block.length).fill(255);
+      stream.set(scan.block);
+      stream.set(order.block, order.offset!);
+      for (let offset = 0; offset < stream.length; offset += 64) {
+        const bytes = new Uint8Array(64).fill(255);
+        bytes.set(stream.subarray(offset, offset + 64));
+        put(offset < 448 ? 0xc040 + offset : 0xc380 + offset - 448, bytes);
+      }
+    }
   }
   return { frames, crc, generation, sector };
 }
 
 /** The protocol and progress plan both use this entry point: every table Write carries scan sets. */
 export function encodeUv5rMiniZoneWrite(input: Uv5rMiniZoneTableInput): Uv5rMiniZoneTableEncoded {
-  return encodeUv5rMiniZoneTable({ ...input, writeScanSets: true });
+  return encodeUv5rMiniZoneTable({ ...input, writeScanSets: true, writeOrder: true });
 }

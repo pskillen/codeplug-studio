@@ -35,7 +35,13 @@ export function fillMiniScanSets(sets: readonly (readonly boolean[])[]): {
 export function encodeMiniScanSets(
   sets: readonly (readonly boolean[])[],
   generation: number,
-): { frames: Uv5rMiniZoneFrame[]; fallback: number[]; kinds: number[]; needed: number } {
+): {
+  frames: Uv5rMiniZoneFrame[];
+  block: Uint8Array;
+  fallback: number[];
+  kinds: number[];
+  needed: number;
+} {
   const { bits, fallback, kinds, needed } = fillMiniScanSets(sets);
   const length = Math.ceil(bits.length / 8);
   const block = new Uint8Array(22 + length);
@@ -71,5 +77,5 @@ export function encodeMiniScanSets(
     bytes.set(block.subarray(offset, offset + 64));
     frames.push({ address: offset < 448 ? 0xc040 + offset : 0xc380 + offset - 448, bytes });
   }
-  return { frames, fallback, kinds, needed };
+  return { frames, block, fallback, kinds, needed };
 }

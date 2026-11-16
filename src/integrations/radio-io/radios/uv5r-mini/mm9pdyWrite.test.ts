@@ -112,7 +112,7 @@ describe('UV-5R Mini MM9PDY Write frame plan', () => {
   it('writes exactly the encoded bytes, and the radio decodes the full table', async () => {
     const intent = zones(24);
     const { pipe } = await writeZones(intent);
-    const encoded = encodeUv5rMiniZoneTable(intent);
+    const encoded = encodeUv5rMiniZoneWrite(intent);
     expect(pipe.sector()).toEqual(encoded.sector);
     const decoded = decodeUv5rMiniZoneTable(pipe.sector());
     expect('zones' in decoded && decoded.zones.map((z) => z.name)).toEqual(
@@ -181,7 +181,7 @@ describe('UV-5R Mini MM9PDY table generation across two Writes', () => {
     const pipe = new FakeRadio();
     await writeZones(zones(24), pipe);
     await writeZones(zones(2), pipe);
-    const second = encodeUv5rMiniZoneTable(zones(2));
+    const second = encodeUv5rMiniZoneWrite(zones(2));
     expect(pipe.sector()).toEqual(second.sector);
     const decoded = decodeUv5rMiniZoneTable(pipe.sector());
     expect('zones' in decoded && decoded.generation).toBe(second.generation);

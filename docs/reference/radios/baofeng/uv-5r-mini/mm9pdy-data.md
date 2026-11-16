@@ -15,13 +15,13 @@ records `0xC200 + 16 i`, member bitmaps `0xC400 + 128 i` (channel 1 is slot 0, o
 
 ## What Studio does
 
-| Rule        | Studio                                                                                                                                                                                                           |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Write order | Header frame first (a write to a 4 KiB-aligned address erases the sector), then name frames, then each zone's two bitmap frames, then the MMZS scan-set frames. An interrupted write never yields wrong zones    |
-| Integrity   | The table CRC-16/XMODEM covers the header, names and bitmaps; a bad table shows no zones. The scan-set block has its own CRC and carries the table generation; if the block fails, zones still load without sets |
-| Generation  | Derived from the CRC, so an identical rewrite keeps the radio's saved state                                                                                                                                      |
-| Empty table | Zero zones is valid and retires an older table                                                                                                                                                                   |
-| Write rules | The `mm9pdy` profile of the Mini write interlock adds 64-byte frames at 64-aligned `0xC000`-`0xCFC0`. Stock is unchanged. `0xB000`-`0xBFFF` and `0xD000` upward are refused on every profile                     |
+| Rule        | Studio                                                                                                                                                                                                                         |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Write order | Header frame first (a write to a 4 KiB-aligned address erases the sector), then name frames, then each zone's two bitmap frames, then the scan-set and zone-order stream frames. An interrupted write never yields wrong zones |
+| Integrity   | The table CRC-16/XMODEM covers the header, names and bitmaps; a bad table shows no zones. The scan-set block has its own CRC and carries the table generation; if the block fails, zones still load without sets               |
+| Generation  | Derived from the CRC, so an identical rewrite keeps the radio's saved state                                                                                                                                                    |
+| Empty table | Zero zones is valid and retires an older table                                                                                                                                                                                 |
+| Write rules | The `mm9pdy` profile of the Mini write interlock adds 64-byte frames at 64-aligned `0xC000`-`0xCFC0`. Stock is unchanged. `0xB000`-`0xBFFF` and `0xD000` upward are refused on every profile                                   |
 
 ## The MM9PDY target
 
@@ -32,7 +32,7 @@ zones to show: a stock radio ignores the zone table and behaves as stock.
 - **Write order.** Studio encodes the table before the first frame, so a bad input fails before the radio sees
   anything. Then the stock clone blocks exactly as the stock target writes them, then the table frames in the codec's
   order: the header at `0xC000` first (that write erases the sector), the name frames, then each zone's two bitmap
-  frames, then the scan-set frames. The progress window shows the table as its own **Zone table** stage.
+  frames, then the scan-set and zone-order stream frames (`0xC040`–`0xC1FF`, then `0xC380`–`0xC3FF`). The progress window shows the table as its own **Zone table** stage.
 - **Checks before any write.** The model reply check refuses a radio that does not answer as a Mini, and the write
   interlock checks the whole plan (stock blocks and table frames) before the handshake. On this target the interlock
   adds `0xC000`-`0xCFC0` to the stock spans and nothing else; a Restore on it is held to the same spans.
@@ -41,6 +41,7 @@ zones to show: a stock radio ignores the zone table and behaves as stock.
 - **Stock targets never touch the range.** The stock Mini target writes no frame at or above `0xC000`, and its
   interlock refuses one.
 - **Scan sets.** Studio writes an MMZS v1 block with every table, including an empty table. Each zone's set is independent of the All channels scan flag. Firmware 1.1.0 and later reads it; 1.0.0 keeps the zones and ignores the sets: it scans a zone’s live SCAN ADD members, or all live members when none has SCAN ADD. The Write session reads the clone but not the separate radio report, so it cannot identify the installed build. When an effective scan set skips a member, Studio shows an informational note about older firmware. A capacity fallback scans all members and does not trigger the note. Studio always writes the sets.
+- **Zone order.** Studio writes each zone’s member order in MMZO after MMZS. Older firmware ignores it and shows channel-number order. Scan sets take room first; zones whose order does not fit fall back to channel-number order and are named in a warning, while later zones are still tried.
 - **Capacity.** A zone with all members included uses no member bits. Other zones are tried in order against 4,432 bits; one that does not fit scans all members, and Studio names it in the room warning. Later zones are still tried. A written set with fewer than two members gets a scan warning.
 - **An empty table is still written.** A build with no zones writes the header with zero zones, which retires an older
   table on the radio.

@@ -12,7 +12,7 @@ import { UV5R_MINI_LAYOUT as layout } from '@integrations/radio-io/radios/uv17pr
 import { FakeMiniRadio } from '@integrations/radio-io/radios/uv5r-mini/__fixtures__/fakeMiniRadio.ts';
 import { UV5R_MINI_DESCRIPTOR } from '@integrations/radio-io/radios/uv5r-mini/descriptor.ts';
 import {
-  encodeUv5rMiniZoneTable,
+  encodeUv5rMiniZoneWrite,
   type Uv5rMiniZoneTableInput,
 } from '@integrations/radio-io/radios/uv5r-mini/modData/index.ts';
 import { Uv5rMiniProtocol } from '@integrations/radio-io/radios/uv5r-mini/protocol.ts';
@@ -109,7 +109,7 @@ describe('UV-5R Mini Restore by profile', () => {
     expect(w[firstTable]).toBe(0xc000);
     expect(w.slice(0, firstTable).every((a) => a < 0xb000)).toBe(true);
     expect(target.sector()).toEqual(source.sector());
-    expect(target.sector()).toEqual(encodeUv5rMiniZoneTable(zones(3)).sector);
+    expect(target.sector()).toEqual(encodeUv5rMiniZoneWrite(zones(3)).sector);
   });
 
   it('stock: the table is left out of the default selection, and naming it is refused before any frame', async () => {
