@@ -4,12 +4,17 @@
  * profile or a manifest `firmware` string is never evidence. A capture is never claimed to be a
  * full flash image. Wire facts: docs/reference/radios/opengd77/debug-capture.md.
  */
+import type { OpenGd77CalibrationLowSlot } from '@core/radios/opengd77/calibration.ts';
+import { OPENGD77_CALIBRATION_LENGTH } from '@core/radios/opengd77/calibration.ts';
 import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import {
   OPENGD77_BACKUP_FLASH_SPANS,
   OPENGD77_BACKUP_USER_DATABASE_ID,
 } from './backupRestoreRoles.ts';
 import {
+  OPENGD77_CALIBRATION_ADDRESS,
+  OPENGD77_CALIBRATION_REGION_ID,
+  OPENGD77_CALIBRATION_REGION_PATH,
   DM1701_RADIO_TYPES,
   MD9600_RADIO_TYPES,
   OPENGD77_1701_POWER_STEPS,
@@ -29,6 +34,8 @@ export interface OpenGd77DebugModel {
   label: string;
   radioTypes: readonly number[];
   powerSteps: readonly OpenGd77PowerStep[];
+  /** What the calibration slot at 0x1A0 means in this model's firmware tree. */
+  calibrationLowSlot: OpenGd77CalibrationLowSlot;
 }
 
 /** Debug-page models, keyed by canonical model id. */
@@ -38,12 +45,14 @@ export const OPENGD77_DEBUG_MODELS: Readonly<Record<string, OpenGd77DebugModel>>
     label: 'DM-1701 / RT-84',
     radioTypes: DM1701_RADIO_TYPES,
     powerSteps: OPENGD77_1701_POWER_STEPS,
+    calibrationLowSlot: 'very-low',
   },
   [OPENGD77_MD9600_MODEL_ID]: {
     modelId: OPENGD77_MD9600_MODEL_ID,
     label: 'MD-9600 / RT-90',
     radioTypes: MD9600_RADIO_TYPES,
     powerSteps: OPENGD77_MD9600_POWER_STEPS,
+    calibrationLowSlot: 'mid-low',
   },
 };
 
@@ -152,6 +161,12 @@ export interface OpenGd77UserDatabaseCoverage {
   headerOnly: boolean;
 }
 
+/** The calibration working copy: its own address space, not a flash span, never a gap-filler. */
+export interface OpenGd77CalibrationCoverage {
+  state: 'captured' | 'not-captured';
+  byteLength: number;
+}
+
 export interface OpenGd77UnclassifiedRegion {
   id: string;
   address: number;
@@ -166,6 +181,7 @@ export interface OpenGd77DebugCoverage {
   /** Unread flash between registered spans (`start` inclusive, `end` exclusive). Never read. */
   gaps: { start: number; end: number }[];
   userDatabase: OpenGd77UserDatabaseCoverage;
+  calibration: OpenGd77CalibrationCoverage;
   unclassified: OpenGd77UnclassifiedRegion[];
   /** The flash part id as the radio reported it; absent without a valid FirmwareInfo sidecar. */
   flashPart?: string;
@@ -222,11 +238,26 @@ export function classifyOpenGd77DebugCoverage(
     headerOnly: dbBytes === OPENUV380_USER_DB_HEADER_SIZE,
   };
 
+  const cal = manifest.regions.find(
+    (r) =>
+      r.id === OPENGD77_CALIBRATION_REGION_ID &&
+      r.address === OPENGD77_CALIBRATION_ADDRESS &&
+      r.byteLength === OPENGD77_CALIBRATION_LENGTH &&
+      r.path === OPENGD77_CALIBRATION_REGION_PATH &&
+      r.restoreRole === 'inspect-only' &&
+      regions[r.id]?.length === OPENGD77_CALIBRATION_LENGTH,
+  );
+  if (cal) claimed.add(cal.id);
+  const calibration: OpenGd77CalibrationCoverage = cal
+    ? { state: 'captured', byteLength: OPENGD77_CALIBRATION_LENGTH }
+    : { state: 'not-captured', byteLength: 0 };
+
   for (const region of manifest.regions) {
     if (claimed.has(region.id)) continue;
     const known =
       OPENGD77_BACKUP_FLASH_SPANS.some((s) => s.id === region.id) ||
-      region.id === OPENGD77_BACKUP_USER_DATABASE_ID;
+      region.id === OPENGD77_BACKUP_USER_DATABASE_ID ||
+      region.id === OPENGD77_CALIBRATION_REGION_ID;
     unclassified.push({
       id: region.id,
       address: region.address,
@@ -244,6 +275,7 @@ export function classifyOpenGd77DebugCoverage(
     spans,
     gaps,
     userDatabase,
+    calibration,
     unclassified,
     ...(identity?.status === 'ok'
       ? { flashPart: `Flash ID ${hex(identity.flashId, 4)} (as reported)` }
@@ -271,6 +303,17 @@ export function openGd77DebugRegionIdentity(
       region.path === `regions/${id}.bin`
       ? { space: 'OpenGD77 FLASH, absolute address', representation: 'FLASH bytes' }
       : undefined;
+  }
+  if (
+    id === OPENGD77_CALIBRATION_REGION_ID &&
+    region.address === OPENGD77_CALIBRATION_ADDRESS &&
+    region.byteLength === OPENGD77_CALIBRATION_LENGTH &&
+    region.path === OPENGD77_CALIBRATION_REGION_PATH
+  ) {
+    return {
+      space: 'OpenGD77 working copy (served from RAM)',
+      representation: 'calibration bytes',
+    };
   }
   if (
     id === OPENGD77_BACKUP_USER_DATABASE_ID &&

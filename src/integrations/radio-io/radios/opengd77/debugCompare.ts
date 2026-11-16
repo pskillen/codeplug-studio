@@ -6,6 +6,7 @@
 import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import { OPENGD77_BACKUP_USER_DATABASE_ID } from './backupRestoreRoles.ts';
 import { OPENUV380_USER_DB_HEADER_SIZE } from './constants.ts';
+import { selectOpenGd77Calibration } from './debugCalibration.ts';
 import { openGd77DebugIdentity, openGd77DebugRegionIdentity } from './debugCoverage.ts';
 import { decodeUserDatabaseHeader } from './userDatabaseCodec.ts';
 
@@ -51,6 +52,15 @@ export function openGd77ComparisonEvidence(
   fields['User Database / Header valid'] = valid;
   fields['User Database / Entry count (header)'] = entries;
   fields['User Database / Captured bytes'] = db?.length;
+  // Working copy rows, by decoded value; only with the local marker present, else unavailable.
+  const calibration = selectOpenGd77Calibration(archive);
+  if (calibration.status === 'ok' && calibration.decode.markerPresent) {
+    for (const row of calibration.decode.rows) {
+      fields[`Calibration / ${row.id}`] = row.decoded;
+    }
+  } else {
+    fields['Calibration'] = undefined;
+  }
   return fields;
 }
 

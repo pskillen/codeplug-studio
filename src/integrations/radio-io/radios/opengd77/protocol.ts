@@ -216,7 +216,11 @@ async function readMem(
   );
 }
 
-async function readFlashRange(pipe: BytePipe, abs: number, length: number): Promise<Uint8Array> {
+export async function readFlashRange(
+  pipe: BytePipe,
+  abs: number,
+  length: number,
+): Promise<Uint8Array> {
   const out = new Uint8Array(length);
   for (let off = 0; off < length; off += OPENGD77_BLOCK) {
     const n = Math.min(OPENGD77_BLOCK, length - off);

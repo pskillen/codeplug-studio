@@ -28,6 +28,7 @@ function parts(radioType = 0x08, db = new Uint8Array(12 + 27 * 2)) {
     capturedAt: '2026-01-01T00:00:00.000Z',
     capturedVia: 'web-serial',
     firmwareInfoRaw: makeOpenGd77FirmwareInfoPayload(radioType, { features: 0x05 }),
+    calibrationWorkingCopy: new Uint8Array(512),
     image: createOpenUv380Image(),
     userDatabase: db,
   });
@@ -209,5 +210,47 @@ describe('openGd77DebugRegionIdentity', () => {
     );
     const short = { ...p.regions, 'flash-span-0': new Uint8Array(3) };
     expect(openGd77DebugRegionIdentity(p.manifest, short, 'flash-span-0')).toBeUndefined();
+  });
+});
+
+describe('calibration working copy coverage', () => {
+  const cal = (p: ReturnType<typeof parts>, change: object) => ({
+    ...p.manifest,
+    regions: p.manifest.regions.map((r) =>
+      r.id === 'calibration-working-copy' ? { ...r, ...change } : r,
+    ),
+  });
+
+  it('classifies the region as its own address space, not a span or unclassified', () => {
+    const p = parts();
+    const c = classifyOpenGd77DebugCoverage(p.manifest, p.regions, p.sidecars);
+    expect(c.calibration).toEqual({ state: 'captured', byteLength: 512 });
+    expect(c.unclassified).toEqual([]);
+    expect(c.spans.every((s) => s.id !== 'calibration-working-copy')).toBe(true);
+    expect(c.gaps.some((g) => g.start <= 0x10000 && g.end > 0x10000)).toBe(true);
+    expect(openGd77DebugRegionIdentity(p.manifest, p.regions, 'calibration-working-copy')).toEqual({
+      space: 'OpenGD77 working copy (served from RAM)',
+      representation: 'calibration bytes',
+    });
+  });
+
+  it('is not-captured when absent and unclassified when the address is wrong', () => {
+    const p = parts();
+    const none = classifyOpenGd77DebugCoverage(
+      {
+        ...p.manifest,
+        regions: p.manifest.regions.filter((r) => r.id !== 'calibration-working-copy'),
+      },
+      p.regions,
+      p.sidecars,
+    );
+    expect(none.calibration.state).toBe('not-captured');
+    const moved = cal(p, { address: 0x10020 });
+    const c = classifyOpenGd77DebugCoverage(moved, p.regions, p.sidecars);
+    expect(c.calibration.state).toBe('not-captured');
+    expect(c.unclassified.map((u) => u.id)).toEqual(['calibration-working-copy']);
+    expect(
+      openGd77DebugRegionIdentity(moved, p.regions, 'calibration-working-copy'),
+    ).toBeUndefined();
   });
 });

@@ -139,6 +139,42 @@ describe('createOpenGd77DebugGuard', () => {
     expect(spy.write).not.toHaveBeenCalled();
   });
 
+  describe('calibration working copy', () => {
+    it('admits the 16 mode-1 reads at 0x10000 after show CPS', async () => {
+      const { pipe, write } = spyPipe();
+      const guard = createOpenGd77DebugGuard(pipe);
+      await guard.pipe.write(INFO);
+      await guard.pipe.write(SHOW);
+      for (let i = 0; i < 16; i++) await guard.pipe.write(read(0x10000 + i * 32, 32));
+      expect(write).toHaveBeenCalledTimes(18);
+    });
+
+    it.each([f(0x52, 0x0a, 0, 0, 0, 0, 0x01, 0x00), f(0x52, 0x0a, 0, 0, 0, 0x01, 0x01, 0x00)])(
+      'refuses mode 10 frame %# before the transport',
+      async (frame) => {
+        const { pipe, write } = spyPipe();
+        const guard = createOpenGd77DebugGuard(pipe);
+        await guard.pipe.write(INFO);
+        await guard.pipe.write(SHOW);
+        write.mockClear();
+        await expect(guard.pipe.write(frame)).rejects.toBeInstanceOf(OpenGd77DebugRefusedError);
+        expect(write).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses the two documented mode-10 frames', () => {
+      for (const frame of [
+        f(0x52, 0x0a, 0, 0, 0, 0, 0x01, 0x00),
+        f(0x52, 0x0a, 0, 0, 0, 0x01, 0x01, 0x00),
+      ]) {
+        expect(classifyOpenGd77DebugFrame(frame)).toEqual({
+          allowed: false,
+          reason: 'read mode 0x0a',
+        });
+      }
+    });
+  });
+
   describe('order', () => {
     it('refuses show CPS before the FirmwareInfo read', async () => {
       const spy = spyPipe();

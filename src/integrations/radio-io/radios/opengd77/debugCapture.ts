@@ -20,10 +20,30 @@ import {
   OPENGD77_BACKUP_USER_DATABASE_ID,
   OPENGD77_BACKUP_USER_DATABASE_LABEL,
 } from './backupRestoreRoles.ts';
-import { OPENUV380_USER_DB_HEADER_ABS } from './constants.ts';
+import { OPENGD77_CALIBRATION_LENGTH } from '@core/radios/opengd77/calibration.ts';
+import { OPENGD77_BLOCK } from '../../kit/codecs/opengd77Serial.ts';
+import {
+  OPENGD77_CALIBRATION_ADDRESS,
+  OPENGD77_CALIBRATION_REGION_ID,
+  OPENGD77_CALIBRATION_REGION_LABEL,
+  OPENGD77_CALIBRATION_REGION_PATH,
+  OPENUV380_USER_DB_HEADER_ABS,
+} from './constants.ts';
 import { createOpenGd77DebugGuard } from './debugGuard.ts';
 import { readAbs } from './memory.ts';
-import { OpenGd77Protocol, parseFirmwareInfo } from './protocol.ts';
+import { OpenGd77Protocol, parseFirmwareInfo, readFlashRange } from './protocol.ts';
+
+/**
+ * Read the 512-byte calibration working copy: 16 mode-1 reads of 32 bytes from `0x10000`. The pipe
+ * must be the debug guard's pipe. The firmware serves a read wholly inside the block from RAM.
+ */
+export async function readOpenGd77CalibrationWorkingCopy(pipe: BytePipe): Promise<Uint8Array> {
+  const out = new Uint8Array(OPENGD77_CALIBRATION_LENGTH);
+  for (let off = 0; off < out.length; off += OPENGD77_BLOCK) {
+    out.set(await readFlashRange(pipe, OPENGD77_CALIBRATION_ADDRESS + off, OPENGD77_BLOCK), off);
+  }
+  return out;
+}
 
 /** The raw 46-byte FirmwareInfo reply, kept beside the regions. */
 export const OPENGD77_DEBUG_FIRMWARE_INFO_SIDECAR = 'debug/firmware-info.bin';
@@ -33,6 +53,8 @@ export interface OpenGd77DebugCapture {
   capturedAt: string;
   capturedVia: RadioBackupCapturedVia;
   firmwareInfoRaw: Uint8Array;
+  /** The OpenGD77 calibration working copy as returned at `0x10000` (512 bytes). */
+  calibrationWorkingCopy: Uint8Array;
   image: MemoryMap;
   /** Header + packed entries; the 12 header bytes alone when the header is not valid. */
   userDatabase: Uint8Array;
@@ -54,6 +76,8 @@ export async function captureOpenGd77DebugPipe(
     throwIfAborted(signal);
     // A wrong radio type throws RadioWrongIdentError here, before show CPS.
     const ident = await radio.connect(guard.pipe, { handshake: 'read', signal });
+    // First, so a refusal or a silent radio costs seconds rather than the minutes of the flash spans.
+    const calibrationWorkingCopy = await readOpenGd77CalibrationWorkingCopy(guard.pipe);
     const image = await radio.download({ onProgress: opts?.onProgress, signal });
     const userDatabase = await radio.downloadUserDatabaseOccupied({
       onProgress: opts?.onProgress,
@@ -66,6 +90,7 @@ export async function captureOpenGd77DebugPipe(
       capturedAt: new Date().toISOString(),
       capturedVia: opts?.capturedVia ?? 'web-serial',
       firmwareInfoRaw: ident.raw.slice(),
+      calibrationWorkingCopy,
       image,
       userDatabase,
     };
@@ -111,6 +136,15 @@ export function buildOpenGd77DebugArchiveParts(capture: OpenGd77DebugCapture): {
     restoreRole: 'inspect-only',
   });
   regions[OPENGD77_BACKUP_USER_DATABASE_ID] = capture.userDatabase;
+  list.push({
+    id: OPENGD77_CALIBRATION_REGION_ID,
+    label: OPENGD77_CALIBRATION_REGION_LABEL,
+    address: OPENGD77_CALIBRATION_ADDRESS,
+    byteLength: capture.calibrationWorkingCopy.length,
+    path: OPENGD77_CALIBRATION_REGION_PATH,
+    restoreRole: 'inspect-only',
+  });
+  regions[OPENGD77_CALIBRATION_REGION_ID] = capture.calibrationWorkingCopy;
 
   let firmware: string | undefined;
   try {

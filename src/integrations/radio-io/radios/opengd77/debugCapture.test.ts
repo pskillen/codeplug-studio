@@ -6,7 +6,11 @@ import {
   OPENGD77_BACKUP_FLASH_SPANS,
   OPENGD77_BACKUP_USER_DATABASE_ID,
 } from './backupRestoreRoles.ts';
-import { OPENUV380_USER_DB_HEADER_ABS } from './constants.ts';
+import {
+  OPENGD77_CALIBRATION_ADDRESS,
+  OPENGD77_CALIBRATION_REGION_ID,
+  OPENUV380_USER_DB_HEADER_ABS,
+} from './constants.ts';
 import { classifyOpenGd77DebugFrame } from './debugGuard.ts';
 import {
   buildOpenGd77DebugArchiveParts,
@@ -62,6 +66,7 @@ describe.each(CASES)('captureOpenGd77DebugPipe on %s (type 0x%s)', (_name, model
     expect(manifest.regions.map((r) => r.id)).toEqual([
       ...OPENGD77_BACKUP_FLASH_SPANS.map((s) => s.id),
       OPENGD77_BACKUP_USER_DATABASE_ID,
+      OPENGD77_CALIBRATION_REGION_ID,
     ]);
     expect(manifest.regions.every((r) => r.restoreRole === 'inspect-only')).toBe(true);
     for (const span of OPENGD77_BACKUP_FLASH_SPANS) {
@@ -86,6 +91,63 @@ describe.each(CASES)('captureOpenGd77DebugPipe on %s (type 0x%s)', (_name, model
     const capture = await captureOpenGd77DebugPipe(pipe, descriptor);
     const { regions } = buildOpenGd77DebugArchiveParts(capture);
     expect(regions['flash-span-0']![0]).toBe(0x42);
+  });
+});
+
+describe.each(CASES)('calibration working copy on %s (type 0x%s)', (_name, modelId, radioType) => {
+  const descriptor = getRadioDescriptor(modelId)!;
+  const hex = (frame: Uint8Array) =>
+    Array.from(frame, (b) => b.toString(16).padStart(2, '0')).join(' ');
+
+  it('reads 16 aligned blocks right after show CPS, before the flash spans', async () => {
+    const pipe = new OpenGd77ScriptedPipe(radioType);
+    pipe.plantByte(0x10000, 0x11);
+    pipe.plantByte(0x101ff, 0x22);
+    const capture = await captureOpenGd77DebugPipe(pipe, descriptor);
+    const frames = pipe.writes.map(hex);
+    const first = frames.indexOf('52 01 00 01 00 00 00 20');
+    expect(frames.slice(0, first)).toEqual(['43 fe', '52 09 00 00 00 00 00 2e', '43 00']);
+    const expected = Array.from({ length: 16 }, (_, i) => {
+      const a = 0x10000 + i * 32;
+      return `52 01 00 01 ${((a >> 8) & 0xff).toString(16).padStart(2, '0')} ${(a & 0xff)
+        .toString(16)
+        .padStart(2, '0')} 00 20`;
+    });
+    expect(frames.slice(first, first + 16)).toEqual(expected);
+    expect(frames.filter((f) => f.startsWith('52 01 00 01 0')).length).toBe(16);
+    expect(capture.calibrationWorkingCopy).toHaveLength(512);
+    expect(capture.calibrationWorkingCopy[0]).toBe(0x11);
+    expect(capture.calibrationWorkingCopy[511]).toBe(0x22);
+  });
+
+  it('stores an inspect-only 512-byte region at 0x10000', async () => {
+    const capture = await captureOpenGd77DebugPipe(new OpenGd77ScriptedPipe(radioType), descriptor);
+    const { manifest, regions } = buildOpenGd77DebugArchiveParts(capture);
+    const region = manifest.regions.find((r) => r.id === OPENGD77_CALIBRATION_REGION_ID)!;
+    expect([region.address, region.byteLength, region.restoreRole, region.path]).toEqual([
+      OPENGD77_CALIBRATION_ADDRESS,
+      512,
+      'inspect-only',
+      'regions/calibration-working-copy.bin',
+    ]);
+    expect(region.label).toMatch(/not stock factory calibration/);
+    expect(regions[OPENGD77_CALIBRATION_REGION_ID]).toHaveLength(512);
+  });
+
+  it.each([
+    ['refused', (p: OpenGd77ScriptedPipe) => p.failReadsAt.add(0x10000 + 32 * 5)],
+    ['short', (p: OpenGd77ScriptedPipe) => p.shortReadsAt.add(0x10000 + 32 * 5)],
+    ['silent', (p: OpenGd77ScriptedPipe) => p.silentReadsAt.add(0x10000 + 32 * 5)],
+  ])('a %s calibration read fails the capture with no archive', async (_kind, arrange) => {
+    const pipe = new OpenGd77ScriptedPipe(radioType);
+    arrange(pipe);
+    await expect(captureOpenGd77DebugPipe(pipe, descriptor)).rejects.toThrow();
+    expect(pipe.commands).toEqual([[0xfe], [0x00], [0x05]]);
+    expect(pipe.cpsDepth).toBe(0);
+    // Failed early: no flash span was read.
+    expect(
+      pipe.writes.some((w) => w[0] === 0x52 && w[1] === 0x01 && w[2] === 0 && w[3] === 0),
+    ).toBe(false);
   });
 });
 
