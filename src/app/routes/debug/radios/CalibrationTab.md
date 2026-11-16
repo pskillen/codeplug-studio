@@ -4,7 +4,7 @@ The shared Calibration tab shell for a radio debug page.
 
 ## Purpose
 
-Calls the descriptor's `calibration(archive)` for the selected read and for the overlay read, and draws the results with the debug kit. It holds no radio text: the `CalibrationView` carries every sentence, address and caveat. The RT95, the AT-D890UV, the DM-32UV and OpenGD77 (DM-1701, MD-9600) are on it; the others keep their own `Calibration` component.
+Calls the descriptor's `calibration(archive)` for the selected read and for the overlay read, and draws the results with the debug kit. It holds no radio text: the `CalibrationView` carries every sentence, address and caveat. The RT95, the AT-D890UV, the DM-32UV, OpenGD77 (DM-1701, MD-9600) and the UV-5R Mini are on it.
 
 ## Props
 
@@ -21,7 +21,7 @@ Calls the descriptor's `calibration(archive)` for the selected read and for the 
 
 ## Behaviour
 
-- Order: `CalibrationReadPicker`, `EvidenceNotice`, facts line, `CalibrationChartGrid` of `CalibrationChartCard`s, **Show password** (only when a table cell is sensitive), one `DebugSection` with a `ValueTable` per table (a table with `folded` starts collapsed), `UnusedRanges`, `HexDump` (folded).
+- Order: `CalibrationReadPicker`, `EvidenceNotice`, facts line, `CalibrationChartGrid` of `CalibrationChartCard`s, **Show password** (only when a table cell is sensitive), one `DebugSection` with a `ValueTable` per table (a table with `folded` starts collapsed), `UnusedRanges`, `HexDump` (folded; runs of identical rows collapse when the view sets `collapseRuns`).
 - No archive: "Open or read a capture". A view that is not `ok`: its reason in an alert. An overlay that is not `ok`: "Overlay not shown" with its reason, and the read is drawn alone.
 - Charts and tables pair with the overlay by `id`.
 - **Show password** resets when another read or archive is shown (`archiveKey`).
@@ -36,3 +36,4 @@ Calls the descriptor's `calibration(archive)` for the selected read and for the 
 - RT95 view: `src/integrations/radio-io/radios/rt95/debugCalibrationView.ts`
 - OpenGD77 view: `src/integrations/radio-io/radios/opengd77/debugCalibrationView.ts`
 - DM-32UV view: `src/integrations/radio-io/radios/dm32uv/debugCalibrationView.ts`
+- UV-5R Mini view: `src/integrations/radio-io/radios/uv5r-mini/debugRead/calibrationView.ts`
