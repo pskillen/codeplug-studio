@@ -36,6 +36,7 @@ import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWakeLock.ts';
 import { capabilityColor, radioDebugDescriptors, radioDebugTabs } from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
+import { SettingsTab } from './SettingsTab.tsx';
 import { Coverage } from './Coverage.tsx';
 import { DebugReadProgress } from './DebugReadProgress.tsx';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
@@ -590,12 +591,22 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               <MemoryViewer archive={archive} />
             )}
           </Tabs.Panel>
-          {descriptor.Settings && (
+          {(descriptor.settings || descriptor.Settings) && (
             <Tabs.Panel value="settings" pt="md">
-              <descriptor.Settings
-                key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
-                archive={archive}
-              />
+              {descriptor.settings ? (
+                <SettingsTab
+                  key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
+                  archive={archive}
+                  settings={descriptor.settings}
+                />
+              ) : (
+                descriptor.Settings && (
+                  <descriptor.Settings
+                    key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
+                    archive={archive}
+                  />
+                )
+              )}
             </Tabs.Panel>
           )}
           <Tabs.Panel value="hex" pt="md">

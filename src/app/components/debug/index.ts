@@ -1,4 +1,5 @@
 export { default as ConfidenceBadge } from './ConfidenceBadge.tsx';
+export { confidenceLabel } from './confidence.ts';
 export type { ConfidenceBadgeProps } from './ConfidenceBadge.tsx';
 export { default as DebugSection } from './DebugSection.tsx';
 export type { DebugSectionProps } from './DebugSection.tsx';
@@ -14,3 +15,5 @@ export { default as UnusedRanges, unusedCountLine } from './UnusedRanges.tsx';
 export type { UnusedRangesProps } from './UnusedRanges.tsx';
 export { default as ValueTable } from './ValueTable.tsx';
 export type { ValueTableProps } from './ValueTable.tsx';
+export { default as SettingsTable } from './SettingsTable.tsx';
+export type { SettingsTableProps } from './SettingsTable.tsx';

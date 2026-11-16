@@ -1,13 +1,6 @@
 import type { Confidence } from '@integrations/radio-io/debugView';
-import Pill, { type PillTone } from '../v2/Pill.tsx';
-
-const CONFIDENCE: Record<Confidence, { label: string; tone: PillTone }> = {
-  traced: { label: 'traced', tone: 'success' },
-  'partially-traced': { label: 'partly traced', tone: 'warning' },
-  inferred: { label: 'inferred', tone: 'warning' },
-  unknown: { label: 'unknown', tone: 'neutral' },
-  unused: { label: 'unused (no reader)', tone: 'neutral' },
-};
+import Pill from '../v2/Pill.tsx';
+import { CONFIDENCE } from './confidence.ts';
 
 export interface ConfidenceBadgeProps {
   value: Confidence;
