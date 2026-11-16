@@ -60,10 +60,12 @@ describe.each([
     expect(high.getByText(/^\d\d( \d\d){8}$/)).toBeInTheDocument();
     expect(high.getByText(/^\d+(, \d+){8}$/)).toBeInTheDocument();
     expect(high.getByText('source-declared')).toBeInTheDocument();
-    expect(high.getByText('named')).toBeInTheDocument();
-    expect(within(row('rx-low-voltage')).getByText('partial')).toBeInTheDocument();
+    expect(high.getByText('traced')).toBeInTheDocument();
+    expect(high.getByText(/PA drive DAC code ÷ 16/)).toBeInTheDocument();
+    expect(within(row('rx-low-voltage')).getByText('partly')).toBeInTheDocument();
+    expect(within(row('vox-level-1')).getByText('not used by OpenGD77')).toBeInTheDocument();
     expect(within(row('uhf-low-slot-power')).getByText(new RegExp(slotLabel))).toBeInTheDocument();
-    expect(within(row('uhf-frequency-0')).getByText(/local marker, not a frequency/)).toBeTruthy();
+    expect(within(row('uhf-frequency-0')).getByText(/OpenGD77 local marker: /)).toBeTruthy();
     expect(screen.getByText('Unknown bytes')).toBeInTheDocument();
     expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
