@@ -1,5 +1,5 @@
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
-import { chooseCategory } from './memoryCategoriesTestUtils.ts';
+import { chooseCategory } from '@app/components/debug/memoryCategoriesTestUtils.ts';
 import {
   decodeUv5rMiniFullRead,
   hashUv5rMiniDebugSpans,

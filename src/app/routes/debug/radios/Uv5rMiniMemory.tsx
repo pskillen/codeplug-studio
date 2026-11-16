@@ -1,14 +1,94 @@
-import { Alert, Select, Stack, Table, Text, TextInput, Title } from '@mantine/core';
-import { useState } from 'react';
+import { Alert, Stack, Text, Title } from '@mantine/core';
+import { useMemo } from 'react';
+import type { DataTableColumn } from '@app/components/v2/index.ts';
+import {
+  identityLabel,
+  MemoryCategories,
+  MemoryCategoryPanel,
+} from '@app/components/debug/index.ts';
+import type { RadioChannelDto, RadioTone } from '@integrations/radio-io/radioChannelDto.ts';
+import {
+  UV5R_MINI_CHANNEL_CAVEAT,
+  UV5R_MINI_CHANNELS_UNAVAILABLE,
+  uv5rMiniChannelSummary,
+} from '@integrations/radio-io/radios/uv5r-mini/debugRead/memoryText.ts';
 import { decodeChannelsFromImage } from '@integrations/radio-io/radios/uv5r-mini/channelCodec.ts';
 import { decodeUv5rMiniZoneTable } from '@integrations/radio-io/radios/uv5r-mini/modData/index.ts';
 import { UV5R_MINI_LAYOUT } from '@integrations/radio-io/radios/uv17pro-family/layout.ts';
 import { uv17ProBackupMemSpans } from '@integrations/radio-io/radios/uv17pro-family/backupRestoreRoles.ts';
-import { MemoryCategories } from './MemoryCategories.tsx';
 import type { DebugArchive } from './captureArchive.ts';
 
+const mhz = (hz: number) => (hz / 1e6).toFixed(5);
+
+function formatTone(tone: RadioTone): string {
+  if (tone.kind === 'ctcss') return `${tone.hz} Hz`;
+  if (tone.kind === 'dcs') return `D${String(tone.code).padStart(3, '0')}${tone.polarity ?? 'N'}`;
+  return 'None';
+}
+
+interface ChannelRow {
+  id: string;
+  slot: number;
+  /** Callsign first, then name; the Mini stores one name field, so this is the name. */
+  label: string;
+  channel: RadioChannelDto;
+}
+
+function channelRow(channel: RadioChannelDto): ChannelRow {
+  return {
+    id: `channel-${channel.slotIndex}`,
+    slot: channel.slotIndex,
+    label: identityLabel(undefined, channel.wireName) || '(unnamed)',
+    channel,
+  };
+}
+
+const CHANNEL_COLUMNS: DataTableColumn<ChannelRow>[] = [
+  {
+    key: 'slot',
+    header: 'Slot',
+    width: '4.5rem',
+    sortable: true,
+    sortValue: (r) => r.slot,
+    render: (r) => r.slot,
+    hideOnMobile: true,
+  },
+  {
+    key: 'identity',
+    header: 'Identity',
+    width: 'minmax(14rem, 2fr)',
+    sortable: true,
+    sortValue: (r) => r.label,
+    render: (r) => <strong>{r.label}</strong>,
+    hideOnMobile: true,
+  },
+  {
+    key: 'rx',
+    header: 'RX MHz',
+    width: '8rem',
+    sortable: true,
+    sortValue: (r) => r.channel.rxHz,
+    render: (r) => mhz(r.channel.rxHz),
+  },
+  {
+    key: 'tx',
+    header: 'TX MHz',
+    width: '8rem',
+    sortable: true,
+    sortValue: (r) => r.channel.txHz,
+    render: (r) => mhz(r.channel.txHz),
+  },
+  { key: 'bw', header: 'Bandwidth', width: '6rem', render: (r) => r.channel.bandwidth },
+];
+
 /** Decode only data actually captured in a recognised region. */
-export function Uv5rMiniMemory({ archive }: { archive?: DebugArchive }) {
+export function Uv5rMiniMemory({
+  archive,
+  notDecoded,
+}: {
+  archive?: DebugArchive;
+  notDecoded?: readonly string[];
+}) {
   if (!archive)
     return (
       <Stack>
@@ -16,12 +96,16 @@ export function Uv5rMiniMemory({ archive }: { archive?: DebugArchive }) {
         <Alert title="No capture">Open or read a capture to inspect its memory.</Alert>
       </Stack>
     );
-  return <Uv5rMiniMemoryLoaded archive={archive} />;
+  return <Uv5rMiniMemoryLoaded archive={archive} notDecoded={notDecoded} />;
 }
 
-function Uv5rMiniMemoryLoaded({ archive }: { archive: DebugArchive }) {
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<string | null>('slot');
+function Uv5rMiniMemoryLoaded({
+  archive,
+  notDecoded,
+}: {
+  archive: DebugArchive;
+  notDecoded?: readonly string[];
+}) {
   const mem = uv17ProBackupMemSpans(UV5R_MINI_LAYOUT)[0]!;
   const entry = archive.manifest.regions.find(
     (r) => r.id === mem.id && r.address === mem.packedOffset && r.byteLength <= mem.size,
@@ -39,61 +123,35 @@ function Uv5rMiniMemoryLoaded({ archive }: { archive: DebugArchive }) {
       ? archive.regions.zones
       : undefined);
   const zones = sector?.length === 0x1000 ? decodeUv5rMiniZoneTable(sector) : undefined;
-  const shown = channels
-    ?.filter((c) => c.wireName.toLocaleLowerCase().includes(query.toLocaleLowerCase()))
-    .sort((a, b) =>
-      sort === 'name'
-        ? a.wireName.localeCompare(b.wireName) || a.slotIndex - b.slotIndex
-        : a.slotIndex - b.slotIndex,
-    );
-  const channelsPanel = (
-    <Stack>
-      {!channels ? (
-        <Alert title="Channels unavailable">A complete channel range is required.</Alert>
-      ) : (
-        <>
-          <TextInput
-            label="Search channels"
-            value={query}
-            onChange={(e) => setQuery(e.currentTarget.value)}
-          />
-          <Select
-            label="Sort channels"
-            value={sort}
-            onChange={setSort}
-            data={[
-              { value: 'slot', label: 'Slot' },
-              { value: 'name', label: 'Name' },
-            ]}
-            allowDeselect={false}
-          />
-          <Table.ScrollContainer minWidth={500}>
-            <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Slot</Table.Th>
-                  <Table.Th>Name</Table.Th>
-                  <Table.Th>RX MHz</Table.Th>
-                  <Table.Th>TX MHz</Table.Th>
-                  <Table.Th>Bandwidth</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {shown?.map((c) => (
-                  <Table.Tr key={c.slotIndex}>
-                    <Table.Td>{c.slotIndex}</Table.Td>
-                    <Table.Td>{c.wireName || '(unnamed)'}</Table.Td>
-                    <Table.Td>{(c.rxHz / 1e6).toFixed(5)}</Table.Td>
-                    <Table.Td>{(c.txHz / 1e6).toFixed(5)}</Table.Td>
-                    <Table.Td>{c.bandwidth}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        </>
+  const rows = useMemo(() => channels?.map(channelRow), [channels]);
+  const channelsPanel = !rows ? (
+    <Alert title="Channels unavailable">{UV5R_MINI_CHANNELS_UNAVAILABLE}</Alert>
+  ) : (
+    <MemoryCategoryPanel
+      summary={uv5rMiniChannelSummary(rows.length, UV5R_MINI_LAYOUT.channelCount)}
+      caveat={UV5R_MINI_CHANNEL_CAVEAT}
+      searchPlaceholder="Search channels"
+      caption="UV-5R Mini memory channels"
+      columns={CHANNEL_COLUMNS}
+      rows={rows}
+      getRowId={(r) => r.id}
+      searchText={(r) => `${r.slot} ${r.label} ${mhz(r.channel.rxHz)} ${mhz(r.channel.txHz)}`}
+      defaultSort={{ key: 'slot', direction: 'asc' }}
+      stickyFirstColumn
+      mobileIdentity={(r) => (
+        <span>
+          {r.slot} · <strong>{r.label}</strong>
+        </span>
       )}
-    </Stack>
+      mobileIdentityLabel="Slot · identity"
+      details={(r) => (
+        <Text size="sm">
+          RX tone {formatTone(r.channel.rxTone)} · TX tone {formatTone(r.channel.txTone)} · Power{' '}
+          {r.channel.powerPercent == null ? 'Default' : `${r.channel.powerPercent}%`}
+        </Text>
+      )}
+      emptyMessage="No channels are stored."
+    />
   );
   const zonesPanel = (
     <Stack>
@@ -122,6 +180,7 @@ function Uv5rMiniMemoryLoaded({ archive }: { archive: DebugArchive }) {
     <Stack>
       <Title order={3}>Memory</Title>
       <MemoryCategories
+        notDecoded={notDecoded}
         storageKey="debug-memory-category:uv5r-mini"
         categories={[
           {

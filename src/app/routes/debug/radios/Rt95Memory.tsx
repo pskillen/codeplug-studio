@@ -27,7 +27,7 @@ import {
   RT95_KEY_TABLE_LENGTH,
   RT95_KEY_FUNCTION_DIR,
 } from '@integrations/radio-io/radios/rt95/zoneKey.ts';
-import { MemoryCategories } from './MemoryCategories.tsx';
+import { MemoryCategories } from '@app/components/debug/index.ts';
 import { rt95GuardEvidence, type DebugArchive } from './captureArchive.ts';
 
 type SlotRow = Rt95DebugSlot & { description: string };

@@ -12,6 +12,7 @@ import type { SettingsView } from '@integrations/radio-io/debugView/index.ts';
 import { Rt95MemoryView } from './Rt95Memory.tsx';
 import { Rt95Settings } from './Rt95Settings.tsx';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
+import { UV5R_MINI_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/uv5r-mini/debugRead/memoryText.ts';
 import { Uv5rMiniSettings } from './Uv5rMiniSettings.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
@@ -76,7 +77,9 @@ export interface RadioDebugDescriptor {
   /** Byte compare for this radio: sections, region identity and limits notes. Radio-home code. */
   compare?: DebugCompareAdapter;
   /** A profile's own Memory viewer; without one the generic Memory viewer is used. */
-  Memory?: ComponentType<{ archive?: DebugArchive }>;
+  Memory?: ComponentType<{ archive?: DebugArchive; notDecoded?: readonly string[] }>;
+  /** Memory categories this radio does not decode yet; named in one line under the Category dropdown. */
+  memoryNotDecoded?: readonly string[];
   /**
    * Password bytes in one archive region, masked in Hex and Compare until revealed. Radio-home
    * function; it returns nothing for another radio's archive. Absent: nothing to mask.
@@ -247,6 +250,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     slug: 'uv-5r-mini',
     compare: uv5rMiniCompareAdapter,
     Memory: Uv5rMiniMemory,
+    memoryNotDecoded: UV5R_MINI_MEMORY_NOT_DECODED,
     Settings: Uv5rMiniSettings,
     readHistory: true,
     capture: captureUv5rMini,

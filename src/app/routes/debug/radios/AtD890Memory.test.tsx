@@ -18,7 +18,7 @@ import {
 import { AtD890Memory } from './AtD890Memory.tsx';
 import { AtD890Settings } from './AtD890Settings.tsx';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
-import { chooseCategory } from './memoryCategoriesTestUtils.ts';
+import { chooseCategory } from '@app/components/debug/memoryCategoriesTestUtils.ts';
 
 type Entry = [RadioBackupRegionV1, Uint8Array];
 const sparse = (address: number, data: Uint8Array): Entry => [

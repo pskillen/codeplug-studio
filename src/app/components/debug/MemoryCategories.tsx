@@ -1,4 +1,4 @@
-import { Select, Stack } from '@mantine/core';
+import { Select, Stack, Text } from '@mantine/core';
 import { useState, type ReactNode } from 'react';
 
 export interface MemoryCategory {
@@ -34,8 +34,11 @@ function remember(storageKey: string | undefined, value: string) {
 export function MemoryCategories({
   categories,
   storageKey,
+  notDecoded,
 }: {
   categories: MemoryCategory[];
+  /** Category names this radio does not decode yet, named in one line under the dropdown. */
+  notDecoded?: readonly string[];
   /** Where to remember the last choice; omit to remember nothing. */
   storageKey?: string;
 }) {
@@ -58,6 +61,11 @@ export function MemoryCategories({
         }}
         allowDeselect={false}
       />
+      {notDecoded && notDecoded.length > 0 ? (
+        <Text size="sm" c="dimmed">
+          Not decoded for this radio yet: {notDecoded.join(', ')}.
+        </Text>
+      ) : null}
       <div key={active.value}>{active.render()}</div>
     </Stack>
   );
