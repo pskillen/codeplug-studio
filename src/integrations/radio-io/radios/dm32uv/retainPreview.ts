@@ -78,7 +78,7 @@ const KEY_FUNCTION_LABELS = [
   'Man Down Alarm',
 ] as const;
 
-function sideKeyLabel(byte: number): string {
+export function dm32KeyFunctionLabel(byte: number): string {
   if (byte >= 0 && byte < KEY_FUNCTION_LABELS.length) {
     return KEY_FUNCTION_LABELS[byte] ?? `Function ${byte}`;
   }
@@ -117,13 +117,13 @@ export function settingsRetainPreview(data: Uint8Array): Dm32RetainPreviewRow[] 
   if (sk1Short || sk1Long) {
     rows.push({
       label: 'Side key 1',
-      value: `${sideKeyLabel(sk1Short)} (short) / ${sideKeyLabel(sk1Long)} (long)`,
+      value: `${dm32KeyFunctionLabel(sk1Short)} (short) / ${dm32KeyFunctionLabel(sk1Long)} (long)`,
     });
   }
   if (sk2Short || sk2Long) {
     rows.push({
       label: 'Side key 2',
-      value: `${sideKeyLabel(sk2Short)} (short) / ${sideKeyLabel(sk2Long)} (long)`,
+      value: `${dm32KeyFunctionLabel(sk2Short)} (short) / ${dm32KeyFunctionLabel(sk2Long)} (long)`,
     });
   }
 
@@ -132,7 +132,7 @@ export function settingsRetainPreview(data: Uint8Array): Dm32RetainPreviewRow[] 
   if (pf1Short || pf1Long) {
     rows.push({
       label: 'Programmable key 1',
-      value: `${sideKeyLabel(pf1Short)} (short) / ${sideKeyLabel(pf1Long)} (long)`,
+      value: `${dm32KeyFunctionLabel(pf1Short)} (short) / ${dm32KeyFunctionLabel(pf1Long)} (long)`,
     });
   }
 
