@@ -5,7 +5,12 @@ import { getDebugReadHistory } from './debugReadHistory.ts';
 import { archiveDm32Capture } from './dm32Capture.ts';
 import { compareDm32Evidence } from '@integrations/radio-io/radios/dm32uv/debugCompare.ts';
 import type { Dm32DebugCapture } from '@integrations/radio-io/radios/dm32uv/debugCapture.ts';
-import { buildDebugReadHistoryZip, openDebugReadHistoryZip } from './debugReadHistoryArchive.ts';
+import {
+  buildDebugReadHistoryZip,
+  isDebugReadHistoryZip,
+  openDebugReadHistoryZip,
+} from './debugReadHistoryArchive.ts';
+import { syntheticOpenGd77Archive } from './opengd77.fixture.ts';
 
 const descriptor = { slug: 'archive-test', archiveModelId: 'AT-D890UV' };
 describe('history archive', () => {
@@ -146,5 +151,30 @@ describe('DM-32 history archive', () => {
     const files3 = unzipSync(zip);
     files3['history.json'] = strToU8('[]');
     expect(() => openDebugReadHistoryZip(zipSync(files3), dm32)).toThrow();
+  });
+});
+
+describe.each([
+  ['dm-1701-opengd77', 'DM-1701'],
+  ['md-9600-opengd77', 'MD-9600'],
+])('OpenGD77 history archive %s', (slug, model) => {
+  it('round-trips and refuses the other OpenGD77 profile', async () => {
+    const d = { slug, archiveModelId: model };
+    const store = getDebugReadHistory(d);
+    store.clear();
+    const entries = [
+      store.add(await syntheticOpenGd77Archive(model)),
+      store.add(await syntheticOpenGd77Archive(model, { capturedAt: '2026-02-01T00:00:00.000Z' })),
+    ];
+    const zip = buildDebugReadHistoryZip(d, entries);
+    expect(isDebugReadHistoryZip(zip)).toBe(true);
+    const opened = openDebugReadHistoryZip(zip, d);
+    expect(opened.map((a) => a.zipBytes)).toEqual(entries.map((e) => e.archive.zipBytes));
+    const other =
+      slug === 'dm-1701-opengd77'
+        ? { slug: 'md-9600-opengd77', archiveModelId: 'MD-9600' }
+        : { slug: 'dm-1701-opengd77', archiveModelId: 'DM-1701' };
+    expect(() => openDebugReadHistoryZip(zip, other)).toThrow();
+    store.clear();
   });
 });

@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { Dm32Calibration } from './Dm32Calibration.tsx';
 import { Dm32DecodedDiff } from './Dm32DecodedDiff.tsx';
+import { OpenGd77DecodedDiff } from './OpenGd77DecodedDiff.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
 import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
@@ -28,6 +29,8 @@ export interface RadioDebugDescriptor {
   capture?: (opts?: { signal?: AbortSignal; onProgress?: ProgressFn }) => Promise<DebugArchive>;
   Calibration?: ComponentType<DebugCalibrationProps>;
   DecodedDiff?: ComponentType<DebugDecodedDiffProps>;
+  /** Keep every read and opened archive in the shared tab-only history, with Compare. */
+  readHistory?: boolean;
   family: string;
   capabilities: readonly RadioDebugCapability[];
   /** Overview rows after `Model · selected`, for a profile with its own identity evidence. */
@@ -102,6 +105,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-1701-opengd77',
+    DecodedDiff: OpenGd77DecodedDiff,
+    readHistory: true,
     capture: captureOpenGd77(OPENGD77_DM1701_MODEL_ID),
     model: 'DM-1701',
     archiveModelId: 'DM-1701',
@@ -113,6 +118,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'md-9600-opengd77',
+    DecodedDiff: OpenGd77DecodedDiff,
+    readHistory: true,
     capture: captureOpenGd77(OPENGD77_MD9600_MODEL_ID),
     model: 'MD-9600',
     archiveModelId: 'MD-9600',

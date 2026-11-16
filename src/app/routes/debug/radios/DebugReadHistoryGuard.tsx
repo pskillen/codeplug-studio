@@ -1,41 +1,63 @@
-import { useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { useBlocker, useLocation } from 'react-router-dom';
 import ConfirmModal from '@app/components/v2/ConfirmModal.tsx';
 import DesignSystemV2Provider from '@app/components/v2/DesignSystemV2Provider.tsx';
-import { getDebugReadHistory, useDebugReadHistory } from './debugReadHistory.ts';
+import { getDebugReadHistory, type DebugReadHistoryStore } from './debugReadHistory.ts';
+import { radioDebugDescriptors } from './descriptors.ts';
 
-const mini = getDebugReadHistory({ slug: 'uv-5r-mini', archiveModelId: 'UV-5R Mini' });
-const rt95 = getDebugReadHistory({ slug: 'rt95', archiveModelId: 'retevis-rt95' });
-const d890 = getDebugReadHistory({ slug: 'at-d890uv', archiveModelId: 'AT-D890UV' });
-const dm32 = getDebugReadHistory({ slug: 'dm-32uv', archiveModelId: 'DM-32UV' });
 const normalize = (path: string) => path.replace(/\/+$/, '');
-const isMini = (path: string) =>
-  ['/debug/uv5r-mini', '/debug/radios/uv-5r-mini'].includes(normalize(path));
-const isRt95 = (path: string) => normalize(path) === '/debug/radios/rt95';
 
-const isDm32 = (path: string) => normalize(path) === '/debug/radios/dm-32uv';
-const isD890 = (path: string) => normalize(path) === '/debug/radios/at-d890uv';
+interface GuardedHistory {
+  store: DebugReadHistoryStore;
+  matches: (path: string) => boolean;
+}
+
+const guarded: readonly GuardedHistory[] = [
+  {
+    store: getDebugReadHistory({ slug: 'uv-5r-mini', archiveModelId: 'UV-5R Mini' }),
+    matches: (path) => ['/debug/uv5r-mini', '/debug/radios/uv-5r-mini'].includes(normalize(path)),
+  },
+  {
+    store: getDebugReadHistory({ slug: 'rt95', archiveModelId: 'retevis-rt95' }),
+    matches: (path) => normalize(path) === '/debug/radios/rt95',
+  },
+  {
+    store: getDebugReadHistory({ slug: 'at-d890uv', archiveModelId: 'AT-D890UV' }),
+    matches: (path) => normalize(path) === '/debug/radios/at-d890uv',
+  },
+  {
+    store: getDebugReadHistory({ slug: 'dm-32uv', archiveModelId: 'DM-32UV' }),
+    matches: (path) => normalize(path) === '/debug/radios/dm-32uv',
+  },
+  ...radioDebugDescriptors
+    .filter((descriptor) => descriptor.readHistory)
+    .map((descriptor) => ({
+      store: getDebugReadHistory(descriptor),
+      matches: (path: string) => normalize(path) === `/debug/radios/${descriptor.slug}`,
+    })),
+];
+
+const subscribeAll = (listener: () => void) => {
+  const unsubscribes = guarded.map((entry) => entry.store.subscribe(listener));
+  return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+};
+/** One primitive snapshot (undownloaded count per history), so it is stable between changes. */
+const pendingKey = () => guarded.map((entry) => entry.store.getSnapshot().undownloaded).join(',');
 
 export function DebugReadHistoryGuard() {
-  const dm32Pending = useDebugReadHistory(dm32).undownloaded;
-  const miniPending = useDebugReadHistory(mini).undownloaded;
-  const d890Pending = useDebugReadHistory(d890).undownloaded;
-  const rt95Pending = useDebugReadHistory(rt95).undownloaded;
+  const pending = useSyncExternalStore(subscribeAll, pendingKey, pendingKey).split(',').map(Number);
+  const anyPending = pending.some((count) => count > 0);
   const { pathname } = useLocation();
   useEffect(() => {
-    if (!miniPending && !rt95Pending && !d890Pending && !dm32Pending) return;
+    if (!anyPending) return;
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = '';
     };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
-  }, [miniPending, rt95Pending, d890Pending, dm32Pending]);
-  const active =
-    (isMini(pathname) && miniPending > 0) ||
-    (isRt95(pathname) && rt95Pending > 0) ||
-    (isD890(pathname) && d890Pending > 0) ||
-    (isDm32(pathname) && dm32Pending > 0);
+  }, [anyPending]);
+  const active = guarded.some((entry, i) => entry.matches(pathname) && pending[i]! > 0);
   return active ? <NavigationGuard /> : null;
 }
 
@@ -43,10 +65,9 @@ function NavigationGuard() {
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       currentLocation.pathname !== nextLocation.pathname &&
-      ((isMini(currentLocation.pathname) && !isMini(nextLocation.pathname)) ||
-        (isRt95(currentLocation.pathname) && !isRt95(nextLocation.pathname)) ||
-        (isD890(currentLocation.pathname) && !isD890(nextLocation.pathname)) ||
-        (isDm32(currentLocation.pathname) && !isDm32(nextLocation.pathname))),
+      guarded.some(
+        (entry) => entry.matches(currentLocation.pathname) && !entry.matches(nextLocation.pathname),
+      ),
   );
   return (
     <DesignSystemV2Provider>
