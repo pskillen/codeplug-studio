@@ -1,3 +1,4 @@
+import { parseChannelTone } from '@core/domain/tones.ts';
 import type { ChannelModeProfileAnalog, ScanInclusion } from '@core/models/library.ts';
 import type { ChannelTone } from '@core/models/libraryTypes.ts';
 import { chirpPercentToWire, chirpWireToPercent } from './profiles.ts';
@@ -19,7 +20,7 @@ interface ClassifiedChirpTone {
   ctcssFreq: string;
   /** Zero-padded 3-digit DTCS code. */
   dtcsCode: string;
-  /** CHIRP polarity wire `N` or `R` (Studio `P` → `R`). */
+  /** CHIRP polarity wire `N` or `R` (Studio inverted `I`, and legacy `P`, → `R`). */
   dtcsPolarity: 'N' | 'R';
 }
 
@@ -45,9 +46,10 @@ function chirpDtcsDefaults(): Pick<
   };
 }
 
-/** Classify Studio `ChannelTone` (`none` | CTCSS Hz | `D023N`) for CHIRP export. */
+/** Classify Studio `ChannelTone` (`none` | CTCSS Hz | `D023N` | `D023I`) for CHIRP export. */
 export function classifyChirpTone(tone: ChannelTone): ClassifiedChirpTone {
-  if (tone === 'none' || !tone.trim()) {
+  const parsed = parseChannelTone(tone);
+  if (parsed.kind === 'none') {
     return {
       kind: 'none',
       ctcssFreq: CHIRP_DEFAULT_TONE_FREQ,
@@ -55,21 +57,17 @@ export function classifyChirpTone(tone: ChannelTone): ClassifiedChirpTone {
       dtcsPolarity: 'N',
     };
   }
-  const trimmed = tone.trim();
-  const dcs = /^D(\d{1,3})([NP]?)$/i.exec(trimmed);
-  if (dcs) {
-    const code = Number.parseInt(dcs[1]!, 10);
-    const studioPol = (dcs[2]?.toUpperCase() || 'N') as 'N' | 'P';
+  if (parsed.kind === 'dcs') {
     return {
       kind: 'DTCS',
       ctcssFreq: CHIRP_DEFAULT_TONE_FREQ,
-      dtcsCode: String(code).padStart(3, '0'),
-      dtcsPolarity: studioPol === 'P' ? 'R' : 'N',
+      dtcsCode: String(parsed.code).padStart(3, '0'),
+      dtcsPolarity: parsed.polarity === 'I' ? 'R' : 'N',
     };
   }
   return {
     kind: 'Tone',
-    ctcssFreq: trimmed,
+    ctcssFreq: tone.trim(),
     dtcsCode: CHIRP_DEFAULT_DTCS_CODE,
     dtcsPolarity: 'N',
   };

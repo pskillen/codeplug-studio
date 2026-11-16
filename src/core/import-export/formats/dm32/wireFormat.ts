@@ -1,3 +1,4 @@
+import { canonicalDcsChannelTone } from '@core/domain/tones.ts';
 import type { ChannelTone, DMRTimeSlot } from '@core/models/libraryTypes.ts';
 import type { ChannelMode, ChannelModeProfile } from '@core/models/library.ts';
 import type { AnalogSquelchMode, TxPermitMode } from '@core/models/channelBehaviourDefaults.ts';
@@ -25,7 +26,7 @@ export function formatDm32FlagWire(value: boolean): string {
 
 export function formatDm32ToneWire(tone: ChannelTone): string {
   if (tone === 'none') return 'None';
-  return tone;
+  return canonicalDcsChannelTone(tone);
 }
 
 export function formatDm32ChannelTypeWire(
