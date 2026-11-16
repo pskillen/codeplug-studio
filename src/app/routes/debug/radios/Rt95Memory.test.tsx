@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   packRadioBackupZip,
@@ -61,8 +61,8 @@ describe('RT95 MMD1 viewer', () => {
       </MantineProvider>,
     );
     expect(screen.getByText(/MM9PDY-compatible data present/)).toBeInTheDocument();
-    expect(screen.getByText(/Slot 1: clone occupancy unavailable/)).toBeInTheDocument();
-    expect(screen.getByText(/Slot 200: clone occupancy unavailable/)).toBeInTheDocument();
+    expect(screen.getByText(/2 members point at empty or unreadable slots/)).toBeInTheDocument();
+    expect(screen.getByText(/1 \(unavailable\), 200 \(unavailable\)/)).toBeInTheDocument();
     expect(screen.getByText(/ZST1 state.*invalid/)).toBeInTheDocument();
     view.rerender(
       <MantineProvider>
@@ -163,8 +163,64 @@ describe('RT95 MMD1 viewer', () => {
         <Rt95Memory archive={a} />
       </MantineProvider>,
     );
-    expect(screen.getByText(/Slot 1: unreadable record/)).toBeInTheDocument();
-    expect(screen.queryByText(/Slot 1: VALID/)).not.toBeInTheDocument();
+    expect(screen.getByText(/1 member points at empty or unreadable slots/)).toBeInTheDocument();
+    expect(screen.getByText(/1 \(unreadable\)/)).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('rt95-zone-1')).queryByRole('cell', { name: /VALID/ }),
+    ).not.toBeInTheDocument();
+  });
+  it('renders only occupied zone members, radio name first, and counts the hidden ones', () => {
+    const clone = new Uint8Array(0x32a0);
+    const rec = (slotIndex: number, wireName: string) =>
+      encodeChannelRecord({
+        slotIndex,
+        empty: false,
+        wireName,
+        rxHz: 145500000,
+        txHz: 145500000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'FM',
+      });
+    clone.set(rec(1, 'GB3WE'), 0);
+    clone.set(rec(3, 'LOCAL'), 2 * 32);
+    clone[RT95_OCCUPIED_BITFIELD_OFFSET] = 0b101;
+    const bytes = new Uint8Array(8192).fill(255);
+    for (const block of encodeRt95ModData(
+      {
+        zones: [{ name: 'MIXED', channelIndexes: [0, 1, 2] }],
+        descriptions: [{ channelIndex: 0, text: 'Westerton' }],
+      },
+      clone,
+    ).blocks)
+      bytes.set(block.bytes, block.address - 0x4000);
+    const a = archive(bytes);
+    a.regions['programming-image'] = clone;
+    a.manifest.regions.push({
+      id: 'programming-image',
+      label: 'Clone',
+      address: 0,
+      byteLength: clone.length,
+      path: 'regions/image.bin',
+      restoreRole: 'inspect-only',
+    });
+    render(
+      <MantineProvider>
+        <Rt95Memory archive={a} />
+      </MantineProvider>,
+    );
+    const zone = within(screen.getByTestId('rt95-zone-1'));
+    expect(zone.getByText('Zone 1: MIXED')).toBeInTheDocument();
+    expect(zone.getByText('3 members')).toBeInTheDocument();
+    expect(zone.getByText('members valid')).toBeInTheDocument();
+    expect(zone.getByRole('cell', { name: 'GB3WE Westerton' })).toBeInTheDocument();
+    expect(zone.getByRole('cell', { name: 'LOCAL' })).toBeInTheDocument();
+    expect(zone.getAllByRole('row')).toHaveLength(3);
+    expect(zone.getByText(/1 member points at empty or unreadable slots/)).toBeInTheDocument();
+    expect(zone.getByText(/2 \(empty\)/)).toBeInTheDocument();
+    expect(screen.getByText(/no callsign field/)).toBeInTheDocument();
+    expect(screen.queryByText(/\[unknown\]/)).not.toBeInTheDocument();
   });
   it.each([
     [255, 'blank or absent'],
