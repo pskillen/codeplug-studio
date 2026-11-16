@@ -233,7 +233,7 @@ describe('DM-32UV debug page', () => {
   const history = getDebugReadHistory({ slug: 'dm-32uv', archiveModelId: 'DM-32UV' });
   afterEach(() => act(() => history.clear()));
 
-  it('mounts one Calibration panel from the selected read, with no overlay select', async () => {
+  it('mounts one Calibration panel from the selected read, with the Read and Overlay pickers', async () => {
     const first = await archiveDm32Capture(dm32CalibrationCapture());
     const second = await archiveDm32Capture(
       dm32CalibrationCapture({
@@ -251,12 +251,13 @@ describe('DM-32UV debug page', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
     expect(screen.queryByText('Calibration unavailable')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Calibration overlay')).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Read' })).toBeInTheDocument();
     expect(screen.getByText('Not validated on hardware')).toBeInTheDocument();
     // The newest retained read is selected: its relocated page address shows.
-    expect(screen.getByText('0x00004000')).toBeInTheDocument();
+    expect(screen.getByText(/Live page: 0x00004000/)).toBeInTheDocument();
     act(() => history.select(firstId));
-    expect(screen.getByText('0x00002000')).toBeInTheDocument();
-    expect(screen.queryByText('0x00004000')).not.toBeInTheDocument();
+    expect(screen.getByText(/Live page: 0x00002000/)).toBeInTheDocument();
+    expect(screen.queryByText(/Live page: 0x00004000/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Trace' }));
     expect(screen.getByText('Trace unavailable')).toBeInTheDocument();
   });
