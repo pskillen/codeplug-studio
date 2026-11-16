@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Inspect captured clone channels, all registered settings, MMD1 zones and P-key bytes without a library or build.
+Inspect captured clone channels, MMD1 zones and P-key bytes without a library or build.
 
 ## Props and usage
 
-`Rt95Memory` takes a `DebugArchive`; `MemoryViewer` mounts it for RT95 archives. Related: [Rt95MemorySettings](Rt95MemorySettings.md).
+`Rt95Memory` takes a `DebugArchive`; `Rt95MemoryView` (the RT95 descriptor's `Memory`) wraps it with the no-capture alert and the not-decoded lines. Settings are the page-level Settings tab, `Rt95Settings` (projection plus `useSensitiveReveal`, rendering [Rt95MemorySettings](Rt95MemorySettings.md)).
 
 ## Behaviour
 

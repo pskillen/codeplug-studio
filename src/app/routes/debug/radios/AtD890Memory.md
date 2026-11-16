@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Read-only AT-D890UV Memory viewer: MR channels, zones, contacts, talk groups, RX groups, scan lists and optional settings decoded from the open debug archive, without a project, library or build.
+Read-only AT-D890UV Memory viewer: MR channels, zones, contacts, talk groups, RX groups, scan lists decoded from the open debug archive, without a project, library or build. Settings are their own page-level tab (`AtD890Settings`), which reads the same memoised projection (`projectAtD890Archive` in `debugProjections.ts`), so the decode runs once per archive.
 
 ## Props
 
