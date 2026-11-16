@@ -13,7 +13,8 @@ import { createOpenUv380Image, writeAbs } from '@integrations/radio-io/radios/op
 import { encodeZonesIntoImage } from '@integrations/radio-io/radios/opengd77/zoneCodec.ts';
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
-import { OpenGd77Settings } from './OpenGd77Settings.tsx';
+import { openGd77SettingsView } from '@integrations/radio-io/radios/opengd77/debugSettingsView.ts';
+import { SettingsTab } from './SettingsTab.tsx';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 import { syntheticOpenGd77Archive } from './opengd77.fixture.ts';
 import { hexRows, sensitiveRanges } from './viewerUtils.ts';
@@ -63,10 +64,16 @@ const view = (archive?: DebugArchive) =>
     </MantineProvider>,
   );
 
+/** The table row whose Setting cell starts with `label` (the help text follows it in the same cell). */
+const row = (label: string) =>
+  Array.from(document.querySelectorAll('tbody tr')).find(
+    (tr) => tr.querySelector('td')?.firstChild?.textContent === label,
+  ) as HTMLElement;
+
 const viewSettings = (archive?: DebugArchive) =>
   render(
     <MantineProvider>
-      <OpenGd77Settings archive={archive} />
+      <SettingsTab archive={archive} settings={openGd77SettingsView} />
     </MantineProvider>,
   );
 
@@ -161,7 +168,7 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       writeAbs(img, 0xe0, new TextEncoder().encode('M0TEST'));
       // An older archive: no settings gap region, so the struct tail is not captured.
       viewSettings(await syntheticOpenGd77Archive(model, { image: img, settingsGap: null }));
-      expect(screen.getByText('Firmware settings, read-only')).toBeInTheDocument();
+      expect(screen.getByText(/not validated on hardware/)).toBeInTheDocument();
       expect(
         screen.getByText(
           model === OPENGD77_DM1701_MODEL_ID
@@ -169,29 +176,27 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
             : /Backup copy; the live copy is in backup SRAM/,
         ),
       ).toBeInTheDocument();
-      const row = (id: string) => document.querySelector(`[data-row-id="${id}"]`) as HTMLElement;
-      expect(row('setting-magicNumber').textContent).toContain('0x4780');
-      expect(row('setting-timezone').textContent).toContain('UTC+00:00, local time shown');
-      expect(row('setting-vfoScanHigh').textContent).toContain('Not captured');
-      expect(row('setting-txPowerLevel').textContent).toContain('Not captured');
-      expect(row('general-radioName').textContent).toContain('M0TEST');
-      expect(row('general-sn').textContent).toContain('unused (no reader)');
+      expect(row('magicNumber').textContent).toContain('0x4780');
+      expect(row('timezone').textContent).toContain('UTC+00:00, local time shown');
+      expect(row('vfoScanHigh').textContent).toContain('Not captured');
+      expect(row('txPowerLevel').textContent).toContain('Not captured');
+      expect(row('radioName (callsign)').textContent).toContain('M0TEST');
+      expect(row('sn').textContent).toContain('unused (no reader)');
     });
 
     it('decodes the struct tail from the settings gap region of a current archive', async () => {
       viewSettings(await syntheticOpenGd77Archive(model));
-      const row = (id: string) => document.querySelector(`[data-row-id="${id}"]`) as HTMLElement;
-      expect(row('setting-magicNumber').textContent).toContain('0x4780');
-      expect(row('setting-vfoScanHigh').textContent).not.toContain('Not captured');
-      expect(row('setting-txPowerLevel').textContent).not.toContain('Not captured');
+      expect(row('magicNumber').textContent).toContain('0x4780');
+      expect(row('vfoScanHigh').textContent).not.toContain('Not captured');
+      expect(row('txPowerLevel').textContent).not.toContain('Not captured');
     });
 
     it('does not name settings fields when the version is wrong', async () => {
       const img = image();
       writeAbs(img, 0x604b, new Uint8Array([0x76, 0x47, 0x00, 0x00]));
       viewSettings(await syntheticOpenGd77Archive(model, { image: img }));
-      expect(screen.getByText('Firmware settings not decoded')).toBeInTheDocument();
-      expect(document.querySelector('[data-row-id="setting-timezone"]')).toBeNull();
+      expect(screen.getByText(/Firmware settings not decoded/)).toBeInTheDocument();
+      expect(screen.queryByText('timezone')).toBeNull();
     });
   },
 );
@@ -206,13 +211,13 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       writeAbs(img, 0x751c, new Uint8Array([0x12, 0x34, 0xff]));
       return syntheticOpenGd77Archive(model, { image: img });
     }
-    const row = (id: string) => document.querySelector(`[data-row-id="${id}"]`) as HTMLElement;
 
     it('hides the boot PIN and prgPwd until Show password, then hides them again', async () => {
       viewSettings(await passwordArchive());
-      expect(row('general-bootPasswordEnable').textContent).toContain('Enabled');
-      expect(row('general-bootPasswordPin').textContent).toContain('MD-9600 layout unconfirmed');
-      for (const id of ['general-bootPasswordPin', 'general-prgPwd']) {
+      expect(row('Boot password enabled').textContent).toContain('Enabled');
+      expect(row('Boot password PIN').textContent).toContain('MD-9600 layout unconfirmed');
+      fireEvent.click(screen.getByLabelText(/Show raw bytes/));
+      for (const id of ['Boot password PIN', 'prgPwd (CPS programming password)']) {
         expect(row(id).textContent).toContain('Hidden (password)');
         expect(row(id).textContent).toContain('••');
       }
@@ -220,8 +225,8 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       expect(document.body.textContent).not.toContain('PRG123');
       expect(document.body.textContent).not.toContain('12 34 FF');
       fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
-      expect(row('general-bootPasswordPin').textContent).toContain('1234');
-      expect(row('general-prgPwd').textContent).toContain('PRG123');
+      expect(row('Boot password PIN').textContent).toContain('1234');
+      expect(row('prgPwd (CPS programming password)').textContent).toContain('PRG123');
       fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
       expect(document.body.textContent).not.toContain('PRG123');
     });

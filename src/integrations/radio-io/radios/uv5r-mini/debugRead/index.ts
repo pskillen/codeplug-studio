@@ -28,6 +28,7 @@ export {
   type Uv5rMiniDebugSpan,
   type Uv5rMiniSpanHash,
 } from './spans.ts';
+export { uv5rMiniSettingsView, type Uv5rMiniSettingsArchive } from './settingsView.ts';
 export {
   compareUv5rMiniReads,
   type Uv5rMiniCompareLine,

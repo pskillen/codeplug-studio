@@ -592,22 +592,13 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               <MemoryViewer archive={archive} />
             )}
           </Tabs.Panel>
-          {(descriptor.settings || descriptor.Settings) && (
+          {descriptor.settings && (
             <Tabs.Panel value="settings" pt="md">
-              {descriptor.settings ? (
-                <SettingsTab
-                  key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
-                  archive={archive}
-                  settings={descriptor.settings}
-                />
-              ) : (
-                descriptor.Settings && (
-                  <descriptor.Settings
-                    key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
-                    archive={archive}
-                  />
-                )
-              )}
+              <SettingsTab
+                key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
+                archive={archive}
+                settings={descriptor.settings}
+              />
             </Tabs.Panel>
           )}
           <Tabs.Panel value="hex" pt="md">
