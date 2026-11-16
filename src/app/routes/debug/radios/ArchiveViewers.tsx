@@ -24,7 +24,10 @@ import {
   hexRows,
   isDm32ModelId,
   regionIdentity,
+  sensitiveRanges,
 } from './viewerUtils.ts';
+import { SensitiveRevealButton } from './SensitiveReveal.tsx';
+import { useSensitiveReveal } from './useSensitiveReveal.ts';
 
 function provenance(archive: DebugArchive | undefined, id: string) {
   return archive?.manifest.radioModelId === RT95_MODEL_ID
@@ -39,6 +42,7 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
   const [page, setPage] = useState(0);
   const [jump, setJump] = useState('');
   const [jumpError, setJumpError] = useState<string>();
+  const reveal = useSensitiveReveal(archive);
   if (!archive)
     return <Alert title="No capture">Open or read a capture to inspect its bytes.</Alert>;
   const wire = selected === '__mini_wire' ? archive.sidecars['debug/wire.bin'] : undefined;
@@ -49,6 +53,7 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
   const pages = Math.max(1, Math.ceil(bytes.length / HEX_PAGE_BYTES));
   const current = Math.min(page, pages - 1);
   const base = wire ? 0 : region.address;
+  const mask = wire ? [] : sensitiveRanges(archive, region.id);
   const goToAddress = () => {
     const text = jump.trim().replace(/^0x/i, '');
     const target = /^[0-9a-f]+$/i.test(text) ? parseInt(text, 16) : NaN;
@@ -104,9 +109,18 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
             : ''}{' '}
           · {bytes.length} bytes
         </Text>
+        {mask.length > 0 && (
+          <Group gap="xs">
+            <Text size="sm">
+              {mask.map((range) => range.label).join(', ')} bytes are{' '}
+              {reveal.revealed ? 'shown' : 'hidden (••)'}.
+            </Text>
+            <SensitiveRevealButton revealed={reveal.revealed} onToggle={reveal.toggle} />
+          </Group>
+        )}
         <div style={{ overflowX: 'auto' }}>
           <pre aria-label="Hexadecimal bytes">
-            {hexRows(bytes, wire ? 0 : region.address, current)
+            {hexRows(bytes, wire ? 0 : region.address, current, reveal.revealed ? [] : mask)
               .map(
                 (row) =>
                   `${formatAddress(row.address)}${provenance(archive, region.id)}  ${row.hex.padEnd(47)}  ${row.ascii}`,
@@ -181,6 +195,7 @@ export function CompareViewer(props: {
   const [error, setError] = useState<string>();
   const [selected, setSelected] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const reveal = useSensitiveReveal(archive);
   const open = async (file: File | null) => {
     if (!file) return;
     try {
@@ -202,6 +217,8 @@ export function CompareViewer(props: {
   const length = a && b ? Math.min(a.length, b.length) : 0;
   const pages = Math.max(1, Math.ceil(length / HEX_PAGE_BYTES));
   const current = Math.min(page, pages - 1);
+  const mask = region && !reveal.revealed ? sensitiveRanges(archive, region.id) : [];
+  const hasSensitive = region ? sensitiveRanges(archive, region.id).length > 0 : false;
   return (
     <Stack>
       <Title order={3}>Compare captures</Title>
@@ -305,15 +322,24 @@ export function CompareViewer(props: {
               />
               <Card withBorder>
                 <Text fw={600}>Byte comparison · {region.label}</Text>
+                {hasSensitive && (
+                  <Group gap="xs">
+                    <Text size="sm">
+                      Password bytes are {reveal.revealed ? 'shown' : 'hidden (••)'} in A and B.
+                    </Text>
+                    <SensitiveRevealButton revealed={reveal.revealed} onToggle={reveal.toggle} />
+                  </Group>
+                )}
                 <div style={{ overflowX: 'auto' }}>
                   <pre aria-label="Byte comparison">
-                    {hexRows(a.subarray(0, length), left.address, current)
+                    {hexRows(a.subarray(0, length), left.address, current, mask)
                       .map((row, i) => {
                         const offset = current * HEX_PAGE_BYTES + i * 16;
                         const otherRow = hexRows(
                           b.subarray(offset, Math.min(offset + 16, length)),
                           left.address + offset,
                           0,
+                          mask,
                         )[0];
                         return `${formatAddress(row.address)}${provenance(archive, region.id)}  A ${row.hex}\n${formatAddress(row.address)}${provenance(archive, region.id)}  B ${otherRow?.hex ?? ''}`;
                       })

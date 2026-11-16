@@ -20,6 +20,10 @@ import {
 } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import type { AtD890MemberStatus } from '@integrations/radio-io/radios/at-d890uv/debugMemory.ts';
 import { RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
+import {
+  rt95DebugSensitiveRanges,
+  type DebugSensitiveRange,
+} from '@integrations/radio-io/radios/rt95/debugSensitive.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
 const archiveIds = new WeakMap<DebugArchive, number>();
@@ -34,16 +38,42 @@ export function archiveKey(archive: DebugArchive): number {
 export const HEX_PAGE_BYTES = 256;
 export const formatAddress = (n: number) => `0x${n.toString(16).toUpperCase().padStart(8, '0')}`;
 
-/** A bounded slice of a single captured region, never a fabricated gap. */
-export function hexRows(bytes: Uint8Array, address: number, page: number) {
+/** Shown in place of each masked byte: same width as a hex pair. */
+export const MASKED_HEX_BYTE = '••';
+
+/** Password bytes in one region of this archive, masked until the operator reveals them. */
+export function sensitiveRanges(
+  archive: DebugArchive | undefined,
+  regionId: string,
+): readonly DebugSensitiveRange[] {
+  return archive?.manifest.radioModelId === RT95_MODEL_ID ? rt95DebugSensitiveRanges(regionId) : [];
+}
+
+const isMasked = (address: number, mask: readonly DebugSensitiveRange[]) =>
+  mask.some((range) => address >= range.start && address < range.end);
+
+/** A bounded slice of a single captured region, never a fabricated gap. Bytes in `mask` are hidden. */
+export function hexRows(
+  bytes: Uint8Array,
+  address: number,
+  page: number,
+  mask: readonly DebugSensitiveRange[] = [],
+) {
   const start = Math.max(0, Math.floor(page)) * HEX_PAGE_BYTES;
   const rows = [];
   for (let offset = start; offset < Math.min(start + HEX_PAGE_BYTES, bytes.length); offset += 16) {
-    const data = bytes.subarray(offset, Math.min(offset + 16, bytes.length));
+    const data = Array.from(bytes.subarray(offset, Math.min(offset + 16, bytes.length)));
+    const at = (i: number) => address + offset + i;
     rows.push({
       address: address + offset,
-      hex: Array.from(data, (b) => b.toString(16).padStart(2, '0')).join(' '),
-      ascii: Array.from(data, (b) => (b >= 32 && b <= 126 ? String.fromCharCode(b) : '.')).join(''),
+      hex: data
+        .map((b, i) => (isMasked(at(i), mask) ? MASKED_HEX_BYTE : b.toString(16).padStart(2, '0')))
+        .join(' '),
+      ascii: data
+        .map((b, i) =>
+          isMasked(at(i), mask) ? '•' : b >= 32 && b <= 126 ? String.fromCharCode(b) : '.',
+        )
+        .join(''),
     });
   }
   return rows;
