@@ -63,7 +63,7 @@ it('opens legacy and partial archives with honest availability and body provenan
     </DesignSystemV2Provider>,
   );
   expect(
-    within(screen.getByText(/Model check text \[body\]/).parentElement!).getByText(/Not captured/),
+    within(screen.getByText(/Radio Type \[body\]/).parentElement!).getByText(/Not captured/),
   ).toBeInTheDocument();
   const partial = openDebugArchive(
     packRadioBackupZip(
@@ -81,12 +81,12 @@ it('opens legacy and partial archives with honest availability and body provenan
     </DesignSystemV2Provider>,
   );
   expect(
-    within(screen.getByText(/Model check text \[body\]/).parentElement!).getByText(
+    within(screen.getByText(/Radio Type \[body\]/).parentElement!).getByText(
       /Raw: 41 42 00 43 44 45 46.*Text: AB.CDEF/,
     ),
   ).toBeInTheDocument();
   expect(
-    within(screen.getByText(/Stored version text \[body\]/).parentElement!).getByText(
+    within(screen.getByText(/Version \[body\]/).parentElement!).getByText(
       /Raw: 38 · partial.*Text: 8/,
     ),
   ).toBeInTheDocument();
@@ -183,7 +183,7 @@ it('draws a dashed calibration overlay and reports captured field differences', 
   );
   expect(screen.getAllByText('Overlay read').length).toBeGreaterThan(0);
   expect(view.container.querySelector('[stroke-dasharray]')).not.toBeNull();
-  expect(screen.getByText(/Model check text.*00 00 00 00 00 00 00 → 41/)).toBeInTheDocument();
+  expect(screen.getByText(/Radio Type.*00 00 00 00 00 00 00 → 41/)).toBeInTheDocument();
   view.rerender(
     <DesignSystemV2Provider>
       <Rt95Calibration overlayArchive={b} />

@@ -90,7 +90,7 @@ describe('RT95 password masking', () => {
       ),
     );
     expect(
-      screen.getByText(/Password comparison bytes \(0x00003B18\): changed$/),
+      screen.getByText(/Program password compare \(0x00003B18\): changed$/),
     ).toBeInTheDocument();
     expect(bodyText()).not.toMatch(/50 57 31 32|41 42 43 44/);
     fireEvent.click(screen.getByRole('button', { name: 'Show password' }));

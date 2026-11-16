@@ -29,14 +29,15 @@ export function Rt95Calibration({
       <Title order={3}>Calibration and production record [body]</Title>
       <Alert title="Not validated on hardware">
         MAIN V1.61 / head V1.41 static trace; applicability to this radio unknown. The head relays
-        each block and can answer without a main-board reply, returning stale or zero bytes;
-        captured bytes are what the head returned, not proof of EEPROM contents. Stable reads and
-        plausible values do not establish calibration health.
+        each block and can answer without a main-board reply, returning stale or zero bytes, the
+        previous block (with a valid checksum), or a block shifted by a late reply; captured bytes
+        are what the head returned, not proof of EEPROM contents. Stable reads and plausible values
+        do not establish calibration health.
       </Alert>
       <Text>
-        Little-endian assumed for display, supported by the traced ARM consumer; signedness and
-        physical units unresolved. Stored production strings do not establish running firmware or
-        modification.
+        Deviation words are little-endian (traced). Squelch and S-meter dB scales are inferred, not
+        measured. Bytes marked unused (no reader) are read by nothing in MAIN, the head or the CPS.
+        Stored production strings do not establish running firmware or modification.
       </Text>
       {fields
         .filter((field) => field.corrections)
@@ -98,8 +99,20 @@ export function Rt95Calibration({
                     : 'Not captured'
                   : `0x${field.value.toString(16).toUpperCase()}`}{' '}
             {field.referenceIndex === undefined ? '' : `· reference index ${field.referenceIndex}`}{' '}
-            · layout {field.layout}, meaning {field.meaning} · {field.source}
+            · layout {field.layout}, meaning{' '}
+            {field.meaning === 'unused' ? 'unused (no reader)' : field.meaning} · {field.source}
           </Text>
+          {(field.units || field.note || field.decoded) && (
+            <Text size="sm" c="dimmed">
+              {[
+                field.decoded ? `Reads as ${field.decoded}` : '',
+                field.units ? `Units: ${field.units}` : '',
+                field.note ?? '',
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </Text>
+          )}
           {field.corrections && (
             <Text size="sm">
               [body] Base + entry − reference (unmasked; firmware masks to 16 bits):{' '}

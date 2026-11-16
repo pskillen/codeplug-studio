@@ -69,7 +69,16 @@ export function Rt95SettingsPanel({
   const unclaimedShown = settings.unclaimed.filter(
     (u) =>
       !searching ||
-      matches(query, 'unclaimed', hexAddress(u.address), u.raw ? hexBytes(u.raw) : ''),
+      matches(
+        query,
+        'unclaimed',
+        u.label,
+        u.confidence,
+        u.note ?? '',
+        u.decoded ?? '',
+        hexAddress(u.address),
+        u.raw ? hexBytes(u.raw) : '',
+      ),
   );
   const { counts } = settings;
   return (
@@ -164,8 +173,10 @@ export function Rt95SettingsPanel({
         <Title order={5}>Unclaimed bytes</Title>
         <Text size="sm" c="dimmed">
           Bytes in the settings windows (0x1980–0x1AFF and 0x3200–0x327F) that no registered field
-          covers. They are unexplained, not zero. {counts.unclaimedBytes} bytes in{' '}
-          {settings.unclaimed.length} runs.
+          covers, explained by the static decode (read-only, none writable): {counts.meaningBytes}{' '}
+          bytes with a meaning, {counts.unusedBytes} unused (no reader), {counts.unknownBytes} still
+          unknown. {counts.unclaimedBytes} bytes in {settings.unclaimed.length} runs. Confidence:
+          traced = read in firmware; partly = from the CPS or CHIRP only, or inferred.
         </Text>
         {unclaimedShown.length === 0 ? (
           <Text size="sm">
@@ -175,9 +186,16 @@ export function Rt95SettingsPanel({
           </Text>
         ) : (
           unclaimedShown.map((u) => (
-            <Text size="sm" key={u.address} ff="monospace">
-              {hexAddress(u.address)} +{u.length}: {u.raw ? hexBytes(u.raw) : NOT_CAPTURED}
-            </Text>
+            <div key={u.address}>
+              <Text size="sm" ff="monospace">
+                {hexAddress(u.address)} +{u.length}: {u.raw ? hexBytes(u.raw) : NOT_CAPTURED}
+              </Text>
+              <Text size="xs" c="dimmed">
+                {u.label} · {u.confidence}
+                {u.decoded ? ` · ${u.decoded}` : ''}
+                {u.note ? ` · ${u.note}` : ''}
+              </Text>
+            </div>
           ))
         )}
       </Stack>
