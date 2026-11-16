@@ -61,7 +61,9 @@ describe('selectOpenGd77Calibration', () => {
     expect(sel.decode.markerPresent).toBe(true);
     expect(sel.bytes).toHaveLength(512);
     const label = sel.decode.rows.find((r) => r.id === 'uhf-low-slot-power')!.label;
-    expect(label).toBe(slot === 'mid-low' ? 'Mid-low power' : 'Very-low power');
+    expect(label).toBe(
+      slot === 'mid-low' ? 'Mid-low power (10 W point)' : 'Very-low power (250 mW point)',
+    );
   });
 
   it('is not-captured without the region (older archive or a Backup ZIP)', () => {
