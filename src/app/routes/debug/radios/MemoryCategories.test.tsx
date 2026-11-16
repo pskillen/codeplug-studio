@@ -58,7 +58,7 @@ describe('MemoryCategories', () => {
   });
 
   it('falls back to the first category when the remembered one is gone', () => {
-    window.localStorage.setItem('debug-memory-category:test', 'missing');
+    window.localStorage.setItem('mm9pdy-codeplug-studio.debug-memory-category:test', 'missing');
     show('debug-memory-category:test');
     expect(screen.getByText('panel one')).toBeInTheDocument();
   });
