@@ -44,7 +44,7 @@ The DM-1701 and MD-9600 (OpenGD77) profiles capture through a guarded read-only 
 
 ## Tabs: Memory and Settings
 
-The page's tab list comes from the radio's descriptor: Overview, Backup, Calibration, Memory, **Settings** (only for a radio whose descriptor has a Settings view), Hex, Compare, Trace. Memory shows channels, zones, lists and contacts; Settings shows the decoded settings of the same archive, read-only. Settings is a tab of its own for RT95, DM-32UV, AT-D890UV and OpenGD77 (DM-1701, MD-9600); it is no longer an inner tab or section of Memory. The UV-5R Mini settings and VFO decode is not on its Settings tab yet (still only on the old `/debug/uv5r-mini` page). DM-32 and D890 Settings share one memoised decode with Memory, so it runs once per archive. Password fields stay masked until revealed.
+The page's tab list comes from the radio's descriptor: Overview, Backup, Calibration, Memory, **Settings** (only for a radio whose descriptor has a Settings view), Hex, Compare, Trace. Memory shows channels, zones, lists and contacts; Settings (UV-5R Mini included) shows the decoded settings of the same archive, read-only. Settings is a tab of its own for RT95, DM-32UV, AT-D890UV and OpenGD77 (DM-1701, MD-9600); it is no longer an inner tab or section of Memory. The UV-5R Mini settings and VFO decode is not on its Settings tab yet (still only on the old `/debug/uv5r-mini` page). DM-32 and D890 Settings share one memoised decode with Memory, so it runs once per archive. Password fields stay masked until revealed.
 
 ## Read progress
 
@@ -66,7 +66,7 @@ Each capture archive can carry the three optional descriptive fields of a radio 
 
 ## Known gaps
 
-- UV-5R Mini has no Settings tab on the shared page yet; its settings and VFO decode is on `/debug/uv5r-mini` only (#1786, later slice). Memory categories are still inner tabs (a dropdown is a later slice).
+- UV-5R Mini: the Settings tab shows the settings and VFO frames decoded from the archive's decoded clone (shared with `/debug/uv5r-mini`, which is unchanged); an archive without a whole clone reads "not captured". The Mini has no password fields. Memory categories are still inner tabs (a dropdown is a later slice).
 - RT95 calibration is not validated on hardware; the head may return stale or zero relay filler without a main-board reply.
 - DM-32UV: the calibration overlay (comparing two pages in the Calibration tab), editing or exporting settings, the digital address book (V-frame `0x0F`), MM9PDY location pages and other blocks outside the product read set, and the firmware build stamp are not captured or decoded yet. The capture is verified against synthetic sessions only, not hardware. Tracking: https://github.com/pskillen/codeplug-studio/issues/1698 (capture) and https://github.com/pskillen/codeplug-studio/issues/1751 (history and comparison).
 - OpenGD77 (DM-1701, MD-9600): APRS, DTMF and additional-settings blocks, the satellite bank and the factory calibration compare are not decoded; the calibration layout comes from two source snapshots and is not hardware-validated ([#1716](https://github.com/pskillen/codeplug-studio/issues/1716)); the factory security-register data is not read; the capture is verified against synthetic sessions only, not hardware. A full User Database read can be up to about 14 MB and takes a long time; it is opt-in per read.

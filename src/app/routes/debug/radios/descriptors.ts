@@ -12,6 +12,7 @@ import { Dm32Settings } from './Dm32Settings.tsx';
 import { Rt95MemoryView } from './Rt95Memory.tsx';
 import { Rt95Settings } from './Rt95Settings.tsx';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
+import { Uv5rMiniSettings } from './Uv5rMiniSettings.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
 import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
@@ -220,6 +221,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
     slug: 'uv-5r-mini',
     Memory: Uv5rMiniMemory,
+    Settings: Uv5rMiniSettings,
     capture: captureUv5rMini,
     model: 'UV-5R Mini',
     archiveModelId: 'UV-5R Mini',

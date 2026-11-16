@@ -92,8 +92,65 @@ function countsText(c: Uv5rMiniFrameCounts): string {
 }
 
 /**
- * Read-only view of a read's settings frame (`0x9000–0x903F`) and VFO frame (`0x8000–0x803F`). It decodes the bytes
- * of the read already taken: nothing here writes, copies or sends them.
+ * The settings frame (`0x9000–0x903F`) and VFO frame (`0x8000–0x803F`) tables decoded from one full decoded clone
+ * (0x10000 bytes). Shared by the old `/debug/uv5r-mini` page and the radio debug page's Settings tab. It decodes
+ * bytes already read: nothing here writes, copies or sends them.
+ */
+export function Uv5rMiniSettingsFrames({ decoded }: { decoded: Uint8Array }) {
+  const settings = useMemo(() => decodeUv5rMiniSettings(decoded), [decoded]);
+  const vfo = useMemo(() => decodeUv5rMiniVfo(decoded), [decoded]);
+  return (
+    <>
+      <Text size="sm" c="dimmed">
+        Evidence is a v0.04 firmware address, or a radio repo ledger id (F302-F309, PR #219); v0.27
+        runs the same code relocated. Confidence: traced is code address and meaning; partly traced
+        is a traced use with an inferred name. A byte shown as unused (no reader) has no reference
+        in either build, which does not rule out a computed pointer access. Nothing in the settings
+        frame is sensitive.
+      </Text>
+
+      <Stack gap="xs">
+        <Group gap="xs">
+          <Title order={4}>Settings frame</Title>
+          <Code>0x9000–0x903F</Code>
+        </Group>
+        <Text size="sm">{countsText(settings.counts)}</Text>
+        {settings.empty ? (
+          <Alert color="yellow" title="Settings frame reads as blank">
+            Every byte of 0x9000–0x903F reads the same (0x00 or 0xFF): the radio would load its
+            defaults.
+          </Alert>
+        ) : null}
+        <FrameTable
+          rows={[settings.fields]}
+          testId="uv5r-mini-settings-frame"
+          columns={['Value']}
+        />
+      </Stack>
+
+      <Stack gap="xs">
+        <Group gap="xs">
+          <Title order={4}>VFO frame</Title>
+          <Code>0x8000–0x803F</Code>
+        </Group>
+        <Text size="sm">
+          Two 32-byte records, A then B. {countsText(vfo.counts)} Busy lockout in VFO mode is
+          settings byte 0x0F, not here. CHIRP has 6 offset digits and its squelch mode at +0x1C; the
+          firmware writes 7 digits and SP-Mute at +0x1B.
+        </Text>
+        <FrameTable
+          rows={vfo.sides.map((s) => s.fields)}
+          testId="uv5r-mini-vfo-frame"
+          columns={vfo.sides.map((s) => `VFO ${s.side}`)}
+        />
+      </Stack>
+    </>
+  );
+}
+
+/**
+ * Read-only view of a read's settings frame and VFO frame. It decodes the bytes of the read already taken:
+ * nothing here writes, copies or sends them.
  */
 export default function Uv5rMiniSettingsSection({
   reads,
@@ -102,9 +159,6 @@ export default function Uv5rMiniSettingsSection({
 }) {
   const [label, setLabel] = useState<string | null>(null);
   const read = reads.find((r) => r.label === label) ?? reads.at(-1);
-
-  const settings = useMemo(() => (read ? decodeUv5rMiniSettings(read.decoded) : null), [read]);
-  const vfo = useMemo(() => (read ? decodeUv5rMiniVfo(read.decoded) : null), [read]);
   const options = reads.map((r) => ({ value: r.label, label: r.label }));
 
   return (
@@ -112,7 +166,7 @@ export default function Uv5rMiniSettingsSection({
       title="Settings and VFO"
       description="0x9000–0x903F (settings) and 0x8000–0x803F (VFO A, B) of one read, named from the radio repo's static trace. View only."
     >
-      {!read || !settings || !vfo ? (
+      {!read ? (
         <Text size="sm" c="dimmed">
           Take a read to view its settings.
         </Text>
@@ -125,49 +179,7 @@ export default function Uv5rMiniSettingsSection({
             onChange={(v) => setLabel(v)}
             allowDeselect={false}
           />
-          <Text size="sm" c="dimmed">
-            Evidence is a v0.04 firmware address, or a radio repo ledger id (F302-F309, PR #219);
-            v0.27 runs the same code relocated. Confidence: traced is code address and meaning;
-            partly traced is a traced use with an inferred name. A byte shown as unused (no reader)
-            has no reference in either build, which does not rule out a computed pointer access.
-            Nothing in the settings frame is sensitive.
-          </Text>
-
-          <Stack gap="xs">
-            <Group gap="xs">
-              <Title order={4}>Settings frame</Title>
-              <Code>0x9000–0x903F</Code>
-            </Group>
-            <Text size="sm">{countsText(settings.counts)}</Text>
-            {settings.empty ? (
-              <Alert color="yellow" title="Settings frame reads as blank">
-                Every byte of 0x9000–0x903F reads the same (0x00 or 0xFF): the radio would load its
-                defaults.
-              </Alert>
-            ) : null}
-            <FrameTable
-              rows={[settings.fields]}
-              testId="uv5r-mini-settings-frame"
-              columns={['Value']}
-            />
-          </Stack>
-
-          <Stack gap="xs">
-            <Group gap="xs">
-              <Title order={4}>VFO frame</Title>
-              <Code>0x8000–0x803F</Code>
-            </Group>
-            <Text size="sm">
-              Two 32-byte records, A then B. {countsText(vfo.counts)} Busy lockout in VFO mode is
-              settings byte 0x0F, not here. CHIRP has 6 offset digits and its squelch mode at +0x1C;
-              the firmware writes 7 digits and SP-Mute at +0x1B.
-            </Text>
-            <FrameTable
-              rows={vfo.sides.map((s) => s.fields)}
-              testId="uv5r-mini-vfo-frame"
-              columns={vfo.sides.map((s) => `VFO ${s.side}`)}
-            />
-          </Stack>
+          <Uv5rMiniSettingsFrames decoded={read.decoded} />
         </Stack>
       )}
     </PageSection>
