@@ -4,6 +4,7 @@ import {
   type DebugCompareAdapter,
   type RegionIdentity,
 } from '../../debugCompare/index.ts';
+import { dm32DecodedSnapshot } from './debugCompareDecoded.ts';
 import { classifyDm32DebugCoverage, dm32DebugIdentity } from './debugCoverage.ts';
 import { selectDm32LiveCalibration } from './calibrationFields.ts';
 import {
@@ -33,6 +34,7 @@ export function dm32DebugRegionIdentity(
 export const dm32CompareAdapter: DebugCompareAdapter = {
   sections: (a, b) => regionSections(a, b, dm32DebugRegionIdentity),
   regionIdentity: dm32DebugRegionIdentity,
+  decoded: dm32DecodedSnapshot,
 };
 
 export interface Dm32CompareArchive {
