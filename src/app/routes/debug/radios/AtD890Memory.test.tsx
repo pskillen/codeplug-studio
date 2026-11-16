@@ -164,7 +164,7 @@ describe('AtD890Memory', () => {
     fireEvent.change(screen.getByLabelText('Search table'), { target: { value: 'mm9pdy' } });
     expect(rowTexts()).toHaveLength(2);
     fireEvent.change(screen.getByLabelText('Search table'), { target: { value: 'zzz' } });
-    expect(screen.getByText(/No channels match/)).toBeInTheDocument();
+    expect(screen.getByText(/No rows match/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Search table'), { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: /Identity/ }));
     expect(rowTexts()[1]).toMatch(/^1GB3ED/);
@@ -180,7 +180,7 @@ describe('AtD890Memory', () => {
       screen.getByText(/Occupied 2 of 250 zone slots · names decoded 2 · member lists decoded 2/),
     ).toBeInTheDocument();
     expect(screen.getByText('(unnamed)')).toBeInTheDocument();
-    expect(screen.getByText('Select a zone to see its members.')).toBeInTheDocument();
+    expect(screen.getByText('Click a zone to see its members.')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Local ★'));
     const region = screen.getByRole('region', { name: 'Zone 1 members' });
     const rows = within(region)
@@ -214,7 +214,7 @@ describe('AtD890Memory', () => {
     );
     open('Zones');
     expect(screen.queryByRole('region')).not.toBeInTheDocument();
-    expect(screen.getByText('Select a zone to see its members.')).toBeInTheDocument();
+    expect(screen.getByText('Click a zone to see its members.')).toBeInTheDocument();
     expect(screen.getByText('Other')).toBeInTheDocument();
     expect(screen.queryByText('Local ★')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Other'));
