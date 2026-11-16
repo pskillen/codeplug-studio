@@ -13,7 +13,12 @@ import {
   sendIdent,
 } from '../../kit/codecs/programRw.ts';
 import { createMemoryMap, memoryMapFromBytes } from '../../kit/memoryMap.ts';
-import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
+import {
+  RadioClosedError,
+  RadioProtocolError,
+  RadioTimeoutError,
+  RadioWrongIdentError,
+} from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
@@ -175,6 +180,10 @@ async function handshake(
   try {
     await sendIdent(pipe, layout.ident, layout.identTimeoutMs);
   } catch (err) {
+    // A closed port is not a wrong ident: leave it unwrapped so the baud fallback does not reopen and send it again.
+    if (err instanceof RadioClosedError) {
+      throw err;
+    }
     throw new RadioWrongIdentError(
       err instanceof Error
         ? `${layout.protocolLabel} ident failed: ${err.message}`
