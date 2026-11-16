@@ -55,4 +55,22 @@ describe('RT95 Compare: summary and hex diff on five reads', () => {
         expect(screen.getByRole('switch', { name: 'Only changed rows' })).not.toBeChecked();
       }
   });
+
+  it('shows one strip line per read after the first, and a click sets the pair', () => {
+    const { store, ids } = open();
+    const strip = screen.getByRole('list', { name: 'Each read against the one before' });
+    const lines = Array.from(strip.querySelectorAll('[role="listitem"]')).map((n) => n.textContent);
+    expect(lines).toEqual([
+      'B = A, identical',
+      'C = B, identical',
+      'D = C, identical',
+      'E ≠ D, 1 byte',
+    ]);
+    fireEvent.click(screen.getByRole('listitem', { name: /^Compare B and C:/ }));
+    expect(store.getSnapshot().comparePair).toEqual({ a: ids[1], b: ids[2] });
+    expect(screen.getByText('Identical')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('listitem', { name: /^Compare D and E:/ }));
+    expect(store.getSnapshot().comparePair).toEqual({ a: ids[3], b: ids[4] });
+    expect(screen.getByText('A and B differ')).toBeInTheDocument();
+  });
 });

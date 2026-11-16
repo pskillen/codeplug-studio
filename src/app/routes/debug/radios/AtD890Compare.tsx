@@ -1,17 +1,16 @@
 import { Alert, Badge, Button, Group, Select, Stack, Text, Title } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import type { DebugDecodedDiffProps } from './descriptors.ts';
-import { compareAtD890, type AtD890ChangedRun, type AtD890UnitVerdict } from './atD890Compare.ts';
+import { compareAtD890, type AtD890UnitVerdict } from './atD890Compare.ts';
 import type { AtD890ReadRange } from './atD890Provenance.ts';
 import {
   AT_D890_DIFF_DOMAIN_LABELS,
   diffAtD890Decoded,
   type AtD890DiffDomain,
 } from './atD890DecodedDiff.ts';
-import type { DebugSensitiveRange } from '@integrations/radio-io/debugSensitive.ts';
 import { SensitiveRevealButton } from './SensitiveReveal.tsx';
 import { useSensitiveReveal } from './useSensitiveReveal.ts';
-import { formatAddress, isMasked, MASKED_HEX_BYTE, sensitiveRanges } from './viewerUtils.ts';
+import { formatAddress } from './viewerUtils.ts';
 
 const PAGE_SIZE = 30;
 const VERDICT: Record<AtD890UnitVerdict, string> = {
@@ -19,30 +18,6 @@ const VERDICT: Record<AtD890UnitVerdict, string> = {
   different: 'Different (per archive claims)',
   unknown: 'Unknown',
 };
-/** Password bytes of one changed run, per side: ranges in absolute addresses, like the byte runs. */
-interface RunMask {
-  before: readonly DebugSensitiveRange[];
-  after: readonly DebugSensitiveRange[];
-  /** Some byte of this run lies in a password range on either side. */
-  touchesPassword: boolean;
-}
-
-/** Hex of `bytes` starting at `start`; bytes in `mask` show `••` unless `revealed`. */
-function hex(
-  bytes: readonly number[],
-  start = 0,
-  mask: readonly DebugSensitiveRange[] = [],
-  revealed = true,
-) {
-  return bytes
-    .map((b, i) =>
-      !revealed && isMasked(start + i, mask)
-        ? MASKED_HEX_BYTE
-        : b.toString(16).toUpperCase().padStart(2, '0'),
-    )
-    .join(' ');
-}
-
 function Pager({
   page,
   pages,
@@ -91,8 +66,6 @@ function usePaged<T>(items: readonly T[]) {
   };
 }
 
-const RUN_PAGE_BYTES = 64;
-
 /** Claims one capture makes about a range, never evidence of the physical responding unit. */
 function claim(range?: AtD890ReadRange): string {
   if (!range) return 'not captured';
@@ -107,58 +80,6 @@ function claim(range?: AtD890ReadRange): string {
         ? 'repeat read did not match (claim)'
         : 'repeat read n/a';
   return `${requested} · responding unit: ${responding} · ${repeat}`;
-}
-
-/** Every changed byte of one run, paged, before above after. */
-function RunBytes({
-  run,
-  mask,
-  revealed,
-}: {
-  run: AtD890ChangedRun;
-  mask: RunMask;
-  revealed: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [page, setPage] = useState(0);
-  const pages = Math.max(1, Math.ceil(run.length / RUN_PAGE_BYTES));
-  const current = Math.min(page, pages - 1);
-  const slice = (bytes: Uint8Array, side: readonly DebugSensitiveRange[]) =>
-    hex(
-      Array.from(bytes.subarray(current * RUN_PAGE_BYTES, (current + 1) * RUN_PAGE_BYTES)),
-      run.start + current * RUN_PAGE_BYTES,
-      side,
-      revealed,
-    );
-  return (
-    <Stack gap={4}>
-      <Button
-        variant="subtle"
-        size="compact-xs"
-        aria-expanded={open}
-        aria-label={`${open ? 'Hide' : 'Show'} bytes of run at ${formatAddress(run.start)}`}
-        onClick={() => setOpen(!open)}
-      >
-        {open ? 'Hide bytes' : 'Show all bytes'}
-      </Button>
-      {open && (
-        <div>
-          <Text size="xs" ff="monospace">
-            First: {slice(run.before, mask.before)}
-          </Text>
-          <Text size="xs" ff="monospace">
-            Second: {slice(run.after, mask.after)}
-          </Text>
-          <Pager
-            page={current}
-            pages={pages}
-            onPage={setPage}
-            label={`Bytes at ${formatAddress(run.start)}`}
-          />
-        </div>
-      )}
-    </Stack>
-  );
 }
 
 function Captures({ first, second }: DebugDecodedDiffProps) {
@@ -278,31 +199,15 @@ function DecodedChanges({
   );
 }
 
-/** D890 acquisition spaces are kept separate even when addresses or bytes coincide. */
+/**
+ * What the D890 adds to the shared compare: the acquisition claims per range, the responding-unit
+ * verdict, the provenance divergence and the decoded changes. The byte summary and hex diff
+ * (password bytes masked there) come from the shared `RadioCompare`.
+ */
 export function AtD890Compare({ first, second }: DebugDecodedDiffProps) {
   const spans = useMemo(() => compareAtD890(first, second), [first, second]);
   const spanPages = usePaged(spans ?? []);
   const reveal = useSensitiveReveal(first);
-  const runs = useMemo(
-    () =>
-      (spans ?? []).flatMap((span) => {
-        // Each side's password ranges come from that side's own archive and region.
-        const before = span.first ? sensitiveRanges(first, span.first.regionId) : [];
-        const after = span.second ? sensitiveRanges(second, span.second.regionId) : [];
-        return (span.runs ?? []).map((run) => {
-          const covers = (range: DebugSensitiveRange) =>
-            range.start < run.start + run.length && range.end > run.start;
-          const mask: RunMask = {
-            before,
-            after,
-            touchesPassword: before.some(covers) || after.some(covers),
-          };
-          return { space: span.space, run, mask };
-        });
-      }),
-    [spans, first, second],
-  );
-  const runPages = usePaged(runs);
   if (!spans)
     return (
       <Stack>
@@ -328,7 +233,7 @@ export function AtD890Compare({ first, second }: DebugDecodedDiffProps) {
         never establish it or validate calibration.
       </Alert>
       <Captures first={first} second={second} />
-      <Title order={4}>Acquisition ranges (byte divergence)</Title>
+      <Title order={4}>Acquisition ranges (claims)</Title>
       {spanPages.slice.map((span) => (
         <div key={`${span.space}:${span.start}:${span.first?.regionId ?? ''}`}>
           <Text>
@@ -355,36 +260,6 @@ export function AtD890Compare({ first, second }: DebugDecodedDiffProps) {
         onPage={spanPages.setPage}
         label="Range"
       />
-      <Title order={4}>Changed byte runs</Title>
-      {!runs.length && <Text>No differing bytes in the comparable ranges.</Text>}
-      {runs.some((r) => r.mask.touchesPassword) && (
-        <Group gap="xs">
-          <Text size="sm">
-            Password bytes are {reveal.revealed ? 'shown' : 'hidden (••)'} in both captures.
-          </Text>
-          <SensitiveRevealButton revealed={reveal.revealed} onToggle={reveal.toggle} />
-        </Group>
-      )}
-      {runPages.slice.map(({ space, run, mask }) => (
-        <div key={`${space}:${run.start}`}>
-          <Text size="sm">
-            {space} · {formatAddress(run.start)}
-            {run.length > 1 ? `–${formatAddress(run.start + run.length - 1)}` : ''} · {run.length}{' '}
-            byte{run.length === 1 ? '' : 's'} ·{' '}
-            {hex(Array.from(run.before.subarray(0, 8)), run.start, mask.before, reveal.revealed)}
-            {run.length > 8 ? ' …' : ''} →{' '}
-            {hex(Array.from(run.after.subarray(0, 8)), run.start, mask.after, reveal.revealed)}
-            {run.length > 8 ? ' …' : ''}
-          </Text>
-          {mask.touchesPassword && !reveal.revealed && (
-            <Text size="sm" c="dimmed">
-              password bytes changed
-            </Text>
-          )}
-          {run.length > 8 && <RunBytes run={run} mask={mask} revealed={reveal.revealed} />}
-        </div>
-      ))}
-      <Pager page={runPages.page} pages={runPages.pages} onPage={runPages.setPage} label="Run" />
       <Title order={4}>Provenance divergence</Title>
       <Text size="sm">
         Claims that differ between captures, separate from whether the bytes differ.

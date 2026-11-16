@@ -41,7 +41,7 @@ import { DebugReadProgress } from './DebugReadProgress.tsx';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 import { ComparePicker } from './ComparePicker.tsx';
 import { RadioCompare } from './compare/RadioCompare.tsx';
-import { Uv5rMiniCompare } from './Uv5rMiniCompare.tsx';
+import { ReadStrip } from './compare/ReadStrip.tsx';
 import { isUv5rMiniReadsZip, openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
 import { archiveUv5rMiniRead } from './uv5rMiniCapture.ts';
 import BackupLabelFields from '@app/components/builds/BackupLabelFields.tsx';
@@ -75,6 +75,8 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   );
   const history = useDebugReadHistory(store);
   const [localArchive, setArchive] = useState<DebugArchive>();
+  // The Compare tab's byte diffs are heavy; they render only while the tab is open.
+  const [activeTab, setActiveTab] = useState<string | null>('overview');
   const archive = historyEnabled
     ? history.entries.find((e) => e.id === history.selectedId)?.archive
     : localArchive;
@@ -83,7 +85,6 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const other = history.entries.find((e) => e.id === otherId)?.archive;
   const pairA = history.entries.find((e) => e.id === history.comparePair.a);
   const pairB = history.entries.find((e) => e.id === history.comparePair.b);
-  const miniRead = (entry: typeof pairA) => reads.find((read) => read.label === entry?.label);
   const [downloadedArchive, setDownloadedArchive] = useState<DebugArchive>();
   // Mini reads live in the shared store; any profile's undownloaded live capture lives only in this tab.
   const unsaved =
@@ -236,7 +237,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
             {archive.manifest.capturedAt} · {archive.manifest.regions.length} regions
           </Text>
         )}
-        <Tabs defaultValue="overview">
+        <Tabs value={activeTab} onChange={setActiveTab}>
           <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
             {radioDebugTabs(descriptor).map((tab) => (
               <Tabs.Tab key={tab} value={tab.toLowerCase()}>
@@ -610,27 +611,18 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 divert reads; equal bytes and repeated-read agreement do not prove unit identity.
               </Alert>
             )}
+            {historyEnabled && activeTab === 'compare' && (
+              <ReadStrip descriptor={descriptor} store={store} />
+            )}
             {historyEnabled && <ComparePicker store={store} onOpenArchive={openFile} />}
-            {descriptor.slug === 'uv-5r-mini' ? (
-              <Uv5rMiniCompare
-                key={`${pairA?.id}:${pairB?.id}`}
-                a={miniRead(pairA)}
-                b={pairA === pairB ? undefined : miniRead(pairB)}
-              />
-            ) : descriptor.summaryCompare ? (
-              <RadioCompare
-                descriptor={descriptor}
-                a={pairA?.archive}
-                b={pairA === pairB ? undefined : pairB?.archive}
-              />
-            ) : historyEnabled ? (
-              <CompareViewer
-                key={`${pairA?.id}:${pairB?.id}`}
-                archive={pairA?.archive}
-                other={pairA === pairB ? undefined : pairB?.archive}
-                modelId={descriptor.archiveModelId}
-                DecodedDiff={descriptor.DecodedDiff}
-              />
+            {historyEnabled ? (
+              activeTab === 'compare' && (
+                <RadioCompare
+                  descriptor={descriptor}
+                  a={pairA?.archive}
+                  b={pairA === pairB ? undefined : pairB?.archive}
+                />
+              )
             ) : (
               <CompareViewer archive={archive} modelId={descriptor.archiveModelId} />
             )}

@@ -12,9 +12,12 @@ import {
 } from '@integrations/radio-io/radios/at-d890uv/vitalBackup.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { AtD890Compare } from './AtD890Compare.tsx';
+import { RadioCompare } from './compare/RadioCompare.tsx';
+import { radioDebugDescriptors } from './descriptors.ts';
 import { AT_D890_PROVENANCE_PATH } from './atD890Provenance.ts';
 import { openDebugArchive } from './captureArchive.ts';
 
+const descriptor = radioDebugDescriptors.find((d) => d.slug === 'at-d890uv')!;
 const TUNE = AT_D890_VITAL_UNITS.find((u) => u.id === 'tune-a')!;
 
 function tuneArchive(
@@ -104,7 +107,6 @@ describe('AtD890Compare', () => {
     expect(screen.getByText(/First capture: 2026-01-01/)).toBeInTheDocument();
     expect(screen.getByText(/second capture: 2026-02-02/)).toBeInTheDocument();
     expect(screen.getByText(/1 changed bytes · responding unit: Unknown/)).toBeInTheDocument();
-    expect(screen.getByText(/vital:tune-a · 0x04F00001 · 1 byte · 02 → 03/)).toBeInTheDocument();
     expect(
       screen.getByText('No differing acquisition claims in the compared ranges.'),
     ).toBeInTheDocument();
@@ -116,7 +118,6 @@ describe('AtD890Compare', () => {
       screen.getByText(/0 changed bytes · responding unit: Different \(per archive claims\)/),
     ).toBeInTheDocument();
     expect(screen.getByText(/responding unit claim differ/)).toBeInTheDocument();
-    expect(screen.getByText('No differing bytes in the comparable ranges.')).toBeInTheDocument();
   });
 
   it('refuses bytes when the claim is missing but still shows decoded differences', () => {
@@ -129,13 +130,8 @@ describe('AtD890Compare', () => {
     expect(screen.getByText(/value: 2000 → 2001/)).toBeInTheDocument();
   });
 
-  it('pages changed runs and filters decoded domains with labelled controls', () => {
-    const first = Array.from({ length: 200 }, () => 0);
-    const second = first.map((_, i) => (i % 2 ? 0 : 1));
-    view(tuneArchive(first, null), tuneArchive(second, null));
-    expect(screen.getByText('Run page 1 of 4')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Next Run page' }));
-    expect(screen.getByText('Run page 2 of 4')).toBeInTheDocument();
+  it('filters decoded domains with a labelled control', () => {
+    view(tuneArchive([1], null), tuneArchive([2], null));
     expect(screen.getByRole('combobox', { name: 'Show domain' })).toBeInTheDocument();
   });
 
@@ -151,24 +147,6 @@ describe('AtD890Compare', () => {
         'Second: requested tune-a · responding unit: local-info · repeat read matched (claim)',
       ),
     ).toBeInTheDocument();
-  });
-
-  it('pages every byte of a long changed run', () => {
-    view(
-      tuneArchive(
-        Array.from({ length: 130 }, () => 1),
-        null,
-      ),
-      tuneArchive(
-        Array.from({ length: 130 }, (_, i) => (i === 129 ? 9 : 2)),
-        null,
-      ),
-    );
-    fireEvent.click(screen.getByRole('button', { name: /Show bytes of run at 0x04F00000/ }));
-    expect(screen.getByText('Bytes at 0x04F00000 page 1 of 3')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Next Bytes at 0x04F00000 page' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next Bytes at 0x04F00000 page' }));
-    expect(screen.getByText('Second: 02 09')).toBeInTheDocument();
   });
 
   describe('password bytes', () => {
@@ -221,21 +199,56 @@ describe('AtD890Compare', () => {
       );
     };
 
-    it('hides a changed power-on password in the run summary and in Show all bytes until revealed', () => {
-      view(sparseArchive(0x31), sparseArchive(0x32));
-      const text = () => document.body.textContent ?? '';
-      expect(text()).toContain('password bytes changed');
-      expect(text()).toContain('31 31 31 31 •• •• •• ••');
-      expect(text()).not.toMatch(/31 31 31 31 31/);
-      expect(text()).not.toContain('11111111');
-      expect(text()).toContain('Password changed (values hidden)');
-      fireEvent.click(screen.getByRole('button', { name: /Show bytes of run at/ }));
-      expect(text()).toContain('First: 31 31 31 31 •• •• •• •• •• •• •• •• 31 31 31 31');
-      expect(text()).toContain('Second: 32 32 32 32 •• •• •• •• •• •• •• •• 32 32 32 32');
+    const shell = (a: ReturnType<typeof tuneArchive>, b: ReturnType<typeof tuneArchive>) =>
+      render(
+        <MantineProvider>
+          <RadioCompare descriptor={descriptor} a={a} b={b} />
+        </MantineProvider>,
+      );
+
+    it('masks a changed power-on password in the shared hex diff until revealed', () => {
+      shell(sparseArchive(0x31), sparseArchive(0x32));
+      const hex = () => screen.getByRole('group', { name: 'Hex diff' }).textContent ?? '';
+      expect(hex()).toContain('••');
+      expect(hex()).toContain('[masked bytes differ]');
+      expect(hex()).toContain('31 31 31 31');
+      expect(hex()).not.toMatch(/31 31 31 31 31/);
+      expect(document.body.textContent).toContain('Password changed (values hidden)');
       fireEvent.click(screen.getAllByRole('button', { name: 'Show password' })[0]!);
-      expect(text()).toContain('First: 31 31 31 31 31 31 31 31 31 31 31 31 31 31 31 31');
-      expect(text()).toContain('11111111');
-      expect(text()).not.toContain('password bytes changed');
+      expect(hex()).not.toContain('••');
+      expect(hex()).toContain('31 31 31 31 31 31 31 31 31 31 31 31');
+      expect(hex()).not.toContain('[masked bytes differ]');
     });
+  });
+});
+
+describe('D890 on the shared compare', () => {
+  const shell = (a: ReturnType<typeof tuneArchive>, b: ReturnType<typeof tuneArchive>) =>
+    render(
+      <MantineProvider>
+        <RadioCompare descriptor={descriptor} a={a} b={b} />
+      </MantineProvider>,
+    );
+
+  it('shows the summary, the hex diff and the provenance panel', () => {
+    shell(tuneArchive([1, 2], null), tuneArchive([1, 3], null));
+    expect(screen.getByText('A and B differ')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Hex diff' })).toBeInTheDocument();
+    expect(screen.getByText('Provenance limits')).toBeInTheDocument();
+  });
+
+  it('is identical when the bytes match, whatever the claims say', () => {
+    shell(tuneArchive([1], 'tune-a'), tuneArchive([1], 'local-info'));
+    expect(screen.getByText('Identical')).toBeInTheDocument();
+    expect(screen.getByText(/responding unit claim differ/)).toBeInTheDocument();
+  });
+
+  it('refuses bytes without a claim but keeps the decoded differences', () => {
+    shell(
+      tuneArchive([0xd0, 0x07], null, { channels: true }, '2026-01-01', false),
+      tuneArchive([0xd1, 0x07], null, { channels: true }, '2026-01-02', false),
+    );
+    expect(screen.getByText('Cannot compare')).toBeInTheDocument();
+    expect(screen.getByText(/value: 2000 → 2001/)).toBeInTheDocument();
   });
 });

@@ -37,9 +37,13 @@ export function RadioCompare({
     return <Alert title="Compare unavailable">This radio has no byte compare yet.</Alert>;
   if (comparison.error)
     return (
-      <Alert color="red" title="Cannot compare">
-        {comparison.error}
-      </Alert>
+      <Stack>
+        <Alert color="red" title="Cannot compare">
+          {comparison.error}
+        </Alert>
+        {/* Decoded changes do not depend on the byte compare (the D890 shows them without its sidecar). */}
+        {descriptor.DecodedDiff && <descriptor.DecodedDiff first={a} second={b} />}
+      </Stack>
     );
 
   const shown = comparison.sections.filter((s) => s.a && s.b && s.kind !== 'incomparable');
