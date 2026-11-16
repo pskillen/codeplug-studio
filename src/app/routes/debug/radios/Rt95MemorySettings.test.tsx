@@ -8,7 +8,7 @@ import {
 import { RT95_POWER_ON_PASSWORD_ADDRESS } from '@integrations/radio-io/radios/rt95/constants.ts';
 import { buildSyntheticRt95Image } from '@integrations/radio-io/radios/rt95/__fixtures__/syntheticImage.ts';
 import { openDebugArchive } from './captureArchive.ts';
-import { Rt95Memory } from './Rt95Memory.tsx';
+import { Rt95Settings } from './Rt95Settings.tsx';
 
 function cloneArchive() {
   const clone = buildSyntheticRt95Image();
@@ -43,7 +43,7 @@ function cloneArchive() {
 const view = () =>
   render(
     <MantineProvider>
-      <Rt95Memory archive={cloneArchive()} />
+      <Rt95Settings archive={cloneArchive()} />
     </MantineProvider>,
   );
 

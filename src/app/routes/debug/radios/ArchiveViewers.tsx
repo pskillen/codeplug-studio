@@ -1,5 +1,4 @@
 import { isOpenGd77ModelId } from '@integrations/radio-io/radios/opengd77/debugCoverage.ts';
-import { Rt95Memory } from './Rt95Memory.tsx';
 import { RT95_MMD1_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import { RT95_MODEL_ID } from '@integrations/radio-io/radios/rt95/constants.ts';
 import { RT95_CALIBRATION_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
@@ -161,22 +160,19 @@ export function HexViewer({ archive }: { archive?: DebugArchive }) {
   );
 }
 
+/** The generic Memory tab, for a radio that has no decoded memory viewer of its own. */
 export function MemoryViewer({ archive }: { archive?: DebugArchive }) {
   return (
     <Stack>
       <Title order={3}>Memory</Title>
       {!archive ? (
         <Alert title="No capture">Open or read a capture to inspect its memory.</Alert>
-      ) : archive.manifest.radioModelId !== RT95_MODEL_ID ? (
+      ) : (
         <Alert title="Decoded inventory unavailable">
           Memory is not decoded for this capture yet.
         </Alert>
-      ) : null}
-      {archive?.manifest.radioModelId === RT95_MODEL_ID && <Rt95Memory archive={archive} />}
-      {(archive?.manifest.radioModelId === RT95_MODEL_ID
-        ? ['Scan lists', 'Contacts', 'Talk groups']
-        : ['Zones', 'Scan lists', 'Contacts', 'Talk groups']
-      ).map((section) => (
+      )}
+      {['Zones', 'Scan lists', 'Contacts', 'Talk groups'].map((section) => (
         <Text key={section}>{section}: not decoded for this radio yet.</Text>
       ))}
     </Stack>

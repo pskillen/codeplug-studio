@@ -16,6 +16,7 @@ import {
   zoneNameAddress,
 } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
 import { AtD890Memory } from './AtD890Memory.tsx';
+import { AtD890Settings } from './AtD890Settings.tsx';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 
 type Entry = [RadioBackupRegionV1, Uint8Array];
@@ -106,6 +107,12 @@ const view = (a?: DebugArchive) =>
   render(
     <MantineProvider>
       <AtD890Memory archive={a} />
+    </MantineProvider>,
+  );
+const viewSettings = (a?: DebugArchive) =>
+  render(
+    <MantineProvider>
+      <AtD890Settings archive={a} />
     </MantineProvider>,
   );
 const rowTexts = () => screen.getAllByRole('row').map((r) => r.textContent ?? '');
@@ -449,14 +456,13 @@ describe('AtD890Memory', () => {
     });
 
     it('groups settings, separates missing from decoded, and toggles raw bytes', () => {
-      view(
+      viewSettings(
         archive([
           sparse(MAIN + 0x26, Uint8Array.of(2)),
           sparse(MAIN + 0x05, Uint8Array.of(7)),
           sparse(MAIN + 0x60, Uint8Array.of(0xaa, 0xbb)),
         ]),
       );
-      open('Settings');
       for (const name of [
         'Display',
         'Audio & tones',
@@ -494,7 +500,7 @@ describe('AtD890Memory', () => {
       store[31] = store.slice(0, 31).reduce((a, b) => (a + b) & 0xff, 0);
       const text = new Uint8Array(0x30);
       'HELLO'.split('').forEach((c, i) => (text[i * 2] = c.charCodeAt(0)));
-      view(
+      viewSettings(
         archive([
           sparse(MAIN + 0x19, Uint8Array.of(0)),
           sparse(MAIN + 0x107, Uint8Array.of(0)),
@@ -504,7 +510,6 @@ describe('AtD890Memory', () => {
           sparse(0x3501280, text),
         ]),
       );
-      open('Settings');
       const dmr = screen.getByRole('region', { name: 'DMR' });
       expect(within(dmr).getByText('No hang time (0)')).toBeInTheDocument();
       expect(within(dmr).getByText('0 (acts as 1 s)')).toBeInTheDocument();
@@ -520,8 +525,7 @@ describe('AtD890Memory', () => {
     });
 
     it('filters settings by search', () => {
-      view(archive([sparse(MAIN + 0x26, Uint8Array.of(2))]));
-      open('Settings');
+      viewSettings(archive([sparse(MAIN + 0x26, Uint8Array.of(2))]));
       fireEvent.change(screen.getByPlaceholderText('Search settings'), {
         target: { value: 'backlight' },
       });

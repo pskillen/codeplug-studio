@@ -23,7 +23,9 @@ const SETTINGS_HEADERS = [
  * decoded from the captured FLASH spans. It never reads a radio; whatever the capture does not
  * hold shows as not captured.
  */
-export function OpenGd77Settings({ archive }: { archive: DebugArchive }) {
+export function OpenGd77Settings({ archive }: { archive?: DebugArchive }) {
+  if (!archive)
+    return <Alert title="No capture">Open or read a capture to inspect its settings.</Alert>;
   const selection = selectOpenGd77Settings(archive);
   if (selection.status === 'unavailable') {
     return (

@@ -34,14 +34,11 @@ import {
 import { Link, useParams } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWakeLock.ts';
-import { capabilityColor, radioDebugDescriptors } from './descriptors.ts';
+import { capabilityColor, radioDebugDescriptors, radioDebugTabs } from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
-import { AtD890Memory } from './AtD890Memory.tsx';
-import { Dm32Memory } from './Dm32Memory.tsx';
 import { Coverage } from './Coverage.tsx';
 import { DebugReadProgress } from './DebugReadProgress.tsx';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
-import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { Uv5rMiniCompare } from './Uv5rMiniCompare.tsx';
 import { isUv5rMiniReadsZip, openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
 import { archiveUv5rMiniRead } from './uv5rMiniCapture.ts';
@@ -241,13 +238,11 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
         )}
         <Tabs defaultValue="overview">
           <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
-            {['Overview', 'Backup', 'Calibration', 'Memory', 'Hex', 'Compare', 'Trace'].map(
-              (tab) => (
-                <Tabs.Tab key={tab} value={tab.toLowerCase()}>
-                  {tab}
-                </Tabs.Tab>
-              ),
-            )}
+            {radioDebugTabs(descriptor).map((tab) => (
+              <Tabs.Tab key={tab} value={tab.toLowerCase()}>
+                {tab}
+              </Tabs.Tab>
+            ))}
           </Tabs.List>
           <Tabs.Panel value="overview" pt="md">
             <Stack>
@@ -590,16 +585,18 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                 key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
                 archive={archive}
               />
-            ) : archive?.manifest.radioModelId === 'UV-5R Mini' ? (
-              <Uv5rMiniMemory archive={archive} />
-            ) : descriptor.slug === 'at-d890uv' ? (
-              <AtD890Memory archive={archive} />
-            ) : descriptor.slug === 'dm-32uv' ? (
-              <Dm32Memory archive={archive} />
             ) : (
               <MemoryViewer archive={archive} />
             )}
           </Tabs.Panel>
+          {descriptor.Settings && (
+            <Tabs.Panel value="settings" pt="md">
+              <descriptor.Settings
+                key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
+                archive={archive}
+              />
+            </Tabs.Panel>
+          )}
           <Tabs.Panel value="hex" pt="md">
             <HexViewer
               key={historyEnabled ? history.selectedId : archive?.manifest.capturedAt}
@@ -660,7 +657,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               />
             </Tabs.Panel>
           )}
-          {descriptor.Calibration && descriptor.slug !== 'dm-32uv' && (
+          {descriptor.Calibration && descriptor.calibrationOverlay !== false && (
             <Tabs.Panel value="calibration" pt="md">
               <Stack>
                 <Select
@@ -679,7 +676,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
               </Stack>
             </Tabs.Panel>
           )}
-          {descriptor.slug === 'dm-32uv' && descriptor.Calibration && (
+          {descriptor.calibrationOverlay === false && descriptor.Calibration && (
             <Tabs.Panel value="calibration" pt="md">
               <descriptor.Calibration archive={archive} />
             </Tabs.Panel>

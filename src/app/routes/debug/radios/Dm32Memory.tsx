@@ -7,19 +7,11 @@ import {
 } from '@app/components/v2/index.ts';
 import type { RadioChannelDto, RadioTone } from '@integrations/radio-io/radioChannelDto.ts';
 import {
-  buildDm32SparseCapture,
-  projectDm32Memory,
   type Dm32ChannelEntry,
   type Dm32ChannelInventory,
 } from '@integrations/radio-io/radios/dm32uv/debugMemory.ts';
-import { projectDm32Settings } from '@integrations/radio-io/radios/dm32uv/debugMemorySettings.ts';
+import { type Dm32ScanListInventory } from '@integrations/radio-io/radios/dm32uv/debugMemoryZones.ts';
 import {
-  projectDm32MemoryLists,
-  type Dm32ScanListInventory,
-} from '@integrations/radio-io/radios/dm32uv/debugMemoryZones.ts';
-import {
-  projectDm32Lists,
-  resolveDm32ChannelReferences,
   type Dm32Reference,
   type Dm32ReferenceResolution,
 } from '@integrations/radio-io/radios/dm32uv/debugMemoryLists.ts';
@@ -29,13 +21,11 @@ import {
   RxGroupsPanel,
   TalkGroupsPanel,
 } from './Dm32MemoryLists.tsx';
-import { SettingsPanel } from './Dm32MemorySettings.tsx';
 import { ScanListsPanel, ZonesPanel } from './Dm32MemoryZones.tsx';
 import { archiveKey } from './viewerUtils.ts';
-import { useSensitiveReveal } from './useSensitiveReveal.ts';
+import { decodeDm32Archive } from './debugProjections.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
-const MODEL_ID = 'DM-32UV';
 const NOT_CAPTURED = 'Not captured';
 const DASH = '—';
 
@@ -369,18 +359,7 @@ export function Dm32Memory({ archive }: { archive?: DebugArchive }) {
 }
 
 function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
-  const reveal = useSensitiveReveal(archive);
-  const decodedArchive = useMemo(() => {
-    if (archive.manifest.radioModelId !== MODEL_ID) return undefined;
-    const memory = projectDm32MemoryLists(projectDm32Memory(buildDm32SparseCapture(archive)));
-    const lists = projectDm32Lists(memory.capture);
-    return {
-      memory,
-      lists,
-      references: resolveDm32ChannelReferences(memory.channels, lists),
-      settings: projectDm32Settings(memory.capture),
-    };
-  }, [archive]);
+  const decodedArchive = decodeDm32Archive(archive);
   const projection = decodedArchive?.memory;
   if (!decodedArchive || !projection)
     return (
@@ -424,7 +403,6 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
           <Tabs.Tab value="rx-groups">RX groups</Tabs.Tab>
           <Tabs.Tab value="radio-ids">Radio IDs</Tabs.Tab>
           <Tabs.Tab value="contacts">Contacts</Tabs.Tab>
-          <Tabs.Tab value="settings">Settings</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="channels" pt="md">
           <ChannelsPanel
@@ -450,13 +428,6 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
         </Tabs.Panel>
         <Tabs.Panel value="contacts" pt="md">
           <ContactsPanel contacts={lists.analogContacts} />
-        </Tabs.Panel>
-        <Tabs.Panel value="settings" pt="md">
-          <SettingsPanel
-            settings={decodedArchive.settings}
-            revealed={reveal.revealed}
-            onToggleReveal={reveal.toggle}
-          />
         </Tabs.Panel>
       </Tabs>
     </Stack>
