@@ -127,4 +127,34 @@ describe('rt95CalibrationView', () => {
     const bands = view.tables.find((t) => t.id === 'band-power')!;
     expect(bands.rows[0]!.cells[0]!.availability).toBe('not-captured');
   });
+
+  it('lists the band-value rows by label, so a renamed or dropped core label fails here', () => {
+    const view = rt95CalibrationView(archive(region()));
+    const labels = view.tables
+      .filter((t) => t.id.startsWith('band-'))
+      .flatMap((t) => t.rows.map((r) => r.label));
+    expect(labels).toEqual([
+      'PA power Low (PAL)',
+      'PA power Mid (PAM)',
+      'PA power High (PAH)',
+      'Squelch base (SQ)',
+      'TX deviation 12.5 kHz (MODN)',
+      'TX deviation 20 kHz (MODM)',
+      'TX deviation 25 kHz (MODW)',
+      'CTCSS deviation 12.5 kHz (CTCN)',
+      'CTCSS deviation 20 kHz (CTCM)',
+      'CTCSS deviation 25 kHz (CTCW)',
+      'DCS deviation 12.5 kHz (DCSN)',
+      'DCS deviation 20 kHz (DCSM)',
+      'DCS deviation 25 kHz (DCSW)',
+      'RSSI reference',
+      'test channel RX frequency, slice 0',
+      'test channel RX frequency, slice 1',
+      'test channel RX frequency, slice 2',
+      'test channel offset, slice 0',
+      'test channel offset, slice 1',
+      'test channel offset, slice 2',
+    ]);
+    expect(labels).toHaveLength(20);
+  });
 });
