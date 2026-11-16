@@ -140,7 +140,7 @@ function CalibrationBody({
       {view.unused && view.unused.length > 0 && <UnusedRanges ranges={view.unused} />}
       {view.hex.length > 0 && (
         <DebugSection title="Raw captured bytes" collapsible defaultCollapsed>
-          <HexDump sources={view.hex} revealed={revealed} />
+          <HexDump sources={view.hex} revealed={revealed} collapseRuns={view.collapseRuns} />
         </DebugSection>
       )}
     </Stack>
