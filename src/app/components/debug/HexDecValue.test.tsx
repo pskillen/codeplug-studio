@@ -20,11 +20,11 @@ describe('HexDecValue', () => {
     expect(screen.getByText('0x3CC0')).toBeInTheDocument();
   });
 
-  it('masks sensitive values and dashes missing ones', () => {
+  it('masks sensitive values and says 'Not captured' for missing ones', () => {
     const { rerender } = render(<HexDecValue value={26} masked />);
     expect(screen.getByText('••')).toBeInTheDocument();
     expect(screen.queryByText(/0x1A/)).toBeNull();
     rerender(<HexDecValue value={undefined} />);
-    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.getByText('Not captured')).toBeInTheDocument();
   });
 });

@@ -1,7 +1,7 @@
 import { formatNumber, type NumberFormat } from '@integrations/radio-io/debugView';
 
 export interface HexDecValueProps {
-  /** Undefined prints the not-captured dash. */
+  /** Undefined prints 'Not captured'. */
   value: number | undefined;
   /** Bytes, for hex padding. Default 1. */
   width?: 1 | 2 | 3 | 4;

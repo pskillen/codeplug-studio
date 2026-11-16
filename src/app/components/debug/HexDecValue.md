@@ -10,7 +10,7 @@ Prints a byte, enum or code as `0x1A (26)` (`0x07D0 (2000)` for two bytes). The 
 
 | Prop     | Type                              | Notes                                                                                                       |
 | -------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `value`  | `number \| undefined`             | Undefined prints a dash (not captured)                                                                      |
+| `value`  | `number \| undefined`             | Undefined prints "Not captured"                                                                             |
 | `width`  | `1 \| 2 \| 3 \| 4`                | Bytes, for hex padding. Default 1                                                                           |
 | `format` | `'hex-dec' \| 'decimal' \| 'hex'` | Default `hex-dec`. `decimal` for counts, frequencies and physical values (with `unit`); `hex` for addresses |
 | `unit`   | `string`                          | Appended to `decimal` output                                                                                |
