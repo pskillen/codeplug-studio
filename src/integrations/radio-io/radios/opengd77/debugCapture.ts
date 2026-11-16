@@ -39,10 +39,19 @@ import { OpenGd77Protocol, parseFirmwareInfo, readFlashRange } from './protocol.
  * Read the 512-byte calibration working copy: 16 mode-1 reads of 32 bytes from `0x10000`. The pipe
  * must be the debug guard's pipe. The firmware serves a read wholly inside the block from RAM.
  */
-export async function readOpenGd77CalibrationWorkingCopy(pipe: BytePipe): Promise<Uint8Array> {
+export async function readOpenGd77CalibrationWorkingCopy(
+  pipe: BytePipe,
+  onProgress?: ProgressFn,
+): Promise<Uint8Array> {
   const out = new Uint8Array(OPENGD77_CALIBRATION_LENGTH);
   for (let off = 0; off < out.length; off += OPENGD77_BLOCK) {
     out.set(await readFlashRange(pipe, OPENGD77_CALIBRATION_ADDRESS + off, OPENGD77_BLOCK), off);
+    onProgress?.({
+      cur: off + OPENGD77_BLOCK,
+      max: out.length,
+      msg: `Reading calibration 0x${(OPENGD77_CALIBRATION_ADDRESS + off).toString(16)}`,
+      stage: 'Calibration',
+    });
   }
   return out;
 }
@@ -86,9 +95,13 @@ export async function captureOpenGd77DebugPipe(
     }
     throwIfAborted(signal);
     // A wrong radio type throws RadioWrongIdentError here, before show CPS.
+    opts?.onProgress?.({ cur: 0, max: 0, msg: 'Connecting…', stage: 'Connect' });
     const ident = await radio.connect(guard.pipe, { handshake: 'read', signal });
     // First, so a refusal or a silent radio costs seconds rather than the minutes of the flash spans.
-    const calibrationWorkingCopy = await readOpenGd77CalibrationWorkingCopy(guard.pipe);
+    const calibrationWorkingCopy = await readOpenGd77CalibrationWorkingCopy(
+      guard.pipe,
+      opts?.onProgress,
+    );
     const image = await radio.download({ onProgress: opts?.onProgress, signal });
     const userDatabase = opts?.includeUserDatabase
       ? await radio.downloadUserDatabaseOccupied({

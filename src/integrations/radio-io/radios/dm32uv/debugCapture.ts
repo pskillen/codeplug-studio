@@ -295,8 +295,15 @@ export async function captureDm32DebugPipe(
   };
   try {
     throwIfAborted(opts?.signal);
+    opts?.onProgress?.({ cur: 0, max: 0, msg: 'Connecting…', stage: 'Connect' });
     const { modelString } = await dm32AsciiHandshake(guard.pipe, settle);
     // The helper keeps nothing on a failed copy; a framing or transport failure latches the guard.
+    opts?.onProgress?.({
+      cur: 0,
+      max: 0,
+      msg: 'Reading factory data and V-frames…',
+      stage: 'Identity',
+    });
     const factory = await dm32CaptureFactorySector(guard.pipe, settle);
     stopIfFailed();
     const vframes: Dm32DebugVFrame[] = [];
@@ -342,6 +349,7 @@ export async function captureDm32DebugPipe(
       for (const [address, data] of part) blocks.set(address, data);
     }
     stopIfFailed();
+    opts?.onProgress?.({ cur: 0, max: 0, msg: 'Finishing…', stage: 'Finishing' });
     return {
       capturedAt: new Date().toISOString(),
       modelString,

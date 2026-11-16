@@ -47,6 +47,7 @@ export async function runUv5rMiniDebugFullRead(input: {
     input.open ?? ((baud: number) => openFirmwareLinkPipe(port, baud, UV5RMINI_RADIO_REPORT_LINK));
   let pipe: BytePipe | null = null;
   try {
+    onProgress?.({ cur: 0, max: 0, msg: 'Handshaking with the radio…', stage: 'Connect' });
     const opened = await openWithBaudFallback({
       bauds: [UV5R_MINI_BAUD_RATE, UV5R_MINI_BAUD_RATE_FALLBACK],
       open,
@@ -55,6 +56,7 @@ export async function runUv5rMiniDebugFullRead(input: {
     pipe = opened.pipe;
     const session = opened.result;
     const read = await session.readAll({ onProgress, signal });
+    onProgress?.({ cur: 0, max: 0, msg: 'Ending the session…', stage: 'Finishing' });
     await session.end().catch(() => undefined);
     return read;
   } finally {

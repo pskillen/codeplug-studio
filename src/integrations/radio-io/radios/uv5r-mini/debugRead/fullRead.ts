@@ -94,7 +94,12 @@ export async function openUv5rMiniDebugSession(
         guarded.forget();
         reportProgress(
           readOpts.onProgress,
-          { cur: i + 1, max, msg: `Reading 0x${addr.toString(16).padStart(4, '0')}` },
+          {
+            cur: i + 1,
+            max,
+            msg: `Reading 0x${addr.toString(16).padStart(4, '0')}`,
+            stage: 'Clone read',
+          },
           readOpts.signal,
         );
       }

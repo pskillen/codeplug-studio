@@ -11,7 +11,8 @@ import { createFakeRt95Pipe } from '@integrations/radio-io/radios/rt95/__fixture
 import { setRt95EndAtForTests } from '@integrations/radio-io/radios/rt95/protocol.ts';
 import { openDebugArchive, rt95ArchiveDetails } from './captureArchive.ts';
 import { guardRt95ClonePipe } from '@integrations/radio-io/radios/rt95/transportGuard.ts';
-import { captureRt95Pipe } from './rt95Capture.ts';
+import { captureRt95Pipe, RT95_CAPTURE_STAGES } from './rt95Capture.ts';
+import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 
 describe('RT95 debug capture', () => {
   it('captures via read-only frames and reopens identical region bytes', async () => {
@@ -40,6 +41,26 @@ describe('RT95 debug capture', () => {
     expect(pipe.count('END')).toBe(1);
     expect(pipe.count('W')).toBe(0);
     expect(pipe.log.every(({ op }) => ['PROGRAM', 'IDENT', 'R', 'END'].includes(op))).toBe(true);
+  }, 30000);
+  it('reports progress for every phase, including calibration and MMD1', async () => {
+    setRt95EndAtForTests(0);
+    const pipe = createFakeRt95Pipe();
+    const events: ProgressUpdate[] = [];
+    await captureRt95Pipe(pipe, { onProgress: (p) => events.push({ ...p }) });
+    const stages = [...new Set(events.map((e) => e.stage))];
+    expect(stages).toEqual([...RT95_CAPTURE_STAGES]);
+    const last = (stage: string) => events.filter((e) => e.stage === stage).at(-1)!;
+    expect(last('Calibration')).toMatchObject({ cur: 76, max: 76 });
+    expect(last('MMD1 zones')).toMatchObject({ cur: 512, max: 512 });
+    expect(last('Clone image').max).toBeGreaterThan(0);
+  }, 30000);
+  it('reports MMD1 as skipped when the guard refuses', async () => {
+    setRt95EndAtForTests(0);
+    const events: ProgressUpdate[] = [];
+    await captureRt95Pipe(createFakeRt95Pipe({ aliasing16k: true }), {
+      onProgress: (p) => events.push({ ...p }),
+    });
+    expect(events.filter((e) => e.stage === 'MMD1 zones').at(-1)?.msg).toMatch(/Skipped/);
   }, 30000);
   it('skips MMD1 on an aliased chip and preserves the capture', async () => {
     setRt95EndAtForTests(0);

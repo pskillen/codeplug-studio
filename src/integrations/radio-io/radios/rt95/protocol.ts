@@ -180,13 +180,23 @@ export class Rt95Protocol implements CloneImageRadio {
   /** Read 16-byte blocks at the given addresses (write verify of the MMD1 range). */
   async readBlocks(
     addresses: readonly number[],
-    opts: { signal?: AbortSignal } = {},
+    opts: { signal?: AbortSignal; onProgress?: ProgressFn; stage?: string } = {},
   ): Promise<Map<number, Uint8Array>> {
     const pipe = this.requirePipe();
     const out = new Map<number, Uint8Array>();
     for (const addr of addresses) {
       throwIfAborted(opts.signal);
       out.set(addr, await this.readBlock(pipe, addr));
+      reportProgress(
+        opts.onProgress,
+        {
+          cur: out.size,
+          max: addresses.length,
+          msg: `Reading 0x${addr.toString(16)}`,
+          ...(opts.stage ? { stage: opts.stage } : {}),
+        },
+        opts.signal,
+      );
     }
     return out;
   }
