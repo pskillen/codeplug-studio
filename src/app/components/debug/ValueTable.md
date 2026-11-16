@@ -4,7 +4,7 @@ Striped table of named values for a debug tab.
 
 ## Purpose
 
-Draws a `ValueTableView`: Field (label, group, address, note dimmed) · Value · Raw · Overlay (with an overlay) · Confidence (layout and meaning badges) · Source. Knows no radio.
+Draws a `ValueTableView`: Field (label, group, address, note dimmed) · Value · Raw · Overlay (with an overlay) · Confidence (layout and meaning badges, each with a "Layout" or "Meaning" label) · Source. Knows no radio.
 
 ## Props
 
@@ -27,6 +27,7 @@ Draws a `ValueTableView`: Field (label, group, address, note dimmed) · Value ·
 - Integer `value` cells use `HexDecValue` with the cell's `format`; decoded text prints with its unit.
 - Missing cells read "Not captured", never zero or empty.
 - Changed overlay cells are amber (`data-changed`), matching compare.
+- Raw is left empty when Value already prints the same bytes in hex (`0x1A (26)`).
 - Phone width (640 px and below): Confidence and Source fold under the field name; the table scrolls in its container.
 - The page owns the Show password control (`SensitiveRevealButton` and `useSensitiveReveal`, in this folder) and passes `revealed`.
 

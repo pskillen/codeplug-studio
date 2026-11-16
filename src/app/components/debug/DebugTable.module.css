@@ -53,8 +53,21 @@
 
 .badges {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 4px;
+}
+
+.badgeGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dimInline {
+  color: var(--dsv2-text-tertiary);
+  font-size: 11px;
+  min-width: 48px;
 }
 
 .bandHead {

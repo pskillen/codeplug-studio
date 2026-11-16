@@ -23,7 +23,7 @@ The kit is **dark only**. It draws on design-system v2 tokens and must render in
   - **Hex alone** for addresses (`0x1050`).
   - `HexDecValue`, and the `format` field of the view models, carry this; pick per field.
 - **Not captured.** Say it in words: "Not captured". Never zero, empty or a default.
-- **Confidence.** `ConfidenceBadge`'s five words. "unused (no reader)" is not "unknown".
+- **Confidence.** `ConfidenceBadge`'s five words. In a value table the two pills are labelled Layout and Meaning. "unused (no reader)" is not "unknown".
 - **Passwords** are masked (`••`) until **Show password**, and masked again when the archive changes. The archive keeps every byte; masking is display only.
 - **Serial numbers** are shown in full: no masking, no trailing slice, no ellipsis before a serial.
 - **Channel identity** is callsign first, then name; the name alone when there is no callsign.
