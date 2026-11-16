@@ -140,7 +140,9 @@ describe('AtD890Calibration', () => {
     expect(text).toMatch(/262144 of 262144 bytes/);
     expect(text).toContain('Local archive');
     expect(text.match(/Unknown/g)?.length).toBeGreaterThanOrEqual(2);
-    expect(text).toMatch(/Little-endian assumed/);
+    expect(text).toMatch(/big-endian in \+0x300–\+0x6FF/);
+    expect(text).toMatch(/261,057 bytes in \d+ ranges/);
+    expect(text).toMatch(/289|Other loaded fields/);
     expect(text).toContain('2000');
     expect(text).toMatch(/0x08047E10/);
     expect(screen.getByLabelText('UHF power tables raw entries by index')).toBeInTheDocument();
@@ -152,7 +154,9 @@ describe('AtD890Calibration', () => {
     expect(screen.getByLabelText('Tune unit hexadecimal bytes').textContent).toContain(
       '0x04F00000',
     );
-    expect(text).not.toMatch(/\b(watts?|dBm|ppm)\b/i);
+    expect(text).toMatch(/watts, dBm and Hz of deviation are unknown/);
+    expect(text).toContain('Factory label FQCA (0x0C)');
+    expect(text).toContain('Offset from neutral: 0.00 ppm');
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByLabelText('Tune unit hexadecimal bytes').textContent).toContain(
       '0x04F00100',

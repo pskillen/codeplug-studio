@@ -3,6 +3,7 @@ import {
   AT_D890_TRIM_NEUTRAL,
   AT_D890_TUNE_UNIT_BYTES,
   atD890CalibrationCorrection,
+  atD890TrimPpm,
   atD890CalibrationTableValue,
   decodeAtD890Calibration,
 } from './calibration.ts';
@@ -50,9 +51,10 @@ describe('decodeAtD890Calibration', () => {
       offset: 0,
       width: 2,
       value: 2000,
-      byteOrder: 'assumed-little-endian',
+      byteOrder: 'little-endian',
       layout: 'traced',
-      meaning: 'partially-traced',
+      meaning: 'traced',
+      factoryLabel: 'FQCA (0x0C)',
       availability: 'captured',
     });
     expect(Array.from(trim.raw)).toEqual([0xd0, 0x07]);
@@ -84,7 +86,7 @@ describe('decodeAtD890Calibration', () => {
     expect(uhf2).toMatchObject({ offset: 0xe00, length: 121, referenceIndex: 40, selection: 2 });
     expect(uhf2.values[0]).toBe(14);
     expect(uhf2.values[120]).toBe(134);
-    expect(uhf2.source.consumers).toEqual(['0x0803AAF8', '0x0811A75C', '0x08123864']);
+    expect(uhf2.source.consumers).toEqual(['0x0811A75C', '0x0803AAF8', '0x0801694C']);
     const vhf3 = byId(cal.tables, 'vhf-power-3');
     expect(vhf3).toMatchObject({ offset: 0x1300, length: 45, referenceIndex: 9 });
     expect(vhf3.values[9]).toBe(206);
@@ -100,17 +102,77 @@ describe('decodeAtD890Calibration', () => {
     ).toBe(true);
   });
 
-  it('keeps unknown bytes, including noted ones, as unknown ranges', () => {
+  it('names every loaded byte and leaves the never-loaded bytes as unused ranges', () => {
     const cal = decodeAtD890Calibration(golden());
-    const notes = cal.unknown.flatMap((r) => r.notes.map((n) => n.offset));
-    expect(notes).toEqual([0x028, 0x200, 0x201, 0x207]);
-    expect(cal.unknown[0]).toMatchObject({ offset: 0x006, end: 0x010 });
-    expect(cal.unknown.at(-1)).toMatchObject({ offset: 0x1719, end: AT_D890_TUNE_UNIT_BYTES });
-    const covered =
-      cal.unknown.reduce((n, r) => n + r.end - r.offset, 0) +
-      cal.scalars.reduce((n, s) => n + s.width, 0) +
-      cal.tables.reduce((n, t) => n + t.length, 0);
-    expect(covered).toBe(AT_D890_TUNE_UNIT_BYTES);
+    const sum = (items: readonly { length: number }[]) => items.reduce((n, i) => n + i.length, 0);
+    const unused = cal.unused.reduce((n, r) => n + r.end - r.offset, 0);
+    const named = sum(cal.fields);
+    expect(named).toBe(289);
+    expect(sum(cal.fields.filter((f) => f.kind !== 'field'))).toBe(77);
+    expect(sum(cal.fields.filter((f) => f.kind === 'no-reader'))).toBe(36);
+    expect(unused).toBe(261_057);
+    expect(
+      unused +
+        named +
+        cal.scalars.reduce((n, s) => n + s.width, 0) +
+        cal.tables.reduce((n, t) => n + t.length, 0),
+    ).toBe(AT_D890_TUNE_UNIT_BYTES);
+    expect(cal.unused[0]).toMatchObject({ offset: 0x02a });
+    expect(cal.unused.at(-1)?.end).toBe(AT_D890_TUNE_UNIT_BYTES);
+    // No two named ranges overlap.
+    const spans = [
+      ...cal.scalars.map((f) => [f.offset, f.offset + f.width]),
+      ...cal.tables.map((t) => [t.offset, t.offset + t.length]),
+      ...cal.fields.map((f) => [f.offset, f.offset + f.length]),
+    ].sort((x, y) => x[0]! - y[0]!);
+    spans.slice(1).forEach((span, i) => expect(span[0]).toBeGreaterThanOrEqual(spans[i]![1]!));
+  });
+
+  it('puts the factory case 5B capture at +0x203 and the air-band 127 MHz point at +0x206', () => {
+    const cal = decodeAtD890Calibration(golden());
+    expect(byId(cal.fields, 'fm-rsi')).toMatchObject({
+      offset: 0x203,
+      factoryLabel: 'FM RSI (0x5B)',
+    });
+    expect(byId(cal.fields, 'air-bpf-127')).toMatchObject({ offset: 0x206, length: 2 });
+  });
+
+  it('decodes the big-endian regions big-endian and the little-endian regions little-endian', () => {
+    const b = new Uint8Array(AT_D890_TUNE_UNIT_BYTES);
+    b.set([0x12, 0x34], 0x40a); // BE
+    b.set([0x12, 0x34], 0x1810); // LE
+    b.set([0x12, 0x34], 0x40a);
+    const cal = decodeAtD890Calibration(b);
+    expect(byId(cal.fields, 'uhf-fsk-400')).toMatchObject({
+      byteOrder: 'big-endian',
+      value: 0x1234,
+    });
+    expect(byId(cal.fields, 'nx6-vhf-mod')).toMatchObject({
+      byteOrder: 'little-endian',
+      value: 0x3412,
+    });
+    // Multi-word blocks are not collapsed into one integer.
+    expect(byId(cal.fields, 'bb-cfg-15').value).toBeUndefined();
+  });
+
+  it('labels power by tier, never by the shifted factory letters', () => {
+    const cal = decodeAtD890Calibration(golden());
+    expect(cal.scalars.filter((s) => s.id.startsWith('uhf-power-ref')).map((s) => s.label)).toEqual(
+      [
+        'UHF power reference, Low',
+        'UHF power reference, Mid',
+        'UHF power reference, High',
+        'UHF power reference, Turbo',
+      ],
+    );
+    expect(byId(cal.scalars, 'uhf-power-ref-0').factoryLabel).toBe('PASU (0x10)');
+    expect(byId(cal.scalars, 'uhf-power-ref-3').factoryLabel).toBe('PAHU (0x0D)');
+  });
+
+  it('converts the trim to ppm around the neutral 2000', () => {
+    expect(atD890TrimPpm(2000)).toBe(0);
+    expect(atD890TrimPpm(2100)).toBeCloseTo(2.173, 2);
+    expect(atD890TrimPpm(1900)).toBeCloseTo(-2.173, 2);
   });
 
   it('reports nothing captured for undefined or empty input', () => {
