@@ -8,7 +8,7 @@ import {
   OPENGD77_DM1701_MODEL_ID,
   OPENGD77_MD9600_MODEL_ID,
 } from '@integrations/radio-io/radios/opengd77/hydration.ts';
-import { createOpenUv380Image } from '@integrations/radio-io/radios/opengd77/memory.ts';
+import { createOpenUv380Image, writeAbs } from '@integrations/radio-io/radios/opengd77/memory.ts';
 import { encodeZonesIntoImage } from '@integrations/radio-io/radios/opengd77/zoneCodec.ts';
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
@@ -137,6 +137,39 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       expect(screen.getByText(/Absent: the channel bitmap/)).toBeInTheDocument();
       expect(screen.getByText(/Out of range/)).toBeInTheDocument();
       expect(screen.getAllByText('SIMPLEX')).toHaveLength(2);
+    });
+
+    it('shows a read-only Settings view: decoded where captured, not captured elsewhere', async () => {
+      const img = image();
+      writeAbs(img, 0x604b, new Uint8Array([0x80, 0x47, 0x00, 0x00]));
+      writeAbs(img, 0x6057, new Uint8Array([0xc0, 0x03]));
+      writeAbs(img, 0xe0, new TextEncoder().encode('M0TEST'));
+      view(await syntheticOpenGd77Archive(model, { image: img }));
+      fireEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+      expect(screen.getByText('Firmware settings, read-only')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          model === OPENGD77_DM1701_MODEL_ID
+            ? /Flash copy as of the last power-off or CPS save/
+            : /Backup copy; the live copy is in backup SRAM/,
+        ),
+      ).toBeInTheDocument();
+      const row = (id: string) => document.querySelector(`[data-row-id="${id}"]`) as HTMLElement;
+      expect(row('setting-magicNumber').textContent).toContain('0x4780');
+      expect(row('setting-timezone').textContent).toContain('UTC+00:00, local time shown');
+      expect(row('setting-vfoScanHigh').textContent).toContain('Not captured');
+      expect(row('setting-txPowerLevel').textContent).toContain('Not captured');
+      expect(row('general-radioName').textContent).toContain('M0TEST');
+      expect(row('general-sn').textContent).toContain('unused (no reader)');
+    });
+
+    it('does not name settings fields when the version is wrong', async () => {
+      const img = image();
+      writeAbs(img, 0x604b, new Uint8Array([0x76, 0x47, 0x00, 0x00]));
+      view(await syntheticOpenGd77Archive(model, { image: img }));
+      fireEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+      expect(screen.getByText('Firmware settings not decoded')).toBeInTheDocument();
+      expect(document.querySelector('[data-row-id="setting-timezone"]')).toBeNull();
     });
   },
 );
