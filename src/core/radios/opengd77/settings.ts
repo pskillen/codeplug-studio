@@ -923,7 +923,7 @@ export const OPENGD77_GENERAL_SETTINGS_ADDRESS = 0xe0;
 
 export interface OpenGd77CodeplugGeneralRow {
   id: string;
-  group: 'Device info (0x80)' | 'General settings (0xE0)';
+  group: 'Device info (0x80)' | 'General settings (0xE0)' | 'Boot password (0x7518)';
   name: string;
   abs: number;
   length: number;
@@ -935,6 +935,8 @@ export interface OpenGd77CodeplugGeneralRow {
   meaning: string;
   confidence: OpenGd77SettingsConfidence;
   evidence: string;
+  /** A secret: views show `value` and `raw` only after an explicit reveal. */
+  sensitive?: true;
 }
 
 const NOT_READ = 'not used by OpenGD77 (stock CPS field)';
@@ -949,6 +951,8 @@ interface GeneralSpec {
   meaning: string;
   evidence: string;
   decode?: (raw: Uint8Array) => string;
+  confidence?: OpenGd77SettingsConfidence;
+  sensitive?: true;
 }
 
 function bcdMhzFromU16(raw: Uint8Array): string {
@@ -973,6 +977,24 @@ function dmrIdFromBcd(raw: Uint8Array): string {
   return String(Number(digits));
 }
 
+/**
+ * Boot password PIN: packed BCD, six nibbles high then low, up to 6 digits, a 0xF nibble ends it.
+ * Any other non-digit nibble makes the whole value invalid (shown as raw hex, never guessed).
+ */
+export function decodeOpenGd77BootPin(raw: Uint8Array): string {
+  let digits = '';
+  for (const b of raw) {
+    for (const nibble of [b >> 4, b & 15]) {
+      if (nibble === 0xf) return digits === '' ? '(empty)' : digits;
+      if (nibble > 9) {
+        return `invalid BCD (${Array.from(raw, (x) => x.toString(16).padStart(2, '0')).join(' ')})`;
+      }
+      digits += String(nibble);
+    }
+  }
+  return digits === '' ? '(empty)' : digits;
+}
+
 const unread = (
   id: string,
   group: OpenGd77CodeplugGeneralRow['group'],
@@ -984,6 +1006,9 @@ const unread = (
 
 const DEVICE = 'Device info (0x80)' as const;
 const GENERAL = 'General settings (0xE0)' as const;
+const BOOT = 'Boot password (0x7518)' as const;
+const BOOT_EVIDENCE =
+  'firmware source, DM-1701 tree (codeplug.c:1618-1647); MD-9600 layout unconfirmed';
 const BAND = (id: string, name: string, abs: number): GeneralSpec => ({
   id,
   group: DEVICE,
@@ -1051,8 +1076,52 @@ const GENERAL_SPECS: GeneralSpec[] = [
     'codeplug.h:272-294',
   ),
   unread('reserver2', GENERAL, 'reserver2', 0xfe, 2, 'codeplug.h:272-294'),
-  unread('prgPwd', GENERAL, 'prgPwd', 0x100, 8, 'codeplug.h:272-294'),
+  {
+    ...unread(
+      'prgPwd',
+      GENERAL,
+      'prgPwd (CPS programming password)',
+      0x100,
+      8,
+      'codeplug.h:272-294',
+    ),
+    decode: asText,
+    sensitive: true,
+  },
+  {
+    id: 'bootPasswordEnable',
+    group: BOOT,
+    name: 'Boot password enabled',
+    abs: 0x7519,
+    length: 1,
+    hasReader: true,
+    meaning: 'Bit 0 set: the radio asks for the PIN at power-on',
+    evidence: BOOT_EVIDENCE,
+    confidence: 'partly',
+    decode: (raw) => ((raw[0]! & 1) === 1 ? 'Enabled' : 'Disabled'),
+  },
+  {
+    id: 'bootPasswordPin',
+    group: BOOT,
+    name: 'Boot password PIN',
+    abs: 0x751c,
+    length: 3,
+    hasReader: true,
+    meaning: 'Packed BCD, high nibble first, up to 6 digits; an F nibble ends the PIN',
+    evidence: BOOT_EVIDENCE,
+    confidence: 'partly',
+    decode: decodeOpenGd77BootPin,
+    sensitive: true,
+  },
 ];
+
+/** Flash spans of the secret general-settings and boot rows, for masking them in Hex. */
+export const OPENGD77_SENSITIVE_SPANS: readonly { abs: number; length: number; label: string }[] =
+  GENERAL_SPECS.filter((s) => s.sensitive).map((s) => ({
+    abs: s.abs,
+    length: s.length,
+    label: s.name,
+  }));
 
 /** Decode the codeplug device info and general settings blocks from whatever is captured. */
 export function decodeOpenGd77CodeplugGeneral(
@@ -1071,8 +1140,9 @@ export function decodeOpenGd77CodeplugGeneral(
       ...(raw && spec.decode ? { value: spec.decode(raw) } : {}),
       hasReader: spec.hasReader,
       meaning: spec.meaning,
-      confidence: 'traced',
+      confidence: spec.confidence ?? 'traced',
       evidence: spec.evidence,
+      ...(spec.sensitive ? { sensitive: true as const } : {}),
     };
   });
 }

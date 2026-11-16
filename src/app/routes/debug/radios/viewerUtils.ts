@@ -48,7 +48,16 @@ export function sensitiveRanges(
   regionId: string,
 ): readonly DebugSensitiveRange[] {
   if (!archive) return [];
-  return radioDebugDescriptors.flatMap((d) => d.sensitiveRanges?.(archive, regionId) ?? []);
+  // Radios that share one hook (the two OpenGD77 descriptors) report the same span twice.
+  const seen = new Set<string>();
+  return radioDebugDescriptors
+    .flatMap((d) => d.sensitiveRanges?.(archive, regionId) ?? [])
+    .filter((r) => {
+      const key = `${r.start}-${r.end}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 const isMasked = (address: number, mask: readonly DebugSensitiveRange[]) =>

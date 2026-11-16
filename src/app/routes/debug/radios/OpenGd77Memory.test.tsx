@@ -15,6 +15,7 @@ import { OpenGd77Memory } from './OpenGd77Memory.tsx';
 import { OpenGd77Settings } from './OpenGd77Settings.tsx';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 import { syntheticOpenGd77Archive } from './opengd77.fixture.ts';
+import { hexRows, sensitiveRanges } from './viewerUtils.ts';
 
 const channel = (
   slot: number,
@@ -190,6 +191,73 @@ describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
       viewSettings(await syntheticOpenGd77Archive(model, { image: img }));
       expect(screen.getByText('Firmware settings not decoded')).toBeInTheDocument();
       expect(document.querySelector('[data-row-id="setting-timezone"]')).toBeNull();
+    });
+  },
+);
+
+describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
+  'OpenGD77 passwords %s',
+  (model) => {
+    async function passwordArchive() {
+      const img = image();
+      writeAbs(img, 0x100, new TextEncoder().encode('PRG123'));
+      writeAbs(img, 0x7519, new Uint8Array([0x01]));
+      writeAbs(img, 0x751c, new Uint8Array([0x12, 0x34, 0xff]));
+      return syntheticOpenGd77Archive(model, { image: img });
+    }
+    const row = (id: string) => document.querySelector(`[data-row-id="${id}"]`) as HTMLElement;
+
+    it('hides the boot PIN and prgPwd until Show password, then hides them again', async () => {
+      viewSettings(await passwordArchive());
+      expect(row('general-bootPasswordEnable').textContent).toContain('Enabled');
+      expect(row('general-bootPasswordPin').textContent).toContain('MD-9600 layout unconfirmed');
+      for (const id of ['general-bootPasswordPin', 'general-prgPwd']) {
+        expect(row(id).textContent).toContain('Hidden (password)');
+        expect(row(id).textContent).toContain('••');
+      }
+      expect(document.body.textContent).not.toContain('1234');
+      expect(document.body.textContent).not.toContain('PRG123');
+      expect(document.body.textContent).not.toContain('12 34 FF');
+      fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+      expect(row('general-bootPasswordPin').textContent).toContain('1234');
+      expect(row('general-prgPwd').textContent).toContain('PRG123');
+      fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+      expect(document.body.textContent).not.toContain('PRG123');
+    });
+
+    it('masks the same bytes in Hex through the descriptor hook and keeps the archive bytes', async () => {
+      const archive = await passwordArchive();
+      const before = structuredClone(
+        Object.fromEntries(Object.entries(archive.regions).map(([k, v]) => [k, Array.from(v)])),
+      );
+      const found = archive.manifest.regions.flatMap((r) =>
+        sensitiveRanges(archive, r.id).map(({ start, end }) => [start, end]),
+      );
+      expect(found).toEqual([
+        [0x100, 0x108],
+        [0x751c, 0x751f],
+      ]);
+      const holder = archive.manifest.regions.find((r) =>
+        sensitiveRanges(archive, r.id).some((x) => x.start === 0x100),
+      )!;
+      const masked = hexRows(
+        archive.regions[holder.id]!,
+        holder.address,
+        0,
+        sensitiveRanges(archive, holder.id),
+      ).find((r) => r.address === 0x100)!;
+      expect(masked.hex).toContain('•• ••');
+      expect(masked.hex).not.toMatch(/50 52 47/);
+      expect(masked.ascii).not.toContain('PRG');
+      expect(
+        Object.fromEntries(Object.entries(archive.regions).map(([k, v]) => [k, Array.from(v)])),
+      ).toEqual(before);
+    });
+
+    it('masks nothing for another radio', async () => {
+      const archive = await passwordArchive();
+      const other = { ...archive, manifest: { ...archive.manifest, radioModelId: 'DM-32UV' } };
+      for (const r of other.manifest.regions) expect(sensitiveRanges(other, r.id)).toEqual([]);
     });
   },
 );

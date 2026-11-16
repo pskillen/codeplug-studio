@@ -3,6 +3,7 @@ import {
   OPENGD77_SETTINGS_ADDRESS,
   OPENGD77_SETTINGS_MEMBER_COUNT,
   OPENGD77_SETTINGS_SIZE,
+  decodeOpenGd77BootPin,
   decodeOpenGd77CodeplugGeneral,
   decodeOpenGd77Settings,
 } from './settings.ts';
@@ -113,8 +114,35 @@ describe('decodeOpenGd77CodeplugGeneral', () => {
     expect(get('radioName').value).toBe('M0TEST');
     expect(get('radioId').value).toBe('234567');
     expect(get('sn').hasReader).toBe(false);
-    expect(rows.every((r) => r.captured)).toBe(true);
+    expect(rows.filter((r) => !r.group.startsWith('Boot')).every((r) => r.captured)).toBe(true);
     const none = decodeOpenGd77CodeplugGeneral(reader(0x6000, 0x6060, {}));
     expect(none.every((r) => !r.captured)).toBe(true);
+  });
+});
+
+describe('OpenGD77 boot PIN and prgPwd', () => {
+  it('decodes packed BCD, high nibble first', () => {
+    expect(decodeOpenGd77BootPin(Uint8Array.of(0x12, 0x34, 0x56))).toBe('123456');
+    expect(decodeOpenGd77BootPin(Uint8Array.of(0x12, 0x34, 0xff))).toBe('1234');
+    expect(decodeOpenGd77BootPin(Uint8Array.of(0x12, 0x3f, 0xff))).toBe('123');
+    expect(decodeOpenGd77BootPin(Uint8Array.of(0xff, 0xff, 0xff))).toBe('(empty)');
+    expect(decodeOpenGd77BootPin(Uint8Array.of(0x1a, 0xff, 0xff))).toMatch(/^invalid BCD/);
+  });
+
+  it('reads the enable bit and marks the PIN and prgPwd sensitive', () => {
+    const plant = {
+      0x100: [...new TextEncoder().encode('SECRET'), 0xff, 0xff],
+      0x7519: [0x01],
+      0x751c: [0x12, 0x34, 0xff],
+    };
+    const rows = decodeOpenGd77CodeplugGeneral(reader(0x80, 0x8000, plant));
+    const get = (id: string) => rows.find((r) => r.id === id)!;
+    expect(get('bootPasswordEnable').value).toBe('Enabled');
+    expect(get('bootPasswordEnable').sensitive).toBeUndefined();
+    expect(get('bootPasswordPin')).toMatchObject({ value: '1234', sensitive: true });
+    expect(get('bootPasswordPin').evidence).toMatch(/MD-9600 layout unconfirmed/);
+    expect(get('prgPwd')).toMatchObject({ value: 'SECRET', sensitive: true });
+    const off = decodeOpenGd77CodeplugGeneral(reader(0x80, 0x8000, { 0x7519: [0xfe] }));
+    expect(off.find((r) => r.id === 'bootPasswordEnable')!.value).toBe('Disabled');
   });
 });
