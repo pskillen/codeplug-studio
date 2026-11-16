@@ -232,6 +232,8 @@ export async function backupLiveRadioSession(
     /** The build's Web Serial profile. The UV-5R Mini MM9PDY profile also backs up the zone table. */
     profileId?: string;
     download?: boolean;
+    /** Stage label stamped on the clone download progress events. */
+    progressStage?: string;
     /** Operator's radio name, label and description, stored in the manifest. */
     labels?: RadioBackupLabels;
   },
@@ -242,6 +244,7 @@ export async function backupLiveRadioSession(
   const image = await session.radio.download({
     onProgress: opts?.onProgress,
     signal: opts?.signal,
+    ...(opts?.progressStage ? { progressStage: opts.progressStage } : {}),
   });
   if (session.radio instanceof AtD890uvProtocol) {
     const packed = packAtD890BackupFromImage(

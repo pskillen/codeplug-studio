@@ -256,7 +256,12 @@ export interface CloneImageRadio {
     },
   ): Promise<IdentResult>;
   disconnect(): Promise<void>;
-  download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap>;
+  download(opts: {
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
+    /** Checklist label for the progress events of this download, where the adapter supports one. */
+    progressStage?: string;
+  }): Promise<MemoryMap>;
   upload(image: MemoryMap, opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<void>;
   decodeChannels(image: MemoryMap): import('./radioChannelDto.ts').RadioChannelDto[];
   encodeChannels(

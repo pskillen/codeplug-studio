@@ -10,7 +10,7 @@ import { Rt95Calibration, Rt95CalibrationDiff } from './Rt95Calibration.tsx';
 import { captureAtD890 } from './atD890Capture.ts';
 import { captureDm32 } from './dm32Capture.ts';
 import { captureUv5rMini } from './uv5rMiniCapture.ts';
-import { captureRt95 } from './rt95Capture.ts';
+import { captureRt95, RT95_CAPTURE_STAGES } from './rt95Capture.ts';
 import { captureOpenGd77, OPENGD77_DEBUG_USER_DATABASE_OPTION } from './opengd77Capture.ts';
 import { openGd77IdentityRows } from './opengd77Identity.ts';
 import {
@@ -47,6 +47,8 @@ export interface RadioDebugDescriptor {
   capture?: RadioDebugCapture;
   /** Tick boxes shown above Read radio; each is passed to `capture` as `options[id]`. */
   captureOptions?: readonly RadioDebugCaptureOption[];
+  /** The `stage` labels a Read goes through, in order; shown as "Stage i of n" beside the progress bar. */
+  captureStages?: readonly string[];
   Calibration?: ComponentType<DebugCalibrationProps>;
   DecodedDiff?: ComponentType<DebugDecodedDiffProps>;
   /** A profile's own Memory viewer; without one the generic Memory viewer is used. */
@@ -171,6 +173,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     Calibration: Rt95Calibration,
     DecodedDiff: Rt95CalibrationDiff,
     capture: captureRt95,
+    captureStages: RT95_CAPTURE_STAGES,
     model: 'RT95',
     archiveModelId: 'retevis-rt95',
     family: 'Stock / MM9PDY',

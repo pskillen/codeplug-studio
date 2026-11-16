@@ -163,6 +163,7 @@ export const captureAtD890DebugPipe = withAtD890ReadRecovery(
   ): Promise<AtD890DebugCapture> => {
     const guard = createAtD890DebugGuard(pipe, opts?.signal);
     try {
+      opts?.onProgress?.({ cur: 0, max: 0, msg: 'Connecting…', stage: 'Connect' });
       await atD890EnterProgram(guard.pipe, opts?.signal);
       const ident = await atD890ProbeIdent(guard.pipe, opts?.signal);
       const head = await atD890ReadMemory(
@@ -182,6 +183,7 @@ export const captureAtD890DebugPipe = withAtD890ReadRecovery(
         opts,
       );
       throwIfAborted(opts?.signal);
+      opts?.onProgress?.({ cur: 0, max: 0, msg: 'Ending the session…', stage: 'Finishing' });
       await guard.finish(FINISH_AUTHORITY);
       return { cache, ident, vital, capturedAt: new Date().toISOString() };
     } catch (error) {

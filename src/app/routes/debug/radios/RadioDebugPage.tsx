@@ -39,6 +39,8 @@ import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
 import { AtD890Memory } from './AtD890Memory.tsx';
 import { Dm32Memory } from './Dm32Memory.tsx';
 import { Coverage } from './Coverage.tsx';
+import { DebugReadProgress } from './DebugReadProgress.tsx';
+import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 import { Uv5rMiniMemory } from './Uv5rMiniMemory.tsx';
 import { Uv5rMiniCompare } from './Uv5rMiniCompare.tsx';
 import { isUv5rMiniReadsZip, openUv5rMiniReadsZip } from './uv5rMiniLegacyArchive.ts';
@@ -103,7 +105,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
   const [error, setError] = useState<string>();
   const [reading, setReading] = useState(false);
   const { held: screenHeld } = useScreenWakeLock(reading);
-  const [progress, setProgress] = useState('');
+  const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   const allReads = reads.map((read) => ({
@@ -186,7 +188,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
     try {
       const result = await descriptor.capture({
         signal: controller.current.signal,
-        onProgress: (p) => setProgress(p.msg),
+        onProgress: (p) => setProgress({ ...p }),
         options: Object.fromEntries(
           (descriptor.captureOptions ?? []).map((option) => [
             option.id,
@@ -207,7 +209,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
     } finally {
       controller.current = null;
       setReading(false);
-      setProgress('');
+      setProgress(null);
     }
   };
   return (
@@ -473,7 +475,7 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
                       <Button variant="default" onClick={() => controller.current?.abort()}>
                         Cancel
                       </Button>
-                      <Text>{progress || 'Connecting…'}</Text>
+                      <DebugReadProgress update={progress} stages={descriptor.captureStages} />
                       {!screenHeld && (
                         <Text size="sm" c="dimmed" data-testid="keep-screen-on-hint">
                           {KEEP_SCREEN_ON_HINT}
