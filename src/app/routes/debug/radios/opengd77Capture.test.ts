@@ -46,6 +46,7 @@ describe('archiveOpenGd77Capture', () => {
         'flash-span-2',
         'flash-span-3',
         'user-database',
+        'calibration-working-copy',
       ]);
       expect(archive.manifest.regions.every((r) => r.restoreRole === 'inspect-only')).toBe(true);
       expect(archive.regions['flash-span-0']!.subarray(0, 3)).toEqual(

@@ -882,7 +882,8 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
         screen.getByText(/Radio type does not distinguish DM-1701 from RT-84/),
       ).toBeInTheDocument();
       for (const badge of screen.getAllByTitle('Available')) expect(badge).toBeInTheDocument();
-      expect(screen.getAllByTitle('Not yet available')).toHaveLength(2);
+      expect(screen.getAllByTitle('Not yet available')).toHaveLength(1);
+      expect(screen.getAllByTitle('Partial')).toHaveLength(1);
       expect(screen.queryByRole('button', { name: /write|restore/i })).not.toBeInTheDocument();
     },
     30000,
@@ -996,6 +997,44 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     });
     expect(await screen.findByText(/Missing from this archive/)).toBeInTheDocument();
   });
+
+  it('shows the Calibration tab as Partial with a viewer, not the unavailable alert', async () => {
+    const [first, second] = await addTwo();
+    history.select(second.id);
+    void first;
+    open(slug);
+    fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+    expect(screen.queryByText('Calibration unavailable')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Calibration overlay').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/not stock factory calibration/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('Unknown bytes')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Trace' }));
+    expect(screen.getByText('Trace unavailable')).toBeInTheDocument();
+    const entry = radioDebugDescriptors.find((d) => d.slug === slug)!;
+    expect(entry.capabilities).toEqual([
+      { name: 'Backup', status: 'Available' },
+      { name: 'Calibration', status: 'Partial' },
+      { name: 'Memory', status: 'Not yet available' },
+    ]);
+  });
+
+  it('reads a Backup-style archive without the region as not captured', async () => {
+    history.add(await syntheticOpenGd77Archive(modelId, { calibration: null }));
+    open(slug);
+    fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+    expect(screen.getByText('Calibration not captured')).toBeInTheDocument();
+  });
+
+  it('a live read carries the calibration region and shows it', async () => {
+    fake.pipe = new OpenGd77ScriptedPipe(radioTypes[0]);
+    open(slug);
+    fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
+    await screen.findByText(/Live read · captured/, {}, { timeout: 20000 });
+    fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+    // Unplanted scripted flash reads 0xFF, so the marker is absent: raw only, no verdicts.
+    expect(screen.getByText(/Marker absent/)).toBeInTheDocument();
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+  }, 30000);
 });
 
 it('keeps the OpenGD77 pages behind the production debug gate', async () => {

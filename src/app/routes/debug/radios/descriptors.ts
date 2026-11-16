@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { Dm32Calibration } from './Dm32Calibration.tsx';
 import { Dm32DecodedDiff } from './Dm32DecodedDiff.tsx';
+import { OpenGd77Calibration } from './OpenGd77Calibration.tsx';
 import { OpenGd77DecodedDiff } from './OpenGd77DecodedDiff.tsx';
 import { AtD890Calibration } from './AtD890Calibration.tsx';
 import { AtD890Compare } from './AtD890Compare.tsx';
@@ -105,26 +106,28 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-1701-opengd77',
+    Calibration: OpenGd77Calibration,
     DecodedDiff: OpenGd77DecodedDiff,
     readHistory: true,
     capture: captureOpenGd77(OPENGD77_DM1701_MODEL_ID),
     model: 'DM-1701',
     archiveModelId: 'DM-1701',
     family: 'OpenGD77',
-    capabilities: capabilities('Available', 'Not yet available', 'Not yet available'),
+    capabilities: capabilities('Available', 'Partial', 'Not yet available'),
     identityRows: openGd77IdentityRows,
     identityNote: OPENGD77_IDENTITY_NOTE,
     readNotice: OPENGD77_READ_NOTICE,
   },
   {
     slug: 'md-9600-opengd77',
+    Calibration: OpenGd77Calibration,
     DecodedDiff: OpenGd77DecodedDiff,
     readHistory: true,
     capture: captureOpenGd77(OPENGD77_MD9600_MODEL_ID),
     model: 'MD-9600',
     archiveModelId: 'MD-9600',
     family: 'OpenGD77',
-    capabilities: capabilities('Available', 'Not yet available', 'Not yet available'),
+    capabilities: capabilities('Available', 'Partial', 'Not yet available'),
     identityRows: openGd77IdentityRows,
     identityNote: OPENGD77_IDENTITY_NOTE,
     readNotice: OPENGD77_READ_NOTICE,
