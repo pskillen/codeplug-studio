@@ -4,7 +4,7 @@ The shared Calibration tab shell for a radio debug page.
 
 ## Purpose
 
-Calls the descriptor's `calibration(archive)` for the selected read and for the overlay read, and draws the results with the debug kit. It holds no radio text: the `CalibrationView` carries every sentence, address and caveat. The RT95 and the AT-D890UV are on it; the other radios keep their own `Calibration` component until K2 to K5.
+Calls the descriptor's `calibration(archive)` for the selected read and for the overlay read, and draws the results with the debug kit. It holds no radio text: the `CalibrationView` carries every sentence, address and caveat. The RT95, the AT-D890UV, the DM-32UV and OpenGD77 (DM-1701, MD-9600) are on it; the others keep their own `Calibration` component.
 
 ## Props
 
@@ -34,4 +34,5 @@ Calls the descriptor's `calibration(archive)` for the selected read and for the 
 - [CalibrationReadPicker](../../../components/debug/CalibrationReadPicker.md), [CalibrationChartCard](../../../components/debug/CalibrationChartCard.md)
 - AT-D890UV view: `src/integrations/radio-io/radios/at-d890uv/debugCalibrationView.ts`
 - RT95 view: `src/integrations/radio-io/radios/rt95/debugCalibrationView.ts`
+- OpenGD77 view: `src/integrations/radio-io/radios/opengd77/debugCalibrationView.ts`
 - DM-32UV view: `src/integrations/radio-io/radios/dm32uv/debugCalibrationView.ts`

@@ -1027,9 +1027,9 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
     expect(screen.queryByText('Calibration unavailable')).not.toBeInTheDocument();
-    expect(screen.getAllByText('Calibration overlay').length).toBeGreaterThan(0);
+    expect(screen.getByText('Overlay (optional)')).toBeInTheDocument();
     expect(screen.getAllByText(/not stock factory calibration/i).length).toBeGreaterThan(0);
-    expect(screen.getByText('Unknown bytes')).toBeInTheDocument();
+    expect(screen.getByText(/Never read \(unused\)/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Trace' }));
     expect(screen.getByText('Trace unavailable')).toBeInTheDocument();
     const entry = radioDebugDescriptors.find((d) => d.slug === slug)!;
@@ -1060,7 +1060,7 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     history.add(await syntheticOpenGd77Archive(modelId, { calibration: null }));
     open(slug);
     fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
-    expect(screen.getByText('Calibration not captured')).toBeInTheDocument();
+    expect(screen.getByText(/no calibration working copy/)).toBeInTheDocument();
   });
 
   it('a live read carries the calibration region and shows it', async () => {
@@ -1070,8 +1070,8 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     await screen.findByText(/Live read · captured/, {}, { timeout: 20000 });
     fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
     // Unplanted scripted flash reads 0xFF, so the marker is absent: raw only, no verdicts.
-    expect(screen.getByText(/Marker absent/)).toBeInTheDocument();
-    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+    expect(screen.getByText(/Absent: this is not the layout/)).toBeInTheDocument();
+    expect(screen.getByText('Raw captured bytes')).toBeInTheDocument();
   }, 30000);
 });
 
