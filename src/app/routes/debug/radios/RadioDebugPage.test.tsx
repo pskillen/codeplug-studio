@@ -783,14 +783,15 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     await addTwo();
     open(slug);
     fireEvent.click(screen.getByRole('button', { name: 'Download all reads' }));
-    await waitFor(() => expect(history.getSnapshot().undownloaded).toBe(0));
+    // Zipping every read is real work: under a loaded full run it outlasts waitFor's 1 s default.
+    await waitFor(() => expect(history.getSnapshot().undownloaded).toBe(0), { timeout: 15_000 });
     fireEvent.click(screen.getByRole('button', { name: 'Clear history' }));
     expect(history.getSnapshot().entries).toHaveLength(2);
-    fireEvent.click(await screen.findByRole('button', { name: /^Clear$/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Clear$/ }, { timeout: 5000 }));
     expect(history.getSnapshot().entries).toHaveLength(0);
     expect(history.getSnapshot().selectedId).toBeNull();
     expect(history.getSnapshot().compareId).toBeNull();
-  });
+  }, 30_000);
 
   it('reopens a history ZIP and refuses a corrupt, wrong-profile or wrong-model one', async () => {
     const [first, second] = await addTwo();
