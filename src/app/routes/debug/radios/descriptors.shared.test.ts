@@ -39,10 +39,15 @@ describe('descriptor fields that carry radio text for the shared page', () => {
     ])
       expect(descriptor(slug).coverage, slug).toBeTypeOf('function');
     expect(descriptor('uv-21-pro-v2').coverage).toBeUndefined();
-    for (const slug of ['dm-32uv', 'dm-1701-opengd77', 'md-9600-opengd77'])
-      expect(descriptor(slug).ownDecodedChanges, slug).toBe(true);
-    for (const slug of ['at-d890uv', 'rt95', 'uv-5r-mini'])
-      expect(descriptor(slug).ownDecodedChanges, slug).toBeFalsy();
+    for (const slug of [
+      'at-d890uv',
+      'dm-32uv',
+      'dm-1701-opengd77',
+      'md-9600-opengd77',
+      'rt95',
+      'uv-5r-mini',
+    ])
+      expect(descriptor(slug).compare?.decoded, slug).toBeTypeOf('function');
   });
 
   it('RT95 coverage has its clone summary line and a start label; it declines another radio', () => {

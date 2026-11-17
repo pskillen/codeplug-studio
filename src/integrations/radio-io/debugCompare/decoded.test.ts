@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { diffDecoded, fieldCounts, type DecodedDomain, type DecodedRecord } from './index.ts';
+import {
+  decodedChanges,
+  diffDecoded,
+  fieldCounts,
+  notCapturedCount,
+  type DecodedDomain,
+  type DecodedRecord,
+} from './index.ts';
 
 const rec = (
   key: string,
@@ -136,5 +143,43 @@ describe('fieldCounts', () => {
       [domain([rec('a', { rx: '9', tx: '3' }), rec('b', { rx: '1' })])],
     );
     expect(fieldCounts(d)).toEqual([{ domainId: 'd', changedFields: 2, changedRecords: 1 }]);
+  });
+});
+
+describe('decodedChanges', () => {
+  const field = (value?: string, address?: number) => ({
+    key: 'settings',
+    identity: { name: 'Radio settings' },
+    fields: [
+      { id: 'vol', label: 'Volume', value, ...(address === undefined ? {} : { address }) },
+      { id: 'pw', label: 'Password', value: value && `pw${value}`, sensitive: true },
+      { id: 'sq', label: 'Squelch', value: '3' },
+    ],
+  });
+  const snap = (value?: string, address?: number) => [domain([field(value, address)])];
+
+  it('flattens to section, record, label, A, B, address and the sensitive flag', () => {
+    const changes = decodedChanges(diffDecoded(snap('1', 0x1a), snap('2', 0x1a)));
+    expect(changes).toHaveLength(2);
+    expect(changes[0]).toMatchObject({
+      record: 'Radio settings',
+      label: 'Volume',
+      kind: 'changed',
+      a: '1',
+      b: '2',
+      address: 0x1a,
+    });
+    expect(changes[1]).toMatchObject({ label: 'Password', sensitive: true });
+    expect(changes[1]).not.toHaveProperty('a');
+  });
+
+  it('keeps a sensitive value out until revealed, and counts not-captured values apart', () => {
+    const shown = decodedChanges(diffDecoded(snap('1'), snap('2'), { revealSensitive: true })).find(
+      (c) => c.sensitive,
+    );
+    expect(shown).toMatchObject({ a: 'pw1', b: 'pw2' });
+    const gap = diffDecoded(snap(undefined), snap('2'));
+    expect(decodedChanges(gap).some((c) => c.label === 'Volume')).toBe(false);
+    expect(notCapturedCount(gap)).toBe(2);
   });
 });

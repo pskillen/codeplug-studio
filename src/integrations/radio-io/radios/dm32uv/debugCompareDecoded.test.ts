@@ -120,6 +120,7 @@ describe('DM-32 decoded snapshot', () => {
     expect(masked.kind).toBe('changed');
     expect(field).toMatchObject({ kind: 'changed', sensitive: true });
     expect(JSON.stringify(masked)).not.toMatch(/1234|9876/);
+    expect(field.address).toEqual(expect.any(Number));
     const shown = diff(a, b, true).records.find((r) => r.domainId === 'settings')!;
     expect(shown.fields.find((f) => f.id === 'power-on-password')).toMatchObject({
       a: '1234',

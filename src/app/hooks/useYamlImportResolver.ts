@@ -224,6 +224,7 @@ export function useRefreshFromDrivePrompt() {
   const [bannerOpen, setBannerOpen] = useState(false);
   const [diff, setDiff] = useState<ProjectSyncDiff | null>(null);
   const [remoteYaml, setRemoteYaml] = useState<string | null>(null);
+  const [remoteModifiedTime, setRemoteModifiedTime] = useState<string | undefined>(undefined);
   const [remoteProjectId, setRemoteProjectId] = useState<string | null>(null);
   const [idMismatch, setIdMismatch] = useState(false);
   const [overwriteOpen, setOverwriteOpen] = useState(false);
@@ -243,6 +244,7 @@ export function useRefreshFromDrivePrompt() {
       }
       setDiff(result.diff);
       setRemoteYaml(result.remoteYaml);
+      setRemoteModifiedTime(result.remoteModifiedTime);
       setRemoteProjectId(result.remoteProjectId);
       setIdMismatch(result.idMismatch);
       setError(null);
@@ -252,13 +254,13 @@ export function useRefreshFromDrivePrompt() {
   );
 
   const runRemoteCheck = useCallback(
-    async (options: { respectDismissed: boolean }) => {
+    async (options: { respectDismissed: boolean }): Promise<boolean> => {
       if (!projectId || !drive || !connected || !activeProject) {
         setBannerOpen(false);
-        return;
+        return false;
       }
       if (options.respectDismissed && dismissedRef.current.has(projectId)) {
-        return;
+        return false;
       }
       const result = await checkDriveRemoteUpdates({
         projectId,
@@ -268,6 +270,7 @@ export function useRefreshFromDrivePrompt() {
         withDriveAuthRetry,
       });
       applyRemoteCheckResult(result);
+      return result.newer;
     },
     [activeProject, applyRemoteCheckResult, connected, drive, port, projectId, withDriveAuthRetry],
   );
@@ -305,16 +308,20 @@ export function useRefreshFromDrivePrompt() {
     }
   }, [activeProject, connected, drive, projectId, runRemoteCheck]);
 
-  async function recordDriveSync() {
+  /**
+   * Record the Drive revision that was actually imported (`syncedAt` comes from
+   * the check that fetched the YAML shown in the Review modal). Re-reading Drive
+   * metadata here would mark a revision saved after that fetch as already synced.
+   */
+  async function recordDriveSync(syncedAt: string | undefined) {
     if (!projectId || !drive) return;
-    const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
     await recordProjectImportDestination(projectId, {
       destination: 'googleDrive',
       fileName: drive.fileName,
       folderId: drive.folderId,
       folderName: drive.folderName,
       fileId: drive.fileId,
-      syncedAt: metadata.modifiedTime ?? new Date().toISOString(),
+      syncedAt: syncedAt ?? new Date().toISOString(),
     });
   }
 
@@ -348,7 +355,7 @@ export function useRefreshFromDrivePrompt() {
         ? ({ kind: 'adoptRemote', projectId } as const)
         : ({ kind: 'replaceExisting', projectId } as const);
       await importProjectFromYaml(remoteYaml, mode);
-      await recordDriveSync();
+      await recordDriveSync(remoteModifiedTime);
       await refreshProjects();
       closeRefreshUi();
     } catch (err) {
@@ -363,7 +370,6 @@ export function useRefreshFromDrivePrompt() {
     setImporting(true);
     setError(null);
     try {
-      const metadata = await withDriveAuthRetry(() => port.getFileMetadata(drive.fileId));
       const result = await importProjectFromYaml(remoteYaml, { kind: 'createNew' });
       await recordDriveSyncForProject(
         result.projectId,
@@ -373,7 +379,7 @@ export function useRefreshFromDrivePrompt() {
           folderName: drive.folderName,
           fileId: drive.fileId,
         },
-        metadata.modifiedTime ?? new Date().toISOString(),
+        remoteModifiedTime ?? new Date().toISOString(),
       );
       await refreshProjects();
       switchProject(result.projectId);
@@ -398,9 +404,27 @@ export function useRefreshFromDrivePrompt() {
     closeOverwrite();
   }
 
-  function openOverwrite() {
+  /**
+   * **Review**: re-read Drive, then open the compare modal. The modal's diff and
+   * the YAML that **Use Drive copy** imports come from this same fetch, so what
+   * the operator reviews is exactly what gets imported — even if Drive changed
+   * after the banner first appeared.
+   */
+  async function openOverwrite() {
+    if (checking) return;
+    setChecking(true);
     setError(null);
-    setOverwriteOpen(true);
+    try {
+      const stillNewer = await runRemoteCheck({ respectDismissed: false });
+      // Drive no longer differs (banner closed by the check): nothing to review.
+      if (stillNewer) {
+        setOverwriteOpen(true);
+      }
+    } catch (err) {
+      setError(driveErrorMessage(err));
+    } finally {
+      setChecking(false);
+    }
   }
 
   function closeOverwrite() {

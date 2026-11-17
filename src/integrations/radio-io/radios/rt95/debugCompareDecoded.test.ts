@@ -118,5 +118,6 @@ describe('RT95 decoded snapshot', () => {
       .find((d) => d.id === 'settings')!
       .records[0]!.fields.filter((f) => f.sensitive);
     expect(sens.length).toBeGreaterThan(0);
+    expect(sens.every((f) => typeof f.address === 'number')).toBe(true);
   });
 });

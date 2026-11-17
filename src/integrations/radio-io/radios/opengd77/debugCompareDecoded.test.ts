@@ -141,6 +141,7 @@ describe('openGd77DecodedSnapshot', () => {
       .filter((r) => r.domainId === 'settings')
       .flatMap((r) => r.fields.filter((f) => f.sensitive));
     expect(sensitive.length).toBeGreaterThanOrEqual(2);
+    expect(sensitive.map((f) => f.address)).toContain(0x100);
     expect(
       sensitive.every((f) => f.kind === 'changed' && f.a === undefined && f.b === undefined),
     ).toBe(true);

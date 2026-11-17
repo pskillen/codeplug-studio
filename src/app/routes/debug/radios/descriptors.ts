@@ -170,11 +170,6 @@ export interface RadioDebugDescriptor {
   coverage?: (archive: DebugArchive) => RadioDebugCoverageView | undefined;
   /** Extra Hex viewer entries after the manifest regions, shown from byte 0 and never masked. */
   extraHexRegions?: (archive: DebugArchive) => readonly RadioDebugExtraHexRegion[];
-  /**
-   * True when this radio's compare adapter shows its own decoded changes, so Compare omits the
-   * shared "Decoded changes" block.
-   */
-  ownDecodedChanges?: boolean;
   /** Keep every read and opened archive in the shared tab-only history, with Compare. */
   readHistory?: boolean;
   family: string;
@@ -250,7 +245,6 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     compare: dm32CompareAdapter,
     Memory: Dm32Memory,
     coverage: dm32Coverage,
-    ownDecodedChanges: true,
     settings: dm32SettingsView,
     calibration: dm32CalibrationView,
     readHistory: true,
@@ -277,7 +271,6 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     calibration: openGd77CalibrationView,
     Memory: OpenGd77Memory,
     coverage: openGd77Coverage,
-    ownDecodedChanges: true,
     settings: openGd77SettingsView,
     readHistory: true,
     sensitiveRanges: openGd77ArchiveSensitiveRanges,
@@ -297,7 +290,6 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     calibration: openGd77CalibrationView,
     Memory: OpenGd77Memory,
     coverage: openGd77Coverage,
-    ownDecodedChanges: true,
     settings: openGd77SettingsView,
     readHistory: true,
     sensitiveRanges: openGd77ArchiveSensitiveRanges,

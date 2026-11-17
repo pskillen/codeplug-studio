@@ -8,12 +8,12 @@ Non-blocking session/drift notices (e.g. Drive session expired, dangling referen
 
 ## Props
 
-| Prop        | Type                                     | Notes                               |
-| ----------- | ---------------------------------------- | ----------------------------------- |
-| `tone`      | `'warning' \| 'info'`                    | Default `warning`                   |
-| `children`  | `ReactNode`                              | Required — the message              |
-| `action`    | `{ label: string, onClick: () => void }` | Optional inline text-link action    |
-| `onDismiss` | `() => void`                             | Called when the notice is dismissed |
+| Prop        | Type                                                         | Notes                                                             |
+| ----------- | ------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `tone`      | `'warning' \| 'info'`                                        | Default `warning`                                                 |
+| `children`  | `ReactNode`                                                  | Required — the message                                            |
+| `action`    | `{ label: string, onClick: () => void, disabled?: boolean }` | Optional inline text-link action (`disabled` while it is working) |
+| `onDismiss` | `() => void`                                                 | Called when the notice is dismissed                               |
 
 ## Usage
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PersistableRow } from '@core/models/revision.ts';
 import {
   diffProjectEntities,
+  invertEntityChanges,
   PROJECT_ENTITY_KINDS,
   type ProjectEntitySets,
 } from './projectEntityDiff.ts';
@@ -85,5 +86,38 @@ describe('diffProjectEntities', () => {
     });
     const names = diffProjectEntities(sets({}), remote).map((c) => c.name);
     expect(names.sort()).toEqual(['My path', 'e2'].sort());
+  });
+});
+
+describe('invertEntityChanges', () => {
+  it("flips added and removed to the remote file's point of view and keeps changed", () => {
+    const local = sets({
+      channels: [row('only-local', { name: 'Mine' }), row('both', { name: 'Same', freq: 1 })],
+    });
+    const remote = sets({
+      channels: [row('only-remote', { name: 'Theirs' }), row('both', { name: 'Same', freq: 2 })],
+    });
+    // Adopting remote: only-remote is added, only-local is removed.
+    const adopt = diffProjectEntities(local, remote);
+    expect(adopt.map((c) => [c.id, c.change])).toEqual([
+      ['only-remote', 'added'],
+      ['both', 'changed'],
+      ['only-local', 'removed'],
+    ]);
+
+    // Writing local over remote: only-local is created on remote, only-remote is deleted from it.
+    expect(invertEntityChanges(adopt).map((c) => [c.id, c.change])).toEqual([
+      ['only-local', 'added'],
+      ['both', 'changed'],
+      ['only-remote', 'removed'],
+    ]);
+  });
+
+  it('keeps collection order after inverting', () => {
+    const adopt = diffProjectEntities(
+      sets({ zones: [row('z1', { name: 'Z' })] }),
+      sets({ channels: [row('c1', { name: 'C' })] }),
+    );
+    expect(invertEntityChanges(adopt).map((c) => c.kind)).toEqual(['channels', 'zones']);
   });
 });

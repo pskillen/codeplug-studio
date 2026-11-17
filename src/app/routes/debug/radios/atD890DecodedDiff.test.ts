@@ -289,6 +289,17 @@ describe('D890 decoded snapshot through diffDecoded', () => {
       .filter((r) => r.kind === 'changed')
       .flatMap((r) => r.fields.filter((f) => f.kind === 'changed').map((f) => f.id));
 
+  it('carries absolute addresses on setting and calibration fields', () => {
+    const d = snap(
+      [sparse(MAIN + 0x26, Uint8Array.of(1)), tune([0xd0, 0x07, 1])],
+      [sparse(MAIN + 0x26, Uint8Array.of(2)), tune([0xd1, 0x07, 1])],
+    );
+    const setting = rec(d, 'settings').find((r) => r.key === 'backlightLevel');
+    expect(setting?.fields.find((f) => f.id === 'raw')?.address).toBe(MAIN + 0x26);
+    const trim = rec(d, 'calibration').find((r) => r.key === 'trim');
+    expect(trim?.fields[0]?.address).toBe(0x04f00000);
+  });
+
   it('is empty for another model', () => {
     const a = archive([zoneSet([])]);
     expect(

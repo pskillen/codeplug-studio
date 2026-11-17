@@ -112,11 +112,14 @@ Implementation: `src/integrations/cloud/googleDrive.ts`, `src/integrations/cloud
 
 - Shows **Google Drive · {fileName}** (or **Local file · {fileName}**) from `ProjectMeta.interchange`
 - **Save to Drive** (floppy icon) — enabled when local edits are newer than the last portable sync; assesses linked file before overwrite ([#335](https://github.com/pskillen/codeplug-studio/issues/335))
+- **Review changes to save** (compare icon, beside Save) — reads the linked file and lists what **Save** would add, change or remove on Drive (`DriveOutgoingChangesModal`); read-only, Save still saves immediately
 - **Check Drive** (refresh icon) — manual remote-newer check; complements automatic check on project focus
 - Dismissible **browser-only** warning when the project has no interchange destination **and** the operator has connected Drive on this browser before (`codeplug-studio:drive:lastAccount`)
 - Session expiry: subtle red panel beside the buttons; **Save** or **Check** click runs reconnect — no separate Reconnect button; local editing continues
 
 `RefreshFromDriveBanner` stays in main content when a newer remote copy is detected (automatic or manual check).
+
+**Review re-reads Drive.** Clicking **Review** (or **Refresh from Drive**) fetches the linked file again and only then opens the which-copy modal. The modal's diff and the YAML that **Use Drive copy** imports come from that one fetch, so what the operator reviews is exactly what is imported, even if another machine saved to Drive after the banner first appeared. The sync baseline (`syncedAt`) recorded after import is that fetch's Drive `modifiedTime`, not a later metadata read. If Drive no longer differs on re-read, the banner closes and no modal opens; if the re-read fails, the error shows beside the banner and the modal stays closed.
 
 ### Session lifecycle (#286)
 
@@ -177,6 +180,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | `DriveRefreshProvider`          | Shared remote-check state for sidebar + refresh banner                                                                                                                                                                                                 |
 | `RefreshFromDriveBanner`        | Newer remote YAML available — optional refresh                                                                                                                                                                                                         |
 | `InterchangeOverwriteModal`     | "Which copy?" dialog: two-card summary, itemised changes, Back up local YAML / Keep this browser's / Use Drive copy ([#477](https://github.com/pskillen/codeplug-studio/issues/477), [#1509](https://github.com/pskillen/codeplug-studio/issues/1509)) |
+| `DriveOutgoingChangesModal`     | Read-only review of the outgoing changes a Save would make to the linked Drive file                                                                                                                                                                    |
 | `DriveSaveConflictModal`        | Pre-save conflict when remote is newer or id mismatches                                                                                                                                                                                                |
 
 ## Error states
@@ -227,12 +231,14 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 - [ ] Connect from a **second browser profile/incognito** with the same Google account → the same "Codeplug Studio" folder is found, not duplicated ([#909](https://github.com/pskillen/codeplug-studio/issues/909) key risk)
 - [ ] Token expiry greys sidebar Drive buttons without page reload; click Save or Check reconnects
 - [ ] **Save to Drive** in sidebar overwrites remembered file when project is dirty
+- [ ] Edit a channel, add one and delete a zone → **Review changes to save** lists them as Changed / Added / Removed against the Drive file; Close writes nothing; Save to Drive from the dialog saves
 - [ ] **Check Drive** finds newer remote copy and shows refresh banner
 - [ ] Open YAML from Drive on fresh browser (unknown UUID) → IndexedDB `project.id` matches YAML ([#361](https://github.com/pskillen/codeplug-studio/issues/361))
 - [ ] Open YAML from Drive with matching `project.id` → which-copy dialog (cards + itemised changes) → use file copy
 - [ ] Switch project with newer Drive file → **Refresh from Drive** banner
 - [ ] Linked Drive file with mismatched `project.id` → mismatch banner → adopt or import as new
 - [ ] Failed refresh import → error shown in modal (not console-only)
+- [ ] Machine A shows the newer-copy banner; Machine B saves more changes to Drive; Machine A **Review** → modal lists B's latest changes → **Use Drive copy** loads them (no delete and re-import)
 - [ ] Machine B saves → Machine A **Save to Drive** → conflict modal (not silent overwrite)
 - [ ] Linked Drive file with mismatched `project.id` → **Save to Drive** → UUID mismatch warning before write
 - [ ] Save to Drive → re-save defaults to last file; overwrite requires confirm

@@ -64,6 +64,8 @@ export interface DecodedField {
   label: string;
   value?: string;
   sensitive?: boolean;
+  /** Absolute address of the field's first byte in the radio's own space, when it has one. */
+  address?: number;
 }
 
 export interface DecodedIdentity {
@@ -104,6 +106,8 @@ export interface FieldDiff {
   a?: string;
   b?: string;
   sensitive?: boolean;
+  /** Absolute address of the field's first byte, from the decoder; absent when it has none. */
+  address?: number;
 }
 
 export type RecordDiffKind = 'changed' | 'added' | 'removed' | 'unchanged' | 'incomparable';

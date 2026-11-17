@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Compare tab body for two chosen reads on every radio with a capture (RT95, DM-32UV, OpenGD77, AT-D890UV, UV-5R Mini): summary, hex diff, then the radio's decoded changes ([DecodedDiffView](DecodedDiffView.md)).
+The Compare tab body for two chosen reads on every radio with a capture (RT95, DM-32UV, OpenGD77, AT-D890UV, UV-5R Mini): summary, hex diff, then the radio's decoded changes ([DecodedDiffView](DecodedDiffView.md), with an Address column where the decoder knows a field's address). Every radio takes this one path.
 
 ## Props
 

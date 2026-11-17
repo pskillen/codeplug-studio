@@ -13,7 +13,7 @@ import type {
 import { UV5R_MINI_LAYOUT } from '../../uv17pro-family/layout.ts';
 import { decodeChannelRecord } from '../channelCodec.ts';
 import { decodeUv5rMiniZoneTable } from '../modData/index.ts';
-import { decodeUv5rMiniCalibration } from './calibrationLayout.ts';
+import { decodeUv5rMiniCalibration, UV5R_MINI_PA_POINTS } from './calibrationLayout.ts';
 import {
   UV5R_MINI_CHANNEL_FIELDS,
   UV5R_MINI_SPECIAL_SLOTS,
@@ -100,6 +100,7 @@ function settingsDomain(clone: Uint8Array): DecodedDomain {
     key,
     identity: { name },
     fields: fields.map((f) => ({
+      address: f.address,
       id: `${f.field.offset}:${f.field.name}`,
       label: f.field.name || `Byte 0x${hexByte(f.field.offset)}`,
       value: f.text,
@@ -120,26 +121,49 @@ function settingsDomain(clone: Uint8Array): DecodedDomain {
 function calibrationDomain(clone: Uint8Array): DecodedDomain {
   const c = decodeUv5rMiniCalibration(clone);
   const fields: DecodedField[] = [
-    ...c.values.map((v) => ({ id: v.id, label: v.label, value: String(v.value) })),
-    { id: c.trim.id, label: c.trim.label, value: `${c.trim.value} (${c.trim.ppm} ppm)` },
+    ...c.values.map((v) => ({
+      id: v.id,
+      label: v.label,
+      value: String(v.value),
+      address: v.address,
+    })),
+    {
+      id: c.trim.id,
+      label: c.trim.label,
+      value: `${c.trim.value} (${c.trim.ppm} ppm)`,
+      address: c.trim.address,
+    },
     {
       id: c.region.id,
+      address: c.region.address,
       label: c.region.label,
       value: `${c.region.value} (table ${c.region.table})`,
     },
-    { id: 'battery', label: 'Battery thresholds', value: c.battery.values.join(', ') },
+    {
+      id: 'battery',
+      label: 'Battery thresholds',
+      value: c.battery.values.join(', '),
+      address: c.battery.start,
+    },
     ...[...c.squelch.thresholds, ...c.squelch.offsets].map((b) => ({
       id: b.id,
       label: b.label,
       value: hex(b.bytes),
+      address: b.start,
     })),
-    ...c.texts.map((t) => ({ id: t.id, label: t.label, value: t.ascii })),
-    { id: c.bandLimits.id, label: c.bandLimits.label, value: hex(c.bandLimits.bytes) },
+    ...c.texts.map((t) => ({ id: t.id, label: t.label, value: t.ascii, address: t.start })),
+    {
+      id: c.bandLimits.id,
+      label: c.bandLimits.label,
+      value: hex(c.bandLimits.bytes),
+      address: c.bandLimits.start,
+    },
     ...c.paBias.flatMap((seg) =>
       seg.levels.map((l) => ({
         id: `pa-${seg.segment.index}-${l.level}`,
         label: `PA bias ${seg.segment.label}, ${l.name}`,
         value: l.points.map((p) => p.value).join(' '),
+        address: l.frameStart + seg.segment.index * UV5R_MINI_PA_POINTS,
       })),
     ),
   ];

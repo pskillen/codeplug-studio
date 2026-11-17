@@ -4,7 +4,7 @@ import ZoneMemberEditor, {
   ZoneMemberAddOverlay,
 } from '../../../components/library/ZoneMemberEditor.tsx';
 import EntityDeleteButton from '../../../components/library/EntityDeleteButton.tsx';
-import { FormField, Panel, TextInput, ToggleSwitch } from '../../../components/v2/index.ts';
+import { Button, FormField, Panel, TextInput, ToggleSwitch } from '../../../components/v2/index.ts';
 import { useZoneEdit } from './ZoneEditContext.tsx';
 import ZoneMapSection from './ZoneMapSection.tsx';
 import classes from './ZoneEditLayout.module.css';
@@ -75,12 +75,20 @@ export default function ZoneEditMainPage() {
             simplex set you nest inside every city zone. Its channels still export inside parent
             zones; this zone will not get its own row in Zones.csv.
           </p>
-          <EntityDeleteButton
-            kind="zone"
-            entityId={entity.id}
-            label={entity.name}
-            onDeleted={() => navigate('/library/zones')}
-          />
+          <div className={classes.identityActions}>
+            <EntityDeleteButton
+              kind="zone"
+              entityId={entity.id}
+              label={entity.name}
+              size="sm"
+              fullWidth
+              onDeleted={() => navigate('/library/zones')}
+            />
+            {/* Second entry point to the same overlay as the members panel's footer button. */}
+            <Button variant="primary" size="md" fullWidth onClick={() => setAddOpen(true)}>
+              + Add members
+            </Button>
+          </div>
         </div>
       </Panel>
 

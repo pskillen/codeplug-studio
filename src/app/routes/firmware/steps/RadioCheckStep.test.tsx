@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useReducer, type Dispatch } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
 import { radioReportFrame } from '@core/radios/baofeng/uv-5r-mini/__fixtures__/radioReportFrame.ts';
@@ -178,7 +178,15 @@ const anyLayout = async (
     ...(radioCodeBase ? { baseName: radioCodeBase } : {}),
   }) as unknown as PreparedFirmwareImage;
 
+// Developer mode lives in localStorage and outlasts a test that fails before its own cleanup, which
+// leaked into the next case under load. Every case starts and ends with it off.
+afterEach(() => setDeveloperMode(false));
+
+/** Prepare resolves through several awaited steps; under a loaded full run the 1 s default is too tight. */
+const SLOW = { timeout: 5000 };
+
 beforeEach(() => {
+  setDeveloperMode(false);
   vi.mocked(flash.prepareFlash).mockReset();
   vi.mocked(flash.readFirmwareRadioReport).mockReset();
   vi.mocked(flash.grantFirmwareRadioReportPort).mockReset();
@@ -522,7 +530,9 @@ describe('RadioCheckStep: the UV-5R Mini Radio Info question, with no report', (
     await readRadio(STOCK_FLASH);
     radioInfo('V0.27', 'V1.7');
     toPrepare();
-    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Ready to flash: L2 build/, undefined, SLOW),
+    ).toBeInTheDocument();
     expect(lastPrepare()[4]).toBe('L2');
     expect(lastPrepare()[5]).toBeUndefined();
     expect(lastPrepare()[7]).toBe(false);
@@ -538,7 +548,9 @@ describe('RadioCheckStep: the UV-5R Mini Radio Info question, with no report', (
       await readRadio(STOCK_FLASH);
       radioInfo('V0.27', 'V1.7');
       toPrepare();
-      expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+      expect(
+        await screen.findByText(/Ready to flash: L2 build/, undefined, SLOW),
+      ).toBeInTheDocument();
       expect(screen.getByText('Flash layout: L2')).toBeInTheDocument();
       expect(lastPrepare()[4]).toBe('L2');
       expect(canAdvance(latest)).toBe(true);
@@ -554,7 +566,9 @@ describe('RadioCheckStep: the UV-5R Mini Radio Info question, with no report', (
       render(<Harness updater={MINI} />);
       await readRadio(reportBlock({}));
       toPrepare();
-      expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+      expect(
+        await screen.findByText(/Ready to flash: L2 build/, undefined, SLOW),
+      ).toBeInTheDocument();
       expect(screen.getAllByText('Flash layout: L2')).toHaveLength(1);
       expect(lastPrepare()[4]).toBe('L2');
       expect(canAdvance(latest)).toBe(true);
@@ -654,7 +668,9 @@ describe('RadioCheckStep: the UV-5R Mini Radio Info question, with no report', (
     ).toBeInTheDocument();
     radioInfo('V0.27', 'V1.7');
     toPrepare();
-    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Ready to flash: L2 build/, undefined, SLOW),
+    ).toBeInTheDocument();
   });
 
   it('drops the confirm when the Radio Info answers change', async () => {

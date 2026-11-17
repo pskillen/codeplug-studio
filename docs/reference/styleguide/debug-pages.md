@@ -22,6 +22,7 @@ The kit is **dark only**. It draws on design-system v2 tokens and must render in
   - **Plain decimal with its unit** for counts, frequencies and physical values (`128 channels`, `12800 kHz`).
   - **Hex alone** for addresses (`0x1050`).
   - `HexDecValue`, and the `format` field of the view models, carry this; pick per field.
+- **Compare decoded changes.** Compare draws one decoded-changes view for every radio (`compare/DecodedDiffView`, or the flat `DecodedChanges` list). A radio's `compare.decoded(archive)` supplies domains, records and fields; the field's optional `address` shows as an **Address** column in hex alone, only when the record's fields have one. No radio-specific compare view, and no radio slug, address or caveat text in the view: those arrive in the snapshot.
 - **Not captured.** Say it in words: "Not captured". Never zero, empty or a default.
 - **Confidence.** `ConfidenceBadge`'s five words. In a value table the two pills are labelled Layout and Meaning. "unused (no reader)" is not "unknown".
 - **Passwords** are masked (`••`) until **Show password**, and masked again when the archive changes. The archive keeps every byte; masking is display only.

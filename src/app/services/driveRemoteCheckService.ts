@@ -10,6 +10,8 @@ export interface DriveRemoteCheckNewer {
   newer: true;
   diff: ProjectSyncDiff;
   remoteYaml: string;
+  /** Drive `modifiedTime` of the copy that `remoteYaml` was read from — the sync baseline to record if it is imported. */
+  remoteModifiedTime?: string;
   remoteProjectId: string;
   idMismatch: boolean;
 }
@@ -53,6 +55,7 @@ export async function checkDriveRemoteUpdates({
     newer: true,
     diff,
     remoteYaml: content,
+    remoteModifiedTime: remoteTime,
     remoteProjectId: preview.projectId,
     idMismatch: preview.projectId !== projectId,
   };

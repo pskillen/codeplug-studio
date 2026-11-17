@@ -2,17 +2,16 @@ import { useMemo, useState } from 'react';
 import { IconAlertTriangle, IconHelpCircle } from '@tabler/icons-react';
 import {
   buildProjectSyncReview,
-  entityKindLabel,
   formatSyncTimestamp,
   type ProjectSyncDiff,
 } from '@core/services/projectSyncSummary.ts';
-import type { ProjectEntityChange } from '@core/services/projectEntityDiff.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { backupLocalProjectYaml } from '../../services/projectImportExportService.ts';
 import Button from '../v2/Button.tsx';
 import DesignSystemV2Provider from '../v2/DesignSystemV2Provider.tsx';
 import ModalShell from '../v2/ModalShell.tsx';
-import Pill, { type PillTone } from '../v2/Pill.tsx';
+import Pill from '../v2/Pill.tsx';
+import ProjectEntityChangeList from './ProjectEntityChangeList.tsx';
 import StatusBanner from '../v2/StatusBanner.tsx';
 import classes from './InterchangeOverwriteModal.module.css';
 
@@ -41,14 +40,6 @@ export interface InterchangeOverwriteModalProps {
   onKeepLocal?: () => void;
 }
 
-const COLLAPSED_CHANGE_ROWS = 8;
-
-const CHANGE_PILL: Record<ProjectEntityChange['change'], { tone: PillTone; label: string }> = {
-  added: { tone: 'success', label: 'Added' },
-  removed: { tone: 'destructive', label: 'Removed' },
-  changed: { tone: 'warning', label: 'Changed' },
-};
-
 export default function InterchangeOverwriteModal({
   opened,
   title,
@@ -65,7 +56,6 @@ export default function InterchangeOverwriteModal({
   onImportAsNew,
   onKeepLocal,
 }: InterchangeOverwriteModalProps) {
-  const [showAll, setShowAll] = useState(false);
   const [backingUp, setBackingUp] = useState(false);
   const [backupNote, setBackupNote] = useState<string | null>(null);
   const [backupError, setBackupError] = useState<string | null>(null);
@@ -94,8 +84,6 @@ export default function InterchangeOverwriteModal({
   }
 
   const changes = review?.entityChanges ?? [];
-  const visibleChanges = showAll ? changes : changes.slice(0, COLLAPSED_CHANGE_ROWS);
-  const hiddenCount = changes.length - COLLAPSED_CHANGE_ROWS;
 
   const body = (
     <div className={classes.body}>
@@ -153,39 +141,10 @@ export default function InterchangeOverwriteModal({
           ) : null}
           <section className={classes.section} aria-label={`Changes on ${sourceLower}`}>
             <h3 className={classes.sectionTitle}>Changes on {sourceLower}</h3>
-            {changes.length === 0 ? (
-              <p className={classes.muted}>
-                No differences in channels, zones, or other items (only timestamps differ).
-              </p>
-            ) : (
-              <>
-                <ul className={classes.changeList}>
-                  {visibleChanges.map((change) => {
-                    const pill = CHANGE_PILL[change.change];
-                    return (
-                      <li key={`${change.kind}:${change.id}`} className={classes.changeRow}>
-                        <Pill tone={pill.tone}>{pill.label}</Pill>
-                        <span className={classes.changeLabel}>
-                          <span className={classes.changeKind}>{entityKindLabel(change.kind)}</span>
-                          {' · '}
-                          {change.name}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-                {hiddenCount > 0 ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={classes.toggle}
-                    onClick={() => setShowAll((prev) => !prev)}
-                  >
-                    {showAll ? 'Show fewer' : `Show all ${changes.length} changes`}
-                  </Button>
-                ) : null}
-              </>
-            )}
+            <ProjectEntityChangeList
+              changes={changes}
+              emptyMessage="No differences in channels, zones, or other items (only timestamps differ)."
+            />
           </section>
         </>
       ) : null}

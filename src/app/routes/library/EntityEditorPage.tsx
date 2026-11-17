@@ -182,7 +182,7 @@ export default function EntityEditorPage({ kindSlug }: { kindSlug?: string } = {
         if (entityId) {
           return <Navigate to={`/library/zones/${entityId}`} replace />;
         }
-        return <ZoneEditor projectId={projectId} library={library} entity={null} />;
+        return <ZoneEditor projectId={projectId} library={library} />;
       case 'satellite': {
         // Satellite rows are only ever created via the CelesTrak/AMSAT refresh flow on the list
         // page — there is no "new satellite" editor mode.

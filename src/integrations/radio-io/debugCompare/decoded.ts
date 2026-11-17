@@ -1,5 +1,7 @@
 import type {
   DecodedDomain,
+  DecodedIdentity,
+  FieldDiffKind,
   DecodedField,
   DecodedRecord,
   DecodedSnapshot,
@@ -48,6 +50,7 @@ function diffFields(
       label: (fb ?? fa)!.label,
       kind,
       ...(sensitive ? { sensitive: true } : {}),
+      ...((fb ?? fa)!.address === undefined ? {} : { address: (fb ?? fa)!.address }),
       ...(va === undefined || hide ? {} : { a: va }),
       ...(vb === undefined || hide ? {} : { b: vb }),
     };
@@ -213,4 +216,63 @@ export function fieldCounts(diff: DecodedDiff): DomainFieldCounts[] {
     const changedRecords = records.filter((r) => r.fields.some((f) => f.kind === 'changed')).length;
     return { domainId: d.id, changedFields, changedRecords };
   });
+}
+
+/** Callsign first, then name; the name alone when there is no callsign. */
+export function identityText(id: DecodedIdentity | undefined): string {
+  if (!id) return '';
+  return [id.callsign, id.name].filter(Boolean).join(' ');
+}
+
+/** `Slot 7 · GB3GL Glasgow (was GB3GL Old)`; the record key when it has neither slot nor identity. */
+export function recordTitle(r: RecordDiff): string {
+  const slot = r.slot === undefined ? '' : `Slot ${r.slot}`;
+  const a = identityText(r.identityA);
+  const b = identityText(r.identityB);
+  const current = b || a;
+  const was = a && b && a !== b ? ` (was ${a})` : '';
+  return [slot, `${current}${was}`.trim()].filter(Boolean).join(' · ') || r.key;
+}
+
+/**
+ * One changed value in the radio-neutral shape the shared "Decoded changes" list draws, whatever
+ * the radio: section (category), record, label, values A and B, address, sensitive flag.
+ * `a` and `b` are absent for a sensitive value that is not revealed, and on a side the record lacks.
+ */
+export interface DecodedChange {
+  section: string;
+  record: string;
+  label: string;
+  kind: FieldDiffKind;
+  a?: string;
+  b?: string;
+  address?: number;
+  sensitive?: boolean;
+}
+
+/** The changed, added and removed fields of a decoded diff, in domain then record order. */
+export function decodedChanges(diff: DecodedDiff): DecodedChange[] {
+  const section = new Map(diff.domains.map((d) => [d.id, d.label]));
+  return diff.records.flatMap((r) =>
+    r.fields
+      .filter((f) => f.kind === 'changed' || f.kind === 'added' || f.kind === 'removed')
+      .map((f) => ({
+        section: section.get(r.domainId) ?? r.domainId,
+        record: recordTitle(r),
+        label: f.label,
+        kind: f.kind,
+        ...(f.a === undefined ? {} : { a: f.a }),
+        ...(f.b === undefined ? {} : { b: f.b }),
+        ...(f.address === undefined ? {} : { address: f.address }),
+        ...(f.sensitive ? { sensitive: true } : {}),
+      })),
+  );
+}
+
+/** Fields not captured on at least one side: unknown, so never counted as changes. */
+export function notCapturedCount(diff: DecodedDiff): number {
+  return diff.records.reduce(
+    (n, r) => n + r.fields.filter((f) => f.kind === 'incomparable').length,
+    0,
+  );
 }

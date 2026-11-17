@@ -187,7 +187,8 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
           {archive && (
             <Text size="sm">
               {archive.source === 'file' ? 'Local archive' : 'Live read'} · captured{' '}
-              {archive.manifest.capturedAt} · {archive.manifest.regions.length} regions
+              {archive.manifest.capturedAt} · {archive.manifest.regions.length}{' '}
+              {archive.manifest.regions.length === 1 ? 'region' : 'regions'}
             </Text>
           )}
           <Tabs value={activeTab} onChange={setActiveTab}>

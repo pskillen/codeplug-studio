@@ -10,8 +10,14 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import { useState } from 'react';
-import { openDebugArchive, rt95ArchiveDetails, type DebugArchive } from './captureArchive.ts';
+import { useMemo, useState } from 'react';
+import {
+  decodedChanges,
+  diffDecoded,
+  notCapturedCount,
+} from '@integrations/radio-io/debugCompare/index.ts';
+import { DecodedChanges } from './compare/DecodedChanges.tsx';
+import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 import {
   archiveKey,
   compareRegions,
@@ -204,6 +210,16 @@ export function CompareViewer(props: {
   const maskA = reveal.revealed ? [] : rangesA;
   const maskB = reveal.revealed ? [] : rangesB;
   const hasSensitive = rangesA.length > 0 || rangesB.length > 0;
+  // The radio's own decoder through the descriptor, drawn by the one shared block; Show password is
+  // the same switch as the byte view's.
+  const decoded = useMemo(() => {
+    const adapter = descriptorForModelId(modelId)?.compare;
+    if (!archive || !other || !adapter?.decoded) return undefined;
+    const diff = diffDecoded(adapter.decoded(archive), adapter.decoded(other), {
+      revealSensitive: reveal.revealed,
+    });
+    return { changes: decodedChanges(diff), notCaptured: notCapturedCount(diff) };
+  }, [archive, other, modelId, reveal.revealed]);
   return (
     <Stack>
       <Title order={3}>Compare captures</Title>
@@ -242,45 +258,12 @@ export function CompareViewer(props: {
                 : `Incomparable: ${'reason' in r ? r.reason : 'region or starting offset differs'}`}
             </Text>
           ))}
-          {!descriptorForModelId(modelId)?.ownDecodedChanges && (
-            <Title order={4}>Decoded changes</Title>
-          )}
-          {!descriptorForModelId(modelId)?.ownDecodedChanges &&
-            (() => {
-              const first = archive && rt95ArchiveDetails(archive)?.summary;
-              const second = other && rt95ArchiveDetails(other)?.summary;
-              if (!first || !second)
-                return <Text>Decoded changes are unavailable for these captures.</Text>;
-              const settings = first.settingsRetain.flatMap((row) => {
-                const next = second.settingsRetain.find((item) => item.label === row.label);
-                return next && next.value !== row.value
-                  ? [`${row.label}: ${row.value} → ${next.value}`]
-                  : [];
-              });
-              const slots = new Set([
-                ...first.inspectChannels.map((item) => item.slotIndex),
-                ...second.inspectChannels.map((item) => item.slotIndex),
-              ]);
-              const changes = [
-                ...settings,
-                ...Array.from(slots).flatMap((slot) => {
-                  const before = first.inspectChannels.find(
-                    (item) => item.slotIndex === slot,
-                  )?.name;
-                  const after = second.inspectChannels.find(
-                    (item) => item.slotIndex === slot,
-                  )?.name;
-                  return before !== after
-                    ? [`Channel slot ${slot}: ${before ?? '(empty)'} → ${after ?? '(empty)'}`]
-                    : [];
-                }),
-              ];
-              return changes.length ? (
-                changes.map((change) => <Text key={change}>{change} [unknown]</Text>)
-              ) : (
-                <Text>No decoded channel name or setting changes. [unknown]</Text>
-              );
-            })()}
+          <DecodedChanges
+            changes={decoded?.changes}
+            notCaptured={decoded?.notCaptured ?? 0}
+            revealed={reveal.revealed}
+            onToggleReveal={reveal.toggle}
+          />
           {region && left && a && b && (
             <>
               <Select

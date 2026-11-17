@@ -118,6 +118,14 @@ export default function MemoryCategoryPanel<T>({
         mobileIdentityLabel={mobileIdentityLabel}
         emptyMessage={emptyMessage}
         filteredEmptyMessage={`No rows match “${query.trim()}”.`}
+        getRowVariant={
+          details
+            ? (row) =>
+                selected !== undefined && getRowId(row) === getRowId(selected)
+                  ? 'active'
+                  : undefined
+            : undefined
+        }
         onRowActivate={
           details
             ? (row) => {

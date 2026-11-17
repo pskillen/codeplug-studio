@@ -89,6 +89,8 @@ interface Described {
   sensitive?: boolean;
   fields: Fields;
   caveats?: readonly string[];
+  /** Absolute radio address of each field, by field name, where the decoder knows it. */
+  addresses?: Readonly<Record<string, number>>;
 }
 interface Side {
   /** True when the occupancy bitmap was captured, so absent slots are genuinely absent. */
@@ -334,6 +336,7 @@ function settingSide(p: AtD890MemoryProjection): Side {
             label: f.label,
             ...(f.sensitive ? { sensitive: true } : {}),
             caveats: f.conditional ? [f.conditional] : [],
+            addresses: { value: f.address, raw: f.address },
             fields:
               f.status === 'captured'
                 ? {
@@ -348,7 +351,7 @@ function settingSide(p: AtD890MemoryProjection): Side {
   );
 }
 
-function calibrationSide(cal: AtD890Calibration): Side {
+function calibrationSide(cal: AtD890Calibration, base?: number): Side {
   const entries: [string, Described][] = [];
   for (const s of cal.scalars)
     entries.push([
@@ -356,6 +359,7 @@ function calibrationSide(cal: AtD890Calibration): Side {
       {
         label: s.label,
         fields: { value: s.value === undefined ? undefined : String(s.value) },
+        ...(base === undefined ? {} : { addresses: { value: base + s.offset } }),
       },
     ]);
   for (const t of cal.tables)
@@ -366,6 +370,16 @@ function calibrationSide(cal: AtD890Calibration): Side {
         fields: Object.fromEntries(
           t.values.map((v, i) => [`[${i}]`, v === undefined ? undefined : String(v)]),
         ),
+        ...(base === undefined || t.values.length === 0
+          ? {}
+          : {
+              addresses: Object.fromEntries(
+                t.values.map((_, i) => [
+                  `[${i}]`,
+                  base + t.offset + i * (t.length / t.values.length),
+                ]),
+              ),
+            }),
       },
     ]);
   return side(true, entries);
@@ -432,6 +446,7 @@ function domainOf(id: string, domain: AtD890DiffDomain, s: Side, keyPrefix: stri
         id: field,
         label: field,
         value,
+        ...(item.addresses?.[field] === undefined ? {} : { address: item.addresses[field] }),
         ...(item.sensitive ? { sensitive: true } : {}),
       })),
       ...(item.caveats?.length ? { caveats: item.caveats } : {}),
@@ -495,7 +510,7 @@ export function atD890DecodedSnapshot(archive: DebugArchive): DecodedSnapshot {
       ? domainOf(
           'calibration',
           'calibration',
-          calibrationSide(decodeAtD890Calibration(tune.bytes)),
+          calibrationSide(decodeAtD890Calibration(tune.bytes), tune.address),
           '',
         )
       : {

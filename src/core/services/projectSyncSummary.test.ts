@@ -5,6 +5,7 @@ import {
   minimalProjectAggregate,
 } from '@core/import-export/formats/native-yaml/testFixtures.ts';
 import {
+  buildProjectOutgoingReview,
   buildProjectSyncDiff,
   buildProjectSyncReview,
   hasUnsyncedLocalEdits,
@@ -184,5 +185,16 @@ describe('sync review', () => {
     expect(review.changedCounts).toHaveLength(3);
     expect(review.remoteNewer).toBe(true);
     expect(review.hasUnsyncedLocalEdits).toBe(false);
+  });
+
+  it('reads count deltas from the outgoing side: local minus remote', () => {
+    const remote = {
+      ...base,
+      counts: { ...base.counts, channels: base.counts.channels + 2, zones: base.counts.zones - 1 },
+    };
+    const outgoing = buildProjectOutgoingReview(buildProjectSyncDiff(base, remote));
+    // Remote has two more channels and one fewer zone, so saving removes 2 channels and adds 1 zone.
+    expect(outgoing.countSummary).toBe('-2 channels, +1 zone');
+    expect(buildProjectOutgoingReview(buildProjectSyncDiff(base, base)).countSummary).toBe('');
   });
 });

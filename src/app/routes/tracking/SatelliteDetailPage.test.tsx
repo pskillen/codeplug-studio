@@ -59,6 +59,12 @@ const SATELLITE: Satellite = {
   ],
 };
 
+// The globe is lazy-loaded and creates a WebGL context. jsdom has none, and under load the chunk
+// resolved after the test finished, throwing an unhandled error that failed the whole run.
+vi.mock('../../components/SatelliteGlobe/SatelliteGlobe.tsx', () => ({
+  default: () => <div data-testid="satellite-globe" />,
+}));
+
 const mockUseLibrary = vi.fn();
 vi.mock('../../state/useLibrary.ts', () => ({
   useLibrary: () => mockUseLibrary(),

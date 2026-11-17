@@ -10,6 +10,7 @@ import type {
   DecodedRecord,
   DecodedSnapshot,
 } from '../../debugCompare/index.ts';
+import { OPENGD77_SETTINGS_ADDRESS } from '@core/radios/opengd77/settings.ts';
 import type { RadioTone } from '../../radioChannelDto.ts';
 import { openGd77ComparisonEvidence, isOpenGd77InvalidEvidence } from './debugCompare.ts';
 import { selectOpenGd77Calibration } from './debugCalibration.ts';
@@ -249,6 +250,7 @@ function settingsDomain(archive: DebugCompareArchive): DecodedDomain {
       fields: settings.members.map((m) => ({
         id: m.id,
         label: m.name,
+        address: OPENGD77_SETTINGS_ADDRESS + m.offset,
         value: m.state !== 'captured' ? undefined : (m.value ?? (m.raw ? hex(m.raw) : undefined)),
       })),
     });
@@ -259,6 +261,7 @@ function settingsDomain(archive: DebugCompareArchive): DecodedDomain {
       {
         id: row.id,
         label: row.name,
+        address: row.abs,
         value: !row.captured ? undefined : (row.value ?? (row.raw ? hex(row.raw) : undefined)),
         // The codeplug password and the boot PIN: compared, never shown unless revealed.
         ...(row.sensitive ? { sensitive: true } : {}),

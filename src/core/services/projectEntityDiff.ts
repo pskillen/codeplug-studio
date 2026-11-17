@@ -152,3 +152,28 @@ export function diffProjectEntities(
   }
   return changes;
 }
+
+const INVERTED_CHANGE: Record<ProjectEntityChangeKind, ProjectEntityChangeKind> = {
+  added: 'removed',
+  removed: 'added',
+  changed: 'changed',
+};
+
+/**
+ * Flip a diff to the other side's point of view: what **writing the local copy over the remote**
+ * does to the remote. Entities only in remote (`added` for an adopt) are deleted by a write
+ * (`removed`), entities only in local (`removed` for an adopt) are created (`added`).
+ * Same collection / change / name ordering as {@link diffProjectEntities}.
+ */
+export function invertEntityChanges(changes: ProjectEntityChange[]): ProjectEntityChange[] {
+  const kindOrder = new Map(PROJECT_ENTITY_KINDS.map((kind, index) => [kind, index]));
+  return changes
+    .map((change) => ({ ...change, change: INVERTED_CHANGE[change.change] }))
+    .sort(
+      (a, b) =>
+        (kindOrder.get(a.kind) ?? 0) - (kindOrder.get(b.kind) ?? 0) ||
+        CHANGE_ORDER[a.change] - CHANGE_ORDER[b.change] ||
+        a.name.localeCompare(b.name) ||
+        (a.id < b.id ? -1 : 1),
+    );
+}

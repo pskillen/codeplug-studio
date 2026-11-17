@@ -81,6 +81,17 @@ describe('MemoryCategoryPanel', () => {
     expect(screen.queryByTestId('memory-row-details')).not.toBeInTheDocument();
   });
 
+  it('highlights the selected row and only that row', () => {
+    show();
+    const rowOf = (text: string) => screen.getByText(text).closest('[role="row"]')!;
+    expect(rowOf('Alpha').className).not.toMatch(/rowActive/);
+    fireEvent.click(screen.getByText('Alpha'));
+    expect(rowOf('Alpha').className).toMatch(/rowActive/);
+    expect(rowOf('GB3XX · Beta').className).not.toMatch(/rowActive/);
+    fireEvent.click(screen.getByText('Alpha'));
+    expect(rowOf('Alpha').className).not.toMatch(/rowActive/);
+  });
+
   it('has no details region without a details prop', () => {
     show(false);
     fireEvent.click(screen.getByText('Alpha'));

@@ -41,6 +41,10 @@ const fake = vi.hoisted(() => ({
   prod: false,
   pipe: undefined as undefined | import('@integrations/radio-io/types.ts').BytePipe,
 }));
+// These cases mount whole debug pages (every tab, real zips). They pass alone in a second or two, but
+// under a loaded full run they overran the 5 s default (two different cases did, in two runs).
+vi.setConfig({ testTimeout: 30_000 });
+
 vi.mock('@integrations/radio-io/transport/index.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@integrations/radio-io/transport/index.ts')>()),
   isCapacitorSerialSupported: () => false,
@@ -571,7 +575,7 @@ it('shows RT95 head and unknown provenance and has no write or restore buttons o
   fireEvent.change(document.querySelector('input[type="file"]')!, {
     target: { files: [rt95ArchiveFile()] },
   });
-  await screen.findByText(/Local archive · captured/);
+  await screen.findByText(/Local archive · captured/, undefined, { timeout: 10_000 });
   for (const name of ['Overview', 'Backup', 'Calibration', 'Memory', 'Hex', 'Compare']) {
     const tab = screen.queryByRole('tab', { name });
     if (!tab) throw new Error(`Missing ${name} tab`);
@@ -783,14 +787,15 @@ describe.each(OG77_PAGES)('OpenGD77 debug page %s', (slug, modelId, radioTypes) 
     await addTwo();
     open(slug);
     fireEvent.click(screen.getByRole('button', { name: 'Download all reads' }));
-    await waitFor(() => expect(history.getSnapshot().undownloaded).toBe(0));
+    // Zipping every read is real work: under a loaded full run it outlasts waitFor's 1 s default.
+    await waitFor(() => expect(history.getSnapshot().undownloaded).toBe(0), { timeout: 15_000 });
     fireEvent.click(screen.getByRole('button', { name: 'Clear history' }));
     expect(history.getSnapshot().entries).toHaveLength(2);
-    fireEvent.click(await screen.findByRole('button', { name: /^Clear$/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Clear$/ }, { timeout: 5000 }));
     expect(history.getSnapshot().entries).toHaveLength(0);
     expect(history.getSnapshot().selectedId).toBeNull();
     expect(history.getSnapshot().compareId).toBeNull();
-  });
+  }, 30_000);
 
   it('reopens a history ZIP and refuses a corrupt, wrong-profile or wrong-model one', async () => {
     const [first, second] = await addTwo();
