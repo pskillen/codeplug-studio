@@ -96,12 +96,30 @@ describe('describeUv5rMiniResult: which refusals mean nothing was installed', ()
       [0x01, 'app'],
       [0x86, 'app'],
       [0x8a, 'app'],
+      [0x90, 'loader'],
       [0x8f, 'app'],
     ] as const) {
       const r = describeUv5rMiniResult(ended({ result, resultPhase }), image);
       expect(r.error).toBeDefined();
       expect(r.nothingInstalled).toBeUndefined();
     }
+  });
+
+  it('loader 0x90 before cmd 4 says the image runs past the install area and asks for a report', () => {
+    const r = describeUv5rMiniResult(ended({ result: 0x90, resultPhase: 'loader' }), image);
+    expect(r).toEqual({ error: UV5RMINI_MSG.loaderPastArea });
+    expect(UV5RMINI_MSG.loaderPastArea).toBe(
+      'This image runs past the area the radio can install. Nothing was erased. Please report it.',
+    );
+  });
+
+  it('loader 0x90 after cmd 4 stays the recover path', () => {
+    const r = describeUv5rMiniResult(
+      ended({ result: 0x90, resultPhase: 'loader', areaLength: 0x1000 }),
+      image,
+    );
+    expect(r.nothingInstalled).toBeUndefined();
+    expect(r.error).toBe(`${UV5RMINI_MSG.recover} (Result 0x90.)`);
   });
 });
 
@@ -405,20 +423,31 @@ describe('UV-5R Mini updater: refusals and silence', () => {
     expect(msg).toContain("Don't send this file again");
   });
 
-  it('0x8F before cmd 4 says the file is not for the radio firmware and the FM presets and volume may be reset', async () => {
+  it('0x8F before cmd 4 says the radio refused the other file, put its settings back, and Studio is sending the other file', async () => {
     const m = make({ loaderRefuses: 0x8f });
     const updater = createUv5rMiniFirmwareUpdater();
     expect((await connect(m, updater)).error).toBeUndefined();
     const run = await settle(updater.flash(imageFor(m), {}), 20_000);
     const err = run.error as FirmwareFlashError;
-    expect(err.message).toBe(
-      "The file isn't for this radio's firmware; the radio refused it. Its FM presets and volume may have been reset; nothing else changed.",
-    );
+    expect(err.message).toBe(UV5RMINI_MSG.loaderOtherLayout);
+    expect(err.message).not.toMatch(/FM presets|volume/);
     expect(err.radioTouched).toBe(true);
     expect(m.areaReads).toBe(0);
     // Typed, so the wizard says "nothing was installed" and not "recover the radio", although the loader ran.
     expect(err.code).toBe('nothingInstalled');
     expect(err.cause).toBeInstanceOf(RadioNothingInstalledError);
+  });
+
+  it('loader 0x90 before cmd 4 is not "nothing installed", so the other file is not offered', async () => {
+    const m = make({ loaderRefuses: 0x90 });
+    const updater = createUv5rMiniFirmwareUpdater();
+    expect((await connect(m, updater)).error).toBeUndefined();
+    const run = await settle(updater.flash(imageFor(m), {}), 20_000);
+    const err = run.error as FirmwareFlashError;
+    expect(err.message).toBe(UV5RMINI_MSG.loaderPastArea);
+    expect(err.code).toBe('protocol');
+    expect(err.cause).not.toBeInstanceOf(RadioNothingInstalledError);
+    expect(m.areaReads).toBe(0);
   });
 
   it('an app result 0x83 with no cmd 4 heard is the other layout: nothing installed, radio untouched', async () => {

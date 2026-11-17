@@ -215,6 +215,8 @@ export class Uv5rMiniSession {
 
   private onResult(data: Uint8Array, rate: number): Uv5rMiniReply {
     if (data.length === 0) return this.ignore(UV5RMINI_FW_CMD.RESULT, data, rate);
+    // The result byte is stored as the radio sent it. `0x8F` (other layout) and `0x90` (image past the install
+    // area) are worded in `describeUv5rMiniResult`; this session does not branch on them.
     const phase = this.phase;
     if (this.result === undefined) {
       this.result = data[0]!;
