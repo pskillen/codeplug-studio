@@ -1,7 +1,11 @@
 import type { ProjectAggregate } from '@core/import-export/projectDocument.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { portableSyncedAt } from './interchangeMeta.ts';
-import type { ProjectEntityChange, ProjectEntityKind } from './projectEntityDiff.ts';
+import {
+  invertEntityChanges,
+  type ProjectEntityChange,
+  type ProjectEntityKind,
+} from './projectEntityDiff.ts';
 import type { ProjectSeed } from './projectInterchangePort.ts';
 
 export interface ProjectSyncCounts {
@@ -385,5 +389,36 @@ export function buildProjectSyncReview(diff: ProjectSyncDiff): ProjectSyncReview
     changedCounts,
     countSummary,
     entityChanges: diff.entityChanges,
+  };
+}
+
+/** What saving the local copy over the remote file would do to it. */
+export interface ProjectOutgoingReview {
+  /** Per-entity changes **to the remote file**: added = new on remote, removed = deleted from it. */
+  entityChanges: ProjectEntityChange[];
+  /** Count rows with a non-zero delta only; `delta` is local minus remote (the change on the remote). */
+  changedCounts: ProjectSyncCountRow[];
+  /** e.g. "+2 channels, -1 zone"; empty when counts are identical. */
+  countSummary: string;
+}
+
+/**
+ * Re-read a {@link ProjectSyncDiff} (local vs remote, built for adopting the remote) from the
+ * point of view of **saving local to the remote**: entity changes and count deltas are inverted.
+ */
+export function buildProjectOutgoingReview(diff: ProjectSyncDiff): ProjectOutgoingReview {
+  const changedCounts = diff.counts
+    .filter((row) => row.delta !== 0)
+    .map((row) => ({ ...row, delta: -row.delta }));
+  const countSummary = changedCounts
+    .map((row) => {
+      const [singular, plural] = ENTITY_NOUNS[row.key];
+      return `${formatSyncDelta(row.delta)} ${Math.abs(row.delta) === 1 ? singular : plural}`;
+    })
+    .join(', ');
+  return {
+    entityChanges: invertEntityChanges(diff.entityChanges),
+    changedCounts,
+    countSummary,
   };
 }

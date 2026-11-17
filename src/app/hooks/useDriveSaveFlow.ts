@@ -12,6 +12,10 @@ import type { DriveSaveTarget } from '../components/import-export/DriveBrowserMo
 import { driveErrorMessage } from '../components/import-export/driveBrowserHelpers.ts';
 import { assessDriveSaveConflict } from '../services/driveSaveConflictService.ts';
 import {
+  buildDriveOutgoingReview,
+  type DriveOutgoingReview,
+} from '../services/driveOutgoingReviewService.ts';
+import {
   exportProjectToYaml,
   recordProjectImportDestination,
 } from '../services/projectImportExportService.ts';
@@ -42,6 +46,10 @@ export function useDriveSaveFlow(options: UseDriveSaveFlowOptions = {}) {
   const [saveAsBrowserOpen, setSaveAsBrowserOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [outgoingOpen, setOutgoingOpen] = useState(false);
+  const [outgoing, setOutgoing] = useState<DriveOutgoingReview | null>(null);
+  const [reviewing, setReviewing] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   const projectId = activeProjectId;
   const projectName = activeProject?.name ?? '';
@@ -102,6 +110,41 @@ export function useDriveSaveFlow(options: UseDriveSaveFlowOptions = {}) {
       return false;
     } finally {
       setSaving(false);
+    }
+  }
+
+  const closeOutgoing = useCallback(() => {
+    setOutgoingOpen(false);
+    setOutgoing(null);
+  }, []);
+
+  const clearReviewError = useCallback(() => {
+    setReviewError(null);
+  }, []);
+
+  /**
+   * **Review changes**: read the linked Drive file and show what **Save** would write to it.
+   * Read-only — nothing is saved; the modal opens only once the diff is ready.
+   */
+  async function reviewOutgoing(drive: GoogleDriveInterchange) {
+    if (!projectId || !activeProject || reviewing) return;
+    setReviewing(true);
+    setReviewError(null);
+    try {
+      const review = await withDriveAuthRetry(() =>
+        buildDriveOutgoingReview({
+          port,
+          localProjectId: projectId,
+          localSyncedAt: portableSyncedAt(activeProject),
+          drive,
+        }),
+      );
+      setOutgoing(review);
+      setOutgoingOpen(true);
+    } catch (err) {
+      setReviewError(driveErrorMessage(err));
+    } finally {
+      setReviewing(false);
     }
   }
 
@@ -245,5 +288,12 @@ export function useDriveSaveFlow(options: UseDriveSaveFlowOptions = {}) {
     saveToNewTarget,
     closeConflict,
     clearSaveError,
+    outgoingOpen,
+    outgoing,
+    reviewing,
+    reviewError,
+    reviewOutgoing,
+    closeOutgoing,
+    clearReviewError,
   };
 }

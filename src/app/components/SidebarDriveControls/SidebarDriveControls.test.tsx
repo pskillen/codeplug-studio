@@ -7,6 +7,7 @@ import DriveRefreshProvider from '../ProjectInterchangeBar/DriveRefreshProvider.
 import DriveSaveFlowProvider from './DriveSaveFlowProvider.tsx';
 
 const mockStartSaveToDrive = vi.fn();
+const mockReviewOutgoing = vi.fn();
 const mockCheckNow = vi.fn();
 const mockRunAction = vi.fn();
 
@@ -50,6 +51,13 @@ vi.mock('../../hooks/useDriveSaveFlow.ts', () => ({
     saveToNewTarget: vi.fn(),
     closeConflict: vi.fn(),
     clearSaveError: vi.fn(),
+    outgoingOpen: false,
+    outgoing: null,
+    reviewing: false,
+    reviewError: null,
+    reviewOutgoing: mockReviewOutgoing,
+    closeOutgoing: vi.fn(),
+    clearReviewError: vi.fn(),
   }),
 }));
 
@@ -146,6 +154,20 @@ describe('SidebarDriveControls', () => {
       fileName: 'demo.yaml',
       exportedAt: '2026-07-09T10:00:00.000Z',
     });
+  });
+
+  it('opens the outgoing review from the button beside Save, without saving', () => {
+    renderControls();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review changes to save' }));
+
+    expect(mockReviewOutgoing).toHaveBeenCalledWith({
+      folderId: 'folder-1',
+      fileId: 'file-1',
+      fileName: 'demo.yaml',
+      exportedAt: '2026-07-09T10:00:00.000Z',
+    });
+    expect(mockStartSaveToDrive).not.toHaveBeenCalled();
   });
 
   it('runs check when Check Drive is clicked', () => {

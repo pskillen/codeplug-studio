@@ -36,12 +36,19 @@ export default function ChromeDismissibleNotices() {
     clearRefreshError,
     projectName,
   } = useDriveRefresh();
-  const { error: saveError, conflictOpen, clearSaveError } = useDriveSaveFlowContext();
+  const {
+    error: saveError,
+    conflictOpen,
+    clearSaveError,
+    reviewError,
+    clearReviewError,
+  } = useDriveSaveFlowContext();
 
   const driveLinked = Boolean(activeProject?.interchange?.googleDrive);
   const showDriveUpdate = bannerOpen && activeProjectId != null;
   // Also shown beside the banner: a failed **Review** re-check leaves the banner up.
   const showRefreshError = Boolean(refreshError) && !overwriteOpen && driveLinked;
+  const showReviewError = Boolean(reviewError) && driveLinked;
   const showSaveError = Boolean(saveError) && !conflictOpen && driveLinked;
   const showDisconnected = driveLinked && sessionExpired && !connected && activeProjectId != null;
 
@@ -65,6 +72,11 @@ export default function ChromeDismissibleNotices() {
       {showRefreshError ? (
         <DismissibleNotice tone="warning" onDismiss={clearRefreshError}>
           Could not refresh from Google Drive: {refreshError}
+        </DismissibleNotice>
+      ) : null}
+      {showReviewError ? (
+        <DismissibleNotice tone="warning" onDismiss={clearReviewError}>
+          Could not read Google Drive to review changes: {reviewError}
         </DismissibleNotice>
       ) : null}
       {showSaveError ? (

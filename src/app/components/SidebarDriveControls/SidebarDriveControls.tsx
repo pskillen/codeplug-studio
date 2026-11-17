@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ActionIcon, Group, Tooltip } from '@mantine/core';
-import { IconDeviceFloppy, IconRefresh } from '@tabler/icons-react';
+import { IconDeviceFloppy, IconGitCompare, IconRefresh } from '@tabler/icons-react';
 import { loadDriveLastAccount } from '@integrations/cloud/drivePrefs.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { useDriveActionClick } from '../../hooks/useDriveActionClick.ts';
@@ -9,6 +9,7 @@ import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useProjectPortableDirty } from '../../hooks/useProjectPortableDirty.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import DriveBrowserModal from '../import-export/DriveBrowserModal.tsx';
+import DriveOutgoingChangesModal from '../import-export/DriveOutgoingChangesModal.tsx';
 import DriveSaveConflictModal from '../import-export/DriveSaveConflictModal.tsx';
 import GoogleDriveNotConfiguredModal from '../import-export/GoogleDriveNotConfiguredModal.tsx';
 import { useDriveRefresh } from '../ProjectInterchangeBar/DriveRefreshProvider.tsx';
@@ -39,9 +40,15 @@ export default function SidebarDriveControls() {
     openSaveAsNew,
     saveToNewTarget,
     closeConflict,
+    outgoingOpen,
+    outgoing,
+    reviewing,
+    reviewOutgoing,
+    closeOutgoing,
   } = useDriveSaveFlowContext();
 
   const saveAction = useDriveActionClick({ disabled: saving, loading: checking });
+  const reviewAction = useDriveActionClick({ disabled: saving || reviewing });
   const checkAction = useDriveActionClick({ disabled: saving, loading: checking });
   const [notConfiguredOpen, setNotConfiguredOpen] = useState(false);
 
@@ -60,6 +67,9 @@ export default function SidebarDriveControls() {
 
   const showExpiryHint = sessionExpired && !connected;
   const saveDisabled = saving || (!showExpiryHint && saveAction.driveReady && !dirty);
+  // Same gate as Save: there is nothing outgoing to review while the project is clean.
+  const reviewDisabled =
+    saving || reviewing || (!showExpiryHint && reviewAction.driveReady && !dirty);
   const checkDisabled = checking || saving;
 
   async function handleSave() {
@@ -67,6 +77,14 @@ export default function SidebarDriveControls() {
     await saveAction.runAction({
       onNotConfigured: () => setNotConfiguredOpen(true),
       action: () => void startSaveToDrive(drive),
+    });
+  }
+
+  async function handleReview() {
+    if (!drive || reviewDisabled) return;
+    await reviewAction.runAction({
+      onNotConfigured: () => setNotConfiguredOpen(true),
+      action: () => void reviewOutgoing(drive),
     });
   }
 
@@ -94,6 +112,19 @@ export default function SidebarDriveControls() {
             <IconDeviceFloppy size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
           </ActionIcon>
         </Tooltip>
+        <Tooltip label="Review changes to save">
+          <ActionIcon
+            variant="default"
+            size="md"
+            aria-label="Review changes to save"
+            loading={reviewing || reviewAction.driveLoading}
+            disabled={reviewDisabled}
+            style={!reviewAction.driveReady && !reviewDisabled ? disconnectedIconStyle : undefined}
+            onClick={() => void handleReview()}
+          >
+            <IconGitCompare size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+          </ActionIcon>
+        </Tooltip>
         <Tooltip label="Check Drive">
           <ActionIcon
             variant="default"
@@ -108,6 +139,19 @@ export default function SidebarDriveControls() {
           </ActionIcon>
         </Tooltip>
       </Group>
+      <DriveOutgoingChangesModal
+        opened={outgoingOpen}
+        projectName={projectName}
+        fileName={drive.fileName}
+        review={outgoing}
+        saving={saving}
+        onClose={closeOutgoing}
+        onSave={() => {
+          // Save runs its own conflict check; the review dialog gets out of its way.
+          closeOutgoing();
+          void startSaveToDrive(drive);
+        }}
+      />
       <DriveSaveConflictModal
         opened={conflictOpen}
         projectName={projectName}
