@@ -101,4 +101,21 @@ describe('UV-5R Mini decoded snapshot', () => {
     );
     expect(diff.domains.find((d) => d.id === 'settings')!.changed).toBe(1);
   });
+
+  it('carries the absolute address of changed settings, VFO and calibration fields', () => {
+    const b = base();
+    b[0x9000 + 1] ^= 0x01;
+    b[0x8000 + 0] ^= 0x01;
+    b[0xf255] ^= 0x01;
+    const diff = diffDecoded(
+      uv5rMiniCompareAdapter.decoded!(archive(base())),
+      uv5rMiniCompareAdapter.decoded!(archive(b)),
+    );
+    const addresses = (domain: string) =>
+      diff.records
+        .filter((r) => r.domainId === domain)
+        .flatMap((r) => r.fields.filter((f) => f.kind === 'changed').map((f) => f.address));
+    expect(addresses('settings')).toEqual(expect.arrayContaining([0x9001, 0x8000]));
+    expect(addresses('calibration')).toEqual([0xf255]);
+  });
 });
