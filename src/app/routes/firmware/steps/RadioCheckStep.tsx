@@ -32,13 +32,15 @@ function RadioLayoutQuestion({
         ))}
       </ol>
       {question.warning ? <StatusBanner tone="warning">{question.warning}</StatusBanner> : null}
-      <RadioInfoLine
-        label={question.firmwareLabel}
-        help={question.firmwareHelp}
-        options={question.firmwareOptions}
-        value={answers.firmware}
-        onChange={(firmware) => onChange({ firmware })}
-      />
+      {question.omitFirmwareLine ? null : (
+        <RadioInfoLine
+          label={question.firmwareLabel}
+          help={question.firmwareHelp}
+          options={question.firmwareOptions}
+          value={answers.firmware}
+          onChange={(firmware) => onChange({ firmware })}
+        />
+      )}
       {question.suffixLabel ? (
         <RadioInfoLine
           label={question.suffixLabel}

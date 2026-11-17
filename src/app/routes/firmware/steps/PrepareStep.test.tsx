@@ -80,7 +80,7 @@ const anyLayout = async (
   radioLayout?: string,
   _b?: unknown,
   _rc?: unknown,
-  _rr?: unknown,
+  radioReported?: boolean,
   radioCodeBase?: string,
 ) =>
   ({
@@ -88,6 +88,7 @@ const anyLayout = async (
     title: `${radioLayout} build`,
     sha256: {},
     radioLayout,
+    ...(radioReported ? { radioReported: true } : {}),
     ...(radioCodeBase ? { baseName: radioCodeBase } : {}),
   }) as unknown as PreparedFirmwareImage;
 
@@ -222,21 +223,22 @@ describe('PrepareStep: the radio check, read-only (#1670)', () => {
   });
 
   it('shows the Radio Info answers as text, and goes back to the check step to change them', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(
       <Harness
         updater={MINI}
         start={{
           radioRead: { kind: 'none' },
-          radioInfo: { firmware: 'V0.27', suffix: 'NRF', hardware: 'V1.7' },
+          radioInfo: { firmware: '', suffix: 'NRF', hardware: 'V1.7' },
         }}
       />,
     );
     expect(screen.getByText('Your radio, as you answered:')).toBeInTheDocument();
-    expect(screen.getByText('Radio Info: Firmware: V0.27')).toBeInTheDocument();
+    expect(screen.queryByText(/Radio Info: Firmware/)).toBeNull();
     expect(screen.getByText('Suffix: NRF')).toBeInTheDocument();
     expect(screen.getByText('Radio Info: Hardware: V1.7')).toBeInTheDocument();
     expect(screen.queryByLabelText('Radio Info: Firmware')).toBeNull();
-    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
+    expect(await screen.findByText(/Ready to flash: L1 build/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Check your radio again' }));
     expect(latest.step).toBe('check');
   });
@@ -262,14 +264,12 @@ describe('PrepareStep: the radio check, read-only (#1670)', () => {
         updater={MINI}
         start={{
           radioRead: { kind: 'none' },
-          radioInfo: { firmware: 'V0.04', suffix: 'NRF', hardware: 'V1.7' },
+          radioInfo: { firmware: '', suffix: 'Other', hardware: 'V1.7' },
         }}
       />,
     );
     expect(
-      screen.getByText(
-        'There is no MM9PDY build for this radio (NRF V0.04) yet; nothing was sent.',
-      ),
+      screen.getByText("Studio doesn't support this radio's suffix; nothing was sent."),
     ).toBeInTheDocument();
     unmount();
     render(

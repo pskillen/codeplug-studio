@@ -1,11 +1,11 @@
 /**
- * The UV-5R Mini's flash layout from its Radio Info screen, for a radio with no radio report (stock firmware, or an
- * MM9PDY build from before the report). The suffix (`NRF`, `NRFB`) and the Firmware version together name the radio's
- * stock base, the code base every file for it is built on (a radio's code base never changes, and NRF and NRFB radios
- * get separate builds): `NRFB V0.04` is `nrfb-v0.04` (flash layout `L1`), `NRF V0.27` is `nrf-v0.27` (`L2`). Any other
- * combination has no build. The Hardware line is the board version, asked only so that a board Studio hasn't seen
- * proven is refused. All three lines are dropdowns of the supported values; `Other` is refused. The bases and the proven
- * Hardware lines are `stockBases.ts`'s, the table the radio report uses too.
+ * The UV-5R Mini's flash layout from its screens, for a radio with no radio report (stock firmware, or an MM9PDY
+ * build from before the report). Studio does not ask Radio Info's Firmware line: it sends the L1 file first
+ * (`uv5rMiniFirstInstallBase`) and the other layout's file if the radio refuses it. The suffix (`NRF`, `NRFB`) is
+ * still asked, and refused when it is not one Studio lists. The Hardware line is the board version, asked only so
+ * that a board Studio hasn't seen proven is refused. Both are dropdowns of the supported values; `Other` is refused.
+ * The bases and the proven Hardware lines are `stockBases.ts`'s, the table the radio report uses too. A radio that
+ * reports itself is still matched by suffix and Firmware line in that table.
  */
 import type {
   FirmwareRadioLayoutQuestion,
@@ -18,13 +18,10 @@ import {
   UV5RMINI_NO_BUILD_FOR_RADIO,
   UV5RMINI_PROVEN_HARDWARE,
   UV5RMINI_RADIO_INFO_REFUSAL,
-  uv5rMiniStockBase,
+  uv5rMiniFirstInstallBase,
 } from './stockBases.ts';
 
 export { UV5RMINI_NO_BUILD_FOR_RADIO, UV5RMINI_RADIO_INFO_REFUSAL };
-
-export const UV5RMINI_FIRMWARE_NOT_SUPPORTED =
-  "Studio doesn't support this radio's Firmware version; nothing was sent.";
 
 /** The pick for a line whose value isn't listed. */
 export const UV5RMINI_RADIO_INFO_OTHER = 'Other';
@@ -39,15 +36,9 @@ export function normaliseRadioInfoLine(line: string): string {
 export const UV5RMINI_SUFFIX_NOT_SUPPORTED =
   "Studio doesn't support this radio's suffix; nothing was sent.";
 
-/** The Firmware lines Studio lists. */
-const FIRMWARE_LINES: readonly string[] = ['V0.04', 'V0.27'];
 /** The suffixes Studio lists. */
 const SUFFIXES: readonly string[] = ['NRF', 'NRFB'];
 
-export const UV5RMINI_FIRMWARE_OPTIONS: readonly string[] = [
-  ...FIRMWARE_LINES,
-  UV5RMINI_RADIO_INFO_OTHER,
-];
 export const UV5RMINI_SUFFIX_OPTIONS: readonly string[] = [...SUFFIXES, UV5RMINI_RADIO_INFO_OTHER];
 export const UV5RMINI_HARDWARE_OPTIONS: readonly string[] = [
   ...UV5RMINI_PROVEN_HARDWARE,
@@ -60,30 +51,24 @@ export function uv5rMiniVariantOfBase(base: string): string | undefined {
 }
 
 /**
- * Shown with the question. Claims only what is caught on the bases Studio knows: a wrong Firmware or suffix pick
- * either has no build (refused here) or names the other flash layout, which the loader refuses before installing
- * anything, though the stock update mode may already have reset the FM presets and volume by then. A wrong Hardware
- * pick is not caught, and neither may be a pick for a radio Studio doesn't know yet.
+ * Shown with the question. A suffix or Hardware line Studio doesn't list stops the update. Studio does not ask the
+ * Firmware line: it sends the L1 file, then the other file if the radio refuses the first.
  */
 export const UV5RMINI_RADIO_INFO_WARNING =
-  "Pick exactly what the radio shows. If the Firmware or suffix you pick is wrong, Studio or the radio refuses the file and nothing is installed, though the radio's FM presets and volume may be reset. If the Hardware line is wrong, nothing stops the update, and a radio Studio doesn't know yet may not be caught either.";
+  'Pick the suffix and Hardware line the radio shows. An unknown suffix or Hardware line stops the update. Studio sends one file first and, if the radio refuses it, sends the other.';
 
 export function uv5rMiniLayoutFromRadioInfo(answers: RadioInfoAnswers): RadioLayoutAnswer {
-  const firmware = normaliseRadioInfoLine(answers.firmware);
   const hardware = normaliseRadioInfoLine(answers.hardware);
   const suffix = (answers.suffix ?? '').replace(/\s+/g, '').toUpperCase();
-  if (firmware === '' || hardware === '' || suffix === '') return { kind: 'incomplete' };
+  if (hardware === '' || suffix === '') return { kind: 'incomplete' };
   if (!isUv5rMiniHardwareProven(hardware)) {
     return { kind: 'refused', message: UV5RMINI_RADIO_INFO_REFUSAL };
   }
-  if (!FIRMWARE_LINES.includes(firmware)) {
-    return { kind: 'refused', message: UV5RMINI_FIRMWARE_NOT_SUPPORTED };
-  }
   if (!SUFFIXES.includes(suffix))
     return { kind: 'refused', message: UV5RMINI_SUFFIX_NOT_SUPPORTED };
-  const hit = uv5rMiniStockBase(suffix, firmware);
-  if (!hit) return { kind: 'refused', message: UV5RMINI_NO_BUILD_FOR_RADIO(suffix, firmware) };
-  return { kind: 'layout', layout: hit.layout, codeBase: hit.base };
+  const first = uv5rMiniFirstInstallBase();
+  if (!first) return { kind: 'refused', message: UV5RMINI_SUFFIX_NOT_SUPPORTED };
+  return { kind: 'layout', layout: first.layout, codeBase: first.base };
 }
 
 /** Where the Firmware and Hardware lines are. */
@@ -95,18 +80,17 @@ export const UV5RMINI_SUFFIX_HELP =
 
 export const UV5RMINI_RADIO_LAYOUT_QUESTION: FirmwareRadioLayoutQuestion = {
   intro:
-    "Each UV-5R Mini firmware gets its own releases. Three things the radio shows tell Studio your radio's firmware, so it offers only the releases built for it; Studio can't read them over the cable.",
+    'Each UV-5R Mini firmware gets its own releases. Studio reads the radio when it can. On a stock radio it asks for the suffix and the Hardware line, then sends one file and the other if the radio refuses the first.',
   steps: [
-    'Pick the Firmware and Hardware lines from the Radio Info screen (MENU → Radio Info).',
+    'Pick the Hardware line from the Radio Info screen (MENU → Radio Info).',
     'Pick the suffix from the start-up screen, as described under it.',
   ],
+  omitFirmwareLine: true,
   firmwareLabel: 'Radio Info: Firmware',
   hardwareLabel: 'Radio Info: Hardware',
   suffixLabel: 'Suffix',
-  firmwareHelp: UV5RMINI_RADIO_INFO_HELP,
   hardwareHelp: UV5RMINI_RADIO_INFO_HELP,
   suffixHelp: UV5RMINI_SUFFIX_HELP,
-  firmwareOptions: UV5RMINI_FIRMWARE_OPTIONS,
   suffixOptions: UV5RMINI_SUFFIX_OPTIONS,
   hardwareOptions: UV5RMINI_HARDWARE_OPTIONS,
   warning: UV5RMINI_RADIO_INFO_WARNING,

@@ -999,17 +999,13 @@ describe('FirmwareFlasherPage', () => {
       renderPage();
       await walkMiniToCheck();
       await readAs(new Uint8Array(64).fill(0xff));
-      fireEvent.change(screen.getByLabelText('Radio Info: Firmware'), {
-        target: { value: 'V0.04' },
-      });
-      fireEvent.change(screen.getByLabelText('Suffix'), { target: { value: 'NRF' } });
+      expect(screen.queryByLabelText('Radio Info: Firmware')).toBeNull();
+      fireEvent.change(screen.getByLabelText('Suffix'), { target: { value: 'Other' } });
       fireEvent.change(screen.getByLabelText('Radio Info: Hardware'), {
         target: { value: 'V1.7' },
       });
       expect(
-        screen.getByText(
-          'There is no MM9PDY build for this radio (NRF V0.04) yet; nothing was sent.',
-        ),
+        screen.getByText("Studio doesn't support this radio's suffix; nothing was sent."),
       ).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
       cont();

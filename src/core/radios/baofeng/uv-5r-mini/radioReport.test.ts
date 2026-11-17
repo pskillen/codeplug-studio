@@ -23,18 +23,13 @@ import {
   uv5rMiniLayoutFromReport,
 } from './radioReport.ts';
 import {
-  UV5RMINI_FIRMWARE_OPTIONS,
-  UV5RMINI_RADIO_INFO_OTHER,
-  UV5RMINI_SUFFIX_OPTIONS,
-  uv5rMiniLayoutFromRadioInfo,
-} from './radioInfo.ts';
-import {
   UV5RMINI_NO_BUILD_FOR_RADIO,
   UV5RMINI_PROVEN_HARDWARE,
   UV5RMINI_RADIO_INFO_REFUSAL,
   UV5RMINI_STOCK_BASE_KEYS,
   uv5rMiniBaseFromBuildName,
   uv5rMiniLayoutOfBase,
+  uv5rMiniStockBase,
 } from './stockBases.ts';
 
 const example = () => fromHex(RADIO_REPORT_EXAMPLE_HEX);
@@ -354,7 +349,7 @@ describe('uv5rMiniLayoutFromReport: the stock base from the shared table', () =>
     }
   });
 
-  it('gives the Radio Info answer for every combination in the table: one table, not two', () => {
+  it('uses the stock-base table for every suffix and Firmware line: one table, not two', () => {
     expect(UV5RMINI_STOCK_BASE_KEYS.length).toBeGreaterThan(0);
     const combos: (readonly [string, string, string])[] = [];
     for (const [suffix, firmware] of UV5RMINI_STOCK_BASE_KEYS) {
@@ -368,30 +363,29 @@ describe('uv5rMiniLayoutFromReport: the stock base from the shared table', () =>
         combos.push([suffix, firmware, 'V1.7']);
       }
     }
-    // Every pair the Radio Info dropdowns offer, so a base added to one path only is caught.
-    for (const suffix of UV5RMINI_SUFFIX_OPTIONS) {
-      for (const firmware of UV5RMINI_FIRMWARE_OPTIONS) {
-        if (suffix === UV5RMINI_RADIO_INFO_OTHER || firmware === UV5RMINI_RADIO_INFO_OTHER)
-          continue;
-        for (const hardware of [...UV5RMINI_PROVEN_HARDWARE, 'V1.8']) {
-          combos.push([suffix, firmware, hardware]);
-        }
-      }
-    }
     for (const [suffix, firmware, hardware] of combos) {
-      const info = uv5rMiniLayoutFromRadioInfo({ firmware, suffix, hardware });
-      const layout = info.kind === 'layout' ? (info.layout as 'L1' | 'L2') : 'L2';
+      const hit = uv5rMiniStockBase(suffix, firmware);
+      const layout = hit?.layout ?? 'L2';
       const reported = answer(
         radioReportFrame({ vm: VM[layout], suffix, version: firmware, hardware: `${hardware} ` }),
       );
-      if (info.kind === 'layout') {
-        expect(reported, `${suffix} ${firmware} ${hardware}`).toMatchObject({
-          kind: 'layout',
-          layout: info.layout,
-          codeBase: info.codeBase,
+      const label = `${suffix} ${firmware} ${hardware}`;
+      if (!UV5RMINI_PROVEN_HARDWARE.includes(hardware)) {
+        expect(reported, label).toEqual({
+          kind: 'refused',
+          message: UV5RMINI_RADIO_INFO_REFUSAL,
+        });
+      } else if (!hit) {
+        expect(reported, label).toEqual({
+          kind: 'refused',
+          message: UV5RMINI_NO_BUILD_FOR_RADIO(suffix, firmware),
         });
       } else {
-        expect(reported, `${suffix} ${firmware} ${hardware}`).toEqual(info);
+        expect(reported, label).toMatchObject({
+          kind: 'layout',
+          layout: hit.layout,
+          codeBase: hit.base,
+        });
       }
     }
   });

@@ -104,7 +104,8 @@ export interface ListedPinnedLoader {
 /**
  * A no-list layout loader: one fixed loader per flash layout, with no build list. It checks the radio's installed VM,
  * PRCT and BTIF directory entries against its own layout record and refuses another layout (result `0x8F`) before
- * erasing. The record is here for reference; Studio checks the packed hash.
+ * erasing. The 1.1.0 loaders then put the radio's settings back (when its settings log fits in one sector), and refuse an image that would run past the record's
+ * area end (result `0x90`) with nothing erased. The record is here for reference; Studio checks the packed hash.
  */
 export interface LayoutPinnedLoader {
   readonly label: string;
@@ -113,12 +114,16 @@ export interface LayoutPinnedLoader {
   readonly layout: Uv5rMiniLayout;
   readonly rawSize: number;
   readonly packedSize: number;
+  /** Byte address of the layout record in the raw loader. The 1.1.0 loaders use `0xD670`; the previous ones `0xD5A0`. */
+  readonly recordAt?: number;
   readonly layoutRecord: {
     readonly vmOff: number;
     readonly vmSize: number;
     readonly hcrcVm: number;
     readonly hcrcPrct: number;
     readonly hcrcBtif: number;
+    /** Install-area end, from the record's spare u16 (4 KiB units). The 1.1.0 loaders store `0x7C000`. */
+    readonly areaEnd?: number;
   };
   readonly lists?: undefined;
 }
@@ -133,10 +138,44 @@ export type PinnedLoader = ListedPinnedLoader | LayoutPinnedLoader;
 export const UV5RMINI_PINNED_LOADERS: readonly PinnedLoader[] = [
   {
     label: 'L1',
+    sha256: 'bb3e038cde0412127992206cb1461b6ce7bc5e21273c1f2b0d2a09a46ca649da',
+    layout: 'L1',
+    rawSize: 18_112,
+    packedSize: 15_848,
+    recordAt: 0xd670,
+    layoutRecord: {
+      vmOff: 0x95000,
+      vmSize: 0x68000,
+      hcrcVm: 0x06d9,
+      hcrcPrct: 0xd9bb,
+      hcrcBtif: 0xf13a,
+      areaEnd: 0x7c000,
+    },
+  },
+  {
+    label: 'L2',
+    sha256: '957bb486bb1d8cb5c971e366cd5c45a6da3c64fe611203096b56bb799ab02372',
+    layout: 'L2',
+    rawSize: 18_112,
+    packedSize: 15_848,
+    recordAt: 0xd670,
+    layoutRecord: {
+      vmOff: 0x94000,
+      vmSize: 0x6a000,
+      hcrcVm: 0x2074,
+      hcrcPrct: 0x48f9,
+      hcrcBtif: 0xf13a,
+      areaEnd: 0x7c000,
+    },
+  },
+  // The previous always-write loaders (no settings restore, no area cap). Images already built on them still verify.
+  {
+    label: 'L1-v2',
     sha256: 'b314ace5106ed3b5ec67846b38d7bf8e65415824343b24650622efb8bdc604dd',
     layout: 'L1',
     rawSize: 17_904,
     packedSize: 15_648,
+    recordAt: 0xd5a0,
     layoutRecord: {
       vmOff: 0x95000,
       vmSize: 0x68000,
@@ -146,11 +185,12 @@ export const UV5RMINI_PINNED_LOADERS: readonly PinnedLoader[] = [
     },
   },
   {
-    label: 'L2',
+    label: 'L2-v2',
     sha256: '1e6c3e0d563a50f38caa2972c773ccdff99aa875c1e9098cc923be1cb5b6193e',
     layout: 'L2',
     rawSize: 17_904,
     packedSize: 15_648,
+    recordAt: 0xd5a0,
     layoutRecord: {
       vmOff: 0x94000,
       vmSize: 0x6a000,

@@ -62,15 +62,16 @@ export const UV5RMINI_MSG = {
     'The radio stopped answering before its firmware was touched. Nothing was written to the firmware. Switch the radio off and on, then press Connect and flash again.',
   appRefused: 'Nothing was written to the firmware. Switch the radio off and on.',
   appOtherLayout:
-    "Nothing was written to the firmware: the radio refused this file before installing anything, most likely because it isn't for this radio's firmware. Its FM presets and volume may have been reset; nothing else changed.",
+    "The file isn't for this radio's firmware; the radio refused it before installing anything.",
   appKey: " This image is not for this radio's key.",
   appOtherStock: ' This image is for another stock version.',
   loaderAlready:
     "This firmware is already on the radio, or the radio holds firmware this image can't replace. Nothing was erased.",
   loaderFinished:
     'The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair.',
-  loaderOtherLayout:
-    "The file isn't for this radio's firmware; the radio refused it. Its FM presets and volume may have been reset; nothing else changed.",
+  loaderOtherLayout: "The file isn't for this radio's firmware; the radio refused it.",
+  loaderPastArea:
+    'This image runs past the area the radio can install. Nothing was erased. Please report it.',
   loaderNothingWritten: 'Nothing was written; the radio boots the installed app.',
   loaderNothingWrittenAgain:
     " Don't send this file again: it can only end the same way. If the radio doesn't reach its normal screen, it needs a case-open repair.",
@@ -473,9 +474,11 @@ export function describeUv5rMiniResult(
     if (code === 0x86) {
       return { error: s.continued ? UV5RMINI_MSG.loaderFinished : UV5RMINI_MSG.loaderAlready };
     }
-    // 0x8F: the layout loader's check found the radio's installed layout is not its own. It refuses before cmd 4, but
-    // the stock app's update stage has already cleared the settings sector holding the FM presets and volume.
+    // 0x8F: the layout loader's check found the radio's installed layout is not its own. It refuses before cmd 4.
+    // The 1.1.0 loaders also put the radio's settings back when its settings log fits in one sector.
     if (code === 0x8f) return { error: UV5RMINI_MSG.loaderOtherLayout, nothingInstalled: true };
+    // 0x90: the image would run past the layout's install area. Nothing was erased. Not the other layout.
+    if (code === 0x90) return { error: UV5RMINI_MSG.loaderPastArea };
     // 0x87 before cmd 4: the loader erased and programmed nothing, and the radio boots its installed app.
     if (code === 0x87) {
       return {

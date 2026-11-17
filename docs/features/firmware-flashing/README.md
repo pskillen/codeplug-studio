@@ -156,17 +156,16 @@ Per radio:
    owner who hasn't opened the flasher yet. A test ties the Mini's text to its stock-base table and proven Hardware lines.
 2. **Your radio** — only for a radio whose firmware comes in more than one flash layout (the UV-5R Mini; the factory
    firmware's packing, not the board), and before any release is offered or stock file asked for: Firmware then offers
-   only the releases built on the radio's own stock base. The step finds the radio's stock
-   base (UV-5R Mini: suffix and Firmware version) and layout. **Read the radio** reads, in normal mode and read-only,
+   only the releases built on the radio's own stock base. A radio that reports itself is matched by its suffix and
+   Firmware version. **Read the radio** reads, in normal mode and read-only,
    the radio report an MM9PDY build answers: its flash layout and the suffix, Firmware and Hardware strings of its
-   stock firmware, matched against the same table and with the same refusals as the dropdowns below. A report naming
+   stock firmware, matched against the stock-base table. A report naming
    a layout Studio doesn't know is refused as "This radio reports firmware Studio doesn't support"; what it reported
-   shows only with developer mode on. With no report, or when the read fails, the step asks three dropdowns of the
-   supported values: Firmware (`V0.04`, `V0.27`, `Other`) and Hardware (`V1.7`, `Other`) from Radio Info, and the
-   suffix (`NRF`, `NRFB`, `Other`) from the start-up screen shown while holding `8`. `Other` is refused, and so is a
-   combination with no build. A warning says to pick exactly what the radio shows: a wrong Firmware or suffix pick is
-   refused with nothing installed but may reset its FM presets and volume, while a wrong Hardware pick, or a radio
-   Studio doesn't know yet, may not be caught
+   shows only with developer mode on. With no report, or when the read fails, the step does not ask the Firmware
+   line. It asks the suffix (`NRF`, `NRFB`, `Other`) from the start-up screen shown while holding `8`, and Hardware
+   (`V1.7`, `Other`) from Radio Info. An unknown suffix or Hardware line is refused. A known suffix is sent the `L1`
+   file first; if the radio refuses it, Studio sends the other file. The warning names that, and does not mention
+   settings. A wrong Hardware pick may not be caught
    ([UV-5R Mini firmware](../../reference/radios/baofeng/uv-5r-mini/firmware.md#radio-info)). Continue stays disabled until the answer names a
    supported radio; the step then says "Studio can update this radio". So an unsupported or unknown Mini stops here,
    before any release or file is fetched. Coming back here later and changing the answer drops the prepared image and
@@ -291,14 +290,15 @@ Per radio:
    ended (see [What to expect](#what-to-expect)). A failure before the radio was touched says nothing was written.
    A failure after it shows the recovery steps.
    A refusal before anything was installed (on the UV-5R Mini: the loader's `0x8F`, or the app's `0x83` before any
-   erase; the file isn't for the radio's firmware) shows **Nothing was installed** instead, even though the loader ran,
-   with the updater's words (the FM presets and volume may have been reset). When the release has a file for the
-   other layout of the same variant (UV-5R Mini: the same NRF/NRFB suffix), the panel offers **Enter update mode
+   erase) shows **Nothing was installed** instead, even though after `0x8F` the loader ran, with the updater's words.
+   The loader's `0x90` (the image runs past the install area; nothing was erased) is not that panel: the other file
+   is not offered. When the release has a file for the other layout, the panel offers **Enter update mode
    again with the other file**: Studio prepares that file, on its own stock, for that layout and runs every check
    again, keeps the before-you-flash ticks, probe and safety backup, and goes back to **Enter update mode**. Nothing is
-   sent until you put the radio into update mode and press **Connect and flash**. It is offered once per flash; a
-   second refusal, or a release with no such file (today's Mini releases: their two files differ in suffix), offers
-   nothing more
+   sent until you put the radio into update mode and press **Connect and flash**. It is offered once per flash. A
+   stock UV-5R Mini (no radio report) is offered today's other file even though the two files differ in suffix. A
+   radio that reported its own base is offered only a file of the same suffix. A second refusal, or a release with
+   no such file, offers nothing more
    ([UV-5R Mini results](../../reference/radios/baofeng/uv-5r-mini/firmware.md#results)).
 
 ## What to expect

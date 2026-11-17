@@ -128,13 +128,8 @@ function backToCheck() {
 const type = (label: string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
-/** The Radio Info lines; the suffix defaults to the one today's base for that version has. */
-const radioInfo = (
-  firmware: string,
-  hardware: string,
-  suffix = firmware === 'V0.04' ? 'NRFB' : 'NRF',
-) => {
-  type('Radio Info: Firmware', firmware);
+/** The suffix and Hardware line. The Firmware line is not asked; a stock radio is sent the L1 file. */
+const radioInfo = (hardware: string, suffix = 'NRF') => {
   type('Suffix', suffix);
   type('Radio Info: Hardware', hardware);
 };
@@ -167,7 +162,7 @@ const anyLayout = async (
   radioLayout?: string,
   _b?: unknown,
   _rc?: unknown,
-  _rr?: unknown,
+  radioReported?: boolean,
   radioCodeBase?: string,
 ) =>
   ({
@@ -175,6 +170,7 @@ const anyLayout = async (
     title: `${radioLayout} build`,
     sha256: {},
     radioLayout,
+    ...(radioReported ? { radioReported: true } : {}),
     ...(radioCodeBase ? { baseName: radioCodeBase } : {}),
   }) as unknown as PreparedFirmwareImage;
 
@@ -242,28 +238,28 @@ describe('RadioCheckStep: a release with one file per flash layout and stock bas
   it('1.0.0 on NRFB V0.04: the NRF-only release chosen earlier is dropped, and nothing is prepared', async () => {
     render(<Harness updater={MINI} loaded={fileFor('L2')} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('V0.04', 'V1.7', 'NRFB');
+    radioInfo('V1.7', 'NRFB');
     await waitFor(() => expect(latest.loadedPatch).toBeNull());
     expectDropped();
   });
 
-  it('keeps a release chosen earlier that has a file for the radio', async () => {
+  it('keeps a release chosen earlier that has the L1 file a stock radio is sent first', async () => {
     vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
-    const release = fileFor('L2');
+    const release = fileFor('L1');
     render(<Harness updater={MINI} loaded={release} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('V0.27', 'V1.7', 'NRF');
+    radioInfo('V1.7', 'NRF');
     expect(latest.loadedPatch).toBe(release);
     expect(screen.getByText(RADIO_CHECK_PASSED_RELEASE)).toBeInTheDocument();
     toPrepare();
-    expect(await screen.findByText(/Ready to flash: L2 build/)).toBeInTheDocument();
-    expect(lastPrepare()[8]).toBe('nrf-v0.27');
+    expect(await screen.findByText(/Ready to flash: L1 build/)).toBeInTheDocument();
+    expect(lastPrepare()[8]).toBe('nrfb-v0.04');
   });
 
   it('never keeps the nearest build: an L2 file on another base is not this radio', async () => {
     render(<Harness updater={MINI} loaded={fileFor('L2', 'nrfb-v0.27')} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('V0.27', 'V1.7', 'NRF');
+    radioInfo('V1.7', 'NRF');
     await waitFor(() => expect(latest.loadedPatch).toBeNull());
     expectDropped();
   });
@@ -506,16 +502,18 @@ describe('RadioCheckStep: reading the UV-5R Mini', () => {
       expect(latest.reinstallConfirmed).toBe(false);
     });
     expect(screen.getByText(NO_REPORT)).toBeInTheDocument();
-    expect(screen.getByLabelText('Radio Info: Firmware')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Radio Info: Firmware')).toBeNull();
+    expect(screen.getByLabelText('Suffix')).toBeInTheDocument();
   });
 });
 
 describe('RadioCheckStep: the UV-5R Mini Radio Info question, with no report', () => {
-  it('a stock radio is asked the Firmware and Hardware lines, and only those', async () => {
+  it('a stock radio is asked the suffix and Hardware line, and not the Firmware line', async () => {
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
     expect(screen.getByText(NO_REPORT)).toBeInTheDocument();
-    expect(screen.getByLabelText('Radio Info: Firmware')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Radio Info: Firmware')).toBeNull();
+    expect(screen.getByLabelText('Suffix')).toBeInTheDocument();
     expect(screen.getByLabelText('Radio Info: Hardware')).toBeInTheDocument();
     expect(screen.queryByLabelText(/MM9PDY build/)).toBeNull();
     expect(screen.queryByRole('checkbox')).toBeNull();
@@ -525,15 +523,17 @@ describe('RadioCheckStep: the UV-5R Mini Radio Info question, with no report', (
     expect(canAdvance(latest)).toBe(false);
   });
 
-  it('stock V0.27 is L2, prepared with no build name', async () => {
+  it('a stock radio is sent the L1 file first, prepared with no build name', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('V0.27', 'V1.7');
+    radioInfo('V1.7');
     toPrepare();
     expect(
-      await screen.findByText(/Ready to flash: L2 build/, undefined, SLOW),
+      await screen.findByText(/Ready to flash: L1 build/, undefined, SLOW),
     ).toBeInTheDocument();
-    expect(lastPrepare()[4]).toBe('L2');
+    expect(lastPrepare()[4]).toBe('L1');
+    expect(lastPrepare()[8]).toBe('nrfb-v0.04');
     expect(lastPrepare()[5]).toBeUndefined();
     expect(lastPrepare()[7]).toBe(false);
     // The flash layout is an internal detail (#1670): shown only with developer mode on.
@@ -544,15 +544,16 @@ describe('RadioCheckStep: the UV-5R Mini Radio Info question, with no report', (
   it('with developer mode on, shows the flash layout and nothing else changes', async () => {
     setDeveloperMode(true);
     try {
+      vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
       render(<Harness updater={MINI} />);
       await readRadio(STOCK_FLASH);
-      radioInfo('V0.27', 'V1.7');
+      radioInfo('V1.7');
       toPrepare();
       expect(
-        await screen.findByText(/Ready to flash: L2 build/, undefined, SLOW),
+        await screen.findByText(/Ready to flash: L1 build/, undefined, SLOW),
       ).toBeInTheDocument();
-      expect(screen.getByText('Flash layout: L2')).toBeInTheDocument();
-      expect(lastPrepare()[4]).toBe('L2');
+      expect(screen.getByText('Flash layout: L1')).toBeInTheDocument();
+      expect(lastPrepare()[4]).toBe('L1');
       expect(canAdvance(latest)).toBe(true);
     } finally {
       localStorage.removeItem(DEVELOPER_MODE_KEY);
@@ -580,7 +581,7 @@ describe('RadioCheckStep: the UV-5R Mini Radio Info question, with no report', (
   it('stock NRFB V0.04 is L1 on nrfb-v0.04; an L2 file is refused before Connect', async () => {
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('V0.04', 'V1.7');
+    radioInfo('V1.7', 'NRFB');
     toPrepare();
     expect(
       await screen.findByText(new RegExp(OTHER_LAYOUT.replace(/[.;]/g, '.'))),
@@ -599,58 +600,58 @@ describe('RadioCheckStep: the UV-5R Mini Radio Info question, with no report', (
       [...(screen.getByLabelText(label) as HTMLSelectElement).options]
         .filter((o) => !o.disabled)
         .map((o) => o.value);
-    expect(options('Radio Info: Firmware')).toEqual(['V0.04', 'V0.27', 'Other']);
+    expect(screen.queryByLabelText('Radio Info: Firmware')).toBeNull();
     expect(options('Suffix')).toEqual(['NRF', 'NRFB', 'Other']);
     expect(options('Radio Info: Hardware')).toEqual(['V1.7', 'Other']);
-    expect(screen.getAllByText('From Radio Info (MENU → Radio Info).')).toHaveLength(2);
+    expect(screen.getAllByText('From Radio Info (MENU → Radio Info).')).toHaveLength(1);
     expect(
       screen.getByText(/hold 8 while switching it on.*film the screen with your phone/),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Pick exactly what the radio shows. If the Firmware or suffix you pick is wrong, Studio or the radio refuses the file and nothing is installed, though the radio's FM presets and volume may be reset. If the Hardware line is wrong, nothing stops the update, and a radio Studio doesn't know yet may not be caught either.",
+        'Pick the suffix and Hardware line the radio shows. An unknown suffix or Hardware line stops the update. Studio sends one file first and, if the radio refuses it, sends the other.',
       ),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/FM presets|volume/)).toBeNull();
   });
 
-  it('refuses a suffix and version with no build (NRF V0.04), without building anything', async () => {
+  it('sends the L1 file for the suffix that used to have no base (NRF), without refusing it', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('V0.04', 'V1.7', 'NRF');
+    radioInfo('V1.7', 'NRF');
+    toPrepare();
     expect(
-      screen.getByText(
-        'There is no MM9PDY build for this radio (NRF V0.04) yet; nothing was sent.',
-      ),
+      await screen.findByText(/Ready to flash: L1 build/, undefined, SLOW),
     ).toBeInTheDocument();
-    expect(flash.prepareFlash).not.toHaveBeenCalled();
-    expect(canAdvance(latest)).toBe(false);
+    expect(lastPrepare()[4]).toBe('L1');
+    expect(lastPrepare()[8]).toBe('nrfb-v0.04');
+    expect(screen.queryByText(/no MM9PDY build/)).toBeNull();
   });
 
   it('refuses suffix Other as not supported', async () => {
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('V0.27', 'V1.7', 'Other');
+    radioInfo('V1.7', 'Other');
     expect(
       screen.getByText("Studio doesn't support this radio's suffix; nothing was sent."),
     ).toBeInTheDocument();
     expect(flash.prepareFlash).not.toHaveBeenCalled();
   });
 
-  it('refuses Firmware Other as not supported, without building anything', async () => {
+  it('does not ask a Firmware line, so a stock radio is not refused for one', async () => {
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('Other', 'V1.7');
+    expect(screen.queryByLabelText('Radio Info: Firmware')).toBeNull();
     expect(
-      screen.getByText("Studio doesn't support this radio's Firmware version; nothing was sent."),
-    ).toBeInTheDocument();
-    expect(flash.prepareFlash).not.toHaveBeenCalled();
-    expect(canAdvance(latest)).toBe(false);
+      screen.queryByText("Studio doesn't support this radio's Firmware version; nothing was sent."),
+    ).toBeNull();
   });
 
   it('refuses Hardware Other, without building anything', async () => {
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('V0.27', 'Other');
+    radioInfo('Other');
     expect(
       screen.getByText(
         "Studio hasn't been proven on this radio's Hardware version; nothing was sent.",
@@ -661,15 +662,16 @@ describe('RadioCheckStep: the UV-5R Mini Radio Info question, with no report', (
   });
 
   it('a failed read says why and falls back to the question', async () => {
+    vi.mocked(flash.prepareFlash).mockImplementation(anyLayout);
     render(<Harness updater={MINI} />);
     await readRadio({ failure: 'The radio did not answer.' });
     expect(
       screen.getByText(/Studio couldn't read the radio: The radio did not answer\./),
     ).toBeInTheDocument();
-    radioInfo('V0.27', 'V1.7');
+    radioInfo('V1.7');
     toPrepare();
     expect(
-      await screen.findByText(/Ready to flash: L2 build/, undefined, SLOW),
+      await screen.findByText(/Ready to flash: L1 build/, undefined, SLOW),
     ).toBeInTheDocument();
   });
 
@@ -687,7 +689,7 @@ describe('RadioCheckStep: the UV-5R Mini Radio Info question, with no report', (
     );
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('V0.27', 'V1.7');
+    radioInfo('V1.7');
     toPrepare();
     await screen.findByText('This radio may run it.');
     expect(
@@ -696,7 +698,7 @@ describe('RadioCheckStep: the UV-5R Mini Radio Info question, with no report', (
     fireEvent.click(screen.getByRole('checkbox', { name: 'Write it again anyway' }));
     await screen.findByText(/Ready to flash/);
     backToCheck();
-    type('Radio Info: Firmware', 'V0.04');
+    type('Suffix', 'NRFB');
     await waitFor(() => expect(latest.reinstallConfirmed).toBe(false));
     expect(latest.image).toBeNull();
   });
@@ -715,7 +717,7 @@ describe('RadioCheckStep: saying the check passed', () => {
   it('with no release chosen, says only that the radio is supported', async () => {
     render(<Harness updater={MINI} start={{ choice: { kind: 'stock' }, loadedPatch: null }} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('V0.04', 'V1.7');
+    radioInfo('V1.7', 'NRFB');
     expect(screen.getByText(RADIO_CHECK_PASSED)).toBeInTheDocument();
     expect(canAdvance(latest)).toBe(true);
   });
@@ -723,7 +725,7 @@ describe('RadioCheckStep: saying the check passed', () => {
   it('says nothing of the kind for a refused radio', async () => {
     render(<Harness updater={MINI} />);
     await readRadio(STOCK_FLASH);
-    radioInfo('Other', 'V1.7');
+    radioInfo('V1.7', 'Other');
     expect(screen.queryByText(RADIO_CHECK_PASSED_RELEASE)).toBeNull();
     expect(screen.queryByText(RADIO_CHECK_PASSED)).toBeNull();
   });

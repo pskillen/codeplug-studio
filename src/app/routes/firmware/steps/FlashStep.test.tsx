@@ -65,8 +65,7 @@ const OTHER_LAYOUT_0X8F = {
   radioId: 'baofeng-uv5rmini',
   image: L1_IMAGE,
   code: 'nothingInstalled',
-  message:
-    "The file isn't for this radio's firmware; the radio refused it. Its FM presets and volume may have been reset; nothing else changed.",
+  message: "The file isn't for this radio's firmware; the radio refused it.",
   position: 'result',
   radioTouched: true,
   startedAt: 'now',
@@ -165,15 +164,19 @@ describe('FlashStep: a refusal before anything was installed', () => {
     expect(flash.runFirmwareFlash).toHaveBeenCalledTimes(1);
   });
 
-  it('an app 0x83 before cmd 4 (radio untouched) offers the L2 file too', async () => {
+  it('an app 0x83 before cmd 4 (radio untouched) offers the L2 file and prepares it', async () => {
+    vi.mocked(flash.prepareFlash).mockResolvedValue(L2_IMAGE);
     show(<Harness />);
     await flashWith({
       ...OTHER_LAYOUT_0X8F,
       radioTouched: false,
-      message: 'Nothing was written to the firmware: the radio refused this file.',
+      message:
+        "The file isn't for this radio's firmware; the radio refused it before installing anything.",
     });
     expect(screen.getByText('Nothing was installed')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: RETRY })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: RETRY }));
+    await waitFor(() => expect(flash.prepareFlash).toHaveBeenCalled());
+    expect(vi.mocked(flash.prepareFlash).mock.calls[0]![4]).toBe('L2');
   });
 
   it('the retry prepares the L2 file through the interlocks and goes back to update mode, keeping the ticks', async () => {
@@ -244,12 +247,30 @@ describe('FlashStep: a refusal before anything was installed', () => {
     }
   });
 
-  it("today's pair (L1 NRFB v0.04, L2 NRF v0.27) crosses the suffix: no retry is offered", async () => {
+  it("a stock radio is offered today's other file even though the two bases differ in suffix", async () => {
     const today: LoadedFirmwarePatch = {
       ...fileFor('L1', 'nrfb-v0.04'),
       otherLayouts: [fileFor('L2', 'nrf-v0.27')],
     };
-    const refused = imageFor('L2', { reported: false, base: 'nrf-v0.27' });
+    const refused = imageFor('L1', { reported: false, base: 'nrfb-v0.04' });
+    const next = imageFor('L2', { reported: false, base: 'nrf-v0.27' });
+    vi.mocked(flash.prepareFlash).mockResolvedValue(next);
+    show(<Harness loaded={today} image={refused} />);
+    await flashWith({ ...OTHER_LAYOUT_0X8F, image: refused });
+    fireEvent.click(screen.getByRole('button', { name: RETRY }));
+    await waitFor(() => expect(latest.step).toBe('updateMode'));
+    const call = vi.mocked(flash.prepareFlash).mock.calls[0]!;
+    expect(call[4]).toBe('L2');
+    expect(call[7]).toBe(false);
+    expect(call[8]).toBe('nrf-v0.27');
+  });
+
+  it('a radio that reported its own base is not offered the other suffix', async () => {
+    const today: LoadedFirmwarePatch = {
+      ...fileFor('L1', 'nrfb-v0.04'),
+      otherLayouts: [fileFor('L2', 'nrf-v0.27')],
+    };
+    const refused = imageFor('L1', { reported: true, base: 'nrfb-v0.04' });
     show(<Harness loaded={today} image={refused} />);
     await flashWith({ ...OTHER_LAYOUT_0X8F, image: refused });
     expect(screen.getByText('Nothing was installed')).toBeInTheDocument();
@@ -271,6 +292,20 @@ describe('FlashStep: a refusal before anything was installed', () => {
     await flashWith({ ...OTHER_LAYOUT_0X8F, image: L2_IMAGE });
     expect(screen.getByText(/refused both of this release's files for it/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Enter update mode again with/ })).toBeNull();
+  });
+
+  it('a loader 0x90 is not "nothing installed": no other file is offered', async () => {
+    show(<Harness />);
+    await flashWith({
+      ...OTHER_LAYOUT_0X8F,
+      code: 'protocol',
+      message:
+        'This image runs past the area the radio can install. Nothing was erased. Please report it.',
+    });
+    expect(screen.queryByText('Nothing was installed')).toBeNull();
+    expect(screen.getByText('Recover the radio')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Enter update mode again with/ })).toBeNull();
+    expect(flash.prepareFlash).not.toHaveBeenCalled();
   });
 
   it('any other refusal keeps today’s handling and offers no retry', async () => {

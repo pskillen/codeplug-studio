@@ -10,7 +10,8 @@ import {
   syntheticUv5rMiniVariantRelease,
   type SynthMiniBase,
 } from './__fixtures__/syntheticReleases.ts';
-import { buildNameLayout, layoutFiles, patchForLayout } from './layouts.ts';
+import { uv5rMiniVariantOfBase } from '../../radios/baofeng/uv-5r-mini/radioInfo.ts';
+import { buildNameLayout, layoutFiles, partnerFor, patchForLayout } from './layouts.ts';
 import {
   compareReleaseTags,
   createPublishedFirmwareReleaseSource,
@@ -41,7 +42,7 @@ const release = (base: SynthMiniBase, version = '9.9.9', more = {}) =>
   syntheticUv5rMiniVariantRelease({ base, version, ...more });
 
 describe('Mini releases by stock base and version', () => {
-  it('keeps the same version on two bases apart: two entries, each loading only its own file', async () => {
+  it('keeps the same version on two bases apart in the list, and keeps the other file for a stock retry', async () => {
     const nrf = await release('nrf-v0.27', '1.0.0', { feature: 'zones' });
     const nrfb = await release('nrfb-v0.04', '1.0.0', { feature: 'zones' });
     const source = createPublishedFirmwareReleaseSource(rowsOf(nrf.row, nrfb.row), [
@@ -53,10 +54,18 @@ describe('Mini releases by stock base and version', () => {
       ['nrfb-v0.04:1.0.0', '1.0.0', ['v0.04 (NRFB)']],
     ]);
     const loaded = await source.loadPatch(MINI, 'nrfb-v0.04:1.0.0');
-    expect(layoutFiles(loaded)).toHaveLength(1);
     expect(loaded.sha256).toBe(nrfb.patchSha256);
     expect(loaded.layout).toBe('L1');
-    expect(patchForLayout(loaded, 'L2', 'nrf-v0.27')).toBeUndefined();
+    expect(layoutFiles(loaded).map((f) => f.layout)).toEqual(['L1', 'L2']);
+    expect(patchForLayout(loaded, 'L2', 'nrf-v0.27')!.sha256).toBe(nrf.patchSha256);
+    // A stock radio (no reported base) is offered the other layout. A reported radio stays on its variant.
+    expect(partnerFor(loaded, 'L1')!.sha256).toBe(nrf.patchSha256);
+    expect(
+      partnerFor(loaded, 'L1', {
+        refusedBase: 'nrfb-v0.04',
+        variantOfBase: uv5rMiniVariantOfBase,
+      }),
+    ).toBeUndefined();
     // The version alone names no release.
     expect((await refusal(source.loadPatch(MINI, '1.0.0'))).message).toMatch(
       /not published for this radio/,

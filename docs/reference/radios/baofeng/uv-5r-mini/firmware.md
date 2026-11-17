@@ -171,9 +171,11 @@ are equal plain bytes. Studio never descrambles anything. The stock bytes come f
 **Pinned loaders** (SHA-256 over the packed loader bytes). Two kinds:
 
 - **Layout loaders**, one per flash layout. They carry no list of builds. Before it erases the firmware area, each one
-  checks the radio's installed VM, PRCT and BTIF directory entries against its own 16-byte layout record, and refuses a
-  radio of the other layout with result `0x8F`. By then the stock app's update stage has already reset the FM presets
-  and volume (below). Each loader always builds to the same bytes, so its packed hash is its pin.
+  checks the radio's installed VM, PRCT and BTIF directory entries against its own layout record, and refuses a
+  radio of the other layout with result `0x8F`. The 1.1.0 loaders put the radio's settings back when its settings log fits in one sector (the used part of the live VM bank is at most `0xF3` bytes) before that refusal,
+  and refuse an image that would run past the record's area end with result `0x90` and nothing erased. Studio checks
+  only the packed hash; the record is reference. Each loader always builds to the same bytes, so its packed hash is
+  its pin. The previous always-write loaders stay pinned so images already built on them still verify.
 - They **always write**: every install erases and rewrites the firmware area from `0x4000` to the end of the image, even
   when the radio already holds the same build, is on the same stock, or has a damaged app. So the image's length is
   what bounds the erase, and the Area and Stock bytes checks keep every image the stock's length, ending at or below the layout's area end
@@ -181,10 +183,12 @@ are equal plain bytes. Studio never descrambles anything. The stock bytes come f
 - **List-carrying loaders**: the older loaders, each with a list of the builds it may install. They stay pinned so that
   images already built on them still pass the checks.
 
-| Loader | Packed SHA-256                                                     | Raw / packed size   | Layout record: VM offset, VM size, VM / PRCT / BTIF header CRCs |
-| ------ | ------------------------------------------------------------------ | ------------------- | --------------------------------------------------------------- |
-| `L1`   | `b314ace5106ed3b5ec67846b38d7bf8e65415824343b24650622efb8bdc604dd` | 17,904 B / 15,648 B | `0x95000`, `0x68000`, `0x06D9` / `0xD9BB` / `0xF13A`            |
-| `L2`   | `1e6c3e0d563a50f38caa2972c773ccdff99aa875c1e9098cc923be1cb5b6193e` | 17,904 B / 15,648 B | `0x94000`, `0x6A000`, `0x2074` / `0x48F9` / `0xF13A`            |
+| Loader  | Packed SHA-256                                                     | Raw / packed size   | Record at | Layout record: VM offset, VM size, VM / PRCT / BTIF header CRCs, area end |
+| ------- | ------------------------------------------------------------------ | ------------------- | --------- | ------------------------------------------------------------------------- |
+| `L1`    | `bb3e038cde0412127992206cb1461b6ce7bc5e21273c1f2b0d2a09a46ca649da` | 18,112 B / 15,848 B | `0xD670`  | `0x95000`, `0x68000`, `0x06D9` / `0xD9BB` / `0xF13A`, area end `0x7C000`  |
+| `L2`    | `957bb486bb1d8cb5c971e366cd5c45a6da3c64fe611203096b56bb799ab02372` | 18,112 B / 15,848 B | `0xD670`  | `0x94000`, `0x6A000`, `0x2074` / `0x48F9` / `0xF13A`, area end `0x7C000`  |
+| `L1-v2` | `b314ace5106ed3b5ec67846b38d7bf8e65415824343b24650622efb8bdc604dd` | 17,904 B / 15,648 B | `0xD5A0`  | `0x95000`, `0x68000`, `0x06D9` / `0xD9BB` / `0xF13A`                      |
+| `L2-v2` | `1e6c3e0d563a50f38caa2972c773ccdff99aa875c1e9098cc923be1cb5b6193e` | 17,904 B / 15,648 B | `0xD5A0`  | `0x94000`, `0x6A000`, `0x2074` / `0x48F9` / `0xF13A`                      |
 
 **Retired loaders.** The first layout loaders wrote nothing when the radio already held the image's build, and with
 Studio's short images that ended in a read past the file. Studio no longer sends them. An image built with one is
@@ -209,8 +213,8 @@ lists is from before the report) names no build, so that refusal can't fire; the
 
 **Layout match.** `L1` and `L2` are the factory firmware's flash packing, not the board: firmware version and board
 variant are separate things. The radio's stock app runs the first stage of an update ("UPDATE..."), before any
-loader. Sent a file for the other layout, that stage already loses some of the radio's settings (its FM presets and
-volume) before the loader can refuse. So Studio checks the layout itself, before it sends anything. For an image whose
+loader. The 1.1.0 loader puts the radio's settings back when its settings log fits in one sector (the used part of the live VM bank is at most `0xF3` bytes) and then refuses with `0x8F`; an image that runs past the
+install area is `0x90`, with nothing erased. Studio checks the layout itself, before it sends anything. For an image whose
 loader is `L1` or `L2`, the radio's layout must be on the prepared image (`PreparedFirmwareImage.radioLayout`, passed
 to `prepareFirmwareImage` as `radioLayout`; from the radio report or Radio Info, below):
 
@@ -290,11 +294,12 @@ What Studio concludes (`decodeUv5rMiniRadioReport`, then `uv5rMiniLayoutFromRepo
 | `(vm_start, vm_size)` neither `(0x95000, 0x68000)` nor `(0x94000, 0x6A000)`       | Refused: "This radio reports firmware Studio doesn't support."; the `VM` entry shows with developer mode on only  |
 | `(0x95000, 0x68000)` / `(0x94000, 0x6A000)`                                       | `L1` / `L2`, then the strings pick the stock base (below)                                                         |
 
-**The stock base.** The strings are looked up in the same table the [Radio Info](#radio-info) answers use
-(`src/core/radios/baofeng/uv-5r-mini/stockBases.ts`), with the same refusals: a Hardware string not proven (today only
+**The stock base.** A report's suffix and Firmware strings are looked up in
+`src/core/radios/baofeng/uv-5r-mini/stockBases.ts`: a Hardware string not proven (today only
 `V1.7`) gets "Studio hasn't been proven on this radio's Hardware version; nothing was sent.", and a suffix and Firmware
 pair with no base gets "There is no MM9PDY build for this radio (NRFB V0.27) yet; nothing was sent." `NRF` / `V0.27`
-is `nrf-v0.27` and `NRFB` / `V0.04` is `nrfb-v0.04`. Bit 0 never picks the base: it is only the cross-check above.
+is `nrf-v0.27` and `NRFB` / `V0.04` is `nrfb-v0.04`. The [Radio Info](#radio-info) question, asked only when there is
+no report, does not use this table: it sends the `L1` file first. Bit 0 never picks the base: it is only the cross-check above.
 A build name in the variant form (`v0.27-NRF-…`, D133) names a base by its prefix: it must be the strings' base, and a
 prefix that is no known base, or another base's, is refused: "…doesn't read right: its build name names other radio
 firmware than its suffix and Firmware strings…". A legacy name (`mm9pdy-L2-…`) or none says nothing about the base.
@@ -336,47 +341,41 @@ code-base check refuses a file on the other base.
 
 ### Radio Info
 
-With no radio report, the wizard asks three things on one screen, as dropdowns of the supported values. Studio can't
-read any of them over the K-plug, so nothing is pre-filled for a stock radio.
+With no radio report, the wizard does not ask the Firmware line. It asks two dropdowns. Studio can't
+read either over the K-plug, so nothing is pre-filled for a stock radio.
 
-- **Firmware** (`V0.04`, `V0.27`, `Other`) and **Hardware** (`V1.7`, `Other`): "From Radio Info (MENU → Radio Info)."
+- **Hardware** (`V1.7`, `Other`): "From Radio Info (MENU → Radio Info)."
 - **Suffix** (`NRF`, `NRFB`, `Other`): not on Radio Info. Its help says: switch the radio off, then hold `8` while
   switching it on: for about a second it shows `5RMINI NRF` or `5RMINI NRFB`, then boots normally; repeat it, or film
   the screen with your phone, if you miss it.
 
-NRF and NRFB radios get separate builds, so the suffix and the Firmware version together name the radio's stock base,
-and with it the flash layout. The Hardware line is the board version, asked only to refuse a board an update hasn't
-been proven on:
+A proven Hardware line and a known suffix (`NRF` or `NRFB`) both send the `L1` file first, on `nrfb-v0.04`. The
+Firmware line is not used, and the suffix does not pick which file goes first. Firmware then lists the `nrfb-v0.04`
+releases. Loading one also keeps the same version's `nrf-v0.27` file, so a refusal can send that file next. A version
+published only on `nrf-v0.27`, with no same-version `nrfb-v0.04` row, is not in that list.
 
-| Firmware | Suffix  | Hardware | Result                                                                                   |
-| -------- | ------- | -------- | ---------------------------------------------------------------------------------------- |
-| `V0.04`  | `NRFB`  | `V1.7`   | `nrfb-v0.04`, `L1`                                                                       |
-| `V0.27`  | `NRF`   | `V1.7`   | `nrf-v0.27`, `L2`                                                                        |
-| `V0.04`  | `NRF`   | `V1.7`   | Refused: "There is no MM9PDY build for this radio (NRF V0.04) yet; nothing was sent."    |
-| `V0.27`  | `NRFB`  | `V1.7`   | Refused the same way: no build for `NRFB V0.27`                                          |
-| `Other`  | Any     | `V1.7`   | Refused: "Studio doesn't support this radio's Firmware version; nothing was sent."       |
-| Listed   | `Other` | `V1.7`   | Refused: "Studio doesn't support this radio's suffix; nothing was sent."                 |
-| Any      | Any     | `Other`  | Refused: "Studio hasn't been proven on this radio's Hardware version; nothing was sent." |
+| Suffix  | Hardware | Result                                                                                   |
+| ------- | -------- | ---------------------------------------------------------------------------------------- |
+| `NRF`   | `V1.7`   | `nrfb-v0.04`, `L1` (the `L2` file is sent only if the radio refuses this one)            |
+| `NRFB`  | `V1.7`   | `nrfb-v0.04`, `L1`, the same first file                                                  |
+| `Other` | `V1.7`   | Refused: "Studio doesn't support this radio's suffix; nothing was sent."                 |
+| Any     | `Other`  | Refused: "Studio hasn't been proven on this radio's Hardware version; nothing was sent." |
 
 A release row is identified by its whole base (its stock version, and the optional row `base`), not by `layout` alone.
-Prepare picks the file on the radio's base and layout and never offers the nearest build: a base the chosen release
-has no file for shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." on the
+Prepare picks the `L1` file on `nrfb-v0.04` and never offers the nearest build: a release with no `L1` file on that
+base shows "Not available in this release: there is no MM9PDY build for this radio (…) yet." on the
 **Your radio** step, which then holds the wizard before the stock file is asked for, and again at Prepare, which
-prepares nothing. In 1.0.0 only `NRF` + `V0.27` + `V1.7` gets a file.
+prepares nothing.
 
-Above the dropdowns, a warning: "Pick exactly what the radio shows. If the Firmware or suffix you pick is wrong,
-Studio or the radio refuses the file and nothing is installed, though the radio's FM presets and volume may be reset.
-If the Hardware line is wrong, nothing stops the update, and a radio Studio doesn't know yet may not be caught
-either." For the two bases Studio knows, a wrong Firmware or suffix pick is caught: a combination with no base is
-refused by Studio, and one that names the other base names the other flash layout, which the loader refuses with
-`0x8F` and erases no firmware, though the stock update stage has already reset the FM presets and volume. A wrong
-Hardware pick is not caught: the file's layout and code base match, so the loader installs it on a board it was never
-proven on. Nor is a suffix mis-pick on a radio of an unknown variant whose version matches a known base. The answers
-live in the wizard's memory only.
+Above the dropdowns, a warning: "Pick the suffix and Hardware line the radio shows. An unknown suffix or Hardware
+line stops the update. Studio sends one file first and, if the radio refuses it, sends the other." A wrong Hardware
+pick is not caught by the radio: the file's layout and code base match, so the loader installs it on a board it was
+never proven on. The answers live in the wizard's memory only.
 
-**Retry partner.** After a refusal before anything was installed, the retry goes only to a file of the same suffix
-(`releaseLayouts.variantOfBase`). Today's `L1` file is NRFB and the `L2` file NRF, so the retry always crosses the
-suffix and no partner is offered.
+**Retry partner.** A radio that reported its own code base is offered only a file of the same suffix
+(`releaseLayouts.variantOfBase`). A stock radio (no report) is offered the other layout's file of the same version
+even when the two files differ in suffix: the first file was a guess. Today's `L1` file is NRFB and the `L2` file NRF,
+so that cross-suffix file is the stock radio's retry, and it is not offered to a radio that reported itself.
 Code: `src/core/radios/baofeng/uv-5r-mini/radioInfo.ts`, rendered by the wizard's **Your radio** step from
 `StockFirmwareDescriptor.radioLayout`.
 
@@ -503,34 +502,34 @@ the radio asked for (at most 0x1000, inside the image), and an echo of the radio
 
 ## Results
 
-| Result                                                            | Wording                                                                                                                                                                                                                                                   |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Loader `0`                                                        | "The radio restarts by itself. Check the power-on screen shows `<build name>`." With a length of 0: "The radio already had this firmware." first                                                                                                          |
-| App `0x83`, no cmd 4 heard in the session (ignored ones included) | "Nothing was written to the firmware: the radio refused this file before installing anything, most likely because it isn't for this radio's firmware. Its FM presets and volume may have been reset; nothing else changed." **Nothing installed** (below) |
-| App `0x01`, `0x86`, `0x8A`, `0x83` after a cmd 4                  | "Nothing was written to the firmware. Switch the radio off and on." `0x01` adds that the image is not for this radio's key; `0x8A` that it is for another stock version                                                                                   |
-| Loader `0x86` before the length, fresh session                    | "This firmware is already on the radio, or the radio holds firmware this image can't replace. Nothing was erased."                                                                                                                                        |
-| Loader `0x86` before the length, continued session                | "The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair."                                                                                            |
-| Loader `0x8F` before the length                                   | "The file isn't for this radio's firmware; the radio refused it. Its FM presets and volume may have been reset; nothing else changed." **Nothing installed** (below)                                                                                      |
-| Loader `0x87` before the length, fresh session                    | "Nothing was written; the radio boots the installed app."                                                                                                                                                                                                 |
-| Loader `0x87` before the length, continued session                | The same, plus: don't send this file again (it can only end the same way); if the radio doesn't reach its normal screen, it needs a case-open repair                                                                                                      |
-| Loader non-zero after the length, or no frame for 60 s            | The recover text below                                                                                                                                                                                                                                    |
+| Result                                                            | Wording                                                                                                                                                                                              |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Loader `0`                                                        | "The radio restarts by itself. Check the power-on screen shows `<build name>`." With a length of 0: "The radio already had this firmware." first                                                     |
+| App `0x83`, no cmd 4 heard in the session (ignored ones included) | "The file isn't for this radio's firmware; the radio refused it before installing anything." **Nothing installed** (below). The loader did not run, so this does not say the settings were put back. |
+| App `0x01`, `0x86`, `0x8A`, `0x83` after a cmd 4                  | "Nothing was written to the firmware. Switch the radio off and on." `0x01` adds that the image is not for this radio's key; `0x8A` that it is for another stock version                              |
+| Loader `0x86` before the length, fresh session                    | "This firmware is already on the radio, or the radio holds firmware this image can't replace. Nothing was erased."                                                                                   |
+| Loader `0x86` before the length, continued session                | "The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair."                                       |
+| Loader `0x8F` before the length                                   | "The file isn't for this radio's firmware; the radio refused it." **Nothing installed** (below)                                                                                                      |
+| Loader `0x90` before the length                                   | "This image runs past the area the radio can install. Nothing was erased. Please report it." Not **Nothing installed**: the other file is not offered. After cmd 4 it stays the recover text.        |
+| Loader `0x87` before the length, fresh session                    | "Nothing was written; the radio boots the installed app."                                                                                                                                            |
+| Loader `0x87` before the length, continued session                | The same, plus: don't send this file again (it can only end the same way); if the radio doesn't reach its normal screen, it needs a case-open repair                                                 |
+| Loader non-zero after the length, or no frame for 60 s            | The recover text below                                                                                                                                                                               |
 
 The summary always says to check the power-on name: a torn last page also ends in `0`.
 
-**Nothing installed, and the retry.** The two rows marked above tell the user the file isn't for the radio's
-firmware (the cause is the other flash layout) and that nothing was installed. The updater throws `RadioNothingInstalledError` (code `nothingInstalled`) for them, so the
+**Nothing installed, and the retry.** The `0x8F` and app-`0x83` rows tell the user the file was refused before
+anything was installed. The updater throws `RadioNothingInstalledError` (code `nothingInstalled`) for them, so the
 wizard shows **Nothing was installed** rather than **Recover the radio**, although after a `0x8F` the loader has run.
-A loader `0x83` after cmd 4 stays the recover text; every other result keeps its words. When the release has a file
-for the other layout **of the same suffix** (NRF or NRFB, `releaseLayouts.variantOfBase`), the wizard offers it once:
+`0x90` is not this error: nothing is offered as the other file. A loader `0x83` after cmd 4 stays the recover text;
+`0x90` after cmd 4 does too. When the release has a file for the other layout, the wizard offers it once:
 it prepares that file with the radio's layout set to the file's (the refusal is the evidence Studio's layout was wrong,
 so the layout check passes by construction; every other interlock runs again, at Prepare and at the start of
 `flash()`), keeps the preflight ticks, probe and safety backup, drops the reinstall confirm, and returns to update
 mode. The file is picked and built on its own stock base: for a radio without a report, the partner's base is taken as
-the radio's (the answers were wrong); a reported code base stands, so the code-base check refuses a retry that would
-change it. The operator re-enters UPDATE... and presses Connect; Studio never resends by itself. With no such file,
-or after one retry, nothing more is offered. Today's two bases (`L1` NRFB, `L2` NRF) cross the suffix, so no retry is
-offered for them. A crossed pick
-costs the FM presets and volume each time, until the firmware keeps them across a refused update.
+the radio's, including today's pair (`L1` on `nrfb-v0.04`, `L2` on `nrf-v0.27`); a reported code base stands, and the
+same-suffix rule (`releaseLayouts.variantOfBase`) then applies, so a reported radio is not offered the other suffix.
+The operator re-enters UPDATE... and presses Connect; Studio never resends by itself. With no such file,
+or after one retry, nothing more is offered.
 
 ## Recovery
 

@@ -378,36 +378,63 @@ describe('checkUv5rMiniImage — a radio code base never changes', () => {
 });
 
 describe('UV5RMINI_PINNED_LOADERS', () => {
-  it('pins the two always-write layout loaders exactly, one per layout, with no list', () => {
-    const byLabel = (l: string) => UV5RMINI_PINNED_LOADERS.find((p) => p.label === l);
+  const byLabel = (l: string) => UV5RMINI_PINNED_LOADERS.find((p) => p.label === l);
+
+  it('pins the 1.1.0 layout loaders exactly, one per layout, with no list', () => {
     expect(byLabel('L1')).toMatchObject({
-      sha256: 'b314ace5106ed3b5ec67846b38d7bf8e65415824343b24650622efb8bdc604dd',
+      sha256: 'bb3e038cde0412127992206cb1461b6ce7bc5e21273c1f2b0d2a09a46ca649da',
       layout: 'L1',
-      rawSize: 17_904,
-      packedSize: 15_648,
+      rawSize: 18_112,
+      packedSize: 15_848,
+      recordAt: 0xd670,
       layoutRecord: {
         vmOff: 0x95000,
         vmSize: 0x68000,
         hcrcVm: 0x06d9,
         hcrcPrct: 0xd9bb,
         hcrcBtif: 0xf13a,
+        areaEnd: 0x7c000,
       },
     });
     expect(byLabel('L2')).toMatchObject({
-      sha256: '1e6c3e0d563a50f38caa2972c773ccdff99aa875c1e9098cc923be1cb5b6193e',
+      sha256: '957bb486bb1d8cb5c971e366cd5c45a6da3c64fe611203096b56bb799ab02372',
       layout: 'L2',
-      rawSize: 17_904,
-      packedSize: 15_648,
+      rawSize: 18_112,
+      packedSize: 15_848,
+      recordAt: 0xd670,
       layoutRecord: {
         vmOff: 0x94000,
         vmSize: 0x6a000,
         hcrcVm: 0x2074,
         hcrcPrct: 0x48f9,
         hcrcBtif: 0xf13a,
+        areaEnd: 0x7c000,
       },
     });
     expect(byLabel('L1')?.lists).toBeUndefined();
     expect(byLabel('L2')?.lists).toBeUndefined();
+  });
+
+  it('still accepts the previous always-write layout loaders', () => {
+    expect(byLabel('L1-v2')).toMatchObject({
+      sha256: 'b314ace5106ed3b5ec67846b38d7bf8e65415824343b24650622efb8bdc604dd',
+      layout: 'L1',
+      rawSize: 17_904,
+      packedSize: 15_648,
+      recordAt: 0xd5a0,
+    });
+    expect(byLabel('L2-v2')).toMatchObject({
+      sha256: '1e6c3e0d563a50f38caa2972c773ccdff99aa875c1e9098cc923be1cb5b6193e',
+      layout: 'L2',
+      rawSize: 17_904,
+      packedSize: 15_648,
+      recordAt: 0xd5a0,
+    });
+    for (const label of ['L1-v2', 'L2-v2']) {
+      const pin = byLabel(label);
+      if (!pin || pin.layout === undefined) throw new Error(label);
+      expect(pin.layoutRecord).not.toHaveProperty('areaEnd');
+    }
   });
 
   it('keeps every list-carrying pin without a layout', () => {
@@ -422,10 +449,25 @@ describe('UV5RMINI_PINNED_LOADERS', () => {
     expect(w1?.lists).toEqual(['nrfb-v0.04', 'mm9pdy-0.1.0-rc.1', 'mm9pdy-pr125-g1c0a9df']);
   });
 
-  it('pins five distinct loaders, and an unknown hash is in none of them', () => {
+  it('pins seven distinct loaders, and an unknown hash is in none of them', () => {
     const hashes = UV5RMINI_PINNED_LOADERS.map((p) => p.sha256);
-    expect(new Set(hashes).size).toBe(5);
+    expect(new Set(hashes).size).toBe(7);
+    expect(hashes).toEqual(
+      expect.arrayContaining([
+        'bb3e038cde0412127992206cb1461b6ce7bc5e21273c1f2b0d2a09a46ca649da',
+        '957bb486bb1d8cb5c971e366cd5c45a6da3c64fe611203096b56bb799ab02372',
+        'b314ace5106ed3b5ec67846b38d7bf8e65415824343b24650622efb8bdc604dd',
+        '1e6c3e0d563a50f38caa2972c773ccdff99aa875c1e9098cc923be1cb5b6193e',
+      ]),
+    );
     expect(hashes).not.toContain(FAKE_PACKED_SHA);
+  });
+
+  it('refuses an image whose loader hash is not pinned', () => {
+    const img = prepared({ radioLayout: 'L1' });
+    const run = () => checkUv5rMiniImage(img, UV5RMINI_PINNED_LOADERS, bases);
+    expect(run).toThrow(RadioInterlockError);
+    expect(run).toThrow(/This image's loader is not one Studio knows/);
   });
 
   it('drops the first layout loaders, which write nothing for the installed build', () => {

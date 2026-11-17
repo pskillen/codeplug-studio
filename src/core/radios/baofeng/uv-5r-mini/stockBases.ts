@@ -60,6 +60,14 @@ export function uv5rMiniStockBase(suffix: string, firmware: string): Uv5rMiniSto
   return Object.hasOwn(BASES, `${suffix} ${firmware}`) ? BASES[`${suffix} ${firmware}`] : undefined;
 }
 
+/**
+ * The file a stock radio (no radio report) is sent first: the base whose stock runs flash layout `L1`. A refusal
+ * (`0x8F` from the loader, `0x83` from the app) sends the other layout's file.
+ */
+export function uv5rMiniFirstInstallBase(): Uv5rMiniStockBase | undefined {
+  return Object.values(BASES).find((b) => b.layout === 'L1');
+}
+
 /** Whether an update has been proven on a Hardware line, exactly as the radio shows it. */
 export function isUv5rMiniHardwareProven(hardware: string): boolean {
   return UV5RMINI_PROVEN_HARDWARE.includes(hardware);
