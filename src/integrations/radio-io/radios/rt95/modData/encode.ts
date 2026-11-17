@@ -11,11 +11,20 @@ import {
   MMD1_SLOT_BYTES,
   MMD1_VERSION,
 } from './layout.ts';
+import { concatBytes, mapGeneration, u16le } from './bytes.ts';
+import { encodeRt95Sections, type Rt95SectionInfo } from './sections.ts';
 import { assertRt95WriteAllowed } from './writeInterlock.ts';
 
+export interface Rt95ModZone {
+  name: string;
+  channelIndexes: readonly number[];
+  scanIndexes?: readonly number[];
+}
+
 export interface Rt95ModDataInput {
-  /** 0-based channel indexes, any order; duplicates are collapsed (a zone is a set). */
-  zones: readonly { name: string; channelIndexes: readonly number[] }[];
+  writeSections?: boolean;
+  /** With sections, channelIndexes is the zone order and must not contain duplicates. */
+  zones: readonly Rt95ModZone[];
   /** Empty text = not written. */
   descriptions: readonly { channelIndex: number; text: string }[];
 }
@@ -26,12 +35,13 @@ export interface Rt95ModBlock {
 }
 
 export interface Rt95ModDataEncoded {
-  /** In write order: descriptions ascending, slots (2 blocks each), names, header LAST. */
+  /** In write order: descriptions, slots, names, optional sections, then header. */
   blocks: readonly Rt95ModBlock[];
   zoneGeneration: number;
   descriptionGeneration: number;
   zoneCount: number;
   descriptionCount: number;
+  sections?: { MMDS: Rt95SectionInfo; MMDO: Rt95SectionInfo };
 }
 
 export class Rt95ModDataError extends Error {
@@ -40,6 +50,8 @@ export class Rt95ModDataError extends Error {
     this.name = 'Rt95ModDataError';
   }
 }
+
+export { concatBytes, mapGeneration, u16le };
 
 /** Header flag bit 0: descriptions present. */
 export const MMD1_FLAG_DESCRIPTIONS = 0x01;
@@ -54,28 +66,6 @@ export function isPrintableAscii(text: string, allowUnderscore: boolean): boolea
     if (!allowUnderscore && c === 0x5f) return false;
   }
   return true;
-}
-
-export function u16le(value: number): [number, number] {
-  return [value & 0xff, (value >> 8) & 0xff];
-}
-
-/** Map 0x0000 to 0x0001 and 0xFFFF to 0xFFFE. */
-export function mapGeneration(crc: number): number {
-  if (crc === 0x0000) return 0x0001;
-  if (crc === 0xffff) return 0xfffe;
-  return crc;
-}
-
-export function concatBytes(parts: readonly Uint8Array[]): Uint8Array {
-  const total = parts.reduce((n, p) => n + p.length, 0);
-  const out = new Uint8Array(total);
-  let off = 0;
-  for (const p of parts) {
-    out.set(p, off);
-    off += p.length;
-  }
-  return out;
 }
 
 /** CRC-8 over the encoded record's RX frequency (+0x00..+0x03) and name (+0x18..+0x1D). */
@@ -122,8 +112,12 @@ export function encodeRt95ModData(input: Rt95ModDataInput, image: Uint8Array): R
           `Zone ${i} member index ${idx} is outside 0-${CHANNEL_MAX - 1}.`,
         );
       }
+      if (input.writeSections && members.has(idx))
+        throw new Rt95ModDataError(`Zone ${i} has duplicate member index ${idx}.`);
       members.add(idx);
     }
+    if (input.writeSections && zone.scanIndexes?.some((idx) => !members.has(idx)))
+      throw new Rt95ModDataError(`Zone ${i} scan indexes must be members.`);
     if (members.size < 1) throw new Rt95ModDataError(`Zone ${i} has no members.`);
     if (members.size > ZONE_MEMBERS_MAX) {
       throw new Rt95ModDataError(`Zone ${i} has more than ${ZONE_MEMBERS_MAX} members.`);
@@ -216,6 +210,10 @@ export function encodeRt95ModData(input: Rt95ModDataInput, image: Uint8Array): R
   names.forEach((name, i) => {
     blocks.push({ address: MMD1_NAMES_ADDR + MMD1_BLOCK_BYTES * i, bytes: name });
   });
+  const sections = input.writeSections
+    ? encodeRt95Sections(input.zones, zoneGeneration)
+    : undefined;
+  if (sections) blocks.push(...sections.MMDS.blocks, ...sections.MMDO.blocks);
   blocks.push({ address: MMD1_HEADER_ADDR, bytes: header });
 
   for (const b of blocks) {
@@ -232,5 +230,6 @@ export function encodeRt95ModData(input: Rt95ModDataInput, image: Uint8Array): R
     descriptionGeneration,
     zoneCount: input.zones.length,
     descriptionCount: descs.length,
+    ...(sections ? { sections: { MMDS: sections.MMDS.info, MMDO: sections.MMDO.info } } : {}),
   };
 }

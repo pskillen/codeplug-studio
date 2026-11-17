@@ -41,7 +41,7 @@ describe('RT95 in-session pre-write read', () => {
     expect(seed).toBeDefined();
     const radio = new Rt95Protocol();
     seed!(radio, undefined, { writeRt95ModData: true, zones: [] }, []);
-    expect(radio.getModDataIntent()).toEqual({ zones: [], descriptions: [] });
+    expect(radio.getModDataIntent()).toEqual({ writeSections: true, zones: [], descriptions: [] });
     seed!(radio, undefined, {}, []);
     expect(radio.getModDataIntent()).toBeNull();
   });
@@ -275,7 +275,10 @@ describe('RT95 MM9PDY session path (fake pipe)', () => {
     });
     expect(seen).toEqual([{ chipGuard: { ok: true } }]);
     const writes = pipe.log.filter((e) => e.op === 'W').map((e) => e.addr!);
-    expect(writes.slice(-5)).toEqual([0x5000, 0x4300, 0x4310, 0x4100, 0x4000]);
+    // Sections (MMDS 0x4700, MMDO 0x4B00: later blocks first, block 0 last) go out before the header.
+    expect(writes.slice(-9)).toEqual([
+      0x5000, 0x4300, 0x4310, 0x4100, 0x4710, 0x4700, 0x4b10, 0x4b00, 0x4000,
+    ]);
     expect(writes.some((a) => a === 0x4010 || a >= 0x6000)).toBe(false);
   });
 

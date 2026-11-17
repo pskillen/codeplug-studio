@@ -30,7 +30,7 @@ On radios whose zones come from the MM9PDY firmware over a flat channel list (th
 
 `resolveZoneScanSets(assembled, library, context)` resolves one scan set per assembled zone, once, in core: the zone's exported members (in member export order) whose cascade resolves to include. Members outside the build are never in a set.
 
-The Web Serial Write projection attaches each set to its zone as `RadioZoneDto.scanChannelNumbers`: the zone's own channel numbers that belong to a channel in the set, kept to the members the radio keeps (after the radio drops channels it can't hold; the RT95 also sorts members into channel-number order, while the UV-5R Mini MM9PDY keeps zone order). Only targets with the zone scan set trait carry the field. A radio writer encodes it as it stands and does not resolve it again.
+The Web Serial Write projection attaches each set to its zone as `RadioZoneDto.scanChannelNumbers`: the zone's own channel numbers that belong to a channel in the set, kept to the members the radio keeps (after the radio drops channels it can't hold; both targets keep zone order). Only targets with the zone scan set trait carry the field. A radio writer encodes it as it stands and does not resolve it again.
 
 ## Warnings
 
@@ -42,12 +42,7 @@ Three warning types, all of which warn and none of which refuses (`ExportWarning
 | `firmware-too-old` | Firmware support is too old or unknown        | The sets were not written; the radio says how it knows                |
 | `room-exceeded`    | The radio's room for scan sets is exceeded    | What it needs and holds, and what happens to the zones that don't fit |
 
-`checkZoneScanSets(sets, checks, warnings)` runs them. The too-few check is common. A radio supplies the rest through `ZoneScanSetRadioChecks`: `firmwareTooOld()` (how it knows) and `roomExceeded(sets)` (its limit and the consequence). The hook's too-old result means the sets aren't written and the per-zone checks are skipped. The Mini always writes the sets and checks their effective membership and capacity. When an effective set skips a member, Studio shows an informational note explaining that firmware before 1.1.0 uses the All channels scan setting instead. A fallback zone scans all members and does not trigger the note. A zone that cannot fit falls back to scanning all members, and the room warning names it; later zones are still tried. See [the Mini reference](../../reference/radios/baofeng/uv-5r-mini/mm9pdy-data.md).
-
-## Known gaps
-
-- The RT95 writer does not yet write scan sets. Its Write adds an info note when a zone's scan set differs from its members; the radio continues to scan as before ([#1756](https://github.com/pskillen/codeplug-studio/issues/1756)).
-- The RT95 does not yet raise the `zone_scan_set` warnings; those checks are wired in with its writer.
+`checkZoneScanSets(sets, checks, warnings)` runs them. The too-few check is common. A radio supplies the rest through `ZoneScanSetRadioChecks`: `firmwareTooOld()` (how it knows) and `roomExceeded(sets)` (its limit and the consequence). The hook's too-old result means the sets aren't written and the per-zone checks are skipped. The Mini always writes the sets and checks their effective membership and capacity. When an effective set skips a member, Studio shows an informational note explaining that firmware before 1.1.0 uses the All channels scan setting instead. A fallback zone scans all members and does not trigger the note. A zone that cannot fit falls back to scanning all members, and the room warning names it; later zones are still tried. The RT95 (MM9PDY target) always writes its scan-set and order sections and shows a similar informational note that firmware older than 1.2.0 ignores them: it fires when a zone has a scan set that skips a member or a member order that is not ascending, and not for plain ascending zones with no custom set. A zone whose custom order does not fit in the radio's order section falls back to channel-number order, and the room warning names that zone. See [the Mini reference](../../reference/radios/baofeng/uv-5r-mini/mm9pdy-data.md) and [the RT95 reference](../../reference/radios/retevis/rt95/mm9pdy-data.md).
 
 ## Not done
 

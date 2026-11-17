@@ -440,7 +440,7 @@ export class Rt95Protocol implements CloneImageRadio {
           opts.signal,
         );
       }
-      // MMD1: descriptions, member slots, zone names, then the header last.
+      // MMD1: descriptions, member slots, zone names, the MMDS/MMDO sections (when present), then the header last.
       for (const block of modBlocks) {
         throwIfAborted(opts.signal);
         await this.writeBlock(pipe, block.address, block.bytes, ctx);
