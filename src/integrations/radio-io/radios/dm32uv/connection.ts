@@ -12,6 +12,7 @@ import {
   type VProbeReply,
 } from '../../kit/codecs/vProbe.ts';
 import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
+import { hexBytes } from '../../kit/frameTrace.ts';
 import { throwIfAborted } from '../../kit/progress.ts';
 import {
   DM32_BLOCK_SIZE,
@@ -96,6 +97,13 @@ export function makeDm32WriteFrame(address: number, data: Uint8Array): Uint8Arra
   return frame;
 }
 
+/** Discard (and return) whatever is already buffered; a pipe without `drain` is flushed. Never sends. */
+async function drainDm32Input(pipe: BytePipe): Promise<Uint8Array> {
+  if (pipe.drain) return pipe.drain();
+  await pipe.flush?.();
+  return new Uint8Array(0);
+}
+
 /**
  * ASCII handshake: PSEARCH → PASSSTA → SYSINFO.
  * Returns model hint string from PSEARCH payload.
@@ -109,15 +117,20 @@ export async function dm32AsciiHandshake(
   const t = DM32_CONNECTION.TIMEOUT.HANDSHAKE_MS;
 
   await delay(scaledMs(DM32_CONNECTION.INIT_DELAY_MS, scale), signal);
-  // Best-effort flush: nothing to read yet on a clean pipe.
+  // Let stray bytes (an earlier session, the port opening, a late reply) arrive, then read and discard them so one
+  // cannot pass for the PSEARCH ACK. Reads only; nothing is sent.
   await delay(scaledMs(DM32_CONNECTION.CLEAR_BUFFER_DELAY_MS, scale), signal);
+  const stray = await drainDm32Input(pipe);
 
   await pipe.write(encodeAscii('PSEARCH'));
   await delay(scaledMs(DM32_CONNECTION.PSEARCH_READ_DELAY_MS, scale), signal);
   const psearch = await pipe.readExact(8, t);
   if (psearch[0] !== 0x06) {
     throw new RadioWrongIdentError(
-      `DM-32UV PSEARCH expected ACK 0x06, got 0x${psearch[0]?.toString(16) ?? '??'}`,
+      `DM-32UV PSEARCH expected ACK 0x06, got 0x${psearch[0]?.toString(16) ?? '??'}; full reply ${hexBytes(psearch, 8)}` +
+        (stray.length > 0
+          ? `; ${stray.length} stray bytes discarded before it: ${hexBytes(stray)}`
+          : ''),
     );
   }
   const modelString = TD.decode(psearch.subarray(1)).replace(/\0/g, '').trim();

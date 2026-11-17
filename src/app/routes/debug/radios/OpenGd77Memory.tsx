@@ -23,7 +23,12 @@ import {
   type OpenGd77ZoneEntry,
   type OpenGd77ZoneMember,
 } from '@integrations/radio-io/radios/opengd77/debugMemory.ts';
-import { ContactsPanel, RxGroupsPanel, UserDatabasePanel } from './OpenGd77Directories.tsx';
+import {
+  ContactsPanel,
+  opengd77DirectoryCounts,
+  RxGroupsPanel,
+  UserDatabasePanel,
+} from './OpenGd77Directories.tsx';
 import { archiveKey } from './viewerUtils.ts';
 import type { DebugArchive } from './captureArchive.ts';
 
@@ -363,6 +368,8 @@ function OpenGd77MemoryLoaded({ archive }: { archive: DebugArchive }) {
     () => projectOpenGd77Memory(archive, archive.manifest.radioModelId),
     [archive],
   );
+  // The picker counts are the panels' own row counts, decoded from the same projections.
+  const counts = useMemo(() => opengd77DirectoryCounts(archive), [archive]);
   if (projection.status !== 'ok')
     return (
       <Stack>
@@ -399,21 +406,26 @@ function OpenGd77MemoryLoaded({ archive }: { archive: DebugArchive }) {
           {
             value: 'zones',
             label: 'Zones',
+            count:
+              projection.zones.status === 'captured' ? projection.zones.entries.length : undefined,
             render: () => <ZonesPanel zones={projection.zones} />,
           },
           {
             value: 'contacts',
             label: 'Contacts',
+            count: counts.contacts,
             render: () => <ContactsPanel archive={archive} />,
           },
           {
             value: 'rx-groups',
             label: 'RX groups',
+            count: counts.rxGroups,
             render: () => <RxGroupsPanel archive={archive} />,
           },
           {
             value: 'user-database',
             label: 'User Database',
+            count: counts.userDatabase,
             render: () => <UserDatabasePanel archive={archive} />,
           },
         ]}

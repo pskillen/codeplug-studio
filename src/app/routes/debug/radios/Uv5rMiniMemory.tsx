@@ -1,4 +1,4 @@
-import { Alert, Stack, Text, Title } from '@mantine/core';
+import { Alert, Badge, Group, Stack, Table, Text, Title } from '@mantine/core';
 import { useMemo } from 'react';
 import type { DataTableColumn } from '@app/components/v2/index.ts';
 import {
@@ -12,6 +12,16 @@ import {
   UV5R_MINI_CHANNELS_CAPTION,
   UV5R_MINI_CHANNELS_EMPTY,
   UV5R_MINI_CHANNELS_UNAVAILABLE,
+  UV5R_MINI_ZONE_CAVEAT,
+  UV5R_MINI_ZONE_NO_MEMBERS,
+  UV5R_MINI_ZONES_CAPTION,
+  UV5R_MINI_ZONES_EMPTY,
+  UV5R_MINI_ZONES_UNAVAILABLE,
+  uv5rMiniZoneHiddenMember,
+  uv5rMiniZoneHiddenSummary,
+  uv5rMiniZoneMembersLabel,
+  uv5rMiniZonesInvalid,
+  uv5rMiniZoneSummary,
   uv5rMiniChannelSummary,
 } from '@integrations/radio-io/radios/uv5r-mini/debugRead/memoryText.ts';
 import { decodeChannelsFromImage } from '@integrations/radio-io/radios/uv5r-mini/channelCodec.ts';
@@ -82,6 +92,109 @@ const CHANNEL_COLUMNS: DataTableColumn<ChannelRow>[] = [
   },
   { key: 'bw', header: 'Bandwidth', width: '6rem', render: (r) => r.channel.bandwidth },
 ];
+
+type ZoneView = Extract<
+  ReturnType<typeof decodeUv5rMiniZoneTable>,
+  { zones: unknown }
+>['zones'][number];
+
+interface ZoneRow {
+  id: string;
+  index: number;
+  zone: ZoneView;
+}
+
+const zoneLabel = (r: ZoneRow) => r.zone.name || '(unnamed)';
+
+const ZONE_COLUMNS: DataTableColumn<ZoneRow>[] = [
+  {
+    key: 'zone',
+    header: 'Zone',
+    width: '5rem',
+    sortable: true,
+    sortValue: (r) => r.index,
+    render: (r) => r.index + 1,
+  },
+  {
+    key: 'name',
+    header: 'Name',
+    width: 'minmax(12rem, 2fr)',
+    sortable: true,
+    sortValue: zoneLabel,
+    render: (r) => <strong>{zoneLabel(r)}</strong>,
+  },
+  {
+    key: 'members',
+    header: 'Members',
+    width: '7rem',
+    sortable: true,
+    sortValue: (r) => r.zone.slotIndexes.length,
+    render: (r) => r.zone.slotIndexes.length,
+  },
+];
+
+function Uv5rMiniZoneBlock({
+  row,
+  channels,
+}: {
+  row: ZoneRow;
+  channels: readonly RadioChannelDto[] | undefined;
+}) {
+  const title = `Zone ${row.index + 1}: ${zoneLabel(row)}`;
+  const members = row.zone.slotIndexes.map((slot) => ({
+    slot: slot + 1,
+    channel: channels?.find((c) => c.slotIndex === slot + 1),
+  }));
+  const shown = members.filter((m) => m.channel !== undefined);
+  const hidden = members.filter((m) => m.channel === undefined);
+  return (
+    <Stack gap={4} data-testid={`uv5r-mini-zone-${row.index + 1}`}>
+      <Group gap="xs">
+        <Text fw={600}>{title}</Text>
+        <Badge variant="light">{uv5rMiniZoneMembersLabel(members.length)}</Badge>
+      </Group>
+      {members.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          {UV5R_MINI_ZONE_NO_MEMBERS}
+        </Text>
+      ) : (
+        <>
+          {shown.length > 0 && (
+            <Table withTableBorder aria-label={`${title} members`}>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Slot</Table.Th>
+                  <Table.Th>Identity</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {shown.map(({ slot, channel }) => (
+                  <Table.Tr key={slot}>
+                    <Table.Td>{slot}</Table.Td>
+                    <Table.Td>
+                      {identityLabel(undefined, channel!.wireName) || '(unnamed)'}
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
+          {hidden.length > 0 && (
+            <details>
+              <summary>{uv5rMiniZoneHiddenSummary(hidden.length)}</summary>
+              <Text size="sm">
+                Slots:{' '}
+                {hidden
+                  .map((m) => uv5rMiniZoneHiddenMember(m.slot, channels !== undefined))
+                  .join(', ')}
+              </Text>
+            </details>
+          )}
+        </>
+      )}
+    </Stack>
+  );
+}
 
 /** Decode only data actually captured in a recognised region. */
 export function Uv5rMiniMemory({
@@ -155,28 +268,35 @@ function Uv5rMiniMemoryLoaded({
       emptyMessage={UV5R_MINI_CHANNELS_EMPTY}
     />
   );
-  const zonesPanel = (
-    <Stack>
-      {!zones ? (
-        <Text>Zone table unavailable: the complete sector was not captured.</Text>
-      ) : 'reject' in zones ? (
-        <Text>Zone table missing or invalid: {zones.reject}. This does not identify firmware.</Text>
-      ) : (
-        zones.zones.map((zone, i) => (
-          <div key={`${zone.name}-${i}`}>
-            <Text fw={600}>{zone.name}</Text>
-            <Text>
-              {zone.slotIndexes
-                .map((slot) => {
-                  const channel = channels?.find((c) => c.slotIndex === slot + 1);
-                  return `${slot + 1}: ${channel?.wireName || (channels ? '(missing channel)' : '(channel unavailable)')}`;
-                })
-                .join(', ') || 'No members'}
-            </Text>
-          </div>
-        ))
-      )}
-    </Stack>
+  const zoneRows = useMemo(
+    () =>
+      zones && !('reject' in zones)
+        ? zones.zones.map((zone, i): ZoneRow => ({ id: `zone-${i + 1}`, index: i, zone }))
+        : undefined,
+    [zones],
+  );
+  const zonesPanel = !zones ? (
+    <Alert title="Zones unavailable">{UV5R_MINI_ZONES_UNAVAILABLE}</Alert>
+  ) : 'reject' in zones ? (
+    <Alert title="Zones missing or invalid">{uv5rMiniZonesInvalid(zones.reject)}</Alert>
+  ) : (
+    <MemoryCategoryPanel
+      summary={uv5rMiniZoneSummary(zones.zones.length)}
+      caveat={UV5R_MINI_ZONE_CAVEAT}
+      searchPlaceholder="Search zones"
+      caption={UV5R_MINI_ZONES_CAPTION}
+      columns={ZONE_COLUMNS}
+      rows={zoneRows!}
+      getRowId={(r) => r.id}
+      searchText={(r) =>
+        `${r.index + 1} ${zoneLabel(r)} ${r.zone.slotIndexes
+          .map((slot) => channels?.find((c) => c.slotIndex === slot + 1)?.wireName ?? '')
+          .join(' ')}`
+      }
+      defaultSort={{ key: 'zone', direction: 'asc' }}
+      details={(r) => <Uv5rMiniZoneBlock row={r} channels={channels} />}
+      emptyMessage={UV5R_MINI_ZONES_EMPTY}
+    />
   );
   return (
     <Stack>
@@ -191,7 +311,12 @@ function Uv5rMiniMemoryLoaded({
             count: channels?.length,
             render: () => channelsPanel,
           },
-          { value: 'zones', label: 'Zones', render: () => zonesPanel },
+          {
+            value: 'zones',
+            label: 'Zones',
+            count: zoneRows?.length,
+            render: () => zonesPanel,
+          },
         ]}
       />
     </Stack>

@@ -7,7 +7,7 @@ import {
   groupDm32BlocksForProgress,
   selectBlocksToBulkRead,
 } from './memory.ts';
-import { dm32WriteMemory } from './connection.ts';
+import { dm32AsciiHandshake, dm32WriteMemory } from './connection.ts';
 import { Dm32uvProtocol } from './protocol.ts';
 import { planDm32Stages } from './plannedStages.ts';
 import {
@@ -147,6 +147,30 @@ describe('Dm32uvProtocol', () => {
     expect(cache?.addressBase).toBe(start);
     expect(cache?.blocks.size).toBe(2);
     expect(radio.readFirmware(image)).toMatch(/DM32/);
+  });
+
+  it('discards a stray 0xc0 already in the input before PSEARCH', async () => {
+    const pipe = new Dm32ScriptedPipe();
+    const psearch = new Uint8Array(8);
+    psearch[0] = 0x06;
+    psearch.set(new TextEncoder().encode('DM-32UV'), 1);
+    pipe.enqueue(psearch, new Uint8Array([0x50, 0, 0]), new Uint8Array([0x06]));
+    let discarded: Uint8Array | undefined;
+    const stray = Object.assign(pipe, {
+      drain: async () => (discarded = new Uint8Array([0xc0])),
+    });
+    const { modelString } = await dm32AsciiHandshake(stray, { settleScale: 0 });
+    expect(modelString).toBe('DM-32UV');
+    expect([...discarded!]).toEqual([0xc0]);
+    expect(new TextDecoder().decode(pipe.writes[0])).toBe('PSEARCH');
+  });
+
+  it('names the whole reply in hex when PSEARCH is not ACKed', async () => {
+    const pipe = new Dm32ScriptedPipe();
+    pipe.enqueue(new Uint8Array([0xc0, 0x44, 0x4d, 0x2d, 0x33, 0x32, 0x55, 0x56]));
+    await expect(dm32AsciiHandshake(pipe, { settleScale: 0 })).rejects.toThrow(
+      /got 0xc0; full reply c0 44 4d 2d 33 32 55 56/,
+    );
   });
 
   it('rejects wrong model on PSEARCH', async () => {

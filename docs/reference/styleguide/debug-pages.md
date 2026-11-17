@@ -59,6 +59,8 @@ All under `src/app/components/debug/`, exported from `index.ts`.
 | [MemoryCategories](../../../src/app/components/debug/MemoryCategories.md)           | The Category dropdown and the one selected panel                    |
 | [MemoryCategoryPanel](../../../src/app/components/debug/MemoryCategoryPanel.md)     | One Memory category: count, caveat, search, sortable table, details |
 
+A Memory view passes `count` for every category that has a decoded list, equal to the panel's own "N results" before any search (a category that is not captured has no count). Zones draw as a zone table, with the member table (callsign then name) opened by clicking a row.
+
 ## Gold references
 
 - **DM-32 Settings and Memory**: the shape every Settings and Memory view follows.

@@ -89,6 +89,29 @@ const contactColumns: DataTableColumn<ContactRow>[] = [
   },
 ];
 
+/**
+ * The item count each directory panel shows as its own "N results" before any search, or undefined
+ * when that panel has no list to count (not captured, refused, invalid header). The User Database
+ * count is the header's captured-entry count: no entry is decoded to know it.
+ */
+export function opengd77DirectoryCounts(archive: OpenGd77MemoryArchive): {
+  contacts: number | undefined;
+  rxGroups: number | undefined;
+  userDatabase: number | undefined;
+} {
+  const contacts = projectOpenGd77Contacts(archive);
+  const rxGroups = projectOpenGd77RxGroups(archive);
+  const db = projectOpenGd77UserDatabase(archive);
+  return {
+    contacts: contacts.status === 'captured' ? contacts.entries.length : undefined,
+    rxGroups: rxGroups.status === 'captured' ? rxGroups.entries.length : undefined,
+    userDatabase:
+      db.status === 'not-captured' || db.status === 'refused' || db.status === 'invalid-header'
+        ? undefined
+        : db.capturedEntries,
+  };
+}
+
 /** Read-only viewer over the open archive. */
 export function ContactsPanel({ archive }: { archive: OpenGd77MemoryArchive }) {
   const projection = useMemo(() => projectOpenGd77Contacts(archive), [archive]);
