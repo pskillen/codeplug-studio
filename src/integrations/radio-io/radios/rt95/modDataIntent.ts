@@ -27,7 +27,11 @@ export function rt95ModDataIntentFromOrganisation(
   };
 }
 
-/** Count exactly the blocks produced for upload; fingerprints do not affect block count. */
+/**
+ * Count exactly the blocks produced for upload; fingerprints do not affect block count. This runs the encoder, so it
+ * throws `Rt95ModDataError` on an intent the encoder rejects; the projection never produces one (it caps zones,
+ * members and duplicates first), so planning does not need a catch.
+ */
 export function rt95ModDataBlockCount(intent: Rt95ModDataInput): number {
   return encodeRt95ModData(intent, new Uint8Array(0x4000)).blocks.length;
 }
