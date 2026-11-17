@@ -71,6 +71,7 @@ describe('neonplug/channelWire helpers', () => {
     expect(formatNeonplugTone('88.5')).toEqual({ type: 'CTCSS', value: 88.5 });
     expect(formatNeonplugTone('D023N')).toEqual({ type: 'DCS', value: 23, polarity: 'N' });
     expect(formatNeonplugTone('D047P')).toEqual({ type: 'DCS', value: 47, polarity: 'P' });
+    expect(formatNeonplugTone('D023I')).toEqual({ type: 'DCS', value: 23, polarity: 'P' });
   });
 
   it('maps timeslot to NeonPlug slotOperation storage', () => {

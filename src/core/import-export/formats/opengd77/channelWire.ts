@@ -1,3 +1,4 @@
+import { canonicalDcsChannelTone } from '@core/domain/tones.ts';
 import type { ChannelMode, ChannelTone } from '@core/models/libraryTypes.ts';
 import { formatFrequencyMhzWireFromHz } from './frequencies.ts';
 import { isAnalogMode, isDigitalMode } from './channelModes.ts';
@@ -48,7 +49,7 @@ export function formatOpenGd77DmrIdWire(mode: ChannelMode, id: number | null): s
 export function formatOpenGd77ToneWire(mode: ChannelMode, tone: ChannelTone | null): string {
   if (isDigitalMode(mode)) return '';
   if (tone == null || tone === NONE_TONE) return 'None';
-  return tone;
+  return canonicalDcsChannelTone(tone);
 }
 
 export function formatOpenGd77FrequencyWire(hz: number | null): string {

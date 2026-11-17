@@ -9,6 +9,7 @@ import {
   type ChannelBehaviourContext,
   resolveEffectiveTxPermit,
 } from '@core/import-export/channelBehaviourDefaults/index.ts';
+import { canonicalDcsChannelTone } from '@core/domain/tones.ts';
 import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
 import { resolveDmrOperatingMode } from '@core/domain/dmrOperatingMode.ts';
 import { anytonePercentToWire } from './profiles.ts';
@@ -26,7 +27,7 @@ export function formatAnytoneBandwidthKhz(khz: number | null): string {
 export function formatAnytoneToneWire(tone: ChannelTone | undefined): string {
   if (!tone || tone === 'none') return 'Off';
   if (typeof tone === 'number') return String(tone);
-  return String(tone);
+  return canonicalDcsChannelTone(tone);
 }
 
 /**

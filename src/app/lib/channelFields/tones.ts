@@ -45,7 +45,7 @@ export const CTCSS_TONE_OPTIONS: readonly string[] = [
   '250.3',
 ];
 
-/** Common DCS codes for UI selects. */
+/** Common DCS codes (`D023N`). The picker strips the normal suffix and adds inverted separately. */
 export const DCS_TONE_OPTIONS: readonly string[] = [
   'D023N',
   'D025N',
@@ -132,12 +132,25 @@ export const DCS_TONE_OPTIONS: readonly string[] = [
   'D754N',
 ];
 
-export function toneSelectOptions(): { value: string; label: string }[] {
-  return [
-    { value: NONE_TONE, label: 'None' },
-    ...CTCSS_TONE_OPTIONS.map((t) => ({ value: t, label: `${t} Hz` })),
-    ...DCS_TONE_OPTIONS.map((t) => ({ value: t, label: t })),
-  ];
+export function ctcssToneSelectOptions(extraHz?: string): { value: string; label: string }[] {
+  const options = CTCSS_TONE_OPTIONS.map((tone) => ({ value: tone, label: `${tone} Hz` }));
+  if (extraHz && !options.some((option) => option.value === extraHz)) {
+    options.push({ value: extraHz, label: `${extraHz} Hz` });
+  }
+  return options;
+}
+
+/** Three-digit DCS code (`023`) from the normal-polarity catalog, plus a stored code that is not listed. */
+export function dcsCodeSelectOptions(extraCode?: string): { value: string; label: string }[] {
+  const options = DCS_TONE_OPTIONS.map((tone) => {
+    const code = tone.slice(1, -1);
+    return { value: code, label: `D${code}` };
+  });
+  if (extraCode && !options.some((option) => option.value === extraCode)) {
+    options.push({ value: extraCode, label: `D${extraCode}` });
+    options.sort((a, b) => a.value.localeCompare(b.value));
+  }
+  return options;
 }
 
 export function normalizeToneValue(value: string | null | undefined): ChannelTone {

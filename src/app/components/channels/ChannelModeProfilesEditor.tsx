@@ -36,7 +36,6 @@ import type {
   ChannelModeProfileNxdn,
   ChannelModeProfileTetra,
   ChannelModeProfileYsf,
-  ChannelTone,
   DMRTimeSlot,
   Library,
   OwnDigitalIdProtocol,
@@ -47,13 +46,10 @@ import { PercentLevelSlider } from '../v2/index.ts';
 import BrandmeisterRxListSyncAction from '../repeaters/BrandmeisterRxListSyncAction.tsx';
 import RxGroupListSummary from '../library/RxGroupListSummary.tsx';
 import AnalogSquelchModeSegment from './AnalogSquelchModeSegment.tsx';
+import ChannelToneField from './ChannelToneField.tsx';
 import SendTalkerAliasSegment from './SendTalkerAliasSegment.tsx';
 import DmrOperatingModeSegment from './DmrOperatingModeSegment.tsx';
-import {
-  BANDWIDTH_KHZ_OPTIONS,
-  toneSelectOptions,
-  type ChannelTimeslot,
-} from '../../lib/channelFields/index.ts';
+import { BANDWIDTH_KHZ_OPTIONS, type ChannelTimeslot } from '../../lib/channelFields/index.ts';
 import { isDmrMode, modeLabel } from '../../lib/channelModes.ts';
 import classes from './ChannelModeProfilesEditor.module.css';
 
@@ -219,19 +215,15 @@ function AnalogPanel({
         clearable
       />
       <Group grow>
-        <Select
+        <ChannelToneField
           label="RX tone"
-          data={toneSelectOptions()}
           value={profile.rxTone}
-          onChange={(v) => onPatch({ rxTone: (v ?? 'none') as ChannelTone })}
-          searchable
+          onChange={(rxTone) => onPatch({ rxTone })}
         />
-        <Select
+        <ChannelToneField
           label="TX tone"
-          data={toneSelectOptions()}
           value={profile.txTone}
-          onChange={(v) => onPatch({ txTone: (v ?? 'none') as ChannelTone })}
-          searchable
+          onChange={(txTone) => onPatch({ txTone })}
         />
       </Group>
       <PercentLevelSlider

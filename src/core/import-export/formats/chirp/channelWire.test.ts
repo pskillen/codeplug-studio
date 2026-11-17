@@ -22,6 +22,12 @@ describe('classifyChirpTone', () => {
       dtcsCode: '047',
       dtcsPolarity: 'R',
     });
+    expect(classifyChirpTone('D023I')).toEqual({
+      kind: 'DTCS',
+      ctcssFreq: '88.5',
+      dtcsCode: '023',
+      dtcsPolarity: 'R',
+    });
   });
 });
 

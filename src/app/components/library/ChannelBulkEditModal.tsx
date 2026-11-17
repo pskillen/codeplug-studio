@@ -51,7 +51,8 @@ import {
   sharedLevelSegmentValue,
 } from '../../lib/bulkEditIdle.ts';
 import { APRS_SLOT_NONE_VALUE, aprsSlotSelectOptions } from '../../lib/aprsBindingHelpers.ts';
-import { NONE_TONE, toneSelectOptions } from '../../lib/channelFields/index.ts';
+import { NONE_TONE } from '../../lib/channelFields/index.ts';
+import ChannelToneField from '../channels/ChannelToneField.tsx';
 import { modalComboboxProps } from '../../theme.ts';
 import type { DeleteOutcome } from '../../state/libraryService.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -575,18 +576,11 @@ function ChannelBulkEditModalBody({
                             }
                             hasSharedValue={shared.rxTone !== undefined}
                           >
-                            <Select
-                              data={toneSelectOptions()}
+                            <ChannelToneField
+                              groupLabel="RX tone"
                               value={form.rxTone}
-                              onChange={(value) =>
-                                setForm((prev) => ({
-                                  ...prev,
-                                  rxTone: (value ?? NONE_TONE) as ChannelTone,
-                                }))
-                              }
-                              searchable
+                              onChange={(rxTone) => setForm((prev) => ({ ...prev, rxTone }))}
                               comboboxProps={modalComboboxProps()}
-                              aria-label="RX tone"
                             />
                           </BulkEditField>
                         </div>
@@ -599,18 +593,11 @@ function ChannelBulkEditModalBody({
                             }
                             hasSharedValue={shared.txTone !== undefined}
                           >
-                            <Select
-                              data={toneSelectOptions()}
+                            <ChannelToneField
+                              groupLabel="TX tone"
                               value={form.txTone}
-                              onChange={(value) =>
-                                setForm((prev) => ({
-                                  ...prev,
-                                  txTone: (value ?? NONE_TONE) as ChannelTone,
-                                }))
-                              }
-                              searchable
+                              onChange={(txTone) => setForm((prev) => ({ ...prev, txTone }))}
                               comboboxProps={modalComboboxProps()}
-                              aria-label="TX tone"
                             />
                           </BulkEditField>
                         </div>

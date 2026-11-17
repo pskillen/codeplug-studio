@@ -1,3 +1,4 @@
+import { parseChannelTone } from '@core/domain/tones.ts';
 import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import type { ChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
@@ -106,21 +107,14 @@ export function formatNeonplugBandwidth(khz: number | null): NeonplugBandwidth {
   return '12.5kHz';
 }
 
-/** Studio tone (`none` | `88.5` | `D023N`) → NeonPlug CTCSS/DCS object. */
+/** Studio tone (`none` | `88.5` | `D023N` | `D023I`) → NeonPlug CTCSS/DCS object. */
 export function formatNeonplugTone(tone: ChannelTone): NeonplugCtcssDcs {
-  if (tone === 'none' || !tone.trim()) return { type: 'None' };
-  const trimmed = tone.trim();
-  const dcs = /^D(\d{1,3})([NP]?)$/i.exec(trimmed);
-  if (dcs) {
-    const value = Number.parseInt(dcs[1]!, 10);
-    const polarity = (dcs[2]?.toUpperCase() || 'N') as 'N' | 'P';
-    return { type: 'DCS', value, polarity };
+  const parsed = parseChannelTone(tone);
+  if (parsed.kind === 'none' || parsed.kind === 'unknown') return { type: 'None' };
+  if (parsed.kind === 'dcs') {
+    return { type: 'DCS', value: parsed.code, polarity: parsed.polarity === 'I' ? 'P' : 'N' };
   }
-  const hz = Number.parseFloat(trimmed);
-  if (Number.isFinite(hz) && hz > 0) {
-    return { type: 'CTCSS', value: hz };
-  }
-  return { type: 'None' };
+  return { type: 'CTCSS', value: parsed.hz };
 }
 
 /** NeonPlug storage: 0 = TS1, 1 = TS2. */

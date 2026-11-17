@@ -9,6 +9,7 @@ import {
   formatAnytoneDmrModeWire,
   formatAnytoneSquelchModeFromResolved,
   formatAnytoneTalkerAliasWire,
+  formatAnytoneToneWire,
 } from './wireFormat.ts';
 
 describe('anytone wireFormat channel mode mapping', () => {
@@ -112,5 +113,12 @@ describe('anytone wireFormat channel mode mapping', () => {
   it('maps talker alias mode to wire digit', () => {
     expect(formatAnytoneTalkerAliasWire('on')).toBe('1');
     expect(formatAnytoneTalkerAliasWire('off')).toBe('0');
+  });
+
+  it('emits canonical inverted DCS and leaves CTCSS', () => {
+    expect(formatAnytoneToneWire('D047P')).toBe('D047I');
+    expect(formatAnytoneToneWire('D023I')).toBe('D023I');
+    expect(formatAnytoneToneWire('88.5')).toBe('88.5');
+    expect(formatAnytoneToneWire('none')).toBe('Off');
   });
 });
