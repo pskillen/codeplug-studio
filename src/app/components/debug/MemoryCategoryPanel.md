@@ -42,6 +42,7 @@ One Memory category in the shared shape, for any radio: a count sentence, a dimm
 - Does not wrap itself: the page (or the styleguide layout) supplies `DesignSystemV2Provider` (dark, v2 tokens).
 - Search, sort, the caveat fold and the selected row are local state; the Memory tab remounts per archive and per category.
 - A row that a search hides closes its details.
+- The open row is highlighted with the table's active-row tint.
 - Display only; no write or capture path.
 
 ## Related
