@@ -145,7 +145,7 @@ describe('RT95 MM9PDY projection', () => {
     expect(warnings.map(formatExportWarning).some((t) => t.includes('"Empty"'))).toBe(true);
   });
 
-  it('notes channel-number order for a zone whose members are not ascending, and unzoned channels', () => {
+  it('keeps each zone order and notes unzoned channels', () => {
     const a = ch('a', 'Alpha', 145.5);
     const b = ch('b', 'Bravo', 145.6);
     const c = ch('c', 'Charlie', 145.7);
@@ -154,14 +154,12 @@ describe('RT95 MM9PDY projection', () => {
       [zone('z1', 'First', ['a', 'b']), zone('z2', 'Second', ['b', 'a'])],
     );
     const { projection, texts } = project(MM, library);
-    expect(projection.organisation.zones?.[1]?.channelNumbers).toEqual([1, 2]);
-    expect(texts.some((t) => t.includes('Second') && t.includes('channel-number order'))).toBe(
-      true,
-    );
+    expect(projection.organisation.zones?.[1]?.channelNumbers).toEqual([2, 1]);
+    expect(texts.some((t) => t.includes('Firmware older than 1.2.0'))).toBe(true);
     expect(texts.some((t) => t.includes('1 channels are only in All channels'))).toBe(true);
   });
 
-  it('notes once that a zone scan set is not written yet, for a library skip', () => {
+  it('warns about old firmware and a small scan set for a library skip', () => {
     const a = ch('a', 'Alpha', 145.5);
     const b = ch('b', 'Bravo', 145.6);
     const z = zone('z1', 'Local', ['a', 'b']);
@@ -171,26 +169,32 @@ describe('RT95 MM9PDY projection', () => {
     ];
     const { projection, texts } = project(MM, lib([a, b], [z]));
     const notes = projection.warnings.filter(
-      (w) => w.kind === 'general' && w.message.includes("isn't written"),
+      (w) => w.kind === 'general' && w.message.includes('Firmware older than 1.2.0'),
     );
     expect(notes).toHaveLength(1);
     expect(notes[0]?.severity).toBe('info');
     expect(texts.some((t) => t.includes('per-zone scan choices'))).toBe(false);
+    // One channel left to scan: the common fewer-than-two warning (zone_scan_set) now applies to the RT95.
+    expect(texts.some((t) => t.includes('"Local"') && t.includes("won't scan on the radio"))).toBe(
+      true,
+    );
   });
 
-  it('notes that a zone scan set is not written yet, for a build-level skip', () => {
+  it('warns about old firmware for a build-level skip', () => {
     const a = ch('a', 'Alpha', 145.5);
     const b = ch('b', 'Bravo', 145.6);
     const library = lib([a, b], [zone('z1', 'Local', ['a', 'b'])]);
-    expect(project(MM, library).texts.some((t) => t.includes("isn't written"))).toBe(false);
+    expect(project(MM, library).texts.some((t) => t.includes('Firmware older than 1.2.0'))).toBe(
+      false,
+    );
     const { texts } = project(MM, library, (build) => {
       const section = build.layout.sections[0];
       if (section?.kind === 'zoneGrouping') section.zones[0]!.scanMemberInclusion = { b: 'skip' };
     });
-    expect(texts.filter((t) => t.includes("isn't written to the radio yet"))).toHaveLength(1);
+    expect(texts.filter((t) => t.includes('Firmware older than 1.2.0'))).toHaveLength(1);
   });
 
-  it('carries each zone scan set and leaves the MMD1 intent and blocks unchanged', () => {
+  it('writes each zone scan set in the MMD1 sections', () => {
     const a = ch('a', 'Alpha', 145.5);
     const b = ch('b', 'Bravo', 145.6);
     const c = ch('c', 'Charlie', 145.7);
@@ -213,12 +217,11 @@ describe('RT95 MM9PDY projection', () => {
     expect(after.organisation.zones).toEqual([
       { wireName: 'Local', channelNumbers: [1, 2, 3], scanChannelNumbers: [1, 3] },
     ]);
-    // The RT95 writer (MMD1) ignores scan sets until its own ticket: same intent, same bytes.
     const intentBefore = rt95ModDataIntentFromOrganisation(before.organisation, before.channels);
     const intentAfter = rt95ModDataIntentFromOrganisation(after.organisation, after.channels);
-    expect(intentAfter).toEqual(intentBefore);
+    expect(intentAfter).not.toEqual(intentBefore);
     const image = new Uint8Array(0x4000);
-    expect(encodeRt95ModData(intentAfter!, image).blocks).toEqual(
+    expect(encodeRt95ModData(intentAfter!, image).blocks).not.toEqual(
       encodeRt95ModData(intentBefore!, image).blocks,
     );
   });

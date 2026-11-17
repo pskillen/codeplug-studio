@@ -7,6 +7,8 @@
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { pushGeneralInfoWarning, pushGeneralWarning } from '@core/import-export/exportWarning.ts';
 import { rt95Mm9pdyChannelDescription, toRt95Ascii } from '@core/import-export/formatProfiles.ts';
+import { checkZoneScanSets, checkZoneOrderRoom } from '@core/import-export/zoneScanSets/index.ts';
+import { encodeRt95Sections } from '@integrations/radio-io/radios/rt95/modData/sections.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
@@ -37,7 +39,7 @@ export function rt95Mm9pdyZoneOrderedAssembled(assembled: AssembledBuild): Assem
 
 /**
  * The zone's scan set (when it has one) restricted to the members the radio keeps, in their
- * ascending order. Spread into the finished zone DTO; empty object when the zone has no scan set.
+ * zone order. Spread into the finished zone DTO; empty object when the zone has no scan set.
  */
 export function scanSetWithin(
   zone: RadioZoneDto,
@@ -46,27 +48,6 @@ export function scanSetWithin(
   if (!zone.scanChannelNumbers) return {};
   const inSet = new Set(zone.scanChannelNumbers);
   return { scanChannelNumbers: members.filter((n) => inSet.has(n)) };
-}
-
-/** Shown while the MM9PDY writers don't encode zone scan sets yet. */
-export const ZONE_SCAN_SET_NOT_WRITTEN =
-  "Scan in this zone isn't written to the radio yet; zones scan as before.";
-
-/**
- * One info warning when any written zone's scan set (resolved, build-level skips included)
- * differs from its written members: the radio writers don't encode scan sets yet.
- */
-export function pushZoneScanSetNotWrittenWarning(
-  zones: readonly RadioZoneDto[],
-  warnings: ExportWarning[],
-): void {
-  const differs = zones.some(
-    (zone) =>
-      zone.scanChannelNumbers !== undefined &&
-      (zone.scanChannelNumbers.length !== zone.channelNumbers.length ||
-        zone.scanChannelNumbers.some((n, i) => n !== zone.channelNumbers[i])),
-  );
-  if (differs) pushGeneralInfoWarning(warnings, ZONE_SCAN_SET_NOT_WRITTEN);
 }
 
 export interface Rt95Mm9pdyProjectionInput {
@@ -157,21 +138,8 @@ export function projectRt95Mm9pdy(input: Rt95Mm9pdyProjectionInput): {
       );
       continue;
     }
-    const ascending = [...new Set(zone.channelNumbers)].sort((a, b) => a - b);
-    const inOrder =
-      ascending.length === zone.channelNumbers.length &&
-      ascending.every((n, i) => n === zone.channelNumbers[i]);
-    if (!inOrder) {
-      pushGeneralInfoWarning(
-        warnings,
-        `Zone "${name.text}": the radio steps through its channels in channel-number order.`,
-      );
-    }
-    zones.push({
-      wireName: name.text,
-      channelNumbers: ascending,
-      ...scanSetWithin(zone, ascending),
-    });
+    const members = [...new Set(zone.channelNumbers)];
+    zones.push({ wireName: name.text, channelNumbers: members, ...scanSetWithin(zone, members) });
   }
   if (zones.length > input.maxZones) {
     const dropped = zones.length - input.maxZones;
@@ -193,7 +161,36 @@ export function projectRt95Mm9pdy(input: Rt95Mm9pdyProjectionInput): {
     );
   }
 
-  pushZoneScanSetNotWrittenWarning(zones, warnings);
+  const sectionZones = zones.map((zone) => ({
+    name: zone.wireName,
+    channelIndexes: zone.channelNumbers.map((n) => n - 1),
+    scanIndexes: (zone.scanChannelNumbers ?? zone.channelNumbers).map((n) => n - 1),
+  }));
+  const sections = encodeRt95Sections(sectionZones, 1);
+  checkZoneScanSets(
+    zones.map((zone) => ({
+      zoneName: zone.wireName,
+      scanChannelNumbers: zone.scanChannelNumbers ?? zone.channelNumbers,
+    })),
+    {},
+    warnings,
+  );
+  checkZoneOrderRoom(
+    zones.map((zone) => ({ zoneName: zone.wireName, channelNumbers: zone.channelNumbers })),
+    () => sections.MMDO.info.fallback,
+    warnings,
+  );
+  if (
+    sections.MMDS.info.kinds.includes(1) ||
+    sectionZones.some((zone) =>
+      zone.channelIndexes.some((n, i) => n !== [...zone.channelIndexes].sort((a, b) => a - b)[i]),
+    )
+  ) {
+    pushGeneralInfoWarning(
+      warnings,
+      "Firmware older than 1.2.0 ignores zone scan sets and zone order. It uses each channel's Scan in All channels setting and follows channel-number order instead.",
+    );
+  }
 
   return { channels, zones };
 }

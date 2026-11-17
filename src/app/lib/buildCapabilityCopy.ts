@@ -196,13 +196,13 @@ export function conceptsForCapabilities(
       id: 'zone-scan',
       title: 'Scanning follows the zone',
       body: set.has(BuildCapabilityTrait.ZoneScanSet)
-        ? "In a zone, Scan visits the zone's scan set (its members set to Scan in this zone). On the UV-5R Mini with MM9PDY firmware that supports zone order, it follows the zone order; older firmware and the RT95 follow channel-number order. In All channels, Scan visits channels whose Scan in All channels flag is on."
+        ? "In a zone, Scan visits the zone's scan set (its members set to Scan in this zone). With supported MM9PDY firmware, it follows the zone order; older firmware follows channel-number order. In All channels, Scan visits channels whose Scan in All channels flag is on."
         : "Scan visits the zone's channels that have scan on, in channel-number order.",
     });
     concepts.push({
       id: 'zone-channel-order',
       title: 'Zone order on the radio',
-      body: 'On the UV-5R Mini, MM9PDY firmware that supports zone order keeps the order set in Studio. Older firmware and the RT95 show channels in channel-number order.',
+      body: 'MM9PDY firmware that supports zone order keeps the order set in Studio. Older firmware shows channels in channel-number order.',
     });
     concepts.push({
       id: 'channel-descriptions',
