@@ -1,9 +1,10 @@
-import type {
-  DecodedDiff,
-  DecodedIdentity,
-  FieldDiff,
-  RecordDiff,
-  RecordDiffKind,
+import {
+  identityText,
+  recordTitle,
+  type DecodedDiff,
+  type FieldDiff,
+  type RecordDiffKind,
+  type RecordDiff,
 } from '@integrations/radio-io/debugCompare/index.ts';
 import {
   Badge,
@@ -19,6 +20,7 @@ import {
 } from '@mantine/core';
 import { useState } from 'react';
 import { SensitiveRevealButton } from '@app/components/debug/index.ts';
+import { formatAddress } from '../viewerUtils.ts';
 
 export const ALL_CATEGORIES = 'all';
 const PAGE_SIZE = 30;
@@ -38,20 +40,8 @@ const KIND_LABEL: Record<RecordDiffKind, string> = {
   incomparable: 'not comparable',
 };
 
-/** Callsign first, then name; the name alone when there is no callsign. */
-export function identityText(id: DecodedIdentity | undefined): string {
-  if (!id) return '';
-  return [id.callsign, id.name].filter(Boolean).join(' ');
-}
-
-function headline(r: RecordDiff): string {
-  const slot = r.slot === undefined ? '' : `Slot ${r.slot}`;
-  const a = identityText(r.identityA);
-  const b = identityText(r.identityB);
-  const current = b || a;
-  const was = a && b && a !== b ? ` (was ${a})` : '';
-  return [slot, `${current}${was}`.trim()].filter(Boolean).join(' · ') || r.key;
-}
+export { identityText };
+const headline = recordTitle;
 
 function Cell({ field, side, revealed }: { field: FieldDiff; side: 'a' | 'b'; revealed: boolean }) {
   const value = field[side];
@@ -83,6 +73,8 @@ function Record({
   revealed: boolean;
 }) {
   const fields = onlyChanges ? record.fields.filter((f) => f.kind !== 'unchanged') : record.fields;
+  // The Address column shows only when the decoder gave this record's fields addresses.
+  const addressed = fields.some((f) => f.address !== undefined);
   return (
     <Stack gap={4} role="group" aria-label={headline(record)}>
       <Group gap="xs">
@@ -106,6 +98,7 @@ function Record({
               <Table.Th>Field</Table.Th>
               <Table.Th>A</Table.Th>
               <Table.Th>B</Table.Th>
+              {addressed && <Table.Th>Address</Table.Th>}
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -125,6 +118,9 @@ function Record({
                       <Cell field={f} side="a" revealed={revealed} />
                       <Cell field={f} side="b" revealed={revealed} />
                     </>
+                  )}
+                  {addressed && (
+                    <Table.Td>{f.address === undefined ? '' : formatAddress(f.address)}</Table.Td>
                   )}
                 </Table.Tr>
               );

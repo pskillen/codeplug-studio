@@ -178,6 +178,7 @@ function settingsDomain(archive: DebugCompareArchive): DecodedDomain {
         fields: fields.map((f) => ({
           id: `${f.address.toString(16)}:${f.mask ?? 0}:${f.id}`,
           label: f.label,
+          address: f.address,
           value:
             f.status === 'captured' ? (f.value ?? (f.raw ? hex(f.raw) : undefined)) : undefined,
           // The power-on password: compared, never shown unless revealed.
@@ -209,6 +210,7 @@ function calibrationDomain(archive: DebugCompareArchive): DecodedDomain {
         identity: { name: 'Calibration and production record' },
         fields: fields.map((f) => ({
           id: `${f.address.toString(16)}:${f.width}`,
+          address: f.address,
           label:
             f.meaning === 'unused'
               ? `${f.label} (0x${f.address.toString(16).toUpperCase()})`

@@ -263,7 +263,7 @@ it('labels RT95 hex and comparison rows with their provenance', async () => {
   expect(screen.getByLabelText('Byte comparison')).toHaveTextContent('0x00003B00 [body] A');
 });
 
-it('labels each decoded RT95 change with unknown provenance', async () => {
+it('lists each decoded RT95 change under its section', async () => {
   const before = buildSyntheticRt95Image();
   const image = memoryMapFromBytes(before);
   encodeChannelsIntoImage(image, [
@@ -298,7 +298,7 @@ it('labels each decoded RT95 change with unknown provenance', async () => {
     </MantineProvider>,
   );
   fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [file] } });
-  expect(await screen.findByText(/Channel slot 7: .*LOCAL \[unknown\]/)).toBeInTheDocument();
+  expect(await screen.findByText(/Slot 7 · LOCAL · Radio name: .* → LOCAL/)).toBeInTheDocument();
 });
 
 it('accepts a controlled comparison archive without an upload control', () => {

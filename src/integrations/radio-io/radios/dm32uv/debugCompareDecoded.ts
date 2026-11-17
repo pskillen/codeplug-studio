@@ -284,6 +284,7 @@ function settingsDomain(archive: DebugCompareArchive): DecodedDomain {
         fields: settings.fields.map((f) => ({
           id: f.id,
           label: f.label,
+          address: f.address,
           value:
             f.status !== 'captured'
               ? undefined
