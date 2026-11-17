@@ -18,7 +18,7 @@ import {
 import { planRt95Stages } from './plannedStages.ts';
 import { Rt95Protocol, setRt95EndAtForTests, setRt95RetryTuningForTests } from './protocol.ts';
 import { RT95_WRITE_VERIFY_HOOKS } from './writeVerifyHooks.ts';
-import { rt95ModDataIntentFromOrganisation } from './modDataIntent.ts';
+import { rt95ModDataBlockCount, rt95ModDataIntentFromOrganisation } from './modDataIntent.ts';
 
 const STOCK_WRITES = RT95_IMAGE_SIZE / 16;
 
@@ -30,6 +30,17 @@ function fromHex(h: string): Uint8Array {
 }
 function intentOf(v: Mmd1Vector): Rt95ModDataInput {
   return { zones: v.zones, descriptions: v.descriptions };
+}
+/** Zone 1 is ascending with a scan set; zone 2 has the same members in reverse, so both sections carry records. */
+function sectionsIntent(): Rt95ModDataInput {
+  return {
+    writeSections: true,
+    zones: [
+      { name: 'FIRST', channelIndexes: [0, 1, 2], scanIndexes: [0, 2] },
+      { name: 'SECOND', channelIndexes: [2, 1, 0] },
+    ],
+    descriptions: [{ channelIndex: 0, text: 'Calling' }],
+  };
 }
 function dtos(): RadioChannelDto[] {
   return MMD1_VECTOR_CHANNELS.map((c) => ({
@@ -310,6 +321,73 @@ describe('RT95 MM9PDY verify', () => {
     );
     expect(result.ok).toBe(true);
     expect(result.regions.some((r) => r.id === 'zones')).toBe(false);
+  });
+});
+
+describe('RT95 MM9PDY Write with the MMDS and MMDO sections', () => {
+  it('writes as many blocks as the planner counts, sections before the header', async () => {
+    const intent = sectionsIntent();
+    const pipe = createFakeRt95Pipe();
+    await write(pipe, intent);
+    const modWrites = wAddrs(pipe).filter((a) => a > RT95_BLOCK_ADDR_END);
+    expect(modWrites).toHaveLength(rt95ModDataBlockCount(intent));
+    expect(modWrites.at(-1)).toBe(0x4000);
+    expect(modWrites).toEqual(expect.arrayContaining([0x4700, 0x4b00]));
+    expect(modWrites.indexOf(0x4700)).toBeLessThan(modWrites.indexOf(0x4000));
+    expect(modWrites.indexOf(0x4b00)).toBeLessThan(modWrites.indexOf(0x4000));
+    expectNoForbiddenWrites(pipe);
+    const plan = planRt95Stages('write', {
+      prepared: {
+        channels: dtos(),
+        organisation: {
+          writeRt95ModData: true,
+          zones: [
+            { wireName: 'FIRST', channelNumbers: [1, 2, 3], scanChannelNumbers: [1, 3] },
+            { wireName: 'SECOND', channelNumbers: [3, 2, 1] },
+          ],
+        },
+      },
+    });
+    const stock = planRt95Stages('write', {});
+    expect(plan[0]!.weight).toBeGreaterThan(stock[0]!.weight);
+  });
+
+  async function writeAndVerify(corrupt?: (pipe: FakeRt95Pipe) => void) {
+    const pipe = createFakeRt95Pipe({ deafAfterEndMs: 60 });
+    const radio = await write(pipe, sectionsIntent());
+    corrupt?.(pipe);
+    const session = { radio, pipe } as unknown as RadioSession;
+    const pending = RT95_WRITE_VERIFY_HOOKS.captureAfterUpload(session);
+    const result = await RT95_WRITE_VERIFY_HOOKS.runVerify(session, pending!);
+    return { result, pipe };
+  }
+
+  it('verify reads the section blocks back', async () => {
+    const { result, pipe } = await writeAndVerify();
+    expect(result.ok).toBe(true);
+    const reads = pipe.log.filter((e) => e.op === 'R').map((e) => e.addr);
+    expect(reads).toEqual(expect.arrayContaining([0x4700, 0x4b00]));
+  });
+
+  it.each([0x4700, 0x4b00])(
+    'verify reports a mismatch when section block %i is corrupted',
+    async (addr) => {
+      const { result } = await writeAndVerify((pipe) => {
+        pipe.eeprom[addr] = pipe.eeprom[addr]! ^ 0xff;
+      });
+      expect(result.ok).toBe(false);
+      expect(result.regions.find((r) => r.id === 'zones')?.status).toBe('mismatch');
+    },
+  );
+
+  it('Restore with an intent set writes nothing above the last stock block (0x3290)', async () => {
+    const pipe = createFakeRt95Pipe();
+    const radio = new Rt95Protocol();
+    await radio.connect(pipe);
+    const prior = await radio.download();
+    radio.setModDataIntent(sectionsIntent());
+    await radio.upload(prior, { operation: 'restore' });
+    expect(wAddrs(pipe).filter((a) => a > RT95_BLOCK_ADDR_END)).toEqual([]);
   });
 });
 
