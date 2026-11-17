@@ -45,7 +45,9 @@ function RadioAnswerReadOnly({
   complete: boolean;
   onChange: (() => void) | undefined;
 }) {
-  const lines: [string, string][] = [[question.firmwareLabel, answers.firmware]];
+  const lines: [string, string][] = question.omitFirmwareLine
+    ? []
+    : [[question.firmwareLabel, answers.firmware]];
   if (question.suffixLabel) lines.push([question.suffixLabel, answers.suffix ?? '']);
   lines.push([question.hardwareLabel, answers.hardware]);
   return (
@@ -144,7 +146,7 @@ export default function PrepareStep({ state, dispatch, updater }: WizardStepProp
     loadedLayouts(loadedPatch).length > 0 &&
     !partnerFor(loadedPatch, image.radioLayout, {
       refusedBase: image.baseName,
-      variantOfBase: updater.stock.releaseLayouts?.variantOfBase,
+      variantOfBase: image.radioReported ? updater.stock.releaseLayouts?.variantOfBase : undefined,
     });
   useEffect(() => {
     if (!stock || !choice || image || radioLayout === null || unavailable) return;

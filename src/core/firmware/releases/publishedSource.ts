@@ -153,9 +153,8 @@ export function createPublishedFirmwareReleaseSource(
         );
     },
     async loadPatch(radioId, key) {
-      const releases = (await loadRows()).filter(
-        (r) => r.radioId === radioId && publishedReleaseKey(r) === key,
-      );
+      const all = await loadRows();
+      const releases = all.filter((r) => r.radioId === radioId && publishedReleaseKey(r) === key);
       const descriptor = descriptors.find((d) => d.radioId === radioId);
       if (releases.length === 0 || !descriptor) {
         throw new FirmwareError(
@@ -165,7 +164,21 @@ export function createPublishedFirmwareReleaseSource(
       }
       if (!descriptor.releaseLayouts) return loadRow(releases[0]!, descriptor);
       const files = await Promise.all(releases.map((r) => loadRow(r, descriptor)));
-      return combineLayoutFiles(files, descriptor, `Release ${releases[0]!.tag}`);
+      const primary = combineLayoutFiles(files, descriptor, `Release ${releases[0]!.tag}`);
+      // Same version on another stock base stays its own release in the list. It is kept here so a stock radio
+      // that was sent one layout's file can be sent the other when the radio refuses the first.
+      const tag = releases[0]!.tag;
+      const ownKeys = new Set(releases.map((r) => publishedReleaseKey(r)));
+      const siblings = all.filter(
+        (r) =>
+          r.radioId === radioId &&
+          r.tag === tag &&
+          r.base !== undefined &&
+          !ownKeys.has(publishedReleaseKey(r)),
+      );
+      if (siblings.length === 0) return primary;
+      const extra = await Promise.all(siblings.map((r) => loadRow(r, descriptor)));
+      return { ...primary, otherLayouts: [...(primary.otherLayouts ?? []), ...extra] };
     },
   };
 }

@@ -497,12 +497,7 @@ describe('the "Your radio" check step (#1670)', () => {
   });
 
   it('stops an unsupported radio at the check step', () => {
-    for (const a of [
-      answer('V0.04', 'NRF'),
-      answer('Other', 'NRF'),
-      answer('V0.27', 'Other'),
-      answer('V0.27', 'NRF', 'Other'),
-    ]) {
+    for (const a of [answer('V0.27', 'Other'), answer('V0.04', 'NRF', 'Other'), answer('', '')]) {
       const s = answered(a);
       expect(canAdvance(s)).toBe(false);
       expect(reduce(s, { type: 'next' }).step).toBe('check');
@@ -521,24 +516,21 @@ describe('the "Your radio" check step (#1670)', () => {
     expect(reduce(s, { type: 'next' }).step).toBe('stock');
   });
 
-  it("drops a chosen release when the radio's answers change to one it has no file for, and keeps it otherwise", () => {
+  it('keeps the L1 release for either known suffix, and drops it when the suffix is not one Studio lists', () => {
     let s = reduce(answered(answer('V0.27', 'NRF')), { type: 'next' });
-    s = reduce(reduce(s, choose(RELEASE_L2)), { type: 'next' });
+    s = reduce(reduce(s, choose(RELEASE_L1)), { type: 'next' });
     expect(s.step).toBe('stock');
     s = reduce(s, { type: 'goTo', step: 'check' });
     expect(s.step).toBe('check');
-    // The same answers again: the release still has a file for the radio.
+    // The same answers again, and the other known suffix: a stock radio is sent the L1 file either way.
     s = reduce(s, answer('V0.27', 'NRF'));
-    expect(s.loadedPatch).toBe(RELEASE_L2);
-    // Another base: the release is dropped, and the way on to Firmware stays open to choose again.
+    expect(s.loadedPatch).toBe(RELEASE_L1);
     s = reduce(s, answer('V0.04', 'NRFB'));
-    expect(s.choice).toBeNull();
-    expect(s.loadedPatch).toBeNull();
-    expect(canAdvance(s)).toBe(true);
-    s = reduce(s, { type: 'next' });
-    expect(s.step).toBe('firmware');
+    expect(s.loadedPatch).toBe(RELEASE_L1);
+    // An unlisted suffix is not a radio Studio can update, so the wizard stays on the check.
+    s = reduce(s, answer('V0.04', 'Other'));
     expect(canAdvance(s)).toBe(false);
-    expect(reduce(s, { type: 'goTo', step: 'stock' }).step).toBe('firmware');
+    expect(reduce(s, { type: 'next' }).step).toBe('check');
   });
 
   it('drops a chosen release when a new read of the radio names another base', () => {
@@ -566,7 +558,7 @@ describe('the "Your radio" check step (#1670)', () => {
     let s = answered(answer('V0.27', 'NRF'));
     for (const a of [
       { type: 'next' },
-      choose(RELEASE_L2),
+      choose(RELEASE_L1),
       { type: 'next' },
       { type: 'stockVerified', stock: STOCK },
       { type: 'next' },
@@ -579,7 +571,7 @@ describe('the "Your radio" check step (#1670)', () => {
     expect(s.step).toBe('preflight');
     s = reduce(s, { type: 'goTo', step: 'check' });
     expect(s.step).toBe('check');
-    s = reduce(s, answer('V0.04', 'NRFB'));
+    s = reduce(s, answer('V0.04', 'Other'));
     expect(s.image).toBeNull();
     expect(s.checks.battery).toBe(false);
     expect(s.stock).toBe(STOCK);

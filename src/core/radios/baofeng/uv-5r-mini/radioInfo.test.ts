@@ -3,10 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { fromHex, RADIO_REPORT_EXAMPLE_HEX } from './__fixtures__/radioReportFrame.ts';
 import {
   normaliseRadioInfoLine,
-  UV5RMINI_FIRMWARE_NOT_SUPPORTED,
-  UV5RMINI_FIRMWARE_OPTIONS,
   UV5RMINI_HARDWARE_OPTIONS,
-  UV5RMINI_NO_BUILD_FOR_RADIO,
   UV5RMINI_RADIO_INFO_REFUSAL,
   UV5RMINI_RADIO_INFO_WARNING,
   UV5RMINI_RADIO_LAYOUT_QUESTION,
@@ -16,27 +13,25 @@ import {
   uv5rMiniVariantOfBase,
 } from './radioInfo.ts';
 
-const ask = (firmware: string, suffix: string, hardware: string) =>
+const ask = (suffix: string, hardware: string, firmware = '') =>
   uv5rMiniLayoutFromRadioInfo({ firmware, suffix, hardware });
-const NRFB_V004 = { kind: 'layout', layout: 'L1', codeBase: 'nrfb-v0.04' } as const;
-const NRF_V027 = { kind: 'layout', layout: 'L2', codeBase: 'nrf-v0.27' } as const;
+const FIRST = { kind: 'layout', layout: 'L1', codeBase: 'nrfb-v0.04' } as const;
 const REFUSED = { kind: 'refused', message: UV5RMINI_RADIO_INFO_REFUSAL } as const;
-const NOT_SUPPORTED = { kind: 'refused', message: UV5RMINI_FIRMWARE_NOT_SUPPORTED } as const;
 
 describe('uv5rMiniLayoutFromRadioInfo', () => {
-  it('offers dropdowns of the supported values: Firmware, suffix and Hardware', () => {
-    expect(UV5RMINI_FIRMWARE_OPTIONS).toEqual(['V0.04', 'V0.27', 'Other']);
+  it('offers dropdowns of the supported values: suffix and Hardware, and no Firmware line', () => {
     expect(UV5RMINI_SUFFIX_OPTIONS).toEqual(['NRF', 'NRFB', 'Other']);
     expect(UV5RMINI_HARDWARE_OPTIONS).toEqual(['V1.7', 'Other']);
     const q = UV5RMINI_RADIO_LAYOUT_QUESTION;
-    expect(q.firmwareOptions).toBe(UV5RMINI_FIRMWARE_OPTIONS);
+    expect(q.omitFirmwareLine).toBe(true);
+    expect(q.firmwareOptions).toBeUndefined();
     expect(q.suffixOptions).toBe(UV5RMINI_SUFFIX_OPTIONS);
     expect(q.hardwareOptions).toBe(UV5RMINI_HARDWARE_OPTIONS);
   });
 
-  it('says where each line is: Firmware and Hardware on Radio Info, the suffix on the hold-8 start-up screen', () => {
+  it('says where each line is: Hardware on Radio Info, the suffix on the hold-8 start-up screen', () => {
     const q = UV5RMINI_RADIO_LAYOUT_QUESTION;
-    expect(q.firmwareHelp).toBe('From Radio Info (MENU → Radio Info).');
+    expect(q.firmwareHelp).toBeUndefined();
     expect(q.hardwareHelp).toBe('From Radio Info (MENU → Radio Info).');
     expect(q.suffixLabel).toBe('Suffix');
     expect(q.suffixHelp).toBe(
@@ -44,77 +39,54 @@ describe('uv5rMiniLayoutFromRadioInfo', () => {
     );
   });
 
-  it('maps a whole base: NRFB V0.04 is nrfb-v0.04 (L1), NRF V0.27 is nrf-v0.27 (L2)', () => {
-    expect(ask('V0.04', 'NRFB', 'V1.7')).toEqual(NRFB_V004);
-    expect(ask('V0.27', 'NRF', 'V1.7')).toEqual(NRF_V027);
+  it('sends the L1 file first for either known suffix, whatever the Firmware line', () => {
+    expect(ask('NRFB', 'V1.7')).toEqual(FIRST);
+    expect(ask('NRF', 'V1.7')).toEqual(FIRST);
+    expect(ask('NRF', 'V1.7', 'V0.27')).toEqual(FIRST);
+    expect(ask('NRFB', 'V1.7', 'V0.04')).toEqual(FIRST);
+    expect(ask('NRF', 'V1.7', 'Other')).toEqual(FIRST);
   });
 
-  it('refuses a combination with no base as having no build yet, never the nearest one', () => {
-    expect(ask('V0.04', 'NRF', 'V1.7')).toEqual({
-      kind: 'refused',
-      message: UV5RMINI_NO_BUILD_FOR_RADIO('NRF', 'V0.04'),
-    });
-    expect(ask('V0.27', 'NRFB', 'V1.7')).toEqual({
-      kind: 'refused',
-      message: UV5RMINI_NO_BUILD_FOR_RADIO('NRFB', 'V0.27'),
-    });
-    expect(UV5RMINI_NO_BUILD_FOR_RADIO('NRF', 'V0.04')).toBe(
-      'There is no MM9PDY build for this radio (NRF V0.04) yet; nothing was sent.',
-    );
-  });
-
-  it('refuses Other, or any unlisted line, as not supported', () => {
-    for (const fw of ['Other', 'V0.05', 'V0.30', 'V1.00', 'mm9pdy-L1-1.0.0']) {
-      expect(ask(fw, 'NRF', 'V1.7')).toEqual(NOT_SUPPORTED);
-    }
+  it('refuses Other, or any unlisted suffix, as not supported', () => {
     for (const sfx of ['Other', 'NRFC']) {
-      expect(ask('V0.27', sfx, 'V1.7')).toEqual({
+      expect(ask(sfx, 'V1.7')).toEqual({
         kind: 'refused',
         message: UV5RMINI_SUFFIX_NOT_SUPPORTED,
       });
     }
-    expect(ask('Other', 'Other', 'Other')).toEqual(REFUSED);
+    expect(ask('Other', 'Other')).toEqual(REFUSED);
   });
 
-  it('warns accurately: a wrong Firmware or suffix pick is refused, a wrong Hardware pick is not caught', () => {
+  it('warns without a settings warning: an unknown suffix or Hardware line stops the update', () => {
     expect(UV5RMINI_RADIO_LAYOUT_QUESTION.warning).toBe(UV5RMINI_RADIO_INFO_WARNING);
-    expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(/exactly what the radio shows/);
-    expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(
-      /Firmware or suffix you pick is wrong, Studio or the radio refuses the file and nothing is installed/,
-    );
-    expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(/FM presets and volume may be reset/);
-    expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(/Hardware line is wrong, nothing stops the update/);
-    expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(/doesn't know yet may not be caught/);
-    // The claim is scoped: never that any wrong pick is refused.
-    expect(UV5RMINI_RADIO_INFO_WARNING).not.toMatch(/If what you pick doesn't match/);
+    expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(/suffix and Hardware line the radio shows/);
+    expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(/unknown suffix or Hardware line stops the update/);
+    expect(UV5RMINI_RADIO_INFO_WARNING).toMatch(/sends one file first/);
+    expect(UV5RMINI_RADIO_INFO_WARNING).not.toMatch(/FM presets|volume|settings/);
     expect(UV5RMINI_RADIO_INFO_WARNING).not.toMatch(/brick/i);
   });
 
   it('reads the lines loosely: case, spaces and a missing V', () => {
-    expect(ask(' v0.04 ', 'nrfb ', '1.7')).toEqual(NRFB_V004);
-    expect(ask('0.27', 'Nrf', 'v 1.7')).toEqual(NRF_V027);
+    expect(ask('nrfb ', '1.7')).toEqual(FIRST);
+    expect(ask('Nrf', 'v 1.7')).toEqual(FIRST);
     expect(normaliseRadioInfoLine('v 0.04')).toBe('V0.04');
   });
 
-  it('refuses a Hardware line not proven, whatever the other lines', () => {
-    for (const [fw, hw] of [
-      ['V0.04', 'V1.6'],
-      ['V0.27', 'V1.8'],
-      ['V0.27', 'V2.0'],
-      ['V0.04', 'V0.04'],
-      ['V0.27', 'Other'],
-    ] as const) {
-      expect(ask(fw, 'NRF', hw)).toEqual(REFUSED);
+  it('refuses a Hardware line not proven, whatever the suffix', () => {
+    for (const hw of ['V1.6', 'V1.8', 'V2.0', 'V0.04', 'Other'] as const) {
+      expect(ask('NRF', hw)).toEqual(REFUSED);
     }
     expect(UV5RMINI_RADIO_INFO_REFUSAL).toBe(
       "Studio hasn't been proven on this radio's Hardware version; nothing was sent.",
     );
   });
 
-  it('waits for all three lines', () => {
-    expect(ask('', 'NRF', 'V1.7')).toEqual({ kind: 'incomplete' });
-    expect(ask('V0.27', '', 'V1.7')).toEqual({ kind: 'incomplete' });
-    expect(ask('V0.27', 'NRF', ' ')).toEqual({ kind: 'incomplete' });
+  it('waits for the suffix and the Hardware line, and does not wait for a Firmware line', () => {
+    expect(ask('', 'V1.7')).toEqual({ kind: 'incomplete' });
+    expect(ask('NRF', ' ')).toEqual({ kind: 'incomplete' });
+    expect(uv5rMiniLayoutFromRadioInfo({ firmware: '', suffix: 'NRF', hardware: 'V1.7' })).toEqual(
+      FIRST,
+    );
     expect(uv5rMiniLayoutFromRadioInfo({ firmware: 'V0.27', hardware: 'V1.7' })).toEqual({
       kind: 'incomplete',
     });
@@ -126,17 +98,16 @@ describe('uv5rMiniLayoutFromRadioInfo', () => {
     expect(uv5rMiniVariantOfBase('synthetic')).toBeUndefined();
   });
 
-  it('asks only the three lines and never calls L1/L2 a hardware layout', () => {
+  it('asks the suffix and Hardware line, not the Firmware line, and never calls L1/L2 a hardware layout', () => {
     const q = UV5RMINI_RADIO_LAYOUT_QUESTION;
     expect(Object.keys(q).sort()).toEqual(
       [
-        'firmwareHelp',
         'firmwareLabel',
-        'firmwareOptions',
         'hardwareHelp',
         'hardwareLabel',
         'hardwareOptions',
         'intro',
+        'omitFirmwareLine',
         'report',
         'resolve',
         'steps',

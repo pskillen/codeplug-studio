@@ -145,14 +145,17 @@ export default function FlashStep({
     error: null,
   });
 
-  // The release's file for the radio's other layout, offered once after a refusal before anything was installed. Only a
-  // file of the same variant (UV-5R Mini: NRF or NRFB) is a partner; with today's two bases there is none.
+  // The release's file for the radio's other layout, offered once after a refusal before anything was installed. A
+  // radio that reported its own code base stays on that variant. A stock radio (no report) is offered the other
+  // layout's file of this release even when the two files differ in suffix: the first file was a guess.
   const refusedLayout = image.radioLayout;
   const partner =
     refusedLayout && state.loadedPatch
       ? partnerFor(state.loadedPatch, refusedLayout, {
           refusedBase: image.baseName,
-          variantOfBase: updater.stock.releaseLayouts?.variantOfBase,
+          variantOfBase: image.radioReported
+            ? updater.stock.releaseLayouts?.variantOfBase
+            : undefined,
         })
       : undefined;
   const retry: LayoutRetryOffer =

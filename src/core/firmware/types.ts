@@ -202,6 +202,11 @@ export interface FirmwareRadioLayoutQuestion {
   readonly firmwareLabel: string;
   readonly hardwareLabel: string;
   /**
+   * When set, the wizard does not ask the Firmware line. `resolve` must not need `answers.firmware`. The UV-5R Mini
+   * sends one layout's file first and the other if the radio refuses it.
+   */
+  readonly omitFirmwareLine?: true;
+  /**
    * The values the operator picks from, in order, where the lines are dropdowns of supported values rather than typed
    * (UV-5R Mini: Firmware `V0.04`, `V0.27`, `Other`; Hardware `V1.7`, `Other`).
    */
