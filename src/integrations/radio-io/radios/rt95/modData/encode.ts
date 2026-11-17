@@ -11,6 +11,7 @@ import {
   MMD1_SLOT_BYTES,
   MMD1_VERSION,
 } from './layout.ts';
+import { concatBytes, mapGeneration, u16le } from './bytes.ts';
 import { encodeRt95Sections, type Rt95SectionInfo } from './sections.ts';
 import { assertRt95WriteAllowed } from './writeInterlock.ts';
 
@@ -50,6 +51,8 @@ export class Rt95ModDataError extends Error {
   }
 }
 
+export { concatBytes, mapGeneration, u16le };
+
 /** Header flag bit 0: descriptions present. */
 export const MMD1_FLAG_DESCRIPTIONS = 0x01;
 
@@ -63,28 +66,6 @@ export function isPrintableAscii(text: string, allowUnderscore: boolean): boolea
     if (!allowUnderscore && c === 0x5f) return false;
   }
   return true;
-}
-
-export function u16le(value: number): [number, number] {
-  return [value & 0xff, (value >> 8) & 0xff];
-}
-
-/** Map 0x0000 to 0x0001 and 0xFFFF to 0xFFFE. */
-export function mapGeneration(crc: number): number {
-  if (crc === 0x0000) return 0x0001;
-  if (crc === 0xffff) return 0xfffe;
-  return crc;
-}
-
-export function concatBytes(parts: readonly Uint8Array[]): Uint8Array {
-  const total = parts.reduce((n, p) => n + p.length, 0);
-  const out = new Uint8Array(total);
-  let off = 0;
-  for (const p of parts) {
-    out.set(p, off);
-    off += p.length;
-  }
-  return out;
 }
 
 /** CRC-8 over the encoded record's RX frequency (+0x00..+0x03) and name (+0x18..+0x1D). */

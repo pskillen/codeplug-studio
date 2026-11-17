@@ -1,5 +1,5 @@
 import { crc16CcittFalse } from '../../../kit/checksums.ts';
-import { concatBytes, mapGeneration, u16le } from './encode.ts';
+import { concatBytes, mapGeneration, u16le } from './bytes.ts';
 import {
   MMD1_BLOCK_BYTES,
   MMDS_ADDR,
@@ -12,13 +12,24 @@ import {
 } from './layout.ts';
 import type { Rt95ModBlock, Rt95ModZone } from './encode.ts';
 
+/** What a section encoded: its generation, record bytes, per-zone kind bits and the zones that fell back. */
 export interface Rt95SectionInfo {
   generation: number;
+  /** Record bytes after the section header. */
   length: number;
+  /** One entry per zone: 1 = a custom record is written, 0 = the default (ascending, or all channels). */
   kinds: number[];
+  /** Zones whose custom order did not fit in MMDO and were written as the default. */
   fallback: number[];
 }
 
+export interface Rt95SectionEncoded {
+  info: Rt95SectionInfo;
+  /** Blocks 1.. ascending, then block 0 (the header block) last. */
+  blocks: Rt95ModBlock[];
+}
+
+/** Encode one MMD1 section (MMDS or MMDO): header, kind bits and the records of the zones that have one. */
 function encodeSection(
   magic: string,
   address: number,
@@ -26,7 +37,7 @@ function encodeSection(
   kinds: number[],
   data: Uint8Array[],
   fallback: number[],
-): { info: Rt95SectionInfo; blocks: Rt95ModBlock[] } {
+): Rt95SectionEncoded {
   const bits = new Uint8Array(4);
   kinds.forEach((kind, i) => {
     bits[i >> 3]! |= kind << (i & 7);
@@ -70,12 +81,20 @@ function encodeSection(
   return { info: { generation, length: records.length, kinds, fallback }, blocks };
 }
 
-export function encodeRt95Sections(zones: readonly Rt95ModZone[], zoneGeneration: number) {
-  const scanKinds: number[] = [],
-    scanData: Uint8Array[] = [],
-    orderKinds: number[] = [],
-    orderData: Uint8Array[] = [],
-    fallback: number[] = [];
+/**
+ * Encode the zone scan-set (MMDS) and member-order (MMDO) sections for the zones as they will be written.
+ * `channelIndexes` is the zone order; a scan set is custom when it omits a member; an order is custom when it
+ * is not ascending. Orders are admitted in zone order until MMDO's data capacity is full, then fall back.
+ */
+export function encodeRt95Sections(
+  zones: readonly Rt95ModZone[],
+  zoneGeneration: number,
+): { MMDS: Rt95SectionEncoded; MMDO: Rt95SectionEncoded } {
+  const scanKinds: number[] = [];
+  const scanData: Uint8Array[] = [];
+  const orderKinds: number[] = [];
+  const orderData: Uint8Array[] = [];
+  const fallback: number[] = [];
   let used = 0;
   zones.forEach((zone, i) => {
     const sorted = [...zone.channelIndexes].sort((a, b) => a - b);
