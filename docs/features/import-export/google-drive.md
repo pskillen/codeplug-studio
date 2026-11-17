@@ -118,6 +118,8 @@ Implementation: `src/integrations/cloud/googleDrive.ts`, `src/integrations/cloud
 
 `RefreshFromDriveBanner` stays in main content when a newer remote copy is detected (automatic or manual check).
 
+**Review re-reads Drive.** Clicking **Review** (or **Refresh from Drive**) fetches the linked file again and only then opens the which-copy modal. The modal's diff and the YAML that **Use Drive copy** imports come from that one fetch, so what the operator reviews is exactly what is imported, even if another machine saved to Drive after the banner first appeared. The sync baseline (`syncedAt`) recorded after import is that fetch's Drive `modifiedTime`, not a later metadata read. If Drive no longer differs on re-read, the banner closes and no modal opens; if the re-read fails, the error shows beside the banner and the modal stays closed.
+
 ### Session lifecycle (#286)
 
 `DriveSessionProvider` is the single source of truth for OAuth state:
@@ -233,6 +235,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 - [ ] Switch project with newer Drive file → **Refresh from Drive** banner
 - [ ] Linked Drive file with mismatched `project.id` → mismatch banner → adopt or import as new
 - [ ] Failed refresh import → error shown in modal (not console-only)
+- [ ] Machine A shows the newer-copy banner; Machine B saves more changes to Drive; Machine A **Review** → modal lists B's latest changes → **Use Drive copy** loads them (no delete and re-import)
 - [ ] Machine B saves → Machine A **Save to Drive** → conflict modal (not silent overwrite)
 - [ ] Linked Drive file with mismatched `project.id` → **Save to Drive** → UUID mismatch warning before write
 - [ ] Save to Drive → re-save defaults to last file; overwrite requires confirm
