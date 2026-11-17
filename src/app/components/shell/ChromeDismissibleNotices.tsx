@@ -22,6 +22,7 @@ export default function ChromeDismissibleNotices() {
     diff,
     overwriteOpen,
     importing,
+    checking,
     error: refreshError,
     idMismatch,
     localProjectId,
@@ -39,8 +40,8 @@ export default function ChromeDismissibleNotices() {
 
   const driveLinked = Boolean(activeProject?.interchange?.googleDrive);
   const showDriveUpdate = bannerOpen && activeProjectId != null;
-  const showRefreshError =
-    Boolean(refreshError) && !showDriveUpdate && !overwriteOpen && driveLinked;
+  // Also shown beside the banner: a failed **Review** re-check leaves the banner up.
+  const showRefreshError = Boolean(refreshError) && !overwriteOpen && driveLinked;
   const showSaveError = Boolean(saveError) && !conflictOpen && driveLinked;
   const showDisconnected = driveLinked && sessionExpired && !connected && activeProjectId != null;
 
@@ -49,7 +50,11 @@ export default function ChromeDismissibleNotices() {
       {showDriveUpdate ? (
         <DismissibleNotice
           tone="warning"
-          action={{ label: 'Review', onClick: openOverwrite }}
+          action={{
+            label: checking ? 'Checking…' : 'Review',
+            onClick: () => void openOverwrite(),
+            disabled: checking,
+          }}
           onDismiss={dismissBanner}
         >
           {idMismatch

@@ -9,6 +9,7 @@ export type DismissibleNoticeTone = 'warning' | 'info';
 export interface DismissibleNoticeAction {
   label: string;
   onClick: () => void;
+  disabled?: boolean;
 }
 
 export interface DismissibleNoticeProps {
@@ -51,7 +52,11 @@ export default function DismissibleNotice({
       <Icon size={ICON_SIZE_NAV} stroke={ICON_STROKE} className={classes.icon} aria-hidden />
       <span className={classes.message}>{children}</span>
       {action ? (
-        <UnstyledButton className={classes.action} onClick={action.onClick}>
+        <UnstyledButton
+          className={classes.action}
+          onClick={action.onClick}
+          disabled={action.disabled}
+        >
           {action.label}
         </UnstyledButton>
       ) : null}

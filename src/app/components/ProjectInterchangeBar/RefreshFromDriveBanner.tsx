@@ -9,6 +9,7 @@ export default function RefreshFromDriveBanner() {
     diff,
     overwriteOpen,
     importing,
+    checking,
     error,
     idMismatch,
     localProjectId,
@@ -55,7 +56,12 @@ export default function RefreshFromDriveBanner() {
               : 'A newer YAML file is available for this project.'}
           </span>
           <Group gap="xs">
-            <Button size="xs" variant="light" onClick={openOverwrite}>
+            <Button
+              size="xs"
+              variant="light"
+              onClick={() => void openOverwrite()}
+              disabled={checking}
+            >
               Refresh from Drive
             </Button>
             <Button size="xs" variant="subtle" onClick={dismissBanner}>
