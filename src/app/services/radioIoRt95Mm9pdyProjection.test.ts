@@ -220,10 +220,80 @@ describe('RT95 MM9PDY projection', () => {
     const intentBefore = rt95ModDataIntentFromOrganisation(before.organisation, before.channels);
     const intentAfter = rt95ModDataIntentFromOrganisation(after.organisation, after.channels);
     expect(intentAfter).not.toEqual(intentBefore);
+    expect(intentAfter!.zones).toEqual([
+      { name: 'Local', channelIndexes: [0, 1, 2], scanIndexes: [0, 2] },
+    ]);
     const image = new Uint8Array(0x4000);
-    expect(encodeRt95ModData(intentAfter!, image).blocks).not.toEqual(
-      encodeRt95ModData(intentBefore!, image).blocks,
-    );
+    const encoded = encodeRt95ModData(intentAfter!, image);
+    expect(encoded.sections!.MMDS.kinds).toEqual([1]);
+    expect(encoded.blocks).not.toEqual(encodeRt95ModData(intentBefore!, image).blocks);
+  });
+
+  describe('zone order and scan sets together', () => {
+    const OLD_FIRMWARE = 'Firmware older than 1.2.0';
+
+    it('carries a custom order and a scan set in one zone', () => {
+      const a = ch('a', 'Alpha', 145.5);
+      const b = ch('b', 'Bravo', 145.6);
+      const c = ch('c', 'Charlie', 145.7);
+      const library = lib(
+        [a, b, c],
+        [
+          zone('z1', 'First', ['c', 'a', 'b']),
+          {
+            ...zone('z2', 'Second', []),
+            members: [
+              { kind: 'channel', channelId: 'b' },
+              { kind: 'channel', channelId: 'a', includeInScanList: 'skip' },
+              { kind: 'channel', channelId: 'c' },
+            ],
+          },
+        ],
+      );
+      const { projection, texts } = project(MM, library);
+      // Numbers follow the first zone: c=1, a=2, b=3. Second lists b, a, c = 3, 2, 1 and skips a.
+      expect(projection.organisation.zones).toEqual([
+        { wireName: 'First', channelNumbers: [1, 2, 3], scanChannelNumbers: [1, 2, 3] },
+        { wireName: 'Second', channelNumbers: [3, 2, 1], scanChannelNumbers: [3, 1] },
+      ]);
+      const intent = rt95ModDataIntentFromOrganisation(
+        projection.organisation,
+        projection.channels,
+      );
+      const encoded = encodeRt95ModData(intent!, new Uint8Array(0x4000));
+      expect(encoded.sections!.MMDS.kinds).toEqual([0, 1]);
+      expect(encoded.sections!.MMDO.kinds).toEqual([0, 1]);
+      expect(texts.filter((t) => t.includes(OLD_FIRMWARE))).toHaveLength(1);
+    });
+
+    it('does not show the old-firmware note for plain ascending zones with no custom set', () => {
+      const a = ch('a', 'Alpha', 145.5);
+      const b = ch('b', 'Bravo', 145.6);
+      const library = lib([a, b], [zone('z1', 'First', ['a', 'b']), zone('z2', 'Second', ['b'])]);
+      const { texts } = project(MM, library);
+      expect(texts.some((t) => t.includes(OLD_FIRMWARE))).toBe(false);
+    });
+
+    it('names a zone whose order does not fit, once, and writes it in channel order', () => {
+      // Zone 1 holds 200 channels in number order; zones 2 to 8 hold the same 200 reversed.
+      // Each custom order takes 202 bytes of the 1,260 available, so the seventh does not fit.
+      const channels = Array.from({ length: 200 }, (_, i) =>
+        ch(`c${i}`, `Ch${i}`, 145 + i * 0.0125),
+      );
+      const ids = channels.map((c) => c.id);
+      const zones = [zone('z1', 'Z1', ids)];
+      for (let i = 2; i <= 8; i++) zones.push(zone(`z${i}`, `Z${i}`, [...ids].reverse()));
+      const { projection, texts } = project(MM, lib(channels, zones));
+      const fallback = texts.filter((t) => t.includes('did not fit'));
+      expect(fallback).toHaveLength(1);
+      expect(fallback[0]).toContain('Zone "Z8"');
+      const intent = rt95ModDataIntentFromOrganisation(
+        projection.organisation,
+        projection.channels,
+      );
+      const encoded = encodeRt95ModData(intent!, new Uint8Array(0x4000));
+      expect(encoded.sections!.MMDO.fallback).toEqual([7]);
+    });
   });
 
   it('warns about a space in a radio name', () => {
