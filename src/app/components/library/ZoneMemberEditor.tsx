@@ -391,6 +391,8 @@ export default function ZoneMemberEditor({
         description={membersDescription}
         addLabel="Add members"
         onAdd={onAdd}
+        addPlacement="footer"
+        addProminent={members.length === 0}
         search={{
           value: inZoneFilter,
           onChange: setInZoneFilter,

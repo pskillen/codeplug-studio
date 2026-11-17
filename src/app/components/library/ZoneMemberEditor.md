@@ -8,16 +8,16 @@ Manages zone membership using `MembershipPanel` + `MembershipRow` (role C) and `
 
 ## Props
 
-| Prop                 | Type                | Description                                                      |
-| -------------------- | ------------------- | ---------------------------------------------------------------- |
-| `channels`           | `Channel[]`         | Full library channels                                            |
-| `zones`              | `Zone[]`            | Full library zones                                               |
-| `editingZoneId`      | `string \| null`    | Zone being edited (`null` on create)                             |
-| `members`            | `ZoneMemberEntry[]` | Current member list                                              |
-| `onChange`           | `(members) => void` | Member list updates                                              |
-| `onMapFiltersChange` | optional            | Map hide-filter callback                                         |
-| `mode`               | optional            | `members`, `scanning`, `summary`, `full` (default), `pool`       |
-| `onAdd`              | optional            | When set, member panel shows **Add members** (overlay in parent) |
+| Prop                 | Type                | Description                                                                                                                   |
+| -------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `channels`           | `Channel[]`         | Full library channels                                                                                                         |
+| `zones`              | `Zone[]`            | Full library zones                                                                                                            |
+| `editingZoneId`      | `string \| null`    | Zone being edited (`null` on create)                                                                                          |
+| `members`            | `ZoneMemberEntry[]` | Current member list                                                                                                           |
+| `onChange`           | `(members) => void` | Member list updates                                                                                                           |
+| `onMapFiltersChange` | optional            | Map hide-filter callback                                                                                                      |
+| `mode`               | optional            | `members`, `scanning`, `summary`, `full` (default), `pool`                                                                    |
+| `onAdd`              | optional            | When set, member panel shows **Add members** below the list (overlay in parent); large and centred while there are no members |
 
 ## Usage
 
@@ -38,7 +38,7 @@ Manages zone membership using `MembershipPanel` + `MembershipRow` (role C) and `
 
 - **`members`:** `MembershipPanel` with find-in-list, Sort channels…, bulk move/remove, drag reorder (`DataTableBulkReorderProvider`). Scan controls are **not** on rows.
 - **`scanning`:** Lighter list for the Scanning behaviour panel — Auto / Force / Skip per direct channel member.
-- **`full`:** Create flow — members panel + inline pool (no `onAdd`).
+- **`full`:** Members panel + inline pool (no `onAdd`). No page uses it since the create form dropped its member picker.
 - **`pool`:** Legacy shim — inline pool only.
 - Blocked nested zones in the add pool use `MembershipPoolRow` `disabled` + `reason`.
 - Map filters via `computeZoneMemberPickerMapFilters`.

@@ -15,6 +15,7 @@ Destructive delete control for library entity editors. Runs [`runEntityDeleteFlo
 | `confirmMessage` | `string`               | Optional override for `window.confirm` copy    |
 | `size`           | Mantine button size    | Default `compact-sm`                           |
 | `variant`        | Mantine button variant | Default `light`                                |
+| `fullWidth`      | `boolean`              | Fill the parent's width; default `false`       |
 
 ## Usage
 

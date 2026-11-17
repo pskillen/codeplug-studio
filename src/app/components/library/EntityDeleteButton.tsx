@@ -13,6 +13,8 @@ export interface EntityDeleteButtonProps {
   confirmMessage?: string;
   size?: 'compact-sm' | 'compact-xs' | 'sm';
   variant?: 'light' | 'subtle' | 'filled';
+  /** Fill the parent's width (default: content width, or stretched by a column flex parent). */
+  fullWidth?: boolean;
 }
 
 export default function EntityDeleteButton({
@@ -23,6 +25,7 @@ export default function EntityDeleteButton({
   confirmMessage,
   size = 'compact-sm',
   variant = 'light',
+  fullWidth = false,
 }: EntityDeleteButtonProps) {
   const { deleteEntity } = useLibrary();
   const [busy, setBusy] = useState(false);
@@ -56,6 +59,7 @@ export default function EntityDeleteButton({
         variant={variant}
         size={size}
         loading={busy}
+        fullWidth={fullWidth}
         onClick={() => void handleDelete()}
       >
         {buttonLabel}

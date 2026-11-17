@@ -130,6 +130,14 @@
   gap: 14px;
 }
 
+/* Delete zone and Add members share the row, half each — Delete is not the loudest thing here. */
+.identityActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
 .actionRow {
   display: flex;
   flex-wrap: wrap;

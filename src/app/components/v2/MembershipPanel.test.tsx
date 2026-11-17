@@ -94,4 +94,44 @@ describe('MembershipPanel', () => {
     expect(screen.getByText('Nothing here yet.')).toBeInTheDocument();
     expect(screen.queryByText('Row content')).not.toBeInTheDocument();
   });
+
+  it('footer placement puts Add below the list, not in the header', () => {
+    const onAdd = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <MembershipPanel
+          title="Zone members"
+          addLabel="Add members"
+          onAdd={onAdd}
+          addPlacement="footer"
+        >
+          <div>Row content</div>
+        </MembershipPanel>
+      </DesignSystemV2Provider>,
+    );
+    const button = screen.getByRole('button', { name: '+ Add members' });
+    const row = screen.getByText('Row content');
+    expect(row.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(button);
+    expect(onAdd).toHaveBeenCalled();
+  });
+
+  it('footer placement keeps Add visible when the list is empty (prominent, after the empty message)', () => {
+    render(
+      <DesignSystemV2Provider>
+        <MembershipPanel
+          title="Zone members"
+          addLabel="Add members"
+          onAdd={() => undefined}
+          addPlacement="footer"
+          addProminent
+          isEmpty
+          emptyMessage="No members in zone"
+        />
+      </DesignSystemV2Provider>,
+    );
+    const empty = screen.getByText('No members in zone');
+    const button = screen.getByRole('button', { name: '+ Add members' });
+    expect(empty.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });
