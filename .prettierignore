@@ -11,3 +11,5 @@ src/core/firmware/**/__fixtures__/**/*.json
 src/integrations/radio-io/radios/uv5r-mini/__fixtures__/mmzs-v1.json
 
 src/integrations/radio-io/radios/uv5r-mini/__fixtures__/mmzo-v1.json
+
+src/integrations/radio-io/radios/rt95/__fixtures__/mmd1-sections-v1.json
