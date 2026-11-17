@@ -14,6 +14,8 @@ Header/toolbar chrome around a list of `MembershipRow`s. Exported as both `Membe
 | `description`      | `ReactNode`                         |                                                                                                                                 |
 | `addLabel`         | `string`                            | Default `Add`                                                                                                                   |
 | `onAdd`            | `() => void`                        | Presence shows the "+ Add" button. **Omit for the reorder-only, no-pool variant.**                                              |
+| `addPlacement`     | `'header' \| 'footer'`              | Default `header`. `footer` puts the Add button below the list                                                                   |
+| `addProminent`     | `boolean`                           | Footer placement only: large, centred Add (for the no-members state)                                                            |
 | `search`           | `{ value, onChange, placeholder? }` | Find-in-list filter                                                                                                             |
 | `sortLabel`        | `string`                            | Default `Sort…`                                                                                                                 |
 | `onSortClick`      | `() => void`                        | Presence shows the permanent Sort… affordance; replaced by "Reorder disabled while filtering" while `search.value` is non-empty |

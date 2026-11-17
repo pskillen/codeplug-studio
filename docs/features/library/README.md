@@ -92,7 +92,7 @@ Shared L1 chrome: `LibraryInventoryHeader`, optional `FilterPopover` (channels �
 
 ### Zone member editor (#25, #157, #180)
 
-**Create:** `/library/zones/new` — identity, full membership editor (reorder + add pool), map.
+**Create:** `/library/zones/new` — identity only (name, comment, export flag). **Save zone** opens the new zone's edit page, straight into the add-members screen when the zone is empty (`?add=members`). Channels preselected on the channels list (**New zone from selected**) still seed the zone's members, and then skip the add screen.
 
 **Edit existing zone** — shared draft state on `/library/zones/:id` with focused sub-screens:
 

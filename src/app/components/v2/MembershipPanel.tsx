@@ -17,6 +17,13 @@ export interface MembershipPanelProps {
   /** Presence (with `onAdd`) shows the "+ Add" button. */
   addLabel?: string;
   onAdd?: () => void;
+  /**
+   * Where the Add button sits: `header` (default, beside the title) or `footer`
+   * (below the list, where the eye ends up after scanning the members).
+   */
+  addPlacement?: 'header' | 'footer';
+  /** Footer placement only: render Add large and centred (use while there are no members). */
+  addProminent?: boolean;
   /** Find-in-list filter. Disables the Sort… affordance while active. */
   search?: MembershipPanelSearchConfig;
   /** Permanent "Sort…" affordance — a confirm-gated rewrite of the true order, distinct from any temporary browse sort. */
@@ -37,7 +44,7 @@ export interface MembershipPanelProps {
 /**
  * Member-panel shell for the Membership family: title/description + Add,
  * find-in-list filter, permanent Sort… affordance, and a bulk toolbar shown
- * once rows are selected. Omitting `onAdd` yields the reorder-only,
+ * once rows are selected. `addPlacement="footer"` moves Add below the list. Omitting `onAdd` yields the reorder-only,
  * no-pool variant (e.g. the build's zone member order screen).
  */
 export function MembershipPanel({
@@ -45,6 +52,8 @@ export function MembershipPanel({
   description,
   addLabel = 'Add',
   onAdd,
+  addPlacement = 'header',
+  addProminent = false,
   search,
   sortLabel = 'Sort…',
   onSortClick,
@@ -69,7 +78,7 @@ export function MembershipPanel({
           <div className={classes.title}>{title}</div>
           {description ? <div className={classes.description}>{description}</div> : null}
         </div>
-        {onAdd ? (
+        {onAdd && addPlacement === 'header' ? (
           <Button variant="primary" size="sm" onClick={onAdd}>
             + {addLabel}
           </Button>
@@ -136,6 +145,14 @@ export function MembershipPanel({
       <div className={classes.body}>
         {isEmpty ? <div className={classes.empty}>{emptyMessage}</div> : children}
       </div>
+
+      {onAdd && addPlacement === 'footer' ? (
+        <div className={addProminent ? classes.addFooterProminent : classes.addFooter}>
+          <Button variant="primary" size={addProminent ? 'lg' : 'sm'} onClick={onAdd}>
+            + {addLabel}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

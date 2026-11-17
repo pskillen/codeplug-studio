@@ -111,3 +111,19 @@
   font-size: var(--dsv2-font-body-sm);
   color: var(--dsv2-text-tertiary);
 }
+
+.addFooter {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* No members yet: the only sensible next step, so make it unmissable. */
+.addFooterProminent {
+  display: flex;
+  justify-content: center;
+  padding: var(--dsv2-space-4) 0;
+}
+
+.addFooterProminent button {
+  min-width: min(100%, 18rem);
+}

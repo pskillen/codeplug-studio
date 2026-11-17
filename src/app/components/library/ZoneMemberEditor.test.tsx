@@ -111,3 +111,46 @@ describe('ZoneMemberEditor cycle-closing zones', () => {
     expect(onChange).toHaveBeenCalledWith([{ kind: 'zone', zoneId: 'z-e' }]);
   });
 });
+
+describe('ZoneMemberEditor add-members placement', () => {
+  it('shows Add members below the member list, once', () => {
+    const channels = [{ ...newChannel('p1', 'Local'), id: 'ch-1' }];
+    const members: Zone['members'] = [{ kind: 'channel', channelId: 'ch-1' }];
+    const onAdd = vi.fn();
+
+    renderEditor(
+      <ZoneMemberEditor
+        channels={channels}
+        zones={[]}
+        editingZoneId={null}
+        members={members}
+        onChange={vi.fn()}
+        mode="members"
+        onAdd={onAdd}
+      />,
+    );
+
+    const buttons = screen.getAllByRole('button', { name: '+ Add members' });
+    expect(buttons).toHaveLength(1);
+    const row = screen.getByText(/Local/);
+    expect(row.compareDocumentPosition(buttons[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(buttons[0]);
+    expect(onAdd).toHaveBeenCalled();
+  });
+
+  it('keeps the Add members button when there are no members', () => {
+    renderEditor(
+      <ZoneMemberEditor
+        channels={[]}
+        zones={[]}
+        editingZoneId={null}
+        members={[]}
+        onChange={vi.fn()}
+        mode="members"
+        onAdd={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('No members in zone')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '+ Add members' })).toBeInTheDocument();
+  });
+});

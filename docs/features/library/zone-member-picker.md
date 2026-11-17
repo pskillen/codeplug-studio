@@ -10,11 +10,11 @@ Deep dive for **`ZoneMemberEditor`** and the mk2 zone edit workspace (E2).
 
 Manages zone membership on the **Membership** family (`MembershipPanel`, `MembershipRow`, `AddMembersScreen`, `MembershipPoolRow`). The zone edit workspace (`/library/zones/:id`) is one coherent screen:
 
-1. **Members** — reorderable list (export order) with find-in-list, Sort…, bulk move/remove, drag; **Add members** opens the pool overlay.
+1. **Members** — reorderable list (export order) with find-in-list, Sort…, bulk move/remove, drag; **Add members** opens the pool overlay. The button sits **below** the member list (large and centred while the zone has no members), and again beside **Delete zone** in the Identity panel (half width each).
 2. **Coverage** — map stack (C7) beside members on desktop (1.7 : 1, map never below `min(420px, 40%)`); stacked, with a full-width map, below `70em`. The main page uses the full window width on desktop (no 75% column, no 1200px body cap; the Identity panel keeps a 1200px width) ([#1531](https://github.com/pskillen/codeplug-studio/issues/1531)).
 3. **Scanning behaviour** — per direct channel member Auto / Force / Skip (`includeInScanList`); not on member rows.
 
-**Create** (`/library/zones/new`) uses `mode="full"` — members panel + inline add pool.
+**Create** (`/library/zones/new`) has no member picker: it saves name/comment/export flag, then opens this workspace on the add-members screen. (`mode="full"` with its inline pool is no longer used by any page.)
 
 Legacy routes `/library/zones/:id/add` and `/scanning` redirect to the main workspace (`?add=members` / `#scanning`).
 
@@ -43,7 +43,7 @@ Sidecars: `ZoneMemberEditor.md`, `GrowZoneRecommendations.md`, `ChannelZoneMembe
 | `members`  | Main panel — reorder, find, Sort…, bulk; `onAdd` opens overlay    |
 | `scanning` | Scanning behaviour panel — Auto / Force / Skip per channel member |
 | `summary`  | Read-only member list                                             |
-| `full`     | Create — members + inline pool (no overlay)                       |
+| `full`     | Unused by pages — members + inline pool (no overlay)              |
 | `pool`     | Legacy shim — inline pool only                                    |
 
 Deprecated aliases: `reorder` → `members`, `scanOnly` → `scanning`, `addPool` → `pool`.
