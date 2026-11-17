@@ -25,7 +25,7 @@ Cite: NeonPlug `connection.ts`, `constants.ts`, `protocol.ts` (facts only — do
 | Constant                   | ms    | Role                           |
 | -------------------------- | ----- | ------------------------------ |
 | `INIT_DELAY`               | 400   | After port open                |
-| `CLEAR_BUFFER_DELAY`       | 200   | After flush / before PSEARCH   |
+| `CLEAR_BUFFER_DELAY`       | 200   | Before the drain / PSEARCH     |
 | `PSEARCH_READ_DELAY`       | 150   | After sending `PSEARCH`        |
 | `REOPEN_DELAY`             | 400   | Close → reopen settling        |
 | `BLOCK_READ_DELAY`         | 150   | Between full 4KB block reads   |
@@ -68,8 +68,8 @@ The radio has no USB data path. Its programming and update jack is the two-pin K
 ## Handshake (ASCII)
 
 1. Open serial at **115200**.
-2. Wait `INIT_DELAY`, flush buffer (`CLEAR_BUFFER_DELAY`).
-3. Send ASCII `PSEARCH` → expect **8 bytes**: first `0x06`, remainder ASCII model string (must include `DP570` / `DM32` / `DM-32`).
+2. Wait `INIT_DELAY`, wait `CLEAR_BUFFER_DELAY`, then read and discard whatever is already in the input (stray bytes from an earlier session or the port opening must not pass for the ACK). Nothing is sent for this.
+3. Send ASCII `PSEARCH` → expect **8 bytes**: first `0x06`, remainder ASCII model string (must include `DP570` / `DM32` / `DM-32`). A first byte other than `0x06` fails with the whole 8-byte reply in hex (and any discarded stray bytes).
 4. Send ASCII `PASSSTA` → expect **3 bytes** starting with `0x50`.
 5. Send ASCII `SYSINFO` → expect **1 byte** `0x06`.
 

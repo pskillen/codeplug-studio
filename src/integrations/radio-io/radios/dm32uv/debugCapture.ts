@@ -257,6 +257,9 @@ export function createDm32DebugGuard(pipe: BytePipe, signal?: AbortSignal): Dm32
       accept(chunk!, bytes);
       return bytes;
     },
+    // Reply-side housekeeping: these read and discard, and never send.
+    flush: pipe.flush ? () => pipe.flush!() : undefined,
+    drain: pipe.drain ? () => pipe.drain!() : undefined,
     close: () => pipe.close(),
   };
   return { pipe: safe, window: () => (window ? { ...window } : undefined), failure: () => failed };
