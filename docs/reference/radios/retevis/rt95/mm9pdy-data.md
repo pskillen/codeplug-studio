@@ -15,7 +15,7 @@ new layout version, never an edit of v1.
 ## Where
 
 EEPROM `0x4000`-`0x5FFF`, in one-line map form: header `0x4000`, radio state `0x4010` (the radio writes it),
-zone name blocks `0x4100 + 16 i`, member slots `0x4300 + 32 i`, description blocks `0x5000 + 16 n`. The stock clone
+zone name blocks `0x4100 + 16 i`, member slots `0x4300 + 32 i`, scan sets MMDS `0x4700–0x4AFF`, zone order MMDO `0x4B00–0x4FFF`, description blocks `0x5000 + 16 n`. The stock clone
 image is `0x0000`-`0x329F`; nothing of ours lives between `0x32A0` and `0x3AFF`.
 
 ## What Studio does
@@ -26,7 +26,7 @@ image is `0x0000`-`0x329F`; nothing of ours lives between `0x32A0` and `0x3AFF`.
 | Allowed write blocks | 16-byte blocks at 16-aligned addresses in `0x0000`-`0x3290` for any target. On the MM9PDY target after a passing guard also `0x4000`-`0x5FF0`                                                                                                                                         |
 | State block          | `0x4010` is never written on a codeplug Write (the radio owns it); a Restore may put a backup back                                                                                                                                                                                    |
 | Hard ceiling         | Nothing at or above `0x6000`, and never at or above `0x7B00` (it aliases the ident, calibration and signature on a 16 KiB chip)                                                                                                                                                       |
-| Write order          | Descriptions (ascending channel), member slots (two blocks each), name blocks, then the **header last**. An interrupted write never yields wrong zones                                                                                                                                |
+| Write order          | Descriptions (ascending channel), member slots (two blocks each), name blocks, MMDS and MMDO, then the **header last**. An interrupted write never yields wrong zones                                                                                                                 |
 | Generations          | Content-derived, so an identical rewrite keeps the radio's saved zones                                                                                                                                                                                                                |
 | Stock targets        | Never write, read-modify or clear `0x4000`-`0x5FFF`                                                                                                                                                                                                                                   |
 | Empty table          | Zero zones and no descriptions is a valid header and is written; it retires an older table                                                                                                                                                                                            |
@@ -45,17 +45,23 @@ zone names, 12-character descriptions) are in [limits.md](limits.md).
 
 ## How Studio fills it
 
-| Field            | Source                                                                                                                                                                                          |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Radio name (6)   | The channel's Callsign when set, otherwise the usual wire name. A build `wireName` override wins                                                                                                |
-| Description (12) | The channel's Name, shortened (channel abbreviation first); empty when it equals the radio name. A build `wireDescription` override wins, and an explicit empty one means none                  |
-| Text             | Accents are folded (`Café` becomes `Cafe`), any other character outside `0x20`-`0x7E` becomes `-`, and in descriptions `_` becomes `-`. Zone and radio names go through the same ASCII rules    |
-| Numbering        | Channels are numbered in zone order (zones in build order, members in zone order, first appearance wins), then the rest; pinned slots keep their pin. A channel in two zones has one number     |
-| Zones            | Up to 32, 12-character names. Empty zones are dropped with a warning; more than 32 keeps the first 32 with a warning. The radio visits a zone's channels in channel-number order (an info note) |
-| Scan             | One scan flag per channel. Zone scan sets are not written yet: one info note when any zone's scan set differs from its members                                                                  |
+| Field            | Source                                                                                                                                                                                                                                                      |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Radio name (6)   | The channel's Callsign when set, otherwise the usual wire name. A build `wireName` override wins                                                                                                                                                            |
+| Description (12) | The channel's Name, shortened (channel abbreviation first); empty when it equals the radio name. A build `wireDescription` override wins, and an explicit empty one means none                                                                              |
+| Text             | Accents are folded (`Café` becomes `Cafe`), any other character outside `0x20`-`0x7E` becomes `-`, and in descriptions `_` becomes `-`. Zone and radio names go through the same ASCII rules                                                                |
+| Numbering        | Channels are numbered in zone order (zones in build order, members in zone order, first appearance wins), then the rest; pinned slots keep their pin. A channel in two zones has one number                                                                 |
+| Zones            | Up to 32, 12-character names. Empty zones are dropped with a warning; more than 32 keeps the first 32 with a warning. Firmware 1.2.0 or later follows each zone's order; zones whose order does not fit use channel-number order and are named in a warning |
+| Scan             | Firmware 1.2.0 or later uses each zone scan set; older firmware uses each channel scan flag and channel-number order                                                                                                                                        |
 
 Owner backup, 2026-10-28: on the owner's chip the range from `0x4000` to `0x7FFF` is erased (all `0xFF`) with no all-zero blocks, so refusing a zero read cannot wrongly block that radio.
 
 ## Status
 
 Shipped in Studio on the `retevis-rt95-mm9pdy` target, on every site. Checked on the owner's radio with the MM9PDY firmware 1.1.0 (zones and descriptions).
+
+The scan-set (MMDS) and order (MMDO) sections are specified in §13–§14 of the firmware repo's
+[MM9PDY EEPROM layout](https://github.com/pskillen-org/retevis-rt95-firmware/blob/main/docs/reference/mm9pdy-eeprom-layout.md);
+the encoder is tested against that repo's `fw/tests/vectors/mmd1-sections-v1.json`. Studio always writes both sections
+(the RT95 can't report its firmware version); firmware before 1.2.0 ignores them. The sections are emulator-tested in the
+firmware repo and not yet checked on a radio.
