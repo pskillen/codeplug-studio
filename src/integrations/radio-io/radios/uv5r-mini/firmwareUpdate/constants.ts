@@ -104,7 +104,7 @@ export interface ListedPinnedLoader {
 /**
  * A no-list layout loader: one fixed loader per flash layout, with no build list. It checks the radio's installed VM,
  * PRCT and BTIF directory entries against its own layout record and refuses another layout (result `0x8F`) before
- * erasing. The 1.1.0 loaders then put the radio's settings back, and refuse an image that would run past the record's
+ * erasing. The 1.1.0 loaders then put the radio's settings back (when its settings log fits in one sector), and refuse an image that would run past the record's
  * area end (result `0x90`) with nothing erased. The record is here for reference; Studio checks the packed hash.
  */
 export interface LayoutPinnedLoader {

@@ -172,7 +172,7 @@ are equal plain bytes. Studio never descrambles anything. The stock bytes come f
 
 - **Layout loaders**, one per flash layout. They carry no list of builds. Before it erases the firmware area, each one
   checks the radio's installed VM, PRCT and BTIF directory entries against its own layout record, and refuses a
-  radio of the other layout with result `0x8F`. The 1.1.0 loaders put the radio's settings back before that refusal,
+  radio of the other layout with result `0x8F`. The 1.1.0 loaders put the radio's settings back when its settings log fits in one sector (the used part of the live VM bank is at most `0xF3` bytes) before that refusal,
   and refuse an image that would run past the record's area end with result `0x90` and nothing erased. Studio checks
   only the packed hash; the record is reference. Each loader always builds to the same bytes, so its packed hash is
   its pin. The previous always-write loaders stay pinned so images already built on them still verify.
@@ -213,7 +213,7 @@ lists is from before the report) names no build, so that refusal can't fire; the
 
 **Layout match.** `L1` and `L2` are the factory firmware's flash packing, not the board: firmware version and board
 variant are separate things. The radio's stock app runs the first stage of an update ("UPDATE..."), before any
-loader. The 1.1.0 loader puts the radio's settings back and then refuses with `0x8F`; an image that runs past the
+loader. The 1.1.0 loader puts the radio's settings back when its settings log fits in one sector (the used part of the live VM bank is at most `0xF3` bytes) and then refuses with `0x8F`; an image that runs past the
 install area is `0x90`, with nothing erased. Studio checks the layout itself, before it sends anything. For an image whose
 loader is `L1` or `L2`, the radio's layout must be on the prepared image (`PreparedFirmwareImage.radioLayout`, passed
 to `prepareFirmwareImage` as `radioLayout`; from the radio report or Radio Info, below):
@@ -502,18 +502,18 @@ the radio asked for (at most 0x1000, inside the image), and an echo of the radio
 
 ## Results
 
-| Result                                                            | Wording                                                                                                                                                                                             |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Loader `0`                                                        | "The radio restarts by itself. Check the power-on screen shows `<build name>`." With a length of 0: "The radio already had this firmware." first                                                    |
-| App `0x83`, no cmd 4 heard in the session (ignored ones included) | "The radio refused this file before installing anything. Studio is sending the other file." **Nothing installed** (below). The loader did not run, so this does not say the settings were put back. |
-| App `0x01`, `0x86`, `0x8A`, `0x83` after a cmd 4                  | "Nothing was written to the firmware. Switch the radio off and on." `0x01` adds that the image is not for this radio's key; `0x8A` that it is for another stock version                             |
-| Loader `0x86` before the length, fresh session                    | "This firmware is already on the radio, or the radio holds firmware this image can't replace. Nothing was erased."                                                                                  |
-| Loader `0x86` before the length, continued session                | "The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair."                                      |
-| Loader `0x8F` before the length                                   | "The radio refused this file because it is for other radio firmware, and it put its settings back. Studio is sending the other file." **Nothing installed** (below)                                 |
-| Loader `0x90` before the length                                   | "This image runs past the area the radio can install. Nothing was erased. Please report it." Not **Nothing installed**: the other file is not offered. After cmd 4 it stays the recover text.       |
-| Loader `0x87` before the length, fresh session                    | "Nothing was written; the radio boots the installed app."                                                                                                                                           |
-| Loader `0x87` before the length, continued session                | The same, plus: don't send this file again (it can only end the same way); if the radio doesn't reach its normal screen, it needs a case-open repair                                                |
-| Loader non-zero after the length, or no frame for 60 s            | The recover text below                                                                                                                                                                              |
+| Result                                                            | Wording                                                                                                                                                                                              |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Loader `0`                                                        | "The radio restarts by itself. Check the power-on screen shows `<build name>`." With a length of 0: "The radio already had this firmware." first                                                     |
+| App `0x83`, no cmd 4 heard in the session (ignored ones included) | "The file isn't for this radio's firmware; the radio refused it before installing anything." **Nothing installed** (below). The loader did not run, so this does not say the settings were put back. |
+| App `0x01`, `0x86`, `0x8A`, `0x83` after a cmd 4                  | "Nothing was written to the firmware. Switch the radio off and on." `0x01` adds that the image is not for this radio's key; `0x8A` that it is for another stock version                              |
+| Loader `0x86` before the length, fresh session                    | "This firmware is already on the radio, or the radio holds firmware this image can't replace. Nothing was erased."                                                                                   |
+| Loader `0x86` before the length, continued session                | "The interrupted update had already finished. The radio restarts into the new firmware. Check the name; if it is missing, the radio needs a case-open repair."                                       |
+| Loader `0x8F` before the length                                   | "The file isn't for this radio's firmware; the radio refused it." **Nothing installed** (below)                                                                                                      |
+| Loader `0x90` before the length                                   | "This image runs past the area the radio can install. Nothing was erased. Please report it." Not **Nothing installed**: the other file is not offered. After cmd 4 it stays the recover text.        |
+| Loader `0x87` before the length, fresh session                    | "Nothing was written; the radio boots the installed app."                                                                                                                                            |
+| Loader `0x87` before the length, continued session                | The same, plus: don't send this file again (it can only end the same way); if the radio doesn't reach its normal screen, it needs a case-open repair                                                 |
+| Loader non-zero after the length, or no frame for 60 s            | The recover text below                                                                                                                                                                               |
 
 The summary always says to check the power-on name: a torn last page also ends in `0`.
 

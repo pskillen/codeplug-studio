@@ -65,8 +65,7 @@ const OTHER_LAYOUT_0X8F = {
   radioId: 'baofeng-uv5rmini',
   image: L1_IMAGE,
   code: 'nothingInstalled',
-  message:
-    'The radio refused this file because it is for other radio firmware, and it put its settings back. Studio is sending the other file.',
+  message: "The file isn't for this radio's firmware; the radio refused it.",
   position: 'result',
   radioTouched: true,
   startedAt: 'now',
@@ -172,7 +171,7 @@ describe('FlashStep: a refusal before anything was installed', () => {
       ...OTHER_LAYOUT_0X8F,
       radioTouched: false,
       message:
-        'The radio refused this file before installing anything. Studio is sending the other file.',
+        "The file isn't for this radio's firmware; the radio refused it before installing anything.",
     });
     expect(screen.getByText('Nothing was installed')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: RETRY }));

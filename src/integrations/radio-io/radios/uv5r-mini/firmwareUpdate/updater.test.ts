@@ -423,7 +423,7 @@ describe('UV-5R Mini updater: refusals and silence', () => {
     expect(msg).toContain("Don't send this file again");
   });
 
-  it('0x8F before cmd 4 says the radio refused the other file, put its settings back, and Studio is sending the other file', async () => {
+  it("0x8F before cmd 4 says the file is not for this radio's firmware", async () => {
     const m = make({ loaderRefuses: 0x8f });
     const updater = createUv5rMiniFirmwareUpdater();
     expect((await connect(m, updater)).error).toBeUndefined();
