@@ -12,7 +12,10 @@ import {
   RT95_KEY_FUNCTION_DIR,
   RT95_KEY_TABLE_ADDR,
 } from '@integrations/radio-io/radios/rt95/zoneKey.ts';
-import { chooseCategory } from '@app/components/debug/memoryCategoriesTestUtils.ts';
+import {
+  chooseCategory,
+  expectPickerCountsMatchPanels,
+} from '@app/components/debug/memoryCategoriesTestUtils.ts';
 import { openDebugArchive } from './captureArchive.ts';
 import { Rt95Memory, Rt95MemoryView } from './Rt95Memory.tsx';
 import { RT95_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/rt95/debugMemoryText.ts';
@@ -281,6 +284,33 @@ describe('RT95 MMD1 viewer', () => {
     );
     chooseCategory('Zones');
     expect(screen.getByText(new RegExp(`Header invalid: ${reason}`))).toBeInTheDocument();
+  });
+  it('counts zones and P-keys in the picker, equal to their rows', () => {
+    const bytes = new Uint8Array(8192).fill(255);
+    for (const block of encodeRt95ModData(
+      { zones: [{ name: 'TEST', channelIndexes: [0] }], descriptions: [] },
+      new Uint8Array(0),
+    ).blocks)
+      bytes.set(block.bytes, block.address - 0x4000);
+    const a = archive(bytes);
+    const clone = new Uint8Array(0x32a0);
+    a.regions['programming-image'] = clone;
+    a.manifest.regions.push({
+      id: 'programming-image',
+      label: 'Clone',
+      address: 0,
+      byteLength: clone.length,
+      path: 'regions/image.bin',
+      restoreRole: 'inspect-only',
+    });
+    render(
+      <MantineProvider>
+        <Rt95Memory archive={a} />
+      </MantineProvider>,
+    );
+    const counts = expectPickerCountsMatchPanels();
+    expect(counts.Zones).toBe(1);
+    expect(counts['P-keys']).toBeGreaterThan(0);
   });
   it('draws P-keys as a table and keeps the DIR meaning, or says the bytes are unavailable', () => {
     const clone = new Uint8Array(0x32a0);

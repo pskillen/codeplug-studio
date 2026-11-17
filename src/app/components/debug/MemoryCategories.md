@@ -6,11 +6,11 @@ The category picker of every radio's debug Memory view: one **Category** dropdow
 
 ## Props
 
-| Prop         | Meaning                                                                                                                                                                              |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `categories` | `{ value, label, count?, render }[]`. `render` is called only for the selected category. `count`, when given, shows as `Label (N)`                                                   |
-| `notDecoded` | Category names the radio does not decode yet; one dimmed line under the dropdown: "Not decoded for this radio yet: scan lists, contacts." Nothing shown for an empty or missing list |
-| `storageKey` | `localStorage` key suffix (the app prefix is added) under which the last choice is remembered; omit to remember nothing                                                              |
+| Prop         | Meaning                                                                                                                                                                                                                                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `categories` | `{ value, label, count?, render }[]`. `render` is called only for the selected category. `count`, when given, shows as `Label (N)`; every radio view passes the decoded item count for each category (the panel's own "N results" before any search) and omits it only when that category has no decoded list |
+| `notDecoded` | Category names the radio does not decode yet; one dimmed line under the dropdown: "Not decoded for this radio yet: scan lists, contacts." Nothing shown for an empty or missing list                                                                                                                          |
+| `storageKey` | `localStorage` key suffix (the app prefix is added) under which the last choice is remembered; omit to remember nothing                                                                                                                                                                                       |
 
 ## Usage
 

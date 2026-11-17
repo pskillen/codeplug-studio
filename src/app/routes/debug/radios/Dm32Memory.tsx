@@ -396,31 +396,45 @@ function Dm32MemoryLoaded({ archive }: { archive: DebugArchive }) {
           {
             value: 'zones',
             label: 'Zones',
+            count:
+              projection.zones.status === 'captured' ? projection.zones.entries.length : undefined,
             render: () => <ZonesPanel zones={projection.zones} />,
           },
           {
             value: 'scan-lists',
             label: 'Scan lists',
+            count:
+              projection.scanLists.status === 'captured'
+                ? projection.scanLists.entries.length
+                : undefined,
             render: () => <ScanListsPanel scanLists={projection.scanLists} />,
           },
           {
             value: 'talk-groups',
             label: 'Talk groups',
+            count:
+              lists.talkGroups.status === 'captured' ? lists.talkGroups.entries.length : undefined,
             render: () => <TalkGroupsPanel talkGroups={lists.talkGroups} references={references} />,
           },
           {
             value: 'rx-groups',
             label: 'RX groups',
+            count: lists.rxGroups.status === 'captured' ? lists.rxGroups.entries.length : undefined,
             render: () => <RxGroupsPanel rxGroups={lists.rxGroups} />,
           },
           {
             value: 'radio-ids',
             label: 'Radio IDs',
+            count: lists.radioIds.status === 'captured' ? lists.radioIds.entries.length : undefined,
             render: () => <RadioIdsPanel radioIds={lists.radioIds} />,
           },
           {
             value: 'contacts',
             label: 'Contacts',
+            count:
+              lists.analogContacts.status === 'captured'
+                ? lists.analogContacts.records.length
+                : undefined,
             render: () => <ContactsPanel contacts={lists.analogContacts} />,
           },
         ]}

@@ -37,6 +37,7 @@ import {
   type AtD890BankInventory,
 } from '@integrations/radio-io/radios/at-d890uv/debugMemoryContacts.ts';
 import {
+  atD890BankRowCount,
   ContactsPanel,
   RxGroupsPanel,
   TalkGroupsPanel,
@@ -485,26 +486,38 @@ function AtD890MemoryLoaded({ archive }: { archive: DebugArchive }) {
           {
             value: 'zones',
             label: 'Zones',
+            count:
+              projection.zones.bitmap === 'captured' ? projection.zones.entries.length : undefined,
             render: () => <ZonesPanel zones={projection.zones} />,
           },
           {
             value: 'contacts',
             label: 'Contacts',
+            count: atD890BankRowCount(projection, 'contacts'),
             render: () => <ContactsPanel projection={projection} />,
           },
           {
             value: 'talk-groups',
             label: 'Talk groups',
+            count: atD890BankRowCount(projection, 'talk-groups'),
             render: () => <TalkGroupsPanel projection={projection} />,
           },
           {
             value: 'rx-groups',
             label: 'RX groups',
+            count:
+              projection.rxGroups.bitmap === 'captured'
+                ? projection.rxGroups.entries.length
+                : undefined,
             render: () => <RxGroupsPanel projection={projection} />,
           },
           {
             value: 'scan-lists',
             label: 'Scan lists',
+            count:
+              projection.scanLists.bitmap === 'captured'
+                ? projection.scanLists.entries.length
+                : undefined,
             render: () => <ScanListsPanel projection={projection} />,
           },
         ]}

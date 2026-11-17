@@ -19,7 +19,10 @@ import { AtD890Memory } from './AtD890Memory.tsx';
 import { atD890SettingsView } from '@integrations/radio-io/radios/at-d890uv/debugSettingsView.ts';
 import { SettingsTab } from './SettingsTab.tsx';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
-import { chooseCategory } from '@app/components/debug/memoryCategoriesTestUtils.ts';
+import {
+  chooseCategory,
+  expectPickerCountsMatchPanels,
+} from '@app/components/debug/memoryCategoriesTestUtils.ts';
 
 type Entry = [RadioBackupRegionV1, Uint8Array];
 const sparse = (address: number, data: Uint8Array): Entry => [
@@ -121,6 +124,16 @@ const rowTexts = () => screen.getAllByRole('row').map((r) => r.textContent ?? ''
 const open = (name: string) => chooseCategory(name);
 
 describe('AtD890Memory', () => {
+  it('shows an item count for every captured category, equal to its rows', () => {
+    view(memoryArchive());
+    expect(expectPickerCountsMatchPanels()).toMatchObject({
+      Channels: 3,
+      Zones: 2,
+      Contacts: null,
+      'Talk groups': null,
+    });
+  });
+
   it('shows a clear no-capture state', () => {
     view();
     expect(screen.getByText('No capture')).toBeInTheDocument();

@@ -20,7 +20,10 @@ import { encodeRxGroupsIntoImage } from '@integrations/radio-io/radios/opengd77/
 import { encodeUserDatabaseHeader } from '@integrations/radio-io/radios/opengd77/userDatabaseCodec.ts';
 import { OpenGd77Memory } from './OpenGd77Memory.tsx';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
-import { chooseCategory } from '@app/components/debug/memoryCategoriesTestUtils.ts';
+import {
+  chooseCategory,
+  expectPickerCountsMatchPanels,
+} from '@app/components/debug/memoryCategoriesTestUtils.ts';
 
 const transport = vi.hoisted(() => ({ open: vi.fn(), request: vi.fn() }));
 vi.mock('@integrations/radio-io/transport/index.ts', async (importOriginal) => ({
@@ -69,6 +72,15 @@ const bodyRows = () => screen.getAllByRole('row').length;
 describe.each([OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID])(
   'OpenGd77 directories %s',
   (model) => {
+    it('shows an item count for every category, equal to its rows', () => {
+      view(archiveOf(model));
+      const counts = expectPickerCountsMatchPanels();
+      expect(counts.Contacts).toBe(3);
+      expect(counts['RX groups']).toBe(1);
+      // The header's captured-entry count is known without decoding any entry.
+      expect(counts['User Database']).toBe(5);
+    });
+
     it('lists contacts one-based with call types and Unknown kept raw', () => {
       view(archiveOf(model));
       expect(screen.queryByText('Coming in a later piece')).not.toBeInTheDocument();

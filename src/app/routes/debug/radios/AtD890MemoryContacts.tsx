@@ -183,6 +183,26 @@ function bankColumns(showUsage: boolean): DataTableColumn<BankRow>[] {
   return columns;
 }
 
+/** The bank entries one panel lists: unclassified slots show in both, decoded ones by call type. */
+function bankEntries(bank: AtD890MemoryProjection['bank'], isContacts: boolean) {
+  return bank.entries.filter((e) =>
+    e.state.kind !== 'decoded'
+      ? true
+      : isContacts
+        ? e.state.record.callType === 0
+        : e.state.record.callType !== 0,
+  );
+}
+
+/** The panel's own row count ("N results" before any search), or undefined when the bank was not captured. */
+export function atD890BankRowCount(
+  projection: AtD890MemoryProjection,
+  kind: 'contacts' | 'talk-groups',
+): number | undefined {
+  const { bank } = projection;
+  return bank.bitmap === 'captured' ? bankEntries(bank, kind === 'contacts').length : undefined;
+}
+
 function BankPanel({
   projection,
   kind,
@@ -195,16 +215,7 @@ function BankPanel({
   const noun = isContacts ? 'contacts' : 'talk groups';
   const columns = useMemo(() => bankColumns(!isContacts), [isContacts]);
   const rows = useMemo(
-    () =>
-      bank.entries
-        .filter((e) =>
-          e.state.kind !== 'decoded'
-            ? true
-            : isContacts
-              ? e.state.record.callType === 0
-              : e.state.record.callType !== 0,
-        )
-        .map((e) => bankRow(e, references)),
+    () => bankEntries(bank, isContacts).map((e) => bankRow(e, references)),
     [bank, references, isContacts],
   );
   if (bank.bitmap !== 'captured')

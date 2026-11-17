@@ -450,8 +450,13 @@ export function Rt95Memory({
           count: visibleSlots.length,
           render: () => channelsPanel,
         },
-        { value: 'zones', label: 'Zones', render: () => zonesPanel },
-        { value: 'p-keys', label: 'P-keys', render: () => pKeysPanel },
+        {
+          value: 'zones',
+          label: 'Zones',
+          count: decoded?.status === 'valid' ? decoded.zones.length : undefined,
+          render: () => zonesPanel,
+        },
+        { value: 'p-keys', label: 'P-keys', count: keys?.length, render: () => pKeysPanel },
       ]}
     />
   );

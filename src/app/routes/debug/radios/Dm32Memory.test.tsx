@@ -6,7 +6,10 @@ import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 import { dm32Capture, dm32Page } from './dm32Archive.fixture.ts';
 import { archiveDm32Capture } from './dm32Capture.ts';
 import { Dm32Memory } from './Dm32Memory.tsx';
-import { chooseCategory } from '@app/components/debug/memoryCategoriesTestUtils.ts';
+import {
+  chooseCategory,
+  expectPickerCountsMatchPanels,
+} from '@app/components/debug/memoryCategoriesTestUtils.ts';
 
 const bcd = (digits: string) =>
   digits
@@ -123,6 +126,26 @@ describe('Dm32Memory', () => {
       chooseCategory(name);
       expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue(name);
     }
+  });
+
+  it('shows an item count for every captured category, equal to its rows', async () => {
+    show(await archiveDm32Capture(listsCapture()));
+    expect(expectPickerCountsMatchPanels()).toMatchObject({
+      Channels: 2,
+      Zones: 2,
+      'Scan lists': 1,
+      'Talk groups': null,
+      Contacts: null,
+    });
+  });
+
+  it('counts talk groups, radio IDs and contacts when they are captured', async () => {
+    show(await archiveDm32Capture(contactsCapture()));
+    expect(expectPickerCountsMatchPanels()).toMatchObject({
+      'Talk groups': 2,
+      'Radio IDs': 2,
+      Contacts: 2,
+    });
   });
 
   /** Channels ONE, TWO; zones Alpha [2, 1, 1, 9] and Beta []; scan list "Scan" [2]. */
