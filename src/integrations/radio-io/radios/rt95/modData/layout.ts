@@ -31,3 +31,13 @@ export const RT95_GUARD_IDENT_ADDR = 0x3b00;
 export const RT95_GUARD_ALIAS_ADDR = 0x7b00;
 /** "RT95-P\0" */
 export const RT95_IDENT_PREFIX = new Uint8Array([0x52, 0x54, 0x39, 0x35, 0x2d, 0x50, 0x00]);
+
+export const MMDS_ADDR = 0x4700;
+export const MMDS_SIZE = 0x400;
+export const MMDS_MAGIC = 'MMDS';
+export const MMDO_ADDR = 0x4b00;
+export const MMDO_SIZE = 0x500;
+export const MMDO_MAGIC = 'MMDO';
+export const MMD_SECTION_HEADER_BYTES = 20;
+export const MMD_SECTION_VERSION = 1;
+export const MMDO_DATA_CAPACITY = MMDO_SIZE - MMD_SECTION_HEADER_BYTES;
