@@ -44,7 +44,7 @@ const RT95_VERIFY_MANIFEST: readonly WriteVerifyRegionManifestEntry[] = RT95_REG
 
 /** MMD1 regions, added to the manifest when a Write staged blocks at or above 0x4000. */
 const RT95_MM9PDY_VERIFY_REGIONS: readonly WriteVerifyRegionManifestEntry[] = [
-  { id: 'zones', label: 'Zones', group: 'replaced', start: 0x4000, length: 0x4700 - 0x4000 },
+  { id: 'zones', label: 'Zones', group: 'replaced', start: 0x4000, length: 0x5000 - 0x4000 },
   {
     id: 'descriptions',
     label: 'Channel descriptions',

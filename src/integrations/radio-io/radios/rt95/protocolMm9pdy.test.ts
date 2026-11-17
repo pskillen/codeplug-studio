@@ -149,7 +149,8 @@ describe('RT95 MM9PDY Write', () => {
     };
     const plan = planRt95Stages('write', { prepared });
     const stock = planRt95Stages('write', {});
-    expect(plan[1]!.weight).toBe(stock[1]!.weight + 16 * (2 + 3 + 1));
+    // 2 descriptions, 3 blocks for the zone, the header, and the MMDS and MMDO sections (2 blocks each, minimum).
+    expect(plan[1]!.weight).toBe(stock[1]!.weight + 16 * (2 + 3 + 1 + 4));
     expect(plan[0]!.weight).toBe(stock[0]!.weight + 32);
 
     for (const intent of [null, intentOf(vector('A'))]) {
@@ -328,12 +329,14 @@ describe('rt95ModDataIntentFromOrganisation', () => {
         channels,
       ),
     ).toEqual({
+      writeSections: true,
       zones: [{ name: 'LOCAL', channelIndexes: [0, 2] }],
       descriptions: [{ channelIndex: 0, text: 'Calling ch' }],
     });
   });
   it('keeps an empty table as an intent (it retires an older one)', () => {
     expect(rt95ModDataIntentFromOrganisation({ writeRt95ModData: true }, [])).toEqual({
+      writeSections: true,
       zones: [],
       descriptions: [],
     });
