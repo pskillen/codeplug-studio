@@ -182,9 +182,10 @@ export function projectRt95Mm9pdy(input: Rt95Mm9pdyProjectionInput): {
   );
   if (
     sections.MMDS.info.kinds.includes(1) ||
-    sectionZones.some((zone) =>
-      zone.channelIndexes.some((n, i) => n !== [...zone.channelIndexes].sort((a, b) => a - b)[i]),
-    )
+    sectionZones.some((zone) => {
+      const ascending = [...zone.channelIndexes].sort((a, b) => a - b);
+      return zone.channelIndexes.some((n, i) => n !== ascending[i]);
+    })
   ) {
     pushGeneralInfoWarning(
       warnings,
