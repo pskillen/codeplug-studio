@@ -22,6 +22,7 @@ import {
   INITIAL_FIRMWARE_WIZARD_STATE,
   type FirmwareWizardStep,
 } from './firmwareWizardState.ts';
+import { FirmwareProjectLink } from './FirmwareGuideLinks.tsx';
 import ReleaseBrowser from './ReleaseBrowser.tsx';
 import FirmwareStep from './steps/FirmwareStep.tsx';
 import FlashStep from './steps/FlashStep.tsx';
@@ -83,6 +84,7 @@ export default function FirmwareFlasherPage() {
       <DesignSystemV2Provider>
         <div className={classes.page}>
           <h1 className={classes.title}>Firmware flasher</h1>
+          <FirmwareProjectLink />
           <ReleaseBrowser offered={offered} />
         </div>
       </DesignSystemV2Provider>
@@ -146,6 +148,7 @@ export default function FirmwareFlasherPage() {
           Flash firmware to your radio over USB. Firmware belongs to the radio, not to a project:
           nothing here changes your codeplug, and nothing is stored.
         </p>
+        <FirmwareProjectLink />
         {/* The radio step's cards say it too; from there on the chosen radio's line stays in view (#1670). */}
         {updater?.stock.supportedRadios && state.step !== 'radio' ? (
           <p className={classes.description}>Supported: {updater.stock.supportedRadios}</p>

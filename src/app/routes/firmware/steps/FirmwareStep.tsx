@@ -34,6 +34,7 @@ import {
   loadChosenPatch,
 } from '../../../services/firmwareFlash.ts';
 import classes from '../FirmwareFlasherPage.module.css';
+import { FirmwareUserGuideLink } from '../FirmwareGuideLinks.tsx';
 import { radioCheckAnswer } from '../radioCheck.ts';
 import ReleaseNotesDisclosure from '../ReleaseNotesDisclosure.tsx';
 import { NO_RELEASE_FOR_RADIO_FIRMWARE, VARIANT_BEHIND } from '../variantCopy.ts';
@@ -231,6 +232,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
     <div className={classes.stack}>
       <Panel title="Firmware" sub="Choose what to put on the radio.">
         <div className={classes.stack}>
+          <FirmwareUserGuideLink radioId={radioId} />
           <ToggleSwitch
             label="Show release candidates"
             checked={state.includeRc}

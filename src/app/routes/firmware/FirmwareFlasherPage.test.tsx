@@ -227,6 +227,26 @@ describe('FirmwareFlasherPage', () => {
     );
   });
 
+  it("links to the firmware project, and to the radio's user guide once the radio is chosen", async () => {
+    renderPage();
+    const project = screen.getByRole('link', { name: 'MM9PDY firmware: user guides and releases' });
+    expect(project).toHaveAttribute('href', 'https://github.com/pskillen/mm9pdy-firmware');
+    expect(project).toHaveAttribute('target', '_blank');
+    expect(project).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(screen.queryByRole('link', { name: 'User guide' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('radio', { name: /Baofeng DM-32UV/ }));
+    cont();
+    await screen.findByText('Summary of 1.0.0.');
+    const guide = screen.getByRole('link', { name: 'User guide' });
+    expect(guide).toHaveAttribute(
+      'href',
+      'https://github.com/pskillen/mm9pdy-firmware/blob/main/docs/baofeng-dm32uv/README.md',
+    );
+    expect(guide).toHaveAttribute('target', '_blank');
+    expect(guide).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
   it('says which radios are supported on the card and above every later step, for a radio that says so', async () => {
     const supported = 'radios whose Radio Info shows Firmware V9.99.';
     vi.mocked(envGate.listOfferedFirmwareUpdaters).mockReturnValue([
@@ -1095,6 +1115,21 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
         await screen.findByText(/Notes for 1\.1\.0-rc\.1|Notes for 1\.0\.0/),
       ).toBeInTheDocument();
       expect(flash.loadChosenPatch).not.toHaveBeenCalled();
+    });
+
+    it("links to the project and to each radio's user guide", async () => {
+      renderPage();
+      expect(
+        screen.getByRole('link', { name: 'MM9PDY firmware: user guides and releases' }),
+      ).toHaveAttribute('href', 'https://github.com/pskillen/mm9pdy-firmware');
+      const guide = screen.getByRole('link', { name: 'User guide' });
+      expect(guide).toHaveAttribute(
+        'href',
+        'https://github.com/pskillen/mm9pdy-firmware/blob/main/docs/baofeng-dm32uv/README.md',
+      );
+      expect(guide).toHaveAttribute('target', '_blank');
+      expect(guide).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(await screen.findByText('Summary of 1.0.0.')).toBeInTheDocument();
     });
 
     it('says which radios are supported, for a radio that says so', async () => {

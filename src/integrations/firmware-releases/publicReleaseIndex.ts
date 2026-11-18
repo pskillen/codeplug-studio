@@ -6,9 +6,24 @@
 import { FirmwareError } from '@core/firmware/errors.ts';
 import { parsePublishedReleaseIndex } from '@core/firmware/releases/index.ts';
 import type { PublishedFirmwareRelease } from '@core/firmware/releases/types.ts';
+import type { FirmwareRadioId } from '@core/firmware/types.ts';
 
 export const DEFAULT_FIRMWARE_RELEASE_INDEX_URL =
   'https://raw.githubusercontent.com/pskillen/mm9pdy-firmware/main/releases.json';
+
+/** The firmware project's public repository: its front page links every radio's user guide and the releases. */
+export const FIRMWARE_PROJECT_URL = 'https://github.com/pskillen/mm9pdy-firmware';
+
+/** The guide folder a radio's guide lives in, where it differs from the flasher's radio id. */
+const GUIDE_RADIO_ID: Partial<Record<FirmwareRadioId, string>> = {
+  // The RT95's one guide covers both boards.
+  'retevis-rt95-main': 'retevis-rt95-head',
+};
+
+/** The radio's user guide in the firmware project's repository (`docs/<radioId>/README.md` on `main`). */
+export function firmwareUserGuideUrl(radioId: FirmwareRadioId): string {
+  return `${FIRMWARE_PROJECT_URL}/blob/main/docs/${GUIDE_RADIO_ID[radioId] ?? radioId}/README.md`;
+}
 
 /** `VITE_FIRMWARE_RELEASE_INDEX_URL` (e.g. a fork or a local server), else the public repository. */
 export function firmwareReleaseIndexUrl(): string {

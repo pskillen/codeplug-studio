@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
 
-import { createPublicReleaseIndexLoader } from './publicReleaseIndex.ts';
+import {
+  createPublicReleaseIndexLoader,
+  firmwareUserGuideUrl,
+  FIRMWARE_PROJECT_URL,
+} from './publicReleaseIndex.ts';
 
 const INDEX_URL = 'https://example.test/repo/main/releases.json';
 
@@ -41,5 +45,25 @@ describe('createPublicReleaseIndexLoader', () => {
       response(JSON.stringify({ format: 2, releases: [] })),
     );
     await expect(future()).rejects.toThrow(/unknown format/);
+  });
+});
+
+describe('firmwareUserGuideUrl', () => {
+  it.each([
+    ['anytone-at-d890uv', 'anytone-at-d890uv'],
+    ['baofeng-dm32uv', 'baofeng-dm32uv'],
+    ['baofeng-uv5rmini', 'baofeng-uv5rmini'],
+    ['retevis-rt95-head', 'retevis-rt95-head'],
+    ['retevis-rt95-main', 'retevis-rt95-head'],
+  ] as const)('points %s at the %s guide', (radioId, folder) => {
+    expect(firmwareUserGuideUrl(radioId)).toBe(
+      `https://github.com/pskillen/mm9pdy-firmware/blob/main/docs/${folder}/README.md`,
+    );
+  });
+
+  it('lives under the project URL', () => {
+    expect(firmwareUserGuideUrl('baofeng-dm32uv').startsWith(`${FIRMWARE_PROJECT_URL}/`)).toBe(
+      true,
+    );
   });
 });
