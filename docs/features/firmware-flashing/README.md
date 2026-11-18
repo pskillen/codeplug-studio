@@ -83,13 +83,29 @@ flowchart LR
 | App          | `src/app/routes/firmware/`, `src/app/services/firmwareFlash.ts`, `firmwareFlashEnvGate.ts` |
 | Time left    | `src/app/routes/firmware/flashEta.ts` (count, elapsed and estimate formatting)             |
 
+## User guides
+
+The firmware project keeps a user guide per radio, and a front page that links them all, in its public repository
+([pskillen/mm9pdy-firmware](https://github.com/pskillen/mm9pdy-firmware)). The flasher links to them; it fetches
+nothing for it. All links open in a new tab (`rel="noopener noreferrer"`).
+
+- **Project link** ("MM9PDY firmware: user guides and releases") under the page's intro, on the wizard and on the
+  read-only release list.
+- **User guide** link per radio: on the wizard's **Firmware** step and on each radio's card in the read-only release
+  list. It points at `docs/<radioId>/README.md` on `main`. The URLs come from `FIRMWARE_PROJECT_URL` and
+  `firmwareUserGuideUrl()` in `src/integrations/firmware-releases/publicReleaseIndex.ts`; the RT95 main board uses the
+  front panel's guide, which covers both. A new radio's updater needs its guide folder there only if the folder name
+  differs from the radio id.
+
+The release notes view renders no links (see `ReleaseNotes.tsx`), so the links above are the way to the guides.
+
 ## Browsers without Web Serial
 
 Flashing needs Web Serial, which phones, tablets, Firefox and Safari don't have. On those browsers `/firmware` shows no
 wizard: a banner says flashing needs Chrome or Edge on a desktop computer, then each offered radio's published releases
 are listed read-only, newest first, with the radio's "Supported: …" line and each release's "For the … on stock …"
-line where the radio has them, **Show release candidates**, the **Release notes** disclosure and the same
-**Try again** when the list can't be downloaded. Nothing there opens a port or loads a patch. The Tools strip still
+line where the radio has them, a **User guide** link per radio (see [User guides](#user-guides)), **Show release
+candidates**, the **Release notes** disclosure and the same **Try again** when the list can't be downloaded. Nothing there opens a port or loads a patch. The Tools strip still
 shows the flasher entry, so the releases can be read from a phone. The Android app is covered below.
 
 ## Android app
@@ -432,6 +448,8 @@ written to browser storage or uploaded. The flash summary is only kept if you co
    support" and the unofficial mirror (marked unofficial); Before you flash shows the two attestations and **Check
    the radio**, and Continue stays disabled until both are ticked and the check passed. Hidden under
    `BUILD_ENV=prod npm run dev`.
-4. `BUILD_ENV=prod npm run dev`: `/firmware` offers only the radios whose prod gate is cleared (the DM-32UV, AT-D890UV, RT95 front panel and UV-5R Mini), and
+4. The project link is under the intro on `/firmware`; after choosing a radio, **Continue** shows the **User guide** link on
+   the Firmware step. Both open the firmware repository in a new tab.
+5. `BUILD_ENV=prod npm run dev`: `/firmware` offers only the radios whose prod gate is cleared (the DM-32UV, AT-D890UV, RT95 front panel and UV-5R Mini), and
    the Tools strip has a Firmware flasher entry. With no radio offered, `/firmware` shows "not available on this
    site yet" and the strip has no entry.

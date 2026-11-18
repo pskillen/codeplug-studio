@@ -8,6 +8,7 @@ import type { FirmwareUpdaterDescriptor } from '@integrations/radio-io';
 import { Button, Panel, Pill, StatusBanner, ToggleSwitch } from '../../components/v2/index.ts';
 import { listPublishedReleases } from '../../services/firmwareFlash.ts';
 import classes from './FirmwareFlasherPage.module.css';
+import { FirmwareUserGuideLink } from './FirmwareGuideLinks.tsx';
 import ReleaseNotesDisclosure from './ReleaseNotesDisclosure.tsx';
 
 export const FIRMWARE_BROWSE_ONLY =
@@ -64,6 +65,7 @@ function RadioReleases({
         {updater.stock.supportedRadios ? (
           <p className={classes.copy}>Supported: {updater.stock.supportedRadios}</p>
         ) : null}
+        <FirmwareUserGuideLink radioId={updater.radioId} />
         {value.kind === 'loading' ? <p className={classes.muted}>Loading releases…</p> : null}
         {value.kind === 'failed' ? (
           <>
