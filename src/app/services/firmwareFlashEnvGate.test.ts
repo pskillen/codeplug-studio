@@ -89,11 +89,12 @@ describe('listOfferedFirmwareUpdaters', () => {
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
   });
 
-  it('offers four radios on prod', () => {
+  it('offers five radios on prod', () => {
     expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toEqual([
       'baofeng-dm32uv',
       'anytone-at-d890uv',
       'retevis-rt95-head',
+      'retevis-rt95-main',
       'baofeng-uv5rmini',
     ]);
   });
@@ -104,8 +105,8 @@ describe('listOfferedFirmwareUpdaters', () => {
     }
   });
 
-  it('hides the RT95 main board on prod and offers it on next, dev and staging', () => {
-    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).not.toContain(
+  it('offers the RT95 main board on prod, next, dev and staging', () => {
+    expect(listOfferedFirmwareUpdaters('prod', false).map((d) => d.radioId)).toContain(
       'retevis-rt95-main',
     );
     for (const env of ENVS_PRE_PROD) {
@@ -152,7 +153,8 @@ describe('developer mode (#1650)', () => {
   });
   afterEach(() => localStorage.removeItem(DEVELOPER_MODE_KEY));
 
-  const PROD_HIDDEN = ['retevis-rt95-main'];
+  // No registered radio is prod-disabled at present; the gate itself is covered by resolveFirmwareFlashGate below.
+  const PROD_HIDDEN: string[] = [];
 
   it('hides the prod-disabled radios on prod with developer mode off', () => {
     const ids = listOfferedFirmwareUpdaters('prod', false).map((d) => d.radioId);

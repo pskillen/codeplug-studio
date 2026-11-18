@@ -110,7 +110,7 @@ The RT95 main board is its own firmware radio, so its releases live under their 
 `retevis-rt95-main`, `patchName` `retevis-rt95-main-firmware`, `patchPath` `releases/retevis-rt95-main/rt95-main-fw-<label>.patch.json`,
 `stockVersion` `MAIN V1.61 (20231202)`. The same patch can be loaded from disk as a user patch (CI artifact
 `rt95-main-fw-<label>`). Format and limits: [RT95 firmware.md](../../reference/radios/retevis/rt95/firmware.md#main-board-patch-format).
-The main board stays hidden on prod.
+The main board is offered on prod from the RT95 1.2.0 release.
 
 ## What Studio checks
 

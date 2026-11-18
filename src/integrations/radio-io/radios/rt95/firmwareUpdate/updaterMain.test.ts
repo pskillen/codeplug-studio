@@ -77,7 +77,7 @@ describe('RT95 MAIN updater: refusals and modes', () => {
 
   it('the registered updater has the MAIN radio id and the MAIN profile', () => {
     expect(RT95_MAIN_FIRMWARE_UPDATER.radioId).toBe('retevis-rt95-main');
-    expect(RT95_MAIN_FIRMWARE_UPDATER.prodFlashDisabled).toBe(true);
+    expect(RT95_MAIN_FIRMWARE_UPDATER.prodFlashDisabled).toBe(false);
     expect(RT95_MAIN_FIRMWARE_UPDATER.createUpdater().radioId).toBe(RT95_MAIN_TARGET.radioId);
   });
 

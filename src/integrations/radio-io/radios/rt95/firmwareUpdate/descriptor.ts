@@ -39,9 +39,9 @@ export const RT95_MAIN_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   // Hidden in the Android app: its required safety backup is desktop-only, and Studio has not flashed a MAIN on
   // hardware (#1674).
   capacitorSupported: false,
-  // Hidden on prod until Studio has flashed a patched MAIN on hardware and the owner has decided on a calibration
-  // restore path.
-  prodFlashDisabled: true,
+  // Offered on prod from the RT95 1.2.0 release, which publishes the first RF CPU patch (the audio level meter); the
+  // owner's go, 2026-11-18.
+  prodFlashDisabled: false,
   preflight: RT95_MAIN_PREFLIGHT,
   // Estimate: about 90 ms into the head plus about 275 ms on to MAIN per frame, 55 frames; not yet measured.
   expectedDuration: 'under a minute',
