@@ -112,15 +112,17 @@ export async function applyRadioReadToLibrary({
         slotToChannelId: channelPlan.slotToChannelId,
         zones: zonePlan?.entries ?? [],
       });
-      const buildResult =
-        existing && JSON.stringify(existing) === JSON.stringify(buildPlan.build)
-          ? { ok: true as const, buildId: existing.id }
-          : await persistReadBuild(
-              persistence,
-              existing
-                ? { kind: 'update', build: buildPlan.build, expectedRevision: existing.revision }
-                : { kind: 'create', build: buildPlan.build, egressPaths: created!.egressPaths },
-            );
+      const buildResult = await persistReadBuild(
+        persistence,
+        existing
+          ? {
+              kind: 'update',
+              build: buildPlan.build,
+              expectedRevision: existing.revision,
+              skipUnchangedWrite: true,
+            }
+          : { kind: 'create', build: buildPlan.build, egressPaths: created!.egressPaths },
+      );
       if (!buildResult.ok)
         return {
           ok: false,
