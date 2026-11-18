@@ -2,7 +2,7 @@
 
 This page describes how a Read of this radio is decoded for the library; product behaviour is in `docs/features/radio-read-write/read-into-library.md`.
 
-The detection method is available to the read workflow; integration into that workflow is still pending.
+The adapter hook is available to the read workflow; the library and UI integration is still pending.
 
 ## Firmware detection
 
@@ -18,3 +18,17 @@ Detection reads only the two frames at `0xC000` and `0xEFC0`; it never writes. I
 ## Reading zones
 
 After detecting MM9PDY firmware, the zone table sector `0xC000`–`0xCFFF` can be read in 64 frames. Zone list order follows the table. Valid MMZO data (firmware 1.1.0 and later) supplies each zone's member order; otherwise members are in ascending channel number. Valid MMZS data supplies each zone's scan set; without it no scan set is read. A table rejected by the radio's reader is treated as no zones, not an error. A valid table can have an empty zone list.
+
+## What a read carries and drops
+
+| Radio field       | Carried to              | Note                                                                                                            |
+| ----------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| RX / TX frequency | Channel frequencies     | TX all FF means receive-only.                                                                                   |
+| RX / TX tone      | Channel tones           | Includes reverse DCS.                                                                                           |
+| Power             | Channel power on create | High 5 W and low 1 W map to 100% and 20%.                                                                       |
+| Bandwidth         | Channel bandwidth       | The NFM bit is inverted compared with classic UV-5R.                                                            |
+| Scan              | Scan inclusion          | Per-channel flag.                                                                                               |
+| Name              | Channel name            | Up to 12 ASCII characters; no callsign.                                                                         |
+| Mode              | Channel mode            | FM, or AM when RX is 108–135.999999 MHz. The clone has no AM bit; like CHIRP, Read infers it from RX frequency. |
+
+Dropped fields (see [channel record offsets](channel-record.md)): DTMF signal code `scode` (12), PTT ID `pttid` (13), voice scramble (14 bits 5–4), RX DTMF (15 bits 5–4), busy channel lockout (15 bit 3), frequency hopping (15 bit 0), unnamed bits (14 bits 7–6 and 3–2, 15 bits 7 and 1), and reserved bytes (16–19). Busy channel lockout is dropped even though the library models it, because Mini Write does not encode it.
