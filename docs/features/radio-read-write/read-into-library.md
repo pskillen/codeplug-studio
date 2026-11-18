@@ -42,3 +42,11 @@ A match updates the modelled fields listed above, except power. The radio's mode
 Zones are library entities, matched by name or by a build override or the export-shortened name for the radio. This prevents long names from being duplicated on re-read, including when MM9PDY limits zone names to 12 characters. Unmatched zones are created.
 
 A matched zone's channel members are replaced in radio order. Per-member scan settings for retained channels and nested zones are preserved. Members pointing to empty slots are skipped and reported. Radio zone order and per-zone scan sets are applied to the build, not the library zone.
+
+## The build
+
+A read updates one build for the radio: the build from which the read started when it targets the same radio, otherwise the first build for that target. If none exists, it creates a build.
+
+For flat-memory radios, the read replaces the build's channel slot pins with the radio's slot numbers. For zone radios, it replaces the zone order and member order and, where available, each zone's scan choices. Channel numbers follow zone order when writing. An empty zone read means zone information is unavailable, so it does not reorder or prune zones.
+
+Library channels and zones absent from the radio are left out of the build but remain in the library. Operators can include them again by hand; the next read leaves them out again. A channel or zone present on the radio is included even if it was previously excluded from the build.
