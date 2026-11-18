@@ -50,3 +50,11 @@ A read updates one build for the radio: the build from which the read started wh
 For flat-memory radios, the read replaces the build's channel slot pins with the radio's slot numbers. For zone radios, it replaces the zone order and member order and, where available, each zone's scan choices. Channel numbers follow zone order when writing. An empty zone read means zone information is unavailable, so it does not reorder or prune zones.
 
 Library channels and zones absent from the radio are left out of the build but remain in the library. Operators can include them again by hand; the next read leaves them out again. A channel or zone present on the radio is included even if it was previously excluded from the build.
+
+## How a read is applied
+
+The read saves channels first, then zones using the saved channel identities, then the build using the resulting library and radio order. These saves are sequential, not one transaction. If a step fails, the message says what was saved. Re-reading does not duplicate unchanged library rows.
+
+[Channel matching](#matching-and-updating-channels) and [zone matching](#zones) both include export-shortened names. As described in [The build](#the-build), channels and zones absent from the radio are left out of the build while remaining in the library; an unavailable zone table leaves zones alone.
+
+The summary reports channels and zones created, updated or unchanged, entities left out of the build, warnings, and fields not carried over from the radio.
