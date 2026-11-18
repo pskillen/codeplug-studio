@@ -2,11 +2,21 @@
 
 Read radio channels and zones into the project library and a build.
 
-**Status:** In progress · **Tracking:** [#1891](https://github.com/pskillen/codeplug-studio/issues/1891)
+**Status:** MVP shipped; preview, better matching, dedupe and selective import still planned · **Tracking:** [#1891](https://github.com/pskillen/codeplug-studio/issues/1891)
 
 ## Purpose
 
-Read a connected radio's channels, and zones where available, into the project library and a build for that radio. Library data is normal project data; the raw radio image is still never stored. This changes the earlier rule that Read does not touch the library.
+Read a connected radio's channels, and zones where available, into the project library and a build for that radio.
+
+## Using it
+
+Open a build's **Backup / Restore** tab and choose **Read into library**. Select the connected radio's serial port when prompted. When the read finishes, close the progress modal to see the model, firmware, counts of created, updated and unchanged rows, and a link to the affected build. The summary also lists fields that were dropped, any warnings, and how many channels or zones were left out of the build while remaining in your library.
+
+Nothing is sent to the radio. The raw image is held in memory. Use **Backup radio** to save a zip. Imported rows are ordinary project data. To undo library changes, edit or delete the affected channels and zones in the library.
+
+## Which radios
+
+The action requires a radio adapter with Read into library support. Today it is available for the Baofeng UV-5R Mini on stock and MM9PDY firmware. Zone import is available on MM9PDY when the radio provides a readable zone table.
 
 ## Field mapping
 
@@ -58,3 +68,10 @@ The read saves channels first, then zones using the saved channel identities, th
 [Channel matching](#matching-and-updating-channels) and [zone matching](#zones) both include export-shortened names. As described in [The build](#the-build), channels and zones absent from the radio are left out of the build while remaining in the library; an unavailable zone table leaves zones alone.
 
 The summary reports channels and zones created, updated or unchanged, entities left out of the build, warnings, and fields not carried over from the radio.
+
+## Known gaps
+
+- Preview, match review, deduplication and selective import are planned for the [post-MVP milestone](https://github.com/pskillen/codeplug-studio/issues/495).
+- Channel matching requires both frequencies and an exact match to a name candidate, which can be a library name, build override or export-shortened name. The read does not split callsigns from names or use fuzzy matching.
+- The UV-5R Mini read drops DTMF signal code, PTT ID mode, voice scramble, RX DTMF, busy channel lockout, frequency hopping and unnamed record bits.
+- The UV-5R Mini read infers AM from the air-band receive frequency.
