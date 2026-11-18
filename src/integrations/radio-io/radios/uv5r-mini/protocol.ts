@@ -2,6 +2,8 @@
  * UV-5R Mini CloneImageRadio — the uv17pro-family protocol plus the MM9PDY zone table.
  */
 
+import { UV5RMINI_RADIO_REPORT_ADDRESS } from '@core/radios/baofeng/uv-5r-mini/radioReport.ts';
+
 import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
@@ -12,6 +14,8 @@ import {
   type Uv17ProConnectOptions,
   type Uv17ProExtraUploadFrames,
 } from '../uv17pro-family/protocol.ts';
+import { classifyUv5rMiniFirmware, type Uv5rMiniFirmwareDetection } from './firmwareDetect.ts';
+import { MMZ1_HEADER_ADDR } from './modData/layout.ts';
 import {
   encodeUv5rMiniZoneWrite,
   MMZ1_BASE,
@@ -60,6 +64,15 @@ export class Uv5rMiniProtocol extends Uv17ProProtocol {
 
   getBackupRestoreProfile(): Uv5rMiniBackupRestoreProfile {
     return this.backupRestoreProfile;
+  }
+
+  /** Read both detection frames in the open session straight after download(), before the radio times out. */
+  async detectFirmware(opts: { signal?: AbortSignal } = {}): Promise<Uv5rMiniFirmwareDetection> {
+    const blocks = await this.readBlocks([MMZ1_HEADER_ADDR, UV5RMINI_RADIO_REPORT_ADDRESS], opts);
+    return classifyUv5rMiniFirmware({
+      header: blocks.get(MMZ1_HEADER_ADDR)!.slice(0, 64),
+      report: blocks.get(UV5RMINI_RADIO_REPORT_ADDRESS)!.slice(0, 64),
+    });
   }
 
   /**
