@@ -175,3 +175,144 @@ describe('applyRadioReadToLibrary', () => {
     expect(descriptorSupportsReadIntoLibrary({})).toBe(false);
   });
 });
+
+it('repairs egresses after a partial build save on retry', async () => {
+  const args = { ...(await setup()), read: read() };
+  const put = vi
+    .spyOn(args.persistence, 'putEgressPath')
+    .mockResolvedValueOnce({ ok: false, reason: 'revision_conflict' });
+  expect(await applyRadioReadToLibrary(args)).toMatchObject({
+    ok: false,
+    message: expect.stringContaining('partially saved'),
+  });
+  const build = (await new BuildService(args.persistence).listBuilds(args.projectId))[0]!;
+  expect(await applyRadioReadToLibrary(args)).toMatchObject({
+    ok: true,
+    summary: { channels: { unchanged: 1 }, build: { id: build.id, action: 'updated' } },
+  });
+  const paths = await args.persistence.listEgressPathsForBuild(args.projectId, build.id);
+  expect(paths.find((path) => path.id === build.defaultEgressPathId)).toBeDefined();
+  expect(paths.length).toBeGreaterThan(0);
+  put.mockRestore();
+});
+
+it('selects the started matching build, otherwise the first matching build', async () => {
+  const args = { ...(await setup()), read: read() };
+  const first = newRadioBuildWithEgresses(args.projectId, 'baofeng-uv5r-mini');
+  const second = newRadioBuildWithEgresses(args.projectId, 'baofeng-uv5r-mini');
+  const other = newRadioBuildWithEgresses(args.projectId, 'baofeng-uv5r-mini-mm9pdy');
+  for (const item of [first, second, other]) {
+    await args.persistence.putRadioBuild(item.build, null);
+    for (const path of item.egressPaths) await args.persistence.putEgressPath(path, null);
+  }
+  expect(
+    await applyRadioReadToLibrary({ ...args, startedFromBuildId: second.build.id }),
+  ).toMatchObject({ ok: true, summary: { build: { id: second.build.id } } });
+  expect(
+    await applyRadioReadToLibrary({ ...args, startedFromBuildId: other.build.id }),
+  ).toMatchObject({
+    ok: true,
+    summary: { build: { id: first.build.id }, buildNote: expect.any(String) },
+  });
+  expect(await applyRadioReadToLibrary(args)).toMatchObject({
+    ok: true,
+    summary: { build: { id: first.build.id } },
+  });
+});
+
+it('keeps existing zones when the radio returns no zone table', async () => {
+  const args = { ...(await setup()), read: read(modProfile) };
+  args.read.zones = [{ wireName: 'Local', channelNumbers: [1], scanChannelNumbers: [1] }];
+  expect((await applyRadioReadToLibrary(args)).ok).toBe(true);
+  const before = (await new BuildService(args.persistence).listBuilds(args.projectId))[0]!;
+  args.read.zones = [];
+  expect(await applyRadioReadToLibrary(args)).toMatchObject({
+    ok: true,
+    summary: { zones: { created: 0, updated: 0 }, build: { zonesLeftOut: 0 } },
+  });
+  const after = (await new BuildService(args.persistence).listBuilds(args.projectId))[0]!;
+  expect(after.zoneOverrides).toEqual(before.zoneOverrides);
+  expect(after.layout).toEqual(before.layout);
+});
+
+it('sets power and AM on creation and preserves FM on an update', async () => {
+  const args = { ...(await setup()), read: read() };
+  args.read.channels[0]!.analogMode = 'am';
+  expect((await applyRadioReadToLibrary(args)).ok).toBe(true);
+  let channel = (await new LibraryService(args.persistence).loadLibrary(args.projectId))
+    .channels[0]!;
+  expect(channel.power).toBe(20);
+  expect(channel.modeProfiles.map((profile) => profile.mode)).toContain('am');
+  args.read.channels[0]!.analogMode = 'fm';
+  args.read.channels[0]!.powerPercent = 100;
+  expect((await applyRadioReadToLibrary(args)).ok).toBe(true);
+  channel = (await new LibraryService(args.persistence).loadLibrary(args.projectId)).channels[0]!;
+  expect(channel.power).toBe(20);
+  expect(channel.modeProfiles.map((profile) => profile.mode)).toEqual(
+    expect.arrayContaining(['am', 'fm']),
+  );
+});
+
+it('creates a detected-target build when started from a different target', async () => {
+  const args = { ...(await setup()), read: read() };
+  const other = newRadioBuildWithEgresses(args.projectId, 'baofeng-uv5r-mini-mm9pdy');
+  await args.persistence.putRadioBuild(other.build, null);
+  const result = await applyRadioReadToLibrary({ ...args, startedFromBuildId: other.build.id });
+  expect(result).toMatchObject({
+    ok: true,
+    summary: { build: { action: 'created' }, buildNote: expect.any(String) },
+  });
+  const builds = await new BuildService(args.persistence).listBuilds(args.projectId);
+  expect(builds).toHaveLength(2);
+  const created = builds.find((build) => build.radioTargetId === 'baofeng-uv5r-mini')!;
+  expect(
+    (await args.persistence.listEgressPathsForBuild(args.projectId, created.id)).length,
+  ).toBeGreaterThan(0);
+});
+
+it('adds FM to a matching DMR channel without replacing DMR or its power', async () => {
+  const args = { ...(await setup()), read: read() };
+  const channel = {
+    ...newChannel(args.projectId, 'Local'),
+    rxFrequency: 145500000,
+    txFrequency: 145500000,
+    power: 75,
+    primaryMode: 'dmr' as const,
+    modeProfiles: [
+      {
+        mode: 'dmr' as const,
+        colourCode: 1,
+        timeslot: 1 as const,
+        ownDigitalIdId: null,
+        contactRef: null,
+        rxGroupListId: null,
+      },
+    ],
+  };
+  await args.persistence.putChannel(channel, null);
+  expect(await applyRadioReadToLibrary(args)).toMatchObject({
+    ok: true,
+    summary: { channels: { updated: 1, created: 0 } },
+  });
+  const updated = (await new LibraryService(args.persistence).loadLibrary(args.projectId))
+    .channels[0]!;
+  expect(updated.power).toBe(75);
+  expect(updated.modeProfiles.map((profile) => profile.mode)).toEqual(['dmr', 'fm']);
+  expect(await applyRadioReadToLibrary(args)).toMatchObject({
+    ok: true,
+    summary: { channels: { unchanged: 1 } },
+  });
+});
+
+it('creates a zone whose radio name is unrelated to existing zones', async () => {
+  const args = { ...(await setup()), read: read(modProfile) };
+  await args.persistence.putZone(newZone(args.projectId, 'Regional Repeaters North'), null);
+  args.read.zones = [{ wireName: 'Other', channelNumbers: [1] }];
+  expect(await applyRadioReadToLibrary(args)).toMatchObject({
+    ok: true,
+    summary: { zones: { created: 1, updated: 0 } },
+  });
+  expect(
+    (await new LibraryService(args.persistence).loadLibrary(args.projectId)).zones,
+  ).toHaveLength(2);
+});

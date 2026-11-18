@@ -42,6 +42,19 @@ it.each(['radio-io-uv5r-mini', 'radio-io-uv5r-mini-mm9pdy'])(
         rxOnly: true,
         analogMode: 'am',
       },
+      {
+        slotIndex: 3,
+        empty: false,
+        wireName: 'Repeater',
+        rxHz: 145600000,
+        txHz: 145000000,
+        rxTone: { kind: 'dcs', code: 23, polarity: 'N' },
+        txTone: { kind: 'ctcss', hz: 88.5 },
+        powerPercent: 100,
+        bandwidth: 'NFM',
+        scanAdd: true,
+        rxOnly: false,
+      },
     ];
     const mod = profileId.endsWith('mm9pdy');
     const read: RadioLibraryRead = {
@@ -49,7 +62,12 @@ it.each(['radio-io-uv5r-mini', 'radio-io-uv5r-mini-mm9pdy'])(
       modelLabel: 'Mini',
       firmwareLabel: 'Test',
       channels,
-      zones: mod ? [{ wireName: 'Local', channelNumbers: [1, 2], scanChannelNumbers: [1] }] : [],
+      zones: mod
+        ? [
+            { wireName: 'Local', channelNumbers: [1, 2], scanChannelNumbers: [1] },
+            { wireName: 'Other', channelNumbers: [3], scanChannelNumbers: [3] },
+          ]
+        : [],
       droppedFields: [],
       notes: [],
     };
@@ -65,8 +83,9 @@ it.each(['radio-io-uv5r-mini', 'radio-io-uv5r-mini-mm9pdy'])(
       formatId: 'radio-io',
       profileId,
     });
-    expect(library.channels).toHaveLength(3);
-    expect(output.channels).toHaveLength(2);
+    expect(library.channels).toHaveLength(4);
+    expect(library.zones.some((zone) => zone.name === 'Extra')).toBe(true);
+    expect(output.channels).toHaveLength(3);
     for (const input of channels) {
       const result = output.channels.find((channel) => channel.wireName === input.wireName)!;
       expect(result).toMatchObject({
@@ -85,6 +104,7 @@ it.each(['radio-io-uv5r-mini', 'radio-io-uv5r-mini-mm9pdy'])(
     if (mod)
       expect(output.organisation.zones).toMatchObject([
         { wireName: 'Local', channelNumbers: [1, 2], scanChannelNumbers: [1] },
+        { wireName: 'Other', channelNumbers: [3], scanChannelNumbers: [3] },
       ]);
   },
 );
