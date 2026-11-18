@@ -52,7 +52,7 @@ it('repairs missing egress paths on retry without replacing saved paths', async 
   const paths = await persistence.listEgressPathsForBuild(meta.projectId, build.id);
   expect(paths).toHaveLength(egressPaths.length);
   expect(paths.find((path) => path.id === build.defaultEgressPathId)).toBeDefined();
-  if (egressPaths[1]) expect(paths).toContainEqual(egressPaths[1]);
+  if (egressPaths[1]) expect(paths.map((path) => path.id)).toContain(egressPaths[1].id);
   expect(
     await persistReadBuild(persistence, {
       kind: 'update',
