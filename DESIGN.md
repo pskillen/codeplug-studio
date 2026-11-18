@@ -37,7 +37,7 @@ Salvage from the old repo: wire-format reference docs, import parsers (simplifie
 | Term                            | Meaning                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Project**                     | Named container: metadata + one library + zero or more format builds. Persisted as a unit.                                                                                                                                                                                                                                                             |
-| **Library**                     | Master inventory — channels, talk groups, contacts, and shared concepts (e.g. zone _definitions_ where they are radio-agnostic). The operator's single source of truth for RF assets.                                                                                                                                                                  |
+| **Library**                     | Master inventory — channels, talk groups, contacts, zones, and other shared entities. The operator's single source of truth for RF assets.                                                                                                                                                                                                             |
 | **Format build** (or **build**) | A format-scoped assembly: library selection + **trait-shaped layout** (zones, flat memories, scan lists, …) for one CPS workflow.                                                                                                                                                                                                                      |
 | **Build capability trait**      | A behavioural concern radios may or may not support (zone grouping, scan lists, m×n channel expansion, …). Builds and build UI compose from traits; wire adapters map the result to CPS.                                                                                                                                                               |
 | **Trait profile**               | The set of traits enabled for a build, usually fixed per format/profile definition — e.g. OpenGD77-1701 vs CHIRP UV-5R.                                                                                                                                                                                                                                |
@@ -75,7 +75,7 @@ Radios differ along a small set of **behavioural concerns** (see [Build capabili
 
 **RadioBuild** data and **build UI** are composed from a **trait profile** (which concerns apply and how) on a catalog **radio target**. **EgressPath** children hold adapter identity (`formatId` / `profileId`) and optional operation hydration. **Wire import/export adapters** remain specific to a format/profile (OpenGD77-1701 CSV, CHIRP UV-5R, …) but _project_ library + trait-shaped build state → wire at the boundary through the selected egress.
 
-Do not model OpenGD77 zones in the library because OpenGD77 has a Zones.csv; model **zone grouping** on the build when the trait profile says the radio uses zones.
+Zones are library entities. Membership and member order live in the library `Zone`. When the trait profile supports zones, the build holds zone export order, layout hints, and the per-zone scan projection. Each format maps these to its own CSV layout at the boundary.
 
 ### 4. Vendor-neutral core
 
@@ -158,13 +158,13 @@ Library
   talkGroups: TalkGroup[]
   contacts: Contact[]
   rxGroupLists: RxGroupList[]    # if modelled at library level
-  zones: Zone[]                  # TBD: library-level vs build-level only
+  zones: Zone[]                  # library-level; the build holds order/layout only
 
 RadioBuild
   id, radioTargetId, name
   trait layout from catalog target traits
   channelOverrides, zoneOverrides, …  # libraryEntityId + wireName / excluded
-  layout: TraitLayout            # trait-shaped state (zones, scan lists, memory slots, …)
+  layout: TraitLayout            # trait-shaped state (zone export order, scan projection, memory slots, …)
   exportSettings?, defaultEgressPathId?
 
 EgressPath
