@@ -36,3 +36,9 @@ Radio fields the library has no field for are dropped; each radio's reference pa
 A read matches a library channel when its name, RX frequency and TX frequency all match exactly. Names are case-sensitive and may match the library name, the build's name override, or any name export would produce for that channel on this radio. These candidates are generated when needed and never stored. Tones, mode and other fields do not affect matching. Each library row can match only one radio channel in a read.
 
 A match updates the modelled fields listed above, except power. The radio's mode is added if missing, and existing modes are never removed. A new channel takes the radio's power. Re-reading the same radio changes nothing. Better matching, including callsign/name splitting, tolerance, preview, deduplication and selective import, is later work.
+
+## Zones
+
+Zones are library entities, matched by name or by a build override or the export-shortened name for the radio. This prevents long names from being duplicated on re-read, including when MM9PDY limits zone names to 12 characters. Unmatched zones are created.
+
+A matched zone's channel members are replaced in radio order. Per-member scan settings for retained channels and nested zones are preserved. Members pointing to empty slots are skipped and reported. Radio zone order and per-zone scan sets are applied to the build, not the library zone.
