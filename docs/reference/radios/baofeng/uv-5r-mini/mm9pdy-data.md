@@ -62,7 +62,7 @@ channel in no zone. A pinned channel keeps its number. Zones point at channel nu
 ## Where the code is
 
 `src/integrations/radio-io/radios/uv5r-mini/modData/`: `layout.ts` (constants), `encode.ts`
-(`encodeUv5rMiniZoneTable`), `decode.ts` (`decodeUv5rMiniZoneTable`, mirrors the radio's table reader rules), and `scanSets.ts` (MMZS encoder and fill). The allow-list
+(`encodeUv5rMiniZoneTable`), `decode.ts` (`decodeUv5rMiniZoneTable`, mirrors the radio's table reader rules), `scanSets.ts` (MMZS encoder and fill), `scanSetsDecode.ts` and `orderDecode.ts` (MMZS and MMZO readers), and `zoneRead.ts` (combined zone projection). `Uv5rMiniProtocol.readZoneTable` reads the sector and `readZones` decodes it. The allow-list
 is `uv5r-mini/writeInterlock.ts`. The write path is `uv5r-mini/protocol.ts` (`Uv5rMiniProtocol.setZoneIntent`, seeded
 by the descriptor from the Write projection), the plan `uv5r-mini/plannedStages.ts`, verify the family's
 `writeVerifyHooks.ts` with the table as an extra span. The projection is
