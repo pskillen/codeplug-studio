@@ -1,9 +1,9 @@
 /**
- * Per-build Backup / Restore tab — zip on disk + in-RAM inspect.
- * Session data stays in React memory; never writes egress hydration or project state (#1138).
+ * Per-build Backup / Restore tab — zip on disk and inspect in memory.
+ * Read into library is the only section that saves library and build rows.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Alert, FileButton, Group, Stack, Table, Text } from '@mantine/core';
 import { isDm32RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
@@ -66,7 +66,15 @@ import {
 } from '../../state/radioSessionBackups.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import RangeChangeBanner from '../../components/dangerZone/RangeChangeBanner.tsx';
+import {
+  applyRadioReadToLibrary,
+  descriptorSupportsReadIntoLibrary,
+  type RadioReadOutcome,
+} from '../../services/radioReadIntoLibrary.ts';
+import { persistence } from '../../state/persistence.ts';
+import { ProjectContext } from '../../state/ProjectContext.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
+import ReadIntoLibraryPanel from './ReadIntoLibraryPanel.tsx';
 
 function coverageCopy(coverage: RadioBackupSession['manifest']['coverage']): string {
   switch (coverage) {
@@ -105,6 +113,9 @@ function BackupRadioLabel({ backup }: { backup: RadioBackupThisSession }) {
 
 export default function BuildRadioBackupPage() {
   const { build, egressPaths } = useBuildLayout();
+  const projects = useContext(ProjectContext);
+  const readProjectId =
+    !projects?.loading && projects?.activeProjectId === build.projectId ? build.projectId : null;
   const radioEgress = findRadioIoEgress(egressPaths);
   const navigate = useNavigate();
   const backupsThisSession = useBackupsThisSession(build.id);
@@ -122,6 +133,7 @@ export default function BuildRadioBackupPage() {
   const [transferStages, setTransferStages] = useState<string[]>([]);
   const [plan, setPlan] = useState<PlannedStage[] | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  const [readOutcome, setReadOutcome] = useState<RadioReadOutcome | null>(null);
   const [backup, setBackup] = useState<RadioBackupSession | null>(null);
   /** Optional descriptive fields typed before a backup; stored in the manifest. */
   const [labels, setLabels] = useState<RadioBackupLabels>({});
@@ -159,6 +171,8 @@ export default function BuildRadioBackupPage() {
   const descriptors = descriptorsForEgress(radioEgress);
   const descriptor = descriptors[0];
   const serialOk = isRadioSerialSupported();
+  const supportsReadIntoLibrary =
+    descriptor != null && descriptorSupportsReadIntoLibrary(descriptor);
   const restoreProdHidden = isRestoreHiddenForProfile(descriptor, radioEgress.profileId);
   const restoreAvailable = descriptorSupportsRestore(descriptor) && !restoreProdHidden;
   const profileId = radioEgress.profileId;
@@ -212,6 +226,43 @@ export default function BuildRadioBackupPage() {
     const session = sessionRef.current;
     sessionRef.current = null;
     if (session) await closeRadioSession(session);
+  }
+
+  async function handleReadIntoLibrary() {
+    const hook = descriptor?.readIntoLibrary;
+    if (busy || !serialOk || !readProjectId || !hook || !radioEgress) return;
+    setReadOutcome(null);
+    beginBusy('library-read');
+    const { signal } = abortRef.current!;
+    try {
+      const { session } = await openRadioSessionForEgress(radioEgress, {
+        forcePortSelection: true,
+        purpose: 'read',
+        signal,
+      });
+      sessionRef.current = session;
+      signal.throwIfAborted();
+      setPhase('transfer');
+      const read = await hook.read(session, { onProgress, signal });
+      await releaseSession();
+      signal.throwIfAborted();
+      setPhase('saving');
+      const outcome = await applyRadioReadToLibrary({
+        persistence,
+        projectId: readProjectId,
+        read,
+        startedFromBuildId: build.id,
+      });
+      setReadOutcome(outcome);
+      if (outcome.ok) setPhase('done');
+      else handleProgressClose();
+    } catch (err) {
+      await releaseSession().catch(() => undefined);
+      if (!signal.aborted) {
+        setReadOutcome({ ok: false, message: err instanceof Error ? err.message : String(err) });
+      }
+      handleProgressClose();
+    }
   }
 
   async function handleBackupRadio() {
@@ -321,6 +372,7 @@ export default function BuildRadioBackupPage() {
 
   function handleCancel(): void {
     abortRef.current?.abort();
+    if (operation === 'library-read') return;
     abortRef.current = null;
     setRestoreConfirmOpen(false);
     setRestoreIdentity(null);
@@ -493,6 +545,16 @@ export default function BuildRadioBackupPage() {
             result={safety}
             onBackup={(region, serial) => void handleBackupSafety(region, serial)}
             onClear={() => setSafety(null)}
+          />
+        ) : null}
+
+        {supportsReadIntoLibrary ? (
+          <ReadIntoLibraryPanel
+            busy={busy}
+            serialOk={serialOk && Boolean(readProjectId)}
+            outcome={readOutcome}
+            onRead={() => void handleReadIntoLibrary()}
+            onClear={() => setReadOutcome(null)}
           />
         ) : null}
 
