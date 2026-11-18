@@ -30,3 +30,9 @@ Name, callsign, comment, location, APRS, abbreviation, scan list, TX permit, squ
 ## Not carried
 
 Radio fields the library has no field for are dropped; each radio's reference page lists what that radio drops. Digital fields, radio-native indexes, descriptions and other unmodelled radio settings are not carried by this analog mapper.
+
+## Matching and updating channels
+
+A read matches a library channel when its name, RX frequency and TX frequency all match exactly. Names are case-sensitive and may match the library name, the build's name override, or any name export would produce for that channel on this radio. These candidates are generated when needed and never stored. Tones, mode and other fields do not affect matching. Each library row can match only one radio channel in a read.
+
+A match updates the modelled fields listed above, except power. The radio's mode is added if missing, and existing modes are never removed. A new channel takes the radio's power. Re-reading the same radio changes nothing. Better matching, including callsign/name splitting, tolerance, preview, deduplication and selective import, is later work.
