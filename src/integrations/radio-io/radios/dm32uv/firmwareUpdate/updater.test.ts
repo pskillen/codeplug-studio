@@ -78,6 +78,22 @@ describe('createDm32FirmwareUpdater', () => {
     expect(progress.at(-1)!.written).toEqual({ done: 840, total: 840, unit: 'blocks' });
   }, 15_000);
 
+  it('flashes a longer-than-stock image whole, tail block included', async () => {
+    const bin = syntheticDm32Image(996_868, 41);
+    const mock = new Dm32BootloaderMock();
+    const updater = createDm32FirmwareUpdater({ preSendDelayMs: 0 });
+    await updater.identify(mock);
+    const result = await updater.flash(preparedDm32Image(bin), {});
+    expect(mock.violations).toEqual([]);
+    expect(mock.erased && mock.eotSeen).toBe(true);
+    expect(new TextDecoder().decode(mock.meta)).toBe(
+      `${DM32UV_FIRMWARE_BLOCK0_FILE_NAME}\x00996612`,
+    );
+    // The mock keeps the 0x1A padding of the last SOH block; the announced length trims it.
+    expect(mock.body.slice(0, 996_612)).toEqual(bin.slice(0x100));
+    expect(result).toMatchObject({ dataFrames: 976, end: 'eot-sent' });
+  }, 15_000);
+
   it('returns the bootloader ident', async () => {
     const ident = await createDm32FirmwareUpdater({ preSendDelayMs: 0 }).identify(
       new Dm32BootloaderMock(),

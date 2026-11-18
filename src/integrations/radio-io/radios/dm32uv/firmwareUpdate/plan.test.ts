@@ -132,6 +132,48 @@ describe('buildDm32FirmwarePlan', () => {
   });
 });
 
+describe('buildDm32FirmwarePlan for a longer-than-stock image', () => {
+  const blocksOf = (p: ReturnType<typeof buildDm32FirmwarePlan>) =>
+    p.filter((s) => s.name.startsWith('block#'));
+  const block0Meta = (p: ReturnType<typeof buildDm32FirmwarePlan>) =>
+    new TextDecoder()
+      .decode(p.find((s) => s.name === 'block0+erase')!.tx.slice(2, 130))
+      .replace(/\0+$/, '');
+
+  it('announces the longer body and ends with a padded SOH tail', () => {
+    // 996,868 B (RadioFoundry's proven length): body 996,612 = 973 KiB + 260 B → 973 STX + 3 SOH.
+    const img = syntheticDm32Image(996_868, 11);
+    const p = buildDm32FirmwarePlan(img, DM32UV_FIRMWARE_BLOCK0_FILE_NAME);
+    expect(block0Meta(p)).toBe(`${DM32UV_FIRMWARE_BLOCK0_FILE_NAME}\u0000996612`);
+    const bl = blocksOf(p);
+    expect(bl).toHaveLength(976);
+    expect(p).toHaveLength(6 + 1 + 976 * 2 + 1);
+    expect(p.find((s) => s.name === 'type#972')!.tx).toEqual(Uint8Array.of(0x02));
+    expect(
+      ['type#973', 'type#974', 'type#975'].map((n) => hex(p.find((s) => s.name === n)!.tx)),
+    ).toEqual(['01', '01', '01']);
+    const tail = bl[bl.length - 1]!.tx;
+    expect(tail[0]).toBe(976 & 0xff);
+    expect(tail).toHaveLength(2 + 128 + 2);
+    expect(tail.slice(2, 6)).toEqual(img.slice(img.length - 4));
+    expect(tail.slice(6, 2 + 128)).toEqual(new Uint8Array(124).fill(0x1a));
+  });
+
+  it('sends a maximum-length image as whole STX blocks', () => {
+    const img = syntheticDm32Image(999_680, 12);
+    const p = buildDm32FirmwarePlan(img, DM32UV_FIRMWARE_BLOCK0_FILE_NAME);
+    expect(block0Meta(p)).toBe(`${DM32UV_FIRMWARE_BLOCK0_FILE_NAME}\u0000999424`);
+    const bl = blocksOf(p);
+    expect(bl).toHaveLength(976);
+    expect(new Set(p.filter((s) => s.name.startsWith('type#')).map((s) => hex(s.tx)))).toEqual(
+      new Set(['02']),
+    );
+    const last = bl[bl.length - 1]!.tx;
+    expect(last[0]).toBe(0xd0);
+    expect(last.slice(2, 2 + 1024)).toEqual(img.slice(img.length - 1024));
+  });
+});
+
 describe('createDm32TxGuard', () => {
   const plan = buildDm32FirmwarePlan(syntheticDm32Image(), DM32UV_FIRMWARE_BLOCK0_FILE_NAME);
 

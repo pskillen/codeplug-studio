@@ -4,6 +4,7 @@
  */
 import {
   DM32UV_FIRMWARE_IMAGE_SIZE,
+  DM32UV_FIRMWARE_MAX_IMAGE_SIZE,
   DM32UV_FIRMWARE_ROLE_BIN,
 } from '@core/radios/baofeng/dm-32uv/firmware.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
@@ -32,9 +33,14 @@ export function checkDm32FirmwareImage(image: PreparedFirmwareImage): Uint8Array
     throw new RadioInterlockError('A DM-32UV firmware image must be exactly one file.');
   }
   const bin = image.package.files[DM32UV_FIRMWARE_ROLE_BIN];
-  if (!bin || bin.length !== DM32UV_FIRMWARE_IMAGE_SIZE) {
+  // At least stock length; at most what the app area the bootloader erases can hold (DM32UV_FIRMWARE_MAX_IMAGE_SIZE).
+  if (
+    !bin ||
+    bin.length < DM32UV_FIRMWARE_IMAGE_SIZE ||
+    bin.length > DM32UV_FIRMWARE_MAX_IMAGE_SIZE
+  ) {
     throw new RadioInterlockError(
-      `A DM-32UV firmware image must be ${DM32UV_FIRMWARE_IMAGE_SIZE} bytes long.`,
+      `A DM-32UV firmware image must be ${DM32UV_FIRMWARE_IMAGE_SIZE} to ${DM32UV_FIRMWARE_MAX_IMAGE_SIZE} bytes long.`,
     );
   }
   if (!bytesEqual(bin.subarray(0, DM32_FW_MODEL_ID_BYTES.length), DM32_FW_MODEL_ID_BYTES)) {
