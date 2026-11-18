@@ -241,10 +241,11 @@ project, library or build. The flasher needs no open project and stores nothing.
    the patch. Anything else is refused before any radio contact.
 4. **Hard interlocks can't be bypassed.** Each radio's updater refuses unsafe images and frames in code, before the
    first byte is sent and again on every write. Examples: address windows that keep away from the bootloader and the
-   activation page; a model-ID match with the bootloader's own ident; a stock-length image where the radio requires
-   it. No setting, flag, environment value or patch field can switch one off. A warning is not an interlock: where an
-   action is safe but worth a second thought (rewriting the build the radio already runs, as a repair), the updater
-   asks for an explicit confirm on Prepare and sends nothing without it. Only a check that a loader makes safe may be a
+   activation page; a model-ID match with the bootloader's own ident; an image length the radio's flash can hold
+   (never shorter than stock, never past the app area the bootloader erases). No setting, flag, environment value or
+   patch field can switch one off. A warning is not an interlock: where an action is safe but worth a second thought
+   (rewriting the build the radio already runs, as a repair), the updater asks for an explicit confirm on Prepare and
+   sends nothing without it. Only a check that a loader makes safe may be a
    warning.
 5. **One pipeline.** Published release, user-supplied patch, and stock all take the same path:
    verify stock → (apply patch → verify result) → interlocks → bootloader ident → flash.
@@ -455,6 +456,7 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 
 | Date       | Change                                                                                                                                                                                                                                                     |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-18 | Firmware flashing rule 4: an image may be as long as the radio's flash takes, not only stock length (DM-32UV: up to the 1 MiB app-area bound)                                                                                                              |
 | 2026-11-15 | Build capability traits: **Zone scan set** for zones over a flat channel list on the RT95 and UV-5R Mini MM9PDY targets ([#1755](https://github.com/pskillen/codeplug-studio/issues/1755))                                                                 |
 | 2026-11-14 | Firmware flashing rule 8: the DM-32UV, the AT-D890UV and the RT95 front panel join the UV-5R Mini in the Android app while developer mode is on; the RT95 main board stays hidden there ([#1674](https://github.com/pskillen/codeplug-studio/issues/1674)) |
 | 2026-11-14 | Firmware flashing rule 8: a per-radio Android setting; the UV-5R Mini is offered in the Android app while developer mode is on ([#1657](https://github.com/pskillen/codeplug-studio/issues/1657))                                                          |

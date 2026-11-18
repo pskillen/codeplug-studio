@@ -25,12 +25,23 @@ The user supplies the vendor zip, or the `.bin` extracted from it. Studio never 
 
 Image facts used by the updater:
 
-| Constant                           | Value                       | Meaning                                                                    |
-| ---------------------------------- | --------------------------- | -------------------------------------------------------------------------- |
-| `DM32UV_FIRMWARE_MODEL_ID`         | `BFUV32-V2`                 | First 9 bytes of every image; the bootloader returns the same as its ident |
-| `DM32UV_FIRMWARE_IMAGE_SIZE`       | 860,416                     | Every release is stock length; the updater refuses any other length        |
-| `DM32UV_FIRMWARE_HEADER_LEN`       | `0x100`                     | Image header length                                                        |
-| `DM32UV_FIRMWARE_BLOCK0_FILE_NAME` | `DM32_L01_048_20250821.bin` | File name sent in YMODEM block 0 for every image, stock or patched         |
+| Constant                            | Value                       | Meaning                                                                    |
+| ----------------------------------- | --------------------------- | -------------------------------------------------------------------------- |
+| `DM32UV_FIRMWARE_MODEL_ID`          | `BFUV32-V2`                 | First 9 bytes of every image; the bootloader returns the same as its ident |
+| `DM32UV_FIRMWARE_IMAGE_SIZE`        | 860,416                     | Stock length; the updater refuses any shorter image                        |
+| `DM32UV_FIRMWARE_MAX_IMAGE_SIZE`    | 999,680                     | Longest image the updater sends (see below); it refuses any longer one     |
+| `DM32UV_FIRMWARE_HEADER_LEN`        | `0x100`                     | Image header length                                                        |
+| `DM32UV_FIRMWARE_BODY_LOAD_ADDRESS` | `0x0300C000`                | Where the body (file `0x100` onward) loads in program flash                |
+| `DM32UV_FIRMWARE_APP_AREA_END`      | `0x03100000`                | End (exclusive) of the app area the bootloader erases                      |
+| `DM32UV_FIRMWARE_BLOCK0_FILE_NAME`  | `DM32_L01_048_20250821.bin` | File name sent in YMODEM block 0 for every image, stock or patched         |
+
+**Maximum length.** The body loads at `0x0300C000` and the bootloader erases the app area up to `0x03100000`
+(RadioFoundry's notes, inferred rather than read out of the bootloader). That leaves 0xF4000 = 999,424 bytes of body,
+so a file of 999,680 bytes. RadioFoundry has flashed a 996,868-byte image through the stock bootloader and it booted.
+The flash part is 1 MiB or 2 MiB, not yet known, so the cap is the proven 1 MiB bound; raise it once the flash size
+is known. Images may be as long as the silicon allows (firmware project decision 88); the bootloader is told each
+image's body length in block 0, so a longer image needs no other protocol change. Calibration and the bootloader are
+never written.
 
 ## Update-mode entry
 
@@ -143,12 +154,15 @@ waits 20 s, the erase was observed at 12.6 s, and Studio waits 60 s.
 - **Sequence:** starts at 1 and wraps from `0xFF` to `0x00`.
 - **Header:** the image's first 0x100 bytes are never sent.
 - **Stock-length image:** 840 STX blocks, last sequence `0x48`; 6 + 1 + 840 × 2 + 1 = 1,688 frames.
+- **Longer image:** block 0 announces the longer body, and a tail that is not a whole KiB goes in 128-byte SOH
+  blocks. A 996,868-byte image is 973 STX + 3 SOH blocks (the last holds 4 bytes and 124 bytes of `0x1A`); a
+  maximum-length image is 976 STX blocks, last sequence `0xD0`.
 
 ### Hard interlocks
 
 None can be switched off by a setting, flag, environment value or patch field.
 
-1. **Image:** radio id `baofeng-dm32uv`; exactly one file (role `bin`); exactly 860,416 bytes; bytes 0–8 equal
+1. **Image:** radio id `baofeng-dm32uv`; exactly one file (role `bin`); 860,416 to 999,680 bytes; bytes 0–8 equal
    `BFUV32-V2`; the CPS's header check (`E` at `0xFD`, `N` at `0xFE` or `D` at `0xFF`). Checked when the image is
    prepared and again in `flash()`.
 2. **Model:** the image's first 9 bytes must equal the bootloader's ident, checked before the erase.

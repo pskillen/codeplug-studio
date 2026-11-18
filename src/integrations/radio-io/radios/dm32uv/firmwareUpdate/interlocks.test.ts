@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import {
+  DM32UV_FIRMWARE_IMAGE_SIZE,
+  DM32UV_FIRMWARE_MAX_IMAGE_SIZE,
+} from '@core/radios/baofeng/dm-32uv/firmware.ts';
+
 import { RadioInterlockError } from '../../../kit/errors.ts';
 import { preparedDm32Image, syntheticDm32Image } from './__fixtures__/syntheticImage.ts';
 import { checkDm32FirmwareImage } from './interlocks.ts';
@@ -17,12 +22,27 @@ describe('checkDm32FirmwareImage', () => {
     expect(() => checkDm32FirmwareImage(preparedDm32Image(bin))).not.toThrow();
   });
 
-  it('refuses the wrong length', () => {
-    const bin = syntheticDm32Image(860_416 + 1024);
+  it('caps the image at the 1 MiB app-area bound', () => {
+    expect(DM32UV_FIRMWARE_IMAGE_SIZE).toBe(860_416);
+    expect(DM32UV_FIRMWARE_MAX_IMAGE_SIZE).toBe(999_680);
+  });
+
+  it.each([
+    ['stock length', 860_416],
+    ['longer than stock (12 KiB appended)', 860_416 + 12 * 1024],
+    ['longer than stock, odd length', 996_868],
+    ['exactly the maximum', 999_680],
+  ])('accepts an image of %s', (_label, length) => {
+    const bin = syntheticDm32Image(length);
+    expect(checkDm32FirmwareImage(preparedDm32Image(bin))).toBe(bin);
+  });
+
+  it.each([
+    ['one byte shorter than stock', 860_415],
+    ['one byte over the maximum', 999_681],
+  ])('refuses an image %s', (_label, length) => {
+    const bin = syntheticDm32Image(length);
     expect(() => checkDm32FirmwareImage(preparedDm32Image(bin))).toThrow(RadioInterlockError);
-    expect(() => checkDm32FirmwareImage(preparedDm32Image(syntheticDm32Image(860_415)))).toThrow(
-      RadioInterlockError,
-    );
   });
 
   it('refuses the wrong model ID', () => {
