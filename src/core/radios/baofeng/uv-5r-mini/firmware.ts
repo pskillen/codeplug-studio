@@ -108,7 +108,8 @@ export const UV5RMINI_STOCK_FIRMWARE: StockFirmwareDescriptor = {
     ],
     indicator: 'UPDATE... on the screen',
     warnings: [
-      'If the red TX LED lights or the normal screen appears, switch off at once.',
+      'If the normal screen appears instead of UPDATE..., switch off at once and try again.',
+      'The red LED may light during the update. That is normal while the screen shows UPDATE...; leave the radio alone until Studio says it has finished.',
       'If an earlier update was cut, switch on with no keys. The screen stays dark and Studio continues the write.',
     ],
   },
