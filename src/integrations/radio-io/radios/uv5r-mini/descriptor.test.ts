@@ -31,6 +31,15 @@ describe('UV-5R Mini descriptor / registry', () => {
     expect(listDescriptorsForProfile('opengd77', 'opengd77-1701')).toHaveLength(0);
   });
 
+  it('is the only registered read into library adapter', () => {
+    expect(
+      listRadioDescriptors()
+        .filter((d) => d.readIntoLibrary)
+        .map((d) => d.label),
+    ).toEqual(['Baofeng UV-5R Mini']);
+    expect(typeof getRadioDescriptor(UV5R_MINI_MODEL_ID)?.readIntoLibrary?.read).toBe('function');
+  });
+
   it('protocolFactory returns a CloneImageRadio with restoreFromBackup', () => {
     const radio = createUv5rMiniProtocol();
     expect(typeof radio.connect).toBe('function');
