@@ -3,7 +3,7 @@
  * main board (MAIN, "RF CPU"). Each is its own firmware radio; both ship in one vendor zip.
  * Code mirror of [firmware.md](../../../../../docs/reference/radios/retevis/rt95/firmware.md).
  * Used by the firmware flasher only — not library CRUD or codeplug Write. MAIN is flashed through the head's bridge
- * (stock MAIN only, hidden on prod).
+ * (the pinned stock MAIN or a MAIN patch).
  */
 import type { StockFirmwareDescriptor } from '../../../firmware/types.ts';
 

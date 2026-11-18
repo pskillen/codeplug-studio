@@ -15,8 +15,9 @@ PL2303GC cable).
 **The main board is a separate firmware radio, `retevis-rt95-main`,** one radio id per MCU, sharing the head's stock
 zip. Its facts are the [stock pin](#main-board-stock-pin), [update mode](#main-board-update-mode), the
 [pre-flight](#main-board-pre-flight) and the [interlocks](#main-board-interlocks). **The MAIN updater flashes the
-pinned stock MAIN, or a MAIN patch file ([format](#main-board-patch-format)), and is hidden on prod**
-(`prodFlashDisabled: true`): it is listed on next, dev and staging.
+pinned stock MAIN, or a MAIN patch file ([format](#main-board-patch-format)), and is offered on every site, prod
+included** (`prodFlashDisabled: false` from the RT95 1.2.0 release, the first with a published RF CPU patch). It stays
+hidden in the Android app (`capacitorSupported: false`).
 
 ## Stock firmware pin
 
