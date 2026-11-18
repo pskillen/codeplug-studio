@@ -18,6 +18,8 @@ import { classifyUv5rMiniFirmware, type Uv5rMiniFirmwareDetection } from './firm
 import { MMZ1_HEADER_ADDR } from './modData/layout.ts';
 import {
   encodeUv5rMiniZoneWrite,
+  decodeUv5rMiniZoneRead,
+  type Uv5rMiniZoneRead,
   MMZ1_BASE,
   MMZ1_FRAME_BYTES,
   MMZ1_SECTOR_BYTES,
@@ -85,6 +87,13 @@ export class Uv5rMiniProtocol extends Uv17ProProtocol {
     if (this.backupRestoreProfile !== 'mm9pdy') {
       throw new RadioProtocolError('UV-5R Mini: the zone table is read on the MM9PDY target only');
     }
+    return this.readZoneTable(opts);
+  }
+
+  /** Read-only: callers must first identify MM9PDY firmware. A stock sector decodes as no zones. */
+  async readZoneTable(
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal } = {},
+  ): Promise<Uint8Array> {
     const addrs = uv5rMiniZoneTableFrameAddresses();
     const sector = new Uint8Array(MMZ1_SECTOR_BYTES);
     let done = 0;
@@ -105,6 +114,12 @@ export class Uv5rMiniProtocol extends Uv17ProProtocol {
       );
     }
     return sector;
+  }
+
+  async readZones(
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal } = {},
+  ): Promise<Uv5rMiniZoneRead> {
+    return decodeUv5rMiniZoneRead(await this.readZoneTable(opts));
   }
 
   /** Restore runs under the Backup / Restore profile, never a Write's zone intent. */

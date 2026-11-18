@@ -3,7 +3,7 @@ import vectors from '../__fixtures__/mmzo-v1.json';
 import { assertUv5rMiniWriteAllowed } from '../writeInterlock.ts';
 import { encodeUv5rMiniZoneTable, encodeUv5rMiniZoneWrite } from './encode.ts';
 import { encodeMiniOrder } from './order.ts';
-import { readOrder } from './orderDecode.test-helper.ts';
+import { decodeMiniOrder } from './orderDecode.ts';
 import { fillMiniScanSets } from './scanSets.ts';
 
 const hex = (bytes: Uint8Array) => [...bytes].map((v) => v.toString(16).padStart(2, '0')).join('');
@@ -33,7 +33,9 @@ describe('MMZO golden vectors', () => {
       expect(encoded.frames.map((f) => ({ addr: f.address, hex: hex(f.bytes) }))).toEqual(
         vector.frames,
       );
-      expect(readOrder(encoded.sector)).toEqual(
+      expect(decodeMiniOrder(encoded.sector)).toMatchObject({ fromRadio: name !== 'no_room' });
+      expect(decodeMiniOrder(encoded.sector)).toHaveProperty(
+        'slots',
         vector.zones.map((z, i) =>
           (vector.fallback as readonly number[]).includes(i)
             ? [...z.slots].sort((a, b) => a - b)
@@ -57,7 +59,8 @@ describe('MMZO golden vectors', () => {
       const stream = Uint8Array.from(vector.stream_hex.match(/../g)!.map((b) => parseInt(b, 16)));
       sector.set(stream.slice(0, 448), 0x40);
       sector.set(stream.slice(448), 0x380);
-      expect(readOrder(sector)).toEqual(
+      expect(decodeMiniOrder(sector)).toHaveProperty(
+        'slots',
         vector.zones.map((z) => [...z.slots].sort((a, b) => a - b)),
       );
     });

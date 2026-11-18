@@ -1,8 +1,8 @@
-/** Independent contract reader for the golden-vector tests; production only writes MMZS. */
+/** Decode MMZS using the radio's validation rules. */
 import { crc16Xmodem } from '../../dm32uv/firmwareUpdate/crc16Xmodem.ts';
 import { decodeUv5rMiniZoneTable } from './decode.ts';
 
-export function readScanSets(
+export function decodeMiniScanSets(
   sector: Uint8Array,
 ): { kinds: number[]; include: boolean[][] } | { reject: string } {
   const table = decodeUv5rMiniZoneTable(sector);

@@ -1,14 +1,16 @@
 import { crc16Xmodem } from '../../dm32uv/firmwareUpdate/crc16Xmodem.ts';
 import { decodeUv5rMiniZoneTable } from './decode.ts';
-import { readScanSets } from './scanSetsDecode.test-helper.ts';
+import { decodeMiniScanSets } from './scanSetsDecode.ts';
 
-/** Independent reader used to check both accepted and rejected firmware vectors. */
-export function readOrder(sector: Uint8Array): number[][] {
+/** Decode MMZO using the radio's validation and fallback rules. */
+export function decodeMiniOrder(
+  sector: Uint8Array,
+): { fromRadio: boolean; slots: number[][] } | { reject: string } {
   const table = decodeUv5rMiniZoneTable(sector);
-  if ('reject' in table) throw new Error('bad table');
+  if ('reject' in table) return { reject: 'no table' };
   const slots = table.zones.map((z) => z.slotIndexes);
-  const fallback = () => slots;
-  if ('reject' in readScanSets(sector)) return fallback();
+  const fallback = () => ({ fromRadio: false, slots });
+  if ('reject' in decodeMiniScanSets(sector)) return fallback();
   const stream = new Uint8Array([...sector.slice(0x40, 0x200), ...sector.slice(0x380, 0x400)]);
   const off = Math.ceil((22 + (stream[10]! | (stream[11]! << 8))) / 16) * 16;
   if (off + 22 > 576) return fallback();
@@ -58,5 +60,5 @@ export function readOrder(sector: Uint8Array): number[][] {
       return fallback();
     result.push(indexes.map((n) => zone[n]!));
   }
-  return result;
+  return { fromRadio: true, slots: result };
 }
