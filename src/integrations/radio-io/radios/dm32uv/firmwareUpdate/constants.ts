@@ -3,12 +3,13 @@
  * Spec: the firmware project's `tools/flash/dm32_fw_send.py` and `docs/reference/update-protocol.md`.
  * Human mirror: docs/reference/radios/baofeng/dm-32uv/firmware.md — "Bootloader update protocol".
  */
+import { PROGRAMMING_CABLE_USB_FILTERS } from '../../../firmware/cableFilters.ts';
 import type { FirmwareLinkSpec } from '../../../firmware/types.ts';
 
-/** CH340 cable, 115200 8N1 with DTR/RTS raised. The cable enumerates with or without a radio attached. */
+/** Any programming cable (CH340 is the usual one), 115200 8N1 with DTR/RTS raised. The cable enumerates with or without a radio attached. */
 export const DM32_FW_LINK: FirmwareLinkSpec = {
   baudRate: 115_200,
-  usbFilters: [{ usbVendorId: 0x1a86, usbProductId: 0x7523 }],
+  usbFilters: PROGRAMMING_CABLE_USB_FILTERS,
   raiseDtrRts: true,
 };
 

@@ -113,13 +113,13 @@ byte. Protocol notes: that project's `docs/reference/update-protocol.md`.
 
 ### Link
 
-| Setting  | Value                                                                                                                                           |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cable    | CH340, USB `1a86:7523`                                                                                                                          |
-| Serial   | 115200 8N1, no flow control                                                                                                                     |
-| Signals  | DTR and RTS raised (as the CPS does)                                                                                                            |
-| Picker   | Filtered to `1a86:7523`. The filter identifies the cable, not whether the radio is in update mode: the cable enumerates with or without a radio |
-| Pre-send | Before every frame: clear the receive buffer, wait 10 ms (the CPS's ComWrite), then write                                                       |
+| Setting  | Value                                                                                                                                                                                                |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cable    | CH340 (USB `1a86:7523`), FTDI FT232R (`0403:6001`) or Prolific PL2303 (`067b:2303`, `067b:23a3`)                                                                                                     |
+| Serial   | 115200 8N1, no flow control                                                                                                                                                                          |
+| Signals  | DTR and RTS raised (as the CPS does)                                                                                                                                                                 |
+| Picker   | Filtered to those cable chips (one list shared with the RT95 and UV-5R Mini). The filter identifies the cable, not whether the radio is in update mode: the cable enumerates with or without a radio |
+| Pre-send | Before every frame: clear the receive buffer, wait 10 ms (the CPS's ComWrite), then write                                                                                                            |
 
 ### Session
 

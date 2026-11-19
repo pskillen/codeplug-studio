@@ -135,7 +135,7 @@ changes only which radios are offered: the stock pins, interlocks and frame guar
 
 Per radio:
 
-- **DM-32UV:** the CH340 cable at 115200, no rate change. The bootloader takes no resend: any late or wrong reply
+- **DM-32UV:** a CH340, FTDI or PL2303 cable at 115200, no rate change. The bootloader takes no resend: any late or wrong reply
   aborts. A flash that stops after **Erasing** needs a re-flash from update mode (stock is the safe choice).
 - **RT95 front panel:** PL2303, CH340 or FTDI cable at 115200, no rate change; each frame comes back as an echo and is
   checked, with up to three resends. **Check the radio** (the normal-mode probe) runs from the phone. A flash cut after
