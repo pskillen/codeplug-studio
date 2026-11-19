@@ -6,6 +6,7 @@
  */
 import { UV5RMINI_FIRMWARE_ROLE_UFW } from '@core/radios/baofeng/uv-5r-mini/firmware.ts';
 
+import { PROGRAMMING_CABLE_USB_FILTERS } from '../../../firmware/cableFilters.ts';
 import type { FirmwareLinkSpec } from '../../../firmware/types.ts';
 
 export const UV5RMINI_FW_RADIO_ID = 'baofeng-uv5rmini' as const;
@@ -252,20 +253,11 @@ export const UV5RMINI_FW_TIMEOUT_MS = {
 } as const;
 
 /**
- * Programming-cable USB-serial chips the port picker offers. Identifies the cable, not the radio or its mode. CH340 is
- * the cable the Mini ships with; FTDI FT232R is a common third-party cable (reported on Chrome/Windows, `0403:6001`).
- */
-export const UV5RMINI_USB_FILTERS: FirmwareLinkSpec['usbFilters'] = [
-  { usbVendorId: 0x1a86, usbProductId: 0x7523 }, // WCH CH340
-  { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI FT232R
-];
-
-/**
  * The update link: the app's update stage runs at 9600 (the loader's 38400 is reached by `reopen`). DTR and RTS stay low
  * after every open and reopen. The filter names the cable, not the radio's mode.
  */
 export const UV5RMINI_FW_LINK: FirmwareLinkSpec = {
   baudRate: 9600,
-  usbFilters: UV5RMINI_USB_FILTERS,
+  usbFilters: PROGRAMMING_CABLE_USB_FILTERS,
   raiseDtrRts: false,
 };

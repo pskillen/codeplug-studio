@@ -38,7 +38,7 @@ Cite: NeonPlug `connection.ts`, `constants.ts`, `protocol.ts` (facts only — do
 
 ## Transport and framing
 
-The radio has no USB data path. Its programming and update jack is the two-pin K1 jack, which carries UART0 at 115200 baud. The USB-C socket is on the battery pack and only charges it. The PC link is a USB-serial cable: the owner's is a WCH CH340, USB `1A86:7523`, which is also the filter Studio's firmware picker uses. Other cables may use other bridge chips; the radio only ever sees UART bytes, so USB packet boundaries and Web Serial `write()` boundaries are invisible to it.
+The radio has no USB data path. Its programming and update jack is the two-pin K1 jack, which carries UART0 at 115200 baud. The USB-C socket is on the battery pack and only charges it. The PC link is a USB-serial cable: the owner's is a WCH CH340, USB `1A86:7523`, which is one of the cables Studio's firmware picker lists (with FTDI FT232R and Prolific PL2303, the list shared with the RT95 and UV-5R Mini). Other cables may use other bridge chips; the radio only ever sees UART bytes, so USB packet boundaries and Web Serial `write()` boundaries are invisible to it.
 
 **Receive path (stock firmware 048, static disassembly).**
 
