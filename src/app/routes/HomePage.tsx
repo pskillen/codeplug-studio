@@ -7,8 +7,11 @@ import {
   ModalShell,
   TextInput,
   ConfirmModal,
+  StatusBanner,
 } from '../components/v2/index.ts';
 import ImportProjectYamlPanel from '../components/import-export/ImportProjectYamlPanel.tsx';
+import GoogleDriveNotConfiguredModal from '../components/import-export/GoogleDriveNotConfiguredModal.tsx';
+import { useDriveActionClick } from '../hooks/useDriveActionClick.ts';
 import LandingSupport from '../components/landing/LandingSupport.tsx';
 import ProjectManageCard from '../components/shell/ProjectManageCard.tsx';
 import { GettingStartedContent, GettingStartedModal } from '../components/onboarding/index.ts';
@@ -38,6 +41,25 @@ export default function HomePage() {
   const [renameValue, setRenameValue] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [driveOpen, setDriveOpen] = useState(false);
+  const [driveNotConfigured, setDriveNotConfigured] = useState(false);
+  const [driveError, setDriveError] = useState<string | null>(null);
+  const driveAction = useDriveActionClick();
+
+  async function openFromDrive() {
+    setDriveError(null);
+    const result = await driveAction.runAction({
+      onNotConfigured: () => setDriveNotConfigured(true),
+      action: () => setDriveOpen(true),
+    });
+    if (!result.ok && 'connectError' in result && result.connectError) {
+      setDriveError(result.connectError);
+    }
+  }
+
+  function startFromRadio() {
+    navigate('/start/radio');
+  }
 
   async function handleCreateProject() {
     const name = newProjectName.trim();
@@ -91,8 +113,11 @@ export default function HomePage() {
       <div className={classes.page}>
         {empty ? (
           <div className={classes.emptyStack}>
+            {driveError ? <StatusBanner tone="warning">{driveError}</StatusBanner> : null}
             <LandingSupport
+              onStartFromRadio={startFromRadio}
               onStartProject={() => setNewProjectOpen(true)}
+              onOpenDrive={() => void openFromDrive()}
               onImport={scrollToImport}
             />
             <div className={classes.quickStartPanel}>
@@ -115,6 +140,12 @@ export default function HomePage() {
                 </Button>
                 <Button variant="outline" size="sm" onClick={scrollToImport}>
                   Import project
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => void openFromDrive()}>
+                  Open from Drive
+                </Button>
+                <Button variant="outline" size="sm" onClick={startFromRadio}>
+                  Read my radio
                 </Button>
                 <Button size="sm" onClick={() => setNewProjectOpen(true)}>
                   New project
@@ -149,11 +180,15 @@ export default function HomePage() {
 
         <div ref={importRef} className={classes.importSection}>
           <div className={classes.importTitle}>Import from YAML</div>
-          <ImportProjectYamlPanel />
+          <ImportProjectYamlPanel driveOpen={driveOpen} onDriveOpenChange={setDriveOpen} />
         </div>
       </div>
 
       <GettingStartedModal opened={quickStartOpen} onClose={() => setQuickStartOpen(false)} />
+      <GoogleDriveNotConfiguredModal
+        opened={driveNotConfigured}
+        onClose={() => setDriveNotConfigured(false)}
+      />
 
       <ModalShell
         open={newProjectOpen}

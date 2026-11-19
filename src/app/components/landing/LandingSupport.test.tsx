@@ -5,24 +5,43 @@ import { MemoryRouter } from 'react-router-dom';
 import { buildSupportMatrix, listRadioModels } from '@core/radio-targets/index.ts';
 import LandingSupport from './LandingSupport.tsx';
 
-function renderLanding(onStartProject = vi.fn(), onImport = vi.fn()) {
+function renderLanding() {
+  const handlers = {
+    onStartFromRadio: vi.fn(),
+    onStartProject: vi.fn(),
+    onOpenDrive: vi.fn(),
+    onImport: vi.fn(),
+  };
   render(
     <MemoryRouter>
       <MantineProvider>
-        <LandingSupport onStartProject={onStartProject} onImport={onImport} />
+        <LandingSupport {...handlers} />
       </MantineProvider>
     </MemoryRouter>,
   );
-  return { onStartProject, onImport };
+  return handlers;
 }
 
 describe('LandingSupport', () => {
-  it('has hero actions wired to the callbacks', () => {
-    const { onStartProject, onImport } = renderLanding();
-    fireEvent.click(screen.getByRole('button', { name: 'Create a project' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Import a project' }));
-    expect(onStartProject).toHaveBeenCalledTimes(1);
-    expect(onImport).toHaveBeenCalledTimes(1);
+  it('offers the ways in, radio first, each wired to its callback', () => {
+    const handlers = renderLanding();
+    const paths = within(screen.getByRole('navigation', { name: 'Get started' })).getAllByRole(
+      'button',
+    );
+    expect(paths.map((b) => b.querySelector('span:last-child span')?.textContent)).toEqual([
+      'Start from my radio',
+      'Start from scratch',
+      'Open from Google Drive',
+      'Import a project file',
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: /Start from my radio/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Start from scratch/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Open from Google Drive/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Import a project file/ }));
+    expect(handlers.onStartFromRadio).toHaveBeenCalledTimes(1);
+    expect(handlers.onStartProject).toHaveBeenCalledTimes(1);
+    expect(handlers.onOpenDrive).toHaveBeenCalledTimes(1);
+    expect(handlers.onImport).toHaveBeenCalledTimes(1);
   });
 
   it('offers one chip per catalog model', () => {

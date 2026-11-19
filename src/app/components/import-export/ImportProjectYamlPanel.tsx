@@ -8,9 +8,23 @@ import GoogleDriveActionButton from './GoogleDriveActionButton.tsx';
 import InterchangeOverwriteModal from './InterchangeOverwriteModal.tsx';
 import ProjectYamlFileDropzone from './ProjectYamlFileDropzone.tsx';
 
-export default function ImportProjectYamlPanel() {
+export interface ImportProjectYamlPanelProps {
+  /** Controlled Drive browser state, so a page can open it from elsewhere (landing path cards). */
+  driveOpen?: boolean;
+  onDriveOpenChange?: (open: boolean) => void;
+}
+
+export default function ImportProjectYamlPanel({
+  driveOpen: driveOpenProp,
+  onDriveOpenChange,
+}: ImportProjectYamlPanelProps = {}) {
   const navigate = useNavigate();
-  const [driveOpen, setDriveOpen] = useState(false);
+  const [driveOpenState, setDriveOpenState] = useState(false);
+  const driveOpen = driveOpenProp ?? driveOpenState;
+  const setDriveOpen = (open: boolean) => {
+    setDriveOpenState(open);
+    onDriveOpenChange?.(open);
+  };
   const resolver = useYamlImportResolver({
     onImported: () => navigate('/summary'),
   });
