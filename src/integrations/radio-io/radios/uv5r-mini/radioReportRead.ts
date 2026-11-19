@@ -12,6 +12,7 @@ import {
 import type { FirmwareLinkSpec } from '../../firmware/types.ts';
 import type { BytePipe } from '../../types.ts';
 import { UV5R_MINI_BAUD_RATE, UV5R_MINI_BAUD_RATE_FALLBACK } from './constants.ts';
+import { UV5RMINI_USB_FILTERS } from './firmwareUpdate/constants.ts';
 import { Uv5rMiniProtocol } from './protocol.ts';
 
 /**
@@ -22,7 +23,7 @@ import { Uv5rMiniProtocol } from './protocol.ts';
  */
 export const UV5RMINI_RADIO_REPORT_LINK: FirmwareLinkSpec = {
   baudRate: UV5R_MINI_BAUD_RATE,
-  usbFilters: [{ usbVendorId: 0x1a86, usbProductId: 0x7523 }],
+  usbFilters: UV5RMINI_USB_FILTERS,
   raiseDtrRts: true,
 };
 

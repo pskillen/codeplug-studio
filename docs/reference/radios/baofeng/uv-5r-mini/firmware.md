@@ -471,7 +471,7 @@ The image reads as the stock ("stock firmware v0.04 (NRFB)") with the stock's ve
 Hold PTT-A and `=`, then switch the radio on. Release the keys when the computer icon and `UPDATE...` appear. If the
 normal screen appears instead of `UPDATE...`, switch off at once and try again. The red LED may light during the update;
 that is normal while the screen shows `UPDATE...`, so leave the radio alone until Studio says it has finished. The update cable is the USB serial cable (CH340,
-USB id `1a86:7523`). Studio opens it at 9600 baud with DTR and RTS low after every open.
+USB id `1a86:7523`, or FTDI FT232R, `0403:6001`; the port picker lists both). Studio opens it at 9600 baud with DTR and RTS low after every open.
 
 After an update that was cut, switch on with no keys: the screen stays dark and the radio's loader restarts from where
 it was. Studio continues that write when you press **Connect and flash** again.
