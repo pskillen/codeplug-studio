@@ -10,7 +10,9 @@ Read a connected radio's channels, and zones where available, into the project l
 
 ## Using it
 
-Open a build's **Backup / Restore** tab and choose **Read into library**. Select the connected radio's serial port when prompted. When the read finishes, close the progress modal to see the model, firmware, counts of created, updated and unchanged rows, and a link to the affected build. The summary also lists fields that were dropped, any warnings, and how many channels or zones were left out of the build while remaining in your library.
+New operators can start from the home page with **Start from my radio**: it creates a project, reads the radio into it and suggests what to do next. See [Start from my radio](../onboarding/README.md#start-from-my-radio).
+
+Within an existing project, open a build's **Backup / Restore** tab and choose **Read into library**. Select the connected radio's serial port when prompted. When the read finishes, close the progress modal to see the model, firmware, counts of created, updated and unchanged rows, and a link to the affected build. The summary also lists fields that were dropped, any warnings, and how many channels or zones were left out of the build while remaining in your library.
 
 Nothing is sent to the radio. The raw image is held in memory. Use **Backup radio** to save a zip. Imported rows are ordinary project data. To undo library changes, edit or delete the affected channels and zones in the library.
 

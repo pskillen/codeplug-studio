@@ -5,7 +5,8 @@ import GettingStartedFlow from './GettingStartedFlow.tsx';
 const MAIN_STEPS = [
   {
     title: 'Create a project',
-    detail: 'Use New project above, or Import from YAML below if you already have a Studio backup.',
+    detail:
+      'Start from my radio reads a programmed radio into a new project. Or use New project, or open a saved project from Google Drive or a file.',
   },
   {
     title: 'Fill your library',

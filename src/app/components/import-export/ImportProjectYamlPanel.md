@@ -6,12 +6,17 @@ Create a project from an offline backup without replacing an existing IndexedDB 
 
 ## Props
 
-None.
+| Prop                | Type                      | Notes                                                                  |
+| ------------------- | ------------------------- | ---------------------------------------------------------------------- |
+| `driveOpen`         | `boolean`                 | Optional. Controls the Drive browser so the page can open it elsewhere |
+| `onDriveOpenChange` | `(open: boolean) => void` | Optional. Called when the panel opens or closes the Drive browser      |
 
 ## Usage
 
 ```tsx
 <ImportProjectYamlPanel />
+// Home opens the same Drive browser from the landing path cards:
+<ImportProjectYamlPanel driveOpen={driveOpen} onDriveOpenChange={setDriveOpen} />
 ```
 
 ## Behaviour
