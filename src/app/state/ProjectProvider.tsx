@@ -58,6 +58,7 @@ export default function ProjectProvider({ children }: ProjectProviderProps) {
       const created = await storeRef.current!.create(name);
       await refreshProjects();
       setActiveProjectId(created.projectId);
+      return created.projectId;
     },
     [refreshProjects],
   );

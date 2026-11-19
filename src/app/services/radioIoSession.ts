@@ -137,7 +137,10 @@ export {
   getWebSerialUnsupportedMessage,
 };
 
-export function descriptorsForEgress(egress: EgressPath): RadioDescriptor[] {
+/** The format/profile pair a radio-io session needs; a build's egress row satisfies it. */
+export type RadioEgressProfile = Pick<EgressPath, 'formatId' | 'profileId'>;
+
+export function descriptorsForEgress(egress: RadioEgressProfile): RadioDescriptor[] {
   return listDescriptorsForProfile(egress.formatId, egress.profileId);
 }
 
@@ -200,7 +203,7 @@ function withBaudsTriedMessage(err: unknown, baudsTried: readonly number[]): Err
 
 /** Open Web Serial for the first compatible descriptor (or explicit modelId). */
 export async function openRadioSessionForEgress(
-  egress: EgressPath,
+  egress: RadioEgressProfile,
   opts?: {
     modelId?: string;
     forcePortSelection?: boolean;

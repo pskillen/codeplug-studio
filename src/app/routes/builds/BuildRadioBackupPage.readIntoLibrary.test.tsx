@@ -66,6 +66,7 @@ const outcome: RadioReadOutcome = {
       id: 'destination',
       name: 'Mini',
       action: 'updated',
+      radioTargetId: 'baofeng-uv5r-mini',
       targetLabel: 'UV-5R Mini',
       channelsLeftOut: 0,
       zonesLeftOut: 0,

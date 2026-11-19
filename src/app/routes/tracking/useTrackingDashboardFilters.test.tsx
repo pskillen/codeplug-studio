@@ -38,7 +38,7 @@ function makeProjectsWrapper(projectId: string | null) {
         activeProjectId: projectId,
         activeProject: projectId ? makeProjectMeta(projectId) : null,
         loading: false,
-        createProject: async () => {},
+        createProject: async () => 'p1',
         switchProject: () => {},
         renameProject: async () => {},
         deleteProject: async () => {},
