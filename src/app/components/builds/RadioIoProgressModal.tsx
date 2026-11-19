@@ -21,9 +21,10 @@ import { Button, ProgressModal, type ProgressModalStep } from '../v2/index.ts';
  * gets its own step list/title rather than reusing `'write'`'s codeplug-shaped copy.
  * `'restore'` replays a backup zip onto the radio — not Write-codeplug.
  * `'vital-read'` is the AT-D890UV vital-data backup (#1288): it downloads a file and saves nothing on the build.
+ * `'library-read'` imports library rows and updates the radio's build.
  */
 export type RadioIoOperation =
-  'read' | 'write' | 'keps-write' | 'restore' | 'vital-read' | 'safety-read';
+  'read' | 'library-read' | 'write' | 'keps-write' | 'restore' | 'vital-read' | 'safety-read';
 
 export type RadioIoProgressPhase =
   'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
@@ -162,7 +163,13 @@ function buildSteps(
     ...(transferStages.length > 0
       ? stageSteps()
       : [{ id: 'transfer', label: 'Download clone image' }]),
-    { id: 'saving', label: 'Save image on this build' },
+    {
+      id: 'saving',
+      label:
+        operation === 'library-read'
+          ? 'Save library and build changes'
+          : 'Save image on this build',
+    },
   ];
   if (phase === 'done') {
     steps.push({ id: 'done', label: 'Read complete' });
@@ -321,8 +328,11 @@ export default function RadioIoProgressModal({
     writeVerifyStatus,
     planned ? cursor : null,
   );
-  const title =
-    operation === 'read'
+  const libraryRead = operation === 'library-read';
+  const savingLibrary = libraryRead && phase === 'saving';
+  const title = libraryRead
+    ? 'Reading into library'
+    : operation === 'read'
       ? 'Reading from radio'
       : operation === 'safety-read'
         ? 'Backing up calibration'
@@ -375,11 +385,13 @@ export default function RadioIoProgressModal({
   const alert =
     operation === 'write' && showPostUploadAlert
       ? writeDoneAlert(writeVerifyStatus, requiresCrossSessionReconnect)
-      : complete && operation === 'read'
+      : complete && (operation === 'read' || libraryRead)
         ? {
             color: 'green',
             title: 'Read finished',
-            body: 'Clone image is saved on this build.',
+            body: libraryRead
+              ? 'Library and build changes are saved.'
+              : 'Clone image is saved on this build.',
           }
         : complete && operation === 'safety-read'
           ? {
@@ -442,7 +454,7 @@ export default function RadioIoProgressModal({
         </Button>
       </>
     )
-  ) : (
+  ) : savingLibrary ? undefined : (
     <Button variant="secondary" size="sm" onClick={onCancel}>
       Cancel
     </Button>
@@ -451,7 +463,11 @@ export default function RadioIoProgressModal({
   const runningNote =
     !complete && !showPostUploadAlert ? (
       <>
-        <Text size="sm">Keep this tab open until the transfer finishes or you cancel.</Text>
+        <Text size="sm">
+          {savingLibrary
+            ? 'Keep this tab open while library and build changes are saved.'
+            : 'Keep this tab open until the transfer finishes or you cancel.'}
+        </Text>
         {!screenHeld ? (
           <Text size="sm" mt="xs" data-testid="keep-screen-on-hint">
             {KEEP_SCREEN_ON_HINT}
@@ -459,7 +475,9 @@ export default function RadioIoProgressModal({
         ) : null}
         {navigationBlocked && !verifying ? (
           <Alert color="red" title="Stay on this page" mt="sm">
-            Navigation is blocked until this transfer finishes or you cancel.
+            {savingLibrary
+              ? 'Navigation is blocked until saving finishes.'
+              : 'Navigation is blocked until this transfer finishes or you cancel.'}
           </Alert>
         ) : null}
       </>
@@ -492,7 +510,10 @@ export default function RadioIoProgressModal({
         ) : null
       }
       footer={footer}
-      onClose={() => (complete ? onClose?.() : onCancel())}
+      onClose={() => {
+        if (complete) onClose?.();
+        else if (!savingLibrary) onCancel();
+      }}
     />
   );
 }

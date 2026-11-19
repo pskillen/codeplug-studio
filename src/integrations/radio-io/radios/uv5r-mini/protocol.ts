@@ -2,6 +2,8 @@
  * UV-5R Mini CloneImageRadio — the uv17pro-family protocol plus the MM9PDY zone table.
  */
 
+import { UV5RMINI_RADIO_REPORT_ADDRESS } from '@core/radios/baofeng/uv-5r-mini/radioReport.ts';
+
 import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
@@ -12,8 +14,12 @@ import {
   type Uv17ProConnectOptions,
   type Uv17ProExtraUploadFrames,
 } from '../uv17pro-family/protocol.ts';
+import { classifyUv5rMiniFirmware, type Uv5rMiniFirmwareDetection } from './firmwareDetect.ts';
+import { MMZ1_HEADER_ADDR } from './modData/layout.ts';
 import {
   encodeUv5rMiniZoneWrite,
+  decodeUv5rMiniZoneRead,
+  type Uv5rMiniZoneRead,
   MMZ1_BASE,
   MMZ1_FRAME_BYTES,
   MMZ1_SECTOR_BYTES,
@@ -62,6 +68,15 @@ export class Uv5rMiniProtocol extends Uv17ProProtocol {
     return this.backupRestoreProfile;
   }
 
+  /** Read both detection frames in the open session straight after download(), before the radio times out. */
+  async detectFirmware(opts: { signal?: AbortSignal } = {}): Promise<Uv5rMiniFirmwareDetection> {
+    const blocks = await this.readBlocks([MMZ1_HEADER_ADDR, UV5RMINI_RADIO_REPORT_ADDRESS], opts);
+    return classifyUv5rMiniFirmware({
+      header: blocks.get(MMZ1_HEADER_ADDR)!.slice(0, 64),
+      report: blocks.get(UV5RMINI_RADIO_REPORT_ADDRESS)!.slice(0, 64),
+    });
+  }
+
   /**
    * MM9PDY Backup: read the table sector 0xC000-0xCFFF (64 frames). Refused on the stock profile, which never
    * reads the range.
@@ -72,6 +87,13 @@ export class Uv5rMiniProtocol extends Uv17ProProtocol {
     if (this.backupRestoreProfile !== 'mm9pdy') {
       throw new RadioProtocolError('UV-5R Mini: the zone table is read on the MM9PDY target only');
     }
+    return this.readZoneTable(opts);
+  }
+
+  /** Read-only: callers must first identify MM9PDY firmware. A stock sector decodes as no zones. */
+  async readZoneTable(
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal } = {},
+  ): Promise<Uint8Array> {
     const addrs = uv5rMiniZoneTableFrameAddresses();
     const sector = new Uint8Array(MMZ1_SECTOR_BYTES);
     let done = 0;
@@ -92,6 +114,12 @@ export class Uv5rMiniProtocol extends Uv17ProProtocol {
       );
     }
     return sector;
+  }
+
+  async readZones(
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal } = {},
+  ): Promise<Uv5rMiniZoneRead> {
+    return decodeUv5rMiniZoneRead(await this.readZoneTable(opts));
   }
 
   /** Restore runs under the Backup / Restore profile, never a Write's zone intent. */

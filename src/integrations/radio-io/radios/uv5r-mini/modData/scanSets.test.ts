@@ -4,7 +4,7 @@ import { assertUv5rMiniWriteAllowed } from '../writeInterlock.ts';
 import { decodeUv5rMiniZoneTable } from './decode.ts';
 import { encodeUv5rMiniZoneTable } from './encode.ts';
 import { encodeMiniScanSets } from './scanSets.ts';
-import { readScanSets } from './scanSetsDecode.test-helper.ts';
+import { decodeMiniScanSets } from './scanSetsDecode.ts';
 
 const hex = (bytes: Uint8Array) => [...bytes].map((v) => v.toString(16).padStart(2, '0')).join('');
 const fromHex = (value: string) => Uint8Array.from(value.match(/../g)!.map((b) => parseInt(b, 16)));
@@ -55,7 +55,7 @@ describe('MMZS golden vectors', () => {
       const blockFrames = encoded.frames.slice(table.frames.length);
       expect(blockFrames.map((f) => f.address)).toEqual(result.frames.map((f) => f.address));
       expect(blockFrames.every((f) => f.address !== 0xe000 && f.address % 0x1000 !== 0)).toBe(true);
-      expect(readScanSets(rebuilt)).toEqual({
+      expect(decodeMiniScanSets(rebuilt)).toEqual({
         kinds: vector.kinds,
         include: sets.map((set, i) => (fallback.includes(i) ? set.map(() => true) : set)),
       });
@@ -75,7 +75,7 @@ describe('MMZS golden vectors', () => {
       const stream = fromHex(vector.stream_hex);
       sector.set(stream.slice(0, 448), 0x40);
       sector.set(stream.slice(448), 0x380);
-      expect(readScanSets(sector)).toEqual({ reject: vector.reason });
+      expect(decodeMiniScanSets(sector)).toEqual({ reject: vector.reason });
       expect(decodeUv5rMiniZoneTable(sector)).toMatchObject({
         zones: vector.zones.map((z) => ({ name: z.name, slotIndexes: z.slots })),
       });

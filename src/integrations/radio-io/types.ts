@@ -3,6 +3,7 @@
  * See docs/features/radio-read-write/protocol-kit-architecture.md §2.
  */
 
+import type { RadioReadIntoLibraryHooks } from './readIntoLibrary.ts';
 import type { RadioChannelDto } from './radioChannelDto.ts';
 import type { RadioWriteOrganisation } from './radioWriteProjection.ts';
 
@@ -188,6 +189,8 @@ export interface RadioHydrationHooks {
 }
 
 export interface RadioDescriptor {
+  /** Presence indicates support for reading into the library. */
+  readIntoLibrary?: RadioReadIntoLibraryHooks;
   modelIds: readonly string[];
   label: string;
   group?: string;

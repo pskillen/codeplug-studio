@@ -17,7 +17,7 @@ import { uv17ProBackupMemSpans } from '../uv17pro-family/backupRestoreRoles.ts';
 import { UV5R_MINI_LAYOUT as layout } from '../uv17pro-family/layout.ts';
 import type { Uv17ProExtraUploadFrames } from '../uv17pro-family/protocol.ts';
 import { FakeMiniRadio as FakeRadio } from './__fixtures__/fakeMiniRadio.ts';
-import { readScanSets } from './modData/scanSetsDecode.test-helper.ts';
+import { decodeMiniScanSets } from './modData/scanSetsDecode.ts';
 import { UV5R_MINI_DESCRIPTOR } from './descriptor.ts';
 import {
   decodeUv5rMiniZoneTable,
@@ -94,7 +94,10 @@ describe('UV-5R Mini MM9PDY Write frame plan', () => {
       encodeUv5rMiniZoneWrite({ ...intent, writeScanSets: false }).sector,
     );
     expect(pipe.wAddresses().slice(-5)).toEqual([0xc000, 0xc200, 0xc400, 0xc440, 0xc040]);
-    expect(readScanSets(pipe.sector())).toEqual({ kinds: [1], include: [[true, false, true]] });
+    expect(decodeMiniScanSets(pipe.sector())).toEqual({
+      kinds: [1],
+      include: [[true, false, true]],
+    });
     expect(pipe.wAddresses()).not.toContain(0xe000);
   });
 
@@ -147,7 +150,7 @@ describe('UV-5R Mini MM9PDY Write frame plan', () => {
       await expect(writeZones(zones(2), radio)).rejects.toThrow();
       if (cut < second.frames.length - 1)
         expect('reject' in decodeUv5rMiniZoneTable(radio.sector())).toBe(true);
-      else expect(readScanSets(radio.sector())).toEqual({ reject: 'no block' });
+      else expect(decodeMiniScanSets(radio.sector())).toEqual({ reject: 'no block' });
     }
   });
 
@@ -194,7 +197,7 @@ describe('UV-5R Mini MM9PDY table generation across two Writes', () => {
     await writeZones({ zones: [] }, pipe);
     const decoded = decodeUv5rMiniZoneTable(pipe.sector());
     expect('zones' in decoded && decoded.zones).toEqual([]);
-    expect(readScanSets(pipe.sector())).toEqual({ kinds: [], include: [] });
+    expect(decodeMiniScanSets(pipe.sector())).toEqual({ kinds: [], include: [] });
     expect(
       pipe
         .sector()
@@ -509,6 +512,29 @@ describe('UV-5R Mini MM9PDY write verify', () => {
 
 describe('UV-5R Mini MM9PDY Backup and Restore of the zone table', () => {
   const TABLE_FRAMES = range(0xc000, 0x1000);
+
+  it('reads zones on a stock profile with only table read frames', async () => {
+    const radio = new FakeRadio();
+    const sector = encodeUv5rMiniZoneWrite({
+      zones: [{ name: 'Test', slotIndexes: [40, 3, 7], scanSlotIndexes: [40, 7] }],
+    }).sector;
+    radio.flash.set(sector, MMZ1_BASE);
+    const { pipe, proto } = await connected(new Uv5rMiniProtocol(), radio);
+    expect(await proto.readZones()).toEqual({
+      kind: 'zones',
+      memberOrderFromRadio: true,
+      scanSetsFromRadio: true,
+      zones: [{ wireName: 'Test', channelNumbers: [41, 4, 8], scanChannelNumbers: [41, 8] }],
+    });
+    expect(pipe.rAddresses()).toEqual(uv5rMiniZoneTableFrameAddresses());
+    expect(pipe.wAddresses()).toEqual([]);
+    await expect(proto.downloadZoneTable()).rejects.toThrow(/MM9PDY target only/);
+  });
+
+  it('returns no zones from blank flash', async () => {
+    const { proto } = await connected();
+    expect(await proto.readZones()).toMatchObject({ kind: 'none' });
+  });
 
   it('Backup plan: the stock profile reads the clone only and refuses the table', async () => {
     const { pipe, proto } = await connected();

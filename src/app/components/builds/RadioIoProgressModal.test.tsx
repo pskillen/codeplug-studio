@@ -30,6 +30,23 @@ function rerenderModal(
 }
 
 describe('RadioIoProgressModal', () => {
+  it('shows the library save step and completion for Read into library', () => {
+    const props = {
+      opened: true,
+      operation: 'library-read' as const,
+      progress: null,
+      onCancel: vi.fn(),
+    };
+    const { rerender } = renderModal({ ...props, phase: 'saving' });
+    expect(screen.getByText('Reading into library')).toBeInTheDocument();
+    expect(screen.getByText('Save library and build changes')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+
+    rerenderModal(rerender, { ...props, phase: 'done' });
+    expect(screen.getByText('Library and build changes are saved.')).toBeInTheDocument();
+    expect(screen.queryByText('Clone image is saved on this build.')).not.toBeInTheDocument();
+  });
+
   it('shows keep-tab warning, read steps, and transfer progress', () => {
     renderModal({
       opened: true,

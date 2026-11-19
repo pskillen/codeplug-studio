@@ -39,8 +39,8 @@ zones to show: a stock radio ignores the zone table and behaves as stock.
 - **Verify.** After a Write, verify reads `0xC000`-`0xCFFF` back (64 frames) along with the clone and compares every
   frame written. A difference shows as a **Zone table** mismatch.
 - **Stock targets never touch the range.** The stock Mini target writes no frame at or above `0xC000`, and its
-  interlock refuses one.
-- **Scan sets.** Studio writes an MMZS v1 block with every table, including an empty table. Each zone's set is independent of the All channels scan flag. Firmware 1.1.0 and later reads it; 1.0.0 keeps the zones and ignores the sets: it scans a zone’s live SCAN ADD members, or all live members when none has SCAN ADD. The Write session reads the clone but not the separate radio report, so it cannot identify the installed build. When an effective scan set skips a member, Studio shows an informational note about older firmware. A capacity fallback scans all members and does not trigger the note. Studio always writes the sets.
+  interlock refuses one. Firmware detection for Read into library reads only the header frame at `0xC000` and the report at `0xEFC0` on any Mini, and never writes.
+- **Scan sets.** Studio writes an MMZS v1 block with every table, including an empty table. Each zone's set is independent of the All channels scan flag. Firmware 1.1.0 and later reads it; 1.0.0 keeps the zones and ignores the sets: it scans a zone’s live SCAN ADD members, or all live members when none has SCAN ADD. The Write session reads the clone but not the separate radio report, so it cannot identify the installed build. Firmware detection for Read into library can: [read-into-library.md](read-into-library.md). When an effective scan set skips a member, Studio shows an informational note about older firmware. A capacity fallback scans all members and does not trigger the note. Studio always writes the sets.
 - **Zone order.** Studio writes each zone’s member order in MMZO after MMZS. Older firmware ignores it and shows channel-number order. Scan sets take room first; zones whose order does not fit fall back to channel-number order and are named in a warning, while later zones are still tried.
 - **Capacity.** A zone with all members included uses no member bits. Other zones are tried in order against 4,432 bits; one that does not fit scans all members, and Studio names it in the room warning. Later zones are still tried. A written set with fewer than two members gets a scan warning.
 - **An empty table is still written.** A build with no zones writes the header with zero zones, which retires an older
@@ -62,7 +62,7 @@ channel in no zone. A pinned channel keeps its number. Zones point at channel nu
 ## Where the code is
 
 `src/integrations/radio-io/radios/uv5r-mini/modData/`: `layout.ts` (constants), `encode.ts`
-(`encodeUv5rMiniZoneTable`), `decode.ts` (`decodeUv5rMiniZoneTable`, mirrors the radio's table reader rules), and `scanSets.ts` (MMZS encoder and fill). The allow-list
+(`encodeUv5rMiniZoneTable`), `decode.ts` (`decodeUv5rMiniZoneTable`, mirrors the radio's table reader rules), `scanSets.ts` (MMZS encoder and fill), `scanSetsDecode.ts` and `orderDecode.ts` (MMZS and MMZO readers), and `zoneRead.ts` (combined zone projection). `Uv5rMiniProtocol.readZoneTable` reads the sector and `readZones` decodes it. The allow-list
 is `uv5r-mini/writeInterlock.ts`. The write path is `uv5r-mini/protocol.ts` (`Uv5rMiniProtocol.setZoneIntent`, seeded
 by the descriptor from the Write projection), the plan `uv5r-mini/plannedStages.ts`, verify the family's
 `writeVerifyHooks.ts` with the table as an extra span. The projection is

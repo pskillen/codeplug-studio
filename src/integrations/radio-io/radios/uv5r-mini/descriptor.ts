@@ -2,6 +2,7 @@
  * UV-5R Mini radio descriptor — registry entry for Web Serial I/O.
  */
 
+import { readUv5rMiniIntoLibrary } from './readIntoLibrary.ts';
 import type { RadioDescriptor } from '../../types.ts';
 import {
   UV5R_MINI_BAUD_RATE,
@@ -23,6 +24,7 @@ import { MMZ1_BASE, MMZ1_END } from './modData/index.ts';
 export { UV5R_MINI_MODEL_ID };
 
 export const UV5R_MINI_DESCRIPTOR: RadioDescriptor = {
+  readIntoLibrary: { read: readUv5rMiniIntoLibrary },
   modelIds: [UV5R_MINI_MODEL_ID, 'UV-5R Mini'],
   label: 'Baofeng UV-5R Mini',
   group: 'Baofeng',
