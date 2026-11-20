@@ -11,7 +11,7 @@ const NO_ACTIVE_PROJECT: ProjectContextValue = {
   activeProjectId: null,
   activeProject: null,
   loading: false,
-  createProject: async () => undefined,
+  createProject: async () => 'p1',
   switchProject: () => undefined,
   renameProject: async () => undefined,
   deleteProject: async () => undefined,

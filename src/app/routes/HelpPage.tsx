@@ -9,6 +9,11 @@ import classes from './HelpPage.module.css';
 
 const WORKFLOW_LINKS = [
   {
+    label: 'Start from my radio',
+    to: '/start/radio',
+    description: 'Read a programmed radio into a new project, then change it and write it back.',
+  },
+  {
     label: 'Build a codeplug from scratch',
     to: '/library/channels',
     description: 'Create a project, fill the library, then export from a format build.',

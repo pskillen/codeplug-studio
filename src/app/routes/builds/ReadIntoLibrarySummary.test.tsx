@@ -14,6 +14,7 @@ const summary: RadioReadSummary = {
     id: 'build-1',
     name: 'Mini',
     action: 'updated',
+    radioTargetId: 'baofeng-uv5r-mini-mm9pdy',
     targetLabel: 'Mini MM9PDY',
     channelsLeftOut: 4,
     zonesLeftOut: 1,

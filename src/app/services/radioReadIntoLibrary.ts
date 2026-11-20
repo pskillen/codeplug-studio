@@ -24,6 +24,8 @@ export interface RadioReadSummary {
     id: string;
     name: string;
     action: 'created' | 'updated';
+    /** Radio target of the build; drives the next steps after a first read. */
+    radioTargetId: string;
     targetLabel: string;
     channelsLeftOut: number;
     zonesLeftOut: number;
@@ -152,6 +154,7 @@ export async function applyRadioReadToLibrary({
             id: buildPlan.build.id,
             name: buildPlan.build.name,
             action: existing ? 'updated' : 'created',
+            radioTargetId: targetId,
             targetLabel,
             channelsLeftOut: buildPlan.summary.channelsLeftOut,
             zonesLeftOut: buildPlan.summary.zonesLeftOut,

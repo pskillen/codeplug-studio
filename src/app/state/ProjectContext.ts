@@ -6,7 +6,8 @@ export interface ProjectContextValue {
   activeProjectId: string | null;
   activeProject: ProjectMeta | null;
   loading: boolean;
-  createProject: (name: string) => Promise<void>;
+  /** Creates the project, makes it active and resolves to its id. */
+  createProject: (name: string) => Promise<string>;
   switchProject: (projectId: string) => void;
   renameProject: (projectId: string, name: string) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;

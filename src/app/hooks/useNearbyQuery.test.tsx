@@ -33,7 +33,7 @@ function makeWrapper(initialEntries: string[]) {
         activeProjectId: PROJECT_ID,
         activeProject: makeProjectMeta(),
         loading: false,
-        createProject: async () => {},
+        createProject: async () => 'p1',
         switchProject: () => {},
         renameProject: async () => {},
         deleteProject: async () => {},

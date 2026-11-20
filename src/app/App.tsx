@@ -84,6 +84,7 @@ import TermsOfUsePage from './routes/legal/TermsOfUsePage.tsx';
 import CookiesPage from './routes/legal/CookiesPage.tsx';
 import AttributionsPage from './routes/AttributionsPage.tsx';
 import { gatedDebugRoute } from './routes/debug/debugRoutes.tsx';
+import StartFromRadioPage from './routes/start/StartFromRadioPage.tsx';
 
 function MapRedirect() {
   return <Navigate to="/library/channels" replace />;
@@ -108,6 +109,7 @@ export const appRouter = createBrowserRouter([
       { path: '/reference/bands', element: <BandsReferencePage /> },
       { path: '/reference/rf-propagation', element: <RfPropagationRedirectPage /> },
       { path: '/firmware', element: <FirmwareFlasherPage /> },
+      { path: '/start/radio', element: <StartFromRadioPage /> },
       {
         path: '/styleguide',
         element: <StyleguideLayout />,

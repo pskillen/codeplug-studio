@@ -1,18 +1,25 @@
 # LandingSupport
 
-Empty-state landing for Home (`/` with no projects): hero, `RadioFinder`, `RadioSupportMatrix`.
+Empty-state landing for Home (`/` with no projects): hero with `LandingPathChooser`, `RadioFinder`, `RadioSupportMatrix`.
 
 ## Props
 
-| Prop             | Type         | Notes                        |
-| ---------------- | ------------ | ---------------------------- |
-| `onStartProject` | `() => void` | Opens the New project dialog |
-| `onImport`       | `() => void` | Scrolls to Import from YAML  |
+| Prop               | Type         | Notes                                 |
+| ------------------ | ------------ | ------------------------------------- |
+| `onStartFromRadio` | `() => void` | Opens the Start from my radio wizard  |
+| `onStartProject`   | `() => void` | Opens the New project dialog          |
+| `onOpenDrive`      | `() => void` | Opens the Google Drive file browser   |
+| `onImport`         | `() => void` | Scrolls to the project file drop zone |
 
 ## Usage
 
 ```tsx
-<LandingSupport onStartProject={() => setNewProjectOpen(true)} onImport={scrollToImport} />
+<LandingSupport
+  onStartFromRadio={() => navigate('/start/radio')}
+  onStartProject={() => setNewProjectOpen(true)}
+  onOpenDrive={openFromDrive}
+  onImport={scrollToImport}
+/>
 ```
 
 ## Behaviour
