@@ -21,7 +21,7 @@ Product-level overview of how Codeplug Studio projects **library + build** into 
 | `Contacts.csv`     | Digital contacts — `city`/`state`/`country`/`remarks` → City/Province/Country/Remark; Type=`Private Call`; Alert Call=`0`; Repeater empty |
 | `RXGroupLists.csv` | Assembled RX group lists                                                                                                                  |
 | `DTMFContacts.csv` | Analog contacts                                                                                                                           |
-| `Scan.csv`         | Zone-derived scan synthesis ([#129](../../issues/129)) when enabled                                                                       |
+| `Scan.csv`         | Zone-derived scan synthesis ([#129](https://github.com/pskillen/codeplug-studio/issues/129)) when enabled                                    |
 
 ## Expansion rules (DM32-specific)
 
