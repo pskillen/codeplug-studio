@@ -12,6 +12,10 @@ Cable write for a Baofeng DM-32UV running RadioFoundry. The [codeplug file](../.
 
 The image is the one [RadioFoundry codeplug](../../../export-formats/radiofoundry/README.md) export builds (`assemble`, then the codeplug serialiser).
 
+## Layout from INFO
+
+The cable code takes a board (model, label, baud, and the core board limits) and serves the layout the radio reports in its INFO reply. Studio refuses the handshake when the block size, the EEPROM image size (`0x10000`) or the flash image start (`0x20000`) differ from the layout the codeplug file uses. The image end is the lower of INFO's and the board's (`0x800000` here), and that is the ID database ceiling. INFO also reports the physical base of the open-firmware image; Studio reads it and does not yet use it to identify the board or refuse a mismatch. A board whose physical base is above zero refuses any wire address at or past that base. The app picks this protocol by the RadioFoundry profile family, not by the DM-32UV's profile id.
+
 ## Digital contacts
 
 Ticking **Digital contacts** chooses Contacts, ID directory, or Both. Leaving it unticked releases the private-contact slots this write would have filled, so those slots stay as the radio had them. It does not change channels, zones, talk groups, or RX lists. Every other contact slot is still written. An unused slot is the empty record.
