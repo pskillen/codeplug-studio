@@ -9,6 +9,7 @@ import type { EgressPath } from '@core/models/egressPath.ts';
 import { channelLocationWriteRadioNote } from '@core/radio-targets/channelLocationNotes.ts';
 import {
   isAtD890RadioIoProfileId,
+  isRadioFoundryRadioIoProfileId,
   isDm32RadioIoProfileId,
   isRt95RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
@@ -84,7 +85,6 @@ import { AtD890StunKillError } from '@integrations/radio-io/radios/at-d890uv/stu
 import { encodeDm32uvWriteImageFromDownloadCache } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { radioFoundryCableBoardForProfileId } from '@integrations/radio-io/radios/dm32uv-radiofoundry/board.ts';
-import { isRadioFoundryRadioIoProfileId } from '@core/import-export/formats/radiofoundry/profiles.ts';
 import { isRadioFoundryCableRadio } from '@integrations/radio-io/radios/dm32uv-radiofoundry/protocol.ts';
 import {
   radioFoundryReviewContacts,

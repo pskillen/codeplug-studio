@@ -25,6 +25,7 @@ import {
 import {
   RADIOFOUNDRY_PROFILES,
   getRadioFoundryProfile,
+  isRadioFoundryRadioIoProfileId,
   type RadioFoundryRadioProfile,
 } from './formats/radiofoundry/profiles.ts';
 import {
@@ -275,6 +276,7 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
 export {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
+  isRadioFoundryRadioIoProfileId,
   isMm9pdyAtD890RadioIoProfileId,
   isMm9pdyDm32RadioIoProfileId,
   isMm9pdyRt95RadioIoProfileId,

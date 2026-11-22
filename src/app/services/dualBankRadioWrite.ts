@@ -10,8 +10,8 @@ import {
 import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
+  isRadioFoundryRadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
-import { isRadioFoundryRadioIoProfileId } from '@core/import-export/formats/radiofoundry/profiles.ts';
 import type { DualBankWriteMode } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
