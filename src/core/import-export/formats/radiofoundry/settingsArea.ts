@@ -25,7 +25,7 @@ let crcTable: Uint32Array | null = null;
 
 /**
  * zlib CRC-32 (reflected poly 0xEDB88320). Core cannot import
- * integrations/radio-io/kit/checksums.ts, so the reader carries its own.
+ * the radio-io kit checksums, so the reader carries its own.
  */
 export function crc32(data: Uint8Array): number {
   if (!crcTable) {
