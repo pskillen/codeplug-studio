@@ -6,7 +6,7 @@
  */
 
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
-import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
+import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { BLOCK_SIZE } from './constants.ts';
 
 /** Image offset of area 1. Not 0x700000. */
@@ -25,7 +25,7 @@ export const DMR_ID_DATABASE_AREA2_ADDRESS = 0xd8000;
  * First address past the open-firmware image (`openfw_end` 0xF00000 minus the
  * EEPROM base). The native codeplug starts here. Area 2 must not reach it.
  */
-export const DMR_ID_DATABASE_IMAGE_END = 0x800000;
+export const DMR_ID_DATABASE_IMAGE_END = DM32UV_RADIOFOUNDRY_BOARD.IMAGE_END;
 
 /** Bytes of area 2 that sit inside the open-firmware image. */
 export const DMR_ID_DATABASE_AREA2_BYTES =
@@ -54,7 +54,7 @@ export const DMR_ID_DATABASE_LAYOUT_RECORDS =
   DMR_ID_DATABASE_AREA1_RECORDS + DMR_ID_DATABASE_AREA2_RECORDS;
 
 /** The cap the Write enforces. The number lives in core; a test pins it to the layout. */
-export const DMR_ID_DATABASE_MAX_RECORDS = DM32UV_RADIOFOUNDRY_LIMITS.ID_DATABASE_MAX;
+export const DMR_ID_DATABASE_MAX_RECORDS = DM32UV_RADIOFOUNDRY_BOARD.ID_DATABASE_MAX;
 
 /** 4 KB blocks that cover `byteLength` of area 2. Empty when there is no spill. */
 export function dmrIdDatabaseArea2Blocks(byteLength: number): number[] {

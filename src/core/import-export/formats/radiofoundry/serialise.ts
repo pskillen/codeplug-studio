@@ -19,7 +19,11 @@ import type {
   OwnDigitalId,
 } from '@core/models/library.ts';
 import type { EntityRef } from '@core/models/libraryTypes.ts';
-import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
+import {
+  DM32UV_RADIOFOUNDRY_BOARD,
+  DM32UV_RADIOFOUNDRY_LIMITS,
+} from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
+import { formatRadioFoundryBands, isInRadioFoundryBand } from '@core/radios/radiofoundry/limits.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
@@ -44,10 +48,6 @@ import {
   RX_LIST_LENGTH_SIZE,
   RX_LIST_RECORD_SIZE,
   SQUELCH_LEVEL_MAX,
-  UHF_MAX_HZ,
-  UHF_MIN_HZ,
-  VHF_MAX_HZ,
-  VHF_MIN_HZ,
   ZONE_BITMAP,
   ZONE_BITMAP_SIZE,
   ZONE_RECORD_SIZE,
@@ -413,11 +413,11 @@ function writeFrequency(
     pushGeneralWarning(warnings, `Channel "${label}" has no ${which} frequency; wrote 0 Hz.`);
     return;
   }
-  if (!inBand(hz)) {
+  if (!isInRadioFoundryBand(hz, DM32UV_RADIOFOUNDRY_BOARD.BANDS_HZ)) {
     const mhz = (hz / 1_000_000).toFixed(5);
     pushGeneralWarning(
       warnings,
-      `Channel "${label}" ${which} frequency ${mhz} MHz is outside 136-174 and 400-480 MHz.`,
+      `Channel "${label}" ${which} frequency ${mhz} MHz is outside ${formatRadioFoundryBands(DM32UV_RADIOFOUNDRY_BOARD.BANDS_HZ)}.`,
     );
   }
   const units = Math.round(hz / 10);
@@ -434,10 +434,6 @@ function writeFrequency(
   record[offset + 1] = (word >> 8) & 0xff;
   record[offset + 2] = (word >> 16) & 0xff;
   record[offset + 3] = (word >>> 24) & 0xff;
-}
-
-function inBand(hz: number): boolean {
-  return (hz >= VHF_MIN_HZ && hz <= VHF_MAX_HZ) || (hz >= UHF_MIN_HZ && hz <= UHF_MAX_HZ);
 }
 
 /**

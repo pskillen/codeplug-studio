@@ -67,11 +67,6 @@ export const PER_CHANNEL_DMR_ID_MAX = 0xff_ffff;
 /** DMR all-call talk group. Stored with call type 2. */
 export const ALL_CALL_DMR_ID = 16_777_215;
 
-export const VHF_MIN_HZ = 136_000_000;
-export const VHF_MAX_HZ = 174_000_000;
-export const UHF_MIN_HZ = 400_000_000;
-export const UHF_MAX_HZ = 480_000_000;
-
 export function channelSlotAddress(number: number): {
   bitmap: number;
   bitIndex: number;

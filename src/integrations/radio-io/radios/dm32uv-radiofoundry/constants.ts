@@ -4,6 +4,7 @@
  * The radio adds {@link PHYSICAL_CODEPLUG_BASE} itself. That value is never a wire address.
  */
 
+import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { RADIOFOUNDRY_IMAGE_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
 
 export const DM32_RADIOFOUNDRY_MODEL_ID = 'DM-32UV-RadioFoundry';
@@ -27,7 +28,7 @@ export const FLASH_IMAGE_START = 0x20000;
  * Physical base of the open-firmware image on this radio.
  * The firmware adds it. A host sends image offsets only.
  */
-export const PHYSICAL_CODEPLUG_BASE = 0x700000;
+export const PHYSICAL_CODEPLUG_BASE = DM32UV_RADIOFOUNDRY_BOARD.PHYSICAL_CODEPLUG_BASE;
 
 export const OP_INFO = 0;
 export const OP_SUMS = 1;
