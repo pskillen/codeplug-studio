@@ -37,7 +37,7 @@ export interface MultiFileImportAdapter extends BaseImportAdapter {
 /** One raw codeplug image (RadioFoundry `codeplug.bin`). */
 export interface BinaryCpsImportAdapter extends BaseImportAdapter {
   readonly capabilities: ImportAdapterCapabilities & { delivery: 'binary-cps' };
-  parse(bytes: Uint8Array, projectId?: string): BinaryCpsImportResult;
+  parse(bytes: Uint8Array, projectId?: string, ctx?: ImportParseContext): BinaryCpsImportResult;
 }
 
 export type ImportAdapter =

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
+import {
+  DM32UV_RADIOFOUNDRY_BOARD,
+  DM32UV_RADIOFOUNDRY_LIMITS,
+} from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import {
   emptyLibrary,
   newAprsConfiguration,
@@ -29,7 +32,13 @@ import {
   SETTINGS_AREA_SIZE,
   channelSlotAddress,
 } from './layout.ts';
-import { serialiseRadioFoundryCodeplug, radioFoundryPowerByte } from './serialise.ts';
+import { parseRadioFoundryCodeplug } from './parse.ts';
+import { RADIOFOUNDRY_PROFILES, type RadioFoundryRadioProfile } from './profiles.ts';
+import {
+  serialiseRadioFoundryCodeplug,
+  serialiseRadioFoundryCodeplugWithProfile,
+  radioFoundryPowerByte,
+} from './serialise.ts';
 
 const LIMITS = DM32UV_RADIOFOUNDRY_LIMITS;
 
@@ -417,9 +426,11 @@ describe('serialiseRadioFoundryCodeplug', () => {
   });
 
   it('maps power percent onto the nine levels', () => {
-    expect(radioFoundryPowerByte(null)).toBe(0);
-    expect(radioFoundryPowerByte(1)).toBe(1);
-    expect(radioFoundryPowerByte(100)).toBe(LIMITS.POWER_LEVELS);
+    expect(radioFoundryPowerByte(null, DM32UV_RADIOFOUNDRY_BOARD.POWER_LEVELS)).toBe(0);
+    expect(radioFoundryPowerByte(1, DM32UV_RADIOFOUNDRY_BOARD.POWER_LEVELS)).toBe(1);
+    expect(radioFoundryPowerByte(100, DM32UV_RADIOFOUNDRY_BOARD.POWER_LEVELS)).toBe(
+      LIMITS.POWER_LEVELS,
+    );
   });
 
   it('downloads through the binary export path and refuses a zip', () => {
@@ -439,5 +450,70 @@ describe('serialiseRadioFoundryCodeplug', () => {
     expect(result.bytes.length).toBe(716384);
     expect(result.bytes[0]).toBe(0xff);
     expect(() => exportBuildZip({ build, egress, library })).toThrow(/codeplug\.bin/);
+  });
+});
+
+describe('RadioFoundry codec follows the radio profile', () => {
+  const sample = () =>
+    assembled({
+      channels: [fmChannel('Local', 50), fmChannel('Top', 100)],
+    });
+
+  it('writes the same bytes for the codec id, the radio-io id and no id', () => {
+    const named = serialiseRadioFoundryCodeplug(sample(), { profileId: 'radiofoundry-dm32uv' });
+    const cable = serialiseRadioFoundryCodeplug(sample(), {
+      profileId: 'radio-io-dm32uv-radiofoundry',
+    });
+    const unset = serialiseRadioFoundryCodeplug({ ...sample(), profileId: '' });
+    expect(Buffer.from(cable.bytes).equals(Buffer.from(named.bytes))).toBe(true);
+    expect(Buffer.from(cable.owned).equals(Buffer.from(named.owned))).toBe(true);
+    expect(Buffer.from(unset.bytes).equals(Buffer.from(named.bytes))).toBe(true);
+    expect(Buffer.from(unset.owned).equals(Buffer.from(named.owned))).toBe(true);
+  });
+
+  it('refuses an unknown profile id', () => {
+    expect(() => serialiseRadioFoundryCodeplug(sample(), { profileId: 'radio-io-dm32uv' })).toThrow(
+      /does not know the radio profile/,
+    );
+  });
+
+  const synthetic: RadioFoundryRadioProfile = {
+    ...RADIOFOUNDRY_PROFILES[0]!,
+    id: 'radiofoundry-test-board',
+    board: {
+      ...DM32UV_RADIOFOUNDRY_BOARD,
+      POWER_LEVELS: 3,
+      BANDS_HZ: [{ minHz: 144_000_000, maxHz: 146_000_000 }],
+    },
+  };
+
+  it('uses the profile power steps and bands', () => {
+    const wideChannel = fmChannel('Far', 1);
+    wideChannel.entity.rxFrequency = 435_000_000;
+    wideChannel.entity.txFrequency = 435_000_000;
+    const { bytes, warnings } = serialiseRadioFoundryCodeplugWithProfile(
+      assembled({ channels: [fmChannel('Top', 100), wideChannel] }),
+      synthetic,
+    );
+    expect(bytes[channelSlotAddress(1).record + 0x19]).toBe(3);
+    expect(bytes[channelSlotAddress(2).record + 0x19]).toBe(1);
+    expect(warnings.map(formatExportWarning).join('\n')).toContain('outside 144-146 MHz');
+  });
+
+  it('reads the profile power steps back on parse', () => {
+    const { bytes } = serialiseRadioFoundryCodeplugWithProfile(
+      assembled({ channels: [fmChannel('Top', 100)] }),
+      synthetic,
+    );
+    expect(parseRadioFoundryCodeplug(bytes, '', synthetic).channels[0]?.power).toBe(100);
+  });
+
+  it('parses the same rows for the radio-io id as for no profile', () => {
+    const { bytes } = serialiseRadioFoundryCodeplug(sample());
+    const plain = parseRadioFoundryCodeplug(bytes, 'p');
+    const cable = parseRadioFoundryCodeplug(bytes, 'p', 'radio-io-dm32uv-radiofoundry');
+    const strip = (r: typeof plain) =>
+      JSON.stringify(r, (key, value) => (key === 'id' || key.endsWith('Id') ? undefined : value));
+    expect(strip(cable)).toBe(strip(plain));
   });
 });

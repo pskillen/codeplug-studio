@@ -1,7 +1,7 @@
 /**
  * Read a headerless open-firmware codeplug image into library entities.
  * File offsets are the layout constants (RadioFoundry docs/spec/open-firmware-cps.md §7
- * and docs/spec/tftp.md §3). Cardinality comes from DM32UV_RADIOFOUNDRY_LIMITS.
+ * and docs/spec/tftp.md §3). Cardinality comes from RADIOFOUNDRY_LIMITS; power steps from the radio profile's board.
  */
 
 import type { SendTalkerAliasOverride } from '@core/models/channelBehaviourDefaults.ts';
@@ -26,7 +26,12 @@ import type {
 } from '@core/models/library.ts';
 import type { DMRTimeSlot, EntityRef, GeoPoint } from '@core/models/libraryTypes.ts';
 import { formatCtcssHz } from '@core/domain/tones.ts';
-import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
+import { RADIOFOUNDRY_LIMITS } from '@core/radios/radiofoundry/limits.ts';
+import {
+  DEFAULT_RADIOFOUNDRY_PROFILE_ID,
+  resolveRadioFoundryProfile,
+  type RadioFoundryRadioProfile,
+} from './profiles.ts';
 import type { BinaryCpsImportResult } from '../../types.ts';
 import {
   ALL_CALL_DMR_ID,
@@ -55,7 +60,7 @@ import {
 } from './channelTags.ts';
 import { readRadioFoundrySettingsArea, settingsAreaSector } from './settingsArea.ts';
 
-const LIMITS = DM32UV_RADIOFOUNDRY_LIMITS;
+const LIMITS = RADIOFOUNDRY_LIMITS;
 
 const CALL_GROUP = 0;
 const CALL_PRIVATE = 1;
@@ -147,7 +152,10 @@ interface ParsedContacts {
 export function parseRadioFoundryCodeplug(
   bytes: Uint8Array,
   projectId = '',
+  profile: RadioFoundryRadioProfile | string = DEFAULT_RADIOFOUNDRY_PROFILE_ID,
 ): BinaryCpsImportResult {
+  const codec = typeof profile === 'string' ? resolveRadioFoundryProfile(profile) : profile;
+  const powerLevels = codec.board.POWER_LEVELS;
   if (bytes.length < RADIOFOUNDRY_IMAGE_SIZE) {
     throw new RadioFoundryImportError(
       `This RadioFoundry codeplug is ${bytes.length} bytes. It has to be at least ${RADIOFOUNDRY_IMAGE_SIZE} bytes.`,
@@ -166,6 +174,7 @@ export function parseRadioFoundryCodeplug(
     contacts.bySlot,
     rxGroupLists.bySlot,
     warnings,
+    powerLevels,
   );
   const zones = readZones(image, projectId, zoneLayout, channels.byNumber, warnings);
   reportSettingsArea(image, channels.records, warnings);
@@ -284,6 +293,7 @@ function readChannels(
   contacts: Map<number, EntityRef>,
   rxLists: Map<number, string>,
   warnings: string[],
+  powerLevels: number,
 ): { rows: Channel[]; byNumber: Map<number, string>; records: Map<number, ImportedRecord> } {
   const rows: Channel[] = [];
   const byNumber = new Map<number, string>();
@@ -302,7 +312,7 @@ function readChannels(
       ...newChannel(projectId, name),
       rxFrequency: readFrequency(record, 0x10),
       txFrequency: readFrequency(record, 0x14),
-      power: powerPercent(record[0x19] ?? 0),
+      power: powerPercent(record[0x19] ?? 0, powerLevels),
       location: location.location,
       useLocation: location.useLocation,
       scanInclusion: flag4 & FLAG4_SCAN_SKIP ? 'skip' : 'alwaysScan',
@@ -475,14 +485,11 @@ function decodeCoordinate(bits: number): number {
  * Byte 0 is the radio default. Otherwise the byte is the exporter's equal-step
  * index plus one. Store the lowest percent that step maps back to, and 100 for the top step.
  */
-function powerPercent(byte: number): number | null {
+function powerPercent(byte: number, powerLevels: number): number | null {
   if (byte <= 0) return null;
-  if (byte >= LIMITS.POWER_LEVELS) return 100;
+  if (byte >= powerLevels) return 100;
   for (let percent = 1; percent <= 100; percent++) {
-    const index = Math.min(
-      LIMITS.POWER_LEVELS - 1,
-      Math.floor(((percent - 1) * LIMITS.POWER_LEVELS) / 100),
-    );
+    const index = Math.min(powerLevels - 1, Math.floor(((percent - 1) * powerLevels) / 100));
     if (index + 1 === byte) return percent;
   }
   return null;

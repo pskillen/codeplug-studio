@@ -20,11 +20,13 @@ import type {
 } from '@core/models/library.ts';
 import type { EntityRef } from '@core/models/libraryTypes.ts';
 import {
-  DM32UV_RADIOFOUNDRY_BOARD,
-  DM32UV_RADIOFOUNDRY_LIMITS,
-} from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
-import { formatRadioFoundryBands, isInRadioFoundryBand } from '@core/radios/radiofoundry/limits.ts';
+  RADIOFOUNDRY_LIMITS,
+  formatRadioFoundryBands,
+  isInRadioFoundryBand,
+  type RadioFoundryBand,
+} from '@core/radios/radiofoundry/limits.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
+import { resolveRadioFoundryProfile, type RadioFoundryRadioProfile } from './profiles.ts';
 import {
   pushGeneralInfoWarning,
   pushGeneralWarning,
@@ -58,7 +60,7 @@ import {
   channelSlotAddress,
 } from './layout.ts';
 
-const LIMITS = DM32UV_RADIOFOUNDRY_LIMITS;
+const LIMITS = RADIOFOUNDRY_LIMITS;
 
 export class RadioFoundryExportError extends Error {
   constructor(message: string) {
@@ -91,14 +93,11 @@ interface KeptChannel {
   number: number;
 }
 
-/** Null power is the radio default (byte 0). Otherwise percent 1-100 maps onto levels 1-9. */
-export function radioFoundryPowerByte(percent: number | null): number {
+/** Null power is the radio default (byte 0). Otherwise percent 1-100 maps onto levels 1..powerLevels. */
+export function radioFoundryPowerByte(percent: number | null, powerLevels: number): number {
   if (percent == null || !Number.isFinite(percent) || percent <= 0) return 0;
   const clamped = Math.min(100, percent);
-  const index = Math.min(
-    LIMITS.POWER_LEVELS - 1,
-    Math.floor(((clamped - 1) * LIMITS.POWER_LEVELS) / 100),
-  );
+  const index = Math.min(powerLevels - 1, Math.floor(((clamped - 1) * powerLevels) / 100));
   return index + 1;
 }
 
@@ -115,6 +114,24 @@ export function serialiseRadioFoundryCodeplug(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
 ): RadioFoundryImage {
+  const requested = options?.profileId ?? assembled.profileId;
+  let codec: RadioFoundryRadioProfile;
+  try {
+    codec = resolveRadioFoundryProfile(requested || undefined);
+  } catch {
+    throw new RadioFoundryExportError(
+      `RadioFoundry export does not know the radio profile "${requested}".`,
+    );
+  }
+  return serialiseRadioFoundryCodeplugWithProfile(assembled, codec, options);
+}
+
+/** The codec body for an already-resolved profile. Tests pass a synthetic board here. */
+export function serialiseRadioFoundryCodeplugWithProfile(
+  assembled: AssembledBuild,
+  codec: RadioFoundryRadioProfile,
+  options?: CpsExportOptions,
+): RadioFoundryImage {
   const warnings: ExportWarning[] = [];
   const radio = requireDefaultDmrId(assembled.ownDigitalIds);
   const image = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
@@ -124,7 +141,16 @@ export function serialiseRadioFoundryCodeplug(
   writeRadioIdentity(image, owned, radio, warnings);
   const contacts = writeContacts(image, owned, assembled, warnings);
   writeRxLists(image, owned, assembled, contacts, warnings);
-  const channels = writeChannels(image, owned, assembled, radio, contacts, warnings, options);
+  const channels = writeChannels(
+    image,
+    owned,
+    assembled,
+    radio,
+    contacts,
+    warnings,
+    options,
+    codec,
+  );
   writeZones(image, owned, assembled, channels, warnings);
   writeAprs(image, owned, assembled, warnings);
   warnScanLists(assembled, warnings);
@@ -175,6 +201,7 @@ function writeChannels(
   contacts: Map<string, number>,
   warnings: ExportWarning[],
   options: CpsExportOptions | undefined,
+  codec: RadioFoundryRadioProfile,
 ): Map<string, number> {
   zeroChannelBitmaps(image, owned);
   const pending: Array<{ row: AssembledChannel; mode: KeptMode }> = [];
@@ -196,7 +223,7 @@ function writeChannels(
   for (const item of pending) {
     const channel: KeptChannel = { ...item, number: numbers.size + 1 };
     numbers.set(channel.row.entity.id, channel.number);
-    writeChannelRecord(image, owned, channel, assembled, radio, contacts, warnings, options);
+    writeChannelRecord(image, owned, channel, assembled, radio, contacts, warnings, options, codec);
     markInUse(image, channel.number);
   }
   return numbers;
@@ -242,6 +269,7 @@ function writeChannelRecord(
   contacts: Map<string, number>,
   warnings: ExportWarning[],
   options: CpsExportOptions | undefined,
+  codec: RadioFoundryRadioProfile,
 ): void {
   const { row, mode } = channel;
   const entity = row.entity;
@@ -258,10 +286,18 @@ function writeChannelRecord(
   // APRS bits stay clear, flag2 holds only the timeslot, STE is off, and the
   // VFO offset and step are zero.
   writeAsciiField(record, 0, row.wireName || entity.name, LIMITS.NAME_MAX, 'Channel', warnings);
-  writeFrequency(record, 0x10, entity.rxFrequency, label, 'RX', warnings);
-  writeFrequency(record, 0x14, entity.txFrequency ?? entity.rxFrequency, label, 'TX', warnings);
+  writeFrequency(record, 0x10, entity.rxFrequency, label, 'RX', warnings, codec.board.BANDS_HZ);
+  writeFrequency(
+    record,
+    0x14,
+    entity.txFrequency ?? entity.rxFrequency,
+    label,
+    'TX',
+    warnings,
+    codec.board.BANDS_HZ,
+  );
   record[0x18] = mode === 'dmr' ? 1 : 0;
-  record[0x19] = radioFoundryPowerByte(entity.power);
+  record[0x19] = radioFoundryPowerByte(entity.power, codec.board.POWER_LEVELS);
   record[0x1b] = 0;
   record[0x20] = 0xff;
   record[0x21] = 0xff;
@@ -419,16 +455,17 @@ function writeFrequency(
   label: string,
   which: 'RX' | 'TX',
   warnings: ExportWarning[],
+  bands: readonly RadioFoundryBand[],
 ): void {
   if (hz == null || !Number.isFinite(hz)) {
     pushGeneralWarning(warnings, `Channel "${label}" has no ${which} frequency; wrote 0 Hz.`);
     return;
   }
-  if (!isInRadioFoundryBand(hz, DM32UV_RADIOFOUNDRY_BOARD.BANDS_HZ)) {
+  if (!isInRadioFoundryBand(hz, bands)) {
     const mhz = (hz / 1_000_000).toFixed(5);
     pushGeneralWarning(
       warnings,
-      `Channel "${label}" ${which} frequency ${mhz} MHz is outside ${formatRadioFoundryBands(DM32UV_RADIOFOUNDRY_BOARD.BANDS_HZ)}.`,
+      `Channel "${label}" ${which} frequency ${mhz} MHz is outside ${formatRadioFoundryBands(bands)}.`,
     );
   }
   const units = Math.round(hz / 10);
