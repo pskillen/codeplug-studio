@@ -8,6 +8,8 @@ export interface RadioFoundryCodeplugImportSuccess {
   ok: true;
   channelCount: number;
   zoneCount: number;
+  /** Plain-text notes about what the file held that the library does not show. */
+  warnings: string[];
 }
 
 export interface RadioFoundryCodeplugImportFailure {
@@ -57,6 +59,7 @@ export async function importRadioFoundryCodeplug(
     ok: true,
     channelCount: parsed.channels.length,
     zoneCount: parsed.zones.length,
+    warnings: parsed.warnings,
   };
 }
 

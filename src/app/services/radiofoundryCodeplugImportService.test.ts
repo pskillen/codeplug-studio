@@ -78,7 +78,7 @@ describe('importRadioFoundryCodeplug', () => {
 
     const result = await importRadioFoundryCodeplug(PROJECT_ID, handBuiltImage(), store);
 
-    expect(result).toEqual({ ok: true, channelCount: 1, zoneCount: 1 });
+    expect(result).toEqual({ ok: true, channelCount: 1, zoneCount: 1, warnings: [] });
     expect(putChannel).toHaveBeenCalledTimes(1);
     expect(putZone).toHaveBeenCalledTimes(1);
     const channel = putChannel.mock.calls[0]?.[0];
@@ -92,6 +92,22 @@ describe('importRadioFoundryCodeplug', () => {
     expect(await store.listChannels(PROJECT_ID)).toHaveLength(1);
     expect(await store.listZones(PROJECT_ID)).toHaveLength(1);
     expect(await store.listOwnDigitalIds(PROJECT_ID)).toHaveLength(1);
+  });
+
+  it('passes warnings through and still writes the rows', async () => {
+    const store = new InMemoryProjectPersistence();
+    const image = handBuiltImage();
+    const zone = ZONE_BITMAP + ZONE_BITMAP_SIZE;
+    writeU16(image, zone + LIMITS.NAME_MAX + 2, 37);
+
+    const result = await importRadioFoundryCodeplug(PROJECT_ID, image, store);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toContain('Zone "Home"');
+    expect(await store.listChannels(PROJECT_ID)).toHaveLength(1);
+    expect(await store.listZones(PROJECT_ID)).toHaveLength(1);
   });
 
   it('surfaces a short-file parser error and writes nothing', async () => {

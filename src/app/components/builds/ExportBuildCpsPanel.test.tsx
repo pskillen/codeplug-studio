@@ -24,6 +24,7 @@ const {
     ok: true as const,
     channelCount: 1,
     zoneCount: 1,
+    warnings: [] as string[],
   })),
   downloadCpsFile: vi.fn(async () => ({ warnings: [] as string[] })),
   downloadCpsSingleFile: vi.fn(async () => ({ warnings: [] as string[] })),
@@ -592,5 +593,23 @@ describe('ExportBuildCpsPanel', () => {
     fireEvent.change(input, { target: { files: [file] } });
     expect(await screen.findByText('Imported 1 channel and 1 zone.')).toBeInTheDocument();
     expect(importRadioFoundryCodeplug).toHaveBeenCalledWith('project-1', expect.any(Uint8Array));
+    expect(screen.queryByText('Check these after the import')).not.toBeInTheDocument();
+  });
+
+  it('lists the import warnings under the import line', async () => {
+    importRadioFoundryCodeplug.mockResolvedValueOnce({
+      ok: true as const,
+      channelCount: 1,
+      zoneCount: 1,
+      warnings: ['Channel 3 "Odd" has mode byte 0x05.'],
+    });
+    renderExportPanel('radiofoundry-dm32uv');
+    await screen.findByRole('button', { name: 'Download codeplug.bin' });
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([1, 2, 3])], 'codeplug.bin');
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(await screen.findByText('Check these after the import')).toBeInTheDocument();
+    expect(screen.getByText('Channel 3 "Odd" has mode byte 0x05.')).toBeInTheDocument();
   });
 });
