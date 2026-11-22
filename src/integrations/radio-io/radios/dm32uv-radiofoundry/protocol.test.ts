@@ -49,7 +49,16 @@ import {
   DMR_ID_DATABASE_IMAGE_END,
   DMR_ID_DATABASE_RECORD_BYTES,
 } from './idDatabase.ts';
-import { Dm32uvRadioFoundryProtocol } from './protocol.ts';
+import {
+  DM32UV_RADIOFOUNDRY_CABLE_BOARD,
+  radioFoundryCableBoardForProfileId,
+  type RadioFoundryCableBoard,
+} from './board.ts';
+import {
+  assertImageBlock,
+  isRadioFoundryCableRadio,
+  RadioFoundryCableProtocol,
+} from './protocol.ts';
 import {
   radioFoundryWriteSourceFromAssembled,
   type Dm32RadioFoundryWriteSource,
@@ -278,12 +287,12 @@ describe('DM-32 RadioFoundry fast codeplug', () => {
   it('stops when INFO does not answer', async () => {
     const silent = new ScriptedPipe(0xff);
     silent.silent = true;
-    const missing = new Dm32uvRadioFoundryProtocol();
+    const missing = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
     await expect(missing.connect(silent)).rejects.toThrow(HANDSHAKE_ERROR);
 
     const refused = new ScriptedPipe(0xff);
     refused.infoStatus = 4;
-    const unavailable = new Dm32uvRadioFoundryProtocol();
+    const unavailable = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
     await expect(unavailable.connect(refused)).rejects.toThrow(
       /did not answer the RadioFoundry codeplug protocol/,
     );
@@ -292,7 +301,7 @@ describe('DM-32 RadioFoundry fast codeplug', () => {
 
   it('writes changed blocks, keeps unowned bytes, and commits without rebooting', async () => {
     const pipe = new ScriptedPipe(0x5a);
-    const proto = new Dm32uvRadioFoundryProtocol();
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
     await proto.connect(pipe);
 
     const bytes = new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE);
@@ -394,7 +403,7 @@ describe('DM-32 RadioFoundry settings area', () => {
   it('never sends block 0xE000 and keeps the radio area byte for byte', async () => {
     const pipe = new ScriptedPipe(0x5a);
     pipe.block(0xe000).set(RFKV_SECTOR_VECTOR);
-    const proto = new Dm32uvRadioFoundryProtocol();
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
     await proto.connect(pipe);
     const { bytes, owned } = blankSource();
     bytes[0x00e0] = 0x54;
@@ -409,7 +418,7 @@ describe('DM-32 RadioFoundry settings area', () => {
 
   it('refuses a source that owns a byte of the area before any frame is sent', async () => {
     const pipe = new ScriptedPipe(0x5a);
-    const proto = new Dm32uvRadioFoundryProtocol();
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
     await proto.connect(pipe);
     const framesBefore = pipe.writes.length;
     const { bytes, owned } = blankSource();
@@ -423,7 +432,7 @@ describe('DM-32 RadioFoundry settings area', () => {
   it('reports the area it read, checked', async () => {
     const pipe = new ScriptedPipe(0x5a);
     pipe.block(0xe000).set(RFKV_SECTOR_VECTOR);
-    const proto = new Dm32uvRadioFoundryProtocol();
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
     await proto.connect(pipe);
     expect(proto.settingsArea()).toBeNull();
     const { bytes, owned } = blankSource();
@@ -434,7 +443,7 @@ describe('DM-32 RadioFoundry settings area', () => {
     expect(area?.entries.map((e) => e.key)).toEqual([1, 0x7001]);
 
     const blank = new ScriptedPipe(0xff);
-    const proto2 = new Dm32uvRadioFoundryProtocol();
+    const proto2 = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
     await proto2.connect(blank);
     proto2.armWriteSource({ bytes, owned, warnings: [] });
     await proto2.download({ progressStage: 'Pre-write read' });
@@ -457,7 +466,7 @@ async function uploadSource(
   pipe: ScriptedPipe,
   source: Dm32RadioFoundryWriteSource,
 ): Promise<ReturnType<typeof stageRecorder>> {
-  const proto = new Dm32uvRadioFoundryProtocol();
+  const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
   await proto.connect(pipe);
   proto.armWriteSource(source);
   const rec = stageRecorder();
@@ -699,5 +708,98 @@ describe('DM-32 RadioFoundry APRS', () => {
       'WIDE1',
     );
     expect(written[at - 1]).toBe(0x5a);
+  });
+});
+
+/** Answers INFO with the given body and nothing else. */
+class InfoOnlyPipe implements BytePipe {
+  private pending = new Uint8Array(0);
+  constructor(private readonly info: Uint8Array) {}
+
+  async write(data: Uint8Array): Promise<void> {
+    const request = decodeDebugFrame(data.slice());
+    const payload = new Uint8Array(1 + this.info.length);
+    payload.set(this.info, 1);
+    const frame = encodeDebugFrame(REPLY, request.seq, payload);
+    const next = new Uint8Array(this.pending.length + frame.length);
+    next.set(this.pending, 0);
+    next.set(frame, this.pending.length);
+    this.pending = next;
+  }
+
+  async readExact(n: number): Promise<Uint8Array> {
+    if (this.pending.length < n) throw new RadioTimeoutError();
+    const out = this.pending.slice(0, n);
+    this.pending = this.pending.slice(n);
+    return out;
+  }
+
+  async close(): Promise<void> {}
+}
+
+/** The cps-fast spec's example INFO reply: EEPROM 0x10000, flash 0x20000, end 0xE00000, base 0. */
+function specExampleInfo(): Uint8Array {
+  const body = infoBody();
+  writeU32(body, 16, 0xe00000);
+  writeU32(body, 20, 0);
+  return body;
+}
+
+const TEST_BOARD: RadioFoundryCableBoard = {
+  ...DM32UV_RADIOFOUNDRY_CABLE_BOARD,
+  limits: {
+    ...DM32UV_RADIOFOUNDRY_CABLE_BOARD.limits,
+    IMAGE_END: 0xe00000,
+    PHYSICAL_CODEPLUG_BASE: 0,
+  },
+};
+
+describe('RadioFoundry cable INFO and board', () => {
+  it('refuses an EEPROM size the codec layout does not assume', async () => {
+    const body = infoBody();
+    writeU32(body, 8, 0x8000);
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await expect(proto.connect(new InfoOnlyPipe(body))).rejects.toThrow(HANDSHAKE_ERROR);
+  });
+
+  it('connects on the spec example INFO and keeps the board ceiling and base', async () => {
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    const ident = await proto.connect(new InfoOnlyPipe(specExampleInfo()));
+    expect(ident.modelHints).toEqual([DM32UV_RADIOFOUNDRY_CABLE_BOARD.modelHint]);
+    const info = { imageEnd: 0xe00000, eepromEnd: 0x10000, flashStart: 0x20000 };
+    // INFO says 0xE00000; the board's own image end (0x800000) is the ceiling.
+    const capped: RadioFoundryCableBoard = {
+      ...DM32UV_RADIOFOUNDRY_CABLE_BOARD,
+      limits: { ...DM32UV_RADIOFOUNDRY_CABLE_BOARD.limits, PHYSICAL_CODEPLUG_BASE: 0 },
+    };
+    expect(() => assertImageBlock(0x7ff000, info, capped)).not.toThrow();
+    expect(() => assertImageBlock(0x800000, info, capped)).toThrow(/outside the image/);
+  });
+
+  it('takes the area-2 ceiling and base guard from the board', async () => {
+    const proto = new RadioFoundryCableProtocol(TEST_BOARD);
+    await proto.connect(new InfoOnlyPipe(specExampleInfo()));
+    const info = { imageEnd: 0xe00000, eepromEnd: 0x10000, flashStart: 0x20000 };
+    expect(() => assertImageBlock(0x700000, info, TEST_BOARD)).not.toThrow();
+    expect(() => assertImageBlock(0xe00000, info, TEST_BOARD)).toThrow(/outside the image/);
+    // The DM-32 board refuses the same offset: its physical base is 0x700000.
+    expect(() => assertImageBlock(0x700000, info, DM32UV_RADIOFOUNDRY_CABLE_BOARD)).toThrow(
+      /image offsets/,
+    );
+  });
+
+  it('recognises a RadioFoundry cable radio by guard', () => {
+    expect(
+      isRadioFoundryCableRadio(new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD)),
+    ).toBe(true);
+    expect(isRadioFoundryCableRadio({})).toBe(false);
+    expect(isRadioFoundryCableRadio(new ScriptedPipe(0xff))).toBe(false);
+  });
+
+  it('finds the board for a radio-io profile id', () => {
+    expect(radioFoundryCableBoardForProfileId('radio-io-dm32uv-radiofoundry')).toBe(
+      DM32UV_RADIOFOUNDRY_CABLE_BOARD,
+    );
+    expect(() => radioFoundryCableBoardForProfileId('radio-io-dm32uv')).toThrow();
   });
 });

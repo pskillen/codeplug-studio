@@ -57,10 +57,13 @@ export const DMR_ID_DATABASE_LAYOUT_RECORDS =
 export const DMR_ID_DATABASE_MAX_RECORDS = DM32UV_RADIOFOUNDRY_BOARD.ID_DATABASE_MAX;
 
 /** 4 KB blocks that cover `byteLength` of area 2. Empty when there is no spill. */
-export function dmrIdDatabaseArea2Blocks(byteLength: number): number[] {
+export function dmrIdDatabaseArea2Blocks(
+  byteLength: number,
+  imageEnd: number = DMR_ID_DATABASE_IMAGE_END,
+): number[] {
   if (byteLength <= 0) return [];
   const end = DMR_ID_DATABASE_AREA2_ADDRESS + byteLength;
-  if (end > DMR_ID_DATABASE_IMAGE_END) {
+  if (end > imageEnd) {
     throw new Error('DMR ID database area 2 passes the native codeplug.');
   }
   const addrs: number[] = [];

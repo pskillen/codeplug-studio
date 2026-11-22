@@ -50,12 +50,16 @@ export const DATA_CHUNK_MAX = 61;
 export const HANDSHAKE_ERROR = 'This radio did not answer the RadioFoundry codeplug protocol.';
 
 /** 4 KB blocks the fast protocol will serve inside the codeplug file. */
-export function servedBlockAddresses(imageSize: number = DM32_RADIOFOUNDRY_IMAGE_SIZE): number[] {
+export function servedBlockAddresses(
+  imageSize: number = DM32_RADIOFOUNDRY_IMAGE_SIZE,
+  eepromEnd: number = EEPROM_IMAGE_END,
+  flashStart: number = FLASH_IMAGE_START,
+): number[] {
   const addresses: number[] = [];
-  for (let addr = 0; addr + BLOCK_SIZE <= EEPROM_IMAGE_END; addr += BLOCK_SIZE) {
+  for (let addr = 0; addr + BLOCK_SIZE <= eepromEnd; addr += BLOCK_SIZE) {
     addresses.push(addr);
   }
-  for (let addr = FLASH_IMAGE_START; addr < imageSize; addr += BLOCK_SIZE) {
+  for (let addr = flashStart; addr < imageSize; addr += BLOCK_SIZE) {
     addresses.push(addr);
   }
   return addresses;
