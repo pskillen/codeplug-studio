@@ -629,7 +629,9 @@ export function assertImageBlock(
   const inFlash = addr >= info.flashStart && addr < DM32_RADIOFOUNDRY_IMAGE_SIZE;
   const inArea2 = addr >= DMR_ID_DATABASE_AREA2_ADDRESS && addr + BLOCK_SIZE <= ceiling;
   if (!inEeprom && !inFlash && !inArea2) {
-    throw new RadioProtocolError(`Codeplug block ${hex(addr)} is outside the image. RadioFoundry codeplug writes use image offsets.`);
+    throw new RadioProtocolError(
+      `Codeplug block ${hex(addr)} is outside the image. RadioFoundry codeplug writes use image offsets.`,
+    );
   }
 }
 
