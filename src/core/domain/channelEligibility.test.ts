@@ -158,6 +158,34 @@ describe('channelEligibility', () => {
   });
 });
 
+describe('DM-32UV RadioFoundry target', () => {
+  const target = 'baofeng-dm32uv-radiofoundry';
+
+  it('accepts in-band FM', () => {
+    expect(channelEligibleForRadio(channelWith(['fm'], 145_000_000), target)).toBe(true);
+  });
+
+  it('rejects FM outside the board bands', () => {
+    expect(channelEligibleForRadio(channelWith(['fm'], 220_000_000), target)).toBe(false);
+  });
+
+  it('rejects NXDN as an unsupported mode', () => {
+    const ch = channelWith([], 446_000_000, 'Nxdn');
+    ch.modeProfiles = [
+      {
+        mode: 'nxdn',
+        rxRan: 1,
+        txRan: 1,
+        ownDigitalIdId: null,
+        contactRef: null,
+        rxGroupListId: null,
+        nxdnRate: null,
+      },
+    ];
+    expect(getChannelIneligibilityReason(ch, target)).toBe('unsupported-mode');
+  });
+});
+
 describe('channelStatusInBuild', () => {
   it('reports included, with the build wire-name override when set', () => {
     const fm = channelWith(['fm'], 145_500_000);
