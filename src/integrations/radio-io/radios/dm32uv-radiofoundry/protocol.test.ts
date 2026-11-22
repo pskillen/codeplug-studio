@@ -782,10 +782,23 @@ describe('RadioFoundry cable INFO and board', () => {
     const info = { imageEnd: 0xe00000, eepromEnd: 0x10000, flashStart: 0x20000 };
     expect(() => assertImageBlock(0x700000, info, TEST_BOARD)).not.toThrow();
     expect(() => assertImageBlock(0xe00000, info, TEST_BOARD)).toThrow(/outside the image/);
-    // The DM-32 board refuses the same offset: its physical base is 0x700000.
-    expect(() => assertImageBlock(0x700000, info, DM32UV_RADIOFOUNDRY_CABLE_BOARD)).toThrow(
-      /image offsets/,
-    );
+  });
+
+  it('accepts every ID-directory block below the DM-32UV ceiling and refuses the first past it', () => {
+    const info = { imageEnd: 0x800000, eepromEnd: 0x10000, flashStart: 0x20000 };
+    const board = DM32UV_RADIOFOUNDRY_CABLE_BOARD;
+    // 0x700000 is the board's physical base and a valid area-2 image offset.
+    expect(() => assertImageBlock(0x700000, info, board)).not.toThrow();
+    expect(() => assertImageBlock(0x7ff000, info, board)).not.toThrow();
+    expect(() => assertImageBlock(0x800000, info, board)).toThrow(/outside the image/);
+  });
+
+  it('still refuses a physical address that lands past the image', () => {
+    const info = { imageEnd: 0x800000, eepromEnd: 0x10000, flashStart: 0x20000 };
+    const board = DM32UV_RADIOFOUNDRY_CABLE_BOARD;
+    const physical = board.limits.PHYSICAL_CODEPLUG_BASE + 0x120000;
+    expect(() => assertImageBlock(physical, info, board)).toThrow(/image offsets/);
+    expect(() => assertImageBlock(-0x1000, info, board)).toThrow(/image offsets/);
   });
 
   it('recognises a RadioFoundry cable radio by guard', () => {

@@ -605,13 +605,18 @@ function mergeBlock(
   return want;
 }
 
+/**
+ * Refuses a block that is not an image offset the radio accepts: unaligned, or outside EEPROM, flash
+ * and ID-database area 2 (up to the lower of INFO's image end and the board's). The board's physical
+ * base is not tested directly: it can sit inside area 2 (DM-32UV: 0x700000), so a base test would
+ * refuse valid ID-directory blocks. A physical address past the ceiling still fails the range test.
+ */
 export function assertImageBlock(
   addr: number,
   info: Pick<FastInfo, 'imageEnd' | 'eepromEnd' | 'flashStart'>,
   board: RadioFoundryCableBoard,
 ): void {
-  const base = board.limits.PHYSICAL_CODEPLUG_BASE;
-  if (!Number.isInteger(addr) || addr < 0 || (base > 0 && addr >= base)) {
+  if (!Number.isInteger(addr) || addr < 0) {
     throw new RadioProtocolError(
       `Refusing wire address ${hex(addr)}. RadioFoundry codeplug writes use image offsets.`,
     );
@@ -624,7 +629,7 @@ export function assertImageBlock(
   const inFlash = addr >= info.flashStart && addr < DM32_RADIOFOUNDRY_IMAGE_SIZE;
   const inArea2 = addr >= DMR_ID_DATABASE_AREA2_ADDRESS && addr + BLOCK_SIZE <= ceiling;
   if (!inEeprom && !inFlash && !inArea2) {
-    throw new RadioProtocolError(`Codeplug block ${hex(addr)} is outside the image.`);
+    throw new RadioProtocolError(`Codeplug block ${hex(addr)} is outside the image. RadioFoundry codeplug writes use image offsets.`);
   }
 }
 
