@@ -8,6 +8,11 @@
  * COMMIT reloads the codeplug. There is no reboot command.
  */
 
+import { SETTINGS_AREA_ADDRESS, SETTINGS_AREA_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
+import {
+  readRadioFoundrySettingsArea,
+  type SettingsArea,
+} from '@core/import-export/formats/radiofoundry/settingsArea.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { crc32Ieee } from '../../kit/checksums.ts';
 import { RadioProtocolError, RadioTimeoutError } from '../../kit/errors.ts';
@@ -110,6 +115,13 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
     ) {
       throw new RadioProtocolError('RadioFoundry write image is the wrong length.');
     }
+    for (let i = SETTINGS_AREA_ADDRESS; i < SETTINGS_AREA_ADDRESS + SETTINGS_AREA_SIZE; i += 1) {
+      if (source.owned[i]) {
+        throw new RadioProtocolError(
+          'This write would change the RadioFoundry settings area. Studio does not write that area yet.',
+        );
+      }
+    }
     const area2 = source.area2;
     const area2Owned = source.area2Owned;
     if (area2 || area2Owned) {
@@ -132,6 +144,13 @@ export class Dm32uvRadioFoundryProtocol implements CloneImageRadio {
 
   hasReadImage(): boolean {
     return this.readBlocks != null;
+  }
+
+  /** The settings area this session read, checked; null before a read. Never decoded past tag headers. */
+  settingsArea(): SettingsArea | null {
+    const block = this.readBlocks?.get(SETTINGS_AREA_ADDRESS);
+    if (!block || block.length < SETTINGS_AREA_SIZE) return null;
+    return readRadioFoundrySettingsArea(block.subarray(0, SETTINGS_AREA_SIZE));
   }
 
   /** True when a directory spill is already in the read cache, or there is no spill. */

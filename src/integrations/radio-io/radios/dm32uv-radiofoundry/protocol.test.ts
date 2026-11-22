@@ -372,6 +372,73 @@ function cableAssembled(contactName?: string): AssembledBuild {
   };
 }
 
+const RFKV_SECTOR_VECTOR = (() => {
+  // Upstream kv.test.mjs valid sector (MIT, Copyright (c) 2026 The RadioFoundry Authors).
+  const sector = new Uint8Array(0x1000).fill(0xff);
+  sector.set([0x52, 0x46, 0x4b, 0x56, 0x01, 0x10, 0x0d, 0x00, 0x9c, 0x60, 0xfa, 0x04, 0, 0, 0, 0], 0);
+  sector.set([0x01, 0x00, 0x04, 0x00, 0x39, 0x30, 0x00, 0x00, 0x01, 0x70, 0x01, 0x00, 0xaa], 16);
+  return sector;
+})();
+
+describe('DM-32 RadioFoundry settings area', () => {
+  function blankSource(): { bytes: Uint8Array; owned: Uint8Array } {
+    return {
+      bytes: new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE).fill(0xff),
+      owned: new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE),
+    };
+  }
+
+  it('never sends block 0xE000 and keeps the radio area byte for byte', async () => {
+    const pipe = new ScriptedPipe(0x5a);
+    pipe.block(0xe000).set(RFKV_SECTOR_VECTOR);
+    const proto = new Dm32uvRadioFoundryProtocol();
+    await proto.connect(pipe);
+    const { bytes, owned } = blankSource();
+    bytes[0x00e0] = 0x54;
+    owned[0x00e0] = 1;
+    proto.armWriteSource({ bytes, owned, warnings: [] });
+    await proto.download({ progressStage: 'Pre-write read' });
+    await proto.upload(memoryMapFromBytes(bytes), {});
+    expect(writtenBlockAddresses(pipe)).toEqual([0]);
+    expect(writtenBlockAddresses(pipe)).not.toContain(0xe000);
+    expect([...pipe.block(0xe000)]).toEqual([...RFKV_SECTOR_VECTOR]);
+  });
+
+  it('refuses a source that owns a byte of the area before any frame is sent', async () => {
+    const pipe = new ScriptedPipe(0x5a);
+    const proto = new Dm32uvRadioFoundryProtocol();
+    await proto.connect(pipe);
+    const framesBefore = pipe.writes.length;
+    const { bytes, owned } = blankSource();
+    owned[0xe000 + 20] = 1;
+    expect(() => proto.armWriteSource({ bytes, owned, warnings: [] })).toThrow(
+      /would change the RadioFoundry settings area/,
+    );
+    expect(pipe.writes.length).toBe(framesBefore);
+  });
+
+  it('reports the area it read, checked', async () => {
+    const pipe = new ScriptedPipe(0x5a);
+    pipe.block(0xe000).set(RFKV_SECTOR_VECTOR);
+    const proto = new Dm32uvRadioFoundryProtocol();
+    await proto.connect(pipe);
+    expect(proto.settingsArea()).toBeNull();
+    const { bytes, owned } = blankSource();
+    proto.armWriteSource({ bytes, owned, warnings: [] });
+    await proto.download({ progressStage: 'Pre-write read' });
+    const area = proto.settingsArea();
+    expect(area?.state).toBe('valid');
+    expect(area?.entries.map((e) => e.key)).toEqual([1, 0x7001]);
+
+    const blank = new ScriptedPipe(0xff);
+    const proto2 = new Dm32uvRadioFoundryProtocol();
+    await proto2.connect(blank);
+    proto2.armWriteSource({ bytes, owned, warnings: [] });
+    await proto2.download({ progressStage: 'Pre-write read' });
+    expect(proto2.settingsArea()?.state).toBe('empty');
+  });
+});
+
 function writtenBlockAddresses(pipe: ScriptedPipe): number[] {
   return pipe.writes
     .map((frame) => decodeDebugFrame(frame))
