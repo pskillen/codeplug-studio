@@ -52,7 +52,7 @@ describe('DM-32UV RadioFoundry profile facts', () => {
 
   it('takes the ID database cap from the board', () => {
     expect(
-      getProfileExportLimits('radio-io', 'radio-io-dm32uv-radiofoundry').maxDigitalIdDatabase,
+      getProfileExportLimits('radio-io', 'radio-io-dm32uv-radiofoundry')?.maxDigitalIdDatabase,
     ).toBe(287_629);
   });
 });
