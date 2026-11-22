@@ -8,7 +8,10 @@
  * COMMIT reloads the codeplug. There is no reboot command.
  */
 
-import { SETTINGS_AREA_ADDRESS, SETTINGS_AREA_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
+import {
+  SETTINGS_AREA_ADDRESS,
+  SETTINGS_AREA_SIZE,
+} from '@core/import-export/formats/radiofoundry/layout.ts';
 import {
   readRadioFoundrySettingsArea,
   type SettingsArea,

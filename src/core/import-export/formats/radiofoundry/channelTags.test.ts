@@ -19,7 +19,13 @@ function storedName(name: string, pad: number): Uint8Array {
 }
 
 function areaOf(entries: [number, number[]][]) {
-  const data = entries.flatMap(([key, value]) => [key & 0xff, key >> 8, value.length & 0xff, value.length >> 8, ...value]);
+  const data = entries.flatMap(([key, value]) => [
+    key & 0xff,
+    key >> 8,
+    value.length & 0xff,
+    value.length >> 8,
+    ...value,
+  ]);
   const s = new Uint8Array(SETTINGS_AREA_SIZE).fill(0xff);
   const crc = crc32(Uint8Array.from(data));
   s.fill(0, 0, 16);
@@ -74,7 +80,11 @@ describe('readChannelTagHeaders', () => {
   });
 
   it('returns nothing for an area that is not valid', () => {
-    expect(readChannelTagHeaders(readRadioFoundrySettingsArea(new Uint8Array(SETTINGS_AREA_SIZE).fill(0xff)))).toEqual([]);
+    expect(
+      readChannelTagHeaders(
+        readRadioFoundrySettingsArea(new Uint8Array(SETTINGS_AREA_SIZE).fill(0xff)),
+      ),
+    ).toEqual([]);
   });
 });
 
@@ -112,7 +122,9 @@ describe('isChannelTagLive', () => {
     expect(isChannelTagLive(tag('T3 Ops'), record('T3 Ops', { dmr: false }))).toBe(false);
   });
   it('is live on an FM record when the base stands alone', () => {
-    expect(isChannelTagLive(tag('P25 Ops', true), record('P25 Ops', { dmr: false, rxOnly: false }))).toBe(true);
+    expect(
+      isChannelTagLive(tag('P25 Ops', true), record('P25 Ops', { dmr: false, rxOnly: false })),
+    ).toBe(true);
   });
   it('is stale on a DMR record that allows TX', () => {
     expect(isChannelTagLive(tag('T3 Ops'), record('T3 Ops', { rxOnly: false }))).toBe(false);

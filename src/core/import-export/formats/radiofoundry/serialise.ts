@@ -25,7 +25,11 @@ import {
 } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { formatRadioFoundryBands, isInRadioFoundryBand } from '@core/radios/radiofoundry/limits.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
-import { pushGeneralInfoWarning, pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import {
+  pushGeneralInfoWarning,
+  pushGeneralWarning,
+  type ExportWarning,
+} from '@core/import-export/exportWarning.ts';
 import {
   ALL_CALL_DMR_ID,
   APRS_BASE,

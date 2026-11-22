@@ -57,7 +57,8 @@ export function readRadioFoundrySettingsArea(sector: Uint8Array): SettingsArea {
   const dataLength = sector[6]! | (sector[7]! << 8);
   if (headerLength < MIN_HEADER || headerLength + dataLength > SETTINGS_AREA_SIZE) return bad;
   const data = sector.subarray(headerLength, headerLength + dataLength);
-  const storedCrc = (sector[8]! | (sector[9]! << 8) | (sector[10]! << 16) | (sector[11]! << 24)) >>> 0;
+  const storedCrc =
+    (sector[8]! | (sector[9]! << 8) | (sector[10]! << 16) | (sector[11]! << 24)) >>> 0;
   if (crc32(data) !== storedCrc) return bad;
 
   const entries: SettingsAreaEntry[] = [];

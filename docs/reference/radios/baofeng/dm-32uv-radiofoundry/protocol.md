@@ -50,6 +50,7 @@ Not sent, and why:
 ## What is not written
 
 - An address the serialiser does not own. The byte read from the radio stays. That includes general settings other than the callsign and the radio DMR ID, voice prompts, factory calibration, the settings ring (including digital APRS destination, beacon interval, and position source), the sector journal, and the native codeplug area. The DMR ID database stays unowned unless that source is selected.
+- The settings area. Block `0xE000` is never sent, and a source that owns any byte of it is refused before a frame goes out. See [settings area](../../../export-formats/radiofoundry/settings-area.md).
 - Anything below the open-firmware image.
 
 Studio does not speak the stock DM-32 programmer, and it does not speak the OpenGD77 `R` / `X` / `W` codec. If the radio does not answer the fast command, the write stops.

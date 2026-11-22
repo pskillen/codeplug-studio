@@ -10,7 +10,7 @@ One file, `codeplug.bin`, for a radio running RadioFoundry. This is the open-fir
 | Export    | Shipped                                                                                                                                                           |
 | Import    | Shipped. The same `codeplug.bin` parses into library entities.                                                                                                    |
 
-**Length:** 716384 bytes (0xAEE60). Bytes Studio does not write stay `0xFF`. The zone table is the exception: the bitmap and all 68 zone records are zeroed before real zones are written, so byte 0x806F is `0x00`–`0x04` and the radio keeps the 80-channel zone layout.
+**Length:** 716384 bytes (0xAEE60). Bytes Studio does not write stay `0xFF`, including the settings area's sector at `0xE000`–`0xEFFF` ([settings area](settings-area.md)). The zone table is the exception: the bitmap and all 68 zone records are zeroed before real zones are written, so byte 0x806F is `0x00`–`0x04` and the radio keeps the 80-channel zone layout.
 
 Hardware caps, including the shared contact bank and the nine power steps, are the [firmware-wide limits](../../radios/radiofoundry/limits.md) and the [DM-32UV (RadioFoundry) board limits](../../radios/baofeng/dm-32uv-radiofoundry/limits.md). Names on the wire are 16 ASCII characters, `0xFF` padded, with no NUL. The radio name is 8 characters, taken from the default DMR radio ID's name. An empty radio name is `0xFF` bytes. A 17th character, or a radio name past 8, is truncated and warned. Non-ASCII characters are replaced or dropped, with a warning.
 
@@ -56,6 +56,7 @@ Left as `0xFF`, with no records written:
 
 - DMR ID database, LUCZ, boot text, VFOs, quick keys
 - DTMF / analog contacts
+- The settings area (`0xE000`–`0xEFFF`), which holds channel modes Studio cannot model yet. The radio keeps its own; export adds an info note. See [settings area](settings-area.md).
 - Scan lists. Each scan list produces a warning. Studio does not add a carrier channel, does not run repeater-times-talk-group expansion, and does not clone talk groups per timeslot.
 
 Layout detail is RadioFoundry's own spec (`docs/spec/open-firmware-cps.md` and `docs/spec/tftp.md` section 3). This page does not restate that byte table.
