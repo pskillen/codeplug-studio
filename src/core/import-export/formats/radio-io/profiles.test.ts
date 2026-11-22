@@ -13,7 +13,7 @@ import {
   isRadioIoAtD890uvProfile,
   isRt95RadioIoProfileId,
   isRadioIoDm32uvProfile,
-  isRadioIoDm32uvRadioFoundryProfile,
+  isRadioIoRadioFoundryProfile,
   isRadioIoOpenGd771701Profile,
 } from './profiles.ts';
 
@@ -121,9 +121,9 @@ describe('radio-io profiles', () => {
 
   it('re-exports DM-32 RadioFoundry caps and stays off the stock DM-32 profile', () => {
     const profile = getRadioIoProfile('radio-io-dm32uv-radiofoundry');
-    expect(isRadioIoDm32uvRadioFoundryProfile(profile)).toBe(true);
+    expect(isRadioIoRadioFoundryProfile(profile)).toBe(true);
     expect(isRadioIoDm32uvProfile(profile)).toBe(false);
-    if (!isRadioIoDm32uvRadioFoundryProfile(profile)) return;
+    if (!isRadioIoRadioFoundryProfile(profile)) return;
     expect(profile.maxMemorySlots).toBe(DM32UV_RADIOFOUNDRY_LIMITS.CHANNEL_MAX);
     expect(profile.nameLimit).toBe(DM32UV_RADIOFOUNDRY_LIMITS.NAME_MAX);
     expect(profile.maxZones).toBe(DM32UV_RADIOFOUNDRY_LIMITS.ZONE_MAX);

@@ -1,4 +1,5 @@
 import { nativeYamlExportAdapter, nativeYamlImportAdapter } from './formats/native-yaml/adapter.ts';
+import { isRadioFoundryRadioIoProfileId } from './formats/radiofoundry/profiles.ts';
 import { opengd77ExportAdapter } from './formats/opengd77/adapter.ts';
 import { dm32ExportAdapter } from './formats/dm32/adapter.ts';
 import { chirpExportAdapter } from './formats/chirp/adapter.ts';
@@ -220,7 +221,7 @@ export function getFormatExportDefaults(
   if (formatId === 'radio-io' && profileId === 'radio-io-dm32uv') {
     return RADIO_IO_DM32UV_EXPORT_DEFAULTS;
   }
-  if (formatId === 'radio-io' && profileId === 'radio-io-dm32uv-radiofoundry') {
+  if (formatId === 'radio-io' && isRadioFoundryRadioIoProfileId(profileId)) {
     return radiofoundryExportAdapter.defaultExportSettings;
   }
   if (formatId === 'radio-io' && profileId === 'radio-io-at-d890uv') {
