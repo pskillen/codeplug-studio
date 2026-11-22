@@ -12,7 +12,7 @@ One file, `codeplug.bin`, for a radio running RadioFoundry. This is the open-fir
 
 **Length:** 716384 bytes (0xAEE60). Bytes Studio does not write stay `0xFF`. The zone table is the exception: the bitmap and all 68 zone records are zeroed before real zones are written, so byte 0x806F is `0x00`–`0x04` and the radio keeps the 80-channel zone layout.
 
-Hardware caps, including the shared contact bank and the nine power steps, are the [DM-32UV (RadioFoundry) limits](../../radios/baofeng/dm-32uv-radiofoundry/limits.md). Names on the wire are 16 ASCII characters, `0xFF` padded, with no NUL. The radio name is 8 characters, taken from the default DMR radio ID's name. An empty radio name is `0xFF` bytes. A 17th character, or a radio name past 8, is truncated and warned. Non-ASCII characters are replaced or dropped, with a warning.
+Hardware caps, including the shared contact bank and the nine power steps, are the [firmware-wide limits](../../radios/radiofoundry/limits.md) and the [DM-32UV (RadioFoundry) board limits](../../radios/baofeng/dm-32uv-radiofoundry/limits.md). Names on the wire are 16 ASCII characters, `0xFF` padded, with no NUL. The radio name is 8 characters, taken from the default DMR radio ID's name. An empty radio name is `0xFF` bytes. A 17th character, or a radio name past 8, is truncated and warned. Non-ASCII characters are replaced or dropped, with a warning.
 
 References on the wire are 1-based indexes assigned at export. Names are labels, not keys.
 
@@ -34,7 +34,7 @@ References on the wire are 1-based indexes assigned at export. Names are labels,
 - The contact table is fully replaced, up to the contact cap. An unused slot is `0xFF` throughout, which the firmware treats as empty. A later slot does not keep a contact that used to sit there.
 - An RX list is unused when its length-table byte is 0. That byte is owned. The list record is not written: the firmware does not read it when the length is 0. A list that has members is replaced in full.
 - Zones: the bitmap and every zone record are owned. Unused zone slots are the zeroed empty record.
-- Frequencies are BCD of 10 Hz units, stored as a little-endian 32-bit word. A frequency outside 136–174 MHz and 400–480 MHz is a warning, not a failed export.
+- Frequencies are BCD of 10 Hz units, stored as a little-endian 32-bit word. A frequency outside the board's bands ([DM-32UV limits](../../radios/baofeng/dm-32uv-radiofoundry/limits.md)) is a warning, not a failed export.
 
 ## What is read
 
