@@ -25,7 +25,7 @@ import {
 } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { formatRadioFoundryBands, isInRadioFoundryBand } from '@core/radios/radiofoundry/limits.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
-import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import { pushGeneralInfoWarning, pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   ALL_CALL_DMR_ID,
   APRS_BASE,
@@ -102,6 +102,11 @@ function markOwned(owned: Uint8Array, offset: number, length: number): void {
   owned.fill(1, offset, offset + length);
 }
 
+const SETTINGS_AREA_KEPT_NOTE =
+  'This codeplug leaves the RadioFoundry settings area blank, so a radio keeps the one it has. ' +
+  'Channel modes set on the radio (DMR Tier III, P25, NXDN) stay as they are, and come back on any channel ' +
+  'written as receive-only DMR at the same number with the same name.';
+
 export function serialiseRadioFoundryCodeplug(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
@@ -119,6 +124,8 @@ export function serialiseRadioFoundryCodeplug(
   writeZones(image, owned, assembled, channels, warnings);
   writeAprs(image, owned, assembled, warnings);
   warnScanLists(assembled, warnings);
+  // 0xE000-0xEFFF (the settings area) stays 0xFF and unowned: the radio keeps the area it has.
+  pushGeneralInfoWarning(warnings, SETTINGS_AREA_KEPT_NOTE);
 
   return { bytes: image, owned, warnings };
 }

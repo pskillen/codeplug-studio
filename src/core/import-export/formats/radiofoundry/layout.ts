@@ -83,3 +83,7 @@ export function channelSlotAddress(number: number): {
     record: bitmap + 16 + within * CHANNEL_RECORD_SIZE,
   };
 }
+
+/** RadioFoundry settings area ("RFKV"): one 4 KB sector in the EEPROM image (codeplug-settings.md §1). */
+export const SETTINGS_AREA_ADDRESS = 0xe000;
+export const SETTINGS_AREA_SIZE = 0x1000;

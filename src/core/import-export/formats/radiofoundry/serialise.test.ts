@@ -25,6 +25,8 @@ import {
   CONTACT_RECORD_SIZE,
   RX_LIST_BASE,
   RX_LIST_LENGTH,
+  SETTINGS_AREA_ADDRESS,
+  SETTINGS_AREA_SIZE,
   channelSlotAddress,
 } from './layout.ts';
 import { serialiseRadioFoundryCodeplug, radioFoundryPowerByte } from './serialise.ts';
@@ -127,6 +129,17 @@ describe('serialiseRadioFoundryCodeplug', () => {
     expect(bytes[0x00eb]).toBe(0x34);
   });
 
+  it('leaves the settings area 0xFF and unowned, and says the radio keeps its own', () => {
+    const written = serialiseRadioFoundryCodeplug(assembled({ channels: [fmChannel('Calling')] }));
+    const end = SETTINGS_AREA_ADDRESS + SETTINGS_AREA_SIZE;
+    expect(written.bytes.subarray(SETTINGS_AREA_ADDRESS, end).every((b) => b === 0xff)).toBe(true);
+    expect(written.owned.subarray(SETTINGS_AREA_ADDRESS, end).every((b) => b === 0)).toBe(true);
+    const info = written.warnings.filter((w) => w.severity === 'info');
+    expect(info).toHaveLength(1);
+    expect(info[0]).toMatchObject({ kind: 'general' });
+    expect(JSON.stringify(info[0])).toContain('settings area');
+  });
+
   it('owns the records it stores and leaves 0xFF holes unowned', () => {
     const { bytes, owned } = serialiseRadioFoundryCodeplug(
       assembled({ channels: [fmChannel('Local')] }),
@@ -163,7 +176,7 @@ describe('serialiseRadioFoundryCodeplug', () => {
     const record = channelSlotAddress(1).record;
     expect([written.bytes[record + 0x20], written.bytes[record + 0x21]]).toEqual([0x85, 0x08]);
     expect([written.bytes[record + 0x22], written.bytes[record + 0x23]]).toEqual([0x23, 0x80]);
-    expect(written.warnings).toEqual([]);
+    expect(written.warnings.filter((w) => w.severity === 'problem')).toEqual([]);
 
     profile.rxTone = 'D023I';
     profile.txTone = '12.5';
@@ -283,7 +296,7 @@ describe('serialiseRadioFoundryCodeplug', () => {
         expect(bytes[at]).toBe(0xff);
       }
     }
-    expect(warnings).toEqual([]);
+    expect(warnings.filter((w) => w.severity === 'problem')).toEqual([]);
   });
 
   it('uses APRS for an empty configuration name and shortens a long comment', () => {
