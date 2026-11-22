@@ -46,6 +46,14 @@ import {
   ZONE_RECORD_SIZE_16,
   channelSlotAddress,
 } from './layout.ts';
+import {
+  CHANNEL_TAG_KEY_FIRST,
+  CHANNEL_TAG_KEY_LAST,
+  isChannelTagLive,
+  radioFoundryChannelKindLabel,
+  readChannelTagHeaders,
+} from './channelTags.ts';
+import { readRadioFoundrySettingsArea, settingsAreaSector } from './settingsArea.ts';
 
 const LIMITS = DM32UV_RADIOFOUNDRY_LIMITS;
 
@@ -61,6 +69,58 @@ const FLAG4_BANDWIDTH_25 = 0x02;
 const FLAG4_RX_ONLY = 0x04;
 const FLAG4_SCAN_SKIP = 0x30;
 
+/**
+ * Import warning texts. Plain sentences for the operator; none carries a value from the settings area.
+ */
+function unknownModeWarning(number: number, name: string, modeByte: number): string {
+  const hex = modeByte.toString(16).padStart(2, '0');
+  return `Channel ${number} "${name}" has mode byte 0x${hex}, which Studio does not know. RadioFoundry runs it as FM, so it was imported as FM.`;
+}
+
+function listNumbers(numbers: readonly number[]): string {
+  if (numbers.length === 1) return `channel ${numbers[0]}`;
+  const head = numbers.slice(0, -1).join(', ');
+  return `channels ${head} and ${numbers[numbers.length - 1]}`;
+}
+
+function zoneEmptyMembersWarning(zone: string, numbers: readonly number[]): string {
+  const subject = numbers.length === 1 ? 'which is' : 'which are';
+  const left = numbers.length === 1 ? 'It was' : 'They were';
+  return `Zone "${zone}" lists ${listNumbers(numbers)}, ${subject} empty in this codeplug. ${left} left out of the zone.`;
+}
+
+function settingsAreaBadWarning(): string {
+  return 'The RadioFoundry settings area in this codeplug is not valid, so a radio ignores it too. Studio did not read it.';
+}
+
+function settingsAreaNewerWarning(version: number): string {
+  return `The RadioFoundry settings area was written by a newer RadioFoundry (area version ${version}). Studio did not read it.`;
+}
+
+function liveTagWarning(number: number, name: string, kindLabel: string): string {
+  return `Channel ${number} "${name}" is a ${kindLabel} channel on the radio. Studio does not support that mode yet and imported it as the receive-only DMR channel stored under it.`;
+}
+
+function liveTagAlsoWarning(
+  number: number,
+  name: string,
+  kindLabel: string,
+  baseMode: 'FM' | 'DMR',
+): string {
+  return `Channel ${number} "${name}" is also a ${kindLabel} channel on the radio. Studio imported only its ${baseMode} settings.`;
+}
+
+function staleTagsWarning(count: number): string {
+  const noun =
+    count === 1 ? 'tag no longer matches its channel' : 'tags no longer match their channel';
+  return `${count} RadioFoundry channel ${noun}; the radio ignores ${count === 1 ? 'it' : 'them'}.`;
+}
+
+function otherSettingsWarning(count: number): string {
+  const noun = count === 1 ? 'setting' : 'settings';
+  return `The settings area also holds ${count} RadioFoundry ${noun} Studio does not import (such as trunked systems, unit IDs or keys).`;
+}
+
 export class RadioFoundryImportError extends Error {
   constructor(message: string) {
     super(message);
@@ -71,6 +131,11 @@ export class RadioFoundryImportError extends Error {
 interface ZoneLayout {
   recordSize: number;
   members: number;
+}
+
+interface ImportedRecord {
+  name: string;
+  record: Uint8Array;
 }
 
 interface ParsedContacts {
@@ -93,8 +158,17 @@ export function parseRadioFoundryCodeplug(
   const radio = readRadioIdentity(image, projectId);
   const contacts = readContacts(image, projectId);
   const rxGroupLists = readRxLists(image, projectId, contacts.bySlot);
-  const channels = readChannels(image, projectId, radio, contacts.bySlot, rxGroupLists.bySlot);
-  const zones = readZones(image, projectId, zoneLayout, channels.byNumber);
+  const warnings: string[] = [];
+  const channels = readChannels(
+    image,
+    projectId,
+    radio,
+    contacts.bySlot,
+    rxGroupLists.bySlot,
+    warnings,
+  );
+  const zones = readZones(image, projectId, zoneLayout, channels.byNumber, warnings);
+  reportSettingsArea(image, channels.records, warnings);
 
   return {
     channels: channels.rows,
@@ -103,6 +177,7 @@ export function parseRadioFoundryCodeplug(
     rxGroupLists: rxGroupLists.rows,
     zones,
     ownDigitalIds: radio.ownDigitalIds,
+    warnings,
   };
 }
 
@@ -208,16 +283,19 @@ function readChannels(
   radio: { radioNumber: number; ownDigitalIds: OwnDigitalId[] },
   contacts: Map<number, EntityRef>,
   rxLists: Map<number, string>,
-): { rows: Channel[]; byNumber: Map<number, string> } {
+  warnings: string[],
+): { rows: Channel[]; byNumber: Map<number, string>; records: Map<number, ImportedRecord> } {
   const rows: Channel[] = [];
   const byNumber = new Map<number, string>();
+  const records = new Map<number, ImportedRecord>();
   for (let number = 1; number <= LIMITS.CHANNEL_MAX; number++) {
     const slot = channelSlotAddress(number);
     if (!bitmapBit(image, slot.bitmap, slot.bitIndex)) continue;
     const record = image.subarray(slot.record, slot.record + CHANNEL_RECORD_SIZE);
     const modeByte = record[0x18] ?? 0xff;
-    if (modeByte !== 0 && modeByte !== 1) continue;
     const name = readAscii(record, 0, LIMITS.NAME_MAX);
+    // RadioFoundry decodes every mode byte other than 1 as FM, so do the same and say so.
+    if (modeByte !== 0 && modeByte !== 1) warnings.push(unknownModeWarning(number, name, modeByte));
     const flag4 = record[0x33] ?? 0;
     const location = readLocation(record);
     const channel: Channel = {
@@ -238,8 +316,9 @@ function readChannels(
     };
     rows.push(channel);
     byNumber.set(number, channel.id);
+    records.set(number, { name, record });
   }
-  return { rows, byNumber };
+  return { rows, byNumber, records };
 }
 
 function readFmProfile(record: Uint8Array, flag4: number): ChannelModeProfileAnalog {
@@ -293,25 +372,78 @@ function readZones(
   projectId: string,
   layout: ZoneLayout,
   channels: Map<number, string>,
+  warnings: string[],
 ): Zone[] {
   const zones: Zone[] = [];
   for (let index = 0; index < LIMITS.ZONE_MAX; index++) {
     if (!bitmapBit(image, ZONE_BITMAP, index)) continue;
     const offset = ZONE_BITMAP + ZONE_BITMAP_SIZE + index * layout.recordSize;
     const members: ZoneMemberEntry[] = [];
+    const missing: number[] = [];
     for (let member = 0; member < layout.members; member++) {
       const channelNumber = readU16(image, offset + LIMITS.NAME_MAX + member * 2);
       if (channelNumber === 0) break;
       const channelId = channels.get(channelNumber);
-      if (!channelId) continue;
+      if (!channelId) {
+        missing.push(channelNumber);
+        continue;
+      }
       members.push({ kind: 'channel', channelId });
     }
+    const zoneName = readAscii(image, offset, LIMITS.NAME_MAX);
+    if (missing.length > 0) warnings.push(zoneEmptyMembersWarning(zoneName, missing));
     zones.push({
-      ...newZone(projectId, readAscii(image, offset, LIMITS.NAME_MAX)),
+      ...newZone(projectId, zoneName),
       members,
     });
   }
   return zones;
+}
+
+/**
+ * Read the settings area and say what Studio leaves behind. Nothing from it is stored, and no
+ * value from it reaches a message (secrets and keys are never decoded).
+ */
+function reportSettingsArea(
+  image: Uint8Array,
+  channels: Map<number, ImportedRecord>,
+  warnings: string[],
+): void {
+  const area = readRadioFoundrySettingsArea(settingsAreaSector(image));
+  if (area.state === 'bad') {
+    warnings.push(settingsAreaBadWarning());
+    return;
+  }
+  if (area.state === 'newer') {
+    warnings.push(settingsAreaNewerWarning(area.version ?? 0));
+    return;
+  }
+  if (area.state !== 'valid') return;
+
+  let stale = 0;
+  for (const tag of readChannelTagHeaders(area)) {
+    const imported = channels.get(tag.channelNumber);
+    if (!imported || !isChannelTagLive(tag, imported.record)) {
+      stale++;
+      continue;
+    }
+    const kind = radioFoundryChannelKindLabel(tag.kind);
+    if (tag.baseStandsAlone) {
+      const baseMode = imported.record[0x18] === 1 ? 'DMR' : 'FM';
+      warnings.push(liveTagAlsoWarning(tag.channelNumber, imported.name, kind, baseMode));
+    } else {
+      warnings.push(liveTagWarning(tag.channelNumber, imported.name, kind));
+    }
+  }
+  if (stale > 0) warnings.push(staleTagsWarning(stale));
+
+  const otherKeys = new Set<number>();
+  for (const entry of area.entries) {
+    if (entry.key < CHANNEL_TAG_KEY_FIRST || entry.key > CHANNEL_TAG_KEY_LAST) {
+      otherKeys.add(entry.key);
+    }
+  }
+  if (otherKeys.size > 0) warnings.push(otherSettingsWarning(otherKeys.size));
 }
 
 function readLocation(record: Uint8Array): { location: GeoPoint | null; useLocation: boolean } {

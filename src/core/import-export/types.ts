@@ -90,6 +90,8 @@ export interface BinaryCpsImportResult {
   rxGroupLists: RxGroupList[];
   zones: Zone[];
   ownDigitalIds: OwnDigitalId[];
+  /** Plain-text notes for the operator: what the file holds that the library row does not show. Never values of secrets. */
+  warnings: string[];
 }
 
 export interface FormatCatalogEntry {
