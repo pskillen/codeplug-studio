@@ -513,7 +513,9 @@ describe('RadioFoundry codec follows the radio profile', () => {
     const plain = parseRadioFoundryCodeplug(bytes, 'p');
     const cable = parseRadioFoundryCodeplug(bytes, 'p', 'radio-io-dm32uv-radiofoundry');
     const strip = (r: typeof plain) =>
-      JSON.stringify(r, (key, value) => (key === 'id' || key.endsWith('Id') ? undefined : value));
+      JSON.stringify(r, (key, value) =>
+        key === 'id' || key === 'updatedAt' || key.endsWith('Id') ? undefined : value,
+      );
     expect(strip(cable)).toBe(strip(plain));
   });
 });
