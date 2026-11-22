@@ -11,12 +11,12 @@ import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
+import { isRadioFoundryRadioIoProfileId } from '@core/import-export/formats/radiofoundry/profiles.ts';
 import type { DualBankWriteMode } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { mapDirectoryEntryToRadioDigitalContactDto } from '@integrations/radioid/mapDirectoryEntryToRadioDto.ts';
-import { DM32_RADIOFOUNDRY_PROFILE_ID } from '@integrations/radio-io/radios/dm32uv-radiofoundry/constants.ts';
 import type {
   RadioDigitalContactDto,
   RadioRadioIdDto,
@@ -61,7 +61,7 @@ function dualBankDirectoryTargets(
 ): { forDm32: boolean; forOpenGd77: boolean; forAtD890: boolean; forRadioFoundry: boolean } {
   // RadioFoundry keeps library contacts in the codeplug table and the ID
   // directory in the DMR ID database. It is not the stock DM-32 address book.
-  if (egressProfileId === DM32_RADIOFOUNDRY_PROFILE_ID) {
+  if (isRadioFoundryRadioIoProfileId(egressProfileId)) {
     return { forDm32: false, forOpenGd77: false, forAtD890: false, forRadioFoundry: true };
   }
   if (formatId === 'dm32' || isDm32RadioIoProfileId(egressProfileId)) {

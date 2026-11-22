@@ -83,8 +83,9 @@ import {
 import { AtD890StunKillError } from '@integrations/radio-io/radios/at-d890uv/stunKillGuard.ts';
 import { encodeDm32uvWriteImageFromDownloadCache } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
-import { DM32_RADIOFOUNDRY_PROFILE_ID } from '@integrations/radio-io/radios/dm32uv-radiofoundry/constants.ts';
-import { Dm32uvRadioFoundryProtocol } from '@integrations/radio-io/radios/dm32uv-radiofoundry/protocol.ts';
+import { radioFoundryCableBoardForProfileId } from '@integrations/radio-io/radios/dm32uv-radiofoundry/board.ts';
+import { isRadioFoundryRadioIoProfileId } from '@core/import-export/formats/radiofoundry/profiles.ts';
+import { isRadioFoundryCableRadio } from '@integrations/radio-io/radios/dm32uv-radiofoundry/protocol.ts';
 import {
   radioFoundryReviewContacts,
   radioFoundryWriteSourceFromAssembled,
@@ -515,21 +516,21 @@ export async function prepareRadioWriteImage(
   }
 
   const radioFoundryOptions = opts?.dualBank?.options;
-  const radioFoundry =
-    egress.profileId === DM32_RADIOFOUNDRY_PROFILE_ID
-      ? radioFoundryWriteSourceFromAssembled(assembled, {
-          includeLibraryContacts: radioFoundryOptions?.includeLibraryContacts ?? true,
-          directoryRows: radioFoundryOptions?.includeDigitalIdDirectory
-            ? directorySlice.digitalContacts
-            : [],
-          exportOptions: mergeExportOptions(
-            build,
-            egress.formatId,
-            { profileId: egress.profileId },
-            library,
-          ),
-        })
-      : undefined;
+  const radioFoundry = isRadioFoundryRadioIoProfileId(egress.profileId)
+    ? radioFoundryWriteSourceFromAssembled(assembled, {
+        board: radioFoundryCableBoardForProfileId(egress.profileId),
+        includeLibraryContacts: radioFoundryOptions?.includeLibraryContacts ?? true,
+        directoryRows: radioFoundryOptions?.includeDigitalIdDirectory
+          ? directorySlice.digitalContacts
+          : [],
+        exportOptions: mergeExportOptions(
+          build,
+          egress.formatId,
+          { profileId: egress.profileId },
+          library,
+        ),
+      })
+    : undefined;
 
   const projection = buildRadioWriteProjection(
     assembled,
@@ -671,7 +672,7 @@ async function resolveRadioWriteImageForUpload(
       throw new RadioWriteBlockedError(message);
     }
   }
-  if (session.radio instanceof Dm32uvRadioFoundryProtocol) {
+  if (isRadioFoundryCableRadio(session.radio)) {
     if (!prepared.radioFoundryWrite) {
       throw new RadioWriteBlockedError('RadioFoundry write needs the serialised codeplug image.');
     }
@@ -829,7 +830,7 @@ export function writeReadsBeforeTransmit(session: RadioSession): boolean {
     radio instanceof OpenGd77Protocol ||
     radio instanceof Uv17ProProtocol ||
     radio instanceof Dm32uvProtocol ||
-    radio instanceof Dm32uvRadioFoundryProtocol ||
+    isRadioFoundryCableRadio(radio) ||
     radio instanceof Rt95Protocol
   );
 }

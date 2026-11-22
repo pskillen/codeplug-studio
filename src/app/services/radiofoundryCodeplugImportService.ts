@@ -30,6 +30,7 @@ export async function importRadioFoundryCodeplug(
   projectId: string,
   bytes: Uint8Array,
   store: ProjectPersistence = persistence,
+  profileId?: string,
 ): Promise<RadioFoundryCodeplugImportResult> {
   const adapter = getImportAdapter('radiofoundry');
   if (!isBinaryCpsImportAdapter(adapter)) {
@@ -38,7 +39,7 @@ export async function importRadioFoundryCodeplug(
 
   let parsed: BinaryCpsImportResult;
   try {
-    parsed = adapter.parse(bytes, projectId);
+    parsed = adapter.parse(bytes, projectId, profileId ? { profileId } : undefined);
   } catch (err) {
     return {
       ok: false,

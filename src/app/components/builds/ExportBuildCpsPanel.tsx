@@ -293,7 +293,12 @@ export default function ExportBuildCpsPanel({
     setCodeplugImportWarnings([]);
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const result = await importRadioFoundryCodeplug(activeProjectId, bytes);
+      const result = await importRadioFoundryCodeplug(
+        activeProjectId,
+        bytes,
+        undefined,
+        profileId || undefined,
+      );
       if (!result.ok) {
         setCodeplugImportFailed(true);
         setCodeplugImportMessage(result.message);

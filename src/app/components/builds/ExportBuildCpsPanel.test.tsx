@@ -592,7 +592,12 @@ describe('ExportBuildCpsPanel', () => {
     const file = new File([new Uint8Array([1, 2, 3])], 'codeplug.bin');
     fireEvent.change(input, { target: { files: [file] } });
     expect(await screen.findByText('Imported 1 channel and 1 zone.')).toBeInTheDocument();
-    expect(importRadioFoundryCodeplug).toHaveBeenCalledWith('project-1', expect.any(Uint8Array));
+    expect(importRadioFoundryCodeplug).toHaveBeenCalledWith(
+      'project-1',
+      expect.any(Uint8Array),
+      undefined,
+      expect.any(String),
+    );
     expect(screen.queryByText('Check these after the import')).not.toBeInTheDocument();
   });
 
