@@ -15,6 +15,7 @@ export const MODE_PANELS: { [M in ChannelMode]: ComponentType<ModePanelProps<Pro
   ssb: AnalogModePanel,
   dmr: DmrModePanel,
   nxdn: NxdnModePanel,
+  tetra: TetraModePanel,
   dstar: DstarModePanel,
   ysf: YsfModePanel,
   p25: PendingModePanel,
