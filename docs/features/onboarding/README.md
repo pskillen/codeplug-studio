@@ -33,7 +33,7 @@ User-facing copy follows the [help writing styleguide](../../reference/writing-s
 
 With zero projects, `/` leads with a short hero and four path cards, then **What radio have you got?** (the finder), then **Compare all radios** (the matrix), then the Quick start guide and Import from YAML. Desktop and phone show the same sections; on phones the chips and firmware cards scroll sideways and the matrix scrolls with its Radio column pinned.
 
-The finder and matrix are a projection of the radio catalog, never a hand-kept table: see [Support matrix](../builds/radio-catalog.md#support-matrix-landing-page) for how each column is derived. Cells have four states: supported, partial, not supported, and not applicable (the radio hardware cannot do it, for example DMR columns on an FM radio). Stock firmware is always listed, with "Not supported" where Studio has no target for it (DM-1701, MD-9600). A flasher is only advertised when this site offers it.
+The finder and matrix are a projection of the radio catalog, never a hand-kept table: see [Support matrix](../builds/radio-catalog.md#support-matrix-landing-page) for how each column is derived. They also show channel modes per radio and firmware, with testing evidence where the firmware project has recorded it. Cells have four states: supported, partial, not supported, and not applicable (the radio hardware cannot do it, for example DMR columns on an FM radio). Stock firmware is always listed, with "Not supported" where Studio has no target for it (DM-1701, MD-9600). A flasher is only advertised when this site offers it.
 
 ### Path cards
 
@@ -115,6 +115,7 @@ Once at least one project exists, the inline panel is hidden; **Quick start** re
 | `src/app/services/startFromRadio.ts`                      | Readable radios, suggested name, flasher offered for a target        |
 | `src/core/services/radioRead/readNextSteps.ts`            | Next steps after a first read (pure, tested)                         |
 | `src/core/radio-targets/supportMatrix.ts`                 | `buildSupportMatrix` (pure, tested)                                  |
+| `src/core/radio-targets/supportEvidence.ts`               | Evidence, checked build and cell notes                               |
 | `src/app/routes/HelpPage.tsx`                             | Getting started section + Quick start                                |
 
 ## Boundaries

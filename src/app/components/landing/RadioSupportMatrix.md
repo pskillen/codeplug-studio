@@ -17,7 +17,10 @@
 ## Behaviour
 
 - DMR / FM / All filter via `filterSupportMatrix`.
-- Four states through `SupportMark`: supported, partial, not supported, not applicable. The legend underneath explains them.
+- Program-it feature columns, then a **Channel modes** column group (one column per mode the catalog supports), then Organise / DMR / Firmware as before.
+- Feature and mode cells use `SupportCellMark`: support glyph, optional evidence tag (`on air` / `bench` / `unverified`), optional † when a capability depends on the radio's build.
+- RadioFoundry firmware rows show the checked commit under the firmware label.
+- Four states through `SupportMark`: supported, partial, not supported, not applicable. The state legend and a separate **Evidence** legend sit underneath.
 - The wrapper scrolls horizontally with the Radio column sticky; it is keyboard focusable.
 
 ## Related

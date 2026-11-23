@@ -47,14 +47,24 @@ Existing builds keep their `radioTargetId`; grouping is derived, so there is no 
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Write via cable / Read back | A `web-serial` entry in the target's `compatibleEgress`, filtered by the site (radio-io descriptor exists; per-profile Write gate) via `supportMatrixAvailability`                                  |
 | CPS file                    | Any `cps-file` entry in `compatibleEgress`                                                                                                                                                          |
+| Satellite keps              | A keps write adapter for a `web-serial` egress and Write offered on this site (`supportMatrixAvailability.satelliteKeps`; core defaults to off when the hook is omitted)                             |
 | Zones                       | `ZoneGrouping`                                                                                                                                                                                      |
 | Scan lists                  | `ScanLists` / `DedicatedScanLists` / `ZoneAsScanList` = supported; `PerChannelScanFlag` only = partial                                                                                              |
 | Zone = scan                 | `ZoneAsScanList`                                                                                                                                                                                    |
 | Talk groups                 | DMR model with a target = supported; FM model = not applicable                                                                                                                                      |
 | Multi-TG channel            | `MultiTalkGroupPerChannel` (FM = not applicable)                                                                                                                                                    |
 | Flash                       | Stock = not applicable. A `mod` firmware on a model with a flasher = supported when the site offers that flasher (prod gate, platform). Open firmware = not supported (the flasher installs MM9PDY) |
+| Channel modes               | One column per mode that at least one target's RF capability row lists, in a fixed order (`listSupportModeColumns`). Supported where that target's row lists the mode; digital modes are not applicable on FM radios; no target → not supported. Mode columns never count in the score. |
+| Transfer path               | Per supported mode: cable when Write via cable is supported, CPS file when CPS export is supported. A fact in `supportEvidence.ts` can restrict which paths apply. Shown in the cell tooltip.          |
+| Evidence                    | `on air`, `bench`, or `unverified`, from `src/core/radio-targets/supportEvidence.ts` (the firmware project's own test records, each with a source sentence). Blank where nothing is recorded.        |
+| Firmware build              | RadioFoundry rows name the commit Studio was checked against (`supportEvidence.ts`, from the pin in `src/core/radios/radiofoundry/firmware.ts`).                                                     |
+| †                           | A condition on a cell (for example NXDN on the AT-D890UV MM9PDY only when the radio reports NXDN enabled).                                                                                             |
 
-A model + firmware with no target is "not supported" in every column. The "Most features" card is the supported firmware with the highest score (supported = 1, partial = 0.5), shown only when a model has more than one supported firmware.
+A model + firmware with no target is "not supported" in every column. The "Most features" card is the supported firmware with the highest score (supported = 1, partial = 0.5), counting feature columns only, shown only when a model has more than one supported firmware.
+
+### Updating the evidence
+
+Evidence is the only hand-kept part of the matrix; every other cell is derived from the catalog. Each evidence row cites its source in `supportEvidence.ts`. A new RadioFoundry target needs FM and DMR evidence rows (a test enforces this). A new channel mode column appears when a target's RF capability row lists that mode — no extra evidence row is required unless you want to record testing for it.
 
 ## Adding a radio or firmware
 
