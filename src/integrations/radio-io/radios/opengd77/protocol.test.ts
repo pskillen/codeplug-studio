@@ -31,7 +31,9 @@ import {
 const probeFrameInWrites = (writes: Uint8Array[]) => {
   const showIdx = writes.findIndex((w) => w[0] === 0x43 && w[1] === 0x00);
   const probeIndices = writes
-    .map((w, i) => (w.length === OPENGD77_RADIOFOUNDRY_PROBE_FRAME.length && w[0] === 0xa5 ? i : -1))
+    .map((w, i) =>
+      w.length === OPENGD77_RADIOFOUNDRY_PROBE_FRAME.length && w[0] === 0xa5 ? i : -1,
+    )
     .filter((i) => i >= 0);
   return { showIdx, probeIndices };
 };

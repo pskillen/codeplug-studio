@@ -10,7 +10,11 @@ const PING = 0x01;
 const PING_REPLY = PING | 0x80;
 
 /** The one probe frame: PING, seq 1, empty payload (8 bytes). The debug guard matches it byte for byte. */
-export const OPENGD77_RADIOFOUNDRY_PROBE_FRAME: Uint8Array = encodeDebugFrame(PING, 0x01, new Uint8Array(0));
+export const OPENGD77_RADIOFOUNDRY_PROBE_FRAME: Uint8Array = encodeDebugFrame(
+  PING,
+  0x01,
+  new Uint8Array(0),
+);
 
 /** How long the probe waits for the first reply byte. */
 export const OPENGD77_RADIOFOUNDRY_PROBE_WAIT_MS = 500;

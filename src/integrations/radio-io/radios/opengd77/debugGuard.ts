@@ -39,12 +39,7 @@ export class OpenGd77DebugRefusedError extends RadioProtocolError {
 }
 
 export type OpenGd77DebugFrameKind =
-  | 'ping'
-  | 'show-cps'
-  | 'close-cps'
-  | 'firmware-info'
-  | 'flash-read'
-  | 'radiofoundry-probe';
+  'ping' | 'show-cps' | 'close-cps' | 'firmware-info' | 'flash-read' | 'radiofoundry-probe';
 
 export type OpenGd77DebugFrameClass =
   { allowed: true; kind: OpenGd77DebugFrameKind } | { allowed: false; reason: string };

@@ -145,12 +145,7 @@ describe.each(CASES)('calibration working copy on %s (type 0x%s)', (_name, model
     const probeHex = Array.from(OPENGD77_RADIOFOUNDRY_PROBE_FRAME, (b) =>
       b.toString(16).padStart(2, '0'),
     ).join(' ');
-    expect(frames.slice(0, first)).toEqual([
-      '43 fe',
-      '52 09 00 00 00 00 00 2e',
-      probeHex,
-      '43 00',
-    ]);
+    expect(frames.slice(0, first)).toEqual(['43 fe', '52 09 00 00 00 00 00 2e', probeHex, '43 00']);
     const expected = Array.from({ length: 16 }, (_, i) => {
       const a = 0x10000 + i * 32;
       return `52 01 00 01 ${((a >> 8) & 0xff).toString(16).padStart(2, '0')} ${(a & 0xff)
