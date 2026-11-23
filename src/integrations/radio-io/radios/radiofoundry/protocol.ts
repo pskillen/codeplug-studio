@@ -373,6 +373,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   ): Promise<void> {
     void image;
     this.requireArmed();
+    // Refuse before the pre-write read when INFO says flash is not writable (foreign storage).
     if (this.storageWritable() === false) {
       throw new RadioInterlockError(STORAGE_FOREIGN_REFUSAL);
     }

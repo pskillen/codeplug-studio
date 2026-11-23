@@ -525,7 +525,33 @@ async function uploadSource(
   return rec;
 }
 
+const STORAGE_FOREIGN_REFUSAL =
+  "This radio's flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry's web programming utility (it backs up first) or with \"rfoundry_debug.py storage claim\", then write again. Nothing was written.";
+
 describe('RadioFoundry codeplug refusals', () => {
+  it('reads when INFO storage flag is clear but refuses a write before SUMS or READ', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.infoFlags = 0x00;
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    expect(proto.storageWritable()).toBe(false);
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
+      includeLibraryContacts: true,
+    });
+    proto.armWriteSource(source);
+    await proto.download({});
+    expect(requestOps(pipe).some((op) => op === OP_SUMS)).toBe(true);
+    const frameCountBeforeWrite = pipe.writes.length;
+    const err = await proto.upload(memoryMapFromBytes(source.bytes), {}).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioInterlockError);
+    expect((err as Error).message).toBe(STORAGE_FOREIGN_REFUSAL);
+    const opsAfter = pipe.writes
+      .slice(frameCountBeforeWrite)
+      .map((frame) => decodeDebugFrame(frame).payload[0]!);
+    expect(opsAfter).not.toContain(OP_SUMS);
+    expect(opsAfter).not.toContain(OP_READ);
+  });
+
   it('names a BEGIN refusal with reason 2 and attaches storage debug detail', async () => {
     const pipe = new ScriptedPipe(0xff);
     pipe.beginRefusalReason = 2;
