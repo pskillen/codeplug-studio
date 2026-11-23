@@ -462,10 +462,10 @@ export default function BuildSatelliteKepsPage() {
             Exactly what a Write Keps would send right now, from the library&apos;s current enabled
             satellites — no session or write required. Expand a spacecraft to see each packed radio
             {spacecraftNames
-              ? ' slot (FM, APRS, or beacon). Pick a candidate in the Radio column when a slot has more than one.'
+              ? ' slot. Pick a candidate in the Radio column when a slot has more than one.'
               : ' (transmitter) row.'}{' '}
             Use the edit control beside an encoded name to pin Familiar or OSCAR suggestions, or
-            type a custom name (≤8 characters).
+            type a custom name (≤{nameLimit} characters).
           </Text>
           {collisionWarning ? (
             <Alert color="yellow" title="Duplicate encoded names" mb="sm">

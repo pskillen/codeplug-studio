@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { RADIOFOUNDRY_PROFILES } from '@core/import-export/formats/radiofoundry/profiles.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
+import { RADIOFOUNDRY_LIMITS } from '@core/radios/radiofoundry/limits.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import { listDescriptorsForProfile } from '@integrations/radio-io/registry.ts';
@@ -12,8 +14,10 @@ import {
   hasSatelliteKepsWriteAdapter,
   kepsWriteChecks,
   satelliteKepsCapacityWarning,
+  satelliteKepsSameSessionAfterUpload,
   SATELLITE_KEPS_WRITE_ADAPTERS,
 } from './satelliteKepsWriteAdapters.ts';
+import { writeRadioFoundrySatellitesToRadio } from './radioIoRadioFoundrySatelliteWrite.ts';
 
 describe('satelliteKepsWriteAdapters', () => {
   it('has an adapter registered for the AT-D890UV profile', () => {
@@ -36,6 +40,48 @@ describe('satelliteKepsWriteAdapters', () => {
     expect(hasSatelliteKepsWriteAdapter('radio-io-uv5r-mini')).toBe(false);
     expect(getSatelliteKepsWriteAdapter('radio-io-uv5r-mini')).toBeUndefined();
     expect(hasSatelliteKepsWriteAdapter('not-a-real-profile')).toBe(false);
+  });
+
+  it('offers keps on every RadioFoundry cable profile through the family check', () => {
+    for (const row of RADIOFOUNDRY_PROFILES) {
+      const id = row.radioIoProfileId;
+      expect(hasSatelliteKepsWriteAdapter(id), id).toBe(true);
+      expect(getSatelliteKepsWriteAdapter(id)).toBe(writeRadioFoundrySatellitesToRadio);
+      expect(getSatelliteKepsWritePreview(id)).toBeTypeOf('function');
+      expect(getSatelliteKepsExclusions(id)).toBeTypeOf('function');
+      const capacity = getSatelliteKepsWriteCapacity(id);
+      expect(capacity?.max).toBe(RADIOFOUNDRY_LIMITS.SATELLITE_MAX);
+      expect(capacity?.nameLength).toBe(RADIOFOUNDRY_LIMITS.SATELLITE_NAME_MAX_BYTES);
+      expect(capacity?.nameScope).toBe('spacecraft');
+      expect(satelliteKepsSameSessionAfterUpload(id)).toBe(true);
+    }
+  });
+
+  it('keeps the AT-D890UV and OpenGD77 entries as they were', () => {
+    for (const profileId of [
+      'radio-io-at-d890uv',
+      'radio-io-at-d890uv-mm9pdy',
+      'radio-io-opengd77-1701',
+      'radio-io-opengd77-md9600',
+    ] as const) {
+      expect(getSatelliteKepsWriteAdapter(profileId)).toBe(SATELLITE_KEPS_WRITE_ADAPTERS[profileId]);
+      expect(satelliteKepsSameSessionAfterUpload(profileId)).toBe(false);
+    }
+  });
+
+  it('uses the radio’s bands for RadioFoundry eligibility', () => {
+    const satellites = [
+      makeSatellite({
+        transmitters: [
+          makeTransmitter({
+            uplinkHz: 144_000_000,
+            downlinkHz: 435_000_000,
+          }),
+        ],
+      }),
+    ];
+    const id = 'radio-io-dm32uv-radiofoundry';
+    expect(getSatelliteKepsWriteCapacity(id)!.countEligible(satellites)).toBe(1);
   });
 });
 

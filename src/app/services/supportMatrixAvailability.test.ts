@@ -38,4 +38,11 @@ describe('supportMatrixAvailability', () => {
     expect(matrix('baofeng-uv5r-mini', 'stock').cells.satelliteKeps).toBe('unsupported');
     expect(matrix('baofeng-dm32uv', 'stock').cells.satelliteKeps).toBe('unsupported');
   });
+
+  it('offers satellite keps on RadioFoundry radios', () => {
+    const matrix = buildSupportMatrix({ availability: supportMatrixAvailability('dev') })
+      .find((m) => m.model.id === 'baofeng-dm32uv')!
+      .firmware.find((f) => f.firmware.id === 'radiofoundry')!;
+    expect(matrix.cells.satelliteKeps).toBe('supported');
+  });
 });

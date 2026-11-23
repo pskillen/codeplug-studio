@@ -134,8 +134,9 @@ export interface BuildEntityOverride {
    */
   scanInclusion?: ScanInclusion;
   /**
-   * OpenGD77 satellite bank slot this transmitter occupies on this build (`fm` = Freq 1,
-   * `aprs` = Freq 2, `beacon` = Freq 3). Ignored by D890. Keyed by transmitter UUID.
+   * Satellite record slot this transmitter occupies on this build, for radios that store one frequency pair per slot
+   * (OpenGD77: `fm` = Freq 1, `aprs` = Freq 2, `beacon` = Freq 3; RadioFoundry: `fm` only). Ignored by D890. Keyed by
+   * transmitter UUID.
    */
   satelliteBankSlot?: 'fm' | 'aprs' | 'beacon';
 }

@@ -6,6 +6,7 @@
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { pushKepsExcludedWarning } from '@core/import-export/exportWarning.ts';
 import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
+import { isRadioFoundryRadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { ProgressFn, RadioSession } from '@integrations/radio-io/index.ts';
@@ -18,6 +19,8 @@ import type {
   SatelliteKepsPreviewOptions,
 } from '@integrations/radio-io/satelliteKepsCapability.ts';
 import type { CapabilitySkippedTransmitter } from '@integrations/radio-io/radios/at-d890uv/index.ts';
+import { radioFoundryCableBoardForProfileId } from '@integrations/radio-io/radios/radiofoundry/board.ts';
+import { countRadioFoundryWriteSatellites } from '@integrations/radio-io/radios/radiofoundry/satelliteCodec.ts';
 import {
   countWriteEligibleSatelliteRecords,
   writeSatellitesToRadio,
@@ -26,6 +29,7 @@ import {
   countWriteEligibleSatelliteRecords as countOpenGd77WriteEligibleSatellites,
   writeOpenGd77SatellitesToRadio,
 } from './radioIoOpenGd77SatelliteWrite.ts';
+import { writeRadioFoundrySatellitesToRadio } from './radioIoRadioFoundrySatelliteWrite.ts';
 
 export type {
   SatelliteKepsExclusion,
@@ -52,7 +56,10 @@ export type SatelliteKepsWriteFn = (
   },
 ) => Promise<SatelliteKepsWriteResult>;
 
-/** Profile → write fn — the only profile-keyed table; everything else uses the descriptor. */
+/**
+ * Profile → write fn — the only profile-keyed table; everything else uses the descriptor.
+ * RadioFoundry radios share one writer and are matched by family in `kepsWriteFnForProfile`.
+ */
 const KEPS_WRITE_BY_PROFILE: Readonly<Record<string, SatelliteKepsWriteFn>> = {
   'radio-io-at-d890uv': writeSatellitesToRadio,
   'radio-io-at-d890uv-mm9pdy': writeSatellitesToRadio,
@@ -69,11 +76,18 @@ export const SATELLITE_KEPS_WRITE_ADAPTERS = KEPS_WRITE_BY_PROFILE;
  */
 const KEPS_SAME_SESSION_AFTER_UPLOAD: ReadonlySet<string> = new Set<string>();
 
+function kepsWriteFnForProfile(profileId: string): SatelliteKepsWriteFn | undefined {
+  const direct = KEPS_WRITE_BY_PROFILE[profileId];
+  if (direct) return direct;
+  return isRadioFoundryRadioIoProfileId(profileId) ? writeRadioFoundrySatellitesToRadio : undefined;
+}
+
 function descriptorKepsForProfile(profileId: string) {
   return listDescriptorsForProfile('radio-io', profileId)[0]?.satelliteKeps;
 }
 
 function countEligibleForWriteFn(
+  profileId: string,
   writeFn: SatelliteKepsWriteFn,
   satellites: readonly Satellite[],
   overrides?: readonly BuildEntityOverride[],
@@ -84,20 +98,27 @@ function countEligibleForWriteFn(
   if (writeFn === writeOpenGd77SatellitesToRadio) {
     return countOpenGd77WriteEligibleSatellites(satellites, overrides);
   }
+  if (writeFn === writeRadioFoundrySatellitesToRadio) {
+    return countRadioFoundryWriteSatellites(satellites, {
+      bands: radioFoundryCableBoardForProfileId(profileId).limits.BANDS_HZ,
+      satelliteOverrides: overrides,
+    });
+  }
   return 0;
 }
 
+/** RadioFoundry radios do not restart after a codeplug write and keep satellites outside the codeplug. */
 export function satelliteKepsSameSessionAfterUpload(profileId: string): boolean {
-  return KEPS_SAME_SESSION_AFTER_UPLOAD.has(profileId);
+  return KEPS_SAME_SESSION_AFTER_UPLOAD.has(profileId) || isRadioFoundryRadioIoProfileId(profileId);
 }
 
 export function hasSatelliteKepsWriteAdapter(profileId: string): boolean {
-  return Boolean(descriptorKepsForProfile(profileId) && KEPS_WRITE_BY_PROFILE[profileId]);
+  return Boolean(descriptorKepsForProfile(profileId) && kepsWriteFnForProfile(profileId));
 }
 
 export function getSatelliteKepsWriteAdapter(profileId: string): SatelliteKepsWriteFn | undefined {
   if (!descriptorKepsForProfile(profileId)) return undefined;
-  return KEPS_WRITE_BY_PROFILE[profileId];
+  return kepsWriteFnForProfile(profileId);
 }
 
 export interface SatelliteKepsWriteCapacity {
@@ -116,12 +137,12 @@ export function getSatelliteKepsWriteCapacity(
   profileId: string,
 ): SatelliteKepsWriteCapacity | undefined {
   const keps = descriptorKepsForProfile(profileId);
-  const writeFn = KEPS_WRITE_BY_PROFILE[profileId];
+  const writeFn = kepsWriteFnForProfile(profileId);
   if (!keps || !writeFn) return undefined;
   return {
     ...keps.limits,
     countEligible: (satellites, overrides) =>
-      countEligibleForWriteFn(writeFn, satellites, overrides),
+      countEligibleForWriteFn(profileId, writeFn, satellites, overrides),
   };
 }
 

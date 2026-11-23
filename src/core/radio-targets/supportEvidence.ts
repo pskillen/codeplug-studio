@@ -99,5 +99,10 @@ export const SUPPORT_FACTS: SupportFacts = {
       note: 'Studio\u2019s RadioFoundry support was checked against this commit. Studio reads the radio\u2019s own build when it connects and says how it differs.',
     },
   },
-  featureNotes: {},
+  featureNotes: {
+    radiofoundry: {
+      satelliteKeps:
+        'Only when the radio’s RadioFoundry build has satellite tracking on (some builds, such as the MD-9600’s maximal build, leave it off). Studio asks the radio before it writes.',
+    },
+  },
 };
