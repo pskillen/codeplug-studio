@@ -22,7 +22,10 @@ import {
 } from './debugCapture.ts';
 import { OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID } from './hydration.ts';
 import { OpenGd77ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
-import { OPENGD77_RADIOFOUNDRY_PROBE_FRAME } from './radioFoundryProbe.ts';
+import {
+  OPENGD77_RADIOFOUNDRY_PROBE_FRAME,
+  OPENGD77_RADIOFOUNDRY_REFUSAL,
+} from './radioFoundryProbe.ts';
 
 const CASES: [string, string, number][] = [
   ['DM-1701', OPENGD77_DM1701_MODEL_ID, 0x08],
@@ -266,6 +269,16 @@ describe('wrong radio', () => {
     expect(pipe.commands).toEqual([[0xfe]]);
     expect(pipe.writes.every((w) => w[0] === 0x43 || w[1] === 0x09)).toBe(true);
     expect(pipe.cpsDepth).toBe(0);
+  });
+});
+
+describe('RadioFoundry refusal', () => {
+  it('ends capture with OPENGD77_RADIOFOUNDRY_REFUSAL when the radio echoes the probe', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    pipe.runsRadioFoundry = true;
+    await expect(
+      captureOpenGd77DebugPipe(pipe, getRadioDescriptor(OPENGD77_DM1701_MODEL_ID)!),
+    ).rejects.toThrow(OPENGD77_RADIOFOUNDRY_REFUSAL);
   });
 });
 
