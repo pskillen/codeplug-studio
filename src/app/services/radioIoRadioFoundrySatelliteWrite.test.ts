@@ -7,12 +7,21 @@ import { DM32_RADIOFOUNDRY_DESCRIPTOR } from '@integrations/radio-io/radios/radi
 import { DM32UV_RADIOFOUNDRY_CABLE_BOARD } from '@integrations/radio-io/radios/radiofoundry/board.ts';
 import { createRadioFoundryCableProtocol } from '@integrations/radio-io/radios/radiofoundry/protocol.ts';
 import type { BytePipe, RadioSession } from '@integrations/radio-io/types.ts';
-import { RadioFoundrySatellitesUnavailableError } from '@integrations/radio-io/radios/radiofoundry/satelliteWrite.ts';
+import {
+  RadioFoundrySatellitesUnavailableError,
+  type RadioFoundrySatelliteWriteInput,
+} from '@integrations/radio-io/radios/radiofoundry/satelliteWrite.ts';
+import type { RadioFoundryCableProtocol } from '@integrations/radio-io/radios/radiofoundry/protocol.ts';
 import { RadioWriteBlockedError } from './radioIoSession.ts';
 import { writeRadioFoundrySatellitesToRadio } from './radioIoRadioFoundrySatelliteWrite.ts';
 
 const { writeSpy } = vi.hoisted(() => ({
-  writeSpy: vi.fn(async () => ({ written: 2, capacity: 10 })),
+  writeSpy: vi.fn<
+    (
+      radio: RadioFoundryCableProtocol,
+      input: RadioFoundrySatelliteWriteInput,
+    ) => Promise<{ written: number; capacity: number }>
+  >(async () => ({ written: 2, capacity: 10 })),
 }));
 
 vi.mock('@integrations/radio-io/radios/radiofoundry/satelliteWrite.ts', async (importOriginal) => {
