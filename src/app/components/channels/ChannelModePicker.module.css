@@ -40,16 +40,16 @@
   min-height: 44px;
   padding: 8px 10px 8px 8px;
   border: 1px solid var(--dsv2-border);
-  border-radius: var(--dsv2-radius-md);
+  border-radius: var(--dsv2-radius-control);
   border-left-width: 4px;
-  background: var(--dsv2-surface-raised);
+  background: var(--dsv2-surface);
   cursor: pointer;
   text-align: left;
   font-family: var(--dsv2-font-family);
 }
 
 .presetButton:hover {
-  border-color: var(--dsv2-border-strong);
+  border-color: var(--dsv2-border);
 }
 
 .presetLabel {
@@ -146,7 +146,7 @@
   background: transparent;
   font-size: 13px;
   font-family: var(--dsv2-font-family);
-  color: var(--dsv2-text-link);
+  color: var(--dsv2-accent);
   cursor: pointer;
 }
 
