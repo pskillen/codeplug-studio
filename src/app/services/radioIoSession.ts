@@ -84,12 +84,12 @@ import {
 import { AtD890StunKillError } from '@integrations/radio-io/radios/at-d890uv/stunKillGuard.ts';
 import { encodeDm32uvWriteImageFromDownloadCache } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
-import { radioFoundryCableBoardForProfileId } from '@integrations/radio-io/radios/dm32uv-radiofoundry/board.ts';
-import { isRadioFoundryCableRadio } from '@integrations/radio-io/radios/dm32uv-radiofoundry/protocol.ts';
+import { radioFoundryCableBoardForProfileId } from '@integrations/radio-io/radios/radiofoundry/board.ts';
+import { isRadioFoundryCableRadio } from '@integrations/radio-io/radios/radiofoundry/protocol.ts';
 import {
   radioFoundryReviewContacts,
   radioFoundryWriteSourceFromAssembled,
-} from '@integrations/radio-io/radios/dm32uv-radiofoundry/writeSource.ts';
+} from '@integrations/radio-io/radios/radiofoundry/writeSource.ts';
 import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
 import {
   OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { crc16CcittFalse } from '../../kit/checksums.ts';
-import { decodeDebugFrame, encodeDebugFrame } from './frame.ts';
+import { crc16CcittFalse } from '../checksums.ts';
+import { decodeDebugFrame, encodeDebugFrame } from './radioFoundryDebugLink.ts';
 
 describe('RadioFoundry debug-link frames', () => {
   it('matches the spec INFO request, including CRC-16/CCITT-FALSE', () => {

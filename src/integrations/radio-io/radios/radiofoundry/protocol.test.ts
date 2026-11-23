@@ -39,7 +39,7 @@ import {
   PHYSICAL_CODEPLUG_BASE,
   servedBlockAddresses,
 } from './constants.ts';
-import { decodeDebugFrame, encodeDebugFrame } from './frame.ts';
+import { decodeDebugFrame, encodeDebugFrame } from '../../kit/codecs/radioFoundryDebugLink.ts';
 import { decodeBlock, encodeBlock } from './lz4.ts';
 import { planDm32RadioFoundryStages } from './plannedStages.ts';
 import {

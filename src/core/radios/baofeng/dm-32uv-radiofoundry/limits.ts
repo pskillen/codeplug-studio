@@ -19,7 +19,7 @@ export const DM32UV_RADIOFOUNDRY_BOARD: RadioFoundryBoardLimits = {
   /**
    * Records the DMR ID database holds: area 1 (`0x40000` bytes less the 12-byte header) plus the
    * part of area 2 that ends at the native codeplug, at 27 bytes a record. Derived from the
-   * layout in `integrations/radio-io/radios/dm32uv-radiofoundry/idDatabase.ts`, which has a test
+   * layout in `integrations/radio-io/radios/radiofoundry/idDatabase.ts`, which has a test
    * pinning the two together.
    */
   ID_DATABASE_MAX: 287_629,

@@ -46,7 +46,7 @@ import {
   servedBlockAddresses,
 } from './constants.ts';
 import type { RadioFoundryCableBoard } from './board.ts';
-import { decodeDebugFrame, encodeDebugFrame, type DebugFrame } from './frame.ts';
+import { decodeDebugFrame, encodeDebugFrame, type DebugFrame } from '../../kit/codecs/radioFoundryDebugLink.ts';
 import { DMR_ID_DATABASE_AREA2_ADDRESS, dmrIdDatabaseArea2Blocks } from './idDatabase.ts';
 import { decodeBlock, encodeBlock } from './lz4.ts';
 import {
