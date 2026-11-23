@@ -52,10 +52,14 @@ export async function writeRadioFoundrySatellitesToRadio(
   }
 
   try {
-    await writeRadioFoundrySatellites(session.radio, packRadioFoundrySatellites(satellites, options), {
-      onProgress: opts?.onProgress,
-      signal: opts?.signal,
-    });
+    await writeRadioFoundrySatellites(
+      session.radio,
+      packRadioFoundrySatellites(satellites, options),
+      {
+        onProgress: opts?.onProgress,
+        signal: opts?.signal,
+      },
+    );
   } catch (err) {
     if (err instanceof RadioFoundrySatellitesUnavailableError) {
       throw new RadioWriteBlockedError(`${err.message} Nothing was written.`);

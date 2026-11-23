@@ -40,7 +40,7 @@ Tier-1 hub for **satellite Keplerian elements (keps / TLEs)** in Codeplug Studio
 | [Satellite tracking](../satellite-tracking/)                                                                            | Post-MVP pass prediction + Tracking Dashboard ([#860](https://github.com/pskillen/codeplug-studio/issues/860))                                                   |
 | [docs/reference/radios/anytone/at-d890uv/satellite-keps.md](../../reference/radios/anytone/at-d890uv/satellite-keps.md) | D890 memory / write protocol — GPL-source-inferred (anytone-cps + qdmr), not hardware-verified ([#855](https://github.com/pskillen/codeplug-studio/issues/855))  |
 | [docs/reference/radios/opengd77/satellite-orbitals.md](../../reference/radios/opengd77/satellite-orbitals.md)           | OpenGD77 satellite bank (block 3 in additional-settings) — qdmr-inferred, not hardware-verified ([#857](https://github.com/pskillen/codeplug-studio/issues/857)) |
-| [docs/reference/radios/radiofoundry/satellite-keps.md](../../reference/radios/radiofoundry/satellite-keps.md)           | RadioFoundry satellite transaction — from the RadioFoundry spec and source; not yet bench-written                                                                 |
+| [docs/reference/radios/radiofoundry/satellite-keps.md](../../reference/radios/radiofoundry/satellite-keps.md)           | RadioFoundry satellite transaction — from the RadioFoundry spec and source; not yet bench-written                                                                |
 
 ---
 
@@ -55,10 +55,10 @@ Tier-1 hub for **satellite Keplerian elements (keps / TLEs)** in Codeplug Studio
 
 ## Target radios (MVP)
 
-| Radio                                   | Notes                                |
-| --------------------------------------- | ------------------------------------ |
-| Anytone AT-D890UV                       | First end-to-end write path          |
-| OpenGD77 (Baofeng DM-1701, TYT MD-9600) | Shared satellite orbital wire format |
+| Radio                                              | Notes                                                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Anytone AT-D890UV                                  | First end-to-end write path                                                                             |
+| OpenGD77 (Baofeng DM-1701, TYT MD-9600)            | Shared satellite orbital wire format                                                                    |
 | RadioFoundry (every radio Studio supports with it) | One frequency pair per satellite, up to 10; the radio is asked whether its build has satellite tracking |
 
 ---

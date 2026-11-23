@@ -100,9 +100,15 @@ describe('packRadioFoundrySatellites', () => {
       libraryEntityId: 'tx-b',
       satelliteBankSlot: 'fm',
     };
-    const packed = packRadioFoundrySatellites([sat], { ...OPTIONS, satelliteOverrides: [override] });
+    const packed = packRadioFoundrySatellites([sat], {
+      ...OPTIONS,
+      satelliteOverrides: [override],
+    });
     expect(packed.profiles[0]!.txHz).toBe(145_850_000);
-    const skipped = radioFoundrySkippedTransmitters([sat], { ...OPTIONS, satelliteOverrides: [override] });
+    const skipped = radioFoundrySkippedTransmitters([sat], {
+      ...OPTIONS,
+      satelliteOverrides: [override],
+    });
     expect(skipped).toEqual([
       {
         satelliteId: sat.id,
@@ -118,7 +124,9 @@ describe('packRadioFoundrySatellites', () => {
       {
         sat: makeSatellite({
           id: 'beacon',
-          transmitters: [makeTransmitter({ mode: 'Beacon', uplinkHz: null, downlinkHz: 436_795_000 })],
+          transmitters: [
+            makeTransmitter({ mode: 'Beacon', uplinkHz: null, downlinkHz: 436_795_000 }),
+          ],
         }),
         reason: 'RadioFoundry tracks FM satellites only.',
       },
@@ -169,10 +177,14 @@ describe('packRadioFoundrySatellites', () => {
     ];
     for (const { sat, reason } of cases) {
       if (!sat.enabled) {
-        expect(radioFoundrySkippedSatellites([sat], OPTIONS).find((s) => s.satelliteId === sat.id)).toBeUndefined();
+        expect(
+          radioFoundrySkippedSatellites([sat], OPTIONS).find((s) => s.satelliteId === sat.id),
+        ).toBeUndefined();
         continue;
       }
-      const row = radioFoundrySkippedSatellites([sat], OPTIONS).find((s) => s.satelliteId === sat.id);
+      const row = radioFoundrySkippedSatellites([sat], OPTIONS).find(
+        (s) => s.satelliteId === sat.id,
+      );
       expect(row?.reason).toBe(reason);
     }
   });
@@ -190,7 +202,9 @@ describe('packRadioFoundrySatellites', () => {
       [makeSatellite({ name: longName })],
       OPTIONS,
     );
-    expect(previewLong[0]!.encodedName.length).toBeLessThanOrEqual(RADIOFOUNDRY_LIMITS.SATELLITE_NAME_MAX_BYTES);
+    expect(previewLong[0]!.encodedName.length).toBeLessThanOrEqual(
+      RADIOFOUNDRY_LIMITS.SATELLITE_NAME_MAX_BYTES,
+    );
     expect(previewLong[0]!.nameTruncated).toBe(true);
   });
 

@@ -38,8 +38,7 @@ export type RadioFoundrySatelliteWritePreviewEntry = SatelliteWritePreviewEntry 
   }[];
 };
 
-const NOT_CHOSEN =
-  'Not chosen: RadioFoundry stores one frequency pair per satellite.';
+const NOT_CHOSEN = 'Not chosen: RadioFoundry stores one frequency pair per satellite.';
 
 function isAllowedRadioFoundryNameChar(c: string): boolean {
   const code = c.codePointAt(0);
@@ -91,7 +90,10 @@ function resolveWriteRow(
   return { satellite, winner, candidates };
 }
 
-function resolveWritten(satellites: readonly Satellite[], options: RadioFoundryKepsOptions): ResolvedWriteRow[] {
+function resolveWritten(
+  satellites: readonly Satellite[],
+  options: RadioFoundryKepsOptions,
+): ResolvedWriteRow[] {
   const out: ResolvedWriteRow[] = [];
   for (const satellite of satellites) {
     const row = resolveWriteRow(satellite, options);
@@ -142,9 +144,7 @@ export function radioFoundrySkippedSatellites(
   satellites: readonly Satellite[],
   options: RadioFoundryKepsOptions,
 ): { satelliteId: string; reason: string }[] {
-  const writtenIds = new Set(
-    resolveWritten(satellites, options).map((r) => r.satellite.id),
-  );
+  const writtenIds = new Set(resolveWritten(satellites, options).map((r) => r.satellite.id));
   return satellites
     .filter((s) => s.enabled && !writtenIds.has(s.id))
     .map((s) => ({
@@ -231,7 +231,11 @@ export function previewRadioFoundrySatelliteWriteRecords(
     const names = shortNames.get(satellite.id)!;
     const wireOverride = overrides.get(satellite.id)?.wireName?.trim();
     const hasWireNameOverride = Boolean(wireOverride?.length);
-    const { name: encodedName } = encodeRecordName(satellite, names.generatedShortName, wireOverride);
+    const { name: encodedName } = encodeRecordName(
+      satellite,
+      names.generatedShortName,
+      wireOverride,
+    );
     const nameTruncated = encodedName !== satellite.name.trim() && !hasWireNameOverride;
     entries.push({
       satelliteId: satellite.id,

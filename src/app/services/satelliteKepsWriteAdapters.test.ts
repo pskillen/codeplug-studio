@@ -64,7 +64,9 @@ describe('satelliteKepsWriteAdapters', () => {
       'radio-io-opengd77-1701',
       'radio-io-opengd77-md9600',
     ] as const) {
-      expect(getSatelliteKepsWriteAdapter(profileId)).toBe(SATELLITE_KEPS_WRITE_ADAPTERS[profileId]);
+      expect(getSatelliteKepsWriteAdapter(profileId)).toBe(
+        SATELLITE_KEPS_WRITE_ADAPTERS[profileId],
+      );
       expect(satelliteKepsSameSessionAfterUpload(profileId)).toBe(false);
     }
   });

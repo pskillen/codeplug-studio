@@ -16,7 +16,10 @@ const { writeSpy } = vi.hoisted(() => ({
 }));
 
 vi.mock('@integrations/radio-io/radios/radiofoundry/satelliteWrite.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@integrations/radio-io/radios/radiofoundry/satelliteWrite.ts')>();
+  const actual =
+    await importOriginal<
+      typeof import('@integrations/radio-io/radios/radiofoundry/satelliteWrite.ts')
+    >();
   return {
     ...actual,
     writeRadioFoundrySatellites: writeSpy,
