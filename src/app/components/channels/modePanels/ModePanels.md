@@ -53,11 +53,11 @@ Digital modes use **`DigitalModeGroups`** — fixed order **Access / Call / List
 
 ### `DigitalModeGroups` and `TwoUp`
 
-| Piece | Detail |
-| ----- | ------ |
-| `DigitalModeGroups` props | `access`, `call`, `listen`, `you` — each a **`GroupContent`** |
-| `GroupContent` | React node(s) wrapped in `.groupFields`, or `{ note: string }` for a muted one-line note; `{ note: '' }` renders heading only |
-| `TwoUp` | `{ compact, children }` — side-by-side fields at `Group` grow; stacks with `Stack gap={14}` when `compact` |
+| Piece                     | Detail                                                                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `DigitalModeGroups` props | `access`, `call`, `listen`, `you` — each a **`GroupContent`**                                                                 |
+| `GroupContent`            | React node(s) wrapped in `.groupFields`, or `{ note: string }` for a muted one-line note; `{ note: '' }` renders heading only |
+| `TwoUp`                   | `{ compact, children }` — side-by-side fields at `Group` grow; stacks with `Stack gap={14}` when `compact`                    |
 
 ### Adding a mode
 

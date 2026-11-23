@@ -25,14 +25,14 @@ Every **digital** mode’s settings answer the same four questions in the same o
 
 **Per-mode layout** (labels only — no wire values):
 
-| Mode    | Access               | Call               | Listen        | You               |
-| ------- | -------------------- | ------------------ | ------------- | ----------------- |
+| Mode    | Access                      | Call               | Listen        | You               |
+| ------- | --------------------------- | ------------------ | ------------- | ----------------- |
 | DMR     | colour code, slot, DMR mode | Talk group/contact | RX group list | DMR ID, alias     |
-| NXDN    | RAN, rate            | Call               | RX group list | Unit ID           |
-| D-STAR  | RPT1, RPT2           | UR call            | repeater-wide | callsign on radio |
-| YSF     | DG-ID                | WIRES-X DTMF       | same DG-ID    | callsign on radio |
-| Tetra   | MCC/MNC, colour code | Talk group, GSSI   | talk group    | ISSI on radio     |
-| P25/M17 | pending note         | (headings only)    | (headings)    | (headings)        |
+| NXDN    | RAN, rate                   | Call               | RX group list | Unit ID           |
+| D-STAR  | RPT1, RPT2                  | UR call            | repeater-wide | callsign on radio |
+| YSF     | DG-ID                       | WIRES-X DTMF       | same DG-ID    | callsign on radio |
+| Tetra   | MCC/MNC, colour code        | Talk group, GSSI   | talk group    | ISSI on radio     |
+| P25/M17 | pending note                | (headings only)    | (headings)    | (headings)        |
 
 **Analogue** modes (FM, AM, SSB) have **no** group headings: tones first (TX then RX), then bandwidth and squelch controls.
 
