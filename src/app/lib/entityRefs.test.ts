@@ -6,9 +6,7 @@ describe('entityRefDisplayName', () => {
   it('shows callsign and name for a channel ref', () => {
     const channel = { ...newChannel('p1', 'Glasgow', 'GB3AA'), id: 'ch-1' };
     const library = { ...emptyLibrary(), channels: [channel] };
-    expect(entityRefDisplayName({ kind: 'channel', id: 'ch-1' }, library)).toBe(
-      'GB3AA — Glasgow',
-    );
+    expect(entityRefDisplayName({ kind: 'channel', id: 'ch-1' }, library)).toBe('GB3AA — Glasgow');
   });
 
   it('shows name alone for a channel ref without callsign', () => {

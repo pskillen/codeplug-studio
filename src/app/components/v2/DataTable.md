@@ -25,14 +25,15 @@ The full-capability list/detail table used across library lists, wire preview, b
 
 ## Props (selection)
 
-| Prop                | Type                       | Notes                                                                                   |
-| ------------------- | -------------------------- | --------------------------------------------------------------------------------------- |
-| `selectable`        | `boolean`                  | Adds a checkbox column + selection toolbar                                              |
-| `selectedKeys`      | `string[]`                 | Controlled selection; uncontrolled if omitted                                           |
-| `onSelectionChange` | `(keys: string[]) => void` |                                                                                         |
-| `isRowSelectable`   | `(row: T) => boolean`      | Rows failing this render a disabled, dimmed checkbox and are excluded from "select all" |
-| `bulkActions`       | `ReactNode`                | Slot in the selection toolbar, shown alongside a Clear action                           |
-| `onClearSelection`  | `() => void`               | Clear-selection toolbar action                                                          |
+| Prop                | Type                       | Notes                                                                                                                                        |
+| ------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `selectable`        | `boolean`                  | Adds a checkbox column + selection toolbar                                                                                                   |
+| `selectedKeys`      | `string[]`                 | Controlled selection; uncontrolled if omitted                                                                                                |
+| `onSelectionChange` | `(keys: string[]) => void` |                                                                                                                                              |
+| `isRowSelectable`   | `(row: T) => boolean`      | Rows failing this render a disabled, dimmed checkbox and are excluded from "select all"                                                      |
+| `rowLabel`          | `(row: T) => string`       | Names each row's checkbox as `Select <rowLabel(row)>`; default `Select row <id>`. The channels table passes the channel's callsign and name. |
+| `bulkActions`       | `ReactNode`                | Slot in the selection toolbar, shown alongside a Clear action                                                                                |
+| `onClearSelection`  | `() => void`               | Clear-selection toolbar action                                                                                                               |
 
 ## Props (reorder)
 
