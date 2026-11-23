@@ -119,7 +119,6 @@ describe('packRadioFoundrySatellites', () => {
   });
 
   it('skips satellites it cannot track, with the reason', () => {
-    const tle = issTle();
     const cases: { sat: Satellite; reason: string }[] = [
       {
         sat: makeSatellite({

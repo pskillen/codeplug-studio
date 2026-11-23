@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RADIOFOUNDRY_PROFILES } from '@core/import-export/formats/radiofoundry/profiles.ts';
+import { RADIOFOUNDRY_PROFILES } from '@core/import-export/formatProfiles.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { RADIOFOUNDRY_LIMITS } from '@core/radios/radiofoundry/limits.ts';

@@ -273,6 +273,7 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
   return null;
 }
 
+export { RADIOFOUNDRY_PROFILES, resolveRadioFoundryProfile } from './formats/radiofoundry/profiles.ts';
 export {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
