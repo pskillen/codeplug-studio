@@ -17,7 +17,7 @@ import {
 } from '@core/import-export/formats/radiofoundry/layout.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { crc32Ieee } from '../../kit/checksums.ts';
-import { RadioTimeoutError } from '../../kit/errors.ts';
+import { RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { expectEventsFollowPlan, stageRecorder } from '../../plannedStagesTestKit.ts';
 import type { BytePipe } from '../../types.ts';
@@ -65,6 +65,8 @@ import {
 } from './writeSource.ts';
 
 const REPLY = CODEPLUG_COMMAND | 0x80;
+const DM32UV_VERSION_TEXT =
+  'proto=1\ngit=454a5b76\ngit_time=1795365604\nsource=official\nboard=DM-32UV\nfeatures=\n';
 
 class ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
@@ -81,6 +83,10 @@ class ScriptedPipe implements BytePipe {
   } | null = null;
   infoStatus = 0;
   silent = false;
+  /** null = no VERSION reply at all. */
+  versionText: string | null = DM32UV_VERSION_TEXT;
+  versionStatus = 0;
+  versionCommand = 0x82;
 
   constructor(fill: number) {
     for (const addr of servedBlockAddresses()) {
@@ -107,6 +113,13 @@ class ScriptedPipe implements BytePipe {
     this.writes.push(copy);
     if (this.silent) return;
     const request = decodeDebugFrame(copy);
+    if (request.command === 0x02) {
+      if (this.versionText === null) return;
+      const text = this.versionStatus === 0 ? new TextEncoder().encode(this.versionText) : [];
+      const payload = Uint8Array.from([this.versionStatus, ...text]);
+      this.enqueue(encodeDebugFrame(this.versionCommand, request.seq, payload));
+      return;
+    }
     expect(request.command).toBe(CODEPLUG_COMMAND);
     const op = request.payload[0]!;
     const args = request.payload.subarray(1);
@@ -268,11 +281,16 @@ function isBlank(block: Uint8Array): boolean {
 }
 
 function requestOps(pipe: ScriptedPipe): number[] {
-  return pipe.writes.map((frame) => decodeDebugFrame(frame).payload[0]!);
+  return pipe.writes
+    .map((frame) => decodeDebugFrame(frame))
+    .filter((frame) => frame.command !== 0x02)
+    .map((frame) => frame.payload[0]!);
 }
 
 function requestCommands(pipe: ScriptedPipe): number[] {
-  return pipe.writes.map((frame) => decodeDebugFrame(frame).command);
+  return pipe.writes
+    .map((frame) => decodeDebugFrame(frame).command)
+    .filter((command) => command !== 0x02);
 }
 
 describe('DM-32 RadioFoundry fast codeplug', () => {
@@ -718,9 +736,15 @@ class InfoOnlyPipe implements BytePipe {
 
   async write(data: Uint8Array): Promise<void> {
     const request = decodeDebugFrame(data.slice());
-    const payload = new Uint8Array(1 + this.info.length);
-    payload.set(this.info, 1);
-    const frame = encodeDebugFrame(REPLY, request.seq, payload);
+    let frame: Uint8Array;
+    if (request.command === 0x02) {
+      const payload = Uint8Array.from([0, ...new TextEncoder().encode(DM32UV_VERSION_TEXT)]);
+      frame = encodeDebugFrame(0x82, request.seq, payload);
+    } else {
+      const payload = new Uint8Array(1 + this.info.length);
+      payload.set(this.info, 1);
+      frame = encodeDebugFrame(REPLY, request.seq, payload);
+    }
     const next = new Uint8Array(this.pending.length + frame.length);
     next.set(this.pending, 0);
     next.set(frame, this.pending.length);
@@ -814,5 +838,76 @@ describe('RadioFoundry cable INFO and board', () => {
       DM32UV_RADIOFOUNDRY_CABLE_BOARD,
     );
     expect(() => radioFoundryCableBoardForProfileId('radio-io-dm32uv')).toThrow();
+  });
+});
+
+describe('RadioFoundry VERSION on connect', () => {
+  it('sends INFO then VERSION and keeps the build', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    const ident = await proto.connect(pipe);
+    const frames = pipe.writes.slice(0, 2).map((frame) => decodeDebugFrame(frame));
+    expect(frames[0]!.command).toBe(CODEPLUG_COMMAND);
+    expect(frames[0]!.payload[0]).toBe(OP_INFO);
+    expect(frames[1]!.command).toBe(0x02);
+    expect(proto.firmwareVersion()?.board).toBe('DM-32UV');
+    expect(ident.firmwareHint).toBe('RadioFoundry 454a5b76 (2026-11-22)');
+  });
+
+  it('accepts every DM-32UV board name', async () => {
+    for (const board of ['dm32', 'DM-32']) {
+      const pipe = new ScriptedPipe(0xff);
+      pipe.versionText = `board=${board}\n`;
+      const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+      await expect(proto.connect(pipe)).resolves.toBeDefined();
+    }
+  });
+
+  it('refuses another board by name', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.versionText = 'board=MD-9600\n';
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    const error = await proto.connect(pipe).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+    expect((error as Error).message).toContain('"MD-9600"');
+    expect((error as Error).message).toContain('Baofeng DM-32UV (RadioFoundry)');
+    await expect(proto.download({})).rejects.toThrow();
+  });
+
+  it('carries on without VERSION', async () => {
+    const cases: ((pipe: ScriptedPipe) => void)[] = [
+      (pipe) => (pipe.versionStatus = 1),
+      (pipe) => (pipe.versionStatus = 4),
+      (pipe) => (pipe.versionCommand = 0xff),
+      (pipe) => (pipe.versionText = null),
+    ];
+    for (const setup of cases) {
+      const pipe = new ScriptedPipe(0xff);
+      setup(pipe);
+      const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+      const ident = await proto.connect(pipe);
+      expect(proto.firmwareVersion()).toBeNull();
+      expect(ident.firmwareHint).toBeUndefined();
+    }
+  });
+
+  it('pairs the next codeplug request with its own reply after a silent VERSION', async () => {
+    const silent = new ScriptedPipe(0xff);
+    silent.versionText = null;
+    const a = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await a.connect(silent);
+    const imageA = await a.download({});
+    const b = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await b.connect(new ScriptedPipe(0xff));
+    const imageB = await b.download({});
+    expect(imageA.bytes).toEqual(imageB.bytes);
+  });
+
+  it('connects when VERSION has no board', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.versionText = 'proto=1\ngit=454a5b76\n';
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    expect(proto.firmwareVersion()?.board).toBeUndefined();
   });
 });

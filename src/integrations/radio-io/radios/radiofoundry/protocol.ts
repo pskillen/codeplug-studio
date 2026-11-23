@@ -19,7 +19,11 @@ import {
 } from '@core/import-export/formats/radiofoundry/settingsArea.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { crc32Ieee } from '../../kit/checksums.ts';
-import { RadioProtocolError, RadioTimeoutError } from '../../kit/errors.ts';
+import {
+  summariseRadioFoundryBuild,
+  type RadioFoundryBuildIdentity,
+} from '@core/radios/radiofoundry/firmware.ts';
+import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { reportProgress } from '../../kit/progress.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
@@ -53,6 +57,12 @@ import {
 } from '../../kit/codecs/radioFoundryDebugLink.ts';
 import { DMR_ID_DATABASE_AREA2_ADDRESS, dmrIdDatabaseArea2Blocks } from './idDatabase.ts';
 import { decodeBlock, encodeBlock } from './lz4.ts';
+import {
+  isRadioFoundryBoardName,
+  parseRadioFoundryVersionText,
+  RADIOFOUNDRY_VERSION_COMMAND,
+  RADIOFOUNDRY_VERSION_TIMEOUT_MS,
+} from './version.ts';
 import {
   ownedPrivateContactBlocks,
   radioFoundryWriteSourceFromAssembled,
@@ -94,11 +104,42 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   private info: FastInfo | null = null;
   private readBlocks: Map<number, Uint8Array> | null = null;
   private armed: RadioFoundryWriteSource | null = null;
+  private version: RadioFoundryBuildIdentity | null = null;
+
+  /** The build the radio reported at connect, or null when it reported none. */
+  firmwareVersion(): RadioFoundryBuildIdentity | null {
+    return this.version;
+  }
+
+  /** One VERSION exchange. Never throws: any failure means "not reported". */
+  private async readVersion(): Promise<RadioFoundryBuildIdentity | null> {
+    const pipe = this.requirePipe();
+    const seq = this.seq & 0xff;
+    this.seq = (this.seq + 1) & 0xff;
+    try {
+      await pipe.write(encodeDebugFrame(RADIOFOUNDRY_VERSION_COMMAND, seq, new Uint8Array(0)));
+      const frame = await readFrame(pipe, RADIOFOUNDRY_VERSION_TIMEOUT_MS);
+      if (
+        frame.command !== (RADIOFOUNDRY_VERSION_COMMAND | 0x80) ||
+        frame.seq !== seq ||
+        frame.payload.length < 1 ||
+        frame.payload[0] !== 0
+      ) {
+        return null;
+      }
+      return parseRadioFoundryVersionText(new TextDecoder().decode(frame.payload.subarray(1)));
+    } catch {
+      // A late reply must not be read as the next codeplug reply.
+      await pipe.drain?.();
+      return null;
+    }
+  }
 
   async connect(pipe: BytePipe): Promise<IdentResult> {
     this.pipe = pipe;
     this.seq = 1;
     this.info = null;
+    this.version = null;
     this.readBlocks = null;
     try {
       const body = await this.request(OP_INFO, new Uint8Array(0), 2000);
@@ -108,12 +149,27 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       if (err instanceof RadioProtocolError && err.message === HANDSHAKE_ERROR) throw err;
       throw new RadioProtocolError(HANDSHAKE_ERROR);
     }
-    return { raw: new Uint8Array(0), modelHints: [this.board.modelHint] };
+    this.version = await this.readVersion();
+    const reported = this.version?.board;
+    if (reported !== undefined && !isRadioFoundryBoardName(this.board, reported)) {
+      this.pipe = null;
+      this.info = null;
+      this.version = null;
+      throw new RadioWrongIdentError(
+        `This radio reports RadioFoundry board "${reported}", not the ${this.board.label}. Pick the build for that radio.`,
+      );
+    }
+    return {
+      raw: new Uint8Array(0),
+      modelHints: [this.board.modelHint],
+      ...(this.version ? { firmwareHint: summariseRadioFoundryBuild(this.version).label } : {}),
+    };
   }
 
   async disconnect(): Promise<void> {
     this.pipe = null;
     this.info = null;
+    this.version = null;
     this.readBlocks = null;
     this.armed = null;
   }

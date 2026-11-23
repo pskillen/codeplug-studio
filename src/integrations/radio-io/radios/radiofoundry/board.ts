@@ -23,6 +23,11 @@ export interface RadioFoundryCableBoard {
   radioIoProfileId: string;
   baudRate: number;
   limits: RadioFoundryBoardLimits;
+  /**
+   * VERSION `board=` values that mean this board, from upstream's registry (tools/boards.py debuglink_names at
+   * 454a5b76): the board name, older aliases and the board id.
+   */
+  versionBoardNames: readonly string[];
 }
 
 export const DM32UV_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
@@ -32,6 +37,7 @@ export const DM32UV_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
   radioIoProfileId: DM32_RADIOFOUNDRY_PROFILE_ID,
   baudRate: DM32_RADIOFOUNDRY_BAUD_RATE,
   limits: DM32UV_RADIOFOUNDRY_BOARD,
+  versionBoardNames: ['DM-32UV', 'DM-32', 'dm32'],
 };
 
 export const RADIOFOUNDRY_CABLE_BOARDS: readonly RadioFoundryCableBoard[] = [
