@@ -55,6 +55,8 @@ Read-only debug capture archive (FirmwareInfo, FLASH spans, User Database): [Ope
 | Operator menu elicitation ([#441](https://github.com/pskillen/codeplug-studio/issues/441))       | Power ladder validation  |
 | Shipped adapter [`profiles.ts`](../../../../src/core/import-export/formats/opengd77/profiles.ts) | `OPENGD77_MD9600_LADDER` |
 
+RadioFoundry firmware on the same hardware: [MD-9600 (RadioFoundry)](../md-9600-radiofoundry/limits.md).
+
 ## Related
 
 - Sibling OpenGD77: [Baofeng DM-1701](../../baofeng/dm-1701/README.md)
