@@ -23,4 +23,6 @@ What differs between boards lives in one module per board (`RadioFoundryBoardLim
 
 - Baofeng DM-32UV: [limits.md](../baofeng/dm-32uv-radiofoundry/limits.md)
 
+Firmware version and board names: [firmware.md](firmware.md).
+
 Do not bake these into library CRUD.

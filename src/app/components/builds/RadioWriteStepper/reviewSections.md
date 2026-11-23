@@ -19,7 +19,7 @@ registerReviewSectionProvider({
 
 ## Behaviour
 
-- Generic sections: **This radio** (model, name and firmware where known, full serial), **Channels** ("N channels will be written." when the codeplug is ticked), contacts and keps counts when ticked, **Time**.
+- Generic sections: **This radio** (model, name and firmware where known, full serial; firmware caveats may sit under the Firmware line and never pause Review), **Channels** ("N channels will be written." when the codeplug is ticked), contacts and keps counts when ticked, **Time**.
 - `identityOnly`: radios whose read happens inside `upload()` show the ident only and say "Studio reads the rest of the radio while writing."
 - The estimate is the write plan's total weight over the throughput measured during the read (`writeEstimate.ts`), never slower than the radio's `nominalBytesPerSecond` (descriptor; default 16 kB/s, AT-D890UV 100 kB/s). The measured rate runs low because read-plan weights are nominal.
 - Providers register once at module load. The AT-D890's (`d890/registerAtD890Review.tsx`, see [AtD890ReviewSections](./d890/AtD890ReviewSections.md)) adds the frequency range row, the receive-only channel warning, the Radio settings section, the backup section and the step-key nudge.

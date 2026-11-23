@@ -8,6 +8,7 @@ Cable write for a Baofeng DM-32UV running RadioFoundry. The [codeplug file](../.
 | Command   | Fast CODEPLUG. Debug-link command `0x1C`, direct mode.                                                                                                             |
 | Addresses | Image offsets. The radio adds physical `0x700000`. Studio does not send that base. The codeplug image ends at `0xAEE60`. ID-database overflow starts at `0xD8000`. |
 | Blocks    | 4096 bytes, and only a block whose bytes changed. A blank block is not sent as data.                                                                               |
+| Identity  | INFO, then VERSION. Board names `DM-32UV`, `DM-32`, `dm32`; see [firmware](../../radiofoundry/firmware.md).                                                        |
 | Commit    | COMMIT reloads the codeplug. Studio does not reboot the radio.                                                                                                     |
 
 The image is the one [RadioFoundry codeplug](../../../export-formats/radiofoundry/README.md) export builds (`assemble`, then the codeplug serialiser).
