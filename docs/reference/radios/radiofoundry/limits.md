@@ -19,7 +19,7 @@ Limits every radio running RadioFoundry shares: they are fixed by the firmware's
 
 ## Per board
 
-What differs between boards lives in one module per board (`RadioFoundryBoardLimits`): RF bands, power steps, the DMR ID database size the cable write may send, the physical base of the codeplug image, and where the image ends.
+What differs between boards lives in one module per board (`RadioFoundryBoardLimits`): RF bands, power levels (how many the board drives; the [codeplug page](../../export-formats/radiofoundry/README.md) has the byte rule that spreads RadioFoundry's 10-step power byte over fewer levels), the DMR ID database size the cable write may send, the physical base of the codeplug image, and where the image ends.
 
 - Baofeng DM-32UV: [limits.md](../baofeng/dm-32uv-radiofoundry/limits.md)
 
