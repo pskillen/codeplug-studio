@@ -32,6 +32,22 @@ When RX and TX fall on different bands, show one pill per band (split operation)
 
 Mode pills and map marker colours use definitions in [channel-modes.md](../channel-modes.md) via `src/app/lib/channelModes.ts`.
 
+### Mode summaries
+
+A channel's modes show as one chip each: the mode label on its colour, then a one-line summary in monospace (`ModeSummaryChip`, `ChannelModeSummaries`). Summaries follow the channel's identity (callsign, then name) and never replace it. With two or more modes the main mode comes first with a coloured border; there is no `*` or "(primary)".
+
+| Mode   | Summary                                                                                         | Example                |
+| ------ | ----------------------------------------------------------------------------------------------- | ---------------------- |
+| FM, AM | TX tone `T x`, RX tone `R x`, both equal `T/R x`; DCS as stored (`D023N`); `12.5k` for 12.5 kHz | `T/R 103.5 12.5k`      |
+| SSB    | Sideband                                                                                        | `USB`                  |
+| DMR    | Colour code, timeslot, talk group (`TG`) or private contact (`PC`)                              | `CC1 TS2 TG2351`       |
+| NXDN   | RAN (`RAN1/2` when RX and TX differ), `NXDN96`, talk group or contact                           | `RAN1 TG65000`         |
+| D-STAR | UR call, then RPT1                                                                              | `→ CQCQCQ via GB7XX B` |
+| YSF    | DG-ID                                                                                           | `DG12`                 |
+| Tetra  | MCC-MNC, then talk group (or GSSI)                                                              | `234-1 TG9`            |
+
+Values are library values (talk-group numbers, codes, tones), never export wire strings. Phone list lines show the plain joined pills (no summary), with the main mode bordered. Zone member rows and pickers keep plain pills.
+
 ## Channel naming
 
 Wire-name composition for CPS export lives at the import/export boundary. In library UI:

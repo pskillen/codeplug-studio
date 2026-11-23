@@ -2,6 +2,10 @@
 
 How the library presents a channel's modes. Live demos: `/styleguide/channel-modes`. Mode labels and colours: [display.md — Channel modes](display.md#channel-modes).
 
+## Mode summaries
+
+List and map surfaces show one `ModeSummaryChip` per mode after the channel's identity, built by `ChannelModeSummaries` from `channelModeSummary.ts`. Rules and the per-mode summary table: [display.md — Mode summaries](display.md#mode-summaries).
+
 ## Mode settings: Access, Call, Listen, You
 
 Every digital mode's settings use the same four groups, in this order (`DigitalModeGroups`):

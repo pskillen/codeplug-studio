@@ -24,7 +24,7 @@ import ChannelIdentitySummary from '@app/components/channels/ChannelIdentitySumm
 - Hidden on the **Identity** tab by `ChannelEditor` — identity fields are already visible there.
 - Rendered at the top of each non-identity `Tabs.Panel` (not as a sibling between `Tabs.List` and panels — Mantine ref management requires panel children).
 - Label uses `channelDisplayLabel` when callsign or name is set; otherwise "New channel" or "Untitled channel".
-- Mode pills mirror the channels list (`channelModesForFilter`, primary marker when multi-mode).
+- Mode pills mirror the channels list; the main mode of a multi-mode channel is bordered.
 - RX/TX uses `formatChannelRxTxListCell`; omitted when both frequencies are unset.
 
 ## Related

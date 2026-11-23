@@ -38,8 +38,25 @@ Every **digital** mode’s settings answer the same four questions in the same o
 
 Mode labels and colours: [display — Channel modes](../../reference/styleguide/display.md#channel-modes). UI conventions: [channel-modes-ui](../../reference/styleguide/channel-modes-ui.md).
 
+## Summaries
+
+A **mode summary** is one line of library values for a single profile — talk-group numbers, colour codes, tones, and similar fields — never CPS wire strings or format names. `channelModeSummary.ts` builds the text; `ModeSummaryChip` and `ChannelModeSummaries` render it.
+
+Summaries appear **after** the channel's callsign and name (they do not replace identity):
+
+- Channel list table **Name** cell and optional **Mode** column (table and cards)
+- Build channel wire-preview rows (not per-talk-group expansion rows)
+- Map popups when the caller passes a library lookup
+- Later: channel view header and folded editor sections (follow-on phases)
+
+They do **not** appear on the phone list identity line (plain joined mode pills only, main mode bordered), zone member rows, or entity pickers — those keep `ModePill`.
+
+With two or more modes, the **main mode** (`primaryMode` when valid, else the first profile) is listed first and drawn with a coloured border. Rules and examples: [display — Mode summaries](../../reference/styleguide/display.md#mode-summaries).
+
 ## Code anchors
 
+- `src/app/lib/channelModeSummary.ts` — summary text per profile
+- `src/app/components/channels/ModeSummaryChip.tsx`, `ChannelModeSummaries.tsx`
 - `src/app/components/channels/modePanels/` — `MODE_PANELS`, `ModePanel`, `DigitalModeGroups`
 - Sidecar: [ModePanels.md](../../../src/app/components/channels/modePanels/ModePanels.md)
 - Wrapper: [ChannelModeProfilesEditor](../../../src/app/components/channels/ChannelModeProfilesEditor.tsx)
