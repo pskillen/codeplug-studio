@@ -4,11 +4,18 @@
  * firmware flasher's radio list. Deploy-specific facts (is Write hidden on this site, is the flasher offered)
  * are injected via {@link SupportMatrixAvailability} so core never reads the integrations layer.
  */
+import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import { firmwareRadioIdForModel, type FirmwareRadioId } from '@core/firmware/index.ts';
 import type { CompatibleEgress, RadioTarget } from './catalog.ts';
 import { radioTargetForModelFirmware } from './grouping.ts';
 import { listRadioModels, type FirmwareVariant, type RadioModel } from './models.ts';
+import {
+  RADIO_RF_CAPABILITIES,
+  getRadioRfCapabilities,
+  type RadioRfCapabilities,
+} from './rfCapabilities.ts';
+import { SUPPORT_FACTS, type SupportFacts } from './supportEvidence.ts';
 
 export type SupportState = 'supported' | 'partial' | 'unsupported' | 'na';
 
@@ -18,6 +25,7 @@ export type SupportColumnId =
   | 'writeCable'
   | 'readBack'
   | 'cpsFile'
+  | 'satelliteKeps'
   | 'zones'
   | 'scanLists'
   | 'zoneIsScan'
@@ -59,6 +67,12 @@ export const SUPPORT_COLUMNS: readonly SupportColumn[] = [
     label: 'CPS file',
     hint: 'Export a file for the maker’s or a community programming tool.',
   },
+  {
+    id: 'satelliteKeps',
+    group: 'program',
+    label: 'Satellite keps',
+    hint: 'Write satellite orbital data (keps) to the radio over the cable.',
+  },
   { id: 'zones', group: 'organise', label: 'Zones', hint: 'Group channels into zones.' },
   {
     id: 'scanLists',
@@ -84,6 +98,56 @@ export const SUPPORT_COLUMNS: readonly SupportColumn[] = [
 
 export type SupportCells = Record<SupportColumnId, SupportState>;
 
+/** Evidence that a mode works on a radio + firmware, from the firmware project's own records. */
+export type SupportEvidence = 'on-air' | 'bench' | 'unverified';
+
+/** Studio's ways of getting a codeplug onto the radio. */
+export type SupportPath = 'cable' | 'file';
+
+/** Display order of channel-mode columns. A column exists only when some target supports the mode. */
+export const SUPPORT_MODE_ORDER: readonly ChannelMode[] = [
+  'fm',
+  'am',
+  'ssb',
+  'dmr',
+  'dstar',
+  'ysf',
+  'p25',
+  'nxdn',
+  'm17',
+  'tetra',
+];
+
+export interface SupportModeCell {
+  state: SupportState;
+  /** Paths that carry this mode: `cable` when the writeCable cell is supported, `file` when cpsFile is. Empty unless supported. */
+  paths: readonly SupportPath[];
+  /** Recorded evidence; undefined when nothing is recorded. */
+  evidence?: SupportEvidence;
+  /** One sentence: where the evidence comes from. */
+  evidenceSource?: string;
+  /** One sentence: a condition (shown with a dagger), e.g. "only when the radio's build has it on". */
+  note?: string;
+}
+
+/** The firmware build Studio was checked against, for firmware that has one. */
+export interface SupportFirmwareBuild {
+  /** Short, e.g. "RadioFoundry 454a5b76 (2026-11-22)". */
+  label: string;
+  /** One sentence for a tooltip. */
+  note: string;
+}
+
+/** Mode columns in display order: every mode some capability row lists. */
+export function listSupportModeColumns(
+  capabilities: readonly Pick<RadioRfCapabilities, 'supportedModes'>[] = Object.values(
+    RADIO_RF_CAPABILITIES,
+  ),
+): ChannelMode[] {
+  const used = new Set(capabilities.flatMap((row) => row.supportedModes));
+  return SUPPORT_MODE_ORDER.filter((mode) => used.has(mode));
+}
+
 export interface SupportFirmwareRow {
   firmware: FirmwareVariant;
   /** Radio target id, or undefined when Studio has no target for this model + firmware. */
@@ -91,6 +155,11 @@ export interface SupportFirmwareRow {
   /** False for firmware Studio cannot build for (for example stock DM-1701). */
   supported: boolean;
   cells: SupportCells;
+  /** One cell per `listSupportModeColumns()` mode. */
+  modes: Partial<Record<ChannelMode, SupportModeCell>>;
+  /** Conditions on feature cells (rendered with a dagger). Empty object when none. */
+  notes: Partial<Record<SupportColumnId, string>>;
+  build?: SupportFirmwareBuild;
   /** `supported` cells count 1, `partial` 0.5. Used to rank firmware for a model. */
   score: number;
 }
@@ -110,6 +179,8 @@ export interface SupportMatrixAvailability {
   cableRead?: (egress: CompatibleEgress) => boolean;
   /** The flasher for this radio is offered on this site and platform. */
   firmwareFlash?: (radioId: FirmwareRadioId) => boolean;
+  /** A satellite keps write is offered for this egress on this site. Omitted = not offered (core cannot know). */
+  satelliteKeps?: (egress: CompatibleEgress) => boolean;
 }
 
 export interface SupportMatrixInput {
@@ -117,12 +188,17 @@ export interface SupportMatrixInput {
   /** Override target lookup (tests). */
   targetFor?: (modelId: string, firmwareId: string) => RadioTarget | undefined;
   availability?: SupportMatrixAvailability;
+  /** Override the RF capability lookup (tests). */
+  rfFor?: (targetId: string) => RadioRfCapabilities | undefined;
+  /** Override the evidence facts (tests). */
+  facts?: SupportFacts;
 }
 
 const ALL_UNSUPPORTED: SupportCells = {
   writeCable: 'unsupported',
   readBack: 'unsupported',
   cpsFile: 'unsupported',
+  satelliteKeps: 'unsupported',
   zones: 'unsupported',
   scanLists: 'unsupported',
   zoneIsScan: 'unsupported',
@@ -166,6 +242,7 @@ function cellsFor(
     cells.writeCable = yes(serial.some((e) => availability.cableWrite?.(e) ?? true));
     cells.readBack = yes(serial.some((e) => availability.cableRead?.(e) ?? true));
     cells.cpsFile = yes(target.compatibleEgress.some((e) => e.kind === 'cps-file'));
+    cells.satelliteKeps = yes(serial.some((e) => availability.satelliteKeps?.(e) ?? false));
     cells.zones = yes(has(target, BuildCapabilityTrait.ZoneGrouping));
     cells.scanLists = scanListState(target);
     cells.zoneIsScan = yes(has(target, BuildCapabilityTrait.ZoneAsScanList));
@@ -194,10 +271,70 @@ function scoreOf(cells: SupportCells): number {
   );
 }
 
+function modeCellsFor(
+  model: RadioModel,
+  target: RadioTarget | undefined,
+  cells: SupportCells,
+  rf: (targetId: string) => RadioRfCapabilities | undefined,
+  facts: SupportFacts,
+  modeColumns: readonly ChannelMode[],
+): Partial<Record<ChannelMode, SupportModeCell>> {
+  const modes: Partial<Record<ChannelMode, SupportModeCell>> = {};
+  for (const mode of modeColumns) {
+    if (!target) {
+      modes[mode] = { state: 'unsupported', paths: [] };
+      continue;
+    }
+    if (model.radioClass === 'fm' && mode !== 'fm' && mode !== 'am' && mode !== 'ssb') {
+      modes[mode] = { state: 'na', paths: [] };
+      continue;
+    }
+    const rfRow = rf(target.id);
+    const modeSupported = rfRow?.supportedModes.includes(mode) ?? false;
+    const state: SupportState = modeSupported ? 'supported' : 'unsupported';
+    let paths: readonly SupportPath[] = [];
+    const fact = facts.modes[target.id]?.[mode];
+    if (modeSupported) {
+      const derived: SupportPath[] = [];
+      if (cells.writeCable === 'supported') derived.push('cable');
+      if (cells.cpsFile === 'supported') derived.push('file');
+      paths = fact?.paths ? fact.paths.filter((p) => derived.includes(p)) : derived;
+    }
+    const cell: SupportModeCell = { state, paths };
+    if (modeSupported && fact) {
+      if (fact.evidence != null) cell.evidence = fact.evidence;
+      if (fact.evidenceSource != null) cell.evidenceSource = fact.evidenceSource;
+      if (fact.note != null) cell.note = fact.note;
+    }
+    modes[mode] = cell;
+  }
+  return modes;
+}
+
+function featureNotesFor(
+  target: RadioTarget | undefined,
+  firmware: FirmwareVariant,
+  cells: SupportCells,
+  facts: SupportFacts,
+): Partial<Record<SupportColumnId, string>> {
+  if (!target) return {};
+  const raw = facts.featureNotes[firmware.id];
+  if (!raw) return {};
+  const notes: Partial<Record<SupportColumnId, string>> = {};
+  for (const col of SUPPORT_COLUMNS) {
+    const note = raw[col.id];
+    if (note != null && cells[col.id] === 'supported') notes[col.id] = note;
+  }
+  return notes;
+}
+
 /** Build the whole matrix: a row per model, a sub-row per firmware variant (stock always listed). */
 export function buildSupportMatrix(input: SupportMatrixInput = {}): SupportModelRow[] {
   const availability = input.availability ?? {};
   const targetFor = input.targetFor ?? radioTargetForModelFirmware;
+  const rf = input.rfFor ?? getRadioRfCapabilities;
+  const facts = input.facts ?? SUPPORT_FACTS;
+  const modeColumns = listSupportModeColumns(Object.values(RADIO_RF_CAPABILITIES));
   return (input.models ?? listRadioModels()).map((model) => {
     const firmware = model.firmware.map((fw): SupportFirmwareRow => {
       const target = targetFor(model.id, fw.id);
@@ -207,6 +344,9 @@ export function buildSupportMatrix(input: SupportMatrixInput = {}): SupportModel
         targetId: target?.id,
         supported: target != null,
         cells,
+        modes: modeCellsFor(model, target, cells, rf, facts, modeColumns),
+        notes: featureNotesFor(target, fw, cells, facts),
+        build: target ? facts.firmwareBuilds[fw.id] : undefined,
         score: scoreOf(cells),
       };
     });

@@ -40,18 +40,29 @@ export {
 export {
   SUPPORT_COLUMNS,
   SUPPORT_GROUPS,
+  SUPPORT_MODE_ORDER,
   buildSupportMatrix,
   filterSupportMatrix,
+  listSupportModeColumns,
   type SupportCells,
   type SupportColumn,
   type SupportColumnId,
+  type SupportEvidence,
+  type SupportFirmwareBuild,
   type SupportFirmwareRow,
   type SupportGroupId,
   type SupportMatrixAvailability,
   type SupportMatrixInput,
+  type SupportModeCell,
   type SupportModelRow,
+  type SupportPath,
   type SupportState,
 } from './supportMatrix.ts';
+export {
+  SUPPORT_FACTS,
+  type SupportFacts,
+  type SupportModeFact,
+} from './supportEvidence.ts';
 export {
   UNKNOWN_MANUFACTURER,
   countBuildsByTarget,
