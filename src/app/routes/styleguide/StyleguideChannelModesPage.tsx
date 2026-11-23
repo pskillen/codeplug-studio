@@ -5,6 +5,7 @@ import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { emptyLibrary, newTalkGroup } from '@core/domain/factories.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import ModePanel from '../../components/channels/modePanels/ModePanel.tsx';
+import { modeLabel } from '../../lib/channelModes.ts';
 import type { ModePanelContext } from '../../components/channels/modePanels/types.ts';
 import { SegmentedControl } from '../../components/v2/index.ts';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
@@ -28,7 +29,7 @@ function DemoModePanel({ mode, compact }: { mode: ChannelMode; compact: boolean 
   return (
     <Stack gap="xs">
       <Text size="sm" fw={600}>
-        {mode.toUpperCase()}
+        {modeLabel(mode)}
       </Text>
       <ModePanel
         profile={profile}

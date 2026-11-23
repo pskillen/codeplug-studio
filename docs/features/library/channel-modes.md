@@ -27,7 +27,7 @@ Every **digital** mode’s settings answer the same four questions in the same o
 
 | Mode    | Access               | Call               | Listen        | You               |
 | ------- | -------------------- | ------------------ | ------------- | ----------------- |
-| DMR     | CC, slot, DMR mode   | Talk group/contact | RX group list | DMR ID, alias     |
+| DMR     | colour code, slot, DMR mode | Talk group/contact | RX group list | DMR ID, alias     |
 | NXDN    | RAN, rate            | Call               | RX group list | Unit ID           |
 | D-STAR  | RPT1, RPT2           | UR call            | repeater-wide | callsign on radio |
 | YSF     | DG-ID                | WIRES-X DTMF       | same DG-ID    | callsign on radio |

@@ -51,13 +51,22 @@ Digital modes use **`DigitalModeGroups`** — fixed order **Access / Call / List
 - **`compact`**: two-up rows (`TwoUp`) become a vertical stack below 48em.
 - Panels never render a mode header, pill, or primary-mode control — the parent page owns those.
 
+### `DigitalModeGroups` and `TwoUp`
+
+| Piece | Detail |
+| ----- | ------ |
+| `DigitalModeGroups` props | `access`, `call`, `listen`, `you` — each a **`GroupContent`** |
+| `GroupContent` | React node(s) wrapped in `.groupFields`, or `{ note: string }` for a muted one-line note; `{ note: '' }` renders heading only |
+| `TwoUp` | `{ compact, children }` — side-by-side fields at `Group` grow; stacks with `Stack gap={14}` when `compact` |
+
 ### Adding a mode
 
 1. Add the profile type in `src/core/models/library.ts` and `defaultModeProfile` in core.
 2. Create `<Mode>ModePanel.tsx` using `DigitalModeGroups` (or analogue layout).
 3. Register it in `MODE_PANELS`.
 4. Add tests and a row in the table above.
-5. No route edits if the parent already maps `modeProfiles` through `ModePanel`.
+5. When the summary and talk-sentence builders exist, add the mode's `case` to both.
+6. No route edits if the parent already maps `modeProfiles` through `ModePanel`.
 
 ## Related
 
