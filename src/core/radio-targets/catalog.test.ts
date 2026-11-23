@@ -223,11 +223,12 @@ describe('radio target catalog', () => {
       radioTargetFor('baofeng-dm32uv-mm9pdy')?.compatibleEgress.map((e) => e.formatId),
     ).toEqual(['radio-io']);
     expect(hasMxNChannelExpansion('baofeng-dm32uv-radiofoundry')).toBe(false);
-    expect(hasTalkGroupTimeslotClones('baofeng-dm32uv-radiofoundry')).toBe(false);
+    expect(hasTalkGroupTimeslotClones('baofeng-dm32uv-radiofoundry')).toBe(true);
     expect(traitsForRadioTarget('baofeng-dm32uv-radiofoundry')).toEqual([
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.TalkGroupTimeslotClones,
       BuildCapabilityTrait.SeparateDigitalIdList,
     ]);
     expect(radioTargetFor('baofeng-dm32uv-radiofoundry')?.label).toBe(

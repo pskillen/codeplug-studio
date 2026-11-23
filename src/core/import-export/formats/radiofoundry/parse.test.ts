@@ -23,6 +23,16 @@ import {
   ZONE_RECORD_SIZE_16,
   channelSlotAddress,
 } from './layout.ts';
+import {
+  newChannel,
+  newOwnDigitalId,
+  newRxGroupList,
+  newTalkGroup,
+} from '@core/domain/factories.ts';
+import type { Channel } from '@core/models/library.ts';
+import type { ChannelModeProfileDMR } from '@core/models/library.ts';
+import type { AssembledBuild } from '@core/services/assemble.ts';
+import { serialiseRadioFoundryCodeplug } from './serialise.ts';
 import { radioFoundryNameCheck } from './channelTags.ts';
 import { CHANNEL_TAG_KEY_FIRST as CHANNEL_TAG_KEY_FIRST_FOR_TEST } from './channelTags.ts';
 import { crc32 } from './settingsArea.ts';
@@ -434,6 +444,59 @@ describe('parseRadioFoundryCodeplug', () => {
       for (const leak of ['DEAD', 'dead', '222', '0xde', '0300', '0a02', '768']) {
         expect(joined).not.toContain(leak);
       }
+    });
+  });
+
+  it('folds timeslot clones back into one talk group on read', () => {
+    const tg = newTalkGroup('proj', 'X', 2355);
+    const rgl = {
+      ...newRxGroupList('proj', 'List'),
+      members: [{ ref: { kind: 'talkGroup' as const, id: tg.id }, timeSlotOverride: 1 as const }],
+    };
+    const dmr: ChannelModeProfileDMR = {
+      mode: 'dmr',
+      colourCode: 1,
+      timeslot: 2,
+      ownDigitalIdId: null,
+      contactRef: { kind: 'talkGroup', id: tg.id },
+      rxGroupListId: rgl.id,
+    };
+    const channel: Channel = {
+      ...newChannel('proj', 'Repeater'),
+      primaryMode: 'dmr',
+      rxFrequency: 430_125_000,
+      txFrequency: 430_125_000,
+      modeProfiles: [dmr],
+    };
+    const build: AssembledBuild = {
+      buildId: 'b',
+      formatId: 'radiofoundry',
+      profileId: 'radiofoundry-dm32uv',
+      buildName: 'RF',
+      channels: [{ entity: channel, wireName: channel.name }],
+      zones: [],
+      scanLists: [],
+      talkGroups: [{ entity: tg, wireName: tg.name }],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [{ entity: rgl, wireName: rgl.name }],
+      ownDigitalIds: [{ ...newOwnDigitalId('proj', 'dmr', 'MM9PDY', 2_351_234), isDefault: true }],
+    };
+    const { bytes } = serialiseRadioFoundryCodeplug(build);
+    const imported = parse(bytes);
+    expect(imported.talkGroups).toHaveLength(1);
+    expect(imported.talkGroups[0]?.name).toBe('X');
+    expect(imported.talkGroups[0]?.digitalId).toBe(2355);
+    const ch = imported.channels[0];
+    const profile = ch?.modeProfiles.find((p) => p.mode === 'dmr');
+    expect(profile?.mode).toBe('dmr');
+    if (profile?.mode !== 'dmr') throw new Error('expected DMR');
+    expect(profile.timeslot).toBe(2);
+    expect(profile.contactRef).toEqual({ kind: 'talkGroup', id: imported.talkGroups[0]!.id });
+    expect(imported.rxGroupLists[0]?.members[0]?.timeSlotOverride).toBe(1);
+    expect(imported.rxGroupLists[0]?.members[0]?.ref).toEqual({
+      kind: 'talkGroup',
+      id: imported.talkGroups[0]!.id,
     });
   });
 });

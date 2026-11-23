@@ -22,7 +22,7 @@ References on the wire are 1-based indexes assigned at export. Names are labels,
 
 - Channels: FM (mode byte 0) and DMR (mode byte 1) only. A channel with both keeps `primaryMode` and warns. Any other mode is dropped with a warning. Channels past the cap are dropped with a warning.
 - The default DMR radio ID, 8 BCD digits, big-endian, in general settings. Export fails with an error the operator can read when that ID is missing or outside 1–16776415. Other own IDs are not written into the radio-wide slot. A channel that points at a different own ID gets the per-channel override.
-- Talk groups and private contacts in one table. Call type is group, private, or all-call. Byte 0x17 is `0x01` (no timeslot override).
+- Talk groups and private contacts in one table. Call type is group, private, or all-call. With the `talkGroupTimeslotClones` trait, each demanded timeslot gets its own group contact (see [Timeslots](#timeslots)); private contacts and all-call keep byte `0x17` at `0x01` (no override).
 - RX lists. The length-table byte is the member count plus 1, or 0 when the list is unused. Extra members are truncated with a warning.
 - Zones. Member lists are 1-based channel numbers. The first 0 ends the list. Nested zone members are already flattened before this writer runs. Extra zones are dropped and extra members truncated, each with a warning.
 - Power: null writes 0 (the radio's own default). A percent from 1 to 100 is split into equal steps, one per power level the board drives, and each level is written as a byte on RadioFoundry's 10-step scale (1 is the lowest, 10 the highest). A board with nine or more levels, such as the DM-32UV as Studio models it, writes the byte as level + 1 (1 through 9). A board with fewer levels gets the scale spread over them: five levels write bytes 1, 3, 6, 8 and 10. The rule is RadioFoundry's `power_to_byte` in `core/codeplug/codeplug.c` (lines 664-687 at `454a5b76`). The DM-32UV watt value of each step is unmeasured.
@@ -52,7 +52,7 @@ The reader walks channel-bank bitmaps and the zone bitmap. References are the sa
 - An in-use zone becomes a zone. Byte 0x806F selects the record: `0x00`–`0x04` is 80 channels per zone, and `0xFF` is the 16-channel layout (68 records of 48 bytes, name then 16 channel numbers). Any other value is rejected. The exporter writes the 80-channel layout. A zone member that points at an empty channel number is left out, and the import lists a warning naming the zone and the number.
 - The settings area (`0xE000`) is read and reported, never imported: its state when it is not usable, each channel that is really a DMR Tier III, P25 or NXDN channel on the radio, and counts of stale tags and of other settings. No value from it is stored or shown. See [settings-area.md](settings-area.md).
 
-Contact byte 0x17 equal to `0x01` means no timeslot override. The library has no field for a contact timeslot override, so any other value is left unread. APRS records, DTMF contacts, and the DMR ID database are not imported. There is no scan-list record to read.
+Contact byte `0x17` equal to `0x01` (or `0xFF`) means no timeslot override and imports as today. Clone rows with TS1/TS2 overrides fold as described in [Timeslots](#timeslots). APRS records, DTMF contacts, and the DMR ID database are not imported. There is no scan-list record to read.
 
 ## What export leaves out
 
@@ -61,6 +61,18 @@ Left as `0xFF`, with no records written:
 - DMR ID database, LUCZ, boot text, VFOs, quick keys
 - DTMF / analog contacts
 - The settings area (`0xE000`–`0xEFFF`), which holds channel modes Studio cannot model yet. The radio keeps its own; export adds an info note. See [settings area](settings-area.md).
-- Scan lists. Each scan list produces a warning. Studio does not add a carrier channel, does not run repeater-times-talk-group expansion, and does not clone talk groups per timeslot.
+- Scan lists. Each scan list produces a warning. Studio does not add a carrier channel and does not run repeater-times-talk-group expansion.
+
+## Timeslots
+
+RadioFoundry has no per-member RX-list timeslot field. A DMR channel's TX contact otherwise lands on timeslot 1. Studio therefore applies the same **talk-group timeslot copies** workaround as OpenGD77 on every RadioFoundry export, cable write, and codeplug file when the build has the `talkGroupTimeslotClones` trait (all RadioFoundry targets).
+
+Export writes one contact per demanded slot per talk group, named `Name TS1` or `Name TS2`. The channel TX contact and each RX-list member index point at the copy for the channel timeslot or the member's `timeSlotOverride`. Unreferenced talk groups still get a single `… TS1` row. Private contacts are unchanged.
+
+Contact byte **`0x17`** (timeslot override): bit 0 set means no override (`0x01` or `0xFF`). Otherwise bit 1 is the timeslot minus 1 — TS1 is `0x00`, TS2 is `0x02`.
+
+Import **folds** clones that carry an override back into one library talk group: contacts are grouped by group call type and DMR ID; a trailing ` TS1` / ` TS2` on the wire name is stripped when present. A channel's TX contact and an RX-list member resolve to that talk group; RX-list members pick up `timeSlotOverride` from the clone slot. Contacts without an override behave as before (two override-less rows with the same ID stay two talk groups).
+
+Clones count toward the **1024** contact cap together with private contacts; the limit warning says so.
 
 Layout detail is RadioFoundry's own spec (`docs/spec/open-firmware-cps.md` and `docs/spec/tftp.md` section 3). This page does not restate that byte table.

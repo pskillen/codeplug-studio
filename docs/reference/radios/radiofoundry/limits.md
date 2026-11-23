@@ -5,17 +5,17 @@ Limits every radio running RadioFoundry shares: they are fixed by the firmware's
 **Code:** `src/core/radios/radiofoundry/limits.ts` (`RADIOFOUNDRY_LIMITS`).
 **Upstream:** `core/codeplug/codeplug.h` in RadioFoundry at `454a5b76`.
 
-| Constraint            | Value    | Notes                                            |
-| --------------------- | -------- | ------------------------------------------------ |
-| Channels              | **1024** |                                                  |
-| Zones                 | **68**   |                                                  |
-| Zone members          | **80**   |                                                  |
-| Contacts              | **1024** | Talk groups and private contacts share this bank |
-| RX group lists        | **76**   |                                                  |
-| RX group list members | **32**   |                                                  |
-| Names                 | **16**   | Channel, zone, contact, and talk-group names     |
-| Radio name            | **8**    |                                                  |
-| Radio DMR IDs         | **1**    | Maximum ID **16776415**                          |
+| Constraint            | Value    | Notes                                                           |
+| --------------------- | -------- | --------------------------------------------------------------- |
+| Channels              | **1024** |                                                                 |
+| Zones                 | **68**   |                                                                 |
+| Zone members          | **80**   |                                                                 |
+| Contacts              | **1024** | Talk-group timeslot copies and private contacts share this bank |
+| RX group lists        | **76**   |                                                                 |
+| RX group list members | **32**   |                                                                 |
+| Names                 | **16**   | Channel, zone, contact, and talk-group names                    |
+| Radio name            | **8**    |                                                                 |
+| Radio DMR IDs         | **1**    | Maximum ID **16776415**                                         |
 
 ### Satellite inventory
 

@@ -44,9 +44,11 @@ function dmrChannel(
 }
 
 describe('talkGroupTimeslotClones', () => {
-  it('gates on OpenGD77 profiles only', () => {
+  it('gates on OpenGD77 and RadioFoundry profiles', () => {
     expect(profileHasTalkGroupTimeslotClones('opengd77-1701')).toBe(true);
     expect(profileHasTalkGroupTimeslotClones('radio-io-opengd77-1701')).toBe(true);
+    expect(profileHasTalkGroupTimeslotClones('radiofoundry-dm32uv')).toBe(true);
+    expect(profileHasTalkGroupTimeslotClones('radio-io-dm32uv-radiofoundry')).toBe(true);
     expect(profileHasTalkGroupTimeslotClones('dm32-baofeng-dm32uv')).toBe(false);
     expect(profileHasTalkGroupTimeslotClones('anytone-at-d890uv')).toBe(false);
   });

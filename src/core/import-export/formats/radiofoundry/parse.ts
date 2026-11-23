@@ -148,6 +148,7 @@ interface ParsedContacts {
   talkGroups: TalkGroup[];
   digitalContacts: DigitalContact[];
   bySlot: Map<number, EntityRef>;
+  rxMemberSlotByContactIndex: Map<number, DMRTimeSlot>;
 }
 
 export function parseRadioFoundryCodeplug(
@@ -166,7 +167,12 @@ export function parseRadioFoundryCodeplug(
   const zoneLayout = readZoneLayout(image);
   const radio = readRadioIdentity(image, projectId);
   const contacts = readContacts(image, projectId);
-  const rxGroupLists = readRxLists(image, projectId, contacts.bySlot);
+  const rxGroupLists = readRxLists(
+    image,
+    projectId,
+    contacts.bySlot,
+    contacts.rxMemberSlotByContactIndex,
+  );
   const warnings: string[] = [];
   const channels = readChannels(
     image,
@@ -225,16 +231,31 @@ function readRadioIdentity(
   return { radioNumber: number, ownDigitalIds: [radio] };
 }
 
+function readContactTimeslotOverride(tsByte: number): DMRTimeSlot | null {
+  if (tsByte === 0x01 || tsByte === 0xff) return null;
+  if ((tsByte & 0x01) !== 0) return null;
+  return ((tsByte >> 1) & 1) === 1 ? 2 : 1;
+}
+
+function stripTimeslotCloneSuffix(name: string): string {
+  if (name.endsWith(' TS2')) return name.slice(0, -4);
+  if (name.endsWith(' TS1')) return name.slice(0, -4);
+  return name;
+}
+
 function readContacts(image: Uint8Array, projectId: string): ParsedContacts {
   const talkGroups: TalkGroup[] = [];
   const digitalContacts: DigitalContact[] = [];
   const bySlot = new Map<number, EntityRef>();
+  const rxMemberSlotByContactIndex = new Map<number, DMRTimeSlot>();
+  const foldedGroups = new Map<number, TalkGroup>();
   for (let index = 0; index < LIMITS.CONTACTS_MAX; index++) {
     const offset = CONTACT_BASE + index * CONTACT_RECORD_SIZE;
     const first = image[offset] ?? 0xff;
     const callType = image[offset + 0x14] ?? 0xff;
     if (first === 0xff || callType === 0xff) continue;
     const name = readAscii(image, offset, LIMITS.NAME_MAX);
+    const tsByte = image[offset + 0x17] ?? 0x01;
     const slot = index + 1;
     if (callType === CALL_ALL) {
       const row = newTalkGroup(projectId, name, ALL_CALL_DMR_ID, 'dmr');
@@ -245,22 +266,35 @@ function readContacts(image: Uint8Array, projectId: string): ParsedContacts {
     const digitalId = readBcd(image, offset + 0x10, 4);
     if (digitalId == null) continue;
     if (callType === CALL_GROUP) {
-      const row = newTalkGroup(projectId, name, digitalId, 'dmr');
-      talkGroups.push(row);
-      bySlot.set(slot, { kind: 'talkGroup', id: row.id });
+      const cloneSlot = readContactTimeslotOverride(tsByte);
+      if (cloneSlot != null) {
+        let row = foldedGroups.get(digitalId);
+        if (!row) {
+          row = newTalkGroup(projectId, stripTimeslotCloneSuffix(name), digitalId, 'dmr');
+          foldedGroups.set(digitalId, row);
+          talkGroups.push(row);
+        }
+        bySlot.set(slot, { kind: 'talkGroup', id: row.id });
+        rxMemberSlotByContactIndex.set(slot, cloneSlot);
+      } else {
+        const row = newTalkGroup(projectId, name, digitalId, 'dmr');
+        talkGroups.push(row);
+        bySlot.set(slot, { kind: 'talkGroup', id: row.id });
+      }
     } else if (callType === CALL_PRIVATE) {
       const row = newDigitalContact(projectId, name, digitalId, 'dmr');
       digitalContacts.push(row);
       bySlot.set(slot, { kind: 'digitalContact', id: row.id });
     }
   }
-  return { talkGroups, digitalContacts, bySlot };
+  return { talkGroups, digitalContacts, bySlot, rxMemberSlotByContactIndex };
 }
 
 function readRxLists(
   image: Uint8Array,
   projectId: string,
   contacts: Map<number, EntityRef>,
+  rxMemberSlotByContactIndex: Map<number, DMRTimeSlot>,
 ): { rows: RxGroupList[]; bySlot: Map<number, string> } {
   const rows: RxGroupList[] = [];
   const bySlot = new Map<number, string>();
@@ -275,7 +309,8 @@ function readRxLists(
       if (contactIndex === 0) break;
       const ref = contacts.get(contactIndex);
       if (!ref) continue;
-      members.push({ ref });
+      const timeSlotOverride = rxMemberSlotByContactIndex.get(contactIndex);
+      members.push(timeSlotOverride != null ? { ref, timeSlotOverride } : { ref });
     }
     const row = {
       ...newRxGroupList(projectId, readAscii(image, offset, LIMITS.NAME_MAX)),

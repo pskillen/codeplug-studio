@@ -55,6 +55,7 @@ function radioFoundryTraitProfile(
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.TalkGroupTimeslotClones,
       BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   };

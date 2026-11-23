@@ -18,7 +18,12 @@ import type {
   ChannelModeProfileDMR,
   OwnDigitalId,
 } from '@core/models/library.ts';
-import type { EntityRef } from '@core/models/libraryTypes.ts';
+import {
+  buildTalkGroupTimeslotCloneIndex,
+  profileHasTalkGroupTimeslotClones,
+  type TalkGroupTimeslotCloneIndex,
+} from '@core/import-export/channelExpansion/talkGroupTimeslotClones.ts';
+import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import {
   RADIOFOUNDRY_LIMITS,
   formatRadioFoundryBands,
@@ -143,14 +148,22 @@ export function serialiseRadioFoundryCodeplugWithProfile(
   const owned = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
 
   writeRadioIdentity(image, owned, radio, warnings);
-  const contacts = writeContacts(image, owned, assembled, warnings);
-  writeRxLists(image, owned, assembled, contacts, warnings);
+  const profileId = options?.profileId ?? assembled.profileId ?? codec.id;
+  const { indexByKey: contacts, cloneIndex } = writeContacts(
+    image,
+    owned,
+    assembled,
+    warnings,
+    profileId,
+  );
+  writeRxLists(image, owned, assembled, contacts, cloneIndex, warnings);
   const channels = writeChannels(
     image,
     owned,
     assembled,
     radio,
     contacts,
+    cloneIndex,
     warnings,
     options,
     codec,
@@ -203,6 +216,7 @@ function writeChannels(
   assembled: AssembledBuild,
   radio: OwnDigitalId,
   contacts: Map<string, number>,
+  cloneIndex: TalkGroupTimeslotCloneIndex | null,
   warnings: ExportWarning[],
   options: CpsExportOptions | undefined,
   codec: RadioFoundryRadioProfile,
@@ -227,7 +241,18 @@ function writeChannels(
   for (const item of pending) {
     const channel: KeptChannel = { ...item, number: numbers.size + 1 };
     numbers.set(channel.row.entity.id, channel.number);
-    writeChannelRecord(image, owned, channel, assembled, radio, contacts, warnings, options, codec);
+    writeChannelRecord(
+      image,
+      owned,
+      channel,
+      assembled,
+      radio,
+      contacts,
+      cloneIndex,
+      warnings,
+      options,
+      codec,
+    );
     markInUse(image, channel.number);
   }
   return numbers;
@@ -271,6 +296,7 @@ function writeChannelRecord(
   assembled: AssembledBuild,
   radio: OwnDigitalId,
   contacts: Map<string, number>,
+  cloneIndex: TalkGroupTimeslotCloneIndex | null,
   warnings: ExportWarning[],
   options: CpsExportOptions | undefined,
   codec: RadioFoundryRadioProfile,
@@ -318,7 +344,18 @@ function writeChannelRecord(
   if (profile?.mode === 'fm') {
     writeAnalogChannel(record, profile, label, warnings);
   } else if (profile?.mode === 'dmr') {
-    writeDmrChannel(record, profile, label, entity, assembled, radio, contacts, warnings, options);
+    writeDmrChannel(
+      record,
+      profile,
+      label,
+      entity,
+      assembled,
+      radio,
+      contacts,
+      cloneIndex,
+      warnings,
+      options,
+    );
   }
   writeSharedChannelFields(record, channel, options);
 }
@@ -379,6 +416,7 @@ function writeDmrChannel(
   assembled: AssembledBuild,
   radio: OwnDigitalId,
   contacts: Map<string, number>,
+  cloneIndex: TalkGroupTimeslotCloneIndex | null,
   warnings: ExportWarning[],
   options: CpsExportOptions | undefined,
 ): void {
@@ -396,8 +434,14 @@ function writeDmrChannel(
   if (resolveEffectiveSendTalkerAlias(profile, options?.channelBehaviourContext) === 'on') {
     record[0x30] |= profile.timeslot === 2 ? 0x08 : 0x02;
   }
+  const txSlot =
+    profile.contactRef?.kind === 'talkGroup' && cloneIndex
+      ? cloneIndex.resolveTxSlot(profile.timeslot)
+      : undefined;
   const contact =
-    profile.contactRef == null ? 0 : (contacts.get(contactKey(profile.contactRef)) ?? 0);
+    profile.contactRef == null
+      ? 0
+      : (contacts.get(resolveContactIndexKey(profile.contactRef, cloneIndex, txSlot)) ?? 0);
   record[0x2e] = contact & 0xff;
   record[0x2f] = (contact >> 8) & 0xff;
   const rxList = rxListIndex(assembled, profile.rxGroupListId);
@@ -545,6 +589,17 @@ interface WireContact {
   name: string;
   digitalId: number;
   callType: number;
+  tsByte: number;
+}
+
+interface CollectedContacts {
+  indexByKey: Map<string, number>;
+  cloneIndex: TalkGroupTimeslotCloneIndex | null;
+}
+
+function formatRadioFoundryContactTsByte(slot?: DMRTimeSlot): number {
+  if (slot == null) return 0x01;
+  return (slot - 1) << 1;
 }
 
 function writeContacts(
@@ -552,19 +607,23 @@ function writeContacts(
   owned: Uint8Array,
   assembled: AssembledBuild,
   warnings: ExportWarning[],
-): Map<string, number> {
+  profileId: string,
+): CollectedContacts {
   // A scan of this table still sees a slot whose first byte is not 0xFF.
   // Own every slot. Unused ones are the empty record the firmware writes
   // when it deletes a contact: 0xFF throughout.
   const tableBytes = LIMITS.CONTACTS_MAX * CONTACT_RECORD_SIZE;
   image.fill(0xff, CONTACT_BASE, CONTACT_BASE + tableBytes);
   markOwned(owned, CONTACT_BASE, tableBytes);
-  const contacts = collectContacts(assembled, warnings);
+  const { contacts, cloneIndex } = collectContacts(assembled, warnings, profileId);
   if (contacts.length > LIMITS.CONTACTS_MAX) {
     const dropped = contacts.length - LIMITS.CONTACTS_MAX;
+    const limitNote = cloneIndex
+      ? 'talk-group timeslot copies and private contacts share this table.'
+      : 'Talk groups and private contacts share this table.';
     pushGeneralWarning(
       warnings,
-      `Dropped ${dropped} contact(s) past the ${LIMITS.CONTACTS_MAX} contact limit. Talk groups and private contacts share this table.`,
+      `Dropped ${dropped} contact(s) past the ${LIMITS.CONTACTS_MAX} contact limit. ${limitNote}`,
     );
     contacts.length = LIMITS.CONTACTS_MAX;
   }
@@ -581,36 +640,73 @@ function writeContacts(
     record[0x14] = contact.callType;
     record[0x15] = 0;
     record[0x16] = 0;
-    record[0x17] = 0x01;
+    record[0x17] = contact.tsByte;
   });
-  return indexByKey;
+  return { indexByKey, cloneIndex };
 }
 
-function collectContacts(assembled: AssembledBuild, warnings: ExportWarning[]): WireContact[] {
+function collectContacts(
+  assembled: AssembledBuild,
+  warnings: ExportWarning[],
+  profileId: string,
+): { contacts: WireContact[]; cloneIndex: TalkGroupTimeslotCloneIndex | null } {
+  const useClones = profileHasTalkGroupTimeslotClones(profileId);
+  let cloneIndex: TalkGroupTimeslotCloneIndex | null = null;
   const contacts: WireContact[] = [];
-  for (const row of assembled.talkGroups) {
-    if (row.entity.mode !== 'dmr') {
-      pushGeneralWarning(
-        warnings,
-        `Talk group "${row.wireName}" was dropped because it is not DMR.`,
-      );
-      continue;
-    }
-    const callType = row.entity.digitalId === ALL_CALL_DMR_ID ? 2 : 0;
-    if (!fitsContactId(row.entity.digitalId)) {
-      pushGeneralWarning(
-        warnings,
-        `Talk group "${row.wireName}" ID ${row.entity.digitalId} was dropped.`,
-      );
-      continue;
-    }
-    contacts.push({
-      key: contactKey({ kind: 'talkGroup', id: row.entity.id }),
-      name: row.wireName,
-      digitalId: row.entity.digitalId,
-      callType,
+
+  if (useClones) {
+    const baseNames = new Map(assembled.talkGroups.map((row) => [row.entity.id, row.wireName]));
+    const reserved = new Set<string>();
+    for (const row of assembled.talkGroups) reserved.add(row.wireName);
+    for (const row of assembled.digitalContacts) reserved.add(row.wireName);
+    cloneIndex = buildTalkGroupTimeslotCloneIndex(assembled, baseNames, {
+      maxNameLength: LIMITS.NAME_MAX,
+      reserved,
     });
+    for (const clone of cloneIndex.clones) {
+      const callType = clone.digitalId === ALL_CALL_DMR_ID ? 2 : 0;
+      if (!fitsContactId(clone.digitalId)) {
+        pushGeneralWarning(
+          warnings,
+          `Talk group "${clone.wireName}" ID ${clone.digitalId} was dropped.`,
+        );
+        continue;
+      }
+      contacts.push({
+        key: talkGroupCloneContactKey(clone.talkGroupId, clone.slot),
+        name: clone.wireName,
+        digitalId: clone.digitalId,
+        callType,
+        tsByte: formatRadioFoundryContactTsByte(clone.slot),
+      });
+    }
+  } else {
+    for (const row of assembled.talkGroups) {
+      if (row.entity.mode !== 'dmr') {
+        pushGeneralWarning(
+          warnings,
+          `Talk group "${row.wireName}" was dropped because it is not DMR.`,
+        );
+        continue;
+      }
+      const callType = row.entity.digitalId === ALL_CALL_DMR_ID ? 2 : 0;
+      if (!fitsContactId(row.entity.digitalId)) {
+        pushGeneralWarning(
+          warnings,
+          `Talk group "${row.wireName}" ID ${row.entity.digitalId} was dropped.`,
+        );
+        continue;
+      }
+      contacts.push({
+        key: contactKey({ kind: 'talkGroup', id: row.entity.id }),
+        name: row.wireName,
+        digitalId: row.entity.digitalId,
+        callType,
+        tsByte: 0x01,
+      });
+    }
   }
+
   for (const row of assembled.digitalContacts) {
     if (row.entity.mode !== 'dmr') {
       pushGeneralWarning(warnings, `Contact "${row.wireName}" was dropped because it is not DMR.`);
@@ -629,9 +725,10 @@ function collectContacts(assembled: AssembledBuild, warnings: ExportWarning[]): 
       name: row.wireName,
       digitalId: row.entity.digitalId,
       callType,
+      tsByte: 0x01,
     });
   }
-  return contacts;
+  return { contacts, cloneIndex };
 }
 
 function fitsContactId(id: number): boolean {
@@ -643,6 +740,7 @@ function writeRxLists(
   owned: Uint8Array,
   assembled: AssembledBuild,
   contactIndexByKey: Map<string, number>,
+  cloneIndex: TalkGroupTimeslotCloneIndex | null,
   warnings: ExportWarning[],
 ): void {
   image.fill(0, RX_LIST_LENGTH, RX_LIST_LENGTH + RX_LIST_LENGTH_SIZE);
@@ -663,8 +761,13 @@ function writeRxLists(
     let skipped = 0;
     let sawTimeslot = false;
     for (const member of row.entity.members) {
-      if (member.timeSlotOverride != null) sawTimeslot = true;
-      const contact = contactIndexByKey.get(contactKey(member.ref));
+      if (!cloneIndex && member.timeSlotOverride != null) sawTimeslot = true;
+      const rxSlot =
+        member.ref.kind === 'talkGroup' && cloneIndex
+          ? cloneIndex.resolveRxMemberSlot(member.timeSlotOverride)
+          : undefined;
+      const key = resolveContactIndexKey(member.ref, cloneIndex, rxSlot);
+      const contact = contactIndexByKey.get(key);
       if (contact == null) {
         skipped += 1;
         continue;
@@ -790,6 +893,21 @@ function rxListIndex(assembled: AssembledBuild, id: string | null): number {
 
 function contactKey(ref: EntityRef): string {
   return `${ref.kind}:${ref.id}`;
+}
+
+function talkGroupCloneContactKey(talkGroupId: string, slot: DMRTimeSlot): string {
+  return `talkGroup:${talkGroupId}:${slot}`;
+}
+
+function resolveContactIndexKey(
+  ref: EntityRef,
+  cloneIndex: TalkGroupTimeslotCloneIndex | null,
+  slot: DMRTimeSlot | undefined,
+): string {
+  if (ref.kind === 'talkGroup' && cloneIndex && slot != null) {
+    return talkGroupCloneContactKey(ref.id, slot);
+  }
+  return contactKey(ref);
 }
 
 function zeroChannelBitmaps(image: Uint8Array, owned: Uint8Array): void {
