@@ -23,6 +23,7 @@ What differs between boards lives in one module per board (`RadioFoundryBoardLim
 
 - Baofeng DM-32UV: [limits.md](../baofeng/dm-32uv-radiofoundry/limits.md)
 - Baofeng DM-1701: [limits.md](../baofeng/dm-1701-radiofoundry/limits.md)
+- Retevis RT84: [limits.md](../retevis/rt84-radiofoundry/limits.md)
 
 Firmware version and board names: [firmware.md](firmware.md). What a cable write sends and refuses: [cable-write.md](cable-write.md).
 
