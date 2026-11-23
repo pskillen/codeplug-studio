@@ -17,7 +17,12 @@ import {
 } from '@core/import-export/formats/radiofoundry/layout.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { crc32Ieee } from '../../kit/checksums.ts';
-import { RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
+import {
+  RadioInterlockError,
+  RadioProtocolError,
+  RadioTimeoutError,
+  RadioWrongIdentError,
+} from '../../kit/errors.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { expectEventsFollowPlan, stageRecorder } from '../../plannedStagesTestKit.ts';
 import type { BytePipe } from '../../types.ts';
@@ -95,6 +100,10 @@ class ScriptedPipe implements BytePipe {
     stream: number[];
   } | null = null;
   infoStatus = 0;
+  /** INFO byte 1 (flags); bit 1 set = storage writable. */
+  infoFlags = 0x02;
+  beginRefusalReason: number | null = null;
+  endRefusalReason: number | null = null;
   silent = false;
   /** null = no VERSION reply at all. */
   versionText: string | null = DM32UV_VERSION_TEXT;
@@ -139,7 +148,9 @@ class ScriptedPipe implements BytePipe {
     let status = op === OP_INFO ? this.infoStatus : 0;
     let body: Uint8Array<ArrayBufferLike> = new Uint8Array(0);
     if (status === 0) {
-      if (op === OP_INFO) body = infoBody();
+      if (op === OP_INFO) body = infoBody(this.infoFlags);
+      else if (op === OP_BEGIN && this.beginRefusalReason != null) status = 7;
+      else if (op === OP_END && this.endRefusalReason != null) status = 7;
       else if (op === OP_SUMS) body = this.sums(args);
       else if (op === OP_READ) body = this.read(args);
       else if (op === OP_BEGIN) {
@@ -151,10 +162,18 @@ class ScriptedPipe implements BytePipe {
       else if (op === OP_COMMIT) body = new Uint8Array(0);
       else status = 2;
     }
+    const refuseReason =
+      status === 7
+        ? op === OP_BEGIN
+          ? this.beginRefusalReason
+          : op === OP_END
+            ? this.endRefusalReason
+            : 7
+        : null;
     const payload = new Uint8Array(1 + (status === 0 ? body.length : status === 7 ? 1 : 0));
     payload[0] = status;
     if (status === 0) payload.set(body, 1);
-    if (status === 7) payload[1] = 7;
+    if (status === 7 && refuseReason != null) payload[1] = refuseReason;
     this.enqueue(encodeDebugFrame(REPLY, request.seq, payload));
   }
 
@@ -254,10 +273,10 @@ class ScriptedPipe implements BytePipe {
   }
 }
 
-function infoBody(): Uint8Array {
+function infoBody(flags = 0x02): Uint8Array {
   const body = new Uint8Array(26);
   body[0] = 1;
-  body[1] = 0x02;
+  body[1] = flags;
   body[2] = 0x00;
   body[3] = 0x10;
   body[4] = 16;
@@ -505,6 +524,35 @@ async function uploadSource(
   await proto.upload(memoryMapFromBytes(source.bytes), { onProgress: rec.onProgress });
   return rec;
 }
+
+describe('RadioFoundry codeplug refusals', () => {
+  it('names a BEGIN refusal with reason 2 and attaches storage debug detail', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.beginRefusalReason = 2;
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Bob'), {
+      includeLibraryContacts: true,
+    });
+    proto.armWriteSource(source);
+    await proto.download({});
+    const err = await proto.upload(memoryMapFromBytes(source.bytes), {}).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioInterlockError);
+    expect((err as Error).message).toContain('reason 2, STORAGE');
+    expect((err as RadioInterlockError).debugText).toContain('storage writable');
+  });
+
+  it('names an END refusal with reason 7 as a protocol error', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.endRefusalReason = 7;
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Carol'), {
+      includeLibraryContacts: true,
+    });
+    const err = await uploadSource(pipe, source).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioProtocolError);
+    expect((err as Error).message).toContain('reason 7, CRC');
+  });
+});
 
 describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
   it('writes a BLOCK covering the contact table when the radio slot is empty', async () => {
