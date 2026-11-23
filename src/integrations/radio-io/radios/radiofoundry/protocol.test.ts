@@ -1076,7 +1076,7 @@ describe('Baofeng DM-1701 (RadioFoundry) cable board', () => {
     ]);
     expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.group).toBe('Baofeng');
     expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.baudRate).toBe(115200);
-    expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.prodWriteDisabled).toBe(true);
+    expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.prodWriteDisabled).toBeUndefined();
     expect(isRadioFoundryCableRadio(DM1701_RADIOFOUNDRY_DESCRIPTOR.protocolFactory())).toBe(true);
   });
 
