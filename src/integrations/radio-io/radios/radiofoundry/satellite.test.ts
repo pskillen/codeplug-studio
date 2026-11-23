@@ -14,7 +14,6 @@ import {
   radioFoundryTleEpochSeconds,
   SAT_PROFILE_CHUNK_MAX,
   serialiseSatelliteRecords,
-  type RadioFoundrySatelliteRecord,
 } from './satellite.ts';
 
 function tleLine1(catalog: number, epochField: string): string {
