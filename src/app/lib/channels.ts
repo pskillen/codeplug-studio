@@ -1,11 +1,18 @@
 import type { Channel } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { isSimplex as isSimplexCore } from '@core/domain/channelDuplex.ts';
 import { channelHasGeolocation } from '@core/domain/mapProjection.ts';
 import { haversineDistanceM } from '@core/domain/geoDistance.ts';
 
 /** Kilometre marks for the channel-list distance filter slider. */
 export const DISTANCE_FILTER_MARKS_KM = [5, 10, 25, 50, 100, 200] as const;
+
+/** How a selection checkbox names a channel: callsign then name; "channel" when it has neither, never the UUID. */
+export function channelSelectionName(channel: Channel): string {
+  const hasIdentity = channel.callsign.trim() !== '' || channel.name.trim() !== '';
+  return hasIdentity ? channelDisplayLabel(channel) : 'channel';
+}
 
 export function channelModesForFilter(channel: Channel): ChannelMode[] {
   if (channel.modeProfiles.length > 0) {

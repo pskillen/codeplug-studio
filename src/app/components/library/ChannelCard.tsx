@@ -4,6 +4,7 @@ import { Checkbox } from '../v2/index.ts';
 import type { DataTableColumn } from '../v2/DataTable.tsx';
 import ChannelListDeleteAction from './ChannelListDeleteAction.tsx';
 import classes from './ChannelCard.module.css';
+import { channelSelectionName } from '../../lib/channels.ts';
 import { channelViewPath } from '../../lib/channelPaths.ts';
 
 export interface ChannelCardProps {
@@ -33,7 +34,7 @@ export default function ChannelCard({
             <Checkbox
               checked={selected ?? false}
               onCheckedChange={onSelectedChange}
-              aria-label={`Select ${channel.name || 'channel'}`}
+              aria-label={`Select ${channelSelectionName(channel)}`}
               onClick={(event) => event.stopPropagation()}
             />
           ) : null}
