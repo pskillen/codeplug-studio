@@ -32,10 +32,12 @@ Existing builds keep their `radioTargetId`; grouping is derived, so there is no 
 
 ## Export for radio list (`/builds`)
 
-- **Group by Radio** (default) uses `BuildsByRadio`: collapsible manufacturer, model card, firmware sub-header, build rows (name, export routes, updated, Open). **Collapse all / Expand all** is provided. **List** keeps the flat table.
-- Models with one exportable firmware show **+ New** in the header; multi-firmware models show **+ Another <firmware> build** under each firmware group. Both link to `/builds/new?target=...`.
+- Manufacturer heading (with build count), then one **card per radio model** (`BuildsByRadio`): model label, DMR / FM pill, build count. Models are alphabetical; builds inside a card run in the model's firmware order (stock first), then by name.
+- Each build is **one link row** that opens it: name, relative updated time (full date on hover), firmware pill, transfer paths. There is no Open button.
+- One **New build** button in the page header goes to `/builds/new`. There are no per-radio "+ New" or "+ Another <firmware> build" links.
+- **Search** (instant, filter-only): every word must match, case-insensitively, somewhere in build name, manufacturer, model, firmware label or transfer paths. Matches are highlighted and counted; no match shows an empty state. There is no Group by switch or flat list view.
 - Not shown: "last written" per build — the model has no such field.
-- Mobile: rows keep name, routes and Open; **+ New build** becomes a floating button above the tab bar; New build's footer is fixed above the tab bar.
+- Mobile: one column; each row shows name and time, then firmware and paths; **New build** becomes a floating button above the tab bar; New build's footer is fixed above the tab bar.
 
 ## Support matrix (landing page)
 

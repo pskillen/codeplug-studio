@@ -52,7 +52,7 @@ Projection settings (scan inclusion, m×n, naming fill-ins, …) stay visible ac
 
 | Route                           | Purpose                                                                                                                                  |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `/builds`                       | List builds — **Group by** Radio (manufacturer → model → firmware → builds) or List                                                      |
+| `/builds`                       | List builds — radio cards per manufacturer, click a row to open, one New build button, search                                            |
 | `/builds/new`                   | Create build — **choose model + firmware** (`?target=<radioTargetId>` preselects) → name (seeds all compatible egress children)          |
 | `/builds/:id`                   | Redirect → export                                                                                                                        |
 | `/builds/:id/export`            | CPS export panel (default / front door)                                                                                                  |
