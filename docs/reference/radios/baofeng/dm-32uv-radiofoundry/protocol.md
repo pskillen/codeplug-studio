@@ -59,10 +59,10 @@ Not sent, and why:
 
 Studio does not speak the stock DM-32 programmer, and it does not speak the OpenGD77 `R` / `X` / `W` codec. If the radio does not answer the fast command, the write stops.
 
-**Code:** `src/integrations/radio-io/radios/dm32uv-radiofoundry/`.
+**Code:** `src/integrations/radio-io/radios/radiofoundry/`.
 
 Hardware caps: [limits.md](limits.md).
 
 ## Link framing
 
-Same K1 jack, UART0 and USB-serial cable as stock; see [stock transport and framing](../dm-32uv/protocol.md#transport-and-framing). Debug-link frames are `A5 5A cmd seq len payload CRC16`, with at most 64 payload bytes. Once `A5 5A` is seen the radio waits up to **200 ms** for the next byte, then drops the frame and resynchronises on the next `A5 5A`. A bad CRC gets an error frame. Studio checks CRC16, sequence and status on every reply, so a write split by the host is not a risk here (the gap is far below 200 ms). This comes from the RadioFoundry spec; the radio's receive code was not read.
+Same K1 jack, UART0 and USB-serial cable as stock; see [stock transport and framing](../dm-32uv/protocol.md#transport-and-framing). Debug-link frames are `A5 5A cmd seq len payload CRC16`, with at most 64 payload bytes, encoded by the shared codec `src/integrations/radio-io/kit/codecs/radioFoundryDebugLink.ts`. Once `A5 5A` is seen the radio waits up to **200 ms** for the next byte, then drops the frame and resynchronises on the next `A5 5A`. A bad CRC gets an error frame. Studio checks CRC16, sequence and status on every reply, so a write split by the host is not a risk here (the gap is far below 200 ms). This comes from the RadioFoundry spec; the radio's receive code was not read.
