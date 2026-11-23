@@ -27,7 +27,7 @@ describe('entityRefDisplayName', () => {
   });
 
   it('still returns talk group name for non-channel refs', () => {
-    const tg = { ...newTalkGroup('p1', 'Region'), id: 'tg-1' };
+    const tg = { ...newTalkGroup('p1', 'Region', 1), id: 'tg-1' };
     const library = { ...emptyLibrary(), talkGroups: [tg] };
     expect(entityRefDisplayName({ kind: 'talkGroup', id: 'tg-1' }, library)).toBe('Region');
   });
