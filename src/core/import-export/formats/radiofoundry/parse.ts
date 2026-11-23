@@ -58,6 +58,7 @@ import {
   radioFoundryChannelKindLabel,
   readChannelTagHeaders,
 } from './channelTags.ts';
+import { radioFoundryByteToLevel } from './power.ts';
 import { readRadioFoundrySettingsArea, settingsAreaSector } from './settingsArea.ts';
 
 const LIMITS = RADIOFOUNDRY_LIMITS;
@@ -482,15 +483,16 @@ function decodeCoordinate(bits: number): number {
 }
 
 /**
- * Byte 0 is the radio default. Otherwise the byte is the exporter's equal-step
- * index plus one. Store the lowest percent that step maps back to, and 100 for the top step.
+ * Byte 0 is the radio default. Otherwise the byte selects a level by the power byte rule (power.ts).
+ * Store the lowest percent whose level is that one, and 100 for the top level.
  */
 function powerPercent(byte: number, powerLevels: number): number | null {
-  if (byte <= 0) return null;
-  if (byte >= powerLevels) return 100;
+  const level = radioFoundryByteToLevel(byte, powerLevels);
+  if (level == null) return null;
+  if (level >= powerLevels - 1) return 100;
   for (let percent = 1; percent <= 100; percent++) {
     const index = Math.min(powerLevels - 1, Math.floor(((percent - 1) * powerLevels) / 100));
-    if (index + 1 === byte) return percent;
+    if (index === level) return percent;
   }
   return null;
 }
