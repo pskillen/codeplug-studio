@@ -6,7 +6,7 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 
 **Constitution:** [DESIGN.md](../../../DESIGN.md) — intentional browser radio I/O with attribution to CHIRP / NeonPlug lineages.
 
-**Prod gate:** a descriptor or compatible profile with `prodWriteDisabled` hides Write (and Restore) on the prod site; [developer mode](../developer-mode/README.md) (five taps on the footer version) shows it on that device. `resolveRadioWriteGate` asks the one prod gate; no Write interlock reads developer mode. No profile carries the flag today.
+**Prod gate:** a descriptor or compatible profile with `prodWriteDisabled` hides Write (and Restore) on the prod site; [developer mode](../developer-mode/README.md) (five taps on the footer version) shows it on that device. `resolveRadioWriteGate` asks the one prod gate; no Write interlock reads developer mode. The RT84, MD-9600 and RT90 RadioFoundry boards carry it until each has been bench-written.
 
 **Layer rule:** library and domain stay vendor-neutral. Binary protocols, baud/handshake, and memory maps live in `src/integrations/radio-io/` and tier-3 `docs/reference/<family>/` — never in core models or library CRUD.
 
