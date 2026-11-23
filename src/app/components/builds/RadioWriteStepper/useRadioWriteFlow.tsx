@@ -24,7 +24,7 @@ import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
-import { RadioIoError } from '@integrations/radio-io/kit/errors.ts';
+import { RadioInterlockError, RadioIoError } from '@integrations/radio-io/kit/errors.ts';
 import { reviewNeedsReconnect } from '@integrations/radio-io/programHold.ts';
 import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
 import {
@@ -234,6 +234,13 @@ const EMPTY_FACTS: WrittenFacts = {
 /** Copyable protocol trace a radio module attached to its error (`RadioIoError.debugText`). */
 export function errorDebugText(err: unknown): string | null {
   return err instanceof RadioIoError && err.debugText ? err.debugText : null;
+}
+
+function logRadioWriteError(message: string, err: unknown): void {
+  const debugText = errorDebugText(err);
+  if (debugText) {
+    console.error('[radio-write]', message, debugText);
+  }
 }
 
 function errorMessage(err: unknown): string {
@@ -1124,10 +1131,16 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     // A D890 Write interrupted after whole units were sent leaves them pending on the radio (#1406).
     const notice = interruptedWriteNotice(egress.profileId, err, failedSerial);
     setPendingBlock(notice?.block ?? null);
-    setError(notice?.text ? `${errorMessage(err)} ${notice.text}` : errorMessage(err));
+    const message = notice?.text ? `${errorMessage(err)} ${notice.text}` : errorMessage(err);
+    setError(message);
     setErrorDebug(errorDebugText(err));
+    logRadioWriteError(message, err);
     // Before the first frame, a failure is recoverable by reading again.
-    setCanReconnect(!transmitStartedRef.current && phaseRef.current !== 'keps');
+    setCanReconnect(
+      !transmitStartedRef.current &&
+        phaseRef.current !== 'keps' &&
+        !(err instanceof RadioInterlockError),
+    );
   }
 
   async function connectAndRead(): Promise<void> {
@@ -1208,8 +1221,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       await releaseSession().catch(() => undefined);
       setBusyNotify(false);
       setCheck('available');
-      setError(errorMessage(err));
+      const message = errorMessage(err);
+      setError(message);
       setErrorDebug(errorDebugText(err));
+      logRadioWriteError(message, err);
     }
   }
 
@@ -1233,8 +1248,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       await releaseSession().catch(() => undefined);
       setBusyNotify(false);
       setKepsAfterRestart('pending');
-      setError(errorMessage(err));
+      const message = errorMessage(err);
+      setError(message);
       setErrorDebug(errorDebugText(err));
+      logRadioWriteError(message, err);
     }
   }
 
