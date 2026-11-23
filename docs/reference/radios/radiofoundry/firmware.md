@@ -32,6 +32,7 @@ Connect compares `board=` with the names the chosen board lists, ignoring case a
 | Board   | `board=` values            |
 | ------- | -------------------------- |
 | DM-32UV | `DM-32UV`, `DM-32`, `dm32` |
+| DM-1701 | `DM-1701`, `dm1701` |
 
 ## When VERSION is missing or odd
 

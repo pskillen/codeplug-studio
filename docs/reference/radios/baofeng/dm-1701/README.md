@@ -54,6 +54,8 @@ Read-only debug capture archive (FirmwareInfo, FLASH spans, User Database): [Ope
 | [G4EML CSV Export and Import Features (PDF)](https://www.opengd77.com/downloads/PC_CPS/Latest/OpenGD77_CPS_CSV%20Features.pdf) | Caps, TOT, colour code                                  |
 | Shipped adapter [`columns.ts`](../../../../src/core/import-export/formats/opengd77/columns.ts)                                 | `zoneMemberHeaders(80)`, `rxGroupListMemberHeaders(32)` |
 
+RadioFoundry firmware on the same hardware: [DM-1701 (RadioFoundry)](../dm-1701-radiofoundry/limits.md).
+
 ## Related
 
 - Epic [#594](https://github.com/pskillen/codeplug-studio/issues/594) · extract [#621](https://github.com/pskillen/codeplug-studio/issues/621)

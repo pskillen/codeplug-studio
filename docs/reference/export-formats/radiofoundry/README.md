@@ -5,7 +5,7 @@ One file, `codeplug.bin`, for a radio running RadioFoundry. This is the open-fir
 |           |                                                                                                                                                                   |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Format id | `radiofoundry`                                                                                                                                                    |
-| Profile   | `radiofoundry-dm32uv` (the cable write's `radio-io-dm32uv-radiofoundry` resolves to the same profile)                                                             |
+| Profile   | `radiofoundry-dm32uv` (default), `radiofoundry-dm1701` / `radio-io-dm1701-radiofoundry`, and sibling ids per board — each radio-io profile resolves to its codec profile |
 | Delivery  | One CPS file (`cps-file`). Cable write is a separate egress on the same radio target: [programming cable](../../radios/baofeng/dm-32uv-radiofoundry/protocol.md). |
 | Export    | Shipped                                                                                                                                                           |
 | Import    | Shipped. The same `codeplug.bin` parses into library entities.                                                                                                    |
@@ -14,7 +14,7 @@ One file, `codeplug.bin`, for a radio running RadioFoundry. This is the open-fir
 
 One codec serves every RadioFoundry radio. The counts below are firmware-wide and the same for each board; what differs per board (power steps, RF bands) comes from the board module of the radio profile the build or import names, so parse and export follow the profile rather than the DM-32UV. A build's profile id, or the cable write's, picks the profile; an unknown id is refused.
 
-Hardware caps, including the shared contact bank and the nine power steps, are the [firmware-wide limits](../../radios/radiofoundry/limits.md) and the [DM-32UV (RadioFoundry) board limits](../../radios/baofeng/dm-32uv-radiofoundry/limits.md). Names on the wire are 16 ASCII characters, `0xFF` padded, with no NUL. The radio name is 8 characters, taken from the default DMR radio ID's name. An empty radio name is `0xFF` bytes. A 17th character, or a radio name past 8, is truncated and warned. Non-ASCII characters are replaced or dropped, with a warning.
+Hardware caps are the [firmware-wide limits](../../radios/radiofoundry/limits.md) plus the board module for the build's profile (for example [DM-32UV (RadioFoundry)](../../radios/baofeng/dm-32uv-radiofoundry/limits.md), [DM-1701 (RadioFoundry)](../../radios/baofeng/dm-1701-radiofoundry/limits.md)). Names on the wire are 16 ASCII characters, `0xFF` padded, with no NUL. The radio name is 8 characters, taken from the default DMR radio ID's name. An empty radio name is `0xFF` bytes. A 17th character, or a radio name past 8, is truncated and warned. Non-ASCII characters are replaced or dropped, with a warning.
 
 References on the wire are 1-based indexes assigned at export. Names are labels, not keys.
 
