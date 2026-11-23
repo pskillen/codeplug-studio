@@ -53,10 +53,11 @@ import {
 import {
   DM1701_RADIOFOUNDRY_CABLE_BOARD,
   DM32UV_RADIOFOUNDRY_CABLE_BOARD,
+  RT84_RADIOFOUNDRY_CABLE_BOARD,
   radioFoundryCableBoardForProfileId,
   type RadioFoundryCableBoard,
 } from './board.ts';
-import { DM1701_RADIOFOUNDRY_DESCRIPTOR } from './descriptor.ts';
+import { DM1701_RADIOFOUNDRY_DESCRIPTOR, RT84_RADIOFOUNDRY_DESCRIPTOR } from './descriptor.ts';
 import { listDescriptorsForProfile } from '../../registry.ts';
 import {
   assertImageBlock,
@@ -1003,6 +1004,56 @@ describe('Baofeng DM-1701 (RadioFoundry) cable board', () => {
     expect(
       isRadioFoundryCableRadio(DM1701_RADIOFOUNDRY_DESCRIPTOR.protocolFactory()),
     ).toBe(true);
+  });
+
+  it('plans area-2 blocks only below the image end', () => {
+    const area2Bytes = 0xe0_0000 - 0xd_8000;
+    expect(dmrIdDatabaseArea2Blocks(area2Bytes, board.limits.IMAGE_END).at(-1)).toBe(0xdff000);
+    expect(() => dmrIdDatabaseArea2Blocks(area2Bytes + 1, 0xe0_0000)).toThrow();
+  });
+});
+
+describe('Retevis RT84 (RadioFoundry) cable board', () => {
+  const board = RT84_RADIOFOUNDRY_CABLE_BOARD;
+
+  it('connects with each of its VERSION board names', async () => {
+    for (const name of board.versionBoardNames) {
+      const proto = new RadioFoundryCableProtocol(board);
+      await proto.connect(
+        new InfoOnlyPipe(
+          specExampleInfo(),
+          `proto=1\ngit=454a5b76\nboard=${name}\n`,
+        ),
+      );
+      expect(proto.firmwareVersion()?.board).toBe(name);
+    }
+  });
+
+  it('refuses the DM-32UV by base', async () => {
+    const error = await new RadioFoundryCableProtocol(board)
+      .connect(new InfoOnlyPipe(infoBody()))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('refuses a radio that reports another board', async () => {
+    const error = await new RadioFoundryCableProtocol(board)
+      .connect(
+        new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=MD-9600\n'),
+      )
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('finds the board and its descriptor', () => {
+    expect(radioFoundryCableBoardForProfileId('radio-io-rt84-radiofoundry')).toBe(board);
+    expect(listDescriptorsForProfile('radio-io', 'radio-io-rt84-radiofoundry')).toEqual([
+      RT84_RADIOFOUNDRY_DESCRIPTOR,
+    ]);
+    expect(RT84_RADIOFOUNDRY_DESCRIPTOR.group).toBe('Retevis');
+    expect(RT84_RADIOFOUNDRY_DESCRIPTOR.baudRate).toBe(115200);
+    expect(RT84_RADIOFOUNDRY_DESCRIPTOR.prodWriteDisabled).toBe(true);
+    expect(isRadioFoundryCableRadio(RT84_RADIOFOUNDRY_DESCRIPTOR.protocolFactory())).toBe(true);
   });
 
   it('plans area-2 blocks only below the image end', () => {

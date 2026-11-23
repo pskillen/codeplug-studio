@@ -100,6 +100,7 @@ describe('groupRadioCatalog', () => {
     expect(groupRadioCatalog({ radioClass: 'dmr' }).map((g) => g.manufacturer)).toEqual([
       'Anytone',
       'Baofeng',
+      'Retevis',
       'TYT',
     ]);
   });
@@ -123,6 +124,7 @@ describe('groupRadioCatalog', () => {
     expect(rf.flatMap((g) => g.models.map((m) => m.model.id)).sort()).toEqual([
       'baofeng-dm1701',
       'baofeng-dm32uv',
+      'retevis-rt84',
     ]);
     const rf1701 = rf.flatMap((g) => g.models).find((m) => m.model.id === 'baofeng-dm1701');
     expect(rf1701?.firmware.map((f) => f.firmware.id)).toEqual(['radiofoundry']);

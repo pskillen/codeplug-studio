@@ -118,6 +118,17 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
       egress('chirp', 'chirp-uv21', 'CHIRP CSV'),
     ],
   },
+  'retevis-rt84-radiofoundry': {
+    id: 'retevis-rt84-radiofoundry',
+    label: 'Retevis RT84 (RadioFoundry)',
+    modelId: 'retevis-rt84',
+    firmwareId: 'radiofoundry',
+    traits: radioFoundryTraits,
+    compatibleEgress: [
+      egress('radiofoundry', 'radiofoundry-rt84', 'RadioFoundry codeplug'),
+      egress('radio-io', 'radio-io-rt84-radiofoundry', 'Web Serial'),
+    ],
+  },
   'retevis-rt95': {
     id: 'retevis-rt95',
     label: 'Retevis RT95 VOX',

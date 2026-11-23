@@ -272,6 +272,16 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     'radiofoundry',
     'RadioFoundry codeplug',
   ),
+  'radio-io-rt84-radiofoundry': radioFoundryTraitProfile(
+    'radio-io-rt84-radiofoundry',
+    'radio-io',
+    'Retevis RT84 (RadioFoundry)',
+  ),
+  'radiofoundry-rt84': radioFoundryTraitProfile(
+    'radiofoundry-rt84',
+    'radiofoundry',
+    'RadioFoundry codeplug',
+  ),
   /** Web Serial direct-write — OpenGD77 / OpenUV380 (MD-9600 / RT-90). */
   'radio-io-opengd77-md9600': {
     profileId: 'radio-io-opengd77-md9600',

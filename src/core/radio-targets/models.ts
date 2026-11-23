@@ -84,6 +84,14 @@ export const RADIO_MODELS: Record<string, RadioModel> = {
     radioClass: 'fm',
     firmware: [STOCK],
   },
+  'retevis-rt84': {
+    id: 'retevis-rt84',
+    manufacturer: 'Retevis',
+    label: 'RT84',
+    formFactor: 'handheld',
+    radioClass: 'dmr',
+    firmware: [STOCK, RADIOFOUNDRY],
+  },
   'retevis-rt95': {
     id: 'retevis-rt95',
     manufacturer: 'Retevis',

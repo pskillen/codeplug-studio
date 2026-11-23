@@ -6,6 +6,7 @@
 
 import type { RadioFoundryBoardLimits } from '@core/radios/radiofoundry/limits.ts';
 import { DM1701_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-1701-radiofoundry/limits.ts';
+import { RT84_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt84-radiofoundry/limits.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import {
   DM32_RADIOFOUNDRY_BAUD_RATE,
@@ -60,9 +61,23 @@ export const DM1701_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
   group: 'Baofeng',
 };
 
+export const RT84_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
+  modelId: 'RT84-RadioFoundry',
+  label: 'Retevis RT84 (RadioFoundry)',
+  modelHint: 'RT84 RadioFoundry',
+  radioIoProfileId: 'radio-io-rt84-radiofoundry',
+  baudRate: RADIOFOUNDRY_USB_BAUD_RATE,
+  limits: RT84_RADIOFOUNDRY_BOARD,
+  versionBoardNames: ['DM-1701', 'dm1701'],
+  group: 'Retevis',
+  /** Hidden on production until a bench write on RadioFoundry. */
+  prodWriteDisabled: true,
+};
+
 export const RADIOFOUNDRY_CABLE_BOARDS: readonly RadioFoundryCableBoard[] = [
   DM32UV_RADIOFOUNDRY_CABLE_BOARD,
   DM1701_RADIOFOUNDRY_CABLE_BOARD,
+  RT84_RADIOFOUNDRY_CABLE_BOARD,
 ];
 
 /** The board for a radio-io profile id; throws on a non-RadioFoundry id. */

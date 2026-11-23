@@ -273,6 +273,13 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     capabilities: unavailable,
   },
   {
+    slug: 'rt84-radiofoundry',
+    model: 'RT84',
+    archiveModelId: 'RT84-RadioFoundry',
+    family: 'RadioFoundry',
+    capabilities: unavailable,
+  },
+  {
     slug: 'dm-1701-opengd77',
     compare: openGd77CompareAdapter,
     calibration: openGd77CalibrationView,

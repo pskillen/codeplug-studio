@@ -10,6 +10,7 @@ import { DM32UV_DESCRIPTOR } from './radios/dm32uv/descriptor.ts';
 import {
   DM1701_RADIOFOUNDRY_DESCRIPTOR,
   DM32_RADIOFOUNDRY_DESCRIPTOR,
+  RT84_RADIOFOUNDRY_DESCRIPTOR,
 } from './radios/radiofoundry/descriptor.ts';
 import { OPENGD77_DM1701_DESCRIPTOR } from './radios/opengd77/dm1701/descriptor.ts';
 import { OPENGD77_MD9600_DESCRIPTOR } from './radios/opengd77/md9600/descriptor.ts';
@@ -22,6 +23,7 @@ const DESCRIPTORS: readonly RadioDescriptor[] = [
   DM32UV_DESCRIPTOR,
   DM32_RADIOFOUNDRY_DESCRIPTOR,
   DM1701_RADIOFOUNDRY_DESCRIPTOR,
+  RT84_RADIOFOUNDRY_DESCRIPTOR,
   AT_D890UV_DESCRIPTOR,
   RT95_DESCRIPTOR,
   OPENGD77_DM1701_DESCRIPTOR,
