@@ -173,6 +173,7 @@ describe('trait profiles', () => {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.TalkGroupTimeslotClones,
       BuildCapabilityTrait.SeparateDigitalIdList,
     ];
     expect(radioIo).toEqual({
@@ -193,8 +194,21 @@ describe('trait profiles', () => {
     const profile = traitProfileFor('radio-io-dm32uv-radiofoundry');
     expect(profile?.formatId).toBe('radio-io');
     expect(profile?.traits).toEqual(traitProfileFor('radiofoundry-dm32uv')?.traits);
-    expect(profile?.traits).not.toContain(BuildCapabilityTrait.TalkGroupTimeslotClones);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.TalkGroupTimeslotClones);
     expect(profile?.traits).not.toContain(BuildCapabilityTrait.MxNChannelExpansion);
+  });
+
+  it('registers every RadioFoundry profile with talk-group timeslot copies', () => {
+    for (const profileId of [
+      'radiofoundry-dm32uv',
+      'radio-io-dm32uv-radiofoundry',
+      'radiofoundry-dm1701',
+      'radio-io-md9600-radiofoundry',
+    ] as const) {
+      expect(traitProfileFor(profileId)?.traits).toContain(
+        BuildCapabilityTrait.TalkGroupTimeslotClones,
+      );
+    }
   });
 
   it('registers radiofoundry-dm32uv as a codeplug file with zone scan', () => {
@@ -205,6 +219,7 @@ describe('trait profiles', () => {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.TalkGroupTimeslotClones,
       BuildCapabilityTrait.SeparateDigitalIdList,
     ]);
   });
