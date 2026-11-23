@@ -1,6 +1,6 @@
 # DM-1701 (RadioFoundry) — programming cable
 
-Cable write for a Baofeng DM-1701 running RadioFoundry. Egress profile `radio-io-dm1701-radiofoundry` on target `baofeng-dm1701-radiofoundry`. Desktop uses Web Serial; Android uses the same baud on USB serial.
+Cable write for a Baofeng DM-1701 running RadioFoundry. Egress profile `radio-io-dm1701-radiofoundry` on target `baofeng-dm1701-radiofoundry`. Write is **hidden on production** until bench-written. Desktop uses Web Serial; Android uses the same baud on USB serial.
 
 |           |                                                                                                                                        |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------- |
@@ -16,7 +16,7 @@ ID directory: area 1 at image `0x50000`, area 2 from `0xD8000` through `0xE00000
 
 ## Bench-written by Studio
 
-Not yet.
+Not yet — cable Write stays hidden on production until then.
 
 ## Related
 
