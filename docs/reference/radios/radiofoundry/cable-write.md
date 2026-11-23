@@ -59,3 +59,23 @@ Hardware caps: [limits.md](limits.md).
 - **Settings area.** Block `0xE000` is never sent.
 
 **Code:** `src/integrations/radio-io/radios/radiofoundry/`.
+
+## Refusals
+
+RadioFoundry answers a codeplug command with **status 7 (refused)** and a **reason byte** (see RadioFoundry `cps-fast.md` §6). Studio maps each reason to a plain sentence and attaches debug detail (`RadioIoError.debugText`: operation, status, reason name, INFO flags, whether storage is writable, board, and firmware build when VERSION was read).
+
+| Reason | Name       | Studio error type    | Meaning (plain)                                                            |
+| ------ | ---------- | -------------------- | -------------------------------------------------------------------------- |
+| 1      | RANGE      | Interlock (no retry) | Write outside the radio’s allowed range.                                   |
+| 2      | STORAGE    | Interlock (no retry) | Flash still holds another firmware’s settings (foreign region); see below. |
+| 3      | NO_STAGING | Protocol             | Staged writes not available.                                               |
+| 4      | STAGE_FULL | Protocol             | Staging area full.                                                         |
+| 5      | STAGE_BUSY | Protocol             | Staging area busy.                                                         |
+| 6      | STATE      | Protocol             | Radio not in a state that accepts the command.                             |
+| 7      | CRC        | Protocol             | Block checksum mismatch.                                                   |
+| 8      | STREAM     | Protocol             | Block data stream rejected.                                                |
+| 9      | FLASH      | Interlock (no retry) | Flash cannot be written.                                                   |
+
+**What Studio shows.** The user-facing message names the operation and reason (`RadioFoundry refused BEGIN (reason 2, STORAGE): …`). When debug text exists, the Write stepper shows a collapsible **Debug details** block and logs `[radio-write]` to the console. **Interlock** refusals (reasons 1, 2, and 9) do not offer **Reconnect, read & write** — retrying the same session cannot fix them.
+
+**Foreign storage region (reason 2).** At connect, INFO **byte 1 bit 1** (`storage_ready`) says whether the settings flash can be written. Studio still **reads** when it is clear; it **refuses a write** before the pre-write read when storage is not writable. The operator must **claim** the region with RadioFoundry’s web programming utility (it backs up first) or `rfoundry_debug.py storage claim` — Studio does not claim (chip UID and danger-zone scope). See RadioFoundry `settings-store.md` §5.

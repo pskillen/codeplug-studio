@@ -79,12 +79,70 @@ import { SAT_ALLOWED_OPS, SATELLITE_COMMAND } from './satellite.ts';
 const REPLY_COMMAND = CODEPLUG_COMMAND | 0x80;
 const PRE_WRITE_STAGE = 'Pre-write read';
 const BLOCKS_STAGE = 'Codeplug blocks';
+const STORAGE_FOREIGN_REFUSAL =
+  'This radio\'s flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry\'s web programming utility (it backs up first) or with "rfoundry_debug.py storage claim", then write again. Nothing was written.';
+
+const CODEPLUG_OP_NAMES: Record<number, string> = {
+  [OP_INFO]: 'INFO',
+  [OP_SUMS]: 'SUMS',
+  [OP_READ]: 'READ',
+  [OP_BEGIN]: 'BEGIN',
+  [OP_BLOCK]: 'BLOCK',
+  [OP_DATA]: 'DATA',
+  [OP_END]: 'END',
+  [OP_COMMIT]: 'COMMIT',
+  [OP_ABORT]: 'ABORT',
+};
+
+const REFUSAL_REASONS: ReadonlyArray<{ name: string; sentence: string } | null> = [
+  null,
+  {
+    name: 'RANGE',
+    sentence:
+      "The block is outside the codeplug image, misaligned, or touches one of the radio's protected areas (settings, journal, calibration).",
+  },
+  {
+    name: 'STORAGE',
+    sentence: STORAGE_FOREIGN_REFUSAL,
+  },
+  {
+    name: 'NO_STAGING',
+    sentence: 'Staged writes are not available on this radio.',
+  },
+  {
+    name: 'STAGE_FULL',
+    sentence: 'The staging area is full.',
+  },
+  {
+    name: 'STAGE_BUSY',
+    sentence: 'The staging area is busy with another operation.',
+  },
+  {
+    name: 'STATE',
+    sentence: 'The radio is not in a state that accepts this codeplug command.',
+  },
+  {
+    name: 'CRC',
+    sentence: 'The block data did not match the checksum the radio expected.',
+  },
+  {
+    name: 'STREAM',
+    sentence: 'The radio did not accept the block data stream.',
+  },
+  {
+    name: 'FLASH',
+    sentence: 'A flash erase, program or read-back failed on the radio.',
+  },
+];
+
+const INTERLOCK_REFUSAL_REASONS = new Set([1, 2, 9]);
 // Status 3 is busy: wait 5 s and sleep 20 ms between replies, then fail.
 const BUSY_WAIT_MS = 5000;
 const BUSY_GAP_MS = 20;
 const COMMIT_STAGE = 'Commit';
 
 interface FastInfo {
+  flags: number;
   dataChunk: number;
   readMax: number;
   sumsMax: number;
@@ -116,6 +174,12 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   /** The build the radio reported at connect, or null when it reported none. */
   firmwareVersion(): RadioFoundryBuildIdentity | null {
     return this.version;
+  }
+
+  /** INFO flag bit 1 (`storage_ready`): null before connect. */
+  storageWritable(): boolean | null {
+    if (!this.info) return null;
+    return (this.info.flags & 0x02) !== 0;
   }
 
   /** One VERSION exchange. Never throws: any failure means "not reported". */
@@ -310,6 +374,10 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   ): Promise<void> {
     void image;
     this.requireArmed();
+    // Refuse before the pre-write read when INFO says flash is not writable (foreign storage).
+    if (this.storageWritable() === false) {
+      throw new RadioInterlockError(STORAGE_FOREIGN_REFUSAL);
+    }
     if (!this.readBlocks) {
       await this.download({ ...opts, progressStage: PRE_WRITE_STAGE });
     }
@@ -613,12 +681,11 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
         if (op === OP_INFO || status === 1 || status === 4) {
           throw new RadioProtocolError(HANDSHAKE_ERROR);
         }
-        const reason = status === 7 && frame.payload.length > 1 ? frame.payload[1] : undefined;
-        throw new RadioProtocolError(
-          reason == null
-            ? `RadioFoundry codeplug command failed (status ${status}).`
-            : `RadioFoundry codeplug command was refused (reason ${reason}).`,
-        );
+        const opName = codeplugOpName(op);
+        if (status === 7 && frame.payload.length > 1) {
+          throw this.refusalError(opName, status, frame.payload[1]!);
+        }
+        throw new RadioProtocolError(`RadioFoundry refused ${opName} (status ${status}).`);
       }
       return frame.payload.subarray(1);
     }
@@ -653,6 +720,47 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       throw new RadioProtocolError('RadioFoundry write needs the serialised codeplug image.');
     }
     return this.armed;
+  }
+
+  private refusalError(
+    opName: string,
+    status: number,
+    reason: number,
+  ): RadioInterlockError | RadioProtocolError {
+    const entry = reason >= 1 && reason < REFUSAL_REASONS.length ? REFUSAL_REASONS[reason] : null;
+    const name = entry?.name ?? 'UNKNOWN';
+    const sentence =
+      entry?.sentence ?? `The radio refused codeplug operation ${opName} (reason ${reason}).`;
+    const message = `RadioFoundry refused ${opName} (reason ${reason}, ${name}): ${sentence}`;
+    const debugText = this.refusalDebugText(opName, status, reason, name);
+    const err = INTERLOCK_REFUSAL_REASONS.has(reason)
+      ? new RadioInterlockError(message)
+      : new RadioProtocolError(message);
+    err.debugText = debugText;
+    return err;
+  }
+
+  private refusalDebugText(
+    opName: string,
+    status: number,
+    reason: number,
+    reasonName: string,
+  ): string {
+    const flagHex = this.info ? `0x${this.info.flags.toString(16).padStart(2, '0')}` : 'unknown';
+    const writable = this.storageWritable();
+    const writableLine = writable === null ? 'unknown' : writable ? 'yes' : 'no';
+    const build = this.version;
+    const buildLine = build
+      ? `firmware: ${summariseRadioFoundryBuild(build).label}`
+      : 'firmware: not reported';
+    return [
+      `op: ${opName}`,
+      `status: ${status}`,
+      `reason: ${reason} (${reasonName})`,
+      `INFO flags: ${flagHex}, storage writable: ${writableLine}`,
+      `board: ${this.board.label}`,
+      buildLine,
+    ].join('\n');
   }
 }
 
@@ -689,6 +797,7 @@ function parseInfo(body: Uint8Array, board: RadioFoundryCableBoard): FastInfo {
     throw new RadioProtocolError(HANDSHAKE_ERROR);
   }
   return {
+    flags: body[1]!,
     sumsMax: Math.min(sumsMax, 16),
     dataChunk: Math.min(dataMax, DATA_CHUNK_MAX),
     readMax: Math.min(readMax, 1000),
@@ -697,6 +806,10 @@ function parseInfo(body: Uint8Array, board: RadioFoundryCableBoard): FastInfo {
     flashStart,
     physicalBase,
   };
+}
+
+function codeplugOpName(op: number): string {
+  return CODEPLUG_OP_NAMES[op] ?? `operation ${op}`;
 }
 
 function mergeBlock(radio: Uint8Array, addr: number, source: RadioFoundryWriteSource): Uint8Array {

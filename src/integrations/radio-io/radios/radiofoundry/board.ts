@@ -61,8 +61,6 @@ export const DM1701_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
   limits: DM1701_RADIOFOUNDRY_BOARD,
   versionBoardNames: ['DM-1701', 'dm1701'],
   group: 'Baofeng',
-  /** Hidden on production until a bench write on RadioFoundry. */
-  prodWriteDisabled: true,
 };
 
 export const RT90_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
