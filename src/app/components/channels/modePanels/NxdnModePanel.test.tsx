@@ -1,8 +1,9 @@
 import { MemoryRouter } from 'react-router-dom';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import DesignSystemV2Provider from '../v2/DesignSystemV2Provider.tsx';
-import ChannelModeProfilesEditor from './ChannelModeProfilesEditor.tsx';
+import DesignSystemV2Provider from '../../v2/DesignSystemV2Provider.tsx';
+import ModePanel from './ModePanel.tsx';
+import { testModePanelContextWithLibrary } from './testContext.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import {
   emptyLibrary,
@@ -15,7 +16,7 @@ import {
   nxdnCallOptions,
   nxdnCallValue,
   nxdnRxGroupListOptions,
-} from '../../lib/nxdnProfileFields.ts';
+} from '../../../lib/nxdnProfileFields.ts';
 import type { ChannelModeProfileNxdn } from '@core/models/library.ts';
 
 const dmrTg = newTalkGroup('p', 'World', 91, 'dmr');
@@ -67,7 +68,7 @@ describe('NXDN call and RX group list options', () => {
   });
 });
 
-describe('ChannelModeProfilesEditor NXDN panel', () => {
+describe('NxdnModePanel', () => {
   it('shows the chosen NXDN contact as the Call and the rate', () => {
     const profile: ChannelModeProfileNxdn = {
       ...(defaultModeProfile('nxdn') as ChannelModeProfileNxdn),
@@ -77,12 +78,10 @@ describe('ChannelModeProfilesEditor NXDN panel', () => {
     render(
       <MemoryRouter>
         <DesignSystemV2Provider>
-          <ChannelModeProfilesEditor
-            profiles={[profile]}
-            library={library}
-            rxFrequency={null}
-            txFrequency={null}
-            onChange={() => {}}
+          <ModePanel
+            profile={profile}
+            onPatch={() => {}}
+            context={testModePanelContextWithLibrary(library)}
           />
         </DesignSystemV2Provider>
       </MemoryRouter>,

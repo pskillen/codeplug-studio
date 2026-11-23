@@ -9,8 +9,9 @@ import type {
   ChannelModeProfileNxdn,
   OwnDigitalId,
 } from '@core/models/library.ts';
-import { DesignSystemV2Provider } from '../v2/index.ts';
-import ChannelModeProfilesEditor from './ChannelModeProfilesEditor.tsx';
+import { DesignSystemV2Provider } from '../../v2/index.ts';
+import ModePanel from './ModePanel.tsx';
+import { testModePanelContextWithLibrary } from './testContext.ts';
 
 function ownId(over: Partial<OwnDigitalId> & Pick<OwnDigitalId, 'id' | 'protocol' | 'number'>) {
   return {
@@ -32,26 +33,24 @@ const library = {
   ],
 };
 
-function renderEditor(profile: ChannelModeProfile, onChange = vi.fn()) {
+function renderPanel(profile: ChannelModeProfile, onPatch = vi.fn()) {
   render(
     <MemoryRouter>
       <DesignSystemV2Provider>
-        <ChannelModeProfilesEditor
-          profiles={[profile]}
-          library={library}
-          rxFrequency={null}
-          txFrequency={null}
-          onChange={onChange}
+        <ModePanel
+          profile={profile}
+          onPatch={onPatch}
+          context={testModePanelContextWithLibrary(library)}
         />
       </DesignSystemV2Provider>
     </MemoryRouter>,
   );
-  return onChange;
+  return onPatch;
 }
 
-describe('ChannelModeProfilesEditor own IDs', () => {
+describe('OwnDigitalIdSelect via mode panels', () => {
   it('DMR ID select shows the default, and lists Default plus DMR IDs only', () => {
-    renderEditor(defaultModeProfile('dmr') as ChannelModeProfileDMR);
+    renderPanel(defaultModeProfile('dmr') as ChannelModeProfileDMR);
     const select = screen.getByLabelText('DMR ID', { selector: 'input' });
     expect(select).toHaveValue('Default (Home (1234567))');
     fireEvent.click(select);
@@ -66,12 +65,10 @@ describe('ChannelModeProfilesEditor own IDs', () => {
   });
 
   it('choosing a DMR ID patches ownDigitalIdId', () => {
-    const onChange = renderEditor(defaultModeProfile('dmr') as ChannelModeProfileDMR);
+    const onPatch = renderPanel(defaultModeProfile('dmr') as ChannelModeProfileDMR);
     fireEvent.click(screen.getByLabelText('DMR ID', { selector: 'input' }));
     fireEvent.click(screen.getByRole('option', { name: 'Club (7654321)' }));
-    expect(onChange).toHaveBeenLastCalledWith([
-      expect.objectContaining({ mode: 'dmr', ownDigitalIdId: 'd-club' }),
-    ]);
+    expect(onPatch).toHaveBeenLastCalledWith(expect.objectContaining({ ownDigitalIdId: 'd-club' }));
   });
 
   it('NXDN Unit ID select lists NXDN IDs only and Default goes back to null', () => {
@@ -79,20 +76,18 @@ describe('ChannelModeProfilesEditor own IDs', () => {
       ...(defaultModeProfile('nxdn') as ChannelModeProfileNxdn),
       ownDigitalIdId: 'n-home',
     };
-    const onChange = renderEditor(profile);
+    const onPatch = renderPanel(profile);
     const select = screen.getByLabelText('Unit ID', { selector: 'input' });
     expect(select).toHaveValue('Home NXDN (1234)');
     fireEvent.click(select);
     const options = screen.getAllByRole('option').map((o) => o.textContent);
     expect(options).toEqual(['Default (Home NXDN (1234))', 'Home NXDN (1234)']);
     fireEvent.click(screen.getByRole('option', { name: 'Default (Home NXDN (1234))' }));
-    expect(onChange).toHaveBeenLastCalledWith([
-      expect.objectContaining({ mode: 'nxdn', ownDigitalIdId: null }),
-    ]);
+    expect(onPatch).toHaveBeenLastCalledWith(expect.objectContaining({ ownDigitalIdId: null }));
   });
 
   it('shows (missing) for a choice that is not in Digital IDs', () => {
-    renderEditor({
+    renderPanel({
       ...(defaultModeProfile('dmr') as ChannelModeProfileDMR),
       ownDigitalIdId: 'gone',
     });
