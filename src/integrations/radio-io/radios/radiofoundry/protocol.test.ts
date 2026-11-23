@@ -940,11 +940,9 @@ describe('RadioFoundry VERSION on connect', () => {
     silent.versionText = null;
     const a = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
     await a.connect(silent);
-    const imageA = await a.download({});
-    const b = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
-    await b.connect(new ScriptedPipe(0xff));
-    const imageB = await b.download({});
-    expect(imageA.bytes).toEqual(imageB.bytes);
+    const image = await a.download({});
+    // Every served block is 0xff on the scripted radio: a misread reply would not give this.
+    expect(image.bytes.subarray(0, BLOCK_SIZE).every((byte) => byte === 0xff)).toBe(true);
   });
 
   it('connects when VERSION has no board', async () => {

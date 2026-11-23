@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RADIOFOUNDRY_CABLE_BOARDS } from './board.ts';
 import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   DMR_ID_DATABASE_ADDRESS,
@@ -12,6 +13,7 @@ import {
   DMR_ID_DATABASE_MAX_RECORDS,
   DMR_ID_DATABASE_RECORD_BYTES,
   DMR_ID_DATABASE_SIZE_BYTE,
+  dmrIdDatabaseLayoutRecords,
   encodeDmrIdDatabase,
   idDatabaseText,
   type DmrIdDatabaseRow,
@@ -93,5 +95,18 @@ describe('encodeDmrIdDatabase', () => {
   it('owns nothing when every row is dropped', () => {
     const warnings: ExportWarning[] = [];
     expect(encodeDmrIdDatabase([row(0, 'Zero'), row(-1, 'Neg')], warnings)).toBeNull();
+  });
+});
+
+describe('ID database cap per board', () => {
+  it('counts layout records for an image end', () => {
+    expect(dmrIdDatabaseLayoutRecords(0x800000)).toBe(287_629);
+    expect(dmrIdDatabaseLayoutRecords(0xe00000)).toBe(520_646);
+  });
+
+  it("pins every board's ID-database cap to the layout", () => {
+    for (const board of RADIOFOUNDRY_CABLE_BOARDS) {
+      expect(board.limits.ID_DATABASE_MAX).toBe(dmrIdDatabaseLayoutRecords(board.limits.IMAGE_END));
+    }
   });
 });
