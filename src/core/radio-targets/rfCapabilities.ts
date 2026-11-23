@@ -2,6 +2,7 @@ import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import { DM1701_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-1701-radiofoundry/limits.ts';
 import { RT84_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt84-radiofoundry/limits.ts';
 import { MD9600_RADIOFOUNDRY_BOARD } from '@core/radios/tyt/md-9600-radiofoundry/limits.ts';
+import { RT90_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt90-radiofoundry/limits.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import type { RadioFoundryBoardLimits } from '@core/radios/radiofoundry/limits.ts';
 
@@ -107,6 +108,8 @@ const RT84_RADIOFOUNDRY = radioFoundryRf('retevis-rt84-radiofoundry', RT84_RADIO
 
 const MD9600_RADIOFOUNDRY = radioFoundryRf('tyt-md9600-radiofoundry', MD9600_RADIOFOUNDRY_BOARD);
 
+const RT90_RADIOFOUNDRY = radioFoundryRf('retevis-rt90-radiofoundry', RT90_RADIOFOUNDRY_BOARD);
+
 const DM32UV_MM9PDY: RadioRfCapabilities = {
   radioTargetId: 'baofeng-dm32uv-mm9pdy',
   supportedModes: ['fm', 'am', 'dmr'],
@@ -166,6 +169,7 @@ export const RADIO_RF_CAPABILITIES: Record<string, RadioRfCapabilities> = {
   'baofeng-uv5r-mini-mm9pdy': UV5R_MINI_MM9PDY,
   'baofeng-uv21': UV21,
   'retevis-rt84-radiofoundry': RT84_RADIOFOUNDRY,
+  'retevis-rt90-radiofoundry': RT90_RADIOFOUNDRY,
   'retevis-rt95': RT95,
   'retevis-rt95-mm9pdy': RT95_MM9PDY,
   'baofeng-dm32uv': DM32UV,

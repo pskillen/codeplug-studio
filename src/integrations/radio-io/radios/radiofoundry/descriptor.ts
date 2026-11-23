@@ -15,6 +15,7 @@ import {
   DM32UV_RADIOFOUNDRY_CABLE_BOARD,
   MD9600_RADIOFOUNDRY_CABLE_BOARD,
   RT84_RADIOFOUNDRY_CABLE_BOARD,
+  RT90_RADIOFOUNDRY_CABLE_BOARD,
   type RadioFoundryCableBoard,
 } from './board.ts';
 import { planRadioFoundryStages } from './plannedStages.ts';
@@ -78,4 +79,8 @@ export const RT84_RADIOFOUNDRY_DESCRIPTOR: RadioDescriptor = createRadioFoundryD
 
 export const MD9600_RADIOFOUNDRY_DESCRIPTOR: RadioDescriptor = createRadioFoundryDescriptor(
   MD9600_RADIOFOUNDRY_CABLE_BOARD,
+);
+
+export const RT90_RADIOFOUNDRY_DESCRIPTOR: RadioDescriptor = createRadioFoundryDescriptor(
+  RT90_RADIOFOUNDRY_CABLE_BOARD,
 );

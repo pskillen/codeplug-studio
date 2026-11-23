@@ -31,6 +31,7 @@ const WITHOUT_SETTINGS = [
   'dm-1701-radiofoundry',
   'rt84-radiofoundry',
   'md-9600-radiofoundry',
+  'rt90-radiofoundry',
 ];
 
 afterEach(cleanup);

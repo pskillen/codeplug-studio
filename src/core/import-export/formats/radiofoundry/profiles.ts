@@ -3,6 +3,7 @@
 import { DM1701_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-1701-radiofoundry/limits.ts';
 import { RT84_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt84-radiofoundry/limits.ts';
 import { MD9600_RADIOFOUNDRY_BOARD } from '@core/radios/tyt/md-9600-radiofoundry/limits.ts';
+import { RT90_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt90-radiofoundry/limits.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import {
   RADIOFOUNDRY_LIMITS,
@@ -105,6 +106,11 @@ export const RADIOFOUNDRY_PROFILES: readonly RadioFoundryRadioProfile[] = [
     'radiofoundry-md9600',
     'radio-io-md9600-radiofoundry',
     MD9600_RADIOFOUNDRY_BOARD,
+  ),
+  radioFoundryCodecProfile(
+    'radiofoundry-rt90',
+    'radio-io-rt90-radiofoundry',
+    RT90_RADIOFOUNDRY_BOARD,
   ),
 ];
 

@@ -94,6 +94,11 @@ describe('groupRadioCatalog', () => {
     )!;
     expect(rt84.firmware[0]?.supported).toBe(false);
     expect(rt84.firmware[1]?.target?.id).toBe('retevis-rt84-radiofoundry');
+    const rt90 = groups.find((g) => g.manufacturer === 'Retevis')!.models.find(
+      (m) => m.model.id === 'retevis-rt90',
+    )!;
+    expect(rt90.firmware[0]?.supported).toBe(false);
+    expect(rt90.firmware[1]?.target?.id).toBe('retevis-rt90-radiofoundry');
   });
 
   it('filters by radio class', () => {
@@ -131,6 +136,7 @@ describe('groupRadioCatalog', () => {
       'baofeng-dm1701',
       'baofeng-dm32uv',
       'retevis-rt84',
+      'retevis-rt90',
       'tyt-md9600',
     ]);
     const rf1701 = rf.flatMap((g) => g.models).find((m) => m.model.id === 'baofeng-dm1701');

@@ -245,6 +245,7 @@ describe('trait profiles', () => {
       'radio-io-opengd77-1701',
       'radio-io-opengd77-md9600',
       'radio-io-rt84-radiofoundry',
+      'radio-io-rt90-radiofoundry',
       'radio-io-rt95',
       'radio-io-rt95-mm9pdy',
       'radio-io-uv21',
@@ -254,6 +255,7 @@ describe('trait profiles', () => {
       'radiofoundry-dm32uv',
       'radiofoundry-md9600',
       'radiofoundry-rt84',
+      'radiofoundry-rt90',
     ]);
   });
 });

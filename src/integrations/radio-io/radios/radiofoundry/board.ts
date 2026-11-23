@@ -8,6 +8,7 @@ import type { RadioFoundryBoardLimits } from '@core/radios/radiofoundry/limits.t
 import { DM1701_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-1701-radiofoundry/limits.ts';
 import { RT84_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt84-radiofoundry/limits.ts';
 import { MD9600_RADIOFOUNDRY_BOARD } from '@core/radios/tyt/md-9600-radiofoundry/limits.ts';
+import { RT90_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt90-radiofoundry/limits.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import {
   DM32_RADIOFOUNDRY_BAUD_RATE,
@@ -62,6 +63,19 @@ export const DM1701_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
   group: 'Baofeng',
 };
 
+export const RT90_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
+  modelId: 'RT90-RadioFoundry',
+  label: 'Retevis RT90 (RadioFoundry)',
+  modelHint: 'RT90 RadioFoundry',
+  radioIoProfileId: 'radio-io-rt90-radiofoundry',
+  baudRate: RADIOFOUNDRY_USB_BAUD_RATE,
+  limits: RT90_RADIOFOUNDRY_BOARD,
+  versionBoardNames: ['MD-9600', 'MD9600', 'RT90', 'md9600'],
+  group: 'Retevis',
+  /** Hidden on production until a bench write on RadioFoundry. */
+  prodWriteDisabled: true,
+};
+
 export const MD9600_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
   modelId: 'MD-9600-RadioFoundry',
   label: 'TYT MD-9600 (RadioFoundry)',
@@ -93,6 +107,7 @@ export const RADIOFOUNDRY_CABLE_BOARDS: readonly RadioFoundryCableBoard[] = [
   DM1701_RADIOFOUNDRY_CABLE_BOARD,
   RT84_RADIOFOUNDRY_CABLE_BOARD,
   MD9600_RADIOFOUNDRY_CABLE_BOARD,
+  RT90_RADIOFOUNDRY_CABLE_BOARD,
 ];
 
 /** The board for a radio-io profile id; throws on a non-RadioFoundry id. */
