@@ -4,6 +4,7 @@
  * The radio adds {@link PHYSICAL_CODEPLUG_BASE} itself. That value is never a wire address.
  */
 
+import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { RADIOFOUNDRY_IMAGE_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
 
 export const DM32_RADIOFOUNDRY_MODEL_ID = 'DM-32UV-RadioFoundry';
@@ -27,7 +28,7 @@ export const FLASH_IMAGE_START = 0x20000;
  * Physical base of the open-firmware image on this radio.
  * The firmware adds it. A host sends image offsets only.
  */
-export const PHYSICAL_CODEPLUG_BASE = 0x700000;
+export const PHYSICAL_CODEPLUG_BASE = DM32UV_RADIOFOUNDRY_BOARD.PHYSICAL_CODEPLUG_BASE;
 
 export const OP_INFO = 0;
 export const OP_SUMS = 1;
@@ -49,12 +50,16 @@ export const DATA_CHUNK_MAX = 61;
 export const HANDSHAKE_ERROR = 'This radio did not answer the RadioFoundry codeplug protocol.';
 
 /** 4 KB blocks the fast protocol will serve inside the codeplug file. */
-export function servedBlockAddresses(imageSize: number = DM32_RADIOFOUNDRY_IMAGE_SIZE): number[] {
+export function servedBlockAddresses(
+  imageSize: number = DM32_RADIOFOUNDRY_IMAGE_SIZE,
+  eepromEnd: number = EEPROM_IMAGE_END,
+  flashStart: number = FLASH_IMAGE_START,
+): number[] {
   const addresses: number[] = [];
-  for (let addr = 0; addr + BLOCK_SIZE <= EEPROM_IMAGE_END; addr += BLOCK_SIZE) {
+  for (let addr = 0; addr + BLOCK_SIZE <= eepromEnd; addr += BLOCK_SIZE) {
     addresses.push(addr);
   }
-  for (let addr = FLASH_IMAGE_START; addr < imageSize; addr += BLOCK_SIZE) {
+  for (let addr = flashStart; addr < imageSize; addr += BLOCK_SIZE) {
     addresses.push(addr);
   }
   return addresses;

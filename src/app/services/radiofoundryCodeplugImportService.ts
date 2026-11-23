@@ -8,6 +8,8 @@ export interface RadioFoundryCodeplugImportSuccess {
   ok: true;
   channelCount: number;
   zoneCount: number;
+  /** Plain-text notes about what the file held that the library does not show. */
+  warnings: string[];
 }
 
 export interface RadioFoundryCodeplugImportFailure {
@@ -28,6 +30,7 @@ export async function importRadioFoundryCodeplug(
   projectId: string,
   bytes: Uint8Array,
   store: ProjectPersistence = persistence,
+  profileId?: string,
 ): Promise<RadioFoundryCodeplugImportResult> {
   const adapter = getImportAdapter('radiofoundry');
   if (!isBinaryCpsImportAdapter(adapter)) {
@@ -36,7 +39,7 @@ export async function importRadioFoundryCodeplug(
 
   let parsed: BinaryCpsImportResult;
   try {
-    parsed = adapter.parse(bytes, projectId);
+    parsed = adapter.parse(bytes, projectId, profileId ? { profileId } : undefined);
   } catch (err) {
     return {
       ok: false,
@@ -57,6 +60,7 @@ export async function importRadioFoundryCodeplug(
     ok: true,
     channelCount: parsed.channels.length,
     zoneCount: parsed.zones.length,
+    warnings: parsed.warnings,
   };
 }
 

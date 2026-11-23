@@ -19,9 +19,19 @@ import type {
   OwnDigitalId,
 } from '@core/models/library.ts';
 import type { EntityRef } from '@core/models/libraryTypes.ts';
-import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
+import {
+  RADIOFOUNDRY_LIMITS,
+  formatRadioFoundryBands,
+  isInRadioFoundryBand,
+  type RadioFoundryBand,
+} from '@core/radios/radiofoundry/limits.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
-import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import { resolveRadioFoundryProfile, type RadioFoundryRadioProfile } from './profiles.ts';
+import {
+  pushGeneralInfoWarning,
+  pushGeneralWarning,
+  type ExportWarning,
+} from '@core/import-export/exportWarning.ts';
 import {
   ALL_CALL_DMR_ID,
   APRS_BASE,
@@ -44,17 +54,13 @@ import {
   RX_LIST_LENGTH_SIZE,
   RX_LIST_RECORD_SIZE,
   SQUELCH_LEVEL_MAX,
-  UHF_MAX_HZ,
-  UHF_MIN_HZ,
-  VHF_MAX_HZ,
-  VHF_MIN_HZ,
   ZONE_BITMAP,
   ZONE_BITMAP_SIZE,
   ZONE_RECORD_SIZE,
   channelSlotAddress,
 } from './layout.ts';
 
-const LIMITS = DM32UV_RADIOFOUNDRY_LIMITS;
+const LIMITS = RADIOFOUNDRY_LIMITS;
 
 export class RadioFoundryExportError extends Error {
   constructor(message: string) {
@@ -87,14 +93,11 @@ interface KeptChannel {
   number: number;
 }
 
-/** Null power is the radio default (byte 0). Otherwise percent 1-100 maps onto levels 1-9. */
-export function radioFoundryPowerByte(percent: number | null): number {
+/** Null power is the radio default (byte 0). Otherwise percent 1-100 maps onto levels 1..powerLevels. */
+export function radioFoundryPowerByte(percent: number | null, powerLevels: number): number {
   if (percent == null || !Number.isFinite(percent) || percent <= 0) return 0;
   const clamped = Math.min(100, percent);
-  const index = Math.min(
-    LIMITS.POWER_LEVELS - 1,
-    Math.floor(((clamped - 1) * LIMITS.POWER_LEVELS) / 100),
-  );
+  const index = Math.min(powerLevels - 1, Math.floor(((clamped - 1) * powerLevels) / 100));
   return index + 1;
 }
 
@@ -102,8 +105,31 @@ function markOwned(owned: Uint8Array, offset: number, length: number): void {
   owned.fill(1, offset, offset + length);
 }
 
+const SETTINGS_AREA_KEPT_NOTE =
+  'This codeplug leaves the RadioFoundry settings area blank, so a radio keeps the one it has. ' +
+  'Channel modes set on the radio (DMR Tier III, P25, NXDN) stay as they are, and come back on any channel ' +
+  'written as receive-only DMR at the same number with the same name.';
+
 export function serialiseRadioFoundryCodeplug(
   assembled: AssembledBuild,
+  options?: CpsExportOptions,
+): RadioFoundryImage {
+  const requested = options?.profileId ?? assembled.profileId;
+  let codec: RadioFoundryRadioProfile;
+  try {
+    codec = resolveRadioFoundryProfile(requested || undefined);
+  } catch {
+    throw new RadioFoundryExportError(
+      `RadioFoundry export does not know the radio profile "${requested}".`,
+    );
+  }
+  return serialiseRadioFoundryCodeplugWithProfile(assembled, codec, options);
+}
+
+/** The codec body for an already-resolved profile. Tests pass a synthetic board here. */
+export function serialiseRadioFoundryCodeplugWithProfile(
+  assembled: AssembledBuild,
+  codec: RadioFoundryRadioProfile,
   options?: CpsExportOptions,
 ): RadioFoundryImage {
   const warnings: ExportWarning[] = [];
@@ -115,10 +141,21 @@ export function serialiseRadioFoundryCodeplug(
   writeRadioIdentity(image, owned, radio, warnings);
   const contacts = writeContacts(image, owned, assembled, warnings);
   writeRxLists(image, owned, assembled, contacts, warnings);
-  const channels = writeChannels(image, owned, assembled, radio, contacts, warnings, options);
+  const channels = writeChannels(
+    image,
+    owned,
+    assembled,
+    radio,
+    contacts,
+    warnings,
+    options,
+    codec,
+  );
   writeZones(image, owned, assembled, channels, warnings);
   writeAprs(image, owned, assembled, warnings);
   warnScanLists(assembled, warnings);
+  // 0xE000-0xEFFF (the settings area) stays 0xFF and unowned: the radio keeps the area it has.
+  pushGeneralInfoWarning(warnings, SETTINGS_AREA_KEPT_NOTE);
 
   return { bytes: image, owned, warnings };
 }
@@ -164,6 +201,7 @@ function writeChannels(
   contacts: Map<string, number>,
   warnings: ExportWarning[],
   options: CpsExportOptions | undefined,
+  codec: RadioFoundryRadioProfile,
 ): Map<string, number> {
   zeroChannelBitmaps(image, owned);
   const pending: Array<{ row: AssembledChannel; mode: KeptMode }> = [];
@@ -185,7 +223,7 @@ function writeChannels(
   for (const item of pending) {
     const channel: KeptChannel = { ...item, number: numbers.size + 1 };
     numbers.set(channel.row.entity.id, channel.number);
-    writeChannelRecord(image, owned, channel, assembled, radio, contacts, warnings, options);
+    writeChannelRecord(image, owned, channel, assembled, radio, contacts, warnings, options, codec);
     markInUse(image, channel.number);
   }
   return numbers;
@@ -231,6 +269,7 @@ function writeChannelRecord(
   contacts: Map<string, number>,
   warnings: ExportWarning[],
   options: CpsExportOptions | undefined,
+  codec: RadioFoundryRadioProfile,
 ): void {
   const { row, mode } = channel;
   const entity = row.entity;
@@ -247,10 +286,18 @@ function writeChannelRecord(
   // APRS bits stay clear, flag2 holds only the timeslot, STE is off, and the
   // VFO offset and step are zero.
   writeAsciiField(record, 0, row.wireName || entity.name, LIMITS.NAME_MAX, 'Channel', warnings);
-  writeFrequency(record, 0x10, entity.rxFrequency, label, 'RX', warnings);
-  writeFrequency(record, 0x14, entity.txFrequency ?? entity.rxFrequency, label, 'TX', warnings);
+  writeFrequency(record, 0x10, entity.rxFrequency, label, 'RX', warnings, codec.board.BANDS_HZ);
+  writeFrequency(
+    record,
+    0x14,
+    entity.txFrequency ?? entity.rxFrequency,
+    label,
+    'TX',
+    warnings,
+    codec.board.BANDS_HZ,
+  );
   record[0x18] = mode === 'dmr' ? 1 : 0;
-  record[0x19] = radioFoundryPowerByte(entity.power);
+  record[0x19] = radioFoundryPowerByte(entity.power, codec.board.POWER_LEVELS);
   record[0x1b] = 0;
   record[0x20] = 0xff;
   record[0x21] = 0xff;
@@ -408,16 +455,17 @@ function writeFrequency(
   label: string,
   which: 'RX' | 'TX',
   warnings: ExportWarning[],
+  bands: readonly RadioFoundryBand[],
 ): void {
   if (hz == null || !Number.isFinite(hz)) {
     pushGeneralWarning(warnings, `Channel "${label}" has no ${which} frequency; wrote 0 Hz.`);
     return;
   }
-  if (!inBand(hz)) {
+  if (!isInRadioFoundryBand(hz, bands)) {
     const mhz = (hz / 1_000_000).toFixed(5);
     pushGeneralWarning(
       warnings,
-      `Channel "${label}" ${which} frequency ${mhz} MHz is outside 136-174 and 400-480 MHz.`,
+      `Channel "${label}" ${which} frequency ${mhz} MHz is outside ${formatRadioFoundryBands(bands)}.`,
     );
   }
   const units = Math.round(hz / 10);
@@ -434,10 +482,6 @@ function writeFrequency(
   record[offset + 1] = (word >> 8) & 0xff;
   record[offset + 2] = (word >> 16) & 0xff;
   record[offset + 3] = (word >>> 24) & 0xff;
-}
-
-function inBand(hz: number): boolean {
-  return (hz >= VHF_MIN_HZ && hz <= VHF_MAX_HZ) || (hz >= UHF_MIN_HZ && hz <= UHF_MAX_HZ);
 }
 
 /**

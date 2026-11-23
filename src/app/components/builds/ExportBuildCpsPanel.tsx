@@ -1,7 +1,7 @@
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { dedupeWarnings } from '@core/import-export/dedupeWarnings.ts';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button, FileButton, Group, Modal, Stack, Text } from '@mantine/core';
+import { Alert, Button, FileButton, Group, List, Modal, Stack, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
 import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
 import { prepareBuildForFrequencyRangeExportPatch } from '../../lib/frequencyRangeExportSettingsPatch.ts';
@@ -99,6 +99,7 @@ export default function ExportBuildCpsPanel({
   const [importingCodeplug, setImportingCodeplug] = useState(false);
   const [codeplugImportMessage, setCodeplugImportMessage] = useState<string | null>(null);
   const [codeplugImportFailed, setCodeplugImportFailed] = useState(false);
+  const [codeplugImportWarnings, setCodeplugImportWarnings] = useState<string[]>([]);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [driveBrowserOpen, setDriveBrowserOpen] = useState(false);
@@ -289,15 +290,22 @@ export default function ExportBuildCpsPanel({
     setImportingCodeplug(true);
     setCodeplugImportMessage(null);
     setCodeplugImportFailed(false);
+    setCodeplugImportWarnings([]);
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const result = await importRadioFoundryCodeplug(activeProjectId, bytes);
+      const result = await importRadioFoundryCodeplug(
+        activeProjectId,
+        bytes,
+        undefined,
+        profileId || undefined,
+      );
       if (!result.ok) {
         setCodeplugImportFailed(true);
         setCodeplugImportMessage(result.message);
         return;
       }
       setCodeplugImportMessage(describeCodeplugImport(result.channelCount, result.zoneCount));
+      setCodeplugImportWarnings(result.warnings);
       const channels = await persistence.listChannels(activeProjectId);
       setChannelCount(channels.length);
     } catch (err) {
@@ -587,6 +595,15 @@ export default function ExportBuildCpsPanel({
           <Text size="sm" c={codeplugImportFailed ? 'red' : undefined}>
             {codeplugImportMessage}
           </Text>
+        ) : null}
+        {codeplugImportWarnings.length > 0 ? (
+          <Alert color="orange" title="Check these after the import">
+            <List size="sm" spacing="xs">
+              {codeplugImportWarnings.map((warning) => (
+                <List.Item key={warning}>{warning}</List.Item>
+              ))}
+            </List>
+          </Alert>
         ) : null}
       </Stack>
     );

@@ -12,6 +12,10 @@ Cable write for a Baofeng DM-32UV running RadioFoundry. The [codeplug file](../.
 
 The image is the one [RadioFoundry codeplug](../../../export-formats/radiofoundry/README.md) export builds (`assemble`, then the codeplug serialiser).
 
+## Layout from INFO
+
+The cable code takes a board (model, label, baud, and the core board limits) and serves the layout the radio reports in its INFO reply. Studio refuses the handshake when the block size, the EEPROM image size (`0x10000`) or the flash image start (`0x20000`) differ from the layout the codeplug file uses. The image end is the lower of INFO's and the board's (`0x800000` here), and that is the ID database ceiling. INFO also reports the physical base of the open-firmware image; Studio reads it and does not yet use it to identify the board or refuse a mismatch. The block guard tests the image range only (EEPROM, flash, and ID area 2 up to that ceiling), not the physical base: the base `0x700000` lies inside area 2, so a base test would refuse valid ID-directory blocks. A physical address past `0x800000` is still refused. The app picks this protocol by the RadioFoundry profile family, not by the DM-32UV's profile id.
+
 ## Digital contacts
 
 Ticking **Digital contacts** chooses Contacts, ID directory, or Both. Leaving it unticked releases the private-contact slots this write would have filled, so those slots stay as the radio had them. It does not change channels, zones, talk groups, or RX lists. Every other contact slot is still written. An unused slot is the empty record.
@@ -50,6 +54,7 @@ Not sent, and why:
 ## What is not written
 
 - An address the serialiser does not own. The byte read from the radio stays. That includes general settings other than the callsign and the radio DMR ID, voice prompts, factory calibration, the settings ring (including digital APRS destination, beacon interval, and position source), the sector journal, and the native codeplug area. The DMR ID database stays unowned unless that source is selected.
+- The settings area. Block `0xE000` is never sent, and a source that owns any byte of it is refused before a frame goes out. See [settings area](../../../export-formats/radiofoundry/settings-area.md).
 - Anything below the open-firmware image.
 
 Studio does not speak the stock DM-32 programmer, and it does not speak the OpenGD77 `R` / `X` / `W` codec. If the radio does not answer the fast command, the write stops.

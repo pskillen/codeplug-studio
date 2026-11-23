@@ -13,7 +13,6 @@ import type { PowerLadderEntry } from './profileLadder.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
-import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { getAnytoneProfile } from './formats/anytone/profiles.ts';
 import { getChirpProfile } from './formats/chirp/profiles.ts';
 import { getDm32Profile } from './formats/dm32/profiles.ts';
@@ -28,7 +27,7 @@ import {
   type RadioIoRt95Profile,
   type RadioIoUv5rMiniProfile,
   isRadioIoDm32uvProfile,
-  isRadioIoDm32uvRadioFoundryProfile,
+  isRadioIoRadioFoundryProfile,
   isRadioIoOpenGd771701Profile,
   isRadioIoOpenGd77Md9600Profile,
 } from './formats/radio-io/profiles.ts';
@@ -360,7 +359,7 @@ export function getProfileExportLimits(
 
     if (formatId === 'radio-io') {
       const profile = getRadioIoProfile(profileId);
-      if (isRadioIoDm32uvRadioFoundryProfile(profile)) {
+      if (isRadioIoRadioFoundryProfile(profile)) {
         return blankDigitalOrganisation({
           formatId,
           profileId: profile.id,
@@ -372,7 +371,7 @@ export function getProfileExportLimits(
           maxScanLists: 'not_used',
           maxRxGroupLists: profile.maxRxGroupLists,
           maxContacts: profile.maxContacts,
-          maxDigitalIdDatabase: DM32UV_RADIOFOUNDRY_LIMITS.ID_DATABASE_MAX,
+          maxDigitalIdDatabase: profile.maxDigitalIdDatabase,
           maxTalkGroups: 'not_used',
           maxRadioIds: profile.maxRadioIds,
           zoneMembers: profile.zoneMembers,

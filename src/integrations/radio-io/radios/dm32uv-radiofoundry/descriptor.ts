@@ -10,13 +10,9 @@
 import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import type { MemoryMap, RadioDescriptor, RadioHydrationHooks } from '../../types.ts';
-import {
-  DM32_RADIOFOUNDRY_BAUD_RATE,
-  DM32_RADIOFOUNDRY_MODEL_ID,
-  DM32_RADIOFOUNDRY_PROFILE_ID,
-} from './constants.ts';
+import { DM32UV_RADIOFOUNDRY_CABLE_BOARD as BOARD } from './board.ts';
 import { planDm32RadioFoundryStages } from './plannedStages.ts';
-import { createDm32uvRadioFoundryProtocol } from './protocol.ts';
+import { createRadioFoundryCableProtocol } from './protocol.ts';
 
 const hydration: RadioHydrationHooks = {
   extractHydration: (_image, meta) => ({
@@ -24,7 +20,7 @@ const hydration: RadioHydrationHooks = {
     capturedAt: meta?.capturedAt ?? new Date(0).toISOString(),
     ...(meta?.sourceFileName ? { sourceFileName: meta.sourceFileName } : {}),
     retain: {
-      radioModelId: DM32_RADIOFOUNDRY_MODEL_ID,
+      radioModelId: BOARD.modelId,
       capturedVia: 'web-serial',
       imageBase64: '',
       imageByteLength: 0,
@@ -38,11 +34,11 @@ const hydration: RadioHydrationHooks = {
 };
 
 export const DM32_RADIOFOUNDRY_DESCRIPTOR: RadioDescriptor = {
-  modelIds: [DM32_RADIOFOUNDRY_MODEL_ID],
-  label: 'Baofeng DM-32UV (RadioFoundry)',
+  modelIds: [BOARD.modelId],
+  label: BOARD.label,
   group: 'Baofeng',
   supportsBle: false,
-  protocolFactory: createDm32uvRadioFoundryProtocol,
+  protocolFactory: () => createRadioFoundryCableProtocol(BOARD),
   capabilities: {
     maxChannels: DM32UV_RADIOFOUNDRY_LIMITS.CHANNEL_MAX,
     supportsZones: true,
@@ -52,9 +48,9 @@ export const DM32_RADIOFOUNDRY_DESCRIPTOR: RadioDescriptor = {
     supportsBulkRead: true,
   },
   attributionIds: [],
-  compatibleProfiles: [{ formatId: 'radio-io', profileId: DM32_RADIOFOUNDRY_PROFILE_ID }],
+  compatibleProfiles: [{ formatId: 'radio-io', profileId: BOARD.radioIoProfileId }],
   writeStrategy: 'selective-ranges',
-  baudRate: DM32_RADIOFOUNDRY_BAUD_RATE,
+  baudRate: BOARD.baudRate,
   hydration,
   planStages: planDm32RadioFoundryStages,
 };

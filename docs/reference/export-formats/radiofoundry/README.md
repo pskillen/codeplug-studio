@@ -5,14 +5,16 @@ One file, `codeplug.bin`, for a radio running RadioFoundry. This is the open-fir
 |           |                                                                                                                                                                   |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Format id | `radiofoundry`                                                                                                                                                    |
-| Profile   | `radiofoundry-dm32uv`                                                                                                                                             |
+| Profile   | `radiofoundry-dm32uv` (the cable write's `radio-io-dm32uv-radiofoundry` resolves to the same profile)                                                             |
 | Delivery  | One CPS file (`cps-file`). Cable write is a separate egress on the same radio target: [programming cable](../../radios/baofeng/dm-32uv-radiofoundry/protocol.md). |
 | Export    | Shipped                                                                                                                                                           |
 | Import    | Shipped. The same `codeplug.bin` parses into library entities.                                                                                                    |
 
-**Length:** 716384 bytes (0xAEE60). Bytes Studio does not write stay `0xFF`. The zone table is the exception: the bitmap and all 68 zone records are zeroed before real zones are written, so byte 0x806F is `0x00`–`0x04` and the radio keeps the 80-channel zone layout.
+**Length:** 716384 bytes (0xAEE60). Bytes Studio does not write stay `0xFF`, including the settings area's sector at `0xE000`–`0xEFFF` ([settings area](settings-area.md)). The zone table is the exception: the bitmap and all 68 zone records are zeroed before real zones are written, so byte 0x806F is `0x00`–`0x04` and the radio keeps the 80-channel zone layout.
 
-Hardware caps, including the shared contact bank and the nine power steps, are the [DM-32UV (RadioFoundry) limits](../../radios/baofeng/dm-32uv-radiofoundry/limits.md). Names on the wire are 16 ASCII characters, `0xFF` padded, with no NUL. The radio name is 8 characters, taken from the default DMR radio ID's name. An empty radio name is `0xFF` bytes. A 17th character, or a radio name past 8, is truncated and warned. Non-ASCII characters are replaced or dropped, with a warning.
+One codec serves every RadioFoundry radio. The counts below are firmware-wide and the same for each board; what differs per board (power steps, RF bands) comes from the board module of the radio profile the build or import names, so parse and export follow the profile rather than the DM-32UV. A build's profile id, or the cable write's, picks the profile; an unknown id is refused.
+
+Hardware caps, including the shared contact bank and the nine power steps, are the [firmware-wide limits](../../radios/radiofoundry/limits.md) and the [DM-32UV (RadioFoundry) board limits](../../radios/baofeng/dm-32uv-radiofoundry/limits.md). Names on the wire are 16 ASCII characters, `0xFF` padded, with no NUL. The radio name is 8 characters, taken from the default DMR radio ID's name. An empty radio name is `0xFF` bytes. A 17th character, or a radio name past 8, is truncated and warned. Non-ASCII characters are replaced or dropped, with a warning.
 
 References on the wire are 1-based indexes assigned at export. Names are labels, not keys.
 
@@ -34,7 +36,7 @@ References on the wire are 1-based indexes assigned at export. Names are labels,
 - The contact table is fully replaced, up to the contact cap. An unused slot is `0xFF` throughout, which the firmware treats as empty. A later slot does not keep a contact that used to sit there.
 - An RX list is unused when its length-table byte is 0. That byte is owned. The list record is not written: the firmware does not read it when the length is 0. A list that has members is replaced in full.
 - Zones: the bitmap and every zone record are owned. Unused zone slots are the zeroed empty record.
-- Frequencies are BCD of 10 Hz units, stored as a little-endian 32-bit word. A frequency outside 136–174 MHz and 400–480 MHz is a warning, not a failed export.
+- Frequencies are BCD of 10 Hz units, stored as a little-endian 32-bit word. A frequency outside the board's bands ([DM-32UV limits](../../radios/baofeng/dm-32uv-radiofoundry/limits.md)) is a warning, not a failed export.
 
 ## What is read
 
@@ -42,11 +44,12 @@ Import uses the same file. A file shorter than 716384 bytes is rejected with an 
 
 The reader walks channel-bank bitmaps and the zone bitmap. References are the same 1-based indexes the exporter writes.
 
-- An in-use channel becomes a library channel. Mode 0 is FM and mode 1 is DMR. Name, RX and TX frequency, power, squelch, CTCSS/DCS, bandwidth, color code, timeslot, TX contact, RX list, per-channel DMR ID, RX-only, and fixed location are copied when the record has them. VFO A and VFO B are not channels.
+- An in-use channel becomes a library channel. Mode 0 is FM and mode 1 is DMR. Any other mode byte is read as FM, the way the radio runs it, and the import lists a warning naming the channel and the byte. Name, RX and TX frequency, power, squelch, CTCSS/DCS, bandwidth, color code, timeslot, TX contact, RX list, per-channel DMR ID, RX-only, and fixed location are copied when the record has them. VFO A and VFO B are not channels.
 - The 8-byte callsign and the 8 BCD radio ID become the default own digital ID (name and number). A per-channel DMR ID that differs from that ID becomes another own digital ID.
 - A group contact becomes a talk group. A private contact becomes a digital contact. Call type 2 becomes talk group 16777215. A slot whose first byte is `0xFF`, or whose call type is `0xFF`, is skipped.
 - An RX list whose length-table byte is not 0 becomes an RX list. Member indexes point at contacts.
-- An in-use zone becomes a zone. Byte 0x806F selects the record: `0x00`–`0x04` is 80 channels per zone, and `0xFF` is the 16-channel layout (68 records of 48 bytes, name then 16 channel numbers). Any other value is rejected. The exporter writes the 80-channel layout.
+- An in-use zone becomes a zone. Byte 0x806F selects the record: `0x00`–`0x04` is 80 channels per zone, and `0xFF` is the 16-channel layout (68 records of 48 bytes, name then 16 channel numbers). Any other value is rejected. The exporter writes the 80-channel layout. A zone member that points at an empty channel number is left out, and the import lists a warning naming the zone and the number.
+- The settings area (`0xE000`) is read and reported, never imported: its state when it is not usable, each channel that is really a DMR Tier III, P25 or NXDN channel on the radio, and counts of stale tags and of other settings. No value from it is stored or shown. See [settings-area.md](settings-area.md).
 
 Contact byte 0x17 equal to `0x01` means no timeslot override. The library has no field for a contact timeslot override, so any other value is left unread. APRS records, DTMF contacts, and the DMR ID database are not imported. There is no scan-list record to read.
 
@@ -56,6 +59,7 @@ Left as `0xFF`, with no records written:
 
 - DMR ID database, LUCZ, boot text, VFOs, quick keys
 - DTMF / analog contacts
+- The settings area (`0xE000`–`0xEFFF`), which holds channel modes Studio cannot model yet. The radio keeps its own; export adds an info note. See [settings area](settings-area.md).
 - Scan lists. Each scan list produces a warning. Studio does not add a carrier channel, does not run repeater-times-talk-group expansion, and does not clone talk groups per timeslot.
 
 Layout detail is RadioFoundry's own spec (`docs/spec/open-firmware-cps.md` and `docs/spec/tftp.md` section 3). This page does not restate that byte table.

@@ -18,9 +18,11 @@ import {
 import { serialiseRadioFoundryCodeplug } from '@core/import-export/formats/radiofoundry/serialise.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
+import { DM32UV_RADIOFOUNDRY_CABLE_BOARD, type RadioFoundryCableBoard } from './board.ts';
 import { BLOCK_SIZE } from './constants.ts';
 import {
   DMR_ID_DATABASE_ADDRESS,
+  DMR_ID_DATABASE_AREA2_ADDRESS,
   encodeDmrIdDatabase,
   type DmrIdDatabaseRow,
 } from './idDatabase.ts';
@@ -53,6 +55,8 @@ export interface RadioFoundryCableWriteOptions {
   directoryRows?: readonly RadioDigitalContactDto[];
   /** Build and library defaults for scan, receive-only, and talker alias. */
   exportOptions?: CpsExportOptions;
+  /** The board being written. Default is the DM-32UV. Its image end sets the ID database ceiling. */
+  board?: RadioFoundryCableBoard;
 }
 
 export function radioFoundryWriteSourceFromAssembled(
@@ -66,7 +70,13 @@ export function radioFoundryWriteSourceFromAssembled(
   const directory = options?.directoryRows ?? [];
   const area2 =
     directory.length > 0
-      ? writeIdDatabase(image.bytes, image.owned, directory, image.warnings)
+      ? writeIdDatabase(
+          image.bytes,
+          image.owned,
+          directory,
+          image.warnings,
+          options?.board ?? DM32UV_RADIOFOUNDRY_CABLE_BOARD,
+        )
       : undefined;
   return {
     bytes: image.bytes,
@@ -149,8 +159,11 @@ function writeIdDatabase(
   owned: Uint8Array,
   rows: readonly RadioDigitalContactDto[],
   warnings: ExportWarning[],
+  board: RadioFoundryCableBoard,
 ): { bytes: Uint8Array; owned: Uint8Array } | undefined {
-  const encoded = encodeDmrIdDatabase(rows.map(directoryRow), warnings);
+  const encoded = encodeDmrIdDatabase(rows.map(directoryRow), warnings, {
+    area2Bytes: board.limits.IMAGE_END - DMR_ID_DATABASE_AREA2_ADDRESS,
+  });
   if (!encoded) return undefined;
   bytes.set(encoded.area1, DMR_ID_DATABASE_ADDRESS);
   owned.fill(1, DMR_ID_DATABASE_ADDRESS, DMR_ID_DATABASE_ADDRESS + encoded.area1.length);

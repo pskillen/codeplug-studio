@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { isBinaryCpsImportAdapter } from '@core/import-export/importAdapter.ts';
+import { getImportAdapter } from '@core/import-export/registry.ts';
 import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
 // Layout constants for a hand-built image. This test does not call the format adapter.
@@ -78,7 +80,7 @@ describe('importRadioFoundryCodeplug', () => {
 
     const result = await importRadioFoundryCodeplug(PROJECT_ID, handBuiltImage(), store);
 
-    expect(result).toEqual({ ok: true, channelCount: 1, zoneCount: 1 });
+    expect(result).toEqual({ ok: true, channelCount: 1, zoneCount: 1, warnings: [] });
     expect(putChannel).toHaveBeenCalledTimes(1);
     expect(putZone).toHaveBeenCalledTimes(1);
     const channel = putChannel.mock.calls[0]?.[0];
@@ -92,6 +94,42 @@ describe('importRadioFoundryCodeplug', () => {
     expect(await store.listChannels(PROJECT_ID)).toHaveLength(1);
     expect(await store.listZones(PROJECT_ID)).toHaveLength(1);
     expect(await store.listOwnDigitalIds(PROJECT_ID)).toHaveLength(1);
+  });
+
+  it('passes warnings through and still writes the rows', async () => {
+    const store = new InMemoryProjectPersistence();
+    const image = handBuiltImage();
+    const zone = ZONE_BITMAP + ZONE_BITMAP_SIZE;
+    writeU16(image, zone + LIMITS.NAME_MAX + 2, 37);
+
+    const result = await importRadioFoundryCodeplug(PROJECT_ID, image, store);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toContain('Zone "Home"');
+    expect(await store.listChannels(PROJECT_ID)).toHaveLength(1);
+    expect(await store.listZones(PROJECT_ID)).toHaveLength(1);
+  });
+
+  it('hands the egress profile id to the parser', async () => {
+    const store = new InMemoryProjectPersistence();
+    const adapter = getImportAdapter('radiofoundry');
+    if (!isBinaryCpsImportAdapter(adapter)) throw new Error('expected a binary adapter');
+    const parse = vi.spyOn(adapter, 'parse');
+
+    const result = await importRadioFoundryCodeplug(
+      PROJECT_ID,
+      handBuiltImage(),
+      store,
+      'radio-io-dm32uv-radiofoundry',
+    );
+
+    expect(result.ok).toBe(true);
+    expect(parse).toHaveBeenCalledWith(expect.any(Uint8Array), PROJECT_ID, {
+      profileId: 'radio-io-dm32uv-radiofoundry',
+    });
+    parse.mockRestore();
   });
 
   it('surfaces a short-file parser error and writes nothing', async () => {

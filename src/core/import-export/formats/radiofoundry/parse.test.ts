@@ -14,6 +14,8 @@ import {
   RX_LIST_BASE,
   RX_LIST_LENGTH,
   RX_LIST_LENGTH_SIZE,
+  SETTINGS_AREA_ADDRESS,
+  SETTINGS_AREA_SIZE,
   ZONE_BITMAP,
   ZONE_BITMAP_SIZE,
   ZONE_LAYOUT_BYTE,
@@ -21,6 +23,9 @@ import {
   ZONE_RECORD_SIZE_16,
   channelSlotAddress,
 } from './layout.ts';
+import { radioFoundryNameCheck } from './channelTags.ts';
+import { CHANNEL_TAG_KEY_FIRST as CHANNEL_TAG_KEY_FIRST_FOR_TEST } from './channelTags.ts';
+import { crc32 } from './settingsArea.ts';
 
 const LIMITS = DM32UV_RADIOFOUNDRY_LIMITS;
 
@@ -282,5 +287,153 @@ describe('parseRadioFoundryCodeplug', () => {
     const image = eightyChannelImage();
     image[ZONE_LAYOUT_BYTE] = 0x20;
     expect(() => parse(image)).toThrow(/zone layout/);
+  });
+
+  describe('warnings', () => {
+    function writeSettingsArea(
+      image: Uint8Array,
+      entries: [number, number[]][],
+      { version = 1, magic = true }: { version?: number; magic?: boolean } = {},
+    ): void {
+      const data = entries.flatMap(([key, value]) => [
+        key & 0xff,
+        key >> 8,
+        value.length & 0xff,
+        value.length >> 8,
+        ...value,
+      ]);
+      const sector = new Uint8Array(SETTINGS_AREA_SIZE).fill(0xff);
+      const crc = crc32(Uint8Array.from(data));
+      sector.fill(0, 0, 16);
+      sector.set([0x52, 0x46, 0x4b, 0x56, version, 16, data.length & 0xff, data.length >> 8], 0);
+      sector.set([crc & 0xff, (crc >>> 8) & 0xff, (crc >>> 16) & 0xff, (crc >>> 24) & 0xff], 8);
+      sector.set(data, 16);
+      if (!magic) sector[0] = 0x00;
+      image.set(sector, SETTINGS_AREA_ADDRESS);
+    }
+
+    function tagFor(image: Uint8Array, number: number, kind: number, flags: number): number[] {
+      const record = image.subarray(
+        channelSlotAddress(number).record,
+        channelSlotAddress(number).record + CHANNEL_RECORD_SIZE,
+      );
+      const check = radioFoundryNameCheck(record.subarray(0, 16));
+      return [kind, 0xff, check & 0xff, check >> 8, flags];
+    }
+
+    it('has no warnings for a clean image', () => {
+      expect(parse(sampleImage()).warnings).toEqual([]);
+    });
+
+    it('imports an unknown mode byte as FM and keeps its zone member', () => {
+      const image = eightyChannelImage();
+      const odd = channelRecord(image, 1);
+      writeAscii(odd, 0, 'Odd', LIMITS.NAME_MAX);
+      odd[0x18] = 5;
+      image[ZONE_BITMAP] = 0x01;
+      const zone = ZONE_BITMAP + ZONE_BITMAP_SIZE;
+      writeAscii(image, zone, 'Home', LIMITS.NAME_MAX);
+      writeU16(image, zone + LIMITS.NAME_MAX, 1);
+
+      const parsed = parse(image);
+      expect(parsed.channels.map((row) => [row.name, row.primaryMode])).toEqual([['Odd', 'fm']]);
+      expect(parsed.zones[0]?.members).toEqual([
+        { kind: 'channel', channelId: parsed.channels[0]?.id },
+      ]);
+      expect(parsed.warnings).toHaveLength(1);
+      expect(parsed.warnings[0]).toContain('Channel 1 "Odd"');
+      expect(parsed.warnings[0]).toContain('0x05');
+    });
+
+    it('names a zone member that points at an empty channel', () => {
+      const image = sampleImage();
+      const zone = ZONE_BITMAP + ZONE_BITMAP_SIZE;
+      writeU16(image, zone + LIMITS.NAME_MAX + 2, 37);
+      const parsed = parse(image);
+      expect(parsed.zones[0]?.members).toHaveLength(1);
+      expect(parsed.warnings).toHaveLength(1);
+      expect(parsed.warnings[0]).toContain('Zone "Home"');
+      expect(parsed.warnings[0]).toContain('channel 37');
+    });
+
+    it('lists several empty members of one zone in one line', () => {
+      const image = sampleImage();
+      const zone = ZONE_BITMAP + ZONE_BITMAP_SIZE;
+      writeU16(image, zone + LIMITS.NAME_MAX + 2, 12);
+      writeU16(image, zone + LIMITS.NAME_MAX + 4, 40);
+      writeU16(image, zone + LIMITS.NAME_MAX + 6, 41);
+      const parsed = parse(image);
+      expect(parsed.warnings).toHaveLength(1);
+      expect(parsed.warnings[0]).toContain('channels 12, 40 and 41');
+    });
+
+    it('says nothing about an erased settings area', () => {
+      const image = sampleImage();
+      image.fill(0xff, SETTINGS_AREA_ADDRESS, SETTINGS_AREA_ADDRESS + SETTINGS_AREA_SIZE);
+      expect(parse(image).warnings).toEqual([]);
+    });
+
+    it('reports a settings area that is not valid, or newer than Studio knows', () => {
+      const bad = sampleImage();
+      writeSettingsArea(bad, [], { magic: false });
+      const badWarnings = parse(bad).warnings;
+      expect(badWarnings).toHaveLength(1);
+      expect(badWarnings[0]).toContain('not valid');
+
+      const newer = sampleImage();
+      writeSettingsArea(newer, [], { version: 2 });
+      const newerWarnings = parse(newer).warnings;
+      expect(newerWarnings).toHaveLength(1);
+      expect(newerWarnings[0]).toContain('newer RadioFoundry');
+      expect(newerWarnings[0]).toContain('version 2');
+    });
+
+    it('reports a live P25 tag over a receive-only DMR stand-in, then a stale one after a rename', () => {
+      const image = sampleImage();
+      writeSettingsArea(image, [[CHANNEL_TAG_KEY_FIRST_FOR_TEST + 1, tagFor(image, 2, 2, 0x01)]]);
+      const live = parse(image).warnings;
+      expect(live).toHaveLength(1);
+      expect(live[0]).toContain('Channel 2 "Repeater"');
+      expect(live[0]).toContain('P25 conventional');
+      expect(live[0]).toContain('receive-only DMR');
+
+      const renamed = sampleImage();
+      writeSettingsArea(renamed, [
+        [CHANNEL_TAG_KEY_FIRST_FOR_TEST + 1, tagFor(renamed, 2, 2, 0x01)],
+      ]);
+      const record = renamed.subarray(
+        channelSlotAddress(2).record,
+        channelSlotAddress(2).record + CHANNEL_RECORD_SIZE,
+      );
+      writeAscii(record, 0, 'Renamed', LIMITS.NAME_MAX);
+      const stale = parse(renamed).warnings;
+      expect(stale).toHaveLength(1);
+      expect(stale[0]).toContain('1 RadioFoundry channel tag no longer matches');
+      expect(stale[0]).not.toContain('P25');
+    });
+
+    it('reports a tag whose base stands alone as imported with its own settings only', () => {
+      const image = sampleImage();
+      writeSettingsArea(image, [[CHANNEL_TAG_KEY_FIRST_FOR_TEST, tagFor(image, 1, 4, 0x03)]]);
+      const warnings = parse(image).warnings;
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toContain('Channel 1 "Local" is also a NXDN conventional');
+      expect(warnings[0]).toContain('only its FM settings');
+    });
+
+    it('counts other settings without showing any value', () => {
+      const image = sampleImage();
+      writeSettingsArea(image, [
+        [0x0300, [0xde, 0xad, 0xbe, 0xef]],
+        [0x0a02, [0xde, 0xad, 0xbe, 0xef, 0x22]],
+      ]);
+      const warnings = parse(image).warnings;
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toContain('2 RadioFoundry settings');
+      const joined = warnings.join('\n');
+      for (const leak of ['DEAD', 'dead', '222', '0xde', '0300', '0a02', '768']) {
+        expect(joined).not.toContain(leak);
+      }
+    });
   });
 });

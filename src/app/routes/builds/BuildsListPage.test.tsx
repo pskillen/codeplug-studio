@@ -22,20 +22,33 @@ function renderPage() {
   );
 }
 
+function seed() {
+  mocks.builds = [
+    { ...newRadioBuildWithEgresses(projectId, 'baofeng-dm32uv-mm9pdy').build, name: 'Club A' },
+    { ...newRadioBuildWithEgresses(projectId, 'retevis-rt95').build, name: 'Mobile' },
+  ];
+}
+
 describe('BuildsListPage', () => {
-  it('groups by manufacturer and model by default, with a List mode', () => {
-    mocks.builds = [
-      { ...newRadioBuildWithEgresses(projectId, 'baofeng-dm32uv-mm9pdy').build, name: 'Club A' },
-      { ...newRadioBuildWithEgresses(projectId, 'retevis-rt95').build, name: 'Mobile' },
-    ];
+  it('shows a card per radio, one New build button and no group switch', () => {
+    seed();
     renderPage();
     expect(screen.getByText(/2 builds across 2 radios/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Baofeng builds' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'DM-32UV builds' })).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'DM-32UV builds' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /New build/ })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'List' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Group by')).not.toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getByRole('button', { name: 'List' }));
-    expect(screen.queryByRole('button', { name: 'Baofeng builds' })).not.toBeInTheDocument();
-    expect(screen.getByText('Club A')).toBeInTheDocument();
+  it('searches with a match count and an empty state', () => {
+    seed();
+    renderPage();
+    const box = screen.getByRole('searchbox', { name: 'Search builds' });
+    fireEvent.change(box, { target: { value: 'RETEVIS mobile' } });
+    expect(screen.getByRole('status')).toHaveTextContent('1 match');
+    expect(screen.queryByRole('article', { name: 'DM-32UV builds' })).not.toBeInTheDocument();
+    fireEvent.change(box, { target: { value: 'nothing here' } });
+    expect(screen.getByText(/No builds match/)).toBeInTheDocument();
   });
 
   it('shows the empty state with no builds', () => {

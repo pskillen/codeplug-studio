@@ -9,9 +9,7 @@ Hardware cardinality, RF band bounds, and name-length ceilings for a radio model
 
 Format profiles (`formats/<format>/profiles.ts`) and radio-io profiles **import** from that module. Protocol-only layout sizes may stay in `integrations/radio-io/`, but cardinality must re-export from core.
 
-**Shipped modules (2026):** Baofeng DM-32UV, OpenGD77 family, Anytone AT-D890UV.
-
-**Audit background:** [export limits placement audit](../../tmp/export-limits-placement-audit/00-findings.md) (H1–H4, M1–M11). Remaining items after #813: [01-unresolved-after-813.md](../../tmp/export-limits-placement-audit/01-unresolved-after-813.md).
+**Shipped modules (2026):** Baofeng DM-32UV, OpenGD77 family, Anytone AT-D890UV, RadioFoundry (a firmware-wide module plus one module per board, the DM-32UV first).
 
 ## Digital ID database cap
 

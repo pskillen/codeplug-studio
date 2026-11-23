@@ -12,8 +12,8 @@ export const radiofoundryImportAdapter = {
     delivery: 'binary-cps',
     entityKinds: ['channels', 'talkGroups', 'contacts', 'rxGroupLists', 'zones', 'radioIds'],
   },
-  parse(bytes, projectId) {
-    return parseRadioFoundryCodeplug(bytes, projectId);
+  parse(bytes, projectId, ctx) {
+    return parseRadioFoundryCodeplug(bytes, projectId, ctx?.profileId);
   },
 } satisfies BinaryCpsImportAdapter;
 

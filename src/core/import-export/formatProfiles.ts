@@ -25,6 +25,7 @@ import {
 import {
   RADIOFOUNDRY_PROFILES,
   getRadioFoundryProfile,
+  isRadioFoundryRadioIoProfileId,
   type RadioFoundryRadioProfile,
 } from './formats/radiofoundry/profiles.ts';
 import {
@@ -41,7 +42,7 @@ import {
   radioIoChannelDescriptionLimit,
   isRadioIoAtD890uvProfile,
   isRadioIoDm32uvProfile,
-  isRadioIoDm32uvRadioFoundryProfile,
+  isRadioIoRadioFoundryProfile,
   isRadioIoOpenGd771701Profile,
   type RadioIoRadioProfile,
 } from './formats/radio-io/profiles.ts';
@@ -253,7 +254,7 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
       if (isRadioIoOpenGd771701Profile(profile)) {
         return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} channels max · Web Serial`;
       }
-      if (isRadioIoDm32uvRadioFoundryProfile(profile)) {
+      if (isRadioIoRadioFoundryProfile(profile)) {
         return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} channels max · Web Serial`;
       }
       return `${profile.nameLimit}-char wire names · ${profile.maxMemorySlots} memory slots · Web Serial only`;
@@ -275,6 +276,7 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
 export {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
+  isRadioFoundryRadioIoProfileId,
   isMm9pdyAtD890RadioIoProfileId,
   isMm9pdyDm32RadioIoProfileId,
   isMm9pdyRt95RadioIoProfileId,

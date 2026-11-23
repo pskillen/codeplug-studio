@@ -1,205 +1,159 @@
-import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import {
-  egressSummary,
-  groupBuildsByRadio,
-  radioTargetForModelFirmware,
-  type BuildModelGroup,
-} from '@core/radio-targets/index.ts';
-import { Button } from '../v2/index.ts';
-import { FirmwareKindPill, RadioClassPill } from './RadioModelPills.tsx';
+import { groupBuildsByRadio, type BuildModelGroup } from '@core/radio-targets/index.ts';
+import { FirmwareLabelPill, RadioClassPill } from './RadioModelPills.tsx';
+import { buildTransferPaths, searchTokens } from './buildsSearch.ts';
 import classes from './BuildsByRadio.module.css';
 
 export interface BuildsByRadioProps {
   builds: readonly RadioBuild[];
+  /** Search words to highlight in names and transfer paths. */
+  query?: string;
 }
 
 function plural(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
-function newBuildHref(targetId: string): string {
-  return `/builds/new?target=${encodeURIComponent(targetId)}`;
+const RELATIVE_UNITS: readonly [Intl.RelativeTimeFormatUnit, number][] = [
+  ['year', 365 * 24 * 3600],
+  ['month', 30 * 24 * 3600],
+  ['week', 7 * 24 * 3600],
+  ['day', 24 * 3600],
+  ['hour', 3600],
+  ['minute', 60],
+];
+
+/** "3 days ago" style label; "just now" under a minute. */
+export function relativeTime(iso: string, now: number = Date.now()): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const seconds = Math.round((then - now) / 1000);
+  const abs = Math.abs(seconds);
+  const fmt = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+  for (const [unit, size] of RELATIVE_UNITS) {
+    if (abs >= size) return fmt.format(Math.trunc(seconds / size), unit);
+  }
+  return 'just now';
 }
 
-function Caret({ open }: { open: boolean }) {
-  return open ? (
-    <IconChevronDown size={14} stroke={2} aria-hidden />
-  ) : (
-    <IconChevronRight size={14} stroke={2} aria-hidden />
+/** Wrap every occurrence of a search token in <mark>. */
+function Highlight({ text, tokens }: { text: string; tokens: readonly string[] }) {
+  if (tokens.length === 0 || !text) return <>{text}</>;
+  const low = text.toLowerCase();
+  const on = new Array<boolean>(text.length).fill(false);
+  for (const tk of tokens) {
+    let i = low.indexOf(tk);
+    while (i >= 0) {
+      for (let j = i; j < i + tk.length; j += 1) on[j] = true;
+      i = low.indexOf(tk, i + 1);
+    }
+  }
+  const parts: { text: string; mark: boolean }[] = [];
+  for (let i = 0; i < text.length; i += 1) {
+    const last = parts[parts.length - 1];
+    if (last && last.mark === on[i]) last.text += text[i];
+    else parts.push({ text: text[i], mark: on[i] });
+  }
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.mark ? <mark key={i}>{p.text}</mark> : <Fragment key={i}>{p.text}</Fragment>,
+      )}
+    </>
   );
 }
 
-function BuildRow({ build, summary }: { build: RadioBuild; summary: string }) {
-  const updated = new Date(build.updatedAt).toLocaleString();
+function BuildRow({
+  build,
+  firmware,
+  tokens,
+}: {
+  build: RadioBuild;
+  firmware: BuildModelGroup<RadioBuild>['firmware'][number]['firmware'] | undefined;
+  tokens: readonly string[];
+}) {
+  const paths = buildTransferPaths(build);
   return (
-    <div className={classes.build}>
-      <div className={classes.buildName}>
-        <Link to={`/builds/${build.id}/export`} className={classes.buildLink}>
-          {build.name}
-        </Link>
-        <small className={classes.buildSummary}>{summary}</small>
-      </div>
-      <div className={classes.buildUpdated}>Updated {updated}</div>
-      <Link to={`/builds/${build.id}/export`} className={classes.open}>
-        Open
-      </Link>
-    </div>
+    <Link to={`/builds/${build.id}/export`} className={classes.build}>
+      <span className={classes.buildName}>
+        <Highlight text={build.name} tokens={tokens} />
+      </span>
+      <time
+        className={classes.buildTime}
+        dateTime={build.updatedAt}
+        title={`Updated ${new Date(build.updatedAt).toLocaleString()}`}
+      >
+        {relativeTime(build.updatedAt)}
+      </time>
+      <span className={classes.buildMeta}>
+        {firmware ? <FirmwareLabelPill firmware={firmware} /> : null}
+        {paths ? (
+          <span className={classes.buildPaths}>
+            <Highlight text={paths} tokens={tokens} />
+          </span>
+        ) : null}
+      </span>
+    </Link>
   );
 }
 
 function ModelCard({
   group,
-  collapsed,
-  onToggle,
+  tokens,
 }: {
   group: BuildModelGroup<RadioBuild>;
-  collapsed: boolean;
-  onToggle: () => void;
+  tokens: readonly string[];
 }) {
   const { model } = group;
-  // A model with a single exportable firmware gets a header "+ New" for that target;
-  // multi-firmware models get a "+ Another <firmware> build" row per firmware group.
-  const modelTargets = model
-    ? model.firmware
-        .map((fw) => radioTargetForModelFirmware(model.id, fw.id))
-        .filter((t) => t != null)
-    : [];
-  const headerTarget = modelTargets.length === 1 ? modelTargets[0] : undefined;
-  const onlyFirmware = group.firmware.length === 1 ? group.firmware[0] : undefined;
-  const showFirmwareHeaders = group.firmware.length > 1 || onlyFirmware?.firmware.kind !== 'stock';
-
   return (
-    <div className={classes.model}>
-      <div className={classes.modelHead}>
-        <button
-          type="button"
-          className={classes.toggle}
-          aria-expanded={!collapsed}
-          aria-label={`${group.label} builds`}
-          onClick={onToggle}
-        >
-          <Caret open={!collapsed} />
-          <span className={classes.modelName}>{group.label}</span>
-        </button>
+    <article className={classes.card} aria-label={`${group.label} builds`}>
+      <header className={classes.cardHead}>
+        <h3 className={classes.modelName}>{group.label}</h3>
         {model ? <RadioClassPill radioClass={model.radioClass} /> : null}
-        {onlyFirmware && !showFirmwareHeaders ? (
-          <FirmwareKindPill kind={onlyFirmware.firmware.kind} />
-        ) : null}
-        <span className={classes.muted}>
-          ·{' '}
-          {group.firmware.length > 1
-            ? `${plural(group.buildCount, 'build', 'builds')} on ${group.firmware.length} firmwares`
-            : plural(group.buildCount, 'build', 'builds')}
-        </span>
-        <span className={classes.spacer} />
-        {headerTarget ? (
-          <Link to={newBuildHref(headerTarget.id)} className={classes.add}>
-            + New
-          </Link>
-        ) : null}
-      </div>
-
-      {collapsed
-        ? null
-        : group.firmware.map((fw) => (
-            <div key={fw.key} className={classes.fw}>
-              {showFirmwareHeaders ? (
-                <div className={classes.fwHead}>
-                  <span className={classes.fwLabel}>{fw.firmware.label}</span>
-                  <FirmwareKindPill kind={fw.firmware.kind} />
-                  <span className={classes.muted}>
-                    · {plural(fw.builds.length, 'build', 'builds')}
-                  </span>
-                </div>
-              ) : null}
-              {fw.builds.map((build) => (
-                <BuildRow
-                  key={build.id}
-                  build={build}
-                  summary={fw.target ? egressSummary(fw.target) : build.radioTargetId}
-                />
-              ))}
-              {fw.target && !headerTarget ? (
-                <Link to={newBuildHref(fw.target.id)} className={classes.addRow}>
-                  + Another {fw.firmware.label} build
-                </Link>
-              ) : null}
-            </div>
-          ))}
-    </div>
+        <span className={classes.count}>{plural(group.buildCount, 'build', 'builds')}</span>
+      </header>
+      {/* Firmware groups are already in catalog order (stock first), builds by name. */}
+      {group.firmware.flatMap((fw) =>
+        fw.builds.map((build) => (
+          <BuildRow
+            key={build.id}
+            build={build}
+            firmware={fw.target ? fw.firmware : undefined}
+            tokens={tokens}
+          />
+        )),
+      )}
+    </article>
   );
 }
 
 /**
- * Builds grouped manufacturer → model → firmware → instances, with collapsible
- * manufacturers and models. Grouping is derived from each build's `radioTargetId`.
+ * Builds as one card per radio model under a manufacturer heading. Each build is a
+ * single link row that opens it. Grouping and ordering come from `groupBuildsByRadio`.
  */
-export default function BuildsByRadio({ builds }: BuildsByRadioProps) {
+export default function BuildsByRadio({ builds, query = '' }: BuildsByRadioProps) {
   const groups = useMemo(() => groupBuildsByRadio(builds), [builds]);
-  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
-
-  const allKeys = useMemo(
-    () => groups.flatMap((g) => [g.key, ...g.models.map((m) => m.key)]),
-    [groups],
-  );
-  const allCollapsed = allKeys.length > 0 && allKeys.every((k) => collapsed.has(k));
-
-  function toggle(key: string) {
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }
+  const tokens = useMemo(() => searchTokens(query), [query]);
 
   if (groups.length === 0) return null;
 
   return (
     <div className={classes.root}>
-      <div className={classes.bar}>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(allKeys))}
-        >
-          {allCollapsed ? 'Expand all' : 'Collapse all'}
-        </Button>
-      </div>
-      {groups.map((mfr) => {
-        const mfrCollapsed = collapsed.has(mfr.key);
-        return (
-          <section key={mfr.key} className={classes.mfr}>
-            <button
-              type="button"
-              className={classes.mfrHead}
-              aria-expanded={!mfrCollapsed}
-              aria-label={`${mfr.manufacturer} builds`}
-              onClick={() => toggle(mfr.key)}
-            >
-              <Caret open={!mfrCollapsed} />
-              <b>{mfr.manufacturer}</b>
-              <span className={classes.muted}>
-                {plural(mfr.buildCount, 'build', 'builds')}
-                {mfrCollapsed ? ` · ${mfr.models.map((m) => m.label).join(', ')}` : ''}
-              </span>
-            </button>
-            {mfrCollapsed
-              ? null
-              : mfr.models.map((model) => (
-                  <ModelCard
-                    key={model.key}
-                    group={model}
-                    collapsed={collapsed.has(model.key)}
-                    onToggle={() => toggle(model.key)}
-                  />
-                ))}
-          </section>
-        );
-      })}
+      {groups.map((mfr) => (
+        <section key={mfr.key} className={classes.mfr} aria-label={`${mfr.manufacturer} builds`}>
+          <h2 className={classes.mfrHead}>
+            {mfr.manufacturer}
+            <small>{plural(mfr.buildCount, 'build', 'builds')}</small>
+          </h2>
+          <div className={classes.grid}>
+            {mfr.models.map((model) => (
+              <ModelCard key={model.key} group={model} tokens={tokens} />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
