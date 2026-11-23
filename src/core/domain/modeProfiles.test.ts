@@ -4,7 +4,9 @@ import type {
   ChannelModeProfileDMR,
   ChannelModeProfile,
 } from '../models/library.ts';
+import type { ChannelModeEdit } from './modeProfiles.ts';
 import {
+  addChannelMode,
   channelHasFmAmProfile,
   defaultModeProfile,
   findAnalogProfile,
@@ -13,7 +15,10 @@ import {
   normalizeModeProfile,
   pickFmAmModeProfile,
   reconcilePrimaryMode,
+  removeChannelMode,
   resolveChannelPrimaryMode,
+  setChannelMainMode,
+  switchChannelMode,
   syncModeProfiles,
   validateModeProfiles,
 } from './modeProfiles.ts';
@@ -299,5 +304,304 @@ describe('pickFmAmModeProfile', () => {
         modeProfiles: [defaultModeProfile('ssb'), defaultModeProfile('dmr')],
       }),
     ).toBe(false);
+  });
+});
+
+function emptyEdit(): ChannelModeEdit {
+  return { modeProfiles: [], primaryMode: null, parked: [] };
+}
+
+function freezeEdit(edit: ChannelModeEdit): ChannelModeEdit {
+  Object.freeze(edit);
+  Object.freeze(edit.modeProfiles);
+  Object.freeze(edit.parked);
+  edit.modeProfiles.forEach((p) => Object.freeze(p));
+  edit.parked.forEach((p) => Object.freeze(p));
+  return edit;
+}
+
+describe('switchChannelMode', () => {
+  it('is unchanged when the target is already the only mode', () => {
+    const edit = {
+      modeProfiles: [defaultModeProfile('fm')],
+      primaryMode: 'fm' as const,
+      parked: [],
+    };
+    const out = switchChannelMode(edit, 'fm');
+    expect(out).toEqual(edit);
+  });
+
+  it('is unchanged with two or more modes', () => {
+    const edit = {
+      modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
+      primaryMode: 'fm' as const,
+      parked: [],
+    };
+    expect(switchChannelMode(edit, 'ysf')).toEqual({
+      modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
+      primaryMode: 'fm',
+      parked: [],
+    });
+  });
+
+  it('parks FM and switches to DMR at the same index', () => {
+    const fm: ChannelModeProfileAnalog = {
+      mode: 'fm',
+      squelch: 25,
+      rxTone: '88.5',
+      txTone: '88.5',
+      bandwidthKHz: 12.5,
+      analogSquelchMode: 'default',
+    };
+    const edit = { modeProfiles: [fm], primaryMode: 'fm' as const, parked: [] };
+    const out = switchChannelMode(edit, 'dmr');
+    expect(out.modeProfiles).toHaveLength(1);
+    expect(out.modeProfiles[0]?.mode).toBe('dmr');
+    expect(out.primaryMode).toBe('dmr');
+    expect(out.parked).toHaveLength(1);
+    expect(out.parked[0]).toEqual(fm);
+  });
+
+  it('restores parked FM with tones when switching back from DMR', () => {
+    const fm: ChannelModeProfileAnalog = {
+      mode: 'fm',
+      squelch: 25,
+      rxTone: '88.5',
+      txTone: '88.5',
+      bandwidthKHz: 12.5,
+      analogSquelchMode: 'default',
+    };
+    const original = { modeProfiles: [fm], primaryMode: 'fm' as const, parked: [] };
+    const afterDmr = switchChannelMode(original, 'dmr');
+    const restored = switchChannelMode(afterDmr, 'fm');
+    expect(restored.modeProfiles).toEqual([fm]);
+    expect(restored.primaryMode).toBe('fm');
+    expect(restored.parked[0]?.mode).toBe('dmr');
+  });
+
+  it('sets a default profile when switching from no mode', () => {
+    const out = switchChannelMode(emptyEdit(), 'p25');
+    expect(out.modeProfiles).toEqual([defaultModeProfile('p25')]);
+    expect(out.primaryMode).toBe('p25');
+  });
+
+  it('restores a parked profile when switching from no mode', () => {
+    const ysf = defaultModeProfile('ysf');
+    const edit = { modeProfiles: [], primaryMode: null, parked: [ysf] };
+    const out = switchChannelMode(edit, 'ysf');
+    expect(out.modeProfiles).toEqual([ysf]);
+    expect(out.parked).toEqual([]);
+  });
+
+  it('carries analogue tones when switching FM to AM', () => {
+    const fm: ChannelModeProfileAnalog = {
+      mode: 'fm',
+      squelch: 40,
+      rxTone: '100.0',
+      txTone: '100.0',
+      bandwidthKHz: 25,
+      analogSquelchMode: 'default',
+    };
+    const out = switchChannelMode(
+      { modeProfiles: [fm], primaryMode: 'fm', parked: [] },
+      'am',
+    );
+    expect(out.modeProfiles[0]).toMatchObject({
+      mode: 'am',
+      rxTone: '100.0',
+      txTone: '100.0',
+      bandwidthKHz: 25,
+      squelch: 40,
+    });
+  });
+
+  it('does not carry DMR colour code when switching to FM', () => {
+    const dmr = defaultModeProfile('dmr') as ChannelModeProfileDMR;
+    dmr.colourCode = 9;
+    const out = switchChannelMode(
+      { modeProfiles: [dmr], primaryMode: 'dmr', parked: [] },
+      'fm',
+    );
+    expect((out.modeProfiles[0] as ChannelModeProfileAnalog).rxTone).toBe('none');
+    expect(out.parked[0]?.mode).toBe('dmr');
+    expect((out.parked[0] as ChannelModeProfileDMR).colourCode).toBe(9);
+  });
+
+  it('uses parked DMR without re-defaulting', () => {
+    const dmr = defaultModeProfile('dmr') as ChannelModeProfileDMR;
+    dmr.colourCode = 3;
+    const fm = defaultModeProfile('fm');
+    const edit = {
+      modeProfiles: [fm],
+      primaryMode: 'fm' as const,
+      parked: [dmr],
+    };
+    const out = switchChannelMode(edit, 'dmr');
+    expect((out.modeProfiles[0] as ChannelModeProfileDMR).colourCode).toBe(3);
+    expect(out.parked).toEqual([fm]);
+  });
+});
+
+describe('addChannelMode', () => {
+  it('is unchanged when the mode is already present', () => {
+    const edit = {
+      modeProfiles: [defaultModeProfile('fm')],
+      primaryMode: 'fm' as const,
+      parked: [],
+    };
+    expect(addChannelMode(edit, 'fm')).toEqual(edit);
+  });
+
+  it('appends a default profile and keeps primary', () => {
+    const edit = {
+      modeProfiles: [defaultModeProfile('fm')],
+      primaryMode: 'fm' as const,
+      parked: [],
+    };
+    const out = addChannelMode(edit, 'dmr');
+    expect(out.modeProfiles.map((p) => p.mode)).toEqual(['fm', 'dmr']);
+    expect(out.primaryMode).toBe('fm');
+  });
+
+  it('restores a parked profile when adding', () => {
+    const dmr = defaultModeProfile('dmr') as ChannelModeProfileDMR;
+    dmr.colourCode = 5;
+    const edit = {
+      modeProfiles: [defaultModeProfile('fm')],
+      primaryMode: 'fm' as const,
+      parked: [dmr],
+    };
+    const out = addChannelMode(edit, 'dmr');
+    expect((out.modeProfiles[1] as ChannelModeProfileDMR).colourCode).toBe(5);
+    expect(out.parked).toEqual([]);
+  });
+
+  it('sets primary to the first mode when it was null', () => {
+    const edit = addChannelMode(emptyEdit(), 'nxdn');
+    expect(edit.primaryMode).toBe('nxdn');
+  });
+});
+
+describe('removeChannelMode', () => {
+  it('is unchanged when the mode is absent', () => {
+    const edit = {
+      modeProfiles: [defaultModeProfile('fm')],
+      primaryMode: 'fm' as const,
+      parked: [],
+    };
+    expect(removeChannelMode(edit, 'dmr')).toEqual(edit);
+  });
+
+  it('parks the removed profile and advances primary', () => {
+    const fm: ChannelModeProfileAnalog = {
+      mode: 'fm',
+      squelch: 25,
+      rxTone: '88.5',
+      txTone: '88.5',
+      bandwidthKHz: null,
+      analogSquelchMode: 'default',
+    };
+    const dmr = defaultModeProfile('dmr') as ChannelModeProfileDMR;
+    dmr.colourCode = 7;
+    const edit = {
+      modeProfiles: [fm, dmr],
+      primaryMode: 'fm' as const,
+      parked: [],
+    };
+    const out = removeChannelMode(edit, 'fm');
+    expect(out.modeProfiles).toHaveLength(1);
+    expect((out.modeProfiles[0] as ChannelModeProfileDMR).colourCode).toBe(7);
+    expect(out.primaryMode).toBe('dmr');
+    expect(out.parked[0]).toEqual(fm);
+  });
+
+  it('clears primary when no modes remain', () => {
+    const out = removeChannelMode(
+      { modeProfiles: [defaultModeProfile('m17')], primaryMode: 'm17', parked: [] },
+      'm17',
+    );
+    expect(out.modeProfiles).toEqual([]);
+    expect(out.primaryMode).toBeNull();
+  });
+});
+
+describe('setChannelMainMode', () => {
+  it('sets primary when the mode is on the channel', () => {
+    const edit = {
+      modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
+      primaryMode: 'fm' as const,
+      parked: [],
+    };
+    const out = setChannelMainMode(edit, 'dmr');
+    expect(out.primaryMode).toBe('dmr');
+    expect(out.modeProfiles.map((p) => p.mode)).toEqual(['fm', 'dmr']);
+  });
+
+  it('is unchanged when the mode is not present', () => {
+    const edit = {
+      modeProfiles: [defaultModeProfile('fm')],
+      primaryMode: 'fm' as const,
+      parked: [],
+    };
+    expect(setChannelMainMode(edit, 'ysf')).toEqual(edit);
+  });
+});
+
+describe('mode transitions (same output as today editor)', () => {
+  it('switch fm then add dmr from empty', () => {
+    let edit = emptyEdit();
+    edit = switchChannelMode(edit, 'fm');
+    edit = addChannelMode(edit, 'dmr');
+    expect(edit.modeProfiles).toEqual([
+      defaultModeProfile('fm'),
+      defaultModeProfile('dmr'),
+    ]);
+    expect(edit.primaryMode).toBe('fm');
+  });
+
+  it('remove fm from fm+dmr with configured profiles', () => {
+    const fm: ChannelModeProfileAnalog = {
+      mode: 'fm',
+      squelch: 25,
+      rxTone: '88.5',
+      txTone: '88.5',
+      bandwidthKHz: null,
+      analogSquelchMode: 'default',
+    };
+    const dmr = defaultModeProfile('dmr') as ChannelModeProfileDMR;
+    dmr.colourCode = 7;
+    const out = removeChannelMode(
+      { modeProfiles: [fm, dmr], primaryMode: 'fm', parked: [] },
+      'fm',
+    );
+    expect(out.modeProfiles).toEqual([dmr]);
+    expect(out.primaryMode).toBe('dmr');
+  });
+
+  it('add ysf to fm+dmr with dmr primary preserves order', () => {
+    const edit = {
+      modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
+      primaryMode: 'dmr' as const,
+      parked: [],
+    };
+    const out = addChannelMode(edit, 'ysf');
+    expect(out.modeProfiles.map((p) => p.mode)).toEqual(['fm', 'dmr', 'ysf']);
+    expect(out.primaryMode).toBe('dmr');
+  });
+});
+
+describe('mode transitions (input immutability)', () => {
+  it('does not mutate frozen inputs', () => {
+    const fm = defaultModeProfile('fm');
+    const before = freezeEdit({ modeProfiles: [fm], primaryMode: 'fm', parked: [] });
+    const snapshot = structuredClone(before);
+    switchChannelMode(before, 'dmr');
+    expect(before).toEqual(snapshot);
+    addChannelMode(before, 'dmr');
+    expect(before).toEqual(snapshot);
+    removeChannelMode(before, 'fm');
+    expect(before).toEqual(snapshot);
+    setChannelMainMode(before, 'dmr');
+    expect(before).toEqual(snapshot);
   });
 });
