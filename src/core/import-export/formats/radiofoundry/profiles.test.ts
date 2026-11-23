@@ -48,6 +48,18 @@ describe('DM-32UV RadioFoundry profile facts', () => {
       '9',
     ]);
     expect(RADIOFOUNDRY_PROFILES[0]!.powerLadder).toEqual(ladder);
+    expect(ladder.every((entry) => entry.approxWatts === undefined)).toBe(true);
+  });
+
+  it('writes the real wire bytes on a five-level ladder', () => {
+    const ladder = radioFoundryPowerLadder(5);
+    expect(ladder.map((entry) => entry.wire)).toEqual(['1', '3', '6', '8', '10']);
+  });
+
+  it('fills approxWatts from labels and rejects a wrong-length list', () => {
+    const labels = ['a', 'b', 'c', 'd', 'e'];
+    expect(radioFoundryPowerLadder(5, labels).map((entry) => entry.approxWatts)).toEqual(labels);
+    expect(() => radioFoundryPowerLadder(5, ['a'])).toThrow();
   });
 
   it('takes the ID database cap from the board', () => {
