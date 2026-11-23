@@ -48,6 +48,7 @@ import {
   DMR_ID_DATABASE_AREA2_ADDRESS,
   DMR_ID_DATABASE_IMAGE_END,
   DMR_ID_DATABASE_RECORD_BYTES,
+  dmrIdDatabaseArea2Blocks,
 } from './idDatabase.ts';
 import {
   DM32UV_RADIOFOUNDRY_CABLE_BOARD,
@@ -56,6 +57,7 @@ import {
 } from './board.ts';
 import {
   assertImageBlock,
+  assertPlannedWriteBlock,
   isRadioFoundryCableRadio,
   RadioFoundryCableProtocol,
 } from './protocol.ts';
@@ -786,10 +788,10 @@ describe('RadioFoundry cable INFO and board', () => {
     await expect(proto.connect(new InfoOnlyPipe(body))).rejects.toThrow(HANDSHAKE_ERROR);
   });
 
-  it('connects on the spec example INFO and keeps the board ceiling and base', async () => {
-    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+  it('connects a base-0 board on the spec example INFO and keeps the board ceiling', async () => {
+    const proto = new RadioFoundryCableProtocol(TEST_BOARD);
     const ident = await proto.connect(new InfoOnlyPipe(specExampleInfo()));
-    expect(ident.modelHints).toEqual([DM32UV_RADIOFOUNDRY_CABLE_BOARD.modelHint]);
+    expect(ident.modelHints).toEqual([TEST_BOARD.modelHint]);
     const info = { imageEnd: 0xe00000, eepromEnd: 0x10000, flashStart: 0x20000 };
     // INFO says 0xE00000; the board's own image end (0x800000) is the ceiling.
     const capped: RadioFoundryCableBoard = {
@@ -798,6 +800,48 @@ describe('RadioFoundry cable INFO and board', () => {
     };
     expect(() => assertImageBlock(0x7ff000, info, capped)).not.toThrow();
     expect(() => assertImageBlock(0x800000, info, capped)).toThrow(/outside the image/);
+  });
+
+  it('refuses another board by physical base', async () => {
+    const wrongBase = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    const error = await wrongBase
+      .connect(new InfoOnlyPipe(specExampleInfo()))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+    expect((error as Error).message).toContain('0x0');
+    expect((error as Error).message).toContain('0x700000');
+    await expect(wrongBase.download({})).rejects.toThrow();
+
+    const pipe = new ScriptedPipe(0xff);
+    const base0 = new RadioFoundryCableProtocol(TEST_BOARD);
+    await expect(base0.connect(pipe)).rejects.toBeInstanceOf(RadioWrongIdentError);
+    expect(pipe.writes.length).toBe(1);
+  });
+
+  it('refuses a block the write did not plan', () => {
+    expect(() => assertPlannedWriteBlock(0x700000, new Set([0x0, 0x1000]))).toThrow(
+      /did not plan it/,
+    );
+    expect(() => assertPlannedWriteBlock(0x1000, new Set([0x0, 0x1000]))).not.toThrow();
+  });
+
+  it('plans the long-directory blocks past 0x700000', () => {
+    const planned = new Set([
+      ...servedBlockAddresses(),
+      ...dmrIdDatabaseArea2Blocks(0x700000 - 0xd8000 + 0x1000, 0x800000),
+    ]);
+    expect(() => assertPlannedWriteBlock(0x700000, planned)).not.toThrow();
+    expect(() => assertPlannedWriteBlock(0x800000, planned)).toThrow();
+  });
+
+  it('writes no area-2 block without a directory', async () => {
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled(), {
+      includeLibraryContacts: false,
+      directoryRows: [],
+    });
+    const pipe = new ScriptedPipe(0xff);
+    await uploadSource(pipe, source);
+    expect(writtenBlockAddresses(pipe).some((addr) => addr >= 0xd8000)).toBe(false);
   });
 
   it('takes the area-2 ceiling and base guard from the board', async () => {

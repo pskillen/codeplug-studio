@@ -23,6 +23,10 @@ export interface RadioFoundryCableBoard {
   radioIoProfileId: string;
   baudRate: number;
   limits: RadioFoundryBoardLimits;
+  /** Manufacturer group for the radio picker (descriptor `group`). */
+  group: string;
+  /** Hide cable Write on production deploys until this board has been bench-written. */
+  prodWriteDisabled?: boolean;
   /**
    * VERSION `board=` values that mean this board, from upstream's registry (tools/boards.py debuglink_names at
    * 454a5b76): the board name, older aliases and the board id.
@@ -37,6 +41,7 @@ export const DM32UV_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
   radioIoProfileId: DM32_RADIOFOUNDRY_PROFILE_ID,
   baudRate: DM32_RADIOFOUNDRY_BAUD_RATE,
   limits: DM32UV_RADIOFOUNDRY_BOARD,
+  group: 'Baofeng',
   versionBoardNames: ['DM-32UV', 'DM-32', 'dm32'],
 };
 
