@@ -1,5 +1,6 @@
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
+import type { RadioFoundryBoardLimits } from '@core/radios/radiofoundry/limits.ts';
 
 /** One supported RX band for a radio target. `txAllowed: false` is display metadata only. */
 export interface RadioFrequencyRange {
@@ -75,14 +76,24 @@ const DM32UV: RadioRfCapabilities = {
   ],
 };
 
-/** RadioFoundry on the DM-32UV: FM and conventional DMR on the board's bands (core radios module). */
-const DM32UV_RADIOFOUNDRY: RadioRfCapabilities = {
-  radioTargetId: 'baofeng-dm32uv-radiofoundry',
-  supportedModes: ['fm', 'dmr'],
-  frequencyRanges: DM32UV_RADIOFOUNDRY_BOARD.BANDS_HZ.map((band) =>
-    range(band.minHz / 1_000_000, band.maxHz / 1_000_000, ['fm', 'dmr']),
-  ),
-};
+/** RadioFoundry: FM and conventional DMR on the board's bands, transmit allowed. */
+function radioFoundryRf(
+  radioTargetId: string,
+  board: RadioFoundryBoardLimits,
+): RadioRfCapabilities {
+  return {
+    radioTargetId,
+    supportedModes: ['fm', 'dmr'],
+    frequencyRanges: board.BANDS_HZ.map((band) =>
+      range(band.minHz / 1_000_000, band.maxHz / 1_000_000, ['fm', 'dmr']),
+    ),
+  };
+}
+
+const DM32UV_RADIOFOUNDRY = radioFoundryRf(
+  'baofeng-dm32uv-radiofoundry',
+  DM32UV_RADIOFOUNDRY_BOARD,
+);
 
 const DM32UV_MM9PDY: RadioRfCapabilities = {
   radioTargetId: 'baofeng-dm32uv-mm9pdy',

@@ -119,6 +119,27 @@ describe('radio-io profiles', () => {
     expect(profile.maxRxGroupLists).toBe(stock.maxRxGroupLists);
   });
 
+  it('builds the DM-32UV RadioFoundry cable profile it had before', () => {
+    const profile = getRadioIoProfile('radio-io-dm32uv-radiofoundry');
+    expect(isRadioIoRadioFoundryProfile(profile)).toBe(true);
+    if (!isRadioIoRadioFoundryProfile(profile)) return;
+    expect(profile).toEqual({
+      id: 'radio-io-dm32uv-radiofoundry',
+      label: 'Baofeng DM-32UV (RadioFoundry)',
+      maxMemorySlots: 1024,
+      nameLimit: 16,
+      maxZones: 68,
+      zoneMembers: 80,
+      maxContacts: 1024,
+      maxRxGroupLists: 76,
+      rxGroupListMembers: 32,
+      maxRadioIds: 1,
+      maxDigitalIdDatabase: 287_629,
+      powerLadder: profile.powerLadder,
+    });
+    expect(profile.powerLadder).toHaveLength(9);
+  });
+
   it('re-exports DM-32 RadioFoundry caps and stays off the stock DM-32 profile', () => {
     const profile = getRadioIoProfile('radio-io-dm32uv-radiofoundry');
     expect(isRadioIoRadioFoundryProfile(profile)).toBe(true);

@@ -56,11 +56,16 @@ const anytoneTraits: readonly Trait[] = [
   BuildCapabilityTrait.IdDatabaseFieldChoice,
 ];
 
-/**
- * Zone is the scan, one channel per repeater, separate digital IDs.
- * Shared by the DM-32UV MM9PDY and RadioFoundry targets.
- */
+/** Zone is the scan, one channel per repeater, separate digital IDs. Shared by the DM-32UV MM9PDY target. */
 const dm32Mm9pdyTraits: readonly Trait[] = [
+  BuildCapabilityTrait.ZoneGrouping,
+  BuildCapabilityTrait.ZoneAsScanList,
+  BuildCapabilityTrait.MultiTalkGroupPerChannel,
+  BuildCapabilityTrait.SeparateDigitalIdList,
+];
+
+/** RadioFoundry on every board: zone is the scan, one channel per repeater, separate digital IDs. */
+const radioFoundryTraits: readonly Trait[] = [
   BuildCapabilityTrait.ZoneGrouping,
   BuildCapabilityTrait.ZoneAsScanList,
   BuildCapabilityTrait.MultiTalkGroupPerChannel,
@@ -162,7 +167,7 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
     label: 'Baofeng DM-32UV (RadioFoundry)',
     modelId: 'baofeng-dm32uv',
     firmwareId: 'radiofoundry',
-    traits: dm32Mm9pdyTraits,
+    traits: radioFoundryTraits,
     compatibleEgress: [
       egress('radiofoundry', 'radiofoundry-dm32uv', 'RadioFoundry codeplug'),
       egress('radio-io', 'radio-io-dm32uv-radiofoundry', 'Web Serial'),

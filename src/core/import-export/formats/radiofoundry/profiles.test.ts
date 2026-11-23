@@ -32,6 +32,43 @@ describe('isRadioFoundryRadioIoProfileId', () => {
   });
 });
 
+describe('radioFoundryCodecProfile', () => {
+  it('builds the DM-32UV codec profile it had before', () => {
+    const row = RADIOFOUNDRY_PROFILES[0]!;
+    expect(row).toEqual({
+      id: 'radiofoundry-dm32uv',
+      label: 'RadioFoundry codeplug',
+      defaultFileName: row.defaultFileName,
+      maxChannels: 1024,
+      maxZones: 68,
+      zoneMembers: 80,
+      maxContacts: 1024,
+      maxRxGroupLists: 76,
+      rxGroupListMembers: 32,
+      nameLimit: 16,
+      radioNameLimit: 8,
+      maxRadioIds: 1,
+      dmrIdMax: 16_776_415,
+      powerLevels: 9,
+      radioIoProfileId: 'radio-io-dm32uv-radiofoundry',
+      board: DM32UV_RADIOFOUNDRY_BOARD,
+      powerLadder: row.powerLadder,
+    });
+    expect(row.powerLadder.map((e) => e.wire)).toEqual([
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+    ]);
+    expect(DEFAULT_RADIOFOUNDRY_PROFILE_ID).toBe('radiofoundry-dm32uv');
+  });
+});
+
 describe('DM-32UV RadioFoundry profile facts', () => {
   it('keeps the nine equal power steps', () => {
     const ladder = radioFoundryPowerLadder(9);

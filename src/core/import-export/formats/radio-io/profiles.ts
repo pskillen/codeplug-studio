@@ -7,7 +7,10 @@ import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
-import { RADIOFOUNDRY_LIMITS } from '@core/radios/radiofoundry/limits.ts';
+import {
+  RADIOFOUNDRY_LIMITS,
+  type RadioFoundryBoardLimits,
+} from '@core/radios/radiofoundry/limits.ts';
 import { RT95_LIMITS } from '@core/radios/retevis/rt95/limits.ts';
 import { UV5R_MINI_LIMITS } from '@core/radios/baofeng/uv-5r-mini/limits.ts';
 import type { PowerLadderEntry } from '../../profileLadder.ts';
@@ -405,23 +408,34 @@ export const RADIO_IO_OPENGD77_1701_PROFILE: RadioIoOpenGd771701Profile = {
   powerLadder: OPENGD77_1701_POWER_LADDER,
 };
 
-export const RADIO_IO_DM32UV_RADIOFOUNDRY_PROFILE: RadioIoRadioFoundryProfile = {
-  id: 'radio-io-dm32uv-radiofoundry',
-  label: 'Baofeng DM-32UV (RadioFoundry)',
-  maxMemorySlots: RADIOFOUNDRY_LIMITS.CHANNEL_MAX,
-  nameLimit: RADIOFOUNDRY_LIMITS.NAME_MAX,
-  maxZones: RADIOFOUNDRY_LIMITS.ZONE_MAX,
-  zoneMembers: RADIOFOUNDRY_LIMITS.ZONE_MEMBERS_MAX,
-  maxContacts: RADIOFOUNDRY_LIMITS.CONTACTS_MAX,
-  maxRxGroupLists: RADIOFOUNDRY_LIMITS.RX_GROUPS_MAX,
-  rxGroupListMembers: RADIOFOUNDRY_LIMITS.RX_GROUP_MEMBERS_MAX,
-  maxRadioIds: RADIOFOUNDRY_LIMITS.RADIO_IDS_MAX,
-  maxDigitalIdDatabase: DM32UV_RADIOFOUNDRY_BOARD.ID_DATABASE_MAX,
-  powerLadder: radioFoundryPowerLadder(
-    DM32UV_RADIOFOUNDRY_BOARD.POWER_LEVELS,
-    DM32UV_RADIOFOUNDRY_BOARD.POWER_LABELS,
-  ),
-};
+/** A RadioFoundry cable-write profile: firmware-wide counts plus one board. */
+export function radioFoundryRadioIoProfile(
+  id: RadioFoundryRadioIoProfileId,
+  label: string,
+  board: RadioFoundryBoardLimits,
+): RadioIoRadioFoundryProfile {
+  return {
+    id,
+    label,
+    maxMemorySlots: RADIOFOUNDRY_LIMITS.CHANNEL_MAX,
+    nameLimit: RADIOFOUNDRY_LIMITS.NAME_MAX,
+    maxZones: RADIOFOUNDRY_LIMITS.ZONE_MAX,
+    zoneMembers: RADIOFOUNDRY_LIMITS.ZONE_MEMBERS_MAX,
+    maxContacts: RADIOFOUNDRY_LIMITS.CONTACTS_MAX,
+    maxRxGroupLists: RADIOFOUNDRY_LIMITS.RX_GROUPS_MAX,
+    rxGroupListMembers: RADIOFOUNDRY_LIMITS.RX_GROUP_MEMBERS_MAX,
+    maxRadioIds: RADIOFOUNDRY_LIMITS.RADIO_IDS_MAX,
+    maxDigitalIdDatabase: board.ID_DATABASE_MAX,
+    powerLadder: radioFoundryPowerLadder(board.POWER_LEVELS, board.POWER_LABELS),
+  };
+}
+
+export const RADIO_IO_DM32UV_RADIOFOUNDRY_PROFILE: RadioIoRadioFoundryProfile =
+  radioFoundryRadioIoProfile(
+    'radio-io-dm32uv-radiofoundry',
+    'Baofeng DM-32UV (RadioFoundry)',
+    DM32UV_RADIOFOUNDRY_BOARD,
+  );
 
 export const RADIO_IO_OPENGD77_MD9600_PROFILE: RadioIoOpenGd77Md9600Profile = {
   id: 'radio-io-opengd77-md9600',

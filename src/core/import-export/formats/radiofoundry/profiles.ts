@@ -55,9 +55,14 @@ export function radioFoundryPowerLadder(
   }));
 }
 
-export const RADIOFOUNDRY_PROFILES: readonly RadioFoundryRadioProfile[] = [
-  {
-    id: 'radiofoundry-dm32uv',
+/** A RadioFoundry codec profile: firmware-wide counts plus one board. */
+export function radioFoundryCodecProfile(
+  id: string,
+  radioIoProfileId: string,
+  board: RadioFoundryBoardLimits,
+): RadioFoundryRadioProfile {
+  return {
+    id,
     label: 'RadioFoundry codeplug',
     defaultFileName: RADIOFOUNDRY_CODEPLUG_FILE_NAME,
     maxChannels: RADIOFOUNDRY_LIMITS.CHANNEL_MAX,
@@ -70,14 +75,19 @@ export const RADIOFOUNDRY_PROFILES: readonly RadioFoundryRadioProfile[] = [
     radioNameLimit: RADIOFOUNDRY_LIMITS.RADIO_NAME_MAX,
     maxRadioIds: RADIOFOUNDRY_LIMITS.RADIO_IDS_MAX,
     dmrIdMax: RADIOFOUNDRY_LIMITS.DMR_ID_MAX,
-    powerLevels: DM32UV_RADIOFOUNDRY_BOARD.POWER_LEVELS,
-    radioIoProfileId: 'radio-io-dm32uv-radiofoundry',
-    board: DM32UV_RADIOFOUNDRY_BOARD,
-    powerLadder: radioFoundryPowerLadder(
-      DM32UV_RADIOFOUNDRY_BOARD.POWER_LEVELS,
-      DM32UV_RADIOFOUNDRY_BOARD.POWER_LABELS,
-    ),
-  },
+    powerLevels: board.POWER_LEVELS,
+    radioIoProfileId,
+    board,
+    powerLadder: radioFoundryPowerLadder(board.POWER_LEVELS, board.POWER_LABELS),
+  };
+}
+
+export const RADIOFOUNDRY_PROFILES: readonly RadioFoundryRadioProfile[] = [
+  radioFoundryCodecProfile(
+    'radiofoundry-dm32uv',
+    'radio-io-dm32uv-radiofoundry',
+    DM32UV_RADIOFOUNDRY_BOARD,
+  ),
 ];
 
 export const DEFAULT_RADIOFOUNDRY_PROFILE_ID = RADIOFOUNDRY_PROFILES[0]!.id;

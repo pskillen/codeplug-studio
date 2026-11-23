@@ -34,6 +34,9 @@ export interface RadioFoundryCableBoard {
   versionBoardNames: readonly string[];
 }
 
+/** USB CDC-ACM ignores the line rate; Web Serial still opens the port with one. */
+export const RADIOFOUNDRY_USB_BAUD_RATE = 115200;
+
 export const DM32UV_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
   modelId: DM32_RADIOFOUNDRY_MODEL_ID,
   label: 'Baofeng DM-32UV (RadioFoundry)',

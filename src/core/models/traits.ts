@@ -41,6 +41,25 @@ export interface TraitProfile {
   traits: readonly BuildCapabilityTrait[];
 }
 
+/** RadioFoundry on every board: zone is the scan, multi-talk-group channels, separate digital IDs. */
+function radioFoundryTraitProfile(
+  profileId: string,
+  formatId: 'radio-io' | 'radiofoundry',
+  label: string,
+): TraitProfile {
+  return {
+    profileId,
+    formatId,
+    label,
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.SeparateDigitalIdList,
+    ],
+  };
+}
+
 export const TRAIT_PROFILES: Record<string, TraitProfile> = {
   'opengd77-1701': {
     profileId: 'opengd77-1701',
@@ -232,29 +251,17 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     ],
   },
   /** Web Serial — DM-32UV RadioFoundry. Same traits as the codeplug file. */
-  'radio-io-dm32uv-radiofoundry': {
-    profileId: 'radio-io-dm32uv-radiofoundry',
-    formatId: 'radio-io',
-    label: 'Baofeng DM-32UV (RadioFoundry)',
-    traits: [
-      BuildCapabilityTrait.ZoneGrouping,
-      BuildCapabilityTrait.ZoneAsScanList,
-      BuildCapabilityTrait.MultiTalkGroupPerChannel,
-      BuildCapabilityTrait.SeparateDigitalIdList,
-    ],
-  },
+  'radio-io-dm32uv-radiofoundry': radioFoundryTraitProfile(
+    'radio-io-dm32uv-radiofoundry',
+    'radio-io',
+    'Baofeng DM-32UV (RadioFoundry)',
+  ),
   /** Open-firmware codeplug image for the DM-32UV on RadioFoundry. */
-  'radiofoundry-dm32uv': {
-    profileId: 'radiofoundry-dm32uv',
-    formatId: 'radiofoundry',
-    label: 'RadioFoundry codeplug',
-    traits: [
-      BuildCapabilityTrait.ZoneGrouping,
-      BuildCapabilityTrait.ZoneAsScanList,
-      BuildCapabilityTrait.MultiTalkGroupPerChannel,
-      BuildCapabilityTrait.SeparateDigitalIdList,
-    ],
-  },
+  'radiofoundry-dm32uv': radioFoundryTraitProfile(
+    'radiofoundry-dm32uv',
+    'radiofoundry',
+    'RadioFoundry codeplug',
+  ),
   /** Web Serial direct-write — OpenGD77 / OpenUV380 (MD-9600 / RT-90). */
   'radio-io-opengd77-md9600': {
     profileId: 'radio-io-opengd77-md9600',

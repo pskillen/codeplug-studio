@@ -166,6 +166,29 @@ describe('trait profiles', () => {
     expect(profile?.traits).not.toContain(BuildCapabilityTrait.TalkGroupTimeslotClones);
   });
 
+  it('keeps the DM-32UV RadioFoundry trait rows', () => {
+    const radioIo = traitProfileFor('radio-io-dm32uv-radiofoundry');
+    const codec = traitProfileFor('radiofoundry-dm32uv');
+    const traits = [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.SeparateDigitalIdList,
+    ];
+    expect(radioIo).toEqual({
+      profileId: 'radio-io-dm32uv-radiofoundry',
+      formatId: 'radio-io',
+      label: 'Baofeng DM-32UV (RadioFoundry)',
+      traits,
+    });
+    expect(codec).toEqual({
+      profileId: 'radiofoundry-dm32uv',
+      formatId: 'radiofoundry',
+      label: 'RadioFoundry codeplug',
+      traits,
+    });
+  });
+
   it('registers radio-io-dm32uv-radiofoundry with the codeplug file traits', () => {
     const profile = traitProfileFor('radio-io-dm32uv-radiofoundry');
     expect(profile?.formatId).toBe('radio-io');
