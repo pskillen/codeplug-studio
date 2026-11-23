@@ -97,11 +97,10 @@ class FakeSatelliteRadio implements BytePipe {
   listWrongEpoch = false;
   private committed = false;
 
-  private inventory: RadioFoundrySatelliteRecord[] = [];
+  inventory: RadioFoundrySatelliteRecord[] = [];
   private profiles = new Map<number, RadioFoundrySatelliteProfile>();
   private txnId: number | null = null;
   private stream = new Uint8Array(0);
-  private streamCrc = 0;
   private streamOffset = 0;
   private stagedProfiles: RadioFoundrySatelliteProfile[] = [];
 
@@ -182,7 +181,6 @@ class FakeSatelliteRadio implements BytePipe {
       this.stream = new Uint8Array(0);
       this.streamOffset = 0;
       this.stagedProfiles = [];
-      this.streamCrc = u32(args, 4);
       this.txnId = 0x0102;
       this.enqueue(
         satPayload(
@@ -487,8 +485,14 @@ describe('writeRadioFoundrySatellites', () => {
       catalogId: 1000 + i,
       name: `S${i}`,
     }));
+    const manyProfiles = many.map((r) => ({
+      catalogId: r.catalogId,
+      rxHz: 436_795_000,
+      txHz: 145_850_000,
+      toneTenths: 0,
+    }));
     await expect(
-      writeRadioFoundrySatellites(radio, { records: many, profiles: many }),
+      writeRadioFoundrySatellites(radio, { records: many, profiles: manyProfiles }),
     ).rejects.toThrow();
     await expect(
       writeRadioFoundrySatellites(radio, {

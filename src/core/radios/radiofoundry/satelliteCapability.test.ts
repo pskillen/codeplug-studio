@@ -5,8 +5,8 @@ import {
   radioFoundrySatelliteProblem,
   radioFoundrySatelliteProfile,
   radioFoundryTransmitterProblem,
-  type RadioFoundryBand,
 } from './satelliteCapability.ts';
+import { type RadioFoundryBand } from './limits.ts';
 
 const BANDS: RadioFoundryBand[] = [
   { minHz: 136_000_000, maxHz: 174_000_000 },
