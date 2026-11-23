@@ -3,6 +3,7 @@
  */
 
 import type { BytePipe } from '../../../types.ts';
+import { decodeDebugFrame, encodeDebugFrame } from '../../../kit/codecs/radioFoundryDebugLink.ts';
 import { RadioTimeoutError } from '../../../kit/errors.ts';
 import {
   OPENGD77_CMD_OK,
@@ -132,6 +133,9 @@ export class OpenGd77ScriptedPipe implements BytePipe {
 
   /** Reads of FLASH starting at these addresses are refused. */
   readonly failReadsAt = new Set<number>();
+  /** Answer a debug-link frame as RadioFoundry does (PING echo); otherwise '-' as OpenGD77 does. */
+  runsRadioFoundry = false;
+
   /** Reads of FLASH starting at these addresses get no reply at all (the host times out). */
   readonly silentReadsAt = new Set<number>();
   /** Reads of FLASH starting at these addresses come back with half the bytes asked for. */
@@ -370,6 +374,15 @@ export class OpenGd77ScriptedPipe implements BytePipe {
       // Any other write command (including a bare `X` cut off after its type byte): refused, sector closed.
       this.openSector = -1;
       this.enqueueChunks(new Uint8Array([OPENGD77_CMD_OK]));
+      return;
+    }
+    if (data[0] === 0xa5) {
+      if (this.runsRadioFoundry) {
+        const frame = decodeDebugFrame(data);
+        this.enqueueChunks(encodeDebugFrame(0x81, frame.seq, frame.payload));
+      } else {
+        this.enqueueChunks(new Uint8Array([OPENGD77_CMD_OK]));
+      }
     }
   }
 
