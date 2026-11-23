@@ -1,11 +1,36 @@
+import type { ChannelMode as CoreChannelMode } from '@core/models/libraryTypes.ts';
 import { describe, expect, it } from 'vitest';
 import {
   getModeDefinition,
   isAnalogMode,
   isDigitalMode,
+  MODE_PICKER_COMMON,
+  MODE_PICKER_MORE,
   modeFilterOptions,
   normalizeChannelMode,
 } from './channelModes.ts';
+
+const ALL_CORE_MODES: CoreChannelMode[] = [
+  'fm',
+  'am',
+  'ssb',
+  'dmr',
+  'dstar',
+  'ysf',
+  'p25',
+  'nxdn',
+  'm17',
+  'tetra',
+];
+
+describe('MODE_PICKER_COMMON and MODE_PICKER_MORE', () => {
+  it('lists every core channel mode exactly once', () => {
+    const combined = [...MODE_PICKER_COMMON, ...MODE_PICKER_MORE];
+    expect(combined).toHaveLength(ALL_CORE_MODES.length);
+    expect(new Set(combined)).toEqual(new Set(ALL_CORE_MODES));
+    expect(combined.toSorted()).toEqual(ALL_CORE_MODES.toSorted());
+  });
+});
 
 describe('reserved meshtastic colour', () => {
   it('has its own colour, distinct from every other mode', () => {

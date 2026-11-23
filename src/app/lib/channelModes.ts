@@ -116,3 +116,28 @@ export function mapLegacyChannelMode(mode: string): ChannelMode {
 export function normalizeChannelMode(mode: string): ChannelMode {
   return mapLegacyChannelMode(mode);
 }
+
+/** Single-select switch, in order; everything else sits under More. */
+export const MODE_PICKER_COMMON: readonly CoreChannelMode[] = [
+  'fm',
+  'am',
+  'dmr',
+  'nxdn',
+  'p25',
+  'm17',
+];
+export const MODE_PICKER_MORE: readonly CoreChannelMode[] = ['ssb', 'dstar', 'ysf', 'tetra'];
+
+export interface ModePreset {
+  id: string;
+  label: string;
+  sub: string;
+  modes: readonly CoreChannelMode[];
+}
+
+/** One-tap presets for a channel with no mode yet. The first mode becomes the main mode. */
+export const MODE_PRESETS: readonly ModePreset[] = [
+  { id: 'fm', label: 'FM', sub: 'Analogue', modes: ['fm'] },
+  { id: 'dmr', label: 'DMR', sub: 'Digital', modes: ['dmr'] },
+  { id: 'fm-dmr', label: 'FM + DMR', sub: 'Dual-mode repeater', modes: ['fm', 'dmr'] },
+];
