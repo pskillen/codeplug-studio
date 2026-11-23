@@ -51,11 +51,7 @@ export function radioFoundrySatelliteProblem(
   satellite: Pick<Satellite, 'noradId' | 'tleLine1' | 'tleLine2'>,
 ): string | null {
   const max = RADIOFOUNDRY_LIMITS.SATELLITE_CATALOG_MAX;
-  if (
-    !Number.isInteger(satellite.noradId) ||
-    satellite.noradId < 1 ||
-    satellite.noradId > max
-  ) {
+  if (!Number.isInteger(satellite.noradId) || satellite.noradId < 1 || satellite.noradId > max) {
     return `RadioFoundry stores catalog numbers up to ${max} only.`;
   }
   if (!isPrintableTleLine(satellite.tleLine1) || !isPrintableTleLine(satellite.tleLine2)) {
@@ -113,7 +109,6 @@ export function radioFoundrySatelliteProfile(
     catalogId,
     rxHz: Math.round(transmitter.downlinkHz!),
     txHz: Math.round(transmitter.uplinkHz!),
-    toneTenths:
-      toneHz != null && toneHz > 0 ? Math.round(toneHz * 10) : 0,
+    toneTenths: toneHz != null && toneHz > 0 ? Math.round(toneHz * 10) : 0,
   };
 }

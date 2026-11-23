@@ -19,12 +19,12 @@ Limits every radio running RadioFoundry shares: they are fixed by the firmware's
 
 ### Satellite inventory
 
-| Constraint | Value | Notes |
-| --- | --- | --- |
-| Satellites | **10** | Whole-set replace only; see [satellite keps](satellite-keps.md) |
-| Satellite name (UTF-8) | **48** bytes | |
-| Catalog (NORAD) ceiling | **99999** | |
-| Uplink CTCSS | **60.0–260.0 Hz** or none | Stored as tenths of Hz (600–2600); 0 = no tone |
+| Constraint              | Value                     | Notes                                                           |
+| ----------------------- | ------------------------- | --------------------------------------------------------------- |
+| Satellites              | **10**                    | Whole-set replace only; see [satellite keps](satellite-keps.md) |
+| Satellite name (UTF-8)  | **48** bytes              |                                                                 |
+| Catalog (NORAD) ceiling | **99999**                 |                                                                 |
+| Uplink CTCSS            | **60.0–260.0 Hz** or none | Stored as tenths of Hz (600–2600); 0 = no tone                  |
 
 ## Per board
 

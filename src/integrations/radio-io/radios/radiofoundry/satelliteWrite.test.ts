@@ -59,8 +59,7 @@ function infoBody(): Uint8Array {
 
 function tleLine1(catalog: number, epochField: string): string {
   const cat = String(catalog).padStart(5, '0');
-  const line =
-    `1 ${cat}U 98067A   ${epochField.padEnd(15).slice(0, 15)}  .00016717 00000-0  10230-3 0  9990`;
+  const line = `1 ${cat}U 98067A   ${epochField.padEnd(15).slice(0, 15)}  .00016717 00000-0  10230-3 0  9990`;
   return line;
 }
 
@@ -186,7 +185,12 @@ class FakeSatelliteRadio implements BytePipe {
       this.streamCrc = u32(args, 4);
       this.txnId = 0x0102;
       this.enqueue(
-        satPayload(0, new Uint8Array([this.txnId & 0xff, (this.txnId >> 8) & 0xff]), frame.seq, SAT_REPLY),
+        satPayload(
+          0,
+          new Uint8Array([this.txnId & 0xff, (this.txnId >> 8) & 0xff]),
+          frame.seq,
+          SAT_REPLY,
+        ),
       );
       return;
     }
@@ -318,7 +322,9 @@ function parseRecordsFromStream(stream: Uint8Array): RadioFoundrySatelliteRecord
     const nameLen = stream[o + 4]!;
     const name = new TextDecoder().decode(stream.subarray(o + 5, o + 5 + nameLen));
     const l1 = new TextDecoder().decode(stream.subarray(o + 5 + nameLen, o + 5 + nameLen + 69));
-    const l2 = new TextDecoder().decode(stream.subarray(o + 5 + nameLen + 69, o + 5 + nameLen + 138));
+    const l2 = new TextDecoder().decode(
+      stream.subarray(o + 5 + nameLen + 69, o + 5 + nameLen + 138),
+    );
     out.push({ catalogId, name, line1: l1, line2: l2 });
     o += 5 + nameLen + 138;
   }
@@ -481,14 +487,18 @@ describe('writeRadioFoundrySatellites', () => {
       catalogId: 1000 + i,
       name: `S${i}`,
     }));
-    await expect(writeRadioFoundrySatellites(radio, { records: many, profiles: many })).rejects.toThrow();
+    await expect(
+      writeRadioFoundrySatellites(radio, { records: many, profiles: many }),
+    ).rejects.toThrow();
     await expect(
       writeRadioFoundrySatellites(radio, {
         records,
         profiles: [{ ...profiles[0]!, catalogId: 99999 }],
       }),
     ).rejects.toThrow();
-    await expect(writeRadioFoundrySatellites(radio, { records: [], profiles: [] })).rejects.toThrow();
+    await expect(
+      writeRadioFoundrySatellites(radio, { records: [], profiles: [] }),
+    ).rejects.toThrow();
     expect(satOps(pipe).length).toBe(0);
   });
 

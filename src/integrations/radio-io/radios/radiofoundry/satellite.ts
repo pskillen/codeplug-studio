@@ -97,7 +97,9 @@ export function serialiseSatelliteRecords(
     }
     seen.add(rec.catalogId);
     if (!isPrintableAsciiLine(rec.line1) || !isPrintableAsciiLine(rec.line2)) {
-      throw new RadioProtocolError('RadioFoundry satellite TLE lines must be 69 printable ASCII characters.');
+      throw new RadioProtocolError(
+        'RadioFoundry satellite TLE lines must be 69 printable ASCII characters.',
+      );
     }
     const name = encodeSatelliteName(rec.name, maxNameBytes);
     if (name.length === 0) {
@@ -151,7 +153,11 @@ export function encodeProfileChunks(
   return chunks;
 }
 
-export function encodeReplaceBegin(recordCount: number, byteCount: number, crc: number): Uint8Array {
+export function encodeReplaceBegin(
+  recordCount: number,
+  byteCount: number,
+  crc: number,
+): Uint8Array {
   const buf = new Uint8Array(8);
   writeU16(buf, 0, recordCount);
   writeU16(buf, 2, byteCount);
@@ -159,7 +165,11 @@ export function encodeReplaceBegin(recordCount: number, byteCount: number, crc: 
   return buf;
 }
 
-export function encodeDataChunk(transactionId: number, offset: number, bytes: Uint8Array): Uint8Array {
+export function encodeDataChunk(
+  transactionId: number,
+  offset: number,
+  bytes: Uint8Array,
+): Uint8Array {
   const buf = new Uint8Array(4 + bytes.length);
   writeU16(buf, 0, transactionId);
   writeU16(buf, 2, offset);
@@ -253,6 +263,7 @@ export function radioFoundryTleEpochSeconds(line1: string): number | null {
   const year = yy >= 57 ? 1900 + yy : 2000 + yy;
   const jan1Days = daysSinceEpochToYearStart(year);
   const dayIndex = jan1Days + ddd - 1;
-  const secFromFracDay = Math.floor(frac / 1_000_000) * 864 + Math.floor(((frac % 1_000_000) * 864) / 1_000_000);
+  const secFromFracDay =
+    Math.floor(frac / 1_000_000) * 864 + Math.floor(((frac % 1_000_000) * 864) / 1_000_000);
   return dayIndex * 86_400 + secFromFracDay;
 }

@@ -19,8 +19,7 @@ import {
 
 function tleLine1(catalog: number, epochField: string): string {
   const cat = String(catalog).padStart(5, '0');
-  const line =
-    `1 ${cat}U 98067A   ${epochField.padEnd(15).slice(0, 15)}  .00016717 00000-0  10230-3 0  9990`;
+  const line = `1 ${cat}U 98067A   ${epochField.padEnd(15).slice(0, 15)}  .00016717 00000-0  10230-3 0  9990`;
   if (line.length !== 69) throw new Error(`line1 length ${line.length}: ${JSON.stringify(line)}`);
   return line;
 }

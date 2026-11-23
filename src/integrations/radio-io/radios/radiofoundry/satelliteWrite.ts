@@ -34,8 +34,7 @@ import {
 export class RadioFoundrySatellitesUnavailableError extends RadioProtocolError {}
 
 export type RadioFoundrySatelliteSupport =
-  | { supported: true; info: RadioFoundrySatelliteInfo }
-  | { supported: false; reason: string };
+  { supported: true; info: RadioFoundrySatelliteInfo } | { supported: false; reason: string };
 
 /** INFO probe. Never throws on a status; throws only on a link failure. */
 export async function probeRadioFoundrySatellites(
@@ -135,11 +134,7 @@ export async function writeRadioFoundrySatellites(
   let listed = 0;
   let start = 0;
   while (listed < info.installed) {
-    const listReply = await radio.satelliteRequest(
-      SAT_OP_LIST,
-      listArgs(start),
-      2000,
-    );
+    const listReply = await radio.satelliteRequest(SAT_OP_LIST, listArgs(start), 2000);
     throwIfAborted(opts?.signal);
     if (listReply.status !== 0) {
       throw new RadioProtocolError("The radio's satellite list did not match its own count.");
@@ -148,7 +143,7 @@ export async function writeRadioFoundrySatellites(
     if (page.length === 0) {
       throw new RadioProtocolError("The radio's satellite list did not match its own count.");
     }
-  listed += page.length;
+    listed += page.length;
     if (listed > info.installed) {
       throw new RadioProtocolError("The radio's satellite list did not match its own count.");
     }
@@ -165,7 +160,9 @@ export async function writeRadioFoundrySatellites(
     4000,
   );
   if (beginReply.status !== 0) {
-    throw new RadioProtocolError(`The radio refused the satellite set (status ${beginReply.status}).`);
+    throw new RadioProtocolError(
+      `The radio refused the satellite set (status ${beginReply.status}).`,
+    );
   }
   if (beginReply.body.length !== 2) {
     throw new RadioProtocolError('The radio refused the satellite set (status 2).');
@@ -223,11 +220,7 @@ export async function writeRadioFoundrySatellites(
     }
   } catch (err) {
     try {
-      await radio.satelliteRequest(
-        SAT_OP_ABORT,
-        encodeTransactionId(transactionId),
-        2000,
-      );
+      await radio.satelliteRequest(SAT_OP_ABORT, encodeTransactionId(transactionId), 2000);
     } catch {
       /* swallow */
     }

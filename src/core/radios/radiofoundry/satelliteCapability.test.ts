@@ -15,8 +15,7 @@ const BANDS: RadioFoundryBand[] = [
 
 function tleLine1(catalog: number, epochField: string): string {
   const cat = String(catalog).padStart(5, '0');
-  const line =
-    `1 ${cat}U 98067A   ${epochField}  .00016717 00000-0  10230-3 0  9990`;
+  const line = `1 ${cat}U 98067A   ${epochField}  .00016717 00000-0  10230-3 0  9990`;
   if (line.length !== 69) throw new Error(`line1 length ${line.length}`);
   return line;
 }
@@ -98,10 +97,10 @@ describe('radioFoundrySatelliteProblem', () => {
     expect(radioFoundrySatelliteProblem({ noradId: 0, tleLine1: line1, tleLine2: line2 })).toBe(
       'RadioFoundry stores catalog numbers up to 99999 only.',
     );
-  const short = line1.slice(0, 68);
-    expect(
-      radioFoundrySatelliteProblem({ noradId: 25544, tleLine1: short, tleLine2: line2 }),
-    ).toBe('Its TLE is not two 69-character lines.');
+    const short = line1.slice(0, 68);
+    expect(radioFoundrySatelliteProblem({ noradId: 25544, tleLine1: short, tleLine2: line2 })).toBe(
+      'Its TLE is not two 69-character lines.',
+    );
     const tabbed = `${line1.slice(0, 10)}\t${line1.slice(11)}`;
     expect(
       radioFoundrySatelliteProblem({ noradId: 25544, tleLine1: tabbed, tleLine2: line2 }),
@@ -110,9 +109,9 @@ describe('radioFoundrySatelliteProblem', () => {
     expect(
       radioFoundrySatelliteProblem({ noradId: 25544, tleLine1: badClass, tleLine2: line2 }),
     ).toBe('Its TLE classification is not U, C or S.');
-    expect(
-      radioFoundrySatelliteProblem({ noradId: 25544, tleLine1: line1, tleLine2: line2 }),
-    ).toBe(null);
+    expect(radioFoundrySatelliteProblem({ noradId: 25544, tleLine1: line1, tleLine2: line2 })).toBe(
+      null,
+    );
   });
 });
 

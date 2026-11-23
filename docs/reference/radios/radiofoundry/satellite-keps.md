@@ -12,20 +12,20 @@ Studio probes with SATELLITE `INFO` (status `0` required). The debug-link `VERSI
 
 ## Operations Studio sends and refuses
 
-| Op | Name | Studio |
-| --- | --- | --- |
-| 0 | INFO | yes — probe and read-back |
-| 1 | LIST | yes — inventory pages |
-| 3 | DATA | yes — record stream chunks |
-| 4 | COMMIT | yes — after data and profiles |
-| 5 | ABORT | yes — on failure before commit |
-| 9 | REPLACE_BEGIN | yes — whole-set replace |
-| 11 | PROFILE_VALUES_GET | yes — read-back check |
-| 12 | PROFILE_STAGE_CHUNK | yes — frequency profiles (protocol ≥ 6) |
-| 2 | BEGIN | **never** — legacy additive install |
-| 6 | SYNC_CHANNELS | **never** — would create codeplug channels on the radio |
-| 7–8, 10 | PROFILE_GET / SET / PROFILE_STAGE | **never** — legacy profile path |
-| 13 | SYNC_CHANNELS_STATUS | **never** |
+| Op      | Name                              | Studio                                                  |
+| ------- | --------------------------------- | ------------------------------------------------------- |
+| 0       | INFO                              | yes — probe and read-back                               |
+| 1       | LIST                              | yes — inventory pages                                   |
+| 3       | DATA                              | yes — record stream chunks                              |
+| 4       | COMMIT                            | yes — after data and profiles                           |
+| 5       | ABORT                             | yes — on failure before commit                          |
+| 9       | REPLACE_BEGIN                     | yes — whole-set replace                                 |
+| 11      | PROFILE_VALUES_GET                | yes — read-back check                                   |
+| 12      | PROFILE_STAGE_CHUNK               | yes — frequency profiles (protocol ≥ 6)                 |
+| 2       | BEGIN                             | **never** — legacy additive install                     |
+| 6       | SYNC_CHANNELS                     | **never** — would create codeplug channels on the radio |
+| 7–8, 10 | PROFILE_GET / SET / PROFILE_STAGE | **never** — legacy profile path                         |
+| 13      | SYNC_CHANNELS_STATUS              | **never**                                               |
 
 Only `satelliteRequest` emits `0x26`. It throws `RadioInterlockError` before writing when the op is not in the allowlist above.
 
@@ -33,12 +33,12 @@ Only `satelliteRequest` emits `0x26`. It throws `RadioInterlockError` before wri
 
 Records are sent in **ascending catalog (NORAD) order** as one byte stream checksummed with CRC-32 IEEE (`zlib.crc32` / Studio `crc32Ieee`):
 
-| Field | Wire |
-| --- | --- |
-| Catalog | `u32` little-endian |
-| Name | `u8` length (1–48 UTF-8 bytes), then UTF-8 payload |
-| TLE line 1 | 69 printable ASCII bytes (`0x20`–`0x7E`) |
-| TLE line 2 | 69 printable ASCII bytes |
+| Field      | Wire                                               |
+| ---------- | -------------------------------------------------- |
+| Catalog    | `u32` little-endian                                |
+| Name       | `u8` length (1–48 UTF-8 bytes), then UTF-8 payload |
+| TLE line 1 | 69 printable ASCII bytes (`0x20`–`0x7E`)           |
+| TLE line 2 | 69 printable ASCII bytes                           |
 
 `REPLACE_BEGIN` carries `recordCount`, total `byteCount`, and CRC-32 over the stream. The radio refuses an empty set (`recordCount` 0), more than capacity (10 on current firmware), or byte counts outside `144 × count` … `191 × count`. Studio validates names and lines before I/O; the radio additionally refuses invalid catalog numbers, bad UTF-8 names, TLE classification (column 8) other than `U` / `C` / `S`, and unparseable epochs.
 
