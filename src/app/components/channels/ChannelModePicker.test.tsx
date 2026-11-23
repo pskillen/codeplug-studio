@@ -61,7 +61,10 @@ describe('ChannelModePicker', () => {
   it('single mode DMR: FM switches, DMR does not', () => {
     const { onSwitch } = renderPicker({ modes: ['dmr'] });
     const group = screen.getByRole('radiogroup', { name: 'Mode' });
-    expect(within(group).getByRole('radio', { name: 'DMR' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(group).getByRole('radio', { name: 'DMR' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
     fireEvent.click(within(group).getByRole('radio', { name: 'FM' }));
     expect(onSwitch).toHaveBeenCalledWith('fm');
     onSwitch.mockClear();
@@ -83,16 +86,7 @@ describe('ChannelModePicker', () => {
     const items = (await screen.findAllByRole('menuitem', { hidden: true })).map(
       (el) => el.textContent,
     );
-    expect(items).toEqual([
-      'AM',
-      'NXDN',
-      'P25',
-      'M17',
-      'SSB',
-      'D-STAR',
-      'YSF',
-      'Tetra',
-    ]);
+    expect(items).toEqual(['AM', 'NXDN', 'P25', 'M17', 'SSB', 'D-STAR', 'YSF', 'Tetra']);
     const nxdn = (await screen.findAllByRole('menuitem', { hidden: true })).find(
       (el) => el.textContent === 'NXDN',
     );

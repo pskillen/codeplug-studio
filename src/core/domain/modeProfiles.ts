@@ -357,11 +357,7 @@ function profileForSwitch(
   if (taken.profile) {
     return { profile: taken.profile, parked: taken.parked };
   }
-  if (
-    oldProfile != null &&
-    isAnalogChannelModeProfile(oldProfile) &&
-    isAnalogChannelMode(target)
-  ) {
+  if (oldProfile != null && isAnalogChannelModeProfile(oldProfile) && isAnalogChannelMode(target)) {
     return {
       profile: analogSwitchProfile(oldProfile, target),
       parked: taken.parked,

@@ -402,10 +402,7 @@ describe('switchChannelMode', () => {
       bandwidthKHz: 25,
       analogSquelchMode: 'default',
     };
-    const out = switchChannelMode(
-      { modeProfiles: [fm], primaryMode: 'fm', parked: [] },
-      'am',
-    );
+    const out = switchChannelMode({ modeProfiles: [fm], primaryMode: 'fm', parked: [] }, 'am');
     expect(out.modeProfiles[0]).toMatchObject({
       mode: 'am',
       rxTone: '100.0',
@@ -418,10 +415,7 @@ describe('switchChannelMode', () => {
   it('does not carry DMR colour code when switching to FM', () => {
     const dmr = defaultModeProfile('dmr') as ChannelModeProfileDMR;
     dmr.colourCode = 9;
-    const out = switchChannelMode(
-      { modeProfiles: [dmr], primaryMode: 'dmr', parked: [] },
-      'fm',
-    );
+    const out = switchChannelMode({ modeProfiles: [dmr], primaryMode: 'dmr', parked: [] }, 'fm');
     expect((out.modeProfiles[0] as ChannelModeProfileAnalog).rxTone).toBe('none');
     expect(out.parked[0]?.mode).toBe('dmr');
     expect((out.parked[0] as ChannelModeProfileDMR).colourCode).toBe(9);
@@ -552,10 +546,7 @@ describe('mode transitions (same output as today editor)', () => {
     let edit = emptyEdit();
     edit = switchChannelMode(edit, 'fm');
     edit = addChannelMode(edit, 'dmr');
-    expect(edit.modeProfiles).toEqual([
-      defaultModeProfile('fm'),
-      defaultModeProfile('dmr'),
-    ]);
+    expect(edit.modeProfiles).toEqual([defaultModeProfile('fm'), defaultModeProfile('dmr')]);
     expect(edit.primaryMode).toBe('fm');
   });
 
@@ -570,10 +561,7 @@ describe('mode transitions (same output as today editor)', () => {
     };
     const dmr = defaultModeProfile('dmr') as ChannelModeProfileDMR;
     dmr.colourCode = 7;
-    const out = removeChannelMode(
-      { modeProfiles: [fm, dmr], primaryMode: 'fm', parked: [] },
-      'fm',
-    );
+    const out = removeChannelMode({ modeProfiles: [fm, dmr], primaryMode: 'fm', parked: [] }, 'fm');
     expect(out.modeProfiles).toEqual([dmr]);
     expect(out.primaryMode).toBe('dmr');
   });

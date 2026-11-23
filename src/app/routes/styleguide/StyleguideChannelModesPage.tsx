@@ -1,14 +1,21 @@
-import { SimpleGrid, Stack, Text } from '@mantine/core';
+import { Button, Group, SimpleGrid, Stack, Text } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import type { ChannelModeProfile } from '@core/models/library.ts';
-import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
+import {
+  addChannelMode,
+  defaultModeProfile,
+  removeChannelMode,
+  switchChannelMode,
+  type ChannelModeEdit,
+} from '@core/domain/modeProfiles.ts';
 import { emptyLibrary, newChannel, newTalkGroup } from '@core/domain/factories.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import ChannelModePicker, { AddModeMenu } from '../../components/channels/ChannelModePicker.tsx';
 import ChannelModeSummaries from '../../components/channels/ChannelModeSummaries.tsx';
 import ModeSummaryChip from '../../components/channels/ModeSummaryChip.tsx';
 import { channelModeSummaries } from '../../lib/channelModeSummary.ts';
 import ModePanel from '../../components/channels/modePanels/ModePanel.tsx';
-import { modeLabel } from '../../lib/channelModes.ts';
+import { modeLabel, type ModePreset } from '../../lib/channelModes.ts';
 import type { ModePanelContext } from '../../components/channels/modePanels/types.ts';
 import { SegmentedControl } from '../../components/v2/index.ts';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
@@ -85,17 +92,75 @@ function buildSummaryDemos(lookup: ReturnType<typeof useSummaryDemoLibrary>) {
   return { fmOnly, fmDmr, fiveMode };
 }
 
+const EMPTY_MODE_EDIT: ChannelModeEdit = {
+  modeProfiles: [],
+  primaryMode: null,
+  parked: [],
+};
+
+function applyPreset(edit: ChannelModeEdit, preset: ModePreset): ChannelModeEdit {
+  let next = edit;
+  const [first, ...rest] = preset.modes;
+  if (first == null) return next;
+  next = switchChannelMode(next, first);
+  for (const mode of rest) {
+    next = addChannelMode(next, mode);
+  }
+  return next;
+}
+
 export default function StyleguideChannelModesPage() {
   const [compact, setCompact] = useState(false);
   const lookup = useSummaryDemoLibrary();
   const { fmOnly, fmDmr, fiveMode } = useMemo(() => buildSummaryDemos(lookup), [lookup]);
   const loneSummaries = channelModeSummaries(fmOnly, lookup);
 
+  const [modeEdit, setModeEdit] = useState<ChannelModeEdit>(EMPTY_MODE_EDIT);
+
+  const pickerModes = modeEdit.modeProfiles.map((p) => p.mode);
+
   return (
     <StyleguidePageShell
       title="Channel modes"
       description="How the library presents a channel's modes."
     >
+      <StyleguideSection
+        title="Mode picker"
+        description="No mode (placeholder with presets), one mode (switch), two or more (chips). Interactive: the demo applies the same transitions the editor uses."
+      >
+        <Stack gap="sm">
+          <ChannelModePicker
+            modes={pickerModes}
+            compact={compact}
+            onSwitch={(mode) => setModeEdit((edit) => switchChannelMode(edit, mode))}
+            onAdd={(mode) => setModeEdit((edit) => addChannelMode(edit, mode))}
+            onRemove={(mode) => setModeEdit((edit) => removeChannelMode(edit, mode))}
+            onPreset={(preset) => setModeEdit((edit) => applyPreset(edit, preset))}
+          />
+          <Text size="sm" c="dimmed">
+            Modes: {pickerModes.length === 0 ? 'none' : pickerModes.map(modeLabel).join(', ')}
+            {' · '}
+            Main: {modeEdit.primaryMode ? modeLabel(modeEdit.primaryMode) : 'none'}
+          </Text>
+          <Group gap="sm">
+            <Button
+              variant="default"
+              size="compact-sm"
+              onClick={() => setModeEdit(EMPTY_MODE_EDIT)}
+            >
+              Reset
+            </Button>
+            {pickerModes.length === 1 ? (
+              <AddModeMenu
+                modes={pickerModes}
+                variant="link"
+                onAdd={(mode) => setModeEdit((edit) => addChannelMode(edit, mode))}
+              />
+            ) : null}
+          </Group>
+        </Stack>
+      </StyleguideSection>
+
       <StyleguideSection
         title="Mode panels"
         description="Every digital mode lays out its fields in Access, Call, Listen, You. Analogue has no headings and puts tones first. A mode Studio holds no settings for yet shows the headings and a note."

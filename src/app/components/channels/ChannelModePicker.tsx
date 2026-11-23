@@ -88,9 +88,7 @@ function MoreModesMenu({
           className={[classes.chip, checked ? classes.chipChecked : ''].filter(Boolean).join(' ')}
           style={{
             borderColor: fill ?? undefined,
-            ...(checked && fill
-              ? { backgroundColor: fill, color: '#1a1b1e' }
-              : {}),
+            ...(checked && fill ? { backgroundColor: fill, color: '#1a1b1e' } : {}),
           }}
         >
           {checked ? (
@@ -225,12 +223,7 @@ function SwitchState({
     <div className={[classes.root, compact ? classes.compact : ''].filter(Boolean).join(' ')}>
       <div className={classes.chips} role="radiogroup" aria-label="Mode">
         {MODE_PICKER_COMMON.map((mode) => (
-          <ModeRadioChip
-            key={mode}
-            mode={mode}
-            checked={current === mode}
-            onSelect={onSwitch}
-          />
+          <ModeRadioChip key={mode} mode={mode} checked={current === mode} onSelect={onSwitch} />
         ))}
         <MoreModesMenu
           current={currentInMore ? current : null}

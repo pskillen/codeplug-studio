@@ -23,3 +23,13 @@ Every digital mode's settings use the same four groups, in this order (`DigitalM
 - A mode panel never draws its own header, mode pill or main-mode control: the page around it does.
 - No radio, format or CPS names in mode copy.
 - Code: `src/app/components/channels/modePanels/` ([ModePanels.md](../../../src/app/components/channels/modePanels/ModePanels.md)).
+
+## Picking a channel's mode
+
+Most channels have one mode, so the mode is a single switch, not a multi-select (`ChannelModePicker`).
+
+- **No mode yet:** a dashed box, "Which mode does this channel use?", with one-tap presets **FM** (Analogue), **DMR** (Digital) and **FM + DMR** (Dual-mode repeater), and the other modes beneath. One tap fills the mode; there is no confirm and no separate "what kind of channel?" step. A preset's first mode becomes the main mode.
+- **One mode:** a single-select switch, FM AM DMR NXDN P25 M17, the rest under **More**. A second mode is opt-in, through **+ Also runs another mode** under that mode's settings.
+- **Two or more modes:** one removable chip per mode (× to remove), then **+ Add another mode**.
+- Chips are 32px tall with a 44px hit area; the switch wraps on a phone.
+- Switching or removing a mode keeps its settings until save; switching back restores them.
