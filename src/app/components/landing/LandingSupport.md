@@ -24,7 +24,7 @@ Empty-state landing for Home (`/` with no projects): hero with `LandingPathChoos
 
 ## Behaviour
 
-Builds rows once with `buildSupportMatrix({ availability: supportMatrixAvailability() })`, so cells reflect this site's Write and flasher gating. Claims in the hero copy must stay true to shipped behaviour.
+Builds rows once with `buildSupportMatrix({ availability: supportMatrixAvailability() })`, so cells reflect this site's Write, satellite keps, and flasher gating. Claims in the hero copy must stay true to shipped behaviour.
 
 ## Related
 

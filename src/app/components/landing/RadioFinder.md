@@ -17,7 +17,9 @@
 
 ## Behaviour
 
-- Cards list features grouped Program it / Organise / DMR, using `SUPPORT_COLUMNS`, with a `SupportMark` each.
+- Cards list features grouped Program it / Organise / DMR, using `SUPPORT_COLUMNS`, with a `SupportCellMark` each (including † notes on supported feature cells when present).
+- RadioFoundry cards show **Checked against** the pinned commit under the header.
+- A **Channel modes** section lists every mode column (including not applicable digital modes on FM radios), with evidence tags where recorded.
 - Unsupported firmware (for example stock DM-1701) shows "Not supported" and points to the best supported firmware.
 - "Most features" marks the top-scoring firmware when more than one is supported.
 - Cards with `flash: supported` link to `/firmware`.

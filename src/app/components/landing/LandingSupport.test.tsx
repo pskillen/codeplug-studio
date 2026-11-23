@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
-import { buildSupportMatrix, listRadioModels } from '@core/radio-targets/index.ts';
+import {
+  buildSupportMatrix,
+  listRadioModels,
+  listSupportModeColumns,
+} from '@core/radio-targets/index.ts';
+import { RADIOFOUNDRY_STUDIO_PIN } from '@core/radios/radiofoundry/firmware.ts';
 import LandingSupport from './LandingSupport.tsx';
 
 function renderLanding() {
@@ -62,7 +67,10 @@ describe('LandingSupport', () => {
     renderLanding();
     fireEvent.click(screen.getByRole('button', { name: /UV-5R Mini/ }));
     const card = screen.getByTestId('fw-card-stock');
-    expect(within(card).getAllByText('Not applicable').length).toBe(2);
+    // Two DMR feature columns plus one "Not applicable" per digital mode column.
+    expect(within(card).getAllByText('Not applicable').length).toBe(
+      2 + listSupportModeColumns().filter((m) => !['fm', 'am', 'ssb'].includes(m)).length,
+    );
   });
 
   it('renders a matrix row per model firmware and filters by class', () => {
@@ -80,6 +88,48 @@ describe('LandingSupport', () => {
     renderLanding();
     const legend = screen.getByRole('list', { name: 'Legend' });
     expect(within(legend).getAllByRole('listitem')).toHaveLength(4);
+  });
+
+  it('shows channel mode columns with evidence', () => {
+    renderLanding();
+    expect(screen.getByTestId('mode-baofeng-dm32uv-radiofoundry-fm')).toHaveAttribute(
+      'data-evidence',
+      'bench',
+    );
+    expect(screen.getByTestId('mode-baofeng-dm1701-radiofoundry-dmr')).toHaveAttribute(
+      'data-evidence',
+      'on-air',
+    );
+    expect(screen.getByTestId('mode-anytone-at-d890uv-stock-fm')).toHaveAttribute(
+      'data-evidence',
+      'none',
+    );
+  });
+
+  it('shows the checked build on RadioFoundry rows', () => {
+    renderLanding();
+    expect(screen.getByTestId('matrix-baofeng-dm32uv-radiofoundry').textContent).toContain(
+      RADIOFOUNDRY_STUDIO_PIN.git,
+    );
+    expect(screen.getByTestId('matrix-baofeng-dm32uv-stock').textContent).not.toContain(
+      RADIOFOUNDRY_STUDIO_PIN.git,
+    );
+  });
+
+  it('shows the evidence legend', () => {
+    renderLanding();
+    const legend = screen.getByRole('list', { name: 'Evidence' });
+    expect(within(legend).getAllByRole('listitem')).toHaveLength(4);
+  });
+
+  it('lists channel modes on a firmware card', () => {
+    renderLanding();
+    fireEvent.click(screen.getByRole('button', { name: /DM-32UV/ }));
+    const card = within(screen.getByTestId('fw-card-radiofoundry'));
+    expect(card.getByText('Channel modes')).toBeInTheDocument();
+    expect(card.getByText('FM')).toBeInTheDocument();
+    expect(card.getAllByText('DMR').length).toBeGreaterThanOrEqual(1);
+    expect(card.getByText(/Checked against/)).toBeInTheDocument();
   });
 });
 

@@ -193,6 +193,52 @@
   font-weight: 600;
 }
 
+.cellMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.evidenceTag {
+  font-size: var(--dsv2-font-micro);
+  font-weight: 600;
+  padding: 0 4px;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+
+.evidence_on_air {
+  color: var(--dsv2-success);
+}
+
+.evidence_bench {
+  color: var(--dsv2-text-secondary);
+}
+
+.evidence_unverified {
+  color: var(--dsv2-warning);
+}
+
+.dagger {
+  color: var(--dsv2-text-tertiary);
+  font-weight: 700;
+}
+
+.fwBuild {
+  display: block;
+  font-size: var(--dsv2-font-micro);
+  font-weight: 400;
+  color: var(--dsv2-text-tertiary);
+}
+
+.fwBuildLine {
+  margin: 2px 0 8px;
+  font-size: var(--dsv2-font-micro);
+  font-weight: 400;
+  color: var(--dsv2-text-tertiary);
+}
+
 /* Marks */
 .mark {
   /* Contain the absolutely positioned `.srOnly` label; otherwise it escapes the matrix's

@@ -24,7 +24,12 @@ import {
   summariseRadioFoundryBuild,
   type RadioFoundryBuildIdentity,
 } from '@core/radios/radiofoundry/firmware.ts';
-import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
+import {
+  RadioInterlockError,
+  RadioProtocolError,
+  RadioTimeoutError,
+  RadioWrongIdentError,
+} from '../../kit/errors.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { reportProgress } from '../../kit/progress.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
@@ -69,6 +74,7 @@ import {
   radioFoundryWriteSourceFromAssembled,
   type RadioFoundryWriteSource,
 } from './writeSource.ts';
+import { SAT_ALLOWED_OPS, SATELLITE_COMMAND } from './satellite.ts';
 
 const REPLY_COMMAND = CODEPLUG_COMMAND | 0x80;
 const PRE_WRITE_STAGE = 'Pre-write read';
@@ -531,6 +537,47 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       if (signal?.aborted) throw new RadioProtocolError('Radio I/O operation was aborted.');
     }
     await this.request(OP_END, new Uint8Array(0), 8000);
+  }
+
+  /**
+   * The only sender of debug-link SATELLITE (0x26). Refuses operations outside SAT_ALLOWED_OPS before writing.
+   * Retries status 3 (busy) for up to 5 s. Returns the status and the body after it; never throws on a status.
+   */
+  async satelliteRequest(
+    op: number,
+    args: Uint8Array,
+    timeoutMs: number,
+  ): Promise<{ status: number; body: Uint8Array }> {
+    if (!SAT_ALLOWED_OPS.has(op)) {
+      throw new RadioInterlockError(`Studio does not send RadioFoundry satellite operation ${op}.`);
+    }
+    const pipe = this.requirePipe();
+    const payload = new Uint8Array(1 + args.length);
+    payload[0] = op;
+    payload.set(args, 1);
+    if (payload.length > 64) {
+      throw new RadioProtocolError('RadioFoundry satellite request is longer than 64 bytes.');
+    }
+    const busyUntil = performance.now() + BUSY_WAIT_MS;
+    for (;;) {
+      const seq = this.seq & 0xff;
+      this.seq = (this.seq + 1) & 0xff;
+      await pipe.write(encodeDebugFrame(SATELLITE_COMMAND, seq, payload));
+      const frame = await readFrame(pipe, timeoutMs);
+      if (
+        frame.command !== (SATELLITE_COMMAND | 0x80) ||
+        frame.seq !== seq ||
+        frame.payload.length < 1
+      ) {
+        throw new RadioProtocolError('Unexpected RadioFoundry satellite reply.');
+      }
+      const status = frame.payload[0]!;
+      if (status === 3 && performance.now() < busyUntil) {
+        await delay(BUSY_GAP_MS);
+        continue;
+      }
+      return { status, body: frame.payload.subarray(1) };
+    }
   }
 
   private async request(op: number, args: Uint8Array, timeoutMs: number): Promise<Uint8Array> {

@@ -7,16 +7,19 @@ import { listDescriptorsForProfile } from '@integrations/radio-io';
 import type { SupportMatrixAvailability } from '@core/radio-targets/index.ts';
 
 import { listOfferedFirmwareUpdaters } from './firmwareFlashEnvGate.ts';
+import { hasSatelliteKepsWriteAdapter } from './satelliteKepsWriteAdapters.ts';
 import { resolveRadioWriteGate } from './radioWriteEnvGate.ts';
 
 export function supportMatrixAvailability(buildEnv?: string): SupportMatrixAvailability {
   const offered = new Set(listOfferedFirmwareUpdaters(buildEnv).map((d) => d.radioId));
+  const cableWrite = (e: Parameters<NonNullable<SupportMatrixAvailability['cableWrite']>>[0]) =>
+    listDescriptorsForProfile(e.formatId, e.profileId).some(
+      (d) => resolveRadioWriteGate(d, buildEnv, e.profileId) === 'allowed',
+    );
   return {
     cableRead: (e) => listDescriptorsForProfile(e.formatId, e.profileId).length > 0,
-    cableWrite: (e) =>
-      listDescriptorsForProfile(e.formatId, e.profileId).some(
-        (d) => resolveRadioWriteGate(d, buildEnv, e.profileId) === 'allowed',
-      ),
+    cableWrite,
+    satelliteKeps: (e) => hasSatelliteKepsWriteAdapter(e.profileId) && cableWrite(e),
     firmwareFlash: (radioId) => offered.has(radioId),
   };
 }

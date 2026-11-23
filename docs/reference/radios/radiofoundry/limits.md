@@ -17,6 +17,15 @@ Limits every radio running RadioFoundry shares: they are fixed by the firmware's
 | Radio name            | **8**    |                                                  |
 | Radio DMR IDs         | **1**    | Maximum ID **16776415**                          |
 
+### Satellite inventory
+
+| Constraint              | Value                     | Notes                                                           |
+| ----------------------- | ------------------------- | --------------------------------------------------------------- |
+| Satellites              | **10**                    | Whole-set replace only; see [satellite keps](satellite-keps.md) |
+| Satellite name (UTF-8)  | **48** bytes              |                                                                 |
+| Catalog (NORAD) ceiling | **99999**                 |                                                                 |
+| Uplink CTCSS            | **60.0–260.0 Hz** or none | Stored as tenths of Hz (600–2600); 0 = no tone                  |
+
 ## Per board
 
 What differs between boards lives in one module per board (`RadioFoundryBoardLimits`): RF bands, power levels (how many the board drives; the [codeplug page](../../export-formats/radiofoundry/README.md) has the byte rule that spreads RadioFoundry's 10-step power byte over fewer levels), the DMR ID database size the cable write may send, the physical base of the codeplug image, and where the image ends. Each board also has a cable board object (base, VERSION names, group) and gets its descriptor from one factory.
