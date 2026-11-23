@@ -217,6 +217,17 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
       egress('opengd77', 'opengd77-md9600', 'OpenGD77 CSV'),
     ],
   },
+  'tyt-md9600-radiofoundry': {
+    id: 'tyt-md9600-radiofoundry',
+    label: 'TYT MD-9600 (RadioFoundry)',
+    modelId: 'tyt-md9600',
+    firmwareId: 'radiofoundry',
+    traits: radioFoundryTraits,
+    compatibleEgress: [
+      egress('radiofoundry', 'radiofoundry-md9600', 'RadioFoundry codeplug'),
+      egress('radio-io', 'radio-io-md9600-radiofoundry', 'Web Serial'),
+    ],
+  },
   'anytone-at-d890uv': {
     id: 'anytone-at-d890uv',
     label: 'Anytone AT-D890UV',

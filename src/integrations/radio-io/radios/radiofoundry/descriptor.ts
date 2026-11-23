@@ -13,6 +13,7 @@ import type { MemoryMap, RadioDescriptor, RadioHydrationHooks } from '../../type
 import {
   DM1701_RADIOFOUNDRY_CABLE_BOARD,
   DM32UV_RADIOFOUNDRY_CABLE_BOARD,
+  MD9600_RADIOFOUNDRY_CABLE_BOARD,
   RT84_RADIOFOUNDRY_CABLE_BOARD,
   type RadioFoundryCableBoard,
 } from './board.ts';
@@ -73,4 +74,8 @@ export const DM1701_RADIOFOUNDRY_DESCRIPTOR: RadioDescriptor = createRadioFoundr
 
 export const RT84_RADIOFOUNDRY_DESCRIPTOR: RadioDescriptor = createRadioFoundryDescriptor(
   RT84_RADIOFOUNDRY_CABLE_BOARD,
+);
+
+export const MD9600_RADIOFOUNDRY_DESCRIPTOR: RadioDescriptor = createRadioFoundryDescriptor(
+  MD9600_RADIOFOUNDRY_CABLE_BOARD,
 );

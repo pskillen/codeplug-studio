@@ -61,6 +61,7 @@ describe('buildSupportMatrix', () => {
     expect(row('baofeng-dm32uv', 'radiofoundry').cells.cpsFile).toBe('supported');
     expect(row('baofeng-dm1701', 'radiofoundry').cells.cpsFile).toBe('supported');
     expect(row('retevis-rt84', 'radiofoundry').cells.cpsFile).toBe('supported');
+    expect(row('tyt-md9600', 'radiofoundry').cells.cpsFile).toBe('supported');
   });
 
   it('derives multi-talk-group from the trait', () => {

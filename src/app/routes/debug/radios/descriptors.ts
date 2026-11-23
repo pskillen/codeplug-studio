@@ -280,6 +280,13 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     capabilities: unavailable,
   },
   {
+    slug: 'md-9600-radiofoundry',
+    model: 'MD-9600',
+    archiveModelId: 'MD-9600-RadioFoundry',
+    family: 'RadioFoundry',
+    capabilities: unavailable,
+  },
+  {
     slug: 'dm-1701-opengd77',
     compare: openGd77CompareAdapter,
     calibration: openGd77CalibrationView,

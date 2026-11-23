@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DM1701_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-1701-radiofoundry/limits.ts';
 import { RT84_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt84-radiofoundry/limits.ts';
+import { MD9600_RADIOFOUNDRY_BOARD } from '@core/radios/tyt/md-9600-radiofoundry/limits.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { getProfileExportLimits } from '../../profileExportLimits.ts';
 import {
@@ -31,6 +32,7 @@ describe('isRadioFoundryRadioIoProfileId', () => {
     expect(isRadioFoundryRadioIoProfileId('radio-io-dm32uv-radiofoundry')).toBe(true);
     expect(isRadioFoundryRadioIoProfileId('radio-io-dm1701-radiofoundry')).toBe(true);
     expect(isRadioFoundryRadioIoProfileId('radio-io-rt84-radiofoundry')).toBe(true);
+    expect(isRadioFoundryRadioIoProfileId('radio-io-md9600-radiofoundry')).toBe(true);
     expect(isRadioFoundryRadioIoProfileId('radio-io-dm32uv')).toBe(false);
     expect(isRadioFoundryRadioIoProfileId('radio-io-opengd77-1701')).toBe(false);
   });
@@ -55,6 +57,18 @@ describe('RT84 RadioFoundry profile facts', () => {
     expect(profile.powerLadder.map((e) => e.wire)).toEqual(['1', '3', '6', '8', '10']);
     expect(profile.powerLadder.map((e) => e.approxWatts)).toEqual(
       RT84_RADIOFOUNDRY_BOARD.POWER_LABELS,
+    );
+    expect(DEFAULT_RADIOFOUNDRY_PROFILE_ID).toBe('radiofoundry-dm32uv');
+  });
+});
+
+describe('MD-9600 RadioFoundry profile facts', () => {
+  it('resolves from radio-io id and keeps five power wires', () => {
+    const profile = resolveRadioFoundryProfile('radio-io-md9600-radiofoundry');
+    expect(profile.id).toBe('radiofoundry-md9600');
+    expect(profile.powerLadder.map((e) => e.wire)).toEqual(['1', '3', '6', '8', '10']);
+    expect(profile.powerLadder.map((e) => e.approxWatts)).toEqual(
+      MD9600_RADIOFOUNDRY_BOARD.POWER_LABELS,
     );
     expect(DEFAULT_RADIOFOUNDRY_PROFILE_ID).toBe('radiofoundry-dm32uv');
   });

@@ -8,6 +8,7 @@ import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { DM1701_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-1701-radiofoundry/limits.ts';
 import { RT84_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt84-radiofoundry/limits.ts';
+import { MD9600_RADIOFOUNDRY_BOARD } from '@core/radios/tyt/md-9600-radiofoundry/limits.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import {
   RADIOFOUNDRY_LIMITS,
@@ -141,7 +142,8 @@ export interface RadioIoOpenGd77Md9600Profile {
 export type RadioFoundryRadioIoProfileId =
   | 'radio-io-dm32uv-radiofoundry'
   | 'radio-io-dm1701-radiofoundry'
-  | 'radio-io-rt84-radiofoundry';
+  | 'radio-io-rt84-radiofoundry'
+  | 'radio-io-md9600-radiofoundry';
 
 /** RadioFoundry cable write. Caps are the open-firmware codeplug, not the stock firmware's. */
 export interface RadioIoRadioFoundryProfile {
@@ -456,6 +458,13 @@ export const RADIO_IO_RT84_RADIOFOUNDRY_PROFILE: RadioIoRadioFoundryProfile =
     RT84_RADIOFOUNDRY_BOARD,
   );
 
+export const RADIO_IO_MD9600_RADIOFOUNDRY_PROFILE: RadioIoRadioFoundryProfile =
+  radioFoundryRadioIoProfile(
+    'radio-io-md9600-radiofoundry',
+    'TYT MD-9600 (RadioFoundry)',
+    MD9600_RADIOFOUNDRY_BOARD,
+  );
+
 export const RADIO_IO_OPENGD77_MD9600_PROFILE: RadioIoOpenGd77Md9600Profile = {
   id: 'radio-io-opengd77-md9600',
   label: 'TYT MD-9600 / RT-90 (OpenGD77)',
@@ -485,6 +494,7 @@ export const RADIO_IO_PROFILES: readonly RadioIoRadioProfile[] = [
   RADIO_IO_DM32UV_RADIOFOUNDRY_PROFILE,
   RADIO_IO_DM1701_RADIOFOUNDRY_PROFILE,
   RADIO_IO_RT84_RADIOFOUNDRY_PROFILE,
+  RADIO_IO_MD9600_RADIOFOUNDRY_PROFILE,
 ];
 
 export function getRadioIoProfile(profileId: string): RadioIoRadioProfile {

@@ -168,4 +168,10 @@ describe('radio-io profiles', () => {
       getProfileExportLimits('radio-io', 'radio-io-rt84-radiofoundry')?.maxDigitalIdDatabase,
     ).toBe(520_646);
   });
+
+  it('re-exports MD-9600 RadioFoundry ID database cap', () => {
+    expect(
+      getProfileExportLimits('radio-io', 'radio-io-md9600-radiofoundry')?.maxDigitalIdDatabase,
+    ).toBe(520_646);
+  });
 });

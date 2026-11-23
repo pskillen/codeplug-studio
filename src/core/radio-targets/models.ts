@@ -106,7 +106,7 @@ export const RADIO_MODELS: Record<string, RadioModel> = {
     label: 'MD-9600 / RT-90',
     formFactor: 'mobile',
     radioClass: 'dmr',
-    firmware: [STOCK, OPENGD77],
+    firmware: [STOCK, OPENGD77, RADIOFOUNDRY],
   },
 };
 
