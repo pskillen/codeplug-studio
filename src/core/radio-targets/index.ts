@@ -58,11 +58,7 @@ export {
   type SupportPath,
   type SupportState,
 } from './supportMatrix.ts';
-export {
-  SUPPORT_FACTS,
-  type SupportFacts,
-  type SupportModeFact,
-} from './supportEvidence.ts';
+export { SUPPORT_FACTS, type SupportFacts, type SupportModeFact } from './supportEvidence.ts';
 export {
   UNKNOWN_MANUFACTURER,
   countBuildsByTarget,

@@ -4,13 +4,13 @@ One matrix or finder cell: the support mark, an optional evidence tag (`on air` 
 
 ## Props
 
-| Prop           | Type                | Notes                                      |
-| -------------- | ------------------- | ------------------------------------------ |
-| `state`        | `SupportState`      | Passed through to `SupportMark`            |
-| `title`        | `string`            | Tooltip (usually from `supportCellTitle`)  |
-| `evidence`     | `SupportEvidence`   | Optional; sets `data-evidence` on the span |
-| `note`         | `string`            | Optional condition; shown as †             |
-| `data-testid`  | `string`             | Optional                                   |
+| Prop          | Type              | Notes                                      |
+| ------------- | ----------------- | ------------------------------------------ |
+| `state`       | `SupportState`    | Passed through to `SupportMark`            |
+| `title`       | `string`          | Tooltip (usually from `supportCellTitle`)  |
+| `evidence`    | `SupportEvidence` | Optional; sets `data-evidence` on the span |
+| `note`        | `string`          | Optional condition; shown as †             |
+| `data-testid` | `string`          | Optional                                   |
 
 ## Usage
 

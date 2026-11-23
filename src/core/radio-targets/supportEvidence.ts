@@ -36,24 +36,35 @@ const DM1701_ON_AIR =
 export const SUPPORT_FACTS: SupportFacts = {
   modes: {
     'baofeng-dm32uv-radiofoundry': {
-      fm: { evidence: 'bench', evidenceSource: `FM checked on the bench by RadioFoundry (feature matrix, ${RF}).` },
+      fm: {
+        evidence: 'bench',
+        evidenceSource: `FM checked on the bench by RadioFoundry (feature matrix, ${RF}).`,
+      },
       dmr: {
         evidence: 'bench',
         evidenceSource: `DMR voice checked on the bench by RadioFoundry (feature matrix, ${RF}).`,
       },
     },
     'baofeng-dm1701-radiofoundry': {
-      fm: { evidence: 'on-air', evidenceSource: `FM transmit checked on the air: ${DM1701_ON_AIR}.` },
-      dmr: { evidence: 'on-air', evidenceSource: `DMR voice checked on the air both ways: ${DM1701_ON_AIR}.` },
+      fm: {
+        evidence: 'on-air',
+        evidenceSource: `FM transmit checked on the air: ${DM1701_ON_AIR}.`,
+      },
+      dmr: {
+        evidence: 'on-air',
+        evidenceSource: `DMR voice checked on the air both ways: ${DM1701_ON_AIR}.`,
+      },
     },
     'retevis-rt84-radiofoundry': {
       fm: {
         evidence: 'unverified',
-        evidenceSource: 'No RadioFoundry record on an RT84. It runs the DM-1701 image, which is checked on the air.',
+        evidenceSource:
+          'No RadioFoundry record on an RT84. It runs the DM-1701 image, which is checked on the air.',
       },
       dmr: {
         evidence: 'unverified',
-        evidenceSource: 'No RadioFoundry record on an RT84. It runs the DM-1701 image, which is checked on the air.',
+        evidenceSource:
+          'No RadioFoundry record on an RT84. It runs the DM-1701 image, which is checked on the air.',
       },
     },
     'tyt-md9600-radiofoundry': {
@@ -69,11 +80,13 @@ export const SUPPORT_FACTS: SupportFacts = {
     'retevis-rt90-radiofoundry': {
       fm: {
         evidence: 'unverified',
-        evidenceSource: 'No RadioFoundry record on an RT90. It runs the MD-9600 image, whose check was partial.',
+        evidenceSource:
+          'No RadioFoundry record on an RT90. It runs the MD-9600 image, whose check was partial.',
       },
       dmr: {
         evidence: 'unverified',
-        evidenceSource: 'No RadioFoundry record on an RT90. It runs the MD-9600 image, whose check was partial.',
+        evidenceSource:
+          'No RadioFoundry record on an RT90. It runs the MD-9600 image, whose check was partial.',
       },
     },
     'anytone-at-d890uv-mm9pdy': {
@@ -83,8 +96,7 @@ export const SUPPORT_FACTS: SupportFacts = {
   firmwareBuilds: {
     radiofoundry: {
       label: `${RF} (${RADIOFOUNDRY_STUDIO_PIN.date})`,
-      note:
-        'Studio\u2019s RadioFoundry support was checked against this commit. Studio reads the radio\u2019s own build when it connects and says how it differs.',
+      note: 'Studio\u2019s RadioFoundry support was checked against this commit. Studio reads the radio\u2019s own build when it connects and says how it differs.',
     },
   },
   featureNotes: {},

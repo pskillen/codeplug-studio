@@ -127,11 +127,9 @@ describe('buildSupportMatrix', () => {
   });
 
   it('lists mode columns for the modes some target supports, in display order', () => {
-    expect(listSupportModeColumns([{ supportedModes: ['dmr', 'fm'] }, { supportedModes: ['nxdn'] }])).toEqual([
-      'fm',
-      'dmr',
-      'nxdn',
-    ]);
+    expect(
+      listSupportModeColumns([{ supportedModes: ['dmr', 'fm'] }, { supportedModes: ['nxdn'] }]),
+    ).toEqual(['fm', 'dmr', 'nxdn']);
     const fromCatalog = listSupportModeColumns();
     expect(fromCatalog).toContain('fm');
     expect(fromCatalog).toContain('dmr');
@@ -185,7 +183,8 @@ describe('buildSupportMatrix', () => {
     expect(row('baofeng-dm32uv', 'radiofoundry').modes.fm?.paths).toEqual(['cable', 'file']);
     expect(row('baofeng-dm32uv', 'mm9pdy').modes.fm?.paths).toEqual(['cable']);
     expect(
-      row('baofeng-dm32uv', 'radiofoundry', { availability: { cableWrite: () => false } }).modes.fm?.paths,
+      row('baofeng-dm32uv', 'radiofoundry', { availability: { cableWrite: () => false } }).modes.fm
+        ?.paths,
     ).toEqual(['file']);
   });
 
@@ -216,8 +215,12 @@ describe('buildSupportMatrix', () => {
     const availability = {
       satelliteKeps: (e: { profileId: string }) => e.profileId === 'radio-io-at-d890uv',
     };
-    expect(row('anytone-at-d890uv', 'stock', { availability }).cells.satelliteKeps).toBe('supported');
-    expect(row('baofeng-dm32uv', 'radiofoundry', { availability }).cells.satelliteKeps).toBe('unsupported');
+    expect(row('anytone-at-d890uv', 'stock', { availability }).cells.satelliteKeps).toBe(
+      'supported',
+    );
+    expect(row('baofeng-dm32uv', 'radiofoundry', { availability }).cells.satelliteKeps).toBe(
+      'unsupported',
+    );
   });
 
   it('shows a feature note only on a supported cell', () => {
