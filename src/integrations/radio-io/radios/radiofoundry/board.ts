@@ -5,6 +5,7 @@
  */
 
 import type { RadioFoundryBoardLimits } from '@core/radios/radiofoundry/limits.ts';
+import { DM1701_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-1701-radiofoundry/limits.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import {
   DM32_RADIOFOUNDRY_BAUD_RATE,
@@ -48,8 +49,20 @@ export const DM32UV_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
   versionBoardNames: ['DM-32UV', 'DM-32', 'dm32'],
 };
 
+export const DM1701_RADIOFOUNDRY_CABLE_BOARD: RadioFoundryCableBoard = {
+  modelId: 'DM-1701-RadioFoundry',
+  label: 'Baofeng DM-1701 (RadioFoundry)',
+  modelHint: 'DM-1701 RadioFoundry',
+  radioIoProfileId: 'radio-io-dm1701-radiofoundry',
+  baudRate: RADIOFOUNDRY_USB_BAUD_RATE,
+  limits: DM1701_RADIOFOUNDRY_BOARD,
+  versionBoardNames: ['DM-1701', 'dm1701'],
+  group: 'Baofeng',
+};
+
 export const RADIOFOUNDRY_CABLE_BOARDS: readonly RadioFoundryCableBoard[] = [
   DM32UV_RADIOFOUNDRY_CABLE_BOARD,
+  DM1701_RADIOFOUNDRY_CABLE_BOARD,
 ];
 
 /** The board for a radio-io profile id; throws on a non-RadioFoundry id. */

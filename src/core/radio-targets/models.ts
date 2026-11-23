@@ -66,7 +66,7 @@ export const RADIO_MODELS: Record<string, RadioModel> = {
     label: 'DM-1701 / RT-84',
     formFactor: 'handheld',
     radioClass: 'dmr',
-    firmware: [STOCK, OPENGD77],
+    firmware: [STOCK, OPENGD77, RADIOFOUNDRY],
   },
   'baofeng-uv5r-mini': {
     id: 'baofeng-uv5r-mini',

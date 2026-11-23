@@ -162,6 +162,8 @@ describe('radio target catalog', () => {
       'radio-io-rt95-mm9pdy',
       'radiofoundry-dm32uv',
       'radio-io-dm32uv-radiofoundry',
+      'radiofoundry-dm1701',
+      'radio-io-dm1701-radiofoundry',
     ]) {
       expect(ids).toContain(profileId);
     }

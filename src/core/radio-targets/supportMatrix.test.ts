@@ -56,6 +56,7 @@ describe('buildSupportMatrix', () => {
     expect(mod.cells.writeCable).toBe('supported');
     expect(mod.cells.cpsFile).toBe('unsupported');
     expect(row('baofeng-dm32uv', 'radiofoundry').cells.cpsFile).toBe('supported');
+    expect(row('baofeng-dm1701', 'radiofoundry').cells.cpsFile).toBe('supported');
   });
 
   it('derives multi-talk-group from the trait', () => {

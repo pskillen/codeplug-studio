@@ -184,6 +184,17 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
       egress('opengd77', 'opengd77-1701', 'OpenGD77 CSV'),
     ],
   },
+  'baofeng-dm1701-radiofoundry': {
+    id: 'baofeng-dm1701-radiofoundry',
+    label: 'Baofeng DM-1701 (RadioFoundry)',
+    modelId: 'baofeng-dm1701',
+    firmwareId: 'radiofoundry',
+    traits: radioFoundryTraits,
+    compatibleEgress: [
+      egress('radiofoundry', 'radiofoundry-dm1701', 'RadioFoundry codeplug'),
+      egress('radio-io', 'radio-io-dm1701-radiofoundry', 'Web Serial'),
+    ],
+  },
   'tyt-md9600': {
     id: 'tyt-md9600',
     label: 'TYT MD-9600 / RT-90 (OpenGD77)',

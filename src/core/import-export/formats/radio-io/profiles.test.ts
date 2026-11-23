@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getProfileExportLimits } from '../../profileExportLimits.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
@@ -154,5 +155,11 @@ describe('radio-io profiles', () => {
     expect(profile.rxGroupListMembers).toBe(DM32UV_RADIOFOUNDRY_LIMITS.RX_GROUP_MEMBERS_MAX);
     expect(profile.maxRadioIds).toBe(DM32UV_RADIOFOUNDRY_LIMITS.RADIO_IDS_MAX);
     expect(profile.powerLadder).toHaveLength(DM32UV_RADIOFOUNDRY_LIMITS.POWER_LEVELS);
+  });
+
+  it('re-exports DM-1701 RadioFoundry ID database cap', () => {
+    expect(
+      getProfileExportLimits('radio-io', 'radio-io-dm1701-radiofoundry')?.maxDigitalIdDatabase,
+    ).toBe(520_646);
   });
 });

@@ -85,6 +85,7 @@ describe('groupRadioCatalog', () => {
     expect(dm1701.firmware[0]).toMatchObject({ supported: false, target: undefined });
     expect(dm1701.firmware[0]?.firmware.kind).toBe('stock');
     expect(dm1701.firmware[1]?.target?.id).toBe('baofeng-dm1701');
+    expect(dm1701.firmware[2]?.target?.id).toBe('baofeng-dm1701-radiofoundry');
     const tyt = groups.find((g) => g.manufacturer === 'TYT')!;
     expect(tyt.models[0]?.firmware[0]?.supported).toBe(false);
   });
@@ -119,8 +120,12 @@ describe('groupRadioCatalog', () => {
     expect(dm32).toHaveLength(1);
     expect(dm32[0]?.models[0]?.firmware).toHaveLength(3);
     const rf = groupRadioCatalog({ query: 'radiofoundry' });
-    expect(rf.flatMap((g) => g.models.map((m) => m.model.id))).toEqual(['baofeng-dm32uv']);
-    expect(rf[0]?.models[0]?.firmware.map((f) => f.firmware.id)).toEqual(['radiofoundry']);
+    expect(rf.flatMap((g) => g.models.map((m) => m.model.id)).sort()).toEqual([
+      'baofeng-dm1701',
+      'baofeng-dm32uv',
+    ]);
+    const rf1701 = rf.flatMap((g) => g.models).find((m) => m.model.id === 'baofeng-dm1701');
+    expect(rf1701?.firmware.map((f) => f.firmware.id)).toEqual(['radiofoundry']);
     expect(groupRadioCatalog({ query: 'zzz' })).toEqual([]);
   });
 });

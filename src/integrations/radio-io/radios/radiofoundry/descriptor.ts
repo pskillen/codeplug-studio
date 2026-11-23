@@ -10,7 +10,11 @@
 import { RADIOFOUNDRY_LIMITS } from '@core/radios/radiofoundry/limits.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import type { MemoryMap, RadioDescriptor, RadioHydrationHooks } from '../../types.ts';
-import { DM32UV_RADIOFOUNDRY_CABLE_BOARD, type RadioFoundryCableBoard } from './board.ts';
+import {
+  DM1701_RADIOFOUNDRY_CABLE_BOARD,
+  DM32UV_RADIOFOUNDRY_CABLE_BOARD,
+  type RadioFoundryCableBoard,
+} from './board.ts';
 import { planRadioFoundryStages } from './plannedStages.ts';
 import { createRadioFoundryCableProtocol } from './protocol.ts';
 
@@ -60,4 +64,8 @@ export function createRadioFoundryDescriptor(board: RadioFoundryCableBoard): Rad
 
 export const DM32_RADIOFOUNDRY_DESCRIPTOR: RadioDescriptor = createRadioFoundryDescriptor(
   DM32UV_RADIOFOUNDRY_CABLE_BOARD,
+);
+
+export const DM1701_RADIOFOUNDRY_DESCRIPTOR: RadioDescriptor = createRadioFoundryDescriptor(
+  DM1701_RADIOFOUNDRY_CABLE_BOARD,
 );

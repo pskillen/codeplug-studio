@@ -33,7 +33,11 @@ import {
   channelSlotAddress,
 } from './layout.ts';
 import { parseRadioFoundryCodeplug } from './parse.ts';
-import { RADIOFOUNDRY_PROFILES, type RadioFoundryRadioProfile } from './profiles.ts';
+import {
+  RADIOFOUNDRY_PROFILES,
+  resolveRadioFoundryProfile,
+  type RadioFoundryRadioProfile,
+} from './profiles.ts';
 import {
   serialiseRadioFoundryCodeplug,
   serialiseRadioFoundryCodeplugWithProfile,
@@ -542,5 +546,46 @@ describe('RadioFoundry codec follows the radio profile', () => {
         key === 'id' || key === 'updatedAt' || key.endsWith('Id') ? undefined : value,
       );
     expect(strip(cable)).toBe(strip(plain));
+  });
+});
+
+describe('DM-1701 RadioFoundry serialise', () => {
+  const profile = resolveRadioFoundryProfile('radiofoundry-dm1701');
+
+  it('maps power percent onto five levels and warns on band', () => {
+    const { bytes } = serialiseRadioFoundryCodeplugWithProfile(
+      assembled({ channels: [fmChannel('Top', 100), fmChannel('Mid', 50)] }),
+      profile,
+    );
+    expect(bytes[channelSlotAddress(1).record + 0x19]).toBe(10);
+    expect(bytes[channelSlotAddress(2).record + 0x19]).toBe(6);
+
+    const inBand = fmChannel('Ok', 1);
+    inBand.entity.rxFrequency = 446_000_000;
+    inBand.entity.txFrequency = 446_000_000;
+    const inBandResult = serialiseRadioFoundryCodeplugWithProfile(
+      assembled({ channels: [inBand] }),
+      profile,
+    );
+    expect(
+      inBandResult.warnings.filter((w) => formatExportWarning(w).includes('MHz')),
+    ).toHaveLength(0);
+
+    const outOfBand = fmChannel('Far', 1);
+    outOfBand.entity.rxFrequency = 485_000_000;
+    outOfBand.entity.txFrequency = 485_000_000;
+    const { warnings } = serialiseRadioFoundryCodeplugWithProfile(
+      assembled({ channels: [outOfBand] }),
+      profile,
+    );
+    expect(formatExportWarning(warnings[0]!)).toContain('136-174 and 400-480 MHz');
+
+  const { bytes: topBytes } = serialiseRadioFoundryCodeplugWithProfile(
+    assembled({ channels: [fmChannel('Top', 100)] }),
+    profile,
+  );
+    expect(
+      parseRadioFoundryCodeplug(topBytes, '', profile).channels[0]?.power,
+    ).toBe(100);
   });
 });

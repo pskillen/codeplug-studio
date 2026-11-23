@@ -266,6 +266,13 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     capabilities: unavailable,
   },
   {
+    slug: 'dm-1701-radiofoundry',
+    model: 'DM-1701',
+    archiveModelId: 'DM-1701-RadioFoundry',
+    family: 'RadioFoundry',
+    capabilities: unavailable,
+  },
+  {
     slug: 'dm-1701-opengd77',
     compare: openGd77CompareAdapter,
     calibration: openGd77CalibrationView,

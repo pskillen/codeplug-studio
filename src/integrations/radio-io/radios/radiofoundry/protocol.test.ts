@@ -51,10 +51,13 @@ import {
   dmrIdDatabaseArea2Blocks,
 } from './idDatabase.ts';
 import {
+  DM1701_RADIOFOUNDRY_CABLE_BOARD,
   DM32UV_RADIOFOUNDRY_CABLE_BOARD,
   radioFoundryCableBoardForProfileId,
   type RadioFoundryCableBoard,
 } from './board.ts';
+import { DM1701_RADIOFOUNDRY_DESCRIPTOR } from './descriptor.ts';
+import { listDescriptorsForProfile } from '../../registry.ts';
 import {
   assertImageBlock,
   assertPlannedWriteBlock,
@@ -734,13 +737,16 @@ describe('DM-32 RadioFoundry APRS', () => {
 /** Answers INFO with the given body and nothing else. */
 class InfoOnlyPipe implements BytePipe {
   private pending = new Uint8Array(0);
-  constructor(private readonly info: Uint8Array) {}
+  constructor(
+    private readonly info: Uint8Array,
+    private readonly versionText: string = DM32UV_VERSION_TEXT,
+  ) {}
 
   async write(data: Uint8Array): Promise<void> {
     const request = decodeDebugFrame(data.slice());
     let frame: Uint8Array;
     if (request.command === 0x02) {
-      const payload = Uint8Array.from([0, ...new TextEncoder().encode(DM32UV_VERSION_TEXT)]);
+      const payload = Uint8Array.from([0, ...new TextEncoder().encode(this.versionText)]);
       frame = encodeDebugFrame(0x82, request.seq, payload);
     } else {
       const payload = new Uint8Array(1 + this.info.length);
@@ -951,5 +957,57 @@ describe('RadioFoundry VERSION on connect', () => {
     const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
     await proto.connect(pipe);
     expect(proto.firmwareVersion()?.board).toBeUndefined();
+  });
+});
+
+describe('Baofeng DM-1701 (RadioFoundry) cable board', () => {
+  const board = DM1701_RADIOFOUNDRY_CABLE_BOARD;
+
+  it('connects with each of its VERSION board names', async () => {
+    for (const name of board.versionBoardNames) {
+      const proto = new RadioFoundryCableProtocol(board);
+      await proto.connect(
+        new InfoOnlyPipe(
+          specExampleInfo(),
+          `proto=1\ngit=454a5b76\nboard=${name}\n`,
+        ),
+      );
+      expect(proto.firmwareVersion()?.board).toBe(name);
+    }
+  });
+
+  it('refuses the DM-32UV by base', async () => {
+    const error = await new RadioFoundryCableProtocol(board)
+      .connect(new InfoOnlyPipe(infoBody()))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('refuses a radio that reports another board', async () => {
+    const error = await new RadioFoundryCableProtocol(board)
+      .connect(
+        new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=MD-9600\n'),
+      )
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('finds the board and its descriptor', () => {
+    expect(radioFoundryCableBoardForProfileId('radio-io-dm1701-radiofoundry')).toBe(board);
+    expect(listDescriptorsForProfile('radio-io', 'radio-io-dm1701-radiofoundry')).toEqual([
+      DM1701_RADIOFOUNDRY_DESCRIPTOR,
+    ]);
+    expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.group).toBe('Baofeng');
+    expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.baudRate).toBe(115200);
+    expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.prodWriteDisabled).toBeUndefined();
+    expect(
+      isRadioFoundryCableRadio(DM1701_RADIOFOUNDRY_DESCRIPTOR.protocolFactory()),
+    ).toBe(true);
+  });
+
+  it('plans area-2 blocks only below the image end', () => {
+    const area2Bytes = 0xe0_0000 - 0xd_8000;
+    expect(dmrIdDatabaseArea2Blocks(area2Bytes, board.limits.IMAGE_END).at(-1)).toBe(0xdff000);
+    expect(() => dmrIdDatabaseArea2Blocks(area2Bytes + 1, 0xe0_0000)).toThrow();
   });
 });

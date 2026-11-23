@@ -1,4 +1,5 @@
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import { DM1701_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-1701-radiofoundry/limits.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import type { RadioFoundryBoardLimits } from '@core/radios/radiofoundry/limits.ts';
 
@@ -95,6 +96,11 @@ const DM32UV_RADIOFOUNDRY = radioFoundryRf(
   DM32UV_RADIOFOUNDRY_BOARD,
 );
 
+const DM1701_RADIOFOUNDRY = radioFoundryRf(
+  'baofeng-dm1701-radiofoundry',
+  DM1701_RADIOFOUNDRY_BOARD,
+);
+
 const DM32UV_MM9PDY: RadioRfCapabilities = {
   radioTargetId: 'baofeng-dm32uv-mm9pdy',
   supportedModes: ['fm', 'am', 'dmr'],
@@ -159,6 +165,7 @@ export const RADIO_RF_CAPABILITIES: Record<string, RadioRfCapabilities> = {
   'baofeng-dm32uv-mm9pdy': DM32UV_MM9PDY,
   'baofeng-dm32uv-radiofoundry': DM32UV_RADIOFOUNDRY,
   'baofeng-dm1701': DM1701,
+  'baofeng-dm1701-radiofoundry': DM1701_RADIOFOUNDRY,
   'tyt-md9600': MD9600,
   'anytone-at-d890uv': AT_D890UV,
   'anytone-at-d890uv-mm9pdy': AT_D890UV_MM9PDY,

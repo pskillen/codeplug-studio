@@ -1,5 +1,6 @@
 /** RadioFoundry codeplug profiles — export boundary only. */
 
+import { DM1701_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-1701-radiofoundry/limits.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import {
   RADIOFOUNDRY_LIMITS,
@@ -87,6 +88,11 @@ export const RADIOFOUNDRY_PROFILES: readonly RadioFoundryRadioProfile[] = [
     'radiofoundry-dm32uv',
     'radio-io-dm32uv-radiofoundry',
     DM32UV_RADIOFOUNDRY_BOARD,
+  ),
+  radioFoundryCodecProfile(
+    'radiofoundry-dm1701',
+    'radio-io-dm1701-radiofoundry',
+    DM1701_RADIOFOUNDRY_BOARD,
   ),
 ];
 
