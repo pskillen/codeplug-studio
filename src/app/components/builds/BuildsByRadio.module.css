@@ -81,7 +81,7 @@
 }
 
 .build:hover {
-  background: var(--dsv2-accent-soft);
+  background: var(--dsv2-accent-tint-10);
 }
 
 .build:hover .buildName {
@@ -122,7 +122,7 @@
 }
 
 .build mark {
-  background: var(--dsv2-accent-soft);
+  background: var(--dsv2-accent-tint-10);
   color: inherit;
   border-radius: 2px;
   box-shadow: 0 0 0 1px var(--dsv2-accent-border);
