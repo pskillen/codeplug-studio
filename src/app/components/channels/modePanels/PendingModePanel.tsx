@@ -1,13 +1,20 @@
-import { Text } from '@mantine/core';
 import type { ChannelModeProfile } from '@core/models/library.ts';
+import { modeLabel } from '../../../lib/channelModes.ts';
 import type { ModePanelProps } from './types.ts';
+import DigitalModeGroups from './DigitalModeGroups.tsx';
 
 export default function PendingModePanel<P extends ChannelModeProfile>({
-  profile: _profile,
+  profile,
 }: ModePanelProps<P>) {
+  const label = modeLabel(profile.mode);
   return (
-    <Text size="sm" c="dimmed">
-      No additional fields for this mode yet.
-    </Text>
+    <DigitalModeGroups
+      access={{
+        note: `Studio doesn't hold ${label} settings yet. Pick the mode now; its settings come in a later release.`,
+      }}
+      call={{ note: '' }}
+      listen={{ note: '' }}
+      you={{ note: '' }}
+    />
   );
 }
