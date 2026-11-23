@@ -13,6 +13,7 @@ import {
   isDm32RadioIoProfileId,
   isRt95RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
+import { summariseRadioFoundryBuild } from '@core/radios/radiofoundry/firmware.ts';
 import { resolveAtD890ScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
@@ -795,6 +796,8 @@ export interface RadioWriteIdentity {
   name?: string;
   /** Firmware where the radio reports it; unset means unknown. */
   firmware?: string;
+  /** Caveats about the firmware line, one sentence each. Facts, not pause reasons. */
+  firmwareNotes?: readonly string[];
 }
 
 /**
@@ -847,6 +850,11 @@ export function radioWriteIdentityFromSession(session: RadioSession): RadioWrite
       : '';
     if (serial) identity.serial = serial;
     if (cache?.firmware) identity.firmware = cache.firmware;
+  }
+  if (isRadioFoundryCableRadio(session.radio)) {
+    const summary = summariseRadioFoundryBuild(session.radio.firmwareVersion());
+    identity.firmware = summary.label;
+    if (summary.notes.length > 0) identity.firmwareNotes = summary.notes;
   }
   return identity;
 }

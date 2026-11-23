@@ -28,15 +28,31 @@ export function IdentitySection({
   extraRows?: [string, string][];
 }) {
   if (!identity) return null;
-  const rows: [string, string][] = [['Model', identity.model]];
-  if (identity.name) rows.push(['Name', identity.name]);
-  if (identity.serial) rows.push(['Serial', identity.serial]);
-  rows.push(['Firmware', identity.firmware ?? 'unknown']);
-  rows.push(...extraRows);
+  const head: [string, string][] = [['Model', identity.model]];
+  if (identity.name) head.push(['Name', identity.name]);
+  if (identity.serial) head.push(['Serial', identity.serial]);
+  head.push(['Firmware', identity.firmware ?? 'unknown']);
+  const notes = identity.firmwareNotes ?? [];
   return (
     <Section title="This radio">
       <dl className={classes.identityGrid} style={{ margin: 0 }}>
-        {rows.map(([k, v]) => (
+        {head.map(([k, v]) => (
+          <div key={k} style={{ display: 'contents' }}>
+            <dt className={classes.identityKey}>{k}</dt>
+            <dd style={{ margin: 0 }}>{v}</dd>
+          </div>
+        ))}
+        {notes.map((note, i) => (
+          <div key={`firmware-note-${i}`} style={{ display: 'contents' }}>
+            <dt className={classes.identityKey} />
+            <dd style={{ margin: 0 }}>
+              <Text size="xs" c="dimmed" component="span" data-testid="identity-firmware-note">
+                {note}
+              </Text>
+            </dd>
+          </div>
+        ))}
+        {extraRows.map(([k, v]) => (
           <div key={k} style={{ display: 'contents' }}>
             <dt className={classes.identityKey}>{k}</dt>
             <dd style={{ margin: 0 }}>{v}</dd>
