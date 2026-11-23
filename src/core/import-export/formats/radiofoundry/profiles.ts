@@ -1,5 +1,9 @@
 /** RadioFoundry codeplug profiles — export boundary only. */
 
+import { DM1701_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-1701-radiofoundry/limits.ts';
+import { RT84_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt84-radiofoundry/limits.ts';
+import { MD9600_RADIOFOUNDRY_BOARD } from '@core/radios/tyt/md-9600-radiofoundry/limits.ts';
+import { RT90_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt90-radiofoundry/limits.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import {
   RADIOFOUNDRY_LIMITS,
@@ -7,6 +11,7 @@ import {
 } from '@core/radios/radiofoundry/limits.ts';
 import type { PowerLadderEntry } from '../../profileLadder.ts';
 import { RADIOFOUNDRY_CODEPLUG_FILE_NAME } from './layout.ts';
+import { radioFoundryLevelToByte } from './power.ts';
 
 export interface RadioFoundryRadioProfile {
   id: string;
@@ -34,17 +39,34 @@ export interface RadioFoundryRadioProfile {
   powerLadder: readonly PowerLadderEntry[];
 }
 
-/** Equal percent steps, wire values 1..n. Shared by the codeplug file and the cable write. */
-export function radioFoundryPowerLadder(powerLevels: number): readonly PowerLadderEntry[] {
+/**
+ * Equal percent steps; wire is the byte each level writes (power.ts). `labels` fills `approxWatts`
+ * per level, lowest first. Shared by the codeplug file and the cable write.
+ */
+export function radioFoundryPowerLadder(
+  powerLevels: number,
+  labels?: readonly string[],
+): readonly PowerLadderEntry[] {
+  if (labels && labels.length !== powerLevels) {
+    throw new Error(
+      `RadioFoundry power labels: expected ${powerLevels} entries, got ${labels.length}`,
+    );
+  }
   return Array.from({ length: powerLevels }, (_, index) => ({
     percent: index === powerLevels - 1 ? 100 : Math.floor((index * 100) / powerLevels) + 1,
-    wire: String(index + 1),
+    wire: String(radioFoundryLevelToByte(index, powerLevels)),
+    ...(labels ? { approxWatts: labels[index]! } : {}),
   }));
 }
 
-export const RADIOFOUNDRY_PROFILES: readonly RadioFoundryRadioProfile[] = [
-  {
-    id: 'radiofoundry-dm32uv',
+/** A RadioFoundry codec profile: firmware-wide counts plus one board. */
+export function radioFoundryCodecProfile(
+  id: string,
+  radioIoProfileId: string,
+  board: RadioFoundryBoardLimits,
+): RadioFoundryRadioProfile {
+  return {
+    id,
     label: 'RadioFoundry codeplug',
     defaultFileName: RADIOFOUNDRY_CODEPLUG_FILE_NAME,
     maxChannels: RADIOFOUNDRY_LIMITS.CHANNEL_MAX,
@@ -57,11 +79,39 @@ export const RADIOFOUNDRY_PROFILES: readonly RadioFoundryRadioProfile[] = [
     radioNameLimit: RADIOFOUNDRY_LIMITS.RADIO_NAME_MAX,
     maxRadioIds: RADIOFOUNDRY_LIMITS.RADIO_IDS_MAX,
     dmrIdMax: RADIOFOUNDRY_LIMITS.DMR_ID_MAX,
-    powerLevels: DM32UV_RADIOFOUNDRY_BOARD.POWER_LEVELS,
-    radioIoProfileId: 'radio-io-dm32uv-radiofoundry',
-    board: DM32UV_RADIOFOUNDRY_BOARD,
-    powerLadder: radioFoundryPowerLadder(DM32UV_RADIOFOUNDRY_BOARD.POWER_LEVELS),
-  },
+    powerLevels: board.POWER_LEVELS,
+    radioIoProfileId,
+    board,
+    powerLadder: radioFoundryPowerLadder(board.POWER_LEVELS, board.POWER_LABELS),
+  };
+}
+
+export const RADIOFOUNDRY_PROFILES: readonly RadioFoundryRadioProfile[] = [
+  radioFoundryCodecProfile(
+    'radiofoundry-dm32uv',
+    'radio-io-dm32uv-radiofoundry',
+    DM32UV_RADIOFOUNDRY_BOARD,
+  ),
+  radioFoundryCodecProfile(
+    'radiofoundry-dm1701',
+    'radio-io-dm1701-radiofoundry',
+    DM1701_RADIOFOUNDRY_BOARD,
+  ),
+  radioFoundryCodecProfile(
+    'radiofoundry-rt84',
+    'radio-io-rt84-radiofoundry',
+    RT84_RADIOFOUNDRY_BOARD,
+  ),
+  radioFoundryCodecProfile(
+    'radiofoundry-md9600',
+    'radio-io-md9600-radiofoundry',
+    MD9600_RADIOFOUNDRY_BOARD,
+  ),
+  radioFoundryCodecProfile(
+    'radiofoundry-rt90',
+    'radio-io-rt90-radiofoundry',
+    RT90_RADIOFOUNDRY_BOARD,
+  ),
 ];
 
 export const DEFAULT_RADIOFOUNDRY_PROFILE_ID = RADIOFOUNDRY_PROFILES[0]!.id;

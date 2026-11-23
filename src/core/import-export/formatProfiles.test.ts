@@ -50,6 +50,10 @@ describe('formatProfiles', () => {
       'radio-io-opengd77-1701',
       'radio-io-opengd77-md9600',
       'radio-io-dm32uv-radiofoundry',
+      'radio-io-dm1701-radiofoundry',
+      'radio-io-rt84-radiofoundry',
+      'radio-io-md9600-radiofoundry',
+      'radio-io-rt90-radiofoundry',
     ]);
     expect(profiles.find((p) => p.profileId === 'radio-io-uv21')?.nameLimit).toBe(12);
     expect(profiles.find((p) => p.profileId === 'radio-io-uv21')?.maxChannels).toBe(1000);

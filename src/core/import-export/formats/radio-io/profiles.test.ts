@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getProfileExportLimits } from '../../profileExportLimits.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
@@ -119,6 +120,27 @@ describe('radio-io profiles', () => {
     expect(profile.maxRxGroupLists).toBe(stock.maxRxGroupLists);
   });
 
+  it('builds the DM-32UV RadioFoundry cable profile it had before', () => {
+    const profile = getRadioIoProfile('radio-io-dm32uv-radiofoundry');
+    expect(isRadioIoRadioFoundryProfile(profile)).toBe(true);
+    if (!isRadioIoRadioFoundryProfile(profile)) return;
+    expect(profile).toEqual({
+      id: 'radio-io-dm32uv-radiofoundry',
+      label: 'Baofeng DM-32UV (RadioFoundry)',
+      maxMemorySlots: 1024,
+      nameLimit: 16,
+      maxZones: 68,
+      zoneMembers: 80,
+      maxContacts: 1024,
+      maxRxGroupLists: 76,
+      rxGroupListMembers: 32,
+      maxRadioIds: 1,
+      maxDigitalIdDatabase: 287_629,
+      powerLadder: profile.powerLadder,
+    });
+    expect(profile.powerLadder).toHaveLength(9);
+  });
+
   it('re-exports DM-32 RadioFoundry caps and stays off the stock DM-32 profile', () => {
     const profile = getRadioIoProfile('radio-io-dm32uv-radiofoundry');
     expect(isRadioIoRadioFoundryProfile(profile)).toBe(true);
@@ -133,5 +155,29 @@ describe('radio-io profiles', () => {
     expect(profile.rxGroupListMembers).toBe(DM32UV_RADIOFOUNDRY_LIMITS.RX_GROUP_MEMBERS_MAX);
     expect(profile.maxRadioIds).toBe(DM32UV_RADIOFOUNDRY_LIMITS.RADIO_IDS_MAX);
     expect(profile.powerLadder).toHaveLength(DM32UV_RADIOFOUNDRY_LIMITS.POWER_LEVELS);
+  });
+
+  it('re-exports DM-1701 RadioFoundry ID database cap', () => {
+    expect(
+      getProfileExportLimits('radio-io', 'radio-io-dm1701-radiofoundry')?.maxDigitalIdDatabase,
+    ).toBe(520_646);
+  });
+
+  it('re-exports RT84 RadioFoundry ID database cap', () => {
+    expect(
+      getProfileExportLimits('radio-io', 'radio-io-rt84-radiofoundry')?.maxDigitalIdDatabase,
+    ).toBe(520_646);
+  });
+
+  it('re-exports MD-9600 RadioFoundry ID database cap', () => {
+    expect(
+      getProfileExportLimits('radio-io', 'radio-io-md9600-radiofoundry')?.maxDigitalIdDatabase,
+    ).toBe(520_646);
+  });
+
+  it('re-exports RT90 RadioFoundry ID database cap', () => {
+    expect(
+      getProfileExportLimits('radio-io', 'radio-io-rt90-radiofoundry')?.maxDigitalIdDatabase,
+    ).toBe(520_646);
   });
 });

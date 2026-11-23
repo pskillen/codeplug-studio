@@ -1,5 +1,10 @@
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import { DM1701_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-1701-radiofoundry/limits.ts';
+import { RT84_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt84-radiofoundry/limits.ts';
+import { MD9600_RADIOFOUNDRY_BOARD } from '@core/radios/tyt/md-9600-radiofoundry/limits.ts';
+import { RT90_RADIOFOUNDRY_BOARD } from '@core/radios/retevis/rt90-radiofoundry/limits.ts';
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
+import type { RadioFoundryBoardLimits } from '@core/radios/radiofoundry/limits.ts';
 
 /** One supported RX band for a radio target. `txAllowed: false` is display metadata only. */
 export interface RadioFrequencyRange {
@@ -75,14 +80,35 @@ const DM32UV: RadioRfCapabilities = {
   ],
 };
 
-/** RadioFoundry on the DM-32UV: FM and conventional DMR on the board's bands (core radios module). */
-const DM32UV_RADIOFOUNDRY: RadioRfCapabilities = {
-  radioTargetId: 'baofeng-dm32uv-radiofoundry',
-  supportedModes: ['fm', 'dmr'],
-  frequencyRanges: DM32UV_RADIOFOUNDRY_BOARD.BANDS_HZ.map((band) =>
-    range(band.minHz / 1_000_000, band.maxHz / 1_000_000, ['fm', 'dmr']),
-  ),
-};
+/** RadioFoundry: FM and conventional DMR on the board's bands, transmit allowed. */
+function radioFoundryRf(
+  radioTargetId: string,
+  board: RadioFoundryBoardLimits,
+): RadioRfCapabilities {
+  return {
+    radioTargetId,
+    supportedModes: ['fm', 'dmr'],
+    frequencyRanges: board.BANDS_HZ.map((band) =>
+      range(band.minHz / 1_000_000, band.maxHz / 1_000_000, ['fm', 'dmr']),
+    ),
+  };
+}
+
+const DM32UV_RADIOFOUNDRY = radioFoundryRf(
+  'baofeng-dm32uv-radiofoundry',
+  DM32UV_RADIOFOUNDRY_BOARD,
+);
+
+const DM1701_RADIOFOUNDRY = radioFoundryRf(
+  'baofeng-dm1701-radiofoundry',
+  DM1701_RADIOFOUNDRY_BOARD,
+);
+
+const RT84_RADIOFOUNDRY = radioFoundryRf('retevis-rt84-radiofoundry', RT84_RADIOFOUNDRY_BOARD);
+
+const MD9600_RADIOFOUNDRY = radioFoundryRf('tyt-md9600-radiofoundry', MD9600_RADIOFOUNDRY_BOARD);
+
+const RT90_RADIOFOUNDRY = radioFoundryRf('retevis-rt90-radiofoundry', RT90_RADIOFOUNDRY_BOARD);
 
 const DM32UV_MM9PDY: RadioRfCapabilities = {
   radioTargetId: 'baofeng-dm32uv-mm9pdy',
@@ -142,13 +168,17 @@ export const RADIO_RF_CAPABILITIES: Record<string, RadioRfCapabilities> = {
   'baofeng-uv5r-mini': UV5R_MINI,
   'baofeng-uv5r-mini-mm9pdy': UV5R_MINI_MM9PDY,
   'baofeng-uv21': UV21,
+  'retevis-rt84-radiofoundry': RT84_RADIOFOUNDRY,
+  'retevis-rt90-radiofoundry': RT90_RADIOFOUNDRY,
   'retevis-rt95': RT95,
   'retevis-rt95-mm9pdy': RT95_MM9PDY,
   'baofeng-dm32uv': DM32UV,
   'baofeng-dm32uv-mm9pdy': DM32UV_MM9PDY,
   'baofeng-dm32uv-radiofoundry': DM32UV_RADIOFOUNDRY,
   'baofeng-dm1701': DM1701,
+  'baofeng-dm1701-radiofoundry': DM1701_RADIOFOUNDRY,
   'tyt-md9600': MD9600,
+  'tyt-md9600-radiofoundry': MD9600_RADIOFOUNDRY,
   'anytone-at-d890uv': AT_D890UV,
   'anytone-at-d890uv-mm9pdy': AT_D890UV_MM9PDY,
 };

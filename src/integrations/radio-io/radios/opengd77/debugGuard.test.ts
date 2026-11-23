@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { BytePipe } from '../../types.ts';
 import { RadioAbortedError } from '../../kit/errors.ts';
+import { encodeDebugFrame } from '../../kit/codecs/radioFoundryDebugLink.ts';
 import {
   classifyOpenGd77DebugFrame,
   createOpenGd77DebugGuard,
   OpenGd77DebugRefusedError,
 } from './debugGuard.ts';
+import { OPENGD77_RADIOFOUNDRY_PROBE_FRAME } from './radioFoundryProbe.ts';
 
 const f = (...bytes: number[]) => new Uint8Array(bytes);
 const PING = f(0x43, 0xfe);
@@ -104,6 +106,18 @@ describe('classifyOpenGd77DebugFrame', () => {
     const cls = classifyOpenGd77DebugFrame(frame);
     expect(cls.allowed).toBe(false);
   });
+
+  it('allows the RadioFoundry probe frame', () => {
+    expect(classifyOpenGd77DebugFrame(OPENGD77_RADIOFOUNDRY_PROBE_FRAME)).toEqual({
+      allowed: true,
+      kind: 'radiofoundry-probe',
+    });
+  });
+
+  it('refuses any other A5 frame', () => {
+    const other = encodeDebugFrame(0x02, 1, new Uint8Array(0));
+    expect(classifyOpenGd77DebugFrame(other).allowed).toBe(false);
+  });
 });
 
 describe('createOpenGd77DebugGuard', () => {
@@ -128,6 +142,42 @@ describe('createOpenGd77DebugGuard', () => {
     await expect(guard.pipe.write(CLOSE)).rejects.toBeInstanceOf(OpenGd77DebugRefusedError);
     expect(write).not.toHaveBeenCalled();
     expect(guard.failure()).toBeInstanceOf(OpenGd77DebugRefusedError);
+  });
+
+  it('allows the probe once between FirmwareInfo and show CPS', async () => {
+    const spy = spyPipe();
+    const guard = createOpenGd77DebugGuard(spy.pipe);
+    await guard.pipe.write(PING);
+    await guard.pipe.write(INFO);
+    await guard.pipe.write(OPENGD77_RADIOFOUNDRY_PROBE_FRAME);
+    await guard.pipe.write(SHOW);
+    expect(spy.write).toHaveBeenCalledTimes(4);
+  });
+
+  it('refuses the probe before FirmwareInfo, after show CPS and a second time', async () => {
+    const spy = spyPipe();
+    const guard = createOpenGd77DebugGuard(spy.pipe);
+    await expect(guard.pipe.write(OPENGD77_RADIOFOUNDRY_PROBE_FRAME)).rejects.toThrow(
+      /RadioFoundry probe before the FirmwareInfo read/,
+    );
+
+    const midSpy = spyPipe();
+    const mid = createOpenGd77DebugGuard(midSpy.pipe);
+    await mid.pipe.write(PING);
+    await mid.pipe.write(INFO);
+    await mid.pipe.write(SHOW);
+    await expect(mid.pipe.write(OPENGD77_RADIOFOUNDRY_PROBE_FRAME)).rejects.toThrow(
+      /RadioFoundry probe after show CPS/,
+    );
+
+    const twiceSpy = spyPipe();
+    const twice = createOpenGd77DebugGuard(twiceSpy.pipe);
+    await twice.pipe.write(PING);
+    await twice.pipe.write(INFO);
+    await twice.pipe.write(OPENGD77_RADIOFOUNDRY_PROBE_FRAME);
+    await expect(twice.pipe.write(OPENGD77_RADIOFOUNDRY_PROBE_FRAME)).rejects.toThrow(
+      /RadioFoundry probe sent twice/,
+    );
   });
 
   it('refuses never-send frames before the session has started too', async () => {

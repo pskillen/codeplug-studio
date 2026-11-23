@@ -43,6 +43,8 @@ export interface RadioIdentityView {
   serial?: string;
   name?: string;
   firmware?: string;
+  /** Caveats about the firmware line, one sentence each. Facts, not pause reasons. */
+  firmwareNotes?: readonly string[];
 }
 
 export type CheckStatus = 'none' | 'available' | 'running' | 'passed' | 'failed' | 'skipped';

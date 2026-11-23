@@ -9,6 +9,7 @@ import {
   reviewSectionsFor,
   type ReviewContext,
 } from './reviewSections.tsx';
+import { IdentitySection } from './reviewSectionParts.tsx';
 import {
   NOMINAL_BYTES_PER_SECOND,
   estimateWriteSeconds,
@@ -150,5 +151,40 @@ describe('write estimate', () => {
     expect(formatEstimate(37)).toBe('About 35 s');
     expect(formatEstimate(100)).toBe('About 1 min 40 s');
     expect(formatEstimate(120)).toBe('About 2 min');
+  });
+});
+
+describe('IdentitySection firmware notes', () => {
+  it('renders each note under Firmware', () => {
+    render(
+      <IdentitySection
+        identity={{
+          model: 'M',
+          firmware: 'RadioFoundry 1a2b3c4d',
+          firmwareNotes: ['One.', 'Two.'],
+        }}
+      />,
+    );
+    expect(screen.getAllByTestId('identity-firmware-note').map((n) => n.textContent)).toEqual([
+      'One.',
+      'Two.',
+    ]);
+    expect(screen.getByText('RadioFoundry 1a2b3c4d')).toBeTruthy();
+  });
+
+  it('renders the same rows as before without notes', () => {
+    render(<IdentitySection identity={{ model: 'M', serial: 'SN123456789' }} />);
+    expect(screen.queryAllByTestId('identity-firmware-note')).toHaveLength(0);
+    expect(screen.getByText('unknown')).toBeTruthy();
+    expect(screen.getByText('SN123456789')).toBeTruthy();
+  });
+
+  it('does not pause Review for notes', () => {
+    expect(
+      reviewPauseReasons(descriptor, {
+        ...ctx,
+        identity: { ...ctx.identity!, firmwareNotes: ['One.'] },
+      }),
+    ).toEqual([]);
   });
 });

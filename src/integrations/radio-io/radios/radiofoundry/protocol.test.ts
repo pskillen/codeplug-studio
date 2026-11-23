@@ -12,18 +12,18 @@ import {
   APRS_RECORD_SIZE,
   CONTACT_BASE,
   CONTACT_RECORD_SIZE,
+  RADIOFOUNDRY_IMAGE_SIZE,
   channelSlotAddress,
 } from '@core/import-export/formats/radiofoundry/layout.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { crc32Ieee } from '../../kit/checksums.ts';
-import { RadioTimeoutError } from '../../kit/errors.ts';
+import { RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { expectEventsFollowPlan, stageRecorder } from '../../plannedStagesTestKit.ts';
 import type { BytePipe } from '../../types.ts';
 import {
   BLOCK_SIZE,
   CODEPLUG_COMMAND,
-  DM32_RADIOFOUNDRY_IMAGE_SIZE,
   FMT_BLANK,
   FMT_LZ4,
   HANDSHAKE_ERROR,
@@ -39,32 +39,47 @@ import {
   PHYSICAL_CODEPLUG_BASE,
   servedBlockAddresses,
 } from './constants.ts';
-import { decodeDebugFrame, encodeDebugFrame } from './frame.ts';
+import { decodeDebugFrame, encodeDebugFrame } from '../../kit/codecs/radioFoundryDebugLink.ts';
 import { decodeBlock, encodeBlock } from './lz4.ts';
-import { planDm32RadioFoundryStages } from './plannedStages.ts';
+import { planRadioFoundryStages } from './plannedStages.ts';
 import {
   DMR_ID_DATABASE_ADDRESS,
   DMR_ID_DATABASE_AREA1_RECORDS,
   DMR_ID_DATABASE_AREA2_ADDRESS,
   DMR_ID_DATABASE_IMAGE_END,
   DMR_ID_DATABASE_RECORD_BYTES,
+  dmrIdDatabaseArea2Blocks,
 } from './idDatabase.ts';
 import {
+  DM1701_RADIOFOUNDRY_CABLE_BOARD,
   DM32UV_RADIOFOUNDRY_CABLE_BOARD,
+  RT84_RADIOFOUNDRY_CABLE_BOARD,
+  MD9600_RADIOFOUNDRY_CABLE_BOARD,
+  RT90_RADIOFOUNDRY_CABLE_BOARD,
   radioFoundryCableBoardForProfileId,
   type RadioFoundryCableBoard,
 } from './board.ts';
 import {
+  DM1701_RADIOFOUNDRY_DESCRIPTOR,
+  MD9600_RADIOFOUNDRY_DESCRIPTOR,
+  RT84_RADIOFOUNDRY_DESCRIPTOR,
+  RT90_RADIOFOUNDRY_DESCRIPTOR,
+} from './descriptor.ts';
+import { listDescriptorsForProfile } from '../../registry.ts';
+import {
   assertImageBlock,
+  assertPlannedWriteBlock,
   isRadioFoundryCableRadio,
   RadioFoundryCableProtocol,
 } from './protocol.ts';
 import {
   radioFoundryWriteSourceFromAssembled,
-  type Dm32RadioFoundryWriteSource,
+  type RadioFoundryWriteSource,
 } from './writeSource.ts';
 
 const REPLY = CODEPLUG_COMMAND | 0x80;
+const DM32UV_VERSION_TEXT =
+  'proto=1\ngit=454a5b76\ngit_time=1795365604\nsource=official\nboard=DM-32UV\nfeatures=\n';
 
 class ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
@@ -81,6 +96,10 @@ class ScriptedPipe implements BytePipe {
   } | null = null;
   infoStatus = 0;
   silent = false;
+  /** null = no VERSION reply at all. */
+  versionText: string | null = DM32UV_VERSION_TEXT;
+  versionStatus = 0;
+  versionCommand = 0x82;
 
   constructor(fill: number) {
     for (const addr of servedBlockAddresses()) {
@@ -107,6 +126,13 @@ class ScriptedPipe implements BytePipe {
     this.writes.push(copy);
     if (this.silent) return;
     const request = decodeDebugFrame(copy);
+    if (request.command === 0x02) {
+      if (this.versionText === null) return;
+      const text = this.versionStatus === 0 ? new TextEncoder().encode(this.versionText) : [];
+      const payload = Uint8Array.from([this.versionStatus, ...text]);
+      this.enqueue(encodeDebugFrame(this.versionCommand, request.seq, payload));
+      return;
+    }
     expect(request.command).toBe(CODEPLUG_COMMAND);
     const op = request.payload[0]!;
     const args = request.payload.subarray(1);
@@ -268,11 +294,16 @@ function isBlank(block: Uint8Array): boolean {
 }
 
 function requestOps(pipe: ScriptedPipe): number[] {
-  return pipe.writes.map((frame) => decodeDebugFrame(frame).payload[0]!);
+  return pipe.writes
+    .map((frame) => decodeDebugFrame(frame))
+    .filter((frame) => frame.command !== 0x02)
+    .map((frame) => frame.payload[0]!);
 }
 
 function requestCommands(pipe: ScriptedPipe): number[] {
-  return pipe.writes.map((frame) => decodeDebugFrame(frame).command);
+  return pipe.writes
+    .map((frame) => decodeDebugFrame(frame).command)
+    .filter((command) => command !== 0x02);
 }
 
 describe('DM-32 RadioFoundry fast codeplug', () => {
@@ -304,9 +335,9 @@ describe('DM-32 RadioFoundry fast codeplug', () => {
     const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
     await proto.connect(pipe);
 
-    const bytes = new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE);
+    const bytes = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
     bytes.fill(0xff);
-    const owned = new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE);
+    const owned = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
     bytes[0x00e0] = 0x54;
     owned[0x00e0] = 1;
     bytes[0x00e8] = 0xff;
@@ -344,11 +375,11 @@ describe('DM-32 RadioFoundry fast codeplug', () => {
     for (const addr of pipe.blockAddresses) {
       expect(addr).not.toBe(PHYSICAL_CODEPLUG_BASE);
       expect(addr).toBeLessThan(PHYSICAL_CODEPLUG_BASE);
-      expect(addr).toBeLessThan(DM32_RADIOFOUNDRY_IMAGE_SIZE);
+      expect(addr).toBeLessThan(RADIOFOUNDRY_IMAGE_SIZE);
     }
     expect(requestCommands(pipe)).not.toContain(0x0d);
 
-    expectEventsFollowPlan(planDm32RadioFoundryStages('write', {}), rec.events);
+    expectEventsFollowPlan(planRadioFoundryStages('write', {}), rec.events);
     expect(rec.stages).toEqual(['Pre-write read', 'Codeplug blocks', 'Commit']);
   });
 });
@@ -395,8 +426,8 @@ const RFKV_SECTOR_VECTOR = (() => {
 describe('DM-32 RadioFoundry settings area', () => {
   function blankSource(): { bytes: Uint8Array; owned: Uint8Array } {
     return {
-      bytes: new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE).fill(0xff),
-      owned: new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE),
+      bytes: new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE).fill(0xff),
+      owned: new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE),
     };
   }
 
@@ -464,7 +495,7 @@ function covers(addr: number, target: number): boolean {
 
 async function uploadSource(
   pipe: ScriptedPipe,
-  source: Dm32RadioFoundryWriteSource,
+  source: RadioFoundryWriteSource,
 ): Promise<ReturnType<typeof stageRecorder>> {
   const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
   await proto.connect(pipe);
@@ -603,7 +634,7 @@ describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
     expect(written.some((addr) => addr >= DMR_ID_DATABASE_IMAGE_END)).toBe(false);
     expect(
       written.some(
-        (addr) => addr >= DM32_RADIOFOUNDRY_IMAGE_SIZE && addr < DMR_ID_DATABASE_AREA2_ADDRESS,
+        (addr) => addr >= RADIOFOUNDRY_IMAGE_SIZE && addr < DMR_ID_DATABASE_AREA2_ADDRESS,
       ),
     ).toBe(false);
     const countBlock = pipe.block(DMR_ID_DATABASE_ADDRESS);
@@ -714,13 +745,22 @@ describe('DM-32 RadioFoundry APRS', () => {
 /** Answers INFO with the given body and nothing else. */
 class InfoOnlyPipe implements BytePipe {
   private pending = new Uint8Array(0);
-  constructor(private readonly info: Uint8Array) {}
+  constructor(
+    private readonly info: Uint8Array,
+    private readonly versionText: string = DM32UV_VERSION_TEXT,
+  ) {}
 
   async write(data: Uint8Array): Promise<void> {
     const request = decodeDebugFrame(data.slice());
-    const payload = new Uint8Array(1 + this.info.length);
-    payload.set(this.info, 1);
-    const frame = encodeDebugFrame(REPLY, request.seq, payload);
+    let frame: Uint8Array;
+    if (request.command === 0x02) {
+      const payload = Uint8Array.from([0, ...new TextEncoder().encode(this.versionText)]);
+      frame = encodeDebugFrame(0x82, request.seq, payload);
+    } else {
+      const payload = new Uint8Array(1 + this.info.length);
+      payload.set(this.info, 1);
+      frame = encodeDebugFrame(REPLY, request.seq, payload);
+    }
     const next = new Uint8Array(this.pending.length + frame.length);
     next.set(this.pending, 0);
     next.set(frame, this.pending.length);
@@ -762,10 +802,10 @@ describe('RadioFoundry cable INFO and board', () => {
     await expect(proto.connect(new InfoOnlyPipe(body))).rejects.toThrow(HANDSHAKE_ERROR);
   });
 
-  it('connects on the spec example INFO and keeps the board ceiling and base', async () => {
-    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+  it('connects a base-0 board on the spec example INFO and keeps the board ceiling', async () => {
+    const proto = new RadioFoundryCableProtocol(TEST_BOARD);
     const ident = await proto.connect(new InfoOnlyPipe(specExampleInfo()));
-    expect(ident.modelHints).toEqual([DM32UV_RADIOFOUNDRY_CABLE_BOARD.modelHint]);
+    expect(ident.modelHints).toEqual([TEST_BOARD.modelHint]);
     const info = { imageEnd: 0xe00000, eepromEnd: 0x10000, flashStart: 0x20000 };
     // INFO says 0xE00000; the board's own image end (0x800000) is the ceiling.
     const capped: RadioFoundryCableBoard = {
@@ -774,6 +814,48 @@ describe('RadioFoundry cable INFO and board', () => {
     };
     expect(() => assertImageBlock(0x7ff000, info, capped)).not.toThrow();
     expect(() => assertImageBlock(0x800000, info, capped)).toThrow(/outside the image/);
+  });
+
+  it('refuses another board by physical base', async () => {
+    const wrongBase = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    const error = await wrongBase
+      .connect(new InfoOnlyPipe(specExampleInfo()))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+    expect((error as Error).message).toContain('0x0');
+    expect((error as Error).message).toContain('0x700000');
+    await expect(wrongBase.download({})).rejects.toThrow();
+
+    const pipe = new ScriptedPipe(0xff);
+    const base0 = new RadioFoundryCableProtocol(TEST_BOARD);
+    await expect(base0.connect(pipe)).rejects.toBeInstanceOf(RadioWrongIdentError);
+    expect(pipe.writes.length).toBe(1);
+  });
+
+  it('refuses a block the write did not plan', () => {
+    expect(() => assertPlannedWriteBlock(0x700000, new Set([0x0, 0x1000]))).toThrow(
+      /did not plan it/,
+    );
+    expect(() => assertPlannedWriteBlock(0x1000, new Set([0x0, 0x1000]))).not.toThrow();
+  });
+
+  it('plans the long-directory blocks past 0x700000', () => {
+    const planned = new Set([
+      ...servedBlockAddresses(),
+      ...dmrIdDatabaseArea2Blocks(0x700000 - 0xd8000 + 0x1000, 0x800000),
+    ]);
+    expect(() => assertPlannedWriteBlock(0x700000, planned)).not.toThrow();
+    expect(() => assertPlannedWriteBlock(0x800000, planned)).toThrow();
+  });
+
+  it('writes no area-2 block without a directory', async () => {
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled(), {
+      includeLibraryContacts: false,
+      directoryRows: [],
+    });
+    const pipe = new ScriptedPipe(0xff);
+    await uploadSource(pipe, source);
+    expect(writtenBlockAddresses(pipe).some((addr) => addr >= 0xd8000)).toBe(false);
   });
 
   it('takes the area-2 ceiling and base guard from the board', async () => {
@@ -814,5 +896,254 @@ describe('RadioFoundry cable INFO and board', () => {
       DM32UV_RADIOFOUNDRY_CABLE_BOARD,
     );
     expect(() => radioFoundryCableBoardForProfileId('radio-io-dm32uv')).toThrow();
+  });
+});
+
+describe('RadioFoundry VERSION on connect', () => {
+  it('sends INFO then VERSION and keeps the build', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    const ident = await proto.connect(pipe);
+    const frames = pipe.writes.slice(0, 2).map((frame) => decodeDebugFrame(frame));
+    expect(frames[0]!.command).toBe(CODEPLUG_COMMAND);
+    expect(frames[0]!.payload[0]).toBe(OP_INFO);
+    expect(frames[1]!.command).toBe(0x02);
+    expect(proto.firmwareVersion()?.board).toBe('DM-32UV');
+    expect(ident.firmwareHint).toBe('RadioFoundry 454a5b76 (2026-11-22)');
+  });
+
+  it('accepts every DM-32UV board name', async () => {
+    for (const board of ['dm32', 'DM-32']) {
+      const pipe = new ScriptedPipe(0xff);
+      pipe.versionText = `board=${board}\n`;
+      const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+      await expect(proto.connect(pipe)).resolves.toBeDefined();
+    }
+  });
+
+  it('refuses another board by name', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.versionText = 'board=MD-9600\n';
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    const error = await proto.connect(pipe).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+    expect((error as Error).message).toContain('"MD-9600"');
+    expect((error as Error).message).toContain('Baofeng DM-32UV (RadioFoundry)');
+    await expect(proto.download({})).rejects.toThrow();
+  });
+
+  it('carries on without VERSION', async () => {
+    const cases: ((pipe: ScriptedPipe) => void)[] = [
+      (pipe) => (pipe.versionStatus = 1),
+      (pipe) => (pipe.versionStatus = 4),
+      (pipe) => (pipe.versionCommand = 0xff),
+      (pipe) => (pipe.versionText = null),
+    ];
+    for (const setup of cases) {
+      const pipe = new ScriptedPipe(0xff);
+      setup(pipe);
+      const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+      const ident = await proto.connect(pipe);
+      expect(proto.firmwareVersion()).toBeNull();
+      expect(ident.firmwareHint).toBeUndefined();
+    }
+  });
+
+  it('pairs the next codeplug request with its own reply after a silent VERSION', async () => {
+    const silent = new ScriptedPipe(0xff);
+    silent.versionText = null;
+    const a = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await a.connect(silent);
+    const image = await a.download({});
+    // Every served block is 0xff on the scripted radio: a misread reply would not give this.
+    expect(image.bytes.subarray(0, BLOCK_SIZE).every((byte) => byte === 0xff)).toBe(true);
+  });
+
+  it('connects when VERSION has no board', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.versionText = 'proto=1\ngit=454a5b76\n';
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    expect(proto.firmwareVersion()?.board).toBeUndefined();
+  });
+});
+
+describe('Baofeng DM-1701 (RadioFoundry) cable board', () => {
+  const board = DM1701_RADIOFOUNDRY_CABLE_BOARD;
+
+  it('connects with each of its VERSION board names', async () => {
+    for (const name of board.versionBoardNames) {
+      const proto = new RadioFoundryCableProtocol(board);
+      await proto.connect(
+        new InfoOnlyPipe(specExampleInfo(), `proto=1\ngit=454a5b76\nboard=${name}\n`),
+      );
+      expect(proto.firmwareVersion()?.board).toBe(name);
+    }
+  });
+
+  it('refuses the DM-32UV by base', async () => {
+    const error = await new RadioFoundryCableProtocol(board)
+      .connect(new InfoOnlyPipe(infoBody()))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('refuses a radio that reports another board', async () => {
+    const error = await new RadioFoundryCableProtocol(board)
+      .connect(new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=MD-9600\n'))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('finds the board and its descriptor', () => {
+    expect(radioFoundryCableBoardForProfileId('radio-io-dm1701-radiofoundry')).toBe(board);
+    expect(listDescriptorsForProfile('radio-io', 'radio-io-dm1701-radiofoundry')).toEqual([
+      DM1701_RADIOFOUNDRY_DESCRIPTOR,
+    ]);
+    expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.group).toBe('Baofeng');
+    expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.baudRate).toBe(115200);
+    expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.prodWriteDisabled).toBe(true);
+    expect(isRadioFoundryCableRadio(DM1701_RADIOFOUNDRY_DESCRIPTOR.protocolFactory())).toBe(true);
+  });
+
+  it('plans area-2 blocks only below the image end', () => {
+    const area2Bytes = 0xe0_0000 - 0xd_8000;
+    expect(dmrIdDatabaseArea2Blocks(area2Bytes, board.limits.IMAGE_END).at(-1)).toBe(0xdff000);
+    expect(() => dmrIdDatabaseArea2Blocks(area2Bytes + 1, 0xe0_0000)).toThrow();
+  });
+});
+
+describe('TYT MD-9600 (RadioFoundry) cable board', () => {
+  const board = MD9600_RADIOFOUNDRY_CABLE_BOARD;
+
+  it('connects with each of its VERSION board names', async () => {
+    for (const name of board.versionBoardNames) {
+      const proto = new RadioFoundryCableProtocol(board);
+      await proto.connect(
+        new InfoOnlyPipe(specExampleInfo(), `proto=1\ngit=454a5b76\nboard=${name}\n`),
+      );
+      expect(proto.firmwareVersion()?.board).toBe(name);
+    }
+  });
+
+  it('refuses the DM-32UV by base', async () => {
+    const error = await new RadioFoundryCableProtocol(board)
+      .connect(new InfoOnlyPipe(infoBody()))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('refuses a radio that reports another board', async () => {
+    const error = await new RadioFoundryCableProtocol(board)
+      .connect(new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=DM-1701\n'))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('finds the board and its descriptor', () => {
+    expect(radioFoundryCableBoardForProfileId('radio-io-md9600-radiofoundry')).toBe(board);
+    expect(listDescriptorsForProfile('radio-io', 'radio-io-md9600-radiofoundry')).toEqual([
+      MD9600_RADIOFOUNDRY_DESCRIPTOR,
+    ]);
+    expect(MD9600_RADIOFOUNDRY_DESCRIPTOR.group).toBe('TYT');
+    expect(MD9600_RADIOFOUNDRY_DESCRIPTOR.baudRate).toBe(115200);
+    expect(MD9600_RADIOFOUNDRY_DESCRIPTOR.prodWriteDisabled).toBe(true);
+    expect(isRadioFoundryCableRadio(MD9600_RADIOFOUNDRY_DESCRIPTOR.protocolFactory())).toBe(true);
+  });
+
+  it('plans area-2 blocks only below the image end', () => {
+    const area2Bytes = 0xe0_0000 - 0xd_8000;
+    expect(dmrIdDatabaseArea2Blocks(area2Bytes, board.limits.IMAGE_END).at(-1)).toBe(0xdff000);
+    expect(() => dmrIdDatabaseArea2Blocks(area2Bytes + 1, 0xe0_0000)).toThrow();
+  });
+});
+
+describe('Retevis RT90 (RadioFoundry) cable board', () => {
+  const board = RT90_RADIOFOUNDRY_CABLE_BOARD;
+
+  it('connects with each of its VERSION board names', async () => {
+    for (const name of board.versionBoardNames) {
+      const proto = new RadioFoundryCableProtocol(board);
+      await proto.connect(
+        new InfoOnlyPipe(specExampleInfo(), `proto=1\ngit=454a5b76\nboard=${name}\n`),
+      );
+      expect(proto.firmwareVersion()?.board).toBe(name);
+    }
+  });
+
+  it('refuses the DM-32UV by base', async () => {
+    const error = await new RadioFoundryCableProtocol(board)
+      .connect(new InfoOnlyPipe(infoBody()))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('refuses a radio that reports another board', async () => {
+    const error = await new RadioFoundryCableProtocol(board)
+      .connect(new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=DM-1701\n'))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('finds the board and its descriptor', () => {
+    expect(radioFoundryCableBoardForProfileId('radio-io-rt90-radiofoundry')).toBe(board);
+    expect(listDescriptorsForProfile('radio-io', 'radio-io-rt90-radiofoundry')).toEqual([
+      RT90_RADIOFOUNDRY_DESCRIPTOR,
+    ]);
+    expect(RT90_RADIOFOUNDRY_DESCRIPTOR.group).toBe('Retevis');
+    expect(RT90_RADIOFOUNDRY_DESCRIPTOR.baudRate).toBe(115200);
+    expect(RT90_RADIOFOUNDRY_DESCRIPTOR.prodWriteDisabled).toBe(true);
+    expect(isRadioFoundryCableRadio(RT90_RADIOFOUNDRY_DESCRIPTOR.protocolFactory())).toBe(true);
+  });
+
+  it('plans area-2 blocks only below the image end', () => {
+    const area2Bytes = 0xe0_0000 - 0xd_8000;
+    expect(dmrIdDatabaseArea2Blocks(area2Bytes, board.limits.IMAGE_END).at(-1)).toBe(0xdff000);
+    expect(() => dmrIdDatabaseArea2Blocks(area2Bytes + 1, 0xe0_0000)).toThrow();
+  });
+});
+
+describe('Retevis RT84 (RadioFoundry) cable board', () => {
+  const board = RT84_RADIOFOUNDRY_CABLE_BOARD;
+
+  it('connects with each of its VERSION board names', async () => {
+    for (const name of board.versionBoardNames) {
+      const proto = new RadioFoundryCableProtocol(board);
+      await proto.connect(
+        new InfoOnlyPipe(specExampleInfo(), `proto=1\ngit=454a5b76\nboard=${name}\n`),
+      );
+      expect(proto.firmwareVersion()?.board).toBe(name);
+    }
+  });
+
+  it('refuses the DM-32UV by base', async () => {
+    const error = await new RadioFoundryCableProtocol(board)
+      .connect(new InfoOnlyPipe(infoBody()))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('refuses a radio that reports another board', async () => {
+    const error = await new RadioFoundryCableProtocol(board)
+      .connect(new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=MD-9600\n'))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('finds the board and its descriptor', () => {
+    expect(radioFoundryCableBoardForProfileId('radio-io-rt84-radiofoundry')).toBe(board);
+    expect(listDescriptorsForProfile('radio-io', 'radio-io-rt84-radiofoundry')).toEqual([
+      RT84_RADIOFOUNDRY_DESCRIPTOR,
+    ]);
+    expect(RT84_RADIOFOUNDRY_DESCRIPTOR.group).toBe('Retevis');
+    expect(RT84_RADIOFOUNDRY_DESCRIPTOR.baudRate).toBe(115200);
+    expect(RT84_RADIOFOUNDRY_DESCRIPTOR.prodWriteDisabled).toBe(true);
+    expect(isRadioFoundryCableRadio(RT84_RADIOFOUNDRY_DESCRIPTOR.protocolFactory())).toBe(true);
+  });
+
+  it('plans area-2 blocks only below the image end', () => {
+    const area2Bytes = 0xe0_0000 - 0xd_8000;
+    expect(dmrIdDatabaseArea2Blocks(area2Bytes, board.limits.IMAGE_END).at(-1)).toBe(0xdff000);
+    expect(() => dmrIdDatabaseArea2Blocks(area2Bytes + 1, 0xe0_0000)).toThrow();
   });
 });

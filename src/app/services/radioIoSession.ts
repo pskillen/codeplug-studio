@@ -13,6 +13,7 @@ import {
   isDm32RadioIoProfileId,
   isRt95RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
+import { summariseRadioFoundryBuild } from '@core/radios/radiofoundry/firmware.ts';
 import { resolveAtD890ScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
@@ -84,12 +85,12 @@ import {
 import { AtD890StunKillError } from '@integrations/radio-io/radios/at-d890uv/stunKillGuard.ts';
 import { encodeDm32uvWriteImageFromDownloadCache } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
-import { radioFoundryCableBoardForProfileId } from '@integrations/radio-io/radios/dm32uv-radiofoundry/board.ts';
-import { isRadioFoundryCableRadio } from '@integrations/radio-io/radios/dm32uv-radiofoundry/protocol.ts';
+import { radioFoundryCableBoardForProfileId } from '@integrations/radio-io/radios/radiofoundry/board.ts';
+import { isRadioFoundryCableRadio } from '@integrations/radio-io/radios/radiofoundry/protocol.ts';
 import {
   radioFoundryReviewContacts,
   radioFoundryWriteSourceFromAssembled,
-} from '@integrations/radio-io/radios/dm32uv-radiofoundry/writeSource.ts';
+} from '@integrations/radio-io/radios/radiofoundry/writeSource.ts';
 import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
 import {
   OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE,
@@ -795,6 +796,8 @@ export interface RadioWriteIdentity {
   name?: string;
   /** Firmware where the radio reports it; unset means unknown. */
   firmware?: string;
+  /** Caveats about the firmware line, one sentence each. Facts, not pause reasons. */
+  firmwareNotes?: readonly string[];
 }
 
 /**
@@ -847,6 +850,11 @@ export function radioWriteIdentityFromSession(session: RadioSession): RadioWrite
       : '';
     if (serial) identity.serial = serial;
     if (cache?.firmware) identity.firmware = cache.firmware;
+  }
+  if (isRadioFoundryCableRadio(session.radio)) {
+    const summary = summariseRadioFoundryBuild(session.radio.firmwareVersion());
+    identity.firmware = summary.label;
+    if (summary.notes.length > 0) identity.firmwareNotes = summary.notes;
   }
   return identity;
 }

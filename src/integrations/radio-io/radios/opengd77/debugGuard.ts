@@ -26,6 +26,7 @@ import {
   OPENGD77_MEM_FLASH,
 } from './constants.ts';
 import { OPENGD77_FIRMWARE_INFO_SIZE } from './protocol.ts';
+import { OPENGD77_RADIOFOUNDRY_PROBE_FRAME } from './radioFoundryProbe.ts';
 
 /** Highest address + length a FLASH read may reach (16 MiB part). */
 export const OPENGD77_DEBUG_FLASH_LIMIT = 0x0100_0000;
@@ -38,7 +39,7 @@ export class OpenGd77DebugRefusedError extends RadioProtocolError {
 }
 
 export type OpenGd77DebugFrameKind =
-  'ping' | 'show-cps' | 'close-cps' | 'firmware-info' | 'flash-read';
+  'ping' | 'show-cps' | 'close-cps' | 'firmware-info' | 'flash-read' | 'radiofoundry-probe';
 
 export type OpenGd77DebugFrameClass =
   { allowed: true; kind: OpenGd77DebugFrameKind } | { allowed: false; reason: string };
@@ -64,6 +65,8 @@ export function classifyOpenGd77DebugFrame(frame: Uint8Array): OpenGd77DebugFram
   if (same(frame, SHOW_CPS)) return { allowed: true, kind: 'show-cps' };
   if (same(frame, CLOSE_CPS)) return { allowed: true, kind: 'close-cps' };
   if (same(frame, FIRMWARE_INFO)) return { allowed: true, kind: 'firmware-info' };
+  if (same(frame, OPENGD77_RADIOFOUNDRY_PROBE_FRAME))
+    return { allowed: true, kind: 'radiofoundry-probe' };
   if (frame[0] === 0x52) {
     if (frame.length !== 8) {
       return { allowed: false, reason: `read frame of ${frame.length} bytes` };
@@ -99,6 +102,7 @@ export function createOpenGd77DebugGuard(pipe: BytePipe, signal?: AbortSignal): 
   let firmwareInfoSent = false;
   let cpsShown = false;
   let closed = false;
+  let probed = false;
 
   const refuse = (reason: string): never => {
     const error = new OpenGd77DebugRefusedError(reason);
@@ -139,6 +143,12 @@ export function createOpenGd77DebugGuard(pipe: BytePipe, signal?: AbortSignal): 
       case 'close-cps':
         if (!cpsShown) return refuse('close CPS before show CPS');
         closed = true;
+        break;
+      case 'radiofoundry-probe':
+        if (!firmwareInfoSent) return refuse('RadioFoundry probe before the FirmwareInfo read');
+        if (cpsShown) return refuse('RadioFoundry probe after show CPS');
+        if (probed) return refuse('RadioFoundry probe sent twice');
+        probed = true;
         break;
     }
   };

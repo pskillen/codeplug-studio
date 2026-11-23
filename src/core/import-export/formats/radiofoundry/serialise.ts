@@ -27,6 +27,7 @@ import {
 } from '@core/radios/radiofoundry/limits.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import { resolveRadioFoundryProfile, type RadioFoundryRadioProfile } from './profiles.ts';
+import { radioFoundryLevelToByte } from './power.ts';
 import {
   pushGeneralInfoWarning,
   pushGeneralWarning,
@@ -93,12 +94,15 @@ interface KeptChannel {
   number: number;
 }
 
-/** Null power is the radio default (byte 0). Otherwise percent 1-100 maps onto levels 1..powerLevels. */
+/**
+ * Null power is the radio default (byte 0). Otherwise percent 1-100 maps onto one of the board's levels,
+ * which the power byte rule turns into the wire byte (see power.ts).
+ */
 export function radioFoundryPowerByte(percent: number | null, powerLevels: number): number {
   if (percent == null || !Number.isFinite(percent) || percent <= 0) return 0;
   const clamped = Math.min(100, percent);
   const index = Math.min(powerLevels - 1, Math.floor(((clamped - 1) * powerLevels) / 100));
-  return index + 1;
+  return radioFoundryLevelToByte(index, powerLevels);
 }
 
 function markOwned(owned: Uint8Array, offset: number, length: number): void {

@@ -56,11 +56,16 @@ const anytoneTraits: readonly Trait[] = [
   BuildCapabilityTrait.IdDatabaseFieldChoice,
 ];
 
-/**
- * Zone is the scan, one channel per repeater, separate digital IDs.
- * Shared by the DM-32UV MM9PDY and RadioFoundry targets.
- */
+/** Zone is the scan, one channel per repeater, separate digital IDs. Shared by the DM-32UV MM9PDY target. */
 const dm32Mm9pdyTraits: readonly Trait[] = [
+  BuildCapabilityTrait.ZoneGrouping,
+  BuildCapabilityTrait.ZoneAsScanList,
+  BuildCapabilityTrait.MultiTalkGroupPerChannel,
+  BuildCapabilityTrait.SeparateDigitalIdList,
+];
+
+/** RadioFoundry on every board: zone is the scan, one channel per repeater, separate digital IDs. */
+const radioFoundryTraits: readonly Trait[] = [
   BuildCapabilityTrait.ZoneGrouping,
   BuildCapabilityTrait.ZoneAsScanList,
   BuildCapabilityTrait.MultiTalkGroupPerChannel,
@@ -113,6 +118,28 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
       egress('chirp', 'chirp-uv21', 'CHIRP CSV'),
     ],
   },
+  'retevis-rt90-radiofoundry': {
+    id: 'retevis-rt90-radiofoundry',
+    label: 'Retevis RT90 (RadioFoundry)',
+    modelId: 'retevis-rt90',
+    firmwareId: 'radiofoundry',
+    traits: radioFoundryTraits,
+    compatibleEgress: [
+      egress('radiofoundry', 'radiofoundry-rt90', 'RadioFoundry codeplug'),
+      egress('radio-io', 'radio-io-rt90-radiofoundry', 'Web Serial'),
+    ],
+  },
+  'retevis-rt84-radiofoundry': {
+    id: 'retevis-rt84-radiofoundry',
+    label: 'Retevis RT84 (RadioFoundry)',
+    modelId: 'retevis-rt84',
+    firmwareId: 'radiofoundry',
+    traits: radioFoundryTraits,
+    compatibleEgress: [
+      egress('radiofoundry', 'radiofoundry-rt84', 'RadioFoundry codeplug'),
+      egress('radio-io', 'radio-io-rt84-radiofoundry', 'Web Serial'),
+    ],
+  },
   'retevis-rt95': {
     id: 'retevis-rt95',
     label: 'Retevis RT95 VOX',
@@ -162,7 +189,7 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
     label: 'Baofeng DM-32UV (RadioFoundry)',
     modelId: 'baofeng-dm32uv',
     firmwareId: 'radiofoundry',
-    traits: dm32Mm9pdyTraits,
+    traits: radioFoundryTraits,
     compatibleEgress: [
       egress('radiofoundry', 'radiofoundry-dm32uv', 'RadioFoundry codeplug'),
       egress('radio-io', 'radio-io-dm32uv-radiofoundry', 'Web Serial'),
@@ -179,6 +206,17 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
       egress('opengd77', 'opengd77-1701', 'OpenGD77 CSV'),
     ],
   },
+  'baofeng-dm1701-radiofoundry': {
+    id: 'baofeng-dm1701-radiofoundry',
+    label: 'Baofeng DM-1701 (RadioFoundry)',
+    modelId: 'baofeng-dm1701',
+    firmwareId: 'radiofoundry',
+    traits: radioFoundryTraits,
+    compatibleEgress: [
+      egress('radiofoundry', 'radiofoundry-dm1701', 'RadioFoundry codeplug'),
+      egress('radio-io', 'radio-io-dm1701-radiofoundry', 'Web Serial'),
+    ],
+  },
   'tyt-md9600': {
     id: 'tyt-md9600',
     label: 'TYT MD-9600 / RT-90 (OpenGD77)',
@@ -188,6 +226,17 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
     compatibleEgress: [
       egress('radio-io', 'radio-io-opengd77-md9600', 'Web Serial'),
       egress('opengd77', 'opengd77-md9600', 'OpenGD77 CSV'),
+    ],
+  },
+  'tyt-md9600-radiofoundry': {
+    id: 'tyt-md9600-radiofoundry',
+    label: 'TYT MD-9600 (RadioFoundry)',
+    modelId: 'tyt-md9600',
+    firmwareId: 'radiofoundry',
+    traits: radioFoundryTraits,
+    compatibleEgress: [
+      egress('radiofoundry', 'radiofoundry-md9600', 'RadioFoundry codeplug'),
+      egress('radio-io', 'radio-io-md9600-radiofoundry', 'Web Serial'),
     ],
   },
   'anytone-at-d890uv': {

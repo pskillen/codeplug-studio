@@ -4,16 +4,14 @@
  */
 
 import type { PlannedStage, RadioOperation, RadioPlanContext } from '../../types.ts';
-import { BLOCK_SIZE, DM32_RADIOFOUNDRY_IMAGE_SIZE, servedBlockAddresses } from './constants.ts';
+import { BLOCK_SIZE, servedBlockAddresses } from './constants.ts';
+import { RADIOFOUNDRY_IMAGE_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
 
-const READ_BYTES = servedBlockAddresses(DM32_RADIOFOUNDRY_IMAGE_SIZE).length * BLOCK_SIZE;
+const READ_BYTES = servedBlockAddresses(RADIOFOUNDRY_IMAGE_SIZE).length * BLOCK_SIZE;
 /** Sized before the read. A real write sends only the blocks that differ. */
 const NOMINAL_CHANGED_BLOCKS = 8;
 
-export function planDm32RadioFoundryStages(
-  op: RadioOperation,
-  ctx: RadioPlanContext,
-): PlannedStage[] {
+export function planRadioFoundryStages(op: RadioOperation, ctx: RadioPlanContext): PlannedStage[] {
   void ctx;
   if (op !== 'write') return [];
   return [

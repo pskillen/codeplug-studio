@@ -10,7 +10,16 @@ import {
 import { encodeChannelsIntoImage } from './channelCodec.ts';
 import { OPENUV380_OFFSET } from './constants.ts';
 import { createOpenUv380Image, readAbs } from './memory.ts';
-import { OpenGd77Protocol, createOpenGd77Md9600Protocol, parseFirmwareInfo } from './protocol.ts';
+import {
+  OpenGd77Protocol,
+  createOpenGd77Dm1701Protocol,
+  createOpenGd77Md9600Protocol,
+  parseFirmwareInfo,
+} from './protocol.ts';
+import {
+  OPENGD77_RADIOFOUNDRY_PROBE_FRAME,
+  OPENGD77_RADIOFOUNDRY_REFUSAL,
+} from './radioFoundryProbe.ts';
 import { planOpenGd77Stages } from './plannedStages.ts';
 import { expectEventsFollowPlan, stageRecorder } from '../../plannedStagesTestKit.ts';
 import { openGd77KeptRegionLength } from './writeVerifySupport.ts';
@@ -18,6 +27,55 @@ import {
   makeOpenGd77FirmwareInfoPayload,
   OpenGd77ScriptedPipe,
 } from './__fixtures__/scriptedPipe.ts';
+
+const probeFrameInWrites = (writes: Uint8Array[]) => {
+  const showIdx = writes.findIndex((w) => w[0] === 0x43 && w[1] === 0x00);
+  const probeIndices = writes
+    .map((w, i) =>
+      w.length === OPENGD77_RADIOFOUNDRY_PROBE_FRAME.length && w[0] === 0xa5 ? i : -1,
+    )
+    .filter((i) => i >= 0);
+  return { showIdx, probeIndices };
+};
+
+describe('OpenGD77 connect meets RadioFoundry', () => {
+  it('connects an OpenGD77 DM-1701 and MD-9600 as before', async () => {
+    const dmPipe = new OpenGd77ScriptedPipe(0x08);
+    dmPipe.plantByte(OPENUV380_OFFSET.channelBank0 + 0x10, 0xaa);
+    const dmProto = createOpenGd77Dm1701Protocol() as OpenGd77Protocol;
+    const dmIdent = await dmProto.connect(dmPipe);
+    expect(dmIdent.firmwareHint).toBe('R20240101000000');
+    const { showIdx, probeIndices } = probeFrameInWrites(dmPipe.writes);
+    expect(probeIndices).toHaveLength(1);
+    expect(probeIndices[0]).toBeLessThan(showIdx);
+    const dmImage = await dmProto.download({});
+    expect(readAbs(dmImage, OPENUV380_OFFSET.channelBank0 + 0x10, 1)[0]).toBe(0xaa);
+
+    const mdPipe = new OpenGd77ScriptedPipe(0x05);
+    const mdProto = createOpenGd77Md9600Protocol() as OpenGd77Protocol;
+    const mdIdent = await mdProto.connect(mdPipe);
+    expect(mdIdent.firmwareHint).toBe('R20240101000000');
+    const mdProbe = probeFrameInWrites(mdPipe.writes);
+    expect(mdProbe.probeIndices).toHaveLength(1);
+    expect(mdProbe.probeIndices[0]).toBeLessThan(mdProbe.showIdx);
+  });
+
+  it('refuses a radio running RadioFoundry before the CPS screen', async () => {
+    for (const [proto, radioType] of [
+      [createOpenGd77Dm1701Protocol() as OpenGd77Protocol, 0x08],
+      [createOpenGd77Md9600Protocol() as OpenGd77Protocol, 0x05],
+    ] as const) {
+      const pipe = new OpenGd77ScriptedPipe(radioType);
+      pipe.runsRadioFoundry = true;
+      await expect(proto.connect(pipe)).rejects.toMatchObject({
+        name: 'RadioWrongIdentError',
+        message: OPENGD77_RADIOFOUNDRY_REFUSAL,
+      });
+      expect(pipe.writes.some((w) => w[0] === 0x43 && w[1] === 0x00)).toBe(false);
+      await proto.disconnect();
+    }
+  });
+});
 
 describe('parseFirmwareInfo', () => {
   it('parses radioType and revision', () => {

@@ -6,7 +6,7 @@ import {
 } from '@core/domain/factories.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
-import { DMR_ID_DATABASE_ADDRESS } from '@integrations/radio-io/radios/dm32uv-radiofoundry/idDatabase.ts';
+import { DMR_ID_DATABASE_ADDRESS } from '@integrations/radio-io/radios/radiofoundry/idDatabase.ts';
 import { prepareRadioWriteImage } from './radioIoSession.ts';
 
 const FALLBACK = 'Digital contacts will be written from the chosen source.';

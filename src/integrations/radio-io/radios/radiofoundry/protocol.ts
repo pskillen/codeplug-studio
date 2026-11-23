@@ -1,14 +1,16 @@
 /**
- * DM-32UV RadioFoundry codeplug over the programming cable.
+ * RadioFoundry codeplug over the programming cable, any board.
  *
  * Debug-link command 0x1C (CODEPLUG), direct mode, image offsets.
  * RadioFoundry docs/spec/cps-fast.md and docs/spec/debuglink.md §2 and §3.20.
- * The radio adds 0x700000. This module never sends that base, never speaks the
+ * The radio adds its own physical base (`RadioFoundryBoardLimits.PHYSICAL_CODEPLUG_BASE`);
+ * this module never sends it, never speaks the
  * OpenGD77 R/X/W codec, and never falls through to the stock DM-32 PROGRAM writer.
  * COMMIT reloads the codeplug. There is no reboot command.
  */
 
 import {
+  RADIOFOUNDRY_IMAGE_SIZE,
   SETTINGS_AREA_ADDRESS,
   SETTINGS_AREA_SIZE,
 } from '@core/import-export/formats/radiofoundry/layout.ts';
@@ -18,7 +20,11 @@ import {
 } from '@core/import-export/formats/radiofoundry/settingsArea.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { crc32Ieee } from '../../kit/checksums.ts';
-import { RadioProtocolError, RadioTimeoutError } from '../../kit/errors.ts';
+import {
+  summariseRadioFoundryBuild,
+  type RadioFoundryBuildIdentity,
+} from '@core/radios/radiofoundry/firmware.ts';
+import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { reportProgress } from '../../kit/progress.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
@@ -27,7 +33,6 @@ import {
   BLOCK_SIZE,
   CODEPLUG_COMMAND,
   DATA_CHUNK_MAX,
-  DM32_RADIOFOUNDRY_IMAGE_SIZE,
   EEPROM_IMAGE_END,
   FMT_BLANK,
   FMT_LZ4,
@@ -46,13 +51,23 @@ import {
   servedBlockAddresses,
 } from './constants.ts';
 import type { RadioFoundryCableBoard } from './board.ts';
-import { decodeDebugFrame, encodeDebugFrame, type DebugFrame } from './frame.ts';
+import {
+  decodeDebugFrame,
+  encodeDebugFrame,
+  type DebugFrame,
+} from '../../kit/codecs/radioFoundryDebugLink.ts';
 import { DMR_ID_DATABASE_AREA2_ADDRESS, dmrIdDatabaseArea2Blocks } from './idDatabase.ts';
 import { decodeBlock, encodeBlock } from './lz4.ts';
 import {
+  isRadioFoundryBoardName,
+  parseRadioFoundryVersionText,
+  RADIOFOUNDRY_VERSION_COMMAND,
+  RADIOFOUNDRY_VERSION_TIMEOUT_MS,
+} from './version.ts';
+import {
   ownedPrivateContactBlocks,
   radioFoundryWriteSourceFromAssembled,
-  type Dm32RadioFoundryWriteSource,
+  type RadioFoundryWriteSource,
 } from './writeSource.ts';
 
 const REPLY_COMMAND = CODEPLUG_COMMAND | 0x80;
@@ -73,7 +88,7 @@ interface FastInfo {
   eepromEnd: number;
   /** Flash image start the radio reports (checked against the codec layout). */
   flashStart: number;
-  /** Physical base of the open-firmware image, as reported. Informational: board identification reads it. */
+  /** Physical base of the open-firmware image, as reported; checked against the board at connect. */
   physicalBase: number;
 }
 
@@ -89,12 +104,43 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   private seq = 1;
   private info: FastInfo | null = null;
   private readBlocks: Map<number, Uint8Array> | null = null;
-  private armed: Dm32RadioFoundryWriteSource | null = null;
+  private armed: RadioFoundryWriteSource | null = null;
+  private version: RadioFoundryBuildIdentity | null = null;
+
+  /** The build the radio reported at connect, or null when it reported none. */
+  firmwareVersion(): RadioFoundryBuildIdentity | null {
+    return this.version;
+  }
+
+  /** One VERSION exchange. Never throws: any failure means "not reported". */
+  private async readVersion(): Promise<RadioFoundryBuildIdentity | null> {
+    const pipe = this.requirePipe();
+    const seq = this.seq & 0xff;
+    this.seq = (this.seq + 1) & 0xff;
+    try {
+      await pipe.write(encodeDebugFrame(RADIOFOUNDRY_VERSION_COMMAND, seq, new Uint8Array(0)));
+      const frame = await readFrame(pipe, RADIOFOUNDRY_VERSION_TIMEOUT_MS);
+      if (
+        frame.command !== (RADIOFOUNDRY_VERSION_COMMAND | 0x80) ||
+        frame.seq !== seq ||
+        frame.payload.length < 1 ||
+        frame.payload[0] !== 0
+      ) {
+        return null;
+      }
+      return parseRadioFoundryVersionText(new TextDecoder().decode(frame.payload.subarray(1)));
+    } catch {
+      // A late reply must not be read as the next codeplug reply.
+      await pipe.drain?.();
+      return null;
+    }
+  }
 
   async connect(pipe: BytePipe): Promise<IdentResult> {
     this.pipe = pipe;
     this.seq = 1;
     this.info = null;
+    this.version = null;
     this.readBlocks = null;
     try {
       const body = await this.request(OP_INFO, new Uint8Array(0), 2000);
@@ -104,21 +150,45 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       if (err instanceof RadioProtocolError && err.message === HANDSHAKE_ERROR) throw err;
       throw new RadioProtocolError(HANDSHAKE_ERROR);
     }
-    return { raw: new Uint8Array(0), modelHints: [this.board.modelHint] };
+    const base = this.requireInfo().physicalBase;
+    const expected = this.board.limits.PHYSICAL_CODEPLUG_BASE;
+    if (base !== expected) {
+      this.pipe = null;
+      this.info = null;
+      throw new RadioWrongIdentError(
+        `This radio keeps its codeplug at ${hex(base)}, but the ${this.board.label} keeps it at ${hex(expected)}: it is a different radio. Pick the build for that radio.`,
+      );
+    }
+    this.version = await this.readVersion();
+    const reported = this.version?.board;
+    if (reported !== undefined && !isRadioFoundryBoardName(this.board, reported)) {
+      this.pipe = null;
+      this.info = null;
+      this.version = null;
+      throw new RadioWrongIdentError(
+        `This radio reports RadioFoundry board "${reported}", not the ${this.board.label}. Pick the build for that radio.`,
+      );
+    }
+    return {
+      raw: new Uint8Array(0),
+      modelHints: [this.board.modelHint],
+      ...(this.version ? { firmwareHint: summariseRadioFoundryBuild(this.version).label } : {}),
+    };
   }
 
   async disconnect(): Promise<void> {
     this.pipe = null;
     this.info = null;
+    this.version = null;
     this.readBlocks = null;
     this.armed = null;
   }
 
   /** Remember the serialised codeplug. Upload overlays only its owned addresses. */
-  armWriteSource(source: Dm32RadioFoundryWriteSource): void {
+  armWriteSource(source: RadioFoundryWriteSource): void {
     if (
-      source.bytes.length !== DM32_RADIOFOUNDRY_IMAGE_SIZE ||
-      source.owned.length !== DM32_RADIOFOUNDRY_IMAGE_SIZE
+      source.bytes.length !== RADIOFOUNDRY_IMAGE_SIZE ||
+      source.owned.length !== RADIOFOUNDRY_IMAGE_SIZE
     ) {
       throw new RadioProtocolError('RadioFoundry write image is the wrong length.');
     }
@@ -143,7 +213,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.armed = source;
   }
 
-  armAssembled(assembled: AssembledBuild): Dm32RadioFoundryWriteSource {
+  armAssembled(assembled: AssembledBuild): RadioFoundryWriteSource {
     const source = radioFoundryWriteSourceFromAssembled(assembled, { board: this.board });
     this.armWriteSource(source);
     return source;
@@ -178,7 +248,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     const stage = opts.progressStage ?? 'Codeplug';
     const addresses = this.readAddresses();
     const sums = await this.readSums(addresses, opts.signal);
-    const image = new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE);
+    const image = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
     image.fill(0xff);
     const blocks = new Map<number, Uint8Array>();
     for (let i = 0; i < addresses.length; i += 1) {
@@ -190,8 +260,8 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
         throw new RadioProtocolError(`Block ${hex(addr)} checksum does not match the radio.`);
       }
       blocks.set(addr, block);
-      if (addr < DM32_RADIOFOUNDRY_IMAGE_SIZE) {
-        const n = Math.min(BLOCK_SIZE, DM32_RADIOFOUNDRY_IMAGE_SIZE - addr);
+      if (addr < RADIOFOUNDRY_IMAGE_SIZE) {
+        const n = Math.min(BLOCK_SIZE, RADIOFOUNDRY_IMAGE_SIZE - addr);
         image.set(block.subarray(0, n), addr);
       }
       reportProgress(
@@ -213,16 +283,16 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   overlayWriteImage(): MemoryMap {
     const blocks = this.requireReadBlocks();
     const source = this.requireArmed();
-    const image = new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE);
+    const image = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
     image.fill(0xff);
     const info = this.requireInfo();
     for (const addr of servedBlockAddresses(
-      DM32_RADIOFOUNDRY_IMAGE_SIZE,
+      RADIOFOUNDRY_IMAGE_SIZE,
       info.eepromEnd,
       info.flashStart,
     )) {
       const merged = mergeBlock(blocks.get(addr)!, addr, source);
-      const n = Math.min(BLOCK_SIZE, DM32_RADIOFOUNDRY_IMAGE_SIZE - addr);
+      const n = Math.min(BLOCK_SIZE, RADIOFOUNDRY_IMAGE_SIZE - addr);
       image.set(merged.subarray(0, n), addr);
     }
     return memoryMapFromBytes(image);
@@ -313,7 +383,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   private readAddresses(): number[] {
     const info = this.requireInfo();
     const addresses = servedBlockAddresses(
-      DM32_RADIOFOUNDRY_IMAGE_SIZE,
+      RADIOFOUNDRY_IMAGE_SIZE,
       info.eepromEnd,
       info.flashStart,
     );
@@ -433,6 +503,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
 
   private async writeBlock(addr: number, data: Uint8Array, signal?: AbortSignal): Promise<void> {
     const info = this.requireInfo();
+    assertPlannedWriteBlock(addr, new Set(this.readAddresses()));
     assertImageBlock(addr, info, this.board);
     if (data.length !== BLOCK_SIZE) {
       throw new RadioProtocolError(`Block ${hex(addr)} is not 4096 bytes.`);
@@ -530,7 +601,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     return this.readBlocks;
   }
 
-  private requireArmed(): Dm32RadioFoundryWriteSource {
+  private requireArmed(): RadioFoundryWriteSource {
     if (!this.armed) {
       throw new RadioProtocolError('RadioFoundry write needs the serialised codeplug image.');
     }
@@ -562,7 +633,7 @@ function parseInfo(body: Uint8Array, board: RadioFoundryCableBoard): FastInfo {
   const flashStart = readU32(body, 12);
   const imageEnd = readU32(body, 16);
   const physicalBase = readU32(body, 20);
-  // The codec's file offsets assume this layout. A different physical base is not refused here.
+  // The codec's file offsets assume this layout.
   if (
     eepromEnd !== EEPROM_IMAGE_END ||
     flashStart !== FLASH_IMAGE_START ||
@@ -581,11 +652,7 @@ function parseInfo(body: Uint8Array, board: RadioFoundryCableBoard): FastInfo {
   };
 }
 
-function mergeBlock(
-  radio: Uint8Array,
-  addr: number,
-  source: Dm32RadioFoundryWriteSource,
-): Uint8Array {
+function mergeBlock(radio: Uint8Array, addr: number, source: RadioFoundryWriteSource): Uint8Array {
   const want = radio.slice();
   if (addr >= DMR_ID_DATABASE_AREA2_ADDRESS) {
     const area2 = source.area2;
@@ -605,11 +672,19 @@ function mergeBlock(
   return want;
 }
 
+/** Refuses any block this write did not plan (served image blocks plus the ID-directory area-2 blocks it owns). */
+export function assertPlannedWriteBlock(addr: number, planned: ReadonlySet<number>): void {
+  if (!planned.has(addr)) {
+    throw new RadioProtocolError(
+      `Refusing codeplug block ${hex(addr)}: this write did not plan it. RadioFoundry writes use image offsets.`,
+    );
+  }
+}
+
 /**
- * Refuses a block that is not an image offset the radio accepts: unaligned, or outside EEPROM, flash
- * and ID-database area 2 (up to the lower of INFO's image end and the board's). The board's physical
- * base is not tested directly: it can sit inside area 2 (DM-32UV: 0x700000), so a base test would
- * refuse valid ID-directory blocks. A physical address past the ceiling still fails the range test.
+ * Refuses a block outside the image: unaligned, or outside EEPROM, flash and ID-database area 2 (up to
+ * the lower of INFO's image end and the board's). With `assertPlannedWriteBlock` it replaces a base
+ * test: a physical address inside area 2 is sent only when it is an ID-directory block this write owns.
  */
 export function assertImageBlock(
   addr: number,
@@ -626,7 +701,7 @@ export function assertImageBlock(
   }
   const ceiling = Math.min(info.imageEnd, board.limits.IMAGE_END);
   const inEeprom = addr + BLOCK_SIZE <= info.eepromEnd;
-  const inFlash = addr >= info.flashStart && addr < DM32_RADIOFOUNDRY_IMAGE_SIZE;
+  const inFlash = addr >= info.flashStart && addr < RADIOFOUNDRY_IMAGE_SIZE;
   const inArea2 = addr >= DMR_ID_DATABASE_AREA2_ADDRESS && addr + BLOCK_SIZE <= ceiling;
   if (!inEeprom && !inFlash && !inArea2) {
     throw new RadioProtocolError(

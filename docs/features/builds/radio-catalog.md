@@ -20,7 +20,7 @@ A profile can have several instances: different codeplugs, several radios of one
 | `catalog.ts`                   | `RADIO_TARGETS`: each `RadioTarget` references `modelId` + `firmwareId`, traits and egress                                                                                     |
 | `grouping.ts`                  | `groupRadioCatalog`, `groupBuildsByRadio`, `countBuildsByTarget`, `radioTargetDisplayLabel`, `manufacturerForRadioTarget`, `egressSummary`                                     |
 
-Stock is listed for **every** model. Where no target exists (DM-1701 and MD-9600 stock) the row is returned with `supported: false` and the picker shows it disabled as "Not supported". Firmware kinds: **stock** is the factory image, **mod** patches stock firmware (MM9PDY), **open** is a complete rewrite (OpenGD77, RadioFoundry).
+Stock is listed for **every** model. Where no target exists (DM-1701, MD-9600, RT84 and RT90 stock) the row is returned with `supported: false` and the picker shows it disabled as "Not supported". Firmware kinds: **stock** is the factory image, **mod** patches stock firmware (MM9PDY), **open** is a complete rewrite (OpenGD77, RadioFoundry).
 
 Existing builds keep their `radioTargetId`; grouping is derived, so there is no persistence migration. Builds whose target is no longer in the catalog group under **Other**.
 

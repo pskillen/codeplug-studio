@@ -166,6 +166,29 @@ describe('trait profiles', () => {
     expect(profile?.traits).not.toContain(BuildCapabilityTrait.TalkGroupTimeslotClones);
   });
 
+  it('keeps the DM-32UV RadioFoundry trait rows', () => {
+    const radioIo = traitProfileFor('radio-io-dm32uv-radiofoundry');
+    const codec = traitProfileFor('radiofoundry-dm32uv');
+    const traits = [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.SeparateDigitalIdList,
+    ];
+    expect(radioIo).toEqual({
+      profileId: 'radio-io-dm32uv-radiofoundry',
+      formatId: 'radio-io',
+      label: 'Baofeng DM-32UV (RadioFoundry)',
+      traits,
+    });
+    expect(codec).toEqual({
+      profileId: 'radiofoundry-dm32uv',
+      formatId: 'radiofoundry',
+      label: 'RadioFoundry codeplug',
+      traits,
+    });
+  });
+
   it('registers radio-io-dm32uv-radiofoundry with the codeplug file traits', () => {
     const profile = traitProfileFor('radio-io-dm32uv-radiofoundry');
     expect(profile?.formatId).toBe('radio-io');
@@ -214,17 +237,25 @@ describe('trait profiles', () => {
       'opengd77-md9600',
       'radio-io-at-d890uv',
       'radio-io-at-d890uv-mm9pdy',
+      'radio-io-dm1701-radiofoundry',
       'radio-io-dm32uv',
       'radio-io-dm32uv-mm9pdy',
       'radio-io-dm32uv-radiofoundry',
+      'radio-io-md9600-radiofoundry',
       'radio-io-opengd77-1701',
       'radio-io-opengd77-md9600',
+      'radio-io-rt84-radiofoundry',
+      'radio-io-rt90-radiofoundry',
       'radio-io-rt95',
       'radio-io-rt95-mm9pdy',
       'radio-io-uv21',
       'radio-io-uv5r-mini',
       'radio-io-uv5r-mini-mm9pdy',
+      'radiofoundry-dm1701',
       'radiofoundry-dm32uv',
+      'radiofoundry-md9600',
+      'radiofoundry-rt84',
+      'radiofoundry-rt90',
     ]);
   });
 });

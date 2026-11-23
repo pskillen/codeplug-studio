@@ -22,6 +22,10 @@ import {
 } from './debugCapture.ts';
 import { OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID } from './hydration.ts';
 import { OpenGd77ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
+import {
+  OPENGD77_RADIOFOUNDRY_PROBE_FRAME,
+  OPENGD77_RADIOFOUNDRY_REFUSAL,
+} from './radioFoundryProbe.ts';
 
 const CASES: [string, string, number][] = [
   ['DM-1701', OPENGD77_DM1701_MODEL_ID, 0x08],
@@ -138,7 +142,10 @@ describe.each(CASES)('calibration working copy on %s (type 0x%s)', (_name, model
     const capture = await captureOpenGd77DebugPipe(pipe, descriptor);
     const frames = pipe.writes.map(hex);
     const first = frames.indexOf('52 01 00 01 00 00 00 20');
-    expect(frames.slice(0, first)).toEqual(['43 fe', '52 09 00 00 00 00 00 2e', '43 00']);
+    const probeHex = Array.from(OPENGD77_RADIOFOUNDRY_PROBE_FRAME, (b) =>
+      b.toString(16).padStart(2, '0'),
+    ).join(' ');
+    expect(frames.slice(0, first)).toEqual(['43 fe', '52 09 00 00 00 00 00 2e', probeHex, '43 00']);
     const expected = Array.from({ length: 16 }, (_, i) => {
       const a = 0x10000 + i * 32;
       return `52 01 00 01 ${((a >> 8) & 0xff).toString(16).padStart(2, '0')} ${(a & 0xff)
@@ -257,6 +264,16 @@ describe('wrong radio', () => {
     expect(pipe.commands).toEqual([[0xfe]]);
     expect(pipe.writes.every((w) => w[0] === 0x43 || w[1] === 0x09)).toBe(true);
     expect(pipe.cpsDepth).toBe(0);
+  });
+});
+
+describe('RadioFoundry refusal', () => {
+  it('ends capture with OPENGD77_RADIOFOUNDRY_REFUSAL when the radio echoes the probe', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    pipe.runsRadioFoundry = true;
+    await expect(
+      captureOpenGd77DebugPipe(pipe, getRadioDescriptor(OPENGD77_DM1701_MODEL_ID)!),
+    ).rejects.toThrow(OPENGD77_RADIOFOUNDRY_REFUSAL);
   });
 });
 

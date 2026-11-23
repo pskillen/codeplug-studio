@@ -1,10 +1,10 @@
 /**
- * Debug-link framing for the fast codeplug command.
+ * RadioFoundry debug-link framing, shared by every module that speaks it.
  * RadioFoundry docs/spec/debuglink.md §2: `A5 5A | cmd | seq | len u16 LE | payload | CRC-16/CCITT-FALSE`.
  * The CRC covers the bytes from the command through the end of the payload.
  */
 
-import { crc16CcittFalse } from '../../kit/checksums.ts';
+import { crc16CcittFalse } from '../checksums.ts';
 
 const SOF1 = 0xa5;
 const SOF2 = 0x5a;

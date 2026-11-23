@@ -33,7 +33,11 @@ import {
   channelSlotAddress,
 } from './layout.ts';
 import { parseRadioFoundryCodeplug } from './parse.ts';
-import { RADIOFOUNDRY_PROFILES, type RadioFoundryRadioProfile } from './profiles.ts';
+import {
+  RADIOFOUNDRY_PROFILES,
+  resolveRadioFoundryProfile,
+  type RadioFoundryRadioProfile,
+} from './profiles.ts';
 import {
   serialiseRadioFoundryCodeplug,
   serialiseRadioFoundryCodeplugWithProfile,
@@ -495,9 +499,34 @@ describe('RadioFoundry codec follows the radio profile', () => {
       assembled({ channels: [fmChannel('Top', 100), wideChannel] }),
       synthetic,
     );
-    expect(bytes[channelSlotAddress(1).record + 0x19]).toBe(3);
+    // Three levels spread over the ten byte steps: bottom 1, top 10.
+    expect(bytes[channelSlotAddress(1).record + 0x19]).toBe(10);
     expect(bytes[channelSlotAddress(2).record + 0x19]).toBe(1);
     expect(warnings.map(formatExportWarning).join('\n')).toContain('outside 144-146 MHz');
+  });
+
+  it('spreads five levels over the power byte and reads each back', () => {
+    const fiveLevel: RadioFoundryRadioProfile = {
+      ...synthetic,
+      id: 'radiofoundry-test-five',
+      board: { ...synthetic.board, POWER_LEVELS: 5 },
+    };
+    const percents = [1, 21, 41, 61, 100];
+    const { bytes } = serialiseRadioFoundryCodeplugWithProfile(
+      assembled({ channels: percents.map((p, i) => fmChannel(`P${i}`, p)) }),
+      fiveLevel,
+    );
+    const written = percents.map((_, i) => bytes[channelSlotAddress(i + 1).record + 0x19]);
+    expect(written).toEqual([1, 3, 6, 8, 10]);
+    const parsed = parseRadioFoundryCodeplug(bytes, '', fiveLevel);
+    expect(parsed.channels.map((c) => c.power)).toEqual(percents);
+  });
+
+  it('keeps the old nine-level bytes for every percent', () => {
+    for (let percent = 1; percent <= 100; percent++) {
+      const old = Math.min(8, Math.floor(((percent - 1) * 9) / 100)) + 1;
+      expect(radioFoundryPowerByte(percent, 9)).toBe(old);
+    }
   });
 
   it('reads the profile power steps back on parse', () => {
@@ -517,5 +546,44 @@ describe('RadioFoundry codec follows the radio profile', () => {
         key === 'id' || key === 'updatedAt' || key.endsWith('Id') ? undefined : value,
       );
     expect(strip(cable)).toBe(strip(plain));
+  });
+});
+
+describe('DM-1701 RadioFoundry serialise', () => {
+  const profile = resolveRadioFoundryProfile('radiofoundry-dm1701');
+
+  it('maps power percent onto five levels and warns on band', () => {
+    const { bytes } = serialiseRadioFoundryCodeplugWithProfile(
+      assembled({ channels: [fmChannel('Top', 100), fmChannel('Mid', 50)] }),
+      profile,
+    );
+    expect(bytes[channelSlotAddress(1).record + 0x19]).toBe(10);
+    expect(bytes[channelSlotAddress(2).record + 0x19]).toBe(6);
+
+    const inBand = fmChannel('Ok', 1);
+    inBand.entity.rxFrequency = 446_000_000;
+    inBand.entity.txFrequency = 446_000_000;
+    const inBandResult = serialiseRadioFoundryCodeplugWithProfile(
+      assembled({ channels: [inBand] }),
+      profile,
+    );
+    expect(
+      inBandResult.warnings.filter((w) => formatExportWarning(w).includes('MHz')),
+    ).toHaveLength(0);
+
+    const outOfBand = fmChannel('Far', 1);
+    outOfBand.entity.rxFrequency = 485_000_000;
+    outOfBand.entity.txFrequency = 485_000_000;
+    const { warnings } = serialiseRadioFoundryCodeplugWithProfile(
+      assembled({ channels: [outOfBand] }),
+      profile,
+    );
+    expect(formatExportWarning(warnings[0]!)).toContain('136-174 and 400-480 MHz');
+
+    const { bytes: topBytes } = serialiseRadioFoundryCodeplugWithProfile(
+      assembled({ channels: [fmChannel('Top', 100)] }),
+      profile,
+    );
+    expect(parseRadioFoundryCodeplug(topBytes, '', profile).channels[0]?.power).toBe(100);
   });
 });

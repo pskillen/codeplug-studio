@@ -29,8 +29,16 @@ export interface RadioFoundryBand {
 /** What differs per board running RadioFoundry. One module per board under core/radios/<mfr>/<model>-radiofoundry/. */
 export interface RadioFoundryBoardLimits {
   readonly BANDS_HZ: readonly RadioFoundryBand[];
-  /** Power steps the codeplug byte selects (1..n; 0 = radio default). */
+  /**
+   * Power levels the board drives (0 in the byte is the radio default). Boards with fewer than
+   * nine get the byte scale spread over them.
+   */
   readonly POWER_LEVELS: number;
+  /**
+   * Nominal label per level, lowest first, as the firmware names them. Display only; not used by
+   * export maths.
+   */
+  readonly POWER_LABELS?: readonly string[];
   /** DMR ID database records the cable write may send. */
   readonly ID_DATABASE_MAX: number;
   /** openfw_eeprom: where the board puts image offset 0. A host never sends it. */
