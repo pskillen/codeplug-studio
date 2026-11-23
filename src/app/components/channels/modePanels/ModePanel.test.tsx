@@ -33,7 +33,9 @@ describe('ModePanel groups and layout', () => {
 
   it('DMR uses Talk group or contact label', () => {
     renderMode('dmr');
-    expect(screen.getByLabelText('Talk group or contact', { selector: 'input' })).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Talk group or contact', { selector: 'input' }),
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText('TX contact', { selector: 'input' })).toBeNull();
   });
 
@@ -109,8 +111,7 @@ describe('ModePanel groups and layout', () => {
     renderMode('fm');
     const tx = screen.getByText('TX tone');
     const rx = screen.getByText('RX tone');
-    const txBeforeRx =
-      (tx.compareDocumentPosition(rx) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    const txBeforeRx = (tx.compareDocumentPosition(rx) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
     expect(txBeforeRx).toBe(true);
   });
 });

@@ -29,5 +29,5 @@ import RxGroupListSummary from '@app/components/library/RxGroupListSummary.tsx';
 
 ## Related
 
-- [ChannelModeProfilesEditor.md](../channels/ChannelModeProfilesEditor.md)
+- [ModePanels.md](../channels/modePanels/ModePanels.md)
 - [#75](https://github.com/pskillen/codeplug-studio/issues/75)

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Stacked per-mode settings blocks for a multi-mode library channel. One block per entry in `Channel.modeProfiles[]`; fields shown depend on the mode (analog, DMR, D-STAR, YSF, NXDN, TETRA, or stub).
+Thin stacked wrapper over **`ModePanel`** for a multi-mode library channel. One block per entry in `Channel.modeProfiles[]` with a mode header (`ModePill` + label); field layout and grouping live in [`modePanels/ModePanels.md`](./modePanels/ModePanels.md).
 
 ## Props
 
@@ -32,15 +32,14 @@ import ChannelModeProfilesEditor from '@app/components/channels/ChannelModeProfi
 
 ## Behaviour
 
-- Renders stacked blocks with a mode header (`ModePill` + label); empty state when `profiles` is empty (new channels start with no modes, so bandwidth/tones/squelch only appear once FM, AM or SSB is selected; the empty state says so, #1477).
-- Analog blocks: bandwidth (`bandwidthKHz`, 12.5 / 25 kHz; DMR has no bandwidth field, it is fixed 12.5 kHz TDMA), RX/TX tone via **`ChannelToneField`** (Off | CTCSS | DCS, including inverted `D023I`), squelch slider, **`AnalogSquelchModeSegment`** (`layout="row"`).
-- DMR block: **`DmrOperatingModeSegment`** (`layout="row"`), colour code, timeslot, DMR ID, digital contact or talk group, RX group list, **`RxGroupListSummary`** when a list is selected, **`BrandmeisterRxListSyncAction`** when `channel` is set, then **`SendTalkerAliasSegment`** (`layout="row"`).
-- D-STAR / YSF / NXDN / TETRA: mode-specific fields per internal model.
-- P25 / M17 stubs show placeholder copy until typed profiles ship.
+- Empty state when `profiles` is empty (new channels start with no modes; bandwidth/tones/squelch only appear once FM, AM or SSB is selected).
+- Each non-empty block renders **`ModePanel`** with `context.savedChannel` from `channel`, live frequencies, and `compact` from the mobile breakpoint.
+- Per-mode fields, Access / Call / Listen / You grouping, and analogue tone order: see **[ModePanels.md](./modePanels/ModePanels.md)**.
 - Shared RF fields (name, frequencies, location, directory verify) live on the parent channel editor, not here.
 
 ## Related
 
+- [ModePanels](./modePanels/ModePanels.md)
 - [ChannelToneField](./ChannelToneField.md)
 - [`BrandmeisterRxListSyncAction.md`](../repeaters/BrandmeisterRxListSyncAction.md)
 - [PillTabs](../ui/PillTabs.md)

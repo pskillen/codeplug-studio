@@ -3,10 +3,7 @@ import type { ProfileFor } from './types.ts';
 import type { ModePanelProps } from './types.ts';
 import DigitalModeGroups from './DigitalModeGroups.tsx';
 
-export default function DstarModePanel({
-  profile,
-  onPatch,
-}: ModePanelProps<ProfileFor<'dstar'>>) {
+export default function DstarModePanel({ profile, onPatch }: ModePanelProps<ProfileFor<'dstar'>>) {
   return (
     <DigitalModeGroups
       access={

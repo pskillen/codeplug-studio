@@ -29,10 +29,10 @@ import AnalogSquelchModeSegment from '@app/components/channels/AnalogSquelchMode
 - **Default** (when `includeDefault`) — uses the analog squelch setting on export. Without it, sets analog squelch for this build’s export instead of each channel’s own setting.
 - Indicator colour follows the shared `three` preset; the neutral `default` option renders with no colour override.
 
-On the channel editor this control lives in the analog **Mode settings** panel via [`ChannelModeProfilesEditor`](./ChannelModeProfilesEditor.md), at `layout="row"`.
+On the channel editor this control lives in the analog **Mode settings** panel via [`modePanels/ModePanels`](./modePanels/ModePanels.md), at `layout="row"`.
 
 ## Related
 
 - [GradientSegmentedControl](../ui/GradientSegmentedControl.md)
-- [ChannelModeProfilesEditor](./ChannelModeProfilesEditor.md)
+- [modePanels/ModePanels](./modePanels/ModePanels.md)
 - [Library feature hub](../../../../docs/features/library/README.md)

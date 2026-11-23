@@ -40,6 +40,6 @@ import ChannelToneField from '@app/components/channels/ChannelToneField.tsx';
 
 ## Related
 
-- [ChannelModeProfilesEditor](./ChannelModeProfilesEditor.md)
+- [ModePanels](./modePanels/ModePanels.md)
 - [ChannelBulkEditModal](../library/ChannelBulkEditModal.md)
 - [Library feature hub](../../../../docs/features/library/README.md)
