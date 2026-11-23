@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { formatRadioFoundryBands, isInRadioFoundryBand, type RadioFoundryBand } from './limits.ts';
+import {
+  formatRadioFoundryBands,
+  isInRadioFoundryBand,
+  RADIOFOUNDRY_LIMITS,
+  type RadioFoundryBand,
+} from './limits.ts';
 
 const BANDS: RadioFoundryBand[] = [
   { minHz: 136_000_000, maxHz: 174_000_000 },
@@ -17,6 +22,16 @@ describe('isInRadioFoundryBand', () => {
     expect(isInRadioFoundryBand(175_000_000, BANDS)).toBe(false);
     expect(isInRadioFoundryBand(480_000_001, BANDS)).toBe(false);
     expect(isInRadioFoundryBand(135_999_999, BANDS)).toBe(false);
+  });
+});
+
+describe('RADIOFOUNDRY_LIMITS', () => {
+  it('holds the satellite inventory limits', () => {
+    expect(RADIOFOUNDRY_LIMITS.SATELLITE_MAX).toBe(10);
+    expect(RADIOFOUNDRY_LIMITS.SATELLITE_NAME_MAX_BYTES).toBe(48);
+    expect(RADIOFOUNDRY_LIMITS.SATELLITE_CATALOG_MAX).toBe(99_999);
+    expect(RADIOFOUNDRY_LIMITS.SATELLITE_TONE_MIN_TENTHS).toBe(600);
+    expect(RADIOFOUNDRY_LIMITS.SATELLITE_TONE_MAX_TENTHS).toBe(2600);
   });
 });
 

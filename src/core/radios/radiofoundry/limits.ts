@@ -18,6 +18,15 @@ export const RADIOFOUNDRY_LIMITS = {
   RADIO_IDS_MAX: 1,
   /** Maximum value of that DMR ID. */
   DMR_ID_MAX: 16_776_415,
+  /** Satellites (TLE + one frequency profile each); core/satellite/store.c and debuglink_satellite.c at 454a5b76. */
+  SATELLITE_MAX: 10,
+  /** Satellite name, UTF-8 bytes. */
+  SATELLITE_NAME_MAX_BYTES: 48,
+  /** Highest catalog (NORAD) number a record may carry. */
+  SATELLITE_CATALOG_MAX: 99_999,
+  /** CTCSS on a satellite uplink, tenths of Hz; 0 means none. */
+  SATELLITE_TONE_MIN_TENTHS: 600,
+  SATELLITE_TONE_MAX_TENTHS: 2600,
 } as const;
 
 /** One inclusive RF band in Hz. */
