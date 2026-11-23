@@ -10,6 +10,8 @@ Cable write for a Baofeng DM-1701 running RadioFoundry. Egress profile `radio-io
 | Addresses | Image offsets from physical base **0**; image end **0xE00000**.                                                                        |
 | Identity  | INFO, then VERSION. Accepted `board=` values: `DM-1701`, `dm1701` (see [firmware](../../radiofoundry/firmware.md)).                    |
 
+A radio moved from OpenGD77 must have its RadioFoundry **storage area claimed** before Studio can write it (see [cable write — Refusals](../../radiofoundry/cable-write.md#refusals)).
+
 ## Digital contacts
 
 ID directory: area 1 at image `0x50000`, area 2 from `0xD8000` through `0xE00000` (520646 records total). See [cable write](../../radiofoundry/cable-write.md#digital-contacts).

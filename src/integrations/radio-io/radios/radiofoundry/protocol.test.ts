@@ -526,7 +526,7 @@ async function uploadSource(
 }
 
 const STORAGE_FOREIGN_REFUSAL =
-  "This radio's flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry's web programming utility (it backs up first) or with \"rfoundry_debug.py storage claim\", then write again. Nothing was written.";
+  'This radio\'s flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry\'s web programming utility (it backs up first) or with "rfoundry_debug.py storage claim", then write again. Nothing was written.';
 
 describe('RadioFoundry codeplug refusals', () => {
   it('reads when INFO storage flag is clear but refuses a write before SUMS or READ', async () => {
