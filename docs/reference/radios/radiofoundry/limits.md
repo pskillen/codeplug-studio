@@ -19,10 +19,10 @@ Limits every radio running RadioFoundry shares: they are fixed by the firmware's
 
 ## Per board
 
-What differs between boards lives in one module per board (`RadioFoundryBoardLimits`): RF bands, power levels (how many the board drives; the [codeplug page](../../export-formats/radiofoundry/README.md) has the byte rule that spreads RadioFoundry's 10-step power byte over fewer levels), the DMR ID database size the cable write may send, the physical base of the codeplug image, and where the image ends.
+What differs between boards lives in one module per board (`RadioFoundryBoardLimits`): RF bands, power levels (how many the board drives; the [codeplug page](../../export-formats/radiofoundry/README.md) has the byte rule that spreads RadioFoundry's 10-step power byte over fewer levels), the DMR ID database size the cable write may send, the physical base of the codeplug image, and where the image ends. Each board also has a cable board object (base, VERSION names, group) and gets its descriptor from one factory.
 
 - Baofeng DM-32UV: [limits.md](../baofeng/dm-32uv-radiofoundry/limits.md)
 
-Firmware version and board names: [firmware.md](firmware.md).
+Firmware version and board names: [firmware.md](firmware.md). What a cable write sends and refuses: [cable-write.md](cable-write.md).
 
 Do not bake these into library CRUD.
