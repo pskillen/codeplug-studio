@@ -58,9 +58,7 @@ export function dmrIdDatabaseLayoutRecords(imageEnd: number): number {
 }
 
 /** Area 1 plus the part of area 2 that ends at the native codeplug, from the layout above. */
-export const DMR_ID_DATABASE_LAYOUT_RECORDS = dmrIdDatabaseLayoutRecords(
-  DMR_ID_DATABASE_IMAGE_END,
-);
+export const DMR_ID_DATABASE_LAYOUT_RECORDS = dmrIdDatabaseLayoutRecords(DMR_ID_DATABASE_IMAGE_END);
 
 /** The cap the Write enforces. The number lives in core; a test pins it to the layout. */
 export const DMR_ID_DATABASE_MAX_RECORDS = DM32UV_RADIOFOUNDRY_BOARD.ID_DATABASE_MAX;
