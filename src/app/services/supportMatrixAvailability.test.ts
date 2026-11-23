@@ -26,4 +26,16 @@ describe('supportMatrixAvailability', () => {
       .firmware.find((f) => f.firmware.id === 'mm9pdy')!;
     expect(dm32.cells.flash).toBe('supported');
   });
+
+  it('offers satellite keps where a keps write exists and Write is offered', () => {
+    const availability = supportMatrixAvailability('dev');
+    const matrix = (modelId: string, firmwareId: string) => {
+      const model = buildSupportMatrix({ availability }).find((m) => m.model.id === modelId)!;
+      return model.firmware.find((f) => f.firmware.id === firmwareId)!;
+    };
+    expect(matrix('anytone-at-d890uv', 'stock').cells.satelliteKeps).toBe('supported');
+    expect(matrix('baofeng-dm1701', 'opengd77').cells.satelliteKeps).toBe('supported');
+    expect(matrix('baofeng-uv5r-mini', 'stock').cells.satelliteKeps).toBe('unsupported');
+    expect(matrix('baofeng-dm32uv', 'stock').cells.satelliteKeps).toBe('unsupported');
+  });
 });
