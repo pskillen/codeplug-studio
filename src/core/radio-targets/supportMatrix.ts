@@ -132,7 +132,7 @@ export interface SupportModeCell {
 
 /** The firmware build Studio was checked against, for firmware that has one. */
 export interface SupportFirmwareBuild {
-  /** Short, e.g. "RadioFoundry 454a5b76 (2026-11-22)". */
+  /** Short, e.g. "RadioFoundry abcdef12 (2026-11-22)". */
   label: string;
   /** One sentence for a tooltip. */
   note: string;
