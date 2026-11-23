@@ -7,11 +7,14 @@ import {
   emptyLibrary,
   newAprsConfiguration,
   newChannel,
+  newDigitalContact,
   newOwnDigitalId,
   newRadioBuildWithEgresses,
+  newRxGroupList,
   newTalkGroup,
 } from '@core/domain/factories.ts';
 import type { Channel, OwnDigitalId, TalkGroup } from '@core/models/library.ts';
+import type { ChannelModeProfileDMR } from '@core/models/library.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { exportBuildBinary, exportBuildZip } from '@core/services/exportBuild.ts';
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
@@ -131,7 +134,8 @@ describe('serialiseRadioFoundryCodeplug', () => {
     expect(bytes[0x3790 + 0x27]).toBe(0x00);
     expect(bytes[0x3790 + 0x28]).toBe(0x16);
     expect(bytes[0x3790 + 0x29]).toBe(0x00);
-    expect(bytes[0xa7620 + 0x17]).toBe(0x01);
+    expect(bytes[0xa7620 + 0x17]).toBe(0x00);
+    expect(fieldText(bytes, 0xa7620, LIMITS.NAME_MAX)).toBe('Town TS1');
     expect(bytes[0x8040]).toBe(0x01);
     expect(bytes[0x8041]).toBe(0x00);
     expect(bytes[0x806f]).toBe(0x00);
@@ -546,6 +550,168 @@ describe('RadioFoundry codec follows the radio profile', () => {
         key === 'id' || key === 'updatedAt' || key.endsWith('Id') ? undefined : value,
       );
     expect(strip(cable)).toBe(strip(plain));
+  });
+
+  it('writes talk-group timeslot clones with 0x17 overrides on contacts', () => {
+    const tg = newTalkGroup('p', 'X', 2355);
+    const rgl = {
+      ...newRxGroupList('p', 'List'),
+      members: [{ ref: { kind: 'talkGroup' as const, id: tg.id }, timeSlotOverride: 1 as const }],
+    };
+    const dmr: ChannelModeProfileDMR = {
+      mode: 'dmr',
+      colourCode: 1,
+      timeslot: 2,
+      ownDigitalIdId: null,
+      contactRef: { kind: 'talkGroup', id: tg.id },
+      rxGroupListId: rgl.id,
+    };
+    const channel: Channel = {
+      ...newChannel('p', 'Repeater'),
+      primaryMode: 'dmr',
+      rxFrequency: 430_125_000,
+      txFrequency: 430_125_000,
+      modeProfiles: [dmr],
+    };
+    const { bytes, warnings } = serialiseRadioFoundryCodeplug(
+      assembled({
+        channels: [{ entity: channel, wireName: channel.name }],
+        talkGroups: [{ entity: tg, wireName: tg.name }],
+        rxGroupLists: [{ entity: rgl, wireName: rgl.name }],
+      }),
+    );
+    const ts1Offset = CONTACT_BASE;
+    const ts2Offset = CONTACT_BASE + CONTACT_RECORD_SIZE;
+    expect(fieldText(bytes, ts1Offset, LIMITS.NAME_MAX)).toBe('X TS1');
+    expect(fieldText(bytes, ts2Offset, LIMITS.NAME_MAX)).toBe('X TS2');
+    expect(bytes[ts1Offset + 0x17]).toBe(0x00);
+    expect(bytes[ts2Offset + 0x17]).toBe(0x02);
+    const record = channelSlotAddress(1).record;
+    expect(bytes[record + 0x2e]).toBe(2);
+    expect(bytes[record + 0x31]).toBe(0x40);
+    const rxOffset = RX_LIST_BASE;
+    expect(bytes[rxOffset + LIMITS.NAME_MAX]).toBe(1);
+    expect(bytes[rxOffset + LIMITS.NAME_MAX + 1]).toBe(0);
+    expect(
+      warnings
+        .map(formatExportWarning)
+        .some((w) => w.includes('member timeslot overrides were not written')),
+    ).toBe(false);
+  });
+
+  it('writes a single TS1 clone for an unreferenced talk group', () => {
+    const tg = newTalkGroup('p', 'Lonely', 99);
+    const { bytes } = serialiseRadioFoundryCodeplug(
+      assembled({ talkGroups: [{ entity: tg, wireName: tg.name }] }),
+    );
+    expect(fieldText(bytes, CONTACT_BASE, LIMITS.NAME_MAX)).toBe('Lonely TS1');
+    expect(bytes[CONTACT_BASE + CONTACT_RECORD_SIZE]).toBe(0xff);
+  });
+
+  it('keeps 0x17 at no override for private contacts', () => {
+    const tg = newTalkGroup('p', 'Town', 9);
+    const priv = newDigitalContact('p', 'Alice', 1001, 'dmr');
+    const { bytes } = serialiseRadioFoundryCodeplug(
+      assembled({
+        talkGroups: [{ entity: tg, wireName: tg.name }],
+        digitalContacts: [{ entity: priv, wireName: priv.name }],
+      }),
+    );
+    const privOffset = CONTACT_BASE + CONTACT_RECORD_SIZE;
+    expect(bytes[privOffset + 0x17]).toBe(0x01);
+  });
+
+  it('warns when clones and private contacts exceed the contact cap', () => {
+    const talkGroups = Array.from({ length: 700 }, (_, i) => {
+      const tg = newTalkGroup('p', `G${i}`, 100 + i);
+      return { entity: tg, wireName: tg.name };
+    });
+    const channels = talkGroups.slice(0, 2).map((row, i) => {
+      const dmr: ChannelModeProfileDMR = {
+        mode: 'dmr',
+        colourCode: 1,
+        timeslot: 1,
+        ownDigitalIdId: null,
+        contactRef: { kind: 'talkGroup', id: row.entity.id },
+        rxGroupListId: null,
+      };
+      const entity: Channel = {
+        ...newChannel('p', `Ch${i}`),
+        primaryMode: 'dmr',
+        rxFrequency: 430_125_000,
+        txFrequency: 430_125_000,
+        modeProfiles: [dmr],
+      };
+      return { entity, wireName: entity.name };
+    });
+    const digitalContacts = Array.from({ length: 325 }, (_, i) => {
+      const entity = newDigitalContact('p', `C${i}`, 10_000 + i, 'dmr');
+      return { entity, wireName: entity.name };
+    });
+    const { warnings } = serialiseRadioFoundryCodeplug(
+      assembled({ channels, talkGroups, digitalContacts }),
+    );
+    expect(warnings.map(formatExportWarning).join('\n')).toMatch(
+      /talk-group timeslot copies and private contacts share this table/,
+    );
+  });
+
+  it('shortens long clone names to fit NAME_MAX and keeps them unique', () => {
+    const tg = newTalkGroup('p', 'ABCDEFGHIJKLMNOP', 2355);
+    const tg2 = newTalkGroup('p', 'BCDEFGHIJKLMNOPQ', 2356);
+    const dmr: ChannelModeProfileDMR = {
+      mode: 'dmr',
+      colourCode: 1,
+      timeslot: 1,
+      ownDigitalIdId: null,
+      contactRef: { kind: 'talkGroup', id: tg.id },
+      rxGroupListId: null,
+    };
+    const dmr2: ChannelModeProfileDMR = {
+      mode: 'dmr',
+      colourCode: 1,
+      timeslot: 1,
+      ownDigitalIdId: null,
+      contactRef: { kind: 'talkGroup', id: tg2.id },
+      rxGroupListId: null,
+    };
+    const { bytes } = serialiseRadioFoundryCodeplug(
+      assembled({
+        channels: [
+          {
+            entity: {
+              ...newChannel('p', 'A'),
+              primaryMode: 'dmr',
+              rxFrequency: 430_125_000,
+              txFrequency: 430_125_000,
+              modeProfiles: [dmr],
+            },
+            wireName: 'A',
+          },
+          {
+            entity: {
+              ...newChannel('p', 'B'),
+              primaryMode: 'dmr',
+              rxFrequency: 430_125_000,
+              txFrequency: 430_125_000,
+              modeProfiles: [dmr2],
+            },
+            wireName: 'B',
+          },
+        ],
+        talkGroups: [
+          { entity: tg, wireName: tg.name },
+          { entity: tg2, wireName: tg2.name },
+        ],
+      }),
+    );
+    const name1 = fieldText(bytes, CONTACT_BASE, LIMITS.NAME_MAX);
+    const name2 = fieldText(bytes, CONTACT_BASE + CONTACT_RECORD_SIZE, LIMITS.NAME_MAX);
+    expect(name1.length).toBeLessThanOrEqual(LIMITS.NAME_MAX);
+    expect(name2.length).toBeLessThanOrEqual(LIMITS.NAME_MAX);
+    expect(name1).toMatch(/ TS1$/);
+    expect(name2).toMatch(/ TS1$/);
+    expect(name1).not.toBe(name2);
   });
 });
 
