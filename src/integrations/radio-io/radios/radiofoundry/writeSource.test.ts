@@ -3,13 +3,15 @@ import {
   newChannel,
   newDigitalContact,
   newOwnDigitalId,
+  newRxGroupList,
   newTalkGroup,
 } from '@core/domain/factories.ts';
+import type { Channel } from '@core/models/library.ts';
+import type { ChannelModeProfileDMR } from '@core/models/library.ts';
 import {
   CONTACT_BASE,
   CONTACT_RECORD_SIZE,
 } from '@core/import-export/formats/radiofoundry/layout.ts';
-import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { DMR_ID_DATABASE_ADDRESS } from './idDatabase.ts';
 import { radioFoundryReviewContacts, radioFoundryWriteSourceFromAssembled } from './writeSource.ts';
@@ -67,6 +69,40 @@ describe('radioFoundryWriteSourceFromAssembled contacts', () => {
     }
     expect(mismatch).toBe(-1);
     expect(off.owned[DMR_ID_DATABASE_ADDRESS]).toBe(0);
+  });
+
+  it('writes timeslot clone contacts into the contact blocks the cable sends', () => {
+    const tg = newTalkGroup('p', 'X', 2355);
+    const rgl = {
+      ...newRxGroupList('p', 'List'),
+      members: [{ ref: { kind: 'talkGroup' as const, id: tg.id }, timeSlotOverride: 1 as const }],
+    };
+    const dmr: ChannelModeProfileDMR = {
+      mode: 'dmr',
+      colourCode: 1,
+      timeslot: 2,
+      ownDigitalIdId: null,
+      contactRef: { kind: 'talkGroup', id: tg.id },
+      rxGroupListId: rgl.id,
+    };
+    const channel: Channel = {
+      ...newChannel('p', 'Repeater'),
+      primaryMode: 'dmr',
+      rxFrequency: 430_125_000,
+      txFrequency: 430_125_000,
+      modeProfiles: [dmr],
+    };
+    const build = assembled();
+    build.channels = [{ entity: channel, wireName: channel.name }];
+    build.talkGroups = [{ entity: tg, wireName: tg.name }];
+    build.rxGroupLists = [{ entity: rgl, wireName: rgl.name }];
+    const { bytes, owned } = radioFoundryWriteSourceFromAssembled(build);
+    const ts1 = CONTACT_BASE;
+    const ts2 = CONTACT_BASE + CONTACT_RECORD_SIZE;
+    expect(owned[ts1]).toBe(1);
+    expect(owned[ts2]).toBe(1);
+    expect(bytes[ts1 + 0x17]).toBe(0x00);
+    expect(bytes[ts2 + 0x17]).toBe(0x02);
   });
 
   it('reviews an empty list when the chosen source produced no rows', () => {
