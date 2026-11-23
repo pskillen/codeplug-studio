@@ -12,6 +12,7 @@ import {
   APRS_RECORD_SIZE,
   CONTACT_BASE,
   CONTACT_RECORD_SIZE,
+  RADIOFOUNDRY_IMAGE_SIZE,
   channelSlotAddress,
 } from '@core/import-export/formats/radiofoundry/layout.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
@@ -23,7 +24,6 @@ import type { BytePipe } from '../../types.ts';
 import {
   BLOCK_SIZE,
   CODEPLUG_COMMAND,
-  DM32_RADIOFOUNDRY_IMAGE_SIZE,
   FMT_BLANK,
   FMT_LZ4,
   HANDSHAKE_ERROR,
@@ -41,7 +41,7 @@ import {
 } from './constants.ts';
 import { decodeDebugFrame, encodeDebugFrame } from '../../kit/codecs/radioFoundryDebugLink.ts';
 import { decodeBlock, encodeBlock } from './lz4.ts';
-import { planDm32RadioFoundryStages } from './plannedStages.ts';
+import { planRadioFoundryStages } from './plannedStages.ts';
 import {
   DMR_ID_DATABASE_ADDRESS,
   DMR_ID_DATABASE_AREA1_RECORDS,
@@ -61,7 +61,7 @@ import {
 } from './protocol.ts';
 import {
   radioFoundryWriteSourceFromAssembled,
-  type Dm32RadioFoundryWriteSource,
+  type RadioFoundryWriteSource,
 } from './writeSource.ts';
 
 const REPLY = CODEPLUG_COMMAND | 0x80;
@@ -304,9 +304,9 @@ describe('DM-32 RadioFoundry fast codeplug', () => {
     const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
     await proto.connect(pipe);
 
-    const bytes = new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE);
+    const bytes = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
     bytes.fill(0xff);
-    const owned = new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE);
+    const owned = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
     bytes[0x00e0] = 0x54;
     owned[0x00e0] = 1;
     bytes[0x00e8] = 0xff;
@@ -344,11 +344,11 @@ describe('DM-32 RadioFoundry fast codeplug', () => {
     for (const addr of pipe.blockAddresses) {
       expect(addr).not.toBe(PHYSICAL_CODEPLUG_BASE);
       expect(addr).toBeLessThan(PHYSICAL_CODEPLUG_BASE);
-      expect(addr).toBeLessThan(DM32_RADIOFOUNDRY_IMAGE_SIZE);
+      expect(addr).toBeLessThan(RADIOFOUNDRY_IMAGE_SIZE);
     }
     expect(requestCommands(pipe)).not.toContain(0x0d);
 
-    expectEventsFollowPlan(planDm32RadioFoundryStages('write', {}), rec.events);
+    expectEventsFollowPlan(planRadioFoundryStages('write', {}), rec.events);
     expect(rec.stages).toEqual(['Pre-write read', 'Codeplug blocks', 'Commit']);
   });
 });
@@ -395,8 +395,8 @@ const RFKV_SECTOR_VECTOR = (() => {
 describe('DM-32 RadioFoundry settings area', () => {
   function blankSource(): { bytes: Uint8Array; owned: Uint8Array } {
     return {
-      bytes: new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE).fill(0xff),
-      owned: new Uint8Array(DM32_RADIOFOUNDRY_IMAGE_SIZE),
+      bytes: new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE).fill(0xff),
+      owned: new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE),
     };
   }
 
@@ -464,7 +464,7 @@ function covers(addr: number, target: number): boolean {
 
 async function uploadSource(
   pipe: ScriptedPipe,
-  source: Dm32RadioFoundryWriteSource,
+  source: RadioFoundryWriteSource,
 ): Promise<ReturnType<typeof stageRecorder>> {
   const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
   await proto.connect(pipe);
@@ -603,7 +603,7 @@ describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
     expect(written.some((addr) => addr >= DMR_ID_DATABASE_IMAGE_END)).toBe(false);
     expect(
       written.some(
-        (addr) => addr >= DM32_RADIOFOUNDRY_IMAGE_SIZE && addr < DMR_ID_DATABASE_AREA2_ADDRESS,
+        (addr) => addr >= RADIOFOUNDRY_IMAGE_SIZE && addr < DMR_ID_DATABASE_AREA2_ADDRESS,
       ),
     ).toBe(false);
     const countBlock = pipe.block(DMR_ID_DATABASE_ADDRESS);

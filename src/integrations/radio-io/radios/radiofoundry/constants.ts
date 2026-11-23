@@ -13,8 +13,6 @@ export const DM32_RADIOFOUNDRY_PROFILE_ID = 'radio-io-dm32uv-radiofoundry';
 /** Programming cable, UART 115200 8N1. No second baud. */
 export const DM32_RADIOFOUNDRY_BAUD_RATE = 115200;
 
-export const DM32_RADIOFOUNDRY_IMAGE_SIZE = RADIOFOUNDRY_IMAGE_SIZE;
-
 /** Debug-link CODEPLUG command. Replies use this value with bit 7 set. */
 export const CODEPLUG_COMMAND = 0x1c;
 
@@ -51,7 +49,7 @@ export const HANDSHAKE_ERROR = 'This radio did not answer the RadioFoundry codep
 
 /** 4 KB blocks the fast protocol will serve inside the codeplug file. */
 export function servedBlockAddresses(
-  imageSize: number = DM32_RADIOFOUNDRY_IMAGE_SIZE,
+  imageSize: number = RADIOFOUNDRY_IMAGE_SIZE,
   eepromEnd: number = EEPROM_IMAGE_END,
   flashStart: number = FLASH_IMAGE_START,
 ): number[] {

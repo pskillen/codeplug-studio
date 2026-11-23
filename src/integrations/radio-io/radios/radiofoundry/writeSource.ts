@@ -31,7 +31,7 @@ import {
 const CONTACT_CALL_TYPE_OFFSET = 0x14;
 const PRIVATE_CALL_TYPE = 1;
 
-export interface Dm32RadioFoundryWriteSource {
+export interface RadioFoundryWriteSource {
   bytes: Uint8Array;
   owned: Uint8Array;
   warnings: ExportWarning[];
@@ -62,7 +62,7 @@ export interface RadioFoundryCableWriteOptions {
 export function radioFoundryWriteSourceFromAssembled(
   assembled: AssembledBuild,
   options?: RadioFoundryCableWriteOptions,
-): Dm32RadioFoundryWriteSource {
+): RadioFoundryWriteSource {
   const image = serialiseRadioFoundryCodeplug(assembled, options?.exportOptions);
   if (options?.includeLibraryContacts === false) {
     releasePrivateContacts(image.bytes, image.owned);

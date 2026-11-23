@@ -11,7 +11,7 @@ import { DM32UV_RADIOFOUNDRY_LIMITS } from '@core/radios/baofeng/dm-32uv-radiofo
 import { RadioProtocolError } from '../../kit/errors.ts';
 import type { MemoryMap, RadioDescriptor, RadioHydrationHooks } from '../../types.ts';
 import { DM32UV_RADIOFOUNDRY_CABLE_BOARD as BOARD } from './board.ts';
-import { planDm32RadioFoundryStages } from './plannedStages.ts';
+import { planRadioFoundryStages } from './plannedStages.ts';
 import { createRadioFoundryCableProtocol } from './protocol.ts';
 
 const hydration: RadioHydrationHooks = {
@@ -52,5 +52,5 @@ export const DM32_RADIOFOUNDRY_DESCRIPTOR: RadioDescriptor = {
   writeStrategy: 'selective-ranges',
   baudRate: BOARD.baudRate,
   hydration,
-  planStages: planDm32RadioFoundryStages,
+  planStages: planRadioFoundryStages,
 };
