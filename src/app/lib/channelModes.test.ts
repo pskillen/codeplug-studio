@@ -28,7 +28,7 @@ describe('MODE_PICKER_COMMON and MODE_PICKER_MORE', () => {
     const combined = [...MODE_PICKER_COMMON, ...MODE_PICKER_MORE];
     expect(combined).toHaveLength(ALL_CORE_MODES.length);
     expect(new Set(combined)).toEqual(new Set(ALL_CORE_MODES));
-    expect(combined.toSorted()).toEqual(ALL_CORE_MODES.toSorted());
+    expect([...combined].sort()).toEqual([...ALL_CORE_MODES].sort());
   });
 });
 
