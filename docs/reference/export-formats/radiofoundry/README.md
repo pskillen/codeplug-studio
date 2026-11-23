@@ -2,13 +2,13 @@
 
 One file, `codeplug.bin`, for a radio running RadioFoundry. This is the open-firmware codeplug image: a headerless binary whose file offset is the STM32 wire address. It is not a CSV zip, not a stock DM-32 codeplug, and not an OpenGD77 CSV.
 
-|           |                                                                                                                                                                   |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Format id | `radiofoundry`                                                                                                                                                    |
+|           |                                                                                                                                                                          |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Format id | `radiofoundry`                                                                                                                                                           |
 | Profile   | `radiofoundry-dm32uv` (default), `radiofoundry-dm1701` / `radio-io-dm1701-radiofoundry`, and sibling ids per board — each radio-io profile resolves to its codec profile |
-| Delivery  | One CPS file (`cps-file`). Cable write is a separate egress on the same radio target: [programming cable](../../radios/baofeng/dm-32uv-radiofoundry/protocol.md). |
-| Export    | Shipped                                                                                                                                                           |
-| Import    | Shipped. The same `codeplug.bin` parses into library entities.                                                                                                    |
+| Delivery  | One CPS file (`cps-file`). Cable write is a separate egress on the same radio target: [programming cable](../../radios/baofeng/dm-32uv-radiofoundry/protocol.md).        |
+| Export    | Shipped                                                                                                                                                                  |
+| Import    | Shipped. The same `codeplug.bin` parses into library entities.                                                                                                           |
 
 **Length:** 716384 bytes (0xAEE60). Bytes Studio does not write stay `0xFF`, including the settings area's sector at `0xE000`–`0xEFFF` ([settings area](settings-area.md)). The zone table is the exception: the bitmap and all 68 zone records are zeroed before real zones are written, so byte 0x806F is `0x00`–`0x04` and the radio keeps the 80-channel zone layout.
 

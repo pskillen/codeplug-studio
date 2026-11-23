@@ -89,14 +89,14 @@ describe('groupRadioCatalog', () => {
     const tyt = groups.find((g) => g.manufacturer === 'TYT')!;
     expect(tyt.models[0]?.firmware[0]?.supported).toBe(false);
     expect(tyt.models[0]?.firmware[2]?.target?.id).toBe('tyt-md9600-radiofoundry');
-    const rt84 = groups.find((g) => g.manufacturer === 'Retevis')!.models.find(
-      (m) => m.model.id === 'retevis-rt84',
-    )!;
+    const rt84 = groups
+      .find((g) => g.manufacturer === 'Retevis')!
+      .models.find((m) => m.model.id === 'retevis-rt84')!;
     expect(rt84.firmware[0]?.supported).toBe(false);
     expect(rt84.firmware[1]?.target?.id).toBe('retevis-rt84-radiofoundry');
-    const rt90 = groups.find((g) => g.manufacturer === 'Retevis')!.models.find(
-      (m) => m.model.id === 'retevis-rt90',
-    )!;
+    const rt90 = groups
+      .find((g) => g.manufacturer === 'Retevis')!
+      .models.find((m) => m.model.id === 'retevis-rt90')!;
     expect(rt90.firmware[0]?.supported).toBe(false);
     expect(rt90.firmware[1]?.target?.id).toBe('retevis-rt90-radiofoundry');
   });

@@ -29,11 +29,11 @@ Studio keeps the result for the session.
 
 Connect compares `board=` with the names the chosen board lists, ignoring case and surrounding spaces. Each board's cable module lists its own names.
 
-| Board   | `board=` values            |
-| ------- | -------------------------- |
-| DM-32UV | `DM-32UV`, `DM-32`, `dm32` |
+| Board   | `board=` values                                                   |
+| ------- | ----------------------------------------------------------------- |
+| DM-32UV | `DM-32UV`, `DM-32`, `dm32`                                        |
 | DM-1701 | `DM-1701`, `dm1701` (as the DM-1701; RT84 reports the same names) |
-| MD-9600 | `MD-9600`, `MD9600`, `RT90`, `md9600` |
+| MD-9600 | `MD-9600`, `MD9600`, `RT90`, `md9600`                             |
 
 ## When VERSION is missing or odd
 

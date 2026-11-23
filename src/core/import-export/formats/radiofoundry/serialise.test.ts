@@ -580,12 +580,10 @@ describe('DM-1701 RadioFoundry serialise', () => {
     );
     expect(formatExportWarning(warnings[0]!)).toContain('136-174 and 400-480 MHz');
 
-  const { bytes: topBytes } = serialiseRadioFoundryCodeplugWithProfile(
-    assembled({ channels: [fmChannel('Top', 100)] }),
-    profile,
-  );
-    expect(
-      parseRadioFoundryCodeplug(topBytes, '', profile).channels[0]?.power,
-    ).toBe(100);
+    const { bytes: topBytes } = serialiseRadioFoundryCodeplugWithProfile(
+      assembled({ channels: [fmChannel('Top', 100)] }),
+      profile,
+    );
+    expect(parseRadioFoundryCodeplug(topBytes, '', profile).channels[0]?.power).toBe(100);
   });
 });

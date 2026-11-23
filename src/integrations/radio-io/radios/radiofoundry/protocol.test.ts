@@ -975,10 +975,7 @@ describe('Baofeng DM-1701 (RadioFoundry) cable board', () => {
     for (const name of board.versionBoardNames) {
       const proto = new RadioFoundryCableProtocol(board);
       await proto.connect(
-        new InfoOnlyPipe(
-          specExampleInfo(),
-          `proto=1\ngit=454a5b76\nboard=${name}\n`,
-        ),
+        new InfoOnlyPipe(specExampleInfo(), `proto=1\ngit=454a5b76\nboard=${name}\n`),
       );
       expect(proto.firmwareVersion()?.board).toBe(name);
     }
@@ -993,9 +990,7 @@ describe('Baofeng DM-1701 (RadioFoundry) cable board', () => {
 
   it('refuses a radio that reports another board', async () => {
     const error = await new RadioFoundryCableProtocol(board)
-      .connect(
-        new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=MD-9600\n'),
-      )
+      .connect(new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=MD-9600\n'))
       .catch((e: unknown) => e);
     expect(error).toBeInstanceOf(RadioWrongIdentError);
   });
@@ -1008,9 +1003,7 @@ describe('Baofeng DM-1701 (RadioFoundry) cable board', () => {
     expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.group).toBe('Baofeng');
     expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.baudRate).toBe(115200);
     expect(DM1701_RADIOFOUNDRY_DESCRIPTOR.prodWriteDisabled).toBeUndefined();
-    expect(
-      isRadioFoundryCableRadio(DM1701_RADIOFOUNDRY_DESCRIPTOR.protocolFactory()),
-    ).toBe(true);
+    expect(isRadioFoundryCableRadio(DM1701_RADIOFOUNDRY_DESCRIPTOR.protocolFactory())).toBe(true);
   });
 
   it('plans area-2 blocks only below the image end', () => {
@@ -1027,10 +1020,7 @@ describe('TYT MD-9600 (RadioFoundry) cable board', () => {
     for (const name of board.versionBoardNames) {
       const proto = new RadioFoundryCableProtocol(board);
       await proto.connect(
-        new InfoOnlyPipe(
-          specExampleInfo(),
-          `proto=1\ngit=454a5b76\nboard=${name}\n`,
-        ),
+        new InfoOnlyPipe(specExampleInfo(), `proto=1\ngit=454a5b76\nboard=${name}\n`),
       );
       expect(proto.firmwareVersion()?.board).toBe(name);
     }
@@ -1045,9 +1035,7 @@ describe('TYT MD-9600 (RadioFoundry) cable board', () => {
 
   it('refuses a radio that reports another board', async () => {
     const error = await new RadioFoundryCableProtocol(board)
-      .connect(
-        new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=DM-1701\n'),
-      )
+      .connect(new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=DM-1701\n'))
       .catch((e: unknown) => e);
     expect(error).toBeInstanceOf(RadioWrongIdentError);
   });
@@ -1077,10 +1065,7 @@ describe('Retevis RT90 (RadioFoundry) cable board', () => {
     for (const name of board.versionBoardNames) {
       const proto = new RadioFoundryCableProtocol(board);
       await proto.connect(
-        new InfoOnlyPipe(
-          specExampleInfo(),
-          `proto=1\ngit=454a5b76\nboard=${name}\n`,
-        ),
+        new InfoOnlyPipe(specExampleInfo(), `proto=1\ngit=454a5b76\nboard=${name}\n`),
       );
       expect(proto.firmwareVersion()?.board).toBe(name);
     }
@@ -1095,9 +1080,7 @@ describe('Retevis RT90 (RadioFoundry) cable board', () => {
 
   it('refuses a radio that reports another board', async () => {
     const error = await new RadioFoundryCableProtocol(board)
-      .connect(
-        new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=DM-1701\n'),
-      )
+      .connect(new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=DM-1701\n'))
       .catch((e: unknown) => e);
     expect(error).toBeInstanceOf(RadioWrongIdentError);
   });
@@ -1127,10 +1110,7 @@ describe('Retevis RT84 (RadioFoundry) cable board', () => {
     for (const name of board.versionBoardNames) {
       const proto = new RadioFoundryCableProtocol(board);
       await proto.connect(
-        new InfoOnlyPipe(
-          specExampleInfo(),
-          `proto=1\ngit=454a5b76\nboard=${name}\n`,
-        ),
+        new InfoOnlyPipe(specExampleInfo(), `proto=1\ngit=454a5b76\nboard=${name}\n`),
       );
       expect(proto.firmwareVersion()?.board).toBe(name);
     }
@@ -1145,9 +1125,7 @@ describe('Retevis RT84 (RadioFoundry) cable board', () => {
 
   it('refuses a radio that reports another board', async () => {
     const error = await new RadioFoundryCableProtocol(board)
-      .connect(
-        new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=MD-9600\n'),
-      )
+      .connect(new InfoOnlyPipe(specExampleInfo(), 'proto=1\ngit=454a5b76\nboard=MD-9600\n'))
       .catch((e: unknown) => e);
     expect(error).toBeInstanceOf(RadioWrongIdentError);
   });

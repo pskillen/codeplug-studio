@@ -2,12 +2,12 @@
 
 Cable write for Retevis RT84 running RadioFoundry. Egress `radio-io-rt84-radiofoundry` on `retevis-rt84-radiofoundry`. Write is **hidden on production** until this radio has been bench-written (`prodWriteDisabled`).
 
-|           |                                                                                                      |
-| --------- | ---------------------------------------------------------------------------------------------------- |
-| Transport | USB CDC-ACM **1FC9:0094**; serial mode, not network mode `0x0096`.                                   |
-| Baud      | 115200 8N1.                                                                                        |
-| Base      | **0**; image end **0xE00000**.                                                                         |
-| Identity  | VERSION accepts `DM-1701` and `dm1701` — see [RT84 and DM-1701](#rt84-and-dm-1701).                 |
+|           |                                                                                     |
+| --------- | ----------------------------------------------------------------------------------- |
+| Transport | USB CDC-ACM **1FC9:0094**; serial mode, not network mode `0x0096`.                  |
+| Baud      | 115200 8N1.                                                                         |
+| Base      | **0**; image end **0xE00000**.                                                      |
+| Identity  | VERSION accepts `DM-1701` and `dm1701` — see [RT84 and DM-1701](#rt84-and-dm-1701). |
 
 ## RT84 and DM-1701
 
