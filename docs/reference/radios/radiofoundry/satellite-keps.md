@@ -72,6 +72,10 @@ Studio accepts satellite protocol **6** (chunked profiles, up to 10) and **7** (
 
 The host reference tool runs SATELLITE in the same debug-link session immediately after a codeplug commit without rebooting; storage may answer busy (status `3`) and the cable writer retries for up to five seconds. **Bench confirmation** on Studio hardware is planned with the keps write adapter that calls `writeRadioFoundrySatellites`.
 
+## From the library
+
+Studio packs each **enabled** satellite that passes TLE and catalog checks into one record (NORAD id, UTF-8 name up to 48 bytes, both TLE lines) plus one **frequency profile**: an FM transmitter marked for write whose uplink and downlink both fall in this board's bands (`BANDS_HZ`). When several FM transmitters qualify, the **first** in library order wins unless the build picks another in the Satellite keps tab's Radio column (`satelliteBankSlot: 'fm'` on the transmitter UUID). The wire name is the build's spacecraft `wireName` override when set, otherwise the shortened library name (48-byte budget); if encoding yields nothing, the catalog id is used. Satellites that fail TLE, catalog, mode, band, or write-inclusion checks are listed as excluded with a reason; extra FM candidates on a written satellite appear as skipped transmitters. The write **replaces the whole satellite set** on the radio and read-backs epochs and profiles. Studio refuses an empty eligible set or more than ten satellites before any I/O, and asks the radio on `INFO` whether its build supports satellite tracking — a build with tracking off is told plainly and nothing is written. Mapping lives in `src/integrations/radio-io/radios/radiofoundry/satelliteCodec.ts`; the app adapter is `writeRadioFoundrySatellitesToRadio`.
+
 ## Related
 
 - [Firmware limits](limits.md) — `SATELLITE_*` capacity and name ceilings

@@ -12,6 +12,8 @@
 | 136–174    | FM, DMR | Yes |
 | 400–480    | FM, DMR | Yes |
 
+Satellite keps: over the debug link when the build has satellite tracking on; see [RadioFoundry satellite keps](../../radiofoundry/satellite-keps.md).
+
 ## Board revisions
 
 RT90 stock firmware identifies V5 boards; RadioFoundry also detects V4A/V5. Upstream reports DMR transmit dropout on some V4A/V5 units until transmit is enabled on the radio (Settings → Advanced → Hardware).
