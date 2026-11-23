@@ -98,7 +98,8 @@ const REFUSAL_REASONS: ReadonlyArray<{ name: string; sentence: string } | null> 
   null,
   {
     name: 'RANGE',
-    sentence: 'The radio refused because the write is outside its allowed frequency range.',
+    sentence:
+      "The block is outside the codeplug image, misaligned, or touches one of the radio's protected areas (settings, journal, calibration).",
   },
   {
     name: 'STORAGE',
@@ -130,7 +131,7 @@ const REFUSAL_REASONS: ReadonlyArray<{ name: string; sentence: string } | null> 
   },
   {
     name: 'FLASH',
-    sentence: 'The radio refused because its flash cannot be written.',
+    sentence: 'A flash erase, program or read-back failed on the radio.',
   },
 ];
 
