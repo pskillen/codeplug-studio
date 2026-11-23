@@ -11,7 +11,7 @@ Handheld DMR + analogue radio running **OpenGD77** firmware. First documented Op
 
 ## Hardware family
 
-TYT MD-UV380 / Retevis RT-3S / Baofeng DM-1701 / Retevis RT-84 share OpenGD77 CPS and codeplug format (same CSV layout family; watt mapping is radio-specific — see [power.md](power.md)).
+TYT MD-UV380 / Retevis RT-3S / Baofeng DM-1701 / Retevis RT-84 share OpenGD77 CPS and codeplug format (same CSV layout family; watt mapping is radio-specific — see [power.md](power.md)). A DM-1701 running **RadioFoundry** is refused on the OpenGD77 Web Serial target; use the RadioFoundry target for that firmware instead.
 
 ## Studio profile ids
 

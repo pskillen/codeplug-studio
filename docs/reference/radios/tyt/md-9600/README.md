@@ -11,7 +11,7 @@ Mobile DMR + analogue radio running **OpenGD77** firmware. Same CPS CSV wire lay
 
 ## Hardware family
 
-Shares OpenGD77 CPS and codeplug format with Baofeng DM-1701 / Retevis RT-84 (same CSV layout; watt mapping differs — see [power.md](power.md)).
+Shares OpenGD77 CPS and codeplug format with Baofeng DM-1701 / Retevis RT-84 (same CSV layout; watt mapping differs — see [power.md](power.md)). An MD-9600 running **RadioFoundry** is refused on the OpenGD77 Web Serial target; use the RadioFoundry target for that firmware instead.
 
 ## USB
 

@@ -200,10 +200,11 @@ A failed flash write throws a typed error naming the command, the sector and the
 
 1. Open serial port for VID/PID (or OS-assigned CDC device matching those IDs).
 2. Optional ping (`'C'` + `feh`).
-3. Read FirmwareInfo (`'R'` + `09h`) → choose OpenGD77 vs OpenUV380 map and write type.
-4. Show CPS screen (`'C'` + `00h`) before bulk memory ops.
-5. Read/write 32-byte blocks against registered spans ([memory-layout.md](memory-layout.md)).
-6. Save / reboot via control commands as required; close CPS screen (`05h`).
+3. Read FirmwareInfo (`'R'` + `09h`) → choose OpenGD77 vs OpenUV380 map and write type; refuse when `radioType` does not match the adapter.
+4. **RadioFoundry probe** (Web Serial connect and debug capture only): one debug-link PING (`A5 5A 01 01 00 00 44 C5`). RadioFoundry echoes command `0x81` with the same payload; stock OpenGD77 answers a single `'-'`, stays silent, or sends anything else. A `0x81` PING reply means the radio is running RadioFoundry — Studio throws `RadioWrongIdentError` with a message to use that radio’s RadioFoundry target, **before** show CPS (the screen does not change). Any other reply is drained and the session continues.
+5. Show CPS screen (`'C'` + `00h`) before bulk memory ops.
+6. Read/write 32-byte blocks against registered spans ([memory-layout.md](memory-layout.md)).
+7. Save / reboot via control commands as required; close CPS screen (`05h`).
 
 ## Linux: ModemManager probes the port
 
@@ -233,13 +234,14 @@ The `/debug/radios/dm-1701-opengd77` and `/debug/radios/md-9600-opengd77` pages 
 | ---------------------------------- | ------------------- | ----------------------------------------------------------------- |
 | `43 FE`                            | Ping                | Until `43 05` has been sent                                       |
 | `52 09 00 00 00 00 00 2E`          | FirmwareInfo (46 B) | Any time before `43 05`                                           |
-| `43 00`                            | Show CPS screen     | Only after the FirmwareInfo read                                  |
+| `A5 5A 01 01 00 00 44 C5`          | RadioFoundry probe  | Once, after FirmwareInfo and before `43 00`                       |
+| `43 00`                            | Show CPS screen     | Only after the FirmwareInfo read (and after the probe when sent)  |
 | `52 01 <addr u32 BE> <len u16 BE>` | FLASH read          | Only after `43 00`; `1 <= len <= 32`, `addr + len <= 0x01000000`  |
 | `43 05`                            | Close CPS screen    | Only after `43 00`, at most once; every frame after it is refused |
 
 The calibration working copy needs no new frame kind: it is sixteen of the FLASH reads above at `0x10000 + 32 * i` (`52 01 00 01 <hi> <lo> 00 20`, where `<hi> <lo>` is `32 * i` big-endian), which the firmware answers from RAM when a read lies wholly inside `0x10000..0x101FF` ([calibration.md](calibration.md)). The settings struct tail needs no new frame kind either: it is three of the same FLASH reads at `0x6060 + 32 * i` (`52 01 00 00 60 <60/80/A0> 00 20`), the read-only gap `0x6060-0x60BF` between flash span 0 (ends `0x605F`) and span 1 that completes the firmware settings struct `0x604B-0x60BE`. It is a debug-only region, not in `OPENUV380_FLASH_SPANS`, so Write, Restore and Backup are unchanged. Mode 10 stays refused at every address, for example `52 0A 00 00 00 00 01 00` and `52 0A 00 00 00 01 01 00`.
 
-**Never sent** (refused before the transport): `X` (`58 ..`, every sub-command), `W` (`57 ..`), `C 06 xx` (`43 06 00/01/02/04` and any other sub-command), `C P` (`43 50 ..`), `D W` and any `44 ..`, read mode 10 (`52 0A ..`), read modes 2, 5, 6, 7, 8, any other `43 xx` flag, `24`, unknown first bytes, empty, one-byte, concatenated or overlong frames, and FLASH reads of length 0, over 32 or past `0x01000000`.
+**Never sent** (refused before the transport): `X` (`58 ..`, every sub-command), `W` (`57 ..`), `C 06 xx` (`43 06 00/01/02/04` and any other sub-command), `C P` (`43 50 ..`), `D W` and any `44 ..`, read mode 10 (`52 0A ..`), read modes 2, 5, 6, 7, 8, any other `43 xx` flag, `24`, any `A5` frame other than the probe row above, unknown first bytes, empty, one-byte, concatenated or overlong frames, and FLASH reads of length 0, over 32 or past `0x01000000`.
 
 After an abort, every frame is refused except one `43 05` (when `43 00` has been sent). Any other refusal latches the guard: no later frame is sent, `43 05` included. Side effects the guard accepts, as the Backup read already has them: ping stops GPS NMEA output, `43 00` shows the CPS screen on the radio, `43 05` restores the UI. If the radio stays on the CPS screen after a failure, power-cycle it.
 
