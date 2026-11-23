@@ -23,6 +23,7 @@ import WirePreviewListNameCell from './WirePreviewListNameCell.tsx';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
 import WirePreviewInclusionCell from './WirePreviewInclusionCell.tsx';
 import WirePreviewExportNameCell from './WirePreviewExportNameCell.tsx';
+import { modeProfileSummary } from '../../../lib/channelModeSummary.ts';
 import { rowEffectivelyIncluded } from './wirePreviewRowUtils.ts';
 import type { WireNameSuggestion } from './WireNameInlineEditor.tsx';
 import {
@@ -386,10 +387,35 @@ export default function WirePreviewDataTable({
                     {row.channelMode.toUpperCase()}
                   </Badge>
                 );
-                return row.expansionNote ? (
-                  <Tooltip label={row.expansionNote}>{badge}</Tooltip>
-                ) : (
-                  badge
+                if (row.expansionNote) {
+                  return <Tooltip label={row.expansionNote}>{badge}</Tooltip>;
+                }
+                const profile =
+                  channelsById && library
+                    ? channelsById
+                        .get(row.libraryEntityId)
+                        ?.modeProfiles.find((p) => p.mode === row.channelMode)
+                    : undefined;
+                const detail = profile && library ? modeProfileSummary(profile, library) : '';
+                return (
+                  <Group gap={6} wrap="nowrap" style={{ minWidth: 0, maxWidth: '100%' }}>
+                    {badge}
+                    {detail ? (
+                      <Text
+                        size="xs"
+                        c="dimmed"
+                        style={{
+                          fontFamily: 'var(--dsv2-font-mono)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          minWidth: 0,
+                        }}
+                      >
+                        {detail}
+                      </Text>
+                    ) : null}
+                  </Group>
                 );
               },
             },
@@ -539,6 +565,7 @@ export default function WirePreviewDataTable({
       onWireNameChange,
       nameLimit,
       channelsById,
+      library,
       channelResolutionByKey,
       zoneResolutionByKey,
     ],

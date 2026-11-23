@@ -38,6 +38,7 @@ export default function ZoneMapSection({
         channels={channelsForMap}
         zones={zonesForMap}
         allChannels={library.channels}
+        library={library}
         height="100%"
         mapControlMode="zoneEmphasis"
         emphasisZoneId={previewZone.id}

@@ -37,7 +37,7 @@ export default function ChannelIdentitySummary({
         </Text>
         <BandPillForChannel channel={channel} size="xs" />
         {modes.map((mode) => (
-          <ModePill key={mode} mode={mode} size="xs" primary={mode === primary} />
+          <ModePill key={mode} mode={mode} size="xs" isMain={mode === primary} />
         ))}
         {rxTx ? (
           <Text size="sm" c="dimmed" style={{ marginInlineStart: 'auto' }}>
