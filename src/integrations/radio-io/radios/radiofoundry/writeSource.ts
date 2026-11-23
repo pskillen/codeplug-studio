@@ -115,7 +115,11 @@ export function radioFoundryReviewContacts(
       });
     }
   }
-  if (options.includeDigitalIdDirectory) rows.push(...directoryRows);
+  // A loop, not push(...rows): spreading a 300k-row ID directory as call
+  // arguments overflows the JS stack ("Maximum call stack size exceeded").
+  if (options.includeDigitalIdDirectory) {
+    for (const row of directoryRows) rows.push(row);
+  }
   return rows;
 }
 

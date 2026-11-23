@@ -105,6 +105,27 @@ describe('radioFoundryWriteSourceFromAssembled contacts', () => {
     expect(bytes[ts2 + 0x17]).toBe(0x02);
   });
 
+  // 300k rows overflowed in the browser; the vitest worker's larger stack needs more to fail.
+  it('reviews a very large ID directory without overflowing the stack', () => {
+    const build = assembled();
+    build.digitalContacts = [];
+    const directory = Array.from({ length: 2_000_000 }, (_, i) => ({
+      wireName: `ID ${i}`,
+      digitalId: 2_000_000 + i,
+      callsign: '',
+      city: '',
+      province: '',
+      country: '',
+      remark: '',
+    }));
+    const reviewed = radioFoundryReviewContacts(build, directory, {
+      includeLibraryContacts: true,
+      includeDigitalIdDirectory: true,
+    });
+    expect(reviewed).toHaveLength(2_000_000);
+    expect(reviewed?.[1_999_999]?.digitalId).toBe(3_999_999);
+  });
+
   it('reviews an empty list when the chosen source produced no rows', () => {
     const build = assembled();
     build.digitalContacts = [];
