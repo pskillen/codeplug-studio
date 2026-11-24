@@ -23,6 +23,8 @@ The Debug hierarchy groups radio profiles, browser storage and serial transport 
 
 ## Behaviour
 
+The Debug index groups by radio: one card per model with a coloured button per firmware (filled when a reader exists, dashed outline when not yet). Each radio page has a firmware switch under the title; capability badges appear on the Overview tab only, not on the index. Read history stays per firmware; a coloured line on Overview and Backup lists reads held under another firmware of the same radio, with Switch (does not trigger the leave guard).
+
 Each radio profile lives at `/debug/radios/<radio>/<firmware>`, where `<radio>` is a hardware key (for example `md-9600`, `rt95`) and `<firmware>` is one of `stock`, `opengd77` or `radiofoundry`. Old slug-style links (for example `/debug/radios/md-9600-opengd77`) and bare `/debug/radios/<radio>` paths redirect, preserving query and hash; a bare radio key opens the first firmware in the order stock, OpenGD77, RadioFoundry among descriptors that exist for that radio. The read-history guard treats leaving the radio as leaving every firmware page for that hardware key (switching firmware on the same radio is not blocked).
 
 The radio debug page (`/debug/radios/:radio/:firmware`, plus the legacy redirect at `/debug/radios/:radio`) is dark throughout: the whole page sits inside one `DesignSystemV2Provider scheme="dark"` and the app shell paints its background and footer dark for these routes, so on a light app theme it shows as one dark page with no light islands (dropdowns open inside the page, not on `body`).
