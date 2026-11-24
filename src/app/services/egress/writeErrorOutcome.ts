@@ -40,7 +40,12 @@ type ErrShape = Error & {
 };
 
 function errShape(err: unknown): ErrShape | null {
-  return err instanceof Error ? (err as ErrShape) : null;
+  if (err instanceof Error) return err as ErrShape;
+  // Browser port-picker cancel is a DOMException; some test DOMs do not subclass Error.
+  if (typeof DOMException !== 'undefined' && err instanceof DOMException) {
+    return err as unknown as ErrShape;
+  }
+  return null;
 }
 
 function cancelledMessage(ctx: WriteErrorContext, err: ErrShape | null): string {
