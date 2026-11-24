@@ -94,6 +94,7 @@ import {
 import { radioFoundryArchiveSensitiveRanges } from '@integrations/radio-io/radios/radiofoundry/debugSensitive.ts';
 import { radioFoundrySettingsView } from '@integrations/radio-io/radios/radiofoundry/debugSettingsView.ts';
 import { radioFoundryCompareAdapter } from '@integrations/radio-io/radios/radiofoundry/debugCompare.ts';
+import { RadioFoundryMemory } from './RadioFoundryMemory.tsx';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
 
 export type DebugCalibrationProps = { archive?: DebugArchive; overlayArchive?: DebugArchive };
@@ -263,7 +264,8 @@ const radioFoundry = (
   coverage: radioFoundryCoverage,
   settings: radioFoundrySettingsView,
   compare: radioFoundryCompareAdapter,
-  capabilities: capabilities('Available', 'Not yet available', 'Not yet available'),
+  Memory: RadioFoundryMemory,
+  capabilities: capabilities('Available', 'Not yet available', 'Partial'),
 });
 
 const unavailable = capabilities('Not yet available', 'Not yet available', 'Not yet available');
