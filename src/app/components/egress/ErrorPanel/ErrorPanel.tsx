@@ -11,6 +11,8 @@ export interface ErrorPanelProps {
   onRetry?: () => void;
   wayOut?: ReactNode;
   testId?: string;
+  /** Overrides the default sent-state title (e.g. file export failures). */
+  title?: string;
 }
 
 function titleForSent(sent: WriteErrorOutcome['sent']): string {
@@ -25,6 +27,7 @@ export default function ErrorPanel({
   onRetry,
   wayOut,
   testId = 'error-panel',
+  title,
 }: ErrorPanelProps) {
   const [copied, setCopied] = useState(false);
   if (outcome.kind === 'cancelled') return null;
@@ -40,7 +43,7 @@ export default function ErrorPanel({
   return (
     <Alert color="red" mb="sm" data-testid={testId}>
       <Text fw={600} mb={4}>
-        {titleForSent(outcome.sent)}
+        {title ?? titleForSent(outcome.sent)}
       </Text>
       <span className={classes.chip}>{sentStateLabel(outcome.sent)}</span>
       <Text size="sm">{outcome.message}</Text>
