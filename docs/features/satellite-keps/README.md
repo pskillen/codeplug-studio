@@ -49,6 +49,10 @@ Tier-1 hub for **satellite Keplerian elements (keps / TLEs)** in Codeplug Studio
 - **Vendor-neutral library** — TLE-derived orbitals (+ optional TX/RX metadata) live in core/library; radio packing and capacity limits apply only at the Web Serial write boundary.
 - **Decoupled UX** — Library **Satellite Keps** tab for refresh/curation; write from the library (select radio) or from a build page (context radio already known).
 - **Capacity at write** — Do not bake radio max satellite counts into library CRUD; halt write with a clear error when selected count exceeds the target radio profile.
+- **Exclusions honoured** — A satellite or transmitter the build excludes is not written to any radio, and the Done step names each skipped row.
+- **Old orbit data** — Step 1 of the write warns when a selected satellite's TLE is 14 or more days old, naming it; the write is not refused.
+- **Read-back line** — Where the radio reads its keps back (RadioFoundry), Done says they match; a mismatch is an error.
+- **Debug details** — A RadioFoundry keps write offers a collapsed **Debug details** control on Done (frames and statuses, with Copy), logs the same to the console, and attaches it to a failed write's error. Wire detail: [RadioFoundry satellite keps](../../reference/radios/radiofoundry/satellite-keps.md#debug-detail).
 - **Same session after codeplug** — Radios that keep satellites outside the codeplug and do not restart (RadioFoundry) take keps in the same Web Serial session as a codeplug write; radios that reboot or cannot interleave keps with an open codeplug transaction need a new session (AT-D890UV, OpenGD77 today).
 
 ---

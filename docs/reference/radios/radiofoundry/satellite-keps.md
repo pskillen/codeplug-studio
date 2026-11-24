@@ -64,6 +64,16 @@ From satellite protocol **6** upward, profiles are staged with `PROFILE_STAGE_CH
 
 Any failure after `REPLACE_BEGIN` and before a successful `COMMIT` sends `ABORT`. Studio never sends an empty inventory (the radio refuses `recordCount` 0).
 
+## Debug detail
+
+Each write keeps a log of every SATELLITE request it sends: operation (number and name), argument length, the status the radio answered (or "no reply" when the link failed) and the reply body length. On success the Done step offers it under **Debug details** (collapsed, with Copy) after a summary line (records sent, installed count, read-back result), and it is written once to the console as `[radiofoundry-keps]`. On failure it is attached to the error as `debugText`, so the error panel's **Copy debug text** carries it. Frame contents are not logged, only sizes and statuses.
+
+## Not done by a keps write
+
+- Studio does **not** send `SYNC_CHANNELS` after a keps write, so the radio's Satellites-zone channels are not changed; the satellite set and frequency profiles are replaced and nothing else. Revisit if Studio manages those channels later.
+- The MD-9600 refuses satellite transmit until RadioFoundry confirms the board revision (`boards/md9600/board.c`, lines 24 to 25 in the RadioFoundry source); keps still write and read back.
+- Studio warns in step 1 when a satellite's orbit data is 14 or more days old (the radio's own threshold). It does not refuse.
+
 ## Protocol versions
 
 Studio accepts satellite protocol **6** (chunked profiles, up to 10) and **7** (current upstream at `454a5b76`).
