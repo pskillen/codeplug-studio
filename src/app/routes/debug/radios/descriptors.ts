@@ -63,6 +63,7 @@ import { captureDm32 } from './dm32Capture.ts';
 import { captureUv5rMini } from './uv5rMiniCapture.ts';
 import { captureRt95, RT95_CAPTURE_STAGES } from './rt95Capture.ts';
 import { captureOpenGd77 } from './opengd77Capture.ts';
+import { captureRadioFoundry } from './radioFoundryCapture.ts';
 import { openGd77IdentityRows } from './opengd77Identity.ts';
 import {
   OPENGD77_DM1701_MODEL_ID,
@@ -79,6 +80,17 @@ import { openGd77ArchiveSensitiveRanges } from '@integrations/radio-io/radios/op
 import { atD890ArchiveSensitiveRanges } from '@integrations/radio-io/radios/at-d890uv/debugPasswords.ts';
 import { dm32ArchiveSensitiveRanges } from '@integrations/radio-io/radios/dm32uv/debugSensitive.ts';
 import { rt95ArchiveSensitiveRanges } from '@integrations/radio-io/radios/rt95/debugSensitive.ts';
+import {
+  RADIOFOUNDRY_CALIBRATION_NOTE,
+  RADIOFOUNDRY_CAPTURE_OPTIONS,
+  RADIOFOUNDRY_CAPTURE_STAGES,
+  RADIOFOUNDRY_READ_NOTICE,
+} from '@integrations/radio-io/radios/radiofoundry/debugText.ts';
+import {
+  RADIOFOUNDRY_IDENTITY_NOTE,
+  radioFoundryIdentityRows,
+} from '@integrations/radio-io/radios/radiofoundry/debugIdentity.ts';
+import { radioFoundryArchiveSensitiveRanges } from '@integrations/radio-io/radios/radiofoundry/debugSensitive.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
 
 export type DebugCalibrationProps = { archive?: DebugArchive; overlayArchive?: DebugArchive };
@@ -204,6 +216,8 @@ export interface RadioDebugDescriptor {
   identityNote?: string;
   /** Backup-tab notice about what the read sends and how to recover. */
   readNotice?: { title: string; text: string };
+  /** Explains why Calibration is empty when this profile has no calibration view yet. */
+  calibrationNote?: string;
 }
 
 export type RadioDebugCapabilityStatus = 'Available' | 'Partial' | 'Not yet available';
@@ -222,6 +236,29 @@ const capabilities = (
   { name: 'Calibration', status: calibration },
   { name: 'Memory', status: memory },
 ];
+
+const radioFoundry = (
+  radio: string,
+  model: string,
+  archiveModelId: string,
+): RadioDebugDescriptor => ({
+  slug: `${radio}-radiofoundry`,
+  radio,
+  firmware: 'radiofoundry',
+  model,
+  archiveModelId,
+  family: 'RadioFoundry',
+  capture: captureRadioFoundry(archiveModelId),
+  captureOptions: RADIOFOUNDRY_CAPTURE_OPTIONS,
+  captureStages: RADIOFOUNDRY_CAPTURE_STAGES,
+  sensitiveRanges: radioFoundryArchiveSensitiveRanges,
+  identityRows: radioFoundryIdentityRows,
+  identityNote: RADIOFOUNDRY_IDENTITY_NOTE,
+  readNotice: RADIOFOUNDRY_READ_NOTICE,
+  calibrationNote: RADIOFOUNDRY_CALIBRATION_NOTE,
+  readHistory: true,
+  capabilities: capabilities('Available', 'Not yet available', 'Not yet available'),
+});
 
 const unavailable = capabilities('Not yet available', 'Not yet available', 'Not yet available');
 
@@ -272,15 +309,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     family: 'Baofeng · stock / MM9PDY',
     capabilities: capabilities('Available', 'Partial', 'Partial'),
   },
-  {
-    slug: 'dm-32uv-radiofoundry',
-    radio: 'dm-32uv',
-    firmware: 'radiofoundry',
-    model: 'DM-32UV',
-    archiveModelId: 'DM-32UV-RadioFoundry',
-    family: 'RadioFoundry',
-    capabilities: unavailable,
-  },
+  radioFoundry('dm-32uv', 'DM-32UV', 'DM-32UV-RadioFoundry'),
   {
     slug: 'dm-1701-opengd77',
     radio: 'dm-1701',
@@ -302,15 +331,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     identityNote: OPENGD77_IDENTITY_NOTE,
     readNotice: OPENGD77_READ_NOTICE,
   },
-  {
-    slug: 'dm-1701-radiofoundry',
-    radio: 'dm-1701',
-    firmware: 'radiofoundry',
-    model: 'DM-1701',
-    archiveModelId: 'DM-1701-RadioFoundry',
-    family: 'RadioFoundry',
-    capabilities: unavailable,
-  },
+  radioFoundry('dm-1701', 'DM-1701', 'DM-1701-RadioFoundry'),
   {
     slug: 'md-9600-opengd77',
     radio: 'md-9600',
@@ -332,33 +353,9 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     identityNote: OPENGD77_IDENTITY_NOTE,
     readNotice: OPENGD77_READ_NOTICE,
   },
-  {
-    slug: 'md-9600-radiofoundry',
-    radio: 'md-9600',
-    firmware: 'radiofoundry',
-    model: 'MD-9600',
-    archiveModelId: 'MD-9600-RadioFoundry',
-    family: 'RadioFoundry',
-    capabilities: unavailable,
-  },
-  {
-    slug: 'rt84-radiofoundry',
-    radio: 'rt84',
-    firmware: 'radiofoundry',
-    model: 'RT84',
-    archiveModelId: 'RT84-RadioFoundry',
-    family: 'RadioFoundry',
-    capabilities: unavailable,
-  },
-  {
-    slug: 'rt90-radiofoundry',
-    radio: 'rt90',
-    firmware: 'radiofoundry',
-    model: 'RT90',
-    archiveModelId: 'RT90-RadioFoundry',
-    family: 'RadioFoundry',
-    capabilities: unavailable,
-  },
+  radioFoundry('md-9600', 'MD-9600', 'MD-9600-RadioFoundry'),
+  radioFoundry('rt84', 'RT84', 'RT84-RadioFoundry'),
+  radioFoundry('rt90', 'RT90', 'RT90-RadioFoundry'),
   {
     slug: 'rt95',
     radio: 'rt95',

@@ -711,9 +711,16 @@ describe('DM-32UV debug page', () => {
     expect(rt95.getSnapshot().undownloaded).toBe(0);
   });
 
-  it('leaves the RadioFoundry profile without a live read', () => {
-    open('dm-32uv-radiofoundry');
-    expect(screen.queryByRole('button', { name: 'Read radio' })).not.toBeInTheDocument();
+  it('shows MD-9600 RadioFoundry read controls and calibration note', () => {
+    open('md-9600-radiofoundry');
+    expect(screen.getByRole('button', { name: 'Read radio' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('checkbox', { name: /Also read the DMR ID database area 2/ }),
+    ).not.toBeChecked();
+    fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
+    expect(
+      screen.getByText(/RadioFoundry calibration is not read yet/i),
+    ).toBeInTheDocument();
   });
 });
 

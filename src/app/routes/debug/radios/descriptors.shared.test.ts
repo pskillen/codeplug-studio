@@ -143,6 +143,28 @@ describe('descriptor fields that carry radio text for the shared page', () => {
     expect(openUv5rMiniLegacyArchive(syntheticZip())?.[0]?.source).toBeDefined();
   });
 
+  it('gives each RadioFoundry profile capture, history, area-2 and calibration note', () => {
+    for (const slug of [
+      'dm-32uv-radiofoundry',
+      'dm-1701-radiofoundry',
+      'rt84-radiofoundry',
+      'md-9600-radiofoundry',
+      'rt90-radiofoundry',
+    ]) {
+      const d = descriptor(slug);
+      expect(d.capture, slug).toBeTypeOf('function');
+      expect(d.readHistory, slug).toBe(true);
+      expect(d.captureOptions?.some((o) => o.label.includes('DMR ID database area 2')), slug).toBe(
+        true,
+      );
+      expect(d.captureStages).toEqual(['Connect', 'Codeplug', 'ID database']);
+      expect(d.calibrationNote).toMatch(/not read yet/);
+      const rows = labels(slug);
+      expect(rows).toContain('Firmware · read');
+      expect(rows).toContain('DMR ID database · IDDB');
+    }
+  });
+
   it('region notes tag RT95 regions and explain Mini addresses', () => {
     const archive = rt95Archive();
     expect(descriptor('rt95').regionNote!(archive, 'programming-image').tag).toBe('[unknown]');

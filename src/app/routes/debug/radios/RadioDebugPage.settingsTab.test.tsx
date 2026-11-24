@@ -73,7 +73,11 @@ describe('descriptor-driven tab list', () => {
   });
 
   it('gives every radio with a capture its own Memory viewer', () => {
-    for (const d of radioDebugDescriptors.filter((item) => item.capture))
+    for (const d of radioDebugDescriptors.filter(
+      (item) =>
+        item.capture &&
+        item.capabilities.find((cap) => cap.name === 'Memory')?.status !== 'Not yet available',
+    ))
       expect(d.Memory, d.slug).toBeDefined();
   });
 });

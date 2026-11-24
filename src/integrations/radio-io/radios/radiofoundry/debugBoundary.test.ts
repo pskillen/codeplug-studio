@@ -8,6 +8,7 @@ export const RADIOFOUNDRY_DEBUG_CAPTURE_BOUNDARY_FILES = [
   'integrations/radio-io/radios/radiofoundry/debugGuard.ts',
   'integrations/radio-io/radios/radiofoundry/debugCapture.ts',
   'integrations/radio-io/radios/radiofoundry/debugText.ts',
+  'app/routes/debug/radios/radioFoundryCapture.ts',
 ] as const;
 
 const here = dirname(fileURLToPath(import.meta.url));

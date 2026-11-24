@@ -568,7 +568,8 @@ function RadioDebugProfile({
             <Alert title={`${tab} unavailable`}>
               {tab === 'Trace'
                 ? 'Protocol trace export is unavailable: this capture does not include trace instrumentation.'
-                : 'This capability is not yet available for this profile.'}
+                : (descriptor.calibrationNote ??
+                  'This capability is not yet available for this profile.')}
             </Alert>
           </Tabs.Panel>
         ))}
