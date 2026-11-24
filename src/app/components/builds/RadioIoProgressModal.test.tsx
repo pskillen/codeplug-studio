@@ -133,37 +133,6 @@ describe('RadioIoProgressModal', () => {
     expect(screen.getByText('Upload')).toBeInTheDocument();
   });
 
-  it('shows a distinct title and step list for keps-write (#859)', () => {
-    renderModal({
-      opened: true,
-      operation: 'keps-write',
-      phase: 'transfer',
-      progress: { cur: 1, max: 1, msg: 'Uploading satellite records' },
-      onCancel: vi.fn(),
-    });
-
-    expect(screen.getByText('Writing keps to radio')).toBeInTheDocument();
-    expect(screen.getByText('Pack satellite records')).toBeInTheDocument();
-    expect(screen.queryByText(/Assemble channels into image/i)).not.toBeInTheDocument();
-  });
-
-  it('shows a keps-write done alert with no verify actions', () => {
-    const onClose = vi.fn();
-    renderModal({
-      opened: true,
-      operation: 'keps-write',
-      phase: 'done',
-      progress: null,
-      onCancel: vi.fn(),
-      onClose,
-    });
-
-    expect(screen.getByText('Keps write finished')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Verify write' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
   it('shows restore title and steps that are not writing a codeplug', () => {
     renderModal({
       opened: true,
@@ -247,16 +216,5 @@ describe('RadioIoProgressModal', () => {
     });
     expect(screen.queryByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).not.toBeInTheDocument();
 
-    rerenderModal(rerender, {
-      opened: true,
-      operation: 'keps-write',
-      phase: 'done',
-      progress: null,
-      successNote: DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
-      onCancel: vi.fn(),
-      onClose: vi.fn(),
-    });
-    expect(screen.getByText('Keps write finished')).toBeInTheDocument();
-    expect(screen.queryByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).not.toBeInTheDocument();
   });
 });

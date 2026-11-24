@@ -13,11 +13,6 @@ import {
   isMm9pdyDm32RadioIoProfileId,
   isRt95RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
-import {
-  ModalShell,
-  WriteVerifyReport as WriteVerifyReportV2,
-  Button as V2Button,
-} from '../v2/index.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { findAttribution } from '../../lib/attributions.ts';
@@ -29,13 +24,11 @@ import { useBuildLayout } from '../../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../../state/useProjects.ts';
 import {
   buildHasRadioCloneHydration,
-  channelLocationNoteForWrite,
   descriptorsForEgress,
   getRadioCloneHydration,
   getRadioSerialUnsupportedMessage,
   isRadioSerialSupported,
 } from '../../services/radioIoSession.ts';
-import { hasPersistedStepKeySwitch, mm9pdyStepKeysDescription } from './mm9pdyStepKeysCopy.ts';
 import {
   buildSummaryLine,
   radioIoPanelFacts,
@@ -51,34 +44,14 @@ import ExperimentalNote from './RadioIoPanelCards/ExperimentalNote.tsx';
 import RangeChangeBanner from '../dangerZone/RangeChangeBanner.tsx';
 import DangerZoneCard from './RadioIoPanelCards/DangerZoneCard.tsx';
 import { listOfferedDangerZoneTools } from '../../services/dangerZone/gate.ts';
-import {
-  atD890OverrideCount,
-  overridesForWrite,
-  setApplyToEveryRadio,
-  setWriteSettingsRequested,
-  useAtD890RadioSettingsSession,
-} from '../../state/atD890RadioSettingsSession.ts';
-import {
-  setWriteSettingsRequested as setRt95WriteSettingsRequested,
-  overridesForWrite as rt95OverridesForWrite,
-  rt95OverrideCount,
-  useRt95RadioSettingsSession,
-} from '../../state/rt95RadioSettingsSession.ts';
-import { rt95SettingsTargetForEgress } from '../../services/radioIoRt95SettingsWrite.ts';
-import { rt95OverrideWords } from './RadioWriteStepper/rt95/rt95ReviewFacts.ts';
-import { atD890OverrideWords } from './RadioWriteStepper/d890/atD890ReviewFacts.ts';
-import WriteVerifyReport from './WriteVerifyReport.tsx';
-import { mapWriteVerifyResultToV2Report } from './writeVerifyReportV2Adapter.ts';
+import { atD890OverrideCount, useAtD890RadioSettingsSession } from '../../state/atD890RadioSettingsSession.ts';
 import AtD890WriteCoverageTable from './AtD890WriteCoverageTable.tsx';
 import { DM32_ANALOG_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
 import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from '../../services/radioWriteEnvGate.ts';
-import { resolveWriteShellOptions } from '../../services/egress/writeShellOptions.ts';
-import RadioWriteStepper from './RadioWriteStepper/RadioWriteStepper.tsx';
-import { useRadioWriteFlow } from './RadioWriteStepper/useRadioWriteFlow.tsx';
-import type { WriteStepperConfig } from './RadioWriteStepper/types.ts';
+import { useRadioWriteDialog } from './RadioWriteDialog/useRadioWriteDialog.tsx';
 
 export interface BuildRadioIoPanelProps {
   build: RadioBuild;
@@ -90,51 +63,29 @@ const buildService = new BuildService(persistence);
 
 export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelProps) {
   const descriptors = descriptorsForEgress(egress);
-  const { activeProjectId, activeProject } = useProjects();
+  const { activeProjectId } = useProjects();
   const { reloadEgressPaths } = useBuildLayout();
 
   const [error, setError] = useState<string | null>(null);
-  const [verifyReportOpen, setVerifyReportOpen] = useState(false);
-  const [channelLocationNote, setChannelLocationNote] = useState<string | null>(null);
-  const [kepsCount, setKepsCount] = useState<number | null>(null);
   const [facts, setFacts] = useState<RadioIoPanelFacts | null>(null);
   const [coverageOpen, setCoverageOpen] = useState(false);
   const navigate = useNavigate();
 
   const serialOk = isRadioSerialSupported();
   const descriptor = descriptors[0];
-  const writeVerifyHooks = descriptor?.writeVerify;
   const writeGate = resolveRadioWriteGate(descriptor, undefined, egress.profileId);
   const writeHidden = writeGate === 'hidden';
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);
   const isAtD890Write = isAtD890RadioIoProfileId(egress.profileId);
   const isRt95Write = isRt95RadioIoProfileId(egress.profileId);
-  const shellOptions = resolveWriteShellOptions(egress, descriptor);
-  const supportsKepsWrite = shellOptions.parts.keps;
 
-  const flow = useRadioWriteFlow({
+  const writeDialog = useRadioWriteDialog({
     build,
     egress,
-    descriptor,
-    activeProjectId,
     onOpenSettingsPage: () => navigate(`/builds/${build.id}/export/radio-settings`),
   });
-  const { view: flowView, actions: flowActions } = flow;
   const d890SettingsSession = useAtD890RadioSettingsSession(build.id);
-  const rt95SettingsSession = useRt95RadioSettingsSession(build.id);
-  const openFlow = flow.open;
-  const writeSettingsRequested =
-    (isAtD890Write && d890SettingsSession.writeSettingsRequested) ||
-    (isRt95Write && rt95SettingsSession.writeSettingsRequested);
-
-  // The settings page's "Write settings…" lands here and opens the stepper with only Radio settings ticked.
-  useEffect(() => {
-    if (!writeSettingsRequested) return;
-    if (isAtD890Write) setWriteSettingsRequested(build.id, false);
-    if (isRt95Write) setRt95WriteSettingsRequested(build.id, false);
-    openFlow({ codeplug: false, contacts: false, keps: false, settings: true });
-  }, [writeSettingsRequested, build.id, openFlow, isAtD890Write, isRt95Write]);
 
   // Counts and receive-range rows for the header and Before you write. Informational only.
   useEffect(() => {
@@ -153,7 +104,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     };
   }, [activeProjectId, build, egress]);
 
-  const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(flowView.busy);
+  const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(writeDialog.busy);
 
   useEffect(() => {
     if (leaveAttempted) stay();
@@ -185,32 +136,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
 
   function openWriteRadio() {
     setError(null);
-    setChannelLocationNote(null);
-    setKepsCount(null);
-    flow.open();
-    void loadChannelLocationNote();
-    void loadKepsCount();
-  }
-
-  async function loadChannelLocationNote() {
-    if (!activeProjectId) return;
-    try {
-      const library = await loadLibrarySlice(persistence, activeProjectId);
-      setChannelLocationNote(channelLocationNoteForWrite(build, egress, library));
-    } catch {
-      // Informational only — Write still works without the note.
-      setChannelLocationNote(null);
-    }
-  }
-
-  async function loadKepsCount() {
-    if (!activeProjectId || !supportsKepsWrite) return;
-    try {
-      const all = await persistence.listSatellites(activeProjectId);
-      setKepsCount(all.filter((s) => s.enabled).length);
-    } catch {
-      setKepsCount(null);
-    }
+    writeDialog.open();
   }
 
   async function handleClearHydration() {
@@ -224,105 +150,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     await reloadEgressPaths();
   }
 
-  const stepperConfig: WriteStepperConfig = {
-    radioLabel: descriptor?.label ?? 'radio',
-    buildId: build.id,
-    serialOk,
-    writeHidden,
-    options: shellOptions,
-    kepsSummary:
-      kepsCount != null
-        ? `${kepsCount} ${kepsCount === 1 ? 'satellite' : 'satellites'}`
-        : undefined,
-    kepsLastUpdatedIso: activeProject?.satelliteLibraryLastUpdated,
-    channelLocationNote,
-    ...(isAtD890Write
-      ? {
-          radioSettings: {
-            count: atD890OverrideCount(d890SettingsSession.overrides),
-            words: atD890OverrideWords(
-              overridesForWrite(build.id),
-              isMm9pdyAtD890RadioIoProfileId(egress.profileId) ? 'mm9pdy' : 'stock',
-            ),
-            applyToEveryRadio: d890SettingsSession.applyToEveryRadio,
-            onApplyToEveryRadioChange: (checked: boolean) =>
-              setApplyToEveryRadio(build.id, checked),
-          },
-        }
-      : {}),
-    ...(isRt95Write
-      ? {
-          radioSettings: {
-            count: rt95OverrideCount(rt95SettingsSession.overrides),
-            words: rt95OverrideWords(
-              rt95OverridesForWrite(build.id),
-              rt95SettingsTargetForEgress(egress),
-            ),
-            applyToEveryRadio: false,
-            onApplyToEveryRadioChange: () => undefined,
-          },
-        }
-      : {}),
-    ...(hasPersistedStepKeySwitch(build.radioTargetId)
-      ? {
-          stepKeys: {
-            checked: build.exportSettings?.assignMm9pdyStepKeys === true,
-            description: mm9pdyStepKeysDescription(build.radioTargetId),
-            onChange: (checked: boolean) => void handleAssignMm9pdyStepKeys(checked),
-          },
-        }
-      : {}),
-  };
-  const checkResult = flow.checkResult;
-
   return (
     <Stack gap="sm">
-      <ModalShell
-        open={verifyReportOpen && checkResult !== null}
-        onClose={() => setVerifyReportOpen(false)}
-        title="Write verify report"
-        size="lg"
-        footer={
-          <V2Button variant="primary" size="sm" onClick={() => setVerifyReportOpen(false)}>
-            Close
-          </V2Button>
-        }
-      >
-        {checkResult ? (
-          <Stack gap="md">
-            <WriteVerifyReportV2
-              title="Verify results"
-              {...mapWriteVerifyResultToV2Report(checkResult)}
-            />
-            {writeVerifyHooks ? (
-              <WriteVerifyReport
-                result={checkResult}
-                debugContext={{
-                  buildId: build.id,
-                  egressId: egress.id,
-                  formatId: egress.formatId,
-                  profileId: egress.profileId,
-                  measuredAt: new Date().toISOString(),
-                  buildVersion: __BUILD_VERSION__,
-                  buildEnv: __BUILD_ENV__,
-                  pageUrl: window.location.href,
-                  userAgent: navigator.userAgent,
-                }}
-                formatDebugMarkdown={writeVerifyHooks.formatDebugMarkdown}
-                onClose={() => setVerifyReportOpen(false)}
-                inModal
-                keptSectionTitle={shellOptions.check.reportLabels?.keptSectionTitle}
-                keptSummaryLabel={shellOptions.check.reportLabels?.keptSummaryLabel}
-              />
-            ) : null}
-          </Stack>
-        ) : null}
-      </ModalShell>
-      <RadioWriteStepper
-        config={stepperConfig}
-        view={flowView}
-        actions={{ ...flowActions, onViewCheckReport: () => setVerifyReportOpen(true) }}
-      />
+      {writeDialog.element}
       {isAtD890Write ? <RangeChangeBanner buildId={build.id} /> : null}
       <WriteHeaderCard
         radioLabel={radioLabel}
@@ -338,7 +168,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             : undefined
         }
         writeHidden={writeHidden}
-        disabled={!serialOk || flowView.busy}
+        disabled={!serialOk || writeDialog.busy}
         onWrite={openWriteRadio}
       />
       {!serialOk ? <Alert color="yellow">{getRadioSerialUnsupportedMessage()}</Alert> : null}

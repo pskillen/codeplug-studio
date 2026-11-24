@@ -16,13 +16,12 @@ import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '../../hooks/useScreenWak
 import { Button, ProgressModal, type ProgressModalStep } from '../v2/index.ts';
 
 /**
- * `'keps-write'` is a distinct operation (#859) — a satellite-keps upload has its own step list.
  * `'restore'` replays a backup zip onto the radio — not Write-codeplug.
  * `'vital-read'` is the AT-D890UV vital-data backup (#1288): it downloads a file and saves nothing on the build.
  * `'library-read'` imports library rows and updates the radio's build.
  */
 export type RadioIoOperation =
-  'read' | 'library-read' | 'keps-write' | 'restore' | 'vital-read' | 'safety-read';
+  'read' | 'library-read' | 'restore' | 'vital-read' | 'safety-read';
 
 export type RadioIoProgressPhase =
   'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
@@ -67,19 +66,6 @@ function buildSteps(
 ): StepDef[] {
   const stageSteps = (): StepDef[] =>
     transferStages.map((label, i) => ({ id: stageId(planned, i, label), label }));
-  if (operation === 'keps-write') {
-    const steps: StepDef[] = [
-      { id: 'connecting', label: 'Connect and handshake' },
-      { id: 'preparing', label: 'Pack satellite records' },
-      ...(transferStages.length > 0
-        ? stageSteps()
-        : [{ id: 'transfer', label: 'Upload to radio' }]),
-    ];
-    if (phase === 'done') {
-      steps.push({ id: 'done', label: 'Keps write complete' });
-    }
-    return steps;
-  }
   if (operation === 'restore') {
     const steps: StepDef[] = [
       { id: 'connecting', label: 'Connect and handshake' },
@@ -232,9 +218,7 @@ export default function RadioIoProgressModal({
         ? 'Backing up calibration'
         : operation === 'vital-read'
           ? 'Backing up vital data'
-          : operation === 'keps-write'
-            ? 'Writing keps to radio'
-            : operation === 'restore'
+          : operation === 'restore'
               ? 'Restoring backup to radio'
               : 'Reading from radio';
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
@@ -291,13 +275,7 @@ export default function RadioIoProgressModal({
               title: 'Vital data backup finished',
               body: 'The file was downloaded. Nothing is saved on this build. The radio restarts when the session ends.',
             }
-          : complete && operation === 'keps-write'
-            ? {
-                color: 'green',
-                title: 'Keps write finished',
-                body: 'Satellite records were sent to the radio.',
-              }
-            : complete && operation === 'restore'
+          : complete && operation === 'restore'
               ? {
                   color: 'green',
                   title: 'Restore finished',
