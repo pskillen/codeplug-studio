@@ -7,6 +7,7 @@ const hookFile = join(
   repoRoot,
   'src/app/components/builds/RadioWriteStepper/useRadioWriteFlow.tsx',
 );
+const exportPanelFile = join(repoRoot, 'src/app/components/builds/BuildRadioIoPanel.tsx');
 const egressDir = join(repoRoot, 'src/app/components/egress');
 
 function listTsFiles(dir: string): string[] {
@@ -26,7 +27,7 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 }
 
-const watchedFiles = [...listTsFiles(egressDir), hookFile];
+const watchedFiles = [...listTsFiles(egressDir), hookFile, exportPanelFile];
 
 describe('egress boundary (shared shell stays radio-neutral)', () => {
   for (const file of watchedFiles) {
