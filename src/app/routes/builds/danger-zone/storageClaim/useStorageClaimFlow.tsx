@@ -52,6 +52,8 @@ export function useStorageClaimFlow(opts: UseStorageClaimFlowOptions): {
   const [pollPending, setPollPending] = useState(false);
   const [layout, setLayout] = useState<StorageClaimView['layout']>(null);
   const manifestRef = useRef<StorageClaimManifest | null>(null);
+  /** Set once a CLAIM may have reached the radio: no second Unlock in this wizard, only Check again. */
+  const claimSentRef = useRef(false);
 
   const refuse = useCallback((err: unknown) => {
     const msg =
@@ -120,7 +122,10 @@ export function useStorageClaimFlow(opts: UseStorageClaimFlowOptions): {
   }, [backupSaved]);
 
   const onUnlock = useCallback(async () => {
-    if (!confirmTick) return;
+    // At most one CLAIM per wizard: each step opens its own radio session, so the sender's
+    // per-session guard alone would allow a second Unlock after an error.
+    if (!confirmTick || !backupSaved || !manifestRef.current || claimSentRef.current) return;
+    const manifest = manifestRef.current;
     setStep('unlock');
     setBusy(true);
     setPollPending(false);
@@ -129,40 +134,46 @@ export function useStorageClaimFlow(opts: UseStorageClaimFlowOptions): {
       await withClaimSession(async (session) => {
         const state = openStorageClaimState(session.pipe, egress.profileId);
         await runStorageClaimCheck(state);
-        if (manifestRef.current) {
-          state.manifestToken = manifestRef.current.token;
-          state.manifestLayout = manifestRef.current.storageInfo;
-        }
+        state.manifestToken = manifest.token;
+        state.manifestLayout = manifest.storageInfo;
         acknowledgeStorageBackupSaved(state);
-        await runStorageClaimUnlock(state);
+        try {
+          await runStorageClaimUnlock(state);
+        } finally {
+          if (state.sender.claimSent) claimSentRef.current = true;
+        }
         setPollPending(true);
         const poll = await pollStorageClaimForOurs(state);
         setPollPending(false);
         if (poll.kind === 'ours') {
-          setLayout(
-            manifestRef.current
-              ? { ...manifestRef.current.storageInfo, region: 'ours' }
-              : {
-                  region: 'ours',
-                  claimPending: false,
-                  settings: { address: 0, size: 0 },
-                  journal: { address: 0, size: 0 },
-                  calibration: { address: 0, size: 0 },
-                },
-          );
+          setLayout({ ...manifest.storageInfo, region: 'ours' });
           setNotice(COPY.oursDone);
         } else {
           setLayout(poll.last);
-          setNotice('Not confirmed yet.');
+          setNotice(COPY.notConfirmed);
         }
         setStep('done');
       });
     } catch (err) {
-      refuse(err);
-      setStep('confirm');
+      setPollPending(false);
+      if (claimSentRef.current) {
+        // The claim went out: the radio may be erasing. Never offer Unlock again; Check again reads INFO only.
+        // A refusal the radio answered (wrong token, not foreign) says so itself; anything else
+        // (lost reply, port gone) leaves the outcome unknown.
+        const msg = err instanceof Error ? err.message : String(err);
+        setNotice(
+          err instanceof StorageClaimSessionError && err.claimSent
+            ? msg
+            : `${COPY.notConfirmed} ${msg}`,
+        );
+        setStep('done');
+      } else {
+        refuse(err);
+        setStep('confirm');
+      }
     }
     setBusy(false);
-  }, [confirmTick, egress.profileId, refuse, withClaimSession]);
+  }, [backupSaved, confirmTick, egress.profileId, refuse, withClaimSession]);
 
   const onCheckAgain = useCallback(async () => {
     setBusy(true);
@@ -171,7 +182,7 @@ export function useStorageClaimFlow(opts: UseStorageClaimFlowOptions): {
         const state = openStorageClaimState(session.pipe, egress.profileId);
         const next = await recheckStorageClaim(state);
         setLayout(next);
-        setNotice(next.region === 'ours' ? COPY.oursDone : 'Storage is still not ours.');
+        setNotice(next.region === 'ours' ? COPY.oursDone : COPY.notConfirmed);
       });
     } catch (err) {
       refuse(err);

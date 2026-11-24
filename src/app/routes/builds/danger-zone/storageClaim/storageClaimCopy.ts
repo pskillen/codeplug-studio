@@ -4,6 +4,8 @@ export const COPY = {
     'Claims the settings flash area so RadioFoundry can save your codeplug. Studio backs up the old bytes first; they cannot be put back with Studio or RadioFoundry.',
   nothingChanged: 'Nothing has changed.',
   oursDone: 'Storage unlocked. Write the radio again.',
+  notConfirmed:
+    'Not confirmed yet: the radio may still be erasing. Use Check again; Studio will not send a second unlock.',
   checkAgain: 'Check again',
   unlockLabel: 'Unlock storage',
   backupTick: "I've saved the backup file",

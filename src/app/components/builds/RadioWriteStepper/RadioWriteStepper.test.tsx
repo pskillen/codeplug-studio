@@ -378,3 +378,35 @@ describe('RadioWriteStepper — AT-D890 contacts hint (#1433)', () => {
     expect(screen.getByText(/This part writes the radio's ID database/)).toBeInTheDocument();
   });
 });
+
+describe('RadioWriteStepper — Unlock storage link', () => {
+  const foreign = {
+    kind: 'error' as const,
+    retry: 'none' as const,
+    sent: 'nothing-sent' as const,
+    message: "This radio's flash still holds settings from the firmware it ran before.",
+    debugText: '',
+    code: 'RadioInterlockError',
+  };
+
+  it('offers Unlock storage… for a foreign-storage refusal when the tool is offered', () => {
+    renderStepper({
+      step: 'connect',
+      errorOutcome: { ...foreign, interlockKey: 'rf-storage-foreign' },
+      storageUnlockHref: '/builds/b1/export/danger-zone/storage-claim',
+    });
+    expect(screen.getByRole('link', { name: 'Unlock storage…' })).toHaveAttribute(
+      'href',
+      '/builds/b1/export/danger-zone/storage-claim',
+    );
+  });
+
+  it('shows no link for other refusals', () => {
+    renderStepper({
+      step: 'connect',
+      errorOutcome: foreign,
+      storageUnlockHref: '/builds/b1/export/danger-zone/storage-claim',
+    });
+    expect(screen.queryByRole('link', { name: 'Unlock storage…' })).toBeNull();
+  });
+});

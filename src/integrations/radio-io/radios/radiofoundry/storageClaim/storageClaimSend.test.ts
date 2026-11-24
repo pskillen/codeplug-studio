@@ -57,6 +57,37 @@ describe('storage claim allow-list (interlock 1)', () => {
   });
 });
 
+describe('one CLAIM, whatever the reply (interlock 9)', () => {
+  const token = new Uint8Array([0x78, 0x56, 0x34, 0x12]);
+  const claims = (pipe: StorageClaimScriptedPipe) =>
+    pipe.writes.filter((w) => {
+      const f = decodeDebugFrame(w);
+      return f.command === RADIOFOUNDRY_STORAGE_COMMAND && f.payload[0] === 2;
+    }).length;
+
+  it('counts a CLAIM whose reply never came as sent, and refuses a second', async () => {
+    const pipe = new StorageClaimScriptedPipe();
+    pipe.silent = true;
+    const sender = createStorageClaimSender(pipe);
+    await expect(sender.exchangeStorage(2, token, 50)).rejects.toThrow();
+    expect(sender.claimSent).toBe(true);
+    await expect(sender.exchangeStorage(2, token, 50)).rejects.toBeInstanceOf(
+      StorageClaimSendRefusedError,
+    );
+    expect(claims(pipe)).toBe(1);
+  });
+
+  it('does not resend CLAIM when the radio answers busy', async () => {
+    const pipe = new StorageClaimScriptedPipe();
+    pipe.claimStatusOverride = 3;
+    const sender = createStorageClaimSender(pipe);
+    const reply = await sender.exchangeStorage(2, token, 2000);
+    expect(reply.status).toBe(3);
+    expect(claims(pipe)).toBe(1);
+    expect(sender.claimSent).toBe(true);
+  });
+});
+
 describe('guard STORAGE READ length', () => {
   it('refuses READ len 0 before write', () => {
     const payload = new Uint8Array([STORAGE_OP_READ, 0, 0, 0x10, 0x01, 0, 0]);

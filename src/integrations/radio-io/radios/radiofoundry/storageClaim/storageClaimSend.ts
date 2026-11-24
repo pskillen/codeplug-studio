@@ -144,28 +144,25 @@ export function createStorageClaimSender(pipe: BytePipe, startSeq = 1): StorageC
       refuse('This session has already sent STORAGE CLAIM.');
     }
     throwIfAborted(signal);
+    const isClaim = command === RADIOFOUNDRY_STORAGE_COMMAND && payload[0] === STORAGE_OP_CLAIM;
     const busyUntil = performance.now() + busyRetryMs;
     const replyCmd = command | 0x80;
     for (;;) {
       throwIfAborted(signal);
       const frameSeq = seq;
       seq = (seq + 1) & 0xff;
+      // Counted as sent before the bytes go out: a lost or late reply must not allow a second CLAIM.
+      if (isClaim) claimSent = true;
       await pipe.write(encodeDebugFrame(command, frameSeq, payload));
       const frame = await readDebugFrame(pipe, timeoutMs);
       if (frame.command !== replyCmd || frame.seq !== frameSeq || frame.payload.length < 1) {
         throw new RadioProtocolError('Unexpected RadioFoundry debug reply during storage claim.');
       }
       const status = frame.payload[0]!;
-      if (status === 3 && performance.now() < busyUntil) {
+      // Busy is retried for reads only; CLAIM is never sent twice.
+      if (status === 3 && !isClaim && performance.now() < busyUntil) {
         await delay(STORAGE_BUSY_GAP_MS);
         continue;
-      }
-      if (
-        command === RADIOFOUNDRY_STORAGE_COMMAND &&
-        payload[0] === STORAGE_OP_CLAIM &&
-        status === 0
-      ) {
-        claimSent = true;
       }
       return { status, body: frame.payload.subarray(1) };
     }

@@ -32,6 +32,8 @@ export class StorageClaimScriptedPipe implements BytePipe {
   claimCount = 0;
   afterClaimRegion: number | null = null;
   silent = false;
+  /** Status to answer CLAIM with instead of the token check (e.g. 3 busy). */
+  claimStatusOverride: number | null = null;
 
   async write(data: Uint8Array): Promise<void> {
     const copy = data.slice();
@@ -104,7 +106,12 @@ export class StorageClaimScriptedPipe implements BytePipe {
           (req.payload[3]! << 16) |
           (req.payload[4]! << 24);
         const ok = token === this.chipToken;
-        const payload = ok ? Uint8Array.from([0, 0]) : Uint8Array.from([7, 1]);
+        const payload =
+          this.claimStatusOverride != null
+            ? Uint8Array.from([this.claimStatusOverride])
+            : ok
+              ? Uint8Array.from([0, 0])
+              : Uint8Array.from([7, 1]);
         this.enqueue(encodeDebugFrame(RADIOFOUNDRY_STORAGE_COMMAND | 0x80, req.seq, payload));
         return;
       }
