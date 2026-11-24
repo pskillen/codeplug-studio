@@ -38,11 +38,7 @@ import type {
   DebugIdentityRows,
   SettingsView,
 } from '@integrations/radio-io/debugView/index.ts';
-import {
-  DEBUG_FIRMWARE_LABEL,
-  DEBUG_FIRMWARE_ORDER,
-  isDebugFirmwareFamily,
-} from '@integrations/radio-io/debugView/index.ts';
+import { DEBUG_FIRMWARE_ORDER, isDebugFirmwareFamily } from '@integrations/radio-io/debugView/index.ts';
 import { rt95CalibrationView } from '@integrations/radio-io/radios/rt95/debugCalibrationView.ts';
 import { Rt95MemoryView } from './Rt95Memory.tsx';
 import { RT95_MEMORY_NOT_DECODED } from '@integrations/radio-io/radios/rt95/debugMemoryText.ts';
