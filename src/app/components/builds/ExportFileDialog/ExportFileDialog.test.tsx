@@ -17,15 +17,15 @@ const { checkCpsExport, downloadCpsZip, downloadCpsSingleFile, uploadCpsZipToDri
         _buildId: string,
         _options?: { baseNeonplugBytes?: Uint8Array },
       ) => ({
-      warnings: [
-        {
-          kind: 'unlinked',
-          severity: 'problem',
-          message: 'Including 1 channel(s) not linked to a zone',
-        },
-      ] as ExportWarning[],
-      fileNames: ['Channels.csv', 'Zones.csv'],
-    }),
+        warnings: [
+          {
+            kind: 'unlinked',
+            severity: 'problem',
+            message: 'Including 1 channel(s) not linked to a zone',
+          },
+        ] as ExportWarning[],
+        fileNames: ['Channels.csv', 'Zones.csv'],
+      }),
     ),
     downloadCpsZip: vi.fn(async () => ({ warnings: [] as ExportWarning[] })),
     downloadCpsSingleFile: vi.fn(async () => ({ warnings: [] as ExportWarning[] })),
