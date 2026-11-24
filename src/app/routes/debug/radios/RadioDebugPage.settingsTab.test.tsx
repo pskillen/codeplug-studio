@@ -3,14 +3,16 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import RadioDebugPage from './RadioDebugPage.tsx';
-import { radioDebugDescriptors, radioDebugTabs } from './descriptors.ts';
+import { debugRadioPath, radioDebugDescriptors, radioDebugTabs } from './descriptors.ts';
 
 function open(slug: string) {
   return render(
-    <MemoryRouter initialEntries={[`/debug/radios/${slug}`]}>
+    <MemoryRouter
+      initialEntries={[debugRadioPath(radioDebugDescriptors.find((d) => d.slug === slug)!)!]}
+    >
       <DesignSystemV2Provider>
         <Routes>
-          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+          <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
         </Routes>
       </DesignSystemV2Provider>
     </MemoryRouter>,

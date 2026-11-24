@@ -23,7 +23,17 @@ import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
 import { Link, useParams } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '@app/hooks/useScreenWakeLock.ts';
-import { capabilityColor, radioDebugDescriptors, radioDebugTabs } from './descriptors.ts';
+import {
+  DEBUG_FIRMWARE_LABEL,
+  isDebugFirmwareFamily,
+} from '@integrations/radio-io/debugView/index.ts';
+import {
+  capabilityColor,
+  debugRadioPath,
+  descriptorForPair,
+  firmwaresOf,
+  radioDebugTabs,
+} from './descriptors.ts';
 import { CompareViewer, HexViewer, MemoryViewer } from './ArchiveViewers.tsx';
 import { CalibrationTab } from './CalibrationTab.tsx';
 import { SettingsTab } from './SettingsTab.tsx';
@@ -43,13 +53,41 @@ import { getDebugReadHistory, useDebugReadHistory } from './debugReadHistory.ts'
 import { DebugReadHistoryControls } from './DebugReadHistoryControls.tsx';
 import { isDebugReadHistoryZip, openDebugReadHistoryZip } from './debugReadHistoryArchive.ts';
 
-export default function RadioDebugPage() {
-  const { radio } = useParams();
-  return <RadioDebugProfile key={radio} radio={radio} />;
+export function RadioNotFound() {
+  return (
+    <DesignSystemV2Provider scheme="dark">
+      <Page>
+        <PageHeader title="Radio not found" />
+        <Anchor component={Link} to="/debug">
+          All debug tools
+        </Anchor>
+      </Page>
+    </DesignSystemV2Provider>
+  );
 }
 
-function RadioDebugProfile({ radio }: { radio: string | undefined }) {
-  const descriptor = radioDebugDescriptors.find((item) => item.slug === radio);
+export default function RadioDebugPage() {
+  const { radio, firmware } = useParams();
+  const descriptor = descriptorForPair(radio ?? '', firmware ?? '');
+  return (
+    <RadioDebugProfile
+      key={descriptor?.slug ?? `${radio}:${firmware}`}
+      descriptor={descriptor}
+      radio={radio}
+      firmware={firmware}
+    />
+  );
+}
+
+function RadioDebugProfile({
+  radio,
+  firmware,
+  descriptor,
+}: {
+  radio: string | undefined;
+  firmware: string | undefined;
+  descriptor: ReturnType<typeof descriptorForPair>;
+}) {
   const historyEnabled = descriptor?.readHistory === true;
   const store = getDebugReadHistory(descriptor ?? { slug: 'unknown', archiveModelId: 'unknown' });
   const history = useDebugReadHistory(store);
@@ -89,17 +127,34 @@ function RadioDebugProfile({ radio }: { radio: string | undefined }) {
     : archive?.source === 'live-read'
       ? 'Read complete · disconnected'
       : 'Not connected';
-  if (!descriptor)
-    return (
-      <DesignSystemV2Provider scheme="dark">
-        <Page>
-          <PageHeader title="Radio not found" />
-          <Anchor component={Link} to="/debug">
-            All debug tools
-          </Anchor>
-        </Page>
-      </DesignSystemV2Provider>
-    );
+  if (!descriptor) {
+    const alternatives = radio ? firmwaresOf(radio) : [];
+    if (alternatives.length > 0) {
+      const label = firmware
+        ? isDebugFirmwareFamily(firmware)
+          ? DEBUG_FIRMWARE_LABEL[firmware]
+          : firmware
+        : 'unknown';
+      return (
+        <DesignSystemV2Provider scheme="dark">
+          <Page>
+            <PageHeader title={`${alternatives[0]!.model} has no ${label} page`} />
+            <Stack gap="xs">
+              {alternatives.map((alt) => (
+                <Anchor key={alt.slug} component={Link} to={debugRadioPath(alt)}>
+                  {DEBUG_FIRMWARE_LABEL[alt.firmware]}
+                </Anchor>
+              ))}
+              <Anchor component={Link} to="/debug">
+                All debug tools
+              </Anchor>
+            </Stack>
+          </Page>
+        </DesignSystemV2Provider>
+      );
+    }
+    return <RadioNotFound />;
+  }
   const openFile = async (file: File | null) => {
     if (!file) return;
     try {

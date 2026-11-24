@@ -13,7 +13,7 @@ import {
 import { Link } from 'react-router-dom';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { useDeveloperMode } from '../../hooks/useDeveloperMode.ts';
-import { capabilityColor, radioDebugDescriptors } from './radios/descriptors.ts';
+import { capabilityColor, debugRadioPath, radioDebugDescriptors } from './radios/descriptors.ts';
 
 export default function DebugIndexPage() {
   const [developerMode, setDeveloperMode] = useDeveloperMode();
@@ -44,7 +44,7 @@ export default function DebugIndexPage() {
         <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
           {radioDebugDescriptors.map((radio) => (
             <Card withBorder key={radio.slug}>
-              <Anchor component={Link} to={`/debug/radios/${radio.slug}`} fw={700}>
+              <Anchor component={Link} to={debugRadioPath(radio)} fw={700}>
                 {radio.model}
               </Anchor>
               <Text size="sm" c="dimmed">

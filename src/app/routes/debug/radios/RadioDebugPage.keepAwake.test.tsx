@@ -29,10 +29,10 @@ describe('debug page live read keeps the screen awake', () => {
         }),
     );
     render(
-      <MemoryRouter initialEntries={['/debug/radios/uv-5r-mini']}>
+      <MemoryRouter initialEntries={['/debug/radios/uv-5r-mini/stock']}>
         <DesignSystemV2Provider>
           <Routes>
-            <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+            <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
           </Routes>
         </DesignSystemV2Provider>
       </MemoryRouter>,

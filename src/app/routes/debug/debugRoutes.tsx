@@ -1,6 +1,7 @@
 import type { RouteObject } from 'react-router-dom';
 import LegacyDebugRedirect from './LegacyDebugRedirect.tsx';
 import RadioDebugPage from './radios/RadioDebugPage.tsx';
+import RadioDebugRedirect from './radios/RadioDebugRedirect.tsx';
 import DebugGate from './DebugGate.tsx';
 import DebugD890EraseProbePage from './DebugD890EraseProbePage.tsx';
 import DebugIndexPage from './DebugIndexPage.tsx';
@@ -18,7 +19,8 @@ import DebugUv5rMiniPage from './DebugUv5rMiniPage.tsx';
  */
 export const debugRoutes: RouteObject[] = [
   { path: '/debug', element: <DebugIndexPage /> },
-  { path: '/debug/radios/:radio', element: <RadioDebugPage /> },
+  { path: '/debug/radios/:radio', element: <RadioDebugRedirect /> },
+  { path: '/debug/radios/:radio/:firmware', element: <RadioDebugPage /> },
   { path: '/debug/indexed-db/*', element: <LegacyDebugRedirect /> },
   { path: '/debug/local-storage/*', element: <LegacyDebugRedirect /> },
   { path: '/debug/serial-reopen', element: <LegacyDebugRedirect /> },

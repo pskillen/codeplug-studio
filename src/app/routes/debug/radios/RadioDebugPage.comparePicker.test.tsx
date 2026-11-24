@@ -5,16 +5,18 @@ import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import RadioDebugPage from './RadioDebugPage.tsx';
 import { getDebugReadHistory } from './debugReadHistory.ts';
 import { exampleArchive } from './debugReadHistory.fixture.ts';
-import { radioDebugDescriptors } from './descriptors.ts';
+import { debugRadioPath, radioDebugDescriptors } from './descriptors.ts';
 
 const withCapture = radioDebugDescriptors.filter((descriptor) => descriptor.capture);
 
 function open(slug: string) {
   render(
-    <MemoryRouter initialEntries={[`/debug/radios/${slug}`]}>
+    <MemoryRouter
+      initialEntries={[debugRadioPath(radioDebugDescriptors.find((d) => d.slug === slug)!)!]}
+    >
       <DesignSystemV2Provider>
         <Routes>
-          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+          <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
         </Routes>
       </DesignSystemV2Provider>
     </MemoryRouter>,

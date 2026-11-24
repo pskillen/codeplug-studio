@@ -34,8 +34,14 @@ import { rt95SettingsView } from '@integrations/radio-io/radios/rt95/debugSettin
 import { atD890SettingsView } from '@integrations/radio-io/radios/at-d890uv/debugSettingsView.ts';
 import type {
   CalibrationView,
+  DebugFirmwareFamily,
   DebugIdentityRows,
   SettingsView,
+} from '@integrations/radio-io/debugView/index.ts';
+import {
+  DEBUG_FIRMWARE_LABEL,
+  DEBUG_FIRMWARE_ORDER,
+  isDebugFirmwareFamily,
 } from '@integrations/radio-io/debugView/index.ts';
 import { rt95CalibrationView } from '@integrations/radio-io/radios/rt95/debugCalibrationView.ts';
 import { Rt95MemoryView } from './Rt95Memory.tsx';
@@ -129,6 +135,11 @@ export interface RadioDebugExtraHexRegion {
 /** Selected profiles describe expectations, never observed radio identity. */
 export interface RadioDebugDescriptor {
   slug: string;
+  /** URL key for the hardware model; every descriptor of one radio shares it and its `model`. */
+  radio: string;
+  firmware: DebugFirmwareFamily;
+  /** Other paths that show this descriptor's read history; the undownloaded-reads guard covers them too. */
+  alsoGuards?: readonly string[];
   model: string;
   archiveModelId: string;
   capture?: RadioDebugCapture;
@@ -222,6 +233,8 @@ export const capabilityColor = (status: RadioDebugCapabilityStatus) =>
 export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   {
     slug: 'at-d890uv',
+    radio: 'at-d890uv',
+    firmware: 'stock',
     // Hooked here, not in atD890Compare.ts: the snapshot's imports reach back into this module.
     compare: { ...atD890CompareAdapter, decoded: atD890DecodedSnapshot },
     Memory: AtD890Memory,
@@ -242,6 +255,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-32uv',
+    radio: 'dm-32uv',
+    firmware: 'stock',
     compare: dm32CompareAdapter,
     Memory: Dm32Memory,
     coverage: dm32Coverage,
@@ -260,41 +275,17 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'dm-32uv-radiofoundry',
+    radio: 'dm-32uv',
+    firmware: 'radiofoundry',
     model: 'DM-32UV',
     archiveModelId: 'DM-32UV-RadioFoundry',
     family: 'RadioFoundry',
     capabilities: unavailable,
   },
   {
-    slug: 'dm-1701-radiofoundry',
-    model: 'DM-1701',
-    archiveModelId: 'DM-1701-RadioFoundry',
-    family: 'RadioFoundry',
-    capabilities: unavailable,
-  },
-  {
-    slug: 'rt84-radiofoundry',
-    model: 'RT84',
-    archiveModelId: 'RT84-RadioFoundry',
-    family: 'RadioFoundry',
-    capabilities: unavailable,
-  },
-  {
-    slug: 'md-9600-radiofoundry',
-    model: 'MD-9600',
-    archiveModelId: 'MD-9600-RadioFoundry',
-    family: 'RadioFoundry',
-    capabilities: unavailable,
-  },
-  {
-    slug: 'rt90-radiofoundry',
-    model: 'RT90',
-    archiveModelId: 'RT90-RadioFoundry',
-    family: 'RadioFoundry',
-    capabilities: unavailable,
-  },
-  {
     slug: 'dm-1701-opengd77',
+    radio: 'dm-1701',
+    firmware: 'opengd77',
     compare: openGd77CompareAdapter,
     calibration: openGd77CalibrationView,
     Memory: OpenGd77Memory,
@@ -313,7 +304,18 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     readNotice: OPENGD77_READ_NOTICE,
   },
   {
+    slug: 'dm-1701-radiofoundry',
+    radio: 'dm-1701',
+    firmware: 'radiofoundry',
+    model: 'DM-1701',
+    archiveModelId: 'DM-1701-RadioFoundry',
+    family: 'RadioFoundry',
+    capabilities: unavailable,
+  },
+  {
     slug: 'md-9600-opengd77',
+    radio: 'md-9600',
+    firmware: 'opengd77',
     compare: openGd77CompareAdapter,
     calibration: openGd77CalibrationView,
     Memory: OpenGd77Memory,
@@ -332,7 +334,36 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     readNotice: OPENGD77_READ_NOTICE,
   },
   {
+    slug: 'md-9600-radiofoundry',
+    radio: 'md-9600',
+    firmware: 'radiofoundry',
+    model: 'MD-9600',
+    archiveModelId: 'MD-9600-RadioFoundry',
+    family: 'RadioFoundry',
+    capabilities: unavailable,
+  },
+  {
+    slug: 'rt84-radiofoundry',
+    radio: 'rt84',
+    firmware: 'radiofoundry',
+    model: 'RT84',
+    archiveModelId: 'RT84-RadioFoundry',
+    family: 'RadioFoundry',
+    capabilities: unavailable,
+  },
+  {
+    slug: 'rt90-radiofoundry',
+    radio: 'rt90',
+    firmware: 'radiofoundry',
+    model: 'RT90',
+    archiveModelId: 'RT90-RadioFoundry',
+    family: 'RadioFoundry',
+    capabilities: unavailable,
+  },
+  {
     slug: 'rt95',
+    radio: 'rt95',
+    firmware: 'stock',
     compare: rt95CompareAdapter,
     Memory: Rt95MemoryView,
     coverage: rt95Coverage,
@@ -352,6 +383,8 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'uv-21-pro-v2',
+    radio: 'uv-21-pro-v2',
+    firmware: 'stock',
     model: 'UV-21 Pro V2',
     archiveModelId: 'UV-21Pro V2',
     family: 'Stock family',
@@ -359,6 +392,9 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
   },
   {
     slug: 'uv-5r-mini',
+    radio: 'uv-5r-mini',
+    firmware: 'stock',
+    alsoGuards: ['/debug/uv5r-mini'],
     compare: uv5rMiniCompareAdapter,
     Memory: Uv5rMiniMemory,
     coverage: uv5rMiniCoverage,
@@ -377,6 +413,60 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     capabilities: capabilities('Available', 'Partial', 'Partial'),
   },
 ];
+
+export function descriptorForPair(
+  radio: string,
+  firmware: string,
+): RadioDebugDescriptor | undefined {
+  if (!isDebugFirmwareFamily(firmware)) return undefined;
+  return radioDebugDescriptors.find((d) => d.radio === radio && d.firmware === firmware);
+}
+
+/** Every descriptor of one radio, in DEBUG_FIRMWARE_ORDER. Empty for an unknown radio. */
+export function firmwaresOf(radio: string): readonly RadioDebugDescriptor[] {
+  const matches = radioDebugDescriptors.filter((d) => d.radio === radio);
+  const order = new Map(DEBUG_FIRMWARE_ORDER.map((f, i) => [f, i]));
+  return [...matches].sort((a, b) => order.get(a.firmware)! - order.get(b.firmware)!);
+}
+
+/** One entry per radio, in first-appearance order of the array. */
+export function debugRadios(): readonly {
+  radio: string;
+  model: string;
+  firmwares: readonly RadioDebugDescriptor[];
+}[] {
+  const seen = new Map<
+    string,
+    { radio: string; model: string; firmwares: RadioDebugDescriptor[] }
+  >();
+  for (const d of radioDebugDescriptors) {
+    let entry = seen.get(d.radio);
+    if (!entry) {
+      entry = { radio: d.radio, model: d.model, firmwares: [] };
+      seen.set(d.radio, entry);
+    }
+    entry.firmwares.push(d);
+  }
+  const order = new Map(DEBUG_FIRMWARE_ORDER.map((f, i) => [f, i]));
+  return [...seen.values()].map((entry) => ({
+    ...entry,
+    firmwares: [...entry.firmwares].sort((a, b) => order.get(a.firmware)! - order.get(b.firmware)!),
+  }));
+}
+
+/** An old pair slug (exact `slug` match wins) or a bare radio key (its first firmware). */
+export function resolveLegacyDebugSlug(
+  slugOrRadio: string,
+): { radio: string; firmware: DebugFirmwareFamily } | undefined {
+  const bySlug = radioDebugDescriptors.find((d) => d.slug === slugOrRadio);
+  if (bySlug) return { radio: bySlug.radio, firmware: bySlug.firmware };
+  const firmwares = firmwaresOf(slugOrRadio);
+  if (!firmwares.length) return undefined;
+  return { radio: firmwares[0]!.radio, firmware: firmwares[0]!.firmware };
+}
+
+export const debugRadioPath = (d: Pick<RadioDebugDescriptor, 'radio' | 'firmware'>) =>
+  `/debug/radios/${d.radio}/${d.firmware}`;
 
 /** The page's tab labels, in order: Settings follows Memory for a radio that has a Settings view. */
 export const radioDebugTabs = (descriptor: Pick<RadioDebugDescriptor, 'settings'>): string[] => [

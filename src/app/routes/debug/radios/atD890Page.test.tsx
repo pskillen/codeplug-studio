@@ -5,6 +5,7 @@ import { getDebugReadHistory } from './debugReadHistory.ts';
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
 import RadioDebugPage from './RadioDebugPage.tsx';
+import { debugRadioPath, radioDebugDescriptors } from './descriptors.ts';
 
 afterEach(() =>
   act(() => getDebugReadHistory({ slug: 'at-d890uv', archiveModelId: 'AT-D890UV' }).clear()),
@@ -48,10 +49,10 @@ it('shows captured identity and retains an opened archive after a failed replace
     { 'debug/ident.bin': ident },
   );
   render(
-    <MemoryRouter initialEntries={['/debug/radios/at-d890uv']}>
+    <MemoryRouter initialEntries={['/debug/radios/at-d890uv/stock']}>
       <DesignSystemV2Provider>
         <Routes>
-          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+          <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
         </Routes>
       </DesignSystemV2Provider>
     </MemoryRouter>,
@@ -83,10 +84,10 @@ it('offers keyboard-focusable capture and cancel controls at narrow width and re
       ),
   );
   render(
-    <MemoryRouter initialEntries={['/debug/radios/at-d890uv']}>
+    <MemoryRouter initialEntries={['/debug/radios/at-d890uv/stock']}>
       <DesignSystemV2Provider>
         <Routes>
-          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+          <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
         </Routes>
       </DesignSystemV2Provider>
     </MemoryRouter>,
@@ -154,10 +155,12 @@ function d890Zip(capturedAt: string, trim: number | undefined) {
 
 const renderAt = (slug: string) =>
   render(
-    <MemoryRouter initialEntries={[`/debug/radios/${slug}`]}>
+    <MemoryRouter
+      initialEntries={[debugRadioPath(radioDebugDescriptors.find((d) => d.slug === slug)!)!]}
+    >
       <DesignSystemV2Provider>
         <Routes>
-          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+          <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
         </Routes>
       </DesignSystemV2Provider>
     </MemoryRouter>,

@@ -26,7 +26,7 @@ import {
   OPENGD77_DM1701_MODEL_ID,
   OPENGD77_MD9600_MODEL_ID,
 } from '@integrations/radio-io/radios/opengd77/hydration.ts';
-import { radioDebugDescriptors } from './descriptors.ts';
+import { debugRadioPath, radioDebugDescriptors } from './descriptors.ts';
 import { openDebugArchive } from './captureArchive.ts';
 import { syntheticOpenGd77Archive } from './opengd77.fixture.ts';
 
@@ -67,12 +67,15 @@ vi.mock('@app/services/uv5rMiniDebugRead.ts', () => ({
   grantUv5rMiniDebugPort: vi.fn(async () => ({})),
   runUv5rMiniDebugFullRead: fake.run,
 }));
+const pathForSlug = (slug: string) =>
+  debugRadioPath(radioDebugDescriptors.find((d) => d.slug === slug)!);
+
 function open(slug = 'uv-5r-mini') {
   const view = render(
-    <MemoryRouter initialEntries={[`/debug/radios/${slug}`]}>
+    <MemoryRouter initialEntries={[pathForSlug(slug)]}>
       <DesignSystemV2Provider>
         <Routes>
-          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+          <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
         </Routes>
       </DesignSystemV2Provider>
     </MemoryRouter>,
@@ -80,12 +83,33 @@ function open(slug = 'uv-5r-mini') {
   fireEvent.click(screen.getByRole('tab', { name: 'Backup' }));
   return view;
 }
+it('shows missing-firmware links for MD-9600 stock', () => {
+  render(
+    <MemoryRouter initialEntries={['/debug/radios/md-9600/stock']}>
+      <Routes>
+        <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  expect(
+    screen.getByRole('heading', { name: 'MD-9600 has no Stock / MM9PDY page' }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'OpenGD77' })).toHaveAttribute(
+    'href',
+    '/debug/radios/md-9600/opengd77',
+  );
+  expect(screen.getByRole('link', { name: 'RadioFoundry' })).toHaveAttribute(
+    'href',
+    '/debug/radios/md-9600/radiofoundry',
+  );
+});
+
 describe('dark scope', () => {
   it('renders the whole page, header and tab bodies, inside a dark .dsv2-scope', () => {
     render(
-      <MemoryRouter initialEntries={['/debug/radios/uv-5r-mini']}>
+      <MemoryRouter initialEntries={['/debug/radios/uv-5r-mini/stock']}>
         <Routes>
-          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+          <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
         </Routes>
       </MemoryRouter>,
     );
@@ -141,10 +165,10 @@ it('retains a late successful capture after unmount and shows it on return', asy
       }),
   );
   const page = render(
-    <MemoryRouter initialEntries={['/debug/radios/uv-5r-mini']}>
+    <MemoryRouter initialEntries={['/debug/radios/uv-5r-mini/stock']}>
       <DesignSystemV2Provider>
         <Routes>
-          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+          <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
         </Routes>
       </DesignSystemV2Provider>
     </MemoryRouter>,
@@ -545,7 +569,7 @@ it('keeps the direct RT95 calibration route behind the production debug gate', a
   fake.prod = true;
   localStorage.removeItem(DEVELOPER_MODE_KEY);
   const router = createMemoryRouter([gatedDebugRoute, { path: '/', element: <div>Home</div> }], {
-    initialEntries: ['/debug/radios/rt95'],
+    initialEntries: ['/debug/radios/rt95/stock'],
   });
   const view = render(
     <DesignSystemV2Provider>
@@ -557,7 +581,7 @@ it('keeps the direct RT95 calibration route behind the production debug gate', a
   view.unmount();
   localStorage.setItem(DEVELOPER_MODE_KEY, 'on');
   const allowed = createMemoryRouter([gatedDebugRoute, { path: '/', element: <div>Home</div> }], {
-    initialEntries: ['/debug/radios/rt95'],
+    initialEntries: ['/debug/radios/rt95/stock'],
   });
   render(
     <DesignSystemV2Provider>
@@ -661,10 +685,10 @@ it('retains comparison uploads in shared history for other viewers and download 
   const file = new File([Uint8Array.from(bytes)], 'reads.zip');
   Object.defineProperty(file, 'arrayBuffer', { value: async () => Uint8Array.from(bytes).buffer });
   const page = render(
-    <MemoryRouter initialEntries={['/debug/radios/uv-5r-mini']}>
+    <MemoryRouter initialEntries={['/debug/radios/uv-5r-mini/stock']}>
       <DesignSystemV2Provider>
         <Routes>
-          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+          <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
         </Routes>
       </DesignSystemV2Provider>
     </MemoryRouter>,
@@ -1105,7 +1129,7 @@ it('keeps the OpenGD77 pages behind the production debug gate', async () => {
   localStorage.removeItem(DEVELOPER_MODE_KEY);
   for (const [slug] of OG77_PAGES) {
     const router = createMemoryRouter([gatedDebugRoute, { path: '/', element: <div>Home</div> }], {
-      initialEntries: [`/debug/radios/${slug}`],
+      initialEntries: [pathForSlug(slug)],
     });
     const view = render(
       <DesignSystemV2Provider>
