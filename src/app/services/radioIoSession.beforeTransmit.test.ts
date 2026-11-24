@@ -31,8 +31,13 @@ import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protoc
 import type { CloneImageRadio, MemoryMap, RadioSession } from '@integrations/radio-io/types.ts';
 import { reviewNeedsReconnect } from '@integrations/radio-io/programHold.ts';
 import { RadioTimeoutError } from '@integrations/radio-io/kit/errors.ts';
+import type { ChannelModeProfile } from '@core/models/library.ts';
+import type { LibrarySlice } from '@core/services/assemble.ts';
 import {
+  ATD890_NXDN_NOT_WRITTEN_NOTICE,
+  ATD890_RESET_PROTOCOL_OFF_NOTICE,
   closeRadioSession,
+  prepareRadioWriteImage,
   RadioWriteBlockedError,
   uploadPreparedRadioWrite,
   type BeforeTransmitContext,
@@ -379,6 +384,159 @@ describe('uploadPreparedRadioWrite beforeTransmit', () => {
     expect(err).toBe(timeout);
     expect((err as RadioTimeoutError).sent).toBe('nothing-sent');
   });
+});
+
+const NXDN: ChannelModeProfile = {
+  mode: 'nxdn',
+  rxRan: 7,
+  txRan: 5,
+  ownDigitalIdId: null,
+  contactRef: null,
+  rxGroupListId: null,
+  nxdnRate: 'nxdn96',
+};
+const DMR: ChannelModeProfile = {
+  mode: 'dmr',
+  dmrMode: null,
+  colourCode: 3,
+  timeslot: 2,
+  ownDigitalIdId: null,
+  contactRef: null,
+  rxGroupListId: null,
+  sendTalkerAlias: 'default',
+};
+
+function nxdnChannel(id: string, rxHz: number, profiles: ChannelModeProfile[]) {
+  return {
+    ...newChannel('p1', id),
+    id,
+    rxFrequency: rxHz,
+    txFrequency: rxHz,
+    power: 100,
+    modeProfiles: profiles,
+  };
+}
+
+function nxdnLibrary(): LibrarySlice {
+  const channels = [
+    nxdnChannel('both', 430_125_000, [DMR, NXDN]),
+    nxdnChannel('only', 430_250_000, [NXDN]),
+  ];
+  return {
+    channels,
+    zones: [
+      {
+        ...newZone('p1', 'Z'),
+        id: 'z',
+        members: channels.map((c) => ({ kind: 'channel' as const, channelId: c.id })),
+      },
+    ],
+    scanLists: [],
+    talkGroups: [],
+    digitalContacts: [],
+    analogContacts: [],
+    rxGroupLists: [],
+    aprsConfiguration: null,
+  };
+}
+
+function atD890SettingsStoreRecord(enabled: number): Uint8Array {
+  const r = new Uint8Array(32).fill(0);
+  r[0] = 0x4d;
+  r[1] = 0x36;
+  r[2] = 1;
+  r[21] = enabled;
+  let sum = 0;
+  for (let i = 0; i < 31; i++) sum += r[i]!;
+  r[31] = sum & 0xff;
+  return r;
+}
+
+async function d890SessionForNxdnGate(
+  store: Uint8Array | null,
+  resetProtocol = 0,
+): Promise<{ session: RadioSession; pipe: AtD890ScriptedPipe }> {
+  const pipe = new AtD890ScriptedPipe();
+  scriptAtD890ConnectWithNegotiation(pipe);
+  const radio = new AtD890uvProtocol();
+  await radio.connect(pipe);
+  const unit348 = makeAtD890EraseUnitBuffer();
+  unit348[D890_MAP.AlarmBitmap - 0x348_0000] = 0xab;
+  unit348[D890_MAP.AlarmData - 0x348_0000] = 0xcd;
+  const unit350 = makeAtD890EraseUnitBuffer();
+  unit350.fill(0, 0, 0x1400);
+  unit350[0x154] = resetProtocol;
+  scriptAtD890UploadReadResponder(
+    pipe,
+    new Map([
+      [0x350_0000, unit350],
+      [D890_MAP.LocalInfo, localInfoWithSerial(SERIAL)],
+      [0x100_0000, makeAtD890EraseUnitBuffer()],
+      [0x348_0000, unit348],
+    ]),
+  );
+  const channelSet = new Uint8Array(0x200);
+  setBitmapBit(channelSet, 0, true);
+  const primary = new Uint8Array(0x40);
+  primary.set(encodeBcdFrequencyHz(145_520_000), 0);
+  const blocks = new Map<number, Uint8Array>([
+    [D890_MAP.LocalInfo, localInfoWithSerial(SERIAL)],
+    [D890_MAP.ChannelSet, channelSet],
+    [channelPrimaryAddress(0), primary],
+    [channelSecondaryAddress(0), new Uint8Array(0x40)],
+    [AT_D890_SAFE_SKIP_WRITE_ADDR, new Uint8Array(0x10)],
+  ]);
+  if (store) {
+    blocks.set(D890_MAP.SettingsStore, store.slice(0, 16));
+    blocks.set(D890_MAP.SettingsStore + 16, store.slice(16, 32));
+  }
+  const resetBlock = new Uint8Array(16);
+  resetBlock[0x154 % 16] = resetProtocol;
+  blocks.set(0x350_0150, resetBlock);
+  radio.seedDownloadCache({ blocks });
+  enableAtD890AutoWriteAck(pipe);
+  return { session: { descriptor: AT_D890UV_DESCRIPTOR, pipe, radio }, pipe };
+}
+
+describe('uploadPreparedRadioWrite beforeTransmit — AT-D890 NXDN gate', () => {
+  it('NXDN not written reaches the pause as a radio warning', async () => {
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv-mm9pdy');
+    const library = nxdnLibrary();
+    const prepared = await prepareRadioWriteImage(build, egress, library);
+    expect(prepared.nxdn).toBeDefined();
+
+    let nxdnCtx: BeforeTransmitContext | undefined;
+    const disabled = await d890SessionForNxdnGate(atD890SettingsStoreRecord(0));
+    await uploadPreparedRadioWrite(disabled.session, egress, prepared.image, {
+      organisation: prepared.organisation,
+      channels: prepared.channels,
+      ...(prepared.nxdn ? { nxdn: prepared.nxdn, warnings: prepared.warnings } : {}),
+      beforeTransmit: async (ctx) => {
+        nxdnCtx = ctx;
+      },
+    });
+    await closeRadioSession(disabled.session);
+    const nxdnNotice = nxdnCtx!.radioWarnings?.find(
+      (w) => w.kind === 'general' && w.message === ATD890_NXDN_NOT_WRITTEN_NOTICE,
+    );
+    expect(nxdnNotice?.severity).toBe('problem');
+
+    let resetCtx: BeforeTransmitContext | undefined;
+    const enabled = await d890SessionForNxdnGate(atD890SettingsStoreRecord(1), 2);
+    await uploadPreparedRadioWrite(enabled.session, egress, prepared.image, {
+      organisation: prepared.organisation,
+      channels: prepared.channels,
+      ...(prepared.nxdn ? { nxdn: prepared.nxdn, warnings: prepared.warnings } : {}),
+      beforeTransmit: async (ctx) => {
+        resetCtx = ctx;
+      },
+    });
+    await closeRadioSession(enabled.session);
+    const resetNotice = resetCtx!.radioWarnings?.find(
+      (w) => w.kind === 'general' && w.message === ATD890_RESET_PROTOCOL_OFF_NOTICE,
+    );
+    expect(resetNotice?.severity).toBe('info');
+  }, 40_000);
 });
 
 describe('reviewNeedsReconnect', () => {
