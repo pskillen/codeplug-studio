@@ -169,7 +169,7 @@ export default function AtD890AirSecuritySeedCard({ egress }: AtD890AirSecurityS
         <TextInput
           label="AirSecurity seed"
           type="password"
-          autoComplete="off"
+          autoComplete="new-password"
           placeholder={PLACEHOLDER}
           value={text}
           error={reason !== null}

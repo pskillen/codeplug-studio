@@ -88,7 +88,7 @@ describe('AtD890AirSecuritySeedCard', () => {
     renderCard();
     const input = seedField();
     expect(input).toHaveAttribute('type', 'password');
-    expect(input).toHaveAttribute('autocomplete', 'off');
+    expect(input).toHaveAttribute('autocomplete', 'new-password');
     expect(input).toHaveAttribute('placeholder', 'Paste the Selfcare text or the otpauth:// link');
     expect(screen.getByText('Not checked')).toBeInTheDocument();
     expect(screen.getByText(ENTRY_WARNING)).toBeInTheDocument();

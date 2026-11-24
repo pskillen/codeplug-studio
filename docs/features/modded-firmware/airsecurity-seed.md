@@ -28,4 +28,4 @@ That check uses the bytes the backup already holds. Studio does not read the rad
 
 ## What Studio never stores
 
-The paste and the parsed bytes live only in the seed section. They are wiped after Write seed, after Clear seed, and on leaving the page. They are not written to browser storage, the project, a build override, the settings session, a URL, the console, or an error message. A backup file can still hold the record, which is why both warnings are there.
+The paste and the parsed bytes live only in the seed section. They are wiped after Write seed, after Clear seed, and on leaving the page. They are not written to browser storage, the project, a build override, the settings session, a URL, the console, or an error message. A backup file can still hold the record, which is why both warnings are there. The pasted text stays on the system clipboard, which Studio cannot clear.

@@ -18,7 +18,7 @@ Brandmeister AirSecurity on the MM9PDY AT-D890UV radio settings page. The operat
 
 ## Behaviour
 
-- **Field.** Label **AirSecurity seed**. Placeholder _Paste the Selfcare text or the otpauth:// link_. `type="password"`, `autoComplete="off"`, no reveal control.
+- **Field.** Label **AirSecurity seed**. Placeholder _Paste the Selfcare text or the otpauth:// link_. `type="password"`, `autoComplete="new-password"`, no reveal control.
 - **State.** **Not checked** until Check radio. Then **Seed set** or **No seed**. After Write seed the state is **Seed set** without reading the radio again. After Clear seed it is **No seed**.
 - **Buttons.** **Check radio**, **Write seed**, **Clear seed**. Each opens its own session (port grant first, then open, close in `finally`) and closes it. Write seed stays off until the paste is accepted. A bad paste shows the refusal and does not repeat the text. A radio error shows that error's message.
 - **Warning.** Always: _Backups contain the seed. Clearing the seed does not remove it from backups you have already taken._ After a write: _Seed written. The radio restarts; wait about 20 seconds._ After a clear: _Seed cleared. The radio restarts; wait about 20 seconds._
