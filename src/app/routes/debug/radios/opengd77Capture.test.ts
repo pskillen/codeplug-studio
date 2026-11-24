@@ -4,6 +4,7 @@ import {
   OPENGD77_DM1701_MODEL_ID,
   OPENGD77_MD9600_MODEL_ID,
 } from '@integrations/radio-io/radios/opengd77/hydration.ts';
+import { debugOpenPort } from '@integrations/radio-io/debugHandoff.ts';
 import { archiveOpenGd77Capture, captureOpenGd77 } from './opengd77Capture.ts';
 import { syntheticOpenGd77Archive, syntheticOpenGd77Capture } from './opengd77.fixture.ts';
 
@@ -101,5 +102,14 @@ describe('captureOpenGd77', () => {
   it('rejects an unknown model without opening a port', async () => {
     await expect(captureOpenGd77('NOT-A-RADIO')()).rejects.toThrow(/No radio descriptor/);
     expect(transport.baud).toEqual([]);
+  });
+
+  it('reuses a handed-over port and skips requesting Web Serial', async () => {
+    transport.pipe = new OpenGd77ScriptedPipe(0x08);
+    const port = debugOpenPort(transport.pipe, 'web-serial', 115_200);
+    const baudBefore = transport.baud.length;
+    await captureOpenGd77(OPENGD77_DM1701_MODEL_ID)({ port, keepPortOnWrongFirmware: true });
+    expect(transport.baud).toEqual([]);
+    expect(transport.baud.length).toBe(baudBefore);
   });
 });

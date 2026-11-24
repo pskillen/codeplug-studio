@@ -95,6 +95,7 @@ import { radioFoundryArchiveSensitiveRanges } from '@integrations/radio-io/radio
 import { radioFoundrySettingsView } from '@integrations/radio-io/radios/radiofoundry/debugSettingsView.ts';
 import { radioFoundryCompareAdapter } from '@integrations/radio-io/radios/radiofoundry/debugCompare.ts';
 import { RadioFoundryMemory } from './RadioFoundryMemory.tsx';
+import type { DebugOpenPort } from '@integrations/radio-io/debugHandoff.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
 
 export type DebugCalibrationProps = { archive?: DebugArchive; overlayArchive?: DebugArchive };
@@ -107,6 +108,10 @@ export type RadioDebugCapture = (opts?: {
   signal?: AbortSignal;
   onProgress?: ProgressFn;
   options?: RadioDebugCaptureOptions;
+  /** Use this open transport instead of requesting a new port; the capture owns closing it. */
+  port?: DebugOpenPort;
+  /** Leave the serial port open when the other firmware is detected on a read. */
+  keepPortOnWrongFirmware?: boolean;
 }) => Promise<DebugArchive>;
 
 /** A tick box on the Backup tab that changes what Read radio reads. Unticked by default. */

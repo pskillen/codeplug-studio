@@ -16,6 +16,12 @@ import {
   Text,
   Title,
 } from '@mantine/core';
+import {
+  DebugWrongFirmwareError,
+  type DebugOpenPort,
+} from '@integrations/radio-io/debugHandoff.ts';
+import { parseRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
+import { getRadioDescriptor } from '@integrations/radio-io/registry.ts';
 import { useEffect, useRef, useState } from 'react';
 import { radioBackupFileName } from '@app/services/radioBackupRead.ts';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
@@ -58,6 +64,7 @@ import { getDebugReadHistory, useDebugReadHistory } from './debugReadHistory.ts'
 import { DebugReadHistoryControls } from './DebugReadHistoryControls.tsx';
 import { isDebugReadHistoryZip, openDebugReadHistoryZip } from './debugReadHistoryArchive.ts';
 import { resolveRadioDebugTabValue } from './radioDebugTabValue.ts';
+import { WrongFirmwareNotice } from './WrongFirmwareNotice.tsx';
 
 export function RadioNotFound() {
   return (
@@ -110,6 +117,50 @@ export default function RadioDebugPage() {
 
   const tabIds = radioDebugTabs(descriptor).map((tab) => tab.toLowerCase());
   const tabValue = resolveRadioDebugTabValue(activeTab, tabIds);
+  const [handoff, setHandoff] = useState<{
+    error: DebugWrongFirmwareError;
+    startedAt: number;
+  }>();
+  const [portClosedMessage, setPortClosedMessage] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState<number>();
+  const [portRead, setPortRead] = useState<DebugOpenPort>();
+  const handoffRef = useRef(handoff);
+  handoffRef.current = handoff;
+
+  const handoffTarget =
+    handoff && handoff.error.found !== 'unknown'
+      ? descriptorForPair(radio!, handoff.error.found)
+      : undefined;
+  const stockSibling = firmwaresOf(radio!).find((d) => d.firmware === 'stock');
+  const portOpen = !!(handoff?.error.port && !portClosedMessage);
+
+  useEffect(() => {
+    return () => {
+      void handoffRef.current?.error.port?.close();
+    };
+  }, [radio]);
+
+  useEffect(() => {
+    if (!handoff?.error.port || portClosedMessage) return;
+    const tick = () => {
+      const left = Math.max(0, 60 - Math.floor((Date.now() - handoff.startedAt) / 1000));
+      setSecondsLeft(left);
+      if (left <= 0) {
+        void handoff.error.port?.close();
+        setPortClosedMessage(true);
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [handoff, portClosedMessage]);
+
+  const closeHandoff = async () => {
+    await handoff?.error.port?.close();
+    setHandoff(undefined);
+    setPortClosedMessage(false);
+    setSecondsLeft(undefined);
+  };
 
   return (
     <DesignSystemV2Provider key={radio} scheme="dark">
@@ -128,9 +179,37 @@ export default function RadioDebugPage() {
             disabled={reading}
             onChange={(next) => {
               const target = firmwaresOf(radio!).find((d) => d.firmware === next);
-              if (target) navigate(debugRadioPath(target));
+              if (target) {
+                void closeHandoff();
+                navigate(debugRadioPath(target));
+              }
             }}
           />
+          {handoff ? (
+            <WrongFirmwareNotice
+              error={handoff.error}
+              target={handoffTarget}
+              stockSibling={stockSibling}
+              portOpen={portOpen}
+              secondsLeft={secondsLeft}
+              portClosedMessage={portClosedMessage}
+              onSwitchAndRead={() => {
+                if (!handoffTarget || !handoff.error.port) return;
+                const port = handoff.error.port;
+                setHandoff(undefined);
+                setPortClosedMessage(false);
+                setSecondsLeft(undefined);
+                setPortRead(port);
+                navigate(debugRadioPath(handoffTarget));
+              }}
+              onSwitchOnly={async (fw) => {
+                await closeHandoff();
+                const target = firmwaresOf(radio!).find((d) => d.firmware === fw);
+                if (target) navigate(debugRadioPath(target));
+              }}
+              onClose={() => void closeHandoff()}
+            />
+          ) : null}
           <RadioDebugProfile
             key={descriptor.slug}
             descriptor={descriptor}
@@ -138,7 +217,15 @@ export default function RadioDebugPage() {
             onTabChange={setActiveTab}
             reading={reading}
             onReadingChange={setReading}
-            onFirmwareSwitch={(next) => {
+            onWrongFirmware={(error) => {
+              setHandoff({ error, startedAt: Date.now() });
+              setPortClosedMessage(false);
+              setSecondsLeft(60);
+            }}
+            portReadRequest={portRead}
+            onPortReadConsumed={() => setPortRead(undefined)}
+            onFirmwareSwitch={async (next) => {
+              await closeHandoff();
               const target = firmwaresOf(radio!).find((d) => d.firmware === next);
               if (target) navigate(debugRadioPath(target));
             }}
@@ -155,6 +242,9 @@ function RadioDebugProfile({
   onTabChange,
   reading,
   onReadingChange,
+  onWrongFirmware,
+  portReadRequest,
+  onPortReadConsumed,
   onFirmwareSwitch,
 }: {
   descriptor: RadioDebugDescriptor;
@@ -162,8 +252,12 @@ function RadioDebugProfile({
   onTabChange: (tab: string | null) => void;
   reading: boolean;
   onReadingChange: (reading: boolean) => void;
-  onFirmwareSwitch: (firmware: DebugFirmwareFamily) => void;
+  onWrongFirmware: (error: DebugWrongFirmwareError) => void;
+  portReadRequest?: DebugOpenPort;
+  onPortReadConsumed: () => void;
+  onFirmwareSwitch: (firmware: DebugFirmwareFamily) => void | Promise<void>;
 }) {
+  const navigate = useNavigate();
   const historyEnabled = descriptor.readHistory === true;
   const store = getDebugReadHistory(descriptor);
   const history = useDebugReadHistory(store);
@@ -192,6 +286,10 @@ function RadioDebugProfile({
   // Keyed `${slug}:${optionId}` so a tick on one radio never carries to another.
   const [captureOptions, setCaptureOptions] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string>();
+  const [archiveSwitch, setArchiveSwitch] = useState<{
+    sibling: RadioDebugDescriptor;
+    bytes: Uint8Array;
+  }>();
   const { held: screenHeld } = useScreenWakeLock(reading);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const controller = useRef<AbortController | null>(null);
@@ -214,6 +312,17 @@ function RadioDebugProfile({
       try {
         next = openDebugArchive(bytes, descriptor.archiveModelId);
       } catch (error) {
+        if (error instanceof Error && error.message.includes('does not match')) {
+          const parsed = parseRadioBackupZip(bytes);
+          const sibling = firmwaresOf(descriptor.radio).find((d) =>
+            getRadioDescriptor(d.archiveModelId)?.modelIds.includes(parsed.manifest.radioModelId),
+          );
+          if (sibling) {
+            setArchiveSwitch({ sibling, bytes });
+            setError(undefined);
+            return;
+          }
+        }
         // Only a ZIP that is not a backup archive at all may be the radio's older format; every other
         // failure (model mismatch, damaged capture) keeps its own message.
         const legacy = descriptor.openLegacyArchive?.(bytes);
@@ -232,7 +341,10 @@ function RadioDebugProfile({
       setError(err instanceof Error ? err.message : 'Could not open archive.');
     }
   };
-  const readRadio = async () => {
+  const runCapture = async (extra?: {
+    port?: DebugOpenPort;
+    keepPortOnWrongFirmware?: boolean;
+  }) => {
     if (!descriptor.capture || controller.current) return;
     onReadingChange(true);
     controller.current = new AbortController();
@@ -247,8 +359,9 @@ function RadioDebugProfile({
             captureOptions[`${descriptor.slug}:${option.id}`] === true,
           ]),
         ),
+        port: extra?.port,
+        keepPortOnWrongFirmware: extra?.keepPortOnWrongFirmware,
       });
-      // A capture with no notes is stored exactly as the capture path produced it.
       const labelled = Object.keys(normaliseBackupLabels(captureLabels)).length
         ? relabelDebugArchive(result, captureLabels)
         : result;
@@ -256,13 +369,27 @@ function RadioDebugProfile({
         store.add(labelled);
       } else setArchive(labelled);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Radio read failed.');
+      if (err instanceof DebugWrongFirmwareError) {
+        onWrongFirmware(err);
+      } else {
+        setError(err instanceof Error ? err.message : 'Radio read failed.');
+      }
     } finally {
       controller.current = null;
       onReadingChange(false);
       setProgress(null);
     }
   };
+  const readRadio = () => runCapture({ keepPortOnWrongFirmware: true });
+
+  useEffect(() => {
+    if (!portReadRequest) return;
+    void runCapture({
+      port: portReadRequest,
+      keepPortOnWrongFirmware: true,
+    }).finally(onPortReadConsumed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot handoff per port object
+  }, [portReadRequest]);
   return (
     <>
       <Group>
@@ -274,6 +401,27 @@ function RadioDebugProfile({
           )}
         </FileButton>
       </Group>
+      {archiveSwitch ? (
+        <Alert color="blue" title={`This is a ${DEBUG_FIRMWARE_LABEL[archiveSwitch.sibling.firmware]} read.`}>
+          <Stack gap="xs">
+            <Text size="sm">Open it on the matching firmware page.</Text>
+            <Button
+              onClick={() => {
+                const next = openDebugArchive(
+                  archiveSwitch.bytes,
+                  archiveSwitch.sibling.archiveModelId,
+                );
+                if (historyEnabled) store.importArchives([next]);
+                else setArchive({ ...next, source: 'file', zipBytes: archiveSwitch.bytes });
+                setArchiveSwitch(undefined);
+                navigate(debugRadioPath(archiveSwitch.sibling));
+              }}
+            >
+              Switch to {DEBUG_FIRMWARE_LABEL[archiveSwitch.sibling.firmware]} and open it
+            </Button>
+          </Stack>
+        </Alert>
+      ) : null}
       {error && (
         <Alert color="red" title="Operation failed">
           {error}
