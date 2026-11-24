@@ -17,8 +17,7 @@ const CHECKSUM_BYTES_PER_BLOCK = 760;
 export function planRadioFoundryStages(op: RadioOperation, ctx: RadioPlanContext): PlannedStage[] {
   if (op !== 'write') return [];
   const radio = ctx.session?.radio;
-  const counts =
-    radio && isRadioFoundryCableRadio(radio) ? radio.plannedBlockCounts() : null;
+  const counts = radio && isRadioFoundryCableRadio(radio) ? radio.plannedBlockCounts() : null;
   if (!counts) {
     const servedBlocks = READ_BYTES / BLOCK_SIZE;
     return [

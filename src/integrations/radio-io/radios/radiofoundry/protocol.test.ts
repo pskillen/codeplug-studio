@@ -1379,7 +1379,7 @@ describe('RadioFoundry write progress plan', () => {
     await proto.connect(pipe);
     proto.armWriteSource(source);
     const plan = planRadioFoundryStages('write', {
-      session: { radio: proto, pipe } as RadioSession,
+      session: { radio: proto, pipe } as unknown as RadioSession,
     });
     const checksumBlocks = SERVED_BLOCKS + 4;
     expect(plan[0]!.weight).toBe(checksumBlocks * CHECKSUM_BYTES_PER_BLOCK);
@@ -1391,7 +1391,9 @@ describe('RadioFoundry write progress plan', () => {
 describe('RadioFoundry SUMS pacing', () => {
   it('reports block-count progress during checksums', async () => {
     const pipe = new ScriptedPipe(0xff);
-    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD, { pause: async () => {} });
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD, {
+      pause: async () => {},
+    });
     await proto.connect(pipe);
     const addresses = sumsProgressAddresses();
     const progress: Array<{ cur: number; max: number; stage: string }> = [];
@@ -1400,7 +1402,10 @@ describe('RadioFoundry SUMS pacing', () => {
         readSums: (
           addresses: number[],
           signal?: AbortSignal,
-          progress?: { onProgress?: (p: { cur: number; max: number; stage: string }) => void; stage?: string },
+          progress?: {
+            onProgress?: (p: { cur: number; max: number; stage: string }) => void;
+            stage?: string;
+          },
         ) => Promise<unknown>;
       }
     ).readSums(addresses, undefined, {
@@ -1410,7 +1415,9 @@ describe('RadioFoundry SUMS pacing', () => {
     const max = addresses.length;
     expect(max).toBe(48);
     expect(progress.map((row) => row.cur)).toEqual([16, 32, 48]);
-    expect(progress.every((row) => row.max === max && row.stage === BLOCK_CHECKSUMS_STAGE)).toBe(true);
+    expect(progress.every((row) => row.max === max && row.stage === BLOCK_CHECKSUMS_STAGE)).toBe(
+      true,
+    );
   });
 
   it('pauses between SUMS runs but not after the last', async () => {
