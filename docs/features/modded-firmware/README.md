@@ -34,10 +34,11 @@ Wire layouts stay in the stock radio docs: [AT-D890UV](../../reference/radios/an
 
 ## Documentation map
 
-| Doc                                               | Topic                               |
-| ------------------------------------------------- | ----------------------------------- |
-| [builds](../builds/README.md)                     | Radio targets, nav, export settings |
-| [radio-read-write](../radio-read-write/README.md) | Web Serial write path               |
+| Doc                                               | Topic                                          |
+| ------------------------------------------------- | ---------------------------------------------- |
+| [airsecurity-seed](airsecurity-seed.md)           | Brandmeister AirSecurity seed on the AT-D890UV |
+| [builds](../builds/README.md)                     | Radio targets, nav, export settings            |
+| [radio-read-write](../radio-read-write/README.md) | Web Serial write path                          |
 
 ## Write rules
 

@@ -4,7 +4,8 @@
  * byte 2 version, one byte per setting, byte 31 the 8-bit sum of bytes 0-30.
  *
  * Studio only reads it, never writes it: it is the one place that says whether the radio
- * reports NXDN enabled, which gates every NXDN byte of a Write.
+ * reports NXDN enabled, which gates every NXDN byte of a Write. Studio does write the
+ * AirSecurity seed record that sits next to it at `+0x220`; it still never writes `M6`.
  */
 
 import { D890_MAP } from './constants.ts';
