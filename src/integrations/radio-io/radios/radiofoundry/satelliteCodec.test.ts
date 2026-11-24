@@ -240,4 +240,59 @@ describe('packRadioFoundrySatellites', () => {
     expect(preview[0]!.transmitterId).toBe(makeTransmitter().id);
     expect(preview[0]!.slot).toBe('fm');
   });
+
+  it('skips an excluded satellite in count, pack, preview and skipped lists', () => {
+    const sat = makeSatellite({ id: 'sat-excl' });
+    const opts: RadioFoundryKepsOptions = {
+      ...OPTIONS,
+      satelliteOverrides: [{ libraryEntityId: 'sat-excl', excluded: true }],
+    };
+    expect(countRadioFoundryWriteSatellites([sat], opts)).toBe(0);
+    expect(packRadioFoundrySatellites([sat], opts).records).toHaveLength(0);
+    expect(previewRadioFoundrySatelliteWriteRecords([sat], opts)).toHaveLength(0);
+    expect(radioFoundrySkippedSatellites([sat], opts)).toHaveLength(0);
+  });
+
+  it('skips an excluded transmitter and picks the next FM candidate', () => {
+    const tx1 = makeTransmitter({ id: 'tx-a', label: 'Primary' });
+    const tx2 = makeTransmitter({ id: 'tx-b', label: 'Alternate', uplinkHz: 145_900_000 });
+    const tx3 = makeTransmitter({ id: 'tx-c', label: 'Extra', uplinkHz: 145_880_000 });
+    const sat = makeSatellite({ transmitters: [tx1, tx2, tx3] });
+    const opts: RadioFoundryKepsOptions = {
+      ...OPTIONS,
+      satelliteOverrides: [{ libraryEntityId: 'tx-a', excluded: true }],
+    };
+    const packed = packRadioFoundrySatellites([sat], opts);
+    expect(packed.profiles[0]!.txHz).toBe(145_900_000);
+    expect(radioFoundrySkippedTransmitters([sat], opts)).toEqual([
+      {
+        satelliteId: sat.id,
+        transmitterId: 'tx-c',
+        reason: 'Not chosen: RadioFoundry stores one frequency pair per satellite.',
+      },
+    ]);
+  });
+
+  it('writes nothing for a satellite whose only FM transmitter is excluded', () => {
+    const sat = makeSatellite({ id: 'sat-only-tx' });
+    const opts: RadioFoundryKepsOptions = {
+      ...OPTIONS,
+      satelliteOverrides: [{ libraryEntityId: 'tx-1', excluded: true }],
+    };
+    expect(countRadioFoundryWriteSatellites([sat], opts)).toBe(0);
+    expect(packRadioFoundrySatellites([sat], opts).records).toHaveLength(0);
+    expect(radioFoundrySkippedTransmitters([sat], opts)).toHaveLength(0);
+  });
+
+  it('an override row with excluded false changes nothing', () => {
+    const satellites = [makeSatellite()];
+    const opts: RadioFoundryKepsOptions = {
+      ...OPTIONS,
+      satelliteOverrides: [{ libraryEntityId: 'sat-1', excluded: false }],
+    };
+    expect(countRadioFoundryWriteSatellites(satellites, opts)).toBe(
+      countRadioFoundryWriteSatellites(satellites, OPTIONS),
+    );
+    expect(packRadioFoundrySatellites(satellites, opts).records.length).toBe(1);
+  });
 });

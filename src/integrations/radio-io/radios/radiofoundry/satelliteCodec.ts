@@ -3,7 +3,7 @@
 import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
-import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
+import { isEntityExcluded, overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
 import { isTransmitterWriteEligible } from '@core/domain/satellite/transmitterWriteEligibility.ts';
 import { shortenSatelliteNames } from '@core/domain/satellite/shortenSatelliteNames.ts';
 import { RADIOFOUNDRY_LIMITS, type RadioFoundryBand } from '@core/radios/radiofoundry/limits.ts';
@@ -48,9 +48,11 @@ function isAllowedRadioFoundryNameChar(c: string): boolean {
 function listCandidates(
   satellite: Satellite,
   bands: readonly RadioFoundryBand[],
+  satelliteOverrides?: readonly BuildEntityOverride[],
 ): SatelliteTransmitter[] {
   const out: SatelliteTransmitter[] = [];
   for (const tx of satellite.transmitters) {
+    if (isEntityExcluded(satelliteOverrides, tx.id)) continue;
     if (!isTransmitterWriteEligible(satellite, tx)) continue;
     if (radioFoundryTransmitterProblem(tx, bands) !== null) continue;
     out.push(tx);
@@ -82,9 +84,10 @@ function resolveWriteRow(
   satellite: Satellite,
   options: RadioFoundryKepsOptions,
 ): ResolvedWriteRow | null {
+  if (isEntityExcluded(options.satelliteOverrides, satellite.id)) return null;
   if (!satellite.enabled) return null;
   if (radioFoundrySatelliteProblem(satellite) !== null) return null;
-  const candidates = listCandidates(satellite, options.bands);
+  const candidates = listCandidates(satellite, options.bands, options.satelliteOverrides);
   const winner = pickFmWinner(candidates, options.satelliteOverrides);
   if (!winner) return null;
   return { satellite, winner, candidates };
@@ -146,7 +149,10 @@ export function radioFoundrySkippedSatellites(
 ): { satelliteId: string; reason: string }[] {
   const writtenIds = new Set(resolveWritten(satellites, options).map((r) => r.satellite.id));
   return satellites
-    .filter((s) => s.enabled && !writtenIds.has(s.id))
+    .filter(
+      (s) =>
+        s.enabled && !writtenIds.has(s.id) && !isEntityExcluded(options.satelliteOverrides, s.id),
+    )
     .map((s) => ({
       satelliteId: s.id,
       reason: skippedSatelliteReason(s, options.bands),
@@ -161,6 +167,7 @@ export function radioFoundrySkippedTransmitters(
   const out: RadioFoundrySkippedTransmitter[] = [];
   for (const row of resolveWritten(satellites, options)) {
     for (const tx of row.satellite.transmitters) {
+      if (isEntityExcluded(options.satelliteOverrides, tx.id)) continue;
       if (!isTransmitterWriteEligible(row.satellite, tx)) continue;
       if (tx.id === row.winner.id) continue;
       const problem = radioFoundryTransmitterProblem(tx, options.bands);
