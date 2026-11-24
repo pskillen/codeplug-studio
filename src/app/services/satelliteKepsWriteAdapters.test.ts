@@ -355,6 +355,21 @@ describe('keps capacity and write checks', () => {
     ]);
   });
 
+  it('TLE-age warning is info, not a problem', () => {
+    const now = new Date('2024-01-15T12:00:00Z');
+    const satellites = [
+      makeSatellite({
+        name: 'ISS',
+        epoch: '2024-01-01T00:00:00Z',
+        transmitters: [makeTransmitter()],
+      }),
+    ];
+    const checks = kepsWriteChecks('radio-io-at-d890uv', satellites, undefined, now);
+    expect(checks.warnings).toEqual([
+      expect.objectContaining({ kind: 'general', severity: 'info' }),
+    ]);
+  });
+
   it('no TLE-age warning at 13 days', () => {
     const now = new Date('2024-01-14T00:00:00Z');
     const satellites = [

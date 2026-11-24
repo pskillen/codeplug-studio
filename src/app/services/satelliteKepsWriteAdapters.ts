@@ -4,7 +4,11 @@
  */
 
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
-import { pushGeneralWarning, pushKepsExcludedWarning } from '@core/import-export/exportWarning.ts';
+import {
+  pushGeneralInfoWarning,
+  pushGeneralWarning,
+  pushKepsExcludedWarning,
+} from '@core/import-export/exportWarning.ts';
 import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
 import { isRadioFoundryRadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
@@ -304,7 +308,7 @@ export function kepsWriteChecks(
   if (stale.length > 0) {
     const oldest = stale.reduce((a, b) => (b.days > a.days ? b : a));
     const countLabel = stale.length === 1 ? '1 satellite has' : `${stale.length} satellites have`;
-    pushGeneralWarning(
+    pushGeneralInfoWarning(
       warnings,
       `${countLabel} orbit data 14 or more days old; the oldest, ${oldest.satellite.name}, is ${oldest.days} days old. Refresh keps in the library before writing.`,
     );
