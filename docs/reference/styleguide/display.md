@@ -127,7 +127,7 @@ For a **single long editor form** with several distinct panels (not app-level pr
 
 ## Export and write warnings
 
-Problems open, notes folded — one component (`WarningsList` in the Write and export flows). **Full** mode on Write step 1 (build checks) and file export; **problems** on Review; **recap** on Done; **chip** when space is tight. Live demos: `/styleguide` → Feedback → Warnings list.
+Problems open, notes folded — one component (`WarningsList` in the Write and export flows). **Full** mode on Write step 1 (build checks) and file export; **problems** on Review; **recap** on Done; **chip** when space is tight. In the Write dialog, step 1 uses full, Review uses problems, Done uses recap. Live demos: `/styleguide` → Feedback → Warnings list.
 
 ## Neutral-default segmented controls
 

@@ -12,6 +12,8 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 
 **MM9PDY modded firmware** uses the same AT-D890UV (and, when shipped, DM-32UV) Web Serial codecs as the stock targets. The radio target changes what is assembled — one channel per repeater, zone as the scan — not a second encoder. An AT-D890UV MM9PDY Write with no zone-derived lists still writes one scan list containing the first channel so the occupancy bitmap is not empty. See [modded firmware](../modded-firmware/README.md).
 
+While the Write dialog is open, Studio prepares the build and shows **Build checks** on step 1 (the same projection is reused on **Read & write**). Review stops when the build or the radio reports a **problem** warning; notes alone do not. Done shows a folded recap. See [import-export — Problems and notes](../import-export/README.md#problems-and-notes).
+
 AT-D890UV debug memory dumps and read-only probes check the LocalInfo stun and kill flags immediately before sending END. If either flag is set or the check fails, Studio skips END and asks the operator to power-cycle the radio. A failed or cancelled debug read may also leave the radio in programming mode; power-cycle it before continuing.
 
 RT95 clone writes protect the production identity and factory calibration region and its chip-size aliases. MM9PDY data writes require a passing chip-size check; unknown clone commands are refused. See [RT95 limits](../../reference/radios/retevis/rt95/limits.md).
