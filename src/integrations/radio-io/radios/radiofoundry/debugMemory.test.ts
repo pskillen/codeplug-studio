@@ -20,8 +20,9 @@ describe('reassembleRadioFoundryImage', () => {
 
   it('returns undefined when flash-image is missing', () => {
     const archive = radioFoundryMemoryFixtureArchive();
-    const { [RADIOFOUNDRY_REGION.flash]: _, ...rest } = archive.regions;
-    expect(reassembleRadioFoundryImage({ ...archive, regions: rest })).toBeUndefined();
+    const regions = { ...archive.regions };
+    delete regions[RADIOFOUNDRY_REGION.flash];
+    expect(reassembleRadioFoundryImage({ ...archive, regions })).toBeUndefined();
   });
 });
 
@@ -44,8 +45,9 @@ describe('projectRadioFoundryMemory', () => {
 
   it('reports not-captured when flash-image is missing', () => {
     const archive = radioFoundryMemoryFixtureArchive();
-    const { [RADIOFOUNDRY_REGION.flash]: _, ...rest } = archive.regions;
-    const view = projectRadioFoundryMemory({ ...archive, regions: rest });
+    const regions = { ...archive.regions };
+    delete regions[RADIOFOUNDRY_REGION.flash];
+    const view = projectRadioFoundryMemory({ ...archive, regions });
     expect(view).toEqual({
       status: 'not-captured',
       reason: 'The flash-image region was not captured.',
