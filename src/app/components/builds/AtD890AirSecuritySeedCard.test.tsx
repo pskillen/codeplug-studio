@@ -174,6 +174,37 @@ describe('AtD890AirSecuritySeedCard', () => {
     expect(screen.getByText(DMR_WARNING)).toBeInTheDocument();
   });
 
+  it('zeros the parsed seed when the card unmounts', () => {
+    let seed: Uint8Array | null = null;
+    let before: number[] = [];
+    const fill = vi.spyOn(Uint8Array.prototype, 'fill').mockImplementation(function (
+      this: Uint8Array,
+      value: number,
+      start?: number,
+      end?: number,
+    ) {
+      if (this.length === SEED.length && value === 0) {
+        before = Array.from(this);
+        seed = this;
+      }
+      const from = start ?? 0;
+      const to = end ?? this.length;
+      for (let i = from; i < to; i++) this[i] = value;
+      return this;
+    });
+    try {
+      const view = renderCard();
+      fireEvent.change(seedField(), { target: { value: GOOD } });
+      expect(seed).toBeNull();
+      view.unmount();
+      expect(seed).not.toBeNull();
+      expect(before).toEqual(Array.from(SEED));
+      expect(Array.from(seed!)).toEqual(Array.from(new Uint8Array(SEED.length)));
+    } finally {
+      fill.mockRestore();
+    }
+  });
+
   it('keeps the seed bytes the write was given when the card unmounts mid-write', async () => {
     let received: Uint8Array | null = null;
     let release: () => void = () => {};
