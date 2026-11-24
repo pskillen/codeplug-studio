@@ -17,10 +17,6 @@ import {
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
-import {
-  isAtD890RadioIoProfileId,
-  isRt95RadioIoProfileId,
-} from '@core/import-export/formatProfiles.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { Satellite } from '@core/models/satellite.ts';
@@ -34,15 +30,6 @@ import {
   type WriteErrorPhase,
 } from '../../../services/egress/writeErrorOutcome.ts';
 import { reviewNeedsReconnect } from '@integrations/radio-io/programHold.ts';
-import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
-import {
-  decodeAtD890RadioSettings,
-  languageLockFromLocalInfo,
-  mm9pdyStepKeyOverrides,
-} from '@integrations/radio-io/radios/at-d890uv/index.ts';
-import { isAtD890MasterIdSelected } from '@integrations/radio-io/radios/at-d890uv/masterIdCodec.ts';
-import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
-import { d890DownloadStages } from '@integrations/radio-io/radios/at-d890uv/plannedStages.ts';
 import type {
   PlannedStage,
   ProgressUpdate,
@@ -59,35 +46,17 @@ import { loadLibrarySlice } from '../../../lib/loadLibrarySlice.ts';
 import { createProgressCoalescer, type ProgressCoalescer } from '../../../lib/progressCoalescer.ts';
 import { persistence } from '../../../state/persistence.ts';
 import {
-  clearOverride,
-  defaultSettingsChoice,
-  getAtD890RadioSettingsSession,
-  isSettingsReadRadio,
-  overridesForWrite,
-  setOverride,
-  setRead,
-  setStepperTicks,
-} from '../../../state/atD890RadioSettingsSession.ts';
-import {
-  getRt95RadioSettingsSession,
-  overridesForWrite as rt95OverridesForWrite,
-  setRead as setRt95Read,
-} from '../../../state/rt95RadioSettingsSession.ts';
-import { addBackupThisSession, findBackupForSerial } from '../../../state/radioSessionBackups.ts';
-import {
-  packAtD890BackupFromSession,
-  downloadRadioBackupZip,
-} from '../../../services/radioBackupRestore.ts';
-import {
   clearInterruptedWriteWarning,
   interruptedWriteNotice,
+  type InterruptedWriteNotice,
 } from '../../../services/radioIoInterruptedWrite.ts';
-import type { AtD890PendingBlock } from '@integrations/radio-io/radios/at-d890uv/pendingUnits.ts';
-import { getAtD890SessionSerial } from '@integrations/radio-io/radios/at-d890uv/programSession.ts';
-import { atD890SettingsReadFromSnapshot } from '../../../services/radioIoAtD890SettingsRead.ts';
-import { writeAtD890SettingsOnly } from '../../../services/radioIoAtD890SettingsWrite.ts';
-import { writeRt95SettingsOnly } from '../../../services/radioIoRt95SettingsWrite.ts';
-import { rt95SettingsReadFromSnapshot } from '../../../services/radioIoRt95SettingsRead.ts';
+import {
+  radioSettingsPartFor,
+  radioWriteExtrasFor,
+  type RadioSettingsPartDeps,
+  type SettingsOnlyReviewContext,
+  type SettingsReviewController,
+} from '../../../services/egress/radioSettingsParts.ts';
 import {
   closeRadioSession,
   grantRadioSerialPortForEgress,
@@ -113,27 +82,10 @@ import {
 } from '../../../services/writeVerifyStorage.ts';
 import {
   satelliteKepsCapacityWarning,
-  type SatelliteKepsWriteFn,
   type SatelliteKepsWriteResult,
 } from '../../../services/satelliteKepsWriteAdapters.ts';
 import './d890/registerAtD890Review.tsx';
 import './rt95/registerRt95Review.tsx';
-import {
-  createAtD890ReviewController,
-  type AtD890ReviewController,
-} from './d890/atD890ReviewController.ts';
-import {
-  createRt95ReviewController,
-  defaultRt95SettingsChoice,
-  isRt95SettingsReadRadio,
-  type Rt95ReviewController,
-} from './rt95/rt95ReviewController.ts';
-import {
-  atD890ReceiveOnlyChannels,
-  atD890ReviewRange,
-  atD890SettingChanges,
-} from './d890/atD890ReviewFacts.ts';
-import { rt95SettingChanges } from './rt95/rt95ReviewFacts.ts';
 import { reviewPauseReasons, reviewSectionsFor } from './reviewSections.tsx';
 import {
   newTrack,
@@ -244,8 +196,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     activeProjectId,
     onOpenSettingsPage,
   } = args;
-  const isAtD890 = isAtD890RadioIoProfileId(egress.profileId);
-  const isRt95 = isRt95RadioIoProfileId(egress.profileId);
+  const settingsPart = radioSettingsPartFor(egress.profileId);
+  const writeExtras = radioWriteExtrasFor(egress.profileId);
   const shellOptions = useMemo(
     () => resolveWriteShellOptions(egress, descriptor),
     [egress, descriptor],
@@ -266,7 +218,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const [errorOutcome, setErrorOutcome] = useState<WriteErrorOutcome | null>(null);
   const [retryLabel, setRetryLabel] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [pendingBlock, setPendingBlock] = useState<AtD890PendingBlock | null>(null);
+  const [pendingBlock, setPendingBlock] = useState<InterruptedWriteNotice['block'] | null>(null);
   const [reconnecting, setReconnecting] = useState(false);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   // Stage lists (4a's cursor): one track per list, kept in a ref so no event is lost between renders.
@@ -441,8 +393,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const satellitesRef = useRef<Satellite[]>([]);
   const settingsAppliedRef = useRef<number | null>(null);
   const reviewUnsubscribeRef = useRef<(() => void) | null>(null);
-  const d890ControllerRef = useRef<AtD890ReviewController | null>(null);
-  const rt95ControllerRef = useRef<Rt95ReviewController | null>(null);
+  const settingsControllerRef = useRef<SettingsReviewController | null>(null);
   const partsRef = useRef(parts);
   const contactSourceRef = useRef(contactSource);
   useEffect(() => {
@@ -610,7 +561,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     lastStageRef.current = undefined;
     autoProceedRef.current = false;
     settingsAppliedRef.current = null;
-    d890ControllerRef.current = null;
+    settingsControllerRef.current = null;
     reviewUnsubscribeRef.current?.();
     reviewUnsubscribeRef.current = null;
     setPhaseBoth('read');
@@ -679,28 +630,25 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       readMs,
     );
     const writeOnly = writePartOfPlan(ctx.plan, readPlanRef.current);
-    if (ctx.atD890) {
-      d890ControllerRef.current = buildD890Controller(ctx.atD890, ctx.channels ?? [], p);
-    } else {
-      d890ControllerRef.current = null;
-    }
-    if (ctx.rt95Settings) {
-      rt95ControllerRef.current = buildRt95Controller(ctx.rt95Settings, p);
-    } else {
-      rt95ControllerRef.current = null;
-    }
+    const tx = ctx as BeforeTransmitContext;
+    const settingsDeps = settingsPartDeps();
+    settingsControllerRef.current = settingsPart
+      ? settingsPart.createReviewController(tx, ctx.channels ?? [], settingsDeps)
+      : null;
     updateWriteTrack((t) => trackWithPlan(t, writeOnly));
     const estimateSeconds = ctx.identityOnly
       ? null
       : estimateWriteSeconds(writeOnly, rate, descriptor?.nominalBytesPerSecond);
-    const mergedRt95 =
-      rt95ControllerRef.current || extra.rt95?.modData
-        ? {
-            ...(extra.rt95?.modData ? { modData: extra.rt95.modData } : {}),
-            ...(rt95ControllerRef.current ? { settings: rt95ControllerRef.current } : {}),
-          }
-        : undefined;
-    const tx = ctx as BeforeTransmitContext;
+    let radioBindings: Record<string, unknown> = {};
+    if (settingsControllerRef.current && settingsPart) {
+      radioBindings = settingsPart.reviewSectionBindings(
+        settingsControllerRef.current,
+        tx,
+        extra.rt95?.modData,
+      );
+    } else if (extra.rt95?.modData) {
+      radioBindings = { rt95: extra.rt95 };
+    }
     const sectionsCtx = {
       identity: ctx.identity,
       parts: p,
@@ -713,8 +661,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       buildWarnings: buildWarningsRef.current,
       radioWarnings: tx.radioWarnings ?? [],
       channelLabel,
-      ...(mergedRt95 ? { rt95: mergedRt95 } : {}),
-      ...(d890ControllerRef.current ? { atD890: d890ControllerRef.current } : {}),
+      ...radioBindings,
     };
     // Read and write in one go unless Review shows something the user must act on (#1638). The
     // user already chose to write on step 1 (Read & write); nothing has been sent yet.
@@ -726,9 +673,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       return Promise.resolve();
     }
     const reviewDisabled = () => {
-      if (d890ControllerRef.current && !d890ControllerRef.current.canWrite()) return true;
-      if (rt95ControllerRef.current && !rt95ControllerRef.current.canWrite()) return true;
-      return false;
+      const c = settingsControllerRef.current;
+      return Boolean(c && !c.canWrite());
     };
     setReview({
       channelCount: ctx.channelCount,
@@ -740,23 +686,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       writeDisabled: reviewDisabled(),
       effectiveParts: effectivePartsFor(p),
     });
-    const controller = d890ControllerRef.current;
-    const rt95Controller = rt95ControllerRef.current;
+    const controller = settingsControllerRef.current;
     reviewUnsubscribeRef.current?.();
     if (controller) {
       // Keep the footer's Write button in step with the choice (settings alone with Keep writes nothing).
       reviewUnsubscribeRef.current = controller.subscribe(() => {
-        // Read the refs now, not in the updater: React runs updaters at render time, after any
-        // pending effects, and the effect that mirrors `parts` into partsRef can still hold the
-        // ticks from before this change.
-        const update = {
-          writeDisabled: reviewDisabled(),
-          effectiveParts: effectivePartsFor(partsRef.current),
-        };
-        setReview((r) => (r ? { ...r, ...update } : r));
-      });
-    } else if (rt95Controller) {
-      reviewUnsubscribeRef.current = rt95Controller.subscribe(() => {
         const update = {
           writeDisabled: reviewDisabled(),
           effectiveParts: effectivePartsFor(partsRef.current),
@@ -774,156 +708,90 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     });
   }
 
-  /** The D890 Review's live state: range, receive-only channels, settings choice and backup. */
-  function buildD890Controller(
-    atCtx: AtD890PreTransmitContext,
-    channels: readonly RadioChannelDto[],
-    p: WriteParts,
-  ): AtD890ReviewController {
-    const store = getAtD890RadioSettingsSession(build.id);
-    const sameRadio = isSettingsReadRadio(store, atCtx.serial);
-    const existing = findBackupForSerial(build.id, atCtx.serial);
-    const fullReadHeld = atCtx.downloadCache !== undefined;
-    const download = estimateWriteSeconds(d890DownloadStages(), null);
-    const controller: AtD890ReviewController = createAtD890ReviewController({
+  function settingsPartDeps(): RadioSettingsPartDeps {
+    return {
       buildId: build.id,
-      serial: atCtx.serial,
-      masterIdName: atCtx.masterIdName,
-      masterIdSelected: isAtD890MasterIdSelected(atCtx.snapshot.masterId),
-      ...(atCtx.nxdnOwnIdLabel !== undefined ? { nxdnOwnIdLabel: atCtx.nxdnOwnIdLabel } : {}),
-      range: atD890ReviewRange(atCtx.snapshot),
-      receiveOnly: atD890ReceiveOnlyChannels(channels, atCtx.snapshot.bandCode),
-      snapshot: atCtx.snapshot,
-      target: atCtx.target,
-      decoded: decodeAtD890RadioSettings(atCtx.snapshot, atCtx.target),
-      languageLock: languageLockFromLocalInfo(atCtx.snapshot.localInfo),
-      getOverrides: () => overridesForWrite(build.id),
-      onClearLanguage: () => clearOverride(build.id, 'language'),
-      initialSettingsTicked: p.settings,
-      sameRadio,
-      applyToEveryRadio: store.applyToEveryRadio,
-      settingsOnly: p.settings && !writesToRadioImage(p),
-      fullReadHeld,
-      readRestSeconds: download == null ? null : Math.round(download / 5) * 5,
-      initialChoice: defaultSettingsChoice(store, atCtx.serial),
-      initialBackup: existing ? { status: 'saved', at: existing.at } : { status: 'none' },
-      onSaveBackup: () => void saveD890Backup(atCtx, () => controller),
-      onReviewSettings: () => {
-        setRead(build.id, atD890SettingsReadFromSnapshot(atCtx.snapshot, atCtx.target, now()));
-        decisionRef.current?.reject(new ReviewSettingsRequestedError());
-      },
-      onUseStepKeys: () => {
-        for (const o of mm9pdyStepKeyOverrides()) setOverride(build.id, o.fieldId, o.value);
-        const next = { ...partsRef.current, settings: true };
+      egress,
+      now,
+      getParts: () => partsRef.current,
+      setParts: (next) => {
         partsRef.current = next;
         setParts(next);
-        // Asking for the keys is asking for them to be written: Use implies Apply, even on another
-        // radio where Keep is preselected (70- §2.4; the user's latest action wins).
-        controller.setChoice('apply');
-        controller.setSettingsTicked(true);
       },
-    });
-    return controller;
-  }
-
-  function buildRt95Controller(rtCtx: Rt95PreTransmitContext, p: WriteParts): Rt95ReviewController {
-    const store = getRt95RadioSettingsSession(build.id);
-    const sameRadio = isRt95SettingsReadRadio(store.read?.bandlimit, rtCtx.bandlimit);
-    const existing = findBackupForSerial(build.id, String(rtCtx.bandlimit));
-    return createRt95ReviewController({
-      buildId: build.id,
-      bandlimit: rtCtx.bandlimit,
-      snapshot: rtCtx.snapshot,
-      target: rtCtx.target,
-      getOverrides: () => rt95OverridesForWrite(build.id),
-      initialSettingsTicked: p.settings,
-      sameRadio,
-      settingsOnly: p.settings && !writesToRadioImage(p),
-      initialChoice: defaultRt95SettingsChoice(store.read?.bandlimit, rtCtx.bandlimit),
-      initialBackup: existing ? { status: 'saved', at: existing.at } : { status: 'none' },
-      onReviewSettings: () => {
-        setRt95Read(build.id, rt95SettingsReadFromSnapshot(rtCtx.snapshot, egress, now()));
+      requestReviewSettings: () => {
         decisionRef.current?.reject(new ReviewSettingsRequestedError());
       },
-    });
+      getSession: () => sessionRef.current,
+      getSignal: () => abortRef.current?.signal,
+      getDescriptor: () => descriptor,
+      onSettingsPlan: (plan) => {
+        readStartRef.current = now();
+        if (plan?.length) {
+          updateWriteTrack((t) => trackWithPlan(t, plan));
+        }
+      },
+    };
   }
 
-  /** Review's "Save backup now": the zip of the read this Write already did (same format as Backup). */
-  async function saveD890Backup(
-    atCtx: AtD890PreTransmitContext,
-    controller: () => AtD890ReviewController,
-  ): Promise<void> {
-    const session = sessionRef.current;
-    const c = controller();
-    if (!session) return;
-    try {
-      let cache = atCtx.downloadCache;
-      if (!cache) {
-        c.setBackup({ status: 'reading' });
-        await session.radio.download({ signal: abortRef.current?.signal });
-        cache =
-          session.radio instanceof AtD890uvProtocol
-            ? (session.radio.getDownloadCache() ?? undefined)
-            : undefined;
-      }
-      c.setBackup({ status: 'saving' });
-      const packed = packAtD890BackupFromSession(session, cache ? { cache } : undefined);
-      downloadRadioBackupZip(packed.zipBytes, packed.manifest);
-      const at = now();
-      addBackupThisSession(build.id, {
-        serial: atCtx.serial,
-        model: session.descriptor.label,
-        name: atCtx.masterIdName,
-        at,
-      });
-      c.setBackup({ status: 'saved', at });
-    } catch (err) {
-      c.setBackup({ status: 'error', message: errorMessage(err) });
-    }
-  }
-
-  /**
-   * What the pause decides about the settings: Apply (with the overrides as they stand now) only
-   * when Radio settings is ticked, there are overrides, and the choice is Apply; otherwise Keep.
-   */
-  function settingsPauseResult(): AtD890PreTransmitResult | Rt95PreTransmitResult {
-    if (!settingsWillBeWritten()) return 'keep';
-    const overrides = isAtD890 ? overridesForWrite(build.id) : rt95OverridesForWrite(build.id);
-    return { decision: 'apply', overrides };
-  }
-
-  /** Radio settings is ticked, there are overrides, and the choice is Apply. */
   function settingsWillBeWritten(): boolean {
-    const c = d890ControllerRef.current ?? rt95ControllerRef.current;
-    if (!c) return false;
-    const state = c.getState();
-    const overrides = isAtD890 ? overridesForWrite(build.id) : rt95OverridesForWrite(build.id);
-    return state.settingsTicked && state.choice === 'apply' && overrides.length > 0;
+    const c = settingsControllerRef.current;
+    if (!c || !settingsPart) return false;
+    return settingsPart.settingsWillBeWritten(c, build.id);
+  }
+
+  function settingsPauseResult():
+    | AtD890PreTransmitResult
+    | Rt95PreTransmitResult {
+    const c = settingsControllerRef.current;
+    if (!c || !settingsPart) return 'keep';
+    return settingsPart.pauseResult(
+      c,
+      build.id,
+      settingsWillBeWritten(),
+    ) as AtD890PreTransmitResult | Rt95PreTransmitResult;
   }
 
   /** The ticked parts, minus settings when the pause would answer Keep (the button names what is sent). */
   function effectivePartsFor(p: WriteParts): WriteParts {
-    const c = d890ControllerRef.current ?? rt95ControllerRef.current;
+    const c = settingsControllerRef.current;
     if (!c || !p.settings || settingsWillBeWritten()) return p;
     return { ...p, settings: false };
   }
 
-  /** How many fields the applied settings changed on this radio (for the Done screen). */
-  function changedCount(): number {
-    const d890 = d890ControllerRef.current;
-    if (d890) {
-      return atD890SettingChanges(d890.init.snapshot, d890.init.target, overridesForWrite(build.id))
-        .length;
+  function appliedSettingsCount(): number {
+    const c = settingsControllerRef.current;
+    if (!c || !settingsPart) return 0;
+    return settingsPart.changedCount(c, build.id);
+  }
+
+  async function awaitReviewFromSettings(ctx: SettingsOnlyReviewContext): Promise<void> {
+    if ('atD890' in ctx) {
+      const atCtx = ctx.atD890;
+      await awaitReview(
+        {
+          identity: {
+            model: sessionRef.current?.descriptor.label ?? '',
+            serial: atCtx.serial,
+          },
+          channelCount: 0,
+          identityOnly: false,
+          ...(ctx.settingsPlan ? { plan: ctx.settingsPlan } : {}),
+          atD890: atCtx,
+        },
+        { contactsNote: null, kepsCount: null },
+      );
+      return;
     }
-    const rt95 = rt95ControllerRef.current;
-    if (rt95) {
-      return rt95SettingChanges(
-        rt95.init.snapshot,
-        rt95.init.target,
-        rt95OverridesForWrite(build.id),
-      ).length;
-    }
-    return 0;
+    await awaitReview(
+      {
+        identity: { model: sessionRef.current?.descriptor.label ?? '' },
+        channelCount: 0,
+        identityOnly: false,
+        ...(ctx.settingsPlan ? { plan: ctx.settingsPlan } : {}),
+        rt95Settings: ctx.rt95Settings,
+      },
+      { contactsNote: null, kepsCount: null },
+    );
   }
 
   /** After Review → Write: refuse to transmit on a session the radio may have dropped. */
@@ -1072,10 +940,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
           ...(image.nxdn ? { nxdn: image.nxdn, warnings: image.warnings } : {}),
           ...(image.radioFoundryWrite ? { radioFoundryWrite: image.radioFoundryWrite } : {}),
           parts: p,
-          ...(isAtD890 && p.settings ? { settingsOverrides: overridesForWrite(build.id) } : {}),
-          ...(isRt95 && p.settings
-            ? { rt95SettingsOverrides: rt95OverridesForWrite(build.id) }
-            : {}),
+          ...(p.settings && settingsPart ? settingsPart.uploadOptions(build.id) : {}),
           beforeTransmit: async (txCtx: BeforeTransmitContext) => {
             await awaitReview(
               {
@@ -1105,7 +970,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
             enterWriting();
             if (!txCtx.atD890 && !txCtx.rt95Settings) return undefined;
             const decision = settingsPauseResult();
-            if (typeof decision !== 'string') settingsAppliedRef.current = changedCount();
+            if (typeof decision !== 'string') settingsAppliedRef.current = appliedSettingsCount();
             return decision;
           },
         });
@@ -1118,43 +983,24 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
           warnings: [...(result.projectionWarnings ?? image.warnings), ...(result.warnings ?? [])],
           writeTimings: result.timings ?? null,
         };
-        await afterUpload(session, p, signal, result.writeVerifyPending);
+        await afterUpload(
+          session,
+          p,
+          signal,
+          result.writeVerifyPending as WriteVerifyPendingPayload | undefined,
+        );
         return;
       }
 
-      if (isRt95 && p.settings) {
-        const overrides = rt95OverridesForWrite(build.id);
-        const settingsPlan = descriptor
-          ? planForOperation(descriptor, 'write', {
-              parts: p,
-              session,
-              prepared: {
-                channels: [],
-                organisation: { rt95SettingsOverrides: overrides },
-              },
-            })
-          : undefined;
-        readStartRef.current = now();
-        if (settingsPlan) {
-          updateWriteTrack((t) => trackWithPlan(t, settingsPlan));
-        }
-        const result = await writeRt95SettingsOnly(session, egress, overrides, {
+      if (settingsPart && p.settings && !writesToRadioImage(p)) {
+        const result = await settingsPart.writeSettingsOnly(session, settingsPartDeps(), {
           onProgress,
           signal,
-          beforeTransmit: async (rtCtx: Rt95PreTransmitContext) => {
-            await awaitReview(
-              {
-                identity: { model: session.descriptor.label },
-                channelCount: 0,
-                identityOnly: false,
-                ...(settingsPlan ? { plan: settingsPlan } : {}),
-                rt95Settings: rtCtx,
-              },
-              { contactsNote: null, kepsCount },
-            );
+          beforeTransmit: async (reviewCtx) => {
+            await awaitReviewFromSettings(reviewCtx);
             enterWriting();
             const decision = settingsPauseResult();
-            if (typeof decision !== 'string') settingsAppliedRef.current = changedCount();
+            if (typeof decision !== 'string') settingsAppliedRef.current = appliedSettingsCount();
             return decision;
           },
         });
@@ -1162,41 +1008,12 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
           ...factsRef.current,
           settingsChanged: settingsAppliedRef.current,
         };
-        await afterUpload(session, p, signal, result.writeVerifyPending);
-        return;
-      }
-
-      // Radio settings alone (AT-D890): read the settings, Review, then patch the one settings unit.
-      if (isAtD890 && p.settings) {
-        const overrides = overridesForWrite(build.id);
-        const settingsPlan = descriptor
-          ? planForOperation(descriptor, 'write', { parts: p, session })
-          : undefined;
-        const result = await writeAtD890SettingsOnly(session, egress, overrides, {
-          onProgress,
+        await afterUpload(
+          session,
+          p,
           signal,
-          beforeTransmit: async (atCtx: AtD890PreTransmitContext) => {
-            await awaitReview(
-              {
-                identity: { model: session.descriptor.label, serial: atCtx.serial },
-                channelCount: 0,
-                identityOnly: false,
-                ...(settingsPlan ? { plan: settingsPlan } : {}),
-                atD890: atCtx,
-              },
-              { contactsNote: null, kepsCount },
-            );
-            enterWriting();
-            const decision = settingsPauseResult();
-            if (typeof decision !== 'string') settingsAppliedRef.current = changedCount();
-            return decision;
-          },
-        });
-        factsRef.current = {
-          ...factsRef.current,
-          settingsChanged: settingsAppliedRef.current,
-        };
-        await afterUpload(session, p, signal, result.writeVerifyPending);
+          result.writeVerifyPending as WriteVerifyPendingPayload | undefined,
+        );
         return;
       }
 
@@ -1271,7 +1088,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   async function onRunError(err: unknown): Promise<void> {
     // The failed radio's serial, before the session (and its pipe) is released.
     const failedSerial =
-      isAtD890 && sessionRef.current ? getAtD890SessionSerial(sessionRef.current.pipe) : '';
+      sessionRef.current && writeExtras?.failedWriteSerial
+        ? writeExtras.failedWriteSerial(sessionRef.current)
+        : '';
     await releaseSession().catch(() => undefined);
     decisionRef.current = null;
     if (err instanceof ReviewSettingsRequestedError) {
@@ -1553,8 +1372,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     onViewCheckReport: () => undefined,
     onEditSettings: () => {
       directoryAttemptRef.current += 1;
-      // Keep the ticks for when the user comes back; the dialog closes (nothing has been read yet).
-      setStepperTicks(build.id, { ...partsRef.current });
+      settingsPart?.saveTicks(build.id, partsRef.current);
       setIsOpen(false);
       onOpenSettingsPage?.();
     },
@@ -1565,17 +1383,13 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     actions,
     open: (initialParts?: Partial<WriteParts>) => {
       directoryAttemptRef.current += 1;
-      const d890Store = getAtD890RadioSettingsSession(build.id);
-      const rt95Store = getRt95RadioSettingsSession(build.id);
-      const hasD890Changes = isAtD890 && d890Store.overrides.size > 0;
-      const hasRt95Changes = isRt95 && rt95Store.overrides.size > 0;
-      const restored = isAtD890 ? d890Store.stepperTicks : undefined;
-      if (restored) setStepperTicks(build.id, undefined);
+      const pendingSettings = settingsPart?.pendingChangeCount(build.id) ?? 0;
+      const restored = settingsPart?.takeRestoredTicks(build.id);
       setParts(
         clampPartsToSupport(
           {
             ...DEFAULT_WRITE_PARTS,
-            settings: hasD890Changes || hasRt95Changes,
+            settings: pendingSettings > 0,
             ...(restored ?? {}),
             ...(initialParts ?? {}),
           },
