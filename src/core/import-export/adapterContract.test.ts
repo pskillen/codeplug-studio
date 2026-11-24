@@ -90,7 +90,7 @@ describe('adapter contracts', () => {
     expect(isBinaryCpsExportAdapter(adapter)).toBe(true);
     if (isBinaryCpsExportAdapter(adapter)) {
       expect(adapter.defaultFileName).toBe('codeplug.bin');
-      expect(adapter.defaultExportSettings?.expandModes).toBe(false);
+      expect(adapter.defaultExportSettings?.expandModes).toBe(true);
       expect(adapter.defaultExportSettings?.expandRxGroupLists).toBe(false);
     }
     const imported = getImportAdapter('radiofoundry');
