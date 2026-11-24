@@ -24,7 +24,10 @@ import {
   useSensitiveReveal,
 } from '../../components/debug/index.ts';
 import { ToggleSwitch, type DataTableColumn } from '../../components/v2/index.ts';
+import { FirmwareSwitch } from '../debug/radios/FirmwareSwitch.tsx';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
+
+const noopCapture = () => Promise.resolve({} as never);
 import {
   DEBUG_DEMO_HEX,
   DEBUG_DEMO_MEMORY_CAVEAT,
@@ -145,6 +148,28 @@ export default function StyleguideDebugPage() {
           Overlay draws a second read on every demo that supports it. Raw bytes opens the Address
           and Raw columns of the settings table and the numeric tables.
         </Text>
+
+        <StyleguideSection
+          title="Firmware switch"
+          description="Expected firmware under the radio title on debug pages: three families with a dashed dot when no reader yet, and a single-option control that is shown but not clickable."
+        >
+          <Stack gap="md">
+            <FirmwareSwitch
+              value="opengd77"
+              onChange={() => {}}
+              options={[
+                { firmware: 'stock', capture: noopCapture },
+                { firmware: 'opengd77', capture: noopCapture },
+                { firmware: 'radiofoundry' },
+              ]}
+            />
+            <FirmwareSwitch
+              value="stock"
+              onChange={() => {}}
+              options={[{ firmware: 'stock', capture: noopCapture }]}
+            />
+          </Stack>
+        </StyleguideSection>
 
         <StyleguideSection
           title="DebugSection"

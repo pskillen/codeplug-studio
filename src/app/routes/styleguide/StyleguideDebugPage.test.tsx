@@ -18,6 +18,7 @@ describe('StyleguideDebugPage', () => {
     renderPage();
     expect(screen.getByRole('heading', { name: 'Debug pages' })).toBeInTheDocument();
     for (const title of [
+      'Firmware switch',
       'CalibrationChartCard and CalibrationChartGrid',
       'TrimDisplay',
       'ValueTable',
