@@ -62,14 +62,14 @@ Rows link to editors via `nameColumn.getPath`. Optional trailing **actions** col
 
 ## Entity list pages
 
-| Route                         | `EntityListEntity` | URL name param      | Default sort key             | Notable columns                                            |
-| ----------------------------- | ------------------ | ------------------- | ---------------------------- | ---------------------------------------------------------- |
+| Route                         | `EntityListEntity` | URL name param      | Default sort key             | Notable columns                                         |
+| ----------------------------- | ------------------ | ------------------- | ---------------------------- | ------------------------------------------------------- |
 | `/library/channels`           | _(channels prefs)_ | `q` (+ band/mode/…) | name or distance             | See [channels list](../library/README.md#channels-list) |
-| `/library/zones`              | `zones`            | `q`                 | export order (`storedOrder`) | Export order (reorder), members, comment, actions          |
-| `/library/talk-groups`        | `talk-groups`      | `q`                 | name                         | Mode, ID, channels/RX lists using, comment, actions        |
-| `/library/contacts` (digital) | `digital-contacts` | `dq`                | name                         | Mode, ID, channels using, actions                          |
-| `/library/contacts` (analog)  | `analog-contacts`  | `aq`                | name                         | Code, channels using, actions                              |
-| `/library/rx-group-lists`     | `rx-group-lists`   | `q`                 | name                         | Members, channels using, actions                           |
+| `/library/zones`              | `zones`            | `q`                 | export order (`storedOrder`) | Export order (reorder), members, comment, actions       |
+| `/library/talk-groups`        | `talk-groups`      | `q`                 | name                         | Mode, ID, channels/RX lists using, comment, actions     |
+| `/library/contacts` (digital) | `digital-contacts` | `dq`                | name                         | Mode, ID, channels using, actions                       |
+| `/library/contacts` (analog)  | `analog-contacts`  | `aq`                | name                         | Code, channels using, actions                           |
+| `/library/rx-group-lists`     | `rx-group-lists`   | `q`                 | name                         | Members, channels using, actions                        |
 
 Digital and analog contact tables on `/library/contacts` use **separate** URL params (`dq`, `aq`) so filters do not collide. Digital contact search matches **name or callsign**; filtering uses the debounced value (300 ms), not the URL round-trip alone.
 
