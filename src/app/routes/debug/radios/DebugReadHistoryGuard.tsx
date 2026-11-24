@@ -9,33 +9,25 @@ const normalize = (path: string) => path.replace(/\/+$/, '');
 
 interface GuardedHistory {
   store: DebugReadHistoryStore;
-  matches: (path: string) => boolean;
+  radio: string;
+  covers: (path: string) => boolean;
 }
 
-const guarded: readonly GuardedHistory[] = [
-  {
-    store: getDebugReadHistory({ slug: 'uv-5r-mini', archiveModelId: 'UV-5R Mini' }),
-    matches: (path) => ['/debug/uv5r-mini', '/debug/radios/uv-5r-mini'].includes(normalize(path)),
-  },
-  {
-    store: getDebugReadHistory({ slug: 'rt95', archiveModelId: 'retevis-rt95' }),
-    matches: (path) => normalize(path) === '/debug/radios/rt95',
-  },
-  {
-    store: getDebugReadHistory({ slug: 'at-d890uv', archiveModelId: 'AT-D890UV' }),
-    matches: (path) => normalize(path) === '/debug/radios/at-d890uv',
-  },
-  {
-    store: getDebugReadHistory({ slug: 'dm-32uv', archiveModelId: 'DM-32UV' }),
-    matches: (path) => normalize(path) === '/debug/radios/dm-32uv',
-  },
-  ...radioDebugDescriptors
-    .filter((descriptor) => descriptor.readHistory)
-    .map((descriptor) => ({
-      store: getDebugReadHistory(descriptor),
-      matches: (path: string) => normalize(path) === `/debug/radios/${descriptor.slug}`,
-    })),
-];
+const guarded: readonly GuardedHistory[] = radioDebugDescriptors
+  .filter((descriptor) => descriptor.readHistory)
+  .map((descriptor) => ({
+    store: getDebugReadHistory(descriptor),
+    radio: descriptor.radio,
+    covers: (path: string) => {
+      const normalised = normalize(path);
+      if (
+        normalised === `/debug/radios/${descriptor.radio}` ||
+        normalised.startsWith(`/debug/radios/${descriptor.radio}/`)
+      )
+        return true;
+      return descriptor.alsoGuards?.some((extra) => normalize(extra) === normalised) ?? false;
+    },
+  }));
 
 const subscribeAll = (listener: () => void) => {
   const unsubscribes = guarded.map((entry) => entry.store.subscribe(listener));
@@ -57,18 +49,20 @@ export function DebugReadHistoryGuard() {
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [anyPending]);
-  const active = guarded.some((entry, i) => entry.matches(pathname) && pending[i]! > 0);
-  return active ? <NavigationGuard /> : null;
+  const active = guarded.some((entry, i) => entry.covers(pathname) && pending[i]! > 0);
+  return active ? <NavigationGuard pending={pending} /> : null;
 }
 
-function NavigationGuard() {
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      currentLocation.pathname !== nextLocation.pathname &&
-      guarded.some(
-        (entry) => entry.matches(currentLocation.pathname) && !entry.matches(nextLocation.pathname),
-      ),
-  );
+function NavigationGuard({ pending }: { pending: number[] }) {
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    if (currentLocation.pathname === nextLocation.pathname) return false;
+    return guarded.some(
+      (entry, i) =>
+        pending[i]! > 0 &&
+        entry.covers(currentLocation.pathname) &&
+        !entry.covers(nextLocation.pathname),
+    );
+  });
   return (
     <DesignSystemV2Provider>
       <ConfirmModal
