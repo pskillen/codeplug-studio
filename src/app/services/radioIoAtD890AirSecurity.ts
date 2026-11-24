@@ -18,7 +18,6 @@ import {
 } from '@integrations/radio-io/radios/at-d890uv/airSecuritySeed.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import type { AtD890SettingsPatch } from '@integrations/radio-io/radios/at-d890uv/settingsFields.ts';
-import type { WriteVerifyCaptureResult } from '@integrations/radio-io/writeVerify.ts';
 import { RadioWriteBlockedError } from './radioIoSession.ts';
 
 function requireAtD890(session: RadioSession): AtD890uvProtocol {
@@ -42,21 +41,19 @@ export async function readAtD890AirSecuritySeedSet(
   return set;
 }
 
-export interface WriteAtD890AirSecuritySeedResult {
-  /** Feed to the Verify write step, as after a settings-only Write. */
-  writeVerifyPending?: WriteVerifyCaptureResult;
-}
-
 /**
  * Write `seed`, or clear the record when `seed` is null. Refuses a target that is not the
  * MM9PDY AT-D890UV before any read. One full-mask patch; the encoded record is zeroed afterwards.
+ *
+ * Returns nothing. The snapshot a Write would keep for Check write carries the record in clear,
+ * and session storage would keep it. A later session checks with `readAtD890AirSecuritySeedSet`.
  */
 export async function writeAtD890AirSecuritySeed(
   session: RadioSession,
   egress: EgressPath,
   seed: Uint8Array | null,
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
-): Promise<WriteAtD890AirSecuritySeedResult> {
+): Promise<void> {
   if (!isMm9pdyAtD890RadioIoProfileId(egress.profileId)) {
     throw new RadioWriteBlockedError(
       'The AirSecurity seed can only be written to an MM9PDY AT-D890UV.',
@@ -76,8 +73,6 @@ export async function writeAtD890AirSecuritySeed(
       onProgress: opts?.onProgress,
       signal: opts?.signal,
     });
-    const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
-    return captured ? { writeVerifyPending: captured } : {};
   } finally {
     record.fill(0);
     patch.bytes.fill(0);

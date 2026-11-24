@@ -87,7 +87,7 @@ describe('AT-D890UV AirSecurity seed service', () => {
     };
     const caller = SECRET.slice();
 
-    const result = await writeAtD890AirSecuritySeed(session, egress, caller);
+    await expect(writeAtD890AirSecuritySeed(session, egress, caller)).resolves.toBeUndefined();
 
     expect([...caller]).toEqual([...SECRET]);
     expect(patchBytes).toBeDefined();
@@ -95,7 +95,6 @@ describe('AT-D890UV AirSecurity seed service', () => {
     expect(writePayloadAt(pipe, AIRSECURITY_SEED_ADDRESS)).toEqual(record.subarray(0, 16));
     expect(writePayloadAt(pipe, AIRSECURITY_SEED_ADDRESS + 16)).toEqual(record.subarray(16, 32));
     expect(writePayloadAt(pipe, 0x03500200)).toEqual(new Uint8Array(16).fill(0x5a));
-    expect(result.writeVerifyPending?.staging.chunks.length).toBeGreaterThan(0);
   });
 
   it('clears the record with 32 zero bytes', async () => {
