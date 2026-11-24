@@ -4,7 +4,7 @@
  */
 
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
-import { pushKepsExcludedWarning } from '@core/import-export/exportWarning.ts';
+import { pushGeneralWarning, pushKepsExcludedWarning } from '@core/import-export/exportWarning.ts';
 import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
 import { isRadioFoundryRadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
@@ -234,10 +234,31 @@ export interface KepsWriteChecksResult {
   eligible: number;
 }
 
+const MS_PER_DAY = 86_400_000;
+const TLE_STALE_DAYS = 14;
+
+function wholeDaysSinceEpoch(epochIso: string, now: Date): number {
+  const epochMs = new Date(epochIso).getTime();
+  return Math.floor((now.getTime() - epochMs) / MS_PER_DAY);
+}
+
+function writtenSatellitesForKeps(
+  previewFn: SatelliteKepsPreviewFn | undefined,
+  satellites: readonly Satellite[],
+  overrides: readonly BuildEntityOverride[] | undefined,
+): readonly Satellite[] {
+  if (!previewFn) return [];
+  const writtenIds = new Set(
+    previewFn(satellites, { satelliteOverrides: overrides }).map((e) => e.satelliteId),
+  );
+  return satellites.filter((s) => writtenIds.has(s.id));
+}
+
 export function kepsWriteChecks(
   profileId: string,
   satellites: readonly Satellite[],
   overrides?: readonly BuildEntityOverride[],
+  now: Date = new Date(),
 ): KepsWriteChecksResult {
   const capacity = getSatelliteKepsWriteCapacity(profileId);
   const eligible = capacity?.countEligible(satellites, overrides) ?? 0;
@@ -271,6 +292,20 @@ export function kepsWriteChecks(
         label: kepsExcludedLabel(satellites, exclusion),
       });
     }
+  }
+
+  const previewFn = getSatelliteKepsWritePreview(profileId);
+  const written = writtenSatellitesForKeps(previewFn, satellites, overrides);
+  const stale = written
+    .map((s) => ({ satellite: s, days: wholeDaysSinceEpoch(s.epoch, now) }))
+    .filter((row) => row.days >= TLE_STALE_DAYS);
+  if (stale.length > 0) {
+    const oldest = stale.reduce((a, b) => (b.days > a.days ? b : a));
+    const countLabel = stale.length === 1 ? '1 satellite has' : `${stale.length} satellites have`;
+    pushGeneralWarning(
+      warnings,
+      `${countLabel} orbit data 14 or more days old; the oldest, ${oldest.satellite.name}, is ${oldest.days} days old. Refresh keps in the library before writing.`,
+    );
   }
 
   return { refusals, warnings, eligible };

@@ -174,7 +174,7 @@ function makeSatellite(overrides: Partial<Satellite> = {}): Satellite {
     source: 'celestrak',
     tleLine1: '1 25544U 98067A   24079.51782528  .00016717  00000-0  30721-3 0  9993',
     tleLine2: '2 25544  51.6416 335.6205 0006447  56.6529  36.3752 15.49560768 45087',
-    epoch: '2024-01-01T00:00:00Z',
+    epoch: new Date().toISOString(),
     classification: 'U',
     inclinationDeg: 51.6416,
     raanDeg: 335.6205,
@@ -334,6 +334,82 @@ describe('keps capacity and write checks', () => {
     const overrides = [{ libraryEntityId: 'sat-0', excluded: true }];
     expect(capacity.countEligible(satellites)).toBe(capacity.max + 1);
     expect(capacity.countEligible(satellites, overrides)).toBe(capacity.max);
+  });
+
+  it("warns once when a written satellite's TLE is 14 days old", () => {
+    const now = new Date('2024-01-15T12:00:00Z');
+    const satellites = [
+      makeSatellite({
+        name: 'ISS',
+        epoch: '2024-01-01T00:00:00Z',
+        transmitters: [makeTransmitter()],
+      }),
+    ];
+    const checks = kepsWriteChecks('radio-io-at-d890uv', satellites, undefined, now);
+    expect(checks.warnings).toEqual([
+      expect.objectContaining({
+        kind: 'general',
+        message:
+          '1 satellite has orbit data 14 or more days old; the oldest, ISS, is 14 days old. Refresh keps in the library before writing.',
+      }),
+    ]);
+  });
+
+  it('no TLE-age warning at 13 days', () => {
+    const now = new Date('2024-01-14T00:00:00Z');
+    const satellites = [
+      makeSatellite({
+        epoch: '2024-01-01T00:00:00Z',
+        transmitters: [makeTransmitter()],
+      }),
+    ];
+    const checks = kepsWriteChecks('radio-io-at-d890uv', satellites, undefined, now);
+    expect(checks.warnings.filter((w) => w.kind === 'general')).toEqual([]);
+  });
+
+  it('TLE-age warning ignores excluded satellites', () => {
+    const now = new Date('2024-02-01T00:00:00Z');
+    const satellites = [
+      makeSatellite({
+        id: 'sat-stale',
+        name: 'StaleSat',
+        epoch: '2024-01-01T00:00:00Z',
+        transmitters: [makeTransmitter({ id: 'tx-stale' })],
+      }),
+    ];
+    const checks = kepsWriteChecks(
+      'radio-io-at-d890uv',
+      satellites,
+      [{ libraryEntityId: 'sat-stale', excluded: true }],
+      now,
+    );
+    expect(checks.warnings.filter((w) => w.kind === 'general')).toEqual([]);
+  });
+
+  it('TLE-age warning names the oldest of several', () => {
+    const now = new Date('2024-02-01T00:00:00Z');
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        name: 'Newer',
+        epoch: '2024-01-10T00:00:00Z',
+        transmitters: [makeTransmitter({ id: 'tx-a' })],
+      }),
+      makeSatellite({
+        id: 'sat-b',
+        name: 'Oldest',
+        epoch: '2024-01-01T00:00:00Z',
+        transmitters: [makeTransmitter({ id: 'tx-b' })],
+      }),
+    ];
+    const checks = kepsWriteChecks('radio-io-at-d890uv', satellites, undefined, now);
+    expect(checks.warnings).toEqual([
+      expect.objectContaining({
+        kind: 'general',
+        message:
+          '2 satellites have orbit data 14 or more days old; the oldest, Oldest, is 31 days old. Refresh keps in the library before writing.',
+      }),
+    ]);
   });
 
   it('OpenGD77 kepsWriteChecks omits build slot competition from folded notes', () => {
