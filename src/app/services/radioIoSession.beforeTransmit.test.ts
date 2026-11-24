@@ -314,7 +314,7 @@ describe('uploadPreparedRadioWrite beforeTransmit', () => {
     };
     const image = new Map() as unknown as MemoryMap;
     const { egress: otherEgress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
-  const err = await uploadPreparedRadioWrite(session, otherEgress, image, {
+    const err = await uploadPreparedRadioWrite(session, otherEgress, image, {
       channels: [],
     }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(RadioTimeoutError);

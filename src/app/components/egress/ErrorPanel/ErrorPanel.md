@@ -6,13 +6,13 @@ Shows a radio or Write dialog error with a consistent layout: what reached the r
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `outcome` | `WriteErrorOutcome` | Classified error (`kind: 'error'` only; cancelled outcomes render nothing). |
-| `retryLabel` | `string \| null` | From `retryLabelFor`; no button when null. |
-| `onRetry` | `() => void` | Retry handler; paired with `retryLabel`. |
-| `wayOut` | `ReactNode` | Extra actions (pending-units clear, Change the ticks, …). |
-| `testId` | `string` | Root test id (default `error-panel`); debug block uses `${testId}-debug`. |
+| Prop         | Type                | Description                                                                 |
+| ------------ | ------------------- | --------------------------------------------------------------------------- |
+| `outcome`    | `WriteErrorOutcome` | Classified error (`kind: 'error'` only; cancelled outcomes render nothing). |
+| `retryLabel` | `string \| null`    | From `retryLabelFor`; no button when null.                                  |
+| `onRetry`    | `() => void`        | Retry handler; paired with `retryLabel`.                                    |
+| `wayOut`     | `ReactNode`         | Extra actions (pending-units clear, Change the ticks, …).                   |
+| `testId`     | `string`            | Root test id (default `error-panel`); debug block uses `${testId}-debug`.   |
 
 ## Usage
 

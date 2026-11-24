@@ -15,13 +15,21 @@ const errorOutcome: WriteErrorOutcome = {
 
 describe('ErrorPanel', () => {
   it('shows the part-way title and chip for may-hold-part', () => {
-    render(<ErrorPanel outcome={errorOutcome} retryLabel="Write again" onRetry={() => undefined} />);
+    render(
+      <ErrorPanel outcome={errorOutcome} retryLabel="Write again" onRetry={() => undefined} />,
+    );
     expect(screen.getByText('The write stopped part way')).toBeInTheDocument();
     expect(screen.getByText('May hold part of the write')).toBeInTheDocument();
   });
 
   it('shows no retry button when retryLabel is null', () => {
-    render(<ErrorPanel outcome={{ ...errorOutcome, retry: 'none' }} retryLabel={null} onRetry={vi.fn()} />);
+    render(
+      <ErrorPanel
+        outcome={{ ...errorOutcome, retry: 'none' }}
+        retryLabel={null}
+        onRetry={vi.fn()}
+      />,
+    );
     expect(screen.queryByRole('button', { name: 'Write again' })).toBeNull();
   });
 

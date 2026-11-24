@@ -26,9 +26,8 @@ export default function ErrorPanel({
   wayOut,
   testId = 'error-panel',
 }: ErrorPanelProps) {
-  if (outcome.kind === 'cancelled') return null;
-
   const [copied, setCopied] = useState(false);
+  if (outcome.kind === 'cancelled') return null;
   async function copy(): Promise<void> {
     try {
       await navigator.clipboard.writeText(`${outcome.message}\n\n${outcome.debugText}`);
@@ -55,7 +54,9 @@ export default function ErrorPanel({
       {wayOut}
       <details style={{ marginTop: 8 }} data-testid={`${testId}-debug`}>
         <summary>Debug details</summary>
-        <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, margin: '8px 0' }}>{outcome.debugText}</pre>
+        <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, margin: '8px 0' }}>
+          {outcome.debugText}
+        </pre>
         <Button variant="secondary" size="sm" onClick={() => void copy()}>
           {copied ? 'Copied' : 'Copy debug text'}
         </Button>

@@ -1184,9 +1184,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     }
     const noticeText = interruptedWriteNotice(egress.profileId, err, failedSerial);
     setPendingBlock(noticeText?.block ?? null);
-    const message = noticeText?.text
-      ? `${outcome.message} ${noticeText.text}`
-      : outcome.message;
+    const message = noticeText?.text ? `${outcome.message} ${noticeText.text}` : outcome.message;
     showPlainError({ ...outcome, message });
   }
 

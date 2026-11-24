@@ -111,7 +111,6 @@ import {
   type Rt95ChipGuardResult,
 } from '@integrations/radio-io/radios/rt95/modData/index.ts';
 import {
-  adviseRadioError,
   RadioIoError,
   type RadioRetryAdvice,
   type RadioSentState,
@@ -514,10 +513,14 @@ export async function prepareRadioWriteImage(
 }> {
   const descriptor = descriptorsForEgress(egress)[0];
   if (descriptor && resolveRadioWriteGate(descriptor, undefined, egress.profileId) === 'hidden') {
-    throw new RadioWriteBlockedError(resolveRadioWriteProdDisabledMessage(egress.profileId), undefined, {
-      retry: 'none',
-      sent: 'nothing-sent',
-    });
+    throw new RadioWriteBlockedError(
+      resolveRadioWriteProdDisabledMessage(egress.profileId),
+      undefined,
+      {
+        retry: 'none',
+        sent: 'nothing-sent',
+      },
+    );
   }
 
   const assembled = assemble(build, library, {
@@ -716,10 +719,14 @@ async function resolveRadioWriteImageForUpload(
   }
   if (isRadioFoundryCableRadio(session.radio)) {
     if (!prepared.radioFoundryWrite) {
-      throw new RadioWriteBlockedError('RadioFoundry write needs the serialised codeplug image.', undefined, {
-        retry: 'none',
-        sent: 'nothing-sent',
-      });
+      throw new RadioWriteBlockedError(
+        'RadioFoundry write needs the serialised codeplug image.',
+        undefined,
+        {
+          retry: 'none',
+          sent: 'nothing-sent',
+        },
+      );
     }
     session.radio.armWriteSource({ ...prepared.radioFoundryWrite, warnings: [] });
     if (!session.radio.hasReadImage() || !session.radio.hasDirectoryImage()) {

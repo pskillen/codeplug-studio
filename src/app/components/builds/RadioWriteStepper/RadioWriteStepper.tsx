@@ -131,7 +131,10 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
     view.errorOutcome && (view.pendingWarning || view.retryLabel === null) ? (
       <>
         {view.pendingWarning ? (
-          <PendingWarningClear warning={view.pendingWarning} onClear={actions.onClearPendingWarning} />
+          <PendingWarningClear
+            warning={view.pendingWarning}
+            onClear={actions.onClearPendingWarning}
+          />
         ) : null}
         {view.pendingWarning && view.retryLabel === null ? (
           <div style={{ marginTop: 8 }}>

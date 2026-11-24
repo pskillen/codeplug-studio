@@ -285,7 +285,7 @@ export default function StyleguideOverlaysPage() {
               retry: 'none',
               sent: 'nothing-sent',
               message:
-                "This radio's flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry's web programming utility (it backs up first) or with \"rfoundry_debug.py storage claim\", then write again. Nothing was written.",
+                'This radio\'s flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry\'s web programming utility (it backs up first) or with "rfoundry_debug.py storage claim", then write again. Nothing was written.',
               debugText: 'INFO flags: 0x00, storage writable: no',
               code: 'interlock',
             }}

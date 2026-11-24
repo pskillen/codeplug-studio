@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { RadioInterlockError, RadioWrongIdentError, adviseRadioError } from '@integrations/radio-io/kit/errors.ts';
+import {
+  RadioInterlockError,
+  RadioWrongIdentError,
+  adviseRadioError,
+} from '@integrations/radio-io/kit/errors.ts';
 import {
   classifyWriteError,
   reportWriteError,

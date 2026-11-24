@@ -1,14 +1,11 @@
-import { RadioInterlockError, type RadioRetryAdvice, type RadioSentState } from '@integrations/radio-io/kit/errors.ts';
+import {
+  RadioInterlockError,
+  type RadioRetryAdvice,
+  type RadioSentState,
+} from '@integrations/radio-io/kit/errors.ts';
 
 export type WriteErrorPhase =
-  | 'connect'
-  | 'preflight'
-  | 'read'
-  | 'review'
-  | 'write'
-  | 'keps'
-  | 'check'
-  | 'restore';
+  'connect' | 'preflight' | 'read' | 'review' | 'write' | 'keps' | 'check' | 'restore';
 
 export interface WriteErrorContext {
   phase: WriteErrorPhase;
@@ -61,9 +58,7 @@ function fallbackDebugText(err: unknown, ctx: WriteErrorContext, message: string
   const name = e?.name ?? (err != null ? typeof err : 'unknown');
   const code = e?.code ?? 'none';
   const studioLine =
-    ctx.build !== undefined
-      ? `studio: ${ctx.build.version} (${ctx.build.env})`
-      : undefined;
+    ctx.build !== undefined ? `studio: ${ctx.build.version} (${ctx.build.env})` : undefined;
   const lines = [
     `error: ${name}`,
     `code: ${code}`,
@@ -110,7 +105,10 @@ export function classifyWriteError(err: unknown, ctx: WriteErrorContext): WriteE
 
   let retry = e?.retry;
   let sent = e?.sent;
-  if (retry === undefined && (e?.name === 'RadioInterlockError' || err instanceof RadioInterlockError)) {
+  if (
+    retry === undefined &&
+    (e?.name === 'RadioInterlockError' || err instanceof RadioInterlockError)
+  ) {
     retry = 'none';
   }
   if (sent === undefined) {
@@ -139,10 +137,7 @@ export function reportWriteError(outcome: WriteErrorOutcome): void {
   }
 }
 
-export function retryLabelFor(
-  outcome: WriteErrorOutcome,
-  phase: WriteErrorPhase,
-): string | null {
+export function retryLabelFor(outcome: WriteErrorOutcome, phase: WriteErrorPhase): string | null {
   if (outcome.retry === 'none') return null;
   if (phase === 'check') return 'Check again';
   if (phase === 'keps') return 'Write keps again';
