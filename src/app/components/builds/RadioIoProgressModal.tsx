@@ -16,11 +16,10 @@ import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '../../hooks/useScreenWak
 import { Button, ProgressModal, type ProgressModalStep } from '../v2/index.ts';
 
 /**
- * `'restore'` replays a backup zip onto the radio — not Write-codeplug.
  * `'vital-read'` is the AT-D890UV vital-data backup (#1288): it downloads a file and saves nothing on the build.
  * `'library-read'` imports library rows and updates the radio's build.
  */
-export type RadioIoOperation = 'read' | 'library-read' | 'restore' | 'vital-read' | 'safety-read';
+export type RadioIoOperation = 'read' | 'library-read' | 'vital-read' | 'safety-read';
 
 export type RadioIoProgressPhase =
   'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
@@ -41,9 +40,9 @@ export interface RadioIoProgressModalProps {
   navigationBlocked?: boolean;
   onCancel: () => void;
   onClose?: () => void;
-  /** Extra sentence on a successful Write or Restore finish. Omitted radios show nothing. */
+  /** Reserved for radios that need an extra sentence after a read (unused on backup reads today). */
   successNote?: string;
-  /** Extra button beside Close once the run finishes (e.g. Restore's "Back to Export"). */
+  /** Extra button beside Close once the run finishes. */
   finishAction?: { label: string; onClick: () => void };
 }
 
@@ -65,18 +64,6 @@ function buildSteps(
 ): StepDef[] {
   const stageSteps = (): StepDef[] =>
     transferStages.map((label, i) => ({ id: stageId(planned, i, label), label }));
-  if (operation === 'restore') {
-    const steps: StepDef[] = [
-      { id: 'connecting', label: 'Connect and handshake' },
-      ...(transferStages.length > 0
-        ? stageSteps()
-        : [{ id: 'transfer', label: 'Restore archive regions' }]),
-    ];
-    if (phase === 'done') {
-      steps.push({ id: 'done', label: 'Restore complete' });
-    }
-    return steps;
-  }
   if (operation === 'safety-read') {
     const steps: StepDef[] = [
       { id: 'connecting', label: 'Connect and handshake' },
@@ -217,9 +204,7 @@ export default function RadioIoProgressModal({
         ? 'Backing up calibration'
         : operation === 'vital-read'
           ? 'Backing up vital data'
-          : operation === 'restore'
-            ? 'Restoring backup to radio'
-            : 'Reading from radio';
+          : 'Reading from radio';
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
   const complete = phase === 'done';
 
@@ -274,15 +259,9 @@ export default function RadioIoProgressModal({
               title: 'Vital data backup finished',
               body: 'The file was downloaded. Nothing is saved on this build. The radio restarts when the session ends.',
             }
-          : complete && operation === 'restore'
-            ? {
-                color: 'green',
-                title: 'Restore finished',
-                body: 'Selected restorable regions were sent from the backup file.',
-              }
-            : null;
+          : null;
 
-  const showSuccessNote = Boolean(successNote) && operation === 'restore' && phase === 'done';
+  const showSuccessNote = false;
 
   const footer = complete ? (
     <>

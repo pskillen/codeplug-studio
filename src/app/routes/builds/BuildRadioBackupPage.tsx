@@ -6,8 +6,6 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Alert, FileButton, Group, Stack, Table, Text } from '@mantine/core';
-import { isDm32RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
-import { DM32_POWER_CYCLE_AFTER_SESSION_NOTE } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
 import type { PlannedStage, ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
@@ -32,8 +30,6 @@ import {
   openRadioSessionForEgress,
 } from '../../services/radioIoSession.ts';
 import {
-  assertRestoreIdentity,
-  atD890RangeMismatch,
   backupLiveRadioSession,
   defaultRestorableRegionIds,
   descriptorSupportsRestore,
@@ -42,12 +38,19 @@ import {
   openRadioBackupZip,
   relabelRadioBackupSession,
   RADIO_RESTORE_PROD_DISABLED_MESSAGE,
-  RESTORE_RANGE_MISMATCH_NOTE,
-  restoreRadioBackup,
   restoreRegionUnavailableReason,
   type RadioBackupSession,
 } from '../../services/radioBackupRestore.ts';
-import { Button, Checkbox, ConfirmModal } from '../../components/v2/index.ts';
+import {
+  classifyWriteError,
+  reportWriteError,
+  type WriteErrorOutcome,
+} from '../../services/egress/writeErrorOutcome.ts';
+import { resolveWriteShellOptions } from '../../services/egress/writeShellOptions.ts';
+import RadioRestoreDialog from '../../components/builds/RadioRestoreDialog/RadioRestoreDialog.tsx';
+import { useRadioRestoreFlow } from '../../components/builds/RadioRestoreDialog/useRadioRestoreFlow.ts';
+import { ErrorPanel } from '../../components/egress/index.ts';
+import { Button, Checkbox } from '../../components/v2/index.ts';
 import {
   backupAtD890Vital,
   openAtD890VitalZip,
@@ -64,7 +67,6 @@ import {
   useBackupsThisSession,
   type RadioBackupThisSession,
 } from '../../state/radioSessionBackups.ts';
-import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import RangeChangeBanner from '../../components/dangerZone/RangeChangeBanner.tsx';
 import {
   applyRadioReadToLibrary,
@@ -119,6 +121,8 @@ export default function BuildRadioBackupPage() {
   const radioEgress = findRadioIoEgress(egressPaths);
   const navigate = useNavigate();
   const backupsThisSession = useBackupsThisSession(build.id);
+  const descriptor = radioEgress ? descriptorsForEgress(radioEgress)[0] : undefined;
+  const profileId = radioEgress?.profileId ?? '';
 
   const sessionRef = useRef<RadioSession | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -132,7 +136,7 @@ export default function BuildRadioBackupPage() {
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [transferStages, setTransferStages] = useState<string[]>([]);
   const [plan, setPlan] = useState<PlannedStage[] | undefined>(undefined);
-  const [error, setError] = useState<string | null>(null);
+  const [readError, setReadError] = useState<WriteErrorOutcome | null>(null);
   const [readOutcome, setReadOutcome] = useState<RadioReadOutcome | null>(null);
   const [backup, setBackup] = useState<RadioBackupSession | null>(null);
   /** Optional descriptive fields typed before a backup; stored in the manifest. */
@@ -140,16 +144,18 @@ export default function BuildRadioBackupPage() {
   const [selectedRegionIds, setSelectedRegionIds] = useState<ReadonlySet<string>>(new Set());
   const [vital, setVital] = useState<AtD890VitalSession | null>(null);
   const [safety, setSafety] = useState<Rt95SafetyBackupResult | null>(null);
-  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
-  /** The connected D890's range differs from the zip's: every restorable region is restored together. */
-  const [rangeMismatch, setRangeMismatch] = useState(false);
-  const [restoreIdentity, setRestoreIdentity] = useState<{
-    label: string;
-    serial?: string;
-    firmware?: string;
-  } | null>(null);
+  const restoreEgress = radioEgress ?? egressPaths[0]!;
+  const restoreFlow = useRadioRestoreFlow({
+    egress: restoreEgress,
+    descriptor,
+    profileId,
+  });
+  const restoreShell = resolveWriteShellOptions(restoreEgress, descriptor);
+  const restoreDialogOpen = restoreFlow.view.open;
 
-  const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
+  const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(
+    busy || restoreFlow.view.busy,
+  );
 
   useEffect(() => {
     if (leaveAttempted) stay();
@@ -169,23 +175,33 @@ export default function BuildRadioBackupPage() {
   }
 
   const descriptors = descriptorsForEgress(radioEgress);
-  const descriptor = descriptors[0];
   const serialOk = isRadioSerialSupported();
   const supportsReadIntoLibrary =
     descriptor != null && descriptorSupportsReadIntoLibrary(descriptor);
   const restoreProdHidden = isRestoreHiddenForProfile(descriptor, radioEgress.profileId);
   const restoreAvailable = descriptorSupportsRestore(descriptor) && !restoreProdHidden;
-  const profileId = radioEgress.profileId;
   const dm32Model = (descriptor?.modelIds ?? []).some((id) => /dm-?32/i.test(id));
   const d890Model = (descriptor?.modelIds ?? []).includes('AT-D890UV');
   const rt95Model = (descriptor?.modelIds ?? []).includes('RT95-P');
   const warnFactoryReset = dm32Model;
-  const dm32PowerCycle =
-    dm32Model ||
-    isDm32RadioIoProfileId(radioEgress.profileId) ||
-    (descriptor?.compatibleProfiles ?? []).some((profile) =>
-      isDm32RadioIoProfileId(profile.profileId),
-    );
+
+  function readErrorContext() {
+    return {
+      phase: 'read' as const,
+      transmitStarted: false,
+      userCancelled: Boolean(abortRef.current?.signal.aborted),
+      radioLabel: descriptor?.label ?? 'radio',
+      profileId,
+      stage: progress?.stage,
+      build: { version: __BUILD_VERSION__, env: __BUILD_ENV__ },
+    };
+  }
+
+  function setReadFailure(err: unknown): void {
+    const outcome = classifyWriteError(err, readErrorContext());
+    reportWriteError(outcome);
+    setReadError(outcome.kind === 'cancelled' ? null : outcome);
+  }
 
   const attributionNames = (descriptor?.attributionIds ?? [])
     .map((id) => findAttribution(id)?.name)
@@ -207,7 +223,7 @@ export default function BuildRadioBackupPage() {
   }
 
   function beginBusy(next: RadioIoOperation = 'read'): void {
-    setError(null);
+    setReadError(null);
     setOperation(next);
     setBusy(true);
     setPhase('connecting');
@@ -295,7 +311,7 @@ export default function BuildRadioBackupPage() {
       applyBackupSession(result);
       setPhase('done');
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setReadFailure(err);
       await releaseSession();
       setBusy(false);
       clearProgress();
@@ -322,7 +338,7 @@ export default function BuildRadioBackupPage() {
       setPhase('done');
     } catch (err) {
       setVital(null);
-      setError(err instanceof Error ? err.message : String(err));
+      setReadFailure(err);
       await releaseSession();
       setBusy(false);
       clearProgress();
@@ -351,7 +367,7 @@ export default function BuildRadioBackupPage() {
       setPhase('done');
     } catch (err) {
       setSafety(null);
-      setError(err instanceof Error ? err.message : String(err));
+      setReadFailure(err);
       await releaseSession();
       setBusy(false);
       clearProgress();
@@ -361,12 +377,12 @@ export default function BuildRadioBackupPage() {
 
   async function handleOpenVitalFile(file: File | null) {
     if (!file) return;
-    setError(null);
+    setReadError(null);
     try {
       setVital(await openAtD890VitalZip(new Uint8Array(await file.arrayBuffer())));
     } catch (err) {
       setVital(null);
-      setError(err instanceof Error ? err.message : String(err));
+      setReadFailure(err);
     }
   }
 
@@ -374,8 +390,6 @@ export default function BuildRadioBackupPage() {
     abortRef.current?.abort();
     if (operation === 'library-read') return;
     abortRef.current = null;
-    setRestoreConfirmOpen(false);
-    setRestoreIdentity(null);
     void releaseSession();
     setBusy(false);
     clearProgress();
@@ -391,18 +405,16 @@ export default function BuildRadioBackupPage() {
     if (!backup) return;
     try {
       setBackup(relabelRadioBackupSession(backup, next));
-      setError(null);
+      setReadError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setReadFailure(err);
     }
   }
 
   function handleClearSession(): void {
     setBackup(null);
     setSelectedRegionIds(new Set());
-    setRestoreConfirmOpen(false);
-    setRestoreIdentity(null);
-    setError(null);
+    setReadError(null);
   }
 
   function toggleRestorableRegion(regionId: string, checked: boolean): void {
@@ -414,86 +426,20 @@ export default function BuildRadioBackupPage() {
     });
   }
 
-  async function handleRestoreToRadio() {
+  function handleOpenRestoreDialog(): void {
     if (!backup) return;
-    beginBusy('restore');
-    try {
-      const { session } = await openRadioSessionForEgress(radioEgress!, {
-        forcePortSelection: true,
-        purpose: 'restore',
-      });
-      sessionRef.current = session;
-      const identity = await assertRestoreIdentity(session, backup.manifest, {
-        signal: abortRef.current!.signal,
-      });
-      setRestoreIdentity(identity);
-      const live = sessionRef.current;
-      const mismatch =
-        live?.radio instanceof AtD890uvProtocol &&
-        atD890RangeMismatch(backup, live.radio.getIdentBandCode());
-      setRangeMismatch(mismatch);
-      if (mismatch) {
-        setSelectedRegionIds(new Set(defaultRestorableRegionIds(backup.manifest, profileId)));
-      }
-      setBusy(false);
-      clearProgress();
-      setRestoreConfirmOpen(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setRestoreConfirmOpen(false);
-      setRestoreIdentity(null);
-      await releaseSession();
-      setBusy(false);
-      clearProgress();
-      abortRef.current = null;
-    }
-  }
-
-  function handleCancelRestoreConfirm(): void {
-    setRestoreConfirmOpen(false);
-    setRestoreIdentity(null);
-    setRangeMismatch(false);
-    void releaseSession();
-  }
-
-  async function handleConfirmRestore() {
-    if (!backup || !sessionRef.current) return;
-    setRestoreConfirmOpen(false);
-    beginBusy('restore');
-    setPhase('transfer');
-    try {
-      await restoreRadioBackup(
-        sessionRef.current,
-        { manifest: backup.manifest, image: backup.image },
-        {
-          regionIds: rangeMismatch
-            ? defaultRestorableRegionIds(backup.manifest, profileId)
-            : [...selectedRegionIds],
-          onProgress,
-          signal: abortRef.current!.signal,
-          profileId,
-        },
-      );
-      await releaseSession();
-      setPhase('done');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      await releaseSession();
-      setBusy(false);
-      clearProgress();
-      abortRef.current = null;
-    }
+    restoreFlow.open(backup, [...selectedRegionIds]);
   }
 
   async function handleOpenFile(file: File | null) {
     if (!file) return;
-    setError(null);
+    setReadError(null);
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       applyBackupSession(openRadioBackupZip(bytes));
     } catch (err) {
       setBackup(null);
-      setError(err instanceof Error ? err.message : String(err));
+      setReadFailure(err);
     } finally {
       fileResetRef.current?.();
     }
@@ -524,7 +470,9 @@ export default function BuildRadioBackupPage() {
             taken beforehand cannot be restored — remapping those bases is out of scope.
           </Alert>
         ) : null}
-        {error ? <Alert color="red">{error}</Alert> : null}
+        {readError ? (
+          <ErrorPanel testId="backup-page-read-error" outcome={readError} retryLabel={null} />
+        ) : null}
         {d890Model ? <RangeChangeBanner buildId={build.id} /> : null}
 
         {d890Model ? (
@@ -605,12 +553,13 @@ export default function BuildRadioBackupPage() {
                 variant="destructive"
                 disabled={
                   busy ||
+                  restoreDialogOpen ||
+                  restoreFlow.view.busy ||
                   !serialOk ||
                   !restoreAvailable ||
-                  selectedRegionIds.size === 0 ||
-                  restoreConfirmOpen
+                  selectedRegionIds.size === 0
                 }
-                onClick={() => void handleRestoreToRadio()}
+                onClick={handleOpenRestoreDialog}
               >
                 Restore to radio
               </Button>
@@ -722,8 +671,8 @@ export default function BuildRadioBackupPage() {
                           ) : region.restoreRole === 'restorable' ? (
                             <Group gap="xs">
                               <Checkbox
-                                checked={rangeMismatch || selectedRegionIds.has(region.id)}
-                                disabled={busy || !restoreAvailable || rangeMismatch}
+                                checked={selectedRegionIds.has(region.id)}
+                                disabled={busy || restoreDialogOpen || !restoreAvailable}
                                 onCheckedChange={(checked) =>
                                   toggleRestorableRegion(region.id, checked)
                                 }
@@ -792,42 +741,17 @@ export default function BuildRadioBackupPage() {
           </Text>
         </FormSection>
 
-        {backup ? (
-          <ConfirmModal
-            open={restoreConfirmOpen}
-            onClose={handleCancelRestoreConfirm}
-            onConfirm={() => void handleConfirmRestore()}
-            title="Confirm restore"
-            confirmLabel="Restore to this radio"
-            tone="destructive"
-          >
-            <Stack gap="sm">
-              <Text size="sm">
-                Confirm this is the same radio the backup was taken from. Serial mismatch is refused
-                before this step — confirm is not a bypass.
-              </Text>
-              <Text size="sm" fw={600}>
-                Radio: {restoreIdentity?.label ?? descriptor?.label ?? '—'}
-              </Text>
-              {rangeMismatch ? (
-                <Text size="sm" fw={600} data-testid="restore-range-mismatch">
-                  {RESTORE_RANGE_MISMATCH_NOTE}
-                </Text>
-              ) : null}
-              {restoreIdentity?.serial || backup.manifest.serial ? (
-                <Text size="sm" fw={600}>
-                  Serial: {restoreIdentity?.serial ?? backup.manifest.serial}
-                </Text>
-              ) : (
-                <Text size="sm" fw={600}>
-                  {restoreIdentity?.firmware || backup.manifest.firmware
-                    ? `Firmware: ${restoreIdentity?.firmware ?? backup.manifest.firmware}`
-                    : `Backup: ${backup.manifest.descriptorLabel}`}
-                </Text>
-              )}
-            </Stack>
-          </ConfirmModal>
-        ) : null}
+        <RadioRestoreDialog
+          options={restoreShell}
+          view={restoreFlow.view}
+          actions={{
+            ...restoreFlow.actions,
+            onBackToExport: () => {
+              restoreFlow.actions.onBackToExport();
+              navigate(`/builds/${build.id}/export`);
+            },
+          }}
+        />
         <RadioIoProgressModal
           opened={busy}
           operation={operation}
@@ -838,22 +762,6 @@ export default function BuildRadioBackupPage() {
           navigationBlocked={leaveAttempted}
           onCancel={handleCancel}
           onClose={handleProgressClose}
-          finishAction={
-            operation === 'restore'
-              ? {
-                  label: 'Back to Export',
-                  onClick: () => {
-                    handleProgressClose();
-                    navigate(`/builds/${build.id}/export`);
-                  },
-                }
-              : undefined
-          }
-          successNote={
-            operation === 'restore' && dm32PowerCycle
-              ? DM32_POWER_CYCLE_AFTER_SESSION_NOTE
-              : undefined
-          }
         />
       </Stack>
     </FormPage>

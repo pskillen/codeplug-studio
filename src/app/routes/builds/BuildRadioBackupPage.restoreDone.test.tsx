@@ -98,6 +98,7 @@ describe('BuildRadioBackupPage restore done', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' }).at(-1)!);
     fireEvent.click(await screen.findByRole('button', { name: 'Restore to radio' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Restore to this radio' }));
+    await screen.findByText('Restore complete');
     fireEvent.click(await screen.findByRole('button', { name: 'Back to Export' }));
     expect(await screen.findByTestId('export-page')).toBeInTheDocument();
   });

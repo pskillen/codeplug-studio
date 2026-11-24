@@ -73,14 +73,14 @@ describe('RadioIoProgressModal', () => {
     const onCancel = vi.fn();
     renderModal({
       opened: true,
-      operation: 'restore',
+      operation: 'read',
       phase: 'transfer',
       progress: null,
       navigationBlocked: true,
       onCancel,
     });
 
-    expect(screen.getByText('Restoring backup to radio')).toBeInTheDocument();
+    expect(screen.getByText('Reading from radio')).toBeInTheDocument();
     expect(screen.getByText(/Stay on this page/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onCancel).toHaveBeenCalledTimes(1);
@@ -90,7 +90,7 @@ describe('RadioIoProgressModal', () => {
     const plan = Array.from({ length: 30 }, (_, i) => ({ label: `Planned ${i}`, weight: 10 }));
     renderModal({
       opened: true,
-      operation: 'restore',
+      operation: 'read',
       phase: 'transfer',
       progress: null,
       plan,
@@ -109,7 +109,7 @@ describe('RadioIoProgressModal', () => {
   it('appends a stage the plan did not name instead of dropping it', () => {
     renderModal({
       opened: true,
-      operation: 'restore',
+      operation: 'read',
       phase: 'transfer',
       progress: { cur: 1, max: 2, msg: '', stage: 'Surprise' },
       transferStages: ['Planned A', 'Surprise'],
@@ -123,7 +123,7 @@ describe('RadioIoProgressModal', () => {
   it('falls back to the growing list when there is no plan', () => {
     renderModal({
       opened: true,
-      operation: 'restore',
+      operation: 'read',
       phase: 'transfer',
       progress: { cur: 1, max: 2, msg: '', stage: 'Upload' },
       transferStages: ['Upload'],
@@ -133,43 +133,11 @@ describe('RadioIoProgressModal', () => {
     expect(screen.getByText('Upload')).toBeInTheDocument();
   });
 
-  it('shows restore title and steps that are not writing a codeplug', () => {
-    renderModal({
-      opened: true,
-      operation: 'restore',
-      phase: 'transfer',
-      progress: { cur: 1, max: 2, msg: 'Restoring channels' },
-      onCancel: vi.fn(),
-    });
-
-    expect(screen.getByText('Restoring backup to radio')).toBeInTheDocument();
-    expect(screen.getByText('Restore archive regions')).toBeInTheDocument();
-    expect(screen.queryByText(/Writing codeplug/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Assemble channels into image/i)).not.toBeInTheDocument();
-  });
-
-  it('shows restore finished copy without write-verify actions', () => {
-    const onClose = vi.fn();
-    renderModal({
-      opened: true,
-      operation: 'restore',
-      phase: 'done',
-      progress: null,
-      onCancel: vi.fn(),
-      onClose,
-    });
-
-    expect(screen.getByText('Restore finished')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Verify write' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('offers the caller finish action beside Close once a Restore finishes', () => {
+  it('offers the caller finish action beside Close once a read finishes', () => {
     const onBack = vi.fn();
     renderModal({
       opened: true,
-      operation: 'restore',
+      operation: 'read',
       phase: 'done',
       progress: null,
       finishAction: { label: 'Back to Export', onClick: onBack },
@@ -180,24 +148,10 @@ describe('RadioIoProgressModal', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the caller success note on restore success', () => {
-    renderModal({
-      opened: true,
-      operation: 'restore',
-      phase: 'done',
-      progress: null,
-      successNote: DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
-      onCancel: vi.fn(),
-      onClose: vi.fn(),
-    });
-    expect(screen.getByText('Restore finished')).toBeInTheDocument();
-    expect(screen.getByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).toBeInTheDocument();
-  });
-
-  it('hides the success note on in-progress transfer and when omitted', () => {
+  it('does not show an omitted success note after read', () => {
     const { rerender } = renderModal({
       opened: true,
-      operation: 'restore',
+      operation: 'read',
       phase: 'transfer',
       progress: { cur: 1, max: 2, msg: 'Restoring Zones' },
       successNote: DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
@@ -215,5 +169,6 @@ describe('RadioIoProgressModal', () => {
       onClose: vi.fn(),
     });
     expect(screen.queryByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('radio-io-progress-success-note')).not.toBeInTheDocument();
   });
 });
