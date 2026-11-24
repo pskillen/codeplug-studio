@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   DEFAULT_WRITE_PARTS,
   clampPartsToSupport,
   tickedPartCount,
+  warningsForParts,
   writeButtonLabel,
   writesToRadioImage,
 } from './writeParts.ts';
@@ -49,5 +51,45 @@ describe('write parts helpers', () => {
     expect(writesToRadioImage({ ...none, keps: true })).toBe(false);
     expect(writesToRadioImage({ ...none, contacts: true })).toBe(true);
     expect(writesToRadioImage({ ...none, codeplug: true })).toBe(true);
+  });
+});
+
+const codeplugWarning: ExportWarning = {
+  kind: 'general',
+  severity: 'problem',
+  message: 'codeplug truncation',
+};
+const contactWarning: ExportWarning = {
+  kind: 'general',
+  severity: 'problem',
+  message: 'contact cap',
+};
+
+describe('warningsForParts', () => {
+  it('warningsForParts keeps every warning when the codeplug is ticked', () => {
+    expect(
+      warningsForParts(
+        { ...none, codeplug: true },
+        { warnings: [codeplugWarning, contactWarning], contactWarnings: [contactWarning] },
+      ),
+    ).toEqual([codeplugWarning, contactWarning]);
+  });
+
+  it('warningsForParts keeps only contact warnings for contacts alone', () => {
+    expect(
+      warningsForParts(
+        { ...none, contacts: true },
+        { warnings: [codeplugWarning, contactWarning], contactWarnings: [contactWarning] },
+      ),
+    ).toEqual([contactWarning]);
+  });
+
+  it('warningsForParts is empty for keps alone', () => {
+    expect(
+      warningsForParts(
+        { ...none, keps: true },
+        { warnings: [codeplugWarning], contactWarnings: [contactWarning] },
+      ),
+    ).toEqual([]);
   });
 });
