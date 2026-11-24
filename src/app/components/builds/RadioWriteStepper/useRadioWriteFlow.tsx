@@ -24,7 +24,14 @@ import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
-import { RadioInterlockError, RadioIoError } from '@integrations/radio-io/kit/errors.ts';
+import {
+  classifyWriteError,
+  reportWriteError,
+  retryLabelFor,
+  type WriteErrorContext,
+  type WriteErrorOutcome,
+  type WriteErrorPhase,
+} from '../../../services/egress/writeErrorOutcome.ts';
 import { reviewNeedsReconnect } from '@integrations/radio-io/programHold.ts';
 import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
 import {
@@ -88,6 +95,7 @@ import {
   prepareRadioWriteImage,
   uploadPreparedRadioWrite,
   verifyRadioWrite,
+  RadioWriteBlockedError,
   RadioWriteCancelledError,
   type AtD890PreTransmitContext,
   type AtD890PreTransmitResult,
@@ -231,18 +239,6 @@ const EMPTY_FACTS: WrittenFacts = {
   writeTimings: null,
 };
 
-/** Copyable protocol trace a radio module attached to its error (`RadioIoError.debugText`). */
-export function errorDebugText(err: unknown): string | null {
-  return err instanceof RadioIoError && err.debugText ? err.debugText : null;
-}
-
-function logRadioWriteError(message: string, err: unknown): void {
-  const debugText = errorDebugText(err);
-  if (debugText) {
-    console.error('[radio-write]', message, debugText);
-  }
-}
-
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
@@ -271,9 +267,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const [parts, setParts] = useState<WriteParts>({ ...DEFAULT_WRITE_PARTS });
   const [contactSource, setContactSource] = useState<ContactSource>('library');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [errorDebug, setErrorDebug] = useState<string | null>(null);
-  const [canReconnect, setCanReconnect] = useState(false);
+  const [errorOutcome, setErrorOutcome] = useState<WriteErrorOutcome | null>(null);
+  const [retryLabel, setRetryLabel] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [pendingBlock, setPendingBlock] = useState<AtD890PendingBlock | null>(null);
   const [reconnecting, setReconnecting] = useState(false);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
@@ -334,6 +330,12 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const readStartRef = useRef(0);
   const readPlanRef = useRef<PlannedStage[]>([]);
   const transmitStartedRef = useRef(false);
+  const userCancelledRef = useRef(false);
+  const lastStageRef = useRef<string | undefined>(undefined);
+  const stepRef = useRef(step);
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
   const readLabelsRef = useRef<Set<string>>(new Set());
   const pendingVerifyRef = useRef<WriteVerifyPendingPayload | null>(null);
   const factsRef = useRef<WrittenFacts>({ ...EMPTY_FACTS });
@@ -355,6 +357,42 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
 
   function setPhaseBoth(next: Phase) {
     phaseRef.current = next;
+  }
+
+  function errorContext(phase: WriteErrorPhase): WriteErrorContext {
+    return {
+      phase,
+      transmitStarted: transmitStartedRef.current,
+      userCancelled: userCancelledRef.current,
+      radioLabel: descriptor?.label ?? 'radio',
+      profileId: egress.profileId,
+      stage: lastStageRef.current,
+      build: { version: __BUILD_VERSION__, env: __BUILD_ENV__ },
+    };
+  }
+
+  function runPhaseFromHook(): WriteErrorPhase {
+    return stepRef.current === 'review' ? 'review' : phaseRef.current;
+  }
+
+  function showPlainError(outcome: WriteErrorOutcome): void {
+    setErrorOutcome(outcome);
+    setRetryLabel(retryLabelFor(outcome, runPhaseFromHook()));
+    setNotice(null);
+  }
+
+  function fail(err: unknown, phase: WriteErrorPhase): void {
+    const outcome = classifyWriteError(err, errorContext(phase));
+    reportWriteError(outcome);
+    if (outcome.kind === 'cancelled') {
+      setNotice(outcome.message);
+      setErrorOutcome(null);
+      setRetryLabel(null);
+      setPendingBlock(null);
+      setStep('whatToWrite');
+      return;
+    }
+    showPlainError(outcome);
   }
 
   function setBusyNotify(next: boolean) {
@@ -406,6 +444,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
 
   function onProgress(p: ProgressUpdate) {
     const stage = p.stage;
+    if (stage) lastStageRef.current = stage;
     if (stage) {
       if (phaseRef.current === 'read') {
         readLabelsRef.current.add(stage);
@@ -446,10 +485,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   }
 
   function resetRun() {
-    setError(null);
-    setErrorDebug(null);
+    setErrorOutcome(null);
+    setRetryLabel(null);
+    setNotice(null);
     setPendingBlock(null);
-    setCanReconnect(false);
     setReconnecting(false);
     clearProgress();
     readPlanRef.current = [];
@@ -472,6 +511,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     factsRef.current = { ...EMPTY_FACTS };
     readLabelsRef.current = new Set();
     transmitStartedRef.current = false;
+    userCancelledRef.current = false;
+    lastStageRef.current = undefined;
     autoProceedRef.current = false;
     settingsAppliedRef.current = null;
     d890ControllerRef.current = null;
@@ -813,9 +854,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   async function run(opts: { reconnect: boolean }): Promise<void> {
     const p = partsRef.current;
     setStep('connectRead');
-    setError(null);
-    setErrorDebug(null);
-    setCanReconnect(false);
+    setErrorOutcome(null);
+    setRetryLabel(null);
+    setNotice(null);
     setReconnecting(opts.reconnect);
     clearProgress();
     updateReadTrack(() => newTrack());
@@ -825,6 +866,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     readStartRef.current = now();
     setPhaseBoth('read');
     transmitStartedRef.current = false;
+    userCancelledRef.current = false;
+    setNotice(null);
     readLabelsRef.current = new Set();
     abortRef.current = new AbortController();
     const signal = abortRef.current.signal;
@@ -839,17 +882,18 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         } catch (err) {
           // Cancelling the browser picker is not a failed radio read. Scope this to the picker:
           // a NotFoundError from an established session must still be reported.
-          if (
-            typeof err === 'object' &&
-            err !== null &&
-            'name' in err &&
-            err.name === 'NotFoundError'
-          ) {
+          const outcome = classifyWriteError(err, errorContext('connect'));
+          reportWriteError(outcome);
+          if (outcome.kind === 'cancelled') {
             setBusyNotify(false);
             setReconnecting(false);
+            setNotice(outcome.message);
+            setErrorOutcome(null);
+            setRetryLabel(null);
             setStep('whatToWrite');
             return;
           }
+          throw err;
           throw err;
         }
       }
@@ -1117,7 +1161,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       return;
     }
     if (err instanceof WriteCancelledError || err instanceof RadioWriteCancelledError) {
-      // Nothing was written; the session closed the way a read-only session does.
+      reportWriteError(classifyWriteError(err, errorContext('review')));
       setBusyNotify(false);
       setIsOpen(false);
       return;
@@ -1128,19 +1172,22 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     }
     coalescerRef.current?.flush();
     setBusyNotify(false);
-    // A D890 Write interrupted after whole units were sent leaves them pending on the radio (#1406).
-    const notice = interruptedWriteNotice(egress.profileId, err, failedSerial);
-    setPendingBlock(notice?.block ?? null);
-    const message = notice?.text ? `${errorMessage(err)} ${notice.text}` : errorMessage(err);
-    setError(message);
-    setErrorDebug(errorDebugText(err));
-    logRadioWriteError(message, err);
-    // Before the first frame, a failure is recoverable by reading again.
-    setCanReconnect(
-      !transmitStartedRef.current &&
-        phaseRef.current !== 'keps' &&
-        !(err instanceof RadioInterlockError),
-    );
+    const outcome = classifyWriteError(err, errorContext(runPhaseFromHook()));
+    reportWriteError(outcome);
+    if (outcome.kind === 'cancelled') {
+      setNotice(outcome.message);
+      setErrorOutcome(null);
+      setRetryLabel(null);
+      setPendingBlock(null);
+      setStep('whatToWrite');
+      return;
+    }
+    const noticeText = interruptedWriteNotice(egress.profileId, err, failedSerial);
+    setPendingBlock(noticeText?.block ?? null);
+    const message = noticeText?.text
+      ? `${outcome.message} ${noticeText.text}`
+      : outcome.message;
+    showPlainError({ ...outcome, message });
   }
 
   async function connectAndRead(): Promise<void> {
@@ -1148,14 +1195,23 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     resetRun();
     if (p.keps && kepsWriteFn) {
       if (!activeProjectId) {
-        setError('No active project.');
+        fail(
+          new RadioWriteBlockedError('No active project.', undefined, {
+            retry: 'none',
+            sent: 'nothing-sent',
+          }),
+          'read',
+        );
         return;
       }
       const all = await persistence.listSatellites(activeProjectId);
       satellitesRef.current = all.filter((s) => s.enabled);
       const capacity = satelliteKepsCapacityWarning(egress.profileId, satellitesRef.current);
       if (capacity) {
-        setError(capacity);
+        fail(
+          new RadioWriteBlockedError(capacity, undefined, { retry: 'none', sent: 'nothing-sent' }),
+          'read',
+        );
         return;
       }
     } else {
@@ -1197,7 +1253,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         return stored ? deserializeWriteVerifyPending(stored) : null;
       })();
     if (!pending) return;
-    setError(null);
+    userCancelledRef.current = false;
+    setNotice(null);
+    setErrorOutcome(null);
+    setRetryLabel(null);
     setCheck('running');
     setPhaseBoth('check');
     clearProgress();
@@ -1221,16 +1280,16 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       await releaseSession().catch(() => undefined);
       setBusyNotify(false);
       setCheck('available');
-      const message = errorMessage(err);
-      setError(message);
-      setErrorDebug(errorDebugText(err));
-      logRadioWriteError(message, err);
+      fail(err, 'check');
     }
   }
 
   async function writeKepsAfterRestart(): Promise<void> {
     if (!kepsWriteFn) return;
-    setError(null);
+    userCancelledRef.current = false;
+    setNotice(null);
+    setErrorOutcome(null);
+    setRetryLabel(null);
     setKepsAfterRestart('running');
     setPhaseBoth('keps');
     clearProgress();
@@ -1248,10 +1307,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       await releaseSession().catch(() => undefined);
       setBusyNotify(false);
       setKepsAfterRestart('pending');
-      const message = errorMessage(err);
-      setError(message);
-      setErrorDebug(errorDebugText(err));
-      logRadioWriteError(message, err);
+      fail(err, 'keps');
     }
   }
 
@@ -1304,11 +1360,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         : 'error'
       : undefined,
     busy,
-    error,
-    errorDebug: error ? errorDebug : null,
-    canReconnect,
+    errorOutcome,
+    retryLabel,
+    notice,
     pendingWarning:
-      error && pendingBlock
+      errorOutcome && pendingBlock
         ? { recordedAt: pendingBlock.recordedAt, interrupted: pendingBlock.interrupted }
         : null,
     reconnecting,
@@ -1329,6 +1385,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     onPartsChange: (next) => {
       directoryAttemptRef.current += 1;
       if (next.contacts !== parts.contacts) setDirectoryStatus('checking');
+      setNotice(null);
       setParts(next);
     },
     onContactSourceChange: (next) => {
@@ -1338,15 +1395,35 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       setContactSource(next);
     },
     onConnectAndRead: () => startWriteAction(guardedConnectAndRead),
-    onAbort: () => abortRef.current?.abort(),
+    onAbort: () => {
+      userCancelledRef.current = true;
+      abortRef.current?.abort();
+    },
     onWrite: () => decisionRef.current?.resolve(),
     onCancelReview: () => decisionRef.current?.reject(new WriteCancelledError()),
-    onReconnect: () => startWriteAction(() => run({ reconnect: false })),
+    onRetry: () => {
+      if (step === 'restartCheck' && checkStatusRef.current === 'available') {
+        void checkWrite();
+        return;
+      }
+      if (step === 'restartCheck' && kepsPendingRef.current) {
+        void writeKepsAfterRestart();
+        return;
+      }
+      startWriteAction(() => run({ reconnect: false }));
+    },
+    onChangeTicks: () => {
+      setErrorOutcome(null);
+      setRetryLabel(null);
+      setNotice(null);
+      setPendingBlock(null);
+      setStep('whatToWrite');
+    },
     onClearPendingWarning: () => {
       if (pendingBlock) clearInterruptedWriteWarning(pendingBlock);
       setPendingBlock(null);
-      setError(null);
-      setCanReconnect(false);
+      setErrorOutcome(null);
+      setRetryLabel(null);
     },
     onCheckWrite: () => void checkWrite(),
     onSkipCheck: skipOutstanding,

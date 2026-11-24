@@ -9,6 +9,7 @@ import type { DigitalContactsWriteSource } from '@core/domain/digitalIdDirectory
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 import type { WriteVerifyResult } from '@integrations/radio-io/writeVerify.ts';
 import type { SatelliteKepsWriteResult } from '../../../services/satelliteKepsWriteAdapters.ts';
+import type { WriteErrorOutcome } from '../../../services/egress/writeErrorOutcome.ts';
 import type { WriteParts, WritePartSupport } from './writeParts.ts';
 
 export type WriteStep =
@@ -153,11 +154,10 @@ export interface WriteFlowView {
   contactDirectoryStatus?: 'checking' | 'empty' | 'error' | 'ready';
   /** A read or transfer is in flight (abort is possible, leaving is blocked). */
   busy: boolean;
-  error: string | null;
-  /** Copyable protocol trace behind the error (for example the last radio frames), or null. */
-  errorDebug: string | null;
-  /** Offer "Reconnect, read & write" with the error. */
-  canReconnect: boolean;
+  errorOutcome: WriteErrorOutcome | null;
+  retryLabel: string | null;
+  /** Quiet return line (picker dismissed, read cancelled) on step 1. */
+  notice: string | null;
   /** AT-D890: a pending-units record sits behind the error; offers "I have rewritten this radio". */
   pendingWarning: { recordedAt: string; interrupted: boolean } | null;
   /** "Reconnecting: the radio may have left programming mode". */
@@ -188,7 +188,8 @@ export interface WriteFlowActions {
   onWrite: () => void;
   /** Review → Cancel: nothing is written. */
   onCancelReview: () => void;
-  onReconnect: () => void;
+  onRetry: () => void;
+  onChangeTicks: () => void;
   /** The operator confirmed the radio was rewritten (CPS or Studio): clear the pending-units warning. */
   onClearPendingWarning: () => void;
   onCheckWrite: () => void;

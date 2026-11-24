@@ -52,7 +52,9 @@ describe('serial picker lifecycle', () => {
             choosePort = resolve;
           }),
       )
-      .mockRejectedValueOnce(new DOMException('No port selected by the user.', 'NotFoundError'));
+      .mockRejectedValueOnce(
+        Object.assign(new Error('No port selected by the user.'), { name: 'NotFoundError' }),
+      );
     const { result } = mount();
     act(() =>
       result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }),
@@ -65,22 +67,23 @@ describe('serial picker lifecycle', () => {
     // Nothing needs Review (#1638): the read runs straight into the keps write.
     await act(async () => choosePort({ transport: 'web', port: {} as never }));
     expect(result.current.view.step).toBe('done');
-    expect(result.current.view.canReconnect).toBe(false);
-    expect(result.current.view.error).toBeNull();
+    expect(result.current.view.retryLabel).toBeNull();
+    expect(result.current.view.errorOutcome).toBeNull();
   });
 
   it('returns to options without a read error when the user cancels the port picker', async () => {
-    vi.mocked(grantRadioSerialPortForEgress).mockRejectedValueOnce(
-      new DOMException('No port selected by the user.', 'NotFoundError'),
-    );
+    const pickerCancel = new Error('No port selected by the user.');
+    pickerCancel.name = 'NotFoundError';
+    vi.mocked(grantRadioSerialPortForEgress).mockRejectedValueOnce(pickerCancel);
     const { result } = mount();
     act(() =>
       result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }),
     );
     await act(async () => result.current.actions.onConnectAndRead());
     expect(result.current.view.step).toBe('whatToWrite');
-    expect(result.current.view.error).toBeNull();
-    expect(result.current.view.canReconnect).toBe(false);
+    expect(result.current.view.notice).toContain('No port chosen');
+    expect(result.current.view.errorOutcome).toBeNull();
+    expect(result.current.view.retryLabel).toBeNull();
     expect(openRadioSessionForEgress).not.toHaveBeenCalled();
   });
   it('keeps genuine session failures visible and clears them on a successful retry', async () => {
@@ -96,11 +99,11 @@ describe('serial picker lifecycle', () => {
       result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }),
     );
     await act(async () => result.current.actions.onConnectAndRead());
-    expect(result.current.view.error).toContain('The serial device disconnected.');
-    expect(result.current.view.canReconnect).toBe(true);
-    await act(async () => result.current.actions.onReconnect());
+    expect(result.current.view.errorOutcome?.message).toContain('The serial device disconnected.');
+    expect(result.current.view.retryLabel).toBe('Reconnect and try again');
+    await act(async () => result.current.actions.onRetry());
     expect(result.current.view.step).toBe('done');
-    expect(result.current.view.error).toBeNull();
-    expect(result.current.view.canReconnect).toBe(false);
+    expect(result.current.view.errorOutcome).toBeNull();
+    expect(result.current.view.retryLabel).toBeNull();
   });
 });
