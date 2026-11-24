@@ -118,6 +118,8 @@ export function radioFoundryCableBoardForProfileId(profileId: string): RadioFoun
 }
 
 /** Cable board for a hydration model id, when this delivery has one. */
-export function radioFoundryCableBoardForModelId(modelId: string): RadioFoundryCableBoard | undefined {
+export function radioFoundryCableBoardForModelId(
+  modelId: string,
+): RadioFoundryCableBoard | undefined {
   return RADIOFOUNDRY_CABLE_BOARDS.find((row) => row.modelId === modelId);
 }

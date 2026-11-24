@@ -1,10 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { BytePipe } from '../../types.ts';
 import { RadioAbortedError } from '../../kit/errors.ts';
-import {
-  encodeDebugFrame,
-  decodeDebugFrame,
-} from '../../kit/codecs/radioFoundryDebugLink.ts';
+import { encodeDebugFrame, decodeDebugFrame } from '../../kit/codecs/radioFoundryDebugLink.ts';
 import {
   BLOCK_SIZE,
   CODEPLUG_COMMAND,
@@ -39,11 +36,7 @@ function u32le(addr: number): number[] {
 
 const INFO = encodeDebugFrame(CODEPLUG_COMMAND, 1, Uint8Array.of(OP_INFO));
 const VERSION = encodeDebugFrame(0x02, 2, new Uint8Array(0));
-const SUMS0_16 = encodeDebugFrame(
-  CODEPLUG_COMMAND,
-  3,
-  Uint8Array.from([OP_SUMS, ...u32le(0), 16]),
-);
+const SUMS0_16 = encodeDebugFrame(CODEPLUG_COMMAND, 3, Uint8Array.from([OP_SUMS, ...u32le(0), 16]));
 const SUMS_FLASH = encodeDebugFrame(
   CODEPLUG_COMMAND,
   4,
@@ -105,15 +98,9 @@ describe('classifyRadioFoundryDebugFrame', () => {
     ['READ_MEM', encodeRefusedDebugCommand(0x0c)],
     ['PING', encodeRefusedDebugCommand(0x01)],
     ['CPKV', encodeRefusedDebugCommand(0x23)],
-    [
-      'IDDB id 1',
-      encodeDebugFrame(0x1f, 1, Uint8Array.of(1, 0, 0, 0)),
-    ],
+    ['IDDB id 1', encodeDebugFrame(0x1f, 1, Uint8Array.of(1, 0, 0, 0))],
     ['INFO 2-byte payload', encodeDebugFrame(CODEPLUG_COMMAND, 1, Uint8Array.of(OP_INFO, 0))],
-    [
-      'VERSION with payload',
-      encodeDebugFrame(0x02, 1, Uint8Array.of(0x61)),
-    ],
+    ['VERSION with payload', encodeDebugFrame(0x02, 1, Uint8Array.of(0x61))],
   ])('refuses %s', (_name, frame) => {
     expect(classifyRadioFoundryDebugFrame(frame, CEILING).allowed).toBe(false);
   });

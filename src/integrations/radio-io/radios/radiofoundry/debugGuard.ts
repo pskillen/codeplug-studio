@@ -37,8 +37,7 @@ export class RadioFoundryDebugRefusedError extends RadioProtocolError {
 export type RadioFoundryDebugFrameKind = 'info' | 'version' | 'sums' | 'read' | 'iddb';
 
 export type RadioFoundryDebugFrameClass =
-  | { allowed: true; kind: RadioFoundryDebugFrameKind }
-  | { allowed: false; reason: string };
+  { allowed: true; kind: RadioFoundryDebugFrameKind } | { allowed: false; reason: string };
 
 function blockInsideImage(addr: number, ceiling: number): boolean {
   if (!Number.isInteger(addr) || addr < 0 || addr % BLOCK_SIZE !== 0) return false;
@@ -60,8 +59,7 @@ function classifyCodeplug(payload: Uint8Array, ceiling: number): RadioFoundryDeb
   }
   if (op === OP_SUMS) {
     if (args.length !== 5) return { allowed: false, reason: `SUMS args are ${args.length} bytes` };
-    const addr =
-      (args[0]! | (args[1]! << 8) | (args[2]! << 16) | (args[3]! << 24)) >>> 0;
+    const addr = (args[0]! | (args[1]! << 8) | (args[2]! << 16) | (args[3]! << 24)) >>> 0;
     const count = args[4]!;
     if (count < 1 || count > 16) {
       return { allowed: false, reason: `SUMS count ${count}` };
@@ -75,8 +73,7 @@ function classifyCodeplug(payload: Uint8Array, ceiling: number): RadioFoundryDeb
   }
   if (op === OP_READ) {
     if (args.length !== 6) return { allowed: false, reason: `READ args are ${args.length} bytes` };
-    const addr =
-      (args[0]! | (args[1]! << 8) | (args[2]! << 16) | (args[3]! << 24)) >>> 0;
+    const addr = (args[0]! | (args[1]! << 8) | (args[2]! << 16) | (args[3]! << 24)) >>> 0;
     if (!blockInsideImage(addr, ceiling)) {
       return { allowed: false, reason: `READ at 0x${addr.toString(16)}` };
     }
@@ -91,7 +88,10 @@ export function classifyRadioFoundryDebugFrame(
   imageEnd: number,
 ): RadioFoundryDebugFrameClass {
   if (data.length < 2) {
-    if (data.length === 1 && (data[0] === 0x52 || data[0] === 0x57 || data[0] === 0x58 || data[0] === 0x43)) {
+    if (
+      data.length === 1 &&
+      (data[0] === 0x52 || data[0] === 0x57 || data[0] === 0x58 || data[0] === 0x43)
+    ) {
       return { allowed: false, reason: `legacy byte 0x${data[0]!.toString(16)}` };
     }
     if (data.length === 1 && data[0] === 0xe0) {

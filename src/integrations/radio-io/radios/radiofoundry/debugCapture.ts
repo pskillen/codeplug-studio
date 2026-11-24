@@ -57,12 +57,18 @@ export function radioFoundryDebugAddresses(
   layout: RadioFoundryInfoLayout,
   opts: { area2: boolean },
 ): { codeplug: number[]; area2: number[] } {
-  const codeplug = servedBlockAddresses(RADIOFOUNDRY_IMAGE_SIZE, layout.eepromEnd, layout.flashStart).filter(
-    (addr) => blockInsideLayout(addr, layout),
-  );
+  const codeplug = servedBlockAddresses(
+    RADIOFOUNDRY_IMAGE_SIZE,
+    layout.eepromEnd,
+    layout.flashStart,
+  ).filter((addr) => blockInsideLayout(addr, layout));
   const area2: number[] = [];
   if (opts.area2) {
-    for (let addr = DMR_ID_DATABASE_AREA2_ADDRESS; addr + BLOCK_SIZE <= layout.imageEnd; addr += BLOCK_SIZE) {
+    for (
+      let addr = DMR_ID_DATABASE_AREA2_ADDRESS;
+      addr + BLOCK_SIZE <= layout.imageEnd;
+      addr += BLOCK_SIZE
+    ) {
       area2.push(addr);
     }
   }
@@ -175,7 +181,11 @@ export const RADIOFOUNDRY_REGION = {
 
 const FLASH_REGION_LENGTH = RADIOFOUNDRY_IMAGE_SIZE - FLASH_IMAGE_START;
 
-function stitchBlocks(blocks: Map<number, RadioFoundryImageBlock>, start: number, length: number): Uint8Array {
+function stitchBlocks(
+  blocks: Map<number, RadioFoundryImageBlock>,
+  start: number,
+  length: number,
+): Uint8Array {
   const out = new Uint8Array(length);
   out.fill(0xff);
   for (let off = 0; off < length; off += BLOCK_SIZE) {
@@ -272,7 +282,9 @@ export function buildRadioFoundryDebugArchiveParts(capture: RadioFoundryDebugCap
   let firmware: string | undefined;
   if (capture.versionText) {
     try {
-      firmware = summariseRadioFoundryBuild(parseRadioFoundryVersionText(capture.versionText)).label;
+      firmware = summariseRadioFoundryBuild(
+        parseRadioFoundryVersionText(capture.versionText),
+      ).label;
     } catch {
       firmware = undefined;
     }

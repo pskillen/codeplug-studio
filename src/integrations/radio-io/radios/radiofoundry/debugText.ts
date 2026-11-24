@@ -1,6 +1,10 @@
 export const RADIOFOUNDRY_DEBUG_AREA2_OPTION = 'idDatabaseArea2';
 
-export const RADIOFOUNDRY_CAPTURE_STAGES: readonly string[] = ['Connect', 'Codeplug', 'ID database'];
+export const RADIOFOUNDRY_CAPTURE_STAGES: readonly string[] = [
+  'Connect',
+  'Codeplug',
+  'ID database',
+];
 
 export const RADIOFOUNDRY_CAPTURE_OPTIONS: readonly {
   id: string;

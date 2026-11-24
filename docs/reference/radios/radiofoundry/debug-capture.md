@@ -6,13 +6,13 @@ What a RadioFoundry **Debug read** sends over the programming cable, how the fra
 
 Every host→radio frame during a Debug read passes through a guard. Each write must be **exactly one** valid debug-link frame (correct length and CRC). The guard admits only:
 
-| Command | Payload | Role |
-| --- | --- | --- |
-| CODEPLUG op 0 INFO | `[0x00]` | Required first; may repeat when the radio is busy |
-| VERSION `0x02` | empty | After INFO |
-| CODEPLUG op 1 SUMS | 6 bytes, count 1–16, every block in the run inside the image | After INFO |
-| CODEPLUG op 2 READ | 7 bytes, block inside the image | After INFO |
-| IDDB `0x1F` | `00 00 00 00` (database id 0 only) | After INFO |
+| Command            | Payload                                                      | Role                                              |
+| ------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
+| CODEPLUG op 0 INFO | `[0x00]`                                                     | Required first; may repeat when the radio is busy |
+| VERSION `0x02`     | empty                                                        | After INFO                                        |
+| CODEPLUG op 1 SUMS | 6 bytes, count 1–16, every block in the run inside the image | After INFO                                        |
+| CODEPLUG op 2 READ | 7 bytes, block inside the image                              | After INFO                                        |
+| IDDB `0x1F`        | `00 00 00 00` (database id 0 only)                           | After INFO                                        |
 
 Refused (non-exhaustive): PING, KEY, PTT, RADIO, READ_MEM, REBOOT, STORAGE (any op), CODEPLUG ops 3–10 (BEGIN through ABORT and unknown ops), SATELLITE, CPKV, IDDB with non-zero id, non-debug-link bytes (including OpenGD77 `R`/`W`/`X`/`C` and MMDVM `0xE0`), two frames in one write, bad CRC, truncated frames.
 
@@ -42,17 +42,17 @@ SUMS pacing matches every other `readImageBlocks` caller (`RADIOFOUNDRY_SUMS_PAU
 
 `buildRadioFoundryDebugArchiveParts` produces manifest, regions and sidecars for `packRadioBackupZip`. Coverage is `partial`; every region is `inspect-only`.
 
-| Region id | Address | Length |
-| --- | --- | --- |
-| `eeprom-image` | `0x0` | `0x10000` |
-| `flash-image` | `0x20000` | `0x8EE60` |
-| `iddb-area2` | `0xD8000` | through the last non-blank area-2 block (absent when area 2 was not read or all blank) |
+| Region id      | Address   | Length                                                                                 |
+| -------------- | --------- | -------------------------------------------------------------------------------------- |
+| `eeprom-image` | `0x0`     | `0x10000`                                                                              |
+| `flash-image`  | `0x20000` | `0x8EE60`                                                                              |
+| `iddb-area2`   | `0xD8000` | through the last non-blank area-2 block (absent when area 2 was not read or all blank) |
 
-| Sidecar | Content |
-| --- | --- |
-| `debug/info.bin` | INFO body after status |
-| `debug/version.txt` | VERSION text (UTF-8), when received |
-| `debug/iddb.bin` | IDDB reply after status, when status was 0 |
-| `debug/sums.bin` | 9 bytes per block read (addr u32 LE, CRC u32 LE, blank u8), sorted by address |
+| Sidecar             | Content                                                                       |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `debug/info.bin`    | INFO body after status                                                        |
+| `debug/version.txt` | VERSION text (UTF-8), when received                                           |
+| `debug/iddb.bin`    | IDDB reply after status, when status was 0                                    |
+| `debug/sums.bin`    | 9 bytes per block read (addr u32 LE, CRC u32 LE, blank u8), sorted by address |
 
 The Debug read path is separate from cable **Write** ([cable-write.md](cable-write.md)); capture code must not call upload, write ops or STORAGE claim paths.

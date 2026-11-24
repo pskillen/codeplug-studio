@@ -25,7 +25,10 @@ import {
   RADIOFOUNDRY_REGION,
 } from './debugCapture.ts';
 import { DMR_ID_DATABASE_AREA2_ADDRESS } from './idDatabase.ts';
-import { FakeRadioFoundryRadio, type FakeRadioFoundryOptions } from './__fixtures__/fakeRadioFoundryRadio.ts';
+import {
+  FakeRadioFoundryRadio,
+  type FakeRadioFoundryOptions,
+} from './__fixtures__/fakeRadioFoundryRadio.ts';
 
 const protocolOpts = { protocolOptions: { pause: async () => {} } };
 
@@ -96,9 +99,15 @@ describe('captureRadioFoundryDebugPipe', () => {
       ...protocolOpts,
       includeArea2: true,
     });
-    const area2Sums = sumsAddresses(withArea.writes).filter((a) => a >= DMR_ID_DATABASE_AREA2_ADDRESS);
+    const area2Sums = sumsAddresses(withArea.writes).filter(
+      (a) => a >= DMR_ID_DATABASE_AREA2_ADDRESS,
+    );
     expect(area2Sums.length).toBeGreaterThan(100);
-    expect(readAddresses(withArea.writes).every((a) => a < DMR_ID_DATABASE_AREA2_ADDRESS || !withArea.block(a).every((b) => b === 0xff))).toBe(true);
+    expect(
+      readAddresses(withArea.writes).every(
+        (a) => a < DMR_ID_DATABASE_AREA2_ADDRESS || !withArea.block(a).every((b) => b === 0xff),
+      ),
+    ).toBe(true);
   });
 
   it('stops area 2 at the board image end', async () => {
@@ -161,7 +170,11 @@ describe('captureRadioFoundryDebugPipe', () => {
   it('succeeds without iddb when IDDB status is 4', async () => {
     const pipe = fakeFor(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
     pipe.iddbStatus = 4;
-    const capture = await captureRadioFoundryDebugPipe(pipe, DM32UV_RADIOFOUNDRY_CABLE_BOARD, protocolOpts);
+    const capture = await captureRadioFoundryDebugPipe(
+      pipe,
+      DM32UV_RADIOFOUNDRY_CABLE_BOARD,
+      protocolOpts,
+    );
     expect(capture.iddb).toBeUndefined();
     expect(capture.codeplug.size).toBeGreaterThan(0);
   });
@@ -184,7 +197,10 @@ describe('captureRadioFoundryDebugPipe', () => {
 
   it('buildRadioFoundryDebugArchiveParts round-trips through pack and parse', async () => {
     const pipe = fakeFor(MD9600_RADIOFOUNDRY_CABLE_BOARD, { fill: 0x33 });
-    pipe.setBlock(0x20000, Uint8Array.from({ length: BLOCK_SIZE }, (_, i) => i & 0xff));
+    pipe.setBlock(
+      0x20000,
+      Uint8Array.from({ length: BLOCK_SIZE }, (_, i) => i & 0xff),
+    );
     const capture = await captureRadioFoundryDebugPipe(pipe, MD9600_RADIOFOUNDRY_CABLE_BOARD, {
       ...protocolOpts,
       includeArea2: true,
