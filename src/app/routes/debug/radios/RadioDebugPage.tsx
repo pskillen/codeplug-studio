@@ -81,10 +81,7 @@ export function RadioNotFound() {
 
 export default function RadioDebugPage() {
   const { radio, firmware } = useParams();
-  const navigate = useNavigate();
   const descriptor = descriptorForPair(radio ?? '', firmware ?? '');
-  const [activeTab, setActiveTab] = useState<string | null>('overview');
-  const [reading, setReading] = useState(false);
 
   if (!descriptor) {
     const alternatives = radio ? firmwaresOf(radio) : [];
@@ -115,6 +112,19 @@ export default function RadioDebugPage() {
     return <RadioNotFound />;
   }
 
+  return <RadioDebugPageResolved radio={radio!} descriptor={descriptor} />;
+}
+
+function RadioDebugPageResolved({
+  radio,
+  descriptor,
+}: {
+  radio: string;
+  descriptor: RadioDebugDescriptor;
+}) {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<string | null>('overview');
+  const [reading, setReading] = useState(false);
   const tabIds = radioDebugTabs(descriptor).map((tab) => tab.toLowerCase());
   const tabValue = resolveRadioDebugTabValue(activeTab, tabIds);
   const [handoff, setHandoff] = useState<{
@@ -125,14 +135,17 @@ export default function RadioDebugPage() {
   const [secondsLeft, setSecondsLeft] = useState<number>();
   const [portRead, setPortRead] = useState<DebugOpenPort>();
   const handoffRef = useRef(handoff);
-  handoffRef.current = handoff;
 
   const handoffTarget =
     handoff && handoff.error.found !== 'unknown'
-      ? descriptorForPair(radio!, handoff.error.found)
+      ? descriptorForPair(radio, handoff.error.found)
       : undefined;
-  const stockSibling = firmwaresOf(radio!).find((d) => d.firmware === 'stock');
+  const stockSibling = firmwaresOf(radio).find((d) => d.firmware === 'stock');
   const portOpen = !!(handoff?.error.port && !portClosedMessage);
+
+  useEffect(() => {
+    handoffRef.current = handoff;
+  }, [handoff]);
 
   useEffect(() => {
     return () => {
@@ -174,11 +187,11 @@ export default function RadioDebugPage() {
             {DEBUG_FIRMWARE_LABEL[descriptor.firmware]}
           </Badge>
           <FirmwareSwitch
-            options={firmwaresOf(radio!)}
+            options={firmwaresOf(radio)}
             value={descriptor.firmware}
             disabled={reading}
             onChange={(next) => {
-              const target = firmwaresOf(radio!).find((d) => d.firmware === next);
+              const target = firmwaresOf(radio).find((d) => d.firmware === next);
               if (target) {
                 void closeHandoff();
                 navigate(debugRadioPath(target));
@@ -204,7 +217,7 @@ export default function RadioDebugPage() {
               }}
               onSwitchOnly={async (fw) => {
                 await closeHandoff();
-                const target = firmwaresOf(radio!).find((d) => d.firmware === fw);
+                const target = firmwaresOf(radio).find((d) => d.firmware === fw);
                 if (target) navigate(debugRadioPath(target));
               }}
               onClose={() => void closeHandoff()}
@@ -226,7 +239,7 @@ export default function RadioDebugPage() {
             onPortReadConsumed={() => setPortRead(undefined)}
             onFirmwareSwitch={async (next) => {
               await closeHandoff();
-              const target = firmwaresOf(radio!).find((d) => d.firmware === next);
+              const target = firmwaresOf(radio).find((d) => d.firmware === next);
               if (target) navigate(debugRadioPath(target));
             }}
           />
