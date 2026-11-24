@@ -10,6 +10,7 @@ export interface WireNameShortening {
   stillExceedsLimit: boolean;
   /** True when the name was disambiguated due to a collision with another exported name. */
   isCollision?: boolean;
+  entityId?: string;
 }
 
 export interface WireNameShorteningGroup {
@@ -228,6 +229,7 @@ export function formatExportWarnings(warnings: ExportWarning[]): FormattedExport
             exported: warning.exported,
             stillExceedsLimit: true,
             isCollision: true,
+            entityId: warning.entityId,
           });
           break;
         }
@@ -244,8 +246,14 @@ export function formatExportWarnings(warnings: ExportWarning[]): FormattedExport
             original: warning.original,
             exported: warning.exported,
             stillExceedsLimit: warning.remediation !== 'shortened',
+            entityId: warning.entityId,
           },
         );
+        break;
+      }
+
+      case 'keps_excluded': {
+        generalInfo.push(formatExportWarning(warning));
         break;
       }
 

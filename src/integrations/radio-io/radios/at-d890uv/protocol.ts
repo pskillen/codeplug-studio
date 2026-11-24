@@ -98,7 +98,7 @@ import {
 import { assertAtD890TransmitAddress } from './writableExtents.ts';
 import { restoreAtD890FromBackup, type AtD890RestoreArchive } from './restoreFromBackup.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
-import { RadioProtocolError } from '../../kit/errors.ts';
+import { adviseRadioError, RadioProtocolError } from '../../kit/errors.ts';
 import { assertAtD890NoStunKill, atD890StunKillState } from './stunKillGuard.ts';
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
@@ -644,7 +644,12 @@ export class AtD890uvProtocol implements CloneImageRadio {
   assertNoStunKillFlag(): void {
     const f = this.localInfoFlags;
     if (f === null) {
-      if (this.pipe !== null) throw new RadioProtocolError(AT_D890_STUN_KILL_UNKNOWN_MESSAGE);
+      if (this.pipe !== null) {
+        throw adviseRadioError(new RadioProtocolError(AT_D890_STUN_KILL_UNKNOWN_MESSAGE), {
+          retry: 'reconnect',
+          sent: 'nothing-sent',
+        });
+      }
       return;
     }
     assertAtD890NoStunKill(Uint8Array.from(f));

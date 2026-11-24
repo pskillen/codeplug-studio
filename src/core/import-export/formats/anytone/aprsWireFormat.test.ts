@@ -67,10 +67,16 @@ describe('anytone aprsWireFormat', () => {
     expect(warnings).toEqual([
       {
         kind: 'general',
-        severity: 'problem',
+        severity: 'info',
         message: 'APRS auto TX interval 61s adjusted to 60s for Anytone wire encoding',
       },
     ]);
+  });
+
+  it('APRS interval snap is a note', () => {
+    const warnings: ExportWarning[] = [];
+    formatAnytoneAprsAutoTxIntervalWire(61, warnings);
+    expect(warnings[0]?.severity).toBe('info');
   });
 
   it('decomposes fixed latitude and longitude', () => {

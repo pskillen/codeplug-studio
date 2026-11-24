@@ -111,7 +111,7 @@ describe('useRadioWriteFlow progress coalescing (#1558)', () => {
       gate.resolve();
     });
     // No timer has fired: the flush came with the error.
-    expect(result.current.view.error).toBe('radio went away');
+    expect(result.current.view.errorOutcome?.message).toBe('radio went away');
     expect(result.current.view.progress?.cur).toBe(50);
     expect(vi.getTimerCount()).toBe(0);
   });

@@ -16,6 +16,11 @@ export type RadioIoErrorCode =
   | 'nothingInstalled'
   | 'needsConfirm';
 
+/** What helps after this error. Set by the module that throws; the shell defaults it when unset. */
+export type RadioRetryAdvice = 'reconnect' | 'rewrite' | 'none';
+/** What the radio may hold. 'nothing-saved': frames were sent but the module knows none was kept. */
+export type RadioSentState = 'nothing-sent' | 'nothing-saved' | 'may-hold-part';
+
 export class RadioIoError extends Error {
   readonly code: RadioIoErrorCode;
   /**
@@ -23,12 +28,26 @@ export class RadioIoError extends Error {
    * The UI shows it next to the message; it is never part of `message`.
    */
   debugText?: string;
+  /** What helps after this error. Set by the module that throws; the shell defaults it when unset. */
+  retry?: RadioRetryAdvice;
+  /** What the radio may hold after this error. */
+  sent?: RadioSentState;
 
   constructor(code: RadioIoErrorCode, message: string) {
     super(message);
     this.name = 'RadioIoError';
     this.code = code;
   }
+}
+
+/** Set what helps and what the radio may hold on an error, and return it (for `throw advise(new X(...), …)`). */
+export function adviseRadioError<E extends { retry?: RadioRetryAdvice; sent?: RadioSentState }>(
+  err: E,
+  advice: { retry?: RadioRetryAdvice; sent?: RadioSentState },
+): E {
+  if (advice.retry !== undefined) err.retry = advice.retry;
+  if (advice.sent !== undefined) err.sent = advice.sent;
+  return err;
 }
 
 export class RadioTimeoutError extends RadioIoError {

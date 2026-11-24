@@ -12,6 +12,7 @@ import {
   type ProgressModalStep,
 } from '../../components/v2/index.ts';
 import RadioIoReplayDemo from './RadioIoReplayDemo.tsx';
+import ErrorPanel from '../../components/egress/ErrorPanel/ErrorPanel.tsx';
 import RadioWriteStepperDemo from './RadioWriteStepperDemo.tsx';
 import RangeChangeDemo from './RangeChangeDemo.tsx';
 import RadioIoStageList, { type StageRow } from '../../components/builds/RadioIoStageList.tsx';
@@ -246,6 +247,62 @@ export default function StyleguideOverlaysPage() {
               </Text>
             )}
           </FilterPopover>
+        </Group>
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="Error panel"
+        description="Write and export dialogs use ErrorPanel for every failure: what reached the radio, the message, retry only when it helps, Debug details always, and a console line."
+      >
+        <Group align="flex-start" grow>
+          <ErrorPanel
+            outcome={{
+              kind: 'error',
+              retry: 'reconnect',
+              sent: 'nothing-sent',
+              message: 'Radio I/O timed out waiting for bytes. (tried baud: 9600)',
+              debugText: 'error: RadioTimeoutError\ncode: timeout',
+              code: 'timeout',
+            }}
+            retryLabel="Reconnect and try again"
+            onRetry={() => undefined}
+          />
+          <ErrorPanel
+            outcome={{
+              kind: 'error',
+              retry: 'rewrite',
+              sent: 'may-hold-part',
+              message: 'Serial pipe closed unexpectedly.',
+              debugText: 'error: RadioClosedError\ncode: closed',
+              code: 'closed',
+            }}
+            retryLabel="Write again"
+            onRetry={() => undefined}
+          />
+          <ErrorPanel
+            outcome={{
+              kind: 'error',
+              retry: 'none',
+              sent: 'nothing-sent',
+              message:
+                'This radio\'s flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry\'s web programming utility (it backs up first) or with "rfoundry_debug.py storage claim", then write again. Nothing was written.',
+              debugText: 'INFO flags: 0x00, storage writable: no',
+              code: 'interlock',
+            }}
+            retryLabel={null}
+          />
+          <ErrorPanel
+            outcome={{
+              kind: 'error',
+              retry: 'none',
+              sent: 'nothing-sent',
+              message: 'No active project.',
+              debugText:
+                'error: Error\ncode: none\nmessage: No active project.\nphase: read\nstage: none\nradio: AT-D890UV\nprofile: radio-io-at-d890uv\nstack:\nnone',
+              code: 'unknown',
+            }}
+            retryLabel={null}
+          />
         </Group>
       </StyleguideSection>
 

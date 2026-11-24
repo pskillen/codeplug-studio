@@ -32,7 +32,7 @@ async function dm32Session(): Promise<{ session: RadioSession; pipe: Dm32Scripte
   return { session: { descriptor: DM32UV_DESCRIPTOR, pipe, radio }, pipe };
 }
 
-function isBlockWrite(frame: number[]): boolean {
+function isBlockWrite(frame: Uint8Array | readonly number[]): boolean {
   return frame[0] === 0x57 && frame.length === 6 + DM32_BLOCK_SIZE;
 }
 
@@ -70,5 +70,20 @@ describe('uploadPreparedRadioWrite beforeTransmit, DM-32UV frames', () => {
     // The in-session read had already happened (read frames only); no block write yet.
     expect(hooked.frames.slice(0, hooked.framesAtHook).some(isBlockWrite)).toBe(false);
     expect(hooked.frames.slice(hooked.framesAtHook).some(isBlockWrite)).toBe(true);
+  }, 20_000);
+
+  it('DM-32UV sends no write frame when the pause rejects', async () => {
+    const { session, pipe } = await dm32Session();
+    const before = pipe.writes.length;
+    await expect(
+      uploadPreparedRadioWrite(session, egress, undefined, {
+        channels: [],
+        organisation: {},
+        beforeTransmit: async () => {
+          throw new Error('cancelled');
+        },
+      }),
+    ).rejects.toThrow('cancelled');
+    expect(pipe.writes.slice(before).some(isBlockWrite)).toBe(false);
   }, 20_000);
 });

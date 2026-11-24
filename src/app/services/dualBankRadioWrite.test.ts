@@ -19,6 +19,34 @@ function emptyLibrary(): LibrarySlice {
 }
 
 describe('collectDualBankDirectorySlice', () => {
+  it('directory paging stops on an aborted signal', async () => {
+    const store = new InMemoryProjectPersistence();
+    const rows = Array.from({ length: 20 }, (_, i) => ({
+      projectId: 'p1',
+      digitalId: 1000 + i,
+      mode: 'dmr' as const,
+      name: `Contact ${String(i).padStart(3, '0')}`,
+      callsign: '',
+      city: '',
+      state: '',
+      country: '',
+    }));
+    await store.putDigitalIdDirectoryEntriesBatch(rows);
+    const ac = new AbortController();
+    const warnings: ExportWarning[] = [];
+    const promise = collectDualBankDirectorySlice({
+      store,
+      projectId: 'p1',
+      library: emptyLibrary(),
+      egressProfileId: 'radio-io-dm32uv',
+      options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
+      warnings,
+      signal: ac.signal,
+    });
+    ac.abort();
+    await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
   it('streams directory rows into DM-32 address-book DTOs and skips library overlaps when Both', async () => {
     const store = new InMemoryProjectPersistence();
     await store.putDigitalIdDirectoryEntriesBatch([

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render as rtlRender, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { DesignSystemV2Provider } from '../../v2/index.ts';
 import type { RadioDescriptor } from '@integrations/radio-io/types.ts';
 import {
@@ -37,6 +38,72 @@ const ctx: ReviewContext = {
 describe('reviewPauseReasons (#1638)', () => {
   it('has no reason for a radio whose Review shows only facts', () => {
     expect(reviewPauseReasons(descriptor, ctx)).toEqual([]);
+  });
+
+  it('a build problem pauses Review', () => {
+    const warnings: ExportWarning[] = [
+      { kind: 'general', severity: 'problem', message: 'truncated name' },
+    ];
+    expect(reviewPauseReasons(descriptor, { ...ctx, buildWarnings: warnings })).toContain(
+      'build-problems',
+    );
+  });
+
+  it('notes alone never pause Review', () => {
+    const warnings: ExportWarning[] = [
+      {
+        kind: 'wire_name',
+        severity: 'info',
+        remediation: 'shortened',
+        entityKind: 'Channel',
+        original: 'A',
+        exported: 'B',
+        limit: 16,
+      },
+    ];
+    expect(reviewPauseReasons(descriptor, { ...ctx, buildWarnings: warnings })).toEqual([]);
+  });
+
+  it('a radio finding that is a problem pauses Review', () => {
+    const warnings: ExportWarning[] = [
+      { kind: 'general', severity: 'problem', message: 'NXDN not written' },
+    ];
+    expect(reviewPauseReasons(descriptor, { ...ctx, radioWarnings: warnings })).toContain(
+      'radio-findings',
+    );
+  });
+
+  it('Review lists Build problems and From the radio', () => {
+    const buildWarnings: ExportWarning[] = [
+      { kind: 'general', severity: 'problem', message: 'build issue' },
+    ];
+    const radioWarnings: ExportWarning[] = [
+      { kind: 'general', severity: 'problem', message: 'radio issue' },
+    ];
+    const d = { ...descriptor, programHoldSafeMs: 5000 } as RadioDescriptor;
+    render(
+      <>
+        {reviewSectionsFor(d, {
+          ...ctx,
+          buildWarnings,
+          radioWarnings,
+        })}
+      </>,
+    );
+    expect(screen.getByText('Build problems')).toBeInTheDocument();
+    expect(screen.getByText('From the radio')).toBeInTheDocument();
+    expect(screen.getByText('build issue')).toBeInTheDocument();
+    expect(screen.getByText('radio issue')).toBeInTheDocument();
+  });
+
+  it('Review states the re-read for a radio with a finite program hold', () => {
+    const d = { ...descriptor, programHoldSafeMs: 1500 } as RadioDescriptor;
+    render(<>{reviewSectionsFor(d, ctx)}</>);
+    expect(
+      screen.getByText(
+        /Studio reads the radio again before writing if this screen stays open longer than 1\.5 s\./,
+      ),
+    ).toBeInTheDocument();
   });
 
   it('collects the reasons of matching providers only, once each', () => {

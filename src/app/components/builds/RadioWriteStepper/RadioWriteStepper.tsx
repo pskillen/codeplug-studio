@@ -7,7 +7,8 @@
  */
 
 import { useState, type ReactNode } from 'react';
-import { Alert, Text } from '@mantine/core';
+import { Text } from '@mantine/core';
+import { ErrorPanel } from '../../egress/index.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '../../../hooks/useScreenWakeLock.ts';
 import { ModalShell } from '../../v2/index.ts';
 import classes from './RadioWriteStepper.module.css';
@@ -25,28 +26,6 @@ import { Button } from '../../v2/index.ts';
 import { WritingBody, WritingFooter } from './steps/WritingStep.tsx';
 import { RestartCheckBody, RestartCheckFooter } from './steps/RestartCheckStep.tsx';
 import { DoneBody, DoneFooter } from './steps/DoneStep.tsx';
-
-/** Collapsed protocol trace under the error, with a copy button for bug reports. */
-function ErrorDebug({ message, debug }: { message: string; debug: string }) {
-  const [copied, setCopied] = useState(false);
-  async function copy(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(`${message}\n\n${debug}`);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
-  return (
-    <details style={{ marginTop: 8 }} data-testid="write-stepper-error-debug">
-      <summary>Debug details</summary>
-      <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, margin: '8px 0' }}>{debug}</pre>
-      <Button variant="secondary" size="sm" onClick={() => void copy()}>
-        {copied ? 'Copied' : 'Copy debug text'}
-      </Button>
-    </details>
-  );
-}
 
 export interface RadioWriteStepperProps {
   config: WriteStepperConfig;
@@ -148,6 +127,27 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
       break;
   }
 
+  const wayOut =
+    view.errorOutcome && (view.pendingWarning || view.retryLabel === null) ? (
+      <>
+        {view.pendingWarning ? (
+          <PendingWarningClear
+            warning={view.pendingWarning}
+            onClear={actions.onClearPendingWarning}
+          />
+        ) : null}
+        {view.pendingWarning && view.retryLabel === null ? (
+          <div style={{ marginTop: 8 }}>
+            <Button variant="secondary" size="sm" onClick={actions.onChangeTicks}>
+              Change the ticks
+            </Button>
+          </div>
+        ) : null}
+      </>
+    ) : view.pendingWarning ? (
+      <PendingWarningClear warning={view.pendingWarning} onClear={actions.onClearPendingWarning} />
+    ) : null;
+
   return (
     <ModalShell
       open={view.open}
@@ -158,24 +158,19 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
       footer={footer}
     >
       <StepBar step={view.step} />
-      {view.error ? (
-        <Alert color="red" mb="sm" data-testid="write-stepper-error">
-          {view.error}
-          {view.errorDebug ? <ErrorDebug message={view.error} debug={view.errorDebug} /> : null}
-          {view.pendingWarning ? (
-            <PendingWarningClear
-              warning={view.pendingWarning}
-              onClear={actions.onClearPendingWarning}
-            />
-          ) : null}
-          {view.canReconnect ? (
-            <div style={{ marginTop: 8 }}>
-              <Button variant="secondary" size="sm" onClick={actions.onReconnect}>
-                Reconnect, read & write
-              </Button>
-            </div>
-          ) : null}
-        </Alert>
+      {view.errorOutcome ? (
+        <ErrorPanel
+          testId="write-stepper-error"
+          outcome={view.errorOutcome}
+          retryLabel={view.retryLabel}
+          onRetry={actions.onRetry}
+          wayOut={wayOut}
+        />
+      ) : null}
+      {view.notice && view.step === 'whatToWrite' ? (
+        <Text size="sm" mb="sm">
+          {view.notice}
+        </Text>
       ) : null}
       {view.busy && !screenHeld ? (
         <Text size="sm" mb="sm" data-testid="keep-screen-on-hint">

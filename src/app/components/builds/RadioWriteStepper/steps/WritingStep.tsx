@@ -27,7 +27,7 @@ export function WritingBody({ view }: StepProps) {
 }
 
 export function WritingFooter({ view, actions }: StepProps) {
-  return view.error ? (
+  return view.errorOutcome ? (
     <Button variant="secondary" size="sm" onClick={actions.onClose}>
       Close
     </Button>

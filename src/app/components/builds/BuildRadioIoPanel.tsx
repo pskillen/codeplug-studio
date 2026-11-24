@@ -377,7 +377,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       {!serialOk ? <Alert color="yellow">{getRadioSerialUnsupportedMessage()}</Alert> : null}
       <BeforeYouWriteRows
         radioLabel={descriptor?.label ?? 'radio'}
-        outOfRangeNames={facts?.outOfRangeChannelNames ?? []}
+        outOfRangeChannels={facts?.outOfRangeChannels ?? []}
         txRangeInfo={isAtD890Write}
       />
       {isAtD890Write ? <AtD890RadioSettingsCard buildId={build.id} egress={egress} /> : null}

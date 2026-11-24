@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
@@ -7,6 +7,19 @@ import {
   openRadioSessionForEgress,
 } from '../../../services/radioIoSession.ts';
 import { useRadioWriteFlow } from './useRadioWriteFlow.tsx';
+
+vi.mock('../../../lib/loadLibrarySlice.ts', () => ({
+  loadLibrarySlice: vi.fn(async () => ({
+    channels: [],
+    zones: [],
+    scanLists: [],
+    talkGroups: [],
+    digitalContacts: [],
+    analogContacts: [],
+    rxGroupLists: [],
+    aprsConfiguration: null,
+  })),
+}));
 
 vi.mock('../../../state/persistence.ts', () => ({
   persistence: { listSatellites: vi.fn(async () => [{ id: 's1', enabled: true }]) },
@@ -57,16 +70,16 @@ describe('serial picker lifecycle', () => {
     act(() =>
       result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }),
     );
-    await act(async () => {
+    act(() => {
       result.current.actions.onConnectAndRead();
       result.current.actions.onConnectAndRead();
     });
-    expect(grantRadioSerialPortForEgress).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(grantRadioSerialPortForEgress).toHaveBeenCalledTimes(1));
     // Nothing needs Review (#1638): the read runs straight into the keps write.
-    await act(async () => choosePort({ transport: 'web', port: {} as never }));
-    expect(result.current.view.step).toBe('done');
-    expect(result.current.view.canReconnect).toBe(false);
-    expect(result.current.view.error).toBeNull();
+    act(() => choosePort({ transport: 'web', port: {} as never }));
+    await waitFor(() => expect(result.current.view.step).toBe('done'));
+    expect(result.current.view.retryLabel).toBeNull();
+    expect(result.current.view.errorOutcome).toBeNull();
   });
 
   it('returns to options without a read error when the user cancels the port picker', async () => {
@@ -77,10 +90,13 @@ describe('serial picker lifecycle', () => {
     act(() =>
       result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }),
     );
-    await act(async () => result.current.actions.onConnectAndRead());
-    expect(result.current.view.step).toBe('whatToWrite');
-    expect(result.current.view.error).toBeNull();
-    expect(result.current.view.canReconnect).toBe(false);
+    act(() => result.current.actions.onConnectAndRead());
+    await waitFor(() => {
+      expect(result.current.view.step).toBe('whatToWrite');
+      expect(result.current.view.notice).toContain('No port chosen');
+    });
+    expect(result.current.view.errorOutcome).toBeNull();
+    expect(result.current.view.retryLabel).toBeNull();
     expect(openRadioSessionForEgress).not.toHaveBeenCalled();
   });
   it('keeps genuine session failures visible and clears them on a successful retry', async () => {
@@ -95,12 +111,16 @@ describe('serial picker lifecycle', () => {
     act(() =>
       result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }),
     );
-    await act(async () => result.current.actions.onConnectAndRead());
-    expect(result.current.view.error).toContain('The serial device disconnected.');
-    expect(result.current.view.canReconnect).toBe(true);
-    await act(async () => result.current.actions.onReconnect());
-    expect(result.current.view.step).toBe('done');
-    expect(result.current.view.error).toBeNull();
-    expect(result.current.view.canReconnect).toBe(false);
+    act(() => result.current.actions.onConnectAndRead());
+    await waitFor(() =>
+      expect(result.current.view.errorOutcome?.message).toContain(
+        'The serial device disconnected.',
+      ),
+    );
+    expect(result.current.view.retryLabel).toBe('Reconnect and try again');
+    act(() => result.current.actions.onRetry());
+    await waitFor(() => expect(result.current.view.step).toBe('done'));
+    expect(result.current.view.errorOutcome).toBeNull();
+    expect(result.current.view.retryLabel).toBeNull();
   });
 });

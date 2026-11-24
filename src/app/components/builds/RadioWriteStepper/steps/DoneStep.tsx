@@ -5,7 +5,9 @@
 
 import { useState } from 'react';
 import { Alert, Stack, Text } from '@mantine/core';
-import { formatExportWarning } from '@core/import-export/exportWarning.ts';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
+import { pushKepsExcludedWarning } from '@core/import-export/exportWarning.ts';
+import { WarningsList } from '../../../egress/index.ts';
 import { Button, Checkbox } from '../../../v2/index.ts';
 import classes from '../RadioWriteStepper.module.css';
 import type {
@@ -75,13 +77,23 @@ export function DoneBody({ config, view, actions }: StepProps) {
         summary.identity.serial ? ` (${summary.identity.serial})` : ''
       }`
     : config.radioLabel;
-  const kepsSkips = [
-    ...(summary.kepsResult?.skipped ?? []).map((s) => `Skipped ${s.satelliteId}: ${s.reason}`),
-    ...(summary.kepsResult?.skippedTransmitters ?? []).map(
-      (s) => `Skipped ${s.satelliteId} / ${s.transmitterId}: ${s.reason}`,
-    ),
-  ];
-  const notes = [...summary.warnings.map((w) => formatExportWarning(w)), ...kepsSkips];
+  const recapWarnings: ExportWarning[] = [...summary.warnings];
+  for (const s of summary.kepsResult?.skipped ?? []) {
+    pushKepsExcludedWarning(recapWarnings, {
+      satelliteId: s.satelliteId,
+      transmitterId: null,
+      reason: s.reason,
+      label: s.satelliteId,
+    });
+  }
+  for (const s of summary.kepsResult?.skippedTransmitters ?? []) {
+    pushKepsExcludedWarning(recapWarnings, {
+      satelliteId: s.satelliteId,
+      transmitterId: s.transmitterId,
+      reason: s.reason,
+      label: `${s.satelliteId} / ${s.transmitterId}`,
+    });
+  }
   const kepsNotWritten = summary.kepsTicked && !summary.kepsResult;
   const wroteSomething =
     summary.codeplugWritten || summary.contactsWritten || summary.settingsChanged !== null;
@@ -148,16 +160,8 @@ export function DoneBody({ config, view, actions }: StepProps) {
           </Button>
         </div>
       ) : null}
-      {notes.length > 0 ? (
-        <Alert color="yellow" title="Notes">
-          <Stack gap={4}>
-            {notes.map((n, i) => (
-              <Text key={i} size="sm">
-                {n}
-              </Text>
-            ))}
-          </Stack>
-        </Alert>
+      {recapWarnings.length > 0 ? (
+        <WarningsList warnings={recapWarnings} mode="recap" channelLabel={view.channelLabel} />
       ) : null}
     </div>
   );

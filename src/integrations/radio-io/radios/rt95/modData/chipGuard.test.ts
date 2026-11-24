@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateRt95ChipGuard } from './chipGuard.ts';
+import { evaluateRt95ChipGuard, rt95ChipGuardRetry } from './chipGuard.ts';
 
 function ident(prefix = 'RT95-P'): Uint8Array {
   const b = new Uint8Array(16).fill(0x30);
@@ -50,5 +50,17 @@ describe('evaluateRt95ChipGuard', () => {
       ok: false,
       reason: 'empty-block',
     });
+  });
+});
+
+describe('rt95ChipGuardRetry', () => {
+  it('empty-block is reconnect', () => {
+    expect(rt95ChipGuardRetry('empty-block')).toBe('reconnect');
+  });
+
+  it('aliased, bad-ident and read-failed are none', () => {
+    expect(rt95ChipGuardRetry('aliased')).toBe('none');
+    expect(rt95ChipGuardRetry('bad-ident')).toBe('none');
+    expect(rt95ChipGuardRetry('read-failed')).toBe('none');
   });
 });

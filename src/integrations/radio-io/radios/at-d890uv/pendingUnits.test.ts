@@ -156,4 +156,11 @@ describe('AT-D890 pending units text (#1406)', () => {
     expect(err.message).toMatch(/Nothing was sent/);
     expect(err.units).toEqual([MAIN]);
   });
+
+  it('pending units error is none and nothing sent', () => {
+    recordAtD890PendingUnits(A, [MAIN]);
+    const err = new AtD890PendingUnitsError(findAtD890PendingBlock(A)!);
+    expect(err.retry).toBe('none');
+    expect(err.sent).toBe('nothing-sent');
+  });
 });

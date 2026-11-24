@@ -1,3 +1,4 @@
+import type { RadioRetryAdvice } from '../../../kit/errors.ts';
 import { RT95_IDENT_PREFIX } from './layout.ts';
 
 export type Rt95ChipGuardResult =
@@ -35,6 +36,12 @@ export function evaluateRt95ChipGuard(
 
 function isAllZero(block: Uint8Array): boolean {
   return block.every((b) => b === 0);
+}
+
+export function rt95ChipGuardRetry(
+  reason: Exclude<Rt95ChipGuardResult, { ok: true }>['reason'],
+): RadioRetryAdvice {
+  return reason === 'empty-block' ? 'reconnect' : 'none';
 }
 
 /** Operator-facing text for a failed chip guard. */

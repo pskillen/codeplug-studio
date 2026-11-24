@@ -25,10 +25,13 @@ import {
   type RadioFoundryBuildIdentity,
 } from '@core/radios/radiofoundry/firmware.ts';
 import {
+  adviseRadioError,
   RadioInterlockError,
   RadioProtocolError,
   RadioTimeoutError,
   RadioWrongIdentError,
+  type RadioRetryAdvice,
+  type RadioSentState,
 } from '../../kit/errors.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { reportProgress } from '../../kit/progress.ts';
@@ -225,8 +228,11 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     if (base !== expected) {
       this.pipe = null;
       this.info = null;
-      throw new RadioWrongIdentError(
-        `This radio keeps its codeplug at ${hex(base)}, but the ${this.board.label} keeps it at ${hex(expected)}: it is a different radio. Pick the build for that radio.`,
+      throw adviseRadioError(
+        new RadioWrongIdentError(
+          `This radio keeps its codeplug at ${hex(base)}, but the ${this.board.label} keeps it at ${hex(expected)}: it is a different radio. Pick the build for that radio.`,
+        ),
+        { retry: 'reconnect', sent: 'nothing-sent' },
       );
     }
     this.version = await this.readVersion();
@@ -235,8 +241,11 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       this.pipe = null;
       this.info = null;
       this.version = null;
-      throw new RadioWrongIdentError(
-        `This radio reports RadioFoundry board "${reported}", not the ${this.board.label}. Pick the build for that radio.`,
+      throw adviseRadioError(
+        new RadioWrongIdentError(
+          `This radio reports RadioFoundry board "${reported}", not the ${this.board.label}. Pick the build for that radio.`,
+        ),
+        { retry: 'reconnect', sent: 'nothing-sent' },
       );
     }
     return {
@@ -376,7 +385,12 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.requireArmed();
     // Refuse before the pre-write read when INFO says flash is not writable (foreign storage).
     if (this.storageWritable() === false) {
-      throw new RadioInterlockError(STORAGE_FOREIGN_REFUSAL);
+      const err = adviseRadioError(new RadioInterlockError(STORAGE_FOREIGN_REFUSAL), {
+        retry: 'none',
+        sent: 'nothing-sent',
+      });
+      err.debugText = this.storageBackstopDebugText();
+      throw err;
     }
     if (!this.readBlocks) {
       await this.download({ ...opts, progressStage: PRE_WRITE_STAGE });
@@ -737,7 +751,27 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       ? new RadioInterlockError(message)
       : new RadioProtocolError(message);
     err.debugText = debugText;
+    const retry: RadioRetryAdvice = INTERLOCK_REFUSAL_REASONS.has(reason) ? 'none' : 'rewrite';
+    const preWriteOps = new Set(['BEGIN', 'SUMS', 'READ', 'INFO']);
+    const sent: RadioSentState = preWriteOps.has(opName) ? 'nothing-sent' : 'may-hold-part';
+    adviseRadioError(err, { retry, sent });
     return err;
+  }
+
+  private storageBackstopDebugText(): string {
+    const flagHex = this.info ? `0x${this.info.flags.toString(16).padStart(2, '0')}` : 'unknown';
+    const writable = this.storageWritable();
+    const writableLine = writable === null ? 'unknown' : writable ? 'yes' : 'no';
+    const build = this.version;
+    const buildLine = build
+      ? `firmware: ${summariseRadioFoundryBuild(build).label}`
+      : 'firmware: not reported';
+    return [
+      'op: none sent (refused from the INFO flags read at connect)',
+      `INFO flags: ${flagHex}, storage writable: ${writableLine}`,
+      `board: ${this.board.label}`,
+      buildLine,
+    ].join('\n');
   }
 
   private refusalDebugText(

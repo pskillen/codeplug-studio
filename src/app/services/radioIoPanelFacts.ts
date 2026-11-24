@@ -13,8 +13,8 @@ import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 export interface RadioIoPanelFacts {
   channelCount: number;
   zoneCount: number;
-  /** Names of channels outside the radio's receive bands; the Write skips them. */
-  outOfRangeChannelNames: string[];
+  /** Channels outside the radio's receive bands; the Write skips them. */
+  outOfRangeChannels: { id: string; callsign?: string; name: string }[];
   /** The library has a default DMR Digital ID (the AT-D890 writes radio IDs only then). */
   hasDefaultDmrId: boolean;
   /** The library has a default NXDN Digital ID (the AT-D890 MM9PDY writes the radio's NXDN ID only then). */
@@ -33,13 +33,20 @@ export function radioIoPanelFacts(
   const candidates = library.channels.filter(
     (channel) => !isEntityExcluded(build.channelOverrides, channel.id),
   );
-  const outOfRangeChannelNames = listIneligibleChannels(build, candidates)
+  const outOfRangeChannels = listIneligibleChannels(build, candidates)
     .filter((row) => row.reason === 'out-of-range')
-    .map((row) => row.channel.name);
+    .map((row) => {
+      const callsign = row.channel.callsign?.trim();
+      return {
+        id: row.channel.id,
+        name: row.channel.name,
+        ...(callsign ? { callsign } : {}),
+      };
+    });
   return {
     channelCount: assembled.channels.length,
     zoneCount: assembled.zones.length,
-    outOfRangeChannelNames,
+    outOfRangeChannels,
     hasDefaultDmrId: defaultOwnDigitalId(library.ownDigitalIds ?? [], 'dmr') !== null,
     hasDefaultNxdnId: defaultOwnDigitalId(library.ownDigitalIds ?? [], 'nxdn') !== null,
   };

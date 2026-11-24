@@ -146,28 +146,43 @@ describe('RadioWriteStepper — steps 2 and 3', () => {
     expect(actions.onWrite).not.toHaveBeenCalled();
   });
 
-  it('shows an error with Reconnect, read & write when the flow offers it', () => {
+  it('shows an error with Reconnect and try again when the flow offers it', () => {
     const actions = renderStepper({
       step: 'review',
-      error: 'No reply from the radio',
-      canReconnect: true,
+      errorOutcome: {
+        kind: 'error',
+        retry: 'reconnect',
+        sent: 'nothing-sent',
+        message: 'No reply from the radio',
+        debugText: 'error: timeout\ncode: none',
+        code: 'timeout',
+      },
+      retryLabel: 'Reconnect and try again',
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Reconnect, read & write' }));
-    expect(actions.onReconnect).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect and try again' }));
+    expect(actions.onRetry).toHaveBeenCalled();
   });
 
-  it('shows the error message intact with the protocol trace under Debug details', () => {
+  it('shows the error message intact with Debug details even when the module gave no debug text', () => {
     renderStepper({
       step: 'writing',
-      error:
-        "OpenGD77 refused FINISH for FLASH sector 0x9c000 (sector 3 of 12): radio answered '-'.",
-      errorDebug: 'Last 2 radio frames (oldest first):\n+000010ms TX    58 03\n+000012ms RX    2d',
+      errorOutcome: {
+        kind: 'error',
+        retry: 'rewrite',
+        sent: 'may-hold-part',
+        message:
+          "OpenGD77 refused FINISH for FLASH sector 0x9c000 (sector 3 of 12): radio answered '-'.",
+        debugText: 'Last 2 radio frames (oldest first):\n+000010ms TX    58 03\n+000012ms RX    2d',
+        code: 'protocol',
+      },
+      retryLabel: 'Write again',
     });
     expect(screen.getByTestId('write-stepper-error')).toHaveTextContent(
       "OpenGD77 refused FINISH for FLASH sector 0x9c000 (sector 3 of 12): radio answered '-'.",
     );
     expect(screen.getByTestId('write-stepper-error-debug')).toHaveTextContent('TX 58 03');
     expect(screen.getByRole('button', { name: 'Copy debug text' })).toBeInTheDocument();
+    expect(screen.getByText('Debug details')).toBeInTheDocument();
   });
 });
 

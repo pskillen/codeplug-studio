@@ -508,9 +508,9 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     expect(screen.queryByRole('button', { name: 'Copy write timings' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Write another radio' }));
     await screen.findByRole('button', { name: 'Write codeplug' });
-    // A second port prompt, same ticks.
+    // A second port prompt, same ticks; build projection is reused from step 1 (#1999).
     expect(grant).toHaveBeenCalledTimes(2);
-    expect(prepare).toHaveBeenCalledTimes(2);
+    expect(prepare).toHaveBeenCalledTimes(1);
   });
 
   it('Done offers Copy write timings when the upload returned them (#1406)', async () => {
@@ -786,12 +786,12 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     expect(radioIoSession.uploadPreparedRadioWrite).toHaveBeenCalledTimes(1);
   });
 
-  it('offers Reconnect, read & write when the read fails before any frame', async () => {
+  it('offers Reconnect and try again when the read fails before any frame', async () => {
     upload.mockRejectedValueOnce(new Error('No reply from the radio'));
     openStepper('radio-io-at-d890uv');
     await connect();
     expect(await screen.findByText('No reply from the radio')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Reconnect, read & write' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect and try again' }));
     await screen.findByRole('button', { name: 'Write codeplug' });
   });
 

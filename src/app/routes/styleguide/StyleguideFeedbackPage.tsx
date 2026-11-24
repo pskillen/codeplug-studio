@@ -1,6 +1,13 @@
 import { Group, Stack } from '@mantine/core';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
+import { WarningsList } from '../../components/egress/index.ts';
+import {
+  styleguideChannelLabel,
+  styleguideWarningsListDemo,
+} from '../../components/egress/WarningsList/warningsListDemo.ts';
 import { DismissibleNotice, StatusBanner, StatusDot } from '../../components/v2/index.ts';
+
+const DEMO_WARNINGS = styleguideWarningsListDemo();
 
 export default function StyleguideFeedbackPage() {
   return (
@@ -44,6 +51,42 @@ export default function StyleguideFeedbackPage() {
           <DismissibleNotice tone="info">
             Export combines library + build via assemble — re-import may differ.
           </DismissibleNotice>
+        </Stack>
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="Warnings list"
+        description="Export and write warnings — problems open, notes folded; same component in four modes."
+      >
+        <Stack gap="lg">
+          <div>
+            <strong>Full</strong> (build checks / file export)
+            <WarningsList
+              warnings={DEMO_WARNINGS}
+              mode="full"
+              channelLabel={styleguideChannelLabel}
+            />
+          </div>
+          <div>
+            <strong>Problems</strong> (Review)
+            <WarningsList
+              warnings={DEMO_WARNINGS}
+              mode="problems"
+              channelLabel={styleguideChannelLabel}
+            />
+          </div>
+          <div>
+            <strong>Chip</strong> (tight space)
+            <WarningsList warnings={DEMO_WARNINGS} mode="chip" />
+          </div>
+          <div>
+            <strong>Recap</strong> (Done)
+            <WarningsList
+              warnings={DEMO_WARNINGS}
+              mode="recap"
+              channelLabel={styleguideChannelLabel}
+            />
+          </div>
         </Stack>
       </StyleguideSection>
     </StyleguidePageShell>

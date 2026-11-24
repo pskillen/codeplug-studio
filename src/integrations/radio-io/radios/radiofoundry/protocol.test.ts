@@ -103,6 +103,7 @@ class ScriptedPipe implements BytePipe {
   /** INFO byte 1 (flags); bit 1 set = storage writable. */
   infoFlags = 0x02;
   beginRefusalReason: number | null = null;
+  blockRefusalReason: number | null = null;
   endRefusalReason: number | null = null;
   silent = false;
   /** null = no VERSION reply at all. */
@@ -150,6 +151,7 @@ class ScriptedPipe implements BytePipe {
     if (status === 0) {
       if (op === OP_INFO) body = infoBody(this.infoFlags);
       else if (op === OP_BEGIN && this.beginRefusalReason != null) status = 7;
+      else if (op === OP_BLOCK && this.blockRefusalReason != null) status = 7;
       else if (op === OP_END && this.endRefusalReason != null) status = 7;
       else if (op === OP_SUMS) body = this.sums(args);
       else if (op === OP_READ) body = this.read(args);
@@ -166,9 +168,11 @@ class ScriptedPipe implements BytePipe {
       status === 7
         ? op === OP_BEGIN
           ? this.beginRefusalReason
-          : op === OP_END
-            ? this.endRefusalReason
-            : 7
+          : op === OP_BLOCK
+            ? this.blockRefusalReason
+            : op === OP_END
+              ? this.endRefusalReason
+              : 7
         : null;
     const payload = new Uint8Array(1 + (status === 0 ? body.length : status === 7 ? 1 : 0));
     payload[0] = status;
@@ -529,6 +533,23 @@ const STORAGE_FOREIGN_REFUSAL =
   'This radio\'s flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry\'s web programming utility (it backs up first) or with "rfoundry_debug.py storage claim", then write again. Nothing was written.';
 
 describe('RadioFoundry codeplug refusals', () => {
+  it('storage backstop refuses with retry none, nothing sent and debug text', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.infoFlags = 0x00;
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
+      includeLibraryContacts: true,
+    });
+    proto.armWriteSource(source);
+    await proto.download({});
+    const err = await proto.upload(memoryMapFromBytes(source.bytes), {}).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioInterlockError);
+    expect((err as RadioInterlockError).retry).toBe('none');
+    expect((err as RadioInterlockError).sent).toBe('nothing-sent');
+    expect((err as RadioInterlockError).debugText).toContain('INFO flags:');
+  });
+
   it('reads when INFO storage flag is clear but refuses a write before SUMS or READ', async () => {
     const pipe = new ScriptedPipe(0xff);
     pipe.infoFlags = 0x00;
@@ -552,7 +573,7 @@ describe('RadioFoundry codeplug refusals', () => {
     expect(opsAfter).not.toContain(OP_READ);
   });
 
-  it('names a BEGIN refusal with reason 2 and attaches storage debug detail', async () => {
+  it('BEGIN refusal reason 2 is none and nothing sent', async () => {
     const pipe = new ScriptedPipe(0xff);
     pipe.beginRefusalReason = 2;
     const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
@@ -566,6 +587,32 @@ describe('RadioFoundry codeplug refusals', () => {
     expect(err).toBeInstanceOf(RadioInterlockError);
     expect((err as Error).message).toContain('reason 2, STORAGE');
     expect((err as RadioInterlockError).debugText).toContain('storage writable');
+    expect((err as RadioInterlockError).retry).toBe('none');
+    expect((err as RadioInterlockError).sent).toBe('nothing-sent');
+  });
+
+  it('BLOCK refusal reason 7 (CRC) is rewrite and may hold part', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.blockRefusalReason = 7;
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Carol'), {
+      includeLibraryContacts: true,
+    });
+    const err = await uploadSource(pipe, source).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioProtocolError);
+    expect((err as RadioProtocolError).retry).toBe('rewrite');
+    expect((err as RadioProtocolError).sent).toBe('may-hold-part');
+  });
+
+  it('BLOCK refusal reason 1 is none and may hold part', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.blockRefusalReason = 1;
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Dan'), {
+      includeLibraryContacts: true,
+    });
+    const err = await uploadSource(pipe, source).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioInterlockError);
+    expect((err as RadioInterlockError).retry).toBe('none');
+    expect((err as RadioInterlockError).sent).toBe('may-hold-part');
   });
 
   it('names an END refusal with reason 7 as a protocol error', async () => {
@@ -888,6 +935,16 @@ describe('RadioFoundry cable INFO and board', () => {
     };
     expect(() => assertImageBlock(0x7ff000, info, capped)).not.toThrow();
     expect(() => assertImageBlock(0x800000, info, capped)).toThrow(/outside the image/);
+  });
+
+  it('wrong codeplug base at connect is reconnect and nothing sent', async () => {
+    const wrongBase = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    const error = await wrongBase
+      .connect(new InfoOnlyPipe(specExampleInfo()))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RadioWrongIdentError);
+    expect((error as RadioWrongIdentError).retry).toBe('reconnect');
+    expect((error as RadioWrongIdentError).sent).toBe('nothing-sent');
   });
 
   it('refuses another board by physical base', async () => {
