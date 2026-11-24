@@ -1,4 +1,5 @@
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
+import type { RadioBackupCapturedVia } from '@integrations/radio-io/backup/types.ts';
 import {
   buildOpenGd77DebugArchiveParts,
   captureOpenGd77DebugPipe,
@@ -40,7 +41,7 @@ export function captureOpenGd77(modelId: string) {
     const descriptor = getRadioDescriptor(modelId);
     if (!descriptor) throw new Error(`No radio descriptor for ${modelId}.`);
     let pipe;
-    let capturedVia: 'web-serial' | 'android-usb-serial';
+    let capturedVia: RadioBackupCapturedVia;
     if (opts?.port) {
       if (opts.port.baudRate !== descriptor.baudRate) {
         await opts.port.close();

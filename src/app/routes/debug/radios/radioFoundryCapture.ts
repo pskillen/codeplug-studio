@@ -1,4 +1,5 @@
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
+import type { RadioBackupCapturedVia } from '@integrations/radio-io/backup/types.ts';
 import {
   buildRadioFoundryDebugArchiveParts,
   captureRadioFoundryDebugPipe,
@@ -29,7 +30,7 @@ export function captureRadioFoundry(modelId: string): RadioDebugCapture {
     const board = radioFoundryCableBoardForModelId(modelId);
     if (!board) throw new Error(`No RadioFoundry board for ${modelId}.`);
     let pipe;
-    let capturedVia: 'web-serial' | 'android-usb-serial';
+    let capturedVia: RadioBackupCapturedVia;
     if (opts?.port) {
       if (opts.port.baudRate !== board.baudRate) {
         await opts.port.close();

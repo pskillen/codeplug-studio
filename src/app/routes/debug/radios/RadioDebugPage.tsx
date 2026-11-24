@@ -402,7 +402,10 @@ function RadioDebugProfile({
         </FileButton>
       </Group>
       {archiveSwitch ? (
-        <Alert color="blue" title={`This is a ${DEBUG_FIRMWARE_LABEL[archiveSwitch.sibling.firmware]} read.`}>
+        <Alert
+          color="blue"
+          title={`This is a ${DEBUG_FIRMWARE_LABEL[archiveSwitch.sibling.firmware]} read.`}
+        >
           <Stack gap="xs">
             <Text size="sm">Open it on the matching firmware page.</Text>
             <Button

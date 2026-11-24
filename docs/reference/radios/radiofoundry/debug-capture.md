@@ -114,10 +114,10 @@ The radio accepts the database when the header record count ends inside the capt
 
 Handshake is **INFO only** — nothing extra is sent to distinguish firmware families. When INFO fails, the capture inspects the first 64 bytes received on the guard tap:
 
-| Evidence | `found` | Notes |
-| -------- | ------- | ----- |
-| A lone `0x2D` with no `A5 5A` debug-link frame | `opengd77` | Evidence, not proof (a busy OpenGD77 radio can also answer `-`). |
-| Silence or anything else | `unknown` | Stock DM-32UV firmware answers nothing; OpenGD77 hotspot USB mode also answers nothing. |
+| Evidence                                       | `found`    | Notes                                                                                   |
+| ---------------------------------------------- | ---------- | --------------------------------------------------------------------------------------- |
+| A lone `0x2D` with no `A5 5A` debug-link frame | `opengd77` | Evidence, not proof (a busy OpenGD77 radio can also answer `-`).                        |
+| Silence or anything else                       | `unknown`  | Stock DM-32UV firmware answers nothing; OpenGD77 hotspot USB mode also answers nothing. |
 
 For `opengd77` the capture may keep the serial port open when asked. For `unknown` the port is always closed. A different RadioFoundry radio (physical base or VERSION board mismatch) stays `RadioWrongIdentError` — that is not a firmware mismatch.
 

@@ -4,10 +4,7 @@
  */
 import { RADIOFOUNDRY_IMAGE_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
 import { summariseRadioFoundryBuild } from '@core/radios/radiofoundry/firmware.ts';
-import {
-  debugOpenPort,
-  DebugWrongFirmwareError,
-} from '../../debugHandoff.ts';
+import { debugOpenPort, DebugWrongFirmwareError } from '../../debugHandoff.ts';
 import type {
   RadioBackupCapturedVia,
   RadioBackupManifestV1,
@@ -18,7 +15,6 @@ import { readDebugFrame, encodeDebugFrame } from '../../kit/codecs/radioFoundryD
 import type { BytePipe, ProgressFn } from '../../types.ts';
 import {
   BLOCK_SIZE,
-  CODEPLUG_COMMAND,
   DM32_RADIOFOUNDRY_MODEL_ID,
   EEPROM_IMAGE_END,
   FLASH_IMAGE_START,

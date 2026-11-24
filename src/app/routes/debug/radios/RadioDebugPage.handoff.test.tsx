@@ -99,7 +99,9 @@ describe('wrong-firmware handoff', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
     await screen.findByTestId('wrong-firmware-notice');
     fireEvent.click(screen.getByRole('button', { name: 'Stop and close the port' }));
-    await waitFor(() => expect(screen.queryByTestId('wrong-firmware-notice')).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByTestId('wrong-firmware-notice')).not.toBeInTheDocument(),
+    );
     expect(port.pipe.close).toHaveBeenCalledTimes(1);
   });
 
@@ -133,7 +135,9 @@ describe('wrong-firmware handoff', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Read radio' }));
     await screen.findByTestId('wrong-firmware-notice');
     fireEvent.click(screen.getByRole('button', { name: /Switch to Stock/ }));
-    await waitFor(() => expect(screen.queryByTestId('wrong-firmware-notice')).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByTestId('wrong-firmware-notice')).not.toBeInTheDocument(),
+    );
     expect(fake.radioFoundry).toHaveBeenCalledTimes(1);
     expect(fake.openGd77).not.toHaveBeenCalled();
   });

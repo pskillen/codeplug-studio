@@ -9,10 +9,7 @@
  * A failure or cancel returns no archive; the protocol closes the CPS screen once, and the
  * transport is closed whatever happens.
  */
-import {
-  debugOpenPort,
-  DebugWrongFirmwareError,
-} from '../../debugHandoff.ts';
+import { debugOpenPort, DebugWrongFirmwareError } from '../../debugHandoff.ts';
 import type {
   RadioBackupCapturedVia,
   RadioBackupManifestV1,
@@ -166,9 +163,7 @@ export async function captureOpenGd77DebugPipe(
       throw new DebugWrongFirmwareError(
         'radiofoundry',
         OPENGD77_DEBUG_RADIOFOUNDRY_FOUND,
-        leavePortOpen
-          ? debugOpenPort(pipe, capturedVia, descriptor.baudRate)
-          : undefined,
+        leavePortOpen ? debugOpenPort(pipe, capturedVia, descriptor.baudRate) : undefined,
       );
     }
     throw err;
