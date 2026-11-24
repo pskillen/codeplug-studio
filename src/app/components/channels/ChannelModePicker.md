@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Pick, switch, add, and remove a channel's modes in the new channel editor. Replaces the multi-select chip wall once wired into `ChannelEditor`. Three states: no mode (placeholder with presets), one mode (single-select switch), two or more (removable chips).
+Pick, switch, add, and remove a channel's modes in the channel editor (`ChannelEditor`). Three states: no mode (placeholder with presets), one mode (single-select switch), two or more (removable chips).
 
 ## ChannelModePicker props
 

@@ -31,7 +31,7 @@ driven nav such as the channel editor's jump-nav (`channelEditorSections.ts`).
 <SectionNav
   items={[
     { id: 'identity', label: 'Identity' },
-    { id: 'rf', label: 'RF' },
+    { id: 'transmit', label: 'Transmit' },
   ]}
   active={activeSectionId}
   onChange={(id) => scrollToPageSection(id)}

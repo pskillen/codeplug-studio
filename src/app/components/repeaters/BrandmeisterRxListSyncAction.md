@@ -2,7 +2,7 @@
 
 ## Purpose
 
-BrandMeister talk-group / RX group list sync button for a saved DMR channel, placed in **Mode settings → DMR settings** below **RX group list**. Opens [`BrandmeisterRxGroupListSyncDialog`](./BrandmeisterRxGroupListSyncDialog.tsx).
+BrandMeister talk-group / RX group list sync button for a saved DMR channel, placed in the DMR settings under **Mode and frequency** (or the DMR panel under **Modes**) below **RX group list**. Opens [`BrandmeisterRxGroupListSyncDialog`](./BrandmeisterRxGroupListSyncDialog.tsx).
 
 ## Props
 

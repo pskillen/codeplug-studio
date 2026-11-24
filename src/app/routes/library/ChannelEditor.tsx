@@ -136,7 +136,9 @@ export default function ChannelEditor({
     channelAprsBindingFromChannel(base),
   );
   const [validationError, setValidationError] = useState<string | null>(null);
-  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
+  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY, false, {
+    getInitialValueInEffect: false,
+  });
 
   const { save, saving, error } = useEntitySave('channels', { navigateOnSave: false });
   const navigate = useNavigate();
@@ -303,16 +305,13 @@ export default function ChannelEditor({
   const sectionIds = useMemo(() => editorSections.map((s) => s.id), [editorSections]);
   const activeSectionId = useSectionScrollSpy(sectionIds);
 
-  const modePanelContext: ModePanelContext = useMemo(
-    () => ({
-      library,
-      savedChannel: entity ? liveChannel : null,
-      rxFrequency: liveRxHz,
-      txFrequency: liveTxHz,
-      compact: isMobile ?? false,
-    }),
-    [library, entity, liveChannel, liveRxHz, liveTxHz, isMobile],
-  );
+  const modePanelContext: ModePanelContext = {
+    library,
+    savedChannel: entity ? liveChannel : null,
+    rxFrequency: liveRxHz,
+    txFrequency: liveTxHz,
+    compact: isMobile ?? false,
+  };
 
   const browseChannelIds = useMemo(
     () => [...library.channels].sort((a, b) => a.name.localeCompare(b.name)).map((ch) => ch.id),
@@ -396,14 +395,16 @@ export default function ChannelEditor({
           </Panel>
 
           <Panel id="mode" title="Mode and frequency">
-            <ChannelModePicker
-              modes={selectedModes}
-              onSwitch={(mode) => setModeEdit((e) => switchChannelMode(e, mode))}
-              onAdd={(mode) => setModeEdit((e) => addChannelMode(e, mode))}
-              onRemove={(mode) => setModeEdit((e) => removeChannelMode(e, mode))}
-              onPreset={(preset) => setModeEdit((e) => applyModePreset(e, preset))}
-              compact={isMobile}
-            />
+            <div className={classes.modePicker}>
+              <ChannelModePicker
+                modes={selectedModes}
+                onSwitch={(mode) => setModeEdit((e) => switchChannelMode(e, mode))}
+                onAdd={(mode) => setModeEdit((e) => addChannelMode(e, mode))}
+                onRemove={(mode) => setModeEdit((e) => removeChannelMode(e, mode))}
+                onPreset={(preset) => setModeEdit((e) => applyModePreset(e, preset))}
+                compact={isMobile}
+              />
+            </div>
             <FormField label="RX frequency (MHz)" mono>
               <TextInput
                 variant="plain"
@@ -461,6 +462,7 @@ export default function ChannelEditor({
               <div className={classes.mainMode}>
                 <p className={classes.mainModeLabel}>Main mode</p>
                 <SegmentedControl
+                  aria-label="Main mode"
                   options={modeProfiles.map((profile) => ({
                     value: profile.mode,
                     label: modeLabel(profile.mode),

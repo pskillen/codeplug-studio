@@ -29,7 +29,7 @@ import SendTalkerAliasSegment from '@app/components/channels/SendTalkerAliasSegm
 - **Default** (when `includeDefault`) — library behavioural defaults and build export overrides.
 - Indicator colour follows the shared `onOff` preset (teal when On, gray when Off); the neutral `default` option renders with no colour override.
 
-On the channel editor this control lives in the DMR **Mode settings** panel via [`modePanels/ModePanels`](./modePanels/ModePanels.md), at `layout="row"`.
+On the channel editor this control lives in the mode's settings via [`modePanels/ModePanels`](./modePanels/ModePanels.md): under **Mode and frequency** for a single-mode channel, or in the DMR panel under **Modes** when two or more modes are set, at `layout="row"`.
 
 ## Related
 

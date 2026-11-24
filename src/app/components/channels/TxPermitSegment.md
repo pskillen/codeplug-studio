@@ -22,7 +22,7 @@ Whether you may transmit while the frequency is already in use. Distinct from re
 - **Permit always** — you can hold TX anyway.
 - **Default** — library behavioural defaults and build export overrides.
 
-On the channel editor this control lives in the **RF** panel ([#1209](https://github.com/pskillen/codeplug-studio/issues/1209)), at `layout="row"` so the control no longer forces the panel to full-width single-column.
+On the channel editor this control lives in the **Transmit** panel, at `layout="row"` so the control no longer forces the panel to full-width single-column.
 
 ## Related
 

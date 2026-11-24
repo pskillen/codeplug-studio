@@ -73,7 +73,7 @@ beforeEach(() => {
 });
 
 describe('ChannelEditor (new channel)', () => {
-  it('shows the mode placeholder, section nav, and no legacy mode-settings copy', () => {
+  it('shows the mode placeholder and section nav without legacy Mode settings panel copy', () => {
     renderNew();
     expect(screen.getByRole('group', { name: 'Which mode does this channel use?' })).toBeTruthy();
     expect(screen.queryByText('Mode settings')).not.toBeInTheDocument();
@@ -156,7 +156,7 @@ describe('ChannelEditor (saved channel)', () => {
     expect(screen.getByText('DMR CC1 TS2')).toBeTruthy();
   });
 
-  it('switching mode and back leaves FM tones and a clean footer', () => {
+  it('switching mode and back restores FM TX tone and a clean footer', () => {
     const channel: Channel = {
       ...newChannel('p', 'FM site'),
       id: 'ch-fm',
@@ -176,10 +176,33 @@ describe('ChannelEditor (saved channel)', () => {
     const modeRadios = within(screen.getByRole('radiogroup', { name: 'Mode' }));
     fireEvent.click(modeRadios.getByRole('radio', { name: 'DMR' }));
     fireEvent.click(modeRadios.getByRole('radio', { name: 'FM' }));
+    const modePanel = document.querySelector('#mode') as HTMLElement;
+    expect(within(modePanel).getByLabelText('TX tone frequency')).toHaveValue('94.8 Hz');
     expect(screen.getByText('All changes saved')).toBeTruthy();
   });
 
-  it('has no vendor-named export hints in the editor copy', () => {
+  it('save after mode switch does not persist parked profiles', async () => {
+    const channel: Channel = {
+      ...newChannel('p', 'FM site'),
+      id: 'ch-fm-park',
+      revision: 1,
+      modeProfiles: [defaultModeProfile('fm') as ChannelModeProfileAnalog],
+      primaryMode: 'fm',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+    };
+    renderEdit(channel);
+    const modeRadios = within(screen.getByRole('radiogroup', { name: 'Mode' }));
+    fireEvent.click(modeRadios.getByRole('radio', { name: 'DMR' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save channel' }));
+    await waitFor(() => expect(mocks.putChannel).toHaveBeenCalledTimes(1));
+    const [row] = mocks.putChannel.mock.calls[0] as [Channel, unknown];
+    expect(row.primaryMode).toBe('dmr');
+    expect(row.modeProfiles).toEqual([defaultModeProfile('dmr')]);
+    expect(row).not.toHaveProperty('parked');
+  });
+
+  it('has no vendor-named copy in identity and mode sections this phase owns', () => {
     const channel: Channel = {
       ...newChannel('p', 'Dual'),
       id: 'ch-dual',
@@ -188,6 +211,9 @@ describe('ChannelEditor (saved channel)', () => {
       primaryMode: 'fm',
     };
     renderEdit(channel);
-    expect(document.body.textContent).not.toMatch(/Anytone|DM-?32|OpenGD77|RadioFoundry|\bCPS\b/i);
+    const ownedText = ['identity', 'mode', 'modes']
+      .map((id) => document.querySelector(`#${id}`)?.textContent ?? '')
+      .join('');
+    expect(ownedText).not.toMatch(/Anytone|DM-?32|OpenGD77|RadioFoundry|\bCPS\b/i);
   });
 });

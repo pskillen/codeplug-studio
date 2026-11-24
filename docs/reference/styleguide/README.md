@@ -24,7 +24,7 @@ This is **not** user-facing help copy. For wording aimed at operators, use [help
 | This README                                                                 | UI categories, decision tree, chrome conventions, specialised outliers         |
 | [lists-and-ordering.md](lists-and-ordering.md)                              | Roles A/B/C/D, `reorderMode` / `storedOrder`, permanent Sort…, gold references |
 | [display.md](display.md)                                                    | Frequencies, bands, modes, icons, two-section nav                              |
-| [channel-modes-ui.md](channel-modes-ui.md)                                  | Channel mode UI: mode settings groups and the mode picker                      |
+| [channel-modes-ui.md](channel-modes-ui.md)                                  | Channel mode UI: mode picker, editor layout, mode settings groups              |
 | [debug-pages.md](debug-pages.md)                                            | Debug kit rules (dark only, number format, masking), component map, gold refs  |
 | [list-kit-roles.md](../../features/app-shell/list-kit-roles.md)             | Surface → role inventory (tier 1 feature deep dive)                            |
 | [data-table.md](../../features/app-shell/data-table.md)                     | v2 `DataTable` props, list prefs, virtualisation                               |

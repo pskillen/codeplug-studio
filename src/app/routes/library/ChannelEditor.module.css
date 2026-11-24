@@ -78,6 +78,10 @@
   color: var(--dsv2-text-primary);
 }
 
+.modePicker {
+  margin-bottom: 12px;
+}
+
 .modeGap {
   margin: 14px 0;
 }
