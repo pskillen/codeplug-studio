@@ -76,23 +76,23 @@ The Radio image retain preview reads startup enable at main `+0xD6` bit 0, zones
 
 A settings **save** in stock V1.05 erases the other half of the unit and writes back only the extents below; anything else in the unit does not survive a save. A frequency-range change (LocalInfo `+0x03`) erases and re-defaults the whole unit on the next boot, so every extent here has a Studio backup span and is restorable. The firmware's settings save copies the old half, overlays the settings it holds in RAM and writes only these extents; the settings loaders read the same ones. Offsets are from `0x3500000`.
 
-| Extent             | Contents                                                                                                                                                                                          | Studio span (id)                   |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `+0x000..+0x1FF`   | Settings, loader reads `0x160`                                                                                                                                                                    | `optional-settings-main`           |
-| `+0x200..+0x3FF`   | Carried from the old half. MM9PDY settings store at `+0x200..+0x21F` (Studio never writes it). AirSecurity seed record at `+0x220..+0x23F`: dedicated MM9PDY write only; stock never reads either | `settings-store`                   |
-| `+0x400..+0x7FF`   | Zone A table, zone B table (`0x200` each)                                                                                                                                                         | `zone-a-channel`, `zone-b-channel` |
-| `+0x800..+0x8FF`   | DTMF list                                                                                                                                                                                         | `dtmf-list`                        |
-| `+0x900..+0x95F`   | Power-on lines (`0x40`), password (`8` at `+0x940`)                                                                                                                                               | `optional-settings-ext`            |
-| `+0x960..+0x9FF`   | Carried tail, no stock reader                                                                                                                                                                     | `optional-settings-ext-tail`       |
-| `+0x1000..+0x125F` | APRS config (`0x106` bytes read; `+0x1100..+0x11FF` is inside the `0x260` span), start of APRS text                                                                                               | `aprs-config`                      |
-| `+0x1260..+0x127F` | Rest of the APRS text block (`0x7A` bytes from `+0x1200`)                                                                                                                                         | `aprs-text-tail`                   |
-| `+0x1280..+0x12AF` | GPS text (the save and load paths use `0x42` bytes; the factory default string is shorter)                                                                                                        | `optional-settings-aprs`           |
-| `+0x12B0..+0x12FF` | Rest of the GPS text; data ends at `+0x12C1`, then `FF`                                                                                                                                           | `gps-info-tail`                    |
-| `+0x1300..+0x13FF` | APRS receive filters (`8` bytes each)                                                                                                                                                             | `aprs-receive-filters`             |
-| `+0x2000..+0x23FF` | 32 GPS zone-switch records of `0x20` bytes (meaning inferred)                                                                                                                                     | `gps-zone-switch`                  |
-| `+0x2400..+0x250F` | 8 APRS fixed-beacon names, `0x22` bytes UTF-16 each (defaults "FIX 1".."FIX 8")                                                                                                                   | `aprs-beacon-names`                |
+| Extent             | Contents                                                                                            | Studio span (id)                   |
+| ------------------ | --------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `+0x000..+0x1FF`   | Settings, loader reads `0x160`                                                                      | `optional-settings-main`           |
+| `+0x200..+0x3FF`   | Carried from the old half. MM9PDY store `+0x200`; AirSecurity seed `+0x220` (below)                 | `settings-store`                   |
+| `+0x400..+0x7FF`   | Zone A table, zone B table (`0x200` each)                                                           | `zone-a-channel`, `zone-b-channel` |
+| `+0x800..+0x8FF`   | DTMF list                                                                                           | `dtmf-list`                        |
+| `+0x900..+0x95F`   | Power-on lines (`0x40`), password (`8` at `+0x940`)                                                 | `optional-settings-ext`            |
+| `+0x960..+0x9FF`   | Carried tail, no stock reader                                                                       | `optional-settings-ext-tail`       |
+| `+0x1000..+0x125F` | APRS config (`0x106` bytes read; `+0x1100..+0x11FF` is inside the `0x260` span), start of APRS text | `aprs-config`                      |
+| `+0x1260..+0x127F` | Rest of the APRS text block (`0x7A` bytes from `+0x1200`)                                           | `aprs-text-tail`                   |
+| `+0x1280..+0x12AF` | GPS text (the save and load paths use `0x42` bytes; the factory default string is shorter)          | `optional-settings-aprs`           |
+| `+0x12B0..+0x12FF` | Rest of the GPS text; data ends at `+0x12C1`, then `FF`                                             | `gps-info-tail`                    |
+| `+0x1300..+0x13FF` | APRS receive filters (`8` bytes each)                                                               | `aprs-receive-filters`             |
+| `+0x2000..+0x23FF` | 32 GPS zone-switch records of `0x20` bytes (meaning inferred)                                       | `gps-zone-switch`                  |
+| `+0x2400..+0x250F` | 8 APRS fixed-beacon names, `0x22` bytes UTF-16 each (defaults "FIX 1".."FIX 8")                     | `aprs-beacon-names`                |
 
-**AirSecurity seed record** (`+0x220..+0x23F`, absolute `0x03500220..0x0350023F`). Not a registered settings field. A dedicated write on the MM9PDY target may replace this span and no other byte. The firmware's own seed-record page is authoritative for the layout.
+This half is carried from the old half on a settings save. Studio never writes the MM9PDY settings store at `+0x200..+0x21F`, and stock firmware never reads that store or the AirSecurity seed record. **AirSecurity seed record** (`+0x220..+0x23F`, absolute `0x03500220..0x0350023F`). Not a registered settings field. A dedicated write on the MM9PDY target may replace this span and no other byte. The firmware's own seed-record page is authoritative for the layout.
 
 | Off   | Field       | Value                          |
 | ----- | ----------- | ------------------------------ |
