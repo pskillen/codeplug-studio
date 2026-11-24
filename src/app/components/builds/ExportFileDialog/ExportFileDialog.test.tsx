@@ -11,7 +11,12 @@ import ExportFileDialog from './ExportFileDialog.tsx';
 
 const { checkCpsExport, downloadCpsZip, downloadCpsSingleFile, uploadCpsZipToDrive } = vi.hoisted(
   () => ({
-    checkCpsExport: vi.fn(async () => ({
+    checkCpsExport: vi.fn(
+      async (
+        _projectId: string,
+        _buildId: string,
+        _options?: { baseNeonplugBytes?: Uint8Array },
+      ) => ({
       warnings: [
         {
           kind: 'unlinked',
@@ -20,7 +25,8 @@ const { checkCpsExport, downloadCpsZip, downloadCpsSingleFile, uploadCpsZipToDri
         },
       ] as ExportWarning[],
       fileNames: ['Channels.csv', 'Zones.csv'],
-    })),
+    }),
+    ),
     downloadCpsZip: vi.fn(async () => ({ warnings: [] as ExportWarning[] })),
     downloadCpsSingleFile: vi.fn(async () => ({ warnings: [] as ExportWarning[] })),
     uploadCpsZipToDrive: vi.fn(async () => ({ warnings: [] as ExportWarning[] })),
@@ -77,8 +83,9 @@ vi.mock('../../import-export/DriveBrowserModal.tsx', () => ({
         onClick={() =>
           onSaveTarget({
             folderId: 'folder-1',
+            folderName: 'Interchange',
             fileName: 'demo-opengd77.zip',
-            path: 'Interchange',
+            path: [{ id: 'folder-1', name: 'Interchange' }],
             existingFileId: 'file-existing',
           })
         }
@@ -324,8 +331,8 @@ describe('ExportFileDialog', () => {
     expect(
       await screen.findByText(new RegExp(`Donor radioInfo.model is "${mismatchModel}"`)),
     ).toBeInTheDocument();
-    const lastCall = checkCpsExport.mock.calls.at(-1);
-    expect(lastCall?.[2]?.baseNeonplugBytes).toBeInstanceOf(Uint8Array);
+    const lastOptions = checkCpsExport.mock.calls.at(-1)?.[2];
+    expect(lastOptions?.baseNeonplugBytes).toBeInstanceOf(Uint8Array);
   });
 
   it('greenfield export shows the no-donor warning', async () => {
