@@ -5,6 +5,7 @@
  * projected image. Sentinel regions are diffed separately (never-write preservation).
  */
 
+import { AIRSECURITY_SEED_ADDRESS, AIRSECURITY_SEED_RECORD_LENGTH } from './airSecuritySeed.ts';
 import { AT_D890_MEMORY_REGIONS } from './memoryRegionExport.ts';
 import type { AtD890StagingChunk } from './sparseEraseRmw.ts';
 import type { AtD890SettingsPatch } from './settingsFields.ts';
@@ -65,6 +66,12 @@ export interface AtD890StagingChunkMismatch {
   readonly expected: Uint8Array;
   /** Absent when {@link kind} is `not_read` — never fabricate unread bytes. */
   readonly actual: Uint8Array | null;
+  /**
+   * Set for a chunk that overlaps the AirSecurity seed span. The UI table and the JSON download
+   * prefer these over {@link expected} / {@link actual}, which still hold the bytes for compare.
+   */
+  readonly expectedDigest?: string;
+  readonly actualDigest?: string;
 }
 
 export interface AtD890WriteVerifyResult {
@@ -109,6 +116,23 @@ function hexAddr(address: number): string {
 
 function bytesToHex(data: Uint8Array): string {
   return [...data].map((b) => b.toString(16).padStart(2, '0')).join(' ');
+}
+
+const AIRSECURITY_SEED_END = AIRSECURITY_SEED_ADDRESS + AIRSECURITY_SEED_RECORD_LENGTH;
+
+function chunkOverlapsAirSecuritySeed(address: number, length: number): boolean {
+  return address < AIRSECURITY_SEED_END && address + length > AIRSECURITY_SEED_ADDRESS;
+}
+
+/** `••` per byte, the same mask the debug memory viewer uses for this span. */
+function maskedSeedHex(length: number): string {
+  return Array.from({ length }, () => '••').join(' ');
+}
+
+/** Hex for a verify row. A chunk that overlaps the seed span is masked in every report. */
+function formatVerifyByteHex(address: number, data: Uint8Array): string {
+  if (chunkOverlapsAirSecuritySeed(address, data.length)) return maskedSeedHex(data.length);
+  return bytesToHex(data);
 }
 
 export function cloneAtD890WriteStagingSnapshot(
@@ -337,6 +361,7 @@ export function compareStagingAgainstRegionDump(
     const actual = readBytesAt(lookup, address, data.length);
     if (actual === null) {
       const region = lookup.regionAt(address);
+      const overlapsSeed = chunkOverlapsAirSecuritySeed(address, data.length);
       mismatches.push({
         kind: 'not_read',
         address,
@@ -344,11 +369,13 @@ export function compareStagingAgainstRegionDump(
         regionLabel: region?.label ?? 'Unknown address (not read)',
         expected: data.slice(),
         actual: null,
+        ...(overlapsSeed ? { expectedDigest: formatVerifyByteHex(address, data) } : {}),
       });
       continue;
     }
     if (!chunksEqual(data, actual)) {
       const region = lookup.regionAt(address);
+      const overlapsSeed = chunkOverlapsAirSecuritySeed(address, data.length);
       mismatches.push({
         kind: 'mismatch',
         address,
@@ -356,6 +383,12 @@ export function compareStagingAgainstRegionDump(
         regionLabel: region?.label ?? 'Unknown address',
         expected: data.slice(),
         actual,
+        ...(overlapsSeed
+          ? {
+              expectedDigest: formatVerifyByteHex(address, data),
+              actualDigest: formatVerifyByteHex(address, actual),
+            }
+          : {}),
       });
     }
   }
@@ -580,9 +613,10 @@ export function formatAtD890WriteVerifyMarkdown(
     lines.push('| Address | Region | Expected | Actual |');
     lines.push('| --- | --- | --- | --- |');
     for (const m of result.staging.mismatches.slice(0, 20)) {
-      const actualCol = m.kind === 'not_read' ? '*(not read)*' : `\`${bytesToHex(m.actual!)}\``;
+      const actualCol =
+        m.kind === 'not_read' ? '*(not read)*' : `\`${formatVerifyByteHex(m.address, m.actual!)}\``;
       lines.push(
-        `| ${hexAddr(m.address)} | ${m.regionLabel} | \`${bytesToHex(m.expected)}\` | ${actualCol} |`,
+        `| ${hexAddr(m.address)} | ${m.regionLabel} | \`${formatVerifyByteHex(m.address, m.expected)}\` | ${actualCol} |`,
       );
     }
     if (result.staging.mismatches.length > 20) {
@@ -702,8 +736,13 @@ export function formatAtD890WriteVerifyDebugMarkdown(
       lines.push('| address | expected (16 B) | actual (16 B) |');
       lines.push('| --- | --- | --- |');
       for (const m of items) {
-        const actualCol = m.kind === 'not_read' ? '*(not read)*' : `\`${bytesToHex(m.actual!)}\``;
-        lines.push(`| ${hexAddr(m.address)} | \`${bytesToHex(m.expected)}\` | ${actualCol} |`);
+        const actualCol =
+          m.kind === 'not_read'
+            ? '*(not read)*'
+            : `\`${formatVerifyByteHex(m.address, m.actual!)}\``;
+        lines.push(
+          `| ${hexAddr(m.address)} | \`${formatVerifyByteHex(m.address, m.expected)}\` | ${actualCol} |`,
+        );
       }
       lines.push('');
     }

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { AT_D890_MEMORY_REGIONS } from './memoryRegionExport.ts';
+import { AIRSECURITY_SEED_ADDRESS, encodeAirSecuritySeedRecord } from './airSecuritySeed.ts';
 import {
   AT_D890_RMW_SPILL_REGION_ID,
   buildAtD890WriteVerifyResult,
   captureAtD890WriteStagingSnapshot,
   compareStagingAgainstRegionDump,
   formatAtD890WriteVerifyDebugMarkdown,
+  formatAtD890WriteVerifyMarkdown,
   isAtD890VolatileVerifyAddress,
   listStagingAddressesOutsideModelledRegions,
   sentinelSnapshotFromRegionDump,
@@ -327,5 +329,56 @@ describe('formatAtD890WriteVerifyDebugMarkdown', () => {
     expect(md).toContain('Investigation hints');
     expect(md).toContain('ab ab ab');
     expect(md).toContain('cd cd cd');
+  });
+});
+
+describe('AirSecurity seed span in verify reports', () => {
+  const record = encodeAirSecuritySeedRecord(new TextEncoder().encode('12345678901234567890'));
+  const chunk = record.subarray(0, 16);
+  const seedHex = [...chunk].map((b) => b.toString(16).padStart(2, '0')).join(' ');
+  const masked = Array.from({ length: chunk.length }, () => '••').join(' ');
+  const debugContext = {
+    buildId: 'build-1',
+    egressId: 'egress-1',
+    formatId: 'anytone-at-d890uv',
+    profileId: 'radio-io-at-d890uv-mm9pdy',
+    measuredAt: '2026-11-24T00:00:00.000Z',
+  };
+
+  function reportsFor(actual: Uint8Array | null) {
+    const snapshot = captureAtD890WriteStagingSnapshot([
+      { address: AIRSECURITY_SEED_ADDRESS, data: chunk },
+    ]);
+    const spill = actual
+      ? new Map([[AIRSECURITY_SEED_ADDRESS, actual]])
+      : new Map<number, Uint8Array>();
+    const result = buildAtD890WriteVerifyResult(
+      snapshot,
+      new Map(),
+      undefined,
+      { model: 'ID890UV', elapsedMs: 1, totalBytesRead: 16 },
+      spill,
+    );
+    return {
+      result,
+      markdown: formatAtD890WriteVerifyMarkdown(result, { measuredAt: debugContext.measuredAt }),
+      debug: formatAtD890WriteVerifyDebugMarkdown(result, debugContext),
+    };
+  }
+
+  it('prints no seed hex for a mismatch or an unread seed-span chunk', () => {
+    for (const { result, markdown, debug } of [
+      reportsFor(new Uint8Array(16).fill(0x11)),
+      reportsFor(null),
+    ]) {
+      expect(markdown).not.toContain(seedHex);
+      expect(debug).not.toContain(seedHex);
+      expect(markdown).toContain(masked);
+      expect(debug).toContain(masked);
+      const row = result.staging.mismatches.find((m) => m.address === AIRSECURITY_SEED_ADDRESS);
+      expect(row?.expectedDigest).toBe(masked);
+      const shown = row?.expectedDigest ?? '';
+      expect(shown).not.toContain('31 32');
+    }
   });
 });
