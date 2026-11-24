@@ -11,22 +11,16 @@ import ExportFileDialog from './ExportFileDialog.tsx';
 
 const { checkCpsExport, downloadCpsZip, downloadCpsSingleFile, uploadCpsZipToDrive } = vi.hoisted(
   () => ({
-    checkCpsExport: vi.fn(
-      async (
-        _projectId: string,
-        _buildId: string,
-        _options?: { baseNeonplugBytes?: Uint8Array },
-      ) => ({
-        warnings: [
-          {
-            kind: 'unlinked',
-            severity: 'problem',
-            message: 'Including 1 channel(s) not linked to a zone',
-          },
-        ] as ExportWarning[],
-        fileNames: ['Channels.csv', 'Zones.csv'],
-      }),
-    ),
+    checkCpsExport: vi.fn(async () => ({
+      warnings: [
+        {
+          kind: 'unlinked',
+          severity: 'problem',
+          message: 'Including 1 channel(s) not linked to a zone',
+        },
+      ] as ExportWarning[],
+      fileNames: ['Channels.csv', 'Zones.csv'],
+    })),
     downloadCpsZip: vi.fn(async () => ({ warnings: [] as ExportWarning[] })),
     downloadCpsSingleFile: vi.fn(async () => ({ warnings: [] as ExportWarning[] })),
     uploadCpsZipToDrive: vi.fn(async () => ({ warnings: [] as ExportWarning[] })),
@@ -320,7 +314,7 @@ describe('ExportFileDialog', () => {
   });
 
   it('donor validation warnings appear on Checks', async () => {
-    renderNeonplugDialog();
+    const { build } = renderNeonplugDialog();
     const mismatchModel = 'UV5R-Mini';
     const input = document.querySelector('input[type="file"]');
     expect(input).toBeTruthy();
@@ -331,8 +325,13 @@ describe('ExportFileDialog', () => {
     expect(
       await screen.findByText(new RegExp(`Donor radioInfo.model is "${mismatchModel}"`)),
     ).toBeInTheDocument();
-    const lastOptions = checkCpsExport.mock.calls.at(-1)?.[2];
-    expect(lastOptions?.baseNeonplugBytes).toBeInstanceOf(Uint8Array);
+    await waitFor(() =>
+      expect(checkCpsExport).toHaveBeenCalledWith(
+        'project-1',
+        build.id,
+        expect.objectContaining({ baseNeonplugBytes: expect.any(Uint8Array) }),
+      ),
+    );
   });
 
   it('greenfield export shows the no-donor warning', async () => {
