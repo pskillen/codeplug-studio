@@ -13,7 +13,7 @@ Shows one pattern for every transfer inside export and write dialogs: an overall
 | `groups`          | `StageProgressGroup[]`   | Rows per phase; optional `title`             |
 | `progress`        | `ProgressUpdate \| null` | Latest event from the radio session          |
 | `startedAt`       | `number \| null`         | Run start (ms) for elapsed                   |
-| `estimateSeconds` | `number \| null`         | Shown after 2 s while `running`              |
+| `estimateSeconds` | `number \| null`         | Fallback until the live estimate is ready    |
 | `running`         | `boolean`                | Ticks elapsed; drives estimates              |
 | `lead`            | `ReactNode`              | Intro line above the bar                     |
 | `testId`          | `string`                 | Root `data-testid`; default `stage-progress` |
@@ -37,6 +37,12 @@ Shows one pattern for every transfer inside export and write dialogs: an overall
 - Pending planned rows are dimmed until the first row leaves `pending`.
 - Headings render only when `groups.length > 1` and the group has a `title`.
 - Elapsed updates every second while `running`; stays visible when the run ends.
+- While `running`, the meta line shows the overall percent and, for a stage with more than one step, the count
+  (`Codeplug blocks: 1,234 of 2,048`).
+- Time left is live: worked out each second from the row weights and the events so far (the same estimate
+  `RadioIoStageList` shows), once 2 s of events have arrived. Until then it falls back to `estimateSeconds` (the
+  Review step's estimate), so a write that skips Review still shows time left. It is only as good as the plan's
+  weights.
 - Optional `bytes` / `bytesPerSecond` on a progress update show under the meta line when present.
 
 ## Related
