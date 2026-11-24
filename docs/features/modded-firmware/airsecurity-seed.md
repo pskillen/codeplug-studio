@@ -14,7 +14,7 @@ The MM9PDY AT-D890UV radio settings page (`/builds/:id/export/radio-settings`) i
 
 The operator pastes the self-care text or the `otpauth://` link into **AirSecurity seed** (placeholder _Paste the Selfcare text or the otpauth:// link_). The field is masked and has no reveal control. Until the radio is asked, the state is **Not checked**. **Check radio** then shows **Seed set** or **No seed**.
 
-**Check radio**, **Write seed**, and **Clear seed** each open their own radio session and close it. **Write seed** stays off until the paste is accepted. A bad paste shows the refusal and does not repeat the text. A radio error shows that error's message. A write or a clear does not read the seed back; the page shows what was just sent. After a write it says _Seed written. The radio restarts; wait about 20 seconds._ After a clear it says _Seed cleared. The radio restarts; wait about 20 seconds._ and the state is **No seed** or **Seed set** to match.
+**Check radio**, **Write seed**, and **Clear seed** each open their own radio session and close it. **Write seed** stays off until the paste is accepted. A bad paste shows the refusal and does not repeat the text. A radio error shows that error's message. A write or a clear does not read the seed back; the page shows what was just sent. After a write it says _Seed written. The radio restarts; wait about 20 seconds._ After a clear it says _Seed cleared. The radio restarts; wait about 20 seconds._ After a write the state is **Seed set**; after a clear it is **No seed**.
 
 The section always says: _Backups contain the seed. Clearing the seed does not remove it from backups you have already taken._
 
