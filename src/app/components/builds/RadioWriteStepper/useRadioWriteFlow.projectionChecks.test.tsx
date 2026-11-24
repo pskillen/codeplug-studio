@@ -12,7 +12,7 @@ import {
   prepareRadioWriteImage,
 } from '../../../services/radioIoSession.ts';
 import { WhatToWriteBody, WhatToWriteFooter } from './steps/WhatToWriteStep.tsx';
-import { demoShellOptions, demoStepperConfig } from './stepperDemo.ts';
+import { demoStepperConfig } from './stepperDemo.ts';
 import type { WriteFlowActions, WriteFlowView } from './types.ts';
 import { useRadioWriteFlow } from './useRadioWriteFlow.tsx';
 
@@ -192,7 +192,9 @@ describe('useRadioWriteFlow projection checks', () => {
 
   it('a projection refusal is listed on step 1 and Read & write is disabled', async () => {
     const { result } = mount(descriptorWithRefusals(refusalMessages));
-    act(() => result.current.open({ codeplug: true, contacts: false, settings: false, keps: false }));
+    act(() =>
+      result.current.open({ codeplug: true, contacts: false, settings: false, keps: false }),
+    );
     await act(async () => {
       vi.advanceTimersByTime(350);
       await Promise.resolve();
@@ -206,7 +208,9 @@ describe('useRadioWriteFlow projection checks', () => {
 
   it('no port is requested while refusals exist', async () => {
     const { result } = mount(descriptorWithRefusals(refusalMessages));
-    act(() => result.current.open({ codeplug: true, contacts: false, settings: false, keps: false }));
+    act(() =>
+      result.current.open({ codeplug: true, contacts: false, settings: false, keps: false }),
+    );
     await act(async () => {
       vi.advanceTimersByTime(350);
       await Promise.resolve();
@@ -219,7 +223,9 @@ describe('useRadioWriteFlow projection checks', () => {
 
   it('a radio without the hook has no refusals', async () => {
     const { result } = mount(descriptorNoHook);
-    act(() => result.current.open({ codeplug: true, contacts: false, settings: false, keps: false }));
+    act(() =>
+      result.current.open({ codeplug: true, contacts: false, settings: false, keps: false }),
+    );
     await act(async () => {
       vi.advanceTimersByTime(350);
       await Promise.resolve();

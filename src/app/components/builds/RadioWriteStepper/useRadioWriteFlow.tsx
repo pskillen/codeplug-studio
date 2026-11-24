@@ -36,7 +36,7 @@ import type {
   RadioDescriptor,
   RadioPlanContext,
   RadioSession,
-  type RadioWriteRefusal,
+  RadioWriteRefusal,
 } from '@integrations/radio-io/types.ts';
 import type {
   WriteVerifyPendingPayload,
@@ -243,6 +243,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     refusals: [],
   });
   const buildRefusalsRef = useRef<readonly RadioWriteRefusal[]>([]);
+  const preflightFindingsRef = useRef<readonly ExportWarning[]>([]);
+  const [preflight, setPreflight] = useState<WriteFlowView['preflight']>({
+    status: 'checking',
+    rows: [],
+  });
   const [channelLabel, setChannelLabel] = useState<
     ((entityId: string) => string | undefined) | undefined
   >(undefined);
@@ -575,6 +580,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     reviewUnsubscribeRef.current?.();
     reviewUnsubscribeRef.current = null;
     setReviewDecision('undecided');
+    preflightFindingsRef.current = [];
+    setPreflight({ status: 'checking', rows: [] });
     setReadStartedAt(null);
     setWriteStartedAt(null);
     setCheckStartedAt(null);
@@ -673,7 +680,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       identityOnly: ctx.identityOnly,
       restartsAfterWrite: restartWaitSeconds > 0 && writesToRadioImage(p),
       buildWarnings: buildWarningsRef.current,
-      radioWarnings: tx.radioWarnings ?? [],
+      radioWarnings: [...(tx.radioWarnings ?? []), ...preflightFindingsRef.current],
       channelLabel,
       ...radioBindings,
     };
@@ -832,7 +839,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   /** Steps 2 to 5 for the ticked parts. `reconnect` re-runs the read after the radio may have dropped. */
   async function run(opts: { reconnect: boolean }): Promise<void> {
     const p = partsRef.current;
-    setStep('connectRead');
+    setStep('connect');
     setReviewDecision('undecided');
     setErrorOutcome(null);
     setRetryLabel(null);
@@ -843,10 +850,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     updateWriteTrack(() => newTrack());
     setReview(null);
     setBusyNotify(true);
-    const readAt = now();
-    readStartRef.current = readAt;
-    setReadStartedAt(readAt);
-    setPhaseBoth('read');
     transmitStartedRef.current = false;
     userCancelledRef.current = false;
     setNotice(null);
@@ -889,7 +892,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
 
       let prepared: Awaited<ReturnType<typeof prepareRadioWriteImage>> | undefined;
       if (writesToRadioImage(p)) {
-        setPhaseBoth('read');
         if (prepareDebounceRef.current != null) {
           clearTimeout(prepareDebounceRef.current);
           prepareDebounceRef.current = null;
@@ -942,8 +944,62 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         clearProgress();
       }
 
-      const session = await ensureSession(true, granted);
-      readStartRef.current = now();
+      setPreflight({ status: 'checking', rows: [] });
+      let session: RadioSession;
+      try {
+        session = await ensureSession(true, granted);
+      } catch (err) {
+        setPreflight({
+          status: 'refused',
+          identity: { model: descriptor?.label ?? '' },
+          rows: [
+            { label: 'Model', value: descriptor?.label ?? '', status: 'ok' },
+            {
+              label: 'Serial',
+              value: 'not reported by this radio',
+              status: 'warn',
+            },
+          ],
+        });
+        fail(err, 'preflight');
+        return;
+      }
+      const defaultPreflightRows = [
+        { label: 'Model', value: descriptor?.label ?? '', status: 'ok' as const },
+        {
+          label: 'Serial',
+          value: 'not reported by this radio',
+          status: 'warn' as const,
+        },
+      ];
+      const preflightResult = descriptor?.writePreflight
+        ? await descriptor.writePreflight(session, {
+            profileId: egress.profileId,
+            parts: p,
+            signal,
+          })
+        : {
+            identity: { model: descriptor?.label ?? '' },
+            rows: defaultPreflightRows,
+          };
+      preflightFindingsRef.current = preflightResult.findings ?? [];
+      setPreflight({
+        status: preflightResult.refusal ? 'refused' : 'passed',
+        identity: preflightResult.identity,
+        rows: preflightResult.rows,
+      });
+      setIdentity(preflightResult.identity);
+      identityRef.current = preflightResult.identity;
+      if (preflightResult.refusal) {
+        await releaseSession();
+        fail(preflightResult.refusal, 'preflight');
+        return;
+      }
+      setStep('connectRead');
+      const readAt = now();
+      readStartRef.current = readAt;
+      setReadStartedAt(readAt);
+      setPhaseBoth('read');
       const planCtx: RadioPlanContext = {
         ...(prepared
           ? { prepared: { channels: prepared.channels, organisation: prepared.organisation } }
@@ -1357,6 +1413,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     kepsFailure,
     summary,
     buildChecks,
+    preflight,
     channelLabel,
   };
 

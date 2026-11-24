@@ -6,7 +6,12 @@
 import type { ReactNode } from 'react';
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { DigitalContactsWriteSource } from '@core/domain/digitalIdDirectoryProjection.ts';
-import type { ProgressUpdate, RadioWriteRefusal } from '@integrations/radio-io/types.ts';
+import type {
+  ProgressUpdate,
+  RadioPreflightIdentity,
+  RadioPreflightRow,
+  RadioWriteRefusal,
+} from '@integrations/radio-io/types.ts';
 import type { WriteVerifyResult } from '@integrations/radio-io/writeVerify.ts';
 import type { SatelliteKepsWriteResult } from '../../../services/satelliteKepsWriteAdapters.ts';
 import type { WriteErrorOutcome } from '../../../services/egress/writeErrorOutcome.ts';
@@ -14,10 +19,11 @@ import type { WriteShellOptions } from '../../../services/egress/writeShellOptio
 import type { WriteParts } from './writeParts.ts';
 
 export type WriteStep =
-  'whatToWrite' | 'connectRead' | 'review' | 'writing' | 'restartCheck' | 'done';
+  'whatToWrite' | 'connect' | 'connectRead' | 'review' | 'writing' | 'restartCheck' | 'done';
 
 export const WRITE_STEPS: readonly WriteStep[] = [
   'whatToWrite',
+  'connect',
   'connectRead',
   'review',
   'writing',
@@ -27,6 +33,7 @@ export const WRITE_STEPS: readonly WriteStep[] = [
 
 export const WRITE_STEP_LABEL: Record<WriteStep, string> = {
   whatToWrite: 'What to write',
+  connect: 'Connect',
   connectRead: 'Read',
   review: 'Review',
   writing: 'Writing',
@@ -172,6 +179,11 @@ export interface WriteFlowView {
     refusals: readonly RadioWriteRefusal[];
     message?: string;
     progress?: string;
+  };
+  preflight: {
+    status: 'checking' | 'passed' | 'refused';
+    identity?: RadioPreflightIdentity;
+    rows: readonly RadioPreflightRow[];
   };
   channelLabel?: (entityId: string) => string | undefined;
 }

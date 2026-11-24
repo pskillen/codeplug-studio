@@ -1,0 +1,32 @@
+.card {
+  border: 1px solid var(--dsv2-border-quiet, rgba(128, 128, 128, 0.25));
+  border-radius: var(--dsv2-radius-8, 8px);
+  padding: var(--dsv2-space-8, 12px);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: max-content 1fr max-content;
+  gap: 4px 12px;
+  font-size: var(--dsv2-text-sm, 0.875rem);
+}
+
+.badgeOk {
+  color: var(--mantine-color-green-7, #2f9e44);
+}
+
+.badgeWarn {
+  color: var(--mantine-color-yellow-8, #f08c00);
+}
+
+.badgeBad {
+  color: var(--mantine-color-red-7, #e03131);
+}

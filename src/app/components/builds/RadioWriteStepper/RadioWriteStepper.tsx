@@ -14,6 +14,7 @@ import classes from './RadioWriteStepper.module.css';
 import { type WriteFlowActions, type WriteFlowView, type WriteStepperConfig } from './types.ts';
 import { writeSteps } from './writeSteps.ts';
 import { WhatToWriteBody, WhatToWriteFooter } from './steps/WhatToWriteStep.tsx';
+import { ConnectBody, ConnectFooter } from './steps/ConnectStep.tsx';
 import { ConnectReadBody, ConnectReadFooter } from './steps/ConnectReadStep.tsx';
 import { ReviewBody, ReviewFooter } from './steps/ReviewStep.tsx';
 import { WritingBody, WritingFooter } from './steps/WritingStep.tsx';
@@ -71,6 +72,10 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
     case 'whatToWrite':
       body = <WhatToWriteBody {...props} />;
       footer = <WhatToWriteFooter {...props} />;
+      break;
+    case 'connect':
+      body = <ConnectBody {...props} />;
+      footer = <ConnectFooter {...props} />;
       break;
     case 'connectRead':
       body = <ConnectReadBody {...props} />;

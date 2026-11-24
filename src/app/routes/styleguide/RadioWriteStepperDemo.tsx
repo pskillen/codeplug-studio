@@ -142,8 +142,7 @@ const DEMO_PROJECTION_REFUSALS = [
     channelIndex: 2,
   },
   {
-    message:
-      'AT-D890UV channel 7: NXDN TX RAN must be a whole number 0-63, got 99',
+    message: 'AT-D890UV channel 7: NXDN TX RAN must be a whole number 0-63, got 99',
     retry: 'none' as const,
     channelIndex: 7,
   },
@@ -168,6 +167,22 @@ function viewFor(
     channelLabel: styleguideChannelLabel,
   });
   switch (step) {
+    case 'connect':
+      return {
+        ...base,
+        identity: { model: 'Anytone AT-D890UV', serial: 'D890UV2401234567', firmware: 'MM9PDY' },
+        preflight: {
+          status: 'passed',
+          identity: { model: 'Anytone AT-D890UV', serial: 'D890UV2401234567', firmware: 'MM9PDY' },
+          rows: [
+            { label: 'Model', value: 'Anytone AT-D890UV (band 3)', status: 'ok' },
+            { label: 'Serial', value: 'D890UV2401234567', status: 'ok' },
+            { label: 'Firmware', value: 'MM9PDY', status: 'ok' },
+            { label: 'Stun/kill', value: 'clear', status: 'ok' },
+            { label: 'Interrupted write', value: 'none', status: 'ok' },
+          ],
+        },
+      };
     case 'connectRead':
       return {
         ...base,
@@ -345,6 +360,18 @@ export default function RadioWriteStepperDemo() {
           }}
         >
           Step 1: projection refusals
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setD890Variant(null);
+            setConfigOverride(null);
+            setShowProjectionRefusals(false);
+            setStep('connect');
+          }}
+        >
+          Connect: pre-flight passed
         </Button>
         <Button
           variant="secondary"

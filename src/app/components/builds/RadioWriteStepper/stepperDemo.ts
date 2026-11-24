@@ -64,6 +64,7 @@ export function demoFlowView(overrides: Partial<WriteFlowView> = {}): WriteFlowV
     kepsFailure: null,
     summary: null,
     buildChecks: { status: 'idle', warnings: [], refusals: [] },
+    preflight: { status: 'checking', rows: [] },
     channelLabel: undefined,
     ...overrides,
   };

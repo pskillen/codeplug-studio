@@ -15,3 +15,7 @@ export {
   type WarningsListMode,
   type WarningsListProps,
 } from './WarningsList/WarningsList.tsx';
+export {
+  default as PreflightCard,
+  type PreflightCardProps,
+} from './PreflightCard/PreflightCard.tsx';
