@@ -24,6 +24,10 @@ import {
   useSensitiveReveal,
 } from '../../components/debug/index.ts';
 import { ToggleSwitch, type DataTableColumn } from '../../components/v2/index.ts';
+import { WrongFirmwareNotice } from '../debug/radios/WrongFirmwareNotice.tsx';
+import { debugOpenPort, DebugWrongFirmwareError } from '@integrations/radio-io/debugHandoff.ts';
+import { OPENGD77_DEBUG_RADIOFOUNDRY_FOUND } from '@integrations/radio-io/radios/opengd77/debugText.ts';
+import { RADIOFOUNDRY_DEBUG_NO_ANSWER } from '@integrations/radio-io/radios/radiofoundry/debugText.ts';
 import { FirmwareSwitch } from '../debug/radios/FirmwareSwitch.tsx';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
 
@@ -184,6 +188,45 @@ export default function StyleguideDebugPage() {
           >
             <Text size="sm">Body content. The body is unmounted while collapsed.</Text>
           </DebugSection>
+        </StyleguideSection>
+
+        <StyleguideSection
+          title="WrongFirmwareNotice"
+          description="Wrong-firmware read: port handoff, no sibling page, and unknown with stock switch-only."
+        >
+          <Stack gap="sm">
+            <WrongFirmwareNotice
+              error={
+                new DebugWrongFirmwareError(
+                  'radiofoundry',
+                  OPENGD77_DEBUG_RADIOFOUNDRY_FOUND,
+                  debugOpenPort({ close: async () => {} } as never, 'web-serial', 115_200),
+                )
+              }
+              target={{ firmware: 'radiofoundry', capture: noopCapture }}
+              portOpen
+              secondsLeft={42}
+              onSwitchAndRead={() => {}}
+              onSwitchOnly={() => {}}
+              onClose={() => {}}
+            />
+            <WrongFirmwareNotice
+              error={new DebugWrongFirmwareError('opengd77', 'No OpenGD77 page for this radio.')}
+              target={{ firmware: 'opengd77', capture: undefined }}
+              portOpen={false}
+              onSwitchAndRead={() => {}}
+              onSwitchOnly={() => {}}
+              onClose={() => {}}
+            />
+            <WrongFirmwareNotice
+              error={new DebugWrongFirmwareError('unknown', RADIOFOUNDRY_DEBUG_NO_ANSWER)}
+              stockSibling={{ firmware: 'stock' }}
+              portOpen={false}
+              onSwitchAndRead={() => {}}
+              onSwitchOnly={() => {}}
+              onClose={() => {}}
+            />
+          </Stack>
         </StyleguideSection>
 
         <StyleguideSection
