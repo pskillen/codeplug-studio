@@ -1,15 +1,57 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateRt95ChipGuard, rt95ChipGuardRetry } from './chipGuard.ts';
-import { RT95_IDENT_PREFIX } from './layout.ts';
 
-function identBlock(): Uint8Array {
-  const b = new Uint8Array(16);
-  RT95_IDENT_PREFIX.forEach((v, i) => {
-    b[i] = v;
-  });
-  b[15] = 1;
+function ident(prefix = 'RT95-P'): Uint8Array {
+  const b = new Uint8Array(16).fill(0x30);
+  b.set(new TextEncoder().encode(prefix), 0);
+  b[prefix.length] = 0;
   return b;
 }
+const blank = new Uint8Array(16).fill(0xff);
+
+describe('evaluateRt95ChipGuard', () => {
+  it('passes with a good ident and a different alias block', () => {
+    expect(evaluateRt95ChipGuard(ident(), blank)).toEqual({ ok: true });
+  });
+  it('reports aliased when both blocks are equal', () => {
+    expect(evaluateRt95ChipGuard(ident(), ident())).toEqual({ ok: false, reason: 'aliased' });
+  });
+  it('reports read-failed for undefined on either side', () => {
+    expect(evaluateRt95ChipGuard(undefined, blank)).toEqual({ ok: false, reason: 'read-failed' });
+    expect(evaluateRt95ChipGuard(ident(), undefined)).toEqual({ ok: false, reason: 'read-failed' });
+  });
+  it('reports bad-ident for RT95-X', () => {
+    expect(evaluateRt95ChipGuard(ident('RT95-X'), blank)).toEqual({
+      ok: false,
+      reason: 'bad-ident',
+    });
+  });
+  it('reports bad-ident (not aliased) for two blank blocks', () => {
+    expect(evaluateRt95ChipGuard(blank, blank)).toEqual({ ok: false, reason: 'bad-ident' });
+  });
+  it('reports read-failed for a 15-byte block', () => {
+    expect(evaluateRt95ChipGuard(ident().subarray(0, 15), blank)).toEqual({
+      ok: false,
+      reason: 'read-failed',
+    });
+  });
+  it('reports empty-block when the 0x7B00 read is all zeros (head-synthesised block)', () => {
+    expect(evaluateRt95ChipGuard(ident(), new Uint8Array(16))).toEqual({
+      ok: false,
+      reason: 'empty-block',
+    });
+  });
+  it('reports empty-block when the ident read is all zeros', () => {
+    expect(evaluateRt95ChipGuard(new Uint8Array(16), blank)).toEqual({
+      ok: false,
+      reason: 'empty-block',
+    });
+    expect(evaluateRt95ChipGuard(new Uint8Array(16), new Uint8Array(16))).toEqual({
+      ok: false,
+      reason: 'empty-block',
+    });
+  });
+});
 
 describe('rt95ChipGuardRetry', () => {
   it('empty-block is reconnect', () => {
@@ -20,13 +62,5 @@ describe('rt95ChipGuardRetry', () => {
     expect(rt95ChipGuardRetry('aliased')).toBe('none');
     expect(rt95ChipGuardRetry('bad-ident')).toBe('none');
     expect(rt95ChipGuardRetry('read-failed')).toBe('none');
-  });
-});
-
-describe('evaluateRt95ChipGuard', () => {
-  it('empty-block is reconnect advice path', () => {
-    const result = evaluateRt95ChipGuard(identBlock(), new Uint8Array(16));
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe('empty-block');
   });
 });
