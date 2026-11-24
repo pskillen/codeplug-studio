@@ -182,13 +182,13 @@
 }
 
 .talkCard {
-  border: 1px solid var(--dsv2-border-subtle);
+  border: 1px solid var(--dsv2-border);
   border-radius: var(--dsv2-radius-panel);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background: var(--dsv2-surface-raised);
+  background: var(--dsv2-surface);
 }
 
 .talkCardHeader,
@@ -221,9 +221,9 @@
 }
 
 .talkRow {
-  border: 1px solid var(--dsv2-border-subtle);
+  border: 1px solid var(--dsv2-border);
   border-radius: var(--dsv2-radius-panel);
-  background: var(--dsv2-surface-raised);
+  background: var(--dsv2-surface);
 }
 
 .talkRowSummary {
