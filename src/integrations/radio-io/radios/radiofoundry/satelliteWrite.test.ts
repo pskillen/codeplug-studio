@@ -24,7 +24,9 @@ import type { RadioFoundrySatelliteProfile } from '@core/radios/radiofoundry/sat
 import {
   probeRadioFoundrySatellites,
   RadioFoundrySatellitesUnavailableError,
+  formatRadioFoundrySatelliteFrames,
   writeRadioFoundrySatellites,
+  type RadioFoundrySatelliteFrame,
 } from './satelliteWrite.ts';
 
 const CODEPLUG_REPLY = CODEPLUG_COMMAND | 0x80;
@@ -379,6 +381,39 @@ describe('writeRadioFoundrySatellites', () => {
     expect([...pipe.inventory].sort((a, b) => a.catalogId - b.catalogId)).toEqual(
       [...records].sort((a, b) => a.catalogId - b.catalogId),
     );
+  });
+
+  it('records every SATELLITE frame and status', async () => {
+    const pipe = new FakeSatelliteRadio();
+    const radio = await connectedRadio(pipe);
+    const frameLog: RadioFoundrySatelliteFrame[] = [];
+    await writeRadioFoundrySatellites(radio, twoSatellites(), { frameLog });
+    expect(frameLog.map((f) => f.op)).toEqual(satOps(pipe));
+    expect(frameLog.every((f) => f.status === 0)).toBe(true);
+    expect(frameLog[0]).toMatchObject({ op: SAT_OP_INFO, argsLen: 0, status: 0, bodyLen: 5 });
+    expect(formatRadioFoundrySatelliteFrames(frameLog)[0]).toBe(
+      '0 INFO args=0B -> status 0, body 5B',
+    );
+  });
+
+  it('attaches the frame log as debugText when the read-back does not match', async () => {
+    const pipe = new FakeSatelliteRadio();
+    pipe.listWrongEpoch = true;
+    const radio = await connectedRadio(pipe);
+    const err = await writeRadioFoundrySatellites(radio, twoSatellites()).catch((e) => e);
+    expect(err.debugText).toContain('SATELLITE frames sent');
+    expect(err.debugText).toContain('INFO args=0B -> status 0');
+    expect(err.debugText).toContain('LIST args=2B');
+  });
+
+  it('attaches the frame log when the radio refuses COMMIT', async () => {
+    const pipe = new FakeSatelliteRadio();
+    pipe.commitStatus = 7;
+    const radio = await connectedRadio(pipe);
+    const err = await writeRadioFoundrySatellites(radio, twoSatellites()).catch((e) => e);
+    expect(err.debugText).toContain('4 COMMIT args=');
+    expect(err.debugText).toContain('status 7');
+    expect(err.debugText).toContain('5 ABORT');
   });
 
   it('reports an older build as unavailable', async () => {

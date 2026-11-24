@@ -64,6 +64,16 @@ From satellite protocol **6** upward, profiles are staged with `PROFILE_STAGE_CH
 
 Any failure after `REPLACE_BEGIN` and before a successful `COMMIT` sends `ABORT`. Studio never sends an empty inventory (the radio refuses `recordCount` 0).
 
+## Debug detail
+
+Each write keeps a log of every SATELLITE request it sends: operation (number and name), argument length, the status the radio answered (or "no reply" when the link failed) and the reply body length. On success the Done step offers it under **Debug details** (collapsed, with Copy) after a summary line (records sent, installed count, read-back result), and it is written once to the console as `[radiofoundry-keps]`. On failure it is attached to the error as `debugText`, so the error panel's **Copy debug text** carries it. Frame contents are not logged, only sizes and statuses.
+
+## Not done by a keps write
+
+- Studio does **not** send `SYNC_CHANNELS` after a keps write, so the radio's Satellites-zone channels are not changed; the satellite set and frequency profiles are replaced and nothing else. Revisit if Studio manages those channels later.
+- The MD-9600 refuses satellite transmit until RadioFoundry confirms the board revision (`boards/md9600/board.c`, lines 24 to 25 in the RadioFoundry source); keps still write and read back.
+- Studio warns in step 1 when a satellite's orbit data is 14 or more days old (the radio's own threshold). It shows as a note, does not refuse, and does not stop Review.
+
 ## Protocol versions
 
 Studio accepts satellite protocol **6** (chunked profiles, up to 10) and **7** (current upstream at `454a5b76`).
@@ -71,6 +81,10 @@ Studio accepts satellite protocol **6** (chunked profiles, up to 10) and **7** (
 ## Inferred behaviour
 
 The host reference tool runs SATELLITE in the same debug-link session immediately after a codeplug commit without rebooting; storage may answer busy (status `3`) and the cable writer retries for up to five seconds. **Bench confirmation** on Studio hardware is planned with the keps write adapter that calls `writeRadioFoundrySatellites`.
+
+## From the library
+
+Studio packs each **enabled** satellite that passes TLE and catalog checks into one record (NORAD id, UTF-8 name up to 48 bytes, both TLE lines) plus one **frequency profile**: an FM transmitter marked for write whose uplink and downlink both fall in this board's bands (`BANDS_HZ`). When several FM transmitters qualify, the **first** in library order wins unless the build picks another in the Satellite keps tab's Radio column (`satelliteBankSlot: 'fm'` on the transmitter UUID). The wire name is the build's spacecraft `wireName` override when set, otherwise the shortened library name (48-byte budget); if encoding yields nothing, the catalog id is used. Satellites that fail TLE, catalog, mode, band, or write-inclusion checks are listed as excluded with a reason; extra FM candidates on a written satellite appear as skipped transmitters. The write **replaces the whole satellite set** on the radio and read-backs epochs and profiles. Studio refuses an empty eligible set or more than ten satellites before any I/O, and asks the radio on `INFO` whether its build supports satellite tracking — a build with tracking off is told plainly and nothing is written. Mapping lives in `src/integrations/radio-io/radios/radiofoundry/satelliteCodec.ts`; the app adapter is `writeRadioFoundrySatellitesToRadio`.
 
 ## Related
 

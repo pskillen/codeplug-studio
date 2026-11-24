@@ -40,6 +40,7 @@ Tier-1 hub for **satellite Keplerian elements (keps / TLEs)** in Codeplug Studio
 | [Satellite tracking](../satellite-tracking/)                                                                            | Post-MVP pass prediction + Tracking Dashboard ([#860](https://github.com/pskillen/codeplug-studio/issues/860))                                                   |
 | [docs/reference/radios/anytone/at-d890uv/satellite-keps.md](../../reference/radios/anytone/at-d890uv/satellite-keps.md) | D890 memory / write protocol — GPL-source-inferred (anytone-cps + qdmr), not hardware-verified ([#855](https://github.com/pskillen/codeplug-studio/issues/855))  |
 | [docs/reference/radios/opengd77/satellite-orbitals.md](../../reference/radios/opengd77/satellite-orbitals.md)           | OpenGD77 satellite bank (block 3 in additional-settings) — qdmr-inferred, not hardware-verified ([#857](https://github.com/pskillen/codeplug-studio/issues/857)) |
+| [docs/reference/radios/radiofoundry/satellite-keps.md](../../reference/radios/radiofoundry/satellite-keps.md)           | RadioFoundry satellite transaction — from the RadioFoundry spec and source; not yet bench-written                                                                |
 
 ---
 
@@ -48,15 +49,21 @@ Tier-1 hub for **satellite Keplerian elements (keps / TLEs)** in Codeplug Studio
 - **Vendor-neutral library** — TLE-derived orbitals (+ optional TX/RX metadata) live in core/library; radio packing and capacity limits apply only at the Web Serial write boundary.
 - **Decoupled UX** — Library **Satellite Keps** tab for refresh/curation; write from the library (select radio) or from a build page (context radio already known).
 - **Capacity at write** — Do not bake radio max satellite counts into library CRUD; halt write with a clear error when selected count exceeds the target radio profile.
+- **Exclusions honoured** — A satellite or transmitter the build excludes is not written to any radio, and the Done step names each skipped row.
+- **Old orbit data** — Step 1 of the write warns when a selected satellite's TLE is 14 or more days old, naming it, as a note; the write is not refused and Review does not stop for it.
+- **Read-back line** — Where the radio reads its keps back (RadioFoundry), Done says they match; a mismatch is an error.
+- **Debug details** — A RadioFoundry keps write offers a collapsed **Debug details** control on Done (frames and statuses, with Copy), logs the same to the console, and attaches it to a failed write's error. Wire detail: [RadioFoundry satellite keps](../../reference/radios/radiofoundry/satellite-keps.md#debug-detail).
+- **Same session after codeplug** — Radios that keep satellites outside the codeplug and do not restart (RadioFoundry) take keps in the same Web Serial session as a codeplug write; radios that reboot or cannot interleave keps with an open codeplug transaction need a new session (AT-D890UV, OpenGD77 today).
 
 ---
 
 ## Target radios (MVP)
 
-| Radio                                   | Notes                                |
-| --------------------------------------- | ------------------------------------ |
-| Anytone AT-D890UV                       | First end-to-end write path          |
-| OpenGD77 (Baofeng DM-1701, TYT MD-9600) | Shared satellite orbital wire format |
+| Radio                                              | Notes                                                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Anytone AT-D890UV                                  | First end-to-end write path                                                                             |
+| OpenGD77 (Baofeng DM-1701, TYT MD-9600)            | Shared satellite orbital wire format                                                                    |
+| RadioFoundry (every radio Studio supports with it) | One frequency pair per satellite, up to 10; the radio is asked whether its build has satellite tracking |
 
 ---
 

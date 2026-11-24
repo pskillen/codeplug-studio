@@ -223,6 +223,19 @@ describe('buildSupportMatrix', () => {
     );
   });
 
+  it('notes that RadioFoundry satellite keps depend on the build', () => {
+    const withKeps = {
+      availability: { satelliteKeps: () => true },
+    };
+    for (const m of buildSupportMatrix(withKeps)) {
+      for (const f of m.firmware) {
+        if (f.firmware.id !== 'radiofoundry') continue;
+        expect(f.notes.satelliteKeps?.length).toBeGreaterThan(0);
+      }
+    }
+    expect(row('anytone-at-d890uv', 'stock').notes.satelliteKeps).toBeUndefined();
+  });
+
   it('shows a feature note only on a supported cell', () => {
     const withKeps = {
       facts: {

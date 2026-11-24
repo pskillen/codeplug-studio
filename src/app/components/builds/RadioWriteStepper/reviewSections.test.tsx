@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render as rtlRender, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
-import type { ExportWarning } from '@core/import-export/exportWarning.ts';
+import { pushGeneralInfoWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { DesignSystemV2Provider } from '../../v2/index.ts';
 import type { RadioDescriptor } from '@integrations/radio-io/types.ts';
 import {
@@ -62,6 +62,17 @@ describe('reviewPauseReasons (#1638)', () => {
       },
     ];
     expect(reviewPauseReasons(descriptor, { ...ctx, buildWarnings: warnings })).toEqual([]);
+  });
+
+  it('an old-TLE warning alone does not pause Review', () => {
+    const warnings: ExportWarning[] = [];
+    pushGeneralInfoWarning(
+      warnings,
+      '1 satellite has orbit data 14 or more days old; the oldest, ISS, is 14 days old. Refresh keps in the library before writing.',
+    );
+    expect(reviewPauseReasons(descriptor, { ...ctx, buildWarnings: warnings })).not.toContain(
+      'build-problems',
+    );
   });
 
   it('a radio finding that is a problem pauses Review', () => {

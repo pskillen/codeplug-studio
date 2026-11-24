@@ -18,6 +18,8 @@ Studio writes only FM and conventional DMR to this radio.
 
 Source: [limits.md](limits.md) and `src/core/radio-targets/rfCapabilities.ts`.
 
+Satellite keps: over the debug link when the build has satellite tracking on; see [RadioFoundry satellite keps](../../radiofoundry/satellite-keps.md).
+
 ## Related
 
 - [limits.md](limits.md) · [RadioFoundry firmware limits](../../radiofoundry/limits.md)

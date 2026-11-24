@@ -24,7 +24,7 @@ Workflow A (#859, [feature-design.md §8](../../../../docs/features/satellite-ke
 
 ## Behaviour
 
-- **Target list:** builds with a `web-serial` egress whose `profileId` is registered in `hasSatelliteKepsWriteAdapter`. Empty state when none qualify.
+- **Target list:** builds with a `web-serial` egress whose `profileId` is registered in `hasSatelliteKepsWriteAdapter`. Every RadioFoundry cable profile qualifies through the family check in that registry (not one row per board). Empty state when none qualify.
 - **Continue:** closes the picker and mounts the chosen build's Write dialog with keps-only ticks; the write uses that build's `satelliteOverrides` like any other write from that build.
 - **Serial lock:** navigation while the Write dialog is busy is handled by the dialog hook's `busy` flag on pages that mount it (this modal unmounts after Continue).
 

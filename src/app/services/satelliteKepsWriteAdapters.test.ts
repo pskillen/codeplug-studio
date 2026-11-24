@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { RADIOFOUNDRY_PROFILES } from '@core/import-export/formatProfiles.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
+import { RADIOFOUNDRY_LIMITS } from '@core/radios/radiofoundry/limits.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import { listDescriptorsForProfile } from '@integrations/radio-io/registry.ts';
@@ -12,8 +14,10 @@ import {
   hasSatelliteKepsWriteAdapter,
   kepsWriteChecks,
   satelliteKepsCapacityWarning,
+  satelliteKepsSameSessionAfterUpload,
   SATELLITE_KEPS_WRITE_ADAPTERS,
 } from './satelliteKepsWriteAdapters.ts';
+import { writeRadioFoundrySatellitesToRadio } from './radioIoRadioFoundrySatelliteWrite.ts';
 
 describe('satelliteKepsWriteAdapters', () => {
   it('has an adapter registered for the AT-D890UV profile', () => {
@@ -36,6 +40,50 @@ describe('satelliteKepsWriteAdapters', () => {
     expect(hasSatelliteKepsWriteAdapter('radio-io-uv5r-mini')).toBe(false);
     expect(getSatelliteKepsWriteAdapter('radio-io-uv5r-mini')).toBeUndefined();
     expect(hasSatelliteKepsWriteAdapter('not-a-real-profile')).toBe(false);
+  });
+
+  it('offers keps on every RadioFoundry cable profile through the family check', () => {
+    for (const row of RADIOFOUNDRY_PROFILES) {
+      const id = row.radioIoProfileId;
+      expect(hasSatelliteKepsWriteAdapter(id), id).toBe(true);
+      expect(getSatelliteKepsWriteAdapter(id)).toBe(writeRadioFoundrySatellitesToRadio);
+      expect(getSatelliteKepsWritePreview(id)).toBeTypeOf('function');
+      expect(getSatelliteKepsExclusions(id)).toBeTypeOf('function');
+      const capacity = getSatelliteKepsWriteCapacity(id);
+      expect(capacity?.max).toBe(RADIOFOUNDRY_LIMITS.SATELLITE_MAX);
+      expect(capacity?.nameLength).toBe(RADIOFOUNDRY_LIMITS.SATELLITE_NAME_MAX_BYTES);
+      expect(capacity?.nameScope).toBe('spacecraft');
+      expect(satelliteKepsSameSessionAfterUpload(id)).toBe(true);
+    }
+  });
+
+  it('keeps the AT-D890UV and OpenGD77 entries as they were', () => {
+    for (const profileId of [
+      'radio-io-at-d890uv',
+      'radio-io-at-d890uv-mm9pdy',
+      'radio-io-opengd77-1701',
+      'radio-io-opengd77-md9600',
+    ] as const) {
+      expect(getSatelliteKepsWriteAdapter(profileId)).toBe(
+        SATELLITE_KEPS_WRITE_ADAPTERS[profileId],
+      );
+      expect(satelliteKepsSameSessionAfterUpload(profileId)).toBe(false);
+    }
+  });
+
+  it('uses the radio’s bands for RadioFoundry eligibility', () => {
+    const satellites = [
+      makeSatellite({
+        transmitters: [
+          makeTransmitter({
+            uplinkHz: 144_000_000,
+            downlinkHz: 435_000_000,
+          }),
+        ],
+      }),
+    ];
+    const id = 'radio-io-dm32uv-radiofoundry';
+    expect(getSatelliteKepsWriteCapacity(id)!.countEligible(satellites)).toBe(1);
   });
 });
 
@@ -126,7 +174,7 @@ function makeSatellite(overrides: Partial<Satellite> = {}): Satellite {
     source: 'celestrak',
     tleLine1: '1 25544U 98067A   24079.51782528  .00016717  00000-0  30721-3 0  9993',
     tleLine2: '2 25544  51.6416 335.6205 0006447  56.6529  36.3752 15.49560768 45087',
-    epoch: '2024-01-01T00:00:00Z',
+    epoch: new Date().toISOString(),
     classification: 'U',
     inclinationDeg: 51.6416,
     raanDeg: 335.6205,
@@ -286,6 +334,97 @@ describe('keps capacity and write checks', () => {
     const overrides = [{ libraryEntityId: 'sat-0', excluded: true }];
     expect(capacity.countEligible(satellites)).toBe(capacity.max + 1);
     expect(capacity.countEligible(satellites, overrides)).toBe(capacity.max);
+  });
+
+  it("warns once when a written satellite's TLE is 14 days old", () => {
+    const now = new Date('2024-01-15T12:00:00Z');
+    const satellites = [
+      makeSatellite({
+        name: 'ISS',
+        epoch: '2024-01-01T00:00:00Z',
+        transmitters: [makeTransmitter()],
+      }),
+    ];
+    const checks = kepsWriteChecks('radio-io-at-d890uv', satellites, undefined, now);
+    expect(checks.warnings).toEqual([
+      expect.objectContaining({
+        kind: 'general',
+        message:
+          '1 satellite has orbit data 14 or more days old; the oldest, ISS, is 14 days old. Refresh keps in the library before writing.',
+      }),
+    ]);
+  });
+
+  it('TLE-age warning is info, not a problem', () => {
+    const now = new Date('2024-01-15T12:00:00Z');
+    const satellites = [
+      makeSatellite({
+        name: 'ISS',
+        epoch: '2024-01-01T00:00:00Z',
+        transmitters: [makeTransmitter()],
+      }),
+    ];
+    const checks = kepsWriteChecks('radio-io-at-d890uv', satellites, undefined, now);
+    expect(checks.warnings).toEqual([
+      expect.objectContaining({ kind: 'general', severity: 'info' }),
+    ]);
+  });
+
+  it('no TLE-age warning at 13 days', () => {
+    const now = new Date('2024-01-14T00:00:00Z');
+    const satellites = [
+      makeSatellite({
+        epoch: '2024-01-01T00:00:00Z',
+        transmitters: [makeTransmitter()],
+      }),
+    ];
+    const checks = kepsWriteChecks('radio-io-at-d890uv', satellites, undefined, now);
+    expect(checks.warnings.filter((w) => w.kind === 'general')).toEqual([]);
+  });
+
+  it('TLE-age warning ignores excluded satellites', () => {
+    const now = new Date('2024-02-01T00:00:00Z');
+    const satellites = [
+      makeSatellite({
+        id: 'sat-stale',
+        name: 'StaleSat',
+        epoch: '2024-01-01T00:00:00Z',
+        transmitters: [makeTransmitter({ id: 'tx-stale' })],
+      }),
+    ];
+    const checks = kepsWriteChecks(
+      'radio-io-at-d890uv',
+      satellites,
+      [{ libraryEntityId: 'sat-stale', excluded: true }],
+      now,
+    );
+    expect(checks.warnings.filter((w) => w.kind === 'general')).toEqual([]);
+  });
+
+  it('TLE-age warning names the oldest of several', () => {
+    const now = new Date('2024-02-01T00:00:00Z');
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        name: 'Newer',
+        epoch: '2024-01-10T00:00:00Z',
+        transmitters: [makeTransmitter({ id: 'tx-a' })],
+      }),
+      makeSatellite({
+        id: 'sat-b',
+        name: 'Oldest',
+        epoch: '2024-01-01T00:00:00Z',
+        transmitters: [makeTransmitter({ id: 'tx-b' })],
+      }),
+    ];
+    const checks = kepsWriteChecks('radio-io-at-d890uv', satellites, undefined, now);
+    expect(checks.warnings).toEqual([
+      expect.objectContaining({
+        kind: 'general',
+        message:
+          '2 satellites have orbit data 14 or more days old; the oldest, Oldest, is 31 days old. Refresh keps in the library before writing.',
+      }),
+    ]);
   });
 
   it('OpenGD77 kepsWriteChecks omits build slot competition from folded notes', () => {

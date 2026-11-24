@@ -43,7 +43,14 @@ function writtenLines(summary: WriteSummary): string[] {
     lines.push('Radio settings: kept as this radio had them.');
   }
   if (summary.kepsResult) {
-    lines.push(`Satellite keps written (${summary.kepsResult.written} transmitters).`);
+    const n = summary.kepsResult.written;
+    const noun = summary.kepsUnitNoun ?? 'transmitter';
+    const unit = n === 1 ? noun : `${noun}s`;
+    let kepsLine = `Satellite keps written: ${n} ${unit}.`;
+    if (summary.kepsResult.readBack === 'matched') {
+      kepsLine += ' The radio read them back and they match.';
+    }
+    lines.push(kepsLine);
   } else if (summary.kepsTicked) {
     lines.push(
       summary.kepsError
@@ -70,6 +77,8 @@ function checkLine(summary: WriteSummary): string {
 export function DoneBody({ config, view, actions }: StepProps) {
   const [timingsCopied, setTimingsCopied] = useState(false);
   const [timingsCopyFailed, setTimingsCopyFailed] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [debugCopied, setDebugCopied] = useState(false);
   const summary = view.summary;
   if (!summary) return null;
   const who = summary.identity
@@ -83,7 +92,7 @@ export function DoneBody({ config, view, actions }: StepProps) {
       satelliteId: s.satelliteId,
       transmitterId: null,
       reason: s.reason,
-      label: s.satelliteId,
+      label: s.label ?? s.satelliteId,
     });
   }
   for (const s of summary.kepsResult?.skippedTransmitters ?? []) {
@@ -91,7 +100,7 @@ export function DoneBody({ config, view, actions }: StepProps) {
       satelliteId: s.satelliteId,
       transmitterId: s.transmitterId,
       reason: s.reason,
-      label: `${s.satelliteId} / ${s.transmitterId}`,
+      label: s.label ?? `${s.satelliteId} / ${s.transmitterId}`,
     });
   }
   const kepsNotWritten = summary.kepsTicked && !summary.kepsResult;
@@ -158,6 +167,39 @@ export function DoneBody({ config, view, actions }: StepProps) {
           >
             {timingsCopied ? 'Copied' : timingsCopyFailed ? 'Copy failed' : 'Copy write timings'}
           </Button>
+        </div>
+      ) : null}
+      {summary.kepsResult?.debugText ? (
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            data-testid="write-stepper-keps-debug-toggle"
+            aria-expanded={debugOpen}
+            onClick={() => setDebugOpen((o) => !o)}
+          >
+            Debug details
+          </Button>
+          {debugOpen ? (
+            <>
+              <pre data-testid="write-stepper-keps-debug" className={classes.keepsDebug}>
+                {summary.kepsResult.debugText}
+              </pre>
+              <Button
+                variant="ghost"
+                size="sm"
+                data-testid="write-stepper-keps-debug-copy"
+                onClick={() => {
+                  void navigator.clipboard
+                    .writeText(summary.kepsResult!.debugText!)
+                    .then(() => setDebugCopied(true))
+                    .catch(() => setDebugCopied(false));
+                }}
+              >
+                {debugCopied ? 'Copied' : 'Copy debug text'}
+              </Button>
+            </>
+          ) : null}
         </div>
       ) : null}
       {recapWarnings.length > 0 ? (

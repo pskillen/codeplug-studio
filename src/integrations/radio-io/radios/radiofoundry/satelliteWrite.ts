@@ -39,8 +39,10 @@ export type RadioFoundrySatelliteSupport =
 /** INFO probe. Never throws on a status; throws only on a link failure. */
 export async function probeRadioFoundrySatellites(
   radio: RadioFoundryCableProtocol,
+  request: SatelliteRequestFn = (op, args, timeoutMs) =>
+    radio.satelliteRequest(op, args, timeoutMs),
 ): Promise<RadioFoundrySatelliteSupport> {
-  const { status, body } = await radio.satelliteRequest(SAT_OP_INFO, new Uint8Array(0), 2000);
+  const { status, body } = await request(SAT_OP_INFO, new Uint8Array(0), 2000);
   if (status === 1) {
     return {
       supported: false,
@@ -88,9 +90,68 @@ export interface RadioFoundrySatelliteWriteInput {
 
 export const RADIOFOUNDRY_SATELLITE_STAGE = 'Satellite keps';
 
-/** Replace the radio's whole satellite set with `input`, then read it back. */
-export async function writeRadioFoundrySatellites(
+type SatelliteRequestFn = (
+  op: number,
+  args: Uint8Array,
+  timeoutMs: number,
+) => Promise<{ status: number; body: Uint8Array }>;
+
+/** One SATELLITE request and what came back. `status` is null when the request threw (link failure). */
+export interface RadioFoundrySatelliteFrame {
+  op: number;
+  argsLen: number;
+  status: number | null;
+  bodyLen: number | null;
+}
+
+const SAT_OP_NAMES: Record<number, string> = {
+  [SAT_OP_INFO]: 'INFO',
+  [SAT_OP_LIST]: 'LIST',
+  [SAT_OP_DATA]: 'DATA',
+  [SAT_OP_COMMIT]: 'COMMIT',
+  [SAT_OP_ABORT]: 'ABORT',
+  [SAT_OP_REPLACE_BEGIN]: 'REPLACE_BEGIN',
+  [SAT_OP_PROFILE_VALUES_GET]: 'PROFILE_VALUES_GET',
+  [SAT_OP_PROFILE_STAGE_CHUNK]: 'PROFILE_STAGE_CHUNK',
+};
+
+/** One line per frame: `3 DATA args=63B -> status 0, body 2B`. */
+export function formatRadioFoundrySatelliteFrames(
+  frames: readonly RadioFoundrySatelliteFrame[],
+): string[] {
+  return frames.map((f) => {
+    const name = SAT_OP_NAMES[f.op] ?? 'UNKNOWN';
+    const reply =
+      f.status === null ? 'no reply (request failed)' : `status ${f.status}, body ${f.bodyLen}B`;
+    return `${f.op} ${name} args=${f.argsLen}B -> ${reply}`;
+  });
+}
+
+function recordingRequest(
   radio: RadioFoundryCableProtocol,
+  into?: RadioFoundrySatelliteFrame[],
+): {
+  req: SatelliteRequestFn;
+  frames: RadioFoundrySatelliteFrame[];
+} {
+  const frames: RadioFoundrySatelliteFrame[] = into ?? [];
+  const req: SatelliteRequestFn = async (op, args, timeoutMs) => {
+    try {
+      const reply = await radio.satelliteRequest(op, args, timeoutMs);
+      frames.push({ op, argsLen: args.length, status: reply.status, bodyLen: reply.body.length });
+      return reply;
+    } catch (err) {
+      frames.push({ op, argsLen: args.length, status: null, bodyLen: null });
+      throw err;
+    }
+  };
+  return { req, frames };
+}
+
+/** Replace the radio's whole satellite set with `input`, then read it back. */
+async function writeInner(
+  radio: RadioFoundryCableProtocol,
+  req: SatelliteRequestFn,
   input: RadioFoundrySatelliteWriteInput,
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
 ): Promise<{ written: number; capacity: number }> {
@@ -119,7 +180,7 @@ export async function writeRadioFoundrySatellites(
   }
 
   throwIfAborted(opts?.signal);
-  const probe = await probeRadioFoundrySatellites(radio);
+  const probe = await probeRadioFoundrySatellites(radio, req);
   if (!probe.supported) {
     throw new RadioFoundrySatellitesUnavailableError(probe.reason);
   }
@@ -134,7 +195,7 @@ export async function writeRadioFoundrySatellites(
   let listed = 0;
   let start = 0;
   while (listed < info.installed) {
-    const listReply = await radio.satelliteRequest(SAT_OP_LIST, listArgs(start), 2000);
+    const listReply = await req(SAT_OP_LIST, listArgs(start), 2000);
     throwIfAborted(opts?.signal);
     if (listReply.status !== 0) {
       throw new RadioProtocolError("The radio's satellite list did not match its own count.");
@@ -154,7 +215,7 @@ export async function writeRadioFoundrySatellites(
   const crc = crc32Ieee(stream);
 
   throwIfAborted(opts?.signal);
-  const beginReply = await radio.satelliteRequest(
+  const beginReply = await req(
     SAT_OP_REPLACE_BEGIN,
     encodeReplaceBegin(records.length, stream.length, crc),
     4000,
@@ -174,11 +235,7 @@ export async function writeRadioFoundrySatellites(
     while (offset < stream.length) {
       throwIfAborted(opts?.signal);
       const chunk = stream.subarray(offset, Math.min(stream.length, offset + SAT_DATA_CHUNK_MAX));
-      const dataReply = await radio.satelliteRequest(
-        SAT_OP_DATA,
-        encodeDataChunk(transactionId, offset, chunk),
-        2000,
-      );
+      const dataReply = await req(SAT_OP_DATA, encodeDataChunk(transactionId, offset, chunk), 2000);
       if (dataReply.status !== 0) {
         throw new RadioProtocolError('The radio did not accept the satellite data.');
       }
@@ -203,24 +260,20 @@ export async function writeRadioFoundrySatellites(
     const profileBlocks = encodeProfileChunks(transactionId, profiles);
     for (const block of profileBlocks) {
       throwIfAborted(opts?.signal);
-      const profReply = await radio.satelliteRequest(SAT_OP_PROFILE_STAGE_CHUNK, block, 4000);
+      const profReply = await req(SAT_OP_PROFILE_STAGE_CHUNK, block, 4000);
       if (profReply.status !== 0 || profReply.body.length !== 0) {
         throw new RadioProtocolError('The radio refused the satellite frequencies.');
       }
     }
 
     throwIfAborted(opts?.signal);
-    const commitReply = await radio.satelliteRequest(
-      SAT_OP_COMMIT,
-      encodeCommit(transactionId, crc),
-      10_000,
-    );
+    const commitReply = await req(SAT_OP_COMMIT, encodeCommit(transactionId, crc), 10_000);
     if (commitReply.status !== 0) {
       throw new RadioProtocolError('The radio did not commit the satellite set.');
     }
   } catch (err) {
     try {
-      await radio.satelliteRequest(SAT_OP_ABORT, encodeTransactionId(transactionId), 2000);
+      await req(SAT_OP_ABORT, encodeTransactionId(transactionId), 2000);
     } catch {
       /* swallow */
     }
@@ -228,7 +281,7 @@ export async function writeRadioFoundrySatellites(
   }
 
   throwIfAborted(opts?.signal);
-  const infoAfter = await radio.satelliteRequest(SAT_OP_INFO, new Uint8Array(0), 2000);
+  const infoAfter = await req(SAT_OP_INFO, new Uint8Array(0), 2000);
   if (infoAfter.status !== 0) {
     throw new RadioProtocolError(
       'The satellites on the radio after the write do not match what Studio sent.',
@@ -248,7 +301,7 @@ export async function writeRadioFoundrySatellites(
   let listIndex = 0;
   while (listIndex < records.length) {
     throwIfAborted(opts?.signal);
-    const listReply = await radio.satelliteRequest(SAT_OP_LIST, listArgs(listIndex), 2000);
+    const listReply = await req(SAT_OP_LIST, listArgs(listIndex), 2000);
     if (listReply.status !== 0) {
       throw new RadioProtocolError(
         'The satellites on the radio after the write do not match what Studio sent.',
@@ -269,11 +322,7 @@ export async function writeRadioFoundrySatellites(
   }
 
   throwIfAborted(opts?.signal);
-  const profReply = await radio.satelliteRequest(
-    SAT_OP_PROFILE_VALUES_GET,
-    new Uint8Array(0),
-    2000,
-  );
+  const profReply = await req(SAT_OP_PROFILE_VALUES_GET, new Uint8Array(0), 2000);
   if (profReply.status !== 0) {
     throw new RadioProtocolError(
       'The satellites on the radio after the write do not match what Studio sent.',
@@ -302,6 +351,35 @@ export async function writeRadioFoundrySatellites(
   }
 
   return { written: records.length, capacity: info.capacity };
+}
+
+/**
+ * Replace the radio's whole satellite set, then read it back. Pass `frameLog` to receive every
+ * SATELLITE request of this write (the caller owns it, one per write). On error, `debugText` on
+ * the thrown error holds the same log.
+ */
+export async function writeRadioFoundrySatellites(
+  radio: RadioFoundryCableProtocol,
+  input: RadioFoundrySatelliteWriteInput,
+  opts?: {
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
+    frameLog?: RadioFoundrySatelliteFrame[];
+  },
+): Promise<{ written: number; capacity: number }> {
+  const { req, frames } = recordingRequest(radio, opts?.frameLog);
+  try {
+    return await writeInner(radio, req, input, opts);
+  } catch (err) {
+    if (err instanceof Error && frames.length > 0) {
+      (err as Error & { debugText?: string }).debugText = [
+        `Satellite keps write failed: ${err.message}`,
+        `SATELLITE frames sent (${frames.length}, oldest first):`,
+        ...formatRadioFoundrySatelliteFrames(frames),
+      ].join('\n');
+    }
+    throw err;
+  }
 }
 
 function listArgs(start: number): Uint8Array {

@@ -84,6 +84,8 @@ import {
   serializeWriteVerifyPending,
 } from '../../../services/writeVerifyStorage.ts';
 import {
+  enrichSatelliteKepsWriteResult,
+  getSatelliteKepsWriteCapacity,
   kepsWriteChecks,
   satelliteKepsCapacityWarning,
   type SatelliteKepsWriteResult,
@@ -172,6 +174,7 @@ interface WrittenFacts {
   settingsChanged: number | null;
   channelCount: number;
   kepsResult: SatelliteKepsWriteResult | null;
+  kepsUnitNoun: string | null;
   kepsError: string | null;
   warnings: ExportWarning[];
   /** Per-stage write timings from the upload (AT-D890); keps after a restart are not timed. */
@@ -184,6 +187,7 @@ const EMPTY_FACTS: WrittenFacts = {
   settingsChanged: null,
   channelCount: 0,
   kepsResult: null,
+  kepsUnitNoun: null,
   kepsError: null,
   warnings: [],
   writeTimings: null,
@@ -652,6 +656,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       settingsTicked: partsRef.current.settings,
       channelCount: facts.channelCount,
       kepsResult: facts.kepsResult,
+      kepsUnitNoun: facts.kepsUnitNoun,
       kepsTicked: partsRef.current.keps,
       kepsError: facts.kepsError,
       warnings: facts.warnings,
@@ -890,7 +895,12 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       signal: abortRef.current?.signal,
       satelliteOverrides: build.satelliteOverrides,
     });
-    factsRef.current = { ...factsRef.current, kepsResult: result };
+    const capacity = getSatelliteKepsWriteCapacity(egress.profileId);
+    factsRef.current = {
+      ...factsRef.current,
+      kepsResult: enrichSatelliteKepsWriteResult(result, satellitesRef.current),
+      kepsUnitNoun: capacity?.unitNoun ?? null,
+    };
   }
 
   /** Steps 2 to 5 for the ticked parts. `reconnect` re-runs the read after the radio may have dropped. */

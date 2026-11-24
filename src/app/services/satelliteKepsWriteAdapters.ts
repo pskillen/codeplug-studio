@@ -4,8 +4,12 @@
  */
 
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
-import { pushKepsExcludedWarning } from '@core/import-export/exportWarning.ts';
+import {
+  pushGeneralInfoWarning,
+  pushKepsExcludedWarning,
+} from '@core/import-export/exportWarning.ts';
 import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
+import { isRadioFoundryRadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { ProgressFn, RadioSession } from '@integrations/radio-io/index.ts';
@@ -18,6 +22,8 @@ import type {
   SatelliteKepsPreviewOptions,
 } from '@integrations/radio-io/satelliteKepsCapability.ts';
 import type { CapabilitySkippedTransmitter } from '@integrations/radio-io/radios/at-d890uv/index.ts';
+import { radioFoundryCableBoardForProfileId } from '@integrations/radio-io/radios/radiofoundry/board.ts';
+import { countRadioFoundryWriteSatellites } from '@integrations/radio-io/radios/radiofoundry/satelliteCodec.ts';
 import {
   countWriteEligibleSatelliteRecords,
   writeSatellitesToRadio,
@@ -26,6 +32,7 @@ import {
   countWriteEligibleSatelliteRecords as countOpenGd77WriteEligibleSatellites,
   writeOpenGd77SatellitesToRadio,
 } from './radioIoOpenGd77SatelliteWrite.ts';
+import { writeRadioFoundrySatellitesToRadio } from './radioIoRadioFoundrySatelliteWrite.ts';
 
 export type {
   SatelliteKepsExclusion,
@@ -37,9 +44,13 @@ export type {
 
 export interface SatelliteKepsWriteResult {
   written: number;
-  skipped: { satelliteId: string; reason: string }[];
+  /** Set when the radio read keps back and they matched what was sent (RadioFoundry). */
+  readBack?: 'matched';
+  /** Copyable frame log for a write that sent frames (RadioFoundry). */
+  debugText?: string;
+  skipped: { satelliteId: string; reason: string; label?: string }[];
   /** Transmitters skipped for a radio-capability reason (e.g. unsupported mode), #1068. */
-  skippedTransmitters: CapabilitySkippedTransmitter[];
+  skippedTransmitters: (CapabilitySkippedTransmitter & { label?: string })[];
 }
 
 export type SatelliteKepsWriteFn = (
@@ -52,7 +63,10 @@ export type SatelliteKepsWriteFn = (
   },
 ) => Promise<SatelliteKepsWriteResult>;
 
-/** Profile → write fn — the only profile-keyed table; everything else uses the descriptor. */
+/**
+ * Profile → write fn — the only profile-keyed table; everything else uses the descriptor.
+ * RadioFoundry radios share one writer and are matched by family in `kepsWriteFnForProfile`.
+ */
 const KEPS_WRITE_BY_PROFILE: Readonly<Record<string, SatelliteKepsWriteFn>> = {
   'radio-io-at-d890uv': writeSatellitesToRadio,
   'radio-io-at-d890uv-mm9pdy': writeSatellitesToRadio,
@@ -69,11 +83,18 @@ export const SATELLITE_KEPS_WRITE_ADAPTERS = KEPS_WRITE_BY_PROFILE;
  */
 const KEPS_SAME_SESSION_AFTER_UPLOAD: ReadonlySet<string> = new Set<string>();
 
+function kepsWriteFnForProfile(profileId: string): SatelliteKepsWriteFn | undefined {
+  const direct = KEPS_WRITE_BY_PROFILE[profileId];
+  if (direct) return direct;
+  return isRadioFoundryRadioIoProfileId(profileId) ? writeRadioFoundrySatellitesToRadio : undefined;
+}
+
 function descriptorKepsForProfile(profileId: string) {
   return listDescriptorsForProfile('radio-io', profileId)[0]?.satelliteKeps;
 }
 
 function countEligibleForWriteFn(
+  profileId: string,
   writeFn: SatelliteKepsWriteFn,
   satellites: readonly Satellite[],
   overrides?: readonly BuildEntityOverride[],
@@ -84,20 +105,27 @@ function countEligibleForWriteFn(
   if (writeFn === writeOpenGd77SatellitesToRadio) {
     return countOpenGd77WriteEligibleSatellites(satellites, overrides);
   }
+  if (writeFn === writeRadioFoundrySatellitesToRadio) {
+    return countRadioFoundryWriteSatellites(satellites, {
+      bands: radioFoundryCableBoardForProfileId(profileId).limits.BANDS_HZ,
+      satelliteOverrides: overrides,
+    });
+  }
   return 0;
 }
 
+/** RadioFoundry radios do not restart after a codeplug write and keep satellites outside the codeplug. */
 export function satelliteKepsSameSessionAfterUpload(profileId: string): boolean {
-  return KEPS_SAME_SESSION_AFTER_UPLOAD.has(profileId);
+  return KEPS_SAME_SESSION_AFTER_UPLOAD.has(profileId) || isRadioFoundryRadioIoProfileId(profileId);
 }
 
 export function hasSatelliteKepsWriteAdapter(profileId: string): boolean {
-  return Boolean(descriptorKepsForProfile(profileId) && KEPS_WRITE_BY_PROFILE[profileId]);
+  return Boolean(descriptorKepsForProfile(profileId) && kepsWriteFnForProfile(profileId));
 }
 
 export function getSatelliteKepsWriteAdapter(profileId: string): SatelliteKepsWriteFn | undefined {
   if (!descriptorKepsForProfile(profileId)) return undefined;
-  return KEPS_WRITE_BY_PROFILE[profileId];
+  return kepsWriteFnForProfile(profileId);
 }
 
 export interface SatelliteKepsWriteCapacity {
@@ -116,12 +144,12 @@ export function getSatelliteKepsWriteCapacity(
   profileId: string,
 ): SatelliteKepsWriteCapacity | undefined {
   const keps = descriptorKepsForProfile(profileId);
-  const writeFn = KEPS_WRITE_BY_PROFILE[profileId];
+  const writeFn = kepsWriteFnForProfile(profileId);
   if (!keps || !writeFn) return undefined;
   return {
     ...keps.limits,
     countEligible: (satellites, overrides) =>
-      countEligibleForWriteFn(writeFn, satellites, overrides),
+      countEligibleForWriteFn(profileId, writeFn, satellites, overrides),
   };
 }
 
@@ -168,7 +196,7 @@ function isOpenGd77BuildSlotSkip(reason: string): boolean {
   );
 }
 
-function kepsExcludedLabel(
+export function kepsExcludedLabel(
   satellites: readonly Satellite[],
   exclusion: SatelliteKepsExclusion,
 ): string {
@@ -180,16 +208,62 @@ function kepsExcludedLabel(
   return `${name} / ${txLabel}`;
 }
 
+export function enrichSatelliteKepsWriteResult(
+  result: SatelliteKepsWriteResult,
+  satellites: readonly Satellite[],
+): SatelliteKepsWriteResult {
+  return {
+    ...result,
+    skipped: (result.skipped ?? []).map((s) => ({
+      ...s,
+      label: kepsExcludedLabel(satellites, {
+        satelliteId: s.satelliteId,
+        transmitterId: null,
+        reason: s.reason,
+      }),
+    })),
+    skippedTransmitters: (result.skippedTransmitters ?? []).map((s) => ({
+      ...s,
+      label: kepsExcludedLabel(satellites, {
+        satelliteId: s.satelliteId,
+        transmitterId: s.transmitterId,
+        reason: s.reason,
+      }),
+    })),
+  };
+}
+
 export interface KepsWriteChecksResult {
   refusals: { message: string; retry: 'none' }[];
   warnings: ExportWarning[];
   eligible: number;
 }
 
+const MS_PER_DAY = 86_400_000;
+const TLE_STALE_DAYS = 14;
+
+function wholeDaysSinceEpoch(epochIso: string, now: Date): number {
+  const epochMs = new Date(epochIso).getTime();
+  return Math.floor((now.getTime() - epochMs) / MS_PER_DAY);
+}
+
+function writtenSatellitesForKeps(
+  previewFn: SatelliteKepsPreviewFn | undefined,
+  satellites: readonly Satellite[],
+  overrides: readonly BuildEntityOverride[] | undefined,
+): readonly Satellite[] {
+  if (!previewFn) return [];
+  const writtenIds = new Set(
+    previewFn(satellites, { satelliteOverrides: overrides }).map((e) => e.satelliteId),
+  );
+  return satellites.filter((s) => writtenIds.has(s.id));
+}
+
 export function kepsWriteChecks(
   profileId: string,
   satellites: readonly Satellite[],
   overrides?: readonly BuildEntityOverride[],
+  now: Date = new Date(),
 ): KepsWriteChecksResult {
   const capacity = getSatelliteKepsWriteCapacity(profileId);
   const eligible = capacity?.countEligible(satellites, overrides) ?? 0;
@@ -223,6 +297,20 @@ export function kepsWriteChecks(
         label: kepsExcludedLabel(satellites, exclusion),
       });
     }
+  }
+
+  const previewFn = getSatelliteKepsWritePreview(profileId);
+  const written = writtenSatellitesForKeps(previewFn, satellites, overrides);
+  const stale = written
+    .map((s) => ({ satellite: s, days: wholeDaysSinceEpoch(s.epoch, now) }))
+    .filter((row) => row.days >= TLE_STALE_DAYS);
+  if (stale.length > 0) {
+    const oldest = stale.reduce((a, b) => (b.days > a.days ? b : a));
+    const countLabel = stale.length === 1 ? '1 satellite has' : `${stale.length} satellites have`;
+    pushGeneralInfoWarning(
+      warnings,
+      `${countLabel} orbit data 14 or more days old; the oldest, ${oldest.satellite.name}, is ${oldest.days} days old. Refresh keps in the library before writing.`,
+    );
   }
 
   return { refusals, warnings, eligible };

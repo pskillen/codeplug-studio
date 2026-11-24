@@ -106,6 +106,8 @@ export interface WriteSummary {
   settingsTicked: boolean;
   channelCount: number;
   kepsResult: SatelliteKepsWriteResult | null;
+  /** Unit noun for keps capacity on this write (`satellite` vs `transmitter`). */
+  kepsUnitNoun: string | null;
   /** Keps were ticked (so "not written" is worth saying when `kepsResult` is null). */
   kepsTicked: boolean;
   /** Why the keps part failed or stopped after the codeplug went onto the radio (D890). */

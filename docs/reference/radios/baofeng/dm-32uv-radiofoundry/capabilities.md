@@ -22,6 +22,8 @@ Source: the board bands in [limits.md](limits.md) (`DM32UV_RADIOFOUNDRY_BOARD.BA
 
 Unlike the stock DM-32UV, there is no receive-only 87–136 MHz row: nothing in RadioFoundry says it keeps the broadcast and air band receive, so Studio does not claim it.
 
+Satellite keps: over the debug link when the build has satellite tracking on; see [RadioFoundry satellite keps](../../radiofoundry/satellite-keps.md).
+
 ## Related
 
 - [limits.md](limits.md) · [RadioFoundry firmware limits](../../radiofoundry/limits.md)
