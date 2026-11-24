@@ -228,6 +228,10 @@ function writeChannels(
   zeroChannelBitmaps(image, owned);
   const expandModes = options?.expandModes ?? true;
   const profileId = options?.profileId ?? assembled.profileId ?? codec.id;
+  const channelWireOptions: CpsExportOptions = {
+    ...options,
+    maxNameLength: options?.maxNameLength ?? LIMITS.NAME_MAX,
+  };
   const pending: Array<{ row: AssembledChannel; mode: KeptMode; wireName: string }> = [];
 
   if (expandModes) {
@@ -238,7 +242,7 @@ function writeChannels(
           row.entity,
           row.wireNameOverride?.trim() || row.wireName,
           expandModes,
-          options,
+          channelWireOptions,
           profileId,
           reserved,
           warnings,
