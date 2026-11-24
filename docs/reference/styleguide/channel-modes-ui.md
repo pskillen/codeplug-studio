@@ -18,7 +18,7 @@ Every digital mode's settings use the same four groups, in this order (`DigitalM
 | You    | What your radio sends about you           | DMR ID, talker alias            |
 
 - A group a mode has no fields for keeps its heading and shows one muted line instead ("Your callsign is set on the radio."). A mode Studio holds no settings for yet shows the headings and one note.
-- Analogue modes (FM, AM, SSB) have no group headings: tones first, then bandwidth and squelch.
+- Analogue modes (FM, AM, SSB) have no group headings: tones first, then bandwidth and squelch. Tone pickers remember the last CTCSS and DCS values while the channel editor is open (not across saves or refresh).
 - Two inputs that share a row stack below 48em.
 - A mode panel never draws its own header, mode pill or main-mode control: the page around it does.
 - No radio, format or CPS names in mode copy.

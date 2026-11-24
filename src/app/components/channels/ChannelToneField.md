@@ -32,7 +32,8 @@ import ChannelToneField from '@app/components/channels/ChannelToneField.tsx';
 - **Off** stores `'none'` and hides the value controls.
 - **CTCSS** shows the Hz list (`88.5 Hz`). No Hz is chosen until the operator picks one; until then the stored string stays `'none'`.
 - **DCS** shows the code list plus **Normal | Inverted**. Normal stores `D023N`; inverted stores `D023I`. Changing polarity keeps the code.
-- Switching between CTCSS and DCS clears the previous value immediately so an Hz is never left stored as DCS, or the reverse.
+- While the field stays mounted (same editor session), it remembers the last CTCSS Hz and the last DCS code with polarity. Switching **Off** or between CTCSS and DCS restores that remembered value when one exists; nothing is written to the library until save. Refreshing the page or closing the editor clears the memory.
+- Switching between CTCSS and DCS with no remembered value for the target kind still clears the stored tone to `'none'` until the operator picks a value.
 - A Hz or DCS code that parses but is not in the catalog stays as an extra option.
 - A string that is neither Off, CTCSS, nor DCS is shown as “Stored value: …” and is left unchanged until the operator picks a kind.
 - Opening `D023P` shows inverted DCS and does not rewrite storage until this field changes; the next write uses `I`.

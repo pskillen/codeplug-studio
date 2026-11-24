@@ -45,7 +45,7 @@ Every **digital** mode’s settings answer the same four questions in the same o
 | Tetra   | MCC/MNC, colour code        | Talk group, GSSI   | talk group    | ISSI on radio     |
 | P25/M17 | pending note                | (headings only)    | (headings)    | (headings)        |
 
-**Analogue** modes (FM, AM, SSB) have **no** group headings: tones first (TX then RX), then bandwidth and squelch controls.
+**Analogue** modes (FM, AM, SSB) have **no** group headings: tones first (TX then RX), then bandwidth and squelch controls. Each tone field remembers its last CTCSS and DCS choices for the open edit session only (switching Off or between kinds restores them; save and refresh do not).
 
 Mode labels and colours: [display — Channel modes](../../reference/styleguide/display.md#channel-modes). UI conventions: [channel-modes-ui](../../reference/styleguide/channel-modes-ui.md).
 
