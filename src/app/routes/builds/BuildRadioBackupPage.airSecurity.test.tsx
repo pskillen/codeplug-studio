@@ -138,10 +138,7 @@ function renderPage() {
   );
 }
 
-async function openBackup(
-  record: Uint8Array,
-  overrides?: Parameters<typeof sessionWith>[1],
-) {
+async function openBackup(record: Uint8Array, overrides?: Parameters<typeof sessionWith>[1]) {
   vi.mocked(backupLiveRadioSession).mockResolvedValue(sessionWith(record, overrides));
   renderPage();
   fireEvent.click(screen.getByRole('button', { name: 'Backup radio' }));
