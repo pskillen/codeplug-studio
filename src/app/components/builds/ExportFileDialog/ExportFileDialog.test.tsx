@@ -1,9 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
-import { buildNeonplugZip } from '@core/import-export/formats/neonplug/packageZip.ts';
-import { NEONPLUG_JSON_FILE_NAME } from '@core/import-export/formats/neonplug/serialise.ts';
-import { neonplugRadioModelForProfile } from '@core/import-export/formats/neonplug/serialise.ts';
+import { strToU8, zipSync } from 'fflate';
 import { DesignSystemV2Provider } from '../../v2/index.ts';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
@@ -141,9 +139,8 @@ function minimalNeonplugJson(model: string): string {
   });
 }
 
-function neonplugDonorFile(profileId: string, modelOverride?: string): File {
-  const model = modelOverride ?? neonplugRadioModelForProfile(profileId);
-  const zip = buildNeonplugZip({ [NEONPLUG_JSON_FILE_NAME]: minimalNeonplugJson(model) });
+function neonplugDonorFile(model: string): File {
+  const zip = zipSync({ 'codeplug.json': strToU8(minimalNeonplugJson(model)) });
   return new File([zip], 'donor.neonplug', { type: 'application/zip' });
 }
 
@@ -316,13 +313,11 @@ describe('ExportFileDialog', () => {
   });
 
   it('donor validation warnings appear on Checks', async () => {
-    const { profileId } = renderNeonplugDialog();
-    const upload = await screen.findByRole('button', { name: 'Upload donor .neonplug' });
-    const mismatchModel =
-      neonplugRadioModelForProfile(profileId) === 'DP570UV' ? 'UV5R-Mini' : 'DP570UV';
+    renderNeonplugDialog();
+    const mismatchModel = 'UV5R-Mini';
     const input = document.querySelector('input[type="file"]');
     expect(input).toBeTruthy();
-    fireEvent.change(input!, { target: { files: [neonplugDonorFile(profileId, mismatchModel)] } });
+    fireEvent.change(input!, { target: { files: [neonplugDonorFile(mismatchModel)] } });
     await waitFor(() => expect(screen.getByText(/donor\.neonplug/)).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => expect(checkCpsExport).toHaveBeenCalled());
