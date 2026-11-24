@@ -45,7 +45,7 @@ Every **digital** mode’s settings answer the same four questions in the same o
 | Tetra   | MCC/MNC, colour code        | Talk group, GSSI   | talk group    | ISSI on radio     |
 | P25/M17 | pending note                | (headings only)    | (headings)    | (headings)        |
 
-**Analogue** modes (FM, AM, SSB) have **no** group headings: tones first (TX then RX), then bandwidth and squelch controls.
+**Analogue** modes (FM, AM, SSB) have **no** group headings: tones first (TX then RX), then bandwidth and squelch controls. Each tone field remembers its last CTCSS and DCS choices for the open edit session only (switching Off or between kinds restores them; save and refresh do not).
 
 Mode labels and colours: [display — Channel modes](../../reference/styleguide/display.md#channel-modes). UI conventions: [channel-modes-ui](../../reference/styleguide/channel-modes-ui.md).
 
@@ -81,6 +81,20 @@ The channel **view** page (`ChannelViewPage`) answers how to use each mode, not 
 | P25 / M17         | Placeholder until settings exist in Studio.                                              |
 
 Layout: one card for a single mode; two cards with **Main mode** on the main profile when there are two; three or more collapse to one summary row per mode that expands to the sentence. UI rules: [Talk cards](../../reference/styleguide/channel-modes-ui.md#talk-cards-channel-view).
+
+## Decisions
+
+Why the channel modes look the way they do.
+
+- **One mode is one plain form.** Most channels run a single mode, so the editor shows the mode as a single switch with that mode's settings right underneath. A second mode is opt-in (**+ Also runs another mode**); only then do chips and per-mode sections appear. There is no separate "what kind of channel is this?" step.
+- **A new channel starts with no mode.** Guessing FM would be wrong as often as it was right, so the editor asks, and offers one-tap presets for the common cases: **FM**, **DMR**, and **FM + DMR** (which makes FM the main mode, matching the label's order and what the editor would pick anyway).
+- **"Main mode", not "primary" or "starts here".** What the field really controls is which mode a dual-mode radio transmits in when it listens to both, and which mode a one-mode radio keeps when it cannot hold two. It is not the mode the radio starts in, so "starts here" misled; "primary" meant nothing to most operators. The stored field keeps its name; only the words in the UI changed.
+- **Make main never moves a section.** Sections stay in profile order when the main mode changes, so the page does not jump under the operator's finger. Only the badge and the button swap. Summaries, which are read rather than edited, do list the main mode first.
+- **Mode changes are kept until save, and never stored.** Switching a channel from one mode to another remembers the old mode's settings in the editor, so switching back restores them and an accidental tap costs nothing. Nothing of the abandoned mode is saved. FM, AM and SSB share tones across a switch because those values mean the same thing in each; digital modes do not.
+- **Every digital mode answers the same four questions.** Access, Call, Listen and You, in that order, so an operator who knows DMR can find the same things on NXDN or D-STAR. Analogue modes stay flat, with tones first, because they have no such questions to answer.
+- **Where one-line summaries appear.** Wherever a channel is shown with room for detail: the channel table and cards, section headers, the view page when there are three or more modes, build channel previews (once per channel, not per expanded talk group) and map popups. They do not appear where space or purpose is tight: the phone list's identity line, zone member rows and entity pickers keep plain mode pills. Summaries add to a channel's callsign and name; they never replace them.
+- **The view page answers "how do I talk on it".** A person opening a channel to use it wants a sentence, not a form read-back, so each mode gets one plain sentence with the dial values in bold and the remaining facts underneath.
+- **Accepted exception: vendor wording.** The APRS binding section, wire-name examples and power hints may use a vendor's own words, because those values only make sense in the vendor's terms. Do not copy the pattern into new library fields.
 
 ## Code anchors
 

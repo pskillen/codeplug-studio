@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Select, type ComboboxProps } from '@mantine/core';
 import { formatDcsChannelTone, parseChannelTone, type DcsPolarity } from '@core/domain/tones.ts';
 import type { ChannelTone } from '@core/models/libraryTypes.ts';
@@ -61,8 +61,23 @@ export default function ChannelToneField({
 }: ChannelToneFieldProps) {
   const accessibleName = label ?? groupLabel;
   const parsed = parseChannelTone(value);
+  const [lastCtcss, setLastCtcss] = useState<ChannelTone | null>(() => {
+    const seed = parseChannelTone(value);
+    return seed.kind === 'ctcss' ? value : null;
+  });
+  const [lastDcs, setLastDcs] = useState<ChannelTone | null>(() => {
+    const seed = parseChannelTone(value);
+    return seed.kind === 'dcs' ? value : null;
+  });
   const [pending, setPending] = useState<{ anchor: ChannelTone; kind: ToneKind } | null>(null);
   const [draftPolarity, setDraftPolarity] = useState<DcsPolarity>('N');
+
+  useEffect(() => {
+    const next = parseChannelTone(value);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- keep session tone memory aligned with the controlled value
+    if (next.kind === 'ctcss') setLastCtcss(value);
+    if (next.kind === 'dcs') setLastDcs(value);
+  }, [value]);
 
   const activeKind: ToneKind | 'unknown' =
     pending && pending.anchor === value ? pending.kind : storedKind(value);
@@ -75,6 +90,18 @@ export default function ChannelToneField({
     }
     if (storedKind(value) === next) {
       setPending(null);
+      return;
+    }
+    if (next === 'ctcss' && lastCtcss) {
+      setPending(null);
+      onChange(lastCtcss);
+      return;
+    }
+    if (next === 'dcs' && lastDcs) {
+      setPending(null);
+      const remembered = parseChannelTone(lastDcs);
+      if (remembered.kind === 'dcs') setDraftPolarity(remembered.polarity);
+      onChange(lastDcs);
       return;
     }
     if (next === 'dcs') setDraftPolarity('N');

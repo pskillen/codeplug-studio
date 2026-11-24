@@ -102,5 +102,5 @@ Full ITU marine VHF, airband subsets, US FRS/GMRS, other DMR simplex grids, exte
 
 ## Related
 
-- [Library CRUD — channel sets](../features/library/README.md#channel-sets-172)
+- [Library CRUD — channel sets](../features/library/README.md#channel-sets)
 - [bands.md](./bands.md)

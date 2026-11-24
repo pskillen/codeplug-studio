@@ -4,78 +4,76 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 
 You can also add channels and zones from a connected radio with [Read into library](../radio-read-write/read-into-library.md).
 
-**Tracking:** Phase 2 [#10](https://github.com/pskillen/codeplug-studio/issues/10) (persistence: [#9](https://github.com/pskillen/codeplug-studio/issues/9), Epic [#1](https://github.com/pskillen/codeplug-studio/issues/1)); list routes [#20](https://github.com/pskillen/codeplug-studio/issues/20), channels table [#24](https://github.com/pskillen/codeplug-studio/issues/24), zone picker [#25](https://github.com/pskillen/codeplug-studio/issues/25); zone management epic [#179](https://github.com/pskillen/codeplug-studio/issues/179)
-
 **Source:** `src/app/routes/library/`, `src/app/state/` (`useLibrary`, `libraryService`), `src/core/domain/references.ts`
 
-## Implementation status
-
-| Area                                      | Status                                                                                                                                         | Notes                                                                                                                                                                          |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Zone + channel editor cross-links         | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180))                                                                       | Revision-2 — see [zone-member-picker.md](zone-member-picker.md)                                                                                                                |
-| Channel view page                         | Shipped ([#1533](https://github.com/pskillen/codeplug-studio/issues/1533))                                                                     | `/library/channels/:id` read-first; editor at `/edit` — see [Channel view](#channel-view-1533)                                                                                 |
-| Channel / zone delete                     | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180), [#202](https://github.com/pskillen/codeplug-studio/issues/202))       | All entity kinds — editors + list row actions; channel zone-membership cascade                                                                                                 |
-| Unsaved-changes guard on editors          | Shipped ([#189](https://github.com/pskillen/codeplug-studio/issues/189), r2 C2 [#945](https://github.com/pskillen/codeplug-studio/issues/945)) | v2 `ConfirmModal` default tone via `UnsavedChangesModal` adapter + `useEntityEditorUnsavedGuard`                                                                               |
-| Channels list bulk selection → new zone   | Shipped ([#154](https://github.com/pskillen/codeplug-studio/issues/154))                                                                       | `DataTable` selectable; **New zone from selected**                                                                                                                             |
-| Channels list bulk edit                   | Shipped ([#1269](https://github.com/pskillen/codeplug-studio/issues/1269), [#207](https://github.com/pskillen/codeplug-studio/issues/207))     | **Bulk edit** modal — inverted shared-value fill; two-column groups; Power Default/Custom; CTCSS/DCS; collapsed APRS gradients; zone add/remove                                |
-| Analog CTCSS/DCS tone picker              | Shipped ([#1843](https://github.com/pskillen/codeplug-studio/issues/1843))                                                                     | Channel editor and bulk edit: **Off \| CTCSS \| DCS**; inverted DCS stored as `D###I`                                                                                          |
-| Channels list bulk delete                 | Shipped ([#310](https://github.com/pskillen/codeplug-studio/issues/310))                                                                       | **Bulk edit** modal — delete selected with confirm; zone auto-cascade                                                                                                          |
-| Zone from location (proximity)            | Shipped ([#181](https://github.com/pskillen/codeplug-studio/issues/181))                                                                       | Section nav **New zone from location**                                                                                                                                         |
-| Nested zone members                       | Shipped ([#157](https://github.com/pskillen/codeplug-studio/issues/157))                                                                       | Flatten at export; `omitFromExport`; schema v7                                                                                                                                 |
-| Tri-state scan inclusion                  | Shipped ([#203](https://github.com/pskillen/codeplug-studio/issues/203))                                                                       | `scanInclusion`; build export default; schema v8                                                                                                                               |
-| Channel behavioural defaults              | Shipped ([#388](https://github.com/pskillen/codeplug-studio/issues/388))                                                                       | `/library/channels/defaults`; Frequencies + mode-profile overrides; schema v18 — see [channel-behavioural-defaults reference](../../reference/channel-behavioural-defaults.md) |
-| Zone behavioural defaults                 | Shipped ([#443](https://github.com/pskillen/codeplug-studio/issues/443))                                                                       | `/library/zones/defaults`; member tri-state + build projection; schema v19 — see [zone-behavioural-defaults reference](../../reference/zone-behavioural-defaults.md)           |
-| Library scan lists                        | Shipped ([#257](https://github.com/pskillen/codeplug-studio/issues/257))                                                                       | `ScanList` entity; schema v10; Anytone dedicated scan                                                                                                                          |
-| Zone member editor                        | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180), r2 [#942](https://github.com/pskillen/codeplug-studio/issues/942))    | mk2 E2 — `MembershipPanel` + `AddMembersScreen`; scanning panel separate from member rows                                                                                      |
-| Channel sets                              | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172))                                                                       | Optional zone on import; mk2 D4 picker ([#944](https://github.com/pskillen/codeplug-studio/issues/944))                                                                        |
-| Public service channels                   | Shipped ([#1283](https://github.com/pskillen/codeplug-studio/issues/1283))                                                                     | Receive-only UK + Ireland datasets; `/library/channels/add-public-services`                                                                                                    |
-| OpenAIP airband import                    | Shipped ([#263](https://github.com/pskillen/codeplug-studio/issues/263))                                                                       | `/library/channels/add-from-openaip` — see [aviation](../aviation/README.md)                                                                                                   |
-| Digital contact metadata + radioid import | Shipped ([#374](https://github.com/pskillen/codeplug-studio/issues/374))                                                                       | Enriched `DigitalContact` CRUD; directory browse/copy at `/library/contacts/directory` — see [contact-directories](../contact-directories/README.md)                           |
-| Delete all digital contacts               | Shipped ([#427](https://github.com/pskillen/codeplug-studio/issues/427))                                                                       | Library → Contacts toolbar; checkbox-gated modal; cascade-clears channel/`RX` refs then IDB partition clear                                                                    |
-| Membership / zone export order            | Shipped ([#456](https://github.com/pskillen/codeplug-studio/issues/456))                                                                       | `Zone.order` + membership arrays; Sort… confirm; build `orderOrSlot` / layout hints                                                                                            |
-| Zone edit screen split                    | Superseded (r2 [#942](https://github.com/pskillen/codeplug-studio/issues/942))                                                                 | Single E2 workspace; `/add` and `/scanning` redirect to main + overlay/hash                                                                                                    |
-| Grow zone from map                        | Shipped ([#588](https://github.com/pskillen/codeplug-studio/issues/588))                                                                       | Inside-hull + near-locator suggestions; multi-add on add-from-map screen                                                                                                       |
-| Channel Power approx watts hint           | Shipped ([#414](https://github.com/pskillen/codeplug-studio/issues/414))                                                                       | Frequencies tab — informational ladder projection; `Channel.power` stays percent-only                                                                                          |
-| Channel TX offset quick buttons           | Shipped ([#156](https://github.com/pskillen/codeplug-studio/issues/156))                                                                       | Frequencies tab — offset display + band quick buttons; see [tx-offsets.md](../../reference/tx-offsets.md)                                                                      |
-| Channels list layout (table / cards)      | Shipped ([#1205](https://github.com/pskillen/codeplug-studio/issues/1205))                                                                     | Operator-chosen layout, card grouping, zone filter, independent card details — supersedes #967 / #971 trials                                                                   |
+**Status:** shipped; the library is the working editing surface for every entity kind, and the pages below describe how it behaves today.
 
 ## Documentation map
 
-| Doc                                                                             | Contents                                                                                                                                                  |
-| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [zone-member-picker.md](zone-member-picker.md)                                  | Vertical zone member editor ([#180](https://github.com/pskillen/codeplug-studio/issues/180))                                                              |
-| [nested-zones.md](nested-zones.md)                                              | Hierarchical zones; flatten at export                                                                                                                     |
-| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | mk2 E6 membership editor ([#942](https://github.com/pskillen/codeplug-studio/issues/942))                                                                 |
-| [channel-modes.md](channel-modes.md)                                            | How the editor and view present a channel's modes                                                                                                         |
-| [scan-lists.md](scan-lists.md)                                                  | Library scan lists ([#257](https://github.com/pskillen/codeplug-studio/issues/257), r2 E7 [#942](https://github.com/pskillen/codeplug-studio/issues/942)) |
-| [aviation](../aviation/README.md)                                               | OpenAIP airport airband import ([#263](https://github.com/pskillen/codeplug-studio/issues/263))                                                           |
-| [contact-directories](../contact-directories/README.md)                         | RadioID.net DMR contact import ([#374](https://github.com/pskillen/codeplug-studio/issues/374))                                                           |
-| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs                                                                                                                         |
-| [channel-behavioural-defaults](../../reference/channel-behavioural-defaults.md) | Epic [#388](https://github.com/pskillen/codeplug-studio/issues/388) cascade — tier-2 reference                                                            |
-| [zone-behavioural-defaults](../../reference/zone-behavioural-defaults.md)       | Zone defaults ([#443](https://github.com/pskillen/codeplug-studio/issues/443))                                                                            |
-| [channel-sets](../../reference/channel-sets.md)                                 | Static channel sets ([#172](https://github.com/pskillen/codeplug-studio/issues/172); epic [#281](https://github.com/pskillen/codeplug-studio/issues/281)) |
-| [public-service-channels/](public-service-channels/README.md)                   | Receive-only statutory-service memories ([#1283](https://github.com/pskillen/codeplug-studio/issues/1283))                                                |
+| Doc                                                                             | Contents                                          |
+| ------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [zone-member-picker.md](zone-member-picker.md)                                  | Vertical zone member editor                       |
+| [nested-zones.md](nested-zones.md)                                              | Hierarchical zones; flatten at export             |
+| [rx-group-list-member-picker.md](rx-group-list-member-picker.md)                | Membership editor for RX group lists              |
+| [channel-modes.md](channel-modes.md)                                            | How the editor and view present a channel's modes |
+| [scan-lists.md](scan-lists.md)                                                  | Library scan lists                                |
+| [aviation](../aviation/README.md)                                               | OpenAIP airport airband import                    |
+| [contact-directories](../contact-directories/README.md)                         | RadioID.net DMR contact import                    |
+| [app-shell/data-table.md](../app-shell/data-table.md)                           | Shared `DataTable` and list prefs                 |
+| [channel-behavioural-defaults](../../reference/channel-behavioural-defaults.md) | Epic cascade — tier-2 reference                   |
+| [zone-behavioural-defaults](../../reference/zone-behavioural-defaults.md)       | Zone defaults                                     |
+| [channel-sets](../../reference/channel-sets.md)                                 | Static channel sets                               |
+| [public-service-channels/](public-service-channels/README.md)                   | Receive-only statutory-service memories           |
 
-Shipped initiatives (mode profiles, membership order, zones revision-2, library routes): see GitHub issues cited in the status table — progress/outstanding logs retired in [#294](https://github.com/pskillen/codeplug-studio/issues/294).
+## What the library covers
+
+| Area                                      | Notes                                                                                                                                                                          |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Zone + channel editor cross-links         | Revision-2 — see [zone-member-picker.md](zone-member-picker.md)                                                                                                                |
+| Channel view page                         | `/library/channels/:id` read-first; editor at `/edit` — see [Channel view](#channel-view)                                                                                      |
+| Channel / zone delete                     | All entity kinds — editors + list row actions; channel zone-membership cascade                                                                                                 |
+| Unsaved-changes guard on editors          | v2 `ConfirmModal` default tone via `UnsavedChangesModal` adapter + `useEntityEditorUnsavedGuard`                                                                               |
+| Channels list bulk selection → new zone   | `DataTable` selectable; **New zone from selected**                                                                                                                             |
+| Channels list bulk edit                   | **Bulk edit** modal — inverted shared-value fill; two-column groups; Power Default/Custom; CTCSS/DCS; collapsed APRS gradients; zone add/remove                                |
+| Analog CTCSS/DCS tone picker              | Channel editor and bulk edit: **Off \                                                                                                                                          |
+| Channels list bulk delete                 | **Bulk edit** modal — delete selected with confirm; zone auto-cascade                                                                                                          |
+| Zone from location (proximity)            | Section nav **New zone from location**                                                                                                                                         |
+| Nested zone members                       | Flatten at export; `omitFromExport`; schema v7                                                                                                                                 |
+| Tri-state scan inclusion                  | `scanInclusion`; build export default; schema v8                                                                                                                               |
+| Channel behavioural defaults              | `/library/channels/defaults`; Frequencies + mode-profile overrides; schema v18 — see [channel-behavioural-defaults reference](../../reference/channel-behavioural-defaults.md) |
+| Zone behavioural defaults                 | `/library/zones/defaults`; member tri-state + build projection; schema v19 — see [zone-behavioural-defaults reference](../../reference/zone-behavioural-defaults.md)           |
+| Library scan lists                        | `ScanList` entity; schema v10; Anytone dedicated scan                                                                                                                          |
+| Zone member editor                        | `MembershipPanel` + `AddMembersScreen`; scanning panel separate from member rows                                                                                               |
+| Channel sets                              | Optional zone on import                                                                                                                                                        |
+| Public service channels                   | Receive-only UK + Ireland datasets; `/library/channels/add-public-services`                                                                                                    |
+| OpenAIP airband import                    | `/library/channels/add-from-openaip` — see [aviation](../aviation/README.md)                                                                                                   |
+| Digital contact metadata + radioid import | Enriched `DigitalContact` CRUD; directory browse/copy at `/library/contacts/directory` — see [contact-directories](../contact-directories/README.md)                           |
+| Delete all digital contacts               | Library → Contacts toolbar; checkbox-gated modal; cascade-clears channel/`RX` refs then IDB partition clear                                                                    |
+| Membership / zone export order            | `Zone.order` + membership arrays; Sort… confirm; build `orderOrSlot` / layout hints                                                                                            |
+| Grow zone from map                        | Inside-hull + near-locator suggestions; multi-add on add-from-map screen                                                                                                       |
+| Channel Power approx watts hint           | Frequencies tab — informational ladder projection; `Channel.power` stays percent-only                                                                                          |
+| Channel TX offset quick buttons           | Frequencies tab — offset display + band quick buttons; see [tx-offsets.md](../../reference/tx-offsets.md)                                                                      |
+| Channels list layout (table / cards)      | Operator-chosen layout, card grouping, zone filter, independent card details                                                                                                   |
 
 ## List routes
 
 `/library` redirects to `/library/channels`. Each entity kind has a dedicated list page; section nav order matches `routes/library/nav.ts`:
 
-| List route                   | UI                                                                                                                                                                                                                                                                                                                                                                             | Map                             |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
-| `/library/channels`          | v2 `DataTable` (sticky header; name column and checkbox pinned on sideways scroll; on mobile a callsign + name line with the checkbox and band / mode pills (one row, name truncates first) stays put above the scrolling columns, #1516) — tabbed `FilterPopover` filters, selection bulk footer, `ModalShell` bulk edit, hideable columns, URL + `localStorage` filter prefs | Yes — split via `ListMapLayout` |
-| `/library/channels/defaults` | Library-wide channel behavioural defaults (TX deny, TX permit, talker alias, analog squelch) — nested under Channels in section nav                                                                                                                                                                                                                                            | No                              |
-| `/library/zones`             | v2 `DataTable` — `reorderMode` grip + `Zone.order`; Sort zones…; members, comment; split map via `ListMapLayout`                                                                                                                                                                                                                                                               | Yes                             |
-| `/library/talk-groups`       | v2 `DataTable` — mode, ID, Abbrev, channels/RX lists using, comment, `RowActionIcon` delete                                                                                                                                                                                                                                                                                    | No                              |
-| `/library/contacts`          | Dual v2 `DataTable` in `Panel`s: digital `scale="extreme"` + Delete all; analog thin list; **ID directory** link in header                                                                                                                                                                                                                                                     | No                              |
-| `/library/rx-group-lists`    | v2 `DataTable` — members, channels using, row delete                                                                                                                                                                                                                                                                                                                           | No                              |
-| `/library/scan-lists`        | v2 `DataTable` — members, channels-using ref count, row delete                                                                                                                                                                                                                                                                                                                 | No                              |
-| `/library/digital-ids`       | Your own DMR and NXDN IDs, grouped by protocol — Default badge, Set as default, channels using, row delete; notice when a protocol has no default                                                                                                                                                                                                                              | No                              |
+| List route                   | UI                                                                                                                                                                                                                                                                                                                                                                      | Map                             |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| `/library/channels`          | v2 `DataTable` (sticky header; name column and checkbox pinned on sideways scroll; on mobile a callsign + name line with the checkbox and band / mode pills (one row, name truncates first) stays put above the scrolling columns) — tabbed `FilterPopover` filters, selection bulk footer, `ModalShell` bulk edit, hideable columns, URL + `localStorage` filter prefs | Yes — split via `ListMapLayout` |
+| `/library/channels/defaults` | Library-wide channel behavioural defaults (TX deny, TX permit, talker alias, analog squelch) — nested under Channels in section nav                                                                                                                                                                                                                                     | No                              |
+| `/library/zones`             | v2 `DataTable` — `reorderMode` grip + `Zone.order`; Sort zones…; members, comment; split map via `ListMapLayout`                                                                                                                                                                                                                                                        | Yes                             |
+| `/library/talk-groups`       | v2 `DataTable` — mode, ID, Abbrev, channels/RX lists using, comment, `RowActionIcon` delete                                                                                                                                                                                                                                                                             | No                              |
+| `/library/contacts`          | Dual v2 `DataTable` in `Panel`s: digital `scale="extreme"` + Delete all; analog thin list; **ID directory** link in header                                                                                                                                                                                                                                              | No                              |
+| `/library/rx-group-lists`    | v2 `DataTable` — members, channels using, row delete                                                                                                                                                                                                                                                                                                                    | No                              |
+| `/library/scan-lists`        | v2 `DataTable` — members, channels-using ref count, row delete                                                                                                                                                                                                                                                                                                          | No                              |
+| `/library/digital-ids`       | Your own DMR and NXDN IDs, grouped by protocol — Default badge, Set as default, channels using, row delete; notice when a protocol has no default                                                                                                                                                                                                                       | No                              |
 
-Shared L1 chrome: `LibraryInventoryHeader`, optional `FilterPopover` (channels — tabbed flyout on desktop, edge-to-edge on mobile, `≤48em`), `ListMapLayout` (map+list: sticky map on desktop, list | map swipe panes with filters and actions in a bottom controls sheet on mobile, #1498). List tables use `components/v2/DataTable` — see [design-system-v2](../design-system-v2/README.md) ([#940](https://github.com/pskillen/codeplug-studio/issues/940)).
+Shared L1 chrome: `LibraryInventoryHeader`, optional `FilterPopover` (channels — tabbed flyout on desktop, edge-to-edge on mobile, `≤48em`), `ListMapLayout` (map+list: sticky map on desktop, list | map swipe panes with filters and actions in a bottom controls sheet on mobile). List tables use `components/v2/DataTable` — see [design-system-v2](../design-system-v2/README.md).
 
-### Channels list (#24)
+### Channels list
 
 - Filters on the list page (`ChannelListFilters`): a **Filters** button opens a tabbed flyout popover (`FilterPopover`) — **band**, **mode**, and **zone membership** (including **Not in a zone**) are tabs showing one chip wall at a time; **duplex** and **distance radius** (when operator location is set) sit in the popover footer, visible regardless of the active tab. Active filters stay visible as removable pills below the row even when the popover is closed. On mobile (`≤48em`) the Filters panel opens as a bottom sheet, and the search box, **Filters**, **Use my location** and the applied-filter pills sit directly above the table (`ListMapLayout`'s `listHeadControls`) so an active filter is never hidden; only the Cards/Table switch and card grouping live in the bottom controls sheet. Desktop keeps one row (Filters + Use my location adjacent, view switch pushed right). Name/callsign search is a page-level field shared by table and card layouts — not `DataTable`'s own toolbar search — so it stays visible in both modes.
 - **Layout** — **Table** or **Cards** on desktop and mobile (operator choice; persisted per project in `localStorage`, not URL). Table mode always renders a real grid (horizontal scroll on narrow viewports). Card mode uses `ChannelCard` with bulk selection.
@@ -86,25 +84,25 @@ Shared L1 chrome: `LibraryInventoryHeader`, optional `FilterPopover` (channels �
 - The embedded map plots the **same filtered channel set** as the list (all active filters apply).
 - Filter state (including zone) syncs to URL query params and per-project `localStorage`. Table column sort/visibility and card layout/group/details prefs persist per project.
 - `modeProfiles[]` drives mode summaries and mode filter matching (vendor-neutral labels only).
-- **Row / card checkboxes**, **Bulk edit** ([#207](https://github.com/pskillen/codeplug-studio/issues/207)), and **New zone from selected** ([#154](https://github.com/pskillen/codeplug-studio/issues/154)) — available in **both** table and card layouts (`ChannelListBulkActions`).
-  - **Bulk edit** ([#207](https://github.com/pskillen/codeplug-studio/issues/207), revamp [#1269](https://github.com/pskillen/codeplug-studio/issues/1269)) — select 2+ channels to open `ChannelBulkEditModal` (see sidecar `ChannelBulkEditModal.md`). The modal receives the **full checkbox selection**, not only rows that match the current search/filter. Fields start as **No change**; only opted-in values are written. Desktop uses a two-column field grid (`layout="column"`: title, control, description below). When every selected channel shares a value, that option is filled (Mantine primary) and **No change** keeps the outline — picking a value applies it. **Power** and analog **Squelch** are **No change | Default | Custom** (slider thumb only on Custom; preview dots for numeric levels). Analog RX/TX tones use the same **Off \| CTCSS \| DCS** picker as the channel editor (inverted DCS stores `D###I`; **Off** clears the tone). Those tones and squelch patch existing analog profiles only. Talker alias patches DMR profiles. APRS receive, report type, and digital PTT collapse into the gradient; report slot stays **No change | Set** plus a select. **Zones** add or remove direct UUID membership (`BulkZonePickerColumn`). Apply is **No changes** until a field is opted in, then **Apply to N channels**. **Delete** is a destructive footer button; it removes the selection after in-modal confirm (zone membership auto-cascade; scan-list and other refs block with a summary). Selecting exactly one channel opens the standard channel editor instead.
+- **Row / card checkboxes**, **Bulk edit**, and **New zone from selected** — available in **both** table and card layouts (`ChannelListBulkActions`).
+  - **Bulk edit** — select 2+ channels to open `ChannelBulkEditModal` (see sidecar `ChannelBulkEditModal.md`). The modal receives the **full checkbox selection**, not only rows that match the current search/filter. Fields start as **No change**; only opted-in values are written. Desktop uses a two-column field grid (`layout="column"`: title, control, description below). When every selected channel shares a value, that option is filled (Mantine primary) and **No change** keeps the outline — picking a value applies it. **Power** and analog **Squelch** are **No change | Default | Custom** (slider thumb only on Custom; preview dots for numeric levels). Analog RX/TX tones use the same **Off \| CTCSS \| DCS** picker as the channel editor (inverted DCS stores `D###I`; **Off** clears the tone). Those tones and squelch patch existing analog profiles only. Talker alias patches DMR profiles. APRS receive, report type, and digital PTT collapse into the gradient; report slot stays **No change | Set** plus a select. **Zones** add or remove direct UUID membership (`BulkZonePickerColumn`). Apply is **No changes** until a field is opted in, then **Apply to N channels**. **Delete** is a destructive footer button; it removes the selection after in-modal confirm (zone membership auto-cascade; scan-list and other refs block with a summary). Selecting exactly one channel opens the standard channel editor instead.
   - **New zone from selected** — navigates to zone editor with members pre-filled in list order.
-- **Zones** column — direct zone badges (link to zone editor), **Not in a zone** / **Nested only** when applicable ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).
+- **Zones** column — direct zone badges (link to zone editor), **Not in a zone** / **Nested only** when applicable.
 - **Delete** row action — removes channel; offers remove-from-zones cascade when blocked by zone membership.
 - **ChannelCard** — name link, **callsign** in the header when set (omitted when empty), optional field rows, delete action, optional selection checkbox. See [ChannelCard.md](../../../src/app/components/library/ChannelCard.md).
 
-### Zone member editor (#25, #157, #180)
+### Zone member editor
 
 **Create:** `/library/zones/new` — identity only (name, comment, export flag). **Save zone** opens the new zone's edit page, straight into the add-members screen when the zone is empty (`?add=members`). Channels preselected on the channels list (**New zone from selected**) still seed the zone's members, and then skip the add screen.
 
 **Edit existing zone** — shared draft state on `/library/zones/:id` with focused sub-screens:
 
-| Route                             | Purpose                                                                                                                     |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `/library/zones/:id`              | Identity, reorder-only members, navigation to add / scanning / map preview                                                  |
-| `/library/zones/:id/add`          | Read-only member summary + **Other channels & zones** add pool + map                                                        |
-| `/library/zones/:id/add-from-map` | Geographic grow — inside-hull and near-locator suggestions ([#588](https://github.com/pskillen/codeplug-studio/issues/588)) |
-| `/library/zones/:id/scanning`     | Per-channel zone-derived scan inclusion only                                                                                |
+| Route                             | Purpose                                                                    |
+| --------------------------------- | -------------------------------------------------------------------------- |
+| `/library/zones/:id`              | Identity, reorder-only members, navigation to add / scanning / map preview |
+| `/library/zones/:id/add`          | Read-only member summary + **Other channels & zones** add pool + map       |
+| `/library/zones/:id/add-from-map` | Geographic grow — inside-hull and near-locator suggestions                 |
+| `/library/zones/:id/scanning`     | Per-channel zone-derived scan inclusion only                               |
 
 `ZoneMemberEditor` composes from **modes** (`reorder`, `addPool`, `scanOnly`, `summary`, `full`) per screen. Channel editor still uses **`ChannelZoneMembershipSection`**. See [zone-member-picker.md](zone-member-picker.md). Sidecars: `ZoneMemberEditor.md`, `GrowZoneRecommendations.md`, `ChannelZoneMembershipSection.md`.
 
@@ -114,11 +112,11 @@ The zone editor map uses **Draw this zone** / **Draw other zones** controls: the
 
 Digital and analog contacts remain separate models and editor slugs (`digital-contacts`, `analog-contacts`); the combined `/library/contacts` list page is a UX grouping only. Each section has its own `DataTable`, name filter (`dq` / `aq` URL params), and persisted column sort.
 
-Digital contacts support enriched metadata (callsign, city, state, country, remarks) in the editor ([#377](https://github.com/pskillen/codeplug-studio/issues/377)). Bulk RadioID.net import writes the **digital ID directory** shadow store ([#985](https://github.com/pskillen/codeplug-studio/issues/985)) at `/library/contacts/directory`; copy rows into library contacts when needed, or project the shadow into CPS / Web Serial without copying — see [contact-directories](../contact-directories/README.md). **Digital ID directory** in the Contacts header links there.
+Digital contacts support enriched metadata (callsign, city, state, country, remarks) in the editor. Bulk RadioID.net import writes the **digital ID directory** shadow store at `/library/contacts/directory`; copy rows into library contacts when needed, or project the shadow into CPS / Web Serial without copying — see [contact-directories](../contact-directories/README.md). **Digital ID directory** in the Contacts header links there.
 
-**Delete all** ([#427](https://github.com/pskillen/codeplug-studio/issues/427)) — digital section toolbar only (disabled at 0). Clears **library** contacts only. **Clear directory** on the directory page wipes the shadow partition without touching library rows.
+**Delete all** — digital section toolbar only (disabled at 0). Clears **library** contacts only. **Clear directory** on the directory page wipes the shadow partition without touching library rows.
 
-### Zone from location ([#181](https://github.com/pskillen/codeplug-studio/issues/181))
+### Zone from location
 
 **Route:** `/library/zones/new-from-location` — section nav **New zone from location**
 
@@ -130,25 +128,25 @@ Map-first workflow to create a zone from geolocated channels within a radius of 
 4. Review the **selected channels** table (nearest-first order).
 5. **Create zone** — persists a new `Zone` with channel members and opens the zone editor.
 
-**Layout ([#1498](https://github.com/pskillen/codeplug-studio/issues/1498)):** desktop shows the centre controls beside a sticky viewport-height map, with the channels table and name below. On mobile the page folds into collapsible panels (Centre point, Channels found, Name this zone), each with a one-line summary when folded; the map is a thumbnail that opens a full-screen picker (tap to place a point, **Use this point** to apply it), and **Create zone** stays pinned above the tab bar.
+**Layout:** desktop shows the centre controls beside a sticky viewport-height map, with the channels table and name below. On mobile the page folds into collapsible panels (Centre point, Channels found, Name this zone), each with a one-line summary when folded; the map is a thumbnail that opens a full-screen picker (tap to place a point, **Use this point** to apply it), and **Create zone** stays pinned above the tab bar.
 
 Core selection: `selectChannelsWithinRadius` in `src/core/domain/proximityZone.ts`. Channels without coordinates are excluded. Membership is a static snapshot at creation time.
 
-### RX group list member picker ([#107](https://github.com/pskillen/codeplug-studio/issues/107), [#108](https://github.com/pskillen/codeplug-studio/issues/108))
+### RX group list member picker
 
 RX group list editor uses `RxGroupListMemberPicker` — **B+C** membership (`MembershipPanel` + `AddMembersScreen`), same pattern as zones and scan lists. Talk groups and digital contacts are separate B sections. Per-member `timeSlotOverride` (`Auto` / `TS1` / `TS2`) is editable on C rows for DMR members. See [rx-group-list-member-picker.md](rx-group-list-member-picker.md).
 
-### Scan lists ([#257](https://github.com/pskillen/codeplug-studio/issues/257))
+### Scan lists
 
 **Route:** `/library/scan-lists` — section nav **Scan lists**
 
 `ScanListEditor` uses `ScanListMemberEditor` for ordered channel membership (channels only — no nested zones). Build pages for `DedicatedScanLists` profiles link here for list curation; per-channel scan assignment stays on the build Channels wire page. See [scan-lists.md](scan-lists.md).
 
-### Channel DMR RX list summary ([#75](https://github.com/pskillen/codeplug-studio/issues/75))
+### Channel DMR RX list summary
 
 Channel editor DMR tab shows `RxGroupListSummary` below the RX group list selector — live member preview with link to the list editor. Sidecar: `src/app/components/library/RxGroupListSummary.md`.
 
-### Channel sets ([#172](https://github.com/pskillen/codeplug-studio/issues/172))
+### Channel sets
 
 **Route:** `/library/channels/add-channel-set` — **Add from…** modal → **Channel set** card
 
@@ -169,7 +167,7 @@ Workflow: pick set → preview `DataTable` (per-channel checkboxes, dedup status
 - **Add from…** picker: `AddFromDataSourceModal` on v2 `ModalShell` — sidecar `src/app/components/library/AddFromDataSourceModal.md`
 - Reference: [channel-sets.md](../../reference/channel-sets.md)
 
-### Public service channels ([#1283](https://github.com/pskillen/codeplug-studio/issues/1283))
+### Public service channels
 
 **Route:** `/library/channels/add-public-services` — **Add from…** modal → **Public services** card
 
@@ -179,7 +177,7 @@ Import bundled, receive-only memories for published unencrypted service allocati
 - UI: `PublicServicePicker` — sidecar `src/app/components/publicServices/PublicServicePicker.md`
 - Core: `src/core/domain/publicServices/`, `src/core/services/publicServiceImport.ts`
 
-### OpenAIP airband ([#263](https://github.com/pskillen/codeplug-studio/issues/263))
+### OpenAIP airband
 
 **Route:** `/library/channels/add-from-openaip` — section nav **Add from…** → OpenAIP
 
@@ -192,16 +190,16 @@ Search [OpenAIP](https://www.openaip.net/) for airport frequencies and import RX
 
 Core: `src/core/domain/airband/`, `src/core/services/airbandImport.ts`. Integration: `src/integrations/aviation/`. UI: `OpenAipAirportSearch` — sidecar `src/app/components/aviation/OpenAipAirportSearch.md`. Reference: [openaip](../../reference/remote-directories/openaip/README.md). Feature hub: [aviation](../aviation/README.md).
 
-Airband is **not** a static channel set — see [aviation](../aviation/README.md) and channel-sets epic [#281](https://github.com/pskillen/codeplug-studio/issues/281).
+Airband is **not** a static channel set — see [aviation](../aviation/README.md) and channel-sets epic.
 
 ## Editor routes
 
-| Path                         | Purpose                                                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `/library/channels/:id`      | **View** a channel — read-first page ([#1533](https://github.com/pskillen/codeplug-studio/issues/1533)) |
-| `/library/channels/:id/edit` | Edit a channel                                                                                          |
-| `/library/channels/new`      | Create a channel                                                                                        |
-| `/library/:kind/:id`         | Edit any other entity (`:id` = `new` to create)                                                         |
+| Path                         | Purpose                                         |
+| ---------------------------- | ----------------------------------------------- |
+| `/library/channels/:id`      | **View** a channel — read-first page            |
+| `/library/channels/:id/edit` | Edit a channel                                  |
+| `/library/channels/new`      | Create a channel                                |
+| `/library/:kind/:id`         | Edit any other entity (`:id` = `new` to create) |
 
 `:kind` is a slug (`channels`, `talk-groups`, `digital-contacts`, `analog-contacts`, `rx-group-lists`, `scan-lists`, `zones`) mapped to an internal `EntityKind` in `routes/library/registry.ts`. Editors navigate back to the matching list route on save/cancel via `listPathForEditorSlug()`; the channel editor goes back to the channel's view page instead (or the list, for a new channel that was cancelled).
 
@@ -222,11 +220,11 @@ Build channel links with `channelViewPath(id)` / `channelEditPath(id)` from `src
 
 Talk cards span both columns above the grid. Two columns from 62em (Details, zones and builds left, map and directory right); one column below.
 
-### Unsaved changes ([#189](https://github.com/pskillen/codeplug-studio/issues/189))
+### Unsaved changes
 
 All entity editors track dirty form state against the mount baseline (`useEntityEditorUnsavedGuard`). When dirty:
 
-- In-app navigation (Cancel link, section nav, back link) opens [`UnsavedChangesModal`](../../src/app/components/ui/UnsavedChangesModal.md) (v2 `ConfirmModal`, C2 [#945](https://github.com/pskillen/codeplug-studio/issues/945)) — Stay or Discard.
+- In-app navigation (Cancel link, section nav, back link) opens [`UnsavedChangesModal`](../../src/app/components/ui/UnsavedChangesModal.md) (v2 `ConfirmModal`, C2) — Stay or Discard.
 - Tab close triggers the browser `beforeunload` prompt.
 - **Save** calls `permitNavigationOnce` before navigating back to the list.
 
@@ -246,18 +244,18 @@ All entity editors track dirty form state against the mount baseline (`useEntity
 
 Channel DMR profiles reference a **digital contact**, an **RX group list** and a **Digital ID** by UUID `id` (the editor exposes dropdowns); NXDN profiles reference a talk group **or** an NXDN contact (the call), an RX group list and a Digital ID by UUID; TETRA profiles may reference talk groups by UUID. NXDN contact and unit IDs are checked 1–65519 in the editors, and your own NXDN Digital IDs the same (never 65535); a talk group may also be 65535 (all-call). An RX group list that mixes modes shows a non-blocking warning. RX group lists and zones hold member `EntityRef[]`. `RxGroupListMember.timeSlotOverride` is an optional per-member DMR slot hint (vendor-neutral; maps to CPS TS Override at export). Names are display labels only — never foreign keys.
 
-### Digital IDs ([#1444](https://github.com/pskillen/codeplug-studio/issues/1444))
+### Digital IDs
 
 Your own DMR and NXDN IDs: the IDs your radio sends. They live in the Library at `/library/digital-ids` (code: `OwnDigitalId`, store `ownDigitalIds`), with a name (may be empty), a protocol, a number (DMR 1–16776415, NXDN 1–65519) and a default flag. They are not contacts or talk groups (who you call) and not the ID directory (the downloaded lookup list).
 
 - **Default per protocol.** The first ID created for a protocol becomes its default automatically; **Set as default** moves it (the new default is written first, then the old one is cleared). Deleting the default leaves the protocol with none, and the page shows a notice ("No default DMR ID. Channels set to Default use whatever DMR ID the radio already has, and some radios send none, until you choose one."). An ID that channels choose cannot be deleted. The same number twice in one protocol is refused in the editor, and a native YAML file (schema 30) with the same protocol and number twice, or two defaults in one protocol, is refused on import.
 - **On a channel.** The DMR panel's "DMR ID" and the NXDN panel's "Unit ID" are selects: **Default (Name, number)** first, then that protocol's IDs, and a "Manage Digital IDs" link. A channel on Default sends the default; a chosen ID overrides it where the radio has a per-channel ID. A choice whose row is gone or belongs to the other protocol shows as "(missing)" and the channel editor refuses to save it.
 - **Migration.** Projects saved before Digital IDs (IndexedDB schema 30 upgrade, native YAML and Drive files at schema 29 or lower) turn each distinct per-channel number into one unnamed Digital ID (shown as "DMR 2351234"), every channel that had a number chooses it explicitly, and **no default is set**. That keeps every existing export byte-identical until you set a default or change a channel's ID, with one exception: a hand-edited legacy `dmrId: 0` (the editor could never produce it) means "no override", so it becomes Default and the OpenGD77 CSV writes `None` where it wrote `0`. A legacy number outside the protocol's range (for example a DMR number above 16776415) is migrated as it is, so the channel keeps its choice, and the page lists it as out of range until you fix or delete it. The first-ID-is-default rule applies only to IDs you create, never to migration.
-- **What writes them.** AT-D890UV (stock and MM9PDY) and DM-32UV Web Serial write the default DMR ID first in the radio-ID list; the AT-D890UV also writes the master ID, and only when a default DMR ID exists (otherwise it warns and leaves its IDs alone). OpenGD77 Web Serial writes a channel's chosen DMR ID to the per-channel override and nothing for Default. An unnamed ID is written to the radio-ID list as `ID <number>` (for example `ID 2351234`), or for a chosen ID the channel's callsign or name; an unnamed default does not replace the master name an AT-D890UV already holds. Over the radio's cap of distinct IDs, a channel whose ID did not fit sends the default ID and the usual "only N export" warning says so. When the AT-D890UV image Studio read has the radio's Master Id choice on (`0x03684026` = 1), Review warns that per-channel ID overrides have no effect. Anytone CSV, DM-32 CSV and NeonPlug do not write Digital IDs yet ([#1448](https://github.com/pskillen/codeplug-studio/issues/1448)); the OpenGD77 radio's own base-settings ID is [#1447](https://github.com/pskillen/codeplug-studio/issues/1447); the NXDN default is written by the AT-D890 own-ID work ([#1442](https://github.com/pskillen/codeplug-studio/issues/1442)).
+- **What writes them.** AT-D890UV (stock and MM9PDY) and DM-32UV Web Serial write the default DMR ID first in the radio-ID list; the AT-D890UV also writes the master ID, and only when a default DMR ID exists (otherwise it warns and leaves its IDs alone). OpenGD77 Web Serial writes a channel's chosen DMR ID to the per-channel override and nothing for Default. An unnamed ID is written to the radio-ID list as `ID <number>` (for example `ID 2351234`), or for a chosen ID the channel's callsign or name; an unnamed default does not replace the master name an AT-D890UV already holds. Over the radio's cap of distinct IDs, a channel whose ID did not fit sends the default ID and the usual "only N export" warning says so. When the AT-D890UV image Studio read has the radio's Master Id choice on (`0x03684026` = 1), Review warns that per-channel ID overrides have no effect. Anytone CSV, DM-32 CSV and NeonPlug do not write Digital IDs yet; the OpenGD77 radio's own base-settings ID is; the NXDN default is written by the AT-D890 own-ID work.
 
 Details: [data-model](../data-model/README.md), [D890 Write contract](../../reference/radios/anytone/at-d890uv/README.md), [DM-32UV radio IDs](../../reference/radios/baofeng/dm-32uv/contacts-zones-lists.md).
 
-### Channel editor ([#16](https://github.com/pskillen/codeplug-studio/issues/16), [#28](https://github.com/pskillen/codeplug-studio/issues/28), r2 [#941](https://github.com/pskillen/codeplug-studio/issues/941), rework [#1265](https://github.com/pskillen/codeplug-studio/issues/1265))
+### Channel editor
 
 - **Layout:** `EditorHeader` (back crumb, title, mode-summary subtitle on saved channels) + a sticky horizontal **section jump-nav** + scroll `Panel` sections + `StickyFooter` (Cancel/Save, dirty status). Order: **Identity** → **Mode and frequency** → **Modes** (two or more modes only) → **Transmit** → **Names and notes** → Location → Zones (edit only) → Scanning → APRS. Every panel carries an `id` the jump-nav scroll-spies against (`useSectionScrollSpy`); clicking a nav item or a same-page cross-link (e.g. Location's "Set from a directory in Identity") calls `scrollToPageSection`.
 - **Header title:** on a saved channel, `EditorHeader`'s `<h1>` reads `"<Callsign> <Name>"` (callsign first, falling back to name alone when callsign is empty, or "Untitled channel" when both are). New channel keeps "New channel" until saved. Callsign leads because it's the licensed identifier — see [display styleguide — Channel naming](../../reference/styleguide/display.md#channel-naming).
@@ -269,46 +267,46 @@ Details: [data-model](../data-model/README.md), [D890 Write contract](../../refe
 - **Value-aware segment colours:** gradient segmented controls (Transmit, TX permit, Scanning, and the DMR/analog mode panels) no longer collapse a neutral "Default"/"Auto" option onto the same colour as a real option just because a short palette ran out of colours to pad with — `GradientSegmentedControl`'s `neutralValues` excludes neutral values from palette fitting entirely. See [GradientSegmentedControl.md](../../../src/app/components/ui/GradientSegmentedControl.md).
 - **Scanning:** scan inclusion + optional `scanListId` FK only (TX controls are under **Transmit**).
 - **No default mode** on new channels — the picker shows "Which mode does this channel use?" with FM, DMR and FM + DMR presets (FM + DMR makes FM the main mode). Frequencies can be set before a mode; a channel can still be saved with no mode (`modeProfiles` empty).
-- **Location:** `ChannelLocationSection` + `MapLocationPicker` in v2 `MapPanel`. Save reconciles locator ↔ coords via `reconcileChannelLocation`. When the channel has a callsign but no location yet, the panel shows a "Set from a directory in Identity" jump-link instead of a static hint. **Find a place** ([#1525](https://github.com/pskillen/codeplug-studio/issues/1525)) searches the town in the channel name (one click) or any address, town or postcode, ranked near the current position, and moves the channel only to the result the operator picks: the fix for directory imports that only carry a 4-character locator ([ChannelPlaceSearch](../../../src/app/components/channels/ChannelPlaceSearch.md)).
+- **Location:** `ChannelLocationSection` + `MapLocationPicker` in v2 `MapPanel`. Save reconciles locator ↔ coords via `reconcileChannelLocation`. When the channel has a callsign but no location yet, the panel shows a "Set from a directory in Identity" jump-link instead of a static hint. **Find a place** searches the town in the channel name (one click) or any address, town or postcode, ranked near the current position, and moves the channel only to the result the operator picks: the fix for directory imports that only carry a 4-character locator ([ChannelPlaceSearch](../../../src/app/components/channels/ChannelPlaceSearch.md)).
 - **Mode profiles:** each mode's settings come from its panel in [`modePanels/`](../../../src/app/components/channels/modePanels/ModePanels.md). Switching mode keeps the old profile until save; switching back restores it. With two or more modes, each mode has its own section; the main mode's shows **Main mode**, the others **Make main**; sections keep their order; with three or more modes (two or more on a phone) the others start folded to their summary; a mode added in this edit starts open. See [channel-modes.md](channel-modes.md). Analog tones use [`ChannelToneField`](../../../src/app/components/channels/ChannelToneField.md) (**Off \| CTCSS \| DCS**).
-- **Zone membership** (edit only): light inverse chips + zone add (`ChannelZoneMembershipSection`) — not full Membership shuttle ([#942](https://github.com/pskillen/codeplug-studio/issues/942)); shows "Not in a zone yet." when the channel has no direct or nested-only membership.
-- **Duplicate** and **Delete channel** on saved channels ([#180](https://github.com/pskillen/codeplug-studio/issues/180)). Duplicate (here and on the view page) is [`ChannelDuplicateButton`](../../../src/app/components/library/ChannelDuplicateButton.md): it asks first, then copies with `duplicateChannel` from `@core/domain/factories.ts` and opens the copy in the editor. In the editor the copy takes the live form, unsaved edits included, and the confirm says so.
+- **Zone membership** (edit only): light inverse chips + zone add (`ChannelZoneMembershipSection`) — not full Membership shuttle; shows "Not in a zone yet." when the channel has no direct or nested-only membership.
+- **Duplicate** and **Delete channel** on saved channels. Duplicate (here and on the view page) is [`ChannelDuplicateButton`](../../../src/app/components/library/ChannelDuplicateButton.md): it asks first, then copies with `duplicateChannel` from `@core/domain/factories.ts` and opens the copy in the editor. In the editor the copy takes the live form, unsaved edits included, and the confirm says so.
 - **Save** returns to the channel's view page; **Cancel** returns to the view page (or the list, for a new channel). The header crumb reads **View channel** on a saved channel. A `#section` hash on the URL (e.g. `/edit#location` from the view page) scrolls to that panel.
 - Component sidecars: `ChannelModePicker.md`, `ModeSection.md`, `modePanels/ModePanels.md`, `ChannelToneField.md`, `EditorHeader.md`, `StickyFooter.md`, `SectionNav.md`, `GradientSegmentedControl.md`, and siblings under `src/app/components/channels/`; directory verify sidecars under `src/app/components/repeaters/`.
 
-### Library strip (design system v2, [#921](https://github.com/pskillen/codeplug-studio/issues/921)–[#923](https://github.com/pskillen/codeplug-studio/issues/923), [#932](https://github.com/pskillen/codeplug-studio/issues/932)–[#935](https://github.com/pskillen/codeplug-studio/issues/935))
+### Library strip
 
-All contextual Library destinations use `DesignSystemV2Provider` with v2 list chrome (`SearchInput` / `DataTable` `selectionChrome="v2"`) and editor shells (sticky header + `Panel` sections). Zone, RGL, and scan list membership editors use the Membership family (`MembershipPanel`, `AddMembersScreen`, pool rows). Maps on zone/channel list pages use `MapPanel` + `CodeplugMap` ([#925](https://github.com/pskillen/codeplug-studio/issues/925)).
+All contextual Library destinations use `DesignSystemV2Provider` with v2 list chrome (`SearchInput` / `DataTable` `selectionChrome="v2"`) and editor shells (sticky header + `Panel` sections). Zone, RGL, and scan list membership editors use the Membership family (`MembershipPanel`, `AddMembersScreen`, pool rows). Maps on zone/channel list pages use `MapPanel` + `CodeplugMap`.
 
-### Talk group editor ([#110](https://github.com/pskillen/codeplug-studio/issues/110), r2 [#943](https://github.com/pskillen/codeplug-studio/issues/943))
+### Talk group editor
 
-- **Layout (mk2 E3):** `EditorHeader` + single `Panel` compact form + `StickyFooter` — same chrome family as channel editor ([#941](https://github.com/pskillen/codeplug-studio/issues/941)).
+- **Layout:** `EditorHeader` + single `Panel` compact form + `StickyFooter` — same chrome family as channel editor.
 - **Identity:** name, v2 `SegmentedControl` mode, talk group ID, abbreviation, comment; `TalkGroupWireNameExamples` for export shortening hints.
 - **List:** optional **Abbrev** column on `/library/talk-groups` (default visible).
 - **Persistence:** empty abbreviation omitted on save; native YAML round-trip preserves the field.
 - Sidecar: `src/app/components/library/TalkGroupWireNameExamples.md`.
 
-### Digital contact editor (r2 [#943](https://github.com/pskillen/codeplug-studio/issues/943))
+### Digital contact editor
 
-- **Layout (mk2 E4):** `EditorHeader` + compact `Panel` + `StickyFooter`.
+- **Layout:** `EditorHeader` + compact `Panel` + `StickyFooter`.
 - **Fields:** callsign, name, country, DMR ID, mode (`SegmentedControl`), city/state, remarks, comment.
 - **RadioID:** `DismissibleNotice` when contact looks directory-sourced; `RadioidContactVerifyPanel` below the form on saved contacts.
 
-### Analog contact editor (r2 [#943](https://github.com/pskillen/codeplug-studio/issues/943))
+### Analog contact editor
 
-- **Layout (mk2 E5):** `EditorHeader` + compact `Panel` + `StickyFooter`.
+- **Layout:** `EditorHeader` + compact `Panel` + `StickyFooter`.
 - **Fields:** name, CTCSS/DCS tone (`code`), comment.
 
-### Library defaults (r2 [#943](https://github.com/pskillen/codeplug-studio/issues/943))
+### Library defaults
 
 - **Routes:** `/library/channels/defaults`, `/library/zones/defaults` — dense settings (not full editor chrome).
 - **Channel:** v2 `Panel` + `SegmentedControl` for forbid TX, TX permit, talker alias, analog squelch.
 - **Zone:** v2 `ToggleSwitch` for zone-derived scan-list include default.
-- Annotated vs mk2 E8: separate routes retained; no invented Power/Bandwidth/contact-Country defaults.
+- Separate routes retained; no invented Power/Bandwidth/contact-Country defaults.
 
-### Zone-from-location & grow (M2/M3, r2 [#943](https://github.com/pskillen/codeplug-studio/issues/943))
+### Zone-from-location & grow
 
-- **M2** `/library/zones/new-from-location`: `EditorHeader`, `GeocodeCentreField` (`Combobox` geocode), radius chips, v2 `DataTable` multi-select, create footer; folding panels + `MapThumbnail` / `FullScreenMapSheet` on mobile ([#1498](https://github.com/pskillen/codeplug-studio/issues/1498)).
+- **M2** `/library/zones/new-from-location`: `EditorHeader`, `GeocodeCentreField` (`Combobox` geocode), radius chips, v2 `DataTable` multi-select, create footer; folding panels + `MapThumbnail` / `FullScreenMapSheet` on mobile.
 - **M3** `/library/zones/:id/add-from-map`: table-first grow recommendations with distance column, multi-select + bulk add, `GeocodeCentreField` in near-locator mode.
 - Sidecar: `GrowZoneRecommendations.md`; geocode field: `GeocodeCentreField.tsx` (library glue, no sidecar).
 
@@ -322,8 +320,8 @@ delete → LibraryService.deleteWithIntegrity → findReferencesTo (core)
 ```
 
 - **Optimistic concurrency:** editors save with the loaded `revision`; a stale write returns `revision_conflict` and the editor shows a reload-and-retry message.
-- **Referential integrity:** single-entity deletes are **blocked** when another entity still references the target (e.g. a zone listing a channel, an RX group list listing a talk group, a channel mode profile pointing at a contact / RX list / talk group, a parent zone nesting a child zone). The block lists the referencing entities. **Exception:** **Delete all digital contacts** cascade-clears inbound refs first (`LibraryService.deleteAllDigitalContacts`) — it does not use the per-row block path. **Radio builds:** builds never block a delete. After any single-entity delete, `LibraryService` drops the deleted id from every build's trait layout (zone grouping, flat memory, scan lists, scan flags) and override rows (`pruneStaleBuildReferences`, core), so a build never keeps a dangling id ([#1528](https://github.com/pskillen/codeplug-studio/issues/1528)).
-- **Delete UI ([#202](https://github.com/pskillen/codeplug-studio/issues/202), [#310](https://github.com/pskillen/codeplug-studio/issues/310), [#427](https://github.com/pskillen/codeplug-studio/issues/427)):** every saved entity has a **Delete** button on its editor (`EntityDeleteButton`; channels use `ChannelDeleteButton` for zone cascade). List pages add a trash **actions** column (`EntityListDeleteAction`; channels use `ChannelListDeleteAction`). Flow: `runEntityDeleteFlow` → `useLibrary().deleteEntity` → `LibraryService.deleteWithIntegrity`. Channel delete may offer remove-from-zones cascade when blocked only by zone membership. **Bulk delete** from the channels list bulk-edit modal uses `persistChannelBulkDelete` with the same integrity rules and one confirmation for the whole selection. **Delete all digital contacts** uses `DeleteAllDigitalContactsDialog` (checkbox gate) → `useLibrary().deleteAllDigitalContacts`.
+- **Referential integrity:** single-entity deletes are **blocked** when another entity still references the target (e.g. a zone listing a channel, an RX group list listing a talk group, a channel mode profile pointing at a contact / RX list / talk group, a parent zone nesting a child zone). The block lists the referencing entities. **Exception:** **Delete all digital contacts** cascade-clears inbound refs first (`LibraryService.deleteAllDigitalContacts`) — it does not use the per-row block path. **Radio builds:** builds never block a delete. After any single-entity delete, `LibraryService` drops the deleted id from every build's trait layout (zone grouping, flat memory, scan lists, scan flags) and override rows (`pruneStaleBuildReferences`, core), so a build never keeps a dangling id.
+- **Delete UI:** every saved entity has a **Delete** button on its editor (`EntityDeleteButton`; channels use `ChannelDeleteButton` for zone cascade). List pages add a trash **actions** column (`EntityListDeleteAction`; channels use `ChannelListDeleteAction`). Flow: `runEntityDeleteFlow` → `useLibrary().deleteEntity` → `LibraryService.deleteWithIntegrity`. Channel delete may offer remove-from-zones cascade when blocked only by zone membership. **Bulk delete** from the channels list bulk-edit modal uses `persistChannelBulkDelete` with the same integrity rules and one confirmation for the whole selection. **Delete all digital contacts** uses `DeleteAllDigitalContactsDialog` (checkbox gate) → `useLibrary().deleteAllDigitalContacts`.
 
 ## Boundaries
 
