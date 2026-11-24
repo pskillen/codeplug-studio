@@ -237,9 +237,7 @@ describe('firmware switch on the radio page', () => {
               <Outlet />
             </>
           ),
-          children: [
-            { path: '/debug/radios/:radio/:firmware', element: <RadioDebugPage /> },
-          ],
+          children: [{ path: '/debug/radios/:radio/:firmware', element: <RadioDebugPage /> }],
         },
       ],
       { initialEntries: ['/debug/radios/md-9600/opengd77'] },
