@@ -18,6 +18,36 @@ function renderStepper(
 }
 
 describe('Stepper', () => {
+  it('renders an ordered list with the current step marked', () => {
+    render(
+      <DesignSystemV2Provider>
+        <Stepper
+          ariaLabel="Flash steps"
+          steps={[
+            { id: 'a', label: 'Radio', status: 'done' },
+            { id: 'b', label: 'Firmware', status: 'current' },
+            { id: 'c', label: 'Flash', status: 'pending' },
+          ]}
+        />
+      </DesignSystemV2Provider>,
+    );
+    expect(screen.getByRole('navigation', { name: 'Flash steps' })).toBeInTheDocument();
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(3);
+    expect(items[1]).toHaveAttribute('aria-current', 'step');
+    expect(items[0]).not.toHaveAttribute('aria-current');
+    expect(items[2]).toHaveTextContent('3');
+  });
+
+  it('marks error steps', () => {
+    render(
+      <DesignSystemV2Provider>
+        <Stepper orientation="vertical" steps={[{ id: 'a', label: 'Flash', status: 'error' }]} />
+      </DesignSystemV2Provider>,
+    );
+    expect(screen.getByRole('listitem')).toHaveAttribute('data-status', 'error');
+  });
+
   it('shows a dash marker and does not number a skipped step', () => {
     renderStepper([
       { id: 'a', label: 'Read', status: 'done' },
