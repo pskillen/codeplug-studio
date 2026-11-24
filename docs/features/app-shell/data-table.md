@@ -64,7 +64,7 @@ Rows link to editors via `nameColumn.getPath`. Optional trailing **actions** col
 
 | Route                         | `EntityListEntity` | URL name param      | Default sort key             | Notable columns                                            |
 | ----------------------------- | ------------------ | ------------------- | ---------------------------- | ---------------------------------------------------------- |
-| `/library/channels`           | _(channels prefs)_ | `q` (+ band/mode/…) | name or distance             | See [channels list](../library/README.md#channels-list-24) |
+| `/library/channels`           | _(channels prefs)_ | `q` (+ band/mode/…) | name or distance             | See [channels list](../library/README.md#channels-list) |
 | `/library/zones`              | `zones`            | `q`                 | export order (`storedOrder`) | Export order (reorder), members, comment, actions          |
 | `/library/talk-groups`        | `talk-groups`      | `q`                 | name                         | Mode, ID, channels/RX lists using, comment, actions        |
 | `/library/contacts` (digital) | `digital-contacts` | `dq`                | name                         | Mode, ID, channels using, actions                          |

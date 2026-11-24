@@ -29,5 +29,5 @@ Reads and writes via `useChannelListQuery` (URL + per-project `localStorage`). O
 - [FilterPopover.md](../v2/FilterPopover.md) — the popover shell this component composes
 - `ChannelsListPage.tsx` — hosts the filter row, applied pills, view switch, and location button
 - `ChannelsSectionNav.tsx` — add-channel actions only
-- [docs/features/library/README.md](../../../../docs/features/library/README.md#channels-list-24)
+- [docs/features/library/README.md](../../../../docs/features/library/README.md#channels-list)
 - [data-table.md](../../../../docs/features/app-shell/data-table.md)

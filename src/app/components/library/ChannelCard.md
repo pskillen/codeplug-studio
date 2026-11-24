@@ -41,4 +41,4 @@ import ChannelCard from '@app/components/library/ChannelCard.tsx';
 - [ChannelsListPage.tsx](../../routes/library/lists/ChannelsListPage.tsx) — table/cards layout, grouping, bulk toolbar
 - [ChannelListBulkActions.tsx](./ChannelListBulkActions.tsx)
 - [ChannelListDeleteAction.tsx](./ChannelListDeleteAction.tsx)
-- [docs/features/library/README.md](../../../../docs/features/library/README.md#channels-list-24)
+- [docs/features/library/README.md](../../../../docs/features/library/README.md#channels-list)
