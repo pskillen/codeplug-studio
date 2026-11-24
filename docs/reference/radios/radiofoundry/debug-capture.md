@@ -93,3 +93,11 @@ Inside the `eeprom-image` region (`integrations/radio-io/radios/radiofoundry/deb
 | Settings continuation | `0xF000` | `0x1000` | Settings area continuation (when header bytes 12–15 are non-zero) |
 
 Boot PIN enable at `0x7519` is shown plain. Device info, APRS and the ID database body are not masked.
+
+## Settings tab (raw)
+
+`radioFoundrySettingsView` reads the settings sector inside `eeprom-image` with `readRadioFoundrySettingsArea`. Each valid entry is one row: key as `Key 0xNNNN`, value as spaced hex, `address` at `0xE000 + offset`, `sensitive` when `isRadioFoundrySecretKey(key)`. `bad` and `newer` states are ambiguous; `empty` is OK with no rows.
+
+## Compare
+
+`radioFoundryCompareAdapter` compares `eeprom-image` and `flash-image` when both archives share the model id and region layout. `iddb-area2` is `reported` only (length may differ). Sidecars `debug/info.bin`, `debug/version.txt` and `debug/iddb.bin` are additional `reported` sections at base 0. Sensitive bytes use `radioFoundryArchiveSensitiveRanges` on `eeprom-image`.
