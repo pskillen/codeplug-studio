@@ -98,6 +98,18 @@ Boot PIN enable at `0x7519` is shown plain. Device info, APRS and the ID databas
 
 `radioFoundrySettingsView` reads the settings sector inside `eeprom-image` with `readRadioFoundrySettingsArea`. Each valid entry is one row: key as `Key 0xNNNN`, value as spaced hex, `address` at `0xE000 + offset`, `sensitive` when `isRadioFoundrySecretKey(key)`. `bad` and `newer` states are ambiguous; `empty` is OK with no rows.
 
+## DMR ID database (Memory decode)
+
+Area 1 starts at image offset `0x50000` inside `flash-image`, up to `0x40000` bytes. The 12-byte header opens with ASCII `Id`; format `N` (0x4E) uses 27-byte records (record-size byte `0x65`) sorted by ascending 3-byte little-endian DMR IDs with 24 bytes of packed text. Records that do not fit in area 1 continue at image `0xD8000` in the optional `iddb-area2` region when the operator ticked area 2 on read.
+
+Format `n` (0x6E) stores area 2 in the voice-prompt area at image `0xAF400`. This capture path does not read that region; Memory surfaces the header only.
+
+Format `C` uses a different layout; Memory shows the header bytes only (F3).
+
+The radio accepts the database when the header record count ends inside the capture ceiling (`debug/info.bin` image end, capped by the board `IMAGE_END`). `debug/iddb.bin` carries the radio's own format letter and record count after IDDB(0).
+
+`radioFoundryIdDatabaseView` in `integrations/radio-io/radios/radiofoundry/debugIdDatabase.ts` decodes captured format `N` records only, checks ascending order across area 1 and area 2, counts blank records the header claims among captured bytes, and supports lookup by DMR ID over captured records only.
+
 ## Compare
 
 `radioFoundryCompareAdapter` compares `eeprom-image` and `flash-image` when both archives share the model id and region layout. `iddb-area2` is `reported` only (length may differ). Sidecars `debug/info.bin`, `debug/version.txt` and `debug/iddb.bin` are additional `reported` sections at base 0. Sensitive bytes use `radioFoundryArchiveSensitiveRanges` on `eeprom-image`.
