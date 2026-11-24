@@ -39,7 +39,7 @@ registerReviewSectionProvider({
   | `build-problems`              | All              | The prepared build has a problem warning (something built won't arrive as built)           |
   | `radio-findings`              | All              | The radio reported a problem at the pause (e.g. NXDN not written)                          |
 
-- After identity, Review may show **Build problems** (`WarningsList` problems mode) and **From the radio** (full mode for radio-derived warnings), then **Nothing has been written yet.** Radios with a finite `programHoldSafeMs` show when Studio re-reads before writing.
+- After identity, Review may show **Build problems** (`WarningsList` problems mode) and **From the radio** (full mode for radio-derived warnings), then **Nothing has been written yet.** Radios with a finite `programHoldSafeMs` show when Studio re-reads before writing (AT-D890UV and RadioFoundry cable boards use `Infinity`, so a long Review does not trigger a re-read).
 - `rt95` is `{ settings?, modData? }`. `settings` (both RT95 targets, when radio settings overrides exist) drives the "Radio settings" section. `modData` (RT95 MM9PDY only) carries the zone and description counts once the chip-size check passed; `rt95/registerRt95Review.tsx` shows "Radio memory: 32 KiB, zones and descriptions can be written." and the counts. A failed check never reaches Review.
 
 ## Related
