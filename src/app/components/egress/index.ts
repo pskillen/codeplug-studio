@@ -1,4 +1,9 @@
 export {
+  default as StageProgress,
+  type StageProgressGroup,
+  type StageProgressProps,
+} from './StageProgress/StageProgress.tsx';
+export {
   default as EgressShell,
   type EgressShellProps,
   type EgressStep,

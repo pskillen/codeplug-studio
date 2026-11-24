@@ -1,0 +1,27 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-3);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dsv2-space-4);
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.lead {
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.groupTitle {
+  margin: var(--dsv2-space-2) 0 var(--dsv2-space-2);
+  font-size: var(--dsv2-font-body-sm);
+  font-weight: 600;
+}
+
+.planPending [data-status='pending'] {
+  opacity: 0.55;
+}

@@ -1,4 +1,4 @@
-import { Group, Text } from '@mantine/core';
+import { Group, Stack, Text } from '@mantine/core';
 import { IconHelpCircle } from '@tabler/icons-react';
 import { useEffect, useMemo, useState } from 'react';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
@@ -13,6 +13,7 @@ import {
 } from '../../components/v2/index.ts';
 import RadioIoReplayDemo from './RadioIoReplayDemo.tsx';
 import ErrorPanel from '../../components/egress/ErrorPanel/ErrorPanel.tsx';
+import StageProgress from '../../components/egress/StageProgress/StageProgress.tsx';
 import RadioWriteStepperDemo from './RadioWriteStepperDemo.tsx';
 import RangeChangeDemo from './RangeChangeDemo.tsx';
 import RadioIoStageList, { type StageRow } from '../../components/builds/RadioIoStageList.tsx';
@@ -304,6 +305,66 @@ export default function StyleguideOverlaysPage() {
             retryLabel={null}
           />
         </Group>
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="Stage progress"
+        description="Read, write, restart wait and check transfers share one progress list inside export and write dialogs."
+      >
+        <Stack gap="xl">
+          <StageProgress
+            lead={<Text size="sm">Connecting to AT-D890UV and reading it…</Text>}
+            groups={[
+              {
+                id: 'read',
+                rows: [
+                  { id: 'a', label: 'Local info', status: 'success', weight: 256 },
+                  { id: 'b', label: 'Channels', status: 'active', weight: 20_000 },
+                  { id: 'c', label: 'Zones', status: 'pending', weight: 6000 },
+                ],
+              },
+            ]}
+            progress={{ cur: 40, max: 100, msg: 'Channels' }}
+            startedAt={Date.now() - 45_000}
+            estimateSeconds={90}
+            running
+          />
+          <StageProgress
+            groups={[
+              {
+                id: 'write',
+                title: 'Write',
+                rows: [
+                  { id: 'w', label: 'Upload', status: 'success', weight: 40_000 },
+                ],
+              },
+              {
+                id: 'restart',
+                title: 'Restart',
+                rows: [{ id: 'r', label: 'Waiting (8 s left)', status: 'active', coarse: true }],
+              },
+              {
+                id: 'check',
+                title: 'Check write',
+                rows: [{ id: 'c', label: 'Verify channels', status: 'pending', weight: 5000 }],
+              },
+            ]}
+            progress={null}
+            startedAt={Date.now() - 120_000}
+            running
+          />
+          <StageProgress
+            groups={[
+              {
+                id: 'grow',
+                rows: [{ id: 'x', label: 'Reading clone', status: 'active' }],
+              },
+            ]}
+            progress={{ cur: 0, max: 0, msg: 'Handshake' }}
+            startedAt={Date.now() - 3000}
+            running
+          />
+        </Stack>
       </StyleguideSection>
 
       <StyleguideSection
