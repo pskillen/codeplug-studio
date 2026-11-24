@@ -138,7 +138,7 @@ export interface Channel extends PersistableRow {
   /** Busy lock / TX permit override. */
   txPermit: TxPermitOverride;
   comment: string;
-  /** Primary mode for dual-mode CPS export (Anytone Channel Type, DM32 Fixed Analog/Digital). */
+  /** The mode a radio transmits in when it listens to several, or keeps when it can hold only one. Formats map it at export. */
   primaryMode?: ChannelMode | null;
   modeProfiles: ChannelModeProfile[];
   /** Optional short qualifier tried first when export wire names exceed profile limits. */

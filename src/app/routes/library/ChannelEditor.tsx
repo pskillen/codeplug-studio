@@ -15,10 +15,15 @@ import {
 import { normalizeOptionalChannelAprs } from '@core/domain/aprs/index.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import {
-  syncModeProfiles,
+  addChannelMode,
+  normalizeModeProfile,
+  removeChannelMode,
+  setChannelMainMode,
+  switchChannelMode,
   validateModeProfiles,
   reconcilePrimaryMode,
   resolveChannelPrimaryMode,
+  type ChannelModeEdit,
 } from '@core/domain/modeProfiles.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import { PercentLevelSlider, UnsavedChangesModal } from '../../components/v2/index.ts';
@@ -33,7 +38,8 @@ import {
   StickyFooter,
   TextInput,
 } from '../../components/v2/index.ts';
-import { type ChannelMode as UiChannelMode, modeLabel } from '../../lib/channelModes.ts';
+import { modeLabel, type ModePreset } from '../../lib/channelModes.ts';
+import { channelModeSummaryText } from '../../lib/channelModeSummary.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { channelEditPath, channelViewPath } from '../../lib/channelPaths.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
@@ -44,12 +50,11 @@ import ChannelLocationSection, {
   channelLocationValuesFromChannel,
   type ChannelLocationValues,
 } from '../../components/channels/ChannelLocationSection.tsx';
-import ChannelModeProfilesEditor from '../../components/channels/ChannelModeProfilesEditor.tsx';
-import ChannelModesField from '../../components/channels/ChannelModesField.tsx';
+import ChannelModePicker, { AddModeMenu } from '../../components/channels/ChannelModePicker.tsx';
+import ModePanel from '../../components/channels/modePanels/ModePanel.tsx';
+import type { ModePanelContext } from '../../components/channels/modePanels/types.ts';
 import ChannelWireNameExamples from '../../components/channels/ChannelWireNameExamples.tsx';
 import ChannelDirectoryVerifyActions from '../../components/repeaters/ChannelDirectoryVerifyActions.tsx';
-import { BandPillForChannel } from '../../components/pills/BandPill.tsx';
-import { formatChannelRxTxListCell } from '../../lib/formatFrequency.ts';
 import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
 import PowerLadderHints from '../../components/library/PowerLadderHints.tsx';
 import ScanListSummary from '../../components/library/ScanListSummary.tsx';
@@ -67,6 +72,31 @@ import { channelEditorPageTitle } from './channelEditorPageTitle.ts';
 import { channelEditorSections } from './channelEditorSections.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import classes from './ChannelEditor.module.css';
+
+function applyModePreset(edit: ChannelModeEdit, preset: ModePreset): ChannelModeEdit {
+  let next = edit;
+  const [first, ...rest] = preset.modes;
+  if (first == null) return next;
+  next = switchChannelMode(next, first);
+  for (const mode of rest) {
+    next = addChannelMode(next, mode);
+  }
+  return next;
+}
+
+function transmitPanelSummary(
+  power: number | null,
+  forbidTransmit: ForbidTransmitOverride,
+): string {
+  const powerPart = power != null ? `Power ${power}%` : 'Power default';
+  const txPart =
+    forbidTransmit === 'forbid'
+      ? 'receive only'
+      : forbidTransmit === 'allow'
+        ? 'transmit allowed'
+        : 'transmit default';
+  return `${powerPart} · ${txPart}`;
+}
 
 export default function ChannelEditor({
   projectId,
@@ -94,8 +124,11 @@ export default function ChannelEditor({
   const [forbidTransmit, setForbidTransmit] = useState<ForbidTransmitOverride>(base.forbidTransmit);
   const [txPermit, setTxPermit] = useState<TxPermitOverride>(base.txPermit);
   const [comment, setComment] = useState(base.comment);
-  const [modeProfiles, setModeProfiles] = useState<ChannelModeProfile[]>(base.modeProfiles);
-  const [primaryMode, setPrimaryMode] = useState<ChannelMode | null>(base.primaryMode ?? null);
+  const [modeEdit, setModeEdit] = useState<ChannelModeEdit>(() => ({
+    modeProfiles: base.modeProfiles.map(normalizeModeProfile),
+    primaryMode: base.primaryMode ?? null,
+    parked: [],
+  }));
   const [location, setLocation] = useState<ChannelLocationValues>(() =>
     channelLocationValuesFromChannel(base),
   );
@@ -108,6 +141,7 @@ export default function ChannelEditor({
   const { save, saving, error } = useEntitySave('channels', { navigateOnSave: false });
   const navigate = useNavigate();
 
+  const modeProfiles = modeEdit.modeProfiles;
   const selectedModes = modeProfiles.map((p) => p.mode as ChannelMode);
 
   function buildRow(): Channel {
@@ -137,7 +171,8 @@ export default function ChannelEditor({
       useLocation: reconciled.useLocation,
       maidenheadLocator: reconciled.maidenheadLocator,
       modeProfiles,
-      primaryMode: modeProfiles.length > 0 ? reconcilePrimaryMode(primaryMode, modeProfiles) : null,
+      primaryMode:
+        modeProfiles.length > 0 ? reconcilePrimaryMode(modeEdit.primaryMode, modeProfiles) : null,
     };
     if (trimmedAbbrev) {
       row.abbreviation = trimmedAbbrev;
@@ -167,27 +202,21 @@ export default function ChannelEditor({
   const { permitNavigationOnce, modalOpen, stay, leave, isDirty } =
     useEntityEditorUnsavedGuard(buildRow);
 
-  // "Apply only": fills form state from a directory match, nothing persisted. Same fan-out
-  // either way — only the fields ChannelDiffField can carry need handling (channelDiff.ts:
-  // callsign, name, rxFrequency, txFrequency, rxTone, txTone, colourCode, mode, location,
-  // maidenheadLocator, useLocation, comment — tones/colour code arrive inside modeProfiles).
   function applyDirectoryPatch(patched: Channel) {
     setName(patched.name);
     setCallsign(patched.callsign);
     setRx(hzToMhzString(patched.rxFrequency));
     setTx(hzToMhzString(patched.txFrequency));
     setComment(patched.comment);
-    setModeProfiles(patched.modeProfiles);
-    setPrimaryMode((prev) => reconcilePrimaryMode(prev, patched.modeProfiles));
+    const normalized = patched.modeProfiles.map(normalizeModeProfile);
+    setModeEdit((e) => ({
+      ...e,
+      modeProfiles: normalized,
+      primaryMode: reconcilePrimaryMode(e.primaryMode, normalized),
+    }));
     setLocation(channelLocationValuesFromChannel(patched));
   }
 
-  // "Apply & save": the dialog has already persisted `patched` (same
-  // persistence.putChannel(patched, channel.revision) call as today's saved-channel workflow,
-  // unchanged). On a saved channel that's the whole job — the page's own key={revision}
-  // remount (EntityEditorPage.tsx) picks up the change. On New channel there is no remount to
-  // rely on yet, so land the operator on the freshly created channel's edit page, matching
-  // ChannelDuplicateButton's navigate-to-new-row pattern.
   function handleApplyAndSave(patched: Channel) {
     permitNavigationOnce();
     if (!entity) {
@@ -220,11 +249,13 @@ export default function ChannelEditor({
     navigate(entity ? channelViewPath(entity.id) : '/library/channels');
   }
 
-  function handleModesChange(modes: UiChannelMode[]) {
-    const coreModes = modes.filter((m): m is ChannelMode => m !== 'other');
-    const nextProfiles = syncModeProfiles(coreModes, modeProfiles);
-    setModeProfiles(nextProfiles);
-    setPrimaryMode((prev) => reconcilePrimaryMode(prev, nextProfiles));
+  function patchModeProfile(index: number, patch: Partial<ChannelModeProfile>) {
+    setModeEdit((e) => ({
+      ...e,
+      modeProfiles: e.modeProfiles.map((p, i) =>
+        i === index ? ({ ...p, ...patch } as ChannelModeProfile) : p,
+      ),
+    }));
   }
 
   const liveRxHz = mhzStringToHz(rx);
@@ -243,14 +274,15 @@ export default function ChannelEditor({
       'Untitled channel'
     : 'New channel';
   const headerSubtitle = entity
-    ? `${selectedModes.map((m) => modeLabel(m)).join(' + ')} · editing`
+    ? modeProfiles.length === 0
+      ? 'No mode set'
+      : channelModeSummaryText(liveChannel, library)
     : 'Set up the identity, frequency and mode for this channel.';
 
   useEffect(() => {
     onPageTitle?.(editorPageTitle);
   }, [editorPageTitle, onPageTitle]);
 
-  // The channel view links straight to a section (e.g. `/edit#location`).
   const { hash } = useLocation();
   useEffect(() => {
     if (!hash || loadingProp) return;
@@ -263,9 +295,24 @@ export default function ChannelEditor({
     ...library.scanLists.map((list) => ({ value: list.id, label: list.name })),
   ];
 
-  const editorSections = useMemo(() => channelEditorSections({ isNew: !entity }), [entity]);
+  const modeCount = modeProfiles.length;
+  const editorSections = useMemo(
+    () => channelEditorSections({ isNew: !entity, modeCount }),
+    [entity, modeCount],
+  );
   const sectionIds = useMemo(() => editorSections.map((s) => s.id), [editorSections]);
   const activeSectionId = useSectionScrollSpy(sectionIds);
+
+  const modePanelContext: ModePanelContext = useMemo(
+    () => ({
+      library,
+      savedChannel: entity ? liveChannel : null,
+      rxFrequency: liveRxHz,
+      txFrequency: liveTxHz,
+      compact: isMobile ?? false,
+    }),
+    [library, entity, liveChannel, liveRxHz, liveTxHz, isMobile],
+  );
 
   const browseChannelIds = useMemo(
     () => [...library.channels].sort((a, b) => a.name.localeCompare(b.name)).map((ch) => ch.id),
@@ -296,7 +343,7 @@ export default function ChannelEditor({
           crumb={entity ? 'View channel' : 'Channels'}
           crumbTo={entity ? channelViewPath(entity.id) : '/library/channels'}
           title={headerTitle}
-          subtitle={headerSubtitle}
+          subtitle={<span className={classes.headerSubtitle}>{headerSubtitle}</span>}
           compact={isMobile}
         />
 
@@ -346,20 +393,130 @@ export default function ChannelEditor({
                 />
               </FormField>
             </div>
-            <button
-              type="button"
-              className={classes.identityRfSummary}
-              onClick={() => scrollToPageSection('rf')}
-              aria-label="Jump to RF section"
-            >
-              <span className={classes.identityRfSummaryText}>
-                {formatChannelRxTxListCell(liveRxHz, liveTxHz)}
-              </span>
-              <BandPillForChannel channel={liveChannel} size="xs" />
-            </button>
-            <div className={classes.identityModes}>
-              <ChannelModesField selectedModes={selectedModes} onChange={handleModesChange} />
+          </Panel>
+
+          <Panel id="mode" title="Mode and frequency">
+            <ChannelModePicker
+              modes={selectedModes}
+              onSwitch={(mode) => setModeEdit((e) => switchChannelMode(e, mode))}
+              onAdd={(mode) => setModeEdit((e) => addChannelMode(e, mode))}
+              onRemove={(mode) => setModeEdit((e) => removeChannelMode(e, mode))}
+              onPreset={(preset) => setModeEdit((e) => applyModePreset(e, preset))}
+              compact={isMobile}
+            />
+            <FormField label="RX frequency (MHz)" mono>
+              <TextInput
+                variant="plain"
+                value={rx}
+                onChange={(e) => setRx(e.currentTarget.value)}
+                mono
+                aria-label="RX frequency"
+              />
+            </FormField>
+            <div className={classes.modeGap}>
+              <TxOffsetControls
+                rxFrequencyHz={liveRxHz}
+                txFrequencyHz={liveTxHz}
+                onTxFrequencyChange={setTx}
+              />
             </div>
+            <FormField label="TX frequency (MHz)" mono error={txFieldError}>
+              <TextInput
+                variant="plain"
+                value={tx}
+                onChange={(e) => setTx(e.currentTarget.value)}
+                mono
+                aria-label="TX frequency"
+              />
+            </FormField>
+            <p className={classes.bandHint}>
+              Offsets shown match this frequency&apos;s band when RX is set.
+            </p>
+            {modeCount <= 1 ? (
+              <div className={classes.inlineModeSettings}>
+                {modeCount === 0 ? (
+                  <p className={classes.modeSettingsPlaceholder}>
+                    The mode&apos;s settings appear here once you pick it.
+                  </p>
+                ) : (
+                  <>
+                    <ModePanel
+                      profile={modeProfiles[0]!}
+                      onPatch={(patch) => patchModeProfile(0, patch)}
+                      context={modePanelContext}
+                    />
+                    <AddModeMenu
+                      modes={selectedModes}
+                      onAdd={(mode) => setModeEdit((e) => addChannelMode(e, mode))}
+                      variant="link"
+                    />
+                  </>
+                )}
+              </div>
+            ) : null}
+          </Panel>
+
+          {modeCount >= 2 ? (
+            <div id="modes" className={classes.modesBlock}>
+              <div className={classes.mainMode}>
+                <p className={classes.mainModeLabel}>Main mode</p>
+                <SegmentedControl
+                  options={modeProfiles.map((profile) => ({
+                    value: profile.mode,
+                    label: modeLabel(profile.mode),
+                  }))}
+                  value={resolveChannelPrimaryMode(modeEdit) ?? ''}
+                  onChange={(value) =>
+                    setModeEdit((e) => setChannelMainMode(e, value as ChannelMode))
+                  }
+                />
+                <p className={classes.mainModeHint}>
+                  A radio that can use only one of these modes uses this one; a radio that listens
+                  to both transmits in it.
+                </p>
+              </div>
+              {modeProfiles.map((profile, index) => (
+                <Panel
+                  key={profile.mode}
+                  id={`mode-${profile.mode}`}
+                  title={modeLabel(profile.mode)}
+                >
+                  <ModePanel
+                    profile={profile}
+                    onPatch={(patch) => patchModeProfile(index, patch)}
+                    context={modePanelContext}
+                  />
+                </Panel>
+              ))}
+            </div>
+          ) : null}
+
+          <Panel
+            id="transmit"
+            title="Transmit"
+            collapsible
+            defaultCollapsed={isMobile}
+            summary={transmitPanelSummary(power, forbidTransmit)}
+          >
+            <div className={classes.powerRow}>
+              <PercentLevelSlider label="Power" value={power} onChange={setPower} />
+              {isMobile ? (
+                <details className={classes.hintDetails}>
+                  <summary>Power examples</summary>
+                  <PowerLadderHints power={power} />
+                </details>
+              ) : (
+                <PowerLadderHints power={power} />
+              )}
+            </div>
+            <Stack gap="lg" className={classes.transmitControls}>
+              <ForbidTransmitSegment
+                value={forbidTransmit}
+                onChange={setForbidTransmit}
+                layout="row"
+              />
+              <TxPermitSegment value={txPermit} onChange={setTxPermit} layout="row" />
+            </Stack>
           </Panel>
 
           <Panel id="naming" title="Names and notes" collapsible defaultCollapsed={isMobile}>
@@ -390,91 +547,6 @@ export default function ChannelEditor({
                 abbreviation={abbreviation}
               />
             </div>
-          </Panel>
-
-          <Panel id="rf" title="RF">
-            <FormField label="RX frequency (MHz)" mono>
-              <TextInput
-                variant="plain"
-                value={rx}
-                onChange={(e) => setRx(e.currentTarget.value)}
-                mono
-                aria-label="RX frequency"
-              />
-            </FormField>
-            <div className={classes.rfGap}>
-              <TxOffsetControls
-                rxFrequencyHz={liveRxHz}
-                txFrequencyHz={liveTxHz}
-                onTxFrequencyChange={setTx}
-              />
-            </div>
-            <FormField label="TX frequency (MHz)" mono error={txFieldError}>
-              <TextInput
-                variant="plain"
-                value={tx}
-                onChange={(e) => setTx(e.currentTarget.value)}
-                mono
-                aria-label="TX frequency"
-              />
-            </FormField>
-            <p className={classes.bandHint}>
-              Offsets shown match this frequency&apos;s band when RX is set.
-            </p>
-            <Stack gap="lg" className={classes.rfTx}>
-              <ForbidTransmitSegment
-                value={forbidTransmit}
-                onChange={setForbidTransmit}
-                layout="row"
-              />
-              <TxPermitSegment value={txPermit} onChange={setTxPermit} layout="row" />
-            </Stack>
-            <div className={classes.powerRow}>
-              <PercentLevelSlider label="Power" value={power} onChange={setPower} />
-              {isMobile ? (
-                <details className={classes.hintDetails}>
-                  <summary>Power examples</summary>
-                  <PowerLadderHints power={power} />
-                </details>
-              ) : (
-                <PowerLadderHints power={power} />
-              )}
-            </div>
-          </Panel>
-
-          <Panel
-            id="mode-settings"
-            title="Mode settings"
-            sub={
-              modeProfiles.length > 1
-                ? 'Multiple modes selected — each stacks its own settings in one panel.'
-                : undefined
-            }
-          >
-            {modeProfiles.length > 1 ? (
-              <div className={classes.primaryMode}>
-                <p className={classes.primaryModeLabel}>Primary mode</p>
-                <SegmentedControl
-                  options={modeProfiles.map((profile) => ({
-                    value: profile.mode,
-                    label: modeLabel(profile.mode),
-                  }))}
-                  value={resolveChannelPrimaryMode({ primaryMode, modeProfiles }) ?? ''}
-                  onChange={(value) => setPrimaryMode(value as ChannelMode)}
-                />
-                <p className={classes.primaryModeHint}>
-                  Primary mode drives dual-mode Channel Type on Anytone and DM32 export.
-                </p>
-              </div>
-            ) : null}
-            <ChannelModeProfilesEditor
-              profiles={modeProfiles}
-              library={library}
-              channel={entity ? liveChannel : null}
-              rxFrequency={liveRxHz}
-              txFrequency={liveTxHz}
-              onChange={setModeProfiles}
-            />
           </Panel>
 
           <Panel id="location" title="Location">

@@ -70,5 +70,5 @@ Digital modes use **`DigitalModeGroups`** — fixed order **Access / Call / List
 
 ## Related
 
-- [ChannelModeProfilesEditor.md](../ChannelModeProfilesEditor.md) — stacked wrapper with mode headers
+- [ChannelModePicker.md](../ChannelModePicker.md) — mode picker in the channel editor
 - [channel-modes.md](../../../../docs/features/library/channel-modes.md) — tier-1 deep dive

@@ -184,17 +184,6 @@ export function dedupeSsbModeProfiles(profiles: ChannelModeProfile[]): ChannelMo
   });
 }
 
-export function syncModeProfiles(
-  selectedModes: ChannelMode[],
-  existingProfiles: ChannelModeProfile[],
-): ChannelModeProfile[] {
-  const normalized = existingProfiles.map(normalizeModeProfile);
-  return selectedModes.map((mode) => {
-    const found = normalized.find((p) => p.mode === mode);
-    return found ?? defaultModeProfile(mode);
-  });
-}
-
 /** Keep `primaryMode` aligned when mode selection changes in CRUD. */
 export function reconcilePrimaryMode(
   primaryMode: ChannelMode | null,

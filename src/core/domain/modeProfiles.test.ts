@@ -19,7 +19,6 @@ import {
   resolveChannelPrimaryMode,
   setChannelMainMode,
   switchChannelMode,
-  syncModeProfiles,
   validateModeProfiles,
 } from './modeProfiles.ts';
 
@@ -150,31 +149,6 @@ describe('normalizeModeProfile (NXDN)', () => {
       rxGroupListId: null,
       nxdnRate: null,
     });
-  });
-});
-
-describe('syncModeProfiles', () => {
-  it('preserves existing profiles and adds defaults for new modes', () => {
-    const fm: ChannelModeProfileAnalog = {
-      mode: 'fm',
-      squelch: 25,
-      rxTone: '88.5',
-      txTone: '88.5',
-      bandwidthKHz: 12.5,
-      analogSquelchMode: 'default',
-    };
-    const synced = syncModeProfiles(['fm', 'dmr'], [fm]);
-    expect(synced).toHaveLength(2);
-    expect(synced[0]).toEqual(fm);
-    expect(synced[1]?.mode).toBe('dmr');
-  });
-
-  it('drops deselected modes', () => {
-    const dmr = defaultModeProfile('dmr') as ChannelModeProfileDMR;
-    dmr.colourCode = 7;
-    const synced = syncModeProfiles(['dmr'], [defaultModeProfile('fm'), dmr]);
-    expect(synced).toHaveLength(1);
-    expect((synced[0] as ChannelModeProfileDMR).colourCode).toBe(7);
   });
 });
 

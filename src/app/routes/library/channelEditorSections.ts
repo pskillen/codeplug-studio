@@ -8,15 +8,24 @@ export interface ChannelEditorSection {
 /**
  * Ordered section list for the channel editor jump-nav and Panel ids.
  * `zones` is omitted on New channel (no persisted row to hold zone membership yet).
+ * `modes` appears only when the channel has two or more mode profiles.
  */
-export function channelEditorSections(opts: { isNew: boolean }): ChannelEditorSection[] {
+export function channelEditorSections(opts: {
+  isNew: boolean;
+  modeCount: number;
+}): ChannelEditorSection[] {
   const sections: ChannelEditorSection[] = [
     { id: 'identity', label: 'Identity' },
-    { id: 'naming', label: 'Names and notes' },
-    { id: 'rf', label: 'RF' },
-    { id: 'mode-settings', label: 'Mode settings' },
-    { id: 'location', label: 'Location' },
+    { id: 'mode', label: 'Mode and frequency' },
   ];
+  if (opts.modeCount >= 2) {
+    sections.push({ id: 'modes', label: 'Modes' });
+  }
+  sections.push(
+    { id: 'transmit', label: 'Transmit' },
+    { id: 'naming', label: 'Names and notes' },
+    { id: 'location', label: 'Location' },
+  );
   if (!opts.isNew) {
     sections.push({ id: 'zones', label: 'Zones' });
   }
