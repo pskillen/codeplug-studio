@@ -27,6 +27,7 @@ Use `ErrorPanel` for failures in the Write stepper and later export flows: it sh
 | [EgressShell sidecar](../../../src/app/components/egress/EgressShell/EgressShell.md)       | Export and write dialogs: one frame (`ModalShell` + step bar)            |
 | [StageProgress sidecar](../../../src/app/components/egress/StageProgress/StageProgress.md) | Every radio read, write, restart wait and check shows progress with this |
 | [PreflightCard sidecar](../../../src/app/components/egress/PreflightCard/PreflightCard.md) | Write **Connect** step: radio identity rows and pre-flight status        |
+| `/styleguide/overlays` → **Satellite keps build picker**                                   | Library Workflow A: empty vs filled build list before the Write dialog   |
 
 ## Doc map
 

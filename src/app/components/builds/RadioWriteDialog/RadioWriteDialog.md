@@ -6,11 +6,11 @@ Reusable Write dialog shell for any page that has a `RadioBuild` and a Web Seria
 
 ## Props (hook args)
 
-| Arg                  | Type                                | Description                                           |
-| -------------------- | ----------------------------------- | ----------------------------------------------------- |
-| `build`              | `RadioBuild`                        | Build whose overrides and settings feed the stepper   |
-| `egress`             | `EgressPath`                        | Active Web Serial pathway                             |
-| `onOpenSettingsPage` | `() => void` optional               | AT-D890 / RT95 “Review its settings” navigation       |
+| Arg                  | Type                  | Description                                         |
+| -------------------- | --------------------- | --------------------------------------------------- |
+| `build`              | `RadioBuild`          | Build whose overrides and settings feed the stepper |
+| `egress`             | `EgressPath`          | Active Web Serial pathway                           |
+| `onOpenSettingsPage` | `() => void` optional | AT-D890 / RT95 “Review its settings” navigation     |
 
 ## Usage
 
@@ -21,8 +21,10 @@ const writeDialog = useRadioWriteDialog({
   onOpenSettingsPage: () => navigate(`/builds/${build.id}/export/radio-settings`),
 });
 
-<Button onClick={() => writeDialog.open()}>Write radio…</Button>
-{writeDialog.element}
+<Button onClick={() => writeDialog.open()}>Write radio…</Button>;
+{
+  writeDialog.element;
+}
 ```
 
 Keps-only:

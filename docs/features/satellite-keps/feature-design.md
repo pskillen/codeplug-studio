@@ -82,27 +82,14 @@ The user can initiate a web-serial write to their radio via two distinct paths, 
 
 #### Workflow A: Global Write (From the Library)
 
-_Intended for the quick, bi-weekly update when the user just plugs in their radio to refresh orbital data._
+1. User navigates to the Keps Library and chooses **Write keps…**.
+2. A modal lists builds whose Web Serial egress supports a keps write.
+3. **Continue** opens the same Write dialog as Workflow B, with only **Satellite keps** ticked (including that build's `satelliteOverrides` and step-1 checks).
 
-1. User navigates to the Keps Library and clicks `Write Keps to Radio`.
-2. A modal window appears titled "Select Target Radio".
-3. **Smart List Sorting:** The modal lists radios in two sections:
+#### Workflow B: Contextual Write (From the Build Satellite keps tab)
 
-- **Recommended / Your Radios:** Pulls from the user's curated Codeplug library (e.g., "Anytone D890 - Base Station", "OpenGD77 - SOTA Kit").
-- **Other Supported Radios:** A generic list (e.g., "Generic OpenGD77", "Generic Anytone 890") for ad-hoc writes to radios not stored in the user's profile.
-
-4. User selects the radio. Codeplug Studio triggers the browser's Web Serial API prompt to connect to the COM port.
-5. A progress bar displays the binary payload transfer, distinct from the UI used for codeplug writes.
-
-#### Workflow B: Contextual Write (From the Export/Build Page)
-
-_Intended for when the user is already deep in the process of flashing a new codeplug structure and wants to sync their Keps at the same time._
-
-1. User is on the specific "Build" page for a saved radio (e.g., their "OpenGD77 - SOTA Kit" profile).
-2. In the action panel, alongside the primary `Write Codeplug` button, there is a secondary `Write Keps` button.
-3. Clicking this **bypasses the radio selection modal entirely**, as the context (the specific radio model and memory map) is already known.
-4. The browser immediately prompts for the Web Serial COM port connection.
-5. The upload executes with a progress indicator.
+1. User is on the build's **Satellite keps** tab.
+2. **Write Keps** opens the Write dialog for that build with only **Satellite keps** ticked.
 
 #### Write dialog (step 1, before the port)
 
