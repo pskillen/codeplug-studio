@@ -12,7 +12,10 @@ import {
   atD890ReviewSections,
 } from './AtD890ReviewSections.tsx';
 import { atD890ReviewPauseReasons } from './atD890ReviewPause.ts';
-import { registerRadioSettingsPart, registerRadioWriteExtras } from '../../../../services/egress/radioSettingsParts.ts';
+import {
+  registerRadioSettingsPart,
+  registerRadioWriteExtras,
+} from '../../../../services/egress/radioSettingsParts.ts';
 import { atD890SettingsPart, atD890WriteExtras } from './atD890SettingsPart.ts';
 
 registerRadioSettingsPart(atD890SettingsPart);

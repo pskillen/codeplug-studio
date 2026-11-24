@@ -104,8 +104,7 @@ export default function RadioIoReplayDemo() {
       weight: p.weight,
       ...(p.optional ? { optional: true } : {}),
       ...(p.coarse ? { coarse: true } : {}),
-      status:
-        active === p.label ? 'active' : finished.has(p.label) ? 'success' : 'pending',
+      status: active === p.label ? 'active' : finished.has(p.label) ? 'success' : 'pending',
     }));
   }, [plan, events, index, progress?.stage]);
 

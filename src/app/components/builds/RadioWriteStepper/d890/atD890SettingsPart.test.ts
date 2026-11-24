@@ -46,8 +46,7 @@ describe('atD890SettingsPart', () => {
     const ctrl = createAtD890ReviewController(
       init({
         initialChoice: choice,
-        getOverrides: () =>
-          overrideCount > 0 ? [{ fieldId: 'x', value: 1 as const }] : [],
+        getOverrides: () => (overrideCount > 0 ? [{ fieldId: 'x', value: 1 as const }] : []),
       }),
     );
     ctrl.setChoice(choice);

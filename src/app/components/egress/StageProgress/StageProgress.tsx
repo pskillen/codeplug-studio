@@ -65,19 +65,12 @@ export default function StageProgress({
 
   const { fraction, total } = overallProgress(rows, tracker, progress);
   const showOverall = total > 0;
-  const showEstimate =
-    running &&
-    elapsed >= 2 &&
-    estimateSeconds != null &&
-    estimateSeconds > 0;
+  const showEstimate = running && elapsed >= 2 && estimateSeconds != null && estimateSeconds > 0;
   const estimateLabel = showEstimate ? `${formatEstimate(estimateSeconds)} left` : null;
 
   const showHeadings = groups.length > 1;
   const extras = progress as ProgressWithBytes | null;
-  const bytesLine =
-    extras?.bytes != null
-      ? `${extras.bytes.toLocaleString()} bytes`
-      : null;
+  const bytesLine = extras?.bytes != null ? `${extras.bytes.toLocaleString()} bytes` : null;
   const rateLine =
     extras?.bytesPerSecond != null
       ? `${Math.round(extras.bytesPerSecond).toLocaleString()} B/s`
@@ -98,9 +91,7 @@ export default function StageProgress({
       ) : null}
       <div className={classes.meta}>
         <span data-testid="stage-progress-elapsed">{formatElapsed(elapsed)}</span>
-        {estimateLabel ? (
-          <span data-testid="stage-progress-estimate">{estimateLabel}</span>
-        ) : null}
+        {estimateLabel ? <span data-testid="stage-progress-estimate">{estimateLabel}</span> : null}
         {bytesLine ? <span data-testid="stage-progress-bytes">{bytesLine}</span> : null}
         {rateLine ? <span data-testid="stage-progress-rate">{rateLine}</span> : null}
       </div>
@@ -111,9 +102,7 @@ export default function StageProgress({
               {group.title}
             </Text>
           ) : null}
-          <div
-            className={planNotStarted(group.rows, running) ? classes.planPending : undefined}
-          >
+          <div className={planNotStarted(group.rows, running) ? classes.planPending : undefined}>
             <RadioIoStageList rows={group.rows} progress={progress} hideOverall />
           </div>
         </div>

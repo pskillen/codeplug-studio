@@ -8,15 +8,15 @@ Shows one pattern for every transfer inside export and write dialogs: an overall
 
 ## Props
 
-| Prop               | Type                      | Notes                                              |
-| ------------------ | ------------------------- | -------------------------------------------------- |
-| `groups`           | `StageProgressGroup[]`    | Rows per phase; optional `title`                   |
-| `progress`         | `ProgressUpdate \| null`  | Latest event from the radio session                |
-| `startedAt`        | `number \| null`          | Run start (ms) for elapsed                         |
-| `estimateSeconds`  | `number \| null`          | Shown after 2 s while `running`                    |
-| `running`          | `boolean`                 | Ticks elapsed; drives estimates                  |
-| `lead`             | `ReactNode`               | Intro line above the bar                           |
-| `testId`           | `string`                  | Root `data-testid`; default `stage-progress`     |
+| Prop              | Type                     | Notes                                        |
+| ----------------- | ------------------------ | -------------------------------------------- |
+| `groups`          | `StageProgressGroup[]`   | Rows per phase; optional `title`             |
+| `progress`        | `ProgressUpdate \| null` | Latest event from the radio session          |
+| `startedAt`       | `number \| null`         | Run start (ms) for elapsed                   |
+| `estimateSeconds` | `number \| null`         | Shown after 2 s while `running`              |
+| `running`         | `boolean`                | Ticks elapsed; drives estimates              |
+| `lead`            | `ReactNode`              | Intro line above the bar                     |
+| `testId`          | `string`                 | Root `data-testid`; default `stage-progress` |
 
 ## Usage
 

@@ -11,11 +11,7 @@ import { Text } from '@mantine/core';
 import { EgressShell, ErrorPanel } from '../../egress/index.ts';
 import { Button } from '../../v2/index.ts';
 import classes from './RadioWriteStepper.module.css';
-import {
-  type WriteFlowActions,
-  type WriteFlowView,
-  type WriteStepperConfig,
-} from './types.ts';
+import { type WriteFlowActions, type WriteFlowView, type WriteStepperConfig } from './types.ts';
 import { writeSteps } from './writeSteps.ts';
 import { WhatToWriteBody, WhatToWriteFooter } from './steps/WhatToWriteStep.tsx';
 import { ConnectReadBody, ConnectReadFooter } from './steps/ConnectReadStep.tsx';
@@ -120,9 +116,7 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
     ) : null;
 
   const notice =
-    view.notice && view.step === 'whatToWrite' ? (
-      <Text size="sm">{view.notice}</Text>
-    ) : null;
+    view.notice && view.step === 'whatToWrite' ? <Text size="sm">{view.notice}</Text> : null;
 
   return (
     <EgressShell

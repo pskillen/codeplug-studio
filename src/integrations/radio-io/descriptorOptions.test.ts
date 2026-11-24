@@ -17,9 +17,10 @@ describe('RadioDescriptor Write shell options', () => {
     );
     for (const d of withRestart) {
       const seconds = d.restartAfterEnd!.seconds;
-      expect(seconds === AT_D890_RESTART_AFTER_END_SECONDS || seconds === OPENGD77_RESTART_AFTER_END_SECONDS).toBe(
-        true,
-      );
+      expect(
+        seconds === AT_D890_RESTART_AFTER_END_SECONDS ||
+          seconds === OPENGD77_RESTART_AFTER_END_SECONDS,
+      ).toBe(true);
     }
   });
 

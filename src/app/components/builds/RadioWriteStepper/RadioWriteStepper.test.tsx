@@ -3,12 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { DesignSystemV2Provider } from '../../v2/index.ts';
 import RadioWriteStepper from './RadioWriteStepper.tsx';
-import {
-  demoFlowView,
-  demoShellOptions,
-  demoStepperConfig,
-  noopActions,
-} from './stepperDemo.ts';
+import { demoFlowView, demoShellOptions, demoStepperConfig, noopActions } from './stepperDemo.ts';
 import type { WriteFlowView, WriteStepperConfig } from './types.ts';
 
 function renderStepper(
@@ -185,15 +180,37 @@ describe('RadioWriteStepper — steps 2 and 3', () => {
 
   it('Review Cancel says the radio restarts only when it restarts after END', () => {
     renderStepper(
-      { step: 'review', review: { channelCount: 0, contactsNote: null, kepsCount: null, estimateSeconds: null, identityOnly: false, sections: [] } },
+      {
+        step: 'review',
+        review: {
+          channelCount: 0,
+          contactsNote: null,
+          kepsCount: null,
+          estimateSeconds: null,
+          identityOnly: false,
+          sections: [],
+        },
+      },
       { options: demoShellOptions({ restartAfterEndSeconds: 20 }) },
     );
     expect(screen.getByText(/the radio restarts \(about 20 s\)/)).toBeInTheDocument();
     renderStepper(
-      { step: 'review', review: { channelCount: 0, contactsNote: null, kepsCount: null, estimateSeconds: null, identityOnly: false, sections: [] } },
+      {
+        step: 'review',
+        review: {
+          channelCount: 0,
+          contactsNote: null,
+          kepsCount: null,
+          estimateSeconds: null,
+          identityOnly: false,
+          sections: [],
+        },
+      },
       { options: demoShellOptions({ restartAfterEndSeconds: 0 }) },
     );
-    expect(screen.getByText('Nothing has been written yet. Cancel leaves the radio as it is.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Nothing has been written yet. Cancel leaves the radio as it is.'),
+    ).toBeInTheDocument();
   });
 
   it('step 3 Cancel is the secondary action and writes nothing', () => {

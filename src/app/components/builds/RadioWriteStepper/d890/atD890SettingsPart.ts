@@ -24,7 +24,10 @@ import {
   packAtD890BackupFromSession,
   downloadRadioBackupZip,
 } from '../../../../services/radioBackupRestore.ts';
-import { addBackupThisSession, findBackupForSerial } from '../../../../state/radioSessionBackups.ts';
+import {
+  addBackupThisSession,
+  findBackupForSerial,
+} from '../../../../state/radioSessionBackups.ts';
 import {
   clearOverride,
   defaultSettingsChoice,
@@ -190,7 +193,12 @@ export const atD890SettingsPart: RadioSettingsPart = {
   },
   createReviewController(txCtx, channels, deps) {
     if (!txCtx.atD890) return null;
-    return buildController(txCtx.atD890, channels as readonly RadioChannelDto[], deps.getParts(), deps);
+    return buildController(
+      txCtx.atD890,
+      channels as readonly RadioChannelDto[],
+      deps.getParts(),
+      deps,
+    );
   },
   reviewSectionBindings(controller) {
     return { atD890: controller as AtD890ReviewController };
@@ -212,6 +220,10 @@ export const atD890WriteExtras: RadioWriteExtras = {
     return getAtD890SessionSerial(session.pipe);
   },
   saveBackupFromSession(_session, txCtx, deps, controller) {
-    return saveD890Backup(txCtx as AtD890PreTransmitContext, deps, controller as () => AtD890ReviewController);
+    return saveD890Backup(
+      txCtx as AtD890PreTransmitContext,
+      deps,
+      controller as () => AtD890ReviewController,
+    );
   },
 };

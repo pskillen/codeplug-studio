@@ -235,8 +235,8 @@ export default function RadioIoProgressModal({
           : operation === 'keps-write'
             ? 'Writing keps to radio'
             : operation === 'restore'
-            ? 'Restoring backup to radio'
-            : 'Reading from radio';
+              ? 'Restoring backup to radio'
+              : 'Reading from radio';
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
   const complete = phase === 'done';
 
@@ -273,37 +273,37 @@ export default function RadioIoProgressModal({
   const alert =
     complete && (operation === 'read' || libraryRead)
       ? {
+          color: 'green',
+          title: 'Read finished',
+          body: libraryRead
+            ? 'Library and build changes are saved.'
+            : 'Clone image is saved on this build.',
+        }
+      : complete && operation === 'safety-read'
+        ? {
             color: 'green',
-            title: 'Read finished',
-            body: libraryRead
-              ? 'Library and build changes are saved.'
-              : 'Clone image is saved on this build.',
+            title: 'Safety backup read finished',
+            body: 'The file was downloaded. Confirm on the page that you saved it. Nothing was written to the radio.',
           }
-        : complete && operation === 'safety-read'
+        : complete && operation === 'vital-read'
           ? {
               color: 'green',
-              title: 'Safety backup read finished',
-              body: 'The file was downloaded. Confirm on the page that you saved it. Nothing was written to the radio.',
+              title: 'Vital data backup finished',
+              body: 'The file was downloaded. Nothing is saved on this build. The radio restarts when the session ends.',
             }
-          : complete && operation === 'vital-read'
+          : complete && operation === 'keps-write'
             ? {
                 color: 'green',
-                title: 'Vital data backup finished',
-                body: 'The file was downloaded. Nothing is saved on this build. The radio restarts when the session ends.',
+                title: 'Keps write finished',
+                body: 'Satellite records were sent to the radio.',
               }
-            : complete && operation === 'keps-write'
+            : complete && operation === 'restore'
               ? {
                   color: 'green',
-                  title: 'Keps write finished',
-                  body: 'Satellite records were sent to the radio.',
+                  title: 'Restore finished',
+                  body: 'Selected restorable regions were sent from the backup file.',
                 }
-              : complete && operation === 'restore'
-                ? {
-                    color: 'green',
-                    title: 'Restore finished',
-                    body: 'Selected restorable regions were sent from the backup file.',
-                  }
-                : null;
+              : null;
 
   const showSuccessNote = Boolean(successNote) && operation === 'restore' && phase === 'done';
 
@@ -325,26 +325,26 @@ export default function RadioIoProgressModal({
   );
 
   const runningNote = !complete ? (
-      <>
-        <Text size="sm">
-          {savingLibrary
-            ? 'Keep this tab open while library and build changes are saved.'
-            : 'Keep this tab open until the transfer finishes or you cancel.'}
+    <>
+      <Text size="sm">
+        {savingLibrary
+          ? 'Keep this tab open while library and build changes are saved.'
+          : 'Keep this tab open until the transfer finishes or you cancel.'}
+      </Text>
+      {!screenHeld ? (
+        <Text size="sm" mt="xs" data-testid="keep-screen-on-hint">
+          {KEEP_SCREEN_ON_HINT}
         </Text>
-        {!screenHeld ? (
-          <Text size="sm" mt="xs" data-testid="keep-screen-on-hint">
-            {KEEP_SCREEN_ON_HINT}
-          </Text>
-        ) : null}
-        {navigationBlocked ? (
-          <Alert color="red" title="Stay on this page" mt="sm">
-            {savingLibrary
-              ? 'Navigation is blocked until saving finishes.'
-              : 'Navigation is blocked until this transfer finishes or you cancel.'}
-          </Alert>
-        ) : null}
-      </>
-    ) : undefined;
+      ) : null}
+      {navigationBlocked ? (
+        <Alert color="red" title="Stay on this page" mt="sm">
+          {savingLibrary
+            ? 'Navigation is blocked until saving finishes.'
+            : 'Navigation is blocked until this transfer finishes or you cancel.'}
+        </Alert>
+      ) : null}
+    </>
+  ) : undefined;
 
   return (
     <ProgressModal

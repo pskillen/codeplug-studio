@@ -53,7 +53,10 @@ function buildController(
     initialChoice: defaultRt95SettingsChoice(store.read?.bandlimit, rtCtx.bandlimit),
     initialBackup: existing ? { status: 'saved', at: existing.at } : { status: 'none' },
     onReviewSettings: () => {
-      setRt95Read(deps.buildId, rt95SettingsReadFromSnapshot(rtCtx.snapshot, deps.egress, deps.now()));
+      setRt95Read(
+        deps.buildId,
+        rt95SettingsReadFromSnapshot(rtCtx.snapshot, deps.egress, deps.now()),
+      );
       deps.requestReviewSettings();
     },
   });
@@ -113,6 +116,7 @@ export const rt95SettingsPart: RadioSettingsPart = {
   settingsWillBeWritten,
   changedCount(controller, buildId) {
     const c = controller as Rt95ReviewController;
-    return rt95SettingChanges(c.init.snapshot, c.init.target, rt95OverridesForWrite(buildId)).length;
+    return rt95SettingChanges(c.init.snapshot, c.init.target, rt95OverridesForWrite(buildId))
+      .length;
   },
 };

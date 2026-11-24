@@ -39,7 +39,10 @@ export function RestartCheckBody({ config, view }: StepProps) {
     groups.push({
       id: 'check',
       title: 'Check write',
-      rows: view.writeRows.length > 0 ? view.writeRows : [{ id: 'check', label: 'Check write', status: 'active' }],
+      rows:
+        view.writeRows.length > 0
+          ? view.writeRows
+          : [{ id: 'check', label: 'Check write', status: 'active' }],
     });
   }
   if (view.kepsAfterRestart === 'running') {

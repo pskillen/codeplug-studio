@@ -190,13 +190,7 @@ function errorMessage(err: unknown): string {
 }
 
 export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
-  const {
-    build,
-    egress,
-    descriptor,
-    activeProjectId,
-    onOpenSettingsPage,
-  } = args;
+  const { build, egress, descriptor, activeProjectId, onOpenSettingsPage } = args;
   const settingsPart = radioSettingsPartFor(egress.profileId);
   const writeExtras = radioWriteExtrasFor(egress.profileId);
   const shellOptions = useMemo(
@@ -750,16 +744,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     return settingsPart.settingsWillBeWritten(c, build.id);
   }
 
-  function settingsPauseResult():
-    | AtD890PreTransmitResult
-    | Rt95PreTransmitResult {
+  function settingsPauseResult(): AtD890PreTransmitResult | Rt95PreTransmitResult {
     const c = settingsControllerRef.current;
     if (!c || !settingsPart) return 'keep';
-    return settingsPart.pauseResult(
-      c,
-      build.id,
-      settingsWillBeWritten(),
-    ) as AtD890PreTransmitResult | Rt95PreTransmitResult;
+    return settingsPart.pauseResult(c, build.id, settingsWillBeWritten()) as
+      AtD890PreTransmitResult | Rt95PreTransmitResult;
   }
 
   /** The ticked parts, minus settings when the pause would answer Keep (the button names what is sent). */

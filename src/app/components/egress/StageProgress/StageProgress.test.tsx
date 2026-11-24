@@ -54,7 +54,11 @@ describe('StageProgress', () => {
     renderProgress({
       groups: [
         { id: 'w', title: 'Write', rows: [{ id: 'a', label: 'Channels', status: 'pending' }] },
-        { id: 'r', title: 'Restart', rows: [{ id: 'b', label: 'Restart wait', status: 'pending' }] },
+        {
+          id: 'r',
+          title: 'Restart',
+          rows: [{ id: 'b', label: 'Restart wait', status: 'pending' }],
+        },
       ],
     });
     expect(screen.getByText('Write')).toBeInTheDocument();
@@ -63,7 +67,9 @@ describe('StageProgress', () => {
 
   it('does not show headings with one group', () => {
     renderProgress({
-      groups: [{ id: 'g', title: 'Write', rows: [{ id: 'a', label: 'Channels', status: 'pending' }] }],
+      groups: [
+        { id: 'g', title: 'Write', rows: [{ id: 'a', label: 'Channels', status: 'pending' }] },
+      ],
     });
     expect(screen.queryByText('Write')).toBeNull();
   });

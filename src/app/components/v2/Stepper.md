@@ -9,12 +9,12 @@ presentational: it renders an ordered list and has no navigation or state of its
 
 ## Props
 
-| Prop          | Type                                                                                   | Notes                         |
-| ------------- | -------------------------------------------------------------------------------------- | ----------------------------- |
+| Prop          | Type                                                                                                | Notes                         |
+| ------------- | --------------------------------------------------------------------------------------------------- | ----------------------------- |
 | `steps`       | `{ id: string; label: string; status: 'pending' \| 'current' \| 'done' \| 'error' \| 'skipped' }[]` | In display order              |
-| `orientation` | `'horizontal' \| 'vertical'`                                                           | Default `horizontal`          |
-| `ariaLabel`   | `string`                                                                               | Nav label; default `Progress` |
-| `className`   | `string`                                                                               | Extra class on the list       |
+| `orientation` | `'horizontal' \| 'vertical'`                                                                        | Default `horizontal`          |
+| `ariaLabel`   | `string`                                                                                            | Nav label; default `Progress` |
+| `className`   | `string`                                                                                            | Extra class on the list       |
 
 ## Usage
 

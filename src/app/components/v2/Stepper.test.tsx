@@ -4,7 +4,11 @@ import { DesignSystemV2Provider } from './index.ts';
 import Stepper from './Stepper.tsx';
 
 function renderStepper(
-  steps: { id: string; label: string; status: 'pending' | 'current' | 'done' | 'error' | 'skipped' }[],
+  steps: {
+    id: string;
+    label: string;
+    status: 'pending' | 'current' | 'done' | 'error' | 'skipped';
+  }[],
 ) {
   render(
     <DesignSystemV2Provider>

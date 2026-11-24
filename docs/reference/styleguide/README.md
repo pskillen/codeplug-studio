@@ -21,10 +21,10 @@ This is **not** user-facing help copy. For wording aimed at operators, use [help
 
 Use `ErrorPanel` for failures in the Write stepper and later export flows: it shows what reached the radio, the message, a retry button only when the classified outcome allows it, **Debug details** on every error (with copy), and a dimmed line that the same text was logged to the console as `[radio-write]`. See `src/app/components/egress/ErrorPanel/ErrorPanel.md`.
 
-| Doc                                                                               | Contents                                        |
-| --------------------------------------------------------------------------------- | ----------------------------------------------- |
-| [ErrorPanel sidecar](../../../src/app/components/egress/ErrorPanel/ErrorPanel.md) | Props, usage, behaviour for write/export errors |
-| [EgressShell sidecar](../../../src/app/components/egress/EgressShell/EgressShell.md) | Export and write dialogs: one frame (`ModalShell` + step bar) |
+| Doc                                                                                        | Contents                                                                 |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| [ErrorPanel sidecar](../../../src/app/components/egress/ErrorPanel/ErrorPanel.md)          | Props, usage, behaviour for write/export errors                          |
+| [EgressShell sidecar](../../../src/app/components/egress/EgressShell/EgressShell.md)       | Export and write dialogs: one frame (`ModalShell` + step bar)            |
 | [StageProgress sidecar](../../../src/app/components/egress/StageProgress/StageProgress.md) | Every radio read, write, restart wait and check shows progress with this |
 
 ## Doc map

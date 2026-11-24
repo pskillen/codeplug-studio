@@ -12,10 +12,7 @@ import {
 import type { WritePartSupport } from '../../components/builds/RadioWriteStepper/writeParts.ts';
 
 export type ContactStoreKind =
-  | 'shared-contact-bank'
-  | 'shared-address-book'
-  | 'separate-lookup-database'
-  | 'generic';
+  'shared-contact-bank' | 'shared-address-book' | 'separate-lookup-database' | 'generic';
 
 export interface WriteShellOptions {
   radioLabel: string;
@@ -25,7 +22,10 @@ export interface WriteShellOptions {
   programHoldSafeMs: number;
   /** 0 = the radio does not restart after END. */
   restartAfterEndSeconds: number;
-  check: { available: boolean; reportLabels?: { keptSectionTitle: string; keptSummaryLabel: string } };
+  check: {
+    available: boolean;
+    reportLabels?: { keptSectionTitle: string; keptSummaryLabel: string };
+  };
   keps?: { writeFn: SatelliteKepsWriteFn; session: 'same' | 'after-restart' };
   successNote?: string;
 }

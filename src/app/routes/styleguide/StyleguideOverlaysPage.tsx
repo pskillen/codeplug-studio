@@ -334,9 +334,7 @@ export default function StyleguideOverlaysPage() {
               {
                 id: 'write',
                 title: 'Write',
-                rows: [
-                  { id: 'w', label: 'Upload', status: 'success', weight: 40_000 },
-                ],
+                rows: [{ id: 'w', label: 'Upload', status: 'success', weight: 40_000 }],
               },
               {
                 id: 'restart',

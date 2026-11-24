@@ -306,13 +306,11 @@ describe('useRadioWriteFlow build checks', () => {
     render(
       <MantineProvider>
         <DoneBody
-          config={
-            demoStepperConfig({
-              radioLabel: 'OpenGD77',
-              buildId: 'b1',
-              options: demoShellOptions({ radioLabel: 'OpenGD77', restartAfterEndSeconds: 0 }),
-            })
-          }
+          config={demoStepperConfig({
+            radioLabel: 'OpenGD77',
+            buildId: 'b1',
+            options: demoShellOptions({ radioLabel: 'OpenGD77', restartAfterEndSeconds: 0 }),
+          })}
           view={result.current.view}
           actions={noopActions}
         />

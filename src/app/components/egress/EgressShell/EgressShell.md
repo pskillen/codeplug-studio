@@ -9,18 +9,18 @@ notice, the keep-screen-on hint while a transfer runs, and the step body in the 
 
 ## Props
 
-| Prop           | Type              | Notes                                                |
-| -------------- | ----------------- | ---------------------------------------------------- |
-| `open`         | `boolean`         | Modal visibility                                     |
-| `title`        | `string`          | Header title                                         |
-| `onClose`      | `() => void`      | Dismiss handler                                      |
-| `dismissible`  | `boolean`         | Overlay/Escape/close while false during transfer   |
-| `steps`        | `EgressStep[]`    | Step bar; skipped steps are not counted in the header |
-| `busy`         | `boolean`         | Transfer in flight (wake lock + hint)                |
-| `error`        | `ReactNode`       | Usually `ErrorPanel`                                 |
-| `notice`       | `ReactNode`       | Quiet return line above the body                     |
-| `footer`       | `ReactNode`       | Step actions                                         |
-| `children`     | `ReactNode`       | Step body                                            |
+| Prop          | Type           | Notes                                                 |
+| ------------- | -------------- | ----------------------------------------------------- |
+| `open`        | `boolean`      | Modal visibility                                      |
+| `title`       | `string`       | Header title                                          |
+| `onClose`     | `() => void`   | Dismiss handler                                       |
+| `dismissible` | `boolean`      | Overlay/Escape/close while false during transfer      |
+| `steps`       | `EgressStep[]` | Step bar; skipped steps are not counted in the header |
+| `busy`        | `boolean`      | Transfer in flight (wake lock + hint)                 |
+| `error`       | `ReactNode`    | Usually `ErrorPanel`                                  |
+| `notice`      | `ReactNode`    | Quiet return line above the body                      |
+| `footer`      | `ReactNode`    | Step actions                                          |
+| `children`    | `ReactNode`    | Step body                                             |
 
 ## Usage
 

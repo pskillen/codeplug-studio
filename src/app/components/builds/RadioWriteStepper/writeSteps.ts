@@ -1,11 +1,6 @@
 import type { EgressStep, EgressStepStatus } from '../../egress/EgressShell/EgressShell.tsx';
 import type { WriteShellOptions } from '../../../services/egress/writeShellOptions.ts';
-import {
-  WRITE_STEPS,
-  WRITE_STEP_LABEL,
-  type WriteFlowView,
-  type WriteStep,
-} from './types.ts';
+import { WRITE_STEPS, WRITE_STEP_LABEL, type WriteFlowView, type WriteStep } from './types.ts';
 
 function stepIndex(step: WriteStep): number {
   return WRITE_STEPS.indexOf(step);
