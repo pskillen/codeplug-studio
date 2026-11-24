@@ -26,6 +26,7 @@ Use `ErrorPanel` for failures in the Write stepper and later export flows: it sh
 | [ErrorPanel sidecar](../../../src/app/components/egress/ErrorPanel/ErrorPanel.md)          | Props, usage, behaviour for write/export errors                          |
 | [EgressShell sidecar](../../../src/app/components/egress/EgressShell/EgressShell.md)       | Export and write dialogs: one frame (`ModalShell` + step bar)            |
 | [StageProgress sidecar](../../../src/app/components/egress/StageProgress/StageProgress.md) | Every radio read, write, restart wait and check shows progress with this |
+| [PreflightCard sidecar](../../../src/app/components/egress/PreflightCard/PreflightCard.md) | Write **Connect** step: radio identity rows and pre-flight status        |
 
 ## Doc map
 
