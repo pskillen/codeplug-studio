@@ -11,7 +11,11 @@
 
 import { Fragment, type ReactNode } from 'react';
 import { Text } from '@mantine/core';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
+import { hasProblemWarnings } from '@core/import-export/exportWarning.ts';
+import { programHoldSafeMs } from '@integrations/radio-io/programHold.ts';
 import type { RadioDescriptor } from '@integrations/radio-io/types.ts';
+import { WarningsList } from '../../egress/index.ts';
 import { IdentitySection, Section, TimeSection } from './reviewSectionParts.tsx';
 import type { AtD890ReviewController } from './d890/atD890ReviewController.ts';
 import type { Rt95ReviewController } from './rt95/rt95ReviewController.ts';
@@ -36,6 +40,9 @@ export interface ReviewContext {
     settings?: Rt95ReviewController;
     modData?: { zones: number; descriptions: number; zoneKey?: { group: number; key: number } };
   };
+  buildWarnings?: readonly ExportWarning[];
+  radioWarnings?: readonly ExportWarning[];
+  channelLabel?: (entityId: string) => string | undefined;
 }
 
 export interface ReviewSectionProvider {
@@ -78,8 +85,18 @@ export type ReviewPauseReason =
   | 'advanced-settings-no-backup'
   /** RT95 MM9PDY: zones are written but no key opens the zone selector. */
   | 'zone-key-nudge'
+  /** The build has a problem warning: something built won't arrive as built. */
+  | 'build-problems'
+  /** The radio reported a problem at the pause. */
+  | 'radio-findings'
   /** A provider with no `pauseReasons` rendered sections: shown rather than skipped unseen. */
   | 'unclassified-sections';
+
+function formatProgramHoldSeconds(ms: number): string {
+  const seconds = ms / 1000;
+  if (seconds < 10) return `${seconds.toFixed(1)} s`;
+  return `${Math.round(seconds)} s`;
+}
 
 const providers: ReviewSectionProvider[] = [];
 
@@ -99,10 +116,27 @@ export function genericReviewSections(
     identityRows?: [string, string][];
     channelNotes?: ReactNode[];
   } = {},
+  descriptor?: RadioDescriptor,
 ): ReactNode[] {
+  const buildWarnings = ctx.buildWarnings ?? [];
+  const radioWarnings = ctx.radioWarnings ?? [];
   const out: ReactNode[] = [
     <IdentitySection key="identity" identity={ctx.identity} extraRows={hooks.identityRows} />,
   ];
+  if (hasProblemWarnings(buildWarnings)) {
+    out.push(
+      <Section key="build-problems" title="Build problems">
+        <WarningsList warnings={buildWarnings} mode="problems" channelLabel={ctx.channelLabel} />
+      </Section>,
+    );
+  }
+  if (radioWarnings.length > 0) {
+    out.push(
+      <Section key="from-radio" title="From the radio">
+        <WarningsList warnings={radioWarnings} mode="full" channelLabel={ctx.channelLabel} />
+      </Section>,
+    );
+  }
   if (ctx.parts.codeplug) {
     out.push(
       <Section key="channels" title="Channels">
@@ -135,6 +169,22 @@ export function genericReviewSections(
       </Section>,
     );
   }
+  out.push(
+    <Text key="nothing-written" size="sm" c="dimmed">
+      Nothing has been written yet.
+    </Text>,
+  );
+  if (descriptor) {
+    const holdMs = programHoldSafeMs(descriptor);
+    if (Number.isFinite(holdMs)) {
+      out.push(
+        <Text key="program-hold" size="sm" c="dimmed">
+          Studio reads the radio again before writing if this screen stays open longer than{' '}
+          {formatProgramHoldSeconds(holdMs)}.
+        </Text>,
+      );
+    }
+  }
   return out;
 }
 
@@ -146,6 +196,9 @@ export function reviewPauseReasons(
   descriptor: RadioDescriptor,
   ctx: ReviewContext,
 ): ReviewPauseReason[] {
+  const lead: ReviewPauseReason[] = [];
+  if (hasProblemWarnings(ctx.buildWarnings ?? [])) lead.push('build-problems');
+  if (hasProblemWarnings(ctx.radioWarnings ?? [])) lead.push('radio-findings');
   const reasons = providers
     .filter((p) => p.matches(descriptor))
     .flatMap((p) => {
@@ -154,7 +207,7 @@ export function reviewPauseReasons(
       const shows = p.sections(ctx, descriptor).some((n) => n != null && n !== false);
       return shows ? (['unclassified-sections'] as ReviewPauseReason[]) : [];
     });
-  return [...new Set(reasons)];
+  return [...new Set([...lead, ...reasons])];
 }
 
 /** Generic sections, then registered per-radio sections, then time. */
@@ -162,10 +215,14 @@ export function reviewSectionsFor(descriptor: RadioDescriptor, ctx: ReviewContex
   const active = providers.filter((p) => p.matches(descriptor));
   const extra = active.flatMap((p) => p.sections(ctx, descriptor));
   return [
-    ...genericReviewSections(ctx, {
-      identityRows: active.flatMap((p) => p.identityRows?.(ctx) ?? []),
-      channelNotes: active.flatMap((p) => p.channelNotes?.(ctx) ?? []),
-    }),
+    ...genericReviewSections(
+      ctx,
+      {
+        identityRows: active.flatMap((p) => p.identityRows?.(ctx) ?? []),
+        channelNotes: active.flatMap((p) => p.channelNotes?.(ctx) ?? []),
+      },
+      descriptor,
+    ),
     ...extra.map((node, i) => <div key={`extra-${i}`}>{node}</div>),
     <TimeSection key="time" ctx={ctx} />,
   ];

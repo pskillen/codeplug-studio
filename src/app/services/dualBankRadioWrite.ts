@@ -53,6 +53,8 @@ export interface CollectDualBankDirectorySliceArgs {
   libraryDigitalIds?: ReadonlySet<number>;
   warnings: ExportWarning[];
   onProgress?: ProgressFn;
+  signal?: AbortSignal;
+  onBufferLength?: (length: number) => void;
 }
 
 function dualBankDirectoryTargets(
@@ -110,6 +112,8 @@ export async function collectDualBankDirectorySlice(
     projectId: args.projectId,
     cap,
     onProgress: args.onProgress,
+    signal: args.signal,
+    onBufferLength: args.onBufferLength,
     progressMsg: 'Loading directory contacts',
     acceptRow,
     onAcceptedRow: (row) => {

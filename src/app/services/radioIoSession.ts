@@ -501,6 +501,7 @@ export async function prepareRadioWriteImage(
     persistence?: ProjectPersistence;
     projectId?: string;
     onProgress?: ProgressFn;
+    signal?: AbortSignal;
   },
 ): Promise<{
   image?: MemoryMap;
@@ -523,6 +524,8 @@ export async function prepareRadioWriteImage(
       },
     );
   }
+
+  opts?.signal?.throwIfAborted();
 
   const assembled = assemble(build, library, {
     formatId: egress.formatId,
@@ -554,6 +557,7 @@ export async function prepareRadioWriteImage(
               : {}),
             warnings: projectionWarnings,
             onProgress: opts.onProgress,
+            signal: opts.signal,
           })
         : { radioIds: [], digitalContacts: [] };
     projectionContext = {
@@ -581,6 +585,8 @@ export async function prepareRadioWriteImage(
         ),
       })
     : undefined;
+
+  opts?.signal?.throwIfAborted();
 
   const projection = buildRadioWriteProjection(
     assembled,
@@ -879,6 +885,8 @@ export interface BeforeTransmitContext {
   rt95?: { chipGuard: Rt95ChipGuardResult };
   /** RT95: settings snapshot and overrides for Review and the fleet choice. */
   rt95Settings?: Rt95PreTransmitContext;
+  /** Radio-derived warnings known at the pause (NXDN gate, reset protocol, …). */
+  radioWarnings?: ExportWarning[];
 }
 
 /** Whether `resolveRadioWriteImageForUpload` reads the radio itself (every protocol but the generic path). */
@@ -1110,6 +1118,17 @@ export async function uploadPreparedRadioWrite(
           opts?.organisation?.idDatabaseFields,
         )
       : undefined;
+    const radioWarnings: ExportWarning[] = [];
+    if (nxdnOutcome) {
+      for (const w of nxdnOutcome.warnings) {
+        if (w.kind === 'general' && w.message === ATD890_NXDN_NOT_WRITTEN_NOTICE) {
+          radioWarnings.push(w);
+        }
+      }
+    }
+    if (resetProtocolReplaced) {
+      pushGeneralInfoWarning(radioWarnings, ATD890_RESET_PROTOCOL_OFF_NOTICE);
+    }
     if (opts?.beforeTransmit) {
       timing?.timeline.markPauseStart();
       const result = await opts.beforeTransmit({
@@ -1139,6 +1158,7 @@ export async function uploadPreparedRadioWrite(
               rt95Settings: buildRt95PreTransmitContext(resolved, rt95Overrides, egress.profileId),
             }
           : {}),
+        ...(radioWarnings.length > 0 ? { radioWarnings } : {}),
       });
       timing?.timeline.markPauseEnd();
       const outcome = atD890PauseOutcome(result as AtD890PreTransmitResult | void, overrides);

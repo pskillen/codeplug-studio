@@ -71,4 +71,19 @@ describe('uploadPreparedRadioWrite beforeTransmit, DM-32UV frames', () => {
     expect(hooked.frames.slice(0, hooked.framesAtHook).some(isBlockWrite)).toBe(false);
     expect(hooked.frames.slice(hooked.framesAtHook).some(isBlockWrite)).toBe(true);
   }, 20_000);
+
+  it('DM-32UV sends no write frame when the pause rejects', async () => {
+    const { session, pipe } = await dm32Session();
+    const before = pipe.writes.length;
+    await expect(
+      uploadPreparedRadioWrite(session, egress, undefined, {
+        channels: [],
+        organisation: {},
+        beforeTransmit: async () => {
+          throw new Error('cancelled');
+        },
+      }),
+    ).rejects.toThrow('cancelled');
+    expect(pipe.writes.slice(before).some(isBlockWrite)).toBe(false);
+  }, 20_000);
 });

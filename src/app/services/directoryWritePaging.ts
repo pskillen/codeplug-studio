@@ -35,6 +35,7 @@ export interface PageDigitalIdDirectoryForWriteArgs {
   batchSize?: number;
   /** Test hook: called with the buffer length after each batch is added, before it is cut. */
   onBufferLength?: (length: number) => void;
+  signal?: AbortSignal;
 }
 
 export interface PageDigitalIdDirectoryForWriteResult {
@@ -106,6 +107,7 @@ export async function pageDigitalIdDirectoryForWrite(
   reportProgress(true);
   let afterDigitalId: number | undefined;
   while (true) {
+    args.signal?.throwIfAborted();
     const rows = await args.store.readDigitalIdDirectoryBatch(args.projectId, {
       afterDigitalId,
       limit: batchSize,

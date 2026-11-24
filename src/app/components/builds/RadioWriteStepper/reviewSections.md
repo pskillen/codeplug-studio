@@ -6,7 +6,7 @@ What the Write stepper's Review step shows (#1393). `reviewSectionsFor(descripto
 
 ## Props
 
-`reviewSectionsFor(descriptor, ctx: ReviewContext)`; `ReviewContext` is `{ identity, parts, channelCount, contactsNote, kepsCount, estimateSeconds, identityOnly, restartsAfterWrite, atD890?, rt95? }`. A provider can also add rows to the identity block (`identityRows`) and content under the Channels line (`channelNotes`).
+`reviewSectionsFor(descriptor, ctx: ReviewContext)`; `ReviewContext` is `{ identity, parts, channelCount, contactsNote, kepsCount, estimateSeconds, identityOnly, restartsAfterWrite, buildWarnings?, radioWarnings?, channelLabel?, atD890?, rt95? }`. A provider can also add rows to the identity block (`identityRows`) and content under the Channels line (`channelNotes`).
 
 ## Usage
 
@@ -36,7 +36,10 @@ registerReviewSectionProvider({
   | `settings-choice`             | AT-D890UV, RT95  | Settings ticked, another radio (or nothing read), and on the D890 **Don't ask again** off  |
   | `advanced-settings-no-backup` | RT95             | Apply changes an advanced field (power-on password, remote stun/kill) and no backup exists |
   | `zone-key-nudge`              | RT95 MM9PDY      | Zones are written and no key opens the zone selector                                       |
+  | `build-problems`              | All              | The prepared build has a problem warning (something built won't arrive as built)           |
+  | `radio-findings`              | All              | The radio reported a problem at the pause (e.g. NXDN not written)                          |
 
+- After identity, Review may show **Build problems** (`WarningsList` problems mode) and **From the radio** (full mode for radio-derived warnings), then **Nothing has been written yet.** Radios with a finite `programHoldSafeMs` show when Studio re-reads before writing.
 - `rt95` is `{ settings?, modData? }`. `settings` (both RT95 targets, when radio settings overrides exist) drives the "Radio settings" section. `modData` (RT95 MM9PDY only) carries the zone and description counts once the chip-size check passed; `rt95/registerRt95Review.tsx` shows "Radio memory: 32 KiB, zones and descriptions can be written." and the counts. A failed check never reaches Review.
 
 ## Related
