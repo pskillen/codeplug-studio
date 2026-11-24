@@ -1,9 +1,21 @@
 import type { ContactStoreKind } from '../../../services/egress/writeShellOptions.ts';
 
-export function contactSourceHint(store: ContactStoreKind, radioLabel: string): string {
+function sharedContactBankPhrase(contactBankSlots?: number): string {
+  if (contactBankSlots != null) {
+    return `the ${contactBankSlots}-slot DMR contact bank`;
+  }
+  return "the radio's DMR contact bank";
+}
+
+export function contactSourceHint(
+  store: ContactStoreKind,
+  radioLabel: string,
+  contactBankSlots?: number,
+): string {
+  const bank = sharedContactBankPhrase(contactBankSlots);
   switch (store) {
     case 'shared-contact-bank':
-      return 'Talk groups and contacts use the 1024-slot DMR contact bank. ID directory writes the firmware User Database for incoming-call lookup. ID directory does not fill the 1024 contact bank; ID directory alone leaves prior FLASH contacts. Contacts or Both replaces talk groups and contacts in that bank.';
+      return `Talk groups and contacts use ${bank}. ID directory writes the firmware User Database for incoming-call lookup. ID directory does not fill ${bank}; ID directory alone leaves prior FLASH contacts. Contacts or Both replaces talk groups and contacts in that bank.`;
     case 'shared-address-book':
       return 'Contacts and the ID directory share one address book. ID directory or Both replaces that book. Duplicate DMR IDs: contacts win. Operator radio IDs come from your Digital IDs when the codeplug is written; contacts alone do not rewrite them.';
     case 'separate-lookup-database':

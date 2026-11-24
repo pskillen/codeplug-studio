@@ -112,7 +112,11 @@ export function WhatToWriteBody({ config, view, actions }: StepProps) {
             ) : null}
             <FormField
               label="Contact source"
-              hint={contactSourceHint(config.options.contactStore, config.options.radioLabel)}
+              hint={contactSourceHint(
+                config.options.contactStore,
+                config.options.radioLabel,
+                config.options.contactBankSlots,
+              )}
             >
               <SegmentedControl
                 size="sm"

@@ -2,6 +2,7 @@
  * Baofeng DM-1701 / RT-84 OpenGD77 radio descriptor.
  */
 
+import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import type { RadioDescriptor, RadioHydrationHooks } from '../../../types.ts';
 import {
   OPENGD77_BAUD_RATE,
@@ -16,6 +17,7 @@ import {
 import { createOpenGd77Dm1701Protocol, OpenGd77Protocol } from '../protocol.ts';
 import { createOpenGd77WriteVerifyHooks } from '../writeVerifyHooks.ts';
 import { planOpenGd77Stages } from '../plannedStages.ts';
+import { OPENGD77_SATELLITE_KEPS_CAPABILITY } from '../satelliteKepsDescriptor.ts';
 
 export { OPENGD77_DM1701_MODEL_ID };
 
@@ -56,6 +58,8 @@ export const OPENGD77_DM1701_DESCRIPTOR: RadioDescriptor = {
   hydration,
   restartAfterEnd: { seconds: OPENGD77_RESTART_AFTER_END_SECONDS },
   contactStore: 'shared-contact-bank',
+  contactBankSlots: OPENGD77_FAMILY_LIMITS.CONTACTS_MAX,
   writeVerify: createOpenGd77WriteVerifyHooks(OPENGD77_DM1701_MODEL_ID),
   planStages: planOpenGd77Stages,
+  satelliteKeps: OPENGD77_SATELLITE_KEPS_CAPABILITY,
 };
