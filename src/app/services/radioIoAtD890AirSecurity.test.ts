@@ -7,6 +7,8 @@ import {
   encodeAirSecuritySeedRecord,
 } from '@integrations/radio-io/radios/at-d890uv/airSecuritySeed.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { AT_D890_WRITE_VERIFY_HOOKS } from '@integrations/radio-io/radios/at-d890uv/writeVerifyHooks.ts';
+import { resolveAtD890SettingsPatches } from '@integrations/radio-io/radios/at-d890uv/settingsFields.ts';
 import {
   AtD890ScriptedPipe,
   collectAtD890WriteDataAddresses,
@@ -23,6 +25,7 @@ import {
   writeAtD890AirSecuritySeed,
 } from './radioIoAtD890AirSecurity.ts';
 import { RadioWriteBlockedError } from './radioIoSession.ts';
+import { serializeWriteVerifyPending } from './writeVerifyStorage.ts';
 import { allowLeakedD890MarkersInThisFile } from '../../test/leakedD890Marker.ts';
 
 allowLeakedD890MarkersInThisFile();
@@ -119,5 +122,23 @@ describe('AT-D890UV AirSecurity seed service', () => {
     );
     expect(pipe.writes.length).toBe(before);
     expect(collectAtD890WriteDataAddresses(pipe)).toEqual([]);
+  });
+
+  it('keeps an ordinary upload capture free of an 8-byte run of a set seed', async () => {
+    const record = encodeAirSecuritySeedRecord(SECRET);
+    const { pipe, radio, session } = await connectedSession('radio-io-at-d890uv-mm9pdy', record);
+
+    await radio.uploadSettingsPatches(
+      resolveAtD890SettingsPatches([{ fieldId: 'keyShortP1', value: 9 }], 'mm9pdy'),
+      {},
+    );
+
+    expect(writePayloadAt(pipe, AIRSECURITY_SEED_ADDRESS)).toEqual(record.subarray(0, 16));
+    const captured = AT_D890_WRITE_VERIFY_HOOKS.captureAfterUpload(session);
+    expect(captured).toBeDefined();
+    const json = JSON.stringify(
+      serializeWriteVerifyPending('build-1', 'egress-1', 'radio-io-at-d890uv-mm9pdy', captured!),
+    );
+    expect(json).not.toContain([...record.subarray(4, 12)].join(','));
   });
 });

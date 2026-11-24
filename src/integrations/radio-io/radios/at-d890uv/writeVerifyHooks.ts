@@ -17,6 +17,11 @@ import {
 } from './memoryRegionExport.ts';
 import { AtD890uvProtocol } from './protocol.ts';
 import type { AtD890SentinelSnapshot } from './sentinelVerify.ts';
+import {
+  AIRSECURITY_SEED_ADDRESS,
+  AIRSECURITY_SEED_FIELD_ID,
+  AIRSECURITY_SEED_RECORD_LENGTH,
+} from './airSecuritySeed.ts';
 import type { AtD890SettingsPatch } from './settingsFields.ts';
 import {
   AT_D890_RMW_SPILL_GROUP,
@@ -30,6 +35,43 @@ import {
 const AT_D890_VERIFY_ONLY_REGION_GROUPS = [
   { id: AT_D890_RMW_SPILL_GROUP, label: 'RMW-preserved spill' },
 ];
+
+const AIRSECURITY_SEED_END = AIRSECURITY_SEED_ADDRESS + AIRSECURITY_SEED_RECORD_LENGTH;
+
+/** A staged block overlaps the seed record. Check write must not store or compare those bytes. */
+function chunkOverlapsAirSecuritySeed(address: number, length: number): boolean {
+  return address < AIRSECURITY_SEED_END && address + length > AIRSECURITY_SEED_ADDRESS;
+}
+
+function omitAirSecuritySeedChunks<T extends { address: number; data: ArrayLike<number> }>(
+  chunks: readonly T[],
+): T[] {
+  return chunks.filter((c) => !chunkOverlapsAirSecuritySeed(c.address, c.data.length));
+}
+
+/**
+ * Drop a seed-field patch, and zero any other patch byte that falls in the seed span, so the
+ * kept snapshot neither stores nor compares the record.
+ */
+function keptPatchesWithoutAirSecuritySeed(
+  patches: readonly AtD890SettingsPatch[],
+): AtD890KeptPatchJson[] {
+  const out: AtD890KeptPatchJson[] = [];
+  for (const patch of patches) {
+    if (patch.fieldId === AIRSECURITY_SEED_FIELD_ID) continue;
+    const bytes = [...patch.bytes];
+    const mask = [...patch.mask];
+    for (let i = 0; i < bytes.length; i++) {
+      const at = patch.address + i;
+      if (at >= AIRSECURITY_SEED_ADDRESS && at < AIRSECURITY_SEED_END) {
+        bytes[i] = 0;
+        mask[i] = 0;
+      }
+    }
+    out.push({ fieldId: patch.fieldId, address: patch.address, bytes, mask });
+  }
+  return out;
+}
 
 export interface AtD890KeptPatchJson {
   readonly fieldId: string;
@@ -48,18 +90,10 @@ export function serializeAtD890KeptSnapshot(
   snapshot: AtD890SentinelSnapshot,
   patches: readonly AtD890SettingsPatch[] = [],
 ): AtD890KeptSnapshotJson {
+  const keptPatches = keptPatchesWithoutAirSecuritySeed(patches);
   return {
     entries: [...snapshot.entries()].map(([id, data]) => ({ id, data: [...data] })),
-    ...(patches.length > 0
-      ? {
-          patches: patches.map((p) => ({
-            fieldId: p.fieldId,
-            address: p.address,
-            bytes: [...p.bytes],
-            mask: [...p.mask],
-          })),
-        }
-      : {}),
+    ...(keptPatches.length > 0 ? { patches: keptPatches } : {}),
   };
 }
 
@@ -178,18 +212,20 @@ export const AT_D890_WRITE_VERIFY_HOOKS: WriteVerifyHooks = {
     return {
       staging: {
         capturedAt: stagingSnapshot.capturedAt,
-        chunks: stagingSnapshot.chunks.map((c) => ({
+        chunks: omitAirSecuritySeedChunks(stagingSnapshot.chunks).map((c) => ({
           address: c.address,
           data: c.data,
         })),
-        preWriteChunks: stagingSnapshot.preWriteChunks.map((c) => ({
+        preWriteChunks: omitAirSecuritySeedChunks(stagingSnapshot.preWriteChunks).map((c) => ({
           address: c.address,
           data: c.data,
         })),
-        downloadCacheChunks: stagingSnapshot.downloadCacheChunks?.map((c) => ({
-          address: c.address,
-          data: c.data,
-        })),
+        downloadCacheChunks: stagingSnapshot.downloadCacheChunks
+          ? omitAirSecuritySeedChunks(stagingSnapshot.downloadCacheChunks).map((c) => ({
+              address: c.address,
+              data: c.data,
+            }))
+          : undefined,
       },
       kept: sentinelBefore
         ? serializeAtD890KeptSnapshot(sentinelBefore, settingsPatches)
