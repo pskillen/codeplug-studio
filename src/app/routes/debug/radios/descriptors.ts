@@ -261,6 +261,7 @@ const radioFoundry = (
   calibrationNote: RADIOFOUNDRY_CALIBRATION_NOTE,
   readHistory: true,
   coverage: radioFoundryCoverage,
+  settings: radioFoundrySettingsView,
   compare: radioFoundryCompareAdapter,
   capabilities: capabilities('Available', 'Not yet available', 'Not yet available'),
 });
@@ -358,10 +359,7 @@ export const radioDebugDescriptors: readonly RadioDebugDescriptor[] = [
     identityNote: OPENGD77_IDENTITY_NOTE,
     readNotice: OPENGD77_READ_NOTICE,
   },
-  {
-    ...radioFoundry('md-9600', 'MD-9600', 'MD-9600-RadioFoundry'),
-    settings: radioFoundrySettingsView,
-  },
+  radioFoundry('md-9600', 'MD-9600', 'MD-9600-RadioFoundry'),
   radioFoundry('rt84', 'RT84', 'RT84-RadioFoundry'),
   radioFoundry('rt90', 'RT90', 'RT90-RadioFoundry'),
   {

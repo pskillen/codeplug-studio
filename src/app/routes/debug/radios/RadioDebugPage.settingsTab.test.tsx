@@ -25,15 +25,15 @@ const WITH_SETTINGS = [
   'dm-1701-opengd77',
   'md-9600-opengd77',
   'md-9600-radiofoundry',
+  'dm-32uv-radiofoundry',
+  'dm-1701-radiofoundry',
+  'rt84-radiofoundry',
+  'rt90-radiofoundry',
   'rt95',
   'uv-5r-mini',
 ];
 const WITHOUT_SETTINGS = [
   'uv-21-pro-v2',
-  'dm-32uv-radiofoundry',
-  'dm-1701-radiofoundry',
-  'rt84-radiofoundry',
-  'rt90-radiofoundry',
 ];
 
 afterEach(cleanup);
