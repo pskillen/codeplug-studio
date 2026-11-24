@@ -6,7 +6,11 @@ import {
 } from '@core/domain/factories.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
-import { DMR_ID_DATABASE_ADDRESS } from '@integrations/radio-io/radios/radiofoundry/idDatabase.ts';
+import {
+  DMR_ID_DATABASE_ADDRESS,
+  DMR_ID_DATABASE_AREA1_RECORDS,
+  DMR_ID_DATABASE_RECORD_BYTES,
+} from '@integrations/radio-io/radios/radiofoundry/idDatabase.ts';
 import { prepareRadioWriteImage } from './radioIoSession.ts';
 
 const FALLBACK = 'Digital contacts will be written from the chosen source.';
@@ -109,5 +113,41 @@ describe('prepareRadioWriteImage RadioFoundry contacts (#1495)', () => {
     expect(reviewNote(prepared.organisation.digitalContacts, true)).toBe(
       '1 digital contacts will be written.',
     );
+  });
+
+  it('carries area 2 when the directory exceeds area 1 (#G34)', async () => {
+    const rowCount = 10_000;
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv-radiofoundry');
+    const store = new InMemoryProjectPersistence();
+    await store.putDigitalIdDirectoryEntriesBatch(
+      Array.from({ length: rowCount }, (_, i) => ({
+        projectId: 'p1',
+        digitalId: 2_000_000 + i,
+        mode: 'dmr' as const,
+        name: `N${i}`,
+        callsign: '',
+        city: '',
+        state: '',
+        country: '',
+      })),
+    );
+    const prepared = await prepareRadioWriteImage(build, egress, library(), {
+      dualBank: {
+        mode: 'codeplug',
+        options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
+      },
+      persistence: store,
+      projectId: 'p1',
+    });
+    const overflow = rowCount - DMR_ID_DATABASE_AREA1_RECORDS;
+    expect(prepared.radioFoundryWrite?.area2?.length).toBe(overflow * DMR_ID_DATABASE_RECORD_BYTES);
+    expect(prepared.radioFoundryWrite?.area2Owned?.every((b) => b === 1)).toBe(true);
+    const b = prepared.radioFoundryWrite!.bytes;
+    const count =
+      b[DMR_ID_DATABASE_ADDRESS + 8]! |
+      (b[DMR_ID_DATABASE_ADDRESS + 9]! << 8) |
+      (b[DMR_ID_DATABASE_ADDRESS + 10]! << 16) |
+      (b[DMR_ID_DATABASE_ADDRESS + 11]! << 24);
+    expect(count).toBe(rowCount);
   });
 });
