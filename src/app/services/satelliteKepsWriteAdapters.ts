@@ -6,7 +6,6 @@
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   pushGeneralInfoWarning,
-  pushGeneralWarning,
   pushKepsExcludedWarning,
 } from '@core/import-export/exportWarning.ts';
 import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
