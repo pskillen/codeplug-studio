@@ -150,7 +150,7 @@ describe('modeTalk', () => {
         contactRef: { kind: 'talkGroup', id: tgScotland.id },
         rxGroupListId: null,
         dmrMode: 'repeater',
-        sendTalkerAliasOverride: 'on',
+        sendTalkerAlias: 'on',
       },
       channel,
       library,
@@ -369,26 +369,37 @@ describe('modeTalk', () => {
       rxFrequency: 439_550_000,
       txFrequency: 430_550_000,
     };
-    const modes = [
-      {
-        mode: 'fm' as const,
-        rxTone: '94.8' as const,
-        txTone: '94.8' as const,
-        squelch: null,
-        bandwidthKHz: null,
-      },
-      {
-        mode: 'dmr' as const,
-        colourCode: 1,
-        timeslot: 2,
-        ownDigitalIdId: null,
-        contactRef: { kind: 'talkGroup' as const, id: tgScotland.id },
-        rxGroupListId: rxList.id,
-      },
-      { mode: 'dstar' as const, urCall: 'CQCQCQ', rpt1Call: 'GB7XX', rpt2Call: '' },
-      { mode: 'p25' as const },
-    ];
-    const blob = modes.map((p) => sentenceText(modeTalk(p, channel, library).sentence)).join('\n');
+    const blob = [
+      sentenceText(
+        modeTalk(
+          { mode: 'fm', rxTone: '94.8', txTone: '94.8', squelch: null, bandwidthKHz: null },
+          channel,
+          library,
+        ).sentence,
+      ),
+      sentenceText(
+        modeTalk(
+          {
+            mode: 'dmr',
+            colourCode: 1,
+            timeslot: 2,
+            ownDigitalIdId: null,
+            contactRef: { kind: 'talkGroup', id: tgScotland.id },
+            rxGroupListId: rxList.id,
+          },
+          channel,
+          library,
+        ).sentence,
+      ),
+      sentenceText(
+        modeTalk(
+          { mode: 'dstar', urCall: 'CQCQCQ', rpt1Call: 'GB7XX', rpt2Call: '' },
+          channel,
+          library,
+        ).sentence,
+      ),
+      sentenceText(modeTalk({ mode: 'p25' }, channel, library).sentence),
+    ].join('\n');
     expect(blob).not.toMatch(/Anytone|DM-?32|OpenGD77|RadioFoundry|\bcps\b/i);
   });
 });

@@ -80,10 +80,8 @@ export function modeProfileFacts(profile: ChannelModeProfile, library: Library):
             : null,
       );
       push(facts, 'ownId', 'Your ID', ownIdName(library, profile.ownDigitalIdId));
-      if (profile.sendTalkerAliasOverride === 'on')
-        push(facts, 'talkerAlias', 'Talker alias', 'On');
-      if (profile.sendTalkerAliasOverride === 'off')
-        push(facts, 'talkerAlias', 'Talker alias', 'Off');
+      if (profile.sendTalkerAlias === 'on') push(facts, 'talkerAlias', 'Talker alias', 'On');
+      if (profile.sendTalkerAlias === 'off') push(facts, 'talkerAlias', 'Talker alias', 'Off');
       break;
     case 'dstar':
       push(facts, 'ur', 'UR', profile.urCall, true);

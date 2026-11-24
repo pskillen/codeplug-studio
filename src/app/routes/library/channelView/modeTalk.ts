@@ -1,6 +1,7 @@
 import type {
   Channel,
   ChannelModeProfile,
+  ChannelModeProfileAnalog,
   ChannelTone,
   EntityRef,
   Library,
@@ -151,7 +152,7 @@ function rxListSentence(library: Library, listId: string | null): TalkPart[] {
 }
 
 function analogTalk(
-  profile: Extract<ChannelModeProfile, { mode: 'fm' | 'am' }>,
+  profile: ChannelModeProfileAnalog,
   channel: Channel,
 ): { sentence: TalkPart[]; usedKeys: Set<string> } {
   const sentence: TalkPart[] = [];
@@ -252,7 +253,7 @@ function dmrTalk(
     }
   }
 
-  const listParts = rxListSentence(library, profile.rxGroupListId);
+  const listParts = rxListSentence(library, profile.rxGroupListId ?? null);
   if (listParts.length > 0) {
     if (sentence.length === 0) sentence.push(...listParts.slice(1));
     else sentence.push(...listParts);
@@ -329,7 +330,7 @@ function nxdnTalk(
     }
   }
 
-  const listParts = rxListSentence(library, profile.rxGroupListId);
+  const listParts = rxListSentence(library, profile.rxGroupListId ?? null);
   if (listParts.length > 0) {
     if (sentence.length === 0) sentence.push(...listParts.slice(1));
     else sentence.push(...listParts);
