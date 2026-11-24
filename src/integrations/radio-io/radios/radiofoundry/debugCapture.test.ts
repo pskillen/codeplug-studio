@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { packRadioBackupZip, parseRadioBackupZip } from '../../backup/index.ts';
-import { RadioAbortedError, RadioProtocolError } from '../../kit/errors.ts';
+import { DebugWrongFirmwareError } from '../../debugHandoff.ts';
+import { RadioAbortedError, RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { decodeDebugFrame } from '../../kit/codecs/radioFoundryDebugLink.ts';
 import { stageRecorder } from '../../plannedStagesTestKit.ts';
 import { RADIOFOUNDRY_IMAGE_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
@@ -24,6 +25,11 @@ import {
   RADIOFOUNDRY_DEBUG_INFO_SIDECAR,
   RADIOFOUNDRY_REGION,
 } from './debugCapture.ts';
+import {
+  RADIOFOUNDRY_DEBUG_HOTSPOT_HINT,
+  RADIOFOUNDRY_DEBUG_NO_ANSWER,
+  RADIOFOUNDRY_DEBUG_OPENGD77_FOUND,
+} from './debugText.ts';
 import { DMR_ID_DATABASE_AREA2_ADDRESS } from './idDatabase.ts';
 import {
   FakeRadioFoundryRadio,
@@ -220,6 +226,71 @@ describe('captureRadioFoundryDebugPipe', () => {
     const rows = sidecars['debug/sums.bin']!;
     expect(rows.length % 9).toBe(0);
     expect(rows.length / 9).toBe(capture.codeplug.size + (capture.area2?.size ?? 0));
+  });
+
+  it('dash handshake is OpenGD77 evidence and can keep the port', async () => {
+    const pipe = fakeFor(MD9600_RADIOFOUNDRY_CABLE_BOARD, { fill: 0xff });
+    pipe.dash = true;
+    await expect(
+      captureRadioFoundryDebugPipe(pipe, MD9600_RADIOFOUNDRY_CABLE_BOARD, protocolOpts),
+    ).rejects.toMatchObject({
+      name: 'DebugWrongFirmwareError',
+      found: 'opengd77',
+      message: RADIOFOUNDRY_DEBUG_OPENGD77_FOUND,
+    });
+    expect(pipe.writes).toHaveLength(1);
+    expect(pipe.closed).toBe(true);
+
+    const kept = fakeFor(MD9600_RADIOFOUNDRY_CABLE_BOARD, { fill: 0xff });
+    kept.dash = true;
+    let err: DebugWrongFirmwareError | undefined;
+    try {
+      await captureRadioFoundryDebugPipe(kept, MD9600_RADIOFOUNDRY_CABLE_BOARD, {
+        ...protocolOpts,
+        keepPortOnOpenGd77: true,
+      });
+    } catch (e) {
+      err = e as DebugWrongFirmwareError;
+    }
+    expect(err?.port?.pipe).toBe(kept);
+    expect(err?.received).toEqual(new Uint8Array([0x2d]));
+    expect(kept.closed).toBe(false);
+  });
+
+  it('silent MD-9600 is unknown with a hotspot hint and always closes', async () => {
+    const pipe = fakeFor(MD9600_RADIOFOUNDRY_CABLE_BOARD);
+    pipe.silent = true;
+    await expect(
+      captureRadioFoundryDebugPipe(pipe, MD9600_RADIOFOUNDRY_CABLE_BOARD, {
+        ...protocolOpts,
+        keepPortOnOpenGd77: true,
+      }),
+    ).rejects.toMatchObject({
+      found: 'unknown',
+      message: `${RADIOFOUNDRY_DEBUG_NO_ANSWER} ${RADIOFOUNDRY_DEBUG_HOTSPOT_HINT}`,
+    });
+    expect(pipe.closed).toBe(true);
+  });
+
+  it('silent DM-32UV is unknown without a hotspot hint', async () => {
+    const pipe = fakeFor(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    pipe.silent = true;
+    await expect(
+      captureRadioFoundryDebugPipe(pipe, DM32UV_RADIOFOUNDRY_CABLE_BOARD, protocolOpts),
+    ).rejects.toMatchObject({
+      found: 'unknown',
+      message: RADIOFOUNDRY_DEBUG_NO_ANSWER,
+    });
+    expect(pipe.closed).toBe(true);
+  });
+
+  it('wrong physical base stays RadioWrongIdentError', async () => {
+    const pipe = fakeFor(MD9600_RADIOFOUNDRY_CABLE_BOARD, {
+      physicalBase: MD9600_RADIOFOUNDRY_CABLE_BOARD.limits.PHYSICAL_CODEPLUG_BASE + 0x1000,
+    });
+    await expect(
+      captureRadioFoundryDebugPipe(pipe, MD9600_RADIOFOUNDRY_CABLE_BOARD, protocolOpts),
+    ).rejects.toBeInstanceOf(RadioWrongIdentError);
   });
 
   it('omits iddb-area2 when every area-2 block is blank', async () => {

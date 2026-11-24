@@ -4,6 +4,10 @@
  */
 import { RADIOFOUNDRY_IMAGE_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
 import { summariseRadioFoundryBuild } from '@core/radios/radiofoundry/firmware.ts';
+import {
+  debugOpenPort,
+  DebugWrongFirmwareError,
+} from '../../debugHandoff.ts';
 import type {
   RadioBackupCapturedVia,
   RadioBackupManifestV1,
@@ -14,10 +18,14 @@ import { readDebugFrame, encodeDebugFrame } from '../../kit/codecs/radioFoundryD
 import type { BytePipe, ProgressFn } from '../../types.ts';
 import {
   BLOCK_SIZE,
+  CODEPLUG_COMMAND,
+  DM32_RADIOFOUNDRY_MODEL_ID,
   EEPROM_IMAGE_END,
   FLASH_IMAGE_START,
+  HANDSHAKE_ERROR,
   servedBlockAddresses,
 } from './constants.ts';
+import { RadioProtocolError } from '../../kit/errors.ts';
 
 function blockInsideLayout(addr: number, layout: RadioFoundryInfoLayout): boolean {
   if (addr % BLOCK_SIZE !== 0 || addr < 0) return false;
@@ -26,6 +34,11 @@ function blockInsideLayout(addr: number, layout: RadioFoundryInfoLayout): boolea
   return inEeprom || inFlash;
 }
 import { createRadioFoundryDebugGuard } from './debugGuard.ts';
+import {
+  RADIOFOUNDRY_DEBUG_HOTSPOT_HINT,
+  RADIOFOUNDRY_DEBUG_NO_ANSWER,
+  RADIOFOUNDRY_DEBUG_OPENGD77_FOUND,
+} from './debugText.ts';
 import { DMR_ID_DATABASE_AREA2_ADDRESS } from './idDatabase.ts';
 import {
   RadioFoundryCableProtocol,
@@ -98,11 +111,15 @@ export async function captureRadioFoundryDebugPipe(
     capturedVia?: RadioBackupCapturedVia;
     includeArea2?: boolean;
     protocolOptions?: RadioFoundryCableProtocolOptions;
+    /** When handshake looks like OpenGD77, leave the raw transport open on the error. */
+    keepPortOnOpenGd77?: boolean;
   },
 ): Promise<RadioFoundryDebugCapture> {
   const signal = opts?.signal;
   const guard = createRadioFoundryDebugGuard(pipe, board, signal);
   const radio = new RadioFoundryCableProtocol(board, opts?.protocolOptions);
+  const capturedVia = opts?.capturedVia ?? 'web-serial';
+  let leavePortOpen = false;
   try {
     opts?.onProgress?.({ cur: 0, max: 0, msg: 'Connecting…', stage: 'Connect' });
     await radio.connect(guard.pipe);
@@ -147,7 +164,7 @@ export async function captureRadioFoundryDebugPipe(
     return {
       modelId: board.modelId,
       capturedAt: new Date().toISOString(),
-      capturedVia: opts?.capturedVia ?? 'web-serial',
+      capturedVia,
       info: replies.info.slice(),
       ...(replies.versionText != null ? { versionText: replies.versionText } : {}),
       ...(iddb ? { iddb } : {}),
@@ -155,16 +172,50 @@ export async function captureRadioFoundryDebugPipe(
       codeplug,
       ...(area2 ? { area2 } : {}),
     };
+  } catch (err) {
+    if (err instanceof RadioProtocolError && err.message === HANDSHAKE_ERROR) {
+      const received = guard.received().slice();
+      const hasDash = received.includes(0x2d);
+      let hasRfFrame = false;
+      for (let i = 0; i < received.length - 1; i += 1) {
+        if (received[i] === 0xa5 && received[i + 1] === 0x5a) {
+          hasRfFrame = true;
+          break;
+        }
+      }
+      if (hasDash && !hasRfFrame) {
+        if (pipe.drain) await pipe.drain();
+        else if (pipe.flush) await pipe.flush();
+        leavePortOpen = opts?.keepPortOnOpenGd77 === true;
+        throw new DebugWrongFirmwareError(
+          'opengd77',
+          RADIOFOUNDRY_DEBUG_OPENGD77_FOUND,
+          leavePortOpen ? debugOpenPort(pipe, capturedVia, board.baudRate) : undefined,
+          received,
+        );
+      }
+      const hint =
+        board.modelId !== DM32_RADIOFOUNDRY_MODEL_ID ? ` ${RADIOFOUNDRY_DEBUG_HOTSPOT_HINT}` : '';
+      throw new DebugWrongFirmwareError(
+        'unknown',
+        RADIOFOUNDRY_DEBUG_NO_ANSWER + hint,
+        undefined,
+        received,
+      );
+    }
+    throw err;
   } finally {
     try {
       await radio.disconnect();
     } catch {
       /* keep primary error */
     }
-    try {
-      await guard.pipe.close();
-    } catch {
-      /* keep primary error */
+    if (!leavePortOpen) {
+      try {
+        await guard.pipe.close();
+      } catch {
+        /* keep primary error */
+      }
     }
   }
 }

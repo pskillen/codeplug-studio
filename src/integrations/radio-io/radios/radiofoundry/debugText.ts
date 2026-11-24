@@ -14,6 +14,15 @@ export const RADIOFOUNDRY_READ_NOTICE = {
 export const RADIOFOUNDRY_CALIBRATION_NOTE =
   'RadioFoundry calibration is not read yet. The codeplug protocol never serves 0x10000–0x1FFFF, where calibration and the settings ring live; reading it needs a separate read-only storage request, planned for later.';
 
+export const RADIOFOUNDRY_DEBUG_OPENGD77_FOUND =
+  "This radio didn't answer as RadioFoundry. It answered like OpenGD77 firmware. Nothing was read.";
+
+export const RADIOFOUNDRY_DEBUG_NO_ANSWER =
+  "This radio didn't answer as RadioFoundry. Nothing was read.";
+
+export const RADIOFOUNDRY_DEBUG_HOTSPOT_HINT =
+  "An OpenGD77 radio in hotspot mode doesn't answer either.";
+
 export const RADIOFOUNDRY_CAPTURE_OPTIONS: readonly {
   id: string;
   label: string;
