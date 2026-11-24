@@ -115,3 +115,23 @@ describe('settingsAreaSector', () => {
     expect(() => settingsAreaSector(new Uint8Array(100))).toThrow();
   });
 });
+
+describe('SettingsAreaEntry offset', () => {
+  it('carries byte offsets from the header end', () => {
+    const data16 = [0x01, 0x00, 0x02, 0x00, 0xaa, 0xbb, 0x05, 0x00, 0x01, 0x00, 0xcc];
+    const area16 = readRadioFoundrySettingsArea(buildSector(data16, { headerLength: 16 }));
+    expect(area16.entries.map((e) => e.offset)).toEqual([20, 26]);
+    const data24 = [0x01, 0x00, 0x02, 0x00, 0xaa, 0xbb];
+    const area24 = readRadioFoundrySettingsArea(buildSector(data24, { headerLength: 24 }));
+    expect(area24.entries[0]!.offset).toBe(28);
+  });
+
+  it('offsets point at value bytes inside the sector', () => {
+    const data = [0x01, 0x00, 0x02, 0x00, 0xaa, 0xbb, 0x05, 0x00, 0x01, 0x00, 0xcc];
+    const sector = buildSector(data, { headerLength: 16 });
+    const area = readRadioFoundrySettingsArea(sector);
+    for (const entry of area.entries) {
+      expect(sector.subarray(entry.offset, entry.offset + entry.value.length)).toEqual(entry.value);
+    }
+  });
+});

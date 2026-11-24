@@ -6,6 +6,8 @@ export type SettingsAreaState = 'valid' | 'empty' | 'bad' | 'newer';
 
 export interface SettingsAreaEntry {
   key: number;
+  /** Byte offset of the value inside the 4096-byte sector (header length + the entry's position + 4). */
+  offset: number;
   /** A view into the sector, never copied out. */
   value: Uint8Array;
 }
@@ -68,7 +70,11 @@ export function readRadioFoundrySettingsArea(sector: Uint8Array): SettingsArea {
     const key = data[pos]! | (data[pos + 1]! << 8);
     const length = data[pos + 2]! | (data[pos + 3]! << 8);
     if (pos + 4 + length > data.length) return bad;
-    entries.push({ key, value: data.subarray(pos + 4, pos + 4 + length) });
+    entries.push({
+      key,
+      offset: headerLength + pos + 4,
+      value: data.subarray(pos + 4, pos + 4 + length),
+    });
     pos += 4 + length;
   }
   return { state: 'valid', version, entries };
