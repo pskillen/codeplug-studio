@@ -423,14 +423,12 @@ function RadioDebugProfile({
             <Text size="sm">Open it on the matching firmware page.</Text>
             <Button
               onClick={() => {
-                const next = openDebugArchive(
-                  archiveSwitch.bytes,
-                  archiveSwitch.sibling.archiveModelId,
-                );
-                if (historyEnabled) store.importArchives([next]);
+                const target = archiveSwitch.sibling;
+                const next = openDebugArchive(archiveSwitch.bytes, target.archiveModelId);
+                if (target.readHistory) getDebugReadHistory(target).importArchives([next]);
                 else setArchive({ ...next, source: 'file', zipBytes: archiveSwitch.bytes });
                 setArchiveSwitch(undefined);
-                navigate(debugRadioPath(archiveSwitch.sibling));
+                navigate(debugRadioPath(target));
               }}
             >
               Switch to {DEBUG_FIRMWARE_LABEL[archiveSwitch.sibling.firmware]} and open it
