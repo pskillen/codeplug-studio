@@ -284,7 +284,9 @@ describe('uploadPreparedRadioWrite beforeTransmit', () => {
     expect(err).toBeInstanceOf(RadioWriteBlockedError);
     expect((err as RadioWriteBlockedError).retry).toBe('none');
     expect((err as RadioWriteBlockedError).sent).toBe('nothing-sent');
-    expect((err as RadioWriteBlockedError).message).toMatch(/can't check this radio's language lock/);
+    expect((err as RadioWriteBlockedError).message).toMatch(
+      /can't check this radio's language lock/,
+    );
     expect(pipe.writes.length).toBe(before);
   }, 20_000);
 
