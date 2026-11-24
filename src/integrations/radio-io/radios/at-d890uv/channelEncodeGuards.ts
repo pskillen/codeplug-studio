@@ -96,7 +96,9 @@ export function assertAtD890NxdnRan(ran: number, label: string, slotIndex: numbe
  * Every channel the radio cannot encode from the projection alone. Never throws; never stops at
  * the first problem.
  */
-export function checkAtD890WriteChannels(channels: readonly RadioChannelDto[]): RadioWriteRefusal[] {
+export function checkAtD890WriteChannels(
+  channels: readonly RadioChannelDto[],
+): RadioWriteRefusal[] {
   const refusals: RadioWriteRefusal[] = [];
   const pushEncodeRefusal = (err: unknown, slotIndex: number): void => {
     if (err instanceof AtD890ChannelEncodeError) {

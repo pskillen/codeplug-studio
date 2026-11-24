@@ -26,7 +26,7 @@ function renderStepper(
 }
 
 describe('RadioWriteStepper — step 1, what to write', () => {
-  it('a radio without restart or check counts five steps', () => {
+  it('a radio without restart or check counts six steps', () => {
     renderStepper(
       {},
       {
@@ -37,12 +37,12 @@ describe('RadioWriteStepper — step 1, what to write', () => {
         }),
       },
     );
-    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('1 of 5 · What to write');
+    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('1 of 6 · What to write');
   });
 
   it('shows the step bar and defaults: codeplug ticked, contacts and keps not', () => {
     renderStepper();
-    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('1 of 6 · What to write');
+    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('1 of 7 · What to write');
     expect(screen.getByRole('checkbox', { name: 'Codeplug' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Digital contacts' })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).not.toBeChecked();
@@ -114,7 +114,7 @@ describe('RadioWriteStepper — steps 2 and 3', () => {
     expect(screen.getByTestId('stage-progress-elapsed')).toHaveTextContent('Elapsed');
   });
 
-  it('step 2 shows the read progress, the identity and a Cancel that aborts', () => {
+  it('step 3 (Read) shows the read progress, the identity and a Cancel that aborts', () => {
     const actions = renderStepper({
       step: 'connectRead',
       busy: true,
@@ -122,7 +122,7 @@ describe('RadioWriteStepper — steps 2 and 3', () => {
       progress: { cur: 5, max: 10, msg: 'Zones' },
       identity,
     });
-    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('2 of 6 · Read');
+    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('3 of 7 · Read');
     expect(screen.getByText('MM9PDY-2')).toBeInTheDocument();
     // The serial isn't sensitive: shown in full.
     expect(screen.getByText('ABC1234567')).toBeInTheDocument();
@@ -151,7 +151,7 @@ describe('RadioWriteStepper — steps 2 and 3', () => {
         }),
       },
     );
-    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('3 of 4 · Writing');
+    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('4 of 5 · Writing');
     expect(screen.getByText('Review not needed this time')).toBeInTheDocument();
   });
 
@@ -282,7 +282,7 @@ describe('RadioWriteStepper — steps 4 to 6', () => {
         { id: 'c', label: 'Upload', status: 'pending', weight: 100 },
       ],
     });
-    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('3 of 5 · Writing');
+    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('4 of 6 · Writing');
     expect(screen.getByText('Channels')).toBeInTheDocument();
     expect(screen.getByText('Upload')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
