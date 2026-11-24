@@ -24,6 +24,20 @@ Every digital mode's settings use the same four groups, in this order (`DigitalM
 - No radio, format or CPS names in mode copy.
 - Code: `src/app/components/channels/modePanels/` ([ModePanels.md](../../../src/app/components/channels/modePanels/ModePanels.md)).
 
+## Channel editor layout
+
+The mode sits with the frequency, and its settings sit right under them (`ChannelEditor`):
+
+1. Identity: callsign (with directory lookup) and name only.
+2. Mode and frequency: the mode picker, RX, offset, TX, then (one mode) that mode's settings and
+   **+ Also runs another mode**. With no mode yet, the settings area says "The mode's settings appear here once you
+   pick it."
+3. Modes (two or more modes only): the main mode choice and one section per mode.
+4. Transmit: power, forbid transmit, TX permit; folded on a phone with a one-line summary.
+5. Names and notes, then Location, Zones, Scanning, APRS.
+
+Library editors never explain a field by naming a radio or export format.
+
 ## Picking a channel's mode
 
 Most channels have one mode, so the mode is a single switch, not a multi-select (`ChannelModePicker`).
