@@ -82,6 +82,16 @@ Wire mapping for CPS formats lives in `docs/reference/export-formats/<format>/` 
 
 **CPS export** lives on each format build under **Export for radio** (`/builds` → `/builds/:id/export`) via [`ExportBuildCpsPanel`](../../../src/app/components/builds/ExportBuildCpsPanel.tsx). Format discovery for new targets is the **New build** wizard (`formatCatalog`), not a separate catalog page.
 
+## Problems and notes
+
+Export and write warnings are either **problems** or **notes** (`ExportWarningSeverity` in `exportWarning.ts`).
+
+A **problem** means something the operator built will not arrive on the radio or in the CPS export as built — dropped rows, truncation that still exceeds the limit, name collisions after export, cardinality over a cap, or an unresolvable link. Problems make the export/write dialog stop on **Review** so the operator can cancel before anything is sent.
+
+A **note** is lossless or expected: a clean name shortening, a documented wire snap, or an intentional Studio adjustment. Notes never pause Review.
+
+A plain `pushGeneralWarning` message defaults to **problem** (fail closed). Use `pushGeneralInfoWarning` only when the message is clearly a tip or a lossless change.
+
 ## Vendor-neutral rules
 
 - Internal relationships use UUID `id` fields — `name` is a display or build wire label, not an FK.
