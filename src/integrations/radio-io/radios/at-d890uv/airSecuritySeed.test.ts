@@ -85,6 +85,15 @@ describe('parseAirSecuritySeedInput', () => {
   ])('refuses %s and the reason does not contain the input', (_name, text) => {
     expectRefusal(text);
   });
+
+  it('refuses 40 Base32 characters (25 bytes) as too long without echoing the input', () => {
+    const text = 'GEZDGNBV'.repeat(5);
+    const parsed = parseAirSecuritySeedInput(text);
+    expect(parsed.ok).toBe(false);
+    if (parsed.ok) return;
+    expect(parsed.reason).toBe('AirSecurity seed is longer than twenty bytes');
+    expect(parsed.reason.includes(text)).toBe(false);
+  });
 });
 
 describe('encodeAirSecuritySeedRecord', () => {
