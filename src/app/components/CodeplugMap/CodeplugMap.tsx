@@ -247,8 +247,7 @@ function ChannelPopup({
             <strong>{channelDisplayLabel(ch, true)}</strong>
             <br />
             <span style={{ opacity: 0.85 }}>
-              {channelModeSummaryText(ch, lookup)}
-              {freq ? ` · ${freq}` : ''}
+              {[channelModeSummaryText(ch, lookup), freq].filter(Boolean).join(' · ')}
             </span>
             {onChannelClick ? (
               <>

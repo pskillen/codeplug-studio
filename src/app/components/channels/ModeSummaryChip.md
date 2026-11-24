@@ -29,6 +29,6 @@ const [summary] = channelModeSummaries(channel, library);
 
 ## Related
 
-- [Library feature hub — channel modes](../../../docs/features/library/channel-modes.md)
+- [Library feature hub — channel modes](../../../../docs/features/library/channel-modes.md)
 - [`channelModeSummary.ts`](../../lib/channelModeSummary.ts)
-- [Styleguide — Mode summaries](../../../docs/reference/styleguide/display.md#mode-summaries)
+- [Styleguide — Mode summaries](../../../../docs/reference/styleguide/display.md#mode-summaries)

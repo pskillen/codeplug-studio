@@ -137,7 +137,7 @@ export default function StyleguideChannelModesPage() {
           </Stack>
           <Stack gap="xs">
             <Text size="sm" fw={600}>
-              Five modes, line +2 overflow
+              Five modes, line, maxVisible 2
             </Text>
             <ChannelModeSummaries
               channel={fiveMode}
@@ -151,7 +151,7 @@ export default function StyleguideChannelModesPage() {
             <Text size="sm" fw={600}>
               Chip sizes
             </Text>
-            <Stack gap="xs">
+            <Stack gap="xs" align="flex-start">
               {loneSummaries[0] ? <ModeSummaryChip summary={loneSummaries[0]} size="xs" /> : null}
               {loneSummaries[0] ? <ModeSummaryChip summary={loneSummaries[0]} size="sm" /> : null}
             </Stack>

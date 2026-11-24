@@ -7,6 +7,8 @@ import classes from './ModeSummaryChip.module.css';
 export interface ModeSummaryChipProps {
   summary: ChannelModeSummary;
   size?: 'xs' | 'sm';
+  /** When true, detail text wraps instead of ellipsising (wrap layout in cards and tables). */
+  detailWrap?: boolean;
 }
 
 function modePillTextColor(mode: ChannelMode): string {
@@ -20,13 +22,17 @@ function chipTitle(summary: ChannelModeSummary): string {
   return summary.isMain ? `${base} · main mode` : base;
 }
 
-export default function ModeSummaryChip({ summary, size = 'sm' }: ModeSummaryChipProps) {
+export default function ModeSummaryChip({
+  summary,
+  size = 'sm',
+  detailWrap = false,
+}: ModeSummaryChipProps) {
   const modeColour = modeColor(summary.mode);
   const sizeClass = size === 'xs' ? classes.sizeXs : classes.sizeSm;
 
   return (
     <span
-      className={`${classes.chip} ${sizeClass}${summary.isMain ? ` ${classes.chipMain}` : ''}`}
+      className={`${classes.chip} ${sizeClass}${summary.isMain ? ` ${classes.chipMain}` : ''}${detailWrap ? ` ${classes.chipDetailWrap}` : ''}`}
       style={summary.isMain ? { borderColor: modeColour } : undefined}
       title={chipTitle(summary)}
     >
@@ -36,7 +42,11 @@ export default function ModeSummaryChip({ summary, size = 'sm' }: ModeSummaryChi
       >
         {summary.label}
       </span>
-      {summary.detail ? <span className={classes.detail}>{summary.detail}</span> : null}
+      {summary.detail ? (
+        <span className={`${classes.detail}${detailWrap ? ` ${classes.detailWrap}` : ''}`}>
+          {summary.detail}
+        </span>
+      ) : null}
       {summary.isMain ? <span className={classes.srOnly}> (main mode)</span> : null}
     </span>
   );

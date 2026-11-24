@@ -181,7 +181,7 @@ function renderChannelIdentity(channel: Channel): ReactNode {
   const name = channel.name || '—';
   const callsign = channel.callsign?.trim();
   const band = bandFromChannel(channel.rxFrequency, channel.txFrequency);
-  const modes = channelModesForFilter(channel);
+  const modes = channel.modeProfiles.map((p) => p.mode);
   const primary = modes.length > 1 ? resolveChannelPrimaryMode(channel) : null;
   return (
     <div className={pageClasses.identityLine}>
@@ -507,7 +507,7 @@ export default function ChannelsListPage() {
     );
 
     return [
-      { ...nameColumn, width: 'minmax(11rem, 1fr)' },
+      { ...nameColumn, width: 'minmax(16rem, 1fr)' },
       ...tableOptionalColumnDefs,
       {
         key: 'actions',

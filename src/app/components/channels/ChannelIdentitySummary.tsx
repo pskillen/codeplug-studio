@@ -2,7 +2,6 @@ import { Group, Paper, Text } from '@mantine/core';
 import type { Channel } from '@core/models/library.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
-import { channelModesForFilter } from '../../lib/channels.ts';
 import { formatChannelRxTxListCell } from '../../lib/formatFrequency.ts';
 import { BandPillForChannel } from '../pills/BandPill.tsx';
 import ModePill from '../pills/ModePill.tsx';
@@ -25,7 +24,7 @@ export default function ChannelIdentitySummary({
   isNew = false,
 }: ChannelIdentitySummaryProps) {
   const label = summaryLabel(channel, isNew);
-  const modes = channelModesForFilter(channel);
+  const modes = channel.modeProfiles.map((p) => p.mode);
   const primary = modes.length > 1 ? resolveChannelPrimaryMode(channel) : null;
   const rxTx = formatChannelRxTxListCell(channel.rxFrequency, channel.txFrequency);
 

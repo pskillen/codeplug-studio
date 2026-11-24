@@ -32,4 +32,4 @@ import ChannelModeSummaries from '@app/components/channels/ChannelModeSummaries.
 
 - [`channelModeSummary.ts`](../../lib/channelModeSummary.ts)
 - [ModeSummaryChip.md](ModeSummaryChip.md)
-- [Styleguide — Mode summaries](../../../docs/reference/styleguide/display.md#mode-summaries)
+- [Styleguide — Mode summaries](../../../../docs/reference/styleguide/display.md#mode-summaries)

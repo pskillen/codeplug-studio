@@ -35,7 +35,12 @@ export default function ChannelModeSummaries({
   return (
     <div className={layoutClass}>
       {visible.map((summary) => (
-        <ModeSummaryChip key={summary.mode} summary={summary} size={size} />
+        <ModeSummaryChip
+          key={summary.mode}
+          summary={summary}
+          size={size}
+          detailWrap={layout === 'wrap'}
+        />
       ))}
       {hidden.length > 0 ? (
         <span

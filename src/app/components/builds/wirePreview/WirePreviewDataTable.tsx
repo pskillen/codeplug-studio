@@ -383,7 +383,7 @@ export default function WirePreviewDataTable({
                   );
                 }
                 const badge = (
-                  <Badge size="xs" variant="light">
+                  <Badge size="xs" variant="light" style={{ flexShrink: 0 }}>
                     {row.channelMode.toUpperCase()}
                   </Badge>
                 );
@@ -404,6 +404,7 @@ export default function WirePreviewDataTable({
                       <Text
                         size="xs"
                         c="dimmed"
+                        title={detail}
                         style={{
                           fontFamily: 'var(--dsv2-font-mono)',
                           overflow: 'hidden',

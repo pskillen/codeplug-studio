@@ -47,7 +47,6 @@ Summaries appear **after** the channel's callsign and name (they do not replace 
 - Channel list table **Name** cell and optional **Mode** column (table and cards)
 - Build channel wire-preview rows (not per-talk-group expansion rows)
 - Map popups when the caller passes a library lookup
-- Later: channel view header and folded editor sections (follow-on phases)
 
 They do **not** appear on the phone list identity line (plain joined mode pills only, main mode bordered), zone member rows, or entity pickers — those keep `ModePill`.
 

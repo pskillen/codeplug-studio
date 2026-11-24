@@ -38,6 +38,17 @@
   white-space: nowrap;
 }
 
+.chipDetailWrap {
+  flex-wrap: wrap;
+}
+
+.detailWrap {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: unset;
+  overflow: visible;
+}
+
 .sizeXs .label,
 .sizeXs .detail {
   padding-top: 2px;

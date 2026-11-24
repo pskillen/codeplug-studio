@@ -113,7 +113,9 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
-  min-width: max-content;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
 }
 
 .joinedModePill {
