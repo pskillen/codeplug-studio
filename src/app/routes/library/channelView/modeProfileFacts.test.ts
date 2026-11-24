@@ -11,8 +11,8 @@ describe('modeProfileFacts', () => {
       emptyLibrary(),
     );
     expect(facts).toEqual([
-      { label: 'Tone', value: '110.9', mono: true },
-      { label: 'Bandwidth', value: '12.5 kHz' },
+      { key: 'tone', label: 'Tone', value: '110.9', mono: true },
+      { key: 'bandwidth', label: 'Bandwidth', value: '12.5 kHz' },
     ]);
   });
 
@@ -22,7 +22,7 @@ describe('modeProfileFacts', () => {
         { mode: 'fm', rxTone: 'none', txTone: '77.0', squelch: null, bandwidthKHz: null },
         emptyLibrary(),
       ),
-    ).toEqual([{ label: 'TX tone', value: '77.0', mono: true }]);
+    ).toEqual([{ key: 'txTone', label: 'TX tone', value: '77.0', mono: true }]);
     expect(
       modeProfileFacts(
         { mode: 'fm', rxTone: 'none', txTone: 'none', squelch: null, bandwidthKHz: null },
@@ -47,9 +47,9 @@ describe('modeProfileFacts', () => {
       library,
     );
     expect(facts).toEqual([
-      { label: 'Colour code', value: '1', mono: true },
-      { label: 'Timeslot', value: 'TS2' },
-      { label: 'Talk group', value: 'Scotland' },
+      { key: 'colourCode', label: 'Colour code', value: '1', mono: true },
+      { key: 'timeslot', label: 'Timeslot', value: 'TS2' },
+      { key: 'talkGroup', label: 'Talk group', value: 'Scotland' },
     ]);
   });
 });
