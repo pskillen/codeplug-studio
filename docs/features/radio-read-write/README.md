@@ -165,7 +165,7 @@ What this doesn't do yet. Delete a line when its gap is fixed.
 
 - Hardware verify on a DM-1701: a flash-write failure now names the command, sector and block, the stepper error has copyable **Debug details** (last 24 frames), CPS is entered once per session, a failure after a sector began restarts the radio (reboot-only), and only in-span 32-byte blocks are sent. None of it is confirmed on hardware yet. Behaviour: [OpenGD77 protocol](../../reference/radios/opengd77/protocol.md#ack-and-nack-framing). Tracking: [#1537](https://github.com/pskillen/codeplug-studio/issues/1537)
 - Check write covers the OpenGD77 User Database (header plus a per-sector CRC-32 of the entries, so a bad sector is reported by digest, not bytes) but not keps; it costs a read about as long as the User Database Write. Not confirmed on hardware.
-- The Write stepper shows **Debug details** on every error (module trace or Studio fallback, with a console line). Backup, restore, standalone keps and User Database flows still show the message only until later phases wire them to the same pattern.
+- The Write stepper, Restore dialog, backup reads and standalone keps show **Debug details** on errors through `ErrorPanel`. The User Database flow still shows the message only until it shares the same pattern.
 
 ### AT-D890UV APRS serial Write
 
