@@ -37,7 +37,7 @@ import {
   StickyFooter,
   TextInput,
 } from '../../components/v2/index.ts';
-import { modeLabel, type ModePreset } from '../../lib/channelModes.ts';
+import type { ModePreset } from '../../lib/channelModes.ts';
 import { channelModeSummaryText, modeProfileSummary } from '../../lib/channelModeSummary.ts';
 import ModeSection, { modeSectionStartsFolded } from '../../components/channels/ModeSection.tsx';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
