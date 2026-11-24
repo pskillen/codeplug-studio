@@ -1,4 +1,5 @@
 import type { DebugSensitiveArchive, DebugSensitiveRange } from '../../debugSensitive.ts';
+import { AIRSECURITY_SEED_ADDRESS, AIRSECURITY_SEED_RECORD_LENGTH } from './airSecuritySeed.ts';
 import { AT_D890UV_MODEL_IDS, D890_MAP } from './constants.ts';
 
 /**
@@ -37,7 +38,19 @@ export const AT_D890_LOCAL_INFO_PASSWORD_SPANS: readonly AtD890PasswordSpan[] = 
   },
 ];
 
-const ALL_SPANS = [AT_D890_POWER_ON_PASSWORD_SPAN, ...AT_D890_LOCAL_INFO_PASSWORD_SPANS];
+/** AirSecurity seed: masked in the debug memory viewer until revealed. The archive keeps every byte. */
+export const AT_D890_AIRSECURITY_SEED_SPAN: AtD890PasswordSpan = {
+  id: 'airSecuritySeed',
+  label: 'Brandmeister AirSecurity seed',
+  address: AIRSECURITY_SEED_ADDRESS,
+  length: AIRSECURITY_SEED_RECORD_LENGTH,
+};
+
+const ALL_SPANS = [
+  AT_D890_POWER_ON_PASSWORD_SPAN,
+  ...AT_D890_LOCAL_INFO_PASSWORD_SPANS,
+  AT_D890_AIRSECURITY_SEED_SPAN,
+];
 
 /**
  * Vital units the radio may answer with LocalInfo bytes: `vital-tune-b` (read "as returned", which

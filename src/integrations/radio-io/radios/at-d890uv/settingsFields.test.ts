@@ -11,12 +11,19 @@ import { RadioProtocolError } from '../../kit/errors.ts';
 import { AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
 import { atD890UploadBankIntentFromOrganisation } from './memory.ts';
 import {
+  AIRSECURITY_SEED_ADDRESS,
+  AIRSECURITY_SEED_FIELD_ID,
+  AIRSECURITY_SEED_RECORD_LENGTH,
+} from './airSecuritySeed.ts';
+import {
   AT_D890_NEVER_PATCH_MAIN_OFFSETS,
   AT_D890_SETTINGS_FIELDS,
+  assertAtD890SettingsPatchPermitted,
   assertAtD890SettingsSpecPermitted,
   resolveAtD890SettingsPatches,
   type AtD890SettingValue,
   type AtD890SettingsFieldSpec,
+  type AtD890SettingsPatch,
 } from './settingsFields.ts';
 import {
   applyAtD890SettingsPatchesToUnit,
@@ -483,5 +490,68 @@ describe('AT-D890 v1 settings fields', () => {
     for (let i = 0; i < stock.length; i++) {
       expect([...spec.encode(stock[i]!.value)]).toEqual([...spec.encode(mm[i]!.value)]);
     }
+  });
+});
+
+function rawPatch(address: number, fieldId: string, length = 1): AtD890SettingsPatch {
+  return {
+    fieldId,
+    address,
+    bytes: new Uint8Array(length).fill(0xaa),
+    mask: new Uint8Array(length).fill(0xff),
+  };
+}
+
+describe('AirSecurity seed patch allow-list', () => {
+  it('allows a seed-id patch that covers only 0x03500220..0x0350023F', () => {
+    expect(() =>
+      assertAtD890SettingsPatchPermitted(
+        rawPatch(
+          AIRSECURITY_SEED_ADDRESS,
+          AIRSECURITY_SEED_FIELD_ID,
+          AIRSECURITY_SEED_RECORD_LENGTH,
+        ),
+      ),
+    ).not.toThrow();
+  });
+
+  it('refuses another field id at the seed address', () => {
+    expect(() =>
+      assertAtD890SettingsPatchPermitted(rawPatch(AIRSECURITY_SEED_ADDRESS, 'other')),
+    ).toThrow(RadioProtocolError);
+  });
+
+  it.each([
+    ['0x0350021F', 0x0350021f],
+    ['+0x200', 0x03500200],
+    ['0x03500240', 0x03500240],
+  ] as const)('refuses a seed-id patch at %s', (_name, address) => {
+    expect(() =>
+      assertAtD890SettingsPatchPermitted(rawPatch(address, AIRSECURITY_SEED_FIELD_ID)),
+    ).toThrow(RadioProtocolError);
+  });
+
+  it('refuses a seed-id patch that starts in the span and touches 0x03500240', () => {
+    expect(() =>
+      assertAtD890SettingsPatchPermitted(
+        rawPatch(
+          AIRSECURITY_SEED_ADDRESS,
+          AIRSECURITY_SEED_FIELD_ID,
+          AIRSECURITY_SEED_RECORD_LENGTH + 1,
+        ),
+      ),
+    ).toThrow(RadioProtocolError);
+  });
+
+  it('refuses a seed-id patch that touches 0x0350021F on its way into the span', () => {
+    expect(() =>
+      assertAtD890SettingsPatchPermitted(rawPatch(0x0350021f, AIRSECURITY_SEED_FIELD_ID, 2)),
+    ).toThrow(RadioProtocolError);
+  });
+
+  it('does not open the seed span on the spec path', () => {
+    expect(() => assertAtD890SettingsSpecPermitted(spec(AIRSECURITY_SEED_ADDRESS))).toThrow(
+      RadioProtocolError,
+    );
   });
 });

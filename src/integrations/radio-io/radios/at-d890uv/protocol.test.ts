@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
+import {
+  AIRSECURITY_SEED_ADDRESS,
+  AIRSECURITY_SEED_CLEAR_RECORD,
+  AIRSECURITY_SEED_FIELD_ID,
+  encodeAirSecuritySeedRecord,
+} from './airSecuritySeed.ts';
 import { D890_MAP } from './constants.ts';
 import { listWriteChunks, cacheToMemoryMap, applyAtD890WriteImageToCache } from './memory.ts';
 import { AtD890uvProtocol } from './protocol.ts';
@@ -235,6 +241,9 @@ describe('AtD890uvProtocol', () => {
     settings.set(block, 0x10);
     const marker = new Uint8Array(16).fill(0x5a);
     settings.set(marker, 0x200);
+    const seedSpan = new Uint8Array(32);
+    for (let i = 0; i < seedSpan.length; i++) seedSpan[i] = 0x40 + (i % 16);
+    settings.set(seedSpan, 0x220);
     const memory = channelUploadMemory();
     memory.set(0x350_0000, settings);
     scriptAtD890UploadReadResponder(pipe, memory);
@@ -252,6 +261,12 @@ describe('AtD890uvProtocol', () => {
     expect(keys?.[4]).toBe(13);
     expect(keys?.[5]).toBe(0x35);
     expect(writePayloadAt(pipe, D890_MAP.OptionalSettingsMain + 0x200)).toEqual(marker);
+    expect(writePayloadAt(pipe, D890_MAP.OptionalSettingsMain + 0x220)).toEqual(
+      seedSpan.subarray(0, 16),
+    );
+    expect(writePayloadAt(pipe, D890_MAP.OptionalSettingsMain + 0x230)).toEqual(
+      seedSpan.subarray(16, 32),
+    );
   }, 20_000);
 
   it('applies a settings override on a stock target as a patch on the fresh read only', async () => {
@@ -485,6 +500,54 @@ describe('AtD890uvProtocol', () => {
         [...a.keys()].filter((i) => a[i] !== b[i]);
       expect(changedBytes(sent, settings)).toEqual(changedBytes(expected, settings));
       expect(changedBytes(sent, settings)).toEqual(expect.arrayContaining([0x47, 0xbc, 0x900]));
+    }, 20_000);
+
+    async function uploadSeed(bytes: Uint8Array) {
+      const settings = settingsUnit();
+      settings.fill(0x5a, 0x200, 0x220);
+      settings.fill(0x11, 0x220, 0x240);
+      const { pipe, radio } = await connected(
+        new Map([
+          [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
+          [0x350_0000, settings],
+        ]),
+      );
+      await radio.uploadSettingsPatches(
+        [
+          {
+            fieldId: AIRSECURITY_SEED_FIELD_ID,
+            address: AIRSECURITY_SEED_ADDRESS,
+            bytes,
+            mask: new Uint8Array(bytes.length).fill(0xff),
+          },
+        ],
+        {},
+      );
+      const sent = settings.slice();
+      for (const w of pipe.writes.filter((f) => f[0] === 0x57)) {
+        const address = ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0;
+        if (address < 0x350_0000 || address >= 0x354_0000) continue;
+        sent.set(w.subarray(6, 6 + w[5]!), address - 0x350_0000);
+      }
+      return { settings, sent };
+    }
+
+    it('a seed patch changes only +0x220..+0x23F and leaves the M6 record', async () => {
+      const record = encodeAirSecuritySeedRecord(new TextEncoder().encode('12345678901234567890'));
+      const { settings, sent } = await uploadSeed(record);
+      expect(sent.subarray(0x200, 0x220)).toEqual(settings.subarray(0x200, 0x220));
+      expect(sent.subarray(0x220, 0x240)).toEqual(record);
+      const changed = [...settings.keys()].filter((i) => settings[i] !== sent[i]);
+      expect(changed.every((i) => i >= 0x220 && i < 0x240)).toBe(true);
+      expect(changed.length).toBeGreaterThan(0);
+    }, 20_000);
+
+    it('a clear record writes 32 zeros and leaves every other byte', async () => {
+      const { settings, sent } = await uploadSeed(AIRSECURITY_SEED_CLEAR_RECORD.slice());
+      expect(sent.subarray(0x200, 0x220)).toEqual(settings.subarray(0x200, 0x220));
+      expect([...sent.subarray(0x220, 0x240)]).toEqual(Array(32).fill(0));
+      const changed = [...settings.keys()].filter((i) => settings[i] !== sent[i]);
+      expect(changed).toEqual([...Array(32).keys()].map((i) => 0x220 + i));
     }, 20_000);
 
     it('refuses an all-0xff settings unit before any frame and sends no END', async () => {
