@@ -105,6 +105,7 @@ export function applyWireNameLimits(
           entityKind: 'Channel',
           candidate: stem,
           disambiguated: name,
+          entityId: channel.id,
         });
       }
       pushWireNameLengthWarning(warnings, {
@@ -114,6 +115,7 @@ export function applyWireNameLimits(
         maxLen,
         profileId: profileId ?? options?.profileId,
         shortenEnabled: false,
+        entityId: channel.id,
       });
       return name;
     }
@@ -126,6 +128,7 @@ export function applyWireNameLimits(
         entityKind: 'Channel',
         candidate: original,
         disambiguated: name,
+        entityId: channel.id,
       });
     }
     if (maxLen != null) {
@@ -136,6 +139,7 @@ export function applyWireNameLimits(
         maxLen,
         profileId: profileId ?? options?.profileId,
         shortenEnabled: false,
+        entityId: channel.id,
       });
     }
     return name;
@@ -167,6 +171,7 @@ export function applyWireNameLimits(
       maxLen,
       profileId: profileId ?? options?.profileId,
       shortenEnabled: true,
+      entityId: channel.id,
     });
     return exported;
   }
@@ -182,6 +187,7 @@ export function applyWireNameLimits(
       entityKind: 'Channel',
       candidate: stem,
       disambiguated: exported,
+      entityId: channel.id,
     });
   }
   pushWireNameLengthWarning(warnings, {
@@ -191,6 +197,7 @@ export function applyWireNameLimits(
     maxLen,
     profileId: profileId ?? options?.profileId,
     shortenEnabled: true,
+    entityId: channel.id,
   });
   return exported;
 }

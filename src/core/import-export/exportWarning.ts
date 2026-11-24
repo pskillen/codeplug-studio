@@ -1,7 +1,34 @@
 import type { WireNameRemediation } from '@core/services/resolveWireNames.ts';
 
-/** Whether an export warning blocks a clean export (`problem`) or is a benign, collapsed note (`info`). */
+/**
+ * Whether an export warning is a **problem** or an **info** note.
+ *
+ * **problem**: something the user built will not arrive as built (dropped, truncated, collided, over a cap,
+ * unresolvable). **info**: lossless or expected (a clean shortening, a documented snap, a tip). Problems make the
+ * export/write dialog stop on Review; info never does.
+ */
 export type ExportWarningSeverity = 'problem' | 'info';
+
+export interface ExportWarningSummary {
+  problems: number;
+  info: number;
+}
+
+export function summariseExportWarnings(
+  warnings: readonly ExportWarning[],
+): ExportWarningSummary {
+  let problems = 0;
+  let info = 0;
+  for (const warning of warnings) {
+    if (warning.severity === 'problem') problems += 1;
+    else info += 1;
+  }
+  return { problems, info };
+}
+
+export function hasProblemWarnings(warnings: readonly ExportWarning[]): boolean {
+  return warnings.some((w) => w.severity === 'problem');
+}
 
 /**
  * Grouping keys mirrored from the UI's member-cap presentation
@@ -25,6 +52,27 @@ export interface WireNameExportWarning {
   exported: string;
   limit: number;
   profileLabel?: string;
+  /** The library entity's id when the emitter had it, so the UI can show a channel as callsign then name. */
+  entityId?: string;
+}
+
+/** A satellite or one transmitter the radio can't carry (mode, band); the write skips it. Always a note. */
+export interface KepsExcludedExportWarning {
+  kind: 'keps_excluded';
+  severity: 'info';
+  satelliteId: string;
+  /** null: the whole satellite is skipped. */
+  transmitterId: string | null;
+  reason: string;
+  /** Human label (satellite name, or "satellite / transmitter"), when the caller has it. */
+  label?: string;
+}
+
+export function pushKepsExcludedWarning(
+  warnings: ExportWarning[],
+  w: Omit<KepsExcludedExportWarning, 'kind' | 'severity'>,
+): void {
+  warnings.push({ kind: 'keps_excluded', severity: 'info', ...w });
 }
 
 export interface MemberCapExportWarning {
@@ -91,6 +139,7 @@ export type ExportWarning =
   | UnlinkedExportWarning
   | GeneralExportWarning
   | ZoneScanSetExportWarning
+  | KepsExcludedExportWarning
   | { kind: 'zone_order'; severity: 'problem'; zoneName: string };
 
 /** Push a plain informational/problem note with no further structure. */
@@ -162,6 +211,8 @@ export function formatExportWarning(warning: ExportWarning): string {
       return formatZoneScanSetWarning(warning);
     case 'zone_order':
       return `Zone "${warning.zoneName}": its order did not fit on the radio, so its channels appear in channel-number order.`;
+    case 'keps_excluded':
+      return `Skipped ${warning.label ?? warning.satelliteId}: ${warning.reason}`;
   }
 }
 
@@ -212,5 +263,9 @@ export function exportWarningIdentity(warning: ExportWarning): string {
       return `zone_scan_set\0${formatZoneScanSetWarning(warning)}`;
     case 'zone_order':
       return `zone_order\0${warning.zoneName}`;
+    case 'keps_excluded':
+      return ['keps_excluded', warning.satelliteId, warning.transmitterId ?? '', warning.reason].join(
+        '\0',
+      );
   }
 }

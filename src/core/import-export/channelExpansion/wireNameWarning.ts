@@ -22,7 +22,12 @@ export function resolveProfileLabel(profileId: string | undefined): string | und
 /** Warn when uniquify appended a disambiguation suffix because the candidate was already reserved. */
 export function pushWireNameCollisionWarning(
   warnings: ExportWarning[],
-  params: { entityKind: WireNameEntityKind; candidate: string; disambiguated: string },
+  params: {
+    entityKind: WireNameEntityKind;
+    candidate: string;
+    disambiguated: string;
+    entityId?: string;
+  },
 ): void {
   if (params.disambiguated === params.candidate) return;
   warnings.push({
@@ -34,6 +39,7 @@ export function pushWireNameCollisionWarning(
     exported: params.disambiguated,
     // Collisions are not length-driven — there is no meaningful character limit to report.
     limit: 0,
+    entityId: params.entityId,
   });
 }
 
@@ -63,6 +69,7 @@ export function pushWireNameResolutionWarning(
     limit?: number;
     profileId?: string;
     profileLabel?: string;
+    entityId?: string;
   },
 ): void {
   const severity = SEVERITY_BY_RESOLUTION_REMEDIATION[params.remediation];
@@ -76,6 +83,7 @@ export function pushWireNameResolutionWarning(
     exported: params.exported.trim(),
     limit: params.limit ?? 0,
     profileLabel: params.profileLabel ?? resolveProfileLabel(params.profileId),
+    entityId: params.entityId,
   });
 }
 
@@ -90,6 +98,7 @@ export function pushWireNameLengthWarning(
     profileId?: string;
     profileLabel?: string;
     shortenEnabled: boolean;
+    entityId?: string;
   },
 ): void {
   const original = params.original.trim();
@@ -122,5 +131,6 @@ export function pushWireNameLengthWarning(
     exported,
     limit: params.maxLen,
     profileLabel,
+    entityId: params.entityId,
   });
 }

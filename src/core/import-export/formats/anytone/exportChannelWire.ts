@@ -56,6 +56,7 @@ export function anytoneChannelWireName(
         entityKind: 'Channel',
         candidate: stem,
         disambiguated: name,
+        entityId: row.entity.id,
       });
     }
     pushWireNameLengthWarning(warnings, {
@@ -65,6 +66,7 @@ export function anytoneChannelWireName(
       maxLen: maxNameLength,
       profileId: resolvedProfileId,
       shortenEnabled: false,
+      entityId: row.entity.id,
     });
     return name;
   }
@@ -83,6 +85,7 @@ export function anytoneChannelWireName(
         entityKind: 'Channel',
         candidate: base,
         disambiguated: name,
+        entityId: row.entity.id,
       });
     }
     pushWireNameLengthWarning(warnings, {
@@ -92,6 +95,7 @@ export function anytoneChannelWireName(
       maxLen: maxNameLength,
       profileId: resolvedProfileId,
       shortenEnabled: false,
+      entityId: row.entity.id,
     });
     return name;
   }

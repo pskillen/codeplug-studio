@@ -107,3 +107,26 @@ describe('pushWireNameCollisionWarning', () => {
     expect(warnings).toEqual([]);
   });
 });
+
+describe('wire-name helpers pass entityId through', () => {
+  it('includes entityId on length and collision warnings when provided', () => {
+    const warnings: ExportWarning[] = [];
+    const entityId = 'ch-abc-123';
+    pushWireNameLengthWarning(warnings, {
+      entityKind: 'Channel',
+      original: 'A very long channel name indeed',
+      exported: 'Short',
+      maxLen: 16,
+      shortenEnabled: true,
+      entityId,
+    });
+    pushWireNameCollisionWarning(warnings, {
+      entityKind: 'Channel',
+      candidate: 'Dup',
+      disambiguated: 'Dup 2',
+      entityId,
+    });
+    expect(warnings[0]).toMatchObject({ entityId });
+    expect(warnings[1]).toMatchObject({ entityId });
+  });
+});
