@@ -11,7 +11,7 @@ vi.mock('./radioIoSession.ts', () => ({
 
 vi.mock('./radioIoAtD890AirSecurity.ts', () => ({
   readAtD890AirSecuritySeedSet: vi.fn(async () => true),
-  writeAtD890AirSecuritySeed: vi.fn(async () => ({ writeVerifyPending: { unused: true } })),
+  writeAtD890AirSecuritySeed: vi.fn(async () => undefined),
 }));
 
 import {
@@ -43,9 +43,7 @@ beforeEach(() => {
   );
   vi.mocked(openRadioSessionForEgress).mockResolvedValue({ session } as never);
   vi.mocked(readAtD890AirSecuritySeedSet).mockResolvedValue(true);
-  vi.mocked(writeAtD890AirSecuritySeed).mockResolvedValue({
-    writeVerifyPending: { unused: true },
-  } as never);
+  vi.mocked(writeAtD890AirSecuritySeed).mockResolvedValue(undefined);
 });
 
 describe('AirSecurity seed session', () => {
@@ -65,10 +63,13 @@ describe('AirSecurity seed session', () => {
     expect(closeRadioSession).toHaveBeenCalledWith(session);
   });
 
-  it('writes without reading the seed back, ignores the write result, and closes', async () => {
+  it('writes without reading the seed back, and closes', async () => {
     const seed = Uint8Array.from([1, 2, 3]);
-    await writeAtD890AirSecuritySeedOnRadio(egress, seed);
+    await expect(writeAtD890AirSecuritySeedOnRadio(egress, seed)).resolves.toBeUndefined();
     expect(writeAtD890AirSecuritySeed).toHaveBeenCalledWith(session, egress, seed, undefined);
+    await expect(
+      vi.mocked(writeAtD890AirSecuritySeed).mock.results.at(-1)?.value,
+    ).resolves.toBeUndefined();
     expect(readAtD890AirSecuritySeedSet).not.toHaveBeenCalled();
     expect(closeRadioSession).toHaveBeenCalledWith(session);
   });

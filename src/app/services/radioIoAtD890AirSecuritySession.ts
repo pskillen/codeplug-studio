@@ -37,7 +37,7 @@ export async function checkAtD890AirSecuritySeed(
 
 /**
  * Write `seed`, or clear the record when `seed` is null, then close the session.
- * Does not read the radio afterwards. The write's return value is ignored.
+ * Does not read the radio afterwards.
  */
 export async function writeAtD890AirSecuritySeedOnRadio(
   egress: EgressPath,
