@@ -111,13 +111,18 @@ describe('modeProfileSummary', () => {
   });
 
   it('summarises SSB sideband', () => {
-    expect(modeProfileSummary({ ...defaultModeProfile('ssb'), ssbSideband: 'lsb' }, lookup)).toBe(
-      'LSB',
-    );
+    expect(
+      modeProfileSummary(
+        { ...defaultModeProfile('ssb'), ssbSideband: 'lsb' } as ChannelModeProfile,
+        lookup,
+      ),
+    ).toBe('LSB');
   });
 
   it('summarises YSF DG-ID', () => {
-    expect(modeProfileSummary({ ...defaultModeProfile('ysf'), dgId: 12 }, lookup)).toBe('DG12');
+    expect(
+      modeProfileSummary({ ...defaultModeProfile('ysf'), dgId: 12 } as ChannelModeProfile, lookup),
+    ).toBe('DG12');
   });
 
   it('summarises Tetra PLMN and talk group', () => {
@@ -193,8 +198,8 @@ describe('channelModeSummaryText', () => {
         colourCode: 1,
         timeslot: 2,
         contactRef: { kind: 'talkGroup', id: tgId },
-      },
-      { ...defaultModeProfile('fm'), rxTone: 'none', txTone: '103.5' },
+      } as ChannelModeProfile,
+      { ...defaultModeProfile('fm'), rxTone: 'none', txTone: '103.5' } as ChannelModeProfile,
     ];
     expect(channelModeSummaryText(channel, lookup)).toBe('DMR CC1 TS2 TG2351 · FM T 103.5');
   });

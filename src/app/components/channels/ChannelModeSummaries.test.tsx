@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
+import type { ChannelModeProfile } from '@core/models/library.ts';
 import { emptyLibrary, newChannel, newTalkGroup } from '@core/domain/factories.ts';
 import { DesignSystemV2Provider } from '../v2/index.ts';
 import ChannelModeSummaries from './ChannelModeSummaries.tsx';
@@ -35,7 +36,7 @@ describe('ChannelModeSummaries', () => {
         colourCode: 1,
         timeslot: 2,
         contactRef: { kind: 'talkGroup', id: lookup.talkGroups[0]!.id },
-      },
+      } as ChannelModeProfile,
     ];
     render(
       <DesignSystemV2Provider>

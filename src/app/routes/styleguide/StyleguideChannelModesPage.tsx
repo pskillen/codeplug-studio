@@ -54,7 +54,9 @@ function buildSummaryDemos(lookup: ReturnType<typeof useSummaryDemoLibrary>) {
   const tgId = lookup.talkGroups[0]!.id;
 
   const fmOnly = newChannel('styleguide-demo', 'FM simplex', 'GB3XX');
-  fmOnly.modeProfiles = [{ ...defaultModeProfile('fm'), rxTone: 'none', txTone: '94.8' }];
+  fmOnly.modeProfiles = [
+    { ...defaultModeProfile('fm'), rxTone: 'none', txTone: '94.8' } as ChannelModeProfile,
+  ];
 
   const fmDmr = newChannel('styleguide-demo', 'Wales link', 'GB7YY');
   fmDmr.primaryMode = 'dmr';
@@ -64,19 +66,20 @@ function buildSummaryDemos(lookup: ReturnType<typeof useSummaryDemoLibrary>) {
       colourCode: 1,
       timeslot: 2,
       contactRef: { kind: 'talkGroup', id: tgId },
-    },
-    { ...defaultModeProfile('fm'), rxTone: 'none', txTone: '103.5' },
+    } as ChannelModeProfile,
+    { ...defaultModeProfile('fm'), rxTone: 'none', txTone: '103.5' } as ChannelModeProfile,
   ];
 
   const fiveMode = newChannel('styleguide-demo', 'Kitchen sink');
-  fiveMode.modeProfiles = (['fm', 'dmr', 'dstar', 'ysf', 'nxdn'] as ChannelMode[]).map((mode) =>
-    mode === 'dmr'
-      ? {
-          ...defaultModeProfile('dmr'),
-          colourCode: 1,
-          contactRef: { kind: 'talkGroup', id: tgId },
-        }
-      : defaultModeProfile(mode),
+  fiveMode.modeProfiles = (['fm', 'dmr', 'dstar', 'ysf', 'nxdn'] as ChannelMode[]).map(
+    (mode) =>
+      (mode === 'dmr'
+        ? {
+            ...defaultModeProfile('dmr'),
+            colourCode: 1,
+            contactRef: { kind: 'talkGroup', id: tgId },
+          }
+        : defaultModeProfile(mode)) as ChannelModeProfile,
   );
 
   return { fmOnly, fmDmr, fiveMode };

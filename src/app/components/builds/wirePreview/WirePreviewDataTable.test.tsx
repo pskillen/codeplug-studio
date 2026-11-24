@@ -9,7 +9,8 @@ import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import type { Channel } from '@core/models/library.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
-import { newTalkGroup } from '@core/domain/factories.ts';
+import { emptyLibrary, newTalkGroup } from '@core/domain/factories.ts';
+import { librarySliceFrom } from '@core/services/assemble.ts';
 
 const rows: WirePreviewRow[] = [
   {
@@ -479,6 +480,7 @@ describe('WirePreviewDataTable', () => {
 
   it('shows mode profile summary beside the badge for non-expansion channel rows', () => {
     const tg = newTalkGroup('proj', 'Scotland', 2351, 'dmr');
+    const librarySlice = librarySliceFrom({ ...emptyLibrary(), talkGroups: [tg] });
     const channel = {
       id: 'ch-1',
       name: 'Demo',
@@ -509,7 +511,7 @@ describe('WirePreviewDataTable', () => {
       entityKind: 'channel',
       onRowActivate: vi.fn(),
       channelsById: new Map([['ch-1', channel]]),
-      library: { talkGroups: [tg], digitalContacts: [] },
+      library: librarySlice,
     });
 
     expect(screen.getByText('CC1 TS2 TG2351')).toBeInTheDocument();
@@ -517,6 +519,7 @@ describe('WirePreviewDataTable', () => {
 
   it('does not show mode profile summary on expansion rows', () => {
     const tg = newTalkGroup('proj', 'Scotland', 2351, 'dmr');
+    const librarySlice = librarySliceFrom({ ...emptyLibrary(), talkGroups: [tg] });
     const channel = {
       id: 'ch-1',
       name: 'Demo',
@@ -547,7 +550,7 @@ describe('WirePreviewDataTable', () => {
       entityKind: 'channel',
       onRowActivate: vi.fn(),
       channelsById: new Map([['ch-1', channel]]),
-      library: { talkGroups: [tg], digitalContacts: [] },
+      library: librarySlice,
     });
 
     expect(screen.queryByText('CC1 TS2 TG2351')).not.toBeInTheDocument();
