@@ -174,6 +174,25 @@ describe('AtD890AirSecuritySeedCard', () => {
     expect(screen.getByText(DMR_WARNING)).toBeInTheDocument();
   });
 
+  it('keeps the seed bytes the write was given when the card unmounts mid-write', async () => {
+    let received: Uint8Array | null = null;
+    let release: () => void = () => {};
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    vi.mocked(writeAtD890AirSecuritySeedOnRadio).mockImplementation(async (_egress, seed) => {
+      received = seed;
+      await pending;
+    });
+    const view = renderCard();
+    fireEvent.change(seedField(), { target: { value: GOOD } });
+    fireEvent.click(screen.getByRole('button', { name: 'Write seed' }));
+    await waitFor(() => expect(received).not.toBeNull());
+    view.unmount();
+    expect(Array.from(received!)).toEqual(Array.from(SEED));
+    release();
+  });
+
   it('shows a radio error and does not include the paste', async () => {
     vi.mocked(writeAtD890AirSecuritySeedOnRadio).mockRejectedValueOnce(
       new Error('The radio did not answer.'),

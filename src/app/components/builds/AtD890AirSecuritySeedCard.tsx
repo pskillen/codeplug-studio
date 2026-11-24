@@ -122,7 +122,8 @@ export default function AtD890AirSecuritySeedCard({ egress }: AtD890AirSecurityS
     setBusy(true);
     const abort = new AbortController();
     abortRef.current = abort;
-    const bytes = seedRef.current;
+    // Copy so unmount can wipe seedRef without zeroing the buffer this write is still using.
+    const seedCopy = action === 'write' && seedRef.current ? seedRef.current.slice() : null;
     try {
       if (action === 'check') {
         const set = await checkAtD890AirSecuritySeed(egress, { signal: abort.signal });
@@ -131,7 +132,7 @@ export default function AtD890AirSecuritySeedCard({ egress }: AtD890AirSecurityS
         setNote(null);
         return;
       }
-      await writeAtD890AirSecuritySeedOnRadio(egress, action === 'clear' ? null : bytes, {
+      await writeAtD890AirSecuritySeedOnRadio(egress, action === 'clear' ? null : seedCopy, {
         signal: abort.signal,
       });
       if (!mountedRef.current) {
@@ -150,6 +151,7 @@ export default function AtD890AirSecuritySeedCard({ egress }: AtD890AirSecurityS
     } catch (err) {
       if (!abort.signal.aborted && mountedRef.current) setError(errorText(err));
     } finally {
+      seedCopy?.fill(0);
       if (abortRef.current === abort) abortRef.current = null;
       if (mountedRef.current) setBusy(false);
     }
