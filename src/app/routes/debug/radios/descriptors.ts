@@ -74,6 +74,7 @@ import { dm32Coverage } from './coverageViews/Dm32Coverage.tsx';
 import { openGd77Coverage } from './coverageViews/OpenGd77Coverage.tsx';
 import { rt95Coverage } from './coverageViews/Rt95Coverage.tsx';
 import { uv5rMiniCoverage, uv5rMiniExtraHexRegions } from './coverageViews/Uv5rMiniCoverage.tsx';
+import { radioFoundryCoverage } from './coverageViews/RadioFoundryCoverage.tsx';
 import type { DebugArchive } from './captureArchive.ts';
 import type { DebugSensitiveRangesFn } from '@integrations/radio-io/debugSensitive.ts';
 import { openGd77ArchiveSensitiveRanges } from '@integrations/radio-io/radios/opengd77/debugSensitive.ts';
@@ -257,6 +258,7 @@ const radioFoundry = (
   readNotice: RADIOFOUNDRY_READ_NOTICE,
   calibrationNote: RADIOFOUNDRY_CALIBRATION_NOTE,
   readHistory: true,
+  coverage: radioFoundryCoverage,
   capabilities: capabilities('Available', 'Not yet available', 'Not yet available'),
 });
 
