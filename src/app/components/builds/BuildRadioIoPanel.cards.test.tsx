@@ -305,4 +305,14 @@ describe('BuildRadioIoPanel header label and every Web Serial radio (#1393)', ()
     fireEvent.click(within(section).getByRole('button', { name: 'Show' }));
     expect(within(section).getByText('Far out')).toBeInTheDocument();
   });
+
+  it('Before you write shows callsign then name', async () => {
+    const ch = fmChannel('North', 10_000_000_000);
+    ch.callsign = 'GB3XX';
+    library.value = { ...library.value, channels: [ch] };
+    renderPanel('radio-io-dm32uv');
+    const section = await screen.findByRole('region', { name: 'Before you write' });
+    fireEvent.click(within(section).getByRole('button', { name: 'Show' }));
+    expect(within(section).getByText('GB3XX — North')).toBeInTheDocument();
+  });
 });
