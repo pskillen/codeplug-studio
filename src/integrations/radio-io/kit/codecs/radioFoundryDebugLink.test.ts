@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { RadioTimeoutError } from '../errors.ts';
 import { crc16CcittFalse } from '../checksums.ts';
 import type { BytePipe } from '../../types.ts';
-import { decodeDebugFrame, encodeDebugFrame, readDebugFrame } from './radioFoundryDebugLink.ts';
+import { decodeDebugFrame, encodeDebugFrame } from './radioFoundryDebugLink.ts';
+import { readDebugFrame } from './radioFoundryDebugLink.ts';
 
 describe('RadioFoundry debug-link frames', () => {
   it('matches the spec INFO request, including CRC-16/CCITT-FALSE', () => {
