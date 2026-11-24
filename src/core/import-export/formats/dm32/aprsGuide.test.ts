@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { newAprsConfiguration, newChannel, newFormatBuild } from '@core/domain/factories.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
-import { buildDm32AprsGuide, DM32_APRS_GUIDE_FILE_NAME, DM32_APRS_GUIDE_TIP } from './aprsGuide.ts';
+import {
+  buildDm32AprsGuide,
+  collectDm32AprsGuideWarnings,
+  DM32_APRS_GUIDE_FILE_NAME,
+  DM32_APRS_GUIDE_TIP,
+} from './aprsGuide.ts';
 import { resolveDm32ExportFileNames, serialiseDm32Files } from './serialise.ts';
 import { collectDm32ExportWarnings } from './warnings.ts';
 import { DM32_EXPORT_FILE_NAMES } from './columns.ts';
@@ -153,5 +158,20 @@ describe('DM32 APRS.md export wiring', () => {
     expect(
       collectDm32ExportWarnings(assembled, library).map((w) => formatExportWarning(w)),
     ).toContain(DM32_APRS_GUIDE_TIP);
+  });
+
+  it('DM32 APRS guide tip is a note', () => {
+    const channel = dmrChannel('A');
+    const config = newAprsConfiguration(PROJECT_ID, 'Home');
+    const build = newFormatBuild(PROJECT_ID, 'dm32-baofeng-dm32uv');
+    const library = { ...emptyLibrary([channel]), aprsConfiguration: config };
+    const assembled = assemble(build, library, {
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+    });
+    const tip = collectDm32AprsGuideWarnings(assembled).find(
+      (w) => w.kind === 'general' && w.message === DM32_APRS_GUIDE_TIP,
+    );
+    expect(tip?.severity).toBe('info');
   });
 });

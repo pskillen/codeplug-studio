@@ -259,6 +259,10 @@ describe('AT-D890 MM9PDY NXDN gate on Write', () => {
       const { resetByte, result } = await run(storeRecord(1), { resetProtocol: 2 });
       expect(resetByte).toBe(0);
       expect(text(result.warnings ?? [])).toContain(ATD890_RESET_PROTOCOL_OFF_NOTICE);
+      const notice = result.warnings?.find(
+        (w) => w.kind === 'general' && w.message === ATD890_RESET_PROTOCOL_OFF_NOTICE,
+      );
+      expect(notice?.severity).toBe('info');
     });
 
     it('radio reports NXDN enabled and the value is already 0: no line in the summary', async () => {

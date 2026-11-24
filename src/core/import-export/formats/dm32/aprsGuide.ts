@@ -4,6 +4,7 @@ import type { AssembledBuild } from '@core/services/assemble.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import {
   formatExportWarning,
+  pushGeneralInfoWarning,
   pushGeneralWarning,
   type ExportWarning,
 } from '@core/import-export/exportWarning.ts';
@@ -197,7 +198,7 @@ export function collectDm32AprsGuideWarnings(assembled: AssembledBuild): ExportW
   const guide = buildDm32AprsGuide(assembled);
   if (!guide) return [];
   const warnings: ExportWarning[] = [];
-  pushGeneralWarning(warnings, DM32_APRS_GUIDE_TIP);
+  pushGeneralInfoWarning(warnings, DM32_APRS_GUIDE_TIP);
   warnings.push(...guide.warnings);
   return warnings;
 }

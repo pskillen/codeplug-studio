@@ -136,7 +136,11 @@ import {
   type AtD890SettingsTarget,
 } from '@integrations/radio-io/radios/at-d890uv/settingsFields.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
-import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import {
+  pushGeneralInfoWarning,
+  pushGeneralWarning,
+  type ExportWarning,
+} from '@core/import-export/exportWarning.ts';
 
 export {
   isRadioSerialSupported,
@@ -767,11 +771,11 @@ async function resolveRadioWriteImageForUpload(
   return prepared.image;
 }
 
-function openGd77WriteWarnings(session: RadioSession): ExportWarning[] {
+export function openGd77WriteWarnings(session: RadioSession): ExportWarning[] {
   if (!(session.radio instanceof OpenGd77Protocol)) return [];
   const warnings: ExportWarning[] = [];
   if (session.radio.getLastDirtySectorCount() === 0) {
-    pushGeneralWarning(warnings, OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE);
+    pushGeneralInfoWarning(warnings, OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE);
   }
   for (const userDb of session.radio.getLastUserDatabaseWarnings()) {
     pushGeneralWarning(warnings, userDb);
@@ -1219,7 +1223,7 @@ export async function uploadPreparedRadioWrite(
     }
     const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
     const warnings = openGd77WriteWarnings(session);
-    if (resetProtocolReplaced) pushGeneralWarning(warnings, ATD890_RESET_PROTOCOL_OFF_NOTICE);
+    if (resetProtocolReplaced) pushGeneralInfoWarning(warnings, ATD890_RESET_PROTOCOL_OFF_NOTICE);
     const timings = timing?.finish({
       profileId: egress.profileId,
       contacts: opts?.organisation?.digitalContacts?.length ?? 0,
