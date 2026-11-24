@@ -7,7 +7,6 @@ import { pushGeneralWarning } from '@core/import-export/exportWarning.ts';
 import type { RadioDescriptor, RadioPreflightResult } from '@integrations/radio-io/types.ts';
 import {
   openRadioSessionForEgress,
-  prepareRadioWriteImage,
   uploadPreparedRadioWrite,
 } from '../../../services/radioIoSession.ts';
 import { useRadioWriteFlow } from './useRadioWriteFlow.tsx';

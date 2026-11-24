@@ -547,9 +547,6 @@ async function uploadSource(
   return rec;
 }
 
-const STORAGE_FOREIGN_REFUSAL =
-  'This radio\'s flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry\'s web programming utility (it backs up first) or with "rfoundry_debug.py storage claim", then write again. Nothing was written.';
-
 describe('RadioFoundry codeplug refusals', () => {
   it('storage backstop refuses with retry none, nothing sent and debug text', async () => {
     const pipe = new ScriptedPipe(0xff);
