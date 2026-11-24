@@ -75,6 +75,7 @@ import {
 } from '../../services/radioReadIntoLibrary.ts';
 import { persistence } from '../../state/persistence.ts';
 import { ProjectContext } from '../../state/ProjectContext.ts';
+import { atD890BackupContainsAirSecuritySeed } from './atD890AirSecurityBackup.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 import ReadIntoLibraryPanel from './ReadIntoLibraryPanel.tsx';
 
@@ -547,6 +548,13 @@ export default function BuildRadioBackupPage() {
           </FormSection>
         ) : (
           <>
+            {atD890BackupContainsAirSecuritySeed(backup) ? (
+              <Alert color="yellow">
+                This backup contains the radio&apos;s Brandmeister AirSecurity seed. Keep the file
+                safe: anyone with it can authorise your DMR ID. Clearing the seed later does not
+                remove it from this file.
+              </Alert>
+            ) : null}
             <FormSection title="Restore">
               <Button
                 size="sm"
