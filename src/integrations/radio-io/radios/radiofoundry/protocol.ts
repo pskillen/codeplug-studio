@@ -95,7 +95,8 @@ export type RadioFoundryStorageInfoReply =
   | { kind: 'no-map' }
   | { kind: 'unknown-command' }
   | { kind: 'no-reply' };
-const PRE_WRITE_STAGE = 'Pre-write read';
+export const PRE_WRITE_STAGE = 'Pre-write read';
+export const BLOCK_CHECKSUMS_STAGE = 'Block checksums';
 const BLOCKS_STAGE = 'Codeplug blocks';
 export const STORAGE_FOREIGN_REFUSAL =
   'This radio\'s flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry\'s web programming utility (it backs up first) or with "rfoundry_debug.py storage claim", then write again. Nothing was written.';
@@ -408,6 +409,28 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     );
   }
 
+  /**
+   * Block counts for write progress planning after connect with an armed source.
+   * Returns null when the session is not ready to size a write.
+   */
+  plannedBlockCounts(): { checksum: number; read: number; write: number } | null {
+    if (!this.info || !this.armed) return null;
+    const source = this.armed;
+    const addresses = this.readAddresses();
+    let read = 0;
+    for (const addr of addresses) {
+      if (!blockFullyOwned(addr, source)) read += 1;
+    }
+    const area2Blocks = source.area2?.length
+      ? dmrIdDatabaseArea2Blocks(source.area2.length, this.info.imageEnd).length
+      : 0;
+    let write = 8 + area2Blocks;
+    if (this.readBlocks) {
+      write = this.changedBlocks().length;
+    }
+    return { checksum: addresses.length, read, write };
+  }
+
   async download(opts: {
     onProgress?: ProgressFn;
     signal?: AbortSignal;
@@ -416,7 +439,10 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.requireLink();
     const stage = opts.progressStage ?? 'Codeplug';
     const addresses = this.readAddresses();
-    const sums = await this.readSums(addresses, opts.signal);
+    const sums = await this.readSums(addresses, opts.signal, {
+      onProgress: opts.onProgress,
+      stage: BLOCK_CHECKSUMS_STAGE,
+    });
     const image = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
     image.fill(0xff);
     const blocks = new Map<number, Uint8Array>();
@@ -586,6 +612,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   private async readSums(
     addresses: number[],
     signal?: AbortSignal,
+    progress?: { onProgress?: ProgressFn; stage?: string },
   ): Promise<Map<number, BlockSum>> {
     const info = this.requireInfo();
     const out = new Map<number, BlockSum>();
@@ -614,6 +641,16 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
         out.set(start + j * BLOCK_SIZE, { crc, blank: ((mask >> j) & 1) === 1 });
       }
       i += count;
+      reportProgress(
+        progress?.onProgress,
+        {
+          cur: i,
+          max: addresses.length,
+          stage: progress?.stage ?? BLOCK_CHECKSUMS_STAGE,
+          msg: 'Checking blocks',
+        },
+        signal,
+      );
       if (i < addresses.length) {
         await this.pause(RADIOFOUNDRY_SUMS_PAUSE_MS, signal);
       }
@@ -937,6 +974,25 @@ function parseInfo(body: Uint8Array, board: RadioFoundryCableBoard): FastInfo {
 
 function codeplugOpName(op: number): string {
   return CODEPLUG_OP_NAMES[op] ?? `operation ${op}`;
+}
+
+function blockFullyOwned(addr: number, source: RadioFoundryWriteSource): boolean {
+  if (addr >= DMR_ID_DATABASE_AREA2_ADDRESS) {
+    const area2 = source.area2;
+    const owned = source.area2Owned;
+    if (!area2 || !owned) return false;
+    const base = addr - DMR_ID_DATABASE_AREA2_ADDRESS;
+    for (let i = 0; i < BLOCK_SIZE; i += 1) {
+      const at = base + i;
+      if (at >= owned.length || !owned[at]) return false;
+    }
+    return true;
+  }
+  for (let i = 0; i < BLOCK_SIZE; i += 1) {
+    const at = addr + i;
+    if (at >= source.owned.length || !source.owned[at]) return false;
+  }
+  return true;
 }
 
 function mergeBlock(radio: Uint8Array, addr: number, source: RadioFoundryWriteSource): Uint8Array {
