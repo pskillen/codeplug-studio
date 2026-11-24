@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import { parseAirSecuritySeedInput } from '@integrations/radio-io/radios/at-d890uv/airSecuritySeed.ts';
 import { DesignSystemV2Provider } from '../v2/index.ts';
@@ -93,6 +93,21 @@ describe('AtD890AirSecuritySeedCard', () => {
     expect(screen.getByText('Not checked')).toBeInTheDocument();
     expect(screen.getByText(ENTRY_WARNING)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Write seed' })).toBeDisabled();
+  });
+
+  it('lists the Brandmeister enrolment steps in order', () => {
+    renderCard();
+    const list = screen.getByRole('list', { name: 'Turn on AirSecurity in Brandmeister' });
+    const steps = within(list)
+      .getAllByRole('listitem')
+      .map((item) => item.textContent);
+    expect(list.tagName).toBe('OL');
+    expect(steps).toEqual([
+      'Write the seed and wait for Check radio to show Seed set.',
+      'On the radio, on a DMR channel that transmits with this DMR ID, press the BM AirSecurity key, then press PTT briefly.',
+      'While it transmits, the radio shows the number it is calling: 9 followed by six digits.',
+      'In Brandmeister Selfcare, enter those six digits, without the leading 9, as the code. Do it straight away: the code changes every 30 seconds.',
+    ]);
   });
 
   it('shows the refusal for a bad paste, keeps Write off, and does not repeat the paste', () => {

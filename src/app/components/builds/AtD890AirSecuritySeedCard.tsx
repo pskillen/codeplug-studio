@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Group, Stack } from '@mantine/core';
+import { Alert, Group, List, Stack, Text } from '@mantine/core';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import {
   airSecuritySeedUriDmrId,
@@ -33,6 +33,13 @@ const ENTRY_WARNING =
 const PLACEHOLDER = 'Paste the Selfcare text or the otpauth:// link';
 const WRITTEN_NOTE = 'Seed written. The radio restarts; wait about 20 seconds.';
 const CLEARED_NOTE = 'Seed cleared. The radio restarts; wait about 20 seconds.';
+
+const ENROLMENT_STEPS = [
+  'Write the seed and wait for Check radio to show Seed set.',
+  'On the radio, on a DMR channel that transmits with this DMR ID, press the BM AirSecurity key, then press PTT briefly.',
+  'While it transmits, the radio shows the number it is calling: 9 followed by six digits.',
+  'In Brandmeister Selfcare, enter those six digits, without the leading 9, as the code. Do it straight away: the code changes every 30 seconds.',
+];
 
 function dmrIdWarning(id: number): string {
   return `The link is for DMR ID ${id}, which is not one of this library's DMR IDs.`;
@@ -214,6 +221,21 @@ export default function AtD890AirSecuritySeedCard({ egress }: AtD890AirSecurityS
             Clear seed
           </Button>
         </Group>
+        <Stack gap={4}>
+          <Text size="sm" fw={500}>
+            Turn on AirSecurity in Brandmeister
+          </Text>
+          <List
+            type="ordered"
+            size="sm"
+            spacing={4}
+            aria-label="Turn on AirSecurity in Brandmeister"
+          >
+            {ENROLMENT_STEPS.map((step) => (
+              <List.Item key={step}>{step}</List.Item>
+            ))}
+          </List>
+        </Stack>
       </Stack>
     </Panel>
   );

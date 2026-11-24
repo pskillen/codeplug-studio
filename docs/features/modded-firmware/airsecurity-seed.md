@@ -20,6 +20,15 @@ The section always says: _Backups contain the seed. Clearing the seed does not r
 
 When the paste is accepted and it is an `otpauth://totp/` link whose label starts with `BrandMeister:` (any case) and a DMR ID, and that ID is not one of this library's DMR IDs, the page says _The link is for DMR ID {id}, which is not one of this library's DMR IDs._ Write seed stays available. A refused paste does not show that warning. Self-care text has no DMR ID, so it does not show it either. An NXDN ID with the same number does not count.
 
+## Turning AirSecurity on in Brandmeister
+
+Writing the seed does not finish the job: Brandmeister Selfcare then asks for one code from the radio. The section lists the steps, under **Turn on AirSecurity in Brandmeister**:
+
+1. Write the seed and wait for Check radio to show Seed set.
+2. On the radio, on a DMR channel that transmits with this DMR ID, press the BM AirSecurity key, then press PTT briefly.
+3. While it transmits, the radio shows the number it is calling: 9 followed by six digits.
+4. In Brandmeister Selfcare, enter those six digits, without the leading 9, as the code. Do it straight away: the code changes every 30 seconds.
+
 ## Backup warning
 
 On Backup / Restore, when the backup on screen (a live read or an opened file) is an AT-D890UV backup and its settings-store record is a seed, Studio shows: _This backup contains the radio's Brandmeister AirSecurity seed. Keep the file safe: anyone with it can authorise your DMR ID. Clearing the seed later does not remove it from this file._
