@@ -27,6 +27,7 @@ Agent rules: [.claude/rules/danger-zone.md](../../../.claude/rules/danger-zone.m
 | Range-change engine (core rules, frame, sender, session, verifier) | Shipped            | The "Engine" section below                                                                                    |
 | Danger zone area (page, registry, entry points, nav)               | Shipped            | PR 3 of #1369. **Start…** opens the wizard                                                                    |
 | Change frequency range wizard                                      | Shipped (pre-prod) | PR 4 of #1369, "The wizard" below. First hardware run 2026-10-27: RT-2 to RT-5 passed; the other rows pending |
+| Unlock settings storage (RadioFoundry)                             | Shipped (pre-prod) | #2030. Wizard at `export/danger-zone/storage-claim`; engine in [storage-claim.md](../../reference/radios/radiofoundry/storage-claim.md). Bench claim on foreign hardware pending. |
 
 ## The area
 
@@ -99,6 +100,10 @@ Like the firmware flasher, there is no Capacitor exemption: the area is hidden i
 1. Add a registry entry (copy deck: what it does, what it costs, minutes, radios).
 2. Build its wizard as a page under `export/danger-zone/<tool>` with its own guarded send path; set `route` so the card shows **Start…**.
 3. Say "nothing has changed" at every exit before the first write; offer a resumable recovery after it.
+
+## Unlock settings storage (RadioFoundry)
+
+Route: `/builds/:id/export/danger-zone/storage-claim`. Five RadioFoundry build targets. Steps: **Check** → **Back up** (zip with full token hex) → **Confirm** → **Unlock** (one CLAIM, poll INFO) → **Done**. Every exit before CLAIM ends with **Nothing has changed.** Interlocks match the range-change pattern: one guarded sender (`storageClaim/`), refusal tests for allow-list, board, region, sane ranges, backup twice, saved tick, INFO_CHIP, fresh INFO, one CLAIM, import boundary. Write pre-flight foreign refusal sets interlock `rf-storage-foreign` and offers **Unlock storage…** when the tool is listed for the build.
 
 ## Engine
 
