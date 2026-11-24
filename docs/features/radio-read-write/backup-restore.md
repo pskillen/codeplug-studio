@@ -112,6 +112,8 @@ Two actions:
 
 On the AT-D890UV a third section, **Vital data**, offers **Back up vital data** (calibration and identity, read twice, own zip, sensitivity warning) and **Open vital data file** (read-only summary: serial, frequency range, per-unit hash, local info decode). It is separate from the codeplug zip and has no restore.
 
+An AT-D890UV backup that holds a Brandmeister AirSecurity seed shows a warning on this page ([Brandmeister AirSecurity seed](../modded-firmware/airsecurity-seed.md)).
+
 On the Retevis RT95 a **Safety backup** section offers **Back up calibration** (EEPROM `0x3B00`–`0x3FFF`, the part a codeplug write cannot rebuild), **Back up full EEPROM** and **Use a backup file I already have**. It asks first for the serial number typed from the radio's label, which is how a backup is matched to a radio. The file downloads, and a saved record is made only when the operator confirms they saved it (or verifies a file they already have). Read-only; Studio has no restore for it. Details: [rt95/backup-restore.md](../../reference/radios/retevis/rt95/backup-restore.md#safety-backup-calibration-region).
 
 Copy: this is not Write; the zip stays on the operator’s disk; the file may contain contact banks / callsigns.
