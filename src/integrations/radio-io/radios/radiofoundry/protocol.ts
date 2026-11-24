@@ -78,12 +78,35 @@ import {
   type RadioFoundryWriteSource,
 } from './writeSource.ts';
 import { SAT_ALLOWED_OPS, SATELLITE_COMMAND } from './satellite.ts';
+import {
+  parseRadioFoundryStorageInfo,
+  RADIOFOUNDRY_STORAGE_COMMAND,
+  type RadioFoundryStorageInfo,
+} from './storageInfo.ts';
 
 const REPLY_COMMAND = CODEPLUG_COMMAND | 0x80;
+const REPLY_STORAGE = RADIOFOUNDRY_STORAGE_COMMAND | 0x80;
+const STORAGE_BUSY_WAIT_MS = 2000;
+const STORAGE_INFO_TIMEOUT_MS = 2000;
+
+export type RadioFoundryStorageInfoReply =
+  | { kind: 'info'; info: RadioFoundryStorageInfo }
+  | { kind: 'no-map' }
+  | { kind: 'unknown-command' }
+  | { kind: 'no-reply' };
 const PRE_WRITE_STAGE = 'Pre-write read';
 const BLOCKS_STAGE = 'Codeplug blocks';
-const STORAGE_FOREIGN_REFUSAL =
+export const STORAGE_FOREIGN_REFUSAL =
   'This radio\'s flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry\'s web programming utility (it backs up first) or with "rfoundry_debug.py storage claim", then write again. Nothing was written.';
+
+export const RF_STORAGE_NOT_STARTED =
+  "This radio's settings storage did not start, so RadioFoundry will not save anything to it. Power-cycle the radio and write again; if it keeps happening, check the radio with RadioFoundry's own tools. Nothing was written.";
+
+export const RF_STORAGE_NO_MAP =
+  'This RadioFoundry firmware has no settings storage map for this radio, so it will not save a codeplug. Check that the firmware matches the radio. Nothing was written.';
+
+export const RF_STORAGE_NOT_READY =
+  "RadioFoundry says its storage is not ready to save, and this firmware can't say why. Nothing was written.";
 
 const CODEPLUG_OP_NAMES: Record<number, string> = {
   [OP_INFO]: 'INFO',
@@ -106,7 +129,7 @@ const REFUSAL_REASONS: ReadonlyArray<{ name: string; sentence: string } | null> 
   },
   {
     name: 'STORAGE',
-    sentence: STORAGE_FOREIGN_REFUSAL,
+    sentence: RF_STORAGE_NOT_READY,
   },
   {
     name: 'NO_STAGING',
@@ -183,6 +206,42 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   storageWritable(): boolean | null {
     if (!this.info) return null;
     return (this.info.flags & 0x02) !== 0;
+  }
+
+  /**
+   * Read-only STORAGE op 0 INFO. Sends no other STORAGE ops. Retries busy for up to 2 s.
+   */
+  async readStorageInfo(signal?: AbortSignal): Promise<RadioFoundryStorageInfoReply> {
+    const pipe = this.requirePipe();
+    const busyUntil = performance.now() + STORAGE_BUSY_WAIT_MS;
+    for (;;) {
+      signal?.throwIfAborted();
+      const seq = this.seq & 0xff;
+      this.seq = (this.seq + 1) & 0xff;
+      await pipe.write(encodeDebugFrame(RADIOFOUNDRY_STORAGE_COMMAND, seq, new Uint8Array([0x00])));
+      let frame: DebugFrame;
+      try {
+        frame = await readFrame(pipe, STORAGE_INFO_TIMEOUT_MS);
+      } catch {
+        await pipe.drain?.();
+        return { kind: 'no-reply' };
+      }
+      if (frame.command !== REPLY_STORAGE || frame.seq !== seq || frame.payload.length < 1) {
+        await pipe.drain?.();
+        return { kind: 'no-reply' };
+      }
+      const status = frame.payload[0]!;
+      if (status === 3 && performance.now() < busyUntil) {
+        await delay(BUSY_GAP_MS);
+        continue;
+      }
+      if (status === 4) return { kind: 'no-map' };
+      if (status === 1) return { kind: 'unknown-command' };
+      if (status !== 0) return { kind: 'no-reply' };
+      const data = frame.payload.subarray(1);
+      if (data.length < 26) return { kind: 'no-reply' };
+      return { kind: 'info', info: parseRadioFoundryStorageInfo(data) };
+    }
   }
 
   /** One VERSION exchange. Never throws: any failure means "not reported". */
@@ -385,7 +444,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.requireArmed();
     // Refuse before the pre-write read when INFO says flash is not writable (foreign storage).
     if (this.storageWritable() === false) {
-      const err = adviseRadioError(new RadioInterlockError(STORAGE_FOREIGN_REFUSAL), {
+      const err = adviseRadioError(new RadioInterlockError(RF_STORAGE_NOT_READY), {
         retry: 'none',
         sent: 'nothing-sent',
       });

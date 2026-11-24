@@ -20,6 +20,7 @@ import {
 } from './board.ts';
 import { planRadioFoundryStages } from './plannedStages.ts';
 import { createRadioFoundryCableProtocol } from './protocol.ts';
+import { radioFoundryWritePreflight } from './writePreflight.ts';
 
 /** One RadioFoundry radio's descriptor. Every board gets one from here; nothing else differs per board. */
 export function createRadioFoundryDescriptor(board: RadioFoundryCableBoard): RadioDescriptor {
@@ -61,6 +62,7 @@ export function createRadioFoundryDescriptor(board: RadioFoundryCableBoard): Rad
     baudRate: board.baudRate,
     hydration,
     planStages: planRadioFoundryStages,
+    writePreflight: (session, ctx) => radioFoundryWritePreflight(session, ctx),
     ...(board.prodWriteDisabled ? { prodWriteDisabled: true } : {}),
   };
 }

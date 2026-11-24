@@ -188,6 +188,30 @@ export interface RadioHydrationHooks {
   ): void;
 }
 
+/** Identity the Connect pre-flight card and Review share. */
+export interface RadioPreflightIdentity {
+  model: string;
+  serial?: string;
+  name?: string;
+  firmware?: string;
+  firmwareNotes?: readonly string[];
+}
+
+export interface RadioPreflightRow {
+  label: string;
+  value: string;
+  status?: 'ok' | 'warn' | 'bad';
+}
+
+export interface RadioPreflightResult {
+  identity: RadioPreflightIdentity;
+  rows: readonly RadioPreflightRow[];
+  /** Stops the run here; carries retry/sent and debug text. */
+  refusal?: Error;
+  /** Join the radio warnings on Review. */
+  findings?: readonly import('@core/import-export/exportWarning.ts').ExportWarning[];
+}
+
 /** Refusals from the write projection alone; never touches a serial pipe. */
 export interface RadioWriteRefusal {
   message: string;
@@ -259,6 +283,15 @@ export interface RadioDescriptor {
     channels: readonly RadioChannelDto[];
     organisation: RadioWriteOrganisation;
   }): readonly RadioWriteRefusal[];
+  /** After connect, before the pre-write read. Read-class frames only. */
+  writePreflight?(
+    session: RadioSession,
+    ctx: {
+      profileId: string;
+      parts: RadioPlanContext['parts'];
+      signal?: AbortSignal;
+    },
+  ): Promise<RadioPreflightResult>;
 }
 
 /**

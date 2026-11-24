@@ -76,7 +76,9 @@ import {
   assertPlannedWriteBlock,
   isRadioFoundryCableRadio,
   RadioFoundryCableProtocol,
+  RF_STORAGE_NOT_READY,
 } from './protocol.ts';
+import { RADIOFOUNDRY_STORAGE_COMMAND } from './storageInfo.ts';
 import {
   radioFoundryWriteSourceFromAssembled,
   type RadioFoundryWriteSource,
@@ -86,7 +88,7 @@ const REPLY = CODEPLUG_COMMAND | 0x80;
 const DM32UV_VERSION_TEXT =
   'proto=1\ngit=454a5b76\ngit_time=1795365604\nsource=official\nboard=DM-32UV\nfeatures=\n';
 
-class ScriptedPipe implements BytePipe {
+export class ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
   readonly beginModes: number[] = [];
   readonly blockAddresses: number[] = [];
@@ -110,6 +112,9 @@ class ScriptedPipe implements BytePipe {
   versionText: string | null = DM32UV_VERSION_TEXT;
   versionStatus = 0;
   versionCommand = 0x82;
+  storageStatus = 0;
+  storageRegion = 2;
+  storageClaimPending = 0;
 
   constructor(fill: number) {
     for (const addr of servedBlockAddresses()) {
@@ -141,6 +146,19 @@ class ScriptedPipe implements BytePipe {
       const text = this.versionStatus === 0 ? new TextEncoder().encode(this.versionText) : [];
       const payload = Uint8Array.from([this.versionStatus, ...text]);
       this.enqueue(encodeDebugFrame(this.versionCommand, request.seq, payload));
+      return;
+    }
+    if (request.command === RADIOFOUNDRY_STORAGE_COMMAND) {
+      let body = new Uint8Array(0);
+      if (this.storageStatus === 0) {
+        body = new Uint8Array(26);
+        body[0] = this.storageRegion;
+        body[1] = this.storageClaimPending;
+      }
+      const payload = new Uint8Array(1 + body.length);
+      payload[0] = this.storageStatus;
+      if (body.length > 0) payload.set(body, 1);
+      this.enqueue(encodeDebugFrame(RADIOFOUNDRY_STORAGE_COMMAND | 0x80, request.seq, payload));
       return;
     }
     expect(request.command).toBe(CODEPLUG_COMMAND);
@@ -565,7 +583,7 @@ describe('RadioFoundry codeplug refusals', () => {
     const frameCountBeforeWrite = pipe.writes.length;
     const err = await proto.upload(memoryMapFromBytes(source.bytes), {}).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(RadioInterlockError);
-    expect((err as Error).message).toBe(STORAGE_FOREIGN_REFUSAL);
+    expect((err as Error).message).toBe(RF_STORAGE_NOT_READY);
     const opsAfter = pipe.writes
       .slice(frameCountBeforeWrite)
       .map((frame) => decodeDebugFrame(frame).payload[0]!);
