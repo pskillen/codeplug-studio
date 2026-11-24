@@ -185,31 +185,28 @@ describe('AtD890AirSecuritySeedCard', () => {
   });
 
   it('zeros the parsed seed when the card unmounts', () => {
-    let seed: Uint8Array | null = null;
     let before: number[] = [];
+    let after: number[] = [];
     const fill = vi.spyOn(Uint8Array.prototype, 'fill').mockImplementation(function (
       this: Uint8Array,
       value: number,
       start?: number,
       end?: number,
     ) {
-      if (this.length === SEED.length && value === 0) {
-        before = Array.from(this);
-        seed = this;
-      }
       const from = start ?? 0;
       const to = end ?? this.length;
+      if (this.length === SEED.length && value === 0) before = Array.from(this);
       for (let i = from; i < to; i++) this[i] = value;
+      if (this.length === SEED.length && value === 0) after = Array.from(this);
       return this;
     });
     try {
       const view = renderCard();
       fireEvent.change(seedField(), { target: { value: GOOD } });
-      expect(seed).toBeNull();
+      expect(before).toEqual([]);
       view.unmount();
-      expect(seed).not.toBeNull();
       expect(before).toEqual(Array.from(SEED));
-      expect(Array.from(seed!)).toEqual(Array.from(new Uint8Array(SEED.length)));
+      expect(after).toEqual(Array.from(new Uint8Array(SEED.length)));
     } finally {
       fill.mockRestore();
     }
