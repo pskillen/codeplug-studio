@@ -10,7 +10,8 @@ import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 import type { WriteVerifyResult } from '@integrations/radio-io/writeVerify.ts';
 import type { SatelliteKepsWriteResult } from '../../../services/satelliteKepsWriteAdapters.ts';
 import type { WriteErrorOutcome } from '../../../services/egress/writeErrorOutcome.ts';
-import type { WriteParts, WritePartSupport } from './writeParts.ts';
+import type { WriteShellOptions } from '../../../services/egress/writeShellOptions.ts';
+import type { WriteParts } from './writeParts.ts';
 
 export type WriteStep =
   'whatToWrite' | 'connectRead' | 'review' | 'writing' | 'restartCheck' | 'done';
@@ -56,12 +57,7 @@ export interface WriteStepperConfig {
   buildId: string;
   serialOk: boolean;
   writeHidden: boolean;
-  support: WritePartSupport;
-  /** Contacts: store notes (OpenGD77, DM-32, AT-D890). */
-  sharedContactBankNote: boolean;
-  sharedAddressBookNote: boolean;
-  /** AT-D890: contacts ride with the codeplug; this part writes the separate ID database. */
-  separateLookupDatabaseNote: boolean;
+  options: WriteShellOptions;
   /** Part summaries. */
   codeplugSummary?: string;
   kepsSummary?: string;
@@ -73,10 +69,6 @@ export interface WriteStepperConfig {
     description: string;
     onChange: (checked: boolean) => void;
   };
-  /** Seconds the radio needs to restart after END (0 when it does not need a wait). */
-  restartWaitSeconds: number;
-  /** Closing the session (Cancel on Review) sends END and the radio restarts (Q-C). */
-  cancelRestartsRadio?: boolean;
   /** AT-D890 Radio settings part and Done-screen choice. Absent on every other radio. */
   radioSettings?: {
     /** Fields set this session. */
@@ -87,10 +79,6 @@ export interface WriteStepperConfig {
     applyToEveryRadio: boolean;
     onApplyToEveryRadioChange: (checked: boolean) => void;
   };
-  /** Radios with a Check write step. */
-  supportsCheck: boolean;
-  /** Extra sentence on the Done step (DM-32: power-cycle the radio). */
-  successNote?: string;
 }
 
 export interface WriteStageRow {

@@ -26,7 +26,7 @@ export function RestartCheckBody({ config, view }: StepProps) {
       </Text>
       <RestartCountdown
         secondsLeft={view.restartSecondsLeft}
-        totalSeconds={config.restartWaitSeconds}
+        totalSeconds={config.options.restartAfterEndSeconds}
         data-testid="write-stepper-restart-wait"
       />
       {view.kepsFailure ? (

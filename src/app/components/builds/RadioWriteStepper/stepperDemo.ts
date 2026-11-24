@@ -5,6 +5,26 @@
 
 import { DEFAULT_WRITE_PARTS } from './writeParts.ts';
 import type { WriteFlowActions, WriteFlowView, WriteStepperConfig } from './types.ts';
+import type { WriteShellOptions } from '../../../services/egress/writeShellOptions.ts';
+
+export function demoShellOptions(overrides: Partial<WriteShellOptions> = {}): WriteShellOptions {
+  return {
+    radioLabel: 'AT-D890UV',
+    parts: { contacts: true, keps: true, settings: false },
+    contactStore: 'separate-lookup-database',
+    readPlan: true,
+    programHoldSafeMs: Number.POSITIVE_INFINITY,
+    restartAfterEndSeconds: 20,
+    check: {
+      available: true,
+      reportLabels: {
+        keptSectionTitle: 'Preserved settings',
+        keptSummaryLabel: '6 sentinel regions',
+      },
+    },
+    ...overrides,
+  };
+}
 
 export function demoStepperConfig(overrides: Partial<WriteStepperConfig> = {}): WriteStepperConfig {
   return {
@@ -12,12 +32,7 @@ export function demoStepperConfig(overrides: Partial<WriteStepperConfig> = {}): 
     buildId: 'build-1',
     serialOk: true,
     writeHidden: false,
-    support: { contacts: true, keps: true, settings: false },
-    sharedContactBankNote: false,
-    sharedAddressBookNote: false,
-    separateLookupDatabaseNote: false,
-    restartWaitSeconds: 20,
-    supportsCheck: true,
+    options: demoShellOptions(),
     ...overrides,
   };
 }

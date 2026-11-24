@@ -8,7 +8,7 @@
  * open between the read and the transmit; `beforeTransmit` is the pause.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   dualBankOptionsFromWriteSource,
   writeSourceIncludesDirectory,
@@ -73,7 +73,6 @@ import {
   overridesForWrite as rt95OverridesForWrite,
   setRead as setRt95Read,
 } from '../../../state/rt95RadioSettingsSession.ts';
-import { radioIoProfileSupportsRadioSettings } from '../../../lib/radioIoRadioSettingsSupport.ts';
 import { addBackupThisSession, findBackupForSerial } from '../../../state/radioSessionBackups.ts';
 import {
   packAtD890BackupFromSession,
@@ -155,6 +154,7 @@ import type {
   WriteSummary,
 } from './types.ts';
 import { estimateWriteSeconds, measuredThroughput } from './writeEstimate.ts';
+import { resolveWriteShellOptions } from '../../../services/egress/writeShellOptions.ts';
 import { clampPartsToSupport } from './writeParts.ts';
 import { DEFAULT_WRITE_PARTS, writesToRadioImage, type WriteParts } from './writeParts.ts';
 
@@ -165,9 +165,6 @@ function now(): number {
 
 type ContactSource = Exclude<DigitalContactsWriteSource, 'none'>;
 type Phase = 'read' | 'write' | 'keps' | 'check';
-
-/** Seconds the stepper waits for a radio that restarts after END. */
-export const RADIO_RESTART_WAIT_SECONDS = 20;
 
 /** Thrown out of `beforeTransmit` when the user cancels on Review: nothing is sent. */
 export class WriteCancelledError extends Error {
@@ -198,11 +195,6 @@ export interface UseRadioWriteFlowArgs {
   egress: EgressPath;
   descriptor: RadioDescriptor | undefined;
   activeProjectId: string | null;
-  supportsDualBankWrite: boolean;
-  /** Keps adapter for this profile, when there is one. */
-  kepsWriteFn?: SatelliteKepsWriteFn;
-  /** The keps writer can share the codeplug's session (D890). Otherwise the radio restarts first. */
-  kepsSameSessionAfterUpload: boolean;
   /** AT-D890 only: open the settings page (Edit on the part row, Review its settings). */
   onOpenSettingsPage?: () => void;
 }
@@ -250,18 +242,21 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     egress,
     descriptor,
     activeProjectId,
-    supportsDualBankWrite,
-    kepsWriteFn,
-    kepsSameSessionAfterUpload,
     onOpenSettingsPage,
   } = args;
   const isAtD890 = isAtD890RadioIoProfileId(egress.profileId);
   const isRt95 = isRt95RadioIoProfileId(egress.profileId);
-  const supportsRadioSettings = radioIoProfileSupportsRadioSettings(egress.profileId);
+  const shellOptions = useMemo(
+    () => resolveWriteShellOptions(egress, descriptor),
+    [egress, descriptor],
+  );
+  const kepsWriteFn = shellOptions.keps?.writeFn;
+  const kepsSameSessionAfterUpload = shellOptions.keps?.session === 'same';
+  const supportsDualBankWrite = shellOptions.parts.contacts;
+  const supportsRadioSettings = shellOptions.parts.settings;
   const supportsDigitalContacts = supportsDualBankWrite;
   const writeVerifyHooks = descriptor?.writeVerify;
-  const requiresReconnect = writeVerifyHooks?.requiresCrossSessionReconnect ?? true;
-  const restartWaitSeconds = requiresReconnect ? RADIO_RESTART_WAIT_SECONDS : 0;
+  const restartWaitSeconds = shellOptions.restartAfterEndSeconds;
 
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<WriteStep>('whatToWrite');
@@ -714,7 +709,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       kepsCount: extra.kepsCount,
       estimateSeconds,
       identityOnly: ctx.identityOnly,
-      restartsAfterWrite: requiresReconnect && writesToRadioImage(p),
+      restartsAfterWrite: restartWaitSeconds > 0 && writesToRadioImage(p),
       buildWarnings: buildWarningsRef.current,
       radioWarnings: tx.radioWarnings ?? [],
       channelLabel,

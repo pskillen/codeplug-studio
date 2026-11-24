@@ -19,7 +19,7 @@ The component is presentational. [`useRadioWriteFlow`](./useRadioWriteFlow.tsx) 
 
 | Prop      | Type                 | Description                                                                                                                                                                      |
 | --------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `config`  | `WriteStepperConfig` | Static facts: radio label, which part rows exist (`support`), summaries, the MM9PDY step-key switch (`stepKeys`), restart wait, whether a check exists, an optional success note |
+| `config`  | `WriteStepperConfig` | Static facts: `options` from `resolveWriteShellOptions` (parts offered, contact-store hint, restart wait, check and success note), plus summaries, the MM9PDY step-key switch (`stepKeys`), and AT-D890/RT95 `radioSettings` when applicable |
 | `view`    | `WriteFlowView`      | Current step, ticks, progress, rows, identity, review data, restart countdown, check status, summary                                                                             |
 | `actions` | `WriteFlowActions`   | Callbacks for every button                                                                                                                                                       |
 

@@ -14,6 +14,7 @@ import WritePartRow from '../WritePartRow.tsx';
 import classes from '../RadioWriteStepper.module.css';
 import type { WriteFlowActions, WriteFlowView, WriteStepperConfig } from '../types.ts';
 import { changesLabel } from '../../../../lib/atD890RadioSettingsText.ts';
+import { contactSourceHint } from '../contactSourceHint.ts';
 import { tickedPartCount } from '../writeParts.ts';
 
 const CONTACT_SOURCE_OPTIONS: {
@@ -25,10 +26,6 @@ const CONTACT_SOURCE_OPTIONS: {
   { value: 'both', label: 'Both' },
 ];
 
-/** AT-D890: contacts ride with the codeplug; the part fills the ID database. */
-const AT_D890_CONTACTS_HINT =
-  "Contacts always go to the radio's Contacts list with the codeplug, after talk groups, so channels and RX group lists can call them. This part writes the radio's ID database, which names incoming calls: your contacts, the ID directory, or both. ID directory rows for a DMR ID that is already a contact are skipped, so the radio shows your name for it. Unticked leaves the ID database as it is. Without Codeplug, the AT-D890UV still re-sends the codeplug image.";
-
 interface StepProps {
   config: WriteStepperConfig;
   view: WriteFlowView;
@@ -37,7 +34,7 @@ interface StepProps {
 
 export function WhatToWriteBody({ config, view, actions }: StepProps) {
   const { parts } = view;
-  const { support } = config;
+  const { parts: support } = config.options;
   const set = (patch: Partial<typeof parts>) => actions.onPartsChange({ ...parts, ...patch });
 
   return (
@@ -115,15 +112,7 @@ export function WhatToWriteBody({ config, view, actions }: StepProps) {
             ) : null}
             <FormField
               label="Contact source"
-              hint={
-                config.sharedContactBankNote
-                  ? 'Talk groups and contacts use the 1024-slot DMR contact bank. ID directory writes the firmware User Database for incoming-call lookup. ID directory does not fill the 1024 contact bank; ID directory alone leaves prior FLASH contacts. Contacts or Both replaces talk groups and contacts in that bank.'
-                  : config.sharedAddressBookNote
-                    ? 'Contacts and the ID directory share one address book. ID directory or Both replaces that book. Duplicate DMR IDs: contacts win. Operator radio IDs come from your Digital IDs when the codeplug is written; contacts alone do not rewrite them.'
-                    : config.separateLookupDatabaseNote
-                      ? AT_D890_CONTACTS_HINT
-                      : 'Contacts are the ones you curate and call. The ID directory is bulk lookup-only data. Both: contacts win on duplicate DMR ID.'
-              }
+              hint={contactSourceHint(config.options.contactStore, config.options.radioLabel)}
             >
               <SegmentedControl
                 size="sm"

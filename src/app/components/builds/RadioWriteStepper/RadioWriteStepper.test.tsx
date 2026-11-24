@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { DesignSystemV2Provider } from '../../v2/index.ts';
 import RadioWriteStepper from './RadioWriteStepper.tsx';
-import { demoFlowView, demoStepperConfig, noopActions } from './stepperDemo.ts';
+import { demoFlowView, demoShellOptions, demoStepperConfig, noopActions } from './stepperDemo.ts';
 import type { WriteFlowView, WriteStepperConfig } from './types.ts';
 
 function renderStepper(
@@ -41,7 +41,12 @@ describe('RadioWriteStepper — step 1, what to write', () => {
   });
 
   it('does not show rows the radio does not support, nor a Radio settings row', () => {
-    renderStepper({}, { support: { contacts: false, keps: false, settings: false } });
+    renderStepper(
+      {},
+      {
+        options: demoShellOptions({ parts: { contacts: false, keps: false, settings: false } }),
+      },
+    );
     expect(screen.queryByRole('checkbox', { name: 'Digital contacts' })).toBeNull();
     expect(screen.queryByRole('checkbox', { name: 'Satellite keps' })).toBeNull();
     expect(screen.queryByRole('checkbox', { name: 'Radio settings' })).toBeNull();
@@ -127,6 +132,19 @@ describe('RadioWriteStepper — steps 2 and 3', () => {
     expect(screen.getByText('Section A')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: label }));
     expect(actions.onWrite).toHaveBeenCalled();
+  });
+
+  it('Review Cancel says the radio restarts only when it restarts after END', () => {
+    renderStepper(
+      { step: 'review', review: { channelCount: 0, contactsNote: null, kepsCount: null, estimateSeconds: null, identityOnly: false, sections: [] } },
+      { options: demoShellOptions({ restartAfterEndSeconds: 20 }) },
+    );
+    expect(screen.getByText(/the radio restarts \(about 20 s\)/)).toBeInTheDocument();
+    renderStepper(
+      { step: 'review', review: { channelCount: 0, contactsNote: null, kepsCount: null, estimateSeconds: null, identityOnly: false, sections: [] } },
+      { options: demoShellOptions({ restartAfterEndSeconds: 0 }) },
+    );
+    expect(screen.getByText('Nothing has been written yet. Cancel leaves the radio as it is.')).toBeInTheDocument();
   });
 
   it('step 3 Cancel is the secondary action and writes nothing', () => {
@@ -251,7 +269,9 @@ describe('RadioWriteStepper — steps 4 to 6', () => {
           writeTimings: null,
         },
       },
-      { successNote: 'Power-cycle the radio.' },
+      {
+        options: demoShellOptions({ successNote: 'Power-cycle the radio.' }),
+      },
     );
     expect(screen.getByText('Codeplug written (412 channels).')).toBeInTheDocument();
     expect(screen.getByText('Check write: skipped.')).toBeInTheDocument();
@@ -268,7 +288,7 @@ describe('RadioWriteStepper — AT-D890 contacts hint (#1433)', () => {
   it('says contacts ride with the codeplug and the part writes the ID database', () => {
     renderStepper(
       { parts: { codeplug: true, contacts: true, settings: false, keps: false } },
-      { separateLookupDatabaseNote: true },
+      { options: demoShellOptions({ contactStore: 'separate-lookup-database' }) },
     );
     expect(
       screen.getByText(/Contacts always go to the radio's Contacts list with the codeplug/),

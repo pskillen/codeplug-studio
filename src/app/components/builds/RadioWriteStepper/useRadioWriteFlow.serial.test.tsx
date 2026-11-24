@@ -43,9 +43,6 @@ function mount() {
       egress: { id: 'e1', profileId: 'opengd77-1701' } as EgressPath,
       descriptor: undefined,
       activeProjectId: 'p1',
-      supportsDualBankWrite: false,
-      kepsWriteFn: vi.fn(),
-      kepsSameSessionAfterUpload: true,
     }),
   );
 }
