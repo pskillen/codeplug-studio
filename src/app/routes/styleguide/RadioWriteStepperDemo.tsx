@@ -134,6 +134,12 @@ const IDENTITY = { model: 'AT-D890UV', serial: 'DEMO0000', name: 'MM9PDY-2', fir
 
 const DEMO_BUILD_CHECKS = styleguideWarningsListDemo();
 
+const DEMO_KEPS_CAPACITY_REFUSAL = {
+  message:
+    '51 transmitter(s) are eligible to write, but this radio only supports 50 (see docs/reference/radios/anytone/at-d890uv/satellite-keps.md). Deselect some satellites or transmitters in the library before writing.',
+  retry: 'none' as const,
+};
+
 const DEMO_PROJECTION_REFUSALS = [
   {
     message:
@@ -153,17 +159,25 @@ function viewFor(
   parts: WriteParts,
   d890?: AtD890ReviewController,
   showProjectionRefusals = false,
+  showKepsCapacityRefusal = false,
 ): WriteFlowView {
+  const kepsNotes = DEMO_BUILD_CHECKS.filter((w) => w.kind === 'keps_excluded');
   const base = demoFlowView({
     step,
     parts,
     identity: step === 'whatToWrite' ? null : IDENTITY,
     buildChecks:
-      step === 'whatToWrite' && parts.codeplug
-        ? showProjectionRefusals
-          ? { status: 'ready', warnings: [], refusals: DEMO_PROJECTION_REFUSALS }
-          : { status: 'ready', warnings: DEMO_BUILD_CHECKS, refusals: [] }
-        : { status: 'idle', warnings: [], refusals: [] },
+      step === 'whatToWrite' && showKepsCapacityRefusal
+        ? {
+            status: 'ready',
+            warnings: kepsNotes,
+            refusals: [DEMO_KEPS_CAPACITY_REFUSAL],
+          }
+        : step === 'whatToWrite' && parts.codeplug
+          ? showProjectionRefusals
+            ? { status: 'ready', warnings: [], refusals: DEMO_PROJECTION_REFUSALS }
+            : { status: 'ready', warnings: DEMO_BUILD_CHECKS, refusals: [] }
+          : { status: 'idle', warnings: [], refusals: [] },
     channelLabel: styleguideChannelLabel,
   });
   switch (step) {
@@ -301,6 +315,7 @@ export default function RadioWriteStepperDemo() {
   const [d890Variant, setD890Variant] = useState<D890Variant | null>(null);
   const [configOverride, setConfigOverride] = useState<Partial<WriteStepperConfig> | null>(null);
   const [showProjectionRefusals, setShowProjectionRefusals] = useState(false);
+  const [showKepsCapacityRefusal, setShowKepsCapacityRefusal] = useState(false);
   const d890 = useMemo(
     () => (d890Variant ? demoD890Controller(d890Variant) : undefined),
     [d890Variant],
@@ -320,6 +335,7 @@ export default function RadioWriteStepperDemo() {
     shownParts,
     d890,
     showProjectionRefusals,
+    showKepsCapacityRefusal,
   );
   const actions = {
     ...noopActions(),
@@ -341,6 +357,7 @@ export default function RadioWriteStepperDemo() {
               setD890Variant(null);
               setConfigOverride(null);
               setShowProjectionRefusals(false);
+              setShowKepsCapacityRefusal(false);
               setStep(s);
             }}
           >
@@ -356,10 +373,25 @@ export default function RadioWriteStepperDemo() {
             setD890Variant(null);
             setConfigOverride(null);
             setShowProjectionRefusals(true);
+            setShowKepsCapacityRefusal(false);
             setStep('whatToWrite');
           }}
         >
           Step 1: projection refusals
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setD890Variant(null);
+            setConfigOverride(null);
+            setShowProjectionRefusals(false);
+            setShowKepsCapacityRefusal(true);
+            setParts({ codeplug: false, contacts: false, settings: false, keps: true });
+            setStep('whatToWrite');
+          }}
+        >
+          Step 1: keps notes and capacity refusal
         </Button>
         <Button
           variant="secondary"

@@ -82,6 +82,7 @@ import {
   serializeWriteVerifyPending,
 } from '../../../services/writeVerifyStorage.ts';
 import {
+  kepsWriteChecks,
   satelliteKepsCapacityWarning,
   type SatelliteKepsWriteResult,
 } from '../../../services/satelliteKepsWriteAdapters.ts';
@@ -242,6 +243,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     warnings: [],
     refusals: [],
   });
+  const projectionRefusalsRef = useRef<readonly RadioWriteRefusal[]>([]);
+  const kepsRefusalsRef = useRef<readonly RadioWriteRefusal[]>([]);
+  const kepsWarningsRef = useRef<readonly ExportWarning[]>([]);
+  const prepareWarningsRef = useRef<readonly ExportWarning[]>([]);
   const buildRefusalsRef = useRef<readonly RadioWriteRefusal[]>([]);
   const preflightFindingsRef = useRef<readonly ExportWarning[]>([]);
   const [preflight, setPreflight] = useState<WriteFlowView['preflight']>({
@@ -293,14 +298,61 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     return `${build.revision}|${p.codeplug}|${p.contacts}|${source}`;
   }
 
+  function publishBuildChecks(
+    status: WriteFlowView['buildChecks']['status'],
+    extra?: Pick<WriteFlowView['buildChecks'], 'message' | 'progress'>,
+  ): void {
+    const mergedRefusals = [...projectionRefusalsRef.current, ...kepsRefusalsRef.current];
+    const mergedWarnings = [...prepareWarningsRef.current, ...kepsWarningsRef.current];
+    buildRefusalsRef.current = mergedRefusals;
+    buildWarningsRef.current = mergedWarnings;
+    setBuildChecks({ status, warnings: mergedWarnings, refusals: mergedRefusals, ...extra });
+  }
+
+  useEffect(() => {
+    if (!isOpen || !activeProjectId) return undefined;
+    if (!parts.keps || !kepsWriteFn) {
+      kepsRefusalsRef.current = [];
+      kepsWarningsRef.current = [];
+      if (!writesToRadioImage(parts)) {
+        queueMicrotask(() => publishBuildChecks('idle'));
+      } else {
+        queueMicrotask(() => publishBuildChecks('ready'));
+      }
+      return undefined;
+    }
+    let cancelled = false;
+    void persistence.listSatellites(activeProjectId).then((all) => {
+      if (cancelled) return;
+      const enabled = all.filter((s) => s.enabled);
+      const checks = kepsWriteChecks(egress.profileId, enabled, build.satelliteOverrides);
+      kepsRefusalsRef.current = checks.refusals;
+      kepsWarningsRef.current = checks.warnings;
+      if (!writesToRadioImage(parts)) {
+        publishBuildChecks('ready');
+        return;
+      }
+      publishBuildChecks('ready');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isOpen,
+    activeProjectId,
+    parts.keps,
+    parts.codeplug,
+    parts.contacts,
+    parts.settings,
+    kepsWriteFn,
+    egress.profileId,
+    build.satelliteOverrides,
+    build.revision,
+  ]);
+
   useEffect(() => {
     if (!isOpen || !activeProjectId) return;
     if (!writesToRadioImage(parts)) {
-      queueMicrotask(() => {
-        setBuildChecks({ status: 'idle', warnings: [], refusals: [] });
-        buildWarningsRef.current = [];
-        buildRefusalsRef.current = [];
-      });
       return undefined;
     }
     const key = prepareCacheKey(parts, contactSource);
@@ -309,7 +361,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       prepareAbortRef.current?.abort();
       const ac = new AbortController();
       prepareAbortRef.current = ac;
-      setBuildChecks({ status: 'checking', warnings: [], refusals: [], progress: undefined });
+      publishBuildChecks('checking', { progress: undefined });
       const runPrepare = async (): Promise<Awaited<ReturnType<typeof prepareRadioWriteImage>>> => {
         const library = await loadLibrarySlice(persistence, activeProjectId);
         if (ac.signal.aborted) throw ac.signal.reason;
@@ -340,14 +392,13 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       };
       const promise = runPrepare()
         .then((result) => {
-          buildWarningsRef.current = result.warnings;
-          const refusals =
+          prepareWarningsRef.current = result.warnings;
+          projectionRefusalsRef.current =
             descriptor?.checkWriteProjection?.({
               channels: result.channels,
               organisation: result.organisation,
             }) ?? [];
-          buildRefusalsRef.current = refusals;
-          setBuildChecks({ status: 'ready', warnings: result.warnings, refusals });
+          publishBuildChecks('ready');
           if (prepareCacheRef.current?.key === key) {
             prepareCacheRef.current = { ...prepareCacheRef.current, result };
           }
@@ -355,10 +406,12 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         })
         .catch((err) => {
           if (ac.signal.aborted) throw err;
+          prepareWarningsRef.current = [];
+          projectionRefusalsRef.current = [];
           if (err instanceof RadioWriteBlockedError) {
-            setBuildChecks({ status: 'error', warnings: [], refusals: [], message: err.message });
+            publishBuildChecks('error', { message: err.message });
           } else {
-            setBuildChecks({ status: 'error', warnings: [], refusals: [], message: String(err) });
+            publishBuildChecks('error', { message: String(err) });
           }
           throw err;
         });
@@ -859,7 +912,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     autoProceedRef.current = opts.reconnect;
     try {
       if (!activeProjectId) throw new Error('No active project.');
-      if (writesToRadioImage(p) && buildRefusalsRef.current.length > 0) {
+      if (buildRefusalsRef.current.length > 0) {
         setBusyNotify(false);
         setStep('whatToWrite');
         return;
@@ -928,15 +981,14 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
             result: prepared,
           };
         }
-        buildWarningsRef.current = prepared.warnings;
-        const refusals =
+        prepareWarningsRef.current = prepared.warnings;
+        projectionRefusalsRef.current =
           descriptor?.checkWriteProjection?.({
             channels: prepared.channels,
             organisation: prepared.organisation,
           }) ?? [];
-        buildRefusalsRef.current = refusals;
-        if (refusals.length > 0) {
-          setBuildChecks((prev) => ({ ...prev, refusals }));
+        publishBuildChecks('ready');
+        if (buildRefusalsRef.current.length > 0) {
           setBusyNotify(false);
           setStep('whatToWrite');
           return;
@@ -1219,7 +1271,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   async function connectAndRead(): Promise<void> {
     const p = partsRef.current;
     resetRun();
-    if (writesToRadioImage(p) && buildRefusalsRef.current.length > 0) {
+    if (buildRefusalsRef.current.length > 0) {
       return;
     }
     if (p.keps && kepsWriteFn) {
@@ -1235,7 +1287,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       }
       const all = await persistence.listSatellites(activeProjectId);
       satellitesRef.current = all.filter((s) => s.enabled);
-      const capacity = satelliteKepsCapacityWarning(egress.profileId, satellitesRef.current);
+      const capacity = satelliteKepsCapacityWarning(
+        egress.profileId,
+        satellitesRef.current,
+        build.satelliteOverrides,
+      );
       if (capacity) {
         fail(
           new RadioWriteBlockedError(capacity, undefined, { retry: 'none', sent: 'nothing-sent' }),

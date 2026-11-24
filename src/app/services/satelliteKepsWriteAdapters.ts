@@ -235,7 +235,7 @@ export function kepsWriteChecks(
     if (capacityMsg) refusals.push({ message: capacityMsg, retry: 'none' });
   }
 
-  if (eligible === 0 && satellites.length > 0) {
+  if (capacity && eligible === 0 && satellites.length > 0) {
     refusals.push({ message: NOTHING_KEPS_ELIGIBLE_REFUSAL, retry: 'none' });
   }
 
