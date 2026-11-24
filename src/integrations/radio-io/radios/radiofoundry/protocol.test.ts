@@ -75,10 +75,13 @@ import { listDescriptorsForProfile } from '../../registry.ts';
 import {
   assertImageBlock,
   assertPlannedWriteBlock,
+  BLOCK_CHECKSUMS_STAGE,
   isRadioFoundryCableRadio,
+  PRE_WRITE_STAGE,
   RadioFoundryCableProtocol,
   RF_STORAGE_NOT_READY,
 } from './protocol.ts';
+import type { RadioSession } from '../../types.ts';
 import { RADIOFOUNDRY_STORAGE_COMMAND } from './storageInfo.ts';
 import {
   radioFoundryWriteSourceFromAssembled,
@@ -422,7 +425,12 @@ describe('DM-32 RadioFoundry fast codeplug', () => {
     expect(requestCommands(pipe)).not.toContain(0x0d);
 
     expectEventsFollowPlan(planRadioFoundryStages('write', {}), rec.events);
-    expect(rec.stages).toEqual(['Pre-write read', 'Codeplug blocks', 'Commit']);
+    expect(rec.stages).toEqual([
+      BLOCK_CHECKSUMS_STAGE,
+      PRE_WRITE_STAGE,
+      'Codeplug blocks',
+      'Commit',
+    ]);
   });
 });
 
@@ -655,6 +663,38 @@ describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
     const block = CONTACT_BASE & ~(BLOCK_SIZE - 1);
     expect(pipe.block(block)[CONTACT_BASE - block]).toBe('A'.charCodeAt(0));
     expect(written).not.toContain(PHYSICAL_CODEPLUG_BASE);
+  });
+
+  it('reports "No contact blocks changed" only when no owned contact block is written', async () => {
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
+      includeLibraryContacts: true,
+    });
+    const block = CONTACT_BASE & ~(BLOCK_SIZE - 1);
+    for (let i = 0; i < BLOCK_SIZE && block + i < source.owned.length; i += 1) {
+      source.owned[block + i] = 1;
+    }
+    const pipe = new ScriptedPipe(0xff);
+    const rec = await uploadSource(pipe, source);
+    expect(writtenBlockAddresses(pipe).some((addr) => covers(addr, CONTACT_BASE))).toBe(true);
+    expect(rec.events.some((event) => event.msg === 'No contact blocks changed')).toBe(false);
+  });
+
+  it('reports "No contact blocks changed" when owned contact blocks already match the radio', async () => {
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
+      includeLibraryContacts: true,
+    });
+    const block = CONTACT_BASE & ~(BLOCK_SIZE - 1);
+    for (let i = 0; i < BLOCK_SIZE && block + i < source.owned.length; i += 1) {
+      source.owned[block + i] = 1;
+    }
+    const pipe = new ScriptedPipe(0xff);
+    const radio = pipe.block(block);
+    for (let i = 0; i < BLOCK_SIZE && block + i < source.bytes.length; i += 1) {
+      radio[i] = source.bytes[block + i]!;
+    }
+    const rec = await uploadSource(pipe, source);
+    expect(writtenBlockAddresses(pipe).some((addr) => covers(addr, CONTACT_BASE))).toBe(false);
+    expect(rec.events.some((event) => event.msg === 'No contact blocks changed')).toBe(true);
   });
 
   it('says no contact blocks changed when the contact table already matches', async () => {
@@ -1315,7 +1355,103 @@ function threeSumsRunAddresses(): number[] {
   ];
 }
 
+function sumsProgressAddresses(): number[] {
+  return servedBlockAddresses().slice(0, 48);
+}
+
+function wantedArea2Block(source: RadioFoundryWriteSource, addr: number): Uint8Array {
+  const want = new Uint8Array(BLOCK_SIZE).fill(0xff);
+  const base = addr - DMR_ID_DATABASE_AREA2_ADDRESS;
+  for (let i = 0; i < BLOCK_SIZE; i += 1) {
+    const at = base + i;
+    if (source.area2Owned![at]) want[i] = source.area2![at]!;
+  }
+  return want;
+}
+
+function readWireAddresses(pipe: ScriptedPipe): number[] {
+  return pipe.writes
+    .map((frame) => decodeDebugFrame(frame))
+    .filter((frame) => frame.payload[0] === OP_READ)
+    .map((frame) => u32(frame.payload, 1));
+}
+
+function area2ArmedSource(blockCount: number, byte = 0x5a): RadioFoundryWriteSource {
+  const bytes = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE).fill(0xff);
+  const owned = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
+  const area2Len = blockCount * BLOCK_SIZE;
+  const area2 = new Uint8Array(area2Len).fill(byte);
+  const area2Owned = new Uint8Array(area2Len).fill(1);
+  return { bytes, owned, warnings: [], area2, area2Owned };
+}
+
+describe('RadioFoundry write progress plan', () => {
+  const SERVED_BLOCKS = servedBlockAddresses().length;
+  const READ_BYTES = SERVED_BLOCKS * BLOCK_SIZE;
+  const CHECKSUM_BYTES_PER_BLOCK = 760;
+
+  it('orders write stages with codeplug-only fallbacks when there is no session', () => {
+    expect(planRadioFoundryStages('write', {}).map((stage) => stage.label)).toEqual([
+      BLOCK_CHECKSUMS_STAGE,
+      PRE_WRITE_STAGE,
+      'Codeplug blocks',
+      'Commit',
+    ]);
+    const plan = planRadioFoundryStages('write', {});
+    expect(plan[0]!.weight).toBe(SERVED_BLOCKS * CHECKSUM_BYTES_PER_BLOCK);
+    expect(plan[1]!.weight).toBe(READ_BYTES);
+    expect(plan[2]!.weight).toBe(8 * BLOCK_SIZE);
+    expect(plan[3]!.weight).toBe(32);
+  });
+
+  it('sizes checksum, read and write when area 2 is armed', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    const source = area2ArmedSource(4);
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    proto.armWriteSource(source);
+    const plan = planRadioFoundryStages('write', {
+      session: { radio: proto, pipe } as unknown as RadioSession,
+    });
+    const checksumBlocks = SERVED_BLOCKS + 4;
+    expect(plan[0]!.weight).toBe(checksumBlocks * CHECKSUM_BYTES_PER_BLOCK);
+    expect(plan[1]!.weight).toBe(SERVED_BLOCKS * BLOCK_SIZE);
+    expect(plan[2]!.weight).toBe((8 + 4) * BLOCK_SIZE);
+  });
+});
+
 describe('RadioFoundry SUMS pacing', () => {
+  it('reports block-count progress during checksums', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD, {
+      pause: async () => {},
+    });
+    await proto.connect(pipe);
+    const addresses = sumsProgressAddresses();
+    const progress: Array<{ cur: number; max: number; stage: string }> = [];
+    await (
+      proto as unknown as {
+        readSums: (
+          addresses: number[],
+          signal?: AbortSignal,
+          progress?: {
+            onProgress?: (p: { cur: number; max: number; stage: string }) => void;
+            stage?: string;
+          },
+        ) => Promise<unknown>;
+      }
+    ).readSums(addresses, undefined, {
+      stage: BLOCK_CHECKSUMS_STAGE,
+      onProgress: (p) => progress.push({ cur: p.cur, max: p.max, stage: p.stage }),
+    });
+    const max = addresses.length;
+    expect(max).toBe(48);
+    expect(progress.map((row) => row.cur)).toEqual([16, 32, 48]);
+    expect(progress.every((row) => row.max === max && row.stage === BLOCK_CHECKSUMS_STAGE)).toBe(
+      true,
+    );
+  });
+
   it('pauses between SUMS runs but not after the last', async () => {
     const pipe = new SumsOrderPipe(0xff);
     const pauseCalls: number[] = [];
@@ -1374,5 +1510,73 @@ describe('RadioFoundry SUMS pacing', () => {
     ).readSums(addresses);
     expect(pauseCalls).toHaveLength(0);
     expect(requestOps(pipe).filter((op) => op === OP_SUMS)).toHaveLength(1);
+  });
+});
+
+describe('RadioFoundry pre-write read without whole-block READ', () => {
+  it('sends no READ frames for fully owned area-2 blocks', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    const source = area2ArmedSource(3, 0x11);
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    proto.armWriteSource(source);
+    const area2Addrs = new Set(
+      dmrIdDatabaseArea2Blocks(
+        source.area2!.length,
+        DM32UV_RADIOFOUNDRY_CABLE_BOARD.limits.IMAGE_END,
+      ),
+    );
+    for (const addr of area2Addrs) pipe.block(addr).fill(0x5a);
+    const framesBefore = pipe.writes.length;
+    await proto.download({ progressStage: PRE_WRITE_STAGE });
+    const reads = pipe.writes
+      .slice(framesBefore)
+      .map((frame) => decodeDebugFrame(frame))
+      .filter((frame) => frame.payload[0] === OP_READ)
+      .map((frame) => u32(frame.payload, 1));
+    expect(reads.some((addr) => area2Addrs.has(addr))).toBe(false);
+  });
+
+  it('does not write an area-2 block whose CRC already matches', async () => {
+    const source = area2ArmedSource(1, 0x22);
+    const want = wantedArea2Block(source, DMR_ID_DATABASE_AREA2_ADDRESS);
+    const pipe = new ScriptedPipe(0xff);
+    pipe.block(DMR_ID_DATABASE_AREA2_ADDRESS).set(want);
+    await uploadSource(pipe, source);
+    expect(writtenBlockAddresses(pipe)).not.toContain(DMR_ID_DATABASE_AREA2_ADDRESS);
+  });
+
+  it('writes an area-2 block when the wanted CRC differs', async () => {
+    const source = area2ArmedSource(1, 0x33);
+    const pipe = new ScriptedPipe(0x00);
+    pipe.block(DMR_ID_DATABASE_AREA2_ADDRESS).fill(0x00);
+    await uploadSource(pipe, source);
+    expect(writtenBlockAddresses(pipe)).toContain(DMR_ID_DATABASE_AREA2_ADDRESS);
+    expect(pipe.block(DMR_ID_DATABASE_AREA2_ADDRESS)[0]).toBe(0x33);
+  });
+
+  it('still READs a partly-owned codeplug block', async () => {
+    const bytes = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE).fill(0xff);
+    const owned = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
+    bytes[0x10] = 0xaa;
+    owned[0x10] = 1;
+    const source: RadioFoundryWriteSource = { bytes, owned, warnings: [] };
+    const pipe = new ScriptedPipe(0x5b);
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    proto.armWriteSource(source);
+    await proto.download({ progressStage: PRE_WRITE_STAGE });
+    expect(readWireAddresses(pipe)).toContain(0);
+  });
+
+  it('READs every non-blank block on a plain connect read', async () => {
+    const pipe = new ScriptedPipe(0x5c);
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    await proto.download({});
+    const reads = new Set(readWireAddresses(pipe));
+    for (const addr of servedBlockAddresses()) {
+      if (!isBlank(pipe.block(addr))) expect(reads).toContain(addr);
+    }
   });
 });

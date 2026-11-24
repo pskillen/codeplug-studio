@@ -95,7 +95,8 @@ export type RadioFoundryStorageInfoReply =
   | { kind: 'no-map' }
   | { kind: 'unknown-command' }
   | { kind: 'no-reply' };
-const PRE_WRITE_STAGE = 'Pre-write read';
+export const PRE_WRITE_STAGE = 'Pre-write read';
+export const BLOCK_CHECKSUMS_STAGE = 'Block checksums';
 const BLOCKS_STAGE = 'Codeplug blocks';
 export const STORAGE_FOREIGN_REFUSAL =
   'This radio\'s flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry\'s web programming utility (it backs up first) or with "rfoundry_debug.py storage claim", then write again. Nothing was written.';
@@ -225,6 +226,8 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   private seq = 1;
   private info: FastInfo | null = null;
   private readBlocks: Map<number, Uint8Array> | null = null;
+  /** Per-block SUMS metadata from the last download; used when a write skips READ on owned blocks. */
+  private blockSums: Map<number, BlockSum> | null = null;
   private armed: RadioFoundryWriteSource | null = null;
   private version: RadioFoundryBuildIdentity | null = null;
 
@@ -305,6 +308,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.info = null;
     this.version = null;
     this.readBlocks = null;
+    this.blockSums = null;
     try {
       const body = await this.request(OP_INFO, new Uint8Array(0), 2000);
       this.info = parseInfo(body, this.board);
@@ -350,6 +354,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.info = null;
     this.version = null;
     this.readBlocks = null;
+    this.blockSums = null;
     this.armed = null;
   }
 
@@ -408,6 +413,28 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     );
   }
 
+  /**
+   * Block counts for write progress planning after connect with an armed source.
+   * Returns null when the session is not ready to size a write.
+   */
+  plannedBlockCounts(): { checksum: number; read: number; write: number } | null {
+    if (!this.info || !this.armed) return null;
+    const source = this.armed;
+    const addresses = this.readAddresses();
+    let read = 0;
+    for (const addr of addresses) {
+      if (!blockFullyOwned(addr, source)) read += 1;
+    }
+    const area2Blocks = source.area2?.length
+      ? dmrIdDatabaseArea2Blocks(source.area2.length, this.info.imageEnd).length
+      : 0;
+    let write = 8 + area2Blocks;
+    if (this.readBlocks) {
+      write = this.changedBlocks().length;
+    }
+    return { checksum: addresses.length, read, write };
+  }
+
   async download(opts: {
     onProgress?: ProgressFn;
     signal?: AbortSignal;
@@ -415,8 +442,13 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   }): Promise<MemoryMap> {
     this.requireLink();
     const stage = opts.progressStage ?? 'Codeplug';
+    const preWrite = this.armed != null && stage === PRE_WRITE_STAGE;
     const addresses = this.readAddresses();
-    const sums = await this.readSums(addresses, opts.signal);
+    const sums = await this.readSums(addresses, opts.signal, {
+      onProgress: opts.onProgress,
+      stage: BLOCK_CHECKSUMS_STAGE,
+    });
+    this.blockSums = new Map(sums);
     const image = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
     image.fill(0xff);
     const blocks = new Map<number, Uint8Array>();
@@ -424,9 +456,16 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       const addr = addresses[i]!;
       const sum = sums.get(addr);
       if (!sum) throw new RadioProtocolError(`No checksum for block ${hex(addr)}.`);
-      const block = sum.blank ? blankBlock() : await this.readBlock(addr, sum.crc, opts.signal);
-      if (crc32Ieee(block) !== sum.crc) {
-        throw new RadioProtocolError(`Block ${hex(addr)} checksum does not match the radio.`);
+      const skipRead = preWrite && blockFullyOwned(addr, this.armed!);
+      let block: Uint8Array;
+      if (skipRead) {
+        const seed = sum.blank ? blankBlock() : new Uint8Array(BLOCK_SIZE).fill(0xff);
+        block = mergeBlock(seed, addr, this.armed!);
+      } else {
+        block = sum.blank ? blankBlock() : await this.readBlock(addr, sum.crc, opts.signal);
+        if (crc32Ieee(block) !== sum.crc) {
+          throw new RadioProtocolError(`Block ${hex(addr)} checksum does not match the radio.`);
+        }
       }
       blocks.set(addr, block);
       if (addr < RADIOFOUNDRY_IMAGE_SIZE) {
@@ -486,7 +525,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       await this.download({ ...opts, progressStage: PRE_WRITE_STAGE });
     }
     const jobs = this.changedBlocks();
-    if (this.privateContactTableMatches()) {
+    if (this.privateContactTableMatches(jobs)) {
       reportProgress(
         opts.onProgress,
         { cur: 1, max: 1, stage: BLOCKS_STAGE, msg: 'No contact blocks changed' },
@@ -527,6 +566,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     );
     await this.request(OP_COMMIT, new Uint8Array(0), 20000);
     this.readBlocks = null;
+    this.blockSums = null;
   }
 
   decodeChannels(image: MemoryMap): RadioChannelDto[] {
@@ -544,18 +584,13 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     return undefined;
   }
 
-  /** Owned private-contact records already match the bytes read from the radio. */
-  private privateContactTableMatches(): boolean {
+  /** None of the owned private-contact blocks are in the upload job list. */
+  private privateContactTableMatches(jobs: { addr: number; data: Uint8Array }[]): boolean {
     const source = this.requireArmed();
-    const blocks = this.requireReadBlocks();
     const addrs = ownedPrivateContactBlocks(source);
     if (addrs.length === 0) return false;
-    for (const addr of addrs) {
-      const radio = blocks.get(addr);
-      if (!radio) return false;
-      if (!sameBytes(mergeBlock(radio, addr, source), radio)) return false;
-    }
-    return true;
+    const writing = new Set(jobs.map((job) => job.addr));
+    return addrs.every((addr) => !writing.has(addr));
   }
 
   private readAddresses(): number[] {
@@ -573,10 +608,20 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   private changedBlocks(): { addr: number; data: Uint8Array }[] {
     const blocks = this.requireReadBlocks();
     const source = this.requireArmed();
+    const sums = this.blockSums;
     const jobs: { addr: number; data: Uint8Array }[] = [];
     for (const addr of this.readAddresses()) {
       const radio = blocks.get(addr);
       if (!radio) throw new RadioProtocolError(`Block ${hex(addr)} was not read.`);
+      if (blockFullyOwned(addr, source)) {
+        const want = mergeBlock(blankBlock(), addr, source);
+        const sum = sums?.get(addr);
+        if (!sum) throw new RadioProtocolError(`No checksum for block ${hex(addr)}.`);
+        const matches =
+          (sum.blank && want.every((byte) => byte === 0xff)) || crc32Ieee(want) === sum.crc;
+        if (!matches) jobs.push({ addr, data: want });
+        continue;
+      }
       const want = mergeBlock(radio, addr, source);
       if (!sameBytes(want, radio)) jobs.push({ addr, data: want });
     }
@@ -586,6 +631,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   private async readSums(
     addresses: number[],
     signal?: AbortSignal,
+    progress?: { onProgress?: ProgressFn; stage?: string },
   ): Promise<Map<number, BlockSum>> {
     const info = this.requireInfo();
     const out = new Map<number, BlockSum>();
@@ -614,6 +660,16 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
         out.set(start + j * BLOCK_SIZE, { crc, blank: ((mask >> j) & 1) === 1 });
       }
       i += count;
+      reportProgress(
+        progress?.onProgress,
+        {
+          cur: i,
+          max: addresses.length,
+          stage: progress?.stage ?? BLOCK_CHECKSUMS_STAGE,
+          msg: 'Checking blocks',
+        },
+        signal,
+      );
       if (i < addresses.length) {
         await this.pause(RADIOFOUNDRY_SUMS_PAUSE_MS, signal);
       }
@@ -937,6 +993,25 @@ function parseInfo(body: Uint8Array, board: RadioFoundryCableBoard): FastInfo {
 
 function codeplugOpName(op: number): string {
   return CODEPLUG_OP_NAMES[op] ?? `operation ${op}`;
+}
+
+function blockFullyOwned(addr: number, source: RadioFoundryWriteSource): boolean {
+  if (addr >= DMR_ID_DATABASE_AREA2_ADDRESS) {
+    const area2 = source.area2;
+    const owned = source.area2Owned;
+    if (!area2 || !owned) return false;
+    const base = addr - DMR_ID_DATABASE_AREA2_ADDRESS;
+    for (let i = 0; i < BLOCK_SIZE; i += 1) {
+      const at = base + i;
+      if (at >= owned.length || !owned[at]) return false;
+    }
+    return true;
+  }
+  for (let i = 0; i < BLOCK_SIZE; i += 1) {
+    const at = addr + i;
+    if (at >= source.owned.length || !source.owned[at]) return false;
+  }
+  return true;
 }
 
 function mergeBlock(radio: Uint8Array, addr: number, source: RadioFoundryWriteSource): Uint8Array {
