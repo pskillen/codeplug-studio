@@ -3,6 +3,10 @@ import { OPENGD77_SETTINGS_GAP_LENGTH } from './constants.ts';
 /** Id of the capture option that also reads the User Database. */
 export const OPENGD77_DEBUG_USER_DATABASE_OPTION = 'userDatabase';
 
+/** Debug read when the radio answers the RadioFoundry probe instead of staying on OpenGD77. */
+export const OPENGD77_DEBUG_RADIOFOUNDRY_FOUND =
+  'This radio answered as RadioFoundry, not OpenGD77. Nothing was read.';
+
 /** Caption sentence under the OpenGD77 identity grid. */
 export const OPENGD77_IDENTITY_NOTE =
   'Values are the captured FirmwareInfo reply, as reported. A revision string is not proof of provenance. The reply has no serial and cannot tell stock builds from forks or mods. Radio type does not distinguish DM-1701 from RT-84 or MD-9600 from RT-90.';

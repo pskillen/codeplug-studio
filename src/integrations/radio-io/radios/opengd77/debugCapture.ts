@@ -9,6 +9,10 @@
  * A failure or cancel returns no archive; the protocol closes the CPS screen once, and the
  * transport is closed whatever happens.
  */
+import {
+  debugOpenPort,
+  DebugWrongFirmwareError,
+} from '../../debugHandoff.ts';
 import type {
   RadioBackupCapturedVia,
   RadioBackupManifestV1,
@@ -37,8 +41,10 @@ import {
   OPENUV380_USER_DB_HEADER_ABS,
 } from './constants.ts';
 import { createOpenGd77DebugGuard } from './debugGuard.ts';
+import { OPENGD77_DEBUG_RADIOFOUNDRY_FOUND } from './debugText.ts';
 import { readAbs } from './memory.ts';
 import { OpenGd77Protocol, parseFirmwareInfo, readFlashRange } from './protocol.ts';
+import { RadioFoundryDetectedError } from './radioFoundryProbe.ts';
 
 /**
  * Read the 512-byte calibration working copy: 16 mode-1 reads of 32 bytes from `0x10000`. The pipe
@@ -112,11 +118,15 @@ export async function captureOpenGd77DebugPipe(
     capturedVia?: RadioBackupCapturedVia;
     /** Also read the occupied User Database (slow; can be megabytes). Off by default. */
     includeUserDatabase?: boolean;
+    /** When the radio answers as RadioFoundry, leave the raw transport open on the error. */
+    keepPortOnRadioFoundry?: boolean;
   },
 ): Promise<OpenGd77DebugCapture> {
   const signal = opts?.signal;
   const guard = createOpenGd77DebugGuard(pipe, signal);
   const radio = descriptor.protocolFactory();
+  const capturedVia = opts?.capturedVia ?? 'web-serial';
+  let leavePortOpen = false;
   try {
     if (!(radio instanceof OpenGd77Protocol)) {
       throw new Error('OpenGD77 descriptor returned an unexpected protocol.');
@@ -143,23 +153,37 @@ export async function captureOpenGd77DebugPipe(
     return {
       modelId: descriptor.modelIds[0]!,
       capturedAt: new Date().toISOString(),
-      capturedVia: opts?.capturedVia ?? 'web-serial',
+      capturedVia,
       firmwareInfoRaw: ident.raw.slice(),
       calibrationWorkingCopy,
       settingsGap,
       image,
       ...(userDatabase ? { userDatabase } : {}),
     };
+  } catch (err) {
+    if (err instanceof RadioFoundryDetectedError) {
+      leavePortOpen = opts?.keepPortOnRadioFoundry === true;
+      throw new DebugWrongFirmwareError(
+        'radiofoundry',
+        OPENGD77_DEBUG_RADIOFOUNDRY_FOUND,
+        leavePortOpen
+          ? debugOpenPort(pipe, capturedVia, descriptor.baudRate)
+          : undefined,
+      );
+    }
+    throw err;
   } finally {
     try {
       await radio.disconnect();
     } catch {
       /* Keep the original refusal, abort or error. */
     }
-    try {
-      await guard.pipe.close();
-    } catch {
-      /* Same. */
+    if (!leavePortOpen) {
+      try {
+        await guard.pipe.close();
+      } catch {
+        /* Same. */
+      }
     }
   }
 }

@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { BytePipe } from '../../types.ts';
-import { RadioTimeoutError } from '../../kit/errors.ts';
+import { RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { decodeDebugFrame, encodeDebugFrame } from '../../kit/codecs/radioFoundryDebugLink.ts';
-import { OPENGD77_RADIOFOUNDRY_PROBE_FRAME, probeRadioFoundry } from './radioFoundryProbe.ts';
+import {
+  OPENGD77_RADIOFOUNDRY_PROBE_FRAME,
+  OPENGD77_RADIOFOUNDRY_REFUSAL,
+  probeRadioFoundry,
+  RadioFoundryDetectedError,
+} from './radioFoundryProbe.ts';
 
 const framesEqual = (a: Uint8Array, b: Uint8Array) =>
   a.length === b.length && a.every((v, i) => v === b[i]);
@@ -34,6 +39,15 @@ class ProbeFakePipe implements BytePipe {
 
   async close(): Promise<void> {}
 }
+
+describe('RadioFoundryDetectedError', () => {
+  it('is a RadioWrongIdentError with the write-path message and name', () => {
+    const err = new RadioFoundryDetectedError();
+    expect(err).toBeInstanceOf(RadioWrongIdentError);
+    expect(err.message).toBe(OPENGD77_RADIOFOUNDRY_REFUSAL);
+    expect(err.name).toBe('RadioWrongIdentError');
+  });
+});
 
 describe('OPENGD77_RADIOFOUNDRY_PROBE_FRAME', () => {
   it('is one fixed PING frame', () => {

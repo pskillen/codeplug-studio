@@ -4,6 +4,7 @@
  * frame type with '-' (usb_com.c:972-976; docs/reference/radios/opengd77/protocol.md). Reads and writes no memory.
  */
 import { decodeDebugFrame, encodeDebugFrame } from '../../kit/codecs/radioFoundryDebugLink.ts';
+import { RadioWrongIdentError } from '../../kit/errors.ts';
 import type { BytePipe } from '../../types.ts';
 
 const PING = 0x01;
@@ -21,6 +22,14 @@ export const OPENGD77_RADIOFOUNDRY_PROBE_WAIT_MS = 500;
 
 export const OPENGD77_RADIOFOUNDRY_REFUSAL =
   'This radio is running RadioFoundry, not OpenGD77. Studio will not write it as an OpenGD77 radio. Make a build for the RadioFoundry version of this radio and write that instead.';
+
+/** Write-path refusal; still matches legacy tests that expect `RadioWrongIdentError` by name. */
+export class RadioFoundryDetectedError extends RadioWrongIdentError {
+  constructor() {
+    super(OPENGD77_RADIOFOUNDRY_REFUSAL);
+    this.name = 'RadioWrongIdentError';
+  }
+}
 
 /** True only when the radio answers the probe with a RadioFoundry PING reply. Never throws. */
 export async function probeRadioFoundry(
