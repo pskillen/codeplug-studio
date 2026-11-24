@@ -22,11 +22,11 @@ Agent rules: [.claude/rules/danger-zone.md](../../../.claude/rules/danger-zone.m
 
 ## Implementation status
 
-| Piece                                                              | Status             | Notes                                                                                                         |
-| ------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------- |
-| Range-change engine (core rules, frame, sender, session, verifier) | Shipped            | The "Engine" section below                                                                                    |
-| Danger zone area (page, registry, entry points, nav)               | Shipped            | PR 3 of #1369. **Start…** opens the wizard                                                                    |
-| Change frequency range wizard                                      | Shipped (pre-prod) | PR 4 of #1369, "The wizard" below. First hardware run 2026-10-27: RT-2 to RT-5 passed; the other rows pending |
+| Piece                                                              | Status             | Notes                                                                                                                                                                             |
+| ------------------------------------------------------------------ | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Range-change engine (core rules, frame, sender, session, verifier) | Shipped            | The "Engine" section below                                                                                                                                                        |
+| Danger zone area (page, registry, entry points, nav)               | Shipped            | PR 3 of #1369. **Start…** opens the wizard                                                                                                                                        |
+| Change frequency range wizard                                      | Shipped (pre-prod) | PR 4 of #1369, "The wizard" below. First hardware run 2026-10-27: RT-2 to RT-5 passed; the other rows pending                                                                     |
 | Unlock settings storage (RadioFoundry)                             | Shipped (pre-prod) | #2030. Wizard at `export/danger-zone/storage-claim`; engine in [storage-claim.md](../../reference/radios/radiofoundry/storage-claim.md). Bench claim on foreign hardware pending. |
 
 ## The area
