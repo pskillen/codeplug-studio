@@ -43,6 +43,8 @@ export interface SatelliteKepsWriteResult {
   written: number;
   /** Set when the radio read keps back and they matched what was sent (RadioFoundry). */
   readBack?: 'matched';
+  /** Copyable frame log for a write that sent frames (RadioFoundry). */
+  debugText?: string;
   skipped: { satelliteId: string; reason: string; label?: string }[];
   /** Transmitters skipped for a radio-capability reason (e.g. unsupported mode), #1068. */
   skippedTransmitters: (CapabilitySkippedTransmitter & { label?: string })[];

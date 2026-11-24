@@ -77,6 +77,8 @@ function checkLine(summary: WriteSummary): string {
 export function DoneBody({ config, view, actions }: StepProps) {
   const [timingsCopied, setTimingsCopied] = useState(false);
   const [timingsCopyFailed, setTimingsCopyFailed] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [debugCopied, setDebugCopied] = useState(false);
   const summary = view.summary;
   if (!summary) return null;
   const who = summary.identity
@@ -165,6 +167,39 @@ export function DoneBody({ config, view, actions }: StepProps) {
           >
             {timingsCopied ? 'Copied' : timingsCopyFailed ? 'Copy failed' : 'Copy write timings'}
           </Button>
+        </div>
+      ) : null}
+      {summary.kepsResult?.debugText ? (
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            data-testid="write-stepper-keps-debug-toggle"
+            aria-expanded={debugOpen}
+            onClick={() => setDebugOpen((o) => !o)}
+          >
+            Debug details
+          </Button>
+          {debugOpen ? (
+            <>
+              <pre data-testid="write-stepper-keps-debug" className={classes.keepsDebug}>
+                {summary.kepsResult.debugText}
+              </pre>
+              <Button
+                variant="ghost"
+                size="sm"
+                data-testid="write-stepper-keps-debug-copy"
+                onClick={() => {
+                  void navigator.clipboard
+                    .writeText(summary.kepsResult!.debugText!)
+                    .then(() => setDebugCopied(true))
+                    .catch(() => setDebugCopied(false));
+                }}
+              >
+                {debugCopied ? 'Copied' : 'Copy debug text'}
+              </Button>
+            </>
+          ) : null}
         </div>
       ) : null}
       {recapWarnings.length > 0 ? (

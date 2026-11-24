@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { WriteSummary } from '../types.ts';
 import { demoFlowView, demoStepperConfig, noopActions } from '../stepperDemo.ts';
 import { DoneBody } from './DoneStep.tsx';
@@ -55,6 +55,41 @@ describe('DoneBody keps summary', () => {
         'Satellite keps written: 2 satellites. The radio read them back and they match.',
       ),
     ).toBeTruthy();
+  });
+
+  it('shows keps debug details collapsed on Done', () => {
+    renderDone(
+      makeSummary({
+        kepsResult: {
+          written: 2,
+          debugText: 'frames: 0 INFO',
+          skipped: [],
+          skippedTransmitters: [],
+        },
+      }),
+    );
+    expect(screen.queryByText('frames: 0 INFO')).toBeNull();
+    fireEvent.click(screen.getByText('Debug details'));
+    expect(screen.getByText('frames: 0 INFO')).toBeTruthy();
+  });
+
+  it('copies keps debug text', async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    renderDone(
+      makeSummary({
+        kepsResult: {
+          written: 2,
+          debugText: 'frames: 0 INFO',
+          skipped: [],
+          skippedTransmitters: [],
+        },
+      }),
+    );
+    fireEvent.click(screen.getByText('Debug details'));
+    fireEvent.click(screen.getByText('Copy debug text'));
+    expect(writeText).toHaveBeenCalledWith('frames: 0 INFO');
+    expect(await screen.findByText('Copied')).toBeTruthy();
   });
 
   it('keeps "transmitter" for a radio without readBack', () => {

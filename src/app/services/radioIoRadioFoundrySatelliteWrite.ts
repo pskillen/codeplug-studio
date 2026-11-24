@@ -12,6 +12,8 @@ import {
   radioFoundrySkippedTransmitters,
 } from '@integrations/radio-io/radios/radiofoundry/satelliteCodec.ts';
 import {
+  formatRadioFoundrySatelliteFrames,
+  type RadioFoundrySatelliteFrame,
   RadioFoundrySatellitesUnavailableError,
   writeRadioFoundrySatellites,
 } from '@integrations/radio-io/radios/radiofoundry/satelliteWrite.ts';
@@ -51,15 +53,24 @@ export async function writeRadioFoundrySatellitesToRadio(
     );
   }
 
+  const frames: RadioFoundrySatelliteFrame[] = [];
+  let debugText: string;
   try {
-    await writeRadioFoundrySatellites(
+    const done = await writeRadioFoundrySatellites(
       session.radio,
       packRadioFoundrySatellites(satellites, options),
       {
         onProgress: opts?.onProgress,
         signal: opts?.signal,
+        frameLog: frames,
       },
     );
+    debugText = [
+      `Satellite keps written: ${done.written} records sent, ${done.written} installed on the radio (capacity ${done.capacity}), read-back matched.`,
+      `SATELLITE frames (${frames.length}):`,
+      ...formatRadioFoundrySatelliteFrames(frames),
+    ].join('\n');
+    console.info('[radiofoundry-keps]', debugText);
   } catch (err) {
     if (err instanceof RadioFoundrySatellitesUnavailableError) {
       throw new RadioWriteBlockedError(`${err.message} Nothing was written.`);
@@ -70,6 +81,7 @@ export async function writeRadioFoundrySatellitesToRadio(
   return {
     written: selected,
     readBack: 'matched',
+    debugText,
     skipped: radioFoundrySkippedSatellites(satellites, options),
     skippedTransmitters: radioFoundrySkippedTransmitters(satellites, options),
   };
