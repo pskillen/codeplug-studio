@@ -20,7 +20,8 @@ With two or more modes on a channel, the **Modes** block renders one `ModeSectio
 ## Usage
 
 ```tsx
-import ModeSection, { modeSectionStartsFolded } from '@app/components/channels/ModeSection';
+import ModeSection from '@app/components/channels/ModeSection';
+import { modeSectionStartsFolded } from '@app/lib/channelModes';
 
 <ModeSection
   mode="dmr"
@@ -40,7 +41,7 @@ import ModeSection, { modeSectionStartsFolded } from '@app/components/channels/M
 
 ## Behaviour
 
-- **Main mode** is a `Pill` with `tone="accent"`; other sections use a ghost **Make main** button. Both sit in the panel `actions` slot (outside the collapse toggle).
+- **Main mode** is a `Pill` with `tone="accent"`; other sections use a secondary **Make main** button. Both sit in the panel `actions` slot (outside the collapse toggle).
 - Hover or focus on either control explains main mode in plain words (no radio or format names).
 - A 4px left stripe uses `modeColor(mode)`.
 - Fold rule: `modeSectionStartsFolded` — with three or more modes (or two on a phone), non-main sections start folded unless they were added during this edit; the main mode always starts open.

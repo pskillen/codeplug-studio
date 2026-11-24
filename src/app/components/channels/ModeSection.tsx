@@ -18,18 +18,11 @@ export interface ModeSectionProps {
   children: ReactNode;
 }
 
-/** Fold rule: 3+ modes, or 2+ on a phone; the main mode and modes added during this edit start open. */
-export function modeSectionStartsFolded(opts: {
-  modeCount: number;
-  compact: boolean;
-  isMain: boolean;
-  addedThisEdit: boolean;
-}): boolean {
-  if (opts.addedThisEdit) return false;
-  if (opts.isMain) return false;
-  if (opts.modeCount >= 3) return true;
-  if (opts.compact && opts.modeCount >= 2) return true;
-  return false;
+function initialCollapsed(mode: ChannelMode, defaultCollapsed: boolean): boolean {
+  if (typeof window !== 'undefined' && window.location.hash === `#mode-${mode}`) {
+    return false;
+  }
+  return defaultCollapsed;
 }
 
 function ModeSectionAction({
@@ -45,20 +38,22 @@ function ModeSectionAction({
   ) : (
     <Button
       type="button"
-      variant="ghost"
+      variant="secondary"
       size="sm"
-      aria-label={`Make ${label} the main mode`}
-      onClick={(e) => {
-        e.stopPropagation();
-        onMakeMain();
-      }}
+      aria-label={`Make main, ${label}`}
+      onClick={() => onMakeMain()}
     >
       Make main
     </Button>
   );
 
   return (
-    <Tooltip label={MAIN_MODE_HELP} multiline w={280}>
+    <Tooltip
+      label={MAIN_MODE_HELP}
+      multiline
+      w={280}
+      events={{ hover: true, focus: true, touch: true }}
+    >
       {control}
     </Tooltip>
   );
@@ -80,7 +75,7 @@ export default function ModeSection({
         id={`mode-${mode}`}
         title={modeLabel(mode)}
         collapsible
-        defaultCollapsed={defaultCollapsed}
+        defaultCollapsed={initialCollapsed(mode, defaultCollapsed)}
         summary={foldedSummary}
         actions={<ModeSectionAction isMain={isMain} mode={mode} onMakeMain={onMakeMain} />}
       >

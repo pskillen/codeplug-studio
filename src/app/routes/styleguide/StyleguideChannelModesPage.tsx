@@ -15,7 +15,8 @@ import ChannelModeSummaries from '../../components/channels/ChannelModeSummaries
 import ModeSummaryChip from '../../components/channels/ModeSummaryChip.tsx';
 import { channelModeSummaries } from '../../lib/channelModeSummary.ts';
 import ModePanel from '../../components/channels/modePanels/ModePanel.tsx';
-import ModeSection, { modeSectionStartsFolded } from '../../components/channels/ModeSection.tsx';
+import ModeSection from '../../components/channels/ModeSection.tsx';
+import { modeSectionStartsFolded } from '../../lib/channelModes.ts';
 import { modeProfileSummary } from '../../lib/channelModeSummary.ts';
 import { modeLabel, type ModePreset } from '../../lib/channelModes.ts';
 import type { ModePanelContext } from '../../components/channels/modePanels/types.ts';

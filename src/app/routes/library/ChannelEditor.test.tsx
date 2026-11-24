@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { emptyLibrary, newChannel } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import type {
@@ -62,6 +63,21 @@ function renderEdit(channel: Channel, library = emptyLibrary()) {
   return render(<RouterProvider router={router} />);
 }
 
+const realMatchMedia = window.matchMedia;
+
+function setMobile(mobile: boolean) {
+  window.matchMedia = ((query: string) => ({
+    matches: mobile && query === MOBILE_MAX_WIDTH_MEDIA_QUERY,
+    media: query,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia;
+}
+
 beforeEach(() => {
   mocks.putChannel.mockReset().mockResolvedValue({ ok: true });
   class MockIntersectionObserver {
@@ -70,6 +86,10 @@ beforeEach(() => {
     disconnect() {}
   }
   vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+});
+
+afterEach(() => {
+  window.matchMedia = realMatchMedia;
 });
 
 describe('ChannelEditor (new channel)', () => {
@@ -214,7 +234,7 @@ describe('ChannelEditor (saved channel)', () => {
     const fmSection = document.getElementById('mode-fm') as HTMLElement;
     const dmrSection = document.getElementById('mode-dmr') as HTMLElement;
     expect(within(fmSection).getByText('Main mode')).toBeInTheDocument();
-    expect(within(dmrSection).getByRole('button', { name: 'Make DMR the main mode' })).toBeTruthy();
+    expect(within(dmrSection).getByRole('button', { name: 'Make main, DMR' })).toBeTruthy();
     expect(screen.queryByRole('radiogroup', { name: 'Main mode' })).not.toBeInTheDocument();
   });
 
@@ -227,7 +247,7 @@ describe('ChannelEditor (saved channel)', () => {
       primaryMode: 'fm',
     };
     renderEdit(channel);
-    fireEvent.click(screen.getByRole('button', { name: 'Make DMR the main mode' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Make main, DMR' }));
     expect(
       within(document.getElementById('mode-dmr') as HTMLElement).getByText('Main mode'),
     ).toBeTruthy();
@@ -240,6 +260,30 @@ describe('ChannelEditor (saved channel)', () => {
     const [row] = mocks.putChannel.mock.calls[0] as [Channel, unknown];
     expect(row.primaryMode).toBe('dmr');
     expect(row.modeProfiles.map((p) => p.mode)).toEqual(['fm', 'dmr']);
+  });
+
+  it('folds non-main mode sections on a phone-width viewport with two modes', () => {
+    setMobile(true);
+    const channel: Channel = {
+      ...newChannel('p', 'Dual phone'),
+      id: 'ch-dual-phone-fold',
+      revision: 1,
+      modeProfiles: [
+        { ...(defaultModeProfile('fm') as ChannelModeProfileAnalog), txTone: '94.8' },
+        {
+          ...(defaultModeProfile('dmr') as ChannelModeProfileDMR),
+          colourCode: 1,
+          timeslot: 2,
+        },
+      ],
+      primaryMode: 'fm',
+    };
+    renderEdit(channel);
+    const fmSection = document.getElementById('mode-fm') as HTMLElement;
+    const dmrSection = document.getElementById('mode-dmr') as HTMLElement;
+    expect(within(fmSection).getByLabelText('TX tone frequency')).toBeTruthy();
+    expect(within(dmrSection).getByText('CC1 TS2')).toBeTruthy();
+    expect(within(dmrSection).queryByLabelText('Colour code')).not.toBeInTheDocument();
   });
 
   it('starts non-main sections folded when three modes are present', () => {

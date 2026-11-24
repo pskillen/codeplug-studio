@@ -1,8 +1,9 @@
 import type { ComponentProps } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { modeSectionStartsFolded } from '../../lib/channelModes.ts';
 import DesignSystemV2Provider from '../v2/DesignSystemV2Provider.tsx';
-import ModeSection, { modeSectionStartsFolded } from './ModeSection.tsx';
+import ModeSection from './ModeSection.tsx';
 
 function renderModeSection(props: Partial<ComponentProps<typeof ModeSection>> = {}) {
   const onMakeMain = vi.fn();
@@ -66,6 +67,12 @@ describe('modeSectionStartsFolded', () => {
 });
 
 describe('ModeSection', () => {
+  const originalHash = window.location.hash;
+
+  afterEach(() => {
+    window.location.hash = originalHash;
+  });
+
   it('shows Main mode on the main section and Make main on others', () => {
     const { unmount } = render(
       <DesignSystemV2Provider>
@@ -79,7 +86,7 @@ describe('ModeSection', () => {
     unmount();
 
     renderModeSection({ isMain: false, mode: 'dmr' });
-    expect(screen.getByRole('button', { name: 'Make DMR the main mode' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Make main, DMR' })).toBeInTheDocument();
     expect(screen.queryByText('Main mode')).not.toBeInTheDocument();
   });
 
@@ -89,7 +96,7 @@ describe('ModeSection', () => {
       summary: 'CC1 TS2',
     });
     expect(screen.queryByText('Mode body')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Make DMR the main mode' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Make main, DMR' }));
     expect(onMakeMain).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('Mode body')).not.toBeInTheDocument();
   });
@@ -112,5 +119,11 @@ describe('ModeSection', () => {
       </DesignSystemV2Provider>,
     );
     expect(screen.getByText('Nothing set yet')).toBeInTheDocument();
+  });
+
+  it('starts open when the URL hash targets this mode', () => {
+    window.location.hash = '#mode-dmr';
+    renderModeSection({ defaultCollapsed: true });
+    expect(screen.getByText('Mode body')).toBeInTheDocument();
   });
 });

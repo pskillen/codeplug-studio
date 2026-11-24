@@ -39,7 +39,8 @@ import {
 } from '../../components/v2/index.ts';
 import type { ModePreset } from '../../lib/channelModes.ts';
 import { channelModeSummaryText, modeProfileSummary } from '../../lib/channelModeSummary.ts';
-import ModeSection, { modeSectionStartsFolded } from '../../components/channels/ModeSection.tsx';
+import ModeSection from '../../components/channels/ModeSection.tsx';
+import { modeSectionStartsFolded } from '../../lib/channelModes.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { channelEditPath, channelViewPath } from '../../lib/channelPaths.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
