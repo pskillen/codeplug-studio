@@ -7,6 +7,11 @@ import {
 import type { RadioDebugDescriptor } from './descriptors.ts';
 import { DEBUG_FIRMWARE_COLOR } from './debugFirmware.ts';
 
+const actionButtonStyles = {
+  root: { height: 'auto', minHeight: 36 },
+  label: { whiteSpace: 'normal' as const },
+};
+
 function hexPreview(bytes: Uint8Array): string {
   return Array.from(bytes.subarray(0, 16), (b) => b.toString(16).padStart(2, '0')).join(' ');
 }
@@ -38,7 +43,12 @@ export function WrongFirmwareNotice({
   const foundLabel =
     error.found === 'unknown' ? 'Unknown firmware' : DEBUG_FIRMWARE_LABEL[error.found];
   return (
-    <Alert color={accent} title={foundLabel} data-testid="wrong-firmware-notice">
+    <Alert
+      color={accent}
+      title={foundLabel}
+      data-testid="wrong-firmware-notice"
+      styles={{ body: { minWidth: 0 } }}
+    >
       <Stack gap="sm">
         <Text size="sm">{error.message}</Text>
         {error.received && error.received.length > 0 ? (
@@ -57,7 +67,7 @@ export function WrongFirmwareNotice({
         ) : null}
         {error.port && target?.capture && portOpen ? (
           <Text size="sm" c="dimmed">
-            Nothing was read. The port is still open.
+            The port is still open.
             {secondsLeft != null && secondsLeft > 0
               ? ` Closing in ${secondsLeft} s unless you continue.`
               : ''}
@@ -71,16 +81,20 @@ export function WrongFirmwareNotice({
         <Stack gap="xs">
           {error.port && target?.capture && portOpen ? (
             <>
-              <Button onClick={onSwitchAndRead}>
+              <Button onClick={onSwitchAndRead} styles={actionButtonStyles}>
                 Switch to {DEBUG_FIRMWARE_LABEL[target.firmware]} and read
               </Button>
-              <Button variant="default" onClick={onClose}>
+              <Button variant="default" onClick={onClose} styles={actionButtonStyles}>
                 Stop and close the port
               </Button>
             </>
           ) : null}
           {error.found === 'unknown' && stockSibling ? (
-            <Button variant="default" onClick={() => onSwitchOnly('stock')}>
+            <Button
+              variant="default"
+              onClick={() => onSwitchOnly('stock')}
+              styles={actionButtonStyles}
+            >
               Switch to Stock / MM9PDY
             </Button>
           ) : null}

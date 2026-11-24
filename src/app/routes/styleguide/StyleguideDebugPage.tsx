@@ -27,7 +27,10 @@ import { ToggleSwitch, type DataTableColumn } from '../../components/v2/index.ts
 import { WrongFirmwareNotice } from '../debug/radios/WrongFirmwareNotice.tsx';
 import { debugOpenPort, DebugWrongFirmwareError } from '@integrations/radio-io/debugHandoff.ts';
 import { OPENGD77_DEBUG_RADIOFOUNDRY_FOUND } from '@integrations/radio-io/radios/opengd77/debugText.ts';
-import { RADIOFOUNDRY_DEBUG_NO_ANSWER } from '@integrations/radio-io/radios/radiofoundry/debugText.ts';
+import {
+  RADIOFOUNDRY_DEBUG_NO_ANSWER,
+  RADIOFOUNDRY_DEBUG_OPENGD77_FOUND,
+} from '@integrations/radio-io/radios/radiofoundry/debugText.ts';
 import { FirmwareSwitch } from '../debug/radios/FirmwareSwitch.tsx';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
 
@@ -211,7 +214,7 @@ export default function StyleguideDebugPage() {
               onClose={() => {}}
             />
             <WrongFirmwareNotice
-              error={new DebugWrongFirmwareError('opengd77', 'No OpenGD77 page for this radio.')}
+              error={new DebugWrongFirmwareError('opengd77', RADIOFOUNDRY_DEBUG_OPENGD77_FOUND)}
               target={{ firmware: 'opengd77', capture: undefined }}
               portOpen={false}
               onSwitchAndRead={() => {}}
