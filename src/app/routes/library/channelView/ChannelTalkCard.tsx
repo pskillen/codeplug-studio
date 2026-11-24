@@ -1,5 +1,7 @@
+import { IconChevronDown } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import type { Channel, ChannelModeProfile, Library } from '@core/models/library.ts';
+import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import type { ChannelModeSummary } from '../../../lib/channelModeSummary.ts';
 import { modeLabel, modeColor } from '../../../lib/channelModes.ts';
 import ModeSummaryChip from '../../../components/channels/ModeSummaryChip.tsx';
@@ -135,6 +137,12 @@ export function ChannelTalkRow(props: ChannelTalkRowProps) {
       <summary className={classes.talkRowSummary}>
         <ModeSummaryChip summary={summary} size="sm" />
         {isMain ? <Pill tone="accent">Main mode</Pill> : null}
+        <IconChevronDown
+          size={ICON_SIZE_NAV}
+          stroke={ICON_STROKE}
+          aria-hidden
+          className={classes.talkRowChevron}
+        />
       </summary>
       <div className={classes.talkRowBody}>
         <TalkCardBody

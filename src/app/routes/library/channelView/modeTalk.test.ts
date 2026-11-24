@@ -251,6 +251,68 @@ describe('modeTalk', () => {
       library,
     );
     expect(sentenceText(talk.sentence)).toBe('RAN 1, sending RAN 2.');
+    expect(talk.facts.map((f) => f.key)).not.toContain('rxRan');
+    expect(talk.facts.map((f) => f.key)).not.toContain('txRan');
+  });
+
+  it('NXDN talk group with split RAN', () => {
+    const channel = newChannel(projectId, 'Test');
+    const tgWide = newTalkGroup(projectId, 'Wide Area', 65000, 'nxdn');
+    library.talkGroups.push(tgWide);
+    const talk = modeTalk(
+      {
+        mode: 'nxdn',
+        rxRan: 1,
+        txRan: 2,
+        ownDigitalIdId: null,
+        contactRef: { kind: 'talkGroup', id: tgWide.id },
+        rxGroupListId: null,
+        nxdnRate: 'nxdn96',
+      },
+      channel,
+      library,
+    );
+    expect(sentenceText(talk.sentence)).toBe('Talk on TG 65000 Wide Area, RAN 1, sending RAN 2.');
+    expect(talk.facts.map((f) => f.key)).toEqual(['rate']);
+  });
+
+  it('NXDN private call with split RAN', () => {
+    const channel = newChannel(projectId, 'Test');
+    const talk = modeTalk(
+      {
+        mode: 'nxdn',
+        rxRan: 1,
+        txRan: 2,
+        ownDigitalIdId: null,
+        contactRef: { kind: 'digitalContact', id: contactJo.id },
+        rxGroupListId: null,
+      },
+      channel,
+      library,
+    );
+    expect(sentenceText(talk.sentence)).toBe(
+      'Call Jo Bloggs (2350123) directly, RAN 1, sending RAN 2.',
+    );
+    expect(talk.facts.map((f) => f.key)).not.toContain('rxRan');
+    expect(talk.facts.map((f) => f.key)).not.toContain('txRan');
+  });
+
+  it('DMR with unresolved RX list id still offers empty edit state', () => {
+    const channel = newChannel(projectId, 'Test');
+    const talk = modeTalk(
+      {
+        mode: 'dmr',
+        colourCode: null,
+        timeslot: null,
+        ownDigitalIdId: null,
+        contactRef: null,
+        rxGroupListId: '00000000-0000-4000-8000-000000000099',
+      },
+      channel,
+      library,
+    );
+    expect(sentenceText(talk.sentence)).toBe('No DMR settings yet.');
+    expect(talk.empty).toBe(true);
   });
 
   it('D-STAR with UR and RPT1', () => {

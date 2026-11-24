@@ -236,6 +236,17 @@
   display: none;
 }
 
+.talkRowChevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--dsv2-text-tertiary);
+  transition: transform 120ms ease;
+}
+
+.talkRow[open] > .talkRowSummary .talkRowChevron {
+  transform: rotate(180deg);
+}
+
 .talkRowBody {
   padding: 0 16px 14px;
   display: flex;

@@ -262,6 +262,33 @@ function dmrTalk(
   return { sentence, usedKeys };
 }
 
+function pushNxdnContactRan(
+  sentence: TalkPart[],
+  usedKeys: Set<string>,
+  rxRan: number | null | undefined,
+  txRan: number | null | undefined,
+  prefix: string,
+): void {
+  if (rxRan != null && txRan != null && rxRan === txRan) {
+    sentence.push({ text: prefix }, { text: String(rxRan), strong: true });
+    usedKeys.add('ran');
+    return;
+  }
+  if (rxRan != null && txRan != null && rxRan !== txRan) {
+    sentence.push({ text: prefix }, { text: String(rxRan), strong: true });
+    sentence.push({ text: ', sending RAN ' }, { text: String(txRan), strong: true });
+    usedKeys.add('rxRan');
+    usedKeys.add('txRan');
+    return;
+  }
+  const single = txRan ?? rxRan;
+  if (single != null) {
+    sentence.push({ text: prefix }, { text: String(single), strong: true });
+    if (txRan != null) usedKeys.add('txRan');
+    else usedKeys.add('rxRan');
+  }
+}
+
 function nxdnTalk(
   profile: Extract<ChannelModeProfile, { mode: 'nxdn' }>,
   library: Library,
@@ -284,30 +311,12 @@ function nxdnTalk(
   if (contactParts) {
     if (ref?.kind === 'digitalContact') {
       sentence.push({ text: 'Call ' }, ...contactParts);
-      if (ranValue != null) {
-        sentence.push({ text: ' directly, RAN ' }, { text: String(ranValue), strong: true });
-        if (ranEqual) usedKeys.add('ran');
-        else {
-          if (txRan != null) usedKeys.add('txRan');
-          if (rxRan != null) usedKeys.add('rxRan');
-        }
-      } else {
-        sentence.push({ text: ' directly' });
-      }
+      const hadRan = rxRan != null || txRan != null;
+      pushNxdnContactRan(sentence, usedKeys, rxRan, txRan, ' directly, RAN ');
+      if (!hadRan) sentence.push({ text: ' directly' });
     } else {
       sentence.push({ text: 'Talk on ' }, ...contactParts);
-      if (ranValue != null) {
-        sentence.push({ text: ', RAN ' }, { text: String(ranValue), strong: true });
-        if (ranEqual) usedKeys.add('ran');
-        else {
-          if (txRan != null) usedKeys.add('txRan');
-          if (rxRan != null && txRan != null && rxRan !== txRan) {
-            sentence.push({ text: ', sending RAN ' }, { text: String(txRan), strong: true });
-            usedKeys.add('txRan');
-            usedKeys.add('rxRan');
-          }
-        }
-      }
+      pushNxdnContactRan(sentence, usedKeys, rxRan, txRan, ', RAN ');
     }
     usedKeys.add('talkGroup');
     sentence.push({ text: '.' });
@@ -443,7 +452,8 @@ export function modeTalk(
   const { sentence, usedKeys } = buildSentence(profile, channel, library);
   const allFacts = modeProfileFacts(profile, library);
   const facts = allFacts.filter((f) => !usedKeys.has(f.key));
-  const hasRxList = modeProfileRxGroupListId(profile) != null;
+  const listId = modeProfileRxGroupListId(profile);
+  const hasRxList = listId != null && rxListSentence(library, listId).length > 0;
 
   if (sentence.length === 0) {
     const label = modeLabel(profile.mode);
