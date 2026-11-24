@@ -44,9 +44,7 @@ export function radioFoundryCoverage(archive: DebugArchive): RadioDebugCoverageV
           {formatAddress(cov.gap.start)}–{formatAddress(cov.gap.end - 1)}: calibration, settings
           ring and journal; the codeplug protocol never serves it
         </Text>
-        {cov.sums === 'missing' && (
-          <Text size="sm">Checksum list missing from this archive</Text>
-        )}
+        {cov.sums === 'missing' && <Text size="sm">Checksum list missing from this archive</Text>}
       </>
     ),
   };

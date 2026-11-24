@@ -77,7 +77,7 @@ function sidecarSection(
     base: 0,
     a: bytesA,
     b: bytesB,
-    missing: (bytesA ? 0 : bytesB?.length ?? 0) + (bytesB ? 0 : bytesA?.length ?? 0),
+    missing: (bytesA ? 0 : (bytesB?.length ?? 0)) + (bytesB ? 0 : (bytesA?.length ?? 0)),
   };
 }
 

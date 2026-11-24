@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { SETTINGS_AREA_ADDRESS, SETTINGS_AREA_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
-import { crc32, readRadioFoundrySettingsArea } from '@core/import-export/formats/radiofoundry/settingsArea.ts';
+import {
+  SETTINGS_AREA_ADDRESS,
+  SETTINGS_AREA_SIZE,
+} from '@core/import-export/formats/radiofoundry/layout.ts';
+import {
+  crc32,
+  readRadioFoundrySettingsArea,
+} from '@core/import-export/formats/radiofoundry/settingsArea.ts';
 import { EEPROM_IMAGE_END } from './constants.ts';
 import { RADIOFOUNDRY_REGION } from './debugCapture.ts';
 import { RADIOFOUNDRY_CABLE_BOARDS } from './board.ts';
@@ -160,9 +166,7 @@ describe('radioFoundryArchiveSensitiveRanges', () => {
       archive('MD-9600-RadioFoundry', eeprom),
       RADIOFOUNDRY_REGION.eeprom,
     );
-    expect(
-      ranges.filter((r) => r.label.includes('Settings')),
-    ).toEqual([]);
+    expect(ranges.filter((r) => r.label.includes('Settings'))).toEqual([]);
   });
 
   it('adds the continuation span when header bytes 12–15 are non-zero', () => {
@@ -175,7 +179,9 @@ describe('radioFoundryArchiveSensitiveRanges', () => {
       RADIOFOUNDRY_REGION.eeprom,
     );
     expect(ranges).toEqual(
-      expect.arrayContaining([{ start: 0xf000, end: 0x10000, label: 'Settings area continuation' }]),
+      expect.arrayContaining([
+        { start: 0xf000, end: 0x10000, label: 'Settings area continuation' },
+      ]),
     );
   });
 });

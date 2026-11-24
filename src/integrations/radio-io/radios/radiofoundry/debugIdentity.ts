@@ -32,14 +32,11 @@ function formatIddb(body: Uint8Array): string {
   if (body.length < 5) return 'Not reported';
   const formatByte = body[0]!;
   const format = formatByte === 0 ? 'none' : String.fromCharCode(formatByte);
-  const records =
-    (body[1]! | (body[2]! << 8) | (body[3]! << 16) | (body[4]! << 24)) >>> 0;
+  const records = (body[1]! | (body[2]! << 8) | (body[3]! << 16) | (body[4]! << 24)) >>> 0;
   return `format ${format} · ${records} records`;
 }
 
-function firmwareReadLabel(
-  archive: DebugIdentityInput['archive'],
-): string {
+function firmwareReadLabel(archive: DebugIdentityInput['archive']): string {
   if (!archive) return 'Not read yet';
   const info = archive.sidecars[RADIOFOUNDRY_DEBUG_INFO_SIDECAR];
   const versionText = archive.sidecars[RADIOFOUNDRY_DEBUG_VERSION_SIDECAR];
@@ -82,7 +79,7 @@ export function radioFoundryIdentityRows({
     const flashStart = readU32(info, 12);
     const imageEnd = readU32(info, 16);
     const physicalBase = readU32(info, 20);
-  const boardEnd = boardLimit ?? imageEnd;
+    const boardEnd = boardLimit ?? imageEnd;
     image = joinDefined([
       `EEPROM end ${hex(eepromEnd)}`,
       `flash start ${hex(flashStart)}`,
@@ -94,8 +91,7 @@ export function radioFoundryIdentityRows({
   let features = 'Not reported';
   if (version) {
     const listed = version.features.join(', ');
-    const off =
-      version.off.length > 0 ? ` · off: ${version.off.join(', ')}` : '';
+    const off = version.off.length > 0 ? ` · off: ${version.off.join(', ')}` : '';
     features = listed ? `${listed}${off}` : off ? off.slice(3) : 'Not reported';
   }
 
@@ -112,17 +108,11 @@ export function radioFoundryIdentityRows({
           : undefined,
       ]) || 'Not reported',
     ],
-    [
-      'Source · VERSION',
-      joinDefined([version?.source, version?.repo]) || 'Not reported',
-    ],
+    ['Source · VERSION', joinDefined([version?.source, version?.repo]) || 'Not reported'],
     ['Features · VERSION', features],
     ['Protocol · INFO', protocol],
     ['Image · INFO', image],
-    [
-      'DMR ID database · IDDB',
-      iddb ? formatIddb(iddb) : 'Not reported',
-    ],
+    ['DMR ID database · IDDB', iddb ? formatIddb(iddb) : 'Not reported'],
     ['Serial', 'None reported'],
     ['Connection', connection],
   ];

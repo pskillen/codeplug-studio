@@ -154,9 +154,10 @@ describe('descriptor fields that carry radio text for the shared page', () => {
       const d = descriptor(slug);
       expect(d.capture, slug).toBeTypeOf('function');
       expect(d.readHistory, slug).toBe(true);
-      expect(d.captureOptions?.some((o) => o.label.includes('DMR ID database area 2')), slug).toBe(
-        true,
-      );
+      expect(
+        d.captureOptions?.some((o) => o.label.includes('DMR ID database area 2')),
+        slug,
+      ).toBe(true);
       expect(d.captureStages).toEqual(['Connect', 'Codeplug', 'ID database']);
       expect(d.calibrationNote).toMatch(/not read yet/);
       const rows = labels(slug);

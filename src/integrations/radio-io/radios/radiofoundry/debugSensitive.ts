@@ -63,10 +63,7 @@ function settingsSensitiveRanges(bytes: Uint8Array): readonly DebugSensitiveRang
     const start = SETTINGS_AREA_ADDRESS + entry.offset;
     out.push({ start, end: start + entry.value.length, label });
   }
-  if (
-    MAGIC.every((m, i) => sector[i] === m) &&
-    !sector.subarray(12, 16).every((b) => b === 0)
-  ) {
+  if (MAGIC.every((m, i) => sector[i] === m) && !sector.subarray(12, 16).every((b) => b === 0)) {
     out.push({
       start: 0xf000,
       end: 0x10000,

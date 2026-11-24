@@ -40,9 +40,10 @@ vi.mock('@integrations/radio-io/transport/index.ts', async (importOriginal) => (
 }));
 
 vi.mock('@integrations/radio-io/radios/radiofoundry/debugCapture.ts', async (importOriginal) => {
-  const actual = await importOriginal<
-    typeof import('@integrations/radio-io/radios/radiofoundry/debugCapture.ts')
-  >();
+  const actual =
+    await importOriginal<
+      typeof import('@integrations/radio-io/radios/radiofoundry/debugCapture.ts')
+    >();
   return {
     ...actual,
     captureRadioFoundryDebugPipe: (
@@ -88,10 +89,7 @@ describe('captureRadioFoundry', () => {
       physicalBase: MD9600_RADIOFOUNDRY_CABLE_BOARD.limits.PHYSICAL_CODEPLUG_BASE,
       versionText: versionTextFor(MD9600_RADIOFOUNDRY_CABLE_BOARD),
     });
-    withArea2.setBlock(
-      DMR_ID_DATABASE_AREA2_ADDRESS,
-      new Uint8Array(BLOCK_SIZE).fill(0xaa),
-    );
+    withArea2.setBlock(DMR_ID_DATABASE_AREA2_ADDRESS, new Uint8Array(BLOCK_SIZE).fill(0xaa));
     transport.pipe = withArea2;
     const included = await captureRadioFoundry('MD-9600-RadioFoundry')({
       options: { [RADIOFOUNDRY_DEBUG_AREA2_OPTION]: true },

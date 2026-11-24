@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { compareVerdict } from '../../debugCompare/index.ts';
 import { EEPROM_IMAGE_END } from './constants.ts';
-import {
-  RADIOFOUNDRY_DEBUG_INFO_SIDECAR,
-  RADIOFOUNDRY_REGION,
-} from './debugCapture.ts';
+import { RADIOFOUNDRY_DEBUG_INFO_SIDECAR, RADIOFOUNDRY_REGION } from './debugCapture.ts';
 import { radioFoundryCompareAdapter } from './debugCompare.ts';
 import { buildOpenGd77DebugArchiveParts } from '../opengd77/debugCapture.ts';
 import { OPENGD77_DM1701_MODEL_ID } from '../opengd77/hydration.ts';
@@ -63,12 +60,20 @@ describe('radioFoundryCompareAdapter', () => {
 
   it('reports INFO sidecar differences', () => {
     const sections = radioFoundryCompareAdapter.sections!(
-      rfArchive('a', { [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(16) }, {
-        [RADIOFOUNDRY_DEBUG_INFO_SIDECAR]: new Uint8Array([1, 2, 3]),
-      }),
-      rfArchive('b', { [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(16) }, {
-        [RADIOFOUNDRY_DEBUG_INFO_SIDECAR]: new Uint8Array([1, 2, 4]),
-      }),
+      rfArchive(
+        'a',
+        { [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(16) },
+        {
+          [RADIOFOUNDRY_DEBUG_INFO_SIDECAR]: new Uint8Array([1, 2, 3]),
+        },
+      ),
+      rfArchive(
+        'b',
+        { [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(16) },
+        {
+          [RADIOFOUNDRY_DEBUG_INFO_SIDECAR]: new Uint8Array([1, 2, 4]),
+        },
+      ),
     );
     const info = sections.sections.find((s) => s.id === 'info-reply')!;
     expect(info.kind).toBe('reported');

@@ -75,13 +75,13 @@ The page works without browser storage.
 
 While **Read radio** runs the page shows the current stage, a `cur / max` bar when the adapter reports a total, and its message (`DebugReadProgress`). Every capture names its phases through `ProgressUpdate.stage`:
 
-| Radio      | Stages                                                                                                                                                                    |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RT95       | Connect, Clone image, Calibration, MMD1 zones (reported as skipped when the chip guard refuses it), Finishing; the descriptor lists them so the page shows "Stage i of 5" |
-| UV-5R Mini | Connect, Clone read, Finishing                                                                                                                                            |
-| OpenGD77   | Connect, Calibration, Settings, FLASH image, User Database (when ticked)                                                                                                  |
-| AT-D890UV  | Connect, the sparse-region stages, First read and Second read of the vital units, Finishing                                                                               |
-| DM-32UV    | Connect, Identity, Discover memory map, the bulk-read groups, Finishing                                                                                                   |
+| Radio        | Stages                                                                                                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RT95         | Connect, Clone image, Calibration, MMD1 zones (reported as skipped when the chip guard refuses it), Finishing; the descriptor lists them so the page shows "Stage i of 5" |
+| UV-5R Mini   | Connect, Clone read, Finishing                                                                                                                                            |
+| OpenGD77     | Connect, Calibration, Settings, FLASH image, User Database (when ticked)                                                                                                  |
+| AT-D890UV    | Connect, the sparse-region stages, First read and Second read of the vital units, Finishing                                                                               |
+| DM-32UV      | Connect, Identity, Discover memory map, the bulk-read groups, Finishing                                                                                                   |
 | RadioFoundry | Connect, Codeplug, ID database (when area 2 is ticked)                                                                                                                    |
 
 Connect and Finishing events carry no total, so the bar is hidden for them. Which blocks are read and every read-only guard are unchanged.

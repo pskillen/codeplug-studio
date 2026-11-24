@@ -65,32 +65,32 @@ The Coverage panel classifies a RadioFoundry partial archive with `classifyRadio
 
 Rows on the debug Overview tab are built in `radiofoundry/debugIdentity.ts` from sidecars only:
 
-| Row | Sidecar |
-| --- | --- |
-| Firmware · read | `debug/version.txt` (via `summariseRadioFoundryBuild`); without VERSION but with INFO: "INFO answered, VERSION not reported" |
-| Board · VERSION | `debug/version.txt` (`board=`) |
-| Release · git · VERSION | `debug/version.txt` (`release`, `git`, `git_time`) |
-| Source · VERSION | `debug/version.txt` (`source`, `repo`) |
-| Features · VERSION | `debug/version.txt` (`features`, `off`) |
-| Protocol · INFO | `debug/info.bin` (protocol version, flags) |
-| Image · INFO | `debug/info.bin` (EEPROM end, flash start, image end, physical base) |
-| DMR ID database · IDDB | `debug/iddb.bin` (format letter, record count) |
-| Serial | always "None reported" |
+| Row                     | Sidecar                                                                                                                      |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Firmware · read         | `debug/version.txt` (via `summariseRadioFoundryBuild`); without VERSION but with INFO: "INFO answered, VERSION not reported" |
+| Board · VERSION         | `debug/version.txt` (`board=`)                                                                                               |
+| Release · git · VERSION | `debug/version.txt` (`release`, `git`, `git_time`)                                                                           |
+| Source · VERSION        | `debug/version.txt` (`source`, `repo`)                                                                                       |
+| Features · VERSION      | `debug/version.txt` (`features`, `off`)                                                                                      |
+| Protocol · INFO         | `debug/info.bin` (protocol version, flags)                                                                                   |
+| Image · INFO            | `debug/info.bin` (EEPROM end, flash start, image end, physical base)                                                         |
+| DMR ID database · IDDB  | `debug/iddb.bin` (format letter, record count)                                                                               |
+| Serial                  | always "None reported"                                                                                                       |
 
 ## Hex secret masks
 
 Inside the `eeprom-image` region (`integrations/radio-io/radios/radiofoundry/debugSensitive.ts`):
 
-| What | Image offset | Length | Label |
-| --- | --- | --- | --- |
-| CPS programming password | `0x100` | 8 | Codeplug password |
-| Boot PIN (BCD) | `0x751C` | 3 | Boot PIN |
-| DTMF kill code | `0x1408` | 16 | DTMF kill code |
-| DTMF wake code | `0x1418` | 16 | DTMF wake code |
-| Settings-area system keys | `0xE000` + entry offset | value length | `System secret 0x03xx` |
-| Settings-area traffic keys | `0xE000` + entry offset | value length | `Traffic key 0x19xx` |
-| Unreadable settings sector | `0xE000` | `0x1000` | Settings area (unreadable, masked whole) |
-| Settings continuation | `0xF000` | `0x1000` | Settings area continuation (when header bytes 12–15 are non-zero) |
+| What                       | Image offset            | Length       | Label                                                             |
+| -------------------------- | ----------------------- | ------------ | ----------------------------------------------------------------- |
+| CPS programming password   | `0x100`                 | 8            | Codeplug password                                                 |
+| Boot PIN (BCD)             | `0x751C`                | 3            | Boot PIN                                                          |
+| DTMF kill code             | `0x1408`                | 16           | DTMF kill code                                                    |
+| DTMF wake code             | `0x1418`                | 16           | DTMF wake code                                                    |
+| Settings-area system keys  | `0xE000` + entry offset | value length | `System secret 0x03xx`                                            |
+| Settings-area traffic keys | `0xE000` + entry offset | value length | `Traffic key 0x19xx`                                              |
+| Unreadable settings sector | `0xE000`                | `0x1000`     | Settings area (unreadable, masked whole)                          |
+| Settings continuation      | `0xF000`                | `0x1000`     | Settings area continuation (when header bytes 12–15 are non-zero) |
 
 Boot PIN enable at `0x7519` is shown plain. Device info, APRS and the ID database body are not masked.
 

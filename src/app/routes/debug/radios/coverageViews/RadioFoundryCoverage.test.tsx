@@ -1,7 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
-import { EEPROM_IMAGE_END, FLASH_IMAGE_START } from '@integrations/radio-io/radios/radiofoundry/constants.ts';
+import {
+  EEPROM_IMAGE_END,
+  FLASH_IMAGE_START,
+} from '@integrations/radio-io/radios/radiofoundry/constants.ts';
 import {
   RADIOFOUNDRY_DEBUG_INFO_SIDECAR,
   RADIOFOUNDRY_DEBUG_SUMS_SIDECAR,
@@ -51,8 +54,12 @@ describe('radioFoundryCoverage', () => {
     expect(view).toBeDefined();
     render(<DesignSystemV2Provider>{view!.body}</DesignSystemV2Provider>);
     expect(
-      screen.getByText(/calibration, settings ring and journal; the codeplug protocol never serves it/i),
+      screen.getByText(
+        /calibration, settings ring and journal; the codeplug protocol never serves it/i,
+      ),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Not read \(tick 'Also read the DMR ID database area 2'\)/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Not read \(tick 'Also read the DMR ID database area 2'\)/i),
+    ).toBeInTheDocument();
   });
 });

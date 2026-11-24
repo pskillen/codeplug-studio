@@ -718,9 +718,7 @@ describe('DM-32UV debug page', () => {
       screen.getByRole('checkbox', { name: /Also read the DMR ID database area 2/ }),
     ).not.toBeChecked();
     fireEvent.click(screen.getByRole('tab', { name: 'Calibration' }));
-    expect(
-      screen.getByText(/RadioFoundry calibration is not read yet/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/RadioFoundry calibration is not read yet/i)).toBeInTheDocument();
   });
 });
 

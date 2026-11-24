@@ -40,11 +40,7 @@ describe('classifyRadioFoundryDebugCoverage', () => {
       protocolOpts,
     );
     const parts = buildRadioFoundryDebugArchiveParts(capture);
-    const cov = classifyRadioFoundryDebugCoverage(
-      parts.manifest,
-      parts.regions,
-      parts.sidecars,
-    );
+    const cov = classifyRadioFoundryDebugCoverage(parts.manifest, parts.regions, parts.sidecars);
     expect(cov).toBeDefined();
     expect(cov!.area2).toEqual({ state: 'not-read' });
     expect(cov!.gap).toEqual({ start: 0x10000, end: 0x20000 });
@@ -65,11 +61,7 @@ describe('classifyRadioFoundryDebugCoverage', () => {
       includeArea2: true,
     });
     const parts = buildRadioFoundryDebugArchiveParts(capture);
-    const cov = classifyRadioFoundryDebugCoverage(
-      parts.manifest,
-      parts.regions,
-      parts.sidecars,
-    )!;
+    const cov = classifyRadioFoundryDebugCoverage(parts.manifest, parts.regions, parts.sidecars)!;
     expect(cov.area2.state).toBe('read');
     if (cov.area2.state === 'read') {
       expect(cov.area2.readTo).toBeGreaterThan(DMR_ID_DATABASE_AREA2_ADDRESS);
@@ -114,9 +106,7 @@ describe('classifyRadioFoundryDebugCoverage', () => {
       settingsGap: new Uint8Array(0x60),
       image: createOpenUv380Image(),
     });
-    expect(
-      classifyRadioFoundryDebugCoverage(og.manifest, og.regions, og.sidecars),
-    ).toBeUndefined();
+    expect(classifyRadioFoundryDebugCoverage(og.manifest, og.regions, og.sidecars)).toBeUndefined();
   });
 
   it('counts mixed blank and read rows in a region', () => {
@@ -138,9 +128,13 @@ describe('classifyRadioFoundryDebugCoverage', () => {
         },
       ],
     };
-    const cov = classifyRadioFoundryDebugCoverage(manifest, {}, {
-      [RADIOFOUNDRY_DEBUG_SUMS_SIDECAR]: sums,
-    })!;
+    const cov = classifyRadioFoundryDebugCoverage(
+      manifest,
+      {},
+      {
+        [RADIOFOUNDRY_DEBUG_SUMS_SIDECAR]: sums,
+      },
+    )!;
     const eeprom = cov.regions.find((r) => r.id === RADIOFOUNDRY_REGION.eeprom)!;
     expect(eeprom.blocksRead).toBe(1);
     expect(eeprom.blocksBlank).toBe(1);

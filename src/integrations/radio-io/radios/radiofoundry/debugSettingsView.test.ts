@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { SETTINGS_AREA_ADDRESS, SETTINGS_AREA_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
-import { crc32, readRadioFoundrySettingsArea } from '@core/import-export/formats/radiofoundry/settingsArea.ts';
+import {
+  SETTINGS_AREA_ADDRESS,
+  SETTINGS_AREA_SIZE,
+} from '@core/import-export/formats/radiofoundry/layout.ts';
+import {
+  crc32,
+  readRadioFoundrySettingsArea,
+} from '@core/import-export/formats/radiofoundry/settingsArea.ts';
 import { EEPROM_IMAGE_END } from './constants.ts';
 import { RADIOFOUNDRY_REGION } from './debugCapture.ts';
 import { radioFoundrySettingsView } from './debugSettingsView.ts';

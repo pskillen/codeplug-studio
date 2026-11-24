@@ -20,8 +20,7 @@ export interface RadioFoundryCoverageRegion {
 export interface RadioFoundryCoverage {
   regions: readonly RadioFoundryCoverageRegion[];
   area2:
-    | { state: 'not-read' }
-    | { state: 'read'; readTo: number; blankAfter: number; imageEnd: number };
+    { state: 'not-read' } | { state: 'read'; readTo: number; blankAfter: number; imageEnd: number };
   gap: { start: number; end: number };
   sums: 'present' | 'missing';
 }

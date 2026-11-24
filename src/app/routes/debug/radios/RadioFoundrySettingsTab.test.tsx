@@ -2,7 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
-import { SETTINGS_AREA_ADDRESS, SETTINGS_AREA_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
+import {
+  SETTINGS_AREA_ADDRESS,
+  SETTINGS_AREA_SIZE,
+} from '@core/import-export/formats/radiofoundry/layout.ts';
 import { crc32 } from '@core/import-export/formats/radiofoundry/settingsArea.ts';
 import { EEPROM_IMAGE_END } from '@integrations/radio-io/radios/radiofoundry/constants.ts';
 import { RADIOFOUNDRY_REGION } from '@integrations/radio-io/radios/radiofoundry/debugCapture.ts';
