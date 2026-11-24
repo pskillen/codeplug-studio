@@ -192,6 +192,15 @@ export default function StyleguideNavigationPage() {
               { id: 'c', label: 'Finish', status: 'pending' },
             ]}
           />
+          <Stepper
+            ariaLabel="Skipped step demo"
+            steps={[
+              { id: 'a', label: 'Read', status: 'done' },
+              { id: 'b', label: 'Review not needed this time', status: 'skipped' },
+              { id: 'c', label: 'Writing', status: 'current' },
+              { id: 'd', label: 'Done', status: 'pending' },
+            ]}
+          />
         </Stack>
       </StyleguideSection>
 

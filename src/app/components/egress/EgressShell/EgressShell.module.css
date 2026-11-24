@@ -1,0 +1,20 @@
+.headerLine {
+  margin-bottom: var(--dsv2-space-3);
+  color: var(--dsv2-text-secondary);
+  font-size: var(--dsv2-font-body-sm);
+  font-weight: 600;
+}
+
+.stepper {
+  margin-bottom: var(--dsv2-space-4);
+}
+
+.notice {
+  margin-bottom: var(--dsv2-space-3);
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.hint {
+  margin-bottom: var(--dsv2-space-3);
+  font-size: var(--dsv2-font-body-sm);
+}

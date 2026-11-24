@@ -11,7 +11,7 @@ presentational: it renders an ordered list and has no navigation or state of its
 
 | Prop          | Type                                                                                   | Notes                         |
 | ------------- | -------------------------------------------------------------------------------------- | ----------------------------- |
-| `steps`       | `{ id: string; label: string; status: 'pending' \| 'current' \| 'done' \| 'error' }[]` | In display order              |
+| `steps`       | `{ id: string; label: string; status: 'pending' \| 'current' \| 'done' \| 'error' \| 'skipped' }[]` | In display order              |
 | `orientation` | `'horizontal' \| 'vertical'`                                                           | Default `horizontal`          |
 | `ariaLabel`   | `string`                                                                               | Nav label; default `Progress` |
 | `className`   | `string`                                                                               | Extra class on the list       |
@@ -32,7 +32,8 @@ presentational: it renders an ordered list and has no navigation or state of its
 ## Behaviour
 
 - Renders `<nav aria-label>` around an `<ol>`; the current step has `aria-current="step"`.
-- Markers show the step number, a check when done, or a cross on error.
+- Markers show the step number (only non-skipped steps are numbered), a check when done, a cross on error, or a dash when skipped.
+- Skipped steps use a dimmed label and `data-status="skipped"`.
 - Horizontal steps wrap on narrow viewports.
 - Must render inside `DesignSystemV2Provider`. Live demo: `/styleguide/navigation`.
 
