@@ -154,7 +154,7 @@ export function assertPreservedBytesMatchFreshRead(
       const allowed = patchMasks?.get(address + i) ?? 0;
       if (((data[i]! ^ fresh[off + i]!) & ~allowed & 0xff) !== 0) {
         throw new RadioProtocolError(
-          `D890 preserved byte mismatch at 0x${(address + i).toString(16)}: staged 0x${data[i]!.toString(16)} !== fresh 0x${fresh[off + i]!.toString(16)}`,
+          `D890 preserved byte mismatch at 0x${(address + i).toString(16)}`,
         );
       }
     }
