@@ -191,6 +191,12 @@ interface BlockSum {
   blank: boolean;
 }
 
+export interface RadioFoundryImageBlock {
+  crc: number;
+  blank: boolean;
+  bytes: Uint8Array;
+}
+
 export type RadioFoundryCableProtocolOptions = {
   pause?: (ms: number, signal?: AbortSignal) => Promise<void>;
 };
@@ -232,6 +238,8 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   private blockSums: Map<number, BlockSum> | null = null;
   private armed: RadioFoundryWriteSource | null = null;
   private version: RadioFoundryBuildIdentity | null = null;
+  private infoReplyBody: Uint8Array | null = null;
+  private connectVersionText: string | null = null;
 
   /** The build the radio reported at connect, or null when it reported none. */
   firmwareVersion(): RadioFoundryBuildIdentity | null {
@@ -296,7 +304,9 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       ) {
         return null;
       }
-      return parseRadioFoundryVersionText(new TextDecoder().decode(frame.payload.subarray(1)));
+      const text = new TextDecoder().decode(frame.payload.subarray(1));
+      this.connectVersionText = text;
+      return parseRadioFoundryVersionText(text);
     } catch {
       // A late reply must not be read as the next codeplug reply.
       await pipe.drain?.();
@@ -311,11 +321,15 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.version = null;
     this.readBlocks = null;
     this.blockSums = null;
+    this.infoReplyBody = null;
+    this.connectVersionText = null;
     try {
       const body = await this.request(OP_INFO, new Uint8Array(0), 2000);
       this.info = parseInfo(body, this.board);
+      this.infoReplyBody = body.slice();
     } catch (err) {
       this.pipe = null;
+      this.infoReplyBody = null;
       if (err instanceof RadioProtocolError && err.message === HANDSHAKE_ERROR) throw err;
       throw new RadioProtocolError(HANDSHAKE_ERROR);
     }
@@ -324,6 +338,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     if (base !== expected) {
       this.pipe = null;
       this.info = null;
+      this.infoReplyBody = null;
       throw adviseRadioError(
         new RadioWrongIdentError(
           `This radio keeps its codeplug at ${hex(base)}, but the ${this.board.label} keeps it at ${hex(expected)}: it is a different radio. Pick the build for that radio.`,
@@ -337,6 +352,8 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       this.pipe = null;
       this.info = null;
       this.version = null;
+      this.infoReplyBody = null;
+      this.connectVersionText = null;
       throw adviseRadioError(
         new RadioWrongIdentError(
           `This radio reports RadioFoundry board "${reported}", not the ${this.board.label}. Pick the build for that radio.`,
@@ -358,6 +375,17 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.readBlocks = null;
     this.blockSums = null;
     this.armed = null;
+    this.infoReplyBody = null;
+    this.connectVersionText = null;
+  }
+
+  /** Raw INFO body and VERSION text from connect; null when not connected. */
+  connectReplies(): { info: Uint8Array; versionText?: string } | null {
+    if (!this.infoReplyBody) return null;
+    return {
+      info: this.infoReplyBody.slice(),
+      ...(this.connectVersionText != null ? { versionText: this.connectVersionText } : {}),
+    };
   }
 
   /** Remember the serialised codeplug. Upload overlays only its owned addresses. */
@@ -435,6 +463,46 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       write = this.changedBlocks().length;
     }
     return { checksum: addresses.length, read, write };
+  }
+
+  /**
+   * SUMS then READ for these 4 KB blocks (image offsets), CRC-checked; blank blocks come back as 0xFF without a READ.
+   * Uses the same readSums (paced, RADIOFOUNDRY_SUMS_PAUSE_MS) and readBlock as download(). Does not touch the write
+   * session's read cache or block sums.
+   */
+  async readImageBlocks(
+    addresses: readonly number[],
+    opts: {
+      signal?: AbortSignal;
+      onProgress?: ProgressFn;
+      stage?: string;
+      msg?: string;
+    } = {},
+  ): Promise<Map<number, RadioFoundryImageBlock>> {
+    this.requireLink();
+    const sums = await this.readSums([...addresses], opts.signal);
+    const out = new Map<number, RadioFoundryImageBlock>();
+    for (let i = 0; i < addresses.length; i += 1) {
+      const addr = addresses[i]!;
+      const sum = sums.get(addr);
+      if (!sum) throw new RadioProtocolError(`No checksum for block ${hex(addr)}.`);
+      const bytes = sum.blank ? blankBlock() : await this.readBlock(addr, sum.crc, opts.signal);
+      if (crc32Ieee(bytes) !== sum.crc) {
+        throw new RadioProtocolError(`Block ${hex(addr)} checksum does not match the radio.`);
+      }
+      out.set(addr, { crc: sum.crc, blank: sum.blank, bytes });
+      reportProgress(
+        opts.onProgress,
+        {
+          cur: i + 1,
+          max: addresses.length,
+          stage: opts.stage ?? 'Codeplug',
+          msg: opts.msg ?? 'Reading codeplug',
+        },
+        opts.signal,
+      );
+    }
+    return out;
   }
 
   async download(opts: {
