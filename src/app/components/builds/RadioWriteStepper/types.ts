@@ -148,6 +148,9 @@ export interface WriteFlowView {
   /** "Reconnecting: the radio may have left programming mode". */
   reconnecting: boolean;
   progress: ProgressUpdate | null;
+  readStartedAt: number | null;
+  writeStartedAt: number | null;
+  checkStartedAt: number | null;
   /** Rows for the Read step (empty when the radio declares no read plan). */
   readRows: WriteStageRow[];
   /** Rows for the Writing step. */

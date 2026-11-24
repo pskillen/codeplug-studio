@@ -230,6 +230,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const [identity, setIdentity] = useState<RadioIdentityView | null>(null);
   const [review, setReview] = useState<WriteReviewView | null>(null);
   const [reviewDecision, setReviewDecision] = useState<ReviewDecision>('undecided');
+  const [readStartedAt, setReadStartedAt] = useState<number | null>(null);
+  const [writeStartedAt, setWriteStartedAt] = useState<number | null>(null);
+  const [checkStartedAt, setCheckStartedAt] = useState<number | null>(null);
   const [writeFinished, setWriteFinished] = useState(false);
   const restartCountdown = useRestartCountdown();
   const restartSecondsLeft = restartCountdown.secondsLeft;
@@ -567,6 +570,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     reviewUnsubscribeRef.current?.();
     reviewUnsubscribeRef.current = null;
     setReviewDecision('undecided');
+    setReadStartedAt(null);
+    setWriteStartedAt(null);
+    setCheckStartedAt(null);
     setPhaseBoth('read');
   }
 
@@ -807,6 +813,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setPhaseBoth('write');
     clearProgress();
     setStep('writing');
+    setWriteStartedAt(now());
     setReconnecting(false);
     setBusyNotify(true);
   }
@@ -836,7 +843,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     updateWriteTrack(() => newTrack());
     setReview(null);
     setBusyNotify(true);
-    readStartRef.current = now();
+    const readAt = now();
+    readStartRef.current = readAt;
+    setReadStartedAt(readAt);
     setPhaseBoth('read');
     transmitStartedRef.current = false;
     userCancelledRef.current = false;
@@ -1202,6 +1211,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setErrorOutcome(null);
     setRetryLabel(null);
     setCheck('running');
+    setCheckStartedAt(now());
     setPhaseBoth('check');
     clearProgress();
     setBusyNotify(true);
@@ -1313,6 +1323,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         : null,
     reconnecting,
     progress,
+    readStartedAt,
+    writeStartedAt,
+    checkStartedAt,
     readRows: stageRows(readTrack, { finished: readFinished, startActive: true }),
     writeRows: stageRows(writeTrack, { finished: writeFinished, startActive: true }),
     identity,

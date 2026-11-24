@@ -150,6 +150,7 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
       return {
         ...base,
         reviewDecision: 'undecided',
+        readStartedAt: Date.now() - 12_000,
         busy: true,
         progress: { cur: 40, max: 100, msg: 'Zones', stage: 'Zones' },
         readRows: [

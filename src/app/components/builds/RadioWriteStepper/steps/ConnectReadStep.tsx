@@ -3,8 +3,8 @@
  * read (the read every Write already does) and ends with the radio's identity. No decisions here.
  */
 
-import { Progress, Text } from '@mantine/core';
-import RadioIoStageList from '../../RadioIoStageList.tsx';
+import { Text } from '@mantine/core';
+import { StageProgress } from '../../../egress/index.ts';
 import { Button } from '../../../v2/index.ts';
 import { IdentitySection } from '../reviewSectionParts.tsx';
 import classes from '../RadioWriteStepper.module.css';
@@ -17,28 +17,22 @@ interface StepProps {
 }
 
 export function ConnectReadBody({ config, view }: StepProps) {
-  const percent = view.progress?.max
-    ? Math.min(100, (100 * view.progress.cur) / view.progress.max)
-    : undefined;
   return (
     <div className={classes.stack}>
-      <Text size="sm">
-        {view.reconnecting
-          ? 'Reconnecting: the radio may have left programming mode.'
-          : `Connecting to ${config.radioLabel} and reading it…`}
-      </Text>
-      {view.readRows.length > 0 ? (
-        <RadioIoStageList rows={view.readRows} progress={view.progress} />
-      ) : (
-        <div>
-          <Progress value={percent ?? 0} animated={percent == null} aria-label="Read progress" />
-          {view.progress?.msg ? (
-            <Text size="xs" c="dimmed" mt={4}>
-              {view.progress.msg}
-            </Text>
-          ) : null}
-        </div>
-      )}
+      <StageProgress
+        testId="write-stepper-read-progress"
+        lead={
+          <Text size="sm">
+            {view.reconnecting
+              ? 'Reconnecting: the radio may have left programming mode.'
+              : `Connecting to ${config.radioLabel} and reading it…`}
+          </Text>
+        }
+        groups={[{ id: 'read', rows: view.readRows }]}
+        progress={view.progress}
+        startedAt={view.readStartedAt}
+        running={view.busy}
+      />
       {view.identity ? <IdentitySection identity={view.identity} /> : null}
       <Text size="xs" c="dimmed">
         Keep this tab open until the read finishes or you cancel.

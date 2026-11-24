@@ -108,10 +108,22 @@ describe('RadioWriteStepper — step 1, what to write', () => {
 describe('RadioWriteStepper — steps 2 and 3', () => {
   const identity = { model: 'AT-D890UV', serial: 'ABC1234567', name: 'MM9PDY-2' };
 
+  it('Read shows elapsed time on a radio without a read plan', () => {
+    renderStepper({
+      step: 'connectRead',
+      busy: true,
+      readRows: [],
+      readStartedAt: Date.now() - 12_000,
+      progress: { cur: 0, max: 0, msg: 'Reading' },
+    });
+    expect(screen.getByTestId('stage-progress-elapsed')).toHaveTextContent('Elapsed');
+  });
+
   it('step 2 shows the read progress, the identity and a Cancel that aborts', () => {
     const actions = renderStepper({
       step: 'connectRead',
       busy: true,
+      readStartedAt: Date.now() - 5000,
       progress: { cur: 5, max: 10, msg: 'Zones' },
       identity,
     });
@@ -258,6 +270,21 @@ describe('RadioWriteStepper — steps 4 to 6', () => {
     expect(screen.getByText('Upload')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(actions.onAbort).toHaveBeenCalled();
+  });
+
+  it('Restart & check shows Restart, Check write and Keps after restart as groups', () => {
+    renderStepper({
+      step: 'restartCheck',
+      busy: true,
+      restartSecondsLeft: 0,
+      checkStatus: 'running',
+      kepsAfterRestart: 'running',
+      checkStartedAt: Date.now() - 8000,
+      writeRows: [{ id: 'a', label: 'Verify channels', status: 'active', weight: 100 }],
+    });
+    expect(screen.getByText('Restart')).toBeInTheDocument();
+    expect(screen.getByText('Check write')).toBeInTheDocument();
+    expect(screen.getByText('Keps after restart')).toBeInTheDocument();
   });
 
   it('step 5 waits for the restart, then offers Check write and Write keps', () => {
