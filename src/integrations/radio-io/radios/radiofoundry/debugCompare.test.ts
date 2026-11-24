@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compareVerdict } from '../../debugCompare/index.ts';
+import { compareVerdict, type DebugCompareArchive } from '../../debugCompare/index.ts';
+import { RADIO_BACKUP_FORMAT, RADIO_BACKUP_VERSION } from '../../backup/types.ts';
 import { EEPROM_IMAGE_END } from './constants.ts';
 import { RADIOFOUNDRY_DEBUG_INFO_SIDECAR, RADIOFOUNDRY_REGION } from './debugCapture.ts';
 import { radioFoundryCompareAdapter } from './debugCompare.ts';
@@ -9,13 +10,20 @@ import { createOpenUv380Image } from '../opengd77/memory.ts';
 import { makeOpenGd77FirmwareInfoPayload } from '../opengd77/__fixtures__/scriptedPipe.ts';
 
 function rfArchive(
-  id: string,
   regions: Record<string, Uint8Array>,
   sidecars: Record<string, Uint8Array> = {},
-) {
+): DebugCompareArchive {
   return {
     manifest: {
+      format: RADIO_BACKUP_FORMAT,
+      version: RADIO_BACKUP_VERSION,
+      capturedAt: '2026-03-01T00:00:00.000Z',
+      capturedVia: 'web-serial',
+      app: { buildEnv: 'test', buildVersion: 'test' },
       radioModelId: 'MD-9600-RadioFoundry',
+      descriptorLabel: 'test',
+      coverage: 'partial',
+      imageByteLength: 0,
       regions: Object.entries(regions).map(([regionId, bytes]) => ({
         id: regionId,
         address: regionId === RADIOFOUNDRY_REGION.flash ? 0x20000 : 0,
@@ -36,8 +44,8 @@ describe('radioFoundryCompareAdapter', () => {
     const bBytes = aBytes.slice();
     bBytes[0x200] = 0xbb;
     const sections = radioFoundryCompareAdapter.sections!(
-      rfArchive('a', { [RADIOFOUNDRY_REGION.eeprom]: aBytes }),
-      rfArchive('b', { [RADIOFOUNDRY_REGION.eeprom]: bBytes }),
+      rfArchive({ [RADIOFOUNDRY_REGION.eeprom]: aBytes }),
+      rfArchive({ [RADIOFOUNDRY_REGION.eeprom]: bBytes }),
     );
     const eeprom = sections.sections.find((s) => s.id === RADIOFOUNDRY_REGION.eeprom)!;
     expect(eeprom.kind).toBe('compared');
@@ -45,11 +53,11 @@ describe('radioFoundryCompareAdapter', () => {
   });
 
   it('keeps area 2 reported so it never decides the verdict', () => {
-    const a = rfArchive('a', {
+    const a = rfArchive({
       [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(EEPROM_IMAGE_END),
       [RADIOFOUNDRY_REGION.area2]: new Uint8Array(4096).fill(1),
     });
-    const b = rfArchive('b', {
+    const b = rfArchive({
       [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(EEPROM_IMAGE_END),
     });
     const sections = radioFoundryCompareAdapter.sections!(a, b);
@@ -61,14 +69,12 @@ describe('radioFoundryCompareAdapter', () => {
   it('reports INFO sidecar differences', () => {
     const sections = radioFoundryCompareAdapter.sections!(
       rfArchive(
-        'a',
         { [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(16) },
         {
           [RADIOFOUNDRY_DEBUG_INFO_SIDECAR]: new Uint8Array([1, 2, 3]),
         },
       ),
       rfArchive(
-        'b',
         { [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(16) },
         {
           [RADIOFOUNDRY_DEBUG_INFO_SIDECAR]: new Uint8Array([1, 2, 4]),
@@ -92,15 +98,15 @@ describe('radioFoundryCompareAdapter', () => {
     });
     const out = radioFoundryCompareAdapter.sections!(
       { manifest: og.manifest, regions: og.regions, sidecars: og.sidecars },
-      rfArchive('b', { [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(16) }),
+      rfArchive({ [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(16) }),
     );
     expect(out.error).toMatch(/incompatible/);
   });
 
   it('tags compared EEPROM with regionId for sensitive ranges', () => {
     const sections = radioFoundryCompareAdapter.sections!(
-      rfArchive('a', { [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(16) }),
-      rfArchive('b', { [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(16) }),
+      rfArchive({ [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(16) }),
+      rfArchive({ [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(16) }),
     );
     expect(sections.sections.find((s) => s.id === RADIOFOUNDRY_REGION.eeprom)?.regionId).toBe(
       RADIOFOUNDRY_REGION.eeprom,

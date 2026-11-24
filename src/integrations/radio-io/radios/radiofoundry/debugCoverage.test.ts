@@ -15,8 +15,26 @@ import { OPENGD77_DM1701_MODEL_ID } from '../opengd77/hydration.ts';
 import { createOpenUv380Image } from '../opengd77/memory.ts';
 import { makeOpenGd77FirmwareInfoPayload } from '../opengd77/__fixtures__/scriptedPipe.ts';
 import { RADIOFOUNDRY_IMAGE_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
+import {
+  RADIO_BACKUP_FORMAT,
+  RADIO_BACKUP_VERSION,
+  type RadioBackupManifestV1,
+} from '../../backup/types.ts';
 
 const protocolOpts = { protocolOptions: { pause: async () => {} } };
+
+const manifestBase = (regions: RadioBackupManifestV1['regions']): RadioBackupManifestV1 => ({
+  format: RADIO_BACKUP_FORMAT,
+  version: RADIO_BACKUP_VERSION,
+  capturedAt: '2026-03-01T00:00:00.000Z',
+  capturedVia: 'web-serial',
+  app: { buildEnv: 'test', buildVersion: 'test' },
+  radioModelId: 'MD-9600-RadioFoundry',
+  descriptorLabel: 'test',
+  coverage: 'partial',
+  imageByteLength: 0,
+  regions,
+});
 
 function sumsRow(address: number, blank: boolean): Uint8Array {
   const row = new Uint8Array(9);
@@ -70,27 +88,24 @@ describe('classifyRadioFoundryDebugCoverage', () => {
   });
 
   it('says sums missing when the sidecar is absent', () => {
-    const manifest = {
-      radioModelId: 'MD-9600-RadioFoundry',
-      regions: [
-        {
-          id: RADIOFOUNDRY_REGION.eeprom,
-          address: 0,
-          byteLength: EEPROM_IMAGE_END,
-          label: 'EEPROM',
-          path: 'regions/eeprom-image.bin',
-          restoreRole: 'inspect-only' as const,
-        },
-        {
-          id: RADIOFOUNDRY_REGION.flash,
-          address: FLASH_IMAGE_START,
-          byteLength: RADIOFOUNDRY_IMAGE_SIZE - FLASH_IMAGE_START,
-          label: 'Flash',
-          path: 'regions/flash-image.bin',
-          restoreRole: 'inspect-only' as const,
-        },
-      ],
-    };
+    const manifest = manifestBase([
+      {
+        id: RADIOFOUNDRY_REGION.eeprom,
+        address: 0,
+        byteLength: EEPROM_IMAGE_END,
+        label: 'EEPROM',
+        path: 'regions/eeprom-image.bin',
+        restoreRole: 'inspect-only',
+      },
+      {
+        id: RADIOFOUNDRY_REGION.flash,
+        address: FLASH_IMAGE_START,
+        byteLength: RADIOFOUNDRY_IMAGE_SIZE - FLASH_IMAGE_START,
+        label: 'Flash',
+        path: 'regions/flash-image.bin',
+        restoreRole: 'inspect-only',
+      },
+    ]);
     const cov = classifyRadioFoundryDebugCoverage(manifest, {}, {})!;
     expect(cov.sums).toBe('missing');
     expect(cov.regions.every((r) => r.blocksRead === 0 && r.blocksBlank === 0)).toBe(true);
@@ -115,19 +130,16 @@ describe('classifyRadioFoundryDebugCoverage', () => {
       ...sumsRow(BLOCK_SIZE, true),
       ...sumsRow(FLASH_IMAGE_START, false),
     ]);
-    const manifest = {
-      radioModelId: 'MD-9600-RadioFoundry',
-      regions: [
-        {
-          id: RADIOFOUNDRY_REGION.eeprom,
-          address: 0,
-          byteLength: EEPROM_IMAGE_END,
-          label: 'EEPROM',
-          path: 'regions/eeprom-image.bin',
-          restoreRole: 'inspect-only' as const,
-        },
-      ],
-    };
+    const manifest = manifestBase([
+      {
+        id: RADIOFOUNDRY_REGION.eeprom,
+        address: 0,
+        byteLength: EEPROM_IMAGE_END,
+        label: 'EEPROM',
+        path: 'regions/eeprom-image.bin',
+        restoreRole: 'inspect-only',
+      },
+    ]);
     const cov = classifyRadioFoundryDebugCoverage(
       manifest,
       {},

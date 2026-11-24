@@ -5,7 +5,28 @@ import {
   RADIOFOUNDRY_DEBUG_VERSION_SIDECAR,
 } from './debugCapture.ts';
 import { makeFakeRadioFoundryInfoBody } from './__fixtures__/fakeRadioFoundryRadio.ts';
+import { RADIO_BACKUP_FORMAT, RADIO_BACKUP_VERSION } from '../../backup/types.ts';
 import { radioFoundryIdentityRows } from './debugIdentity.ts';
+import type { DebugIdentityInput } from '../../debugView/index.ts';
+
+const stubArchive = (radioModelId: string, sidecars: Record<string, Uint8Array>) =>
+  ({
+    manifest: {
+      format: RADIO_BACKUP_FORMAT,
+      version: RADIO_BACKUP_VERSION,
+      capturedAt: '2026-03-01T00:00:00.000Z',
+      capturedVia: 'web-serial',
+      app: { buildEnv: 'test', buildVersion: 'test' },
+      radioModelId,
+      descriptorLabel: 'test',
+      coverage: 'partial',
+      imageByteLength: 0,
+      regions: [],
+    },
+    regions: {},
+    sidecars,
+    source: 'file',
+  }) as NonNullable<DebugIdentityInput['archive']>;
 
 const rows = (input: Parameters<typeof radioFoundryIdentityRows>[0]) =>
   Object.fromEntries(radioFoundryIdentityRows(input));
@@ -25,16 +46,11 @@ describe('radioFoundryIdentityRows', () => {
     );
     const iddb = new Uint8Array([0x4e, 0x96, 0xdc, 0x04, 0x00]);
     const r = rows({
-      archive: {
-        manifest: { radioModelId: 'MD-9600-RadioFoundry', regions: [] },
-        regions: {},
-        sidecars: {
-          [RADIOFOUNDRY_DEBUG_INFO_SIDECAR]: info,
-          [RADIOFOUNDRY_DEBUG_VERSION_SIDECAR]: version,
-          [RADIOFOUNDRY_DEBUG_IDDB_SIDECAR]: iddb,
-        },
-        source: 'live-read',
-      },
+      archive: stubArchive('MD-9600-RadioFoundry', {
+        [RADIOFOUNDRY_DEBUG_INFO_SIDECAR]: info,
+        [RADIOFOUNDRY_DEBUG_VERSION_SIDECAR]: version,
+        [RADIOFOUNDRY_DEBUG_IDDB_SIDECAR]: iddb,
+      }),
       connection: 'Read complete · disconnected',
       family: 'RadioFoundry',
     });
@@ -50,14 +66,9 @@ describe('radioFoundryIdentityRows', () => {
 
   it('says VERSION not reported when INFO exists without VERSION', () => {
     const r = rows({
-      archive: {
-        manifest: { radioModelId: 'DM-32UV-RadioFoundry', regions: [] },
-        regions: {},
-        sidecars: {
-          [RADIOFOUNDRY_DEBUG_INFO_SIDECAR]: makeFakeRadioFoundryInfoBody(0x10000),
-        },
-        source: 'file',
-      },
+      archive: stubArchive('DM-32UV-RadioFoundry', {
+        [RADIOFOUNDRY_DEBUG_INFO_SIDECAR]: makeFakeRadioFoundryInfoBody(0x10000),
+      }),
       connection: 'Imported',
       family: 'RadioFoundry',
     });
@@ -66,14 +77,9 @@ describe('radioFoundryIdentityRows', () => {
 
   it('formats IDDB format none when the format byte is zero', () => {
     const r = rows({
-      archive: {
-        manifest: { radioModelId: 'DM-32UV-RadioFoundry', regions: [] },
-        regions: {},
-        sidecars: {
-          [RADIOFOUNDRY_DEBUG_IDDB_SIDECAR]: new Uint8Array([0, 0, 0, 0, 0]),
-        },
-        source: 'file',
-      },
+      archive: stubArchive('DM-32UV-RadioFoundry', {
+        [RADIOFOUNDRY_DEBUG_IDDB_SIDECAR]: new Uint8Array([0, 0, 0, 0, 0]),
+      }),
       connection: 'Imported',
       family: 'RadioFoundry',
     });
@@ -82,12 +88,7 @@ describe('radioFoundryIdentityRows', () => {
 
   it('says Not reported when IDDB is absent', () => {
     const r = rows({
-      archive: {
-        manifest: { radioModelId: 'DM-32UV-RadioFoundry', regions: [] },
-        regions: {},
-        sidecars: {},
-        source: 'file',
-      },
+      archive: stubArchive('DM-32UV-RadioFoundry', {}),
       connection: 'Imported',
       family: 'RadioFoundry',
     });

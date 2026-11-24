@@ -1,4 +1,7 @@
-import { SETTINGS_AREA_ADDRESS, SETTINGS_AREA_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
+import {
+  SETTINGS_AREA_ADDRESS,
+  SETTINGS_AREA_SIZE,
+} from '@core/import-export/formats/radiofoundry/layout.ts';
 import { crc32 } from '@core/import-export/formats/radiofoundry/settingsArea.ts';
 import { EEPROM_IMAGE_END } from '../constants.ts';
 

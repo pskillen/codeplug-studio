@@ -65,7 +65,7 @@ function sidecarSection(
       changed: 0,
       missing: 0,
       runs: [],
-      runsTruncated: 0,
+      runsTruncated: false,
     };
   }
   const diff = diffBytes(bytesA ?? new Uint8Array(0), bytesB ?? new Uint8Array(0), 0);

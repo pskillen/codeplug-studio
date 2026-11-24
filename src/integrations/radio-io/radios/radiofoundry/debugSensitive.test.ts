@@ -11,6 +11,8 @@ import { EEPROM_IMAGE_END } from './constants.ts';
 import { RADIOFOUNDRY_REGION } from './debugCapture.ts';
 import { RADIOFOUNDRY_CABLE_BOARDS } from './board.ts';
 import { radioFoundryArchiveSensitiveRanges } from './debugSensitive.ts';
+import type { DebugSensitiveArchive } from '../../debugSensitive.ts';
+import { RADIO_BACKUP_FORMAT, RADIO_BACKUP_VERSION } from '../../backup/types.ts';
 import { OPENGD77_DM1701_MODEL_ID } from '../opengd77/hydration.ts';
 
 function buildSector(
@@ -26,11 +28,28 @@ function buildSector(
   return s;
 }
 
-function archive(modelId: string, eeprom: Uint8Array) {
+function archive(modelId: string, eeprom: Uint8Array): DebugSensitiveArchive {
   return {
     manifest: {
+      format: RADIO_BACKUP_FORMAT,
+      version: RADIO_BACKUP_VERSION,
+      capturedAt: '2026-03-01T00:00:00.000Z',
+      capturedVia: 'web-serial',
+      app: { buildEnv: 'test', buildVersion: 'test' },
       radioModelId: modelId,
-      regions: [{ id: RADIOFOUNDRY_REGION.eeprom, address: 0, byteLength: eeprom.length }],
+      descriptorLabel: 'test',
+      coverage: 'partial',
+      imageByteLength: eeprom.length,
+      regions: [
+        {
+          id: RADIOFOUNDRY_REGION.eeprom,
+          address: 0,
+          byteLength: eeprom.length,
+          label: 'EEPROM',
+          path: 'regions/eeprom-image.bin',
+          restoreRole: 'inspect-only',
+        },
+      ],
     },
     regions: { [RADIOFOUNDRY_REGION.eeprom]: eeprom },
     sidecars: {},
