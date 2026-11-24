@@ -202,6 +202,113 @@ describe('ChannelEditor (saved channel)', () => {
     expect(row).not.toHaveProperty('parked');
   });
 
+  it('shows Main mode on the primary section and Make main on others', () => {
+    const channel: Channel = {
+      ...newChannel('p', 'Dual'),
+      id: 'ch-dual-sections',
+      revision: 1,
+      modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
+      primaryMode: 'fm',
+    };
+    renderEdit(channel);
+    const fmSection = document.getElementById('mode-fm') as HTMLElement;
+    const dmrSection = document.getElementById('mode-dmr') as HTMLElement;
+    expect(within(fmSection).getByText('Main mode')).toBeInTheDocument();
+    expect(within(dmrSection).getByRole('button', { name: 'Make DMR the main mode' })).toBeTruthy();
+    expect(screen.queryByRole('radiogroup', { name: 'Main mode' })).not.toBeInTheDocument();
+  });
+
+  it('Make main moves the badge without reordering mode sections', async () => {
+    const channel: Channel = {
+      ...newChannel('p', 'Dual'),
+      id: 'ch-dual-make-main',
+      revision: 1,
+      modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
+      primaryMode: 'fm',
+    };
+    renderEdit(channel);
+    fireEvent.click(screen.getByRole('button', { name: 'Make DMR the main mode' }));
+    expect(
+      within(document.getElementById('mode-dmr') as HTMLElement).getByText('Main mode'),
+    ).toBeTruthy();
+    const sectionIds = [
+      ...(document.getElementById('modes')?.querySelectorAll('section') ?? []),
+    ].map((s) => s.id);
+    expect(sectionIds).toEqual(['mode-fm', 'mode-dmr']);
+    fireEvent.click(screen.getByRole('button', { name: 'Save channel' }));
+    await waitFor(() => expect(mocks.putChannel).toHaveBeenCalledTimes(1));
+    const [row] = mocks.putChannel.mock.calls[0] as [Channel, unknown];
+    expect(row.primaryMode).toBe('dmr');
+    expect(row.modeProfiles.map((p) => p.mode)).toEqual(['fm', 'dmr']);
+  });
+
+  it('starts non-main sections folded when three modes are present', () => {
+    const channel: Channel = {
+      ...newChannel('p', 'Triple'),
+      id: 'ch-triple-fold',
+      revision: 1,
+      modeProfiles: [
+        { ...(defaultModeProfile('fm') as ChannelModeProfileAnalog), txTone: '94.8' },
+        defaultModeProfile('dmr'),
+        defaultModeProfile('nxdn'),
+      ],
+      primaryMode: 'dmr',
+    };
+    renderEdit(channel);
+    const fmSection = document.getElementById('mode-fm') as HTMLElement;
+    const nxdnSection = document.getElementById('mode-nxdn') as HTMLElement;
+    const dmrSection = document.getElementById('mode-dmr') as HTMLElement;
+    expect(within(fmSection).getByText('T 94.8')).toBeTruthy();
+    expect(within(nxdnSection).getByText('Nothing set yet')).toBeTruthy();
+    expect(within(dmrSection).getByLabelText('Colour code')).toBeTruthy();
+  });
+
+  it('opens a mode section added during the edit', async () => {
+    const channel: Channel = {
+      ...newChannel('p', 'Triple add'),
+      id: 'ch-triple-add',
+      revision: 1,
+      modeProfiles: [
+        defaultModeProfile('fm'),
+        defaultModeProfile('dmr'),
+        defaultModeProfile('nxdn'),
+      ],
+      primaryMode: 'dmr',
+    };
+    renderEdit(channel);
+    fireEvent.click(screen.getByRole('button', { name: '+ Add another mode' }));
+    await waitFor(() => {
+      expect(screen.getAllByRole('menuitem', { hidden: true }).length).toBeGreaterThan(0);
+    });
+    const ysfItem = screen
+      .getAllByRole('menuitem', { hidden: true })
+      .find((el) => el.textContent === 'YSF');
+    expect(ysfItem).toBeTruthy();
+    fireEvent.click(ysfItem!);
+    const ysfSection = document.getElementById('mode-ysf') as HTMLElement;
+    expect(within(ysfSection).getByLabelText('DG-ID')).toBeTruthy();
+  });
+
+  it('passes main mode to the first remaining profile when the main mode is removed', async () => {
+    const channel: Channel = {
+      ...newChannel('p', 'Dual remove'),
+      id: 'ch-dual-remove',
+      revision: 1,
+      modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
+      primaryMode: 'dmr',
+    };
+    renderEdit(channel);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove DMR' }));
+    expect(document.getElementById('mode-dmr')).toBeNull();
+    expect(document.getElementById('modes')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove DMR' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save channel' }));
+    await waitFor(() => expect(mocks.putChannel).toHaveBeenCalledTimes(1));
+    const [row] = mocks.putChannel.mock.calls[0] as [Channel, unknown];
+    expect(row.primaryMode).toBe('fm');
+    expect(row.modeProfiles.map((p) => p.mode)).toEqual(['fm']);
+  });
+
   it('has no vendor-named copy in identity and mode sections this phase owns', () => {
     const channel: Channel = {
       ...newChannel('p', 'Dual'),

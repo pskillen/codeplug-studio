@@ -34,12 +34,12 @@ import {
   FormField,
   Panel,
   SectionNav,
-  SegmentedControl,
   StickyFooter,
   TextInput,
 } from '../../components/v2/index.ts';
 import { modeLabel, type ModePreset } from '../../lib/channelModes.ts';
-import { channelModeSummaryText } from '../../lib/channelModeSummary.ts';
+import { channelModeSummaryText, modeProfileSummary } from '../../lib/channelModeSummary.ts';
+import ModeSection, { modeSectionStartsFolded } from '../../components/channels/ModeSection.tsx';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { channelEditPath, channelViewPath } from '../../lib/channelPaths.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
@@ -129,6 +129,7 @@ export default function ChannelEditor({
     primaryMode: base.primaryMode ?? null,
     parked: [],
   }));
+  const [addedModes, setAddedModes] = useState<ReadonlySet<ChannelMode>>(() => new Set());
   const [location, setLocation] = useState<ChannelLocationValues>(() =>
     channelLocationValuesFromChannel(base),
   );
@@ -144,7 +145,26 @@ export default function ChannelEditor({
   const navigate = useNavigate();
 
   const modeProfiles = modeEdit.modeProfiles;
+  const modeCount = modeProfiles.length;
   const selectedModes = modeProfiles.map((p) => p.mode as ChannelMode);
+  const resolvedMainMode = resolveChannelPrimaryMode(modeEdit);
+
+  function addModeWithTracking(mode: ChannelMode) {
+    setAddedModes((modes) => new Set([...modes, mode]));
+    setModeEdit((e) => addChannelMode(e, mode));
+  }
+
+  function applyPresetWithTracking(preset: ModePreset) {
+    setModeEdit((e) => {
+      const beforeModes = new Set(e.modeProfiles.map((p) => p.mode));
+      const next = applyModePreset(e, preset);
+      const newModes = next.modeProfiles.map((p) => p.mode).filter((m) => !beforeModes.has(m));
+      if (newModes.length > 0) {
+        setAddedModes((modes) => new Set([...modes, ...newModes]));
+      }
+      return next;
+    });
+  }
 
   function buildRow(): Channel {
     const lat = Number.parseFloat(location.lat);
@@ -297,7 +317,6 @@ export default function ChannelEditor({
     ...library.scanLists.map((list) => ({ value: list.id, label: list.name })),
   ];
 
-  const modeCount = modeProfiles.length;
   const editorSections = useMemo(
     () => channelEditorSections({ isNew: !entity, modeCount }),
     [entity, modeCount],
@@ -399,9 +418,9 @@ export default function ChannelEditor({
               <ChannelModePicker
                 modes={selectedModes}
                 onSwitch={(mode) => setModeEdit((e) => switchChannelMode(e, mode))}
-                onAdd={(mode) => setModeEdit((e) => addChannelMode(e, mode))}
+                onAdd={addModeWithTracking}
                 onRemove={(mode) => setModeEdit((e) => removeChannelMode(e, mode))}
-                onPreset={(preset) => setModeEdit((e) => applyModePreset(e, preset))}
+                onPreset={applyPresetWithTracking}
                 compact={isMobile}
               />
             </div>
@@ -446,11 +465,7 @@ export default function ChannelEditor({
                       onPatch={(patch) => patchModeProfile(0, patch)}
                       context={modePanelContext}
                     />
-                    <AddModeMenu
-                      modes={selectedModes}
-                      onAdd={(mode) => setModeEdit((e) => addChannelMode(e, mode))}
-                      variant="link"
-                    />
+                    <AddModeMenu modes={selectedModes} onAdd={addModeWithTracking} variant="link" />
                   </>
                 )}
               </div>
@@ -459,37 +474,31 @@ export default function ChannelEditor({
 
           {modeCount >= 2 ? (
             <div id="modes" className={classes.modesBlock}>
-              <div className={classes.mainMode}>
-                <p className={classes.mainModeLabel}>Main mode</p>
-                <SegmentedControl
-                  aria-label="Main mode"
-                  options={modeProfiles.map((profile) => ({
-                    value: profile.mode,
-                    label: modeLabel(profile.mode),
-                  }))}
-                  value={resolveChannelPrimaryMode(modeEdit) ?? ''}
-                  onChange={(value) =>
-                    setModeEdit((e) => setChannelMainMode(e, value as ChannelMode))
-                  }
-                />
-                <p className={classes.mainModeHint}>
-                  A radio that can use only one of these modes uses this one; a radio that listens
-                  to both transmits in it.
-                </p>
-              </div>
-              {modeProfiles.map((profile, index) => (
-                <Panel
-                  key={profile.mode}
-                  id={`mode-${profile.mode}`}
-                  title={modeLabel(profile.mode)}
-                >
-                  <ModePanel
-                    profile={profile}
-                    onPatch={(patch) => patchModeProfile(index, patch)}
-                    context={modePanelContext}
-                  />
-                </Panel>
-              ))}
+              {modeProfiles.map((profile, index) => {
+                const mode = profile.mode as ChannelMode;
+                const isMain = mode === resolvedMainMode;
+                return (
+                  <ModeSection
+                    key={mode}
+                    mode={mode}
+                    isMain={isMain}
+                    onMakeMain={() => setModeEdit((e) => setChannelMainMode(e, mode))}
+                    summary={modeProfileSummary(profile, library)}
+                    defaultCollapsed={modeSectionStartsFolded({
+                      modeCount,
+                      compact: isMobile ?? false,
+                      isMain,
+                      addedThisEdit: addedModes.has(mode),
+                    })}
+                  >
+                    <ModePanel
+                      profile={profile}
+                      onPatch={(patch) => patchModeProfile(index, patch)}
+                      context={modePanelContext}
+                    />
+                  </ModeSection>
+                );
+              })}
             </div>
           ) : null}
 
