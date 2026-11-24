@@ -36,6 +36,7 @@ import type {
   RadioDescriptor,
   RadioPlanContext,
   RadioSession,
+  type RadioWriteRefusal,
 } from '@integrations/radio-io/types.ts';
 import type {
   WriteVerifyPendingPayload,
@@ -239,7 +240,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const [buildChecks, setBuildChecks] = useState<WriteFlowView['buildChecks']>({
     status: 'idle',
     warnings: [],
+    refusals: [],
   });
+  const buildRefusalsRef = useRef<readonly RadioWriteRefusal[]>([]);
   const [channelLabel, setChannelLabel] = useState<
     ((entityId: string) => string | undefined) | undefined
   >(undefined);
@@ -289,8 +292,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     if (!isOpen || !activeProjectId) return;
     if (!writesToRadioImage(parts)) {
       queueMicrotask(() => {
-        setBuildChecks({ status: 'idle', warnings: [] });
+        setBuildChecks({ status: 'idle', warnings: [], refusals: [] });
         buildWarningsRef.current = [];
+        buildRefusalsRef.current = [];
       });
       return undefined;
     }
@@ -300,7 +304,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       prepareAbortRef.current?.abort();
       const ac = new AbortController();
       prepareAbortRef.current = ac;
-      setBuildChecks({ status: 'checking', warnings: [], progress: undefined });
+      setBuildChecks({ status: 'checking', warnings: [], refusals: [], progress: undefined });
       const runPrepare = async (): Promise<Awaited<ReturnType<typeof prepareRadioWriteImage>>> => {
         const library = await loadLibrarySlice(persistence, activeProjectId);
         if (ac.signal.aborted) throw ac.signal.reason;
@@ -332,7 +336,13 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       const promise = runPrepare()
         .then((result) => {
           buildWarningsRef.current = result.warnings;
-          setBuildChecks({ status: 'ready', warnings: result.warnings });
+          const refusals =
+            descriptor?.checkWriteProjection?.({
+              channels: result.channels,
+              organisation: result.organisation,
+            }) ?? [];
+          buildRefusalsRef.current = refusals;
+          setBuildChecks({ status: 'ready', warnings: result.warnings, refusals });
           if (prepareCacheRef.current?.key === key) {
             prepareCacheRef.current = { ...prepareCacheRef.current, result };
           }
@@ -341,9 +351,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         .catch((err) => {
           if (ac.signal.aborted) throw err;
           if (err instanceof RadioWriteBlockedError) {
-            setBuildChecks({ status: 'error', warnings: [], message: err.message });
+            setBuildChecks({ status: 'error', warnings: [], refusals: [], message: err.message });
           } else {
-            setBuildChecks({ status: 'error', warnings: [], message: String(err) });
+            setBuildChecks({ status: 'error', warnings: [], refusals: [], message: String(err) });
           }
           throw err;
         });
@@ -362,6 +372,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     contactSource,
     egress,
     supportsDualBankWrite,
+    descriptor,
   ]);
 
   // React state cannot prevent a second click before the next render (including port picking).
@@ -845,6 +856,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     autoProceedRef.current = opts.reconnect;
     try {
       if (!activeProjectId) throw new Error('No active project.');
+      if (writesToRadioImage(p) && buildRefusalsRef.current.length > 0) {
+        setBusyNotify(false);
+        setStep('whatToWrite');
+        return;
+      }
       if (!grantedPortRef.current) {
         try {
           grantedPortRef.current = await grantRadioSerialPortForEgress({
@@ -911,6 +927,18 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
           };
         }
         buildWarningsRef.current = prepared.warnings;
+        const refusals =
+          descriptor?.checkWriteProjection?.({
+            channels: prepared.channels,
+            organisation: prepared.organisation,
+          }) ?? [];
+        buildRefusalsRef.current = refusals;
+        if (refusals.length > 0) {
+          setBuildChecks((prev) => ({ ...prev, refusals }));
+          setBusyNotify(false);
+          setStep('whatToWrite');
+          return;
+        }
         clearProgress();
       }
 
@@ -1135,6 +1163,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   async function connectAndRead(): Promise<void> {
     const p = partsRef.current;
     resetRun();
+    if (writesToRadioImage(p) && buildRefusalsRef.current.length > 0) {
+      return;
+    }
     if (p.keps && kepsWriteFn) {
       if (!activeProjectId) {
         fail(

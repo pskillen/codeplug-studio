@@ -6,7 +6,7 @@
 import type { ReactNode } from 'react';
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { DigitalContactsWriteSource } from '@core/domain/digitalIdDirectoryProjection.ts';
-import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
+import type { ProgressUpdate, RadioWriteRefusal } from '@integrations/radio-io/types.ts';
 import type { WriteVerifyResult } from '@integrations/radio-io/writeVerify.ts';
 import type { SatelliteKepsWriteResult } from '../../../services/satelliteKepsWriteAdapters.ts';
 import type { WriteErrorOutcome } from '../../../services/egress/writeErrorOutcome.ts';
@@ -169,6 +169,7 @@ export interface WriteFlowView {
   buildChecks: {
     status: 'idle' | 'checking' | 'ready' | 'error';
     warnings: ExportWarning[];
+    refusals: readonly RadioWriteRefusal[];
     message?: string;
     progress?: string;
   };

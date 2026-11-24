@@ -164,6 +164,25 @@ export function WhatToWriteBody({ config, view, actions }: StepProps) {
               {view.buildChecks.progress ? ` ${view.buildChecks.progress}` : ''}
             </Text>
           ) : null}
+          {view.buildChecks.status === 'ready' && view.buildChecks.refusals.length > 0 ? (
+            <Alert
+              color="red"
+              title="Studio can't write this build to the radio yet"
+              data-testid="write-projection-refusals"
+            >
+              <ul className={classes.refusalList}>
+                {view.buildChecks.refusals.map((refusal) => (
+                  <li key={`${refusal.channelIndex ?? 'x'}-${refusal.message}`}>
+                    {/* Write projection carries slot index and wire name only — no library id. */}
+                    {refusal.message}
+                  </li>
+                ))}
+              </ul>
+              <Text size="sm">
+                Fix these channels in the build, then try again. Nothing has been sent.
+              </Text>
+            </Alert>
+          ) : null}
           {view.buildChecks.status === 'ready' ? (
             <>
               <WarningsList
@@ -203,6 +222,7 @@ export function WhatToWriteFooter({ config, view, actions }: StepProps) {
     config.writeHidden ||
     tickedPartCount(view.parts) === 0 ||
     view.busy ||
+    view.buildChecks.refusals.length > 0 ||
     (view.contactDirectoryStatus != null && view.contactDirectoryStatus !== 'ready');
   return (
     <>

@@ -134,15 +134,37 @@ const IDENTITY = { model: 'AT-D890UV', serial: 'DEMO0000', name: 'MM9PDY-2', fir
 
 const DEMO_BUILD_CHECKS = styleguideWarningsListDemo();
 
-function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewController): WriteFlowView {
+const DEMO_PROJECTION_REFUSALS = [
+  {
+    message:
+      'AT-D890UV channel 2: RX 118000000 Hz is AM airband (108–137 MHz) — airband belongs in the separate AmAir bank, not MR channel slots',
+    retry: 'none' as const,
+    channelIndex: 2,
+  },
+  {
+    message:
+      'AT-D890UV channel 7: NXDN TX RAN must be a whole number 0-63, got 99',
+    retry: 'none' as const,
+    channelIndex: 7,
+  },
+];
+
+function viewFor(
+  step: WriteStep,
+  parts: WriteParts,
+  d890?: AtD890ReviewController,
+  showProjectionRefusals = false,
+): WriteFlowView {
   const base = demoFlowView({
     step,
     parts,
     identity: step === 'whatToWrite' ? null : IDENTITY,
     buildChecks:
       step === 'whatToWrite' && parts.codeplug
-        ? { status: 'ready', warnings: DEMO_BUILD_CHECKS }
-        : { status: 'idle', warnings: [] },
+        ? showProjectionRefusals
+          ? { status: 'ready', warnings: [], refusals: DEMO_PROJECTION_REFUSALS }
+          : { status: 'ready', warnings: DEMO_BUILD_CHECKS, refusals: [] }
+        : { status: 'idle', warnings: [], refusals: [] },
     channelLabel: styleguideChannelLabel,
   });
   switch (step) {
@@ -263,6 +285,7 @@ export default function RadioWriteStepperDemo() {
   const [parts, setParts] = useState<WriteParts>({ ...DEFAULT_WRITE_PARTS });
   const [d890Variant, setD890Variant] = useState<D890Variant | null>(null);
   const [configOverride, setConfigOverride] = useState<Partial<WriteStepperConfig> | null>(null);
+  const [showProjectionRefusals, setShowProjectionRefusals] = useState(false);
   const d890 = useMemo(
     () => (d890Variant ? demoD890Controller(d890Variant) : undefined),
     [d890Variant],
@@ -277,7 +300,12 @@ export default function RadioWriteStepperDemo() {
     return () => clearAllOverrides(D890_DEMO_BUILD);
   }, []);
   const shownParts = d890 ? { ...parts, settings: d890.getState().settingsTicked } : parts;
-  const view = viewFor(d890 ? 'review' : (step ?? 'whatToWrite'), shownParts, d890);
+  const view = viewFor(
+    d890 ? 'review' : (step ?? 'whatToWrite'),
+    shownParts,
+    d890,
+    showProjectionRefusals,
+  );
   const actions = {
     ...noopActions(),
     onClose: () => {
@@ -297,6 +325,7 @@ export default function RadioWriteStepperDemo() {
             onClick={() => {
               setD890Variant(null);
               setConfigOverride(null);
+              setShowProjectionRefusals(false);
               setStep(s);
             }}
           >
@@ -310,7 +339,20 @@ export default function RadioWriteStepperDemo() {
           size="sm"
           onClick={() => {
             setD890Variant(null);
+            setConfigOverride(null);
+            setShowProjectionRefusals(true);
+            setStep('whatToWrite');
+          }}
+        >
+          Step 1: projection refusals
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setD890Variant(null);
             setConfigOverride(FIVE_STEP_SHELL);
+            setShowProjectionRefusals(false);
             setStep('whatToWrite');
           }}
         >

@@ -63,7 +63,7 @@ export function demoFlowView(overrides: Partial<WriteFlowView> = {}): WriteFlowV
     kepsAfterRestart: 'none',
     kepsFailure: null,
     summary: null,
-    buildChecks: { status: 'idle', warnings: [] },
+    buildChecks: { status: 'idle', warnings: [], refusals: [] },
     channelLabel: undefined,
     ...overrides,
   };
