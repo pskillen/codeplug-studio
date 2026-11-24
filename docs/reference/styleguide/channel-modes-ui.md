@@ -24,6 +24,16 @@ Every digital mode's settings use the same four groups, in this order (`DigitalM
 - No radio, format or CPS names in mode copy.
 - Code: `src/app/components/channels/modePanels/` ([ModePanels.md](../../../src/app/components/channels/modePanels/ModePanels.md)).
 
+## Mode sections and the main mode
+
+With two or more modes, each mode gets its own section (`ModeSection`, a collapsible `Panel` with a stripe in the mode's colour).
+
+- The main mode's header carries a **Main mode** badge; every other mode's a small **Make main** button. Both explain on hover or focus: "A radio that can use only one of these modes uses this one; a radio that listens to both transmits in it."
+- Making a mode main never moves its section: sections jumping under the operator's finger is worse than the main mode sitting second.
+- With three or more modes (two or more on a phone) every section except the main mode's starts folded to its one-line summary. A mode added during the edit starts open.
+- Remove a mode from the chips (×), not from its section.
+- Never call it "primary" or describe it through a radio or export format.
+
 ## Channel editor layout
 
 The mode sits with the frequency, and its settings sit right under them (`ChannelEditor`):
@@ -32,7 +42,7 @@ The mode sits with the frequency, and its settings sit right under them (`Channe
 2. Mode and frequency: the mode picker, RX, offset, TX, then (one mode) that mode's settings and
    **+ Also runs another mode**. With no mode yet, the settings area says "The mode's settings appear here once you
    pick it."
-3. Modes (two or more modes only): the main mode choice and one section per mode.
+3. Modes (two or more modes only): one section per mode.
 4. Transmit: power, forbid transmit, TX permit; folded on a phone with a one-line summary.
 5. Names and notes, then Location, Zones, Scanning, APRS.
 

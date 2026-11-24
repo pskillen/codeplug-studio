@@ -1,6 +1,6 @@
 import { Stack, Text } from '@mantine/core';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
-import { Button, Panel } from '../../components/v2/index.ts';
+import { Button, Panel, Pill } from '../../components/v2/index.ts';
 
 export default function StyleguideContainersPage() {
   return (
@@ -11,6 +11,32 @@ export default function StyleguideContainersPage() {
       >
         <Panel title="Identity" sub="Optional description below the title.">
           <Text size="sm">Panel body content.</Text>
+        </Panel>
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="Panel (header actions)"
+        description="Controls at the end of the header, outside the collapse toggle."
+      >
+        <Panel
+          title="DMR"
+          collapsible
+          defaultCollapsed
+          summary="CC1 TS2"
+          actions={<Pill tone="accent">Main mode</Pill>}
+        >
+          <Text size="sm">Body hidden until expanded; the badge stays in the header row.</Text>
+        </Panel>
+        <Panel
+          title="FM"
+          collapsible
+          actions={
+            <Button type="button" variant="ghost" size="sm" onClick={() => undefined}>
+              Make main
+            </Button>
+          }
+        >
+          <Text size="sm">Clicking Make main does not collapse the panel.</Text>
         </Panel>
       </StyleguideSection>
 

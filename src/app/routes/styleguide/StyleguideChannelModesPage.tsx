@@ -15,6 +15,8 @@ import ChannelModeSummaries from '../../components/channels/ChannelModeSummaries
 import ModeSummaryChip from '../../components/channels/ModeSummaryChip.tsx';
 import { channelModeSummaries } from '../../lib/channelModeSummary.ts';
 import ModePanel from '../../components/channels/modePanels/ModePanel.tsx';
+import ModeSection, { modeSectionStartsFolded } from '../../components/channels/ModeSection.tsx';
+import { modeProfileSummary } from '../../lib/channelModeSummary.ts';
 import { modeLabel, type ModePreset } from '../../lib/channelModes.ts';
 import type { ModePanelContext } from '../../components/channels/modePanels/types.ts';
 import { SegmentedControl } from '../../components/v2/index.ts';
@@ -109,6 +111,70 @@ function applyPreset(edit: ChannelModeEdit, preset: ModePreset): ChannelModeEdit
   return next;
 }
 
+function DemoModeSections() {
+  const lookup = useSummaryDemoLibrary();
+  const tgId = lookup.talkGroups[0]!.id;
+  const [profiles, setProfiles] = useState<ChannelModeProfile[]>(() => [
+    {
+      ...defaultModeProfile('fm'),
+      rxTone: 'none',
+      txTone: '94.8',
+    } as ChannelModeProfile,
+    {
+      ...defaultModeProfile('dmr'),
+      colourCode: 1,
+      timeslot: 2,
+      contactRef: { kind: 'talkGroup', id: tgId },
+    } as ChannelModeProfile,
+    defaultModeProfile('nxdn'),
+  ]);
+  const [primaryMode, setPrimaryMode] = useState<ChannelMode>('dmr');
+
+  const context: ModePanelContext = {
+    library: lookup,
+    savedChannel: null,
+    rxFrequency: null,
+    txFrequency: null,
+    compact: false,
+  };
+
+  return (
+    <Stack gap="md">
+      {profiles.map((profile, index) => {
+        const mode = profile.mode as ChannelMode;
+        const isMain = mode === primaryMode;
+        return (
+          <ModeSection
+            key={mode}
+            mode={mode}
+            isMain={isMain}
+            onMakeMain={() => setPrimaryMode(mode)}
+            summary={modeProfileSummary(profile, lookup)}
+            defaultCollapsed={modeSectionStartsFolded({
+              modeCount: profiles.length,
+              compact: false,
+              isMain,
+              addedThisEdit: false,
+            })}
+          >
+            <ModePanel
+              profile={profile}
+              onPatch={(patch) =>
+                setProfiles((prev) =>
+                  prev.map((p, i) =>
+                    i === index ? ({ ...p, ...patch } as ChannelModeProfile) : p,
+                  ),
+                )
+              }
+              context={context}
+            />
+          </ModeSection>
+        );
+      })}
+    </Stack>
+  );
+}
+
 export default function StyleguideChannelModesPage() {
   const [compact, setCompact] = useState(false);
   const lookup = useSummaryDemoLibrary();
@@ -124,6 +190,13 @@ export default function StyleguideChannelModesPage() {
       title="Channel modes"
       description="How the library presents a channel's modes."
     >
+      <StyleguideSection
+        title="Mode sections"
+        description="Main mode badge, Make main, folding with three or more modes."
+      >
+        <DemoModeSections />
+      </StyleguideSection>
+
       <StyleguideSection
         title="Mode picker"
         description="No mode (placeholder with presets), one mode (switch), two or more (chips). Interactive: the demo applies the same transitions the editor uses."

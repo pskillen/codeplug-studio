@@ -16,12 +16,12 @@ A library channel may carry one or more **mode profiles** (`Channel.modeProfiles
 
 - **One mode:** the channel editor reads as a plain form — the mode picker sits with RX/TX and that mode's settings sit directly underneath, with **+ Also runs another mode** as the only hint that a second mode exists.
 - **New channel:** no mode until the operator picks one or taps a preset (FM, DMR, FM + DMR). A dashed placeholder asks "Which mode does this channel use?"
-- **Two or more modes:** removable chips in **Mode and frequency**; per-mode panels and **Main mode** live in the **Modes** block.
+- **Two or more modes:** removable chips in **Mode and frequency**; each mode has its own collapsible section in **Modes** ([`ModeSection`](../../../src/app/components/channels/ModeSection.md)).
 - **Switching** keeps the previous mode's profile in editor memory until save; switching back restores it without marking the form dirty. FM, AM and SSB carry tones across mode switches; digital modes do not. Profile order changes only by append, in-place switch (0–1 modes), or removal.
 
 ## Main mode
 
-When a channel has two or more profiles, **Main mode** is the operator's choice of `primaryMode` (defaults to the first profile when unset). A radio that can use only one of the channel's modes keeps the main one; a radio that listens to both transmits in it. If the main mode is removed, `reconcilePrimaryMode` passes leadership to the first remaining profile.
+When a channel has two or more profiles, the main mode's section shows a **Main mode** badge; every other section has a **Make main** button. Both explain on hover or focus: a radio that can use only one of the channel's modes keeps the main one; a radio that listens to both transmits in it. That choice is `primaryMode` (defaults to the first profile when unset). Sections stay in profile order when the main mode changes. If the main mode is removed, `reconcilePrimaryMode` passes leadership to the first remaining profile.
 
 ## Access, Call, Listen, You
 
