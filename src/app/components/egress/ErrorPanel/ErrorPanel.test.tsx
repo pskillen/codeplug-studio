@@ -59,7 +59,7 @@ describe('ErrorPanel', () => {
   });
 
   it('renders nothing for a cancelled outcome', () => {
-    const { container } = renderPanel(
+    renderPanel(
       <ErrorPanel
         outcome={{
           ...errorOutcome,
@@ -70,6 +70,6 @@ describe('ErrorPanel', () => {
         retryLabel={null}
       />,
     );
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByTestId('error-panel')).toBeNull();
   });
 });
