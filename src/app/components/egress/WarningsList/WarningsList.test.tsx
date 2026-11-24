@@ -96,6 +96,18 @@ describe('WarningsList', () => {
     expect(screen.getByText(/GB3XX — Glasgow North/)).toBeTruthy();
   });
 
+  it('expands unlinked problem groups in full mode', () => {
+    const warnings: ExportWarning[] = [
+      { kind: 'unlinked', severity: 'problem', message: 'Including 19 channel(s) not linked to a zone' },
+    ];
+    wrap(<WarningsList warnings={warnings} mode="full" />);
+    const unlinked = screen.getByRole('button', { name: /Export unlinked items \(1\)/ });
+    expect(unlinked).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(unlinked);
+    expect(unlinked).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText(/Including 19 channel\(s\)/)).toBeInTheDocument();
+  });
+
   it('keps_excluded is a folded note', () => {
     const warnings: ExportWarning[] = [];
     pushKepsExcludedWarning(warnings, {

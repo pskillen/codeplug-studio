@@ -8,7 +8,7 @@ import { isAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts'
 import { usesAtD890AirbandBankSplit } from '@core/services/anytoneChannelBanks.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { buildRadioWriteProjection } from '../../../services/radioIoWriteProjection.ts';
-import ExportWarningsAlert from '../../../components/builds/ExportWarningsAlert.tsx';
+import { WarningsList } from '../../../components/egress/index.ts';
 import { loadLibrarySlice } from '../../../lib/loadLibrarySlice.ts';
 import { useProjects } from '../../../state/useProjects.ts';
 import { persistence } from '../../../state/persistence.ts';
@@ -99,7 +99,7 @@ export default function BuildAirbandWirePage() {
           </Text>
         )}
 
-        {serialWarnings.length > 0 ? <ExportWarningsAlert warnings={serialWarnings} /> : null}
+        {serialWarnings.length > 0 ? <WarningsList warnings={serialWarnings} mode="full" /> : null}
 
         <BuildWirePreviewListPage
           embedded

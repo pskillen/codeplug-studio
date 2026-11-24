@@ -4,7 +4,7 @@ import type { FormatId } from '@core/import-export/types.ts';
 import type { CpsAppExportOptions } from '../../services/buildCpsExportService.ts';
 import { useBuildCpsExportPreview } from '../../hooks/useBuildCpsExportPreview.ts';
 import CpsCsvPreview from './CpsCsvPreview.tsx';
-import ExportWarningsAlert from './ExportWarningsAlert.tsx';
+import { WarningsList } from '../egress/index.ts';
 
 export interface CpsCsvPreviewModalProps {
   opened: boolean;
@@ -35,7 +35,7 @@ export default function CpsCsvPreviewModal({
   return (
     <Modal opened={opened} onClose={onClose} title="CSV preview" size="90%" centered>
       <Stack gap="md">
-        <ExportWarningsAlert warnings={warnings} />
+        <WarningsList warnings={warnings} mode="full" />
         <CpsCsvPreview
           fileNames={fileNames}
           tablesByFile={tablesByFile}
