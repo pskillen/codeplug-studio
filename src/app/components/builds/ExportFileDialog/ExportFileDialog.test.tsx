@@ -154,7 +154,9 @@ describe('ExportFileDialog', () => {
     const warnings = await screen.findByTestId('export-warnings-full');
     expect(screen.getByText(/not linked to a zone/)).toBeInTheDocument();
     const download = screen.getByTestId('export-download-zip');
-    expect(warnings.compareDocumentPosition(download) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      warnings.compareDocumentPosition(download) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('Download goes to the done step with a recap', async () => {

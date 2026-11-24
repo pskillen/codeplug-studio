@@ -98,7 +98,11 @@ describe('WarningsList', () => {
 
   it('expands unlinked problem groups in full mode', () => {
     const warnings: ExportWarning[] = [
-      { kind: 'unlinked', severity: 'problem', message: 'Including 19 channel(s) not linked to a zone' },
+      {
+        kind: 'unlinked',
+        severity: 'problem',
+        message: 'Including 19 channel(s) not linked to a zone',
+      },
     ];
     wrap(<WarningsList warnings={warnings} mode="full" />);
     const unlinked = screen.getByRole('button', { name: /Export unlinked items \(1\)/ });
