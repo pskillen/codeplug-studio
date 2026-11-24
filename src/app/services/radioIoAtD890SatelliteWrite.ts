@@ -39,12 +39,12 @@
 
 import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
-import { isTransmitterWriteEligible } from '@core/domain/satellite/transmitterWriteEligibility.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import {
   AT_D890_SATELLITE,
   listCapabilitySkippedTransmitters,
   packSatelliteWriteRecords,
+  skippedSatellites,
   uploadAtD890SatelliteRecords,
   type CapabilitySkippedTransmitter,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
@@ -64,21 +64,7 @@ export interface WriteSatellitesToRadioResult {
   skippedTransmitters: CapabilitySkippedTransmitter[];
 }
 
-/**
- * Satellites with no generically write-eligible transmitter at all (`isTransmitterWriteEligible`
- * false for every transmitter — disabled satellite, opted-out/dismissed transmitters, or none).
- * Checked against the generic predicate directly, not "did this satellite end up with a wire
- * record" — a satellite whose only eligible transmitter was capability-filtered (#1068) already
- * has its own specific reason in `skippedTransmitters`, so it is intentionally not duplicated
- * here with the generic "no write-eligible transmitters" reason.
- */
-export function skippedSatellites(
-  satellites: readonly Satellite[],
-): { satelliteId: string; reason: string }[] {
-  return satellites
-    .filter((s) => !s.transmitters.some((t) => isTransmitterWriteEligible(s, t)))
-    .map((s) => ({ satelliteId: s.id, reason: 'No write-eligible transmitters.' }));
-}
+export { skippedSatellites };
 
 /**
  * Non-throwing "how many wire records would this write" count — the same eligibility +

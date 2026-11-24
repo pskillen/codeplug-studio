@@ -448,3 +448,12 @@ export function packSatelliteWriteRecords(
     };
   });
 }
+
+/** Satellites with no generically write-eligible transmitter (#1085 exclusions). */
+export function skippedSatellites(
+  satellites: readonly Satellite[],
+): { satelliteId: string; reason: string }[] {
+  return satellites
+    .filter((s) => !s.transmitters.some((t) => isWriteEligible(s, t)))
+    .map((s) => ({ satelliteId: s.id, reason: 'No write-eligible transmitters.' }));
+}

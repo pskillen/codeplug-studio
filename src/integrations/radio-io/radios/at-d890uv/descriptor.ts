@@ -21,6 +21,7 @@ import { AT_D890_WRITE_VERIFY_HOOKS } from './writeVerifyHooks.ts';
 import { checkAtD890WriteChannels } from './channelEncodeGuards.ts';
 import { atD890WritePreflight } from './writePreflight.ts';
 import { planAtD890Stages } from './plannedStages.ts';
+import { AT_D890UV_SATELLITE_KEPS_CAPABILITY } from './satelliteKepsDescriptor.ts';
 
 export { AT_D890UV_MODEL_ID };
 
@@ -76,4 +77,5 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
   nominalBytesPerSecond: 100_000,
   checkWriteProjection: (prepared) => checkAtD890WriteChannels(prepared.channels),
   writePreflight: (session) => atD890WritePreflight(session),
+  satelliteKeps: AT_D890UV_SATELLITE_KEPS_CAPABILITY,
 };
