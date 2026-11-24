@@ -150,9 +150,9 @@ describe('useRadioWriteFlow reconnect after write errors', () => {
   });
 
   it('a dismissed port picker returns to step 1 with the no-port line', async () => {
-    const err = new Error('cancelled');
-    err.name = 'NotFoundError';
-    vi.mocked(grantRadioSerialPortForEgress).mockRejectedValueOnce(err);
+    vi.mocked(grantRadioSerialPortForEgress).mockRejectedValueOnce(
+      new DOMException('No port selected by the user.', 'NotFoundError'),
+    );
     const { result } = mount();
     act(() =>
       result.current.open({ codeplug: true, contacts: false, settings: false, keps: false }),

@@ -52,9 +52,7 @@ describe('serial picker lifecycle', () => {
             choosePort = resolve;
           }),
       )
-      .mockRejectedValueOnce(
-        Object.assign(new Error('No port selected by the user.'), { name: 'NotFoundError' }),
-      );
+      .mockRejectedValueOnce(new DOMException('No port selected by the user.', 'NotFoundError'));
     const { result } = mount();
     act(() =>
       result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }),
@@ -72,9 +70,9 @@ describe('serial picker lifecycle', () => {
   });
 
   it('returns to options without a read error when the user cancels the port picker', async () => {
-    const pickerCancel = new Error('No port selected by the user.');
-    pickerCancel.name = 'NotFoundError';
-    vi.mocked(grantRadioSerialPortForEgress).mockRejectedValueOnce(pickerCancel);
+    vi.mocked(grantRadioSerialPortForEgress).mockRejectedValueOnce(
+      new DOMException('No port selected by the user.', 'NotFoundError'),
+    );
     const { result } = mount();
     act(() =>
       result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }),

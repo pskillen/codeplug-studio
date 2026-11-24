@@ -4,6 +4,7 @@ import {
   RadioWrongIdentError,
   adviseRadioError,
 } from '@integrations/radio-io/kit/errors.ts';
+import { OpenGd77WriteNackError } from '@integrations/radio-io/radios/opengd77/writeErrors.ts';
 import {
   classifyWriteError,
   reportWriteError,
@@ -102,6 +103,20 @@ describe('classifyWriteError', () => {
     err.debugText = 'module trace';
     const outcome = classifyWriteError(err, ctx());
     expect(outcome.debugText).toBe('module trace');
+  });
+
+  it('OpenGd77WriteNackError debug text is kept', () => {
+    const err = new OpenGd77WriteNackError({
+      phase: 'codeplug',
+      command: 'set-sector',
+      sectorAbs: 0,
+      offset: 0,
+      sectorIndex: 1,
+      sectorsTotal: 1,
+    });
+    err.debugText = 'trace';
+    const outcome = classifyWriteError(err, ctx());
+    expect(outcome.debugText).toBe('trace');
   });
 
   it('fallback debug text is never empty and names phase, radio and profile', () => {
