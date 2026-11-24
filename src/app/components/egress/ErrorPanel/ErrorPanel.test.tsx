@@ -1,7 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { DesignSystemV2Provider } from '../../v2/index.ts';
 import ErrorPanel from './ErrorPanel.tsx';
 import type { WriteErrorOutcome } from '../../../services/egress/writeErrorOutcome.ts';
+
+function renderPanel(ui: React.ReactElement) {
+  return render(<DesignSystemV2Provider>{ui}</DesignSystemV2Provider>);
+}
 
 const errorOutcome: WriteErrorOutcome = {
   kind: 'error',
@@ -14,7 +20,7 @@ const errorOutcome: WriteErrorOutcome = {
 
 describe('ErrorPanel', () => {
   it('shows the part-way title and chip for may-hold-part', () => {
-    render(
+    renderPanel(
       <ErrorPanel outcome={errorOutcome} retryLabel="Write again" onRetry={() => undefined} />,
     );
     expect(screen.getByText('The write stopped part way')).toBeInTheDocument();
@@ -22,7 +28,7 @@ describe('ErrorPanel', () => {
   });
 
   it('shows no retry button when retryLabel is null', () => {
-    render(
+    renderPanel(
       <ErrorPanel
         outcome={{ ...errorOutcome, retry: 'none' }}
         retryLabel={null}
@@ -34,7 +40,7 @@ describe('ErrorPanel', () => {
 
   it('calls onRetry from the labelled button', () => {
     const onRetry = vi.fn();
-    render(<ErrorPanel outcome={errorOutcome} retryLabel="Write again" onRetry={onRetry} />);
+    renderPanel(<ErrorPanel outcome={errorOutcome} retryLabel="Write again" onRetry={onRetry} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write again' }));
     expect(onRetry).toHaveBeenCalledOnce();
   });
@@ -42,7 +48,7 @@ describe('ErrorPanel', () => {
   it('always offers Debug details and copies message and debug text', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
-    render(<ErrorPanel outcome={errorOutcome} retryLabel={null} />);
+    renderPanel(<ErrorPanel outcome={errorOutcome} retryLabel={null} />);
     expect(screen.getByText('Debug details')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Copy debug text' }));
     await Promise.resolve();
@@ -53,7 +59,7 @@ describe('ErrorPanel', () => {
   });
 
   it('renders nothing for a cancelled outcome', () => {
-    const { container } = render(
+    const { container } = renderPanel(
       <ErrorPanel
         outcome={{
           ...errorOutcome,
