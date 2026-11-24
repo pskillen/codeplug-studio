@@ -132,6 +132,7 @@ export default function AtD890AirSecuritySeedCard({ egress }: AtD890AirSecurityS
         setNote(null);
         return;
       }
+      if (action === 'write' && seedCopy === null) return;
       await writeAtD890AirSecuritySeedOnRadio(egress, action === 'clear' ? null : seedCopy, {
         signal: abort.signal,
       });

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import { parseAirSecuritySeedInput } from '@integrations/radio-io/radios/at-d890uv/airSecuritySeed.ts';
 import { DesignSystemV2Provider } from '../v2/index.ts';
@@ -222,6 +222,25 @@ describe('AtD890AirSecuritySeedCard', () => {
     view.unmount();
     expect(Array.from(received!)).toEqual(Array.from(SEED));
     release();
+  });
+
+  it('does not call the radio when Write seed runs with no parsed bytes', async () => {
+    vi.mocked(writeAtD890AirSecuritySeedOnRadio).mockResolvedValue(undefined);
+    renderCard();
+    const button = screen.getByRole('button', { name: 'Write seed' });
+    expect(button).toBeDisabled();
+    const propsKey = Object.keys(button).find((name) => name.startsWith('__reactProps$'));
+    if (!propsKey) throw new Error('Write seed has no click handler');
+    const onClick = (button as unknown as Record<string, { onClick?: () => void }>)[propsKey]
+      ?.onClick;
+    if (!onClick) throw new Error('Write seed has no click handler');
+    await act(async () => {
+      onClick();
+      await Promise.resolve();
+    });
+    expect(writeAtD890AirSecuritySeedOnRadio).not.toHaveBeenCalled();
+    expect(screen.getByText('Not checked')).toBeInTheDocument();
+    expect(screen.queryByText('No seed')).not.toBeInTheDocument();
   });
 
   it('shows a radio error and does not include the paste', async () => {
