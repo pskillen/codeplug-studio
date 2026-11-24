@@ -32,7 +32,7 @@ async function dm32Session(): Promise<{ session: RadioSession; pipe: Dm32Scripte
   return { session: { descriptor: DM32UV_DESCRIPTOR, pipe, radio }, pipe };
 }
 
-function isBlockWrite(frame: number[]): boolean {
+function isBlockWrite(frame: Uint8Array | readonly number[]): boolean {
   return frame[0] === 0x57 && frame.length === 6 + DM32_BLOCK_SIZE;
 }
 

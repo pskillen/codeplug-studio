@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
+import { channelDisplayLabel } from '@core/domain/mapProjection.ts';
 import classes from './RadioIoPanelCards.module.css';
 
 export interface OutOfRangeChannelRef {
@@ -51,7 +51,12 @@ export default function BeforeYouWriteRows({
             {open ? (
               <ul className={classes.nameList}>
                 {outOfRangeChannels.map((channel) => (
-                  <li key={channel.id}>{channelDisplayLabel(channel)}</li>
+                  <li key={channel.id}>
+                    {channelDisplayLabel(
+                      { callsign: channel.callsign ?? '', name: channel.name },
+                      true,
+                    )}
+                  </li>
                 ))}
               </ul>
             ) : null}

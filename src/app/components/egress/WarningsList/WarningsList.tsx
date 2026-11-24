@@ -279,7 +279,7 @@ export default function WarningsList({
     return (
       <Stack gap="xs" data-testid={testId}>
         <Text className={classes.recapSummary}>{chipSummary(warnings)}</Text>
-        <Accordion variant="separated" defaultValue={[]}>
+        <Accordion variant="separated" defaultValue={null}>
           <Accordion.Item value="details">
             <Accordion.Control>Details</Accordion.Control>
             <Accordion.Panel>

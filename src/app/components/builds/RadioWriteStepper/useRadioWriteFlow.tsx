@@ -355,17 +355,18 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       const ac = new AbortController();
       prepareAbortRef.current = ac;
       setBuildChecks({ status: 'checking', warnings: [], progress: undefined });
-      const promise = (async () => {
+      const runPrepare = async (): Promise<Awaited<ReturnType<typeof prepareRadioWriteImage>>> => {
         const library = await loadLibrarySlice(persistence, activeProjectId);
         if (ac.signal.aborted) throw ac.signal.reason;
-        setChannelLabel((id) => {
-          const ch = library.channels.find((c) => c.id === id);
+        setChannelLabel(() => (entityId: string) => {
+          const ch = library.channels.find((c) => c.id === entityId);
           return ch ? channelDisplayLabel(ch) : undefined;
         });
-        const dualOpts = supportsDualBankWrite
+        const writeMode: DualBankWriteMode = parts.codeplug ? 'codeplug' : 'digitalIdList';
+        const dualBankPrepare = supportsDualBankWrite
           ? {
               dualBank: {
-                mode: parts.codeplug ? 'codeplug' : 'digitalIdList',
+                mode: writeMode,
                 options: dualBankOptionsFromWriteSource(parts.contacts ? contactSource : 'none'),
               },
               persistence,
@@ -376,24 +377,30 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
                 );
               },
             }
-          : undefined;
-        const result = await prepareRadioWriteImage(build, egress, library, {
-          ...dualOpts,
+          : {};
+        return prepareRadioWriteImage(build, egress, library, {
+          ...dualBankPrepare,
           signal: ac.signal,
         });
-        buildWarningsRef.current = result.warnings;
-        setBuildChecks({ status: 'ready', warnings: result.warnings });
-        prepareCacheRef.current = { key, promise, result };
-        return result;
-      })().catch((err) => {
-        if (ac.signal.aborted) throw err;
-        if (err instanceof RadioWriteBlockedError) {
-          setBuildChecks({ status: 'error', warnings: [], message: err.message });
-        } else {
-          setBuildChecks({ status: 'error', warnings: [], message: String(err) });
-        }
-        throw err;
-      });
+      };
+      const promise = runPrepare()
+        .then((result) => {
+          buildWarningsRef.current = result.warnings;
+          setBuildChecks({ status: 'ready', warnings: result.warnings });
+          if (prepareCacheRef.current?.key === key) {
+            prepareCacheRef.current = { ...prepareCacheRef.current, result };
+          }
+          return result;
+        })
+        .catch((err) => {
+          if (ac.signal.aborted) throw err;
+          if (err instanceof RadioWriteBlockedError) {
+            setBuildChecks({ status: 'error', warnings: [], message: err.message });
+          } else {
+            setBuildChecks({ status: 'error', warnings: [], message: String(err) });
+          }
+          throw err;
+        });
       prepareCacheRef.current = { key, promise };
     }, 300);
     return () => {
@@ -1012,8 +1019,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
           prepared = await cache.promise;
         } else {
           const library = await loadLibrarySlice(persistence, activeProjectId);
-          setChannelLabel((id) => {
-            const ch = library.channels.find((c) => c.id === id);
+          setChannelLabel(() => (entityId: string) => {
+            const ch = library.channels.find((c) => c.id === entityId);
             return ch ? channelDisplayLabel(ch) : undefined;
           });
           prepared = await prepareRadioWriteImage(

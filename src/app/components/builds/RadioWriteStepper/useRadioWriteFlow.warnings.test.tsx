@@ -75,7 +75,9 @@ vi.mock('../../../services/radioIoSession.ts', async (importOriginal) => {
   };
 });
 
-function mount(opts: { kepsWriteFn?: SatelliteKepsWriteFn; kepsSameSessionAfterUpload?: boolean } = {}) {
+function mount(
+  opts: { kepsWriteFn?: SatelliteKepsWriteFn; kepsSameSessionAfterUpload?: boolean } = {},
+) {
   return renderHook(() =>
     useRadioWriteFlow({
       build,
