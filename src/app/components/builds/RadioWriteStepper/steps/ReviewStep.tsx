@@ -26,8 +26,8 @@ export function ReviewBody({ config, view }: StepProps) {
         <Fragment key={i}>{section}</Fragment>
       ))}
       <Text size="xs" c="dimmed">
-        {config.cancelRestartsRadio
-          ? `Nothing has been written yet. Cancel writes nothing, but the radio restarts (about ${config.restartWaitSeconds} s).`
+        {config.options.restartAfterEndSeconds > 0
+          ? `Nothing has been written yet. Cancel writes nothing, but the radio restarts (about ${config.options.restartAfterEndSeconds} s).`
           : 'Nothing has been written yet. Cancel leaves the radio as it is.'}
       </Text>
     </div>

@@ -3,7 +3,11 @@
  */
 
 import type { RadioDescriptor, RadioHydrationHooks } from '../../../types.ts';
-import { OPENGD77_BAUD_RATE, OPENGD77_CHANNEL_SLOTS } from '../constants.ts';
+import {
+  OPENGD77_BAUD_RATE,
+  OPENGD77_CHANNEL_SLOTS,
+  OPENGD77_RESTART_AFTER_END_SECONDS,
+} from '../constants.ts';
 import {
   extractOpenGd77Hydration,
   mergeChannelsIntoOpenGd77Hydration,
@@ -50,6 +54,8 @@ export const OPENGD77_DM1701_DESCRIPTOR: RadioDescriptor = {
   writeStrategy: 'full-image',
   baudRate: OPENGD77_BAUD_RATE,
   hydration,
+  restartAfterEnd: { seconds: OPENGD77_RESTART_AFTER_END_SECONDS },
+  contactStore: 'shared-contact-bank',
   writeVerify: createOpenGd77WriteVerifyHooks(OPENGD77_DM1701_MODEL_ID),
   planStages: planOpenGd77Stages,
 };

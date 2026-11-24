@@ -74,3 +74,14 @@
   border-color: var(--dsv2-destructive);
   color: var(--dsv2-destructive);
 }
+
+.skipped {
+  color: var(--dsv2-text-tertiary);
+  opacity: 0.65;
+}
+
+.skipped .marker {
+  border-style: dashed;
+  background: transparent;
+  font-weight: 400;
+}

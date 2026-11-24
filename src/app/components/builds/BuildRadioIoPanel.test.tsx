@@ -261,6 +261,42 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
   const forcePause = { on: true };
   let unregisterPause: () => void;
 
+  const preparedChannels = [
+    {
+      slotIndex: 1,
+      empty: false,
+      wireName: 'A',
+      rxHz: 145_520_000,
+      txHz: 145_520_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: null,
+      bandwidth: 'FM',
+    },
+    {
+      slotIndex: 2,
+      empty: false,
+      wireName: 'B',
+      rxHz: 145_525_000,
+      txHz: 145_525_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: null,
+      bandwidth: 'FM',
+    },
+    {
+      slotIndex: 3,
+      empty: false,
+      wireName: 'C',
+      rxHz: 145_530_000,
+      txHz: 145_530_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: null,
+      bandwidth: 'FM',
+    },
+  ] as const;
+
   beforeEach(() => {
     forcePause.on = true;
     unregisterPause = registerReviewSectionProvider({
@@ -282,7 +318,7 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     prepare = vi.spyOn(radioIoSession, 'prepareRadioWriteImage').mockResolvedValue({
       warnings: [],
       organisation: {},
-      channels: [{}, {}, {}] as never,
+      channels: [...preparedChannels],
     });
     vi.spyOn(radioIoSession, 'openRadioSessionForEgress').mockImplementation(async () => ({
       session: fakeSession('Test radio'),
@@ -299,7 +335,7 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
         });
         hookRan = true;
         uploaded += 1;
-        return {};
+        return { channels: [...preparedChannels], warnings: [] };
       });
   });
 

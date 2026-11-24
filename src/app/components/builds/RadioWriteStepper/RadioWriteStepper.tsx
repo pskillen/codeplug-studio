@@ -8,21 +8,15 @@
 
 import { useState, type ReactNode } from 'react';
 import { Text } from '@mantine/core';
-import { ErrorPanel } from '../../egress/index.ts';
-import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '../../../hooks/useScreenWakeLock.ts';
-import { ModalShell } from '../../v2/index.ts';
+import { EgressShell, ErrorPanel } from '../../egress/index.ts';
+import { Button } from '../../v2/index.ts';
 import classes from './RadioWriteStepper.module.css';
-import {
-  WRITE_STEPS,
-  stepBarLabel,
-  type WriteFlowActions,
-  type WriteFlowView,
-  type WriteStepperConfig,
-} from './types.ts';
+import { type WriteFlowActions, type WriteFlowView, type WriteStepperConfig } from './types.ts';
+import { writeSteps } from './writeSteps.ts';
 import { WhatToWriteBody, WhatToWriteFooter } from './steps/WhatToWriteStep.tsx';
+import { ConnectBody, ConnectFooter } from './steps/ConnectStep.tsx';
 import { ConnectReadBody, ConnectReadFooter } from './steps/ConnectReadStep.tsx';
 import { ReviewBody, ReviewFooter } from './steps/ReviewStep.tsx';
-import { Button } from '../../v2/index.ts';
 import { WritingBody, WritingFooter } from './steps/WritingStep.tsx';
 import { RestartCheckBody, RestartCheckFooter } from './steps/RestartCheckStep.tsx';
 import { DoneBody, DoneFooter } from './steps/DoneStep.tsx';
@@ -31,31 +25,6 @@ export interface RadioWriteStepperProps {
   config: WriteStepperConfig;
   view: WriteFlowView;
   actions: WriteFlowActions;
-}
-
-function StepBar({ step }: { step: WriteFlowView['step'] }) {
-  const index = WRITE_STEPS.indexOf(step);
-  return (
-    <div className={classes.stepBar}>
-      <Text className={classes.stepBarLabel} data-testid="write-stepper-step-label">
-        {stepBarLabel(step)}
-      </Text>
-      <div className={classes.stepDots} aria-hidden>
-        {WRITE_STEPS.map((s, i) => (
-          <span
-            key={s}
-            className={[
-              classes.stepDot,
-              i < index ? classes.stepDotDone : '',
-              i === index ? classes.stepDotCurrent : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          />
-        ))}
-      </div>
-    </div>
-  );
 }
 
 /** Lifts the D890 pending-units block for an operator who rewrote the radio some other way. */
@@ -97,13 +66,16 @@ function PendingWarningClear({
 
 export default function RadioWriteStepper({ config, view, actions }: RadioWriteStepperProps) {
   const props = { config, view, actions };
-  const { held: screenHeld } = useScreenWakeLock(view.open && view.busy);
   let body: ReactNode = null;
   let footer: ReactNode = null;
   switch (view.step) {
     case 'whatToWrite':
       body = <WhatToWriteBody {...props} />;
       footer = <WhatToWriteFooter {...props} />;
+      break;
+    case 'connect':
+      body = <ConnectBody {...props} />;
+      footer = <ConnectFooter {...props} />;
       break;
     case 'connectRead':
       body = <ConnectReadBody {...props} />;
@@ -148,36 +120,32 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
       <PendingWarningClear warning={view.pendingWarning} onClear={actions.onClearPendingWarning} />
     ) : null;
 
+  const notice =
+    view.notice && view.step === 'whatToWrite' ? <Text size="sm">{view.notice}</Text> : null;
+
   return (
-    <ModalShell
+    <EgressShell
       open={view.open}
       onClose={actions.onClose}
-      title={`Write radio · ${config.radioLabel}`}
-      size="md"
+      title={`Write radio · ${config.options.radioLabel}`}
       dismissible={!view.busy}
+      steps={writeSteps(view, config.options)}
+      busy={view.busy}
+      error={
+        view.errorOutcome ? (
+          <ErrorPanel
+            testId="write-stepper-error"
+            outcome={view.errorOutcome}
+            retryLabel={view.retryLabel}
+            onRetry={actions.onRetry}
+            wayOut={wayOut}
+          />
+        ) : null
+      }
+      notice={notice}
       footer={footer}
     >
-      <StepBar step={view.step} />
-      {view.errorOutcome ? (
-        <ErrorPanel
-          testId="write-stepper-error"
-          outcome={view.errorOutcome}
-          retryLabel={view.retryLabel}
-          onRetry={actions.onRetry}
-          wayOut={wayOut}
-        />
-      ) : null}
-      {view.notice && view.step === 'whatToWrite' ? (
-        <Text size="sm" mb="sm">
-          {view.notice}
-        </Text>
-      ) : null}
-      {view.busy && !screenHeld ? (
-        <Text size="sm" mb="sm" data-testid="keep-screen-on-hint">
-          {KEEP_SCREEN_ON_HINT}
-        </Text>
-      ) : null}
-      {body}
-    </ModalShell>
+      <div className={classes.stack}>{body}</div>
+    </EgressShell>
   );
 }

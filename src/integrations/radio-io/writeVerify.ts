@@ -140,8 +140,9 @@ export interface WriteVerifyHooks {
     opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
   ): Promise<WriteVerifyResult>;
   formatDebugMarkdown(result: WriteVerifyResult, context: WriteVerifyDebugContext): string;
-  /** When true, operator must reconnect in a new session after radio restart (D890). */
+  /** When true, Check write needs a new session after the radio restarts. "The radio restarts" is `restartAfterEnd`. */
   readonly requiresCrossSessionReconnect: boolean;
+  reportLabels?: { keptSectionTitle: string; keptSummaryLabel: string };
 }
 
 /** JSON-safe staging round-trip for sessionStorage (no adapter-specific fields). */

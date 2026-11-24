@@ -6,17 +6,24 @@
 import type { ReactNode } from 'react';
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { DigitalContactsWriteSource } from '@core/domain/digitalIdDirectoryProjection.ts';
-import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
+import type {
+  ProgressUpdate,
+  RadioPreflightIdentity,
+  RadioPreflightRow,
+  RadioWriteRefusal,
+} from '@integrations/radio-io/types.ts';
 import type { WriteVerifyResult } from '@integrations/radio-io/writeVerify.ts';
 import type { SatelliteKepsWriteResult } from '../../../services/satelliteKepsWriteAdapters.ts';
 import type { WriteErrorOutcome } from '../../../services/egress/writeErrorOutcome.ts';
-import type { WriteParts, WritePartSupport } from './writeParts.ts';
+import type { WriteShellOptions } from '../../../services/egress/writeShellOptions.ts';
+import type { WriteParts } from './writeParts.ts';
 
 export type WriteStep =
-  'whatToWrite' | 'connectRead' | 'review' | 'writing' | 'restartCheck' | 'done';
+  'whatToWrite' | 'connect' | 'connectRead' | 'review' | 'writing' | 'restartCheck' | 'done';
 
 export const WRITE_STEPS: readonly WriteStep[] = [
   'whatToWrite',
+  'connect',
   'connectRead',
   'review',
   'writing',
@@ -26,6 +33,7 @@ export const WRITE_STEPS: readonly WriteStep[] = [
 
 export const WRITE_STEP_LABEL: Record<WriteStep, string> = {
   whatToWrite: 'What to write',
+  connect: 'Connect',
   connectRead: 'Read',
   review: 'Review',
   writing: 'Writing',
@@ -33,10 +41,7 @@ export const WRITE_STEP_LABEL: Record<WriteStep, string> = {
   done: 'Done',
 };
 
-/** "2 of 6 · Read". */
-export function stepBarLabel(step: WriteStep): string {
-  return `${WRITE_STEPS.indexOf(step) + 1} of ${WRITE_STEPS.length} · ${WRITE_STEP_LABEL[step]}`;
-}
+export type ReviewDecision = 'undecided' | 'paused' | 'skipped';
 
 /** What Studio knows about the connected radio. Serial is shown in full. */
 export interface RadioIdentityView {
@@ -56,12 +61,7 @@ export interface WriteStepperConfig {
   buildId: string;
   serialOk: boolean;
   writeHidden: boolean;
-  support: WritePartSupport;
-  /** Contacts: store notes (OpenGD77, DM-32, AT-D890). */
-  sharedContactBankNote: boolean;
-  sharedAddressBookNote: boolean;
-  /** AT-D890: contacts ride with the codeplug; this part writes the separate ID database. */
-  separateLookupDatabaseNote: boolean;
+  options: WriteShellOptions;
   /** Part summaries. */
   codeplugSummary?: string;
   kepsSummary?: string;
@@ -73,10 +73,6 @@ export interface WriteStepperConfig {
     description: string;
     onChange: (checked: boolean) => void;
   };
-  /** Seconds the radio needs to restart after END (0 when it does not need a wait). */
-  restartWaitSeconds: number;
-  /** Closing the session (Cancel on Review) sends END and the radio restarts (Q-C). */
-  cancelRestartsRadio?: boolean;
   /** AT-D890 Radio settings part and Done-screen choice. Absent on every other radio. */
   radioSettings?: {
     /** Fields set this session. */
@@ -87,10 +83,6 @@ export interface WriteStepperConfig {
     applyToEveryRadio: boolean;
     onApplyToEveryRadioChange: (checked: boolean) => void;
   };
-  /** Radios with a Check write step. */
-  supportsCheck: boolean;
-  /** Extra sentence on the Done step (DM-32: power-cycle the radio). */
-  successNote?: string;
 }
 
 export interface WriteStageRow {
@@ -163,12 +155,17 @@ export interface WriteFlowView {
   /** "Reconnecting: the radio may have left programming mode". */
   reconnecting: boolean;
   progress: ProgressUpdate | null;
+  readStartedAt: number | null;
+  writeStartedAt: number | null;
+  checkStartedAt: number | null;
   /** Rows for the Read step (empty when the radio declares no read plan). */
   readRows: WriteStageRow[];
   /** Rows for the Writing step. */
   writeRows: WriteStageRow[];
   identity: RadioIdentityView | null;
   review: WriteReviewView | null;
+  /** Set at each run: whether Review paused, was skipped, or not decided yet. */
+  reviewDecision: ReviewDecision;
   /** Restart & check. */
   restartSecondsLeft: number;
   checkStatus: CheckStatus;
@@ -179,8 +176,14 @@ export interface WriteFlowView {
   buildChecks: {
     status: 'idle' | 'checking' | 'ready' | 'error';
     warnings: ExportWarning[];
+    refusals: readonly RadioWriteRefusal[];
     message?: string;
     progress?: string;
+  };
+  preflight: {
+    status: 'checking' | 'passed' | 'refused';
+    identity?: RadioPreflightIdentity;
+    rows: readonly RadioPreflightRow[];
   };
   channelLabel?: (entityId: string) => string | undefined;
 }

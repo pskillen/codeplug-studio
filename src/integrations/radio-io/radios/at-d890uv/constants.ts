@@ -7,6 +7,9 @@ import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 
 export const AT_D890UV_MODEL_IDS = ['AT-D890UV', 'ID890UV'] as const;
 
+/** Seconds to wait after END before Check write or keps (the radio reboots). */
+export const AT_D890_RESTART_AFTER_END_SECONDS = 20;
+
 /** Family safe-skip write address (878-line radios; apply on D890 too). */
 export const AT_D890_SAFE_SKIP_WRITE_ADDR = 0x2fa0010;
 

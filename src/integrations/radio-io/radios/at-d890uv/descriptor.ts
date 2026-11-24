@@ -3,7 +3,12 @@
  */
 
 import type { RadioDescriptor } from '../../types.ts';
-import { AT_D890_CONNECTION, AT_D890_LIMITS, AT_D890UV_MODEL_IDS } from './constants.ts';
+import {
+  AT_D890_CONNECTION,
+  AT_D890_LIMITS,
+  AT_D890_RESTART_AFTER_END_SECONDS,
+  AT_D890UV_MODEL_IDS,
+} from './constants.ts';
 import {
   extractAtD890uvHydration,
   extractAtD890uvHydrationFromProtocol,
@@ -13,6 +18,8 @@ import {
 import { atD890UploadBankIntentFromOrganisation } from './memory.ts';
 import { createAtD890uvProtocol, AtD890uvProtocol } from './protocol.ts';
 import { AT_D890_WRITE_VERIFY_HOOKS } from './writeVerifyHooks.ts';
+import { checkAtD890WriteChannels } from './channelEncodeGuards.ts';
+import { atD890WritePreflight } from './writePreflight.ts';
 import { planAtD890Stages } from './plannedStages.ts';
 
 export { AT_D890UV_MODEL_ID };
@@ -60,9 +67,13 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
       }
     },
   },
+  restartAfterEnd: { seconds: AT_D890_RESTART_AFTER_END_SECONDS },
+  contactStore: 'separate-lookup-database',
   writeVerify: AT_D890_WRITE_VERIFY_HOOKS,
   planStages: planAtD890Stages,
   // Hardware (#1288, 2026-10-16): 0xF0-byte R frames run at ~110 KiB/s. Writes are a little
   // slower, so round down.
   nominalBytesPerSecond: 100_000,
+  checkWriteProjection: (prepared) => checkAtD890WriteChannels(prepared.channels),
+  writePreflight: (session) => atD890WritePreflight(session),
 };

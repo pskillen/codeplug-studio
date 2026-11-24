@@ -2,7 +2,7 @@ import { IconCheck, IconX } from '@tabler/icons-react';
 
 import classes from './Stepper.module.css';
 
-export type StepperStepStatus = 'pending' | 'current' | 'done' | 'error';
+export type StepperStepStatus = 'pending' | 'current' | 'done' | 'error' | 'skipped';
 
 export interface StepperStep {
   id: string;
@@ -22,7 +22,16 @@ const STATUS_CLASS: Record<StepperStepStatus, string> = {
   current: classes.current,
   done: classes.done,
   error: classes.error,
+  skipped: classes.skipped,
 };
+
+function countedNumberBefore(steps: readonly StepperStep[], index: number): number {
+  let n = 0;
+  for (let i = 0; i < index; i++) {
+    if (steps[i]?.status !== 'skipped') n++;
+  }
+  return n;
+}
 
 /** Presentational step indicator for multi-step flows (wizards). An ordered list; no navigation of its own. */
 export default function Stepper({
@@ -54,8 +63,10 @@ export default function Stepper({
                 <IconCheck size={12} stroke={2.5} />
               ) : step.status === 'error' ? (
                 <IconX size={12} stroke={2.5} />
+              ) : step.status === 'skipped' ? (
+                '–'
               ) : (
-                i + 1
+                countedNumberBefore(steps, i) + 1
               )}
             </span>
             <span className={classes.label}>{step.label}</span>

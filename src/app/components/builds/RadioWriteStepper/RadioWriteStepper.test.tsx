@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { DesignSystemV2Provider } from '../../v2/index.ts';
 import RadioWriteStepper from './RadioWriteStepper.tsx';
-import { demoFlowView, demoStepperConfig, noopActions } from './stepperDemo.ts';
+import { demoFlowView, demoShellOptions, demoStepperConfig, noopActions } from './stepperDemo.ts';
 import type { WriteFlowView, WriteStepperConfig } from './types.ts';
 
 function renderStepper(
@@ -26,11 +26,23 @@ function renderStepper(
 }
 
 describe('RadioWriteStepper — step 1, what to write', () => {
+  it('a radio without restart or check counts six steps', () => {
+    renderStepper(
+      {},
+      {
+        options: demoShellOptions({
+          restartAfterEndSeconds: 0,
+          check: { available: false },
+          keps: undefined,
+        }),
+      },
+    );
+    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('1 of 6 · What to write');
+  });
+
   it('shows the step bar and defaults: codeplug ticked, contacts and keps not', () => {
     renderStepper();
-    expect(screen.getByTestId('write-stepper-step-label')).toHaveTextContent(
-      '1 of 6 · What to write',
-    );
+    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('1 of 7 · What to write');
     expect(screen.getByRole('checkbox', { name: 'Codeplug' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Digital contacts' })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).not.toBeChecked();
@@ -41,7 +53,12 @@ describe('RadioWriteStepper — step 1, what to write', () => {
   });
 
   it('does not show rows the radio does not support, nor a Radio settings row', () => {
-    renderStepper({}, { support: { contacts: false, keps: false, settings: false } });
+    renderStepper(
+      {},
+      {
+        options: demoShellOptions({ parts: { contacts: false, keps: false, settings: false } }),
+      },
+    );
     expect(screen.queryByRole('checkbox', { name: 'Digital contacts' })).toBeNull();
     expect(screen.queryByRole('checkbox', { name: 'Satellite keps' })).toBeNull();
     expect(screen.queryByRole('checkbox', { name: 'Radio settings' })).toBeNull();
@@ -86,14 +103,26 @@ describe('RadioWriteStepper — step 1, what to write', () => {
 describe('RadioWriteStepper — steps 2 and 3', () => {
   const identity = { model: 'AT-D890UV', serial: 'ABC1234567', name: 'MM9PDY-2' };
 
-  it('step 2 shows the read progress, the identity and a Cancel that aborts', () => {
+  it('Read shows elapsed time on a radio without a read plan', () => {
+    renderStepper({
+      step: 'connectRead',
+      busy: true,
+      readRows: [],
+      readStartedAt: Date.now() - 12_000,
+      progress: { cur: 0, max: 0, msg: 'Reading' },
+    });
+    expect(screen.getByTestId('stage-progress-elapsed')).toHaveTextContent('Elapsed');
+  });
+
+  it('step 3 (Read) shows the read progress, the identity and a Cancel that aborts', () => {
     const actions = renderStepper({
       step: 'connectRead',
       busy: true,
+      readStartedAt: Date.now() - 5000,
       progress: { cur: 5, max: 10, msg: 'Zones' },
       identity,
     });
-    expect(screen.getByTestId('write-stepper-step-label')).toHaveTextContent('2 of 6 · Read');
+    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('3 of 7 · Read');
     expect(screen.getByText('MM9PDY-2')).toBeInTheDocument();
     // The serial isn't sensitive: shown in full.
     expect(screen.getByText('ABC1234567')).toBeInTheDocument();
@@ -104,6 +133,26 @@ describe('RadioWriteStepper — steps 2 and 3', () => {
   it('step 2 says when it is reconnecting', () => {
     renderStepper({ step: 'connectRead', busy: true, reconnecting: true });
     expect(screen.getByText(/the radio may have left programming mode/)).toBeInTheDocument();
+  });
+
+  it('Review reads Review if needed before the read finishes', () => {
+    renderStepper({ step: 'connectRead', busy: true, reviewDecision: 'undecided' });
+    expect(screen.getByText('Review if needed')).toBeInTheDocument();
+  });
+
+  it('Review not needed this time is not counted', () => {
+    renderStepper(
+      { step: 'writing', reviewDecision: 'skipped' },
+      {
+        options: demoShellOptions({
+          restartAfterEndSeconds: 0,
+          check: { available: false },
+          keps: undefined,
+        }),
+      },
+    );
+    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('4 of 5 · Writing');
+    expect(screen.getByText('Review not needed this time')).toBeInTheDocument();
   });
 
   it.each([
@@ -127,6 +176,41 @@ describe('RadioWriteStepper — steps 2 and 3', () => {
     expect(screen.getByText('Section A')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: label }));
     expect(actions.onWrite).toHaveBeenCalled();
+  });
+
+  it('Review Cancel says the radio restarts only when it restarts after END', () => {
+    renderStepper(
+      {
+        step: 'review',
+        review: {
+          channelCount: 0,
+          contactsNote: null,
+          kepsCount: null,
+          estimateSeconds: null,
+          identityOnly: false,
+          sections: [],
+        },
+      },
+      { options: demoShellOptions({ restartAfterEndSeconds: 20 }) },
+    );
+    expect(screen.getByText(/the radio restarts \(about 20 s\)/)).toBeInTheDocument();
+    renderStepper(
+      {
+        step: 'review',
+        review: {
+          channelCount: 0,
+          contactsNote: null,
+          kepsCount: null,
+          estimateSeconds: null,
+          identityOnly: false,
+          sections: [],
+        },
+      },
+      { options: demoShellOptions({ restartAfterEndSeconds: 0 }) },
+    );
+    expect(
+      screen.getByText('Nothing has been written yet. Cancel leaves the radio as it is.'),
+    ).toBeInTheDocument();
   });
 
   it('step 3 Cancel is the secondary action and writes nothing', () => {
@@ -191,17 +275,33 @@ describe('RadioWriteStepper — steps 4 to 6', () => {
     const actions = renderStepper({
       step: 'writing',
       busy: true,
+      reviewDecision: 'skipped',
       writeRows: [
         { id: 'a', label: 'Channels', status: 'success', weight: 100 },
         { id: 'b', label: 'Zones', status: 'active', weight: 100 },
         { id: 'c', label: 'Upload', status: 'pending', weight: 100 },
       ],
     });
-    expect(screen.getByTestId('write-stepper-step-label')).toHaveTextContent('4 of 6 · Writing');
+    expect(screen.getByTestId('egress-step-label')).toHaveTextContent('4 of 6 · Writing');
     expect(screen.getByText('Channels')).toBeInTheDocument();
     expect(screen.getByText('Upload')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(actions.onAbort).toHaveBeenCalled();
+  });
+
+  it('Restart & check shows Restart, Check write and Keps after restart as groups', () => {
+    renderStepper({
+      step: 'restartCheck',
+      busy: true,
+      restartSecondsLeft: 0,
+      checkStatus: 'running',
+      kepsAfterRestart: 'running',
+      checkStartedAt: Date.now() - 8000,
+      writeRows: [{ id: 'a', label: 'Verify channels', status: 'active', weight: 100 }],
+    });
+    expect(screen.getByText('Restart')).toBeInTheDocument();
+    expect(screen.getByText('Check write')).toBeInTheDocument();
+    expect(screen.getByText('Keps after restart')).toBeInTheDocument();
   });
 
   it('step 5 waits for the restart, then offers Check write and Write keps', () => {
@@ -251,7 +351,9 @@ describe('RadioWriteStepper — steps 4 to 6', () => {
           writeTimings: null,
         },
       },
-      { successNote: 'Power-cycle the radio.' },
+      {
+        options: demoShellOptions({ successNote: 'Power-cycle the radio.' }),
+      },
     );
     expect(screen.getByText('Codeplug written (412 channels).')).toBeInTheDocument();
     expect(screen.getByText('Check write: skipped.')).toBeInTheDocument();
@@ -268,7 +370,7 @@ describe('RadioWriteStepper — AT-D890 contacts hint (#1433)', () => {
   it('says contacts ride with the codeplug and the part writes the ID database', () => {
     renderStepper(
       { parts: { codeplug: true, contacts: true, settings: false, keps: false } },
-      { separateLookupDatabaseNote: true },
+      { options: demoShellOptions({ contactStore: 'separate-lookup-database' }) },
     );
     expect(
       screen.getByText(/Contacts always go to the radio's Contacts list with the codeplug/),

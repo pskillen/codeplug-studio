@@ -34,7 +34,8 @@ The app orchestration (post-write prompt, debounced **Verify write** button, pro
    - `captureAfterUpload(session)` — snapshot **transmitted** staging chunks (and optional pre-upload kept regions). Never include addresses skipped at transmit.
    - `runVerify(session, pending, opts)` — cross-session read-back + compare; populate `WriteVerifyResult.regionGroups` for the report table.
    - `formatDebugMarkdown(result, context)` — agent-oriented export (full mismatch list + hints).
-   - `requiresCrossSessionReconnect` — `true` when the operator must wait for radio restart before verify (D890, OpenGD77); `false` for soft reconnect (RT95, UV, DM-32).
+   - `requiresCrossSessionReconnect` — `true` when Check write needs a new session after the radio restarts; `false` for soft reconnect (RT95, UV, DM-32). Whether the radio reboots after END is `RadioDescriptor.restartAfterEnd`, not this flag.
+   - `reportLabels` — optional kept-section title and pass summary for the verify report modal (D890: "Preserved settings", "6 sentinel regions").
 2. **Kept snapshot opacity** — serialize adapter-specific retained bytes into `WriteVerifyKeptSnapshot` (`Record<string, unknown>`). D890 and OpenGD77 use `{ entries: [{ id, data: number[] }] }`.
    - A Write may deliberately change a kept span. D890: the kept JSON carries the Write's settings patches (`patches`: field id, address, bytes, mask; absent in payloads stored before they existed). The sentinel compare expects each span to read `before ⊕ patches`: a patched byte must equal its new value, every other byte must equal `before` ([#1394](https://github.com/pskillen/codeplug-studio/issues/1394), [at-d890uv-radio-settings.md](at-d890uv-radio-settings.md)).
 3. **Compare exclusions** — document adapter-owned rules (D890: erase-unit bookkeeping; `not_read` never fabricates bytes). Prefer `writeVerifyCompare.ts` for full-image / dirty-sector adapters.
@@ -48,7 +49,7 @@ The app orchestration (post-write prompt, debounced **Verify write** button, pro
 ## Operator flow
 
 1. **Write to radio** completes; if `descriptor.writeVerify` is defined, staging (+ optional kept) snapshots persist to `sessionStorage`.
-2. The Write stepper's step 5 (**Restart & check**) offers **Check write** once the restart wait is over (about 20 s when `requiresCrossSessionReconnect`, immediately otherwise). It is optional: **Skip and finish** clears the pending storage.
+2. The Write stepper's step 5 (**Restart & check**) offers **Check write** after `restartAfterEnd.seconds` when the descriptor declares it (D890 and OpenGD77: 20 s), or immediately when the radio does not restart. It is optional: **Skip and finish** clears the pending storage.
 3. Operator clicks **Check write** → new serial session (new port prompt) → read-back compare. The Done step says whether the check passed, failed or was skipped, and **View check report** opens the **Write verify report** modal.
 4. Closing the stepper from step 5 clears pending storage.
 

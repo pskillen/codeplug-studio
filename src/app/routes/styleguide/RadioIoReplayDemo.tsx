@@ -16,9 +16,10 @@ import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/de
 import { DM32UV_DESCRIPTOR } from '@integrations/radio-io/radios/dm32uv/descriptor.ts';
 import { OPENGD77_DM1701_DESCRIPTOR } from '@integrations/radio-io/radios/opengd77/dm1701/descriptor.ts';
 import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.ts';
-import RadioIoProgressModal from '../../components/builds/RadioIoProgressModal.tsx';
-import { Button } from '../../components/v2/index.ts';
+import StageProgress from '../../components/egress/StageProgress/StageProgress.tsx';
+import { ModalShell, Button } from '../../components/v2/index.ts';
 import { REPLAY_RADIOS, replayEventsFor, type ReplayRadioId } from './radioIoReplayEvents.ts';
+import type { WriteStageRow } from '../../components/builds/RadioWriteStepper/types.ts';
 
 const DESCRIPTORS: Record<ReplayRadioId, RadioDescriptor> = {
   'at-d890uv': AT_D890UV_DESCRIPTOR,
@@ -30,6 +31,7 @@ const DESCRIPTORS: Record<ReplayRadioId, RadioDescriptor> = {
 /** Milliseconds between replayed events when playing normally, and when seeking to `at`. */
 const PLAY_MS = 120;
 const SEEK_MS = 40;
+const REPLAY_STARTED_AT = 1_700_000_000_000;
 
 function isReplayRadio(v: string | null): v is ReplayRadioId {
   return REPLAY_RADIOS.some((r) => r.id === v);
@@ -52,6 +54,9 @@ export default function RadioIoReplayDemo() {
   const [index, setIndex] = useState(0);
   /** Stop at this many events (a screenshot) instead of running to the end. */
   const [stopAt, setStopAt] = useState<number | null>(null);
+  const [startedAt, setStartedAt] = useState<number | null>(
+    start?.radio ? REPLAY_STARTED_AT : null,
+  );
 
   const events = useMemo<ProgressUpdate[]>(() => (radio ? replayEventsFor(radio) : []), [radio]);
   const plan = useMemo<PlannedStage[] | undefined>(
@@ -83,19 +88,37 @@ export default function RadioIoReplayDemo() {
 
   const done = radio != null && index >= events.length;
   const progress = radio && index > 0 ? (events[index - 1] ?? null) : null;
-  const transferStages = useMemo(() => {
-    const seen: string[] = [];
+
+  const rows = useMemo((): WriteStageRow[] => {
+    if (!plan) return [];
+    const finished = new Set<string>();
     for (const e of events.slice(0, index)) {
-      if (e.stage && !seen.includes(e.stage)) seen.push(e.stage);
+      if (e.stage) finished.add(e.stage);
     }
-    return seen;
-  }, [events, index]);
+    const active = progress?.stage;
+    return plan.map((p) => ({
+      id: p.label,
+      label: p.label,
+      weight: p.weight,
+      ...(p.optional ? { optional: true } : {}),
+      ...(p.coarse ? { coarse: true } : {}),
+      status: active === p.label ? 'active' : finished.has(p.label) ? 'success' : 'pending',
+    }));
+  }, [plan, events, index, progress?.stage]);
 
   function open(next: ReplayRadioId) {
     setStopAt(null);
     setIndex(0);
+    setStartedAt(REPLAY_STARTED_AT);
     setRadio(next);
   }
+
+  function closeReplay() {
+    setRadio(null);
+    setStartedAt(null);
+  }
+
+  const label = REPLAY_RADIOS.find((r) => r.id === radio)?.label ?? 'radio';
 
   return (
     <>
@@ -106,16 +129,24 @@ export default function RadioIoReplayDemo() {
           </Button>
         ))}
       </Group>
-      <RadioIoProgressModal
-        opened={radio != null}
-        operation="write"
-        phase={done ? 'done' : index === 0 ? 'preparing' : 'transfer'}
-        progress={progress}
-        transferStages={transferStages}
-        plan={plan}
-        onCancel={() => setRadio(null)}
-        onClose={() => setRadio(null)}
-      />
+      <ModalShell
+        open={radio != null}
+        title={`Replay ${label} Write`}
+        onClose={closeReplay}
+        dismissible
+        footer={
+          <Button size="sm" onClick={closeReplay}>
+            Close
+          </Button>
+        }
+      >
+        <StageProgress
+          groups={[{ id: 'write', title: 'Write', rows }]}
+          progress={progress}
+          startedAt={startedAt}
+          running={!done && radio != null}
+        />
+      </ModalShell>
     </>
   );
 }

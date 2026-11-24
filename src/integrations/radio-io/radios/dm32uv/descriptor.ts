@@ -11,6 +11,7 @@ import {
   DM32UV_MODEL_ID,
 } from './hydration.ts';
 import { createDm32uvProtocol, Dm32uvProtocol } from './protocol.ts';
+import { DM32_POWER_CYCLE_AFTER_SESSION_NOTE } from './writeRole.ts';
 import { DM32_WRITE_VERIFY_HOOKS } from './writeVerifyHooks.ts';
 import { planDm32Stages } from './plannedStages.ts';
 
@@ -50,6 +51,8 @@ export const DM32UV_DESCRIPTOR: RadioDescriptor = {
     },
     mergeChannelsIntoHydration: mergeChannelsIntoDm32uvHydration,
   },
+  contactStore: 'shared-address-book',
+  successNote: DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
   writeVerify: DM32_WRITE_VERIFY_HOOKS,
   planStages: planDm32Stages,
 };

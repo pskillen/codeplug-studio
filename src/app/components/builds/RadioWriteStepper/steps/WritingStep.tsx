@@ -4,7 +4,7 @@
  */
 
 import { Text } from '@mantine/core';
-import RadioIoStageList from '../../RadioIoStageList.tsx';
+import { StageProgress } from '../../../egress/index.ts';
 import { Button } from '../../../v2/index.ts';
 import classes from '../RadioWriteStepper.module.css';
 import type { WriteFlowActions, WriteFlowView, WriteStepperConfig } from '../types.ts';
@@ -18,7 +18,14 @@ interface StepProps {
 export function WritingBody({ view }: StepProps) {
   return (
     <div className={classes.stack}>
-      <RadioIoStageList rows={view.writeRows} progress={view.progress} />
+      <StageProgress
+        testId="write-stepper-write-progress"
+        groups={[{ id: 'write', rows: view.writeRows }]}
+        progress={view.progress}
+        startedAt={view.writeStartedAt}
+        estimateSeconds={view.review?.estimateSeconds ?? null}
+        running={view.busy}
+      />
       <Text size="xs" c="dimmed">
         Keep this tab open until the transfer finishes or you cancel.
       </Text>

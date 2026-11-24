@@ -188,6 +188,38 @@ export interface RadioHydrationHooks {
   ): void;
 }
 
+/** Identity the Connect pre-flight card and Review share. */
+export interface RadioPreflightIdentity {
+  model: string;
+  serial?: string;
+  name?: string;
+  firmware?: string;
+  firmwareNotes?: readonly string[];
+}
+
+export interface RadioPreflightRow {
+  label: string;
+  value: string;
+  status?: 'ok' | 'warn' | 'bad';
+}
+
+export interface RadioPreflightResult {
+  identity: RadioPreflightIdentity;
+  rows: readonly RadioPreflightRow[];
+  /** Stops the run here; carries retry/sent and debug text. */
+  refusal?: Error;
+  /** Join the radio warnings on Review. */
+  findings?: readonly import('@core/import-export/exportWarning.ts').ExportWarning[];
+}
+
+/** Refusals from the write projection alone; never touches a serial pipe. */
+export interface RadioWriteRefusal {
+  message: string;
+  retry: 'none';
+  channelIndex?: number;
+  channelId?: string;
+}
+
 export interface RadioDescriptor {
   /** Presence indicates support for reading into the library. */
   readIntoLibrary?: RadioReadIntoLibraryHooks;
@@ -237,6 +269,29 @@ export interface RadioDescriptor {
   nominalBytesPerSecond?: number;
   /** Optional cross-session write verify — compare staged upload vs post-commit read-back. */
   writeVerify?: import('./writeVerify.ts').WriteVerifyHooks;
+  /** The radio restarts after END; the shell waits this long before Check write or keps (D890, OpenGD77: 20). */
+  restartAfterEnd?: { seconds: number };
+  /** Which contact store the Digital contacts part fills; picks the hint copy. Unset: generic hint. */
+  contactStore?: 'shared-contact-bank' | 'shared-address-book' | 'separate-lookup-database';
+  /** Extra sentence on Done (DM-32UV: DM32_POWER_CYCLE_AFTER_SESSION_NOTE, already in radio-io). */
+  successNote?: string;
+  /**
+   * Pure checks on the prepared Write projection before a port is chosen. Return every problem;
+   * the throwing encode guards remain the backstop at upload time.
+   */
+  checkWriteProjection?(prepared: {
+    channels: readonly RadioChannelDto[];
+    organisation: RadioWriteOrganisation;
+  }): readonly RadioWriteRefusal[];
+  /** After connect, before the pre-write read. Read-class frames only. */
+  writePreflight?(
+    session: RadioSession,
+    ctx: {
+      profileId: string;
+      parts: RadioPlanContext['parts'];
+      signal?: AbortSignal;
+    },
+  ): Promise<RadioPreflightResult>;
 }
 
 /**

@@ -13,7 +13,6 @@ import {
   isMm9pdyDm32RadioIoProfileId,
   isRt95RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
-import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import {
   ModalShell,
   WriteVerifyReport as WriteVerifyReportV2,
@@ -67,28 +66,18 @@ import {
 } from '../../state/rt95RadioSettingsSession.ts';
 import { rt95SettingsTargetForEgress } from '../../services/radioIoRt95SettingsWrite.ts';
 import { rt95OverrideWords } from './RadioWriteStepper/rt95/rt95ReviewFacts.ts';
-import { radioIoProfileSupportsRadioSettings } from '../../lib/radioIoRadioSettingsSupport.ts';
 import { atD890OverrideWords } from './RadioWriteStepper/d890/atD890ReviewFacts.ts';
 import WriteVerifyReport from './WriteVerifyReport.tsx';
 import { mapWriteVerifyResultToV2Report } from './writeVerifyReportV2Adapter.ts';
 import AtD890WriteCoverageTable from './AtD890WriteCoverageTable.tsx';
-import {
-  DM32_ANALOG_CONTACTS_WRITE_GAP,
-  DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
-} from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
+import { DM32_ANALOG_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
 import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from '../../services/radioWriteEnvGate.ts';
-import { isOpenGd77RadioIoEgress } from '../../services/radioIoChannelMap.ts';
-import {
-  getSatelliteKepsWriteAdapter,
-  hasSatelliteKepsWriteAdapter,
-  satelliteKepsSameSessionAfterUpload,
-} from '../../services/satelliteKepsWriteAdapters.ts';
+import { resolveWriteShellOptions } from '../../services/egress/writeShellOptions.ts';
 import RadioWriteStepper from './RadioWriteStepper/RadioWriteStepper.tsx';
 import { useRadioWriteFlow } from './RadioWriteStepper/useRadioWriteFlow.tsx';
-import { RADIO_RESTART_WAIT_SECONDS } from './RadioWriteStepper/useRadioWriteFlow.tsx';
 import type { WriteStepperConfig } from './RadioWriteStepper/types.ts';
 
 export interface BuildRadioIoPanelProps {
@@ -121,23 +110,14 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const hasHydration = buildHasRadioCloneHydration(egress);
   const isAtD890Write = isAtD890RadioIoProfileId(egress.profileId);
   const isRt95Write = isRt95RadioIoProfileId(egress.profileId);
-  const supportsRadioSettings = radioIoProfileSupportsRadioSettings(egress.profileId);
-  const supportsKepsWrite = hasSatelliteKepsWriteAdapter(egress.profileId);
-  const kepsWriteFn = getSatelliteKepsWriteAdapter(egress.profileId);
-  const dualBankTraitProfile = traitProfileFor(egress.profileId);
-  const supportsDualBankWrite = Boolean(
-    dualBankTraitProfile?.traits.includes(BuildCapabilityTrait.SeparateDigitalIdList),
-  );
-  const supportsDigitalContacts = supportsDualBankWrite;
+  const shellOptions = resolveWriteShellOptions(egress, descriptor);
+  const supportsKepsWrite = shellOptions.parts.keps;
 
   const flow = useRadioWriteFlow({
     build,
     egress,
     descriptor,
     activeProjectId,
-    supportsDualBankWrite,
-    kepsWriteFn,
-    kepsSameSessionAfterUpload: satelliteKepsSameSessionAfterUpload(egress.profileId),
     onOpenSettingsPage: () => navigate(`/builds/${build.id}/export/radio-settings`),
   });
   const { view: flowView, actions: flowActions } = flow;
@@ -249,14 +229,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     buildId: build.id,
     serialOk,
     writeHidden,
-    support: {
-      contacts: supportsDigitalContacts,
-      keps: supportsKepsWrite,
-      settings: supportsRadioSettings,
-    },
-    sharedContactBankNote: isOpenGd77RadioIoEgress(egress.profileId),
-    sharedAddressBookNote: isDm32RadioIoProfileId(egress.profileId),
-    separateLookupDatabaseNote: isAtD890Write,
+    options: shellOptions,
     kepsSummary:
       kepsCount != null
         ? `${kepsCount} ${kepsCount === 1 ? 'satellite' : 'satellites'}`
@@ -299,12 +272,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           },
         }
       : {}),
-    restartWaitSeconds: RADIO_RESTART_WAIT_SECONDS,
-    cancelRestartsRadio: writeVerifyHooks?.requiresCrossSessionReconnect === true,
-    supportsCheck: Boolean(writeVerifyHooks),
-    successNote: isDm32RadioIoProfileId(egress.profileId)
-      ? DM32_POWER_CYCLE_AFTER_SESSION_NOTE
-      : undefined,
   };
   const checkResult = flow.checkResult;
 
@@ -344,8 +311,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
                 formatDebugMarkdown={writeVerifyHooks.formatDebugMarkdown}
                 onClose={() => setVerifyReportOpen(false)}
                 inModal
-                keptSectionTitle={isAtD890Write ? 'Preserved settings' : undefined}
-                keptSummaryLabel={isAtD890Write ? '6 sentinel regions' : undefined}
+                keptSectionTitle={shellOptions.check.reportLabels?.keptSectionTitle}
+                keptSummaryLabel={shellOptions.check.reportLabels?.keptSummaryLabel}
               />
             ) : null}
           </Stack>

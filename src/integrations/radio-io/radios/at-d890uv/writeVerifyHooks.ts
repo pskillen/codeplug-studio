@@ -164,6 +164,10 @@ function mapD890ResultFromNeutralForMarkdown(result: WriteVerifyResult): AtD890W
 
 export const AT_D890_WRITE_VERIFY_HOOKS: WriteVerifyHooks = {
   requiresCrossSessionReconnect: true,
+  reportLabels: {
+    keptSectionTitle: 'Preserved settings',
+    keptSummaryLabel: '6 sentinel regions',
+  },
 
   captureAfterUpload(session: RadioSession): WriteVerifyCaptureResult | undefined {
     if (!(session.radio instanceof AtD890uvProtocol)) return undefined;

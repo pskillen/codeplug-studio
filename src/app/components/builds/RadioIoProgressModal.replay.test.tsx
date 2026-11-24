@@ -110,7 +110,7 @@ describe('RadioIoProgressModal replays real Write event shapes', () => {
       const grown: string[] = [];
       const base = {
         opened: true,
-        operation: 'write' as const,
+        operation: 'restore' as const,
         plan: sc.plan,
         onCancel: vi.fn(),
         onClose: vi.fn(),

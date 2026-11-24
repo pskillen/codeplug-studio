@@ -16,20 +16,16 @@ import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '../../hooks/useScreenWak
 import { Button, ProgressModal, type ProgressModalStep } from '../v2/index.ts';
 
 /**
- * `'keps-write'` is a distinct operation from `'write'` (#859) — a satellite-keps upload has
- * no assemble-channels-into-image step, no write-verify concept, and no coverage table, so it
- * gets its own step list/title rather than reusing `'write'`'s codeplug-shaped copy.
+ * `'keps-write'` is a distinct operation (#859) — a satellite-keps upload has its own step list.
  * `'restore'` replays a backup zip onto the radio — not Write-codeplug.
  * `'vital-read'` is the AT-D890UV vital-data backup (#1288): it downloads a file and saves nothing on the build.
  * `'library-read'` imports library rows and updates the radio's build.
  */
 export type RadioIoOperation =
-  'read' | 'library-read' | 'write' | 'keps-write' | 'restore' | 'vital-read' | 'safety-read';
+  'read' | 'library-read' | 'keps-write' | 'restore' | 'vital-read' | 'safety-read';
 
 export type RadioIoProgressPhase =
   'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
-
-export type RadioIoWriteVerifyStatus = 'none' | 'unverified' | 'verifying' | 'verified' | 'failed';
 
 export interface RadioIoProgressModalProps {
   opened: boolean;
@@ -45,11 +41,6 @@ export interface RadioIoProgressModalProps {
    */
   plan?: readonly PlannedStage[];
   navigationBlocked?: boolean;
-  writeVerifyStatus?: RadioIoWriteVerifyStatus;
-  requiresCrossSessionReconnect?: boolean;
-  verifyButtonEnabled?: boolean;
-  onVerify?: () => void;
-  onCloseWithoutVerify?: () => void;
   onCancel: () => void;
   onClose?: () => void;
   /** Extra sentence on a successful Write or Restore finish. Omitted radios show nothing. */
@@ -72,43 +63,10 @@ function buildSteps(
   operation: RadioIoOperation,
   transferStages: readonly string[],
   phase: RadioIoProgressPhase,
-  writeVerifyStatus: RadioIoWriteVerifyStatus,
   planned: boolean,
 ): StepDef[] {
   const stageSteps = (): StepDef[] =>
     transferStages.map((label, i) => ({ id: stageId(planned, i, label), label }));
-  if (operation === 'write') {
-    const postUpload = writeVerifyStatus !== 'none' || phase === 'done' || phase === 'verifying';
-
-    if (postUpload) {
-      const steps: StepDef[] = [
-        { id: 'connecting', label: 'Connect and handshake' },
-        { id: 'preparing', label: 'Assemble channels into image' },
-        // A planned list keeps its rows (all done) so the list does not shrink at the finish.
-        ...(planned ? stageSteps() : [{ id: 'transfer', label: 'Upload to radio' }]),
-      ];
-      if (writeVerifyStatus !== 'none') {
-        steps.push({ id: 'verify', label: 'Verify write (optional)' });
-      }
-      if (phase === 'done' && writeVerifyStatus === 'verified') {
-        steps.push({ id: 'done', label: 'Write complete — verify passed' });
-      } else if (phase === 'done' && writeVerifyStatus === 'failed') {
-        steps.push({ id: 'done', label: 'Write complete — verify failed' });
-      } else if (phase === 'done' && writeVerifyStatus === 'none') {
-        steps.push({ id: 'done', label: 'Write complete' });
-      }
-      return steps;
-    }
-
-    const steps: StepDef[] = [
-      { id: 'connecting', label: 'Connect and handshake' },
-      { id: 'preparing', label: 'Assemble channels into image' },
-      ...(transferStages.length > 0
-        ? stageSteps()
-        : [{ id: 'transfer', label: 'Upload to radio' }]),
-    ];
-    return steps;
-  }
   if (operation === 'keps-write') {
     const steps: StepDef[] = [
       { id: 'connecting', label: 'Connect and handshake' },
@@ -181,19 +139,11 @@ function activeStepId(
   phase: RadioIoProgressPhase,
   progress: ProgressUpdate | null,
   transferStages: readonly string[],
-  writeVerifyStatus: RadioIoWriteVerifyStatus,
   cursor: StageCursor | null,
 ): string {
   if (phase === 'connecting') return 'connecting';
   if (phase === 'preparing') return 'preparing';
   if (phase === 'saving') return 'saving';
-  if (phase === 'verifying' || writeVerifyStatus === 'verifying') return 'verify';
-  if (phase === 'done' && (writeVerifyStatus === 'verified' || writeVerifyStatus === 'failed')) {
-    return 'done';
-  }
-  if (phase === 'done' && writeVerifyStatus === 'unverified') {
-    return 'verify';
-  }
   if (phase === 'done') return 'done';
   if (cursor) {
     // Planned: the cursor only moves forward; before the first event the first stage is current.
@@ -226,51 +176,6 @@ function stepStatus(
   return 'pending';
 }
 
-export function writeDoneAlert(
-  writeVerifyStatus: RadioIoWriteVerifyStatus,
-  requiresCrossSessionReconnect = true,
-): {
-  color: string;
-  title: string;
-  body: string;
-} {
-  if (writeVerifyStatus === 'verified') {
-    return {
-      color: 'green',
-      title: 'Write finished — verify passed',
-      body: 'Every staged block matches what is on the radio now.',
-    };
-  }
-  if (writeVerifyStatus === 'failed') {
-    return {
-      color: 'red',
-      title: 'Write verify failed',
-      body: 'Some staged blocks do not match. See the verify report for detail.',
-    };
-  }
-  if (writeVerifyStatus === 'unverified') {
-    return {
-      color: 'blue',
-      title: 'Write finished',
-      body: requiresCrossSessionReconnect
-        ? 'Wait until the radio shows its normal screen, then Verify write.'
-        : 'Click Verify write to compare memory with what was transmitted.',
-    };
-  }
-  if (writeVerifyStatus === 'verifying') {
-    return {
-      color: 'blue',
-      title: 'Verifying write',
-      body: 'Reading modelled memory from the radio…',
-    };
-  }
-  return {
-    color: 'green',
-    title: 'Write finished',
-    body: 'All selected blocks were sent.',
-  };
-}
-
 export default function RadioIoProgressModal({
   opened,
   operation,
@@ -279,11 +184,6 @@ export default function RadioIoProgressModal({
   transferStages: grownStages = [],
   plan,
   navigationBlocked = false,
-  writeVerifyStatus = 'none',
-  requiresCrossSessionReconnect = true,
-  verifyButtonEnabled = true,
-  onVerify,
-  onCloseWithoutVerify,
   onCancel,
   onClose,
   successNote,
@@ -320,14 +220,8 @@ export default function RadioIoProgressModal({
 
   const { held: screenHeld } = useScreenWakeLock(opened && phase !== 'done');
 
-  const stepDefs = buildSteps(operation, transferStages, phase, writeVerifyStatus, planned);
-  const activeId = activeStepId(
-    phase,
-    progress,
-    transferStages,
-    writeVerifyStatus,
-    planned ? cursor : null,
-  );
+  const stepDefs = buildSteps(operation, transferStages, phase, planned);
+  const activeId = activeStepId(phase, progress, transferStages, planned ? cursor : null);
   const libraryRead = operation === 'library-read';
   const savingLibrary = libraryRead && phase === 'saving';
   const title = libraryRead
@@ -342,22 +236,16 @@ export default function RadioIoProgressModal({
             ? 'Writing keps to radio'
             : operation === 'restore'
               ? 'Restoring backup to radio'
-              : 'Writing to radio';
+              : 'Reading from radio';
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
   const complete = phase === 'done';
-  const verifying = phase === 'verifying' || writeVerifyStatus === 'verifying';
-  const awaitingVerify = writeVerifyStatus === 'unverified';
-  const showPostUploadAlert = complete || verifying || writeVerifyStatus === 'unverified';
 
   const steps: ProgressModalStep[] = stepDefs.map((step) => ({
     id: step.id,
     label: step.label,
     detail:
       step.id === 'preparing' && phase === 'preparing' && progress?.msg ? progress.msg : undefined,
-    status:
-      complete && step.id === 'done' && writeVerifyStatus === 'failed'
-        ? 'error'
-        : stepStatus(step.id, activeId, stepDefs),
+    status: stepStatus(step.id, activeId, stepDefs),
   }));
 
   const planByStep = new Map((plan ?? []).map((p, i) => [`stage:${i}`, { p, i }]));
@@ -383,105 +271,80 @@ export default function RadioIoProgressModal({
   ) : undefined;
 
   const alert =
-    operation === 'write' && showPostUploadAlert
-      ? writeDoneAlert(writeVerifyStatus, requiresCrossSessionReconnect)
-      : complete && (operation === 'read' || libraryRead)
+    complete && (operation === 'read' || libraryRead)
+      ? {
+          color: 'green',
+          title: 'Read finished',
+          body: libraryRead
+            ? 'Library and build changes are saved.'
+            : 'Clone image is saved on this build.',
+        }
+      : complete && operation === 'safety-read'
         ? {
             color: 'green',
-            title: 'Read finished',
-            body: libraryRead
-              ? 'Library and build changes are saved.'
-              : 'Clone image is saved on this build.',
+            title: 'Safety backup read finished',
+            body: 'The file was downloaded. Confirm on the page that you saved it. Nothing was written to the radio.',
           }
-        : complete && operation === 'safety-read'
+        : complete && operation === 'vital-read'
           ? {
               color: 'green',
-              title: 'Safety backup read finished',
-              body: 'The file was downloaded. Confirm on the page that you saved it. Nothing was written to the radio.',
+              title: 'Vital data backup finished',
+              body: 'The file was downloaded. Nothing is saved on this build. The radio restarts when the session ends.',
             }
-          : complete && operation === 'vital-read'
+          : complete && operation === 'keps-write'
             ? {
                 color: 'green',
-                title: 'Vital data backup finished',
-                body: 'The file was downloaded. Nothing is saved on this build. The radio restarts when the session ends.',
+                title: 'Keps write finished',
+                body: 'Satellite records were sent to the radio.',
               }
-            : complete && operation === 'keps-write'
+            : complete && operation === 'restore'
               ? {
                   color: 'green',
-                  title: 'Keps write finished',
-                  body: 'Satellite records were sent to the radio.',
+                  title: 'Restore finished',
+                  body: 'Selected restorable regions were sent from the backup file.',
                 }
-              : complete && operation === 'restore'
-                ? {
-                    color: 'green',
-                    title: 'Restore finished',
-                    body: 'Selected restorable regions were sent from the backup file.',
-                  }
-                : null;
+              : null;
 
-  const showSuccessNote =
-    Boolean(successNote) &&
-    ((operation === 'write' &&
-      phase === 'done' &&
-      (writeVerifyStatus === 'none' ||
-        writeVerifyStatus === 'unverified' ||
-        writeVerifyStatus === 'verified')) ||
-      (operation === 'restore' && phase === 'done'));
+  const showSuccessNote = Boolean(successNote) && operation === 'restore' && phase === 'done';
 
   const footer = complete ? (
-    awaitingVerify ? (
-      <>
-        <Button variant="secondary" size="sm" onClick={() => onCloseWithoutVerify?.()}>
-          Skip verify
+    <>
+      {finishAction ? (
+        <Button variant="secondary" size="sm" onClick={finishAction.onClick}>
+          {finishAction.label}
         </Button>
-        <Button
-          size="sm"
-          onClick={() => onVerify?.()}
-          disabled={writeVerifyStatus === 'unverified' && !verifyButtonEnabled}
-        >
-          Verify write
-        </Button>
-      </>
-    ) : (
-      <>
-        {finishAction ? (
-          <Button variant="secondary" size="sm" onClick={finishAction.onClick}>
-            {finishAction.label}
-          </Button>
-        ) : null}
-        <Button size="sm" onClick={() => onClose?.()}>
-          Close
-        </Button>
-      </>
-    )
+      ) : null}
+      <Button size="sm" onClick={() => onClose?.()}>
+        Close
+      </Button>
+    </>
   ) : savingLibrary ? undefined : (
     <Button variant="secondary" size="sm" onClick={onCancel}>
       Cancel
     </Button>
   );
 
-  const runningNote =
-    !complete && !showPostUploadAlert ? (
-      <>
-        <Text size="sm">
-          {savingLibrary
-            ? 'Keep this tab open while library and build changes are saved.'
-            : 'Keep this tab open until the transfer finishes or you cancel.'}
+  const runningNote = !complete ? (
+    <>
+      <Text size="sm">
+        {savingLibrary
+          ? 'Keep this tab open while library and build changes are saved.'
+          : 'Keep this tab open until the transfer finishes or you cancel.'}
+      </Text>
+      {!screenHeld ? (
+        <Text size="sm" mt="xs" data-testid="keep-screen-on-hint">
+          {KEEP_SCREEN_ON_HINT}
         </Text>
-        {!screenHeld ? (
-          <Text size="sm" mt="xs" data-testid="keep-screen-on-hint">
-            {KEEP_SCREEN_ON_HINT}
-          </Text>
-        ) : null}
-        {navigationBlocked && !verifying ? (
-          <Alert color="red" title="Stay on this page" mt="sm">
-            {savingLibrary
-              ? 'Navigation is blocked until saving finishes.'
-              : 'Navigation is blocked until this transfer finishes or you cancel.'}
-          </Alert>
-        ) : null}
-      </>
-    ) : undefined;
+      ) : null}
+      {navigationBlocked ? (
+        <Alert color="red" title="Stay on this page" mt="sm">
+          {savingLibrary
+            ? 'Navigation is blocked until saving finishes.'
+            : 'Navigation is blocked until this transfer finishes or you cancel.'}
+        </Alert>
+      ) : null}
+    </>
+  ) : undefined;
 
   return (
     <ProgressModal
@@ -491,8 +354,7 @@ export default function RadioIoProgressModal({
       steps={steps}
       body={stageListBody}
       progress={
-        !complete &&
-        (phase === 'transfer' || verifying || (phase === 'preparing' && progress != null))
+        !complete && (phase === 'transfer' || (phase === 'preparing' && progress != null))
           ? percent
           : undefined
       }

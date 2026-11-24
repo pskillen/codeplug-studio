@@ -6,7 +6,6 @@ import { hasProblemWarnings, pushKepsExcludedWarning } from '@core/import-export
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
-import type { SatelliteKepsWriteFn } from '../../../services/satelliteKepsWriteAdapters.ts';
 import {
   openRadioSessionForEgress,
   prepareRadioWriteImage,
@@ -14,6 +13,7 @@ import {
 } from '../../../services/radioIoSession.ts';
 import { DoneBody } from './steps/DoneStep.tsx';
 import { reviewPauseReasons } from './reviewSections.tsx';
+import { demoShellOptions, demoStepperConfig } from './stepperDemo.ts';
 import type { WriteFlowActions } from './types.ts';
 import { useRadioWriteFlow } from './useRadioWriteFlow.tsx';
 
@@ -75,18 +75,13 @@ vi.mock('../../../services/radioIoSession.ts', async (importOriginal) => {
   };
 });
 
-function mount(
-  opts: { kepsWriteFn?: SatelliteKepsWriteFn; kepsSameSessionAfterUpload?: boolean } = {},
-) {
+function mount() {
   return renderHook(() =>
     useRadioWriteFlow({
       build,
       egress,
       descriptor,
       activeProjectId: 'p1',
-      supportsDualBankWrite: false,
-      kepsWriteFn: opts.kepsWriteFn,
-      kepsSameSessionAfterUpload: opts.kepsSameSessionAfterUpload ?? false,
     }),
   );
 }
@@ -311,19 +306,11 @@ describe('useRadioWriteFlow build checks', () => {
     render(
       <MantineProvider>
         <DoneBody
-          config={
-            {
-              radioLabel: 'OpenGD77',
-              buildId: 'b1',
-              serialOk: true,
-              writeHidden: false,
-              support: { codeplug: true, contacts: true, settings: false, keps: true },
-              sharedContactBankNote: false,
-              sharedAddressBookNote: false,
-              separateLookupDatabaseNote: false,
-              restartWaitSeconds: 0,
-            } as never
-          }
+          config={demoStepperConfig({
+            radioLabel: 'OpenGD77',
+            buildId: 'b1',
+            options: demoShellOptions({ radioLabel: 'OpenGD77', restartAfterEndSeconds: 0 }),
+          })}
           view={result.current.view}
           actions={noopActions}
         />

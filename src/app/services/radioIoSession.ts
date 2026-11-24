@@ -850,17 +850,7 @@ export async function writeBuildToRadio(
 }
 
 /** What Studio knows about the connected radio at the pause before transmit. */
-export interface RadioWriteIdentity {
-  /** Descriptor label, e.g. `Anytone AT-D890UV`. */
-  model: string;
-  /** Full serial where the radio reports one in the read (shown in full). */
-  serial?: string;
-  name?: string;
-  /** Firmware where the radio reports it; unset means unknown. */
-  firmware?: string;
-  /** Caveats about the firmware line, one sentence each. Facts, not pause reasons. */
-  firmwareNotes?: readonly string[];
-}
+export type RadioWriteIdentity = import('@integrations/radio-io/types.ts').RadioPreflightIdentity;
 
 /**
  * Passed to `beforeTransmit` once the in-session read is done and nothing has been sent. Radio

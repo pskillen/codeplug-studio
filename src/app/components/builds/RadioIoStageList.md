@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Fixed-height list of transfer steps with an overall progress bar and a time-remaining estimate (#1393, workflow design §2.5). The caller passes every step up front, so the user sees the whole plan before the first byte moves. The list never changes height as steps advance: it scrolls inside a fixed box and keeps the current step in view, so the bar above and the buttons below stay put. Used by [`RadioIoProgressModal`](./RadioIoProgressModal.md) when an adapter declared a plan; the Write stepper reuses it.
+Fixed-height list of transfer steps with an overall progress bar and a time-remaining estimate (#1393, workflow design §2.5). The caller passes every step up front, so the user sees the whole plan before the first byte moves. The list never changes height as steps advance: it scrolls inside a fixed box and keeps the current step in view, so the bar above and the buttons below stay put. Used by [`RadioIoProgressModal`](./RadioIoProgressModal.md) when an adapter declared a plan, and as the row renderer inside [`StageProgress`](../egress/StageProgress/StageProgress.md) (Write stepper Read / Writing / Restart & check).
 
 ## Props
 

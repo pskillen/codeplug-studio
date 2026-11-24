@@ -78,4 +78,11 @@ RadioFoundry answers a codeplug command with **status 7 (refused)** and a **reas
 
 **What Studio shows.** The user-facing message names the operation and reason (`RadioFoundry refused BEGIN (reason 2, STORAGE): …`). When debug text exists, the Write stepper shows a collapsible **Debug details** block and logs `[radio-write]` to the console. **Interlock** refusals (reasons 1, 2, and 9) do not offer **Reconnect, read & write** — retrying the same session cannot fix them.
 
-**Foreign storage region (reason 2).** At connect, INFO **byte 1 bit 1** (`storage_ready`) says whether the settings flash can be written. Studio still **reads** when it is clear; it **refuses a write** before the pre-write read when storage is not writable. The operator must **claim** the region with RadioFoundry’s web programming utility (it backs up first) or `rfoundry_debug.py storage claim` — Studio does not claim (chip UID and danger-zone scope). See RadioFoundry `settings-store.md` §5.
+**Settings storage at pre-flight.** At connect, CODEPLUG INFO **byte 1 bit 1** (`storage_ready`) is false for **none**, **foreign** and **no flash map** alike — only a STORAGE INFO (command `0x0F`, op 0, read-only) before the pre-write read tells Studio which case it is. Studio refuses there when storage is not writable; only **foreign** points the operator at claiming the region (RadioFoundry web utility or `rfoundry_debug.py storage claim` — Studio does not claim; danger-zone scope). The upload-time backstop when INFO cannot distinguish the case uses a generic not-ready sentence.
+
+| STORAGE INFO outcome       | Operator message (summary)                                                      |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| `foreign`                  | Flash still holds another firmware’s settings — claim storage, then write again |
+| `none`                     | Storage did not start — power-cycle and try again                               |
+| Status 4 (no map)          | Firmware has no storage map for this radio                                      |
+| Unknown / no reply / other | Storage not ready; firmware cannot say why                                      |

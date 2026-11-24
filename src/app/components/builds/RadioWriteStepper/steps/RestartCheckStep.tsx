@@ -3,8 +3,9 @@
  * optional Check write and, when keps could not share the codeplug's session, the keps write.
  */
 
-import { Alert, Progress, Text } from '@mantine/core';
+import { Alert, Text } from '@mantine/core';
 import RestartCountdown from '../../../radio-io/RestartCountdown.tsx';
+import { StageProgress } from '../../../egress/index.ts';
 import { Button } from '../../../v2/index.ts';
 import classes from '../RadioWriteStepper.module.css';
 import type { WriteFlowActions, WriteFlowView, WriteStepperConfig } from '../types.ts';
@@ -16,9 +17,45 @@ interface StepProps {
 }
 
 export function RestartCheckBody({ config, view }: StepProps) {
-  const percent = view.progress?.max
-    ? Math.min(100, (100 * view.progress.cur) / view.progress.max)
-    : undefined;
+  const groups: { id: string; title?: string; rows: typeof view.writeRows }[] = [];
+  if (config.options.restartAfterEndSeconds > 0) {
+    groups.push({
+      id: 'restart',
+      title: 'Restart',
+      rows: [
+        {
+          id: 'restart-wait',
+          label:
+            view.restartSecondsLeft > 0
+              ? `Waiting (${view.restartSecondsLeft} s left)`
+              : 'Radio is back',
+          status: view.restartSecondsLeft > 0 ? 'active' : 'success',
+          coarse: true,
+        },
+      ],
+    });
+  }
+  if (view.checkStatus === 'running') {
+    groups.push({
+      id: 'check',
+      title: 'Check write',
+      rows:
+        view.writeRows.length > 0
+          ? view.writeRows
+          : [{ id: 'check', label: 'Check write', status: 'active' }],
+    });
+  }
+  if (view.kepsAfterRestart === 'running') {
+    groups.push({
+      id: 'keps',
+      title: 'Keps after restart',
+      rows:
+        view.writeRows.length > 0
+          ? view.writeRows
+          : [{ id: 'keps', label: 'Writing satellite keps', status: 'active' }],
+    });
+  }
+
   return (
     <div className={classes.stack}>
       <Text size="sm" fw={600}>
@@ -26,7 +63,7 @@ export function RestartCheckBody({ config, view }: StepProps) {
       </Text>
       <RestartCountdown
         secondsLeft={view.restartSecondsLeft}
-        totalSeconds={config.restartWaitSeconds}
+        totalSeconds={config.options.restartAfterEndSeconds}
         data-testid="write-stepper-restart-wait"
       />
       {view.kepsFailure ? (
@@ -46,15 +83,20 @@ export function RestartCheckBody({ config, view }: StepProps) {
           Satellite keps are written in a new session once the radio is back.
         </Text>
       ) : null}
-      {view.busy ? (
-        <div>
-          <Progress value={percent ?? 0} animated={percent == null} aria-label="Progress" />
-          {view.progress?.msg ? (
-            <Text size="xs" c="dimmed" mt={4}>
-              {view.progress.msg}
-            </Text>
-          ) : null}
-        </div>
+      {groups.length > 0 ? (
+        <StageProgress
+          testId="write-stepper-restart-progress"
+          groups={groups}
+          progress={view.progress}
+          startedAt={
+            view.checkStatus === 'running'
+              ? view.checkStartedAt
+              : view.kepsAfterRestart === 'running'
+                ? view.writeStartedAt
+                : view.readStartedAt
+          }
+          running={view.busy}
+        />
       ) : null}
     </div>
   );

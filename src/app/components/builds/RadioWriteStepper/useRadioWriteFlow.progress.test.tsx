@@ -11,6 +11,25 @@ import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.
 import type { SatelliteKepsWriteFn } from '../../../services/satelliteKepsWriteAdapters.ts';
 import { useRadioWriteFlow, type RadioWriteFlow } from './useRadioWriteFlow.tsx';
 
+const shellTestState = vi.hoisted(() => ({
+  kepsWriteFn: undefined as SatelliteKepsWriteFn | undefined,
+}));
+
+vi.mock('../../../services/egress/writeShellOptions.ts', () => ({
+  resolveWriteShellOptions: () => ({
+    radioLabel: 'Fake radio',
+    parts: { contacts: false, keps: Boolean(shellTestState.kepsWriteFn), settings: false },
+    contactStore: 'generic' as const,
+    readPlan: false,
+    programHoldSafeMs: 30_000,
+    restartAfterEndSeconds: 0,
+    check: { available: false },
+    keps: shellTestState.kepsWriteFn
+      ? { writeFn: shellTestState.kepsWriteFn, session: 'same' as const }
+      : undefined,
+  }),
+}));
+
 vi.mock('../../../state/persistence.ts', () => ({
   persistence: { listSatellites: vi.fn(async () => [{ id: 's1', enabled: true }]) },
 }));
@@ -58,15 +77,13 @@ function deferred(): { promise: Promise<void>; resolve: () => void } {
 }
 
 function mount(kepsWriteFn: SatelliteKepsWriteFn) {
+  shellTestState.kepsWriteFn = kepsWriteFn;
   return renderHook(() =>
     useRadioWriteFlow({
       build: BUILD,
       egress: EGRESS,
       descriptor: undefined,
       activeProjectId: 'p1',
-      supportsDualBankWrite: false,
-      kepsWriteFn,
-      kepsSameSessionAfterUpload: true,
     }),
   );
 }
@@ -82,6 +99,7 @@ async function startWrite(flow: { current: RadioWriteFlow }): Promise<void> {
 
 describe('useRadioWriteFlow progress coalescing (#1558)', () => {
   beforeEach(() => {
+    shellTestState.kepsWriteFn = undefined;
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date', 'performance'] });
   });
   afterEach(() => {

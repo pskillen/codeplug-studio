@@ -7,9 +7,11 @@ import { Group } from '@mantine/core';
 import RadioWriteStepper from '../../components/builds/RadioWriteStepper/RadioWriteStepper.tsx';
 import {
   demoFlowView,
+  demoShellOptions,
   demoStepperConfig,
   noopActions,
 } from '../../components/builds/RadioWriteStepper/stepperDemo.ts';
+import type { WriteStepperConfig } from '../../components/builds/RadioWriteStepper/types.ts';
 import {
   WRITE_STEP_LABEL,
   WRITE_STEPS,
@@ -132,21 +134,60 @@ const IDENTITY = { model: 'AT-D890UV', serial: 'DEMO0000', name: 'MM9PDY-2', fir
 
 const DEMO_BUILD_CHECKS = styleguideWarningsListDemo();
 
-function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewController): WriteFlowView {
+const DEMO_PROJECTION_REFUSALS = [
+  {
+    message:
+      'AT-D890UV channel 2: RX 118000000 Hz is AM airband (108–137 MHz) — airband belongs in the separate AmAir bank, not MR channel slots',
+    retry: 'none' as const,
+    channelIndex: 2,
+  },
+  {
+    message: 'AT-D890UV channel 7: NXDN TX RAN must be a whole number 0-63, got 99',
+    retry: 'none' as const,
+    channelIndex: 7,
+  },
+];
+
+function viewFor(
+  step: WriteStep,
+  parts: WriteParts,
+  d890?: AtD890ReviewController,
+  showProjectionRefusals = false,
+): WriteFlowView {
   const base = demoFlowView({
     step,
     parts,
     identity: step === 'whatToWrite' ? null : IDENTITY,
     buildChecks:
       step === 'whatToWrite' && parts.codeplug
-        ? { status: 'ready', warnings: DEMO_BUILD_CHECKS }
-        : { status: 'idle', warnings: [] },
+        ? showProjectionRefusals
+          ? { status: 'ready', warnings: [], refusals: DEMO_PROJECTION_REFUSALS }
+          : { status: 'ready', warnings: DEMO_BUILD_CHECKS, refusals: [] }
+        : { status: 'idle', warnings: [], refusals: [] },
     channelLabel: styleguideChannelLabel,
   });
   switch (step) {
+    case 'connect':
+      return {
+        ...base,
+        identity: { model: 'Anytone AT-D890UV', serial: 'D890UV2401234567', firmware: 'MM9PDY' },
+        preflight: {
+          status: 'passed',
+          identity: { model: 'Anytone AT-D890UV', serial: 'D890UV2401234567', firmware: 'MM9PDY' },
+          rows: [
+            { label: 'Model', value: 'Anytone AT-D890UV (band 3)', status: 'ok' },
+            { label: 'Serial', value: 'D890UV2401234567', status: 'ok' },
+            { label: 'Firmware', value: 'MM9PDY', status: 'ok' },
+            { label: 'Stun/kill', value: 'clear', status: 'ok' },
+            { label: 'Interrupted write', value: 'none', status: 'ok' },
+          ],
+        },
+      };
     case 'connectRead':
       return {
         ...base,
+        reviewDecision: 'undecided',
+        readStartedAt: Date.now() - 12_000,
         busy: true,
         progress: { cur: 40, max: 100, msg: 'Zones', stage: 'Zones' },
         readRows: [
@@ -161,6 +202,7 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
       const kepsCount = parts.keps ? 24 : null;
       return {
         ...base,
+        reviewDecision: 'paused',
         review: {
           channelCount: 412,
           contactsNote,
@@ -203,6 +245,7 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
     case 'writing':
       return {
         ...base,
+        reviewDecision: 'skipped',
         busy: true,
         progress: { cur: 3, max: 18, msg: 'Scan lists', stage: 'Scan lists' },
         writeRows: [
@@ -213,10 +256,16 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
         ],
       };
     case 'restartCheck':
-      return { ...base, restartSecondsLeft: 12, checkStatus: 'available' };
+      return {
+        ...base,
+        reviewDecision: 'skipped',
+        restartSecondsLeft: 12,
+        checkStatus: 'available',
+      };
     case 'done':
       return {
         ...base,
+        reviewDecision: 'skipped',
         summary: {
           codeplugWritten: true,
           contactsWritten: parts.contacts,
@@ -238,10 +287,20 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
   }
 }
 
+const FIVE_STEP_SHELL: Partial<WriteStepperConfig> = {
+  options: demoShellOptions({
+    restartAfterEndSeconds: 0,
+    check: { available: false },
+    keps: undefined,
+  }),
+};
+
 export default function RadioWriteStepperDemo() {
   const [step, setStep] = useState<WriteStep | null>(null);
   const [parts, setParts] = useState<WriteParts>({ ...DEFAULT_WRITE_PARTS });
   const [d890Variant, setD890Variant] = useState<D890Variant | null>(null);
+  const [configOverride, setConfigOverride] = useState<Partial<WriteStepperConfig> | null>(null);
+  const [showProjectionRefusals, setShowProjectionRefusals] = useState(false);
   const d890 = useMemo(
     () => (d890Variant ? demoD890Controller(d890Variant) : undefined),
     [d890Variant],
@@ -256,7 +315,12 @@ export default function RadioWriteStepperDemo() {
     return () => clearAllOverrides(D890_DEMO_BUILD);
   }, []);
   const shownParts = d890 ? { ...parts, settings: d890.getState().settingsTicked } : parts;
-  const view = viewFor(d890 ? 'review' : (step ?? 'whatToWrite'), shownParts, d890);
+  const view = viewFor(
+    d890 ? 'review' : (step ?? 'whatToWrite'),
+    shownParts,
+    d890,
+    showProjectionRefusals,
+  );
   const actions = {
     ...noopActions(),
     onClose: () => {
@@ -269,10 +333,69 @@ export default function RadioWriteStepperDemo() {
     <>
       <Group gap="xs">
         {WRITE_STEPS.map((s, i) => (
-          <Button key={s} variant="secondary" size="sm" onClick={() => setStep(s)}>
+          <Button
+            key={s}
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setD890Variant(null);
+              setConfigOverride(null);
+              setShowProjectionRefusals(false);
+              setStep(s);
+            }}
+          >
             {`${i + 1}. ${WRITE_STEP_LABEL[s]}`}
           </Button>
         ))}
+      </Group>
+      <Group gap="xs">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setD890Variant(null);
+            setConfigOverride(null);
+            setShowProjectionRefusals(true);
+            setStep('whatToWrite');
+          }}
+        >
+          Step 1: projection refusals
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setD890Variant(null);
+            setConfigOverride(null);
+            setShowProjectionRefusals(false);
+            setStep('connect');
+          }}
+        >
+          Connect: pre-flight passed
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setD890Variant(null);
+            setConfigOverride(FIVE_STEP_SHELL);
+            setShowProjectionRefusals(false);
+            setStep('whatToWrite');
+          }}
+        >
+          Shell: five counted steps
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setD890Variant(null);
+            setConfigOverride(FIVE_STEP_SHELL);
+            setStep('writing');
+          }}
+        >
+          Shell: Review skipped
+        </Button>
       </Group>
       <Group gap="xs">
         {D890_VARIANTS.map((v) => (
@@ -290,7 +413,7 @@ export default function RadioWriteStepperDemo() {
         ))}
       </Group>
       <RadioWriteStepper
-        config={demoStepperConfig()}
+        config={demoStepperConfig(configOverride ?? {})}
         view={{ ...view, open: step !== null || d890Variant !== null }}
         actions={actions}
       />
