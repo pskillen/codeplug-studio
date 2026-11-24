@@ -158,7 +158,8 @@ export default function AtD890AirSecuritySeedCard({ egress }: AtD890AirSecurityS
     }
   }
 
-  const linkedDmrId = airSecuritySeedUriDmrId(text);
+  const parsed = parseAirSecuritySeedInput(text);
+  const linkedDmrId = parsed.ok ? airSecuritySeedUriDmrId(text) : null;
   const showDmrWarning = linkedDmrId !== null && !libraryDmrIds.includes(linkedDmrId);
 
   return (

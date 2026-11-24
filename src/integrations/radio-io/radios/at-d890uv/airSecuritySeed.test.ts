@@ -107,6 +107,18 @@ describe('airSecuritySeedUriDmrId', () => {
     ).toBe(1234567);
   });
 
+  it('reads a leading brandmeister label in any case', () => {
+    expect(
+      airSecuritySeedUriDmrId(`otpauth://totp/brandmeister:1234567?secret=${SECRET_B32}`),
+    ).toBe(1234567);
+  });
+
+  it('ignores BrandMeister when it is not the start of the label', () => {
+    expect(
+      airSecuritySeedUriDmrId(`otpauth://totp/AccountBrandMeister:1234567?secret=${SECRET_B32}`),
+    ).toBeNull();
+  });
+
   it('is null for self-care text and for a link with no BrandMeister label', () => {
     expect(airSecuritySeedUriDmrId(SELFCARE)).toBeNull();
     expect(airSecuritySeedUriDmrId(`otpauth://totp/Account?secret=${SECRET_B32}`)).toBeNull();

@@ -18,7 +18,7 @@ The operator pastes the self-care text or the `otpauth://` link into **AirSecuri
 
 The section always says: _Backups contain the seed. Clearing the seed does not remove it from backups you have already taken._
 
-When the paste is an `otpauth://totp/` link whose label is `BrandMeister:` and a DMR ID, and that ID is not one of this library's DMR IDs, the page says _The link is for DMR ID {id}, which is not one of this library's DMR IDs._ Write seed stays available. Self-care text has no DMR ID, so it does not show that warning. An NXDN ID with the same number does not count.
+When the paste is accepted and it is an `otpauth://totp/` link whose label starts with `BrandMeister:` (any case) and a DMR ID, and that ID is not one of this library's DMR IDs, the page says _The link is for DMR ID {id}, which is not one of this library's DMR IDs._ Write seed stays available. A refused paste does not show that warning. Self-care text has no DMR ID, so it does not show it either. An NXDN ID with the same number does not count.
 
 ## Backup warning
 

@@ -116,8 +116,9 @@ export function parseAirSecuritySeedInput(text: string): AirSecuritySeedParse {
 }
 
 /**
- * DMR ID from the label of an `otpauth://totp/` link: the digits after `BrandMeister:`,
- * URL-decoded. Null for self-care text, or when that label is absent. The secret is not returned.
+ * DMR ID from the label of an `otpauth://totp/` link: `BrandMeister:` at the start of the
+ * path, any case, then digits, URL-decoded. Null for self-care text, or when that label is
+ * absent. The secret is not returned.
  */
 export function airSecuritySeedUriDmrId(text: string): number | null {
   const trimmed = text.trim();
@@ -135,10 +136,7 @@ export function airSecuritySeedUriDmrId(text: string): number | null {
   } catch {
     return null;
   }
-  const marker = 'BrandMeister:';
-  const at = label.indexOf(marker);
-  if (at < 0) return null;
-  const digits = /^(\d+)/.exec(label.slice(at + marker.length));
+  const digits = /^brandmeister:(\d+)/i.exec(label);
   if (!digits?.[1]) return null;
   const id = Number(digits[1]);
   if (!Number.isSafeInteger(id)) return null;

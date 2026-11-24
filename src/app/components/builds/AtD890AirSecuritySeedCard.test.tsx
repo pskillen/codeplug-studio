@@ -54,6 +54,8 @@ const BAD = 'gezd 1bnv';
 const GOOD = 'gezd gnbv gy3t qojq gezd gnbv gy3t qojq';
 const LINK =
   'otpauth://totp/BrandMeister:1234567?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ&issuer=BrandMeister';
+const REFUSED_LINK =
+  'otpauth://totp/BrandMeister:1234567?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ&algorithm=SHA256';
 const DMR_WARNING = "The link is for DMR ID 1234567, which is not one of this library's DMR IDs.";
 const SEED = new TextEncoder().encode('12345678901234567890');
 const ENTRY_WARNING =
@@ -165,6 +167,14 @@ describe('AtD890AirSecuritySeedCard', () => {
     fireEvent.change(seedField(), { target: { value: LINK } });
     expect(screen.queryByText(DMR_WARNING)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Write seed' })).toBeEnabled();
+  });
+
+  it('does not show the DMR warning when the paste is refused', () => {
+    renderCard();
+    fireEvent.change(seedField(), { target: { value: REFUSED_LINK } });
+    expect(screen.queryByText(DMR_WARNING)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Write seed' })).toBeDisabled();
+    expect(document.body.textContent).not.toContain('GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ');
   });
 
   it('does not treat an NXDN id with the same number as a library DMR ID', () => {
