@@ -92,6 +92,8 @@ import {
   radioFoundryIdentityRows,
 } from '@integrations/radio-io/radios/radiofoundry/debugIdentity.ts';
 import { radioFoundryArchiveSensitiveRanges } from '@integrations/radio-io/radios/radiofoundry/debugSensitive.ts';
+import { radioFoundrySettingsView } from '@integrations/radio-io/radios/radiofoundry/debugSettingsView.ts';
+import { radioFoundryCompareAdapter } from '@integrations/radio-io/radios/radiofoundry/debugCompare.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
 
 export type DebugCalibrationProps = { archive?: DebugArchive; overlayArchive?: DebugArchive };
@@ -259,6 +261,8 @@ const radioFoundry = (
   calibrationNote: RADIOFOUNDRY_CALIBRATION_NOTE,
   readHistory: true,
   coverage: radioFoundryCoverage,
+  settings: radioFoundrySettingsView,
+  compare: radioFoundryCompareAdapter,
   capabilities: capabilities('Available', 'Not yet available', 'Not yet available'),
 });
 

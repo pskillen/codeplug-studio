@@ -27,14 +27,17 @@ function clipRange(
   return start < end ? { start, end, label: range.label } : undefined;
 }
 
+/** True for system-secret and traffic-key families masked in Settings, Hex and Compare. */
+export function isRadioFoundrySecretKey(key: number): boolean {
+  return (key >= 0x0300 && key <= 0x03ff) || (key >= 0x1900 && key <= 0x1cff);
+}
+
 function secretLabel(key: number): string | undefined {
+  if (!isRadioFoundrySecretKey(key)) return undefined;
   if (key >= 0x0300 && key <= 0x03ff) {
     return `System secret 0x${key.toString(16).padStart(4, '0')}`;
   }
-  if (key >= 0x1900 && key <= 0x1cff) {
-    return `Traffic key 0x${key.toString(16).padStart(4, '0')}`;
-  }
-  return undefined;
+  return `Traffic key 0x${key.toString(16).padStart(4, '0')}`;
 }
 
 function settingsSensitiveRanges(bytes: Uint8Array): readonly DebugSensitiveRange[] {

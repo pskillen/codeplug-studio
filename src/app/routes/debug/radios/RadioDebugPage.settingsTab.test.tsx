@@ -24,6 +24,7 @@ const WITH_SETTINGS = [
   'dm-32uv',
   'dm-1701-opengd77',
   'md-9600-opengd77',
+  'md-9600-radiofoundry',
   'rt95',
   'uv-5r-mini',
 ];
@@ -32,7 +33,6 @@ const WITHOUT_SETTINGS = [
   'dm-32uv-radiofoundry',
   'dm-1701-radiofoundry',
   'rt84-radiofoundry',
-  'md-9600-radiofoundry',
   'rt90-radiofoundry',
 ];
 
