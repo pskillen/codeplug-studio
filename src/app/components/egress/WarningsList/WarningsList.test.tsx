@@ -90,11 +90,7 @@ describe('WarningsList', () => {
       },
     ];
     wrap(
-      <WarningsList
-        warnings={warnings}
-        mode="full"
-        channelLabel={() => 'GB3XX — Glasgow North'}
-      />,
+      <WarningsList warnings={warnings} mode="full" channelLabel={() => 'GB3XX — Glasgow North'} />,
     );
     fireEvent.click(screen.getByText('1 names shortened cleanly'));
     expect(screen.getByText(/GB3XX — Glasgow North/)).toBeTruthy();

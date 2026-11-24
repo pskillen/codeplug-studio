@@ -14,9 +14,7 @@ export interface ExportWarningSummary {
   info: number;
 }
 
-export function summariseExportWarnings(
-  warnings: readonly ExportWarning[],
-): ExportWarningSummary {
+export function summariseExportWarnings(warnings: readonly ExportWarning[]): ExportWarningSummary {
   let problems = 0;
   let info = 0;
   for (const warning of warnings) {
@@ -264,8 +262,11 @@ export function exportWarningIdentity(warning: ExportWarning): string {
     case 'zone_order':
       return `zone_order\0${warning.zoneName}`;
     case 'keps_excluded':
-      return ['keps_excluded', warning.satelliteId, warning.transmitterId ?? '', warning.reason].join(
-        '\0',
-      );
+      return [
+        'keps_excluded',
+        warning.satelliteId,
+        warning.transmitterId ?? '',
+        warning.reason,
+      ].join('\0');
   }
 }

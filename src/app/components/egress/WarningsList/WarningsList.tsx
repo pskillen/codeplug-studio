@@ -34,7 +34,7 @@ function shorteningLine(
 ): string {
   let original = item.original;
   if (item.entityId && channelLabel) {
-  // Wire-name preview shows the exported string; here we show callsign then name when we know the channel id.
+    // Wire-name preview shows the exported string; here we show callsign then name when we know the channel id.
     const label = channelLabel(item.entityId);
     if (label) original = label;
   }
@@ -114,12 +114,7 @@ function ProblemGroups({
   channelLabel?: (entityId: string) => string | undefined;
   inAccordion: boolean;
 }) {
-  const {
-    general,
-    unlinkedGroup,
-    memberCapGroups,
-    shortenedProblemGroups,
-  } = formatted;
+  const { general, unlinkedGroup, memberCapGroups, shortenedProblemGroups } = formatted;
 
   const groups = (
     <Stack gap="sm">
@@ -128,9 +123,7 @@ function ProblemGroups({
           {warning}
         </Text>
       ))}
-      {unlinkedGroup != null ||
-      memberCapGroups.length > 0 ||
-      shortenedProblemGroups.length > 0 ? (
+      {unlinkedGroup != null || memberCapGroups.length > 0 || shortenedProblemGroups.length > 0 ? (
         <Accordion multiple variant="separated" defaultValue={inAccordion ? [] : undefined}>
           {unlinkedGroup != null ? (
             <Accordion.Item value="unlinked">
@@ -255,7 +248,7 @@ export default function WarningsList({
   testId = 'warnings-list',
 }: WarningsListProps) {
   const formatted = formatExportWarnings([...warnings]);
-  const { problems, info } = summariseExportWarnings(warnings);
+  const { info } = summariseExportWarnings(warnings);
 
   if (mode === 'chip') {
     return (
@@ -292,11 +285,7 @@ export default function WarningsList({
             <Accordion.Panel>
               <Stack gap="sm">
                 {hasProblems(formatted) ? (
-                  <ProblemGroups
-                    formatted={formatted}
-                    channelLabel={channelLabel}
-                    inAccordion
-                  />
+                  <ProblemGroups formatted={formatted} channelLabel={channelLabel} inAccordion />
                 ) : null}
                 <NotesSection formatted={formatted} infoCount={info} channelLabel={channelLabel} />
               </Stack>

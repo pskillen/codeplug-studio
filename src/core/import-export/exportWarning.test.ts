@@ -35,7 +35,14 @@ describe('summariseExportWarnings', () => {
         exported: 'Too Long Stil',
         limit: 12,
       },
-      { kind: 'member_cap', severity: 'problem', capKind: 'zone-expanded-cap', label: 'Z1', count: 50, cap: 16 },
+      {
+        kind: 'member_cap',
+        severity: 'problem',
+        capKind: 'zone-expanded-cap',
+        label: 'Z1',
+        count: 50,
+        cap: 16,
+      },
       { kind: 'unlinked', severity: 'problem', message: 'orphan channel' },
       { kind: 'general', severity: 'problem', message: 'something went wrong' },
       { kind: 'general', severity: 'info', message: 'just a tip' },
@@ -84,8 +91,6 @@ describe('summariseExportWarnings', () => {
       reason: 'not supported on this radio',
       label: 'Fox-1A',
     });
-    expect(formatExportWarning(warnings[0]!)).toBe(
-      'Skipped Fox-1A: not supported on this radio',
-    );
+    expect(formatExportWarning(warnings[0]!)).toBe('Skipped Fox-1A: not supported on this radio');
   });
 });

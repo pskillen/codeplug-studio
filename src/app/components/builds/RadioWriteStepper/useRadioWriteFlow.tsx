@@ -16,6 +16,7 @@ import {
   type DualBankWriteMode,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
+import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import {
   isAtD890RadioIoProfileId,
   isRt95RadioIoProfileId,
@@ -289,6 +290,21 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     useState<WriteFlowView['kepsAfterRestart']>('none');
   const [kepsFailure, setKepsFailure] = useState<string | null>(null);
   const [summary, setSummary] = useState<WriteSummary | null>(null);
+  const [buildChecks, setBuildChecks] = useState<WriteFlowView['buildChecks']>({
+    status: 'idle',
+    warnings: [],
+  });
+  const [channelLabel, setChannelLabel] = useState<
+    ((entityId: string) => string | undefined) | undefined
+  >(undefined);
+  const buildWarningsRef = useRef<readonly ExportWarning[]>([]);
+  const prepareAbortRef = useRef<AbortController | null>(null);
+  const prepareCacheRef = useRef<{
+    key: string;
+    promise: Promise<Awaited<ReturnType<typeof prepareRadioWriteImage>>>;
+    result?: Awaited<ReturnType<typeof prepareRadioWriteImage>>;
+  } | null>(null);
+  const prepareDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const directoryAttemptRef = useRef(0);
   useEffect(
     () => () => {
@@ -317,6 +333,83 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       cancelled = true;
     };
   }, [isOpen, needsDirectory, activeProjectId, contactSource]);
+
+  function prepareCacheKey(p: WriteParts, contactSource: ContactSource): string {
+    const source = p.contacts ? contactSource : 'none';
+    return `${build.revision}|${p.codeplug}|${p.contacts}|${source}`;
+  }
+
+  useEffect(() => {
+    if (!isOpen || !activeProjectId) return;
+    if (!writesToRadioImage(parts)) {
+      queueMicrotask(() => {
+        setBuildChecks({ status: 'idle', warnings: [] });
+        buildWarningsRef.current = [];
+      });
+      return undefined;
+    }
+    const key = prepareCacheKey(parts, contactSource);
+    prepareDebounceRef.current = setTimeout(() => {
+      prepareDebounceRef.current = null;
+      prepareAbortRef.current?.abort();
+      const ac = new AbortController();
+      prepareAbortRef.current = ac;
+      setBuildChecks({ status: 'checking', warnings: [], progress: undefined });
+      const promise = (async () => {
+        const library = await loadLibrarySlice(persistence, activeProjectId);
+        if (ac.signal.aborted) throw ac.signal.reason;
+        setChannelLabel((id) => {
+          const ch = library.channels.find((c) => c.id === id);
+          return ch ? channelDisplayLabel(ch) : undefined;
+        });
+        const dualOpts = supportsDualBankWrite
+          ? {
+              dualBank: {
+                mode: parts.codeplug ? 'codeplug' : 'digitalIdList',
+                options: dualBankOptionsFromWriteSource(parts.contacts ? contactSource : 'none'),
+              },
+              persistence,
+              projectId: activeProjectId,
+              onProgress: (u: ProgressUpdate) => {
+                setBuildChecks((prev) =>
+                  prev.status === 'checking' ? { ...prev, progress: u.msg } : prev,
+                );
+              },
+            }
+          : undefined;
+        const result = await prepareRadioWriteImage(build, egress, library, {
+          ...dualOpts,
+          signal: ac.signal,
+        });
+        buildWarningsRef.current = result.warnings;
+        setBuildChecks({ status: 'ready', warnings: result.warnings });
+        prepareCacheRef.current = { key, promise, result };
+        return result;
+      })().catch((err) => {
+        if (ac.signal.aborted) throw err;
+        if (err instanceof RadioWriteBlockedError) {
+          setBuildChecks({ status: 'error', warnings: [], message: err.message });
+        } else {
+          setBuildChecks({ status: 'error', warnings: [], message: String(err) });
+        }
+        throw err;
+      });
+      prepareCacheRef.current = { key, promise };
+    }, 300);
+    return () => {
+      if (prepareDebounceRef.current != null) clearTimeout(prepareDebounceRef.current);
+      prepareAbortRef.current?.abort();
+    };
+  }, [
+    isOpen,
+    activeProjectId,
+    build.revision,
+    build.id,
+    parts,
+    contactSource,
+    egress,
+    supportsDualBankWrite,
+  ]);
 
   // React state cannot prevent a second click before the next render (including port picking).
   const writeActionPendingRef = useRef(false);
@@ -605,6 +698,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
             ...(rt95ControllerRef.current ? { settings: rt95ControllerRef.current } : {}),
           }
         : undefined;
+    const tx = ctx as BeforeTransmitContext;
     const sectionsCtx = {
       identity: ctx.identity,
       parts: p,
@@ -614,6 +708,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       estimateSeconds,
       identityOnly: ctx.identityOnly,
       restartsAfterWrite: requiresReconnect && writesToRadioImage(p),
+      buildWarnings: buildWarningsRef.current,
+      radioWarnings: tx.radioWarnings ?? [],
+      channelLabel,
       ...(mergedRt95 ? { rt95: mergedRt95 } : {}),
       ...(d890ControllerRef.current ? { atD890: d890ControllerRef.current } : {}),
     };
@@ -894,7 +991,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
             return;
           }
           throw err;
-          throw err;
         }
       }
       const granted = grantedPortRef.current;
@@ -904,20 +1000,43 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       let prepared: Awaited<ReturnType<typeof prepareRadioWriteImage>> | undefined;
       if (writesToRadioImage(p)) {
         setPhaseBoth('read');
-        const library = await loadLibrarySlice(persistence, activeProjectId);
-        prepared = await prepareRadioWriteImage(
-          build,
-          egress,
-          library,
-          supportsDualBankWrite
-            ? {
-                dualBank: { mode, options: dualBankOptionsFromWriteSource(source) },
-                persistence,
-                projectId: activeProjectId,
-                onProgress,
-              }
-            : undefined,
-        );
+        if (prepareDebounceRef.current != null) {
+          clearTimeout(prepareDebounceRef.current);
+          prepareDebounceRef.current = null;
+        }
+        const key = prepareCacheKey(p, contactSourceRef.current);
+        const cache = prepareCacheRef.current;
+        if (cache?.key === key && cache.result) {
+          prepared = cache.result;
+        } else if (cache?.key === key) {
+          prepared = await cache.promise;
+        } else {
+          const library = await loadLibrarySlice(persistence, activeProjectId);
+          setChannelLabel((id) => {
+            const ch = library.channels.find((c) => c.id === id);
+            return ch ? channelDisplayLabel(ch) : undefined;
+          });
+          prepared = await prepareRadioWriteImage(
+            build,
+            egress,
+            library,
+            supportsDualBankWrite
+              ? {
+                  dualBank: { mode, options: dualBankOptionsFromWriteSource(source) },
+                  persistence,
+                  projectId: activeProjectId,
+                  onProgress,
+                  signal,
+                }
+              : { signal },
+          );
+          prepareCacheRef.current = {
+            key,
+            promise: Promise.resolve(prepared),
+            result: prepared,
+          };
+        }
+        buildWarningsRef.current = prepared.warnings;
         clearProgress();
       }
 
@@ -1376,6 +1495,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     kepsAfterRestart,
     kepsFailure,
     summary,
+    buildChecks,
+    channelLabel,
   };
 
   const actions: WriteFlowActions = {

@@ -44,6 +44,8 @@ export function demoFlowView(overrides: Partial<WriteFlowView> = {}): WriteFlowV
     kepsAfterRestart: 'none',
     kepsFailure: null,
     summary: null,
+    buildChecks: { status: 'idle', warnings: [] },
+    channelLabel: undefined,
     ...overrides,
   };
 }

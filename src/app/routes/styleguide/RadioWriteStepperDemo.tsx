@@ -21,6 +21,10 @@ import {
   type WriteParts,
 } from '../../components/builds/RadioWriteStepper/writeParts.ts';
 import { reviewSectionsFor } from '../../components/builds/RadioWriteStepper/reviewSections.tsx';
+import {
+  styleguideChannelLabel,
+  styleguideWarningsListDemo,
+} from '../../components/egress/WarningsList/warningsListDemo.ts';
 import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
 import { decodeAtD890RadioSettings } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import '../../components/builds/RadioWriteStepper/d890/registerAtD890Review.tsx';
@@ -126,8 +130,19 @@ function demoD890Controller(variant: D890Variant): AtD890ReviewController {
 
 const IDENTITY = { model: 'AT-D890UV', serial: 'DEMO0000', name: 'MM9PDY-2', firmware: 'MM9PDY' };
 
+const DEMO_BUILD_CHECKS = styleguideWarningsListDemo();
+
 function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewController): WriteFlowView {
-  const base = demoFlowView({ step, parts, identity: step === 'whatToWrite' ? null : IDENTITY });
+  const base = demoFlowView({
+    step,
+    parts,
+    identity: step === 'whatToWrite' ? null : IDENTITY,
+    buildChecks:
+      step === 'whatToWrite' && parts.codeplug
+        ? { status: 'ready', warnings: DEMO_BUILD_CHECKS }
+        : { status: 'idle', warnings: [] },
+    channelLabel: styleguideChannelLabel,
+  });
   switch (step) {
     case 'connectRead':
       return {
@@ -165,6 +180,21 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
             estimateSeconds: 100,
             identityOnly: false,
             restartsAfterWrite: true,
+            buildWarnings: [
+              {
+                kind: 'general',
+                severity: 'problem',
+                message: 'Channel name still too long after shortening',
+              },
+            ],
+            radioWarnings: [
+              {
+                kind: 'general',
+                severity: 'problem',
+                message: 'NXDN built in Studio was not written to this radio',
+              },
+            ],
+            channelLabel: styleguideChannelLabel,
             ...(d890 ? { atD890: d890 } : {}),
           }),
         },

@@ -6,13 +6,13 @@ Render export/write warning lists the same way everywhere: problems with counts,
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `warnings` | `readonly ExportWarning[]` | Structured warnings from core export/write projection. |
-| `mode` | `'full' \| 'problems' \| 'chip' \| 'recap'` | Layout for step 1, Review, tight space, or Done recap. |
-| `channelLabel` | `(entityId: string) => string \| undefined` | Optional map from channel library id to display label (callsign then name). |
-| `emptyText` | `string` | Shown in `full` and `recap` when there are no warnings (default `"No warnings."`). |
-| `testId` | `string` | Root `data-testid` (default `warnings-list`). |
+| Prop           | Type                                        | Description                                                                        |
+| -------------- | ------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `warnings`     | `readonly ExportWarning[]`                  | Structured warnings from core export/write projection.                             |
+| `mode`         | `'full' \| 'problems' \| 'chip' \| 'recap'` | Layout for step 1, Review, tight space, or Done recap.                             |
+| `channelLabel` | `(entityId: string) => string \| undefined` | Optional map from channel library id to display label (callsign then name).        |
+| `emptyText`    | `string`                                    | Shown in `full` and `recap` when there are no warnings (default `"No warnings."`). |
+| `testId`       | `string`                                    | Root `data-testid` (default `warnings-list`).                                      |
 
 ## Usage
 
@@ -23,7 +23,7 @@ import { WarningsList } from '@app/components/egress';
   warnings={projectionWarnings}
   mode="full"
   channelLabel={(id) => channelById.get(id) && channelDisplayLabel(channelById.get(id)!)}
-/>
+/>;
 ```
 
 ## Behaviour

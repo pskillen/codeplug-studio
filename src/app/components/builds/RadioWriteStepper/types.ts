@@ -176,6 +176,13 @@ export interface WriteFlowView {
   /** Keps failed or were aborted after the codeplug was written in the same session. */
   kepsFailure: string | null;
   summary: WriteSummary | null;
+  buildChecks: {
+    status: 'idle' | 'checking' | 'ready' | 'error';
+    warnings: ExportWarning[];
+    message?: string;
+    progress?: string;
+  };
+  channelLabel?: (entityId: string) => string | undefined;
 }
 
 export interface WriteFlowActions {

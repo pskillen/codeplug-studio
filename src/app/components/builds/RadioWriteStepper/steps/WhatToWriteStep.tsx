@@ -5,6 +5,8 @@
 
 import { Link } from 'react-router-dom';
 import { Alert, Anchor, Switch, Text } from '@mantine/core';
+import { hasProblemWarnings } from '@core/import-export/exportWarning.ts';
+import { WarningsList } from '../../../egress/index.ts';
 import type { DigitalContactsWriteSource } from '@core/domain/digitalIdDirectoryProjection.ts';
 import KepsLastUpdated from '../../../library/KepsLastUpdated.tsx';
 import { Button, FormField, SegmentedControl } from '../../../v2/index.ts';
@@ -158,6 +160,42 @@ export function WhatToWriteBody({ config, view, actions }: StepProps) {
           </WritePartRow>
         ) : null}
       </div>
+
+      {view.buildChecks.status !== 'idle' ? (
+        <section aria-label="Build checks" data-testid="write-build-checks">
+          <Text size="sm" fw={600}>
+            Build checks
+          </Text>
+          <Text size="xs" c="dimmed">
+            Worked out from the build, no radio needed.
+          </Text>
+          {view.buildChecks.status === 'checking' ? (
+            <Text size="sm" role="status">
+              Checking the build…
+              {view.buildChecks.progress ? ` ${view.buildChecks.progress}` : ''}
+            </Text>
+          ) : null}
+          {view.buildChecks.status === 'ready' ? (
+            <>
+              <WarningsList
+                warnings={view.buildChecks.warnings}
+                mode="full"
+                channelLabel={view.channelLabel}
+              />
+              {hasProblemWarnings(view.buildChecks.warnings) ? (
+                <Text size="sm" c="dimmed">
+                  Studio will stop on Review before writing, so you can cancel then.
+                </Text>
+              ) : null}
+            </>
+          ) : null}
+          {view.buildChecks.status === 'error' && view.buildChecks.message ? (
+            <Text size="sm" c="red">
+              {view.buildChecks.message}
+            </Text>
+          ) : null}
+        </section>
+      ) : null}
 
       <Text size="sm" c="dimmed">
         Anything not ticked stays as it is on the radio.
