@@ -34,10 +34,7 @@ export const WRITE_STEP_LABEL: Record<WriteStep, string> = {
   done: 'Done',
 };
 
-/** "2 of 6 · Read". */
-export function stepBarLabel(step: WriteStep): string {
-  return `${WRITE_STEPS.indexOf(step) + 1} of ${WRITE_STEPS.length} · ${WRITE_STEP_LABEL[step]}`;
-}
+export type ReviewDecision = 'undecided' | 'paused' | 'skipped';
 
 /** What Studio knows about the connected radio. Serial is shown in full. */
 export interface RadioIdentityView {
@@ -157,6 +154,8 @@ export interface WriteFlowView {
   writeRows: WriteStageRow[];
   identity: RadioIdentityView | null;
   review: WriteReviewView | null;
+  /** Set at each run: whether Review paused, was skipped, or not decided yet. */
+  reviewDecision: ReviewDecision;
   /** Restart & check. */
   restartSecondsLeft: number;
   checkStatus: CheckStatus;

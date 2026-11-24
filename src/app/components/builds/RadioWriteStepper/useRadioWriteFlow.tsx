@@ -101,6 +101,7 @@ import type {
   RadioIdentityView,
   WriteFlowActions,
   WriteFlowView,
+  ReviewDecision,
   WriteReviewView,
   WriteStep,
   WriteSummary,
@@ -228,6 +229,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const [writeTrack, setWriteTrack] = useState<StageTrack>(writeTrackRef.current);
   const [identity, setIdentity] = useState<RadioIdentityView | null>(null);
   const [review, setReview] = useState<WriteReviewView | null>(null);
+  const [reviewDecision, setReviewDecision] = useState<ReviewDecision>('undecided');
   const [writeFinished, setWriteFinished] = useState(false);
   const restartCountdown = useRestartCountdown();
   const restartSecondsLeft = restartCountdown.secondsLeft;
@@ -564,6 +566,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     settingsControllerRef.current = null;
     reviewUnsubscribeRef.current?.();
     reviewUnsubscribeRef.current = null;
+    setReviewDecision('undecided');
     setPhaseBoth('read');
   }
 
@@ -670,6 +673,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       reviewUnsubscribeRef.current?.();
       reviewUnsubscribeRef.current = null;
       reviewOpenedAtRef.current = now();
+      setReviewDecision('skipped');
       return Promise.resolve();
     }
     const reviewDisabled = () => {
@@ -701,6 +705,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       reviewUnsubscribeRef.current = null;
     }
     setBusyNotify(false);
+    setReviewDecision('paused');
     setStep('review');
     reviewOpenedAtRef.current = now();
     return new Promise<void>((resolve, reject) => {
@@ -821,6 +826,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   async function run(opts: { reconnect: boolean }): Promise<void> {
     const p = partsRef.current;
     setStep('connectRead');
+    setReviewDecision('undecided');
     setErrorOutcome(null);
     setRetryLabel(null);
     setNotice(null);
@@ -1311,6 +1317,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     writeRows: stageRows(writeTrack, { finished: writeFinished, startActive: true }),
     identity,
     review,
+    reviewDecision,
     restartSecondsLeft,
     checkStatus,
     kepsAfterRestart,

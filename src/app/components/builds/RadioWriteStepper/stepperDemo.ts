@@ -54,6 +54,7 @@ export function demoFlowView(overrides: Partial<WriteFlowView> = {}): WriteFlowV
     writeRows: [],
     identity: null,
     review: null,
+    reviewDecision: 'undecided',
     restartSecondsLeft: 0,
     checkStatus: 'none',
     kepsAfterRestart: 'none',

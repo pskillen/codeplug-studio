@@ -147,6 +147,7 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
     case 'connectRead':
       return {
         ...base,
+        reviewDecision: 'undecided',
         busy: true,
         progress: { cur: 40, max: 100, msg: 'Zones', stage: 'Zones' },
         readRows: [
@@ -161,6 +162,7 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
       const kepsCount = parts.keps ? 24 : null;
       return {
         ...base,
+        reviewDecision: 'paused',
         review: {
           channelCount: 412,
           contactsNote,
@@ -203,6 +205,7 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
     case 'writing':
       return {
         ...base,
+        reviewDecision: 'skipped',
         busy: true,
         progress: { cur: 3, max: 18, msg: 'Scan lists', stage: 'Scan lists' },
         writeRows: [
@@ -213,10 +216,16 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
         ],
       };
     case 'restartCheck':
-      return { ...base, restartSecondsLeft: 12, checkStatus: 'available' };
+      return {
+        ...base,
+        reviewDecision: 'skipped',
+        restartSecondsLeft: 12,
+        checkStatus: 'available',
+      };
     case 'done':
       return {
         ...base,
+        reviewDecision: 'skipped',
         summary: {
           codeplugWritten: true,
           contactsWritten: parts.contacts,
