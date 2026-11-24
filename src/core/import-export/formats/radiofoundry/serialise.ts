@@ -31,6 +31,8 @@ import {
   type RadioFoundryBand,
 } from '@core/radios/radiofoundry/limits.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
+import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
+import { expandRadioFoundryChannelWireRows } from './radiofoundryExportModes.ts';
 import { resolveRadioFoundryProfile, type RadioFoundryRadioProfile } from './profiles.ts';
 import { radioFoundryLevelToByte } from './power.ts';
 import {
@@ -97,6 +99,8 @@ interface KeptChannel {
   mode: KeptMode;
   /** 1-based channel number in the image. */
   number: number;
+  /** Per-mode expansion wire name; absent when same as row wire name. */
+  exportWireName?: string;
 }
 
 /**
@@ -220,14 +224,43 @@ function writeChannels(
   warnings: ExportWarning[],
   options: CpsExportOptions | undefined,
   codec: RadioFoundryRadioProfile,
-): Map<string, number> {
+): Map<string, number[]> {
   zeroChannelBitmaps(image, owned);
-  const pending: Array<{ row: AssembledChannel; mode: KeptMode }> = [];
-  for (const row of assembled.channels) {
-    const mode = selectMode(row, warnings);
-    if (!mode) continue;
-    pending.push({ row, mode });
+  const expandModes = options?.expandModes ?? true;
+  const profileId = options?.profileId ?? assembled.profileId ?? codec.id;
+  const pending: Array<{ row: AssembledChannel; mode: KeptMode; wireName: string }> = [];
+
+  if (expandModes) {
+    const reserved = new Set<string>();
+    const expanded = filterExpandedRowsByOverrides(
+      assembled.channels.flatMap((row) =>
+        expandRadioFoundryChannelWireRows(
+          row.entity,
+          row.wireNameOverride?.trim() || row.wireName,
+          expandModes,
+          options,
+          profileId,
+          reserved,
+          warnings,
+          Boolean(row.wireNameOverride?.trim()),
+        ),
+      ),
+      options?.channelOverrides,
+    );
+    for (const exp of expanded) {
+      const mode = asKeptMode(exp.mode);
+      if (!mode) continue;
+      const assembledRow = assembled.channels.find((c) => c.entity.id === exp.sourceChannelId)!;
+      pending.push({ row: assembledRow, mode, wireName: exp.wireName });
+    }
+  } else {
+    for (const row of assembled.channels) {
+      const mode = selectMode(row, warnings);
+      if (!mode) continue;
+      pending.push({ row, mode, wireName: row.wireNameOverride?.trim() || row.wireName });
+    }
   }
+
   if (pending.length > LIMITS.CHANNEL_MAX) {
     const dropped = pending.length - LIMITS.CHANNEL_MAX;
     pushGeneralWarning(
@@ -237,10 +270,20 @@ function writeChannels(
     pending.length = LIMITS.CHANNEL_MAX;
   }
 
-  const numbers = new Map<string, number>();
+  const numbers = new Map<string, number[]>();
+  let channelNumber = 0;
   for (const item of pending) {
-    const channel: KeptChannel = { ...item, number: numbers.size + 1 };
-    numbers.set(channel.row.entity.id, channel.number);
+    channelNumber += 1;
+    const channel: KeptChannel = {
+      row: item.row,
+      mode: item.mode,
+      number: channelNumber,
+      exportWireName: item.wireName,
+    };
+    const id = channel.row.entity.id;
+    const list = numbers.get(id);
+    if (list) list.push(channel.number);
+    else numbers.set(id, [channel.number]);
     writeChannelRecord(
       image,
       owned,
@@ -303,7 +346,9 @@ function writeChannelRecord(
 ): void {
   const { row, mode } = channel;
   const entity = row.entity;
-  const label = row.wireName || entity.name;
+  const wireName =
+    channel.exportWireName ?? (row.wireNameOverride?.trim() || row.wireName);
+  const label = wireName || entity.name;
   const slot = channelSlotAddress(channel.number);
   markOwned(owned, slot.record, CHANNEL_RECORD_SIZE);
   const record = image.subarray(slot.record, slot.record + CHANNEL_RECORD_SIZE);
@@ -315,7 +360,7 @@ function writeChannelRecord(
   // read it, so the channel report slot is not stored there. Talker-alias
   // APRS bits stay clear, flag2 holds only the timeslot, STE is off, and the
   // VFO offset and step are zero.
-  writeAsciiField(record, 0, row.wireName || entity.name, LIMITS.NAME_MAX, 'Channel', warnings);
+  writeAsciiField(record, 0, wireName || entity.name, LIMITS.NAME_MAX, 'Channel', warnings);
   writeFrequency(record, 0x10, entity.rxFrequency, label, 'RX', warnings, codec.board.BANDS_HZ);
   writeFrequency(
     record,
@@ -812,7 +857,7 @@ function writeZones(
   image: Uint8Array,
   owned: Uint8Array,
   assembled: AssembledBuild,
-  channelNumbers: Map<string, number>,
+  channelNumbers: Map<string, number[]>,
   warnings: ExportWarning[],
 ): void {
   // Bitmap and every record, including unused slots. An unused slot is the
@@ -838,7 +883,7 @@ function writeZone(
   image: Uint8Array,
   zone: AssembledZone,
   index: number,
-  channelNumbers: Map<string, number>,
+  channelNumbers: Map<string, number[]>,
   warnings: ExportWarning[],
 ): void {
   image[ZONE_BITMAP + (index >> 3)]! |= 1 << (index & 7);
@@ -848,12 +893,12 @@ function writeZone(
   const members: number[] = [];
   let skipped = 0;
   for (const channelId of zone.memberChannelIds) {
-    const number = channelNumbers.get(channelId);
-    if (number == null) {
+    const copies = channelNumbers.get(channelId);
+    if (copies == null || copies.length === 0) {
       skipped += 1;
       continue;
     }
-    members.push(number);
+    for (const number of copies) members.push(number);
   }
   if (skipped > 0) {
     pushGeneralWarning(
