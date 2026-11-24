@@ -6,10 +6,10 @@ Reminds the operator that another firmware profile for the same radio may still 
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `descriptor` | `Pick<RadioDebugDescriptor, 'radio' \| 'firmware'>` | Current page. |
-| `onSwitch` | `(firmware: DebugFirmwareFamily) => void` | Navigate to the sibling firmware (same as the page switch). |
+| Prop         | Type                                                | Description                                                 |
+| ------------ | --------------------------------------------------- | ----------------------------------------------------------- |
+| `descriptor` | `Pick<RadioDebugDescriptor, 'radio' \| 'firmware'>` | Current page.                                               |
+| `onSwitch`   | `(firmware: DebugFirmwareFamily) => void`           | Navigate to the sibling firmware (same as the page switch). |
 
 ## Usage
 
