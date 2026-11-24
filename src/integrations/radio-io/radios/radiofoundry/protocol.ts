@@ -28,7 +28,6 @@ import {
   adviseRadioError,
   RadioInterlockError,
   RadioProtocolError,
-  RadioTimeoutError,
   RadioWrongIdentError,
   type RadioRetryAdvice,
   type RadioSentState,
@@ -63,6 +62,7 @@ import type { RadioFoundryCableBoard } from './board.ts';
 import {
   decodeDebugFrame,
   encodeDebugFrame,
+  readDebugFrame,
   type DebugFrame,
 } from '../../kit/codecs/radioFoundryDebugLink.ts';
 import { DMR_ID_DATABASE_AREA2_ADDRESS, dmrIdDatabaseArea2Blocks } from './idDatabase.ts';
@@ -257,7 +257,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       await pipe.write(encodeDebugFrame(RADIOFOUNDRY_STORAGE_COMMAND, seq, new Uint8Array([0x00])));
       let frame: DebugFrame;
       try {
-        frame = await readFrame(pipe, STORAGE_INFO_TIMEOUT_MS);
+        frame = await readDebugFrame(pipe, STORAGE_INFO_TIMEOUT_MS);
       } catch {
         await pipe.drain?.();
         return { kind: 'no-reply' };
@@ -287,7 +287,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.seq = (this.seq + 1) & 0xff;
     try {
       await pipe.write(encodeDebugFrame(RADIOFOUNDRY_VERSION_COMMAND, seq, new Uint8Array(0)));
-      const frame = await readFrame(pipe, RADIOFOUNDRY_VERSION_TIMEOUT_MS);
+      const frame = await readDebugFrame(pipe, RADIOFOUNDRY_VERSION_TIMEOUT_MS);
       if (
         frame.command !== (RADIOFOUNDRY_VERSION_COMMAND | 0x80) ||
         frame.seq !== seq ||
@@ -803,7 +803,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       const seq = this.seq & 0xff;
       this.seq = (this.seq + 1) & 0xff;
       await pipe.write(encodeDebugFrame(SATELLITE_COMMAND, seq, payload));
-      const frame = await readFrame(pipe, timeoutMs);
+      const frame = await readDebugFrame(pipe, timeoutMs);
       if (
         frame.command !== (SATELLITE_COMMAND | 0x80) ||
         frame.seq !== seq ||
@@ -835,7 +835,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       await pipe.write(encodeDebugFrame(CODEPLUG_COMMAND, seq, payload));
       let frame: DebugFrame;
       try {
-        frame = await readFrame(pipe, timeoutMs);
+        frame = await readDebugFrame(pipe, timeoutMs);
       } catch (err) {
         if (op === OP_INFO) throw new RadioProtocolError(HANDSHAKE_ERROR);
         throw err;
@@ -1123,33 +1123,4 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
-}
-
-async function readFrame(pipe: BytePipe, timeoutMs: number): Promise<DebugFrame> {
-  const started = Date.now();
-  const remaining = (): number => {
-    const left = timeoutMs - (Date.now() - started);
-    if (left <= 0) throw new RadioTimeoutError();
-    return left;
-  };
-  let prev = 0;
-  for (;;) {
-    const b = (await pipe.readExact(1, remaining()))[0]!;
-    if (prev === 0xa5 && b === 0x5a) break;
-    prev = b;
-  }
-  const head = await pipe.readExact(4, remaining());
-  const len = head[2]! | (head[3]! << 8);
-  if (len > 1024) throw new RadioProtocolError('RadioFoundry codeplug reply is too long.');
-  const rest = await pipe.readExact(len + 2, remaining());
-  const frame = new Uint8Array(8 + len);
-  frame[0] = 0xa5;
-  frame[1] = 0x5a;
-  frame.set(head, 2);
-  frame.set(rest, 6);
-  try {
-    return decodeDebugFrame(frame);
-  } catch {
-    throw new RadioProtocolError('RadioFoundry codeplug reply CRC does not match.');
-  }
 }
