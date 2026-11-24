@@ -261,7 +261,7 @@ describe('createRadioFoundryDebugGuard', () => {
     payload.fill(0xab);
     spy.readExact.mockImplementation(async (n: number) => payload.slice(0, n));
     const guard = createRadioFoundryDebugGuard(spy.pipe, BOARD);
-    await guard.pipe.readExact(80);
+    await guard.pipe.readExact(80, 1000);
     expect(guard.received()).toHaveLength(64);
     expect(guard.received().every((b) => b === 0xab)).toBe(true);
   });
