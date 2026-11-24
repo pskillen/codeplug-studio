@@ -273,6 +273,8 @@ export interface RadioDescriptor {
   restartAfterEnd?: { seconds: number };
   /** Which contact store the Digital contacts part fills; picks the hint copy. Unset: generic hint. */
   contactStore?: 'shared-contact-bank' | 'shared-address-book' | 'separate-lookup-database';
+  /** DMR contact bank size when `contactStore` is `shared-contact-bank`; drives Write hint copy. */
+  contactBankSlots?: number;
   /** Extra sentence on Done (DM-32UV: DM32_POWER_CYCLE_AFTER_SESSION_NOTE, already in radio-io). */
   successNote?: string;
   /**
@@ -292,6 +294,8 @@ export interface RadioDescriptor {
       signal?: AbortSignal;
     },
   ): Promise<RadioPreflightResult>;
+  /** Satellite keps limits, preview and exclusions; write fn is registered in app. */
+  satelliteKeps?: import('./satelliteKepsCapability.ts').SatelliteKepsCapability;
 }
 
 /**

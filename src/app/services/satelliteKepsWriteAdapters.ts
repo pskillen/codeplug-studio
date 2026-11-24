@@ -1,12 +1,6 @@
 /**
- * Registry of profileIds with a satellite-keps write adapter (#859).
- *
- * Nothing else in the codebase answers "which connected/configured radios support a keps
- * write." `RadioDescriptor` (`@integrations/radio-io/types.ts`) has
- * `writeStrategy` and `writeVerify` — all about full-codeplug write. This registry is the
- * satellite-keps-specific analogue: it lets Workflow A/B call sites ask "does this
- * formatId/profileId support a keps write" without hardcoding a D890-only check at every
- * call site. OpenGD77 DM-1701 / MD-9600 (#858) share one packer registered twice.
+ * Satellite-keps write adapters (#859). Limits, preview and exclusions come from each
+ * `RadioDescriptor.satelliteKeps`; the write functions stay here because they use app services.
  */
 
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
@@ -14,30 +8,32 @@ import { pushKepsExcludedWarning } from '@core/import-export/exportWarning.ts';
 import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
 import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
-import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
-import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
-import type { OpenGd77SatelliteBankSlot } from '@core/radios/opengd77/satelliteCapability.ts';
 import type { ProgressFn, RadioSession } from '@integrations/radio-io/index.ts';
-import {
-  listCapabilitySkippedTransmitters,
-  previewSatelliteWriteRecords,
-  type CapabilitySkippedTransmitter,
-  type SatelliteWritePreviewEntry,
-} from '@integrations/radio-io/radios/at-d890uv/index.ts';
-import {
-  listCapabilitySkippedTransmitters as listOpenGd77CapabilitySkippedTransmitters,
-  previewSatelliteWriteRecords as previewOpenGd77SatelliteWriteRecords,
-  skippedSatellites as skippedOpenGd77Satellites,
-} from '@integrations/radio-io/radios/opengd77/satelliteCodec.ts';
+import { listDescriptorsForProfile } from '@integrations/radio-io/registry.ts';
+import type {
+  SatelliteKepsExclusion,
+  SatelliteKepsExclusionsFn,
+  SatelliteKepsPreviewEntry,
+  SatelliteKepsPreviewFn,
+  SatelliteKepsPreviewOptions,
+} from '@integrations/radio-io/satelliteKepsCapability.ts';
+import type { CapabilitySkippedTransmitter } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import {
   countWriteEligibleSatelliteRecords,
-  skippedSatellites,
   writeSatellitesToRadio,
 } from './radioIoAtD890SatelliteWrite.ts';
 import {
   countWriteEligibleSatelliteRecords as countOpenGd77WriteEligibleSatellites,
   writeOpenGd77SatellitesToRadio,
 } from './radioIoOpenGd77SatelliteWrite.ts';
+
+export type {
+  SatelliteKepsExclusion,
+  SatelliteKepsExclusionsFn,
+  SatelliteKepsPreviewEntry as SatelliteKepsWritePreviewEntry,
+  SatelliteKepsPreviewFn as SatelliteKepsWritePreviewFn,
+  SatelliteKepsPreviewOptions as SatelliteKepsWritePreviewOptions,
+};
 
 export interface SatelliteKepsWriteResult {
   written: number;
@@ -56,104 +52,77 @@ export type SatelliteKepsWriteFn = (
   },
 ) => Promise<SatelliteKepsWriteResult>;
 
-/**
- * Registry of profileIds with a satellite-keps write adapter. Callers treat "no entry"
- * as "not offered," not an error.
- */
-export const SATELLITE_KEPS_WRITE_ADAPTERS: Readonly<Record<string, SatelliteKepsWriteFn>> = {
+/** Profile → write fn — the only profile-keyed table; everything else uses the descriptor. */
+const KEPS_WRITE_BY_PROFILE: Readonly<Record<string, SatelliteKepsWriteFn>> = {
   'radio-io-at-d890uv': writeSatellitesToRadio,
   'radio-io-at-d890uv-mm9pdy': writeSatellitesToRadio,
   'radio-io-opengd77-1701': writeOpenGd77SatellitesToRadio,
   'radio-io-opengd77-md9600': writeOpenGd77SatellitesToRadio,
 };
 
+/** @deprecated Use `getSatelliteKepsWriteAdapter`; kept for tests that pin the write-fn table. */
+export const SATELLITE_KEPS_WRITE_ADAPTERS = KEPS_WRITE_BY_PROFILE;
+
 /**
  * Profiles whose keps writer can run in the codeplug's own session, after `upload()` and before
  * END. Empty today (#1406).
- *
- * The AT-D890UV keps writer preserve-reads the keps unit (0x4A80000). Once the codeplug's `W`
- * frames have started, that read is an `R` after `W`: the firmware then never promotes the unit
- * it was writing, and an `R` just before `END` makes `END` commit nothing. So D890 keps need a
- * new session after the radio restarts, as OpenGD77's do (its `upload()` ends with SAVE_REBOOT).
- * Owning the keps unit (no preserve read) would bring the D890 back here (#1417).
  */
 const KEPS_SAME_SESSION_AFTER_UPLOAD: ReadonlySet<string> = new Set<string>();
+
+function descriptorKepsForProfile(profileId: string) {
+  return listDescriptorsForProfile('radio-io', profileId)[0]?.satelliteKeps;
+}
+
+function countEligibleForWriteFn(
+  writeFn: SatelliteKepsWriteFn,
+  satellites: readonly Satellite[],
+  overrides?: readonly BuildEntityOverride[],
+): number {
+  if (writeFn === writeSatellitesToRadio) {
+    return countWriteEligibleSatelliteRecords(satellites, overrides);
+  }
+  if (writeFn === writeOpenGd77SatellitesToRadio) {
+    return countOpenGd77WriteEligibleSatellites(satellites, overrides);
+  }
+  return 0;
+}
 
 export function satelliteKepsSameSessionAfterUpload(profileId: string): boolean {
   return KEPS_SAME_SESSION_AFTER_UPLOAD.has(profileId);
 }
 
 export function hasSatelliteKepsWriteAdapter(profileId: string): boolean {
-  return profileId in SATELLITE_KEPS_WRITE_ADAPTERS;
+  return Boolean(descriptorKepsForProfile(profileId) && KEPS_WRITE_BY_PROFILE[profileId]);
 }
 
 export function getSatelliteKepsWriteAdapter(profileId: string): SatelliteKepsWriteFn | undefined {
-  return SATELLITE_KEPS_WRITE_ADAPTERS[profileId];
+  if (!descriptorKepsForProfile(profileId)) return undefined;
+  return KEPS_WRITE_BY_PROFILE[profileId];
 }
 
 export interface SatelliteKepsWriteCapacity {
-  /** Cap this profile's radio enforces on write-eligible records (spacecraft or transmitters). */
   max: number;
-  /** Non-throwing count of records the current library would produce for this profile. */
   countEligible: (
     satellites: readonly Satellite[],
     overrides?: readonly BuildEntityOverride[],
   ) => number;
-  /** Wire name field length for this radio's satellite records. */
   nameLength: number;
-  /** Noun in capacity warnings (`transmitter` vs `satellite`). */
   unitNoun: string;
-  /** Wire name is one field per spacecraft (OpenGD77) vs per transmitter (D890). */
   nameScope: 'spacecraft' | 'transmitter';
-  /** Tier-3 doc path cited in over-cap copy. */
   limitsDoc: string;
 }
-
-/**
- * Registry of profileIds with a known write-capacity ceiling (#1068) — parallel to
- * `SATELLITE_KEPS_WRITE_ADAPTERS` above, split out so a UI pre-flight check
- * (`BuildRadioIoPanel.tsx`) can warn before opening a session, without duplicating each
- * adapter's own eligibility/capability filtering logic.
- */
-export const SATELLITE_KEPS_WRITE_CAPACITY: Readonly<Record<string, SatelliteKepsWriteCapacity>> = {
-  'radio-io-at-d890uv': {
-    max: AT_D890UV_LIMITS.SATELLITE_MAX,
-    countEligible: countWriteEligibleSatelliteRecords,
-    nameLength: AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH,
-    unitNoun: 'transmitter',
-    nameScope: 'transmitter',
-    limitsDoc: 'docs/reference/radios/anytone/at-d890uv/satellite-keps.md',
-  },
-  'radio-io-at-d890uv-mm9pdy': {
-    max: AT_D890UV_LIMITS.SATELLITE_MAX,
-    countEligible: countWriteEligibleSatelliteRecords,
-    nameLength: AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH,
-    unitNoun: 'transmitter',
-    nameScope: 'transmitter',
-    limitsDoc: 'docs/reference/radios/anytone/at-d890uv/satellite-keps.md',
-  },
-  'radio-io-opengd77-1701': {
-    max: OPENGD77_FAMILY_LIMITS.SATELLITE_MAX,
-    countEligible: countOpenGd77WriteEligibleSatellites,
-    nameLength: OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH,
-    unitNoun: 'satellite',
-    nameScope: 'spacecraft',
-    limitsDoc: 'docs/reference/radios/opengd77/satellite-orbitals.md',
-  },
-  'radio-io-opengd77-md9600': {
-    max: OPENGD77_FAMILY_LIMITS.SATELLITE_MAX,
-    countEligible: countOpenGd77WriteEligibleSatellites,
-    nameLength: OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH,
-    unitNoun: 'satellite',
-    nameScope: 'spacecraft',
-    limitsDoc: 'docs/reference/radios/opengd77/satellite-orbitals.md',
-  },
-};
 
 export function getSatelliteKepsWriteCapacity(
   profileId: string,
 ): SatelliteKepsWriteCapacity | undefined {
-  return SATELLITE_KEPS_WRITE_CAPACITY[profileId];
+  const keps = descriptorKepsForProfile(profileId);
+  const writeFn = KEPS_WRITE_BY_PROFILE[profileId];
+  if (!keps || !writeFn) return undefined;
+  return {
+    ...keps.limits,
+    countEligible: (satellites, overrides) =>
+      countEligibleForWriteFn(writeFn, satellites, overrides),
+  };
 }
 
 export function formatSatelliteKepsCapacityWarning(
@@ -259,124 +228,14 @@ export function kepsWriteChecks(
   return { refusals, warnings, eligible };
 }
 
-export interface SatelliteKepsWritePreviewOptions {
-  satelliteOverrides?: readonly BuildEntityOverride[];
-}
-
-/** Common preview row for any registered keps adapter (OpenGD77 may add extra fields). */
-export type SatelliteKepsWritePreviewEntry = SatelliteWritePreviewEntry & {
-  slot?: OpenGd77SatelliteBankSlot;
-  slotCandidates?: {
-    transmitterId: string;
-    label: string;
-    mode: string | null;
-    uplinkHz?: number | null;
-    downlinkHz?: number | null;
-  }[];
-};
-
-export type SatelliteKepsWritePreviewFn = (
-  satellites: readonly Satellite[],
-  options?: SatelliteKepsWritePreviewOptions,
-) => SatelliteKepsWritePreviewEntry[];
-
-/**
- * Registry of profileIds with a live write-preview function (#1074) — parallel to
- * `SATELLITE_KEPS_WRITE_ADAPTERS`/`SATELLITE_KEPS_WRITE_CAPACITY` above, so the export page can
- * render exactly what a write would send before/without opening a session.
- */
-const previewAtD890Satellites: SatelliteKepsWritePreviewFn = (satellites, options) =>
-  previewSatelliteWriteRecords(satellites, {
-    satelliteOverrides: options?.satelliteOverrides,
-  });
-
-export const SATELLITE_KEPS_WRITE_PREVIEW: Readonly<Record<string, SatelliteKepsWritePreviewFn>> = {
-  'radio-io-at-d890uv': previewAtD890Satellites,
-  'radio-io-at-d890uv-mm9pdy': previewAtD890Satellites,
-  'radio-io-opengd77-1701': (satellites, options) =>
-    previewOpenGd77SatelliteWriteRecords(satellites, {
-      satelliteOverrides: options?.satelliteOverrides,
-    }),
-  'radio-io-opengd77-md9600': (satellites, options) =>
-    previewOpenGd77SatelliteWriteRecords(satellites, {
-      satelliteOverrides: options?.satelliteOverrides,
-    }),
-};
-
 export function getSatelliteKepsWritePreview(
   profileId: string,
-): SatelliteKepsWritePreviewFn | undefined {
-  return SATELLITE_KEPS_WRITE_PREVIEW[profileId];
+): SatelliteKepsPreviewFn | undefined {
+  return descriptorKepsForProfile(profileId)?.preview;
 }
-
-/**
- * One enabled satellite or transmitter excluded from the write preview, with a reason.
- * `transmitterId: null` means the whole satellite was excluded (e.g. no write-eligible
- * transmitter at all); a set `transmitterId` means one specific transmitter was excluded
- * (e.g. unsupported mode or out-of-range frequency, #1068/#1085) while others on the same
- * satellite may still be written.
- */
-export interface SatelliteKepsExclusion {
-  satelliteId: string;
-  transmitterId: string | null;
-  reason: string;
-}
-
-export type SatelliteKepsExclusionsFn = (
-  satellites: readonly Satellite[],
-  options?: SatelliteKepsWritePreviewOptions,
-) => SatelliteKepsExclusion[];
-
-/**
- * Registry of profileIds exposing a live "why was this excluded" computation (#1085 follow-up)
- * — parallel to `SATELLITE_KEPS_WRITE_PREVIEW` above, so the preview page can explain gaps
- * between "enabled in the library" and "appears in the write preview" without requiring a
- * session or an actual write. Both `skippedSatellites` (satellite-level: no write-eligible
- * transmitter at all) and `listCapabilitySkippedTransmitters` (transmitter-level: mode or
- * frequency excluded) are pure functions of the `satellites` array — no session needed.
- */
-function openGd77Exclusions(
-  satellites: readonly Satellite[],
-  options?: SatelliteKepsWritePreviewOptions,
-): SatelliteKepsExclusion[] {
-  return [
-    ...skippedOpenGd77Satellites(satellites).map((s) => ({
-      satelliteId: s.satelliteId,
-      transmitterId: null,
-      reason: s.reason,
-    })),
-    ...listOpenGd77CapabilitySkippedTransmitters(satellites, options?.satelliteOverrides).map(
-      (t) => ({
-        satelliteId: t.satelliteId,
-        transmitterId: t.transmitterId,
-        reason: t.reason,
-      }),
-    ),
-  ];
-}
-
-const atD890Exclusions: SatelliteKepsExclusionsFn = (satellites, options) => [
-  ...skippedSatellites(satellites).map((s) => ({
-    satelliteId: s.satelliteId,
-    transmitterId: null,
-    reason: s.reason,
-  })),
-  ...listCapabilitySkippedTransmitters(satellites, options?.satelliteOverrides).map((t) => ({
-    satelliteId: t.satelliteId,
-    transmitterId: t.transmitterId,
-    reason: t.reason,
-  })),
-];
-
-export const SATELLITE_KEPS_EXCLUSIONS: Readonly<Record<string, SatelliteKepsExclusionsFn>> = {
-  'radio-io-at-d890uv': atD890Exclusions,
-  'radio-io-at-d890uv-mm9pdy': atD890Exclusions,
-  'radio-io-opengd77-1701': openGd77Exclusions,
-  'radio-io-opengd77-md9600': openGd77Exclusions,
-};
 
 export function getSatelliteKepsExclusions(
   profileId: string,
 ): SatelliteKepsExclusionsFn | undefined {
-  return SATELLITE_KEPS_EXCLUSIONS[profileId];
+  return descriptorKepsForProfile(profileId)?.exclusions;
 }

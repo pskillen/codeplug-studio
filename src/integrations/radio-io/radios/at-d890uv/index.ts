@@ -16,6 +16,7 @@ export {
   listCapabilitySkippedTransmitters,
   packSatelliteWriteRecords,
   previewSatelliteWriteRecords,
+  skippedSatellites,
   SATELLITE_RECORD_BYTES,
   type CapabilitySkippedTransmitter,
   type SatelliteWritePreviewEntry,

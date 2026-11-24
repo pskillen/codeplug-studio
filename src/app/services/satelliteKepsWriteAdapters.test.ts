@@ -3,6 +3,7 @@ import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
+import { listDescriptorsForProfile } from '@integrations/radio-io/registry.ts';
 import {
   getSatelliteKepsExclusions,
   getSatelliteKepsWriteAdapter,
@@ -12,7 +13,6 @@ import {
   kepsWriteChecks,
   satelliteKepsCapacityWarning,
   SATELLITE_KEPS_WRITE_ADAPTERS,
-  SATELLITE_KEPS_WRITE_PREVIEW,
 } from './satelliteKepsWriteAdapters.ts';
 
 describe('satelliteKepsWriteAdapters', () => {
@@ -62,19 +62,35 @@ describe('getSatelliteKepsWriteCapacity (#1068)', () => {
 
 describe('getSatelliteKepsWritePreview (#1074)', () => {
   it('has a preview function registered for the AT-D890UV profile', () => {
-    expect(getSatelliteKepsWritePreview('radio-io-at-d890uv')).toBe(
-      SATELLITE_KEPS_WRITE_PREVIEW['radio-io-at-d890uv'],
+    const preview = getSatelliteKepsWritePreview('radio-io-at-d890uv');
+    expect(preview).toBe(
+      listDescriptorsForProfile('radio-io', 'radio-io-at-d890uv')[0]?.satelliteKeps?.preview,
     );
   });
 
   it('has preview functions registered for OpenGD77 profileIds', () => {
     for (const profileId of ['radio-io-opengd77-1701', 'radio-io-opengd77-md9600'] as const) {
-      expect(getSatelliteKepsWritePreview(profileId)).toBe(SATELLITE_KEPS_WRITE_PREVIEW[profileId]);
+      expect(getSatelliteKepsWritePreview(profileId)).toBe(
+        listDescriptorsForProfile('radio-io', profileId)[0]?.satelliteKeps?.preview,
+      );
     }
   });
 
   it('is undefined for a profile with no registered preview function', () => {
     expect(getSatelliteKepsWritePreview('radio-io-uv5r-mini')).toBeUndefined();
+  });
+});
+
+describe('descriptor satellite keps limits', () => {
+  it('every profile with a keps writer has capacity matching the descriptor limits', () => {
+    for (const profileId of Object.keys(SATELLITE_KEPS_WRITE_ADAPTERS)) {
+      const descriptor = listDescriptorsForProfile('radio-io', profileId)[0];
+      const capacity = getSatelliteKepsWriteCapacity(profileId);
+      expect(descriptor?.satelliteKeps).toBeDefined();
+      expect(capacity).toBeDefined();
+      expect(capacity?.max).toBe(descriptor?.satelliteKeps?.limits.max);
+      expect(capacity?.nameLength).toBe(descriptor?.satelliteKeps?.limits.nameLength);
+    }
   });
 });
 

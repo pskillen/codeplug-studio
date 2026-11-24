@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EgressPath } from '@core/models/egressPath.ts';
+import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { listRadioDescriptors } from '@integrations/radio-io/registry.ts';
 import { UV5R_MINI_MODEL_ID } from '@integrations/radio-io/radios/uv5r-mini/descriptor.ts';
 import { DM32_POWER_CYCLE_AFTER_SESSION_NOTE } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
@@ -40,6 +41,7 @@ describe('resolveWriteShellOptions', () => {
     const options = resolveWriteShellOptions(egress('radio-io-opengd77-1701'), descriptor);
     expect(options.restartAfterEndSeconds).toBe(20);
     expect(options.contactStore).toBe('shared-contact-bank');
+    expect(options.contactBankSlots).toBe(OPENGD77_FAMILY_LIMITS.CONTACTS_MAX);
     expect(options.parts.contacts).toBe(true);
     expect(options.parts.keps).toBe(true);
   });

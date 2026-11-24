@@ -6,13 +6,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Alert, Anchor, Button, Stack, Text } from '@mantine/core';
-import {
-  isAtD890RadioIoProfileId,
-  isDm32RadioIoProfileId,
-  isMm9pdyAtD890RadioIoProfileId,
-  isMm9pdyDm32RadioIoProfileId,
-  isRt95RadioIoProfileId,
-} from '@core/import-export/formatProfiles.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { findAttribution } from '../../lib/attributions.ts';
@@ -49,7 +42,10 @@ import {
   useAtD890RadioSettingsSession,
 } from '../../state/atD890RadioSettingsSession.ts';
 import AtD890WriteCoverageTable from './AtD890WriteCoverageTable.tsx';
-import { DM32_ANALOG_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
+import {
+  experimentalDetailsFor,
+  resolveRadioIoPanelExtras,
+} from '../../services/egress/radioIoPanelExtras.ts';
 import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
@@ -80,8 +76,10 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const writeHidden = writeGate === 'hidden';
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);
-  const isAtD890Write = isAtD890RadioIoProfileId(egress.profileId);
-  const isRt95Write = isRt95RadioIoProfileId(egress.profileId);
+  const panelExtras = resolveRadioIoPanelExtras(
+    egress.profileId,
+    listOfferedDangerZoneTools(build.radioTargetId).length,
+  );
 
   const writeDialog = useRadioWriteDialog({
     build,
@@ -120,10 +118,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
 
   if (descriptors.length === 0) return null;
 
-  const isMm9pdyTarget =
-    isMm9pdyAtD890RadioIoProfileId(egress.profileId) ||
-    isMm9pdyDm32RadioIoProfileId(egress.profileId);
-  const radioLabel = `${descriptor?.label ?? 'radio'}${isMm9pdyTarget ? ' (MM9PDY)' : ''}`;
+  const radioLabel = `${descriptor?.label ?? 'radio'}${panelExtras.radioLabelSuffix}`;
 
   function openWriteRadio() {
     setError(null);
@@ -144,7 +139,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   return (
     <Stack gap="sm">
       {writeDialog.element}
-      {isAtD890Write ? <RangeChangeBanner buildId={build.id} /> : null}
+      {panelExtras.rangeChangeBanner ? <RangeChangeBanner buildId={build.id} /> : null}
       <WriteHeaderCard
         radioLabel={radioLabel}
         summary={
@@ -152,7 +147,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             ? buildSummaryLine({
                 channels: facts.channelCount,
                 zones: facts.zoneCount,
-                ...(isAtD890Write
+                ...(panelExtras.summaryIncludesSettingChanges
                   ? { settingChanges: atD890OverrideCount(d890SettingsSession.overrides) }
                   : {}),
               })
@@ -166,12 +161,16 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       <BeforeYouWriteRows
         radioLabel={descriptor?.label ?? 'radio'}
         outOfRangeChannels={facts?.outOfRangeChannels ?? []}
-        txRangeInfo={isAtD890Write}
+        txRangeInfo={panelExtras.beforeYouWriteTxRangeInfo}
       />
-      {isAtD890Write ? <AtD890RadioSettingsCard buildId={build.id} egress={egress} /> : null}
-      {isRt95Write ? <Rt95RadioSettingsCard buildId={build.id} egress={egress} /> : null}
+      {panelExtras.atD890RadioSettings ? (
+        <AtD890RadioSettingsCard buildId={build.id} egress={egress} />
+      ) : null}
+      {panelExtras.rt95RadioSettings ? (
+        <Rt95RadioSettingsCard buildId={build.id} egress={egress} />
+      ) : null}
       {descriptorSupportsBackup(descriptor) ? <RadioBackupCard buildId={build.id} /> : null}
-      {isAtD890Write ? (
+      {panelExtras.writeCoverageTable ? (
         <div>
           <Button
             size="xs"
@@ -186,23 +185,15 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
               settingsChangeCount={atD890OverrideCount(d890SettingsSession.overrides)}
               buildId={build.id}
               hasHydration={hasHydration}
-              mm9pdy={isMm9pdyAtD890RadioIoProfileId(egress.profileId)}
+              mm9pdy={panelExtras.writeCoverageMm9pdy}
               hasDefaultDmrId={facts?.hasDefaultDmrId ?? false}
               hasDefaultNxdnId={facts?.hasDefaultNxdnId ?? false}
             />
           ) : null}
         </div>
       ) : null}
-      {isAtD890Write && listOfferedDangerZoneTools(build.radioTargetId).length > 0 ? (
-        <DangerZoneCard buildId={build.id} />
-      ) : null}
-      <ExperimentalNote
-        details={
-          isAtD890Write
-            ? 'Write assembles modelled channels and organisation from the build, then reads co-resident bytes from the connected radio during upload. Unmodelled settings are preserved via erase-unit read-modify-write — not from a stored project image. Use Backup / Restore for a zip snapshot and ephemeral inspection.'
-            : 'Write overlays modelled channels and organisation onto an in-session read of the connected radio. Unmodelled settings are preserved from that live FLASH image — not from a stored project clone. Identity is the radio on the cable this session, not a saved stash. Use Backup / Restore for a zip snapshot.'
-        }
-      />
+      {panelExtras.dangerZoneCard ? <DangerZoneCard buildId={build.id} /> : null}
+      <ExperimentalNote details={experimentalDetailsFor(panelExtras.experimentalCopy)} />
       {attributionNames ? (
         <Text size="xs" c="dimmed">
           Protocol lineage thanks to {attributionNames}. See{' '}
@@ -239,9 +230,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           {resolveRadioWriteProdDisabledMessage(egress.profileId)}
         </Text>
       ) : null}
-      {isDm32RadioIoProfileId(egress.profileId) ? (
+      {panelExtras.dm32AnalogContactsNote ? (
         <Text size="xs" c="dimmed">
-          {DM32_ANALOG_CONTACTS_WRITE_GAP}
+          {panelExtras.dm32AnalogContactsNote}
         </Text>
       ) : null}
       {error ? <Alert color="red">{error}</Alert> : null}

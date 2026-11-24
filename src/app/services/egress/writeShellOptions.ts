@@ -18,6 +18,7 @@ export interface WriteShellOptions {
   radioLabel: string;
   parts: WritePartSupport;
   contactStore: ContactStoreKind;
+  contactBankSlots?: number;
   readPlan: boolean;
   programHoldSafeMs: number;
   /** 0 = the radio does not restart after END. */
@@ -51,6 +52,7 @@ export function resolveWriteShellOptions(
       settings: radioIoProfileSupportsRadioSettings(profileId),
     },
     contactStore: descriptor?.contactStore ?? 'generic',
+    contactBankSlots: descriptor?.contactBankSlots,
     readPlan: typeof descriptor?.planStages === 'function',
     programHoldSafeMs: programHoldSafeMs(descriptor ?? {}),
     restartAfterEndSeconds: descriptor?.restartAfterEnd?.seconds ?? 0,

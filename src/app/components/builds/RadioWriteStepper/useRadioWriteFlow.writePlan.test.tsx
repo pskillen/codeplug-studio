@@ -126,8 +126,48 @@ describe('useRadioWriteFlow — write plan on step 5 (RadioFoundry)', () => {
     expect(v.writeRows.every((r) => r.weight != null)).toBe(true);
   });
 
-  it('a reconnect pass after a long Review keeps the weighted plan', async () => {
-    // First pass: Review pauses (a problem radio warning), user waits > 30 s, presses Write.
+  it('a long Review on RadioFoundry does not reconnect; writing keeps the weighted plan', async () => {
+    vi.mocked(uploadPreparedRadioWrite).mockImplementationOnce(async (_s, _e, _i, opts) => {
+      for (let i = 1; i <= 112; i += 1)
+        opts?.onProgress?.({ cur: i, max: 112, stage: 'Pre-write read', msg: '' });
+      await opts!.beforeTransmit!({
+        identity: { model: 'Baofeng DM-1701' },
+        channelCount: 0,
+        identityOnly: false,
+        plan: FULL_PLAN,
+        radioWarnings: [{ kind: 'general', severity: 'problem', message: 'x' }],
+      } as never);
+      for (let i = 1; i <= 797; i += 1)
+        opts?.onProgress?.({ cur: i, max: 2107, stage: 'Codeplug blocks', msg: '' });
+      await new Promise(() => undefined);
+      return {};
+    });
+    const { result } = mount();
+    await startAndSettle(result);
+    expect(result.current.view.step).toBe('review');
+    const realNow = Date.now;
+    const t0 = realNow();
+    Date.now = () => t0 + 31_000;
+    try {
+      await act(async () => {
+        result.current.actions.onWrite();
+        await new Promise((r) => setTimeout(r, 300));
+      });
+    } finally {
+      Date.now = realNow;
+    }
+    const v = result.current.view;
+    expect(vi.mocked(uploadPreparedRadioWrite).mock.calls.length).toBe(1);
+    expect(v.step).toBe('writing');
+    expect(v.writeRows.map((r) => r.label)).toEqual(['Codeplug blocks', 'Commit']);
+    expect(v.writeRows.every((r) => r.weight != null)).toBe(true);
+  });
+
+  it('a reconnect pass after a long Review keeps the weighted plan when hold time is finite', async () => {
+    const finiteHoldDesc: RadioDescriptor = { ...DESC, programHoldSafeMs: 30_000 };
+    vi.mocked(openRadioSessionForEgress).mockResolvedValue({
+      session: { descriptor: finiteHoldDesc, pipe: {}, radio: {} },
+    } as never);
     vi.mocked(uploadPreparedRadioWrite).mockImplementationOnce(async (_s, _e, _i, opts) => {
       for (let i = 1; i <= 112; i += 1)
         opts?.onProgress?.({ cur: i, max: 112, stage: 'Pre-write read', msg: '' });
@@ -140,9 +180,15 @@ describe('useRadioWriteFlow — write plan on step 5 (RadioFoundry)', () => {
       } as never);
       throw new Error('should not transmit on the first pass');
     });
-    // Second (reconnect) pass: same plan handed to beforeTransmit.
     scenario(FULL_PLAN);
-    const { result } = mount();
+    const { result } = renderHook(() =>
+      useRadioWriteFlow({
+        build: { id: 'b1' } as RadioBuild,
+        egress: { id: 'e1', profileId: 'radio-io-dm1701-radiofoundry' } as EgressPath,
+        descriptor: finiteHoldDesc,
+        activeProjectId: 'p1',
+      }),
+    );
     await startAndSettle(result);
     expect(result.current.view.step).toBe('review');
     const realNow = Date.now;

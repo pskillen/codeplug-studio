@@ -528,9 +528,16 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     }
     const jobs = this.changedBlocks();
     if (this.privateContactTableMatches(jobs)) {
+      // A note, not progress: cur 0 so the forward-only stage cursor does not mark the block
+      // stage done before the blocks below are written.
       reportProgress(
         opts.onProgress,
-        { cur: 1, max: 1, stage: BLOCKS_STAGE, msg: 'No contact blocks changed' },
+        {
+          cur: 0,
+          max: Math.max(1, jobs.length),
+          stage: BLOCKS_STAGE,
+          msg: 'No contact blocks changed',
+        },
         opts.signal,
       );
     }

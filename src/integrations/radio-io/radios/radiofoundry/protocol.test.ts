@@ -712,6 +712,25 @@ describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
     expect(rec.events.some((event) => event.msg === 'No contact blocks changed')).toBe(true);
   });
 
+  it('does not report the block stage complete before the last block is written', async () => {
+    // Owner report (DM-1701, Codeplug + ID database): the contact note was a 1-of-1 event, and the
+    // forward-only progress cursor held step 5 at 100% for the whole write.
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
+      includeLibraryContacts: true,
+    });
+    const pipe = new ScriptedPipe(0xff);
+    const block = CONTACT_BASE & ~(BLOCK_SIZE - 1);
+    const radio = pipe.block(block);
+    for (let i = 0; i < BLOCK_SIZE && block + i < source.bytes.length; i += 1) {
+      if (source.owned[block + i]) radio[i] = source.bytes[block + i]!;
+    }
+    const rec = await uploadSource(pipe, source);
+    const blocks = rec.events.filter((event) => event.stage === 'Codeplug blocks');
+    expect(writtenBlockAddresses(pipe).length).toBeGreaterThan(1);
+    const firstFull = blocks.findIndex((event) => event.max > 0 && event.cur >= event.max);
+    expect(firstFull).toBe(blocks.length - 1);
+  });
+
   it('leaves a private contact slot as the radio had it when library contacts are off', async () => {
     const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
       includeLibraryContacts: false,

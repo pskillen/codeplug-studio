@@ -34,4 +34,4 @@ Workflow A (#859, [feature-design.md §8](../../../../docs/features/satellite-ke
 - [satellite-keps feature hub](../../../../docs/features/satellite-keps/README.md)
 - [BuildRadioIoPanel.md](../builds/BuildRadioIoPanel.md) — Workflow B, the contextual sibling
 - [RadioIoProgressModal.md](../builds/RadioIoProgressModal.md)
-- Service: `src/app/services/satelliteKepsWriteAdapters.ts`
+- Keps limits and preview: `RadioDescriptor.satelliteKeps` (integrations); write fn: `src/app/services/satelliteKepsWriteAdapters.ts`
