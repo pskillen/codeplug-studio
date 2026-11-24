@@ -10,7 +10,7 @@ import {
   RADIOFOUNDRY_DEBUG_SUMS_SIDECAR,
   RADIOFOUNDRY_REGION,
 } from '@integrations/radio-io/radios/radiofoundry/debugCapture.ts';
-import { RADIOFOUNDRY_IMAGE_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
+const FLASH_IMAGE_BYTE_LENGTH = 0x8ee60;
 import { radioFoundryCoverage } from './RadioFoundryCoverage.tsx';
 import type { DebugArchive } from '../captureArchive.ts';
 
@@ -31,7 +31,7 @@ function archive(): DebugArchive {
         {
           id: RADIOFOUNDRY_REGION.flash,
           address: FLASH_IMAGE_START,
-          byteLength: RADIOFOUNDRY_IMAGE_SIZE - FLASH_IMAGE_START,
+          byteLength: FLASH_IMAGE_BYTE_LENGTH,
           label: 'Flash',
           path: 'regions/flash-image.bin',
           restoreRole: 'inspect-only',

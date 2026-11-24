@@ -2,31 +2,15 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
-import {
-  SETTINGS_AREA_ADDRESS,
-  SETTINGS_AREA_SIZE,
-} from '@core/import-export/formats/radiofoundry/layout.ts';
-import { crc32 } from '@core/import-export/formats/radiofoundry/settingsArea.ts';
-import { EEPROM_IMAGE_END } from '@integrations/radio-io/radios/radiofoundry/constants.ts';
+import { eepromWithSecretKey0305 } from '@integrations/radio-io/radios/radiofoundry/__fixtures__/settingsSector.ts';
 import { RADIOFOUNDRY_REGION } from '@integrations/radio-io/radios/radiofoundry/debugCapture.ts';
 import RadioDebugPage from './RadioDebugPage.tsx';
 import { debugRadioPath, radioDebugDescriptors } from './descriptors.ts';
 import { getDebugReadHistory } from './debugReadHistory.ts';
 
-function buildSector(data: number[]): Uint8Array {
-  const s = new Uint8Array(SETTINGS_AREA_SIZE).fill(0xff);
-  const crc = crc32(Uint8Array.from(data));
-  s.set([0x52, 0x46, 0x4b, 0x56, 1, 16, data.length & 0xff, data.length >> 8], 0);
-  s.set([crc & 0xff, (crc >>> 8) & 0xff, (crc >>> 16) & 0xff, (crc >>> 24) & 0xff], 8);
-  s.set(data, 16);
-  return s;
-}
-
 describe('RadioFoundry Settings tab', () => {
   it('masks a secret key until Show password', () => {
-    const sector = buildSector([0x05, 0x03, 0x04, 0x00, 0xde, 0xad, 0xbe, 0xef]);
-    const eeprom = new Uint8Array(EEPROM_IMAGE_END).fill(0xff);
-    eeprom.set(sector, SETTINGS_AREA_ADDRESS);
+    const eeprom = eepromWithSecretKey0305();
     const archive = {
       source: 'live-read' as const,
       manifest: {

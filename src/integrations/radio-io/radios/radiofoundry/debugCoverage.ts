@@ -4,7 +4,6 @@ import {
   RADIOFOUNDRY_DEBUG_SUMS_SIDECAR,
   RADIOFOUNDRY_REGION,
 } from './debugCapture.ts';
-import { BLOCK_SIZE } from './constants.ts';
 import { DMR_ID_DATABASE_AREA2_ADDRESS } from './idDatabase.ts';
 import { radioFoundryCableBoardForModelId } from './board.ts';
 
