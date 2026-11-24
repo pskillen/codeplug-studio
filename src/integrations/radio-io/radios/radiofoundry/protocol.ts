@@ -60,7 +60,6 @@ import {
 } from './constants.ts';
 import type { RadioFoundryCableBoard } from './board.ts';
 import {
-  decodeDebugFrame,
   encodeDebugFrame,
   readDebugFrame,
   type DebugFrame,
