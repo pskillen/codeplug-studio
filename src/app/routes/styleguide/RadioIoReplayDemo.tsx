@@ -4,7 +4,7 @@
  * is involved. `?replay=<radio>&at=<0..1>` opens it paused at that point, for screenshots.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Group } from '@mantine/core';
 import type {
   PlannedStage,
@@ -31,6 +31,7 @@ const DESCRIPTORS: Record<ReplayRadioId, RadioDescriptor> = {
 /** Milliseconds between replayed events when playing normally, and when seeking to `at`. */
 const PLAY_MS = 120;
 const SEEK_MS = 40;
+const REPLAY_STARTED_AT = 1_700_000_000_000;
 
 function isReplayRadio(v: string | null): v is ReplayRadioId {
   return REPLAY_RADIOS.some((r) => r.id === v);
@@ -53,7 +54,9 @@ export default function RadioIoReplayDemo() {
   const [index, setIndex] = useState(0);
   /** Stop at this many events (a screenshot) instead of running to the end. */
   const [stopAt, setStopAt] = useState<number | null>(null);
-  const startedAtRef = useRef<number | null>(null);
+  const [startedAt, setStartedAt] = useState<number | null>(
+    start?.radio ? REPLAY_STARTED_AT : null,
+  );
 
   const events = useMemo<ProgressUpdate[]>(() => (radio ? replayEventsFor(radio) : []), [radio]);
   const plan = useMemo<PlannedStage[] | undefined>(
@@ -73,11 +76,6 @@ export default function RadioIoReplayDemo() {
       setStopAt(Math.round(start.at * events.length));
     }
   }, [start, radio, events.length]);
-
-  useEffect(() => {
-    if (radio) startedAtRef.current = Date.now();
-    else startedAtRef.current = null;
-  }, [radio]);
 
   const seeking = stopAt != null;
   useEffect(() => {
@@ -111,7 +109,13 @@ export default function RadioIoReplayDemo() {
   function open(next: ReplayRadioId) {
     setStopAt(null);
     setIndex(0);
+    setStartedAt(REPLAY_STARTED_AT);
     setRadio(next);
+  }
+
+  function closeReplay() {
+    setRadio(null);
+    setStartedAt(null);
   }
 
   const label = REPLAY_RADIOS.find((r) => r.id === radio)?.label ?? 'radio';
@@ -128,10 +132,10 @@ export default function RadioIoReplayDemo() {
       <ModalShell
         open={radio != null}
         title={`Replay ${label} Write`}
-        onClose={() => setRadio(null)}
+        onClose={closeReplay}
         dismissible
         footer={
-          <Button size="sm" onClick={() => setRadio(null)}>
+          <Button size="sm" onClick={closeReplay}>
             Close
           </Button>
         }
@@ -139,7 +143,7 @@ export default function RadioIoReplayDemo() {
         <StageProgress
           groups={[{ id: 'write', title: 'Write', rows }]}
           progress={progress}
-          startedAt={startedAtRef.current}
+          startedAt={startedAt}
           running={!done && radio != null}
         />
       </ModalShell>

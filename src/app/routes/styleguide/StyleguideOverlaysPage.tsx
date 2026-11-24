@@ -31,6 +31,9 @@ const FINISHED_SUCCESS_STEPS: ProgressModalStep[] = [
   { id: 'verify', label: 'Verify', status: 'success' },
 ];
 
+/** Fixed ms timestamps for StageProgress demos (no `Date.now()` during render). */
+const STAGE_PROGRESS_DEMO_START = 1_700_000_000_000;
+
 const FINISHED_ERROR_STEPS: ProgressModalStep[] = [
   { id: 'connect', label: 'Connect to radio', status: 'success' },
   { id: 'write', label: 'Write channels', status: 'error', detail: 'Channel 12 rejected' },
@@ -325,7 +328,7 @@ export default function StyleguideOverlaysPage() {
               },
             ]}
             progress={{ cur: 40, max: 100, msg: 'Channels' }}
-            startedAt={Date.now() - 45_000}
+            startedAt={STAGE_PROGRESS_DEMO_START - 45_000}
             estimateSeconds={90}
             running
           />
@@ -348,7 +351,7 @@ export default function StyleguideOverlaysPage() {
               },
             ]}
             progress={null}
-            startedAt={Date.now() - 120_000}
+            startedAt={STAGE_PROGRESS_DEMO_START - 120_000}
             running
           />
           <StageProgress
@@ -359,7 +362,7 @@ export default function StyleguideOverlaysPage() {
               },
             ]}
             progress={{ cur: 0, max: 0, msg: 'Handshake' }}
-            startedAt={Date.now() - 3000}
+            startedAt={STAGE_PROGRESS_DEMO_START - 3000}
             running
           />
         </Stack>
