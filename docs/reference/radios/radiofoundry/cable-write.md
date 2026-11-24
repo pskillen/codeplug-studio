@@ -18,6 +18,8 @@ Rows that do not fit before the board's image end are dropped with a warning. Th
 
 A cable write replaces every byte of a channel, zone, contact, talk group, or RX-list slot it writes. The radio read is not a source for those bytes.
 
+During download, block checksums (**Block checksums** progress) run before any block read. On a write pre-read, a block the armed source owns in full is compared to the radio by CRC instead of being read.
+
 - A channel that is in use is all 56 bytes. Unmodelled fields are zero, which means: TX timeout follows the radio-wide timeout, SFR is off, beep is on, power saving is on, the channel is not roaming or out of band, VOX and talkaround are off, the vendor power and squelch bits are clear, channel byte 0x2D is 0, talker-alias APRS bits are clear, flag 2 holds only the timeslot, STE is off, and the VFO offset and step are zero. The text bit of talker alias still follows the library. Byte 0x2D is the OpenGD77 APRS index. This firmware does not read it, so the channel report slot is not stored there.
 - An unused channel record is not written. The in-use bitmap is owned and cleared, and a clear bit means that record is empty.
 - The zone bitmap and every zone record are owned. An unused zone slot is the zeroed empty record.
