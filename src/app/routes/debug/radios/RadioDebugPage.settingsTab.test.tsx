@@ -32,9 +32,7 @@ const WITH_SETTINGS = [
   'rt95',
   'uv-5r-mini',
 ];
-const WITHOUT_SETTINGS = [
-  'uv-21-pro-v2',
-];
+const WITHOUT_SETTINGS = ['uv-21-pro-v2'];
 
 afterEach(cleanup);
 
