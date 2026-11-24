@@ -32,7 +32,7 @@ import ChannelCard from '@app/components/library/ChannelCard.tsx';
 
 - The header link reads **callsign · name** (callsign first, monospace) when `channel.callsign` is non-empty, otherwise the name alone — see [display styleguide — Channel identity](../../../../docs/reference/styleguide/display.md#channel-identity-callsign-and-name-together).
 - The link opens the channel view page, `/library/channels/:id` ([#1533](https://github.com/pskillen/codeplug-studio/issues/1533)).
-- **Selection** — checkbox only when `onSelectedChange` is provided; clicking the checkbox does not navigate.
+- **Selection** — checkbox only when `onSelectedChange` is provided; clicking the checkbox does not navigate. The checkbox is named `Select <callsign — name>` (name alone when there is no callsign, `Select channel` when neither is set).
 - **Delete** reuses `ChannelListDeleteAction` (same confirmation flow as the table row action).
 - Renders nothing extra when `fieldColumns` is empty (header + delete only).
 

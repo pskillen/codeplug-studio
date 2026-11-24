@@ -70,7 +70,7 @@ import {
 } from '../../../lib/entityRefs.ts';
 import { bandFromChannel } from '../../../lib/bands.ts';
 import { getModeDefinition, type ChannelMode } from '../../../lib/channelModes.ts';
-import { channelModesForFilter } from '../../../lib/channels.ts';
+import { channelModesForFilter, channelSelectionName } from '../../../lib/channels.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import {
   createNameColumn,
@@ -850,6 +850,7 @@ export default function ChannelsListPage() {
           sort={effectiveV2Sort}
           onSortChange={handleSortChange}
           selectable
+          rowLabel={channelSelectionName}
           stickyFirstColumn
           mobileIdentity={renderChannelIdentity}
           mobileIdentityLabel="Channel"

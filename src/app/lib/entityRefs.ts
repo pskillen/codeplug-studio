@@ -1,3 +1,4 @@
+import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import type { Channel, ChannelModeProfileDMR, EntityRef, Library } from '@core/models/library.ts';
 
 export function entityRefKey(ref: EntityRef): string {
@@ -7,8 +8,11 @@ export function entityRefKey(ref: EntityRef): string {
 export function entityRefDisplayName(ref: EntityRef | null, library: Library): string {
   if (!ref) return '';
   switch (ref.kind) {
-    case 'channel':
-      return library.channels.find((c) => c.id === ref.id)?.name ?? '';
+    case 'channel': {
+      const channel = library.channels.find((c) => c.id === ref.id);
+      if (!channel || (!channel.callsign.trim() && !channel.name.trim())) return '';
+      return channelDisplayLabel(channel);
+    }
     case 'talkGroup':
       return library.talkGroups.find((t) => t.id === ref.id)?.name ?? '';
     case 'digitalContact':

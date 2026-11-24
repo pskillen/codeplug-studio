@@ -48,6 +48,11 @@ const SECTIONS = [
     title: 'Patterns',
     description: 'FacetBar, build list cards, NextPassCard.',
   },
+  {
+    to: '/styleguide/channel-modes',
+    title: 'Channel modes',
+    description: 'Mode panels: Access, Call, Listen, You.',
+  },
 ] as const;
 
 export default function StyleguideIndexPage() {

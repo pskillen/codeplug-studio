@@ -51,6 +51,7 @@ The rule: **wherever a channel is identified, show its callsign and its name tog
 - **Channel editor heading:** `<Callsign> <Name>` when a callsign is set, falling back to name alone.
 - **List / table rows:** lead with callsign (+ band) on its own line, name below — not the other way round. A table that splits them into columns puts **Callsign** before **Name** and shows `—` when it is empty.
 - **Phone identity lines:** bold callsign, then `· name`.
+- **Selection checkboxes:** a checkbox that selects a channel is named "Select <callsign — name>" ("Select <name>" without a callsign, "Select channel" with neither), never by its id. Tables pass `DataTable`'s `rowLabel`.
 - **Pickers, comboboxes, member rows, map tooltips and popups, confirm dialogs:** callsign and name, not name alone.
 - **Search** on any channel table or picker matches callsign as well as name.
 - **Sort:** where a table sorts by name, offer callsign too.

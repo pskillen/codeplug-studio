@@ -35,10 +35,10 @@ import DmrOperatingModeSegment from '@app/components/channels/DmrOperatingModeSe
 - **DMO** / **Repeater** — explicit override, ignores frequency inference at export.
 - Spells its neutral option `'auto'` rather than `'default'`, so it passes `neutralValues={['auto']}` to `GradientSegmentedControl` — otherwise Auto would absorb a real palette slot from the `three` scheme instead of rendering with no colour override.
 
-On the channel editor this control lives in the DMR **Mode settings** panel via [`ChannelModeProfilesEditor`](./ChannelModeProfilesEditor.md), at `layout="row"`.
+On the channel editor this control lives in the DMR **Mode settings** panel via [`modePanels/ModePanels`](./modePanels/ModePanels.md), at `layout="row"`.
 
 ## Related
 
 - [GradientSegmentedControl](../ui/GradientSegmentedControl.md)
-- [ChannelModeProfilesEditor](./ChannelModeProfilesEditor.md)
+- [modePanels/ModePanels](./modePanels/ModePanels.md)
 - [Library feature hub](../../../../docs/features/library/README.md)

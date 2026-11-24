@@ -207,6 +207,26 @@ describe('DataTable v2', () => {
     expect(onSelectionChange).toHaveBeenCalledWith(['1']);
   });
 
+  it('uses rowLabel for row checkbox accessible name when provided', () => {
+    const onSelectionChange = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={ROWS}
+          getRowId={(row) => row.id}
+          selectable
+          selectedKeys={[]}
+          onSelectionChange={onSelectionChange}
+          rowLabel={(row) => row.name}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    fireEvent.click(screen.getByLabelText('Select Bravo'));
+    expect(onSelectionChange).toHaveBeenCalledWith(['1']);
+  });
+
   it('excludes non-selectable rows from select-all and gates their checkbox', () => {
     const onSelectionChange = vi.fn();
     render(

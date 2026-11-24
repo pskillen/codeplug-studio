@@ -43,5 +43,5 @@ Power and analog squelch as a 0–100% slider with an optional **Radio default**
 ## Related
 
 - [`ChannelBulkEditModal`](../library/ChannelBulkEditModal.md)
-- [`ChannelModeProfilesEditor`](../channels/ChannelModeProfilesEditor.md)
+- [`ModePanels`](../channels/modePanels/ModePanels.md)
 - Dev demos: `/styleguide/forms`

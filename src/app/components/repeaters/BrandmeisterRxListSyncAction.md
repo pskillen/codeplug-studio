@@ -17,7 +17,7 @@ BrandMeister talk-group / RX group list sync button for a saved DMR channel, pla
 <BrandmeisterRxListSyncAction channel={channel} library={library} />
 ```
 
-Rendered from `DmrPanel` in [`ChannelModeProfilesEditor`](../channels/ChannelModeProfilesEditor.tsx) when `channel` is a saved row.
+Rendered from `DmrModePanel` (`channels/modePanels/`) when the channel is saved.
 
 ## Behaviour
 

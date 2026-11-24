@@ -78,7 +78,7 @@ describe('ChannelCard', () => {
   it('shows a selection checkbox when onSelectedChange is provided', () => {
     const onSelectedChange = vi.fn();
     renderCard({
-      channel: CHANNEL,
+      channel: { ...CHANNEL, callsign: '' },
       fieldColumns: [],
       selected: false,
       onSelectedChange,
@@ -86,5 +86,16 @@ describe('ChannelCard', () => {
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Select Repeater 1' }));
     expect(onSelectedChange).toHaveBeenCalledWith(true);
+  });
+
+  it('names the selection checkbox with callsign and name', () => {
+    renderCard({
+      channel: { ...CHANNEL, callsign: 'GB3AA', name: 'Repeater 1' },
+      fieldColumns: [],
+      selected: false,
+      onSelectedChange: vi.fn(),
+    });
+
+    expect(screen.getByRole('checkbox', { name: 'Select GB3AA — Repeater 1' })).toBeInTheDocument();
   });
 });

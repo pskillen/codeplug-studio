@@ -55,6 +55,7 @@ import StyleguideOverlaysPage from './routes/styleguide/StyleguideOverlaysPage.t
 import StyleguideMembershipPage from './routes/styleguide/StyleguideMembershipPage.tsx';
 import StyleguideNavigationPage from './routes/styleguide/StyleguideNavigationPage.tsx';
 import StyleguidePatternsPage from './routes/styleguide/StyleguidePatternsPage.tsx';
+import StyleguideChannelModesPage from './routes/styleguide/StyleguideChannelModesPage.tsx';
 import StyleguideContainersPage from './routes/styleguide/StyleguideContainersPage.tsx';
 import BuildsListPage from './routes/builds/BuildsListPage.tsx';
 import BuildsV2Layout from './routes/builds/BuildsV2Layout.tsx';
@@ -123,6 +124,7 @@ export const appRouter = createBrowserRouter([
           { path: 'membership', element: <StyleguideMembershipPage /> },
           { path: 'navigation', element: <StyleguideNavigationPage /> },
           { path: 'patterns', element: <StyleguidePatternsPage /> },
+          { path: 'channel-modes', element: <StyleguideChannelModesPage /> },
           { path: 'containers', element: <StyleguideContainersPage /> },
         ],
       },

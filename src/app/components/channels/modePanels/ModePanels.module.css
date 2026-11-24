@@ -1,0 +1,25 @@
+.group + .group {
+  border-top: 1px solid var(--dsv2-border-quiet);
+  padding-top: 8px;
+}
+
+.heading {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  color: var(--dsv2-text-tertiary);
+}
+
+.groupFields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.note {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0;
+}

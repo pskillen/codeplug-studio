@@ -88,6 +88,8 @@ export interface DataTableProps<T> {
   onSelectionChange?: (keys: string[]) => void;
   /** Rows failing this predicate render a disabled, dimmed checkbox and are excluded from "select all". */
   isRowSelectable?: (row: T) => boolean;
+  /** Names a row for its selection checkbox: `Select ${rowLabel(row)}`. Default: `Select row ${rowId}`. */
+  rowLabel?: (row: T) => string;
   /** Slot for bulk-action buttons, shown in the selection toolbar alongside a Clear action. */
   bulkActions?: ReactNode;
   onClearSelection?: () => void;
@@ -247,6 +249,7 @@ interface DataTableBodyRowProps<T> {
   useCardLayout: boolean;
   mobileCard: ((row: T) => ReactNode) | undefined;
   mobileIdentity: ((row: T) => ReactNode) | undefined;
+  rowLabel: ((row: T) => string) | undefined;
   /** Left offsets (px) of the pinned lead columns, in order; empty when nothing is pinned. */
   pin: PinLayout;
 }
@@ -272,6 +275,7 @@ function DataTableBodyRow<T>({
   useCardLayout,
   mobileCard,
   mobileIdentity,
+  rowLabel,
   pin,
 }: DataTableBodyRowProps<T>) {
   const { row, key, depth, hasChildren } = flat;
@@ -297,6 +301,8 @@ function DataTableBodyRow<T>({
   const dragHandle: SelectedItemDragHandleProps | null = reorderDragEnabled
     ? { setActivatorNodeRef, attributes, listeners, disabled: false }
     : null;
+
+  const selectRowLabel = rowLabel ? `Select ${rowLabel(row)}` : `Select row ${key}`;
 
   return (
     <div
@@ -350,7 +356,7 @@ function DataTableBodyRow<T>({
                   checked={selected}
                   onCheckedChange={() => onToggleRow(key)}
                   onClick={(event) => event.stopPropagation()}
-                  aria-label={`Select row ${key}`}
+                  aria-label={selectRowLabel}
                 />
               ) : null}
             </span>
@@ -369,7 +375,7 @@ function DataTableBodyRow<T>({
               checked={selected}
               onCheckedChange={() => onToggleRow(key)}
               onClick={(event) => event.stopPropagation()}
-              aria-label={`Select row ${key}`}
+              aria-label={selectRowLabel}
             />
           ) : null}
         </div>
@@ -442,6 +448,7 @@ export default function DataTable<T>({
   selectedKeys: controlledSelectedKeys,
   onSelectionChange,
   isRowSelectable,
+  rowLabel,
   bulkActions,
   onClearSelection,
   reorderMode = false,
@@ -941,6 +948,7 @@ export default function DataTable<T>({
                         useCardLayout={useCardLayout}
                         mobileCard={mobileCard}
                         mobileIdentity={useIdentity ? mobileIdentity : undefined}
+                        rowLabel={rowLabel}
                         pin={pin}
                       />
                     );
