@@ -14,7 +14,7 @@ Select, download and explicitly clear a tab-local debug read history.
 
 ## Behaviour
 
-Selection shows each capture's label and time. Download all captures a snapshot of the current entries and only marks those IDs downloaded after a successful save. Clear requires confirmation. Retaining captures and generating a ZIP consume tab memory; history is not persisted or uploaded.
+Selection shows each capture's label and time. The **Selected read** `Select` shows a firmware-coloured dot (`DEBUG_FIRMWARE_COLOR`) in the field and beside every option, matching the switch and sibling-read markers. Download all captures a snapshot of the current entries and only marks those IDs downloaded after a successful save. Clear requires confirmation. Retaining captures and generating a ZIP consume tab memory; history is not persisted or uploaded.
 
 ## Related
 

@@ -108,7 +108,7 @@ From `cpsHandleWriteCommand` (`usb_com.c:331-600`) and `CDC_Receive_FS` (`MDUV38
 | `X 03` FINISH                                              | no sector is open, or erase / page program is still busy after the wait loop.                                                                                                   | `usb_com.c:471-500`     |
 | any frame                                                  | it arrives while the previous request is **still being processed**: the USB interrupt answers `'-'` at once and drops the frame.                                                | `usbd_cdc_if.c:475-481` |
 | any frame                                                  | it overflows the 2048-byte request buffer.                                                                                                                                      | `usbd_cdc_if.c:335-344` |
-| unknown type byte (for example the `'A'` of an `AT` probe) | always.                                                                                                                                                                         | `usb_com.c:972-976`     |
+| unknown type byte (for example the `'A'` of an `AT` probe) | always (not in hotspot USB mode, which answers nothing).                                                                                                                        | `usb_com.c:972-976`     |
 
 The firmware checks **no address bounds, alignment or protected range** on flash writes (apart from the calibration sector above). Every NACK also clears the open sector (`usb_com.c:596`), so the next SET_SECTOR after a NACK succeeds. The open-sector state (`static int sector`, `usb_com.c:84`) is cleared only by FINISH, a NACK or a reboot: neither CLOSE_CPS (`:683-692`) nor a new USB session clears it, so after an unclean session the **first SET_SECTOR of the next session is refused** `'-'` (that refusal closes the sector). Studio's sector recovery handles this as any refused SET_SECTOR; power-cycling a radio that showed a failed write also clears it.
 
@@ -201,7 +201,7 @@ A failed flash write throws a typed error naming the command, the sector and the
 1. Open serial port for VID/PID (or OS-assigned CDC device matching those IDs).
 2. Optional ping (`'C'` + `feh`).
 3. Read FirmwareInfo (`'R'` + `09h`) → choose OpenGD77 vs OpenUV380 map and write type; refuse when `radioType` does not match the adapter.
-4. **RadioFoundry probe** (Web Serial connect and debug capture only): one debug-link PING (`A5 5A 01 01 00 00 44 C5`). RadioFoundry echoes command `0x81` with the same payload; stock OpenGD77 answers a single `'-'`, stays silent, or sends anything else. A `0x81` PING reply means the radio is running RadioFoundry — Studio throws `RadioWrongIdentError` with a message to use that radio’s RadioFoundry target, **before** show CPS (the screen does not change). Any other reply is drained and the session continues.
+4. **RadioFoundry probe** (Web Serial connect and debug capture only): one debug-link PING (`A5 5A 01 01 00 00 44 C5`). RadioFoundry echoes command `0x81` with the same payload; stock OpenGD77 answers a single `'-'`, stays silent, or sends anything else. A `0x81` PING reply means the radio is running RadioFoundry. On a **write** connect Studio throws `RadioWrongIdentError` with a message to use that radio’s RadioFoundry target, **before** show CPS (the screen does not change). On a **debug read** Studio throws `DebugWrongFirmwareError` (`found: radiofoundry`) and may keep the port open for a RadioFoundry read when asked. Any other reply is drained and the session continues.
 5. Show CPS screen (`'C'` + `00h`) before bulk memory ops.
 6. Read/write 32-byte blocks against registered spans ([memory-layout.md](memory-layout.md)).
 7. Save / reboot via control commands as required; close CPS screen (`05h`).
@@ -228,7 +228,7 @@ For **Restore** (not Write): `restoreFromBackup` copies zip FLASH spans onto a *
 
 ## Debug capture allow-list
 
-The `/debug/radios/dm-1701-opengd77` and `/debug/radios/md-9600-opengd77` pages read the radio through a frame guard (`debugGuard.ts`) that refuses everything except the frames below. Each frame is byte-exact and sent as one write. Feature: [radio-debug](../../../features/radio-debug/README.md); archive layout: [debug-capture.md](debug-capture.md).
+The `/debug/radios/dm-1701/opengd77` and `/debug/radios/md-9600/opengd77` pages read the radio through a frame guard (`debugGuard.ts`) that refuses everything except the frames below. Each frame is byte-exact and sent as one write. Feature: [radio-debug](../../../features/radio-debug/README.md); archive layout: [debug-capture.md](debug-capture.md).
 
 | Frame                              | Meaning             | Order rule                                                        |
 | ---------------------------------- | ------------------- | ----------------------------------------------------------------- |

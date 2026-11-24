@@ -6,9 +6,11 @@ How the radio debug pages are built. They have their own kit, apart from the pro
 
 ## Scope
 
+**Firmware colour.** RadioFoundry teal, OpenGD77 orange, stock blue (`DEBUG_FIRMWARE_COLOR`), on the index buttons, the switch, the header chip, the tab underline and read-history markers. No marker on a debug page uses these three colours for another meaning; capability badges stay green, yellow and gray.
+
 `/debug/radios/*` tabs (Calibration, Settings, Memory, Hex, Compare) and any future debug viewer. Product UI (library, builds) keeps the list kit; debug pages use the kit in `src/app/components/debug/`.
 
-The kit is **dark only**. It draws on design-system v2 tokens and must render inside `DesignSystemV2Provider`; there is no light theme and no light claim anywhere in it. The whole `/debug/radios/:radio` page (header, tab bar, every tab body, including the plain Mantine Backup, Hex, Compare and Overview tabs) sits inside one `DesignSystemV2Provider scheme="dark"`, so it is dark throughout even when the app theme is light; tabs and kit components do not wrap themselves. The shell paints `main` and the footer dark for these routes (`isDarkPagePath`), and selects open inside the scope, so no dropdown or strip is light.
+The kit is **dark only**. It draws on design-system v2 tokens and must render inside `DesignSystemV2Provider`; there is no light theme and no light claim anywhere in it. The whole `/debug/radios/:radio/:firmware` page (and the legacy `/debug/radios/:radio` redirect) — header, tab bar, every tab body, including the plain Mantine Backup, Hex, Compare and Overview tabs — sits inside one `DesignSystemV2Provider scheme="dark"`, so it is dark throughout even when the app theme is light; tabs and kit components do not wrap themselves. The shell paints `main` and the footer dark for these routes (`isDarkPagePath`), and selects open inside the scope, so no dropdown or strip is light.
 
 ## Rules
 
@@ -39,6 +41,8 @@ All under `src/app/components/debug/`, exported from `index.ts`.
 
 | Component                                                                           | Job                                                                 |
 | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [FirmwareSwitch](../../../src/app/routes/debug/radios/FirmwareSwitch.md)            | Expected-firmware control under the radio title on debug pages      |
+| [WrongFirmwareNotice](../../../src/app/routes/debug/radios/WrongFirmwareNotice.md)  | Wrong-firmware read notice, port handoff and stock switch-only      |
 | [DebugSection](../../../src/app/components/debug/DebugSection.md)                   | Titled bordered container for every block                           |
 | [EvidenceNotice](../../../src/app/components/debug/EvidenceNotice.md)               | The one "not validated on hardware" notice per tab                  |
 | [ConfidenceBadge](../../../src/app/components/debug/ConfidenceBadge.md)             | Layout or meaning confidence as a pill                              |

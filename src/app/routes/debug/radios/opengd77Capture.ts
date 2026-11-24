@@ -1,4 +1,5 @@
 import { packRadioBackupZip } from '@integrations/radio-io/backup/index.ts';
+import type { RadioBackupCapturedVia } from '@integrations/radio-io/backup/types.ts';
 import {
   buildOpenGd77DebugArchiveParts,
   captureOpenGd77DebugPipe,
@@ -15,6 +16,7 @@ import {
 } from '@integrations/radio-io/transport/index.ts';
 import type { ProgressFn } from '@integrations/radio-io/types.ts';
 import { openDebugArchive, type DebugArchive } from './captureArchive.ts';
+import type { DebugOpenPort } from '@integrations/radio-io/debugHandoff.ts';
 import type { RadioDebugCaptureOptions } from './descriptors.ts';
 
 /** Capture option id: also read the occupied User Database (off unless ticked). The id lives in the radio home. */
@@ -33,18 +35,35 @@ export function captureOpenGd77(modelId: string) {
     signal?: AbortSignal;
     onProgress?: ProgressFn;
     options?: RadioDebugCaptureOptions;
+    port?: DebugOpenPort;
+    keepPortOnWrongFirmware?: boolean;
   }): Promise<DebugArchive> => {
     const descriptor = getRadioDescriptor(modelId);
     if (!descriptor) throw new Error(`No radio descriptor for ${modelId}.`);
-    const native = isCapacitorSerialSupported();
-    const pipe = native
-      ? await openCapacitorSerialPipe(await requestCapacitorSerialPort(), descriptor.baudRate)
-      : await openWebSerialPipe(await requestWebSerialPort(true), descriptor.baudRate);
+    let pipe;
+    let capturedVia: RadioBackupCapturedVia;
+    if (opts?.port) {
+      if (opts.port.baudRate !== descriptor.baudRate) {
+        await opts.port.close();
+        throw new Error(
+          `The open port runs at ${opts.port.baudRate} baud; this radio needs ${descriptor.baudRate}. Read radio again.`,
+        );
+      }
+      pipe = opts.port.pipe;
+      capturedVia = opts.port.capturedVia;
+    } else {
+      const native = isCapacitorSerialSupported();
+      pipe = native
+        ? await openCapacitorSerialPipe(await requestCapacitorSerialPort(), descriptor.baudRate)
+        : await openWebSerialPipe(await requestWebSerialPort(true), descriptor.baudRate);
+      capturedVia = native ? 'android-usb-serial' : 'web-serial';
+    }
     const capture = await captureOpenGd77DebugPipe(pipe, descriptor, {
       signal: opts?.signal,
       onProgress: opts?.onProgress,
-      capturedVia: native ? 'android-usb-serial' : 'web-serial',
+      capturedVia,
       includeUserDatabase: opts?.options?.[OPENGD77_DEBUG_USER_DATABASE_OPTION] === true,
+      keepPortOnRadioFoundry: opts?.keepPortOnWrongFirmware === true,
     });
     return archiveOpenGd77Capture(capture);
   };

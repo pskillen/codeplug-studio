@@ -5,6 +5,7 @@ import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import { OPENGD77_DM1701_MODEL_ID } from '@integrations/radio-io/radios/opengd77/hydration.ts';
 import { syntheticOpenGd77Archive } from './opengd77.fixture.ts';
 import RadioDebugPage from './RadioDebugPage.tsx';
+import { debugRadioPath, radioDebugDescriptors } from './descriptors.ts';
 
 const fake = vi.hoisted(() => ({ capture: vi.fn() }));
 vi.mock('./opengd77Capture.ts', async (importOriginal) => ({
@@ -19,10 +20,12 @@ beforeEach(() => {
 
 function open(slug: string) {
   render(
-    <MemoryRouter initialEntries={[`/debug/radios/${slug}`]}>
+    <MemoryRouter
+      initialEntries={[debugRadioPath(radioDebugDescriptors.find((d) => d.slug === slug)!)!]}
+    >
       <DesignSystemV2Provider>
         <Routes>
-          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+          <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
         </Routes>
       </DesignSystemV2Provider>
     </MemoryRouter>,

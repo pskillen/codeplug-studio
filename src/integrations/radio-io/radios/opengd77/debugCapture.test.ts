@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { packRadioBackupZip, parseRadioBackupZip } from '../../backup/index.ts';
+import { DebugWrongFirmwareError } from '../../debugHandoff.ts';
 import { RadioAbortedError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { getRadioDescriptor } from '../../registry.ts';
 import {
@@ -22,10 +23,8 @@ import {
 } from './debugCapture.ts';
 import { OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID } from './hydration.ts';
 import { OpenGd77ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
-import {
-  OPENGD77_RADIOFOUNDRY_PROBE_FRAME,
-  OPENGD77_RADIOFOUNDRY_REFUSAL,
-} from './radioFoundryProbe.ts';
+import { OPENGD77_DEBUG_RADIOFOUNDRY_FOUND } from './debugText.ts';
+import { OPENGD77_RADIOFOUNDRY_PROBE_FRAME } from './radioFoundryProbe.ts';
 
 const CASES: [string, string, number][] = [
   ['DM-1701', OPENGD77_DM1701_MODEL_ID, 0x08],
@@ -267,13 +266,57 @@ describe('wrong radio', () => {
   });
 });
 
-describe('RadioFoundry refusal', () => {
-  it('ends capture with OPENGD77_RADIOFOUNDRY_REFUSAL when the radio echoes the probe', async () => {
+describe('RadioFoundry on a debug read', () => {
+  const descriptor = getRadioDescriptor(OPENGD77_DM1701_MODEL_ID)!;
+
+  it('throws DebugWrongFirmwareError without a port by default', async () => {
+    let closed = false;
     const pipe = new OpenGd77ScriptedPipe(0x08);
     pipe.runsRadioFoundry = true;
-    await expect(
-      captureOpenGd77DebugPipe(pipe, getRadioDescriptor(OPENGD77_DM1701_MODEL_ID)!),
-    ).rejects.toThrow(OPENGD77_RADIOFOUNDRY_REFUSAL);
+    pipe.close = async () => {
+      closed = true;
+    };
+    const guardWrites: Uint8Array[] = [];
+    const rawWrite = pipe.write.bind(pipe);
+    pipe.write = async (data) => {
+      guardWrites.push(data);
+      return rawWrite(data);
+    };
+    await expect(captureOpenGd77DebugPipe(pipe, descriptor)).rejects.toMatchObject({
+      name: 'DebugWrongFirmwareError',
+      found: 'radiofoundry',
+      message: OPENGD77_DEBUG_RADIOFOUNDRY_FOUND,
+    });
+    expect(closed).toBe(true);
+    expect(pipe.commands).toEqual([[0xfe]]);
+    expect(pipe.cpsDepth).toBe(0);
+    const afterProbe = guardWrites.filter(
+      (w) =>
+        w.length !== OPENGD77_RADIOFOUNDRY_PROBE_FRAME.length ||
+        !w.every((b, i) => b === OPENGD77_RADIOFOUNDRY_PROBE_FRAME[i]),
+    );
+    expect(afterProbe.every((w) => w[0] !== 0x00)).toBe(true);
+  });
+
+  it('can keep the raw port and close it idempotently', async () => {
+    let closed = false;
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    pipe.runsRadioFoundry = true;
+    pipe.close = async () => {
+      closed = true;
+    };
+    let err: DebugWrongFirmwareError | undefined;
+    try {
+      await captureOpenGd77DebugPipe(pipe, descriptor, { keepPortOnRadioFoundry: true });
+    } catch (e) {
+      err = e as DebugWrongFirmwareError;
+    }
+    expect(err?.port?.pipe).toBe(pipe);
+    expect(closed).toBe(false);
+    await err!.port!.close();
+    expect(closed).toBe(true);
+    await err!.port!.close();
+    expect(closed).toBe(true);
   });
 });
 

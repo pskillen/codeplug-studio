@@ -116,7 +116,7 @@ Read from radio-backup archives (`regions/<id>.bin` inside the ZIP) or the in-ta
 
 ## Manual verify
 
-1. Open `/debug/radios/at-d890uv`, Calibration tab, with no archive: "Not captured".
+1. Open `/debug/radios/at-d890uv/stock`, Calibration tab, with no archive: "Not captured".
 2. Open a synthetic archive with a `vital-tune-a` entry at `0x04F00000`: provenance, "Not validated on hardware", scalar tables, four charts and numeric tables, other loaded fields, the never-read (unused) ranges and paged raw hex appear.
 3. Open one whose tune entry is a short prefix: fields past the prefix read "Unavailable" or "Not captured"; chart lines stop.
 4. Open one with only `vital-tune-b`: "Not captured", with the note that tune B is not used.

@@ -156,7 +156,7 @@ describe('App', () => {
   });
 
   it('shows the selected radio profile without claiming an observed identity', () => {
-    renderApp('/debug/radios/at-d890uv');
+    renderApp('/debug/radios/at-d890uv/stock');
     expect(screen.getByRole('heading', { name: 'AT-D890UV' })).toBeInTheDocument();
     expect(screen.getByText('No radio identity observed')).toBeInTheDocument();
     expect(screen.getByText(/expectation, not proof/)).toBeInTheDocument();
@@ -175,7 +175,7 @@ describe('App', () => {
   });
 
   it.each([
-    '/debug/radios/rt95',
+    '/debug/radios/rt95/stock',
     '/debug/storage/indexed-db',
     '/debug/indexed-db/channels',
     '/debug/transport/serial-reopen',

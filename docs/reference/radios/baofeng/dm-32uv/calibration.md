@@ -40,7 +40,7 @@ Adjust (PCTESTM) mode maps each calibration byte to a register: group 0 TX power
 
 ### Viewer confidence
 
-The Calibration tab on `/debug/radios/dm-32uv` ([Radio debug](../../../features/radio-debug/README.md)) shows these fields read-only, with layout and meaning confidence per row. Source addresses are the firmware consumers from the firmware notes. Registry: `src/integrations/radio-io/radios/dm32uv/calibrationFields.ts`; the tab is built from it by `debugCalibrationView.ts`. The charts plot TX power against the TX frequency points (traced) and squelch thresholds against the RX frequency points (an inferred pairing, not traced).
+The Calibration tab on `/debug/radios/dm-32uv/stock` ([Radio debug](../../../features/radio-debug/README.md)) shows these fields read-only, with layout and meaning confidence per row. Source addresses are the firmware consumers from the firmware notes. Registry: `src/integrations/radio-io/radios/dm32uv/calibrationFields.ts`; the tab is built from it by `debugCalibrationView.ts`. The charts plot TX power against the TX frequency points (traced) and squelch thresholds against the RX frequency points (an inferred pairing, not traced).
 
 | Confidence (layout / meaning) | Fields                                                                                                                                                                                                                                                      |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

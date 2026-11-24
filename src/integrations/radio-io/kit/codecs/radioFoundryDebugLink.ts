@@ -4,7 +4,9 @@
  * The CRC covers the bytes from the command through the end of the payload.
  */
 
+import { RadioProtocolError, RadioTimeoutError } from '../errors.ts';
 import { crc16CcittFalse } from '../checksums.ts';
+import type { BytePipe } from '../../types.ts';
 
 const SOF1 = 0xa5;
 const SOF2 = 0x5a;
@@ -51,4 +53,33 @@ export function decodeDebugFrame(bytes: Uint8Array): DebugFrame {
     seq: bytes[3]!,
     payload: bytes.slice(6, 6 + len),
   };
+}
+
+export async function readDebugFrame(pipe: BytePipe, timeoutMs: number): Promise<DebugFrame> {
+  const started = Date.now();
+  const remaining = (): number => {
+    const left = timeoutMs - (Date.now() - started);
+    if (left <= 0) throw new RadioTimeoutError();
+    return left;
+  };
+  let prev = 0;
+  for (;;) {
+    const b = (await pipe.readExact(1, remaining()))[0]!;
+    if (prev === 0xa5 && b === 0x5a) break;
+    prev = b;
+  }
+  const head = await pipe.readExact(4, remaining());
+  const len = head[2]! | (head[3]! << 8);
+  if (len > 1024) throw new RadioProtocolError('RadioFoundry codeplug reply is too long.');
+  const rest = await pipe.readExact(len + 2, remaining());
+  const frame = new Uint8Array(8 + len);
+  frame[0] = 0xa5;
+  frame[1] = 0x5a;
+  frame.set(head, 2);
+  frame.set(rest, 6);
+  try {
+    return decodeDebugFrame(frame);
+  } catch {
+    throw new RadioProtocolError('RadioFoundry codeplug reply CRC does not match.');
+  }
 }

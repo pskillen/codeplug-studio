@@ -7,7 +7,11 @@ import { exampleArchive } from './debugReadHistory.fixture.ts';
 import { downloadZip } from '@integrations/download/browserDownload.ts';
 
 vi.mock('@integrations/download/browserDownload.ts', () => ({ downloadZip: vi.fn() }));
-const descriptor = { slug: 'controls-test', archiveModelId: 'AT-D890UV' };
+const descriptor = {
+  slug: 'controls-test',
+  archiveModelId: 'AT-D890UV',
+  firmware: 'stock' as const,
+};
 const store = getDebugReadHistory(descriptor);
 const show = () =>
   render(
@@ -36,6 +40,12 @@ describe('history controls', () => {
     resolve({ status: 'saved' });
     await waitFor(() => expect(store.getSnapshot().undownloaded).toBe(1));
   });
+  it('marks options with the firmware colour', () => {
+    store.add(exampleArchive());
+    const { container } = show();
+    expect(container.querySelector('[data-firmware="stock"]')).not.toBeNull();
+  });
+
   it('retains undownloaded status on failure and confirms clear', async () => {
     store.add(exampleArchive());
     vi.mocked(downloadZip).mockRejectedValue(new Error('Save failed'));

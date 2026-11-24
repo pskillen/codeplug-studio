@@ -16,10 +16,10 @@ describe('RT95 Compare: summary and hex diff on five reads', () => {
     const store = getDebugReadHistory(descriptor);
     store.importArchives(rt95FiveReads());
     render(
-      <MemoryRouter initialEntries={['/debug/radios/rt95']}>
+      <MemoryRouter initialEntries={['/debug/radios/rt95/stock']}>
         <DesignSystemV2Provider>
           <Routes>
-            <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+            <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
           </Routes>
         </DesignSystemV2Provider>
       </MemoryRouter>,

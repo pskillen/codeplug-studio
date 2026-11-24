@@ -82,6 +82,8 @@ RadioFoundry answers a codeplug command with **status 7 (refused)** and a **reas
 
 **Settings storage at pre-flight.** At connect, CODEPLUG INFO **byte 1 bit 1** (`storage_ready`) is false for **none**, **foreign** and **no flash map** alike — only a STORAGE INFO (command `0x0F`, op 0, read-only) before the pre-write read tells Studio which case it is. Studio refuses there when storage is not writable. **Foreign** alone offers **Unlock storage…** in the Write stepper (Danger zone wizard; see [storage-claim.md](storage-claim.md)) or RadioFoundry's own tools. The upload-time backstop when INFO cannot distinguish the case uses a generic not-ready sentence.
 
+The Debug capture reads with `readImageBlocks`: the same paced `readSums` (50 ms between SUMS requests) and CRC-checked `readBlock` as the write path's read, without the pre-write READ skip. It wraps the port in its own frame guard ([debug-capture.md](debug-capture.md)).
+
 | STORAGE INFO outcome       | Operator message (summary)                                                      |
 | -------------------------- | ------------------------------------------------------------------------------- |
 | `foreign`                  | Flash still holds another firmware’s settings — claim storage, then write again |

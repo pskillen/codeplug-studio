@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RT95_CALIBRATION_REGION_ID } from '@integrations/radio-io/radios/rt95/debugCapture.ts';
 import type { DebugArchive } from './captureArchive.ts';
-import { radioDebugDescriptors } from './descriptors.ts';
+import { debugRadios, resolveLegacyDebugSlug, radioDebugDescriptors } from './descriptors.ts';
 import { rt95Archive } from './rt95Archive.fixture.ts';
 import { syntheticZip } from './uv5rMiniLegacyArchive.fixture.ts';
 import { openUv5rMiniLegacyArchive } from './uv5rMiniLegacyArchive.ts';
@@ -11,6 +11,56 @@ const labels = (slug: string) =>
   descriptor(slug).identityRows!({ connection: 'Not connected', family: 'F' }).map(
     ([label]) => label,
   );
+
+describe('radio and firmware addressing', () => {
+  it('gives each (radio, firmware) pair once and keeps one model per radio key', () => {
+    const pairs = radioDebugDescriptors.map((d) => `${d.radio}:${d.firmware}`);
+    expect(new Set(pairs).size).toBe(pairs.length);
+    for (const radio of new Set(radioDebugDescriptors.map((d) => d.radio))) {
+      const models = new Set(
+        radioDebugDescriptors.filter((d) => d.radio === radio).map((d) => d.model),
+      );
+      expect(models.size).toBe(1);
+    }
+  });
+
+  it('resolves every slug and bare radio key', () => {
+    const table: [string, string, string][] = [
+      ['at-d890uv', 'at-d890uv', 'stock'],
+      ['dm-32uv', 'dm-32uv', 'stock'],
+      ['dm-32uv-radiofoundry', 'dm-32uv', 'radiofoundry'],
+      ['dm-1701-radiofoundry', 'dm-1701', 'radiofoundry'],
+      ['dm-1701-opengd77', 'dm-1701', 'opengd77'],
+      ['md-9600-radiofoundry', 'md-9600', 'radiofoundry'],
+      ['md-9600-opengd77', 'md-9600', 'opengd77'],
+      ['rt84-radiofoundry', 'rt84', 'radiofoundry'],
+      ['rt90-radiofoundry', 'rt90', 'radiofoundry'],
+      ['rt95', 'rt95', 'stock'],
+      ['uv-21-pro-v2', 'uv-21-pro-v2', 'stock'],
+      ['uv-5r-mini', 'uv-5r-mini', 'stock'],
+    ];
+    for (const [slug, radio, firmware] of table) {
+      expect(resolveLegacyDebugSlug(slug)).toEqual({ radio, firmware });
+    }
+    expect(resolveLegacyDebugSlug('md-9600')).toEqual({ radio: 'md-9600', firmware: 'opengd77' });
+    expect(resolveLegacyDebugSlug('dm-32uv')?.firmware).toBe('stock');
+    expect(resolveLegacyDebugSlug('rt84')?.firmware).toBe('radiofoundry');
+  });
+
+  it('lists each radio once in card order', () => {
+    expect(debugRadios().map((r) => r.radio)).toEqual([
+      'at-d890uv',
+      'dm-32uv',
+      'dm-1701',
+      'md-9600',
+      'rt84',
+      'rt90',
+      'rt95',
+      'uv-21-pro-v2',
+      'uv-5r-mini',
+    ]);
+  });
+});
 
 describe('descriptor fields that carry radio text for the shared page', () => {
   it('every radio with its own identity evidence builds its rows in its home', () => {
@@ -91,6 +141,29 @@ describe('descriptor fields that carry radio text for the shared page', () => {
     expect(open(new Uint8Array([1, 2, 3]))).toBeUndefined();
     expect(descriptor('rt95').openLegacyArchive).toBeUndefined();
     expect(openUv5rMiniLegacyArchive(syntheticZip())?.[0]?.source).toBeDefined();
+  });
+
+  it('gives each RadioFoundry profile capture, history, area-2 and calibration note', () => {
+    for (const slug of [
+      'dm-32uv-radiofoundry',
+      'dm-1701-radiofoundry',
+      'rt84-radiofoundry',
+      'md-9600-radiofoundry',
+      'rt90-radiofoundry',
+    ]) {
+      const d = descriptor(slug);
+      expect(d.capture, slug).toBeTypeOf('function');
+      expect(d.readHistory, slug).toBe(true);
+      expect(
+        d.captureOptions?.some((o) => o.label.includes('DMR ID database area 2')),
+        slug,
+      ).toBe(true);
+      expect(d.captureStages).toEqual(['Connect', 'Codeplug', 'ID database']);
+      expect(d.calibrationNote).toMatch(/not read yet/);
+      const rows = labels(slug);
+      expect(rows).toContain('Firmware · read');
+      expect(rows).toContain('DMR ID database · IDDB');
+    }
   });
 
   it('region notes tag RT95 regions and explain Mini addresses', () => {

@@ -160,7 +160,7 @@ Upload stages each **post-remap 4 KB block** actually written. **Verify write** 
 
 ## Debug capture allow-list
 
-The `/debug/radios/dm-32uv` live read (`radios/dm32uv/debugCapture.ts`) wraps the transport in a guard. Only these frames reach the radio, in this order, one frame per write:
+The `/debug/radios/dm-32uv/stock` live read (`radios/dm32uv/debugCapture.ts`) wraps the transport in a guard. Only these frames reach the radio, in this order, one frame per write:
 
 1. `PSEARCH`, `PASSSTA`, `SYSINFO` (ASCII, exact).
 2. `47 00 00 00 00 10`, exactly twice.

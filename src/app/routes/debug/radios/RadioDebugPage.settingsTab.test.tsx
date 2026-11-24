@@ -3,14 +3,16 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DesignSystemV2Provider } from '@app/components/v2/index.ts';
 import RadioDebugPage from './RadioDebugPage.tsx';
-import { radioDebugDescriptors, radioDebugTabs } from './descriptors.ts';
+import { debugRadioPath, radioDebugDescriptors, radioDebugTabs } from './descriptors.ts';
 
 function open(slug: string) {
   return render(
-    <MemoryRouter initialEntries={[`/debug/radios/${slug}`]}>
+    <MemoryRouter
+      initialEntries={[debugRadioPath(radioDebugDescriptors.find((d) => d.slug === slug)!)!]}
+    >
       <DesignSystemV2Provider>
         <Routes>
-          <Route path="/debug/radios/:radio" element={<RadioDebugPage />} />
+          <Route path="/debug/radios/:radio/:firmware" element={<RadioDebugPage />} />
         </Routes>
       </DesignSystemV2Provider>
     </MemoryRouter>,
@@ -22,17 +24,15 @@ const WITH_SETTINGS = [
   'dm-32uv',
   'dm-1701-opengd77',
   'md-9600-opengd77',
-  'rt95',
-  'uv-5r-mini',
-];
-const WITHOUT_SETTINGS = [
-  'uv-21-pro-v2',
+  'md-9600-radiofoundry',
   'dm-32uv-radiofoundry',
   'dm-1701-radiofoundry',
   'rt84-radiofoundry',
-  'md-9600-radiofoundry',
   'rt90-radiofoundry',
+  'rt95',
+  'uv-5r-mini',
 ];
+const WITHOUT_SETTINGS = ['uv-21-pro-v2'];
 
 afterEach(cleanup);
 

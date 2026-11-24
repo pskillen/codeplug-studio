@@ -24,7 +24,17 @@ import {
   useSensitiveReveal,
 } from '../../components/debug/index.ts';
 import { ToggleSwitch, type DataTableColumn } from '../../components/v2/index.ts';
+import { WrongFirmwareNotice } from '../debug/radios/WrongFirmwareNotice.tsx';
+import { debugOpenPort, DebugWrongFirmwareError } from '@integrations/radio-io/debugHandoff.ts';
+import { OPENGD77_DEBUG_RADIOFOUNDRY_FOUND } from '@integrations/radio-io/radios/opengd77/debugText.ts';
+import {
+  RADIOFOUNDRY_DEBUG_NO_ANSWER,
+  RADIOFOUNDRY_DEBUG_OPENGD77_FOUND,
+} from '@integrations/radio-io/radios/radiofoundry/debugText.ts';
+import { FirmwareSwitch } from '../debug/radios/FirmwareSwitch.tsx';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
+
+const noopCapture = () => Promise.resolve({} as never);
 import {
   DEBUG_DEMO_HEX,
   DEBUG_DEMO_MEMORY_CAVEAT,
@@ -147,6 +157,28 @@ export default function StyleguideDebugPage() {
         </Text>
 
         <StyleguideSection
+          title="Firmware switch"
+          description="Expected firmware under the radio title on debug pages: three families with a dashed dot when no reader yet, and a single-option control that is shown but not clickable."
+        >
+          <Stack gap="md">
+            <FirmwareSwitch
+              value="opengd77"
+              onChange={() => {}}
+              options={[
+                { firmware: 'stock', capture: noopCapture },
+                { firmware: 'opengd77', capture: noopCapture },
+                { firmware: 'radiofoundry' },
+              ]}
+            />
+            <FirmwareSwitch
+              value="stock"
+              onChange={() => {}}
+              options={[{ firmware: 'stock', capture: noopCapture }]}
+            />
+          </Stack>
+        </StyleguideSection>
+
+        <StyleguideSection
           title="DebugSection"
           description="A titled section with a one-line description, meta on the right and an optional disclosure."
         >
@@ -159,6 +191,45 @@ export default function StyleguideDebugPage() {
           >
             <Text size="sm">Body content. The body is unmounted while collapsed.</Text>
           </DebugSection>
+        </StyleguideSection>
+
+        <StyleguideSection
+          title="WrongFirmwareNotice"
+          description="Wrong-firmware read: port handoff, no sibling page, and unknown with stock switch-only."
+        >
+          <Stack gap="sm">
+            <WrongFirmwareNotice
+              error={
+                new DebugWrongFirmwareError(
+                  'radiofoundry',
+                  OPENGD77_DEBUG_RADIOFOUNDRY_FOUND,
+                  debugOpenPort({ close: async () => {} } as never, 'web-serial', 115_200),
+                )
+              }
+              target={{ firmware: 'radiofoundry', capture: noopCapture }}
+              portOpen
+              secondsLeft={42}
+              onSwitchAndRead={() => {}}
+              onSwitchOnly={() => {}}
+              onClose={() => {}}
+            />
+            <WrongFirmwareNotice
+              error={new DebugWrongFirmwareError('opengd77', RADIOFOUNDRY_DEBUG_OPENGD77_FOUND)}
+              target={{ firmware: 'opengd77', capture: undefined }}
+              portOpen={false}
+              onSwitchAndRead={() => {}}
+              onSwitchOnly={() => {}}
+              onClose={() => {}}
+            />
+            <WrongFirmwareNotice
+              error={new DebugWrongFirmwareError('unknown', RADIOFOUNDRY_DEBUG_NO_ANSWER)}
+              stockSibling={{ firmware: 'stock' }}
+              portOpen={false}
+              onSwitchAndRead={() => {}}
+              onSwitchOnly={() => {}}
+              onClose={() => {}}
+            />
+          </Stack>
         </StyleguideSection>
 
         <StyleguideSection

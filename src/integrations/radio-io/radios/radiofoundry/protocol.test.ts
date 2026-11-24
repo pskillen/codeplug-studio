@@ -1599,3 +1599,83 @@ describe('RadioFoundry pre-write read without whole-block READ', () => {
     }
   });
 });
+
+describe('RadioFoundry read helpers', () => {
+  it('readImageBlocks skips READ for blank blocks and leaves hasReadImage false', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.block(0).fill(0x5a);
+    const pause = async (): Promise<void> => {};
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD, { pause });
+    await proto.connect(pipe);
+    const opsBefore = requestOps(pipe).length;
+    const blocks = await proto.readImageBlocks([0, BLOCK_SIZE], { stage: 'Debug' });
+    expect(blocks.get(0)?.blank).toBe(false);
+    expect(blocks.get(BLOCK_SIZE)?.blank).toBe(true);
+    expect([...blocks.get(0)!.bytes.subarray(0, 4)]).toEqual([0x5a, 0x5a, 0x5a, 0x5a]);
+    const downloadOps = requestOps(pipe).slice(opsBefore);
+    expect(downloadOps.filter((op) => op === OP_READ).length).toBeGreaterThan(0);
+    expect(downloadOps.some((op) => op === OP_READ)).toBe(true);
+    expect(proto.hasReadImage()).toBe(false);
+  });
+
+  it('readImageBlocks fails when a block checksum does not match', async () => {
+    const pipe = new ScriptedPipe(0x5a);
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD, {
+      pause: async () => {},
+    });
+    await proto.connect(pipe);
+    const inner = proto as unknown as {
+      readSums: (addresses: number[]) => Promise<Map<number, { crc: number; blank: boolean }>>;
+    };
+    const realReadSums = inner.readSums.bind(proto);
+    inner.readSums = async (addresses) => {
+      const sums = await realReadSums(addresses);
+      const entry = sums.get(0)!;
+      sums.set(0, { ...entry, crc: entry.crc ^ 0xfffffff });
+      return sums;
+    };
+    await expect(proto.readImageBlocks([0])).rejects.toThrow(
+      /checksum does not match the radio|did not decode to the radio's checksum|checksum changed while it was being read/,
+    );
+  });
+
+  it('readImageBlocks paces SUMS like other callers', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    const pauseCalls: number[] = [];
+    const pause = async (ms: number): Promise<void> => {
+      pauseCalls.push(ms);
+    };
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD, { pause });
+    await proto.connect(pipe);
+    await proto.readImageBlocks(threeSumsRunAddresses(), { stage: 'Debug' });
+    expect(pauseCalls).toEqual([RADIOFOUNDRY_SUMS_PAUSE_MS, RADIOFOUNDRY_SUMS_PAUSE_MS]);
+  });
+
+  it('download sends the same request ops as before readImageBlocks', async () => {
+    const captureOps = async (): Promise<number[]> => {
+      const pipe = new ScriptedPipe(0x5a);
+      const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD, {
+        pause: async () => {},
+      });
+      await proto.connect(pipe);
+      const start = requestOps(pipe).length;
+      await proto.download({});
+      return requestOps(pipe).slice(start);
+    };
+    expect(await captureOps()).toEqual(await captureOps());
+  });
+
+  it('connectReplies exposes INFO and VERSION then clears on disconnect', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    expect(proto.connectReplies()).toBeNull();
+    expect(pipe.writes).toHaveLength(0);
+    await proto.connect(pipe);
+    expect(pipe.writes).toHaveLength(2);
+    const replies = proto.connectReplies();
+    expect(replies?.info).toEqual(infoBody());
+    expect(replies?.versionText).toBe(DM32UV_VERSION_TEXT);
+    await proto.disconnect();
+    expect(proto.connectReplies()).toBeNull();
+  });
+});

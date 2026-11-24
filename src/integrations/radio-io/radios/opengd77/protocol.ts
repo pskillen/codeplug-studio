@@ -75,7 +75,7 @@ import {
   decodeChannelsFromImage,
   encodeChannelsIntoImage,
 } from './channelCodec.ts';
-import { OPENGD77_RADIOFOUNDRY_REFUSAL, probeRadioFoundry } from './radioFoundryProbe.ts';
+import { probeRadioFoundry, RadioFoundryDetectedError } from './radioFoundryProbe.ts';
 import {
   allSectorBlocks,
   collectDirtySectors,
@@ -387,7 +387,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
 
     throwIfAborted(opts?.signal);
     if (await probeRadioFoundry(pipe)) {
-      throw new RadioWrongIdentError(OPENGD77_RADIOFOUNDRY_REFUSAL);
+      throw new RadioFoundryDetectedError();
     }
 
     await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);

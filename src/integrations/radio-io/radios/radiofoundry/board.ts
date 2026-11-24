@@ -116,3 +116,10 @@ export function radioFoundryCableBoardForProfileId(profileId: string): RadioFoun
   if (!board) throw new Error(`No RadioFoundry cable board for profile: ${profileId}`);
   return board;
 }
+
+/** Cable board for a hydration model id, when this delivery has one. */
+export function radioFoundryCableBoardForModelId(
+  modelId: string,
+): RadioFoundryCableBoard | undefined {
+  return RADIOFOUNDRY_CABLE_BOARDS.find((row) => row.modelId === modelId);
+}
