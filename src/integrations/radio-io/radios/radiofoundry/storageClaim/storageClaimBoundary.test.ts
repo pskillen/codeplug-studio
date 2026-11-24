@@ -8,7 +8,14 @@ import { describe, expect, it } from 'vitest';
 
 const SRC = join(process.cwd(), 'src');
 const CLAIM_DIR = ['integrations', 'radio-io', 'radios', 'radiofoundry', 'storageClaim'].join(sep);
-const HOOK = join('app', 'routes', 'builds', 'danger-zone', 'storageClaim', 'useStorageClaimFlow.tsx');
+const HOOK = join(
+  'app',
+  'routes',
+  'builds',
+  'danger-zone',
+  'storageClaim',
+  'useStorageClaimFlow.tsx',
+);
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -30,7 +37,9 @@ function offenders(needle: RegExp, allowed: (rel: string) => boolean): string[] 
 
 describe('storage-claim send boundary (interlock 10)', () => {
   const allowed = (rel: string) =>
-    rel.startsWith(CLAIM_DIR + sep) || rel === HOOK || rel === join(CLAIM_DIR, 'storageClaimBoundary.test.ts');
+    rel.startsWith(CLAIM_DIR + sep) ||
+    rel === HOOK ||
+    rel === join(CLAIM_DIR, 'storageClaimBoundary.test.ts');
 
   it('only storageClaim/ and the wizard hook reference storageClaimSend', () => {
     expect(offenders(/storageClaimSend/, allowed)).toEqual([]);

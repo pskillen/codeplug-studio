@@ -8,11 +8,7 @@ import {
   encodeDebugFrame,
   type DebugFrame,
 } from '../../../kit/codecs/radioFoundryDebugLink.ts';
-import {
-  RadioInterlockError,
-  RadioProtocolError,
-  RadioTimeoutError,
-} from '../../../kit/errors.ts';
+import { RadioInterlockError, RadioProtocolError, RadioTimeoutError } from '../../../kit/errors.ts';
 import { throwIfAborted } from '../../../kit/progress.ts';
 import type { BytePipe } from '../../../types.ts';
 import { CODEPLUG_COMMAND } from '../constants.ts';
@@ -164,7 +160,11 @@ export function createStorageClaimSender(pipe: BytePipe, startSeq = 1): StorageC
         await delay(STORAGE_BUSY_GAP_MS);
         continue;
       }
-      if (command === RADIOFOUNDRY_STORAGE_COMMAND && payload[0] === STORAGE_OP_CLAIM && status === 0) {
+      if (
+        command === RADIOFOUNDRY_STORAGE_COMMAND &&
+        payload[0] === STORAGE_OP_CLAIM &&
+        status === 0
+      ) {
         claimSent = true;
       }
       return { status, body: frame.payload.subarray(1) };

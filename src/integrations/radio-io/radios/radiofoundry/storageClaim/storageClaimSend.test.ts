@@ -26,9 +26,9 @@ describe('storage claim allow-list (interlock 1)', () => {
   });
 
   it('refuses STORAGE op 3 and unknown commands', () => {
-    expect(() => guardStorageClaimCommand(RADIOFOUNDRY_STORAGE_COMMAND, new Uint8Array([3]))).toThrow(
-      /STORAGE operation 3/,
-    );
+    expect(() =>
+      guardStorageClaimCommand(RADIOFOUNDRY_STORAGE_COMMAND, new Uint8Array([3])),
+    ).toThrow(/STORAGE operation 3/);
     expect(() => guardStorageClaimCommand(0x26, new Uint8Array([0]))).toThrow(/does not send/);
   });
 
@@ -59,15 +59,7 @@ describe('storage claim allow-list (interlock 1)', () => {
 
 describe('guard STORAGE READ length', () => {
   it('refuses READ len 0 before write', () => {
-    const payload = new Uint8Array([
-      STORAGE_OP_READ,
-      0,
-      0,
-      0x10,
-      0x01,
-      0,
-      0,
-    ]);
+    const payload = new Uint8Array([STORAGE_OP_READ, 0, 0, 0x10, 0x01, 0, 0]);
     expect(() => guardStorageClaimCommand(RADIOFOUNDRY_STORAGE_COMMAND, payload)).toThrow(
       RadioInterlockError,
     );

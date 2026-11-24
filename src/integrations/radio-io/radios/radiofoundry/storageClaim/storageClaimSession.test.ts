@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { decodeDebugFrame, encodeDebugFrame } from '../../../kit/codecs/radioFoundryDebugLink.ts';
+import { decodeDebugFrame } from '../../../kit/codecs/radioFoundryDebugLink.ts';
 import { DM32UV_RADIOFOUNDRY_CABLE_BOARD } from '../board.ts';
 import { RADIOFOUNDRY_STORAGE_COMMAND } from '../storageInfo.ts';
-import { assertSaneStorageClaimRanges, StorageClaimRulesError } from '@core/radios/radiofoundry/storageClaim.ts';
+import {
+  assertSaneStorageClaimRanges,
+  StorageClaimRulesError,
+} from '@core/radios/radiofoundry/storageClaim.ts';
 import {
   createStorageClaimSession,
   storageClaimAcknowledgeBackupSaved,

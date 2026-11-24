@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { AT_D890_FREQUENCY_RANGE_TOOL_ID, DANGER_ZONE_TOOLS } from './registry.ts';
+import {
+  AT_D890_FREQUENCY_RANGE_TOOL_ID,
+  DANGER_ZONE_TOOLS,
+  RADIOFOUNDRY_STORAGE_CLAIM_TOOL_ID,
+} from './registry.ts';
 
 describe('DANGER_ZONE_TOOLS', () => {
   it('has unique ids', () => {
@@ -15,5 +19,11 @@ describe('DANGER_ZONE_TOOLS', () => {
     expect(tool).not.toHaveProperty('prodDisabled');
     expect(tool?.minutes).toBe(10);
     expect(tool?.route).toBe('export/danger-zone/frequency-range');
+  });
+
+  it('lists the RadioFoundry storage claim tool for RF targets', () => {
+    const tool = DANGER_ZONE_TOOLS.find((t) => t.id === RADIOFOUNDRY_STORAGE_CLAIM_TOOL_ID);
+    expect(tool?.route).toBe('export/danger-zone/storage-claim');
+    expect(tool?.radios).toContain('baofeng-dm32uv-radiofoundry');
   });
 });

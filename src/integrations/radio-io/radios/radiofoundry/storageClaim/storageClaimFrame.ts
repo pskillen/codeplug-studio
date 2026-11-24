@@ -27,6 +27,8 @@ export function buildStorageClaimTokenPayload(token: number): Uint8Array {
 /** Refuse before a CLAIM is sent when the payload is not exactly 5 bytes with op 2. */
 export function assertStorageClaimPayload(payload: Uint8Array): void {
   if (payload.length !== 5 || payload[0] !== STORAGE_OP_CLAIM) {
-    throw new StorageClaimFrameRefusedError('Storage claim payload must be exactly 5 bytes starting with op 2.');
+    throw new StorageClaimFrameRefusedError(
+      'Storage claim payload must be exactly 5 bytes starting with op 2.',
+    );
   }
 }

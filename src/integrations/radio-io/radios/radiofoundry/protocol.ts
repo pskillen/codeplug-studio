@@ -98,8 +98,10 @@ export type RadioFoundryStorageInfoReply =
 export const PRE_WRITE_STAGE = 'Pre-write read';
 export const BLOCK_CHECKSUMS_STAGE = 'Block checksums';
 const BLOCKS_STAGE = 'Codeplug blocks';
+export const RF_STORAGE_FOREIGN_INTERLOCK = 'rf-storage-foreign';
+
 export const STORAGE_FOREIGN_REFUSAL =
-  'This radio\'s flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Claim the storage area with RadioFoundry\'s web programming utility (it backs up first) or with "rfoundry_debug.py storage claim", then write again. Nothing was written.';
+  "This radio's flash still holds settings from the firmware it ran before, so RadioFoundry will not save anything to it. Use Unlock storage in Danger zone (Studio backs up first), or claim with RadioFoundry's web programming utility or rfoundry_debug.py storage claim, then write again. Nothing was written.";
 
 export const RF_STORAGE_NOT_STARTED =
   "This radio's settings storage did not start, so RadioFoundry will not save anything to it. Power-cycle the radio and write again; if it keeps happening, check the radio with RadioFoundry's own tools. Nothing was written.";

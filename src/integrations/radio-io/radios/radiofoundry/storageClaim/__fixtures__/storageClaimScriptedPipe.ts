@@ -1,5 +1,8 @@
 import { RadioTimeoutError } from '../../../../kit/errors.ts';
-import { decodeDebugFrame, encodeDebugFrame } from '../../../../kit/codecs/radioFoundryDebugLink.ts';
+import {
+  decodeDebugFrame,
+  encodeDebugFrame,
+} from '../../../../kit/codecs/radioFoundryDebugLink.ts';
 import type { BytePipe } from '../../../../types.ts';
 import { CODEPLUG_COMMAND } from '../../constants.ts';
 import { RADIOFOUNDRY_STORAGE_COMMAND } from '../../storageInfo.ts';
@@ -55,7 +58,10 @@ export class StorageClaimScriptedPipe implements BytePipe {
     if (req.command === RADIOFOUNDRY_STORAGE_COMMAND) {
       const op = req.payload[0]!;
       if (op === STORAGE_OP_INFO) {
-        const region = this.claimCount > 0 && this.afterClaimRegion != null ? this.afterClaimRegion : this.storageRegion;
+        const region =
+          this.claimCount > 0 && this.afterClaimRegion != null
+            ? this.afterClaimRegion
+            : this.storageRegion;
         const data26 = new Uint8Array(26);
         data26[0] = region;
         data26[1] = this.storageClaimPending;
@@ -98,7 +104,6 @@ export class StorageClaimScriptedPipe implements BytePipe {
           (req.payload[3]! << 16) |
           (req.payload[4]! << 24);
         const ok = token === this.chipToken;
-        const status = ok ? 0 : 7;
         const payload = ok ? Uint8Array.from([0, 0]) : Uint8Array.from([7, 1]);
         this.enqueue(encodeDebugFrame(RADIOFOUNDRY_STORAGE_COMMAND | 0x80, req.seq, payload));
         return;
@@ -108,7 +113,7 @@ export class StorageClaimScriptedPipe implements BytePipe {
     throw new Error(`Unexpected command 0x${req.command.toString(16)}`);
   }
 
-  async readExact(n: number, _timeout?: number): Promise<Uint8Array> {
+  async readExact(n: number): Promise<Uint8Array> {
     if (this.pending.length < n) throw new RadioTimeoutError();
     const out = this.pending.slice(0, n);
     this.pending = this.pending.slice(n);

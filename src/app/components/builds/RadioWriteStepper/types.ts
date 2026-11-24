@@ -186,6 +186,8 @@ export interface WriteFlowView {
     rows: readonly RadioPreflightRow[];
   };
   channelLabel?: (entityId: string) => string | undefined;
+  /** Danger zone unlock when pre-flight refused foreign storage. */
+  storageUnlockHref?: string;
 }
 
 export interface WriteFlowActions {

@@ -42,6 +42,8 @@ import type {
   WriteVerifyPendingPayload,
   WriteVerifyResult,
 } from '@integrations/radio-io/writeVerify.ts';
+import { listOfferedDangerZoneTools } from '../../../services/dangerZone/gate.ts';
+import { RADIOFOUNDRY_STORAGE_CLAIM_TOOL_ID } from '../../../services/dangerZone/registry.ts';
 import { useRestartCountdown } from '../../radio-io/useRestartCountdown.ts';
 import { loadLibrarySlice } from '../../../lib/loadLibrarySlice.ts';
 import { createProgressCoalescer, type ProgressCoalescer } from '../../../lib/progressCoalescer.ts';
@@ -1471,6 +1473,13 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     buildChecks,
     preflight,
     channelLabel,
+    storageUnlockHref:
+      errorOutcome?.interlockKey === 'rf-storage-foreign' &&
+      listOfferedDangerZoneTools(build.radioTargetId).some(
+        (t) => t.id === RADIOFOUNDRY_STORAGE_CLAIM_TOOL_ID,
+      )
+        ? `/builds/${build.id}/export/danger-zone/storage-claim`
+        : undefined,
   };
 
   const actions: WriteFlowActions = {

@@ -16,10 +16,7 @@ import { throwIfAborted } from '../../../kit/progress.ts';
 import type { BytePipe } from '../../../types.ts';
 import type { RadioFoundryCableBoard } from '../board.ts';
 import { isRadioFoundryBoardName } from '../version.ts';
-import {
-  parseRadioFoundryStorageInfo,
-  type RadioFoundryStorageInfo,
-} from '../storageInfo.ts';
+import { parseRadioFoundryStorageInfo, type RadioFoundryStorageInfo } from '../storageInfo.ts';
 import {
   INFO_CHIP_UNAVAILABLE_MESSAGE,
   parseRadioFoundryChipInfo,
@@ -115,15 +112,29 @@ export async function storageClaimCheck(
       state.sender.claimSent,
     );
   }
-  const infoReply = await state.sender.exchangeStorage(STORAGE_OP_INFO, new Uint8Array(), 2000, signal);
+  const infoReply = await state.sender.exchangeStorage(
+    STORAGE_OP_INFO,
+    new Uint8Array(),
+    2000,
+    signal,
+  );
   if (infoReply.status === 4) {
-    refuse('This RadioFoundry firmware has no settings storage map for this radio. Nothing has changed.', state.sender.claimSent);
+    refuse(
+      'This RadioFoundry firmware has no settings storage map for this radio. Nothing has changed.',
+      state.sender.claimSent,
+    );
   }
   if (infoReply.status === 1) {
-    refuse('This RadioFoundry build does not support STORAGE. Nothing has changed.', state.sender.claimSent);
+    refuse(
+      'This RadioFoundry build does not support STORAGE. Nothing has changed.',
+      state.sender.claimSent,
+    );
   }
   if (infoReply.status !== 0 || infoReply.body.length < 26) {
-    refuse('Could not read storage layout from the radio. Nothing has changed.', state.sender.claimSent);
+    refuse(
+      'Could not read storage layout from the radio. Nothing has changed.',
+      state.sender.claimSent,
+    );
   }
   const parsed = parseRadioFoundryStorageInfo(infoReply.body);
   const layout = toLayout(parsed);
@@ -132,7 +143,10 @@ export async function storageClaimCheck(
     refuse('Storage already belongs to RadioFoundry. Nothing to do.', state.sender.claimSent);
   }
   if (layout.region !== 'foreign') {
-    refuse('Storage is not in the foreign state Studio can claim. Nothing has changed.', state.sender.claimSent);
+    refuse(
+      'Storage is not in the foreign state Studio can claim. Nothing has changed.',
+      state.sender.claimSent,
+    );
   }
   const ranges = storageClaimRangesFromInfo(layout);
   assertSaneStorageClaimRanges(ranges);
@@ -165,7 +179,7 @@ export async function storageClaimBackup(
     refuse(INFO_CHIP_UNAVAILABLE_MESSAGE, state.sender.claimSent);
   }
   if (chipReply.status !== 0) {
-    refuse('Could not read the radio\'s chip ID. Nothing has changed.', state.sender.claimSent);
+    refuse("Could not read the radio's chip ID. Nothing has changed.", state.sender.claimSent);
   }
   const chip = parseRadioFoundryChipInfo(chipReply.body);
   const out: Record<string, Uint8Array> = {};
@@ -210,11 +224,8 @@ async function readRangeFull(
       throw new RadioProtocolError('STORAGE READ reply was too short.');
     }
     const echo =
-      reply.body[0]! |
-      (reply.body[1]! << 8) |
-      (reply.body[2]! << 16) |
-      (reply.body[3]! << 24);
-    if ((echo >>> 0) !== (range.address + offset) >>> 0) {
+      reply.body[0]! | (reply.body[1]! << 8) | (reply.body[2]! << 16) | (reply.body[3]! << 24);
+    if (echo >>> 0 !== (range.address + offset) >>> 0) {
       throw new RadioProtocolError('STORAGE READ echoed the wrong address.');
     }
     buf.set(reply.body.subarray(4, 4 + len), offset);
@@ -233,14 +244,25 @@ export async function storageClaimUnlock(
   signal?: AbortSignal,
 ): Promise<void> {
   if (!state.backupSaved) {
-    refuse('Confirm you have saved the backup file before unlocking storage.', state.sender.claimSent);
+    refuse(
+      'Confirm you have saved the backup file before unlocking storage.',
+      state.sender.claimSent,
+    );
   }
   if (state.manifestToken == null || state.manifestLayout == null) {
     refuse('Complete the backup step before unlocking storage.', state.sender.claimSent);
   }
-  const infoReply = await state.sender.exchangeStorage(STORAGE_OP_INFO, new Uint8Array(), 2000, signal);
+  const infoReply = await state.sender.exchangeStorage(
+    STORAGE_OP_INFO,
+    new Uint8Array(),
+    2000,
+    signal,
+  );
   if (infoReply.status !== 0 || infoReply.body.length < 26) {
-    refuse('Could not re-read storage layout before claim. Nothing has changed.', state.sender.claimSent);
+    refuse(
+      'Could not re-read storage layout before claim. Nothing has changed.',
+      state.sender.claimSent,
+    );
   }
   const fresh = toLayout(parseRadioFoundryStorageInfo(infoReply.body));
   if (fresh.region !== 'foreign' || !rangesEqual(fresh, state.manifestLayout)) {
@@ -272,7 +294,10 @@ export async function storageClaimUnlock(
     signal,
   );
   if (claimReply.status !== 0) {
-    refuse(`The radio refused storage claim (status ${claimReply.status}). Nothing has changed.`, true);
+    refuse(
+      `The radio refused storage claim (status ${claimReply.status}). Nothing has changed.`,
+      true,
+    );
   }
 }
 
@@ -294,7 +319,12 @@ export async function storageClaimPollForOurs(
   while (performance.now() < end) {
     throwIfAborted(signal);
     await delay(STORAGE_CLAIM_POLL_MS);
-    const infoReply = await state.sender.exchangeStorage(STORAGE_OP_INFO, new Uint8Array(), 2000, signal);
+    const infoReply = await state.sender.exchangeStorage(
+      STORAGE_OP_INFO,
+      new Uint8Array(),
+      2000,
+      signal,
+    );
     if (infoReply.status !== 0 || infoReply.body.length < 26) continue;
     const layout = toLayout(parseRadioFoundryStorageInfo(infoReply.body));
     last = layout;
@@ -310,7 +340,12 @@ export async function storageClaimRecheck(
   state: StorageClaimSessionState,
   signal?: AbortSignal,
 ): Promise<StorageClaimLayout> {
-  const infoReply = await state.sender.exchangeStorage(STORAGE_OP_INFO, new Uint8Array(), 2000, signal);
+  const infoReply = await state.sender.exchangeStorage(
+    STORAGE_OP_INFO,
+    new Uint8Array(),
+    2000,
+    signal,
+  );
   if (infoReply.status !== 0 || infoReply.body.length < 26) {
     throw new RadioProtocolError('STORAGE INFO failed during recheck.');
   }

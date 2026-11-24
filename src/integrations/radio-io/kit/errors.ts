@@ -142,8 +142,11 @@ export class RadioConfirmRequiredError extends RadioIoError {
 }
 
 export class RadioInterlockError extends RadioIoError {
-  constructor(message: string) {
+  /** Stable marker for product flows (e.g. foreign storage → Danger zone unlock). */
+  readonly interlockKey?: string;
+  constructor(message: string, interlockKey?: string) {
     super('interlock', message);
     this.name = 'RadioInterlockError';
+    this.interlockKey = interlockKey;
   }
 }

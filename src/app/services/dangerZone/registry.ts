@@ -21,6 +21,15 @@ export interface DangerZoneToolDescriptor {
 }
 
 export const AT_D890_FREQUENCY_RANGE_TOOL_ID = 'd890-frequency-range';
+export const RADIOFOUNDRY_STORAGE_CLAIM_TOOL_ID = 'radiofoundry-storage-claim';
+
+const RADIOFOUNDRY_DANGER_TARGET_IDS = [
+  'retevis-rt90-radiofoundry',
+  'retevis-rt84-radiofoundry',
+  'baofeng-dm32uv-radiofoundry',
+  'baofeng-dm1701-radiofoundry',
+  'tyt-md9600-radiofoundry',
+] as const;
 
 export const DANGER_ZONE_TOOLS: readonly DangerZoneToolDescriptor[] = [
   {
@@ -32,5 +41,15 @@ export const DANGER_ZONE_TOOLS: readonly DangerZoneToolDescriptor[] = [
     minutes: 10,
     radios: ['anytone-at-d890uv', 'anytone-at-d890uv-mm9pdy'],
     route: 'export/danger-zone/frequency-range',
+  },
+  {
+    id: RADIOFOUNDRY_STORAGE_CLAIM_TOOL_ID,
+    title: 'Unlock settings storage',
+    summary:
+      'Claims the flash settings area RadioFoundry refused to write while it still held data from the old firmware.',
+    cost: "Erases the old firmware's 40 KB settings area; Studio saves it to a file first.",
+    minutes: 2,
+    radios: RADIOFOUNDRY_DANGER_TARGET_IDS,
+    route: 'export/danger-zone/storage-claim',
   },
 ];
