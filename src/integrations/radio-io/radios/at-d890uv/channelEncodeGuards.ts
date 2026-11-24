@@ -3,6 +3,7 @@
  */
 
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
+import type { RadioWriteRefusal } from '../../types.ts';
 import { encodeBcdFrequencyHz } from './bcd.ts';
 
 /** AM airband lives in a separate bank on D890 — never MR channel slots. */
@@ -89,4 +90,42 @@ export function assertAtD890NxdnRan(ran: number, label: string, slotIndex: numbe
       `AT-D890UV channel ${slotIndex}: NXDN ${label} must be a whole number 0-${AT_D890_NXDN_RAN_MAX}, got ${ran}`,
     );
   }
+}
+
+/**
+ * Every channel the radio cannot encode from the projection alone. Never throws; never stops at
+ * the first problem.
+ */
+export function checkAtD890WriteChannels(channels: readonly RadioChannelDto[]): RadioWriteRefusal[] {
+  const refusals: RadioWriteRefusal[] = [];
+  const pushEncodeRefusal = (err: unknown, slotIndex: number): void => {
+    if (err instanceof AtD890ChannelEncodeError) {
+      refusals.push({ message: err.message, retry: 'none', channelIndex: slotIndex });
+    }
+  };
+  for (const ch of channels) {
+    if (ch.empty) continue;
+    try {
+      assertAtD890MrChannelFrequencies(ch);
+    } catch (err) {
+      pushEncodeRefusal(err, ch.slotIndex);
+    }
+    if (ch.nxdn) {
+      if (ch.nxdn.txRan != null) {
+        try {
+          assertAtD890NxdnRan(ch.nxdn.txRan, 'TX RAN', ch.slotIndex);
+        } catch (err) {
+          pushEncodeRefusal(err, ch.slotIndex);
+        }
+      }
+      if (ch.nxdn.rxRan != null) {
+        try {
+          assertAtD890NxdnRan(ch.nxdn.rxRan, 'RX RAN', ch.slotIndex);
+        } catch (err) {
+          pushEncodeRefusal(err, ch.slotIndex);
+        }
+      }
+    }
+  }
+  return refusals;
 }

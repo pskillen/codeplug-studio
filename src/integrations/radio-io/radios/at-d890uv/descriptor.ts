@@ -18,6 +18,7 @@ import {
 import { atD890UploadBankIntentFromOrganisation } from './memory.ts';
 import { createAtD890uvProtocol, AtD890uvProtocol } from './protocol.ts';
 import { AT_D890_WRITE_VERIFY_HOOKS } from './writeVerifyHooks.ts';
+import { checkAtD890WriteChannels } from './channelEncodeGuards.ts';
 import { planAtD890Stages } from './plannedStages.ts';
 
 export { AT_D890UV_MODEL_ID };
@@ -72,4 +73,5 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
   // Hardware (#1288, 2026-10-16): 0xF0-byte R frames run at ~110 KiB/s. Writes are a little
   // slower, so round down.
   nominalBytesPerSecond: 100_000,
+  checkWriteProjection: (prepared) => checkAtD890WriteChannels(prepared.channels),
 };

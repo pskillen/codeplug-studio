@@ -188,6 +188,14 @@ export interface RadioHydrationHooks {
   ): void;
 }
 
+/** Refusals from the write projection alone; never touches a serial pipe. */
+export interface RadioWriteRefusal {
+  message: string;
+  retry: 'none';
+  channelIndex?: number;
+  channelId?: string;
+}
+
 export interface RadioDescriptor {
   /** Presence indicates support for reading into the library. */
   readIntoLibrary?: RadioReadIntoLibraryHooks;
@@ -243,6 +251,14 @@ export interface RadioDescriptor {
   contactStore?: 'shared-contact-bank' | 'shared-address-book' | 'separate-lookup-database';
   /** Extra sentence on Done (DM-32UV: DM32_POWER_CYCLE_AFTER_SESSION_NOTE, already in radio-io). */
   successNote?: string;
+  /**
+   * Pure checks on the prepared Write projection before a port is chosen. Return every problem;
+   * the throwing encode guards remain the backstop at upload time.
+   */
+  checkWriteProjection?(prepared: {
+    channels: readonly RadioChannelDto[];
+    organisation: RadioWriteOrganisation;
+  }): readonly RadioWriteRefusal[];
 }
 
 /**
