@@ -665,6 +665,38 @@ describe('DM-32 RadioFoundry contacts and DMR ID database', () => {
     expect(written).not.toContain(PHYSICAL_CODEPLUG_BASE);
   });
 
+  it('reports "No contact blocks changed" only when no owned contact block is written', async () => {
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
+      includeLibraryContacts: true,
+    });
+    const block = CONTACT_BASE & ~(BLOCK_SIZE - 1);
+    for (let i = 0; i < BLOCK_SIZE && block + i < source.owned.length; i += 1) {
+      source.owned[block + i] = 1;
+    }
+    const pipe = new ScriptedPipe(0xff);
+    const rec = await uploadSource(pipe, source);
+    expect(writtenBlockAddresses(pipe).some((addr) => covers(addr, CONTACT_BASE))).toBe(true);
+    expect(rec.events.some((event) => event.msg === 'No contact blocks changed')).toBe(false);
+  });
+
+  it('reports "No contact blocks changed" when owned contact blocks already match the radio', async () => {
+    const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
+      includeLibraryContacts: true,
+    });
+    const block = CONTACT_BASE & ~(BLOCK_SIZE - 1);
+    for (let i = 0; i < BLOCK_SIZE && block + i < source.owned.length; i += 1) {
+      source.owned[block + i] = 1;
+    }
+    const pipe = new ScriptedPipe(0xff);
+    const radio = pipe.block(block);
+    for (let i = 0; i < BLOCK_SIZE && block + i < source.bytes.length; i += 1) {
+      radio[i] = source.bytes[block + i]!;
+    }
+    const rec = await uploadSource(pipe, source);
+    expect(writtenBlockAddresses(pipe).some((addr) => covers(addr, CONTACT_BASE))).toBe(false);
+    expect(rec.events.some((event) => event.msg === 'No contact blocks changed')).toBe(true);
+  });
+
   it('says no contact blocks changed when the contact table already matches', async () => {
     const source = radioFoundryWriteSourceFromAssembled(cableAssembled('Alice'), {
       includeLibraryContacts: true,

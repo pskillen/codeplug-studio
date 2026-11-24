@@ -525,7 +525,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       await this.download({ ...opts, progressStage: PRE_WRITE_STAGE });
     }
     const jobs = this.changedBlocks();
-    if (this.privateContactTableMatches()) {
+    if (this.privateContactTableMatches(jobs)) {
       reportProgress(
         opts.onProgress,
         { cur: 1, max: 1, stage: BLOCKS_STAGE, msg: 'No contact blocks changed' },
@@ -584,18 +584,13 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     return undefined;
   }
 
-  /** Owned private-contact records already match the bytes read from the radio. */
-  private privateContactTableMatches(): boolean {
+  /** None of the owned private-contact blocks are in the upload job list. */
+  private privateContactTableMatches(jobs: { addr: number; data: Uint8Array }[]): boolean {
     const source = this.requireArmed();
-    const blocks = this.requireReadBlocks();
     const addrs = ownedPrivateContactBlocks(source);
     if (addrs.length === 0) return false;
-    for (const addr of addrs) {
-      const radio = blocks.get(addr);
-      if (!radio) return false;
-      if (!sameBytes(mergeBlock(radio, addr, source), radio)) return false;
-    }
-    return true;
+    const writing = new Set(jobs.map((job) => job.addr));
+    return addrs.every((addr) => !writing.has(addr));
   }
 
   private readAddresses(): number[] {
