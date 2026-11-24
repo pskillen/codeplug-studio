@@ -205,6 +205,14 @@ Each radio's protocol doc under `docs/reference/radios/<manufacturer>/<model>/` 
 
 ---
 
+## Errors: what was sent and whether a retry helps
+
+Radio I/O errors carry two optional fields: `retry` (`'reconnect'`, `'rewrite'`, or `'none'`) and `sent` (`'nothing-sent'`, `'nothing-saved'`, or `'may-hold-part'`). Set them on the error where you throw it. Leave them unset only when the Write dialog's default is correct: before the first write frame, nothing was sent and reconnect may help; after a write-class frame has gone out, the radio may hold part of the write and the operator should try writing again.
+
+Claim `nothing-saved` only when the module can prove no bytes were kept on the radio. Every refusal in tests should assert both fields.
+
+---
+
 ## Anti-patterns
 
 1. Writing the radio from a bare library channel list (skips RadioBuild / `assemble`)
