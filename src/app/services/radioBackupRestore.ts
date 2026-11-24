@@ -20,6 +20,11 @@ import {
   atD890MaintenanceUnlocked,
   sanitiseAtD890RangeCode,
 } from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
+import {
+  adviseRadioError,
+  type RadioRetryAdvice,
+  type RadioSentState,
+} from '@integrations/radio-io/kit/errors.ts';
 import { readAtD890ConnectedRadioIdentity } from './radioIoSession.ts';
 import { resolveRadioWriteGate } from './radioWriteEnvGate.ts';
 export * from './radioBackupRead.ts';
@@ -34,11 +39,16 @@ export type RadioRestoreErrorCode =
 
 export class RadioRestoreError extends Error {
   readonly code: RadioRestoreErrorCode;
+  retry?: RadioRetryAdvice;
+  sent?: RadioSentState;
 
   constructor(code: RadioRestoreErrorCode, message: string) {
     super(message);
     this.name = 'RadioRestoreError';
     this.code = code;
+    if (code === 'model-mismatch' || code === 'serial-mismatch') {
+      adviseRadioError(this, { retry: 'none', sent: 'nothing-sent' });
+    }
   }
 }
 

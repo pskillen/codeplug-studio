@@ -53,7 +53,9 @@ function cancelledMessage(ctx: WriteErrorContext, err: ErrShape | null): string 
     return 'No port chosen, so nothing happened. Press Read & write to choose again.';
   }
   if (ctx.phase === 'review') {
-    return 'Write cancelled. Nothing was written.';
+    return err?.name === 'RestoreCancelledError'
+      ? 'Restore cancelled. Nothing was written.'
+      : 'Write cancelled. Nothing was written.';
   }
   return 'Read cancelled. Nothing was written.';
 }
@@ -95,7 +97,9 @@ export function classifyWriteError(err: unknown, ctx: WriteErrorContext): WriteE
   }
 
   const isCancelledName =
-    e?.name === 'WriteCancelledError' || e?.name === 'RadioWriteCancelledError';
+    e?.name === 'WriteCancelledError' ||
+    e?.name === 'RadioWriteCancelledError' ||
+    e?.name === 'RestoreCancelledError';
   const isPickerCancelled = ctx.phase === 'connect' && e?.name === 'NotFoundError';
   if ((!ctx.transmitStarted && (isCancelledName || ctx.userCancelled)) || isPickerCancelled) {
     return {

@@ -159,6 +159,29 @@ describe('restoreRadioBackup', () => {
     expect(restoreFromBackup).not.toHaveBeenCalled();
   });
 
+  it('restore identity mismatches are retry none and nothing sent', async () => {
+    const restoreFromBackup = vi.fn();
+    const session = sessionFor(fakeRadio(restoreFromBackup));
+    const manifest = restoreManifest({ serial: 'SN-ARCHIVE-ONLY' });
+    await expect(
+      restoreRadioBackup(session, { manifest, image: createMemoryMap(16) }),
+    ).rejects.toMatchObject({
+      code: 'serial-mismatch',
+      retry: 'none',
+      sent: 'nothing-sent',
+    });
+    await expect(
+      restoreRadioBackup(session, {
+        manifest: restoreManifest({ radioModelId: 'AT-D890UV' }),
+        image: createMemoryMap(16),
+      }),
+    ).rejects.toMatchObject({
+      code: 'model-mismatch',
+      retry: 'none',
+      sent: 'nothing-sent',
+    });
+  });
+
   it('drops inspect-only region ids even when the caller includes them', async () => {
     const restoreFromBackup = vi.fn(async () => {});
     const session = sessionFor(fakeRadio(restoreFromBackup));
