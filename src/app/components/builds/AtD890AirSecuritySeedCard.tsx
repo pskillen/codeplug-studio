@@ -9,11 +9,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Group, Stack } from '@mantine/core';
 import type { EgressPath } from '@core/models/egressPath.ts';
-import { parseAirSecuritySeedInput } from '@integrations/radio-io/radios/at-d890uv/airSecuritySeed.ts';
+import {
+  airSecuritySeedUriDmrId,
+  parseAirSecuritySeedInput,
+} from '@integrations/radio-io/radios/at-d890uv/airSecuritySeed.ts';
 import {
   checkAtD890AirSecuritySeed,
   writeAtD890AirSecuritySeedOnRadio,
 } from '../../services/radioIoAtD890AirSecuritySession.ts';
+import { useLibrary } from '../../state/useLibrary.ts';
 import {
   getRadioSerialUnsupportedMessage,
   isRadioSerialSupported,
@@ -30,6 +34,10 @@ const PLACEHOLDER = 'Paste the Selfcare text or the otpauth:// link';
 const WRITTEN_NOTE = 'Seed written. The radio restarts; wait about 20 seconds.';
 const CLEARED_NOTE = 'Seed cleared. The radio restarts; wait about 20 seconds.';
 
+function dmrIdWarning(id: number): string {
+  return `The link is for DMR ID ${id}, which is not one of this library's DMR IDs.`;
+}
+
 type Presence = 'unchecked' | 'set' | 'unset';
 type Note = 'written' | 'cleared' | null;
 
@@ -45,6 +53,10 @@ function errorText(err: unknown): string {
 
 export default function AtD890AirSecuritySeedCard({ egress }: AtD890AirSecuritySeedCardProps) {
   const serialOk = isRadioSerialSupported();
+  const { library } = useLibrary();
+  const libraryDmrIds = library.ownDigitalIds
+    .filter((row) => row.protocol === 'dmr')
+    .map((row) => row.number);
   const [text, setText] = useState('');
   const [reason, setReason] = useState<string | null>(null);
   const [canWrite, setCanWrite] = useState(false);
@@ -143,6 +155,9 @@ export default function AtD890AirSecuritySeedCard({ egress }: AtD890AirSecurityS
     }
   }
 
+  const linkedDmrId = airSecuritySeedUriDmrId(text);
+  const showDmrWarning = linkedDmrId !== null && !libraryDmrIds.includes(linkedDmrId);
+
   return (
     <Panel title="Brandmeister AirSecurity">
       <Stack gap="sm">
@@ -158,6 +173,9 @@ export default function AtD890AirSecuritySeedCard({ egress }: AtD890AirSecurityS
           disabled={busy || !serialOk}
           onChange={(event) => onPaste(event.target.value)}
         />
+        {showDmrWarning && linkedDmrId !== null ? (
+          <Alert color="yellow">{dmrIdWarning(linkedDmrId)}</Alert>
+        ) : null}
         <p role="status">{PRESENCE_LABEL[presence]}</p>
         {note === 'written' ? <p>{WRITTEN_NOTE}</p> : null}
         {note === 'cleared' ? <p>{CLEARED_NOTE}</p> : null}

@@ -18,6 +18,8 @@ The operator pastes the self-care text or the `otpauth://` link into **AirSecuri
 
 The section always says: _Backups contain the seed. Clearing the seed does not remove it from backups you have already taken._
 
+When the paste is an `otpauth://totp/` link whose label is `BrandMeister:` and a DMR ID, and that ID is not one of this library's DMR IDs, the page says _The link is for DMR ID {id}, which is not one of this library's DMR IDs._ Write seed stays available. Self-care text has no DMR ID, so it does not show that warning. An NXDN ID with the same number does not count.
+
 ## Backup warning
 
 On Backup / Restore, when the backup on screen (a live read or an opened file) is an AT-D890UV backup and its settings-store record is a seed, Studio shows: _This backup contains the radio's Brandmeister AirSecurity seed. Keep the file safe: anyone with it can authorise your DMR ID. Clearing the seed later does not remove it from this file._

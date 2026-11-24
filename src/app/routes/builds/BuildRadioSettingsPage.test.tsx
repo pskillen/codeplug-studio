@@ -10,6 +10,21 @@ import BuildRadioSettingsPage, {
   RADIO_SETTINGS_UNSUPPORTED_MESSAGE,
 } from './BuildRadioSettingsPage.tsx';
 
+vi.mock('../../state/useLibrary.ts', async () => {
+  const { emptyLibrary } = await import('@core/domain/factories.ts');
+  return {
+    useLibrary: () => ({
+      projectId: 'proj',
+      library: emptyLibrary(),
+      loading: false,
+      reload: async () => {},
+      deleteEntity: async () => ({ ok: true }),
+      deleteAllDigitalContacts: async () => ({ ok: true }),
+      setDefaultOwnDigitalId: async () => {},
+    }),
+  };
+});
+
 vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../services/radioIoSession.ts')>();
   return { ...actual, isRadioSerialSupported: () => true };

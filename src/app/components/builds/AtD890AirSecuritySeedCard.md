@@ -22,6 +22,7 @@ Brandmeister AirSecurity on the MM9PDY AT-D890UV radio settings page. The operat
 - **State.** **Not checked** until Check radio. Then **Seed set** or **No seed**. After Write seed the state is **Seed set** without reading the radio again. After Clear seed it is **No seed**.
 - **Buttons.** **Check radio**, **Write seed**, **Clear seed**. Each opens its own session (port grant first, then open, close in `finally`) and closes it. Write seed stays off until the paste is accepted. A bad paste shows the refusal and does not repeat the text. A radio error shows that error's message.
 - **Warning.** Always: _Backups contain the seed. Clearing the seed does not remove it from backups you have already taken._ After a write: _Seed written. The radio restarts; wait about 20 seconds._ After a clear: _Seed cleared. The radio restarts; wait about 20 seconds._
+- **DMR ID.** When the paste is an `otpauth://totp/` link labelled `BrandMeister:` plus a DMR ID, and that ID is not one of this library's DMR IDs, the card says _The link is for DMR ID {id}, which is not one of this library's DMR IDs._ Write seed stays available. Self-care text does not show it.
 - **Wiped.** The field is cleared and the parsed bytes are zeroed after Write seed, after Clear seed, and when the card unmounts. Nothing is written to browser storage, the project, a build override, the settings session, a URL, the console, or an error message.
 
 ## Related

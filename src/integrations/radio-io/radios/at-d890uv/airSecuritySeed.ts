@@ -115,6 +115,36 @@ export function parseAirSecuritySeedInput(text: string): AirSecuritySeedParse {
   return parseSelfcare(text);
 }
 
+/**
+ * DMR ID from the label of an `otpauth://totp/` link: the digits after `BrandMeister:`,
+ * URL-decoded. Null for self-care text, or when that label is absent. The secret is not returned.
+ */
+export function airSecuritySeedUriDmrId(text: string): number | null {
+  const trimmed = text.trim();
+  if (!trimmed.toLowerCase().startsWith('otpauth://')) return null;
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'otpauth:' || url.hostname.toLowerCase() !== 'totp') return null;
+  let label: string;
+  try {
+    label = decodeURIComponent(url.pathname.replace(/^\/+/, ''));
+  } catch {
+    return null;
+  }
+  const marker = 'BrandMeister:';
+  const at = label.indexOf(marker);
+  if (at < 0) return null;
+  const digits = /^(\d+)/.exec(label.slice(at + marker.length));
+  if (!digits?.[1]) return null;
+  const id = Number(digits[1]);
+  if (!Number.isSafeInteger(id)) return null;
+  return id;
+}
+
 /** 32-byte record. Throws when `seed` is empty or longer than 20 bytes. */
 export function encodeAirSecuritySeedRecord(seed: Uint8Array): Uint8Array {
   if (seed.length < 1 || seed.length > SEED_MAX_BYTES) {

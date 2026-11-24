@@ -9,6 +9,37 @@ import {
   writeAtD890AirSecuritySeedOnRadio,
 } from '../../services/radioIoAtD890AirSecuritySession.ts';
 
+const libraryState = vi.hoisted(() => ({
+  ids: [] as { protocol: 'dmr' | 'nxdn'; number: number }[],
+}));
+
+vi.mock('../../state/useLibrary.ts', async () => {
+  const { emptyLibrary } = await import('@core/domain/factories.ts');
+  return {
+    useLibrary: () => ({
+      projectId: 'p',
+      library: {
+        ...emptyLibrary(),
+        ownDigitalIds: libraryState.ids.map((row, index) => ({
+          id: `id-${index}`,
+          projectId: 'p',
+          revision: 1,
+          updatedAt: '',
+          name: '',
+          protocol: row.protocol,
+          number: row.number,
+          isDefault: index === 0,
+        })),
+      },
+      loading: false,
+      reload: async () => {},
+      deleteEntity: async () => ({ ok: true }),
+      deleteAllDigitalContacts: async () => ({ ok: true }),
+      setDefaultOwnDigitalId: async () => {},
+    }),
+  };
+});
+
 vi.mock('../../services/radioIoAtD890AirSecuritySession.ts', () => ({
   checkAtD890AirSecuritySeed: vi.fn(),
   writeAtD890AirSecuritySeedOnRadio: vi.fn(),
@@ -21,6 +52,9 @@ vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
 
 const BAD = 'gezd 1bnv';
 const GOOD = 'gezd gnbv gy3t qojq gezd gnbv gy3t qojq';
+const LINK =
+  'otpauth://totp/BrandMeister:1234567?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ&issuer=BrandMeister';
+const DMR_WARNING = "The link is for DMR ID 1234567, which is not one of this library's DMR IDs.";
 const SEED = new TextEncoder().encode('12345678901234567890');
 const ENTRY_WARNING =
   'Backups contain the seed. Clearing the seed does not remove it from backups you have already taken.';
@@ -42,6 +76,7 @@ function seedField() {
 }
 
 beforeEach(() => {
+  libraryState.ids = [];
   vi.mocked(checkAtD890AirSecuritySeed).mockReset();
   vi.mocked(writeAtD890AirSecuritySeedOnRadio).mockReset();
 });
@@ -114,6 +149,29 @@ describe('AtD890AirSecuritySeedCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Check radio' }));
     await waitFor(() => expect(screen.getByText('No seed')).toBeInTheDocument());
     expect(writeAtD890AirSecuritySeedOnRadio).not.toHaveBeenCalled();
+  });
+
+  it('warns when the link DMR ID is not a library DMR ID, and still allows Write', () => {
+    renderCard();
+    fireEvent.change(seedField(), { target: { value: LINK } });
+    expect(screen.getByText(DMR_WARNING)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Write seed' })).toBeEnabled();
+    expect(document.body.textContent).not.toContain('GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ');
+  });
+
+  it('does not warn when DMR ID 1234567 is in the library', () => {
+    libraryState.ids = [{ protocol: 'dmr', number: 1234567 }];
+    renderCard();
+    fireEvent.change(seedField(), { target: { value: LINK } });
+    expect(screen.queryByText(DMR_WARNING)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Write seed' })).toBeEnabled();
+  });
+
+  it('does not treat an NXDN id with the same number as a library DMR ID', () => {
+    libraryState.ids = [{ protocol: 'nxdn', number: 1234567 }];
+    renderCard();
+    fireEvent.change(seedField(), { target: { value: LINK } });
+    expect(screen.getByText(DMR_WARNING)).toBeInTheDocument();
   });
 
   it('shows a radio error and does not include the paste', async () => {

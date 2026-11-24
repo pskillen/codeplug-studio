@@ -6,6 +6,7 @@ import {
   AIRSECURITY_SEED_FIELD_ID,
   AIRSECURITY_SEED_RECORD_LENGTH,
   airSecuritySeedRecordIsSet,
+  airSecuritySeedUriDmrId,
   encodeAirSecuritySeedRecord,
   parseAirSecuritySeedInput,
 } from './airSecuritySeed.ts';
@@ -93,6 +94,23 @@ describe('parseAirSecuritySeedInput', () => {
     if (parsed.ok) return;
     expect(parsed.reason).toBe('AirSecurity seed is longer than twenty bytes');
     expect(parsed.reason.includes(text)).toBe(false);
+  });
+});
+
+describe('airSecuritySeedUriDmrId', () => {
+  it('reads the DMR ID from a BrandMeister totp label', () => {
+    expect(airSecuritySeedUriDmrId(LINK)).toBe(1234567);
+    expect(
+      airSecuritySeedUriDmrId(
+        `otpauth://totp/BrandMeister%3A1234567?secret=${SECRET_B32}&issuer=BrandMeister`,
+      ),
+    ).toBe(1234567);
+  });
+
+  it('is null for self-care text and for a link with no BrandMeister label', () => {
+    expect(airSecuritySeedUriDmrId(SELFCARE)).toBeNull();
+    expect(airSecuritySeedUriDmrId(`otpauth://totp/Account?secret=${SECRET_B32}`)).toBeNull();
+    expect(airSecuritySeedUriDmrId('')).toBeNull();
   });
 });
 
