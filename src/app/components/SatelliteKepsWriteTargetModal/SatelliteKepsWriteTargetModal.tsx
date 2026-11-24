@@ -48,17 +48,11 @@ export default function SatelliteKepsWriteTargetModal({
   return <SatelliteKepsWriteTargetModalInner onClose={onClose} projectId={projectId} />;
 }
 
-function KepsWriteDialogLauncher({
-  build,
-  egress,
-}: {
-  build: RadioBuild;
-  egress: EgressPath;
-}) {
+function KepsWriteDialogLauncher({ build, egress }: { build: RadioBuild; egress: EgressPath }) {
   const dialog = useRadioWriteDialog({ build, egress });
   useEffect(() => {
     dialog.open({ codeplug: false, contacts: false, settings: false, keps: true });
-  }, [dialog.open]);
+  }, [dialog]);
   return <>{dialog.element}</>;
 }
 
@@ -157,8 +151,8 @@ function SatelliteKepsWriteTargetModalInner({
           {loading ? <Text size="sm">Loading builds…</Text> : null}
           {!loading && targets.length === 0 ? (
             <Text size="sm">
-              No build can write satellite keps yet. Create a build for a radio that takes
-              satellite keps, then write from here or from its Satellite keps tab.
+              No build can write satellite keps yet. Create a build for a radio that takes satellite
+              keps, then write from here or from its Satellite keps tab.
             </Text>
           ) : null}
           <Radio.Group value={selectedKey} onChange={setSelectedKey}>

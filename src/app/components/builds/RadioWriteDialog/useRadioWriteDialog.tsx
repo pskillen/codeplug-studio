@@ -45,7 +45,11 @@ import { rt95OverrideWords } from '../RadioWriteStepper/rt95/rt95ReviewFacts.ts'
 import { atD890OverrideWords } from '../RadioWriteStepper/d890/atD890ReviewFacts.ts';
 import WriteVerifyReport from '../WriteVerifyReport.tsx';
 import { mapWriteVerifyResultToV2Report } from '../writeVerifyReportV2Adapter.ts';
-import { ModalShell, WriteVerifyReport as WriteVerifyReportV2, Button as V2Button } from '../../v2/index.ts';
+import {
+  ModalShell,
+  WriteVerifyReport as WriteVerifyReportV2,
+  Button as V2Button,
+} from '../../v2/index.ts';
 
 const buildService = new BuildService(persistence);
 
@@ -94,7 +98,7 @@ export function useRadioWriteDialog(args: {
     if (isAtD890Write) setWriteSettingsRequested(build.id, false);
     if (isRt95Write) setRt95WriteSettingsRequested(build.id, false);
     flow.open({ codeplug: false, contacts: false, keps: false, settings: true });
-  }, [writeSettingsRequested, build.id, flow.open, isAtD890Write, isRt95Write]);
+  }, [writeSettingsRequested, build.id, isAtD890Write, isRt95Write, flow]);
 
   async function loadChannelLocationNote() {
     if (!activeProjectId) return;
@@ -150,7 +154,8 @@ export function useRadioWriteDialog(args: {
               isMm9pdyAtD890RadioIoProfileId(egress.profileId) ? 'mm9pdy' : 'stock',
             ),
             applyToEveryRadio: d890SettingsSession.applyToEveryRadio,
-            onApplyToEveryRadioChange: (checked: boolean) => setApplyToEveryRadio(build.id, checked),
+            onApplyToEveryRadioChange: (checked: boolean) =>
+              setApplyToEveryRadio(build.id, checked),
           },
         }
       : {}),

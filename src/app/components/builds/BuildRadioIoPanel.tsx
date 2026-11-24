@@ -44,7 +44,10 @@ import ExperimentalNote from './RadioIoPanelCards/ExperimentalNote.tsx';
 import RangeChangeBanner from '../dangerZone/RangeChangeBanner.tsx';
 import DangerZoneCard from './RadioIoPanelCards/DangerZoneCard.tsx';
 import { listOfferedDangerZoneTools } from '../../services/dangerZone/gate.ts';
-import { atD890OverrideCount, useAtD890RadioSettingsSession } from '../../state/atD890RadioSettingsSession.ts';
+import {
+  atD890OverrideCount,
+  useAtD890RadioSettingsSession,
+} from '../../state/atD890RadioSettingsSession.ts';
 import AtD890WriteCoverageTable from './AtD890WriteCoverageTable.tsx';
 import { DM32_ANALOG_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
 import {
@@ -121,18 +124,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     isMm9pdyAtD890RadioIoProfileId(egress.profileId) ||
     isMm9pdyDm32RadioIoProfileId(egress.profileId);
   const radioLabel = `${descriptor?.label ?? 'radio'}${isMm9pdyTarget ? ' (MM9PDY)' : ''}`;
-
-  async function handleAssignMm9pdyStepKeys(checked: boolean) {
-    const next = buildService.withExportSettings(build, { assignMm9pdyStepKeys: checked });
-    const result = await buildService.putBuild(next, build.revision);
-    if (!result.ok) {
-      setError(
-        result.reason === 'revision_conflict'
-          ? 'Build changed elsewhere — reload and try again.'
-          : 'Could not save the TG step-key setting.',
-      );
-    }
-  }
 
   function openWriteRadio() {
     setError(null);

@@ -11,6 +11,10 @@ const writeDialogState = vi.hoisted(() => ({
   open: vi.fn(),
 }));
 
+const writeDialogHookArgs = vi.hoisted(() => ({
+  last: null as { build: RadioBuild; egress: EgressPath } | null,
+}));
+
 const { listRadioBuilds, listEgressPaths } = vi.hoisted(() => ({
   listRadioBuilds: vi.fn(async (): Promise<RadioBuild[]> => []),
   listEgressPaths: vi.fn(async (): Promise<EgressPath[]> => []),
@@ -34,11 +38,14 @@ vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
 });
 
 vi.mock('../builds/RadioWriteDialog/useRadioWriteDialog.tsx', () => ({
-  useRadioWriteDialog: () => ({
-    element: null,
-    open: writeDialogState.open,
-    busy: false,
-  }),
+  useRadioWriteDialog: (args: { build: RadioBuild; egress: EgressPath }) => {
+    writeDialogHookArgs.last = args;
+    return {
+      element: null,
+      open: writeDialogState.open,
+      busy: false,
+    };
+  },
 }));
 
 function renderModal(projectId = 'project-1') {
@@ -68,17 +75,15 @@ describe('SatelliteKepsWriteTargetModal — Workflow A', () => {
 
     renderModal();
 
-    await waitFor(() => expect(screen.getByText('My D890 — Anytone AT-D890UV')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText('My D890 — Anytone AT-D890UV')).toBeInTheDocument(),
+    );
     expect(screen.queryByText(/My DM-32/)).not.toBeInTheDocument();
     expect(screen.queryByText('Other supported radios')).not.toBeInTheDocument();
   });
 
   it('choosing a build opens its Write dialog with only keps ticked', async () => {
-    const { build, egress } = newRadioBuildForProfile(
-      'project-1',
-      'radio-io-at-d890uv',
-      'My D890',
-    );
+    const { build, egress } = newRadioBuildForProfile('project-1', 'radio-io-at-d890uv', 'My D890');
     listRadioBuilds.mockResolvedValueOnce([build]);
     listEgressPaths.mockResolvedValueOnce([egress]);
 
@@ -103,8 +108,23 @@ describe('SatelliteKepsWriteTargetModal — Workflow A', () => {
 
     renderModal();
 
-    expect(
-      await screen.findByText(/No build can write satellite keps yet/),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/No build can write satellite keps yet/)).toBeInTheDocument();
+  });
+
+  it("the library flow passes the build's satellite overrides", async () => {
+    writeDialogHookArgs.last = null;
+    const overrides = [{ libraryEntityId: 'sat-excluded', excluded: true as const }];
+    const { build, egress } = newRadioBuildForProfile('project-1', 'radio-io-at-d890uv', 'My D890');
+    const buildWithOverrides = { ...build, satelliteOverrides: overrides };
+    listRadioBuilds.mockResolvedValueOnce([buildWithOverrides]);
+    listEgressPaths.mockResolvedValueOnce([egress]);
+
+    renderModal();
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    await waitFor(() => expect(writeDialogHookArgs.last).not.toBeNull());
+    expect(writeDialogHookArgs.last!.build.satelliteOverrides).toEqual(overrides);
   });
 });

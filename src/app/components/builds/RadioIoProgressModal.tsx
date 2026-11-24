@@ -20,8 +20,7 @@ import { Button, ProgressModal, type ProgressModalStep } from '../v2/index.ts';
  * `'vital-read'` is the AT-D890UV vital-data backup (#1288): it downloads a file and saves nothing on the build.
  * `'library-read'` imports library rows and updates the radio's build.
  */
-export type RadioIoOperation =
-  'read' | 'library-read' | 'restore' | 'vital-read' | 'safety-read';
+export type RadioIoOperation = 'read' | 'library-read' | 'restore' | 'vital-read' | 'safety-read';
 
 export type RadioIoProgressPhase =
   'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
@@ -219,8 +218,8 @@ export default function RadioIoProgressModal({
         : operation === 'vital-read'
           ? 'Backing up vital data'
           : operation === 'restore'
-              ? 'Restoring backup to radio'
-              : 'Reading from radio';
+            ? 'Restoring backup to radio'
+            : 'Reading from radio';
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
   const complete = phase === 'done';
 
@@ -276,12 +275,12 @@ export default function RadioIoProgressModal({
               body: 'The file was downloaded. Nothing is saved on this build. The radio restarts when the session ends.',
             }
           : complete && operation === 'restore'
-              ? {
-                  color: 'green',
-                  title: 'Restore finished',
-                  body: 'Selected restorable regions were sent from the backup file.',
-                }
-              : null;
+            ? {
+                color: 'green',
+                title: 'Restore finished',
+                body: 'Selected restorable regions were sent from the backup file.',
+              }
+            : null;
 
   const showSuccessNote = Boolean(successNote) && operation === 'restore' && phase === 'done';
 

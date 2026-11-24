@@ -35,21 +35,6 @@ vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
     ...actual,
     isRadioSerialSupported: () => true,
     getRadioSerialUnsupportedMessage: () => 'Web Serial not supported.',
-    openRadioSessionForEgress: vi.fn(
-      () =>
-        new Promise((resolve) => {
-          resolveOpenSession = () =>
-            resolve({
-              session: {
-                descriptor: { label: 'D890' },
-                pipe: {},
-                radio: {},
-              },
-              descriptor: { label: 'D890' },
-            });
-        }),
-    ),
-    closeRadioSession: vi.fn(async () => {}),
   };
 });
 
@@ -57,7 +42,6 @@ const kepsWriteFn = vi.fn(
   () => new Promise(() => {}), // never resolves — we only assert the disabled state mid-flight
 );
 
-let kepsCapacityStub: { max: number; countEligible: (s: readonly unknown[]) => number } | undefined;
 let kepsPreviewStub:
   | ((satellites: readonly Satellite[], options?: { satelliteOverrides?: unknown[] }) => unknown[])
   | undefined;
@@ -78,25 +62,8 @@ vi.mock('../../services/satelliteKepsWriteAdapters.ts', async (importOriginal) =
       profileId === 'radio-io-opengd77-md9600'
         ? kepsWriteFn
         : undefined,
-    getSatelliteKepsWriteCapacity: (profileId: string) => {
-      if (kepsCapacityStub) {
-        return {
-          ...kepsCapacityStub,
-          nameLength: 8,
-          unitNoun: 'transmitter',
-          nameScope: 'transmitter' as const,
-          limitsDoc: '',
-        };
-      }
-      return actual.getSatelliteKepsWriteCapacity(profileId);
-    },
-    satelliteKepsCapacityWarning: (_profileId: string, satellites: readonly Satellite[]) => {
-      if (!kepsCapacityStub) return null;
-      return actual.formatSatelliteKepsCapacityWarning(
-        kepsCapacityStub.countEligible(satellites),
-        kepsCapacityStub.max,
-      );
-    },
+    getSatelliteKepsWriteCapacity: actual.getSatelliteKepsWriteCapacity,
+    satelliteKepsCapacityWarning: actual.satelliteKepsCapacityWarning,
     getSatelliteKepsWritePreview: () => kepsPreviewStub,
     getSatelliteKepsExclusions: () => kepsExclusionsStub,
   };

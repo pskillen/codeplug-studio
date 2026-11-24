@@ -243,10 +243,7 @@ export function kepsWriteChecks(
   if (exclusionsFn) {
     for (const exclusion of exclusionsFn(satellites, { satelliteOverrides: overrides })) {
       if (isEntityExcluded(overrides, exclusion.satelliteId)) continue;
-      if (
-        exclusion.transmitterId != null &&
-        isEntityExcluded(overrides, exclusion.transmitterId)
-      ) {
+      if (exclusion.transmitterId != null && isEntityExcluded(overrides, exclusion.transmitterId)) {
         continue;
       }
       if (isOpenGd77BuildSlotSkip(exclusion.reason)) continue;

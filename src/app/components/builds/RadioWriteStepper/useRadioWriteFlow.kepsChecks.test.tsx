@@ -1,8 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
-import type { EgressPath } from '@core/models/egressPath.ts';
-import type { RadioBuild } from '@core/models/radioBuild.ts';
+import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import { grantRadioSerialPortForEgress } from '../../../services/radioIoSession.ts';
@@ -56,12 +55,7 @@ function makeSatellite(overrides: Partial<Satellite> = {}): Satellite {
   } as Satellite;
 }
 
-const build = { id: 'b1', revision: 1, satelliteOverrides: [] } as RadioBuild;
-const egress = {
-  id: 'e1',
-  profileId: 'radio-io-at-d890uv',
-  formatId: 'radio-io',
-} as EgressPath;
+const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv', 'Keps checks build');
 const descriptor = {
   label: 'Anytone AT-D890UV',
   modelIds: ['AT-D890UV'],
@@ -140,7 +134,9 @@ describe('useRadioWriteFlow keps checks on step 1', () => {
     );
     vi.mocked(persistence.listSatellites).mockResolvedValue(satellites);
     const { result } = mount();
-    act(() => result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }));
+    act(() =>
+      result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }),
+    );
     await act(async () => {
       await Promise.resolve();
     });
@@ -158,14 +154,14 @@ describe('useRadioWriteFlow keps checks on step 1', () => {
       makeSatellite({ transmitters: [makeTransmitter({ mode: 'SSTV' })] }),
     ]);
     const { result } = mount();
-    act(() => result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }));
+    act(() =>
+      result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }),
+    );
     await act(async () => {
       await Promise.resolve();
     });
     expect(
-      result.current.view.buildChecks.refusals.some((r) =>
-        r.message.includes('Nothing to write'),
-      ),
+      result.current.view.buildChecks.refusals.some((r) => r.message.includes('Nothing to write')),
     ).toBe(true);
   });
 
@@ -181,7 +177,9 @@ describe('useRadioWriteFlow keps checks on step 1', () => {
       }),
     ]);
     const { result } = mount();
-    act(() => result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }));
+    act(() =>
+      result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }),
+    );
     await act(async () => {
       await Promise.resolve();
     });
@@ -200,7 +198,7 @@ describe('useRadioWriteFlow keps checks on step 1', () => {
     const buildWithOverride = {
       ...build,
       satelliteOverrides: [{ libraryEntityId: 'sat-0', excluded: true }],
-    } as RadioBuild;
+    };
     const { result } = renderHook(() =>
       useRadioWriteFlow({
         build: buildWithOverride,
@@ -209,7 +207,9 @@ describe('useRadioWriteFlow keps checks on step 1', () => {
         activeProjectId: 'p1',
       }),
     );
-    act(() => result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }));
+    act(() =>
+      result.current.open({ codeplug: false, contacts: false, settings: false, keps: true }),
+    );
     await act(async () => {
       await Promise.resolve();
     });

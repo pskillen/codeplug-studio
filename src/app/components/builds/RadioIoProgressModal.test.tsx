@@ -215,6 +215,5 @@ describe('RadioIoProgressModal', () => {
       onClose: vi.fn(),
     });
     expect(screen.queryByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).not.toBeInTheDocument();
-
   });
 });

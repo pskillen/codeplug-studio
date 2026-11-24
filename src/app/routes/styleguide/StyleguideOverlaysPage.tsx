@@ -16,6 +16,7 @@ import ErrorPanel from '../../components/egress/ErrorPanel/ErrorPanel.tsx';
 import StageProgress from '../../components/egress/StageProgress/StageProgress.tsx';
 import RadioWriteStepperDemo from './RadioWriteStepperDemo.tsx';
 import ExportFileDialogDemo from './ExportFileDialogDemo.tsx';
+import SatelliteKepsWriteTargetModalDemo from './SatelliteKepsWriteTargetModalDemo.tsx';
 import RangeChangeDemo from './RangeChangeDemo.tsx';
 import RadioIoStageList, { type StageRow } from '../../components/builds/RadioIoStageList.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
@@ -367,6 +368,13 @@ export default function StyleguideOverlaysPage() {
             running
           />
         </Stack>
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="Satellite keps build picker"
+        description="Library → Satellites → Write keps… lists builds with a keps-capable Web Serial egress. Continue opens the Write dialog with only Satellite keps ticked."
+      >
+        <SatelliteKepsWriteTargetModalDemo />
       </StyleguideSection>
 
       <StyleguideSection

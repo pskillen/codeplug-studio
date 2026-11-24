@@ -395,29 +395,31 @@ export function previewSatelliteWriteRecords(
 ): SatelliteWritePreviewEntry[] {
   const maxNameLength = options?.maxNameLength ?? AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH;
   const wireNames = resolveTransmitterWireNames(satellites, options);
-  return listEligiblePairs(satellites, options?.satelliteOverrides).map(({ satellite, transmitter }) => {
-    const resolved = wireNameForTransmitter(transmitter.id, satellite, wireNames, maxNameLength);
-    const encodedName = resolved.encodedName.trimEnd();
-    const source = nameEncodingSource(resolved.satelliteShortName, transmitter);
-    return {
-      satelliteId: satellite.id,
-      satelliteName: satellite.name,
-      transmitterId: transmitter.id,
-      transmitterLabel: transmitter.label,
-      mode: transmitter.mode,
-      encodedName,
-      satelliteWireName: resolved.satelliteShortName,
-      generatedWireName: resolved.generatedEncodedName,
-      suggestedFamiliarEncoded: resolved.suggestedFamiliarEncoded,
-      suggestedOscarEncoded: resolved.suggestedOscarEncoded,
-      hasWireNameOverride: resolved.fromOverride,
-      uplinkHz: transmitter.uplinkHz,
-      downlinkHz: transmitter.downlinkHz,
-      nameTruncated:
-        resolved.satelliteShortName !== satellite.name.trim() ||
-        (!resolved.fromOverride && encodedName !== source.slice(0, maxNameLength)),
-    };
-  });
+  return listEligiblePairs(satellites, options?.satelliteOverrides).map(
+    ({ satellite, transmitter }) => {
+      const resolved = wireNameForTransmitter(transmitter.id, satellite, wireNames, maxNameLength);
+      const encodedName = resolved.encodedName.trimEnd();
+      const source = nameEncodingSource(resolved.satelliteShortName, transmitter);
+      return {
+        satelliteId: satellite.id,
+        satelliteName: satellite.name,
+        transmitterId: transmitter.id,
+        transmitterLabel: transmitter.label,
+        mode: transmitter.mode,
+        encodedName,
+        satelliteWireName: resolved.satelliteShortName,
+        generatedWireName: resolved.generatedEncodedName,
+        suggestedFamiliarEncoded: resolved.suggestedFamiliarEncoded,
+        suggestedOscarEncoded: resolved.suggestedOscarEncoded,
+        hasWireNameOverride: resolved.fromOverride,
+        uplinkHz: transmitter.uplinkHz,
+        downlinkHz: transmitter.downlinkHz,
+        nameTruncated:
+          resolved.satelliteShortName !== satellite.name.trim() ||
+          (!resolved.fromOverride && encodedName !== source.slice(0, maxNameLength)),
+      };
+    },
+  );
 }
 
 /**
