@@ -17,9 +17,11 @@ import type {
   RadioHydrationHooks,
   RadioSession,
 } from '@integrations/radio-io/types.ts';
+import { RadioWrongIdentError, adviseRadioError } from '@integrations/radio-io/kit/errors.ts';
 import {
   buildHasRadioCloneHydration,
   descriptorsForBuild,
+  encodeRefusal,
   grantRadioSerialPortForEgress,
   openRadioSessionForBuild,
   openRadioSessionForEgress,
@@ -27,6 +29,7 @@ import {
   RadioWriteBlockedError,
   uploadPreparedRadioWrite,
   verifyRadioWrite,
+  withBaudsTriedMessage,
   writeBuildToRadio,
 } from './radioIoSession.ts';
 import { AT_D890_WRITE_VERIFY_HOOKS } from '@integrations/radio-io/radios/at-d890uv/writeVerifyHooks.ts';
@@ -650,5 +653,30 @@ describe('radioIoSession helpers', () => {
     const result = await verifyRadioWrite(session, pending);
     expect(runVerify).toHaveBeenCalledWith(session, pending, undefined);
     expect(result.ok).toBe(true);
+  });
+});
+
+describe('encodeRefusal and withBaudsTriedMessage', () => {
+  it('encodeRefusal is none and nothing sent', () => {
+    const err = encodeRefusal(new Error('bad encode'));
+    expect(err).toBeInstanceOf(RadioWriteBlockedError);
+    expect(err.retry).toBe('none');
+    expect(err.sent).toBe('nothing-sent');
+    expect(err.message).toBe('bad encode');
+  });
+
+  it('withBaudsTriedMessage keeps code and advice', () => {
+    const src = adviseRadioError(new RadioWrongIdentError('mismatch'), {
+      retry: 'reconnect',
+      sent: 'nothing-sent',
+    });
+    src.debugText = 'detail';
+    const next = withBaudsTriedMessage(src, [9600, 115200]);
+    expect(next.message).toContain('tried baud: 9600, 115200');
+    expect(next.name).toBe('RadioWrongIdentError');
+    expect((next as RadioWrongIdentError).code).toBe('wrongIdent');
+    expect((next as { retry?: string }).retry).toBe('reconnect');
+    expect((next as { sent?: string }).sent).toBe('nothing-sent');
+    expect((next as { debugText?: string }).debugText).toBe('detail');
   });
 });

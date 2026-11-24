@@ -9,7 +9,7 @@
  * the same check and the same wording.
  */
 
-import { RadioProtocolError } from '../../kit/errors.ts';
+import { adviseRadioError, RadioProtocolError } from '../../kit/errors.ts';
 import type { BytePipe } from '../../types.ts';
 import { atD890ExitProgram, atD890ReadMemory } from './connection.ts';
 import { AT_D890_BLOCK_SIZE, D890_MAP } from './constants.ts';
@@ -46,6 +46,7 @@ export class AtD890StunKillError extends RadioProtocolError {
     super(AT_D890_STUN_KILL_MESSAGE);
     this.name = 'AtD890StunKillError';
     this.state = state;
+    adviseRadioError(this, { retry: 'none', sent: 'nothing-sent' });
   }
 }
 

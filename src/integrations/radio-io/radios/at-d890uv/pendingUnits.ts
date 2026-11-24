@@ -27,7 +27,7 @@
  * wrapped: the record is best effort, and the warning shown on the failure still names the units.
  */
 
-import { RadioProtocolError } from '../../kit/errors.ts';
+import { adviseRadioError, RadioProtocolError } from '../../kit/errors.ts';
 import { D890_MAP } from './constants.ts';
 import { isAtD890DigitalContactUnit } from './digitalContactUnits.ts';
 import { eraseUnitBaseFor } from './eraseUnits.ts';
@@ -336,6 +336,7 @@ export class AtD890PendingUnitsError extends RadioProtocolError {
         `Nothing was sent.`,
     );
     this.name = 'AtD890PendingUnitsError';
+    adviseRadioError(this, { retry: 'none', sent: 'nothing-sent' });
   }
 
   get units(): readonly number[] {

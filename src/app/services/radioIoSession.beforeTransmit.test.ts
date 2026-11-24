@@ -30,8 +30,10 @@ import {
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import type { CloneImageRadio, MemoryMap, RadioSession } from '@integrations/radio-io/types.ts';
 import { reviewNeedsReconnect } from '@integrations/radio-io/programHold.ts';
+import { RadioTimeoutError } from '@integrations/radio-io/kit/errors.ts';
 import {
   closeRadioSession,
+  RadioWriteBlockedError,
   uploadPreparedRadioWrite,
   type BeforeTransmitContext,
 } from './radioIoSession.ts';
@@ -224,32 +226,34 @@ describe('uploadPreparedRadioWrite beforeTransmit', () => {
     expect(pipe.writes.length).toBe(before);
   }, 20_000);
 
-  it('refuses a language the radio region forbids before any frame (D890 language lock)', async () => {
+  it('language lock refusal is none and nothing sent', async () => {
     const { session, pipe } = await d890Session(1);
     const before = pipe.writes.length;
-    await expect(
-      uploadPreparedRadioWrite(session, egress, undefined, {
-        ...projected,
-        settingsOverrides: [{ fieldId: 'language', value: 2 }],
-        beforeTransmit: async () => 'apply',
-      }),
-    ).rejects.toThrow(/only allows English.*Language/);
+    const err = await uploadPreparedRadioWrite(session, egress, undefined, {
+      ...projected,
+      settingsOverrides: [{ fieldId: 'language', value: 2 }],
+      beforeTransmit: async () => 'apply',
+    }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioWriteBlockedError);
+    expect((err as RadioWriteBlockedError).retry).toBe('none');
+    expect((err as RadioWriteBlockedError).sent).toBe('nothing-sent');
     expect(pipe.writes.length).toBe(before);
   }, 20_000);
 
-  it('fails closed when a language change cannot be checked because LocalInfo is not cached', async () => {
+  it('uncached LocalInfo language refusal is none and nothing sent', async () => {
     const { session, pipe } = await d890Session();
     (session.radio as AtD890uvProtocol)
       .getDownloadCache()
       ?.blocks.delete(alignDownAtD890Address(D890_MAP.LocalInfo));
     const before = pipe.writes.length;
-    await expect(
-      uploadPreparedRadioWrite(session, egress, undefined, {
-        ...projected,
-        settingsOverrides: [{ fieldId: 'language', value: 0 }],
-        beforeTransmit: async () => 'apply',
-      }),
-    ).rejects.toThrow(/can't check this radio's language lock/);
+    const err = await uploadPreparedRadioWrite(session, egress, undefined, {
+      ...projected,
+      settingsOverrides: [{ fieldId: 'language', value: 0 }],
+      beforeTransmit: async () => 'apply',
+    }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioWriteBlockedError);
+    expect((err as RadioWriteBlockedError).retry).toBe('none');
+    expect((err as RadioWriteBlockedError).sent).toBe('nothing-sent');
     expect(pipe.writes.length).toBe(before);
   }, 20_000);
 
@@ -291,6 +295,56 @@ describe('uploadPreparedRadioWrite beforeTransmit', () => {
       },
     });
     expect(order).toEqual(['hook', 'upload']);
+  });
+
+  it('an upload failure is marked may hold part', async () => {
+    const radio = {
+      upload: vi.fn(async () => {
+        throw new RadioTimeoutError();
+      }),
+    } as unknown as CloneImageRadio;
+    const session: RadioSession = {
+      descriptor: {
+        label: 'Other',
+        modelIds: ['OTHER'],
+        hydration: { seedProtocolForUpload: undefined },
+      } as unknown as RadioSession['descriptor'],
+      pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
+      radio,
+    };
+    const image = new Map() as unknown as MemoryMap;
+    const { egress: otherEgress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
+  const err = await uploadPreparedRadioWrite(session, otherEgress, image, {
+      channels: [],
+    }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RadioTimeoutError);
+    expect((err as RadioTimeoutError).sent).toBe('may-hold-part');
+  });
+
+  it('an upload failure that already says nothing sent keeps it', async () => {
+    const timeout = new RadioTimeoutError();
+    timeout.sent = 'nothing-sent';
+    const radio = {
+      upload: vi.fn(async () => {
+        throw timeout;
+      }),
+    } as unknown as CloneImageRadio;
+    const session: RadioSession = {
+      descriptor: {
+        label: 'Other',
+        modelIds: ['OTHER'],
+        hydration: { seedProtocolForUpload: undefined },
+      } as unknown as RadioSession['descriptor'],
+      pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
+      radio,
+    };
+    const image = new Map() as unknown as MemoryMap;
+    const { egress: otherEgress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
+    const err = await uploadPreparedRadioWrite(session, otherEgress, image, {
+      channels: [],
+    }).catch((e: unknown) => e);
+    expect(err).toBe(timeout);
+    expect((err as RadioTimeoutError).sent).toBe('nothing-sent');
   });
 });
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RadioProtocolError } from '../../kit/errors.ts';
+import { AtD890StunKillError, atD890StunKillState } from './stunKillGuard.ts';
 import { D890_MAP } from './constants.ts';
 import { AtD890uvProtocol, AT_D890_STUN_KILL_UNKNOWN_MESSAGE } from './protocol.ts';
 import { AT_D890_STUN_KILL_MESSAGE } from './stunKillGuard.ts';
@@ -124,5 +125,27 @@ describe('AT-D890 stun/kill guard (#1288)', () => {
       ),
     ).rejects.toThrow(AT_D890_STUN_KILL_MESSAGE);
     expect(writeFrames(pipe)).toBe(0);
+  });
+
+  it('stun/kill flag error is none and nothing sent', () => {
+    const err = new AtD890StunKillError(atD890StunKillState(Uint8Array.of(1, 0)));
+    expect(err.retry).toBe('none');
+    expect(err.sent).toBe('nothing-sent');
+  });
+
+  it('unknown stun/kill state is reconnect and nothing sent', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890Connect(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    let err: unknown;
+    try {
+      radio.assertNoStunKillFlag();
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(RadioProtocolError);
+    expect((err as RadioProtocolError).retry).toBe('reconnect');
+    expect((err as RadioProtocolError).sent).toBe('nothing-sent');
   });
 });

@@ -107,8 +107,15 @@ import {
 import { readBandlimitFromImage } from '@integrations/radio-io/radios/rt95/channelCodec.ts';
 import {
   rt95ChipGuardRefusalText,
+  rt95ChipGuardRetry,
   type Rt95ChipGuardResult,
 } from '@integrations/radio-io/radios/rt95/modData/index.ts';
+import {
+  adviseRadioError,
+  RadioIoError,
+  type RadioRetryAdvice,
+  type RadioSentState,
+} from '@integrations/radio-io/kit/errors.ts';
 import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
@@ -186,7 +193,7 @@ export async function grantRadioSerialPortForEgress(opts?: {
   return { transport: 'web', port };
 }
 
-function withBaudsTriedMessage(err: unknown, baudsTried: readonly number[]): Error {
+export function withBaudsTriedMessage(err: unknown, baudsTried: readonly number[]): Error {
   const list = baudsTried.join(', ');
   if (err instanceof Error) {
     // The stun/kill refusals are not connect failures: keep their class and wording (#1288).
@@ -198,9 +205,36 @@ function withBaudsTriedMessage(err: unknown, baudsTried: readonly number[]): Err
     }
     const next = new Error(`${err.message} (tried baud: ${list})`);
     next.name = err.name;
+    if (err instanceof RadioIoError) {
+      (next as RadioIoError).code = err.code;
+    }
+    const src = err as Error & {
+      code?: string;
+      retry?: RadioRetryAdvice;
+      sent?: RadioSentState;
+      debugText?: string;
+    };
+    if (src.code !== undefined && !(next as { code?: string }).code) {
+      (next as { code?: string }).code = src.code;
+    }
+    if (src.retry !== undefined) (next as { retry?: RadioRetryAdvice }).retry = src.retry;
+    if (src.sent !== undefined) (next as { sent?: RadioSentState }).sent = src.sent;
+    if (src.debugText !== undefined) (next as { debugText?: string }).debugText = src.debugText;
     return next;
   }
   return new Error(`Radio connect failed (tried baud: ${list})`);
+}
+
+/** Re-wrap an encode refusal as a blocked write with nothing sent and no retry. */
+export function encodeRefusal(err: unknown): RadioWriteBlockedError {
+  const message = err instanceof Error ? err.message : String(err);
+  return new RadioWriteBlockedError(message, undefined, { retry: 'none', sent: 'nothing-sent' });
+}
+
+function markMayHoldPartIfUnset(err: unknown): void {
+  if (err instanceof RadioIoError || err instanceof RadioWriteBlockedError) {
+    if (err.sent === undefined) err.sent = 'may-hold-part';
+  }
 }
 
 /** Open Web Serial for the first compatible descriptor (or explicit modelId). */
@@ -437,11 +471,19 @@ export interface AtD890NxdnWriteVariant {
 export class RadioWriteBlockedError extends Error {
   /** Present when the block reason is a cardinality overage (#859 §9) — absent otherwise. */
   readonly capacity?: RadioWriteBlockedCapacity;
+  retry?: RadioRetryAdvice;
+  sent?: RadioSentState;
 
-  constructor(message: string, capacity?: RadioWriteBlockedCapacity) {
+  constructor(
+    message: string,
+    capacity?: RadioWriteBlockedCapacity,
+    advice?: { retry?: RadioRetryAdvice; sent?: RadioSentState },
+  ) {
     super(message);
     this.name = 'RadioWriteBlockedError';
     this.capacity = capacity;
+    if (advice?.retry !== undefined) this.retry = advice.retry;
+    if (advice?.sent !== undefined) this.sent = advice.sent;
   }
 }
 
@@ -472,7 +514,10 @@ export async function prepareRadioWriteImage(
 }> {
   const descriptor = descriptorsForEgress(egress)[0];
   if (descriptor && resolveRadioWriteGate(descriptor, undefined, egress.profileId) === 'hidden') {
-    throw new RadioWriteBlockedError(resolveRadioWriteProdDisabledMessage(egress.profileId));
+    throw new RadioWriteBlockedError(resolveRadioWriteProdDisabledMessage(egress.profileId), undefined, {
+      retry: 'none',
+      sent: 'nothing-sent',
+    });
   }
 
   const assembled = assemble(build, library, {
@@ -619,8 +664,7 @@ async function resolveRadioWriteImageForUpload(
         prepared.organisation,
       );
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      throw new RadioWriteBlockedError(message);
+      throw encodeRefusal(err);
     }
   }
   if (session.radio instanceof OpenGd77Protocol) {
@@ -639,8 +683,7 @@ async function resolveRadioWriteImageForUpload(
         powerSteps: session.radio.getPowerSteps(),
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      throw new RadioWriteBlockedError(message);
+      throw encodeRefusal(err);
     }
   }
   if (session.radio instanceof Uv17ProProtocol) {
@@ -652,8 +695,7 @@ async function resolveRadioWriteImageForUpload(
     try {
       return session.radio.encodeChannels(prior, prepared.channels);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      throw new RadioWriteBlockedError(message);
+      throw encodeRefusal(err);
     }
   }
   if (session.radio instanceof Dm32uvProtocol) {
@@ -669,13 +711,15 @@ async function resolveRadioWriteImageForUpload(
         prepared.organisation,
       );
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      throw new RadioWriteBlockedError(message);
+      throw encodeRefusal(err);
     }
   }
   if (isRadioFoundryCableRadio(session.radio)) {
     if (!prepared.radioFoundryWrite) {
-      throw new RadioWriteBlockedError('RadioFoundry write needs the serialised codeplug image.');
+      throw new RadioWriteBlockedError('RadioFoundry write needs the serialised codeplug image.', undefined, {
+        retry: 'none',
+        sent: 'nothing-sent',
+      });
     }
     session.radio.armWriteSource({ ...prepared.radioFoundryWrite, warnings: [] });
     if (!session.radio.hasReadImage() || !session.radio.hasDirectoryImage()) {
@@ -696,13 +740,17 @@ async function resolveRadioWriteImageForUpload(
     if (session.radio.getModDataIntent()) {
       // MM9PDY: refuse a 16 KiB chip (or an unreadable one) before the pause and before any W.
       const guard = await session.radio.probeChipGuard();
-      if (!guard.ok) throw new RadioWriteBlockedError(rt95ChipGuardRefusalText(guard.reason));
+      if (!guard.ok) {
+        throw new RadioWriteBlockedError(rt95ChipGuardRefusalText(guard.reason), undefined, {
+          retry: rt95ChipGuardRetry(guard.reason),
+          sent: 'nothing-sent',
+        });
+      }
     }
     try {
       return session.radio.encodeChannels(prior, prepared.channels);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      throw new RadioWriteBlockedError(message);
+      throw encodeRefusal(err);
     }
   }
   if (!prepared.image) {
@@ -1106,6 +1154,8 @@ export async function uploadPreparedRadioWrite(
         ) {
           throw new RadioWriteBlockedError(
             "Studio can't check this radio's language lock because its LocalInfo was not read; the Language change was not written.",
+            undefined,
+            { retry: 'none', sent: 'nothing-sent' },
           );
         }
         const languageProblem = atD890LanguageLockProblem(
@@ -1118,7 +1168,12 @@ export async function uploadPreparedRadioWrite(
             ),
           ),
         );
-        if (languageProblem) throw new RadioWriteBlockedError(languageProblem);
+        if (languageProblem) {
+          throw new RadioWriteBlockedError(languageProblem, undefined, {
+            retry: 'none',
+            sent: 'nothing-sent',
+          });
+        }
         // Resolve again: the overrides may have changed at the pause. Refused ones fail here, before upload.
         atD890UploadBankIntentFromOrganisation(chosen, opts?.channels);
         session.descriptor.hydration.seedProtocolForUpload?.(
@@ -1143,15 +1198,20 @@ export async function uploadPreparedRadioWrite(
       );
     }
     declareAtD890ContactUnitsForWrite(session, contactWrite);
-    await session.radio.upload(resolved, {
-      onProgress,
-      signal: opts?.signal,
-    });
-    if (isD890) {
-      await writePreparedAtD890DigitalContactsForWrite(session, contactWrite, {
-        ...opts,
+    try {
+      await session.radio.upload(resolved, {
         onProgress,
+        signal: opts?.signal,
       });
+      if (isD890) {
+        await writePreparedAtD890DigitalContactsForWrite(session, contactWrite, {
+          ...opts,
+          onProgress,
+        });
+      }
+    } catch (uploadErr) {
+      markMayHoldPartIfUnset(uploadErr);
+      throw uploadErr;
     }
     const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
     const warnings = openGd77WriteWarnings(session);
