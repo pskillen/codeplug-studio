@@ -18,7 +18,7 @@ function ui(phase: 'transfer' | 'done', opened = true) {
       <DesignSystemV2Provider>
         <RadioIoProgressModal
           opened={opened}
-          operation="restore"
+          operation="read"
           phase={phase}
           progress={null}
           onCancel={vi.fn()}

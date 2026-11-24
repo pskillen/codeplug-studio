@@ -50,6 +50,61 @@ describe('StageProgress', () => {
     expect(screen.getByTestId('stage-progress-estimate')).toHaveTextContent(/left/);
   });
 
+  it('shows a live estimate from the stage weights when Review gave none', () => {
+    let now = 1_000;
+    const nowSpy = vi.spyOn(performance, 'now').mockImplementation(() => now);
+    const t0 = 1_700_000_000_000;
+    vi.setSystemTime(t0);
+    const rows = [
+      { id: 'a', label: 'Codeplug blocks', status: 'active' as const, weight: 2000 },
+      { id: 'b', label: 'Commit', status: 'pending' as const, weight: 32 },
+    ];
+    const ui = (cur: number) => (
+      <DesignSystemV2Provider>
+        <StageProgress
+          groups={[{ id: 'w', rows }]}
+          progress={{ cur, max: 2000, msg: '', stage: 'Codeplug blocks' }}
+          startedAt={t0}
+          estimateSeconds={null}
+          running
+        />
+      </DesignSystemV2Provider>
+    );
+    const { rerender } = render(ui(10));
+    now += 10_000;
+    vi.setSystemTime(t0 + 10_000);
+    rerender(ui(500));
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.getByTestId('stage-progress-estimate')).toHaveTextContent(/left/);
+    nowSpy.mockRestore();
+  });
+
+  it('shows the current stage count, x of y, while running', () => {
+    renderProgress({
+      progress: { cur: 1234, max: 2048, msg: '', stage: 'Codeplug blocks' },
+      running: true,
+    });
+    expect(screen.getByTestId('stage-progress-count')).toHaveTextContent(
+      `Codeplug blocks: ${(1234).toLocaleString()} of ${(2048).toLocaleString()}`,
+    );
+  });
+
+  it('shows no count for a single-step stage or when finished', () => {
+    renderProgress({ progress: { cur: 1, max: 1, msg: '', stage: 'Commit' }, running: true });
+    expect(screen.queryByTestId('stage-progress-count')).toBeNull();
+  });
+
+  it('shows the overall percent while running', () => {
+    renderProgress({
+      groups: [{ id: 'g', rows: [{ id: 'a', label: 'Channels', status: 'active', weight: 100 }] }],
+      progress: { cur: 5, max: 10, msg: '', stage: 'Channels' },
+      running: true,
+    });
+    expect(screen.getByTestId('stage-progress-percent')).toHaveTextContent(/^\d+%$/);
+  });
+
   it('shows group headings only with two or more groups', () => {
     renderProgress({
       groups: [

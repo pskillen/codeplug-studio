@@ -148,7 +148,7 @@ Write-coverage tables stay on the **Export** write panel. They must not become t
 
 ### Restore after a range change
 
-On the AT-D890UV, when the connected radio's range (the sanitised code from its ident) differs from the one in the zip's LocalInfo (above 18 reads as 0, and 14 without `890#` reads as 0), Restore **forces every restorable region** and the confirm modal says "This radio's range has changed since the backup, so Studio restores everything together. Restoring settings alone would stop the radio starting." A same-range Restore is unchanged. The Danger zone's wizard does the same restore itself ([danger-zone.md](danger-zone.md)).
+On the AT-D890UV, when the connected radio's range (the sanitised code from its ident) differs from the one in the zip's LocalInfo (above 18 reads as 0, and 14 without `890#` reads as 0), Restore **forces every restorable region** and the Review step says "This radio's range has changed since the backup, so Studio restores everything together. Restoring settings alone would stop the radio starting." A same-range Restore is unchanged. The Danger zone's wizard does the same restore itself ([danger-zone.md](danger-zone.md)).
 
 ### Unfinished range change banner
 
@@ -156,11 +156,15 @@ When this browser holds an unfinished range-change record (stage `sending`, `cha
 
 ### Restore
 
-Confirm modal: connected model + serial (or firmware / label when the archive has no serial). **Serial mismatch is an error, not a confirm option.**
+[`RadioRestoreDialog`](../../../src/app/components/builds/RadioRestoreDialog/RadioRestoreDialog.md) on the same egress shell as Write:
 
-Progress modal operation **`restore`** — copy must not say “Writing codeplug.” Abort / disconnect like other radio-io flows.
+1. **Connect** — port picker, then pre-flight (model, full serial, serial match or model match when the backup has no serial). **Serial mismatch refuses here** with no retry; nothing is sent.
+2. **Review** — always shown: this radio, the backup (model, serial, when taken), regions to restore, the range-mismatch note when it applies, "Nothing has been written yet.", destructive **Restore to this radio**.
+3. **Restoring** — `StageProgress` with the adapter's `restore` plan; copy must not say "Writing codeplug."
+4. **Restart** — countdown when the radio declares a restart after the session ends (no check step).
+5. **Done** — green summary, the radio's optional success note (e.g. DM-32UV power-cycle), **Back to Export**.
 
-When a Restore finishes, the progress dialog offers **Back to Export** beside Close.
+Backup **reads** still use [`RadioIoProgressModal`](../../../src/app/components/builds/RadioIoProgressModal.md); failed reads show [`ErrorPanel`](../../../src/app/components/egress/ErrorPanel/ErrorPanel.md).
 
 Optional post-restore verify where the descriptor already has `writeVerify` (same idea as Write). Not a blocker for families without hooks.
 

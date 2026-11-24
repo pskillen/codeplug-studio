@@ -16,6 +16,7 @@ import ErrorPanel from '../../components/egress/ErrorPanel/ErrorPanel.tsx';
 import StageProgress from '../../components/egress/StageProgress/StageProgress.tsx';
 import RadioWriteStepperDemo from './RadioWriteStepperDemo.tsx';
 import ExportFileDialogDemo from './ExportFileDialogDemo.tsx';
+import RadioRestoreDialogDemo from './RadioRestoreDialogDemo.tsx';
 import SatelliteKepsWriteTargetModalDemo from './SatelliteKepsWriteTargetModalDemo.tsx';
 import RangeChangeDemo from './RangeChangeDemo.tsx';
 import RadioIoStageList, { type StageRow } from '../../components/builds/RadioIoStageList.tsx';
@@ -389,6 +390,13 @@ export default function StyleguideOverlaysPage() {
         description="Build → Export opens the same shell in file mode: Checks with warnings before download, optional What to export for CHIRP or NeonPlug, then a done recap."
       >
         <ExportFileDialogDemo />
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="Restore dialog"
+        description="Build → Backup / Restore → Restore uses the same egress shell as Write: Connect pre-flight, Review (always), progress, optional restart, Done with Back to Export."
+      >
+        <RadioRestoreDialogDemo />
       </StyleguideSection>
 
       <StyleguideSection
