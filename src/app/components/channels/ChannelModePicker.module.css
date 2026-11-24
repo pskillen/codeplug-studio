@@ -22,7 +22,7 @@
 .presetGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 14px;
 }
 
@@ -57,11 +57,12 @@
   font-weight: 700;
   color: var(--dsv2-text-primary);
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .presetSub {
-  font-size: 11px;
-  color: var(--dsv2-text-tertiary);
+  font-size: 10.5px;
+  color: var(--dsv2-text-secondary);
   line-height: 1.35;
   margin-top: 2px;
 }
@@ -92,7 +93,8 @@
   align-items: center;
   gap: 6px;
   font-size: 12.5px;
-  min-height: 44px;
+  position: relative;
+  min-height: 32px;
   padding: 6px 12px;
   border-radius: var(--dsv2-radius-pill);
   border: 1px solid var(--dsv2-border);
@@ -102,6 +104,12 @@
   font-family: var(--dsv2-font-family);
   cursor: pointer;
   box-sizing: border-box;
+}
+
+.chip::after {
+  content: '';
+  position: absolute;
+  inset: -6px 0;
 }
 
 .chip:hover {

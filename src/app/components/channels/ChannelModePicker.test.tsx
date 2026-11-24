@@ -82,7 +82,7 @@ describe('ChannelModePicker', () => {
     const { onRemove, onAdd } = renderPicker({ modes: ['fm', 'dmr'] });
     fireEvent.click(screen.getByRole('button', { name: 'Remove FM' }));
     expect(onRemove).toHaveBeenCalledWith('fm');
-    fireEvent.click(screen.getByRole('button', { name: 'Add another mode' }));
+    fireEvent.click(screen.getByRole('button', { name: '+ Add another mode' }));
     const items = (await screen.findAllByRole('menuitem', { hidden: true })).map(
       (el) => el.textContent,
     );

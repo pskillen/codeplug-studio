@@ -434,6 +434,88 @@ describe('switchChannelMode', () => {
     expect((out.modeProfiles[0] as ChannelModeProfileDMR).colourCode).toBe(3);
     expect(out.parked).toEqual([fm]);
   });
+
+  it('sets usb sideband when switching FM to SSB and omits it when switching back', () => {
+    const fm: ChannelModeProfileAnalog = {
+      mode: 'fm',
+      squelch: 25,
+      rxTone: 'none',
+      txTone: 'none',
+      bandwidthKHz: null,
+      analogSquelchMode: 'default',
+    };
+    const toSsb = switchChannelMode({ modeProfiles: [fm], primaryMode: 'fm', parked: [] }, 'ssb');
+    expect(toSsb.modeProfiles[0]).toMatchObject({ mode: 'ssb', ssbSideband: 'usb' });
+    const backFm = switchChannelMode(toSsb, 'fm');
+    expect(backFm.modeProfiles[0]?.mode).toBe('fm');
+    expect(backFm.modeProfiles[0]).not.toHaveProperty('ssbSideband');
+  });
+
+  it('carries analogSquelchMode when switching FM to AM', () => {
+    const fm: ChannelModeProfileAnalog = {
+      mode: 'fm',
+      squelch: 25,
+      rxTone: 'none',
+      txTone: 'none',
+      bandwidthKHz: null,
+      analogSquelchMode: 'carrier',
+    };
+    const out = switchChannelMode({ modeProfiles: [fm], primaryMode: 'fm', parked: [] }, 'am');
+    expect((out.modeProfiles[0] as ChannelModeProfileAnalog).analogSquelchMode).toBe('carrier');
+  });
+
+  it('does not carry digital fields when switching DMR to P25 and parks DMR', () => {
+    const dmr = defaultModeProfile('dmr') as ChannelModeProfileDMR;
+    dmr.colourCode = 12;
+    const out = switchChannelMode({ modeProfiles: [dmr], primaryMode: 'dmr', parked: [] }, 'p25');
+    expect(out.modeProfiles[0]?.mode).toBe('p25');
+    expect(out.modeProfiles[0]).toEqual(defaultModeProfile('p25'));
+    expect((out.parked[0] as ChannelModeProfileDMR).colourCode).toBe(12);
+  });
+
+  it('does not carry fields when switching NXDN to DMR', () => {
+    const nxdn = defaultModeProfile('nxdn');
+    const out = switchChannelMode({ modeProfiles: [nxdn], primaryMode: 'nxdn', parked: [] }, 'dmr');
+    expect(out.modeProfiles[0]).toEqual(defaultModeProfile('dmr'));
+    expect(out.parked[0]?.mode).toBe('nxdn');
+  });
+
+  it('does not carry analog tones when switching FM to DMR', () => {
+    const fm: ChannelModeProfileAnalog = {
+      mode: 'fm',
+      squelch: 25,
+      rxTone: '88.5',
+      txTone: '88.5',
+      bandwidthKHz: 12.5,
+      analogSquelchMode: 'default',
+    };
+    const out = switchChannelMode({ modeProfiles: [fm], primaryMode: 'fm', parked: [] }, 'dmr');
+    expect(out.modeProfiles[0]).toEqual(defaultModeProfile('dmr'));
+    expect(out.parked[0]).toEqual(fm);
+  });
+
+  it('replaces an earlier parked profile for the same mode', () => {
+    const dmrOld = defaultModeProfile('dmr') as ChannelModeProfileDMR;
+    dmrOld.colourCode = 1;
+    const dmrNew = defaultModeProfile('dmr') as ChannelModeProfileDMR;
+    dmrNew.colourCode = 9;
+    let edit = switchChannelMode({ modeProfiles: [dmrOld], primaryMode: 'dmr', parked: [] }, 'fm');
+    edit = switchChannelMode({ ...edit, modeProfiles: [dmrNew] }, 'fm');
+    expect(edit.parked).toHaveLength(1);
+    expect((edit.parked[0] as ChannelModeProfileDMR).colourCode).toBe(9);
+  });
+
+  it('normalises legacy mode-only stubs through a switch', () => {
+    const stub = { mode: 'fm' } as ChannelModeProfile;
+    const out = switchChannelMode({ modeProfiles: [stub], primaryMode: 'fm', parked: [] }, 'dmr');
+    expect(out.parked[0]).toEqual(defaultModeProfile('fm'));
+    const legacySsb = { mode: 'ssb-lsb' } as unknown as ChannelModeProfile;
+    const fromLegacy = switchChannelMode(
+      { modeProfiles: [legacySsb], primaryMode: 'ssb', parked: [] },
+      'am',
+    );
+    expect(fromLegacy.parked[0]).toMatchObject({ mode: 'ssb', ssbSideband: 'lsb' });
+  });
 });
 
 describe('addChannelMode', () => {
@@ -484,6 +566,17 @@ describe('removeChannelMode', () => {
       parked: [],
     };
     expect(removeChannelMode(edit, 'dmr')).toEqual(edit);
+  });
+
+  it('keeps primary when removing a non-main mode', () => {
+    const edit = {
+      modeProfiles: [defaultModeProfile('fm'), defaultModeProfile('dmr')],
+      primaryMode: 'fm' as const,
+      parked: [],
+    };
+    const out = removeChannelMode(edit, 'dmr');
+    expect(out.primaryMode).toBe('fm');
+    expect(out.modeProfiles.map((p) => p.mode)).toEqual(['fm']);
   });
 
   it('parks the removed profile and advances primary', () => {
@@ -581,7 +674,13 @@ describe('mode transitions (same output as today editor)', () => {
 describe('mode transitions (input immutability)', () => {
   it('does not mutate frozen inputs', () => {
     const fm = defaultModeProfile('fm');
-    const before = freezeEdit({ modeProfiles: [fm], primaryMode: 'fm', parked: [] });
+    const parkedDmr = defaultModeProfile('dmr') as ChannelModeProfileDMR;
+    parkedDmr.colourCode = 4;
+    const before = freezeEdit({
+      modeProfiles: [fm],
+      primaryMode: 'fm',
+      parked: [parkedDmr],
+    });
     const snapshot = structuredClone(before);
     switchChannelMode(before, 'dmr');
     expect(before).toEqual(snapshot);

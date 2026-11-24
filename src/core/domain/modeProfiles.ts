@@ -294,10 +294,7 @@ export function channelHasDmrProfile(channel: Pick<Channel, 'modeProfiles'>): bo
   return channel.modeProfiles.some((profile) => profile.mode === 'dmr');
 }
 
-/**
- * `ownIds` are the library's Digital IDs. When given, a DMR or NXDN profile that names an ID which
- * is missing or belongs to the other protocol is an error; omit it to skip that check.
- */
+/** Editor state for mode transitions; `parked` is never persisted on `Channel`. */
 export interface ChannelModeEdit {
   modeProfiles: ChannelModeProfile[];
   primaryMode: ChannelMode | null;
@@ -432,6 +429,10 @@ export function setChannelMainMode(edit: ChannelModeEdit, mode: ChannelMode): Ch
   return { ...base, primaryMode: mode };
 }
 
+/**
+ * `ownIds` are the library's Digital IDs. When given, a DMR or NXDN profile that names an ID which
+ * is missing or belongs to the other protocol is an error; omit it to skip that check.
+ */
 export function validateModeProfiles(
   profiles: ChannelModeProfile[],
   ownIds?: readonly OwnDigitalId[],

@@ -27,6 +27,8 @@ Pick, switch, add, and remove a channel's modes in the new channel editor. Repla
 
 Wire callbacks to pure transitions in `@core/domain/modeProfiles.ts`:
 
+`parked` is never part of the dirty check or the save payload, and Discard clears it; compare against normalised saved profiles.
+
 ```tsx
 import {
   addChannelMode,
@@ -34,6 +36,7 @@ import {
   switchChannelMode,
   type ChannelModeEdit,
 } from '@core/domain/modeProfiles.ts';
+import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import ChannelModePicker, { AddModeMenu } from './ChannelModePicker.tsx';
 import type { ModePreset } from '../../lib/channelModes.ts';
 
@@ -57,6 +60,7 @@ function onPreset(edit: ChannelModeEdit, preset: ModePreset) {
 - **One mode:** FM AM DMR NXDN P25 M17 switch; rare modes under More. Editor renders `AddModeMenu variant="link"` below settings (not inside the picker).
 - **Two or more:** coloured chips with remove (×), then `AddModeMenu variant="chip"`.
 - Switching or removing parks the profile; switching or adding back restores it (`parked` is editor-only).
+- The **More** chip is a `role="radio"` control that opens a menu for SSB, D-STAR, YSF, and Tetra.
 
 ## Related
 

@@ -1,6 +1,6 @@
 import { Menu } from '@mantine/core';
 import { IconCheck, IconChevronDown, IconX } from '@tabler/icons-react';
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import type { ChannelMode as CoreChannelMode } from '@core/models/libraryTypes.ts';
 import {
   MODE_PICKER_COMMON,
@@ -33,6 +33,32 @@ export interface AddModeMenuProps {
 function pickerModesNotOnChannel(modes: readonly CoreChannelMode[]): CoreChannelMode[] {
   const present = new Set(modes);
   return [...MODE_PICKER_COMMON, ...MODE_PICKER_MORE].filter((m) => !present.has(m));
+}
+
+function rootClass(compact?: boolean): string {
+  return [classes.root, compact ? classes.compact : ''].filter(Boolean).join(' ');
+}
+
+function PlaceholderBox({
+  role,
+  'aria-labelledby': labelledBy,
+  children,
+  className,
+}: {
+  role?: string;
+  'aria-labelledby'?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      role={role}
+      aria-labelledby={labelledBy}
+      className={[classes.placeholder, className].filter(Boolean).join(' ')}
+    >
+      {children}
+    </div>
+  );
 }
 
 function ModeRadioChip({
@@ -141,7 +167,7 @@ export function AddModeMenu({ modes, onAdd, variant }: AddModeMenuProps): ReactN
   return (
     <Menu withinPortal position="bottom-start" width={200}>
       <Menu.Target>
-        <button type="button" className={classes.chip} aria-label="Add another mode">
+        <button type="button" className={classes.chip}>
           + Add another mode
         </button>
       </Menu.Target>
@@ -154,9 +180,10 @@ function PlaceholderState({
   onSwitch,
   onPreset,
 }: Pick<ChannelModePickerProps, 'onSwitch' | 'onPreset'>) {
+  const titleId = useId();
   return (
-    <Cardinal role="group" aria-labelledby="channel-mode-picker-title">
-      <p id="channel-mode-picker-title" className={classes.placeholderTitle}>
+    <PlaceholderBox role="group" aria-labelledby={titleId}>
+      <p id={titleId} className={classes.placeholderTitle}>
         Which mode does this channel use?
       </p>
       <div className={classes.presetGrid}>
@@ -183,29 +210,7 @@ function PlaceholderState({
         ))}
         <MoreModesMenu current={null} onSwitch={onSwitch} checked={false} />
       </div>
-    </Cardinal>
-  );
-}
-
-function Cardinal({
-  role,
-  'aria-labelledby': labelledBy,
-  children,
-  className,
-}: {
-  role?: string;
-  'aria-labelledby'?: string;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      role={role}
-      aria-labelledby={labelledBy}
-      className={[classes.placeholder, className].filter(Boolean).join(' ')}
-    >
-      {children}
-    </div>
+    </PlaceholderBox>
   );
 }
 
@@ -220,7 +225,7 @@ function SwitchState({
 }) {
   const currentInMore = MODE_PICKER_MORE.includes(current);
   return (
-    <div className={[classes.root, compact ? classes.compact : ''].filter(Boolean).join(' ')}>
+    <div className={rootClass(compact)}>
       <div className={classes.chips} role="radiogroup" aria-label="Mode">
         {MODE_PICKER_COMMON.map((mode) => (
           <ModeRadioChip key={mode} mode={mode} checked={current === mode} onSelect={onSwitch} />
@@ -247,7 +252,7 @@ function MultiState({
   compact?: boolean;
 }) {
   return (
-    <div className={[classes.root, compact ? classes.compact : ''].filter(Boolean).join(' ')}>
+    <div className={rootClass(compact)}>
       <div className={classes.chips}>
         {modes.map((mode) => {
           const fill = modeColor(mode);
@@ -286,7 +291,7 @@ export default function ChannelModePicker({
 }: ChannelModePickerProps): ReactNode {
   if (modes.length === 0) {
     return (
-      <div className={[classes.root, compact ? classes.compact : ''].filter(Boolean).join(' ')}>
+      <div className={rootClass(compact)}>
         <PlaceholderState onSwitch={onSwitch} onPreset={onPreset} />
       </div>
     );
