@@ -24,6 +24,7 @@ Use `ErrorPanel` for failures in the Write stepper and later export flows: it sh
 | Doc                                                                               | Contents                                        |
 | --------------------------------------------------------------------------------- | ----------------------------------------------- |
 | [ErrorPanel sidecar](../../../src/app/components/egress/ErrorPanel/ErrorPanel.md) | Props, usage, behaviour for write/export errors |
+| [EgressShell sidecar](../../../src/app/components/egress/EgressShell/EgressShell.md) | Export and write dialogs: one frame (`ModalShell` + step bar) |
 
 ## Doc map
 

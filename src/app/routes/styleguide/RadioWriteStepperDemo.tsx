@@ -7,9 +7,11 @@ import { Group } from '@mantine/core';
 import RadioWriteStepper from '../../components/builds/RadioWriteStepper/RadioWriteStepper.tsx';
 import {
   demoFlowView,
+  demoShellOptions,
   demoStepperConfig,
   noopActions,
 } from '../../components/builds/RadioWriteStepper/stepperDemo.ts';
+import type { WriteStepperConfig } from '../../components/builds/RadioWriteStepper/types.ts';
 import {
   WRITE_STEP_LABEL,
   WRITE_STEPS,
@@ -247,10 +249,19 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
   }
 }
 
+const FIVE_STEP_SHELL: Partial<WriteStepperConfig> = {
+  options: demoShellOptions({
+    restartAfterEndSeconds: 0,
+    check: { available: false },
+    keps: undefined,
+  }),
+};
+
 export default function RadioWriteStepperDemo() {
   const [step, setStep] = useState<WriteStep | null>(null);
   const [parts, setParts] = useState<WriteParts>({ ...DEFAULT_WRITE_PARTS });
   const [d890Variant, setD890Variant] = useState<D890Variant | null>(null);
+  const [configOverride, setConfigOverride] = useState<Partial<WriteStepperConfig> | null>(null);
   const d890 = useMemo(
     () => (d890Variant ? demoD890Controller(d890Variant) : undefined),
     [d890Variant],
@@ -278,10 +289,43 @@ export default function RadioWriteStepperDemo() {
     <>
       <Group gap="xs">
         {WRITE_STEPS.map((s, i) => (
-          <Button key={s} variant="secondary" size="sm" onClick={() => setStep(s)}>
+          <Button
+            key={s}
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setD890Variant(null);
+              setConfigOverride(null);
+              setStep(s);
+            }}
+          >
             {`${i + 1}. ${WRITE_STEP_LABEL[s]}`}
           </Button>
         ))}
+      </Group>
+      <Group gap="xs">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setD890Variant(null);
+            setConfigOverride(FIVE_STEP_SHELL);
+            setStep('whatToWrite');
+          }}
+        >
+          Shell: five counted steps
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setD890Variant(null);
+            setConfigOverride(FIVE_STEP_SHELL);
+            setStep('writing');
+          }}
+        >
+          Shell: Review skipped
+        </Button>
       </Group>
       <Group gap="xs">
         {D890_VARIANTS.map((v) => (
@@ -299,7 +343,7 @@ export default function RadioWriteStepperDemo() {
         ))}
       </Group>
       <RadioWriteStepper
-        config={demoStepperConfig()}
+        config={demoStepperConfig(configOverride ?? {})}
         view={{ ...view, open: step !== null || d890Variant !== null }}
         actions={actions}
       />
