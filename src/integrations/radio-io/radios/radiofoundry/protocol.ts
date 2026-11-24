@@ -226,6 +226,8 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   private seq = 1;
   private info: FastInfo | null = null;
   private readBlocks: Map<number, Uint8Array> | null = null;
+  /** Per-block SUMS metadata from the last download; used when a write skips READ on owned blocks. */
+  private blockSums: Map<number, BlockSum> | null = null;
   private armed: RadioFoundryWriteSource | null = null;
   private version: RadioFoundryBuildIdentity | null = null;
 
@@ -306,6 +308,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.info = null;
     this.version = null;
     this.readBlocks = null;
+    this.blockSums = null;
     try {
       const body = await this.request(OP_INFO, new Uint8Array(0), 2000);
       this.info = parseInfo(body, this.board);
@@ -351,6 +354,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.info = null;
     this.version = null;
     this.readBlocks = null;
+    this.blockSums = null;
     this.armed = null;
   }
 
@@ -438,11 +442,13 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   }): Promise<MemoryMap> {
     this.requireLink();
     const stage = opts.progressStage ?? 'Codeplug';
+    const preWrite = this.armed != null && stage === PRE_WRITE_STAGE;
     const addresses = this.readAddresses();
     const sums = await this.readSums(addresses, opts.signal, {
       onProgress: opts.onProgress,
       stage: BLOCK_CHECKSUMS_STAGE,
     });
+    this.blockSums = new Map(sums);
     const image = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
     image.fill(0xff);
     const blocks = new Map<number, Uint8Array>();
@@ -450,9 +456,16 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       const addr = addresses[i]!;
       const sum = sums.get(addr);
       if (!sum) throw new RadioProtocolError(`No checksum for block ${hex(addr)}.`);
-      const block = sum.blank ? blankBlock() : await this.readBlock(addr, sum.crc, opts.signal);
-      if (crc32Ieee(block) !== sum.crc) {
-        throw new RadioProtocolError(`Block ${hex(addr)} checksum does not match the radio.`);
+      const skipRead = preWrite && blockFullyOwned(addr, this.armed!);
+      let block: Uint8Array;
+      if (skipRead) {
+        const seed = sum.blank ? blankBlock() : new Uint8Array(BLOCK_SIZE).fill(0xff);
+        block = mergeBlock(seed, addr, this.armed!);
+      } else {
+        block = sum.blank ? blankBlock() : await this.readBlock(addr, sum.crc, opts.signal);
+        if (crc32Ieee(block) !== sum.crc) {
+          throw new RadioProtocolError(`Block ${hex(addr)} checksum does not match the radio.`);
+        }
       }
       blocks.set(addr, block);
       if (addr < RADIOFOUNDRY_IMAGE_SIZE) {
@@ -553,6 +566,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     );
     await this.request(OP_COMMIT, new Uint8Array(0), 20000);
     this.readBlocks = null;
+    this.blockSums = null;
   }
 
   decodeChannels(image: MemoryMap): RadioChannelDto[] {
@@ -599,10 +613,20 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   private changedBlocks(): { addr: number; data: Uint8Array }[] {
     const blocks = this.requireReadBlocks();
     const source = this.requireArmed();
+    const sums = this.blockSums;
     const jobs: { addr: number; data: Uint8Array }[] = [];
     for (const addr of this.readAddresses()) {
       const radio = blocks.get(addr);
       if (!radio) throw new RadioProtocolError(`Block ${hex(addr)} was not read.`);
+      if (blockFullyOwned(addr, source)) {
+        const want = mergeBlock(blankBlock(), addr, source);
+        const sum = sums?.get(addr);
+        if (!sum) throw new RadioProtocolError(`No checksum for block ${hex(addr)}.`);
+        const matches =
+          (sum.blank && want.every((byte) => byte === 0xff)) || crc32Ieee(want) === sum.crc;
+        if (!matches) jobs.push({ addr, data: want });
+        continue;
+      }
       const want = mergeBlock(radio, addr, source);
       if (!sameBytes(want, radio)) jobs.push({ addr, data: want });
     }
