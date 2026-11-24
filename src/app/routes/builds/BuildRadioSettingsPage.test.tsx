@@ -88,6 +88,23 @@ describe('BuildRadioSettingsPage', () => {
     );
   });
 
+  it('shows Brandmeister AirSecurity only on the MM9PDY AT-D890UV', () => {
+    const stock = renderPage('radio-io-at-d890uv');
+    expect(
+      screen.queryByRole('heading', { name: 'Brandmeister AirSecurity' }),
+    ).not.toBeInTheDocument();
+    stock.unmount();
+
+    const other = renderPage('radio-io-uv5r-mini');
+    expect(
+      screen.queryByRole('heading', { name: 'Brandmeister AirSecurity' }),
+    ).not.toBeInTheDocument();
+    other.unmount();
+
+    renderPage('radio-io-at-d890uv-mm9pdy');
+    expect(screen.getByRole('heading', { name: 'Brandmeister AirSecurity' })).toBeInTheDocument();
+  });
+
   describe('Danger zone Change… link', () => {
     afterEach(() => {
       clearAllOverrides('page-radio-io-at-d890uv');
