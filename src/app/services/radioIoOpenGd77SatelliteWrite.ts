@@ -33,7 +33,7 @@ export async function writeOpenGd77SatellitesToRadio(
     satelliteOverrides?: readonly BuildEntityOverride[];
   },
 ): Promise<WriteOpenGd77SatellitesToRadioResult> {
-  const selected = countWriteEligibleSatelliteRecords(satellites);
+  const selected = countWriteEligibleSatelliteRecords(satellites, opts?.satelliteOverrides);
   if (selected > OPENGD77_FAMILY_LIMITS.SATELLITE_MAX) {
     const radioLabel = session.descriptor.label;
     throw new RadioWriteBlockedError(
@@ -59,6 +59,6 @@ export async function writeOpenGd77SatellitesToRadio(
   return {
     written: selected,
     skipped: skippedSatellites(satellites),
-    skippedTransmitters: listCapabilitySkippedTransmitters(satellites),
+    skippedTransmitters: listCapabilitySkippedTransmitters(satellites, opts?.satelliteOverrides),
   };
 }

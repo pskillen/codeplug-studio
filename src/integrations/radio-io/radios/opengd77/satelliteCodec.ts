@@ -6,6 +6,7 @@
  */
 
 import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
+import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
@@ -254,6 +255,7 @@ function assignSlots(
   };
 
   for (const tx of satellite.transmitters) {
+    if (isEntityExcluded(satelliteOverrides, tx.id)) continue;
     if (!isTransmitterWriteEligible(satellite, tx)) continue;
     if (!isOpenGd77SatelliteFrequencyEligible(tx)) {
       skipped.push({
@@ -340,7 +342,9 @@ function resolvePacked(
   satellites: readonly Satellite[],
   satelliteOverrides?: readonly BuildEntityOverride[],
 ): OpenGd77PackedSatellite[] {
-  const selected = listOpenGd77WriteSatellites(satellites);
+  const selected = listOpenGd77WriteSatellites(satellites).filter(
+    (satellite) => !isEntityExcluded(satelliteOverrides, satellite.id),
+  );
   const names = shortenSatelliteNames(
     selected.map((s) => ({ id: s.id, name: s.name, noradId: s.noradId })),
     { maxLength: OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH },
@@ -369,8 +373,11 @@ function resolvePacked(
   });
 }
 
-export function countWriteEligibleSatelliteRecords(satellites: readonly Satellite[]): number {
-  return listOpenGd77WriteSatellites(satellites).length;
+export function countWriteEligibleSatelliteRecords(
+  satellites: readonly Satellite[],
+  satelliteOverrides?: readonly BuildEntityOverride[],
+): number {
+  return resolvePacked(satellites, satelliteOverrides).length;
 }
 
 export function encodeSatelliteRecord(

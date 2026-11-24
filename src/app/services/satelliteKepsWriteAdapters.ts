@@ -9,6 +9,9 @@
  * call site. OpenGD77 DM-1701 / MD-9600 (#858) share one packer registered twice.
  */
 
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
+import { pushKepsExcludedWarning } from '@core/import-export/exportWarning.ts';
+import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
 import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
@@ -92,7 +95,10 @@ export interface SatelliteKepsWriteCapacity {
   /** Cap this profile's radio enforces on write-eligible records (spacecraft or transmitters). */
   max: number;
   /** Non-throwing count of records the current library would produce for this profile. */
-  countEligible: (satellites: readonly Satellite[]) => number;
+  countEligible: (
+    satellites: readonly Satellite[],
+    overrides?: readonly BuildEntityOverride[],
+  ) => number;
   /** Wire name field length for this radio's satellite records. */
   nameLength: number;
   /** Noun in capacity warnings (`transmitter` vs `satellite`). */
@@ -167,13 +173,93 @@ export function formatSatelliteKepsCapacityWarning(
 export function satelliteKepsCapacityWarning(
   profileId: string,
   satellites: readonly Satellite[],
+  overrides?: readonly BuildEntityOverride[],
 ): string | null {
   const capacity = getSatelliteKepsWriteCapacity(profileId);
   if (!capacity) return null;
-  return formatSatelliteKepsCapacityWarning(capacity.countEligible(satellites), capacity.max, {
-    unitNoun: capacity.unitNoun,
-    limitsDoc: capacity.limitsDoc,
-  });
+  return formatSatelliteKepsCapacityWarning(
+    capacity.countEligible(satellites, overrides),
+    capacity.max,
+    {
+      unitNoun: capacity.unitNoun,
+      limitsDoc: capacity.limitsDoc,
+    },
+  );
+}
+
+const NOTHING_KEPS_ELIGIBLE_REFUSAL =
+  'Nothing to write: none of the enabled satellites has a transmitter this radio can carry. Check the satellites in the library.';
+
+function isOpenGd77BuildSlotSkip(reason: string): boolean {
+  return (
+    reason.startsWith('Not selected for ') ||
+    reason === 'Only one FM pair fits an OpenGD77 satellite record.' ||
+    reason === 'Only one APRS pair fits an OpenGD77 satellite record.' ||
+    reason === 'Only one beacon frequency fits an OpenGD77 satellite record.'
+  );
+}
+
+function kepsExcludedLabel(
+  satellites: readonly Satellite[],
+  exclusion: SatelliteKepsExclusion,
+): string {
+  const satellite = satellites.find((s) => s.id === exclusion.satelliteId);
+  const name = satellite?.name ?? exclusion.satelliteId;
+  if (exclusion.transmitterId == null) return name;
+  const transmitter = satellite?.transmitters.find((t) => t.id === exclusion.transmitterId);
+  const txLabel = transmitter?.label ?? exclusion.transmitterId;
+  return `${name} / ${txLabel}`;
+}
+
+export interface KepsWriteChecksResult {
+  refusals: { message: string; retry: 'none' }[];
+  warnings: ExportWarning[];
+  eligible: number;
+}
+
+export function kepsWriteChecks(
+  profileId: string,
+  satellites: readonly Satellite[],
+  overrides?: readonly BuildEntityOverride[],
+): KepsWriteChecksResult {
+  const capacity = getSatelliteKepsWriteCapacity(profileId);
+  const eligible = capacity?.countEligible(satellites, overrides) ?? 0;
+  const refusals: KepsWriteChecksResult['refusals'] = [];
+  const warnings: ExportWarning[] = [];
+
+  if (capacity) {
+    const capacityMsg = formatSatelliteKepsCapacityWarning(eligible, capacity.max, {
+      unitNoun: capacity.unitNoun,
+      limitsDoc: capacity.limitsDoc,
+    });
+    if (capacityMsg) refusals.push({ message: capacityMsg, retry: 'none' });
+  }
+
+  if (eligible === 0 && satellites.length > 0) {
+    refusals.push({ message: NOTHING_KEPS_ELIGIBLE_REFUSAL, retry: 'none' });
+  }
+
+  const exclusionsFn = getSatelliteKepsExclusions(profileId);
+  if (exclusionsFn) {
+    for (const exclusion of exclusionsFn(satellites, { satelliteOverrides: overrides })) {
+      if (isEntityExcluded(overrides, exclusion.satelliteId)) continue;
+      if (
+        exclusion.transmitterId != null &&
+        isEntityExcluded(overrides, exclusion.transmitterId)
+      ) {
+        continue;
+      }
+      if (isOpenGd77BuildSlotSkip(exclusion.reason)) continue;
+      pushKepsExcludedWarning(warnings, {
+        satelliteId: exclusion.satelliteId,
+        transmitterId: exclusion.transmitterId,
+        reason: exclusion.reason,
+        label: kepsExcludedLabel(satellites, exclusion),
+      });
+    }
+  }
+
+  return { refusals, warnings, eligible };
 }
 
 export interface SatelliteKepsWritePreviewOptions {
@@ -272,13 +358,13 @@ function openGd77Exclusions(
   ];
 }
 
-const atD890Exclusions: SatelliteKepsExclusionsFn = (satellites) => [
+const atD890Exclusions: SatelliteKepsExclusionsFn = (satellites, options) => [
   ...skippedSatellites(satellites).map((s) => ({
     satelliteId: s.satelliteId,
     transmitterId: null,
     reason: s.reason,
   })),
-  ...listCapabilitySkippedTransmitters(satellites).map((t) => ({
+  ...listCapabilitySkippedTransmitters(satellites, options?.satelliteOverrides).map((t) => ({
     satelliteId: t.satelliteId,
     transmitterId: t.transmitterId,
     reason: t.reason,
