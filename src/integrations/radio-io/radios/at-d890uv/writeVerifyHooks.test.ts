@@ -1,4 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import {
+  AIRSECURITY_SEED_ADDRESS,
+  AIRSECURITY_SEED_FIELD_ID,
+  AIRSECURITY_SEED_RECORD_LENGTH,
+  encodeAirSecuritySeedRecord,
+} from './airSecuritySeed.ts';
 import { AT_D890_MEMORY_REGIONS } from './memoryRegionExport.ts';
 import {
   buildAtD890WriteVerifyResult,
@@ -11,6 +17,13 @@ import {
   serializeAtD890KeptSnapshot,
 } from './writeVerifyHooks.ts';
 import { resolveAtD890SettingsPatches } from './settingsFields.ts';
+
+const SECRET = new TextEncoder().encode('12345678901234567890');
+
+/** Bytes 4..11 of the record, the way JSON.stringify writes a number array. */
+function seedByteRun(record: Uint8Array): string {
+  return [...record.subarray(4, 12)].join(',');
+}
 
 function makeRegionFiles(): Map<string, Uint8Array> {
   const files = new Map<string, Uint8Array>();
@@ -83,5 +96,37 @@ describe('AT-D890 kept snapshot patches', () => {
     expect(deserializeAtD890KeptPatches(kept)).toEqual([]);
     const result = verifyWith(kept);
     expect(result.sentinel.ok).toBe(false);
+  });
+
+  it('drops a seed-field patch and zeros any other byte inside the seed span', () => {
+    const record = encodeAirSecuritySeedRecord(SECRET);
+    const seedPatch = {
+      fieldId: AIRSECURITY_SEED_FIELD_ID,
+      address: AIRSECURITY_SEED_ADDRESS,
+      bytes: record,
+      mask: new Uint8Array(AIRSECURITY_SEED_RECORD_LENGTH).fill(0xff),
+    };
+    const overlapping = {
+      fieldId: 'not-the-seed',
+      address: AIRSECURITY_SEED_ADDRESS - 1,
+      bytes: Uint8Array.of(0x11, record[0]!),
+      mask: Uint8Array.of(0xff, 0xff),
+    };
+    const kept = JSON.parse(
+      JSON.stringify(
+        serializeAtD890KeptSnapshot(sentinelSnapshotFromRegionDump(makeRegionFiles()), [
+          ...patches,
+          seedPatch,
+          overlapping,
+        ]),
+      ),
+    );
+    const json = JSON.stringify(kept);
+    expect(json).not.toContain(seedByteRun(record));
+    const stored = deserializeAtD890KeptPatches(kept);
+    expect(stored.map((p) => p.fieldId)).toEqual(['keyShortP1', 'keyShortP2', 'not-the-seed']);
+    const redacted = stored.find((p) => p.fieldId === 'not-the-seed')!;
+    expect([...redacted.bytes]).toEqual([0x11, 0]);
+    expect([...redacted.mask]).toEqual([0xff, 0]);
   });
 });

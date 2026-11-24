@@ -10,6 +10,21 @@ import BuildRadioSettingsPage, {
   RADIO_SETTINGS_UNSUPPORTED_MESSAGE,
 } from './BuildRadioSettingsPage.tsx';
 
+vi.mock('../../state/useLibrary.ts', async () => {
+  const { emptyLibrary } = await import('@core/domain/factories.ts');
+  return {
+    useLibrary: () => ({
+      projectId: 'proj',
+      library: emptyLibrary(),
+      loading: false,
+      reload: async () => {},
+      deleteEntity: async () => ({ ok: true }),
+      deleteAllDigitalContacts: async () => ({ ok: true }),
+      setDefaultOwnDigitalId: async () => {},
+    }),
+  };
+});
+
 vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../services/radioIoSession.ts')>();
   return { ...actual, isRadioSerialSupported: () => true };
@@ -86,6 +101,23 @@ describe('BuildRadioSettingsPage', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       'Radio settings — AT-D890UV (MM9PDY firmware)',
     );
+  });
+
+  it('shows Brandmeister AirSecurity only on the MM9PDY AT-D890UV', () => {
+    const stock = renderPage('radio-io-at-d890uv');
+    expect(
+      screen.queryByRole('heading', { name: 'Brandmeister AirSecurity' }),
+    ).not.toBeInTheDocument();
+    stock.unmount();
+
+    const other = renderPage('radio-io-uv5r-mini');
+    expect(
+      screen.queryByRole('heading', { name: 'Brandmeister AirSecurity' }),
+    ).not.toBeInTheDocument();
+    other.unmount();
+
+    renderPage('radio-io-at-d890uv-mm9pdy');
+    expect(screen.getByRole('heading', { name: 'Brandmeister AirSecurity' })).toBeInTheDocument();
   });
 
   describe('Danger zone Change… link', () => {

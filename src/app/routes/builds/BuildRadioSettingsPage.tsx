@@ -9,6 +9,7 @@ import {
   isMm9pdyRt95RadioIoProfileId,
   isRt95RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
+import AtD890AirSecuritySeedCard from '../../components/builds/AtD890AirSecuritySeedCard.tsx';
 import AtD890RadioSettingsEditor from '../../components/builds/AtD890RadioSettingsEditor.tsx';
 import Rt95RadioSettingsEditor from '../../components/builds/Rt95RadioSettingsEditor.tsx';
 import { StatusBanner } from '../../components/v2/index.ts';
@@ -48,12 +49,15 @@ export default function BuildRadioSettingsPage() {
       </div>
       {supported && egress ? (
         isD890 ? (
-          <AtD890RadioSettingsEditor
-            buildId={buildId}
-            target={isMm9pdyD890 ? 'mm9pdy' : 'stock'}
-            egress={egress}
-            dangerZoneOffered={listOfferedDangerZoneTools(build.radioTargetId).length > 0}
-          />
+          <>
+            <AtD890RadioSettingsEditor
+              buildId={buildId}
+              target={isMm9pdyD890 ? 'mm9pdy' : 'stock'}
+              egress={egress}
+              dangerZoneOffered={listOfferedDangerZoneTools(build.radioTargetId).length > 0}
+            />
+            {isMm9pdyD890 ? <AtD890AirSecuritySeedCard egress={egress} /> : null}
+          </>
         ) : (
           <Rt95RadioSettingsEditor buildId={buildId} egress={egress} />
         )

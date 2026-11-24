@@ -38,6 +38,8 @@ Studio offers the range the **firmware** honours, not always the CPS's: for exam
 
 Route `/builds/:id/export/radio-settings`, reached from **Radio settings** in the build strip (after Export settings). The strip entry shows on builds with an AT-D890UV Web Serial egress, stock or MM9PDY; on any other build the route says "Radio settings are only available for the AT-D890UV". Components: `AtD890RadioSettingsEditor`, `AtD890RadioSettingRow`, `Mm9pdyStepKeysNudge`.
 
+The MM9PDY page also has the Brandmeister AirSecurity card ([Brandmeister AirSecurity seed](../modded-firmware/airsecurity-seed.md)).
+
 | State        | What it shows                                                                                                                                                                     |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Not read** | Every field "Keep radio's value"; the Radio column says "not read". **Read a radio**. Values can still be set                                                                     |

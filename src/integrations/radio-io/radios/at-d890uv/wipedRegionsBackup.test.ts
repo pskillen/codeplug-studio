@@ -15,6 +15,7 @@ import {
   channelSecondaryAddress,
   listWriteChunks,
 } from './memory.ts';
+import { encodeAirSecuritySeedRecord } from './airSecuritySeed.ts';
 import { AtD890uvProtocol } from './protocol.ts';
 import {
   AtD890ScriptedPipe,
@@ -280,5 +281,53 @@ describe('AT-D890 Restore of the wiped extents', () => {
     const written = collectAtD890WriteDataAddresses(pipe);
     expect(written).toContain(D890_MAP.OptionalSettingsMain);
     expect(writePayloadAt(pipe, D890_MAP.SettingsStore)?.[0]).toBe(0x5a);
+  });
+});
+
+describe('AT-D890 AirSecurity seed in backup', () => {
+  it('an archive taken with a seed set contains the record at +0x220 and restore sends it', async () => {
+    const record = encodeAirSecuritySeedRecord(new TextEncoder().encode('12345678901234567890'));
+    const memory = radioMemory();
+    memory.get(D890_MAP.SettingsStore)!.set(record, 0x20);
+
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    scriptAtD890UploadReadResponder(pipe, memory);
+    const image = await radio.download({});
+    const cache = radio.getDownloadCache()!;
+    const extract = regionsFromDownload({
+      modelId: 'AT-D890UV',
+      image,
+      sparseBlocks: [...cache.blocks.entries()].map(([address, data]) => ({ address, data })),
+    });
+    const archived = extract.regionBytes['settings-store']!;
+    expect(archived.subarray(0x20, 0x40)).toEqual(record);
+
+    const restorePipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(restorePipe);
+    const restoreRadio = new AtD890uvProtocol();
+    await restoreRadio.connect(restorePipe);
+    const unit350 = makeAtD890EraseUnitBuffer();
+    unit350[0] = 0x01;
+    scriptAtD890UploadReadResponder(
+      restorePipe,
+      new Map([
+        [D890_MAP.LocalInfo, localInfoWithSerial(SERIAL)],
+        [0x350_0000, unit350],
+        [0x1f8_0000, makeAtD890EraseUnitBuffer()],
+      ]),
+    );
+    enableAtD890AutoWriteAck(restorePipe);
+    const restoreImage = createMemoryMap(AT_D890_MAP_SIZE);
+    restoreImage.set(D890_MAP.SettingsStore, archived);
+    const region = extract.regions.find((r) => r.id === 'settings-store')!;
+    await restoreRadio.restoreFromBackup(
+      { manifest: manifestFor([region]), image: restoreImage },
+      { regionIds: ['settings-store'] },
+    );
+    expect(writePayloadAt(restorePipe, 0x03500220)).toEqual(record.subarray(0, 16));
+    expect(writePayloadAt(restorePipe, 0x03500230)).toEqual(record.subarray(16, 32));
   });
 });

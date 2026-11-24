@@ -16,6 +16,11 @@ import {
   atD890SettingField,
 } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
+import {
+  AIRSECURITY_SEED_ADDRESS,
+  AIRSECURITY_SEED_FIELD_ID,
+  AIRSECURITY_SEED_RECORD_LENGTH,
+} from './airSecuritySeed.ts';
 import { AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
 import { isAtD890EraseUnitBookkeepingAddress } from './eraseUnits.ts';
 
@@ -154,9 +159,24 @@ export function assertAtD890SettingsSpecPermitted(spec: AtD890SettingsFieldSpec)
 }
 
 /**
+ * The AirSecurity seed record is not a registered field. Only a patch whose field id is
+ * {@link AIRSECURITY_SEED_FIELD_ID} may touch `0x03500220..0x0350023F`, and only those bytes:
+ * the same field id anywhere else, and any other field id on that span, still go through
+ * {@link assertAtD890SettingsAddressPermitted}. The spec path never uses this exception.
+ */
+function isAirSecuritySeedPatchByte(patch: AtD890SettingsPatch, address: number): boolean {
+  return (
+    patch.fieldId === AIRSECURITY_SEED_FIELD_ID &&
+    address >= AIRSECURITY_SEED_ADDRESS &&
+    address < AIRSECURITY_SEED_ADDRESS + AIRSECURITY_SEED_RECORD_LENGTH
+  );
+}
+
+/**
  * Transmit-layer allow-list: refuses a raw patch that covers any byte outside the permitted spans
  * or on a never-patch offset, or whose bytes and mask disagree. Called by the protocol before any
  * frame, so a patch built by hand cannot bypass {@link resolveAtD890SettingsPatches}.
+ * The one exception is the AirSecurity seed span, and only for its own field id.
  */
 export function assertAtD890SettingsPatchPermitted(patch: AtD890SettingsPatch): void {
   const label = `D890 settings patch ${patch.fieldId}`;
@@ -167,7 +187,9 @@ export function assertAtD890SettingsPatchPermitted(patch: AtD890SettingsPatch): 
     throw new RadioProtocolError(`${label} needs bytes and a mask of the same length`);
   }
   for (let i = 0; i < patch.bytes.length; i++) {
-    assertAtD890SettingsAddressPermitted(patch.address + i, label);
+    const address = patch.address + i;
+    if (isAirSecuritySeedPatchByte(patch, address)) continue;
+    assertAtD890SettingsAddressPermitted(address, label);
   }
 }
 

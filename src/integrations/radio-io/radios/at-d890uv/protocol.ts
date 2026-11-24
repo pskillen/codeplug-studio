@@ -75,6 +75,7 @@ import {
   overlayModelledChunksOntoUnit,
   preWriteChunksFromFreshUnits,
 } from './sparseEraseRmw.ts';
+import { AIRSECURITY_SEED_ADDRESS, AIRSECURITY_SEED_RECORD_LENGTH } from './airSecuritySeed.ts';
 import {
   assertAtD890SettingsPatchesPermitted,
   type AtD890RadioSettingsSnapshot,
@@ -943,6 +944,28 @@ export class AtD890uvProtocol implements CloneImageRadio {
     const ext = await read(D890_MAP.OptionalSettingsExt, D890_MAP.OptionalSettingsExtLength);
     const masterId = await read(D890_MAP.MasterIdData, D890_MAP.MasterIdLength);
     return { localInfo, main, ext, masterId, bandCode: this.identBandCode };
+  }
+
+  /**
+   * The 32-byte AirSecurity seed record at `0x03500220`. No other reads, no cache changes.
+   * The caller decides whether the record is set; this returns the bytes as read.
+   */
+  async readAirSecuritySeedRecord(opts?: { signal?: AbortSignal }): Promise<Uint8Array> {
+    const pipe = this.pipe;
+    if (!pipe) {
+      throw new RadioProtocolError('AT-D890UV not connected');
+    }
+    if (!this.programming) {
+      await atD890EnterProgram(pipe, opts?.signal);
+      this.programming = true;
+    }
+    return atD890ReadMemory(
+      pipe,
+      AIRSECURITY_SEED_ADDRESS,
+      AIRSECURITY_SEED_RECORD_LENGTH,
+      opts?.signal,
+      this.readBlockSize,
+    );
   }
 
   /**
