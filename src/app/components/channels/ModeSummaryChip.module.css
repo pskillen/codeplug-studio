@@ -1,0 +1,72 @@
+.chip {
+  display: inline-flex;
+  align-items: stretch;
+  max-width: 100%;
+  min-width: 0;
+  border-radius: var(--dsv2-radius-pill);
+  border: 1px solid var(--dsv2-border);
+  background: var(--dsv2-surface-quiet);
+  overflow: hidden;
+}
+
+.chipMain {
+  border-width: 2px;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 8px;
+  font-family: var(--dsv2-font-family);
+  font-size: var(--dsv2-font-eyebrow);
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.detail {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0 8px;
+  font-family: var(--dsv2-font-mono);
+  font-size: var(--dsv2-font-eyebrow);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chipDetailWrap {
+  flex-wrap: wrap;
+}
+
+.detailWrap {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: unset;
+  overflow: visible;
+}
+
+.sizeXs .label,
+.sizeXs .detail {
+  padding-top: 2px;
+  padding-bottom: 2px;
+  font-size: 10px;
+}
+
+.sizeSm .label,
+.sizeSm .detail {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

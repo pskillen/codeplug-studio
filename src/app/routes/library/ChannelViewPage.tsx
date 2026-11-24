@@ -194,6 +194,7 @@ function ChannelView({
             <div className={classes.column}>
               <LocationPanel
                 channel={channel}
+                library={library}
                 position={position}
                 onPosition={(lat, lon, accuracyMeters) =>
                   setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
@@ -299,12 +300,14 @@ function detailFacts(channel: Channel, library: Library): ChannelFact[] {
 
 function LocationPanel({
   channel,
+  library,
   position,
   onPosition,
   isMobile,
   editPath,
 }: {
   channel: Channel;
+  library: Library;
   position: OperatorPosition | null;
   onPosition: (lat: number, lon: number, accuracyMeters?: number | null) => void;
   isMobile: boolean;
@@ -335,6 +338,7 @@ function LocationPanel({
       <div className={classes.map}>
         <CodeplugMap
           channels={channels}
+          library={library}
           highlightChannelId={channel.id}
           operatorPosition={position}
           distanceLine={

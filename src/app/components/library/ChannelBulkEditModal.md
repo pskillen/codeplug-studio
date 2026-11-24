@@ -52,7 +52,7 @@ Single-channel selection is handled by the list page (navigate to the channel ed
 - Shell: `ModalShell` (`size="xl"`) with pencil icon, a **N channels selected** banner, and footer **No changes** / **Apply to N channels**, Cancel, and a **destructive** **Delete N channels** button.
 - The list page passes the **full checkbox selection**, not the currently filtered/visible rows. Search and filters only hide rows; they do not shrink bulk edit.
 - **View selected channels** expands a compact scrollable name list.
-- Groups match the channel editor: **RF**, **Mode settings**, **Zones**, **Scanning**, **APRS**. Collapsible `Panel`s; RF and Scanning start open. Header **badge** shows how many overrides in that group, open or closed.
+- Bulk-edit groups: **Transmit**, **Modes**, **Zones**, **Scanning**, **APRS**. Collapsible `Panel`s; Transmit and Scanning start open. Header **badge** shows how many overrides in that group, open or closed.
 - Each field starts as **No change**. Gradient fields use an offset idle segment; long selects use [`BulkEditField`](./BulkEditField.md). Apply writes only opted-in fields.
 - Idle + shared value: Mantine fill on the shared option, outline on **No change**. Mixed: fill on **No change**. Opted in: fill and outline on the chosen value.
 - Desktop: two-column `.fieldGroup` grid; mobile: one group per row. Controls use `layout="column"` (title, then control, then description).

@@ -308,6 +308,7 @@ export default function ZoneFromLocationPage() {
       channels={library.channels}
       zones={library.zones}
       allChannels={library.channels}
+      library={library}
       height={height}
       mapControlMode="zoneFromLocation"
       referencePosition={centre}
@@ -506,6 +507,7 @@ export default function ZoneFromLocationPage() {
             channels={library.channels}
             zones={[]}
             allChannels={library.channels}
+            library={library}
             height="100%"
             mapControlMode="zoneFromLocation"
             showControls={false}

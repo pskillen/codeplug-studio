@@ -184,17 +184,6 @@ export function dedupeSsbModeProfiles(profiles: ChannelModeProfile[]): ChannelMo
   });
 }
 
-export function syncModeProfiles(
-  selectedModes: ChannelMode[],
-  existingProfiles: ChannelModeProfile[],
-): ChannelModeProfile[] {
-  const normalized = existingProfiles.map(normalizeModeProfile);
-  return selectedModes.map((mode) => {
-    const found = normalized.find((p) => p.mode === mode);
-    return found ?? defaultModeProfile(mode);
-  });
-}
-
 /** Keep `primaryMode` aligned when mode selection changes in CRUD. */
 export function reconcilePrimaryMode(
   primaryMode: ChannelMode | null,
@@ -292,6 +281,141 @@ export function patchAllDmrProfiles(
 
 export function channelHasDmrProfile(channel: Pick<Channel, 'modeProfiles'>): boolean {
   return channel.modeProfiles.some((profile) => profile.mode === 'dmr');
+}
+
+/** Editor state for mode transitions; `parked` is never persisted on `Channel`. */
+export interface ChannelModeEdit {
+  modeProfiles: ChannelModeProfile[];
+  primaryMode: ChannelMode | null;
+  /** Profiles removed during this edit, restored if their mode comes back. Editor state only; never saved. */
+  parked: ChannelModeProfile[];
+}
+
+function normalizeChannelModeEdit(edit: ChannelModeEdit): ChannelModeEdit {
+  return {
+    modeProfiles: edit.modeProfiles.map(normalizeModeProfile),
+    primaryMode: edit.primaryMode,
+    parked: edit.parked.map(normalizeModeProfile),
+  };
+}
+
+function parkModeProfile(
+  parked: ChannelModeProfile[],
+  profile: ChannelModeProfile,
+): ChannelModeProfile[] {
+  const normalized = normalizeModeProfile(profile);
+  return [...parked.filter((p) => p.mode !== normalized.mode), normalized];
+}
+
+function takeParkedProfile(
+  parked: ChannelModeProfile[],
+  mode: ChannelMode,
+): { parked: ChannelModeProfile[]; profile: ChannelModeProfile | null } {
+  const found = parked.find((p) => p.mode === mode);
+  if (!found) {
+    return { parked, profile: null };
+  }
+  return { parked: parked.filter((p) => p.mode !== mode), profile: found };
+}
+
+function analogSwitchProfile(
+  from: ChannelModeProfileAnalog,
+  target: AnalogChannelMode,
+): ChannelModeProfileAnalog {
+  const base = defaultModeProfile(target) as ChannelModeProfileAnalog;
+  return {
+    ...base,
+    rxTone: from.rxTone,
+    txTone: from.txTone,
+    bandwidthKHz: from.bandwidthKHz,
+    squelch: from.squelch,
+    analogSquelchMode: from.analogSquelchMode,
+    ...(target === 'ssb' ? { ssbSideband: 'usb' as const } : {}),
+  };
+}
+
+function profileForSwitch(
+  oldProfile: ChannelModeProfile | undefined,
+  target: ChannelMode,
+  parked: ChannelModeProfile[],
+): { profile: ChannelModeProfile; parked: ChannelModeProfile[] } {
+  const taken = takeParkedProfile(parked, target);
+  if (taken.profile) {
+    return { profile: taken.profile, parked: taken.parked };
+  }
+  if (oldProfile != null && isAnalogChannelModeProfile(oldProfile) && isAnalogChannelMode(target)) {
+    return {
+      profile: analogSwitchProfile(oldProfile, target),
+      parked: taken.parked,
+    };
+  }
+  return { profile: defaultModeProfile(target), parked: taken.parked };
+}
+
+/** 0 or 1 modes: replace (or set) the channel's mode. With 2+ modes it returns the edit unchanged. */
+export function switchChannelMode(edit: ChannelModeEdit, mode: ChannelMode): ChannelModeEdit {
+  const base = normalizeChannelModeEdit(edit);
+  if (base.modeProfiles.length >= 2) {
+    return base;
+  }
+  if (base.modeProfiles.length === 1) {
+    const current = base.modeProfiles[0];
+    if (current.mode === mode) {
+      return base;
+    }
+    let nextParked = parkModeProfile(base.parked, current);
+    const { profile, parked } = profileForSwitch(current, mode, nextParked);
+    nextParked = parked;
+    return {
+      modeProfiles: [profile],
+      primaryMode: mode,
+      parked: nextParked,
+    };
+  }
+  const { profile, parked } = profileForSwitch(undefined, mode, base.parked);
+  return {
+    modeProfiles: [profile],
+    primaryMode: mode,
+    parked,
+  };
+}
+
+export function addChannelMode(edit: ChannelModeEdit, mode: ChannelMode): ChannelModeEdit {
+  const base = normalizeChannelModeEdit(edit);
+  if (base.modeProfiles.some((p) => p.mode === mode)) {
+    return base;
+  }
+  const taken = takeParkedProfile(base.parked, mode);
+  const profile = taken.profile ?? defaultModeProfile(mode);
+  const nextProfiles = [...base.modeProfiles, profile];
+  return {
+    modeProfiles: nextProfiles,
+    primaryMode: reconcilePrimaryMode(base.primaryMode, nextProfiles),
+    parked: taken.parked,
+  };
+}
+
+export function removeChannelMode(edit: ChannelModeEdit, mode: ChannelMode): ChannelModeEdit {
+  const base = normalizeChannelModeEdit(edit);
+  const index = base.modeProfiles.findIndex((p) => p.mode === mode);
+  if (index === -1) {
+    return base;
+  }
+  const removed = base.modeProfiles[index];
+  const rest = base.modeProfiles.filter((_, i) => i !== index);
+  return {
+    modeProfiles: rest,
+    primaryMode: reconcilePrimaryMode(base.primaryMode, rest),
+    parked: parkModeProfile(base.parked, removed),
+  };
+}
+
+export function setChannelMainMode(edit: ChannelModeEdit, mode: ChannelMode): ChannelModeEdit {
+  const base = normalizeChannelModeEdit(edit);
+  if (!base.modeProfiles.some((p) => p.mode === mode)) {
+    return base;
+  }
+  return { ...base, primaryMode: mode };
 }
 
 /**

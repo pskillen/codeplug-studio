@@ -2,6 +2,10 @@
 
 How the library presents a channel's modes. Live demos: `/styleguide/channel-modes`. Mode labels and colours: [display.md — Channel modes](display.md#channel-modes).
 
+## Mode summaries
+
+List and map surfaces show one `ModeSummaryChip` per mode after the channel's identity, built by `ChannelModeSummaries` from `channelModeSummary.ts`. Rules and the per-mode summary table: [display.md — Mode summaries](display.md#mode-summaries).
+
 ## Mode settings: Access, Call, Listen, You
 
 Every digital mode's settings use the same four groups, in this order (`DigitalModeGroups`):
@@ -19,3 +23,27 @@ Every digital mode's settings use the same four groups, in this order (`DigitalM
 - A mode panel never draws its own header, mode pill or main-mode control: the page around it does.
 - No radio, format or CPS names in mode copy.
 - Code: `src/app/components/channels/modePanels/` ([ModePanels.md](../../../src/app/components/channels/modePanels/ModePanels.md)).
+
+## Channel editor layout
+
+The mode sits with the frequency, and its settings sit right under them (`ChannelEditor`):
+
+1. Identity: callsign (with directory lookup) and name only.
+2. Mode and frequency: the mode picker, RX, offset, TX, then (one mode) that mode's settings and
+   **+ Also runs another mode**. With no mode yet, the settings area says "The mode's settings appear here once you
+   pick it."
+3. Modes (two or more modes only): the main mode choice and one section per mode.
+4. Transmit: power, forbid transmit, TX permit; folded on a phone with a one-line summary.
+5. Names and notes, then Location, Zones, Scanning, APRS.
+
+Library editors never explain a field by naming a radio or export format.
+
+## Picking a channel's mode
+
+Most channels have one mode, so the mode is a single switch, not a multi-select (`ChannelModePicker`).
+
+- **No mode yet:** a dashed box, "Which mode does this channel use?", with one-tap presets **FM** (Analogue), **DMR** (Digital) and **FM + DMR** (Dual-mode repeater), and the other modes beneath. One tap fills the mode; there is no confirm and no separate "what kind of channel?" step. A preset's first mode becomes the main mode.
+- **One mode:** a single-select switch, FM AM DMR NXDN P25 M17, the rest under **More**. A second mode is opt-in, through **+ Also runs another mode** under that mode's settings.
+- **Two or more modes:** one removable chip per mode (× to remove), then **+ Add another mode**.
+- Chips are 32px tall with a 44px hit area; the switch wraps on a phone.
+- Switching or removing a mode keeps its settings until save; switching back restores them.

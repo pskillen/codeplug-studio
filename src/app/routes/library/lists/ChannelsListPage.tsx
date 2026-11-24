@@ -39,6 +39,7 @@ import ChannelListDeleteAction from '../../../components/library/ChannelListDele
 import ChannelListFilters, {
   ChannelListAppliedFilters,
 } from '../../../components/library/ChannelListFilters.tsx';
+import ChannelModeSummaries from '../../../components/channels/ChannelModeSummaries.tsx';
 import ChannelZonesListCell from '../../../components/library/ChannelZonesListCell.tsx';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
 import {
@@ -70,6 +71,7 @@ import {
 } from '../../../lib/entityRefs.ts';
 import { bandFromChannel } from '../../../lib/bands.ts';
 import { getModeDefinition, type ChannelMode } from '../../../lib/channelModes.ts';
+import type { ModeSummaryLookup } from '../../../lib/channelModeSummary.ts';
 import { channelModesForFilter, channelSelectionName } from '../../../lib/channels.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import {
@@ -123,20 +125,21 @@ function modePillTextColor(mode: ChannelMode): string {
 }
 
 /** Joined mode pill group — SplitFilter-style segments with per-mode semantic fills. */
-function renderJoinedModePills(modes: ChannelMode[], primary: ChannelMode | null): ReactNode {
+function renderJoinedModePills(modes: ChannelMode[], main: ChannelMode | null): ReactNode {
   if (modes.length === 0) return null;
   return (
     <div className={classes.joinedModePill} role="presentation">
       {modes.map((mode) => {
         const def = getModeDefinition(mode);
-        const label = primary === mode ? `${def.label}*` : def.label;
+        const isMain = main === mode;
         return (
           <span
             key={mode}
-            className={classes.joinedModeSegment}
+            className={`${classes.joinedModeSegment}${isMain ? ` ${classes.joinedModeSegmentMain}` : ''}`}
             style={{ backgroundColor: def.color, color: modePillTextColor(mode) }}
           >
-            {label}
+            {def.label}
+            {isMain ? <span className={classes.srOnly}> (main mode)</span> : null}
           </span>
         );
       })}
@@ -144,13 +147,11 @@ function renderJoinedModePills(modes: ChannelMode[], primary: ChannelMode | null
   );
 }
 
-/** Name column cell — callsign + band on one line; name link below; mode pills last (table only). */
-function renderChannelNameCell(channel: Channel): ReactNode {
+/** Name column cell — callsign + band on one line; name link below; mode summaries last (table only). */
+function renderChannelNameCell(channel: Channel, lookup: ModeSummaryLookup): ReactNode {
   const name = channel.name || '—';
   const callsign = channel.callsign?.trim();
   const band = bandFromChannel(channel.rxFrequency, channel.txFrequency);
-  const modes = channelModesForFilter(channel);
-  const primary = modes.length > 1 ? resolveChannelPrimaryMode(channel) : null;
 
   return (
     <div className={classes.nameCell}>
@@ -167,7 +168,7 @@ function renderChannelNameCell(channel: Channel): ReactNode {
       <Link to={channelViewPath(channel.id)} className="libraryListNameLink">
         {name}
       </Link>
-      {renderJoinedModePills(modes, primary)}
+      <ChannelModeSummaries channel={channel} lookup={lookup} layout="wrap" size="xs" />
     </div>
   );
 }
@@ -180,7 +181,7 @@ function renderChannelIdentity(channel: Channel): ReactNode {
   const name = channel.name || '—';
   const callsign = channel.callsign?.trim();
   const band = bandFromChannel(channel.rxFrequency, channel.txFrequency);
-  const modes = channelModesForFilter(channel);
+  const modes = channel.modeProfiles.map((p) => p.mode);
   const primary = modes.length > 1 ? resolveChannelPrimaryMode(channel) : null;
   return (
     <div className={pageClasses.identityLine}>
@@ -392,11 +393,12 @@ export default function ChannelsListPage() {
       if (col.key === 'mode') {
         return {
           ...base,
-          render: (ch: Channel) => {
-            const modes = channelModesForFilter(ch);
-            const primary = modes.length > 1 ? resolveChannelPrimaryMode(ch) : null;
-            return renderJoinedModePills(modes, primary) ?? '—';
-          },
+          render: (ch: Channel) =>
+            ch.modeProfiles.length === 0 ? (
+              '—'
+            ) : (
+              <ChannelModeSummaries channel={ch} lookup={library} layout="wrap" size="xs" />
+            ),
           sortValue: (ch: Channel) => channelModesForFilter(ch).join(','),
         };
       }
@@ -488,7 +490,7 @@ export default function ChannelsListPage() {
     const nameColumn = createNameColumn<Channel>({
       getName: (ch) => ch.name || '—',
       getPath: (ch) => channelViewPath(ch.id),
-      render: renderChannelNameCell,
+      render: (ch) => renderChannelNameCell(ch, library),
       hideOnMobile: true,
     });
 
@@ -505,7 +507,7 @@ export default function ChannelsListPage() {
     );
 
     return [
-      { ...nameColumn, width: 'minmax(11rem, 1fr)' },
+      { ...nameColumn, width: 'minmax(16rem, 1fr)' },
       ...tableOptionalColumnDefs,
       {
         key: 'actions',
@@ -515,7 +517,7 @@ export default function ChannelsListPage() {
         render: (ch: Channel) => <ChannelListDeleteAction channel={ch} />,
       },
     ];
-  }, [optionalColumnDefs]);
+  }, [library, optionalColumnDefs]);
 
   const cardFieldColumns = useMemo(
     () => optionalColumnDefs.filter((col) => cardVisibleKeys.includes(col.key)),
@@ -916,6 +918,7 @@ export default function ChannelsListPage() {
       channels={mapChannels}
       zones={zones}
       allChannels={mapChannels}
+      library={library}
       height="100%"
       operatorPosition={position}
       onChannelClick={(id) => navigate(channelViewPath(id))}

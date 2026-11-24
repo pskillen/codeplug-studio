@@ -399,6 +399,7 @@ export default function GrowZoneRecommendations() {
                   channels={library.channels}
                   zones={library.zones}
                   allChannels={library.channels}
+                  library={library}
                   height="100%"
                   mapControlMode="zoneEmphasis"
                   emphasisZoneId={entity.id}

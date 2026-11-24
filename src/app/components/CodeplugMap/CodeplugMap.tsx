@@ -20,7 +20,6 @@ import {
   applyFilters,
   buildChannelById,
   channelDisplayLabel,
-  channelModes,
   channelPlottableOnMap,
   dominantMode,
   groupByCoords,
@@ -36,7 +35,8 @@ import { collectMapPoints, computeMapView } from '@core/domain/mapView.ts';
 import { greatCirclePath } from '@core/domain/geoDistance.ts';
 import type { Channel, Zone } from '@core/models/library.ts';
 import type { GeoPoint } from '@core/models/libraryTypes.ts';
-import { modeColor, modeLabel } from '../../lib/channelModes.ts';
+import { channelModeSummaryText, type ModeSummaryLookup } from '../../lib/channelModeSummary.ts';
+import { modeColor } from '../../lib/channelModes.ts';
 import { hzToMhzString } from '../../lib/units.ts';
 import { useDocumentLayoutReady } from '../../hooks/useDocumentLayoutReady.ts';
 import { useMapSettings } from '../../hooks/useMapSettings.ts';
@@ -218,17 +218,13 @@ function formatFreqPair(rx: number | null, tx: number | null): string {
   return `${rxStr} / ${txStr} MHz`;
 }
 
-function modeSummary(channel: Channel): string {
-  return channelModes(channel)
-    .map((m) => modeLabel(m))
-    .join('+');
-}
-
 function ChannelPopup({
   group,
+  lookup,
   onChannelClick,
 }: {
   group: Channel[];
+  lookup: ModeSummaryLookup;
   onChannelClick?: (channelId: string) => void;
 }) {
   const title =
@@ -251,8 +247,7 @@ function ChannelPopup({
             <strong>{channelDisplayLabel(ch, true)}</strong>
             <br />
             <span style={{ opacity: 0.85 }}>
-              {modeSummary(ch)}
-              {freq ? ` · ${freq}` : ''}
+              {[channelModeSummaryText(ch, lookup), freq].filter(Boolean).join(' · ')}
             </span>
             {onChannelClick ? (
               <>
@@ -412,6 +407,7 @@ export interface CodeplugMapProps {
   onMapClick?: (lat: number, lon: number) => void;
   onChannelClick?: (channelId: string) => void;
   onZoneClick?: (zoneId: string) => void;
+  library?: ModeSummaryLookup;
 }
 
 export default function CodeplugMap({
@@ -435,7 +431,9 @@ export default function CodeplugMap({
   onMapClick,
   onChannelClick,
   onZoneClick,
+  library,
 }: CodeplugMapProps) {
+  const summaryLookup = library ?? { talkGroups: [], digitalContacts: [] };
   const mapLayoutReady = useDocumentLayoutReady();
   const { maidenheadGrid } = useMapSettings();
   const [showLabels, setShowLabels] = useState(defaultShowLabels);
@@ -798,7 +796,11 @@ export default function CodeplugMap({
                     <ChannelTooltipLines group={group} />
                   </Tooltip>
                   <Popup>
-                    <ChannelPopup group={group} onChannelClick={onChannelClick} />
+                    <ChannelPopup
+                      group={group}
+                      lookup={summaryLookup}
+                      onChannelClick={onChannelClick}
+                    />
                   </Popup>
                 </Marker>
               );

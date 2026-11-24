@@ -8,6 +8,9 @@ import WirePreviewDataTable from './WirePreviewDataTable.tsx';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import type { Channel } from '@core/models/library.ts';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
+import { emptyLibrary, newTalkGroup } from '@core/domain/factories.ts';
+import { librarySliceFrom } from '@core/services/assemble.ts';
 
 const rows: WirePreviewRow[] = [
   {
@@ -473,5 +476,83 @@ describe('WirePreviewDataTable', () => {
     fireEvent.click(screen.getByLabelText('Edit export name'));
     expect(screen.getByText('Suggestion:')).toBeInTheDocument();
     expect(screen.queryByText(/Callsign/)).not.toBeInTheDocument();
+  });
+
+  it('shows mode profile summary beside the badge for non-expansion channel rows', () => {
+    const tg = newTalkGroup('proj', 'Scotland', 2351, 'dmr');
+    const librarySlice = librarySliceFrom({ ...emptyLibrary(), talkGroups: [tg] });
+    const channel = {
+      id: 'ch-1',
+      name: 'Demo',
+      callsign: '',
+      modeProfiles: [
+        {
+          ...defaultModeProfile('dmr'),
+          colourCode: 1,
+          timeslot: 2,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+        },
+      ],
+    } as unknown as Channel;
+    const dmrRow: WirePreviewRow = {
+      key: 'ch-1',
+      libraryEntityId: 'ch-1',
+      entityKind: 'channel',
+      displayLabel: 'Demo',
+      generatedWireName: 'Demo',
+      effectiveWireName: 'Demo',
+      hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
+      excluded: false,
+      channelMode: 'dmr',
+    };
+    renderTable({
+      rows: [dmrRow],
+      entityKind: 'channel',
+      onRowActivate: vi.fn(),
+      channelsById: new Map([['ch-1', channel]]),
+      library: librarySlice,
+    });
+
+    expect(screen.getByText('CC1 TS2 TG2351')).toBeInTheDocument();
+  });
+
+  it('does not show mode profile summary on expansion rows', () => {
+    const tg = newTalkGroup('proj', 'Scotland', 2351, 'dmr');
+    const librarySlice = librarySliceFrom({ ...emptyLibrary(), talkGroups: [tg] });
+    const channel = {
+      id: 'ch-1',
+      name: 'Demo',
+      modeProfiles: [
+        {
+          ...defaultModeProfile('dmr'),
+          colourCode: 1,
+          timeslot: 2,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+        },
+      ],
+    } as unknown as Channel;
+    const expansionRow: WirePreviewRow = {
+      key: 'ch-1:tg',
+      libraryEntityId: 'ch-1',
+      entityKind: 'channel',
+      displayLabel: 'Demo',
+      generatedWireName: 'Demo TG',
+      effectiveWireName: 'Demo TG',
+      hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
+      excluded: false,
+      channelMode: 'dmr',
+      expansionNote: 'One row per talk group',
+    };
+    renderTable({
+      rows: [expansionRow],
+      entityKind: 'channel',
+      onRowActivate: vi.fn(),
+      channelsById: new Map([['ch-1', channel]]),
+      library: librarySlice,
+    });
+
+    expect(screen.queryByText('CC1 TS2 TG2351')).not.toBeInTheDocument();
   });
 });

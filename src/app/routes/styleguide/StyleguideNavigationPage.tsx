@@ -162,8 +162,8 @@ export default function StyleguideNavigationPage() {
           <SectionNav
             items={[
               { id: 'identity', label: 'Identity' },
-              { id: 'rf', label: 'RF' },
-              { id: 'mode-settings', label: 'Mode settings' },
+              { id: 'mode', label: 'Mode and frequency' },
+              { id: 'transmit', label: 'Transmit' },
             ]}
             active={sectionId}
             onChange={setSectionId}

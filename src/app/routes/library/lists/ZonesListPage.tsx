@@ -183,6 +183,7 @@ export default function ZonesListPage() {
       channels={channels}
       zones={zones}
       allChannels={channels}
+      library={library}
       height="100%"
       operatorPosition={position}
       onChannelClick={(id) => navigate(channelViewPath(id))}
