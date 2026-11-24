@@ -3,7 +3,12 @@
  */
 
 import type { RadioDescriptor } from '../../types.ts';
-import { AT_D890_CONNECTION, AT_D890_LIMITS, AT_D890UV_MODEL_IDS } from './constants.ts';
+import {
+  AT_D890_CONNECTION,
+  AT_D890_LIMITS,
+  AT_D890_RESTART_AFTER_END_SECONDS,
+  AT_D890UV_MODEL_IDS,
+} from './constants.ts';
 import {
   extractAtD890uvHydration,
   extractAtD890uvHydrationFromProtocol,
@@ -60,6 +65,8 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
       }
     },
   },
+  restartAfterEnd: { seconds: AT_D890_RESTART_AFTER_END_SECONDS },
+  contactStore: 'separate-lookup-database',
   writeVerify: AT_D890_WRITE_VERIFY_HOOKS,
   planStages: planAtD890Stages,
   // Hardware (#1288, 2026-10-16): 0xF0-byte R frames run at ~110 KiB/s. Writes are a little

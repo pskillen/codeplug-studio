@@ -237,6 +237,12 @@ export interface RadioDescriptor {
   nominalBytesPerSecond?: number;
   /** Optional cross-session write verify — compare staged upload vs post-commit read-back. */
   writeVerify?: import('./writeVerify.ts').WriteVerifyHooks;
+  /** The radio restarts after END; the shell waits this long before Check write or keps (D890, OpenGD77: 20). */
+  restartAfterEnd?: { seconds: number };
+  /** Which contact store the Digital contacts part fills; picks the hint copy. Unset: generic hint. */
+  contactStore?: 'shared-contact-bank' | 'shared-address-book' | 'separate-lookup-database';
+  /** Extra sentence on Done (DM-32UV: DM32_POWER_CYCLE_AFTER_SESSION_NOTE, already in radio-io). */
+  successNote?: string;
 }
 
 /**

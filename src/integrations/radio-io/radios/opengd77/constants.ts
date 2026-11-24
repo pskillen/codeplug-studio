@@ -13,6 +13,9 @@ import {
 /** USB serial baud (qdmr opengd77_interface.cc). */
 export const OPENGD77_BAUD_RATE = 115_200;
 
+/** Seconds to wait after END before Check write or keps (SAVE_REBOOT). */
+export const OPENGD77_RESTART_AFTER_END_SECONDS = 20;
+
 export const OPENGD77_BLOCK = 32;
 export const OPENGD77_SECTOR = 4096;
 
