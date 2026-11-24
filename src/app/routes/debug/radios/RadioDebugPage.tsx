@@ -57,6 +57,7 @@ import { relabelDebugArchive } from './captureArchive.ts';
 import { getDebugReadHistory, useDebugReadHistory } from './debugReadHistory.ts';
 import { DebugReadHistoryControls } from './DebugReadHistoryControls.tsx';
 import { isDebugReadHistoryZip, openDebugReadHistoryZip } from './debugReadHistoryArchive.ts';
+import { resolveRadioDebugTabValue } from './radioDebugTabValue.ts';
 
 export function RadioNotFound() {
   return (
@@ -108,7 +109,7 @@ export default function RadioDebugPage() {
   }
 
   const tabIds = radioDebugTabs(descriptor).map((tab) => tab.toLowerCase());
-  const tabValue = activeTab && tabIds.includes(activeTab) ? activeTab : 'overview';
+  const tabValue = resolveRadioDebugTabValue(activeTab, tabIds);
 
   return (
     <DesignSystemV2Provider key={radio} scheme="dark">
