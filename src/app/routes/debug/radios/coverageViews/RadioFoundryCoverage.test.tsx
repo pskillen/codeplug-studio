@@ -56,7 +56,14 @@ function archive() {
     ]),
     [RADIOFOUNDRY_DEBUG_SUMS_SIDECAR]: new Uint8Array(9),
   };
-  return openDebugArchive(packRadioBackupZip(manifest, {}, sidecars), 'MD-9600-RadioFoundry');
+  const regionBytes = {
+    [RADIOFOUNDRY_REGION.eeprom]: new Uint8Array(EEPROM_IMAGE_END),
+    [RADIOFOUNDRY_REGION.flash]: new Uint8Array(FLASH_IMAGE_BYTE_LENGTH),
+  };
+  return openDebugArchive(
+    packRadioBackupZip(manifest, regionBytes, sidecars),
+    'MD-9600-RadioFoundry',
+  );
 }
 
 describe('radioFoundryCoverage', () => {

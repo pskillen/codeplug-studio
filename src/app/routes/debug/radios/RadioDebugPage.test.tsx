@@ -156,7 +156,7 @@ describe('firmware switch on the radio page', () => {
     expect(screen.getByRole('tab', { name: 'Memory' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('falls back to Overview when Settings is missing on the target firmware (md-9600 opengd77 → radiofoundry)', async () => {
+  it('keeps Settings when both firmwares expose it (md-9600 opengd77 → radiofoundry)', async () => {
     const router = firmwareRouter('/debug/radios/md-9600/opengd77');
     render(
       <MantineProvider>
@@ -168,8 +168,7 @@ describe('firmware switch on the radio page', () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/debug/radios/md-9600/radiofoundry'),
     );
-    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.queryByRole('tab', { name: 'Settings' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Settings' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('shows a single-option RT95 stock switch that is not clickable', () => {
