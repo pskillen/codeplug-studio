@@ -75,7 +75,6 @@ import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from '../../services/radioWriteEnvGate.ts';
-import { hasSatelliteKepsWriteAdapter } from '../../services/satelliteKepsWriteAdapters.ts';
 import { resolveWriteShellOptions } from '../../services/egress/writeShellOptions.ts';
 import RadioWriteStepper from './RadioWriteStepper/RadioWriteStepper.tsx';
 import { useRadioWriteFlow } from './RadioWriteStepper/useRadioWriteFlow.tsx';
@@ -113,7 +112,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const isRt95Write = isRt95RadioIoProfileId(egress.profileId);
   const shellOptions = resolveWriteShellOptions(egress, descriptor);
   const supportsKepsWrite = shellOptions.parts.keps;
-  const supportsDigitalContacts = shellOptions.parts.contacts;
 
   const flow = useRadioWriteFlow({
     build,

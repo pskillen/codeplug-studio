@@ -6,7 +6,6 @@ import { hasProblemWarnings, pushKepsExcludedWarning } from '@core/import-export
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
-import type { SatelliteKepsWriteFn } from '../../../services/satelliteKepsWriteAdapters.ts';
 import {
   openRadioSessionForEgress,
   prepareRadioWriteImage,

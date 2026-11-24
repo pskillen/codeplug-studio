@@ -10,12 +10,13 @@ import { resolveWriteShellOptions } from './writeShellOptions.ts';
 function egress(profileId: string): EgressPath {
   return {
     id: 'egress-1',
+    projectId: 'project-1',
     revision: 1,
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    radioBuildId: 'build-1',
     formatId: 'radio-io',
     profileId,
-    radioTargetId: null,
-    createdAt: '',
-    updatedAt: '',
+    kind: 'web-serial',
   };
 }
 
