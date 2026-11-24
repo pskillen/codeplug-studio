@@ -292,7 +292,7 @@ AssembledBuild.channels
 
 | Option                         | Typical use                                          |
 | ------------------------------ | ---------------------------------------------------- |
-| `expandModes`                  | `true` OpenGD77; `false` DM32 (native dual-mode row) |
+| `expandModes`                  | `true` OpenGD77, RadioFoundry; `false` DM32 (native dual-mode row) |
 | `expandRxGroupLists`           | `false` OpenGD77; `true` DM32 / NeonPlug / Anytone   |
 | `expandRxGroupListMembers`     | `'all'` \| `'talkGroupsOnly'`                        |
 | `multiTalkGroupExportNameMode` | Wire naming for fan-out rows                         |

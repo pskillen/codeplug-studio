@@ -20,7 +20,7 @@ References on the wire are 1-based indexes assigned at export. Names are labels,
 
 ## What is written
 
-- Channels: FM (mode byte 0) and DMR (mode byte 1) only. A channel with both keeps `primaryMode` and warns. Any other mode is dropped with a warning. Channels past the cap are dropped with a warning.
+- Channels: FM (mode byte 0) and DMR (mode byte 1) only. A library channel with more than one storable mode (FM and/or DMR) exports as **one channel record per mode**, in the channel's mode order, with the shared wire-name suffix (`-F` for FM, `-D` for DMR). A single storable mode keeps today's unsuffixed name. With `expandModes: false`, a multi-mode channel keeps `primaryMode` only and warns. Any other mode is dropped with a warning. The channel cap counts mode copies; excess copies are dropped with a warning. Zone members list every written copy's number, in order, where the library channel sat in the zone.
 - The default DMR radio ID, 8 BCD digits, big-endian, in general settings. Export fails with an error the operator can read when that ID is missing or outside 1–16776415. Other own IDs are not written into the radio-wide slot. A channel that points at a different own ID gets the per-channel override.
 - Talk groups and private contacts in one table. Call type is group, private, or all-call. With the `talkGroupTimeslotClones` trait, each demanded timeslot gets its own group contact (see [Timeslots](#timeslots)); private contacts and all-call keep byte `0x17` at `0x01` (no override).
 - RX lists. The length-table byte is the member count plus 1, or 0 when the list is unused. Extra members are truncated with a warning.
