@@ -41,6 +41,7 @@ All under `src/app/components/debug/`, exported from `index.ts`.
 
 | Component                                                                           | Job                                                                 |
 | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [FirmwareSwitch](../../../src/app/routes/debug/radios/FirmwareSwitch.md)            | Expected-firmware control under the radio title on debug pages      |
 | [DebugSection](../../../src/app/components/debug/DebugSection.md)                   | Titled bordered container for every block                           |
 | [EvidenceNotice](../../../src/app/components/debug/EvidenceNotice.md)               | The one "not validated on hardware" notice per tab                  |
 | [ConfidenceBadge](../../../src/app/components/debug/ConfidenceBadge.md)             | Layout or meaning confidence as a pill                              |
