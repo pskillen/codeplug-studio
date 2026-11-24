@@ -693,6 +693,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     ctx = { ...ctx, identity: reviewIdentity };
     identityRef.current = ctx.identity;
     setIdentity(ctx.identity);
+    // Before any early return: a reconnect pass reset the write track, and step 5's bar, percent
+    // and time left need this plan's weights.
+    const writeOnly = writePartOfPlan(ctx.plan, readPlanRef.current);
+    updateWriteTrack((t) => trackWithPlan(t, writeOnly));
     if (autoProceedRef.current) {
       autoProceedRef.current = false;
       // The user already pressed Write; the hold clock restarts with this fresh read.
@@ -705,13 +709,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       readPlanRef.current.length ? readPlanRef.current : undefined,
       readMs,
     );
-    const writeOnly = writePartOfPlan(ctx.plan, readPlanRef.current);
     const tx = ctx as BeforeTransmitContext;
     const settingsDeps = settingsPartDeps();
     settingsControllerRef.current = settingsPart
       ? settingsPart.createReviewController(tx, ctx.channels ?? [], settingsDeps)
       : null;
-    updateWriteTrack((t) => trackWithPlan(t, writeOnly));
     const estimateSeconds = ctx.identityOnly
       ? null
       : estimateWriteSeconds(writeOnly, rate, descriptor?.nominalBytesPerSecond);
