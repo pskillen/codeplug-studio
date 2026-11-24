@@ -2,6 +2,7 @@ import type { ChannelModeProfile, ChannelTone, Library } from '@core/models/libr
 import { entityRefDisplayName } from '../../../lib/entityRefs.ts';
 
 export interface ChannelFact {
+  key: string;
   label: string;
   value: string;
   /** Render in the monospace face (identifiers, tones, codes). */
@@ -14,6 +15,7 @@ function tone(value: ChannelTone | undefined): string | null {
 
 function push(
   facts: ChannelFact[],
+  key: string,
   label: string,
   value: string | number | null | undefined,
   mono = false,
@@ -21,7 +23,7 @@ function push(
   if (value == null) return;
   const text = String(value).trim();
   if (!text) return;
-  facts.push(mono ? { label, value: text, mono } : { label, value: text });
+  facts.push(mono ? { key, label, value: text, mono } : { key, label, value: text });
 }
 
 function ownIdName(library: Library, id: string | null): string | null {
@@ -45,24 +47,31 @@ export function modeProfileFacts(profile: ChannelModeProfile, library: Library):
       const rx = tone(profile.rxTone);
       const tx = tone(profile.txTone);
       if (rx || tx) {
-        if (rx === tx) push(facts, 'Tone', rx, true);
+        if (rx === tx) push(facts, 'tone', 'Tone', rx, true);
         else {
-          push(facts, 'TX tone', tx, true);
-          push(facts, 'RX tone', rx, true);
+          push(facts, 'txTone', 'TX tone', tx, true);
+          push(facts, 'rxTone', 'RX tone', rx, true);
         }
       }
       if (profile.mode === 'ssb')
-        push(facts, 'Sideband', (profile.ssbSideband ?? 'usb').toUpperCase());
-      if (profile.bandwidthKHz != null) push(facts, 'Bandwidth', `${profile.bandwidthKHz} kHz`);
-      if (profile.squelch != null) push(facts, 'Squelch', `${profile.squelch}%`);
+        push(facts, 'sideband', 'Sideband', (profile.ssbSideband ?? 'usb').toUpperCase());
+      if (profile.bandwidthKHz != null)
+        push(facts, 'bandwidth', 'Bandwidth', `${profile.bandwidthKHz} kHz`);
+      if (profile.squelch != null) push(facts, 'squelch', 'Squelch', `${profile.squelch}%`);
       break;
     }
     case 'dmr':
-      push(facts, 'Colour code', profile.colourCode, true);
-      push(facts, 'Timeslot', profile.timeslot != null ? `TS${profile.timeslot}` : null);
-      push(facts, 'Talk group', entityRefDisplayName(profile.contactRef, library));
+      push(facts, 'colourCode', 'Colour code', profile.colourCode, true);
       push(
         facts,
+        'timeslot',
+        'Timeslot',
+        profile.timeslot != null ? `TS${profile.timeslot}` : null,
+      );
+      push(facts, 'talkGroup', 'Talk group', entityRefDisplayName(profile.contactRef, library));
+      push(
+        facts,
+        'dmrMode',
         'DMR mode',
         profile.dmrMode === 'repeater'
           ? 'Repeater'
@@ -70,38 +79,41 @@ export function modeProfileFacts(profile: ChannelModeProfile, library: Library):
             ? 'Simplex'
             : null,
       );
-      push(facts, 'Your ID', ownIdName(library, profile.ownDigitalIdId));
+      push(facts, 'ownId', 'Your ID', ownIdName(library, profile.ownDigitalIdId));
+      if (profile.sendTalkerAlias === 'on') push(facts, 'talkerAlias', 'Talker alias', 'On');
+      if (profile.sendTalkerAlias === 'off') push(facts, 'talkerAlias', 'Talker alias', 'Off');
       break;
     case 'dstar':
-      push(facts, 'UR', profile.urCall, true);
-      push(facts, 'RPT1', profile.rpt1Call, true);
-      push(facts, 'RPT2', profile.rpt2Call, true);
+      push(facts, 'ur', 'UR', profile.urCall, true);
+      push(facts, 'rpt1', 'RPT1', profile.rpt1Call, true);
+      push(facts, 'rpt2', 'RPT2', profile.rpt2Call, true);
       break;
     case 'ysf':
-      push(facts, 'DG-ID', profile.dgId, true);
-      push(facts, 'WIRES-X ID', profile.wiresDtmfId, true);
+      push(facts, 'dgId', 'DG-ID', profile.dgId, true);
+      push(facts, 'wiresId', 'WIRES-X ID', profile.wiresDtmfId, true);
       break;
     case 'nxdn':
       if (profile.rxRan != null && profile.rxRan === profile.txRan)
-        push(facts, 'RAN', profile.rxRan, true);
+        push(facts, 'ran', 'RAN', profile.rxRan, true);
       else {
-        push(facts, 'TX RAN', profile.txRan, true);
-        push(facts, 'RX RAN', profile.rxRan, true);
+        push(facts, 'txRan', 'TX RAN', profile.txRan, true);
+        push(facts, 'rxRan', 'RX RAN', profile.rxRan, true);
       }
-      push(facts, 'Talk group', entityRefDisplayName(profile.contactRef, library));
+      push(facts, 'talkGroup', 'Talk group', entityRefDisplayName(profile.contactRef, library));
       push(
         facts,
+        'rate',
         'Rate',
         profile.nxdnRate === 'nxdn48' ? 'NXDN48' : profile.nxdnRate === 'nxdn96' ? 'NXDN96' : null,
       );
-      push(facts, 'Your ID', ownIdName(library, profile.ownDigitalIdId));
+      push(facts, 'ownId', 'Your ID', ownIdName(library, profile.ownDigitalIdId));
       break;
     case 'tetra':
-      push(facts, 'MCC', profile.mcc, true);
-      push(facts, 'MNC', profile.mnc, true);
-      push(facts, 'GSSI', profile.gssi, true);
-      push(facts, 'Colour code', profile.colorCode, true);
-      push(facts, 'Talk group', entityRefDisplayName(profile.talkGroupRef, library));
+      push(facts, 'mcc', 'MCC', profile.mcc, true);
+      push(facts, 'mnc', 'MNC', profile.mnc, true);
+      push(facts, 'gssi', 'GSSI', profile.gssi, true);
+      push(facts, 'colourCode', 'Colour code', profile.colorCode, true);
+      push(facts, 'talkGroup', 'Talk group', entityRefDisplayName(profile.talkGroupRef, library));
       break;
     case 'p25':
     case 'm17':

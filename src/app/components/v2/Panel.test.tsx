@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import DesignSystemV2Provider from './DesignSystemV2Provider.tsx';
+import { Button, Pill } from './index.ts';
 import Panel from './Panel.tsx';
 
 describe('Panel', () => {
@@ -78,6 +79,56 @@ describe('Panel', () => {
 
     expect(screen.getByText('2 changes')).toBeInTheDocument();
     expect(screen.queryByText('Body')).not.toBeInTheDocument();
+  });
+
+  it('renders header actions beside the title without wrapping the collapse toggle', () => {
+    const { container } = render(
+      <DesignSystemV2Provider>
+        <Panel
+          title="DMR"
+          collapsible
+          defaultCollapsed
+          actions={
+            <Button type="button" variant="ghost" size="sm">
+              Make main
+            </Button>
+          }
+        >
+          <span>Body</span>
+        </Panel>
+      </DesignSystemV2Provider>,
+    );
+
+    const section = container.querySelector('section');
+    expect(section?.firstElementChild?.tagName).toBe('DIV');
+    fireEvent.click(screen.getByRole('button', { name: 'Make main' }));
+    const toggle = screen.getByRole('button', { name: 'DMR' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('leaves the first child as H2 when actions is unset', () => {
+    const { container } = render(
+      <DesignSystemV2Provider>
+        <Panel title="Identity">
+          <span>Body</span>
+        </Panel>
+      </DesignSystemV2Provider>,
+    );
+    expect(container.querySelector('section')?.firstElementChild?.tagName).toBe('H2');
+  });
+
+  it('shows actions with a collapsible panel and a pill action', () => {
+    render(
+      <DesignSystemV2Provider>
+        <Panel title="FM" collapsible actions={<Pill tone="accent">Main mode</Pill>}>
+          <span>Body</span>
+        </Panel>
+      </DesignSystemV2Provider>,
+    );
+    expect(screen.getByText('Main mode')).toBeInTheDocument();
+    expect(screen.getByText('Body')).toBeInTheDocument();
   });
 
   it('shows the one-line summary only while folded', () => {

@@ -3,7 +3,6 @@ import { useHotkeys, useMediaQuery } from '@mantine/hooks';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { Channel, Library } from '@core/models/library.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
 import { zonesWithEffectiveChannelMembership } from '@core/domain/zoneMembership.ts';
 import { channelStatusInBuild, type ChannelBuildStatus } from '@core/domain/channelEligibility.ts';
 import { channelHasGeolocation } from '@core/domain/mapProjection.ts';
@@ -26,23 +25,17 @@ import {
   EditorHeader,
   EmptyState,
   Panel,
-  Pill,
 } from '../../components/v2/index.ts';
+import { channelModeSummaries } from '../../lib/channelModeSummary.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { channelEditPath } from '../../lib/channelPaths.ts';
-import { getModeDefinition } from '../../lib/channelModes.ts';
 import { formatFrequencyHz, formatMhzNumber } from '../../lib/formatFrequency.ts';
 import { formatAprsAssignmentSummary } from '../../lib/aprsBindingHelpers.ts';
 import { useOperatorPosition, type OperatorPosition } from '../../state/operatorPosition.tsx';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
-import { DSV2_TOKENS } from '../../theme-v2.ts';
-import {
-  modeProfileFacts,
-  modeProfileRxGroupListId,
-  type ChannelFact,
-} from './channelView/modeProfileFacts.ts';
-import RxGroupListBrief from './channelView/RxGroupListBrief.tsx';
+import { ChannelTalkCard, ChannelTalkRow } from './channelView/ChannelTalkCard.tsx';
+import type { ChannelFact } from './channelView/modeProfileFacts.ts';
 import classes from './ChannelViewPage.module.css';
 
 /** Read-first channel page (#1533): what is set, where it is, and where it is used. */
@@ -97,8 +90,8 @@ function ChannelView({
 
   const callsign = channel.callsign.trim();
   const name = channel.name.trim();
-  const modes = channel.modeProfiles.map((p) => p.mode);
-  const primary = modes.length > 1 ? resolveChannelPrimaryMode(channel) : null;
+  const modeSummaries = channelModeSummaries(channel, library);
+  const modeCount = channel.modeProfiles.length;
   const details = detailFacts(channel, library);
 
   return (
@@ -135,52 +128,59 @@ function ChannelView({
         </div>
 
         <div className={classes.body}>
-          <section className={classes.hero} aria-label="Frequency and modes">
+          <section className={classes.hero} aria-label="Frequency">
             <FrequencySummary channel={channel} />
             <div className={classes.heroPills}>
               <BandPillForChannel channel={channel} size="sm" />
-              {modes.map((mode) => {
-                const def = getModeDefinition(mode);
-                return (
-                  <Pill
-                    key={mode}
-                    tone="semantic"
-                    color={def.color}
-                    textColor={
-                      mode === 'dstar' || mode === 'dmr' || mode === 'tetra'
-                        ? DSV2_TOKENS.colors.pillTextLight
-                        : undefined
-                    }
-                  >
-                    {primary === mode ? `${def.label} (primary)` : def.label}
-                  </Pill>
-                );
-              })}
             </div>
             {channel.comment.trim() ? (
               <p className={classes.comment}>{channel.comment.trim()}</p>
             ) : null}
           </section>
 
+          <section className={classes.talkSection} aria-label="How to talk on it">
+            {modeCount === 0 ? (
+              <p className={classes.muted}>
+                No mode set. <Link to={`${editPath}#mode`}>Edit</Link>
+              </p>
+            ) : modeCount >= 3 ? (
+              modeSummaries.map((summary) => {
+                const profile = channel.modeProfiles.find((p) => p.mode === summary.mode);
+                if (!profile) return null;
+                return (
+                  <ChannelTalkRow
+                    key={profile.mode}
+                    profile={profile}
+                    channel={channel}
+                    library={library}
+                    isMain={summary.isMain}
+                    editPath={editPath}
+                    modeCount={modeCount}
+                    summary={summary}
+                  />
+                );
+              })
+            ) : (
+              modeSummaries.map((summary) => {
+                const profile = channel.modeProfiles.find((p) => p.mode === summary.mode);
+                if (!profile) return null;
+                return (
+                  <ChannelTalkCard
+                    key={profile.mode}
+                    profile={profile}
+                    channel={channel}
+                    library={library}
+                    isMain={summary.isMain}
+                    editPath={editPath}
+                    modeCount={modeCount}
+                  />
+                );
+              })
+            )}
+          </section>
+
           <div className={classes.grid}>
             <div className={classes.column}>
-              {channel.modeProfiles.map((profile) => {
-                const facts = modeProfileFacts(profile, library);
-                const rxGroupListId = modeProfileRxGroupListId(profile);
-                const label = getModeDefinition(profile.mode).label;
-                return (
-                  <Panel key={profile.mode} title={label}>
-                    {facts.length > 0 ? <FactList facts={facts} /> : null}
-                    {rxGroupListId ? (
-                      <RxGroupListBrief listId={rxGroupListId} library={library} />
-                    ) : null}
-                    {facts.length === 0 && !rxGroupListId ? (
-                      <p className={classes.muted}>No {label} settings set.</p>
-                    ) : null}
-                  </Panel>
-                );
-              })}
-
               {details.length > 0 ? (
                 <Panel title="Details">
                   <FactList facts={details} />
@@ -256,7 +256,7 @@ function FactList({ facts }: { facts: ChannelFact[] }) {
   return (
     <dl className={classes.facts}>
       {facts.map((fact) => (
-        <div key={fact.label} className={classes.fact}>
+        <div key={fact.key} className={classes.fact}>
           <dt>{fact.label}</dt>
           <dd className={fact.mono ? classes.mono : undefined}>{fact.value}</dd>
         </div>
@@ -269,23 +269,29 @@ function FactList({ facts }: { facts: ChannelFact[] }) {
 function detailFacts(channel: Channel, library: Library): ChannelFact[] {
   const facts: ChannelFact[] = [];
   if (channel.abbreviation?.trim()) {
-    facts.push({ label: 'Abbreviation', value: channel.abbreviation.trim() });
+    facts.push({ key: 'abbreviation', label: 'Abbreviation', value: channel.abbreviation.trim() });
   }
-  if (channel.power != null) facts.push({ label: 'Power', value: `${channel.power}%` });
-  if (channel.forbidTransmit === 'forbid') facts.push({ label: 'Transmit', value: 'RX only' });
-  if (channel.forbidTransmit === 'allow') facts.push({ label: 'Transmit', value: 'Allowed' });
-  if (channel.txPermit === 'busyLock') facts.push({ label: 'TX permit', value: 'Busy lock' });
+  if (channel.power != null)
+    facts.push({ key: 'power', label: 'Power', value: `${channel.power}%` });
+  if (channel.forbidTransmit === 'forbid')
+    facts.push({ key: 'transmit', label: 'Transmit', value: 'RX only' });
+  if (channel.forbidTransmit === 'allow')
+    facts.push({ key: 'transmit', label: 'Transmit', value: 'Allowed' });
+  if (channel.txPermit === 'busyLock')
+    facts.push({ key: 'txPermit', label: 'TX permit', value: 'Busy lock' });
   if (channel.txPermit === 'permitAlways')
-    facts.push({ label: 'TX permit', value: 'Permit always' });
-  if (channel.scanInclusion === 'skip') facts.push({ label: 'Scan', value: 'Skipped' });
+    facts.push({ key: 'txPermit', label: 'TX permit', value: 'Permit always' });
+  if (channel.scanInclusion === 'skip')
+    facts.push({ key: 'scan', label: 'Scan', value: 'Skipped' });
   if (channel.scanInclusion === 'alwaysScan')
-    facts.push({ label: 'Scan', value: 'Always scanned' });
+    facts.push({ key: 'scan', label: 'Scan', value: 'Always scanned' });
   const scanList = channel.scanListId
     ? library.scanLists.find((list) => list.id === channel.scanListId)
     : undefined;
-  if (scanList) facts.push({ label: 'Scan list', value: scanList.name });
+  if (scanList) facts.push({ key: 'scanList', label: 'Scan list', value: scanList.name });
   if (channel.aprs && library.aprsConfiguration) {
     facts.push({
+      key: 'aprs',
       label: 'APRS',
       value: formatAprsAssignmentSummary(
         channel.aprs,
@@ -294,7 +300,8 @@ function detailFacts(channel: Channel, library: Library): ChannelFact[] {
       ),
     });
   }
-  if (channel.hideFromInternalMap) facts.push({ label: 'Map', value: 'Hidden from maps' });
+  if (channel.hideFromInternalMap)
+    facts.push({ key: 'map', label: 'Map', value: 'Hidden from maps' });
   return facts;
 }
 
@@ -366,11 +373,13 @@ function LocationPanel({
       <FactList
         facts={[
           {
+            key: 'locator',
             label: 'Locator',
             value: channel.maidenheadLocator || coordsToLocator(location.lat, location.lon, 6),
             mono: true,
           },
           {
+            key: 'coordinates',
             label: 'Coordinates',
             value: `${location.lat.toFixed(5)}, ${location.lon.toFixed(5)}`,
             mono: true,

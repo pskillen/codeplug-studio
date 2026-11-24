@@ -141,3 +141,17 @@ export const MODE_PRESETS: readonly ModePreset[] = [
   { id: 'dmr', label: 'DMR', sub: 'Digital', modes: ['dmr'] },
   { id: 'fm-dmr', label: 'FM + DMR', sub: 'Dual-mode repeater', modes: ['fm', 'dmr'] },
 ];
+
+/** Fold rule: 3+ modes, or 2+ on a phone; the main mode and modes added during this edit start open. */
+export function modeSectionStartsFolded(opts: {
+  modeCount: number;
+  compact: boolean;
+  isMain: boolean;
+  addedThisEdit: boolean;
+}): boolean {
+  if (opts.addedThisEdit) return false;
+  if (opts.isMain) return false;
+  if (opts.modeCount >= 3) return true;
+  if (opts.compact && opts.modeCount >= 2) return true;
+  return false;
+}

@@ -24,6 +24,8 @@ export interface PanelProps {
   badge?: string;
   /** One-line summary shown under the title while a `collapsible` panel is folded (e.g. the chosen value). */
   summary?: ReactNode;
+  /** Controls at the end of the header (e.g. a badge or a small button), outside the collapse toggle. Requires `title`. */
+  actions?: ReactNode;
 }
 
 /**
@@ -42,6 +44,7 @@ export default function Panel({
   defaultCollapsed = false,
   badge,
   summary,
+  actions,
 }: PanelProps) {
   const [collapsed, setCollapsed] = useState(collapsible && defaultCollapsed);
   const hasHeader = title != null;
@@ -59,6 +62,40 @@ export default function Panel({
     </span>
   );
 
+  const titleBlock = (
+    <h2
+      className={[
+        classes.title,
+        sub ? classes.titleWithSub : '',
+        actions ? classes.titleInHeader : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {collapsible ? (
+        <button
+          type="button"
+          className={classes.collapseToggle}
+          onClick={() => setCollapsed((c) => !c)}
+          aria-expanded={!collapsed}
+          aria-label={headerLabel}
+        >
+          {titleInner}
+          <IconChevronDown
+            size={ICON_SIZE_NAV}
+            stroke={ICON_STROKE}
+            className={[classes.chevron, collapsed ? classes.chevronCollapsed : '']
+              .filter(Boolean)
+              .join(' ')}
+            aria-hidden
+          />
+        </button>
+      ) : (
+        titleInner
+      )}
+    </h2>
+  );
+
   return (
     <section
       id={id}
@@ -67,29 +104,14 @@ export default function Panel({
         .join(' ')}
     >
       {hasHeader ? (
-        <h2 className={[classes.title, sub ? classes.titleWithSub : ''].filter(Boolean).join(' ')}>
-          {collapsible ? (
-            <button
-              type="button"
-              className={classes.collapseToggle}
-              onClick={() => setCollapsed((c) => !c)}
-              aria-expanded={!collapsed}
-              aria-label={headerLabel}
-            >
-              {titleInner}
-              <IconChevronDown
-                size={ICON_SIZE_NAV}
-                stroke={ICON_STROKE}
-                className={[classes.chevron, collapsed ? classes.chevronCollapsed : '']
-                  .filter(Boolean)
-                  .join(' ')}
-                aria-hidden
-              />
-            </button>
-          ) : (
-            titleInner
-          )}
-        </h2>
+        actions ? (
+          <div className={classes.header}>
+            {titleBlock}
+            <div className={classes.headerActions}>{actions}</div>
+          </div>
+        ) : (
+          titleBlock
+        )
       ) : null}
       {collapsible && collapsed && summary ? <p className={classes.summary}>{summary}</p> : null}
       {sub ? <p className={classes.sub}>{sub}</p> : null}
