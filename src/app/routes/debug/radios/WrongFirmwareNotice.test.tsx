@@ -6,6 +6,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { WrongFirmwareNotice } from './WrongFirmwareNotice.tsx';
 
+const noopCapture = () => Promise.resolve({} as never);
 const noop = () => {};
 
 function shell(ui: ReactElement) {
@@ -18,7 +19,7 @@ describe('WrongFirmwareNotice', () => {
     shell(
       <WrongFirmwareNotice
         error={new DebugWrongFirmwareError('radiofoundry', OPENGD77_DEBUG_RADIOFOUNDRY_FOUND, port)}
-        target={{ firmware: 'radiofoundry', capture: noop }}
+        target={{ firmware: 'radiofoundry', capture: noopCapture }}
         portOpen
         secondsLeft={42}
         onSwitchAndRead={noop}
@@ -37,7 +38,7 @@ describe('WrongFirmwareNotice', () => {
     shell(
       <WrongFirmwareNotice
         error={new DebugWrongFirmwareError('radiofoundry', OPENGD77_DEBUG_RADIOFOUNDRY_FOUND, port)}
-        target={{ firmware: 'radiofoundry', capture: noop }}
+        target={{ firmware: 'radiofoundry', capture: noopCapture }}
         portOpen
         secondsLeft={42}
         onSwitchAndRead={noop}
