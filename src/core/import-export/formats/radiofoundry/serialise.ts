@@ -346,8 +346,7 @@ function writeChannelRecord(
 ): void {
   const { row, mode } = channel;
   const entity = row.entity;
-  const wireName =
-    channel.exportWireName ?? (row.wireNameOverride?.trim() || row.wireName);
+  const wireName = channel.exportWireName ?? (row.wireNameOverride?.trim() || row.wireName);
   const label = wireName || entity.name;
   const slot = channelSlotAddress(channel.number);
   markOwned(owned, slot.record, CHANNEL_RECORD_SIZE);

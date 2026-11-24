@@ -168,9 +168,7 @@ describe('RadioFoundry multi-mode channel export', () => {
     const { bytes } = serialiseRadioFoundryCodeplug(
       assembled({
         channels: [channel],
-        zones: [
-          { zoneId: 'z', wireName: 'Home', memberChannelIds: [channel.entity.id] },
-        ],
+        zones: [{ zoneId: 'z', wireName: 'Home', memberChannelIds: [channel.entity.id] }],
       }),
     );
     expect(zoneMemberNumbers(bytes, 0)).toEqual([1, 2]);
