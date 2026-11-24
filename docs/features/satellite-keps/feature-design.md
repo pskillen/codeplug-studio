@@ -104,6 +104,10 @@ _Intended for when the user is already deep in the process of flashing a new cod
 4. The browser immediately prompts for the Web Serial COM port connection.
 5. The upload executes with a progress indicator.
 
+#### Write dialog (step 1, before the port)
+
+Workflows A and B both open the same **Write** dialog when the operator chooses to write keps. With **Satellite keps** ticked, step 1 loads enabled satellites and evaluates capacity, eligibility, and radio-capability exclusions using this build's satellite overrides (the same rules as the build **Satellite keps** preview). Over-capacity and nothing-to-write outcomes appear as refusals and disable **Read & write**; individual satellite/transmitter skips appear as folded notes. The serial port is not requested until those checks pass.
+
 ### 9. UX Edge Cases & Error Handling
 
 - **Memory Overages:** Radios have hard limits on satellite capacity. The Library view must dynamically show a count (e.g., "Selected: 42"). If the user initiates a write to an OpenGD77, and the selected count exceeds the firmware's limit, the write should halt with a clear error: _"You have selected 85 satellites, but the OpenGD77 only supports 45. Please deselect some satellites in the library."_
