@@ -151,6 +151,21 @@ function zoneMemberNumbers(bytes: Uint8Array, zoneIndex: number): number[] {
 }
 
 describe('RadioFoundry multi-mode channel export', () => {
+  it('keeps the mode suffix on a 16-character name', () => {
+    const channel = fmDmrChannel('FG6 BA Secondary');
+    expect('FG6 BA Secondary'.length).toBe(LIMITS.NAME_MAX);
+    const { bytes } = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    const fmSuffix = modeExportNameSuffix('fm');
+    const dmrSuffix = modeExportNameSuffix('dmr');
+    const fmName = fieldText(bytes, channelSlotAddress(1).record, LIMITS.NAME_MAX);
+    const dmrName = fieldText(bytes, channelSlotAddress(2).record, LIMITS.NAME_MAX);
+    expect(fmName.length).toBeLessThanOrEqual(LIMITS.NAME_MAX);
+    expect(dmrName.length).toBeLessThanOrEqual(LIMITS.NAME_MAX);
+    expect(fmName.endsWith(fmSuffix)).toBe(true);
+    expect(dmrName.endsWith(dmrSuffix)).toBe(true);
+    expect(fmName).not.toBe(dmrName);
+  });
+
   it('writes one record per FM and DMR mode with suffixes and mode bytes', () => {
     const channel = fmDmrChannel('Repeater');
     const { bytes, warnings } = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
