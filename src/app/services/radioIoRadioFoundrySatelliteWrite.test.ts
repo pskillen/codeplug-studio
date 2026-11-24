@@ -111,6 +111,13 @@ function foundrySession(): RadioSession {
 }
 
 describe('writeRadioFoundrySatellitesToRadio', () => {
+  it('reports readBack matched after a successful write', async () => {
+    writeSpy.mockClear();
+    writeSpy.mockResolvedValueOnce({ written: 1, capacity: 10 });
+    const result = await writeRadioFoundrySatellitesToRadio(foundrySession(), [makeSatellite()]);
+    expect(result.readBack).toBe('matched');
+  });
+
   it('packs the library and writes it', async () => {
     writeSpy.mockClear();
     writeSpy.mockResolvedValueOnce({ written: 2, capacity: 10 });

@@ -41,9 +41,11 @@ export type {
 
 export interface SatelliteKepsWriteResult {
   written: number;
-  skipped: { satelliteId: string; reason: string }[];
+  /** Set when the radio read keps back and they matched what was sent (RadioFoundry). */
+  readBack?: 'matched';
+  skipped: { satelliteId: string; reason: string; label?: string }[];
   /** Transmitters skipped for a radio-capability reason (e.g. unsupported mode), #1068. */
-  skippedTransmitters: CapabilitySkippedTransmitter[];
+  skippedTransmitters: (CapabilitySkippedTransmitter & { label?: string })[];
 }
 
 export type SatelliteKepsWriteFn = (
@@ -189,7 +191,7 @@ function isOpenGd77BuildSlotSkip(reason: string): boolean {
   );
 }
 
-function kepsExcludedLabel(
+export function kepsExcludedLabel(
   satellites: readonly Satellite[],
   exclusion: SatelliteKepsExclusion,
 ): string {
@@ -199,6 +201,31 @@ function kepsExcludedLabel(
   const transmitter = satellite?.transmitters.find((t) => t.id === exclusion.transmitterId);
   const txLabel = transmitter?.label ?? exclusion.transmitterId;
   return `${name} / ${txLabel}`;
+}
+
+export function enrichSatelliteKepsWriteResult(
+  result: SatelliteKepsWriteResult,
+  satellites: readonly Satellite[],
+): SatelliteKepsWriteResult {
+  return {
+    ...result,
+    skipped: result.skipped.map((s) => ({
+      ...s,
+      label: kepsExcludedLabel(satellites, {
+        satelliteId: s.satelliteId,
+        transmitterId: null,
+        reason: s.reason,
+      }),
+    })),
+    skippedTransmitters: result.skippedTransmitters.map((s) => ({
+      ...s,
+      label: kepsExcludedLabel(satellites, {
+        satelliteId: s.satelliteId,
+        transmitterId: s.transmitterId,
+        reason: s.reason,
+      }),
+    })),
+  };
 }
 
 export interface KepsWriteChecksResult {

@@ -69,6 +69,7 @@ export async function writeRadioFoundrySatellitesToRadio(
 
   return {
     written: selected,
+    readBack: 'matched',
     skipped: radioFoundrySkippedSatellites(satellites, options),
     skippedTransmitters: radioFoundrySkippedTransmitters(satellites, options),
   };

@@ -287,6 +287,7 @@ function viewFor(
           settingsTicked: false,
           channelCount: 412,
           kepsResult: null,
+          kepsUnitNoun: null,
           kepsTicked: parts.keps,
           kepsError: null,
           warnings: [],

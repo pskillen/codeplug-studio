@@ -43,7 +43,14 @@ function writtenLines(summary: WriteSummary): string[] {
     lines.push('Radio settings: kept as this radio had them.');
   }
   if (summary.kepsResult) {
-    lines.push(`Satellite keps written (${summary.kepsResult.written} transmitters).`);
+    const n = summary.kepsResult.written;
+    const noun = summary.kepsUnitNoun ?? 'transmitter';
+    const unit = n === 1 ? noun : `${noun}s`;
+    let kepsLine = `Satellite keps written: ${n} ${unit}.`;
+    if (summary.kepsResult.readBack === 'matched') {
+      kepsLine += ' The radio read them back and they match.';
+    }
+    lines.push(kepsLine);
   } else if (summary.kepsTicked) {
     lines.push(
       summary.kepsError
@@ -83,7 +90,7 @@ export function DoneBody({ config, view, actions }: StepProps) {
       satelliteId: s.satelliteId,
       transmitterId: null,
       reason: s.reason,
-      label: s.satelliteId,
+      label: s.label ?? s.satelliteId,
     });
   }
   for (const s of summary.kepsResult?.skippedTransmitters ?? []) {
@@ -91,7 +98,7 @@ export function DoneBody({ config, view, actions }: StepProps) {
       satelliteId: s.satelliteId,
       transmitterId: s.transmitterId,
       reason: s.reason,
-      label: `${s.satelliteId} / ${s.transmitterId}`,
+      label: s.label ?? `${s.satelliteId} / ${s.transmitterId}`,
     });
   }
   const kepsNotWritten = summary.kepsTicked && !summary.kepsResult;

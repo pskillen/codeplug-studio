@@ -342,6 +342,7 @@ describe('RadioWriteStepper — steps 4 to 6', () => {
           settingsTicked: false,
           channelCount: 412,
           kepsResult: null,
+          kepsUnitNoun: null,
           kepsTicked: false,
           kepsError: null,
           warnings: [],
