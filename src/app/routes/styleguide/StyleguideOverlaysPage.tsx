@@ -19,6 +19,7 @@ import ExportFileDialogDemo from './ExportFileDialogDemo.tsx';
 import RadioRestoreDialogDemo from './RadioRestoreDialogDemo.tsx';
 import SatelliteKepsWriteTargetModalDemo from './SatelliteKepsWriteTargetModalDemo.tsx';
 import RangeChangeDemo from './RangeChangeDemo.tsx';
+import StorageClaimDemo from './StorageClaimDemo.tsx';
 import RadioIoStageList, { type StageRow } from '../../components/builds/RadioIoStageList.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
@@ -404,6 +405,13 @@ export default function StyleguideOverlaysPage() {
         description="The AT-D890 range-change wizard, every step and the main failure screens, with demo data. Nothing talks to a radio."
       >
         <RangeChangeDemo />
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="Danger zone: Unlock settings storage"
+        description="RadioFoundry foreign-storage wizard at the backup step, with demo data."
+      >
+        <StorageClaimDemo />
       </StyleguideSection>
     </StyleguidePageShell>
   );

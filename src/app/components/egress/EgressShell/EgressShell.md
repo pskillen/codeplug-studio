@@ -43,7 +43,10 @@ notice, the keep-screen-on hint while a transfer runs, and the step body in the 
 ## Behaviour
 
 - Header shows `n of m · label` where `m` counts only steps whose status is not `skipped`.
-- Renders v2 `Stepper` with the same steps (including skipped markers).
+- Width: `xl` (960 px) on desktop, so the whole step list fits on one line.
+- Below Mantine `sm` (48em, phones) the dialog is **full screen** (`ModalShell fullScreen`) and the step list collapses
+  to the header line plus a thin grey step bar (`egress-step-bar`); the body scrolls between header and footer.
+- Otherwise renders v2 `Stepper` with the same steps (including skipped markers).
 - Holds a screen wake lock while `open && busy`; shows the keep-screen-on hint when the lock is not held.
 
 ## Related

@@ -30,6 +30,8 @@ export interface WriteErrorOutcome {
   debugText: string;
   /** RadioIoError.code, else the error's name, else 'unknown'. */
   code: string;
+  /** When the refusal is a known interlock (e.g. foreign storage). */
+  interlockKey?: string;
 }
 
 type ErrShape = Error & {
@@ -130,6 +132,9 @@ export function classifyWriteError(err: unknown, ctx: WriteErrorContext): WriteE
   const debugText = e?.debugText?.trim() ? e.debugText : fallbackDebugText(err, ctx, message);
   const code = e?.code ?? e?.name ?? 'unknown';
 
+  const interlockKey =
+    err instanceof RadioInterlockError && err.interlockKey ? err.interlockKey : undefined;
+
   return {
     kind: 'error',
     retry,
@@ -137,6 +142,7 @@ export function classifyWriteError(err: unknown, ctx: WriteErrorContext): WriteE
     message,
     debugText,
     code,
+    interlockKey,
   };
 }
 

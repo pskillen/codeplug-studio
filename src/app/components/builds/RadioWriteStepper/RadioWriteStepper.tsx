@@ -8,6 +8,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { Text } from '@mantine/core';
+import { Link } from 'react-router-dom';
 import { EgressShell, ErrorPanel } from '../../egress/index.ts';
 import { Button } from '../../v2/index.ts';
 import classes from './RadioWriteStepper.module.css';
@@ -99,7 +100,14 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
       break;
   }
 
-  const wayOut =
+  const storageUnlock =
+    view.storageUnlockHref && view.errorOutcome?.interlockKey === 'rf-storage-foreign' ? (
+      <Link to={view.storageUnlockHref} className={classes.wayOutLink}>
+        Unlock storage…
+      </Link>
+    ) : null;
+
+  const wayOutExtra =
     view.errorOutcome && (view.pendingWarning || view.retryLabel === null) ? (
       <>
         {view.pendingWarning ? (
@@ -118,6 +126,14 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
       </>
     ) : view.pendingWarning ? (
       <PendingWarningClear warning={view.pendingWarning} onClear={actions.onClearPendingWarning} />
+    ) : null;
+
+  const wayOut =
+    storageUnlock || wayOutExtra ? (
+      <>
+        {storageUnlock}
+        {wayOutExtra}
+      </>
     ) : null;
 
   const notice =

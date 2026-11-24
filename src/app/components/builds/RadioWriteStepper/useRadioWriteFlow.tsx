@@ -42,6 +42,8 @@ import type {
   WriteVerifyPendingPayload,
   WriteVerifyResult,
 } from '@integrations/radio-io/writeVerify.ts';
+import { listOfferedDangerZoneTools } from '../../../services/dangerZone/gate.ts';
+import { RADIOFOUNDRY_STORAGE_CLAIM_TOOL_ID } from '../../../services/dangerZone/registry.ts';
 import { useRestartCountdown } from '../../radio-io/useRestartCountdown.ts';
 import { loadLibrarySlice } from '../../../lib/loadLibrarySlice.ts';
 import { createProgressCoalescer, type ProgressCoalescer } from '../../../lib/progressCoalescer.ts';
@@ -691,6 +693,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     ctx = { ...ctx, identity: reviewIdentity };
     identityRef.current = ctx.identity;
     setIdentity(ctx.identity);
+    // Before any early return: a reconnect pass reset the write track, and step 5's bar, percent
+    // and time left need this plan's weights.
+    const writeOnly = writePartOfPlan(ctx.plan, readPlanRef.current);
+    updateWriteTrack((t) => trackWithPlan(t, writeOnly));
     if (autoProceedRef.current) {
       autoProceedRef.current = false;
       // The user already pressed Write; the hold clock restarts with this fresh read.
@@ -703,13 +709,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       readPlanRef.current.length ? readPlanRef.current : undefined,
       readMs,
     );
-    const writeOnly = writePartOfPlan(ctx.plan, readPlanRef.current);
     const tx = ctx as BeforeTransmitContext;
     const settingsDeps = settingsPartDeps();
     settingsControllerRef.current = settingsPart
       ? settingsPart.createReviewController(tx, ctx.channels ?? [], settingsDeps)
       : null;
-    updateWriteTrack((t) => trackWithPlan(t, writeOnly));
     const estimateSeconds = ctx.identityOnly
       ? null
       : estimateWriteSeconds(writeOnly, rate, descriptor?.nominalBytesPerSecond);
@@ -1471,6 +1475,13 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     buildChecks,
     preflight,
     channelLabel,
+    storageUnlockHref:
+      errorOutcome?.interlockKey === 'rf-storage-foreign' &&
+      listOfferedDangerZoneTools(build.radioTargetId).some(
+        (t) => t.id === RADIOFOUNDRY_STORAGE_CLAIM_TOOL_ID,
+      )
+        ? `/builds/${build.id}/export/danger-zone/storage-claim`
+        : undefined,
   };
 
   const actions: WriteFlowActions = {

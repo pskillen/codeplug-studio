@@ -69,3 +69,22 @@
   padding: var(--dsv2-panel-padding-y) var(--dsv2-panel-padding-x);
   border-top: 1px solid var(--dsv2-border-quiet);
 }
+
+/* Phones: the panel fills the viewport; the body scrolls between header and footer. */
+.modalFull :global(.mantine-Modal-content) {
+  border: 0;
+  border-radius: 0;
+}
+
+.modalFull :global(.mantine-Modal-body) {
+  height: 100%;
+}
+
+.panelFull {
+  height: 100dvh;
+}
+
+.bodyFull {
+  flex: 1;
+  min-height: 0;
+}

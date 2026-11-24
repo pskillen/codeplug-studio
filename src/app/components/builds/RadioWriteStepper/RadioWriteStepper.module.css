@@ -4,6 +4,14 @@
   gap: var(--dsv2-space-8, 12px);
 }
 
+.wayOutLink {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-blue-6);
+  text-decoration: underline;
+}
+
 .refusalList {
   margin: 0 0 8px;
   padding-left: 1.25rem;

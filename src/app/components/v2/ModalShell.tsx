@@ -21,6 +21,8 @@ export interface ModalShellProps {
   children: ReactNode;
   /** Renders the panel markup only, without the Modal overlay/portal — for embedding. */
   inline?: boolean;
+  /** Fill the viewport (phones): no width cap, the body scrolls in the space between header and footer. */
+  fullScreen?: boolean;
   className?: string;
 }
 
@@ -41,6 +43,7 @@ interface ModalShellPanelProps {
   footer?: ReactNode;
   children: ReactNode;
   className?: string;
+  fullScreen?: boolean;
 }
 
 function ModalShellPanel({
@@ -52,9 +55,14 @@ function ModalShellPanel({
   footer,
   children,
   className,
+  fullScreen,
 }: ModalShellPanelProps) {
   return (
-    <div className={[classes.panel, className].filter(Boolean).join(' ')}>
+    <div
+      className={[classes.panel, fullScreen ? classes.panelFull : null, className]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className={classes.header}>
         {icon ? (
           <span className={[classes.iconBadge, ICON_TONE_CLASS[iconTone]].join(' ')} aria-hidden>
@@ -71,9 +79,15 @@ function ModalShellPanel({
           />
         ) : null}
       </div>
-      <ScrollArea.Autosize mah={480} className={classes.body}>
-        {children}
-      </ScrollArea.Autosize>
+      {fullScreen ? (
+        <ScrollArea className={classes.bodyFull}>
+          <div className={classes.body}>{children}</div>
+        </ScrollArea>
+      ) : (
+        <ScrollArea.Autosize mah={480} className={classes.body}>
+          {children}
+        </ScrollArea.Autosize>
+      )}
       {footer ? <div className={classes.footer}>{footer}</div> : null}
     </div>
   );
@@ -96,6 +110,7 @@ export default function ModalShell({
   children,
   inline,
   className,
+  fullScreen = false,
 }: ModalShellProps) {
   const panel = (
     <ModalShellPanel
@@ -106,6 +121,7 @@ export default function ModalShell({
       onClose={onClose}
       footer={footer}
       className={className}
+      fullScreen={fullScreen && !inline}
     >
       {children}
     </ModalShellPanel>
@@ -123,10 +139,13 @@ export default function ModalShell({
       closeOnClickOutside={dismissible}
       closeOnEscape={dismissible}
       size={SIZE_PX[size]}
-      radius="panel"
+      fullScreen={fullScreen}
+      radius={fullScreen ? 0 : 'panel'}
       padding={0}
       centered
-      className={classes.modalRoot}
+      className={[classes.modalRoot, fullScreen ? classes.modalFull : null]
+        .filter(Boolean)
+        .join(' ')}
       portalProps={{ target: DSV2_SCOPE_SELECTOR }}
     >
       {panel}

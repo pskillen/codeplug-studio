@@ -10,6 +10,7 @@ import {
   RF_STORAGE_NO_MAP,
   RF_STORAGE_NOT_READY,
   RF_STORAGE_NOT_STARTED,
+  RF_STORAGE_FOREIGN_INTERLOCK,
   STORAGE_FOREIGN_REFUSAL,
   type RadioFoundryStorageInfoReply,
 } from './protocol.ts';
@@ -70,10 +71,14 @@ function storageDebugLines(
 function refusalForStorage(
   reply: RadioFoundryStorageInfoReply,
   storageReadyFlagClear: boolean,
-): { message: string; storageLabel: string } {
+): { message: string; storageLabel: string; interlockKey?: string } {
   if (reply.kind === 'info') {
     if (reply.info.region === 'foreign') {
-      return { message: STORAGE_FOREIGN_REFUSAL, storageLabel: 'foreign' };
+      return {
+        message: STORAGE_FOREIGN_REFUSAL,
+        storageLabel: 'foreign',
+        interlockKey: RF_STORAGE_FOREIGN_INTERLOCK,
+      };
     }
     if (reply.info.region === 'none') {
       return { message: RF_STORAGE_NOT_STARTED, storageLabel: 'did not start' };
@@ -120,8 +125,8 @@ export async function radioFoundryWritePreflight(
     };
   }
   const reply = await radio.readStorageInfo(ctx.signal);
-  const { message, storageLabel } = refusalForStorage(reply, writable === false);
-  const err = adviseRadioError(new RadioInterlockError(message), {
+  const { message, storageLabel, interlockKey } = refusalForStorage(reply, writable === false);
+  const err = adviseRadioError(new RadioInterlockError(message, interlockKey), {
     retry: 'none',
     sent: 'nothing-sent',
   });

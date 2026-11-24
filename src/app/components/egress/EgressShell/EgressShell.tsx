@@ -1,5 +1,7 @@
-import { Text } from '@mantine/core';
+import { Progress, Text } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import type { ReactNode } from 'react';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../../lib/breakpoints.ts';
 import { KEEP_SCREEN_ON_HINT, useScreenWakeLock } from '../../../hooks/useScreenWakeLock.ts';
 import { ModalShell } from '../../v2/index.ts';
 import Stepper from '../../v2/Stepper.tsx';
@@ -45,15 +47,22 @@ export default function EgressShell({
   children,
 }: EgressShellProps) {
   const { held: screenHeld } = useScreenWakeLock(open && busy);
+  // Phones: full screen, and the step list collapses to the header line plus a thin bar.
+  const compact = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY) ?? false;
   const header = egressStepHeaderLabel(steps);
   const stepperSteps = steps.map((s) => ({ id: s.id, label: s.label, status: s.status }));
+  // Same count as the header line ("3 of 7"): skipped steps don't count.
+  const counted = steps.filter((s) => s.status !== 'skipped');
+  const at = counted.findIndex((s) => s.status === 'current' || s.status === 'error');
+  const stepFraction = counted.length > 0 ? (Math.max(at, 0) + 1) / counted.length : 0;
 
   return (
     <ModalShell
       open={open}
       onClose={onClose}
       title={title}
-      size="md"
+      size="xl"
+      fullScreen={compact}
       dismissible={dismissible}
       footer={footer}
     >
@@ -62,7 +71,17 @@ export default function EgressShell({
           {header}
         </Text>
       ) : null}
-      <Stepper className={classes.stepper} ariaLabel="Write steps" steps={stepperSteps} />
+      {compact ? (
+        <Progress
+          className={classes.stepBar}
+          value={Math.min(100, Math.round(stepFraction * 100))}
+          size={3}
+          aria-label="Step progress"
+          data-testid="egress-step-bar"
+        />
+      ) : (
+        <Stepper className={classes.stepper} ariaLabel="Write steps" steps={stepperSteps} />
+      )}
       {error}
       {notice ? <div className={classes.notice}>{notice}</div> : null}
       {busy && !screenHeld ? (
