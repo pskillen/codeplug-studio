@@ -57,3 +57,17 @@ Most channels have one mode, so the mode is a single switch, not a multi-select 
 - **Two or more modes:** one removable chip per mode (× to remove), then **+ Add another mode**.
 - Chips are 32px tall with a 44px hit area; the switch wraps on a phone.
 - Switching or removing a mode keeps its settings until save; switching back restores them.
+
+## Talk cards (channel view)
+
+The view page answers "how do I use this channel?", not "what is set": one card per mode with a sentence, then
+the small facts the sentence didn't use (`channelView/ChannelTalkCard.tsx`, sentences from `modeTalk`).
+
+- The sentence puts the values an operator dials or reads in bold: "Talk on **TG 2351 Scotland**, timeslot
+  **2**, colour code **1**." A clause whose field is unset is dropped, never shown as "—".
+- Talk groups read number first, as operators dial them: "TG 2351 Scotland".
+- Repeater or simplex wording comes from the frequencies, never from a radio setting.
+- One mode: one card. Two: two cards, main mode first with the **Main mode** badge. Three or more: one compact row
+  per mode with its summary chip, opening to the sentence.
+- A mode with nothing set says so and links to that mode in the editor.
+- No radio, format or CPS names in sentences.

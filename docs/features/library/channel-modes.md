@@ -63,9 +63,30 @@ They do **not** appear on the phone list identity line (plain joined mode pills 
 
 With two or more modes, the **main mode** (`primaryMode` when valid, else the first profile) is listed first and drawn with a coloured border. Rules and examples: [display — Mode summaries](../../reference/styleguide/display.md#mode-summaries).
 
+## How to talk on it
+
+The channel **view** page (`ChannelViewPage`) answers how to use each mode, not only what is set. `modeTalk.ts` builds one sentence per profile from library values; `ChannelTalkCard` renders it with bold dial values, leftover facts from `modeProfileFacts`, and the RX group list brief when present.
+
+| Mode              | Sentence (unset clauses dropped)                                                         |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| FM / AM, repeater | TX tone to open; then whether the repeater sends a tone back (same, different, or none). |
+| FM / AM, simplex  | Talk direct; optional TX tone.                                                           |
+| FM / AM, RX only  | Receive only.                                                                            |
+| SSB               | Upper or lower sideband.                                                                 |
+| DMR               | Talk group or private call, timeslot, colour code; optional RX list sentence.            |
+| NXDN              | Talk group or private call and RAN (split TX/RX RAN when they differ); optional RX list. |
+| D-STAR            | UR call, optional RPT1 gateway.                                                          |
+| YSF               | DG-ID when set.                                                                          |
+| Tetra             | Talk group (or GSSI), optional MCC-MNC network.                                          |
+| P25 / M17         | Placeholder until settings exist in Studio.                                              |
+
+Layout: one card for a single mode; two cards with **Main mode** on the main profile when there are two; three or more collapse to one summary row per mode that expands to the sentence. UI rules: [Talk cards](../../reference/styleguide/channel-modes-ui.md#talk-cards-channel-view).
+
 ## Code anchors
 
 - `src/app/lib/channelModeSummary.ts` — summary text per profile
+- `src/app/routes/library/channelView/modeTalk.ts` — view-page talk sentences
+- `src/app/routes/library/channelView/ChannelTalkCard.tsx` — talk card UI on the view page
 - `src/app/components/channels/ModeSummaryChip.tsx`, `ChannelModeSummaries.tsx`
 - `src/app/components/channels/modePanels/` — `MODE_PANELS`, `ModePanel`, `DigitalModeGroups`
 - Sidecar: [ModePanels.md](../../../src/app/components/channels/modePanels/ModePanels.md)

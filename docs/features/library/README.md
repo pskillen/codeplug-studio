@@ -207,20 +207,20 @@ Airband is **not** a static channel set — see [aviation](../aviation/README.md
 
 Build channel links with `channelViewPath(id)` / `channelEditPath(id)` from `src/app/lib/channelPaths.ts`. Links open the **view** by default — list rows and cards, map markers, zone member rows, scan-list summaries, Nearby and directory search results, APRS and OpenAIP rows. Only links whose intent is clearly to edit go to `/edit`: the single-selection **Edit** bulk action, a build's **Edit in library** link, Duplicate, and Previous / Next inside the editor.
 
-### Channel view ([#1533](https://github.com/pskillen/codeplug-studio/issues/1533))
+### Channel view
 
 `ChannelViewPage` (`src/app/routes/library/ChannelViewPage.tsx`) shows what is set on a channel and hides what is empty:
 
 - **Header:** callsign · name (callsign first, monospace; name alone when there is no callsign), then **Edit** (also the **E** key), **Duplicate** (asks first, then opens the copy in the editor) and **Delete**.
-- **Frequency and modes:** RX frequency large; TX and the signed offset below, or **Simplex** / **Receive only**; band pill and one pill per mode (primary marked when there are several); the comment.
-- **Per-mode panels:** only the fields that are set (`channelView/modeProfileFacts.ts`) — tones (one **Tone** when RX and TX match, TX before RX when they differ), bandwidth, squelch, colour code, timeslot, talk group, your ID, D-STAR calls, DG-ID, RAN, Tetra codes. A DMR or NXDN profile with an RX group list adds a summary under its facts (`channelView/RxGroupListBrief.tsx`): the list name (linked), counts by kind and timeslot override, and the first 12 members as chips (name, ID, TS override) with a **+N more** link to the list.
+- **Frequency:** RX frequency large; TX and the signed offset below, or **Simplex** / **Receive only**; band pill and the comment (no mode pills in the hero).
+- **How to talk on it:** full-width talk cards above the column grid (`channelView/ChannelTalkCard.tsx`, sentences from `channelView/modeTalk.ts`). Each card states how to use that mode in a sentence (values to dial in bold), then the small facts the sentence did not use, then an RX group list brief when the profile has one (`channelView/RxGroupListBrief.tsx`). One mode → one card (no badge). Two modes → two cards, main mode first with a **Main mode** badge. Three or more → one compact row per mode (summary chip, expandable). A mode with nothing set says so and links to that mode in the editor (`#mode` or `#mode-<mode>`).
 - **Details:** abbreviation, power, transmit / TX permit / scan overrides, scan list, APRS — each only when it differs from the default.
 - **Zones:** each zone that contains the channel, linked, with "via <nested zone>" for nested-only membership.
 - **Builds:** each build in the project with whether the channel reaches it — **Included** (and the build's wire-name override, if any), **Excluded in this build**, or ruled out by the radio's modes or frequency ranges (`channelStatusInBuild` in `@core/domain/channelEligibility.ts`).
 - **Location:** a small map with the channel (and you, once known), **distance and bearing from you** (the same operator position as the list's **Use my location**; the button reads "How far is this from me?" until it is set), locator and coordinates. Once your position is known the map draws a dashed great-circle line from you to the channel, labelled with the distance at its midpoint (`CodeplugMap` `distanceLine`). With no location, a link to the editor's Location section.
 - **Directory:** collapsed; the same directory checks as the editor, with **Apply & save** only (no form to fill).
 
-Two columns from 62em (settings left, map and directory right); one column below.
+Talk cards span both columns above the grid. Two columns from 62em (Details, zones and builds left, map and directory right); one column below.
 
 ### Unsaved changes ([#189](https://github.com/pskillen/codeplug-studio/issues/189))
 

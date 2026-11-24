@@ -1,4 +1,6 @@
 import { Button, Group, SimpleGrid, Stack, Text } from '@mantine/core';
+import DesignSystemV2Provider from '../../components/v2/DesignSystemV2Provider.tsx';
+import { ChannelTalkCard, ChannelTalkRow } from '../library/channelView/ChannelTalkCard.tsx';
 import { useMemo, useState } from 'react';
 import type { ChannelModeProfile } from '@core/models/library.ts';
 import {
@@ -63,9 +65,26 @@ function useSummaryDemoLibrary() {
 function buildSummaryDemos(lookup: ReturnType<typeof useSummaryDemoLibrary>) {
   const tgId = lookup.talkGroups[0]!.id;
 
+  const fmRepeater = newChannel('styleguide-demo', 'FM repeater', 'GB3XX');
+  fmRepeater.rxFrequency = 145_600_000;
+  fmRepeater.txFrequency = 145_000_000;
+  fmRepeater.modeProfiles = [
+    { ...defaultModeProfile('fm'), rxTone: 'none', txTone: '94.8' } as ChannelModeProfile,
+  ];
+
   const fmOnly = newChannel('styleguide-demo', 'FM simplex', 'GB3XX');
   fmOnly.modeProfiles = [
     { ...defaultModeProfile('fm'), rxTone: 'none', txTone: '94.8' } as ChannelModeProfile,
+  ];
+
+  const dmrTalkCard = newChannel('styleguide-demo', 'Scotland TG', 'GB7YY');
+  dmrTalkCard.modeProfiles = [
+    {
+      ...defaultModeProfile('dmr'),
+      colourCode: 1,
+      timeslot: 2,
+      contactRef: { kind: 'talkGroup', id: tgId },
+    } as ChannelModeProfile,
   ];
 
   const fmDmr = newChannel('styleguide-demo', 'Wales link', 'GB7YY');
@@ -92,7 +111,14 @@ function buildSummaryDemos(lookup: ReturnType<typeof useSummaryDemoLibrary>) {
         : defaultModeProfile(mode)) as ChannelModeProfile,
   );
 
-  return { fmOnly, fmDmr, fiveMode };
+  const threeModeDemo = newChannel('styleguide-demo', 'Three modes');
+  threeModeDemo.modeProfiles = [
+    fmRepeater.modeProfiles[0]!,
+    dmrTalkCard.modeProfiles[0]!,
+    { ...defaultModeProfile('dstar'), urCall: 'CQCQCQ', rpt1Call: 'GB7XX B' } as ChannelModeProfile,
+  ];
+
+  return { fmOnly, fmDmr, fiveMode, fmRepeater, dmrTalkCard, threeModeDemo };
 }
 
 const EMPTY_MODE_EDIT: ChannelModeEdit = {
@@ -179,7 +205,11 @@ function DemoModeSections() {
 export default function StyleguideChannelModesPage() {
   const [compact, setCompact] = useState(false);
   const lookup = useSummaryDemoLibrary();
-  const { fmOnly, fmDmr, fiveMode } = useMemo(() => buildSummaryDemos(lookup), [lookup]);
+  const { fmOnly, fmDmr, fiveMode, fmRepeater, dmrTalkCard, threeModeDemo } = useMemo(
+    () => buildSummaryDemos(lookup),
+    [lookup],
+  );
+  const threeSummaries = channelModeSummaries(threeModeDemo, lookup);
   const loneSummaries = channelModeSummaries(fmOnly, lookup);
 
   const [modeEdit, setModeEdit] = useState<ChannelModeEdit>(EMPTY_MODE_EDIT);
@@ -296,6 +326,65 @@ export default function StyleguideChannelModesPage() {
             </Stack>
           </Stack>
         </Stack>
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="Talk cards"
+        description="One sentence per mode on how to talk on it; main mode first."
+      >
+        <DesignSystemV2Provider>
+          <Stack gap="md">
+            <Stack gap="xs">
+              <Text size="sm" fw={600}>
+                FM repeater
+              </Text>
+              <ChannelTalkCard
+                profile={fmRepeater.modeProfiles[0]!}
+                channel={fmRepeater}
+                library={lookup}
+                isMain={false}
+                editPath="#"
+                modeCount={1}
+              />
+            </Stack>
+            <Stack gap="xs">
+              <Text size="sm" fw={600}>
+                DMR talk group
+              </Text>
+              <ChannelTalkCard
+                profile={dmrTalkCard.modeProfiles[0]!}
+                channel={dmrTalkCard}
+                library={lookup}
+                isMain={false}
+                editPath="#"
+                modeCount={1}
+              />
+            </Stack>
+            <Stack gap="xs">
+              <Text size="sm" fw={600}>
+                Three modes (compact rows)
+              </Text>
+              <Stack gap="sm">
+                {threeSummaries.map((summary) => {
+                  const profile = threeModeDemo.modeProfiles.find((p) => p.mode === summary.mode);
+                  if (!profile) return null;
+                  return (
+                    <ChannelTalkRow
+                      key={profile.mode}
+                      profile={profile}
+                      channel={threeModeDemo}
+                      library={lookup}
+                      isMain={summary.isMain}
+                      editPath="#"
+                      modeCount={3}
+                      summary={summary}
+                    />
+                  );
+                })}
+              </Stack>
+            </Stack>
+          </Stack>
+        </DesignSystemV2Provider>
       </StyleguideSection>
     </StyleguidePageShell>
   );
