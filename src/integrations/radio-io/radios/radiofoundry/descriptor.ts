@@ -2,9 +2,9 @@
  * RadioFoundry cable descriptors.
  * Web Serial and the Android app both open at the descriptor baud. No transport picker.
  *
- * `programHoldSafeMs` is left unset. The debug link spec does not give an idle
- * disconnect. The 10 second figure in the fast-codeplug spec is the write
- * session after BEGIN, and that session is not open while Review is showing.
+ * `programHoldSafeMs` is Infinity: the debug link has no idle disconnect, so a long
+ * Review must not force reconnect and re-read. The 10 second figure in the fast-codeplug
+ * spec is the write session after BEGIN, and that session is not open while Review shows.
  */
 
 import { RADIOFOUNDRY_LIMITS } from '@core/radios/radiofoundry/limits.ts';
@@ -63,6 +63,7 @@ export function createRadioFoundryDescriptor(board: RadioFoundryCableBoard): Rad
     hydration,
     planStages: planRadioFoundryStages,
     writePreflight: (session, ctx) => radioFoundryWritePreflight(session, ctx),
+    programHoldSafeMs: Number.POSITIVE_INFINITY,
     ...(board.prodWriteDisabled ? { prodWriteDisabled: true } : {}),
   };
 }

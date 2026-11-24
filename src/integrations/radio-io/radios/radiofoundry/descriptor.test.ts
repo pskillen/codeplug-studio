@@ -1,7 +1,23 @@
 import { describe, expect, it } from 'vitest';
+import { programHoldSafeMs, reviewNeedsReconnect } from '@integrations/radio-io/programHold.ts';
 import { DM32UV_RADIOFOUNDRY_CABLE_BOARD } from './board.ts';
-import { createRadioFoundryDescriptor, DM32_RADIOFOUNDRY_DESCRIPTOR } from './descriptor.ts';
+import {
+  createRadioFoundryDescriptor,
+  DM1701_RADIOFOUNDRY_DESCRIPTOR,
+  DM32_RADIOFOUNDRY_DESCRIPTOR,
+  MD9600_RADIOFOUNDRY_DESCRIPTOR,
+  RT84_RADIOFOUNDRY_DESCRIPTOR,
+  RT90_RADIOFOUNDRY_DESCRIPTOR,
+} from './descriptor.ts';
 import { isRadioFoundryCableRadio } from './protocol.ts';
+
+const RADIOFOUNDRY_DESCRIPTORS = [
+  DM32_RADIOFOUNDRY_DESCRIPTOR,
+  DM1701_RADIOFOUNDRY_DESCRIPTOR,
+  RT84_RADIOFOUNDRY_DESCRIPTOR,
+  MD9600_RADIOFOUNDRY_DESCRIPTOR,
+  RT90_RADIOFOUNDRY_DESCRIPTOR,
+] as const;
 
 describe('RadioFoundry descriptor factory', () => {
   it('gives the DM-32UV descriptor it had before', () => {
@@ -32,5 +48,10 @@ describe('RadioFoundry descriptor factory', () => {
       prodWriteDisabled: true,
     });
     expect(d.prodWriteDisabled).toBe(true);
+  });
+
+  it.each(RADIOFOUNDRY_DESCRIPTORS)('program hold is infinite for $label', (descriptor) => {
+    expect(programHoldSafeMs(descriptor)).toBe(Number.POSITIVE_INFINITY);
+    expect(reviewNeedsReconnect(descriptor, 10 * 60_000)).toBe(false);
   });
 });
