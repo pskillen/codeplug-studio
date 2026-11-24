@@ -16,7 +16,7 @@ import {
   servedBlockAddresses,
 } from '../constants.ts';
 import { decodeDebugFrame, encodeDebugFrame } from '../../../kit/codecs/radioFoundryDebugLink.ts';
-import { decodeBlock, encodeBlock } from '../lz4.ts';
+import { encodeBlock } from '../lz4.ts';
 import { DMR_ID_DATABASE_AREA2_ADDRESS } from '../idDatabase.ts';
 
 const REPLY = CODEPLUG_COMMAND | 0x80;

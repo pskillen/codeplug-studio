@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { BytePipe } from '../../types.ts';
 import { RadioAbortedError } from '../../kit/errors.ts';
-import { encodeDebugFrame, decodeDebugFrame } from '../../kit/codecs/radioFoundryDebugLink.ts';
+import { encodeDebugFrame } from '../../kit/codecs/radioFoundryDebugLink.ts';
 import {
   BLOCK_SIZE,
   CODEPLUG_COMMAND,

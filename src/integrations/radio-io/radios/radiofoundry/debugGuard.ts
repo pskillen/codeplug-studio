@@ -180,9 +180,8 @@ export function createRadioFoundryDebugGuard(
       );
     }
     if (signal?.aborted) throw new RadioAbortedError();
-    let frame: DebugFrame;
     try {
-      frame = decodeDebugFrame(data);
+      decodeDebugFrame(data);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'bad frame';
       if (msg.includes('CRC')) return refuse('bad CRC');
