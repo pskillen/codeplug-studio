@@ -72,7 +72,7 @@ Each write keeps a log of every SATELLITE request it sends: operation (number an
 
 - Studio does **not** send `SYNC_CHANNELS` after a keps write, so the radio's Satellites-zone channels are not changed; the satellite set and frequency profiles are replaced and nothing else. Revisit if Studio manages those channels later.
 - The MD-9600 refuses satellite transmit until RadioFoundry confirms the board revision (`boards/md9600/board.c`, lines 24 to 25 in the RadioFoundry source); keps still write and read back.
-- Studio warns in step 1 when a satellite's orbit data is 14 or more days old (the radio's own threshold). It does not refuse.
+- Studio warns in step 1 when a satellite's orbit data is 14 or more days old (the radio's own threshold). It shows as a note, does not refuse, and does not stop Review.
 
 ## Protocol versions
 
