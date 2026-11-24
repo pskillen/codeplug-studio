@@ -22,7 +22,10 @@ describe('RadioFoundry debug-link frames', () => {
 class FramePipe implements BytePipe {
   private pending = new Uint8Array(0);
 
-  constructor(private readonly junk: Uint8Array, private readonly frame: Uint8Array) {}
+  constructor(
+    private readonly junk: Uint8Array,
+    private readonly frame: Uint8Array,
+  ) {}
 
   async readExact(n: number, _timeoutMs?: number): Promise<Uint8Array> {
     void _timeoutMs;
