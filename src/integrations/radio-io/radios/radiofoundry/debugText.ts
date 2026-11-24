@@ -6,6 +6,14 @@ export const RADIOFOUNDRY_CAPTURE_STAGES: readonly string[] = [
   'ID database',
 ];
 
+export const RADIOFOUNDRY_READ_NOTICE = {
+  title: 'Read-only capture',
+  text: 'The read sends only INFO, VERSION, checksum (SUMS) and block (READ) requests, and one ID-database count (IDDB). A frame guard refuses anything else. The radio keeps working while it is read; there is nothing to recover afterwards. Cancel stops at the next request.',
+};
+
+export const RADIOFOUNDRY_CALIBRATION_NOTE =
+  'RadioFoundry calibration is not read yet. The codeplug protocol never serves 0x10000–0x1FFFF, where calibration and the settings ring live; reading it needs a separate read-only storage request, planned for later.';
+
 export const RADIOFOUNDRY_CAPTURE_OPTIONS: readonly {
   id: string;
   label: string;
