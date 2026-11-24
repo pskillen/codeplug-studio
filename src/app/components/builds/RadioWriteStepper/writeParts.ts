@@ -3,6 +3,8 @@
  * ticks. Pure helpers shared by the part list, the Review step and the panel's service mapping.
  */
 
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
+
 export interface WriteParts {
   codeplug: boolean;
   /** Digital contacts (dual-bank radios: DM-32, OpenGD77, AT-D890). */
@@ -64,4 +66,17 @@ export function clampPartsToSupport(parts: WriteParts, support: WritePartSupport
 /** Parts that go through one `uploadPreparedRadioWrite` session. */
 export function writesToRadioImage(parts: WriteParts): boolean {
   return parts.codeplug || parts.contacts;
+}
+
+/** Build-check warnings shown on step 1 for the currently ticked parts only. */
+export function warningsForParts(
+  parts: WriteParts,
+  result: {
+    warnings: readonly ExportWarning[];
+    contactWarnings?: readonly ExportWarning[];
+  },
+): readonly ExportWarning[] {
+  if (parts.codeplug) return result.warnings;
+  if (parts.contacts) return result.contactWarnings ?? [];
+  return [];
 }

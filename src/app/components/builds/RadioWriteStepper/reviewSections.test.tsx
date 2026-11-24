@@ -49,6 +49,31 @@ describe('reviewPauseReasons (#1638)', () => {
     );
   });
 
+  it('a mode skip alone does not pause Review', () => {
+    const warnings: ExportWarning[] = [];
+    pushGeneralInfoWarning(warnings, 'Skipping 1 channel(s) with unsupported mode(s): TestChan');
+    expect(reviewPauseReasons(descriptor, { ...ctx, buildWarnings: warnings })).not.toContain(
+      'build-problems',
+    );
+  });
+
+  it('a truncated channel name still pauses Review', () => {
+    const warnings: ExportWarning[] = [
+      {
+        kind: 'wire_name',
+        severity: 'problem',
+        remediation: 'shortened',
+        entityKind: 'Channel',
+        original: 'Very long channel name',
+        exported: 'Short',
+        limit: 16,
+      },
+    ];
+    expect(reviewPauseReasons(descriptor, { ...ctx, buildWarnings: warnings })).toContain(
+      'build-problems',
+    );
+  });
+
   it('notes alone never pause Review', () => {
     const warnings: ExportWarning[] = [
       {

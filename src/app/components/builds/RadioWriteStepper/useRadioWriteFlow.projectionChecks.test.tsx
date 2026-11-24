@@ -2,6 +2,8 @@ import { act, render, renderHook, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { newRadioBuildForProfile } from '@core/domain/factories.ts';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
@@ -149,6 +151,7 @@ vi.mock('../../../services/radioIoSession.ts', async (importOriginal) => {
     prepareRadioWriteImage: vi.fn(async () => ({
       image: undefined,
       warnings: [],
+      contactWarnings: [],
       organisation: {},
       channels: sampleChannels,
     })),
@@ -219,6 +222,58 @@ describe('useRadioWriteFlow projection checks', () => {
       await result.current.actions.onConnectAndRead();
     });
     expect(vi.mocked(grantRadioSerialPortForEgress)).not.toHaveBeenCalled();
+  });
+
+  it('keps alone drops the codeplug warnings from the first prepare', async () => {
+    const channelWarning: ExportWarning = {
+      kind: 'general',
+      severity: 'problem',
+      message: 'Skipping 1 channel(s) with unsupported mode(s): Air1',
+    };
+    vi.mocked(prepareRadioWriteImage).mockResolvedValue({
+      image: undefined,
+      warnings: [channelWarning],
+      contactWarnings: [],
+      organisation: {},
+      channels: sampleChannels,
+    });
+    const { build: kepsBuild, egress: kepsEgress } = newRadioBuildForProfile(
+      'p1',
+      'radio-io-at-d890uv',
+      'Keps clears codeplug warnings',
+    );
+    const { result } = renderHook(() =>
+      useRadioWriteFlow({
+        build: kepsBuild,
+        egress: kepsEgress,
+        descriptor: descriptorNoHook,
+        activeProjectId: 'p1',
+      }),
+    );
+    act(() =>
+      result.current.open({ codeplug: true, contacts: false, settings: false, keps: false }),
+    );
+    await act(async () => {
+      vi.advanceTimersByTime(350);
+      await Promise.resolve();
+    });
+    expect(result.current.view.buildChecks.warnings).toContainEqual(channelWarning);
+    act(() => {
+      result.current.actions.onPartsChange({
+        codeplug: false,
+        contacts: false,
+        settings: false,
+        keps: true,
+      });
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(
+      result.current.view.buildChecks.warnings.some(
+        (w) => w.kind === 'general' && w.message.includes('unsupported mode'),
+      ),
+    ).toBe(false);
   });
 
   it('a radio without the hook has no refusals', async () => {

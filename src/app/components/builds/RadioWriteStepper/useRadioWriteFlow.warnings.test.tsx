@@ -67,6 +67,7 @@ vi.mock('../../../services/radioIoSession.ts', async (importOriginal) => {
     prepareRadioWriteImage: vi.fn(async () => ({
       image: undefined,
       warnings: [] as ExportWarning[],
+      contactWarnings: [] as ExportWarning[],
       organisation: {},
       channels: [],
     })),
@@ -158,6 +159,7 @@ describe('useRadioWriteFlow build checks', () => {
           limit: 16,
         },
       ],
+      contactWarnings: [],
       organisation: {},
       channels: [{ wireName: 'B', empty: false } as never],
     });
@@ -205,6 +207,7 @@ describe('useRadioWriteFlow build checks', () => {
           message: 'Channel CH1 is outside receive range',
         },
       ],
+      contactWarnings: [],
       organisation: {},
       channels: [{ wireName: 'CH1', empty: false } as never],
     });
@@ -271,6 +274,7 @@ describe('useRadioWriteFlow build checks', () => {
     vi.mocked(prepareRadioWriteImage).mockResolvedValue({
       image: undefined,
       warnings: buildWarnings,
+      contactWarnings: [],
       organisation: {},
       channels: [{ wireName: 'CH1', empty: false } as never],
     });

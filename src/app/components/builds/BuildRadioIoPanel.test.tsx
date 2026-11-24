@@ -317,6 +317,7 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
       .mockResolvedValue({ transport: 'web', port });
     prepare = vi.spyOn(radioIoSession, 'prepareRadioWriteImage').mockResolvedValue({
       warnings: [],
+      contactWarnings: [],
       organisation: {},
       channels: [...preparedChannels],
     });

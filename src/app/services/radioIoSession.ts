@@ -509,6 +509,8 @@ export async function prepareRadioWriteImage(
 ): Promise<{
   image?: MemoryMap;
   warnings: ExportWarning[];
+  /** Directory / contact-slice warnings only (not the full codeplug projection). */
+  contactWarnings: ExportWarning[];
   organisation: RadioWriteOrganisation;
   channels: readonly RadioChannelDto[];
   /** AT-D890UV MM9PDY with NXDN content or a default NXDN ID: the projection to use if the radio has NXDN enabled. */
@@ -636,6 +638,7 @@ export async function prepareRadioWriteImage(
   }
   return {
     warnings,
+    contactWarnings: projectionWarnings,
     organisation,
     channels: projection.channels,
     ...(nxdn ? { nxdn } : {}),

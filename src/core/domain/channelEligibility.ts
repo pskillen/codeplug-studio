@@ -6,7 +6,7 @@ import {
   type RadioFrequencyRange,
   type RadioRfCapabilities,
 } from '@core/radio-targets/rfCapabilities.ts';
-import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import { pushGeneralInfoWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export type ChannelIneligibilityReason = 'unsupported-mode' | 'out-of-range';
 
@@ -149,14 +149,14 @@ export function formatChannelEligibilityWarning(
   const warnings: ExportWarning[] = [];
   if (byReason['unsupported-mode'].length > 0) {
     const names = byReason['unsupported-mode'].map((row) => row.channel.name).join(', ');
-    pushGeneralWarning(
+    pushGeneralInfoWarning(
       warnings,
       `Skipping ${byReason['unsupported-mode'].length} channel(s) with unsupported mode(s): ${names}`,
     );
   }
   if (byReason['out-of-range'].length > 0) {
     const names = byReason['out-of-range'].map((row) => row.channel.name).join(', ');
-    pushGeneralWarning(
+    pushGeneralInfoWarning(
       warnings,
       `Skipping ${byReason['out-of-range'].length} channel(s) outside supported frequency range: ${names}`,
     );

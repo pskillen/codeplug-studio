@@ -3,6 +3,7 @@ import { newChannel, newRadioBuild } from '@core/domain/factories.ts';
 import {
   channelEligibleForRadio,
   channelStatusInBuild,
+  formatChannelEligibilityWarning,
   getChannelIneligibilityReason,
   supportedChannelModes,
 } from './channelEligibility.ts';
@@ -183,6 +184,22 @@ describe('DM-32UV RadioFoundry target', () => {
       },
     ];
     expect(getChannelIneligibilityReason(ch, target)).toBe('unsupported-mode');
+  });
+});
+
+describe('formatChannelEligibilityWarning', () => {
+  it('unsupported-mode skip is info', () => {
+    const ch = channelWith(['dmr'], 430_125_000);
+    const warnings = formatChannelEligibilityWarning([{ channel: ch, reason: 'unsupported-mode' }]);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]?.severity).toBe('info');
+  });
+
+  it('out-of-range skip is info', () => {
+    const ch = channelWith(['fm'], 500_000_000);
+    const warnings = formatChannelEligibilityWarning([{ channel: ch, reason: 'out-of-range' }]);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]?.severity).toBe('info');
   });
 });
 

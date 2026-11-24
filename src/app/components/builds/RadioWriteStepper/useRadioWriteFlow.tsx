@@ -115,7 +115,12 @@ import type {
 import { estimateWriteSeconds, measuredThroughput } from './writeEstimate.ts';
 import { resolveWriteShellOptions } from '../../../services/egress/writeShellOptions.ts';
 import { clampPartsToSupport } from './writeParts.ts';
-import { DEFAULT_WRITE_PARTS, writesToRadioImage, type WriteParts } from './writeParts.ts';
+import {
+  DEFAULT_WRITE_PARTS,
+  warningsForParts,
+  writesToRadioImage,
+  type WriteParts,
+} from './writeParts.ts';
 
 /** Clock for event handlers (kept out of render by the purity lint). */
 function now(): number {
@@ -359,6 +364,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   useEffect(() => {
     if (!isOpen || !activeProjectId) return;
     if (!writesToRadioImage(parts)) {
+      prepareWarningsRef.current = [];
+      projectionRefusalsRef.current = [];
+      queueMicrotask(() => publishBuildChecks(parts.keps && kepsWriteFn ? 'ready' : 'idle'));
       return undefined;
     }
     const key = prepareCacheKey(parts, contactSource);
@@ -398,12 +406,13 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       };
       const promise = runPrepare()
         .then((result) => {
-          prepareWarningsRef.current = result.warnings;
-          projectionRefusalsRef.current =
-            descriptor?.checkWriteProjection?.({
-              channels: result.channels,
-              organisation: result.organisation,
-            }) ?? [];
+          prepareWarningsRef.current = warningsForParts(parts, result);
+          projectionRefusalsRef.current = parts.codeplug
+            ? (descriptor?.checkWriteProjection?.({
+                channels: result.channels,
+                organisation: result.organisation,
+              }) ?? [])
+            : [];
           publishBuildChecks('ready');
           if (prepareCacheRef.current?.key === key) {
             prepareCacheRef.current = { ...prepareCacheRef.current, result };
@@ -995,12 +1004,13 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
             result: prepared,
           };
         }
-        prepareWarningsRef.current = prepared.warnings;
-        projectionRefusalsRef.current =
-          descriptor?.checkWriteProjection?.({
-            channels: prepared.channels,
-            organisation: prepared.organisation,
-          }) ?? [];
+        prepareWarningsRef.current = warningsForParts(p, prepared);
+        projectionRefusalsRef.current = p.codeplug
+          ? (descriptor?.checkWriteProjection?.({
+              channels: prepared.channels,
+              organisation: prepared.organisation,
+            }) ?? [])
+          : [];
         publishBuildChecks('ready');
         if (buildRefusalsRef.current.length > 0) {
           setBusyNotify(false);
