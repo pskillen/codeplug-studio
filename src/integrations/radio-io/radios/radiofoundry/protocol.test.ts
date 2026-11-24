@@ -42,6 +42,7 @@ import {
   OP_READ,
   OP_SUMS,
   PHYSICAL_CODEPLUG_BASE,
+  RADIOFOUNDRY_SUMS_PAUSE_MS,
   servedBlockAddresses,
 } from './constants.ts';
 import { decodeDebugFrame, encodeDebugFrame } from '../../kit/codecs/radioFoundryDebugLink.ts';
@@ -1291,5 +1292,87 @@ describe('Retevis RT84 (RadioFoundry) cable board', () => {
     const area2Bytes = 0xe0_0000 - 0xd_8000;
     expect(dmrIdDatabaseArea2Blocks(area2Bytes, board.limits.IMAGE_END).at(-1)).toBe(0xdff000);
     expect(() => dmrIdDatabaseArea2Blocks(area2Bytes + 1, 0xe0_0000)).toThrow();
+  });
+});
+
+class SumsOrderPipe extends ScriptedPipe {
+  readonly order: Array<'sums' | 'pause'> = [];
+
+  async write(data: Uint8Array): Promise<void> {
+    const request = decodeDebugFrame(data.slice());
+    if (request.command === CODEPLUG_COMMAND && request.payload[0] === OP_SUMS) {
+      this.order.push('sums');
+    }
+    await super.write(data);
+  }
+}
+
+function threeSumsRunAddresses(): number[] {
+  return [
+    ...Array.from({ length: 16 }, (_, index) => index * BLOCK_SIZE),
+    0x20_0000,
+    DMR_ID_DATABASE_AREA2_ADDRESS,
+  ];
+}
+
+describe('RadioFoundry SUMS pacing', () => {
+  it('pauses between SUMS runs but not after the last', async () => {
+    const pipe = new SumsOrderPipe(0xff);
+    const pauseCalls: number[] = [];
+    const pause = async (ms: number): Promise<void> => {
+      pauseCalls.push(ms);
+      pipe.order.push('pause');
+    };
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD, { pause });
+    await proto.connect(pipe);
+    await (
+      proto as unknown as {
+        readSums: (addresses: number[], signal?: AbortSignal) => Promise<Map<number, unknown>>;
+      }
+    ).readSums(threeSumsRunAddresses());
+    expect(pauseCalls).toEqual([RADIOFOUNDRY_SUMS_PAUSE_MS, RADIOFOUNDRY_SUMS_PAUSE_MS]);
+    expect(pipe.order).toEqual(['sums', 'pause', 'sums', 'pause', 'sums']);
+  });
+
+  it('stops when aborted during the pause', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    const controller = new AbortController();
+    let pauseCount = 0;
+    const pause = async (_ms: number, signal?: AbortSignal): Promise<void> => {
+      void signal;
+      pauseCount += 1;
+      controller.abort();
+    };
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD, { pause });
+    await proto.connect(pipe);
+    const sumsBefore = requestOps(pipe).filter((op) => op === OP_SUMS).length;
+    await expect(
+      (
+        proto as unknown as {
+          readSums: (addresses: number[], signal?: AbortSignal) => Promise<unknown>;
+        }
+      ).readSums(threeSumsRunAddresses(), controller.signal),
+    ).rejects.toThrow('Radio I/O operation was aborted.');
+    expect(pauseCount).toBe(1);
+    const sumsAfter = requestOps(pipe).filter((op) => op === OP_SUMS).length;
+    expect(sumsAfter).toBe(sumsBefore + 1);
+  });
+
+  it('one SUMS run needs no pause', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    const pauseCalls: number[] = [];
+    const pause = async (ms: number): Promise<void> => {
+      pauseCalls.push(ms);
+    };
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD, { pause });
+    await proto.connect(pipe);
+    const addresses = Array.from({ length: 16 }, (_, index) => index * BLOCK_SIZE);
+    await (
+      proto as unknown as {
+        readSums: (addresses: number[], signal?: AbortSignal) => Promise<unknown>;
+      }
+    ).readSums(addresses);
+    expect(pauseCalls).toHaveLength(0);
+    expect(requestOps(pipe).filter((op) => op === OP_SUMS)).toHaveLength(1);
   });
 });
