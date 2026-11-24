@@ -6,7 +6,7 @@
 
 import { RadioProtocolError, RadioTimeoutError } from '../errors.ts';
 import { crc16CcittFalse } from '../checksums.ts';
-import type { BytePipe } from '../types.ts';
+import type { BytePipe } from '../../types.ts';
 
 const SOF1 = 0xa5;
 const SOF2 = 0x5a;

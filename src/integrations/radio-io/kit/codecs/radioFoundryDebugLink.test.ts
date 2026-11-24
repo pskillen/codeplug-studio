@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RadioTimeoutError } from '../errors.ts';
 import { crc16CcittFalse } from '../checksums.ts';
-import type { BytePipe } from '../types.ts';
+import type { BytePipe } from '../../types.ts';
 import { decodeDebugFrame, encodeDebugFrame, readDebugFrame } from './radioFoundryDebugLink.ts';
 
 describe('RadioFoundry debug-link frames', () => {
