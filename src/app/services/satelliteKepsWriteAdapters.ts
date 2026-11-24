@@ -209,7 +209,7 @@ export function enrichSatelliteKepsWriteResult(
 ): SatelliteKepsWriteResult {
   return {
     ...result,
-    skipped: result.skipped.map((s) => ({
+    skipped: (result.skipped ?? []).map((s) => ({
       ...s,
       label: kepsExcludedLabel(satellites, {
         satelliteId: s.satelliteId,
@@ -217,7 +217,7 @@ export function enrichSatelliteKepsWriteResult(
         reason: s.reason,
       }),
     })),
-    skippedTransmitters: result.skippedTransmitters.map((s) => ({
+    skippedTransmitters: (result.skippedTransmitters ?? []).map((s) => ({
       ...s,
       label: kepsExcludedLabel(satellites, {
         satelliteId: s.satelliteId,
