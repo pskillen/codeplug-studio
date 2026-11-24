@@ -25,7 +25,7 @@ export const radiofoundryExportAdapter = {
   defaultFileName: RADIOFOUNDRY_CODEPLUG_FILE_NAME,
   defaultExportSettings: {
     defaultScanInclusion: 'scan',
-    expandModes: false,
+    expandModes: true,
     expandRxGroupLists: false,
     exportScratchChannels: false,
     exportZoneDerivedScanLists: false,
