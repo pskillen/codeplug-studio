@@ -4,7 +4,7 @@ Tier-3 reference for the read-only capture made by the `/debug/radios/dm-1701/op
 
 ## What is read
 
-1. Ping, then FirmwareInfo (`R` mem `09h`, 46 bytes). A radio type the selected profile does not accept stops the session here: nothing after FirmwareInfo is sent.
+1. Ping, then FirmwareInfo (`R` mem `09h`, 46 bytes). A radio type the selected profile does not accept stops the session here: nothing after FirmwareInfo is sent. The RadioFoundry probe runs next on connect; a `0x81` reply ends the read with `DebugWrongFirmwareError` (nothing read). When opted in, the capture may leave the serial port open on that error so the Debug page can hand off to a RadioFoundry read on the same transport.
 2. Show CPS screen, then the calibration working copy: 16 reads of 32 bytes at `0x10000` (first after the identity and show CPS, so a refusal costs seconds, not the minutes of the spans; [calibration.md](calibration.md)), then the settings struct tail: 3 reads of 32 bytes at `0x6060` (`settings-gap`, flash `0x6060-0x60BF`, inspect-only, debug-only; it completes the settings struct `0x604B-0x60BE` with span 0). An older archive without it reads "not captured" for the struct tail.
 3. The four registered FLASH spans in 32-byte reads ([memory-layout.md](memory-layout.md)).
 4. Only when the operator ticks **Also read the User Database** (`includeUserDatabase`): the occupied User Database, the 12-byte header, then the packed entries ([user-database.md](user-database.md)). Unticked, no User Database frame is sent and the archive has no `user-database` region.

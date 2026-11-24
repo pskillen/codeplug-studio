@@ -110,6 +110,17 @@ The radio accepts the database when the header record count ends inside the capt
 
 `radioFoundryIdDatabaseView` in `integrations/radio-io/radios/radiofoundry/debugIdDatabase.ts` decodes captured format `N` records only, checks ascending order across area 1 and area 2, counts blank records the header claims among captured bytes, and supports lookup by DMR ID over captured records only.
 
+## Wrong firmware
+
+Handshake is **INFO only** — nothing extra is sent to distinguish firmware families. When INFO fails, the capture inspects the first 64 bytes received on the guard tap:
+
+| Evidence | `found` | Notes |
+| -------- | ------- | ----- |
+| A lone `0x2D` with no `A5 5A` debug-link frame | `opengd77` | Evidence, not proof (a busy OpenGD77 radio can also answer `-`). |
+| Silence or anything else | `unknown` | Stock DM-32UV firmware answers nothing; OpenGD77 hotspot USB mode also answers nothing. |
+
+For `opengd77` the capture may keep the serial port open when asked. For `unknown` the port is always closed. A different RadioFoundry radio (physical base or VERSION board mismatch) stays `RadioWrongIdentError` — that is not a firmware mismatch.
+
 ## Compare
 
 `radioFoundryCompareAdapter` compares `eeprom-image` and `flash-image` when both archives share the model id and region layout. `iddb-area2` is `reported` only (length may differ). Sidecars `debug/info.bin`, `debug/version.txt` and `debug/iddb.bin` are additional `reported` sections at base 0. Sensitive bytes use `radioFoundryArchiveSensitiveRanges` on `eeprom-image`.
