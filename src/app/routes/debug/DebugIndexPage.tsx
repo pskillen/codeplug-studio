@@ -1,7 +1,7 @@
 import {
   Alert,
   Anchor,
-  Badge,
+  Button,
   Card,
   Group,
   SimpleGrid,
@@ -11,9 +11,11 @@ import {
   Title,
 } from '@mantine/core';
 import { Link } from 'react-router-dom';
+import { DEBUG_FIRMWARE_LABEL } from '@integrations/radio-io/debugView/firmware.ts';
 import { Page, PageHeader } from '@app/components/ui/index.ts';
 import { useDeveloperMode } from '../../hooks/useDeveloperMode.ts';
-import { capabilityColor, debugRadioPath, radioDebugDescriptors } from './radios/descriptors.ts';
+import { DEBUG_FIRMWARE_COLOR } from './radios/debugFirmware.ts';
+import { debugRadios, debugRadioPath } from './radios/descriptors.ts';
 
 export default function DebugIndexPage() {
   const [developerMode, setDeveloperMode] = useDeveloperMode();
@@ -37,28 +39,27 @@ export default function DebugIndexPage() {
         <div>
           <Title order={2}>Radios</Title>
           <Text c="dimmed">
-            Choose a model and expected firmware family. A selected profile is not evidence of
-            installed firmware.
+            Pick the radio, then the firmware it runs. If you&apos;re not sure, either works: the
+            Read checks first.
           </Text>
         </div>
         <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
-          {radioDebugDescriptors.map((radio) => (
-            <Card withBorder key={radio.slug}>
-              <Anchor component={Link} to={debugRadioPath(radio)} fw={700}>
-                {radio.model}
-              </Anchor>
-              <Text size="sm" c="dimmed">
-                {radio.family}
-              </Text>
-              <Group gap="xs" mt="md">
-                {radio.capabilities.map((capability) => (
-                  <Badge
-                    key={capability.name}
-                    color={capabilityColor(capability.status)}
-                    title={`${capability.name}: ${capability.status}`}
+          {debugRadios().map((entry) => (
+            <Card withBorder key={entry.radio}>
+              <Text fw={700}>{entry.model}</Text>
+              <Group gap="xs" mt="md" wrap="wrap">
+                {entry.firmwares.map((d) => (
+                  <Button
+                    key={d.slug}
+                    component={Link}
+                    to={debugRadioPath(d)}
+                    color={DEBUG_FIRMWARE_COLOR[d.firmware]}
+                    variant={d.capture ? 'filled' : 'outline'}
+                    style={d.capture ? undefined : { borderStyle: 'dashed' }}
+                    title={d.capture ? undefined : 'No reader yet'}
                   >
-                    {capability.name} · {capability.status}
-                  </Badge>
+                    {DEBUG_FIRMWARE_LABEL[d.firmware]}
+                  </Button>
                 ))}
               </Group>
             </Card>
