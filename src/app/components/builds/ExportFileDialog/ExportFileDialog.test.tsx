@@ -90,11 +90,7 @@ vi.mock('../../import-export/DriveBrowserModal.tsx', () => ({
     ) : null,
 }));
 
-function renderDialog(
-  profileId: string,
-  open = true,
-  opts?: { interchangeFolderId?: string },
-) {
+function renderDialog(profileId: string, open = true, opts?: { interchangeFolderId?: string }) {
   const { build, egress } = newRadioBuildForProfile('project-1', profileId);
   const onClose = vi.fn();
   render(
@@ -340,10 +336,9 @@ describe('ExportFileDialog', () => {
   it('greenfield export shows the no-donor warning', async () => {
     renderNeonplugDialog();
     expect(await screen.findByTestId('egress-step-label')).toHaveTextContent(/What to export/);
-    expect(screen.getByRole('button', { name: 'Export without a donor (greenfield)' })).toHaveAttribute(
-      'data-variant',
-      'filled',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Export without a donor (greenfield)' }),
+    ).toHaveAttribute('data-variant', 'filled');
     expect(screen.getByText(/Greenfield download \(not for radio write\)/)).toBeInTheDocument();
     expect(screen.getByText(/not safe to write back/i)).toBeInTheDocument();
   });
