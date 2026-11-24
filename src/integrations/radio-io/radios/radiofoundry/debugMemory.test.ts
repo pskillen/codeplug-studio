@@ -3,10 +3,8 @@ import { RADIOFOUNDRY_IMAGE_SIZE } from '@core/import-export/formats/radiofoundr
 import { FLASH_IMAGE_START } from './constants.ts';
 import { RADIOFOUNDRY_REGION } from './debugCapture.ts';
 import {
-  archiveFromRadioFoundryImage,
   radioFoundryMemoryAssembled,
   radioFoundryMemoryFixtureArchive,
-  serialiseRadioFoundryCodeplug,
 } from './__fixtures__/debugMemoryArchive.ts';
 import { projectRadioFoundryMemory, reassembleRadioFoundryImage } from './debugMemory.ts';
 
@@ -33,8 +31,8 @@ describe('projectRadioFoundryMemory', () => {
     const view = projectRadioFoundryMemory(radioFoundryMemoryFixtureArchive());
     expect(view.status).toBe('ok');
     if (view.status !== 'ok') return;
-    expect(view.result.channels.map((c) => c.name).sort()).toEqual(
-      built.channels.map((c) => c.wireName).sort(),
+    expect(view.result.channels.map((ch) => ch.name).sort()).toEqual(
+      built.channels.map((ch) => ch.wireName).sort(),
     );
     expect(view.result.zones).toHaveLength(1);
     expect(view.result.zones[0]!.name).toBe('Home');

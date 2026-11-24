@@ -70,7 +70,7 @@ describe('RadioFoundryIdDatabasePanel', () => {
     const archive = archiveWithIdDb(50);
     render(
       <DesignSystemV2Provider>
-        <RadioFoundryIdDatabasePanel archive={{ ...archive, source: 'file-open' }} />
+        <RadioFoundryIdDatabasePanel archive={{ ...archive, source: 'file' }} />
       </DesignSystemV2Provider>,
     );
     expect(screen.getByText(/IDs ascend across both areas/i)).toBeInTheDocument();
@@ -91,7 +91,7 @@ describe('RadioFoundryIdDatabasePanel', () => {
     });
     render(
       <DesignSystemV2Provider>
-        <RadioFoundryIdDatabasePanel archive={{ ...archive, source: 'file-open' }} />
+        <RadioFoundryIdDatabasePanel archive={{ ...archive, source: 'file' }} />
       </DesignSystemV2Provider>,
     );
     expect(screen.getByText(/IDs stop ascending/i)).toBeInTheDocument();
@@ -101,7 +101,7 @@ describe('RadioFoundryIdDatabasePanel', () => {
     const archive = archiveWithIdDb(20);
     render(
       <DesignSystemV2Provider>
-        <RadioFoundryIdDatabasePanel archive={{ ...archive, source: 'file-open' }} />
+        <RadioFoundryIdDatabasePanel archive={{ ...archive, source: 'file' }} />
       </DesignSystemV2Provider>,
     );
     const input = screen.getByRole('textbox', { name: /DMR ID/i });
@@ -127,7 +127,7 @@ describe('RadioFoundryIdDatabasePanel', () => {
     );
     render(
       <DesignSystemV2Provider>
-        <RadioFoundryIdDatabasePanel archive={{ ...archive, source: 'file-open' }} />
+        <RadioFoundryIdDatabasePanel archive={{ ...archive, source: 'file' }} />
       </DesignSystemV2Provider>,
     );
     expect(screen.getByText(/voice-prompt area/i)).toBeInTheDocument();

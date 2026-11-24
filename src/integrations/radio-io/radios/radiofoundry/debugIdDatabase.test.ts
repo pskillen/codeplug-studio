@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   DMR_ID_DATABASE_ADDRESS,
   DMR_ID_DATABASE_AREA1_RECORDS,
@@ -14,7 +14,6 @@ import {
   RADIOFOUNDRY_DEBUG_INFO_SIDECAR,
   RADIOFOUNDRY_REGION,
 } from './debugCapture.ts';
-import { MD9600_RADIOFOUNDRY_CABLE_BOARD } from './board.ts';
 import { radioFoundryMemoryFixtureArchive } from './__fixtures__/debugMemoryArchive.ts';
 import { parseIddbRadioReply, radioFoundryIdDatabaseView } from './debugIdDatabase.ts';
 

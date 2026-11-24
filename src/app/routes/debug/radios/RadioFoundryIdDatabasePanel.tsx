@@ -4,7 +4,7 @@ import {
   radioFoundryIdDatabaseView,
   type RadioFoundryIdDatabaseView,
 } from '@integrations/radio-io/radios/radiofoundry/debugIdDatabase.ts';
-import { Alert, Button, Group, NativeSelect, NumberInput, Stack, Text, Title } from '@mantine/core';
+import { Alert, Button, Group, NumberInput, Stack, Text } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { useMemo, useState } from 'react';
 import type { DebugArchive } from './captureArchive.ts';

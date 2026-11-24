@@ -5,14 +5,16 @@ import {
   MemoryCategoryPanel,
 } from '@app/components/debug/index.ts';
 import { useMemo, type ReactNode } from 'react';
-import { DataTable, type DataTableColumn } from '@app/components/v2/index.ts';
+import type { DataTableColumn } from '@app/components/v2/index.ts';
 import type {
   Channel,
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
+  Zone,
 } from '@core/models/library.ts';
+import type { ChannelTone } from '@core/models/libraryTypes.ts';
 import { projectRadioFoundryMemory } from '@integrations/radio-io/radios/radiofoundry/debugMemory.ts';
-import type { BinaryCpsImportResult } from '@core/import-export/formats/radiofoundry/parse.ts';
+import type { BinaryCpsImportResult } from '@core/import-export/types.ts';
 import { archiveKey } from './viewerUtils.ts';
 import type { DebugArchive } from './captureArchive.ts';
 import { memoByArchive } from './archiveMemo.ts';
@@ -43,12 +45,9 @@ function modeLabel(channel: Channel): string {
   return channel.primaryMode ?? DASH;
 }
 
-function formatTone(profile: ChannelModeProfileAnalog, key: 'rxTone' | 'txTone'): string {
-  const tone = profile[key];
-  if (tone === 'none') return 'None';
-  if (tone.kind === 'ctcss') return `${tone.hz} Hz`;
-  if (tone.kind === 'dcs') return `D${String(tone.code).padStart(3, '0')}${tone.polarity ?? 'N'}`;
-  return DASH;
+function formatTone(tone: ChannelTone): string {
+  if (tone === 'none' || tone.trim() === '') return 'None';
+  return tone;
 }
 
 interface ChannelRow {
@@ -107,7 +106,7 @@ const channelColumns: DataTableColumn<ChannelRow>[] = [
     width: '6rem',
     render: (r) => {
       const fm = fmProfile(r.channel);
-      return fm ? formatTone(fm, 'rxTone') : DASH;
+      return fm ? formatTone(fm.rxTone) : DASH;
     },
   },
   {
@@ -116,7 +115,7 @@ const channelColumns: DataTableColumn<ChannelRow>[] = [
     width: '6rem',
     render: (r) => {
       const fm = fmProfile(r.channel);
-      return fm ? formatTone(fm, 'txTone') : DASH;
+      return fm ? formatTone(fm.txTone) : DASH;
     },
   },
 ];
@@ -150,14 +149,12 @@ interface ZoneRow {
   count: number;
 }
 
-function zoneMemberLabels(
-  memberChannelIds: readonly string[],
-  channels: readonly Channel[],
-): string {
+function zoneMemberLabels(zoneMembers: Zone['members'], channels: readonly Channel[]): string {
   const byId = new Map(channels.map((c) => [c.id, c]));
-  return memberChannelIds
-    .map((id) => {
-      const ch = byId.get(id);
+  return zoneMembers
+    .filter((m): m is { kind: 'channel'; channelId: string } => m.kind === 'channel')
+    .map((m) => {
+      const ch = byId.get(m.channelId);
       return ch ? identityLabel(ch.callsign, ch.name) : 'Unknown channel';
     })
     .join('; ');
@@ -194,8 +191,8 @@ function ZonesPanel({ result }: { result: BinaryCpsImportResult }) {
       result.zones.map((zone) => ({
         id: zone.id,
         name: zone.name,
-        count: zone.memberChannelIds.length,
-        members: zoneMemberLabels(zone.memberChannelIds, result.channels),
+        count: zone.members.filter((m) => m.kind === 'channel').length,
+        members: zoneMemberLabels(zone.members, result.channels),
       })),
     [result],
   );

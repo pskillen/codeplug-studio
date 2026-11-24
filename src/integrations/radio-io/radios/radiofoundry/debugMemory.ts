@@ -6,8 +6,8 @@ import { RADIOFOUNDRY_IMAGE_SIZE } from '@core/import-export/formats/radiofoundr
 import {
   parseRadioFoundryCodeplug,
   RadioFoundryImportError,
-  type BinaryCpsImportResult,
 } from '@core/import-export/formats/radiofoundry/parse.ts';
+import type { BinaryCpsImportResult } from '@core/import-export/types.ts';
 import { resolveRadioFoundryProfile } from '@core/import-export/formats/radiofoundry/profiles.ts';
 import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import { EEPROM_IMAGE_END, FLASH_IMAGE_START } from './constants.ts';

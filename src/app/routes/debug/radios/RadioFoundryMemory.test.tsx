@@ -51,7 +51,7 @@ function openMemory(archive = radioFoundryMemoryFixtureArchive()) {
   const debugArchive = openDebugArchive(packed, archive.manifest.radioModelId);
   return render(
     <DesignSystemV2Provider>
-      <RadioFoundryMemory archive={{ ...debugArchive, source: 'file-open' }} />
+      <RadioFoundryMemory archive={{ ...debugArchive, source: 'file' }} />
     </DesignSystemV2Provider>,
   );
 }
@@ -117,7 +117,8 @@ describe('RadioFoundryMemory', () => {
             manifest,
             regions: { ...parts.regions, 'flash-image': flash },
             sidecars: {},
-            source: 'file-open',
+            source: 'file',
+            zipBytes: new Uint8Array(0),
           }}
         />
       </DesignSystemV2Provider>,
