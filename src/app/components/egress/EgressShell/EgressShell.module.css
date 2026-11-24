@@ -18,3 +18,12 @@
   margin-bottom: var(--dsv2-space-3);
   font-size: var(--dsv2-font-body-sm);
 }
+
+.stepBar {
+  margin-bottom: var(--dsv2-space-4);
+}
+
+/* Quieter than the transfer's own bar below it. */
+.stepBar :global(.mantine-Progress-section) {
+  background: var(--dsv2-text-tertiary);
+}
