@@ -1,39 +1,22 @@
 /**
- * Workflow A (#859, design §8): "Write Keps to Radio" from the Satellite Keps library page.
- * Lets the operator pick a target radio — a build's persisted Web Serial egress, or a generic
- * "other supported radio" with no persisted build — then connects and uploads the library's
- * enabled satellites in the same distinct progress UI Workflow B (BuildRadioIoPanel) uses.
+ * Workflow A (#859): pick a build with a keps-capable Web Serial egress, then open the Write
+ * dialog with only Satellite keps ticked.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Radio, Stack, Text } from '@mantine/core';
 import type { EgressPath } from '@core/models/egressPath.ts';
-import { egressKindForFormatId } from '@core/models/egressPath.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
-import { listRadioDescriptors } from '@integrations/radio-io/index.ts';
-import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { ModalShell, Button as V2Button } from '../v2/index.ts';
-import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
 import { persistence } from '../../state/persistence.ts';
 import {
-  closeRadioSession,
   descriptorsForEgress,
   getRadioSerialUnsupportedMessage,
   isRadioSerialSupported,
-  openRadioSessionForEgress,
-  RadioWriteBlockedError,
 } from '../../services/radioIoSession.ts';
-import {
-  resolveRadioWriteGate,
-  resolveRadioWriteProdDisabledMessage,
-} from '../../services/radioWriteEnvGate.ts';
-import {
-  getSatelliteKepsWriteAdapter,
-  hasSatelliteKepsWriteAdapter,
-} from '../../services/satelliteKepsWriteAdapters.ts';
-import RadioIoProgressModal, {
-  type RadioIoProgressPhase,
-} from '../builds/RadioIoProgressModal.tsx';
+import { hasSatelliteKepsWriteAdapter } from '../../services/satelliteKepsWriteAdapters.ts';
+import { useRadioWriteDialog } from '../builds/RadioWriteDialog/useRadioWriteDialog.tsx';
 
 function webSerialRadioLabel(profileId: string, descriptorLabel?: string): string {
   return (
@@ -49,50 +32,13 @@ export interface SatelliteKepsWriteTargetModalProps {
   projectId: string | null;
 }
 
-/** A persisted build's Web Serial egress with a registered keps-write adapter. */
-interface YourRadioTarget {
-  kind: 'build';
+interface BuildWriteTarget {
   key: string;
   label: string;
+  build: RadioBuild;
   egress: EgressPath;
 }
 
-/**
- * A registered adapter's radio with no persisted build/egress — Studio does not have wire
- * names or trait layout for it, only "connect and upload keps." The stub `EgressPath` built
- * for this case is safe here specifically because `writeSatellitesToRadio` never reads
- * `egress.hydration` — it would NOT be safe to reuse this stub for a codeplug write.
- */
-interface GenericRadioTarget {
-  kind: 'generic';
-  key: string;
-  label: string;
-  formatId: string;
-  profileId: string;
-}
-
-type WriteTarget = YourRadioTarget | GenericRadioTarget;
-
-function targetToEgress(projectId: string, target: WriteTarget): EgressPath {
-  if (target.kind === 'build') return target.egress;
-  return {
-    id: '',
-    projectId,
-    revision: 0,
-    updatedAt: '',
-    radioBuildId: '',
-    formatId: target.formatId,
-    profileId: target.profileId,
-    kind: egressKindForFormatId(target.formatId),
-  };
-}
-
-/**
- * Outer wrapper only mounts {@link SatelliteKepsWriteTargetModalInner} while `opened` is true —
- * a fresh mount each time gives every internal `useState` a clean initial value for free, so
- * there is no separate "reset transient state on reopen" effect to maintain (and no
- * setState-in-effect anti-pattern to work around).
- */
 export default function SatelliteKepsWriteTargetModal({
   opened,
   onClose,
@@ -102,40 +48,24 @@ export default function SatelliteKepsWriteTargetModal({
   return <SatelliteKepsWriteTargetModalInner onClose={onClose} projectId={projectId} />;
 }
 
+function KepsWriteDialogLauncher({ build, egress }: { build: RadioBuild; egress: EgressPath }) {
+  const dialog = useRadioWriteDialog({ build, egress });
+  useEffect(() => {
+    dialog.open({ codeplug: false, contacts: false, settings: false, keps: true });
+  }, [dialog]);
+  return <>{dialog.element}</>;
+}
+
 function SatelliteKepsWriteTargetModalInner({
   onClose,
   projectId,
 }: Omit<SatelliteKepsWriteTargetModalProps, 'opened'>) {
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [yourRadios, setYourRadios] = useState<YourRadioTarget[]>([]);
-  const [otherRadios, setOtherRadios] = useState<GenericRadioTarget[]>([]);
+  const [targets, setTargets] = useState<BuildWriteTarget[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-
-  const [busy, setBusy] = useState(false);
-  const [phase, setPhase] = useState<RadioIoProgressPhase>('connecting');
-  const [progress, setProgress] = useState<ProgressUpdate | null>(null);
-  const [transferStages, setTransferStages] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  /**
-   * Written/skipped counts from the last successful write. `RadioIoProgressModal` itself
-   * shows the generic "Keps write finished" alert (shared with Workflow B); this supplements
-   * it with per-satellite skip reasons once the modal is dismissed, mirroring the summary
-   * `BuildRadioIoPanel` keeps visible after a Workflow B write.
-   */
-  const [summary, setSummary] = useState<{
-    written: number;
-    skipped: { satelliteId: string; reason: string }[];
-  } | null>(null);
-
-  const abortRef = useRef<AbortController | null>(null);
-  const sessionRef = useRef<RadioSession | null>(null);
-
-  const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
-
-  useEffect(() => {
-    if (leaveAttempted) stay();
-  }, [leaveAttempted, stay]);
+  const [launch, setLaunch] = useState<{ build: RadioBuild; egress: EgressPath } | null>(null);
+  const serialOk = isRadioSerialSupported();
 
   useEffect(() => {
     if (!projectId) return;
@@ -149,10 +79,8 @@ function SatelliteKepsWriteTargetModalInner({
           persistence.listEgressPaths(projectId),
         ]);
         if (cancelled) return;
-
         const buildById = new Map(builds.map((b) => [b.id, b]));
-        const yours: YourRadioTarget[] = [];
-        const shownProfileIds = new Set<string>();
+        const rows: BuildWriteTarget[] = [];
         for (const egress of egressPaths) {
           if (egress.kind !== 'web-serial') continue;
           if (!hasSatelliteKepsWriteAdapter(egress.profileId)) continue;
@@ -160,41 +88,19 @@ function SatelliteKepsWriteTargetModalInner({
           if (!build) continue;
           const descriptor = descriptorsForEgress(egress)[0];
           const radioLabel = webSerialRadioLabel(egress.profileId, descriptor?.label);
-          yours.push({
-            kind: 'build',
+          rows.push({
             key: `build:${egress.id}`,
             label: `${build.name} — ${radioLabel}`,
+            build,
             egress,
           });
-          shownProfileIds.add(egress.profileId);
         }
-        yours.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
-
-        const others: GenericRadioTarget[] = [];
-        const seenGenericProfileIds = new Set<string>();
-        for (const descriptor of listRadioDescriptors()) {
-          for (const profile of descriptor.compatibleProfiles) {
-            if (!hasSatelliteKepsWriteAdapter(profile.profileId)) continue;
-            if (shownProfileIds.has(profile.profileId)) continue;
-            if (seenGenericProfileIds.has(profile.profileId)) continue;
-            seenGenericProfileIds.add(profile.profileId);
-            others.push({
-              kind: 'generic',
-              key: `generic:${profile.profileId}`,
-              label: webSerialRadioLabel(profile.profileId, descriptor.label),
-              formatId: profile.formatId,
-              profileId: profile.profileId,
-            });
-          }
-        }
-        others.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
-
-        setYourRadios(yours);
-        setOtherRadios(others);
-        setSelectedKey(yours[0]?.key ?? others[0]?.key ?? null);
+        rows.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+        setTargets(rows);
+        setSelectedKey(rows[0]?.key ?? null);
       } catch (err) {
         if (!cancelled) {
-          setLoadError(err instanceof Error ? err.message : 'Failed to load radio targets.');
+          setLoadError(err instanceof Error ? err.message : 'Failed to load builds.');
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -205,88 +111,19 @@ function SatelliteKepsWriteTargetModalInner({
     };
   }, [projectId]);
 
-  function onProgress(p: ProgressUpdate) {
-    setPhase('transfer');
-    setProgress(p);
-    if (p.stage) {
-      setTransferStages((prev) => (prev.includes(p.stage!) ? prev : [...prev, p.stage!]));
-    }
-  }
+  const selected = targets.find((t) => t.key === selectedKey) ?? null;
 
-  const allTargets: WriteTarget[] = [...yourRadios, ...otherRadios];
-  const selectedTarget = allTargets.find((t) => t.key === selectedKey) ?? null;
-  const serialOk = isRadioSerialSupported();
-
-  async function handleConnectAndWrite() {
-    if (!projectId || !selectedTarget) return;
-    const egress = targetToEgress(projectId, selectedTarget);
-    const descriptor = descriptorsForEgress(egress)[0];
-    const writeKeps = getSatelliteKepsWriteAdapter(egress.profileId);
-    if (!writeKeps) return;
-
-    if (descriptor && resolveRadioWriteGate(descriptor) === 'hidden') {
-      setError(resolveRadioWriteProdDisabledMessage(egress.profileId));
-      return;
-    }
-
-    setError(null);
-    setBusy(true);
-    setPhase('connecting');
-    setProgress(null);
-    setTransferStages([]);
-    setSummary(null);
-    abortRef.current = new AbortController();
-
-    try {
-      const { session } = await openRadioSessionForEgress(egress, {
-        forcePortSelection: true,
-        purpose: 'write',
-      });
-      sessionRef.current = session;
-      setPhase('preparing');
-      const allSatellites = await persistence.listSatellites(projectId);
-      const satellites = allSatellites.filter((s) => s.enabled);
-      setPhase('transfer');
-      const result = await writeKeps(session, satellites, {
-        onProgress,
-        signal: abortRef.current.signal,
-      });
-      setSummary(result);
-      await closeRadioSession(session);
-      sessionRef.current = null;
-      setPhase('done');
-    } catch (err) {
-      if (err instanceof RadioWriteBlockedError) {
-        setError(err.message);
-      } else {
-        setError(err instanceof Error ? err.message : String(err));
-      }
-      const session = sessionRef.current;
-      sessionRef.current = null;
-      if (session) await closeRadioSession(session);
-      setBusy(false);
-      setProgress(null);
-      abortRef.current = null;
-    }
-  }
-
-  function handleCancel() {
-    abortRef.current?.abort();
-  }
-
-  function handleProgressClose() {
-    // Return to the target-select modal (this component stays mounted until the parent
-    // stops rendering it) rather than closing the whole flow, so the written/skipped
-    // summary below has somewhere to render.
-    setBusy(false);
-    setProgress(null);
-    abortRef.current = null;
+  function handleContinue() {
+    if (!selected) return;
+    setLaunch({ build: selected.build, egress: selected.egress });
+    onClose();
   }
 
   return (
     <>
+      {launch ? <KepsWriteDialogLauncher build={launch.build} egress={launch.egress} /> : null}
       <ModalShell
-        open={!busy}
+        open={!launch}
         onClose={onClose}
         title="Select target radio"
         size="md"
@@ -297,77 +134,36 @@ function SatelliteKepsWriteTargetModalInner({
             </V2Button>
             <V2Button
               size="sm"
-              disabled={!serialOk || !selectedTarget || loading}
-              onClick={() => void handleConnectAndWrite()}
+              disabled={!serialOk || !selected || loading}
+              onClick={handleContinue}
             >
-              Connect &amp; write
+              Continue
             </V2Button>
           </>
         }
       >
         <Stack gap="md">
           <Text size="sm" c="dimmed">
-            Uploads your library&apos;s enabled satellites to the selected radio over Web Serial —
-            distinct from a codeplug write.
+            Opens the Write dialog for the build you choose, with only Satellite keps selected.
           </Text>
           {!serialOk ? <Alert color="yellow">{getRadioSerialUnsupportedMessage()}</Alert> : null}
           {loadError ? <Alert color="red">{loadError}</Alert> : null}
-          {error ? <Alert color="red">{error}</Alert> : null}
-          {summary ? (
-            <Alert color={summary.skipped.length > 0 ? 'yellow' : 'green'} title="Last keps write">
-              <Stack gap={4}>
-                <Text size="sm">{summary.written} satellite(s) written.</Text>
-                {summary.skipped.map((s) => (
-                  <Text key={`keps-skipped-${s.satelliteId}`} size="sm" c="dimmed">
-                    Skipped {s.satelliteId}: {s.reason}
-                  </Text>
-                ))}
-              </Stack>
-            </Alert>
-          ) : null}
-          {loading ? <Text size="sm">Loading radio targets…</Text> : null}
-          {!loading && allTargets.length === 0 ? (
-            <Text size="sm" c="dimmed">
-              No radios currently support a satellite keps write.
+          {loading ? <Text size="sm">Loading builds…</Text> : null}
+          {!loading && targets.length === 0 ? (
+            <Text size="sm">
+              No build can write satellite keps yet. Create a build for a radio that takes satellite
+              keps, then write from here or from its Satellite keps tab.
             </Text>
           ) : null}
           <Radio.Group value={selectedKey} onChange={setSelectedKey}>
-            <Stack gap="md">
-              {yourRadios.length > 0 ? (
-                <Stack gap="xs">
-                  <Text fw={600} size="sm">
-                    Recommended / Your radios
-                  </Text>
-                  {yourRadios.map((target) => (
-                    <Radio key={target.key} value={target.key} label={target.label} />
-                  ))}
-                </Stack>
-              ) : null}
-              {otherRadios.length > 0 ? (
-                <Stack gap="xs">
-                  <Text fw={600} size="sm">
-                    Other supported radios
-                  </Text>
-                  {otherRadios.map((target) => (
-                    <Radio key={target.key} value={target.key} label={target.label} />
-                  ))}
-                </Stack>
-              ) : null}
+            <Stack gap="xs">
+              {targets.map((target) => (
+                <Radio key={target.key} value={target.key} label={target.label} />
+              ))}
             </Stack>
           </Radio.Group>
         </Stack>
       </ModalShell>
-
-      <RadioIoProgressModal
-        opened={busy}
-        operation="keps-write"
-        phase={phase}
-        progress={progress}
-        transferStages={transferStages}
-        navigationBlocked={leaveAttempted}
-        onCancel={handleCancel}
-        onClose={handleProgressClose}
-      />
     </>
   );
 }

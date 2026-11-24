@@ -14,7 +14,20 @@ import { persistence } from '../../state/persistence.ts';
  * covered the inline button/panel this page now replaces.
  */
 
-let resolveOpenSession: (() => void) | null = null;
+const writeDialogState = vi.hoisted(() => ({
+  open: vi.fn(),
+  busy: false,
+}));
+
+vi.mock('../../components/builds/RadioWriteDialog/useRadioWriteDialog.tsx', () => ({
+  useRadioWriteDialog: () => ({
+    element: null,
+    open: writeDialogState.open,
+    get busy() {
+      return writeDialogState.busy;
+    },
+  }),
+}));
 
 vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../services/radioIoSession.ts')>();
@@ -22,21 +35,6 @@ vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
     ...actual,
     isRadioSerialSupported: () => true,
     getRadioSerialUnsupportedMessage: () => 'Web Serial not supported.',
-    openRadioSessionForEgress: vi.fn(
-      () =>
-        new Promise((resolve) => {
-          resolveOpenSession = () =>
-            resolve({
-              session: {
-                descriptor: { label: 'D890' },
-                pipe: {},
-                radio: {},
-              },
-              descriptor: { label: 'D890' },
-            });
-        }),
-    ),
-    closeRadioSession: vi.fn(async () => {}),
   };
 });
 
@@ -44,7 +42,6 @@ const kepsWriteFn = vi.fn(
   () => new Promise(() => {}), // never resolves — we only assert the disabled state mid-flight
 );
 
-let kepsCapacityStub: { max: number; countEligible: (s: readonly unknown[]) => number } | undefined;
 let kepsPreviewStub:
   | ((satellites: readonly Satellite[], options?: { satelliteOverrides?: unknown[] }) => unknown[])
   | undefined;
@@ -65,25 +62,8 @@ vi.mock('../../services/satelliteKepsWriteAdapters.ts', async (importOriginal) =
       profileId === 'radio-io-opengd77-md9600'
         ? kepsWriteFn
         : undefined,
-    getSatelliteKepsWriteCapacity: (profileId: string) => {
-      if (kepsCapacityStub) {
-        return {
-          ...kepsCapacityStub,
-          nameLength: 8,
-          unitNoun: 'transmitter',
-          nameScope: 'transmitter' as const,
-          limitsDoc: '',
-        };
-      }
-      return actual.getSatelliteKepsWriteCapacity(profileId);
-    },
-    satelliteKepsCapacityWarning: (_profileId: string, satellites: readonly Satellite[]) => {
-      if (!kepsCapacityStub) return null;
-      return actual.formatSatelliteKepsCapacityWarning(
-        kepsCapacityStub.countEligible(satellites),
-        kepsCapacityStub.max,
-      );
-    },
+    getSatelliteKepsWriteCapacity: actual.getSatelliteKepsWriteCapacity,
+    satelliteKepsCapacityWarning: actual.satelliteKepsCapacityWarning,
     getSatelliteKepsWritePreview: () => kepsPreviewStub,
     getSatelliteKepsExclusions: () => kepsExclusionsStub,
   };
@@ -172,34 +152,24 @@ describe('BuildSatelliteKepsPage — Write Keps (#1085, moved from #859)', () =>
     expect(screen.getByRole('button', { name: 'Write Keps' })).toBeInTheDocument();
   });
 
-  it('disables the Write Keps button while a write is in flight', async () => {
+  it('the keps tab opens the Write dialog with only keps ticked', () => {
     renderPage();
-
-    const writeKepsButton = screen.getByRole('button', { name: 'Write Keps' });
-    expect(writeKepsButton).not.toBeDisabled();
-
-    fireEvent.click(writeKepsButton);
-    await waitFor(() => expect(writeKepsButton).toBeDisabled());
-
-    resolveOpenSession?.();
-    await waitFor(() => expect(kepsWriteFn).toHaveBeenCalled());
-    expect(writeKepsButton).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Write Keps' }));
+    expect(writeDialogState.open).toHaveBeenCalledWith({
+      codeplug: false,
+      contacts: false,
+      settings: false,
+      keps: true,
+    });
   });
-});
 
-describe('BuildSatelliteKepsPage — capacity pre-flight (#1068)', () => {
-  it('shows a capacity warning and never calls kepsWriteFn or opens a session when over capacity', async () => {
-    const callsBefore = kepsWriteFn.mock.calls.length;
-    kepsCapacityStub = { max: 0, countEligible: () => 1 };
+  it('disables the Write Keps button while the Write dialog is busy', () => {
+    writeDialogState.busy = true;
     try {
       renderPage();
-      fireEvent.click(screen.getByRole('button', { name: 'Write Keps' }));
-
-      await waitFor(() => expect(screen.getByText(/only supports 0/)).toBeInTheDocument());
-      expect(kepsWriteFn.mock.calls.length).toBe(callsBefore);
-      expect(screen.getByRole('button', { name: 'Write Keps' })).not.toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Write Keps' })).toBeDisabled();
     } finally {
-      kepsCapacityStub = undefined;
+      writeDialogState.busy = false;
     }
   });
 });

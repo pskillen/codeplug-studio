@@ -9,6 +9,8 @@ import {
   getSatelliteKepsWriteCapacity,
   getSatelliteKepsWritePreview,
   hasSatelliteKepsWriteAdapter,
+  kepsWriteChecks,
+  satelliteKepsCapacityWarning,
   SATELLITE_KEPS_WRITE_ADAPTERS,
   SATELLITE_KEPS_WRITE_PREVIEW,
 } from './satelliteKepsWriteAdapters.ts';
@@ -170,6 +172,19 @@ describe('getSatelliteKepsExclusions (#1085 follow-up)', () => {
     expect(getSatelliteKepsExclusions('radio-io-at-d890uv')!(satellites)).toEqual([]);
   });
 
+  it('exclusions skip what the build already excludes on the AT-D890UV', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        transmitters: [makeTransmitter({ id: 'tx-a', mode: 'SSTV' })],
+      }),
+    ];
+    const exclusions = getSatelliteKepsExclusions('radio-io-at-d890uv')!(satellites, {
+      satelliteOverrides: [{ libraryEntityId: 'tx-a', excluded: true }],
+    });
+    expect(exclusions).toEqual([]);
+  });
+
   it('reports an extra OpenGD77 transmitter that does not fit the in-record FM slot', () => {
     const satellites = [
       makeSatellite({
@@ -182,5 +197,93 @@ describe('getSatelliteKepsExclusions (#1085 follow-up)', () => {
     ];
     const exclusions = getSatelliteKepsExclusions('radio-io-opengd77-1701')!(satellites);
     expect(exclusions.some((e) => e.transmitterId === 'tx-fm-2' && e.reason.length > 0)).toBe(true);
+  });
+});
+
+describe('keps capacity and write checks', () => {
+  it('capacity counts after the build overrides on the AT-D890UV', () => {
+    const capacity = getSatelliteKepsWriteCapacity('radio-io-at-d890uv')!;
+    const satellites = Array.from({ length: capacity.max + 1 }, (_, i) =>
+      makeSatellite({
+        id: `sat-${i}`,
+        name: `Sat ${i}`,
+        transmitters: [makeTransmitter({ id: `tx-${i}` })],
+      }),
+    );
+    expect(capacity.countEligible(satellites)).toBe(capacity.max + 1);
+    expect(satelliteKepsCapacityWarning('radio-io-at-d890uv', satellites)).not.toBeNull();
+    const overrides = [{ libraryEntityId: satellites[0]!.id, excluded: true }];
+    expect(capacity.countEligible(satellites, overrides)).toBe(capacity.max);
+    expect(satelliteKepsCapacityWarning('radio-io-at-d890uv', satellites, overrides)).toBeNull();
+  });
+
+  it('nothing eligible is a refusal', () => {
+    const satellites = [
+      makeSatellite({
+        transmitters: [makeTransmitter({ mode: 'SSTV' })],
+      }),
+    ];
+    const checks = kepsWriteChecks('radio-io-at-d890uv', satellites);
+    expect(checks.eligible).toBe(0);
+    expect(checks.refusals.some((r) => r.message.includes('Nothing to write'))).toBe(true);
+  });
+
+  it('exclusions become keps_excluded notes with names', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        name: 'AO-91',
+        transmitters: [makeTransmitter({ id: 'tx-a', label: 'FM Voice', mode: 'SSTV' })],
+      }),
+    ];
+    const checks = kepsWriteChecks('radio-io-at-d890uv', satellites);
+    expect(checks.warnings).toEqual([
+      expect.objectContaining({
+        kind: 'keps_excluded',
+        severity: 'info',
+        label: 'AO-91 / FM Voice',
+        reason: expect.stringContaining('SSTV'),
+      }),
+    ]);
+  });
+
+  it('kepsWriteChecks drops build-excluded transmitters from folded notes', () => {
+    const satellites = [
+      makeSatellite({
+        transmitters: [makeTransmitter({ id: 'tx-a', mode: 'SSTV' })],
+      }),
+    ];
+    const checks = kepsWriteChecks('radio-io-at-d890uv', satellites, [
+      { libraryEntityId: 'tx-a', excluded: true },
+    ]);
+    expect(checks.warnings).toEqual([]);
+  });
+
+  it('OpenGD77 capacity honours build overrides', () => {
+    const capacity = getSatelliteKepsWriteCapacity('radio-io-opengd77-1701')!;
+    const satellites = Array.from({ length: capacity.max + 1 }, (_, i) =>
+      makeSatellite({
+        id: `sat-${i}`,
+        transmitters: [makeTransmitter({ id: `tx-${i}` })],
+      }),
+    );
+    const overrides = [{ libraryEntityId: 'sat-0', excluded: true }];
+    expect(capacity.countEligible(satellites)).toBe(capacity.max + 1);
+    expect(capacity.countEligible(satellites, overrides)).toBe(capacity.max);
+  });
+
+  it('OpenGD77 kepsWriteChecks omits build slot competition from folded notes', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        name: 'FOX-1A',
+        transmitters: [
+          makeTransmitter({ id: 'tx-fm', mode: 'FM', label: 'Voice' }),
+          makeTransmitter({ id: 'tx-fm-2', mode: 'FM', label: 'Voice 2' }),
+        ],
+      }),
+    ];
+    const checks = kepsWriteChecks('radio-io-opengd77-1701', satellites);
+    expect(checks.warnings).toEqual([]);
   });
 });

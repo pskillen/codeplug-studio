@@ -8,17 +8,23 @@ import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { CpsPreviewResult } from '../../services/buildCpsExportService.ts';
 import { BuildLayoutProvider } from '../../routes/builds/BuildLayoutContext.tsx';
+import { DesignSystemV2Provider } from '../v2/index.ts';
 import ExportBuildCpsPanel from './ExportBuildCpsPanel.tsx';
 
 const {
   downloadCpsZip,
   downloadCpsFile,
   downloadCpsSingleFile,
+  checkCpsExport,
   previewCpsExport,
   previewCpsSingleFile,
   listCpsExportFileNames,
   importRadioFoundryCodeplug,
 } = vi.hoisted(() => ({
+  checkCpsExport: vi.fn(async () => ({
+    warnings: [] as ExportWarning[],
+    fileNames: ['Channels.csv', 'Zones.csv'],
+  })),
   downloadCpsZip: vi.fn(async () => ({ warnings: [] as ExportWarning[] })),
   importRadioFoundryCodeplug: vi.fn(async () => ({
     ok: true as const,
@@ -55,6 +61,7 @@ vi.mock('../../services/buildCpsExportService.ts', async (importOriginal) => {
     downloadCpsFile,
     downloadCpsSingleFile,
     downloadCpsZip,
+    checkCpsExport,
     previewCpsExport,
     previewCpsSingleFile,
     listCpsExportFileNames,
@@ -129,11 +136,13 @@ function renderExportPanel(
     reloadEgressPaths: vi.fn(async () => {}),
   };
   const panel = (
-    <BuildLayoutProvider value={layoutValue}>
-      <MantineProvider>
-        <ExportBuildCpsPanel build={build} panelMode={opts?.panelMode} />
-      </MantineProvider>
-    </BuildLayoutProvider>
+    <DesignSystemV2Provider>
+      <BuildLayoutProvider value={layoutValue}>
+        <MantineProvider>
+          <ExportBuildCpsPanel build={build} panelMode={opts?.panelMode} />
+        </MantineProvider>
+      </BuildLayoutProvider>
+    </DesignSystemV2Provider>
   );
   if (opts?.router) {
     return render(<MemoryRouter>{panel}</MemoryRouter>);
@@ -158,22 +167,20 @@ describe('ExportBuildCpsPanel', () => {
     expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
   });
 
-  it('renders download ZIP and per-file export actions for shipped OpenGD77 builds', async () => {
+  it('renders Export button for shipped OpenGD77 builds', async () => {
     renderExportPanel('opengd77-1701');
 
     expect(await screen.findByText(/Export as/)).toBeInTheDocument();
     expect(screen.getAllByText('OpenGD77 CSV').length).toBeGreaterThan(0);
-    const zipButton = await screen.findByRole('button', { name: 'Download ZIP' });
-    expect(zipButton).not.toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Save ZIP to Drive' })).not.toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Channels.csv' })).not.toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Zones.csv' })).not.toBeDisabled();
+    const exportButton = await screen.findByRole('button', { name: 'Export…' });
+    expect(exportButton).not.toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Download ZIP' })).not.toBeInTheDocument();
   });
 
   it('renders CHIRP single-file export actions for shipped CHIRP builds', async () => {
     renderExportPanel('chirp-uv5r', { router: true });
 
-    expect(await screen.findByRole('button', { name: 'Download CSV' })).not.toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Export…' })).not.toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Download ZIP' })).not.toBeInTheDocument();
     expect(screen.queryByText(/not in the memory list/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/aren't in a zone/i)).not.toBeInTheDocument();
@@ -186,7 +193,7 @@ describe('ExportBuildCpsPanel', () => {
   it('does not show CHIRP try-NeonPlug tip on UV-5R Mini CHIRP pathway', async () => {
     renderExportPanel('chirp-uv5r', { router: true });
 
-    expect(await screen.findByRole('button', { name: 'Download CSV' })).not.toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Export…' })).not.toBeDisabled();
     expect(
       screen.queryByText(/FYI: there's another pathway for UV-5R Mini in the browser/),
     ).not.toBeInTheDocument();
@@ -201,7 +208,7 @@ describe('ExportBuildCpsPanel', () => {
     expect(
       await screen.findByText(/Prefer Web Serial or NeonPlug for your DM-32/),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Download ZIP' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Export…' })).not.toBeDisabled();
     unmount();
 
     renderExportPanel('opengd77-1701');
@@ -248,6 +255,8 @@ describe('ExportBuildCpsPanel', () => {
   it('opens CSV preview modal for CHIRP single-file export', async () => {
     renderExportPanel('chirp-uv5r', { router: true });
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Export…' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Continue' }));
     const previewButton = await screen.findByRole('button', { name: 'Preview CSV' });
     fireEvent.click(previewButton);
 
@@ -279,6 +288,7 @@ describe('ExportBuildCpsPanel', () => {
   it('opens CSV preview modal with per-file tabs after Preview CSV', async () => {
     renderExportPanel('opengd77-1701');
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Export…' }));
     const previewButton = await screen.findByRole('button', { name: 'Preview CSV' });
     expect(previewButton).not.toBeDisabled();
     fireEvent.click(previewButton);
@@ -313,6 +323,7 @@ describe('ExportBuildCpsPanel', () => {
 
     renderExportPanel('anytone-at-d890uv');
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Export…' }));
     expect(await screen.findByRole('button', { name: 'AMAir.CSV' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Channel.CSV' })).toBeInTheDocument();
 
@@ -346,6 +357,7 @@ describe('ExportBuildCpsPanel', () => {
 
     renderExportPanel('anytone-at-d890uv');
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Export…' }));
     expect(await screen.findByRole('button', { name: 'AMZone.CSV' })).toBeInTheDocument();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Preview CSV' }));
@@ -356,18 +368,13 @@ describe('ExportBuildCpsPanel', () => {
     expect(await screen.findByRole('tab', { name: /AMZone\.CSV/ })).toBeInTheDocument();
   });
 
-  it('renders NeonPlug merge-first export with greenfield secondary path', async () => {
+  it('opens NeonPlug export on What to export with greenfield choice', async () => {
     renderExportPanel('neonplug-dm32uv');
 
-    expect(await screen.findByText('Merge into radio-read base')).toBeInTheDocument();
-    const mergeButton = screen.getByRole('button', { name: 'Download for radio write' });
-    expect(mergeButton).toBeDisabled();
-    expect(
-      screen.getByRole('button', { name: 'Download greenfield .neonplug' }),
-    ).not.toBeDisabled();
-    expect(screen.queryByRole('button', { name: 'Preview CSV' })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'Export…' }));
+    expect(await screen.findByText(/Merge into radio-read base/i)).toBeInTheDocument();
     expect(screen.getByText(/not safe to write back/i)).toBeInTheDocument();
-    expect(screen.getByText(/saved on this NeonPlug egress pathway/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Preview CSV' })).not.toBeInTheDocument();
   });
 
   it('enables radio-write download when DM32UV egress has stored hydration', async () => {
@@ -390,19 +397,21 @@ describe('ExportBuildCpsPanel', () => {
       },
     });
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Export…' }));
+    expect(await screen.findByText(/radio\.neonplug/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('button', { name: 'Download for radio write' }),
     ).not.toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Clear stored donor' })).toBeInTheDocument();
-    expect(screen.getByText(/Stored: radio\.neonplug/)).toBeInTheDocument();
   });
 
   it('persists donor settings messaging for UV5R-Mini NeonPlug builds', async () => {
     renderExportPanel('neonplug-uv5rmini');
 
-    expect(await screen.findByText('Merge into radio-read base')).toBeInTheDocument();
-    expect(screen.getByText(/saved on this NeonPlug egress pathway/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Download for radio write' })).toBeDisabled();
+    fireEvent.click(await screen.findByRole('button', { name: 'Export…' }));
+    expect(await screen.findByText(/Merge into radio-read base/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('button', { name: /greenfield/i })).toBeInTheDocument();
   });
 
   it('enables radio-write download when UV5R-Mini egress has stored hydration', async () => {
@@ -425,11 +434,12 @@ describe('ExportBuildCpsPanel', () => {
       },
     });
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Export…' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Use stored donor' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByRole('button', { name: 'Download for radio write' }),
     ).not.toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Clear stored donor' })).toBeInTheDocument();
-    expect(screen.getByText(/Stored: uv5r\.neonplug/)).toBeInTheDocument();
   });
 
   it('shows Web Serial panel for Direct radio builds without CPS download', async () => {
@@ -501,12 +511,12 @@ describe('ExportBuildCpsPanel', () => {
 
     render(<Uv5rMiniExportHarness />);
 
-    expect(
-      await screen.findByRole('button', { name: /Download for radio write/i }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Export…' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /CHIRP/i }));
-    expect(await screen.findByRole('button', { name: /Download CSV/i })).toBeInTheDocument();
-    expect(screen.getByText(/memory CSV using the profile below/i)).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Export…' })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Choose the runtime profile in the export dialog/i),
+    ).toBeInTheDocument();
     expect(chirpEgress.formatId).toBe('chirp');
   });
 
@@ -578,16 +588,17 @@ describe('ExportBuildCpsPanel', () => {
     });
     renderExportPanel('radiofoundry-dm32uv');
 
-    const download = await screen.findByRole('button', { name: 'Download codeplug.bin' });
-    expect(download).not.toBeDisabled();
+    const exportBtn = await screen.findByRole('button', { name: 'Export…' });
+    expect(exportBtn).not.toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Download ZIP' })).not.toBeInTheDocument();
     expect(screen.getByText(/This downloads one/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Write radio/i })).not.toBeInTheDocument();
 
-    fireEvent.click(download);
+    fireEvent.click(exportBtn);
+    fireEvent.click(await screen.findByTestId('export-download-binary'));
     expect(await screen.findByText('Scan list "Evening" was not written')).toBeInTheDocument();
 
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"][accept*=".bin"]') as HTMLInputElement;
     expect(input.accept).toContain('.bin');
     const file = new File([new Uint8Array([1, 2, 3])], 'codeplug.bin');
     fireEvent.change(input, { target: { files: [file] } });
@@ -609,12 +620,23 @@ describe('ExportBuildCpsPanel', () => {
       warnings: ['Channel 3 "Odd" has mode byte 0x05.'],
     });
     renderExportPanel('radiofoundry-dm32uv');
-    await screen.findByRole('button', { name: 'Download codeplug.bin' });
+    await screen.findByRole('button', { name: 'Export…' });
 
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"][accept*=".bin"]') as HTMLInputElement;
     const file = new File([new Uint8Array([1, 2, 3])], 'codeplug.bin');
     fireEvent.change(input, { target: { files: [file] } });
     expect(await screen.findByText('Check these after the import')).toBeInTheDocument();
     expect(screen.getByText('Channel 3 "Odd" has mode byte 0x05.')).toBeInTheDocument();
+  });
+
+  it('the export page has no warnings until the dialog opens', async () => {
+    checkCpsExport.mockResolvedValueOnce({
+      warnings: [{ kind: 'general', severity: 'problem', message: 'Hidden until dialog' }],
+      fileNames: ['Channels.csv'],
+    });
+    renderExportPanel('opengd77-1701');
+    expect(screen.queryByText('Hidden until dialog')).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'Export…' }));
+    expect(await screen.findByText('Hidden until dialog')).toBeInTheDocument();
   });
 });

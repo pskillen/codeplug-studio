@@ -22,6 +22,44 @@ function cleanShorten(i: number): ExportWarning {
   };
 }
 
+function unlinked(message: string): ExportWarning {
+  return { kind: 'unlinked', severity: 'problem', message };
+}
+
+function shortened(params: {
+  entityKind: string;
+  original: string;
+  exported: string;
+  limit?: number;
+  profileLabel?: string;
+}): ExportWarning {
+  return {
+    kind: 'wire_name',
+    severity: 'info',
+    remediation: 'shortened',
+    limit: 16,
+    profileLabel: 'Anytone AT-D890UV',
+    ...params,
+  };
+}
+
+function stillTooLong(params: {
+  entityKind: string;
+  original: string;
+  exported: string;
+  limit?: number;
+  profileLabel?: string;
+}): ExportWarning {
+  return {
+    kind: 'wire_name',
+    severity: 'problem',
+    remediation: 'truncated',
+    limit: 16,
+    profileLabel: 'Anytone AT-D890UV',
+    ...params,
+  };
+}
+
 describe('WarningsList', () => {
   it('full shows problems open with counts and folds clean shortens behind one line', () => {
     const warnings: ExportWarning[] = [
@@ -94,6 +132,144 @@ describe('WarningsList', () => {
     );
     fireEvent.click(screen.getByText('1 names shortened cleanly'));
     expect(screen.getByText(/GB3XX — Glasgow North/)).toBeTruthy();
+  });
+
+  it('folds unlinked problems in the yellow alert and clean shortens in the info section', () => {
+    const warnings: ExportWarning[] = [
+      unlinked('Including 19 channel(s) not linked to a zone'),
+      unlinked('Including 7 talk group(s) not referenced by a channel'),
+      shortened({
+        entityKind: 'Channel',
+        original: 'Aberdeen Approach',
+        exported: 'Aber Approach',
+      }),
+      shortened({
+        entityKind: 'Channel',
+        original: 'Edinburgh Approach',
+        exported: 'Edinb Approach',
+      }),
+      shortened({
+        entityKind: 'Talk group',
+        original: 'Australia, New Zealand',
+        exported: 'Aus+NZ',
+      }),
+    ];
+    wrap(<WarningsList warnings={warnings} mode="full" />);
+
+    expect(screen.getByText('Export warnings')).toBeTruthy();
+    const unlinkedControl = screen.getByRole('button', { name: /Export unlinked items \(2\)/ });
+    expect(unlinkedControl).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByTestId('warnings-list-notes')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('3 names shortened cleanly'));
+    expect(screen.getByText(/"Aberdeen Approach" → "Aber Approach"/)).toBeTruthy();
+  });
+
+  it('renders clean shortens as info only — no Export warnings alert', () => {
+    wrap(
+      <WarningsList
+        warnings={[
+          shortened({
+            entityKind: 'Channel',
+            original: 'Aberdeen Approach',
+            exported: 'Aber Approach',
+          }),
+          shortened({
+            entityKind: 'Channel',
+            original: 'Edinburgh Approach',
+            exported: 'Edinb Approach',
+          }),
+        ]}
+        mode="full"
+      />,
+    );
+
+    expect(screen.queryByText('Export warnings')).toBeNull();
+    expect(screen.getByTestId('warnings-list-notes')).toBeTruthy();
+    fireEvent.click(screen.getByText('2 names shortened cleanly'));
+    expect(screen.getByText(/"Aberdeen Approach" → "Aber Approach"/)).toBeTruthy();
+  });
+
+  it('renders both sections when clean and still-too-long shortens mix', () => {
+    wrap(
+      <WarningsList
+        warnings={[
+          shortened({
+            entityKind: 'Channel',
+            original: 'Aberdeen Approach',
+            exported: 'Aber Approach',
+          }),
+          stillTooLong({
+            entityKind: 'Channel',
+            original: 'This Name Remains Far Too Long After Shortening',
+            exported: 'StillTooLongNameX',
+          }),
+        ]}
+        mode="full"
+      />,
+    );
+
+    expect(screen.getByText('Export warnings')).toBeTruthy();
+    expect(screen.getByTestId('warnings-list-notes')).toBeTruthy();
+    const problemChannels = screen.getByRole('button', { name: /Channel names shortened \(1\)/ });
+    fireEvent.click(problemChannels);
+    expect(screen.getByText(/still too long/)).toBeTruthy();
+    fireEvent.click(screen.getByText('1 names shortened cleanly'));
+    expect(screen.getByText(/"Aberdeen Approach" → "Aber Approach"/)).toBeTruthy();
+  });
+
+  it('keeps non-group general warnings visible without an accordion', () => {
+    wrap(
+      <WarningsList
+        warnings={[
+          {
+            kind: 'general',
+            severity: 'problem',
+            message: 'Build exceeded profile channel cap',
+          },
+        ]}
+        mode="full"
+      />,
+    );
+
+    expect(screen.getByText('Export warnings')).toBeTruthy();
+    expect(screen.getByText('Build exceeded profile channel cap')).toBeTruthy();
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByTestId('warnings-list-notes')).toBeNull();
+  });
+
+  it('expands unlinked problem groups in full mode', () => {
+    const warnings: ExportWarning[] = [
+      {
+        kind: 'unlinked',
+        severity: 'problem',
+        message: 'Including 19 channel(s) not linked to a zone',
+      },
+    ];
+    wrap(<WarningsList warnings={warnings} mode="full" />);
+    const unlinked = screen.getByRole('button', { name: /Export unlinked items \(1\)/ });
+    expect(unlinked).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(unlinked);
+    expect(unlinked).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText(/Including 19 channel\(s\)/)).toBeInTheDocument();
+  });
+
+  it('expands unlinked items on click', () => {
+    wrap(
+      <WarningsList
+        warnings={[
+          unlinked('Including 19 channel(s) not linked to a zone'),
+          unlinked('Including 22304 digital contact(s) not referenced by a channel'),
+        ]}
+        mode="full"
+      />,
+    );
+
+    const unlinkedControl = screen.getByRole('button', { name: /Export unlinked items \(2\)/ });
+    expect(unlinkedControl).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(unlinkedControl);
+    expect(unlinkedControl).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText(/Including 19 channel\(s\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Including 22304 digital contact\(s\)/)).toBeInTheDocument();
   });
 
   it('keps_excluded is a folded note', () => {

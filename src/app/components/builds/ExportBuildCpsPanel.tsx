@@ -1,8 +1,5 @@
-import type { ExportWarning } from '@core/import-export/exportWarning.ts';
-import { dedupeWarnings } from '@core/import-export/dedupeWarnings.ts';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button, FileButton, Group, List, Modal, Stack, Text } from '@mantine/core';
-import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
+import { Alert, Button, FileButton, List, Stack, Text } from '@mantine/core';
 import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
 import { prepareBuildForFrequencyRangeExportPatch } from '../../lib/frequencyRangeExportSettingsPatch.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
@@ -21,16 +18,10 @@ import type { FormatId } from '@core/import-export/types.ts';
 import type { CpsAppExportOptions } from '../../services/buildCpsExportService.ts';
 import ExportBuildSettingsSections from './ExportBuildSettingsSections.tsx';
 import EgressPathwayCards from './EgressPathwayCards.tsx';
-import ProfilePicker from './ProfilePicker.tsx';
-import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
-import ExportWarningsAlert from './ExportWarningsAlert.tsx';
+import ExportFileDialog from './ExportFileDialog/ExportFileDialog.tsx';
 import Dm32PreferNeonPlugAlert from './Dm32PreferNeonPlugAlert.tsx';
 import Dm32AprsSetupAlert from './Dm32AprsSetupAlert.tsx';
 import BuildRadioIoPanel from './BuildRadioIoPanel.tsx';
-import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
-import DriveBrowserModal, { type DriveSaveTarget } from '../import-export/DriveBrowserModal.tsx';
-import GoogleDriveActionButton from '../import-export/GoogleDriveActionButton.tsx';
-import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 import {
   resolvedBuildExportSettings,
   radioBuildFormatExportDefaults,
@@ -48,17 +39,9 @@ import { persistence } from '../../state/persistence.ts';
 import {
   defaultCpsSingleFileName,
   defaultCpsZipFileName,
-  downloadCpsFile,
-  downloadCpsSingleFile,
-  downloadCpsZip,
-  extractNeonplugDonorFromZip,
-  isNeonplugDonorBag,
-  uploadCpsZipToDrive,
-  validateNeonplugDonorBase,
 } from '../../services/buildCpsExportService.ts';
 import { useBuildCpsExportFileNames } from '../../hooks/useBuildCpsExportFileNames.ts';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
-import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { importRadioFoundryCodeplug } from '../../services/radiofoundryCodeplugImportService.ts';
 
 function describeCodeplugImport(channelCount: number, zoneCount: number): string {
@@ -81,7 +64,6 @@ export default function ExportBuildCpsPanel({
 }: ExportBuildCpsPanelProps) {
   const { activeProjectId, activeProject } = useProjects();
   const { activeEgress, egressPaths, setActiveEgressId, reloadEgressPaths } = useBuildLayout();
-  const { withDriveAuthRetry } = useGoogleDrive();
   const { putBuild } = useFormatBuilds();
 
   const formatId = (activeEgress?.formatId ?? 'opengd77') as FormatId;
@@ -93,17 +75,13 @@ export default function ExportBuildCpsPanel({
   const resolvedSettings = resolvedBuildExportSettings(build);
 
   const [channelCount, setChannelCount] = useState<number | null>(null);
-  const [exportWarnings, setExportWarnings] = useState<ExportWarning[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [exporting, setExporting] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [importingCodeplug, setImportingCodeplug] = useState(false);
   const [codeplugImportMessage, setCodeplugImportMessage] = useState<string | null>(null);
   const [codeplugImportFailed, setCodeplugImportFailed] = useState(false);
   const [codeplugImportWarnings, setCodeplugImportWarnings] = useState<string[]>([]);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [driveBrowserOpen, setDriveBrowserOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
   /** CHIRP-only runtime profile override — must not absorb NeonPlug / radio-io profile ids. */
   const [exportProfileId, setExportProfileId] = useState(profileId);
   const [lastChirpEgressId, setLastChirpEgressId] = useState(
@@ -117,12 +95,6 @@ export default function ExportBuildCpsPanel({
   }
   const chirpExportProfileId =
     formatId === 'chirp' ? resolveChirpExportProfileId(exportProfileId, profileId) : profileId;
-  const [overwriteOpen, setOverwriteOpen] = useState(false);
-  const [pendingDriveTarget, setPendingDriveTarget] = useState<DriveSaveTarget | null>(null);
-  const [neonplugBaseBytes, setNeonplugBaseBytes] = useState<Uint8Array | null>(null);
-  const [neonplugBaseFileName, setNeonplugBaseFileName] = useState<string | null>(null);
-  const [neonplugBaseError, setNeonplugBaseError] = useState<string | null>(null);
-  const neonplugBaseInputRef = useRef<HTMLInputElement>(null);
   const migratedRef = useRef(false);
 
   const profileNameLimit = useMemo(() => {
@@ -150,17 +122,6 @@ export default function ExportBuildCpsPanel({
   const exportShipped = formatEntry?.exportStatus === 'shipped';
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
   const suggestedZipName = defaultCpsZipFileName(build.name, formatId);
-  const isNeonplug = formatId === 'neonplug';
-  /** Persist donor retain on the egress path for all NeonPlug profiles (DM32UV + UV5R-Mini). */
-  const persistNeonplugDonor = isNeonplug;
-  const storedNeonplugDonor = persistNeonplugDonor
-    ? isNeonplugDonorBag(activeEgress?.hydration)
-      ? activeEgress.hydration
-      : null
-    : null;
-  const hasNeonplugMergeDonor = Boolean(neonplugBaseBytes) || Boolean(storedNeonplugDonor);
-  const archiveDownloadLabel = isNeonplug ? 'Download .neonplug' : 'Download ZIP';
-  const archiveDriveLabel = isNeonplug ? 'Save .neonplug to Drive' : 'Save ZIP to Drive';
   const defaultScanValue =
     resolvedSettings.defaultScanInclusion ?? formatDefaults.defaultScanInclusion;
 
@@ -187,12 +148,6 @@ export default function ExportBuildCpsPanel({
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time migration on mount
   }, [build.id]);
-
-  function mergeWarnings(warnings: ExportWarning[]) {
-    if (warnings.length) {
-      setExportWarnings((prev) => dedupeWarnings([...prev, ...warnings]));
-    }
-  }
 
   async function handleExportSettingsPatch(
     patch: Partial<BuildExportSettings>,
@@ -252,39 +207,6 @@ export default function ExportBuildCpsPanel({
     }
   }
 
-  async function handleDownloadSingleFile() {
-    if (!activeProjectId) return;
-    setExporting(true);
-    setError(null);
-    try {
-      const result = await downloadCpsSingleFile(activeProjectId, build.id, runtimeExportOverrides);
-      mergeWarnings(result.warnings);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setExporting(false);
-    }
-  }
-
-  async function handleDownloadFile(fileName: string) {
-    if (!activeProjectId) return;
-    setExporting(true);
-    setError(null);
-    try {
-      const result = await downloadCpsFile(
-        activeProjectId,
-        build.id,
-        fileName,
-        runtimeExportOverrides,
-      );
-      mergeWarnings(result.warnings);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setExporting(false);
-    }
-  }
-
   async function handleImportCodeplug(file: File | null) {
     if (!file || !activeProjectId) return;
     setImportingCodeplug(true);
@@ -314,128 +236,6 @@ export default function ExportBuildCpsPanel({
     } finally {
       setImportingCodeplug(false);
     }
-  }
-
-  async function handleDownloadZip(baseNeonplugBytes?: Uint8Array) {
-    if (!activeProjectId) return;
-    setExporting(true);
-    setError(null);
-    try {
-      const result = await downloadCpsZip(activeProjectId, build.id, {
-        ...runtimeExportOverrides,
-        fileName: suggestedZipName,
-        baseNeonplugBytes,
-      });
-      mergeWarnings(result.warnings);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setExporting(false);
-    }
-  }
-
-  async function saveZipToDrive(target: DriveSaveTarget, baseNeonplugBytes?: Uint8Array) {
-    if (!activeProjectId) return;
-    setExporting(true);
-    setError(null);
-    try {
-      const result = await withDriveAuthRetry(() =>
-        uploadCpsZipToDrive(
-          activeProjectId,
-          build.id,
-          {
-            folderId: target.folderId,
-            fileName: target.fileName,
-            existingFileId: target.existingFileId,
-          },
-          {
-            ...runtimeExportOverrides,
-            baseNeonplugBytes,
-          },
-        ),
-      );
-      mergeWarnings(result.warnings);
-      saveDriveLastFolderId(target.folderId);
-      saveDriveLastFolderPath(target.path);
-      setDriveBrowserOpen(false);
-      setOverwriteOpen(false);
-      setPendingDriveTarget(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setExporting(false);
-    }
-  }
-
-  async function handleNeonplugBaseFileChange(file: File | null) {
-    setNeonplugBaseError(null);
-    if (!file) {
-      setNeonplugBaseBytes(null);
-      setNeonplugBaseFileName(null);
-      return;
-    }
-    try {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const { warnings } = validateNeonplugDonorBase(bytes, profileId);
-      mergeWarnings(warnings);
-      setNeonplugBaseBytes(bytes);
-      setNeonplugBaseFileName(file.name);
-
-      if (persistNeonplugDonor && activeEgress) {
-        const bag = extractNeonplugDonorFromZip(bytes, { sourceFileName: file.name });
-        setSavingSettings(true);
-        setSettingsError(null);
-        const next = buildService.withEgressHydration(activeEgress, bag);
-        const result = await buildService.putEgressPath(next, activeEgress.revision);
-        if (!result.ok) {
-          setSettingsError(
-            result.reason === 'revision_conflict'
-              ? 'Egress changed elsewhere — reload and try again.'
-              : 'Could not save donor settings on this pathway.',
-          );
-        } else {
-          await reloadEgressPaths();
-        }
-        setSavingSettings(false);
-      }
-    } catch (err) {
-      setNeonplugBaseBytes(null);
-      setNeonplugBaseFileName(null);
-      setNeonplugBaseError(err instanceof Error ? err.message : String(err));
-      setSavingSettings(false);
-    }
-  }
-
-  async function handleClearStoredNeonplugDonor() {
-    if (!persistNeonplugDonor || !storedNeonplugDonor || !activeEgress) return;
-    setSavingSettings(true);
-    setSettingsError(null);
-    setNeonplugBaseBytes(null);
-    setNeonplugBaseFileName(null);
-    try {
-      const next = buildService.clearEgressHydration(activeEgress);
-      const result = await buildService.putEgressPath(next, activeEgress.revision);
-      if (!result.ok) {
-        setSettingsError(
-          result.reason === 'revision_conflict'
-            ? 'Egress changed elsewhere — reload and try again.'
-            : 'Could not clear donor settings.',
-        );
-      } else {
-        await reloadEgressPaths();
-      }
-    } finally {
-      setSavingSettings(false);
-    }
-  }
-
-  function handleDriveSaveTarget(target: DriveSaveTarget) {
-    if (target.existingFileId) {
-      setPendingDriveTarget(target);
-      setOverwriteOpen(true);
-      return;
-    }
-    void saveZipToDrive(target, isNeonplug ? (neonplugBaseBytes ?? undefined) : undefined);
   }
 
   if (!activeEgress) {
@@ -469,6 +269,28 @@ export default function ExportBuildCpsPanel({
         egressPaths={egressPaths}
         activeEgressId={activeEgress.id}
         onSelect={(id) => void handleActiveEgressChange(id)}
+      />
+    ) : null;
+
+  const exportDialog =
+    activeProjectId && activeEgress && exportDialogOpen ? (
+      <ExportFileDialog
+        open
+        onClose={() => setExportDialogOpen(false)}
+        build={build}
+        projectId={activeProjectId}
+        activeEgress={activeEgress}
+        formatId={formatId}
+        formatLabel={formatEntry?.label ?? formatId}
+        buildProfileId={profileId}
+        exportProfileId={exportProfileId}
+        onExportProfileIdChange={setExportProfileId}
+        runtimeExportOverrides={runtimeExportOverrides}
+        suggestedZipName={suggestedZipName}
+        exportFileNames={exportFileNames}
+        hasChannels={hasChannels}
+        interchangeFolderId={interchangeFolderId}
+        reloadEgressPaths={reloadEgressPaths}
       />
     ) : null;
 
@@ -565,17 +387,10 @@ export default function ExportBuildCpsPanel({
             Add channels to the library before exporting this build.
           </Text>
         ) : null}
-        {error ? <Alert color="red">{error}</Alert> : null}
-        {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
-        <Button
-          leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-          variant="filled"
-          disabled={!hasChannels || exporting}
-          loading={exporting}
-          onClick={() => void handleDownloadZip()}
-        >
-          Download {imageFileName}
+        <Button variant="filled" disabled={!hasChannels} onClick={() => setExportDialogOpen(true)}>
+          Export…
         </Button>
+        {exportDialog}
         <Text size="sm">
           Import a <code>{imageFileName}</code> into this project. Channels, zones, and the other
           library rows in the file are added.
@@ -611,7 +426,6 @@ export default function ExportBuildCpsPanel({
 
   if (isSingleFileCpsExportAdapter(adapter)) {
     const suggestedCsvName = defaultCpsSingleFileName(formatId, chirpExportProfileId);
-    const profileOverridesBuild = chirpExportProfileId !== profileId;
 
     return (
       <Stack gap="sm">
@@ -621,47 +435,17 @@ export default function ExportBuildCpsPanel({
           <Text span fw={600}>
             {formatEntry?.label ?? formatId}
           </Text>{' '}
-          memory CSV using the profile below.
+          memory CSV. Choose the runtime profile in the export dialog when it opens.
         </Text>
-        <ProfilePicker
-          mode="select"
-          formatId={formatId}
-          value={chirpExportProfileId}
-          onChange={setExportProfileId}
-          description="CHIRP memory layout and power ladder for target hardware"
-        />
-        {profileOverridesBuild ? (
-          <Text size="sm" c="dimmed">
-            Export uses {traitProfileFor(chirpExportProfileId)?.label ?? chirpExportProfileId};
-            pathway default is {profileLabel}.
-          </Text>
-        ) : null}
         {!hasChannels ? (
           <Text size="sm" c="dimmed">
             Add channels to the library and memory list before exporting this build.
           </Text>
         ) : null}
-        {error ? <Alert color="red">{error}</Alert> : null}
-        {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
-        <Group gap="xs">
-          <Button
-            leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-            variant="filled"
-            disabled={!hasChannels || exporting}
-            loading={exporting}
-            onClick={() => void handleDownloadSingleFile()}
-          >
-            Download CSV
-          </Button>
-          <Button
-            variant="outline"
-            leftSection={<IconTable size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-            disabled={!hasChannels || exporting}
-            onClick={() => setPreviewOpen(true)}
-          >
-            Preview CSV
-          </Button>
-        </Group>
+        <Button variant="filled" disabled={!hasChannels} onClick={() => setExportDialogOpen(true)}>
+          Export…
+        </Button>
+        {exportDialog}
         <Text size="sm" c="dimmed">
           Only analogue FM/AM channels are exported. Digital modes are skipped with a warning.
           Suggested filename: {suggestedCsvName}
@@ -669,14 +453,6 @@ export default function ExportBuildCpsPanel({
         <Text size="sm" c="dimmed">
           Export name settings match the Channels page. Reorder memories on Channels.
         </Text>
-        <CpsCsvPreviewModal
-          opened={previewOpen}
-          onClose={() => setPreviewOpen(false)}
-          build={build}
-          formatId={formatId}
-          profileId={profileId}
-          exportOptions={runtimeExportOverrides}
-        />
       </Stack>
     );
   }
@@ -720,241 +496,22 @@ export default function ExportBuildCpsPanel({
           Add channels to the library before exporting this build.
         </Text>
       ) : null}
-      {error ? <Alert color="red">{error}</Alert> : null}
       {showDm32PreferNeonPlug ? <Dm32AprsSetupAlert exportFileNames={exportFileNames} /> : null}
-      {exportWarnings.length > 0 ? <ExportWarningsAlert warnings={exportWarnings} /> : null}
-      {isNeonplug ? (
-        <Stack gap="md">
-          <Stack gap="xs">
-            <Text size="sm" fw={600}>
-              Merge into radio-read base
-            </Text>
-            <Text size="sm">
-              Merge Studio channels and organisation into a radio-read donor so NeonPlug keeps
-              settings and operator DMR IDs:
-            </Text>
-            <Text size="sm" component="div">
-              <ol style={{ margin: 0, paddingLeft: '1.25rem' }}>
-                <li>In NeonPlug, read the codeplug from the radio.</li>
-                <li>
-                  Export a <code>.neonplug</code> file from NeonPlug.
-                </li>
-                <li>Upload that donor file here.</li>
-                <li>Download the merged file for radio write.</li>
-                <li>Import the merged file in NeonPlug.</li>
-                <li>Write the codeplug back to the radio.</li>
-              </ol>
-            </Text>
-            <input
-              ref={neonplugBaseInputRef}
-              type="file"
-              accept=".neonplug,application/zip"
-              style={{ display: 'none' }}
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null;
-                void handleNeonplugBaseFileChange(file);
-                event.target.value = '';
-              }}
-            />
-            <Group gap="xs">
-              <Button
-                variant="light"
-                size="sm"
-                disabled={exporting || savingSettings}
-                onClick={() => neonplugBaseInputRef.current?.click()}
-              >
-                {neonplugBaseFileName || storedNeonplugDonor
-                  ? 'Replace donor .neonplug'
-                  : 'Upload donor .neonplug'}
-              </Button>
-              {neonplugBaseFileName ? (
-                <Text size="sm" c="dimmed">
-                  Session: {neonplugBaseFileName}
-                </Text>
-              ) : storedNeonplugDonor ? (
-                <Text size="sm" c="dimmed">
-                  Stored
-                  {storedNeonplugDonor.sourceFileName
-                    ? `: ${storedNeonplugDonor.sourceFileName}`
-                    : ' on this egress'}
-                  {storedNeonplugDonor.capturedAt
-                    ? ` (${new Date(storedNeonplugDonor.capturedAt).toLocaleString()})`
-                    : ''}
-                </Text>
-              ) : null}
-              {persistNeonplugDonor && storedNeonplugDonor ? (
-                <Button
-                  variant="subtle"
-                  color="red"
-                  size="compact-sm"
-                  disabled={exporting || savingSettings}
-                  loading={savingSettings}
-                  onClick={() => void handleClearStoredNeonplugDonor()}
-                >
-                  Clear stored donor
-                </Button>
-              ) : null}
-            </Group>
-            {persistNeonplugDonor ? (
-              <Text size="sm" c="dimmed">
-                Donor settings are saved on this NeonPlug egress pathway for repeat exports. Upload
-                once, then download for radio write without re-selecting the file.
-              </Text>
-            ) : null}
-            {neonplugBaseError ? <Alert color="red">{neonplugBaseError}</Alert> : null}
-            <Group gap="xs">
-              <Button
-                leftSection={<IconPackage size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-                variant="filled"
-                disabled={!hasChannels || !hasNeonplugMergeDonor || exporting}
-                loading={exporting}
-                onClick={() => void handleDownloadZip(neonplugBaseBytes ?? undefined)}
-              >
-                Download for radio write
-              </Button>
-              <GoogleDriveActionButton
-                disabled={!hasChannels || !hasNeonplugMergeDonor || exporting}
-                loading={exporting}
-                onClick={() => setDriveBrowserOpen(true)}
-              >
-                Save for radio write to Drive
-              </GoogleDriveActionButton>
-            </Group>
-          </Stack>
-          <Stack gap="xs">
-            <Alert color="yellow" title="Greenfield download (not for radio write)">
-              A Studio-only <code>.neonplug</code> omits radio settings, operator DMR IDs, and other
-              unmodelled NeonPlug fields. Safe for browsing in NeonPlug — not safe to write back
-              without merging into a donor base first.
-            </Alert>
-            <Button
-              leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-              variant="subtle"
-              size="compact-sm"
-              disabled={!hasChannels || exporting}
-              loading={exporting}
-              onClick={() => void handleDownloadZip()}
-            >
-              Download greenfield .neonplug
-            </Button>
-          </Stack>
-          <Text size="sm" c="dimmed">
-            NeonPlug export is a single <code>.neonplug</code> ZIP containing{' '}
-            <code>codeplug.json</code>.
-          </Text>
-        </Stack>
-      ) : (
-        <>
-          <Group gap="xs">
-            <Button
-              leftSection={<IconPackage size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-              variant="filled"
-              disabled={!hasChannels || exporting}
-              loading={exporting}
-              onClick={() => void handleDownloadZip()}
-            >
-              {archiveDownloadLabel}
-            </Button>
-            <GoogleDriveActionButton
-              disabled={!hasChannels || exporting}
-              loading={exporting}
-              onClick={() => setDriveBrowserOpen(true)}
-            >
-              {archiveDriveLabel}
-            </GoogleDriveActionButton>
-            <Button
-              variant="outline"
-              leftSection={<IconTable size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-              disabled={!hasChannels || exporting}
-              onClick={() => setPreviewOpen(true)}
-            >
-              Preview CSV
-            </Button>
-          </Group>
-          <Stack gap={4}>
-            <Text size="sm" fw={600}>
-              Individual files
-            </Text>
-            <Group gap="xs">
-              {exportFileNames.map((fileName) => (
-                <Button
-                  key={fileName}
-                  size="xs"
-                  variant="light"
-                  leftSection={<IconDownload size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
-                  disabled={!hasChannels || exporting}
-                  onClick={() => void handleDownloadFile(fileName)}
-                >
-                  {fileName}
-                </Button>
-              ))}
-            </Group>
-          </Stack>
-        </>
-      )}
+      <Button variant="filled" disabled={!hasChannels} onClick={() => setExportDialogOpen(true)}>
+        Export…
+      </Button>
+      {exportDialog}
+      {formatId === 'neonplug' ? (
+        <Text size="sm" c="dimmed">
+          NeonPlug export is a single <code>.neonplug</code> ZIP containing{' '}
+          <code>codeplug.json</code>. Upload a radio-read donor in the export dialog when merging
+          for radio write.
+        </Text>
+      ) : null}
       <Text size="sm" c="dimmed">
         Wire preview pages show the same export settings. Switch export pathway above when this
         radio supports multiple CPS targets.
       </Text>
-      <DriveBrowserModal
-        opened={driveBrowserOpen}
-        onClose={() => setDriveBrowserOpen(false)}
-        mode="save"
-        interchangeFolderId={interchangeFolderId}
-        defaultFileName={suggestedZipName}
-        saveConflictKind="zip"
-        saving={exporting}
-        onSelectFile={() => {}}
-        onSaveTarget={handleDriveSaveTarget}
-      />
-      <CpsCsvPreviewModal
-        opened={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        build={build}
-        formatId={formatId}
-        profileId={profileId}
-        exportOptions={runtimeExportOverrides}
-      />
-      <Modal
-        opened={overwriteOpen}
-        onClose={() => {
-          setOverwriteOpen(false);
-          setPendingDriveTarget(null);
-        }}
-        title="Overwrite file?"
-        centered
-      >
-        <Stack gap="sm">
-          <Text size="sm">
-            {pendingDriveTarget?.fileName} already exists in this folder. Overwrite it?
-          </Text>
-          <Group justify="flex-end">
-            <Button
-              variant="default"
-              onClick={() => {
-                setOverwriteOpen(false);
-                setPendingDriveTarget(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              color="red"
-              loading={exporting}
-              onClick={() => {
-                if (pendingDriveTarget) {
-                  void saveZipToDrive(
-                    pendingDriveTarget,
-                    isNeonplug ? (neonplugBaseBytes ?? undefined) : undefined,
-                  );
-                }
-              }}
-            >
-              Overwrite
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
     </Stack>
   );
 }

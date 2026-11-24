@@ -1,14 +1,34 @@
 import { describe, expect, it, vi } from 'vitest';
 import { unzipSync } from 'fflate';
-import { newChannel, newProjectMeta, newRadioBuildForProfile } from '@core/domain/factories.ts';
+import {
+  newChannel,
+  newOwnDigitalId,
+  newProjectMeta,
+  newRadioBuildForProfile,
+} from '@core/domain/factories.ts';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import { DM32_CORE_EXPORT_FILES } from '../../test/dm32CsvCompare.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
 import {
   buildCpsZipBytes,
+  checkCpsExport,
   defaultCpsZipFileName,
+  downloadCpsSingleFile,
+  downloadCpsZip,
   uploadCpsZipToDrive,
 } from './buildCpsExportService.ts';
+
+const { downloadZip, downloadTextFile, downloadBinaryFile } = vi.hoisted(() => ({
+  downloadZip: vi.fn(),
+  downloadTextFile: vi.fn(),
+  downloadBinaryFile: vi.fn(),
+}));
+
+vi.mock('@integrations/download/browserDownload.ts', () => ({
+  downloadZip,
+  downloadTextFile,
+  downloadBinaryFile,
+}));
 
 const { writeBinaryFile } = vi.hoisted(() => ({
   writeBinaryFile: vi.fn(async () => ({
@@ -123,6 +143,73 @@ describe('buildCpsExportService', () => {
     for (const fileName of DM32_CORE_EXPORT_FILES) {
       expect(entries).toContain(fileName);
     }
+  });
+
+  it('checkCpsExport returns the same warnings the download does for multi-file', async () => {
+    downloadZip.mockClear();
+    const { store, build, projectId } = await seedStore();
+    const check = await checkCpsExport(projectId, build.id, undefined, store);
+    const download = await buildCpsZipBytes(projectId, build.id, undefined, store);
+    await downloadCpsZip(projectId, build.id, undefined, store);
+    expect(check.warnings).toEqual(download.warnings);
+    expect(downloadZip).toHaveBeenCalledOnce();
+    expect(check.warnings).toEqual([
+      {
+        kind: 'unlinked',
+        severity: 'problem',
+        message: 'Including 1 channel(s) not linked to a zone',
+      },
+    ]);
+  });
+
+  it('checkCpsExport returns the same warnings for CHIRP single file', async () => {
+    downloadTextFile.mockClear();
+    const meta = newProjectMeta('CHIRP export');
+    const channel = withExportEligibleDefaults(newChannel(meta.projectId, 'CH', 'M7ABC'));
+    const { build, egressPaths } = newRadioBuildForProfile(meta.projectId, 'chirp-uv5r', 'CHIRP');
+    const store = new InMemoryProjectPersistence();
+    await store.seedProject({ meta, channels: [channel], radioBuilds: [build], egressPaths });
+    const check = await checkCpsExport(meta.projectId, build.id, undefined, store);
+    await downloadCpsSingleFile(meta.projectId, build.id, undefined, store);
+    expect(downloadTextFile).toHaveBeenCalledOnce();
+    expect(check.fileNames.length).toBe(1);
+  });
+
+  it('checkCpsExport returns warnings for RadioFoundry binary without download', async () => {
+    downloadBinaryFile.mockClear();
+    const meta = newProjectMeta('RF export');
+    const channel = withExportEligibleDefaults(newChannel(meta.projectId, 'CH', 'M7ABC'));
+    const ownDigitalIds = [
+      { ...newOwnDigitalId(meta.projectId, 'dmr', 'M7ABC', 235_103), isDefault: true },
+    ];
+    const { build, egressPaths } = newRadioBuildForProfile(
+      meta.projectId,
+      'radiofoundry-dm32uv',
+      'RF build',
+    );
+    const store = new InMemoryProjectPersistence();
+    await store.seedProject({
+      meta,
+      channels: [channel],
+      ownDigitalIds,
+      radioBuilds: [build],
+      egressPaths,
+    });
+    const check = await checkCpsExport(meta.projectId, build.id, undefined, store);
+    await downloadCpsZip(meta.projectId, build.id, undefined, store);
+    expect(check.fileNames).toEqual(['codeplug.bin']);
+    expect(downloadBinaryFile).toHaveBeenCalledOnce();
+  });
+
+  it('checkCpsExport never triggers a download', async () => {
+    downloadZip.mockClear();
+    downloadTextFile.mockClear();
+    downloadBinaryFile.mockClear();
+    const { store, build, projectId } = await seedStore();
+    await checkCpsExport(projectId, build.id, undefined, store);
+    expect(downloadZip).not.toHaveBeenCalled();
+    expect(downloadTextFile).not.toHaveBeenCalled();
+    expect(downloadBinaryFile).not.toHaveBeenCalled();
   });
 
   it('uploadCpsZipToDrive writes binary zip to Google Drive', async () => {

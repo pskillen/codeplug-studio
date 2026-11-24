@@ -40,7 +40,7 @@ import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
 - Per-column **Filter** inputs (case-insensitive substring; AND across columns).
 - Click a column header to sort ascending/descending (locale-aware, numeric-aware).
 - `CpsCsvPreviewModal` fetches only while `opened` (lazy serialisation).
-- Export warnings appear in a yellow alert above the tabs (`ExportWarningsAlert` — groups collapsed by default).
+- Export warnings appear above the tabs via [`WarningsList`](../egress/WarningsList/WarningsList.md) in `full` mode.
 
 ## Related
 

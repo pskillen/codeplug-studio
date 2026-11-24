@@ -2,7 +2,10 @@ import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
-import { isSingleFileCpsExportAdapter } from '@core/import-export/exportAdapter.ts';
+import {
+  isBinaryCpsExportAdapter,
+  isSingleFileCpsExportAdapter,
+} from '@core/import-export/exportAdapter.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
 import {
   exportBuildAll,
@@ -132,6 +135,47 @@ function stripAppOptions(options?: CpsAppExportOptions): {
   if (!options) return { cpsOptions: {} };
   const { egressId, ...cpsOptions } = options;
   return { egressId, cpsOptions };
+}
+
+/** Run the same export projection as delivery, without triggering a browser download. */
+export async function checkCpsExport(
+  projectId: string,
+  buildId: string,
+  options?: CpsZipExportOptions,
+  store: ProjectPersistence = persistence,
+): Promise<{ warnings: ExportWarning[]; fileNames: string[] }> {
+  const { egressId, baseNeonplugBytes, ...cpsOptions } = options ?? {};
+  const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
+  const adapter = getExportAdapter(egress.formatId as FormatId);
+  const library = await loadLibrarySlice(store, projectId);
+  const exportOptions = await mergeCpsExportOptions(
+    store,
+    projectId,
+    build,
+    egress,
+    library,
+    cpsOptions,
+  );
+
+  if (isBinaryCpsExportAdapter(adapter)) {
+    const result = exportBuildBinary({ build, egress, library, options: exportOptions });
+    return { warnings: result.warnings, fileNames: [result.fileName] };
+  }
+  if (isSingleFileCpsExportAdapter(adapter)) {
+    const result = await previewCpsSingleFile(
+      projectId,
+      buildId,
+      { egressId, ...cpsOptions },
+      store,
+    );
+    return { warnings: result.warnings, fileNames: [...result.fileNames] };
+  }
+  if (baseNeonplugBytes !== undefined || egress.formatId === 'neonplug') {
+    const zip = await buildCpsZipBytes(projectId, buildId, options, store);
+    return { warnings: zip.warnings, fileNames: [zip.fileName] };
+  }
+  const result = await previewCpsExport(projectId, buildId, { egressId, ...cpsOptions }, store);
+  return { warnings: result.warnings, fileNames: [...result.fileNames] };
 }
 
 /** Serialise all CPS CSV files for preview (no browser download). */

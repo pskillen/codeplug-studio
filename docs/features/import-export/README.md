@@ -80,7 +80,7 @@ Wire mapping for CPS formats lives in `docs/reference/export-formats/<format>/` 
 
 **Native YAML** (project interchange) lives on **Summary** (`/summary`) under **Project interchange** — import (replace active project), download, and Google Drive save. Home still offers create-from-YAML. Bookmarks to `/import-export` redirect to `/summary`.
 
-**CPS export** lives on each format build under **Export for radio** (`/builds` → `/builds/:id/export`) via [`ExportBuildCpsPanel`](../../../src/app/components/builds/ExportBuildCpsPanel.tsx). Format discovery for new targets is the **New build** wizard (`formatCatalog`), not a separate catalog page.
+**CPS export** lives on each format build under **Export for radio** (`/builds` → `/builds/:id/export`) via [`ExportBuildCpsPanel`](../../../src/app/components/builds/ExportBuildCpsPanel.tsx). File delivery uses **Export…**, which opens the same dialog shell as radio write: optional **What to export** (CHIRP profile or NeonPlug donor), **Checks** with warnings before download, **Preview CSV** on Checks, then delivery (ZIP, single file, codeplug.bin, per-file, or Save to Drive when the project has a Drive folder). Format discovery for new targets is the **New build** wizard (`formatCatalog`), not a separate catalog page.
 
 ## Problems and notes
 

@@ -10,6 +10,7 @@
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
+import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
 import { resolveSatelliteTransmitterWriteNames } from '@core/domain/satellite/resolveSatelliteTransmitterWriteNames.ts';
 import type { SatelliteTransmitterWriteNameResult } from '@core/domain/satellite/resolveSatelliteTransmitterWriteNames.ts';
 import { encodeSatelliteTransmitterWireName } from '@core/domain/satellite/encodeSatelliteTransmitterWireName.ts';
@@ -58,7 +59,7 @@ function resolveTransmitterWireNames(
     return new Map(options.wireNamesByTransmitterId);
   }
   const maxLength = options?.maxNameLength ?? AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH;
-  const pairs = listEligiblePairs(satellites);
+  const pairs = listEligiblePairs(satellites, options?.satelliteOverrides);
   return resolveSatelliteTransmitterWriteNames(pairs, options?.satelliteOverrides, { maxLength });
 }
 
@@ -81,10 +82,15 @@ function isFrequencyEligibleForAtD890(transmitter: SatelliteTransmitter): boolea
   );
 }
 
-function listEligiblePairs(satellites: readonly Satellite[]): EligiblePair[] {
+function listEligiblePairs(
+  satellites: readonly Satellite[],
+  satelliteOverrides?: readonly BuildEntityOverride[],
+): EligiblePair[] {
   const pairs: EligiblePair[] = [];
   for (const satellite of satellites) {
+    if (isEntityExcluded(satelliteOverrides, satellite.id)) continue;
     for (const transmitter of satellite.transmitters) {
+      if (isEntityExcluded(satelliteOverrides, transmitter.id)) continue;
       if (
         isWriteEligible(satellite, transmitter) &&
         isModeSupportedByAtD890(transmitter.mode) &&
@@ -140,10 +146,13 @@ function formatMhz(hz: number): string {
  */
 export function listCapabilitySkippedTransmitters(
   satellites: readonly Satellite[],
+  satelliteOverrides?: readonly BuildEntityOverride[],
 ): CapabilitySkippedTransmitter[] {
   const skipped: CapabilitySkippedTransmitter[] = [];
   for (const satellite of satellites) {
+    if (isEntityExcluded(satelliteOverrides, satellite.id)) continue;
     for (const transmitter of satellite.transmitters) {
+      if (isEntityExcluded(satelliteOverrides, transmitter.id)) continue;
       if (!isWriteEligible(satellite, transmitter)) continue;
 
       if (!isModeSupportedByAtD890(transmitter.mode)) {
@@ -386,29 +395,31 @@ export function previewSatelliteWriteRecords(
 ): SatelliteWritePreviewEntry[] {
   const maxNameLength = options?.maxNameLength ?? AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH;
   const wireNames = resolveTransmitterWireNames(satellites, options);
-  return listEligiblePairs(satellites).map(({ satellite, transmitter }) => {
-    const resolved = wireNameForTransmitter(transmitter.id, satellite, wireNames, maxNameLength);
-    const encodedName = resolved.encodedName.trimEnd();
-    const source = nameEncodingSource(resolved.satelliteShortName, transmitter);
-    return {
-      satelliteId: satellite.id,
-      satelliteName: satellite.name,
-      transmitterId: transmitter.id,
-      transmitterLabel: transmitter.label,
-      mode: transmitter.mode,
-      encodedName,
-      satelliteWireName: resolved.satelliteShortName,
-      generatedWireName: resolved.generatedEncodedName,
-      suggestedFamiliarEncoded: resolved.suggestedFamiliarEncoded,
-      suggestedOscarEncoded: resolved.suggestedOscarEncoded,
-      hasWireNameOverride: resolved.fromOverride,
-      uplinkHz: transmitter.uplinkHz,
-      downlinkHz: transmitter.downlinkHz,
-      nameTruncated:
-        resolved.satelliteShortName !== satellite.name.trim() ||
-        (!resolved.fromOverride && encodedName !== source.slice(0, maxNameLength)),
-    };
-  });
+  return listEligiblePairs(satellites, options?.satelliteOverrides).map(
+    ({ satellite, transmitter }) => {
+      const resolved = wireNameForTransmitter(transmitter.id, satellite, wireNames, maxNameLength);
+      const encodedName = resolved.encodedName.trimEnd();
+      const source = nameEncodingSource(resolved.satelliteShortName, transmitter);
+      return {
+        satelliteId: satellite.id,
+        satelliteName: satellite.name,
+        transmitterId: transmitter.id,
+        transmitterLabel: transmitter.label,
+        mode: transmitter.mode,
+        encodedName,
+        satelliteWireName: resolved.satelliteShortName,
+        generatedWireName: resolved.generatedEncodedName,
+        suggestedFamiliarEncoded: resolved.suggestedFamiliarEncoded,
+        suggestedOscarEncoded: resolved.suggestedOscarEncoded,
+        hasWireNameOverride: resolved.fromOverride,
+        uplinkHz: transmitter.uplinkHz,
+        downlinkHz: transmitter.downlinkHz,
+        nameTruncated:
+          resolved.satelliteShortName !== satellite.name.trim() ||
+          (!resolved.fromOverride && encodedName !== source.slice(0, maxNameLength)),
+      };
+    },
+  );
 }
 
 /**
@@ -423,7 +434,7 @@ export function packSatelliteWriteRecords(
 ): SatelliteWriteRecord[] {
   const maxNameLength = options?.maxNameLength ?? AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH;
   const wireNames = resolveTransmitterWireNames(satellites, options);
-  const pairs = listEligiblePairs(satellites);
+  const pairs = listEligiblePairs(satellites, options?.satelliteOverrides);
   return pairs.map(({ satellite, transmitter }, index) => {
     const resolved = wireNameForTransmitter(transmitter.id, satellite, wireNames, maxNameLength);
     return {

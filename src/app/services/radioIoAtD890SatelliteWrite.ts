@@ -87,8 +87,11 @@ export function skippedSatellites(
  * capacity warning before the operator commits to opening a serial session, instead of only
  * discovering the `RadioWriteBlockedError` after a session is already open.
  */
-export function countWriteEligibleSatelliteRecords(satellites: readonly Satellite[]): number {
-  return packSatelliteWriteRecords(satellites, 0, 0).length;
+export function countWriteEligibleSatelliteRecords(
+  satellites: readonly Satellite[],
+  satelliteOverrides?: readonly BuildEntityOverride[],
+): number {
+  return packSatelliteWriteRecords(satellites, 0, 0, { satelliteOverrides }).length;
 }
 
 /**
@@ -133,6 +136,6 @@ export async function writeSatellitesToRadio(
   return {
     written: records.length,
     skipped: skippedSatellites(satellites),
-    skippedTransmitters: listCapabilitySkippedTransmitters(satellites),
+    skippedTransmitters: listCapabilitySkippedTransmitters(satellites, opts?.satelliteOverrides),
   };
 }
