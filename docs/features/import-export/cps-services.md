@@ -37,6 +37,8 @@ Wire adapters read `AssembledBuild` — they do not query IndexedDB or parse CPS
 
 App-layer `previewCpsExport` in `buildCpsExportService.ts` calls `exportBuildAll` without triggering a browser download; the build export page modal parses results with `csvToTable` for on-screen preview ([#151](https://github.com/pskillen/codeplug-studio/issues/151)).
 
+`checkCpsExport` runs the same projection as the chosen delivery path (multi-file preview, CHIRP single-file preview, NeonPlug ZIP build, or RadioFoundry binary) and returns warnings and file names without calling browser download helpers. The export dialog calls it on **Checks**.
+
 `options.profileId` overrides the build's saved profile for wire limits without mutating the build row.
 
 ## Related

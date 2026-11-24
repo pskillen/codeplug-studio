@@ -15,6 +15,7 @@ import RadioIoReplayDemo from './RadioIoReplayDemo.tsx';
 import ErrorPanel from '../../components/egress/ErrorPanel/ErrorPanel.tsx';
 import StageProgress from '../../components/egress/StageProgress/StageProgress.tsx';
 import RadioWriteStepperDemo from './RadioWriteStepperDemo.tsx';
+import ExportFileDialogDemo from './ExportFileDialogDemo.tsx';
 import RangeChangeDemo from './RangeChangeDemo.tsx';
 import RadioIoStageList, { type StageRow } from '../../components/builds/RadioIoStageList.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
@@ -373,6 +374,13 @@ export default function StyleguideOverlaysPage() {
         description="Build → Export → Write radio is one ModalShell dialog with six steps. Pick a step to preview it with dummy data; nothing talks to a radio."
       >
         <RadioWriteStepperDemo />
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="Export dialog (file mode)"
+        description="Build → Export opens the same shell in file mode: Checks with warnings before download, optional What to export for CHIRP or NeonPlug, then a done recap."
+      >
+        <ExportFileDialogDemo />
       </StyleguideSection>
 
       <StyleguideSection
