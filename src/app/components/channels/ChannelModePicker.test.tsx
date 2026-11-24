@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -30,6 +33,16 @@ function renderPicker(
 }
 
 describe('ChannelModePicker', () => {
+  it('layers the remove control above the chip hit-area overlay', () => {
+    const css = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), 'ChannelModePicker.module.css'),
+      'utf8',
+    );
+    const removeBlock = css.match(/\.removeButton\s*\{([^}]+)\}/)?.[1] ?? '';
+    expect(removeBlock).toMatch(/position:\s*relative/);
+    expect(removeBlock).toMatch(/z-index:\s*1/);
+  });
+
   it('shows placeholder presets and other modes with no modes selected', () => {
     renderPicker();
     expect(screen.getByRole('group', { name: 'Which mode does this channel use?' })).toBeTruthy();
