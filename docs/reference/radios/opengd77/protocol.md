@@ -228,7 +228,7 @@ For **Restore** (not Write): `restoreFromBackup` copies zip FLASH spans onto a *
 
 ## Debug capture allow-list
 
-The `/debug/radios/dm-1701-opengd77` and `/debug/radios/md-9600-opengd77` pages read the radio through a frame guard (`debugGuard.ts`) that refuses everything except the frames below. Each frame is byte-exact and sent as one write. Feature: [radio-debug](../../../features/radio-debug/README.md); archive layout: [debug-capture.md](debug-capture.md).
+The `/debug/radios/dm-1701/opengd77` and `/debug/radios/md-9600/opengd77` pages read the radio through a frame guard (`debugGuard.ts`) that refuses everything except the frames below. Each frame is byte-exact and sent as one write. Feature: [radio-debug](../../../features/radio-debug/README.md); archive layout: [debug-capture.md](debug-capture.md).
 
 | Frame                              | Meaning             | Order rule                                                        |
 | ---------------------------------- | ------------------- | ----------------------------------------------------------------- |

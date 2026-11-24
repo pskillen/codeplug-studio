@@ -10,7 +10,7 @@ None. The route supplies the profile slug.
 
 ## Usage
 
-Mounted beneath the debug gate at `/debug/radios/:radio`.
+Mounted beneath the debug gate at `/debug/radios/:radio/:firmware`. `/debug/radios/:radio` redirects to the canonical path (legacy slug or the radio’s first firmware). Unknown firmware for a known radio shows “&lt;model&gt; has no &lt;firmware&gt; page” with links to each firmware that exists.
 
 ## Behaviour
 

@@ -1,6 +1,6 @@
 # OpenGD77 — debug capture archive
 
-Tier-3 reference for the read-only capture made by the `/debug/radios/dm-1701-opengd77` and `/debug/radios/md-9600-opengd77` pages. Product behaviour: [radio-debug](../../../features/radio-debug/README.md). Frames the capture may send: [protocol.md — Debug capture allow-list](protocol.md#debug-capture-allow-list).
+Tier-3 reference for the read-only capture made by the `/debug/radios/dm-1701/opengd77` and `/debug/radios/md-9600/opengd77` pages. Product behaviour: [radio-debug](../../../features/radio-debug/README.md). Frames the capture may send: [protocol.md — Debug capture allow-list](protocol.md#debug-capture-allow-list).
 
 ## What is read
 
