@@ -90,6 +90,7 @@ import { isRadioFoundryCableRadio } from '@integrations/radio-io/radios/radiofou
 import {
   radioFoundryReviewContacts,
   radioFoundryWriteSourceFromAssembled,
+  type RadioFoundryWriteSource,
 } from '@integrations/radio-io/radios/radiofoundry/writeSource.ts';
 import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
 import {
@@ -141,6 +142,8 @@ import {
   pushGeneralWarning,
   type ExportWarning,
 } from '@core/import-export/exportWarning.ts';
+
+type RadioFoundryWritePrepared = Omit<RadioFoundryWriteSource, 'warnings'>;
 
 export {
   isRadioSerialSupported,
@@ -511,7 +514,7 @@ export async function prepareRadioWriteImage(
   /** AT-D890UV MM9PDY with NXDN content or a default NXDN ID: the projection to use if the radio has NXDN enabled. */
   nxdn?: AtD890NxdnWriteVariant;
   /** DM-32 RadioFoundry: serialised codeplug and the addresses that serialiser stored. */
-  radioFoundryWrite?: { bytes: Uint8Array; owned: Uint8Array };
+  radioFoundryWrite?: RadioFoundryWritePrepared;
 }> {
   const descriptor = descriptorsForEgress(egress)[0];
   if (descriptor && resolveRadioWriteGate(descriptor, undefined, egress.profileId) === 'hidden') {
@@ -637,7 +640,15 @@ export async function prepareRadioWriteImage(
     channels: projection.channels,
     ...(nxdn ? { nxdn } : {}),
     ...(radioFoundry
-      ? { radioFoundryWrite: { bytes: radioFoundry.bytes, owned: radioFoundry.owned } }
+      ? {
+          radioFoundryWrite: {
+            bytes: radioFoundry.bytes,
+            owned: radioFoundry.owned,
+            ...(radioFoundry.area2
+              ? { area2: radioFoundry.area2, area2Owned: radioFoundry.area2Owned }
+              : {}),
+          },
+        }
       : {}),
   };
 }
@@ -654,7 +665,7 @@ async function resolveRadioWriteImageForUpload(
     image?: MemoryMap;
     channels: readonly RadioChannelDto[];
     organisation: RadioWriteOrganisation;
-    radioFoundryWrite?: { bytes: Uint8Array; owned: Uint8Array };
+    radioFoundryWrite?: RadioFoundryWritePrepared;
   },
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
 ): Promise<MemoryMap> {
@@ -996,7 +1007,7 @@ export async function uploadPreparedRadioWrite(
      */
     nxdn?: AtD890NxdnWriteVariant;
     /** DM-32 RadioFoundry serialised image from {@link prepareRadioWriteImage}. */
-    radioFoundryWrite?: { bytes: Uint8Array; owned: Uint8Array };
+    radioFoundryWrite?: RadioFoundryWritePrepared;
     /** Warnings of the standard projection, used with `nxdn` to build the Write's warning list. */
     warnings?: readonly ExportWarning[];
   },

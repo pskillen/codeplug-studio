@@ -56,6 +56,7 @@ import {
   OP_INFO,
   OP_READ,
   OP_SUMS,
+  RADIOFOUNDRY_SUMS_PAUSE_MS,
   servedBlockAddresses,
 } from './constants.ts';
 import type { RadioFoundryCableBoard } from './board.ts';
@@ -187,8 +188,38 @@ interface BlockSum {
   blank: boolean;
 }
 
+export type RadioFoundryCableProtocolOptions = {
+  pause?: (ms: number, signal?: AbortSignal) => Promise<void>;
+};
+
+function defaultSumsPause(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new RadioProtocolError('Radio I/O operation was aborted.'));
+      return;
+    }
+    const onAbort = (): void => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+      reject(new RadioProtocolError('Radio I/O operation was aborted.'));
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener('abort', onAbort);
+  });
+}
+
 export class RadioFoundryCableProtocol implements CloneImageRadio {
-  constructor(readonly board: RadioFoundryCableBoard) {}
+  private readonly pause: (ms: number, signal?: AbortSignal) => Promise<void>;
+
+  constructor(
+    readonly board: RadioFoundryCableBoard,
+    options: RadioFoundryCableProtocolOptions = {},
+  ) {
+    this.pause = options.pause ?? defaultSumsPause;
+  }
 
   private pipe: BytePipe | null = null;
   private seq = 1;
@@ -583,6 +614,9 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
         out.set(start + j * BLOCK_SIZE, { crc, blank: ((mask >> j) & 1) === 1 });
       }
       i += count;
+      if (i < addresses.length) {
+        await this.pause(RADIOFOUNDRY_SUMS_PAUSE_MS, signal);
+      }
       if (signal?.aborted) throw new RadioProtocolError('Radio I/O operation was aborted.');
     }
     return out;

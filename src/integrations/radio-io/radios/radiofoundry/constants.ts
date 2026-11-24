@@ -47,6 +47,9 @@ export const DATA_CHUNK_MAX = 61;
 
 export const HANDSHAKE_ERROR = 'This radio did not answer the RadioFoundry codeplug protocol.';
 
+// The MD-9600 resets after ~4 s of consecutive SUMS (2026-11-24); 50 ms between requests avoids it.
+export const RADIOFOUNDRY_SUMS_PAUSE_MS = 50;
+
 /** 4 KB blocks the fast protocol will serve inside the codeplug file. */
 export function servedBlockAddresses(
   imageSize: number = RADIOFOUNDRY_IMAGE_SIZE,

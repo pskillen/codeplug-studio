@@ -41,13 +41,42 @@ import {
   resolveRadioFoundryProfile,
   type RadioFoundryRadioProfile,
 } from './profiles.ts';
+import { modeExportNameSuffix } from '@core/import-export/channelExpansion/multiMode.ts';
 import {
   serialiseRadioFoundryCodeplug,
   serialiseRadioFoundryCodeplugWithProfile,
   radioFoundryPowerByte,
 } from './serialise.ts';
+import { ZONE_BITMAP, ZONE_BITMAP_SIZE, ZONE_RECORD_SIZE } from './layout.ts';
 
 const LIMITS = DM32UV_RADIOFOUNDRY_LIMITS;
+
+function fmDmrChannel(name: string): AssembledChannel {
+  const entity: Channel = {
+    ...newChannel('p', name),
+    rxFrequency: 145_500_000,
+    txFrequency: 145_500_000,
+    primaryMode: 'dmr',
+    modeProfiles: [
+      {
+        mode: 'fm',
+        squelch: null,
+        rxTone: 'none',
+        txTone: 'none',
+        bandwidthKHz: 12.5,
+      },
+      {
+        mode: 'dmr',
+        colourCode: 1,
+        timeslot: 1,
+        ownDigitalIdId: null,
+        contactRef: null,
+        rxGroupListId: null,
+      },
+    ],
+  };
+  return { entity, wireName: name };
+}
 
 function fmChannel(name: string, power: number | null = null): AssembledChannel {
   const entity: Channel = {
@@ -107,6 +136,116 @@ function includesAscii(image: Uint8Array, text: string): boolean {
   }
   return false;
 }
+
+function zoneMemberNumbers(bytes: Uint8Array, zoneIndex: number): number[] {
+  const offset = ZONE_BITMAP + ZONE_BITMAP_SIZE + zoneIndex * ZONE_RECORD_SIZE;
+  const members: number[] = [];
+  for (let i = 0; i < 80; i += 1) {
+    const at = offset + 16 + i * 2;
+    const lo = bytes[at];
+    const hi = bytes[at + 1];
+    if (lo === 0 && hi === 0) break;
+    members.push(lo! | (hi! << 8));
+  }
+  return members;
+}
+
+describe('RadioFoundry multi-mode channel export', () => {
+  it('keeps the mode suffix on a 16-character name', () => {
+    const channel = fmDmrChannel('FG6 BA Secondary');
+    expect('FG6 BA Secondary'.length).toBe(LIMITS.NAME_MAX);
+    const { bytes } = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    const fmSuffix = modeExportNameSuffix('fm');
+    const dmrSuffix = modeExportNameSuffix('dmr');
+    const fmName = fieldText(bytes, channelSlotAddress(1).record, LIMITS.NAME_MAX);
+    const dmrName = fieldText(bytes, channelSlotAddress(2).record, LIMITS.NAME_MAX);
+    expect(fmName.length).toBeLessThanOrEqual(LIMITS.NAME_MAX);
+    expect(dmrName.length).toBeLessThanOrEqual(LIMITS.NAME_MAX);
+    expect(fmName.endsWith(fmSuffix)).toBe(true);
+    expect(dmrName.endsWith(dmrSuffix)).toBe(true);
+    expect(fmName).not.toBe(dmrName);
+  });
+
+  it('writes one record per FM and DMR mode with suffixes and mode bytes', () => {
+    const channel = fmDmrChannel('Repeater');
+    const { bytes, warnings } = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    const fmName = `Repeater${modeExportNameSuffix('fm')}`;
+    const dmrName = `Repeater${modeExportNameSuffix('dmr')}`;
+    expect(fieldText(bytes, channelSlotAddress(1).record, LIMITS.NAME_MAX)).toBe(fmName);
+    expect(fieldText(bytes, channelSlotAddress(2).record, LIMITS.NAME_MAX)).toBe(dmrName);
+    expect(bytes[channelSlotAddress(1).record + 0x18]).toBe(0);
+    expect(bytes[channelSlotAddress(2).record + 0x18]).toBe(1);
+    expect(warnings.map(formatExportWarning).join('\n')).not.toMatch(/more than one mode/);
+  });
+
+  it('lists both channel numbers in a zone, in mode order', () => {
+    const channel = fmDmrChannel('Repeater');
+    const { bytes } = serialiseRadioFoundryCodeplug(
+      assembled({
+        channels: [channel],
+        zones: [{ zoneId: 'z', wireName: 'Home', memberChannelIds: [channel.entity.id] }],
+      }),
+    );
+    expect(zoneMemberNumbers(bytes, 0)).toEqual([1, 2]);
+  });
+
+  it('writes a single-mode channel without a suffix', () => {
+    const channel = fmChannel('Local');
+    const { bytes } = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    expect(fieldText(bytes, channelSlotAddress(1).record, LIMITS.NAME_MAX)).toBe('Local');
+    expect(bytes[0x3780]! & 0x01).toBe(0x01);
+    expect(bytes[0x3780]! & 0x02).toBe(0);
+  });
+
+  it('keeps one record and warns when expandModes is false', () => {
+    const channel = fmDmrChannel('Repeater');
+    const { bytes, warnings } = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }), {
+      expandModes: false,
+    });
+    expect(fieldText(bytes, channelSlotAddress(1).record, LIMITS.NAME_MAX)).toBe('Repeater');
+    expect(bytes[0x3780]! & 0x02).toBe(0);
+    expect(warnings.map(formatExportWarning).join('\n')).toMatch(/more than one mode/);
+  });
+
+  it('drops non-storable modes and still exports FM and DMR copies', () => {
+    const channel = fmDmrChannel('Site');
+    channel.entity.modeProfiles.push({
+      mode: 'dstar',
+      urCall: 'CQCQCQ',
+      rpt1Call: '',
+      rpt2Call: '',
+    });
+    const { bytes, warnings } = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    expect(fieldText(bytes, channelSlotAddress(1).record, LIMITS.NAME_MAX)).toBe(
+      `Site${modeExportNameSuffix('fm')}`,
+    );
+    expect(fieldText(bytes, channelSlotAddress(2).record, LIMITS.NAME_MAX)).toBe(
+      `Site${modeExportNameSuffix('dmr')}`,
+    );
+    expect(warnings.map(formatExportWarning).join('\n')).toMatch(/mode dstar was dropped/);
+  });
+
+  it('counts mode copies toward the channel cap', () => {
+    const dualCount = Math.floor(LIMITS.CHANNEL_MAX / 2) + 1;
+    const channels = Array.from({ length: dualCount }, (_, i) => fmDmrChannel(`C${i}`));
+    const { bytes, warnings } = serialiseRadioFoundryCodeplug(assembled({ channels }));
+    const dropped = dualCount * 2 - LIMITS.CHANNEL_MAX;
+    expect(warnings.map(formatExportWarning).join('\n')).toContain(String(LIMITS.CHANNEL_MAX));
+    expect(warnings.map(formatExportWarning).join('\n')).toMatch(
+      new RegExp(`Dropped ${dropped} channel`),
+    );
+    const lastKeptIndex = Math.floor(LIMITS.CHANNEL_MAX / 2) - 1;
+    expect(includesAscii(bytes, `C${lastKeptIndex}${modeExportNameSuffix('dmr')}`)).toBe(true);
+    expect(includesAscii(bytes, `C${dualCount - 1}${modeExportNameSuffix('fm')}`)).toBe(false);
+  });
+
+  it('parse round-trips FM and DMR copies as two library channels', () => {
+    const channel = fmDmrChannel('Repeater');
+    const { bytes } = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    const parsed = parseRadioFoundryCodeplug(bytes, 'p');
+    expect(parsed.channels).toHaveLength(2);
+  });
+});
 
 describe('serialiseRadioFoundryCodeplug', () => {
   it('writes a 716384-byte image with a channel, a contact, and a zero-filled zone list', () => {

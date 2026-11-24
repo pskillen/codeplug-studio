@@ -290,13 +290,13 @@ AssembledBuild.channels
 
 `CpsExportOptions` flags (set defaults in export UI per format):
 
-| Option                         | Typical use                                          |
-| ------------------------------ | ---------------------------------------------------- |
-| `expandModes`                  | `true` OpenGD77; `false` DM32 (native dual-mode row) |
-| `expandRxGroupLists`           | `false` OpenGD77; `true` DM32 / NeonPlug / Anytone   |
-| `expandRxGroupListMembers`     | `'all'` \| `'talkGroupsOnly'`                        |
-| `multiTalkGroupExportNameMode` | Wire naming for fan-out rows                         |
-| `exportZoneDerivedScanLists`   | DM32 zone → `Scan.csv` synthesis                     |
+| Option                         | Typical use                                                        |
+| ------------------------------ | ------------------------------------------------------------------ |
+| `expandModes`                  | `true` OpenGD77, RadioFoundry; `false` DM32 (native dual-mode row) |
+| `expandRxGroupLists`           | `false` OpenGD77; `true` DM32 / NeonPlug / Anytone                 |
+| `expandRxGroupListMembers`     | `'all'` \| `'talkGroupsOnly'`                                      |
+| `multiTalkGroupExportNameMode` | Wire naming for fan-out rows                                       |
+| `exportZoneDerivedScanLists`   | DM32 zone → `Scan.csv` synthesis                                   |
 
 Zone members: use shared `expandMxNZoneMemberWireNames` / `expandMxNZoneMemberNumbers` so logical channel ids fan out to **expanded wire names** (or NeonPlug numbers). Warn/truncate at profile caps in `warnings.ts`.
 
