@@ -125,6 +125,10 @@ For a **single long editor form** with several distinct panels (not app-level pr
 - Sticky on **both** desktop and mobile; sits below any higher-priority sticky chrome (e.g. below `StickyFooter`'s z-index).
 - Only reach for this when a form has enough panels that scrolling past earlier ones to reach a later one is a real cost — not every multi-panel editor needs it.
 
+## Export and write warnings
+
+Problems open, notes folded — one component (`WarningsList` in the Write and export flows). **Full** mode on Write step 1 (build checks) and file export; **problems** on Review; **recap** on Done; **chip** when space is tight. Live demos: `/styleguide` → Feedback → Warnings list.
+
 ## Neutral-default segmented controls
 
 `GradientSegmentedControl`'s colour fitting is value-aware: a neutral option (conventionally `'default'`, or `'auto'` when that reads better for the field) is excluded from palette fitting via `neutralValues` and renders with **no** colour override, rather than absorbing a palette slot a short scheme didn't have spare. Use `layout="row"` (label/description left, control right, collapsing to full-width stacking on mobile) instead of `fullWidth` when a 2–3-option control doesn't need to dominate a panel's width — see [GradientSegmentedControl.md](../../../src/app/components/ui/GradientSegmentedControl.md).
