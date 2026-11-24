@@ -57,6 +57,10 @@ SUMS pacing matches every other `readImageBlocks` caller (`RADIOFOUNDRY_SUMS_PAU
 
 The Debug read path is separate from cable **Write** ([cable-write.md](cable-write.md)); capture code must not call upload, write ops or STORAGE claim paths.
 
+## Backup coverage
+
+The Coverage panel classifies a RadioFoundry partial archive with `classifyRadioFoundryDebugCoverage` in `radiofoundry/debugCoverage.ts`. Per manifest region it counts **blocks read** (SUMS row with `blank = 0`) and **reported blank, not sent** (`blank = 1`) from `debug/sums.bin` (9-byte rows: address u32 LE, CRC u32 LE, blank u8). Area 2 is **not read** when no `iddb-area2` region and no SUMS rows from `0xD8000`; otherwise it reports the read end and blank blocks after it up to the capture ceiling from `debug/info.bin` (capped by the board `IMAGE_END`). The gap `0x10000–0x1FFFF` is always named as never served by the codeplug protocol.
+
 ## Overview identity rows
 
 Rows on the debug Overview tab are built in `radiofoundry/debugIdentity.ts` from sidecars only:
