@@ -151,6 +151,7 @@ vi.mock('../../../services/radioIoSession.ts', async (importOriginal) => {
     prepareRadioWriteImage: vi.fn(async () => ({
       image: undefined,
       warnings: [],
+      contactWarnings: [],
       organisation: {},
       channels: sampleChannels,
     })),
