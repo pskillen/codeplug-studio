@@ -120,7 +120,8 @@ export function getSatelliteKepsWriteCapacity(
   if (!keps || !writeFn) return undefined;
   return {
     ...keps.limits,
-    countEligible: (satellites, overrides) => countEligibleForWriteFn(writeFn, satellites, overrides),
+    countEligible: (satellites, overrides) =>
+      countEligibleForWriteFn(writeFn, satellites, overrides),
   };
 }
 
