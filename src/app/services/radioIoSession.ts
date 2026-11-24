@@ -204,9 +204,6 @@ export function withBaudsTriedMessage(err: unknown, baudsTried: readonly number[
     }
     const next = new Error(`${err.message} (tried baud: ${list})`);
     next.name = err.name;
-    if (err instanceof RadioIoError) {
-      (next as RadioIoError).code = err.code;
-    }
     const src = err as Error & {
       code?: string;
       retry?: RadioRetryAdvice;

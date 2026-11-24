@@ -1,5 +1,4 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ErrorPanel from './ErrorPanel.tsx';
 import type { WriteErrorOutcome } from '../../../services/egress/writeErrorOutcome.ts';
@@ -33,10 +32,10 @@ describe('ErrorPanel', () => {
     expect(screen.queryByRole('button', { name: 'Write again' })).toBeNull();
   });
 
-  it('calls onRetry from the labelled button', async () => {
+  it('calls onRetry from the labelled button', () => {
     const onRetry = vi.fn();
     render(<ErrorPanel outcome={errorOutcome} retryLabel="Write again" onRetry={onRetry} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Write again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write again' }));
     expect(onRetry).toHaveBeenCalledOnce();
   });
 
@@ -45,7 +44,8 @@ describe('ErrorPanel', () => {
     vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
     render(<ErrorPanel outcome={errorOutcome} retryLabel={null} />);
     expect(screen.getByText('Debug details')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Copy debug text' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy debug text' }));
+    await Promise.resolve();
     expect(writeText).toHaveBeenCalledWith(
       'Serial pipe closed unexpectedly.\n\nop: upload\nstack:\nnone',
     );

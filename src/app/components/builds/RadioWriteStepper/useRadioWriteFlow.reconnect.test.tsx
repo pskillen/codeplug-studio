@@ -109,7 +109,7 @@ describe('useRadioWriteFlow reconnect after write errors', () => {
 
   it('offers Write again after a timeout once transmit started', async () => {
     vi.mocked(uploadPreparedRadioWrite).mockImplementationOnce(async (_s, _e, _i, opts) => {
-      opts?.onProgress?.({ cur: 1, max: 2, stage: 'Upload' });
+      opts?.onProgress?.({ cur: 1, max: 2, stage: 'Upload', msg: 'Writing' });
       await Promise.resolve();
       throw adviseRadioError(new RadioTimeoutError(), {
         retry: 'rewrite',
