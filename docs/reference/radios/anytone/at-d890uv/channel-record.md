@@ -174,7 +174,7 @@ anytone-cps names this `dmr_mode` on `0x34` bit 1 (`1` sets the bit). Studio pol
 
 ## Power (`tx_power` in byte `0x08`)
 
-Wire enum (2 bits) maps to CPS labels; Studio `%` ladder for **file** adapters is in [power.md](power.md). Binary adapter should map the same four steps (Low / Mid / High / Turbo) at the edge — do not invent a fifth level.
+Bits 3:2 encode the same four tiers as Anytone CPS CSV. The codec uses the shared AT-D890UV decode values and write cutoffs. [AT-D890UV power table](power.md)
 
 ## Empty channel
 

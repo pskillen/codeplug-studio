@@ -8,6 +8,13 @@ import {
 } from './profiles.ts';
 
 describe('chirp/profiles', () => {
+  it.each(['chirp-uv5r', 'chirp-uv21', 'chirp-rt95'])(
+    'exports Above High as the ordinary maximum for %s',
+    (profileId) => {
+      expect(chirpPercentToWire(profileId, 101)).toBe(chirpPercentToWire(profileId, 100));
+    },
+  );
+
   it('registers three Studio profile ids', () => {
     expect(CHIRP_PROFILES.map((p) => p.id)).toEqual(['chirp-uv5r', 'chirp-uv21', 'chirp-rt95']);
   });

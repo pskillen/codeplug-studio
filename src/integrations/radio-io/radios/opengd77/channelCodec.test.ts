@@ -70,6 +70,12 @@ describe('opengd77 channelCodec BCD / tone / power', () => {
     expect(powerWireToPercent(9)).toBe(100);
   });
 
+  it('encodes Above High as P9 on the channel record', () => {
+    const dto = sampleDto({ powerPercent: 101 });
+    expect(encodeChannelRecord(dto)[0x19]).toBe(9);
+    expect(encodeChannelRecord(dto, OPENGD77_MD9600_POWER_STEPS)[0x19]).toBe(9);
+  });
+
   it('maps MD-9600 power ladder nearest steps', () => {
     expect(powerPercentToWire(63, OPENGD77_MD9600_POWER_STEPS)).toBe(8);
     expect(powerWireToPercent(8, OPENGD77_MD9600_POWER_STEPS)).toBe(63);

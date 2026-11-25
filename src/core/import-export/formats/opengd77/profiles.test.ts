@@ -4,6 +4,13 @@ import { percentToWire, wireToPercent } from '../../profileLadder.ts';
 import { getOpenGd77Profile, opengd77PercentToWire, opengd77WireToPercent } from './profiles.ts';
 
 describe('profileLadder', () => {
+  it.each(['opengd77-1701', 'opengd77-md9600'])(
+    'exports Above High as the ordinary maximum for %s',
+    (profileId) => {
+      expect(opengd77PercentToWire(profileId, 101)).toBe(opengd77PercentToWire(profileId, 100));
+    },
+  );
+
   it('maps exact wire to percent', () => {
     const profile = getOpenGd77Profile('opengd77-1701');
     expect(wireToPercent(profile, 'P9')).toBe(100);

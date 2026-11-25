@@ -1,8 +1,9 @@
 /** Anytone radio profiles — import/export boundary (caps + power ladder). */
 
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+import { AT_D890UV_POWER_LADDER, selectAtD890Power } from '@core/radios/anytone/at-d890uv/power.ts';
 import { radioTargetFor, radioTargetIdForProfile } from '@core/radio-targets/index.ts';
-import { percentToWire, wireToPercent, type PowerLadderEntry } from '../../profileLadder.ts';
+import { wireToPercent, type PowerLadderEntry } from '../../profileLadder.ts';
 
 export interface AnytoneRadioProfile {
   id: string;
@@ -26,14 +27,6 @@ export interface AnytoneRadioProfile {
   defaultRadioIdLabel: string;
   defaultRadioId: string;
 }
-
-/** AT-D890UV Transmit Power — Turbo first so null → Turbo. */
-const AT_D890UV_POWER_LADDER: readonly PowerLadderEntry[] = [
-  { percent: 100, wire: 'Turbo', approxWatts: '7 W VHF / 6 W UHF' },
-  { percent: 75, wire: 'High', approxWatts: '5 W' },
-  { percent: 50, wire: 'Mid', approxWatts: '2.5 W' },
-  { percent: 25, wire: 'Low', approxWatts: '0.2 W' },
-];
 
 export const ANYTONE_PROFILES: readonly AnytoneRadioProfile[] = [
   {
@@ -82,9 +75,10 @@ export function getAnytoneProfile(profileId: string): AnytoneRadioProfile {
 }
 
 export function anytoneWireToPercent(profileId: string, wire: string): number | null {
-  return wireToPercent(getAnytoneProfile(profileId), wire.trim());
+  return wireToPercent(getAnytoneProfile(profileId), wire);
 }
 
 export function anytonePercentToWire(profileId: string, percent: number | null): string {
-  return percentToWire(getAnytoneProfile(profileId), percent);
+  getAnytoneProfile(profileId);
+  return selectAtD890Power(percent).wire;
 }

@@ -665,6 +665,19 @@ describe('RadioFoundry codec follows the radio profile', () => {
     expect(parsed.channels.map((c) => c.power)).toEqual(percents);
   });
 
+  it('exports Above High as the top power byte without an extra warning', () => {
+    const channel = fmChannel('Top', 100);
+    const high = serialiseRadioFoundryCodeplug(assembled({ channels: [channel] }));
+    const aboveHigh = serialiseRadioFoundryCodeplug(
+      assembled({ channels: [{ ...channel, entity: { ...channel.entity, power: 101 } }] }),
+    );
+
+    const powerOffset = channelSlotAddress(1).record + 0x19;
+    expect(high.bytes[powerOffset]).toBe(9);
+    expect(aboveHigh.bytes[powerOffset]).toBe(9);
+    expect(aboveHigh.warnings).toEqual(high.warnings);
+  });
+
   it('keeps the old nine-level bytes for every percent', () => {
     for (let percent = 1; percent <= 100; percent++) {
       const old = Math.min(8, Math.floor(((percent - 1) * 9) / 100)) + 1;

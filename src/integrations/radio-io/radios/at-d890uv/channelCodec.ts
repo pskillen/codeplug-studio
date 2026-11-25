@@ -3,6 +3,7 @@
  * Cite: anytone-cps `Channel::encode_D890UV` / `decode_D890UV` (facts only).
  */
 
+import { AT_D890UV_POWER_TIERS, selectAtD890Power } from '@core/radios/anytone/at-d890uv/power.ts';
 import type { MemoryMap } from '../../types.ts';
 import type {
   RadioChannelDto,
@@ -185,20 +186,13 @@ function hasDigitalHalf(mode: RadioChannelMode | undefined): boolean {
   return isDigitalMode(mode) || mode === 'fixed-analog';
 }
 
-function powerWireFromPercent(p: number | null): number {
-  if (p == null) return 3;
-  if (p <= 30) return 0;
-  if (p <= 55) return 1;
-  if (p <= 80) return 2;
-  return 3;
-}
-
-function powerPercentFromWire(bits: number): number | null {
-  if (bits === 0) return 25;
-  if (bits === 1) return 50;
-  if (bits === 2) return 75;
-  return 100;
-}
+/** Power tier indexed by byte 0x08, bits 3:2. */
+const POWER_TIER_BY_BITS = [
+  AT_D890UV_POWER_TIERS.low,
+  AT_D890UV_POWER_TIERS.mid,
+  AT_D890UV_POWER_TIERS.high,
+  AT_D890UV_POWER_TIERS.turbo,
+] as const;
 
 function bandwidthFromWire(bits: number): 'FM' | 'NFM' {
   return bits === 0 ? 'NFM' : 'FM';
@@ -290,7 +284,7 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
   const b8 = data[8]!;
   const duplex = (b8 >> 6) & 0x3;
   const bandwidth = bandwidthFromWire((b8 >> 4) & 0x3);
-  const powerPercent = powerPercentFromWire((b8 >> 2) & 0x3);
+  const powerPercent = POWER_TIER_BY_BITS[(b8 >> 2) & 0x3]!.percent;
   const channelType = modeFromWire(b8 & 0x3);
   const b9 = data[9]!;
   const ctcssEncSel = (b9 >> 2) & 0x3;
@@ -403,7 +397,7 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   data.set(encodeBcdFrequencyHz(rxHz), 0);
   const duplex = duplexFromRxTx(rxHz, txHz);
   data.set(encodeBcdFrequencyHz(duplex === 0 ? 0 : offsetHz(rxHz, txHz)), 4);
-  const power = powerWireFromPercent(ch.powerPercent);
+  const power = POWER_TIER_BY_BITS.indexOf(selectAtD890Power(ch.powerPercent));
   const bw = bandwidthToWire(ch.bandwidth);
   data[8] =
     ((duplex & 0x3) << 6) |

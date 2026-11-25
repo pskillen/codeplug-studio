@@ -10,6 +10,13 @@ import {
 } from './profiles.ts';
 
 describe('profileLadder (DM32)', () => {
+  it.each(['dm32-baofeng-dm32uv'])(
+    'exports Above High as the ordinary maximum for %s',
+    (profileId) => {
+      expect(dm32PercentToWire(profileId, 101)).toBe(dm32PercentToWire(profileId, 100));
+    },
+  );
+
   it('maps exact power wire to percent', () => {
     const profile = getDm32Profile('dm32-baofeng-dm32uv');
     expect(wireToPercent(profile, 'High')).toBe(100);

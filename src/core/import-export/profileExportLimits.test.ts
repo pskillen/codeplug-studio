@@ -183,7 +183,12 @@ describe('getProfileExportLimits', () => {
     expect(limits!.zoneMembers).toBe(250);
     expect(limits!.maxContacts).toBe(AT_D890UV_LIMITS.TALK_GROUPS_MAX);
     expect(limits!.maxDigitalIdDatabase).toBe(AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX);
-    expect(limits!.powerLadder.map((e) => e.wire)).toEqual(['Turbo', 'High', 'Mid', 'Low']);
+    expect(limits!.powerLadder.map(({ wire, percent }) => [wire, percent])).toEqual([
+      ['Turbo', 101],
+      ['High', 100],
+      ['Mid', 50],
+      ['Low', 25],
+    ]);
   });
 
   it('marks MM9PDY DM-32UV scan-list limits not_used', () => {

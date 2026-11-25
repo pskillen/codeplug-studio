@@ -10,7 +10,9 @@ import { nearestLadderEntry } from './profileLadder.ts';
 import { getOpenGd77Profile, opengd77PercentToWire } from './formats/opengd77/profiles.ts';
 import { getDm32Profile, dm32PercentToWire } from './formats/dm32/profiles.ts';
 import { getChirpProfile, chirpPercentToWire } from './formats/chirp/profiles.ts';
-import { getAnytoneProfile, anytonePercentToWire } from './formats/anytone/profiles.ts';
+import { getAnytoneProfile } from './formats/anytone/profiles.ts';
+import { getRadioIoProfile, isMm9pdyAtD890RadioIoProfileId } from './formats/radio-io/profiles.ts';
+import { selectAtD890Power } from '@core/radios/anytone/at-d890uv/power.ts';
 
 export interface PowerLadderProfileKey {
   formatId: FormatId;
@@ -21,7 +23,7 @@ export interface PowerLadderHintRow {
   formatId: FormatId;
   profileId: string;
   label: string;
-  /** CPS wire label for the nearest ladder step (or Master for OpenGD77 null). */
+  /** Wire label for the selected power tier (or Master for OpenGD77 null). */
   wire: string;
   /** Optional approximate watts from profile metadata. */
   approxWatts?: string;
@@ -118,16 +120,19 @@ function hintForProfile(
         isRadioDefault: power == null,
       };
     }
-    if (formatId === 'anytone') {
-      const profile = getAnytoneProfile(profileId);
-      const wire = anytonePercentToWire(profileId, power);
-      const entry = nearestLadderEntry(profile, power);
+    if (
+      formatId === 'anytone' ||
+      (formatId === 'radio-io' && isMm9pdyAtD890RadioIoProfileId(profileId))
+    ) {
+      const profile =
+        formatId === 'anytone' ? getAnytoneProfile(profileId) : getRadioIoProfile(profileId);
+      const tier = selectAtD890Power(power);
       return {
         formatId,
         profileId,
         label: profile.label,
-        wire,
-        approxWatts: entry?.approxWatts,
+        wire: tier.wire,
+        approxWatts: tier.approxWatts,
         isRadioDefault: power == null,
       };
     }

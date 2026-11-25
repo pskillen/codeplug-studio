@@ -1,4 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { newChannel } from '@core/domain/factories.ts';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
+import { serialiseAnytoneChannelRow } from '@core/import-export/formats/anytone/channelWire.ts';
+import { DEFAULT_ANYTONE_PROFILE_ID } from '@core/import-export/formats/anytone/profiles.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import type { MemoryMap } from '../../types.ts';
 import {
@@ -82,6 +86,79 @@ const simplexDigital: RadioChannelDto = {
   mode: 'digital',
 };
 
+describe('AT-D890UV transmit power', () => {
+  it.each([
+    [0, 25],
+    [1, 50],
+    [2, 100],
+    [3, 101],
+  ])('decodes power bits %i as library power %i', (bits, powerPercent) => {
+    const record = new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
+    record.set([0x14, 0x55, 0x20, 0x00]); // 145.520 MHz, so the slot is occupied.
+    record[0x08] = bits << 2;
+
+    expect(parseAtD890ChannelRecord(record, 1).powerPercent).toBe(powerPercent);
+  });
+
+  it.each([
+    [25, 0],
+    [50, 1],
+    [100, 2],
+    [101, 3],
+    [null, 2],
+  ])('encodes library power %s as power bits %i', (powerPercent, bits) => {
+    const record = encodeAtD890ChannelRecord({ ...simplexDigital, powerPercent });
+
+    expect((record[0x08]! >> 2) & 0x3).toBe(bits);
+  });
+
+  it.each([
+    [37.49, 'Low', 0],
+    [37.5, 'Mid', 1],
+    [62.49, 'Mid', 1],
+    [62.5, 'High', 2],
+    [75, 'High', 2],
+    [100, 'High', 2],
+    [101, 'Turbo', 3],
+    [null, 'High', 2],
+  ])('projects library power %s to CSV %s and serial bits %i', (powerPercent, csv, bits) => {
+    const dto = { ...simplexDigital, mode: 'analog' as const, powerPercent };
+    const row = {
+      wireName: dto.wireName,
+      entity: {
+        ...newChannel('11111111-1111-4111-8111-111111111111', dto.wireName),
+        rxFrequency: dto.rxHz,
+        txFrequency: dto.txHz,
+        power: dto.powerPercent,
+        modeProfiles: [defaultModeProfile('fm')],
+      },
+    };
+    const profileId = DEFAULT_ANYTONE_PROFILE_ID;
+    const cells = serialiseAnytoneChannelRow(
+      row,
+      {
+        buildId: 'b1',
+        buildName: 'Test',
+        formatId: 'anytone',
+        profileId,
+        channels: [row],
+        zones: [],
+        scanLists: [],
+        talkGroups: [],
+        digitalContacts: [],
+        analogContacts: [],
+        rxGroupLists: [],
+      },
+      profileId,
+      dto.slotIndex,
+    );
+    const record = encodeAtD890ChannelRecord(dto);
+
+    expect(cells['Transmit Power']).toBe(csv);
+    expect((record[0x08]! >> 2) & 0x3).toBe(bits);
+  });
+});
+
 describe('encodeAtD890ChannelRecord', () => {
   it('round-trips a simple FM channel', () => {
     const ch: RadioChannelDto = {
@@ -100,6 +177,7 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(encoded.length).toBe(0x80);
     expect([...encoded.subarray(0, 4)]).toEqual([0x14, 0x55, 0x20, 0x00]);
     expect((encoded[8]! >> 4) & 0x3).toBe(1);
+    expect((encoded[8]! >> 2) & 0x3).toBe(2);
     const decoded = parseAtD890ChannelRecord(encoded, 1);
     expect(decoded.rxHz).toBe(145_520_000);
     expect(decoded.wireName).toBe('Test CH');

@@ -19,6 +19,14 @@ import {
 } from './profiles.ts';
 
 describe('radio-io profiles', () => {
+  it.each(['radio-io-at-d890uv', 'radio-io-at-d890uv-mm9pdy'])(
+    'shares the Anytone CSV power table with %s',
+    (profileId) => {
+      const csv = getAnytoneProfile('anytone-at-d890uv');
+      expect(getRadioIoProfile(profileId).powerLadder).toBe(csv.powerLadder);
+    },
+  );
+
   it('derives the RT95 MM9PDY caps from RT95_LIMITS and leaves stock without zones', () => {
     const mm = getRadioIoProfile('radio-io-rt95-mm9pdy') as ReturnType<typeof getRadioIoProfile> & {
       maxZones?: number;

@@ -4,6 +4,7 @@
  */
 
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+import { AT_D890UV_POWER_LADDER } from '@core/radios/anytone/at-d890uv/power.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { DM1701_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-1701-radiofoundry/limits.ts';
@@ -269,14 +270,6 @@ const DM32_POWER_LADDER: readonly PowerLadderEntry[] = [
 ];
 
 /** Same P1–P9 ladder as opengd77-1701 CSV profile. */
-/** Same Low / Mid / High / Turbo ladder as anytone-at-d890uv CSV profile. */
-const AT_D890UV_POWER_LADDER: readonly PowerLadderEntry[] = [
-  { percent: 100, wire: 'Turbo', approxWatts: '7 W VHF / 6 W UHF' },
-  { percent: 75, wire: 'High', approxWatts: '5 W' },
-  { percent: 50, wire: 'Mid', approxWatts: '2.5 W' },
-  { percent: 25, wire: 'Low', approxWatts: '0.2 W' },
-];
-
 const OPENGD77_1701_POWER_LADDER: readonly PowerLadderEntry[] = [
   { percent: 100, wire: 'P9', approxWatts: '5 W' },
   { percent: 80, wire: 'P8', approxWatts: '4 W' },
