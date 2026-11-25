@@ -58,9 +58,7 @@ describe('DigitalIdsListPage', () => {
   it('shows the empty state with no IDs', () => {
     state.initial = [];
     renderPage();
-    expect(
-      screen.getByText('Add your DMR ID and, if you use NXDN, your NXDN ID.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Add a DMR ID, NXDN ID or M17 callsign.')).toBeInTheDocument();
   });
 
   it('warns about a protocol with IDs but no default, and names unnamed IDs by number', () => {

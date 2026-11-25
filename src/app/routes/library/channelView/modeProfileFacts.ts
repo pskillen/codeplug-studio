@@ -35,7 +35,7 @@ function ownIdName(library: Library, id: string | null): string | null {
 
 /**
  * Read-only facts for one mode profile on the channel view page. Only fields that are set are
- * returned — the view hides what the editor shows as empty inputs. The RX group list is not a
+ * returned, with effective defaults shown where they describe how the channel operates. The RX group list is not a
  * fact: the view summarises it separately (`RxGroupListBrief`).
  */
 export function modeProfileFacts(profile: ChannelModeProfile, library: Library): ChannelFact[] {
@@ -115,8 +115,12 @@ export function modeProfileFacts(profile: ChannelModeProfile, library: Library):
       push(facts, 'colourCode', 'Colour code', profile.colorCode, true);
       push(facts, 'talkGroup', 'Talk group', entityRefDisplayName(profile.talkGroupRef, library));
       break;
-    case 'p25':
     case 'm17':
+      push(facts, 'can', 'CAN', profile.can ?? 0, true);
+      push(facts, 'destination', 'Destination', profile.destination || 'ALL', true);
+      push(facts, 'listen', 'Listen', profile.playEveryCan ? 'Every CAN' : 'This CAN only');
+      break;
+    case 'p25':
       break;
   }
   return facts;

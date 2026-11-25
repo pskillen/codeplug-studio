@@ -44,6 +44,7 @@ A channel's modes show as one chip each: the mode label on its colour, then a on
 | NXDN   | RAN (`RAN1/2` when RX and TX differ), `NXDN96`, talk group or contact                           | `RAN1 TG65000`         |
 | D-STAR | UR call, then RPT1                                                                              | `→ CQCQCQ via GB7XX B` |
 | YSF    | DG-ID                                                                                           | `DG12`                 |
+| M17    | CAN and destination, with `ALL` for broadcast                                                   | `CAN 3 → ECHO`         |
 | Tetra  | MCC-MNC, then talk group (or GSSI)                                                              | `234-1 TG9`            |
 
 Values are library values (talk-group numbers, codes, tones), never export wire strings. Phone list lines show the plain joined pills (no summary), with the main mode bordered. Zone member rows and pickers keep plain pills.

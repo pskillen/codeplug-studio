@@ -10,7 +10,7 @@ import {
   switchChannelMode,
   type ChannelModeEdit,
 } from '@core/domain/modeProfiles.ts';
-import { emptyLibrary, newChannel, newTalkGroup } from '@core/domain/factories.ts';
+import { emptyLibrary, newChannel, newOwnDigitalId, newTalkGroup } from '@core/domain/factories.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import ChannelModePicker, { AddModeMenu } from '../../components/channels/ChannelModePicker.tsx';
 import ChannelModeSummaries from '../../components/channels/ChannelModeSummaries.tsx';
@@ -25,13 +25,16 @@ import type { ModePanelContext } from '../../components/channels/modePanels/type
 import { SegmentedControl } from '../../components/v2/index.ts';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
 
-const DEMO_MODES: ChannelMode[] = ['fm', 'dmr', 'dstar', 'p25'];
+const DEMO_MODES: ChannelMode[] = ['fm', 'dmr', 'dstar', 'p25', 'm17'];
 
 function DemoModePanel({ mode, compact }: { mode: ChannelMode; compact: boolean }) {
   const [profile, setProfile] = useState<ChannelModeProfile>(() => defaultModeProfile(mode));
   const demoLibrary = {
     ...emptyLibrary(),
     talkGroups: [newTalkGroup('styleguide-demo', 'Scotland', 2351, 'dmr')],
+    ownDigitalIds: [
+      { ...newOwnDigitalId('styleguide-demo', 'm17', 'Demo', 'AB1CD/P'), isDefault: true },
+    ],
   };
   const context: ModePanelContext = {
     library: demoLibrary,

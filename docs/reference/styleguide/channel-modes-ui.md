@@ -17,6 +17,7 @@ Every digital mode's settings use the same four groups, in this order (`DigitalM
 | Listen | What else you hear                        | RX group list                   |
 | You    | What your radio sends about you           | DMR ID, talker alias            |
 
+- The M17 demo shows **CAN** and **Play every CAN** under Access, **Destination** under Call, the active CAN filter under Listen, and the read-only default **M17 callsign** with **Manage Digital IDs** under You.
 - A group a mode has no fields for keeps its heading and shows one muted line instead ("Your callsign is set on the radio."). A mode Studio holds no settings for yet shows the headings and one note.
 - Analogue modes (FM, AM, SSB) have no group headings: tones first, then bandwidth and squelch. Tone pickers remember the last CTCSS and DCS values while the channel editor is open (not across saves or refresh).
 - Two inputs that share a row stack below 48em.
@@ -53,7 +54,7 @@ Library editors never explain a field by naming a radio or export format.
 Most channels have one mode, so the mode is a single switch, not a multi-select (`ChannelModePicker`).
 
 - **No mode yet:** a dashed box, "Which mode does this channel use?", with one-tap presets **FM** (Analogue), **DMR** (Digital) and **FM + DMR** (Dual-mode repeater), and the other modes beneath. One tap fills the mode; there is no confirm and no separate "what kind of channel?" step. A preset's first mode becomes the main mode.
-- **One mode:** a single-select switch, FM AM DMR NXDN P25 M17, the rest under **More**. A second mode is opt-in, through **+ Also runs another mode** under that mode's settings.
+- **One mode:** a single-select switch, FM AM DMR NXDN P25. M17 and the other modes are under **More**. A second mode is opt-in, through **+ Also runs another mode** under that mode's settings.
 - **Two or more modes:** one removable chip per mode (× to remove), then **+ Add another mode**.
 - Chips are 32px tall with a 44px hit area; the switch wraps on a phone.
 - Switching or removing a mode keeps its settings until save; switching back restores them.

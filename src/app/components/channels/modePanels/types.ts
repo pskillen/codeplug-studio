@@ -5,8 +5,8 @@ import type { Channel, ChannelModeProfile, Library } from '@core/models/library.
 type ProfileWithMode<P, M> = P extends { mode: infer PM } ? (M extends PM ? P : never) : never;
 
 /**
- * The profile type for one mode. Analogue modes share ChannelModeProfileAnalog (mode: 'fm' | 'am' | 'ssb'), and
- * p25/m17 share ChannelModeProfileStub until their profiles ship, so a plain Extract<…, { mode: M }> would be never.
+ * The profile type for one mode. Analogue modes share ChannelModeProfileAnalog, so a plain
+ * Extract<…, { mode: M }> would miss that profile for 'fm', 'am' and 'ssb'.
  */
 export type ProfileFor<M extends ChannelMode> = ProfileWithMode<ChannelModeProfile, M>;
 

@@ -13,7 +13,8 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider, useParams } from 'react-router-dom';
+import { MantineProvider } from '@mantine/core';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { newChannel, newOwnDigitalId, newProjectMeta } from '@core/domain/factories.ts';
 import type { ChannelModeProfileDMR } from '@core/models/library.ts';
@@ -38,32 +39,22 @@ vi.mock('../../state/useProjects.ts', () => ({
   useProjects: () => ({ activeProjectId: hoisted.projectId }),
 }));
 
-import { OwnDigitalIdEditor } from './OwnDigitalIdEditor.tsx';
+import EntityEditorPage from './EntityEditorPage.tsx';
 import DigitalIdsListPage from './lists/DigitalIdsListPage.tsx';
-import { useLibrary } from '../../state/useLibrary.ts';
-
-function EditRoute() {
-  const { id } = useParams();
-  const { library, loading } = useLibrary();
-  if (loading) return null;
-  const entity = library.ownDigitalIds.find((row) => row.id === id) ?? null;
-  if (entity?.protocol === 'm17') throw new Error('Expected a numeric Digital ID');
-  return <OwnDigitalIdEditor projectId={hoisted.projectId} entity={entity} />;
-}
 
 function renderApp(initial: string) {
   const router = createMemoryRouter(
     [
       { path: '/library/digital-ids', element: <DigitalIdsListPage /> },
-      {
-        path: '/library/digital-ids/new',
-        element: <OwnDigitalIdEditor projectId={hoisted.projectId} entity={null} />,
-      },
-      { path: '/library/digital-ids/:id', element: <EditRoute /> },
+      { path: '/library/:kind/:id', element: <EntityEditorPage /> },
     ],
     { initialEntries: [initial] },
   );
-  render(<RouterProvider router={router} />);
+  render(
+    <MantineProvider>
+      <RouterProvider router={router} />
+    </MantineProvider>,
+  );
   return router;
 }
 
@@ -77,10 +68,14 @@ async function fillAndSave(name: string, number: string, beforeSave?: () => Prom
   fireEvent.click(screen.getByRole('button', { name: 'Save Digital ID' }));
 }
 
-async function addId(router: ReturnType<typeof renderApp>, name: string, number: string) {
-  await router.navigate('/library/digital-ids/new');
+async function openNewId() {
+  fireEvent.click(await screen.findByRole('button', { name: 'New Digital ID' }));
+}
+
+async function addId(name: string, number: string) {
+  await openNewId();
   await fillAndSave(name, number);
-  await waitFor(() => expect(router.state.location.pathname).toBe('/library/digital-ids'));
+  await screen.findByRole('link', { name });
 }
 
 /**
@@ -123,11 +118,11 @@ describe('Digital IDs: default flow', () => {
 
   it('first ID is the default, Set as default moves it, deleting the default leaves none', async () => {
     const router = renderApp('/library/digital-ids');
-    await addId(router, 'Home', '2351234');
+    await addId('Home', '2351234');
     await screen.findByText('Home', {}, { timeout: 5000 });
     expect(await setAsDefaultButton('Home')).toBeNull();
 
-    await addId(router, 'Club', '2351235');
+    await addId('Club', '2351235');
     await waitFor(async () => expect(await setAsDefaultButton('Club')).not.toBeNull());
     expect(await setAsDefaultButton('Home')).toBeNull();
 
@@ -152,15 +147,63 @@ describe('Digital IDs: default flow', () => {
   });
 
   it('refuses a duplicate number in the editor', async () => {
-    const router = renderApp('/library/digital-ids');
-    await addId(router, 'Home', '2351234');
-    await router.navigate('/library/digital-ids/new');
+    renderApp('/library/digital-ids');
+    await addId('Home', '2351234');
+    await openNewId();
     // The editor checks against the library it has loaded: wait for its message before Save.
     await fillAndSave('Again', '2351234', async () => {
       expect(await screen.findByText(/already in Digital IDs/)).toBeInTheDocument();
     });
     expect(await screen.findByText(/already in Digital IDs/)).toBeInTheDocument();
     expect(await hoisted.store.listOwnDigitalIds(hoisted.projectId)).toHaveLength(1);
+  });
+
+  it('validates and edits M17 callsigns, with a default independent of DMR', async () => {
+    const router = renderApp('/library/digital-ids');
+    await addId('Home', '2351234');
+    await openNewId();
+    fireEvent.click(await screen.findByRole('button', { name: 'M17' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Portable' } });
+    const callsign = screen.getByLabelText('M17 callsign');
+    const save = screen.getByRole('button', { name: 'Save Digital ID' });
+    fireEvent.change(callsign, { target: { value: 'AB CD' } });
+    expect(screen.getByText(/M17 callsign must be 1–9/)).toBeInTheDocument();
+    fireEvent.click(save);
+    expect(await hoisted.store.listOwnDigitalIds(hoisted.projectId)).toHaveLength(1);
+
+    fireEvent.change(callsign, { target: { value: ' ab1cd/p ' } });
+    expect(callsign).toHaveValue(' ab1cd/p ');
+    fireEvent.blur(callsign);
+    expect(callsign).toHaveValue('AB1CD/P');
+    fireEvent.click(save);
+    await waitFor(() => expect(router.state.location.pathname).toBe('/library/digital-ids'));
+    const m17Section = within(await screen.findByRole('region', { name: 'M17 callsigns' }));
+    expect(m17Section.getByText('AB1CD/P')).toBeInTheDocument();
+    expect(m17Section.queryByText('Channels using')).toBeNull();
+    expect(await setAsDefaultButton('Portable')).toBeNull();
+    expect(await setAsDefaultButton('Home')).toBeNull();
+
+    fireEvent.click(m17Section.getByRole('link', { name: 'Portable' }));
+    const savedCallsign = await screen.findByLabelText('M17 callsign');
+    expect(savedCallsign).toHaveValue('AB1CD/P');
+    fireEvent.change(savedCallsign, { target: { value: ' ab1cd/m ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Digital ID' }));
+    expect(await screen.findByText('AB1CD/M')).toBeInTheDocument();
+    const rows = await hoisted.store.listOwnDigitalIds(hoisted.projectId);
+    expect(rows.find((row) => row.protocol === 'm17')).toMatchObject({
+      callsign: 'AB1CD/M',
+      isDefault: true,
+    });
+
+    await openNewId();
+    fireEvent.click(await screen.findByRole('button', { name: 'M17' }));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Duplicate' } });
+    fireEvent.change(screen.getByLabelText('M17 callsign'), { target: { value: ' ab1cd/m ' } });
+    expect(
+      await screen.findByText('M17 callsign AB1CD/M is already in Digital IDs'),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save Digital ID' }));
+    expect(await hoisted.store.listOwnDigitalIds(hoisted.projectId)).toHaveLength(2);
   });
 
   it('an ID that a channel uses cannot be deleted, and its protocol is locked', async () => {

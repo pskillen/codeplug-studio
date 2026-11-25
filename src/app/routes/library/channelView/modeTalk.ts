@@ -434,8 +434,14 @@ function buildSentence(
       };
     case 'm17':
       return {
-        sentence: [{ text: "Studio doesn't hold M17 settings yet." }],
-        usedKeys: new Set(),
+        sentence: [
+          { text: 'Calls ' },
+          { text: profile.destination || 'ALL', strong: true },
+          { text: ' on ' },
+          { text: `CAN ${profile.can ?? 0}`, strong: true },
+          { text: '.' },
+        ],
+        usedKeys: new Set(['destination', 'can']),
       };
     default: {
       const _exhaustive: never = profile;
@@ -457,13 +463,6 @@ export function modeTalk(
 
   if (sentence.length === 0) {
     const label = modeLabel(profile.mode);
-    if (profile.mode === 'p25' || profile.mode === 'm17') {
-      return {
-        sentence: [{ text: `Studio doesn't hold ${label} settings yet.` }],
-        facts,
-        empty: false,
-      };
-    }
     return {
       sentence: [{ text: `No ${label} settings yet.` }],
       facts,
