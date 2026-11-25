@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { IconPlus } from '@tabler/icons-react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { NumericOwnDigitalId } from '@core/models/library.ts';
+import type { OwnDigitalId } from '@core/models/library.ts';
 import {
-  NUMERIC_OWN_DIGITAL_ID_PROTOCOLS,
+  OWN_DIGITAL_ID_PROTOCOLS,
   ownDigitalIdLabel,
   ownDigitalIdProtocolLabel,
+  ownDigitalIdValue,
   ownDigitalIdWarnings,
 } from '@core/domain/ownDigitalIds.ts';
 import EntityListRowDeleteAction from '../../../components/library/EntityListRowDeleteAction.tsx';
@@ -26,7 +27,7 @@ import {
 import { useLibrary } from '../../../state/useLibrary.ts';
 import classes from '../../../components/library/LibraryInventoryPage.module.css';
 
-const SUBTITLE = 'Your own DMR and NXDN IDs: the IDs your radio sends.';
+const SUBTITLE = 'The DMR and NXDN IDs and M17 callsigns your radio sends.';
 const CAPTION =
   'Your own IDs. People and groups you call are in Contacts and Talk groups; the downloaded lookup list is the ID directory.';
 
@@ -34,14 +35,11 @@ export default function DigitalIdsListPage() {
   const navigate = useNavigate();
   const { library, loading, setDefaultOwnDigitalId } = useLibrary();
   const [actionError, setActionError] = useState<string | null>(null);
-  const ownDigitalIds = useMemo(
-    () => library.ownDigitalIds.filter((row) => row.protocol !== 'm17'),
-    [library.ownDigitalIds],
-  );
+  const { ownDigitalIds } = library;
   const referenceIndex = useMemo(() => buildReferenceCountIndex(library), [library]);
   const warnings = useMemo(() => ownDigitalIdWarnings(ownDigitalIds), [ownDigitalIds]);
 
-  async function makeDefault(row: NumericOwnDigitalId) {
+  async function makeDefault(row: OwnDigitalId) {
     setActionError(null);
     try {
       await setDefaultOwnDigitalId(row.id);
@@ -50,7 +48,7 @@ export default function DigitalIdsListPage() {
     }
   }
 
-  const columns = useMemo((): DataTableColumn<NumericOwnDigitalId>[] => {
+  const columns = useMemo((): DataTableColumn<OwnDigitalId>[] => {
     return [
       {
         key: 'name',
@@ -70,8 +68,8 @@ export default function DigitalIdsListPage() {
       {
         key: 'number',
         header: 'ID',
-        render: (row) => row.number,
-        sortValue: (row) => row.number,
+        render: ownDigitalIdValue,
+        sortValue: ownDigitalIdValue,
       },
       {
         key: 'default',
@@ -110,6 +108,10 @@ export default function DigitalIdsListPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- makeDefault only closes over stable setters
   }, [referenceIndex]);
 
+  const m17Columns = columns
+    .filter((column) => column.key !== 'usage')
+    .map((column) => (column.key === 'number' ? { ...column, header: 'Callsign' } : column));
+
   const listActions = (
     <Button
       variant="primary"
@@ -145,24 +147,31 @@ export default function DigitalIdsListPage() {
 
         {ownDigitalIds.length === 0 ? (
           <p className={classes.subtitle} style={{ marginTop: 16 }}>
-            Add your DMR ID and, if you use NXDN, your NXDN ID.
+            Add a DMR ID, NXDN ID or M17 callsign.
           </p>
         ) : null}
 
-        {NUMERIC_OWN_DIGITAL_ID_PROTOCOLS.map((protocol) => {
+        {OWN_DIGITAL_ID_PROTOCOLS.map((protocol) => {
           const rows = ownDigitalIds
             .filter((row) => row.protocol === protocol)
-            .sort((a, b) => a.number - b.number);
+            .sort((a, b) => {
+              const left = ownDigitalIdValue(a);
+              const right = ownDigitalIdValue(b);
+              return typeof left === 'number' && typeof right === 'number'
+                ? left - right
+                : String(left).localeCompare(String(right));
+            });
           if (rows.length === 0) return null;
           const label = ownDigitalIdProtocolLabel(protocol);
+          const sectionLabel = protocol === 'm17' ? 'M17 callsigns' : `${label} IDs`;
           return (
-            <section key={protocol} aria-label={`${label} IDs`}>
+            <section key={protocol} aria-label={sectionLabel}>
               <h2 className={classes.sectionTitle}>{label}</h2>
               <DataTable
-                columns={columns}
+                columns={protocol === 'm17' ? m17Columns : columns}
                 rows={rows}
                 getRowId={(row) => row.id}
-                emptyMessage={`No ${label} IDs.`}
+                emptyMessage={`No ${sectionLabel}.`}
               />
             </section>
           );

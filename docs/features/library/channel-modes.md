@@ -36,14 +36,17 @@ Every **digital** mode’s settings answer the same four questions in the same o
 
 **Per-mode layout** (labels only — no wire values):
 
-| Mode    | Access                      | Call               | Listen        | You               |
-| ------- | --------------------------- | ------------------ | ------------- | ----------------- |
-| DMR     | colour code, slot, DMR mode | Talk group/contact | RX group list | DMR ID, alias     |
-| NXDN    | RAN, rate                   | Call               | RX group list | Unit ID           |
-| D-STAR  | RPT1, RPT2                  | UR call            | repeater-wide | callsign on radio |
-| YSF     | DG-ID                       | WIRES-X DTMF       | same DG-ID    | callsign on radio |
-| Tetra   | MCC/MNC, colour code        | Talk group, GSSI   | talk group    | ISSI on radio     |
-| P25/M17 | pending note                | (headings only)    | (headings)    | (headings)        |
+| Mode   | Access                      | Call               | Listen        | You                  |
+| ------ | --------------------------- | ------------------ | ------------- | -------------------- |
+| DMR    | colour code, slot, DMR mode | Talk group/contact | RX group list | DMR ID, alias        |
+| NXDN   | RAN, rate                   | Call               | RX group list | Unit ID              |
+| D-STAR | RPT1, RPT2                  | UR call            | repeater-wide | callsign on radio    |
+| YSF    | DG-ID                       | WIRES-X DTMF       | same DG-ID    | callsign on radio    |
+| Tetra  | MCC/MNC, colour code        | Talk group, GSSI   | talk group    | ISSI on radio        |
+| M17    | CAN, Play every CAN         | Destination        | CAN filter    | Default M17 callsign |
+| P25    | pending note                | (headings only)    | (headings)    | (headings)           |
+
+Choose **More → M17** in the mode picker. CAN accepts an integer from 0 to 15, with blank using 0. **Play every CAN** opens squelch for any CAN. It starts off, so the panel shows that the channel hears only its own CAN. The destination accepts up to nine letters, digits, hyphens, slashes, periods or spaces. Studio trims and uppercases it. Blank, `ALL` and `@ALL` call everyone. Enter a reflector module such as `M17-M17 A` as one destination. **You** shows the radio-wide default set in [Digital IDs](README.md#digital-ids).
 
 **Analogue** modes (FM, AM, SSB) have **no** group headings: tones first (TX then RX), then bandwidth and squelch controls. Each tone field remembers its last CTCSS and DCS choices for the open edit session only (switching Off or between kinds restores them; save and refresh do not).
 
@@ -78,7 +81,8 @@ The channel **view** page (`ChannelViewPage`) answers how to use each mode, not 
 | D-STAR            | UR call, optional RPT1 gateway.                                                          |
 | YSF               | DG-ID when set.                                                                          |
 | Tetra             | Talk group (or GSSI), optional MCC-MNC network.                                          |
-| P25 / M17         | Placeholder until settings exist in Studio.                                              |
+| M17               | Calls **ECHO** on **CAN 3**. Broadcast displays as **ALL**.                              |
+| P25               | Placeholder until settings exist in Studio.                                              |
 
 Layout: one card for a single mode; two cards with **Main mode** on the main profile when there are two; three or more collapse to one summary row per mode that expands to the sentence. UI rules: [Talk cards](../../reference/styleguide/channel-modes-ui.md#talk-cards-channel-view).
 

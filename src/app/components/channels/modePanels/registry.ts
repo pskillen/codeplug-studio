@@ -7,6 +7,7 @@ import NxdnModePanel from './NxdnModePanel.tsx';
 import DstarModePanel from './DstarModePanel.tsx';
 import YsfModePanel from './YsfModePanel.tsx';
 import TetraModePanel from './TetraModePanel.tsx';
+import M17ModePanel from './M17ModePanel.tsx';
 import PendingModePanel from './PendingModePanel.tsx';
 
 export const MODE_PANELS: { [M in ChannelMode]: ComponentType<ModePanelProps<ProfileFor<M>>> } = {
@@ -19,5 +20,5 @@ export const MODE_PANELS: { [M in ChannelMode]: ComponentType<ModePanelProps<Pro
   dstar: DstarModePanel,
   ysf: YsfModePanel,
   p25: PendingModePanel,
-  m17: PendingModePanel,
+  m17: M17ModePanel,
 };

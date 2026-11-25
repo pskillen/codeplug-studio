@@ -109,8 +109,9 @@ export function modeProfileSummary(profile: ChannelModeProfile, lookup: ModeSumm
       }
       break;
     }
-    case 'p25':
     case 'm17':
+      return `CAN ${profile.can ?? 0} → ${profile.destination || 'ALL'}`;
+    case 'p25':
       break;
     default: {
       const _exhaustive: never = profile;

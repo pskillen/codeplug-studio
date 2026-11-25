@@ -113,6 +113,50 @@ describe('ChannelEditor (new channel)', () => {
     expect(screen.queryByRole('button', { name: 'Modes' })).not.toBeInTheDocument();
   });
 
+  it('blocks invalid M17 fields and saves a canonical destination', async () => {
+    renderNew();
+    fireEvent.click(screen.getByRole('radio', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'M17' }));
+    const access = within(screen.getByRole('group', { name: 'Access' }));
+    const call = within(screen.getByRole('group', { name: 'Call' }));
+    const can = access.getByLabelText('CAN');
+    const destination = call.getByLabelText('Destination');
+    const save = screen.getByRole('button', { name: 'Save channel' });
+
+    expect(screen.getByPlaceholderText('No default M17 callsign set')).toHaveValue('');
+    expect(screen.getByText('Hears only this CAN.')).toBeInTheDocument();
+
+    fireEvent.change(can, { target: { value: '16' } });
+    expect(access.getByText('M17 CAN must be an integer from 0 to 15')).toBeInTheDocument();
+    fireEvent.click(save);
+    expect(mocks.putChannel).not.toHaveBeenCalled();
+
+    fireEvent.change(can, { target: { value: '3.5' } });
+    expect(access.getByText('M17 CAN must be an integer from 0 to 15')).toBeInTheDocument();
+    fireEvent.click(save);
+    expect(mocks.putChannel).not.toHaveBeenCalled();
+
+    fireEvent.change(can, { target: { value: '3' } });
+    fireEvent.click(access.getByRole('switch', { name: 'Play every CAN' }));
+    expect(screen.getByText('Hears every CAN.')).toBeInTheDocument();
+    fireEvent.change(destination, { target: { value: '@ECHO' } });
+    expect(call.getByText(/M17 destination must be blank/)).toBeInTheDocument();
+    fireEvent.click(save);
+    expect(mocks.putChannel).not.toHaveBeenCalled();
+
+    fireEvent.change(destination, { target: { value: ' m17-m17 a ' } });
+    expect(destination).toHaveValue(' m17-m17 a ');
+    fireEvent.blur(destination);
+    expect(destination).toHaveValue('M17-M17 A');
+    fireEvent.change(destination, { target: { value: ' echo ' } });
+    fireEvent.click(save);
+    await waitFor(() => expect(mocks.putChannel).toHaveBeenCalledTimes(1));
+    const [row] = mocks.putChannel.mock.calls[0] as [Channel, unknown];
+    expect(row.modeProfiles).toEqual([
+      { mode: 'm17', can: 3, playEveryCan: true, destination: 'ECHO' },
+    ]);
+  });
+
   it('FM + DMR preset opens dual-mode layout with Main mode FM', () => {
     renderNew();
     fireEvent.click(screen.getByRole('button', { name: /FM \+ DMR/ }));

@@ -54,7 +54,7 @@ describe('ChannelModePicker', () => {
     expect(screen.getByRole('radio', { name: 'AM' })).toBeTruthy();
     expect(screen.getByRole('radio', { name: 'NXDN' })).toBeTruthy();
     expect(screen.getByRole('radio', { name: 'P25' })).toBeTruthy();
-    expect(screen.getByRole('radio', { name: 'M17' })).toBeTruthy();
+    expect(screen.queryByRole('radio', { name: 'M17' })).toBeNull();
     expect(screen.getByRole('radio', { name: /More/ })).toBeTruthy();
   });
 
@@ -64,11 +64,14 @@ describe('ChannelModePicker', () => {
     expect(onPreset).toHaveBeenCalledWith(MODE_PRESETS.find((p) => p.id === 'fm-dmr'));
   });
 
-  it('opens More under placeholder and switches to YSF', async () => {
+  it.each([
+    ['YSF', 'ysf'],
+    ['M17', 'm17'],
+  ])('opens More under placeholder and switches to %s', async (label, mode) => {
     const { onSwitch } = renderPicker();
     fireEvent.click(screen.getByRole('radio', { name: /More/ }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'YSF' }));
-    expect(onSwitch).toHaveBeenCalledWith('ysf');
+    fireEvent.click(await screen.findByRole('menuitem', { name: label }));
+    expect(onSwitch).toHaveBeenCalledWith(mode);
   });
 
   it('single mode DMR: FM switches, DMR does not', () => {

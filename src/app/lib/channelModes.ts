@@ -118,15 +118,8 @@ export function normalizeChannelMode(mode: string): ChannelMode {
 }
 
 /** Single-select switch, in order; everything else sits under More. */
-export const MODE_PICKER_COMMON: readonly CoreChannelMode[] = [
-  'fm',
-  'am',
-  'dmr',
-  'nxdn',
-  'p25',
-  'm17',
-];
-export const MODE_PICKER_MORE: readonly CoreChannelMode[] = ['ssb', 'dstar', 'ysf', 'tetra'];
+export const MODE_PICKER_COMMON: readonly CoreChannelMode[] = ['fm', 'am', 'dmr', 'nxdn', 'p25'];
+export const MODE_PICKER_MORE: readonly CoreChannelMode[] = ['m17', 'ssb', 'dstar', 'ysf', 'tetra'];
 
 export interface ModePreset {
   id: string;
