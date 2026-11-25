@@ -9,6 +9,8 @@ import {
 } from '@core/domain/channelSets/index.ts';
 import type { ChannelSetId } from '@core/domain/channelSets/types.ts';
 import { channelSetDefinition } from '@core/domain/channelSets/definitions.ts';
+import { isValidChannelPower } from '@core/domain/validation.ts';
+import { CHANNEL_POWER_ABOVE_HIGH } from '@core/models/library.ts';
 import { buildChannelSetImportPlan } from '@core/services/channelSetImport.ts';
 import ModePill from '../pills/ModePill.tsx';
 import DirectoryIngestPage from '../directories/DirectoryIngestPage.tsx';
@@ -43,6 +45,8 @@ const BANDWIDTH_OPTIONS = [
   { value: '12.5', label: '12.5 kHz (NFM)' },
   { value: '25', label: '25 kHz (wide FM)' },
 ];
+
+const POWER_OVERRIDE_RANGE = `Enter 0–100 or ${CHANNEL_POWER_ABOVE_HIGH} for Above High.`;
 
 type PreviewStatus = 'add' | 'skip_rx' | 'skip_name';
 
@@ -89,7 +93,7 @@ export default function ChannelSetPicker() {
 
   const [setId, setSetId] = useState<ChannelSetId>('pmr446');
   const [namePrefix, setNamePrefix] = useState('');
-  const [power, setPower] = useState<number | string>('');
+  const [power, setPower] = useState<number | null>(null);
   const [bandwidthKHz, setBandwidthKHz] = useState('12.5');
   const [forbidTransmit, setForbidTransmit] = useState<boolean | null>(null);
   const [alsoCreateZone, setAlsoCreateZone] = useState(false);
@@ -104,17 +108,17 @@ export default function ChannelSetPicker() {
   const definition = channelSetDefinition(setId);
 
   const effectiveForbidTransmit = forbidTransmit ?? definition.defaultForbidTransmit;
-  const powerValue = power === '' ? null : Number(power);
+  const powerValid = isValidChannelPower(power);
   const bandwidthValue = Number(bandwidthKHz);
 
   const generateOptions = useMemo(
     () => ({
       namePrefix: namePrefix || undefined,
-      power: powerValue,
+      power: powerValid ? power : null,
       forbidTransmit: effectiveForbidTransmit,
       bandwidthKHz: bandwidthValue,
     }),
-    [namePrefix, powerValue, effectiveForbidTransmit, bandwidthValue],
+    [namePrefix, power, powerValid, effectiveForbidTransmit, bandwidthValue],
   );
 
   const previewRows = useMemo((): PreviewRow[] => {
@@ -191,7 +195,7 @@ export default function ChannelSetPicker() {
   }, []);
 
   async function handleAdd() {
-    if (!activeProjectId || addCount === 0) return;
+    if (!activeProjectId || addCount === 0 || !powerValid) return;
     setAdding(true);
     setError(null);
     setSuccess(null);
@@ -282,16 +286,24 @@ export default function ChannelSetPicker() {
           </FormField>
           <FormField
             label="Power (%)"
-            hint="Leave empty for radio default"
+            hint={`Leave empty for radio default. ${POWER_OVERRIDE_RANGE}`}
+            error={powerValid ? undefined : POWER_OVERRIDE_RANGE}
             className={pageClasses.filterField}
           >
             <TextInput
               variant="plain"
               type="number"
               min={0}
-              max={100}
-              value={power}
-              onChange={(e) => setPower(e.currentTarget.value)}
+              max={CHANNEL_POWER_ABOVE_HIGH}
+              step="any"
+              aria-label="Power (%)"
+              aria-invalid={!powerValid}
+              onInput={(e) => {
+                const input = e.currentTarget;
+                setPower(
+                  input.value === '' && !input.validity.badInput ? null : input.valueAsNumber,
+                );
+              }}
             />
           </FormField>
           {definition.mode === 'dmr' ? null : (
@@ -348,7 +360,7 @@ export default function ChannelSetPicker() {
             leftSection={<IconPlaylistAdd size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
             onClick={() => void handleAdd()}
             loading={adding}
-            disabled={addCount === 0}
+            disabled={addCount === 0 || !powerValid}
           >
             Add {addCount} channel{addCount === 1 ? '' : 's'}
           </Button>

@@ -106,6 +106,28 @@ describe('native-yaml parse', () => {
     expect(channel.hideFromInternalMap).toBeUndefined();
   });
 
+  it.each([0, 62.5, 100, 101, null])('preserves channel power %s', (power) => {
+    const yaml = readFixture('omitted-nullables.yaml').replace(
+      '      modeProfiles:',
+      `      power: ${power}\n      modeProfiles:`,
+    );
+    expect(parseProjectDocument(yaml).channels[0]?.power).toBe(power);
+  });
+
+  it.each([-1, 100.5, 102, 'High'])('rejects invalid channel power %s', (power) => {
+    const yaml = readFixture('omitted-nullables.yaml').replace(
+      '      modeProfiles:',
+      `      power: ${power}\n      modeProfiles:`,
+    );
+    expect(() => parseProjectDocument(yaml)).toThrowError(
+      new NativeYamlImportError(
+        typeof power === 'number'
+          ? 'library.channels[0].power must be null, a number from 0 to 100 inclusive, or 101 (Above High)'
+          : 'library.channels[0].power must be a number',
+      ),
+    );
+  });
+
   it('parses hideFromInternalMap when true', () => {
     const aggregate = fullLibraryAggregate();
     const withHidden = {

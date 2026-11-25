@@ -1,6 +1,6 @@
 # UV-21Pro V2 — power ladder
 
-Internal Studio `power` is **0–100 percent** (or `null` = unset / radio default). Hardware has two RF steps: **High 5 W** and **Low 1 W** (same UV-17Pro / UV-5R Mini ladder).
+The UV-21Pro V2 has two RF steps, **High 5 W** and **Low 1 W** (same UV-17Pro / UV-5R Mini ladder). **Above High** (`101`) writes High. See the [native YAML channel fields](../../../export-formats/native-yaml/README.md#channel).
 
 | Step  | Watts | Internal percent |
 | ----- | ----- | ---------------- |

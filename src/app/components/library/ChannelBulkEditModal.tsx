@@ -9,7 +9,13 @@ import type {
   TxPermitOverride,
 } from '@core/models/channelBehaviourDefaults.ts';
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
-import type { Channel, ChannelTone, Library, ScanInclusion } from '@core/models/library.ts';
+import {
+  CHANNEL_POWER_ABOVE_HIGH,
+  type Channel,
+  type ChannelTone,
+  type Library,
+  type ScanInclusion,
+} from '@core/models/library.ts';
 import { nestedOnlyZoneMembershipsForChannels } from '@core/domain/zoneMembership.ts';
 import { isAnalogChannelModeProfile } from '@core/domain/modeProfiles.ts';
 import {
@@ -531,6 +537,9 @@ function ChannelBulkEditModalBody({
                   showValue={form.changePower && form.power != null}
                   showDefaultCheckbox={false}
                   previewValues={channels.map((channel) => channel.power)}
+                  min={1}
+                  step={1}
+                  extraEndpoint={{ value: CHANNEL_POWER_ABOVE_HIGH, label: 'Above High' }}
                 />
               </FieldGroup>
             </div>

@@ -119,50 +119,48 @@ describe('anytone serialise', () => {
     expect(row.txcc).toBe('7');
   });
 
-  it('serialises Transmit Power Mid and Turbo from percent', () => {
-    const base: Channel = {
-      ...newChannel(PROJECT_ID, 'Power Ch'),
+  it('serialises the selected Transmit Power in Channel.CSV', () => {
+    const channels: Channel[] = [50, 75, 100, 101, null].map((power, index) => ({
+      ...newChannel(PROJECT_ID, `Power ${index + 1}`),
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
+      power,
       modeProfiles: [defaultModeProfile('fm')],
+    }));
+    const zone = {
+      ...newZone(PROJECT_ID, 'Power'),
+      members: channels.map(({ id }) => ({ kind: 'channel' as const, channelId: id })),
     };
-    const assembleCtx = {
-      buildId: 'b1',
-      formatId: 'anytone',
-      profileId: 'anytone-at-d890uv',
-      buildName: 'Test',
-      channels: [{ entity: base, wireName: 'Power Ch' }],
-      zones: [],
-      scanLists: [],
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: channels.map(({ id }) => id) }],
+          },
+        ],
+      },
+    };
+    const library = {
+      channels,
+      zones: [zone],
       talkGroups: [],
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [],
+      scanLists: [],
     };
-
-    const mid = serialiseAnytoneChannelRow(
-      { entity: { ...base, power: 50 }, wireName: 'Power Ch' },
-      assembleCtx,
-      'anytone-at-d890uv',
-      1,
-    );
-    expect(mid['Transmit Power']).toBe('Mid');
-
-    const turbo = serialiseAnytoneChannelRow(
-      { entity: { ...base, power: 100 }, wireName: 'Power Ch' },
-      assembleCtx,
-      'anytone-at-d890uv',
-      1,
-    );
-    expect(turbo['Transmit Power']).toBe('Turbo');
-
-    const high = serialiseAnytoneChannelRow(
-      { entity: { ...base, power: 75 }, wireName: 'Power Ch' },
-      assembleCtx,
-      'anytone-at-d890uv',
-      1,
-    );
-    expect(high['Transmit Power']).toBe('High');
+    const files = serialiseAnytoneFiles(assemble(build, library), library);
+    const table = csvToTable(files['Channel.CSV']);
+    const powerIndex = table.headers.indexOf('Transmit Power');
+    expect(table.rows.map((row) => row[powerIndex])).toEqual([
+      'Mid',
+      'High',
+      'High',
+      'Turbo',
+      'High',
+    ]);
   });
 
   it('serialises Channel Free Busy Lock for FM channels', () => {

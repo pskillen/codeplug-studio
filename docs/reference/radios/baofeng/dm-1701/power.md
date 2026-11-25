@@ -1,6 +1,6 @@
 # DM-1701 — power ladder
 
-Internal Studio `power` is **0–100 percent** (or `null` = unset / radio default).
+Studio's DM-1701 output tops out at **P9**. **Above High** (`101`) writes P9. See the [native YAML channel fields](../../../export-formats/native-yaml/README.md#channel).
 
 OpenGD77 wire spelling (`Master`, `P1`…`Pn`) is documented generically in [export-formats/opengd77/power-squelch.md](../../../export-formats/opengd77/power-squelch.md). This page records the **1701-specific** watt ↔ percent mapping used by profile `opengd77-1701`.
 

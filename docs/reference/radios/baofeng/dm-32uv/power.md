@@ -1,8 +1,8 @@
 # DM-32UV — power and squelch ladders
 
-Internal Studio `power` / `squelch` are **0–100 percent** (or `null` = unset / radio default).
-
 ## Power
+
+Studio's DM-32UV output tops out at **High**. **Above High** (`101`) writes High. See the [native YAML channel fields](../../../export-formats/native-yaml/README.md#channel).
 
 | Step   | Wire     | Internal percent |
 | ------ | -------- | ---------------- |
@@ -22,7 +22,7 @@ On export, `null` defaults to **High**.
 
 ## Squelch
 
-Same ladder on analogue and digital channels.
+Studio stores `squelch` as **0–100 percent** or `null` for radio default. The same ladder applies to analogue and digital channels.
 
 | Wire `Squelch Level` | Internal `squelch` %     |
 | -------------------- | ------------------------ |

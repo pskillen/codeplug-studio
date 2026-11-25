@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   assertNonEmptyName,
+  isValidChannelPower,
   rxGroupListModes,
   validateDigitalIdForMode,
   validateEntityRef,
@@ -13,6 +14,16 @@ import {
   newTalkGroup,
   newZone,
 } from './factories.ts';
+
+describe('isValidChannelPower', () => {
+  it.each([null, 0, 62.5, 100, 101])('accepts %s', (power) => {
+    expect(isValidChannelPower(power)).toBe(true);
+  });
+
+  it.each([-1, 100.5, 102, NaN, Infinity])('rejects %s', (power) => {
+    expect(isValidChannelPower(power)).toBe(false);
+  });
+});
 
 describe('validation', () => {
   it('rejects empty names', () => {

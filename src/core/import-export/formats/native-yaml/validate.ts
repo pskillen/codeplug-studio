@@ -1,6 +1,7 @@
 import { forbidTransmitFromLegacyBoolean } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
 import { scanInclusionFromLegacyBoolean } from '@core/import-export/scanInclusion/index.ts';
 import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
+import { isValidChannelPower } from '@core/domain/validation.ts';
 import { normalizeZoneBehaviourDefaults } from '@core/domain/normalizeZoneBehaviourDefaults.ts';
 import type {
   AnalogSquelchModeOverride,
@@ -37,6 +38,7 @@ import type {
   AprsSlotCallType,
   DMRTimeSlot,
 } from '@core/models/libraryTypes.ts';
+import { CHANNEL_POWER_ABOVE_HIGH } from '@core/models/library.ts';
 import type {
   AnalogContact,
   Channel,
@@ -548,6 +550,14 @@ function parseChannel(raw: unknown, index: number, studioSchemaVersion: number):
       ? parseChannelAprsBinding(record.aprs, `library.channels[${index}].aprs`, studioSchemaVersion)
       : undefined;
 
+  const powerLabel = `library.channels[${index}].power`;
+  const power = expectNullableNumber(record.power, powerLabel);
+  if (!isValidChannelPower(power)) {
+    throw new NativeYamlImportError(
+      `${powerLabel} must be null, a number from 0 to 100 inclusive, or ${CHANNEL_POWER_ABOVE_HIGH} (Above High)`,
+    );
+  }
+
   return {
     ...parsePersistableRow(record, `library.channels[${index}]`),
     name: expectString(record.name, `library.channels[${index}].name`),
@@ -560,7 +570,7 @@ function parseChannel(raw: unknown, index: number, studioSchemaVersion: number):
       record.maidenheadLocator,
       `library.channels[${index}].maidenheadLocator`,
     ),
-    power: expectNullableNumber(record.power, `library.channels[${index}].power`),
+    power,
     scanInclusion: parseScanInclusion(record, `library.channels[${index}]`),
     forbidTransmit: parseForbidTransmitField(
       record.forbidTransmit,

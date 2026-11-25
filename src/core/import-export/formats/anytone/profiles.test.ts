@@ -13,28 +13,42 @@ describe('anytone profiles', () => {
     expect(ANYTONE_PROFILES.map((p) => p.id)).toEqual(['anytone-at-d890uv']);
   });
 
-  it('round-trips power ladder for all four wire values', () => {
-    expect(anytoneWireToPercent('anytone-at-d890uv', 'Turbo')).toBe(100);
-    expect(anytoneWireToPercent('anytone-at-d890uv', 'High')).toBe(75);
-    expect(anytoneWireToPercent('anytone-at-d890uv', 'Mid')).toBe(50);
-    expect(anytoneWireToPercent('anytone-at-d890uv', 'Low')).toBe(25);
-
-    expect(anytonePercentToWire('anytone-at-d890uv', 100)).toBe('Turbo');
-    expect(anytonePercentToWire('anytone-at-d890uv', 75)).toBe('High');
-    expect(anytonePercentToWire('anytone-at-d890uv', 50)).toBe('Mid');
-    expect(anytonePercentToWire('anytone-at-d890uv', 25)).toBe('Low');
+  it.each([
+    ['Low', 25],
+    ['Mid', 50],
+    ['High', 100],
+    ['Turbo', 101],
+    ['  Turbo  ', 101],
+    ['', null],
+    ['  ', null],
+    ['turbo', null],
+  ])('decodes CSV power %j as %s', (wire, expectedPercent) => {
+    expect(anytoneWireToPercent('anytone-at-d890uv', wire)).toBe(expectedPercent);
   });
 
-  it('maps nearest percent and null to Turbo', () => {
-    expect(anytonePercentToWire('anytone-at-d890uv', null)).toBe('Turbo');
-    expect(anytonePercentToWire('anytone-at-d890uv', 5)).toBe('Low');
-    expect(anytonePercentToWire('anytone-at-d890uv', 40)).toBe('Mid');
-    expect(anytonePercentToWire('anytone-at-d890uv', 63)).toBe('High');
-    expect(anytonePercentToWire('anytone-at-d890uv', 90)).toBe('Turbo');
+  it.each([
+    [null, 'High'],
+    [0, 'Low'],
+    [5, 'Low'],
+    [25, 'Low'],
+    [37.49, 'Low'],
+    [37.5, 'Mid'],
+    [40, 'Mid'],
+    [50, 'Mid'],
+    [62.49, 'Mid'],
+    [62.5, 'High'],
+    [63, 'High'],
+    [75, 'High'],
+    [90, 'High'],
+    [100, 'High'],
+    [101, 'Turbo'],
+  ])('encodes library power %s as %s', (power, expectedWire) => {
+    expect(anytonePercentToWire('anytone-at-d890uv', power)).toBe(expectedWire);
   });
 
   it('throws for unknown profile', () => {
     expect(() => getAnytoneProfile('unknown')).toThrow(/Unknown Anytone profile/);
+    expect(() => anytonePercentToWire('unknown', 101)).toThrow(/Unknown Anytone profile/);
   });
 
   it('imports org caps from AT_D890UV_LIMITS', () => {

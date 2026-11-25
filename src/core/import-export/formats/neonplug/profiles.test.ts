@@ -10,6 +10,13 @@ import {
 } from './profiles.ts';
 
 describe('neonplug profiles', () => {
+  it.each(['neonplug-dm32uv', 'neonplug-uv5rmini'])(
+    'exports Above High as the ordinary maximum for %s',
+    (profileId) => {
+      expect(neonplugPercentToWire(profileId, 101)).toBe(neonplugPercentToWire(profileId, 100));
+    },
+  );
+
   it('registers dm32uv and uv5rmini profiles', () => {
     expect(NEONPLUG_PROFILES.map((p) => p.id)).toEqual(['neonplug-dm32uv', 'neonplug-uv5rmini']);
   });

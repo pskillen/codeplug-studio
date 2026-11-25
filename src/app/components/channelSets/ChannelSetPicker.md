@@ -26,11 +26,12 @@ Routed at `/library/channels/add-channel-set` via `AddChannelSetPage`.
 - Set selector lists all channel sets with channel counts
 - Live preview table: per-channel checkbox (default on; skip rows disabled), name, frequency (`<MHz> simplex` for simplex rows; RX/TX column reserved for future split channels), mode, dedup status; selectable addable rows
 - Options: name prefix, power %, **bandwidth** (12.5 or 25 kHz; hidden for DMR sets such as DMR446, which generate DMR simplex CC1/TS1 channels), forbid transmit, optional zone
+- The optional power override applies to every added channel. Leave it blank for **Radio default** (`null`), enter a number from 0 through 100 (fractions are allowed), or enter 101 for **Above High**. Invalid values disable **Add**.
 - Persists via `persistChannelSetImport` → `putChannel` loop and optional `putZone`
 - Navigates to channels list or new zone on success
 
 ## Related
 
-- [Library CRUD](../../../docs/features/library/README.md)
-- [Channel sets reference](../../../docs/reference/channel-sets.md)
+- [Library CRUD](../../../../docs/features/library/README.md)
+- [Channel sets reference](../../../../docs/reference/channel-sets.md)
 - Core: `src/core/domain/channelSets/`, `src/core/services/channelSetImport.ts`

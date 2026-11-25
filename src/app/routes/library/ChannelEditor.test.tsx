@@ -152,6 +152,40 @@ describe('ChannelEditor (new channel)', () => {
 });
 
 describe('ChannelEditor (saved channel)', () => {
+  it('saves the last power position as 101', async () => {
+    renderEdit({ ...newChannel('p', 'Relay'), power: 100 });
+    const slider = screen.getByRole('slider', { name: 'Power' });
+
+    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    expect(slider).toHaveAttribute('aria-valuetext', 'Above High');
+    fireEvent.click(screen.getByRole('button', { name: 'Save channel' }));
+
+    await waitFor(() => expect(mocks.putChannel).toHaveBeenCalledTimes(1));
+    expect(mocks.putChannel.mock.calls[0][0]).toMatchObject({ power: 101 });
+  });
+
+  it('reopens saved Above High power and names it in the compact transmit summary', () => {
+    setMobile(true);
+    renderEdit({ ...newChannel('p', 'Relay'), power: 101 });
+    expect(screen.getByText('Power Above High · transmit default')).toBeInTheDocument();
+
+    const heading = screen.getByRole('heading', { name: 'Transmit' });
+    fireEvent.click(within(heading).getByRole('button', { name: 'Transmit' }));
+    const slider = screen.getByRole('slider', { name: 'Power' });
+    expect(slider).toHaveAttribute('aria-valuenow', '101');
+    expect(slider).toHaveAttribute('aria-valuetext', 'Above High');
+    expect(screen.getByText('Power examples')).toBeInTheDocument();
+  });
+
+  it.each([0, 42.5, 101])('preserves stored power %s on an unrelated save', async (power) => {
+    renderEdit({ ...newChannel('p', 'Relay'), power });
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Renamed' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save channel' }));
+
+    await waitFor(() => expect(mocks.putChannel).toHaveBeenCalledTimes(1));
+    expect(mocks.putChannel.mock.calls[0][0]).toMatchObject({ name: 'Renamed', power });
+  });
+
   it('inline DMR settings live under Mode and frequency', () => {
     const channel: Channel = {
       ...newChannel('p', 'Relay'),

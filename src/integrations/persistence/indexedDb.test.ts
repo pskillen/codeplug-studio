@@ -52,6 +52,17 @@ describe('IndexedDbProjectPersistence', () => {
     expect(channels.map((c) => c.name)).toEqual(['Alpha', 'Zulu']);
   });
 
+  it('preserves Above High channel power in storage', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+    const channel = { ...newChannel(meta.projectId, 'Local'), power: 101 };
+
+    await store.putChannel(channel, null);
+
+    expect((await store.getChannel(meta.projectId, channel.id))?.power).toBe(101);
+  });
+
   it('defaults scanInclusion when reading legacy channel rows', async () => {
     const store = makeStore();
     const meta = newProjectMeta('Test');

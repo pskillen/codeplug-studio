@@ -36,7 +36,7 @@ CSV column and radio menu share this **1-based** order: (1) DMO/simplex, (2) Rep
 
 ## Transmit Power
 
-Wire ladder (AT-D890UV): `Low` / `Mid` / `High` / `Turbo`. Watt mapping and Studio `%` ladder: [at-d890uv power](../../radios/anytone/at-d890uv/power.md) · [profiles.md](profiles.md).
+AT-D890UV exports `Low` below 37.5, `Mid` from 37.5 to below 62.5, and `High` from 62.5 through 100 or when power is `null`. Above High (101) exports as `Turbo`. [Shared AT-D890UV power table](../../radios/anytone/at-d890uv/power.md)
 
 ## Busy Lock / TX Permit
 
