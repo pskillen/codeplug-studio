@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { IconPlus } from '@tabler/icons-react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { OwnDigitalId, OwnDigitalIdProtocol } from '@core/models/library.ts';
+import type { NumericOwnDigitalId } from '@core/models/library.ts';
 import {
-  OWN_DIGITAL_ID_PROTOCOLS,
+  NUMERIC_OWN_DIGITAL_ID_PROTOCOLS,
   ownDigitalIdLabel,
   ownDigitalIdProtocolLabel,
   ownDigitalIdWarnings,
@@ -34,11 +34,14 @@ export default function DigitalIdsListPage() {
   const navigate = useNavigate();
   const { library, loading, setDefaultOwnDigitalId } = useLibrary();
   const [actionError, setActionError] = useState<string | null>(null);
-  const { ownDigitalIds } = library;
+  const ownDigitalIds = useMemo(
+    () => library.ownDigitalIds.filter((row) => row.protocol !== 'm17'),
+    [library.ownDigitalIds],
+  );
   const referenceIndex = useMemo(() => buildReferenceCountIndex(library), [library]);
   const warnings = useMemo(() => ownDigitalIdWarnings(ownDigitalIds), [ownDigitalIds]);
 
-  async function makeDefault(row: OwnDigitalId) {
+  async function makeDefault(row: NumericOwnDigitalId) {
     setActionError(null);
     try {
       await setDefaultOwnDigitalId(row.id);
@@ -47,7 +50,7 @@ export default function DigitalIdsListPage() {
     }
   }
 
-  const columns = useMemo((): DataTableColumn<OwnDigitalId>[] => {
+  const columns = useMemo((): DataTableColumn<NumericOwnDigitalId>[] => {
     return [
       {
         key: 'name',
@@ -146,7 +149,7 @@ export default function DigitalIdsListPage() {
           </p>
         ) : null}
 
-        {OWN_DIGITAL_ID_PROTOCOLS.map((protocol: OwnDigitalIdProtocol) => {
+        {NUMERIC_OWN_DIGITAL_ID_PROTOCOLS.map((protocol) => {
           const rows = ownDigitalIds
             .filter((row) => row.protocol === protocol)
             .sort((a, b) => a.number - b.number);

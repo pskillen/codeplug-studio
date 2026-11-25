@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
-import type { Library, OwnDigitalId } from '@core/models/library.ts';
+import type { Library, NumericOwnDigitalId, OwnDigitalId } from '@core/models/library.ts';
 
 const state = vi.hoisted(() => ({ initial: [] as OwnDigitalId[] }));
 
@@ -33,7 +33,9 @@ vi.mock('../../../state/useLibrary.ts', async () => {
 
 import DigitalIdsListPage from './DigitalIdsListPage.tsx';
 
-function row(over: Partial<OwnDigitalId> & Pick<OwnDigitalId, 'id' | 'number'>): OwnDigitalId {
+function row(
+  over: Partial<NumericOwnDigitalId> & Pick<NumericOwnDigitalId, 'id' | 'number'>,
+): NumericOwnDigitalId {
   return {
     projectId: 'p',
     revision: 1,

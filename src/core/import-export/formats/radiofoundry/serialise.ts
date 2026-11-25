@@ -16,6 +16,7 @@ import type { AssembledBuild, AssembledChannel, AssembledZone } from '@core/serv
 import type {
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
+  NumericOwnDigitalId,
   OwnDigitalId,
 } from '@core/models/library.ts';
 import {
@@ -181,8 +182,10 @@ export function serialiseRadioFoundryCodeplugWithProfile(
   return { bytes: image, owned, warnings };
 }
 
-function requireDefaultDmrId(ids: readonly OwnDigitalId[] | undefined): OwnDigitalId {
-  const chosen = (ids ?? []).find((row) => row.protocol === 'dmr' && row.isDefault);
+function requireDefaultDmrId(ids: readonly OwnDigitalId[] | undefined): NumericOwnDigitalId {
+  const chosen = (ids ?? []).find(
+    (row): row is NumericOwnDigitalId => row.protocol === 'dmr' && row.isDefault,
+  );
   if (!chosen) {
     throw new RadioFoundryExportError(
       `RadioFoundry export needs a default DMR radio ID from 1 to ${LIMITS.DMR_ID_MAX}.`,
@@ -199,7 +202,7 @@ function requireDefaultDmrId(ids: readonly OwnDigitalId[] | undefined): OwnDigit
 function writeRadioIdentity(
   image: Uint8Array,
   owned: Uint8Array,
-  radio: OwnDigitalId,
+  radio: NumericOwnDigitalId,
   warnings: ExportWarning[],
 ): void {
   markOwned(owned, GENERAL_SETTINGS, LIMITS.RADIO_NAME_MAX + 4);
@@ -218,7 +221,7 @@ function writeChannels(
   image: Uint8Array,
   owned: Uint8Array,
   assembled: AssembledBuild,
-  radio: OwnDigitalId,
+  radio: NumericOwnDigitalId,
   contacts: Map<string, number>,
   cloneIndex: TalkGroupTimeslotCloneIndex | null,
   warnings: ExportWarning[],
@@ -341,7 +344,7 @@ function writeChannelRecord(
   owned: Uint8Array,
   channel: KeptChannel,
   assembled: AssembledBuild,
-  radio: OwnDigitalId,
+  radio: NumericOwnDigitalId,
   contacts: Map<string, number>,
   cloneIndex: TalkGroupTimeslotCloneIndex | null,
   warnings: ExportWarning[],
@@ -462,7 +465,7 @@ function writeDmrChannel(
   label: string,
   entity: KeptChannel['row']['entity'],
   assembled: AssembledBuild,
-  radio: OwnDigitalId,
+  radio: NumericOwnDigitalId,
   contacts: Map<string, number>,
   cloneIndex: TalkGroupTimeslotCloneIndex | null,
   warnings: ExportWarning[],
@@ -501,7 +504,7 @@ function writeOwnIdOverride(
   record: Uint8Array,
   profile: ChannelModeProfileDMR,
   ids: readonly OwnDigitalId[],
-  radio: OwnDigitalId,
+  radio: NumericOwnDigitalId,
   label: string,
   warnings: ExportWarning[],
 ): void {

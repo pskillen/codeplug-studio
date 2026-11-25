@@ -274,6 +274,9 @@ export default function ChannelEditor({
     }
     setValidationError(null);
     const row = buildRow();
+    row.modeProfiles = row.modeProfiles.map((profile) =>
+      profile.mode === 'm17' ? normalizeModeProfile(profile) : profile,
+    );
     void save(() => persistence.putChannel(row, entity ? entity.revision : null), {
       permitNavigation: permitNavigationOnce,
     }).then((saved) => {

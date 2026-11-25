@@ -666,3 +666,46 @@ describe('mode transitions (input immutability)', () => {
     expect(before).toEqual(snapshot);
   });
 });
+
+describe('M17 mode profiles', () => {
+  const defaults = { mode: 'm17', can: null, playEveryCan: null, destination: '' } as const;
+
+  it('restores a legacy parked stub with defaults', () => {
+    const legacyEdit = {
+      modeProfiles: [defaultModeProfile('fm')],
+      primaryMode: 'fm',
+      parked: [{ mode: 'm17' }],
+    } as ChannelModeEdit;
+    expect(switchChannelMode(legacyEdit, 'm17').modeProfiles).toEqual([defaults]);
+    expect(addChannelMode(legacyEdit, 'm17').modeProfiles[1]).toEqual(defaults);
+  });
+
+  it('keeps configured fields through switch and remove transitions', () => {
+    const profile = { ...defaults, can: 3, playEveryCan: true, destination: 'M17-M17 A' };
+    const edit: ChannelModeEdit = { modeProfiles: [profile], primaryMode: 'm17', parked: [] };
+    const switched = switchChannelMode(switchChannelMode(edit, 'fm'), 'm17');
+    const readded = addChannelMode(removeChannelMode(edit, 'm17'), 'm17');
+    expect(switched).toEqual({ ...edit, parked: [defaultModeProfile('fm')] });
+    expect(readded).toEqual(edit);
+    expect(normalizeModeProfile({ ...profile, playEveryCan: false })).toEqual({
+      ...profile,
+      playEveryCan: false,
+    });
+  });
+
+  it.each([0, 15, null])('accepts CAN %s', (can) => {
+    expect(validateModeProfiles([{ ...defaults, can }])).toEqual([]);
+  });
+
+  it.each([-1, 16, 1.5, NaN, Infinity])('rejects CAN %s', (can) => {
+    expect(validateModeProfiles([{ ...defaults, can }])).toEqual([
+      'M17 CAN must be an integer from 0 to 15',
+    ]);
+  });
+
+  it('rejects invalid destination text before saving', () => {
+    expect(validateModeProfiles([{ ...defaults, destination: 'AB*CD' }])).toEqual([
+      expect.stringContaining('M17 destination'),
+    ]);
+  });
+});

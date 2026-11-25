@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Anchor, Select, Stack } from '@mantine/core';
-import type { Library, OwnDigitalIdProtocol } from '@core/models/library.ts';
+import type { Library, NumericOwnDigitalIdProtocol } from '@core/models/library.ts';
 import {
   OWN_ID_FIELD_HINTS,
   OWN_ID_PAGE_PATH,
@@ -17,7 +17,7 @@ export default function OwnDigitalIdSelect({
   onChange,
 }: {
   label: string;
-  protocol: OwnDigitalIdProtocol;
+  protocol: NumericOwnDigitalIdProtocol;
   library: Library;
   value: string | null | undefined;
   onChange: (ownDigitalIdId: string | null) => void;

@@ -406,7 +406,9 @@ function ownIdOverride(
 ): string | null {
   const number = ((record[0x27] ?? 0) << 16) | ((record[0x28] ?? 0) << 8) | (record[0x29] ?? 0);
   if (number <= 0 || number === radio.radioNumber) return null;
-  const existing = radio.ownDigitalIds.find((row) => !row.isDefault && row.number === number);
+  const existing = radio.ownDigitalIds.find(
+    (row) => row.protocol === 'dmr' && !row.isDefault && row.number === number,
+  );
   if (existing) return existing.id;
   const created = newOwnDigitalId(radio.ownDigitalIds[0]?.projectId ?? '', 'dmr', '', number);
   radio.ownDigitalIds.push(created);

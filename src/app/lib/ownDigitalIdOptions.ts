@@ -1,4 +1,4 @@
-import type { Library, OwnDigitalIdProtocol } from '@core/models/library.ts';
+import type { Library, NumericOwnDigitalIdProtocol } from '@core/models/library.ts';
 import { defaultOwnDigitalId, ownDigitalIdOptionLabel } from '@core/domain/ownDigitalIds.ts';
 
 /** Value of the "Default" option (a Mantine Select cannot hold `null`). */
@@ -6,7 +6,7 @@ export const OWN_ID_DEFAULT_VALUE = '';
 
 export const OWN_ID_PAGE_PATH = '/library/digital-ids';
 
-export const OWN_ID_FIELD_HINTS: Record<OwnDigitalIdProtocol, string> = {
+export const OWN_ID_FIELD_HINTS: Record<NumericOwnDigitalIdProtocol, string> = {
   dmr: 'The ID this channel sends. Default uses your default DMR ID.',
   nxdn: 'The ID this channel sends. Default uses your default NXDN ID. Radios with one NXDN ID always send the default.',
 };
@@ -18,7 +18,7 @@ export const OWN_ID_FIELD_HINTS: Record<OwnDigitalIdProtocol, string> = {
  */
 export function ownDigitalIdSelectData(
   library: Pick<Library, 'ownDigitalIds'>,
-  protocol: OwnDigitalIdProtocol,
+  protocol: NumericOwnDigitalIdProtocol,
   current: string | null | undefined,
 ): { value: string; label: string }[] {
   const rows = library.ownDigitalIds.filter((row) => row.protocol === protocol);

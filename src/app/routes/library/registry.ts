@@ -1,5 +1,5 @@
 import type { Library } from '@core/models/library.ts';
-import { ownDigitalIdProtocolLabel } from '@core/domain/ownDigitalIds.ts';
+import { ownDigitalIdProtocolLabel, ownDigitalIdValue } from '@core/domain/ownDigitalIds.ts';
 import type { PersistableRow } from '@core/models/revision.ts';
 import type { LibraryEntityKind } from '@integrations/persistence/index.ts';
 
@@ -115,7 +115,7 @@ export function describeEntity(library: Library, kind: LibraryEntityKind, id: st
     case 'ownDigitalId': {
       const o = library.ownDigitalIds.find((x) => x.id === id);
       return o
-        ? `${ownDigitalIdProtocolLabel(o.protocol)} · ID ${o.number}${o.isDefault ? ' · Default' : ''}`
+        ? `${ownDigitalIdProtocolLabel(o.protocol)} · ID ${ownDigitalIdValue(o)}${o.isDefault ? ' · Default' : ''}`
         : '';
     }
     case 'scanList': {

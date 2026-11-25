@@ -10,6 +10,7 @@ import type {
   Channel,
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
+  NumericOwnDigitalId,
   Zone,
 } from '@core/models/library.ts';
 import type { ChannelTone } from '@core/models/libraryTypes.ts';
@@ -310,6 +311,9 @@ function RadioFoundryMemoryLoaded({ archive }: { archive: DebugArchive }) {
   }
 
   const result = projection.result;
+  const dmrIds = result.ownDigitalIds.filter(
+    (row): row is NumericOwnDigitalId => row.protocol === 'dmr',
+  );
   const categories: {
     value: string;
     label: string;
@@ -385,13 +389,13 @@ function RadioFoundryMemoryLoaded({ archive }: { archive: DebugArchive }) {
     {
       value: 'radio-ids',
       label: 'Radio IDs',
-      count: result.ownDigitalIds.length,
+      count: dmrIds.length,
       render: () => (
         <SimpleListPanel
-          summary={`${result.ownDigitalIds.length} radio ID${result.ownDigitalIds.length === 1 ? '' : 's'} decoded.`}
+          summary={`${dmrIds.length} radio ID${dmrIds.length === 1 ? '' : 's'} decoded.`}
           caption="Radio IDs"
           searchPlaceholder="Search radio IDs"
-          rows={result.ownDigitalIds.map((row) => ({
+          rows={dmrIds.map((row) => ({
             id: row.id,
             name: row.name,
             extra: String(row.number),

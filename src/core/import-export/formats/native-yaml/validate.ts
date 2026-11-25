@@ -1,3 +1,12 @@
+import {
+  isM17Can,
+  M17_CALLSIGN_ERROR,
+  M17_CAN_ERROR,
+  M17_DESTINATION_ERROR,
+  normalizeM17Callsign,
+  normalizeM17Destination,
+} from '@core/domain/m17Address.ts';
+import { OWN_DIGITAL_ID_PROTOCOLS, ownDigitalIdValue } from '@core/domain/ownDigitalIds.ts';
 import { forbidTransmitFromLegacyBoolean } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
 import { scanInclusionFromLegacyBoolean } from '@core/import-export/scanInclusion/index.ts';
 import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
@@ -304,8 +313,31 @@ function parseModeProfile(
           `modeProfiles[${index}].talkGroupRef`,
         ),
       };
+    case 'm17': {
+      const label = `modeProfiles[${index}]`;
+      const can = expectNullableNumber(record.can, `${label}.can`);
+      if (can !== null && !isM17Can(can)) {
+        throw new NativeYamlImportError(`${label}.can: ${M17_CAN_ERROR}`);
+      }
+      const destination = normalizeM17Destination(
+        record.destination === undefined
+          ? ''
+          : expectString(record.destination, `${label}.destination`),
+      );
+      if (destination === null) {
+        throw new NativeYamlImportError(`${label}.destination: ${M17_DESTINATION_ERROR}`);
+      }
+      return {
+        mode,
+        can,
+        playEveryCan:
+          record.playEveryCan == null
+            ? null
+            : expectBoolean(record.playEveryCan, `${label}.playEveryCan`),
+        destination,
+      };
+    }
     case 'p25':
-    case 'm17':
       return { mode };
     default:
       throw new NativeYamlImportError(`modeProfiles[${index}].mode is invalid: ${mode}`);
@@ -722,13 +754,20 @@ function parseTalkGroup(raw: unknown, index: number): TalkGroup {
 function parseOwnDigitalId(raw: unknown, index: number): OwnDigitalId {
   const label = `library.ownDigitalIds[${index}]`;
   const record = expectRecord(raw, label);
-  return {
+  const protocol = parseEnumField(record.protocol, `${label}.protocol`, OWN_DIGITAL_ID_PROTOCOLS);
+  const base = {
     ...parsePersistableRow(record, label),
     name: expectOptionalString(record.name, `${label}.name`),
-    protocol: parseEnumField(record.protocol, `${label}.protocol`, ['dmr', 'nxdn'] as const),
-    number: expectNumber(record.number, `${label}.number`),
     isDefault: expectBoolean(record.isDefault, `${label}.isDefault`),
   };
+  if (protocol === 'm17') {
+    const callsign = normalizeM17Callsign(expectString(record.callsign, `${label}.callsign`));
+    if (callsign === null) {
+      throw new NativeYamlImportError(`${label}.callsign: ${M17_CALLSIGN_ERROR}`);
+    }
+    return { ...base, protocol, callsign };
+  }
+  return { ...base, protocol, number: expectNumber(record.number, `${label}.number`) };
 }
 
 function parseDigitalContact(raw: unknown, index: number): DigitalContact {
@@ -1572,7 +1611,7 @@ function validateForeignKeys(
   const ids = libraryEntityIds(library);
 
   const seenOwnIds = new Set<string>();
-  for (const protocol of ['dmr', 'nxdn'] as const) {
+  for (const protocol of OWN_DIGITAL_ID_PROTOCOLS) {
     const rows = library.ownDigitalIds.filter((row) => row.protocol === protocol);
     if (rows.filter((row) => row.isDefault).length > 1) {
       throw new NativeYamlImportError(
@@ -1580,10 +1619,11 @@ function validateForeignKeys(
       );
     }
     for (const row of rows) {
-      const key = `${protocol}:${row.number}`;
+      const value = ownDigitalIdValue(row);
+      const key = `${protocol}:${value}`;
       if (seenOwnIds.has(key)) {
         throw new NativeYamlImportError(
-          `library.ownDigitalIds lists ${protocol.toUpperCase()} ID ${row.number} more than once`,
+          `library.ownDigitalIds lists ${protocol.toUpperCase()} ID ${value} more than once`,
         );
       }
       seenOwnIds.add(key);
@@ -1833,6 +1873,7 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 30 &&
     studioSchemaVersion !== 29 &&
     studioSchemaVersion !== 28 &&
     studioSchemaVersion !== 27 &&
@@ -1862,7 +1903,7 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 

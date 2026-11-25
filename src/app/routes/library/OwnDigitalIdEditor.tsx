@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
-import type { OwnDigitalId, OwnDigitalIdProtocol } from '@core/models/library.ts';
+import type { NumericOwnDigitalId, NumericOwnDigitalIdProtocol } from '@core/models/library.ts';
 import { newOwnDigitalId } from '@core/domain/factories.ts';
 import {
   OWN_ID_RANGE,
@@ -37,7 +37,7 @@ const PROTOCOL_OPTIONS = [
 
 const service = new LibraryService(persistence);
 
-function numberHint(protocol: OwnDigitalIdProtocol): string {
+function numberHint(protocol: NumericOwnDigitalIdProtocol): string {
   const [min, max] = OWN_ID_RANGE[protocol];
   return `${ownDigitalIdProtocolLabel(protocol)} ID, ${min}–${max}`;
 }
@@ -47,11 +47,11 @@ export function OwnDigitalIdEditor({
   entity,
 }: {
   projectId: string;
-  entity: OwnDigitalId | null;
+  entity: NumericOwnDigitalId | null;
 }) {
   const base = entity ?? newOwnDigitalId(projectId);
   const [name, setName] = useState(base.name);
-  const [protocol, setProtocol] = useState<OwnDigitalIdProtocol>(base.protocol);
+  const [protocol, setProtocol] = useState<NumericOwnDigitalIdProtocol>(base.protocol);
   const [number, setNumber] = useState(base.number > 0 ? String(base.number) : '');
   const [saveAttempted, setSaveAttempted] = useState(false);
   const { save, saving, error } = useEntitySave('digital-ids');
@@ -66,7 +66,7 @@ export function OwnDigitalIdEditor({
   // The protocol is fixed once channels choose the ID: a DMR channel cannot name an NXDN ID.
   const protocolLocked = usageCount > 0;
 
-  function buildRow(): OwnDigitalId {
+  function buildRow(): NumericOwnDigitalId {
     return {
       ...base,
       name: name.trim(),
@@ -136,7 +136,7 @@ export function OwnDigitalIdEditor({
                   options={PROTOCOL_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
                   value={protocol}
                   onChange={(next) => {
-                    if (!protocolLocked) setProtocol(next as OwnDigitalIdProtocol);
+                    if (!protocolLocked) setProtocol(next as NumericOwnDigitalIdProtocol);
                   }}
                 />
                 {protocolLocked ? (
