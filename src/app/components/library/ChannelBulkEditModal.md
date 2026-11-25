@@ -56,7 +56,7 @@ Single-channel selection is handled by the list page (navigate to the channel ed
 - Each field starts as **No change**. Gradient fields use an offset idle segment; long selects use [`BulkEditField`](./BulkEditField.md). Apply writes only opted-in fields.
 - Idle + shared value: Mantine fill on the shared option, outline on **No change**. Mixed: fill on **No change**. Opted in: fill and outline on the chosen value.
 - Desktop: two-column `.fieldGroup` grid; mobile: one group per row. Controls use `layout="column"` (title, then control, then description).
-- **Power** and analog **Squelch** are **No change | Default | Custom**. Default writes `null`. Custom shows the percent thumb; idle/default hide the 50% thumb. Preview dots mark every selected channel’s numeric level.
+- **Power** and analog **Squelch** offer **No change**, **Default**, and **Custom**. Default writes `null`. Custom power offers 1–100 in one-point steps, followed by **Above High** (101). Preview dots remain visible in every mode, including the endpoint for existing Above High values. With **No change** selected, applying any other field leaves power out of the patch.
 - Analog RX and TX tones are independent [`ChannelToneField`](../channels/ChannelToneField.md) pickers (**Off | CTCSS | DCS**; inverted DCS stores `D###I`). **No change** writes nothing; **Off** clears the tone.
 - Channel-level fields (`scanInclusion`, `forbidTransmit`, `txPermit`, `power`) apply to every selected channel when opted in.
 - Analog fields appear only when at least one selected channel has an analog mode. Digital-only channels are skipped for analog patches. Talker alias appears when at least one channel has DMR.
@@ -69,7 +69,7 @@ Single-channel selection is handled by the list page (navigate to the channel ed
 
 ## Related
 
-- [library/README.md](../../../docs/features/library/README.md) — channels list bulk edit/delete ([#207](https://github.com/pskillen/codeplug-studio/issues/207), [#310](https://github.com/pskillen/codeplug-studio/issues/310), [#1269](https://github.com/pskillen/codeplug-studio/issues/1269))
+- [library/README.md](../../../../docs/features/library/README.md) — channels list bulk edit/delete ([#207](https://github.com/pskillen/codeplug-studio/issues/207), [#310](https://github.com/pskillen/codeplug-studio/issues/310), [#1269](https://github.com/pskillen/codeplug-studio/issues/1269))
 - [`BulkEditField`](./BulkEditField.md), [`BulkZonePickerColumn`](./BulkZonePickerColumn.md), [`GradientSegmentedControl`](../ui/GradientSegmentedControl.md), [`PercentLevelSlider`](../v2/PercentLevelSlider.md)
 - `ScanInclusionSegment`, `ForbidTransmitSegment`, `PercentLevelSlider`
 - `persistChannelBulkDelete` in `src/app/lib/channelBulkDelete.ts`

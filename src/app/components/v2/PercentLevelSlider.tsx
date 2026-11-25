@@ -36,6 +36,8 @@ export interface PercentLevelSliderProps {
   min?: number;
   max?: number;
   step?: number;
+  /** Adds a named final position above max. The position must align with min and step. */
+  extraEndpoint?: { value: number; label: string };
   /**
    * When false, omit the `— {value}` suffix and hide the primary thumb.
    * Defaults to hiding when `value` is null (radio default).
@@ -43,7 +45,7 @@ export interface PercentLevelSliderProps {
   showValue?: boolean;
   /** Radio-default checkbox. Hide when a parent gradient owns Default. Default true. */
   showDefaultCheckbox?: boolean;
-  /** Numeric percents from a bulk selection — secondary dots on the track. Nulls omitted. */
+  /** Bulk selection values shown as secondary dots. Nulls are drawn at 50. */
   previewValues?: readonly (number | null)[];
 }
 
@@ -57,6 +59,7 @@ export default function PercentLevelSlider({
   min = 0,
   max = 100,
   step = PERCENT_LEVEL_STEP,
+  extraEndpoint,
   showValue,
   showDefaultCheckbox = true,
   previewValues,
@@ -64,9 +67,19 @@ export default function PercentLevelSlider({
   const useDefaultId = useId();
   const sliderId = useId();
   const isDefault = value == null;
-  const committedValue =
-    value == null ? Math.max(min, snapPercentToStep(50, step)) : snapPercentToStep(value, step);
-  const valueLabel = formatPercentLevelLabel(value, { zeroLabel, defaultLabel });
+  const trackMax = extraEndpoint?.value ?? max;
+  const snapTrackValue = (level: number) =>
+    extraEndpoint
+      ? Math.min(trackMax, Math.max(min, min + Math.round((level - min) / step) * step))
+      : snapPercentToStep(level, step);
+  const committedValue = value == null ? Math.max(min, snapTrackValue(50)) : snapTrackValue(value);
+  const formatValue = (level: number | null) =>
+    extraEndpoint && level === extraEndpoint.value
+      ? extraEndpoint.label
+      : formatPercentLevelLabel(level, { zeroLabel, defaultLabel });
+  const marks = extraEndpoint
+    ? PERCENT_LEVEL_MARKS.filter((mark) => mark.value >= min && mark.value <= max)
+    : [...PERCENT_LEVEL_MARKS];
   const displayValue = showValue ?? !isDefault;
   const hideThumb = !displayValue;
   const sliderValue = hideThumb ? min : committedValue;
@@ -80,7 +93,7 @@ export default function PercentLevelSlider({
           <Text component="span" inherit>
             {label}{' '}
             <Text component="span" c="dimmed" inherit>
-              — {valueLabel}
+              — {formatValue(value)}
             </Text>
           </Text>
         ) : (
@@ -107,13 +120,15 @@ export default function PercentLevelSlider({
         <div className={classes.trackWrap}>
           <Slider
             id={sliderId}
-            aria-label={label}
+            thumbLabel={label}
+            thumbValueText={extraEndpoint ? formatValue : undefined}
+            label={extraEndpoint ? formatValue : undefined}
             value={sliderValue}
-            onChange={(v) => onChange(snapPercentToStep(v, step))}
+            onChange={(v) => onChange(snapTrackValue(v))}
             min={min}
-            max={max}
+            max={trackMax}
             step={step}
-            marks={[...PERCENT_LEVEL_MARKS]}
+            marks={marks}
             disabled={isDefault || hideThumb}
             mb={16}
             classNames={{
@@ -127,7 +142,9 @@ export default function PercentLevelSlider({
                 <span
                   key={`${percent}-${index}`}
                   className={classes.previewDot}
-                  style={{ left: `${((percent - min) / (max - min)) * 100}%` }}
+                  style={{
+                    left: `${((Math.min(trackMax, Math.max(min, percent)) - min) / (trackMax - min)) * 100}%`,
+                  }}
                 />
               ))}
             </div>

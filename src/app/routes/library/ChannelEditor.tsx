@@ -7,7 +7,13 @@ import type {
   ForbidTransmitOverride,
   TxPermitOverride,
 } from '@core/models/channelBehaviourDefaults.ts';
-import type { Channel, ChannelModeProfile, Library, ScanInclusion } from '@core/models/library.ts';
+import {
+  CHANNEL_POWER_ABOVE_HIGH,
+  type Channel,
+  type ChannelModeProfile,
+  type Library,
+  type ScanInclusion,
+} from '@core/models/library.ts';
 import {
   placeQueryFromChannelName,
   reconcileChannelLocation,
@@ -74,6 +80,8 @@ import { channelEditorSections } from './channelEditorSections.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import classes from './ChannelEditor.module.css';
 
+const POWER_EXTRA_ENDPOINT = { value: CHANNEL_POWER_ABOVE_HIGH, label: 'Above High' };
+
 function applyModePreset(edit: ChannelModeEdit, preset: ModePreset): ChannelModeEdit {
   let next = edit;
   const [first, ...rest] = preset.modes;
@@ -89,7 +97,12 @@ function transmitPanelSummary(
   power: number | null,
   forbidTransmit: ForbidTransmitOverride,
 ): string {
-  const powerPart = power != null ? `Power ${power}%` : 'Power default';
+  const powerPart =
+    power === POWER_EXTRA_ENDPOINT.value
+      ? `Power ${POWER_EXTRA_ENDPOINT.label}`
+      : power != null
+        ? `Power ${power}%`
+        : 'Power default';
   const txPart =
     forbidTransmit === 'forbid'
       ? 'receive only'
@@ -511,7 +524,14 @@ export default function ChannelEditor({
             summary={transmitPanelSummary(power, forbidTransmit)}
           >
             <div className={classes.powerRow}>
-              <PercentLevelSlider label="Power" value={power} onChange={setPower} />
+              <PercentLevelSlider
+                label="Power"
+                value={power}
+                onChange={setPower}
+                min={1}
+                step={1}
+                extraEndpoint={POWER_EXTRA_ENDPOINT}
+              />
               {isMobile ? (
                 <details className={classes.hintDetails}>
                   <summary>Power examples</summary>

@@ -52,9 +52,17 @@ You can also add channels and zones from a connected radio with [Read into libra
 | Delete all digital contacts               | Library → Contacts toolbar; checkbox-gated modal; cascade-clears channel/`RX` refs then IDB partition clear                                                                    |
 | Membership / zone export order            | `Zone.order` + membership arrays; Sort… confirm; build `orderOrSlot` / layout hints                                                                                            |
 | Grow zone from map                        | Inside-hull + near-locator suggestions; multi-add on add-from-map screen                                                                                                       |
-| Channel Power approx watts hint           | Frequencies tab — informational ladder projection; `Channel.power` stays percent-only                                                                                          |
+| Channel power                             | Transmit section, bulk edit and channel set import — see [Channel power](#channel-power)                                                                                       |
 | Channel TX offset quick buttons           | Frequencies tab — offset display + band quick buttons; see [tx-offsets.md](../../reference/tx-offsets.md)                                                                      |
 | Channels list layout (table / cards)      | Operator-chosen layout, card grouping, zone filter, independent card details                                                                                                   |
+
+## Channel power
+
+In the channel editor’s **Transmit** section, clear **Radio default** to select a power from 1 through 100. The final position is **Above High**. Use the same scale under **Power → Custom** in bulk edit. **Default** stores the radio default and **No change** keeps each channel’s saved setting, including when the modal shows preview dots for those values. See [the power slider](../../../src/app/components/v2/PercentLevelSlider.md) and [bulk edit](../../../src/app/components/library/ChannelBulkEditModal.md).
+
+When adding a curated channel set, enter a power from 0 through 100 or enter 101 for **Above High**. Leave the field empty for **Radio default**. See [the channel set picker](../../../src/app/components/channelSets/ChannelSetPicker.md).
+
+Above High uses the extra level on radios that offer one. Other radios use their ordinary highest tier without a warning. Channels previously saved at 100 now write High on the AT-D890UV. Select **Above High** to use its extra tier. The editor’s **Power examples** show how the selected power maps to the targets in the project. See [the power examples](../../../src/app/components/library/PowerLadderHints.md) and [the AT-D890UV power mapping](../../reference/radios/anytone/at-d890uv/power.md).
 
 ## List routes
 

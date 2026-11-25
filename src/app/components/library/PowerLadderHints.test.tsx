@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
-import { newRadioBuildForProfile } from '@core/domain/factories.ts';
+import { newRadioBuildForProfile, newRadioBuildWithEgresses } from '@core/domain/factories.ts';
 import PowerLadderHints from './PowerLadderHints.tsx';
 
 vi.mock('../../state/useFormatBuilds.ts', () => ({
@@ -54,5 +54,21 @@ describe('PowerLadderHints', () => {
     expect(screen.getByText(/From this project/)).toBeInTheDocument();
     expect(screen.getByText(/Mid ≈ 2.5 W/)).toBeInTheDocument();
     expect(screen.queryByText(/Baofeng 1701/)).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [100, 'High ≈ 5 W'],
+    [101, 'Turbo ≈ 7 W VHF / 6 W UHF'],
+    [null, 'High ≈ 5 W (radio default)'],
+  ])('renders power %s for an MM9PDY-only build', (power, hint) => {
+    const { build } = newRadioBuildWithEgresses('p1', 'anytone-at-d890uv-mm9pdy');
+    mockedUseFormatBuilds.mockReturnValue({ ...mockedUseFormatBuilds(), builds: [build] });
+
+    render(
+      <MantineProvider>
+        <PowerLadderHints power={power} />
+      </MantineProvider>,
+    );
+    expect(screen.getByText(`Anytone AT-D890UV (MM9PDY modded firmware): ${hint}`)).toBeVisible();
   });
 });

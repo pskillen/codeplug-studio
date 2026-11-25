@@ -1,9 +1,79 @@
 import { MantineProvider } from '@mantine/core';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import PercentLevelSlider from './PercentLevelSlider.tsx';
 
+function PowerSlider({ initialValue }: { initialValue: number | null }) {
+  const [value, setValue] = useState(initialValue);
+  return (
+    <MantineProvider>
+      <PercentLevelSlider
+        label="Power"
+        value={value}
+        onChange={setValue}
+        min={1}
+        step={1}
+        extraEndpoint={{ value: 101, label: 'Above High' }}
+        previewValues={[0, 101]}
+      />
+    </MantineProvider>
+  );
+}
+
 describe('PercentLevelSlider', () => {
+  it('moves between 100 and the named endpoint with the arrow keys', () => {
+    render(<PowerSlider initialValue={99} />);
+    const slider = screen.getByRole('slider', { name: 'Power' });
+
+    expect(slider).toHaveAttribute('aria-valuemin', '1');
+    expect(slider).toHaveAttribute('aria-valuemax', '101');
+    expect(screen.getByText('100')).toBeInTheDocument();
+    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    expect(slider).toHaveAttribute('aria-valuenow', '100');
+    expect(slider).toHaveAttribute('aria-valuetext', '100%');
+    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    expect(slider).toHaveAttribute('aria-valuenow', '101');
+    expect(slider).toHaveAttribute('aria-valuetext', 'Above High');
+    expect(screen.getByText('— Above High')).toBeInTheDocument();
+    fireEvent.keyDown(slider, { key: 'ArrowLeft' });
+    expect(slider).toHaveAttribute('aria-valuenow', '100');
+  });
+
+  it('disables the power slider on radio default and re-enables at 50', () => {
+    render(<PowerSlider initialValue={101} />);
+    const slider = screen.getByRole('slider', { name: 'Power' });
+    const radioDefault = screen.getByRole('checkbox', { name: 'Radio default' });
+
+    fireEvent.click(radioDefault);
+    expect(slider).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(radioDefault);
+    expect(slider).toHaveAttribute('aria-disabled', 'false');
+    expect(slider).toHaveAttribute('aria-valuenow', '50');
+  });
+
+  it('places an Above High preview dot at the endpoint and clamps zero to the start', () => {
+    const { container } = render(<PowerSlider initialValue={null} />);
+    const dots = container.querySelectorAll('[data-preview-dots] span');
+    expect(dots[0]).toHaveStyle({ left: '0%' });
+    expect(dots[1]).toHaveStyle({ left: '100%' });
+  });
+
+  it('keeps generic squelch on the zero-to-100 scale with five-point snapping', () => {
+    const onChange = vi.fn();
+    render(
+      <MantineProvider>
+        <PercentLevelSlider label="Squelch" value={47} onChange={onChange} />
+      </MantineProvider>,
+    );
+    const slider = screen.getByRole('slider', { name: 'Squelch' });
+    expect(slider).toHaveAttribute('aria-valuemin', '0');
+    expect(slider).toHaveAttribute('aria-valuemax', '100');
+    expect(slider).toHaveAttribute('aria-valuenow', '45');
+    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    expect(onChange).toHaveBeenCalledWith(50);
+  });
+
   it('omits the value suffix when the level is radio default', () => {
     render(
       <MantineProvider>
