@@ -125,6 +125,9 @@ export default function EntityEditorPage({ kindSlug }: { kindSlug?: string } = {
         const ownEntity = entityId
           ? (library.ownDigitalIds.find((o) => o.id === entityId) ?? null)
           : null;
+        if (ownEntity?.protocol === 'm17') {
+          return <Navigate to="/library/digital-ids" replace />;
+        }
         return (
           <OwnDigitalIdEditor
             key={ownEntity ? `${ownEntity.id}:${ownEntity.revision}` : 'new'}

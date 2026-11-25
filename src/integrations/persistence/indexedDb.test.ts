@@ -10,6 +10,7 @@ import {
   newTalkGroup,
   newTrackingSettings,
 } from '@core/domain/factories.ts';
+import { ownDigitalIdValue } from '@core/domain/ownDigitalIds.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import { IndexedDbProjectPersistence } from './indexedDb.ts';
@@ -351,6 +352,43 @@ describe('IndexedDbProjectPersistence', () => {
     rawDb.close();
   });
 
+  it('opens a v30 project with an active M17 stub', async () => {
+    const dbName = `v30-m17-db-${counter++}`;
+    const meta = newProjectMeta('Legacy M17');
+    const channel = {
+      ...newChannel(meta.projectId, 'M17 repeater'),
+      primaryMode: 'm17',
+      modeProfiles: [{ mode: 'm17' }],
+    };
+
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open(dbName, 30);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        const projects = db.createObjectStore('projects', { keyPath: ['projectId', 'id'] });
+        projects.createIndex('byProject', 'projectId');
+        projects.put(meta);
+        const channels = db.createObjectStore('channels', { keyPath: ['projectId', 'id'] });
+        channels.createIndex('byProject', 'projectId');
+        channels.put(channel);
+      };
+      request.onsuccess = () => {
+        request.result.close();
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+
+    const store = new IndexedDbProjectPersistence(dbName);
+    open.add(store);
+    const seed = await store.loadProjectSeed(meta.projectId);
+    expect(seed?.channels?.[0]).toMatchObject({
+      id: channel.id,
+      primaryMode: 'm17',
+      modeProfiles: [{ mode: 'm17', can: null, playEveryCan: null, destination: '' }],
+    });
+  });
+
   it('upgrading a v29 DB turns channel DMR and NXDN numbers into Digital IDs per project', async () => {
     const dbName = `v29-db-${counter++}`;
     const metaA = newProjectMeta('A');
@@ -407,11 +445,15 @@ describe('IndexedDbProjectPersistence', () => {
 
     const idsA = await store.listOwnDigitalIds(metaA.projectId);
     const idsB = await store.listOwnDigitalIds(metaB.projectId);
-    expect(idsA.map((r) => [r.protocol, r.number, r.name, r.isDefault]).sort()).toEqual([
-      ['dmr', 2351234, '', false],
-      ['nxdn', 5, '', false],
+    expect(idsA.map((r) => [r.protocol, ownDigitalIdValue(r), r.name, r.isDefault]).sort()).toEqual(
+      [
+        ['dmr', 2351234, '', false],
+        ['nxdn', 5, '', false],
+      ],
+    );
+    expect(idsB.map((r) => [r.protocol, ownDigitalIdValue(r), r.isDefault])).toEqual([
+      ['dmr', 2351234, false],
     ]);
-    expect(idsB.map((r) => [r.protocol, r.number, r.isDefault])).toEqual([['dmr', 2351234, false]]);
     // No default is set by the migration.
     expect([...idsA, ...idsB].some((r) => r.isDefault)).toBe(false);
 

@@ -14,6 +14,12 @@ import type {
   SsbSideband,
 } from '../models/libraryTypes.ts';
 import { normalizeDmrModeProfile } from './dmrOperatingMode.ts';
+import {
+  isM17Can,
+  M17_CAN_ERROR,
+  M17_DESTINATION_ERROR,
+  normalizeM17Destination,
+} from './m17Address.ts';
 import { channelOwnIdOverride } from './ownDigitalIds.ts';
 
 const ANALOG_MODES = new Set<AnalogChannelMode>(['fm', 'am', 'ssb']);
@@ -94,8 +100,9 @@ export function defaultModeProfile(
         colorCode: null,
         talkGroupRef: null,
       };
-    case 'p25':
     case 'm17':
+      return { mode, can: null, playEveryCan: null, destination: '' };
+    case 'p25':
       return { mode };
     default: {
       const _exhaustive: never = mode;
@@ -169,6 +176,15 @@ export function normalizeModeProfile(profile: ChannelModeProfile): ChannelModePr
   }
   if (profile.mode === 'nxdn') {
     return normalizeNxdnProfile(profile as ChannelModeProfileNxdn);
+  }
+  if (profile.mode === 'm17') {
+    const destination = profile.destination ?? '';
+    return {
+      ...profile,
+      can: profile.can ?? null,
+      playEveryCan: profile.playEveryCan ?? null,
+      destination: normalizeM17Destination(destination) ?? destination,
+    };
   }
   return profile;
 }
@@ -433,6 +449,10 @@ export function validateModeProfiles(
       errors.push(`Duplicate mode profile: ${profile.mode}`);
     }
     seen.add(profile.mode);
+    if (profile.mode === 'm17') {
+      if (profile.can != null && !isM17Can(profile.can)) errors.push(M17_CAN_ERROR);
+      if (normalizeM17Destination(profile.destination) === null) errors.push(M17_DESTINATION_ERROR);
+    }
     if (profile.mode === 'dmr') {
       if (profile.colourCode != null && (profile.colourCode < 0 || profile.colourCode > 15)) {
         errors.push('DMR colour code must be 0–15');

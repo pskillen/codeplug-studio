@@ -8,6 +8,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Group, List, Stack, Text } from '@mantine/core';
+import type { NumericOwnDigitalId } from '@core/models/library.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import {
   airSecuritySeedUriDmrId,
@@ -62,7 +63,7 @@ export default function AtD890AirSecuritySeedCard({ egress }: AtD890AirSecurityS
   const serialOk = isRadioSerialSupported();
   const { library } = useLibrary();
   const libraryDmrIds = library.ownDigitalIds
-    .filter((row) => row.protocol === 'dmr')
+    .filter((row): row is NumericOwnDigitalId => row.protocol === 'dmr')
     .map((row) => row.number);
   const [text, setText] = useState('');
   const [reason, setReason] = useState<string | null>(null);

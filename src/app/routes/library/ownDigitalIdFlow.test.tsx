@@ -47,6 +47,7 @@ function EditRoute() {
   const { library, loading } = useLibrary();
   if (loading) return null;
   const entity = library.ownDigitalIds.find((row) => row.id === id) ?? null;
+  if (entity?.protocol === 'm17') throw new Error('Expected a numeric Digital ID');
   return <OwnDigitalIdEditor projectId={hoisted.projectId} entity={entity} />;
 }
 

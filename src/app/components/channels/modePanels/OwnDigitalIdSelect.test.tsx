@@ -7,13 +7,15 @@ import type {
   ChannelModeProfile,
   ChannelModeProfileDMR,
   ChannelModeProfileNxdn,
-  OwnDigitalId,
+  NumericOwnDigitalId,
 } from '@core/models/library.ts';
 import { DesignSystemV2Provider } from '../../v2/index.ts';
 import ModePanel from './ModePanel.tsx';
 import { testModePanelContextWithLibrary } from './testContext.ts';
 
-function ownId(over: Partial<OwnDigitalId> & Pick<OwnDigitalId, 'id' | 'protocol' | 'number'>) {
+function ownId(
+  over: Partial<NumericOwnDigitalId> & Pick<NumericOwnDigitalId, 'id' | 'protocol' | 'number'>,
+) {
   return {
     projectId: 'p1',
     revision: 1,
@@ -21,7 +23,7 @@ function ownId(over: Partial<OwnDigitalId> & Pick<OwnDigitalId, 'id' | 'protocol
     name: '',
     isDefault: false,
     ...over,
-  } as OwnDigitalId;
+  } as NumericOwnDigitalId;
 }
 
 const library = {

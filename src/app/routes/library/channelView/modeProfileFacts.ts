@@ -29,7 +29,7 @@ function push(
 function ownIdName(library: Library, id: string | null): string | null {
   if (!id) return null;
   const row = library.ownDigitalIds.find((r) => r.id === id);
-  if (!row) return null;
+  if (!row || row.protocol === 'm17') return null;
   return row.name.trim() ? `${row.name} (${row.number})` : String(row.number);
 }
 

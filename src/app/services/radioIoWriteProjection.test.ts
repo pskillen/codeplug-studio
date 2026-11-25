@@ -12,7 +12,7 @@ import {
 } from '@core/domain/factories.ts';
 import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
-import type { OwnDigitalId } from '@core/models/library.ts';
+import type { NumericOwnDigitalId } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { assemble } from '@core/services/assemble.ts';
 import {
@@ -37,7 +37,11 @@ function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
   };
 }
 
-function ownId(id: string, number: number, over: Partial<OwnDigitalId> = {}): OwnDigitalId {
+function ownId(
+  id: string,
+  number: number,
+  over: Partial<NumericOwnDigitalId> = {},
+): NumericOwnDigitalId {
   return {
     id,
     projectId: 'p1',

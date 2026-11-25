@@ -6,6 +6,7 @@ import {
   newRxGroupList,
   newTalkGroup,
 } from '@core/domain/factories.ts';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { modeTalk } from './modeTalk.ts';
 
 const projectId = '11111111-1111-4111-8111-111111111111';
@@ -385,7 +386,7 @@ describe('modeTalk', () => {
     expect(sentenceText(modeTalk({ mode: 'p25' }, channel, library).sentence)).toBe(
       "Studio doesn't hold P25 settings yet.",
     );
-    expect(sentenceText(modeTalk({ mode: 'm17' }, channel, library).sentence)).toBe(
+    expect(sentenceText(modeTalk(defaultModeProfile('m17'), channel, library).sentence)).toBe(
       "Studio doesn't hold M17 settings yet.",
     );
   });

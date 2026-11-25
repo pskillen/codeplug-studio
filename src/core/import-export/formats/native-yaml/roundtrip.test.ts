@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { stringify } from 'yaml';
+import { documentFromAggregate } from '../../projectDocument.ts';
 import { describe, expect, it } from 'vitest';
 import { scratchWireKey } from '@core/import-export/channelExpansion/channelOverrideKey.ts';
 import { expansionWireKey } from '@core/import-export/channelExpansion/modeExportSuffix.ts';
@@ -30,7 +32,7 @@ import {
   nestedZonesAggregate,
   projectWithRadioBuildAggregate,
 } from './testFixtures.ts';
-import type { Channel } from '@core/models/library.ts';
+import type { Channel, NumericOwnDigitalId } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import { initialRevision } from '@core/models/revision.ts';
 
@@ -403,26 +405,16 @@ describe('native-yaml Digital IDs', () => {
   });
 
   it('loads a schema 29 NXDN unitId as an NXDN Digital ID', () => {
-    const yaml = serialiseProject(
-      (() => {
-        const aggregate = fullLibraryAggregate();
-        const channel: Channel = {
-          ...newChannel(FIXTURE_PROJECT_ID, 'NXDN ch'),
-          modeProfiles: [
-            {
-              mode: 'nxdn',
-              rxRan: null,
-              txRan: null,
-              ownDigitalIdId: FIXTURE_NXDN_OWN_ID,
-              contactRef: null,
-            },
-          ],
-        };
-        return { ...aggregate, channels: [...aggregate.channels, channel] };
-      })(),
-    )
-      .replace('studioSchemaVersion: 30', 'studioSchemaVersion: 29')
-      .replace(`ownDigitalIdId: ${FIXTURE_NXDN_OWN_ID}`, 'unitId: 77');
+    const document = documentFromAggregate(fullLibraryAggregate());
+    const channel = {
+      ...newChannel(FIXTURE_PROJECT_ID, 'NXDN ch'),
+      modeProfiles: [{ mode: 'nxdn', rxRan: null, txRan: null, contactRef: null, unitId: 77 }],
+    };
+    const yaml = stringify({
+      ...document,
+      studioSchemaVersion: 29,
+      library: { ...document.library, channels: [...document.library.channels, channel] },
+    });
     const parsed = parseProjectDocument(yaml);
     expect(parsed.ownDigitalIds.some((row) => row.protocol === 'nxdn' && row.number === 77)).toBe(
       true,
@@ -431,7 +423,9 @@ describe('native-yaml Digital IDs', () => {
 
   it('rejects the same protocol and number twice, and several defaults in a protocol', () => {
     const aggregate = fullLibraryAggregate();
-    const dmrRow = aggregate.ownDigitalIds!.find((row) => row.protocol === 'dmr')!;
+    const dmrRow = aggregate.ownDigitalIds!.find(
+      (row): row is NumericOwnDigitalId => row.protocol === 'dmr',
+    )!;
     const twin = { ...dmrRow, id: '11111111-1111-4111-8111-111111111111', isDefault: false };
     expect(() =>
       parseProjectDocument(
@@ -466,10 +460,21 @@ describe('native-yaml Digital IDs', () => {
   });
 
   it('rejects the old dmrId field in a schema 30 file', () => {
-    const yaml = serialiseProject(fullLibraryAggregate()).replace(
-      `ownDigitalIdId: ${FIXTURE_DMR_OWN_ID}`,
-      'dmrId: 2351123',
-    );
+    const document = documentFromAggregate(fullLibraryAggregate());
+    const channels = document.library.channels.map((channel) => ({
+      ...channel,
+      modeProfiles: channel.modeProfiles.map((profile) => {
+        if (profile.mode !== 'dmr' || profile.ownDigitalIdId !== FIXTURE_DMR_OWN_ID) return profile;
+        const { ownDigitalIdId: _replaced, ...rest } = profile;
+        void _replaced;
+        return { ...rest, dmrId: 2351123 };
+      }),
+    }));
+    const yaml = stringify({
+      ...document,
+      studioSchemaVersion: 30,
+      library: { ...document.library, channels },
+    });
     expect(() => parseProjectDocument(yaml)).toThrow(
       /dmrId is replaced by ownDigitalIdId in schema 30/,
     );

@@ -27,7 +27,7 @@ IndexedDB remains the live edit store with per-entity revision concurrency. YAML
 
 The **RadioID directory shadow** (`digitalIdDirectory` IndexedDB partition) is **not** part of native YAML or Google Drive portable sync — use the separate local directory interchange on the Digital ID directory page ([#986](https://github.com/pskillen/codeplug-studio/issues/986)–[#988](https://github.com/pskillen/codeplug-studio/issues/988)).
 
-Envelope fields `schemaVersion` and `studioSchemaVersion` are documented in the tier 3 reference.
+The YAML envelope stays at version 1. Studio schema 31 adds the M17 channel fields `can`, `playEveryCan` and `destination`, and radio-wide Digital IDs with `protocol: m17` and a `callsign`. Schema 30 files remain supported. Old M17 mode-only profiles load with CAN and `playEveryCan` unset and an empty broadcast destination. See the [data model](../../data-model/README.md#library-entities) for the M17 text and default rules.
 
 **Stale build references.** Library foreign keys must resolve or import fails. Radio build layouts and override rows are derived from the library, so an id there that is no longer in the library (for example a zone deleted before [#1528](https://github.com/pskillen/codeplug-studio/issues/1528) cascaded deletes into builds) is dropped on import with one warning per build, instead of failing a Drive refresh or file open.
 
@@ -78,6 +78,7 @@ Rejected imports throw with a clear message:
 - Malformed YAML syntax
 - Unsupported `schemaVersion` or `studioSchemaVersion`
 - Duplicate entity `id` within a collection
+- Invalid M17 CAN, receive filter or address text, duplicate M17 callsigns after canonicalization, or several defaults for one protocol
 - Inconsistent `projectId` across rows
 - Broken UUID FK (zone member, contact ref, build selection, trait layout channel id, …)
 - Invalid composite channel override key shape (plain UUID, mode suffix, talk-group member, or `:scratch` companion — see [tier 3 `BuildEntityOverride`](../../../reference/export-formats/native-yaml/README.md#buildentityoverride))

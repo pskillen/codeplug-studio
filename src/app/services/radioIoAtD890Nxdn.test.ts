@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { newChannel, newRadioBuildForProfile, newZone } from '@core/domain/factories.ts';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
-import type { Channel, ChannelModeProfile, OwnDigitalId } from '@core/models/library.ts';
+import type {
+  Channel,
+  ChannelModeProfile,
+  NumericOwnDigitalId,
+  OwnDigitalId,
+} from '@core/models/library.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { encodeAtD890ChannelRecord } from '@integrations/radio-io/radios/at-d890uv/channelCodec.ts';
 import {
@@ -224,7 +229,11 @@ describe('AT-D890 MM9PDY NXDN channel projection', () => {
   });
 });
 
-function ownId(id: string, number: number, over: Partial<OwnDigitalId> = {}): OwnDigitalId {
+function ownId(
+  id: string,
+  number: number,
+  over: Partial<NumericOwnDigitalId> = {},
+): NumericOwnDigitalId {
   return {
     id,
     projectId: PROJECT,
