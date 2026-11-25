@@ -38,7 +38,7 @@ exports[`own-ID output of a project saved before Digital IDs > AT-D890 stock Wri
 
 exports[`own-ID output of a project saved before Digital IDs > Anytone CSV files 1`] = `
 {
-  "Channel.CSV": "f69b29043325d89748ba223ad07a5147d944eb4203178bf8881ab1f029cd35f1",
+  "Channel.CSV": "237a6c234458f1a68b1a45bc2d2d38ee29d9844a9a56b7966bbc65617f99469c",
   "DMRDigitalContactList.CSV": "9a2e99849e57439621b152dfc5a85c61261faf29400d4361ac74a9c9abe06d0c",
   "DMRReceiveGroupCallList.CSV": "c54f49dd4a7762b9a375cf8be46a0a83dd052c143f0a31757d898e9df4f4fede",
   "DMRTalkGroups.CSV": "e651138cca2c1af9eefbc32c571e64676847795567bb134759d60ef62de3a50a",
