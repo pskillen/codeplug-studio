@@ -110,7 +110,7 @@ Unused CTCSS cells are `88.5`. DCS is never written into `rToneFreq` / `cToneFre
 
 ## Power
 
-See per-radio ladders via [profiles.md](profiles.md). Internal `power` is 0–100 percent; `null` = radio default (exports as profile high step).
+CHIRP exports a watt value from the selected radio's power ladder. **Above High** (`101`) exports as the profile's highest step. Radio default (`null`) also exports as the profile's high step. See [CHIRP profiles](profiles.md) and the [native YAML channel fields](../native-yaml/README.md#channel).
 
 ## TX Admit
 

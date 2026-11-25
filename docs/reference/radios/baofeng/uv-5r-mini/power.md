@@ -1,6 +1,6 @@
 # UV-5R Mini — power ladder
 
-Internal Studio `power` is **0–100 percent** (or `null` = unset / radio default). Hardware has two RF steps: **High 5 W** and **Low 1 W** (CHIRP UV17Pro / `UV5RMini`).
+The UV-5R Mini has two RF steps, **High 5 W** and **Low 1 W** (CHIRP UV17Pro / `UV5RMini`). **Above High** (`101`) writes High. See the [native YAML channel fields](../../../export-formats/native-yaml/README.md#channel).
 
 | Step  | Watts | Internal percent |
 | ----- | ----- | ---------------- |

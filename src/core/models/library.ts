@@ -120,6 +120,8 @@ export type ChannelModeProfile =
   | ChannelModeProfileTetra
   | ChannelModeProfileStub;
 
+export const CHANNEL_POWER_ABOVE_HIGH = 101;
+
 export interface Channel extends PersistableRow {
   name: string;
   callsign: string;
@@ -129,6 +131,7 @@ export interface Channel extends PersistableRow {
   useLocation: boolean;
   /** Maidenhead locator when known — not mutually exclusive with `location`. */
   maidenheadLocator: string | null;
+  /** Radio default (`null`), a finite percentage from 0 to 100, or 101 for the discrete Above High setting. */
   power: number | null;
   scanInclusion: ScanInclusion;
   /** Optional FK to library `ScanList` for dedicated-scan-list CPS export. */

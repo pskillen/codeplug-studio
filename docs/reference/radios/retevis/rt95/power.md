@@ -1,6 +1,6 @@
 # RT95 VOX — power ladder
 
-Internal Studio `power` is **0–100 percent** (or `null` = unset / radio default).
+Studio's RT95 output tops out at **High** (about 25 W). **Above High** (`101`) writes High. See the [native YAML channel fields](../../../export-formats/native-yaml/README.md#channel).
 
 CHIRP radio driver labels are Low / Medium / High (~5 / 10 / 25 W). Studio exports Generic CSV **watt** strings for interchange (`parse_power`) — not radio labels. `null` → high (`25W`).
 

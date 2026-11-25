@@ -2,6 +2,10 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { parse as parseYaml } from 'yaml';
+import { newChannel } from '@core/domain/factories.ts';
+import { STUDIO_SCHEMA_VERSION } from '@core/models/schemaVersion.ts';
+import { NATIVE_YAML_SCHEMA_VERSION } from '../../projectDocument.ts';
 import { serialiseProject } from './serialise.ts';
 import {
   fullLibraryAggregate,
@@ -24,6 +28,17 @@ describe('native-yaml serialise', () => {
     expect(normaliseYamlEol(serialiseProject(minimalProjectAggregate()))).toBe(
       readGolden('minimal-project.yaml'),
     );
+  });
+
+  it('serialises Above High as a number with the current schema versions', () => {
+    const aggregate = minimalProjectAggregate();
+    aggregate.channels = [{ ...newChannel(aggregate.meta.projectId, 'Local'), power: 101 }];
+
+    expect(parseYaml(serialiseProject(aggregate))).toMatchObject({
+      schemaVersion: NATIVE_YAML_SCHEMA_VERSION,
+      studioSchemaVersion: STUDIO_SCHEMA_VERSION,
+      library: { channels: [{ power: 101 }] },
+    });
   });
 
   it('serialises full library with FK refs', () => {

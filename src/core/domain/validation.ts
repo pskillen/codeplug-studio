@@ -1,7 +1,22 @@
-import type { EntityRef, Library, RxGroupList, ZoneMemberEntry } from '../models/library.ts';
+import {
+  CHANNEL_POWER_ABOVE_HIGH,
+  type Channel,
+  type EntityRef,
+  type Library,
+  type RxGroupList,
+  type ZoneMemberEntry,
+} from '../models/library.ts';
 import type { DigitalChannelMode } from '../models/libraryTypes.ts';
 import { normalizeZoneMemberEntry } from './zoneMembers.ts';
 import { zoneMembershipHasCycle } from './zoneHierarchy.ts';
+
+export function isValidChannelPower(power: Channel['power']): boolean {
+  return (
+    power === null ||
+    (Number.isFinite(power) && power >= 0 && power <= 100) ||
+    power === CHANNEL_POWER_ABOVE_HIGH
+  );
+}
 
 export function assertNonEmptyName(name: string, field: string): void {
   if (!name.trim()) {

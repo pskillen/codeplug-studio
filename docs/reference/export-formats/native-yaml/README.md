@@ -92,23 +92,25 @@ Arrays may be empty; `aprsConfiguration` may be `null`. Serialiser emits all key
 
 ### `Channel`
 
-| Field                 | Type                                | Nullable |
-| --------------------- | ----------------------------------- | -------- |
-| _(persistable row)_   |                                     |          |
-| `name`                | string                              | no       |
-| `callsign`            | string                              | no       |
-| `rxFrequency`         | number (Hz)                         | yes      |
-| `txFrequency`         | number (Hz)                         | yes      |
-| `location`            | `{ lat: number; lon: number }`      | yes      |
-| `useLocation`         | boolean                             | no       |
-| `hideFromInternalMap` | boolean                             | no       | Optional; when `true`, channel omitted from internal Codeplug Studio maps only (not CPS export) |
-| `maidenheadLocator`   | string                              | yes      |
-| `power`               | number (0–100)                      | yes      |
-| `scanInclusion`       | `default` \| `skip` \| `alwaysScan` | no       | Legacy `scanSkip` boolean accepted on import (`true`→`skip`, `false`→`default`)                 |
-| `scanListId`          | string (UUID)                       | yes      | Optional FK to `library.scanLists[].id` — Channel.CSV Scan List column                          |
-| `comment`             | string                              | no       |
-| `primaryMode`         | channel mode string                 | yes      | Optional; dual-mode CPS primary (`fm`, `dmr`, …)                                                |
-| `modeProfiles`        | `ChannelModeProfile[]`              | no       |
+| Field                 | Type                                     | Nullable |
+| --------------------- | ---------------------------------------- | -------- |
+| _(persistable row)_   |                                          |          |
+| `name`                | string                                   | no       |
+| `callsign`            | string                                   | no       |
+| `rxFrequency`         | number (Hz)                              | yes      |
+| `txFrequency`         | number (Hz)                              | yes      |
+| `location`            | `{ lat: number; lon: number }`           | yes      |
+| `useLocation`         | boolean                                  | no       |
+| `hideFromInternalMap` | boolean                                  | no       | Optional; when `true`, channel omitted from internal Codeplug Studio maps only (not CPS export) |
+| `maidenheadLocator`   | string                                   | yes      |
+| `power`               | finite number (0–100 inclusive) or `101` | yes      |
+| `scanInclusion`       | `default` \| `skip` \| `alwaysScan`      | no       | Legacy `scanSkip` boolean accepted on import (`true`→`skip`, `false`→`default`)                 |
+| `scanListId`          | string (UUID)                            | yes      | Optional FK to `library.scanLists[].id` — Channel.CSV Scan List column                          |
+| `comment`             | string                                   | no       |
+| `primaryMode`         | channel mode string                      | yes      | Optional; dual-mode CPS primary (`fm`, `dmr`, …)                                                |
+| `modeProfiles`        | `ChannelModeProfile[]`                   | no       |
+
+`power: 101` selects the single **Above High** setting on supported radios. The value represents a discrete step with no wattage ratio. The ordinary 0–100 range accepts fractions. `power: null` means **Radio default**, and import uses the same default when the field is omitted.
 
 Mode profile discriminant is `mode`. DMR profiles may include `dmrMode: dmo-simplex | repeater | null` (`null` = infer at export from RX/TX). See [data-model](../../../features/data-model/README.md) for per-mode fields. DMR and NXDN profiles carry `ownDigitalIdId` (a `library.ownDigitalIds[].id`, `null` = the protocol's default); schema 30 replaced the typed `dmrId` / `unitId` numbers, which files at schema 29 or lower still carry and which load as unnamed Digital IDs with no default. `library.ownDigitalIds` rows are `{ id, name, protocol: dmr | nxdn, number, isDefault }` (`name` may be empty). NXDN profiles carry `rxRan`, `txRan`, `contactRef` (an `EntityRef` to an NXDN talk group or digital contact), `rxGroupListId` and `nxdnRate` (`nxdn48` \| `nxdn96` \| `null`); import accepts the legacy key `talkGroupRef` on NXDN profiles and reads it as `contactRef`. Import checks structure and references only, not ID ranges. Analog `ssb` profiles may include `ssbSideband: usb | lsb` (defaults to `usb`). Import accepts legacy `ssb-usb` / `ssb-lsb` mode strings and normalises them on load.
 
