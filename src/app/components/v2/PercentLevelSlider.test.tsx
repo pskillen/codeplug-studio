@@ -40,6 +40,44 @@ describe('PercentLevelSlider', () => {
     expect(slider).toHaveAttribute('aria-valuenow', '100');
   });
 
+  it('draws the Above High zone after 100 and fills it when chosen', () => {
+    const { container } = render(<PowerSlider initialValue={100} />);
+    const zone = container.querySelector('[data-extra-zone]');
+    expect(zone).not.toBeNull();
+    expect(zone).not.toHaveAttribute('data-active');
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Power' }), { key: 'End' });
+    expect(zone).toHaveAttribute('data-active');
+    expect(screen.getByRole('slider', { name: 'Power' })).toHaveAttribute('aria-valuenow', '101');
+  });
+
+  it('leaves the zone with one step left, not a step within it', () => {
+    const onChange = vi.fn();
+    render(
+      <MantineProvider>
+        <PercentLevelSlider
+          label="Power"
+          value={101}
+          onChange={onChange}
+          min={1}
+          step={1}
+          extraEndpoint={{ value: 101, label: 'Above High' }}
+        />
+      </MantineProvider>,
+    );
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Power' }), { key: 'ArrowLeft' });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(100);
+  });
+
+  it('has no zone without an extra endpoint', () => {
+    const { container } = render(
+      <MantineProvider>
+        <PercentLevelSlider label="Squelch" value={50} onChange={() => undefined} />
+      </MantineProvider>,
+    );
+    expect(container.querySelector('[data-extra-zone]')).toBeNull();
+  });
+
   it('disables the power slider on radio default and re-enables at 50', () => {
     render(<PowerSlider initialValue={101} />);
     const slider = screen.getByRole('slider', { name: 'Power' });

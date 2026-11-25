@@ -58,7 +58,7 @@ You can also add channels and zones from a connected radio with [Read into libra
 
 ## Channel power
 
-In the channel editor’s **Transmit** section, clear **Radio default** to select a power from 1 through 100. The final position is **Above High**. Use the same scale under **Power → Custom** in bulk edit. **Default** stores the radio default and **No change** keeps each channel’s saved setting, including when the modal shows preview dots for those values. See [the power slider](../../../src/app/components/v2/PercentLevelSlider.md) and [bulk edit](../../../src/app/components/library/ChannelBulkEditModal.md).
+In the channel editor’s **Transmit** section, clear **Radio default** to select a power from 1 through 100. After 100 the track continues into a short striped orange zone: anywhere in it is **Above High**, and the zone fills orange when chosen. Use the same scale under **Power → Custom** in bulk edit. **Default** stores the radio default and **No change** keeps each channel’s saved setting, including when the modal shows preview dots for those values. See [the power slider](../../../src/app/components/v2/PercentLevelSlider.md) and [bulk edit](../../../src/app/components/library/ChannelBulkEditModal.md).
 
 When adding a curated channel set, enter a power from 0 through 100 or enter 101 for **Above High**. Leave the field empty for **Radio default**. See [the channel set picker](../../../src/app/components/channelSets/ChannelSetPicker.md).
 

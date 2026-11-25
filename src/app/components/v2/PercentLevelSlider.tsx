@@ -1,8 +1,11 @@
 import { Checkbox, Input, Slider, Stack, Text } from '@mantine/core';
-import { useId } from 'react';
+import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
 import classes from './PercentLevelSlider.module.css';
 
 export const PERCENT_LEVEL_STEP = 5;
+
+/** Width of the extra-endpoint zone, as a share of the ordinary min–max span. */
+const EXTRA_ZONE_SHARE = 0.13;
 
 export const PERCENT_LEVEL_MARKS = [
   { value: 0, label: '0' },
@@ -66,13 +69,23 @@ export default function PercentLevelSlider({
 }: PercentLevelSliderProps) {
   const useDefaultId = useId();
   const sliderId = useId();
+  const trackRef = useRef<HTMLDivElement>(null);
   const isDefault = value == null;
-  const trackMax = extraEndpoint?.value ?? max;
-  const snapTrackValue = (level: number) =>
+  // With an extra endpoint the track runs past max into a zone. Every position in the
+  // zone means the endpoint; the thumb sits at the zone's far end when it is chosen.
+  const zoneUnits = extraEndpoint ? Math.max(step, Math.round((max - min) * EXTRA_ZONE_SHARE)) : 0;
+  const trackMax = max + zoneUnits;
+  const isExtra = extraEndpoint != null && value === extraEndpoint.value;
+  const snapOrdinary = (level: number) =>
     extraEndpoint
-      ? Math.min(trackMax, Math.max(min, min + Math.round((level - min) / step) * step))
+      ? Math.min(max, Math.max(min, min + Math.round((level - min) / step) * step))
       : snapPercentToStep(level, step);
-  const committedValue = value == null ? Math.max(min, snapTrackValue(50)) : snapTrackValue(value);
+  const toTrack = (level: number) =>
+    extraEndpoint && level > max ? trackMax : snapOrdinary(level);
+  const fromTrack = (position: number) =>
+    extraEndpoint && position > max ? extraEndpoint.value : snapOrdinary(position);
+  const committedValue =
+    value == null ? Math.max(min, snapOrdinary(50)) : isExtra ? value : snapOrdinary(value);
   const formatValue = (level: number | null) =>
     extraEndpoint && level === extraEndpoint.value
       ? extraEndpoint.label
@@ -82,9 +95,32 @@ export default function PercentLevelSlider({
     : [...PERCENT_LEVEL_MARKS];
   const displayValue = showValue ?? !isDefault;
   const hideThumb = !displayValue;
-  const sliderValue = hideThumb ? min : committedValue;
+  const sliderValue = hideThumb ? min : toTrack(committedValue);
+  const disabled = isDefault || hideThumb;
+
+  // Mantine reports the zone's far end as aria-valuemax; the real maximum is the endpoint.
+  useEffect(() => {
+    if (!extraEndpoint) return;
+    trackRef.current
+      ?.querySelector('[role="slider"]')
+      ?.setAttribute('aria-valuemax', String(extraEndpoint.value));
+  });
+
+  // Inside the zone, one step left must leave it rather than land elsewhere in it.
+  const onKeyDownCapture = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!extraEndpoint || disabled || !isExtra) return;
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      event.stopPropagation();
+      onChange(max);
+    }
+  };
 
   const previewPercents = (previewValues ?? []).map((v) => (v == null ? 50 : v));
+  const trackPercent = (level: number) =>
+    ((Math.min(trackMax, Math.max(min, extraEndpoint && level > max ? trackMax : level)) - min) /
+      (trackMax - min)) *
+    100;
 
   return (
     <Input.Wrapper
@@ -117,34 +153,44 @@ export default function PercentLevelSlider({
             }}
           />
         ) : null}
-        <div className={classes.trackWrap}>
+        <div className={classes.trackWrap} ref={trackRef} onKeyDownCapture={onKeyDownCapture}>
           <Slider
             id={sliderId}
             thumbLabel={label}
             thumbValueText={extraEndpoint ? formatValue : undefined}
             label={extraEndpoint ? formatValue : undefined}
+            scale={extraEndpoint ? (v) => (v > max ? extraEndpoint.value : v) : undefined}
+            color={isExtra && !hideThumb ? 'orange' : undefined}
             value={sliderValue}
-            onChange={(v) => onChange(snapTrackValue(v))}
+            onChange={(v) => onChange(extraEndpoint ? fromTrack(v) : snapPercentToStep(v, step))}
             min={min}
             max={trackMax}
             step={step}
             marks={marks}
-            disabled={isDefault || hideThumb}
+            disabled={disabled}
             mb={16}
             classNames={{
               thumb: hideThumb ? classes.thumbHidden : undefined,
               bar: hideThumb ? classes.barHidden : undefined,
             }}
           />
+          {extraEndpoint ? (
+            <div
+              className={classes.extraZone}
+              aria-hidden
+              data-extra-zone=""
+              data-active={isExtra && !hideThumb ? '' : undefined}
+              data-disabled={disabled ? '' : undefined}
+              style={{ ['--zone-start' as string]: trackPercent(max) }}
+            />
+          ) : null}
           {previewPercents.length > 0 ? (
             <div className={classes.previewLayer} aria-hidden data-preview-dots="">
               {previewPercents.map((percent, index) => (
                 <span
                   key={`${percent}-${index}`}
                   className={classes.previewDot}
-                  style={{
-                    left: `${((Math.min(trackMax, Math.max(min, percent)) - min) / (trackMax - min)) * 100}%`,
-                  }}
+                  style={{ left: `${trackPercent(percent)}%` }}
                 />
               ))}
             </div>

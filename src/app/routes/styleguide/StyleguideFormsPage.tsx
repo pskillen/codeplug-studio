@@ -1,5 +1,6 @@
 import { Group, Stack, TextInput as MantineTextInput } from '@mantine/core';
 import { useState } from 'react';
+import { CHANNEL_POWER_ABOVE_HIGH } from '@core/models/library.ts';
 import GradientSegmentedControl, {
   GRADIENT_SEGMENT_IDLE_VALUE,
 } from '../../components/ui/GradientSegmentedControl.tsx';
@@ -40,6 +41,7 @@ export default function StyleguideFormsPage() {
   const [bulkPowerOptedIn, setBulkPowerOptedIn] = useState(false);
   const [bulkPower, setBulkPower] = useState<number | null>(50);
   const [demoPower, setDemoPower] = useState<number | null>(null);
+  const [boostPower, setBoostPower] = useState<number | null>(100);
   const [skipScan, setSkipScan] = useState(false);
   const [selected, setSelected] = useState(true);
   const [droppedFileName, setDroppedFileName] = useState<string | undefined>();
@@ -179,6 +181,19 @@ export default function StyleguideFormsPage() {
         description="Radio default hides the value suffix and primary thumb. Uncheck to set a percent."
       >
         <PercentLevelSlider label="Power" value={demoPower} onChange={setDemoPower} />
+      </StyleguideSection>
+      <StyleguideSection
+        title="PercentLevelSlider — extra endpoint (Above High)"
+        description="Channel power: 1–100 in steps of 1, then a striped orange zone after a small gap. Anywhere in the zone is Above High (stored as 101); it fills orange when chosen. Left arrow from Above High returns to 100."
+      >
+        <PercentLevelSlider
+          label="Power"
+          value={boostPower}
+          onChange={setBoostPower}
+          min={1}
+          step={1}
+          extraEndpoint={{ value: CHANNEL_POWER_ABOVE_HIGH, label: 'Above High' }}
+        />
       </StyleguideSection>
       <StyleguideSection
         title="GradientSegmentedControl — row, column, idle invert"
