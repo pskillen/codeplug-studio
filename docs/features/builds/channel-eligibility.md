@@ -10,9 +10,9 @@ Operators should not have to guess which library channels their radio can use. S
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------- |
 | Library CRUD                               | No — all modes and frequencies allowed                                                            |
 | Radio Build lists / pickers                | Yes — via `channelEligibleForRadio` (including wire-preview **Channels** and zone member pickers) |
-| `assemble` / CPS export / Web Serial Write | Yes — ineligible channels never reach serialisers                                                 |
+| `assemble` / CPS export / Web Serial Write | Yes — ineligible channels never reach serialisers; **partial** mode drops on mixed channels       |
 
-Wire translation (NeonPlug no-TX sentinels, Anytone receive banks, CHIRP analogue-only rows, etc.) is unchanged. Eligibility **drops candidates** before adapters run; it does not rewrite channel fields or infer forbid-transmit from band tables.
+Wire translation (NeonPlug no-TX sentinels, Anytone receive banks, CHIRP analogue-only rows, etc.) is unchanged. Eligibility **drops whole channels** when no mode is supported or (by default) RX is out of band. When at least one mode is supported, `assemble` **projects** the channel: unsupported mode profiles are stripped from the export entity only (library rows stay intact), `primaryMode` is reconciled to a surviving profile, and one **info** note names the left-out modes. Targets without an RF capability row pass profiles through unchanged. Format adapters may still filter modes as a backstop; those notes are **info**, not Review stops.
 
 ## Gates
 
@@ -31,7 +31,7 @@ Per-radio tables live in `src/core/radio-targets/rfCapabilities.ts` and are mirr
 
 Toggle on **Export** (and flat-memory **Channels** / **Scan list** export settings). Persisted on `RadioBuild.exportSettings`; round-trips in native YAML.
 
-When export skips channels, `assemble` adds a single grouped warning (count + names) — same path for CPS download and Web Serial Write.
+When export skips whole channels, `assemble` adds a single grouped **info** note (count + names) — same path for CPS download and Web Serial Write. When a channel is included but some modes are unsupported (e.g. M17 on a DMR-only target), one **info** note per channel names the modes left out; Export Review and Write Review show these as notes, not problems.
 
 ## Toggle reconciliation (v1)
 
@@ -46,15 +46,15 @@ A confirm dialog warns that slot/member order may need redoing.
 
 ## Code anchors
 
-| Module                                                          | Role                                            |
-| --------------------------------------------------------------- | ----------------------------------------------- |
-| `src/core/radio-targets/rfCapabilities.ts`                      | Authoritative Hz/MHz tables per `radioTargetId` |
-| `src/core/domain/channelEligibility.ts`                         | `channelEligibleForRadio`, warnings             |
-| `src/core/domain/channelEligibilityReconcile.ts`                | Toggle reconciliation                           |
-| `src/core/services/assemble.ts`                                 | Filters `assembleChannels`                      |
-| `src/core/domain/exportOrderOrSlot.ts`                          | Flat-memory candidate sets                      |
-| `src/app/components/builds/FrequencyRangeEligibilityFields.tsx` | Export toggle UI                                |
-| `src/app/components/builds/RadioRfCapabilitiesSection.tsx`      | Characteristics display                         |
+| Module                                                          | Role                                                 |
+| --------------------------------------------------------------- | ---------------------------------------------------- |
+| `src/core/radio-targets/rfCapabilities.ts`                      | Authoritative Hz/MHz tables per `radioTargetId`      |
+| `src/core/domain/channelEligibility.ts`                         | `channelEligibleForRadio`, mode projection, warnings |
+| `src/core/domain/channelEligibilityReconcile.ts`                | Toggle reconciliation                                |
+| `src/core/services/assemble.ts`                                 | Filters `assembleChannels`                           |
+| `src/core/domain/exportOrderOrSlot.ts`                          | Flat-memory candidate sets                           |
+| `src/app/components/builds/FrequencyRangeEligibilityFields.tsx` | Export toggle UI                                     |
+| `src/app/components/builds/RadioRfCapabilitiesSection.tsx`      | Characteristics display                              |
 
 ## Receive-only channels
 

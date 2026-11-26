@@ -1,6 +1,7 @@
 import type { Channel } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
+import { reconcilePrimaryMode } from '@core/domain/modeProfiles.ts';
 import {
   getRadioRfCapabilities,
   type RadioFrequencyRange,
@@ -136,6 +137,59 @@ export function listIneligibleChannels(
     if (reason) ineligible.push({ channel, reason });
   }
   return ineligible;
+}
+
+export function channelDroppedModesWarning(
+  channelLabel: string,
+  modes: readonly ChannelMode[],
+): string {
+  return `Channel "${channelLabel}": left out unsupported mode(s) for this radio: ${modes.join(', ')}`;
+}
+
+/**
+ * Strip mode profiles the radio target cannot carry. Targets without an RF row are unchanged.
+ * Reconciles `primaryMode` to a surviving profile when the library primary was dropped.
+ */
+export function projectChannelForRadioTarget(
+  channel: Channel,
+  radioTargetId: string,
+): { entity: Channel; droppedModes: ChannelMode[] } {
+  const caps = getRadioRfCapabilities(radioTargetId);
+  if (!caps) {
+    return { entity: channel, droppedModes: [] };
+  }
+  const supported = new Set(caps.supportedModes);
+  const keptProfiles = channel.modeProfiles.filter((profile) => supported.has(profile.mode));
+  const droppedModes = channel.modeProfiles
+    .filter((profile) => !supported.has(profile.mode))
+    .map((profile) => profile.mode);
+  if (droppedModes.length === 0) {
+    return { entity: channel, droppedModes: [] };
+  }
+  return {
+    entity: {
+      ...channel,
+      modeProfiles: keptProfiles,
+      primaryMode: reconcilePrimaryMode(channel.primaryMode ?? null, keptProfiles),
+    },
+    droppedModes,
+  };
+}
+
+export function collectPartialModeDropWarnings(
+  radioTargetId: string,
+  channels: readonly Channel[],
+  options?: ChannelEligibilityOptions,
+): ExportWarning[] {
+  const warnings: ExportWarning[] = [];
+  for (const channel of channels) {
+    if (!channelEligibleForRadio(channel, radioTargetId, options)) continue;
+    const { droppedModes } = projectChannelForRadioTarget(channel, radioTargetId);
+    if (droppedModes.length > 0) {
+      pushGeneralInfoWarning(warnings, channelDroppedModesWarning(channel.name, droppedModes));
+    }
+  }
+  return warnings;
 }
 
 export function formatChannelEligibilityWarning(

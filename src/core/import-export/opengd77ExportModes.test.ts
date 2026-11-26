@@ -47,6 +47,7 @@ describe('OpenGD77 exportModes', () => {
     expect(warnings.map((w) => formatExportWarning(w))).toEqual([
       openGd77DroppedModesWarning('Repeater', ['ysf']),
     ]);
+    expect(warnings.every((w) => w.severity === 'info')).toBe(true);
   });
 
   it('omits YSF-only channels with warning', () => {

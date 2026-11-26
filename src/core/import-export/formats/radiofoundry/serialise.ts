@@ -324,7 +324,7 @@ function selectMode(row: AssembledChannel, warnings: ExportWarning[]): KeptMode 
   }
   for (const profile of channel.modeProfiles) {
     if (profile.mode === 'fm' || profile.mode === 'dmr') continue;
-    pushGeneralWarning(
+    pushGeneralInfoWarning(
       warnings,
       `Channel "${label}" mode ${profile.mode} was dropped. This codeplug stores FM and DMR only.`,
     );
@@ -332,7 +332,7 @@ function selectMode(row: AssembledChannel, warnings: ExportWarning[]): KeptMode 
   if (supported.length === 1) return asKeptMode(supported[0]!.mode);
   let kept: KeptMode = 'dmr';
   if (channel.primaryMode === 'fm') kept = 'fm';
-  pushGeneralWarning(
+  pushGeneralInfoWarning(
     warnings,
     `Channel "${label}" has more than one mode; kept ${kept === 'dmr' ? 'DMR' : 'FM'}.`,
   );

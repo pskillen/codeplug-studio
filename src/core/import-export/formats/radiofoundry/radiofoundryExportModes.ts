@@ -3,7 +3,11 @@ import type { ExpandedChannelWireRow } from '@core/import-export/channelExpansio
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
-import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import {
+  pushGeneralInfoWarning,
+  pushGeneralWarning,
+  type ExportWarning,
+} from '@core/import-export/exportWarning.ts';
 
 /** FM and DMR only in a RadioFoundry channel record (byte 0x18). */
 export function isRadioFoundryExportableMode(mode: ChannelMode): boolean {
@@ -25,7 +29,7 @@ export function filterRadioFoundryExportChannel(
   }
   for (const profile of channel.modeProfiles) {
     if (isRadioFoundryExportableMode(profile.mode)) continue;
-    pushGeneralWarning(
+    pushGeneralInfoWarning(
       warnings,
       `Channel "${label}" mode ${profile.mode} was dropped. This codeplug stores FM and DMR only.`,
     );

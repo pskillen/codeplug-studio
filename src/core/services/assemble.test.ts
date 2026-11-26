@@ -333,7 +333,6 @@ describe('assemble', () => {
     };
     const channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'NXDN ch'),
-      // The D890 does not list NXDN as an RF mode yet, so a DMR profile keeps the channel eligible.
       modeProfiles: [
         defaultModeProfile('dmr'),
         {
@@ -348,7 +347,7 @@ describe('assemble', () => {
       ],
     });
     const build = {
-      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      ...newFormatBuild(projectId, 'radio-io-at-d890uv-mm9pdy'),
       exportUnlinkedDigitalContacts: false,
       exportUnlinkedRxGroupLists: false,
       exportUnlinkedTalkGroups: false,
@@ -364,6 +363,10 @@ describe('assemble', () => {
     };
 
     const assembled = assemble(build, library);
+    expect(assembled.channels[0]?.entity.modeProfiles.map((profile) => profile.mode)).toEqual([
+      'dmr',
+      'nxdn',
+    ]);
     expect(assembled.digitalContacts.map((row) => row.entity.id)).toEqual([nxdnContact.id]);
     expect(assembled.rxGroupLists.map((row) => row.entity.id)).toEqual([rxList.id]);
     expect(assembled.talkGroups.map((row) => row.entity.id)).toEqual([nxdnTg.id]);
