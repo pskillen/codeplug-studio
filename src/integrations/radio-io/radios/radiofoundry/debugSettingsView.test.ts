@@ -3,10 +3,16 @@ import {
   SETTINGS_AREA_ADDRESS,
   SETTINGS_AREA_SIZE,
 } from '@core/import-export/formats/radiofoundry/layout.ts';
+import { writeRadioFoundryChannelTag } from '@core/import-export/formats/radiofoundry/channelTags.ts';
+import {
+  encodeM17CallsignRecord,
+  encodeM17ChannelBlock,
+} from '@core/import-export/formats/radiofoundry/m17.ts';
 import {
   crc32,
   readRadioFoundrySettingsArea,
 } from '@core/import-export/formats/radiofoundry/settingsArea.ts';
+import { encodeRadioFoundrySettingsSector } from '@core/import-export/formats/radiofoundry/settingsAreaWrite.ts';
 import { EEPROM_IMAGE_END } from './constants.ts';
 import { RADIOFOUNDRY_REGION } from './debugCapture.ts';
 import { radioFoundrySettingsView } from './debugSettingsView.ts';
@@ -101,6 +107,42 @@ describe('radioFoundrySettingsView', () => {
     const view = radioFoundrySettingsView(archive(eeprom));
     if (state === 'empty') expect(view.status).toEqual({ kind: 'ok' });
     else expect(view.status?.kind).toBe('ambiguous');
+  });
+
+  it('names M17 rows and keeps hex, raw bytes and secret masking', () => {
+    const tag = writeRadioFoundryChannelTag({
+      kind: 6,
+      system: null,
+      storedName: new Uint8Array(16),
+      txAllowed: true,
+      block: encodeM17ChannelBlock(3, false, 'ECHO')!,
+    });
+    const callsign = encodeM17CallsignRecord('AB1CD')!;
+    const secret = new Uint8Array(4).fill(0xaa);
+    const encoded = encodeRadioFoundrySettingsSector([
+      { key: 0x0001, value: Uint8Array.of(0x11) },
+      { key: 0x0305, value: secret },
+      { key: 0x0406, value: tag },
+      { key: 0x0a06, value: callsign },
+    ]);
+    if (!encoded.ok) throw new Error('fixture overflow');
+    const eeprom = new Uint8Array(EEPROM_IMAGE_END).fill(0xff);
+    eeprom.set(encoded.sector, SETTINGS_AREA_ADDRESS);
+    const rows = radioFoundrySettingsView(archive(eeprom)).groups[0]!.rows;
+    const m17 = rows.find((row) => row.label.startsWith('Channel 7'))!;
+    expect(m17.label).toBe('Channel 7: M17, CAN 3, every CAN, ECHO');
+    expect(m17.value).toBe([...tag].map((b) => b.toString(16).padStart(2, '0')).join(' '));
+    expect(m17.raw).toEqual([...tag]);
+    expect(m17.sensitive).toBe(false);
+    const named = rows.find((row) => row.label.startsWith('M17 callsign'))!;
+    expect(named.label).toBe('M17 callsign: AB1CD');
+    expect(named.raw).toEqual([...callsign]);
+    expect(named.sensitive).toBe(false);
+    expect(rows.find((row) => row.label === 'Key 0x0001')!.sensitive).toBe(false);
+    const masked = rows.find((row) => row.label === 'Key 0x0305')!;
+    expect(masked.sensitive).toBe(true);
+    expect(masked.raw).toEqual([...secret]);
+    expect(isRadioFoundrySecretKey(0x0a06)).toBe(false);
   });
 
   it('marks duplicate keys', () => {

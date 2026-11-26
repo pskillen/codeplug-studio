@@ -4,6 +4,11 @@
  * block and the 10-byte callsign record stay here.
  */
 import { normalizeM17Callsign, normalizeM17Destination } from '@core/domain/m17Address.ts';
+import {
+  CHANNEL_TAG_KEY_FIRST,
+  CHANNEL_TAG_KEY_LAST,
+  RADIOFOUNDRY_KIND_M17,
+} from './channelTags.ts';
 
 /** Kind 6 radio-wide record (m17-codeplug.md §1). */
 export const M17_RADIO_WIDE_KEY = 0x0a06;
@@ -169,6 +174,30 @@ export function m17CallsignFromRadioName(radioName: string): string | null {
   const word = radioName.replace(/^ +/, '').split(/[ -]/, 1)[0] ?? '';
   if (!word) return null;
   return normalizeM17Callsign(word);
+}
+
+/**
+ * Settings-tab label for a kind-6 channel tag or the radio-wide callsign.
+ * Null for every other key, so the row keeps its numbered label.
+ */
+export function describeRadioFoundrySettingsEntry(key: number, value: Uint8Array): string | null {
+  if (key === M17_RADIO_WIDE_KEY) {
+    const callsign = decodeM17CallsignRecord(value);
+    return callsign ? `M17 callsign: ${callsign}` : 'M17 callsign';
+  }
+  if (
+    key < CHANNEL_TAG_KEY_FIRST ||
+    key > CHANNEL_TAG_KEY_LAST ||
+    value.length < 5 ||
+    value[0] !== RADIOFOUNDRY_KIND_M17
+  ) {
+    return null;
+  }
+  const decoded = decodeM17ChannelBlock(value.subarray(5));
+  const channel = key - CHANNEL_TAG_KEY_FIRST + 1;
+  const heard = decoded.squelchOn ? 'squelch' : 'every CAN';
+  const destination = decoded.destination === '' ? 'ALL' : decoded.destination;
+  return `Channel ${channel}: M17, CAN ${decoded.can}, ${heard}, ${destination}`;
 }
 
 /**
