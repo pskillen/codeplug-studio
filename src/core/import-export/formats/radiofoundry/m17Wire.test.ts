@@ -118,14 +118,16 @@ describe('RadioFoundry M17 export', () => {
     expect(image.bytes[record + 0x33]! & 0x04).toBe(0x04);
     expect(image.bytes[record + 0x33]! & 0x02).toBe(0);
     const tag = image.m17Settings?.channelTags.get(1);
-    expect(tag?.[0]).toBe(RADIOFOUNDRY_KIND_M17);
-    expect(tag?.[1]).toBe(0xff);
-    expect(tag?.[4]! & 0xfe).toBe(0);
-    expect(tag?.[4]! & 0x01).toBe(0x01);
-    expect([...tag!.subarray(5, 12)]).toEqual([...encodeM17ChannelBlock(3, false, 'ECHO')!]);
+    expect(tag).toBeDefined();
+    if (!tag) return;
+    expect(tag[0]).toBe(RADIOFOUNDRY_KIND_M17);
+    expect(tag[1]).toBe(0xff);
+    expect(tag[4]! & 0xfe).toBe(0);
+    expect(tag[4]! & 0x01).toBe(0x01);
+    expect([...tag.subarray(5, 12)]).toEqual([...encodeM17ChannelBlock(3, false, 'ECHO')!]);
     expect(
       isChannelTagLive(
-        tagHeader(1, tag!),
+        tagHeader(1, tag),
         image.bytes.subarray(record, record + CHANNEL_RECORD_SIZE),
       ),
     ).toBe(true);
