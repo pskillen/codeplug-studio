@@ -9,9 +9,9 @@ import {
   type ExportWarning,
 } from '@core/import-export/exportWarning.ts';
 
-/** FM and DMR only in a RadioFoundry channel record (byte 0x18). */
+/** FM, DMR and M17. The M17 base record is a DMR stand-in; the tag carries the mode. */
 export function isRadioFoundryExportableMode(mode: ChannelMode): boolean {
-  return mode === 'fm' || mode === 'dmr';
+  return mode === 'fm' || mode === 'dmr' || mode === 'm17';
 }
 
 export function filterRadioFoundryExportChannel(
@@ -23,7 +23,7 @@ export function filterRadioFoundryExportChannel(
   if (supported.length === 0) {
     pushGeneralWarning(
       warnings,
-      `Channel "${label}" was dropped. This codeplug stores FM and DMR only.`,
+      `Channel "${label}" was dropped. This codeplug stores FM, DMR and M17 only.`,
     );
     return null;
   }
@@ -31,7 +31,7 @@ export function filterRadioFoundryExportChannel(
     if (isRadioFoundryExportableMode(profile.mode)) continue;
     pushGeneralInfoWarning(
       warnings,
-      `Channel "${label}" mode ${profile.mode} was dropped. This codeplug stores FM and DMR only.`,
+      `Channel "${label}" mode ${profile.mode} was dropped. This codeplug stores FM, DMR and M17 only.`,
     );
   }
   if (supported.length === channel.modeProfiles.length) {

@@ -17,21 +17,21 @@ const VERIFY = 'Studio takes this from the radio and does not verify it.';
 describe('summariseRadioFoundryBuild', () => {
   it('is pinned with no notes for the checked commit from an official build', () => {
     const s = summariseRadioFoundryBuild(
-      build({ git: '454a5b76', gitTime: 1795365604, source: 'official' }),
+      build({ git: 'adfbfce7', gitTime: 1795626273, source: 'official' }),
     );
     expect(s.standing).toBe('pinned');
-    expect(s.label).toBe('RadioFoundry 454a5b76 (2026-11-22)');
+    expect(s.label).toBe('RadioFoundry adfbfce7 (2026-11-25)');
     expect(s.notes).toEqual([]);
   });
 
   it('is older and newer by git_time', () => {
     const older = summariseRadioFoundryBuild(
-      build({ git: '1a2b3c4d', gitTime: 1795365603, source: 'official' }),
+      build({ git: '1a2b3c4d', gitTime: RADIOFOUNDRY_STUDIO_PIN.gitTime - 1, source: 'official' }),
     );
     expect(older.standing).toBe('older');
     expect(older.notes).toEqual([OLDER, VERIFY]);
     const newer = summariseRadioFoundryBuild(
-      build({ git: '1a2b3c4d', gitTime: 1795365605, source: 'official' }),
+      build({ git: '1a2b3c4d', gitTime: RADIOFOUNDRY_STUDIO_PIN.gitTime + 1, source: 'official' }),
     );
     expect(newer.standing).toBe('newer');
     expect(newer.notes).toEqual([NEWER, VERIFY]);
@@ -45,7 +45,12 @@ describe('summariseRadioFoundryBuild', () => {
     expect(s.label).toBe('RadioFoundry v1.0 (1a2b3c4d)');
     expect(s.notes).toEqual([]);
     const withTime = summariseRadioFoundryBuild(
-      build({ git: '1a2b3c4d', release: 'v1.0', source: 'official', gitTime: 1795365605 }),
+      build({
+        git: '1a2b3c4d',
+        release: 'v1.0',
+        source: 'official',
+        gitTime: RADIOFOUNDRY_STUDIO_PIN.gitTime + 1,
+      }),
     );
     expect(withTime.standing).toBe('newer');
   });
@@ -98,8 +103,11 @@ describe('summariseRadioFoundryBuild', () => {
   });
 
   it('takes the pin from one constant', () => {
-    expect(RADIOFOUNDRY_STUDIO_PIN.git).toBe('454a5b76');
-    for (const gitTime of [1795365603, 1795365605]) {
+    expect(RADIOFOUNDRY_STUDIO_PIN.git).toBe('adfbfce7');
+    for (const gitTime of [
+      RADIOFOUNDRY_STUDIO_PIN.gitTime - 1,
+      RADIOFOUNDRY_STUDIO_PIN.gitTime + 1,
+    ]) {
       const s = summariseRadioFoundryBuild(build({ git: '1a2b3c4d', gitTime, source: 'official' }));
       expect(s.notes[0]).toContain(RADIOFOUNDRY_STUDIO_PIN.date);
     }

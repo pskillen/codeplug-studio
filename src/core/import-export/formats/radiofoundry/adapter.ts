@@ -2,7 +2,7 @@ import type { BinaryCpsExportAdapter } from '../../exportAdapter.ts';
 import type { BinaryCpsImportAdapter } from '../../importAdapter.ts';
 import { RADIOFOUNDRY_CODEPLUG_FILE_NAME } from './layout.ts';
 import { parseRadioFoundryCodeplug } from './parse.ts';
-import { serialiseRadioFoundryCodeplug } from './serialise.ts';
+import { materialiseRadioFoundryFileExport, serialiseRadioFoundryCodeplug } from './serialise.ts';
 
 export const radiofoundryImportAdapter = {
   id: 'radiofoundry',
@@ -31,6 +31,6 @@ export const radiofoundryExportAdapter = {
     exportZoneDerivedScanLists: false,
   },
   serialise(assembled, options) {
-    return serialiseRadioFoundryCodeplug(assembled, options);
+    return materialiseRadioFoundryFileExport(serialiseRadioFoundryCodeplug(assembled, options));
   },
 } satisfies BinaryCpsExportAdapter;

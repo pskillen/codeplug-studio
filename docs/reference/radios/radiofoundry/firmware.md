@@ -41,7 +41,7 @@ Older firmware answers status 1 (unknown command), some builds answer 4 (unavail
 
 ## The checked commit
 
-Studio was checked against RadioFoundry commit `454a5b76` (2026-11-22). The landing page support matrix shows this commit on RadioFoundry firmware rows. A reported build is classed as:
+Studio was checked against RadioFoundry commit `adfbfce7` (2026-11-25). The landing page support matrix shows this commit on RadioFoundry firmware rows. A reported build is classed as:
 
 - release: a release name, with no commit time to compare;
 - pinned: the checked commit, or the same commit time;
