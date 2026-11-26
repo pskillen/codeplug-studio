@@ -49,6 +49,7 @@ import type {
   WriteVerifyResult,
 } from '@integrations/radio-io/writeVerify.ts';
 import {
+  assembledHasM17Channels,
   assembledHasNxdnContent,
   buildRadioWriteProjection,
   type BuildRadioWriteProjectionContext,
@@ -513,6 +514,8 @@ export async function prepareRadioWriteImage(
   contactWarnings: ExportWarning[];
   organisation: RadioWriteOrganisation;
   channels: readonly RadioChannelDto[];
+  /** An assembled channel has an M17 mode profile. Vendor-neutral; not a radio wire field. */
+  includesM17?: boolean;
   /** AT-D890UV MM9PDY with NXDN content or a default NXDN ID: the projection to use if the radio has NXDN enabled. */
   nxdn?: AtD890NxdnWriteVariant;
   /** DM-32 RadioFoundry: serialised codeplug and the addresses that serialiser stored. */
@@ -641,12 +644,14 @@ export async function prepareRadioWriteImage(
     contactWarnings: projectionWarnings,
     organisation,
     channels: projection.channels,
+    includesM17: assembledHasM17Channels(assembled),
     ...(nxdn ? { nxdn } : {}),
     ...(radioFoundry
       ? {
           radioFoundryWrite: {
             bytes: radioFoundry.bytes,
             owned: radioFoundry.owned,
+            ...(radioFoundry.settings ? { settings: radioFoundry.settings } : {}),
             ...(radioFoundry.area2
               ? { area2: radioFoundry.area2, area2Owned: radioFoundry.area2Owned }
               : {}),
@@ -757,6 +762,7 @@ async function resolveRadioWriteImageForUpload(
         progressStage: 'Pre-write read',
       });
     }
+    await session.radio.refreshSettingsForWrite(opts?.signal);
     return session.radio.overlayWriteImage();
   }
   if (session.radio instanceof Rt95Protocol) {

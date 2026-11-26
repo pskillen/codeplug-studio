@@ -107,8 +107,18 @@ export interface ChannelModeProfileTetra {
   talkGroupRef: EntityRef | null;
 }
 
+export interface ChannelModeProfileM17 {
+  mode: 'm17';
+  /** Null uses CAN 0 on export. */
+  can: number | null;
+  /** Null and false play only the channel's CAN. */
+  playEveryCan?: boolean | null;
+  /** Empty for broadcast. */
+  destination: string;
+}
+
 export interface ChannelModeProfileStub {
-  mode: 'p25' | 'm17';
+  mode: 'p25';
 }
 
 export type ChannelModeProfile =
@@ -118,6 +128,7 @@ export type ChannelModeProfile =
   | ChannelModeProfileYsf
   | ChannelModeProfileNxdn
   | ChannelModeProfileTetra
+  | ChannelModeProfileM17
   | ChannelModeProfileStub;
 
 export const CHANNEL_POWER_ABOVE_HIGH = 101;
@@ -161,21 +172,32 @@ export interface TalkGroup extends PersistableRow {
 }
 
 /** The protocols that have an operator-owned ID: what the radio sends. */
-export type OwnDigitalIdProtocol = 'dmr' | 'nxdn';
+export type NumericOwnDigitalIdProtocol = 'dmr' | 'nxdn';
+export type OwnDigitalIdProtocol = NumericOwnDigitalIdProtocol | 'm17';
 
 /**
  * One of the operator's own IDs (what the radio sends), as opposed to a contact or talk group
  * (who you call) or an ID-directory row (the downloaded lookup list).
  */
-export interface OwnDigitalId extends PersistableRow {
+interface OwnDigitalIdBase extends PersistableRow {
   /** Empty for IDs migrated from channels until the user names them. */
   name: string;
-  protocol: OwnDigitalIdProtocol;
-  /** DMR 1-16776415, NXDN 1-65519. */
-  number: number;
   /** At most one per protocol; see `defaultOwnDigitalId`. */
   isDefault: boolean;
 }
+
+export interface NumericOwnDigitalId extends OwnDigitalIdBase {
+  protocol: NumericOwnDigitalIdProtocol;
+  /** DMR 1-16776415, NXDN 1-65519. */
+  number: number;
+}
+
+export interface M17OwnDigitalId extends OwnDigitalIdBase {
+  protocol: 'm17';
+  callsign: string;
+}
+
+export type OwnDigitalId = NumericOwnDigitalId | M17OwnDigitalId;
 
 export interface DigitalContact extends PersistableRow {
   mode: DigitalChannelMode;

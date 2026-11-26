@@ -94,9 +94,9 @@ Inside the `eeprom-image` region (`integrations/radio-io/radios/radiofoundry/deb
 
 Boot PIN enable at `0x7519` is shown plain. Device info, APRS and the ID database body are not masked.
 
-## Settings tab (raw)
+## Settings tab
 
-`radioFoundrySettingsView` reads the settings sector inside `eeprom-image` with `readRadioFoundrySettingsArea`. Each valid entry is one row: key as `Key 0xNNNN`, value as spaced hex, `address` at `0xE000 + offset`, `sensitive` when `isRadioFoundrySecretKey(key)`. `bad` and `newer` states are ambiguous; `empty` is OK with no rows.
+`radioFoundrySettingsView` reads the settings sector inside `eeprom-image` with `readRadioFoundrySettingsArea`. Each valid entry is one row. A kind-6 channel tag is named from the shared M17 decoder (`Channel 7: M17, CAN 3, every CAN, ECHO`; squelch on reads `squelch`, and a blank destination reads `ALL`). Key `0x0A06` is named `M17 callsign: AB1CD`, or `M17 callsign` when the record does not decode. Every other key stays `Key 0xNNNN`. The value stays spaced hex, `raw` stays the stored bytes, and `address` is `0xE000 + offset`. `sensitive` still follows `isRadioFoundrySecretKey(key)`, independent of the label. `bad` and `newer` states are ambiguous; `empty` is OK with no rows. Runtime `m17.run.*` is not read here.
 
 ## DMR ID database (Memory decode)
 

@@ -13,7 +13,7 @@ import {
   RF_STORAGE_NOT_STARTED,
   STORAGE_FOREIGN_REFUSAL,
 } from './protocol.ts';
-import { radioFoundryWritePreflight } from './writePreflight.ts';
+import { RADIOFOUNDRY_M17_PARKED_NOTE, radioFoundryWritePreflight } from './writePreflight.ts';
 import { ScriptedPipe } from './protocol.test.ts';
 
 describe('RadioFoundry write pre-flight', () => {
@@ -145,5 +145,69 @@ describe('RadioFoundry write pre-flight', () => {
     expect(err.retry).toBe('none');
     expect(err.sent).toBe('nothing-sent');
     expect(err.debugText).toContain('STORAGE INFO:');
+  });
+
+  it.each([
+    ['features=M17', 'runs', false],
+    ['features=M17,M17_PACKET', 'runs', false],
+    ['features=M17_PACKET', 'not in this build', true],
+    ['features=', 'not in this build', true],
+  ])('M17 token %s is %s', async (features, value, parked) => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.infoFlags = 0x02;
+    pipe.versionText = `proto=1\nboard=DM-32UV\n${features}\n`;
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    const session = createRadioSession({
+      descriptor: DM32_RADIOFOUNDRY_DESCRIPTOR,
+      pipe,
+      radio: proto,
+    });
+    const result = await radioFoundryWritePreflight(session, { includesM17: true });
+    expect(result.refusal).toBeUndefined();
+    expect(result.rows.find((row) => row.label === 'M17')?.value).toBe(value);
+    const notes = (result.findings ?? []).flatMap((finding) =>
+      finding.kind === 'general' ? [finding.message] : [],
+    );
+    if (parked) expect(notes).toContain(RADIOFOUNDRY_M17_PARKED_NOTE);
+    else expect(notes).not.toContain(RADIOFOUNDRY_M17_PARKED_NOTE);
+  });
+
+  it('treats a missing VERSION reply as parked and still refuses foreign storage', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.infoFlags = 0x00;
+    pipe.versionText = null;
+    pipe.storageRegion = 2;
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    const session = createRadioSession({
+      descriptor: DM32_RADIOFOUNDRY_DESCRIPTOR,
+      pipe,
+      radio: proto,
+    });
+    const result = await radioFoundryWritePreflight(session, { includesM17: true });
+    expect(result.refusal).toBeInstanceOf(RadioInterlockError);
+    expect(result.rows.find((row) => row.label === 'M17')?.value).toBe('not in this build');
+    expect(
+      result.findings?.flatMap((finding) => (finding.kind === 'general' ? [finding.message] : [])),
+    ).toContain(RADIOFOUNDRY_M17_PARKED_NOTE);
+    expect((result.refusal as RadioInterlockError).retry).toBe('none');
+    expect((result.refusal as RadioInterlockError).sent).toBe('nothing-sent');
+  });
+
+  it('adds no M17 row when the write has no M17 channel', async () => {
+    const pipe = new ScriptedPipe(0xff);
+    pipe.infoFlags = 0x02;
+    pipe.versionText = 'proto=1\nboard=DM-32UV\nfeatures=M17_PACKET\n';
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    const session = createRadioSession({
+      descriptor: DM32_RADIOFOUNDRY_DESCRIPTOR,
+      pipe,
+      radio: proto,
+    });
+    const result = await radioFoundryWritePreflight(session, { includesM17: false });
+    expect(result.rows.some((row) => row.label === 'M17')).toBe(false);
+    expect(result.findings).toBeUndefined();
   });
 });

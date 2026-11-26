@@ -23,10 +23,10 @@ describe('RT84_RADIOFOUNDRY_BOARD', () => {
 
   it('gives the RF row the board bands', () => {
     const caps = getRadioRfCapabilities('retevis-rt84-radiofoundry');
-    expect(caps?.supportedModes).toEqual(['fm', 'dmr']);
+    expect(caps?.supportedModes).toEqual(['fm', 'dmr', 'm17']);
     expect(caps?.frequencyRanges).toEqual([
-      { minMhz: 136, maxMhz: 174, modes: ['fm', 'dmr'] },
-      { minMhz: 400, maxMhz: 480, modes: ['fm', 'dmr'] },
+      { minMhz: 136, maxMhz: 174, modes: ['fm', 'dmr', 'm17'] },
+      { minMhz: 400, maxMhz: 480, modes: ['fm', 'dmr', 'm17'] },
     ]);
   });
 });

@@ -2,21 +2,22 @@
 
 ## RF / modes
 
-| Capability  | Support |
-| ----------- | ------- |
-| DMR digital | Yes     |
-| Analogue FM | Yes     |
+| Capability  | Support                                                                                                                    |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------- |
+| DMR digital | Yes                                                                                                                        |
+| Analogue FM | Yes                                                                                                                        |
+| M17         | Yes. The channel stores a CAN and a destination; the radio sends the CAN on air and filters on it (firmware M6 and later). |
 
-Studio writes only FM and conventional DMR to this radio, so those are the only modes its builds accept. Other modes are not offered until Studio can write them.
+Studio writes FM, conventional DMR and M17 to this radio. Other modes are not offered until Studio can write them.
 
 ### Frequency ranges (Studio eligibility)
 
 Inclusive MHz bands used when filtering build lists and export. See [channel-eligibility.md](../../../../features/builds/channel-eligibility.md).
 
-| Band (MHz) | Modes   | TX  |
-| ---------- | ------- | --- |
-| 136–174    | FM, DMR | Yes |
-| 400–480    | FM, DMR | Yes |
+| Band (MHz) | Modes        | TX  |
+| ---------- | ------------ | --- |
+| 136–174    | FM, DMR, M17 | Yes |
+| 400–480    | FM, DMR, M17 | Yes |
 
 Source: the board bands in [limits.md](limits.md) (`DM32UV_RADIOFOUNDRY_BOARD.BANDS_HZ`); the row is in `src/core/radio-targets/rfCapabilities.ts` and a test pins it to them.
 

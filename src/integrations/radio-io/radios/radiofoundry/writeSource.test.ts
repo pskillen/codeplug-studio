@@ -13,8 +13,13 @@ import {
   CONTACT_RECORD_SIZE,
 } from '@core/import-export/formats/radiofoundry/layout.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
+import { SETTINGS_AREA_ADDRESS } from '@core/import-export/formats/radiofoundry/layout.ts';
 import { DMR_ID_DATABASE_ADDRESS } from './idDatabase.ts';
-import { radioFoundryReviewContacts, radioFoundryWriteSourceFromAssembled } from './writeSource.ts';
+import {
+  RADIOFOUNDRY_CABLE_SETTINGS_MERGE_NOTE,
+  radioFoundryReviewContacts,
+  radioFoundryWriteSourceFromAssembled,
+} from './writeSource.ts';
 
 function fmChannel(name: string): AssembledChannel {
   const entity: Channel = {
@@ -141,5 +146,19 @@ describe('radioFoundryWriteSourceFromAssembled contacts', () => {
         includeDigitalIdDirectory: false,
       }),
     ).toBeUndefined();
+  });
+
+  it('owns the channel table for a cable merge and does not own the settings sector', () => {
+    const source = radioFoundryWriteSourceFromAssembled(assembled());
+    expect(source.settings?.ownsChannelTable).toBe(true);
+    expect(source.settings?.channelTags.size).toBe(0);
+    expect(source.settings?.callsignRecord).toBeUndefined();
+    expect(source.owned[SETTINGS_AREA_ADDRESS]).toBe(0);
+    expect(
+      source.warnings.some(
+        (warning) =>
+          warning.kind === 'general' && warning.message === RADIOFOUNDRY_CABLE_SETTINGS_MERGE_NOTE,
+      ),
+    ).toBe(true);
   });
 });

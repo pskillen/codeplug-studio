@@ -1,0 +1,145 @@
+/**
+ * The Review/Connect write path merges the same settings sector as the
+ * protocol, and a build without the M17 feature parks rather than refusing.
+ */
+
+import { describe, expect, it } from 'vitest';
+import { newChannel, newOwnDigitalId, newRadioBuildForProfile } from '@core/domain/factories.ts';
+import type { Channel, ChannelModeProfileM17 } from '@core/models/library.ts';
+import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
+import { decodeDebugFrame } from '@integrations/radio-io/kit/codecs/radioFoundryDebugLink.ts';
+import { createRadioSession } from '@integrations/radio-io/kit/session.ts';
+import { DM32UV_RADIOFOUNDRY_CABLE_BOARD } from '@integrations/radio-io/radios/radiofoundry/board.ts';
+import {
+  OP_BLOCK,
+  SETTINGS_AREA_ADDRESS,
+} from '@integrations/radio-io/radios/radiofoundry/constants.ts';
+import { DM32_RADIOFOUNDRY_DESCRIPTOR } from '@integrations/radio-io/radios/radiofoundry/descriptor.ts';
+import { RadioFoundryCableProtocol } from '@integrations/radio-io/radios/radiofoundry/protocol.ts';
+import { ScriptedPipe } from '@integrations/radio-io/radios/radiofoundry/protocol.test.ts';
+import {
+  RADIOFOUNDRY_M17_PARKED_NOTE,
+  radioFoundryWritePreflight,
+} from '@integrations/radio-io/radios/radiofoundry/writePreflight.ts';
+import {
+  radioFoundryWriteSourceFromAssembled,
+  type RadioFoundryWriteSource,
+} from '@integrations/radio-io/radios/radiofoundry/writeSource.ts';
+import { memoryMapFromBytes } from '@integrations/radio-io/kit/memoryMap.ts';
+import { uploadPreparedRadioWrite } from './radioIoSession.ts';
+
+function m17Assembled(): AssembledBuild {
+  const profile: ChannelModeProfileM17 = {
+    mode: 'm17',
+    can: 3,
+    playEveryCan: true,
+    destination: 'ECHO',
+  };
+  const entity: Channel = {
+    ...newChannel('p', 'Echo'),
+    rxFrequency: 145_500_000,
+    txFrequency: 145_500_000,
+    primaryMode: 'm17',
+    modeProfiles: [profile],
+  };
+  const channel: AssembledChannel = { entity, wireName: 'Echo' };
+  return {
+    buildId: 'b',
+    formatId: 'radiofoundry',
+    profileId: 'radiofoundry-dm32uv',
+    buildName: 'DM-32',
+    channels: [channel],
+    zones: [],
+    scanLists: [],
+    talkGroups: [],
+    digitalContacts: [],
+    analogContacts: [],
+    rxGroupLists: [],
+    ownDigitalIds: [
+      { ...newOwnDigitalId('p', 'dmr', 'MM9PDY', 2_351_234), isDefault: true },
+      { ...newOwnDigitalId('p', 'm17', 'AB1CD', 'AB1CD'), isDefault: true },
+    ],
+  };
+}
+
+function containsBytes(haystack: Uint8Array, needle: readonly number[]): boolean {
+  outer: for (let i = 0; i + needle.length <= haystack.length; i += 1) {
+    for (let j = 0; j < needle.length; j += 1) {
+      if (haystack[i + j] !== needle[j]) continue outer;
+    }
+    return true;
+  }
+  return false;
+}
+
+function writtenSettings(pipe: ScriptedPipe): boolean {
+  return pipe.writes.some((frame) => {
+    const decoded = decodeDebugFrame(frame);
+    if (decoded.payload[0] !== OP_BLOCK) return false;
+    const addr =
+      decoded.payload[1]! |
+      (decoded.payload[2]! << 8) |
+      (decoded.payload[3]! << 16) |
+      (decoded.payload[4]! << 24);
+    return addr === SETTINGS_AREA_ADDRESS;
+  });
+}
+
+describe('RadioFoundry M17 cable write session', () => {
+  it('parks on Connect and writes the same settings sector as the protocol', async () => {
+    const source: RadioFoundryWriteSource = radioFoundryWriteSourceFromAssembled(m17Assembled());
+    expect(source.settings?.ownsChannelTable).toBe(true);
+    expect(source.settings?.channelTags.size).toBeGreaterThan(0);
+
+    const unitPipe = new ScriptedPipe(0xff);
+    const unit = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await unit.connect(unitPipe);
+    unit.armWriteSource(source);
+    await unit.download({ progressStage: 'Pre-write read' });
+    const overlay = unit.overlayWriteImage();
+    await unit.upload(memoryMapFromBytes(Uint8Array.of(0)), {});
+    expect(writtenSettings(unitPipe)).toBe(true);
+
+    const pipe = new ScriptedPipe(0xff);
+    pipe.versionText = 'proto=1\nboard=DM-32UV\nfeatures=M17_PACKET\n';
+    const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD);
+    await proto.connect(pipe);
+    const session = createRadioSession({
+      descriptor: DM32_RADIOFOUNDRY_DESCRIPTOR,
+      pipe,
+      radio: proto,
+    });
+    const preflight = await radioFoundryWritePreflight(session, { includesM17: true });
+    expect(preflight.refusal).toBeUndefined();
+    expect(preflight.rows.find((row) => row.label === 'M17')?.value).toBe('not in this build');
+    expect(
+      preflight.findings?.flatMap((finding) =>
+        finding.kind === 'general' ? [finding.message] : [],
+      ),
+    ).toContain(RADIOFOUNDRY_M17_PARKED_NOTE);
+
+    const { egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv-radiofoundry');
+    await uploadPreparedRadioWrite(session, egress, undefined, {
+      channels: [],
+      organisation: {},
+      radioFoundryWrite: {
+        bytes: source.bytes,
+        owned: source.owned,
+        ...(source.settings ? { settings: source.settings } : {}),
+        ...(source.area2 ? { area2: source.area2, area2Owned: source.area2Owned } : {}),
+      },
+    });
+    expect(writtenSettings(pipe)).toBe(true);
+    expect([...pipe.block(SETTINGS_AREA_ADDRESS)]).toEqual([
+      ...unitPipe.block(SETTINGS_AREA_ADDRESS),
+    ]);
+    expect([...pipe.block(SETTINGS_AREA_ADDRESS)]).toEqual([
+      ...overlay.bytes.subarray(SETTINGS_AREA_ADDRESS, SETTINGS_AREA_ADDRESS + 0x1000),
+    ]);
+    const written = pipe.block(SETTINGS_AREA_ADDRESS);
+    expect(containsBytes(written, [0x13, 0x00, 0x00, 0x00, 0x0e, 0xd8, 0x7d])).toBe(true);
+    expect(
+      containsBytes(written, [0x41, 0x42, 0x31, 0x43, 0x44, 0x00, 0x00, 0x00, 0x00, 0x00]),
+    ).toBe(true);
+  }, 60_000);
+});

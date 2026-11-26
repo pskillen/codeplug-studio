@@ -1,47 +1,68 @@
 /**
- * Digital IDs: the operator's own DMR and NXDN IDs, what the radio sends.
+ * Digital IDs: the operator's own DMR and NXDN numbers and M17 callsigns.
  *
  * Not the `digitalId` number on a talk group or contact (who you call) and not the ID directory
- * (the downloaded lookup list). One ID per protocol can be the default; a channel either uses the
- * default (`ownDigitalIdId` null) or names one.
+ * (the downloaded lookup list). One ID per protocol can be the default. DMR and NXDN channels
+ * can choose an override. The M17 default is radio-wide.
  */
 import type { ProjectAggregate } from '../import-export/projectDocument.ts';
 import { newId } from '../models/ids.ts';
 import { initialRevision, isoNow } from '../models/revision.ts';
-import type { OwnDigitalId, OwnDigitalIdProtocol } from '../models/library.ts';
+import type {
+  M17OwnDigitalId,
+  NumericOwnDigitalId,
+  NumericOwnDigitalIdProtocol,
+  OwnDigitalId,
+  OwnDigitalIdProtocol,
+} from '../models/library.ts';
+import { M17_CALLSIGN_ERROR, normalizeM17Callsign } from './m17Address.ts';
 import { NXDN_ID_MAX, NXDN_ID_MIN } from './validation.ts';
 
-export const OWN_DIGITAL_ID_PROTOCOLS: readonly OwnDigitalIdProtocol[] = ['dmr', 'nxdn'];
+export const NUMERIC_OWN_DIGITAL_ID_PROTOCOLS: readonly NumericOwnDigitalIdProtocol[] = [
+  'dmr',
+  'nxdn',
+];
+export const OWN_DIGITAL_ID_PROTOCOLS: readonly OwnDigitalIdProtocol[] = [
+  ...NUMERIC_OWN_DIGITAL_ID_PROTOCOLS,
+  'm17',
+];
 
 export const DMR_OWN_ID_MIN = 1;
 export const DMR_OWN_ID_MAX = 16_776_415;
 
 /** Inclusive number range per protocol. */
-export const OWN_ID_RANGE: Record<OwnDigitalIdProtocol, readonly [number, number]> = {
+export const OWN_ID_RANGE: Record<NumericOwnDigitalIdProtocol, readonly [number, number]> = {
   dmr: [DMR_OWN_ID_MIN, DMR_OWN_ID_MAX],
   nxdn: [NXDN_ID_MIN, NXDN_ID_MAX],
 };
 
 export function ownDigitalIdProtocolLabel(protocol: OwnDigitalIdProtocol): string {
-  return protocol === 'dmr' ? 'DMR' : 'NXDN';
+  return protocol.toUpperCase();
 }
 
-/** What a list or select shows for an ID: its name, else "DMR 2351234" / "NXDN 1234". */
-export function ownDigitalIdLabel(row: Pick<OwnDigitalId, 'name' | 'protocol' | 'number'>): string {
-  return row.name.trim() || `${ownDigitalIdProtocolLabel(row.protocol)} ${row.number}`;
+type OwnDigitalIdValue =
+  Pick<NumericOwnDigitalId, 'protocol' | 'number'> | Pick<M17OwnDigitalId, 'protocol' | 'callsign'>;
+
+export function ownDigitalIdValue(row: OwnDigitalIdValue): number | string {
+  return row.protocol === 'm17' ? row.callsign : row.number;
 }
 
-/** "Name (number)" for a named ID, else "DMR 2351234". */
-export function ownDigitalIdOptionLabel(
-  row: Pick<OwnDigitalId, 'name' | 'protocol' | 'number'>,
-): string {
+type NamedOwnDigitalId = OwnDigitalIdValue & Pick<OwnDigitalId, 'name'>;
+
+/** What a list or select shows for an ID: its name, else the protocol and value. */
+export function ownDigitalIdLabel(row: NamedOwnDigitalId): string {
+  return row.name.trim() || `${ownDigitalIdProtocolLabel(row.protocol)} ${ownDigitalIdValue(row)}`;
+}
+
+/** "Name (value)" for a named ID, else the protocol and value. */
+export function ownDigitalIdOptionLabel(row: NamedOwnDigitalId): string {
   const name = row.name.trim();
-  return name ? `${name} (${row.number})` : ownDigitalIdLabel(row);
+  return name ? `${name} (${ownDigitalIdValue(row)})` : ownDigitalIdLabel(row);
 }
 
 /** Range error for a number in a protocol, or `null` when it is in range. */
 export function ownDigitalIdRangeError(
-  protocol: OwnDigitalIdProtocol,
+  protocol: NumericOwnDigitalIdProtocol,
   number: number,
 ): string | null {
   const [min, max] = OWN_ID_RANGE[protocol];
@@ -51,15 +72,27 @@ export function ownDigitalIdRangeError(
   return null;
 }
 
-/** Errors that block saving an ID: unknown protocol, range, or the same number twice in a protocol. */
+type OwnDigitalIdChoice = OwnDigitalIdValue & Pick<OwnDigitalId, 'id'>;
+
+/** Errors that block saving an ID. */
 export function validateOwnDigitalId(
-  row: Pick<OwnDigitalId, 'id' | 'protocol' | 'number'>,
-  all: readonly Pick<OwnDigitalId, 'id' | 'protocol' | 'number'>[],
+  row: OwnDigitalIdChoice,
+  all: readonly OwnDigitalIdChoice[],
 ): string[] {
   const errors: string[] = [];
   if (!OWN_DIGITAL_ID_PROTOCOLS.includes(row.protocol)) {
-    errors.push('Protocol must be DMR or NXDN');
-    return errors;
+    return ['Protocol must be DMR, NXDN or M17'];
+  }
+  if (row.protocol === 'm17') {
+    const callsign = normalizeM17Callsign(row.callsign);
+    if (callsign === null) return [M17_CALLSIGN_ERROR];
+    const duplicate = all.some(
+      (other) =>
+        other.id !== row.id &&
+        other.protocol === 'm17' &&
+        normalizeM17Callsign(other.callsign) === callsign,
+    );
+    return duplicate ? [`M17 callsign ${callsign} is already in Digital IDs`] : [];
   }
   const rangeError = ownDigitalIdRangeError(row.protocol, row.number);
   if (rangeError) errors.push(rangeError);
@@ -79,6 +112,18 @@ export function validateOwnDigitalId(
  * The default ID of a protocol, or `null`. If a half-finished two-row write left several rows
  * marked, the one with the smallest `id` wins so every reader agrees.
  */
+export function defaultOwnDigitalId(
+  all: readonly OwnDigitalId[],
+  protocol: NumericOwnDigitalIdProtocol,
+): NumericOwnDigitalId | null;
+export function defaultOwnDigitalId(
+  all: readonly OwnDigitalId[],
+  protocol: 'm17',
+): M17OwnDigitalId | null;
+export function defaultOwnDigitalId(
+  all: readonly OwnDigitalId[],
+  protocol: OwnDigitalIdProtocol,
+): OwnDigitalId | null;
 export function defaultOwnDigitalId(
   all: readonly OwnDigitalId[],
   protocol: OwnDigitalIdProtocol,
@@ -119,11 +164,19 @@ export function ownDigitalIdWarnings(all: readonly OwnDigitalId[]): string[] {
   const warnings: string[] = [];
   for (const protocol of protocolsWithoutDefault(all)) {
     const label = ownDigitalIdProtocolLabel(protocol);
+    if (protocol === 'm17') {
+      warnings.push('No default M17 callsign. Choose one to set the radio-wide M17 callsign.');
+      continue;
+    }
     warnings.push(
       `No default ${label} ID. Channels set to Default use whatever ${label} ID the radio already has, and some radios send none, until you choose one.`,
     );
   }
   for (const protocol of protocolsWithSeveralDefaults(all)) {
+    if (protocol === 'm17') {
+      warnings.push('More than one default M17 callsign. Set one as the default to fix it.');
+      continue;
+    }
     warnings.push(
       `More than one default ${ownDigitalIdProtocolLabel(protocol)} ID. Set one as the default to fix it.`,
     );
@@ -131,7 +184,7 @@ export function ownDigitalIdWarnings(all: readonly OwnDigitalId[]): string[] {
   // A number outside the protocol's range can arrive from an older project (migration keeps it so
   // channels keep their choice) or a hand-edited file. It stays in the list; the notice says so.
   for (const row of all) {
-    if (!OWN_DIGITAL_ID_PROTOCOLS.includes(row.protocol)) continue;
+    if (!OWN_DIGITAL_ID_PROTOCOLS.includes(row.protocol) || row.protocol === 'm17') continue;
     const rangeError = ownDigitalIdRangeError(row.protocol, row.number);
     if (rangeError) {
       warnings.push(
@@ -149,7 +202,7 @@ export interface OwnIdProfileChoice {
 }
 
 /** Protocol of a mode profile that carries an own ID, or `null` for other modes. */
-export function ownIdProtocolOfMode(mode: string): OwnDigitalIdProtocol | null {
+export function ownIdProtocolOfMode(mode: string): NumericOwnDigitalIdProtocol | null {
   return mode === 'dmr' || mode === 'nxdn' ? mode : null;
 }
 
@@ -160,7 +213,7 @@ export function ownIdProtocolOfMode(mode: string): OwnDigitalIdProtocol | null {
 export function resolveChannelOwnId(
   profile: OwnIdProfileChoice,
   all: readonly OwnDigitalId[],
-): { row: OwnDigitalId; source: 'override' | 'default' } | null {
+): { row: NumericOwnDigitalId; source: 'override' | 'default' } | null {
   const protocol = ownIdProtocolOfMode(profile.mode);
   if (!protocol) return null;
   const override = channelOwnIdOverride(profile, all);
@@ -173,7 +226,7 @@ export function resolveChannelOwnId(
 export function channelOwnIdOverride(
   profile: OwnIdProfileChoice,
   all: readonly OwnDigitalId[],
-): OwnDigitalId | null {
+): NumericOwnDigitalId | null {
   const protocol = ownIdProtocolOfMode(profile.mode);
   if (!protocol || !profile.ownDigitalIdId) return null;
   const row = all.find((candidate) => candidate.id === profile.ownDigitalIdId);
@@ -210,13 +263,15 @@ export function migrateLegacyOwnIds<C extends { modeProfiles: readonly object[] 
 ): { channels: C[]; ownDigitalIds: OwnDigitalId[] } {
   const rows: OwnDigitalId[] = [...existing];
   const rowFor = (
-    protocol: OwnDigitalIdProtocol,
+    protocol: NumericOwnDigitalIdProtocol,
     number: number,
     updatedAt: string,
-  ): OwnDigitalId => {
-    const found = rows.find((row) => row.protocol === protocol && row.number === number);
+  ): NumericOwnDigitalId => {
+    const found = rows.find(
+      (row): row is NumericOwnDigitalId => row.protocol === protocol && row.number === number,
+    );
     if (found) return found;
-    const created: OwnDigitalId = {
+    const created: NumericOwnDigitalId = {
       id: makeId(),
       projectId,
       revision: initialRevision(),
@@ -242,7 +297,7 @@ export function migrateLegacyOwnIds<C extends { modeProfiles: readonly object[] 
       changed = true;
       const { [key]: legacyValue, ...rest } = legacy;
       const number = legacyNumber(legacyValue);
-      const protocol: OwnDigitalIdProtocol = key === 'dmrId' ? 'dmr' : 'nxdn';
+      const protocol: NumericOwnDigitalIdProtocol = key === 'dmrId' ? 'dmr' : 'nxdn';
       const ownDigitalIdId =
         number !== null ? rowFor(protocol, number, stamp).id : (legacy.ownDigitalIdId ?? null);
       return { ...rest, ownDigitalIdId };

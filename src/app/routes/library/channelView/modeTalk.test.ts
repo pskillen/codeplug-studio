@@ -6,6 +6,7 @@ import {
   newRxGroupList,
   newTalkGroup,
 } from '@core/domain/factories.ts';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { modeTalk } from './modeTalk.ts';
 
 const projectId = '11111111-1111-4111-8111-111111111111';
@@ -380,13 +381,26 @@ describe('modeTalk', () => {
     expect(sentenceText(talk.sentence)).toBe('Talk on TG 12345.');
   });
 
-  it('P25 and M17 placeholder copy', () => {
+  it('P25 placeholder copy', () => {
     const channel = newChannel(projectId, 'Test');
     expect(sentenceText(modeTalk({ mode: 'p25' }, channel, library).sentence)).toBe(
       "Studio doesn't hold P25 settings yet.",
     );
-    expect(sentenceText(modeTalk({ mode: 'm17' }, channel, library).sentence)).toBe(
-      "Studio doesn't hold M17 settings yet.",
+  });
+
+  it('describes the M17 destination and CAN, with filtering as a separate fact', () => {
+    const channel = newChannel(projectId, 'Test');
+    const talk = modeTalk(
+      { mode: 'm17', can: 3, destination: 'ECHO', playEveryCan: true },
+      channel,
+      library,
+    );
+    expect(sentenceText(talk.sentence)).toBe('Calls ECHO on CAN 3.');
+    expect(strongTexts(talk.sentence)).toEqual(['ECHO', 'CAN 3']);
+    expect(talk.facts).toEqual([{ key: 'listen', label: 'Listen', value: 'Every CAN' }]);
+    expect(talk.empty).toBe(false);
+    expect(sentenceText(modeTalk(defaultModeProfile('m17'), channel, library).sentence)).toBe(
+      'Calls ALL on CAN 0.',
     );
   });
 

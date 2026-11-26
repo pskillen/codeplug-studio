@@ -10,7 +10,7 @@ One file, `codeplug.bin`, for a radio running RadioFoundry. This is the open-fir
 | Export    | Shipped                                                                                                                                                                  |
 | Import    | Shipped. The same `codeplug.bin` parses into library entities.                                                                                                           |
 
-**Length:** 716384 bytes (0xAEE60). Bytes Studio does not write stay `0xFF`, including the settings area's sector at `0xE000`–`0xEFFF` ([settings area](settings-area.md)). The zone table is the exception: the bitmap and all 68 zone records are zeroed before real zones are written, so byte 0x806F is `0x00`–`0x04` and the radio keeps the 80-channel zone layout.
+**Length:** 716384 bytes (0xAEE60). Bytes Studio does not write stay `0xFF`. The settings area at `0xE000`–`0xEFFF` stays `0xFF` unless the file contains an M17 channel, in which case the file carries a fresh sector ([settings area](settings-area.md)). The zone table is the exception to the `0xFF` rule: the bitmap and all 68 zone records are zeroed before real zones are written, so byte 0x806F is `0x00`–`0x04` and the radio keeps the 80-channel zone layout.
 
 One codec serves every RadioFoundry radio. The counts below are firmware-wide and the same for each board; what differs per board (power steps, RF bands) comes from the board module of the radio profile the build or import names, so parse and export follow the profile rather than the DM-32UV. A build's profile id, or the cable write's, picks the profile; an unknown id is refused.
 
@@ -20,7 +20,7 @@ References on the wire are 1-based indexes assigned at export. Names are labels,
 
 ## What is written
 
-- Channels: FM (mode byte 0) and DMR (mode byte 1) only. A library channel with more than one storable mode (FM and/or DMR) exports as **one channel record per mode**, in the channel's mode order, with the shared wire-name suffix (`-F` for FM, `-D` for DMR). A single storable mode keeps today's unsuffixed name. With `expandModes: false`, a multi-mode channel keeps `primaryMode` only and warns. Any other mode is dropped with a warning. The channel cap counts mode copies; excess copies are dropped with a warning. Zone members list every written copy's number, in order, where the library channel sat in the zone.
+- Channels: FM (mode byte 0), DMR (mode byte 1) and M17. A library channel with more than one of those modes exports as **one channel record per mode**, in the channel's mode order, with the shared wire-name suffix (`-F` for FM, `-D` for DMR, `-M17` for M17). A single storable mode keeps an unsuffixed name. With `expandModes: false`, a multi-mode channel keeps `primaryMode` when that mode is one of the three, otherwise DMR when present, then FM, then M17, and warns. Any other mode is dropped with a warning. The channel cap counts mode copies; excess copies are dropped with a warning. Zone members list every written copy's number, in order, where the library channel sat in the zone. An M17 copy is a receive-only DMR record (mode byte 1, bandwidth 12.5 kHz, contact, RX list, colour code, timeslot and per-channel ID zero, including the byte DMR leaves at `0x16`) plus a kind-6 tag in the settings area. The tag's TX bit follows the channel's transmit setting. The radio sends the CAN on air and filters on it (firmware M6 and later).
 - The default DMR radio ID, 8 BCD digits, big-endian, in general settings. Export fails with an error the operator can read when that ID is missing or outside 1–16776415. Other own IDs are not written into the radio-wide slot. A channel that points at a different own ID gets the per-channel override.
 - Talk groups and private contacts in one table. Call type is group, private, or all-call. With the `talkGroupTimeslotClones` trait, each demanded timeslot gets its own group contact (see [Timeslots](#timeslots)); private contacts and all-call keep byte `0x17` at `0x01` (no override).
 - RX lists. The length-table byte is the member count plus 1, or 0 when the list is unused. Extra members are truncated with a warning.
@@ -50,7 +50,7 @@ The reader walks channel-bank bitmaps and the zone bitmap. References are the sa
 - A group contact becomes a talk group. A private contact becomes a digital contact. Call type 2 becomes talk group 16777215. A slot whose first byte is `0xFF`, or whose call type is `0xFF`, is skipped.
 - An RX list whose length-table byte is not 0 becomes an RX list. Member indexes point at contacts.
 - An in-use zone becomes a zone. Byte 0x806F selects the record: `0x00`–`0x04` is 80 channels per zone, and `0xFF` is the 16-channel layout (68 records of 48 bytes, name then 16 channel numbers). Any other value is rejected. The exporter writes the 80-channel layout. A zone member that points at an empty channel number is left out, and the import lists a warning naming the zone and the number.
-- The settings area (`0xE000`) is read and reported, never imported: its state when it is not usable, each channel that is really a DMR Tier III, P25 or NXDN channel on the radio, and counts of stale tags and of other settings. No value from it is stored or shown. See [settings-area.md](settings-area.md).
+- The settings area (`0xE000`) is read. A live M17 tag becomes an M17 channel, and a valid `0x0A06` callsign becomes the default M17 own ID. A live DMR Tier III, P25, NXDN or AES tag is reported, not imported. Stale tags and other settings are counts only. See [settings-area.md](settings-area.md).
 
 Contact byte `0x17` equal to `0x01` (or `0xFF`) means no timeslot override and imports as today. Clone rows with TS1/TS2 overrides fold as described in [Timeslots](#timeslots). APRS records, DTMF contacts, and the DMR ID database are not imported. There is no scan-list record to read.
 
@@ -60,7 +60,7 @@ Left as `0xFF`, with no records written:
 
 - DMR ID database, LUCZ, boot text, VFOs, quick keys
 - DTMF / analog contacts
-- The settings area (`0xE000`–`0xEFFF`), which holds channel modes Studio cannot model yet. The radio keeps its own; export adds an info note. See [settings area](settings-area.md).
+- The settings area (`0xE000`–`0xEFFF`) when the file has no M17 channel. The radio keeps its own; export adds an info note. An M17 file writes a fresh sector instead, and Review warns that writing the file replaces the area. See [settings area](settings-area.md).
 - Scan lists. Each scan list produces a warning. Studio does not add a carrier channel and does not run repeater-times-talk-group expansion.
 
 ## Timeslots

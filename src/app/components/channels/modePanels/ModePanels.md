@@ -36,15 +36,15 @@ import ModePanel from '@app/components/channels/modePanels/ModePanel.tsx';
 
 Digital modes use **`DigitalModeGroups`** — fixed order **Access / Call / Listen / You**:
 
-| Mode   | Access                           | Call                  | Listen                         | You                      |
-| ------ | -------------------------------- | --------------------- | ------------------------------ | ------------------------ |
-| DMR    | Colour code + timeslot, DMR mode | Talk group or contact | RX group list + summary + sync | DMR ID, talker alias     |
-| NXDN   | RX/TX RAN, rate                  | Call                  | RX group list                  | Unit ID                  |
-| D-STAR | RPT1, RPT2                       | UR call               | note (repeater-wide listen)    | note (callsign on radio) |
-| YSF    | DG-ID                            | WIRES-X DTMF ID       | note (same DG-ID)              | note (callsign on radio) |
-| Tetra  | MCC + MNC, colour code           | Talk group, GSSI      | note (talk group)              | note (ISSI on radio)     |
-| P25    | pending: note only               | heading only          | heading only                   | heading only             |
-| M17    | pending: note only               | heading only          | heading only                   | heading only             |
+| Mode   | Access                           | Call                  | Listen                         | You                         |
+| ------ | -------------------------------- | --------------------- | ------------------------------ | --------------------------- |
+| DMR    | Colour code + timeslot, DMR mode | Talk group or contact | RX group list + summary + sync | DMR ID, talker alias        |
+| NXDN   | RX/TX RAN, rate                  | Call                  | RX group list                  | Unit ID                     |
+| D-STAR | RPT1, RPT2                       | UR call               | note (repeater-wide listen)    | note (callsign on radio)    |
+| YSF    | DG-ID                            | WIRES-X DTMF ID       | note (same DG-ID)              | note (callsign on radio)    |
+| Tetra  | MCC + MNC, colour code           | Talk group, GSSI      | note (talk group)              | note (ISSI on radio)        |
+| P25    | pending: note only               | heading only          | heading only                   | heading only                |
+| M17    | CAN, Play every CAN              | Destination           | Matching or every CAN          | Radio-wide default callsign |
 
 - Empty groups show a muted one-line **note** (or heading only when `note: ''`).
 - **Analogue** (FM, AM, SSB): no group headings; order is sideband (SSB), **TX then RX tone**, bandwidth, squelch, squelch mode.
@@ -70,5 +70,6 @@ Digital modes use **`DigitalModeGroups`** — fixed order **Access / Call / List
 
 ## Related
 
+- [M17ModePanel.md](M17ModePanel.md) — M17 access, destination and default callsign
 - [ChannelModePicker.md](../ChannelModePicker.md) — mode picker in the channel editor
-- [channel-modes.md](../../../../docs/features/library/channel-modes.md) — tier-1 deep dive
+- [channel-modes.md](../../../../../docs/features/library/channel-modes.md) — tier-1 deep dive

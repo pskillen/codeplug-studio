@@ -1,8 +1,8 @@
 # RadioFoundry settings area
 
-A RadioFoundry radio keeps a 4 KB key-value store, the settings area, in its codeplug image at `0xE000`–`0xEFFF` (one EEPROM sector). Among other things it holds channel modes Studio cannot model yet: DMR Tier III, P25 and NXDN tags attached to channels. This page is the wire reference and says what Studio does with the area on each path.
+A RadioFoundry radio keeps a 4 KB key-value store, the settings area, in its codeplug image at `0xE000`–`0xEFFF` (one EEPROM sector). It holds channel tags, including M17, and radio-wide records such as the M17 callsign. DMR Tier III, P25 and NXDN tags are still reported rather than imported. This page is the wire reference and says what Studio does with the area on each path.
 
-Source: RadioFoundry `docs/spec/codeplug-settings.md` (sections 1, 2 and 6) and `docs/spec/channel-modes.md` (sections 2.1 to 2.3), at RadioFoundry commit `454a5b76`. Layout constants live in `src/core/import-export/formats/radiofoundry/layout.ts`; the reader is `settingsArea.ts` and `channelTags.ts` in the same folder.
+Source: RadioFoundry `docs/spec/codeplug-settings.md` (sections 2, 4 and 6), `docs/spec/channel-modes.md` and `docs/spec/m17-codeplug.md`, at RadioFoundry commit `adfbfce7`. Layout constants live in `src/core/import-export/formats/radiofoundry/layout.ts`; the reader is `settingsArea.ts` and `channelTags.ts`, and the M17 block and the sector rewrite are `m17.ts` and `settingsAreaWrite.ts` in the same folder.
 
 ## Header
 
@@ -32,23 +32,23 @@ When a write puts anything that is not a valid area in that sector, the radio ke
 
 A record number n sits at the family base plus n.
 
-| Keys               | Holds                                     |
-| ------------------ | ----------------------------------------- |
-| `0x0001`–`0x0009`  | Scalars                                   |
-| `0x0100`           | Systems                                   |
-| `0x0200`           | System entries                            |
-| `0x0300`           | System secrets (never decoded by Studio)  |
-| `0x0400`–`0x07FF`  | Channel tags (key `0x0400` + channel - 1) |
-| `0x0800`, `0x0900` | Tier III data                             |
-| `0x0A00`           | A kind's radio-wide record                |
-| `0x1000`           | Targets                                   |
-| `0x1800`           | Target lists                              |
-| `0x1900`–`0x1CFF`  | Traffic keys (never decoded by Studio)    |
-| `0x1D00`           | Zone tags (reserved)                      |
+| Keys               | Holds                                                                |
+| ------------------ | -------------------------------------------------------------------- |
+| `0x0001`–`0x0009`  | Scalars                                                              |
+| `0x0100`           | Systems                                                              |
+| `0x0200`           | System entries                                                       |
+| `0x0300`           | System secrets (never decoded by Studio)                             |
+| `0x0400`–`0x07FF`  | Channel tags (key `0x0400` + channel - 1)                            |
+| `0x0800`, `0x0900` | Tier III data                                                        |
+| `0x0A00`           | A kind's radio-wide record. `0x0A06` is the 10-byte M17 own callsign |
+| `0x1000`           | Targets                                                              |
+| `0x1800`           | Target lists                                                         |
+| `0x1900`–`0x1CFF`  | Traffic keys (never decoded by Studio)                               |
+| `0x1D00`           | Zone tags (reserved)                                                 |
 
 ## Channel tag header
 
-Channels are numbered 1 to 1024. Studio reads only the first five bytes of a tag.
+Channels are numbered 1 to 1024. Studio reads the header of every tag. For kind 6 it also reads the 7-byte M17 block. Other kinds' blocks stay unread.
 
 | Offset | Size | Field                                                                                                                                   |
 | ------ | ---- | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -56,9 +56,15 @@ Channels are numbered 1 to 1024. Studio reads only the first five bytes of a tag
 | 1      | 1    | System index, `0xFF` for none                                                                                                           |
 | 2      | 2    | Name check of the channel's stored name (LE)                                                                                            |
 | 4      | 1    | Flags: bit 0 TX allowed; bit 1 the base record stands alone; bit 2 a fallback (4 bytes) follows; bit 3 reserved; bits 4 to 7 the kind's |
-| 5 or 9 | rest | The kind's parameter block (not decoded)                                                                                                |
+| 5 or 9 | rest | The kind's parameter block. Kind 6 is the M17 block below. Other kinds are not decoded                                                  |
 
-Kinds known at the pinned commit: 1 DMR Tier III trunked, 2 P25 conventional, 3 P25 trunked, 4 NXDN conventional. Higher ids are not settled upstream and Studio calls them "kind N (not known to Studio)".
+Kinds at the pinned commit: 1 DMR Tier III trunked, 2 P25 conventional, 3 P25 trunked, 4 NXDN conventional, 5 conventional DMR AES-256, 6 M17 conventional. Studio writes kind 6. Any other id is labelled and, when the tag is live, reported as a mode Studio did not import.
+
+### M17 block and callsign
+
+Kind 6's block is 7 bytes and nothing follows it. Byte 0 holds the CAN in bits 0–3 and the CAN squelch in bit 4 (set means every CAN is heard). Bytes 1–6 are the destination, six bytes, big-endian base-40, first character the least significant digit. Zero, all `0xFF`, and any value from `0xEE6B28000000` up decode as no destination. A CAN above 15 is stored as 0.
+
+Key `0x0A06` is ten bytes. A `0x00` or `0xFF` ends the callsign, trailing `0x20` bytes are discarded, and ASCII `a`–`z` fold to upper case. Ten raw bytes of a shorter callsign padded with spaces are valid. Studio writes the callsign only from the default M17 own ID. With none set, a file leaves `0x0A06` out and says whether the radio name can stand in.
 
 ## Name check
 
@@ -78,12 +84,12 @@ A tag is live when its check equals the check of the channel's stored name and e
 
 ## What Studio does
 
-| Path             | Behaviour                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| File export      | `codeplug.bin` carries `0xE000`–`0xEFFF` as `0xFF`. An info note says the radio keeps its own area, and that a channel mode comes back on any channel written as receive-only DMR at the same number with the same name.                                                                                                                                                                                                                                         |
-| Cable write      | Block `0xE000` is never sent. A write source that owns any byte in the area is refused before a frame is sent. The session exposes the area it read, checked, and decoded no further than tag headers.                                                                                                                                                                                                                                                           |
-| File import      | The area is read and checked; nothing from it is stored. A bad area, or one written by a newer RadioFoundry, gets one warning and is skipped. A channel tag that is live gets a warning naming the channel and its kind (Studio imported the receive-only DMR stand-in, or only the base settings when the tag says the base stands alone). Tags that no longer match their channel and other settings are reported as counts only. An erased area says nothing. |
-| Secrets and keys | Never decoded, shown, logged or stored.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Path             | Behaviour                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| File export      | With no M17 row, `codeplug.bin` carries `0xE000`–`0xEFFF` as `0xFF` and an info note says the radio keeps its own area. With M17 rows, the file gets a fresh sector: one kind-6 tag per kept M17 channel, and `0x0A06` when a default M17 callsign is set. Review warns that writing that file replaces the radio's settings area, and notes that M17 needs a firmware build that includes it. The ownership mask stays clear.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Cable write      | The cable image leaves `0xE000` blank and unowned. A write that owns the channel table reads the radio's sector in that attempt (a checksum-confirmed blank counts; a block filled in from the outgoing image does not) and merges it: every channel tag is dropped and replaced by the tags in this codeplug, even when there are none. Other keys are copied in order. `0x0A06` is written from the front when this codeplug has a default M17 callsign, and bytes past the first 10 stay. An unchanged sector is not sent, so a second write of the same codeplug omits `0xE000`. Channel blocks are sent before that one settings block. A newer area, or one that cannot hold the merged records, is refused before BEGIN and nothing is written. A source that owns any byte of the area is still refused before a frame is sent. A write that does not own the channel table leaves channel-tag keys as they are. |
+| File import      | A live kind-6 tag replaces the receive-only DMR stand-in with an M17 channel. When the tag says the base stands alone, the base profile stays and M17 is added. Transmit follows the tag's TX bit. A valid `0x0A06` becomes the default M17 own ID when the import has none yet. Other live kinds are still a warning (the stand-in is what was imported). A bad or newer area is one warning and is skipped. Stale tags and other settings are counts only; `0x0A06` is not one of those other settings. An erased area says nothing.                                                                                                                                                                                                                                                                                                                                                                                   |
+| Secrets and keys | Never decoded, shown, logged or stored.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ## Credit
 

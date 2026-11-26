@@ -23,6 +23,13 @@ const tgId = lookup.talkGroups[0]!.id;
 const pcId = lookup.digitalContacts[0]!.id;
 
 describe('modeProfileSummary', () => {
+  it('summarises M17 CAN and destination, including broadcast', () => {
+    expect(modeProfileSummary({ mode: 'm17', can: 3, destination: 'ECHO' }, lookup)).toBe(
+      'CAN 3 → ECHO',
+    );
+    expect(modeProfileSummary(defaultModeProfile('m17'), lookup)).toBe('CAN 0 → ALL');
+  });
+
   it('summarises FM tones when only TX is set', () => {
     const profile = {
       ...defaultModeProfile('fm'),

@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { newChannel, newRadioBuild } from '@core/domain/factories.ts';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import {
+  channelDroppedModesWarning,
   channelEligibleForRadio,
   channelStatusInBuild,
+  collectPartialModeDropWarnings,
   formatChannelEligibilityWarning,
   getChannelIneligibilityReason,
+  projectChannelForRadioTarget,
   supportedChannelModes,
 } from './channelEligibility.ts';
 import { getRadioRfCapabilities } from '@core/radio-targets/rfCapabilities.ts';
@@ -218,5 +222,42 @@ describe('channelStatusInBuild', () => {
     expect(channelStatusInBuild(air, build)).toEqual({ kind: 'unsupported-mode' });
     build.channelOverrides = [{ libraryEntityId: air.id, excluded: true }];
     expect(channelStatusInBuild(air, build)).toEqual({ kind: 'excluded' });
+  });
+});
+
+describe('projectChannelForRadioTarget', () => {
+  it('strips M17 and reconciles primaryMode onto DMR', () => {
+    const mixed = channelWith(['dmr', 'fm'], 430_125_000, 'Mixed');
+    mixed.primaryMode = 'm17';
+    mixed.modeProfiles.push({
+      mode: 'm17',
+      can: 3,
+      playEveryCan: null,
+      destination: 'ECHO',
+    });
+    const { entity, droppedModes } = projectChannelForRadioTarget(mixed, 'baofeng-dm1701');
+    expect(droppedModes).toEqual(['m17']);
+    expect(entity.modeProfiles.map((p) => p.mode)).toEqual(['dmr', 'fm']);
+    expect(entity.primaryMode).toBe('dmr');
+  });
+
+  it('leaves channels unchanged when the target has no RF row', () => {
+    const m17Only = newChannel(projectId, 'M17 hub');
+    m17Only.modeProfiles = [defaultModeProfile('m17')];
+    const { entity, droppedModes } = projectChannelForRadioTarget(m17Only, 'unknown-target');
+    expect(droppedModes).toEqual([]);
+    expect(entity).toBe(m17Only);
+  });
+
+  it('emits an info note per included channel with dropped modes', () => {
+    const mixed = channelWith(['fm'], 145_500_000, 'FM+M17');
+    mixed.modeProfiles.push(defaultModeProfile('m17'));
+    const warnings = collectPartialModeDropWarnings('retevis-rt95', [mixed]);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]?.severity).toBe('info');
+    expect(warnings[0]?.kind).toBe('general');
+    if (warnings[0]?.kind === 'general') {
+      expect(warnings[0].message).toBe(channelDroppedModesWarning('FM+M17', ['m17']));
+    }
   });
 });

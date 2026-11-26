@@ -1,9 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
-import { emptyLibrary } from '@core/domain/factories.ts';
+import { emptyLibrary, newOwnDigitalId } from '@core/domain/factories.ts';
 import { DesignSystemV2Provider } from '../../v2/index.ts';
 import ModePanel from './ModePanel.tsx';
 import { testModePanelContext } from './testContext.ts';
@@ -72,22 +72,35 @@ describe('ModePanel groups and layout', () => {
     expect(screen.getByText('Your ISSI is set on the radio.')).toBeInTheDocument();
   });
 
-  it('P25 and M17 show pending notes', () => {
+  it('P25 shows a pending note', () => {
     renderMode('p25');
     expect(screen.getByText(/Studio doesn't hold P25 settings yet/)).toBeInTheDocument();
+  });
 
+  it('shows the read-only radio-wide default M17 callsign in You', () => {
+    const library = emptyLibrary();
+    library.ownDigitalIds.push(newOwnDigitalId('p', 'm17', 'Alternate', 'GB7XX'), {
+      ...newOwnDigitalId('p', 'm17', 'Home', 'AB1CD/P'),
+      isDefault: true,
+    });
     render(
       <MemoryRouter>
         <DesignSystemV2Provider>
           <ModePanel
             profile={defaultModeProfile('m17')}
             onPatch={() => {}}
-            context={testModePanelContext()}
+            context={testModePanelContext({ library })}
           />
         </DesignSystemV2Provider>
       </MemoryRouter>,
     );
-    expect(screen.getByText(/Studio doesn't hold M17 settings yet/)).toBeInTheDocument();
+    const you = within(screen.getByRole('group', { name: 'You' }));
+    expect(you.getByRole('textbox', { name: 'M17 callsign' })).toHaveValue('AB1CD/P');
+    expect(you.getByRole('textbox', { name: 'M17 callsign' })).toHaveAttribute('readonly');
+    expect(you.getByRole('link', { name: 'Manage Digital IDs' })).toHaveAttribute(
+      'href',
+      '/library/digital-ids',
+    );
   });
 
   it('analogue modes render no h3 headings', () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { OwnDigitalId } from '../models/library.ts';
+import type { NumericOwnDigitalId, OwnDigitalId } from '../models/library.ts';
+import { newOwnDigitalId } from './factories.ts';
 import {
   channelOwnIdOverride,
   defaultOwnDigitalId,
@@ -8,12 +9,15 @@ import {
   ownDigitalIdLabel,
   ownDigitalIdOptionLabel,
   ownDigitalIdWarnings,
+  ownDigitalIdValue,
   protocolsWithoutDefault,
   resolveChannelOwnId,
   validateOwnDigitalId,
 } from './ownDigitalIds.ts';
 
-function row(over: Partial<OwnDigitalId> & Pick<OwnDigitalId, 'id'>): OwnDigitalId {
+function row(
+  over: Partial<NumericOwnDigitalId> & Pick<NumericOwnDigitalId, 'id'>,
+): NumericOwnDigitalId {
   return {
     projectId: 'p1',
     revision: 1,
@@ -65,10 +69,10 @@ describe('validateOwnDigitalId', () => {
   it('refuses an unknown protocol', () => {
     expect(
       validateOwnDigitalId(
-        { id: 'a', protocol: 'p25' as unknown as OwnDigitalId['protocol'], number: 1 },
+        { id: 'a', protocol: 'p25' as unknown as NumericOwnDigitalId['protocol'], number: 1 },
         none,
       ),
-    ).toEqual(['Protocol must be DMR or NXDN']);
+    ).toEqual(['Protocol must be DMR, NXDN or M17']);
   });
 });
 
@@ -120,7 +124,7 @@ describe('default rules', () => {
       [],
       () => 'r',
     );
-    expect(migrated.ownDigitalIds.map((r) => r.number)).toEqual([99_999_999]);
+    expect(migrated.ownDigitalIds.map(ownDigitalIdValue)).toEqual([99_999_999]);
   });
 
   it('a protocol with IDs but no default is reported, an empty one is not', () => {
@@ -204,7 +208,13 @@ describe('migrateLegacyOwnIds', () => {
       makeId,
     );
     expect(
-      result.ownDigitalIds.map((r) => [r.id, r.protocol, r.number, r.name, r.isDefault]),
+      result.ownDigitalIds.map((r) => [
+        r.id,
+        r.protocol,
+        ownDigitalIdValue(r),
+        r.name,
+        r.isDefault,
+      ]),
     ).toEqual([
       ['row-1', 'dmr', 2351234, '', false],
       ['row-2', 'dmr', 2351235, '', false],
@@ -235,7 +245,7 @@ describe('migrateLegacyOwnIds', () => {
   it('migrates an NXDN unit ID to an NXDN row, apart from a DMR row with the same number', () => {
     counter = 0;
     const result = migrateLegacyOwnIds('p1', [channel('a', dmr(1234), nxdn(1234))], [], makeId);
-    expect(result.ownDigitalIds.map((r) => [r.protocol, r.number])).toEqual([
+    expect(result.ownDigitalIds.map((r) => [r.protocol, ownDigitalIdValue(r)])).toEqual([
       ['dmr', 1234],
       ['nxdn', 1234],
     ]);
@@ -272,5 +282,25 @@ describe('migrateLegacyOwnIds', () => {
     const ch = channel('a', fm, { mode: 'dmr', ownDigitalIdId: 'x' });
     const result = migrateLegacyOwnIds('p1', [ch], [], makeId);
     expect(result.channels[0]).toBe(ch);
+  });
+});
+
+describe('M17 operator callsigns', () => {
+  it('resolves the default radio-wide and ignores attempts at channel overrides', () => {
+    const m17 = { ...newOwnDigitalId('p1', 'm17', '', 'AB1CD'), isDefault: true };
+    const all = [m17, row({ id: 'dmr', isDefault: true })];
+    expect(defaultOwnDigitalId(all, 'm17')?.callsign).toBe('AB1CD');
+    expect(resolveChannelOwnId({ mode: 'm17', ownDigitalIdId: m17.id }, all)).toBeNull();
+    expect(channelOwnIdOverride({ mode: 'dmr', ownDigitalIdId: m17.id }, all)).toBeNull();
+    expect(resolveChannelOwnId({ mode: 'dmr', ownDigitalIdId: m17.id }, all)?.row.id).toBe('dmr');
+  });
+
+  it('reports a missing default only for M17 when numeric defaults are set', () => {
+    const m17 = newOwnDigitalId('p1', 'm17', '', 'AB1CD');
+    const all = [m17, row({ id: 'dmr', isDefault: true })];
+    expect(protocolsWithoutDefault(all)).toEqual(['m17']);
+    expect(ownDigitalIdWarnings(all)).toEqual([
+      'No default M17 callsign. Choose one to set the radio-wide M17 callsign.',
+    ]);
   });
 });

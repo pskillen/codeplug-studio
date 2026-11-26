@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { emptyLibrary, newTalkGroup } from '@core/domain/factories.ts';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { modeProfileFacts } from './modeProfileFacts.ts';
 
 const projectId = '11111111-1111-4111-8111-111111111111';
 
 describe('modeProfileFacts', () => {
+  it('shows M17 broadcast and CAN filtering defaults', () => {
+    expect(modeProfileFacts(defaultModeProfile('m17'), emptyLibrary())).toEqual([
+      { key: 'can', label: 'CAN', value: '0', mono: true },
+      { key: 'destination', label: 'Destination', value: 'ALL', mono: true },
+      { key: 'listen', label: 'Listen', value: 'This CAN only' },
+    ]);
+  });
+
   it('collapses matching analog tones and hides unset fields', () => {
     const facts = modeProfileFacts(
       { mode: 'fm', rxTone: '110.9', txTone: '110.9', squelch: null, bandwidthKHz: 12.5 },

@@ -1,9 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
-import type { OwnDigitalId, OwnDigitalIdProtocol } from '@core/models/library.ts';
+import type {
+  NumericOwnDigitalIdProtocol,
+  OwnDigitalId,
+  OwnDigitalIdProtocol,
+} from '@core/models/library.ts';
 import { newOwnDigitalId } from '@core/domain/factories.ts';
+import { normalizeM17Callsign } from '@core/domain/m17Address.ts';
 import {
+  OWN_DIGITAL_ID_PROTOCOLS,
   OWN_ID_RANGE,
   ownDigitalIdLabel,
   ownDigitalIdProtocolLabel,
@@ -22,6 +28,7 @@ import {
 } from '../../components/v2/index.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
+import { OWN_ID_FIELD_HINTS } from '../../lib/ownDigitalIdOptions.ts';
 import { referenceCount } from '../../lib/listReferences.ts';
 import { parseOptionalInt } from '../../lib/units.ts';
 import { LibraryService } from '../../state/libraryService.ts';
@@ -30,14 +37,14 @@ import { useLibrary } from '../../state/useLibrary.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import classes from './CompactFormEditor.module.css';
 
-const PROTOCOL_OPTIONS = [
-  { value: 'dmr', label: 'DMR' },
-  { value: 'nxdn', label: 'NXDN' },
-] as const;
+const PROTOCOL_OPTIONS = OWN_DIGITAL_ID_PROTOCOLS.map((value) => ({
+  value,
+  label: ownDigitalIdProtocolLabel(value),
+}));
 
 const service = new LibraryService(persistence);
 
-function numberHint(protocol: OwnDigitalIdProtocol): string {
+function numberHint(protocol: NumericOwnDigitalIdProtocol): string {
   const [min, max] = OWN_ID_RANGE[protocol];
   return `${ownDigitalIdProtocolLabel(protocol)} ID, ${min}–${max}`;
 }
@@ -49,10 +56,13 @@ export function OwnDigitalIdEditor({
   projectId: string;
   entity: OwnDigitalId | null;
 }) {
-  const base = entity ?? newOwnDigitalId(projectId);
+  const [base] = useState(() => entity ?? newOwnDigitalId(projectId));
   const [name, setName] = useState(base.name);
   const [protocol, setProtocol] = useState<OwnDigitalIdProtocol>(base.protocol);
-  const [number, setNumber] = useState(base.number > 0 ? String(base.number) : '');
+  const [number, setNumber] = useState(
+    base.protocol !== 'm17' && base.number > 0 ? String(base.number) : '',
+  );
+  const [callsign, setCallsign] = useState(base.protocol === 'm17' ? base.callsign : '');
   const [saveAttempted, setSaveAttempted] = useState(false);
   const { save, saving, error } = useEntitySave('digital-ids');
   const { library } = useLibrary();
@@ -63,24 +73,34 @@ export function OwnDigitalIdEditor({
     () => (entity ? referenceCount(library, { kind: 'ownDigitalId', id: entity.id }) : 0),
     [entity, library],
   );
-  // The protocol is fixed once channels choose the ID: a DMR channel cannot name an NXDN ID.
+  // A channel override must keep the protocol it refers to.
   const protocolLocked = usageCount > 0;
 
   function buildRow(): OwnDigitalId {
-    return {
-      ...base,
-      name: name.trim(),
-      protocol,
-      number: parseOptionalInt(number) ?? 0,
-    };
+    const { id, revision, updatedAt, isDefault } = base;
+    const shared = { id, projectId, revision, updatedAt, isDefault, name: name.trim() };
+    return protocol === 'm17'
+      ? { ...shared, protocol, callsign }
+      : { ...shared, protocol, number: parseOptionalInt(number) ?? 0 };
   }
 
   const { permitNavigationOnce, modalOpen, stay, leave, isDirty } =
     useEntityEditorUnsavedGuard(buildRow);
 
   const errors = validateOwnDigitalId(buildRow(), library.ownDigitalIds);
-  const errorShown = number.trim() === '' && !saveAttempted ? null : (errors[0] ?? null);
+  const isM17 = protocol === 'm17';
+  const value = isM17 ? callsign : number;
+  const fieldLabel = isM17 ? 'M17 callsign' : `${ownDigitalIdProtocolLabel(protocol)} ID`;
+  const errorShown = value.trim() === '' && !saveAttempted ? undefined : errors[0];
   const nameMissing = !entity && name.trim() === '' && saveAttempted;
+  const isDefault = entity?.protocol === protocol && entity.isDefault;
+  const defaultHint = isM17
+    ? isDefault
+      ? 'This is your default M17 callsign. It applies radio-wide.'
+      : 'The first M17 callsign you add becomes the default. Use Set as default on the list to change it.'
+    : isDefault
+      ? `This is your default ${fieldLabel}. Channels set to Default send it.`
+      : `The first ${fieldLabel} you add becomes the default. Use Set as default on the list to change it.`;
 
   function handleSave() {
     if (errors.length > 0 || (!entity && name.trim() === '')) {
@@ -121,7 +141,11 @@ export function OwnDigitalIdEditor({
               <FormField
                 label="Name"
                 error={nameMissing ? 'Give this ID a name' : undefined}
-                hint="Shown in the channel's ID list, and on the radio where it has a name field."
+                hint={
+                  isM17
+                    ? 'Shown in Digital IDs.'
+                    : "Shown in the channel's ID list, and on the radio where it has a name field."
+                }
               >
                 <TextInput
                   variant="plain"
@@ -133,10 +157,11 @@ export function OwnDigitalIdEditor({
               <div>
                 <p className={classes.segmentLabel}>Protocol</p>
                 <SegmentedControl
-                  options={PROTOCOL_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+                  options={PROTOCOL_OPTIONS}
                   value={protocol}
+                  aria-label="Protocol"
                   onChange={(next) => {
-                    if (!protocolLocked) setProtocol(next as OwnDigitalIdProtocol);
+                    if (!protocolLocked) setProtocol(next);
                   }}
                 />
                 {protocolLocked ? (
@@ -146,24 +171,28 @@ export function OwnDigitalIdEditor({
             </div>
             <div style={{ marginTop: 14 }}>
               <FormField
-                label={`${ownDigitalIdProtocolLabel(protocol)} ID`}
+                label={fieldLabel}
                 mono
-                error={errorShown ?? undefined}
-                hint={numberHint(protocol)}
+                error={errorShown}
+                hint={isM17 ? OWN_ID_FIELD_HINTS.m17 : numberHint(protocol)}
               >
                 <TextInput
                   variant="plain"
-                  value={number}
-                  onChange={(e) => setNumber(e.currentTarget.value)}
+                  value={value}
+                  onChange={(e) => (isM17 ? setCallsign : setNumber)(e.currentTarget.value)}
+                  onBlur={
+                    isM17
+                      ? () => setCallsign((draft) => normalizeM17Callsign(draft) ?? draft)
+                      : undefined
+                  }
                   mono
-                  aria-label={`${ownDigitalIdProtocolLabel(protocol)} ID`}
+                  aria-label={fieldLabel}
+                  aria-invalid={errorShown ? true : undefined}
                 />
               </FormField>
             </div>
             <p className={classes.hint} style={{ marginTop: 8 }}>
-              {entity?.isDefault
-                ? `This is your default ${ownDigitalIdProtocolLabel(protocol)} ID. Channels set to Default send it.`
-                : `The first ${ownDigitalIdProtocolLabel(protocol)} ID you add becomes the default. Use Set as default on the list to change it.`}
+              {defaultHint}
             </p>
           </Panel>
 

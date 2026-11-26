@@ -4,7 +4,11 @@
  * state from the catalog; it only reads these to annotate cells. Sources are cited per row.
  */
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
-import { RADIOFOUNDRY_STUDIO_PIN } from '@core/radios/radiofoundry/firmware.ts';
+import {
+  RADIOFOUNDRY_M17_CAN_NOTE,
+  RADIOFOUNDRY_M17_CAN_ON_AIR,
+  RADIOFOUNDRY_STUDIO_PIN,
+} from '@core/radios/radiofoundry/firmware.ts';
 import type {
   SupportColumnId,
   SupportEvidence,
@@ -33,6 +37,10 @@ const RF = `RadioFoundry ${RADIOFOUNDRY_STUDIO_PIN.git}`;
 const DM1701_ON_AIR =
   'RadioFoundry\u2019s on-air tests on the DM-1701 (firmware 5a13814, 2026-10-10)';
 
+const M17_MODE: SupportModeFact = RADIOFOUNDRY_M17_CAN_ON_AIR
+  ? {}
+  : { note: RADIOFOUNDRY_M17_CAN_NOTE };
+
 export const SUPPORT_FACTS: SupportFacts = {
   modes: {
     'baofeng-dm32uv-radiofoundry': {
@@ -44,6 +52,7 @@ export const SUPPORT_FACTS: SupportFacts = {
         evidence: 'bench',
         evidenceSource: `DMR voice checked on the bench by RadioFoundry (feature matrix, ${RF}).`,
       },
+      m17: M17_MODE,
     },
     'baofeng-dm1701-radiofoundry': {
       fm: {
@@ -54,6 +63,7 @@ export const SUPPORT_FACTS: SupportFacts = {
         evidence: 'on-air',
         evidenceSource: `DMR voice checked on the air both ways: ${DM1701_ON_AIR}.`,
       },
+      m17: M17_MODE,
     },
     'retevis-rt84-radiofoundry': {
       fm: {
@@ -66,6 +76,7 @@ export const SUPPORT_FACTS: SupportFacts = {
         evidenceSource:
           'No RadioFoundry record on an RT84. It runs the DM-1701 image, which is checked on the air.',
       },
+      m17: M17_MODE,
     },
     'tyt-md9600-radiofoundry': {
       fm: {
@@ -76,6 +87,7 @@ export const SUPPORT_FACTS: SupportFacts = {
         evidence: 'unverified',
         evidenceSource: `RadioFoundry\u2019s MD-9600 check was partial and needs a re-run (feature matrix, ${RF}).`,
       },
+      m17: M17_MODE,
     },
     'retevis-rt90-radiofoundry': {
       fm: {
@@ -88,6 +100,7 @@ export const SUPPORT_FACTS: SupportFacts = {
         evidenceSource:
           'No RadioFoundry record on an RT90. It runs the MD-9600 image, whose check was partial.',
       },
+      m17: M17_MODE,
     },
     'anytone-at-d890uv-mm9pdy': {
       nxdn: { note: 'Only when the radio reports NXDN on. Studio checks before it writes.' },

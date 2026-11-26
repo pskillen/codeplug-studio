@@ -56,11 +56,11 @@ function onPreset(edit: ChannelModeEdit, preset: ModePreset) {
 
 ## Behaviour
 
-- **No mode:** dashed box, presets FM, DMR, FM + DMR; first preset mode becomes main. Other modes: AM, NXDN, P25, M17, More (SSB, D-STAR, YSF, Tetra).
-- **One mode:** FM AM DMR NXDN P25 M17 switch; rare modes under More. Editor renders `AddModeMenu variant="link"` below settings (not inside the picker).
+- **No mode:** dashed box, presets FM, DMR, FM + DMR; first preset mode becomes main. Other modes: AM, NXDN, P25, More (M17, SSB, D-STAR, YSF, Tetra).
+- **One mode:** FM AM DMR NXDN P25 switch; rare modes under More. Editor renders `AddModeMenu variant="link"` below settings (not inside the picker).
 - **Two or more:** coloured chips with remove (×), then `AddModeMenu variant="chip"`.
 - Switching or removing parks the profile; switching or adding back restores it (`parked` is editor-only).
-- The **More** chip is a `role="radio"` control that opens a menu for SSB, D-STAR, YSF, and Tetra.
+- The **More** chip is a `role="radio"` control that opens a menu for M17, SSB, D-STAR, YSF, and Tetra.
 
 ## Related
 

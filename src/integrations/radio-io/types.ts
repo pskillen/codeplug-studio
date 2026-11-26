@@ -292,6 +292,8 @@ export interface RadioDescriptor {
       profileId: string;
       parts: RadioPlanContext['parts'];
       signal?: AbortSignal;
+      /** This write includes a channel with an M17 mode profile. */
+      includesM17?: boolean;
     },
   ): Promise<RadioPreflightResult>;
   /** Satellite keps limits, preview and exclusions; write fn is registered in app. */

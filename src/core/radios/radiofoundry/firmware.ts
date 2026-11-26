@@ -5,10 +5,19 @@
 
 /** The RadioFoundry commit Studio's codec and cable write were checked against. */
 export const RADIOFOUNDRY_STUDIO_PIN = {
-  git: '454a5b76',
-  gitTime: 1_795_365_604,
-  date: '2026-11-22',
+  git: 'adfbfce7',
+  gitTime: 1_795_626_273,
+  date: '2026-11-25',
 } as const;
+
+/**
+ * True since firmware M6: the radio sends the CAN on air and applies CAN squelch.
+ * The support matrix and RadioFoundry export share this sentence.
+ */
+export const RADIOFOUNDRY_M17_CAN_ON_AIR = true;
+
+export const RADIOFOUNDRY_M17_CAN_NOTE =
+  'RadioFoundry stores the CAN and the CAN squelch with the channel. Sending the CAN on air and filtering on it are still pending.';
 
 export interface RadioFoundryBuildIdentity {
   proto?: number;

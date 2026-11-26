@@ -11,7 +11,9 @@ import type {
   DigitalContact,
   Library,
   OwnDigitalId,
-  OwnDigitalIdProtocol,
+  M17OwnDigitalId,
+  NumericOwnDigitalId,
+  NumericOwnDigitalIdProtocol,
   RxGroupList,
   ScanList,
   TalkGroup,
@@ -353,20 +355,32 @@ export { newAprsConfiguration } from './aprs/index.ts';
 /** A blank Digital ID. The save path decides `isDefault` (the first ID of a protocol is default). */
 export function newOwnDigitalId(
   projectId: string,
-  protocol: OwnDigitalIdProtocol = 'dmr',
-  name = '',
-  number = 0,
+  protocol?: NumericOwnDigitalIdProtocol,
+  name?: string,
+  number?: number,
+): NumericOwnDigitalId;
+export function newOwnDigitalId(
+  projectId: string,
+  protocol: 'm17',
+  name?: string,
+  callsign?: string,
+): M17OwnDigitalId;
+export function newOwnDigitalId(
+  projectId: string,
+  ...args:
+    | [protocol?: NumericOwnDigitalIdProtocol, name?: string, number?: number]
+    | [protocol: 'm17', name?: string, callsign?: string]
 ): OwnDigitalId {
-  return {
+  const base = {
     id: newId(),
     projectId,
     revision: initialRevision(),
     updatedAt: isoNow(),
-    name,
-    protocol,
-    number,
+    name: args[1] ?? '',
     isDefault: false,
   };
+  if (args[0] === 'm17') return { ...base, protocol: args[0], callsign: args[2] ?? '' };
+  return { ...base, protocol: args[0] ?? 'dmr', number: args[2] ?? 0 };
 }
 
 export function newZone(projectId: string, name: string): Zone {

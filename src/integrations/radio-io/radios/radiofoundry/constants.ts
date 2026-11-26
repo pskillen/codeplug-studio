@@ -7,6 +7,8 @@
 import { DM32UV_RADIOFOUNDRY_BOARD } from '@core/radios/baofeng/dm-32uv-radiofoundry/limits.ts';
 import { RADIOFOUNDRY_IMAGE_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
 
+export { SETTINGS_AREA_ADDRESS } from '@core/import-export/formats/radiofoundry/layout.ts';
+
 export const DM32_RADIOFOUNDRY_MODEL_ID = 'DM-32UV-RadioFoundry';
 export const DM32_RADIOFOUNDRY_PROFILE_ID = 'radio-io-dm32uv-radiofoundry';
 

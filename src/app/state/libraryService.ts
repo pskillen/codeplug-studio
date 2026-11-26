@@ -1,5 +1,6 @@
 import type { Library, OwnDigitalId } from '@core/models/library.ts';
-import { newOwnDigitalIdIsDefault } from '@core/domain/ownDigitalIds.ts';
+import { M17_CALLSIGN_ERROR, normalizeM17Callsign } from '@core/domain/m17Address.ts';
+import { newOwnDigitalIdIsDefault, validateOwnDigitalId } from '@core/domain/ownDigitalIds.ts';
 import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
 import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
 import { normalizeZoneBehaviourDefaults } from '@core/domain/normalizeZoneBehaviourDefaults.ts';
@@ -95,6 +96,14 @@ export class LibraryService {
     const isDefault = keepsDefault
       ? previous.isDefault
       : newOwnDigitalIdIsDefault(others, row.protocol);
+    if (row.protocol === 'm17') {
+      const callsign = normalizeM17Callsign(row.callsign);
+      if (callsign === null) throw new Error(M17_CALLSIGN_ERROR);
+      const normalized = { ...row, callsign, isDefault };
+      const errors = validateOwnDigitalId(normalized, others);
+      if (errors.length > 0) throw new Error(errors[0]);
+      return this.persistence.putOwnDigitalId(normalized, expectedRevision);
+    }
     return this.persistence.putOwnDigitalId({ ...row, isDefault }, expectedRevision);
   }
 

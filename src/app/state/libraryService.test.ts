@@ -212,6 +212,32 @@ describe('LibraryService', () => {
   });
 
   describe('Digital IDs', () => {
+    it('saves canonical M17 callsigns with a separate radio-wide default', async () => {
+      const { persistence, service, projectId } = await setup();
+      const home = newOwnDigitalId(projectId, 'm17', 'Home', ' ab1cd/p ');
+      const club = newOwnDigitalId(projectId, 'm17', 'Club', 'AB2CD');
+      const dmr = newOwnDigitalId(projectId, 'dmr', 'Home DMR', 2351234);
+
+      expect(await service.saveOwnDigitalId(home, null)).toMatchObject({ ok: true });
+      expect(await service.saveOwnDigitalId(club, null)).toMatchObject({ ok: true });
+      expect(await service.saveOwnDigitalId(dmr, null)).toMatchObject({ ok: true });
+      await expect(
+        service.saveOwnDigitalId(newOwnDigitalId(projectId, 'm17', 'Duplicate', 'ab1cd/p'), null),
+      ).rejects.toThrow('M17 callsign AB1CD/P is already in Digital IDs');
+
+      expect(await persistence.getOwnDigitalId(projectId, home.id)).toMatchObject({
+        callsign: 'AB1CD/P',
+        isDefault: true,
+      });
+      expect(await persistence.getOwnDigitalId(projectId, club.id)).toMatchObject({
+        callsign: 'AB2CD',
+        isDefault: false,
+      });
+      expect(await persistence.getOwnDigitalId(projectId, dmr.id)).toMatchObject({
+        isDefault: true,
+      });
+    });
+
     it('the first ID of a protocol becomes its default, later ones do not', async () => {
       const { persistence, service, projectId } = await setup();
       await service.saveOwnDigitalId(newOwnDigitalId(projectId, 'dmr', 'Home', 2351234), null);

@@ -1919,6 +1919,13 @@ export function assembledHasNxdnChannels(assembled: AssembledBuild): boolean {
   );
 }
 
+/** True when any assembled channel has an M17 mode profile. */
+export function assembledHasM17Channels(assembled: AssembledBuild): boolean {
+  return assembled.channels.some((row) =>
+    row.entity.modeProfiles.some((profile) => profile.mode === 'm17'),
+  );
+}
+
 export function buildRadioWriteProjection(
   sourceAssembled: AssembledBuild,
   build: RadioBuild,

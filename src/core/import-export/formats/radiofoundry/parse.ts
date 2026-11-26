@@ -17,6 +17,7 @@ import type {
   Channel,
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
+  ChannelModeProfileM17,
   DigitalContact,
   OwnDigitalId,
   RxGroupList,
@@ -55,11 +56,19 @@ import {
   CHANNEL_TAG_KEY_FIRST,
   CHANNEL_TAG_KEY_LAST,
   isChannelTagLive,
+  RADIOFOUNDRY_KIND_M17,
   radioFoundryChannelKindLabel,
   readChannelTagHeaders,
+  type ChannelTagHeader,
 } from './channelTags.ts';
+import { decodeM17CallsignRecord, decodeM17ChannelBlock, M17_RADIO_WIDE_KEY } from './m17.ts';
 import { radioFoundryByteToLevel } from './power.ts';
-import { readRadioFoundrySettingsArea, settingsAreaSector } from './settingsArea.ts';
+import {
+  firstSettingsEntry,
+  readRadioFoundrySettingsArea,
+  settingsAreaSector,
+  type SettingsArea,
+} from './settingsArea.ts';
 
 const LIMITS = RADIOFOUNDRY_LIMITS;
 
@@ -184,7 +193,15 @@ export function parseRadioFoundryCodeplug(
     powerLevels,
   );
   const zones = readZones(image, projectId, zoneLayout, channels.byNumber, warnings);
-  reportSettingsArea(image, channels.records, warnings);
+  reportSettingsArea(
+    image,
+    channels.records,
+    channels.rows,
+    channels.byNumber,
+    radio.ownDigitalIds,
+    projectId,
+    warnings,
+  );
 
   return {
     channels: channels.rows,
@@ -406,7 +423,9 @@ function ownIdOverride(
 ): string | null {
   const number = ((record[0x27] ?? 0) << 16) | ((record[0x28] ?? 0) << 8) | (record[0x29] ?? 0);
   if (number <= 0 || number === radio.radioNumber) return null;
-  const existing = radio.ownDigitalIds.find((row) => !row.isDefault && row.number === number);
+  const existing = radio.ownDigitalIds.find(
+    (row) => row.protocol === 'dmr' && !row.isDefault && row.number === number,
+  );
   if (existing) return existing.id;
   const created = newOwnDigitalId(radio.ownDigitalIds[0]?.projectId ?? '', 'dmr', '', number);
   radio.ownDigitalIds.push(created);
@@ -447,12 +466,18 @@ function readZones(
 }
 
 /**
- * Read the settings area and say what Studio leaves behind. Nothing from it is stored, and no
- * value from it reaches a message (secrets and keys are never decoded).
+ * Read the settings area. A live M17 tag becomes an M17 profile, and a valid
+ * radio-wide callsign becomes the default M17 own ID. Other live tags are
+ * still only a warning. Secrets and keys are never decoded, and no value from
+ * the area is copied into a warning.
  */
 function reportSettingsArea(
   image: Uint8Array,
   channels: Map<number, ImportedRecord>,
+  rows: Channel[],
+  byNumber: Map<number, string>,
+  ownDigitalIds: OwnDigitalId[],
+  projectId: string,
   warnings: string[],
 ): void {
   const area = readRadioFoundrySettingsArea(settingsAreaSector(image));
@@ -473,6 +498,10 @@ function reportSettingsArea(
       stale++;
       continue;
     }
+    if (tag.kind === RADIOFOUNDRY_KIND_M17) {
+      applyLiveM17(area, tag, rows, byNumber);
+      continue;
+    }
     const kind = radioFoundryChannelKindLabel(tag.kind);
     if (tag.baseStandsAlone) {
       const baseMode = imported.record[0x18] === 1 ? 'DMR' : 'FM';
@@ -482,14 +511,56 @@ function reportSettingsArea(
     }
   }
   if (stale > 0) warnings.push(staleTagsWarning(stale));
+  applyM17Callsign(area, ownDigitalIds, projectId);
 
   const otherKeys = new Set<number>();
   for (const entry of area.entries) {
+    if (entry.key === M17_RADIO_WIDE_KEY) continue;
     if (entry.key < CHANNEL_TAG_KEY_FIRST || entry.key > CHANNEL_TAG_KEY_LAST) {
       otherKeys.add(entry.key);
     }
   }
   if (otherKeys.size > 0) warnings.push(otherSettingsWarning(otherKeys.size));
+}
+
+function applyLiveM17(
+  area: SettingsArea,
+  tag: ChannelTagHeader,
+  rows: Channel[],
+  byNumber: Map<number, string>,
+): void {
+  const channelId = byNumber.get(tag.channelNumber);
+  const channel = rows.find((row) => row.id === channelId);
+  const value = firstSettingsEntry(area, CHANNEL_TAG_KEY_FIRST + tag.channelNumber - 1)?.value;
+  if (!channel || !value) return;
+  const blockAt = (value[4]! & 0x04) !== 0 ? 9 : 5;
+  const decoded = decodeM17ChannelBlock(value.subarray(blockAt));
+  const profile: ChannelModeProfileM17 = {
+    mode: 'm17',
+    can: decoded.can,
+    playEveryCan: !decoded.squelchOn,
+    destination: decoded.destination,
+  };
+  channel.forbidTransmit = tag.txAllowed ? 'allow' : 'forbid';
+  if (tag.baseStandsAlone) {
+    channel.modeProfiles = [...channel.modeProfiles, profile];
+    return;
+  }
+  channel.modeProfiles = [profile];
+  channel.primaryMode = 'm17';
+}
+
+function applyM17Callsign(
+  area: SettingsArea,
+  ownDigitalIds: OwnDigitalId[],
+  projectId: string,
+): void {
+  const value = firstSettingsEntry(area, M17_RADIO_WIDE_KEY)?.value;
+  const callsign = decodeM17CallsignRecord(value);
+  if (!callsign || ownDigitalIds.some((row) => row.protocol === 'm17')) return;
+  const created = newOwnDigitalId(projectId, 'm17', callsign, callsign);
+  created.isDefault = true;
+  ownDigitalIds.push(created);
 }
 
 function readLocation(record: Uint8Array): { location: GeoPoint | null; useLocation: boolean } {
