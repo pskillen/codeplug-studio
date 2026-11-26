@@ -6,7 +6,6 @@
 import { describe, expect, it } from 'vitest';
 import { newChannel, newOwnDigitalId, newRadioBuildForProfile } from '@core/domain/factories.ts';
 import type { Channel, ChannelModeProfileM17 } from '@core/models/library.ts';
-import { SETTINGS_AREA_ADDRESS } from '@core/import-export/formats/radiofoundry/layout.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { decodeDebugFrame } from '@integrations/radio-io/kit/codecs/radioFoundryDebugLink.ts';
 import { createRadioSession } from '@integrations/radio-io/kit/session.ts';
@@ -25,6 +24,9 @@ import {
 } from '@integrations/radio-io/radios/radiofoundry/writeSource.ts';
 import { memoryMapFromBytes } from '@integrations/radio-io/kit/memoryMap.ts';
 import { uploadPreparedRadioWrite } from './radioIoSession.ts';
+
+/** Image offset of the RadioFoundry settings sector. The cable merge writes this block. */
+const SETTINGS_BLOCK = 0xe000;
 
 function m17Assembled(): AssembledBuild {
   const profile: ChannelModeProfileM17 = {
@@ -69,7 +71,7 @@ function writtenSettings(pipe: ScriptedPipe): boolean {
       (decoded.payload[2]! << 8) |
       (decoded.payload[3]! << 16) |
       (decoded.payload[4]! << 24);
-    return addr === SETTINGS_AREA_ADDRESS;
+    return addr === SETTINGS_BLOCK;
   });
 }
 
@@ -118,11 +120,9 @@ describe('RadioFoundry M17 cable write session', () => {
       },
     });
     expect(writtenSettings(pipe)).toBe(true);
-    expect([...pipe.block(SETTINGS_AREA_ADDRESS)]).toEqual([
-      ...unitPipe.block(SETTINGS_AREA_ADDRESS),
-    ]);
-    expect([...pipe.block(SETTINGS_AREA_ADDRESS)]).toEqual([
-      ...overlay.bytes.subarray(SETTINGS_AREA_ADDRESS, SETTINGS_AREA_ADDRESS + 0x1000),
+    expect([...pipe.block(SETTINGS_BLOCK)]).toEqual([...unitPipe.block(SETTINGS_BLOCK)]);
+    expect([...pipe.block(SETTINGS_BLOCK)]).toEqual([
+      ...overlay.bytes.subarray(SETTINGS_BLOCK, SETTINGS_BLOCK + 0x1000),
     ]);
   }, 60_000);
 });
