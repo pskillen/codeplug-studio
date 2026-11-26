@@ -38,8 +38,10 @@ import {
 } from '@core/domain/exportOrderOrSlot.ts';
 import {
   channelEligibleForRadio,
+  collectPartialModeDropWarnings,
   formatChannelEligibilityWarning,
   listIneligibleChannels,
+  projectChannelForRadioTarget,
   resolveChannelEligibilityOptions,
 } from '@core/domain/channelEligibility.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
@@ -389,9 +391,10 @@ function assembleChannels(
     }
     const override = overrideByEntityId(overrides).get(entity.id);
     const wireNameOverride = override?.wireName?.trim();
-    const generated = defaultChannelWireName(entity, { nameModeOverride });
+    const { entity: projected } = projectChannelForRadioTarget(entity, build.radioTargetId);
+    const generated = defaultChannelWireName(projected, { nameModeOverride });
     assembled.push({
-      entity,
+      entity: projected,
       wireName: wireNameOverride ?? generated,
       wireNameOverride,
       scanInclusionOverride: override?.scanInclusion,
@@ -511,9 +514,13 @@ export function exportChannelEligibilityWarnings(
   const candidates = library.channels.filter(
     (channel) => !isEntityExcluded(build.channelOverrides, channel.id),
   );
-  return formatChannelEligibilityWarning(
+  const warnings = formatChannelEligibilityWarning(
     listIneligibleChannels(build, candidates, eligibleOptions),
   );
+  warnings.push(
+    ...collectPartialModeDropWarnings(build.radioTargetId, candidates, eligibleOptions),
+  );
+  return warnings;
 }
 
 /** Warnings when orphan library entities are included in export. */
