@@ -3,7 +3,8 @@ import {
   SETTINGS_AREA_SIZE,
 } from '@core/import-export/formats/radiofoundry/layout.ts';
 import { crc32 } from '@core/import-export/formats/radiofoundry/settingsArea.ts';
-import { EEPROM_IMAGE_END } from '../constants.ts';
+import { BLOCK_SIZE, EEPROM_IMAGE_END } from '../constants.ts';
+import { FakeRadioFoundryRadio, type FakeRadioFoundryOptions } from './fakeRadioFoundryRadio.ts';
 
 export function eepromWithSecretKey0305(): Uint8Array {
   const data = [0x05, 0x03, 0x04, 0x00, 0xde, 0xad, 0xbe, 0xef];
@@ -15,4 +16,17 @@ export function eepromWithSecretKey0305(): Uint8Array {
   const eeprom = new Uint8Array(EEPROM_IMAGE_END).fill(0xff);
   eeprom.set(sector, SETTINGS_AREA_ADDRESS);
   return eeprom;
+}
+
+/** A fake radio whose 0xE000 block is `sector` (4096 bytes, tail 0xFF if shorter). */
+export function radioWithSettingsSector(
+  sector: Uint8Array,
+  options?: FakeRadioFoundryOptions,
+): FakeRadioFoundryRadio {
+  const radio = new FakeRadioFoundryRadio(options);
+  const block = new Uint8Array(BLOCK_SIZE);
+  block.fill(0xff);
+  block.set(sector.subarray(0, Math.min(sector.length, SETTINGS_AREA_SIZE)));
+  radio.setBlock(SETTINGS_AREA_ADDRESS, block);
+  return radio;
 }

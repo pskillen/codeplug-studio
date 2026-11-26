@@ -647,6 +647,7 @@ export async function prepareRadioWriteImage(
           radioFoundryWrite: {
             bytes: radioFoundry.bytes,
             owned: radioFoundry.owned,
+            ...(radioFoundry.settings ? { settings: radioFoundry.settings } : {}),
             ...(radioFoundry.area2
               ? { area2: radioFoundry.area2, area2Owned: radioFoundry.area2Owned }
               : {}),
@@ -757,6 +758,7 @@ async function resolveRadioWriteImageForUpload(
         progressStage: 'Pre-write read',
       });
     }
+    await session.radio.refreshSettingsForWrite(opts?.signal);
     return session.radio.overlayWriteImage();
   }
   if (session.radio instanceof Rt95Protocol) {

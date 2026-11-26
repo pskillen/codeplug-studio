@@ -100,8 +100,9 @@ function mergedEntries(
   const entries: SettingsAreaValue[] = [];
   for (const entry of existing) {
     if (seen.has(entry.key)) continue;
-    seen.add(entry.key);
+    // A dropped channel tag must not block the tag Studio appends for that channel.
     if (edit.ownsChannelTable && isChannelTagKey(entry.key)) continue;
+    seen.add(entry.key);
     const wide = radioWide.get(entry.key);
     entries.push(
       wide
