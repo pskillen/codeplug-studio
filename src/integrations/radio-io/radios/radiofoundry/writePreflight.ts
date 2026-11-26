@@ -2,9 +2,10 @@
  * RadioFoundry Connect pre-flight: firmware row and STORAGE INFO before the pre-write read.
  */
 
+import { pushGeneralInfoWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { summariseRadioFoundryBuild } from '@core/radios/radiofoundry/firmware.ts';
 import { adviseRadioError, RadioInterlockError } from '../../kit/errors.ts';
-import type { RadioPreflightResult, RadioSession } from '../../types.ts';
+import type { RadioPreflightResult, RadioPreflightRow, RadioSession } from '../../types.ts';
 import {
   isRadioFoundryCableRadio,
   RF_STORAGE_NO_MAP,
@@ -68,6 +69,25 @@ function storageDebugLines(
   ];
 }
 
+export const RADIOFOUNDRY_M17_PARKED_NOTE =
+  "This radio's build doesn't run M17: its M17 channels will be parked (they tune but stay silent).";
+
+function m17Preflight(
+  features: readonly string[] | undefined,
+  includesM17: boolean,
+): { row?: RadioPreflightRow; findings: ExportWarning[] } {
+  if (!includesM17) return { findings: [] };
+  if (features?.includes('M17')) {
+    return { row: { label: 'M17', value: 'runs', status: 'ok' }, findings: [] };
+  }
+  const findings: ExportWarning[] = [];
+  pushGeneralInfoWarning(findings, RADIOFOUNDRY_M17_PARKED_NOTE);
+  return {
+    row: { label: 'M17', value: 'not in this build', status: 'warn' },
+    findings,
+  };
+}
+
 function refusalForStorage(
   reply: RadioFoundryStorageInfoReply,
   storageReadyFlagClear: boolean,
@@ -95,7 +115,7 @@ function refusalForStorage(
 
 export async function radioFoundryWritePreflight(
   session: RadioSession,
-  ctx: { signal?: AbortSignal },
+  ctx: { signal?: AbortSignal; includesM17?: boolean },
 ): Promise<RadioPreflightResult> {
   const radio = session.radio;
   if (!isRadioFoundryCableRadio(radio)) {
@@ -109,6 +129,7 @@ export async function radioFoundryWritePreflight(
     firmware: firmwareLabel === 'not reported' ? undefined : firmwareLabel,
     ...(summary.notes.length > 0 ? { firmwareNotes: summary.notes } : {}),
   };
+  const m17 = m17Preflight(version?.features, ctx.includesM17 === true);
   const rows = [
     { label: 'Model', value: radio.board.label, status: 'ok' as const },
     {
@@ -116,12 +137,15 @@ export async function radioFoundryWritePreflight(
       value: firmwareLabel,
       status: firmwareLabel === 'not reported' ? ('warn' as const) : ('ok' as const),
     },
+    ...(m17.row ? [m17.row] : []),
   ];
+  const findings = m17.findings.length > 0 ? m17.findings : undefined;
   const writable = radio.storageWritable();
   if (writable === true) {
     return {
       identity,
       rows: [...rows, { label: 'Storage', value: 'writable', status: 'ok' as const }],
+      ...(findings ? { findings } : {}),
     };
   }
   const reply = await radio.readStorageInfo(ctx.signal);
@@ -139,5 +163,6 @@ export async function radioFoundryWritePreflight(
     identity,
     rows: [...rows, { label: 'Storage', value: storageLabel, status: 'bad' as const }],
     refusal: err,
+    ...(findings ? { findings } : {}),
   };
 }

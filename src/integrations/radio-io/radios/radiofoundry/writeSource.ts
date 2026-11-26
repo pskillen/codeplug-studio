@@ -11,11 +11,18 @@ import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import {
   ALL_CALL_DMR_ID,
+  CHANNEL_RECORD_SIZE,
+  CHANNELS_PER_BANK,
   CONTACT_BASE,
   CONTACT_RECORD_SIZE,
   RX_LIST_LENGTH,
+  channelSlotAddress,
 } from '@core/import-export/formats/radiofoundry/layout.ts';
-import { serialiseRadioFoundryCodeplug } from '@core/import-export/formats/radiofoundry/serialise.ts';
+import {
+  SETTINGS_AREA_KEPT_NOTE,
+  serialiseRadioFoundryCodeplug,
+} from '@core/import-export/formats/radiofoundry/serialise.ts';
+import { RADIOFOUNDRY_LIMITS } from '@core/radios/radiofoundry/limits.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
 import { DM32UV_RADIOFOUNDRY_CABLE_BOARD, type RadioFoundryCableBoard } from './board.ts';
@@ -31,10 +38,28 @@ import {
 const CONTACT_CALL_TYPE_OFFSET = 0x14;
 const PRIVATE_CALL_TYPE = 1;
 
+/**
+ * What a cable write does to the settings area. The sector bytes stay unowned;
+ * the protocol merges this into the radio's own sector.
+ */
+export interface RadioFoundryCableSettingsIntent {
+  /** True when this write owns a channel bitmap or channel record (D24). */
+  ownsChannelTable: boolean;
+  /** Channel number → full tag. Empty when the codeplug has no M17 row. */
+  channelTags: ReadonlyMap<number, Uint8Array>;
+  /** 10-byte 0x0A06. Absent leaves the radio's record, including bytes past 10. */
+  callsignRecord?: Uint8Array;
+}
+
+export const RADIOFOUNDRY_CABLE_SETTINGS_MERGE_NOTE =
+  'Writing to the radio merges its settings area: channel tags are rewritten from this codeplug, and tones, systems, keys and the M17 callsign already on the radio stay unless this codeplug sets a default M17 callsign.';
+
 export interface RadioFoundryWriteSource {
   bytes: Uint8Array;
   owned: Uint8Array;
   warnings: ExportWarning[];
+  /** Present on a source built from a codeplug. Absent on a hand-built mask. */
+  settings?: RadioFoundryCableSettingsIntent;
   /**
    * Records past area 1, placed at image `0xD8000`. Absent when the directory
    * fits in area 1 or is not part of this write. The gap before `0xD8000` is
@@ -78,12 +103,40 @@ export function radioFoundryWriteSourceFromAssembled(
           options?.board ?? DM32UV_RADIOFOUNDRY_CABLE_BOARD,
         )
       : undefined;
+  const m17 = image.m17Settings;
   return {
     bytes: image.bytes,
     owned: image.owned,
-    warnings: image.warnings,
+    warnings: cableSettingsWarnings(image.warnings),
+    settings: {
+      ownsChannelTable: radioFoundryWriteOwnsChannelTable(image.owned),
+      channelTags: m17?.channelTags ?? new Map(),
+      ...(m17?.callsignRecord ? { callsignRecord: m17.callsignRecord } : {}),
+    },
     ...(area2 ? { area2: area2.bytes, area2Owned: area2.owned } : {}),
   };
+}
+
+/** True when any channel bitmap or channel record byte is owned. */
+export function radioFoundryWriteOwnsChannelTable(owned: Uint8Array): boolean {
+  const banks = RADIOFOUNDRY_LIMITS.CHANNEL_MAX / CHANNELS_PER_BANK;
+  for (let bank = 0; bank < banks; bank += 1) {
+    const slot = channelSlotAddress(bank * CHANNELS_PER_BANK + 1);
+    const bitmapEnd = slot.bitmap + 16;
+    const recordsEnd = slot.record + CHANNELS_PER_BANK * CHANNEL_RECORD_SIZE;
+    if (recordsEnd > owned.length) return false;
+    for (let i = slot.bitmap; i < bitmapEnd; i += 1) if (owned[i]) return true;
+    for (let i = slot.record; i < recordsEnd; i += 1) if (owned[i]) return true;
+  }
+  return false;
+}
+
+function cableSettingsWarnings(warnings: ExportWarning[]): ExportWarning[] {
+  return warnings.map((warning) =>
+    warning.kind === 'general' && warning.message === SETTINGS_AREA_KEPT_NOTE
+      ? { ...warning, message: RADIOFOUNDRY_CABLE_SETTINGS_MERGE_NOTE }
+      : warning,
+  );
 }
 
 /**

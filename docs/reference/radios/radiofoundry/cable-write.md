@@ -42,7 +42,7 @@ Not sent, and why:
 ## What is not written
 
 - An address the serialiser does not own. The byte read from the radio stays. That includes general settings other than the callsign and the radio DMR ID, voice prompts, factory calibration, the settings ring (including digital APRS destination, beacon interval, and position source), the sector journal, and the native codeplug area. The DMR ID database stays unowned unless that source is selected.
-- The settings area. Block `0xE000` is never sent, and a source that owns any byte of it is refused before a frame goes out. See [settings area](../../export-formats/radiofoundry/settings-area.md).
+- The settings area as owned bytes. The cable image leaves `0xE000` blank. Studio merges the radio's own sector instead of overlaying those bytes. A source that owns any byte of the area is refused before a frame goes out. See [Settings area](#settings-area) and [settings area](../../export-formats/radiofoundry/settings-area.md).
 - Anything below the open-firmware image.
 
 Studio does not speak the stock DM-32 programmer, and it does not speak the OpenGD77 `R` / `X` / `W` codec. If the radio does not answer the fast command, the write stops.
@@ -58,9 +58,28 @@ Hardware caps: [limits.md](limits.md).
 - **Board name.** After INFO and the base check, Studio reads VERSION and refuses a `board=` that is not one of the board's names. A missing VERSION carries on. See [firmware.md](firmware.md).
 - **Planned blocks.** A write sends only blocks it planned: the served image blocks plus the ID-directory area-2 blocks the write owns. Any other address is refused before a frame goes out. A physical base that lies inside area 2 is therefore never sent unless it is a directory block this write owns.
 - **Image range.** A block must be 4 KB aligned and inside EEPROM, flash, or ID-database area 2 up to the ceiling.
-- **Settings area.** Block `0xE000` is never sent.
+- **Settings area.** Block `0xE000` is sent only when the merge changes the sector. See [Settings area](#settings-area).
 
 **Code:** `src/integrations/radio-io/radios/radiofoundry/`.
+
+## Settings area
+
+A write that owns the channel bitmap or a channel record merges the radio's settings sector. The read has to be from this write attempt: checksum-confirmed blank (`0xFF` with no READ) counts, and a block Studio filled in because it already owned every byte does not. Studio then:
+
+- Drops every channel-tag key and appends the tags for this codeplug. A codeplug with no M17 channel still drops the tags, so turning the last M17 channel into FM removes its tag.
+- Copies every other key in its original order, byte for byte, including tones, systems and keys.
+- Sets `0x0A06` from the front when this codeplug has a default M17 callsign. Bytes past the first 10 stay. With no default callsign, the radio's record stays.
+
+Channel and bitmap blocks go out before the one settings block. If the merged sector matches the radio, that block is not sent; a second write of the same codeplug omits `0xE000`. A write that does not own the channel table does not touch channel-tag keys.
+
+Refused before BEGIN, with nothing written:
+
+- No fresh settings read for this attempt.
+- The area version is newer than Studio merges.
+- The merged records do not fit in the sector.
+- The source owns any byte of `0xE000` (the merge is the only way that sector is written).
+
+Connect does not stop the write when VERSION has no exact `M17` feature (`M17_PACKET` alone does not count, and neither does a missing VERSION). If the codeplug has M17 channels, Review gets an info note that those channels will be parked: they tune but stay silent.
 
 ## Refusals
 

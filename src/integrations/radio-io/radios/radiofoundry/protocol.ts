@@ -14,10 +14,16 @@ import {
   SETTINGS_AREA_ADDRESS,
   SETTINGS_AREA_SIZE,
 } from '@core/import-export/formats/radiofoundry/layout.ts';
+import { M17_RADIO_WIDE_KEY } from '@core/import-export/formats/radiofoundry/m17.ts';
 import {
   readRadioFoundrySettingsArea,
   type SettingsArea,
 } from '@core/import-export/formats/radiofoundry/settingsArea.ts';
+import {
+  mergeRadioFoundrySettingsArea,
+  type RadioFoundrySettingsEdit,
+  type SettingsAreaHeadWrite,
+} from '@core/import-export/formats/radiofoundry/settingsAreaWrite.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { crc32Ieee } from '../../kit/checksums.ts';
 import {
@@ -74,6 +80,7 @@ import {
 } from './version.ts';
 import {
   ownedPrivateContactBlocks,
+  radioFoundryWriteOwnsChannelTable,
   radioFoundryWriteSourceFromAssembled,
   type RadioFoundryWriteSource,
 } from './writeSource.ts';
@@ -110,6 +117,16 @@ export const RF_STORAGE_NO_MAP =
 
 export const RF_STORAGE_NOT_READY =
   "RadioFoundry says its storage is not ready to save, and this firmware can't say why. Nothing was written.";
+
+export const RF_SETTINGS_STALE =
+  "Studio does not have a fresh read of this radio's settings area for this write, so it will not merge channel tags. Nothing was written.";
+
+export const RF_SETTINGS_NEWER =
+  "This radio's settings area is a newer version than Studio can merge, so the write stopped. Nothing was written.";
+
+export const RF_SETTINGS_STALE_KEY = 'rf-settings-stale';
+export const RF_SETTINGS_NEWER_KEY = 'rf-settings-newer';
+export const RF_SETTINGS_OVERFLOW_KEY = 'rf-settings-overflow';
 
 const CODEPLUG_OP_NAMES: Record<number, string> = {
   [OP_INFO]: 'INFO',
@@ -236,6 +253,9 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
   /** Per-block SUMS metadata from the last download; used when a write skips READ on owned blocks. */
   private blockSums: Map<number, BlockSum> | null = null;
   private armed: RadioFoundryWriteSource | null = null;
+  /** Settings sector from a CRC-checked read in this write attempt. Never a synthesised block. */
+  private settingsSector: Uint8Array | null = null;
+  private settingsFresh = false;
   private version: RadioFoundryBuildIdentity | null = null;
   private infoReplyBody: Uint8Array | null = null;
   private connectVersionText: string | null = null;
@@ -318,8 +338,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.seq = 1;
     this.info = null;
     this.version = null;
-    this.readBlocks = null;
-    this.blockSums = null;
+    this.invalidateReadCache();
     this.infoReplyBody = null;
     this.connectVersionText = null;
     try {
@@ -371,8 +390,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.pipe = null;
     this.info = null;
     this.version = null;
-    this.readBlocks = null;
-    this.blockSums = null;
+    this.invalidateReadCache();
     this.armed = null;
     this.infoReplyBody = null;
     this.connectVersionText = null;
@@ -414,6 +432,33 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       }
     }
     this.armed = source;
+    // A new write attempt must not reuse a settings sector from an earlier read.
+    this.forgetSettings();
+  }
+
+  /**
+   * Re-read block 0xE000 when this write merges settings and the sector is not
+   * fresh. A fully owned block can be synthesised; this one never is.
+   */
+  async refreshSettingsForWrite(signal?: AbortSignal): Promise<void> {
+    if (!this.settingsEdit()) return;
+    if (this.settingsFresh && this.settingsSector) return;
+    if (!this.readBlocks) {
+      await this.download({ signal, progressStage: PRE_WRITE_STAGE });
+      return;
+    }
+    const addr = SETTINGS_AREA_ADDRESS;
+    const sums = await this.readSums([addr], signal);
+    const sum = sums.get(addr);
+    if (!sum) throw new RadioProtocolError(`No checksum for block ${hex(addr)}.`);
+    const block = sum.blank ? blankBlock() : await this.readBlock(addr, sum.crc, signal);
+    if (crc32Ieee(block) !== sum.crc) {
+      throw new RadioProtocolError(`Block ${hex(addr)} checksum does not match the radio.`);
+    }
+    this.readBlocks.set(addr, block);
+    if (!this.blockSums) this.blockSums = new Map();
+    this.blockSums.set(addr, sum);
+    this.rememberSettings(block);
   }
 
   armAssembled(assembled: AssembledBuild): RadioFoundryWriteSource {
@@ -512,6 +557,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     this.requireLink();
     const stage = opts.progressStage ?? 'Codeplug';
     const preWrite = this.armed != null && stage === PRE_WRITE_STAGE;
+    this.forgetSettings();
     const addresses = this.readAddresses();
     const sums = await this.readSums(addresses, opts.signal, {
       onProgress: opts.onProgress,
@@ -525,7 +571,8 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       const addr = addresses[i]!;
       const sum = sums.get(addr);
       if (!sum) throw new RadioProtocolError(`No checksum for block ${hex(addr)}.`);
-      const skipRead = preWrite && blockFullyOwned(addr, this.armed!);
+      const skipRead =
+        preWrite && addr !== SETTINGS_AREA_ADDRESS && blockFullyOwned(addr, this.armed!);
       let block: Uint8Array;
       if (skipRead) {
         const seed = sum.blank ? blankBlock() : new Uint8Array(BLOCK_SIZE).fill(0xff);
@@ -535,6 +582,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
         if (crc32Ieee(block) !== sum.crc) {
           throw new RadioProtocolError(`Block ${hex(addr)} checksum does not match the radio.`);
         }
+        if (addr === SETTINGS_AREA_ADDRESS) this.rememberSettings(block);
       }
       blocks.set(addr, block);
       if (addr < RADIOFOUNDRY_IMAGE_SIZE) {
@@ -558,6 +606,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
 
   /** Image the next upload would send: radio bytes, with owned addresses replaced. */
   overlayWriteImage(): MemoryMap {
+    this.assertSettingsWritable();
     const blocks = this.requireReadBlocks();
     const source = this.requireArmed();
     const image = new Uint8Array(RADIOFOUNDRY_IMAGE_SIZE);
@@ -572,6 +621,8 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       const n = Math.min(BLOCK_SIZE, RADIOFOUNDRY_IMAGE_SIZE - addr);
       image.set(merged.subarray(0, n), addr);
     }
+    const merge = this.peekSettingsMerge();
+    if (merge.status === 'written') image.set(merge.sector, SETTINGS_AREA_ADDRESS);
     return memoryMapFromBytes(image);
   }
 
@@ -593,6 +644,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
     if (!this.readBlocks) {
       await this.download({ ...opts, progressStage: PRE_WRITE_STAGE });
     }
+    this.assertSettingsWritable();
     const jobs = this.changedBlocks();
     if (this.privateContactTableMatches(jobs)) {
       // A note, not progress: cur 0 so the forward-only stage cursor does not mark the block
@@ -615,7 +667,12 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
         opts.signal,
       );
     }
-    await this.request(OP_BEGIN, Uint8Array.of(MODE_DIRECT), 2000);
+    try {
+      await this.request(OP_BEGIN, Uint8Array.of(MODE_DIRECT), 2000);
+    } catch (err) {
+      this.invalidateReadCache();
+      throw err;
+    }
     try {
       for (let i = 0; i < jobs.length; i += 1) {
         const job = jobs[i]!;
@@ -633,6 +690,7 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       }
     } catch (err) {
       await this.request(OP_ABORT, new Uint8Array(0), 2000).catch(() => undefined);
+      this.invalidateReadCache();
       throw err;
     }
     reportProgress(
@@ -640,9 +698,13 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       { cur: 1, max: 1, stage: COMMIT_STAGE, msg: 'Committing codeplug' },
       opts.signal,
     );
-    await this.request(OP_COMMIT, new Uint8Array(0), 20000);
-    this.readBlocks = null;
-    this.blockSums = null;
+    try {
+      await this.request(OP_COMMIT, new Uint8Array(0), 20000);
+    } catch (err) {
+      this.invalidateReadCache();
+      throw err;
+    }
+    this.invalidateReadCache();
   }
 
   decodeChannels(image: MemoryMap): RadioChannelDto[] {
@@ -701,7 +763,92 @@ export class RadioFoundryCableProtocol implements CloneImageRadio {
       const want = mergeBlock(radio, addr, source);
       if (!sameBytes(want, radio)) jobs.push({ addr, data: want });
     }
+    const merge = this.peekSettingsMerge();
+    if (merge.status === 'written') {
+      jobs.push({ addr: SETTINGS_AREA_ADDRESS, data: merge.sector });
+    }
     return jobs;
+  }
+
+  private settingsEdit(): RadioFoundrySettingsEdit | null {
+    const source = this.armed;
+    if (!source) return null;
+    const owns = source.settings
+      ? source.settings.ownsChannelTable
+      : radioFoundryWriteOwnsChannelTable(source.owned);
+    const callsign = source.settings?.callsignRecord;
+    if (!owns && !callsign) return null;
+    const radioWide = callsign
+      ? new Map<number, SettingsAreaHeadWrite>([
+          [M17_RADIO_WIDE_KEY, { value: callsign, head: true }],
+        ])
+      : undefined;
+    return {
+      ownsChannelTable: owns,
+      ...(owns ? { channelTags: source.settings?.channelTags ?? new Map() } : {}),
+      ...(radioWide ? { radioWide } : {}),
+    };
+  }
+
+  private peekSettingsMerge():
+    | { status: 'skip' }
+    | { status: 'missing' }
+    | { status: 'unchanged' }
+    | { status: 'written'; sector: Uint8Array }
+    | { status: 'refused'; reason: 'newer' }
+    | { status: 'refused'; reason: 'overflow'; overflowBytes: number } {
+    const edit = this.settingsEdit();
+    if (!edit) return { status: 'skip' };
+    if (!this.settingsFresh || !this.settingsSector) return { status: 'missing' };
+    if (readRadioFoundrySettingsArea(this.settingsSector).state === 'newer') {
+      return { status: 'refused', reason: 'newer' };
+    }
+    const merged = mergeRadioFoundrySettingsArea(this.settingsSector, edit);
+    if (merged.status === 'unchanged') return { status: 'unchanged' };
+    if (merged.status === 'refused') return merged;
+    return { status: 'written', sector: merged.sector };
+  }
+
+  /** Refusals here are before BEGIN: nothing of the write transaction is sent. */
+  private assertSettingsWritable(): void {
+    const merge = this.peekSettingsMerge();
+    if (merge.status === 'missing') {
+      throw adviseRadioError(new RadioInterlockError(RF_SETTINGS_STALE, RF_SETTINGS_STALE_KEY), {
+        retry: 'none',
+        sent: 'nothing-sent',
+      });
+    }
+    if (merge.status === 'refused' && merge.reason === 'newer') {
+      throw adviseRadioError(new RadioInterlockError(RF_SETTINGS_NEWER, RF_SETTINGS_NEWER_KEY), {
+        retry: 'none',
+        sent: 'nothing-sent',
+      });
+    }
+    if (merge.status === 'refused' && merge.reason === 'overflow') {
+      throw adviseRadioError(
+        new RadioInterlockError(
+          `These records do not fit in the radio's settings area (short by ${merge.overflowBytes} bytes), so the write stopped. Nothing was written.`,
+          RF_SETTINGS_OVERFLOW_KEY,
+        ),
+        { retry: 'none', sent: 'nothing-sent' },
+      );
+    }
+  }
+
+  private rememberSettings(block: Uint8Array): void {
+    this.settingsSector = block.subarray(0, SETTINGS_AREA_SIZE).slice();
+    this.settingsFresh = true;
+  }
+
+  private forgetSettings(): void {
+    this.settingsSector = null;
+    this.settingsFresh = false;
+  }
+
+  private invalidateReadCache(): void {
+    this.readBlocks = null;
+    this.blockSums = null;
+    this.forgetSettings();
   }
 
   private async readSums(

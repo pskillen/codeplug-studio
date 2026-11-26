@@ -147,7 +147,7 @@ function markOwned(owned: Uint8Array, offset: number, length: number): void {
   owned.fill(1, offset, offset + length);
 }
 
-const SETTINGS_AREA_KEPT_NOTE =
+export const SETTINGS_AREA_KEPT_NOTE =
   'This codeplug leaves the RadioFoundry settings area blank, so a radio keeps the one it has. ' +
   'Channel modes set on the radio (DMR Tier III, P25, NXDN) stay as they are, and come back on any channel ' +
   'written as receive-only DMR at the same number with the same name.';

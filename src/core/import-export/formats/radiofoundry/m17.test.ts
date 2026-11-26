@@ -238,6 +238,24 @@ describe('mergeRadioFoundrySettingsArea', () => {
     ]);
   });
 
+  it('replaces a channel tag that already uses that key, and leaves the same tag unchanged', () => {
+    const sector = sectorOf([[0x0400, [2, 0xff, 0, 0, 0]]]);
+    const tag = Uint8Array.of(6, 0xff, 0xa9, 0x18, 0x01, 3, 0, 0, 0, 0, 0, 0);
+    const replaced = mergeRadioFoundrySettingsArea(sector, {
+      ownsChannelTable: true,
+      channelTags: new Map([[1, tag]]),
+    });
+    expect(replaced.status).toBe('written');
+    if (replaced.status !== 'written') return;
+    expect(readEntries(replaced.sector)).toEqual([{ key: 0x0400, value: tag }]);
+    expect(
+      mergeRadioFoundrySettingsArea(replaced.sector, {
+        ownsChannelTable: true,
+        channelTags: new Map([[1, tag]]),
+      }).status,
+    ).toBe('unchanged');
+  });
+
   it('leaves channel tags in place when the write does not own the channel table', () => {
     const tag = [4, 0xff, 1, 2, 0];
     const sector = sectorOf([
