@@ -25,6 +25,7 @@ import {
   OP_BEGIN,
   OP_BLOCK,
   OP_READ,
+  OP_SUMS,
   PHYSICAL_CODEPLUG_BASE,
 } from './constants.ts';
 import { DM32UV_RADIOFOUNDRY_CABLE_BOARD } from './board.ts';
@@ -236,6 +237,7 @@ describe('RadioFoundry settings merge write', () => {
     const planned = proto.plannedBlockCounts();
     await proto.upload(ignoredImage(), {});
     const written = writtenBlocks(pipe);
+    expect(written).toContain(blockAddr);
     expect(written.indexOf(SETTINGS_AREA_ADDRESS)).toBeGreaterThan(written.indexOf(blockAddr));
     expect(written.length).toBe(planned?.write);
     expect([...overlay.subarray(SETTINGS_AREA_ADDRESS, SETTINGS_AREA_ADDRESS + 0x1000)]).toEqual([
@@ -300,7 +302,126 @@ describe('RadioFoundry settings merge write', () => {
       );
     expect(second).not.toContain(SETTINGS_AREA_ADDRESS);
   });
+
+  it('writes a new callsign before the kind-6 tag so the second serialised write is unchanged', async () => {
+    const source = radioFoundryWriteSourceFromAssembled(m17Assembled());
+    const { pipe, proto } = await connectScripted();
+    pipe.block(SETTINGS_AREA_ADDRESS).set(sector([{ key: 0x0003, value: Uint8Array.of(1) }]));
+    proto.armWriteSource(source);
+    await proto.download({ progressStage: 'Pre-write read' });
+    await proto.upload(ignoredImage(), {});
+    const first = readRadioFoundrySettingsArea(pipe.block(SETTINGS_AREA_ADDRESS)).entries.map(
+      (entry) => entry.key,
+    );
+    expect(first).toEqual([0x0003, 0x0a06, 0x0400]);
+    const from = pipe.writes.length;
+    await proto.upload(ignoredImage(), {});
+    const second = pipe.writes
+      .slice(from)
+      .map((frame) => decodeDebugFrame(frame))
+      .filter((frame) => frame.payload[0] === OP_BLOCK)
+      .map(
+        (frame) =>
+          frame.payload[1]! |
+          (frame.payload[2]! << 8) |
+          (frame.payload[3]! << 16) |
+          (frame.payload[4]! << 24),
+      );
+    expect(second).not.toContain(SETTINGS_AREA_ADDRESS);
+    expect(
+      readRadioFoundrySettingsArea(pipe.block(SETTINGS_AREA_ADDRESS)).entries.map(
+        (entry) => entry.key,
+      ),
+    ).toEqual(first);
+  });
+
+  it('re-reads only the settings block when a Read cache is already held', async () => {
+    const { pipe, proto } = await cachedReadThenArm();
+    const from = pipe.writes.length;
+    await proto.refreshSettingsForWrite();
+    expect(opAddresses(pipe, OP_SUMS, from)).toEqual([SETTINGS_AREA_ADDRESS]);
+    const reads = opAddresses(pipe, OP_READ, from);
+    expect(reads.length).toBeGreaterThan(0);
+    expect(reads.every((addr) => addr === SETTINGS_AREA_ADDRESS)).toBe(true);
+    expect(codeplugOps(pipe.writes, from)).not.toContain(OP_BEGIN);
+  });
+
+  it('stops a settings refresh on a checksum mismatch before BEGIN', async () => {
+    const { pipe, proto } = await cachedReadThenArm();
+    const inner = proto as unknown as {
+      readSums: (addresses: number[]) => Promise<Map<number, { crc: number; blank: boolean }>>;
+    };
+    const realReadSums = inner.readSums.bind(proto);
+    inner.readSums = async (addresses) => {
+      const sums = await realReadSums(addresses);
+      const entry = sums.get(SETTINGS_AREA_ADDRESS)!;
+      sums.set(SETTINGS_AREA_ADDRESS, { ...entry, crc: entry.crc ^ 0xfffffff });
+      return sums;
+    };
+    const from = pipe.writes.length;
+    await expect(proto.refreshSettingsForWrite()).rejects.toThrow(/checksum/);
+    expect(opAddresses(pipe, OP_SUMS, from)).toEqual([SETTINGS_AREA_ADDRESS]);
+    expect(codeplugOps(pipe.writes, from)).not.toContain(OP_BEGIN);
+    expect(codeplugOps(pipe.writes, from)).not.toContain(OP_BLOCK);
+  });
 });
+
+function opAddresses(pipe: ScriptedPipe, op: number, from = 0): number[] {
+  return pipe.writes
+    .slice(from)
+    .map((frame) => decodeDebugFrame(frame))
+    .filter((frame) => frame.payload[0] === op)
+    .map(
+      (frame) =>
+        frame.payload[1]! |
+        (frame.payload[2]! << 8) |
+        (frame.payload[3]! << 16) |
+        (frame.payload[4]! << 24),
+    );
+}
+
+/** A finished Read, then arm, so refresh takes the partial 0xE000 path. */
+async function cachedReadThenArm(): Promise<{
+  pipe: ScriptedPipe;
+  proto: RadioFoundryCableProtocol;
+}> {
+  const pipe = new ScriptedPipe(0xff);
+  pipe.block(SETTINGS_AREA_ADDRESS).set(sector([{ key: 0x0003, value: Uint8Array.of(1) }]));
+  const proto = new RadioFoundryCableProtocol(DM32UV_RADIOFOUNDRY_CABLE_BOARD, {
+    pause: async () => {},
+  });
+  await proto.connect(pipe);
+  await proto.download({});
+  proto.armWriteSource(mergingSource());
+  return { pipe, proto };
+}
+
+function m17Assembled(): AssembledBuild {
+  const entity: Channel = {
+    ...newChannel('p', 'Echo'),
+    rxFrequency: 145_500_000,
+    txFrequency: 145_500_000,
+    primaryMode: 'm17',
+    modeProfiles: [{ mode: 'm17', can: 3, playEveryCan: true, destination: 'ECHO' }],
+  };
+  return {
+    buildId: 'b',
+    formatId: 'radiofoundry',
+    profileId: 'radiofoundry-dm32uv',
+    buildName: 'DM-32',
+    channels: [{ entity, wireName: 'Echo' }],
+    zones: [],
+    scanLists: [],
+    talkGroups: [],
+    digitalContacts: [],
+    analogContacts: [],
+    rxGroupLists: [],
+    ownDigitalIds: [
+      { ...newOwnDigitalId('p', 'dmr', 'MM9PDY', 2_351_234), isDefault: true },
+      { ...newOwnDigitalId('p', 'm17', 'AB1CD', 'AB1CD'), isDefault: true },
+    ],
+  };
+}
 
 function fmChannel(name: string): AssembledChannel {
   const entity: Channel = {

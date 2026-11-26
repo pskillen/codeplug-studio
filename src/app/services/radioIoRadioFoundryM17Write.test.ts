@@ -10,7 +10,10 @@ import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.t
 import { decodeDebugFrame } from '@integrations/radio-io/kit/codecs/radioFoundryDebugLink.ts';
 import { createRadioSession } from '@integrations/radio-io/kit/session.ts';
 import { DM32UV_RADIOFOUNDRY_CABLE_BOARD } from '@integrations/radio-io/radios/radiofoundry/board.ts';
-import { OP_BLOCK } from '@integrations/radio-io/radios/radiofoundry/constants.ts';
+import {
+  OP_BLOCK,
+  SETTINGS_AREA_ADDRESS,
+} from '@integrations/radio-io/radios/radiofoundry/constants.ts';
 import { DM32_RADIOFOUNDRY_DESCRIPTOR } from '@integrations/radio-io/radios/radiofoundry/descriptor.ts';
 import { RadioFoundryCableProtocol } from '@integrations/radio-io/radios/radiofoundry/protocol.ts';
 import { ScriptedPipe } from '@integrations/radio-io/radios/radiofoundry/protocol.test.ts';
@@ -24,9 +27,6 @@ import {
 } from '@integrations/radio-io/radios/radiofoundry/writeSource.ts';
 import { memoryMapFromBytes } from '@integrations/radio-io/kit/memoryMap.ts';
 import { uploadPreparedRadioWrite } from './radioIoSession.ts';
-
-/** Image offset of the RadioFoundry settings sector. The cable merge writes this block. */
-const SETTINGS_BLOCK = 0xe000;
 
 function m17Assembled(): AssembledBuild {
   const profile: ChannelModeProfileM17 = {
@@ -62,6 +62,16 @@ function m17Assembled(): AssembledBuild {
   };
 }
 
+function containsBytes(haystack: Uint8Array, needle: readonly number[]): boolean {
+  outer: for (let i = 0; i + needle.length <= haystack.length; i += 1) {
+    for (let j = 0; j < needle.length; j += 1) {
+      if (haystack[i + j] !== needle[j]) continue outer;
+    }
+    return true;
+  }
+  return false;
+}
+
 function writtenSettings(pipe: ScriptedPipe): boolean {
   return pipe.writes.some((frame) => {
     const decoded = decodeDebugFrame(frame);
@@ -71,7 +81,7 @@ function writtenSettings(pipe: ScriptedPipe): boolean {
       (decoded.payload[2]! << 8) |
       (decoded.payload[3]! << 16) |
       (decoded.payload[4]! << 24);
-    return addr === SETTINGS_BLOCK;
+    return addr === SETTINGS_AREA_ADDRESS;
   });
 }
 
@@ -120,9 +130,16 @@ describe('RadioFoundry M17 cable write session', () => {
       },
     });
     expect(writtenSettings(pipe)).toBe(true);
-    expect([...pipe.block(SETTINGS_BLOCK)]).toEqual([...unitPipe.block(SETTINGS_BLOCK)]);
-    expect([...pipe.block(SETTINGS_BLOCK)]).toEqual([
-      ...overlay.bytes.subarray(SETTINGS_BLOCK, SETTINGS_BLOCK + 0x1000),
+    expect([...pipe.block(SETTINGS_AREA_ADDRESS)]).toEqual([
+      ...unitPipe.block(SETTINGS_AREA_ADDRESS),
     ]);
+    expect([...pipe.block(SETTINGS_AREA_ADDRESS)]).toEqual([
+      ...overlay.bytes.subarray(SETTINGS_AREA_ADDRESS, SETTINGS_AREA_ADDRESS + 0x1000),
+    ]);
+    const written = pipe.block(SETTINGS_AREA_ADDRESS);
+    expect(containsBytes(written, [0x13, 0x00, 0x00, 0x00, 0x0e, 0xd8, 0x7d])).toBe(true);
+    expect(
+      containsBytes(written, [0x41, 0x42, 0x31, 0x43, 0x44, 0x00, 0x00, 0x00, 0x00, 0x00]),
+    ).toBe(true);
   }, 60_000);
 });
