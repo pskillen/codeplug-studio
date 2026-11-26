@@ -29,7 +29,7 @@ export interface RadioFoundrySettingsEdit {
   ownsChannelTable: boolean;
   /** Channel number (1–1024) → full tag value. Applied only when `ownsChannelTable`. */
   channelTags?: ReadonlyMap<number, Uint8Array>;
-  /** Non-channel keys to set. A missing key is appended. */
+  /** Non-channel keys to set. A missing key is appended before channel tags. */
   radioWide?: ReadonlyMap<number, SettingsAreaHeadWrite>;
 }
 
@@ -110,6 +110,14 @@ function mergedEntries(
         : { key: entry.key, value: copyBytes(entry.value) },
     );
   }
+  // New radio-wide keys precede Studio's tags, so a second write of the same
+  // codeplug keeps this order and compares unchanged.
+  const appended = [...radioWide.entries()].sort((a, b) => a[0] - b[0]);
+  for (const [key, write] of appended) {
+    if (seen.has(key) || isChannelTagKey(key)) continue;
+    seen.add(key);
+    entries.push({ key, value: copyBytes(write.value) });
+  }
   if (edit.ownsChannelTable) {
     const tags = [...(edit.channelTags ?? new Map<number, Uint8Array>()).entries()].sort(
       (a, b) => a[0] - b[0],
@@ -120,11 +128,6 @@ function mergedEntries(
       seen.add(key);
       entries.push({ key, value: copyBytes(value) });
     }
-  }
-  const appended = [...radioWide.entries()].sort((a, b) => a[0] - b[0]);
-  for (const [key, write] of appended) {
-    if (seen.has(key) || isChannelTagKey(key)) continue;
-    entries.push({ key, value: copyBytes(write.value) });
   }
   return entries;
 }

@@ -13,6 +13,7 @@ import { SETTINGS_AREA_SIZE } from './layout.ts';
 import {
   decodeM17CallsignRecord,
   decodeM17ChannelBlock,
+  decodeM17Destination,
   describeRadioFoundrySettingsEntry,
   encodeM17CallsignRecord,
   encodeM17ChannelBlock,
@@ -119,6 +120,12 @@ describe('M17 channel-mode vectors', () => {
     const m = /^m17call (-|[0-9A-Fa-f]+) (-|[^\s]+)(?: (.*))?$/.exec(line)!;
     const callsign = resolveM17Callsign(hexToBytes(m[1]!), m[3] ?? '');
     expect(callsign ?? '-').toBe(m[2]);
+  });
+});
+
+describe('M17 destination text', () => {
+  it('trims a leading space so value 40 reads as A', () => {
+    expect(decodeM17Destination(Uint8Array.of(0x00, 0x00, 0x00, 0x00, 0x00, 40))).toBe('A');
   });
 });
 

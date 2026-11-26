@@ -292,7 +292,7 @@ export interface RadioDescriptor {
       profileId: string;
       parts: RadioPlanContext['parts'];
       signal?: AbortSignal;
-      /** RadioFoundry: this write includes M17 channels, for the parked-firmware note. */
+      /** This write includes a channel with an M17 mode profile. */
       includesM17?: boolean;
     },
   ): Promise<RadioPreflightResult>;

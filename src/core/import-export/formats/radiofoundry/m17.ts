@@ -79,7 +79,7 @@ function destinationText(value: number): string {
     text += BASE40[n % 40]!;
     n = Math.floor(n / 40);
   }
-  return text.replace(/ +$/, '');
+  return text.trim();
 }
 
 /**

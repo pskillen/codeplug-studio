@@ -1053,9 +1053,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
             profileId: egress.profileId,
             parts: p,
             signal,
-            includesM17: Boolean(
-              p.codeplug && (prepared?.radioFoundryWrite?.settings?.channelTags.size ?? 0) > 0,
-            ),
+            includesM17: Boolean(p.codeplug && prepared?.includesM17),
           })
         : {
             identity: { model: descriptor?.label ?? '' },
