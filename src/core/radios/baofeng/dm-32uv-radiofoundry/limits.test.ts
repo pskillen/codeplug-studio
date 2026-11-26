@@ -38,6 +38,6 @@ describe('DM32UV_RADIOFOUNDRY_BOARD', () => {
     expect(
       caps!.frequencyRanges.map((r) => [Math.round(r.minMhz * 1e6), Math.round(r.maxMhz * 1e6)]),
     ).toEqual(DM32UV_RADIOFOUNDRY_BOARD.BANDS_HZ.map((b) => [b.minHz, b.maxHz]));
-    expect(caps!.supportedModes).toEqual(['fm', 'dmr']);
+    expect(caps!.supportedModes).toEqual(['fm', 'dmr', 'm17']);
   });
 });

@@ -16,6 +16,7 @@ import type { AssembledBuild, AssembledChannel, AssembledZone } from '@core/serv
 import type {
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
+  ChannelModeProfileM17,
   NumericOwnDigitalId,
   OwnDigitalId,
 } from '@core/models/library.ts';
@@ -25,17 +26,31 @@ import {
   type TalkGroupTimeslotCloneIndex,
 } from '@core/import-export/channelExpansion/talkGroupTimeslotClones.ts';
 import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
+import { isM17Can } from '@core/domain/m17Address.ts';
+import { defaultOwnDigitalId } from '@core/domain/ownDigitalIds.ts';
 import {
   RADIOFOUNDRY_LIMITS,
   formatRadioFoundryBands,
   isInRadioFoundryBand,
   type RadioFoundryBand,
 } from '@core/radios/radiofoundry/limits.ts';
+import {
+  RADIOFOUNDRY_M17_CAN_NOTE,
+  RADIOFOUNDRY_M17_CAN_ON_AIR,
+} from '@core/radios/radiofoundry/firmware.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import { expandRadioFoundryChannelWireRows } from './radiofoundryExportModes.ts';
 import { resolveRadioFoundryProfile, type RadioFoundryRadioProfile } from './profiles.ts';
 import { radioFoundryLevelToByte } from './power.ts';
+import { RADIOFOUNDRY_KIND_M17, writeRadioFoundryChannelTag } from './channelTags.ts';
+import {
+  encodeM17CallsignRecord,
+  encodeM17ChannelBlock,
+  M17_RADIO_WIDE_KEY,
+  m17CallsignFromRadioName,
+} from './m17.ts';
+import { encodeRadioFoundrySettingsSector, type SettingsAreaValue } from './settingsAreaWrite.ts';
 import {
   pushGeneralInfoWarning,
   pushGeneralWarning,
@@ -58,6 +73,7 @@ import {
   GENERAL_SETTINGS,
   PER_CHANNEL_DMR_ID_MAX,
   RADIOFOUNDRY_IMAGE_SIZE,
+  SETTINGS_AREA_ADDRESS,
   RX_LIST_BASE,
   RX_LIST_LENGTH,
   RX_LIST_LENGTH_SIZE,
@@ -78,20 +94,32 @@ export class RadioFoundryExportError extends Error {
   }
 }
 
+/** Tags and the radio-wide callsign for M17 rows that survived overrides and the cap. */
+export interface RadioFoundryM17SettingsIntent {
+  /** Channel number → full tag value. */
+  channelTags: ReadonlyMap<number, Uint8Array>;
+  /** 10-byte 0x0A06. Absent leaves the radio's record. */
+  callsignRecord?: Uint8Array;
+}
+
 export interface RadioFoundryImage {
   bytes: Uint8Array;
   /**
    * 1 where this serialiser stored a byte, 0 where the image is still the
    * initial 0xFF hole. A cable write may replace only the owned addresses.
+   * The settings area stays unowned: a file export may fill the bytes, and
+   * the cable write merges them later.
    */
   owned: Uint8Array;
   warnings: ExportWarning[];
+  /** Set when this image wrote at least one M17 channel. Absent from the cable bytes. */
+  m17Settings?: RadioFoundryM17SettingsIntent;
 }
 
-type KeptMode = 'fm' | 'dmr';
+type KeptMode = 'fm' | 'dmr' | 'm17';
 
 function asKeptMode(mode: string): KeptMode | null {
-  if (mode === 'fm' || mode === 'dmr') return mode;
+  if (mode === 'fm' || mode === 'dmr' || mode === 'm17') return mode;
   return null;
 }
 
@@ -173,13 +201,19 @@ export function serialiseRadioFoundryCodeplugWithProfile(
     options,
     codec,
   );
-  writeZones(image, owned, assembled, channels, warnings);
+  writeZones(image, owned, assembled, channels.numbers, warnings);
   writeAprs(image, owned, assembled, warnings);
   warnScanLists(assembled, warnings);
-  // 0xE000-0xEFFF (the settings area) stays 0xFF and unowned: the radio keeps the area it has.
+  // 0xE000-0xEFFF stays 0xFF and unowned. A file export fills it when M17 rows exist.
   pushGeneralInfoWarning(warnings, SETTINGS_AREA_KEPT_NOTE);
+  const m17Settings = m17SettingsIntent(
+    image,
+    assembled.ownDigitalIds ?? [],
+    channels.m17Tags,
+    warnings,
+  );
 
-  return { bytes: image, owned, warnings };
+  return { bytes: image, owned, warnings, ...(m17Settings ? { m17Settings } : {}) };
 }
 
 function requireDefaultDmrId(ids: readonly OwnDigitalId[] | undefined): NumericOwnDigitalId {
@@ -227,7 +261,7 @@ function writeChannels(
   warnings: ExportWarning[],
   options: CpsExportOptions | undefined,
   codec: RadioFoundryRadioProfile,
-): Map<string, number[]> {
+): { numbers: Map<string, number[]>; m17Tags: Map<number, Uint8Array> } {
   zeroChannelBitmaps(image, owned);
   const expandModes = options?.expandModes ?? true;
   const profileId = options?.profileId ?? assembled.profileId ?? codec.id;
@@ -278,6 +312,7 @@ function writeChannels(
   }
 
   const numbers = new Map<string, number[]>();
+  const m17Tags = new Map<number, Uint8Array>();
   let channelNumber = 0;
   for (const item of pending) {
     channelNumber += 1;
@@ -302,40 +337,43 @@ function writeChannels(
       warnings,
       options,
       codec,
+      m17Tags,
     );
     markInUse(image, channel.number);
   }
-  return numbers;
+  return { numbers, m17Tags };
 }
 
 function selectMode(row: AssembledChannel, warnings: ExportWarning[]): KeptMode | null {
   const channel = row.entity;
   const label = row.wireName || channel.name;
   const supported = channel.modeProfiles.filter(
-    (profile): profile is ChannelModeProfileAnalog | ChannelModeProfileDMR =>
-      profile.mode === 'fm' || profile.mode === 'dmr',
+    (profile) => profile.mode === 'fm' || profile.mode === 'dmr' || profile.mode === 'm17',
   );
   if (supported.length === 0) {
     pushGeneralWarning(
       warnings,
-      `Channel "${label}" was dropped. This codeplug stores FM and DMR only.`,
+      `Channel "${label}" was dropped. This codeplug stores FM, DMR and M17 only.`,
     );
     return null;
   }
   for (const profile of channel.modeProfiles) {
-    if (profile.mode === 'fm' || profile.mode === 'dmr') continue;
+    if (profile.mode === 'fm' || profile.mode === 'dmr' || profile.mode === 'm17') continue;
     pushGeneralInfoWarning(
       warnings,
-      `Channel "${label}" mode ${profile.mode} was dropped. This codeplug stores FM and DMR only.`,
+      `Channel "${label}" mode ${profile.mode} was dropped. This codeplug stores FM, DMR and M17 only.`,
     );
   }
   if (supported.length === 1) return asKeptMode(supported[0]!.mode);
+  const primary = supported.find((profile) => profile.mode === channel.primaryMode);
   let kept: KeptMode = 'dmr';
-  if (channel.primaryMode === 'fm') kept = 'fm';
-  pushGeneralInfoWarning(
-    warnings,
-    `Channel "${label}" has more than one mode; kept ${kept === 'dmr' ? 'DMR' : 'FM'}.`,
-  );
+  if (primary?.mode === 'fm' || primary?.mode === 'dmr' || primary?.mode === 'm17') {
+    kept = primary.mode;
+  } else if (!supported.some((profile) => profile.mode === 'dmr')) {
+    kept = supported.some((profile) => profile.mode === 'fm') ? 'fm' : 'm17';
+  }
+  const keptLabel = kept === 'dmr' ? 'DMR' : kept === 'fm' ? 'FM' : 'M17';
+  pushGeneralInfoWarning(warnings, `Channel "${label}" has more than one mode; kept ${keptLabel}.`);
   return kept;
 }
 
@@ -350,6 +388,7 @@ function writeChannelRecord(
   warnings: ExportWarning[],
   options: CpsExportOptions | undefined,
   codec: RadioFoundryRadioProfile,
+  m17Tags: Map<number, Uint8Array>,
 ): void {
   const { row, mode } = channel;
   const entity = row.entity;
@@ -377,7 +416,7 @@ function writeChannelRecord(
     warnings,
     codec.board.BANDS_HZ,
   );
-  record[0x18] = mode === 'dmr' ? 1 : 0;
+  record[0x18] = mode === 'fm' ? 0 : 1;
   record[0x19] = radioFoundryPowerByte(entity.power, codec.board.POWER_LEVELS);
   record[0x1b] = 0;
   record[0x20] = 0xff;
@@ -386,7 +425,7 @@ function writeChannelRecord(
   record[0x23] = 0xff;
   record[0x26] = 0;
   record[0x27] = 0x00;
-  record[0x28] = 0x16;
+  record[0x28] = mode === 'm17' ? 0x00 : 0x16;
   record[0x29] = 0x00;
   record[0x33] = 0;
   record[0x37] = 0;
@@ -409,6 +448,150 @@ function writeChannelRecord(
     );
   }
   writeSharedChannelFields(record, channel, options);
+  if (mode === 'm17' && profile?.mode === 'm17') {
+    writeM17StandIn(record);
+    m17Tags.set(
+      channel.number,
+      writeRadioFoundryChannelTag({
+        kind: RADIOFOUNDRY_KIND_M17,
+        system: null,
+        storedName: record.subarray(0, 16),
+        txAllowed:
+          resolveEffectiveForbidTransmit(entity, options?.channelBehaviourContext) !== 'forbid',
+        block: m17ParameterBlock(profile, label, warnings),
+      }),
+    );
+  }
+}
+
+/** DMR, receive-only, 12.5 kHz, and no DMR contact, list, colour code, timeslot or per-channel ID. */
+function writeM17StandIn(record: Uint8Array): void {
+  record[0x18] = 1;
+  record[0x27] = 0;
+  record[0x28] = 0;
+  record[0x29] = 0;
+  record[0x2b] = 0;
+  record[0x2c] = 0;
+  record[0x2e] = 0;
+  record[0x2f] = 0;
+  record[0x30] = 0;
+  record[0x31] = 0;
+  record[0x33] = (record[0x33]! | 0x04) & ~0x02;
+}
+
+function m17ParameterBlock(
+  profile: ChannelModeProfileM17,
+  label: string,
+  warnings: ExportWarning[],
+): Uint8Array {
+  const can = profile.can == null ? 0 : profile.can;
+  const storedCan = isM17Can(can) ? can : 0;
+  if (storedCan !== can) {
+    pushGeneralWarning(
+      warnings,
+      `Channel "${label}" CAN ${can} is outside 0-15 and was written as ${storedCan}.`,
+    );
+  }
+  const destination = profile.destination ?? '';
+  const block = encodeM17ChannelBlock(storedCan, profile.playEveryCan !== true, destination);
+  if (block) return block;
+  pushGeneralWarning(
+    warnings,
+    `Channel "${label}" destination "${destination}" is not an M17 address and was written as ALL.`,
+  );
+  return encodeM17ChannelBlock(storedCan, profile.playEveryCan !== true, '')!;
+}
+
+function storedRadioName(image: Uint8Array): string {
+  const field = image.subarray(GENERAL_SETTINGS, GENERAL_SETTINGS + LIMITS.RADIO_NAME_MAX);
+  let end = field.length;
+  for (let i = 0; i < field.length; i += 1) {
+    if (field[i] === 0x00 || field[i] === 0xff) {
+      end = i;
+      break;
+    }
+  }
+  return new TextDecoder().decode(field.subarray(0, end));
+}
+
+const M17_CALLSIGN_OVERRIDE = "The radio's own settings can override it.";
+
+function m17SettingsIntent(
+  image: Uint8Array,
+  ids: readonly OwnDigitalId[],
+  tags: ReadonlyMap<number, Uint8Array>,
+  warnings: ExportWarning[],
+): RadioFoundryM17SettingsIntent | undefined {
+  if (tags.size === 0) return undefined;
+  if (!RADIOFOUNDRY_M17_CAN_ON_AIR) pushGeneralInfoWarning(warnings, RADIOFOUNDRY_M17_CAN_NOTE);
+  const intent: RadioFoundryM17SettingsIntent = { channelTags: tags };
+  const callsign = defaultOwnDigitalId(ids, 'm17');
+  if (callsign) {
+    const record = encodeM17CallsignRecord(callsign.callsign);
+    if (record) intent.callsignRecord = record;
+    else {
+      pushGeneralWarning(
+        warnings,
+        `The default M17 callsign "${callsign.callsign}" cannot be stored, so the radio keeps its own. ${M17_CALLSIGN_OVERRIDE}`,
+      );
+    }
+    return intent;
+  }
+  const fallback = m17CallsignFromRadioName(storedRadioName(image));
+  if (fallback) {
+    pushGeneralInfoWarning(
+      warnings,
+      `No default M17 callsign is set. This radio's name gives ${fallback}. ${M17_CALLSIGN_OVERRIDE}`,
+    );
+  } else {
+    pushGeneralWarning(
+      warnings,
+      `No default M17 callsign is set, and this radio's name is not a valid M17 callsign, so the radio refuses M17 voice and packet. ${M17_CALLSIGN_OVERRIDE}`,
+    );
+  }
+  return intent;
+}
+
+export const RADIOFOUNDRY_FILE_SETTINGS_REPLACED =
+  'Writing this file to a radio replaces its settings area: other channel modes, tones, systems and keys set on the radio are lost. Use Write to radio to keep them.';
+
+export const RADIOFOUNDRY_M17_FIRMWARE_NOTE =
+  'M17 runs only on a firmware build that includes M17. Voice is not part of this firmware yet.';
+
+/**
+ * File export only. Copies the base image and, when it has M17 rows, writes a
+ * fresh settings sector. The ownership mask stays clear, so a cable write of
+ * the base image never sends that sector or these file-only warnings.
+ */
+export function materialiseRadioFoundryFileExport(image: RadioFoundryImage): RadioFoundryImage {
+  if (!image.m17Settings) return image;
+  const entries: SettingsAreaValue[] = [...image.m17Settings.channelTags.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([channelNumber, value]) => ({
+      key: 0x0400 + channelNumber - 1,
+      value,
+    }));
+  if (image.m17Settings.callsignRecord) {
+    entries.push({ key: M17_RADIO_WIDE_KEY, value: image.m17Settings.callsignRecord });
+  }
+  const encoded = encodeRadioFoundrySettingsSector(entries);
+  if (!encoded.ok) {
+    const warnings = [...image.warnings];
+    pushGeneralInfoWarning(warnings, RADIOFOUNDRY_M17_FIRMWARE_NOTE);
+    pushGeneralWarning(
+      warnings,
+      `The RadioFoundry settings area cannot hold these M17 records (short by ${encoded.overflowBytes} bytes). The file leaves that area blank.`,
+    );
+    return { ...image, warnings };
+  }
+  const warnings = image.warnings.filter(
+    (warning) => !(warning.kind === 'general' && warning.message === SETTINGS_AREA_KEPT_NOTE),
+  );
+  pushGeneralInfoWarning(warnings, RADIOFOUNDRY_M17_FIRMWARE_NOTE);
+  const bytes = image.bytes.slice();
+  bytes.set(encoded.sector, SETTINGS_AREA_ADDRESS);
+  pushGeneralWarning(warnings, RADIOFOUNDRY_FILE_SETTINGS_REPLACED);
+  return { ...image, bytes, warnings };
 }
 
 function writeAnalogChannel(

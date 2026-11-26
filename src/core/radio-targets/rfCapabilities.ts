@@ -80,16 +80,17 @@ const DM32UV: RadioRfCapabilities = {
   ],
 };
 
-/** RadioFoundry: FM and conventional DMR on the board's bands, transmit allowed. */
+/** RadioFoundry: FM, conventional DMR and M17 on the board's bands, transmit allowed. */
 function radioFoundryRf(
   radioTargetId: string,
   board: RadioFoundryBoardLimits,
 ): RadioRfCapabilities {
+  const modes = ['fm', 'dmr', 'm17'] as const;
   return {
     radioTargetId,
-    supportedModes: ['fm', 'dmr'],
+    supportedModes: modes,
     frequencyRanges: board.BANDS_HZ.map((band) =>
-      range(band.minHz / 1_000_000, band.maxHz / 1_000_000, ['fm', 'dmr']),
+      range(band.minHz / 1_000_000, band.maxHz / 1_000_000, modes),
     ),
   };
 }

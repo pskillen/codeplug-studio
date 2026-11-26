@@ -2,19 +2,20 @@
 
 ## RF / modes
 
-| Capability  | Support |
-| ----------- | ------- |
-| DMR digital | Yes     |
-| Analogue FM | Yes     |
+| Capability  | Support                                                                                                          |
+| ----------- | ---------------------------------------------------------------------------------------------------------------- |
+| DMR digital | Yes                                                                                                              |
+| Analogue FM | Yes                                                                                                              |
+| M17         | Yes. The channel stores a CAN and a destination. Sending the CAN on air, and filtering on it, are still pending. |
 
-Studio writes only FM and conventional DMR to this radio.
+Studio writes FM, conventional DMR and M17 to this radio.
 
 ### Frequency ranges (Studio eligibility)
 
-| Band (MHz) | Modes   | TX  |
-| ---------- | ------- | --- |
-| 136–174    | FM, DMR | Yes |
-| 400–480    | FM, DMR | Yes |
+| Band (MHz) | Modes        | TX  |
+| ---------- | ------------ | --- |
+| 136–174    | FM, DMR, M17 | Yes |
+| 400–480    | FM, DMR, M17 | Yes |
 
 Source: [limits.md](limits.md) and `src/core/radio-targets/rfCapabilities.ts`.
 
