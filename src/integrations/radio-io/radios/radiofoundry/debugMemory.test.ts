@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { newChannel, newOwnDigitalId } from '@core/domain/factories.ts';
+import type { Channel, ChannelModeProfileM17 } from '@core/models/library.ts';
 import { RADIOFOUNDRY_IMAGE_SIZE } from '@core/import-export/formats/radiofoundry/layout.ts';
+import {
+  materialiseRadioFoundryFileExport,
+  serialiseRadioFoundryCodeplug,
+} from '@core/import-export/formats/radiofoundry/serialise.ts';
+import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { FLASH_IMAGE_START } from './constants.ts';
 import { RADIOFOUNDRY_REGION } from './debugCapture.ts';
 import {
+  archiveFromRadioFoundryImage,
   radioFoundryMemoryAssembled,
   radioFoundryMemoryFixtureArchive,
 } from './__fixtures__/debugMemoryArchive.ts';
@@ -41,6 +49,51 @@ describe('projectRadioFoundryMemory', () => {
     expect(view.result.digitalContacts).toHaveLength(1);
     expect(view.result.rxGroupLists).toHaveLength(1);
     expect(view.result.ownDigitalIds).toHaveLength(1);
+  });
+
+  it('shows a parsed M17 channel and callsign from the settings sector', () => {
+    const profile: ChannelModeProfileM17 = {
+      mode: 'm17',
+      can: 3,
+      playEveryCan: true,
+      destination: 'ECHO',
+    };
+    const entity: Channel = {
+      ...newChannel('p', 'Echo'),
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      primaryMode: 'm17',
+      modeProfiles: [profile],
+    };
+    const channel: AssembledChannel = { entity, wireName: 'Echo' };
+    const assembled: AssembledBuild = {
+      buildId: 'b',
+      formatId: 'radiofoundry',
+      profileId: 'radiofoundry-dm32uv',
+      buildName: 'DM-32',
+      channels: [channel],
+      zones: [],
+      scanLists: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      ownDigitalIds: [
+        { ...newOwnDigitalId('p', 'dmr', 'MM9PDY', 2_351_234), isDefault: true },
+        { ...newOwnDigitalId('p', 'm17', 'AB1CD', 'AB1CD'), isDefault: true },
+      ],
+    };
+    const file = materialiseRadioFoundryFileExport(serialiseRadioFoundryCodeplug(assembled));
+    const view = projectRadioFoundryMemory(archiveFromRadioFoundryImage(file.bytes));
+    expect(view.status).toBe('ok');
+    if (view.status !== 'ok') return;
+    expect(view.result.channels[0]).toMatchObject({
+      primaryMode: 'm17',
+      modeProfiles: [{ mode: 'm17', can: 3, playEveryCan: true, destination: 'ECHO' }],
+    });
+    expect(view.result.ownDigitalIds.find((row) => row.protocol === 'm17')).toMatchObject({
+      callsign: 'AB1CD',
+    });
   });
 
   it('reports not-captured when flash-image is missing', () => {

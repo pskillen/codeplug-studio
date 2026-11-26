@@ -13,6 +13,7 @@ import { SETTINGS_AREA_SIZE } from './layout.ts';
 import {
   decodeM17CallsignRecord,
   decodeM17ChannelBlock,
+  describeRadioFoundrySettingsEntry,
   encodeM17CallsignRecord,
   encodeM17ChannelBlock,
   encodeM17Destination,
@@ -122,6 +123,35 @@ describe('M17 channel-mode vectors', () => {
 });
 
 describe('M17 channel tag', () => {
+  it('names a kind-6 tag and the callsign for the settings tab', () => {
+    const every = writeRadioFoundryChannelTag({
+      kind: RADIOFOUNDRY_KIND_M17,
+      system: null,
+      storedName: new Uint8Array(16),
+      txAllowed: true,
+      block: encodeM17ChannelBlock(3, false, 'ECHO')!,
+    });
+    expect(describeRadioFoundrySettingsEntry(0x0406, every)).toBe(
+      'Channel 7: M17, CAN 3, every CAN, ECHO',
+    );
+    const only = writeRadioFoundryChannelTag({
+      kind: RADIOFOUNDRY_KIND_M17,
+      system: null,
+      storedName: new Uint8Array(16),
+      txAllowed: true,
+      block: encodeM17ChannelBlock(1, true, '')!,
+    });
+    expect(describeRadioFoundrySettingsEntry(0x0400, only)).toBe(
+      'Channel 1: M17, CAN 1, squelch, ALL',
+    );
+    expect(describeRadioFoundrySettingsEntry(0x0a06, encodeM17CallsignRecord('AB1CD')!)).toBe(
+      'M17 callsign: AB1CD',
+    );
+    expect(describeRadioFoundrySettingsEntry(0x0a06, Uint8Array.of(0x01))).toBe('M17 callsign');
+    expect(describeRadioFoundrySettingsEntry(0x0400, Uint8Array.of(2, 0, 0, 0, 0))).toBeNull();
+    expect(describeRadioFoundrySettingsEntry(0x0001, Uint8Array.of(1))).toBeNull();
+  });
+
   it('names kind 5 and kind 6', () => {
     expect(radioFoundryChannelKindLabel(RADIOFOUNDRY_KIND_AES)).toBe('Conventional DMR AES-256');
     expect(radioFoundryChannelKindLabel(RADIOFOUNDRY_KIND_M17)).toBe('M17 conventional');

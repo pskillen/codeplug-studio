@@ -1,3 +1,4 @@
+import { describeRadioFoundrySettingsEntry } from '@core/import-export/formats/radiofoundry/m17.ts';
 import {
   readRadioFoundrySettingsArea,
   settingsAreaSector,
@@ -76,9 +77,10 @@ export function radioFoundrySettingsView(archive: SettingsArchive): SettingsView
   const rows: SettingRow[] = area.entries.map((entry, index) => {
     const dup = seenKeys.has(entry.key);
     seenKeys.set(entry.key, (seenKeys.get(entry.key) ?? 0) + 1);
+    const described = describeRadioFoundrySettingsEntry(entry.key, entry.value);
     return {
       id: `kv-${index}`,
-      label: `Key 0x${entry.key.toString(16).padStart(4, '0')}`,
+      label: described ?? `Key 0x${entry.key.toString(16).padStart(4, '0')}`,
       help: `${entry.value.length} bytes`,
       value: hexSpaced(entry.value),
       raw: [...entry.value],
@@ -92,7 +94,7 @@ export function radioFoundrySettingsView(archive: SettingsArchive): SettingsView
     status: { kind: 'ok' },
     summary: `Settings area version ${area.version} · ${area.entries.length} entries`,
     intro:
-      'Raw entries as stored. Keys are not named yet. Secret and traffic-key values are masked.',
+      'Entries as stored. M17 channel tags and the M17 callsign are named; other keys stay numbered. Secret and traffic-key values are masked.',
     groups: [{ id: 'entries', label: 'Settings area entries', rows }],
   };
 }
