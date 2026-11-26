@@ -5,13 +5,18 @@ import type { SettingsArea } from './settingsArea.ts';
 export const CHANNEL_TAG_KEY_FIRST = 0x0400;
 export const CHANNEL_TAG_KEY_LAST = 0x07ff;
 
-/** Merged kinds at RadioFoundry 454a5b76. Ids 5+ are unsettled upstream. */
+/** Kinds Studio names. Any other id stays "kind N (not known to Studio)". */
 export const RADIOFOUNDRY_CHANNEL_KIND_LABELS: Readonly<Record<number, string>> = {
   1: 'DMR Tier III trunked',
   2: 'P25 conventional',
   3: 'P25 trunked',
   4: 'NXDN conventional',
+  5: 'Conventional DMR AES-256',
+  6: 'M17 conventional',
 };
+
+export const RADIOFOUNDRY_KIND_AES = 5;
+export const RADIOFOUNDRY_KIND_M17 = 6;
 
 export interface ChannelTagHeader {
   /** 1-1024 */
@@ -77,4 +82,32 @@ export function isChannelTagLive(tag: ChannelTagHeader, channelRecord: Uint8Arra
   if (radioFoundryNameCheck(channelRecord.subarray(0, 16)) !== tag.nameCheck) return false;
   if (tag.baseStandsAlone) return true;
   return channelRecord[0x18] === 1 && (channelRecord[0x33]! & 0x04) !== 0;
+}
+
+/**
+ * Whole tag value: kind, system, name check, flags, parameter block.
+ * Studio writes every byte from the model. Flag bits other than transmit and
+ * "base stands alone" are 0. There is no fallback and nothing is copied from an old tag.
+ */
+export function writeRadioFoundryChannelTag(args: {
+  kind: number;
+  /** Null is no system (0xFF). */
+  system: number | null;
+  /** The 16 name octets as the channel record stores them. */
+  storedName: Uint8Array;
+  txAllowed: boolean;
+  /** Flag bit 1. Studio's M17 stand-in leaves this clear. */
+  baseStandsAlone?: boolean;
+  block: Uint8Array;
+}): Uint8Array {
+  const check = radioFoundryNameCheck(args.storedName);
+  const flags = (args.txAllowed ? 0x01 : 0) | (args.baseStandsAlone ? 0x02 : 0);
+  const out = new Uint8Array(TAG_HEADER_LENGTH + args.block.length);
+  out[0] = args.kind & 0xff;
+  out[1] = args.system == null ? 0xff : args.system & 0xff;
+  out[2] = check & 0xff;
+  out[3] = (check >> 8) & 0xff;
+  out[4] = flags;
+  out.set(args.block, TAG_HEADER_LENGTH);
+  return out;
 }
