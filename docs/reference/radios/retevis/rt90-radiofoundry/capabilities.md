@@ -1,10 +1,10 @@
 # RT90 (RadioFoundry) — capabilities
 
-| Capability  | Support                                                                                                          |
-| ----------- | ---------------------------------------------------------------------------------------------------------------- |
-| DMR digital | Yes                                                                                                              |
-| Analogue FM | Yes                                                                                                              |
-| M17         | Yes. The channel stores a CAN and a destination. Sending the CAN on air, and filtering on it, are still pending. |
+| Capability  | Support                                                                                                                    |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------- |
+| DMR digital | Yes                                                                                                                        |
+| Analogue FM | Yes                                                                                                                        |
+| M17         | Yes. The channel stores a CAN and a destination; the radio sends the CAN on air and filters on it (firmware M6 and later). |
 
 ### Frequency ranges
 

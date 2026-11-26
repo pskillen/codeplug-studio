@@ -137,7 +137,7 @@ describe('RadioFoundry M17 export', () => {
     const text = image.warnings.map(formatExportWarning).join('\n');
     expect(text).not.toContain(RADIOFOUNDRY_FILE_SETTINGS_REPLACED);
     expect(text).not.toContain(RADIOFOUNDRY_M17_FIRMWARE_NOTE);
-    expect(text).toContain('CAN squelch');
+    expect(text).not.toContain('CAN squelch');
     expect(text).toContain('MM9PDY');
   });
 

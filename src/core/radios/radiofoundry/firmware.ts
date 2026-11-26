@@ -11,10 +11,10 @@ export const RADIOFOUNDRY_STUDIO_PIN = {
 } as const;
 
 /**
- * False until the firmware sends the CAN and applies CAN squelch (M6).
+ * True since firmware M6: the radio sends the CAN on air and applies CAN squelch.
  * The support matrix and RadioFoundry export share this sentence.
  */
-export const RADIOFOUNDRY_M17_CAN_ON_AIR = false;
+export const RADIOFOUNDRY_M17_CAN_ON_AIR = true;
 
 export const RADIOFOUNDRY_M17_CAN_NOTE =
   'RadioFoundry stores the CAN and the CAN squelch with the channel. Sending the CAN on air and filtering on it are still pending.';
