@@ -88,7 +88,7 @@ Maps resolved `analogSquelchMode` on the analog profile (or library default for 
 | `sendTalkerAlias`  | _(none)_   | No talker-alias column on wire                                                                                               |
 | Global APRS config | `APRS.md`  | No CPS `APRS.csv` — operator guide only ([aprs.md](aprs.md), [#250](https://github.com/pskillen/codeplug-studio/issues/250)) |
 
-`Channel Name` maps to split internal fields on import and is **composed on export**. Split rules: [channel-name-parsing](../../../features/channel-name-parsing.md).
+`Channel Name` maps to split internal fields on import and is **composed on export**. Split rules: [callsign parsing](../../callsigns.md).
 
 ## Export name length and shortening
 
